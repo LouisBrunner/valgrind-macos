@@ -981,7 +981,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                   }
                   VG_(nuke_all_threads_except) ( tid );
                   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = 
-                        (UInt)__libc_freeres_wrapper;
+                     __libc_freeres_wrapper;
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
 
@@ -1197,10 +1197,10 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    /* Set an argument and bogus return address.  The return address will not
       be used, but we still need to have it so that the arg is at the
       correct stack offset. */
-   VGA_(set_arg_and_bogus_ret)(tid, (UInt)PTHREAD_CANCELED, 0xBEADDEEF);
+   VGA_(set_arg_and_bogus_ret)(tid, (UWord)PTHREAD_CANCELED, 0xBEADDEEF);
 
    /* .cancel_pend will hold &thread_exit_wrapper */
-   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)VG_(threads)[tid].cancel_pend;
+   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UWord)VG_(threads)[tid].cancel_pend;
 
    VG_(proxy_abort_syscall)(tid);
 
@@ -1843,7 +1843,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
                               (Addr)&do__apply_in_new_thread_bogusRA);
 
    /* this is where we start */
-   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)fn;
+   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UWord)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "new thread, created by %d", parent_tid );
@@ -2574,7 +2574,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    vg_assert(specifics_ptr == NULL 
              || IS_ALIGNED4_ADDR(specifics_ptr));
 
-   SET_PTHREQ_RETVAL(tid, (UInt)specifics_ptr);
+   SET_PTHREQ_RETVAL(tid, (UWord)specifics_ptr);
 }
 
 
@@ -2926,7 +2926,7 @@ void do_client_request ( ThreadId tid, UInt* arg )
       case VG_USERREQ__MALLOC:
          VG_(sk_malloc_called_by_scheduler) = True;
          SET_PTHREQ_RETVAL(
-            tid, (UInt)SK_(malloc) ( arg[1] ) 
+            tid, (Addr)SK_(malloc) ( arg[1] ) 
          );
          VG_(sk_malloc_called_by_scheduler) = False;
          break;

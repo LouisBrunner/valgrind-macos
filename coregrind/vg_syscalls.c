@@ -1489,7 +1489,7 @@ PRE(sched_setscheduler)
    /* int sched_setscheduler(pid_t pid, int policy, 
       const struct sched_param *p); */
    MAYBE_PRINTF("sched_setscheduler ( %d, %d, %p )\n",arg1,arg2,arg3);
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid,
 		     "sched_setscheduler(struct sched_param *p)", 
 		     arg3, sizeof(struct vki_sched_param));
@@ -1572,7 +1572,7 @@ PRE(sendfile)
    /* ssize_t sendfile(int out_fd, int in_fd, off_t *offset, 
       size_t count) */
    MAYBE_PRINTF("sendfile ( %d, %d, %p, %llu )\n",arg1,arg2,arg3,(ULong)arg4);
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sendfile(offset)",
 		     arg3, sizeof(vki_off_t) );
 }
@@ -1587,14 +1587,14 @@ PRE(sendfile64)
    /* ssize_t sendfile64(int out_df, int in_fd, loff_t *offset,
       size_t count); */
    MAYBE_PRINTF("sendfile64 ( %d, %d, %p, %llu )\n",arg1,arg2,arg3,(ULong)arg4);
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sendfile64(offset)",
 		     arg3, sizeof(vki_loff_t) );
 }
 
 POST(sendfile64)
 {
-   if (arg3 != (UInt)NULL ) {
+   if (arg3 != (UWord)NULL ) {
       VG_TRACK( post_mem_write, arg3, sizeof(vki_loff_t) );
    }
 }
@@ -1734,9 +1734,9 @@ PRE(execve)
    MAYBE_PRINTF("execve ( %p(%s), %p, %p )\n", arg1, arg1, arg2, arg3);
 
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "execve(filename)", arg1 );
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
 
    /* Erk.  If the exec fails, then the following will have made a
@@ -2517,7 +2517,7 @@ PRE(ipc)
    case 4: /* IPCOP_semtimedop */
       SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(sops)", arg5, 
 		     arg3 * sizeof(struct vki_sembuf) );
-      if (arg6 != (UInt)NULL)
+      if (arg6 != (UWord)NULL)
          SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(timeout)", arg6, 
                         sizeof(struct vki_timespec) );
       tst->sys_flags |= MayBlock;
@@ -3112,7 +3112,7 @@ PRE(ioctl)
 	 // buf pointer only needs to be readable
 	 struct vki_ifconf *ifc = (struct vki_ifconf *) arg3;
 	 SYSCALL_TRACK( pre_mem_write,tid, "ioctl(SIOCGIFCONF).ifc_buf",
-			(Addr)(ifc->vki_ifc_buf), (UInt)(ifc->ifc_len) );
+			(Addr)(ifc->vki_ifc_buf), ifc->ifc_len );
       }
       break;
    case VKI_SIOCGSTAMP:
@@ -3388,8 +3388,7 @@ PRE(ioctl)
          /* ToDo: don't do any of the following if the structure is invalid */
          struct vki_cdrom_read_audio *cra = (struct vki_cdrom_read_audio *) arg3;
 	 SYSCALL_TRACK( pre_mem_write, tid, "ioctl(CDROMREADAUDIO).buf",
-	                (Addr)(cra->buf),
-                        (UInt)(cra->nframes * VKI_CD_FRAMESIZE_RAW));
+	                (Addr)cra->buf, cra->nframes * VKI_CD_FRAMESIZE_RAW);
       }
       break;      
    case VKI_CDROMPLAYMSF:
@@ -3730,8 +3729,7 @@ POST(ioctl)
       if (res == 0 && arg3 ) {
 	 struct vki_ifconf *ifc = (struct vki_ifconf *) arg3;
 	 if (ifc->vki_ifc_buf != NULL)
-	    VG_TRACK( post_mem_write, (Addr)(ifc->vki_ifc_buf), 
-		      (UInt)(ifc->ifc_len) );
+	    VG_TRACK( post_mem_write, (Addr)(ifc->vki_ifc_buf), ifc->ifc_len );
       }
       break;
    case VKI_SIOCGSTAMP:
@@ -3885,7 +3883,7 @@ POST(ioctl)
    {
       struct vki_cdrom_read_audio *cra = (struct vki_cdrom_read_audio *) arg3;
       VG_TRACK( post_mem_write, (Addr)(cra->buf),
-                (UInt)(cra->nframes * VKI_CD_FRAMESIZE_RAW));
+                cra->nframes * VKI_CD_FRAMESIZE_RAW);
       break;
    }
       
@@ -4201,14 +4199,14 @@ PRE(nanosleep)
    MAYBE_PRINTF("nanosleep ( %p, %p )\n", arg1,arg2);
    SYSCALL_TRACK( pre_mem_read, tid, "nanosleep(req)", arg1, 
                                         sizeof(struct vki_timespec) );
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "nanosleep(rem)", arg2, 
                      sizeof(struct vki_timespec) );
 }
 
 POST(nanosleep)
 {
-   if (arg2 != (UInt)NULL && res == -VKI_EINTR)
+   if (arg2 != (UWord)NULL && res == -VKI_EINTR)
       VG_TRACK( post_mem_write, arg2, sizeof(struct vki_timespec) );
 }
 
@@ -4990,7 +4988,7 @@ POST(socketcall)
 
    case VKI_SYS_RECV:
       if (res >= 0 
-	  && ((UInt*)arg2)[1] != (UInt)NULL) {
+	  && ((UInt*)arg2)[1] != (UWord)NULL) {
 	 VG_TRACK( post_mem_write, ((UInt*)arg2)[1], /* buf */
 		   ((UInt*)arg2)[2]  /* len */ );
       }
@@ -5149,14 +5147,14 @@ PRE(time)
 {
    /* time_t time(time_t *t); */
    MAYBE_PRINTF("time ( %p )\n",arg1);
-   if (arg1 != (UInt)NULL) {
+   if (arg1 != (UWord)NULL) {
       SYSCALL_TRACK( pre_mem_write, tid, "time", arg1, sizeof(vki_time_t) );
    }
 }
 
 POST(time)
 {
-   if (arg1 != (UInt)NULL) {
+   if (arg1 != (UWord)NULL) {
       VG_TRACK( post_mem_write, arg1, sizeof(vki_time_t) );
    }
 }
@@ -5171,7 +5169,7 @@ PRE(times)
 
 POST(times)
 {
-   if (arg1 != (UInt)NULL) {
+   if (arg1 != (UWord)NULL) {
       VG_TRACK( post_mem_write, arg1, sizeof(struct vki_tms) );
    }
 }
@@ -5206,7 +5204,7 @@ PRE(uname)
 
 POST(uname)
 {
-   if (arg1 != (UInt)NULL) {
+   if (arg1 != (UWord)NULL) {
       VG_TRACK( post_mem_write, arg1, sizeof(struct vki_new_utsname) );
    }
 }
@@ -5216,7 +5214,7 @@ PRE(utime)
    /* int utime(const char *filename, struct utimbuf *buf); */
    MAYBE_PRINTF("utime ( %p, %p )\n", arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "utime(filename)", arg1 );
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid, "utime(buf)", arg2, 
 		     sizeof(struct vki_utimbuf) );
 }
@@ -5322,7 +5320,7 @@ PRE(utimes)
     /* int utimes(const char *filename, struct timeval *tvp); */
     MAYBE_PRINTF("utimes ( %p, %p )\n", arg1,arg2);
     SYSCALL_TRACK( pre_mem_read_asciiz, tid, "utimes(filename)", arg1 );
-    if (arg2 != (UInt)NULL)
+    if (arg2 != (UWord)NULL)
          SYSCALL_TRACK( pre_mem_read, tid, "utimes(tvp)", arg2,
                        sizeof(struct vki_timeval) );
 }
@@ -5332,7 +5330,7 @@ PRE(futex)
     /* int futex(void *futex, int op, int val, const struct timespec *timeout); */
     MAYBE_PRINTF("futex ( %p, %d, %d, %p, %p )\n", arg1,arg2,arg3,arg4,arg5);
     SYSCALL_TRACK( pre_mem_read, tid, "futex(futex)", arg1, sizeof(int) );
-    if (arg2 == VKI_FUTEX_WAIT && arg4 != (UInt)NULL)
+    if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
        SYSCALL_TRACK( pre_mem_read, tid, "futex(timeout)", arg4,
                       sizeof(struct vki_timespec) );
     if (arg2 == VKI_FUTEX_REQUEUE)
@@ -5405,17 +5403,17 @@ PRE(rt_sigtimedwait)
    /* int sigtimedwait(const  sigset_t  *set,  siginfo_t  *info,
       const struct timespec timeout); */
    MAYBE_PRINTF("sigtimedwait ( %p, %p, timeout )\n", arg1, arg2);
-   if (arg1 != (UInt)NULL) 
+   if (arg1 != (UWord)NULL) 
       SYSCALL_TRACK( pre_mem_read,  tid, "sigtimedwait(set)",  arg1,
                      sizeof(vki_sigset_t));
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sigtimedwait(info)", arg2,
 		     sizeof(vki_siginfo_t) );
 }
 
 POST(rt_sigtimedwait)
 {
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       VG_TRACK( post_mem_write, arg2, sizeof(vki_siginfo_t) );
 }
 
@@ -5423,7 +5421,7 @@ PRE(rt_sigqueueinfo)
 {
    /*  long sys_rt_sigqueueinfo(int pid, int sig, siginfo_t *uinfo) */
    MAYBE_PRINTF("rt_sigqueueinfo(%d, %d, %p)\n", arg1, arg2, arg3);
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid, "sigqueueinfo(uinfo)", arg3, 
 		     sizeof(vki_siginfo_t) );
 }
@@ -5443,11 +5441,11 @@ PRE(sigaltstack)
 {
    /* int sigaltstack(const stack_t *ss, stack_t *oss); */
    MAYBE_PRINTF("sigaltstack ( %p, %p )\n",arg1,arg2);
-   if (arg1 != (UInt)NULL) {
+   if (arg1 != (UWord)NULL) {
       SYSCALL_TRACK( pre_mem_read, tid, "sigaltstack(ss)", 
 		     arg1, sizeof(vki_stack_t) );
    }
-   if (arg2 != (UInt)NULL) {
+   if (arg2 != (UWord)NULL) {
       SYSCALL_TRACK( pre_mem_write, tid, "sigaltstack(oss)", 
 		     arg2, sizeof(vki_stack_t) );
    }
@@ -5458,7 +5456,7 @@ PRE(sigaltstack)
 
 POST(sigaltstack)
 {
-   if (res == 0 && arg2 != (UInt)NULL)
+   if (res == 0 && arg2 != (UWord)NULL)
       VG_TRACK( post_mem_write, arg2, sizeof(vki_stack_t));
 }
 
@@ -5467,10 +5465,10 @@ PRE(sigaction)
    /* int sigaction(int signum, struct k_sigaction *act, 
       struct k_sigaction *oldact); */
    MAYBE_PRINTF("sigaction ( %d, %p, %p )\n",arg1,arg2,arg3);
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid, "sigaction(act)", 
 		     arg2, sizeof(struct vki_sigaction));
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sigaction(oldact)", 
 		     arg3, sizeof(struct vki_sigaction));
 
@@ -5480,7 +5478,7 @@ PRE(sigaction)
 
 POST(sigaction)
 {
-   if (res == 0 && arg3 != (UInt)NULL)
+   if (res == 0 && arg3 != (UWord)NULL)
       VG_TRACK( post_mem_write, arg3, sizeof(struct vki_sigaction));
 }
 
@@ -5492,10 +5490,10 @@ PRE(sigprocmask)
    /* int sigprocmask(int how, k_sigset_t *set, 
       k_sigset_t *oldset); */
    MAYBE_PRINTF("sigprocmask ( %d, %p, %p )\n",arg1,arg2,arg3);
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid, "sigprocmask(set)", 
 		     arg2, sizeof(vki_sigset_t));
-   if (arg3 != (UInt)NULL)
+   if (arg3 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sigprocmask(oldset)", 
 		     arg3, sizeof(vki_sigset_t));
 
@@ -5508,7 +5506,7 @@ PRE(sigprocmask)
 
 POST(sigprocmask)
 {
-   if (res == 0 && arg3 != (UInt)NULL)
+   if (res == 0 && arg3 != (UWord)NULL)
       VG_TRACK( post_mem_write, arg3, sizeof(vki_sigset_t));
 }
 
@@ -5588,7 +5586,7 @@ PRE(io_getevents)
    if (arg3 > 0)
       SYSCALL_TRACK( pre_mem_write, tid, "io_getevents(events)",
                      arg4, sizeof(struct vki_io_event)*arg3 );
-   if (arg5 != (UInt)NULL)
+   if (arg5 != (UWord)NULL)
       SYSCALL_TRACK( pre_mem_read, tid, "io_getevents(timeout)",
                      arg5, sizeof(struct vki_timespec));
 }
@@ -5601,7 +5599,7 @@ POST(io_getevents)
       VG_TRACK( post_mem_write, arg4, sizeof(struct vki_io_event)*res );
       for (i = 0; i < res; i++) {
          const struct vki_io_event *vev = ((struct vki_io_event *)arg4) + i;
-         const struct vki_iocb *cb = (struct vki_iocb *)(UInt)vev->obj;
+         const struct vki_iocb *cb = (struct vki_iocb *)(Addr)vev->obj;
 
          switch (cb->aio_lio_opcode) {
          case VKI_IOCB_CMD_PREAD:

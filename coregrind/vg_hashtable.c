@@ -38,7 +38,7 @@
 
 #define VG_N_CHAINS 4999 /* a prime number */
 
-#define VG_CHAIN_NO(aa) (((UInt)(aa)) % VG_N_CHAINS)
+#define VG_CHAIN_NO(aa) (((UWord)(aa)) % VG_N_CHAINS)
 
 /*--------------------------------------------------------------------*/
 /*--- Functions                                                    ---*/

@@ -240,8 +240,8 @@ typedef struct EC_IP {
 
 static inline UInt packEC(ExeContext *ec)
 {
-   SK_ASSERT(((UInt)ec & ((1 << STATE_BITS)-1)) == 0);
-   return ((UInt)ec) >> STATE_BITS;
+   SK_ASSERT(((UWord)ec & ((1 << STATE_BITS)-1)) == 0);
+   return ((UWord)ec) >> STATE_BITS;
 }
 
 static inline ExeContext *unpackEC(UInt i)
@@ -252,7 +252,7 @@ static inline ExeContext *unpackEC(UInt i)
 /* Lose 2 LSB of IP */
 static inline UInt packIP(Addr ip)
 {
-   return ((UInt)ip) >> STATE_BITS;
+   return ip >> STATE_BITS;
 }
 
 static inline Addr unpackIP(UInt i)
@@ -445,8 +445,8 @@ static Bool tlsIsDisjoint(const ThreadLifeSeg *tls,
 
 static inline UInt packTLS(ThreadLifeSeg *tls)
 {
-   SK_ASSERT(((UInt)tls & ((1 << STATE_BITS)-1)) == 0);
-   return ((UInt)tls) >> STATE_BITS;
+   SK_ASSERT(((UWord)tls & ((1 << STATE_BITS)-1)) == 0);
+   return ((UWord)tls) >> STATE_BITS;
 }
 
 static inline ThreadLifeSeg *unpackTLS(UInt i)
@@ -656,8 +656,8 @@ static inline UInt packLockSet(const LockSet *p)
 {
    UInt id;
 
-   SK_ASSERT(((UInt)p & ((1 << STATE_BITS)-1)) == 0);
-   id = ((UInt)p) >> STATE_BITS;
+   SK_ASSERT(((UWord)p & ((1 << STATE_BITS)-1)) == 0);
+   id = ((UWord)p) >> STATE_BITS;
 
    return id;
 }
@@ -710,7 +710,7 @@ static UInt hash_LockSet_w_wo(const LockSet *ls,
       }
 
       hash = ROTL(hash, 17);
-      hash ^= (UInt)mx->mutexp;
+      hash ^= mx->mutexp;
    }
 
    return hash % LOCKSET_HASH_SZ;
@@ -1348,7 +1348,7 @@ static void pp_all_mutexes()
 /* find or create a Mutex for a program's mutex use */
 static Mutex *get_mutex(Addr mutexp)
 {
-   UInt bucket = ((UInt)mutexp) % M_MUTEX_HASHSZ;
+   UInt bucket = mutexp % M_MUTEX_HASHSZ;
    Mutex *mp;
    
    for(mp = mutex_hash[bucket]; mp != NULL; mp = mp->next)
@@ -2593,10 +2593,10 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
 	break;
       case Mallocd:
       case Freed: {
-         UInt delta;
+         SizeT delta;
          UChar* relative;
          if (ai->rwoffset < 0) {
-            delta    = (UInt)(- ai->rwoffset);
+            delta    = (SizeT)(- ai->rwoffset);
             relative = "before";
          } else if (ai->rwoffset >= ai->blksize) {
             delta    = ai->rwoffset - ai->blksize;
@@ -2606,8 +2606,8 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
 	 VG_(message)(Vg_UserMsg, 
-		      " Address %p is %d bytes %s a block of size %d %s by thread %d",
-		      a, delta, relative, 
+		      " Address %p is %llu bytes %s a block of size %d %s by thread %d",
+		      a, (ULong)delta, relative, 
 		      ai->blksize,
 		      ai->akind == Mallocd ? "alloc'd" : "freed",
 		      ai->lasttid);

@@ -238,7 +238,7 @@ void add_tt_entry ( TCEntry* tce )
    UInt i;
    /* VG_(printf)("add_TT_entry orig_addr %p\n", tce->orig_addr); */
    /* Hash to get initial probe point. */
-   i = ((UInt)(tce->orig_addr)) % VG_TT_SIZE;
+   i = tce->orig_addr % VG_TT_SIZE;
    while (True) {
       if (vg_tt[i].orig_addr == tce->orig_addr)
          VG_(core_panic)("add_TT_entry: duplicate");
@@ -266,7 +266,7 @@ TTEntry* search_tt ( Addr orig_addr )
 {
    Int i;
    /* Hash to get initial probe point. */
-   i = ((UInt)orig_addr) % VG_TT_SIZE;
+   i = orig_addr % VG_TT_SIZE;
    while (True) {
       if (vg_tt[i].orig_addr == orig_addr)
          return &vg_tt[i];

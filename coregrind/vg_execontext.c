@@ -236,7 +236,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
    Int         i;
    Addr        ips[VG_DEEPEST_BACKTRACE];
    Bool        same;
-   UInt        hash;
+   UWord       hash;
    ExeContext* new_ec;
    ExeContext* list;
 
@@ -254,7 +254,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
 
    hash = 0;
    for (i = 0; i < VG_(clo_backtrace_size); i++) {
-      hash ^= (UInt)ips[i];
+      hash ^= ips[i];
       hash = (hash << 29) | (hash >> 3);
    }
    hash = hash % VG_N_EC_LISTS;

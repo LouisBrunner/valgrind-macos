@@ -73,7 +73,7 @@ Bool VG_(isfullsigset)( vki_sigset_t* set )
    Int i;
    vg_assert(set != NULL);
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      if (set->sig[i] != (UInt)(~0x0)) return False;
+      if (set->sig[i] != (UWord)(~0x0)) return False;
    return True;
 }
 
@@ -136,25 +136,22 @@ void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 /* The functions sigaction, sigprocmask, sigpending and sigsuspend
    return 0 on success and -1 on error.  
 */
-Int VG_(sigprocmask)( Int how, 
-                       const vki_sigset_t* set, 
-                       vki_sigset_t* oldset)
+Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 {
    Int res 
       = VG_(do_syscall)(__NR_rt_sigprocmask, 
-			how, (UInt)set, (UInt)oldset, 
+			how, (UWord)set, (UWord)oldset, 
 			_VKI_NSIG_WORDS * sizeof(UWord));
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(sigaction) ( Int signum,  
-                      const struct vki_sigaction* act,  
-                      struct vki_sigaction* oldact)
+Int VG_(sigaction) ( Int signum, const struct vki_sigaction* act,  
+                     struct vki_sigaction* oldact)
 {
    Int res
      = VG_(do_syscall)(__NR_rt_sigaction,
-		       signum, (UInt)act, (UInt)oldact, 
+		       signum, (UWord)act, (UWord)oldact, 
 		       _VKI_NSIG_WORDS * sizeof(UWord));
    /* VG_(printf)("res = %d\n",res); */
    return VG_(is_kerror)(res) ? -1 : 0;
@@ -185,7 +182,7 @@ Int VG_(signal)(Int signum, void (*sighandler)(Int))
    res = VG_(sigemptyset)( &sa.sa_mask );
    vg_assert(res == 0);
    res = VG_(do_syscall)(__NR_rt_sigaction,
-			 signum, (UInt)(&sa), (UInt)NULL,
+			 signum, (UWord)&sa, (UWord)NULL,
 			 _VKI_NSIG_WORDS * sizeof(UWord));
    return VG_(is_kerror)(res) ? -1 : 0;
 }
@@ -575,7 +572,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
             send('0');
             send('x');
             ret += myvprintf_int64(send, flags, 16, width, 
-				   (ULong)((UInt)va_arg (vargs, void *)));
+				   (ULong)((UWord)va_arg (vargs, void *)));
             break;
          case 'x': /* %x */
             if (is_long)
@@ -1638,7 +1635,7 @@ Int VG_(system) ( Char* cmd )
       argv[3] = 0;
 
       (void)VG_(do_syscall)(__NR_execve, 
-                            (UInt)"/bin/sh", (UInt)argv, (UInt)envp);
+                            (UWord)"/bin/sh", (UWord)argv, (UWord)envp);
 
       /* If we're still alive here, execve failed. */
       VG_(exit)(1);
@@ -1690,7 +1687,7 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
 
    if (p != ((void*)(-1))) {
       vg_assert((void*)VG_(valgrind_base) <= p && p <= (void*)VG_(valgrind_last));
-      tot_alloc += (UInt)nBytes;
+      tot_alloc += nBytes;
       if (0)
          VG_(printf)(
             "get_memory_from_mmap: %llu tot, %llu req = %p .. %p, caller %s\n",

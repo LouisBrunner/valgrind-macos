@@ -146,7 +146,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 
          /* OK - maybe it's a mempool, too? */
          mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list),
-                                             (UInt)vg_cgbs[i].start,
+                                             (UWord)vg_cgbs[i].start,
                                              (void*)&d);
          if(mp != NULL) {
             if(mp->chunks != NULL) {
@@ -197,14 +197,14 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
          ok = MC_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             MC_(record_user_error) ( tid, bad_addr, True );
-         *ret = ok ? (UInt)NULL : bad_addr;
+         *ret = ok ? (UWord)NULL : bad_addr;
 	 break;
 
       case VG_USERREQ__CHECK_READABLE: /* check readable */
          ok = MC_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             MC_(record_user_error) ( tid, bad_addr, False );
-         *ret = ok ? (UInt)NULL : bad_addr;
+         *ret = ok ? (UWord)NULL : bad_addr;
 	 break;
 
       case VG_USERREQ__DO_LEAK_CHECK:

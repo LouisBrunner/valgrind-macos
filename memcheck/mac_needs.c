@@ -227,7 +227,7 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
          }
          break;
       case Freed: case Mallocd: case UserG: case Mempool: {
-         UInt delta;
+         SizeT delta;
          UChar* relative;
          UChar* kind;
          if (ai->akind == Mempool) {
@@ -236,7 +236,7 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             kind = "block";
          }
          if (ai->rwoffset < 0) {
-            delta    = (UInt)(- ai->rwoffset);
+            delta    = (SizeT)(- ai->rwoffset);
             relative = "before";
          } else if (ai->rwoffset >= ai->blksize) {
             delta    = ai->rwoffset - ai->blksize;
@@ -246,8 +246,8 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
-            " Address 0x%x is %d bytes %s a %s of size %d %s",
-            a, delta, relative, kind,
+            " Address 0x%x is %llu bytes %s a %s of size %d %s",
+            a, (ULong)delta, relative, kind,
             ai->blksize,
             ai->akind==Mallocd ? "alloc'd" 
                : ai->akind==Freed ? "free'd" 
@@ -412,8 +412,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    for the --workaround-gcc296-bugs kludge. */
 static Bool is_just_below_ESP( Addr esp, Addr aa )
 {
-   if ((UInt)esp > (UInt)aa
-       && ((UInt)esp - (UInt)aa) <= VG_GCC296_BUG_STACK_SLOP)
+   if (esp > aa && (esp - aa) <= VG_GCC296_BUG_STACK_SLOP)
       return True;
    else
       return False;

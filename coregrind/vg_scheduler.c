@@ -570,8 +570,23 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].sched_jmpbuf_valid = False;
 }
 
-/* Called in the child after fork.  Presumably the parent was running,
-   so we now we're running. */
+/*                                                                             
+   Called in the child after fork.  If the parent has multiple                 
+   threads, then we've inhereted a VG_(threads) array describing them,         
+   but only the thread which called fork() is actually alive in the            
+   child.  This functions needs to clean up all those other thread             
+   structures.                                                                 
+                                                                               
+   Whichever tid in the parent which called fork() becomes the                 
+   master_tid in the child.  That's because the only living slot in            
+   VG_(threads) in the child after fork is VG_(threads)[tid], and it           
+   would be too hard to try to re-number the thread and relocate the           
+   thread state down to VG_(threads)[1].                                       
+                                                                               
+   This function also needs to reinitialize the run_sema, since                
+   otherwise we may end up sharing its state with the parent, which            
+   would be deeply confusing.                                                  
+*/                                          
 static void sched_fork_cleanup(ThreadId me)
 {
    ThreadId tid;
@@ -584,8 +599,10 @@ static void sched_fork_cleanup(ThreadId me)
 
    /* clear out all the unused thread slots */
    for (tid = 1; tid < VG_N_THREADS; tid++) {
-      if (tid != me)
+      if (tid != me) {
+         mostly_clear_thread_record(tid);
 	 VG_(threads)[tid].status = VgTs_Empty;
+      }
    }
 
    /* re-init and take the sema */

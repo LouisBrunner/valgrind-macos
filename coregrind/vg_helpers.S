@@ -536,7 +536,13 @@ VG_(helper_idiv_16_8):
 	popl	%eax
 	ret
 
-		
+
+/* Undefined instruction (generates SIGILL) */
+.globl VG_(helper_undefined_instruction)
+VG_(helper_undefined_instruction):
+1:	ud2
+	jmp	1b
+			
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_helpers.S ---##
 ##--------------------------------------------------------------------##

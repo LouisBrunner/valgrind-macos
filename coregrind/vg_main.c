@@ -100,6 +100,7 @@ Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
 Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
+Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
  * increased too much, they won't really be compact any more... */
@@ -317,6 +318,9 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAS) );
    VGOFF_(helper_DAA)
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAA) );
+
+   VGOFF_(helper_undefined_instruction)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction) );
 
    /* Allocate slots for noncompact helpers */
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 

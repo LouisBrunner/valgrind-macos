@@ -4679,7 +4679,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                      "MMX, SSE, SSE2 or 3DNow!\n" );
 	 VG_(printf)("instruction.  Valgrind does not currently "
                      "support such instructions.  Sorry.\n" );
-         VG_(unimplemented)("unhandled x86 0x0F 2-byte opcode");
+	 uInstr0(cb, CALLM_S, 0);
+	 uInstr1(cb, CALLM,   0, Lit16, VGOFF_(helper_undefined_instruction));
+	 uInstr0(cb, CALLM_E, 0);
+
+	 /* just because everything else insists the last instruction
+	    of a BB is a jmp */
+	 uInstr1(cb, JMP,     0, Literal, 0);
+	 uCond(cb, CondAlways);
+	 uLiteral(cb, eip);
+	 *isEnd = True;
       }
 
       break;

@@ -1547,6 +1547,8 @@ extern void VG_(helper_SAHF);
 extern void VG_(helper_DAS);
 extern void VG_(helper_DAA);
 
+extern void VG_(helper_undefined_instruction);
+
 /* NOT A FUNCTION; this is a bogus RETURN ADDRESS. */
 extern void VG_(signalreturn_bogusRA)( void );
 
@@ -1670,6 +1672,8 @@ extern Int VGOFF_(helper_fstsw_AX);
 extern Int VGOFF_(helper_SAHF);
 extern Int VGOFF_(helper_DAS);
 extern Int VGOFF_(helper_DAA);
+
+extern Int VGOFF_(helper_undefined_instruction);
 
 extern Int VGOFF_(handle_esp_assignment); /* :: Addr -> void */
 

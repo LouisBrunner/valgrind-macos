@@ -430,7 +430,7 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
                                   IRTemp  dstUS,
                                   IRTemp  dst1,
                                   IRType  ty,
-                                  IRExpr* guard )
+                                  IRTemp  guard )
 {
    Int ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
@@ -446,9 +446,9 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
    }
 
    /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
-   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(dstUS)) );
-   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst1)) );
+   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_SRC, mkexpr(dstUS)) );
+   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_DST, mkexpr(dst1)) );
 }
 
 
@@ -2038,7 +2038,7 @@ UInt dis_Grp2 ( UChar  sorb,
                     mkexpr(shift_amt), mkU(ty,0)));
 
       /* Build the flags thunk. */
-      setFlags_DSTus_DST1(op8, subshift, dst1, ty, mkexpr(guard));
+      setFlags_DSTus_DST1(op8, subshift, dst1, ty, guard);
    } else {
       /* Rotate */
       vpanic("dis_Grp2: rotate");
@@ -3154,87 +3154,123 @@ UInt dis_mul_E_G ( UChar       sorb,
 //--                (UInt)((second_byte >> 3) & 7) );
 //--    VG_(core_panic)("dis_fpu: unhandled opcodes");
 //-- }
-//-- 
-//-- 
-//-- /* Double length left shifts.  Apparently only required in v-size (no
-//--    b- variant). */
-//-- static
-//-- Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb,
-//--                        UChar sorb,
-//--                        Addr eip, UChar modrm,
-//--                        Int sz, 
-//--                        Tag amt_tag, UInt amt_val,
-//--                        Bool left_shift )
-//-- {
-//--    /* amt_tag and amt_val denote either ArchReg(%CL) or a Literal.
-//--       And eip on entry points at the modrm byte. */
-//--    Int   t, t1, t2, ta, helper;
-//--    UInt  pair;
-//--    UChar dis_buf[50];
-//-- 
-//--    vg_assert(sz == 2 || sz == 4);
-//-- 
-//--    helper = left_shift 
-//--                ? (sz==4 ? VGOFF_(helper_shldl) 
-//--                         : VGOFF_(helper_shldw))
-//--                : (sz==4 ? VGOFF_(helper_shrdl) 
-//--                         : VGOFF_(helper_shrdw));
-//-- 
-//--    /* Get the amount to be shifted by onto the stack. */
-//--    t = newTemp(cb);
-//--    t1 = newTemp(cb);
-//--    t2 = newTemp(cb);
-//--    if (amt_tag == ArchReg) {
-//--       vg_assert(amt_val == R_CL);
-//--       uInstr2(cb, GET, 1, ArchReg, amt_val, TempReg, t);
-//--    } else {
-//--       uInstr2(cb, MOV, 1, Literal, 0, TempReg, t);
-//--       uLiteral(cb, amt_val);
-//--    }
-//-- 
-//--    uInstr0(cb, CALLM_S, 0);
-//--    uInstr1(cb, PUSH, 1, TempReg, t);
-//-- 
-//--    /* The E-part is the destination; this is shifted.  The G-part
-//--       supplies bits to be shifted into the E-part, but is not
-//--       changed. */
-//-- 
-//--    uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t1);
-//--    uInstr1(cb, PUSH, sz, TempReg, t1);
-//-- 
-//--    if (epartIsReg(modrm)) {
-//--       eip++;
-//--       uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, t2);
-//--       uInstr1(cb, PUSH,  sz, TempReg, t2);
-//--       uInstr1(cb, CALLM, 0,  Lit16,   helper);
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
-//--       uInstr1(cb, POP,   sz, TempReg, t);
-//--       uInstr2(cb, PUT,   sz, TempReg, t, ArchReg, eregOfRM(modrm));
-//--       DIP("sh%cd%c %%cl, %s, %s\n",
-//--           ( left_shift ? 'l' : 'r' ), nameISize(sz), 
-//--           nameIReg(sz, gregOfRM(modrm)), nameIReg(sz, eregOfRM(modrm)));
-//--    } else {
-//--       pair = disAMode ( cb, sorb, eip, dis_buf );
-//--       ta   = LOW24(pair);
-//--       eip  += HI8(pair);
-//--       uInstr2(cb, LOAD,  sz, TempReg, ta,     TempReg, t2);
-//--       uInstr1(cb, PUSH,  sz, TempReg, t2);
-//--       uInstr1(cb, CALLM, 0,  Lit16,   helper);
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
-//--       uInstr1(cb, POP,   sz, TempReg, t);
-//--       uInstr2(cb, STORE, sz, TempReg, t,      TempReg, ta);
-//--       DIP("sh%cd%c %%cl, %s, %s\n", ( left_shift ? 'l' : 'r' ),
-//--           nameISize(sz), nameIReg(sz, gregOfRM(modrm)), dis_buf);
-//--    }
-//--   
-//--    if (amt_tag == Literal) eip++;
-//--    uInstr1(cb, CLEAR, 0, Lit16, 8);
-//-- 
-//--    uInstr0(cb, CALLM_E, 0);
-//--    return eip;
-//-- }
-//-- 
-//-- 
+
+
+/* Double length left and right shifts.  Apparently only required in
+   v-size (no b- variant). */
+static
+UInt dis_SHLRD_Gv_Ev ( UChar sorb,
+                       UInt delta, UChar modrm,
+                       Int sz,
+                       IRExpr* shift_amt,
+                       Bool amt_is_literal,
+                       Char* shift_amt_txt,
+                       Bool left_shift )
+{
+   /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used
+      for printing it.   And eip on entry points at the modrm byte. */
+   Int len;
+   UChar dis_buf[50];
+
+   IRType ty = szToITy(sz);
+   IRTemp gsrc = newTemp(ty);
+   IRTemp esrc = newTemp(ty);
+   IRTemp addr = INVALID_IRTEMP;
+   IRTemp tmpSH = newTemp(Ity_I8);
+   IRTemp guard = newTemp(Ity_I32);
+   IRTemp tmpL = INVALID_IRTEMP;
+   IRTemp tmpRes = INVALID_IRTEMP;
+   IRTemp tmpSubSh = INVALID_IRTEMP;
+   IROp   mkpair;
+   IROp   getres;
+   IROp   shift;
+   UInt   thunkOp;
+   IRExpr* mask = NULL;
+
+   vassert(sz == 2 || sz == 4);
+
+   /* The E-part is the destination; this is shifted.  The G-part
+      supplies bits to be shifted into the E-part, but is not
+      changed.  
+
+      If shifting left, form a double-length word with E at the top
+      and G at the bottom, and shift this left.  The result is then in
+      the high part.
+
+      If shifting right, form a double-length word with G at the top
+      and E at the bottom, and shift this right.  The result is then
+      at the bottom.  */
+
+   /* Fetch the operands. */
+
+   assign( gsrc, getIReg(sz, gregOfRM(modrm)) );
+
+   if (epartIsReg(modrm)) {
+      delta++;
+      assign( esrc, getIReg(sz, eregOfRM(modrm)) );
+      DIP("sh%cd%c %%cl, %s, %s\n",
+          ( left_shift ? 'l' : 'r' ), nameISize(sz), 
+          nameIReg(sz, gregOfRM(modrm)), nameIReg(sz, eregOfRM(modrm)));
+   } else {
+      addr = disAMode ( &len, sorb, delta, dis_buf );
+      delta += len;
+      assign( esrc, loadLE(ty, mkexpr(addr)) );
+      DIP("sh%cd%c %%cl, %s, %s\n", ( left_shift ? 'l' : 'r' ),
+          nameISize(sz), nameIReg(sz, gregOfRM(modrm)), dis_buf);
+   }
+
+   /* Round up the relevant primops. */
+
+   if (sz == 4) {
+      tmpL     = newTemp(Ity_I64);
+      tmpRes   = newTemp(Ity_I32);
+      tmpSubSh = newTemp(Ity_I32);
+      mkpair = Iop_32HLto64;
+      getres = left_shift ? Iop_64HIto32 : Iop_64LOto32;
+      shift = left_shift ? Iop_Shl64 : Iop_Shr64;
+      thunkOp = left_shift ? CC_OP_SHLL : CC_OP_SARL;
+      mask = mkU8(31);
+      assign( tmpSH, binop(Iop_And8, shift_amt, mask) );
+   } else {
+      /* sz == 2 */
+      vassert(0);
+   }
+
+   /* Do the shift, calculate the subshift value, and set 
+      the flag thunk. */
+
+   if (left_shift)
+      assign( tmpL, binop(mkpair, mkexpr(esrc), mkexpr(gsrc)) );
+   else
+      assign( tmpL, binop(mkpair, mkexpr(gsrc), mkexpr(esrc)) );
+
+   assign( tmpRes, unop(getres, binop(shift, mkexpr(tmpL), mkexpr(tmpSH)) ) );
+   assign( tmpSubSh, 
+           unop(getres, 
+                binop(shift, 
+                      mkexpr(tmpL), 
+                      binop(Iop_And8, 
+                            binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
+                            mask))) );
+   assign( guard, binop(Iop_CmpNE8, mkexpr(tmpSH), mkU8(0)) );
+
+   setFlags_DSTus_DST1 ( 
+			left_shift ? Iop_Shl8 : Iop_Sar8,
+			tmpSubSh, tmpRes, ty, guard );
+
+   /* Put result back. */
+
+   if (epartIsReg(modrm)) {
+      putIReg(sz, eregOfRM(modrm), mkexpr(tmpRes));
+   } else {
+      storeLE( mkexpr(addr), mkexpr(tmpRes) );
+   }
+
+   if (amt_is_literal) delta++;
+   return delta;
+}
+
+
 //-- /* Handle BT/BTS/BTR/BTC Gv, Ev.  Apparently b-size is not
 //--    required. */
 //-- 
@@ -7337,12 +7373,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--                   Literal, getUChar(eip + lengthAMode(eip)),
 //--                   True );
 //--          break;
-//--       case 0xA5: /* SHLDv %cl,Gv,Ev */
-//--          modrm = getUChar(eip);
-//--          eip = dis_SHLRD_Gv_Ev ( 
-//--                   cb, sorb, eip, modrm, sz, ArchReg, R_CL, True );
-//--          break;
-//-- 
+      case 0xA5: /* SHLDv %cl,Gv,Ev */
+         modrm = getIByte(delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                    sorb, delta, modrm, sz,
+                    getIReg(1,R_ECX), False, /* not literal */
+                    "%cl", True );
+         break;
+
 //--       case 0xAC: /* SHRDv imm8,Gv,Ev */
 //--          modrm = getUChar(eip);
 //--          eip = dis_SHLRD_Gv_Ev ( 

@@ -3,19 +3,19 @@ Test file created.
 Syscall param writev(vector[...]) contains uninitialised or unaddressable byte(s)
    at 0x........: (within /...libc...)
    by 0x........: main (writev.c:56)
- Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 Received EFAULT as expected
 
 Syscall param writev(vector) contains uninitialised or unaddressable byte(s)
    at 0x........: (within /...libc...)
    by 0x........: main (writev.c:68)
- Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 Received EINVAL as expected
 
 Syscall param readv(vector) contains uninitialised or unaddressable byte(s)
    at 0x........: readv (in /...libc...)
    by 0x........: main (writev.c:76)
- Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 Received EINVAL as expected
 
 ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

@@ -121,7 +121,7 @@ int main ( int argc, char** argv )
       for (i = 0; i < TEST_N_ITERS; i++)
          tres
             = LibVEX_Translate ( 
-                 InsnSetX86, InsnSetX86,
+                 InsnSetARM, InsnSetX86,
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,
                  &orig_used,
                  transbuf, N_TRANSBUF, &trans_used,

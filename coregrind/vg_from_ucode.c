@@ -2156,6 +2156,10 @@ static void synth_jcond_lit ( Condcode cond,
             VG_(emit_shiftopv_lit_reg)( False, 4, ROR, 7, R_EAX );
             /* eax has OF and SF in lower 8 bits, and ZF in MSB */
 
+	    /* actually set the real cpu flags, since ROR changes
+	       neither P nor Z */
+	    VG_(emit_nonshiftopv_reg_reg)( False, 4, OR, R_EAX, R_EAX );
+
 	    if (cond == CondLE) {
 	       /* test Z */
 	       VG_(emit_jcondshort_target)(False, CondS, &tgt_jump);
@@ -2183,6 +2187,7 @@ static void synth_jcond_lit ( Condcode cond,
 	    VG_(emit_testb_lit_reg) ( False, 0x11, R_EAX);
 	    /* PF = OF == SF */
 
+	    /* Testing P now is OK since SHR sets it */
             if (cond == CondL) cond = CondP; else cond = CondNP;
 	    break;
 

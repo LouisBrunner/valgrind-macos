@@ -320,6 +320,23 @@ int memcmp ( const void *s1V, const void *s2V, unsigned int n )
    return 0;
 }
 
+/* glibc-2.3.2/sysdeps/generic/stpcpy.c */
+/* Copy SRC to DEST, returning the address of the terminating '\0' in DEST.  */
+char *
+stpcpy (dest, src)
+     char *dest;
+     const char *src;
+{
+  register char *d = dest;
+  register const char *s = src;
+
+  do
+    *d++ = *s;
+  while (*s++ != '\0');
+
+  return d - 1;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                     mac_replace_strmem.c ---*/
 /*--------------------------------------------------------------------*/

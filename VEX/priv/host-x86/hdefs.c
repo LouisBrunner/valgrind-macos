@@ -1218,10 +1218,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                   *p++ = 0x6B;
                   p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
                   *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
-                  goto done;
                } else {
-                  goto bad;
+                  *p++ = 0x69;
+                  p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
+                  p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
                }
+               goto done;
             default:
                goto bad;
          }

@@ -724,6 +724,15 @@ int recv(int s, void *buf, size_t len, int flags)
    return __libc_recv(s, buf, len, flags);
 }
 
+extern
+int __libc_sendto(int s, const void *msg, size_t len, int flags, 
+                  const struct sockaddr *to, socklen_t tolen);
+int sendto(int s, const void *msg, size_t len, int flags, 
+           const struct sockaddr *to, socklen_t tolen)
+{
+   return __libc_sendto(s, msg, len, flags, to, tolen);
+}
+
 
 /*--------------------------------------------------*/
 

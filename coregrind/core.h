@@ -100,13 +100,6 @@
    options or sizes, recompile, and still have a working system.
    ------------------------------------------------------------------ */
 
-/* Total number of spill slots available for allocation, if a TempReg
-   doesn't make it into a RealReg.  Just bomb the entire system if
-   this value is too small; we don't expect it will ever get
-   particularly high. */
-#define VG_MAX_SPILLSLOTS 24
-
-
 /* Constants for the slow translation lookup cache. */
 #define VG_TRANSTAB_SLOW_BITS 11
 #define VG_TRANSTAB_SLOW_SIZE (1 << VG_TRANSTAB_SLOW_BITS)

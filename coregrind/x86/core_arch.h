@@ -307,10 +307,16 @@ arch_thread_t;
 
 
 /* ---------------------------------------------------------------------
-   Constants involving memory layout
+   Miscellaneous constants
    ------------------------------------------------------------------ */
 
-// base address of client address space
+// Total number of spill slots available for register allocation.
+#define VG_MAX_SPILLSLOTS     24
+
+// Valgrind's signal stack size, in words.
+#define VG_SIGSTACK_SIZE_W    10000
+
+// Base address of client address space.
 #define CLIENT_BASE	0x00000000ul
 
 #endif   // __X86_CORE_ARCH_H

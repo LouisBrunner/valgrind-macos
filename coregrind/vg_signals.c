@@ -96,9 +96,6 @@ static const Char *signame(Int sigNo);
    Signal stack
    ------------------------------------------------------------------ */
 
-/* Valgrind's signal stack size, in words */
-#define VG_SIGSTACK_SIZE_W    10000
-
 /* We have to ask for signals to be delivered on an alternative
    stack, since it is possible, although unlikely, that we'll have to run
    client code from inside the Valgrind-installed signal handler. */

@@ -1709,7 +1709,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
             safer to say it does.  If we don't, memcheck could get out
             of sync, in that it thinks all FP registers are defined by
             this helper, but in reality some have not been updated. */
-         if (True || moveRegs)
+         if (moveRegs)
             vexRegs[preg] = 0.0;
          vexTags[preg] = 0;
       } else {

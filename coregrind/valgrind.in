@@ -87,6 +87,10 @@ do
     --trace-symtab=no)      vgopts="$vgopts $arg"; shift;;
     --trace-malloc=yes)     vgopts="$vgopts $arg"; shift;;
     --trace-malloc=no)      vgopts="$vgopts $arg"; shift;;
+    --trace-sched=yes)      vgopts="$vgopts $arg"; shift;;
+    --trace-sched=no)       vgopts="$vgopts $arg"; shift;;
+    --trace-pthread=yes)    vgopts="$vgopts $arg"; shift;;
+    --trace-pthread=no)     vgopts="$vgopts $arg"; shift;;
     --stop-after=*)         vgopts="$vgopts $arg"; shift;;
     --dump-error=*)         vgopts="$vgopts $arg"; shift;;
     -*)                     dousage=1; break;;
@@ -146,6 +150,8 @@ if [ z"$argopts" = z   -o   z"$dousage" = z1 ]; then
    echo "    --trace-signals=no|yes    show signal handling details? [no]"
    echo "    --trace-symtab=no|yes     show symbol table details? [no]"
    echo "    --trace-malloc=no|yes     show client malloc details? [no]"
+   echo "    --trace-sched=no|yes      show thread scheduler details? [no]"
+   echo "    --trace-pthread=no|yes    show pthread event details? [no]"
    echo "    --stop-after=<number>     switch to real CPU after executing"
    echo "                              <number> basic blocks [infinity]"
    echo "    --dump-error=<number>     show translation for basic block"

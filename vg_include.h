@@ -242,6 +242,10 @@ extern Bool  VG_(clo_trace_signals);
 extern Bool  VG_(clo_trace_symtab);
 /* DEBUG: print malloc details?  default: NO */
 extern Bool  VG_(clo_trace_malloc);
+/* DEBUG: print thread scheduling events?  default: NO */
+extern Bool  VG_(clo_trace_sched);
+/* DEBUG: print pthread (mutex etc) events?  default: NO */
+extern Bool  VG_(clo_trace_pthread);
 /* Stop after this many basic blocks.  default: Infinity. */
 extern ULong VG_(clo_stop_after);
 /* Display gory details for the k'th most popular error.  default:

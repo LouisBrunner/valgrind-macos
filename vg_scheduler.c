@@ -50,7 +50,11 @@ anyone at all!
 - return bogus RA: %EAX trashed, so pthread_joiner gets nonsense
   exit codes
 
-- when a thread is done mark its stack as noaccess */
+- when a thread is done mark its stack as noaccess 
+
+- make signal return and .fini call be detected via request mechanism
+
+ */
 
 
 /* ---------------------------------------------------------------------
@@ -166,8 +170,14 @@ void add_waiting_fd ( ThreadId tid, Int fd, Int syscall_no )
 static
 void print_sched_event ( ThreadId tid, Char* what )
 {
-   if (1)
-      VG_(message)(Vg_DebugMsg, "SCHED[%d]: %s", tid, what );
+   VG_(message)(Vg_DebugMsg, "SCHED[%d]: %s", tid, what );
+}
+
+
+static
+void print_pthread_event ( ThreadId tid, Char* what )
+{
+   VG_(message)(Vg_DebugMsg, "PTHREAD[%d]: %s", tid, what );
 }
 
 
@@ -566,7 +576,7 @@ void sched_do_syscall ( ThreadId tid )
            + (ULong)( (UInt)(req->tv_nsec) / 1000 );
       vg_threads[tid].status    = VgTs_Sleeping;
       vg_threads[tid].awaken_at = t_awaken;
-      if (1) {
+      if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, "at %lu: nanosleep for %lu", 
                                t_now, t_awaken-t_now);
 	 print_sched_event(tid, msg_buf);
@@ -642,7 +652,7 @@ void sched_do_syscall ( ThreadId tid )
       add_waiting_fd(tid, fd, saved_eax /* which holds the syscall # */);
       /* Deschedule thread until an I/O completion happens. */
       vg_threads[tid].status = VgTs_WaitFD;
-      if (1) {
+      if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf,"block until I/O ready on fd %d", fd);
 	 print_sched_event(tid, msg_buf);
       }
@@ -702,7 +712,7 @@ void poll_for_ready_fds ( void )
          vg_threads[tid].m_eax = 0;
 	 /* Reschedule this thread. */
 	 vg_threads[tid].status = VgTs_Runnable;
-         if (1) {
+         if (VG_(clo_trace_sched)) {
             VG_(sprintf)(msg_buf, "at %lu: nanosleep done", 
                                   t_now);
             print_sched_event(tid, msg_buf);
@@ -843,7 +853,7 @@ void complete_blocked_syscalls ( void )
       /* Mark slot as no longer in use. */
       vg_waiting_fds[i].fd = -1;
       /* pp_sched_status(); */
-      if (1) {
+      if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf,"resume due to I/O completion on fd %d", fd);
 	 print_sched_event(tid, msg_buf);
       }
@@ -1205,7 +1215,7 @@ void do_pthread_cancel ( ThreadId  tid_canceller,
       do_pthread_create_bogusRA with PTHREAD_CANCELED as the
       return value.  So: simple: put PTHREAD_CANCELED into %EAX
       and &do_pthread_create_bogusRA into %EIP and keep going! */
-   if (1) {
+   if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "cancelled by %d", tid_canceller);
       print_sched_event(tid_cancellee, msg_buf);
    }
@@ -1237,7 +1247,7 @@ void do_pthread_create_exit_by_returning ( ThreadId tid )
    if (vg_threads[tid].joiner == VG_INVALID_THREADID) {
       /* No one has yet done a join on me */
       vg_threads[tid].status = VgTs_WaitJoiner;
-      if (1) {
+      if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "root fn returns, waiting for a call pthread_join(%d)", 
             tid);
@@ -1261,7 +1271,7 @@ void do_pthread_create_exit_by_returning ( ThreadId tid )
       vg_threads[jnr].m_edx = 0; /* success */
       vg_threads[jnr].status = VgTs_Runnable;
       vg_threads[tid].status = VgTs_Empty; /* bye! */
-      if (1) {
+      if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "root fn returns, to find a waiting pthread_join(%d)", tid);
          print_sched_event(tid, msg_buf);
@@ -1320,7 +1330,7 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
          *thread_return = vg_threads[jee].retval;
       vg_threads[tid].status = VgTs_Runnable;
       vg_threads[jee].status = VgTs_Empty; /* bye! */
-      if (1) {
+      if (VG_(clo_trace_sched)) {
 	 VG_(sprintf)(msg_buf,
 		      "someone called pthread_join() on me; bye!");
          print_sched_event(jee, msg_buf);
@@ -1335,7 +1345,7 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
    /* Ok, so we'll have to wait on jee. */
    vg_threads[jee].joiner = tid;
    vg_threads[tid].status = VgTs_WaitJoinee;
-   if (1) {
+   if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
          "blocking on call of pthread_join(%d)", jee );
       print_sched_event(tid, msg_buf);
@@ -1408,7 +1418,7 @@ void do_pthread_create ( ThreadId parent_tid,
    /* this is where we start */
    vg_threads[tid].m_eip = (UInt)start_routine;
 
-   if (1) {
+   if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
          "new thread, created by %d", parent_tid );
       print_sched_event(tid, msg_buf);
@@ -1447,18 +1457,23 @@ void do_pthread_create ( ThreadId parent_tid,
 */
 
 static
-void initialise_mutex ( pthread_mutex_t *mutex )
+void initialise_mutex ( ThreadId tid, pthread_mutex_t *mutex )
 {
-   MutexId mid;
+   MutexId  mid;
+   Char     msg_buf[100];
    /* vg_alloc_MutexId aborts if we can't allocate a mutex, for
       whatever reason. */
-VG_(printf)("initialise_mutex %p\n", mutex);
    mid = vg_alloc_VgMutex();
    vg_mutexes[mid].in_use = True;
    vg_mutexes[mid].held = False;
    vg_mutexes[mid].owner = VG_INVALID_THREADID; /* irrelevant */
    mutex->__m_reserved = mid;
    mutex->__m_count = 1; /* initialised */
+   if (VG_(clo_trace_pthread)) {
+      VG_(sprintf)(msg_buf, "(initialise mutex) (%p) -> %d", 
+                            mutex, mid );
+      print_pthread_event(tid, msg_buf);
+   }
 }
 
 /* Allocate a new MutexId and write it into *mutex.  Ideally take
@@ -1468,12 +1483,18 @@ void do_pthread_mutex_init ( ThreadId tid,
                              pthread_mutex_t *mutex, 
                              const  pthread_mutexattr_t *mutexattr)
 {
+   Char     msg_buf[100];
    /* Paranoia ... */
-VG_(printf)("mutex_init %d %p %p\n", tid, mutex, mutexattr);
-
    vg_assert(sizeof(pthread_mutex_t) >= sizeof(UInt));
 
-   initialise_mutex(mutex);
+   initialise_mutex(tid, mutex);
+
+   if (VG_(clo_trace_pthread)) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_init (%p) -> %d", 
+                            mutex, mutex->__m_reserved );
+      print_pthread_event(tid, msg_buf);
+   }
+
    /*
    RETURN VALUE
        pthread_mutex_init  always  returns 0. The other mutex functions 
@@ -1490,8 +1511,6 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
    MutexId  mid;
    Char     msg_buf[100];
 
-VG_(printf)("mutex_lock %d %p\n", tid, mutex);
-
    /* *mutex contains the MutexId, or one of the magic values
       PTHREAD_*MUTEX_INITIALIZER*, indicating we need to initialise it
       now.  See comment(s) above re use of __m_count to indicated 
@@ -1505,13 +1524,19 @@ VG_(printf)("mutex_lock %d %p\n", tid, mutex);
    }
 
    if (mutex->__m_count == 0) {
-      initialise_mutex(mutex);
+      initialise_mutex(tid, mutex);
    }
 
    mid = mutex->__m_reserved;
    if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
       vg_threads[tid].m_edx = EINVAL;
       return;
+   }
+
+   if (VG_(clo_trace_pthread)) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d (%p)", 
+                            mid, mutex );
+      print_pthread_event(tid, msg_buf);
    }
 
    /* Assert initialised. */
@@ -1529,9 +1554,10 @@ VG_(printf)("mutex_lock %d %p\n", tid, mutex);
       vg_threads[tid].status = VgTs_WaitMX;
       vg_threads[tid].waited_on_mid = mid;
       /* No assignment to %EDX, since we're blocking. */
-      if (1) {
-         VG_(sprintf)(msg_buf, "wait for mutex %d", mid );
-         print_sched_event(tid, msg_buf);
+      if (VG_(clo_trace_pthread)) {
+         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d (%p): BLOCK", 
+                               mid, mutex );
+         print_pthread_event(tid, msg_buf);
       }
    } else {
       /* We get it! */
@@ -1551,8 +1577,6 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    Int      i;
    Char     msg_buf[100];
 
-VG_(printf)("mutex_unlock %d %p\n", tid, mutex);
-
    if (mutex == NULL 
        || mutex->__m_count != 1) {
       vg_threads[tid].m_edx = EINVAL;
@@ -1563,6 +1587,12 @@ VG_(printf)("mutex_unlock %d %p\n", tid, mutex);
    if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
       vg_threads[tid].m_edx = EINVAL;
       return;
+   }
+
+   if (VG_(clo_trace_pthread)) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_unlock %d (%p)", 
+                            mid, mutex );
+      print_pthread_event(tid, msg_buf);
    }
 
    /* Assume tid valid */
@@ -1594,9 +1624,11 @@ VG_(printf)("mutex_unlock %d %p\n", tid, mutex);
       vg_mutexes[mid].owner = i;
       vg_threads[i].status = VgTs_Runnable;
       vg_threads[i].m_edx = 0; /* pth_lock() success */
-      if (1) {
-         VG_(sprintf)(msg_buf, "acquire mutex %d, resume", mid );
-         print_sched_event(tid, msg_buf);
+
+      if (VG_(clo_trace_pthread)) {
+         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: RESUME", 
+                               mid );
+         print_pthread_event(tid, msg_buf);
       }
    }
 
@@ -1609,9 +1641,8 @@ VG_(printf)("mutex_unlock %d %p\n", tid, mutex);
 static void do_pthread_mutex_destroy ( ThreadId tid,
                                        pthread_mutex_t *mutex )
 {
-   MutexId mid;
-
-VG_(printf)("mutex_destroy %d %p\n", tid, mutex);
+   MutexId  mid;
+   Char     msg_buf[100];
 
    if (mutex == NULL 
        || mutex->__m_count != 1) {
@@ -1623,6 +1654,12 @@ VG_(printf)("mutex_destroy %d %p\n", tid, mutex);
    if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
       vg_threads[tid].m_edx = EINVAL;
       return;
+   }
+
+   if (VG_(clo_trace_pthread)) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_destroy %d (%p)", 
+                            mid, mutex );
+      print_pthread_event(tid, msg_buf);
    }
 
    /* Assume tid valid */

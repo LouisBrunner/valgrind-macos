@@ -152,17 +152,17 @@ int* __errno_location ( void )
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
-  char* str = "pthread_mutexattr_init\n";
-  write(2, str, strlen(str));
-  return 0;
+   char* str = "IGNORED pthread_mutexattr_init\n";
+   write(2, str, strlen(str));
+   return 0;
 }
 
 int pthread_mutex_init(pthread_mutex_t *mutex, 
                        const  pthread_mutexattr_t *mutexattr)
 {
    int res;
-  char* str = "pthread_mutex_init\n";
-  write(2, str, strlen(str));
+   //  char* str = "pthread_mutex_init\n";
+   //  write(2, str, strlen(str));
    ensure_valgrind("pthread_mutex_init");
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_MUTEX_INIT,
@@ -172,7 +172,7 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
-  char* str = "pthread_mutexattr_destroy\n";
+  char* str = "IGNORED pthread_mutexattr_destroy\n";
   write(2, str, strlen(str));
   return 0;
 }
@@ -237,7 +237,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
 
 int pthread_setcanceltype(int type, int *oldtype)
 {
-   char* str = "pthread_setcanceltype\n";
+   char* str = "IGNORED pthread_setcanceltype\n";
    write(2, str, strlen(str));
    return 0;
 }

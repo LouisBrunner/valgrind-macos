@@ -1935,8 +1935,6 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 	    vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
 	    return False;
 	}
-	// CAB: EA must be a multiple of four - can we test this?
-
 	DIP("lmw %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
 	for (reg_idx = Rd_addr; reg_idx<=31; reg_idx++) {
 	    putIReg( reg_idx,
@@ -2174,7 +2172,7 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
 
 
 
-static Bool dis_branch ( theInstr )
+static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 {
     UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
     UChar BO       = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
@@ -2209,10 +2207,9 @@ static Bool dis_branch ( theInstr )
     if (theInstr == 0x429F0005) {
 	DIP("bcl 0x%x, 0x%x,\n", BO, BI);
 	stmt( IRStmt_Put( OFFB_LR, mkU32(guest_cia_curr_instr + 4)) );
-	irbb->jumpkind = Ijk_Boring;
-	irbb->next     = mkU32(guest_cia_curr_instr + 4);
 	return True;
     }
+    // 
 #endif
     
     switch (opc1) {
@@ -2340,12 +2337,13 @@ static Bool dis_branch ( theInstr )
 	return False;
     }
     
+    *whatNext = Dis_StopHere;
     return True;
 }
 
 
 
-static Bool dis_syslink ( UInt theInstr )
+static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
 {
 //    const UChar IP_bit = 6;
     Addr32 base_ea = 0;
@@ -2375,6 +2373,7 @@ static Bool dis_syslink ( UInt theInstr )
     irbb->next     = mkU32( nia );
     irbb->jumpkind = Ijk_Syscall;
 
+    *whatNext = Dis_StopHere;
     return True;
 }
 
@@ -3104,7 +3103,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x0F: // addis
    case 0x07: // mulli
    case 0x08: // subfic
-       if (dis_int_arith(theInstr)) break;
+       if (dis_int_arith(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3112,7 +3112,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    */
    case 0x0B: // cmpi
    case 0x0A: // cmpli
-       if (dis_int_cmp(theInstr)) break;
+       if (dis_int_cmp(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3124,7 +3125,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x19: // oris
    case 0x1A: // xori
    case 0x1B: // xoris
-       if (dis_int_logic(theInstr)) break;
+       if (dis_int_logic(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3133,7 +3135,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x14: // rlwimi
    case 0x15: // rlwinm
    case 0x17: // rlwnm
-       if (dis_int_rot(theInstr)) break;
+       if (dis_int_rot(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3147,7 +3150,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x29: // lhzu
    case 0x20: // lwz
    case 0x21: // lwzu
-       if (dis_int_load(theInstr)) break;
+       if (dis_int_load(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3159,7 +3163,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x2D: // sthu
    case 0x24: // stw
    case 0x25: // stwu
-       if (dis_int_store(theInstr)) break;
+       if (dis_int_store(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3167,7 +3172,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    */
    case 0x2E: // lmw
    case 0x2F: // stmw
-       if (dis_int_ldst_mult(theInstr)) break;
+       if (dis_int_ldst_mult(theInstr))
+	   break;
        goto decode_failure;
 
    /*
@@ -3175,20 +3181,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    */
    case 0x12: // b
    case 0x10: // bc
-       if (dis_branch(theInstr)) {
-	   whatNext = Dis_StopHere;
+       if (dis_branch(theInstr, &whatNext))
 	   break;
-       }
        goto decode_failure;
 
    /*
      System Linkage Instructions
    */
    case 0x11: // sc
-       if (dis_syslink(theInstr)) {
-	   whatNext = Dis_StopHere;
+       if (dis_syslink(theInstr, &whatNext))
 	   break;
-       }
        goto decode_failure;
 
    /*
@@ -3239,17 +3241,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        */
        case 0x210: // bcctr
        case 0x010: // bclr
-	   if (dis_branch(theInstr)) {
-	       whatNext = Dis_StopHere;
+	   if (dis_branch(theInstr, &whatNext))
 	       break;
-	   }
 	   goto decode_failure;
 
        /*
 	 Memory Synchronization Instructions
        */
        case 0x096: // isync
-	   if (dis_memsync(theInstr)) break;
+	   if (dis_memsync(theInstr))
+	       break;
 	   goto decode_failure;
 
        default:
@@ -3280,7 +3281,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x008: // subfc
        case 0x088: // subfe
        case 0x0E8: // subfme
-       case 0x0C8: // subfze, B=0
+       case 0x0C8: // subfze
 	   if (dis_int_arith(theInstr)) goto decode_success;
 	   goto decode_failure;
 
@@ -3297,7 +3298,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        */
        case 0x000: // cmp
        case 0x020: // cmpl
-	   if (dis_int_cmp(theInstr)) break;
+	   if (dis_int_cmp(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3314,7 +3316,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x1BC: // or
        case 0x19C: // orc
        case 0x13C: // xor
-	   if (dis_int_logic(theInstr)) break;
+	   if (dis_int_logic(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3324,7 +3327,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x318: // sraw
        case 0x338: // srawi
        case 0x218: // srw
-	   if (dis_int_shift(theInstr)) break;
+	   if (dis_int_shift(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3338,7 +3342,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x137: // lhzux
        case 0x017: // lwzx
        case 0x037: // lwzux
-	   if (dis_int_load(theInstr)) break;
+	   if (dis_int_load(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3350,7 +3355,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x197: // sthx
        case 0x0B7: // stwux
        case 0x097: // stwx
-	   if (dis_int_store(theInstr)) break;
+	   if (dis_int_store(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3360,7 +3366,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x216: // lwbrx
        case 0x396: // sthbrx
        case 0x296: // stwbrx
-	   if (dis_int_ldst_rev(theInstr)) break;
+	   if (dis_int_ldst_rev(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3370,7 +3377,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x215: // lswx
        case 0x2D5: // stswi
        case 0x295: // stswx
-	   if (dis_int_ldst_str(theInstr)) break;
+	   if (dis_int_ldst_str(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3380,7 +3388,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x014: // lwarx
        case 0x096: // stwcx.
        case 0x256: // sync
-	   if (dis_memsync(theInstr)) break;
+	   if (dis_memsync(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3392,7 +3401,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x173: // mftb
        case 0x090: // mtcrf
        case 0x1D3: // mtspr
-	   if (dis_proc_ctl(theInstr)) break;
+	   if (dis_proc_ctl(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*
@@ -3405,7 +3415,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x0F6: // dcbtst
        case 0x3F6: // dcbz
        case 0x3D6: // icbi
-	   if (dis_cache_manage(theInstr)) break;
+	   if (dis_cache_manage(theInstr))
+	       break;
 	   goto decode_failure;
 
        /*

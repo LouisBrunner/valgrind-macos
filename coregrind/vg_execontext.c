@@ -39,22 +39,22 @@
 /* The idea is only to ever store any one context once, so as to save
    space and make exact comparisons faster. */
 
-static ExeContext* vg_ec_list[VG_N_EC_LISTS];
+static ExeContext* ec_list[VG_N_EC_LISTS];
 
 /* Stats only: the number of times the system was searched to locate a
    context. */
-static UInt vg_ec_searchreqs;
+static UInt ec_searchreqs;
 
 /* Stats only: the number of full context comparisons done. */
-static UInt vg_ec_searchcmps;
+static UInt ec_searchcmps;
 
 /* Stats only: total number of stored contexts. */
-static UInt vg_ec_totstored;
+static UInt ec_totstored;
 
 /* Number of 2, 4 and (fast) full cmps done. */
-static UInt vg_ec_cmp2s;
-static UInt vg_ec_cmp4s;
-static UInt vg_ec_cmpAlls;
+static UInt ec_cmp2s;
+static UInt ec_cmp4s;
+static UInt ec_cmpAlls;
 
 
 /*------------------------------------------------------------*/
@@ -69,14 +69,14 @@ static void init_ExeContext_storage ( void )
    static Bool init_done = False;
    if (init_done)
       return;
-   vg_ec_searchreqs = 0;
-   vg_ec_searchcmps = 0;
-   vg_ec_totstored = 0;
-   vg_ec_cmp2s = 0;
-   vg_ec_cmp4s = 0;
-   vg_ec_cmpAlls = 0;
+   ec_searchreqs = 0;
+   ec_searchcmps = 0;
+   ec_totstored = 0;
+   ec_cmp2s = 0;
+   ec_cmp4s = 0;
+   ec_cmpAlls = 0;
    for (i = 0; i < VG_N_EC_LISTS; i++)
-      vg_ec_list[i] = NULL;
+      ec_list[i] = NULL;
    init_done = True;
 }
 
@@ -87,20 +87,20 @@ void VG_(print_ExeContext_stats) ( void )
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
       "exectx: %d lists, %d contexts (avg %d per list)",
-      VG_N_EC_LISTS, vg_ec_totstored, 
-      vg_ec_totstored / VG_N_EC_LISTS 
+      VG_N_EC_LISTS, ec_totstored, 
+      ec_totstored / VG_N_EC_LISTS 
    );
    VG_(message)(Vg_DebugMsg, 
       "exectx: %d searches, %d full compares (%d per 1000)",
-      vg_ec_searchreqs, vg_ec_searchcmps, 
-      vg_ec_searchreqs == 0 
+      ec_searchreqs, ec_searchcmps, 
+      ec_searchreqs == 0 
          ? 0 
-         : (UInt)( (((ULong)vg_ec_searchcmps) * 1000) 
-           / ((ULong)vg_ec_searchreqs )) 
+         : (UInt)( (((ULong)ec_searchcmps) * 1000) 
+           / ((ULong)ec_searchreqs )) 
    );
    VG_(message)(Vg_DebugMsg, 
       "exectx: %d cmp2, %d cmp4, %d cmpAll",
-      vg_ec_cmp2s, vg_ec_cmp4s, vg_ec_cmpAlls 
+      ec_cmp2s, ec_cmp4s, ec_cmpAlls 
    );
 }
 
@@ -121,14 +121,14 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
    switch (res) {
    case Vg_LowRes:
       /* Just compare the top two callers. */
-      vg_ec_cmp2s++;
+      ec_cmp2s++;
       if (e1->ips[0] != e2->ips[0]
           || e1->ips[1] != e2->ips[1]) return False;
       return True;
 
    case Vg_MedRes:
       /* Just compare the top four callers. */
-      vg_ec_cmp4s++;
+      ec_cmp4s++;
       if (e1->ips[0] != e2->ips[0]) return False;
 
       if (VG_(clo_backtrace_size) < 2) return True;
@@ -142,7 +142,7 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
       return True;
 
    case Vg_HighRes:
-      vg_ec_cmpAlls++;
+      ec_cmpAlls++;
       /* Compare them all -- just do pointer comparison. */
       if (e1 != e2) return False;
       return True;
@@ -268,13 +268,13 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
 
    /* And (the expensive bit) look a matching entry in the list. */
 
-   vg_ec_searchreqs++;
+   ec_searchreqs++;
 
-   list = vg_ec_list[hash];
+   list = ec_list[hash];
 
    while (True) {
       if (list == NULL) break;
-      vg_ec_searchcmps++;
+      ec_searchcmps++;
       same = True;
       for (i = 0; i < VG_(clo_backtrace_size); i++) {
          if (list->ips[i] != ips[i]) {
@@ -293,7 +293,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
    }
 
    /* Bummer.  We have to allocate a new context record. */
-   vg_ec_totstored++;
+   ec_totstored++;
 
    new_ec = VG_(arena_malloc)( VG_AR_EXECTXT, 
                                sizeof(struct _ExeContext *) 
@@ -302,8 +302,8 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
    for (i = 0; i < VG_(clo_backtrace_size); i++)
       new_ec->ips[i] = ips[i];
 
-   new_ec->next = vg_ec_list[hash];
-   vg_ec_list[hash] = new_ec;
+   new_ec->next = ec_list[hash];
+   ec_list[hash] = new_ec;
 
    VGP_POPCC(VgpExeContext);
    return new_ec;

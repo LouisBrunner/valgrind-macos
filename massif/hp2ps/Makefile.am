@@ -36,7 +36,7 @@ hp2ps_SOURCES = \
 	Scale.c		\
 	Shade.c 	\
 	Utilities.c
-hp2ps_LDFLAGS = -lm
+hp2ps_LDADD = -lm
 
 noinst_HEADERS = \
        AreaBelow.h \

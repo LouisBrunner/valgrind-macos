@@ -342,7 +342,9 @@ static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
       addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
       return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
    } else {
-      return PPC32Instr_Alu32(Palu_ADD, dst, zero, src);
+      // Load immediate _without_ sign extend
+      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
+      return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
    }
 }
 

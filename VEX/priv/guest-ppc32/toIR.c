@@ -1127,7 +1127,7 @@ static Bool dis_int_arith ( UInt theInstr )
    case 0x0E: // addi   (Add Immediate, p380)
       // li rD,val   == addi rD,0,val
       // la disp(rA) == addi rD,rA,disp
-      DIP("addi %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
+      DIP("addi r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
       if ( Ra_addr == 0 ) {
          assign( Rd, mkU32(EXTS_SIMM) );
       } else {

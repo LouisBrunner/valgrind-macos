@@ -2695,6 +2695,8 @@ int main(int argc, char **argv, char **envp)
    VG_(instr_ptr_offset) = offsetof(VexGuestArchState, ARCH_INSTR_PTR);
 
    //--------------------------------------------------------------
+   // Initialise the pthread model
+   //   p: ?
    //--------------------------------------------------------------
    //if (VG_(clo_model_pthreads))
    //   VG_(pthread_init)();

@@ -715,6 +715,16 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       break;
    }
 
+   case 'S': {			/* set/bitstring */
+      /* 'S' TYPE */
+      SymType *typeinfo;
+
+      typeinfo = stabtype_parser(si, NULL, &p);
+
+      type = VG_(st_mkarray)(si, typeinfo, VG_(st_mkint)(NULL, 1, True));
+      break;
+   }
+
    case 'P':			/* packed array */
    case 'a': {			/* array */
       /* ( 'a' | 'P' ) IDX-TYPE TYPE */

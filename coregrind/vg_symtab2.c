@@ -1188,7 +1188,9 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
    if (oimage == ((Addr)(-1))) {
       VG_(message)(Vg_UserMsg,
-                   "mmap failed on %s", si->filename );
+                   "warning: mmap failed on %s", si->filename );
+      VG_(message)(Vg_UserMsg,
+                   "         no symbols or debug info loaded" );
       return False;
    }
 

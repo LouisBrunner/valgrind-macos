@@ -2139,7 +2139,7 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 	 case SyEBPrel:
 	 case SyESPrel:
 	    reg = *regaddr(tid, sym->kind == SyESPrel ? 
-                                R_STACK_PTR : R_FRAME_PTR);
+                                VGA_R_STACK_PTR : VGA_R_FRAME_PTR);
 	    if (debug)
 	       VG_(printf)("reg=%p+%d=%p\n", reg, sym->u.offset, reg+sym->u.offset);
 	    v->valuep = (Addr)(reg + sym->u.offset);

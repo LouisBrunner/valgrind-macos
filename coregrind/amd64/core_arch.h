@@ -60,26 +60,26 @@
 #define VGA_PTHREQ_RET        guest_RDX
 
 // Register numbers, for vg_symtab2.c
-#define R_STACK_PTR           4
-#define R_FRAME_PTR           5
+#define VGA_R_STACK_PTR       4
+#define VGA_R_FRAME_PTR       5
 
 // Stack frame layout and linkage
-#define FIRST_STACK_FRAME(rbp)         (rbp)
-#define STACK_FRAME_RET(rbp)           (((UWord*)rbp)[1])
-#define STACK_FRAME_NEXT(rbp)          (((UWord*)rbp)[0])
+#define VGA_FIRST_STACK_FRAME(rbp)     (rbp)
+#define VGA_STACK_FRAME_RET(rbp)       (((UWord*)rbp)[1])
+#define VGA_STACK_FRAME_NEXT(rbp)      (((UWord*)rbp)[0])
 
 // Get stack pointer and frame pointer
-#define ARCH_GET_REAL_STACK_PTR(lval) do {   \
+#define VGA_GET_REAL_STACK_PTR(lval) do {   \
    asm("movq %%rsp, %0" : "=r" (lval));      \
 } while (0)
 
-#define ARCH_GET_REAL_FRAME_PTR(lval) do {   \
+#define VGA_GET_REAL_FRAME_PTR(lval) do {   \
    asm("movq %%rbp, %0" : "=r" (lval));      \
 } while (0)
 
 // On AMD64, it's ok to access up to 128 bytes below %rsp.
 // The signal handler needs to know this.
-#define ARCH_STACK_REDZONE_SIZE 128
+#define VGA_STACK_REDZONE_SIZE 128
 
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState

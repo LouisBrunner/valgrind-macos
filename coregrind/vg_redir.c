@@ -533,14 +533,14 @@ void VG_(setup_code_redirect_table) ( void )
 //:: /* Called from generated code via helper */
 //:: void VG_(wrap_before)(ThreadState *tst, const FuncWrapper *wrapper)
 //:: {
-//::    Addr retaddr = ARCH_RETADDR(tst->arch);
-//::    Addr argp = (Addr)&ARCH_FUNC_ARG(tst->arch, 0);
+//::    Addr retaddr = VGA_RETADDR(tst->arch);
+//::    Addr argp = (Addr)&VGA_FUNC_ARG(tst->arch, 0);
 //::    void *nonce = NULL;
 //::    Bool mf = VG_(my_fault);
 //::    VG_(my_fault) = True;
 //:: 
 //::    if (wrapper->before) {
-//::       va_list args = ARCH_VA_LIST(tst->arch);
+//::       va_list args = VGA_VA_LIST(tst->arch);
 //::       nonce = (*wrapper->before)(args);
 //::    }
 //:: 

@@ -80,7 +80,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
    } else {
       /* Get whatever we safely can ... */
       ips[0] = ip;
-      fp = FIRST_STACK_FRAME(fp);
+      fp = VGA_FIRST_STACK_FRAME(fp);
       for (i = 1; i < n_ips; i++) {
          if (!(fp_min <= fp && fp <= fp_max)) {
 	    if (debug)
@@ -92,8 +92,8 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
          //   VG_(printf)("nonmonotonic\n");
          //    break; /* fp gone nonmonotonic */
          // }
-         ips[i] = STACK_FRAME_RET(fp);  /* ret addr */
-         fp     = STACK_FRAME_NEXT(fp);  /* old fp */
+         ips[i] = VGA_STACK_FRAME_RET(fp);  /* ret addr */
+         fp     = VGA_STACK_FRAME_NEXT(fp);  /* old fp */
 	 if (debug)
 	    VG_(printf)("     ips[%d]=%08p\n", i, ips[i]);
       }

@@ -1834,14 +1834,14 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 			 VG_(shadow_base), VG_(shadow_end));
       }
       if (info->si_code == 1 /* SEGV_MAPERR */
-	  && fault >= (esp - ARCH_STACK_REDZONE_SIZE)
+	  && fault >= (esp - VGA_STACK_REDZONE_SIZE)
           && fault < VG_(client_end)) {
 	 /* If the fault address is above esp but below the current known
 	    stack segment base, and it was a fault because there was
 	    nothing mapped there (as opposed to a permissions fault),
 	    then extend the stack segment. 
 	 */
-         Addr base = PGROUNDDN(esp - ARCH_STACK_REDZONE_SIZE);
+         Addr base = PGROUNDDN(esp - VGA_STACK_REDZONE_SIZE);
 	 if (VG_(extend_stack)(base, VG_(threads)[tid].stack_size)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 

@@ -152,7 +152,7 @@ static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 
 #if 0
 #define SET_SIGNAL_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, VGA_STACK_PTR, R_STACK_PTR, \
+   SET_THREAD_REG(zztid, zzval, VGA_STACK_PTR, VGA_R_STACK_PTR, \
                   post_reg_write_deliver_signal)
 #endif
 

@@ -66,21 +66,21 @@
 #define VGA_PTHREQ_RET        guest_R0
 
 // Register numbers, for vg_symtab2.c
-#define R_STACK_PTR           13
-#define R_FRAME_PTR           11
+#define VGA_R_STACK_PTR       13
+#define VGA_R_FRAME_PTR       11
 
 // Stack frame layout and linkage
 // XXX ToDo: ???
-#define FIRST_STACK_FRAME(ebp)         (ebp)
-#define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
-#define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
+#define VGA_FIRST_STACK_FRAME(ebp)     (ebp)
+#define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])
+#define VGA_STACK_FRAME_NEXT(ebp)      (((UInt*)ebp)[0])
 
 // Get stack pointer and frame pointer
-#define ARCH_GET_REAL_STACK_PTR(esp) do {   \
+#define VGA_GET_REAL_STACK_PTR(esp) do {   \
    I_die_here; \
 } while (0)
 
-#define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
+#define VGA_GET_REAL_FRAME_PTR(ebp) do {   \
    I_die_here; \
 } while (0)
 

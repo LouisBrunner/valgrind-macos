@@ -61,26 +61,26 @@
 
 
 // Register numbers, for vg_symtab2.c
-#define R_STACK_PTR           4
-#define R_FRAME_PTR           5
+#define VGA_R_STACK_PTR       4
+#define VGA_R_FRAME_PTR       5
 
 // Stack frame layout and linkage
-#define FIRST_STACK_FRAME(ebp)         (ebp)
-#define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
-#define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
+#define VGA_FIRST_STACK_FRAME(ebp)     (ebp)
+#define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])
+#define VGA_STACK_FRAME_NEXT(ebp)      (((UInt*)ebp)[0])
 
 // Get stack pointer and frame pointer
-#define ARCH_GET_REAL_STACK_PTR(esp) do {   \
+#define VGA_GET_REAL_STACK_PTR(esp) do {   \
    asm("movl %%esp, %0" : "=r" (esp));       \
 } while (0)
 
-#define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
+#define VGA_GET_REAL_FRAME_PTR(ebp) do {   \
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
 
 // On X86, any access below %esp is illegal.
 // The signal handler needs to know this.
-#define ARCH_STACK_REDZONE_SIZE 0
+#define VGA_STACK_REDZONE_SIZE 0
 
 //extern const Char VG_(helper_wrapper_before)[];	/* in dispatch.S */
 //extern const Char VG_(helper_wrapper_return)[];	/* in dispatch.S */

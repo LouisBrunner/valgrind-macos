@@ -2080,8 +2080,8 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    tl_assert(u_in->val2 < ntemps);
 
 	    stackref[u_in->val2] = (u_in->size == 4 &&
-				    (u_in->val1 == R_STACK_PTR ||
-                                     u_in->val1 == R_FRAME_PTR));
+				    (u_in->val1 == VGA_R_STACK_PTR ||
+                                     u_in->val1 == VGA_R_FRAME_PTR));
 	    VG_(copy_UInstr)(cb, u_in);
 	    break;
 

@@ -1137,8 +1137,8 @@ static inline void get_and_pp_real_StackTrace(Addr ret)
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
-   ARCH_GET_REAL_STACK_PTR(sp);
-   ARCH_GET_REAL_FRAME_PTR(fp);
+   VGA_GET_REAL_STACK_PTR(sp);
+   VGA_GET_REAL_FRAME_PTR(fp);
 
    stacktop = (Addr)(tst->os_state.stack + tst->os_state.stacksize);
 

@@ -4748,6 +4748,57 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 
+      case 0x18: /* PREFETCHT0/PREFETCHT1/PREFETCHT2/PREFETCHNTA */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (epartIsReg(modrm)) {
+            goto unimp2;
+         }
+         if (gregOfRM(modrm) > 3) {
+            goto unimp2;
+         }
+         eip += lengthAMode(eip);
+         if (dis) {
+            UChar* hintstr;
+            switch (gregOfRM(modrm)) {
+               case 0: hintstr = "nta"; break;
+               case 1: hintstr = "t0"; break;
+               case 2: hintstr = "t1"; break;
+               case 3: hintstr = "t2"; break;
+               default: goto unimp2;
+            }
+            VG_(printf)("prefetch%s ...\n", hintstr);
+         }
+         break;
+
+      case 0x73: /* PSLL/PSRA/PSRL mmxreg by imm8 */
+         {
+         UChar byte1, byte2, byte3, subopc, mmxreg;
+         vg_assert(sz == 4);
+         byte1 = opc;
+         byte2 = getUChar(eip); eip++;
+         byte3 = getUChar(eip); eip++;
+         mmxreg = byte2 & 7;
+         subopc = (byte2 >> 3) & 7;
+         if (subopc == 2 || subopc == 6) {  
+            /* 2 == 010 == SRL, 6 == 110 == SLL */
+            /* ok */
+         } else {
+            eip -= 2;
+            goto unimp2;
+         }
+         uInstr2(cb, MMX3, 0, 
+                     Lit16, (((UShort)byte1) << 8) | ((UShort)byte2),
+                     Lit16, ((UShort)byte3) );
+         if (dis)
+            VG_(printf)("ps%s%s $%d, %s\n",
+                        (subopc == 2 ? "rl" : subopc == 6 ? "ll" : "??"),
+                        nameMMXGran(opc & 3),
+                        (Int)byte3,
+                        nameMMXReg(mmxreg) );
+         }
+         break;
+
       case 0x77: /* EMMS */
          vg_assert(sz == 4);
          uInstr1(cb, MMX1, 0, Lit16, ((UShort)(opc)) );
@@ -4755,10 +4806,43 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             VG_(printf)("emms\n");
          break;
 
+      case 0x6E: /* MOVD (src)ireg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (epartIsReg(modrm)) {
+            eip++;
+            t1 = newTemp(cb);
+            uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
+            uInstr2(cb, MMX2_RegRd, 4, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, t1 );
+            if (dis)
+               VG_(printf)("movd %s, %s\n", 
+                           nameIReg(4,eregOfRM(modrm)),
+                           nameMMXReg(gregOfRM(modrm)));
+         } else {
+            Int tmpa;
+            pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+            tmpa = LOW24(pair);
+            eip += HI8(pair);
+            uInstr2(cb, LOAD, 4, TempReg, tmpa, TempReg, tmpa);
+            uInstr2(cb, MMX2_RegRd, 4, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, tmpa);
+            if (dis)
+               VG_(printf)("movd %s, %s\n", 
+                           dis_buf,
+                           nameMMXReg(gregOfRM(modrm)));
+         }
+         break;
+
       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          modrm = getUChar(eip);
          if (epartIsReg(modrm)) {
+            eip++;
             uInstr1(cb, MMX2, 0, 
                         Lit16, 
                         (((UShort)(opc)) << 8) | ((UShort)modrm) );

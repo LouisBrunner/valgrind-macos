@@ -59,6 +59,16 @@
 #define VGOFF_STACK_PTR                VGOFF_(m_esp)
 #define VGOFF_FRAME_PTR                VGOFF_(m_ebp)
 
+// Get stack pointer and frame pointer
+#define ARCH_GET_REAL_STACK_PTR(esp) do {   \
+   asm("movl %%esp, %0" : "=r" (esp));       \
+} while (0)
+
+#define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
+   asm("movl %%ebp, %0" : "=r" (ebp));       \
+} while (0)
+
+
 /* -----------------------------------------------------
    Read-write parts of baseBlock.
    -------------------------------------------------- */

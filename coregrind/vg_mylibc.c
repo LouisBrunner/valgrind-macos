@@ -1091,7 +1091,8 @@ static inline ExeContext *get_real_execontext(Addr ret)
    Addr esp, ebp;
    Addr stacktop, sigstack_low, sigstack_high;
 
-   asm("movl %%ebp, %0; movl %%esp, %1" : "=r" (ebp), "=r" (esp));
+   ARCH_GET_REAL_STACK_PTR(esp);
+   ARCH_GET_REAL_FRAME_PTR(ebp);
    stacktop = VG_(valgrind_last);
    VG_(get_sigstack_bounds)( &sigstack_low, &sigstack_high );
    if (esp >= sigstack_low && esp < sigstack_high)

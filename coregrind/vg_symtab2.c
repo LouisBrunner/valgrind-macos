@@ -2193,6 +2193,13 @@ void VG_(setup_code_redirect_table) ( void )
 			    "soname:libpthread.so.0",	redirects[i].to);
    }
 
+   /* Redirect _dl_sysinfo_int80, which is glibc's default system call
+      routine, to the routine in our trampoline page so that the
+      special sysinfo unwind hack in vg_execontext.c will kick in.
+   */
+   VG_(add_redirect_addr)("soname:ld-linux.so.2", "_dl_sysinfo_int80",
+                          VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+   
    /* Overenthusiastic use of PLT bypassing by the glibc people also
       means we need to patch the following functions to our own
       implementations of said, in mac_replace_strmem.c.

@@ -1069,7 +1069,8 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 
 #define Special    (1 << 0)
 #define MayBlock   (1 << 1)
-#define PostOnFail (1 << 2)
+#define NBRunInLWP (1 << 2)   // non-blocking, but must run in LWP context
+#define PostOnFail (1 << 3)
 
 #define PRE(x)  static void before_##x(ThreadId tid, ThreadState *tst)
 #define POST(x) static void  after_##x(ThreadId tid, ThreadState *tst)
@@ -5846,7 +5847,7 @@ static const struct sys_info sys_info[] = {
 
    // stime		               25 sys_stime *
    SYSBA(ptrace,		0), // 26 sys_ptrace ()
-   SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */ // 27 sys_alarm *
+   SYSB_(alarm,			NBRunInLWP), // 27 sys_alarm *
    // oldfstat		               28 sys_fstat *
    SYSX_(__NR_pause,            sys_pause), // 29 *
 
@@ -5901,7 +5902,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(setreuid,		0), // 70 sys_setreuid16 ##
    SYSB_(setregid,		0), // 71 sys_setregid16 ##
    SYSB_(sigsuspend,		MayBlock), // 72 sys_sigsuspend
-   SYSBA(sigpending,		MayBlock), /* not blocking, but must run in LWP context */ // 73 sys_sigpending *
+   SYSBA(sigpending,		NBRunInLWP), // 73 sys_sigpending *
    // sethostname	               74 sys_sethostname *
 
    SYSB_(setrlimit,		0), // 75 sys_setrlimit *
@@ -5938,9 +5939,9 @@ static const struct sys_info sys_info[] = {
    SYSB_(ioperm,		0), // 101 sys_ioperm *
    SYSBA(socketcall,		MayBlock), // 102 sys_socketcall *
    SYSBA(syslog,		MayBlock), // 103 sys_syslog *
-   SYSBA(setitimer,		MayBlock), /* not blocking, but must run in LWP context */ // 104 sys_setitimer *
+   SYSBA(setitimer,		NBRunInLWP), // 104 sys_setitimer *
 
-   SYSBA(getitimer,		MayBlock), /* not blocking, but must run in LWP context */ // 105 sys_getitimer *
+   SYSBA(getitimer,		NBRunInLWP), // 105 sys_getitimer *
    SYSBA(stat,			0), // 106 sys_newstat *
    SYSBA(lstat,			0), // 107 sys_newlstat *
    SYSBA(fstat,			0), // 108 sys_newfstat *
@@ -6027,7 +6028,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(rt_sigaction,		SIG_SIM), // 174 sys_rt_sigaction
 
    SYSBA(rt_sigprocmask,	SIG_SIM), // 175 sys_rt_sigprocmask *
-   SYSBA(rt_sigpending,		MayBlock), /* not blocking, but must run in LWP context */ // 176 sys_rt_sigpending *
+   SYSBA(rt_sigpending,		NBRunInLWP), // 176 sys_rt_sigpending *
    SYSBA(rt_sigtimedwait,	MayBlock), // 177 sys_rt_sigtimedwait *
    SYSBA(rt_sigqueueinfo,	0), // 178 sys_rt_sigqueueinfo *
    SYSB_(rt_sigsuspend,		MayBlock), // 179 sys_sigsuspend
@@ -6183,8 +6184,9 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    ThreadState* tst;
    UInt         syscallno, flags;
    const struct sys_info *sys;
-   Bool isSpecial = False;
-   Bool mayBlock  = False;
+   Bool isSpecial    = False;
+   Bool mayBlock     = False;
+   Bool runInLWP     = False;
    Bool syscall_done = False;	/* we actually ran the syscall */
 
    VGP_PUSHCC(VgpCoreSysWrap);
@@ -6235,11 +6237,16 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       flags = sys->flags;
    }
 
-   isSpecial = flags & Special;
-   mayBlock  = flags & MayBlock;
+   {
+      Bool nbrunInLWP = ( flags & NBRunInLWP ? True : False );
+      isSpecial       = ( flags & Special    ? True : False );
+      mayBlock        = ( flags & MayBlock   ? True : False );
+      runInLWP        = mayBlock || nbrunInLWP;
+      // At most one of these should be true
+      vg_assert( isSpecial + mayBlock + nbrunInLWP <= 1 );
+   }
 
    tst->sys_flags = flags;
-
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
@@ -6251,7 +6258,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
          VG_(getpid)(), tid, syscallno, 
          isSpecial ? " special"  : "",
-         mayBlock  ? " blocking" : "");
+         runInLWP  ? " runInLWP" : "");
 
    if (isSpecial) {
       /* "Special" syscalls are implemented by Valgrind internally,
@@ -6259,7 +6266,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 therefore, is that the "before" function not only does the
 	 appropriate tests, but also performs the syscall itself and
 	 sets the result.  Special syscalls cannot block. */
-      vg_assert(mayBlock == 0);
+      vg_assert(!mayBlock && !runInLWP);
 
       (sys->before)(tst->tid, tst);
 
@@ -6275,7 +6282,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	    anything - just pretend the syscall happened. */
          PRINT(" ==> %lld (0x%llx)\n", (Long)(Word)res, (ULong)res);
 	 syscall_done = True;
-      } else if (mayBlock) {
+      } else if (runInLWP) {
 	 /* Issue to worker.  If we're waiting on the syscall because
 	    it's in the hands of the ProxyLWP, then set the thread
 	    state to WaitSys. */

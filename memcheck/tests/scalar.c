@@ -38,7 +38,7 @@ int main(void)
 
    // __NR_waitpid 7 --> sys_waitpid()
    GO(__NR_waitpid, "3s 1m");
-   SY(__NR_waitpid, x0-1);
+   SY(__NR_waitpid, x0, x0+1, x0);
 
    // __NR_creat 8 --> sys_creat()
    GO(__NR_creat, "2s 1m");
@@ -192,7 +192,7 @@ int main(void)
 
    // __NR_setgid 46 --> sys_setgid16()
    GO(__NR_setgid, "1s 0m");
-   SY(__NR_setgid);
+   SY(__NR_setgid, x0);
 
    // __NR_getgid 47 --> sys_getgid16()
    GO(__NR_getgid, "0e");
@@ -551,11 +551,11 @@ int main(void)
 
    // __NR_setfsuid 138
    GO(__NR_setfsuid, "1s 0m");
-   SY(__NR_setfsuid);
+   SY(__NR_setfsuid, x0);
 
    // __NR_setfsgid 139
    GO(__NR_setfsgid, "1s 0m");
-   SY(__NR_setfsgid);
+   SY(__NR_setfsgid, x0);
 
    // __NR__llseek 140
  //GO(__NR__llseek, ".s .m");
@@ -855,7 +855,7 @@ int main(void)
 
    // __NR_setgid32 214
    GO(__NR_setgid32, "1s 0m");
-   SY(__NR_setgid32);
+   SY(__NR_setgid32, x0);
 
    // __NR_setfsuid32 215 --> sys_setfsuid()
    GO(__NR_setfsuid32, "1s 0m");

@@ -291,7 +291,7 @@ Char *resolve_fname(Int fd)
    if(VG_(readlink)(tmp, buf, PATH_MAX) == -1)
       return NULL;
 
-   return ((buf[0] == '/') ? VG_(strdup)(buf) : NULL);
+   return ((buf[0] == '/') ? VG_(arena_strdup)(VG_AR_CORE, buf) : NULL);
 }
 
 
@@ -311,8 +311,8 @@ void record_fd_close(Int tid, Int fd)
          if(i->next)
             i->next->prev = i->prev;
          if(i->pathname) 
-            VG_(free) (i->pathname);
-         VG_(free) (i);
+            VG_(arena_free) (VG_AR_CORE, i->pathname);
+         VG_(arena_free) (VG_AR_CORE, i);
          fd_count--;
          break;
       }
@@ -339,7 +339,7 @@ void record_fd_open(Int tid, Int fd, char *pathname)
    i = allocated_fds;
    while (i) {
       if (i->fd == fd) {
-         if (i->pathname) VG_(free)(i->pathname);
+         if (i->pathname) VG_(arena_free)(VG_AR_CORE, i->pathname);
          break;
       }
       i = i->next;
@@ -347,7 +347,7 @@ void record_fd_open(Int tid, Int fd, char *pathname)
 
    /* Not already one: allocate an OpenFd */
    if (i == NULL) {
-      i = VG_(malloc)(sizeof(OpenFd));
+      i = VG_(arena_malloc)(VG_AR_CORE, sizeof(OpenFd));
 
       i->prev = NULL;
       i->next = allocated_fds;
@@ -3350,7 +3350,7 @@ POST(open)
       res = -VKI_EMFILE;
    } else {
       if(VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(strdup)((Char*)arg1));
+         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
 }
@@ -3394,7 +3394,7 @@ POST(creat)
       res = -VKI_EMFILE;
    } else {
       if(VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(strdup)((Char*)arg1));
+         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
 }

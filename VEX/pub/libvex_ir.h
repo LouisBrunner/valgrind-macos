@@ -497,7 +497,7 @@ typedef
       union {
          struct {
             Int     offset;
-            IRExpr* expr;
+            IRExpr* data;
          } Put;
          struct {
             IRArray* descr;
@@ -507,7 +507,7 @@ typedef
          } PutI;
          struct {
             IRTemp  tmp;
-            IRExpr* expr;
+            IRExpr* data;
          } Tmp;
          struct {
             IRExpr* addr;
@@ -524,11 +524,11 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put   ( Int off, IRExpr* value );
+extern IRStmt* IRStmt_Put   ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* off, Int bias, 
                               IRExpr* data );
-extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* expr );
-extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* value );
+extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* data );
+extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty ( IRDirty* details );
 extern IRStmt* IRStmt_Exit  ( IRExpr* cond, IRConst* dst );
 

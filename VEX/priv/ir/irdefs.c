@@ -299,7 +299,7 @@ void ppIRStmt ( IRStmt* s )
    switch (s->tag) {
       case Ist_Put:
          vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
-         ppIRExpr(s->Ist.Put.expr);
+         ppIRExpr(s->Ist.Put.data);
          break;
       case Ist_PutI:
          vex_printf( "PUTI" );
@@ -312,7 +312,7 @@ void ppIRStmt ( IRStmt* s )
       case Ist_Tmp:
          ppIRTemp(s->Ist.Tmp.tmp);
          vex_printf( " = " );
-         ppIRExpr(s->Ist.Tmp.expr);
+         ppIRExpr(s->Ist.Tmp.data);
          break;
       case Ist_STle:
          vex_printf( "STle(");
@@ -551,11 +551,11 @@ IRDirty* emptyIRDirty ( void )
 
 /* Constructors -- IRStmt */
 
-IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
+IRStmt* IRStmt_Put ( Int off, IRExpr* data ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
    s->Ist.Put.offset = off;
-   s->Ist.Put.expr   = value;
+   s->Ist.Put.data   = data;
    return s;
 }
 IRStmt* IRStmt_PutI ( IRArray* descr, IRExpr* off,
@@ -568,18 +568,18 @@ IRStmt* IRStmt_PutI ( IRArray* descr, IRExpr* off,
    s->Ist.PutI.data  = data;
    return s;
 }
-IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* expr ) {
+IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* data ) {
    IRStmt* s       = LibVEX_Alloc(sizeof(IRStmt));
    s->tag          = Ist_Tmp;
    s->Ist.Tmp.tmp  = tmp;
-   s->Ist.Tmp.expr = expr;
+   s->Ist.Tmp.data = data;
    return s;
 }
-IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value ) {
+IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* data ) {
    IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
    s->tag           = Ist_STle;
    s->Ist.STle.addr = addr;
-   s->Ist.STle.data = value;
+   s->Ist.STle.data = data;
    return s;
 }
 IRStmt* IRStmt_Dirty ( IRDirty* d )
@@ -999,14 +999,14 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
    IRDirty* d;
    switch (stmt->tag) {
       case Ist_Put:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.data,def_counts);
          break;
       case Ist_PutI:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.off,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.data,def_counts);
          break;
       case Ist_Tmp:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.expr,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.data,def_counts);
          break;
       case Ist_STle:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.STle.addr,def_counts);
@@ -1128,24 +1128,27 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
       case Ist_Put:
-         tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");
+         tcExpr( bb, stmt, stmt->Ist.Put.data, gWordTy );
+         if (typeOfIRExpr(tyenv,stmt->Ist.Put.data) == Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.Put.data: cannot Put :: Ity_Bit");
          break;
       case Ist_PutI:
          tcExpr( bb, stmt, stmt->Ist.PutI.data, gWordTy );
          tcExpr( bb, stmt, stmt->Ist.PutI.off, gWordTy );
          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.PutI.expr: cannot PutI :: Ity_Bit");
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.data: cannot PutI :: Ity_Bit");
+         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) 
+             != stmt->Ist.PutI.descr->elemTy)
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.data: data ty != elem ty");
          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.off) != Ity_I32)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.off: not :: Ity_I32");
          if (!saneIRArray(stmt->Ist.PutI.descr))
             sanityCheckFail(bb,stmt,"IRStmt.PutI.descr: invalid descr");
          break;
       case Ist_Tmp:
-         tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );
+         tcExpr( bb, stmt, stmt->Ist.Tmp.data, gWordTy );
          if (typeOfIRTemp(tyenv, stmt->Ist.Tmp.tmp)
-             != typeOfIRExpr(tyenv, stmt->Ist.Tmp.expr))
+             != typeOfIRExpr(tyenv, stmt->Ist.Tmp.data))
             sanityCheckFail(bb,stmt,"IRStmt.Put.Tmp: tmp and expr do not match");
          break;
       case Ist_STle:

@@ -253,7 +253,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
    IRDirty *d,  *d2;
    switch (st->tag) {
       case Ist_Put:
-         e1 = flatten_Expr(bb, st->Ist.Put.expr);
+         e1 = flatten_Expr(bb, st->Ist.Put.data);
          addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
          break;
       case Ist_PutI:
@@ -265,13 +265,13 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
                                        e2));
          break;
       case Ist_Tmp:
-         if (isFlat(st->Ist.Tmp.expr)) {
+         if (isFlat(st->Ist.Tmp.data)) {
             /* optimisation, to reduce the number of tmp-tmp
                copies generated */
             addStmtToIRBB(bb, st);
          } else {
             /* general case, always correct */
-            e1 = flatten_Expr(bb, st->Ist.Tmp.expr);
+            e1 = flatten_Expr(bb, st->Ist.Tmp.data);
             addStmtToIRBB(bb, IRStmt_Tmp(st->Ist.Tmp.tmp, e1));
          }
          break;
@@ -628,10 +628,10 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
 #  endif
 
    if (st->tag == Ist_Put) {
-      vassert(isAtom(st->Ist.Put.expr));
+      vassert(isAtom(st->Ist.Put.data));
       return IRStmt_Put(
                 st->Ist.Put.offset, 
-                fold_Expr(subst_Expr(env, st->Ist.Put.expr)) 
+                fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
              );
    }
 
@@ -647,11 +647,11 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
    }
 
    if (st->tag == Ist_Tmp) {
-      /* This is the one place where an expr (st->Ist.Tmp.expr) is
+      /* This is the one place where an expr (st->Ist.Tmp.data) is
          allowed to be more than just a constant or a tmp. */
       return IRStmt_Tmp(
                 st->Ist.Tmp.tmp,
-                fold_Expr(subst_Expr(env, st->Ist.Tmp.expr))
+                fold_Expr(subst_Expr(env, st->Ist.Tmp.data))
              );
    }
 
@@ -752,18 +752,18 @@ static IRBB* cprop_BB ( IRBB* in )
          and not to the output BB.  Otherwise, add it to the output
          BB. */
 
-      if (st2->tag == Ist_Tmp && st2->Ist.Tmp.expr->tag == Iex_Const) {
+      if (st2->tag == Ist_Tmp && st2->Ist.Tmp.data->tag == Iex_Const) {
          /* 't = const' -- add to env.  
              The pair (IRTemp, IRExpr*) is added. */
          addToH64(env, (ULong)(st2->Ist.Tmp.tmp),
-                       (ULong)(st2->Ist.Tmp.expr) );
+                       (ULong)(st2->Ist.Tmp.data) );
       }
       else
-      if (st2->tag == Ist_Tmp && st2->Ist.Tmp.expr->tag == Iex_Tmp) {
+      if (st2->tag == Ist_Tmp && st2->Ist.Tmp.data->tag == Iex_Tmp) {
          /* 't1 = t2' -- add to env.  
              The pair (IRTemp, IRExpr*) is added. */
          addToH64(env, (ULong)(st2->Ist.Tmp.tmp),
-                       (ULong)(st2->Ist.Tmp.expr) );
+                       (ULong)(st2->Ist.Tmp.data) );
       }
       else {
          /* Not interesting, copy st2 into the output block. */
@@ -840,10 +840,10 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
          addUses_Expr(set, st->Ist.PutI.data);
          return;
       case Ist_Tmp:
-         addUses_Expr(set, st->Ist.Tmp.expr);
+         addUses_Expr(set, st->Ist.Tmp.data);
          return;
       case Ist_Put:
-         addUses_Expr(set, st->Ist.Put.expr);
+         addUses_Expr(set, st->Ist.Put.data);
          return;
       case Ist_STle:
          addUses_Expr(set, st->Ist.STle.addr);
@@ -987,10 +987,10 @@ static void redundant_get_removal_BB ( IRBB* bb )
 
       /* Deal with Gets */
       if (st->tag == Ist_Tmp
-          && st->Ist.Tmp.expr->tag == Iex_Get) {
+          && st->Ist.Tmp.data->tag == Iex_Get) {
          /* st is 't = Get(...)'.  Look up in the environment and see
             if the Get can be replaced. */
-         IRExpr* get = st->Ist.Tmp.expr;
+         IRExpr* get = st->Ist.Tmp.data;
          key = (ULong)mk_key_GetPut( get->Iex.Get.offset, 
                                      get->Iex.Get.ty );
          if (lookupH64(env, &val, (ULong)key)) {
@@ -1016,7 +1016,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
          case Ist_Put: 
             isPut = True;
             key = mk_key_GetPut( st->Ist.Put.offset, 
-                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.expr) );
+                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
             break;
          case Ist_PutI:
             isPut = True;
@@ -1036,8 +1036,8 @@ static void redundant_get_removal_BB ( IRBB* bb )
 
       /* add this one to the env, if appropriate */
       if (st->tag == Ist_Put) {
-         vassert(isAtom(st->Ist.Put.expr));
-         addToH64( env, (ULong)key, (ULong)(st->Ist.Put.expr));
+         vassert(isAtom(st->Ist.Put.data));
+         addToH64( env, (ULong)key, (ULong)(st->Ist.Put.data));
       }
 
    } /* for (i = 0; i < bb->stmts_used; i++) */
@@ -1063,7 +1063,7 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
       /* This is the only interesting case.  Deal with Gets in the RHS
          expression. */
       case Ist_Tmp:
-         e = st->Ist.Tmp.expr;
+         e = st->Ist.Tmp.data;
          switch (e->tag) {
             case Iex_Get:
                isGet = True;
@@ -1153,8 +1153,8 @@ static void redundant_put_removal_BB ( IRBB* bb )
          case Ist_Put: 
             isPut = True;
             key = mk_key_GetPut( st->Ist.Put.offset, 
-                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.expr) );
-            vassert(isAtom(st->Ist.Put.expr));
+                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
+            vassert(isAtom(st->Ist.Put.data));
             break;
          case Ist_PutI:
             isPut = True;
@@ -1213,11 +1213,11 @@ void spec_helpers_BB ( IRBB* bb,
 
       if (!st 
           || st->tag != Ist_Tmp
-          || st->Ist.Tmp.expr->tag != Iex_CCall)
+          || st->Ist.Tmp.data->tag != Iex_CCall)
 	continue;
 
-      ex = (*specHelper)( st->Ist.Tmp.expr->Iex.CCall.name,
-                          st->Ist.Tmp.expr->Iex.CCall.args );
+      ex = (*specHelper)( st->Ist.Tmp.data->Iex.CCall.name,
+                          st->Ist.Tmp.data->Iex.CCall.args );
       if (!ex)
 	/* the front end can't think of a suitable replacement */
 	continue;
@@ -1228,7 +1228,7 @@ void spec_helpers_BB ( IRBB* bb,
 
       if (0) {
          vex_printf("SPEC: ");
-         ppIRExpr(st->Ist.Tmp.expr);
+         ppIRExpr(st->Ist.Tmp.data);
          vex_printf("  -->  ");
          ppIRExpr(ex);
          vex_printf("\n");
@@ -1335,10 +1335,10 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
    IRDirty* d;
    switch (st->tag) {
       case Ist_Tmp: 
-         occCount_Expr(env, st->Ist.Tmp.expr); 
+         occCount_Expr(env, st->Ist.Tmp.data); 
          return; 
       case Ist_Put: 
-         occCount_Expr(env, st->Ist.Put.expr);
+         occCount_Expr(env, st->Ist.Put.data);
          return;
       case Ist_PutI:
          occCount_Expr(env, st->Ist.PutI.off);
@@ -1465,12 +1465,12 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
       case Ist_Tmp:
          return IRStmt_Tmp(
                    st->Ist.Tmp.tmp,
-                   tbSubst_Expr(env, st->Ist.Tmp.expr)
+                   tbSubst_Expr(env, st->Ist.Tmp.data)
                 );
       case Ist_Put:
          return IRStmt_Put(
                    st->Ist.Put.offset,
-                   tbSubst_Expr(env, st->Ist.Put.expr)
+                   tbSubst_Expr(env, st->Ist.Put.data)
                 );
       case Ist_PutI:
          return IRStmt_PutI(
@@ -1681,7 +1681,7 @@ static void treebuild_BB ( IRBB* bb )
          ti = (TmpInfo*)res;
          if (ti->occ == 1) {
             /* ok, we have 't = E', occ(t)==1.  Do the abovementioned actions. */
-            IRExpr* e = st->Ist.Tmp.expr;
+            IRExpr* e = st->Ist.Tmp.data;
             IRExpr* e2 = tbSubst_Expr(env, e);
             ti->expr = e2;
             ti->eDoesLoad = ti->eDoesGet = False;
@@ -1918,7 +1918,7 @@ static void cse_BB ( IRBB* bb )
          continue;
 
       t = st->Ist.Tmp.tmp;
-      eprime = irExpr_to_AvailExpr(st->Ist.Tmp.expr);
+      eprime = irExpr_to_AvailExpr(st->Ist.Tmp.data);
       /* ignore if not of AvailExpr form */
       if (!eprime)
          continue;
@@ -2033,11 +2033,11 @@ static Bool hasGetIorPutI ( IRBB* bb )
          case Ist_PutI: 
             return True;
          case Ist_Tmp:  
-            if (st->Ist.Tmp.expr->tag == Iex_GetI)
+            if (st->Ist.Tmp.data->tag == Iex_GetI)
                return True;
             break;
          case Ist_Put:
-            vassert(isAtom(st->Ist.Put.expr));
+            vassert(isAtom(st->Ist.Put.data));
             break;
          case Ist_STle:
             vassert(isAtom(st->Ist.STle.addr));

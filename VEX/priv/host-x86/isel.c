@@ -1981,11 +1981,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- PUT --------- */
    case Ist_Put: {
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.expr);
+      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       if (ty == Ity_I32) {
          /* We're going to write to memory, so compute the RHS into an
             X86RI. */
-         X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.expr);
+         X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.data);
          addInstr(env,
                   X86Instr_Alu32M(
                      Xalu_MOV,
@@ -1995,7 +1995,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (ty == Ity_I8 || ty == Ity_I16) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.Put.expr);
+         HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
          addInstr(env, X86Instr_Store(
                           ty==Ity_I8 ? 1 : 2,
                           r,
@@ -2032,28 +2032,28 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       IRTemp tmp = stmt->Ist.Tmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-         X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
+         X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Alu32R(Xalu_MOV,rmi,dst));
          return;
       }
       if (ty == Ity_I64) {
          HReg rHi, rLo, dstHi, dstLo;
-         iselIntExpr64(&rHi,&rLo, env, stmt->Ist.Tmp.expr);
+         iselIntExpr64(&rHi,&rLo, env, stmt->Ist.Tmp.data);
          lookupIRTemp64( &dstHi, &dstLo, env, tmp);
          addInstr(env, mk_MOVsd_RR(rHi,dstHi) );
          addInstr(env, mk_MOVsd_RR(rLo,dstLo) );
          return;
       }
       if (ty == Ity_Bit) {
-         X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.expr);
+         X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Set32(cond, dst));
          return;
       }
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselDblExpr(env, stmt->Ist.Tmp.expr);
+         HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);
          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
          return;
       }

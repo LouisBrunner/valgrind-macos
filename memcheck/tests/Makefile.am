@@ -45,6 +45,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
 	manuel2.stderr.exp manuel2.stdout.exp manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
+	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
@@ -96,6 +97,7 @@ check_PROGRAMS = \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-tree leak-regroot leakotron \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
+	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
@@ -151,6 +153,7 @@ malloc3_SOURCES 	= malloc3.c
 manuel1_SOURCES 	= manuel1.c
 manuel2_SOURCES 	= manuel2.c
 manuel3_SOURCES 	= manuel3.c
+match_overrun_SOURCES 	= match-overrun.c
 mmaptest_SOURCES 	= mmaptest.c
 memalign_test_SOURCES 	= memalign_test.c
 memalign2_SOURCES 	= memalign2.c

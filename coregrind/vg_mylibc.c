@@ -1074,7 +1074,8 @@ static Bool string_match_wrk ( const Char* pat, const Char* str )
    recDepth++;
    for (;;) {
       switch (*pat) {
-         case '\0' : return (*str=='\0');
+         case '\0' : recDepth--;
+                     return (*str=='\0');
          case '*'  : do {
                         if (string_match_wrk(pat+1,str)) {
                            recDepth--;
@@ -1108,6 +1109,7 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
    Bool b;
    recDepth = 0;
    b = string_match_wrk ( pat, str );
+   vg_assert(recDepth == 0);
    /*
    VG_(printf)("%s   %s   %s\n",
 	       b?"TRUE ":"FALSE", pat, str);

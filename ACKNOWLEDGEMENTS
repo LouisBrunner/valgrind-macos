@@ -1,26 +1,52 @@
 
-The following people contributed in some way to valgrind, during its
-long journey over the past two years or so.  Here's a list.  If I have
-forgotten you, I do apologise; let me know (jseward@acm.org) and I'll
-fix it.
+Jeremy Fitzhardinge, jeremy@valgrind.org
 
-Donna Robinson <donna@muraroa.demon.co.uk>
-	for many reasons, including endless encouragement, and
-	persuading me I wasn't crazy to	try doing this
+Jeremy wrote Helgrind and totally overhauled low-level syscall/signal
+and address space layout stuff, among many other improvements.
 
-Rob Noble <rob.noble@antlimited.com>
-	for early encouragement, support, suggestions, and asking of
-	many questions
+Tom Hughes, tom@valgrind.org
 
-Reuben Thomas <rrt@sc3d.org>
-	for discussions about value tag operations, and making me
-	laugh
+Tom did a vast number of bug fixes, and helped out with support for
+more recent Linux/glibc versions.
 
-Various KDE folks, for suffering recent versions of valgrind, 
-	providing many patches, questions and helpful feedback
-	Dirk Mueller <mueller@kde.org>
-	Stephan Kulow <coolo@kde.org>
-	Michael Matz <matz@kde.org>
-	Simon Hausmann <hausmann@kde.org>
-	David Faure <david@mandrakesoft.com>
-	Ellis Whitehead <kde@ellisw.net>
+Nicholas Nethercote, njn@valgrind.org
+
+Nick did the core/tool generalisation, wrote Cachegrind and Massif,
+and tons of other stuff.
+
+Paul Mackerras
+
+Paul did a lot of the initial per-architecture factoring that forms
+the basis of the 3.0 line and is also to be seen in 2.4.0. He also did
+UCode-based dynamic translation support for PowerPC, and created a set
+of ppc-linux derivatives of the 2.X release line.
+
+Dirk Mueller, dmuell@gmx.net
+
+Dirk contributed the malloc-free mismatch checking stuff and various
+other bits and pieces, and acted as our KDE liaison.
+
+Donna Robinson, donna@terpsichore.ws
+
+Keeper of the very excellent http://www.valgrind.org.
+
+Julian Seward, julian@valgrind.org
+
+Julian was the original designer and author of Valgrind, created the
+dynamic translation framework, wrote Memcheck and Addrcheck, and did
+lots of other things.
+
+Robert Walsh, rjwalsh@valgrind.org
+
+Robert added file descriptor leakage checking, new library
+interception machinery, support for client allocation pools, and minor
+other tweakage.
+
+
+Frederic Gobry helped with autoconf and automake.  Daniel Berlin
+modified readelf's dwarf2 source line reader, written by Nick Clifton,
+for use in Valgrind.  Michael Matz and Simon Hausmann modified the GNU
+binutils demangler(s) for use in Valgrind.
+
+And lots and lots of other people sent bug reports, patches, and very
+helpful feedback.

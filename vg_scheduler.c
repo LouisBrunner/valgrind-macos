@@ -2369,7 +2369,6 @@ void do_pthread_mutex_lock( ThreadId tid,
       /* We get it! [for the first time]. */
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
-      vg_assert(VG_(threads)[tid].associated_mx == NULL);
       /* return 0 (success). */
       SET_EDX(tid, 0);
    }

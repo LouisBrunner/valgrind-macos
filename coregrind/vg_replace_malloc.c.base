@@ -63,6 +63,8 @@
                      visibility("protected"))); \
    ret VG_INTERCEPT(soname:libc.so.6, ##name) args
 
+extern void _exit(int);
+
 /*------------------------------------------------------------*/
 /*--- Replacing malloc() et al                             ---*/
 /*------------------------------------------------------------*/
@@ -106,17 +108,37 @@ LIBALIAS(void *, fff, (Int n)) \
    MALLOC_TRACE(" = %p", v ); \
    return v; \
 }
+
+#define ALLOC2(fff, vgfff) \
+LIBALIAS(void *, fff, (Int n)) \
+{ \
+   void* v; \
+ \
+   MALLOC_TRACE(#fff "(%d)", n ); \
+   MAYBE_SLOPPIFY(n); \
+   if (!init_done) init(); \
+ \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
+   MALLOC_TRACE(" = %p", v ); \
+   if (NULL == v) { \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "new/new[] failed and should throw an exception, but Valgrind\n" \
+         "   cannot throw exceptions and so is aborting instead.  Sorry."); \
+         _exit(1); \
+   } \
+   return v; \
+}
 ALLOC( malloc,              malloc            );
-ALLOC( __builtin_new,       __builtin_new     );
-ALLOC( _Znwj,               __builtin_new     );
+ALLOC2(__builtin_new,       __builtin_new     );
+ALLOC2(_Znwj,               __builtin_new     );
 
 // operator new(unsigned, std::nothrow_t const&)
 ALLOC( _ZnwjRKSt9nothrow_t, __builtin_new     );
 
-ALLOC( __builtin_vec_new,   __builtin_vec_new );
-ALLOC( _Znaj,               __builtin_vec_new );
+ALLOC2(__builtin_vec_new,   __builtin_vec_new );
+ALLOC2(_Znaj,               __builtin_vec_new );
 
-// operator new[](unsigned, std::nothrow_t const&
+// operator new[](unsigned, std::nothrow_t const&)
 ALLOC( _ZnajRKSt9nothrow_t, __builtin_vec_new );
 
 #define FREE(fff, vgfff) \
@@ -244,8 +266,6 @@ LIBALIAS(int, malloc_usable_size, ( void* p ))
 
 
 /* Bomb out if we get any of these. */
-
-extern void _exit(int);
 
 static void panic(const char *str)
 {

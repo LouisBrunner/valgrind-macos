@@ -19,17 +19,18 @@
       a:active  { color:            #0000C0;
                   text-decoration:  none; }
     </style>
+    <title>Valgrind</title>
   </head>
 
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, version 1.0</h1>
-<center>This manual was majorly updated on 20020713</center>
+<h1 align=center>Valgrind, version 1.0.0</h1>
+<center>This manual was last updated on 20020726</center>
 <p>
 
 <center>
-<a href="mailto:jseward@acm.org">jseward@acm.org<br>
+<a href="mailto:jseward@acm.org">jseward@acm.org</a><br>
 Copyright &copy; 2000-2002 Julian Seward
 <p>
 Valgrind is licensed under the GNU General Public License, 
@@ -129,12 +130,12 @@ modern Linux installations.
 Valgrind is licensed under the GNU General Public License, version
 2. Read the file LICENSE in the source distribution for details.  Some
 of the PThreads test cases, <code>test/pth_*.c</code>, are taken from
-"Pthreads Programming" by Bradford Nichols, Dick Buttlar & Jacqueline
-Proulx Farrell, ISBN 1-56592-115-1, published by O'Reilly &
+"Pthreads Programming" by Bradford Nichols, Dick Buttlar &amp; Jacqueline
+Proulx Farrell, ISBN 1-56592-115-1, published by O'Reilly &amp;
 Associates, Inc.
 
 
-<a name="whatdoes">
+<a name="whatdoes"></a>
 <h3>1.2&nbsp; What it does with your program</h3>
 
 Valgrind is designed to be as non-intrusive as possible. It works
@@ -477,7 +478,7 @@ follows:
       increased using this parameter.  The supplied value must be
       between 4 and 4096 inclusive, and must be a power of two.</li><br><p>
 
-  <li><code>--trace-children=no</code> [the default]</br>
+  <li><code>--trace-children=no</code> [the default]<br>
       <code>--trace-children=yes</code>
       <p>When enabled, Valgrind will trace into child processes.  This
       is confusing and usually not what you want, so is disabled by
@@ -743,7 +744,7 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 </ul>
 
 
-<a name="errormsgs">
+<a name="errormsgs"></a>
 <h3>2.6&nbsp; Explaination of error messages</h3>
 
 Despite considerable sophistication under the hood, Valgrind can only
@@ -880,7 +881,7 @@ has wrongly been deallocated with <code>free</code>:
      at 0x4004318C: __builtin_vec_new (vg_clientfuncs.c:152)
      by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
      by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
-     by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
+     by 0x4C21788F: OLEFilter::convert(QCString const &amp;) (olefilter.cc:272)
 </pre>
 The following was told to me be the KDE 3 developers.  I didn't know
 any of it myself.  They also implemented the check itself.
@@ -1648,7 +1649,7 @@ know.  I don't promise to fix it, but I'd at least like to be aware of
 it.
 
 
-<a name="leaks"><a/>
+<a name="leaks"></a>
 <h3>3.5&nbsp; Memory leak detection</h3>
 
 Valgrind keeps track of all memory blocks issued in response to calls
@@ -1796,27 +1797,25 @@ Programs which are known not to work are:
       <p>
 </ul>
 
-Known platform-specific limitations:
+Known platform-specific limitations, as of release 1.0.0:
 
 <ul>
-  <li>(With valgrind versions 1.0pre4 and 1.0pre5) On Red Hat 7.3,
-      there have been reports of link errors (at program start time)
-      for threaded programs using <code>__pthread_clock_gettime</code>
-      and <code>__pthread_clock_settime</code>.  This appears to be
-      due to <code>/lib/librt-2.2.5.so</code> needing them.
-      Unfortunately I do not understand enough about this problem to
-      fix it properly, and I can't reproduce it on my test RedHat 7.3
-      system.  Please mail me if you have more information /
-      understanding.  </li><br>
+  <li>On Red Hat 7.3, there have been reports of link errors (at
+      program start time) for threaded programs using
+      <code>__pthread_clock_gettime</code> and
+      <code>__pthread_clock_settime</code>.  This appears to be due to
+      <code>/lib/librt-2.2.5.so</code> needing them.  Unfortunately I
+      do not understand enough about this problem to fix it properly,
+      and I can't reproduce it on my test RedHat 7.3 system.  Please
+      mail me if you have more information / understanding.  </li><br>
       <p>
   <li>
-      Things are likely to go badly wrong on Red Hat 7.3.92 ("Limbo"
-      public beta), especially with threaded programs.  Don't expect
-      this to work.  Basically valgrind won't work as-is with any 
-      glibc-2.3 based system.  Also it looks like Red Hat's 2.4.18
-      kernel as hacked for Limbo gives problems, due to an extra entry
-      in the ELF frame constructed by the kernel.  The 2.4.18 in the
-      standard Red Hat 7.3 release works fine, though.</li><br>
+      1.0.0 now partially works on Red Hat 7.3.92 ("Limbo"
+      public beta).  However, don't expect a smooth ride.
+      Basically valgrind won't work as-is with any 
+      glibc-2.3 based system.  Limbo is just a little pre glibc-2.3 
+      and it just about works.  Limbo is also gcc-3.1 based and so
+      suffers from the problems in the following point.</li><br>
       <p>
   <li>
       Inlining of string functions with gcc-3.1 or above causes a
@@ -2071,11 +2070,12 @@ The two steps are:
       specified manually, or manually on the command line, or
       "interesting" source files can be annotated automatically with
       the <code>--auto=yes</code> option.  You can annotate C/C++
-      files or assembly language files equally easily.</li>
+      files or assembly language files equally easily.
       <p>
       This step can be performed as many times as you like for each
       Step 2.  You may want to do multiple annotations showing
       different information each time.<p>
+  </li>
 </ol>
 
 The steps are described in detail in the following sections.<p>
@@ -2121,12 +2121,12 @@ all three levels (I1/D1/L2) of the cache from the command line using the
 Other noteworthy behaviour:
 
 <ul>
-  <li>References that straddle two cache lines are treated as follows:</li>
+  <li>References that straddle two cache lines are treated as follows:
   <ul>
     <li>If both blocks hit --&gt; counted as one hit</li>
     <li>If one block hits, the other misses --&gt; counted as one miss</li>
     <li>If both blocks miss --&gt; counted as one miss (not two)</li>
-  </ul><p>
+  </ul><p></li>
 
   <li>Instructions that modify a memory location (eg. <code>inc</code> and
       <code>dec</code>) are counted as doing just a read, ie. a single data
@@ -2213,7 +2213,7 @@ Things to note about the <code>cachegrind.out</code> file:
       of around 15 MB.</li>
 </ul>
 
-<a name="profile"></a>
+<a name="profileflags"></a>
 <h3>7.5&nbsp; Cachegrind options</h3>
 Cachegrind accepts all the options that Valgrind does, although some of them
 (ones related to memory checking) don't do anything when cache profiling.<p>
@@ -2221,9 +2221,9 @@ Cachegrind accepts all the options that Valgrind does, although some of them
 The interesting cache-simulation specific options are:
 
 <ul>
-  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br>
-      <code>--D1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br> 
-      <code>--L2=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 
+  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt;,&lt;line_size&gt;</code><br>
+      <code>--D1=&lt;size&gt;,&lt;associativity&gt;,&lt;line_size&gt;</code><br> 
+      <code>--L2=&lt;size&gt;,&lt;associativity&gt;,&lt;line_size&gt;</code><p> 
       [default: uses CPUID for automagic cache configuration]<p>
 
       Manually specifies the I1/D1/L2 cache configuration, where

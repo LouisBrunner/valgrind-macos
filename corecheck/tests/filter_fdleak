@@ -15,6 +15,9 @@ $dir/../../tests/filter_test_paths                      |
 # Anonymise paths like "(in /foo/bar/libc-baz.so)"
 sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |
 
+# Anonymise paths like "xxx (../sysdeps/unix/sysv/linux/quux.c:129)"
+sed "s/(\.\.\/sysdeps\/unix\/sysv\/linux\/.*\.c:[0-9]*)$/(in \/...libc...)/" |
+
 # Anonymise paths like "__libc_start_main (../foo/bar/libc-quux.c:129)"
 sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/"	|
 

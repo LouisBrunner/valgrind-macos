@@ -3,7 +3,8 @@
 add_includes = -I$(top_builddir)/include -I$(top_srcdir)/include \
 		-I$(top_srcdir)/include/$(VG_ARCH) \
 		-I$(top_srcdir)/include/$(VG_OS) \
-		-I$(top_srcdir)/include/$(VG_PLATFORM)
+		-I$(top_srcdir)/include/$(VG_PLATFORM) \
+		-I@VEX_DIR@/pub
 
 AM_CPPFLAGS = $(add_includes)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g @ARCH_TOOL_AM_CFLAGS@

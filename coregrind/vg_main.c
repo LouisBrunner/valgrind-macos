@@ -1312,13 +1312,17 @@ Bool VG_(within_stack)(Addr a)
       return False;
 }
 
-Bool VG_(within_m_state_static)(Addr a)
+Bool VG_(within_m_state_static_OR_threads)(Addr a)
 {
    if (a >= ((Addr)(&VG_(m_state_static)))
-       && a <= ((Addr)(&VG_(m_state_static))) + sizeof(VG_(m_state_static)))
+       && a < ((Addr)(&VG_(m_state_static))) + sizeof(VG_(m_state_static)))
       return True;
-   else
-      return False;
+
+   if (a >= ((Addr)(&VG_(threads)[0]))
+       && a < ((Addr)(&VG_(threads)[VG_N_THREADS])))
+      return True;
+
+   return False;
 }
 
 /* ---------------------------------------------------------------------

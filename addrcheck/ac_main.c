@@ -513,6 +513,25 @@ Bool ac_check_accessible ( Addr a, UInt len, Addr* bad_addr )
    return True;
 }
 
+/* The opposite; check that an address range is inaccessible. */
+static
+Bool ac_check_noaccess ( Addr a, UInt len, Addr* bad_addr )
+{
+   UInt  i;
+   UChar abit;
+   PROF_EVENT(48);
+   for (i = 0; i < len; i++) {
+      PROF_EVENT(49);
+      abit = get_abit(a);
+      if (abit == VGM_BIT_VALID) {
+         if (bad_addr != NULL) *bad_addr = a;
+         return False;
+      }
+      a++;
+   }
+   return True;
+}
+
 /* Check a zero-terminated ascii string.  Tricky -- don't want to
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
@@ -1234,6 +1253,7 @@ void SK_(pre_clo_init)(void)
    MAC_( ban_mem_heap)             = & ac_make_noaccess;
    MAC_(copy_mem_heap)             = & ac_copy_address_range_state;
    MAC_( die_mem_heap)             = & ac_make_noaccess;
+   MAC_(check_noaccess)            = & ac_check_noaccess;
 
    VG_(track_new_mem_startup)      ( & ac_new_mem_startup );
    VG_(track_new_mem_stack_signal) ( & ac_make_accessible );

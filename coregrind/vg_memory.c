@@ -153,8 +153,9 @@ void startup_segment_callback ( Addr start, UInt size,
 {
    UInt r_esp;
    Bool is_stack_segment;
+   Bool verbose = False; /* set to True for debugging */
 
-   if (0)
+   if (verbose)
       VG_(message)(Vg_DebugMsg,
                    "initial map %8x-%8x %c%c%c? %8x (%d) (%s)",
                    start,start+size,rr,ww,xx,foffset,
@@ -172,10 +173,26 @@ void startup_segment_callback ( Addr start, UInt size,
       return;
    }
 
+   /* If this segment corresponds to something mmap'd /dev/zero by the
+      low-level memory manager (vg_malloc2.c), skip it.  Clients
+      should never have access to the segments which hold valgrind
+      internal data.  And access to client data in the VG_AR_CLIENT
+      arena is mediated by the skin, so we don't want make it
+      accessible at this stage. */
+   if (VG_(is_inside_segment_mmapd_by_low_level_MM)( start )) {
+      if (verbose)
+         VG_(message)(Vg_DebugMsg,
+                      "   skipping %8x-%8x (owned by our MM)", 
+                      start, start+size );
+      /* Don't announce it to the skin. */
+      return;
+   }
+   
    /* This parallels what happens when we mmap some new memory */
    if (filename != NULL && xx == 'x') {
       VG_(new_exe_segment)( start, size );
    }
+
    VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
 
    /* If this is the stack segment mark all below %esp as noaccess. */

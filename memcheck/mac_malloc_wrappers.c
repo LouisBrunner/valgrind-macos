@@ -45,10 +45,13 @@ static UInt cmalloc_bs_mallocd = 0;
 UInt VG_(vg_malloc_redzone_szB) = 16;
 
 /* Function pointers for the two skins to track interesting events. */
-void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
-void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
-void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
-void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
+void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited )  = NULL;
+void (*MAC_(ban_mem_heap)) ( Addr a, UInt len )                  = NULL;
+void (*MAC_(die_mem_heap)) ( Addr a, UInt len )                  = NULL;
+void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len )      = NULL;
+
+/* Function pointers for internal sanity checking. */
+Bool (*MAC_(check_noaccess))( Addr a, UInt len, Addr* bad_addr ) = NULL;
 
 
 /*------------------------------------------------------------*/
@@ -134,13 +137,14 @@ void add_MAC_Chunk ( ThreadState* tst, Addr p, UInt size, MAC_AllocKind kind )
    mc->allockind = kind;
    mc->where     = VG_(get_ExeContext)(tst);
 
-   /* The following line puts the shadow chunk, and hence the pointer
-      to the real chunk, off-limits to the client.  This seems to be
-      necessary to make the leak checker work reliably.  Problem is,
-      this seems to point to something deeper being wrong: this chunk
-      is allocated in the AR_SKIN arena and so should by default be
-      off-limits to the client anyway. */
-   MAC_(ban_mem_heap)( (Addr)mc, sizeof(MAC_Chunk));
+   /* Paranoia ... ensure this area is off-limits to the client, so
+      the mc->data field isn't visible to the leak checker.  If memory
+      management is working correctly, anything pointer returned by
+      VG_(malloc) should be noaccess as far as the client is
+      concerned. */
+   if (!MAC_(check_noaccess)( (Addr)mc, sizeof(MAC_Chunk), NULL )) {
+      VG_(skin_panic)("add_MAC_chunk: shadow area is accessible");
+   } 
 
    VG_(HT_add_node)( MAC_(malloc_list), (VgHashNode*)mc );
 }

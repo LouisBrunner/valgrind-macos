@@ -256,11 +256,11 @@ extern ULong VG_(bbs_done);
 /* Get the simulated %esp */
 extern Addr VG_(get_stack_pointer) ( void );
 
-/* Detect if an address is within Valgrind's stack or Valgrind's
-   m_state_static;  useful for memory leak detectors to tell if a block
-   is used by Valgrind (and thus can be ignored). */
+/* Detect if an address is within Valgrind's stack, Valgrind's
+   m_state_static, or the VG_(threads) array.  This is useful for
+   memory leak detectors to rule out spurious pointers to a block. */
 extern Bool VG_(within_stack)(Addr a);
-extern Bool VG_(within_m_state_static)(Addr a);
+extern Bool VG_(within_m_state_static_OR_threads)(Addr a);
 
 /* Check if an address is 4-byte aligned */
 #define IS_ALIGNED4_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 3))

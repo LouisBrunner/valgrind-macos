@@ -448,6 +448,10 @@ extern void  VG_(mallocSanityCheckAll)   ( void );
 extern void  VG_(show_all_arena_stats) ( void );
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
+/* Returns True if aa is inside any block mmap'd /dev/zero
+   by our low-level memory manager. */
+extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_intercept.c

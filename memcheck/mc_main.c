@@ -518,6 +518,27 @@ static void mc_copy_address_range_state ( Addr src, Addr dst, UInt len )
    exist, *bad_addr is set to the offending address, so the caller can
    know what it is. */
 
+/* Returns True if [a .. a+len) is not addressible.  Otherwise,
+   returns False, and if bad_addr is non-NULL, sets *bad_addr to
+   indicate the lowest failing address.  Functions below are
+   similar. */
+Bool MC_(check_noaccess) ( Addr a, UInt len, Addr* bad_addr )
+{
+   UInt  i;
+   UChar abit;
+   PROF_EVENT(42);
+   for (i = 0; i < len; i++) {
+      PROF_EVENT(43);
+      abit = get_abit(a);
+      if (abit == VGM_BIT_VALID) {
+         if (bad_addr != NULL) *bad_addr = a;
+         return False;
+      }
+      a++;
+   }
+   return True;
+}
+
 Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
 {
    UInt  i;
@@ -1655,6 +1676,7 @@ void SK_(pre_clo_init)(void)
    MAC_( ban_mem_heap)             = & MC_(make_noaccess);
    MAC_(copy_mem_heap)             = & mc_copy_address_range_state;
    MAC_( die_mem_heap)             = & MC_(make_noaccess);
+   MAC_(check_noaccess)            = & MC_(check_noaccess);
 
    VG_(track_new_mem_startup)      ( & mc_new_mem_startup );
    VG_(track_new_mem_stack_signal) ( & MC_(make_writable) );

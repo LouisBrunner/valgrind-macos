@@ -267,6 +267,9 @@ extern void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
 extern void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
 extern void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
 
+/* Function pointers for internal sanity checking. */
+extern Bool (*MAC_(check_noaccess))( Addr a, UInt len, Addr* bad_addr );
+
 /* Used in describe_addr() */
 extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 

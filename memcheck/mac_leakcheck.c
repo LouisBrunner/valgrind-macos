@@ -311,10 +311,10 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
       where the .bss segment has been put.  If you can, drop me a
       line.  
    */
-   if (VG_(within_stack)(a))              return;
-   if (VG_(within_m_state_static)(a))     return;
-   if (a == (Addr)(&lc_min_mallocd_addr)) return;
-   if (a == (Addr)(&lc_max_mallocd_addr)) return;
+   if (VG_(within_stack)(a))                      return;
+   if (VG_(within_m_state_static_OR_threads)(a))  return;
+   if (a == (Addr)(&lc_min_mallocd_addr))         return;
+   if (a == (Addr)(&lc_max_mallocd_addr))         return;
 
    /* OK, let's get on and do something Useful for a change. */
 

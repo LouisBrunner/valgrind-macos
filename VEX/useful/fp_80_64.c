@@ -1,4 +1,6 @@
 
+#ifndef USED_AS_INCLUDE
+
 #include "../pub/libvex_basictypes.h"
 #include <stdio.h>
 #include <malloc.h>
@@ -42,6 +44,8 @@ static void convert_f64le_to_f80le_HW ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
                 : "r" (&f64[0]), "r" (&f80[0])
                 : "memory" );
 }
+
+#endif /* ndef USED_AS_INCLUDE */
 
 /* 80 and 64-bit floating point formats:
 
@@ -337,6 +341,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    }
 }
 
+#ifndef USED_AS_INCLUDE
 
 //////////////
 
@@ -545,6 +550,4 @@ int main ( void )
    return 0;
 }
 
-
-
-
+#endif /* ndef USED_AS_INCLUDE */

@@ -19,9 +19,12 @@ CXXFLAGS = $(CFLAGS)
 # generic C ones
 true_SOURCES 	= true.c
 
-EXTRA_DIST = \
-	$(noinst_SCRIPTS) \
-	blocked_syscall.c \
-	clientperm.c \
-	clientstackperm.c \
-	discard.c
+#EXTRA_DIST = \
+#	$(noinst_SCRIPTS) \
+#	blocked_syscall.c \
+#	clientperm.c \
+#	clientstackperm.c \
+#	discard.c
+
+EXTRA_DIST = $(noinst_SCRIPTS)
+

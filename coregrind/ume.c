@@ -405,10 +405,11 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 {
    struct elfinfo *e;
    struct elfinfo *interp = NULL;
-   ESZ(Addr) minaddr = ~0;
-   ESZ(Addr) maxaddr = 0;
-   ESZ(Addr) interp_addr = 0;
-   ESZ(Word) interp_size = 0;
+   ESZ(Addr) exeoff = 0;	/* offset between link address and load address */
+   ESZ(Addr) minaddr = ~0;	/* lowest mapped address */
+   ESZ(Addr) maxaddr = 0;	/* highest mapped address */
+   ESZ(Addr) interp_addr = 0;	/* interpreter (ld.so) address */
+   ESZ(Word) interp_size = 0;	/* interpreter size */
    int i;
    void *entry;
 
@@ -486,6 +487,16 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       }
    }
 
+   if (e->e.e_type == ET_DYN) {
+	   /* PIE executable */
+	   exeoff = info->exe_base - minaddr;
+   }
+
+   minaddr += exeoff;
+   maxaddr += exeoff;
+   info->phdr += exeoff;
+   info->entry += exeoff;
+
    if (info->exe_base != info->exe_end) {
       if (minaddr >= maxaddr ||
 	  (minaddr < info->exe_base ||
@@ -498,7 +509,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       }
    }
 
-   info->brkbase = mapelf(e, 0);		/* map the executable */
+   info->brkbase = mapelf(e, exeoff);		/* map the executable */
 
    if (info->brkbase == 0)
       return ENOMEM;
@@ -529,7 +540,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       entry = baseoff + interp->e.e_entry;
       info->interp_base = (ESZ(Addr))base;
    } else
-      entry = (void *)e->e.e_entry;
+      entry = (void *)e->e.e_entry + exeoff;
 
    info->exe_base = minaddr;
    info->exe_end = maxaddr;

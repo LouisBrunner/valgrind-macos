@@ -110,9 +110,10 @@ if [ z"$nptl_threading" = zyes ]; then
    export LD_ASSUME_KERNEL 
 fi
 
+which_prog="`which $1`"
+
 # Ensure the program isn't statically linked.
 if [ $# != 0 ] ; then
-   which_prog="`which $1`"
    case `file "$which_prog"` in
    *"statically linked"*)
      echo "\`$which_prog' is statically linked"
@@ -124,8 +125,8 @@ if [ $# != 0 ] ; then
 fi
 
 # Ensure that there is no suid or sgid flag
-if [ `stat -c %a "$1"` -gt 2000 ] ; then
-  echo "\`$1' is suid/sgid."
+if [ `stat -c %a "$which_prog"` -gt 2000 ] ; then
+  echo "\`$which_prog' is suid/sgid."
   echo "Valgrind can't handle these executables, as it"
   echo "requires the LD_PRELOAD feature in order to work."
   echo ""

@@ -1,4 +1,3 @@
-
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: memcmp (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -8,9 +7,3 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: memcmp (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-
-ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 20 bytes in 2 blocks.
-malloc/free: 2 allocs, 0 frees, 20 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

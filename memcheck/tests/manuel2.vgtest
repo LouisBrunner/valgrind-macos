@@ -1,1 +1,2 @@
 prog: manuel2
+vgopts: -q

@@ -1,9 +1,3 @@
-
-
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 1000 bytes in 1 blocks.
-malloc/free: 1 allocs, 0 frees, 1000 bytes allocated.
-For counts of detected errors, rerun with: -v
 searching for pointers to 1 not-freed blocks.
 checked ... bytes.
 

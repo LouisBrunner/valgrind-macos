@@ -69,7 +69,7 @@ Int VGOFF_(m_f6) = INVALID_OFFSET;
 Int VGOFF_(m_f7) = INVALID_OFFSET;
 Int VGOFF_(m_ftag0) = INVALID_OFFSET;
 Int VGOFF_(m_fpucw) = INVALID_OFFSET;
-Int VGOFF_(m_fc320) = INVALID_OFFSET;
+Int VGOFF_(m_fc3210) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
@@ -186,18 +186,18 @@ static void vg_init_baseBlock ( void )
 
    /* 12  */ VGOFF_(m_eip)      = alloc_BaB(1);
 
-   /* 13 */ VGOFF_(m_ftop)  = alloc_BaB(1);
-   /* 14 */ VGOFF_(m_f0)    = alloc_BaB(2);
-   /* 16 */ VGOFF_(m_f1)    = alloc_BaB(2);
-   /* 18 */ VGOFF_(m_f2)    = alloc_BaB(2);
-   /* 20 */ VGOFF_(m_f3)    = alloc_BaB(2);
-   /* 22 */ VGOFF_(m_f4)    = alloc_BaB(2);
-   /* 24 */ VGOFF_(m_f5)    = alloc_BaB(2);
-   /* 26 */ VGOFF_(m_f6)    = alloc_BaB(2);
-   /* 28 */ VGOFF_(m_f7)    = alloc_BaB(2);
-   /* 30 */ VGOFF_(m_ftag0) = alloc_BaB(2);
-   /* 32 */ VGOFF_(m_fpucw) = alloc_BaB(1);
-   /* 33 */ VGOFF_(m_fc320) = alloc_BaB(1);
+   /* 13 */ VGOFF_(m_ftop)   = alloc_BaB(1);
+   /* 14 */ VGOFF_(m_f0)     = alloc_BaB(2);
+   /* 16 */ VGOFF_(m_f1)     = alloc_BaB(2);
+   /* 18 */ VGOFF_(m_f2)     = alloc_BaB(2);
+   /* 20 */ VGOFF_(m_f3)     = alloc_BaB(2);
+   /* 22 */ VGOFF_(m_f4)     = alloc_BaB(2);
+   /* 24 */ VGOFF_(m_f5)     = alloc_BaB(2);
+   /* 26 */ VGOFF_(m_f6)     = alloc_BaB(2);
+   /* 28 */ VGOFF_(m_f7)     = alloc_BaB(2);
+   /* 30 */ VGOFF_(m_ftag0)  = alloc_BaB(2);
+   /* 32 */ VGOFF_(m_fpucw)  = alloc_BaB(1);
+   /* 33 */ VGOFF_(m_fc3210) = alloc_BaB(1);
 
    /* 34  */ VGOFF_(sh_eax)    = alloc_BaB(1);
    /* 35  */ VGOFF_(sh_ecx)    = alloc_BaB(1);

@@ -736,24 +736,39 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- CCALL --------- */
    case Iex_CCall: {
       Addr64 helper;
-      Int    i, nargs;
-      UInt   target;
+      Int     i, n_args, n_arg_ws;
+      UInt    target;
       IRExpr* arg;
+      IRType  arg_ty;
       HReg    dst = newVRegI(env);
       vassert(ty == Ity_I32);
-      /* be very restrictive for now.  Only 32-bit ints allowed
-         for args and return type. */
+
+      /* be very restrictive for now.  Only 32/64-bit ints allowed
+         for args, and 32 bits for return type. */
       if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
+
       /* push args on the stack, right to left. */
-      nargs = 0;
-      while (e->Iex.CCall.args[nargs]) nargs++;
-      for (i = nargs-1; i >= 0; i--) {
-         arg = e->Iex.CCall.args[i];
-         if (typeOfIRExpr(env->type_env,arg) != Ity_I32)
-            goto irreducible;
-         addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
+      n_arg_ws = n_args = 0;
+      while (e->Iex.CCall.args[n_args]) n_args++;
+
+      for (i = n_args-1; i >= 0; i--) {
+         arg    = e->Iex.CCall.args[i];
+         arg_ty = typeOfIRExpr(env->type_env, arg);
+         if (arg_ty == Ity_I32) {
+            addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
+            n_arg_ws ++;
+	 } else 
+         if (arg_ty == Ity_I64) {
+            HReg rHi, rLo;
+            iselIntExpr64(&rHi, &rLo, env, arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+            n_arg_ws += 2;
+         }
+         else goto irreducible;
       }
+
       /* Find the function to call.  Since the host -- for which we
          are generating code -- is a 32-bit machine (x86) -- the upper
          32 bit of the helper address should be zero. */
@@ -765,9 +780,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                        X86RMI_Imm(target),
                        hregX86_EAX()));
       addInstr(env, X86Instr_Call(hregX86_EAX()));
-      if (nargs > 0)
+      if (n_arg_ws > 0)
          addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                          X86RMI_Imm(4*nargs),
+                          X86RMI_Imm(4*n_arg_ws),
                           hregX86_ESP()));
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1370,7 +1385,6 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
       HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
       HReg rrm2 = newVRegI(env);
-      HReg dst  = newVRegI(env);
       HReg tLo  = newVRegI(env);
       HReg tHi  = newVRegI(env);
 
@@ -1428,7 +1442,33 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
       *rHi = tHi;
       *rLo = tLo;
-      return dst;
+      return;
+   }
+
+   if (e->tag == Iex_GetI) {
+      /* First off, compute the index expression into an integer reg.
+         The referenced address will then be 0 + ebp + reg*1, that is,
+         an X86AMode_IRRS. */
+      vassert(e->Iex.GetI.ty == Ity_I64);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      HReg idx = iselIntExpr_R(env, e->Iex.GetI.offset);
+
+      /* This (x86) is a little-endian target.  The front end will
+	 have laid out the baseblock in accordance with the back-end's
+	 endianness, so this hardwired assumption here that the 64-bit
+	 value is stored little-endian is OK. */
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV, 
+                       X86RMI_Mem(X86AMode_IRRS(0, hregX86_EBP(), idx, 0)), 
+                       tLo));
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV, 
+                       X86RMI_Mem(X86AMode_IRRS(4, hregX86_EBP(), idx, 0)), 
+                       tHi));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
    }
 
    ppIRExpr(e);
@@ -1577,9 +1617,10 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Unop.op) {
-         case Iop_NegF64: fpop = Xfp_NEGATE; break;
-         case Iop_SinF64: fpop = Xfp_SIN; break;
-         case Iop_CosF64: fpop = Xfp_COS; break;
+         case Iop_NegF64:  fpop = Xfp_NEGATE; break;
+         case Iop_SqrtF64: fpop = Xfp_SQRT; break;
+         case Iop_SinF64:  fpop = Xfp_SIN; break;
+         case Iop_CosF64:  fpop = Xfp_COS; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {

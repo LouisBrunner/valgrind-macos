@@ -49,6 +49,12 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 #define CC_MASK_S    0x0080
 #define CC_MASK_O    0x0800
 
+/* FPU flag masks */
+#define FC_MASK_C3   (1 << 14)
+#define FC_MASK_C2   (1 << 10)
+#define FC_MASK_C1   (1 << 9)
+#define FC_MASK_C0   (1 << 8)
+
 /* eflags thunk descriptors. */
 enum {
     CC_OP_COPY, /* nothing to do -- ccs are in CC_SRC and up to date */
@@ -206,10 +212,11 @@ typedef
 
    FPUCW[15:0] is the FPU's control word.  FPUCW[31:16] is unused.
 
-   FC320 contains the C3, C2 and C0 bits in the same place they are in
-   the FPU's status word.  (bits 14, 10 and 8 respectively).  All other
-   bits should be zero.  The relevant mask to select just those bits
-   is 0x4500.
+   FC3210 contains the C3, C2, C1 and C0 bits in the same place they
+   are in the FPU's status word.  (bits 14, 10, 9, 8 respectively).
+   All other bits should be zero.  The relevant mask to select just
+   those bits is 0x4700.  To select C3, C2 and C0 only, the mask is
+   0x4500.
 */
 #define OFFB_FTOP    (13*4)
 #define OFFB_F0      (14*4)
@@ -222,10 +229,10 @@ typedef
 #define OFFB_F7      (28*4)
 #define OFFB_FTAG0   (30*4) // up to 30*4 + 7
 #define OFFB_FPUCW   (32*4)
-#define OFFB_FC320   (33*4)
+#define OFFB_FC3210  (33*4)
 
 /* Don't forget to keep this up to date. */
-#define SIZEOF_X86H_STATE  (OFFB_FC320 + 4)
+#define SIZEOF_X86H_STATE  (OFFB_FC3210 + 4)
 
 
 

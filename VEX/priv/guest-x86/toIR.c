@@ -3099,16 +3099,16 @@ static void put_ftop ( IRExpr* e )
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
-/* --------- Get/set the C320 bits of the control word. --------- */
+/* --------- Get/set the C3210 bits of the control word. --------- */
 
-static IRExpr* get_C320 ( void )
+static IRExpr* get_C3210 ( void )
 {
-   return IRExpr_Get( OFFB_FC320, Ity_I32 );
+   return IRExpr_Get( OFFB_FC3210, Ity_I32 );
 }
 
-static void put_C320 ( IRExpr* e )
+static void put_C3210 ( IRExpr* e )
 {
-   stmt( IRStmt_Put( OFFB_FC320, e ) );
+   stmt( IRStmt_Put( OFFB_FC3210, e ) );
 }
 
 /* --------- Get/set the FPU control word. --------- */
@@ -3237,6 +3237,12 @@ static IRExpr* get_ST_UNCHECKED ( Int i )
 {
    return
       IRExpr_GetI( off_ST(i), Ity_F64, OFFB_F0, OFFB_F7+8-1 );
+}
+
+static IRExpr* get_ST_UNCHECKED_as_ULong ( Int i )
+{
+   return
+      IRExpr_GetI( off_ST(i), Ity_I64, OFFB_F0, OFFB_F7+8-1 );
 }
 
 /* Given i, generate an expression yielding 
@@ -3506,6 +3512,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_NegF64, get_ST(0)));
                break;
 
+           case 0xE5: { /* FXAM */
+              /* This is an interesting one.  It examines %st(0),
+                 regardless of whether the tag says it's empty or not.
+                 Here, just pass both the tag (in our format) and the
+                 value (as a double, actually a ULong) to a helper
+                 function. */
+              IRExpr** args;
+              DIP("fxam");
+              args = LibVEX_Alloc(3 * sizeof(IRExpr*));
+              args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
+              args[1] = get_ST_UNCHECKED_as_ULong(0);
+              args[2] = NULL;
+              put_C3210(IRExpr_CCall("calculate_FXAM", Ity_I32, args));
+              break;
+           }
+
            case 0xE8: /* FLD1 */
                DIP("fld1");
                fp_push();
@@ -3535,6 +3557,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(1, binop(Iop_AtanYXF64,
                                          get_ST(1), get_ST(0)));
                fp_pop();
+               break;
+
+            case 0xFA: /* FSQRT */
+               DIP("fsqrt\n");
+               put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
                break;
 
             case 0xFE: /* FSIN */
@@ -3615,9 +3642,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE9: /* FUCOMPP %st(0),%st(1) */
                DIP("fucompp %%st(0),%%st(1)\n");
-               put_C320( binop(Iop_Shl32, 
-                               binop(Iop_CmpF64, get_ST(0), get_ST(1)),
-                               mkU8(8)) );
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(1)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
                fp_pop();
                fp_pop();
                break;
@@ -3790,17 +3822,27 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xE0 ... 0xE7: /* FUCOM %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xE0;
                DIP("fucom %%st(0),%%st(%d)\n", r_dst);
-               put_C320( binop(Iop_Shl32, 
-                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
-                               mkU8(8)) );
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
                break;
 
             case 0xE8 ... 0xEF: /* FUCOMP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xE8;
                DIP("fucomp %%st(0),%%st(%d)\n", r_dst);
-               put_C320( binop(Iop_Shl32, 
-                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
-                               mkU8(8)) );
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
                fp_pop();
                break;
 
@@ -3902,7 +3944,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fnstsw %%ax\n");
                /* Invent a plausible-looking FPU status word value and
                   dump it in %AX:
-                     ((ftop & 7) << 11) | (c320 & 0x4500)
+                     ((ftop & 7) << 11) | (c3210 & 0x4700)
                */
                putIReg(2, R_EAX,
                   unop(Iop_32to16,
@@ -3910,7 +3952,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                              binop(Iop_Shl32, 
                                    binop(Iop_And32, get_ftop(), mkU32(7)), 
                                    mkU8(11)),
-                             binop(Iop_And32, get_C320(), mkU32(0x4500))
+                             binop(Iop_And32, get_C3210(), mkU32(0x4700))
                )));
                break;
 
@@ -7944,6 +7986,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
+	vassert(0);
 //--       case 0xA5: 
 	//         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
 	//                              guest_eip+delta, "repne movs" );

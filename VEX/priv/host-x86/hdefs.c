@@ -1259,6 +1259,7 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
 {
    switch (op) {
       case Xfp_NEGATE: *p++ = 0xD9; *p++ = 0xE0; break;
+      case Xfp_SQRT:   *p++ = 0xD9; *p++ = 0xFA; break;
       case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
       default: vpanic("do_fop1_st: unknown op");

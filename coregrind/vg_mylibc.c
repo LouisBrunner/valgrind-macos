@@ -1193,6 +1193,7 @@ Char* VG_(getenv) ( Char* varname )
    return NULL;
 }
 
+
 /* You'd be amazed how many places need to know the current pid. */
 Int VG_(getpid) ( void )
 {
@@ -1201,6 +1202,14 @@ Int VG_(getpid) ( void )
    res = vg_do_syscall0(__NR_getpid);
    return res;
 }
+
+Int VG_(getppid) ( void )
+{
+   Int res;
+   res = vg_do_syscall0(__NR_getppid);
+   return res;
+}
+
 
 /* Return -1 if error, else 0.  NOTE does not indicate return code of
    child! */

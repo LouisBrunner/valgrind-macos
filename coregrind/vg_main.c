@@ -540,7 +540,12 @@ Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_sloppy_malloc)  = False;
 Int    VG_(clo_alignment)      = 4;
 Bool   VG_(clo_trace_children) = False;
-Int    VG_(clo_logfile_fd)     = 2;
+
+/* See big comment in vg_include.h for meaning of these three. */
+VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
+Int     VG_(clo_logfile_fd)    = 2;
+Char*   VG_(clo_logfile_name)  = NULL;
+
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Bool   VG_(clo_profile)        = False;
@@ -583,6 +588,7 @@ static Char vg_cmdline_copy[M_VG_CMDLINE_STRLEN];
 void VG_(bad_option) ( Char* opt )
 {
    VG_(shutdown_logging)();
+   VG_(clo_log_to)     = VgLogTo_Fd;
    VG_(clo_logfile_fd) = 2; /* stderr */
    VG_(printf)("valgrind.so: Bad option `%s'; aborting.\n", opt);
    VG_(exit)(1);
@@ -591,6 +597,7 @@ void VG_(bad_option) ( Char* opt )
 static void config_error ( Char* msg )
 {
    VG_(shutdown_logging)();
+   VG_(clo_log_to)     = VgLogTo_Fd;
    VG_(clo_logfile_fd) = 2; /* stderr */
    VG_(printf)(
       "valgrind.so: Startup or configuration error:\n   %s\n", msg);
@@ -602,6 +609,7 @@ static void config_error ( Char* msg )
 static void args_grok_error ( Char* msg )
 {
    VG_(shutdown_logging)();
+   VG_(clo_log_to)     = VgLogTo_Fd;
    VG_(clo_logfile_fd) = 2; /* stderr */
    VG_(printf)("valgrind.so: When searching for "
                "client's argc/argc/envp:\n\t%s\n", msg);
@@ -628,6 +636,7 @@ static void usage ( void )
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
+"    --logfile=<file>          log messages to <file>.pid<pid>\n"
 "    --suppressions=<filename> suppress errors described in\n"
 "                              suppressions file <filename>\n"
 "    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
@@ -675,6 +684,7 @@ static void usage ( void )
    VG_(printf)(usage2, VG_EMAIL_ADDR);
 
    VG_(shutdown_logging)();
+   VG_(clo_log_to)     = VgLogTo_Fd;
    VG_(clo_logfile_fd) = 2; /* stderr */
    VG_(exit)(1);
 }
@@ -886,8 +896,16 @@ static void process_cmd_line_options ( void )
       else if (STREQN(15, argv[i], "--sanity-level="))
          VG_(sanity_level) = (Int)VG_(atoll)(&argv[i][15]);
 
-      else if (STREQN(13, argv[i], "--logfile-fd="))
+      else if (STREQN(13, argv[i], "--logfile-fd=")) {
+         VG_(clo_log_to)       = VgLogTo_Fd;
+         VG_(clo_logfile_name) = NULL;
          eventually_logfile_fd = (Int)VG_(atoll)(&argv[i][13]);
+      }
+
+      else if (STREQN(10, argv[i], "--logfile=")) {
+         VG_(clo_log_to)       = VgLogTo_File;
+         VG_(clo_logfile_name) = &argv[i][10];
+      }
 
       else if (STREQN(15, argv[i], "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
@@ -1020,7 +1038,50 @@ static void process_cmd_line_options ( void )
       VG_(bad_option)("--gdb-attach=yes and --trace-children=yes");
    }
 
-   VG_(clo_logfile_fd) = eventually_logfile_fd;
+   /* Set up logging now.  After this is done, VG_(clo_logfile_fd)
+      should be connected to whatever sink has been selected, and we
+      indiscriminately chuck stuff into it without worrying what the
+      nature of it is.  Oh the wonder of Unix streams. */
+
+   /* So far we should be still attached to stderr, so we can show on
+      the terminal any problems to do with processing command line
+      opts. */
+   vg_assert(VG_(clo_logfile_fd) == 2 /* stderr */);
+
+   switch (VG_(clo_log_to)) {
+      case VgLogTo_Socket: 
+         VG_(core_panic)("VgLogTo_Socket ?!"); 
+         break;
+      case VgLogTo_Fd: 
+         vg_assert(VG_(clo_logfile_name) == NULL);
+         VG_(clo_logfile_fd) = eventually_logfile_fd;
+         break;
+      case VgLogTo_File: {
+         Char logfilename[1000];
+         vg_assert(VG_(clo_logfile_name) != NULL);
+         vg_assert(VG_(strlen)(VG_(clo_logfile_name)) <= 900); /* paranoia */
+         VG_(sprintf)(logfilename, "%s.pid%d",
+                      VG_(clo_logfile_name), VG_(getpid)() );
+         eventually_logfile_fd 
+            = VG_(open)(logfilename, VKI_O_CREAT|VKI_O_WRONLY, 
+                                     VKI_S_IRUSR|VKI_S_IWUSR);
+         if (eventually_logfile_fd != -1) {
+            VG_(clo_logfile_fd) = eventually_logfile_fd;
+         } else {
+            VG_(message)(Vg_UserMsg, 
+               "Can't create/open log file `%s.pid%d'; giving up!", 
+               VG_(clo_logfile_name), VG_(getpid)());
+            VG_(bad_option)(
+               "--logfile=<file> didn't work out for some reason.");
+         }
+         break;
+	 }
+   }
+
+   /* Ok, the logging sink is running now.  Print a suitable preamble.
+      If logging to file or a socket, write details of parent PID and
+      command line args, to help people trying to interpret the
+      results of a run which encompasses multiple processes. */
 
    if (VG_(clo_verbosity > 0)) {
       /* Skin details */
@@ -1040,7 +1101,18 @@ static void process_cmd_line_options ( void )
          "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
    }
 
+   if (VG_(clo_log_to) != VgLogTo_Fd) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, 
+         "My PID = %d, parent PID = %d.  Prog and args are:",
+         VG_(getpid)(), VG_(getppid)() );
+      for (i = 0; i < VG_(client_argc); i++) 
+         VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+   }
+
    if (VG_(clo_verbosity) > 1) {
+      if (VG_(clo_log_to) != VgLogTo_Fd)
+         VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
       for (i = 0; i < argc; i++) {
          VG_(message)(Vg_UserMsg, "   %s", argv[i]);
@@ -1051,6 +1123,7 @@ static void process_cmd_line_options ( void )
        (VG_(needs).core_errors || VG_(needs).skin_errors)) {
       config_error("No error-suppression files were specified.");
    }
+
 }
 
 /* ---------------------------------------------------------------------

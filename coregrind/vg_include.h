@@ -47,8 +47,9 @@
 
 #include "vg_constants.h"
 
-/* All stuff visible to core and skins goes in vg_skin.h.  Things visible
- * to core but private to skins go here. */
+/* All stuff visible to core and skins goes in vg_skin.h.  Things
+ * visible to core but not visible to any skins should go in this
+ * file, vg_include.h. */
 #include "vg_skin.h"
 
 /* Total number of spill slots available for allocation, if a TempReg
@@ -152,6 +153,15 @@
 
 #define VG_CLO_MAX_SFILES 10
 
+/* Describes where logging output is to be sent. */
+typedef
+   enum {
+      VgLogTo_Fd,
+      VgLogTo_File,
+      VgLogTo_Socket
+   } VgLogTo;
+
+
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to GDB at errors?   default: NO */
@@ -168,8 +178,27 @@ extern Bool  VG_(clo_sloppy_malloc);
 extern Int   VG_(clo_alignment);
 /* Simulate child processes? default: NO */
 extern Bool  VG_(clo_trace_children);
-/* The file id on which we send all messages.  default: 2 (stderr). */
-extern Int   VG_(clo_logfile_fd);
+
+/* Where logging output is to be sent to.
+
+   When log_to == VgLogTo_Fd, clo_logfile_fd holds the file id, and is
+   taken from the command line.  clo_logfile_name is irrelevant.
+
+   When log_to == VgLogTo_File, clo_logfile_name holds the logfile
+   name, and is taken from the command line.  clo_logfile_fd is then
+   made to hold the relevant file id, by opening clo_logfile_name
+   (concatenated with the process ID) for writing.
+
+   When log_to == VgLogTo_Socket, clo_logfile_name holds the
+   hostname:portnumber pair, and is taken from the command line.
+   clo_logfile_fd is then made to hold the relevant file handle, by
+   opening a connection to said hostname:portnumber pair. 
+
+   Global default is to set log_to == VgLogTo_Fd and logfile_fd == 2
+   (stderr). */
+extern VgLogTo VG_(clo_log_to);
+extern Int     VG_(clo_logfile_fd);
+extern Char*   VG_(clo_logfile_name);
 
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);

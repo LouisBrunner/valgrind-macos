@@ -364,7 +364,8 @@ extern Int VG_(log2) ( Int x );
 
 /* ------------------------------------------------------------------ */
 /* unistd.h, fcntl.h, sys/stat.h */
-extern Int  VG_(getpid) ( void );
+extern Int  VG_(getpid)  ( void );
+extern Int  VG_(getppid) ( void );
 
 extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
 extern Int  VG_(read)   ( Int fd, void* buf, Int count);

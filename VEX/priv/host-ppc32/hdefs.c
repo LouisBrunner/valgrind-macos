@@ -2149,7 +2149,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormXO(p, 31, r_dst, r_src, 0, 0, 104, 0);
          break;
       case Pun_CLZ:  // cntlzw r_dst, r_src
-         p = mkFormX(p, 31, r_dst, r_src, 0, 26, 0);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 26, 0);
          break;
       default: goto bad;
       }

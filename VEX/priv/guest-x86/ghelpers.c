@@ -765,6 +765,12 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
                      binop(Iop_CmpEQ32, cc_dep1, cc_dep2));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNZ)) {
+         /* long sub/cmp, then NZ --> test dst!=src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE32, cc_dep1, cc_dep2));
+      }
+
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondL)) {
          /* long sub/cmp, then L (signed less than) 
             --> test dst <s src */
@@ -853,6 +859,15 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
          return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dep1, mkU32(0)));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondBE)) {
+         /* long and/or/xor, then BE
+            LOGIC sets ZF according to the result and makes CF be zero.
+            BE computes (CF | ZF), but CF is zero, so this reduces ZF 
+            -- which will be 1 iff the result is zero.  Hence ...
+         */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
+      }
+
       /*---------------- LOGICW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondZ)) {
@@ -894,14 +909,18 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
       /* This can happen, as a result of x87 FP compares: "fcom ... ;
          fnstsw %ax ; sahf ; jbe" for example. */
 
-      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondBE)) {
+      if (isU32(cc_op, X86G_CC_OP_COPY) && 
+          (isU32(cond, X86CondBE) || isU32(cond, X86CondNBE))) {
          /* COPY, then BE --> extract C and Z from dep1, and test (C
             or Z == 1). */
+         /* COPY, then NBE --> extract C and Z from dep1, and test (C
+            or Z == 0). */
+         UInt nnn = isU32(cond, X86CondBE) ? 1 : 0;
          return
             unop(
                Iop_1Uto32,
                binop(
-                  Iop_CmpNE32,
+                  Iop_CmpEQ32,
                   binop(
                      Iop_And32,
                      binop(
@@ -911,7 +930,7 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
                      ),
                      mkU32(1)
                   ),
-                  mkU32(0)
+                  mkU32(nnn)
                )
             );
       }

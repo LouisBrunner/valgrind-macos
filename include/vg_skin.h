@@ -71,11 +71,8 @@
 
 
 /*====================================================================*/
-/*=== Basic types                                                  ===*/
+/*=== Basic types, useful macros                                   ===*/
 /*====================================================================*/
-
-#define mycat_wrk(aaa,bbb) aaa##bbb
-#define mycat(aaa,bbb) mycat_wrk(aaa,bbb)
 
 typedef unsigned char          UChar;
 typedef unsigned short         UShort;
@@ -93,6 +90,12 @@ typedef unsigned char          Bool;
 #define False                  ((Bool)0)
 #define True                   ((Bool)1)
 
+
+#define mycat_wrk(aaa,bbb) aaa##bbb
+#define mycat(aaa,bbb) mycat_wrk(aaa,bbb)
+
+/* No, really.  I _am_ that strange. */
+#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
 
 /* ---------------------------------------------------------------------
    Now the basic types are set up, we can haul in the kernel-interface

@@ -215,9 +215,6 @@ extern Char* VG_(clo_weird_hacks);
 #  define VGP_ACCURATE_PROFILING
 #endif
 
-/* No, really.  I _am_ that strange. */
-#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
-
 /* Create a logfile into which messages can be dumped. */
 extern void VG_(startup_logging) ( void );
 extern void VG_(shutdown_logging)( void );

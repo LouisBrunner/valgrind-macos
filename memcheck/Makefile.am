@@ -80,10 +80,6 @@ noinst_HEADERS = \
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 
-vg_annotate:
-
-vg_cachegen:
-
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 

@@ -217,7 +217,7 @@ sub process_cmd_line()
 
             # --version
             if ($arg =~ /^-v$|^--version$/) {
-                die("vg_annotate$version\n");
+                die("vg_annotate-$version\n");
 
             # --show=A,B,C
             } elsif ($arg =~ /^--show=(.*)$/) {

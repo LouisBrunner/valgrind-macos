@@ -247,6 +247,8 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
 
 AC_OUTPUT(
+   vg_annotate
+   vg_cachegen
    valgrind
    valgrind.spec
    Makefile 

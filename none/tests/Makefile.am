@@ -25,6 +25,8 @@ EXTRA_DIST = \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
+	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
+	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
@@ -44,7 +46,8 @@ EXTRA_DIST = \
 
 noinst_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \
-	cpuid dastest discard floored fork fucomip munmap_exe rcl_assert \
+	cpuid dastest discard floored fork fpu_lazy_eflags \
+	fucomip munmap_exe rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
 	coolo_sigaction gxx304
@@ -64,6 +67,7 @@ discard_SOURCES 	= discard.c
 fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
+fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
 munmap_exe_SOURCES 	= munmap_exe.c
 rcl_assert_SOURCES 	= rcl_assert.S
@@ -84,4 +88,7 @@ pth_blockedsig_LDADD	= -lpthread
 coolo_sigaction_SOURCES	= coolo_sigaction.cpp
 gxx304_SOURCES		= gxx304.cpp
 
+# must be built with these flags -- bug only occurred with them
+fpu_lazy_eflags.o: fpu_lazy_eflags.c
+	$(COMPILE) -O2 -mcpu=pentiumpro -march=pentiumpro -c $<
 

@@ -1,2 +1,12 @@
 Makefile.in
 Makefile
+allok
+allok.stderr.diff
+allok.stderr.out
+deadlock
+deadlock.stderr.out
+deadlock.stdout.out
+inherit
+race
+race2
+readshared

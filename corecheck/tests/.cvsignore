@@ -15,3 +15,14 @@ res_search
 *.stderr.diff
 *.stdout.out
 *.stderr.out
+fdleak_cmsg
+fdleak_creat
+fdleak_dup
+fdleak_dup2
+fdleak_fcntl
+fdleak_ipv4
+fdleak_open
+fdleak_pipe
+fdleak_socketpair
+pth_exit
+vgprintf

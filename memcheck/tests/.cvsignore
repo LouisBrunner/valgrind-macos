@@ -48,3 +48,10 @@ weirdioctl
 *.stderr.diff
 *.stdout.out
 *.stderr.out
+badrw
+brk
+metadata
+new_nothrow
+realloc3
+threadederrno
+writev

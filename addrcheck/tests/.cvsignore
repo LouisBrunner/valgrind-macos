@@ -1,2 +1,6 @@
 Makefile.in
 Makefile
+badrw.stderr.diff
+badrw.stderr.out
+fprw.stderr.diff
+fprw.stderr.out

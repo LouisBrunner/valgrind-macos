@@ -71,7 +71,7 @@ Building and installing it
 To install from CVS :
 
   0. Check out the code from CVS, following the instructions at
-     http://sourceforge.net/cvs/?group_id=46268.  The 'modulename' is
+     http://developer.kde.org/source/anoncvs.html. The 'modulename' is
      "valgrind".
 
   1. cd into the source directory.

@@ -161,11 +161,11 @@ static IRExpr* mkU8 ( ULong i )
    return IRExpr_Const(IRConst_U8( (UChar)i ));
 }
 
-//.. static IRExpr* mkU16 ( UInt i )
-//.. {
-//..    vassert(i < 65536);
-//..    return IRExpr_Const(IRConst_U16(i));
-//.. }
+static IRExpr* mkU16 ( ULong i )
+{
+   vassert(i < 0x10000ULL);
+   return IRExpr_Const(IRConst_U16( (UShort)i ));
+}
 
 static IRExpr* mkU32 ( ULong i )
 {
@@ -182,12 +182,61 @@ static IRExpr* mkU ( IRType ty, ULong i )
 {
    switch (ty) {
       case Ity_I8:  return mkU8(i);
-	//      case Ity_I16: return mkU16(i);
+      case Ity_I16: return mkU16(i);
       case Ity_I32: return mkU32(i);
       case Ity_I64: return mkU64(i);
       default: vpanic("mkU(amd64)");
    }
 }
+
+static void storeLE ( IRExpr* addr, IRExpr* data )
+{
+   stmt( IRStmt_STle(addr,data) );
+}
+
+static IRExpr* loadLE ( IRType ty, IRExpr* data )
+{
+   return IRExpr_LDle(ty,data);
+}
+
+static IROp mkSizedOp ( IRType ty, IROp op8 )
+{
+   vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
+           || op8 == Iop_Mul8 
+           || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
+           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
+           || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
+           || op8 == Iop_Not8 );
+   switch (ty) {
+      case Ity_I8:  return 0 +op8;
+      case Ity_I16: return 1 +op8;
+      case Ity_I32: return 2 +op8;
+      case Ity_I64: return 3 +op8;
+      default: vpanic("mkSizedOp(amd64)");
+   }
+}
+
+static 
+IRExpr* doScalarWidening ( Int szSmall, Int szBig, Bool signd, IRExpr* src )
+{
+   if (szSmall == 1 && szBig == 4) {
+      return unop(signd ? Iop_8Sto32 : Iop_8Uto32, src);
+   }
+   if (szSmall == 1 && szBig == 2) {
+      return unop(signd ? Iop_8Sto16 : Iop_8Uto16, src);
+   }
+   if (szSmall == 2 && szBig == 4) {
+      return unop(signd ? Iop_16Sto32 : Iop_16Uto32, src);
+   }
+   if (szSmall == 1 && szBig == 8 && !signd) {
+      return unop(Iop_32Uto64, unop(Iop_8Uto32, src));
+   }
+   if (szSmall == 2 && szBig == 8 && !signd) {
+      return unop(Iop_32Uto64, unop(Iop_16Uto32, src));
+   }
+   vpanic("doScalarWidening(amd64)");
+}
+
 
 
 /*------------------------------------------------------------*/
@@ -554,6 +603,15 @@ static ULong getSDisp8 ( ULong delta )
    return extend_s_8to64( guest_code[delta] );
 }
 
+/* Get a 16-bit value out of the insn stream and sign-extend to 64
+   bits. */
+static ULong getSDisp16 ( ULong delta )
+{
+   UShort v = guest_code[delta+1]; v <<= 8;
+   v |= guest_code[delta+0];
+   return extend_s_16to64( v );
+}
+
 /* Get a 32-bit value out of the insn stream and sign-extend to 64
    bits. */
 static ULong getSDisp32 ( ULong delta )
@@ -565,21 +623,13 @@ static ULong getSDisp32 ( ULong delta )
    return extend_s_32to64( v );
 }
 
-//.. static UInt getSDisp16 ( UInt delta0 )
-//.. {
-//..    UChar* eip = (UChar*)(&guest_code[delta0]);
-//..    UInt d = *eip++;
-//..    d |= ((*eip++) << 8);
-//..    return extend_s_16to32(d);
-//.. }
-
 /* Note: because AMD64 doesn't allow 64-bit literals, it is an error
    if this is called with size==8.  Should not happen. */
 static ULong getSDisp ( Int size, ULong delta )
 {
    switch (size) {
       case 4: return getSDisp32(delta);
-	//      case 2: return getSDisp16(delta);
+      case 2: return getSDisp16(delta);
       case 1: return getSDisp8(delta);
       default: vpanic("getSDisp(amd64)");
   }
@@ -651,10 +701,12 @@ static Bool haveREX ( Prefix pfx ) {
    return (pfx & PFX_REX) ? True : False;
 }
 
+static Int getRexW ( Prefix pfx ) {
+   return (pfx & PFX_REXW) ? 1 : 0;
+}
 static Int getRexR ( Prefix pfx ) {
    return (pfx & PFX_REXR) ? 1 : 0;
 }
-
 static Int getRexB ( Prefix pfx ) {
    return (pfx & PFX_REXB) ? 1 : 0;
 }
@@ -1049,53 +1101,11 @@ static HChar* nameIReg64 ( UInt regno )
 //..    stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
 //.. }
 
-static void storeLE ( IRExpr* addr, IRExpr* data )
-{
-   stmt( IRStmt_STle(addr,data) );
-}
-
 //.. static IRExpr* mkV128 ( UShort mask )
 //.. {
 //..    return IRExpr_Const(IRConst_V128(mask));
 //.. }
 
-static IRExpr* loadLE ( IRType ty, IRExpr* data )
-{
-   return IRExpr_LDle(ty,data);
-}
-
-static IROp mkSizedOp ( IRType ty, IROp op8 )
-{
-   vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
-           || op8 == Iop_Mul8 
-           || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
-           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
-           || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
-           || op8 == Iop_Not8 );
-   switch (ty) {
-      case Ity_I8:  return 0 +op8;
-      case Ity_I16: return 1 +op8;
-      case Ity_I32: return 2 +op8;
-      case Ity_I64: return 3 +op8;
-      default: vpanic("mkSizedOp(amd64)");
-   }
-}
-
-//.. static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
-//.. {
-//..    if (szSmall == 1 && szBig == 4) {
-//..       return signd ? Iop_8Sto32 : Iop_8Uto32;
-//..    }
-//..    if (szSmall == 1 && szBig == 2) {
-//..       return signd ? Iop_8Sto16 : Iop_8Uto16;
-//..    }
-//..    if (szSmall == 2 && szBig == 4) {
-//..       return signd ? Iop_16Sto32 : Iop_16Uto32;
-//..    }
-//..    vpanic("mkWidenOp(x86,guest)");
-//.. }
-//.. 
-//.. 
 //.. /*------------------------------------------------------------*/
 //.. /*--- Helpers for %eflags.                                 ---*/
 //.. /*------------------------------------------------------------*/
@@ -2506,38 +2516,44 @@ ULong dis_op_imm_A ( Int    size,
 }
 
 
-//.. /* Sign- and Zero-extending moves. */
-//.. static
-//.. UInt dis_movx_E_G ( UChar       sorb,
-//..                     UInt delta, Int szs, Int szd, Bool sign_extend )
-//.. {
-//..    UChar rm = getUChar(delta);
-//..    if (epartIsReg(rm)) {
-//..       putIReg(szd, gregOfRM(rm),
-//..                    unop(mkWidenOp(szs,szd,sign_extend), 
-//..                         getIReg(szs,eregOfRM(rm))));
-//..       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
-//..                                nameISize(szs), nameISize(szd),
-//..                                nameIReg(szs,eregOfRM(rm)),
-//..                                nameIReg(szd,gregOfRM(rm)));
-//..       return 1+delta;
-//..    }
-//.. 
-//..    /* E refers to memory */    
-//..    {
-//..       Int    len;
-//..       HChar  dis_buf[50];
-//..       IRTemp addr = disAMode ( &len, sorb, delta, dis_buf );
-//.. 
-//..       putIReg(szd, gregOfRM(rm),
-//..                    unop(mkWidenOp(szs,szd,sign_extend), 
-//..                         loadLE(szToITy(szs),mkexpr(addr))));
-//..       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
-//..                                nameISize(szs), nameISize(szd),
-//..                                dis_buf, nameIReg(szd,gregOfRM(rm)));
-//..       return len+delta;
-//..    }
-//.. }
+/* Sign- and Zero-extending moves. */
+static
+ULong dis_movx_E_G ( Prefix pfx,
+                     ULong delta, Int szs, Int szd, Bool sign_extend )
+{
+   UChar rm = getUChar(delta);
+   if (epartIsReg(rm)) {
+      putIRegR(pfx, szd, 
+                    gregOfRM(rm),
+                    doScalarWidening(
+                       szs,szd,sign_extend,
+                       getIRegB(pfx,szs,eregOfRM(rm))));
+      DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
+                               nameISize(szs), 
+                               nameISize(szd),
+                               nameIRegB(pfx,szs,eregOfRM(rm)),
+                               nameIRegR(pfx,szd,gregOfRM(rm)));
+      return 1+delta;
+   }
+
+   /* E refers to memory */    
+   {
+      Int    len;
+      HChar  dis_buf[50];
+      IRTemp addr = disAMode ( &len, pfx, delta, dis_buf );
+      putIRegR(pfx, szd, 
+                    gregOfRM(rm),
+                    doScalarWidening(
+                       szs,szd,sign_extend, 
+                       loadLE(szToITy(szs),mkexpr(addr))));
+      DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
+                               nameISize(szs), 
+                               nameISize(szd),
+                               dis_buf, 
+                               nameIRegR(pfx,szd,gregOfRM(rm)));
+      return len+delta;
+   }
+}
 
 
 /* Generate code to divide ArchRegs RDX:RAX / EDX:EAX / DX:AX / AX by the 32 /
@@ -11213,6 +11229,36 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
       break;
 
+   /* ------------------------ MOVx ------------------------ */
+
+   case 0x63: /* MOVSX */
+      if (haveREX(pfx) && 1==getRexW(pfx)) {
+         vassert(sz == 8);
+         /* movsx r/m32 to r64 */
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) {
+            delta++;
+            putIRegR(pfx, 8, gregOfRM(modrm), 
+                             unop(Iop_32Sto64, 
+                                  getIRegB(pfx, 4, eregOfRM(modrm))));
+            DIP("movslq %s,%s\n",
+                nameIRegB(pfx, 4, eregOfRM(modrm)),
+                nameIRegR(pfx, 8, gregOfRM(modrm)));
+            break;
+         } else {
+            addr = disAMode ( &alen, pfx, delta, dis_buf );
+            delta += alen;
+            putIRegR(pfx, 8, gregOfRM(modrm), 
+                             unop(Iop_32Sto64, 
+                                  loadLE(Ity_I32, mkexpr(addr))));
+            DIP("movslq %s,%s\n", dis_buf, 
+                nameIRegR(pfx, 8, gregOfRM(modrm)));
+            break;
+         }
+      } else {
+         goto decode_failure;
+      }
+
 //..    /* ------------------------ opl imm, A ----------------- */
 //.. 
 //..    case 0x04: /* ADD Ib, AL */
@@ -12255,15 +12301,19 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--          DIP("cpuid\n");
 //.. //--          break;
 //.. //-- 
-//..       /* =-=-=-=-=-=-=-=-=- MOVZX, MOVSX =-=-=-=-=-=-=-= */
-//.. 
-//..       case 0xB6: /* MOVZXb Eb,Gv */
-//..          delta = dis_movx_E_G ( sorb, delta, 1, 4, False );
-//..          break;
-//..       case 0xB7: /* MOVZXw Ew,Gv */
-//..          delta = dis_movx_E_G ( sorb, delta, 2, 4, False );
-//..          break;
-//.. 
+      /* =-=-=-=-=-=-=-=-=- MOVZX, MOVSX =-=-=-=-=-=-=-= */
+
+      case 0xB6: /* MOVZXb Eb,Gv */
+         if (sz != 2 && sz != 4 && sz != 8)
+            goto decode_failure;
+         delta = dis_movx_E_G ( pfx, delta, 1, sz, False );
+         break;
+      case 0xB7: /* MOVZXw Ew,Gv */
+         if (sz != 4 && sz != 8)
+            goto decode_failure;
+         delta = dis_movx_E_G ( pfx, delta, 2, sz, False );
+         break;
+
 //..       case 0xBE: /* MOVSXb Eb,Gv */
 //..          delta = dis_movx_E_G ( sorb, delta, 1, 4, True );
 //..          break;

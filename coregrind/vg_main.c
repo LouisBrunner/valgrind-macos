@@ -83,7 +83,8 @@
 /* size multiple for client address space */
 #define CLIENT_SIZE_MULTIPLE	(1 * 1024*1024)
 
-#define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
+/* Proportion of client space for its heap (rest is for mmaps + stack) */
+#define CLIENT_HEAP_PROPORTION   0.333
 
 /*====================================================================*/
 /*=== Global entities not referenced from generated code           ===*/
@@ -495,15 +496,6 @@ static void layout_client_space(Addr argc_addr)
    VG_(valgrind_base)     = VG_(valgrind_mmap_end) - VALGRIND_MAPSIZE;
    VG_(valgrind_end)      = ROUNDUP(argc_addr, 0x10000); /* stack */
 
-   if (0)
-      printf("client base:        %x\n"
-             "valgrind base--end: %x--%x (%x)\n"
-             "valgrind mmap end:  %x\n\n",
-             VG_(client_base),
-             VG_(valgrind_base), VG_(valgrind_end),
-             VG_(valgrind_end) - VG_(valgrind_base),
-             VG_(valgrind_mmap_end));
-
    as_pad((void *)VG_(client_base), (void *)VG_(valgrind_base));
 }
 
@@ -517,18 +509,37 @@ static void layout_remaining_space(float ratio)
 
    VG_(client_end)     = VG_(client_base) + client_size;
    VG_(client_mapbase) = PGROUNDDN((client_size/4)*3); /* where !FIXED mmap goes */
+
+   /* where !FIXED mmap goes */
+   VG_(client_mapbase) = PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION)); 
    VG_(client_trampoline_code) = VG_(client_end) - VKI_BYTES_PER_PAGE;
 
    VG_(shadow_base) = VG_(client_end) + REDZONE_SIZE;
    VG_(shadow_end)  = VG_(shadow_base) + shadow_size;
 
+#define SEGSIZE(a,b) ((VG_(b) - VG_(a))/(1024*1024))
+
    if (0)
-      printf("client base--end:   %x--%x (%x)\n"
-             "client mapbase:     %x\n"
-             "shadow base--end:   %x--%x (%x)\n\n",
-             VG_(client_base), VG_(client_end), client_size,
-             VG_(client_mapbase),
-             VG_(shadow_base), VG_(shadow_end), shadow_size);
+      VG_(printf)(
+         "client_base        %8x (%dMB)\n"
+         "client_mapbase     %8x (%dMB)\n"
+         "client_end         %8x (%dMB)\n"
+         "shadow_base        %8x (%dMB)\n"
+         "shadow_end         %8x (%dMB)\n"
+         "valgrind_base      %8x (%dMB)\n"
+         "valgrind_mmap_end  %8x (%dMB)\n"
+         "valgrind_end       %8x\n",
+         VG_(client_base),       SEGSIZE(client_base,       client_mapbase),
+         VG_(client_mapbase),    SEGSIZE(client_mapbase,    client_end),
+         VG_(client_end),        SEGSIZE(client_end,        shadow_base),
+         VG_(shadow_base),       SEGSIZE(shadow_base,       shadow_end),
+         VG_(shadow_end),        SEGSIZE(shadow_end,        valgrind_base),
+         VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_mmap_end),
+         VG_(valgrind_mmap_end), SEGSIZE(valgrind_mmap_end, valgrind_end),
+         VG_(valgrind_end)
+      );
+
+#undef SEGSIZE
 
    // Ban redzone
    mmap((void *)VG_(client_end), REDZONE_SIZE, PROT_NONE,
@@ -573,6 +584,8 @@ static char* get_file_clo(char* dir)
 #  undef FLEN
 }
 
+#define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
+
 static Int count_args(char* s)
 {
    Int n = 0;
@@ -608,6 +621,8 @@ static char** copy_args( char* s, char** to )
    }
    return to;
 }
+
+#undef ISSPACE
 
 // Augment command line with arguments from environment and .valgrindrc
 // files.

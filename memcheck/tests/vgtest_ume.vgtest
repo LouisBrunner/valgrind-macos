@@ -1,0 +1,2 @@
+prog: vgtest_ume
+vgopts: -q

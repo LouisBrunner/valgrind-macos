@@ -21,6 +21,7 @@ filter_stderr
 fpeflags
 fprw
 fwrite
+hello
 inits
 inline
 malloc1
@@ -49,6 +50,7 @@ supp2
 suppfree
 trivialleak
 tronical
+vgtest_ume
 weirdioctl
 *.stdout.diff
 *.stderr.diff

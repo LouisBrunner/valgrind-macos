@@ -75,6 +75,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
+	vgtest_ume.stderr.exp vgtest_ume.vgtest \
 	writev.stderr.exp writev.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
 
@@ -83,14 +84,17 @@ check_PROGRAMS = \
 	badloop badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog execve execve2 \
-	fpeflags fprw fwrite inits inline \
+	fpeflags fprw fwrite hello inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap pushfpopf \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
-	mismatches new_override metadata threadederrno writev zeropage
+	mismatches new_override metadata threadederrno \
+	vgtest_ume \
+	writev zeropage
+
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
@@ -148,6 +152,7 @@ weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
+vgtest_ume_SOURCES	= vgtest_ume.c
 writev_SOURCES		= writev.c
 zeropage_SOURCES	= zeropage.c
 
@@ -155,6 +160,14 @@ zeropage_SOURCES	= zeropage.c
 mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
+
+# Valgrind unit self-tests
+hello_SOURCES		= hello.c
+hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
+			  -Wl,-T,../../coregrind/${VG_ARCH}/stage2.lds
+vgtest_ume_LDADD	= ../../coregrind/ume.o \
+			  ../../coregrind/ume_entry.o \
+			  ../../coregrind/jmp_with_stack.o
 
 # must be built with these flags -- bug only occurred with them
 fpeflags.o: CFLAGS += -march=i686

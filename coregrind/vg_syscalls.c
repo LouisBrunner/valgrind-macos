@@ -3230,6 +3230,17 @@ PRE(ioctl)
    case CDROM_DRIVE_STATUS: /* 0x5326 */
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
+      
+   case FBIOGET_VSCREENINFO: /* 0x4600 */
+      SYSCALL_TRACK( pre_mem_write,tid,
+                     "ioctl(FBIOGET_VSCREENINFO)", arg3,
+                     sizeof(struct fb_var_screeninfo));
+      break;
+   case FBIOGET_FSCREENINFO: /* 0x4602 */
+      SYSCALL_TRACK( pre_mem_write,tid,
+                     "ioctl(FBIOGET_FSCREENINFO)", arg3,
+                     sizeof(struct fb_fix_screeninfo));
+      break;
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
@@ -3582,6 +3593,15 @@ POST(ioctl)
 	 for readability).  JRS 20021117 */
    case CDROM_DRIVE_STATUS: /* 0x5326 */
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
+      break;
+
+   case FBIOGET_VSCREENINFO: //0x4600
+      if (res == 0)
+         VG_TRACK( post_mem_write,arg3, sizeof(struct fb_var_screeninfo));
+      break;
+   case FBIOGET_FSCREENINFO: //0x4602
+      if (res == 0)
+         VG_TRACK( post_mem_write,arg3, sizeof(struct fb_fix_screeninfo));
       break;
 
       /* We don't have any specific information on it, so

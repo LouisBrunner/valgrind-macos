@@ -1,0 +1,317 @@
+#include "vg_include.h"
+
+#include <stdlib.h>
+
+#define SKIPLIST_DEBUG	0
+
+#define SK_MAXHEIGHT	20	/* 2^20 elements */
+#define SKIPLIST_MAGIC		0x5b1ff872
+#define SKIPLIST_HEAD_MAGIC	(~SKIPLIST_MAGIC)
+
+
+#if SKIPLIST_DEBUG
+#define inline
+#endif /* SKIPLIST_DEBUG */
+
+struct _SkipNode {
+   UInt		magic;
+   UShort	level;		/* level is the max level (level == 0 means 1 next pointer) */
+   SkipNode	*next[0];
+};
+
+
+
+static inline Int get_height(void)
+{
+   UInt ret = 0;
+
+   while((ret < SK_MAXHEIGHT) && (random() & 1))
+      ret++;
+
+   return ret;
+}
+
+static inline void *key_of_data(const SkipList *l, void *d)
+{
+   return (void *)((Char *)d + l->keyoff);
+}
+
+static inline SkipNode *node_of_data(const SkipList *l, const void *d)
+{
+   SkipNode *n = (SkipNode *)((Char *)d + l->size);
+
+   if (SKIPLIST_DEBUG && n->magic != SKIPLIST_MAGIC)
+      VG_(printf)("bad magic on node %p = %x (not %x)\n",
+		  n, n->magic, SKIPLIST_MAGIC);
+
+   vg_assert(n->magic == SKIPLIST_MAGIC);
+
+   return n; 
+}
+
+static inline void *data_of_node(const SkipList *l, const SkipNode *n)
+{
+   if (SKIPLIST_DEBUG && n->magic != SKIPLIST_MAGIC)
+      VG_(printf)("bad magic on node %p = %x (not %x)\n",
+		  n, n->magic, SKIPLIST_MAGIC);
+
+   vg_assert(n->magic == SKIPLIST_MAGIC);
+   return (void *)((Char *)n - l->size);
+}
+
+static inline void *key_of_node(const SkipList *l, const SkipNode *n)
+{
+   return key_of_data(l, data_of_node(l, n));
+}
+
+static inline void validate_skiplist(const SkipList *l, const Char *where)
+{
+#if SKIPLIST_DEBUG
+   const SkipNode *prev[SK_MAXHEIGHT];
+   Int i;
+   const SkipNode *n, *next;
+   
+   VG_(printf)("---------------- %s ----------------\n", where);
+
+   if (l->head == NULL)
+      return;
+
+   for(i = 0; i <= l->head->level; i++) {
+      VG_(printf)("l->head->next[%d]=%p\n",
+		  i, l->head->next[i]);
+      prev[i] = l->head->next[i];
+   }
+
+   for(n = l->head->next[0]; n != NULL; n = next) {
+      next = n->next[0];
+
+      VG_(printf)("n=%p next=%p, n->level=%d k=%s\n",
+		  n, next, n->level, (*l->strkey)(key_of_node(l, n)));
+      for(i = 0; i <= n->level; i++) {
+	 VG_(printf)("  n->next[%d] = %p\n",
+		     i, n->next[i]);
+	 VG_(printf)("  prev[%d] = %p\n",
+		     i, prev[i]);
+      }
+      
+      vg_assert(l->head->level >= n->level);
+
+      for(i = 0; i <= n->level; i++)
+	 vg_assert(prev[i] == n);
+
+      for(i = 0; i <= n->level; i++)
+	 prev[i] = n->next[i];
+
+      vg_assert(next == NULL || (l->cmp)(key_of_node(l, n), key_of_node(l, next)) < 0);
+   }
+#endif	/* SKIPLIST_DEBUG */
+}
+
+void *VG_(SkipNode_Alloc)(const SkipList *l)
+{
+   UInt size = l->size;
+   Int h = get_height();
+   SkipNode *n;
+   Char *ret;
+
+   size += sizeof(SkipNode) + (h+1)*sizeof(SkipNode *);
+
+   if (l->arena == -1)
+      *(Short *)&l->arena = VG_AR_SKIN;
+
+   ret = VG_(arena_malloc)(l->arena, size);
+
+   if (ret == NULL)
+      return NULL;
+
+   n = (SkipNode *)(ret + l->size);
+   n->level = h;
+   n->magic = SKIPLIST_MAGIC;
+
+   while(h-- >= 0)
+      n->next[h] = NULL;
+
+   return ret;
+}
+
+void VG_(SkipNode_Free)(const SkipList *l, void *p)
+{
+   if (SKIPLIST_DEBUG) {
+      SkipNode *n = node_of_data(l, p);
+
+      VG_(printf)("SkipNode_Free: freeing %p (node %p)\n",
+		  p, n);
+      n->magic = 0x55ffaabb;
+   }
+   VG_(arena_free)(l->arena, p);
+}
+
+void *VG_(SkipNode_First)(const SkipList *l)
+{
+   SkipNode *n = l->head ? l->head->next[0] : NULL;
+
+   if (n == NULL)
+      return NULL;
+   else
+      return data_of_node(l, n);
+}
+
+void *VG_(SkipNode_Next)(const SkipList *l, void *data)
+{
+   SkipNode *n = node_of_data(l, data);
+   
+   n = n->next[0];
+
+   if (n == NULL)
+      return NULL;
+
+   return data_of_node(l, n);
+}
+
+
+
+static Int cmp(const SkipList *l, SkipNode *n, void *k2)
+{
+   void *k1 = key_of_node(l, n);
+
+   if (k1 == k2)
+      return 0;
+
+   if (l->head == n)
+      return -1;
+
+   return (l->cmp)(k1, k2);
+}
+
+/* Search the list for k; it either returns the k if it exists, or the
+   one before if not.  */
+static SkipNode *SkipList__Find(const SkipList *l, void *k, SkipNode **prevs)
+{
+   SkipNode *n;
+   Int lvl;
+
+   if (SKIPLIST_DEBUG)
+      VG_(printf)("SkipList__Find: finding %s\n", (*l->strkey)(k));
+
+   validate_skiplist(l, "SkipList__Find");
+
+   if (l->head == NULL)
+      return NULL;
+
+   for(lvl = l->head->level, n = l->head; lvl >= 0; lvl--) {
+      while(n->next[lvl] != NULL && cmp(l, n->next[lvl], k) < 0) {
+	 if (SKIPLIST_DEBUG)
+	    VG_(printf)("SkipList__Find: n=%p n->next[%d]=%p\n",
+			n, lvl, n->next[lvl]);
+	 n = n->next[lvl];
+      }
+      if (prevs)
+	 prevs[lvl] = n;
+   }
+
+   /* XXX Is there a cleaner way of getting this? 
+      
+      If we get an exact match, return it.
+      If we get the head, return NULL.
+      Otherwise return the one before where the hit would be.
+    */
+   if (n->next[0] != NULL && cmp(l, n->next[0], k) == 0)
+      n =  n->next[0];
+   if (n == l->head)
+      n = NULL;
+
+   if (SKIPLIST_DEBUG) {
+
+      VG_(printf)("SkipList__Find returning node %p\n", n);
+
+      if (n == NULL) {
+	 SkipNode *nn;
+
+	 for(nn = l->head->next[0]; nn != NULL; nn = nn->next[0])
+	    vg_assert(cmp(l, nn, k) != 0);
+      } else
+	 vg_assert(cmp(l, n, k) <= 0);
+   }
+
+   return n;
+}
+
+void *VG_(SkipList_Find)(const SkipList *l, void *k)
+{
+   SkipNode *n = SkipList__Find(l, k, NULL);
+
+   if (n != NULL)
+      return data_of_node(l, n);
+   return NULL;
+}
+
+void VG_(SkipList_Insert)(SkipList *l, void *data)
+{
+   SkipNode *update[SK_MAXHEIGHT];
+   SkipNode *n;
+   void *k = key_of_data(l, data);
+   Int i;
+
+   if (SKIPLIST_DEBUG)
+      VG_(printf)("inserting node %p, key %s, height %d\n",
+		  data, (*l->strkey)(key_of_data(l, data)), node_of_data(l, data)->level);
+
+   validate_skiplist(l, "SkipList_Insert before");
+
+   if (l->head == NULL) {
+      Int size = sizeof(SkipNode) * sizeof(SkipNode *) * SK_MAXHEIGHT;
+
+      if (l->arena == -1)
+	 *(Short *)&l->arena = VG_AR_SKIN;
+      
+      l->head = VG_(arena_malloc)(l->arena, size);
+      VG_(memset)(l->head, 0, size);
+
+      l->head->magic = SKIPLIST_HEAD_MAGIC;
+      l->head->level = 0;
+   }
+
+   n = SkipList__Find(l, k, update);
+   
+   vg_assert(n == NULL || (l->cmp)(key_of_node(l, n), k) != 0);
+
+   n = node_of_data(l, data);
+
+   vg_assert(l->head != NULL);
+   if (l->head->level < n->level) {
+      for(i = l->head->level+1; i <= n->level; i++)
+	 l->head->next[i] = n;
+      l->head->level = n->level;
+   }
+
+   for(i = 0; i <= n->level; i++) {
+      n->next[i] = update[i]->next[i];
+      update[i]->next[i] = n;
+   }
+
+   validate_skiplist(l, "SkipList_Insert after");
+}
+
+void *VG_(SkipList_Remove)(SkipList *l, void *k)
+{
+   SkipNode *update[SK_MAXHEIGHT];
+   SkipNode *n;
+   Int i;
+   
+   validate_skiplist(l, "SkipList_Remove before");
+
+   n = SkipList__Find(l, k, update);
+   if (n == NULL)
+      return NULL;
+
+   vg_assert((l->cmp)(k, key_of_node(l, n)) == 0);
+
+   for(i = 0; i <= n->level; i++) {
+      update[i]->next[i] = n->next[i];
+      n->next[i] = NULL;
+   }
+
+   validate_skiplist(l, "SkipList_Remove after");
+
+   return data_of_node(l, n);
+}

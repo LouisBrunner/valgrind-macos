@@ -400,19 +400,19 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 
 #define VG_USERREQ__PTHREAD_CREATE          0x3001
-#define VG_USERREQ__PTHREAD_CREATE_BOGUSRA  0x3002
-#define VG_USERREQ__PTHREAD_JOIN            0x3003
-#define VG_USERREQ__PTHREAD_GET_THREADID    0x3004
-#define VG_USERREQ__PTHREAD_MUTEX_INIT      0x3005
-#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3006
-#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3007
-#define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3008
-#define VG_USERREQ__PTHREAD_CANCEL          0x3009
+#define VG_USERREQ__PTHREAD_JOIN            0x3002
+#define VG_USERREQ__PTHREAD_GET_THREADID    0x3003
+#define VG_USERREQ__PTHREAD_MUTEX_INIT      0x3004
+#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3005
+#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3006
+#define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3007
+#define VG_USERREQ__PTHREAD_CANCEL          0x3008
 
 /* 
 In vg_constants.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
-#define VG_USERREQ__SHUTDOWN_VALGRIND       0x4002 
+#define VG_USERREQ__PTHREAD_RETURNS         0x4002
+#define VG_USERREQ__SHUTDOWN_VALGRIND       0x4003
 */
 
 
@@ -1520,8 +1520,9 @@ extern void VG_(helper_value_check2_fail);
 extern void VG_(helper_value_check1_fail);
 extern void VG_(helper_value_check0_fail);
 
-/* NOT A FUNCTION; a bogus RETURN ADDRESS. */
+/* NOT FUNCTIONS; these are bogus RETURN ADDRESS. */
 extern void VG_(signalreturn_bogusRA)( void );
+extern void VG_(pthreadreturn_bogusRA)( void );
 
 
 /* ---------------------------------------------------------------------

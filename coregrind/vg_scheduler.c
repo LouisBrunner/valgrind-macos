@@ -47,9 +47,6 @@ anyone at all!
 - signals interrupting read/write and nanosleep, and take notice
   of SA_RESTART or not
 
-- return bogus RA: %EAX trashed, so pthread_joiner gets nonsense
-  exit codes
-
 - when a thread is done mark its stack as noaccess 
 
 - make signal return and .fini call be detected via request mechanism
@@ -1182,20 +1179,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
     typedef unsigned long int pthread_t;
 */
 
-/* RUNS ON SIMD CPU!
-   This is the return address that pthread_create uses.
-*/
-static
-void do_pthread_create_bogusRA ( void )
-{
-   /* Tell the scheduler that this thread has returned. */
-   Int res;
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_CREATE_BOGUSRA,
-                           0, 0, 0, 0);
-   VG_(panic)("do_pthread_create_bogusRA: shouldn't be still alive!");
-}
-
 
 static
 void do_pthread_cancel ( ThreadId  tid_canceller,
@@ -1211,17 +1194,18 @@ void do_pthread_cancel ( ThreadId  tid_canceller,
       print_sched_event(tid_cancellee, msg_buf);
    }
    vg_threads[tid_cancellee].m_eax  = (UInt)PTHREAD_CANCELED;
-   vg_threads[tid_cancellee].m_eip  = (UInt)&do_pthread_create_bogusRA;
+   vg_threads[tid_cancellee].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
    vg_threads[tid_cancellee].status = VgTs_Runnable;
 }
 
 
 
 /* Thread tid is exiting, by returning from the function it was
-   created with.  The main complication here is to resume any thread
-   waiting to join with this one. */
+   created with.  Or possibly due to pthread_exit or cancellation.
+   The main complication here is to resume any thread waiting to join
+   with this one. */
 static 
-void do_pthread_create_exit_by_returning ( ThreadId tid )
+void handle_pthread_return ( ThreadId tid, void* retval )
 {
    ThreadId jnr; /* joiner, the thread calling pthread_join. */
    UInt*    jnr_args;
@@ -1233,7 +1217,7 @@ void do_pthread_create_exit_by_returning ( ThreadId tid )
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
    vg_assert(vg_threads[tid].status != VgTs_Empty);
 
-   vg_threads[tid].retval = (void*)vg_threads[tid].m_eax;
+   vg_threads[tid].retval = retval;
 
    if (vg_threads[tid].joiner == VG_INVALID_THREADID) {
       /* No one has yet done a join on me */
@@ -1401,7 +1385,7 @@ void do_pthread_create ( ThreadId parent_tid,
 
    /* push (magical) return address */
    vg_threads[tid].m_esp -= 4;
-   * (UInt*)(vg_threads[tid].m_esp) = (UInt)do_pthread_create_bogusRA;
+   * (UInt*)(vg_threads[tid].m_esp) = (UInt)VG_(pthreadreturn_bogusRA);
 
    if (VG_(clo_instrument))
       VGM_(make_readable)( vg_threads[tid].m_esp, 2 * 4 );
@@ -1687,8 +1671,8 @@ void do_nontrivial_clientreq ( ThreadId tid )
                             (void*)arg[4] );
          break;
 
-      case VG_USERREQ__PTHREAD_CREATE_BOGUSRA:
-         do_pthread_create_exit_by_returning( tid );
+      case VG_USERREQ__PTHREAD_RETURNS:
+         handle_pthread_return( tid, (void*)arg[1] );
          break;
 
       case VG_USERREQ__PTHREAD_JOIN:

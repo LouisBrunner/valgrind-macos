@@ -23,7 +23,11 @@
    Only change the signatures of these helper functions very
    carefully.  If you change the signature here, you'll have to change
    the parameters passed to it in the IR calls constructed by
-   x86toIR.c.  
+   x86toIR.c.
+
+   Some of this code/logic is derived from QEMU, which is copyright
+   Fabrice Bellard, licensed under the LGPL.  It is used with
+   permission.  
 */
 
 typedef UChar uint8_t;
@@ -86,20 +90,22 @@ static inline int lshift(int x, int n)
    const UInt CC_DST = cc_dst;						 \
    const UInt CC_SRC = cc_src
 
-#define ACTIONS_ADD(DATA_BITS,DATA_TYPE,DATA_STYPE)				\
-   {										\
-      PREAMBLE(DATA_BITS);							\
-      int cf, pf, af, zf, sf, of;						\
-      int src1, src2;								\
-      src1 = CC_SRC;								\
-      src2 = CC_DST - CC_SRC;							\
-      cf = (DATA_TYPE)CC_DST < (DATA_TYPE)src1;					\
-      pf = parity_table[(uint8_t)CC_DST];					\
-      af = (CC_DST ^ src1 ^ src2) & 0x10;					\
-      zf = ((DATA_TYPE)CC_DST == 0) << 6;					\
-      sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;				\
-      of = lshift((src1 ^ src2 ^ -1) & (src1 ^ CC_DST), 12 - DATA_BITS) & CC_O;	\
-      return cf | pf | af | zf | sf | of;					\
+
+#define ACTIONS_ADD(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+   {								\
+      PREAMBLE(DATA_BITS);					\
+      int cf, pf, af, zf, sf, of;				\
+      int src1, src2;						\
+      src1 = CC_SRC;						\
+      src2 = CC_DST - CC_SRC;					\
+      cf = (DATA_TYPE)CC_DST < (DATA_TYPE)src1;			\
+      pf = parity_table[(uint8_t)CC_DST];			\
+      af = (CC_DST ^ src1 ^ src2) & 0x10;			\
+      zf = ((DATA_TYPE)CC_DST == 0) << 6;			\
+      sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;		\
+      of = lshift((src1 ^ src2 ^ -1) & (src1 ^ CC_DST), 	\
+                  12 - DATA_BITS) & CC_O;			\
+      return cf | pf | af | zf | sf | of;			\
    }
 
 #define ACTIONS_SUB(DATA_BITS,DATA_TYPE,DATA_STYPE)			   \
@@ -131,6 +137,38 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;		\
    }
 
+#define ACTIONS_INC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
+{							\
+    PREAMBLE(DATA_BITS);				\
+    int cf, pf, af, zf, sf, of;				\
+    int src1, src2;					\
+    src1 = CC_DST - 1;					\
+    src2 = 1;						\
+    cf = CC_SRC;					\
+    pf = parity_table[(uint8_t)CC_DST];			\
+    af = (CC_DST ^ src1 ^ src2) & 0x10;			\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;			\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;		\
+    of = ((CC_DST & DATA_MASK) == SIGN_MASK) << 11;	\
+    return cf | pf | af | zf | sf | of;			\
+}
+
+#define ACTIONS_DEC(DATA_BITS,DATA_TYPE,DATA_STYPE)			\
+{									\
+  PREAMBLE(DATA_BITS);							\
+  int cf, pf, af, zf, sf, of;						\
+  int src1, src2;							\
+  src1 = CC_DST + 1;							\
+  src2 = 1;								\
+  cf = CC_SRC;								\
+  pf = parity_table[(uint8_t)CC_DST];					\
+  af = (CC_DST ^ src1 ^ src2) & 0x10;					\
+  zf = ((DATA_TYPE)CC_DST == 0) << 6;					\
+  sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;				\
+  of = ((CC_DST & DATA_MASK) == ((uint32_t)SIGN_MASK - 1)) << 11;	\
+  return cf | pf | af | zf | sf | of;					\
+}
+
 #define ACTIONS_SHL(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
 {								\
   PREAMBLE(DATA_BITS);						\
@@ -144,8 +182,6 @@ static inline int lshift(int x, int n)
     of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_O;	\
     return cf | pf | af | zf | sf | of;				\
 }
-
-
 
 #define ACTIONS_SAR(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
 {								\
@@ -174,38 +210,6 @@ static inline int lshift(int x, int n)
     return fl;							\
 }
 
-#define ACTIONS_INC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
-{							\
-    PREAMBLE(DATA_BITS);				\
-    int cf, pf, af, zf, sf, of;				\
-    int src1, src2;					\
-    src1 = CC_DST - 1;					\
-    src2 = 1;						\
-    cf = CC_SRC;					\
-    pf = parity_table[(uint8_t)CC_DST];			\
-    af = (CC_DST ^ src1 ^ src2) & 0x10;			\
-    zf = ((DATA_TYPE)CC_DST == 0) << 6;			\
-    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;		\
-    of = ((CC_DST & DATA_MASK) == SIGN_MASK) << 11;	\
-    return cf | pf | af | zf | sf | of;			\
-}
-
-#define ACTIONS_DEC(DATA_BITS,DATA_TYPE,DATA_STYPE)			\
-{									\
-  PREAMBLE(DATA_BITS);		\
-  int cf, pf, af, zf, sf, of;						\
-  int src1, src2;							\
-  src1 = CC_DST + 1;							\
-  src2 = 1;								\
-  cf = CC_SRC;								\
-  pf = parity_table[(uint8_t)CC_DST];					\
-  af = (CC_DST ^ src1 ^ src2) & 0x10;					\
-  zf = ((DATA_TYPE)CC_DST == 0) << 6;					\
-  sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;				\
-  of = ((CC_DST & DATA_MASK) == ((uint32_t)SIGN_MASK - 1)) << 11;	\
-  return cf | pf | af | zf | sf | of;					\
-}
-
 
 
 /* CALLED FROM GENERATED CODE */
@@ -218,24 +222,24 @@ static inline int lshift(int x, int n)
 
       case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
 
-      case CC_OP_SUBB:   ACTIONS_SUB(8,UChar,Char);
+      case CC_OP_SUBB:   ACTIONS_SUB( 8,UChar, SChar);
       case CC_OP_SUBW:   ACTIONS_SUB(16,UShort,Short);
-      case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
+      case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,  Int);
 
-      case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
+      case CC_OP_LOGICB: ACTIONS_LOGIC(8, UChar, SChar);
       case CC_OP_LOGICW: ACTIONS_LOGIC(16,UShort,Short);
-      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
+      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,  Int);
 
       case CC_OP_INCL:   ACTIONS_INC(32,UInt,Int);
 
-      case CC_OP_DECB:   ACTIONS_DEC(8,UChar,Char);
-      case CC_OP_DECL:   ACTIONS_DEC(32,UInt,Int);
+      case CC_OP_DECB:   ACTIONS_DEC(8, UChar,SChar);
+      case CC_OP_DECL:   ACTIONS_DEC(32,UInt, Int);
 
       case CC_OP_SHLL:   ACTIONS_SHL(32,UInt,Int);
       case CC_OP_SARL:   ACTIONS_SAR(32,UInt,Int);
 
       case CC_OP_RORW:   ACTIONS_ROR(16,UShort,Short);
-      case CC_OP_RORL:   ACTIONS_ROR(32,UInt,Int);
+      case CC_OP_RORL:   ACTIONS_ROR(32,UInt,  Int);
 
       default:
          /* shouldn't really make these calls from generated code */

@@ -31,6 +31,10 @@ Minor changes in 1.9.6:
 
 - Fix bug in the VALGRIND_DISCARD_TRANSLATIONS client request.
 
+- Fix bug in the DWARF2 debug line info loader, when instructions 
+  following each other have source lines far from each other 
+  (e.g. with inlined functions).
+
 - Debug info reading: read symbols from both "symtab" and "dynsym"
   sections, rather than merely from the one that comes last in the
   file.

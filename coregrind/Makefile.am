@@ -58,6 +58,9 @@ valgrind_so_SOURCES = \
 	vg_signals.c \
 	vg_startup.S \
 	vg_symtab2.c \
+	vg_symtab_dwarf.c \
+	vg_symtab_stabs.c \
+	vg_symtypes.c \
 	vg_syscalls.c \
 	vg_syscall.S \
 	vg_to_ucode.c \
@@ -84,6 +87,8 @@ lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
 noinst_HEADERS = \
         vg_include.h            \
         vg_constants.h          \
+	vg_symtab2.h		\
+	vg_symtypes.h		\
 	vg_unsafe.h
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) .in_place/libpthread.so.0

@@ -476,6 +476,28 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_mount)
+      case __NR_mount:
+         /* int mount(const char *specialfile, const char *dir,
+            const char *filesystemtype, unsigned long rwflag,
+            const void *data); */
+         MAYBE_PRINTF( "mount( %p, %p, %p )\n" ,arg1,arg2,arg3);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst,"mount(specialfile)",arg1);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst,"mount(dir)",arg2);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst,"mount(filesystemtype)",arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_umount)
+      case __NR_umount:
+         /* int umount(const char *path) */
+         MAYBE_PRINTF("umount( %p )\n", arg1);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst,"umount(path)",arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_modify_ldt)
       case __NR_modify_ldt: /* syscall 123 */
          /* int modify_ldt(int func, void *ptr, 

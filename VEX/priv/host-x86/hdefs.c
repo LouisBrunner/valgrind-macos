@@ -1287,6 +1287,7 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
       case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
       case Xfp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
+      case Xfp_MOV:    break;
       default: vpanic("do_fop1_st: unknown op");
    }
    return p;
@@ -1326,6 +1327,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       GrpN insns, in which the greg field is used as a sub-opcode
       and does not really contain a register. */
 #  define fake(_n) mkHReg((_n), HRcInt, False)
+
+   /* vex_printf("asm  ");ppX86Instr(i); vex_printf("\n"); */
 
    switch (i->tag) {
 

@@ -7,7 +7,7 @@ AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 
 # Where is VEX ? ToDo: --with-vex=
-VEX_DIR=/home/sewardj/Vex/vex/trunk
+VEX_DIR=/home/sewardj/VEX/vex/trunk
 AC_SUBST(VEX_DIR)
 
 # Checks for programs.
@@ -87,6 +87,15 @@ case "${host_cpu}" in
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
 
+     arm*) 
+	AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="arm"
+        KICKSTART_BASE="0xb0000000"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CCASFLAGS=""
+        ;;
+
      powerpc*)
         AC_MSG_RESULT([no (${host_cpu})])
         VG_ARCH="ppc"
@@ -156,10 +165,13 @@ case $VG_PLATFORM in
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
         ;;
 
+    arm-linux)
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+        ;;
+
     *)
         AC_MSG_RESULT([no (${host_cpu}-${host_os})])
-        AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doin
-g a port.])
+        AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doing a port.])
         ;;
 esac
 

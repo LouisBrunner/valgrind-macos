@@ -117,7 +117,7 @@ LIBALIAS(void *, fff, (SizeT n)) \
 { \
    void* v; \
  \
-   MALLOC_TRACE(#fff "(%d)", n ); \
+   MALLOC_TRACE(#fff "(%llu)", (ULong)n ); \
    MAYBE_SLOPPIFY(n); \
    if (!init_done) init(); \
  \
@@ -131,7 +131,7 @@ LIBALIAS(void *, fff, (SizeT n)) \
 { \
    void* v; \
  \
-   MALLOC_TRACE(#fff "(%d)", n ); \
+   MALLOC_TRACE(#fff "(%llu)", (ULong)n ); \
    MAYBE_SLOPPIFY(n); \
    if (!init_done) init(); \
  \
@@ -186,7 +186,7 @@ LIBALIAS(void*, calloc, ( SizeT nmemb, SizeT size ))
 {
    void* v;
 
-   MALLOC_TRACE("calloc(%d,%d)", nmemb, size );
+   MALLOC_TRACE("calloc(%llu,%llu)", (ULong)nmemb, (ULong)size );
    MAYBE_SLOPPIFY(size);
 
    if (!init_done) init();
@@ -199,7 +199,7 @@ LIBALIAS(void*, realloc, ( void* ptrV, SizeT new_size ))
 {
    void* v;
 
-   MALLOC_TRACE("realloc(%p,%d)", ptrV, new_size );
+   MALLOC_TRACE("realloc(%p,%llu)", ptrV, (ULong)new_size );
    MAYBE_SLOPPIFY(new_size);
 
    if (ptrV == NULL)
@@ -221,7 +221,7 @@ LIBALIAS(void*, memalign, ( SizeT alignment, SizeT n ))
 {
    void* v;
 
-   MALLOC_TRACE("memalign(al %d, size %d)", alignment, n );
+   MALLOC_TRACE("memalign(al %llu, size %llu)", (ULong)alignment, (ULong)n );
    MAYBE_SLOPPIFY(n);
 
    // Round up to minimum alignment if necessary.
@@ -282,7 +282,7 @@ LIBALIAS(int, malloc_usable_size, ( void* p ))
    if (!init_done) init();
    pszB = (SizeT)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
                                           VG_AR_CLIENT, p );
-   MALLOC_TRACE(" = %d", pszB );
+   MALLOC_TRACE(" = %llu", (ULong)pszB );
 
    return pszB;
 }

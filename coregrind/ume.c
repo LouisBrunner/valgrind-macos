@@ -667,6 +667,7 @@ static int check_perms(int fd)
 static int do_exec_inner(const char *exe, struct exeinfo *info)
 {
    int fd;
+   int err;
    char buf[VKI_BYTES_PER_PAGE];
    int bufsz;
    int i;
@@ -688,7 +689,7 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
       return errno;
    }
 
-   int err = check_perms(fd);
+   err = check_perms(fd);
    if (err != 0) {
       close(fd);
       return err;

@@ -36,10 +36,10 @@
 /* This module creates and removes signal frames for signal deliveries
    on x86-linux.
 
-   Note that this file is in the wrong place.  It is marked as x86
-   specific, but in fact it is specific to both x86 and linux.  There
-   is nothing that ensures that (eg) x86-solaris will have the same
-   signal frame layout as Linux.
+   FIXME: Note that this file is in the wrong place.  It is marked as
+   x86 specific, but in fact it is specific to both x86 and linux.
+   There is nothing that ensures that (eg) x86-solaris will have the
+   same signal frame layout as Linux.
 
    Note also, this file contains kernel-specific knowledge in the
    form of 'struct sigframe' and 'struct rt_sigframe'.  How does
@@ -54,9 +54,9 @@
    FIXME: sigcontexting is basically broken for the moment.  When
    delivering a signal, the integer registers and %eflags are
    correctly written into the sigcontext, however the FP and SSE state
-   is not.  When returning from a signal, the entire CPU state is
-   restored to what it was before the signal.  Hence signal handlers
-   which modify the sigcontext and then return will not work.
+   is not.  When returning from a signal, only the integer registers
+   are restored from the sigcontext; the rest of the CPU state is
+   restored to what it was before the signal.
 
    This will be fixed.
 */
@@ -625,24 +625,24 @@ void restore_sigcontext( ThreadState *tst,
                          struct vki_sigcontext *sc, 
                          struct _vki_fpstate *fpstate )
 {
-//::    tst->arch.vex.guest_EAX     = sc->eax;
-//::    tst->arch.vex.guest_ECX     = sc->ecx;
-//::    tst->arch.vex.guest_EDX     = sc->edx;
-//::    tst->arch.vex.guest_EBX     = sc->ebx;
-//::    tst->arch.vex.guest_EBP     = sc->ebp; 
-//::    tst->arch.vex.guest_ESP     = sc->esp;
-//::    tst->arch.vex.guest_ESI     = sc->esi;
-//::    tst->arch.vex.guest_EDI     = sc->edi;
+   tst->arch.vex.guest_EAX     = sc->eax;
+   tst->arch.vex.guest_ECX     = sc->ecx;
+   tst->arch.vex.guest_EDX     = sc->edx;
+   tst->arch.vex.guest_EBX     = sc->ebx;
+   tst->arch.vex.guest_EBP     = sc->ebp; 
+   tst->arch.vex.guest_ESP     = sc->esp;
+   tst->arch.vex.guest_ESI     = sc->esi;
+   tst->arch.vex.guest_EDI     = sc->edi;
 //::    tst->arch.vex.guest_eflags  = sc->eflags;
 //::    tst->arch.vex.guest_EIP     = sc->eip;
-//:: 
-//::    tst->arch.vex.guest_CS      = sc->cs; 
-//::    tst->arch.vex.guest_SS      = sc->ss;
-//::    tst->arch.vex.guest_DS      = sc->ds;
-//::    tst->arch.vex.guest_ES      = sc->es;
-//::    tst->arch.vex.guest_FS      = sc->fs;
-//::    tst->arch.vex.guest_GS      = sc->gs;
-//:: 
+
+   tst->arch.vex.guest_CS      = sc->cs; 
+   tst->arch.vex.guest_SS      = sc->ss;
+   tst->arch.vex.guest_DS      = sc->ds;
+   tst->arch.vex.guest_ES      = sc->es;
+   tst->arch.vex.guest_FS      = sc->fs;
+   tst->arch.vex.guest_GS      = sc->gs;
+
 //::    restore_i387(&tst->arch, fpstate);
 }
 

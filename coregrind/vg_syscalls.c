@@ -357,7 +357,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
 
    END QUOTE
 */
-Bool VG_(is_kerror) ( Int res )
+Bool VG_(is_kerror) ( Word res )
 {
    if (res >= -4095 && res <= -1)
       return True;

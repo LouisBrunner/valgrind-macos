@@ -563,7 +563,6 @@ void VG_(pad_address_space)(void)
 {
    Addr addr = VG_(client_base);
    Segment *s = VG_(SkipNode_First)(&sk_segments);
-   UInt args[6];
    Addr ret;
    
    while (s && addr <= VG_(valgrind_last)) {

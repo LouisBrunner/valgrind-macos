@@ -70,6 +70,7 @@ An open-source tool for supervising execution of Linux-x86 executables.
     3.3&nbsp; <a href="#regressiontests">Regression tests</a><br>
     3.4&nbsp; <a href="#profiling">Profiling</a><br>
     3.5&nbsp; <a href="#othermakefilehackery">Other makefile hackery</a><br>
+    3.6&nbsp; <a href="#interfaceversions">Core/skin interface versions</a><br>
 
 <h4>4&nbsp; <a href="#finalwords">Final Words</a></h4>
 
@@ -351,6 +352,12 @@ A skin must define at least these four functions:
     SK_(fini)()
 </pre>
 
+Also, it must use the macro <code>VG_DETERMINE_INTERFACE_VERSION</code>
+exactly once in its source code.  If it doesn't, you will get a link error
+involving <code>VG_(skin_interface_major_version)</code>.  This macro is
+used to ensure the core/skin interface used by the core and a plugged-in
+skin are binary compatible.
+
 In addition, if a skin wants to use some of the optional services provided by
 the core, it may have to define other functions.
 
@@ -623,6 +630,26 @@ add them to the <code>bin_SCRIPTS</code> variable in
 <code>valgrind/foobar/Makefile.am</code>.<p>
 
 
+<a name="interfaceversions"</a>
+<h3>3.5&nbsp; Core/skin interface versions</h3>
+
+In order to allow for the core/skin interface to evolve over time, Valgrind
+uses a basic interface versioning system.  All a skin has to do is use the
+<code>VG_DETERMINE_INTERFACE_VERSION</code> macro exactly once in its code.
+If not, a link error will occur when the skin is built.
+<p>
+The interface version number has the form X.Y.  Changes in Y indicate binary
+compatible changes.  Changes in X indicate binary incompatible changes.  If
+the core and skin has the same major version number X they should work
+together.  If X doesn't match, Valgrind will abort execution with an
+explanation of the problem.
+<p>
+This approach was chosen so that if the interface changes in the future,
+old skins won't work and the reason will be clearly explained, instead of
+possibly crashing mysteriously.  We have attempted to minimise the potential
+for binary incompatible changes by means such as minimising the use of naked
+structs in the interface.
+
 <a name="finalwords"></a>
 <h2>4&nbsp; Final Words</h2>
 
@@ -634,7 +661,10 @@ immature.  It will almost certainly change in the future;  we have no intention
 of freezing it and then regretting the inevitable stupidities.  Hopefully most
 of the future changes will be to add new features, hooks, functions, etc,
 rather than to change old ones, which should cause a minimum of trouble for
-existing skins, but we can't guarantee it.  Just something to be aware of.<p>
+existing skins, and we've put some effort into future-proofing the interface
+to avoid binary incompatibility.  But we can't guarantee anything.  The
+versioning system should catch any incompatibilities.  Just something to be
+aware of.<p>
 
 The second consequence of this is that we'd love to hear your feedback about
 it:

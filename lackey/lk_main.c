@@ -31,6 +31,8 @@
 
 #include "vg_skin.h"
 
+VG_DETERMINE_INTERFACE_VERSION
+
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;
 static ULong n_BBs          = 0;

@@ -5,6 +5,8 @@
 
 #include "vg_skin.h"
 
+VG_DETERMINE_INTERFACE_VERSION
+
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
    details->name             = "Example";

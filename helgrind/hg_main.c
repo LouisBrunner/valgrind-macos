@@ -31,6 +31,7 @@
 
 #include "vg_skin.h"
 
+VG_DETERMINE_INTERFACE_VERSION
 
 static UInt n_eraser_warnings = 0;
 

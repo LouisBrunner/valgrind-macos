@@ -34,6 +34,8 @@
 #include "memcheck.h"   /* for client requests */
 //#include "vg_profile.c"
 
+VG_DETERMINE_INTERFACE_VERSION
+
 /* Define to debug the mem audit system. */
 /* #define VG_DEBUG_MEMORY */
 

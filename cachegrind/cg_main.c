@@ -33,6 +33,8 @@
 #include "vg_skin.h"
 //#include "vg_profile.c"
 
+VG_DETERMINE_INTERFACE_VERSION
+
 /* For cache simulation */
 typedef struct {
     int size;       /* bytes */ 

@@ -1318,6 +1318,26 @@ void VG_(main) ( void )
    VgSchedReturnCode src;
    ThreadState*      tst;
 
+   /* Check skin and core versions are compatible */
+   if (VG_CORE_INTERFACE_MAJOR_VERSION != VG_(skin_interface_major_version)) {
+      VG_(printf)("Error:\n"
+                  "  Skin and core interface versions do not match.\n"
+                  "  Interface version used by core is: %d.%d\n"
+                  "  Interface version used by skin is: %d.%d\n"
+                  "  The major version numbers must match.\n",
+                  VG_CORE_INTERFACE_MAJOR_VERSION,
+                  VG_CORE_INTERFACE_MINOR_VERSION,
+                  VG_(skin_interface_major_version),
+                  VG_(skin_interface_minor_version));
+      VG_(printf)("  You need to at least recompile, and possibly update,\n");
+      if (VG_CORE_INTERFACE_MAJOR_VERSION > VG_(skin_interface_major_version))
+         VG_(printf)("  your skin to work with this version of Valgrind.\n");
+      else
+         VG_(printf)("  your version of Valgrind to work with this skin.\n");
+      VG_(printf)("  Aborting, sorry.\n");
+      VG_(exit)(1);
+   }
+
    /* Set up our stack sanity-check words. */
    for (i = 0; i < 10; i++) {
       VG_(stack)[i]         = (UInt)(&VG_(stack)[i])         ^ 0xA4B3C2D1;

@@ -106,6 +106,32 @@ typedef unsigned char          Bool;
 
 
 /*====================================================================*/
+/*=== Core/skin interface version                                  ===*/
+/*====================================================================*/
+
+/* The major version number indicates binary-incompatible changes to the
+   interface;  if the core and skin major versions don't match, Valgrind
+   will abort.  The minor version indicates binary-compatible changes.
+
+   We don't want the variables themselves in the core, only in the skins,
+   hence the #ifndef.  But the core needs to know of their existence, hence
+   the #else branch.  Phew.
+
+   In summary:  skins don't need to do anything, the core works it all out.
+*/
+
+#define VG_CORE_INTERFACE_MAJOR_VERSION   1
+#define VG_CORE_INTERFACE_MINOR_VERSION   1
+
+extern const Int VG_(skin_interface_major_version);
+extern const Int VG_(skin_interface_minor_version);
+
+/* Every skin must define this macro somewhere, exactly once. */
+#define VG_DETERMINE_INTERFACE_VERSION \
+const Int VG_(skin_interface_major_version) = VG_CORE_INTERFACE_MAJOR_VERSION; \
+const Int VG_(skin_interface_minor_version) = VG_CORE_INTERFACE_MINOR_VERSION;
+
+/*====================================================================*/
 /*=== Command-line options                                         ===*/
 /*====================================================================*/
 

@@ -967,6 +967,333 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 
 
 /* ---------------------------------------------------------------------
+   Deal with a bunch of socket-related syscalls
+   ------------------------------------------------------------------ */
+
+/* ------ */
+
+void generic_PRE_sys_socketpair ( ThreadId tid,
+                                  UWord arg0, UWord arg1, 
+                                  UWord arg2, UWord arg3 )
+{
+   /* int socketpair(int d, int type, int protocol, int sv[2]); */
+   PRE_MEM_WRITE( "socketcall.socketpair(sv)", 
+                  arg3, 2*sizeof(int) );
+}
+
+UWord generic_POST_sys_socketpair ( ThreadId tid,
+                                    UWord res,
+                                    UWord arg0, UWord arg1, 
+                                    UWord arg2, UWord arg3 )
+{
+   UWord r = res;
+   Int fd1 = ((Int*)arg3)[0];
+   Int fd2 = ((Int*)arg3)[1];
+   POST_MEM_WRITE( arg3, 2*sizeof(int) );
+   if (!VG_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
+       !VG_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
+      VG_(close)(fd1);
+      VG_(close)(fd2);
+      r = -VKI_EMFILE;
+   } else {
+      POST_MEM_WRITE( arg3, 2*sizeof(int) );
+      if (VG_(clo_track_fds)) {
+         VG_(record_fd_open)(tid, fd1, NULL);
+         VG_(record_fd_open)(tid, fd2, NULL);
+      }
+   }
+   return r;
+}
+
+/* ------ */
+
+UWord generic_POST_sys_socket ( ThreadId tid, UWord res )
+{
+   UWord r = res;
+   if (!VG_(fd_allowed)(res, "socket", tid, True)) {
+      VG_(close)(res);
+      r = -VKI_EMFILE;
+   } else {
+      if (VG_(clo_track_fds))
+         VG_(record_fd_open)(tid, res, NULL);
+   }
+   return r;
+}
+
+/* ------ */
+
+void generic_PRE_sys_bind ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int bind(int sockfd, struct sockaddr *my_addr, 
+               int addrlen); */
+   pre_mem_read_sockaddr( 
+      tid, "socketcall.bind(my_addr.%s)",
+      (struct vki_sockaddr *) arg1, arg2 
+   );
+}
+
+/* ------ */
+
+void generic_PRE_sys_accept ( ThreadId tid,
+                              UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+   Addr addr_p     = arg1;
+   Addr addrlen_p  = arg2;
+   if (addr_p != (Addr)NULL) 
+      buf_and_len_pre_check ( tid, addr_p, addrlen_p,
+                              "socketcall.accept(addr)",
+                              "socketcall.accept(addrlen_in)" );
+}
+
+UWord generic_POST_sys_accept ( ThreadId tid,
+                                UWord res,
+                                UWord arg0, UWord arg1, UWord arg2 )
+{
+   UWord r = res;
+   if (!VG_(fd_allowed)(res, "accept", tid, True)) {
+      VG_(close)(res);
+      r = -VKI_EMFILE;
+   } else {
+      Addr addr_p     = arg1;
+      Addr addrlen_p  = arg2;
+      if (addr_p != (Addr)NULL) 
+         buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
+                                  "socketcall.accept(addrlen_out)" );
+      if (VG_(clo_track_fds))
+          VG_(record_fd_open)(tid, res, NULL);
+   }
+   return r;
+}
+
+/* ------ */
+
+void generic_PRE_sys_sendto ( ThreadId tid, 
+                              UWord arg0, UWord arg1, UWord arg2,
+                              UWord arg3, UWord arg4, UWord arg5 )
+{
+   /* int sendto(int s, const void *msg, int len, 
+                 unsigned int flags, 
+                 const struct sockaddr *to, int tolen); */
+   PRE_MEM_READ( "socketcall.sendto(msg)",
+                 arg1, /* msg */
+                 arg2  /* len */ );
+   pre_mem_read_sockaddr( 
+      tid, "socketcall.sendto(to.%s)",
+      (struct vki_sockaddr *) arg4, arg5
+   );
+}
+
+/* ------ */
+
+void generic_PRE_sys_send ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int send(int s, const void *msg, size_t len, int flags); */
+   PRE_MEM_READ( "socketcall.send(msg)",
+                  arg1, /* msg */
+                  arg2  /* len */ );
+
+}
+
+/* ------ */
+
+void generic_PRE_sys_recvfrom ( ThreadId tid, 
+                                UWord arg0, UWord arg1, UWord arg2,
+                                UWord arg3, UWord arg4, UWord arg5 )
+{
+   /* int recvfrom(int s, void *buf, int len, unsigned int flags,
+                   struct sockaddr *from, int *fromlen); */
+   Addr buf_p      = arg1;
+   Int  len        = arg2;
+   Addr from_p     = arg4;
+   Addr fromlen_p  = arg5;
+   PRE_MEM_WRITE( "socketcall.recvfrom(buf)", buf_p, len );
+   if (from_p != (Addr)NULL) 
+      buf_and_len_pre_check ( tid, from_p, fromlen_p, 
+                              "socketcall.recvfrom(from)",
+                              "socketcall.recvfrom(fromlen_in)" );
+}
+
+void generic_POST_sys_recvfrom ( ThreadId tid,
+                                 UWord res,
+                                 UWord arg0, UWord arg1, UWord arg2,
+                                 UWord arg3, UWord arg4, UWord arg5 )
+{
+   Addr buf_p      = arg1;
+   Int  len        = arg2;
+   Addr from_p     = arg4;
+   Addr fromlen_p  = arg5;
+
+   if (from_p != (Addr)NULL) 
+      buf_and_len_post_check ( tid, res, from_p, fromlen_p,
+                               "socketcall.recvfrom(fromlen_out)" );
+   POST_MEM_WRITE( buf_p, len );
+}
+
+/* ------ */
+
+void generic_PRE_sys_recv ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int recv(int s, void *buf, int len, unsigned int flags); */
+   /* man 2 recv says:
+      The  recv call is normally used only on a connected socket
+      (see connect(2)) and is identical to recvfrom with a  NULL
+      from parameter.
+   */
+   PRE_MEM_WRITE( "socketcall.recv(buf)", 
+                  arg1, /* buf */
+                  arg2  /* len */ );
+}
+
+void generic_POST_sys_recv ( ThreadId tid, 
+                             UWord res,
+                             UWord arg0, UWord arg1, UWord arg2 )
+{
+   if (res >= 0 && arg1 != 0) {
+      POST_MEM_WRITE( arg1, /* buf */
+                      arg2  /* len */ );
+   }
+}
+
+/* ------ */
+
+void generic_PRE_sys_connect ( ThreadId tid,
+                               UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int connect(int sockfd, 
+                  struct sockaddr *serv_addr, int addrlen ); */
+   PRE_MEM_READ( "socketcall.connect(serv_addr.sa_family)",
+                 arg1, /* serv_addr */
+                 sizeof(vki_sa_family_t));
+   pre_mem_read_sockaddr( tid,
+                          "socketcall.connect(serv_addr.%s)",
+                          (struct vki_sockaddr *) arg1, arg2);
+}
+
+/* ------ */
+
+void generic_PRE_sys_setsockopt ( ThreadId tid, 
+                                  UWord arg0, UWord arg1, UWord arg2,
+                                  UWord arg3, UWord arg4 )
+{
+   /* int setsockopt(int s, int level, int optname, 
+                     const void *optval, int optlen); */
+   PRE_MEM_READ( "socketcall.setsockopt(optval)",
+                 arg3, /* optval */
+                 arg4  /* optlen */ );
+}
+
+/* ------ */
+
+void generic_PRE_sys_getsockopt ( ThreadId tid, 
+                                  UWord arg0, UWord arg1, UWord arg2,
+                                  UWord arg3, UWord arg4 )
+{
+   /* int getsockopt(int s, int level, int optname, 
+                     void *optval, socklen_t *optlen); */
+   Addr optval_p  = arg3;
+   Addr optlen_p  = arg4;
+   /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
+   if (optval_p != (Addr)NULL) 
+      buf_and_len_pre_check ( tid, optval_p, optlen_p,
+                              "socketcall.getsockopt(optval)",
+                              "socketcall.getsockopt(optlen)" );
+}
+
+void generic_POST_sys_getsockopt ( ThreadId tid,
+                                   UWord res,
+                                   UWord arg0, UWord arg1, UWord arg2,
+                                   UWord arg3, UWord arg4 )
+{
+   Addr optval_p  = arg3;
+   Addr optlen_p  = arg4;
+   if (optval_p != (Addr)NULL) 
+      buf_and_len_post_check ( tid, res, optval_p, optlen_p,
+                               "socketcall.getsockopt(optlen_out)" );
+}
+
+/* ------ */
+
+void generic_PRE_sys_getsockname ( ThreadId tid,
+                                   UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int getsockname(int s, struct sockaddr* name, int* namelen) */
+   Addr name_p     = arg1;
+   Addr namelen_p  = arg2;
+   /* Nb: name_p cannot be NULL */
+   buf_and_len_pre_check ( tid, name_p, namelen_p,
+                           "socketcall.getsockname(name)",
+                           "socketcall.getsockname(namelen_in)" );
+}
+
+void generic_POST_sys_getsockname ( ThreadId tid,
+                                    UWord res,
+                                    UWord arg0, UWord arg1, UWord arg2 )
+{
+   Addr name_p     = arg1;
+   Addr namelen_p  = arg2;
+   buf_and_len_post_check ( tid, res, name_p, namelen_p,
+                            "socketcall.getsockname(namelen_out)" );
+}
+
+/* ------ */
+
+void generic_PRE_sys_getpeername ( ThreadId tid,
+                                   UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int getpeername(int s, struct sockaddr* name, int* namelen) */
+   Addr name_p     = arg1;
+   Addr namelen_p  = arg2;
+   /* Nb: name_p cannot be NULL */
+   buf_and_len_pre_check ( tid, name_p, namelen_p,
+                           "socketcall.getpeername(name)",
+                           "socketcall.getpeername(namelen_in)" );
+}
+
+void generic_POST_sys_getpeername ( ThreadId tid,
+                                    UWord res,
+                                    UWord arg0, UWord arg1, UWord arg2 )
+{
+   Addr name_p     = arg1;
+   Addr namelen_p  = arg2;
+   buf_and_len_post_check ( tid, res, name_p, namelen_p,
+                            "socketcall.getpeername(namelen_out)" );
+}
+
+/* ------ */
+
+void generic_PRE_sys_sendmsg ( ThreadId tid,
+                               UWord arg0, UWord arg1 )
+{
+   /* int sendmsg(int s, const struct msghdr *msg, int flags); */
+   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
+   msghdr_foreachfield ( tid, msg, pre_mem_read_sendmsg );
+}
+
+/* ------ */
+
+void generic_PRE_sys_recvmsg ( ThreadId tid,
+                               UWord arg0, UWord arg1 )
+{
+   /* int recvmsg(int s, struct msghdr *msg, int flags); */
+   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
+   msghdr_foreachfield ( tid, msg, pre_mem_write_recvmsg );
+}
+
+void generic_POST_sys_recvmsg ( ThreadId tid,
+                                UWord res,
+                                UWord arg0, UWord arg1 )
+{
+   struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
+   msghdr_foreachfield( tid, msg, post_mem_write_recvmsg );
+   check_cmsg_for_fds( tid, msg );
+}
+
+
+/* ---------------------------------------------------------------------
    The Main Entertainment ... syscall wrappers
    ------------------------------------------------------------------ */
 
@@ -4194,6 +4521,13 @@ PRE(sys_setuid, 0)
 
 PRE(sys_socketcall, MayBlock)
 {
+#  define ARG2_0  (((UWord*)ARG2)[0])
+#  define ARG2_1  (((UWord*)ARG2)[1])
+#  define ARG2_2  (((UWord*)ARG2)[2])
+#  define ARG2_3  (((UWord*)ARG2)[3])
+#  define ARG2_4  (((UWord*)ARG2)[4])
+#  define ARG2_5  (((UWord*)ARG2)[5])
+
    PRINT("sys_socketcall ( %d, %p )",ARG1,ARG2);
    PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
 
@@ -4202,8 +4536,7 @@ PRE(sys_socketcall, MayBlock)
    case VKI_SYS_SOCKETPAIR:
       /* int socketpair(int d, int type, int protocol, int sv[2]); */
       PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-      PRE_MEM_WRITE( "socketcall.socketpair(sv)", 
-		     ((UWord*)ARG2)[3], 2*sizeof(int) );
+      generic_PRE_sys_socketpair( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
       break;
 
    case VKI_SYS_SOCKET:
@@ -4215,8 +4548,7 @@ PRE(sys_socketcall, MayBlock)
       /* int bind(int sockfd, struct sockaddr *my_addr, 
 	 int addrlen); */
       PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-      pre_mem_read_sockaddr( tid, "socketcall.bind(my_addr.%s)",
-			     (struct vki_sockaddr *) (((UWord*)ARG2)[1]), ((UWord*)ARG2)[2]);
+      generic_PRE_sys_bind( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
                
    case VKI_SYS_LISTEN:
@@ -4227,53 +4559,31 @@ PRE(sys_socketcall, MayBlock)
    case VKI_SYS_ACCEPT: {
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
       PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-      {
-	 Addr addr_p     = ((UWord*)ARG2)[1];
-	 Addr addrlen_p  = ((UWord*)ARG2)[2];
-	 if (addr_p != (Addr)NULL) 
-	    buf_and_len_pre_check ( tid, addr_p, addrlen_p,
-				    "socketcall.accept(addr)",
-				    "socketcall.accept(addrlen_in)" );
-      }
+      generic_PRE_sys_accept( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
    }
 
    case VKI_SYS_SENDTO:
       /* int sendto(int s, const void *msg, int len, 
-	 unsigned int flags, 
-	 const struct sockaddr *to, int tolen); */
+                    unsigned int flags, 
+                    const struct sockaddr *to, int tolen); */
       PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-      PRE_MEM_READ( "socketcall.sendto(msg)",
-		     ((UWord*)ARG2)[1], /* msg */
-		     ((UWord*)ARG2)[2]  /* len */ );
-      pre_mem_read_sockaddr( tid, "socketcall.sendto(to.%s)",
-			     (struct vki_sockaddr *) (((UWord*)ARG2)[4]), ((UWord*)ARG2)[5]);
+      generic_PRE_sys_sendto( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                   ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_SEND:
       /* int send(int s, const void *msg, size_t len, int flags); */
       PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-      PRE_MEM_READ( "socketcall.send(msg)",
-		     ((UWord*)ARG2)[1], /* msg */
-		     ((UWord*)ARG2)[2]  /* len */ );
+      generic_PRE_sys_send( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_RECVFROM:
       /* int recvfrom(int s, void *buf, int len, unsigned int flags,
 	 struct sockaddr *from, int *fromlen); */
       PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-      {
-	 Addr buf_p      = ((UWord*)ARG2)[1];
-	 Int  len        = ((UWord*)ARG2)[2];
-	 Addr from_p     = ((UWord*)ARG2)[4];
-	 Addr fromlen_p  = ((UWord*)ARG2)[5];
-
-	 PRE_MEM_WRITE( "socketcall.recvfrom(buf)", buf_p, len );
-	 if (from_p != (Addr)NULL) 
-	    buf_and_len_pre_check ( tid, from_p, fromlen_p, 
-				    "socketcall.recvfrom(from)",
-				    "socketcall.recvfrom(fromlen_in)" );
-      }
+      generic_PRE_sys_recvfrom( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                     ARG2_3, ARG2_4, ARG2_5 );
       break;
    
    case VKI_SYS_RECV:
@@ -4284,73 +4594,42 @@ PRE(sys_socketcall, MayBlock)
 	 from parameter.
       */
       PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-      PRE_MEM_WRITE( "socketcall.recv(buf)", 
-		     ((UWord*)ARG2)[1], /* buf */
-		     ((UWord*)ARG2)[2]  /* len */ );
+      generic_PRE_sys_recv( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
       /* int connect(int sockfd, 
-	 struct sockaddr *serv_addr, int addrlen ); */
+                     struct sockaddr *serv_addr, int addrlen ); */
       PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-      PRE_MEM_READ( "socketcall.connect(serv_addr.sa_family)",
-		     ((UWord*)ARG2)[1], /* serv_addr */
-		     sizeof(vki_sa_family_t));
-      pre_mem_read_sockaddr( tid,
-			     "socketcall.connect(serv_addr.%s)",
-			     (struct vki_sockaddr *) (((UWord*)ARG2)[1]), ((UWord*)ARG2)[2]);
+      generic_PRE_sys_connect( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SETSOCKOPT:
       /* int setsockopt(int s, int level, int optname, 
-	 const void *optval, int optlen); */
+                        const void *optval, int optlen); */
       PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-      PRE_MEM_READ( "socketcall.setsockopt(optval)",
-		     ((UWord*)ARG2)[3], /* optval */
-		     ((UWord*)ARG2)[4]  /* optlen */ );
+      generic_PRE_sys_setsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                       ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKOPT:
-      /* int setsockopt(int s, int level, int optname, 
-	 void *optval, socklen_t *optlen); */
+      /* int getsockopt(int s, int level, int optname, 
+                        void *optval, socklen_t *optlen); */
       PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-      {
-	 Addr optval_p  = ((UWord*)ARG2)[3];
-	 Addr optlen_p  = ((UWord*)ARG2)[4];
-	 /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
-	 if (optval_p != (Addr)NULL) 
-	    buf_and_len_pre_check ( tid, optval_p, optlen_p,
-				    "socketcall.getsockopt(optval)",
-				    "socketcall.getsockopt(optlen)" );
-      }
+      generic_PRE_sys_getsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
+                                       ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
       /* int getsockname(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-      {
-	 Addr name_p     = ((UWord*)ARG2)[1];
-	 Addr namelen_p  = ((UWord*)ARG2)[2];
-
-	 /* Nb: name_p cannot be NULL */
-	 buf_and_len_pre_check ( tid, name_p, namelen_p,
-				 "socketcall.getsockname(name)",
-				 "socketcall.getsockname(namelen_in)" );
-      }
+      generic_PRE_sys_getsockname( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
       /* int getpeername(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-      {
-	 Addr name_p     = ((UWord*)ARG2)[1];
-	 Addr namelen_p  = ((UWord*)ARG2)[2];
-
-	 /* Nb: name_p cannot be NULL */
-	 buf_and_len_pre_check ( tid, name_p, namelen_p,
-				 "socketcall.getpeername(name)",
-				 "socketcall.getpeername(namelen_in)" );
-      }
+      generic_PRE_sys_getpeername( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SHUTDOWN:
@@ -4365,10 +4644,7 @@ PRE(sys_socketcall, MayBlock)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)ARG2)[ 1 ];
-      msghdr_foreachfield ( tid, msg, pre_mem_read_sendmsg );
-
+      generic_PRE_sys_sendmsg( tid, ARG2_0, ARG2_1 );
       break;
    }
       
@@ -4379,10 +4655,7 @@ PRE(sys_socketcall, MayBlock)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)ARG2)[ 1 ];
-      msghdr_foreachfield ( tid, msg, pre_mem_write_recvmsg );
-
+      generic_PRE_sys_recvmsg( tid, ARG2_0, ARG2_1 );
       break;
    }
 
@@ -4391,40 +4664,35 @@ PRE(sys_socketcall, MayBlock)
       SET_RESULT( -VKI_EINVAL );
       break;
    }
+#  undef ARG2_0
+#  undef ARG2_1
+#  undef ARG2_2
+#  undef ARG2_3
+#  undef ARG2_4
+#  undef ARG2_5
 }
 
 POST(sys_socketcall)
 {
+#  define ARG2_0  (((UWord*)ARG2)[0])
+#  define ARG2_1  (((UWord*)ARG2)[1])
+#  define ARG2_2  (((UWord*)ARG2)[2])
+#  define ARG2_3  (((UWord*)ARG2)[3])
+#  define ARG2_4  (((UWord*)ARG2)[4])
+#  define ARG2_5  (((UWord*)ARG2)[5])
+
+   UWord r;
    switch (ARG1 /* request */) {
 
-   case VKI_SYS_SOCKETPAIR: {
-      Int fd1 = ((Int*)((UWord*)ARG2)[3])[0];
-      Int fd2 = ((Int*)((UWord*)ARG2)[3])[1];
-      POST_MEM_WRITE( ((UWord*)ARG2)[3], 2*sizeof(int) );
-      if (!VG_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
-          !VG_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
-         VG_(close)(fd1);
-         VG_(close)(fd2);
-         SET_RESULT( -VKI_EMFILE );
-      } else {
-         POST_MEM_WRITE( ((UWord*)ARG2)[3], 2*sizeof(int) );
-         if (VG_(clo_track_fds)) {
-            VG_(record_fd_open)(tid, fd1, NULL);
-            VG_(record_fd_open)(tid, fd2, NULL);
-         }
-      }
+   case VKI_SYS_SOCKETPAIR:
+      generic_POST_sys_socketpair( tid, RES, ARG2_0, 
+                                        ARG2_1, ARG2_2, ARG2_3 );
       break;
-   }
 
    case VKI_SYS_SOCKET:
-      if (!VG_(fd_allowed)(RES, "socket", tid, True)) {
-	 VG_(close)(RES);
-	 SET_RESULT( -VKI_EMFILE );
-      } else {
-         if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, NULL);
-      }
-      break;
+     r = generic_POST_sys_socket( tid, RES );
+     SET_RESULT(r);
+     break;
 
    case VKI_SYS_BIND:
       /* int bind(int sockfd, struct sockaddr *my_addr, 
@@ -4435,23 +4703,11 @@ POST(sys_socketcall)
       /* int listen(int s, int backlog); */
       break;
 
-   case VKI_SYS_ACCEPT: {
+   case VKI_SYS_ACCEPT:
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-      if (!VG_(fd_allowed)(RES, "accept", tid, True)) {
-	 VG_(close)(RES);
-	 SET_RESULT( -VKI_EMFILE );
-      } else {
-	 Addr addr_p     = ((UWord*)ARG2)[1];
-	 Addr addrlen_p  = ((UWord*)ARG2)[2];
-
-	 if (addr_p != (Addr)NULL) 
-	    buf_and_len_post_check ( tid, RES, addr_p, addrlen_p,
-				     "socketcall.accept(addrlen_out)" );
-         if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, NULL);
-      }
-      break;
-   }
+     r = generic_POST_sys_accept( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+     SET_RESULT(r);
+     break;
 
    case VKI_SYS_SENDTO:
       break;
@@ -4460,24 +4716,12 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVFROM:
-      {
-	 Addr buf_p      = ((UWord*)ARG2)[1];
-	 Int  len        = ((UWord*)ARG2)[2];
-	 Addr from_p     = ((UWord*)ARG2)[4];
-	 Addr fromlen_p  = ((UWord*)ARG2)[5];
-
-	 if (from_p != (Addr)NULL) 
-	    buf_and_len_post_check ( tid, RES, from_p, fromlen_p,
-				     "socketcall.recvfrom(fromlen_out)" );
-	 POST_MEM_WRITE( buf_p, len );
-      }
+      generic_POST_sys_recvfrom( tid, RES, ARG2_0, ARG2_1, ARG2_2,
+                                           ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_RECV:
-      if (RES >= 0 && ((UWord*)ARG2)[1] != 0) {
-	 POST_MEM_WRITE( ((UWord*)ARG2)[1], /* buf */
-		         ((UWord*)ARG2)[2]  /* len */ );
-      }
+      generic_POST_sys_recv( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
@@ -4487,34 +4731,16 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_GETSOCKOPT:
-      {
-	 Addr optval_p  = ((UWord*)ARG2)[3];
-	 Addr optlen_p  = ((UWord*)ARG2)[4];
-
-	 if (optval_p != (Addr)NULL) 
-	    buf_and_len_post_check ( tid, RES, optval_p, optlen_p,
-				     "socketcall.getsockopt(optlen_out)" );
-      }
+      generic_POST_sys_getsockopt( tid, RES, ARG2_0, ARG2_1, 
+                                             ARG2_2, ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
-      {
-	 Addr name_p     = ((UWord*)ARG2)[1];
-	 Addr namelen_p  = ((UWord*)ARG2)[2];
-
-	 buf_and_len_post_check ( tid, RES, name_p, namelen_p,
-				  "socketcall.getsockname(namelen_out)" );
-      }
+      generic_POST_sys_getsockname( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
-      {
-	 Addr name_p     = ((UWord*)ARG2)[1];
-	 Addr namelen_p  = ((UWord*)ARG2)[2];
-
-	 buf_and_len_post_check ( tid, RES, name_p, namelen_p,
-				  "socketcall.getpeername(namelen_out)" );
-      }
+      generic_POST_sys_getpeername( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SHUTDOWN:
@@ -4524,20 +4750,20 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVMSG:
-   {
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)ARG2)[ 1 ];
-
-      msghdr_foreachfield( tid, msg, post_mem_write_recvmsg );
-      check_cmsg_for_fds( tid, msg );
-
-      break;
-   }
+     generic_POST_sys_recvmsg( tid, RES, ARG2_0, ARG2_1 );
+     break;
 
    default:
       VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",ARG1);
       VG_(core_panic)("... bye!\n");
       break; /*NOTREACHED*/
    }
+#  undef ARG2_0
+#  undef ARG2_1
+#  undef ARG2_2
+#  undef ARG2_3
+#  undef ARG2_4
+#  undef ARG2_5
 }
 
 PRE(sys_newstat, 0)

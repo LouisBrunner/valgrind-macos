@@ -61,7 +61,6 @@ stage2_SOURCES = \
 	vg_demangle.c \
 	vg_errcontext.c \
 	vg_hashtable.c \
-	vg_instrument.c \
 	vg_main.c \
 	vg_malloc2.c \
 	vg_memory.c \

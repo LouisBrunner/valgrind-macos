@@ -404,6 +404,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define LIT0 (u->lit32 == 0)
 #  define LIT1 (!(LIT0))
 #  define LITm (u->tag1 == Literal ? True : LIT0 )
+#  define SZ8  (u->size == 8)
 #  define SZ4  (u->size == 4)
 #  define SZ2  (u->size == 2)
 #  define SZ1  (u->size == 1)
@@ -543,6 +544,11 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                        (u->argc > 1                   ? TR2 : N2) && 
                        (u->argc > 2 || u->has_ret_val ? TR3 : N3) &&
                        u->regparms_n <= u->argc && XCCALL;
+   /* Fields checked:     lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
+   case MMX1:
+   case MMX2:       return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
+   case MMX2_MemRd: return LIT0 && SZ8  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_MemWr: return LIT0 && SZ8  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
          return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
@@ -556,6 +562,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef LIT0
 #  undef LIT1
 #  undef LITm
+#  undef SZ8
 #  undef SZ4
 #  undef SZ2
 #  undef SZ1
@@ -842,6 +849,10 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case FPU_R:   return "FPU_R";
       case FPU_W:   return "FPU_W";
       case FPU:     return "FPU"  ;
+      case MMX1:       return "MMX1" ;
+      case MMX2:       return "MMX2" ;
+      case MMX2_MemRd: return "MMX2_MRd" ;
+      case MMX2_MemWr: return "MMX2_MWr" ;
       default:
          if (VG_(needs).extended_UCode)
             return SK_(name_XUOpcode)(opc);
@@ -958,6 +969,23 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case FPU:
          VG_(printf)("\t0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
+         break;
+
+      case MMX1:
+         VG_(printf)("\t0x%x",
+                     u->val1 & 0xFF );
+         break;
+
+      case MMX2:
+         VG_(printf)("\t0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
+         break;
+
+      case MMX2_MemWr:
+      case MMX2_MemRd:
+         VG_(printf)("\t0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
+         VG_(pp_UOperand)(u, 2, 4, True);
          break;
 
       case GET: case PUT: case MOV: case LOAD: case STORE: case CMOV:
@@ -1111,6 +1139,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case LEA1: RD(1); WR(2); break;
       case LEA2: RD(1); RD(2); WR(3); break;
 
+      case MMX1: case MMX2:
       case NOP:   case FPU:   case INCEIP: case CALLM_S: case CALLM_E:
       case CLEAR: case CALLM: case LOCK: break;
 
@@ -1121,6 +1150,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
          if (u->has_ret_val) WR(3);
          break;
 
+      case MMX2_MemRd: case MMX2_MemWr:
       case FPU_R: case FPU_W: RD(2); break;
 
       case GETSEG: WR(2); break;
@@ -1257,6 +1287,8 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case CC2VAL:
       case JIFZ:
       case FPU: case FPU_R: case FPU_W:
+      case MMX1: case MMX2:
+      case MMX2_MemRd: case MMX2_MemWr:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
       case GETSEG: case PUTSEG: 

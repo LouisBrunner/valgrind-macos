@@ -1081,6 +1081,13 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case MMX1: case MMX2: case MMX3:
+         case MMX2_MemRd: case MMX2_MemWr:
+         case MMX2_RegRd: case MMX2_RegWr:
+            VG_(skin_panic)(
+               "I don't know how to instrument MMXish stuff (yet)");
+            break;
+
          default:
             VG_(pp_UInstr)(0, u_in);
             VG_(skin_panic)( "memcheck_instrument: unhandled case");

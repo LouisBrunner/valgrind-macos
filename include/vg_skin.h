@@ -516,6 +516,41 @@ typedef
       FPU,           /* Doesn't touch memory */
       FPU_R, FPU_W,  /* Reads/writes memory  */
 
+      /* ------------ MMX ops ------------ */
+
+      /* 1 byte, no memrefs, no iregdefs, copy exactly to the
+	 output.  Held in val1[7:0]. */
+      MMX1,
+
+      /* 2 bytes, no memrefs, no iregdefs, copy exactly to the
+	 output.  Held in val1[15:0]. */
+      MMX2,
+
+      /* 3 bytes, no memrefs, no iregdefs, copy exactly to the
+         output.  Held in val1[15:0] and val2[7:0]. */
+      MMX3,
+
+      /* 2 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:mod mmxreg r/m.
+         Held in val1[15:0], and mod and rm are to be replaced
+         at codegen time by a reference to the Temp/RealReg holding 
+         the address.  Arg2 holds this Temp/Real Reg.
+         Transfer is always at size 8.
+      */
+      MMX2_MemRd,
+      MMX2_MemWr,
+
+      /* 2 bytes, reads/writes an integer register.  Insns of the form
+         bbbbbbbb:11 mmxreg ireg.
+         Held in val1[15:0], and ireg is to be replaced
+         at codegen time by a reference to the relevant RealReg.
+         Transfer is always at size 4.  Arg2 holds this Temp/Real Reg.
+      */
+      MMX2_RegRd,
+      MMX2_RegWr,
+
+      /* ------------------------ */
+
       /* Not strictly needed, but improve address calculation translations. */
       LEA1,  /* reg2 := const + reg1 */
       LEA2,  /* reg3 := const + reg1 + reg2 * 1,2,4 or 8 */
@@ -931,14 +966,18 @@ extern Int VGOFF_(helper_DAA);
 #define R_GS 5
 
 /* For pretty printing x86 code */
+extern Char* VG_(name_of_mmx_gran) ( UChar gran );
+extern Char* VG_(name_of_mmx_reg)  ( Int mmxreg );
 extern Char* VG_(name_of_seg_reg)  ( Int sreg );
 extern Char* VG_(name_of_int_reg)  ( Int size, Int reg );
 extern Char  VG_(name_of_int_size) ( Int size );
 
 /* Shorter macros for convenience */
-#define nameIReg  VG_(name_of_int_reg)
-#define nameISize VG_(name_of_int_size)
-#define nameSReg  VG_(name_of_seg_reg)
+#define nameIReg    VG_(name_of_int_reg)
+#define nameISize   VG_(name_of_int_size)
+#define nameSReg    VG_(name_of_seg_reg)
+#define nameMMXReg  VG_(name_of_mmx_reg)
+#define nameMMXGran VG_(name_of_mmx_gran)
 
 /* Randomly useful things */
 extern UInt  VG_(extend_s_8to32) ( UInt x );

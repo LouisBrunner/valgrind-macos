@@ -1094,6 +1094,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case MMX2_MemRd:
+         case MMX2_MemWr:
+            sk_assert(u_in->size == 8);
+            t_addr = u_in->val2;
+            t_size = newTemp(cb);
+	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, 8);
+            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
+            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
          default:
             VG_(copy_UInstr)(cb, u_in);
             break;

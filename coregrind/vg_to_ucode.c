@@ -112,7 +112,8 @@ Char* VG_(name_of_int_reg) ( Int size, Int reg )
    static Char* ireg16_names[8] 
      = { "%ax", "%cx", "%dx", "%bx", "%sp", "%bp", "%si", "%di" };
    static Char* ireg8_names[8] 
-     = { "%al", "%cl", "%dl", "%bl", "%ah{sp}", "%ch{bp}", "%dh{si}", "%bh{di}" };
+     = { "%al", "%cl", "%dl", "%bl", 
+         "%ah{sp}", "%ch{bp}", "%dh{si}", "%bh{di}" };
    if (reg < 0 || reg > 7) goto bad;
    switch (size) {
       case 4: return ireg32_names[reg];
@@ -134,6 +135,25 @@ Char* VG_(name_of_seg_reg) ( Int sreg )
       case R_FS: return "%fs";
       case R_GS: return "%gs";
       default: VG_(core_panic)("nameOfSegReg");
+   }
+}
+
+Char* VG_(name_of_mmx_reg) ( Int mmxreg )
+{
+   static Char* mmx_names[8] 
+     = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
+   if (mmxreg < 0 || mmxreg > 7) VG_(core_panic)("name_of_mmx_reg");
+   return mmx_names[mmxreg];
+}
+
+Char* VG_(name_of_mmx_gran) ( UChar gran )
+{
+   switch (gran) {
+      case 0: return "b";
+      case 1: return "w";
+      case 2: return "d";
+      case 3: return "q";
+      default: VG_(core_panic)("name_of_mmx_gran");
    }
 }
 
@@ -3180,6 +3200,54 @@ Addr dis_mov_Sw_Ew ( UCodeBlock* cb,
 }
 
 
+
+/* Simple MMX operations, either 
+       op   (src)mmxreg, (dst)mmxreg
+   or
+       op   (src)address, (dst)mmxreg
+   opc is the byte following the 0x0F prefix.
+*/
+static 
+Addr dis_MMXop_regmem_to_reg ( UCodeBlock* cb, 
+                               UChar sorb,
+                               Addr eip,
+                               UChar opc,
+                               Char* name,
+                               Bool show_granularity )
+{
+   UChar dis_buf[50];
+   UChar modrm;
+   modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      eip++;
+      uInstr1(cb, MMX2, 0, 
+                  Lit16, 
+                  (((UShort)(opc)) << 8) | ((UShort)modrm) );
+      if (dis)
+         VG_(printf)("%s%s %s, %s\n", 
+                     name,
+                     show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
+                     nameMMXReg(eregOfRM(modrm)),
+                     nameMMXReg(gregOfRM(modrm)));
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr2(cb, MMX2_MemRd, 8, 
+                  Lit16, 
+                  (((UShort)(opc)) << 8) | ((UShort)modrm),
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s%s %s, %s\n", 
+                     name,
+                     show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
+                     dis_buf,
+                     nameMMXReg(gregOfRM(modrm)));
+   }
+   return eip;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
 /*------------------------------------------------------------*/
@@ -4678,17 +4746,206 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip = dis_xadd_G_E ( cb, sorb, sz, eip );
          break;
 
+      /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
+
+      case 0x77: /* EMMS */
+         vg_assert(sz == 4);
+         uInstr1(cb, MMX1, 0, Lit16, ((UShort)(opc)) );
+         if (dis)
+            VG_(printf)("emms\n");
+         break;
+
+      case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (epartIsReg(modrm)) {
+            uInstr1(cb, MMX2, 0, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm) );
+            if (dis)
+               VG_(printf)("movq %s, %s\n", 
+                           nameMMXReg(eregOfRM(modrm)),
+                           nameMMXReg(gregOfRM(modrm)));
+         } else {
+            pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+            Int tmpa = LOW24(pair);
+            eip += HI8(pair);
+            uInstr2(cb, MMX2_MemRd, 8, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, tmpa);
+            if (dis)
+               VG_(printf)("movq %s, %s\n", 
+                           dis_buf,
+                           nameMMXReg(gregOfRM(modrm)));
+         }
+         break;
+
+      case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (epartIsReg(modrm)) {
+            goto unimp2;
+         } else {
+            pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+            Int tmpa = LOW24(pair);
+            eip += HI8(pair);
+            uInstr2(cb, MMX2_MemWr, 8, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, tmpa);
+            if (dis)
+               VG_(printf)("movq %s, %s\n", 
+                           nameMMXReg(gregOfRM(modrm)),
+                           dis_buf);
+         }
+         break;
+
+      case 0xFC: case 0xFD: case 0xFE: 
+         /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "padd", True );
+         break;
+
+      case 0xEC: case 0xED:
+         /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "padds", True );
+         break;
+
+      case 0xDC: case 0xDD:
+         /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "paddus", True );
+         break;
+
+      case 0xF8: case 0xF9: case 0xFA:
+         /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psub", True );
+         break;
+
+      case 0xE8: case 0xE9:
+         /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psubs", True );
+         break;
+
+      case 0xD8: case 0xD9:
+         /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psubus", True );
+         break;
+
+      case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmulhw", False );
+         break;
+
+      case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmullw", False );
+         break;
+
+      case 0xF5: /* PMADDWD (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmaddwd", False );
+         break;
+
+      case 0x74: case 0x75: case 0x76: 
+         /* PCMPEQgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pcmpeq", True );
+         break;
+
+      case 0x64: case 0x65: case 0x66: 
+         /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pcmpgt", True );
+         break;
+
+      case 0x6B: /* PACKSSDW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "packssdw", False );
+         break;
+
+      case 0x63: /* PACKSSWB (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "packsswb", False );
+         break;
+
+      case 0x67: /* PACKUSWB (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "packuswb", False );
+         break;
+
+      case 0x68: case 0x69: case 0x6A: 
+         /* PUNPCKHgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "punpckh", True );
+         break;
+
+      case 0x60: case 0x61: case 0x62:
+         /* PUNPCKLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "punpckl", True );
+         break;
+
+      case 0xDB: /* PAND (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pand", False );
+         break;
+
+      case 0xDF: /* PANDN (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pandn", False );
+         break;
+
+      case 0xEB: /* POR (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "por", False );
+         break;
+
+      case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pxor", False );
+         break;
+
+      case 0xF1: case 0xF2: case 0xF3:
+         /* PSLLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psll", True );
+         break;
+
+      case 0xD1: case 0xD2: case 0xD3:
+         /* PSRLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psrl", True );
+         break;
+
+      case 0xE1: case 0xE2:
+         /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psra", True );
+         break;
+
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 
       default:
-         VG_(printf)("disInstr: unhandled 2-byte opcode 0x%x\n", 
-                     (UInt)opc);
-	 VG_(printf)("This _might_ be the result of executing an "
-                     "MMX, SSE, SSE2 or 3DNow!\n" );
+      unimp2:
+         VG_(printf)("disInstr: unhandled 2-byte opcode: "
+                     "0x%x 0x%x 0x%x\n",
+                     (Int)getUChar(eip-1), 
+                     (Int)getUChar(eip+0), 
+                     (Int)getUChar(eip+1) );
+
+	 VG_(printf)("This _might_ be the result of executing a "
+                     "SSE, SSE2 or 3DNow!\n" );
 	 VG_(printf)("instruction.  Valgrind does not currently "
                      "support such instructions.  Sorry.\n" );
 	 uInstr0(cb, CALLM_S, 0);
-	 uInstr1(cb, CALLM,   0, Lit16, VGOFF_(helper_undefined_instruction));
+	 uInstr1(cb, CALLM,   0, Lit16, 
+                     VGOFF_(helper_undefined_instruction));
 	 uInstr0(cb, CALLM_E, 0);
 
 	 /* just because everything else insists the last instruction

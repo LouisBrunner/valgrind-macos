@@ -1382,6 +1382,49 @@ static void emit_fpu_regmem ( FlagSet uses_sflags,
                   nameIReg(4,reg) );
 }
 
+static void emit_MMX2_regmem ( FlagSet uses_sflags, 
+                               FlagSet sets_sflags,
+			       UChar first_byte, 
+                               UChar second_byte, 
+                               Int ireg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( 0x0F );
+   VG_(emitB) ( first_byte );
+   second_byte &= 0x38; /* mask out mod and rm fields */
+   emit_amode_regmem_reg ( ireg, second_byte >> 3 );
+   if (dis)
+      VG_(printf)("\n\t\tmmx2-0x%x:0x%x-(%s)\n", 
+                  (UInt)first_byte, (UInt)second_byte,
+                  nameIReg(4,ireg) );
+}
+
+static void emit_MMX2_no_mem ( FlagSet uses_sflags, 
+                               FlagSet sets_sflags,
+			       UChar first_byte, 
+                               UChar second_byte )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( 0x0F );
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   if (dis)
+      VG_(printf)("\n\t\tmmx2-0x%x:0x%x\n", 
+                  (UInt)first_byte, (UInt)second_byte );
+}
+
+static void emit_MMX1_no_mem ( FlagSet uses_sflags, 
+                               FlagSet sets_sflags,
+			       UChar first_byte ) 
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( 0x0F );
+   VG_(emitB) ( first_byte );
+   if (dis)
+      VG_(printf)("\n\t\tmmx1-0x%x\n", 
+                  (UInt)first_byte );
+}
+
 
 /*----------------------------------------------------*/
 /*--- misc instruction emitters                    ---*/
@@ -2618,12 +2661,38 @@ static void synth_setb_reg ( Bool simd, Int reg, Condcode cond )
 }
 
 
+static void synth_MMX2_regmem ( Bool uses_flags, Bool sets_flags,
+ 			        UChar first_byte,
+                                UChar second_byte, 
+                                Int ireg )
+{
+   emit_MMX2_regmem ( uses_flags, sets_flags, 
+                      first_byte, second_byte, ireg );
+}
+
+
+static void synth_MMX2_no_mem ( Bool uses_flags, Bool sets_flags,
+			        UChar first_byte,
+                                UChar second_byte )
+{
+   emit_MMX2_no_mem ( uses_flags, sets_flags, first_byte, second_byte );
+}
+
+
+static void synth_MMX1_no_mem ( Bool uses_flags, Bool sets_flags,
+			        UChar first_byte )
+{
+   emit_MMX1_no_mem ( uses_flags, sets_flags, first_byte );
+}
+
+
 static void synth_fpu_regmem ( Bool uses_flags, Bool sets_flags,
 			       UChar first_byte,
                                UChar second_byte_masked, 
                                Int reg )
 {
-   emit_fpu_regmem ( uses_flags, sets_flags, first_byte, second_byte_masked, reg );
+   emit_fpu_regmem ( uses_flags, sets_flags, 
+                     first_byte, second_byte_masked, reg );
 }
 
 
@@ -3352,6 +3421,44 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          synth_fpu_no_mem ( u->flags_r, u->flags_w,
 			    (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF );
+         break;
+
+      case MMX2_MemWr:
+      case MMX2_MemRd:
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == RealReg);
+         vg_assert(!anyFlagUse(u));
+         if (!(*fplive)) {
+            emit_get_fpu_state();
+            *fplive = True;
+         }
+         synth_MMX2_regmem ( u->flags_r, u->flags_w,
+                             (u->val1 >> 8) & 0xFF,
+                             u->val1 & 0xFF,
+                             u->val2 );
+         break;
+
+      case MMX1:
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == NoValue);
+	 if (!(*fplive)) {
+	    emit_get_fpu_state();
+	    *fplive = True;
+	 }
+         synth_MMX1_no_mem ( u->flags_r, u->flags_w,
+                             u->val1 & 0xFF );
+         break;
+
+      case MMX2:
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == NoValue);
+	 if (!(*fplive)) {
+	    emit_get_fpu_state();
+	    *fplive = True;
+	 }
+         synth_MMX2_no_mem ( u->flags_r, u->flags_w,
+			     (u->val1 >> 8) & 0xFF,
+                             u->val1 & 0xFF );
          break;
 
       default: 

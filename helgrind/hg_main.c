@@ -2055,6 +2055,13 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 	 }
 
+         case MMX1: case MMX2: case MMX3:
+         case MMX2_MemRd: case MMX2_MemWr:
+         case MMX2_RegRd: case MMX2_RegWr:
+            VG_(skin_panic)(
+               "I don't know how to instrument MMXish stuff (yet)");
+            break;
+
          default:
 	    /* conservative tromping */
 	    if (0 && u_in->tag1 == TempReg) /* can val1 ever be dest? */

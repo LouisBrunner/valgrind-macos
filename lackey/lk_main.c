@@ -181,7 +181,14 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                VG_(copy_UInstr)(cb, u);
             }
             break;
-            
+
+         case MMX1: case MMX2: case MMX3:
+         case MMX2_MemRd: case MMX2_MemWr:
+         case MMX2_RegRd: case MMX2_RegWr:
+            VG_(skin_panic)(
+               "I don't know how to instrument MMXish stuff (yet)");
+            break;
+         
          default:
             /* Count UInstr */
             VG_(call_helper_0_0)(cb, (Addr) & add_one_UInstr);

@@ -679,6 +679,90 @@ struct __res_state* __res_state ( void )
 }
 
 
+/* ---------------------------------------------------
+   LIBC-PRIVATE SPECIFIC DATA
+   ------------------------------------------------ */
+
+/* Relies on assumption that initial private data is NULL.  This
+   should be fixed somehow. */
+
+/* The allowable keys (indices) (all 2 of them). 
+   From sysdeps/pthread/bits/libc-tsd.h
+*/
+enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
+                        _LIBC_TSD_KEY_DL_ERROR,
+                        _LIBC_TSD_KEY_N };
+
+/* Auto-initialising subsystem.  libc_specifics_inited is set 
+   after initialisation.  libc_specifics_inited_mx guards it. */
+static int             libc_specifics_inited    = 0;
+static pthread_mutex_t libc_specifics_inited_mx = PTHREAD_MUTEX_INITIALIZER;
+
+/* These are the keys we must initialise the first time. */
+static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N];
+
+/* Initialise the keys, if they are not already initialise. */
+static
+void init_libc_tsd_keys ( void )
+{
+   int res, i;
+   pthread_key_t k;
+
+   res = pthread_mutex_lock(&libc_specifics_inited_mx);
+   if (res != 0) barf("init_libc_tsd_keys: lock");
+
+   if (libc_specifics_inited == 0) {
+      /* printf("INIT libc specifics\n"); */
+      libc_specifics_inited = 1;
+      for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
+         res = pthread_key_create(&k, NULL);
+	 if (res != 0) barf("init_libc_tsd_keys: create");
+         libc_specifics_keys[i] = k;
+      }
+   }
+
+   res = pthread_mutex_unlock(&libc_specifics_inited_mx);
+   if (res != 0) barf("init_libc_tsd_keys: unlock");
+}
+
+
+static int
+libc_internal_tsd_set ( enum __libc_tsd_key_t key, 
+                        const void * pointer )
+{
+   int res;
+   /* printf("SET SET SET key %d ptr %p\n", key, pointer); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_set: invalid key");
+   init_libc_tsd_keys();
+   res = pthread_setspecific(libc_specifics_keys[key], pointer);
+   if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
+   return 0;
+}
+
+static void *
+libc_internal_tsd_get ( enum __libc_tsd_key_t key )
+{
+   void* v;
+   /* printf("GET GET GET key %d\n", key); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_get: invalid key");
+   init_libc_tsd_keys();
+   v = pthread_getspecific(libc_specifics_keys[key]);
+   /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
+   return v;
+}
+
+
+
+
+int (*__libc_internal_tsd_set)(enum __libc_tsd_key_t key, const void * pointer)
+     = libc_internal_tsd_set;
+
+void* (*__libc_internal_tsd_get)(enum __libc_tsd_key_t key)
+     = libc_internal_tsd_get;
+
+
 /* ---------------------------------------------------------------------
    These are here (I think) because they are deemed cancellation
    points by POSIX.  For the moment we'll simply pass the call along
@@ -1213,6 +1297,26 @@ strong_alias(fcntl, __fcntl)
 strong_alias(connect, __connect)
 
 /*--------------------------------------------------*/
+
+int
+pthread_rwlock_rdlock (void* /* pthread_rwlock_t* */ rwlock)
+{
+   kludged("pthread_rwlock_rdlock");
+   return 0;
+}
+
+strong_alias(pthread_rwlock_rdlock, __pthread_rwlock_rdlock)
+
+
+int
+pthread_rwlock_unlock (void* /* pthread_rwlock_t* */ rwlock)
+{
+   kludged("pthread_rwlock_unlock");
+   return 0;
+}
+
+strong_alias(pthread_rwlock_unlock, __pthread_rwlock_unlock)
+
 
 /* I've no idea what these are, but they get called quite a lot.
    Anybody know? */

@@ -3066,7 +3066,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    }
 
    /* Skip a LOCK prefix. */
-   if (getUChar(eip) == 0xF0) eip++;
+   if (getUChar(eip) == 0xF0) { 
+      /* VG_(printf)("LOCK LOCK LOCK LOCK LOCK \n"); */
+      eip++;
+   }
 
    /* Crap out if we see a segment override prefix. */
    if (getUChar(eip) == 0x65) {

@@ -101,12 +101,12 @@ void pthread_mutex_timedlock ( void )  { unimp("pthread_mutex_timedlock"); }
 //void pthread_once ( void )  { unimp("pthread_once"); }
 void pthread_rwlock_destroy ( void )  { unimp("pthread_rwlock_destroy"); }
 void pthread_rwlock_init ( void )  { unimp("pthread_rwlock_init"); }
-void pthread_rwlock_rdlock ( void )  { unimp("pthread_rwlock_rdlock"); }
+//void pthread_rwlock_rdlock ( void )  { unimp("pthread_rwlock_rdlock"); }
 void pthread_rwlock_timedrdlock ( void )  { unimp("pthread_rwlock_timedrdlock"); }
 void pthread_rwlock_timedwrlock ( void )  { unimp("pthread_rwlock_timedwrlock"); }
 void pthread_rwlock_tryrdlock ( void )  { unimp("pthread_rwlock_tryrdlock"); }
 void pthread_rwlock_trywrlock ( void )  { unimp("pthread_rwlock_trywrlock"); }
-void pthread_rwlock_unlock ( void )  { unimp("pthread_rwlock_unlock"); }
+//void pthread_rwlock_unlock ( void )  { unimp("pthread_rwlock_unlock"); }
 void pthread_rwlock_wrlock ( void )  { unimp("pthread_rwlock_wrlock"); }
 void pthread_rwlockattr_destroy ( void )  { unimp("pthread_rwlockattr_destroy"); }
 void pthread_rwlockattr_getkind_np ( void )  { unimp("pthread_rwlockattr_getkind_np"); }
@@ -153,3 +153,4 @@ void sem_init@GLIBC_2.0 ( void )  { unimp("sem_init@GLIBC_2.0"); }
 void pthread_attr_init@@GLIBC_2.1 ( void )  { unimp("pthread_attr_init@@GLIBC_2.1"); }
 void pthread_attr_init@GLIBC_2.0 ( void )  { unimp("pthread_attr_init@GLIBC_2.0"); }
 #endif
+

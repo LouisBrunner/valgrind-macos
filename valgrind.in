@@ -166,5 +166,6 @@ export LD_LIBRARY_PATH
 LD_PRELOAD=valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
 #LD_DEBUG=files
+#LD_DEBUG=symbols
 #export LD_DEBUG
 exec "$@"

@@ -112,16 +112,22 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
+#if 0
+/* Apparently unused. */
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
 }
+#endif
 
+#if 0
+/* Apparently unused. */
 static IRExpr* mkU8 ( UInt i )
 {
    vassert(i < 256);
    return IRExpr_Const(IRConst_U8(i));
 }
+#endif
 
 static IRExpr* bind ( Int binder )
 {
@@ -1684,7 +1690,7 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
 
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 {
-   MatchInfo mi;
+   /* MatchInfo mi; */
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_F64);

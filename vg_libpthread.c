@@ -1138,6 +1138,24 @@ ssize_t __pwrite64 (int __fd, const void *__buf, size_t __nbytes,
 }
 
 
+extern 
+ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset);
+__attribute__((weak))
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
+{
+   return __libc_pwrite(fd, buf, count, offset);
+}
+
+
+extern 
+ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset);
+__attribute__((weak))
+ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+{
+   return __libc_pread(fd, buf, count, offset);
+}
+
+
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
 /* not weak: __attribute__((weak)) */
@@ -1556,8 +1574,6 @@ strong_alias(fcntl, __fcntl)
 strong_alias(lseek, __lseek)
 strong_alias(open, __open)
 strong_alias(open64, __open64)
-//strong_alias(pread64, __pread64)
-//strong_alias(pwrite64, __pwrite64)
 strong_alias(read, __read)
 strong_alias(wait, __wait)
 strong_alias(write, __write)

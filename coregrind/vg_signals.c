@@ -552,7 +552,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    if ( (signo == VKI_SIGVGINT || signo == VKI_SIGVGKILL)
 	&& new_act
 	&& !(new_act->ksa_handler == VKI_SIG_DFL || new_act->ksa_handler == VKI_SIG_IGN) )
-      goto bad_signo;
+      goto bad_signo_reserved;
 
    /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
    if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP)
@@ -587,17 +587,30 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
   bad_signo:
    if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
       VG_(message)(Vg_UserMsg,
-                   "Warning: bad signal number %d in __NR_sigaction.", 
+                   "Warning: bad signal number %d in sigaction()", 
                    signo);
+   SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
+   return;
+
+  bad_signo_reserved:
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
+      VG_(message)(Vg_UserMsg,
+		   "Warning: ignored attempt to set %s handler in sigaction();",
+		   signame(signo));
+      VG_(message)(Vg_UserMsg,
+		   "         the %s signal is used internally by Valgrind", 
+		   signame(signo));
    SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    return;
 
   bad_sigkill_or_sigstop:
    if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
       VG_(message)(Vg_UserMsg,
-		   "Warning: attempt to set %s handler in __NR_sigaction.", 
+		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
-
+      VG_(message)(Vg_UserMsg,
+		   "         the %s signal is uncatchable", 
+		   signame(signo));
    SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    return;
 }

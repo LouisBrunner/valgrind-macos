@@ -23,7 +23,8 @@ getting signal 7: Success
 setting signal 8: Success
 getting signal 8: Success
 
-setting signal 9: Warning: attempt to set SIGKILL handler in __NR_sigaction.
+setting signal 9: Warning: ignored attempt to set SIGKILL handler in sigaction();
+         the SIGKILL signal is uncatchable
 Invalid argument
 getting signal 9: Success
 
@@ -54,7 +55,8 @@ getting signal 17: Success
 setting signal 18: Success
 getting signal 18: Success
 
-setting signal 19: Warning: attempt to set SIGSTOP handler in __NR_sigaction.
+setting signal 19: Warning: ignored attempt to set SIGSTOP handler in sigaction();
+         the SIGSTOP signal is uncatchable
 Invalid argument
 getting signal 19: Success
 
@@ -94,11 +96,13 @@ getting signal 30: Success
 setting signal 31: Success
 getting signal 31: Success
 
-setting signal 32: Warning: bad signal number 32 in __NR_sigaction.
+setting signal 32: Warning: ignored attempt to set SIGRT32 handler in sigaction();
+         the SIGRT32 signal is used internally by Valgrind
 Invalid argument
 getting signal 32: Success
 
-setting signal 33: Warning: bad signal number 33 in __NR_sigaction.
+setting signal 33: Warning: ignored attempt to set SIGRT33 handler in sigaction();
+         the SIGRT33 signal is used internally by Valgrind
 Invalid argument
 getting signal 33: Success
 
@@ -195,9 +199,9 @@ getting signal 63: Success
 setting signal 64: Success
 getting signal 64: Success
 
-setting signal 65: Warning: bad signal number 65 in __NR_sigaction.
+setting signal 65: Warning: bad signal number 65 in sigaction()
 Invalid argument
-getting signal 65: Warning: bad signal number 65 in __NR_sigaction.
+getting signal 65: Warning: bad signal number 65 in sigaction()
 Invalid argument
 
 

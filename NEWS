@@ -46,6 +46,11 @@ Other changes:
   69432: helgrind asserts encountering a MutexErr when there are 
          EraserErr suppressions
 
+- Increase the max size of the translation cache from 200k average bbs
+  to 300k average bbs.  Programs on the size of OOo (680m17) are
+  thrashing the cache at the smaller size, creating large numbers of
+  retranslations and wasting significant time as a result.
+
 
 
 Stable release 2.0.0 (5 Nov 2003)

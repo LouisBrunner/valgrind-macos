@@ -1373,6 +1373,8 @@ void VG_(nuke_all_threads_except) ( ThreadId me )
             "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
       VG_(proxy_delete)(tid, True);
       VG_(threads)[tid].status = VgTs_Empty;
+      VG_(threads)[tid].associated_mx = NULL;
+      VG_(threads)[tid].associated_cv = NULL;
       cleanup_after_thread_exited( tid, True );
    }
 }

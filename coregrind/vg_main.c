@@ -458,9 +458,17 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
                   MAP_PRIVATE|MAP_ANON|MAP_FIXED|MAP_NORESERVE, -1, 0);
       if ((void*)-1 == vres) {
          fprintf(stderr, 
-          "valgrind: Couldn't allocate address space for shadow memory\n"
-          "valgrind: Are you using a kernel with a small user address space,\n"
-          "valgrind: or do you have your virtual memory size limited?\n");
+          "valgrind: Could not allocate address space (%p bytes)\n"
+          "valgrind:   for shadow memory\n"
+          "valgrind: Possible causes:\n"
+          "valgrind: - For some systems (especially under RedHat 8), Valgrind\n"
+          "valgrind:   needs at least 1.5GB swap space.\n"
+          "valgrind: - Or, your virtual memory size may be limited (check\n"
+          "valgrind:   with 'ulimit -v').\n"
+          "valgrind: - Or, your system may use a kernel that provides only a\n" 
+          "valgrind:   too-small (eg. 2GB) user address space.\n"
+          , (void*)shadow_size
+         ); 
          exit(1);
       }
    }

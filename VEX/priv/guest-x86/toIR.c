@@ -3502,6 +3502,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739)));
                break;
 
+            case 0xEB: /* FLDPI */
+               DIP("fldpi");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851)));
+               break;
+
             case 0xEC: /* FLDLG2 */
                DIP("fldlg2");
                fp_push();
@@ -3872,6 +3878,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
+               break;
+
+            case 0xF0 ... 0xF7: /* FDIVR %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, False );
                break;
 
             case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */

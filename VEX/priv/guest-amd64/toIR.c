@@ -2987,7 +2987,6 @@ ULong dis_Grp1 ( Prefix pfx,
       assign(src,  mkU(ty,d64 & mask));
 
       if (gregLO3ofRM(modrm) == 2 /* ADC */) {
-         vassert(0); /* awaiting test case */
          helper_ADC( sz, dst1, dst0, src );
       } else 
       if (gregLO3ofRM(modrm) == 3 /* SBB */) {
@@ -3014,7 +3013,6 @@ ULong dis_Grp1 ( Prefix pfx,
       assign(src, mkU(ty,d64 & mask));
 
       if (gregLO3ofRM(modrm) == 2 /* ADC */) {
-         vassert(0); /* awaiting test case */
          helper_ADC( sz, dst1, dst0, src );
       } else 
       if (gregLO3ofRM(modrm) == 3 /* SBB */) {
@@ -3647,16 +3645,16 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
       IRTemp addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
       assign( t1, loadLE(ty, mkexpr(addr)) );
       switch (gregLO3ofRM(modrm)) {
-//..          case 0: /* INC */
-//..             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
-//..             storeLE( mkexpr(addr), mkexpr(t2) );
-//..             setFlags_INC_DEC( True, t2, ty );
-//..             break;
-//..          case 1: /* DEC */
-//..             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
-//..             storeLE( mkexpr(addr), mkexpr(t2) );
-//..             setFlags_INC_DEC( False, t2, ty );
-//..             break;
+         case 0: /* INC */
+            assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
+            storeLE( mkexpr(addr), mkexpr(t2) );
+            setFlags_INC_DEC( True, t2, ty );
+            break;
+         case 1: /* DEC */
+            assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
+            storeLE( mkexpr(addr), mkexpr(t2) );
+            setFlags_INC_DEC( False, t2, ty );
+            break;
          default: 
             vex_printf(
                "unhandled Grp4(M) case %d\n", (Int)gregLO3ofRM(modrm));
@@ -11691,13 +11689,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 
 /* XXXX be careful here with moves to AH/BH/CH/DH */
-//..    case 0xB0: /* MOV imm,AL */
-//..    case 0xB1: /* MOV imm,CL */
+   case 0xB0: /* MOV imm,AL */
+   case 0xB1: /* MOV imm,CL */
    case 0xB2: /* MOV imm,DL */
-//..    case 0xB3: /* MOV imm,BL */
-//..    case 0xB4: /* MOV imm,AH */
-//..    case 0xB5: /* MOV imm,CH */
-//..    case 0xB6: /* MOV imm,DH */
+   case 0xB3: /* MOV imm,BL */
+   case 0xB4: /* MOV imm,AH */
+   case 0xB5: /* MOV imm,CH */
+   case 0xB6: /* MOV imm,DH */
    case 0xB7: /* MOV imm,BH */
       if (haveF2orF3(pfx)) goto decode_failure;
       d64 = getUChar(delta); 
@@ -11805,9 +11803,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
       break;
 
-//..    case 0x0C: /* OR Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
-//..       break;
+   case 0x0C: /* OR Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
+      break;
    case 0x0D: /* OR Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
@@ -11827,9 +11826,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--       delta = dis_op_imm_A( sz, SBB, True, delta, "sbb" );
 //.. //--       break;
 //.. //-- 
-//..    case 0x24: /* AND Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_And8, True, delta, "and" );
-//..       break;
+   case 0x24: /* AND Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, Iop_And8, True, delta, "and" );
+      break;
    case 0x25: /* AND Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_And8, True, delta, "and" );
@@ -13033,7 +13033,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       case 0x31: /* RDTSC */
          if (haveF2orF3(pfx)) goto decode_failure;
          if (1) vex_printf("vex amd64->IR: kludged rdtsc\n");
-         putIRegRAX(4, mkU32(0));
+         putIRegRAX(4, mkU32(1));
          putIRegRDX(4, mkU32(0));
 
 //.. //--          t1 = newTemp(cb);

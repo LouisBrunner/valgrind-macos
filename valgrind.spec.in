@@ -24,6 +24,7 @@ detect problems such as:
 - Memory leaks -- where pointers to malloc'd blocks are lost forever
 - Passing of uninitialised and/or unaddressible memory to system calls
 - Mismatched use of malloc/new/new [] vs free/delete/delete []
+- Some abuses of the POSIX Pthreads API
 
 %prep
 %setup -n @PACKAGE@-@VERSION@

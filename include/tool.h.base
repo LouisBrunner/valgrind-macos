@@ -65,9 +65,6 @@
 /*=== Useful macros                                                ===*/
 /*====================================================================*/
 
-#define mycat_wrk(aaa,bbb) aaa##bbb
-#define mycat(aaa,bbb) mycat_wrk(aaa,bbb)
-
 /* No, really.  I _am_ that strange. */
 #define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
 

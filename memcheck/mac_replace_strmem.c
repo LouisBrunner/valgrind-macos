@@ -155,11 +155,11 @@ char* strcat ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncat ( char* dst, const char* src, int n )
+char* strncat ( char* dst, const char* src, unsigned int n )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
-   Int   m = 0;
+   UInt  m = 0;
 
    while (*dst) dst++;
    while (m   < n && *src) { m++; *dst++ = *src++; } /* concat <= n chars */
@@ -209,11 +209,11 @@ char* strcpy ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncpy ( char* dst, const char* src, int n )
+char* strncpy ( char* dst, const char* src, unsigned int n )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
-   Int   m = 0;
+   UInt  m = 0;
 
    while (m   < n && *src) { m++; *dst++ = *src++; }
    /* Check for overlap after copying; all n bytes of dst are relevant,
@@ -225,8 +225,7 @@ char* strncpy ( char* dst, const char* src, int n )
    return dst_orig;
 }
 
-int strncmp ( const unsigned char* s1, const unsigned char* s2, 
-              unsigned int nmax )
+int strncmp ( const char* s1, const char* s2, unsigned int nmax )
 {
    unsigned int n = 0;
    while (True) {

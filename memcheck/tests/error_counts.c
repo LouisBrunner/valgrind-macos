@@ -13,7 +13,6 @@ int main(void)
    int  n_dubious    = 0;
    int  n_leaked     = 0;
    int  n_suppressed = 0;
-   int  errs;
 
    /* Error counting */
    printf("errors: %d\n", VALGRIND_COUNT_ERRORS);

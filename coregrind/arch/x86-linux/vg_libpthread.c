@@ -25,7 +25,9 @@
 
 #include <unistd.h>
 #include <string.h>
-
+#ifdef GLIBC_2_1
+#include <sys/time.h>
+#endif
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -257,10 +259,12 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
    switch (type) {
+#ifndef GLIBC_2_1    
       case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+#endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
-      case PTHREAD_MUTEX_ADAPTIVE_NP:
          attr->__mutexkind = type;
          return 0;
       default:
@@ -391,7 +395,11 @@ int   pthread_getschedparam(pthread_t  target_thread,
 {
    kludged("pthread_getschedparam");
    if (policy) *policy = SCHED_OTHER;
+#  ifdef GLIBC_2_1
+   if (param) param->sched_priority = 0; /* who knows */
+#  else
    if (param) param->__sched_priority = 0; /* who knows */
+#  endif
    return 0;
 }
 
@@ -538,7 +546,11 @@ int sigaction(int signum,
               const struct sigaction *act,  
               struct  sigaction *oldact)
 {
+#  ifdef GLIBC_2_1
+   return __sigaction(signum, act, oldact);
+#  else
    return __libc_sigaction(signum, act, oldact);
+#  endif
 }
 
 

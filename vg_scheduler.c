@@ -1729,10 +1729,12 @@ void do_pthread_mutex_lock( ThreadId tid,
 
    /* More paranoia ... */
    switch (mutex->__m_kind) {
+#     ifndef GLIBC_2_1
       case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
-      case PTHREAD_MUTEX_ADAPTIVE_NP:
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
@@ -1817,10 +1819,12 @@ void do_pthread_mutex_unlock ( ThreadId tid,
 
    /* More paranoia ... */
    switch (mutex->__m_kind) {
+#     ifndef GLIBC_2_1    
       case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
-      case PTHREAD_MUTEX_ADAPTIVE_NP:
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
@@ -1979,10 +1983,12 @@ void do_pthread_cond_wait ( ThreadId tid,
 
    /* More paranoia ... */
    switch (mutex->__m_kind) {
+#     ifndef GLIBC_2_1    
       case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
-      case PTHREAD_MUTEX_ADAPTIVE_NP:
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:

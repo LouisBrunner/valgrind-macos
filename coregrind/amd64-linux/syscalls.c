@@ -1199,7 +1199,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENX_(__NR_exit,              sys_exit),           // 60
    GENXY(__NR_wait4,             sys_wait4),          // 61 
-   GENXY(__NR_kill,              sys_kill),           // 62 
+   GENX_(__NR_kill,              sys_kill),           // 62 
    GENXY(__NR_uname,             sys_newuname),       // 63 
    PLAX_(__NR_semget,            sys_semget),         // 64 
 

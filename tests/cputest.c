@@ -2,7 +2,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-// We return 0 if the machine matches the asked-for cpu, 1 otherwise.
+// We return:
+// - 0 if the machine matches the asked-for cpu
+// - 1 if it didn't match, but did match the name of another arch
+// - 2 otherwise
+
+// When updating this file for a new architecture, add the name to
+// 'all_archs' as well as adding go().
+
+#define False  0
+#define True   1
+typedef int    Bool;
+
+char* all_archs[] = {
+   "x86",
+   "ppc",
+   "amd64",
+   NULL
+};
 
 #ifdef __x86__
 static __inline__ void cpuid(unsigned int n,
@@ -16,12 +33,12 @@ static __inline__ void cpuid(unsigned int n,
    );
 }
 
-static int go(char* cpu)
+static Bool go(char* cpu)
 { 
    unsigned int level = 0, mask = 0, a, b, c, d;
 
    if ( strcmp( cpu, "x86" ) == 0 ) {
-     return 0;
+     return True;
    } else if ( strcmp( cpu, "x86-fpu" ) == 0 ) {
      level = 1;
      mask = 1 << 0;
@@ -41,7 +58,7 @@ static int go(char* cpu)
      level = 1;
      mask = 1 << 26;
    } else {
-     return 1;
+     return False;
    }
 
    cpuid( level & 0x80000000, &a, &b, &c, &d );
@@ -49,29 +66,36 @@ static int go(char* cpu)
    if ( a >= level ) {
       cpuid( level, &a, &b, &c, &d );
 
-      if ( ( d & mask ) != 0 ) return 0;
+      if ( ( d & mask ) != 0 ) return True;
    }
-   return 1;
+   return False;
 }
 #endif // __x86__
 
 
 #ifdef __ppc__
-static int go(char* cpu)
+static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc" ) == 0 )
-      return 0;
+      return True;
    else 
-      return 1;
+      return False;
 }
 #endif // __ppc__
 
-
 int main(int argc, char **argv)
 {
+   int i;
    if ( argc != 2 ) {
       fprintf( stderr, "usage: cputest <cpu-type>\n" );
-      exit( 1 );
+      exit( 2 );
    }
-   return go( argv[1] );
+   if (go( argv[1] )) {
+      return 0;      // matched
+   }
+   for (i = 0; NULL != all_archs[i]; i++) {
+      if ( strcmp( argv[1], all_archs[i] ) == 0 )
+         return 1;
+   }
+   return 2;
 }

@@ -318,9 +318,15 @@ sub test_one_dir($$)
     my ($dir, $prev_dirs) = @_;
     $dir =~ s/\/$//;    # trim a trailing '/'
 
-    # ignore dirs into which we should not recurse
+    # Ignore dirs into which we should not recurse.
     if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
 
+    # Ignore any dir whose name matches that of an architecture which is not
+    # the architecture we are running on (eg. when running on x86, ignore ppc/
+    # directories).
+    # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
+    if (256 == system("$tests_dir/tests/cputest $dir")) { return; }
+    
     chdir($dir) or die "Could not change into $dir\n";
 
     # Nb: Don't prepend a '/' to the base directory

@@ -361,6 +361,16 @@ static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
                                     binop(Iop_Sub32, mkU32(0), a1) )));
 }
 
+static IRAtom* mkLeft64 ( MCEnv* mce, IRAtom* a1 ) {
+   tl_assert(isShadowAtom(mce,a1));
+   /* It's safe to duplicate a1 since it's only an atom */
+   return assignNew(mce, Ity_I64, 
+                    binop(Iop_Or64, a1, 
+                          assignNew(mce, Ity_I64,
+                                    /* unop(Iop_Neg32, a1)))); */
+                                    binop(Iop_Sub64, mkU64(0), a1) )));
+}
+
 /* --------- 'Improvement' functions for AND/OR. --------- */
 
 /* ImproveAND(data, vbits) = data OR vbits.  Defined (0) data 0s give
@@ -1580,6 +1590,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       cheap_AddSub32:
       case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
+
+      /* could do better: Add64, Sub64 */
+      case Iop_Add64:
+      case Iop_Sub64:
+         return mkLeft64(mce, mkUifU64(mce, vatom1,vatom2));
 
       case Iop_Mul16:
       case Iop_Add16:

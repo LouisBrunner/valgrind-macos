@@ -5164,7 +5164,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnz %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(
                   0, 
                   IRExpr_Mux0X( 
@@ -5178,7 +5178,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnbe %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(
                   0, 
                   IRExpr_Mux0X( 

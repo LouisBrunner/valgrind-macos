@@ -380,7 +380,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
          vassert(irbb->next == NULL);
          /* figure out a new delta to continue at. */
          vassert(chase_into_ok(guest_next));
-         delta = (UInt)(guest_next - guest_pc_start);
+         delta = toUInt(guest_next - guest_pc_start);
          n_resteers++;
          d_resteers++;
          if (0 && (n_resteers & 0xFF) == 0)

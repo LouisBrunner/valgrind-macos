@@ -1070,12 +1070,12 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
 
    if (vex_streq(function_name, "x86g_calculate_eflags_all")) {
       /* specialise calls to above "calculate_eflags_all" function */
-      IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      IRExpr *cc_op, *cc_dep1; /*, *cc_dep2, *cc_ndep; */
       vassert(arity == 4);
       cc_op   = args[0];
       cc_dep1 = args[1];
-      cc_dep2 = args[2];
-      cc_ndep = args[3];
+      /* cc_dep2 = args[2]; */
+      /* cc_ndep = args[3]; */
 
       if (isU32(cc_op, X86G_CC_OP_COPY)) {
          /* eflags after COPY are stored in DEP1. */

@@ -659,7 +659,7 @@ void doHelperCall ( ISelEnv* env,
 
    /* Finally, the call itself. */
    addInstr(env, PPC32Instr_Call( cc,
-                                  Ptr_to_ULong(cee->addr),
+                                  toUInt(Ptr_to_ULong(cee->addr)),
                                   n_args + (passBBP ? 1 : 0) ));
 }
 

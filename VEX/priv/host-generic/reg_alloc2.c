@@ -432,12 +432,12 @@ HInstrArray* doRegisterAllocation (
                   vpanic("doRegisterAllocation: "
                          "first event for vreg is Read");
                }
-               vreg_lrs[k].dead_before = ii + 1;
+               vreg_lrs[k].dead_before = toShort(ii + 1);
                break;
             case HRmWrite:
                if (vreg_lrs[k].live_after == INVALID_INSTRNO)
-                  vreg_lrs[k].live_after = ii;
-               vreg_lrs[k].dead_before = ii + 1;
+                  vreg_lrs[k].live_after = toShort(ii);
+               vreg_lrs[k].dead_before = toShort(ii + 1);
                break;
             case HRmModify:
                if (vreg_lrs[k].live_after == INVALID_INSTRNO) {
@@ -445,7 +445,7 @@ HInstrArray* doRegisterAllocation (
                   vpanic("doRegisterAllocation: "
                          "first event for vreg is Modify");
                }
-               vreg_lrs[k].dead_before = ii + 1;
+               vreg_lrs[k].dead_before = toShort(ii + 1);
                break;
             default:
                vpanic("doRegisterAllocation(1)");
@@ -528,8 +528,8 @@ HInstrArray* doRegisterAllocation (
             if (0) 
                vex_printf("FLUSH 1 (%d,%d)\n", flush_la, flush_db);
             rreg_lrs[rreg_lrs_used].rreg        = rreg;
-            rreg_lrs[rreg_lrs_used].live_after  = flush_la;
-            rreg_lrs[rreg_lrs_used].dead_before = flush_db;
+            rreg_lrs[rreg_lrs_used].live_after  = toShort(flush_la);
+            rreg_lrs[rreg_lrs_used].dead_before = toShort(flush_db);
             rreg_lrs_used++;
          }
 
@@ -565,8 +565,8 @@ HInstrArray* doRegisterAllocation (
          vex_printf("FLUSH 2 (%d,%d)\n", 
                     rreg_live_after[j], rreg_dead_before[j]);
       rreg_lrs[rreg_lrs_used].rreg        = available_real_regs[j];
-      rreg_lrs[rreg_lrs_used].live_after  = rreg_live_after[j];
-      rreg_lrs[rreg_lrs_used].dead_before = rreg_dead_before[j];
+      rreg_lrs[rreg_lrs_used].live_after  = toShort(rreg_live_after[j]);
+      rreg_lrs[rreg_lrs_used].dead_before = toShort(rreg_dead_before[j]);
       rreg_lrs_used++;
    }
 
@@ -681,7 +681,7 @@ HInstrArray* doRegisterAllocation (
       /* This reflects LibVEX's hard-wired knowledge of the baseBlock
          layout: the guest state, then an equal sized area following
          it for shadow state, and then the spill area. */
-      vreg_lrs[j].spill_offset = guest_sizeB * 2 + k * 8;
+      vreg_lrs[j].spill_offset = toShort(guest_sizeB * 2 + k * 8);
 
       /* if (j > max_ss_no) */
       /*    max_ss_no = j; */

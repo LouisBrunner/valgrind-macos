@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "../memcheck.h"
 
 /* Program demonstrating copying of metadata in memcheck. */

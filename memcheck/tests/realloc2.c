@@ -3,7 +3,7 @@
    realloc time due to bad ordering of the things happening.  Now runs
    without error. */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 int main ( void )

@@ -8,7 +8,7 @@ $dir/../../tests/filter_stderr_basic                    |
 $dir/../../tests/filter_addresses                       |
 
 # Anonymise line numbers in mac_replace_strmem.c
-sed "s/mac_replace_strmem.c:[0-9]\+/mac_replace_strmem.c:.../"  |
+sed "s/mac_replace_strmem.c:[0-9]*/mac_replace_strmem.c:.../"  |
 
 $dir/../../tests/filter_test_paths                      |
 

@@ -1810,7 +1810,7 @@ static Bool dis_int_load ( UInt theInstr )
       
    case 0x28: // lhz (Load HW & Zero, p490)
       DIP("lhz r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
-      putIReg( Rd_addr, unop(Iop_16Sto32,
+      putIReg( Rd_addr, unop(Iop_16Uto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
       
@@ -1820,7 +1820,8 @@ static Bool dis_int_load ( UInt theInstr )
          return False;
       }
       DIP("lhzu r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
-      putIReg( Rd_addr, loadBE(Ity_I16, mkexpr(EA_imm)) );
+      putIReg( Rd_addr, unop(Iop_16Uto32,
+                             loadBE(Ity_I16, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
 
@@ -1888,14 +1889,14 @@ static Bool dis_int_load ( UInt theInstr )
             return False;
          }
          DIP("lhzux r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-         putIReg( Rd_addr, unop(Iop_16Sto32,
+         putIReg( Rd_addr, unop(Iop_16Uto32,
                                 loadBE(Ity_I16, mkexpr(EA_reg))) );
          putIReg( Ra_addr, mkexpr(EA_reg) );
          break;
          
       case 0x117: // lhzx (Load HW & Zero Indexed, p493)
          DIP("lhzx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-         putIReg( Rd_addr, unop(Iop_16Sto32,
+         putIReg( Rd_addr, unop(Iop_16Uto32,
                                 loadBE(Ity_I16, mkexpr(EA_reg))) );
          break;
 

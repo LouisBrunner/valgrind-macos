@@ -35,7 +35,11 @@
 #include <errno.h>
 #include <sys/types.h>
 
+/* Sidestep the normal check which disallows using valgrind.h
+   directly. */
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
+
 #include "vg_include.h"
 
 # define strong_alias(name, aliasname) \

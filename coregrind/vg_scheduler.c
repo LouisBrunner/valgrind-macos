@@ -29,6 +29,10 @@
 */
 
 #include "vg_include.h"
+
+/* Sidestep the normal check which disallows using valgrind.h
+   directly. */
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h" /* for VG_USERREQ__RUNNING_ON_VALGRIND and
                              VG_USERREQ__DISCARD_TRANSLATIONS */
 

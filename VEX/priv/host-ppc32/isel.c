@@ -185,7 +185,6 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
    return env->vregmap[tmp];
 }
 
-#if 0
 static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
@@ -194,7 +193,6 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
    *vrLO = env->vregmap[tmp];
    *vrHI = env->vregmapHI[tmp];
 }
-#endif
 
 static void addInstr ( ISelEnv* env, PPC32Instr* instr )
 {
@@ -246,12 +244,10 @@ static HReg          iselIntExpr_R     ( ISelEnv* env, IRExpr* e );
 static PPC32AMode*   iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
 static PPC32AMode*   iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
 
-#if 0
 static void          iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, 
 					 ISelEnv* env, IRExpr* e );
 static void          iselInt64Expr     ( HReg* rHi, HReg* rLo, 
 					 ISelEnv* env, IRExpr* e );
-#endif
 
 static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
 static PPC32CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
@@ -1055,14 +1051,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
          case Iop_64HIto32: {
-
-	    /* 64HIto32(MullU32(expr,expr)) */
+            HReg rHi, rLo;
+            iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
+            return rHi; /* and abandon rLo .. poor wee thing :-) */
+         }
+         case Iop_64to32: {
+#if 1
+// CAB: This right?
+	    /* 64to32(MullS32(expr,expr)) */
 	    {
-		DECLARE_PATTERN(p_MullU32_then_64HIto32);
-		DEFINE_PATTERN(p_MullU32_then_64HIto32,
-			       unop(Iop_64HIto32,
-				    binop(Iop_MullU32, bind(0), bind(1))));
-		if (matchIRExpr(&mi,p_MullU32_then_64HIto32,e)) {
+		DECLARE_PATTERN(p_MullS32_then_64to32);
+		DEFINE_PATTERN(p_MullS32_then_64to32,
+			       unop(Iop_64to32,
+				    binop(Iop_MullS32, bind(0), bind(1))));
+		if (matchIRExpr(&mi,p_MullS32_then_64to32,e)) {
 		    HReg dst = newVRegI(env);
 		    HReg     src1 = iselIntExpr_R( env, mi.bindee[0] );
 		    PPC32RI* src2 = iselIntExpr_RI( env, mi.bindee[1] );
@@ -1070,20 +1072,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 		    return dst;
 		}
 	    }
-
-#if 0
-            HReg rHi, rLo;
-            iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
-            return rHi; /* and abandon rLo .. poor wee thing :-) */
-#endif
-         }
-#if 0
-         case Iop_64to32: {
+#else
             HReg rHi, rLo;
             iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* similar stupid comment to the above ... */
-         }
 #endif
+         }
          case Iop_16HIto8:
          case Iop_32HIto16: {
             HReg dst   = newVRegI(env);
@@ -1548,7 +1542,6 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 }
 
 
-#if 0
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (64 bit)                ---*/
 /*---------------------------------------------------------*/
@@ -1577,7 +1570,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
 
-   vex_printf("@iselInt64Expr_wrk: tag=%d\n", e->tag);
+//   vex_printf("@iselInt64Expr_wrk: tag=%d\n", e->tag);
 
 //..    /* 64-bit literal */
 //..    if (e->tag == Iex_Const) {
@@ -1670,26 +1663,19 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          /* 32 x 32 -> 64 multiply */
          case Iop_MullU32:
          case Iop_MullS32: {
-#if 0
             /* get one operand into %r3, and the other into a R/I.
                Need to make an educated guess about which is better in
                which. */
-            HReg     tLo    = newVRegI(env);
-            HReg     tHi    = newVRegI(env);
-            Bool     syned  = e->Iex.Binop.op == Iop_MullS32;
-            PPC32RI* rmLeft = iselIntExpr_RI(env, e->Iex.Binop.arg1);
-            HReg     rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
-            addInstr(env, mk_iMOVsd_RR(rRight, hregPPC32_GPR3()));
-
-            addInstr(env, PPC32Instr_MulL(syned, Pss_32, rmLeft));
-
-            /* Result is now in EDX:EAX.  Tell the caller. */
-            addInstr(env, mk_iMOVds_RR(tHi, hregPPC32_EDX()));
-            addInstr(env, mk_iMOVds_RR(tLo, hregPPC32_EAX()));
+            HReg     tLo     = newVRegI(env);
+            HReg     tHi     = newVRegI(env);
+            Bool     syned   = e->Iex.Binop.op == Iop_MullS32;
+            HReg     rLeft   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            PPC32RI* riRight = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+            addInstr(env, PPC32Instr_MulL(syned, 0, tLo, rLeft, riRight));
+            addInstr(env, PPC32Instr_MulL(syned, 1, tHi, rLeft, riRight));
             *rHi = tHi;
             *rLo = tLo;
             return;
-#endif
          }
 
 //..          /* 64 x 32 -> (32(rem),32(div)) division */
@@ -2212,7 +2198,6 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    ppIRExpr(e);
    vpanic("iselInt64Expr(ppc32)");
 }
-#endif
 
 
 //.. /*---------------------------------------------------------*/
@@ -3251,10 +3236,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..       break;
 //..    }
 
-//..    /* --------- MEM FENCE --------- */
-//..    case Ist_MFence:
-//..       addInstr(env, X86Instr_MFence(env->subarch));
-//..       return;
+   /* --------- MEM FENCE --------- */
+   case Ist_MFence:
+      addInstr(env, PPC32Instr_MFence(env->subarch));
+      return;
 
    /* --------- EXIT --------- */
    case Ist_Exit: {

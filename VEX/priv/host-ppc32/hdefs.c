@@ -471,14 +471,17 @@ PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst ) {
    i->Pin.Unary32.dst = dst;
    return i;
 }
-//.. X86Instr* X86Instr_MulL ( Bool syned, X86ScalarSz ssz , X86RM* src ) {
-//..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag             = Xin_MulL;
-//..    i->Xin.MulL.syned  = syned;
-//..    i->Xin.MulL.ssz    = ssz;
-//..    i->Xin.MulL.src    = src;
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
+			      HReg src1, PPC32RI* src2 ) {
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_MulL;
+   i->Pin.MulL.syned = syned;
+   i->Pin.MulL.word  = word;
+   i->Pin.MulL.dst  = dst;
+   i->Pin.MulL.src1  = src1;
+   i->Pin.MulL.src2  = src2;
+   return i;
+}
 //.. X86Instr* X86Instr_Div ( Bool syned, X86ScalarSz ssz, X86RM* src ) {
 //..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
 //..    i->tag             = Xin_Div;
@@ -564,16 +567,15 @@ PPC32Instr* PPC32Instr_Set32 ( PPC32CondCode cond, HReg dst ) {
 //..    i->Xin.Bsfr32.dst    = dst;
 //..    return i;
 //.. }
-//.. X86Instr* X86Instr_MFence ( VexSubArch subarch )
-//.. {
-//..    X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag                = Xin_MFence;
-//..    i->Xin.MFence.subarch = subarch;
-//..    vassert(subarch == VexSubArchX86_sse0
-//..            || subarch == VexSubArchX86_sse1
-//..            || subarch == VexSubArchX86_sse2);
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_MFence ( VexSubArch subarch )
+{
+   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                = Pin_MFence;
+   i->Pin.MFence.subarch = subarch;
+   vassert(subarch == VexSubArchPPC32_AV
+           || subarch == VexSubArchPPC32_noAV);
+   return i;
+}
 
 //.. X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
 //..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
@@ -697,12 +699,20 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf("%sl ", showPPC32UnaryOp(i->Pin.Unary32.op));
          ppHRegPPC32(i->Pin.Unary32.dst);
          return;
-//..       case Xin_MulL:
-//..          vex_printf("%cmul%s ",
-//..                     i->Xin.MulL.syned ? 's' : 'u',
-//..                     showX86ScalarSz(i->Xin.MulL.ssz));
-//..          ppX86RM(i->Xin.MulL.src);
-//..          return;
+      case Pin_MulL:
+	  if (i->Pin.MulL.src2->tag == Pri_Imm) {
+	      vex_printf("mulli ");
+	  } else {
+	      vex_printf("mul%s%c ",
+			 i->Pin.MulL.word ? "hw" : "lw",
+			 i->Pin.MulL.syned ? 's' : 'u');
+	  }
+         ppHRegPPC32(i->Pin.MulL.dst);
+         vex_printf(",");
+         ppHRegPPC32(i->Pin.MulL.src1);
+         vex_printf(",");
+         ppPPC32RI(i->Pin.MulL.src2);
+         return;
 //..       case Xin_Div:
 //..          vex_printf("%cdiv%s ",
 //..                     i->Xin.Div.syned ? 's' : 'u',
@@ -797,10 +807,10 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          vex_printf(",");
 //..          ppHRegX86(i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          vex_printf("mfence(%s)",
-//..                     LibVEX_ppVexSubArch(i->Xin.MFence.subarch));
-//..          return;
+      case Pin_MFence:
+         vex_printf("mfence(%s)",
+                    LibVEX_ppVexSubArch(i->Pin.MFence.subarch));
+         return;
 //..       case Xin_FpUnary:
 //..          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
 //..          ppHRegX86(i->Xin.FpUnary.src);
@@ -973,11 +983,11 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       case Pin_Unary32:
 	 addHRegUse(u, HRmModify, i->Pin.Unary32.dst);
          return;
-//..       case Xin_MulL:
-//..          addRegUsage_X86RM(u, i->Xin.MulL.src, HRmRead);
-//..          addHRegUse(u, HRmModify, hregX86_EAX());
-//..          addHRegUse(u, HRmWrite, hregX86_EDX());
-//..          return;
+      case Pin_MulL:
+	 addHRegUse(u, HRmWrite, i->Pin.MulL.dst);
+	 addHRegUse(u, HRmRead, i->Pin.MulL.src1);
+         addRegUsage_PPC32RI(u, i->Pin.MulL.src2);
+         return;
 //..       case Xin_Div:
 //..          addRegUsage_X86RM(u, i->Xin.Div.src, HRmRead);
 //..          addHRegUse(u, HRmModify, hregX86_EAX());
@@ -1058,8 +1068,8 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
 //..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          return;
+      case Pin_MFence:
+         return;
 //..       case Xin_FpUnary:
 //..          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1200,9 +1210,11 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       case Pin_Unary32:
          mapReg(m, &i->Pin.Unary32.dst);
          return;
-//..       case Xin_MulL:
-//..          mapRegs_X86RM(m, i->Xin.MulL.src);
-//..          return;
+      case Pin_MulL:
+         mapReg(m, &i->Pin.MulL.dst);
+         mapReg(m, &i->Pin.MulL.src1);
+         mapRegs_PPC32RI(m, i->Pin.MulL.src2);
+         return;
 //..       case Xin_Div:
 //..          mapRegs_X86RM(m, i->Xin.Div.src);
 //..          return;
@@ -1237,8 +1249,8 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
 //..          mapReg(m, &i->Xin.Bsfr32.src);
 //..          mapReg(m, &i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          return;
+      case Pin_MFence:
+         return;
 //..       case Xin_FpUnary:
 //..          mapReg(m, &i->Xin.FpUnary.src);
 //..          mapReg(m, &i->Xin.FpUnary.dst);

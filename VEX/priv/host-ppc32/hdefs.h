@@ -290,7 +290,7 @@ typedef
       Pin_Sh32,      /* 32-bit shift/rotate */
       Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
       Pin_Unary32,   /* 32-bit not and neg */
-//..       Xin_MulL,      /* widening multiply */
+      Pin_MulL,      /* widening multiply */
 //..       Xin_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
@@ -301,7 +301,7 @@ typedef
       Pin_Store,     /* store a 8|16|32 bit value to mem */
       Pin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
-//..       Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
+      Pin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
 
 //..       Xin_FpUnary,   /* FP fake unary op */
 //..       Xin_FpBinary,  /* FP fake binary op */
@@ -343,12 +343,14 @@ typedef
             PPC32UnaryOp op;
             HReg         dst;
          } Unary32;
-//..          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
-//..          struct {
-//..             Bool        syned;
-//..             X86ScalarSz ssz;
-//..             X86RM*      src;
-//..          } MulL;
+         /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
+         struct {
+            Bool     syned;
+	    Bool     word;   /* low=0, hi=1 */
+            HReg     dst;
+            HReg     src1;
+            PPC32RI* src2;
+         } MulL;
 //..          /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
 //..          struct {
 //..             Bool        syned;
@@ -413,16 +415,16 @@ typedef
 //..             HReg src;
 //..             HReg dst;
 //..          } Bsfr32;
-//..          /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
-//..             an insn which flushes all preceding loads and stores as
-//..             much as possible before continuing.  On SSE2 we emit a
-//..             real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
-//..             on SSE0 "lock addl $0,0(%esp)".  This insn therefore
-//..             carries the subarch so the assembler knows what to
-//..             emit. */
-//..          struct {
-//..             VexSubArch subarch;
-//..          } MFence;
+         /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
+            an insn which flushes all preceding loads and stores as
+            much as possible before continuing.  On SSE2 we emit a
+            real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
+            on SSE0 "lock addl $0,0(%esp)".  This insn therefore
+            carries the subarch so the assembler knows what to
+            emit. */
+         struct {
+            VexSubArch subarch;
+         } MFence;
 
 //..          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
 //..          struct {
@@ -492,7 +494,7 @@ extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst );
-//.. extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
+extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
 //.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
@@ -504,7 +506,7 @@ extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );
 //.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_MFence    ( VexSubArch );
+extern PPC32Instr* PPC32Instr_MFence    ( VexSubArch );
 //.. 
 //.. extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );

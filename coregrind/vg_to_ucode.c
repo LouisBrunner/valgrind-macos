@@ -1219,44 +1219,89 @@ Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
 }
 
 
-#if 0
-/* Group 8 extended opcodes. */
+
+/* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 static
-Addr dis_Grp8 ( UCodeBlock* cb, Addr eip, UChar modrm,
-                Int am_sz, Int sz, UInt src_val )
+Addr dis_Grp8_BT ( UCodeBlock* cb, Addr eip, UChar modrm,
+                   Int am_sz, Int sz, UInt src_val )
 {
+#  define MODIFY_t2_AND_SET_CARRY_FLAG					\
+      /* t2 is the value to be op'd on.  Copy to t_fetched, then	\
+         modify t2, if non-BT. */					\
+      uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);		\
+      uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);		\
+      uLiteral(cb, v_mask);						\
+      switch (gregOfRM(modrm)) {					\
+         case 4: /* BT */  break;					\
+         case 5: /* BTS */ 						\
+            uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;	\
+         case 6: /* BTR */						\
+            uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;	\
+         case 7: /* BTC */ 						\
+            uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;	\
+      }									\
+      /* Copy relevant bit from t_fetched into carry flag. */		\
+      uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);		\
+      uLiteral(cb, src_val);						\
+      uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);		\
+      uLiteral(cb, 1);							\
+      uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);	\
+      uInstr1(cb, NEG, sz, TempReg, t_fetched);				\
+      setFlagsFromUOpcode(cb, NEG);
+
+
    /* src_val denotes a d8.
       And eip on entry points at the modrm byte. */
-   Int   t1, t2, helper;
+   Int   t1, t2, t_fetched, t_mask;
    UInt  pair;
    UChar dis_buf[50];
+   UInt  v_mask;
 
-   switch (gregOfRM(modrm)) {
-      case 4: helper = VGOFF_(helper_bt);  break;
-      case 5: helper = VGOFF_(helper_bts); break;
-      case 6: helper = VGOFF_(helper_btr); break;
-      case 7: helper = VGOFF_(helper_btc); break;
-      /* If this needs to be extended, be careful to do the flag
-         setting in the parts below correctly. */
-      default: VG_(panic)("dis_Grp8");
+   /* There is no 1-byte form of this instruction, AFAICS. */
+   vg_assert(sz == 2 || sz == 4);
+
+   /* Limit src_val -- the bit offset -- to something within a word.
+      The Intel docs say that literal offsets larger than a word are
+      masked in this way. */
+   switch (sz) {
+      case 2: src_val &= 15; break;
+      case 4: src_val &= 31; break;
+      default: VG_(panic)("dis_Grp8_BT: invalid size");
    }
 
-   t1 = newTemp(cb);
-   uInstr2(cb, MOV,  4, Literal, 0, TempReg, t1);
-   uLiteral(cb, src_val);
-   uInstr0(cb, CALLM_S, 0);
-   uInstr1(cb, PUSH, 4, TempReg, t1);
-   
+   /* Invent a mask suitable for the operation. */
+
+   switch (gregOfRM(modrm)) {
+      case 4: /* BT */  v_mask = 0; break;
+      case 5: /* BTS */ v_mask = 1 << src_val; break;
+      case 6: /* BTR */ v_mask = ~(1 << src_val); break;
+      case 7: /* BTC */ v_mask = 1 << src_val; break;
+         /* If this needs to be extended, probably simplest to make a
+            new function to handle the other cases (0 .. 3).  The
+            Intel docs do however not indicate any use for 0 .. 3, so
+            we don't expect this to happen. */
+      default: VG_(panic)("dis_Grp8_BT");
+   }
+   /* Probably excessively paranoid. */
+   if (sz == 2)
+      v_mask &= 0x0000FFFF;
+
+   t1        = INVALID_TEMPREG;
+   t_fetched = newTemp(cb);
+   t_mask    = newTemp(cb);
+
    if (epartIsReg(modrm)) {
       vg_assert(am_sz == 1);
       t2 = newTemp(cb);
-      uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, t2);
-      uInstr1(cb, PUSH,  sz, TempReg, t2);
-      uInstr1(cb, CALLM, 0,  Lit16,   helper);
-      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-      uInstr1(cb, POP,   sz, TempReg, t2);
-      uInstr2(cb, PUT,   sz, TempReg, t2, ArchReg, eregOfRM(modrm));
-      uInstr1(cb, CLEAR, 0,  Lit16,   4);
+
+      /* Fetch the value to be tested and modified. */
+      uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t2);
+      /* Do it! */
+      MODIFY_t2_AND_SET_CARRY_FLAG;
+      /* Dump the result back, if non-BT. */
+      if (gregOfRM(modrm) != 4 /* BT */)
+         uInstr2(cb, PUT, sz, TempReg, t2, ArchReg, eregOfRM(modrm));
+
       eip += (am_sz + 1);
       if (dis)
          VG_(printf)("%s%c $0x%x, %s\n",
@@ -1269,23 +1314,25 @@ Addr dis_Grp8 ( UCodeBlock* cb, Addr eip, UChar modrm,
       t2   = newTemp(cb);
       eip  += HI8(pair);
       eip  += 1;
+
+      /* Fetch the value to be tested and modified. */
       uInstr2(cb, LOAD,  sz, TempReg, t1, TempReg, t2);
-      uInstr1(cb, PUSH,  sz, TempReg, t2);
-      uInstr1(cb, CALLM, 0,  Lit16,   helper);
-      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-      uInstr1(cb, POP,   sz, TempReg, t2);
-      uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-      SMC_IF_ALL(cb);
-      uInstr1(cb, CLEAR, 0, Lit16,    4);
+      /* Do it! */
+      MODIFY_t2_AND_SET_CARRY_FLAG;
+      /* Dump the result back, if non-BT. */
+      if (gregOfRM(modrm) != 4 /* BT */) {
+         uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
+         SMC_IF_ALL(cb);
+      }
       if (dis)
             VG_(printf)("%s%c $0x%x, %s\n",
                         nameGrp8(gregOfRM(modrm)), nameISize(sz), src_val, 
                         dis_buf);
    }
-	uInstr0(cb, CALLM_E, 0);
    return eip;
+
+#  undef MODIFY_t2_AND_SET_CARRY_FLAG
 }
-#endif
 
 
 
@@ -4044,14 +4091,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- Grp8 =-=-=-=-=-=-=-=-=-=-=-= */
 
-#if 0
       case 0xBA: /* Grp8 Ib,Ev */
          modrm = getUChar(eip);
          am_sz = lengthAMode(eip);
          d32   = getSDisp8(eip + am_sz);
-         eip = dis_Grp8 ( cb, eip, modrm, am_sz, sz, d32 );
+         eip = dis_Grp8_BT ( cb, eip, modrm, am_sz, sz, d32 );
          break;
-#endif
+
       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
 
       case 0xBC: /* BSF Gv,Ev */

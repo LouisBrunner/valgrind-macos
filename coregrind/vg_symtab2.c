@@ -1420,6 +1420,25 @@ void vg_read_lib_symbols ( SegInfo* si )
 
       /* find the .stabstr and .stab sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
+
+         /* As a fallback position, we look first for the dynamic
+            symbols of a library to increase the chances that we can
+            say something helpful even if the standard and debug
+            symbols are missing. */
+
+         if (0 == VG_(strcmp)(".dynsym",sh_strtab + shdr[i].sh_name)) {
+            o_symtab    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
+            o_symtab_sz = shdr[i].sh_size;
+            vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
+            /* check image overrun here */
+         }
+         if (0 == VG_(strcmp)(".dynstr",sh_strtab + shdr[i].sh_name)) {
+            o_strtab    = (UChar*)(oimage + shdr[i].sh_offset);
+            o_strtab_sz = shdr[i].sh_size;
+            /* check image overrun here */
+         }
+ 
+         /* now look for the main symbol and string tables. */
          if (0 == VG_(strcmp)(".symtab",sh_strtab + shdr[i].sh_name)) {
             o_symtab    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
             o_symtab_sz = shdr[i].sh_size;

@@ -80,6 +80,7 @@
 {								\
    { Int nf, zf, cf;            				\
      Int argL, argR, res;					\
+     nf=nf; zf=zf; cf=cf; argL=argL; argR=argR; res=res;	\
    }								\
 }
 /*
@@ -198,12 +199,15 @@ UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond,
 /* Used by the optimiser to try specialisations.  Returns an
    equivalent expression, or NULL if none. */
 
+#if 0
+/* temporarily unused */
 static Bool isU32 ( IRExpr* e, UInt n )
 {
    return e->tag == Iex_Const
           && e->Iex.Const.con->tag == Ico_U32
           && e->Iex.Const.con->Ico.U32 == n;
 }
+#endif
 IRExpr* guest_arm_spechelper ( Char* function_name,
                                IRExpr** args )
 {
@@ -240,17 +244,19 @@ void LibVEX_GuestARM_put_flags ( UInt eflags_native,
 #endif
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestARM_get_eflags ( /*IN*/VexGuestARMState* vex_state )
+UInt LibVEX_GuestARM_get_flags ( /*IN*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
 
-   UInt eflags = armg_calculate_eflags_all(
+   UInt eflags = armg_calculate_flags_all(
                     vex_state->guest_CC_OP,
                     vex_state->guest_CC_DEP1,
                     vex_state->guest_CC_DEP2
                  );
 #if 0
    // CAB: what does this do?!
+   // jrs -- it's more x86-specific flags hacks (sigh).  You can
+   // safely delete it.
    UInt dflag = vex_state->guest_DFLAG;
    vassert(dflag == 1 || dflag == 0xFFFFFFFF);
    if (dflag == 0xFFFFFFFF)

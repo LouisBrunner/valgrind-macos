@@ -984,14 +984,14 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*OUT*/ UInt*   size,
                             /*OUT*/ Addr64* whereNext )
 {
-   IRType    ty;
-   IRTemp    addr, t1, t2;
-   Int       alen;
-   UChar     opc, modrm, abyte;
+  //   IRType    ty;
+  //  IRTemp    addr, t1, t2;
+  //   Int       alen;
+  UChar     opc; //, modrm, abyte;
    ARMCondcode cond;
-   UInt      d32;
-   UChar     dis_buf[50];
-   Int       am_sz, d_sz;
+   //  UInt      d32;
+   // UChar     dis_buf[50];
+   // Int       am_sz, d_sz;
    DisResult whatNext = Dis_Continue;
    UInt      theInstr;
 

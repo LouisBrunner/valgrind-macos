@@ -88,7 +88,25 @@ typedef
    VexGuestARMState;
 
 
+/*---------------------------------------------------------------*/
+/*--- Utility functions for ARM guest stuff.                  ---*/
+/*---------------------------------------------------------------*/
+
+/* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
+
+/* Initialise all guest ARM state. */
+
+extern
+void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state );
+
+/* Calculate the ARM flag state from the saved data. */
+
+extern
+UInt LibVEX_GuestARM_get_flags ( /*IN*/VexGuestARMState* vex_state );
+
+
 #endif /* ndef __LIBVEX_PUB_GUEST_ARM_H */
+
 
 /*---------------------------------------------------------------*/
 /*---                                      libvex_guest_arm.h ---*/

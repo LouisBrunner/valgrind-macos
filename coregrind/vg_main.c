@@ -403,9 +403,13 @@ UInt VG_(overall_in_tsize) = 0;
 UInt VG_(overall_out_count) = 0;
 UInt VG_(overall_out_osize) = 0;
 UInt VG_(overall_out_tsize) = 0;
-
 /* The number of discards of TT/TC. */
 UInt VG_(number_of_tc_discards) = 0;
+/* Counts of chain and unchain operations done. */
+UInt VG_(bb_enchain_count) = 0;
+UInt VG_(bb_dechain_count) = 0;
+/* Number of unchained jumps performed. */
+UInt VG_(unchained_jumps_done) = 0;
 
 
 /* Counts pertaining to the register allocator. */
@@ -468,6 +472,7 @@ Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
+Bool   VG_(clo_chain_bb)       = True;
 
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
@@ -558,6 +563,7 @@ static void usage ( void )
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (skin must be built for it) [no]\n"
+"    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
 "    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
@@ -832,6 +838,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_profile) = True;
       else if (STREQ(argv[i], "--profile=no"))
          VG_(clo_profile) = False;
+
+      else if (STREQ(argv[i], "--chain-bb=yes"))
+	 VG_(clo_chain_bb) = True;
+      else if (STREQ(argv[i], "--chain-bb=no"))
+	 VG_(clo_chain_bb) = False;
 
       else if (STREQ(argv[i], "--single-step=yes"))
          VG_(clo_single_step) = True;
@@ -1174,6 +1185,9 @@ static void vg_show_counts ( void )
 		"    TT/TC: %d tc sectors discarded.",
                 VG_(number_of_tc_discards) );
    VG_(message)(Vg_DebugMsg,
+                "           %d chainings, %d unchainings.",
+                VG_(bb_enchain_count), VG_(bb_dechain_count) );
+   VG_(message)(Vg_DebugMsg,
                 "translate: new     %d (%d -> %d; ratio %d:10)",
                 VG_(overall_in_count),
                 VG_(overall_in_osize),
@@ -1186,10 +1200,19 @@ static void vg_show_counts ( void )
                 VG_(overall_out_tsize),
                 safe_idiv(10*VG_(overall_out_tsize), VG_(overall_out_osize)));
    VG_(message)(Vg_DebugMsg,
-      " dispatch: %lu basic blocks, %d/%d sched events, %d tt_fast misses.", 
-      VG_(bbs_done), VG_(num_scheduling_events_MAJOR), 
+      " dispatch: %lu jumps (bb entries), of which %u (%lu%%) were unchained.", 
+      VG_(bbs_done), 
+      VG_(unchained_jumps_done),
+      ((ULong)(100) * (ULong)(VG_(unchained_jumps_done)))
+         / ( VG_(bbs_done)==0 ? 1 : VG_(bbs_done) )
+   );
+
+   VG_(message)(Vg_DebugMsg,
+      "           %d/%d major/minor sched events.  %d tt_fast misses.", 
+                     VG_(num_scheduling_events_MAJOR), 
                      VG_(num_scheduling_events_MINOR), 
                      VG_(tt_fast_misses));
+
    VG_(message)(Vg_DebugMsg, 
                 "reg-alloc: %d t-req-spill, "
                 "%d+%d orig+spill uis, %d total-reg-r.",

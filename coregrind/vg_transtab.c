@@ -30,6 +30,7 @@
 */
 
 #include "vg_include.h"
+#include <stddef.h>
 
 /* #define DEBUG_TRANSTAB */
 
@@ -58,6 +59,10 @@
 
 /*------------------ TYPES ------------------*/
 
+#define CODE_ALIGNMENT	16	/* alignment of TCEntries */
+#define CODE_ALIGN(a)	(((a)+CODE_ALIGNMENT-1) & ~(CODE_ALIGNMENT-1))
+#define IS_ALIGNED(a)	(((a) & (CODE_ALIGNMENT-1)) == 0)
+
 /* An entry in TC.  Payload always is always padded out to a 4-aligned
    quantity so that these structs are always word-aligned. */
 typedef
@@ -65,7 +70,8 @@ typedef
       /* +0 */ Addr   orig_addr;
       /* +4 */ UShort orig_size;
       /* +6 */ UShort trans_size;
-      /* +8 */ UChar  payload[0];
+      /* +8 */ UShort jump_sites[VG_MAX_JUMPS];
+      /* +VG_CODE_OFFSET */ UChar  payload[0];
    }
    TCEntry;
 
@@ -130,6 +136,50 @@ static Int vg_tt_used = 0;
    vg_dispatch.S. */
 Addr /* TCEntry*, really */ VG_(tt_fast)[VG_TT_FAST_SIZE];
 
+static void for_each_tc(Int sector, void (*fn)(TCEntry *));
+
+
+/*------------------ T-CHAINING HELPERS ------------------*/
+
+static
+void for_each_jumpsite(TCEntry *tce, void (*fn)(Addr))
+{
+   Int i;
+   for(i = 0; i < VG_MAX_JUMPS; i++) {
+      Addr a;
+      UShort idx = tce->jump_sites[i];
+
+      if (idx == (UShort)-1)
+	 continue;
+      
+      a = (Addr)&tce->payload[idx];
+
+      (*fn)(a);
+   }
+}
+
+static inline
+void unchain_tce(TCEntry *tce)
+{
+   for_each_jumpsite(tce, VG_(unchain_jumpsite));
+}
+
+/* Unchain any jumps pointing to a sector we're about to free */
+static
+void unchain_sector(Int s, Addr base, UInt len)
+{
+   void unchain_site(Addr a) {
+      Addr jmp = VG_(get_jmp_dest)(a);
+      if (jmp >= base && jmp < (base+len))
+	 VG_(unchain_jumpsite)(a);
+   }
+   void _unchain_tce(TCEntry *tce) {
+      for_each_jumpsite(tce, unchain_site);
+   }
+
+   for_each_tc(s, _unchain_tce);
+}
+
 
 /*------------------ TT HELPERS ------------------*/
 
@@ -176,6 +226,7 @@ void add_tt_entry ( TCEntry* tce )
       if (i == VG_TT_SIZE) 
          i = 0;
    }
+
    vg_tt[i].orig_addr = tce->orig_addr;
    vg_tt[i].tcentry = tce;
    vg_tt_used++;
@@ -221,30 +272,37 @@ static
 void rebuild_TT ( void )
 {
    Int      s;
-   UChar*   pc;
-   UChar*   pc_lim;
-   TCEntry* tce;
 
    /* Throw away TT. */
    initialise_tt();
    
    /* Rebuild TT from the remaining quarters. */
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
-      pc     = &(vg_tc[s][0]);
-      pc_lim = &(vg_tc[s][vg_tc_used[s]]);
-      while (True) {
-         if (pc >= pc_lim) break;
-         tce = (TCEntry*)pc;
-         pc += sizeof(TCEntry) + tce->trans_size;
-         if (tce->orig_addr != VG_TTE_DELETED)
-            add_tt_entry(tce);
-      }
+      for_each_tc(s, add_tt_entry);
    }
    pp_tt_tc_status ( "after  rebuild of TC" );
 }
 
 
 /*------------------ TC HELPERS ------------------*/
+
+static
+void for_each_tc(Int s, void (*fn)(TCEntry *))
+{
+   UChar *pc;
+   UChar *pc_lim;
+   TCEntry *tce;
+
+   pc     = &(vg_tc[s][0]);
+   pc_lim = &(vg_tc[s][vg_tc_used[s]]);
+   while (True) {
+      if (pc >= pc_lim) break;
+      tce = (TCEntry*)pc;
+      pc += sizeof(TCEntry) + tce->trans_size;
+      if (tce->orig_addr != VG_TTE_DELETED)
+	 (*fn)(tce);
+   }
+}
 
 /* Find the oldest non-NULL, non-empty sector, or -1 if none such. */
 static 
@@ -274,9 +332,17 @@ void discard_oldest_sector ( void )
    Char msg[100];
    Int s = find_oldest_sector();
    if (s != -1) {
+      Int i;
+
       vg_assert(s >= 0 && s < VG_TC_N_SECTORS);
       VG_(sprintf)(msg, "before discard of sector %d (%d bytes)", 
                         s, vg_tc_used[s]);
+
+      for(i = 0; i < VG_TC_N_SECTORS; i++) {
+	 if (i != s && vg_tc[i] != NULL)
+	    unchain_sector(i, (Addr)vg_tc[s], vg_tc_used[s]);
+      }
+
       pp_tt_tc_status ( msg );
       VG_(overall_out_count) += vg_tc_stats_count[s];
       VG_(overall_out_osize) += vg_tc_stats_osize[s];
@@ -331,7 +397,7 @@ UChar* allocate ( Int nBytes )
 {
    Int i;
 
-   vg_assert(0 == (nBytes & 3));
+   vg_assert(IS_ALIGNED(nBytes));
 
    /* Ensure the TT is still OK. */
    while (vg_tt_used >= VG_TT_LIMIT) {
@@ -421,7 +487,8 @@ void VG_(sanity_check_tc_tt) ( void )
    pointer, which is inserted here.
 */
 void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                             Addr trans_addr, Int trans_size )
+                             Addr trans_addr, Int trans_size,
+			     UShort jumps[VG_MAX_JUMPS])
 {
    Int i, nBytes, trans_size_aligned;
    TCEntry* tce;
@@ -431,12 +498,12 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                tte->trans_addr, tte->trans_size);
    */
 
+   vg_assert(offsetof(TCEntry, payload) == VG_CODE_OFFSET);
+
    /* figure out how many bytes we require. */
-   trans_size_aligned = trans_size;
-   while ((trans_size_aligned & 3) != 0) 
-      trans_size_aligned++;
-   nBytes = trans_size_aligned + sizeof(TCEntry);
-   vg_assert((nBytes & 3) == 0);
+   nBytes = CODE_ALIGN(trans_size + sizeof(TCEntry));
+   trans_size_aligned = nBytes-sizeof(TCEntry);
+   vg_assert(IS_ALIGNED(nBytes));
 
    tce = (TCEntry*)allocate(nBytes);
    /* VG_(printf)("allocate returned %p\n", tce); */
@@ -445,10 +512,14 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    tce->orig_addr  = orig_addr;
    tce->orig_size  = (UShort)orig_size;  /* what's the point of storing this? */
    tce->trans_size = (UShort)trans_size_aligned;
+   for (i = 0; i < VG_MAX_JUMPS; i++) {
+      tce->jump_sites[i] = jumps[i];
+   }
    for (i = 0; i < trans_size; i++) {
       tce->payload[i] = ((UChar*)trans_addr)[i];
    }
-
+   
+   unchain_tce(tce);
    add_tt_entry(tce);
 
    /* Update stats. */
@@ -552,6 +623,10 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 void VG_(init_tt_tc) ( void )
 {
    Int s;
+
+   /* Otherwise we wind up with non-32-bit-aligned code in
+      TCEntries. */
+   vg_assert((VG_MAX_JUMPS % 2) == 0);
 
    /* Figure out how big each sector should be.  */
    vg_tc_sector_szB 

@@ -53,6 +53,17 @@
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
 
+/* size of call instruction put into generated code at jump sites */
+#define VG_PATCHME_CALLSZ	5
+
+/* size of jmp instruction which overwrites the call */
+#define VG_PATCHME_JMPSZ	5
+
+/* maximum number of normal jumps which can appear in a basic block */
+#define VG_MAX_JUMPS		2
+
+/* Offset of code in a TCEntry */
+#define VG_CODE_OFFSET		(8 + VG_MAX_JUMPS * 2)
 
 /* Debugging hack for assembly code ... sigh. */
 #if 0

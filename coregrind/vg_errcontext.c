@@ -416,7 +416,7 @@ void VG_(show_all_errors) ( void )
 
       if ((i+1 == VG_(clo_dump_error))) {
 	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to below NULLs */,
-                         p_min->where->eips[0], NULL, NULL, NULL );
+                         p_min->where->eips[0], NULL, NULL, NULL, NULL );
       }
 
       p_min->count = 1 << 30;

@@ -244,6 +244,8 @@ extern Char* VG_(clo_weird_hacks);
    is ignored.  Ie if a skin says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
+/* Use the basic-block chaining optimisation */
+extern Bool VG_(clo_chain_bb);
 
 
 /* ---------------------------------------------------------------------
@@ -1045,10 +1047,15 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
    Exports of vg_from_ucode.c
    ------------------------------------------------------------------ */
 
-extern UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes );
+extern UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort jumps[VG_MAX_JUMPS] );
 
 extern void   VG_(print_ccall_stats)      ( void );
 extern void   VG_(print_UInstr_histogram) ( void );
+
+extern void   VG_(unchain_jumpsite)	  ( Addr jumpsite );
+extern Addr   VG_(get_jmp_dest)           ( Addr jumpsite );
+extern Bool   VG_(is_unchained_jumpsite)  ( Addr jumpsite );
+extern Bool   VG_(is_chained_jumpsite)    ( Addr jumpsite );
 
 /* ---------------------------------------------------------------------
    Exports of vg_to_ucode.c
@@ -1062,6 +1069,7 @@ extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr eip0 );
 
 /* Expandable arrays of uinstrs. */
 struct _UCodeBlock { 
+   Addr	   orig_eip;
    Int     used; 
    Int     size; 
    UInstr* instrs;
@@ -1074,7 +1082,8 @@ extern void  VG_(translate)  ( ThreadState* tst,
                                Addr  orig_addr,
                                UInt* orig_size,
                                Addr* trans_addr,
-                               UInt* trans_size );
+                               UInt* trans_size,
+			       UShort jumps[VG_MAX_JUMPS]);
 
 extern Char* VG_(nameCondcode)        ( Condcode cond );
 extern Bool  VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
@@ -1369,9 +1378,14 @@ extern UInt VG_(overall_in_tsize);
 extern UInt VG_(overall_out_count);
 extern UInt VG_(overall_out_osize);
 extern UInt VG_(overall_out_tsize);
-
 /* The number of discards of TT/TC. */
 extern UInt VG_(number_of_tc_discards);
+/* Counts of chain and unchain operations done. */
+extern UInt VG_(bb_enchain_count);
+extern UInt VG_(bb_dechain_count);
+/* Number of unchained jumps performed. */
+extern UInt VG_(unchained_jumps_done);
+
 
 /* Counts pertaining to the register allocator. */
 
@@ -1445,7 +1459,8 @@ extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 extern void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used );
 
 extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                                    Addr trans_addr, Int trans_size );
+                                    Addr trans_addr, Int trans_size,
+				    UShort jumps[VG_MAX_JUMPS]);
 
 extern void VG_(invalidate_translations) ( Addr start, UInt range );
 
@@ -1482,6 +1497,9 @@ extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,
    which means we need to defer to the scheduler. */
 extern UInt VG_(run_innerloop) ( void );
 
+/* The patching routing called when a BB wants to chain itself to
+   another. */
+extern UInt VG_(patch_me);
 
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S

@@ -316,12 +316,17 @@ Char* name_of_sched_event ( UInt event )
 static
 void create_translation_for ( ThreadId tid, Addr orig_addr )
 {
-   Addr trans_addr;
-   Int  orig_size, trans_size;
+   Addr   trans_addr;
+   Int    orig_size, trans_size;
+   UShort jumps[VG_MAX_JUMPS];
+   Int    i;
+
+   for(i = 0; i < VG_MAX_JUMPS; i++)
+      jumps[i] = (UShort)-1;
 
    /* Make a translation, into temporary storage. */
    VG_(translate)( &VG_(threads)[tid],
-                   orig_addr, &orig_size, &trans_addr, &trans_size );
+                   orig_addr, &orig_size, &trans_addr, &trans_size, jumps );
 
    /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are
@@ -329,7 +334,7 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
    vg_assert(orig_size > 0 && orig_size < 65536);
    vg_assert(trans_size > 0 && trans_size < 65536);
 
-   VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size );
+   VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size, jumps );
 
    /* Free the intermediary -- was allocated by VG_(emit_code). */
    VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
@@ -1579,7 +1584,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    VG_(printf)(
       "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
    VG_(translate)( &VG_(threads)[tid], 
-                   VG_(threads)[tid].m_eip, NULL, NULL, NULL );
+                   VG_(threads)[tid].m_eip, NULL, NULL, NULL, NULL );
    VG_(printf)("\n");
    VG_(printf)(
       "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");

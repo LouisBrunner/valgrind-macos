@@ -55,6 +55,7 @@ UCodeBlock* VG_(alloc_UCodeBlock) ( void )
 UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb_in )
 {
    UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
+   cb->orig_eip = cb_in->orig_eip;
    cb->used = cb->size = 0;
    cb->nextTemp = cb_in->nextTemp;
    cb->instrs = NULL;
@@ -1762,6 +1763,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    /* Resulting code goes here.  We generate it all in a forwards
       pass. */
    c2 = VG_(alloc_UCodeBlock)();
+   c2->orig_eip = c1->orig_eip;
 
    /* At the start, no TempRegs are assigned to any real register.
       Correspondingly, all temps claim to be currently resident in
@@ -2017,7 +2019,8 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
 		      /*IN*/  Addr  orig_addr,  
                       /*OUT*/ UInt* orig_size,
                       /*OUT*/ Addr* trans_addr, 
-                      /*OUT*/ UInt* trans_size )
+                      /*OUT*/ UInt* trans_size,
+		      /*OUT*/ UShort jumps[VG_MAX_JUMPS])
 {
    Int         n_disassembled_bytes, final_code_size;
    Bool        debugging_translation;
@@ -2032,6 +2035,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tst, "", orig_addr, 1 );
 
    cb = VG_(alloc_UCodeBlock)();
+   cb->orig_eip = orig_addr;
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_codegen)) {
@@ -2088,7 +2092,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(5);
 
    VGP_PUSHCC(VgpFromUcode);
-   final_code = VG_(emit_code)(cb, &final_code_size );
+   final_code = VG_(emit_code)(cb, &final_code_size, jumps );
    VGP_POPCC(VgpFromUcode);
    VG_(free_UCodeBlock)(cb);
 

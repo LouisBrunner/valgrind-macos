@@ -50,13 +50,20 @@
 */
 
 	
+#define TT_LOOKUP(reg, fail)				\
+	movl %eax, reg;					\
+	andl $VG_TT_FAST_MASK, reg;			\
+	movl VG_(tt_fast)(,reg,4), reg;			\
+	cmpl %eax, (reg);				\
+	jnz  fail
+	
 /* The C world needs a way to get started simulating.  So we provide
    a function void vg_run_innerloop ( void ), which starts running
    from vg_m_eip, and exits when the counter reaches zero.  This loop
    can also exit if vg_oursignalhandler() catches a non-resumable
    signal, for example SIGSEGV.  It then longjmp()s back past here.
 */
-	
+
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
 	/* OYNK(1000) */
@@ -101,47 +108,16 @@ dispatch_boring:
 	/* save the jump address at VG_(baseBlock)[VGOFF_(m_eip)] */
 	movl	VGOFF_(m_eip), %esi
 	movl	%eax, (%ebp, %esi, 4)
-	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	decl	VG_(dispatch_ctr)
-	jz	counter_is_zero
-	/* try a fast lookup in the translation cache */
-	movl	%eax, %ebx
-	andl	$VG_TT_FAST_MASK, %ebx	
-	/* ebx = tt_fast index */
-	movl	VG_(tt_fast)(,%ebx,4), %ebx	
-	/* ebx points at a tc entry
-	   now compare target with the tce.orig_addr field (+0) */
-	cmpl	%eax, (%ebx)
-	jnz	fast_lookup_failed
-
-	/* Found a match.  Call the tce.payload field (+8) */
-	addl	$8, %ebx
-	call	*%ebx
-	
-	cmpl	$VG_(baseBlock), %ebp
-	jnz	dispatch_exceptional
-
-dispatch_boring_unroll2:
-	/* save the jump address at VG_(baseBlock)[VGOFF_(m_eip)] */
-	movl	VGOFF_(m_eip), %esi
-	movl	%eax, (%ebp, %esi, 4)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	decl	VG_(dispatch_ctr)
+	cmpl	$0, VG_(dispatch_ctr)
 	jz	counter_is_zero
-
 	/* try a fast lookup in the translation cache */
-	movl	%eax, %ebx
-	andl	$VG_TT_FAST_MASK, %ebx	
-	/* ebx = tt_fast index */
-	movl	VG_(tt_fast)(,%ebx,4), %ebx	
-	/* ebx points at a tc entry
-	   now compare target with the tce.orig_addr field (+0) */
-	cmpl	%eax, (%ebx)
-	jnz	fast_lookup_failed
+	TT_LOOKUP(%ebx, fast_lookup_failed)
 
-	/* Found a match.  Call the tce.payload field (+8) */
-	addl	$8, %ebx
+	/* Found a match.  Call the tce.payload field (+VG_CODE_OFFSET) */
+	addl	$VG_CODE_OFFSET, %ebx
+	incl	VG_(unchained_jumps_done)	      /* update stats */
 	call	*%ebx
 	
 	cmpl	$VG_(baseBlock), %ebp
@@ -180,7 +156,9 @@ dispatch_exceptional:
 	jz	dispatch_syscall
 	cmpl	$VG_TRC_EBP_JMP_CLIENTREQ, %ebp
 	jz	dispatch_clientreq
-
+	cmpl	$VG_TRC_INNER_COUNTERZERO, %ebp
+	jz	counter_is_zero
+	
 	/* ebp has an invalid value ... crap out. */
 	pushl	$panic_msg_ebp
 	call	VG_(core_panic)
@@ -202,6 +180,34 @@ dispatch_clientreq:
 	movl	$VG_TRC_EBP_JMP_CLIENTREQ, %eax
 	jmp	run_innerloop_exit
 
+
+/* This is the translation chainer, our run-time linker, if you like.
+	
+   This enters with %eax pointing to next eip we want.  If
+   we've already compiled that eip (ie, get a fast hit), we
+   backpatch the call instruction with a jump, and jump there.
+   Otherwise, we do a slow hit/compile through the normal path
+   (and get to do a backpatch next time through). 
+*/
+.globl VG_(patch_me)
+VG_(patch_me):
+	/* try a fast lookup in the translation cache */
+	TT_LOOKUP(%ebx, 1f)
+
+	/* Patch call instruction at callsite into a chained jmp */
+	popl	%eax	    /* eax = just after (VG_PATCHME_CALLSZ byte) call */
+	addl	$VG_CODE_OFFSET, %ebx	/* ebx = target eip */
+	subl	%eax, %ebx		/* ebx = delta */
+	movb	$0xE9, -(VG_PATCHME_CALLSZ-0)(%eax)		/* 0xe9 = jmp */
+	movl	%ebx,  -(VG_PATCHME_CALLSZ-1)(%eax)	       /* store delta */
+	addl	%eax, %ebx
+	incl	VG_(bb_enchain_count)			      /* update stats */
+	jmp	*%ebx					       /* jmp to dest */
+
+	/* tt_fast miss: return into main dispatch loop */
+1:	addl	$4, %esp	/* remove our call address */
+	ret			/* return into main dispatch loop above */
+	
 .data
 panic_msg_ebp:
 .ascii	"vg_dispatch: %ebp has invalid value!"

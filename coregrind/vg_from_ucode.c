@@ -69,6 +69,10 @@ static UChar* emitted_code;
 static Int    emitted_code_used;
 static Int    emitted_code_size;
 
+/* offset (in bytes into the basic block)  */
+static UShort jumps[VG_MAX_JUMPS];
+static Int    jumpidx;
+
 /* Statistics about C functions called from generated code. */
 static UInt ccalls                 = 0;
 static UInt ccall_reg_saves        = 0;
@@ -1040,6 +1044,110 @@ static void emit_ret ( void )
       VG_(printf)("\n\t\tret\n");
 }
 
+/* Predicate used in sanity checks elsewhere - returns true if any
+   jump-site is an actual chained jump */
+Bool VG_(is_chained_jumpsite)(Addr a)
+{
+   UChar *cp = (UChar *)a;
+
+   return (*cp == 0xE9);		/* 0xE9 -- jmp */
+}
+
+/* Predicate used in sanity checks elsewhere - returns true if all
+   jump-sites are calls to VG_(patch_me) */
+Bool VG_(is_unchained_jumpsite)(Addr a)
+{
+   UChar *cp = (UChar *)a;
+   Int delta = ((Addr)&VG_(patch_me)) - (a + VG_PATCHME_CALLSZ);
+   Int idelta;
+
+   if (*cp++ != 0xE8)	/* 0xE8 == call */
+      return False;
+
+   idelta  = (*cp++) <<  0;
+   idelta |= (*cp++) <<  8;
+   idelta |= (*cp++) << 16;
+   idelta |= (*cp++) << 24;
+      
+   return idelta == delta;
+}
+
+/* Return target address for a direct jmp */
+Addr VG_(get_jmp_dest)(Addr a)
+{
+   Int delta;
+   UChar *cp = (UChar *)a;
+
+   if (*cp++ != 0xE9)	/* 0xE9 == jmp */
+      return 0;
+
+   delta  = (*cp++) <<  0;
+   delta |= (*cp++) <<  8;
+   delta |= (*cp++) << 16;
+   delta |= (*cp++) << 24;
+
+   return a + VG_PATCHME_JMPSZ + delta;
+}
+
+/* unchain a BB by generating a call to VG_(patch_me) */
+void VG_(unchain_jumpsite)(Addr a)
+{
+   Int delta = ((Addr)&VG_(patch_me)) - (a + VG_PATCHME_CALLSZ);
+   UChar *cp = (UChar *)a;
+
+   if (VG_(is_unchained_jumpsite)(a))
+      return;			/* don't write unnecessarily */
+
+   *cp++ = 0xE8;		/* call */
+   *cp++ = (delta >>  0) & 0xff;
+   *cp++ = (delta >>  8) & 0xff;
+   *cp++ = (delta >> 16) & 0xff;
+   *cp++ = (delta >> 24) & 0xff;
+   VG_(bb_dechain_count)++;     /* update stats */
+}
+
+/* This doesn't actually generate a call to VG_(patch_me), but
+   reserves enough space in the instruction stream for it to happen
+   and records the offset into the jump table.  This is because call
+   is a relative jump, and so will be affected when this code gets
+   moved about.  The translation table will "unchain" this basic block
+   on insertion (with VG_(unchain_BB)()), and thereby generate a
+   proper call instruction. */
+static void emit_call_patchme( void )
+{
+   vg_assert(VG_PATCHME_CALLSZ == 5);
+
+   VG_(new_emit)();
+
+   if (jumpidx >= VG_MAX_JUMPS) {
+      /* If there too many jumps in this basic block, fall back to
+	 dispatch loop.  We still need to keep it the same size as the
+	 call sequence. */
+      VG_(emitB) ( 0xC3 );	/* ret */
+      VG_(emitB) ( 0x90 );	/* nop */
+      VG_(emitB) ( 0x90 );	/* nop */
+      VG_(emitB) ( 0x90 );	/* nop */
+      VG_(emitB) ( 0x90 );	/* nop */
+
+      if (dis)
+	 VG_(printf)("\n\t\tret; nop; nop; nop; nop\n");
+
+      if (0 && VG_(clo_verbosity))
+	 VG_(message)(Vg_DebugMsg, "too many chained jumps in basic-block");
+   } else {
+      jumps[jumpidx++] = emitted_code_used;
+      
+      VG_(emitB) ( 0x0F );		/* UD2 - undefined instruction */
+      VG_(emitB) ( 0x0B );
+      VG_(emitB) ( 0x0F );		/* UD2 - undefined instruction */
+      VG_(emitB) ( 0x0B );
+      VG_(emitB) ( 0x90 );		/* NOP */
+
+      if (dis)
+	 VG_(printf)("\n\t\tud2; ud2; nop\n");
+   }
+}   
+
 void VG_(emit_pushal) ( void )
 {
    VG_(new_emit)();
@@ -1410,13 +1518,20 @@ static void synth_jmp_reg ( Int reg, JmpKind jmpkind )
    emit_ret();
 }
 
+static void synth_mov_reg_offregmem ( Int size, Int reg, Int off, Int areg );
 
 /* Same deal as synth_jmp_reg. */
 static void synth_jmp_lit ( Addr addr, JmpKind jmpkind )
 {
-   load_ebp_from_JmpKind ( jmpkind );
    VG_(emit_movv_lit_reg) ( 4, addr, R_EAX );
-   emit_ret();
+
+   if (VG_(clo_chain_bb) && (jmpkind == JmpBoring || jmpkind == JmpCall)) {
+      synth_mov_reg_offregmem(4, R_EAX, 4*VGOFF_(m_eip), R_EBP); /* update EIP */
+      emit_call_patchme();
+   } else {
+      load_ebp_from_JmpKind ( jmpkind );
+      emit_ret();
+   }
 }
 
 
@@ -1436,7 +1551,23 @@ static void synth_jcond_lit ( Condcode cond, Addr addr )
    6                    xyxyxy:
   */
    emit_get_eflags();
-   VG_(emit_jcondshort_delta) ( invertCondition(cond), 5+1 );
+   if (VG_(clo_chain_bb)) {
+      /* When using BB chaining, the jump sequence is:
+        jmp short if not cond to xyxyxy
+        addr -> eax
+	call VG_(patch_me)/jmp target
+        xyxyxy
+	 
+		je     1f
+		mov    $0x4000d190,%eax			// 5
+		mov    %eax, VGOFF_(m_eip)(%ebp)	// 3
+		call   0x40050f9a <vgPlain_patch_me>	// 5
+	1:	mov    $0x4000d042,%eax
+		call   0x40050f9a <vgPlain_patch_me>
+      */
+      VG_(emit_jcondshort_delta) ( invertCondition(cond), 5+3+5 );
+   } else
+      VG_(emit_jcondshort_delta) ( invertCondition(cond), 5+1 );
    synth_jmp_lit ( addr, JmpBoring );
 }
 
@@ -1450,7 +1581,10 @@ static void synth_jmp_ifzero_reg_lit ( Int reg, Addr addr )
       next:
    */
    VG_(emit_cmpl_zero_reg) ( reg );
-   VG_(emit_jcondshort_delta) ( CondNZ, 5+1 );
+   if (VG_(clo_chain_bb))
+      VG_(emit_jcondshort_delta) ( CondNZ, 5+3+5 );
+   else
+      VG_(emit_jcondshort_delta) ( CondNZ, 5+1 );
    synth_jmp_lit ( addr, JmpBoring );
 }
 
@@ -1965,8 +2099,8 @@ Bool anyFlagUse ( UInstr* u )
    there is any chance at all that the code generated for a UInstr
    will change the real FPU state.  
 */
-static Bool emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before, 
-                         Bool fplive )
+static Bool emitUInstr ( UCodeBlock* cb, Int i, 
+                         RRegSet regs_live_before, Bool fplive )
 {
    Int     old_emitted_code_used;
    UInstr* u = &cb->instrs[i];
@@ -2466,17 +2600,30 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before,
 
 /* Emit x86 for the ucode in cb, returning the address of the
    generated code and setting *nbytes to its size. */
-UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes )
+UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort j[VG_MAX_JUMPS] )
 {
    Int i;
    UChar regs_live_before = 0;   /* No regs live at BB start */
    Bool fplive;
-
+   
    emitted_code_used = 0;
    emitted_code_size = 500; /* reasonable initial size */
    emitted_code = VG_(arena_malloc)(VG_AR_JITTER, emitted_code_size);
+   jumpidx = 0;
 
    if (dis) VG_(printf)("Generated x86 code:\n");
+
+   /* Generate decl VG_(dispatch_ctr) and drop into dispatch if we hit
+      zero.  We have to do this regardless of whether we're t-chaining
+      or not. */
+   VG_(new_emit)();
+   VG_(emitB) (0xFF);	/* decl */
+   emit_amode_litmem_reg((Addr)&VG_(dispatch_ctr), 1);
+   if (dis)
+      VG_(printf)("\n\t\tdecl (%p)\n", &VG_(dispatch_ctr));
+   VG_(emit_jcondshort_delta)(CondNZ, 5+1);
+   VG_(emit_movv_lit_reg) ( 4, VG_TRC_INNER_COUNTERZERO, R_EBP );
+   emit_ret();
 
    fplive = False;
    for (i = 0; i < cb->used; i++) {
@@ -2496,6 +2643,12 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes )
    }
    if (dis) VG_(printf)("\n");
    vg_assert(!fplive);	/* FPU state must be saved by end of BB */
+
+   if (j != NULL) {
+      vg_assert(jumpidx <= VG_MAX_JUMPS);
+      for(i = 0; i < jumpidx; i++)
+	 j[i] = jumps[i];
+   }
 
    /* Returns a pointer to the emitted code.  This will have to be
       copied by the caller into the translation cache, and then freed */

@@ -1317,8 +1317,10 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
 }
 
 
-/* Traverse an expr, and detect if any part of it reads memory
-   or does a Get. */
+/* Traverse an expr, and detect if any part of it reads memory or does
+   a Get.  Be careful ... this really controls how much the
+   tree-builder can reorder the code, so getting it right is critical.
+*/
 static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
 {
    Int i;
@@ -1341,6 +1343,7 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          return;
       case Iex_LDle:
          *doesLoad |= True;
+	 setHints_Expr(doesLoad, doesGet, e->Iex.LDle.addr);
          return;
       case Iex_Get:
          *doesGet |= True;
@@ -1510,7 +1513,7 @@ static void treebuild_BB ( IRBB* bb )
          appeared.  (Stupid algorithm): first, mark all bindings which
          need to be dumped.  Then, dump them in the order in which
          they were defined. */
-      invPut = st->tag == Ist_Put;
+      invPut = st->tag == Ist_Put || st->tag == Ist_PutI;
       invStore = st->tag == Ist_STle;
 
       for (k = 0; k < env->used; k++) {

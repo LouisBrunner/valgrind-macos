@@ -884,7 +884,10 @@ extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 
 /* Sanity check a BB of IR */
-extern void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size );
+extern void sanityCheckIRBB ( IRBB*  bb, 
+                              HChar* caller,
+                              Bool   require_flatness, 
+                              IRType guest_word_size );
 extern Bool isFlatIRStmt ( IRStmt* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */

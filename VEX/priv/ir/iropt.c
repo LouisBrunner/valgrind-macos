@@ -96,7 +96,6 @@
       * Redundant-GetI removal
       * Redundant-PutI removal
       * Dead code removal
-      * (redo flattening)
 
    Then the transformations are as follows, as defined by
    vex_control.iropt_level:
@@ -107,7 +106,6 @@
    Level 1: the following sequence:
       * Flatten into atomic form.
       * Cheap transformations.
-      * Flatten into atomic form.
 
    Level 2: the following sequence
       * Flatten into atomic form.
@@ -118,11 +116,9 @@
         - Unrolled a loop, and block does not contain GetI or PutI:
           Do: * CSE
               * Dead code removal
-              * Flatten into atomic form.
         - Unrolled a loop, and block contains GetI or PutI:
           Do: * Expensive transformations
               * Cheap transformations
-              * Flatten into atomic form.
 */
 
 /* Implementation notes, 29 Dec 04.
@@ -145,8 +141,6 @@
    They are not regarded as atoms, and instead lifted off and
    bound to temps.  This allows them to participate in CSE, which
    is important for getting good performance for x86 guest code.
-
-   make spec_helpers_BB always return flat code
 
    CSE up F64 literals (already doing F64is)
 
@@ -1586,12 +1580,13 @@ static Bool isZeroU1 ( IRExpr* e )
 /*---------------------------------------------------------------*/
 
 static 
-void spec_helpers_BB ( IRBB* bb,
-                       IRExpr* (*specHelper) ( Char*, IRExpr**) )   
+IRBB* spec_helpers_BB ( IRBB* bb,
+                        IRExpr* (*specHelper) ( Char*, IRExpr**) )   
 {
-   Int i;
+   Int     i;
    IRStmt* st;
    IRExpr* ex;
+   Bool    any = False;
 
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
@@ -1608,6 +1603,7 @@ void spec_helpers_BB ( IRBB* bb,
         continue;
 
       /* We got something better.  Install it in the bb. */
+      any = True;
       bb->stmts[i]
          = IRStmt_Tmp(st->Ist.Tmp.tmp, ex);
 
@@ -1619,6 +1615,10 @@ void spec_helpers_BB ( IRBB* bb,
          vex_printf("\n");
       }
    }
+
+   if (any)
+      bb = flatten_BB(bb);
+   return bb;
 }
 
 
@@ -3342,10 +3342,8 @@ static Bool iropt_verbose = False; //True;
 /* Do a simple cleanup pass on bb.  This is: redundant Get removal,
    redundant Put removal, constant propagation, dead code removal,
    clean helper specialisation, and dead code removal (again).
+*/
 
-   Note, spec_helpers_BB destroys the 'flat' property, as the
-   expressions which replace clean helper calls can be arbitrarily
-   deep.  This should be fixed.  */
 
 static 
 IRBB* cheap_transformations ( 
@@ -3378,7 +3376,7 @@ IRBB* cheap_transformations (
       ppIRBB(bb);
    }
 
-   spec_helpers_BB ( bb, specHelper );
+   bb = spec_helpers_BB ( bb, specHelper );
    do_deadcode_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= SPECd \n\n" );
@@ -3400,7 +3398,7 @@ IRBB* expensive_transformations( IRBB* bb )
    do_redundant_GetI_elimination( bb );
    do_redundant_PutI_elimination( bb );
    do_deadcode_BB( bb );
-   return flatten_BB( bb );
+   return bb;
 }
 
 
@@ -3533,9 +3531,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    }
 
-   /* sigh; flatten the block out (yet again) for the benefit of
-      instrumenters. */
-   bb = flatten_BB( bb );
    return bb;
 }
 

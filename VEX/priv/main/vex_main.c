@@ -315,12 +315,14 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Sanity check the initial IR. */
-   sanityCheckIRBB(irbb, guest_word_type);
+   sanityCheckIRBB( irbb, "initial IR", 
+                    False/*can be non-flat*/, guest_word_type );
 
    /* Clean it up, hopefully a lot. */
    irbb = do_iropt_BB ( irbb, specHelper, preciseMemExnsFn, 
                               guest_bytes_addr );
-   sanityCheckIRBB(irbb, guest_word_type);
+   sanityCheckIRBB( irbb, "after initial iropt", 
+                    True/*must be flat*/, guest_word_type );
 
    if (vex_traceflags & VEX_TRACE_OPT1) {
       vex_printf("\n------------------------" 
@@ -345,14 +347,16 @@ TranslateResult LibVEX_Translate (
    }
 
    if (instrument1 || instrument2)
-      sanityCheckIRBB(irbb, guest_word_type);
+      sanityCheckIRBB( irbb, "after instrumentation",
+                       True/*must be flat*/, guest_word_type );
 
    /* Do a post-instrumentation cleanup pass. */
    if (cleanup_after_instrumentation) {
       do_deadcode_BB( irbb );
       irbb = cprop_BB( irbb );
       do_deadcode_BB( irbb );
-      sanityCheckIRBB(irbb, guest_word_type);
+      sanityCheckIRBB( irbb, "after post-instrumentation cleanup",
+                       True/*must be flat*/, guest_word_type );
    }
 
    if (vex_traceflags & VEX_TRACE_OPT2) {

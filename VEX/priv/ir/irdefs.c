@@ -1853,12 +1853,16 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    }
 }
 
-void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
+void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
+                       Bool require_flat, IRType guest_word_size )
 {
    Int     i;
    IRStmt* stmt;
    Int     n_temps    = bb->tyenv->types_used;
    Int*    def_counts = LibVEX_Alloc(n_temps * sizeof(Int));
+
+   if (0)
+      vex_printf("sanityCheck: %s\n", caller);
 
    vassert(guest_word_size == Ity_I32
            || guest_word_size == Ity_I64);
@@ -1876,6 +1880,19 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
                     i, (UInt)ty);
          sanityCheckFail(bb,NULL,"Temp declared with implausible type");
       }
+   }
+
+   /* Check for flatness, if required. */
+   if (require_flat) {
+      for (i = 0; i < bb->stmts_used; i++) {
+         stmt = bb->stmts[i];
+         if (!stmt)
+            continue;
+         if (!isFlatIRStmt(stmt))
+            sanityCheckFail(bb, stmt, "IRStmt: is not flat");
+      }
+      if (!isAtom(bb->next))
+         sanityCheckFail(bb, NULL, "bb->next is not an atom");
    }
 
    /* Count the defs of each temp.  Only one def is allowed.

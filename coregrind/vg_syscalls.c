@@ -1787,66 +1787,14 @@ PRE(execve)
    }
 
    if (VG_(clo_trace_children)) {
-      /* If we're tracing the children, then we need to start it
-	 with our starter+arguments.
-      */
-      Int i;
-      Char *exec = (Char *)arg1;
-      Char **env = (Char **)arg3;
-      Char *cp;
-      Char *exename;
-      Bool sawexec = False;
-      Char *optvar;
-      Int  optlen;
+      Char* optvar = VG_(build_child_VALGRINDCLO)( (Char*)arg1 );
 
-      optlen = 1;
-      for(i = 0; i < VG_(vg_argc); i++)
-	 optlen += VG_(strlen)(VG_(vg_argv)[i]) + 1;
+      // Set VALGRINDCLO and VALGRINDLIB in arg3 (the environment)
+      VG_(env_setenv)( (Char***)&arg3, VALGRINDCLO, optvar);
+      VG_(env_setenv)( (Char***)&arg3, VALGRINDLIB, VG_(libdir));
 
-      /* All these are leaked - we're either going to exec, or panic
-	 when we fail. */
-      exename  = VG_(arena_malloc)(VG_AR_CORE, 64);
-      exec = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(exec) + 7 /* --exec= */ + 1 /* \0 */);
-
-      VG_(sprintf)(exec, "--exec=%s", (Char *)arg1);
-      VG_(sprintf)(exename, "/proc/self/fd/%d", VG_(vgexecfd));
-
-      optlen += VG_(strlen)(exec)+1;
-
-      optvar = VG_(arena_malloc)(VG_AR_CORE, optlen);
-
-      /* valgrind arguments */
-      cp = optvar;
-      
-      for(i = 1; i < VG_(vg_argc); i++) {
-	 Char *arg = VG_(vg_argv)[i];
-	 Int len;
-	 
-	 if (VG_(memcmp)(arg, "--exec=", 7) == 0) {
-	    /* replace existing --exec= arg */
-	    sawexec = True;
-	    arg = exec;
-	 } else if (VG_(strcmp)(VG_(vg_argv)[i], "--") == 0)
-	    break;
-
-	 len = VG_(strlen)(arg);
-	 VG_(memcpy)(cp, arg, len);
-	 cp += len;
-	 *cp++ = '\01';
-      }
-
-      if (!sawexec) {
-	 Int execlen = VG_(strlen)(exec);
-	 VG_(memcpy)(cp, exec, execlen);
-	 cp += execlen;
-	 *cp++ = '\01';
-      }
-      *cp = '\0';
-
-      VG_(env_setenv)(&env, VALGRINDCLO, optvar);
-
-      arg1 = (UInt)exename;
-      arg3 = (UInt)env;
+      // Create executable name: "/proc/self/fd/<vgexecfd>", update arg1
+      arg1 = (UInt)VG_(build_child_exename)();
    }
 
    if (0) {
@@ -1854,9 +1802,9 @@ PRE(execve)
 
       VG_(printf)("exec: %s\n", (Char *)arg1);
       for(cpp = (Char **)arg2; cpp && *cpp; cpp++)
-	 VG_(printf)("argv: %s\n", *cpp);
+         VG_(printf)("argv: %s\n", *cpp);
       for(cpp = (Char **)arg3; cpp && *cpp; cpp++)
-	 VG_(printf)("env: %s\n", *cpp);
+         VG_(printf)("env: %s\n", *cpp);
    }
 
    /* Set our real sigmask to match the client's sigmask so that the

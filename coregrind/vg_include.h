@@ -1107,7 +1107,6 @@ VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
 }
 
 
-
 /* ---------------------------------------------------------------------
    Exports of vg_demangle.c
    ------------------------------------------------------------------ */
@@ -1265,11 +1264,12 @@ extern Addr VG_(valgrind_end);
 
 extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
 
-/* stage1 executable file descriptor */
-extern Int  VG_(vgexecfd);
-
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);
+
+// Help set up the child used when doing execve() with --trace-children=yes
+Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
+Char* VG_(build_child_exename)     ( void );
 
 /* Determine if %esp adjustment must be noted */
 extern Bool VG_(need_to_handle_esp_assignment) ( void );
@@ -1278,10 +1278,6 @@ extern Bool VG_(need_to_handle_esp_assignment) ( void );
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
-
-/* Valgrind's argc and argv */
-extern Int    VG_(vg_argc);
-extern Char **VG_(vg_argv);
 
 /* Something of a function looking for a home ... start up debugger. */
 extern void VG_(start_debugger) ( Int tid );

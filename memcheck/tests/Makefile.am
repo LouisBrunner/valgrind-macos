@@ -27,6 +27,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve.stderr.exp execve.vgtest \
+	execve2.stderr.exp execve2.vgtest \
 	fpeflags.stderr.exp fpeflags.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
@@ -77,7 +78,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop badrw brk buflen_check \
 	clientperm custom_alloc \
-	doublefree error_counts errs1 exitprog execve \
+	doublefree error_counts errs1 exitprog execve execve2 \
 	fpeflags fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mempool mmaptest nanoleak new_nothrow \
@@ -104,6 +105,7 @@ doublefree_SOURCES 	= doublefree.c
 error_counts_SOURCES 	= error_counts.c
 errs1_SOURCES 		= errs1.c
 execve_SOURCES 		= execve.c
+execve2_SOURCES 	= execve2.c
 exitprog_SOURCES 	= exitprog.c
 fpeflags_SOURCES	= fpeflags.c
 fprw_SOURCES 		= fprw.c

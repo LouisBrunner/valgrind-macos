@@ -117,7 +117,7 @@ vki_rlimit VG_(client_rlimit_data);
 Bool VG_(have_ssestate);
 
 /* stage1 (main) executable */
-Int  VG_(vgexecfd) = -1;
+static Int vgexecfd = -1;
 
 /* client executable */
 Int  VG_(clexecfd) = -1;
@@ -126,8 +126,8 @@ Int  VG_(clexecfd) = -1;
 const Char *VG_(libdir) = VG_LIBDIR;
 
 /* our argc/argv */
-Int  VG_(vg_argc);
-Char **VG_(vg_argv);
+static Int  vg_argc;
+static Char **vg_argv;
 
 /* PID of the main thread */
 Int VG_(main_pid);
@@ -413,7 +413,7 @@ int scan_auxv(void)
 	 break;
 
       case AT_UME_EXECFD:
-	 VG_(vgexecfd) = auxv->u.a_val;
+	 vgexecfd = auxv->u.a_val;
 	 found |= 2;
 	 break;
       }
@@ -567,8 +567,8 @@ static char** copy_args( char* s, char** to )
 // files.
 static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
 {
-   int    vg_argc = *vg_argc_inout;
-   char** vg_argv = *vg_argv_inout;
+   int    vg_argc0 = *vg_argc_inout;
+   char** vg_argv0 = *vg_argv_inout;
 
    char*  env_clo = getenv(VALGRINDOPTS);
    char*  f1_clo  = get_file_clo( getenv("HOME") );
@@ -590,11 +590,11 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
 		env_arg_count, f1_arg_count, f2_arg_count);
 
       /* +2: +1 for null-termination, +1 for added '--' */
-      from    = vg_argv;
-      vg_argv = malloc( (vg_argc + env_arg_count + f1_arg_count 
+      from     = vg_argv0;
+      vg_argv0 = malloc( (vg_argc0 + env_arg_count + f1_arg_count 
                           + f2_arg_count + 2) * sizeof(char **));
-      vg_assert(vg_argv);
-      to      = vg_argv;
+      vg_assert(vg_argv0);
+      to      = vg_argv0;
 
       /* copy argv[0] */
       *to++ = *from++;
@@ -620,23 +620,25 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
       /* add -- */
       *to++ = "--";
 
-      vg_argc = to - vg_argv;
+      vg_argc0 = to - vg_argv0;
 
       /* copy rest of original command line, then NULL */
       while (*from) *to++ = *from++;
       *to = NULL;
    }
 
-   *vg_argc_inout = vg_argc;
-   *vg_argv_inout = vg_argv;
+   *vg_argc_inout = vg_argc0;
+   *vg_argv_inout = vg_argv0;
 }
+
+#define VG_CLO_SEP   '\01'
 
 static void get_command_line( int argc, char** argv,
                               Int* vg_argc_out, Char*** vg_argv_out, 
                                                 char*** cl_argv_out )
 {
-   int    vg_argc;
-   char** vg_argv;
+   int    vg_argc0;
+   char** vg_argv0;
    char** cl_argv;
    char*  env_clo = getenv(VALGRINDCLO);
 
@@ -644,23 +646,26 @@ static void get_command_line( int argc, char** argv,
       char *cp;
       char **cpp;
 
-      /* OK, we're getting all our arguments from the environment - the
-	 entire command line belongs to the client (including argv[0]) */
-      vg_argc = 1;		/* argv[0] */
+      /* OK, VALGRINDCLO is set, which means we must be a child of another
+         Valgrind process using --trace-children, so we're getting all our
+         arguments from VALGRINDCLO, and the entire command line belongs to
+         the client (including argv[0]) */
+      vg_argc0 = 1;		/* argv[0] */
       for (cp = env_clo; *cp; cp++)
-	 if (*cp == '\01')
-	    vg_argc++;
+	 if (*cp == VG_CLO_SEP)
+	    vg_argc0++;
 
-      vg_argv = malloc(sizeof(char **) * (vg_argc + 1));
-      vg_assert(vg_argv);
+      vg_argv0 = malloc(sizeof(char **) * (vg_argc0 + 1));
+      vg_assert(vg_argv0);
 
-      cpp = vg_argv;
+      cpp = vg_argv0;
 
       *cpp++ = "valgrind";	/* nominal argv[0] */
       *cpp++ = env_clo;
 
+      // Replace the VG_CLO_SEP args separator with '\0'
       for (cp = env_clo; *cp; cp++) {
-	 if (*cp == '\01') {
+	 if (*cp == VG_CLO_SEP) {
 	    *cp++ = '\0';	/* chop it up in place */
 	    *cpp++ = cp;
 	 }
@@ -670,31 +675,32 @@ static void get_command_line( int argc, char** argv,
 
    } else {
       /* Count the arguments on the command line. */
-      vg_argv = argv;
+      vg_argv0 = argv;
 
-      for (vg_argc = 1; vg_argc < argc; vg_argc++) {
-	 if (argv[vg_argc][0] != '-') /* exe name */
+      for (vg_argc0 = 1; vg_argc0 < argc; vg_argc0++) {
+	 if (argv[vg_argc0][0] != '-') /* exe name */
 	    break;
-	 if (VG_STREQ(argv[vg_argc], "--")) { /* dummy arg */
-	    vg_argc++;
+	 if (VG_STREQ(argv[vg_argc0], "--")) { /* dummy arg */
+	    vg_argc0++;
 	    break;
 	 }
       }
-      cl_argv = &argv[vg_argc];
+      cl_argv = &argv[vg_argc0];
 
       /* Get extra args from VALGRIND_OPTS and .valgrindrc files.
-       * Note we don't do this if getting args from VALGRINDCLO. */
-      augment_command_line(&vg_argc, &vg_argv);
+         Note we don't do this if getting args from VALGRINDCLO, as 
+         those extra args will already be present in VALGRINDCLO. */
+      augment_command_line(&vg_argc0, &vg_argv0);
    }
 
    if (0) {
       Int i;
-      for (i = 0; i < vg_argc; i++)
-         printf("vg_argv[%d]=\"%s\"\n", i, vg_argv[i]);
+      for (i = 0; i < vg_argc0; i++)
+         printf("vg_argv0[%d]=\"%s\"\n", i, vg_argv0[i]);
    }
 
-   *vg_argc_out =         vg_argc;
-   *vg_argv_out = (Char**)vg_argv;
+   *vg_argc_out =         vg_argc0;
+   *vg_argv_out = (Char**)vg_argv0;
    *cl_argv_out =         cl_argv;
 }
 
@@ -1413,7 +1419,7 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
 
 
 /*====================================================================*/
-/*=== Command-line: variables, processing                          ===*/
+/*=== Command-line: variables, processing, etc                     ===*/
 /*====================================================================*/
 
 /* Define, and set defaults. */
@@ -1569,25 +1575,25 @@ static void pre_process_cmd_line_options
    UInt i;
 
    /* parse the options we have (only the options we care about now) */
-   for (i = 1; i < VG_(vg_argc); i++) {
+   for (i = 1; i < vg_argc; i++) {
 
-      if (strcmp(VG_(vg_argv)[i], "--version") == 0) {
+      if (strcmp(vg_argv[i], "--version") == 0) {
          printf("valgrind-" VERSION "\n");
          exit(0);
 
-      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help") ||
-                 VG_CLO_STREQ(VG_(vg_argv)[i], "-h")) {
+      } else if (VG_CLO_STREQ(vg_argv[i], "--help") ||
+                 VG_CLO_STREQ(vg_argv[i], "-h")) {
          *need_help = 1;
 
-      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help-debug")) {
+      } else if (VG_CLO_STREQ(vg_argv[i], "--help-debug")) {
          *need_help = 2;
 
-      } else if (VG_CLO_STREQN(7, VG_(vg_argv)[i], "--tool=") ||
-	         VG_CLO_STREQN(7, VG_(vg_argv)[i], "--skin=")) {
-	 *tool = &VG_(vg_argv)[i][7];
+      } else if (VG_CLO_STREQN(7, vg_argv[i], "--tool=") ||
+	         VG_CLO_STREQN(7, vg_argv[i], "--skin=")) {
+	 *tool = &vg_argv[i][7];
 	 
-      } else if (VG_CLO_STREQN(7, VG_(vg_argv)[i], "--exec=")) {
-	 *exec = &VG_(vg_argv)[i][7];
+      } else if (VG_CLO_STREQN(7, vg_argv[i], "--exec=")) {
+	 *exec = &vg_argv[i][7];
       }
    }
 
@@ -1625,9 +1631,9 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
    } 
 
-   for (i = 1; i < VG_(vg_argc); i++) {
+   for (i = 1; i < vg_argc; i++) {
 
-      Char* arg = VG_(vg_argv)[i];
+      Char* arg = vg_argv[i];
       Char* colon = arg;
 
       /* Look for a colon in the switch name */
@@ -1932,8 +1938,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
 
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
-      for (i = 1; i < VG_(vg_argc); i++) {
-         VG_(message)(Vg_UserMsg, "   %s", VG_(vg_argv)[i]);
+      for (i = 1; i < vg_argc; i++) {
+         VG_(message)(Vg_UserMsg, "   %s", vg_argv[i]);
       }
 
       VG_(message)(Vg_UserMsg, "Contents of /proc/version:");
@@ -1978,6 +1984,75 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    }
 }
 
+// Build the string for VALGRINDCLO.
+Char* VG_(build_child_VALGRINDCLO)( Char* exename )
+{
+   /* If we're tracing the children, then we need to start it
+      with our starter+arguments, which are copied into VALGRINDCLO,
+      except the --exec= option is changed if present.
+   */
+   Int i;
+   Char *exec;
+   Char *cp;
+   Char *optvar;
+   Int  optlen, execlen;
+
+   // All these allocated blocks are not free - because we're either
+   // going to exec, or panic when we fail.
+
+   // Create --exec= option: "--exec=<exename>"
+   exec = VG_(arena_malloc)(VG_AR_CORE, 
+                            VG_(strlen)( exename ) + 7/*--exec=*/ + 1/*\0*/);
+   vg_assert(NULL != exec);
+   VG_(sprintf)(exec, "--exec=%s", exename);
+
+   // Allocate space for optvar (may overestimate by counting --exec twice,
+   // no matter)
+   optlen = 1;
+   for (i = 0; i < vg_argc; i++)
+      optlen += VG_(strlen)(vg_argv[i]) + 1;
+   optlen += VG_(strlen)(exec)+1;
+   optvar = VG_(arena_malloc)(VG_AR_CORE, optlen);
+
+   // Copy all valgrind args except the old --exec (if present)
+   // VG_CLO_SEP is the separator.
+   cp = optvar;
+   for (i = 1; i < vg_argc; i++) {
+      Char *arg = vg_argv[i];
+      
+      if (VG_(memcmp)(arg, "--exec=", 7) == 0) {
+         // don't copy existing --exec= arg
+      } else if (VG_(strcmp)(arg, "--") == 0) {
+         // stop at "--"
+         break;
+      } else {
+         // copy non "--exec" arg
+         Int len = VG_(strlen)(arg);
+         VG_(memcpy)(cp, arg, len);
+         cp += len;
+         *cp++ = VG_CLO_SEP;
+      }
+   }
+   // Add the new --exec= option
+   execlen = VG_(strlen)(exec);
+   VG_(memcpy)(cp, exec, execlen);
+   cp += execlen;
+   *cp++ = VG_CLO_SEP;
+
+   *cp = '\0';
+
+   return optvar;
+}
+
+// Build "/proc/self/fd/<execfd>".
+Char* VG_(build_child_exename)( void )
+{
+   Char* exename = VG_(arena_malloc)(VG_AR_CORE, 64);
+   vg_assert(NULL != exename);
+   VG_(sprintf)(exename, "/proc/self/fd/%d", vgexecfd);
+   return exename;
+}
+
 
 /*====================================================================*/
 /*=== File descriptor setup                                        ===*/
@@ -2007,8 +2082,8 @@ static void setup_file_descriptors(void)
    /* Update the soft limit. */
    VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);
 
-   if (VG_(vgexecfd) != -1)
-      VG_(vgexecfd) = VG_(safe_fd)( VG_(vgexecfd) );
+   if (vgexecfd != -1)
+      vgexecfd = VG_(safe_fd)( vgexecfd );
    if (VG_(clexecfd) != -1)
       VG_(clexecfd) = VG_(safe_fd)( VG_(clexecfd) );
 }
@@ -2725,7 +2800,7 @@ int main(int argc, char **argv)
    // Pre-process the command line.
    //   p: n/a
    //--------------------------------------------------------------
-   get_command_line(argc, argv, &VG_(vg_argc), &VG_(vg_argv), &cl_argv);
+   get_command_line(argc, argv, &vg_argc, &vg_argv, &cl_argv);
    pre_process_cmd_line_options(&need_help, &tool, &exec);
 
    //==============================================================
@@ -2782,7 +2857,7 @@ int main(int argc, char **argv)
 
    if (0)
       printf("entry=%x client esp=%x vg_argc=%d brkbase=%x\n",
-	     client_eip, esp_at_startup, VG_(vg_argc), VG_(brk_base));
+	     client_eip, esp_at_startup, vg_argc, VG_(brk_base));
 
    //==============================================================
    // Finished setting up operating environment.  Now initialise

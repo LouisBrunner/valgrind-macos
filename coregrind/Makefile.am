@@ -80,14 +80,7 @@ MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_clientfuncs.o: vg_clientfuncs.c $(MANUAL_DEPS)
-	$(COMPILE) -fno-omit-frame-pointer -c $<
-
-vg_libpthread.o: vg_libpthread.c $(MANUAL_DEPS)
-	$(COMPILE) -fno-omit-frame-pointer -c $<
-
-vg_intercept.o: vg_intercept.c $(MANUAL_DEPS)
-	$(COMPILE) -fno-omit-frame-pointer -c $<
+vg_intercept.o vg_libpthread.o vg_clientfuncs.o: CFLAGS += -fno-omit-frame-pointer
 
 ##valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 ##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \

@@ -2545,8 +2545,12 @@ Addr dis_fpu ( UCodeBlock* cb,
                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
             case 3: /* FISTP word-integer */
                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
+            case 4: /* FBLD extended-real */
+               return dis_fpu_mem(cb, sorb, 10, rd, eip, first_byte);
             case 5: /* FILD qword-integer */
                return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
+            case 6: /* FBSTP extended-real */
+               return dis_fpu_mem(cb, sorb, 10, wr, eip, first_byte);
             case 7: /* FISTP qword-integer */
                return dis_fpu_mem(cb, sorb, 8, wr, eip, first_byte); 
             default: 

@@ -339,16 +339,16 @@ int main(void)
       SY(__NR_select, args+x0);
    }
 
-   // __NR_symlink 83
- //GO(__NR_symlink, ".s .m");
- //SY(__NR_symlink);
+   // __NR_symlink 83 --> sys_symlink()
+   GO(__NR_symlink, "2s 2m");
+   SY(__NR_symlink, x0, x0);
 
    // __NR_oldlstat 84
    // (obsolete, not handled by Valgrind)
 
    // __NR_readlink 85
- //GO(__NR_readlink, ".s .m");
- //SY(__NR_readlink);
+   GO(__NR_readlink, "3s 2m");
+   SY(__NR_readlink);
 
    // __NR_uselib 86
    // (Not yet handled by Valgrind)
@@ -370,13 +370,13 @@ int main(void)
  //GO(__NR_munmap, ".s .m");
  //SY(__NR_munmap);
 
-   // __NR_truncate 92
- //GO(__NR_truncate, ".s .m");
- //SY(__NR_truncate);
+   // __NR_truncate 92 --> sys_truncate()
+   GO(__NR_truncate, "2s 1m");
+   SY(__NR_truncate, x0, x0);
 
-   // __NR_ftruncate 93
- //GO(__NR_ftruncate, ".s .m");
- //SY(__NR_ftruncate);
+   // __NR_ftruncate 93 --> sys_ftruncate()
+   GO(__NR_ftruncate, "2s 0m");
+   SY(__NR_ftruncate, x0, x0);
 
    // __NR_fchmod 94
  //GO(__NR_fchmod, ".s .m");
@@ -773,13 +773,13 @@ int main(void)
  //GO(__NR_mmap2, ".s .m");
  //SY(__NR_mmap2);
 
-   // __NR_truncate64 193
- //GO(__NR_truncate64, ".s .m");
- //SY(__NR_truncate64);
+   // __NR_truncate64 193 --> sys_truncate64()
+   GO(__NR_truncate64, "3s 1m");
+   SY(__NR_truncate64, x0, x0, x0);
 
-   // __NR_ftruncate64 194
- //GO(__NR_ftruncate64, ".s .m");
- //SY(__NR_ftruncate64);
+   // __NR_ftruncate64 194 --> sys_ftruncate64()
+   GO(__NR_ftruncate64, "3s 0m");
+   SY(__NR_ftruncate64, x0, x0, x0);
 
    // __NR_stat64 195
    GO(__NR_stat64, "2s 2m");

@@ -1453,7 +1453,7 @@ PRE(quotactl)
    PRE_MEM_RASCIIZ( "quotactl(special)", arg2 );
 }
 
-// XXX: this is only suitable for 32-bit platforms
+// XXX: this wrapper is only suitable for 32-bit platforms
 PREx(sys_lookup_dcookie, 0)
 {
    PRINT("sys_lookup_dcookie (0x%llx, %p, %d)", LOHI64(arg1,arg2), arg3, arg4);
@@ -1467,12 +1467,6 @@ POSTx(sys_lookup_dcookie)
 {
    if (arg3 != (Addr)NULL)
       POST_MEM_WRITE( arg3, res);
-}
-
-PRE(truncate64)
-{
-   PRINT("truncate64 ( %p, %lld )", arg1, LOHI64(arg2, arg3));
-   PRE_MEM_RASCIIZ( "truncate64(path)", arg1 );
 }
 
 PRE(fdatasync)
@@ -2295,17 +2289,39 @@ PRE(fsync)
    PRINT("fsync ( %d )", arg1);
 }
 
-PRE(ftruncate)
+PREx(sys_ftruncate, MayBlock)
 {
-   /* int ftruncate(int fd, size_t length); */
-   PRINT("ftruncate ( %d, %lld )", arg1,(ULong)arg2);
+   PRINT("sys_ftruncate ( %d, %lld )", arg1,(ULong)arg2);
+   PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
 }
 
-PRE(ftruncate64)
+PREx(sys_truncate, MayBlock)
 {
-   /* int ftruncate64(int fd, off64_t length); */
-   PRINT("ftruncate64 ( %d, %lld )", arg1, LOHI64(arg2,arg3));
+   PRINT("sys_truncate ( %p(%s), %d )", arg1,arg1,arg2);
+   PRE_REG_READ2(long, "truncate", 
+                 const char *, path, unsigned long, length);
+   PRE_MEM_RASCIIZ( "truncate(path)", arg1 );
 }
+
+// XXX: this wrapper is only suitable for 32-bit platforms
+PREx(sys_ftruncate64, MayBlock)
+{
+   PRINT("sys_ftruncate64 ( %d, %lld )", arg1, LOHI64(arg2,arg3));
+   PRE_REG_READ3(long, "ftruncate64",
+                 unsigned int, fd,
+                 vki_u32, length_low32, vki_u32, length_high32);
+}
+
+// XXX: this wrapper is only suitable for 32-bit platforms
+PREx(sys_truncate64, MayBlock)
+{
+   PRINT("sys_truncate64 ( %p, %lld )", arg1, LOHI64(arg2, arg3));
+   PRE_REG_READ3(long, "truncate64",
+                 const char *, path,
+                 vki_u32, length_low32, vki_u32, length_high32);
+   PRE_MEM_RASCIIZ( "truncate64(path)", arg1 );
+}
+
 
 PRE(getdents)
 {
@@ -4740,15 +4756,16 @@ POST(epoll_wait)
       POST_MEM_WRITE( arg2, sizeof(struct epoll_event)*res ) ;
 }
 
-PRE(readlink)
+PREx(sys_readlink, 0)
 {
-   /* int readlink(const char *path, char *buf, size_t bufsiz); */
-   PRINT("readlink ( %p, %p, %llu )", arg1,arg2,(ULong)arg3);
+   PRINT("sys_readlink ( %p, %p, %llu )", arg1,arg2,(ULong)arg3);
+   PRE_REG_READ3(long, "readlink",
+                 const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", arg1 );
    PRE_MEM_WRITE( "readlink(buf)", arg2,arg3 );
 }
 
-POST(readlink)
+POSTx(sys_readlink)
 {
    POST_MEM_WRITE( arg2, res );
 }
@@ -5417,10 +5434,10 @@ POST(statfs64)
    POST_MEM_WRITE( arg3, arg2 );
 }
 
-PRE(symlink)
+PREx(sys_symlink, MayBlock)
 {
-   /* int symlink(const char *oldpath, const char *newpath); */
-   PRINT("symlink ( %p, %p )",arg1,arg2);
+   PRINT("sys_symlink ( %p, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "symlink", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "symlink(oldpath)", arg1 );
    PRE_MEM_RASCIIZ( "symlink(newpath)", arg2 );
 }
@@ -5491,13 +5508,6 @@ POSTx(sys_times)
    if (arg1 != (UWord)NULL) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_tms) );
    }
-}
-
-PRE(truncate)
-{
-   /* int truncate(const char *path, off_t length); */
-   PRINT("truncate ( %p(%s), %d )", arg1,arg1,arg2);
-   PRE_MEM_RASCIIZ( "truncate(path)", arg1 );
 }
 
 PREx(sys_umask, 0)
@@ -6372,10 +6382,10 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_getgroups,        sys_getgroups16),  // 80 ## P
    SYSX_(__NR_setgroups,        sys_setgroups16),  // 81 ## almost-P
    SYSX_(__NR_select,           old_select),       // 82 (x86) (4.4BSD)
-   SYSB_(__NR_symlink,          sys_symlink, MayBlock), // 83 *
+   SYSX_(__NR_symlink,          sys_symlink),      // 83 * P
    //   (__NR_oldlstat,         sys_lstat),        // 84 * L -- obsolete
 
-   SYSBA(__NR_readlink,         sys_readlink, 0), // 85 *
+   SYSXY(__NR_readlink,         sys_readlink),     // 85 * (X/OPEN,4.4BSD)
    //   (__NR_uselib,           sys_uselib),       // 86 * L
    //   (__NR_swapon,           sys_swapon),       // 87 * L
    //   (__NR_reboot,           sys_reboot),       // 88 * L
@@ -6383,8 +6393,8 @@ static const struct sys_info sys_info[] = {
 
    SYSB_(__NR_mmap,             old_mmap, Special), // 90  old_mmap
    SYSBA(__NR_munmap,           sys_munmap, 0),    // 91 *
-   SYSB_(__NR_truncate,         sys_truncate, MayBlock), // 92 *
-   SYSB_(__NR_ftruncate,        sys_ftruncate, MayBlock), // 93 *
+   SYSX_(__NR_truncate,         sys_truncate),     // 92 * P
+   SYSX_(__NR_ftruncate,        sys_ftruncate),    // 93 * P
    SYSB_(__NR_fchmod,           sys_fchmod, 0),    // 94 *
 
    SYSX_(__NR_fchown,           sys_fchown16),     // 95 ## (SVr4,BSD4.3)
@@ -6507,8 +6517,8 @@ static const struct sys_info sys_info[] = {
    //   (__NR_vfork,            sys_vfork),        // 190 -- Valgrind avoids
    SYSXY(__NR_ugetrlimit,       sys_getrlimit),    // 191 * (?)
    SYSBA(__NR_mmap2,            sys_mmap2, 0),     // 192 
-   SYSB_(__NR_truncate64,       sys_truncate64, MayBlock),   // 193 %%
-   SYSB_(__NR_ftruncate64,      sys_ftruncate64, MayBlock), // 194 %%
+   SYSX_(__NR_truncate64,       sys_truncate64),   // 193 %% (P?)
+   SYSX_(__NR_ftruncate64,      sys_ftruncate64),  // 194 %% (P?)
    
    SYSXY(__NR_stat64,           sys_stat64),       // 195 %% (?)
    SYSXY(__NR_lstat64,          sys_lstat64),      // 196 %% (?)

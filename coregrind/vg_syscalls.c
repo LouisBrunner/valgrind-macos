@@ -78,7 +78,7 @@ void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child)
    n_atfork++;
 }
 
-static void do_atfork_pre(ThreadId tid)
+void VG_(do_atfork_pre)(ThreadId tid)
 {
    Int i;
 
@@ -87,7 +87,7 @@ static void do_atfork_pre(ThreadId tid)
 	 (*atforks[i].pre)(tid);
 }
 
-static void do_atfork_parent(ThreadId tid)
+void VG_(do_atfork_parent)(ThreadId tid)
 {
    Int i;
 
@@ -96,7 +96,7 @@ static void do_atfork_parent(ThreadId tid)
 	 (*atforks[i].parent)(tid);
 }
 
-static void do_atfork_child(ThreadId tid)
+void VG_(do_atfork_child)(ThreadId tid)
 {
    Int i;
 
@@ -736,7 +736,7 @@ void msghdr_foreachfield (
                      (Addr)msg->msg_control, msg->msg_controllen );
 }
 
-void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
+static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
 {
    struct vki_cmsghdr *cm = VKI_CMSG_FIRSTHDR(msg);
 
@@ -1356,19 +1356,20 @@ VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
 // Combine two 32-bit values into a 64-bit value
 #define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
 
-PRE(sys_exit_group, Special)
-{
-   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
-}
+//PRE(sys_exit_group, Special)
+//{
+//   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
+//}
 
 PRE(sys_exit, Special)
 {
    VG_(core_panic)("syscall exit() not caught by the scheduler?!");
 }
 
-PRE(sys_sched_yield, Special)
+PRE(sys_sched_yield, MayBlock)
 {
-   VG_(core_panic)("syscall sched_yield() not caught by the scheduler?!");
+   PRINT("sched_yield()");
+   PRE_REG_READ0(long, "sys_sched_yield");
 }
 
 PRE(sys_ni_syscall, Special)
@@ -1378,16 +1379,8 @@ PRE(sys_ni_syscall, Special)
    SET_RESULT( -VKI_ENOSYS );
 }
 
-PRE(sys_set_tid_address, Special)
+PRE(sys_set_tid_address, 0)
 {
-   // We don't let this syscall run, and don't do anything to simulate it
-   // ourselves -- it becomes a no-op!  Why?  Tom says:
-   // 
-   //   I suspect this is deliberate given that all the user level threads
-   //   are running in the same kernel thread under valgrind so we probably
-   //   don't want to be calling the actual system call here.
-   //
-   // Hmm.
    PRINT("sys_set_tid_address ( %p )", ARG1);
    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }
@@ -1657,7 +1650,7 @@ PRE(sys_putpmsg, MayBlock)
       PRE_MEM_READ( "putpmsg(data)", (Addr)data->buf, data->len);
 }
 
-PRE(sys_getitimer, NBRunInLWP)
+PRE(sys_getitimer, 0)
 {
    PRINT("sys_getitimer ( %d, %p )", ARG1, ARG2);
    PRE_REG_READ2(long, "getitimer", int, which, struct itimerval *, value);
@@ -1671,7 +1664,7 @@ POST(sys_getitimer)
    }
 }
 
-PRE(sys_setitimer, NBRunInLWP)
+PRE(sys_setitimer, 0)
 {
    PRINT("sys_setitimer ( %d, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "setitimer", 
@@ -1913,7 +1906,7 @@ PRE(sys_capset, 0)
 }
 
 // Pre_read a char** argument.
-void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
+static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 {
    while (True) {
       Addr a_deref;
@@ -1931,6 +1924,8 @@ void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 // but it seems to work nonetheless...
 PRE(sys_execve, Special)
 {
+   Char *path;          /* path to executable */
+
    PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
                  char *, filename, char **, argv, char **, envp);
@@ -1939,6 +1934,8 @@ PRE(sys_execve, Special)
       pre_argv_envp( ARG2, tid, "execve(argv)", "execve(argv[i])" );
    if (ARG3 != 0)
       pre_argv_envp( ARG3, tid, "execve(envp)", "execve(envp[i])" );
+
+   path = (Char *)ARG1;
 
    /* Erk.  If the exec fails, then the following will have made a
       mess of things which makes it hard for us to continue.  The
@@ -1966,17 +1963,26 @@ PRE(sys_execve, Special)
    /* Resistance is futile.  Nuke all other threads.  POSIX mandates
       this. (Really, nuke them all, since the new process will make
       its own new thread.) */
-   VG_(nuke_all_threads_except)( VG_INVALID_THREADID );
+   VG_(master_tid) = tid;       /* become the master */
+   VG_(nuke_all_threads_except)( tid, VgSrc_ExitSyscall );
+   VGA_(reap_threads)(tid);
+
+   if (0) {
+      /* Shut down cleanly and report final state
+         XXX Is this reasonable? */
+      tst->exitreason = VgSrc_ExitSyscall;
+      VG_(shutdown_actions)(tid);
+   }
 
    {
       // Remove the valgrind-specific stuff from the environment so the
-      // child doesn't get our libpthread and other stuff.  This is
+      // child doesn't get vg_inject.so, vgpreload.so, etc.  This is
       // done unconditionally, since if we are tracing the child,
       // stage1/2 will set up the appropriate client environment.
       Char** envp = (Char**)ARG3;
 
       if (envp != NULL) {
-         VG_(env_remove_valgrind_env_stuff)( envp ); 
+         VG_(env_remove_valgrind_env_stuff)( envp );
       }
    }
 
@@ -2001,10 +2007,19 @@ PRE(sys_execve, Special)
          VG_(printf)("env: %s\n", *cpp);
    }
 
-   /* Set our real sigmask to match the client's sigmask so that the
-      exec'd child will get the right mask.  First we need to clear
-      out any pending signals so they they don't get delivered, which
-      would confuse things.
+   /* restore the DATA rlimit for the child */
+   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+
+   /*
+      Set the signal state up for exec.
+
+      We need to set the real signal state to make sure the exec'd
+      process gets SIG_IGN properly.
+
+      Also set our real sigmask to match the client's sigmask so that
+      the exec'd child will get the right mask.  First we need to
+      clear out any pending signals so they they don't get delivered,
+      which would confuse things.
 
       XXX This is a bug - the signals should remain pending, and be
       delivered to the new process after exec.  There's also a
@@ -2016,25 +2031,37 @@ PRE(sys_execve, Special)
       vki_sigset_t allsigs;
       vki_siginfo_t info;
       static const struct vki_timespec zero = { 0, 0 };
-    
+      Int i;
+
+      for(i = 1; i < VG_(max_signal); i++) {
+         struct vki_sigaction sa;
+         VG_(do_sys_sigaction)(i, NULL, &sa);
+         if (sa.ksa_handler == VKI_SIG_IGN)
+            VG_(sigaction)(i, &sa, NULL);
+         else {
+            sa.ksa_handler = VKI_SIG_DFL;
+            VG_(sigaction)(i, &sa, NULL);
+         }
+      }
+
       VG_(sigfillset)(&allsigs);
       while(VG_(sigtimedwait)(&allsigs, &info, &zero) > 0)
-	 ;
+         ;
 
       VG_(sigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
    }
 
-   /* restore the DATA rlimit for the child */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+   SET_RESULT( VG_(do_syscall3)(__NR_execve, (UWord)path, ARG2, ARG3) );
 
-   SET_RESULT( VG_(do_syscall3)(__NR_execve, ARG1, ARG2, ARG3) );
-
-   /* If we got here, then the execve failed.  We've already made too much of a mess
-      of ourselves to continue, so we have to abort. */
+   /* If we got here, then the execve failed.  We've already made too
+      much of a mess of ourselves to continue, so we have to abort. */
    VG_(message)(Vg_UserMsg, "execve(%p(%s), %p, %p) failed, errno %d",
-		ARG1, ARG1, ARG2, ARG3, -RES);
-   VG_(core_panic)("EXEC FAILED: I can't recover from execve() failing, so I'm dying.\n"
-		   "Add more stringent tests in PRE(execve), or work out how to recover.");   
+                ARG1, ARG1, ARG2, ARG3, -RES);
+   VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
+                            "execve() failing, so I'm dying.");
+   VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(execve), "
+                            "or work out how to recover.");
+   VG_(exit)(101);
 }
 
 PRE(sys_access, 0)
@@ -2044,7 +2071,7 @@ PRE(sys_access, 0)
    PRE_MEM_RASCIIZ( "access(pathname)", ARG1 );
 }
 
-PRE(sys_alarm, NBRunInLWP)
+PRE(sys_alarm, 0)
 {
    PRINT("sys_alarm ( %d )", ARG1);
    PRE_REG_READ1(unsigned long, "alarm", unsigned int, seconds);
@@ -2247,8 +2274,8 @@ PRE(sys_fcntl, 0)
       break;
    }
 
-   if (ARG2 == VKI_F_SETLKW)
-      tst->sys_flags |= MayBlock;
+   //if (ARG2 == VKI_F_SETLKW)
+   //   tst->sys_flags |= MayBlock;
 }
 
 POST(sys_fcntl)
@@ -2308,11 +2335,11 @@ PRE(sys_fcntl64, 0)
    }
    
 #ifndef __amd64__
-   if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
-      tst->sys_flags |= MayBlock;
+   //if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
+   //   tst->sys_flags |= MayBlock;
 #else
-   if (ARG2 == VKI_F_SETLKW)
-      tst->sys_flags |= MayBlock;
+   //if (ARG2 == VKI_F_SETLKW)
+   //   tst->sys_flags |= MayBlock;
 #endif
 }
 
@@ -2352,34 +2379,24 @@ PRE(sys_fork, 0)
    PRINT("sys_fork ( )");
    PRE_REG_READ0(long, "fork");
 
-   vg_assert(VG_(gettid)() == VG_(main_pid));
-
    /* Block all signals during fork, so that we can fix things up in
       the child without being interrupted. */
    VG_(sigfillset)(&mask);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
-   do_atfork_pre(tid);
-}
+   VG_(do_atfork_pre)(tid);
 
-POST(sys_fork)
-{
+   SET_RESULT(VG_(do_syscall0)(__NR_fork));
+
    if (RES == 0) {
-      do_atfork_child(tid);
-
-      /* I am the child.  Nuke all other threads which I might
-	 have inherited from my parent.  POSIX mandates this. */
-      VG_(nuke_all_threads_except)( tid );
-
-      /* XXX TODO: tid 1 is special, and is presumed to be present.
-	 We should move this TID to 1 in the child. */
+      VG_(do_atfork_child)(tid);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
-   } else {
-      PRINT("   fork: process %d created child %d\n", VG_(main_pid), RES);
+   } else if (RES > 0) {
+      PRINT("   fork: process %d created child %d\n", VG_(getpid)(), RES);
 
-      do_atfork_parent(tid);
+      VG_(do_atfork_parent)(tid);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
@@ -2973,7 +2990,7 @@ PRE(sys_ioctl, MayBlock)
       break;
    case VKI_SIOCSPGRP:
       PRE_MEM_READ( "ioctl(SIOCSPGRP)", ARG3, sizeof(int) );
-      tst->sys_flags &= ~MayBlock;
+      //tst->sys_flags &= ~MayBlock;
       break;
 
       /* linux/soundcard interface (OSS) */
@@ -3931,26 +3948,17 @@ PRE(sys_kill, 0)
    /* int kill(pid_t pid, int sig); */
    PRINT("sys_kill ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "kill", int, pid, int, sig);
-   if (ARG2 == VKI_SIGVGINT || ARG2 == VKI_SIGVGKILL)
+   if (!VG_(client_signal_OK)(ARG2))
       SET_RESULT( -VKI_EINVAL );
 }
 
 POST(sys_kill)
 {
-   /* If this was a self-kill then wait for a signal to be
-      delivered to any thread before claiming the kill is done. */
-   if (RES >= 0 &&                           // if it was successful and
-       ARG2 != 0 &&                          // if a real signal and
-       !VG_(is_sig_ign)(ARG2) &&             // that isn't ignored and
-       !VG_(sigismember)(&tst->eff_sig_mask, ARG2) && // we're not blocking it
-       (ARG1 == VG_(getpid)() ||             // directed at us or
-	ARG1 == -1	      ||             // directed at everyone or
-	ARG1 == 0	      ||             // directed at whole group or
-	-ARG1 == VG_(getpgrp)())) {          // directed at our group...
-      /* ...then wait for that signal to be delivered to someone
-	 (might be us, might be someone else who doesn't have it blocked) */
-      VG_(proxy_waitsig)();
-   }
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "kill: sent signal %d to pid %d",
+                   ARG2, ARG1);
+   // Check to see if this kill gave us a pending signal
+   VG_(poll_signals)(tid);
 }
 
 PRE(sys_link, MayBlock)
@@ -4029,6 +4037,13 @@ PRE(old_mmap, Special)
    PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
          a1, (ULong)a2, a3, a4, a5, a6 );
 
+   if (a2 == 0) {
+      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
+         shall be established. */
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
    if (a4 & VKI_MAP_FIXED) {
       if (!VG_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
          PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
@@ -4065,6 +4080,13 @@ PRE(sys_mmap2, 0)
                  unsigned long, start, unsigned long, length,
                  unsigned long, prot,  unsigned long, flags,
                  unsigned long, fd,    unsigned long, offset);
+
+   if (ARG2 == 0) {
+      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
+         shall be established. */
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
 
    if (ARG4 & VKI_MAP_FIXED) {
       if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
@@ -4465,11 +4487,6 @@ PRE(sys_setpgid, 0)
 {
    PRINT("setpgid ( %d, %d )", ARG1, ARG2);
    PRE_REG_READ2(long, "setpgid", vki_pid_t, pid, vki_pid_t, pgid);
-}
-
-POST(sys_setpgid)
-{
-   VG_(main_pgrp) = VG_(getpgrp)();
 }
 
 PRE(sys_setregid, 0)
@@ -5102,13 +5119,13 @@ PRE(sys_rt_sigqueueinfo, 0)
 
 POST(sys_rt_sigqueueinfo)
 {
-   if (RES >= 0 && 
-       ARG2 != 0 &&
-       !VG_(is_sig_ign)(ARG2) &&
-       !VG_(sigismember)(&tst->eff_sig_mask, ARG2) &&
-       ARG1 == VG_(getpid)()) {
-      VG_(proxy_waitsig)();
-   }
+   PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "rt_sigqueueinfo",
+                 int, pid, int, sig, vki_siginfo_t *, uinfo);
+   if (ARG2 != 0)
+      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
+   if (!VG_(client_signal_OK)(ARG2))
+      SET_RESULT( -VKI_EINVAL );
 }
 
 // XXX: x86-specific
@@ -5151,9 +5168,11 @@ PRE(sys_rt_sigaction, Special)
    // XXX: doesn't seem right to be calling do_sys_sigaction for
    // sys_rt_sigaction... perhaps this function should be renamed
    // VG_(do_sys_rt_sigaction)()  --njn
-   VG_(do_sys_sigaction)(tid);
-   /* Mark that the result is set. */
-   SET_RESULT(RES);
+
+   SET_RESULT(
+      VG_(do_sys_sigaction)(ARG1, (const struct vki_sigaction *)ARG2,
+                            (struct vki_sigaction *)ARG3)
+   );
 }
 
 POST(sys_rt_sigaction)
@@ -5237,7 +5256,7 @@ POST(sys_rt_sigprocmask)
       POST_MEM_WRITE( ARG3, sizeof(vki_sigset_t));
 }
 
-PRE(sys_sigpending, NBRunInLWP)
+PRE(sys_sigpending, 0)
 {
    PRINT( "sys_sigpending ( %p )", ARG1 );
    PRE_REG_READ1(long, "sigpending", vki_old_sigset_t *, set);
@@ -5249,7 +5268,7 @@ POST(sys_sigpending)
    POST_MEM_WRITE( ARG1, sizeof(vki_old_sigset_t) ) ;
 }
 
-PRE(sys_rt_sigpending, NBRunInLWP)
+PRE(sys_rt_sigpending, 0)
 {
    PRINT( "sys_rt_sigpending ( %p )", ARG1 );
    PRE_REG_READ2(long, "rt_sigpending", 
@@ -5503,8 +5522,63 @@ static void bad_before(ThreadId tid, ThreadState *tst)
 static const struct SyscallTableEntry bad_sys =
    { &bad_flags, bad_before, NULL };
 
+static const struct SyscallTableEntry *get_syscall_entry(UInt syscallno)
+{
+   const struct SyscallTableEntry *sys;
 
-Bool VG_(pre_syscall) ( ThreadId tid )
+   if (syscallno < VGA_(syscall_table_size) &&
+       VGA_(syscall_table)[syscallno].before != NULL)
+      sys = &VGA_(syscall_table)[syscallno];
+   else
+      sys = &bad_sys;
+
+   return sys;
+}
+
+/* Perform post-syscall actions */
+void VG_(post_syscall) (ThreadId tid)
+{
+   const struct SyscallTableEntry *sys;
+   UInt flags;
+   Bool mayBlock;
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   Int syscallno;
+
+   vg_assert(VG_(is_running_thread)(tid));
+
+   syscallno = tst->syscallno;
+   tst->syscallno = -1;
+
+   vg_assert(syscallno != -1);
+
+   sys = get_syscall_entry(syscallno);
+   flags = *(sys->flags_ptr);
+
+   mayBlock        = !!( flags & MayBlock );
+
+   if (sys->after != NULL &&
+       ((flags & PostOnFail) != 0 || !VG_(is_kerror)(RES))) {
+      if (0)
+         VG_(printf)("post_syscall: calling sys_after tid=%d syscallno=%d\n",
+                     tid, syscallno);
+      (sys->after)(tid, tst);
+   }
+
+   /* Do any post-syscall actions
+
+      NOTE: this is only called if the syscall completed.  If the
+      syscall was restarted, then it will call the Tool's
+      pre_syscall again, without calling post_syscall (ie, more
+      pre's than post's) */
+   if (VG_(needs).syscall_wrapper) {
+     //VGP_PUSHCC(VgpSkinSysWrap);
+      TL_(post_syscall)(tid, syscallno, RES);
+      //VGP_POPCC(VgpSkinSysWrap);
+   }
+}
+
+
+void VG_(client_syscall) ( ThreadId tid )
 {
    ThreadState* tst;
    UInt         syscallno, flags;
@@ -5518,17 +5592,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 
    tst = VG_(get_ThreadState)(tid);
 
-   /* Convert vfork to fork, since we can't handle it otherwise. */
-   if (SYSNO == __NR_vfork)
-      SYSNO = __NR_fork;
-
    syscallno = (UInt)SYSNO;
-
-   if (tst->syscallno != -1)
-      VG_(printf)("tid %d has syscall %d\n", tst->tid, tst->syscallno);
-
-   vg_assert(tst->syscallno == -1);             // should be no current syscall
-   vg_assert(tst->status == VgTs_Runnable);     // should be runnable */
 
    /* the syscall no is in %eax.  For syscalls with <= 6 args,
       args 1 .. 6 to the syscall are in %ebx %ecx %edx %esi %edi %ebp.
@@ -5547,28 +5611,23 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       comes from.
    */
 
+   vg_assert(VG_(is_running_thread)(tid));
+   vg_assert(tst->syscallno == -1);
    tst->syscallno = syscallno;
-   vg_assert(tst->status == VgTs_Runnable);
 
-   if (syscallno < VGA_(syscall_table_size) &&
-       VGA_(syscall_table)[syscallno].before != NULL)
-   {
-      sys = &VGA_(syscall_table)[syscallno];
-   } else {
-      sys = &bad_sys;
-   }
+   /* Make sure the tmp signal mask matches the real signal
+      mask; sigsuspend may change this. */
+   vg_assert(tst->sig_mask.sig[0] == tst->tmp_sig_mask.sig[0]);
+   vg_assert(tst->sig_mask.sig[1] == tst->tmp_sig_mask.sig[1]);
+
+   sys = get_syscall_entry(syscallno);
    flags = *(sys->flags_ptr);
 
-   {
-      Bool nbrunInLWP = ( flags & NBRunInLWP ? True : False );
-      isSpecial       = ( flags & Special    ? True : False );
-      mayBlock        = ( flags & MayBlock   ? True : False );
-      runInLWP        = mayBlock || nbrunInLWP;
-      // At most one of these should be true
-      vg_assert( isSpecial + mayBlock + nbrunInLWP <= 1 );
-   }
-
-   tst->sys_flags = flags;
+   /* !! is standard idiom to turn an int->bool */
+   isSpecial       = !!( flags & Special );
+   mayBlock        = !!( flags & MayBlock );
+   // At most one of these should be true
+   vg_assert( isSpecial + mayBlock <= 1 );
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
@@ -5582,6 +5641,8 @@ Bool VG_(pre_syscall) ( ThreadId tid )
          isSpecial ? " special"  : "",
          runInLWP  ? " runInLWP" : "");
 
+   tst->syscall_result_set = False;
+
    if (isSpecial) {
       /* "Special" syscalls are implemented by Valgrind internally,
 	 and do not generate real kernel calls.  The expectation,
@@ -5590,18 +5651,16 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 sets the result.  Special syscalls cannot block. */
       vg_assert(!mayBlock && !runInLWP);
 
-      tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
       /* This *must* result in tst->syscall_result_set becoming
          True. */
 
-      vg_assert(tst->sys_flags == flags);
+      //      vg_assert(tst->sys_flags == flags);
       vg_assert(tst->syscall_result_set == True);
 
       PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
       syscall_done = True;
    } else {
-      tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
       /* This *may* result in tst->syscall_result_set becoming
          True. */
@@ -5611,116 +5670,143 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	    don't do anything - just pretend the syscall happened. */
          PRINT(" ==> %lld (0x%llx)\n", (Long)RES, (ULong)RES);
 	 syscall_done = True;
-      } else if (runInLWP) {
-	 /* Issue to worker.  If we're waiting on the syscall because
-	    it's in the hands of the ProxyLWP, then set the thread
-	    state to WaitSys. */
+      } else if (mayBlock) {
+         vki_sigset_t mask;
+
+         vg_assert(!(flags & PadAddr));
+
+         /* Syscall may block, so run it asynchronously */
          PRINT(" --> ...\n");
-	 tst->status = VgTs_WaitSys;
-	 VG_(sys_issue)(tid);
+
+         mask = tst->sig_mask;
+         VG_(sanitize_client_sigmask)(tid, &mask);
+
+         VG_(set_sleeping)(tid, VgTs_WaitSys);
+         VGA_(client_syscall)(syscallno, tst, &mask);
+         /* VGA_(client_syscall) may not return if the syscall was
+            interrupted by a signal.  In that case, flow of control
+            will end up back in the scheduler via the signal
+            machinery. */
+         VG_(set_running)(tid);
+         PRINT("SYSCALL[%d,%d](%3d) --> %ld (0x%lx)\n",
+               VG_(getpid)(), tid, syscallno, (Long)(Word)RES, (ULong)RES);
       } else {
 	 /* run the syscall directly */
+         if (flags & PadAddr)
+            VG_(pad_address_space)(VG_(client_end));
+
 	 RES = VG_(do_syscall6)(syscallno, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
          PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
 	 syscall_done = True;
       }
    }
 
-   VGP_POPCC(VgpCoreSysWrap);
+   vg_assert(VG_(is_running_thread)(tid));
 
-   vg_assert(( syscall_done && tst->status == VgTs_Runnable) ||
-	     (!syscall_done && tst->status == VgTs_WaitSys ));
+   SET_SYSCALL_RETVAL(tid, RES);
 
-   return syscall_done;
-}
+   VG_(post_syscall)(tid);
 
-static void restart_syscall(ThreadId tid)
-{
-   ThreadState* tst;
-   tst = VG_(get_ThreadState)(tid);
-
-   vg_assert(tst != NULL);
-   vg_assert(tst->status == VgTs_WaitSys);
-   vg_assert(tst->syscallno != -1);
-
-   SYSNO = tst->syscallno;
-   VGA_(restart_syscall)(&tst->arch);
-}
-
-void VG_(post_syscall) ( ThreadId tid, Bool restart )
-{
-   ThreadState* tst;
-   UInt syscallno, flags;
-   const struct SyscallTableEntry *sys;
-   Bool isSpecial = False;
-   Bool restarted = False;
-
-   VGP_PUSHCC(VgpCoreSysWrap);
-
-   tst = VG_(get_ThreadState)(tid);
-   vg_assert(tst->tid == tid);
-
-   /* Tell the tool about the syscall return value */
-   SET_SYSCALL_RETVAL(tst->tid, RES);
-
-   syscallno = tst->syscallno;
-
-   vg_assert(syscallno != -1);			/* must be a current syscall */
-
-   if (syscallno < VGA_(syscall_table_size) &&
-       VGA_(syscall_table)[syscallno].before != NULL)
-   {
-      sys = &VGA_(syscall_table)[syscallno];
-   } else {
-      sys = &bad_sys;
-   }
-   flags = *(sys->flags_ptr);
-
-   isSpecial = flags & Special;
-
-   if (RES == -VKI_ERESTARTSYS) {
-      /* Applications never expect to see this, so we should either
-	 restart the syscall or fail it with EINTR, depending on what
-	 our caller wants.  Generally they'll want to restart, but if
-	 client set the signal state to not restart, then we fail with
-	 EINTR.  Either way, ERESTARTSYS means the syscall made no
-	 progress, and so can be failed or restarted without
-	 consequence. */
-      if (0)
-	 VG_(printf)("syscall %d returned ERESTARTSYS; restart=%d\n",
-		     syscallno, restart);
-
-      if (restart) {
-	 restarted = True;
-	 restart_syscall(tid);
-      } else
-	 RES = -VKI_EINTR;
-   } 
-
-   if (!restarted) {
-      if (sys->after != NULL &&
-          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(RES)))
-	 (sys->after)(tst->tid, tst);
-
-      /* Do any post-syscall actions
-
-	 NOTE: this is only called if the syscall completed.  If the
-	 syscall was restarted, then it will call the Tool's
-	 pre_syscall again, without calling post_syscall (ie, more
-	 pre's than post's)
-       */
-      if (VG_(needs).syscall_wrapper) {
-	 VGP_PUSHCC(VgpToolSysWrap);
-	 TL_(post_syscall)(tid, syscallno, RES);
-	 VGP_POPCC(VgpToolSysWrap);
-      }
+   if (flags & PadAddr) {
+      vg_assert(!mayBlock);
+      VG_(unpad_address_space)(VG_(client_end));
+      //VG_(sanity_check_memory)();
    }
 
-   tst->status = VgTs_Runnable;	/* runnable again */
-   tst->syscallno = -1;		/* no current syscall */
+   /* VG_(post_syscall) should set this */
+   vg_assert(tst->syscallno == -1);
 
    VGP_POPCC(VgpCoreSysWrap);
 }
+
+//static void restart_syscall(ThreadId tid)
+//{
+//   ThreadState* tst;
+//   tst = VG_(get_ThreadState)(tid);
+//
+//   vg_assert(tst != NULL);
+//   vg_assert(tst->status == VgTs_WaitSys);
+//   vg_assert(tst->syscallno != -1);
+//
+//   SYSNO = tst->syscallno;
+//   VGA_(restart_syscall)(&tst->arch);
+//}
+
+// svn version of post_syscall
+//void VG_(post_syscall) ( ThreadId tid, Bool restart )
+//{
+//   ThreadState* tst;
+//   UInt syscallno, flags;
+//   const struct SyscallTableEntry *sys;
+//   Bool isSpecial = False;
+//   Bool restarted = False;
+//
+//   VGP_PUSHCC(VgpCoreSysWrap);
+//
+//   tst = VG_(get_ThreadState)(tid);
+//   vg_assert(tst->tid == tid);
+//
+//   /* Tell the tool about the syscall return value */
+//   SET_SYSCALL_RETVAL(tst->tid, RES);
+//
+//   syscallno = tst->syscallno;
+//
+//   vg_assert(syscallno != -1);			/* must be a current syscall */
+//
+//   if (syscallno < VGA_(syscall_table_size) &&
+//       VGA_(syscall_table)[syscallno].before != NULL)
+//   {
+//      sys = &VGA_(syscall_table)[syscallno];
+//   } else {
+//      sys = &bad_sys;
+//   }
+//   flags = *(sys->flags_ptr);
+//
+//   isSpecial = flags & Special;
+//
+//   if (RES == -VKI_ERESTARTSYS) {
+//      /* Applications never expect to see this, so we should either
+//	 restart the syscall or fail it with EINTR, depending on what
+//	 our caller wants.  Generally they'll want to restart, but if
+//	 client set the signal state to not restart, then we fail with
+//	 EINTR.  Either way, ERESTARTSYS means the syscall made no
+//	 progress, and so can be failed or restarted without
+//	 consequence. */
+//      if (0)
+//	 VG_(printf)("syscall %d returned ERESTARTSYS; restart=%d\n",
+//		     syscallno, restart);
+//
+//      if (restart) {
+//	 restarted = True;
+//	 restart_syscall(tid);
+//      } else
+//	 RES = -VKI_EINTR;
+//   } 
+//
+//   if (!restarted) {
+//      if (sys->after != NULL &&
+//          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(RES)))
+//	 (sys->after)(tst->tid, tst);
+//
+//      /* Do any post-syscall actions
+//
+//	 NOTE: this is only called if the syscall completed.  If the
+//	 syscall was restarted, then it will call the Tool's
+//	 pre_syscall again, without calling post_syscall (ie, more
+//	 pre's than post's)
+//       */
+//      if (VG_(needs).syscall_wrapper) {
+//	 VGP_PUSHCC(VgpToolSysWrap);
+//	 TL_(post_syscall)(tid, syscallno, RES);
+//	 VGP_POPCC(VgpToolSysWrap);
+//      }
+//   }
+//
+//   tst->status = VgTs_Runnable;	/* runnable again */
+//   tst->syscallno = -1;		/* no current syscall */
+//
+//   VGP_POPCC(VgpCoreSysWrap);
+//}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

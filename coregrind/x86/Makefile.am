@@ -1,7 +1,7 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
 
 noinst_HEADERS = \
 	core_arch.h \
@@ -12,8 +12,7 @@ noinst_HEADERS = \
 noinst_LIBRARIES = libarch.a
 
 EXTRA_DIST = \
-	jmp_with_stack.c \
-	libpthread.c
+	jmp_with_stack.c
 
 BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
@@ -23,6 +22,7 @@ libarch_a_SOURCES = \
 	helpers.S \
 	dispatch.S \
 	signals.c \
+	jmp_with_stack.c \
 	state.c
 
 # Extract ld's default linker script and hack it to our needs

@@ -7,6 +7,7 @@ noinst_SCRIPTS = filter_allocs filter_leak_check_size \
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
@@ -22,6 +23,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
+	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
@@ -32,6 +34,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
+	leak-0.vgtest leak-0.stderr.exp \
+	leak-cycle.vgtest leak-cycle.stderr.exp \
+	leak-tree.vgtest leak-tree.stderr.exp \
+	leak-regroot.vgtest leak-regroot.stderr.exp \
+	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
@@ -50,6 +57,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	pointer-trace.vgtest pointer-trace.stdout.exp pointer-trace.stderr.exp \
+	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
@@ -78,15 +87,20 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
 
 check_PROGRAMS = \
+	addressable \
 	badaddrvalue badfree badjump badjump2 \
 	badloop badpoll badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
+	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 \
 	fprw fwrite hello inits inline \
+	leak-0 leak-cycle leak-tree leak-regroot leakotron \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
+	pointer-trace \
+	post-syscall \
 	realloc1 realloc2 realloc3 \
 	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	sigaltstack signal2 sigprocmask \
@@ -97,11 +111,12 @@ check_PROGRAMS = \
 	writev zeropage
 
 
-AM_CPPFLAGS = -I$(top_builddir)/include -I@VEX_DIR@/pub
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include -I@VEX_DIR@/pub
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # C ones
+addressable_SOURCES	= addressable.c
 badaddrvalue_SOURCES 	= badaddrvalue.c
 badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
@@ -114,6 +129,7 @@ brk2_SOURCES 		= brk2.c
 buflen_check_SOURCES	= buflen_check.c
 clientperm_SOURCES 	= clientperm.c
 custom_alloc_SOURCES 	= custom_alloc.c
+describe_block_SOURCES	= describe-block.c
 doublefree_SOURCES 	= doublefree.c
 error_counts_SOURCES 	= error_counts.c
 errs1_SOURCES 		= errs1.c
@@ -124,6 +140,11 @@ fprw_SOURCES 		= fprw.c
 fwrite_SOURCES 		= fwrite.c
 inits_SOURCES		= inits.c
 inline_SOURCES 	        = inline.c
+leak_0_SOURCES		= leak-0.c
+leak_cycle_SOURCES	= leak-cycle.c
+leak_tree_SOURCES	= leak-tree.c
+leak_regroot_SOURCES	= leak-regroot.c
+leakotron_SOURCES	= leakotron.c
 malloc1_SOURCES 	= malloc1.c
 malloc2_SOURCES 	= malloc2.c
 malloc3_SOURCES 	= malloc3.c
@@ -138,6 +159,8 @@ mempool_SOURCES 	= mempool.c
 nanoleak_SOURCES 	= nanoleak.c
 null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c
+pointer_trace_SOURCES	= pointer-trace.c
+post_syscall_SOURCES	= post-syscall.c
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c

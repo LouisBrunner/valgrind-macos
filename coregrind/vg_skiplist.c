@@ -3,8 +3,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2002-2004 Nicholas Nethercote
-      njn25@cam.ac.uk
+   Copyright (C) 2002-2004 Jeremy Fitzhardinge
+      jeremy@goop.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -339,12 +339,37 @@ static SkipNode *SkipList__Find(const SkipList *l, void *k, SkipNode **prevs)
    return n;
 }
 
-void *VG_(SkipList_Find)(const SkipList *l, void *k)
+/* Return list element which is <= k, or NULL if there is none. */
+void *VG_(SkipList_Find_Before)(const SkipList *l, void *k)
 {
    SkipNode *n = SkipList__Find(l, k, NULL);
 
    if (n != NULL)
       return data_of_node(l, n);
+   return NULL;
+}
+
+/* Return the list element which == k, or NULL if none */
+void *VG_(SkipList_Find_Exact)(const SkipList *l, void *k)
+{
+   SkipNode *n = SkipList__Find(l, k, NULL);
+
+   if (n != NULL && (l->cmp)(key_of_node(l, n), k) == 0)
+      return data_of_node(l, n);
+   return NULL;
+}
+
+/* Return the list element which is >= k, or NULL if none */
+void *VG_(SkipList_Find_After)(const SkipList *l, void *k)
+{
+   SkipNode *n = SkipList__Find(l, k, NULL);
+
+   if (n != NULL && (l->cmp)(key_of_node(l, n), k) < 0)
+      n = n->next[0];
+
+   if (n != NULL)
+      return data_of_node(l, n);
+
    return NULL;
 }
 
@@ -424,3 +449,64 @@ void *VG_(SkipList_Remove)(SkipList *l, void *k)
 
    return data_of_node(l, n);
 }
+
+void  VG_(SkipList_for_each_node)(const SkipList *l, 
+				  void (*fn)(void *node, void *arg), void *arg)
+{
+   void *n;
+
+   for(n = VG_(SkipNode_First)(l);
+       n != NULL;
+       n = VG_(SkipNode_Next)(l, n))
+      (*fn)(n, arg);
+}
+
+
+/* --------------------------------------------------
+   Comparison functions
+   -------------------------------------------------- */
+Int VG_(cmp_Int)(const void *v1, const void *v2)
+{
+   Int a = *(const Int *)v1;
+   Int b = *(const Int *)v2;
+
+   if (a < b)
+      return -1;
+   if (a == b)
+      return 0;
+   return 1;
+}
+
+Int VG_(cmp_UInt)(const void *v1, const void *v2)
+{
+   UInt a = *(const UInt *)v1;
+   UInt b = *(const UInt *)v2;
+
+   if (a < b)
+      return -1;
+   if (a == b)
+      return 0;
+   return 1;
+}
+
+Int VG_(cmp_Addr)(const void *v1, const void *v2)
+{
+   Addr a = *(const Addr *)v1;
+   Addr b = *(const Addr *)v2;
+
+   if (a < b)
+      return -1;
+   if (a == b)
+      return 0;
+   return 1;
+}
+
+Int VG_(cmp_string)(const void *v1, const void *v2)
+{
+   const Char *a = *(const Char **)v1;
+   const Char *b = *(const Char **)v2;
+
+   return VG_(strcmp)(a, b);
+}
+
+

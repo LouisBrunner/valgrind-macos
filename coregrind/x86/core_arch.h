@@ -59,6 +59,7 @@
 #define ARCH_CLREQ_RET        guest_EDX
 #define ARCH_PTHREQ_RET       guest_EDX
 
+
 // Register numbers, for vg_symtab2.c
 #define R_STACK_PTR           4
 #define R_FRAME_PTR           5
@@ -81,13 +82,18 @@
 // The signal handler needs to know this.
 #define ARCH_STACK_REDZONE_SIZE 0
 
+//extern const Char VG_(helper_wrapper_before)[];	/* in dispatch.S */
+//extern const Char VG_(helper_wrapper_return)[];	/* in dispatch.S */
+
+//extern const Char VG_(helper_undefined_instruction)[];
+//extern const Char VG_(helper_INT)[];
+//extern const Char VG_(helper_breakpoint)[];
+
+
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */
 
-// Architecture-specific part of a ThreadState
-// XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core...
 typedef 
    struct {
       /* --- BEGIN vex-mandated guest state --- */
@@ -108,24 +114,23 @@ typedef
 typedef VexGuestX86State VexGuestArchState;
 
 /* ---------------------------------------------------------------------
-   libpthread stuff
-   ------------------------------------------------------------------ */
-
-struct _ThreadArchAux {
-   void*         tls_data;
-   int           tls_segment;
-   unsigned long sysinfo;
-};
-
-/* ---------------------------------------------------------------------
    Miscellaneous constants
    ------------------------------------------------------------------ */
 
 // Valgrind's signal stack size, in words.
 #define VG_SIGSTACK_SIZE_W    10000
 
+// Valgrind's stack size, in words.
+#define VG_STACK_SIZE_W    16384
+
 // Base address of client address space.
 #define CLIENT_BASE	0x00000000ul
+
+/* ---------------------------------------------------------------------
+   Signal stuff (should be plat)
+   ------------------------------------------------------------------ */
+
+void VGA_(signal_return)(ThreadId tid, Bool isRT);
 
 #endif   // __X86_CORE_ARCH_H
 

@@ -1,5 +1,4 @@
-
-/*
+/* -*- c -*-
    ----------------------------------------------------------------
 
    Notice that the following BSD-style license applies to this one
@@ -63,6 +62,17 @@
 
 #undef __@VG_ARCH@__
 #define __@VG_ARCH@__   1	// Architecture we're installed on
+
+
+/* If we're not compiling for our target architecture, don't generate
+   any inline asms.  This would be a bit neater if we used the same
+   CPP symbols as the compiler for identifying architectures. */
+#if !(__x86__ && __i386__)
+#  ifndef NVALGRIND
+#    define NVALGRIND	1
+#  endif  /* NVALGRIND */
+#endif
+
 
 /* This file is for inclusion into client (your!) code.
 
@@ -143,26 +153,23 @@ extern void exit (int __status);
 // amd64/core_arch.h!
 #endif  // __amd64__
 #ifdef __x86__
-#define VALGRIND_MAGIC_SEQUENCE(                                        \
-        _zzq_rlval, _zzq_default, _zzq_request,                         \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
-                                                                        \
-  { volatile unsigned int _zzq_args[5];                                 \
-    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
-    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
-    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
-    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
-    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
-    asm volatile("movl %1, %%eax\n\t"                                   \
-                 "movl %2, %%edx\n\t"                                   \
-                 "roll $29, %%eax ; roll $3, %%eax\n\t"                 \
-                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"                 \
-                 "roll $13, %%eax ; roll $19, %%eax\n\t"                \
-                 "movl %%edx, %0\t"                                     \
-                 : "=r" (_zzq_rlval)                                    \
-                 : "r" (&_zzq_args[0]), "r" (_zzq_default)              \
-                 : "eax", "edx", "cc", "memory"                         \
-                );                                                      \
+#define VALGRIND_MAGIC_SEQUENCE(				\
+        _zzq_rlval, _zzq_default, _zzq_request,			\
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)		\
+								\
+  { unsigned int _zzq_args[5];					\
+    _zzq_args[0] = (unsigned int)(_zzq_request);		\
+    _zzq_args[1] = (unsigned int)(_zzq_arg1);			\
+    _zzq_args[2] = (unsigned int)(_zzq_arg2);			\
+    _zzq_args[3] = (unsigned int)(_zzq_arg3);			\
+    _zzq_args[4] = (unsigned int)(_zzq_arg4);			\
+    asm volatile("roll $29, %%eax ; roll $3, %%eax\n\t"		\
+                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"		\
+                 "roll $13, %%eax ; roll $19, %%eax"		\
+                 : "=d" (_zzq_rlval)				\
+                 : "a" (&_zzq_args[0]), "0" (_zzq_default)	\
+                 : "cc", "memory"				\
+                );						\
   }
 #endif  // __x86__
 // Insert assembly code for other architectures here...

@@ -43,6 +43,8 @@
    extern void VGA_(linux_##x##_before)(ThreadId tid, ThreadState *tst); \
    extern void VGA_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
 
+LINUX_SYSCALL_WRAPPER(sys_exit_group);
+
 LINUX_SYSCALL_WRAPPER(sys_mount);
 LINUX_SYSCALL_WRAPPER(sys_oldumount);
 LINUX_SYSCALL_WRAPPER(sys_umount);
@@ -85,6 +87,94 @@ LINUX_SYSCALL_WRAPPER(sys_io_destroy);
 LINUX_SYSCALL_WRAPPER(sys_io_getevents);
 LINUX_SYSCALL_WRAPPER(sys_io_submit);
 LINUX_SYSCALL_WRAPPER(sys_io_cancel);
+
+#define FUTEX_SEMA	0
+
+#if FUTEX_SEMA
+/* ---------------------------------------------------------------------
+   Definition for a semaphore.  Defined in terms of futex.
+
+   Futex semaphore operations taken from futex-2.2/usersem.h
+   ------------------------------------------------------------------ */
+typedef struct {
+   int count;
+} vg_sema_t;
+
+extern Int __futex_down_slow(vg_sema_t *, int, struct vki_timespec *);
+extern Int __futex_up_slow(vg_sema_t *);
+
+void VG_(sema_init)(vg_sema_t *);
+static inline void VG_(sema_deinit)(vg_sema_t *) 
+{
+}
+
+static inline void VG_(sema_down)(vg_sema_t *futx)
+{
+   Int val, woken = 0;
+
+   /* Returns new value */
+   while ((val = __futex_down(&futx->count)) != 0) {
+      Int ret = __futex_down_slow(futx, val, NULL);
+      if (ret < 0) 
+	 return; /* error */
+      else if (ret == 1)
+	 return; /* passed */
+      else if (ret == 0)
+	 woken = 1; /* slept */
+      else
+	 /* loop */;
+   }
+   /* If we were woken, someone else might be sleeping too: set to -1 */
+   if (woken) {
+      futx->count = -1;
+   }
+   return;
+}
+
+/* If __futex_up increments count from 0 -> 1, noone was waiting.
+   Otherwise, set to 1 and tell kernel to wake them up. */
+static inline void VG_(sema_up)(vg_sema_t *futx)
+{
+   if (!__futex_up(&futx->count))
+      __futex_up_slow(futx);
+}
+#else  /* !FUTEX_SEMA */
+/* 
+   Not really a semaphore, but use a pipe for a token-passing scheme
+ */
+typedef struct {
+   Int pipe[2];
+   Int owner_thread;		/* who currently has it */
+} vg_sema_t;
+
+void VG_(sema_init)(vg_sema_t *);
+void VG_(sema_deinit)(vg_sema_t *);
+void VG_(sema_down)(vg_sema_t *sema);
+void VG_(sema_up)(vg_sema_t *sema);
+
+#endif	/* FUTEX_SEMA */
+
+/* OS-specific thread state */
+typedef struct {
+   /* who we are */
+   Int	lwpid;			/* PID of kernel task */
+   Int	threadgroup;		/* thread group id */
+
+   /* how we were started */
+   UInt clone_flags;		/* flags passed to clone() to create this thread */
+   Int  *parent_tidptr;
+   Int  *child_tidptr;
+
+   ThreadId parent;		/* parent tid (if any) */
+
+   /* runtime details */
+   UInt *stack;			/* stack base */
+   UInt stacksize;		/* stack size in UInts */
+
+   /* exit details */
+   Int  exitcode;		/* in the case of exitgroup, set by someone else */
+   Int  fatalsig;		/* fatal signal */
+} os_thread_t;
 
 #endif   // __LINUX_CORE_OS_H
 

@@ -6,7 +6,7 @@ int main(void)
 {
    void *p;
 
-   int size = 2 * 1023 * 1024 * 1024;     // just under 2^31 (2GB)
+   unsigned long size = 2ul * 1023ul * 1024ul * 1024ul;     // just under 2^31 (4GB)
  
    fprintf(stderr, "Attempting too-big malloc()...\n");
    p = malloc(size);          // way too big!

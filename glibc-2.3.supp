@@ -128,6 +128,13 @@
    fun:dl_open_worker
 }
 
+#-------- glibc 2.3.4/ Fedora Core 3
+{
+   dl_relocate_object
+   Memcheck:Cond
+   fun:_dl_relocate_object
+}
+
 #-------- Data races
 {
    _dl_lookup_symbol_internal/fixup/_dl_runtime_resolve
@@ -203,17 +210,6 @@
 }
 
 ##----------------------------------------------------------------------##
-## For a leak in Valgrind's own libpthread.so :(
-{
-   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
-   Memcheck:Leak
-   fun:malloc
-   fun:my_malloc
-   fun:get_or_allocate_specifics_ptr
-   fun:pthread_key_create
-}
-
-##----------------------------------------------------------------------##
 ## Bugs in helper library supplied with Intel Icc 7.0 (65)
 ## in /opt/intel/compiler70/ia32/lib/libcxa.so.3
 {
@@ -246,4 +242,123 @@
    Ugly strchr error in /lib/ld-2.3.3.so
    Memcheck:Cond
    obj:/lib/ld-2.3.3.so
+}
+##----------------------------------------------------------------------##
+## glibc-2.3.3 on FC2
+## Assumes that sysctl returns \0-terminated strings in is_smp_system
+{
+   Unterminated strstr string in is_smp_system() (NPTL)
+   Memcheck:Cond
+   fun:strstr
+   fun:__pthread_initialize_minimal
+   obj:/lib/tls/libpthread-0.61.so
+   obj:/lib/tls/libpthread-0.61.so
+}
+{
+   Unterminated strstr string in is_smp_system() (LinuxThreads)
+   Memcheck:Cond
+   fun:strstr
+   fun:pthread_initialize
+   obj:/lib/i686/libpthread-0.10.so
+   obj:/lib/i686/libpthread-0.10.so
+}
+{
+   Unterminated strstr string in is_smp_system() (LinuxThreads)
+   Memcheck:Cond
+   fun:strstr
+   fun:pthread_initialize
+   obj:/lib/libpthread-0.10.so
+   obj:/lib/libpthread-0.10.so
+}
+
+## Bug in PRE(sys_clone), really.  Some args are not used.
+{
+   LinuxThread clone use (parent_tidptr)
+   Memcheck:Param
+   clone(parent_tidptr)
+   fun:clone
+   fun:pthread_create
+}
+{
+   LinuxThread clone use (child_tidptr)
+   Memcheck:Param
+   clone(child_tidptr)
+   fun:clone
+   fun:pthread_create
+}
+{
+   LinuxThread clone use (tlsinfo)
+   Memcheck:Param
+   clone(tlsinfo)
+   fun:clone
+   fun:pthread_create
+}
+{
+   LinuxThread clone use (parent_tidptr)
+   Memcheck:Param
+   clone(parent_tidptr)
+   fun:clone
+   fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThread clone use (child_tidptr)
+   Memcheck:Param
+   clone(child_tidptr)
+   fun:clone
+   fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThread clone use (tlsinfo)
+   Memcheck:Param
+   clone(tlsinfo)
+   fun:clone
+   fun:pthread_create@@GLIBC_2.1
+}
+
+## LinuxThreads manager writes messages containing undefined bytes
+{
+   LinuxThreads: write/pthread_onexit_process
+   Memcheck:Param
+   write(buf)
+   fun:pthread_onexit_process
+   fun:exit
+}
+{
+   LinuxThreads: write/pthread_join
+   Memcheck:Param
+   write(buf)
+   fun:pthread_join
+}
+{
+   LinuxThreads: write/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThreads: write/__pthread_initialize_manager/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.1
+}
+
+{
+   LinuxThreads: write/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_create
+}
+
+##----------------------------------------------------------------------##
+## glibc-2.3.4 on FC3
+## Assumes that sysctl returns \0-terminated strings in is_smp_system
+{
+   Unterminated strstr string in is_smp_system() (NPTL)
+   Memcheck:Cond
+   fun:strstr
+   fun:__pthread_initialize_minimal
+   obj:/lib/tls/libpthread-2.3.4.so
+   obj:/lib/tls/libpthread-2.3.4.so
 }

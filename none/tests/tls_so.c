@@ -1,3 +1,6 @@
+#include <config.h>
+
+#ifdef HAVE_TLS
 #include <pthread.h>
 
 extern __thread int so_extern;
@@ -17,4 +20,5 @@ int *test_so_local(void)
 int *test_so_global(void)
 {
 	return &global;
-}
+} 
+#endif

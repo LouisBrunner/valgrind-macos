@@ -84,6 +84,7 @@ if ($output eq "callwrap") {
 	my $args = join ', ', @args;
 
 	print "$ret $pfxmap{$pfx}($func)($args);\n";
+	print "$ret VG_(missing_$func)($args);\n";
 	print "Bool VG_(defined_$func)(void);\n";
     }
 } elsif ($output eq "toolproto") {
@@ -99,11 +100,11 @@ if ($output eq "callwrap") {
 	my ($pfx, $ret, $func, @args) = @_;
 	my $args = join ", ", @args;
 
-	print "static $ret missing_${pfx}_$func($args) {\n";
+	print "__attribute__ ((weak))\n$ret VG_(missing_$func)($args) {\n";
 	print "   VG_(missing_tool_func)(\"${pfx}_$func\");\n";
 	print "}\n";
 	print "Bool VG_(defined_$func)(void) {\n";
-	print "   return $struct.${pfx}_$func != missing_${pfx}_$func;\n";
+	print "   return $struct.${pfx}_$func != VG_(missing_$func);\n";
 	print "}\n\n";
     };
     $indent = "   ";
@@ -135,7 +136,7 @@ if ($output eq "callwrap") {
     $generate = sub ($$$@) {
 	my ($pfx, $ret, $func, @args) = @_;
 
-	print "$indent.${pfx}_$func = missing_${pfx}_$func,\n"
+	print "$indent.${pfx}_$func = VG_(missing_$func),\n"
     };
     $indent = "   ";
 } elsif ($output eq "initfunc") {
@@ -149,7 +150,7 @@ if ($output eq "callwrap") {
 void VG_(init_$func)($ret (*func)($args))
 {
 	if (func == NULL)
-		func = missing_${pfx}_$func;
+		func = VG_(missing_$func);
 	if (VG_(defined_$func)())
 		VG_(printf)("Warning tool is redefining $func\\n");
 	if (func == TL_($func))

@@ -19,8 +19,7 @@ child_main(void *no_args)
 //  for (i = 0; i < 5; ++i)
 //    {
       sleep (1);
-      fprintf (stdout, "thread %ld sending SIGUSR1 to thread %ld\n",
-               pthread_self (), main_thread);
+      fprintf (stdout, "thread CHILD sending SIGUSR1 to thread MAIN\n");
       if (pthread_kill (main_thread, SIGUSR1) != 0)
         fprintf (stderr, "error doing pthread_kill\n"); 
 //    }

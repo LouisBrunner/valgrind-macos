@@ -91,6 +91,8 @@ typedef
       VG_USERREQ__GET_VBITS,
       VG_USERREQ__SET_VBITS,
 
+      VG_USERREQ__CREATE_BLOCK,
+
       /* This is just for memcheck's internal use - don't use it */
       _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP = VG_USERREQ_TOOL_BASE('M','C')+256
    } Vg_MemCheckClientRequest;
@@ -100,8 +102,7 @@ typedef
 /* Client-code macros to manipulate the state of memory. */
 
 /* Mark memory at _qzz_addr as unaddressible and undefined for
-   _qzz_len bytes.  Returns an int handle pertaining to the block
-   descriptions Valgrind will use in subsequent error messages. */
+   _qzz_len bytes.   */
 #define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
@@ -130,12 +131,20 @@ typedef
     _qzz_res;                                                    \
    }))
 
-/* Discard a block-description-handle obtained from the above three
-   macros.  After this, Valgrind will no longer be able to relate
-   addressing errors to the user-defined block associated with the
-   handle.  The permissions settings associated with the handle remain
-   in place.  Returns 1 for an invalid handle, 0 for a valid
-   handle. */
+/* Create a block-description handle.  The description is an ascii
+   string which is included in any messages pertaining to addresses
+   within the specified memory range.  Has no other effect on the
+   properties of the memory range. */
+#define VALGRIND_CREATE_BLOCK(_qzz_addr,_qzz_len, _qzz_desc)	\
+	(__extension__({unsigned int _qzz_res;			\
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,	\
+                            VG_USERREQ__CREATE_BLOCK,           \
+                            _qzz_addr, _qzz_len, _qzz_desc, 0);	\
+    _qzz_res;							\
+   }))
+
+/* Discard a block-description-handle. Returns 1 for an
+   invalid handle, 0 for a valid handle. */
 #define VALGRIND_DISCARD(_qzz_blkindex)                          \
    (__extension__ ({unsigned int _qzz_res;                       \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
@@ -187,6 +196,15 @@ typedef
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__DO_LEAK_CHECK,             \
                             0, 0, 0, 0);                           \
+   }
+
+/* Just display summaries of leaked memory, rather than all the
+   details */
+#define VALGRIND_DO_QUICK_LEAK_CHECK				   \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__DO_LEAK_CHECK,             \
+                            1, 0, 0, 0);                           \
    }
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by

@@ -314,11 +314,16 @@ struct vki_utimbuf {
 // From linux-2.6.8.1/include/linux/sched.h
 //----------------------------------------------------------------------
 
+#define VKI_CSIGNAL		0x000000ff	/* signal mask to be sent at exit */
 #define VKI_CLONE_VM		0x00000100	/* set if VM shared between processes */
 #define VKI_CLONE_FS		0x00000200	/* set if fs info shared between processes */
 #define VKI_CLONE_FILES		0x00000400	/* set if open files shared between processes */
 #define VKI_CLONE_SIGHAND	0x00000800	/* set if signal handlers and blocked signals shared */
+#define VKI_CLONE_VFORK		0x00004000	/* set if the parent wants the child to wake it up on mm_release */
+#define VKI_CLONE_PARENT	0x00008000	/* set if we want to have the same parent as the cloner */
 #define VKI_CLONE_THREAD	0x00010000	/* Same thread group? */
+#define VKI_CLONE_SYSVSEM	0x00040000	/* share system V SEM_UNDO semantics */
+#define VKI_CLONE_SETTLS	0x00080000	/* create a new TLS for the child */
 #define VKI_CLONE_PARENT_SETTID	0x00100000	/* set the TID in the parent */
 #define VKI_CLONE_CHILD_CLEARTID	0x00200000	/* clear the TID in the child */
 #define VKI_CLONE_DETACHED	0x00400000	/* Unused, ignored */
@@ -332,9 +337,10 @@ struct vki_sched_param {
 // From nowhere: constants internal to Valgrind
 //----------------------------------------------------------------------
 
-#define VKI_SIGVGINT        (VKI_SIGRTMIN+0) // [[internal: interrupt]]
-#define VKI_SIGVGKILL       (VKI_SIGRTMIN+1) // [[internal: kill]]
-#define VKI_SIGVGRTUSERMIN  (VKI_SIGRTMIN+2) // [[internal: first
+/* Use high signals because native pthreads wants to use low */
+#define VKI_SIGVGKILL       (VG_(max_signal)-0) // [[internal: kill]]
+#define VKI_SIGVGCHLD       (VG_(max_signal)-1) // [[internal: thread death]]
+#define VKI_SIGVGRTUSERMAX  (VG_(max_signal)-2) // [[internal: last user-usable RT signal]]
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
@@ -1002,6 +1008,8 @@ struct  vki_seminfo {
 #define	VKI_ESRCH		 3	/* No such process */
 #define	VKI_EINTR		 4	/* Interrupted system call */
 #define	VKI_EBADF		 9	/* Bad file number */
+#define VKI_EAGAIN		11	/* Try again */
+#define VKI_EWOULDBLOCK		VKI_EAGAIN
 #define	VKI_ENOMEM		12	/* Out of memory */
 #define	VKI_EACCES		13	/* Permission denied */
 #define	VKI_EFAULT		14	/* Bad address */
@@ -1032,12 +1040,14 @@ struct  vki_seminfo {
 #define VKI_MREMAP_FIXED	2
 
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/futex.h
+// From linux-2.6.10-rc3-mm1/include/linux/futex.h
 //----------------------------------------------------------------------
 
 #define VKI_FUTEX_WAIT (0)
+#define VKI_FUTEX_WAKE (1)
 #define VKI_FUTEX_FD (2)
 #define VKI_FUTEX_REQUEUE (3)
+#define VKI_FUTEX_CMP_REQUEUE (4)
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/errno.h

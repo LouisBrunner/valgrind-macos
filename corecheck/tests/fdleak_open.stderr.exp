@@ -3,7 +3,7 @@
 FILE DESCRIPTORS: 4 open at exit.
 Open file descriptor .: /dev/null
    at 0x........: open (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Open file descriptor .: .

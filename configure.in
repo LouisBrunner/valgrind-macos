@@ -25,7 +25,7 @@ AC_ARG_WITH(vex,
 AC_SUBST(VEX_DIR)
 
 # Checks for programs.
-CFLAGS=""
+CFLAGS="-Wno-long-long"
 
 AC_PROG_LN_S
 AC_PROG_CC
@@ -96,8 +96,8 @@ case "${host_cpu}" in
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="x86"
         KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
-        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CFLAGS="@PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="@PREFERRED_STACK_BOUNDARY@"
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
 
@@ -268,21 +268,6 @@ case "${glibc}" in
 	;;
 esac
 
-# APIs introduced in recent glibc versions
-
-AC_MSG_CHECKING([whether sched_param has a sched_priority member])
-AC_CACHE_VAL(vg_have_sched_priority,
-[
-AC_TRY_COMPILE([#include <pthread.h>],[
-struct sched_param p; p.sched_priority=1;],
-vg_have_sched_priority=yes,
-vg_have_sched_priority=no)
-])
-AC_MSG_RESULT($vg_have_sched_priority)
-if test "$vg_have_sched_priority" = yes; then
-AC_DEFINE([HAVE_SCHED_PRIORITY], 1, [pthread / sched_priority exists])
-fi
-
 # We don't know how to detect the X client library version
 # (detecting the server version is easy, bu no help).  So we
 # just use a hack: always include the suppressions for both
@@ -314,19 +299,55 @@ CFLAGS=$safe_CFLAGS
 
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
+# does this compiler support -Wno-pointer-sign ?
+AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign ])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wno-pointer-sign"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+no_pointer_sign=yes
+AC_MSG_RESULT([yes])
+], [
+no_pointer_sign=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+if test x$no_pointer_sign = xyes; then
+  CFLAGS="$CFLAGS -Wno-pointer-sign"
+fi
+
+# Check for TLS support in the compiler and linker
+AC_CACHE_CHECK([for TLS support], vg_cv_tls,
+	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],
+		[vg_cv_tls=$enableval],
+               	[AC_RUN_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
+                                                [[return foo;]])],
+                               [vg_cv_tls=yes],
+                               [vg_cv_tls=no])])])
+
+if test "$vg_cv_tls" = yes; then
+AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
+fi
 
 # Check for PIE support in the compiler and linker
 AC_CACHE_CHECK([for PIE support], vg_cv_pie,
-               [safe_CFLAGS=$CFLAGS
-                CFLAGS="$CFLAGS -fpie"
-                safe_LDFLAGS=$LDFLAGS
-                LDFLAGS="$LDFLAGS -pie"
-                AC_TRY_LINK([int foo;],
-                            [],
-                            [vg_cv_pie=yes],
-                            [vg_cv_pie=no])
-                CFLAGS=$safe_CFLAGS
-                LDFLAGS=$safe_LDFLAGS])
+	       [AC_ARG_ENABLE(pie, [  --enable-pie            platform supports PIE linking],
+		[vg_cv_pie=$enableval],
+               	[safe_CFLAGS=$CFLAGS
+                 CFLAGS="$CFLAGS -fpie"
+                 safe_LDFLAGS=$LDFLAGS
+                 LDFLAGS="$LDFLAGS -pie"
+                 AC_TRY_LINK([int foo;],
+                             [],
+                             [vg_cv_pie=yes],
+                             [vg_cv_pie=no])
+                 CFLAGS=$safe_CFLAGS
+                 LDFLAGS=$safe_LDFLAGS])])
 if test "$vg_cv_pie" = yes; then
 AC_DEFINE([HAVE_PIE], 1, [can create position-independent executables])
 fi
@@ -342,7 +363,6 @@ AC_TYPE_UID_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-AC_CHECK_TYPES(__pthread_unwind_buf_t,,,[#include <pthread.h>])
 
 # Checks for library functions.
 AC_FUNC_MEMCMP

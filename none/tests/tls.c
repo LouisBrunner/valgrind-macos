@@ -1,7 +1,10 @@
+#include <config.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+
+#ifdef HAVE_TLS
 
 #define COUNT 10
 
@@ -99,3 +102,10 @@ int main()
 
 	return 0;
 }
+#else
+int main()
+{
+	printf("FAILED: no compiler support for __thread\n");
+	return 1;
+}
+#endif

@@ -1,4 +1,4 @@
-noinst_SCRIPTS = filter_cpuid filter_int filter_stderr gen_insn_test.pl
+noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 INSN_TESTS=insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2

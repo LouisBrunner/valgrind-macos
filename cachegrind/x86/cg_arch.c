@@ -245,50 +245,23 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    return 0;
 }
 
-static jmp_buf cpuid_jmpbuf;
-
-static
-void cpuid_SIGILL_handler(int signum)
-{
-   __builtin_longjmp(cpuid_jmpbuf, 1);
-}
-
 static 
 Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
-   Int  level, res, ret;
+   Int  level, ret;
    Char vendor_id[13];
-   struct vki_sigaction sigill_new, sigill_saved;
-
-   /* Install own SIGILL handler */
-   sigill_new.ksa_handler  = cpuid_SIGILL_handler;
-   sigill_new.sa_flags    = 0;
-   sigill_new.sa_restorer = NULL;
-   res = VG_(sigemptyset)( &sigill_new.sa_mask );
    tl_assert(res == 0);
 
    res = VG_(sigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
    tl_assert(res == 0);
 
-   /* Trap for illegal instruction, in case it's a really old processor that
-    * doesn't support CPUID. */
-   if (__builtin_setjmp(cpuid_jmpbuf) == 0) {
-      VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
-                            (int*)&vendor_id[8], (int*)&vendor_id[4]);    
-      vendor_id[12] = '\0';
-
-      /* Restore old SIGILL handler */
-      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      tl_assert(res == 0);
-
-   } else  {
+   if (!VG_(has_cpuid)()) {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
-
-      /* Restore old SIGILL handler */
-      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      tl_assert(res == 0);
       return -1;
    }
+   VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
+	      (int*)&vendor_id[8], (int*)&vendor_id[4]);    
+   vendor_id[12] = '\0';
 
    if (0 == level) {
       VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?\n");

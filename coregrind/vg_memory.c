@@ -476,36 +476,6 @@ static void preen_segments ( void )
 
 
 /*--------------------------------------------------------------*/
-/*---                                                        ---*/
-/*--------------------------------------------------------------*/
-
-
-static Int addrcmp(const void *ap, const void *bp)
-{
-   Addr a = *(Addr *)ap;
-   Addr b = *(Addr *)bp;
-   Int ret;
-
-   if (a == b)
-      ret = 0;
-   else
-      ret = (a < b) ? -1 : 1;
-
-   return ret;
-}
-
-static Char *straddr(void *p)
-{
-   static Char buf[16];
-
-   VG_(sprintf)(buf, "%p", *(Addr *)p);
-
-   return buf;
-}
-
-static SkipList sk_segments = SKIPLIST_INIT(Segment, addr, addrcmp, straddr, VG_AR_CORE);
-
-/*--------------------------------------------------------------*/
 /*--- Maintain an ordered list of all the client's mappings  ---*/
 /*--------------------------------------------------------------*/
 
@@ -825,6 +795,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 {
    static const Bool debug = False || mem_debug;
    Addr ret;
+   Addr addrOrig = addr;
    Addr limit = (for_client ? VG_(client_end)-1   : VG_(valgrind_last));
    Addr base  = (for_client ? VG_(client_mapbase) : VG_(valgrind_base));
    Addr hole_start, hole_end, hstart_any, hstart_fixed, hstart_final;
@@ -899,6 +870,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
       vg_assert(hole_end > hole_start);
       hole_len = hole_end - hole_start + 1;
+      vg_assert(IS_PAGE_ALIGNED(hole_len));
 
       if (hole_len >= len && i_any == -1) {
          /* It will at least fit in this hole. */
@@ -906,12 +878,13 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
          hstart_any = hole_start;
       }
 
-      if (fixed && hole_start <= addr && hole_len >= len) {
+      if (fixed && hole_start <= addr 
+                && hole_start+hole_len >= addr+len) {
          /* We were asked for a fixed mapping, and this hole works.
             Bag it -- and stop searching as further searching is
             pointless. */
          i_fixed = i;
-         hstart_fixed = hole_start;
+         hstart_fixed = addr;
          break;
       }
    }
@@ -922,7 +895,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
    if (fixed) {
       i_final = i_fixed;
-      hstart_final = hstart_fixed;
+      hstart_final = hstart_fixed + VKI_PAGE_SIZE;  /* skip leading redzone */
    } else {
       i_final = i_any;
       hstart_final = hstart_any;
@@ -930,7 +903,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
 
    if (i_final != -1)
-      ret = hstart_final + VKI_PAGE_SIZE;  /* skip leading redzone */
+      ret = hstart_final;
    else
       ret = 0; /* not found */
 
@@ -938,11 +911,15 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
       VG_(printf)("find_map_space(%p, %d, %d) -> %p\n\n",
                   addr, len, for_client, ret);
 
+   if (fixed) {
+      vg_assert(ret == 0 || ret == addrOrig);
+   }
+
    return ret;
 }
 
 
-/* Pad the entire process address space, from VG_(client_base)
+/* Pad the entire process address space, from "start"
    to VG_(valgrind_last) by creating an anonymous and inaccessible
    mapping over any part of the address space which is not covered
    by an entry in the segment list.
@@ -953,12 +930,13 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
    address with VG_(find_map_space) and then adding a segment for
    it and padding the address space valgrind can ensure that the
    kernel has no choice but to put the memory where we want it. */
-void VG_(pad_address_space)(void)
+void VG_(pad_address_space)(Addr start)
 {
-   Addr addr = VG_(client_base);
+  vg_assert(0);
+#if 0
+   Addr addr = (start == 0) ? VG_(client_base) : start;
    Segment *s = VG_(SkipNode_First)(&sk_segments);
    Addr ret;
-vg_assert(0);
    
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
@@ -978,16 +956,18 @@ vg_assert(0);
    }
 
    return;
+#endif
 }
 
 /* Remove the address space padding added by VG_(pad_address_space)
    by removing any mappings that it created. */
-void VG_(unpad_address_space)(void)
+void VG_(unpad_address_space)(Addr start)
 {
-   Addr addr = VG_(client_base);
+vg_assert(0);
+#if 0
+   Addr addr = (start == 0) ? VG_(client_base) : start;
    Segment *s = VG_(SkipNode_First)(&sk_segments);
    Int ret;
-vg_assert(0);
 
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
@@ -1003,6 +983,7 @@ vg_assert(0);
    }
 
    return;
+#endif
 }
 
 /* Find the segment holding 'a', or NULL if none. */
@@ -1117,35 +1098,39 @@ static void segv_handler(Int seg)
 }
 
 /* 
-   Test if a piece of memory is addressable by setting up a temporary
-   SIGSEGV handler, then try to touch the memory.  No signal = good,
-   signal = bad.
+   Test if a piece of memory is addressable with at least the "prot"
+   protection permissions by examining the underlying segments.
+
+   Really this is a very stupid algorithm and we could do much
+   better by iterating through the segment array instead of through
+   the address space.
  */
-Bool VG_(is_addressable)(Addr p, SizeT size)
+Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
 {
-   volatile Char * volatile cp = (volatile Char *)p;
-   volatile Bool ret;
-   struct vki_sigaction sa, origsa;
-   vki_sigset_t mask;
+   Segment *seg;
 
-   sa.ksa_handler = segv_handler;
-   sa.sa_flags = 0;
-   VG_(sigfillset)(&sa.sa_mask);
-   VG_(sigaction)(VKI_SIGSEGV, &sa, &origsa);
-   VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
+   if ((p + size) < p)
+      return False; /* reject wraparounds */
+   if (size == 0)
+      return True; /* isn't this a bit of a strange case? */
 
-   if (__builtin_setjmp(&segv_jmpbuf) == 0) {
-      while(size--)
-	 *cp++;
-      ret = True;
-    } else
-      ret = False;
+   p    = PGROUNDDN(p);
+   size = PGROUNDUP(size);
+   vg_assert(IS_PAGE_ALIGNED(p));
+   vg_assert(IS_PAGE_ALIGNED(size));
 
-   VG_(sigaction)(VKI_SIGSEGV, &origsa, NULL);
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+   for (; size > 0; size -= VKI_PAGE_SIZE) {
+      seg = VG_(find_segment)(p);
+      if (!seg)
+         return False;
+      if ((seg->prot & prot) != prot)
+         return False;
+      p += VKI_PAGE_SIZE;
+   }
 
-   return ret;
+   return True;
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- Manage allocation of memory on behalf of the client          ---*/

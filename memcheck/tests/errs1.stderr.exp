@@ -8,6 +8,8 @@ Invalid read of size 1
    by 0x........: zzzzzzz (errs1.c:12)
    by 0x........: yyy (errs1.c:13)
    by 0x........: xxx (errs1.c:14)
+   by 0x........: www (errs1.c:15)
+   by 0x........: main (errs1.c:17)
 
 Invalid write of size 1
    at 0x........: ddd (errs1.c:7)
@@ -19,3 +21,5 @@ Invalid write of size 1
    by 0x........: zzzzzzz (errs1.c:12)
    by 0x........: yyy (errs1.c:13)
    by 0x........: xxx (errs1.c:14)
+   by 0x........: www (errs1.c:15)
+   by 0x........: main (errs1.c:17)

@@ -30,7 +30,7 @@
 #ifndef __X86_CORE_ARCH_ASM_H
 #define __X86_CORE_ARCH_ASM_H
 
-#endif   // __X86_CORE_ARCH_ASM_H
+#endif   /* __X86_CORE_ARCH_ASM_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -3,17 +3,17 @@
 FILE DESCRIPTORS: 6 open at exit.
 Open file descriptor .: /dev/null
    at 0x........: dup2 (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Open file descriptor .: /dev/null
    at 0x........: dup2 (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Open file descriptor .: /dev/null
    at 0x........: open (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Open file descriptor .: .

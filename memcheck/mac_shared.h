@@ -65,6 +65,7 @@ typedef
       OffT rwoffset;          //   Freed, Mallocd
       ExeContext* lastchange; //   Freed, Mallocd
       ThreadId stack_tid;     //   Stack
+      const Char *desc;	      //   UserG
       Bool maybe_gcc;         // True if just below %esp -- could be a gcc bug.
    }
    AddrInfo;
@@ -192,13 +193,28 @@ extern UInt MAC_(event_ctr)[N_PROF_EVENTS];
 /*--- V and A bits                                         ---*/
 /*------------------------------------------------------------*/
 
-#define IS_DISTINGUISHED_SM(smap) \
-   ((smap) == &distinguished_secondary_map)
+/* expand 1 bit -> 8 */
+#define BIT_EXPAND(b)	((~(((UChar)(b) & 1) - 1)) & 0xFF)
+
+#define SECONDARY_SHIFT	16
+#define SECONDARY_SIZE	(1 << SECONDARY_SHIFT)
+#define SECONDARY_MASK	(SECONDARY_SIZE - 1)
+
+#define PRIMARY_SIZE	(1 << (32 - SECONDARY_SHIFT))
+
+#define SM_OFF(addr)	((addr) & SECONDARY_MASK)
+#define PM_IDX(addr)	((addr) >> SECONDARY_SHIFT)
+
+#define IS_DISTINGUISHED_SM(smap)		   \
+   ((smap) >= &distinguished_secondary_maps[0] &&  \
+    (smap) < &distinguished_secondary_maps[N_SECONDARY_MAPS])
+
+#define IS_DISTINGUISHED(addr)	(IS_DISTINGUISHED_SM(primary_map[PM_IDX(addr)]))
 
 #define ENSURE_MAPPABLE(addr,caller)                              \
    do {                                                           \
-      if (IS_DISTINGUISHED_SM(primary_map[(addr) >> 16])) {       \
-         primary_map[(addr) >> 16] = alloc_secondary_map(caller); \
+      if (IS_DISTINGUISHED(addr)) {				  \
+	 primary_map[PM_IDX(addr)] = alloc_secondary_map(caller, primary_map[PM_IDX(addr)]); \
          /* VG_(printf)("new 2map because of %p\n", addr); */     \
       }                                                           \
    } while(0)
@@ -250,7 +266,15 @@ extern Bool MAC_(clo_partial_loads_ok);
 extern Int MAC_(clo_freelist_vol);
 
 /* Do leak check at exit?  default: NO */
-extern Bool MAC_(clo_leak_check);
+typedef
+   enum {
+      LC_Off,
+      LC_Summary,
+      LC_Full,
+   }
+   LeakCheckMode;
+
+extern LeakCheckMode MAC_(clo_leak_check);
 
 /* How closely should we compare ExeContexts in leak records? default: 2 */
 extern VgRes MAC_(clo_leak_resolution);
@@ -291,6 +315,7 @@ extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
 /* For VALGRIND_COUNT_LEAKS client request */
 extern Int MAC_(bytes_leaked);
+extern Int MAC_(bytes_indirect);
 extern Int MAC_(bytes_dubious);
 extern Int MAC_(bytes_reachable);
 extern Int MAC_(bytes_suppressed);
@@ -340,7 +365,7 @@ extern void MAC_(pp_shared_Error)          ( Error* err);
 extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*, void*), void* d );
 
 extern void MAC_(common_pre_clo_init) ( void );
-extern void MAC_(common_fini)         ( void (*leak_check)(ThreadId) );
+extern void MAC_(common_fini)         ( void (*leak_check)(LeakCheckMode mode) );
 
 extern Bool MAC_(handle_common_client_requests) ( ThreadId tid, 
                                                   UWord* arg_block, UWord* ret );
@@ -352,9 +377,9 @@ extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record,
                                          UInt n_total_records); 
                            
 extern void MAC_(do_detect_memory_leaks) (
-          ThreadId tid,
-          Bool is_valid_64k_chunk ( UInt ),
-          Bool is_valid_address   ( Addr )
+          LeakCheckMode mode,
+          Bool (*is_valid_64k_chunk) ( UInt ),
+          Bool (*is_valid_address)   ( Addr )
        );
 
 extern REGPARM(1) void MAC_(new_mem_stack_4)  ( Addr old_ESP );

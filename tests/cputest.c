@@ -53,9 +53,9 @@ static Bool go(char* cpu)
 #endif // __ppc__
 
 #ifdef __x86__
-static __inline__ void cpuid(unsigned int n,
-                             unsigned int *a, unsigned int *b,
-                             unsigned int *c, unsigned int *d)
+static void cpuid ( unsigned int n,
+                    unsigned int* a, unsigned int* b,
+                    unsigned int* c, unsigned int* d )
 {
    __asm__ __volatile__ (
       "cpuid"

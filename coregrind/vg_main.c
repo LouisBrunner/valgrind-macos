@@ -45,6 +45,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "memcheck/memcheck.h"
+
 #ifndef AT_DCACHEBSIZE
 #define AT_DCACHEBSIZE		19
 #endif /* AT_DCACHEBSIZE */
@@ -122,11 +124,11 @@ const Char *VG_(libdir) = VG_LIBDIR;
 static Int  vg_argc;
 static Char **vg_argv;
 
-/* PID of the main thread */
-Int VG_(main_pid);
-
-/* PGRP of process */
-Int VG_(main_pgrp);
+/* The master thread the one which will be responsible for mopping
+   everything up at exit.  Normally it is tid 1, since that's the
+   first thread created, but it may be something else after a
+   fork(). */
+ThreadId VG_(master_tid) = VG_INVALID_THREADID;
 
 /* Application-visible file descriptor limits */
 Int VG_(fd_soft_limit) = -1;
@@ -190,6 +192,8 @@ static void print_all_stats ( void )
          "------ Valgrind's internal memory use stats follow ------" );
       VG_(sanity_check_malloc_all)();
       VG_(print_all_arena_stats)();
+      VG_(message)(Vg_DebugMsg, "");
+      //VG_(print_shadow_stats)();
       VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's ExeContext management stats follow ------" );
@@ -326,21 +330,12 @@ void VG_(oynk) ( Int n )
    OINK(n);
 }
 
-/* Initialize the PID and PGRP of scheduler LWP; this is also called
-   in any new children after fork. */
-static void newpid(ThreadId unused)
-{
-   /* PID of scheduler LWP */
-   VG_(main_pid)  = VG_(getpid)();
-   VG_(main_pgrp) = VG_(getpgrp)();
-}
-
 /*====================================================================*/
 /*=== Check we were launched by stage 1                            ===*/
 /*====================================================================*/
 
 /* Look for our AUXV table */
-int scan_auxv(void* init_sp)
+static int scan_auxv(void* init_sp)
 {
    const struct ume_auxv *auxv = find_auxv((UWord*)init_sp);
    int padfile = -1, found = 0;
@@ -641,23 +636,29 @@ static void get_command_line( int argc, char** argv,
       cl_argv = argv;
 
    } else {
+      Bool noaugment = False;
+
       /* Count the arguments on the command line. */
       vg_argv0 = argv;
 
       for (vg_argc0 = 1; vg_argc0 < argc; vg_argc0++) {
-	 if (argv[vg_argc0][0] != '-') /* exe name */
+         Char* arg = argv[vg_argc0];
+         if (arg[0] != '-') /* exe name */
 	    break;
-	 if (VG_STREQ(argv[vg_argc0], "--")) { /* dummy arg */
+	 if (VG_STREQ(arg, "--")) { /* dummy arg */
 	    vg_argc0++;
 	    break;
 	 }
+         VG_BOOL_CLO("--command-line-only", noaugment)
       }
       cl_argv = &argv[vg_argc0];
 
       /* Get extra args from VALGRIND_OPTS and .valgrindrc files.
          Note we don't do this if getting args from VALGRINDCLO, as 
-         those extra args will already be present in VALGRINDCLO. */
-      augment_command_line(&vg_argc0, &vg_argv0);
+         those extra args will already be present in VALGRINDCLO.
+         (We also don't do it when --command-line-only=yes.) */
+      if (!noaugment)
+	 augment_command_line(&vg_argc0, &vg_argv0);
    }
 
    if (0) {
@@ -715,19 +716,11 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
    return False;
 }
 
-static Bool contains(const char *p) {
-   if (VG_STREQ(p, VG_(libdir))) {
-      return True;
-   }
-   return False;
-}
-
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
-   1. LD_LIBRARY_PATH=$VALGRINDLIB:$LD_LIBRARY_PATH
-   2. LD_PRELOAD=$VALGRINDLIB/vg_inject.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
+     LD_PRELOAD=$VALGRINDLIB/vg_inject.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
 
-   If any of these is missing, then it is added.
+   If this is missing, then it is added.
 
    Yummy.  String hacking in C.
 
@@ -737,14 +730,11 @@ static Bool contains(const char *p) {
 static char **fix_environment(char **origenv, const char *preload)
 {
    static const char inject_so[]          = "vg_inject.so";
-   static const char ld_library_path[]    = "LD_LIBRARY_PATH=";
    static const char ld_preload[]         = "LD_PRELOAD=";
    static const char valgrind_clo[]       = VALGRINDCLO "=";
-   static const int  ld_library_path_len  = sizeof(ld_library_path)-1;
    static const int  ld_preload_len       = sizeof(ld_preload)-1;
    static const int  valgrind_clo_len     = sizeof(valgrind_clo)-1;
    int ld_preload_done       = 0;
-   int ld_library_path_done  = 0;
    char *inject_path;
    int   inject_path_len;
    int vgliblen = strlen(VG_(libdir));
@@ -772,7 +762,7 @@ static char **fix_environment(char **origenv, const char *preload)
       envc++;
 
    /* Allocate a new space */
-   ret = malloc(sizeof(char *) * (envc+3+1)); /* 3 new entries + NULL */
+   ret = malloc(sizeof(char *) * (envc+1+1)); /* 1 new entry + NULL */
    vg_assert(ret);
 
    /* copy it over */
@@ -784,25 +774,7 @@ static char **fix_environment(char **origenv, const char *preload)
 
    /* Walk over the new environment, mashing as we go */
    for (cpp = ret; cpp && *cpp; cpp++) {
-      if (memcmp(*cpp, ld_library_path, ld_library_path_len) == 0) {
-	 /* If the LD_LIBRARY_PATH already contains libdir, then don't
-	    bother adding it again, even if it isn't the first (it
-	    seems that the Java runtime will keep reexecing itself
-	    unless its paths are at the front of LD_LIBRARY_PATH) */
-         if (!scan_colsep(*cpp + ld_library_path_len, contains)) {
-	    int len = strlen(*cpp) + vgliblen*2 + 16;
-	    char *cp = malloc(len);
-            vg_assert(cp);
-
-	    snprintf(cp, len, "%s%s:%s",
-		     ld_library_path, VG_(libdir),
-		     (*cpp)+ld_library_path_len);
-
-	    *cpp = cp;
-	 }
-
-	 ld_library_path_done = 1;
-      } else if (memcmp(*cpp, ld_preload, ld_preload_len) == 0) {
+      if (memcmp(*cpp, ld_preload, ld_preload_len) == 0) {
 	 int len = strlen(*cpp) + inject_path_len;
 	 char *cp = malloc(len);
          vg_assert(cp);
@@ -819,17 +791,6 @@ static char **fix_environment(char **origenv, const char *preload)
    }
 
    /* Add the missing bits */
-
-   if (!ld_library_path_done) {
-      int len = ld_library_path_len + vgliblen*2 + 16;
-      char *cp = malloc(len);
-      vg_assert(cp);
-
-      snprintf(cp, len, "%s%s", ld_library_path, VG_(libdir));
-
-      ret[envc++] = cp;
-   }
-
    if (!ld_preload_done) {
       int len = ld_preload_len + inject_path_len;
       char *cp = malloc(len);
@@ -841,13 +802,13 @@ static char **fix_environment(char **origenv, const char *preload)
       ret[envc++] = cp;
    }
 
+   free(inject_path);
    ret[envc] = NULL;
 
    return ret;
 }
 
 extern char **environ;		/* our environment */
-//#include <error.h>
 
 /* Add a string onto the string table, and return its address */
 static char *copy_str(char **tab, const char *str)
@@ -1053,10 +1014,7 @@ static Addr setup_client_stack(void* init_sp,
 	 break;
 
       case AT_BASE:
-	 if (info->interp_base == 0)
-	    auxv->a_type = AT_IGNORE;
-	 else
-	    auxv->u.a_val = info->interp_base;
+	 auxv->u.a_val = info->interp_base;
 	 break;
 
       case AT_PLATFORM:		/* points to a platform description string */
@@ -1092,7 +1050,7 @@ static Addr setup_client_stack(void* init_sp,
 	    suid, and therefore the dynamic linker should be careful
 	    about LD_PRELOAD, etc.  However, since stage1 (the thing
 	    the kernel actually execve's) should never be SUID, and we
-	    need LD_PRELOAD/LD_LIBRARY_PATH to work for the client, we
+	    need LD_PRELOAD to work for the client, we
 	    set AT_SECURE to 0. */
 	 auxv->u.a_val = 0;
 	 break;
@@ -1219,7 +1177,7 @@ static void load_tool( const char *toolname, void** handle_out,
                        ToolInfo** toolinfo_out, char **preloadpath_out )
 {
    Bool      ok;
-   int       len = strlen(VG_(libdir)) + strlen(toolname)*2 + 16;
+   int       len = strlen(VG_(libdir)) + strlen(toolname) + 16;
    char      buf[len];
    void*     handle;
    ToolInfo* toolinfo;
@@ -1320,15 +1278,6 @@ void VG_(bad_option) ( Char* opt )
 {
    abort_msg();
    VG_(printf)("valgrind: Bad option `%s'; aborting.\n", opt);
-   VG_(printf)("valgrind: Use --help for more information.\n");
-   VG_(exit)(1);
-}
-
-static void missing_tool_option ( void  )
-{
-   abort_msg();
-   VG_(printf)("valgrind: Missing --tool option\n");
-   list_tools();
    VG_(printf)("valgrind: Use --help for more information.\n");
    VG_(exit)(1);
 }
@@ -1441,7 +1390,7 @@ void as_unpad(void *start, void *end, int padfile)
    killpad_extra extra;
    int res;
 
-   vg_assert(padfile > 0);
+   vg_assert(padfile >= 0);
    
    res = fstat(padfile, &padstat);
    vg_assert(0 == res);
@@ -1492,10 +1441,11 @@ Int    VG_(clo_trace_notbelow) = 0;
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;
+Bool   VG_(clo_trace_redir)    = False;
 Bool   VG_(clo_trace_sched)    = False;
-Int    VG_(clo_trace_pthread_level) = 0;
+Bool   VG_(clo_trace_pthreads) = False;
 Int    VG_(clo_dump_error)     = 0;
-Int    VG_(clo_backtrace_size) = 4;
+Int    VG_(clo_backtrace_size) = 12;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
@@ -1503,17 +1453,9 @@ Bool   VG_(clo_show_below_main) = False;
 Bool   VG_(clo_pointercheck)   = True;
 Bool   VG_(clo_support_elan3)  = False;
 Bool   VG_(clo_branchpred)     = False;
+Bool   VG_(clo_model_pthreads) = False;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
-
-/* If we're doing signal routing, poll for signals every 50mS by
-   default. */
-Int    VG_(clo_signal_polltime) = 50;
-
-/* These flags reduce thread wakeup latency on syscall completion and
-   signal delivery, respectively.  The downside is possible unfairness. */
-Bool   VG_(clo_lowlat_syscalls) = False; /* low-latency syscalls */
-Bool   VG_(clo_lowlat_signals)  = False; /* low-latency signals */
 
 
 void usage ( Bool debug_help )
@@ -1522,7 +1464,7 @@ void usage ( Bool debug_help )
 "usage: valgrind --tool=<toolname> [options] prog-and-args\n"
 "\n"
 "  common user options for all Valgrind tools, with defaults in [ ]:\n"
-"    --tool=<name>             use the Valgrind tool named <name>\n"
+"    --tool=<name>             use the Valgrind tool named <name> [memcheck]\n"
 "    -h --help                 show this message\n"
 "    --help-debug              show this message, plus debugging options\n"
 "    --version                 show version\n"
@@ -1534,10 +1476,7 @@ void usage ( Bool debug_help )
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
-"    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls [none]\n"
-"    --signal-polltime=<time>  signal poll period (mS) for older kernels [50]\n"
-"    --lowlat-signals=no|yes   improve thread signal wake-up latency [no]\n"
-"    --lowlat-syscalls=no|yes  improve thread syscall wake-up latency [no]\n"
+"    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls,ioctl-mmap [none]\n"
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]\n"
 "\n"
@@ -1572,12 +1511,15 @@ void usage ( Bool debug_help )
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
-"    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
 "    --vex-iropt-verbosity             0 .. 9 [0]\n"
 "    --vex-iropt-level                 0 .. 2 [2]\n"
 "    --vex-iropt-precise-memory-exns   [no]\n"
+#if 0
+"    --model-pthreads=yes|no   model the pthreads library [no]\n"
+#endif
+"    --command-line-only=no|yes  only use command line options [no]\n"
 "    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"
 "    --vex-guest-max-insns             1 .. 100 [50]\n"
 "    --vex-guest-chase-thresh          0 .. 99  [10]\n"
@@ -1661,17 +1603,6 @@ static void pre_process_cmd_line_options
 	 *exec = &vg_argv[i][7];
       }
    }
-
-   /* If no tool specified, can act appropriately without loading tool */
-   if (*tool == NULL) {
-      if (0 == *need_help) {
-         // neither --tool nor --help/--help-debug specified
-         missing_tool_option();
-      } else {
-         // Give help message, without any tool-specific help
-         usage(/*help-debug?*/2 == *need_help);
-      }
-   }
 }
 
 static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
@@ -1690,7 +1621,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 // XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 #ifdef __x86__
    {
-      Word *auxp;
+      UInt* auxp;
       for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
          switch(auxp[0]) {
          case AT_SYSINFO:
@@ -1734,6 +1665,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 	 continue;
       if (VG_CLO_STREQN(7, arg, "--exec="))
 	 continue;
+      if (VG_CLO_STREQN(20, arg, "--command-line-only="))
+	 continue;
 
       if (     VG_CLO_STREQ(arg, "--"))
 	 continue;
@@ -1750,8 +1683,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO("--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
-      else VG_BOOL_CLO("--lowlat-signals",   VG_(clo_lowlat_signals))
-      else VG_BOOL_CLO("--lowlat-syscalls",  VG_(clo_lowlat_syscalls))
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO("--support-elan3",    VG_(clo_support_elan3))
       else VG_BOOL_CLO("--profile",          VG_(clo_profile))
@@ -1763,8 +1694,11 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--trace-sched",      VG_(clo_trace_sched))
       else VG_BOOL_CLO("--trace-signals",    VG_(clo_trace_signals))
       else VG_BOOL_CLO("--trace-symtab",     VG_(clo_trace_symtab))
+      else VG_BOOL_CLO("--trace-redir",      VG_(clo_trace_redir))
       else VG_BOOL_CLO("--trace-syscalls",   VG_(clo_trace_syscalls))
+      else VG_BOOL_CLO("--trace-pthreads",   VG_(clo_trace_pthreads))
       else VG_BOOL_CLO("--wait-for-gdb",     VG_(clo_wait_for_gdb))
+      else VG_BOOL_CLO("--model-pthreads",   VG_(clo_model_pthreads))
 
       else VG_STR_CLO ("--db-command",        VG_(clo_db_command))
       else VG_STR_CLO ("--weird-hacks",       VG_(clo_weird_hacks))
@@ -1772,7 +1706,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_NUM_CLO ("--dump-error",        VG_(clo_dump_error))
       else VG_NUM_CLO ("--input-fd",          VG_(clo_input_fd))
       else VG_NUM_CLO ("--sanity-level",      VG_(clo_sanity_level))
-      else VG_NUM_CLO ("--signal-polltime",   VG_(clo_signal_polltime))
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
 
@@ -1879,13 +1812,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
 
       else VG_NUM_CLO ("--trace-notbelow",        VG_(clo_trace_notbelow))
-
-      else if (VG_CLO_STREQ(arg, "--trace-pthread=none"))
-         VG_(clo_trace_pthread_level) = 0;
-      else if (VG_CLO_STREQ(arg, "--trace-pthread=some"))
-         VG_(clo_trace_pthread_level) = 1;
-      else if (VG_CLO_STREQ(arg, "--trace-pthread=all"))
-         VG_(clo_trace_pthread_level) = 2;
 
       else if (VG_CLO_STREQ(arg, "--gen-suppressions=no"))
          VG_(clo_gen_suppressions) = 0;
@@ -2246,35 +2172,44 @@ static void setup_file_descriptors(void)
 /*===  Initialise program data/text, etc.                          ===*/
 /*====================================================================*/
 
-static void build_valgrind_map_callback 
-      ( Addr start, SizeT size, Char rr, Char ww, Char xx, 
-        UInt dev, UInt ino, ULong foffset, const UChar* filename )
+static void build_valgrind_map_callback ( Addr start, SizeT size, UInt prot,
+					  UInt dev, UInt ino, ULong foffset, 
+					  const UChar* filename )
 {
-   UInt prot  = 0;
-   UInt flags = SF_MMAP|SF_NOSYMS;
-   Bool is_stack_segment;
-
-   is_stack_segment = 
-      (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
-
    /* Only record valgrind mappings for now, without loading any
       symbols.  This is so we know where the free space is before we
       start allocating more memory (note: heap is OK, it's just mmap
       which is the problem here). */
-   if (start >= VG_(valgrind_base) && (start+size-1) <= VG_(valgrind_last)) {
-      flags |= SF_VALGRIND;
-      VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
+   if (start >= VG_(client_end) && start < VG_(valgrind_last)) {
+      if (0)
+	 VG_(printf)("init1: %p-%p prot %s\n",
+		     start, start+size, VG_(prot_str)(prot));
+      VG_(map_file_segment)(start, size, prot,
+			    SF_MMAP|SF_NOSYMS|SF_VALGRIND,
+			    dev, ino, foffset, filename);
+      /* update VG_(valgrind_last) if it looks wrong */
+      if (start+size > VG_(valgrind_last))
+	      VG_(valgrind_last) = start+size-1;
    }
 }
 
 // Global var used to pass local data to callback
 Addr sp_at_startup___global_arg = 0;
 
-static void build_segment_map_callback 
-      ( Addr start, SizeT size, Char rr, Char ww, Char xx,
-        UInt dev, UInt ino, ULong foffset, const UChar* filename )
+/* 
+   This second pass adds in client mappings, and loads symbol tables
+   for all interesting mappings.  The trouble is that things can
+   change as we go, because we're calling the Tool to track memory as
+   we find it.
+
+   So for Valgrind mappings, we don't replace any mappings which
+   aren't still identical (which will include the .so mappings, so we
+   will load their symtabs)>
+ */
+static void build_segment_map_callback ( Addr start, SizeT size, UInt prot,
+					 UInt dev, UInt ino, ULong foffset,
+					 const UChar* filename )
 {
-   UInt prot = 0;
    UInt flags;
    Bool is_stack_segment;
    Addr r_esp;
@@ -2282,9 +2217,9 @@ static void build_segment_map_callback
    is_stack_segment 
       = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
 
-   if (rr == 'r') prot |= VKI_PROT_READ;
-   if (ww == 'w') prot |= VKI_PROT_WRITE;
-   if (xx == 'x') prot |= VKI_PROT_EXEC;
+   if (0)
+      VG_(printf)("init2: %p-%p prot %s stack=%d\n",
+		  start, start+size, VG_(prot_str)(prot), is_stack_segment);
 
    if (is_stack_segment)
       flags = SF_STACK | SF_GROWDOWN;
@@ -2294,22 +2229,51 @@ static void build_segment_map_callback
    if (filename != NULL)
       flags |= SF_FILE;
 
-   if (start >= VG_(valgrind_base) && (start+size-1) <= VG_(valgrind_last))
-      flags |= SF_VALGRIND;
+#if 0
+   // This needs to be fixed properly.   jrs 20050307
+   if (start >= VG_(client_end) && start < VG_(valgrind_last)) {
+      Segment *s = VG_(find_segment_before)(start);
 
-   VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
+      /* We have to be a bit careful about inserting new mappings into
+	 the Valgrind part of the address space.  We're actively
+	 changing things as we parse these mappings, particularly in
+	 shadow memory, and so we don't want to overwrite those
+	 changes.  Therefore, we only insert/update a mapping if it is
+	 mapped from a file or it exactly matches an existing mapping.
 
-   if (VG_(is_client_addr)(start) && VG_(is_client_addr)(start+size-1))
-      VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
+	 NOTE: we're only talking about the Segment list mapping
+	 metadata; this doesn't actually mmap anything more. */
+      if (filename || (s && s->addr == start && s->len == size)) {
+	 flags |= SF_VALGRIND;
+	 VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
+      } else {
+	 /* assert range is already mapped */
+	 vg_assert(VG_(is_addressable)(start, size, VKI_PROT_NONE));
+      }
+   } else
+#endif
+      VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
+
+   if (VG_(is_client_addr)(start) && VG_(is_client_addr)(start+size-1)) {
+	   VG_TRACK( new_mem_startup, start, size,
+		     !!(prot & VKI_PROT_READ), 
+                     !!(prot & VKI_PROT_WRITE), 
+                     !!(prot & VKI_PROT_EXEC));
+   }
 
    /* If this is the stack segment mark all below %esp as noaccess. */
    r_esp = sp_at_startup___global_arg;
    vg_assert(0 != r_esp);
    if (is_stack_segment) {
-      if (0)
-         VG_(message)(Vg_DebugMsg, "invalidating stack area: %x .. %x",
+      if (0) {
+         VG_(message)(Vg_DebugMsg, "invalidating stack area: %p .. %p",
                       start,r_esp);
+         VG_(message)(Vg_DebugMsg, "  validating stack area: %p .. %p",
+                      r_esp, start+size);
+      }
       VG_TRACK( die_mem_stack, start, r_esp-start );
+      // what's this for?
+      //VG_TRACK( post_mem_write, r_esp, (start+size)-r_esp );
    }
 }
 
@@ -2323,6 +2287,8 @@ static void build_segment_map_callback
 
 void VG_(sanity_check_general) ( Bool force_expensive )
 {
+   ThreadId tid;
+
    VGP_PUSHCC(VgpCoreCheapSanity);
 
    if (VG_(clo_sanity_level) < 1) return;
@@ -2351,8 +2317,6 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       sanity_slow_count++;
 
-      VG_(sanity_check_proxy)();
-
 #     if 0
       { void zzzmemscan(void); zzzmemscan(); }
 #     endif
@@ -2365,6 +2329,24 @@ void VG_(sanity_check_general) ( Bool force_expensive )
           vg_assert(TL_(expensive_sanity_check)());
           VGP_POPCC(VgpToolExpensiveSanity);
       }
+
+      /* Check that Segments and /proc/self/maps match up */
+      //vg_assert(VG_(sanity_check_memory)());
+
+      /* Look for stack overruns.  Visit all threads. */
+      for(tid = 1; tid < VG_N_THREADS; tid++) {
+	 Int remains;
+
+	 if (VG_(threads)[tid].status == VgTs_Empty ||
+	     VG_(threads)[tid].status == VgTs_Zombie)
+	    continue;
+
+	 remains = VGA_(stack_unused)(tid);
+	 if (remains < VKI_PAGE_SIZE)
+	    VG_(message)(Vg_DebugMsg, "WARNING: Thread %d is within %d bytes of running out of stack!",
+			 tid, remains);
+      }
+
       /* 
       if ((sanity_fast_count % 500) == 0) VG_(mallocSanityCheckAll)(); 
       */
@@ -2441,10 +2423,10 @@ static int prmap(char *start, char *end, const char *perm, off_t off,
    return True;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
    char **cl_argv;
-   const char *tool = NULL;
+   const char *tool = "memcheck";   // default to Memcheck
    const char *exec = NULL;
    char *preload;          /* tool-specific LD_PRELOAD .so */
    char **env;
@@ -2455,13 +2437,8 @@ int main(int argc, char **argv)
    Addr client_eip;
    Addr sp_at_startup;     /* client's SP at the point we gained control. */
    UInt * client_auxv;
-   VgSchedReturnCode src;
-   Int exitcode = 0;
-   Int fatal_sigNo = -1;
    struct vki_rlimit zero = { 0, 0 };
    Int padfile;
-   ThreadId last_run_tid = 0;    // Last thread the scheduler ran.
-
 
    //============================================================
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -2472,8 +2449,8 @@ int main(int argc, char **argv)
    //============================================================
    // Command line argument handling order:
    // * If --help/--help-debug are present, show usage message 
-   //   (if --tool is also present, that includes the tool-specific usage)
-   // * Then, if --tool is missing, abort with error msg
+   //   (including the tool-specific usage)
+   // * (If no --tool option given, default to Memcheck)
    // * Then, if client is missing, abort with error msg
    // * Then, if any cmdline args are bad, abort with error msg
    //============================================================
@@ -2497,7 +2474,6 @@ int main(int argc, char **argv)
       void* init_sp = argv - 1;
       padfile = scan_auxv(init_sp);
    }
-
    if (0) {
       printf("========== main() ==========\n");
       foreach_map(prmap, /*dummy*/NULL);
@@ -2563,7 +2539,7 @@ int main(int argc, char **argv)
    //   p: set-libdir  [for VG_(libdir)]
    //   p: load_tool() [for 'preload']
    //--------------------------------------------------------------
-   env = fix_environment(environ, preload);
+   env = fix_environment(envp, preload);
 
    //--------------------------------------------------------------
    // Setup client stack, eip, and VG_(client_arg[cv])
@@ -2572,8 +2548,10 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    { 
       void* init_sp = argv - 1;
+
       sp_at_startup = setup_client_stack(init_sp, cl_argv, env, &info,
                                          &client_auxv);
+      free(env);
    }
 
    if (0)
@@ -2587,27 +2565,13 @@ int main(int argc, char **argv)
    //==============================================================
 
    //--------------------------------------------------------------
-   // atfork
-   //   p: n/a
-   //--------------------------------------------------------------
-   VG_(atfork)(NULL, NULL, newpid);
-   newpid(VG_INVALID_THREADID);
-
-   //--------------------------------------------------------------
    // setup file descriptors
    //   p: n/a
    //--------------------------------------------------------------
    setup_file_descriptors();
 
    //--------------------------------------------------------------
-   // Read /proc/self/maps into a buffer
-   //   p: all memory layout, environment setup   [so memory maps are right]
-   //--------------------------------------------------------------
-   VG_(read_procselfmaps)();
-
-   //--------------------------------------------------------------
    // Build segment map (Valgrind segments only)
-   //   p: read proc/self/maps
    //   p: tl_pre_clo_init()  [to setup new_mem_startup tracker]
    //--------------------------------------------------------------
    VG_(parse_procselfmaps) ( build_valgrind_map_callback );
@@ -2662,6 +2626,7 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // Build segment map (all segments)
+   //   p: shadow/redzone segments
    //   p: setup_client_stack()  [for 'sp_at_startup']
    //   p: init tool             [for 'new_mem_startup']
    //--------------------------------------------------------------
@@ -2674,9 +2639,17 @@ int main(int argc, char **argv)
    // Protect client trampoline page (which is also sysinfo stuff)
    //   p: segment stuff   [otherwise get seg faults...]
    //--------------------------------------------------------------
-   VG_(mprotect)( (void *)VG_(client_trampoline_code),
-                 VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
+   {
+      Segment *seg;
+      VG_(mprotect)( (void *)VG_(client_trampoline_code),
+		     VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
 #endif
+
+      /* Make sure this segment isn't treated as stack */
+      seg = VG_(find_segment)(VG_(client_trampoline_code));
+      if (seg)
+	 seg->flags &= ~(SF_STACK | SF_GROWDOWN);
+   }
 
    //==============================================================
    // Can use VG_(map)() after segments set up
@@ -2698,7 +2671,6 @@ int main(int argc, char **argv)
       { Long q; for (q = 0; q < 10ULL *1000*1000*1000; q++) ; }
    }
 
-   //--------------------------------------------------------------
    // Search for file descriptors that are inherited from our parent
    //   p: process_cmd_line_options  [for VG_(clo_track_fds)]
    //--------------------------------------------------------------
@@ -2712,8 +2684,8 @@ int main(int argc, char **argv)
    VG_(scheduler_init)();
 
    //--------------------------------------------------------------
-   // Set up state of thread 1
-   //   p: {pre,post}_clo_init()  [for tool helper registration]
+   // Initialise the pthread model
+   //   p: ?
    //      load_client()          [for 'client_eip']
    //      setup_client_stack()   [for 'sp_at_startup']
    //      setup_scheduler()      [for the rest of state 1 stuff]
@@ -2728,15 +2700,13 @@ int main(int argc, char **argv)
    VG_(instr_ptr_offset) = offsetof(VexGuestArchState, ARCH_INSTR_PTR);
 
    //--------------------------------------------------------------
-   // Set up the ProxyLWP machinery
-   //   p: VG_(scheduler_init)()?  [XXX: subtle dependency?]
    //--------------------------------------------------------------
-   VG_(proxy_init)();
+   //if (VG_(clo_model_pthreads))
+   //   VG_(pthread_init)();
 
    //--------------------------------------------------------------
    // Initialise the signal handling subsystem
-   //   p: VG_(atfork)(NULL, NULL, newpid) [else problems with sigmasks]
-   //   p: VG_(proxy_init)()               [else breaks...]
+   //   p: n/a
    //--------------------------------------------------------------
    // Nb: temporarily parks the saved blocking-mask in saved_sigmask.
    VG_(sigstartup_actions)();
@@ -2774,13 +2744,6 @@ int main(int argc, char **argv)
    VG_(init_tt_tc)();
 
    //--------------------------------------------------------------
-   // Read debug info to find glibc entry points to intercept
-   //   p: parse_procselfmaps? [XXX for debug info?]
-   //   p: init_tt_tc?  [XXX ???]
-   //--------------------------------------------------------------
-   VG_(setup_code_redirect_table)();
-
-   //--------------------------------------------------------------
    // Verbosity message
    //   p: end_rdtsc_calibration [so startup message is printed first]
    //--------------------------------------------------------------
@@ -2800,23 +2763,42 @@ int main(int argc, char **argv)
    // Run!
    //--------------------------------------------------------------
    VGP_POPCC(VgpStartup);
-   VGP_PUSHCC(VgpSched);
 
-   src = VG_(scheduler)( &exitcode, &last_run_tid, &fatal_sigNo );
+   vg_assert(VG_(master_tid) == 1);
 
-   VGP_POPCC(VgpSched);
+   VGA_(main_thread_wrapper)(1);
 
+   abort();
+}
+
+
+/* Do everything which needs doing when the last thread exits */
+void VG_(shutdown_actions)(ThreadId tid)
+{
+   vg_assert(tid == VG_(master_tid));
+   vg_assert(VG_(is_running_thread)(tid));
+
+   // Wait for all other threads to exit.
+   VGA_(reap_threads)(tid);
+
+   VG_(clo_model_pthreads) = False;
+
+   // Clean the client up before the final report
+   VGA_(final_tidyup)(tid);
+
+   // OK, done
+   VG_(exit_thread)(tid);
+
+   /* should be no threads left */
+   vg_assert(VG_(count_living_threads)() == 0);
+
+   VG_(threads)[tid].status = VgTs_Empty;
    //--------------------------------------------------------------
    // Finalisation: cleanup, messages, etc.  Order no so important, only
    // affects what order the messages come.
    //--------------------------------------------------------------
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
-
-   if (src == VgSrc_Deadlock) {
-     VG_(message)(Vg_UserMsg, 
-        "Warning: pthread scheduler exited due to deadlock");
-   }
 
    /* Print out file descriptor summary and stats. */
    if (VG_(clo_track_fds))
@@ -2825,7 +2807,7 @@ int main(int argc, char **argv)
    if (VG_(needs).core_errors || VG_(needs).tool_errors)
       VG_(show_all_errors)();
 
-   TL_(fini)( exitcode );
+   TL_(fini)( 0 /*exitcode*/ );
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 
@@ -2834,57 +2816,14 @@ int main(int argc, char **argv)
 
    if (VG_(clo_profile))
       VGP_(done_profiling)();
-
    if (VG_(clo_profile_flags) > 0)
       VG_(show_BB_profile)();
-
-   /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
-   vg_assert(src == VgSrc_FatalSig ||
-	     VG_(threads)[last_run_tid].status == VgTs_Runnable ||
-	     VG_(threads)[last_run_tid].status == VgTs_WaitJoiner);
-   VG_(nuke_all_threads_except)(VG_INVALID_THREADID);
 
    /* Print Vex storage stats */
    if (0)
        LibVEX_ShowAllocStats();
 
-   //--------------------------------------------------------------
-   // Exit, according to the scheduler's return code
-   //--------------------------------------------------------------
-   switch (src) {
-      case VgSrc_ExitSyscall: /* the normal way out */
-         vg_assert(last_run_tid > 0 && last_run_tid < VG_N_THREADS);
-	 VG_(proxy_shutdown)();
-
-         /* The thread's %EBX at the time it did __NR_exit() will hold
-            the arg to __NR_exit(), so we just do __NR_exit() with
-            that arg. */
-         VG_(exit)( exitcode );
-         /* NOT ALIVE HERE! */
-         VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
-         break; /* what the hell :) */
-
-      case VgSrc_Deadlock:
-         /* Just exit now.  No point in continuing. */
-	 VG_(proxy_shutdown)();
-         VG_(exit)(0);
-         VG_(core_panic)("entered the afterlife in main() -- Deadlock");
-         break;
-
-      case VgSrc_FatalSig:
-	 /* We were killed by a fatal signal, so replicate the effect */
-	 vg_assert(fatal_sigNo != -1);
-	 VG_(kill_self)(fatal_sigNo);
-	 VG_(core_panic)("main(): signal was supposed to be fatal");
-	 break;
-
-      default:
-         VG_(core_panic)("main(): unexpected scheduler return code");
-   }
-
-   abort();
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                vg_main.c ---*/

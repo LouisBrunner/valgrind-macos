@@ -59,7 +59,7 @@ Int VG_(sigemptyset)( vki_sigset_t* set )
    return 0;
 }
 
-Bool VG_(isemptysigset)( vki_sigset_t* set )
+Bool VG_(isemptysigset)( const vki_sigset_t* set )
 {
    Int i;
    vg_assert(set != NULL);
@@ -68,7 +68,7 @@ Bool VG_(isemptysigset)( vki_sigset_t* set )
    return True;
 }
 
-Bool VG_(isfullsigset)( vki_sigset_t* set )
+Bool VG_(isfullsigset)( const vki_sigset_t* set )
 {
    Int i;
    vg_assert(set != NULL);
@@ -100,7 +100,7 @@ Int VG_(sigdelset)( vki_sigset_t* set, Int signum )
    return 0;
 }
 
-Int VG_(sigismember) ( vki_sigset_t* set, Int signum )
+Int VG_(sigismember) ( const vki_sigset_t* set, Int signum )
 {
    if (set == NULL)
       return 0;
@@ -168,7 +168,7 @@ Int VG_(sigtimedwait)( const vki_sigset_t *set, vki_siginfo_t *info,
    Int res = VG_(do_syscall4)(__NR_rt_sigtimedwait, (UWord)set, (UWord)info, 
                               (UWord)timeout, sizeof(*set));
 
-   return VG_(is_kerror)(res) ? -1 : res;
+   return res;
 }
  
 Int VG_(signal)(Int signum, void (*sighandler)(Int))
@@ -197,14 +197,13 @@ Int VG_(tkill)( ThreadId tid, Int signo )
 {
    Int ret = -VKI_ENOSYS;
 
-#ifdef __NR_tgkill
-   ret = VG_(do_syscall3)(__NR_tgkill, VG_(main_pid), tid, signo);
-#endif /* __NR_tgkill */
+#if 0
+   /* This isn't right because the client may create a process
+      structure with multiple thread groups */
+   ret = VG_(do_syscall)(__NR_tgkill, VG_(getpid)(), tid, signo);
+#endif
 
-#ifdef __NR_tkill
-   if (ret == -VKI_ENOSYS)
-      ret = VG_(do_syscall2)(__NR_tkill, tid, signo);
-#endif /* __NR_tkill */
+   ret = VG_(do_syscall2)(__NR_tkill, tid, signo);
 
    if (ret == -VKI_ENOSYS)
       ret = VG_(do_syscall2)(__NR_kill, tid, signo);
@@ -347,6 +346,17 @@ Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
+/* Terminate this single thread */
+void VG_(exit_single)( Int status )
+{
+   (void)VG_(do_syscall1)(__NR_exit, status );
+   /* Why are we still alive here? */
+   /*NOTREACHED*/
+   *(volatile Int *)0 = 'x';
+   vg_assert(2+2 == 5);
+}
+
+/* Pull down the entire world */
 void VG_(exit)( Int status )
 {
    (void)VG_(do_syscall1)(__NR_exit_group, status );
@@ -394,8 +404,8 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 
 /* Copy a string into the buffer. */
 static UInt
-myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str, 
-                Bool capitalise )
+myvprintf_str ( void(*send)(Char, void*), Int flags, Int width, Char* str, 
+                Bool capitalise, void *send_arg )
 {
 #  define MAYBE_TOUPPER(ch) (capitalise ? VG_(toupper)(ch) : (ch))
    UInt ret = 0;
@@ -405,14 +415,14 @@ myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str,
    if (width == 0) {
       ret += len;
       for (i = 0; i < len; i++)
-         send(MAYBE_TOUPPER(str[i]));
+          send(MAYBE_TOUPPER(str[i]), send_arg);
       return ret;
    }
 
    if (len > width) {
       ret += width;
       for (i = 0; i < width; i++)
-         send(MAYBE_TOUPPER(str[i]));
+         send(MAYBE_TOUPPER(str[i]), send_arg);
       return ret;
    }
 
@@ -420,15 +430,15 @@ myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str,
    if (flags & VG_MSG_LJUSTIFY) {
       ret += extra;
       for (i = 0; i < extra; i++)
-         send(' ');
+         send(' ', send_arg);
    }
    ret += len;
    for (i = 0; i < len; i++)
-      send(MAYBE_TOUPPER(str[i]));
+      send(MAYBE_TOUPPER(str[i]), send_arg);
    if (!(flags & VG_MSG_LJUSTIFY)) {
       ret += extra;
       for (i = 0; i < extra; i++)
-         send(' ');
+         send(' ', send_arg);
    }
 
 #  undef MAYBE_TOUPPER
@@ -443,7 +453,7 @@ myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str,
  *  WIDTH is the width of the field.
  */
 static UInt
-myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
+myvprintf_int64 ( void(*send)(Char,void*), Int flags, Int base, Int width, ULong p, void *send_arg)
 {
    Char buf[40];
    Int  ind = 0;
@@ -488,12 +498,12 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
    /* Reverse copy to buffer.  */
    ret += ind;
    for (i = ind -1; i >= 0; i--) {
-      send(buf[i]);
+      send(buf[i], send_arg);
    }
    if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
       for(; ind < width; ind++) {
 	 ret++;
-         send(' ');  // Never pad with zeroes on RHS -- changes the value!
+         send(' ', send_arg);  // Never pad with zeroes on RHS -- changes the value!
       }
    }
    return ret;
@@ -502,7 +512,7 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
 
 /* A simple vprintf().  */
 UInt
-VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
+VG_(vprintf) ( void(*send)(Char,void*), const Char *format, va_list vargs, void *send_arg )
 {
    UInt ret = 0;
    int i;
@@ -517,7 +527,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
 
    for (i = 0; format[i] != 0; i++) {
       if (format[i] != '%') {
-         send(format[i]);
+         send(format[i], send_arg);
 	 ret++;
          continue;
       }
@@ -527,7 +537,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
          break;
       if (format[i] == '%') {
          /* `%%' is replaced by `%'. */
-         send('%');
+         send('%', send_arg);
 	 ret++;
          continue;
       }
@@ -568,42 +578,42 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
             flags |= VG_MSG_SIGNED;
             if (is_long)
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Long)));
+				      (ULong)(va_arg (vargs, Long)), send_arg);
             else
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Int)));
+				      (ULong)(va_arg (vargs, Int)), send_arg);
             break;
          case 'u': /* %u */
             if (is_long)
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, ULong)));
+				      (ULong)(va_arg (vargs, ULong)), send_arg);
             else
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, UInt)));
+				      (ULong)(va_arg (vargs, UInt)), send_arg);
             break;
          case 'p': /* %p */
 	    ret += 2;
-            send('0');
-            send('x');
+            send('0',send_arg);
+            send('x',send_arg);
             ret += myvprintf_int64(send, flags, 16, width, 
-				   (ULong)((UWord)va_arg (vargs, void *)));
+				   (ULong)((UWord)va_arg (vargs, void *)), send_arg);
             break;
          case 'x': /* %x */
             if (is_long)
                ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, ULong)));
+				      (ULong)(va_arg (vargs, ULong)), send_arg);
             else
                ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, UInt)));
+				      (ULong)(va_arg (vargs, UInt)), send_arg);
             break;
          case 'c': /* %c */
 	    ret++;
-            send(va_arg (vargs, int));
+            send(va_arg (vargs, int), send_arg);
             break;
          case 's': case 'S': { /* %s */
             char *str = va_arg (vargs, char *);
             if (str == (char*) 0) str = "(null)";
-            ret += myvprintf_str(send, flags, width, str, format[i]=='S');
+            ret += myvprintf_str(send, flags, width, str, format[i]=='S', send_arg);
             break;
 	 }
 	 case 'y': { /* %y - print symbol */
@@ -619,7 +629,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
 		  *cp++ = ')';
 		  *cp = '\0';
 	       }
-	       ret += myvprintf_str(send, flags, width, buf, 0);
+	       ret += myvprintf_str(send, flags, width, buf, 0, send_arg);
 	    }
 
 	    break;
@@ -636,35 +646,38 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
    debugging info should be sent via here.  The official route is to
    to use vg_message().  This interface is deprecated.
 */
-static char myprintf_buf[100];
-static int  n_myprintf_buf;
+typedef struct {
+   char buf[100];
+   int n;
+} printf_buf;
 
-static void add_to_myprintf_buf ( Char c )
+static void add_to_myprintf_buf ( Char c, void *p )
 {
-   if (n_myprintf_buf >= 100-10 /*paranoia*/ ) {
+   printf_buf *myprintf_buf = (printf_buf *)p;
+   
+   if (myprintf_buf->n >= 100-10 /*paranoia*/ ) {
       if (VG_(clo_log_fd) >= 0) {
          VG_(send_bytes_to_logging_sink)( 
-            myprintf_buf, VG_(strlen)(myprintf_buf) );
+            myprintf_buf->buf, VG_(strlen)(myprintf_buf->buf) );
       }
-      n_myprintf_buf = 0;
-      myprintf_buf[n_myprintf_buf] = 0;      
+      myprintf_buf->n = 0;
+      myprintf_buf->buf[myprintf_buf->n] = 0;      
    }
-   myprintf_buf[n_myprintf_buf++] = c;
-   myprintf_buf[n_myprintf_buf] = 0;
+   myprintf_buf->buf[myprintf_buf->n++] = c;
+   myprintf_buf->buf[myprintf_buf->n] = 0;
 }
 
 UInt VG_(printf) ( const char *format, ... )
 {
    UInt ret;
    va_list vargs;
+   printf_buf myprintf_buf = {"",0};
    va_start(vargs,format);
    
-   n_myprintf_buf = 0;
-   myprintf_buf[n_myprintf_buf] = 0;      
-   ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
+   ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs, &myprintf_buf );
 
-   if (n_myprintf_buf > 0 && VG_(clo_log_fd) >= 0) {
-      VG_(send_bytes_to_logging_sink)( myprintf_buf, n_myprintf_buf );
+   if (myprintf_buf.n > 0 && VG_(clo_log_fd) >= 0) {
+      VG_(send_bytes_to_logging_sink)( myprintf_buf.buf, myprintf_buf.n );
    }
 
    va_end(vargs);
@@ -673,29 +686,27 @@ UInt VG_(printf) ( const char *format, ... )
 }
 
 /* A general replacement for sprintf(). */
-
-static Char *vg_sprintf_ptr;
-
-static void add_to_vg_sprintf_buf ( Char c )
+static void add_to_vg_sprintf_buf ( Char c, void *p )
 {
-   *vg_sprintf_ptr++ = c;
+   char **vg_sprintf_ptr = p;
+   *(*vg_sprintf_ptr)++ = c;
 }
 
 UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 {
    Int ret;
    va_list vargs;
-
-   vg_sprintf_ptr = buf;
+   Char *vg_sprintf_ptr = buf;
 
    va_start(vargs,format);
 
-   ret = VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs );
-   add_to_vg_sprintf_buf(0);
+   ret = VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs, &vg_sprintf_ptr );
+   add_to_vg_sprintf_buf(0,&vg_sprintf_ptr);
 
    va_end(vargs);
 
    vg_assert(VG_(strlen)(buf) == ret);
+
    return ret;
 }
 
@@ -1119,15 +1130,15 @@ static inline ExeContext *get_real_execontext(Addr ret)
 {
    ExeContext *ec;
    Addr sp, fp;
-   Addr stacktop, sigstack_low, sigstack_high;
+   Addr stacktop;
+   ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadState *tst = VG_(get_ThreadState)(tid);
 
    ARCH_GET_REAL_STACK_PTR(sp);
    ARCH_GET_REAL_FRAME_PTR(fp);
-   stacktop = VG_(valgrind_last);
-   VG_(get_sigstack_bounds)( &sigstack_low, &sigstack_high );
-   if (sp >= sigstack_low && sp < sigstack_high)
-      stacktop = sigstack_high;
-      
+
+   stacktop = (Addr)(tst->os_state.stack + tst->os_state.stacksize);
+
    ec = VG_(get_ExeContext2)(ret, fp, sp, stacktop);
 
    return ec;
@@ -1444,14 +1455,16 @@ Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
    Int res;
    /* res = getrlimit( resource, rlim ); */
-   res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
+   res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
+   if (res == -VKI_ENOSYS)
+      res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
    if(VG_(is_kerror)(res)) res = -1;
    return res;
 }
 
 
 /* Support for setrlimit. */
-Int VG_(setrlimit) (Int resource, struct vki_rlimit *rlim)
+Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 {
    Int res;
    /* res = setrlimit( resource, rlim ); */
@@ -1670,6 +1683,11 @@ UInt VG_(read_millisecond_timer) ( void )
    return (now - base) / 1000;
 }
 
+
+void VG_(nanosleep)(struct vki_timespec *ts)
+{
+   VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
+}
 
 /* ---------------------------------------------------------------------
    Primitive support for bagging memory via mmap.

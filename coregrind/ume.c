@@ -307,6 +307,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 
    info->phnum = e->e.e_phnum;
    info->entry = e->e.e_entry + ebase;
+   info->phdr = 0;
 
    for(i = 0; i < e->e.e_phnum; i++) {
       ESZ(Phdr) *ph = &e->p[i];
@@ -375,6 +376,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       }
    }
 
+   if (info->phdr == 0)
+      info->phdr = minaddr + e->e.e_phoff;
+
    if (info->exe_base != info->exe_end) {
       if (minaddr >= maxaddr ||
 	  (minaddr + ebase < info->exe_base ||
@@ -417,6 +421,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       entry = baseoff + interp->e.e_entry;
       info->interp_base = (ESZ(Addr))base;
 
+      free(interp->p);
       free(interp);
    } else
       entry = (void *)e->e.e_entry;
@@ -426,6 +431,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 
    info->init_eip = (Addr)entry;
 
+   free(e->p);
    free(e);
 
    return 0;

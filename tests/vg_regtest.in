@@ -181,7 +181,9 @@ sub read_vgtest_file($)
     open(INPUTFILE, "< $f") || die "File $f not openable\n";
 
     while (my $line = <INPUTFILE>) {
-        if      ($line =~ /^\s*vgopts:\s*(.*)$/) {
+        if      ($line =~ /^\s*#/ || $line =~ /^\s*$/) {
+	    next;
+	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
             $vgopts = $1;
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 0, 0);
@@ -276,9 +278,9 @@ sub do_one_test($$)
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 
     # Pass the appropriate --tool option for the directory (can be overridden
-    # by an "args:" or "args.dev:" line, though).  
+    # by an "args:" line, though).  
     my $tool=determine_tool();
-    mysystem("VALGRINDLIB=$tests_dir/.in_place $valgrind --tool=$tool $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+    mysystem("VALGRINDLIB=$tests_dir/.in_place $valgrind --command-line-only=yes --tool=$tool $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");

@@ -671,7 +671,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 /*--- Cache configuration                                  ---*/
 /*------------------------------------------------------------*/
 
-#define UNDEFINED_CACHE     ((cache_t) { -1, -1, -1 }) 
+#define UNDEFINED_CACHE     { -1, -1, -1 }
 
 static cache_t clo_I1_cache = UNDEFINED_CACHE;
 static cache_t clo_D1_cache = UNDEFINED_CACHE;

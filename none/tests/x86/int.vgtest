@@ -1,3 +1,2 @@
 prog: int
-stderr_filter: filter_int
 cleanup: rm vgcore.pid*

@@ -10,7 +10,7 @@ DIST_SUBDIRS = $(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) demangle .
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
 		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
+AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
 AM_CFLAGS += -fno-omit-frame-pointer
 
 default.supp: $(SUPP_FILES)
@@ -20,7 +20,6 @@ bin_PROGRAMS = \
 
 val_PROGRAMS = \
 	stage2 \
-	libpthread.so \
 	vg_inject.so
 
 noinst_LIBRARIES = lib_replace_malloc.a
@@ -34,12 +33,12 @@ noinst_HEADERS = \
 	vg_toolint.h
 
 EXTRA_DIST = \
-	vg_libpthread.vs valgrind.vs \
+	valgrind.vs \
 	gen_toolint.pl toolfuncs.def \
-	gen_intercepts.pl vg_replace_malloc.c.base vg_intercept.c.base
+	gen_intercepts.pl vg_replace_malloc.c.base
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h
-CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c vg_intercept.c
+CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c
 
 valgrind_SOURCES = \
 	ume.c \
@@ -67,10 +66,12 @@ stage2_SOURCES = \
 	vg_mylibc.c \
 	vg_needs.c \
 	vg_procselfmaps.c \
-	vg_proxylwp.c \
 	vg_dummy_profile.c \
 	vg_signals.c \
 	vg_symtab2.c \
+	vg_threadmodel.c \
+	vg_pthreadmodel.c \
+	vg_redir.c \
 	vg_dwarf.c \
 	vg_stabs.c \
 	vg_skiplist.c \
@@ -111,10 +112,6 @@ endif
 stage2_LDADD= $(stage2_extra) -ldl
 
 
-vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base
-	rm -f $@
-	$(PERL) $(srcdir)/gen_intercepts.pl < $(srcdir)/vg_intercept.c.base > $@
-
 vg_replace_malloc.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_replace_malloc.c.base
 	rm -f $@
 	$(PERL) $(srcdir)/gen_intercepts.pl < $(srcdir)/vg_replace_malloc.c.base > $@
@@ -132,22 +129,9 @@ vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	$(PERL) $(srcdir)/gen_toolint.pl proto  < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl struct < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 
-libpthread_so_SOURCES = \
-	vg_libpthread.c \
-	vg_libpthread_unimp.c \
-	${VG_ARCH}/libpthread.c \
-	${VG_PLATFORM}/syscall.S
-libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
-libpthread_so_CFLAGS = $(AM_CFLAGS) -fpic -fno-omit-frame-pointer
-libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
-	-shared -ldl \
-	-Wl,-version-script $(srcdir)/vg_libpthread.vs \
-	-Wl,-z,nodelete \
-	-Wl,--soname=libpthread.so.0
-
-vg_inject_so_SOURCES = \
-	vg_intercept.c 
+vg_inject_so_SOURCES = vg_intercept.c
 vg_inject_so_CFLAGS = $(AM_CFLAGS) -fpic
+vg_inject_so_LDADD = -ldl
 vg_inject_so_LDFLAGS = \
 	-shared \
 	-Wl,--soname,vg_inject.so \
@@ -156,12 +140,12 @@ vg_inject_so_LDFLAGS = \
 lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
 lib_replace_malloc_a_CFLAGS  = $(AM_CFLAGS) -fpic -fno-omit-frame-pointer
 
-MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) $(inplacedir)/libpthread.so.0
+MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 
 all-local:
 	mkdir -p $(inplacedir)
 	for i in $(val_PROGRAMS); do \
-		to=$(inplacedir)/$$(echo $$i | sed 's,libpthread.so,libpthread.so.0,'); \
+		to=$(inplacedir)/$$i; \
 		rm -f $$$to; \
 		ln -sf ../$(subdir)/$$i $$to; \
 	done

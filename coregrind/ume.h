@@ -41,6 +41,7 @@
 /*--- General stuff                                        ---*/
 /*------------------------------------------------------------*/
 
+extern
 void foreach_map(int (*fn)(char *start, char *end,
 			   const char *perm, off_t offset,
 			   int maj, int min, int ino, void* extra),
@@ -49,7 +50,9 @@ void foreach_map(int (*fn)(char *start, char *end,
 // Jump to a new 'ip' with the stack 'sp'.  This is intended
 // to simulate the initial CPU state when the kernel starts an program
 // after exec; and so should clear all the other registers.
-void jmp_with_stack(Addr ip, Addr sp) __attribute__((noreturn));
+extern
+__attribute__((noreturn))
+void jmp_with_stack(void (*eip)(void), Addr sp);
 
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/
@@ -81,7 +84,7 @@ struct exeinfo
 // checks execute permissions, sets up interpreter if program is a script, 
 // reads headers, maps file into memory, and returns important info about
 // the program.
-int do_exec(const char *exe, struct exeinfo *info);
+extern int do_exec(const char *exe, struct exeinfo *info);
 
 /*------------------------------------------------------------*/
 /*--- Finding and dealing with auxv                        ---*/
@@ -96,7 +99,7 @@ struct ume_auxv
    } u;
 };
 
-struct ume_auxv *find_auxv(UWord* orig_esp);
+extern struct ume_auxv *find_auxv(UWord* orig_esp);
 
 /* Our private auxv entries */
 #define AT_UME_PADFD	0xff01	/* padding file fd */

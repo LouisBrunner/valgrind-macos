@@ -30,7 +30,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
-	sigkill.stderr.exp sigkill.vgtest \
+	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 

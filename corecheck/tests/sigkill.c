@@ -19,10 +19,10 @@ main (void)
   int i;
   int rc;
   for (i = 1; i <= 65; i++) {
-     // skip signals 32 and 33: some systems say "warning, ignored attempt
+     // skip signals 63 and 64: some systems say "warning, ignored attempt
      // to catch 32 because it's used internally by Valgrind", others say
      // "invalid argument".
-     if (i == 32 || i == 33) {
+     if (i == 63 || i == 64) {
         continue;       
      }                  // different systems
      sa.sa_flags   = 0;

@@ -266,6 +266,9 @@ void VGA_(cleanup_thread) ( ThreadArchState* arch )
 void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child, 
                          /*IN*/  ThreadArchState *parent )
 {
+   /* We inherit our parent's guest state. */
+   child->vex = parent->vex;
+   child->vex_shadow = parent->vex_shadow;
    /* We inherit our parent's LDT. */
    if (parent->vex.guest_LDT == (HWord)NULL) {
       /* We hope this is the common case. */
@@ -316,6 +319,24 @@ void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
 
    VG_TRACK ( post_mem_write, Vg_CoreSignal, tid, esp, 2 * sizeof(UWord) );
 }
+
+
+void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadArchState *arch = &tst->arch;
+
+   /* XXX ask tool about validity? */
+   (*marker)(arch->vex.guest_EAX);
+   (*marker)(arch->vex.guest_ECX);
+   (*marker)(arch->vex.guest_EDX);
+   (*marker)(arch->vex.guest_EBX);
+   (*marker)(arch->vex.guest_ESI);
+   (*marker)(arch->vex.guest_EDI);
+   (*marker)(arch->vex.guest_ESP);
+   (*marker)(arch->vex.guest_EBP);
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Symtab stuff                                         ---*/

@@ -65,7 +65,11 @@
    obj:*libc-2.2.?.so
    fun:_dl_catch_error*
 }
-
+{
+   _dl_relocate_object_internal
+   Memcheck:Cond
+   fun:_dl_relocate_object_internal
+}
 
 #-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
 {
@@ -398,10 +402,18 @@
 }
 
 {
-   _dl_init/ld-2.2.4.so(Cond)
+   _dl_start/ld-2.2.4.so(Cond)
    Memcheck:Cond
    fun:_dl_start
    obj:/lib/ld-2.2.4.so
+}
+
+#-------- glibc 2.2.5/ Debian 3.0
+{
+   _dl_start/ld-2.2.5.so(Cond)
+   Memcheck:Cond
+   fun:_dl_start
+   obj:/lib/ld-2.2.5.so
 }
 
 #-------------------
@@ -471,15 +483,17 @@
    obj:/usr/X11R6/lib/libXt.so.6.0
 }
 
-##----------------------------------------------------------------------##
-## For a leak in Valgrind's own libpthread.so :(
+# LinuxThreads suppressesion
 {
-   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
-   Memcheck:Leak
-   fun:malloc
-   fun:my_malloc
-   fun:get_or_allocate_specifics_ptr
-   fun:pthread_key_create
+   LinuxThreads: write/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:pthread_create@@GLIBC_2.1
 }
-
-
+{
+   LinuxThreads: write/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_create@@GLIBC_2.1
+}

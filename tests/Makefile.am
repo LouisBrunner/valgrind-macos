@@ -5,8 +5,10 @@ noinst_SCRIPTS = \
 	vg_regtest \
 	filter_addresses \
 	filter_discards \
+	filter_libc \
 	filter_numbers \
 	filter_stderr_basic \
+	filter_sink \
 	filter_test_paths
 
 EXTRA_DIST = $(noinst_SCRIPTS)
@@ -22,6 +24,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # generic C ones
 cputest_SOURCES 	= cputest.c
 cputest_CFLAGS  	= $(AM_CFLAGS) -D__$(VG_ARCH)__
+cputest_DEPENDENCIES	= 
+cputest_LDADD		= 
 toobig_allocs_SOURCES	= toobig-allocs.c
 true_SOURCES 		= true.c
-

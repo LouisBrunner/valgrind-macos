@@ -599,8 +599,6 @@ void init_magically_inited_sword(Addr a)
 {
    shadow_word sword;
 
-   tl_assert(VG_INVALID_THREADID == VG_(get_current_tid)());
-
    sword = SW(Vge_Virgin, TID_INDICATING_NONVIRGIN);
 
    set_sword(a, virgin_sword);
@@ -3162,42 +3160,42 @@ static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
 
 REGPARM(1) static void eraser_mem_help_read_1(Addr a)
 {
-   eraser_mem_read(a, 1, VG_(get_current_tid)());
+   eraser_mem_read(a, 1, VG_(get_VCPU_tid)());
 }
 
 REGPARM(1) static void eraser_mem_help_read_2(Addr a)
 {
-   eraser_mem_read(a, 2, VG_(get_current_tid)());
+   eraser_mem_read(a, 2, VG_(get_VCPU_tid)());
 }
 
 REGPARM(1) static void eraser_mem_help_read_4(Addr a)
 {
-   eraser_mem_read(a, 4, VG_(get_current_tid)());
+   eraser_mem_read(a, 4, VG_(get_VCPU_tid)());
 }
 
 REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
 {
-   eraser_mem_read(a, size, VG_(get_current_tid)());
+   eraser_mem_read(a, size, VG_(get_VCPU_tid)());
 }
 
 REGPARM(2) static void eraser_mem_help_write_1(Addr a, UInt val)
 {
    if (*(UChar *)a != val)
-      eraser_mem_write(a, 1, VG_(get_current_tid)());
+      eraser_mem_write(a, 1, VG_(get_VCPU_tid)());
 }
 REGPARM(2) static void eraser_mem_help_write_2(Addr a, UInt val)
 {
    if (*(UShort *)a != val)
-      eraser_mem_write(a, 2, VG_(get_current_tid)());
+      eraser_mem_write(a, 2, VG_(get_VCPU_tid)());
 }
 REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
 {
    if (*(UInt *)a != val)
-      eraser_mem_write(a, 4, VG_(get_current_tid)());
+      eraser_mem_write(a, 4, VG_(get_VCPU_tid)());
 }
 REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
 {
-   eraser_mem_write(a, size, VG_(get_current_tid)());
+   eraser_mem_write(a, size, VG_(get_VCPU_tid)());
 }
 
 static void hg_thread_create(ThreadId parent, ThreadId child)
@@ -3226,14 +3224,14 @@ static Int __BUS_HARDWARE_LOCK__;
 
 static void bus_lock(void)
 {
-   ThreadId tid = VG_(get_current_tid)();
+   ThreadId tid = VG_(get_VCPU_tid)();
    eraser_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
    eraser_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
 }
 
 static void bus_unlock(void)
 {
-   ThreadId tid = VG_(get_current_tid)();
+   ThreadId tid = VG_(get_VCPU_tid)();
    eraser_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
 }
 

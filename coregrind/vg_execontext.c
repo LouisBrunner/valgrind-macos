@@ -159,6 +159,7 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
 static UInt stack_snapshot2 ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
                               Addr fp_min, Addr fp_max_orig )
 {
+   static const Bool debug = False;
    Int         i;
    Addr        fp_max;
    UInt        n_found = 0;
@@ -181,6 +182,10 @@ static UInt stack_snapshot2 ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
    fp_max = (fp_max_orig + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE - 1);
    fp_max -= sizeof(Addr);
 
+   if (debug)
+      VG_(printf)("n_ips=%d fp_min=%p fp_max_orig=%p, fp_max=%p ip=%p fp=%p\n",
+		  n_ips, fp_min, fp_max_orig, fp_max, ip, fp);
+
    /* Assertion broken before main() is reached in pthreaded programs;  the
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(fp_min <= fp_max);*/
@@ -197,7 +202,8 @@ static UInt stack_snapshot2 ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
       fp = FIRST_STACK_FRAME(fp);
       for (i = 1; i < n_ips; i++) {
          if (!(fp_min <= fp && fp <= fp_max)) {
-            //VG_(printf)("... out of range %p\n", fp);
+	    if (debug)
+	       VG_(printf)("... out of range %p\n", fp);
             break; /* fp gone baaaad */
          }
          // NJN 2002-sep-17: monotonicity doesn't work -- gives wrong traces...
@@ -207,7 +213,8 @@ static UInt stack_snapshot2 ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
          // }
          ips[i] = STACK_FRAME_RET(fp);  /* ret addr */
          fp     = STACK_FRAME_NEXT(fp);  /* old fp */
-         //VG_(printf)("     %p\n", ips[i]);
+	 if (debug)
+	    VG_(printf)("     ips[%d]=%08p\n", i, ips[i]);
       }
    }
    n_found = i;
@@ -305,6 +312,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
 void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
                      Addr* stack_highest_word)
 {
+   /* thread in thread table */
    ThreadState* tst = & VG_(threads)[ tid ];
    *ip                 = INSTR_PTR(tst->arch);
    *fp                 = FRAME_PTR(tst->arch);
@@ -322,11 +330,14 @@ void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
       useful.  */
    if (*ip >= VG_(client_trampoline_code)+VG_(tramp_syscall_offset) &&
        *ip < VG_(client_trampoline_code)+VG_(trampoline_code_length) &&
-       VG_(is_addressable)(*sp, sizeof(Addr))) {
+       VG_(is_addressable)(*sp, sizeof(Addr), VKI_PROT_READ)) {
       *ip = *(Addr *)*sp;
       *sp += sizeof(Addr);
    }
 #endif
+   if (0)
+      VG_(printf)("tid %d: stack_highest=%p ip=%p sp=%p fp=%p\n",
+		  tid, *stack_highest_word, *ip, *sp, *fp);
 }
 
 ExeContext* VG_(get_ExeContext) ( ThreadId tid )
@@ -358,6 +369,15 @@ Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n )
 Addr VG_(get_EIP) ( ThreadId tid )
 {
    return INSTR_PTR(VG_(threads)[ tid ].arch);
+}
+
+Addr VG_(get_thread_stack_pointer) ( ThreadId tid )
+{
+   Addr ret;
+
+   ret = STACK_PTR(VG_(threads)[ tid ].arch);
+
+   return ret;
 }
 
 /*--------------------------------------------------------------------*/

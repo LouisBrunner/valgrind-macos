@@ -292,7 +292,7 @@ void failure_exit ( void )
 }
 
 static
-void log_bytes ( Char* bytes, Int nbytes )
+void log_bytes ( HChar* bytes, Int nbytes )
 {
   Int i;
   for (i = 0; i < nbytes-3; i += 4)
@@ -426,7 +426,8 @@ Bool VG_(translate) ( ThreadId tid,
        !VG_(seg_contains)(seg, orig_addr, 1) || 
        (seg->prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == 0) {
       /* Code address is bad - deliver a signal instead */
-      vg_assert(!VG_(is_addressable)(orig_addr, 1));
+      vg_assert(!VG_(is_addressable)(orig_addr, 1, 
+                                     VKI_PROT_READ|VKI_PROT_EXEC));
 
       if (seg != NULL && VG_(seg_contains)(seg, orig_addr, 1)) {
          vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
@@ -453,7 +454,7 @@ Bool VG_(translate) ( ThreadId tid,
    tres = LibVEX_Translate ( 
              VG_(vex_arch), VG_(vex_subarch),
              VG_(vex_arch), VG_(vex_subarch),
-             (UChar*)orig_addr, 
+             (UChar*)ULong_to_Ptr(orig_addr), 
              (Addr64)orig_addr, 
              chase_into_ok,
              &vge,

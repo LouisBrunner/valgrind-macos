@@ -28,62 +28,20 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* TODO/FIXME jrs 20050207: assignments to the syscall return result
+   in interrupted_syscall() need to be reviewed.  They don't seem
+   to assign the shadow state.
+*/
+
 #include "core.h"
+#include "ume.h"                /* for jmp_with_stack */
 
-
-// See the comment accompanying the declaration of VGA_(thread_syscall)() in
-// coregrind/core.h for an explanation of what this does, and why.
-asm(
-".text\n"
-"	.type vgArch_do_thread_syscall,@function\n"
-
-".globl  vgArch_do_thread_syscall\n"
-"vgArch_do_thread_syscall:\n"
-"	push	%esi\n"
-"	push	%edi\n"
-"	push	%ebx\n"
-"	push	%ebp\n"
-".vgArch_sys_before:\n"
-"	movl	16+ 4(%esp),%eax\n" /* syscall */
-"	movl	16+ 8(%esp),%ebx\n" /* arg1 */
-"	movl	16+12(%esp),%ecx\n" /* arg2 */
-"	movl	16+16(%esp),%edx\n" /* arg3 */
-"	movl	16+20(%esp),%esi\n" /* arg4 */
-"	movl	16+24(%esp),%edi\n" /* arg5 */
-"	movl	16+28(%esp),%ebp\n" /* arg6 */
-".vgArch_sys_restarted:\n"
-"	int	$0x80\n"
-".vgArch_sys_after:\n"
-"	movl	16+32(%esp),%ebx\n"	/* ebx = Int *RES */
-"	movl	%eax, (%ebx)\n"		/* write the syscall retval */
-
-"	movl	16+36(%esp),%ebx\n"	/* ebx = enum PXState * */
-"	testl	%ebx, %ebx\n"
-"	jz	1f\n"
-
-"	movl	16+40(%esp),%ecx\n"	/* write the post state (must be after retval write) */
-"	movl	%ecx,(%ebx)\n"
-
-".vgArch_sys_done:\n"			/* OK, all clear from here */
-"1:	popl	%ebp\n"
-"	popl	%ebx\n"
-"	popl	%edi\n"
-"	popl	%esi\n"
-"	ret\n"
-"	.size vgArch_do_thread_syscall,.-vgArch_do_thread_syscall\n"
-".previous\n"
-
-".section .rodata\n"
-"       .globl  vgArch_sys_before\n"
-"vgArch_sys_before:	.long	.vgArch_sys_before\n"
-"       .globl  vgArch_sys_restarted\n"
-"vgArch_sys_restarted:	.long	.vgArch_sys_restarted\n"
-"       .globl  vgArch_sys_after\n"
-"vgArch_sys_after:	.long	.vgArch_sys_after\n"
-"       .globl  vgArch_sys_done\n"
-"vgArch_sys_done:	.long	.vgArch_sys_done\n"
-".previous\n"
-);
+/* These are addresses within VGA_(client_syscall).  See syscall.S for details. */
+extern const Word VGA_(blksys_setup);
+extern const Word VGA_(blksys_restart);
+extern const Word VGA_(blksys_complete);
+extern const Word VGA_(blksys_committed);
+extern const Word VGA_(blksys_finished);
 
 // Back up to restart a system call.
 void VGA_(restart_syscall)(ThreadArchState *arch)
@@ -105,6 +63,371 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
    }
+}
+
+/* 
+   Fix up the VCPU state when a syscall is interrupted by a signal.
+
+   To do this, we determine the precise state of the syscall by
+   looking at the (real) eip at the time the signal happened.  The
+   syscall sequence looks like:
+
+     1. unblock signals
+     2. perform syscall
+     3. save result to EAX
+     4. re-block signals
+
+   If a signal happens at	Then	Why?
+   1-2				restart	nothing has happened (restart syscall)
+   2				restart	syscall hasn't started, or kernel wants to restart
+   2-3				save	syscall complete, but results not saved
+   3-4				-	syscall complete, results saved
+
+   Sometimes we never want to restart an interrupted syscall (because
+   sigaction says not to), so we only restart if "restart" is True.
+
+   This will also call VG_(post_syscall)() if the syscall has actually
+   completed (either because it was interrupted, or because it
+   actually finished).  It will not call VG_(post_syscall)() if the
+   syscall is set up for restart, which means that the pre-wrapper may
+   get called multiple times.
+ */
+void VGA_(interrupted_syscall)(ThreadId tid, 
+			       struct vki_ucontext *uc,
+			       Bool restart)
+{
+   static const Bool debug = 0;
+
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadArchState *th_regs = &tst->arch;
+   Word eip = UCONTEXT_INSTR_PTR(uc);
+
+   if (debug)
+      VG_(printf)("interrupted_syscall: eip=%p; restart=%d eax=%d\n", 
+		  eip, restart, UCONTEXT_SYSCALL_NUM(uc));
+
+   if (eip < VGA_(blksys_setup) || eip >= VGA_(blksys_finished)) {
+      VG_(printf)("  not in syscall (%p - %p)\n", VGA_(blksys_setup), VGA_(blksys_finished));
+      vg_assert(tst->syscallno == -1);
+      return;
+   }
+
+   vg_assert(tst->syscallno != -1);
+
+   if (eip >= VGA_(blksys_setup) && eip < VGA_(blksys_restart)) {
+      /* syscall hasn't even started; go around again */
+      if (debug)
+	 VG_(printf)("  not started: restart\n");
+      VGA_(restart_syscall)(th_regs);
+   } else if (eip == VGA_(blksys_restart)) {
+      /* We're either about to run the syscall, or it was interrupted
+	 and the kernel restarted it.  Restart if asked, otherwise
+	 EINTR it. */
+      if (restart)
+	 VGA_(restart_syscall)(th_regs);
+      else {
+	 th_regs->vex.PLATFORM_SYSCALL_RET = -VKI_EINTR;
+	 VG_(post_syscall)(tid);
+      }
+   } else if (eip >= VGA_(blksys_complete) && eip < VGA_(blksys_committed)) {
+      /* Syscall complete, but result hasn't been written back yet.
+	 The saved real CPU %eax has the result, which we need to move
+	 to EAX. */
+      if (debug)
+	 VG_(printf)("  completed: ret=%d\n", UCONTEXT_SYSCALL_RET(uc));
+      th_regs->vex.PLATFORM_SYSCALL_RET = UCONTEXT_SYSCALL_RET(uc);
+      VG_(post_syscall)(tid);
+   } else if (eip >= VGA_(blksys_committed) && eip < VGA_(blksys_finished)) {
+      /* Result committed, but the signal mask has not been restored;
+	 we expect our caller (the signal handler) will have fixed
+	 this up. */
+      if (debug)
+	 VG_(printf)("  all done\n");
+      VG_(post_syscall)(tid);
+   } else
+      VG_(core_panic)("?? strange syscall interrupt state?");
+   
+   tst->syscallno = -1;
+}
+
+extern void VGA_(_client_syscall)(Int syscallno, 
+                                  void* guest_state,
+				  const vki_sigset_t *syscall_mask,
+				  const vki_sigset_t *restore_mask,
+				  Int nsigwords);
+
+void VGA_(client_syscall)(Int syscallno, ThreadState *tst,
+			  const vki_sigset_t *syscall_mask)
+{
+   vki_sigset_t saved;
+   VGA_(_client_syscall)(syscallno, &tst->arch.vex, 
+                         syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord));
+}
+
+
+/* 
+   Allocate a stack for this thread.
+
+   They're allocated lazily, but never freed.
+ */
+#define FILL	0xdeadbeef
+
+static UInt *allocstack(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   UInt *esp;
+
+   if (tst->os_state.stack == NULL) {
+      void *stk = VG_(mmap)(0, VG_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
+			    VKI_PROT_READ|VKI_PROT_WRITE,
+			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
+			    SF_VALGRIND,
+			    -1, 0);
+
+      if (stk != (void *)-1) {
+	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
+	 tst->os_state.stack = (UInt *)stk + VKI_PAGE_SIZE/sizeof(UInt);
+	 tst->os_state.stacksize = VG_STACK_SIZE_W;
+      } else 
+	 return (UInt *)-1;
+   }
+
+   for(esp = tst->os_state.stack; esp < (tst->os_state.stack + tst->os_state.stacksize); esp++)
+      *esp = FILL;
+   /* esp is left at top of stack */
+
+   if (0)
+      VG_(printf)("stack for tid %d at %p (%x); esp=%p\n",
+		  tid, tst->os_state.stack, *tst->os_state.stack,
+		  esp);
+
+   return esp;
+}
+
+/* Return how many bytes of this stack have not been used */
+Int VGA_(stack_unused)(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   UInt *p;
+
+   for (p = tst->os_state.stack; 
+	p && (p < (tst->os_state.stack + tst->os_state.stacksize)); 
+	p++)
+      if (*p != FILL)
+	 break;
+
+   if (0)
+      VG_(printf)("p=%p %x tst->os_state.stack=%p\n", p, *p, tst->os_state.stack);
+
+   return (p - tst->os_state.stack) * sizeof(*p);
+}
+
+/*
+   Allocate a stack for the main thread, and call VGA_(thread_wrapper)
+   on that stack.
+ */
+void VGA_(main_thread_wrapper)(ThreadId tid)
+{
+   UInt *esp = allocstack(tid);
+
+   vg_assert(tid == VG_(master_tid));
+
+   *--esp = tid;		/* set arg */
+   *--esp = 0;			/* bogus return address */
+   jmp_with_stack((void (*)(void))VGA_(thread_wrapper), (Addr)esp);
+}
+
+static Int start_thread(void *arg)
+{
+   ThreadState *tst = (ThreadState *)arg;
+   ThreadId tid = tst->tid;
+
+   VGA_(thread_wrapper)(tid);
+
+   /* OK, thread is dead; this releases the run lock */
+   VG_(exit_thread)(tid);
+
+   vg_assert(tst->status == VgTs_Zombie);
+
+   /* Poke the reaper */
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "Sending SIGVGCHLD to master tid=%d lwp=%d", 
+		   VG_(master_tid), VG_(threads)[VG_(master_tid)].os_state.lwpid);
+
+   VG_(tkill)(VG_(threads)[VG_(master_tid)].os_state.lwpid, VKI_SIGVGCHLD);
+
+   /* We have to use this sequence to terminate the thread to prevent
+      a subtle race.  If VG_(exit_thread)() had left the ThreadState
+      as Empty, then it could have been reallocated, reusing the stack
+      while we're doing these last cleanups.  Instead,
+      VG_(exit_thread) leaves it as Zombie to prevent reallocation.
+      We need to make sure we don't touch the stack between marking it
+      Empty and exiting.  Hence the assembler. */
+   asm volatile (
+      "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
+      "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
+      : "=m" (tst->status)
+      : "n" (VgTs_Empty), "a" (__NR_exit), "b" (tst->os_state.exitcode));
+
+   VG_(core_panic)("Thread exit failed?\n");
+}
+
+/* 
+   clone() handling
+
+   When a client clones, we need to keep track of the new thread.  This means:
+   1. allocate a ThreadId+ThreadState+stack for the the thread
+
+   2. initialize the thread's new VCPU state
+
+   3. create the thread using the same args as the client requested,
+   but using the scheduler entrypoint for EIP, and a separate stack
+   for ESP.
+ */
+static Int do_clone(ThreadId ptid, 
+		    UInt flags, Addr esp, 
+		    Int *parent_tidptr, 
+		    Int *child_tidptr, 
+		    vki_modify_ldt_t *tlsinfo)
+{
+   static const Bool debug = False;
+
+   ThreadId ctid = VG_(alloc_ThreadState)();
+   ThreadState *ptst = VG_(get_ThreadState)(ptid);
+   ThreadState *ctst = VG_(get_ThreadState)(ctid);
+   UInt *stack;
+   Segment *seg;
+   Int ret;
+   vki_sigset_t blockall, savedmask;
+
+   VG_(sigfillset)(&blockall);
+
+   vg_assert(VG_(is_running_thread)(ptid));
+   vg_assert(VG_(is_valid_tid)(ctid));
+
+   stack = allocstack(ctid);
+
+   /* Copy register state
+
+      Both parent and child return to the same place, and the code
+      following the clone syscall works out which is which, so we
+      don't need to worry about it.
+
+      The parent gets the child's new tid returned from clone, but the
+      child gets 0.
+
+      If the clone call specifies a NULL esp for the new thread, then
+      it actually gets a copy of the parent's esp.
+   */
+   VGA_(setup_child)( &ctst->arch, &ptst->arch );
+
+   PLATFORM_SET_SYSCALL_RESULT(ctst->arch, 0);
+   if (esp != 0)
+      ctst->arch.vex.guest_ESP = esp;
+
+   ctst->os_state.parent = ptid;
+   ctst->os_state.clone_flags = flags;
+   ctst->os_state.parent_tidptr = parent_tidptr;
+   ctst->os_state.child_tidptr = child_tidptr;
+
+   /* inherit signal mask */
+   ctst->sig_mask = ptst->sig_mask;
+   ctst->tmp_sig_mask = ptst->sig_mask;
+
+   /* We don't really know where the client stack is, because its
+      allocated by the client.  The best we can do is look at the
+      memory mappings and try to derive some useful information.  We
+      assume that esp starts near its highest possible value, and can
+      only go down to the start of the mmaped segment. */
+   seg = VG_(find_segment)((Addr)esp);
+   if (seg) {
+      ctst->stack_base = seg->addr;
+      ctst->stack_highest_word = (Addr)PGROUNDUP(esp);
+      ctst->stack_size = ctst->stack_highest_word - ctst->stack_base;
+
+      if (debug)
+	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
+		     ctid, seg->addr, PGROUNDUP(esp));
+   } else {
+      VG_(message)(Vg_UserMsg, "!? New thread %d starts with ESP(%p) unmapped\n",
+		   ctid, esp);
+      ctst->stack_base = 0;
+      ctst->stack_size = 0;
+   }
+
+   if (flags & VKI_CLONE_SETTLS) {
+      if (debug)
+	 VG_(printf)("clone child has SETTLS: tls info at %p: idx=%d base=%p limit=%x; esp=%p fs=%x gs=%x\n",
+		     tlsinfo, tlsinfo->entry_number, tlsinfo->base_addr, tlsinfo->limit,
+		     ptst->arch.vex.guest_ESP,
+		     ctst->arch.vex.guest_FS, ctst->arch.vex.guest_GS);
+      ret = VG_(sys_set_thread_area)(ctid, tlsinfo);
+
+      if (ret != 0)
+	 goto out;
+   }
+
+   flags &= ~VKI_CLONE_SETTLS;
+
+   /* start the thread with everything blocked */
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, &savedmask);
+
+   /* Create the new thread */
+   ret = VG_(clone)(start_thread, stack, flags, &VG_(threads)[ctid],
+		    child_tidptr, parent_tidptr, NULL);
+
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
+
+  out:
+   if (ret < 0) {
+      /* clone failed */
+      VGA_(cleanup_thread)(&ctst->arch);
+      ctst->status = VgTs_Empty;
+   }
+
+   return ret;
+}
+
+/* Do a clone which is really a fork() */
+static Int do_fork_clone(ThreadId tid, UInt flags, Addr esp, Int *parent_tidptr, Int *child_tidptr)
+{
+   vki_sigset_t fork_saved_mask;
+   vki_sigset_t mask;
+   Int ret;
+
+   if (flags & (VKI_CLONE_SETTLS | VKI_CLONE_FS | VKI_CLONE_VM | VKI_CLONE_FILES | VKI_CLONE_VFORK))
+      return -VKI_EINVAL;
+
+   /* Block all signals during fork, so that we can fix things up in
+      the child without being interrupted. */
+   VG_(sigfillset)(&mask);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
+
+   VG_(do_atfork_pre)(tid);
+
+   /* Since this is the fork() form of clone, we don't need all that
+      VG_(clone) stuff */
+   ret = VG_(do_syscall5)(__NR_clone, flags, (UWord)NULL, (UWord)parent_tidptr, 
+                                             (UWord)NULL, (UWord)child_tidptr);
+
+   if (ret == 0) {
+      /* child */
+      VG_(do_atfork_child)(tid);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   } else if (ret > 0) {
+      /* parent */
+      if (VG_(clo_trace_syscalls))
+	  VG_(printf)("   clone(fork): process %d created child %d\n", VG_(getpid)(), ret);
+
+      VG_(do_atfork_parent)(tid);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   }
+
+   return ret;
 }
 
 /* ---------------------------------------------------------------------
@@ -150,84 +473,110 @@ PRE(old_select, MayBlock)
    }
 }
 
-
-/* --- BEGIN Quadrics Elan3 driver hacks (1) --- */
-
-/* Horrible hack.  Do sys_clone, and if you are then the child,
-   continue at child_next_eip instead of returning. */
-/* not even kernel thread-safe due to use of static var, but I think
-   that's ok.  we should not have multiple kernel threads here. */
-static void* child_wherenext;
-static UInt clone_child_native ( void* child_next_eip, UInt arg1, UInt arg2 )
-{ 
-   UInt __res;
-   UInt syscallno = __NR_clone;
-   child_wherenext = child_next_eip;
-   __asm__ volatile (
-      "int  $0x80\n\t"
-      "cmpl $0, %%eax\n\t"
-      "jnz  laLaloLo345321\n\t"
-      "jmp  *child_wherenext\n"
-      "laLaloLo345321:"
-      : "=a" (__res)
-      : "0" (syscallno),
-        "b" (arg1),
-        "c" (arg2)
-   );
-   return __res;
-}
-
-/* --- END Quadrics Elan3 driver hacks (1) --- */
-
-
 PRE(sys_clone, Special)
 {
-   PRINT("sys_clone ( %d, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
-   // XXX: really not sure about the last two args... if they are really
-   // there, we should do PRE_MEM_READs for both of them...
-   PRE_REG_READ4(int, "clone",
-                 unsigned long, flags, void *, child_stack,
-                 int *, parent_tidptr, int *, child_tidptr);
+   UInt cloneflags;
 
-   if (ARG2 == 0 
-       && (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
-           || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD)))
-   {
-      VGA_(gen_sys_fork_before)(tid, tst);
-      SET_RESULT( VG_(do_syscall5)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
-      VGA_(gen_sys_fork_after) (tid, tst);
-   } 
-   else
-   if (VG_(clo_support_elan3) && ARG1 == 0xF00) {
-      /* --- BEGIN Quadrics Elan3 driver hacks (2) --- */
-      /* The Elan3 user-space driver is trying to clone off a
-         do-nothing-much thread.  So we let it run natively, and hope
-         for the best, but keep the parent running normally on
-         Valgrind. */
-      Int res = clone_child_native( (void*)tst->arch.vex.guest_EIP, ARG1, ARG2 );
-      /* clone_child_native only returns in the parent's context, and
-         so res must be either > 0, in which case it is the pid of the
-         child, or < 0, which is an error code.  
-      */
-      if (1) 
-         VG_(printf)("valgrind: ELAN3_HACK(x86): "
-                     "parent pid = %d, child pid = %d\n", VG_(getpid)(), res);
-      vg_assert(res != 0);
-      SET_RESULT(res);
-      /* --- END Quadrics Elan3 driver hacks (2) --- */
-   } 
-   else {
-      VG_(unimplemented)
-         ("clone(): not supported by Valgrind.\n   "
-          "\n"
-          "NOTE(1): We do support programs linked against\n   "
-          "libpthread.so, though.  Re-run with -v and ensure that\n   "
-          "you are picking up Valgrind's implementation of libpthread.so.\n"
-          "\n"
-          "NOTE(2): if you are trying to run a program using the Quadrics Elan3\n"
-          "   user-space drivers, you need re-run with the flag:\n"
-          "   --support-elan3=yes\n");
+   PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int, "clone",
+                 unsigned long, flags,
+                 void *, child_stack,
+                 int *, parent_tidptr,
+                 vki_modify_ldt_t *, tlsinfo,
+                 int *, child_tidptr);
+
+   if (ARG1 & VKI_CLONE_PARENT_SETTID) {
+      PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
+      if (!VG_(is_addressable)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
+         SET_RESULT( -VKI_EFAULT );
+         return;
+      }
    }
+   if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
+      if (!VG_(is_addressable)(ARG5, sizeof(Int), VKI_PROT_WRITE)) {
+         SET_RESULT( -VKI_EFAULT );
+         return;
+      }
+   }
+   if (ARG1 & VKI_CLONE_SETTLS) {
+      PRE_MEM_READ("clone(tls_user_desc)", ARG4, sizeof(vki_modify_ldt_t));
+      if (!VG_(is_addressable)(ARG4, sizeof(vki_modify_ldt_t), VKI_PROT_READ)) {
+         SET_RESULT( -VKI_EFAULT );
+         return;
+      }
+   }
+
+   cloneflags = ARG1;
+
+   if (!VG_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
+   /* Only look at the flags we really care about */
+   switch(cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
+   case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
+      /* thread creation */
+      SET_RESULT(do_clone(tid,
+                          ARG1,         /* flags */
+                          (Addr)ARG2,   /* child ESP */
+                          (Int *)ARG3,  /* parent_tidptr */
+                          (Int *)ARG5,  /* child_tidptr */
+                          (vki_modify_ldt_t *)ARG4)); /* set_tls */
+      break;
+
+   case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
+      /* FALLTHROUGH - assume vfork == fork */
+      cloneflags &= ~(VKI_CLONE_VFORK | VKI_CLONE_VM);
+
+   case 0: /* plain fork */
+      SET_RESULT(do_fork_clone(tid,
+                               cloneflags,              /* flags */
+                               (Addr)ARG2,      /* child ESP */
+                               (Int *)ARG3,     /* parent_tidptr */
+                               (Int *)ARG5));   /* child_tidptr */
+      break;
+
+   default:
+      /* should we just ENOSYS? */
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: %x", ARG1);
+      VG_(unimplemented)
+         ("Valgrind does not support general clone().  The only supported uses "
+          "are via a threads library, fork, or vfork.");
+   }
+
+   if (!VG_(is_kerror)(RES)) {
+      if (ARG1 & VKI_CLONE_PARENT_SETTID)
+         POST_MEM_WRITE(ARG3, sizeof(Int));
+      if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
+         POST_MEM_WRITE(ARG5, sizeof(Int));
+
+      /* Thread creation was successful; let the child have the chance
+         to run */
+      VG_(vg_yield)();
+   }
+}
+
+PRE(sys_sigreturn, Special)
+{
+   PRINT("sigreturn ( )");
+
+   /* Adjust esp to point to start of frame; skip back up over
+      sigreturn sequence's "popl %eax" and handler ret addr */
+   tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
+
+   /* This is only so that the EIP is (might be) useful to report if
+      something goes wrong in the sigreturn */
+   VGA_(restart_syscall)(&tst->arch);
+
+   VGA_(signal_return)(tid, False);
+
+   /* Keep looking for signals until there are none */
+   VG_(poll_signals)(tid);
+
+   /* placate return-must-be-set assertion */
+   SET_RESULT(0);
 }
 
 PRE(sys_modify_ldt, Special)
@@ -390,7 +739,7 @@ PRE(sys_ipc, 0)
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
       PRE_MEM_READ( "semop(sops)", ARG5, ARG3 * sizeof(struct vki_sembuf) );
-      tst->sys_flags |= MayBlock;
+      /* tst->sys_flags |= MayBlock; */
       break;
    case VKI_SEMGET:
       break;
@@ -499,7 +848,7 @@ PRE(sys_ipc, 0)
       if (ARG6 != 0)
          PRE_MEM_READ( "semtimedop(timeout)", ARG6, 
                         sizeof(struct vki_timespec) );
-      tst->sys_flags |= MayBlock;
+      /* tst->sys_flags |= MayBlock; */
       break;
    case VKI_MSGSND:
    {
@@ -511,8 +860,9 @@ PRE(sys_ipc, 0)
       PRE_MEM_READ( "msgsnd(msgp->mtext)", 
 		     (Addr)msgp->mtext, msgsz );
 
-      if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-         tst->sys_flags |= MayBlock;
+      /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+            tst->sys_flags |= MayBlock;
+      */
       break;
    }
    case VKI_MSGRCV:
@@ -529,8 +879,9 @@ PRE(sys_ipc, 0)
       PRE_MEM_WRITE( "msgrcv(msgp->mtext)", 
 		     (Addr)msgp->mtext, msgsz );
 
-      if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-         tst->sys_flags |= MayBlock;
+      /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+            tst->sys_flags |= MayBlock;
+      */
       break;
    }
    case VKI_MSGGET:
@@ -818,18 +1169,72 @@ POST(sys_ipc)
    }
 }
 
+
+// jrs 20050207: this is from the svn branch
+//PRE(sys_sigaction, Special)
+//{
+//   PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
+//   PRE_REG_READ3(int, "sigaction",
+//                 int, signum, const struct old_sigaction *, act,
+//                 struct old_sigaction *, oldact)
+//   if (ARG2 != 0)
+//      PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
+//   if (ARG3 != 0)
+//      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
+//
+//   VG_(do_sys_sigaction)(tid);
+//}
+
+/* Convert from non-RT to RT sigset_t's */
+static void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
+{
+   VG_(sigemptyset)(set);
+   set->sig[0] = *oldset;
+}
 PRE(sys_sigaction, Special)
 {
+   struct vki_sigaction new, old;
+   struct vki_sigaction *newp, *oldp;
+
    PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "sigaction",
                  int, signum, const struct old_sigaction *, act,
-                 struct old_sigaction *, oldact)
+                 struct old_sigaction *, oldact);
+
+   newp = oldp = NULL;
+
    if (ARG2 != 0)
       PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
-   if (ARG3 != 0)
-      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
 
-   VG_(do_sys_sigaction)(tid);
+   if (ARG3 != 0) {
+      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
+      oldp = &old;
+   }
+
+   //jrs 20050207: what?!  how can this make any sense?
+   //if (VG_(is_kerror)(SYSRES))
+   //   return;
+
+   if (ARG2 != 0) {
+      struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
+
+      new.ksa_handler = oldnew->ksa_handler;
+      new.sa_flags = oldnew->sa_flags;
+      new.sa_restorer = oldnew->sa_restorer;
+      convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
+      newp = &new;
+   }
+
+   SET_RESULT( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
+
+   if (ARG3 != 0 && RES == 0) {
+      struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
+
+      oldold->ksa_handler = oldp->ksa_handler;
+      oldold->sa_flags = oldp->sa_flags;
+      oldold->sa_restorer = oldp->sa_restorer;
+      oldold->sa_mask = oldp->sa_mask.sig[0];
+   }
 }
 
 POST(sys_sigaction)
@@ -860,7 +1265,7 @@ POST(sys_sigaction)
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (restart_syscall)                             // 0
    GENX_(__NR_exit,              sys_exit),           // 1
-   GENXY(__NR_fork,              sys_fork),           // 2
+   GENX_(__NR_fork,              sys_fork),           // 2
    GENXY(__NR_read,              sys_read),           // 3
    GENX_(__NR_write,             sys_write),          // 4
 
@@ -926,7 +1331,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENXY(__NR_fcntl,             sys_fcntl),          // 55
    GENX_(__NR_mpx,               sys_ni_syscall),     // 56
-   GENXY(__NR_setpgid,           sys_setpgid),        // 57
+   GENX_(__NR_setpgid,           sys_setpgid),        // 57
    GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
 
@@ -1000,7 +1405,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
    PLAXY(__NR_ipc,               sys_ipc),            // 117
    GENX_(__NR_fsync,             sys_fsync),          // 118
-   //   (__NR_sigreturn,         sys_sigreturn),      // 119 ?/Linux
+   PLAX_(__NR_sigreturn,         sys_sigreturn),      // 119 ?/Linux
 
    PLAX_(__NR_clone,             sys_clone),          // 120
    //   (__NR_setdomainname,     sys_setdomainname),  // 121 */*(?)
@@ -1163,7 +1568,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_fadvise64,         sys_fadvise64),      // 250 */(Linux?)
    GENX_(251,                    sys_ni_syscall),     // 251
-   GENX_(__NR_exit_group,        sys_exit_group),     // 252
+   LINX_(__NR_exit_group,        sys_exit_group),     // 252
    GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
    LINXY(__NR_epoll_create,      sys_epoll_create),   // 254
 

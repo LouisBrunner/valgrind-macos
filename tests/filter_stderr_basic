@@ -3,6 +3,8 @@
 # This filter should be applied to *every* stderr result.  It removes
 # Valgrind startup stuff and pid numbers.
 
+dir=`dirname $0`
+
 # Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
 sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"             |
 
@@ -23,18 +25,12 @@ sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
 # Anonymise vg_intercept lines
 sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |
 
-# Anonymise vg_libpthread lines
-sed "s/vg_libpthread.c:[0-9]*/vg_libpthread.c:.../"                   |
-
 # Hide suppressed error counts
 sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 
 
 # Reduce some libc incompatibility
-sed "s/ __getsockname / getsockname /"                                 |
-sed "s/ __sigaction / sigaction /"                                     |
-sed "s/ __GI___/ __/"                                                  |
-sed "s/ __\([a-z]*\)_nocancel / \1 /"                                  |
+$dir/filter_libc                                                       |
 
 # Remove line info out of order warnings
 sed "/warning: line info addresses out of order/d"                     |

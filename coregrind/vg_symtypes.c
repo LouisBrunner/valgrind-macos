@@ -501,12 +501,12 @@ static void clear_visited(void)
    }
 }
 
-static void bprintf(void (*send)(Char), const Char *fmt, ...)
+static void bprintf(void (*send)(Char, void*), void *send_arg, const Char *fmt, ...)
 {
    va_list vargs;
 
    va_start(vargs, fmt);
-   VG_(vprintf)(send, fmt, vargs);
+   VG_(vprintf)(send, fmt, vargs, send_arg);
    va_end(vargs);
 }
 
@@ -667,7 +667,7 @@ static UInt describe_addr_bufidx;
 static UInt describe_addr_bufsz;
 
 /* Add a character to the result buffer */
-static void describe_addr_addbuf(Char c) {
+static void describe_addr_addbuf(Char c,void *p) {
    if ((describe_addr_bufidx+1) >= describe_addr_bufsz) {
       Char *n;
     
@@ -872,7 +872,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	       if (debug)
 		  VG_(printf)("    non-followable array (sz=%d): checking addr %p in range %p-%p\n",
 			      sz, addr, var->valuep, (var->valuep + sz));
-	       if (addr >= var->valuep && addr <= (var->valuep + sz))
+	       if (ty->size > 0 && addr >= var->valuep && addr <= (var->valuep + sz))
 		  min = max = (addr - var->valuep) / ty->size;
 	       else
 		  break;
@@ -1018,7 +1018,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	       found->container->name = NULL;
 	       found->container = found->container->container;
 	    } else {
-	       bprintf(describe_addr_addbuf, "&(");
+               bprintf(describe_addr_addbuf, 0, "&(");
 	       ptr = False;
 	    }
 
@@ -1030,13 +1030,13 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 
 	 *ep++ = '\0';
 
-	 bprintf(describe_addr_addbuf, sp);
+	 bprintf(describe_addr_addbuf, 0, sp);
 
 	 if (addr != found->valuep)
-	    bprintf(describe_addr_addbuf, "+%d", addr - found->valuep);
+	    bprintf(describe_addr_addbuf, 0, "+%d", addr - found->valuep);
 
 	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
-	    bprintf(describe_addr_addbuf, " at %s:%d", file, line, addr);
+	    bprintf(describe_addr_addbuf, 0, " at %s:%d", file, line, addr);
       }
    }
 

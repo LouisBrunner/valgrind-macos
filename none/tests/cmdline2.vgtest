@@ -1,1 +1,1 @@
-vgopts: --help-debug
+vgopts: --help-debug --tool=none

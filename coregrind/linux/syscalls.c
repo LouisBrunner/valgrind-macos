@@ -40,12 +40,41 @@
 #define PRE(name, f)     PRE_TEMPLATE( , vgArch_linux, name, f)
 #define POST(name)      POST_TEMPLATE( , vgArch_linux, name)
 
+PRE(sys_exit_group, Special)
+{
+   ThreadId t;
+
+   PRINT("exit_group( %d )", ARG1);
+   PRE_REG_READ1(void, "exit_group", int, exit_code);
+
+   /* A little complex; find all the threads with the same threadgroup
+      as this one (including this one), and mark them to exit */
+   for (t = 1; t < VG_N_THREADS; t++) {
+      if (VG_(threads)[t].status == VgTs_Empty ||				/* not alive */
+	  VG_(threads)[t].os_state.threadgroup != tst->os_state.threadgroup)	/* not our group */
+	 continue;
+
+      VG_(threads)[t].exitreason = VgSrc_ExitSyscall;
+      VG_(threads)[t].os_state.exitcode = ARG1;
+
+      if (t != tid)
+	 VG_(kill_thread)(t);	/* unblock it, if blocked */
+   }
+
+   /* exit_group doesn't return anything (perhaps it doesn't return?)
+      Nevertheless, if we don't do this, the result-not-assigned-
+      yet-you-said-you-were-Special assertion in the main syscall
+      handling logic will fire.  Hence ..
+   */
+   SET_RESULT(0);
+}
+
 PRE(sys_mount, MayBlock)
 {
    // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
    // We are conservative and check everything, except the memory pointed to
    // by 'data'.
-   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,ARG1,ARG2,ARG3);
+   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "mount",
                  char *, source, char *, target, char *, type,
                  unsigned long, flags, void *, data);
@@ -301,13 +330,32 @@ PRE(sys_personality, 0)
 PRE(sys_sysctl, 0)
 {
    PRINT("sys_sysctl ( %p )", ARG1 );
+   struct __vki_sysctl_args *args;
+   args = (struct __vki_sysctl_args *)ARG1;
    PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
    PRE_MEM_WRITE( "sysctl(args)", ARG1, sizeof(struct __vki_sysctl_args) );
+   if (!VG_(is_addressable)(ARG1, sizeof(struct __vki_sysctl_args), VKI_PROT_READ)) {
+      SET_RESULT( -VKI_EFAULT );
+      return;
+   }
+
+   PRE_MEM_READ("sysctl(name)", (Addr)args->name, args->nlen * sizeof(*args->name));
+   if (args->newval != NULL)
+      PRE_MEM_READ("sysctl(newval)", (Addr)args->newval, args->newlen);
+   if (args->oldlenp != NULL) {
+      PRE_MEM_READ("sysctl(oldlenp)", (Addr)args->oldlenp, sizeof(*args->oldlenp));
+      PRE_MEM_WRITE("sysctl(oldval)", (Addr)args->oldval, *args->oldlenp);
+   }
 }
 
 POST(sys_sysctl)
 {
-   POST_MEM_WRITE( ARG1, sizeof(struct __vki_sysctl_args) );
+   struct __vki_sysctl_args *args;
+   args = (struct __vki_sysctl_args *)ARG1;
+   if (args->oldlenp != NULL) {
+      POST_MEM_WRITE((Addr)args->oldlenp, sizeof(*args->oldlenp));
+      POST_MEM_WRITE((Addr)args->oldval, *args->oldlenp);
+   }
 }
 
 PRE(sys_prctl, MayBlock)
@@ -319,7 +367,7 @@ PRE(sys_prctl, MayBlock)
                  int, option, unsigned long, arg2, unsigned long, arg3,
                  unsigned long, arg4, unsigned long, arg5);
    // XXX: totally wrong... we need to look at the 'option' arg, and do
-   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
+   // SYS_PRE_MEM_READs/SYS_PRE_MEM_WRITEs as necessary...
 }
 
 PRE(sys_sendfile, MayBlock)
@@ -443,11 +491,16 @@ PRE(sys_io_setup, Special)
    size = PGROUNDUP(sizeof(struct vki_aio_ring) +
                     ARG1*sizeof(struct vki_io_event));
    addr = VG_(find_map_space)(0, size, True);
-   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
    
-   VG_(pad_address_space)();
-   SET_RESULT( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
-   VG_(unpad_address_space)();
+   if (addr == 0) {
+      SET_RESULT( -VKI_ENOMEM );
+      return;
+   }
+
+   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, SF_FIXED);
+   
+   VG_(pad_address_space)(0);
+   VG_(unpad_address_space)(0);
 
    if (RES == 0) {
       struct vki_aio_ring *r = *(struct vki_aio_ring **)ARG2;
@@ -468,6 +521,9 @@ PRE(sys_io_setup, Special)
 // before the syscall, while the aio_ring structure still exists.  (And we
 // know that we must look at the aio_ring structure because Tom inspected the
 // kernel and glibc sources to see what they do, yuk.)
+//
+// XXX This segment can be implicitly unmapped when aio
+// file-descriptors are closed...
 PRE(sys_io_destroy, Special)
 {     
    Segment *s = VG_(find_segment)(ARG1);
@@ -485,7 +541,7 @@ PRE(sys_io_destroy, Special)
 
    SET_RESULT( VG_(do_syscall1)(SYSNO, ARG1) );
 
-   if (RES == 0 && s != NULL && VG_(seg_contains)(s, ARG1, size)) { 
+   if (RES == 0 && s != NULL) { 
       VG_TRACK( die_mem_munmap, ARG1, size );
       VG_(unmap_range)(ARG1, size);
    }  
@@ -504,7 +560,7 @@ PRE(sys_io_getevents, MayBlock)
                      ARG4, sizeof(struct vki_io_event)*ARG3 );
    if (ARG5 != 0)
       PRE_MEM_READ( "io_getevents(timeout)",
-                     ARG5, sizeof(struct vki_timespec));
+                    ARG5, sizeof(struct vki_timespec));
 }
 
 POST(sys_io_getevents)

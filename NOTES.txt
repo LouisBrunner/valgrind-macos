@@ -70,4 +70,3 @@ did) and should be removed.
 Sockets: move the socketcall marshaller from vg_syscalls.c into
 x86-linux/syscalls.c; it is in the wrong place.
 
-Tra La La

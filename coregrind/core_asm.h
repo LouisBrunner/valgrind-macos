@@ -41,7 +41,7 @@
 /* Magic values that the guest state might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
    start of the thread's VEX guest state.  These also are return values from
-   VG_(run_innerloop) to the scheduler.
+   from VG_(run_innerloop) to the scheduler.
 */
 /* Defines values for JMP_EMWARN, JMP_SYSCALL, JMP_CLIENTREQ and
    JMP_YIELD */
@@ -51,17 +51,16 @@
    those from libvex_trc_values.h. */
 #define VG_TRC_INNER_FASTMISS     37 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  41 /* TRC only; means bb ctr == 0 */
-#define VG_TRC_UNRESUMABLE_SIGNAL 43 /* TRC only; got sigsegv/sigbus */
+#define VG_TRC_FAULT_SIGNAL       43 /* TRC only; got sigsegv/sigbus */
 #define VG_TRC_INVARIANT_FAILED   47 /* TRC only; invariant violation */
 
+
+#define VG_MAX_TRC		128  /* Highest possible TRC value */
 
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 16
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
-
-/* Assembly code stubs make this request */
-#define VG_USERREQ__SIGNAL_RETURNS          0x4001
 
 // XXX: all this will go into x86/ eventually...
 /* 

@@ -31,6 +31,7 @@
 
 
 #include "core.h"
+//zz#include "memcheck/memcheck.h"
 
 //#define DEBUG_MALLOC      // turn on heavyweight debugging machinery
 //#define VERBOSE_MALLOC    // make verbose, esp. in debugging machinery
@@ -478,6 +479,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       sb = VG_(get_memory_from_mmap) ( cszB, "newSuperblock" );
    }
    vg_assert(NULL != sb);
+   //zzVALGRIND_MAKE_WRITABLE(sb, cszB);
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
    sb->n_payload_bytes = cszB - sizeof(Superblock);
    a->bytes_mmaped += cszB;
@@ -866,6 +868,7 @@ void mkFreeBlock ( Arena* a, Block* b, SizeT bszB, UInt b_lno )
 {
    SizeT pszB = bszB_to_pszB(a, bszB);
    vg_assert(b_lno == pszB_to_listNo(pszB));
+   //zzVALGRIND_MAKE_WRITABLE(b, bszB);
    // Set the size fields and indicate not-in-use.
    set_bszB_lo(b, mk_free_bszB(bszB));
    set_bszB_hi(b, mk_free_bszB(bszB));
@@ -895,6 +898,7 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
 {
    UInt i;
    vg_assert(bszB >= min_useful_bszB(a));
+   //zzVALGRIND_MAKE_WRITABLE(b, bszB);
    set_bszB_lo(b, mk_inuse_bszB(bszB));
    set_bszB_hi(b, mk_inuse_bszB(bszB));
    set_prev_b(b, NULL);    // Take off freelist
@@ -1029,6 +1033,8 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    VGP_POPCC(VgpMalloc);
    v = get_block_payload(a, b);
    vg_assert( (((Addr)v) & (VG_MIN_MALLOC_SZB-1)) == 0 );
+
+   VALGRIND_MALLOCLIKE_BLOCK(v, req_pszB, 0, False);
    return v;
 }
 
@@ -1123,6 +1129,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
 #  ifdef DEBUG_MALLOC
    sanity_check_malloc_arena(aid);
 #  endif
+
+   VALGRIND_FREELIKE_BLOCK(ptr, 0);
 
    VGP_POPCC(VgpMalloc);
 }
@@ -1250,6 +1258,9 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB 
    VGP_POPCC(VgpMalloc);
 
    vg_assert( (((Addr)align_p) % req_alignB) == 0 );
+
+   VALGRIND_MALLOCLIKE_BLOCK(align_p, req_pszB, 0, False);
+
    return align_p;
 }
 
@@ -1268,7 +1279,6 @@ SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 
 void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb, SizeT nbytes )
 {
-   UInt   i; 
    SizeT  size;
    UChar* p;
 
@@ -1282,7 +1292,9 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb, SizeT nbytes )
    else
       p = VG_(arena_malloc_aligned) ( aid, alignB, size );
 
-   for (i = 0; i < size; i++) p[i] = 0;
+   VG_(memset)(p, 0, nbytes);
+
+   VALGRIND_MALLOCLIKE_BLOCK(p, nbytes, 0, True);
 
    VGP_POPCC(VgpMalloc);
    
@@ -1295,8 +1307,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 {
    Arena* a;
    SizeT  old_bszB, old_pszB;
-   UInt   i;
-   UChar  *p_old, *p_new;
+   UChar  *p_new;
    Block* b;
 
    VGP_PUSHCC(VgpMalloc);
@@ -1325,11 +1336,9 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
       p_new = VG_(arena_malloc_aligned) ( aid, req_alignB, req_pszB );
    }
 
-   p_old = (UChar*)ptr;
-   for (i = 0; i < old_pszB; i++)
-      p_new[i] = p_old[i];
+   VG_(memcpy)(p_new, ptr, old_pszB);
 
-   VG_(arena_free)(aid, p_old);
+   VG_(arena_free)(aid, ptr);
 
    VGP_POPCC(VgpMalloc);
    return p_new;

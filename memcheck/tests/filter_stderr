@@ -13,17 +13,4 @@ sed "/^Memcheck, a memory error detector/ , /./ d" |
 # Anonymise line numbers in mac_replace_strmem.c
 sed "s/mac_replace_strmem.c:[0-9]*/mac_replace_strmem.c:.../"  |
 
-$dir/../../tests/filter_test_paths                      |
-
-# Anonymise paths like "(in /foo/bar/libc-baz.so)"
-sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |
-
-# Anonymise paths like "(within /foo/bar/libc-baz.so)"
-sed "s/(within \/.*libc.*)$/(within \/...libc...)/"      |
-
-# Anonymise paths like "xxx (../sysdeps/unix/sysv/linux/quux.c:129)"
-sed "s/(\.\.\/sysdeps\/unix\/sysv\/linux\/.*\.c:[0-9]*)$/(in \/...libc...)/" |
-
-# Anonymise paths like "__libc_start_main (../foo/bar/libc-quux.c:129)"
-sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/"
-
+$dir/../../tests/filter_test_paths

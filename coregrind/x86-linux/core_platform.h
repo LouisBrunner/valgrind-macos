@@ -87,6 +87,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 #define UCONTEXT_STACK_PTR(uc)   ((uc)->uc_mcontext.esp)
 #define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.ebp)
 #define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.eax)
+#define UCONTEXT_SYSCALL_RET(uc) ((uc)->uc_mcontext.eax)
 
 /* ---------------------------------------------------------------------
    mmap() stuff
@@ -115,6 +116,81 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    a5 = arg_block[4];                                           \
    a6 = arg_block[5];                                           \
 } while (0)
+
+/* ---------------------------------------------------------------------
+   Inline asm for atomic operations for use with futexes
+   Taken from futex-2.2/i386.h
+   ------------------------------------------------------------------ */
+/* (C) Matthew Kirkwood <matthew@hairy.beasts.org>
+   (C) 2002 Rusty Russell IBM <rusty@rustcorp.com.au>
+ */
+
+/* Atomic dec: return new value. */
+static __inline__ Int __futex_down(Int *counter)
+{
+   Int val;
+   UChar eqz;
+
+   /* Don't decrement if already negative. */
+   val = *counter;
+   if (val < 0)
+      return val;
+
+   /* Damn 386: no cmpxchg... */
+   __asm__ __volatile__(
+      "lock; decl %0; sete %1"
+      :"=m" (*counter), "=qm" (eqz)
+      :"m" (*counter) : "memory");
+
+   /* We know if it's zero... */
+   if (eqz) return 0;
+   /* Otherwise, we have no way of knowing value.  Guess -1 (if
+      we're wrong we'll spin). */
+   return -1;
+}
+
+/* Atomic inc: return 1 if counter incremented from 0 to 1. */
+static __inline__ Int __futex_up(Int *c)
+{
+   Int r = 1;
+
+   /* This actually tests if result >= 1.  Damn 386. --RR */
+   __asm__ __volatile__ (
+      "	lock; incl %1\n"
+      "	jg 1f\n"
+      "	decl %0\n"
+      "1:\n"
+      : "=q"(r), "=m"(*c) : "0"(r)
+      );
+   return r;
+}
+
+/* Simple atomic increment. */
+static __inline__ void __atomic_inc(Int *c)
+{
+   __asm__ __volatile__(
+      "lock; incl %0"
+      :"=m" (*c)
+      :"m" (*c));
+}
+
+
+/* Commit the write, so it happens before we send the semaphore to
+   anyone else */
+static __inline__ void __futex_commit(void)
+{
+   /* Probably overkill, but some non-Intel clones support
+      out-of-order stores, according to 2.5.5-pre1's
+      linux/include/asm-i386/system.h */
+   __asm__ __volatile__ ("lock; addl $0,0(%%esp)": : :"memory");
+}
+
+/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
+   state, but does need to pass though "val". */
+#include <setjmp.h>       /* for jmp_buf         */
+
+#define SETJMP(env)		setjmp(env)
+#define LONGJMP(env, val)	longjmp(env, val)
 
 #endif   // __X86_LINUX_CORE_PLATFORM_H
 

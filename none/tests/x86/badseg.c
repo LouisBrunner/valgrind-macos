@@ -15,7 +15,7 @@ int main()
 	int val;
 
 	sa.sa_sigaction = handler;
-	sigemptyset(&sa.sa_mask);
+	sigfillset(&sa.sa_mask);
 	sa.sa_flags = SA_SIGINFO;
 	
 	sigaction(SIGSEGV, &sa, NULL);

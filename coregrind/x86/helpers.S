@@ -28,6 +28,7 @@
 */
 
 #include "core_asm.h"
+#include "vki_unistd.h"
 
 /* ------------------ SIMULATED CPU HELPERS ------------------ */
 /* A stubs for a return which we want to catch: a signal return.
@@ -44,27 +45,23 @@
 .global VG_(trampoline_code_start)
 .global VG_(trampoline_code_length)
 .global VG_(tramp_sigreturn_offset)
+.global VG_(tramp_rt_sigreturn_offset)
 .global VG_(tramp_syscall_offset)
 	
 VG_(trampoline_code_start):
-sigreturn_start:	
-	subl	$20, %esp	# allocate arg block
-	movl	%esp, %edx	# %edx == &_zzq_args[0]
-	movl	$VG_USERREQ__SIGNAL_RETURNS, 0(%edx)	# request
-	movl	$0, 4(%edx)	# arg1
-	movl	$0, 8(%edx)	# arg2
-	movl	$0, 12(%edx)	# arg3
-	movl	$0, 16(%edx)	# arg4
-	movl	%edx, %eax
-	# and now the magic sequence itself:
-	roll $29, %eax
-	roll $3, %eax
-	rorl $27, %eax
-	rorl $5, %eax
-	roll $13, %eax
-	roll $19, %eax
-	# should never get here
-	ud2
+sigreturn_start:
+        /* This is a very specific sequence which GDB uses to
+           recognize signal handler frames. */
+        popl    %eax
+        movl    $__NR_sigreturn, %eax
+        int     $0x80
+        ud2
+
+rt_sigreturn_start:
+        /* Likewise for rt signal frames */
+        movl    $__NR_rt_sigreturn, %eax
+        int     $0x80
+        ud2
 
 	# We can point our sysinfo stuff here
 	.align 16
@@ -78,6 +75,8 @@ VG_(trampoline_code_length):
 	.long tramp_code_end - VG_(trampoline_code_start)
 VG_(tramp_sigreturn_offset):
 	.long sigreturn_start - VG_(trampoline_code_start)
+VG_(tramp_rt_sigreturn_offset):
+        .long rt_sigreturn_start - VG_(trampoline_code_start)
 VG_(tramp_syscall_offset):
 	.long syscall_start - VG_(trampoline_code_start)
 .text

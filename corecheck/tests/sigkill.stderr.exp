@@ -96,6 +96,12 @@ getting signal 30: Success
 setting signal 31: Success
 getting signal 31: Success
 
+setting signal 32: Success
+getting signal 32: Success
+
+setting signal 33: Success
+getting signal 33: Success
+
 setting signal 34: Success
 getting signal 34: Success
 
@@ -182,12 +188,6 @@ getting signal 61: Success
 
 setting signal 62: Success
 getting signal 62: Success
-
-setting signal 63: Success
-getting signal 63: Success
-
-setting signal 64: Success
-getting signal 64: Success
 
 setting signal 65: Warning: bad signal number 65 in sigaction()
 Invalid argument

@@ -43,6 +43,7 @@
 
 #include "core.h"
 #include "ume.h"
+#include "memcheck/memcheck.h"
 
 static int stack[SIGSTKSZ*4];
 
@@ -115,8 +116,8 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
    seen = 0;
    for(; auxv->a_type != AT_NULL; auxv++) {
       if (0)
-	 printf("doing auxv %p %4lld: %lld %p\n",
-                auxv, (ULong)auxv->a_type, (ULong)auxv->u.a_val, auxv->u.a_ptr);
+	 printf("doing auxv %p %5lld: %lld %p\n",
+                auxv, (Long)auxv->a_type, (Long)auxv->u.a_val, auxv->u.a_ptr);
 
       switch(auxv->a_type) {
       case AT_PHDR:
@@ -297,20 +298,26 @@ static void main2(void)
       foreach_map(prmap, /*dummy*/NULL);
    }
 
-   jmp_with_stack(info.init_eip, (Addr)esp);   
+   jmp_with_stack((void (*)(void))info.init_eip, (Addr)esp);   
 }
 
 int main(int argc, char** argv)
 {
    struct rlimit rlim;
-   const char *cp = getenv(VALGRINDLIB);
-
-   if (cp != NULL)
-      valgrind_lib = cp;
+   const char *cp;
 
    // Initial stack pointer is to argc, which is immediately before argv[0]
    // on the stack.  Nb: Assumes argc is word-aligned.
    init_sp = argv - 1;
+
+   /* The Linux libc startup sequence leaves this in an apparently
+      undefined state, but it really is defined, so mark it so. */
+   VALGRIND_MAKE_READABLE(init_sp, sizeof(int));
+
+   cp = getenv(VALGRINDLIB);
+
+   if (cp != NULL)
+      valgrind_lib = cp;
 
    /* Set the address space limit as high as it will go, since we make
       a lot of very large mappings. */
@@ -319,7 +326,7 @@ int main(int argc, char** argv)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
-   jmp_with_stack((Addr)main2, (Addr)stack + sizeof(stack));
+   jmp_with_stack(main2, (Addr)stack + sizeof(stack));
 }
 
 /*--------------------------------------------------------------------*/

@@ -1,7 +1,7 @@
 -----------------------------------------------------
 252:     __NR_exit_group 1s 0m
 -----------------------------------------------------
-Syscall param exit_group(error_code) contains uninitialised byte(s)
+Syscall param exit_group(exit_code) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...

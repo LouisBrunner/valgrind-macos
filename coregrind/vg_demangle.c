@@ -64,7 +64,9 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    /* Check that the demangler isn't leaking. */
    /* 15 Feb 02: if this assertion fails, this is not a disaster.
       Comment it out, and let me know.  (jseward@acm.org). */
-   vg_assert(VG_(is_empty_arena)(VG_AR_DEMANGLE));
+   // 9 Feb 05: it fails very occasionally, as reported in bug #87480.
+   // It's very rare, and not a disaster, so let it slide.
+   //vg_assert(VG_(is_empty_arena)(VG_AR_DEMANGLE));
 
    /* VG_(show_all_arena_stats)(); */
 

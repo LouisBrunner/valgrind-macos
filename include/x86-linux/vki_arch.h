@@ -241,7 +241,7 @@ struct vki_sigcontext {
 // From linux-2.6.8.1/include/asm-i386/mman.h
 //----------------------------------------------------------------------
 
-//#define VKI_PROT_NONE	0x0		/* No page permissions */
+#define VKI_PROT_NONE	0x0		/* No page permissions */
 #define VKI_PROT_READ	0x1		/* page can be read */
 #define VKI_PROT_WRITE	0x2		/* page can be written */
 #define VKI_PROT_EXEC	0x4		/* page can be executed */
@@ -251,6 +251,7 @@ struct vki_sigcontext {
 //#define VKI_MAP_TYPE	0x0f		/* Mask for type of mapping */
 #define VKI_MAP_FIXED	0x10		/* Interpret addr exactly */
 #define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
+#define VKI_MAP_NORESERVE	0x4000		/* don't check for reservations */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/fcntl.h
@@ -258,6 +259,7 @@ struct vki_sigcontext {
 
 #define VKI_O_RDONLY	     00
 #define VKI_O_WRONLY	     01
+#define VKI_O_RDWR	     02
 #define VKI_O_CREAT	   0100	/* not fcntl */
 #define VKI_O_EXCL	   0200	/* not fcntl */
 #define VKI_O_TRUNC	  01000	/* not fcntl */
@@ -315,6 +317,26 @@ struct vki_sigcontext {
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/stat.h
 //----------------------------------------------------------------------
+
+#define VKI_S_IFMT  00170000
+#define VKI_S_IFSOCK 0140000
+#define VKI_S_IFLNK	 0120000
+#define VKI_S_IFREG  0100000
+#define VKI_S_IFBLK  0060000
+#define VKI_S_IFDIR  0040000
+#define VKI_S_IFCHR  0020000
+#define VKI_S_IFIFO  0010000
+#define VKI_S_ISUID  0004000
+#define VKI_S_ISGID  0002000
+#define VKI_S_ISVTX  0001000
+
+#define VKI_S_ISLNK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFLNK)
+#define VKI_S_ISREG(m)	(((m) & VKI_S_IFMT) == VKI_S_IFREG)
+#define VKI_S_ISDIR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFDIR)
+#define VKI_S_ISCHR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFCHR)
+#define VKI_S_ISBLK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFBLK)
+#define VKI_S_ISFIFO(m)	(((m) & VKI_S_IFMT) == VKI_S_IFIFO)
+#define VKI_S_ISSOCK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFSOCK)
 
 struct vki_stat {
 	unsigned long  st_dev;
@@ -438,6 +460,8 @@ struct vki_termios {
 #define _VKI_IOC_SIZEBITS	14
 #define _VKI_IOC_DIRBITS	2
 
+#define _VKI_IOC_NRMASK		((1 << _VKI_IOC_NRBITS)-1)
+#define _VKI_IOC_TYPEMASK	((1 << _VKI_IOC_TYPEBITS)-1)
 #define _VKI_IOC_SIZEMASK	((1 << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK	((1 << _VKI_IOC_DIRBITS)-1)
 
@@ -471,6 +495,8 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 
 /* used to decode ioctl numbers.. */
 #define _VKI_IOC_DIR(nr)	(((nr) >> _VKI_IOC_DIRSHIFT) & _VKI_IOC_DIRMASK)
+#define _VKI_IOC_TYPE(nr)	(((nr) >> _VKI_IOC_TYPESHIFT) & _VKI_IOC_TYPEMASK)
+#define _VKI_IOC_NR(nr)		(((nr) >> _VKI_IOC_NRSHIFT) & _VKI_IOC_NRMASK)
 #define _VKI_IOC_SIZE(nr)	(((nr) >> _VKI_IOC_SIZESHIFT) & _VKI_IOC_SIZEMASK)
 
 //----------------------------------------------------------------------
@@ -738,6 +764,28 @@ struct vki_shminfo64 {
 	unsigned long	__unused3;
 	unsigned long	__unused4;
 };
+
+//----------------------------------------------------------------------
+// DRM ioctls
+//----------------------------------------------------------------------
+
+// jrs 20050207: where did all this stuff come from?  Is it really
+// i386 specific, or should it go into the linux-generic category?
+//struct vki_drm_buf_pub {
+//	Int		  idx;	       /**< Index into the master buffer list */
+//	Int		  total;       /**< Buffer size */
+//	Int		  used;	       /**< Amount of buffer in use (for DMA) */
+//	void	  __user *address;     /**< Address of buffer */
+//};
+//
+//struct vki_drm_buf_map {
+//	Int	      count;		/**< Length of the buffer list */
+//	void	      __user *virtual;	/**< Mmap'd area in user-virtual */
+//	struct vki_drm_buf_pub __user *list;	/**< Buffer information */
+//};
+//
+///* We need to pay attention to this, because it mmaps memory */
+//#define VKI_DRM_IOCTL_MAP_BUFS		_VKI_IOWR('d', 0x19, struct vki_drm_buf_map)
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-i386/ptrace.h

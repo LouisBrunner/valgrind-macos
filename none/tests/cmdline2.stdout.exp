@@ -1,7 +1,7 @@
 usage: valgrind --tool=<toolname> [options] prog-and-args
 
   common user options for all Valgrind tools, with defaults in [ ]:
-    --tool=<name>             use the Valgrind tool named <name>
+    --tool=<name>             use the Valgrind tool named <name> [memcheck]
     -h --help                 show this message
     --help-debug              show this message, plus debugging options
     --version                 show version
@@ -13,10 +13,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   uncommon user options for all Valgrind tools:
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
-    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls [none]
-    --signal-polltime=<time>  signal poll period (mS) for older kernels [50]
-    --lowlat-signals=no|yes   improve thread signal wake-up latency [no]
-    --lowlat-syscalls=no|yes  improve thread syscall wake-up latency [no]
+    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls,ioctl-mmap [none]
     --pointercheck=no|yes     enforce client address space limits [yes]
     --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]
 
@@ -51,9 +48,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
-    --trace-pthread=none|some|all  show pthread event details? [none]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
-
+    --command-line-only=no|yes  only use command line options [no]
     --vex-iropt-verbosity             0 .. 9 [0]
     --vex-iropt-level                 0 .. 2 [2]
     --vex-iropt-precise-memory-exns   [no]

@@ -47,22 +47,29 @@
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-Bool  MAC_(clo_partial_loads_ok)       = True;
-Int   MAC_(clo_freelist_vol)           = 1000000;
-Bool  MAC_(clo_leak_check)             = False;
-VgRes MAC_(clo_leak_resolution)        = Vg_LowRes;
-Bool  MAC_(clo_show_reachable)         = False;
-Bool  MAC_(clo_workaround_gcc296_bugs) = False;
+Bool          MAC_(clo_partial_loads_ok)       = True;
+Int           MAC_(clo_freelist_vol)           = 1000000;
+LeakCheckMode MAC_(clo_leak_check)             = LC_Off;
+VgRes         MAC_(clo_leak_resolution)        = Vg_LowRes;
+Bool          MAC_(clo_show_reachable)         = False;
+Bool          MAC_(clo_workaround_gcc296_bugs) = False;
 
 Bool MAC_(process_common_cmd_line_option)(Char* arg)
 {
-        VG_BOOL_CLO("--leak-check",            MAC_(clo_leak_check))
-   else VG_BOOL_CLO("--partial-loads-ok",      MAC_(clo_partial_loads_ok))
+	VG_BOOL_CLO("--partial-loads-ok",      MAC_(clo_partial_loads_ok))
    else VG_BOOL_CLO("--show-reachable",        MAC_(clo_show_reachable))
    else VG_BOOL_CLO("--workaround-gcc296-bugs",MAC_(clo_workaround_gcc296_bugs))
    
    else VG_BNUM_CLO("--freelist-vol",  MAC_(clo_freelist_vol), 0, 1000000000)
    
+   else if (VG_CLO_STREQ(arg, "--leak-check=no"))
+      MAC_(clo_leak_check) = LC_Off;
+   else if (VG_CLO_STREQ(arg, "--leak-check=summary"))
+      MAC_(clo_leak_check) = LC_Summary;
+   else if (VG_CLO_STREQ(arg, "--leak-check=yes") ||
+	    VG_CLO_STREQ(arg, "--leak-check=full"))
+      MAC_(clo_leak_check) = LC_Full;
+
    else if (VG_CLO_STREQ(arg, "--leak-resolution=low"))
       MAC_(clo_leak_resolution) = Vg_LowRes;
    else if (VG_CLO_STREQ(arg, "--leak-resolution=med"))
@@ -79,11 +86,11 @@ Bool MAC_(process_common_cmd_line_option)(Char* arg)
 void MAC_(print_common_usage)(void)
 {
    VG_(printf)(
-"    --partial-loads-ok=no|yes too hard to explain here; see manual [yes]\n"
-"    --freelist-vol=<number>   volume of freed blocks queue [1000000]\n"
-"    --leak-check=no|yes       search for memory leaks at exit? [no]\n"
-"    --leak-resolution=low|med|high  how much bt merging in leak check [low]\n"
-"    --show-reachable=no|yes   show reachable blocks in leak check? [no]\n"
+"    --partial-loads-ok=no|yes        too hard to explain here; see manual [yes]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue [1000000]\n"
+"    --leak-check=no|summary|full     search for memory leaks at exit? [no]\n"
+"    --leak-resolution=low|med|high   how much bt merging in leak check [low]\n"
+"    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
    );
    VG_(replacement_malloc_print_usage)();
@@ -107,6 +114,7 @@ void clear_AddrInfo ( AddrInfo* ai )
    ai->lastchange = NULL;
    ai->stack_tid  = VG_INVALID_THREADID;
    ai->maybe_gcc  = False;
+   ai->desc       = NULL;
 }
 
 void MAC_(clear_MAC_Error) ( MAC_Error* err_extra )
@@ -228,13 +236,16 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
          break;
       case Freed: case Mallocd: case UserG: case Mempool: {
          SizeT delta;
-         UChar* relative;
-         UChar* kind;
+         const Char* relative;
+         const Char* kind;
          if (ai->akind == Mempool) {
             kind = "mempool";
          } else {
             kind = "block";
          }
+	 if (ai->desc != NULL)
+	    kind = ai->desc;
+
          if (ai->rwoffset < 0) {
             delta    = (SizeT)(- ai->rwoffset);
             relative = "before";
@@ -828,20 +839,20 @@ void MAC_(common_pre_clo_init)(void)
    init_prof_mem();
 }
 
-void MAC_(common_fini)(void (*leak_check)(ThreadId))
+void MAC_(common_fini)(void (*leak_check)(LeakCheckMode mode))
 {
    MAC_(print_malloc_stats)();
 
    if (VG_(clo_verbosity) == 1) {
-      if (!MAC_(clo_leak_check))
+      if (MAC_(clo_leak_check) == LC_Off)
          VG_(message)(Vg_UserMsg, 
              "For a detailed leak analysis,  rerun with: --leak-check=yes");
 
       VG_(message)(Vg_UserMsg, 
                    "For counts of detected errors, rerun with: -v");
    }
-   if (MAC_(clo_leak_check)) 
-      leak_check( 1/*bogus ThreadID*/ );
+   if (MAC_(clo_leak_check) != LC_Off)
+      (*leak_check)(MAC_(clo_leak_check));
 
    done_prof_mem();
 }
@@ -864,10 +875,13 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       UWord** argp = (UWord**)arg;
       // MAC_(bytes_leaked) et al were set by the last leak check (or zero
       // if no prior leak checks performed).
-      *argp[1] = MAC_(bytes_leaked);
+      *argp[1] = MAC_(bytes_leaked) + MAC_(bytes_indirect);
       *argp[2] = MAC_(bytes_dubious);
       *argp[3] = MAC_(bytes_reachable);
       *argp[4] = MAC_(bytes_suppressed);
+      // there is no argp[5]
+      //*argp[5] = MAC_(bytes_indirect);
+      // XXX need to make *argp[1-4] readable
       *ret = 0;
       return True;
    }

@@ -88,7 +88,7 @@ void* TL_(malloc)( ThreadId tid, SizeT size )
 }
 
 __attribute__ ((weak))
-void  TL_(free)( ThreadId tid, void* p )
+void TL_(free)( ThreadId tid, void* p )
 {
    /* see comment for TL_(malloc)() above */
    if (VG_(tl_malloc_called_by_scheduler))

@@ -352,6 +352,16 @@ char* stpcpy ( char* dst, const char* src )
    return dst;
 }
 
+void *memset(void *s, int c, size_t n)
+{
+   unsigned char *cp = s;
+
+   while(n--)
+      *cp++ = c;
+
+   return s;
+}
+
 
 /* Find the first occurrence of C in S or the final NUL byte.  */
 

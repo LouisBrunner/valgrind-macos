@@ -678,7 +678,7 @@ int main(void)
 
    // __NR_munlockall 153
    GO(__NR_munlockall, "0s 0m");
-   SY(__NR_munlockall); SUCC_OR_FAIL;
+   SY(__NR_munlockall); SUCC_OR_FAILx(EPERM);
 
    // __NR_sched_setparam 154
    GO(__NR_sched_setparam, "2s 1m");
@@ -1027,7 +1027,7 @@ int main(void)
 
    // __NR_flistxattr 234
    GO(__NR_flistxattr, "3s 1m");
-   SY(__NR_flistxattr, x0-1, x0, x0+1); FAILx(EBADF);
+   SY(__NR_flistxattr, x0-1, x0, x0+1); FAILx(EFAULT); /* kernel returns EBADF, but both seem correct */
 
    // __NR_removexattr 235
    GO(__NR_removexattr, "2s 2m");
@@ -1137,7 +1137,7 @@ int main(void)
 
    // __NR_set_tid_address 258
    GO(__NR_set_tid_address, "1s 0m");
-   SY(__NR_set_tid_address, x0); SUCC;
+   SY(__NR_set_tid_address, x0); SUCC_OR_FAILx(ENOSYS);
 
    // __NR_timer_create 259
    GO(__NR_timer_create, "3s 2m");

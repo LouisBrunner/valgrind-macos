@@ -47,3 +47,15 @@ extern long int syscall (long int __sysno, ...) __THROW;
       } \
    } while (0);
 
+#define SUCC_OR_FAILx(E) \
+   do { \
+      int myerrno = errno; \
+      if (-1 == res) { \
+         if (E == myerrno) { \
+            /* as expected */ \
+         } else { \
+         fprintf(stderr, "Expected error %s (%d), got %d\n", #E, E, myerrno); \
+         exit(1); \
+         } \
+      } \
+   } while (0);

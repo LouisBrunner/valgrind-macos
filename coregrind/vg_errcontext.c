@@ -51,6 +51,7 @@ static UInt n_errs_suppressed = 0;
 /* forwards ... */
 static Supp* is_suppressible_error ( Error* err );
 
+static ThreadId last_tid_printed = 1;
 
 /*------------------------------------------------------------*/
 /*--- Error type                                           ---*/
@@ -58,11 +59,6 @@ static Supp* is_suppressible_error ( Error* err );
 
 /* Note: it is imperative this doesn't overlap with (0..) at all, as tools
  * effectively extend it by defining their own enums in the (0..) range. */
-typedef
-   enum { 
-      PThreadErr      = -1,   // Pthreading error
-   }
-   CoreErrorKind;
 
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
    enum (with element values in the normal range (0..)) for `ekind'. 
@@ -130,14 +126,25 @@ typedef
    }
    CoreSuppKind;
 
+/* Max number of callers for context in a suppression. */
+#define VG_MAX_SUPP_CALLERS  24
+
 /* For each caller specified for a suppression, record the nature of
    the caller name.  Not of interest to tools. */
 typedef
    enum { 
+      NoName,     /* Error case */
       ObjName,    /* Name is of an shared object file. */
       FunName     /* Name is of a function. */
    }
    SuppLocTy;
+
+typedef
+   struct {
+      SuppLocTy ty;
+      Char*     name;
+   }
+   SuppLoc;
 
 /* Suppressions.  Tools can get/set tool-relevant parts with functions
    declared in include/tool.h.  Extensible via the 'extra' field. 
@@ -147,10 +154,12 @@ struct _Supp {
    struct _Supp* next;
    Int count;     // The number of times this error has been suppressed.
    Char* sname;   // The name by which the suppression is referred to.
-   /* First two (name of fn where err occurs, and immediate caller)
-    * are mandatory;  extra two are optional. */
-   SuppLocTy caller_ty[VG_N_SUPP_CALLERS];
-   Char*     caller   [VG_N_SUPP_CALLERS];
+
+   // Length of 'callers'
+   Int n_callers;
+   // Array of callers, for matching stack traces.  First one (name of fn
+   // where err occurs) is mandatory;  rest are optional.
+   SuppLoc* callers;
 
    /* The tool-specific part */
    SuppKind skind;   // What kind of suppression.  Must use the range (0..).
@@ -205,13 +214,10 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
       return False;
 
    switch (e1->ekind) {
-      case PThreadErr:
-         vg_assert(VG_(needs).core_errors);
-         if (e1->string == e2->string) 
-            return True;
-         if (0 == VG_(strcmp)(e1->string, e2->string))
-            return True;
-         return False;
+     //      case ThreadErr:
+     //      case MutexErr:
+     //         vg_assert(VG_(needs).core_errors);
+     //         return VG_(tm_error_equal)(res, e1, e2);
       default: 
          if (VG_(needs).tool_errors)
             return TL_(eq_Error)(res, e1, e2);
@@ -228,15 +234,17 @@ static void pp_Error ( Error* err, Bool printCount )
 {
    if (printCount)
       VG_(message)(Vg_UserMsg, "Observed %d times:", err->count );
-   if (err->tid > 1)
+   if (err->tid > 0 && err->tid != last_tid_printed) {
       VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
+      last_tid_printed = err->tid;
+   }
 
    switch (err->ekind) {
-      case PThreadErr:
-         vg_assert(VG_(needs).core_errors);
-         VG_(message)(Vg_UserMsg, "%s", err->string );
-         VG_(pp_ExeContext)(err->where);
-         break;
+     //      case ThreadErr:
+     //      case MutexErr:
+     //         vg_assert(VG_(needs).core_errors);
+     //         VG_(tm_error_print)(err);
+     //         break;
       default: 
          if (VG_(needs).tool_errors)
             TL_(pp_Error)( err );
@@ -292,8 +300,7 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 }
 
 
-// Initialisation picks out values from the appropriate ThreadState as
-// necessary.
+/* Construct an error */
 static __inline__
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
                        Char* s, void* extra, ExeContext* where )
@@ -328,14 +335,14 @@ static void gen_suppression(Error* err)
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
 
-   /* At most VG_N_SUPP_CALLERS names */
-   if (stop_at > VG_N_SUPP_CALLERS) stop_at = VG_N_SUPP_CALLERS;
+   /* At most VG_MAX_SUPP_CALLERS names */
+   if (stop_at > VG_MAX_SUPP_CALLERS) stop_at = VG_MAX_SUPP_CALLERS;
    vg_assert(stop_at > 0);
 
    VG_(printf)("{\n");
    VG_(printf)("   <insert a suppression name here>\n");
 
-   if (PThreadErr == err->ekind) {
+   if (ThreadErr == err->ekind || MutexErr == err->ekind) {
       VG_(printf)("   core:PThread\n");
 
    } else {
@@ -528,16 +535,24 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
 
-   /* update `extra', for non-core errors (core ones don't use 'extra') */
-   if (VG_(needs).tool_errors && PThreadErr != ekind) {
-      extra_size = TL_(update_extra)(p);
+   /* update `extra' */
+   switch (ekind) {
+     //      case ThreadErr:
+     //      case MutexErr:
+     //         vg_assert(VG_(needs).core_errors);
+     //         extra_size = VG_(tm_error_update_extra)(p);
+     //         break;
+      default:
+         vg_assert(VG_(needs).tool_errors);
+         extra_size = TL_(update_extra)(p);
+         break;
+   }
 
-      /* copy block pointed to by `extra', if there is one */
-      if (NULL != p->extra && 0 != extra_size) { 
-         void* new_extra = VG_(malloc)(extra_size);
-         VG_(memcpy)(new_extra, p->extra, extra_size);
-         p->extra = new_extra;
-      }
+   /* copy block pointed to by `extra', if there is one */
+   if (NULL != p->extra && 0 != extra_size) { 
+      void* new_extra = VG_(malloc)(extra_size);
+      VG_(memcpy)(new_extra, p->extra, extra_size);
+      p->extra = new_extra;
    }
 
    p->next = vg_errors;
@@ -607,12 +622,6 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 /*------------------------------------------------------------*/
 
 /* These are called not from generated code but from the scheduler */
-
-void VG_(record_pthread_error) ( ThreadId tid, Char* msg )
-{
-   if (! VG_(needs).core_errors) return;
-   VG_(maybe_record_error)( tid, PThreadErr, /*addr*/0, msg, /*extra*/NULL );
-}
 
 void VG_(show_all_errors) ( void )
 {
@@ -746,16 +755,16 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
    (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( Char** p_caller, SuppLocTy* p_ty )
+static Bool setLocationTy ( SuppLoc* p )
 {
-   if (VG_(strncmp)(*p_caller, "fun:", 4) == 0) {
-      (*p_caller) += 4;
-      *p_ty = FunName;
+   if (VG_(strncmp)(p->name, "fun:", 4) == 0) {
+      p->name += 4;
+      p->ty = FunName;
       return True;
    }
-   if (VG_(strncmp)(*p_caller, "obj:", 4) == 0) {
-      (*p_caller) += 4;
-      *p_ty = ObjName;
+   if (VG_(strncmp)(p->name, "obj:", 4) == 0) {
+      p->name += 4;
+      p->ty = ObjName;
       return True;
    }
    VG_(printf)("location should start with fun: or obj:\n");
@@ -787,10 +796,12 @@ static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
    Int   fd, i;
-   Bool  eof, too_many_contexts = False;
+   Bool  eof;
    Char  buf[N_BUF+1];
    Char* tool_names;
    Char* supp_name;
+   Char* err_str = NULL;
+   SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (fd < 0) {
@@ -799,32 +810,42 @@ static void load_one_suppressions_file ( Char* filename )
       VG_(exit)(1);
    }
 
+#define BOMB(S)  { err_str = S;  goto syntax_error; }
+
    while (True) {
       /* Assign and initialise the two suppression halves (core and tool) */
       Supp* supp;
       supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(Supp));
       supp->count = 0;
-      for (i = 0; i < VG_N_SUPP_CALLERS; i++) supp->caller[i] = NULL;
+
+      // Initialise temporary reading-in buffer.
+      for (i = 0; i < VG_MAX_SUPP_CALLERS; i++) {
+         tmp_callers[i].ty   = NoName;
+         tmp_callers[i].name = NULL;
+      }
+
       supp->string = supp->extra = NULL;
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
       if (eof) break;
 
-      if (!VG_STREQ(buf, "{")) goto syntax_error;
+      if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
       eof = VG_(get_line) ( fd, buf, N_BUF );
-      if (eof || VG_STREQ(buf, "}")) goto syntax_error;
+
+      if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
+
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, buf);
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
 
-      if (eof) goto syntax_error;
+      if (eof) BOMB("unexpected end-of-file");
 
       /* Check it has the "tool1,tool2,...:supp" form (look for ':') */
       i = 0;
       while (True) {
          if (buf[i] == ':')  break;
-         if (buf[i] == '\0') goto syntax_error;
+         if (buf[i] == '\0') BOMB("malformed 'tool1,tool2,...:supp' line");
          i++;
       }
       buf[i]    = '\0';    /* Replace ':', splitting into two strings */
@@ -832,31 +853,29 @@ static void load_one_suppressions_file ( Char* filename )
       tool_names = & buf[0];
       supp_name  = & buf[i+1];
 
-      /* Is it a core suppression? */
       if (VG_(needs).core_errors && tool_name_present("core", tool_names))
       {
+         // A core suppression
          if (VG_STREQ(supp_name, "PThread"))
             supp->skind = PThreadSupp;
          else
-            goto syntax_error;
+            BOMB("unknown core suppression type");
       }
-
-      /* Is it a tool suppression? */
       else if (VG_(needs).tool_errors && 
                tool_name_present(VG_(details).name, tool_names))
       {
-         if (TL_(recognised_suppression)(supp_name, supp)) 
-         {
+         // A tool suppression
+         if (TL_(recognised_suppression)(supp_name, supp)) {
             /* Do nothing, function fills in supp->skind */
-         } else
-            goto syntax_error;
+         } else {
+            BOMB("unknown tool suppression type");
+         }
       }
-
       else {
-         /* Ignore rest of suppression */
+         // Ignore rest of suppression
          while (True) {
             eof = VG_(get_line) ( fd, buf, N_BUF );
-            if (eof) goto syntax_error;
+            if (eof) BOMB("unexpected end-of-file");
             if (VG_STREQ(buf, "}"))
                break;
          }
@@ -864,32 +883,46 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       if (VG_(needs).tool_errors && 
-          !TL_(read_extra_suppression_info)(fd, buf, N_BUF, supp)) 
-         goto syntax_error;
-
-      /* "i > 0" ensures at least one caller read. */
-      for (i = 0; i <= VG_N_SUPP_CALLERS; i++) {
-         eof = VG_(get_line) ( fd, buf, N_BUF );
-         if (eof) goto syntax_error;
-         if (i > 0 && VG_STREQ(buf, "}")) 
-            break;
-         if (i == VG_N_SUPP_CALLERS)
-            break;
-         supp->caller[i] = VG_(arena_strdup)(VG_AR_CORE, buf);
-         if (!setLocationTy(&(supp->caller[i]), &(supp->caller_ty[i])))
-            goto syntax_error;
+          !TL_(read_extra_suppression_info)(fd, buf, N_BUF, supp))
+      {
+         BOMB("bad or missing extra suppression info");
       }
 
-      /* make sure to grab the '}' if the num callers is >=
-         VG_N_SUPP_CALLERS */
+      i = 0;
+      while (True) {
+         eof = VG_(get_line) ( fd, buf, N_BUF );
+         if (eof)
+            BOMB("unexpected end-of-file");
+         if (VG_STREQ(buf, "}")) {
+            if (i > 0) {
+               break;
+            } else {
+               BOMB("missing stack trace");
+            }
+         }
+         if (i == VG_MAX_SUPP_CALLERS)
+            BOMB("too many callers in stack trace");
+         if (i > 0 && i >= VG_(clo_backtrace_size)) 
+            break;
+         tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE, buf);
+         if (!setLocationTy(&(tmp_callers[i])))
+            BOMB("location should start with 'fun:' or 'obj:'");
+         i++;
+      }
+
+      // If the num callers is >= VG_(clo_backtrace_size), ignore any extra
+      // lines and grab the '}'.
       if (!VG_STREQ(buf, "}")) {
-         // Don't just ignore extra lines -- abort.  (Someone complained
-         // about silent ignoring of lines in bug #77922.)
-         //do {
-         //   eof = VG_(get_line) ( fd, buf, N_BUF );
-         //} while (!eof && !VG_STREQ(buf, "}"));
-         too_many_contexts = True;
-         goto syntax_error;
+         do {
+            eof = VG_(get_line) ( fd, buf, N_BUF );
+         } while (!eof && !VG_STREQ(buf, "}"));
+      }
+
+      // Copy tmp_callers[] into supp->callers[]
+      supp->n_callers = i;
+      supp->callers = VG_(arena_malloc)(VG_AR_CORE, i*sizeof(SuppLoc));
+      for (i = 0; i < supp->n_callers; i++) {
+         supp->callers[i] = tmp_callers[i];
       }
 
       supp->next = vg_suppressions;
@@ -899,26 +932,14 @@ static void load_one_suppressions_file ( Char* filename )
    return;
 
   syntax_error:
-   if (eof) {
-      VG_(message)(Vg_UserMsg, 
-                   "FATAL: in suppressions file `%s': unexpected EOF", 
-                   filename );
-   } else if (too_many_contexts) {
-      VG_(message)(Vg_UserMsg, 
-                   "FATAL: in suppressions file: `%s': at %s:", 
-                   filename, buf );
-      VG_(message)(Vg_UserMsg, 
-                   "too many lines (limit of %d contexts in suppressions)",
-                   VG_N_SUPP_CALLERS);
-   } else {
-      VG_(message)(Vg_UserMsg, 
-                   "FATAL: in suppressions file: `%s': syntax error on: %s", 
-                   filename, buf );
-   }
+   VG_(message)(Vg_UserMsg, 
+                "FATAL: in suppressions file `%s': %s", filename, err_str );
+   
    VG_(close)(fd);
    VG_(message)(Vg_UserMsg, "exiting now.");
    VG_(exit)(1);
 
+#  undef BOMB
 #  undef N_BUF   
 }
 
@@ -936,24 +957,12 @@ void VG_(load_suppressions) ( void )
    }
 }
 
-/* Return the name of an erring fn in a way which is useful
-   for comparing against the contents of a suppressions file. 
-   Doesn't demangle the fn name, because we want to refer to 
-   mangled names in the suppressions file.
-*/
-static void get_objname_fnname ( Addr a, Char* obj_buf, Int n_obj_buf,
-                                         Char* fun_buf, Int n_fun_buf )
-{     
-   (void)VG_(get_objname)          ( a, obj_buf, n_obj_buf );
-   (void)VG_(get_fnname_nodemangle)( a, fun_buf, n_fun_buf );
-}     
-
-static __inline__
+static
 Bool supp_matches_error(Supp* su, Error* err)
 {
    switch (su->skind) {
       case PThreadSupp:
-         return (err->ekind == PThreadErr);
+         return (err->ekind == ThreadErr || err->ekind == MutexErr);
       default:
          if (VG_(needs).tool_errors) {
             return TL_(error_matches_suppression)(err, su);
@@ -967,22 +976,28 @@ Bool supp_matches_error(Supp* su, Error* err)
    }
 }
 
-static __inline__
-Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT], 
-                                    Char caller_fun[][M_VG_ERRTXT])
+static
+Bool supp_matches_callers(Error* err, Supp* su)
 {
    Int i;
+   Char caller_name[M_VG_ERRTXT];
 
-   for (i = 0; i < VG_N_SUPP_CALLERS && su->caller[i] != NULL; i++) {
-      switch (su->caller_ty[i]) {
-         case ObjName: if (VG_(string_match)(su->caller[i],
-                                             caller_obj[i])) break;
-                       return False;
-         case FunName: if (VG_(string_match)(su->caller[i], 
-                                             caller_fun[i])) break;
-                       return False;
+   for (i = 0; i < su->n_callers; i++) {
+      Addr a = err->where->ips[i];
+      vg_assert(su->callers[i].name != NULL);
+      switch (su->callers[i].ty) {
+         case ObjName: 
+            (void)VG_(get_objname)(a, caller_name, M_VG_ERRTXT);
+            break; 
+
+         case FunName: 
+            // Nb: mangled names used in suppressions
+            (void)VG_(get_fnname_nodemangle)(a, caller_name, M_VG_ERRTXT);
+            break;
          default: VG_(tool_panic)("supp_matches_callers");
       }
+      if (!VG_(string_match)(su->callers[i].name, caller_name))
+         return False;
    }
 
    /* If we reach here, it's a match */
@@ -995,32 +1010,13 @@ Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT],
 */
 static Supp* is_suppressible_error ( Error* err )
 {
-   Int i;
-
-   static Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
-   static Char caller_fun[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
-
    Supp* su;
-
-   /* get_objname_fnname() writes the function name and object name if
-      it finds them in the debug info.  So the strings in the suppression
-      file should match these.
-   */
-
-   /* Initialise these strs so they are always safe to compare, even
-      if get_objname_fnname doesn't write anything to them. */
-   for (i = 0; i < VG_N_SUPP_CALLERS; i++)
-      caller_obj[i][0] = caller_fun[i][0] = 0;
-
-   for (i = 0; i < VG_N_SUPP_CALLERS && i < VG_(clo_backtrace_size); i++) {
-      get_objname_fnname ( err->where->ips[i], caller_obj[i], M_VG_ERRTXT,
-                                               caller_fun[i], M_VG_ERRTXT );
-   }
 
    /* See if the error context matches any suppression. */
    for (su = vg_suppressions; su != NULL; su = su->next) {
       if (supp_matches_error(su, err) &&
-          supp_matches_callers(su, caller_obj, caller_fun)) {
+          supp_matches_callers(err, su))
+      {
          return su;
       }
    }
@@ -1028,5 +1024,5 @@ static Supp* is_suppressible_error ( Error* err )
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                          vg_errcontext.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 
 char filea[24];
 char fileb[24];
@@ -126,7 +127,10 @@ client ()
       exit(1);
    }
 
+  again:
    if((size = recvmsg(s, &msg, 0)) == -1) {
+      if (errno == EINTR)
+	 goto again;		/* SIGCHLD from server exiting could interrupt */
       perror("recvmsg");
       exit(1);
    }

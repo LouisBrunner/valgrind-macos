@@ -32,7 +32,6 @@
 
 #include "core.h"
 
-
 /* static ... to keep it out of the stack frame. */
 static Char procmap_buf[M_PROCMAP_BUF];
 
@@ -56,14 +55,14 @@ static Int decdigit ( Char c )
    return -1;
 }
 
-static Int readchar ( Char* buf, Char* ch )
+static Int readchar ( const Char* buf, Char* ch )
 {
    if (*buf == 0) return 0;
    *ch = *buf;
    return 1;
 }
 
-static Int readhex ( Char* buf, UWord* val )
+static Int readhex ( const Char* buf, UWord* val )
 {
    Int n = 0;
    *val = 0;
@@ -74,7 +73,7 @@ static Int readhex ( Char* buf, UWord* val )
    return n;
 }
 
-static Int readdec ( Char* buf, UInt* val )
+static Int readdec ( const Char* buf, UInt* val )
 {
    Int n = 0;
    *val = 0;
@@ -86,9 +85,10 @@ static Int readdec ( Char* buf, UInt* val )
 }
 
 
-/* Read /proc/self/maps, store the contents in a static buffer.  If there's
-   a syntax error or other failure, just abort. */
-void VG_(read_procselfmaps)(void)
+/* Read /proc/self/maps, store the contents into a static buffer.  If
+   there's a syntax error or other failure, just abort. */
+
+static void read_procselfmaps ( void )
 {
    Int n_chunk, fd;
    
@@ -100,7 +100,7 @@ void VG_(read_procselfmaps)(void)
    }
    buf_n_tot = 0;
    do {
-      n_chunk = VG_(read) ( fd, &procmap_buf[buf_n_tot], 
+      n_chunk = VG_(read) ( fd, &procmap_buf[buf_n_tot],
                             M_PROCMAP_BUF - buf_n_tot );
       buf_n_tot += n_chunk;
    } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
@@ -122,16 +122,15 @@ void VG_(read_procselfmaps)(void)
 
       start address in memory
       length
-      r permissions char; either - or r
-      w permissions char; either - or w
-      x permissions char; either - or x
+      page protections (using the VKI_PROT_* flags)
+      mapped file device and inode
       offset in file, or zero if no file
       filename, zero terminated, or NULL if no file
 
    So the sig of the called fn might be
 
-      void (*record_mapping)( Addr start, SizeT size, 
-                              Char r, Char w, Char x, 
+      void (*record_mapping)( Addr start, SizeT size, UInt prot,
+			      UInt dev, UInt info,
                               ULong foffset, UChar* filename )
 
    Note that the supplied filename is transiently stored; record_mapping 
@@ -141,7 +140,7 @@ void VG_(read_procselfmaps)(void)
        procmap_buf!
 */
 void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr addr, SizeT len, Char rr, Char ww, Char xx, 
+   void (*record_mapping)( Addr addr, SizeT len, UInt prot,
 			   UInt dev, UInt ino, ULong foff, const UChar* filename )
    )
 {
@@ -149,8 +148,10 @@ void VG_(parse_procselfmaps) (
    Addr   start, endPlusOne;
    UChar* filename;
    UChar  rr, ww, xx, pp, ch, tmp;
-   UInt	  ino;
+   UInt	  ino, prot;
    UWord  foffset, maj, min;
+
+   read_procselfmaps();
 
    tl_assert( '\0' != procmap_buf[0] && 0 != buf_n_tot);
 
@@ -215,13 +216,13 @@ void VG_(parse_procselfmaps) (
         for (k = i-50; k <= i; k++) VG_(printf)("%c", procmap_buf[k]);
         VG_(printf)("'\n");
       }
-       VG_(exit)(1);
+      VG_(exit)(1);
 
     read_line_ok:
 
       /* Try and find the name of the file mapped to this segment, if
          it exists. */
-      while (procmap_buf[i] != '\n' && i < M_PROCMAP_BUF-1) i++;
+      while (procmap_buf[i] != '\n' && i < buf_n_tot-1) i++;
       i_eol = i;
       i--;
       while (!VG_(isspace)(procmap_buf[i]) && i >= 0) i--;
@@ -233,13 +234,19 @@ void VG_(parse_procselfmaps) (
          tmp = filename[i_eol - i];
          filename[i_eol - i] = '\0';
       } else {
-         tmp = '\0';
+	 tmp = 0;
          filename = NULL;
          foffset = 0;
       }
 
+      prot = 0;
+      if (rr == 'r') prot |= VKI_PROT_READ;
+      if (ww == 'w') prot |= VKI_PROT_WRITE;
+      if (xx == 'x') prot |= VKI_PROT_EXEC;
+
+      //if (start < VG_(valgrind_last))
       (*record_mapping) ( start, endPlusOne-start, 
-                          rr, ww, xx, maj * 256 + min, ino,
+                          prot, maj * 256 + min, ino,
                           foffset, filename );
 
       if ('\0' != tmp) {

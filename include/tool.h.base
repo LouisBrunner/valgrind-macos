@@ -32,11 +32,10 @@
 #define __TOOL_H
 
 #include <stdarg.h>       /* ANSI varargs stuff  */
-#include <setjmp.h>       /* for jmp_buf         */
 
 #include "basic_types.h"
-#include "tool_asm.h"           // asm stuff
-#include "tool_arch.h"          // arch-specific tool stuff
+#include "tool_asm.h"           /* asm stuff */
+#include "tool_arch.h"          /* arch-specific tool stuff */
 #include "vki.h"
 
 #include "libvex.h"
@@ -135,7 +134,7 @@ typedef struct _ToolInfo {
 #define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
 #define VG_CLO_STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
-// Higher-level command-line option recognisers;  use in if/else chains
+/* Higher-level command-line option recognisers;  use in if/else chains */
 
 #define VG_BOOL_CLO(qq_option, qq_var) \
    if (VG_CLO_STREQ(arg, qq_option"=yes")) { (qq_var) = True; } \
@@ -151,7 +150,7 @@ typedef struct _ToolInfo {
       (qq_var) = (Int)VG_(atoll)( &arg[ VG_(strlen)(qq_option)+1 ] ); \
    }
 
-// Bounded integer arg
+/* Bounded integer arg */
 #define VG_BNUM_CLO(qq_option, qq_var, qq_lo, qq_hi) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, arg, qq_option"=")) { \
       (qq_var) = (Int)VG_(atoll)( &arg[ VG_(strlen)(qq_option)+1 ] ); \
@@ -190,19 +189,19 @@ typedef
    enum { Vg_UserMsg,         /* '?' == '=' */
           Vg_DebugMsg,        /* '?' == '-' */
           Vg_DebugExtraMsg,   /* '?' == '+' */
-          Vg_ClientMsg,       /* '?' == '*' */
+          Vg_ClientMsg        /* '?' == '*' */
    }
    VgMsgKind;
 
 /* Functions for building a message from multiple parts. */
 extern int VG_(start_msg)  ( VgMsgKind kind );
-extern int VG_(add_to_msg) ( Char* format, ... );
+extern int VG_(add_to_msg) ( const Char* format, ... );
 /* Ends and prints the message.  Appends a newline. */
 extern int VG_(end_msg)    ( void );
 
 /* Send a single-part message.  Appends a newline. */
-extern int VG_(message)    ( VgMsgKind kind, Char* format, ... );
-extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
+extern int VG_(message)    ( VgMsgKind kind, const Char* format, ... );
+extern int VG_(vmessage)   ( VgMsgKind kind, const Char* format, va_list vargs );
 
 
 /*====================================================================*/
@@ -294,14 +293,8 @@ typedef
    UInt
    ThreadId;
 
-/* Returns the tid of the currently running thread.  Only call it when
-   running generated code.  It will barf if there is no running thread.
-   Will never return zero.
-*/
-extern ThreadId VG_(get_current_tid) ( void );
-
-/* Does the scheduler think we are running generated code right now?  */
-extern Bool VG_(running_a_thread) ( void );
+/* Get the TID of the thread which currently has the CPU. */
+extern ThreadId VG_(get_running_tid) ( void );
 
 /* Searches through all thread's stacks to see if any match.  Returns
    VG_INVALID_THREADID if none match. */
@@ -338,8 +331,8 @@ extern Addr VG_(get_stack_pointer) ( ThreadId tid );
 extern UInt VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
 extern UInt VG_(sprintf) ( Char* buf, Char *format, ... );
-extern UInt VG_(vprintf) ( void(*send)(Char),
-                           const Char *format, va_list vargs );
+extern UInt VG_(vprintf) ( void(*send)(Char, void *),
+                           const Char *format, va_list vargs, void *send_arg );
 
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 
@@ -354,9 +347,14 @@ extern void* VG_(malloc_aligned) ( SizeT align_bytes, SizeT nbytes );
 
 extern void  VG_(print_malloc_stats) ( void );
 
-
+/* terminate everything */
 extern void  VG_(exit)( Int status )
              __attribute__ ((__noreturn__));
+
+/* terminate the calling thread - probably not what you want */
+extern void  VG_(exit_single)( Int status )
+             __attribute__ ((__noreturn__));
+
 /* Prints a panic message (a constant string), appends newline and bug
    reporting info, aborts. */
 __attribute__ ((__noreturn__))
@@ -369,7 +367,7 @@ extern Char* VG_(getenv) ( Char* name );
 extern Int VG_(getrlimit) ( Int resource, struct vki_rlimit *rlim );
 
 /* Set client resource limit*/
-extern Int VG_(setrlimit) ( Int resource, struct vki_rlimit *rlim );
+extern Int VG_(setrlimit) ( Int resource, const struct vki_rlimit *rlim );
 
 /* Crude stand-in for the glibc system() call. */
 extern Int   VG_(system) ( Char* cmd );
@@ -494,18 +492,32 @@ extern Addr VG_(get_shadow_size)(void);
 
 extern void *VG_(shadow_alloc)(UInt size);
 
-extern Bool VG_(is_addressable)(Addr p, SizeT sz);
+extern Bool VG_(is_addressable)(Addr p, SizeT sz, UInt prot);
 
 extern Addr VG_(client_alloc)(Addr base, SizeT len, UInt prot, UInt flags);
 extern void VG_(client_free)(Addr addr);
 
 extern Bool VG_(is_valgrind_addr)(Addr a);
 
+/* Register an interest in apparently internal faults; used code which
+   wanders around dangerous memory (ie, leakcheck).  The catcher is
+   not expected to return. */
+extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
+
 /* initialize shadow pages in the range [p, p+sz) This calls
    init_shadow_page for each one.  It should be a lot more efficient
    for bulk-initializing shadow pages than faulting on each one. 
 */
 extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
+
+/* Calls into the core used by leak-checking */
+
+/* Calls "add_rootrange" with each range of memory which looks like a
+   plausible source of root pointers. */
+extern void VG_(find_root_memory)(void (*add_rootrange)(Addr addr, SizeT sz));
+
+/* Calls "mark_addr" with register values (which may or may not be pointers) */
+extern void VG_(mark_from_registers)(void (*mark_addr)(Addr addr));
 
 /* ------------------------------------------------------------------ */
 /* signal.h.
@@ -519,12 +531,12 @@ extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
 extern Int  VG_(sigfillset)  ( vki_sigset_t* set );
 extern Int  VG_(sigemptyset) ( vki_sigset_t* set );
 
-extern Bool VG_(isfullsigset)  ( vki_sigset_t* set );
-extern Bool VG_(isemptysigset) ( vki_sigset_t* set );
+extern Bool VG_(isfullsigset)  ( const vki_sigset_t* set );
+extern Bool VG_(isemptysigset) ( const vki_sigset_t* set );
 
 extern Int  VG_(sigaddset)   ( vki_sigset_t* set, Int signum );
 extern Int  VG_(sigdelset)   ( vki_sigset_t* set, Int signum );
-extern Int  VG_(sigismember) ( vki_sigset_t* set, Int signum );
+extern Int  VG_(sigismember) ( const vki_sigset_t* set, Int signum );
 
 extern void VG_(sigaddset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
 extern void VG_(sigdelset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
@@ -560,6 +572,8 @@ extern Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 /* other, randomly useful functions */
 extern UInt VG_(read_millisecond_timer) ( void );
 
+extern Bool VG_(has_cpuid) ( void );
+
 extern void VG_(cpuid) ( UInt eax,
                          UInt *eax_ret, UInt *ebx_ret,
                          UInt *ecx_ret, UInt *edx_ret );
@@ -593,7 +607,7 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
    new one.  Either way, return a pointer to the context.  Context size
    controlled by --num-callers option.
 
-   If called from generated code, use VG_(get_current_tid)() to get the
+   If called from generated code, use VG_(get_VCPU_tid)() to get the
    current ThreadId.  If called from non-generated code, the current
    ThreadId should be passed in by the core.
 */
@@ -785,7 +799,7 @@ typedef
       Vg_SectData,
       Vg_SectBSS,
       Vg_SectGOT,
-      Vg_SectPLT,
+      Vg_SectPLT
    }
    VgSectKind;
 
@@ -890,16 +904,26 @@ struct _SkipList {
 	}
 
 /* List operations:
-   SkipList_Find searchs a list.  If it can't find an exact match, it either
-      returns NULL or a pointer to the element before where k would go
+   SkipList_Find_* search a list.  The 3 variants are:
+      Before: returns a node which is <= key, or NULL if none
+      Exact:  returns a node which is == key, or NULL if none
+      After:  returns a node which is >= key, or NULL if none
    SkipList_Insert inserts a new element into the list.  Duplicates are
       forbidden.  The element must have been created with SkipList_Alloc!
    SkipList_Remove removes an element from the list and returns it.  It
       doesn't free the memory.
 */
-extern void *VG_(SkipList_Find)  (const SkipList *l, void *key);
-extern void  VG_(SkipList_Insert)(      SkipList *l, void *data);
-extern void *VG_(SkipList_Remove)(      SkipList *l, void *key);
+extern void *VG_(SkipList_Find_Before)  (const SkipList *l, void *key);
+extern void *VG_(SkipList_Find_Exact)   (const SkipList *l, void *key);
+extern void *VG_(SkipList_Find_After)   (const SkipList *l, void *key);
+extern void  VG_(SkipList_Insert)       (      SkipList *l, void *data);
+extern void *VG_(SkipList_Remove)       (      SkipList *l, void *key);
+
+/* Some useful standard comparisons */
+extern Int  VG_(cmp_Addr)  (const void *a, const void *b);
+extern Int  VG_(cmp_Int)   (const void *a, const void *b);
+extern Int  VG_(cmp_UInt)  (const void *a, const void *b);
+extern Int  VG_(cmp_string)(const void *a, const void *b);
 
 /* Node (element) operations:
    SkipNode_Alloc: allocate memory for a new element on the list.  Must be

@@ -5,15 +5,17 @@ include $(top_srcdir)/Makefile.all.am
 
 ## include must be first for tool.h
 ## addrcheck must come after memcheck, for mac_*.o
-SUBDIRS = 	include coregrind . docs tests auxprogs \
-		memcheck \
-		addrcheck \
-		cachegrind \
-		corecheck \
-		helgrind \
-		massif \
-		lackey \
-		none
+#TOOLS =		memcheck \
+#		addrcheck \
+#		cachegrind \
+#		corecheck \
+#		massif \
+#		lackey \
+#		none
+TOOLS =		none
+
+SUBDIRS = 	include coregrind . docs tests auxprogs $(TOOLS)
+DIST_SUBDIRS =	$(SUBDIRS) helgrind
 
 SUPP_FILES = \
 	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \
@@ -32,7 +34,7 @@ default.supp: $(SUPP_FILES)
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
-	@PERL@ tests/vg_regtest --all
+	@PERL@ tests/vg_regtest $(TOOLS)
 
 EXTRA_DIST = \
 	FAQ.txt \
@@ -40,14 +42,12 @@ EXTRA_DIST = \
 	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
-	valgrind.spec.in valgrind.pc.in \
+	valgrind.spec valgrind.spec.in valgrind.pc.in \
 	Makefile.all.am Makefile.tool.am Makefile.core-AM_CPPFLAGS.am \
 	Makefile.tool-inplace.am
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
-	rm -f $(DESTDIR)$(valdir)/libpthread.so.0
-	$(LN_S) libpthread.so $(DESTDIR)$(valdir)/libpthread.so.0
 
 all-local:
 	mkdir -p $(inplacedir)

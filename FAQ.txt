@@ -125,69 +125,6 @@ to a non-code address, in which case you'll get a SIGILL signal.
 Memcheck/Addrcheck may issue a warning just before this happens, but they
 might not if the jump happens to land in addressable memory.
 
------------------------------------------------------------------
-
-3.4. My program dies like this:
-
-      error: /lib/librt.so.1: symbol __pthread_clock_settime, version
-      GLIBC_PRIVATE not defined in file libpthread.so.0 with link time
-      reference
-
-This is a total swamp.  Nevertheless there is a way out.  It's a problem
-which is not easy to fix.  Really the problem is that /lib/librt.so.1
-refers to some symbols __pthread_clock_settime and
-__pthread_clock_gettime in /lib/libpthread.so which are not intended to
-be exported, ie they are private.
-
-Best solution is to ensure your program does not use /lib/librt.so.1.
-
-However .. since you're probably not using it directly, or even
-knowingly, that's hard to do.  You might instead be able to fix it by
-playing around with coregrind/vg_libpthread.vs.  Things to try:
-
-Remove this
-
-  GLIBC_PRIVATE {
-     __pthread_clock_gettime;
-     __pthread_clock_settime;
-  };
-
-or maybe remove this
-
-  GLIBC_2.2.3 {
-     __pthread_clock_gettime;
-    __pthread_clock_settime;
-  }  GLIBC_2.2;
-
-or maybe add this
-
-  GLIBC_2.2.4 {
-     __pthread_clock_gettime;
-     __pthread_clock_settime;
-  } GLIBC_2.2;
-
-  GLIBC_2.2.5 {
-     __pthread_clock_gettime;
-     __pthread_clock_settime;
-  } GLIBC_2.2;
-
-or some combination of the above.  After each change you need to delete
-coregrind/libpthread.so and do make && make install.
-
-I just don't know if any of the above will work.  If you can find a
-solution which works, I would be interested to hear it.
-
-To which someone replied:
-
-  I deleted this:
-
-  GLIBC_2.2.3 { 
-     __pthread_clock_gettime; 
-     __pthread_clock_settime; 
-  } GLIBC_2.2; 
-
-  and it worked.
-
 
 -----------------------------------------------------------------
 4. Valgrind behaves unexpectedly
@@ -376,21 +313,6 @@ documentation for more details.
 Unfortunately, Memcheck doesn't do bounds checking on static or stack
 arrays.  We'd like to, but it's just not possible to do in a reasonable
 way that fits with how Memcheck works.  Sorry.
-
------------------------------------------------------------------
-
-5.3. My program dies with a segmentation fault, but Memcheck doesn't give
-     any error messages before it, or none that look related.
-
-One possibility is that your program accesses to memory with
-inappropriate permissions set, such as writing to read-only memory.
-Maybe your program is writing to a static string like this:
-
-    char* s = "hello";
-    s[0] = 'j';
-
-or something similar.  Writing to read-only memory can also apparently
-make LinuxThreads behave strangely.
 
 
 -----------------------------------------------------------------

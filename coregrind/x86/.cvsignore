@@ -1,3 +1,5 @@
 Makefile.in
 Makefile
+core_arch_asm_offsets.h
+gen_offsets
 stage2.lds

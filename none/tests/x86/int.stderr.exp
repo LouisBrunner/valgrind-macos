@@ -1,8 +1,6 @@
 
-disInstr: unhandled instruction bytes: 0x........ 0x........ 0x........ 0x........
-          at 0x........: main (int.c:5)
 
-Process terminating with default action of signal 4 (SIGILL)
- Illegal operand at address 0x........
+Process terminating with default action of signal 11 (SIGSEGV)
+ GPF (Pointer out of bounds?)
    at 0x........: main (int.c:5)
 

@@ -1,5 +1,6 @@
 Makefile.in
 Makefile
+addressable
 badaddrvalue
 badfree
 badjump
@@ -27,6 +28,10 @@ fwrite
 hello
 inits
 inline
+leak-0
+leak-cycle
+leak-regroot
+leak-tree
 malloc1
 malloc2
 malloc3
@@ -45,6 +50,8 @@ new_nothrow
 new_override
 null_socket
 overlap
+pointer-trace
+post-syscall
 realloc1
 realloc2
 realloc3

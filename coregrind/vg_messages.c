@@ -39,7 +39,7 @@
 static char vg_mbuf[M_VG_MSGBUF];
 static int vg_n_mbuf;
 
-static void add_to_buf ( Char c )
+static void add_to_buf ( Char c, void *p )
 {
   if (vg_n_mbuf >= (M_VG_MSGBUF-1)) return;
   vg_mbuf[vg_n_mbuf++] = c;
@@ -68,27 +68,27 @@ static void add_timestamp ( Char *buf )
 /* Publically visible from here onwards. */
 
 int
-VG_(add_to_msg) ( Char *format, ... )
+VG_(add_to_msg) ( const Char *format, ... )
 {
    int count;
    va_list vargs;
    va_start(vargs,format);
-   count = VG_(vprintf) ( add_to_buf, format, vargs );
+   count = VG_(vprintf) ( add_to_buf, format, vargs, 0 );
    va_end(vargs);
    return count;
 }
 
-int VG_(vmessage) ( VgMsgKind kind, Char* format, va_list vargs )
+int VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
 {
    int count;
    count = VG_(start_msg) ( kind );
-   count += VG_(vprintf) ( add_to_buf, format, vargs );
+   count += VG_(vprintf) ( add_to_buf, format, vargs, 0 );
    count += VG_(end_msg)();
    return count;
 }
 
 /* Send a simple single-part message. */
-int VG_(message) ( VgMsgKind kind, Char* format, ... )
+int VG_(message) ( VgMsgKind kind, const Char* format, ... )
 {
    int count;
    va_list vargs;
@@ -102,6 +102,7 @@ int VG_(start_msg) ( VgMsgKind kind )
 {
    Char ts[32];
    Char c;
+   static const Char pfx[] = ">>>>>>>>>>>>>>>>";
    vg_n_mbuf = 0;
    vg_mbuf[vg_n_mbuf] = 0;
    if (VG_(clo_time_stamp))
@@ -115,8 +116,9 @@ int VG_(start_msg) ( VgMsgKind kind )
       case Vg_ClientMsg:     c = '*'; break;
       default:               c = '?'; break;
    }
-   return VG_(add_to_msg)( "%c%c%s%d%c%c ", 
-                           c,c, ts, VG_(getpid)(), c,c );
+   return VG_(add_to_msg)( "%s%c%c%s%d%c%c ", 
+			   &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
+			   c,c, ts, VG_(getpid)(), c,c );
 }
 
 
@@ -124,7 +126,7 @@ int VG_(end_msg) ( void )
 {
    int count = 0;
    if (VG_(clo_log_fd) >= 0) {
-      add_to_buf('\n');
+      add_to_buf('\n',0);
       VG_(send_bytes_to_logging_sink) ( 
          vg_mbuf, VG_(strlen)(vg_mbuf) );
       count = 1;

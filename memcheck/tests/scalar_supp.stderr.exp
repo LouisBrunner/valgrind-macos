@@ -1,14 +1,14 @@
 Syscall param (syscallno) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Syscall param write(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
 Syscall param write(count) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...

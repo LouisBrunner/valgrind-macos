@@ -54,7 +54,7 @@ int main()
 		kill(pid, SIGUSR1);
 		sleep(1);
 		if (write(fds[1], "x", 1) != -1 || errno != EPIPE)
-			fprintf(stderr, "FAIL: expected write to fail with EPIPE\n");
+			fprintf(stderr, "FAIL: expected write to fail with EPIPE, not %d\n", errno);
 
 		waitpid(pid, NULL, 0);
 	}

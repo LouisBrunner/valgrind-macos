@@ -30,6 +30,9 @@
 
 #include "core_asm.h"
 #include "vki_unistd.h"
+#include "libvex_guest_offsets.h"
+		
+.globl	VG_(do_syscall)
 
 /*
 	Perform a Linux syscall with int 0x80
@@ -38,11 +41,12 @@
 	Int VG_(do_syscall)(Int syscall_no, UWord a1, UWord a2, UWord a3,
 					    UWord a4, UWord a5, UWord a6)
 
-	This has no effect on the virtual machine; the expectation is
+	This has no effect on the virtual machine; the assumption is
 	that the syscall mechanism makes no useful changes to any
-	register except %eax, which is returned.
+	register except %eax, which is returned. (Some kernels will
+	change other registers randomly, but they're just compiler
+	spill values.)
  */
-.globl	VG_(do_syscall)
 VG_(do_syscall):
 	push	%esi
 	push	%edi
@@ -69,8 +73,8 @@ VG_(do_syscall):
 
 	int VG_(clone)(int (*fn)(void *), void *child_stack, int flags, void *arg, 
 	               0                  4                  8          12
-		       pid_t *child_tid, pid_t *parent_tid)
-		       16                20
+		       pid_t *child_tid, pid_t *parent_tid, vki_modify_ldt_t *)
+		       16                20	            24
 
  */
 .globl VG_(clone)
@@ -90,6 +94,7 @@ VG_(clone):
 	movl	 8+FSZ(%esp), %ebx	/* flags */
 	movl	20+FSZ(%esp), %edx	/* parent tid * */
 	movl	16+FSZ(%esp), %edi	/* child tid * */
+	movl	24+FSZ(%esp), %esi	/* modify_ldt_t * */
 	movl	$__NR_clone, %eax
 	int	$0x80
 	testl	%eax, %eax
@@ -111,12 +116,126 @@ VG_(clone):
 	pop	%edi
 	pop	%ebx
 	ret
-
+#undef FSZ
+	
 .globl VG_(sigreturn)
 VG_(sigreturn):
 	movl	$__NR_rt_sigreturn, %eax
 	int	$0x80
 
+
+/*
+	Perform a syscall for the client.  This will run a syscall
+	with the client's specific per-thread signal mask.
+	
+	The structure of this function is such that, if the syscall is
+	interrupted by a signal, we can determine exactly what
+	execution state we were in with respect to the execution of
+	the syscall by examining the value of %eip in the signal
+	handler.  This means that we can always do the appropriate
+	thing to precisely emulate the kernel's signal/syscall
+	interactions.
+
+	The syscall number is taken from the argument, even though it
+	should also be in regs->m_eax.  The syscall result is written
+	back to regs->m_eax on completion.
+	
+	Returns 0 if the syscall was successfully called (even if the
+	syscall itself failed), or a -ve error code if one of the
+	sigprocmasks failed (there's no way to determine which one
+	failed).
+
+	VGA_(interrupted_syscall)() does the thread state fixup in the
+	case where we were interrupted by a signal.
+	
+	Prototype:
+
+	Int VGA_(_client_syscall)(Int syscallno,		// 0
+				  void* guest_state,		// 4
+				  const vki_sigset_t *sysmask,	// 8
+				  const vki_sigset_t *postmask,	// 12
+				  Int nsigwords)		// 16
+				   
+*/
+
+/* from vki_arch.h */	
+#define VKI_SIG_SETMASK	2
+	
+.globl VGA_(_client_syscall)
+VGA_(_client_syscall):
+	/* save callee-saved regs */
+	push	%esi
+	push	%edi
+	push	%ebx
+	push	%ebp
+#define FSZ	((4+1)*4)	/* 4 args + ret addr */
+
+1:	/* Even though we can't take a signal until the sigprocmask completes,
+	   start the range early.
+	   If eip is in the range [1,2), the syscall hasn't been started yet */
+
+	/* Set the signal mask which should be current during the syscall. */
+	movl	$__NR_rt_sigprocmask, %eax
+	movl	$VKI_SIG_SETMASK, %ebx
+	movl	8+FSZ(%esp), %ecx
+	movl	12+FSZ(%esp), %edx
+	movl	16+FSZ(%esp), %esi
+	int	$0x80
+	testl	%eax, %eax
+	js	5f	/* sigprocmask failed */
+	
+	movl	 4+FSZ(%esp), %eax	/* eax == ThreadState * */
+
+	movl	 OFFSET_x86_EBX(%eax), %ebx
+	movl	 OFFSET_x86_ECX(%eax), %ecx
+	movl	 OFFSET_x86_EDX(%eax), %edx
+	movl	 OFFSET_x86_ESI(%eax), %esi
+	movl	 OFFSET_x86_EDI(%eax), %edi
+	movl	 OFFSET_x86_EBP(%eax), %ebp
+	movl	 0+FSZ(%esp), %eax	/* use syscallno argument rather than thread EAX */
+	
+	/* If eip==2, then the syscall was either just about to start, 
+	   or was interrupted and the kernel was restarting it. */
+2:	int	$0x80
+3:	/* In the range [3, 4), the syscall result is in %eax, but hasn't been
+	   committed to EAX. */
+	movl	4+FSZ(%esp), %ebx
+	movl	%eax, OFFSET_x86_EAX(%ebx)	/* save back to EAX */
+
+4:	/* Re-block signals.  If eip is in [4,5), then the syscall is complete and 
+	   we needn't worry about it. */
+	movl	$__NR_rt_sigprocmask, %eax
+	movl	$VKI_SIG_SETMASK, %ebx
+	movl	12+FSZ(%esp), %ecx
+	xorl	%edx, %edx
+	movl	16+FSZ(%esp), %esi
+	int	$0x80
+
+5:	/* now safe from signals */
+		
+	popl	%ebp
+	popl	%ebx
+	popl	%edi
+	popl	%esi
+#undef FSZ
+	ret
+
+.section .rodata
+/* export the ranges so that VGA_(interrupted_syscall) can do the
+	right thing */
+	
+.globl VGA_(blksys_setup)
+.globl VGA_(blksys_restart)
+.globl VGA_(blksys_complete)
+.globl VGA_(blksys_committed)
+.globl VGA_(blksys_finished)
+VGA_(blksys_setup):	.long 1b
+VGA_(blksys_restart):	.long 2b
+VGA_(blksys_complete):	.long 3b
+VGA_(blksys_committed):	.long 4b
+VGA_(blksys_finished):	.long 5b
+.previous
+	
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 

@@ -574,6 +574,11 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].sys_pre_res	  = NULL;
 
    VG_(threads)[tid].proxy		  = NULL;
+
+   /* start with no altstack */
+   VG_(threads)[tid].altstack.ss_sp = (void *)0xdeadbeef;
+   VG_(threads)[tid].altstack.ss_size = 0;
+   VG_(threads)[tid].altstack.ss_flags = VKI_SS_DISABLE;
 }
 
 

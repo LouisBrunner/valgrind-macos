@@ -2391,10 +2391,6 @@ void VG_(sigstartup_actions) ( void )
    vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_flags = VKI_SA_SIGINFO;
    VG_(ksigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
-   /* Copy the alt stack, if any. */
-   ret = VG_(ksigaltstack)(NULL, &VG_(threads)[1].altstack);
-   vg_assert(ret == 0);
-
    /* Copy the process' signal mask into the root thread. */
    vg_assert(VG_(threads)[1].status == VgTs_Runnable);
    VG_(threads)[1].sig_mask = saved_procmask;

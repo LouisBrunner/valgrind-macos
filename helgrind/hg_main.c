@@ -304,6 +304,47 @@ void init_magically_inited_sword(Addr a)
    set_sword(a, virgin_sword);
 }
 
+/*------------------------------------------------------------*/
+/*--- Implementation of mutex structure.                   ---*/
+/*------------------------------------------------------------*/
+
+#define M_MUTEX_HASHSZ	1023
+
+typedef struct _LockSet LockSet; /* forward declaration */
+
+typedef struct hg_mutex {
+   void              *mutexp;
+   Int	              order;	/* graph ordering */
+   LockSet           *priors;	/* set of mutexes this one depends on */
+   struct hg_mutex   *next;
+} hg_mutex_t;
+
+static hg_mutex_t *mutex_hash[M_MUTEX_HASHSZ];
+
+static inline Int mutex_cmp(const hg_mutex_t *a, const hg_mutex_t *b)
+{
+   return (UInt)a->mutexp - (UInt)b->mutexp;
+}
+
+/* find or create an hg_mutex for a program's mutex use */
+static hg_mutex_t *get_mutex(void *mutexp)
+{
+   UInt bucket = ((UInt)mutexp) % M_MUTEX_HASHSZ;
+   hg_mutex_t *mp;
+   
+   for(mp = mutex_hash[bucket]; mp != NULL; mp = mp->next)
+      if (mp->mutexp == mutexp)
+	 return mp;
+
+   mp = VG_(malloc)(sizeof(*mp));
+   mp->mutexp = mutexp;
+   mp->order = -1;		/* uninitialized */
+   mp->priors = NULL;
+   mp->next = mutex_hash[bucket];
+   mutex_hash[bucket] = mp;
+
+   return mp;
+}
 
 /*------------------------------------------------------------*/
 /*--- Implementation of lock sets.                         ---*/
@@ -311,13 +352,10 @@ void init_magically_inited_sword(Addr a)
 
 #define M_LOCKSET_TABLE 1000
 
-#include <pthread.h>
-
-typedef 
-   struct _LockSet {
-       pthread_mutex_t* mutex;
-       struct _LockSet* next;
-   } LockSet;
+struct _LockSet {
+   hg_mutex_t *mutex;
+   struct _LockSet* next;
+};
 
 
 /* Each one is an index into the lockset table. */
@@ -393,7 +431,7 @@ static
 Bool structural_eq_LockSet(LockSet* a, LockSet* b)
 {
    while (a && b) {
-      if (a->mutex != b->mutex) {
+      if (mutex_cmp(a->mutex, b->mutex) != 0) {
          return False;
       }
       a = a->next;
@@ -413,7 +451,7 @@ void sanity_check_locksets ( Char* caller )
 {
    Int              i, j, badness;
    LockSet*         v;
-   pthread_mutex_t* mx_prev;
+   hg_mutex_t       mx_prev;
 
    badness = 0;
    i = j = -1;
@@ -438,12 +476,12 @@ void sanity_check_locksets ( Char* caller )
    /* Check the sanity of each individual set. */
    for (i = 1; i < n_lockset_table; i++) {
       v = lockset_table[i];
-      mx_prev = (pthread_mutex_t*)0;
+      mx_prev.mutexp = NULL;
       while (True) {
          if (v == NULL) break;
-         if (mx_prev >= v->mutex) 
+         if (mutex_cmp(&mx_prev, v->mutex) >= 0) 
             { badness = 5; goto baaad; }
-         mx_prev = v->mutex;
+         mx_prev = *v->mutex;
          v = v->next;
       }
    }
@@ -475,7 +513,7 @@ void sanity_check_locksets ( Char* caller )
    exist in the table (unchecked).
 */
 static 
-UInt remove ( UInt ia, pthread_mutex_t* mx )
+UInt remove ( UInt ia, hg_mutex_t *mx )
 {
    Int       found, res;
    LockSet*  new_vector = NULL;
@@ -485,7 +523,7 @@ UInt remove ( UInt ia, pthread_mutex_t* mx )
    sk_assert(is_valid_lockset_id(ia));
 
 #  if DEBUG_MEM_LOCKSET_CHANGES
-   VG_(printf)("Removing from %d mutex %p:\n", ia, mx);
+   VG_(printf)("Removing from %d mutex %p:\n", ia, mx->mutexp);
 #  endif
 
 #  if DEBUG_MEM_LOCKSET_CHANGES
@@ -499,7 +537,7 @@ UInt remove ( UInt ia, pthread_mutex_t* mx )
    /* Build the intersection of the two lists */
    found = 0;
    while (a) {
-      if (a->mutex != mx) {
+      if (mutex_cmp(a->mutex, mx) != 0) {
          new_node = VG_(malloc)(sizeof(LockSet));
 #        if DEBUG_MEM_LOCKSET_CHANGES
          VG_(printf)("malloc'd %x\n", new_node);
@@ -537,7 +575,7 @@ UInt remove ( UInt ia, pthread_mutex_t* mx )
  */
 static Bool 
 weird_LockSet_equals(LockSet* a, LockSet* b, 
-                     pthread_mutex_t* missing_mutex)
+                     hg_mutex_t *missing_mutex)
 {
    /* Idea is to try and match each element of b against either an
       element of a, or missing_mutex. */
@@ -545,15 +583,15 @@ weird_LockSet_equals(LockSet* a, LockSet* b,
       if (b == NULL) 
          break;
       /* deal with missing already being in a */
-      if (a && a->mutex == missing_mutex) 
+      if (a && mutex_cmp(a->mutex, missing_mutex) == 0)
          a = a->next;
       /* match current b element either against a or missing */
-      if (b->mutex == missing_mutex) {
+      if (mutex_cmp(b->mutex, missing_mutex) == 0) {
          b = b->next;
          continue;
       }
       /* wasn't == missing, so have to match from a, or fail */
-      if (a && b->mutex == a->mutex) {
+      if (a && mutex_cmp(b->mutex, a->mutex) == 0) {
          a = a->next;
          b = b->next;
          continue;
@@ -599,7 +637,7 @@ static UInt intersect(UInt ia, UInt ib)
 
    /* Build the intersection of the two lists */
    while (a && b) {
-      if (a->mutex == b->mutex) {
+      if (mutex_cmp(a->mutex, b->mutex) == 0) {
          new_node = VG_(malloc)(sizeof(LockSet));
 #        if DEBUG_MEM_LOCKSET_CHANGES
          VG_(printf)("malloc'd %x\n", new_node);
@@ -609,9 +647,9 @@ static UInt intersect(UInt ia, UInt ib)
          prev_ptr = &((*prev_ptr)->next);
          a = a->next;
          b = b->next;
-      } else if (a->mutex < b->mutex) {
+      } else if (mutex_cmp(a->mutex, b->mutex) < 0) {
          a = a->next;
-      } else if (a->mutex > b->mutex) {
+      } else if (mutex_cmp(a->mutex, b->mutex) > 0) {
          b = b->next;
       } else VG_(skin_panic)("STOP PRESS: Laws of arithmetic broken");
 
@@ -1020,10 +1058,10 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
    LockSet*  new_node;
    LockSet*  p;
    LockSet** q;
-   pthread_mutex_t* mutex = (pthread_mutex_t*)void_mutex;
+   hg_mutex_t *mutex = get_mutex(void_mutex);
    
 #  if DEBUG_LOCKS
-   VG_(printf)("lock  (%u, %x)\n", tid, mutex);
+   VG_(printf)("lock  (%u, %x)\n", tid, mutex->mutexp);
 #  endif
 
    sk_assert(tid < VG_N_THREADS &&
@@ -1056,7 +1094,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
          /* find spot for the new mutex in the new list */
          p = lockset_table[i];
          q = &lockset_table[i];
-         while (NULL != p && mutex > p->mutex) {
+         while (NULL != p && mutex_cmp(mutex, p->mutex) > 0) {
             p = p->next;
             q = &((*q)->next);
          }
@@ -1109,10 +1147,10 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
 {
    Int i = 0;
-   pthread_mutex_t* mutex = (pthread_mutex_t*)void_mutex;
+   hg_mutex_t *mutex = get_mutex(void_mutex);
    
 #  if DEBUG_LOCKS
-   VG_(printf)("unlock(%u, %x)\n", tid, mutex);
+   VG_(printf)("unlock(%u, %x)\n", tid, mutex->mutexp);
 #  endif
 
 #  if LOCKSET_SANITY > 1

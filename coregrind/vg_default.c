@@ -180,9 +180,15 @@ Bool SK_(process_cmd_line_option)(Char* argv)
 }
 
 __attribute__ ((weak))
-Char* SK_(usage)(void)
+void SK_(print_usage)(void)
 {
-   non_fund_panic("SK_(usage)");
+   non_fund_panic("SK_(print_usage)");
+}
+
+__attribute__ ((weak))
+void SK_(print_debug_usage)(void)
+{
+   non_fund_panic("SK_(print_debug_usage)");
 }
 
 /* ---------------------------------------------------------------------
@@ -247,26 +253,6 @@ void  SK_(post_syscall)(ThreadId tid, UInt syscallno,
 }
 
 /* ---------------------------------------------------------------------
-   Shadow chunks
-   ------------------------------------------------------------------ */
-
-__attribute__ ((weak))
-void SK_(complete_shadow_chunk)( ShadowChunk* sc, ThreadState* tst )
-{
-   non_fund_panic("SK_(complete_shadow_chunk)");
-}
-
-/* ---------------------------------------------------------------------
-   Alternative free()
-   ------------------------------------------------------------------ */
-
-__attribute__ ((weak))
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   non_fund_panic("SK_(alt_free)");
-}
-
-/* ---------------------------------------------------------------------
    Sanity checks
    ------------------------------------------------------------------ */
 
@@ -281,6 +267,95 @@ Bool SK_(expensive_sanity_check)(void)
 {
    non_fund_panic("SK_(expensive_sanity_check)");
 }
+
+/*------------------------------------------------------------*/
+/*--- Replacing malloc et al                               ---*/
+/*------------------------------------------------------------*/
+
+/* Default redzone for CLIENT arena of Valgrind's malloc() is 4 bytes */
+__attribute__ ((weak))
+UInt VG_(vg_malloc_redzone_szB) = 4;
+
+Bool VG_(sk_malloc_called_by_scheduler) = False;
+
+static __attribute__ ((noreturn))
+void malloc_panic ( Char* fn )
+{
+   VG_(printf)(
+      "\nSkin error:\n"
+      "  The skin you have selected is missing the function `%s'\n"
+      "  required because it is replacing malloc() et al.\n\n",
+      fn);
+   VG_(skin_panic)("Missing skin function");
+}
+
+/* If the skin hasn't replaced malloc(), this one can be called from the
+   scheduler, for the USERREQ__MALLOC user request used by vg_libpthread.c. 
+   (Nb: it cannot call glibc's malloc().)  The lock variable ensures that the
+   scheduler is the only place this can be called from;  this ensures that a
+   malloc()-replacing skin cannot forget to implement SK_(malloc)() or
+   SK_(free)().  */
+__attribute__ ((weak))
+void* SK_(malloc)               ( ThreadState* tst, Int size )
+{
+   if (VG_(sk_malloc_called_by_scheduler))
+      return VG_(cli_malloc)(4, size);
+   else 
+      malloc_panic("SK_(malloc)");
+}
+
+__attribute__ ((weak))
+void* SK_(__builtin_new)        ( ThreadState* tst, Int size )
+{
+   malloc_panic("SK_(__builtin_new)");
+}
+
+__attribute__ ((weak))
+void* SK_(__builtin_vec_new)    ( ThreadState* tst, Int size )
+{
+   malloc_panic("SK_(__builtin_vec_new)");
+}
+
+__attribute__ ((weak))
+void* SK_(memalign)             ( ThreadState* tst, Int align, Int size )
+{
+   malloc_panic("SK_(memalign)");
+}
+
+__attribute__ ((weak))
+void* SK_(calloc)               ( ThreadState* tst, Int nmemb, Int size )
+{
+   malloc_panic("SK_(calloc)");
+}
+
+__attribute__ ((weak))
+void  SK_(free)                 ( ThreadState* tst, void* p )
+{
+   /* see comment for SK_(malloc)() above */
+   if (VG_(sk_malloc_called_by_scheduler))
+      VG_(cli_free)(p);
+   else 
+      malloc_panic("SK_(free)");
+}
+
+__attribute__ ((weak))
+void  SK_(__builtin_delete)     ( ThreadState* tst, void* p )
+{
+   malloc_panic("SK_(__builtin_delete)");
+}
+
+__attribute__ ((weak))
+void  SK_(__builtin_vec_delete) ( ThreadState* tst, void* p )
+{
+   malloc_panic("SK_(__builtin_vec_delete)");
+}
+
+__attribute__ ((weak))
+void* SK_(realloc)              ( ThreadState* tst, void* p, Int new_size )
+{
+   malloc_panic("SK_(realloc)");
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_defaults.c ---*/

@@ -1910,7 +1910,8 @@ void VG_(maybe_read_symbols) ( void )
       return;
 
    VGP_PUSHCC(VgpReadSyms);
-      VG_(read_procselfmaps) ( VG_(read_symtab_callback) );
+      VG_(read_procselfmaps) ( VG_(read_symtab_callback),
+                               /*read_from_file*/True );
    VGP_POPCC(VgpReadSyms);
 }
 

@@ -6,17 +6,11 @@
 # Remove ==pid== and --pid-- and ++pid++ strings 
 sed "s/\(==\|--\|++\)[0-9]\{3,5\}\1 //"                                |
 
-# Remove intro line for 1.0.X branch
-sed "/valgrind-.*, a memory error detector for x86 GNU\/Linux./d"       |
-sed "/cachegrind-.*, an I1.D1.L2 cache profiler for x86 GNU\/Linux./d"  |
-
-# Remove "<name>, a <description> for x86-linux." line 
-# and the following copyright notice line for post-1.0.X branch
+# Remove "<name>, a <description> for x86-linux." line and the following
+# copyright notice line.  Works for skin and core intro lines.
 sed "/^.*, .* for x86-linux\./ , /./ d"                                | 
 
 # Remove other introductory lines
-sed "/Built with valgrind-.*, a program execution monitor./d"          |
-sed "/Copyright (C) 2000-2..., and GNU GPL'd, by Julian Seward\./d"    |
 sed "/Estimated CPU clock rate is [0-9]\+ MHz/d"                       |
 sed "/For more details, rerun with: -v/d"
 

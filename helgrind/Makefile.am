@@ -12,12 +12,8 @@ val_PROGRAMS = vgskin_helgrind.so
 
 vgskin_helgrind_so_SOURCES = hg_main.c
 vgskin_helgrind_so_LDFLAGS = -shared
+vgskin_helgrind_so_LDADD = ../coregrind/vg_replace_malloc.o
 
 hgincludedir = $(includedir)/valgrind
 
-hginclude_HEADERS = \
-	helgrind.h
-
-##vgskin_helgrind.so$(EXEEXT): $(vgskin_helgrind_so_OBJECTS)
-##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_helgrind.so \
-##		$(vgskin_helgrind_so_OBJECTS)
+hginclude_HEADERS = helgrind.h

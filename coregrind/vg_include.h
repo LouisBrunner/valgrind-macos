@@ -177,12 +177,6 @@ extern Bool  VG_(clo_gen_suppressions);
 extern Int   VG_(sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */
 extern Bool  VG_(clo_demangle);
-/* Round malloc sizes upwards to integral number of words? default:
-   NO */
-extern Bool  VG_(clo_sloppy_malloc);
-/* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use default of the machine (== 4) */
-extern Int   VG_(clo_alignment);
 /* Simulate child processes? default: NO */
 extern Bool  VG_(clo_trace_children);
 
@@ -224,8 +218,6 @@ extern Bool  VG_(clo_trace_syscalls);
 extern Bool  VG_(clo_trace_signals);
 /* DEBUG: print symtab details?  default: NO */
 extern Bool  VG_(clo_trace_symtab);
-/* DEBUG: print malloc details?  default: NO */
-extern Bool  VG_(clo_trace_malloc);
 /* DEBUG: print thread scheduling events?  default: NO */
 extern Bool  VG_(clo_trace_sched);
 /* DEBUG: print pthread (mutex etc) events?  default: 0 (none), 1
@@ -304,8 +296,6 @@ typedef
       Bool client_requests;
       Bool extended_UCode;
       Bool syscall_wrapper;
-      UInt sizeof_shadow_block;
-      Bool alternative_free;
       Bool sanity_checks;
       Bool data_syms;
    } 
@@ -320,10 +310,15 @@ typedef
    struct {
       /* Memory events */
       void (*new_mem_startup)( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
-      void (*new_mem_heap)   ( Addr a, UInt len, Bool is_inited );
       void (*new_mem_stack_signal)  ( Addr a, UInt len );
       void (*new_mem_brk)    ( Addr a, UInt len );
       void (*new_mem_mmap)   ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+
+      void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
+      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+      void (*die_mem_stack_signal)  ( Addr a, UInt len );
+      void (*die_mem_brk)    ( Addr a, UInt len );
+      void (*die_mem_munmap) ( Addr a, UInt len );
 
       void (*new_mem_stack_4)  ( Addr new_ESP );
       void (*new_mem_stack_8)  ( Addr new_ESP );
@@ -332,19 +327,6 @@ typedef
       void (*new_mem_stack_32) ( Addr new_ESP );
       void (*new_mem_stack)    ( Addr a, UInt len );
 
-      void (*copy_mem_heap)  ( Addr from, Addr to, UInt len );
-      void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
-      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
-      
-      /* Used on redzones around malloc'd blocks and at end of stack */
-      void (*ban_mem_heap)   ( Addr a, UInt len );
-      void (*ban_mem_stack)  ( Addr a, UInt len );
-
-      void (*die_mem_heap)   ( Addr a, UInt len );
-      void (*die_mem_stack_signal)  ( Addr a, UInt len );
-      void (*die_mem_brk)    ( Addr a, UInt len );
-      void (*die_mem_munmap) ( Addr a, UInt len );
-
       void (*die_mem_stack_4)  ( Addr die_ESP );
       void (*die_mem_stack_8)  ( Addr die_ESP );
       void (*die_mem_stack_12) ( Addr die_ESP );
@@ -352,8 +334,7 @@ typedef
       void (*die_mem_stack_32) ( Addr die_ESP );
       void (*die_mem_stack)    ( Addr a, UInt len );
 
-      void (*bad_free)        ( ThreadState* tst, Addr a );
-      void (*mismatched_free) ( ThreadState* tst, Addr a );
+      void (*ban_mem_stack)  ( Addr a, UInt len );
 
       void (*pre_mem_read)   ( CorePart part, ThreadState* tst,
                                Char* s, Addr a, UInt size );
@@ -386,7 +367,7 @@ typedef
                                   void* /*pthread_mutex_t* */ mutex );
 
       /* Signal events (not exhaustive) */
-      void (*pre_deliver_signal)  ( ThreadId tid, Int sigNo, Bool alt_stack );
+      void (* pre_deliver_signal) ( ThreadId tid, Int sigNo, Bool alt_stack );
       void (*post_deliver_signal) ( ThreadId tid, Int sigNo );
 
       
@@ -409,35 +390,38 @@ void VG_(sanity_check_needs)(void);
    ------------------------------------------------------------------ */
 
 /* Allocation arenas.  
-      CORE      is for the core's general use.
-      SKIN      is for the skin to use (and the only one it uses).
-      SYMTAB    is for Valgrind's symbol table storage.
-      JITTER    is for small storage during translation.
-      CLIENT    is for the client's mallocs/frees.
-      DEMANGLE  is for the C++ demangler.
-      EXECTXT   is for storing ExeContexts.
-      ERRORS    is for storing CoreErrors.
-      TRANSIENT is for very short-term use.  It should be empty
-                in between uses.
+
+      CORE      for the core's general use.
+      SKIN      for the skin to use (and the only one it uses).
+      SYMTAB    for Valgrind's symbol table storage.
+      JITTER    for small storage during translation.
+      CLIENT    for the client's mallocs/frees, if the skin replaces glibc's
+                    malloc() et al -- redzone size is chosen by the skin.
+      DEMANGLE  for the C++ demangler.
+      EXECTXT   for storing ExeContexts.
+      ERRORS    for storing CoreErrors.
+      TRANSIENT for very short-term use.  It should be empty in between uses.
+
    When adding a new arena, remember also to add it to ensure_mm_init(). 
 */
 typedef Int ArenaId;
 
-#define VG_N_ARENAS 9
+#define VG_N_ARENAS        9 
 
-#define VG_AR_CORE      0    /* :: ArenaId */
-#define VG_AR_SKIN      1    /* :: ArenaId */
-#define VG_AR_SYMTAB    2    /* :: ArenaId */
-#define VG_AR_JITTER    3    /* :: ArenaId */
-#define VG_AR_CLIENT    4    /* :: ArenaId */
-#define VG_AR_DEMANGLE  5    /* :: ArenaId */
-#define VG_AR_EXECTXT   6    /* :: ArenaId */
-#define VG_AR_ERRORS    7    /* :: ArenaId */
-#define VG_AR_TRANSIENT 8    /* :: ArenaId */
+#define VG_AR_CORE         0
+#define VG_AR_SKIN         1
+#define VG_AR_SYMTAB       2
+#define VG_AR_JITTER       3
+#define VG_AR_CLIENT       4
+#define VG_AR_DEMANGLE     5
+#define VG_AR_EXECTXT      6
+#define VG_AR_ERRORS       7
+#define VG_AR_TRANSIENT    8
 
 extern void* VG_(arena_malloc)  ( ArenaId arena, Int nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, Int nmemb, Int nbytes );
+extern void* VG_(arena_calloc)  ( ArenaId arena, Int alignment,
+                                  Int nmemb, Int nbytes );
 extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, Int alignment,
                                   Int size );
 extern void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, 
@@ -449,16 +433,8 @@ extern void  VG_(show_all_arena_stats) ( void );
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 
-/* The red-zone size for the client.  This can be arbitrary, but
-   unfortunately must be set at compile time. */
-#define VG_AR_CLIENT_REDZONE_SZW 4
-
-#define VG_AR_CLIENT_REDZONE_SZB \
-   (VG_AR_CLIENT_REDZONE_SZW * VKI_BYTES_PER_WORD)
-
-
 /* ---------------------------------------------------------------------
-   Exports of vg_clientfuncs.c
+   Exports of vg_intercept.c
    ------------------------------------------------------------------ */
 
 /* This doesn't export code or data that valgrind.so needs to link
@@ -467,17 +443,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
    defined in valgrind.h, and similar headers for some skins. */
 
 #define VG_USERREQ__MALLOC              0x2001
-#define VG_USERREQ__BUILTIN_NEW         0x2002
-#define VG_USERREQ__BUILTIN_VEC_NEW     0x2003
-
-#define VG_USERREQ__FREE                0x2004
-#define VG_USERREQ__BUILTIN_DELETE      0x2005
-#define VG_USERREQ__BUILTIN_VEC_DELETE  0x2006
-
-#define VG_USERREQ__CALLOC              0x2007
-#define VG_USERREQ__REALLOC             0x2008
-#define VG_USERREQ__MEMALIGN            0x2009
-
+#define VG_USERREQ__FREE                0x2002
 
 /* (Fn, Arg): Create a new thread and run Fn applied to Arg in it.  Fn
    MUST NOT return -- ever.  Eventually it will do either __QUIT or
@@ -552,9 +518,11 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
 #define VG_USERREQ__PTHREAD_ERROR           0x3102
-/* Write a string to the logging sink. */
+/* 
+In vg_skin.h, so skins can use it.
+Write a string to the logging sink. 
 #define VG_USERREQ__LOGMESSAGE              0x3103
-
+*/
 
 /* 
 In vg_constants.h:
@@ -575,6 +543,13 @@ extern void VG_(__libc_freeres_wrapper)( void );
 #define VG_SIZE_OF_FPUSTATE 108
 /* ... and in words ... */
 #define VG_SIZE_OF_FPUSTATE_W ((VG_SIZE_OF_FPUSTATE+3)/4)
+
+
+/* ---------------------------------------------------------------------
+   Exports of vg_defaults.c
+   ------------------------------------------------------------------ */
+
+extern Bool VG_(sk_malloc_called_by_scheduler);
 
 
 /* ---------------------------------------------------------------------
@@ -1166,13 +1141,6 @@ struct _Error {
    Supp* supp;
    Int count;
    ThreadId tid;
-   /* These record %EIP, %ESP and %EBP at the error point.  They
-      are only used to make GDB-attaching convenient; there is no
-      other purpose; specifically they are not used to do
-      comparisons between errors. */
-   UInt m_eip;
-   UInt m_esp;
-   UInt m_ebp;
 
    /* The skin-specific part */
    /* Initialised by core */
@@ -1206,9 +1174,16 @@ extern void VG_(gen_suppression) ( Error* err );
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */
 
+/* Reads /proc/self/maps into a static buffer. */
+void VG_(read_procselfmaps_contents) ( void );
+
+/* Parses /proc/self/maps, calling `record_mapping' for each entry.  If
+   `read_from_file' is True, /proc/self/maps is read directly, otherwise
+   it's read from the buffer filled by VG_(read_procselfmaps_contents)(). */
 extern 
 void VG_(read_procselfmaps) (
-   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* )
+   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* ),
+   Bool read_from_file
 );
 
 
@@ -1224,46 +1199,6 @@ extern void VG_(maybe_unload_symbols) ( Addr start, UInt length );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 extern void VG_(mini_stack_dump)      ( ExeContext* ec );
-
-
-/* ---------------------------------------------------------------------
-   Exports of vg_clientmalloc.c
-   ------------------------------------------------------------------ */
-
-typedef
-   enum { 
-      Vg_AllocMalloc = 0,
-      Vg_AllocNew    = 1,
-      Vg_AllocNewVec = 2 
-   }
-   VgAllocKind;
-
-/* Description of a malloc'd chunk.  Functions for extracting skin-relevant
-   parts are in include/vg_skin.h Size of skin_extra array is given by
-   VG_(needs).sizeof_shadow_chunk. */
-struct _ShadowChunk {
-   struct _ShadowChunk* next;
-   UInt          size : 30;      /* size requested                   */
-   VgAllocKind   allockind : 2;  /* which wrapper did the allocation */
-   Addr          data;           /* ptr to actual block              */
-   UInt          extra[0];       /* extra skin-specific info         */
-};
-
-
-extern void  VG_(client_malloc_init)();
-
-/* These are called from the scheduler, when it intercepts a user
-   request. */
-extern void* VG_(client_malloc)   ( ThreadState* tst, 
-                                    UInt size, VgAllocKind kind );
-extern void* VG_(client_memalign) ( ThreadState* tst, 
-                                    UInt align, UInt size );
-extern void  VG_(client_free)     ( ThreadState* tst, 
-                                    void* ptrV, VgAllocKind  kind );
-extern void* VG_(client_calloc)   ( ThreadState* tst, 
-                                    UInt nmemb, UInt size1 );
-extern void* VG_(client_realloc)  ( ThreadState* tst, 
-                                    void* ptrV, UInt size_new );
 
 
 /* ---------------------------------------------------------------------

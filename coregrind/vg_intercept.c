@@ -30,6 +30,14 @@
 */
 
 
+/* ---------------------------------------------------------------------
+   All the code in this file runs on the SIMULATED CPU.  It is
+   intended for various reasons as drop-in replacements for libc
+   functions.  These functions have global visibility (obviously) and
+   have no prototypes in vg_include.h, since they are not intended to
+   be called from within Valgrind.
+   ------------------------------------------------------------------ */
+
 /* This has some nasty duplication of stuff from vg_libpthread.c */
 
 #include <errno.h>
@@ -292,6 +300,83 @@ int writev (int fd, const struct iovec *iov, int count)
 }
 
 strong_alias(writev, __writev)
+
+/* ---------------------------------------------------------------------
+   Horrible hack to make sigsuspend() sort-of work OK.  Same trick as
+   for pause() in vg_libpthread.so.
+   ------------------------------------------------------------------ */
+
+/* Horrible because
+
+   -- uses VG_(ksigprocmask), VG_(nanosleep) and vg_assert, which are 
+      valgrind-native (not intended for client use).
+
+   -- This is here so single-threaded progs (not linking libpthread.so)
+      can see it.  But pause() should also be here.  ???
+*/
+
+/* Either libc supplies this (weak) or our libpthread.so supplies it
+   (strong) in a threaded setting. 
+*/
+extern int* __errno_location ( void );
+
+
+int sigsuspend ( /* const sigset_t * */ void* mask)
+{
+   unsigned int n_orig, n_now;
+   struct vki_timespec nanosleep_interval;
+
+   VALGRIND_MAGIC_SEQUENCE(n_orig, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__GET_N_SIGS_RETURNED, 
+                           0, 0, 0, 0);
+   vg_assert(n_orig != 0xFFFFFFFF);
+
+   VG_(ksigprocmask)(VKI_SIG_SETMASK, mask, NULL);
+
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(n_now, 0xFFFFFFFF /* default */,
+                              VG_USERREQ__GET_N_SIGS_RETURNED, 
+                              0, 0, 0, 0);
+      vg_assert(n_now != 0xFFFFFFFF);
+      vg_assert(n_now >= n_orig);
+      if (n_now != n_orig) break;
+
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 53 * 1000 * 1000; /* 53 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      VG_(nanosleep)( &nanosleep_interval, NULL);
+   }
+
+   /* Maybe this is OK both in single and multithreaded setting. */
+   * (__errno_location()) = -VKI_EINTR; /* == EINTR; */ 
+   return -1;
+}
+
+
+/* ---------------------------------------------------------------------
+   Hook for running __libc_freeres once the program exits.
+   ------------------------------------------------------------------ */
+
+void VG_(__libc_freeres_wrapper)( void )
+{
+   int res;
+   extern void __libc_freeres(void);
+   __libc_freeres();
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
+   /*NOTREACHED*/
+   vg_assert(12345+54321 == 999999);
+}
+
+/* ---------------------------------------------------------------------
+   Useful for skins that want to replace certain functions
+   ------------------------------------------------------------------ */
+
+Bool VG_(is_running_on_simd_CPU)(void)
+{
+   return VG_(running_on_simd_CPU);
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_intercept.c ---*/

@@ -190,37 +190,32 @@ void ensure_mm_init ( void )
 
    /* Use a checked red zone size of 1 word for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
-      course the client's red zone is checked really, but using the
-      addressibility maps, not by the mechanism implemented here,
-      which merely checks at the time of freeing that the red zone
-      words are unchanged. */
+      course the client's red zone can be checked by the skin, eg. 
+      by using addressibility maps, but not by the mechanism implemented
+      here, which merely checks at the time of freeing that the red 
+      zone words are unchanged. */
 
-   arena_init ( &vg_arena[VG_AR_CORE],      "core    ", 
-                1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_SKIN],      "skin    ", 
-                1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_SKIN],      "skin",     1, True, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab  ", 
-                1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter  ", 
-                1, True, 8192 );
+   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   1, True, 8192 );
 
-   arena_init ( &vg_arena[VG_AR_CLIENT],    "client  ",  
-                VG_AR_CLIENT_REDZONE_SZW, False, 262144 );
+   /* No particular reason for this figure, it's just smallish */
+   sk_assert(VG_(vg_malloc_redzone_szB) < 128);
+   arena_init ( &vg_arena[VG_AR_CLIENT],    "client",  
+                VG_(vg_malloc_redzone_szB)/4, False, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle",  
-                4 /*paranoid*/, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle", 4 /*paranoid*/,
+                                                           True, 16384 );
 
-   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt ",  
-                1, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  1, True, 16384 );
 
-   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors  ",  
-                1, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   1, True, 16384 );
 
-   arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien",  
-                2, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien", 2, True, 16384 );
 
    init_done = True;
 #  ifdef DEBUG_MALLOC
@@ -805,7 +800,7 @@ static void mallocSanityCheckArena ( ArenaId aid )
    }
 
    VG_(message)(Vg_DebugMsg,
-                "mSC [%s]: %2d sbs, %5d tot bs, %4d/%-4d free bs, "
+                "mSC [%8s]: %2d sbs, %5d tot bs, %4d/%-4d free bs, "
                 "%2d lists, %7d mmap, %7d loan", 
                 a->name,
                 superblockctr,
@@ -1189,7 +1184,7 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(arena_calloc) ( ArenaId aid, Int nmemb, Int nbytes )
+void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
 {
    Int    i, size;
    UChar* p;
@@ -1198,7 +1193,12 @@ void* VG_(arena_calloc) ( ArenaId aid, Int nmemb, Int nbytes )
 
    size = nmemb * nbytes;
    vg_assert(size >= 0);
-   p = VG_(arena_malloc) ( aid, size );
+
+   if (alignB == 4)
+      p = VG_(arena_malloc) ( aid, size );
+   else
+      p = VG_(arena_malloc_aligned) ( aid, alignB, size );
+
    for (i = 0; i < size; i++) p[i] = 0;
 
    VGP_POPCC(VgpMalloc);
@@ -1271,7 +1271,7 @@ void  VG_(free) ( void* ptr )
 
 void* VG_(calloc) ( Int nmemb, Int nbytes )
 {
-   return VG_(arena_calloc) ( VG_AR_SKIN, nmemb, nbytes );
+   return VG_(arena_calloc) ( VG_AR_SKIN, /*alignment*/4, nmemb, nbytes );
 }
 
 void* VG_(realloc) ( void* ptr, Int size )
@@ -1282,6 +1282,28 @@ void* VG_(realloc) ( void* ptr, Int size )
 void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
 {
    return VG_(arena_malloc_aligned) ( VG_AR_SKIN, req_alignB, req_pszB );
+}
+
+
+void* VG_(cli_malloc) ( UInt align, Int nbytes )                 
+{                                                                             
+   vg_assert(align >= 4);                                                     
+   if (4 == align)                                                            
+      return VG_(arena_malloc)         ( VG_AR_CLIENT, nbytes ); 
+   else                                                                       
+      return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );                            
+}                                                                             
+
+void VG_(cli_free) ( void* p )                                   
+{                                                                             
+   VG_(arena_free) ( VG_AR_CLIENT, p );                          
+}
+
+
+Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size )
+{  
+   return (start - VG_(vg_malloc_redzone_szB) <= a
+           && a < start + size + VG_(vg_malloc_redzone_szB));
 }
 
 

@@ -34,8 +34,10 @@
 
 
 /* static ... to keep it out of the stack frame. */
-
 static Char procmap_buf[M_PROCMAP_BUF];
+
+/* Records length of /proc/self/maps read into procmap_buf. */
+static Int  buf_n_tot;
 
 
 /* Helper fns. */
@@ -67,8 +69,38 @@ static Int readhex ( Char* buf, UInt* val )
 }
 
 
+/* Read /proc/self/maps, store the contents in a static buffer.  If there's
+   a syntax error or other failure, just abort. */
+void VG_(read_procselfmaps_contents)(void)
+{
+   Int n_chunk, fd;
+   
+   /* Read the initial memory mapping from the /proc filesystem. */
+   fd = VG_(open) ( "/proc/self/maps", VKI_O_RDONLY, 0 );
+   if (fd == -1) {
+      VG_(message)(Vg_UserMsg, "FATAL: can't open /proc/self/maps");
+      VG_(exit)(1);
+   }
+   buf_n_tot = 0;
+   do {
+      n_chunk = VG_(read) ( fd, &procmap_buf[buf_n_tot], 
+                            M_PROCMAP_BUF - buf_n_tot );
+      buf_n_tot += n_chunk;
+   } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
+   VG_(close)(fd);
+   if (buf_n_tot >= M_PROCMAP_BUF-5) {
+      VG_(message)(Vg_UserMsg, "FATAL: M_PROCMAP_BUF is too small; "
+                               "increase it and recompile");
+       VG_(exit)(1);
+   }
+   if (buf_n_tot == 0) {
+      VG_(message)(Vg_UserMsg, "FATAL: I/O error on /proc/self/maps" );
+       VG_(exit)(1);
+   }
+   procmap_buf[buf_n_tot] = 0;
+}
 
-/* Read /proc/self/maps.  For each map entry, call
+/* Parse /proc/self/maps.  For each map entry, call
    record_mapping, passing it, in this order:
 
       start address in memory
@@ -88,49 +120,30 @@ static Int readhex ( Char* buf, UInt* val )
    Note that the supplied filename is transiently stored; record_mapping 
    should make a copy if it wants to keep it.
 
-   If there's a syntax error or other failure, just abort.  
+   Nb: it is important that this function does not alter the contents of
+       procmap_buf!
 */
-
 void VG_(read_procselfmaps) (
-   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* )
-)
+   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* ),
+   Bool read_from_file )
 {
-   Int    i, j, n_tot, n_chunk, fd, i_eol;
+   Int    i, j, i_eol;
    Addr   start, endPlusOne;
    UChar* filename;
    UInt   foffset;
-   UChar  rr, ww, xx, pp, ch;
+   UChar  rr, ww, xx, pp, ch, tmp;
 
-   /* Read the initial memory mapping from the /proc filesystem. */
-   fd = VG_(open) ( "/proc/self/maps", VKI_O_RDONLY, 0 );
-   if (fd == -1) {
-      VG_(message)(Vg_UserMsg, "FATAL: can't open /proc/self/maps");
-      VG_(exit)(1);
+   if (read_from_file) {
+      VG_(read_procselfmaps_contents)();
    }
-   n_tot = 0;
-   do {
-      n_chunk = VG_(read) ( fd, &procmap_buf[n_tot], M_PROCMAP_BUF - n_tot );
-      n_tot += n_chunk;
-   } while ( n_chunk > 0 && n_tot < M_PROCMAP_BUF );
-   VG_(close)(fd);
-   if (n_tot >= M_PROCMAP_BUF-5) {
-      VG_(message)(Vg_UserMsg, "FATAL: M_PROCMAP_BUF is too small; "
-                               "increase it and recompile");
-       VG_(exit)(1);
-   }
-   if (n_tot == 0) {
-      VG_(message)(Vg_UserMsg, "FATAL: I/O error on /proc/self/maps" );
-       VG_(exit)(1);
-   }
-   procmap_buf[n_tot] = 0;
+
    if (0)
       VG_(message)(Vg_DebugMsg, "raw:\n%s", procmap_buf );
 
    /* Ok, it's safely aboard.  Parse the entries. */
-
    i = 0;
    while (True) {
-      if (i >= n_tot) break;
+      if (i >= buf_n_tot) break;
 
       /* Read (without fscanf :) the pattern %8x-%8x %c%c%c%c %8x */
       j = readhex(&procmap_buf[i], &start);
@@ -181,9 +194,13 @@ void VG_(read_procselfmaps) (
       while (!VG_(isspace)(procmap_buf[i]) && i >= 0) i--;
       i++;
       if (i < i_eol-1 && procmap_buf[i] == '/') {
+         /* Minor hack: put a '\0' at the filename end for the call to
+            `record_mapping', then restore the old char with `tmp'. */
          filename = &procmap_buf[i];
+         tmp = filename[i_eol - i];
          filename[i_eol - i] = '\0';
       } else {
+         tmp = '\0';
          filename = NULL;
          foffset = 0;
       }
@@ -191,6 +208,10 @@ void VG_(read_procselfmaps) (
       (*record_mapping) ( start, endPlusOne-start, 
                           rr, ww, xx, 
                           foffset, filename );
+
+      if ('\0' != tmp) {
+         filename[i_eol - i] = tmp;
+      }
 
       i = i_eol + 1;
    }

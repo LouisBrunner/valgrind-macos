@@ -24,7 +24,7 @@ Invalid read of size 8
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
    Address 0x........ is 0 bytes inside a block of size 8 free'd
-   at 0x........: free (vg_clientfuncs.c:...)
+   at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:18)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
@@ -34,7 +34,7 @@ Invalid write of size 8
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
    Address 0x........ is 0 bytes inside a block of size 8 free'd
-   at 0x........: free (vg_clientfuncs.c:...)
+   at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:18)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
@@ -44,7 +44,7 @@ Invalid read of size 4
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
    Address 0x........ is 0 bytes inside a block of size 4 free'd
-   at 0x........: free (vg_clientfuncs.c:...)
+   at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:19)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
@@ -54,13 +54,13 @@ Invalid write of size 4
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
    Address 0x........ is 0 bytes inside a block of size 4 free'd
-   at 0x........: free (vg_clientfuncs.c:...)
+   at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:19)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
 
 Invalid free() / delete / delete[]
-   at 0x........: free (vg_clientfuncs.c:...)
+   at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:22)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
@@ -71,7 +71,7 @@ Invalid write of size 8
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)
    Address 0x........ is 0 bytes inside a block of size 4 alloc'd
-   at 0x........: malloc (vg_clientfuncs.c:...)
+   at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (fprw.c:23)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/fprw)

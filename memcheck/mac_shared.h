@@ -120,6 +120,26 @@ typedef
    }
    MAC_Error;
 
+/* For malloc()/new/new[] vs. free()/delete/delete[] mismatch checking. */
+typedef
+   enum {
+      MAC_AllocMalloc = 0,
+      MAC_AllocNew    = 1,
+      MAC_AllocNewVec = 2
+   }
+   MAC_AllocKind;
+   
+/* Nb: first two fields must match core's VgHashNode. */
+typedef
+   struct _MAC_Chunk {
+      struct _MAC_Chunk* next;
+      Addr          data;           /* ptr to actual block              */
+      UInt          size : 30;      /* size requested                   */
+      MAC_AllocKind allockind : 2;  /* which wrapper did the allocation */
+      ExeContext*   where;          /* where it was allocated           */
+   }
+   MAC_Chunk;
+
 /*------------------------------------------------------------*/
 /*--- Profiling of skins and memory events                 ---*/
 /*------------------------------------------------------------*/
@@ -225,21 +245,35 @@ extern Bool MAC_(clo_show_reachable);
  * default: NO*/
 extern Bool MAC_(clo_workaround_gcc296_bugs);
 
-extern Bool MAC_(process_common_cmd_line_option)(Char* arg);
+extern Bool MAC_(process_common_cmd_line_option) ( Char* arg );
+extern void MAC_(print_common_usage)             ( void );
+extern void MAC_(print_common_debug_usage)       ( void );
+
+
+/*------------------------------------------------------------*/
+/*--- Variables                                            ---*/
+/*------------------------------------------------------------*/
+
+/* For tracking malloc'd blocks */
+extern VgHashTable MAC_(malloc_list);
+
+/* Function pointers for the two skins to track interesting events. */
+extern void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
+extern void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
+extern void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
+extern void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
+
+/* Used in describe_addr() */
+extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-extern void        MAC_(set_where) ( ShadowChunk* sc, ExeContext* ec );
-extern ExeContext *MAC_(get_where) ( ShadowChunk* sc );
-
 extern void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai );
 
 extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
-
-extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
@@ -254,13 +288,12 @@ extern void MAC_(record_freemismatch_error)( ThreadState* tst, Addr a );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 
-extern void MAC_(init_prof_mem) ( void );
-extern void MAC_(done_prof_mem) ( void );
+extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*) );
 
-extern Int          MAC_(count_freelist)  ( void ) __attribute__ ((unused));
-extern void         MAC_(freelist_sanity) ( void ) __attribute__ ((unused));
-extern ShadowChunk* MAC_(any_matching_freed_ShadowChunks) 
-                            ( Bool (*p)(ShadowChunk*) );
+extern void MAC_(common_pre_clo_init) ( void );
+extern void MAC_(common_fini)         ( void (*leak_check)(void) );
+
+extern void MAC_(print_malloc_stats) ( void );
 
 /* For leak checking */
 extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record, 
@@ -281,8 +314,8 @@ extern __attribute__((regparm(1))) void MAC_(new_mem_stack_16) ( Addr old_ESP );
 extern __attribute__((regparm(1))) void MAC_(die_mem_stack_16) ( Addr old_ESP );
 extern __attribute__((regparm(1))) void MAC_(new_mem_stack_32) ( Addr old_ESP );
 extern __attribute__((regparm(1))) void MAC_(die_mem_stack_32) ( Addr old_ESP );
-extern                             void MAC_(die_mem_stack) ( Addr a, UInt len );
-extern                             void MAC_(new_mem_stack) ( Addr a, UInt len );
+extern                             void MAC_(die_mem_stack) ( Addr a, UInt len);
+extern                             void MAC_(new_mem_stack) ( Addr a, UInt len);
 
 
 /*------------------------------------------------------------*/
@@ -290,7 +323,7 @@ extern                             void MAC_(new_mem_stack) ( Addr a, UInt len )
 /*------------------------------------------------------------*/
 
 /* Some noble preprocessor abuse, to enable Memcheck and Addrcheck to
-   share this code, but not call the same functions.
+   share this code, but call different functions.
 
    Note that this code is executed very frequently and must be highly
    optimised, which is why I resort to the preprocessor to achieve the

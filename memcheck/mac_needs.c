@@ -87,110 +87,27 @@ Bool MAC_(process_common_cmd_line_option)(Char* arg)
       MAC_(clo_workaround_gcc296_bugs) = False;
 
    else
-      return False;
+      return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
    return True;
 }
 
-/*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-void MAC_(set_where)( ShadowChunk* sc, ExeContext* ec )
+void MAC_(print_common_usage)(void)
 {
-   VG_(set_sc_extra)( sc, 0, (UInt)ec );
+   VG_(printf)(
+"    --partial-loads-ok=no|yes too hard to explain here; see manual [yes]\n"
+"    --freelist-vol=<number>   volume of freed blocks queue [1000000]\n"
+"    --leak-check=no|yes       search for memory leaks at exit? [no]\n"
+"    --leak-resolution=low|med|high  how much bt merging in leak check [low]\n"
+"    --show-reachable=no|yes   show reachable blocks in leak check? [no]\n"
+"    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
+   );
+   VG_(replacement_malloc_print_usage)();
 }
 
-ExeContext *MAC_(get_where)( ShadowChunk* sc )
+void MAC_(print_common_debug_usage)(void)
 {
-   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Postponing free()ing                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Holds blocks after freeing. */
-static ShadowChunk* freed_list_start  = NULL;
-static ShadowChunk* freed_list_end    = NULL;
-static Int          freed_list_volume = 0;
-
-__attribute__ ((unused))
-Int MAC_(count_freelist) ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n++;
-   return n;
-}
-
-__attribute__ ((unused))
-void MAC_(freelist_sanity) ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   /* VG_(printf)("freelist sanity\n"); */
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n += VG_(get_sc_size)(sc);
-   sk_assert(n == freed_list_volume);
-}
-
-/* Put a shadow chunk on the freed blocks queue, possibly freeing up
-   some of the oldest blocks in the queue at the same time. */
-static void add_to_freed_queue ( ShadowChunk* sc )
-{
-   ShadowChunk* sc1;
-
-   /* Put it at the end of the freed list */
-   if (freed_list_end == NULL) {
-      sk_assert(freed_list_start == NULL);
-      freed_list_end = freed_list_start = sc;
-      freed_list_volume = VG_(get_sc_size)(sc);
-   } else {    
-      sk_assert(VG_(get_sc_next)(freed_list_end) == NULL);
-      VG_(set_sc_next)(freed_list_end, sc);
-      freed_list_end = sc;
-      freed_list_volume += VG_(get_sc_size)(sc);
-   }
-   VG_(set_sc_next)(sc, NULL);
-
-   /* Release enough of the oldest blocks to bring the free queue
-      volume below vg_clo_freelist_vol. */
-   
-   while (freed_list_volume > MAC_(clo_freelist_vol)) {
-      /* freelist_sanity(); */
-      sk_assert(freed_list_start != NULL);
-      sk_assert(freed_list_end != NULL);
-
-      sc1 = freed_list_start;
-      freed_list_volume -= VG_(get_sc_size)(sc1);
-      /* VG_(printf)("volume now %d\n", freed_list_volume); */
-      sk_assert(freed_list_volume >= 0);
-
-      if (freed_list_start == freed_list_end) {
-         freed_list_start = freed_list_end = NULL;
-      } else {
-         freed_list_start = VG_(get_sc_next)(sc1);
-      }
-      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
-      VG_(free_ShadowChunk) ( sc1 );
-   }
-}
-
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   /* Record where freed */
-   MAC_(set_where)( sc, VG_(get_ExeContext) ( tst ) );
-
-   /* Put it out of harm's way for a while. */
-   add_to_freed_queue ( sc );
+   VG_(replacement_malloc_print_debug_usage)();
 }
 
 /*------------------------------------------------------------*/
@@ -389,39 +306,29 @@ void MAC_(pp_shared_SkinError) ( Error* err )
    MemCheck for user blocks, which Addrcheck doesn't support. */
 Bool (*MAC_(describe_addr_supp)) ( Addr a, AddrInfo* ai ) = NULL;
    
-/* Return the first shadow chunk satisfying the predicate p. */
-static ShadowChunk* first_matching_freed_ShadowChunk ( Bool (*p)(ShadowChunk*) )
-{
-   ShadowChunk* sc;
-
-   /* No point looking through freed blocks if we're not keeping
-      them around for a while... */
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      if (p(sc))
-         return sc;
-
-   return NULL;
-}
-
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
-   ShadowChunk* sc;
-   ThreadId     tid;
+   MAC_Chunk* sc;
+   ThreadId   tid;
 
    /* Nested functions, yeah.  Need the lexical scoping of 'a'. */
-   
+
    /* Closure for searching thread stacks */
    Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
    {
       return (stack_min <= a && a <= stack_max);
    }
-   /* Closure for searching malloc'd and free'd lists */
-   Bool addr_is_in_block(ShadowChunk *sh_ch)
+   /* Closure for searching free'd list */
+   Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc)
    {
-      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
-                                        VG_(get_sc_size)(sh_ch) );
+      return VG_(addr_is_in_block)( a, mc->data, mc->size );
+   }
+   /* Closure for searching malloc'd lists */
+   Bool addr_is_in_HashNode(VgHashNode* sh_ch)
+   {
+      return addr_is_in_MAC_Chunk( (MAC_Chunk*)sh_ch );
    }
 
    /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
@@ -437,28 +344,27 @@ static void describe_addr ( Addr a, AddrInfo* ai )
       return;
    }
    /* Search for a recently freed block which might bracket it. */
-   sc = first_matching_freed_ShadowChunk(addr_is_in_block);
-   if (NULL != sc) { 
+   sc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk);
+   if (NULL != sc) {
       ai->akind      = Freed;
-      ai->blksize    = VG_(get_sc_size)(sc);
-      ai->rwoffset   = (Int)a - (Int)VG_(get_sc_data)(sc);
-      ai->lastchange = MAC_(get_where)(sc);
+      ai->blksize    = sc->size;
+      ai->rwoffset   = (Int)a - (Int)sc->data;
+      ai->lastchange = sc->where;
       return;
    }
    /* Search for a currently malloc'd block which might bracket it. */
-   sc = VG_(first_matching_mallocd_ShadowChunk)(addr_is_in_block);
+   sc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode);
    if (NULL != sc) {
       ai->akind      = Mallocd;
-      ai->blksize    = VG_(get_sc_size)(sc);
-      ai->rwoffset   = (Int)a - (Int)VG_(get_sc_data)(sc);
-      ai->lastchange = MAC_(get_where)(sc);
+      ai->blksize    = sc->size;
+      ai->rwoffset   = (Int)(a) - (Int)sc->data;
+      ai->lastchange = sc->where;
       return;
    }
    /* Clueless ... */
    ai->akind = Unknown;
    return;
 }
-
 
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
@@ -798,14 +704,14 @@ M  89   fpu_write 10/28/108
 
 UInt MAC_(event_ctr)[N_PROF_EVENTS];
 
-void MAC_(init_prof_mem) ( void )
+void init_prof_mem ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++)
       MAC_(event_ctr)[i] = 0;
 }
 
-void MAC_(done_prof_mem) ( void )
+void done_prof_mem ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++) {
@@ -819,10 +725,37 @@ void MAC_(done_prof_mem) ( void )
 
 #else
 
-void MAC_(init_prof_mem) ( void ) { }
-void MAC_(done_prof_mem) ( void ) { }
+void init_prof_mem ( void ) { }
+void done_prof_mem ( void ) { }
 
 #endif
+
+/*------------------------------------------------------------*/
+/*--- Common initialisation + finalisation                 ---*/
+/*------------------------------------------------------------*/
+
+void MAC_(common_pre_clo_init)(void)
+{
+   MAC_(malloc_list) = VG_(HT_construct)();
+   init_prof_mem();
+}
+
+void MAC_(common_fini)(void (*leak_check)(void))
+{
+   MAC_(print_malloc_stats)();
+
+   if (VG_(clo_verbosity) == 1) {
+      if (!MAC_(clo_leak_check))
+         VG_(message)(Vg_UserMsg, 
+             "For a detailed leak analysis,  rerun with: --leak-check=yes");
+
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected errors, rerun with: -v");
+   }
+   if (MAC_(clo_leak_check)) leak_check();
+
+   done_prof_mem();
+}
 
 /*------------------------------------------------------------*/
 /*--- Syscall wrappers                                     ---*/

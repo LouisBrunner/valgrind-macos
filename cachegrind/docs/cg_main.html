@@ -672,12 +672,8 @@ Valgrind's cache profiling has a number of shortcomings:
   <li>It doesn't account for cache misses not visible at the instruction level,
       eg. those arising from TLB misses, or speculative execution.</li><p>
 
-  <li>Valgrind's custom <code>malloc()</code> will allocate memory in different
-      ways to the standard <code>malloc()</code>, which could warp the results.
-      </li><p>
-
   <li>Valgrind's custom threads implementation will schedule threads
-      differently to the standard one.  This too could warp the results for
+      differently to the standard one.  This could warp the results for
       threaded programs.
       </li><p>
 

@@ -140,6 +140,16 @@ void VGE_(done_prof_mem) ( void )
 /*--- Data defns.                                          ---*/
 /*------------------------------------------------------------*/
 
+typedef
+   struct _HG_Chunk {
+      struct _HG_Chunk* next;
+      Addr          data;           /* ptr to actual block              */
+      UInt          size;           /* size requested                   */
+      ExeContext*   where;          /* where it was allocated           */
+      ThreadId      tid;            /* allocating thread                */
+   }
+   HG_Chunk;
+
 typedef enum 
    { Vge_VirginInit, Vge_NonVirginInit, Vge_SegmentInit, Vge_Error } 
    VgeInitStatus;
@@ -1285,42 +1295,6 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
 }
 
 /*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-#define SHADOW_EXTRA	2
-
-static __inline__
-ExeContext *get_sc_where( ShadowChunk* sc )
-{
-   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
-}
-
-static __inline__
-ThreadId get_sc_tid(ShadowChunk *sc)
-{
-   return (ThreadId)VG_(get_sc_extra)(sc, 1);
-}
-
-static __inline__
-void set_sc_where( ShadowChunk* sc, ExeContext* ec )
-{
-   VG_(set_sc_extra)(sc, 0, (UInt)ec);
-}
-
-static __inline__
-void set_sc_tid( ShadowChunk* sc, ThreadId tid )
-{
-   VG_(set_sc_extra)(sc, 1, (UInt)tid);
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   set_sc_where ( sc, VG_(get_ExeContext)(tst) );
-   set_sc_tid   ( sc, VG_(get_tid_from_ThreadState)(tst) );
-}
-
-/*------------------------------------------------------------*/
 /*--- Implementation of mutex structure.                   ---*/
 /*------------------------------------------------------------*/
 
@@ -1429,40 +1403,6 @@ static void find_mutex_range(Addr start, Addr end, Bool (*action)(Mutex *))
 	 i = 0;
    }
 }
-
-#define N_FREED_CHUNKS	2
-static Int freechunkptr = 0;
-static ShadowChunk *freechunks[N_FREED_CHUNKS];
-
-/* They're freeing some memory; look to see if it contains any mutexes. */
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   ThreadId tid = VG_(get_tid_from_ThreadState)(tst);
-   Addr start = VG_(get_sc_data)(sc);
-   Addr end = start + VG_(get_sc_size)(sc);
-
-   Bool deadmx(Mutex *mx) {
-      if (mx->state != MxDead)
-	 set_mutex_state(mx, MxDead, tid, tst);
-
-      return False;
-   }
-
-   set_sc_where(sc, VG_(get_ExeContext)(tst));
-
-   /* maintain a small window so that the error reporting machinery
-      knows about this memory */
-   if (freechunks[freechunkptr] != NULL)
-      VG_(free_ShadowChunk)(freechunks[freechunkptr]);
-   freechunks[freechunkptr] = sc;
-
-   if (++freechunkptr == N_FREED_CHUNKS)
-      freechunkptr = 0;
-
-   /* mark all mutexes in range dead */
-   find_mutex_range(start, end, deadmx);
-}
-
 
 #define MARK_LOOP	(graph_mark+0)
 #define MARK_DONE	(graph_mark+1)
@@ -1860,6 +1800,208 @@ void init_shadow_memory(void)
 }
 
 
+/*------------------------------------------------------------*/
+/*--- malloc() et al replacements                          ---*/
+/*------------------------------------------------------------*/
+
+VgHashTable hg_malloc_list = NULL;
+
+#define N_FREED_CHUNKS	2
+static Int freechunkptr = 0;
+static HG_Chunk *freechunks[N_FREED_CHUNKS];
+
+/* Use a small redzone (paranoia) */
+UInt VG_(vg_malloc_redzone_szB) = 4;
+
+
+/* Allocate a user-chunk of size bytes.  Also allocate its shadow
+   block, make the shadow block point at the user block.  Put the
+   shadow chunk on the appropriate list, and set all memory
+   protections correctly. */
+
+static void add_HG_Chunk ( ThreadState* tst, Addr p, UInt size )
+{
+   HG_Chunk* hc;
+
+   hc            = VG_(malloc)(sizeof(HG_Chunk));
+   hc->data      = p;
+   hc->size      = size;
+   hc->where     = VG_(get_ExeContext)(tst);
+   hc->tid       = VG_(get_tid_from_ThreadState)(tst);
+
+   VG_(HT_add_node)( hg_malloc_list, (VgHashNode*)hc );
+}
+
+/* Allocate memory and note change in memory available */
+static __inline__
+void* alloc_and_new_mem ( ThreadState* tst, UInt size, UInt alignment,
+                          Bool is_zeroed )
+{
+   Addr p;
+
+   p = (Addr)VG_(cli_malloc)(alignment, size);
+   add_HG_Chunk ( tst, p, size );
+   eraser_new_mem_heap( p, size, is_zeroed );
+
+   return (void*)p;
+}
+
+void* SK_(malloc) ( ThreadState* tst, Int n )
+{
+   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+void* SK_(__builtin_new) ( ThreadState* tst, Int n )
+{
+   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+void* SK_(__builtin_vec_new) ( ThreadState* tst, Int n )
+{
+   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+void* SK_(memalign) ( ThreadState* tst, Int align, Int n )
+{
+   return alloc_and_new_mem ( tst, n, align,              /*is_zeroed*/False );
+}
+
+void* SK_(calloc) ( ThreadState* tst, Int nmemb, Int size1 )
+{
+   void* p;
+   Int  size, i;
+
+   size = nmemb * size1;
+
+   p = alloc_and_new_mem ( tst, size, VG_(clo_alignment), /*is_zeroed*/True );
+   for (i = 0; i < size; i++)    /* calloc() is zeroed */
+      ((UChar*)p)[i] = 0;
+   return p;
+}
+
+static
+void die_and_free_mem ( ThreadState* tst, HG_Chunk* hc,
+                        HG_Chunk** prev_chunks_next_ptr )
+{
+   ThreadId tid   = VG_(get_tid_from_ThreadState)(tst);
+   Addr     start = hc->data;
+   Addr     end   = start + hc->size;
+
+   Bool deadmx(Mutex *mx) {
+      if (mx->state != MxDead)
+         set_mutex_state(mx, MxDead, tid, tst);
+
+      return False;
+   }
+
+   /* Remove hc from the malloclist using prev_chunks_next_ptr to
+      avoid repeating the hash table lookup.  Can't remove until at least
+      after free and free_mismatch errors are done because they use
+      describe_addr() which looks for it in malloclist. */
+   *prev_chunks_next_ptr = hc->next;
+
+   /* Record where freed */
+   hc->where = VG_(get_ExeContext) ( tst );
+
+   /* maintain a small window so that the error reporting machinery
+      knows about this memory */
+   if (freechunks[freechunkptr] != NULL) {
+      /* free HG_Chunk */
+      HG_Chunk* sc1 = freechunks[freechunkptr];
+      VG_(cli_free) ( (void*)(sc1->data) );
+      VG_(free) ( sc1 );
+   }
+
+   freechunks[freechunkptr] = hc;
+
+   if (++freechunkptr == N_FREED_CHUNKS)
+      freechunkptr = 0;
+
+   /* mark all mutexes in range dead */
+   find_mutex_range(start, end, deadmx);
+}
+
+
+static __inline__
+void handle_free ( ThreadState* tst, void* p )
+{
+   HG_Chunk*  hc;
+   HG_Chunk** prev_chunks_next_ptr;
+
+   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,
+                                      (VgHashNode***)&prev_chunks_next_ptr );
+   if (hc == NULL) {
+      return;
+   }
+   die_and_free_mem ( tst, hc, prev_chunks_next_ptr );
+}
+
+void SK_(free) ( ThreadState* tst, void* p )
+{
+   handle_free(tst, p);
+}
+
+void SK_(__builtin_delete) ( ThreadState* tst, void* p )
+{
+   handle_free(tst, p);
+}
+
+void SK_(__builtin_vec_delete) ( ThreadState* tst, void* p )
+{
+   handle_free(tst, p);
+}
+
+void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
+{
+   HG_Chunk  *hc;
+   HG_Chunk **prev_chunks_next_ptr;
+   UInt       i;
+
+   /* First try and find the block. */
+   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,
+                                       (VgHashNode***)&prev_chunks_next_ptr );
+
+   if (hc == NULL) {
+      return NULL;
+   }
+  
+   if (hc->size == new_size) {
+      /* size unchanged */
+      return p;
+      
+   } else if (hc->size > new_size) {
+      /* new size is smaller */
+      hc->size = new_size;
+      return p;
+
+   } else {
+      /* new size is bigger */
+      Addr p_new;
+
+      /* Get new memory */
+      p_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+
+      /* First half kept and copied, second half new */
+      copy_address_range_state( (Addr)p, p_new, hc->size );
+      eraser_new_mem_heap ( p_new+hc->size, new_size-hc->size,
+                            /*inited*/False );
+
+      /* Copy from old to new */
+      for (i = 0; i < hc->size; i++)
+         ((UChar*)p_new)[i] = ((UChar*)p)[i];
+
+      /* Free old memory */
+      die_and_free_mem ( tst, hc, prev_chunks_next_ptr );
+
+      /* this has to be after die_and_free_mem, otherwise the
+         former succeeds in shorting out the new block, not the
+         old, in the case when both are on the same list.  */
+      add_HG_Chunk ( tst, p_new, new_size );
+
+      return (void*)p_new;
+   }  
+}
+
 /*--------------------------------------------------------------*/
 /*--- Machinery to support sanity checking                   ---*/
 /*--------------------------------------------------------------*/
@@ -2196,7 +2338,7 @@ void clear_HelgrindError ( HelgrindError* err_extra )
 
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
-   ShadowChunk* sc;
+   HG_Chunk* hc;
    Int i;
 
    /* Nested functions, yeah.  Need the lexical scoping of 'a'. */ 
@@ -2207,10 +2349,10 @@ static void describe_addr ( Addr a, AddrInfo* ai )
       return (stack_min <= a && a <= stack_max);
    }
    /* Closure for searching malloc'd and free'd lists */
-   Bool addr_is_in_block(ShadowChunk *sh_ch)
+   Bool addr_is_in_block(VgHashNode *node)
    {
-      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
-                                        VG_(get_sc_size)(sh_ch) );
+      HG_Chunk* hc2 = (HG_Chunk*)node;
+      return (hc2->data <= a && a < hc2->data + hc2->size);
    }
 
    /* Search for it in segments */
@@ -2247,34 +2389,28 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    }
 
    /* Search for a currently malloc'd block which might bracket it. */
-   sc = VG_(first_matching_mallocd_ShadowChunk)(addr_is_in_block);
-   if (NULL != sc) {
+   hc = (HG_Chunk*)VG_(HT_first_match)(hg_malloc_list, addr_is_in_block);
+   if (NULL != hc) {
       ai->akind      = Mallocd;
-      ai->blksize    = VG_(get_sc_size)(sc);
-      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
-      ai->lastchange = get_sc_where(sc);
-      ai->lasttid    = get_sc_tid(sc);
+      ai->blksize    = hc->size;
+      ai->rwoffset   = (Int)a - (Int)(hc->data);
+      ai->lastchange = hc->where;
+      ai->lasttid    = hc->tid;
       return;
    } 
 
    /* Look in recently freed memory */
    for(i = 0; i < N_FREED_CHUNKS; i++) {
-      Addr sc_data;
-      UInt sc_size;
-      
-      sc = freechunks[i];
-      if (sc == NULL)
+      hc = freechunks[i];
+      if (hc == NULL)
 	 continue;
 
-      sc_data = VG_(get_sc_data)(sc);
-      sc_size = VG_(get_sc_size)(sc);
-
-      if (a >= sc_data && a <  sc_data + sc_size) {
+      if (a >= hc->data && a < hc->data + hc->size) {
 	 ai->akind      = Freed;
-	 ai->blksize    = sc_size;
-	 ai->rwoffset   = a - sc_data;
-	 ai->lastchange = get_sc_where(sc);
-	 ai->lasttid    = get_sc_tid(sc);
+	 ai->blksize    = hc->size;
+	 ai->rwoffset   = a - hc->data;
+	 ai->lastchange = hc->where;
+	 ai->lasttid    = hc->tid;
 	 return;
       } 
    }
@@ -3107,26 +3243,20 @@ void SK_(pre_clo_init)(void)
    VG_(needs_core_errors)();
    VG_(needs_skin_errors)();
    VG_(needs_data_syms)();
-   VG_(needs_sizeof_shadow_block)(SHADOW_EXTRA);
-   VG_(needs_alternative_free)();
    VG_(needs_client_requests)();
    VG_(needs_command_line_options)();
 
    VG_(track_new_mem_startup)      (& eraser_new_mem_startup);
-   VG_(track_new_mem_heap)         (& eraser_new_mem_heap);
 
    /* stack ones not decided until VG_(post_clo_init)() */
 
    VG_(track_new_mem_brk)          (& make_writable);
    VG_(track_new_mem_mmap)         (& eraser_new_mem_startup);
 
-   VG_(track_copy_mem_heap)        (& copy_address_range_state);
    VG_(track_change_mem_mprotect)  (& eraser_set_perms);
 
-   VG_(track_ban_mem_heap)         (NULL);
    VG_(track_ban_mem_stack)        (NULL);
 
-   VG_(track_die_mem_heap)         (NULL);
    VG_(track_die_mem_stack)        (NULL);
    VG_(track_die_mem_stack_signal) (NULL);
    VG_(track_die_mem_brk)          (NULL);
@@ -3172,6 +3302,7 @@ void SK_(pre_clo_init)(void)
    }
 
    init_shadow_memory();
+   hg_malloc_list = VG_(HT_construct)();
 }
 
 static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
@@ -3228,18 +3359,23 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    if (match_Bool(arg, "--private-stacks=", &clo_priv_stacks))
       return True;
 
-   return False;
+   return VG_(replacement_malloc_process_cmd_line_option)(arg);
 }
 
-Char *SK_(usage)(void)
+void SK_(print_usage)(void)
 {
-   return ""
+   VG_(printf)(
 "    --private-stacks=yes|no   assume thread stacks are used privately [no]\n"
 "    --show-last-access=no|some|all\n"
 "                           show location of last word access on error [no]\n"
-      ;
+   );
+   VG_(replacement_malloc_print_usage)();
 }
 
+void SK_(print_debug_usage)(void)
+{
+   VG_(replacement_malloc_print_debug_usage)();
+}
 
 void SK_(post_clo_init)(void)
 {

@@ -34,10 +34,6 @@
 #include "memcheck.h"
 //#include "vg_profile.c"
 
-#include "mac_leakcheck.c"
-#include "mac_needs.c"
-
-
 
 VG_DETERMINE_INTERFACE_VERSION
 
@@ -1154,18 +1150,14 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return MAC_(process_common_cmd_line_option)(arg);
 }
 
-Char* SK_(usage)(void)
+void SK_(print_usage)(void)
 {  
-   return  
-"    --partial-loads-ok=no|yes too hard to explain here; see manual [yes]\n"
-"    --freelist-vol=<number>   volume of freed blocks queue [1000000]\n"
-"    --leak-check=no|yes       search for memory leaks at exit? [no]\n"
-"    --leak-resolution=low|med|high\n"
-"                              amount of bt merging in leak check [low]\n"
-"    --show-reachable=no|yes   show reachable blocks in leak check? [no]\n"
-"    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
-"\n"
-"    --cleanup=no|yes          improve after instrumentation? [yes]\n";
+   MAC_(print_common_usage)();
+}
+
+void SK_(print_debug_usage)(void)
+{  
+   MAC_(print_common_debug_usage)();
 }
 
 
@@ -1186,37 +1178,34 @@ void SK_(pre_clo_init)(void)
    VG_(needs_core_errors)         ();
    VG_(needs_skin_errors)         ();
    VG_(needs_libc_freeres)        ();
-   VG_(needs_sizeof_shadow_block) ( 1 );
    VG_(needs_command_line_options)();
    VG_(needs_client_requests)     ();
    VG_(needs_syscall_wrapper)     ();
-   VG_(needs_alternative_free)    ();
    VG_(needs_sanity_checks)       ();
 
+   MAC_( new_mem_heap)             = & ac_new_mem_heap;
+   MAC_( ban_mem_heap)             = & ac_make_noaccess;
+   MAC_(copy_mem_heap)             = & ac_copy_address_range_state;
+   MAC_( die_mem_heap)             = & ac_make_noaccess;
+
    VG_(track_new_mem_startup)      ( & ac_new_mem_startup );
-   VG_(track_new_mem_heap)         ( & ac_new_mem_heap );
    VG_(track_new_mem_stack_signal) ( & ac_make_accessible );
    VG_(track_new_mem_brk)          ( & ac_make_accessible );
    VG_(track_new_mem_mmap)         ( & ac_set_perms );
    
+   VG_(track_copy_mem_remap)       ( & ac_copy_address_range_state );
+   VG_(track_change_mem_mprotect)  ( & ac_set_perms );
+      
+   VG_(track_die_mem_stack_signal) ( & ac_make_noaccess ); 
+   VG_(track_die_mem_brk)          ( & ac_make_noaccess );
+   VG_(track_die_mem_munmap)       ( & ac_make_noaccess ); 
+
    VG_(track_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
    VG_(track_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
    VG_(track_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
    VG_(track_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
    VG_(track_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
    VG_(track_new_mem_stack)        ( & MAC_(new_mem_stack)    );
-
-   VG_(track_copy_mem_heap)        ( & ac_copy_address_range_state );
-   VG_(track_copy_mem_remap)       ( & ac_copy_address_range_state );
-   VG_(track_change_mem_mprotect)  ( & ac_set_perms );
-      
-   VG_(track_ban_mem_heap)         ( & ac_make_noaccess );
-   VG_(track_ban_mem_stack)        ( & ac_make_noaccess );
-
-   VG_(track_die_mem_heap)         ( & ac_make_noaccess );
-   VG_(track_die_mem_stack_signal) ( & ac_make_noaccess ); 
-   VG_(track_die_mem_brk)          ( & ac_make_noaccess );
-   VG_(track_die_mem_munmap)       ( & ac_make_noaccess ); 
 
    VG_(track_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
    VG_(track_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
@@ -1225,8 +1214,7 @@ void SK_(pre_clo_init)(void)
    VG_(track_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
    VG_(track_die_mem_stack)        ( & MAC_(die_mem_stack)    );
    
-   VG_(track_bad_free)             ( & MAC_(record_free_error) );
-   VG_(track_mismatched_free)      ( & MAC_(record_freemismatch_error) );
+   VG_(track_ban_mem_stack)        ( & ac_make_noaccess );
 
    VG_(track_pre_mem_read)         ( & ac_check_is_readable );
    VG_(track_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
@@ -1243,7 +1231,7 @@ void SK_(pre_clo_init)(void)
    VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    init_shadow_memory();
-   MAC_(init_prof_mem)();
+   MAC_(common_pre_clo_init)();
 }
 
 void SK_(post_clo_init) ( void )
@@ -1252,19 +1240,7 @@ void SK_(post_clo_init) ( void )
 
 void SK_(fini) ( void )
 {
-   VG_(print_malloc_stats)();
-
-   if (VG_(clo_verbosity) == 1) {
-      if (!MAC_(clo_leak_check))
-         VG_(message)(Vg_UserMsg, 
-             "For a detailed leak analysis,  rerun with: --leak-check=yes");
-
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected errors, rerun with: -v");
-   }
-   if (MAC_(clo_leak_check)) ac_detect_memory_leaks();
-
-   MAC_(done_prof_mem)();
+   MAC_(common_fini)( ac_detect_memory_leaks );
 }
 
 /*--------------------------------------------------------------------*/

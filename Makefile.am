@@ -1,9 +1,12 @@
 
 AUTOMAKE_OPTIONS = 1.5
 
+## coregrind must come before memcheck, addrcheck, helgrind, for
+##   vg_replace_malloc.o.
+## addrcheck must come after memcheck, for mac_*.o
 SUBDIRS = 	coregrind . docs tests include auxprogs \
-		addrcheck \
 		memcheck \
+		addrcheck \
 		cachegrind \
 		corecheck \
 		helgrind \

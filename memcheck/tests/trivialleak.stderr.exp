@@ -8,7 +8,7 @@ searching for pointers to 1000 not-freed blocks.
 checked ... bytes.
 
 1000 bytes in 1000 blocks are definitely lost in loss record 1 of 1
-   at 0x........: malloc (vg_clientfuncs.c:...)
+   at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: test (trivialleak.c:8)
    by 0x........: main (trivialleak.c:12)
    by 0x........: __libc_start_main (...libc...)

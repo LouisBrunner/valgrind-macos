@@ -224,9 +224,9 @@ typedef
 #ifdef VG_DEBUG_LEAKCHECK
 /* Used to sanity-check the fast binary-search mechanism. */
 static 
-Int find_shadow_for_OLD ( Addr          ptr, 
-                          ShadowChunk** shadows,
-                          Int           n_shadows )
+Int find_shadow_for_OLD ( Addr        ptr, 
+                          MAC_Chunk** shadows,
+                          Int         n_shadows )
 
 {
    Int  i;
@@ -245,9 +245,9 @@ Int find_shadow_for_OLD ( Addr          ptr,
 
 
 static 
-Int find_shadow_for ( Addr          ptr, 
-                      ShadowChunk** shadows,
-                      Int           n_shadows )
+Int find_shadow_for ( Addr        ptr, 
+                      MAC_Chunk** shadows,
+                      Int         n_shadows )
 {
    Addr a_mid_lo, a_mid_hi;
    Int lo, mid, hi, retVal;
@@ -256,14 +256,12 @@ Int find_shadow_for ( Addr          ptr,
    lo = 0;
    hi = n_shadows-1;
    while (True) {
-      /* invariant: current unsearched space is from lo to hi,
-         inclusive. */
+      /* invariant: current unsearched space is from lo to hi, inclusive. */
       if (lo > hi) break; /* not found */
 
       mid      = (lo + hi) / 2;
-      a_mid_lo = VG_(get_sc_data)(shadows[mid]);
-      a_mid_hi = VG_(get_sc_data)(shadows[mid]) + 
-                 VG_(get_sc_size)(shadows[mid]) - 1;
+      a_mid_lo = shadows[mid]->data;
+      a_mid_hi = shadows[mid]->data + shadows[mid]->size - 1;
 
       if (ptr < a_mid_lo) {
          hi = mid-1;
@@ -286,11 +284,11 @@ Int find_shadow_for ( Addr          ptr,
 }
 
 /* Globals, for the following callback used by VG_(detect_memory_leaks). */
-static ShadowChunk**  vglc_shadows;
-static Int            vglc_n_shadows;
-static Reachedness*   vglc_reachedness;
-static Addr           vglc_min_mallocd_addr;
-static Addr           vglc_max_mallocd_addr;
+static MAC_Chunk**  lc_shadows;
+static Int          lc_n_shadows;
+static Reachedness* lc_reachedness;
+static Addr         lc_min_mallocd_addr;
+static Addr         lc_max_mallocd_addr;
 
 static 
 void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
@@ -313,29 +311,28 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
       where the .bss segment has been put.  If you can, drop me a
       line.  
    */
-   if (VG_(within_stack)(a))                return;
-   if (VG_(within_m_state_static)(a))       return;
-   if (a == (Addr)(&vglc_min_mallocd_addr)) return;
-   if (a == (Addr)(&vglc_max_mallocd_addr)) return;
+   if (VG_(within_stack)(a))              return;
+   if (VG_(within_m_state_static)(a))     return;
+   if (a == (Addr)(&lc_min_mallocd_addr)) return;
+   if (a == (Addr)(&lc_max_mallocd_addr)) return;
 
    /* OK, let's get on and do something Useful for a change. */
 
    ptr = (Addr)word_at_a;
-   if (ptr >= vglc_min_mallocd_addr && ptr <= vglc_max_mallocd_addr) {
+   if (ptr >= lc_min_mallocd_addr && ptr <= lc_max_mallocd_addr) {
       /* Might be legitimate; we'll have to investigate further. */
-      sh_no = find_shadow_for ( ptr, vglc_shadows, vglc_n_shadows );
+      sh_no = find_shadow_for ( ptr, lc_shadows, lc_n_shadows );
       if (sh_no != -1) {
          /* Found a block at/into which ptr points. */
-         sk_assert(sh_no >= 0 && sh_no < vglc_n_shadows);
-         sk_assert(ptr < VG_(get_sc_data)(vglc_shadows[sh_no])
-                       + VG_(get_sc_size)(vglc_shadows[sh_no]));
+         sk_assert(sh_no >= 0 && sh_no < lc_n_shadows);
+         sk_assert(ptr < lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
          /* Decide whether Proper-ly or Interior-ly reached. */
-         if (ptr == VG_(get_sc_data)(vglc_shadows[sh_no])) {
+         if (ptr == lc_shadows[sh_no]->data) {
             if (0) VG_(printf)("pointer at %p to %p\n", a, word_at_a );
-            vglc_reachedness[sh_no] = Proper;
+            lc_reachedness[sh_no] = Proper;
          } else {
-            if (vglc_reachedness[sh_no] == Unreached)
-               vglc_reachedness[sh_no] = Interior;
+            if (lc_reachedness[sh_no] == Unreached)
+               lc_reachedness[sh_no] = Interior;
          }
       }
    }
@@ -385,25 +382,33 @@ void MAC_(do_detect_memory_leaks) (
    LossRecord* errlist;
    LossRecord* p;
 
-   /* VG_(get_malloc_shadows) allocates storage for shadows */
-   vglc_shadows = VG_(get_malloc_shadows)( &vglc_n_shadows );
-   if (vglc_n_shadows == 0) {
-      sk_assert(vglc_shadows == NULL);
+   /* VG_(HashTable_to_array) allocates storage for shadows */
+   lc_shadows = (MAC_Chunk**)VG_(HT_to_sorted_array)( MAC_(malloc_list),
+                                                        &lc_n_shadows );
+
+   /* Sanity check -- make sure they don't overlap */
+   for (i = 0; i < lc_n_shadows-1; i++) {
+      sk_assert( lc_shadows[i]->data + lc_shadows[i]->size
+                 < lc_shadows[i+1]->data );
+   }
+
+   if (lc_n_shadows == 0) {
+      sk_assert(lc_shadows == NULL);
       VG_(message)(Vg_UserMsg, 
                    "No malloc'd blocks -- no leaks are possible.");
       return;
    }
 
    VG_(message)(Vg_UserMsg, "searching for pointers to %d not-freed blocks.", 
-                vglc_n_shadows );
+                lc_n_shadows );
 
-   vglc_min_mallocd_addr = VG_(get_sc_data)(vglc_shadows[0]);
-   vglc_max_mallocd_addr = VG_(get_sc_data)(vglc_shadows[vglc_n_shadows-1])
-                         + VG_(get_sc_size)(vglc_shadows[vglc_n_shadows-1]) - 1;
+   lc_min_mallocd_addr = lc_shadows[0]->data;
+   lc_max_mallocd_addr = lc_shadows[lc_n_shadows-1]->data
+                         + lc_shadows[lc_n_shadows-1]->size - 1;
 
-   vglc_reachedness = VG_(malloc)( vglc_n_shadows * sizeof(Reachedness) );
-   for (i = 0; i < vglc_n_shadows; i++)
-      vglc_reachedness[i] = Unreached;
+   lc_reachedness = VG_(malloc)( lc_n_shadows * sizeof(Reachedness) );
+   for (i = 0; i < lc_n_shadows; i++)
+      lc_reachedness[i] = Unreached;
 
    /* Do the scan of memory. */
    bytes_notified
@@ -419,12 +424,12 @@ void MAC_(do_detect_memory_leaks) (
    /* Common up the lost blocks so we can print sensible error messages. */
    n_lossrecords = 0;
    errlist       = NULL;
-   for (i = 0; i < vglc_n_shadows; i++) {
+   for (i = 0; i < lc_n_shadows; i++) {
      
-      ExeContext* where = MAC_(get_where) ( vglc_shadows[i] );
+      ExeContext* where = lc_shadows[i]->where;
       
       for (p = errlist; p != NULL; p = p->next) {
-         if (p->loss_mode == vglc_reachedness[i]
+         if (p->loss_mode == lc_reachedness[i]
              && VG_(eq_ExeContext) ( MAC_(clo_leak_resolution),
                                      p->allocated_at, 
                                      where) ) {
@@ -433,13 +438,13 @@ void MAC_(do_detect_memory_leaks) (
       }
       if (p != NULL) {
          p->num_blocks  ++;
-         p->total_bytes += VG_(get_sc_size)(vglc_shadows[i]);
+         p->total_bytes += lc_shadows[i]->size;
       } else {
          n_lossrecords ++;
          p = VG_(malloc)(sizeof(LossRecord));
-         p->loss_mode    = vglc_reachedness[i];
+         p->loss_mode    = lc_reachedness[i];
          p->allocated_at = where;
-         p->total_bytes  = VG_(get_sc_size)(vglc_shadows[i]);
+         p->total_bytes  = lc_shadows[i]->size;
          p->num_blocks   = 1;
          p->next         = errlist;
          errlist         = p;
@@ -474,7 +479,8 @@ void MAC_(do_detect_memory_leaks) (
       is_suppressed = 
          VG_(unique_error) ( /*tst*/NULL, LeakErr, (UInt)i+1,
                              (Char*)n_lossrecords, (void*) p_min,
-                             p_min->allocated_at, print_record );
+                             p_min->allocated_at, print_record,
+                             /*allow_GDB_attach*/False );
 
       if (is_suppressed) {
          blocks_suppressed += p_min->num_blocks;
@@ -516,8 +522,8 @@ void MAC_(do_detect_memory_leaks) (
    }
    VG_(message)(Vg_UserMsg, "");
 
-   VG_(free) ( vglc_shadows );
-   VG_(free) ( vglc_reachedness );
+   VG_(free) ( lc_shadows );
+   VG_(free) ( lc_reachedness );
 }
 
 /*--------------------------------------------------------------------*/

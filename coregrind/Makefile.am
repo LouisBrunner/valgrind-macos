@@ -35,15 +35,14 @@ valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 valgrinq_so_LDFLAGS = -shared
 
 valgrind_so_SOURCES = \
-	vg_clientfuncs.c \
 	vg_scheduler.c \
-	vg_clientmalloc.c \
 	vg_default.c \
 	vg_demangle.c \
 	vg_dispatch.S \
 	vg_errcontext.c \
 	vg_execontext.c \
 	vg_from_ucode.c \
+	vg_hashtable.c \
 	vg_helpers.S \
 	vg_instrument.c \
 	vg_intercept.c \
@@ -71,27 +70,22 @@ valgrind_so_LDADD = \
 	demangle/dyn-string.o \
 	demangle/safe-ctype.o
 
+## Build a .a library, but we don't actually use it;  just a ploy to ensure
+## vg_replace_malloc.o is built.
+noinst_LIBRARIES = lib_replace_malloc.a
+
+lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
+
 noinst_HEADERS = \
         vg_kerneliface.h        \
         vg_include.h            \
         vg_constants.h          \
-        vg_unsafe.h
+	vg_unsafe.h
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) 
 
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_intercept.o vg_libpthread.o vg_clientfuncs.o: CFLAGS += -fno-omit-frame-pointer
+vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 
-##valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
-##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \
-##		$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)
-
-##valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
-##	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)
-
-##libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS) $(srcdir)/vg_libpthread.vs
-##	$(CC) -Wall -Werror -g -O -shared -fpic -o libpthread.so \
-##		$(libpthread_so_OBJECTS) \
-##		-Wl,-version-script $(srcdir)/vg_libpthread.vs

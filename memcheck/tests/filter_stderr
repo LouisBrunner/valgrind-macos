@@ -7,8 +7,8 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
-# Anonymise line numbers in vg_clientfuncs.c
-sed "s/vg_clientfuncs.c:[0-9]\+/vg_clientfuncs.c:.../"  |
+# Anonymise line numbers in vg_replace_malloc.c
+sed "s/vg_replace_malloc.c:[0-9]\+/vg_replace_malloc.c:.../"  |
 
 $dir/../../tests/filter_test_paths                      |
 

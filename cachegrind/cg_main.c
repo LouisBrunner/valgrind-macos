@@ -1922,12 +1922,20 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-Char* SK_(usage)(void)
+void SK_(print_usage)(void)
 {
-   return 
+   VG_(printf)(
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
 "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually\n"
-"    --L2=<size>,<assoc>,<line_size>  set L2 cache manually\n";
+"    --L2=<size>,<assoc>,<line_size>  set L2 cache manually\n"
+   );
+}
+
+void SK_(print_debug_usage)(void)
+{
+   VG_(printf)(
+"    (none)\n"
+   );
 }
 
 /*--------------------------------------------------------------------*/

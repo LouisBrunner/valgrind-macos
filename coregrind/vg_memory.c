@@ -190,26 +190,24 @@ void startup_segment_callback ( Addr start, UInt size,
 }
 
 
-/* 1. Records exe segments from /proc/pid/maps -- always necessary, because 
-      if they're munmap()ed we need to know if they were executable in order
-      to discard translations.  Also checks there's no exe segment overlaps.
+/* 1. Records startup segments from /proc/pid/maps.  Takes special note
+      of the executable ones, because if they're munmap()ed we need to
+      discard translations.  Also checks there's no exe segment overlaps.
 
-   2. Marks global variables that might be accessed from generated code;
+      Note that `read_from_file' is false;  we read /proc/self/maps into a
+      buffer at the start of VG_(main) so that any superblocks mmap'd by
+      calls to VG_(malloc)() by SK_({pre,post}_clo_init) aren't erroneously
+      thought of as being owned by the client.
 
-   3. Sets up the end of the data segment so that vg_syscalls.c can make
+   2. Sets up the end of the data segment so that vg_syscalls.c can make
       sense of calls to brk().
  */
 void VG_(init_memory) ( void )
 {
-   /* 1 and 2 */
-   VG_(read_procselfmaps) ( startup_segment_callback );
+   /* 1 */
+   VG_(read_procselfmaps) ( startup_segment_callback, /*read_from_file*/False );
 
-   /* 3 */
-   VG_TRACK( post_mem_write, (Addr) & VG_(running_on_simd_CPU), 1 );
-   VG_TRACK( post_mem_write, (Addr) & VG_(clo_trace_malloc),    1 );
-   VG_TRACK( post_mem_write, (Addr) & VG_(clo_sloppy_malloc),   1 );
-
-   /* 4 */
+   /* 2 */
    VG_(init_dataseg_end_for_brk)();
 
    /* kludge: some newer kernels place a "sysinfo" page up high, with
@@ -219,7 +217,6 @@ void VG_(init_memory) ( void )
       VG_TRACK( new_mem_startup, VG_(sysinfo_page_addr), 4096, 
                 True, True, True );
      }
-
 }
 
 /*------------------------------------------------------------*/

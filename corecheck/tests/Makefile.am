@@ -10,24 +10,18 @@ noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
-	erringfds.stderr.exp erringfds.stdout.exp \
-	erringfds.vgtest \
-	malloc3.stderr.exp malloc3.stdout.exp \
-	malloc3.vgtest \
-	pth_atfork1.stderr.exp \
-	pth_atfork1.stdout.exp pth_atfork1.vgtest \
+	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
+	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \
-	pth_cvsimple.stderr.exp \
-	pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
+	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
 	pth_empty.stderr.exp pth_empty.vgtest \
 	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
-	pth_once.stderr.exp pth_once.stdout.exp \
-	pth_once.vgtest \
+	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	sigkill.stderr.exp sigkill.vgtest
 
 noinst_PROGRAMS = \
-	erringfds malloc3 sigkill \
+	erringfds sigkill \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_mutexspeed pth_once
 
@@ -36,7 +30,6 @@ CXXFLAGS = $(CFLAGS)
 
 # C ones
 erringfds_SOURCES 	= erringfds.c
-malloc3_SOURCES 	= malloc3.c
 sigkill_SOURCES 	= sigkill.c
 
 # Pthread ones

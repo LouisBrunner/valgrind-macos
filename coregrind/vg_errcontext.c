@@ -161,9 +161,8 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
    error comes from:
 
    - If from generated code (tst == NULL), the %EIP/%EBP values that we
-     need in order to create proper error messages are picked up out of
-     VG_(baseBlock) rather than from the thread table (vg_threads in
-     vg_scheduler.c).
+     need in order to attach GDB are picked up out of VG_(baseBlock) rather
+     than from the thread table (vg_threads in vg_scheduler.c).
 
    - If not from generated code but in response to requests passed back to
      the scheduler (tst != NULL), we pick up %EIP/%EBP values from the
@@ -171,7 +170,9 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 */
 static __inline__
 void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
-                       Char* s, void* extra, ExeContext* where )
+                       Char* s, void* extra, ExeContext* where,
+                       /*out*/Addr* m_eip, /*out*/Addr* m_esp,
+                       /*out*/Addr* m_ebp )
 {
    /* Core-only parts */
    err->next     = NULL;
@@ -184,14 +185,14 @@ void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
 
    if (NULL == tst) {
       err->tid   = VG_(get_current_tid)();
-      err->m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-      err->m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-      err->m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+      *m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
+      *m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+      *m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    } else {
       err->tid   = tst->tid;
-      err->m_eip = tst->m_eip;
-      err->m_esp = tst->m_esp;
-      err->m_ebp = tst->m_ebp;
+      *m_eip = tst->m_eip;
+      *m_esp = tst->m_esp;
+      *m_ebp = tst->m_ebp;
    }
 
    /* Skin-relevant parts */
@@ -246,12 +247,14 @@ void VG_(gen_suppression)(Error* err)
    VG_(printf)("}\n");
 }
 
-void do_actions_on_error(Error* err)
+void do_actions_on_error(Error* err, Bool allow_GDB_attach,
+                         Addr m_eip, Addr m_esp, Addr m_ebp )
 {
    /* Perhaps we want a GDB attach at this point? */
-   if (VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) {
-      VG_(swizzle_esp_then_start_GDB)(
-         err->m_eip, err->m_esp, err->m_ebp);
+   if (allow_GDB_attach &&
+       VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) 
+   {
+      VG_(swizzle_esp_then_start_GDB)( m_eip, m_esp, m_ebp );
    }
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(is_action_requested)( "Print suppression",
@@ -270,6 +273,7 @@ static Bool is_first_shown_context = True;
 void VG_(maybe_record_error) ( ThreadState* tst, 
                                ErrorKind ekind, Addr a, Char* s, void* extra )
 {
+          Addr   m_eip, m_esp, m_ebp;
           Error  err;
           Error* p;
           Error* p_prev;
@@ -334,7 +338,8 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    }
 
    /* Build ourselves the error */
-   construct_error ( &err, tst, ekind, a, s, extra, NULL );
+   construct_error ( &err, tst, ekind, a, s, extra, NULL,
+                     &m_eip, &m_esp, &m_ebp );
 
    /* First, see if we've got an error record matching this one. */
    p      = vg_errors;
@@ -405,7 +410,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
       pp_Error(p, False);
       is_first_shown_context = False;
       vg_n_errs_shown++;
-      do_actions_on_error(p);
+      do_actions_on_error(p, /*allow_GDB_attach*/True, m_eip, m_esp, m_ebp );
    } else {
       vg_n_errs_suppressed++;
       p->supp->count++;
@@ -418,12 +423,15 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    comparing stuff.  But they can be suppressed;  returns True if it is
    suppressed.  Bool `print_error' dictates whether to print the error. */
 Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
-                         void* extra, ExeContext* where, Bool print_error )
+                         void* extra, ExeContext* where, Bool print_error,
+                         Bool allow_GDB_attach )
 {
    Error  err;
+   Addr   m_eip, m_esp, m_ebp;
 
    /* Build ourselves the error */
-   construct_error ( &err, tst, ekind, a, s, extra, where );
+   construct_error ( &err, tst, ekind, a, s, extra, where,
+                     &m_eip, &m_esp, &m_ebp );
 
    /* Unless it's suppressed, we're going to show it.  Don't need to make
       a copy, because it's only temporary anyway.
@@ -442,7 +450,7 @@ Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
          pp_Error(&err, False);
          is_first_shown_context = False;
       }
-      do_actions_on_error(&err);
+      do_actions_on_error(&err, allow_GDB_attach, m_eip, m_esp, m_ebp);
 
       return False;
 
@@ -490,7 +498,6 @@ void VG_(show_all_errors) ( void )
       if (su->count > 0)
          n_supp_contexts++;
    }
-
    VG_(message)(Vg_UserMsg,
                 "ERROR SUMMARY: "
                 "%d errors from %d contexts (suppressed: %d from %d)",

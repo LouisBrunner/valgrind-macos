@@ -291,6 +291,11 @@ extern ThreadId     VG_(get_current_or_recent_tid) ( void );
 extern ThreadId     VG_(get_tid_from_ThreadState)  ( ThreadState* );
 extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
 
+/* Searches through all thread's stacks to see if any match.  Returns
+ * VG_INVALID_THREADID if none match. */
+extern ThreadId VG_(first_matching_thread_stack)
+                        ( Bool (*p) ( Addr stack_min, Addr stack_max ));
+
 
 /*====================================================================*/
 /*=== Valgrind's version of libc                                   ===*/
@@ -1188,8 +1193,7 @@ void*       VG_(get_error_extra)   ( Error* err );
    if needed.  But it won't be copied if it's NULL.
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
-   NULL for them.
-*/
+   NULL for them.  */
 extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind, 
                                       Addr a, Char* s, void* extra );
 
@@ -1201,13 +1205,16 @@ extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind,
    be suppressed without possibly printing it. */
 extern Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,
-                                ExeContext* where, Bool print_error );
+                                ExeContext* where, Bool print_error,
+                                Bool allow_GDB_attach );
 
 /* Gets a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line.  Returns True if EOF was hit instead. 
-   Useful for reading in extra skin-specific suppression lines.
-*/
+   Useful for reading in extra skin-specific suppression lines.  */
 extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
+
+/* Client request: write a string to the logging sink. */
+#define VG_USERREQ__LOGMESSAGE              0x3103
 
 
 /*====================================================================*/
@@ -1219,8 +1226,7 @@ extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
    copies the info into the buffer/UInt and returns True.  If not, it
    returns False and nothing is copied.  VG_(get_fnname) always
    demangles C++ function names.  VG_(get_fnname_w_offset) is the
-   same, except it appends "+N" to symbol names to indicate offsets.  
-*/
+   same, except it appends "+N" to symbol names to indicate offsets.  */
 extern Bool VG_(get_filename) ( Addr a, Char* filename, Int n_filename );
 extern Bool VG_(get_fnname)   ( Addr a, Char* fnname,   Int n_fnname   );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
@@ -1274,63 +1280,136 @@ extern VgSectKind VG_(seg_sect_kind)(Addr);
 
 
 /*====================================================================*/
-/*=== Shadow chunks and block-finding                              ===*/
+/*=== Generic hash table                                           ===*/
 /*====================================================================*/
 
-/* The skin-relevant parts of a ShadowChunk are:
-     size:   size of the block in bytes
-     addr:   addr of the block
-     extra:  anything extra kept by the skin;  size is determined by
-             VG_(needs).sizeof_shadow_chunk
-*/
+/* Generic type for a separately-chained hash table.  Via a kind of dodgy
+   C-as-C++ style inheritance, skins can extend the VgHashNode type, so long
+   as the first two fields match the sizes of these two fields.  Requires
+   a bit of casting by the skin. */
 typedef
-   struct _ShadowChunk
-   ShadowChunk;
+   struct _VgHashNode {
+      struct _VgHashNode * next;
+      UInt               key;
+   }
+   VgHashNode;
 
-extern UInt         VG_(get_sc_size)  ( ShadowChunk* sc );
-extern Addr         VG_(get_sc_data)  ( ShadowChunk* sc );
-/* Gets the ith word of the `extra' field. */
-extern UInt         VG_(get_sc_extra) ( ShadowChunk* sc, UInt i );
-/* Sets the ith word of the `extra' field to `word'. */
-extern void         VG_(set_sc_extra) ( ShadowChunk* sc, UInt i, UInt word );
+typedef
+   VgHashNode**
+   VgHashTable;
 
-/* These two should only be used if the `alternative_free' need is set, once
-   we reach the point where the block would have been free'd. */
-extern ShadowChunk* VG_(get_sc_next)  ( ShadowChunk* sc );
-extern void         VG_(set_sc_next)  ( ShadowChunk* sc, ShadowChunk* next );
+/* Make a new table. */
+extern VgHashTable VG_(HT_construct) ( void );
+
+/* Add a node to the table. */
+extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
+
+/* Looks up a node in the hash table.  Also returns the address of the 
+   previous node's `next' pointer which allows it to be removed from the
+   list later without having to look it up again.  */
+extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
+                                    /*OUT*/VgHashNode*** next_ptr );
+
+/* Allocates a sorted array of pointers to all the shadow chunks of malloc'd
+   blocks. */
+extern VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable t, 
+                                              /*OUT*/ UInt* n_shadows );
+
+/* Returns first node that matches predicate `p', or NULL if none do.
+   Extra arguments can be implicitly passed to `p' using nested functions;
+   see memcheck/mc_errcontext.c for an example. */
+extern VgHashNode* VG_(HT_first_match) ( VgHashTable t,
+                                         Bool (*p)(VgHashNode*) );
+
+/* Applies a function f() once to each node.  Again, nested functions
+   can be very useful. */
+extern void VG_(HT_apply_to_all_nodes)( VgHashTable t, void (*f)(VgHashNode*) );
+
+/* Destroy a table. */
+extern void VG_(HT_destruct) ( VgHashTable t );
 
 
-/* Use this to free blocks if VG_(needs).alternative_free == True. 
-   It frees the ShadowChunk and the malloc'd block it points to. */
-extern void VG_(free_ShadowChunk) ( ShadowChunk* sc );
+/*====================================================================*/
+/*=== General stuff for replacing functions                        ===*/
+/*====================================================================*/
 
-/* Makes an array of pointers to all the shadow chunks of malloc'd blocks */
-extern ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows );
+/* Some skins need to replace the standard definitions of some functions. */
 
-/* Determines if address 'a' is within the bounds of the block at start.
-   Allows a little 'slop' round the edges. */
-extern Bool VG_(addr_is_in_block) ( Addr a, Addr start, UInt size );
+/* ------------------------------------------------------------------ */
+/* General stuff, for replacing any functions */
 
-/* Searches through currently malloc'd blocks until a matching one is found.
-   Returns NULL if none match.  Extra arguments can be implicitly passed to
-   p using nested functions; see memcheck/mc_errcontext.c for an example. */
-extern ShadowChunk* VG_(first_matching_mallocd_ShadowChunk) 
-                        ( Bool (*p) ( ShadowChunk* ));
+/* Is the client running on the simulated CPU or the real one? 
 
-/* Searches through all thread's stacks to see if any match.  Returns
- * VG_INVALID_THREADID if none match. */
-extern ThreadId VG_(first_matching_thread_stack)
-                        ( Bool (*p) ( Addr stack_min, Addr stack_max ));
+   Nb: If it is, and you want to call a function to be run on the real CPU,
+   use one of the VG_NON_SIMD_CALL[123] macros in valgrind.h to call it.
 
-/* Do memory leak detection. */
-extern void VG_(generic_detect_memory_leaks) (
-          Bool is_valid_64k_chunk ( UInt ),
-          Bool is_valid_address ( Addr ),
-          ExeContext* get_where ( ShadowChunk* ),
-          VgRes leak_resolution,
-          Bool  show_reachable,
-          UInt /*CoreErrorKind*/ leakSupp
-       );
+   Nb: don't forget the function parentheses when using this in a 
+   condition... write this:
+
+     if (VG_(is_running_on_simd_CPU)()) { ... }    // calls function
+
+   not this:
+     
+     if (VG_(is_running_on_simd_CPU)) { ... }      // address of var!
+*/
+extern Bool VG_(is_running_on_simd_CPU) ( void ); 
+
+
+/*====================================================================*/
+/*=== Specific stuff for replacing malloc() and friends            ===*/
+/*====================================================================*/
+
+/* ------------------------------------------------------------------ */
+/* Replacing malloc() and friends */
+
+/* If a skin replaces malloc() et al, the easiest way to do so is to link
+   with coregrind/vg_replace_malloc.c, and follow the following instructions.
+   You can do it from scratch, though, if you enjoy that sort of thing. */
+
+/* Arena size for valgrind's own malloc();  default value is 0, but can
+   be overridden by skin -- but must be done so *statically*, eg:
+  
+     Int VG_(vg_malloc_redzone_szB) = 4;
+  
+   It can't be done from a function like SK_(pre_clo_init)().  So it can't,
+   for example, be controlled with a command line option, unfortunately. */
+extern UInt VG_(vg_malloc_redzone_szB);
+
+/* If a skin links with vg_replace_malloc.c, the following functions will be
+   called appropriately when malloc() et al are called. */
+extern void* SK_(malloc)               ( ThreadState* tst, Int n );
+extern void* SK_(__builtin_new)        ( ThreadState* tst, Int n );
+extern void* SK_(__builtin_vec_new)    ( ThreadState* tst, Int n );
+extern void* SK_(memalign)             ( ThreadState* tst, Int align, Int n );
+extern void* SK_(calloc)               ( ThreadState* tst, Int nmemb, Int n );
+extern void  SK_(free)                 ( ThreadState* tst, void* p );
+extern void  SK_(__builtin_delete)     ( ThreadState* tst, void* p );
+extern void  SK_(__builtin_vec_delete) ( ThreadState* tst, void* p );
+extern void* SK_(realloc)              ( ThreadState* tst, void* p, Int size );
+
+/* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
+extern void* VG_(cli_malloc) ( UInt align, Int nbytes ); 
+extern void  VG_(cli_free)   ( void* p );
+
+/* Check if an address is within a range, allowing for redzones at edges */
+extern Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size );
+
+/* ------------------------------------------------------------------ */
+/* Some options that can be used by a skin if malloc() et al are replaced. 
+   The skin should use the VG_(process...)() and VG_(print...)() functions
+   to give control over these aspects of Valgrind's version of malloc(). */
+
+/* Round malloc sizes upwards to integral number of words? default: NO */
+extern Bool VG_(clo_sloppy_malloc);
+/* DEBUG: print malloc details?  default: NO */
+extern Bool VG_(clo_trace_malloc);
+/* Minimum alignment in functions that don't specify alignment explicitly.
+   default: 0, i.e. use default of the machine (== 4) */
+extern Int  VG_(clo_alignment);
+
+extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );
+extern void VG_(replacement_malloc_print_usage)             ( void );
+extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 
 
 /*====================================================================*/
@@ -1376,7 +1455,6 @@ extern void VG_(needs_libc_freeres) ( void );
 
 /* Want to have errors detected by Valgrind's core reported?  Includes:
    - pthread API errors (many;  eg. unlocking a non-locked mutex)
-   - silly arguments to malloc() et al (eg. negative size)
    - invalid file descriptors to blocking syscalls read() and write()
    - bad signal numbers passed to sigaction()
    - attempt to install signal handler for SIGKILL or SIGSTOP */  
@@ -1412,16 +1490,6 @@ extern void VG_(needs_extended_UCode) ( void );
 /* Skin does stuff before and/or after system calls? */
 extern void VG_(needs_syscall_wrapper) ( void );
 
-/* Size, in words, of extra info about malloc'd blocks recorded by
-   skin.  Be careful to get this right or you'll get seg faults! */
-extern void VG_(needs_sizeof_shadow_block) ( Int size );
-
-/* Skin does free()s itself?  Useful if a skin needs to keep track of
-   blocks in some way after they're free'd.  
-   WARNING: don't forget to call VG_(free_ShadowChunk)() for each block 
-   eventually! */
-extern void VG_(needs_alternative_free) ( void );
-
 /* Are skin-state sanity checks performed? */
 extern void VG_(needs_sanity_checks) ( void );
 
@@ -1443,17 +1511,30 @@ typedef
    function to the appropriate function.  To ignore an event, don't do
    anything (default is for events to be ignored). */
 
-/* Memory events */
 
+/* Memory events (Nb: to track heap allocation/freeing, a skin must replace
+   malloc() et al.  See above how to do this.) */
+
+/* These ones occur at startup, upon some signals, and upon some syscalls */
 EV VG_(track_new_mem_startup) ( void (*f)(Addr a, UInt len, 
                                           Bool rr, Bool ww, Bool xx) );
-EV VG_(track_new_mem_heap)    ( void (*f)(Addr a, UInt len, Bool is_inited) );
 EV VG_(track_new_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
 EV VG_(track_new_mem_brk)     ( void (*f)(Addr a, UInt len) );
 EV VG_(track_new_mem_mmap)    ( void (*f)(Addr a, UInt len,
                                           Bool rr, Bool ww, Bool xx) );
 
-/* The specialised ones are called in preference to the general one, if they
+EV VG_(track_copy_mem_remap)  ( void (*f)(Addr from, Addr to, UInt len) );
+EV VG_(track_change_mem_mprotect) ( void (*f)(Addr a, UInt len,
+                                              Bool rr, Bool ww, Bool xx) );
+EV VG_(track_die_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_brk)     ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_munmap)  ( void (*f)(Addr a, UInt len) );
+
+
+/* These ones are called when %esp changes.  A skin could track these itself
+   (except for ban_mem_stack) but it's much easier to use the core's help.
+  
+   The specialised ones are called in preference to the general one, if they
    are defined.  These functions are called a lot if they are used, so
    specialising can optimise things significantly.  If any of the
    specialised cases are defined, the general case must be defined too. 
@@ -1466,23 +1547,6 @@ EV VG_(track_new_mem_stack_16) ( void (*f)(Addr new_ESP) );
 EV VG_(track_new_mem_stack_32) ( void (*f)(Addr new_ESP) );
 EV VG_(track_new_mem_stack)    ( void (*f)(Addr a, UInt len) );
 
-EV VG_(track_change_mem_stack)    ( void (*f)(Addr new_ESP) );
-
-EV VG_(track_copy_mem_heap)   ( void (*f)(Addr from, Addr to, UInt len) );
-EV VG_(track_copy_mem_remap)  ( void (*f)(Addr from, Addr to, UInt len) );
-EV VG_(track_change_mem_mprotect) ( void (*f)(Addr a, UInt len,
-                                              Bool rr, Bool ww, Bool xx) );
-      
-/* Used on redzones around malloc'd blocks and at end of stack */
-EV VG_(track_ban_mem_heap)    ( void (*f)(Addr a, UInt len) );
-EV VG_(track_ban_mem_stack)   ( void (*f)(Addr a, UInt len) );
-
-EV VG_(track_die_mem_heap)    ( void (*f)(Addr a, UInt len) );
-EV VG_(track_die_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
-EV VG_(track_die_mem_brk)     ( void (*f)(Addr a, UInt len) );
-EV VG_(track_die_mem_munmap)  ( void (*f)(Addr a, UInt len) );
-
-/* See comments for VG_(track_new_mem_stack_4) et al above */
 EV VG_(track_die_mem_stack_4)  ( void (*f)(Addr die_ESP) );
 EV VG_(track_die_mem_stack_8)  ( void (*f)(Addr die_ESP) );
 EV VG_(track_die_mem_stack_12) ( void (*f)(Addr die_ESP) );
@@ -1490,9 +1554,10 @@ EV VG_(track_die_mem_stack_16) ( void (*f)(Addr die_ESP) );
 EV VG_(track_die_mem_stack_32) ( void (*f)(Addr die_ESP) );
 EV VG_(track_die_mem_stack)    ( void (*f)(Addr a, UInt len) );
 
-EV VG_(track_bad_free)        ( void (*f)(ThreadState* tst, Addr a) );
-EV VG_(track_mismatched_free) ( void (*f)(ThreadState* tst, Addr a) );
+/* Used for redzone at end of thread stacks */
+EV VG_(track_ban_mem_stack)   ( void (*f)(Addr a, UInt len) );
 
+/* These ones occur around syscalls, signal handling, etc */
 EV VG_(track_pre_mem_read)    ( void (*f)(CorePart part, ThreadState* tst,
                                           Char* s, Addr a, UInt size) );
 EV VG_(track_pre_mem_read_asciiz) ( void (*f)(CorePart part, ThreadState* tst,
@@ -1666,9 +1731,11 @@ extern void SK_(written_shadow_regs_values) ( UInt* gen_reg, UInt* eflags );
    record the option as well. */
 extern Bool SK_(process_cmd_line_option) ( Char* argv );
 
-/* Print out command line usage for skin options */
-extern Char* SK_(usage)                  ( void );
+/* Print out command line usage for options for normal skin operation. */
+extern void SK_(print_usage)             ( void );
 
+/* Print out command line usage for options for debugging the skin. */
+extern void SK_(print_debug_usage)       ( void );
 
 /* ------------------------------------------------------------------ */
 /* VG_(needs).client_requests */
@@ -1716,22 +1783,6 @@ extern void* SK_( pre_syscall) ( ThreadId tid, UInt syscallno,
 extern void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
                                  void* pre_result, Int res,
                                  Bool is_blocking );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).sizeof_shadow_chunk (if > 0) */
-
-/* Must fill in the `extra' part, using VG_(set_sc_extra)(). */
-extern void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).alternative_free */
-
-/* If this need is set, when a dynamic block would normally be free'd, this
-   is called instead.  The block is contained inside the ShadowChunk;  use
-   the VG_(get_sc_*)() functions to access it. */
-extern void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst );
 
 
 /* ---------------------------------------------------------------------

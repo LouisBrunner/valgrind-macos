@@ -50,14 +50,12 @@ VgNeeds VG_(needs) = {
    .core_errors          = False,
    .skin_errors          = False,
    .libc_freeres         = False,
-   .sizeof_shadow_block  = 0,
    .basic_block_discards = False,
    .shadow_regs          = False,
    .command_line_options = False,
    .client_requests      = False,
    .extended_UCode       = False,
    .syscall_wrapper      = False,
-   .alternative_free     = False,
    .sanity_checks        = False,
    .data_syms	         = False,
 };
@@ -65,10 +63,16 @@ VgNeeds VG_(needs) = {
 VgTrackEvents VG_(track_events) = {
    /* Memory events */
    .new_mem_startup              = NULL,
-   .new_mem_heap                 = NULL,
    .new_mem_stack_signal         = NULL,
    .new_mem_brk                  = NULL,
    .new_mem_mmap                 = NULL,
+
+   .copy_mem_remap               = NULL,
+   .change_mem_mprotect          = NULL,
+
+   .die_mem_stack_signal         = NULL,
+   .die_mem_brk                  = NULL,
+   .die_mem_munmap               = NULL,
 
    .new_mem_stack_4              = NULL,
    .new_mem_stack_8              = NULL,
@@ -77,18 +81,6 @@ VgTrackEvents VG_(track_events) = {
    .new_mem_stack_32             = NULL,
    .new_mem_stack                = NULL,
 
-   .copy_mem_heap                = NULL,
-   .copy_mem_remap               = NULL,
-   .change_mem_mprotect          = NULL,
-
-   .ban_mem_heap                 = NULL,
-   .ban_mem_stack                = NULL,
-
-   .die_mem_heap                 = NULL,
-   .die_mem_stack_signal         = NULL,
-   .die_mem_brk                  = NULL,
-   .die_mem_munmap               = NULL,
-
    .die_mem_stack_4              = NULL,
    .die_mem_stack_8              = NULL,
    .die_mem_stack_12             = NULL,
@@ -96,8 +88,7 @@ VgTrackEvents VG_(track_events) = {
    .die_mem_stack_32             = NULL,
    .die_mem_stack                = NULL,
 
-   .bad_free                     = NULL,
-   .mismatched_free              = NULL,
+   .ban_mem_stack                = NULL,
 
    .pre_mem_read                 = NULL,
    .pre_mem_read_asciiz          = NULL,
@@ -195,13 +186,6 @@ NEEDS(command_line_options)
 NEEDS(client_requests)
 NEEDS(extended_UCode)
 NEEDS(syscall_wrapper)
-
-extern void VG_(needs_sizeof_shadow_block)(Int size)
-{
-   VG_(needs).sizeof_shadow_block = size;
-}
-
-NEEDS(alternative_free)
 NEEDS(sanity_checks)
 NEEDS(data_syms)
 
@@ -212,11 +196,18 @@ NEEDS(data_syms)
       VG_(track_events).event = f;        \
    }
 
+/* Memory events */
 TRACK(new_mem_startup,       Addr a, UInt len, Bool rr, Bool ww, Bool xx)
-TRACK(new_mem_heap,          Addr a, UInt len, Bool is_inited)
 TRACK(new_mem_stack_signal,  Addr a, UInt len)
 TRACK(new_mem_brk,           Addr a, UInt len)
 TRACK(new_mem_mmap,          Addr a, UInt len, Bool rr, Bool ww, Bool xx)
+
+TRACK(copy_mem_remap,      Addr from, Addr to, UInt len)
+TRACK(change_mem_mprotect, Addr a, UInt len, Bool rr, Bool ww, Bool xx)
+
+TRACK(die_mem_stack_signal,  Addr a, UInt len)
+TRACK(die_mem_brk,           Addr a, UInt len)
+TRACK(die_mem_munmap,        Addr a, UInt len)
 
 TRACK(new_mem_stack_4,       Addr new_ESP)
 TRACK(new_mem_stack_8,       Addr new_ESP)
@@ -225,18 +216,6 @@ TRACK(new_mem_stack_16,      Addr new_ESP)
 TRACK(new_mem_stack_32,      Addr new_ESP)
 TRACK(new_mem_stack,         Addr a, UInt len)
 
-TRACK(copy_mem_heap,       Addr from, Addr to, UInt len)
-TRACK(copy_mem_remap,      Addr from, Addr to, UInt len)
-TRACK(change_mem_mprotect, Addr a, UInt len, Bool rr, Bool ww, Bool xx)
-
-TRACK(ban_mem_heap,  Addr a, UInt len)
-TRACK(ban_mem_stack, Addr a, UInt len)
-
-TRACK(die_mem_heap,          Addr a, UInt len)
-TRACK(die_mem_stack_signal,  Addr a, UInt len)
-TRACK(die_mem_brk,           Addr a, UInt len)
-TRACK(die_mem_munmap,        Addr a, UInt len)
-
 TRACK(die_mem_stack_4,       Addr new_ESP)
 TRACK(die_mem_stack_8,       Addr new_ESP)
 TRACK(die_mem_stack_12,      Addr new_ESP)
@@ -244,8 +223,7 @@ TRACK(die_mem_stack_16,      Addr new_ESP)
 TRACK(die_mem_stack_32,      Addr new_ESP)
 TRACK(die_mem_stack,         Addr a, UInt len)
 
-TRACK(bad_free,        ThreadState* tst, Addr a)
-TRACK(mismatched_free, ThreadState* tst, Addr a)
+TRACK(ban_mem_stack, Addr a, UInt len)
 
 TRACK(pre_mem_read,        CorePart part, ThreadState* tst, Char* s, Addr a,
                            UInt size)
@@ -263,7 +241,7 @@ TRACK( pre_mutex_lock,   ThreadId tid, void* /*pthread_mutex_t* */ mutex)
 TRACK(post_mutex_lock,   ThreadId tid, void* /*pthread_mutex_t* */ mutex)
 TRACK(post_mutex_unlock, ThreadId tid, void* /*pthread_mutex_t* */ mutex)
 
-TRACK(pre_deliver_signal,  ThreadId tid, Int sigNum, Bool alt_stack)
+TRACK( pre_deliver_signal, ThreadId tid, Int sigNum, Bool alt_stack)
 TRACK(post_deliver_signal, ThreadId tid, Int sigNum)
 
 /*--------------------------------------------------------------------*/
@@ -350,42 +328,6 @@ void* VG_(get_error_extra)  ( Error* err )
 {
    return err->extra;
 }
-
-/*--------------------------------------------------------------------*/
-/* ShadowChunks */
-
-UInt VG_(get_sc_size)  ( ShadowChunk* sc )
-{
-   return sc->size;
-}
-
-Addr VG_(get_sc_data)  ( ShadowChunk* sc )
-{
-   return sc->data;
-}
-
-UInt VG_(get_sc_extra) ( ShadowChunk* sc, UInt i )
-{
-   vg_assert(i < VG_(needs).sizeof_shadow_block);
-   return sc->extra[i];
-}
-
-ShadowChunk* VG_(get_sc_next)  ( ShadowChunk* sc )
-{
-   return sc->next;
-}
-
-void VG_(set_sc_extra) ( ShadowChunk* sc, UInt i, UInt word )
-{
-   vg_assert(i < VG_(needs).sizeof_shadow_block);
-   sc->extra[i] = word;
-}
-
-void VG_(set_sc_next)  ( ShadowChunk* sc, ShadowChunk* next )
-{
-   sc->next = next;
-}
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                               vg_needs.c ---*/

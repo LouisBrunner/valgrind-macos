@@ -491,8 +491,6 @@ Bool   VG_(clo_gen_suppressions) = False;
 Int    VG_(sanity_level)       = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
-Bool   VG_(clo_sloppy_malloc)  = False;
-Int    VG_(clo_alignment)      = 4;
 Bool   VG_(clo_trace_children) = False;
 
 /* See big comment in vg_include.h for meaning of these three. */
@@ -509,7 +507,6 @@ UChar  VG_(clo_trace_codegen)  = 0; // 00000000b
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;
-Bool   VG_(clo_trace_malloc)   = False;
 Bool   VG_(clo_trace_sched)    = False;
 Int    VG_(clo_trace_pthread_level) = 0;
 ULong  VG_(clo_stop_after)     = 1000000000000000LL;
@@ -593,8 +590,6 @@ static void usage ( void )
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
-"    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
-"    --alignment=<number>      set minimum alignment of allocations [4]\n"
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
@@ -620,14 +615,17 @@ static void usage ( void )
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
-"    --trace-malloc=no|yes     show client malloc details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
-"    --trace-pthread=none|some|all  show pthread event details? [no]\n"
+"    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --stop-after=<number>     switch to real CPU after executing\n"
 "                              <number> basic blocks [infinity]\n"
 "    --dump-error=<number>     show translation for basic block\n"
 "                              associated with <number>'th\n"
 "                              error context [0=don't show any]\n"
+"\n"
+"  %s skin debugging options:\n";
+
+   Char* usage3 =
 "\n"
 "  Extra options are read from env variable $VALGRIND_OPTS\n"
 "\n"
@@ -642,10 +640,15 @@ static void usage ( void )
    VG_(printf)(usage1, VG_(details).name);
    /* Don't print skin string directly for security, ha! */
    if (VG_(needs).command_line_options)
-      VG_(printf)("%s", SK_(usage)());
+      SK_(print_usage)();
    else
       VG_(printf)("    (none)\n");
-   VG_(printf)(usage2, VG_EMAIL_ADDR);
+   VG_(printf)(usage2, VG_(details).name);
+   if (VG_(needs).command_line_options)
+      SK_(print_debug_usage)();
+   else
+      VG_(printf)("    (none)\n");
+   VG_(printf)(usage3, VG_EMAIL_ADDR);
 
    VG_(shutdown_logging)();
    VG_(clo_log_to)     = VgLogTo_Fd;
@@ -707,11 +710,13 @@ static void process_cmd_line_options ( void )
    {
        UInt* sp;
 
-       /* Look for the stack segment by reading /proc/self/maps and
+       /* Look for the stack segment by parsing /proc/self/maps and
 	  looking for a section bracketing VG_(esp_at_startup) which
-	  has rwx permissions and no associated file. */
+	  has rwx permissions and no associated file.  Note that this uses
+          the /proc/self/maps contents read at the start of VG_(main)(),
+          and doesn't re-read /proc/self/maps. */
 
-       VG_(read_procselfmaps)( vg_findstack_callback );
+       VG_(read_procselfmaps)( vg_findstack_callback, /*read_from_file*/False );
 
        /* Now vg_foundstack_start and vg_foundstack_size
           should delimit the stack. */
@@ -890,14 +895,6 @@ static void process_cmd_line_options ( void )
       else if (VG_CLO_STREQ(argv[i], "--demangle=no"))
          VG_(clo_demangle) = False;
 
-      else if (VG_CLO_STREQ(argv[i], "--sloppy-malloc=yes"))
-         VG_(clo_sloppy_malloc) = True;
-      else if (VG_CLO_STREQ(argv[i], "--sloppy-malloc=no"))
-         VG_(clo_sloppy_malloc) = False;
-
-      else if (VG_CLO_STREQN(12, argv[i], "--alignment="))
-         VG_(clo_alignment) = (Int)VG_(atoll)(&argv[i][12]);
-
       else if (VG_CLO_STREQ(argv[i], "--trace-children=yes"))
          VG_(clo_trace_children) = True;
       else if (VG_CLO_STREQ(argv[i], "--trace-children=no"))
@@ -993,11 +990,6 @@ static void process_cmd_line_options ( void )
       else if (VG_CLO_STREQ(argv[i], "--trace-symtab=no"))
          VG_(clo_trace_symtab) = False;
 
-      else if (VG_CLO_STREQ(argv[i], "--trace-malloc=yes"))
-         VG_(clo_trace_malloc) = True;
-      else if (VG_CLO_STREQ(argv[i], "--trace-malloc=no"))
-         VG_(clo_trace_malloc) = False;
-
       else if (VG_CLO_STREQ(argv[i], "--trace-sched=yes"))
          VG_(clo_trace_sched) = True;
       else if (VG_CLO_STREQ(argv[i], "--trace-sched=no"))
@@ -1041,16 +1033,6 @@ static void process_cmd_line_options ( void )
 
    if (VG_(clo_verbosity < 0))
       VG_(clo_verbosity) = 0;
-
-   if (VG_(clo_alignment) < 4 
-       || VG_(clo_alignment) > 4096
-       || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, 
-         "Invalid --alignment= setting.  "
-         "Should be a power of 2, >= 4, <= 4096.");
-      VG_(bad_option)("--alignment");
-   }
 
    if (VG_(clo_GDB_attach) && VG_(clo_trace_children)) {
       VG_(message)(Vg_UserMsg, "");
@@ -1149,7 +1131,7 @@ static void process_cmd_line_options ( void )
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
-         "Using valgrind-%s, a program instrumentation system for x86-linux.",
+         "Using valgrind-%s, a program supervision framework for x86-linux.",
          VERSION);
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
@@ -1394,6 +1376,17 @@ void VG_(main) ( void )
       VG_(stack)[10000-1-i] = (UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321;
    }
 
+   /* Read /proc/self/maps into a buffer.  Must be before:
+      - SK_(pre_clo_init)(): so that if it calls VG_(malloc)(), any mmap'd
+        superblocks are not erroneously identified as being owned by the
+        client, which would be bad.
+      - init_memory(): that's where the buffer is parsed
+      - init_tt_tc(): so the anonymous mmaps for the translation table and
+        translation cache aren't identified as part of the client, which would
+        waste > 20M of virtual address space, and be bad.
+   */
+   VG_(read_procselfmaps_contents)();
+
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (0) {
@@ -1408,23 +1401,25 @@ void VG_(main) ( void )
       - process_cmd_line_options(): to register skin name and description,
         and turn on/off 'command_line_options' need
       - init_memory() (to setup memory event trackers).
-    */
+   */
    SK_(pre_clo_init)();
    VG_(sanity_check_needs)();
 
    /* Process Valgrind's command-line opts (from env var VG_ARGS). */
    process_cmd_line_options();
 
-   /* Do post command-line processing initialisation */
+   /* Do post command-line processing initialisation.  Must be before:
+      - vg_init_baseBlock(): to register any more helpers
+   */
    SK_(post_clo_init)();
 
-   /* Set up baseBlock offsets and copy the saved machine's state into it. 
-      Comes after SK_(post_clo_init) in case it registers helpers. */
+   /* Set up baseBlock offsets and copy the saved machine's state into it. */
    vg_init_baseBlock();
 
    /* Initialise the scheduler, and copy the client's state from
-      baseBlock into VG_(threads)[1].  This has to come before signal
-      initialisations. */
+      baseBlock into VG_(threads)[1].  Must be before:
+      - VG_(sigstartup_actions)()
+   */
    VG_(scheduler_init)();
 
    /* Initialise the signal handling subsystem, temporarily parking
@@ -1438,8 +1433,7 @@ void VG_(main) ( void )
    /* Start calibration of our RDTSC-based clock. */
    VG_(start_rdtsc_calibration)();
 
-   /* Must come after SK_(init) so memory handler accompaniments (eg.
-    * shadow memory) can be setup ok */
+   /* Parse /proc/self/maps to learn about startup segments. */
    VGP_PUSHCC(VgpInitMem);
    VG_(init_memory)();
    VGP_POPCC(VgpInitMem);
@@ -1453,10 +1447,7 @@ void VG_(main) ( void )
       we can. */
    VG_(end_rdtsc_calibration)();
 
-   /* This should come after init_memory_and_symbols(); otherwise the 
-      latter carefully sets up the permissions maps to cover the 
-      anonymous mmaps for the translation table and translation cache, 
-      which wastes > 20M of virtual address space. */
+   /* Initialise translation table and translation cache. */
    VG_(init_tt_tc)();
 
    if (VG_(clo_verbosity) == 1) {

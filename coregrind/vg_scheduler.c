@@ -3265,55 +3265,87 @@ void do_client_request ( ThreadId tid )
    /* VG_(printf)("req no = 0x%x\n", req_no); */
    switch (req_no) {
 
+      /* For the CLIENT_{,tst}CALL[0123] ones, have to do some nasty casting
+         to make gcc believe it's a function. */
+      case VG_USERREQ__CLIENT_CALL0: {
+         UInt (*f)(void) = (void*)arg[1];
+         RETURN_WITH(
+            f ( )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_CALL1: {
+         UInt (*f)(UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( arg[2] )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_CALL2: {
+         UInt (*f)(UInt, UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( arg[2], arg[3] )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_CALL3: {
+         UInt (*f)(UInt, UInt, UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( arg[2], arg[3], arg[4] )
+         );
+         break;
+      }
+
+      case VG_USERREQ__CLIENT_tstCALL0: {
+         UInt (*f)(ThreadState*) = (void*)arg[1];
+         RETURN_WITH(
+            f ( tst )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_tstCALL1: {
+         UInt (*f)(ThreadState*, UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( tst, arg[2] )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_tstCALL2: {
+         UInt (*f)(ThreadState*, UInt, UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( tst, arg[2], arg[3] )
+         );
+         break;
+      }
+      case VG_USERREQ__CLIENT_tstCALL3: {
+         UInt (*f)(ThreadState*, UInt, UInt, UInt) = (void*)arg[1];
+         RETURN_WITH(
+            f ( tst, arg[2], arg[3], arg[4] )
+         );
+         break;
+      }
+
+      /* Note:  for skins that replace malloc() et al, we want to call
+         the replacement versions.  For those that don't, we want to call
+         VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
+         malloc-replacing skins must replace, but have its default definition
+         call */
+
+      /* Note: for MALLOC and FREE, must set the appropriate "lock"... see
+         the comment in vg_defaults.c/SK_(malloc)() for why. */
       case VG_USERREQ__MALLOC:
+         VG_(sk_malloc_called_by_scheduler) = True;
          RETURN_WITH(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocMalloc ) 
+            (UInt)SK_(malloc) ( tst, arg[1] ) 
          );
-         break;
-
-      case VG_USERREQ__BUILTIN_NEW:
-         RETURN_WITH(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNew )
-         );
-         break;
-
-      case VG_USERREQ__BUILTIN_VEC_NEW:
-         RETURN_WITH(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNewVec )
-         );
+         VG_(sk_malloc_called_by_scheduler) = False;
          break;
 
       case VG_USERREQ__FREE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocMalloc );
+         VG_(sk_malloc_called_by_scheduler) = True;
+         SK_(free) ( tst, (void*)arg[1] );
+         VG_(sk_malloc_called_by_scheduler) = False;
 	 RETURN_WITH(0); /* irrelevant */
-         break;
-
-      case VG_USERREQ__BUILTIN_DELETE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNew );
-	 RETURN_WITH(0); /* irrelevant */
-         break;
-
-      case VG_USERREQ__BUILTIN_VEC_DELETE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNewVec );
-	 RETURN_WITH(0); /* irrelevant */
-         break;
-
-      case VG_USERREQ__CALLOC:
-         RETURN_WITH(
-            (UInt)VG_(client_calloc) ( tst, arg[1], arg[2] )
-         );
-         break;
-
-      case VG_USERREQ__REALLOC:
-         RETURN_WITH(
-            (UInt)VG_(client_realloc) ( tst, (void*)arg[1], arg[2] )
-         );
-         break;
-
-      case VG_USERREQ__MEMALIGN:
-         RETURN_WITH(
-            (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
-         );
          break;
 
       case VG_USERREQ__PTHREAD_GET_THREADID:

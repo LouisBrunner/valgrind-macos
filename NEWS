@@ -1,71 +1,168 @@
 
 Stable release 2.4.0 (March 2005) -- CHANGES RELATIVE TO 2.2.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.4.0 brings many significant changes and bug fixes.  The most
+significant user-visible change is that we no longer supply our own
+pthread implementation.  Instead, Valgrind is finally capable of
+running the native thread library, either LinuxThreads or NPTL.
 
-2.4.0 represents another architectural change for Valgrind.  The most
-significant user-visible change is that we no longer emulate
-libpthread; this has both pluses and minuses.
+This means our libpthread has gone, along with the bugs associated
+with it.  Valgrind now supports the kernel's threading syscalls, and
+lets you use your standard system libpthread.  As a result:
 
-* Memcheck is now the default tool
+* There are many fewer system dependencies and strange library-related
+  bugs.  There is a small performance improvement, and a large
+  stability improvement.
 
-* The default stack backtrace is now 12 call frames
+* On the downside, Valgrind can no longer report misuses of the POSIX
+  PThreads API.  It also means that Helgrind currently does not work.
+  We hope to fix these problems in a future release.
 
-* Suppressions can have up to 25 call frame matches, rather than
-  just 4
+Note that running the native thread libraries does not mean Valgrind
+is able to provide genuine concurrent execution on SMPs.  We still
+impose the restriction that only one thread is running at any given
+time.
 
-* libpthread has gone along with all the bugs associated with it.
-  Instead, Valgrind now emulates the kernel's threading syscalls
-  (clone, etc), and lets you use your standard system libpthread.
-  This means:
+There are many other significant changes too:
 
-    - There should be many fewer system dependencies and strange
-      library-related bugs.  There is a small performance improvement,
-      and a large stability improvement.
+* Memcheck is (once again) the default tool.
 
-    - On the downside, this means that Valgrind can no longer report
-      on problems with how your program uses threads.  It also means
-      that Helgrind is currently non-functional.  We're hoping to
-      fix these for a (near) future release.
+* The default stack backtrace is now 12 call frames, rather than 4.
 
-* Addrcheck and memcheck use a lot less memory for many programs.
-  These tools no longer need to allocate shadow memory if there are
-  large regions of memory with the same A/V states - such as an
-  mmaped file.
+* Suppressions can have up to 25 call frame matches, rather than 4.
 
-* Addrcheck and memcheck's leak-detector has been improved.  It now
-  reports many more types of memory leak, including leaked cycles.
-  When reporting leaked memory, it can distinguish between directly
-  leaked memory (memory with no references), and indirectly leaked
-  memory (memory only referred to by other leaked memory).
+* Memcheck and Addrcheck use less memory.  Under some circumstances,
+  they no longer allocate shadow memory if there are large regions of
+  memory with the same A/V states - such as an mmaped file.
 
-* Memcheck's confusion over the effect of mprotect() has been fixed;
-  previously mprotect could erroneously make undefined data defined.
+* The memory-leak detector in Memcheck and Addrcheck has been
+  improved.  It now reports more types of memory leak, including
+  leaked cycles.  When reporting leaked memory, it can distinguish
+  between directly leaked memory (memory with no references), and
+  indirectly leaked memory (memory only referred to by other leaked
+  memory).
 
-* State passed to signal handlers may be modified so that it will take
-  effect when the signal returns.  You will need run with --single-step=yes
-  to make this useful.
+* Memcheck's confusion over the effect of mprotect() has been fixed:
+  previously mprotect could erroneously mark undefined data as
+  defined.
 
-* In general, signal handling should now be indistinguishable from
-  running natively.
+* Signal handling is much improved and should be very close to what
+  you get when running natively.  
+
+  One result of this is that Valgrind observes changes to sigcontexts
+  passed to signal handlers.  Such modifications will take effect when
+  the signal returns.  You will need to run with --single-step=yes to
+  make this useful.
 
 * Valgrind is built in Position Independent Executable (PIE) format if
-  the toolchain supports it.  This allows it to take advantage of all
+  your toolchain supports it.  This allows it to take advantage of all
   the available address space on systems with 4Gbyte user address
   spaces.
 
 * Valgrind can now run itself (requires PIE support).
 
-* Syscall arguments are now checked for validity.  Previously all memory
-  used by syscalls was checked, but now the actual values passed
-  are also checked.
+* Syscall arguments are now checked for validity.  Previously all
+  memory used by syscalls was checked, but now the actual values
+  passed are also checked.
 
-* Syscall wrappers are now more robust against bad addresses being
-  passed to syscalls; they will fail with EFAULT rather than killing
-  Valgrind with SIGSEGV.
+* Syscall wrappers are more robust against bad addresses being passed
+  to syscalls: they will fail with EFAULT rather than killing Valgrind
+  with SIGSEGV.
 
-* Because clone() is directly supported, many non-pthread uses of
-  it will work.  Partial sharing (where some resources are shared,
-  and some are not) is not supported.
+* Because clone() is directly supported, some non-pthread uses of it
+  will work.  Partial sharing (where some resources are shared, and
+  some are not) is not supported.
+
+* open() and readlink() on /proc/self/exe are supported.
+
+BUGS FIXED:
+
+88520   pipe+fork+dup2 kills the main program
+88604 	Valgrind Aborts when using $VALGRIND_OPTS and user progra...
+88614 	valgrind: vg_libpthread.c:2323 (read): Assertion `read_pt...
+88703 	Stabs parser fails to handle ";"
+88886 	ioctl wrappers for TIOCMBIS and TIOCMBIC
+89032 	valgrind pthread_cond_timedwait fails
+89106 	the 'impossible' happened
+89139 	Missing sched_setaffinity & sched_getaffinity
+89198 	valgrind lacks support for SIOCSPGRP and SIOCGPGRP
+89263 	Missing ioctl translations for scsi-generic and CD playing
+89440 	tests/deadlock.c line endings
+89481 	`impossible' happened: EXEC FAILED
+89663 	valgrind 2.2.0 crash on Redhat 7.2
+89792 	Report pthread_mutex_lock() deadlocks instead of returnin...
+90111 	statvfs64 gives invalid error/warning
+90128 	crash+memory fault with stabs generated by gnat for a run...
+90778 	VALGRIND_CHECK_DEFINED() not as documented in memcheck.h
+90834 	cachegrind crashes at end of program without reporting re...
+91028 	valgrind: vg_memory.c:229 (vgPlain_unmap_range): Assertio...
+91162 	valgrind crash while debugging drivel 1.2.1
+91199 	Unimplemented function
+91325 	Signal routing does not propagate the siginfo structure
+91599 	Assertion `cv == ((void *)0)'
+91604 	rw_lookup clears orig and sends the NULL value to rw_new
+91821 	Small problems building valgrind with $top_builddir ne $t...
+91844 	signal 11 (SIGSEGV) at get_tcb (libpthread.c:86) in corec...
+92264 	UNIMPLEMENTED FUNCTION: pthread_condattr_setpshared
+92331 	per-target flags necessitate AM_PROG_CC_C_O
+92420 	valgrind doesn't compile with linux 2.6.8.1/9
+92513 	Valgrind 2.2.0 generates some warning messages
+92528 	vg_symtab2.c:170 (addLoc): Assertion `loc->size > 0' failed.
+93096 	unhandled ioctl 0x4B3A and 0x5601
+93117 	Tool and core interface versions do not match
+93128 	Can't run valgrind --tool=memcheck because of unimplement...
+93174 	Valgrind can crash if passed bad args to certain syscalls
+93309 	Stack frame in new thread is badly aligned
+93328 	Wrong types used with sys_sigprocmask()
+93763 	/usr/include/asm/msr.h is missing
+93776 	valgrind: vg_memory.c:508 (vgPlain_find_map_space): Asser...
+93810 	fcntl() argument checking a bit too strict
+94378 	Assertion `tst->sigqueue_head != tst->sigqueue_tail' failed.
+94429 	valgrind 2.2.0 segfault with mmap64 in glibc 2.3.3
+94645 	Impossible happened: PINSRW mem
+94953 	valgrind: the `impossible' happened: SIGSEGV
+95667 	Valgrind does not work with any KDE app
+96243 	Assertion 'res==0' failed
+96252 	stage2 loader of valgrind fails to allocate memory
+96520 	All programs crashing at _dl_start (in /lib/ld-2.3.3.so) ...
+96660 	ioctl CDROMREADTOCENTRY causes bogus warnings
+96747 	After looping in a segfault handler, the impossible happens
+96923 	Zero sized arrays crash valgrind trace back with SIGFPE
+96948 	valgrind stops with assertion failure regarding mmap2
+96966 	valgrind fails when application opens more than 16 sockets
+97398 	valgrind: vg_libpthread.c:2667 Assertion failed
+97407 	valgrind: vg_mylibc.c:1226 (vgPlain_safe_fd): Assertion `...
+97427 	"Warning: invalid file descriptor -1 in syscall close()" ...
+97785 	missing backtrace
+97792 	build in obj dir fails - autoconf / makefile cleanup
+97880 	pthread_mutex_lock fails from shared library (special ker...
+97975 	program aborts without ang VG messages
+98129 	Failed when open and close file 230000 times using stdio
+98175 	Crashes when using valgrind-2.2.0 with a program using al...
+98288 	Massif broken
+98303 	UNIMPLEMENTED FUNCTION pthread_condattr_setpshared
+98630 	failed--compilation missing warnings.pm, fails to make he...
+98756 	Cannot valgrind signal-heavy kdrive X server
+98966 	valgrinding the JVM fails with a sanity check assertion
+99035 	Valgrind crashes while profiling
+99142 	loops with message "Signal 11 being dropped from thread 0...
+99195 	threaded apps crash on thread start (using QThread::start...
+99348 	Assertion `vgPlain_lseek(core_fd, 0, 1) == phdrs[i].p_off...
+99568 	False negative due to mishandling of mprotect
+99738 	valgrind memcheck crashes on program that uses sigitimer
+99923 	0-sized allocations are reported as leaks
+99949 	program seg faults after exit()
+100036 	"newSuperblock's request for 1048576 bytes failed"
+100116 	valgrind: (pthread_cond_init): Assertion `sizeof(* cond) ...
+100486 	memcheck reports "valgrind: the `impossible' happened: V...
+100833 	second call to "mremap" fails with EINVAL
+101156 	(vgPlain_find_map_space): Assertion `(addr & ((1 << 12)-1...
+101173 	Assertion `recDepth >= 0 && recDepth < 500' failed
+101291 	creating threads in a forked process fails
+101313 	valgrind causes different behavior when resizing a window...
+101423 	segfault for c++ array of floats
+101562 	valgrind massif dies on SIGINT even with signal handler r...
+
 
 Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

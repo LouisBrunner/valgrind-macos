@@ -287,6 +287,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    volatile UInt sz_vex   = (UInt) sizeof VG_(threads)[tid].arch.vex;
    volatile UInt sz_vexsh = (UInt) sizeof VG_(threads)[tid].arch.vex_shadow;
    volatile UInt sz_spill = (UInt) sizeof VG_(threads)[tid].arch.vex_spill;
+   /* volatile UInt zz = VG_(threads)[tid].arch.vex.guest_EIP; */
 
    /* Paranoia */
    vg_assert(VG_(is_valid_tid)(tid));
@@ -339,6 +340,14 @@ UInt run_thread_for_a_while ( ThreadId tid )
    }
 
    vg_assert(!scheduler_jmpbuf_valid);
+
+   if (trc == VG_TRC_INVARIANT_FAILED) {
+      /* To see the bb causing this to fail, set VG_SCHEDULING_QUANTUM to 1, 
+         and make zz be the program counter at entry to this fn. */
+      /* VG_(translate)(tid,zz,True); */
+      VG_(core_panic)
+         ("host invariant state failure in VEX-generated code");
+   }
 
    done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
 

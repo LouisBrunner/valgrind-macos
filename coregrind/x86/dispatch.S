@@ -68,9 +68,10 @@ VG_(run_innerloop):
 	movl	(%ebp, %esi, 1), %eax
 
 	/* set host FPU control word to the default mode expected 
-	   by VEX-generated code. */
+           by VEX-generated code.  See comments in libvex.h for
+           more info. */
 	finit
-	pushl	$0x037F
+	pushl	$0x027F
 	fldcw	(%esp)
 	addl	$4, %esp
 	
@@ -123,19 +124,33 @@ dispatch_boring:
 	jmp	dispatch_exceptional
 
 	
-fast_lookup_failed:
-	/* %EIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_FASTMISS, %eax
-	jmp	run_innerloop_exit
 
-counter_is_zero:
-	/* %EIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_COUNTERZERO, %eax
-	jmp	run_innerloop_exit
-	
-run_innerloop_exit:
+/* All exits from the dispatcher go through here.  %eax holds
+   the return value. 
+*/
+run_innerloop_exit: 
+	/* We're leaving.  Check that nobody messed with
+           %mxcsr or %fpucw.  We can't mess with %eax here as it
+	   holds the tentative return value, but any other is OK. */
+	pushl	$0
+	fstcw	(%esp)
+	cmpl	$0x027F, (%esp)
+	popl	%esi /* get rid of the word without trashing %eflags */
+	jnz	invariant_violation
+	pushl	$0
+	stmxcsr	(%esp)
+	andl	$0xFFFFFFC0, (%esp)  /* mask out status flags */
+	cmpl	$0x1F80, (%esp)
+	popl	%esi
+	jnz	invariant_violation
+	/* otherwise we're OK */
+	jmp	run_innerloop_exit_REALLY
+
+invariant_violation:
+	movl	$VG_TRC_INVARIANT_FAILED, %eax
+	jmp	run_innerloop_exit_REALLY
+
+run_innerloop_exit_REALLY:
 	popl	%ebp
 	popl	%edi
 	popl	%esi
@@ -159,6 +174,18 @@ dispatch_exceptional:
 	movl	28(%esp), %edi
 	movl	%eax, (%edi, %esi, 1)
 	movl	%ebp, %eax
+	jmp	run_innerloop_exit
+
+fast_lookup_failed:
+	/* %EIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
+	movl	$VG_TRC_INNER_FASTMISS, %eax
+	jmp	run_innerloop_exit
+
+counter_is_zero:
+	/* %EIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
+	movl	$VG_TRC_INNER_COUNTERZERO, %eax
 	jmp	run_innerloop_exit
 
 	

@@ -1,6 +1,6 @@
 
 
-FILE DESCRIPTORS: 6 open at exit.
+FILE DESCRIPTORS: 5 open at exit.
 Open AF_UNIX socket .: <unknown>
    at 0x........: __socketpair (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -10,9 +10,6 @@ Open AF_UNIX socket .: <unknown>
    at 0x........: __socketpair (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-
-Open file descriptor .: .
-   <inherited from parent>
 
 Open file descriptor .: .
    <inherited from parent>

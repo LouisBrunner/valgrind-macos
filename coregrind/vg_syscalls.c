@@ -332,6 +332,9 @@ void record_fd_open(Int tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
+   if (fd > VG_MAX_FD)
+      return;			/* Valgrind internal */
+
    /* Check to see if this fd is already open. */
    i = allocated_fds;
    while (i) {

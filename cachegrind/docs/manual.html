@@ -1813,7 +1813,10 @@ Known platform-specific limitations:
       Things are likely to go badly wrong on Red Hat 7.3.92 ("Limbo"
       public beta), especially with threaded programs.  Don't expect
       this to work.  Basically valgrind won't work as-is with any 
-      glibc-2.3 based system.</li><br>
+      glibc-2.3 based system.  Also it looks like Red Hat's 2.4.18
+      kernel as hacked for Limbo gives problems, due to an extra entry
+      in the ELF frame constructed by the kernel.  The 2.4.18 in the
+      standard Red Hat 7.3 release works fine, though.</li><br>
       <p>
 </ul>
 

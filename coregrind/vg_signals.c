@@ -1820,51 +1820,37 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
    vg_assert(!terminate);
 }
 
-/* Synthesize a fault where the address is OK, but the page
-   permissions are bad */
+static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
+{
+   vki_ksiginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGSEGV;
+   info.si_code = si_code;
+   info._sifields._sigfault._addr = (void*)addr;
+
+   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
+   VG_(deliver_signal)(tid, &info, False);
+}
+
+// Synthesize a fault where the address is OK, but the page
+// permissions are bad.
 void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
 {
-   vki_ksiginfo_t info;
-
-   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
-   info.si_signo = VKI_SIGSEGV;
-   info.si_code = 2;
-   info._sifields._sigfault._addr = (void*)addr;
-
-   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
-   VG_(deliver_signal)(tid, &info, False);
+   synth_fault_common(tid, addr, 2);
 }
 
-/* Synthesize a fault where the address there's nothing mapped at the
-   address */
+// Synthesize a fault where the address there's nothing mapped at the address.
 void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
 {
-   vki_ksiginfo_t info;
-
-   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
-   info.si_signo = VKI_SIGSEGV;
-   info.si_code = 1;
-   info._sifields._sigfault._addr = (void*)addr;
-
-   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
-   VG_(deliver_signal)(tid, &info, False);
+   synth_fault_common(tid, addr, 1);
 }
 
-/* Synthesize a misc memory fault */
+// Synthesize a misc memory fault.
 void VG_(synth_fault)(ThreadId tid)
 {
-   vki_ksiginfo_t info;
-
-   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
-   info.si_signo = VKI_SIGSEGV;
-   info.si_code = 0x80;
-   info._sifields._sigfault._addr = (void*)0;
-
-   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
-   VG_(deliver_signal)(tid, &info, False);
+   synth_fault_common(tid, 0, 0x80);
 }
 
 void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async )

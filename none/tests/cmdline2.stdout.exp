@@ -13,7 +13,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
   uncommon user options for all Valgrind tools:
     --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]
     --weird-hacks=hack1,hack2,...  [none]
-         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls
+         recognised hacks are: lax-ioctls
     --signal-polltime=<time>  time, in mS, we should poll for signals.
                               Only applies for older kernels which need
                               signal routing [50]

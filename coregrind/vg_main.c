@@ -1520,7 +1520,7 @@ void usage ( Bool debug_help )
 "  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --weird-hacks=hack1,hack2,...  [none]\n"
-"         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls\n"
+"         recognised hacks are: lax-ioctls\n"
 "    --signal-polltime=<time>  time, in mS, we should poll for signals.\n"
 "                              Only applies for older kernels which need\n"
 "                              signal routing [50]\n"

@@ -547,7 +547,6 @@ BE41000000                		movl	$65, %esi
 BE42000000                		movl	$66, %esi
 8B442444                   		movl	68(%rsp), %eax
 8B742444                   		movl	68(%rsp), %esi
-448B4424 44                		movl	68(%rsp), %r8d
 BE45000000                		movl	$69, %esi
 8B442448                   		movl	72(%rsp), %eax
 8B742448                   		movl	72(%rsp), %esi
@@ -1180,7 +1179,6 @@ F7D2                       		notl	%edx
 55                         		pushq	%rbp
 53                         		pushq	%rbx
 F3C3                       		rep ; ret
-C3                         		ret
 D1C0                       		roll	%eax
 C1E010                     		sall	$16, %eax
 D1642410                   		sall	16(%rsp)

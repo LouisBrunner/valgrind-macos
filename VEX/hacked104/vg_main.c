@@ -579,7 +579,7 @@ static void process_cmd_line_options ( void )
    VG_(clo_n_suppressions)   = 0;
    VG_(clo_single_step)      = False;
    VG_(clo_optimise)         = True;
-   VG_(clo_instrument)       = True;
+   VG_(clo_instrument)       = False; //True;
    VG_(clo_cachesim)         = False;
    VG_(clo_I1_cache)         = UNDEFINED_CACHE;
    VG_(clo_D1_cache)         = UNDEFINED_CACHE;
@@ -1048,9 +1048,8 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[24/4];
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[28/4];
 
-   //   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[32/4];
    VG_(baseBlock)[VGOFF_(m_cc_op)]    = 0; // CC_OP_COPY
-   VG_(baseBlock)[VGOFF_(m_cc_src)]   = 0;
+   VG_(baseBlock)[VGOFF_(m_cc_src)]   = VG_(m_state_static)[32/4];
    VG_(baseBlock)[VGOFF_(m_cc_dst)]   = 0;
    VG_(baseBlock)[VGOFF_(m_cc_dflag)] = 1;
 

@@ -4787,8 +4787,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          if (epartIsReg(modrm)) {
             goto unimp2;
          } else {
+            Int tmpa;
             pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
-            Int tmpa = LOW24(pair);
+            tmpa = LOW24(pair);
             eip += HI8(pair);
             uInstr2(cb, MMX2_MemWr, 8, 
                         Lit16, 

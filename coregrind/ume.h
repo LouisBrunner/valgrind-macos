@@ -70,8 +70,8 @@ struct exeinfo
    addr_t brkbase;      // base address of brk segment
 
    // These are the extra args added by #! scripts
-   char*  argv0;        // INPUT: the interpreter name
-   char*  argv1;        // INPUT: the args for the interpreter
+   char*  interp_name;  // INPUT: the interpreter name
+   char*  interp_args;  // INPUT: the args for the interpreter
 };
 
 int do_exec(const char *exe, struct exeinfo *info);

@@ -1013,13 +1013,13 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    /* paste on the extra args if the loader needs them (ie, the #! 
       interpreter and its argument) */
    argc = 0;
-   if (info->argv0 != NULL) {
+   if (info->interp_name != NULL) {
       argc++;
-      stringsize += strlen(info->argv0) + 1;
+      stringsize += strlen(info->interp_name) + 1;
    }
-   if (info->argv1 != NULL) {
+   if (info->interp_args != NULL) {
       argc++;
-      stringsize += strlen(info->argv1) + 1;
+      stringsize += strlen(info->interp_args) + 1;
    }
 
    /* now scan the args we're given... */
@@ -1091,13 +1091,13 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    *ptr++ = argc;		/* client argc */
 
    /* --- argv --- */
-   if (info->argv0) {
-      *ptr++ = (addr_t)copy_str(&strtab, info->argv0);
-      free(info->argv0);
+   if (info->interp_name) {
+      *ptr++ = (addr_t)copy_str(&strtab, info->interp_name);
+      free(info->interp_name);
    }
-   if (info->argv1) {
-      *ptr++ = (addr_t)copy_str(&strtab, info->argv1);
-      free(info->argv1);
+   if (info->interp_args) {
+      *ptr++ = (addr_t)copy_str(&strtab, info->interp_args);
+      free(info->interp_args);
    }
    for (cpp = orig_argv; *cpp; ptr++, cpp++) {
       *ptr = (addr_t)copy_str(&strtab, *cpp);
@@ -1452,8 +1452,8 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
 
    if (need_help) {
       VG_(clexecfd) = -1;
-      info->argv0 = NULL;
-      info->argv1 = NULL;
+      info->interp_name = NULL;
+      info->interp_args = NULL;
    } else {
       Int ret;
       VG_(clexecfd) = VG_(open)(exec, O_RDONLY, VKI_S_IRUSR);

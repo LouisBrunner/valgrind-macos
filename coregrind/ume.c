@@ -565,19 +565,19 @@ static int load_script(char *hdr, int len, int fd, const char *name, struct exei
       *cp = '\0';
    }
    
-   info->argv0 = strdup(interp);
-   assert(NULL != info->argv0);
+   info->interp_name = strdup(interp);
+   assert(NULL != info->interp_name);
    if (arg != NULL && *arg != '\0') {
-      info->argv1 = strdup(arg);
-      assert(NULL != info->argv1);
+      info->interp_args = strdup(arg);
+      assert(NULL != info->interp_args);
    }
 
    if (info->argv && info->argv[0] != NULL)
       info->argv[0] = (char *)name;
 
    if (0)
-      printf("#! script: argv0=\"%s\" argv1=\"%s\"\n",
-	     info->argv0, info->argv1);
+      printf("#! script: interp_name=\"%s\" interp_args=\"%s\"\n",
+	     info->interp_name, info->interp_args);
 
    return do_exec_inner(interp, info);
 }
@@ -669,8 +669,8 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
 
 int do_exec(const char *exe, struct exeinfo *info)
 {
-   info->argv0 = NULL;
-   info->argv1 = NULL;
+   info->interp_name = NULL;
+   info->interp_args = NULL;
 
    return do_exec_inner(exe, info);
 }

@@ -27,7 +27,7 @@ int main ( void )
   pthread_create(&tid2, NULL, &thr2, NULL);
   pthread_create(&tid3, NULL, &thr3, NULL);
   f = fopen("bogus", "r");
-  printf("f1 = %p, errno1 = %d (%s)\n", f, errno, strerror(errno));
+  printf("f  = %p, errno  = %d (%s)\n", f, errno, strerror(errno));
   pthread_join(tid2, NULL);
   pthread_join(tid3, NULL);
   return 0;

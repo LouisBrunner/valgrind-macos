@@ -45,6 +45,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	seg_override.stderr.exp \
 	seg_override.stdout.exp seg_override.vgtest \
+	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
 	susphello.stdout.exp susphello.stderr.exp susphello.vgtest \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
@@ -61,8 +62,8 @@ check_PROGRAMS = \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
 	fucomip $(INSN_TESTS) \
 	int munmap_exe map_unmap mremap rcl_assert \
-	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
-	susphello pth_blockedsig pushpopseg \
+	rcrl readline1 resolv seg_override semlimit sha1_test \
+	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -108,6 +109,8 @@ rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
 resolv_SOURCES 		= resolv.c
 seg_override_SOURCES 	= seg_override.c
+semlimit_SOURCES	= semlimit.c
+semlimit_LDADD		= -lpthread
 smc1_SOURCES 		= smc1.c
 sha1_test_SOURCES 	= sha1_test.c
 shortpush_SOURCES 	= shortpush.c

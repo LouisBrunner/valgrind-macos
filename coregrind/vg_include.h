@@ -116,9 +116,6 @@
    beyond it. */
 #define VG_PTHREAD_STACK_SIZE (1 << 20)
 
-/* Number of entries in the semaphore-remapping table. */
-#define VG_N_SEMAPHORES 50
-
 /* Number of entries in the rwlock-remapping table. */
 #define VG_N_RWLOCKS 500
 

@@ -2489,9 +2489,6 @@ pid_t __vfork(void)
 
 #include <semaphore.h>
 
-/* This is a terrible way to do the remapping.  Plan is to import an
-   AVL tree at some point. */
-
 typedef
    struct {
       pthread_mutex_t se_mx;
@@ -2501,59 +2498,52 @@ typedef
    }
    vg_sem_t;
 
-static pthread_mutex_t se_remap_mx = PTHREAD_MUTEX_INITIALIZER;
+#define SEM_CHECK_MAGIC 0x5b1d0772
 
-static int      se_remap_used = 0;
-static sem_t*   se_remap_orig[VG_N_SEMAPHORES];
-static vg_sem_t se_remap_new[VG_N_SEMAPHORES];
+typedef
+   struct {
+      union {
+         vg_sem_t* p;
+         int i;
+      } shadow;
+      int err_check;
+   }
+   user_sem_t;
 
-static vg_sem_t* se_remap ( sem_t* orig )
+
+static vg_sem_t* se_new ( sem_t* orig )
 {
-   int res, i;
-   res = __pthread_mutex_lock(&se_remap_mx);
-   my_assert(res == 0);
+   user_sem_t* u_sem = (user_sem_t*)orig;
+   vg_sem_t* vg_sem;
 
-   for (i = 0; i < se_remap_used; i++) {
-      if (se_remap_orig[i] == orig)
-         break;
-   }
-   if (i == se_remap_used) {
-      if (se_remap_used == VG_N_SEMAPHORES) {
-         res = pthread_mutex_unlock(&se_remap_mx);
-         my_assert(res == 0);
-         barf("VG_N_SEMAPHORES is too low.  Increase and recompile.");
-      }
-      se_remap_used++;
-      se_remap_orig[i] = orig;
-      /* printf("allocated semaphore %d\n", i); */
-   }
-   res = __pthread_mutex_unlock(&se_remap_mx);
-   my_assert(res == 0);
-   return &se_remap_new[i];
+   vg_sem = my_malloc(sizeof(vg_sem_t));
+
+   u_sem->shadow.p = vg_sem;
+   u_sem->err_check = u_sem->shadow.i ^ SEM_CHECK_MAGIC;
+
+   return vg_sem;
 }
 
-static void se_unmap( sem_t* orig )
+static vg_sem_t* se_lookup ( sem_t* orig )
 {
-   int res, i;
-   res = __pthread_mutex_lock(&se_remap_mx);
-   my_assert(res == 0);
+   user_sem_t* u_sem = (user_sem_t*) orig;
 
-   for (i = 0; i < se_remap_used; i++) {
-      if (se_remap_orig[i] == orig)
-         break;
-   }
-   if (i == se_remap_used) {
-      res = pthread_mutex_unlock(&se_remap_mx);
-      my_assert(res == 0);
-      barf("se_unmap: unmapping invalid semaphore");
-   } else {
-      se_remap_orig[i] = se_remap_orig[--se_remap_used];
-      se_remap_orig[se_remap_used] = 0;
-      memset(&se_remap_new[se_remap_used], 0,
-             sizeof(se_remap_new[se_remap_used]));
-   }
-   res = pthread_mutex_unlock(&se_remap_mx);
-   my_assert(res == 0);
+   if(!u_sem->shadow.p || ((u_sem->shadow.i ^ SEM_CHECK_MAGIC) != u_sem->err_check))
+      return NULL;
+   
+   return u_sem->shadow.p;
+}
+   
+static void se_free( sem_t* orig )
+{
+   user_sem_t* u_sem = (user_sem_t*) orig;
+
+   my_free(u_sem->shadow.p);
+
+   u_sem->shadow.p = NULL;
+   u_sem->err_check = 0;
+
+   return;
 }
 
 int sem_init(sem_t *sem, int pshared, unsigned int value)
@@ -2566,12 +2556,14 @@ int sem_init(sem_t *sem, int pshared, unsigned int value)
       *(__errno_location()) = ENOSYS;
       return -1;
    }
-   vg_sem = se_remap(sem);
+   vg_sem = se_new(sem);
+
    res = pthread_mutex_init(&vg_sem->se_mx, NULL);
    my_assert(res == 0);
    res = pthread_cond_init(&vg_sem->se_cv, NULL);
    my_assert(res == 0);
    vg_sem->count = value;
+   vg_sem->waiters = 0;
    return 0;
 }
 
@@ -2580,7 +2572,12 @@ int sem_wait ( sem_t* sem )
    int       res;
    vg_sem_t* vg_sem;
    ensure_valgrind("sem_wait");
-   vg_sem = se_remap(sem);
+   vg_sem = se_lookup(sem);
+   if(!vg_sem) {
+      pthread_error("sem_wait: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    while (vg_sem->count == 0) {
@@ -2600,7 +2597,12 @@ int sem_post ( sem_t* sem )
    int       res;
    vg_sem_t* vg_sem; 
    ensure_valgrind("sem_post");
-   vg_sem = se_remap(sem);
+   vg_sem = se_lookup(sem);
+   if(!vg_sem) {
+      pthread_error("sem_post: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    if (vg_sem->count == 0) {
@@ -2621,7 +2623,12 @@ int sem_trywait ( sem_t* sem )
    int       ret, res;
    vg_sem_t* vg_sem; 
    ensure_valgrind("sem_trywait");
-   vg_sem = se_remap(sem);
+   vg_sem = se_lookup(sem);
+   if(!vg_sem) {
+      pthread_error("sem_trywait: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    if (vg_sem->count > 0) { 
@@ -2642,7 +2649,12 @@ int sem_getvalue(sem_t* sem, int * sval)
    int res;
    vg_sem_t* vg_sem; 
    ensure_valgrind("sem_getvalue");
-   vg_sem = se_remap(sem);
+   vg_sem = se_lookup(sem);
+   if(!vg_sem) {
+      pthread_error("sem_getvalue: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    *sval = vg_sem->count;
@@ -2658,7 +2670,12 @@ int sem_destroy(sem_t * sem)
    vg_sem_t* vg_sem;
    int res;
    ensure_valgrind("sem_destroy");
-   vg_sem = se_remap(sem);
+   vg_sem = se_lookup(sem);
+   if(!vg_sem) {
+      pthread_error("sem_destroy: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    if (vg_sem->waiters > 0)
@@ -2674,7 +2691,7 @@ int sem_destroy(sem_t * sem)
    my_assert(res == 0);
    res = pthread_mutex_destroy(&vg_sem->se_mx);
    my_assert(res == 0);
-   se_unmap(sem);
+   se_free(sem);
    return 0;
 }
 
@@ -2684,7 +2701,12 @@ int sem_timedwait(sem_t* sem, const struct timespec *abstime)
    int       res; 
    vg_sem_t* vg_sem; 
    ensure_valgrind("sem_timedwait"); 
-   vg_sem = se_remap(sem); 
+   vg_sem = se_lookup(sem); 
+   if(!vg_sem) {
+      pthread_error("sem_timedwait: semaphore overwritten or not initialized");
+      *(__errno_location()) = EINVAL;
+      return -1;
+   }
    res = __pthread_mutex_lock(&vg_sem->se_mx); 
    my_assert(res == 0); 
    while ( vg_sem->count == 0 && res != ETIMEDOUT ) { 

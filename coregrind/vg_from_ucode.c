@@ -1805,18 +1805,14 @@ static void synth_fpu_regmem ( UChar first_byte,
                                UChar second_byte_masked, 
                                Int reg )
 {
-   emit_get_fpu_state();
    emit_fpu_regmem ( first_byte, second_byte_masked, reg );
-   emit_put_fpu_state();
 }
 
 
 static void synth_fpu_no_mem ( UChar first_byte,
                                UChar second_byte )
 {
-   emit_get_fpu_state();
    emit_fpu_no_mem ( first_byte, second_byte );
-   emit_put_fpu_state();
 }
 
 
@@ -1961,22 +1957,22 @@ Bool anyFlagUse ( UInstr* u )
 }
 
 
-static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
+/* fplive==True indicates that the simulated machine's FPU state is in
+   the real FPU.  If so we need to be very careful not to trash it.
+   If FPU state is live and we deem it necessary to copy it back to
+   the simulated machine's FPU state, we do so.  The final state of
+   fpliveness is returned.  In short we _must_ do put_fpu_state if
+   there is any chance at all that the code generated for a UInstr
+   will change the real FPU state.  
+*/
+static Bool emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before, 
+                         Bool fplive )
 {
    Int     old_emitted_code_used;
    UInstr* u = &cb->instrs[i];
 
    if (dis)
       VG_(pp_UInstr_regs)(i, u);
-
-#  if 0
-   if (0&& VG_(translations_done) >= 600) {
-      Bool old_dis = dis;
-      dis = False; 
-      synth_OINK(i);
-      dis = old_dis;
-   }
-#  endif
 
    old_emitted_code_used = emitted_code_used;
    
@@ -2208,6 +2204,11 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->size == 0);
 
+	 if (fplive) {
+	    emit_put_fpu_state();
+	    fplive = False;
+	 }
+
          VG_(synth_ccall) ( (Addr) & VG_(do_useseg), 
                             2, /* args */
                             0, /* regparms_n */
@@ -2294,6 +2295,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
       case JMP: {
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
+	 if (fplive) {
+	    emit_put_fpu_state();
+	    fplive = False;
+	 }
          if (u->cond == CondAlways) {
             switch (u->tag1) {
                case RealReg:
@@ -2327,6 +2332,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == Literal);
          vg_assert(u->size == 4);
+	 if (fplive) {
+	    emit_put_fpu_state();
+	    fplive = False;
+	 }
          synth_jmp_ifzero_reg_lit ( u->val1, u->lit32 );
          break;
 
@@ -2346,6 +2355,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->size == 0);
+	 if (fplive) {
+	    emit_put_fpu_state();
+	    fplive = False;
+	 }
          if (anyFlagUse ( u )) 
             emit_get_eflags();
          VG_(synth_call) ( False, u->val1 );
@@ -2370,6 +2383,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          else                                vg_assert(u->tag3 == NoValue);
          vg_assert(u->size == 0);
 
+	 if (fplive) {
+	    emit_put_fpu_state();
+	    fplive = False;
+	 }
          VG_(synth_ccall) ( u->lit32, u->argc, u->regparms_n, argv, tagv,
                             ret_reg, regs_live_before, u->regs_live_after );
          break;
@@ -2392,6 +2409,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
       case FPU_W:         
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == RealReg);
+	 if (!fplive) {
+	    emit_get_fpu_state();
+	    fplive = True;
+	 }
          synth_fpu_regmem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF,
                             u->val2 );
@@ -2402,6 +2423,10 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          vg_assert(u->tag2 == NoValue);
          if (anyFlagUse ( u )) 
             emit_get_eflags();
+	 if (!fplive) {
+	    emit_get_fpu_state();
+	    fplive = True;
+	 }
          synth_fpu_no_mem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF );
          if (writeFlagUse ( u )) 
@@ -2409,9 +2434,13 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          break;
 
       default: 
-         if (VG_(needs).extended_UCode)
+         if (VG_(needs).extended_UCode) {
+	    if (fplive) {
+	       emit_put_fpu_state();
+	       fplive = False;
+	    }
             SK_(emit_XUInstr)(u, regs_live_before);
-         else {
+         } else {
             VG_(printf)("\nError:\n"
                         "  unhandled opcode: %u.  Perhaps "
                         " VG_(needs).extended_UCode should be set?\n",
@@ -2421,10 +2450,17 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          }
    }
 
+   if (0 && fplive) {
+      emit_put_fpu_state();
+      fplive = False;
+   }
+
    /* Update UInstr histogram */
    vg_assert(u->opcode < 100);
    histogram[u->opcode].counts++;
    histogram[u->opcode].size += (emitted_code_used - old_emitted_code_used);
+
+   return fplive;
 }
 
 
@@ -2434,13 +2470,15 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes )
 {
    Int i;
    UChar regs_live_before = 0;   /* No regs live at BB start */
-   
+   Bool fplive;
+
    emitted_code_used = 0;
    emitted_code_size = 500; /* reasonable initial size */
    emitted_code = VG_(arena_malloc)(VG_AR_JITTER, emitted_code_size);
 
    if (dis) VG_(printf)("Generated x86 code:\n");
 
+   fplive = False;
    for (i = 0; i < cb->used; i++) {
       UInstr* u = &cb->instrs[i];
       if (cb->instrs[i].opcode != NOP) {
@@ -2452,11 +2490,12 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes )
             VG_(up_UInstr)( i, u );
 	 }
          vg_assert(sane);
-         emitUInstr( cb, i, regs_live_before );
+         fplive = emitUInstr( cb, i, regs_live_before, fplive );
       }
       regs_live_before = u->regs_live_after;
    }
    if (dis) VG_(printf)("\n");
+   vg_assert(!fplive);	/* FPU state must be saved by end of BB */
 
    /* Returns a pointer to the emitted code.  This will have to be
       copied by the caller into the translation cache, and then freed */

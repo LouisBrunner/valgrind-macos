@@ -155,7 +155,7 @@ Bool, expensive_sanity_check
 
 ## Note that most events aren't passed a ThreadId.  If the event is one called
 ## from generated code (eg. new_mem_stack_*), you can use
-## VG_(get_current_tid)() to find it.  Otherwise, it has to be passed in,
+## VG_(get_running_tid)() to find it.  Otherwise, it has to be passed in,
 ## as in pre_mem_read, and so the event signature will require changing.
 
 ## Memory events (Nb: to track heap allocation/freeing, a tool must replace

@@ -845,7 +845,7 @@ typedef
       /* Not for translating x86 calls -- only to call C helper functions of
          up to three arguments (or two if the functions has a return value).
          Arguments and return value must be word-sized.  More arguments can
-         be faked with global variables (eg. use VG_(set_global_var)()).
+         be faked with global variables (eg. use VG_(lit_to_globvar)()).
 
          Seven possibilities: 'arg[123]' show where args go, 'ret' shows
          where return value goes (if present).
@@ -1116,17 +1116,56 @@ extern Bool VG_(any_flag_use)( UInstr* u );
 
 /* ------------------------------------------------------------------ */
 /* Higher-level UInstr sequence builders */
+
+extern void VG_(lit_to_reg)    ( UCodeBlock* cb, UInt lit, UInt t );
+extern UInt VG_(lit_to_newreg) ( UCodeBlock* cb, UInt lit         );
+
+#define CB_F   UCodeBlock* cb, Addr f
+#define EV     extern void
+#define RPn    UInt regparms_n
+
+/* Various CCALL builders, of the form "ccall_<args>_<retval>".  'R'
+   represents a TempReg, 'L' represents a literal, '0' represents nothing
+   (ie. no args, or no return value). */
+
+EV VG_(ccall_0_0)   ( CB_F                                    );
+
+EV VG_(ccall_R_0)   ( CB_F, UInt r1,                      RPn );
+EV VG_(ccall_L_0)   ( CB_F, UInt r1,                      RPn );
+EV VG_(ccall_R_R)   ( CB_F, UInt r1, UInt r_ret,          RPn );
+EV VG_(ccall_L_R)   ( CB_F, UInt r1, UInt r_ret,          RPn );
+
+EV VG_(ccall_RR_0)  ( CB_F, UInt r1, UInt r2,             RPn );
+EV VG_(ccall_RL_0)  ( CB_F, UInt r1, UInt r2,             RPn );
+EV VG_(ccall_LR_0)  ( CB_F, UInt r1, UInt r2,             RPn );
+EV VG_(ccall_LL_0)  ( CB_F, UInt r1, UInt r2,             RPn );
+EV VG_(ccall_RR_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
+EV VG_(ccall_RL_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
+EV VG_(ccall_LR_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
+EV VG_(ccall_LL_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
+
+EV VG_(ccall_RRR_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
+EV VG_(ccall_RLL_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
+EV VG_(ccall_LLR_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
+EV VG_(ccall_LLL_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
+
+#undef CB_F
+#undef EV
+#undef RPn
+
+/* One way around the 3-arg C function limit is to pass args via global
+ * variables... ugly, but it works. */
+void VG_(reg_to_globvar)(UCodeBlock* cb, UInt t,   UInt* globvar_ptr);
+void VG_(lit_to_globvar)(UCodeBlock* cb, UInt lit, UInt* globvar_ptr);
+
+
+/* Old, deprecated versions of some of the helpers (DO NOT USE) */
 extern void VG_(call_helper_0_0) ( UCodeBlock* cb, Addr f);
 extern void VG_(call_helper_1_0) ( UCodeBlock* cb, Addr f, UInt arg1,
                                    UInt regparms_n);
 extern void VG_(call_helper_2_0) ( UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
                                    UInt regparms_n);
-
-/* One way around the 3-arg C function limit is to pass args via global
- * variables... ugly, but it works.  This one puts a literal in there. */
 extern void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
-
-/* This one puts the contents of a TempReg in the global variable. */
 extern void VG_(set_global_var_tempreg) ( UCodeBlock* cb, Addr globvar_ptr,
                                           UInt t_val);
 

@@ -2284,7 +2284,7 @@ static void emit_call_patchme( void )
       VG_(emitB) ( 0x90 );		/* NOP */
 
       if (dis)
-	 VG_(printf)("\n\t\tud2; ud2; nop /* call VG_(patchme) */\n");
+	 VG_(printf)("\n\t\tud2; ud2; nop /* call VG_(patch_me) */\n");
    }
 }   
 

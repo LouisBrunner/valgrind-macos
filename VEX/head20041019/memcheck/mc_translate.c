@@ -1719,7 +1719,8 @@ static IRType shadowType ( IRType ty )
       case Ity_Bit:
       case Ity_I8:
       case Ity_I16:
-      case Ity_I32: return ty;
+      case Ity_I32: 
+      case Ity_I64: return ty;
       default: ppIRType(ty); 
                VG_(skin_panic)("memcheck:shadowType");
    }
@@ -1785,27 +1786,105 @@ static IRExpr* definedOfType ( IRType ty ) {
    }
 }
 
+static IRAtom* mkDifD8 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   sk_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I8, binop(Iop_And8, a1, a2));
+}
+static IRAtom* mkDifD32 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   sk_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I32, binop(Iop_And32, a1, a2));
+}
+
+static IRAtom* mkUifU8 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   sk_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I8, binop(Iop_Or8, a1, a2));
+}
 static IRAtom* mkUifU16 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    sk_assert(isShadowAtom(mce,a1));
    sk_assert(isShadowAtom(mce,a2));
    return assignNew(mce, Ity_I16, binop(Iop_Or16, a1, a2));
 }
-
 static IRAtom* mkUifU32 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    sk_assert(isShadowAtom(mce,a1));
    sk_assert(isShadowAtom(mce,a2));
    return assignNew(mce, Ity_I32, binop(Iop_Or32, a1, a2));
 }
+static IRAtom* mkUifU ( MCEnv* mce, IRType vty,  IRAtom* a1, IRAtom* a2 ) {
+   switch (vty) {
+      case Ity_I32: return mkUifU32(mce, a1, a2);
+      default:
+         VG_(printf)("\n"); ppIRType(vty); VG_(printf)("\n");
+         VG_(skin_panic)("memcheck:mkUifU");
+   }
+}
 
-static IRExpr* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
+
+static IRAtom* mkLeft8 ( MCEnv* mce, IRAtom* a1 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   /* It's safe to duplicate a1 since it's only an atom */
+   return assignNew(mce, Ity_I8, 
+                    binop(Iop_Or8, a1, 
+                          assignNew(mce, Ity_I8,
+                                    /* unop(Iop_Neg8, a1)))); */
+                                    binop(Iop_Sub8, mkU8(0), a1) )));
+}
+static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
    sk_assert(isShadowAtom(mce,a1));
    /* It's safe to duplicate a1 since it's only an atom */
    return assignNew(mce, Ity_I32, 
-             binop(Iop_Or32, a1, 
-                   assignNew(mce, Ity_I32,
-                   /* unop(Iop_Neg32, a1)))); */
-                   binop(Iop_Sub32, mkU32(0), a1) )));
+                    binop(Iop_Or32, a1, 
+                          assignNew(mce, Ity_I32,
+                                    /* unop(Iop_Neg32, a1)))); */
+                                    binop(Iop_Sub32, mkU32(0), a1) )));
 }
+
+/* ImproveAND(data, vbits) = data OR vbits.  Defined (0) data 0s give
+   defined (0); all other -> undefined (1).
+*/
+static IRAtom* mkImproveAND8 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(mce, Ity_I8, binop(Iop_Or8, data, vbits));
+}
+static IRAtom* mkImproveAND32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(mce, Ity_I32, binop(Iop_Or32, data, vbits));
+}
+
+/* ImproveOR(data, vbits) = ~data OR vbits.  Defined (0) data 1s give
+   defined (0); all other -> undefined (1).
+*/
+static IRAtom* mkImproveOR8 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(
+             mce, Ity_I8, 
+             binop(Iop_Or8, 
+                   assignNew(mce, Ity_I8, unop(Iop_Not8, data)), 
+                   vbits) );
+}
+static IRAtom* mkImproveOR32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(
+             mce, Ity_I32, 
+             binop(Iop_Or32, 
+                   assignNew(mce, Ity_I32, unop(Iop_Not32, data)), 
+                   vbits) );
+}
+
 
 static void setHelperAnns ( MCEnv* mce, IRDirty* di ) {
    di->nFxState = 2;
@@ -1901,7 +1980,7 @@ void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    /* sz is only used for constructing the error message */
    Int    sz = ty==Ity_Bit ? 0 : sizeofIRType(ty);
 
-   IRExpr* cond = mkPCastTo( mce, vatom, Ity_Bit );
+   IRAtom* cond = mkPCastTo( mce, vatom, Ity_Bit );
    /* cond will be 0 if all defined, and 1 if any not defined. */
 
    IRDirty* di 
@@ -1926,6 +2005,22 @@ void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    }
 }
 
+
+static
+IRAtom* doLazyApproximation ( MCEnv* mce, 
+                              IRAtom** exprvec,
+                              IRType finalVtype )
+{
+   Int i;
+   IRAtom* here;
+   IRAtom* curr = definedOfType(Ity_I32);
+   for (i = 0; exprvec[i]; i++) {
+      sk_assert(isOriginalAtom(mce, exprvec[i]));
+      here = mkPCastTo( mce, expr2vbits(mce, exprvec[i]), Ity_I32 );
+      curr = mkUifU32(mce, here, curr);
+   }
+   return mkPCastTo(mce, curr, finalVtype );
+}
 
 /* Generate into bb suitable actions to shadow this Put.  If the state
    slice is marked 'always defined', emit a complaint if any of the
@@ -2001,6 +2096,11 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
                            IRExpr* atom1, IRExpr* atom2,
                            IRExpr* vatom1, IRExpr* vatom2 )
 {
+   IRType  and_or_ty;
+   IRAtom* (*uifu)    (MCEnv*, IRAtom*, IRAtom*);
+   IRAtom* (*difd)    (MCEnv*, IRAtom*, IRAtom*);
+   IRAtom* (*improve) (MCEnv*, IRAtom*, IRAtom*);
+
    sk_assert(isOriginalAtom(mce,atom1));
    sk_assert(isOriginalAtom(mce,atom2));
    sk_assert(isShadowAtom(mce,vatom1));
@@ -2010,7 +2110,12 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
    switch (op) {
       case Iop_Sub32:
       case Iop_Add32:
+      case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
+
+      case Iop_Sub8:
+      case Iop_Add8:
+         return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
       case Iop_CmpLE32S: case Iop_CmpLE32U: case Iop_CmpLT32U:
       case Iop_CmpEQ32:
@@ -2019,12 +2124,40 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpEQ16:
          return mkPCastTo(mce, mkUifU16(mce, vatom1,vatom2), Ity_Bit);
 
+      case Iop_CmpEQ8: case Iop_CmpNE8:
+         return mkPCastTo(mce, mkUifU8(mce, vatom1,vatom2), Ity_Bit);
+
       case Iop_Shl32:
       case Iop_Shr32:
          /* Complain if the shift amount is undefined.  Then simply
             shift the first arg's V bits by the real shift amount. */
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I32, binop(op, vatom1, atom2));
+
+      case Iop_And32:
+         uifu = mkUifU32; difd = mkDifD32; 
+         and_or_ty = Ity_I32; improve = mkImproveAND32; goto do_And_Or;
+      case Iop_And8:
+         uifu = mkUifU8; difd = mkDifD8; 
+         and_or_ty = Ity_I8; improve = mkImproveAND8; goto do_And_Or;
+
+      case Iop_Or32:
+         uifu = mkUifU32; difd = mkDifD32; 
+         and_or_ty = Ity_I32; improve = mkImproveOR32; goto do_And_Or;
+      case Iop_Or8:
+         uifu = mkUifU8; difd = mkDifD8; 
+         and_or_ty = Ity_I8; improve = mkImproveOR8; goto do_And_Or;
+
+      do_And_Or:
+         return
+         assignNew(
+            mce, 
+            and_or_ty,
+            difd(mce, uifu(mce, vatom1, vatom2),
+                      difd(mce, improve(mce, atom1, vatom1),
+                                improve(mce, atom2, vatom2) ) ) );
+      case Iop_Xor32:
+         return mkUifU32(mce, vatom1, vatom2);
 
       default:
          ppIROp(op);
@@ -2045,11 +2178,20 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce,
       case Iop_1Uto32:
       case Iop_8Uto32:
       case Iop_16Uto32:
+      case Iop_8Sto32:
          return assignNew(mce, Ity_I32, unop(op, vatom));
-      case Iop_32to1:
-         return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
+
       case Iop_32to16:
          return assignNew(mce, Ity_I16, unop(Iop_32to16, vatom));
+
+      case Iop_1Uto8:
+      case Iop_32to8:
+         return assignNew(mce, Ity_I8, unop(op, vatom));
+
+      case Iop_32to1:
+         return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
+
+      case Iop_Not32:
       case Iop_Not1:
          return vatom;
       default:
@@ -2060,7 +2202,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce,
 
 
 static
-IRExpr* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
+IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
 {
    void*    helper;
    Char*    hname;
@@ -2101,6 +2243,32 @@ IRExpr* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
 
 
 static
+IRAtom* expr2vbits_Mux0X ( MCEnv* mce, 
+			   IRAtom* cond, IRAtom* expr0, IRAtom* exprX )
+{
+   IRAtom *vbitsC, *vbits0, *vbitsX;
+   IRType ty;
+   /* Given Mux0X(cond,expr0,exprX), generate
+         Mux0X(cond,expr0#,exprX#) `UifU` PCast(cond#)
+      That is, steer the V bits like the originals, but trash the 
+      result if the steering value is undefined.  This gives 
+      lazy propagation. */
+   sk_assert(isOriginalAtom(mce, cond));
+   sk_assert(isOriginalAtom(mce, expr0));
+   sk_assert(isOriginalAtom(mce, exprX));
+
+   vbitsC = expr2vbits(mce, cond);
+   vbits0 = expr2vbits(mce, expr0);
+   vbitsX = expr2vbits(mce, exprX);
+   ty = typeOfIRExpr(mce->bb->tyenv, vbits0);
+
+   return
+      mkUifU(mce, ty, assignNew(mce, ty, IRExpr_Mux0X(cond, vbits0, vbitsX)),
+                      mkPCastTo(mce, vbitsC, ty) );
+}      
+
+
+static
 IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
 {
    IRExpr *v1, *v2;
@@ -2136,6 +2304,13 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
       case Iex_LDle:
          return expr2vbits_LDle( mce, e->Iex.LDle.ty, e->Iex.LDle.addr );
 
+      case Iex_CCall:
+         return doLazyApproximation( mce, e->Iex.CCall.args, e->Iex.CCall.retty );
+
+      case Iex_Mux0X:
+         return expr2vbits_Mux0X( mce, e->Iex.Mux0X.cond, e->Iex.Mux0X.expr0, 
+                                       e->Iex.Mux0X.exprX);
+
       default: 
          VG_(printf)("\n");
          ppIRExpr(e);
@@ -2144,6 +2319,7 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
    }
 }
 
+/* Widen a value to the host word size. */
 static
 IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
 {
@@ -2152,13 +2328,19 @@ IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
    sk_assert(isShadowAtom(mce,vatom));
    IRType tyH = mce->hWordTy;
    IRType ty  = typeOfIRExpr(mce->bb->tyenv, vatom);
-   switch (ty) {
-      case Ity_I32:
-         if (tyH == Ity_I32) return vatom;
-         goto unhandled;
-      unhandled:
-         default: VG_(skin_panic)("zwidenToHostWord");
+   if (tyH == Ity_I32) {
+      switch (ty) {
+         case Ity_I32: return vatom;
+         case Ity_I16: return assignNew(mce, tyH, unop(Iop_16Uto32, vatom));
+         case Ity_I8:  return assignNew(mce, tyH, unop(Iop_8Uto32, vatom));
+         default:      goto unhandled;
+      }
+   } else {
+      goto unhandled;
    }
+  unhandled:
+   VG_(printf)("\nty = "); ppIRType(ty); VG_(printf)("\n");
+   VG_(skin_panic)("zwidenToHostWord");
 }
 
 static 

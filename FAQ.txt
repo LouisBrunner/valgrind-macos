@@ -1,6 +1,6 @@
 Valgrind FAQ, version 2.1.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Last revised 6 April 2004
+Last revised 18 July 2004
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Background
@@ -117,8 +117,13 @@ Older versions did not support some x86 instructions, particularly
 SSE/SSE2 instructions.  Try a newer Valgrind;  we now support almost all
 instructions.  If it still happens with newer versions, if the failing
 instruction is an SSE/SSE2 instruction, you might be able to recompile
-your progrma without it by using the flag -march to gcc.  Either way,
+your program without it by using the flag -march to gcc.  Either way,
 let us know and we'll try to fix it.
+
+Another possibility is that your program has a bug and erroneously jumps
+to a non-code address, in which case you'll get a SIGILL signal.
+Memcheck/Addrcheck may issue a warning just before this happens, but they
+might not if the jump happens to land in addressable memory.
 
 -----------------------------------------------------------------
 

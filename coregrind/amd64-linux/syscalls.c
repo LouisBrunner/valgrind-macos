@@ -1249,21 +1249,21 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_ptrace,            sys_ptrace),         // 101 
    GENX_(__NR_getuid,            sys_getuid),         // 102 
    //   (__NR_syslog,            sys_syslog),         // 103 
-   //   (__NR_getgid,            sys_getgid),         // 104 
+   GENX_(__NR_getgid,            sys_getgid),         // 104 
 
-   //   (__NR_setuid,            sys_setuid),         // 105 
-   //   (__NR_setgid,            sys_setgid),         // 106 
-   //   (__NR_geteuid,           sys_geteuid),        // 107 
-   //   (__NR_getegid,           sys_getegid),        // 108 
+   GENX_(__NR_setuid,            sys_setuid),         // 105 
+   GENX_(__NR_setgid,            sys_setgid),         // 106 
+   GENX_(__NR_geteuid,           sys_geteuid),        // 107 
+   GENX_(__NR_getegid,           sys_getegid),        // 108 
    //   (__NR_setpgid,           sys_setpgid),        // 109 
 
    GENX_(__NR_getppid,           sys_getppid),        // 110 
-   //   (__NR_getpgrp,           sys_getpgrp),        // 111 
+   GENX_(__NR_getpgrp,           sys_getpgrp),        // 111 
    //   (__NR_setsid,            sys_setsid),         // 112 
    //   (__NR_setreuid,          sys_setreuid),       // 113 
    //   (__NR_setregid,          sys_setregid),       // 114 
 
-   //   (__NR_getgroups,         sys_getgroups),      // 115 
+   GENXY(__NR_getgroups,         sys_getgroups),      // 115 
    //   (__NR_setgroups,         sys_setgroups),      // 116 
    //   (__NR_setresuid,         sys_setresuid),      // 117 
    //   (__NR_getresuid,         sys_getresuid),      // 118 

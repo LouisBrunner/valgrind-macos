@@ -1377,7 +1377,7 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 /*------------------------------------------------------------*/
 
 static
-IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
+IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout )
 {
    Int      i, j, minoff_ST, maxoff_ST;
    IRDirty  *dcall, *d;

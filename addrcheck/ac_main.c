@@ -1035,6 +1035,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             tl_assert(isAtom(aexpr));
             hsz    = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
 	    isLoad = False;
+            break;
 
          case Ist_Put:
             tl_assert(isAtom(st->Ist.Put.data));

@@ -1737,8 +1737,6 @@ extern UInt VG_(patch_me);
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */
 
-extern void VG_(helper_undefined_instruction);
-
 /* Information about trampoline code (for signal return and syscalls) */
 extern const Char VG_(trampoline_code_start);
 extern const Int  VG_(trampoline_code_length);
@@ -1766,10 +1764,10 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 
 /* An array of words.  In generated code, %ebp always points to the
    start of this array.  Useful stuff, like the simulated CPU state,
-   and the addresses of helper functions, can then be found by
-   indexing off %ebp.  The following declares variables which, at
-   startup time, are given values denoting offsets into baseBlock.
-   These offsets are in *words* from the start of baseBlock. */
+   can then be found by indexing off %ebp.  The following declares
+   variables which, at startup time, are given values denoting offsets
+   into baseBlock.  These offsets are in *words* from the start of
+   baseBlock. */
 
 #define VG_BASEBLOCK_WORDS 400
 

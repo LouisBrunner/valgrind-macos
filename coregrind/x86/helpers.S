@@ -83,14 +83,6 @@ VG_(tramp_syscall_offset):
 .text
 
 
-
-
-/* Undefined instruction (generates SIGILL) */
-.globl VG_(helper_undefined_instruction)
-VG_(helper_undefined_instruction):
-1:	ud2
-	jmp	1b
-	        
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 		

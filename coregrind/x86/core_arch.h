@@ -108,9 +108,6 @@ extern Int VGOFF_(ldt);
 /* This thread's TLS pointer. */
 extern Int VGOFF_(tls_ptr);
 
-/* Nb: Most helper offsets are in include/tool.h, for use by tools */
-extern Int VGOFF_(helper_undefined_instruction);
-
 
 /* ---------------------------------------------------------------------
    Elf stuff

@@ -2164,25 +2164,6 @@ static void setup_file_descriptors(void)
 /*=== baseBlock: definition + setup                                ===*/
 /*====================================================================*/
 
-Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
-
-/* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
- * increased too much, they won't really be compact any more... */
-#define  MAX_COMPACT_HELPERS     8
-#define  MAX_NONCOMPACT_HELPERS  50 
-
-/* For storing tool-specific helpers, determined at runtime.  The addr 
- * and offset arrays together form a (addr, offset) map that allows a 
- * helper's baseBlock offset to be computed from its address.  It's done 
- * like this so CCALLs can use the function address rather than having to
- * muck around with offsets. */
-static UInt VG_(n_compact_helpers)    = 0;
-static UInt VG_(n_noncompact_helpers) = 0;
-static Addr VG_(compact_helper_addrs)  [MAX_COMPACT_HELPERS];
-static Int  VG_(compact_helper_offsets)[MAX_COMPACT_HELPERS];
-static Addr VG_(noncompact_helper_addrs)  [MAX_NONCOMPACT_HELPERS];
-static Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
-
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
@@ -2217,43 +2198,6 @@ Int VG_(alloc_BaB_1_set) ( Addr a )
    return off;
 }
 
-/* Registers a function in compact_helper_addrs;  compact_helper_offsets is
-   filled in later. */
-void VG_(register_compact_helper)(Addr a)
-{
-   if (MAX_COMPACT_HELPERS <= VG_(n_compact_helpers)) {
-      VG_(printf)("Can only register %d compact helpers\n", 
-                  MAX_COMPACT_HELPERS);
-      VG_(core_panic)("Too many compact helpers registered");
-   }
-   VG_(compact_helper_addrs)[VG_(n_compact_helpers)] = a;
-   VG_(n_compact_helpers)++;
-}
-
-/* Registers a function in noncompact_helper_addrs;  noncompact_helper_offsets
- * is filled in later.
- */
-void VG_(register_noncompact_helper)(Addr a)
-{
-   if (MAX_NONCOMPACT_HELPERS <= VG_(n_noncompact_helpers)) {
-      VG_(printf)("Can only register %d non-compact helpers\n", 
-                  MAX_NONCOMPACT_HELPERS);
-      VG_(printf)("Try increasing MAX_NON_COMPACT_HELPERS\n");
-      VG_(core_panic)("Too many non-compact helpers registered");
-   }
-   VG_(noncompact_helper_addrs)[VG_(n_noncompact_helpers)] = a;
-   VG_(n_noncompact_helpers)++;
-}
-
-/* Allocate offsets in baseBlock for the tool helpers */
-static 
-void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
-{
-   UInt i;
-   for (i = 0; i < n; i++) 
-      offsets[i] = VG_(alloc_BaB_1_set)( addrs[i] );
-}
-
 Bool VG_(need_to_handle_SP_assignment)(void)
 {
    return ( VG_(defined_new_mem_stack_4)()  ||
@@ -2277,73 +2221,7 @@ Bool VG_(need_to_handle_SP_assignment)(void)
 static void init_baseBlock ( Addr client_eip, Addr sp_at_startup )
 {
    VGA_(init_low_baseBlock)(client_eip, sp_at_startup);
-
-   /* Allocate slots for compact helpers */
-   assign_helpers_in_baseBlock(VG_(n_compact_helpers), 
-                               VG_(compact_helper_offsets), 
-                               VG_(compact_helper_addrs));
-
    VGA_(init_high_baseBlock)(client_eip, sp_at_startup);
-
-#define REG(kind, size) \
-   if (VG_(defined_##kind##_mem_stack##size)()) \
-      VG_(register_noncompact_helper)(           \
-          (Addr) VG_(tool_interface).track_##kind##_mem_stack##size );
-   REG(new, _8);
-   REG(new, _12);
-   REG(new, _16);
-   REG(new, _32);
-   REG(new, );
-   REG(die, _8);
-   REG(die, _12);
-   REG(die, _16);
-   REG(die, _32);
-   REG(die, );
-#undef REG
-
-   if (VG_(need_to_handle_SP_assignment)())
-      VG_(register_noncompact_helper)((Addr) VG_(unknown_SP_update));
-
-   VGOFF_(helper_undefined_instruction)
-      = VG_(alloc_BaB_1_set)( (Addr) & VG_(helper_undefined_instruction));
-
-   /* Allocate slots for noncompact helpers */
-   assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
-                               VG_(noncompact_helper_offsets), 
-                               VG_(noncompact_helper_addrs));
-}
-
-// Finds the baseBlock offset of a tool-specified helper.
-// Searches through compacts first, then non-compacts.
-Int VG_(helper_offset)(Addr a)
-{
-   UInt i;
-   Char buf[100];
-
-   for (i = 0; i < VG_(n_compact_helpers); i++)
-      if (VG_(compact_helper_addrs)[i] == a)
-         return VG_(compact_helper_offsets)[i];
-   for (i = 0; i < VG_(n_noncompact_helpers); i++)
-      if (VG_(noncompact_helper_addrs)[i] == a)
-         return VG_(noncompact_helper_offsets)[i];
-
-   /* Shouldn't get here */
-   VG_(get_fnname)   ( a, buf, 100 );
-
-   VG_(printf)(
-      "\nCouldn't find offset of helper from its address (%p: %s).\n"
-      "A helper function probably used hasn't been registered?\n\n", a, buf);
-
-   VG_(printf)("      compact helpers: ");
-   for (i = 0; i < VG_(n_compact_helpers); i++)
-      VG_(printf)("%p ", VG_(compact_helper_addrs)[i]);
-
-   VG_(printf)("\n  non-compact helpers: ");
-   for (i = 0; i < VG_(n_noncompact_helpers); i++)
-      VG_(printf)("%p ", VG_(noncompact_helper_addrs)[i]);
-
-   VG_(printf)("\n");
-   VG_(tool_panic)("Unfound helper");
 }
 
 

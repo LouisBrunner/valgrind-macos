@@ -28,7 +28,7 @@ EXTRA_DIST = $(val_DATA) \
 
 val_PROGRAMS = valgrind.so valgrinq.so libpthread.so
 
-libpthread_so_SOURCES = vg_libpthread.c
+libpthread_so_SOURCES = vg_libpthread.c vg_libpthread_unimp.c
 
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 

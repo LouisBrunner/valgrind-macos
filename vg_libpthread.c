@@ -126,6 +126,16 @@ static void kludged ( char* msg )
    }
 }
 
+void vgPlain_unimp ( char* what )
+{
+   char* ig = "vg_libpthread.so: UNIMPLEMENTED FUNCTION: ";
+   write(2, ig, strlen(ig));
+   write(2, what, strlen(what));
+   ig = "\n";
+   write(2, ig, strlen(ig));
+   barf("Please report this bug to me at: jseward@acm.org");
+}
+
 
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
@@ -236,19 +246,16 @@ void pthread_exit(void *retval)
 }
 
 
-static int thread_specific_errno[VG_N_THREADS];
-
-int* __errno_location ( void )
+pthread_t pthread_self(void)
 {
    int tid;
-   /* ensure_valgrind("__errno_location"); */
+   ensure_valgrind("pthread_self");
    VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
-   /* 'cos I'm paranoid ... */
    if (tid < 0 || tid >= VG_N_THREADS)
-      barf("__errno_location: invalid ThreadId");
-   return & thread_specific_errno[tid];
+      barf("pthread_self: invalid ThreadId");
+   return tid;
 }
 
 
@@ -265,10 +272,10 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
    switch (type) {
-#ifndef GLIBC_2_1    
+#     ifndef GLIBC_2_1    
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
-#endif
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          attr->__mutexkind = type;
@@ -577,34 +584,52 @@ int pthread_once ( pthread_once_t *once_control,
 
 
 /* ---------------------------------------------------
-   MISC
+   LIBRARY-PRIVATE THREAD SPECIFIC STATE
    ------------------------------------------------ */
 
-/* What are these?  Anybody know?  I don't. */
+#include <resolv.h>
+static int thread_specific_errno[VG_N_THREADS];
+static int thread_specific_h_errno[VG_N_THREADS];
+static struct __res_state
+           thread_specific_res_state[VG_N_THREADS];
 
-void _pthread_cleanup_push_defer ( void )
-{
-  //  char* str = "_pthread_cleanup_push_defer\n";
-  //  write(2, str, strlen(str));
-}
-
-void _pthread_cleanup_pop_restore ( void )
-{
-  //  char* str = "_pthread_cleanup_pop_restore\n";
-  //  write(2, str, strlen(str));
-}
-
-
-pthread_t pthread_self(void)
+int* __errno_location ( void )
 {
    int tid;
-   ensure_valgrind("pthread_self");
-   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
+   /* ensure_valgrind("__errno_location"); */
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
    if (tid < 0 || tid >= VG_N_THREADS)
-      barf("pthread_self: invalid ThreadId");
-   return tid;
+      barf("__errno_location: invalid ThreadId");
+   return & thread_specific_errno[tid];
+}
+
+int* __h_errno_location ( void )
+{
+   int tid;
+   /* ensure_valgrind("__h_errno_location"); */
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
+   if (tid < 0 || tid >= VG_N_THREADS)
+      barf("__h_errno_location: invalid ThreadId");
+   return & thread_specific_h_errno[tid];
+}
+
+struct __res_state* __res_state ( void )
+{
+   int tid;
+   /* ensure_valgrind("__res_state"); */
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
+   if (tid < 0 || tid >= VG_N_THREADS)
+      barf("__res_state: invalid ThreadId");
+   return & thread_specific_res_state[tid];
 }
 
 
@@ -802,26 +827,10 @@ pid_t wait(int *status)
 }
 
 
-/*--------------------------------------------------*/
-
-/* I've no idea what these are, but they get called quite a lot.
-   Anybody know? */
-
-#undef _IO_flockfile
-void _IO_flockfile ( _IO_FILE * file )
-{
-  //  char* str = "_IO_flockfile\n";
-  //  write(2, str, strlen(str));
-  //  barf("_IO_flockfile");
-}
-
-#undef _IO_funlockfile
-void _IO_funlockfile ( _IO_FILE * file )
-{
-  //  char* str = "_IO_funlockfile\n";
-  //  write(2, str, strlen(str));
-  //barf("_IO_funlockfile");
-}
+/* ---------------------------------------------------------------------
+   Nonblocking implementations of select() and poll().  This stuff will
+   surely rot your mind.
+   ------------------------------------------------------------------ */
 
 /*--------------------------------------------------*/
 
@@ -1122,4 +1131,67 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       (void)my_do_syscall2(__NR_nanosleep, 
                            (int)(&nanosleep_interval), (int)NULL);
    }
+}
+
+
+/* ---------------------------------------------------------------------
+   B'stard.
+   ------------------------------------------------------------------ */
+
+# define strong_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+
+strong_alias(pthread_mutex_lock, __pthread_mutex_lock)
+strong_alias(pthread_mutex_unlock, __pthread_mutex_unlock)
+strong_alias(pthread_mutexattr_init, __pthread_mutexattr_init)
+strong_alias(pthread_mutexattr_settype, __pthread_mutexattr_settype)
+strong_alias(pthread_mutex_init, __pthread_mutex_init)
+strong_alias(pthread_mutexattr_destroy, __pthread_mutexattr_destroy)
+strong_alias(pthread_mutex_destroy, __pthread_mutex_destroy)
+strong_alias(pthread_once, __pthread_once)
+
+strong_alias(close, __close)
+strong_alias(write, __write)
+strong_alias(read, __read)
+strong_alias(open, __open)
+strong_alias(sigaction, __sigaction)
+
+strong_alias(pthread_key_create, __pthread_key_create)
+strong_alias(pthread_getspecific, __pthread_getspecific)
+strong_alias(pthread_setspecific, __pthread_setspecific)
+strong_alias(open64, __open64)
+strong_alias(fcntl, __fcntl)
+strong_alias(connect, __connect)
+
+/*--------------------------------------------------*/
+
+/* I've no idea what these are, but they get called quite a lot.
+   Anybody know? */
+
+#undef _IO_flockfile
+void _IO_flockfile ( _IO_FILE * file )
+{
+   //   char* str = "_IO_flockfile\n";
+   //   write(2, str, strlen(str));
+   //  barf("_IO_flockfile");
+}
+
+#undef _IO_funlockfile
+void _IO_funlockfile ( _IO_FILE * file )
+{
+   //   char* str = "_IO_funlockfile\n";
+   //   write(2, str, strlen(str));
+   //  barf("_IO_funlockfile");
+}
+
+void _pthread_cleanup_push_defer ( void )
+{
+   //    char* str = "_pthread_cleanup_push_defer\n";
+   //    write(2, str, strlen(str));
+}
+
+void _pthread_cleanup_pop_restore ( void )
+{
+   //    char* str = "_pthread_cleanup_pop_restore\n";
+   //    write(2, str, strlen(str));
 }

@@ -2283,10 +2283,12 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
    /* Optional.  We're not required to do this, although it shouldn't
       make any difference to programs which use the key/specifics
       functions correctly.  */
+#  if 1
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (vg_threads[tid].status != VgTs_Empty)
          vg_threads[tid].specifics[key] = NULL;
    }
+#  endif
 }
 
 

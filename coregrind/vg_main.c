@@ -1582,7 +1582,7 @@ void usage ( Bool debug_help )
 "\n"
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
-"  Valgrind is Copyright (C) 2000-2004 Julian Seward\n"
+"  Valgrind is Copyright (C) 2000-2004 Julian Seward et al.\n"
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n"
@@ -1960,7 +1960,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          "Using valgrind-%s, a program supervision framework for x86-linux.",
          VERSION);
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward.");
+         "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");
    }
 
    if (VG_(clo_verbosity) > 0 && VG_(clo_log_to) != VgLogTo_Fd) {

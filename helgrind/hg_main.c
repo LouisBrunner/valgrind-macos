@@ -3275,7 +3275,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a data race detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2004, and GNU GPL'd, by Nicholas Nethercote.");
+      "Copyright (C) 2002-2004, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 115 );
 

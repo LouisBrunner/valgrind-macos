@@ -37,7 +37,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 
-  Valgrind is Copyright (C) 2000-2004 Julian Seward
+  Valgrind is Copyright (C) 2000-2004 Julian Seward et al.
   and licensed under the GNU General Public License, version 2.
   Bug reports, feedback, admiration, abuse, etc, to: valgrind.kde.org.
 

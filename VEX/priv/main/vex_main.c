@@ -44,8 +44,6 @@ void LibVEX_Init (
    void (*log_bytes) ( Char*, Int nbytes ),
    /* debug paranoia level */
    Int debuglevel,
-   /* initial verbosity level */
-   Int verbosity,
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
    /* Control ... */
@@ -62,7 +60,6 @@ void LibVEX_Init (
    vassert(failure_exit);
    vassert(log_bytes);
    vassert(debuglevel >= 0);
-   vassert(verbosity >= 0);
 
    vassert(vcon->iropt_verbosity >= 0);
    vassert(vcon->iropt_level >= 0);
@@ -103,7 +100,6 @@ void LibVEX_Init (
 
    /* Really start up .. */
    vex_debuglevel         = debuglevel;
-   vex_verbosity          = verbosity;
    vex_valgrind_support   = valgrind_support;
    vex_control            = *vcon;
    vex_initdone           = True;
@@ -135,8 +131,8 @@ TranslateResult LibVEX_Translate (
    HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
-   /* IN: if > 0, use this verbosity for this bb */
-   Int  bb_verbosity
+   /* IN: debug: trace vex activity at various points */
+   Int  traceflags
 )
 {
    /* This the bundle of functions we need to do the back-end stuff
@@ -164,7 +160,7 @@ TranslateResult LibVEX_Translate (
    IRBB*               irbb;
    HInstrArray*        vcode;
    HInstrArray*        rcode;
-   Int                 i, j, k, out_used, saved_verbosity, guest_sizeB;
+   Int                 i, j, k, out_used, guest_sizeB;
    UChar               insn_bytes[32];
    IRType              guest_word_size;
 
@@ -186,9 +182,7 @@ TranslateResult LibVEX_Translate (
    preciseMemExnsFn       = NULL;
    guest_word_size        = Ity_INVALID;
 
-   saved_verbosity = vex_verbosity;
-   if (bb_verbosity > 0)
-      vex_verbosity = bb_verbosity;
+   vex_traceflags = traceflags;
 
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
@@ -228,6 +222,11 @@ TranslateResult LibVEX_Translate (
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
 
+   if (vex_traceflags & VEX_TRACE_FE)
+      vex_printf("\n------------------------" 
+                   " Front end "
+                   "------------------------\n\n");
+
    irbb = bbToIR ( guest_bytes, 
 		   guest_bytes_addr,
 		   guest_bytes_read,
@@ -237,18 +236,17 @@ TranslateResult LibVEX_Translate (
    if (irbb == NULL) {
       /* Access failure. */
       LibVEX_ClearTemporary(False);
-      vex_verbosity = saved_verbosity;
+      vex_traceflags = 0;
       return TransAccessFail;
    }
 
    /* If debugging, show the raw guest bytes for this bb. */
-   if (vex_verbosity >= 2) {
+   if (vex_traceflags & VEX_TRACE_FE) {
       UChar* p = guest_bytes;
-      vex_printf("\n");
       vex_printf(". 0 %llx %d\n.", guest_bytes_addr, *guest_bytes_read );
       for (i = 0; i < *guest_bytes_read; i++)
          vex_printf(" %02x", (Int)p[i] );
-      vex_printf("\n");
+      vex_printf("\n\n");
    }
 
    /* Sanity check the initial IR. */
@@ -259,8 +257,10 @@ TranslateResult LibVEX_Translate (
                               guest_bytes_addr );
    sanityCheckIRBB(irbb, guest_word_size);
 
-   if (vex_verbosity > 0) {
-      vex_printf("\n-------- After IR optimisation --------\n");
+   if (vex_traceflags & VEX_TRACE_OPT1) {
+      vex_printf("\n------------------------" 
+                   " After pre-instr IR optimisation "
+                   "------------------------\n\n");
       ppIRBB ( irbb );
       vex_printf("\n");
    }
@@ -271,15 +271,41 @@ TranslateResult LibVEX_Translate (
    if (instrument2)
       irbb = (*instrument2)(irbb, guest_layout);
       
+   if (vex_traceflags & VEX_TRACE_INST) {
+      vex_printf("\n------------------------" 
+                   " After instrumentation "
+                   "------------------------\n\n");
+      ppIRBB ( irbb );
+      vex_printf("\n");
+   }
+
    if (instrument1 || instrument2)
       sanityCheckIRBB(irbb, guest_word_size);
 
    /* Turn it into virtual-registerised code. */
    do_deadcode_BB( irbb );
    do_treebuild_BB( irbb );
+
+   if (vex_traceflags & VEX_TRACE_TREES) {
+      vex_printf("\n------------------------" 
+                   "  After tree-building "
+                   "------------------------\n\n");
+      ppIRBB ( irbb );
+      vex_printf("\n");
+   }
+
+   if (vex_traceflags & VEX_TRACE_VCODE)
+      vex_printf("\n------------------------" 
+                   " Instruction selection "
+                   "------------------------\n");
+
    vcode = iselBB ( irbb, findHelper, tool_findhelper );
 
-   if (vex_verbosity > 0) {
+   if (vex_traceflags & VEX_TRACE_VCODE)
+      vex_printf("\n");
+
+#if 0
+   if (vex_traceflags & VEX_TRACE_VCODE) {
       vex_printf("\n-------- Virtual registerised code --------\n");
       for (i = 0; i < vcode->arr_used; i++) {
          vex_printf("%3d   ", i);
@@ -288,6 +314,7 @@ TranslateResult LibVEX_Translate (
       }
       vex_printf("\n");
    }
+#endif
 
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,
@@ -296,8 +323,10 @@ TranslateResult LibVEX_Translate (
 			          genSpill, genReload, guest_sizeB,
 				  ppInstr, ppReg );
 
-   if (vex_verbosity > 0) {
-      vex_printf("\n-------- Post-regalloc code --------\n");
+   if (vex_traceflags & VEX_TRACE_RCODE) {
+      vex_printf("\n------------------------" 
+                   " Register-allocated code "
+                   "------------------------\n\n");
       for (i = 0; i < rcode->arr_used; i++) {
          vex_printf("%3d   ", i);
          ppInstr(rcode->arr[i]);
@@ -307,14 +336,20 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Assemble */
+   if (vex_traceflags & VEX_TRACE_ASM) {
+      vex_printf("\n------------------------" 
+                   " Assembly "
+                   "------------------------\n\n");
+   }
+
    out_used = 0; /* tracks along the host_bytes array */
    for (i = 0; i < rcode->arr_used; i++) {
-      if (vex_verbosity > 2) {
+      if (vex_traceflags & VEX_TRACE_ASM) {
          ppInstr(rcode->arr[i]);
          vex_printf("\n");
       }
       j = (*emit)( insn_bytes, 32, rcode->arr[i] );
-      if (vex_verbosity > 2) {
+      if (vex_traceflags & VEX_TRACE_ASM) {
          for (k = 0; k < j; k++)
 	    if (insn_bytes[k] < 16)
                vex_printf("0%x ",  (UInt)insn_bytes[k]);
@@ -324,7 +359,7 @@ TranslateResult LibVEX_Translate (
       }
       if (out_used + j > host_bytes_size) {
          LibVEX_ClearTemporary(False);
-         vex_verbosity = saved_verbosity;
+         vex_traceflags = 0;
          return TransOutputFull;
       }
       for (k = 0; k < j; k++) {
@@ -335,10 +370,9 @@ TranslateResult LibVEX_Translate (
    }
    *host_bytes_used = out_used;
 
-   //   LibVEX_ClearTemporary(True);
    LibVEX_ClearTemporary(False);
 
-   vex_verbosity = saved_verbosity;
+   vex_traceflags = 0;
    return TransOK;
 }
 

@@ -208,7 +208,7 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 static void addInstr ( ISelEnv* env, X86Instr* instr )
 {
    addHInstr(env->code, instr);
-   if (vex_verbosity > 0) {
+   if (vex_traceflags & VEX_TRACE_VCODE) {
       ppX86Instr(instr);
       vex_printf("\n");
    }
@@ -2014,8 +2014,8 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 
 static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
-   if (vex_verbosity > 0) {
-      vex_printf("-- ");
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      vex_printf("\n-- ");
       ppIRStmt(stmt);
       vex_printf("\n");
    }
@@ -2219,8 +2219,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 {
    X86RI* ri;
-   if (vex_verbosity > 0) {
-      vex_printf("-- goto {");
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      vex_printf("\n-- goto {");
       ppIRJumpKind(jk);
       vex_printf("} ");
       ppIRExpr(next);

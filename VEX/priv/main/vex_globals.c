@@ -28,8 +28,8 @@ void (*vex_log_bytes) ( Char*, Int nbytes ) = NULL;
 /* debug paranoia level */
 Int vex_debuglevel = 0;
 
-/* verbosity level */
-Int vex_verbosity = 0;
+/* trace flags */
+Int vex_traceflags = 0;
 
 /* Are we supporting valgrind checking? */
 Bool vex_valgrind_support = False;
@@ -42,3 +42,4 @@ VexControl vex_control = { 0,0,False,0,0,0 };
 /*---------------------------------------------------------------*/
 /*--- end                                       vex_globals.c ---*/
 /*---------------------------------------------------------------*/
+

@@ -64,8 +64,6 @@ extern void LibVEX_Init (
    void (*log_bytes) ( Char*, Int nbytes ),
    /* debug paranoia level */
    Int debuglevel,
-   /* verbosity level */
-   Int verbosity,
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
    /* Control ... */
@@ -134,8 +132,8 @@ TranslateResult LibVEX_Translate (
    HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
-   /* IN: if > 0, use this verbosity for this bb */
-   Int  bb_verbosity
+   /* IN: debug: trace vex activity at various points */
+   Int  traceflags
 );
 
 

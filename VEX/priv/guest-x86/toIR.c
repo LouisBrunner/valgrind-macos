@@ -48,10 +48,6 @@
 /* CONST */
 static Bool host_is_bigendian;
 
-/* Are we being verbose? */
-/* CONST */
-static Bool print_codegen;
-
 /* Pointer to the guest code area. */
 /* CONST */
 static UChar* guest_code;
@@ -68,12 +64,12 @@ static IRBB* irbb;
 /*--- Debugging output                                     ---*/
 /*------------------------------------------------------------*/
 
-#define DIP(format, args...)  \
-   if (print_codegen)         \
+#define DIP(format, args...)           \
+   if (vex_traceflags & VEX_TRACE_FE)  \
       vex_printf(format, ## args)
 
-#define DIS(buf, format, args...)  \
-   if (print_codegen)              \
+#define DIS(buf, format, args...)      \
+   if (vex_traceflags & VEX_TRACE_FE)  \
       vex_sprintf(buf, format, ## args)
 
 
@@ -162,14 +158,11 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
-   print_codegen     = vex_verbosity >= 1;
    guest_code        = x86code;
    guest_eip_bbstart = (Addr32)guest_eip_start;
    irbb              = emptyIRBB();
 
    vassert((guest_eip_start >> 32) == 0);
-
-   DIP("Original x86 code to IR:\n\n");
 
    /* Delta keeps track of how far along the x86code array we
       have so far gone. */
@@ -193,7 +186,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
       dres = disInstr( resteerOK, delta, &size, &guest_next );
 
       /* Print the resulting IR, if needed. */
-      if (print_codegen) {
+      if (vex_traceflags & VEX_TRACE_FE) {
          for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
             vex_printf("              ");
             ppIRStmt(irbb->stmts[i]);
@@ -203,7 +196,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    
       if (dres == Dis_StopHere) {
          vassert(irbb->next != NULL);
-         if (print_codegen) {
+         if (vex_traceflags & VEX_TRACE_FE) {
             vex_printf("              ");
             vex_printf( "goto {");
             ppIRJumpKind(irbb->jumpkind);
@@ -2503,7 +2496,7 @@ UInt dis_Grp2 ( UChar  sorb,
    /* Save result, and finish up. */
    if (epartIsReg(modrm)) {
       putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
-      if (print_codegen) {
+      if (vex_traceflags & VEX_TRACE_FE) {
          vex_printf("%s%c ",
                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
          if (shift_expr_txt)
@@ -2514,7 +2507,7 @@ UInt dis_Grp2 ( UChar  sorb,
       }
    } else {
       storeLE(mkexpr(addr), mkexpr(dst1));
-      if (print_codegen) {
+      if (vex_traceflags & VEX_TRACE_FE) {
          vex_printf("%s%c ",
                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
          if (shift_expr_txt)

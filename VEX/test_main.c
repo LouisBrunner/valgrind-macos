@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include "libvex_basictypes.h"
 #include "libvex.h"
@@ -45,6 +46,10 @@ static UChar origbuf[N_ORIGBUF];
 static UChar transbuf[N_TRANSBUF];
 
 static Bool verbose = True;
+
+/* Forwards */
+static IRBB* ac_instrument ( IRBB*, VexGuestLayoutInfo* );
+
 
 int main ( int argc, char** argv )
 {
@@ -116,9 +121,8 @@ int main ( int argc, char** argv )
                  InsnSetX86, InsnSetX86,
                  origbuf, (Addr64)orig_addr, &orig_used,
                  transbuf, N_TRANSBUF, &trans_used,
-                 NULL, /* instrument1 */
+                 ac_instrument, //NULL, /* instrument1 */
                  NULL, /* instrument2 */
-                 NULL, /* tool-findhelper */
                  NULL, /* access checker */
                  TEST_FLAGS 
               );
@@ -139,4 +143,146 @@ int main ( int argc, char** argv )
    LibVEX_ClearTemporary(True);
 
    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+static
+void panic ( Char* s )
+{
+  printf("\npanic: %s\n", s);
+  failure_exit();
+}
+
+static
+IRBB* ac_instrument (IRBB* bb_in, VexGuestLayoutInfo* layout)
+{
+/* Use this rather than eg. -1 because it's a UInt. */
+#define INVALID_DATA_SIZE   999999
+
+   Int         i;
+   Int         sz;
+   IRCallee*   helper;
+   IRStmt*    st;
+   IRExpr* data;
+   IRExpr* addr;
+   Bool needSz;
+
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+   /* No loads to consider in ->next. */
+   assert(isAtom(bb_in->next));
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+      st = bb_in->stmts[i];
+      if (!st) continue;
+
+      switch (st->tag) {
+
+         case Ist_Tmp:
+            data = st->Ist.Tmp.data;
+            if (data->tag == Iex_LDle) {
+               addr = data->Iex.LDle.addr;
+               sz = sizeofIRType(data->Iex.LDle.ty);
+               needSz = False;
+               switch (sz) {
+                  case 4: helper = mkIRCallee(1, "ac_helperc_LOAD4", 
+                                                 0x12345601); break;
+                  case 2: helper = mkIRCallee(0, "ac_helperc_LOAD2",
+                                                 0x12345602); break;
+                  case 1: helper = mkIRCallee(1, "ac_helperc_LOAD1",
+                                                 0x12345603); break;
+                  default: helper = mkIRCallee(0, "ac_helperc_LOADN",
+                                                  0x12345604);
+                                                  needSz = True; break;
+               }
+               if (needSz) {
+                  addStmtToIRBB( 
+                     bb,
+                     IRStmt_Dirty(
+                        unsafeIRDirty_0_N( helper, 
+                                           mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
+                  ));
+               } else {
+                  addStmtToIRBB( 
+                     bb,
+                     IRStmt_Dirty(
+                        unsafeIRDirty_0_N( helper, 
+                                           mkIRExprVec_1(addr) )
+                  ));
+               }
+            }
+            break;
+
+         case Ist_STle:
+            data = st->Ist.STle.data;
+            addr = st->Ist.STle.addr;
+            assert(isAtom(data));
+            assert(isAtom(addr));
+            sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
+            needSz = False;
+            switch (sz) {
+               case 4: helper = mkIRCallee(1, "ac_helperc_STORE4", 
+                                              0x12345605); break;
+               case 2: helper = mkIRCallee(0, "ac_helperc_STORE2", 
+                                              0x12345606); break;
+               case 1: helper = mkIRCallee(1, "ac_helperc_STORE1", 
+                                              0x12345607); break;
+               default: helper = mkIRCallee(0, "ac_helperc_STOREN", 
+                                               0x12345608);
+                                               needSz = True; break;
+            }
+            if (needSz) {
+               addStmtToIRBB( 
+                  bb,
+                  IRStmt_Dirty(
+                     unsafeIRDirty_0_N( helper, 
+                                        mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
+               ));
+            } else {
+               addStmtToIRBB( 
+                  bb,
+                  IRStmt_Dirty(
+                     unsafeIRDirty_0_N( helper, 
+                                        mkIRExprVec_1(addr) )
+               ));
+            }
+            break;
+
+         case Ist_Put:
+            assert(isAtom(st->Ist.Put.data));
+            break;
+
+         case Ist_PutI:
+            assert(isAtom(st->Ist.PutI.off));
+            assert(isAtom(st->Ist.PutI.data));
+            break;
+
+         case Ist_Exit:
+            assert(isAtom(st->Ist.Exit.cond));
+            break;
+
+         case Ist_Dirty:
+            /* If the call doesn't interact with memory, we ain't
+               interested. */
+            if (st->Ist.Dirty.details->mFx == Ifx_None)
+               break;
+            goto unhandled;
+
+         default:
+         unhandled:
+            printf("\n");
+            ppIRStmt(st);
+            printf("\n");
+            panic("addrcheck: unhandled IRStmt");
+      }
+
+      addStmtToIRBB( bb, dopyIRStmt(st));
+   }
+
+   return bb;
 }

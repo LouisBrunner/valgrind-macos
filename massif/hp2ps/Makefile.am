@@ -38,6 +38,27 @@ hp2ps_SOURCES = \
 	Utilities.c
 hp2ps_LDFLAGS = -lm
 
+noinst_HEADERS = \
+       AreaBelow.h \
+       AuxFile.h \
+       Axes.h \
+       Curves.h \
+       Defines.h \
+       Deviation.h \
+       Dimensions.h \
+       Error.h \
+       HpFile.h \
+       Key.h \
+       Main.h \
+       Marks.h \
+       PsFile.h \
+       Reorder.h \
+       Scale.h \
+       Shade.h \
+       TopTwenty.h \
+       TraceElement.h \
+       Utilities.h
+
 all-local:
 	mkdir -p $(inplacedir)
 	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))

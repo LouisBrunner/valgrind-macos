@@ -37,24 +37,118 @@
 
 static const Bool mem_debug = False;
 
+#define IS_PAGE_ALIGNED(_aa)  (((_aa) & (VKI_PAGE_SIZE-1)) == 0)
+
+
 /*--------------------------------------------------------------*/
-/*---                                                        ---*/
+/*--- A simple, self-contained ordered array of segments.    ---*/
 /*--------------------------------------------------------------*/
 
-#define VG_N_SEGMENTS 400
+/* Max number of segments we can track. */
+#define VG_N_SEGMENTS 1000
+
+/* Max number of segment file names we can track. */
+#define VG_N_SEGNAMES 200
+
+/* Max length of a segment file name. */
+#define VG_MAX_SEGNAMELEN 1000
+
+
+/* ------ STATE for the address-space manager ------ */
 
 /* Array [0 .. segments_used-1] of all mappings. */
 /* Sorted by .addr field. */
 /* I: len may not be zero. */
 /* I: overlapping segments are not allowed. */
+/* Each segment can optionally hold an index into the filename table. */
 
 static Segment segments[VG_N_SEGMENTS];
 static Int     segments_used = 0;
 
+typedef
+   struct {
+      Bool  inUse;
+      Bool  mark;
+      HChar fname[VG_MAX_SEGNAMELEN];
+   }
+   SegName;
+
+/* Filename table.  _used is the high water mark; an entry is only
+   valid if its index >= 0, < _used, and its .inUse field == True.
+   The .mark field is used to garbage-collect dead entries.
+*/
+static SegName segnames[VG_N_SEGNAMES];
+static Int     segnames_used = 0;
+
+
+/* ------ end of STATE for the address-space manager ------ */
+
+
+/* Searches the filename table to find an index for the given name.
+   If none is found, an index is allocated and the name stored.  If no
+   space is available we just give up.  If the string is too long to
+   store, return -1.
+*/
+static Int allocate_segname ( const HChar* name )
+{
+   Int i, j, len;
+
+   vg_assert(name);
+
+   if (0) VG_(printf)("alloc_segname %s\n", name);
+
+   len = VG_(strlen)(name);
+   if (len >= VG_MAX_SEGNAMELEN-1) {
+      return -1;
+   }
+
+   /* first see if we already have the name. */
+   for (i = 0; i < segnames_used; i++) {
+      if (!segnames[i].inUse)
+         continue;
+      if (0 == VG_(strcmp)(name, &segnames[i].fname[0])) {
+         return i;
+      }
+   }
+
+   /* no we don't.  So look for a free slot. */
+   for (i = 0; i < segnames_used; i++)
+      if (!segnames[i].inUse)
+         break;
+
+   if (i == segnames_used) {
+      /* no free slots .. advance the high-water mark. */
+      if (segnames_used+1 < VG_N_SEGNAMES) {
+         i = segnames_used;
+         segnames_used++;
+      } else {
+         VG_(printf)(
+            "coregrind/vg_memory.c:\n"
+            "   VG_N_SEGNAMES is too small: "
+            "increase it and rebuild Valgrind.\n"
+         );
+         VG_(printf)(
+            "coregrind/vg_memory.c:\n"
+            "   giving up now.\n\n"
+         );
+         VG_(exit)(0);
+      }
+   }
+
+   /* copy it in */
+   segnames[i].inUse = True;
+   for (j = 0; j < len; j++)
+      segnames[i].fname[j] = name[j];
+   vg_assert(len < VG_MAX_SEGNAMELEN);
+   segnames[i].fname[len] = 0;
+   return i;
+}
+
 
 /* Returns -1 if 'a' denotes an address prior to seg, 1 if it denotes
    an address after it, and 0 if it denotes an address covered by
-   seg. */
+   seg. 
+*/
 static Int compare_addr_with_seg ( Addr a, Segment* seg )
 {
    if (a < seg->addr) 
@@ -64,8 +158,10 @@ static Int compare_addr_with_seg ( Addr a, Segment* seg )
    return 0;
 }
 
+
 /* Find the (index of the) segment that contains 'a', or -1 if
-   none. */
+   none. 
+*/
 static Int find_segment ( Addr a )
 {
    Int i;
@@ -88,7 +184,7 @@ static Int find_segment_above_unmapped ( Addr a )
       r = compare_addr_with_seg(a, &segments[i]);
       vg_assert(r != 0); /* 'a' should not be in any segment. */
       if (r == 1)
-	continue;
+         continue;
       vg_assert(r == -1);
       break;
    }
@@ -133,14 +229,28 @@ static void make_space_at ( Int i )
    Int j;
    vg_assert(i >= 0 && i <= segments_used);
    vg_assert(segments_used >= 0);
+   if (segments_used+1 == VG_N_SEGMENTS) {
+      VG_(printf)(
+         "coregrind/vg_memory.c:\n"
+         "   VG_N_SEGMENTS is too small: "
+         "increase it and rebuild Valgrind.\n"
+      );
+      VG_(printf)(
+         "coregrind/vg_memory.c:\n"
+         "   giving up now.\n\n"
+      );
+      VG_(exit)(0);
+   }
    vg_assert(segments_used+1 < VG_N_SEGMENTS);
    for (j = segments_used; j > i; j--)
       segments[j] = segments[j-1];
    segments_used++;
 }
 
+
 /* Shift segments [i+1 .. segments_used-1] down by one, and decrement
-   segments_used. */
+   segments_used. 
+*/
 static void delete_segment_at ( Int i )
 {
    Int j;
@@ -156,16 +266,18 @@ static void delete_segment_at ( Int i )
 static void zeroise_segment ( Int i )
 {
    vg_assert(i >= 0 && i < segments_used);
-   segments[i].prot = 0;
-   segments[i].flags = 0;
-   segments[i].addr = 0;
-   segments[i].len = 0;
-   segments[i].offset = 0;
+   segments[i].prot     = 0;
+   segments[i].flags    = 0;
+   segments[i].addr     = 0;
+   segments[i].len      = 0;
+   segments[i].offset   = 0;
    segments[i].filename = NULL;
-   segments[i].dev = 0;
-   segments[i].ino = 0;
-   segments[i].symtab = NULL;
+   segments[i].fnIdx    = -1;
+   segments[i].dev      = 0;
+   segments[i].ino      = 0;
+   segments[i].symtab   = NULL;
 }
+
 
 /* Create a segment to contain 'a', and return its index.  Or -1 if
    this failed because some other segment already contains 'a'.  If
@@ -192,19 +304,34 @@ static Int create_segment ( Addr a )
    return i;
 }
 
-//static 
-void show_segments ( HChar* who )
+
+/* Print out the segment array (debugging only!).  Note, this calls
+   VG_(printf), and I'm not 100% clear that that wouldn't require
+   dynamic memory allocation and hence more segments to be allocated.
+*/
+static void show_segments ( HChar* who )
 {
-  Int i;
-  VG_(printf)("<<< SHOW_SEGMENTS: %s %d\n", who, segments_used);
-  for (i = 0; i < segments_used; i++) {
+   Int i;
+   VG_(printf)("<<< SHOW_SEGMENTS: %s (%d segments, %d segnames)\n", 
+               who, segments_used, segnames_used);
+   for (i = 0; i < segnames_used; i++) {
+      if (!segnames[i].inUse)
+         continue;
+      VG_(printf)("(%2d) %s\n", i, segnames[i].fname);
+   }
+   for (i = 0; i < segments_used; i++) {
       VG_(printf)(
-         "%2d: %p %llu 0x%x 0x%x 0x%x %d %lld %s\n",
+         "%3d: %08p-%08p %7llu pr=0x%x fl=0x%04x d=0x%03x i=%-7d o=%-7lld (%d)\n",
          i,
-         segments[i].addr, (ULong)segments[i].len, segments[i].prot, segments[i].flags, segments[i].dev, segments[i].ino, (Long)segments[i].offset, "qqq" /*segments[i].filename*/);
+         segments[i].addr, segments[i].addr + segments[i].len,
+         (ULong)segments[i].len, segments[i].prot, 
+         segments[i].flags, segments[i].dev, segments[i].ino, 
+         (Long)segments[i].offset, 
+         segments[i].fnIdx);
+   }
+   VG_(printf)(">>>\n");
 }
-  VG_(printf)(">>>\n");
-}
+
 
 /* Find the segment containing 'a' and split it into two pieces at
    'a'.  Does nothing if no segment contains 'a', or if the split
@@ -220,7 +347,7 @@ static Int split_segment ( Addr a )
 {
    Int r;
    HWord delta;
-   vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
+   vg_assert(IS_PAGE_ALIGNED(a));
    r = find_segment(a);
    if (r == -1)
       /* not found */
@@ -242,11 +369,115 @@ static Int split_segment ( Addr a )
    return r+1;
 }
 
+
+/* Return true if two segments are adjacent and mergable (s1 is
+   assumed to have a lower ->addr than s2) */
+static inline Bool segments_are_mergeable(Segment *s1, Segment *s2)
+{
+   if (s1->addr+s1->len != s2->addr)
+      return False;
+
+   if (s1->flags != s2->flags)
+      return False;
+
+   if (s1->prot != s2->prot)
+      return False;
+
+   if (s1->symtab != s2->symtab)
+      return False;
+
+   if (s1->flags & SF_FILE){
+      if ((s1->offset + s1->len) != s2->offset)
+	 return False;
+      if (s1->dev != s2->dev)
+	 return False;
+      if (s1->ino != s2->ino)
+	 return False;
+      if (s1->fnIdx != s2->fnIdx)
+         return False;
+   }
+   
+   return True;
+}
+
+
+/* Clean up and sanity check the segment array:
+   - check segments are in ascending order
+   - check segments do not overlap
+   - check no segment has zero size
+   - merge adjacent where possible
+   - perform checks on the filename table, and reclaim dead entries
+*/
+static void preen_segments ( void )
+{
+   Int i, j, rd, wr;
+   Segment *s, *s1;
+   vg_assert(segments_used >= 0 && segments_used < VG_N_SEGMENTS);
+   vg_assert(segnames_used >= 0 && segnames_used < VG_N_SEGNAMES);
+
+   if (0) show_segments("before preen");
+
+   /* clear string table mark bits */
+   for (i = 0; i < segnames_used; i++)
+      segnames[i].mark = False;
+
+   /* check for non-zero size, and set mark bits for any used strings */
+   for (i = 0; i < segments_used; i++) {
+      vg_assert(segments[i].len > 0);
+      j = segments[i].fnIdx;
+      vg_assert(j >= -1 && j < segnames_used);
+      if (j >= 0) {
+         vg_assert(segnames[j].inUse);
+         segnames[j].mark = True;
+      }
+   }
+
+   /* check ascendingness and non-overlap */
+   for (i = 0; i < segments_used-1; i++) {
+      s = &segments[i];
+      s1 = &segments[i+1];
+      vg_assert(s->addr < s1->addr);
+      vg_assert(s->addr + s->len <= s1->addr);
+   }
+
+   /* merge */
+   if (segments_used < 1)
+      return;
+
+   wr = 1;
+   for (rd = 1; rd < segments_used; rd++) {
+      s = &segments[wr-1];
+      s1 = &segments[rd];
+      if (segments_are_mergeable(s,s1)) {
+         if (0)
+            VG_(printf)("merge %p-%p with %p-%p\n",
+                        s->addr, s->addr+s->len,
+                        s1->addr, s1->addr+s1->len);
+         s->len += s1->len;
+         continue;
+      }
+      if (wr < rd)
+         segments[wr] = segments[rd];
+      wr++;
+   }
+   vg_assert(wr >= 0 && wr <= segments_used);
+   segments_used = wr;
+
+   /* Free up any strings which are no longer referenced. */
+   for (i = 0; i < segnames_used; i++) {
+      if (segnames[i].mark == False) {
+         segnames[i].inUse = False;
+         segnames[i].fname[0] = 0;
+      }
+   }
+
+   if (0) show_segments("after preen");
+}
+
+
 /*--------------------------------------------------------------*/
 /*---                                                        ---*/
 /*--------------------------------------------------------------*/
-
-#define IS_PAGE_ALIGNED(_aa)  (((_aa) & (VKI_PAGE_SIZE-1)) == 0)
 
 
 static Int addrcmp(const void *ap, const void *bp)
@@ -366,11 +597,10 @@ vg_assert(0);
    partial mappings at the ends are truncated. */
 void VG_(unmap_range)(Addr addr, SizeT len)
 {
-   Segment *s;
-   Segment *next;
    static const Bool debug = False || mem_debug;
-   Addr end, s_end;
-   Int i;
+   Segment* s;
+   Addr     end, s_end;
+   Int      i;
 
    if (len == 0)
       return;
@@ -379,7 +609,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 
    if (debug)
       VG_(printf)("unmap_range(%p, %d)\n", addr, len);
-   if (0) show_segments("unmap_range");
+   if (0) show_segments("unmap_range(BEFORE)");
    end = addr+len;
 
    /* Everything must be page-aligned */
@@ -418,7 +648,8 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 Word delta = end - s->addr;
 
 	 if (debug)
-	    VG_(printf)("  case 2: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
+	    VG_(printf)("  case 2: s->addr=%p s->len=%d delta=%d\n", 
+                        s->addr, s->len, delta);
 
 	 s->addr += delta;
 	 s->offset += delta;
@@ -449,35 +680,8 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 			addr, addr+len);
       }
    }
-   if (0) show_segments("unmap_range(AFTER)");
-}
-
-/* Return true if two segments are adjacent and mergable (s1 is
-   assumed to have a lower ->addr than s2) */
-static inline Bool neighbours(Segment *s1, Segment *s2)
-{
-   if (s1->addr+s1->len != s2->addr)
-      return False;
-
-   if (s1->flags != s2->flags)
-      return False;
-
-   if (s1->prot != s2->prot)
-      return False;
-
-   if (s1->symtab != s2->symtab)
-      return False;
-
-   if (s1->flags & SF_FILE){
-      if ((s1->offset + s1->len) != s2->offset)
-	 return False;
-      if (s1->dev != s2->dev)
-	 return False;
-      if (s1->ino != s2->ino)
-	 return False;
-   }
-   
-   return True;
+   preen_segments();
+   if (0) show_segments("unmap_range(AFTER)");
 }
 
 /* If possible, merge segment with its neighbours - some segments,
@@ -497,7 +701,7 @@ static void merge_segments(Addr a, SizeT len)
        s != NULL && s->addr < (a+len);) {
       next = VG_(SkipNode_Next)(&sk_segments, s);
 
-      if (next && neighbours(s, next)) {
+      if (next && segments_are_mergeable(s, next)) {
 	 Segment *rs;
 
 	 if (0)
@@ -526,10 +730,9 @@ VG_(map_file_segment)( Addr addr, SizeT len,
                        UInt dev, UInt ino, ULong off, 
                        const Char *filename)
 {
-   Segment *s;
    static const Bool debug = False || mem_debug;
-   Bool recycled;
-   Int  idx;
+   Segment* s;
+   Int      idx;
 
    if (debug)
       VG_(printf)(
@@ -551,91 +754,40 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    vg_assert(segments_used >= 0 && segments_used <= VG_N_SEGMENTS);
    vg_assert(idx != -1);
    vg_assert(idx >= 0 && idx < segments_used);
-   vg_assert(segments[idx].addr == addr);
-   segments[idx].prot     = prot;
-   segments[idx].flags    = flags;
-   segments[idx].len      = len;
-   segments[idx].offset   = off;
-   segments[idx].filename = filename;
-   segments[idx].dev      = dev;
-   segments[idx].ino      = ino;
-   segments[idx].symtab   = NULL;
-   return;
 
-#if 0
-   /* First look to see what already exists around here */
-   s = VG_(SkipList_Find)(&sk_segments, &addr);
+   s = &segments[idx];
+   vg_assert(s->addr == addr);
+   s->prot     = prot;
+   s->flags    = flags;
+   s->len      = len;
+   s->offset   = off;
+   s->fnIdx    = filename==NULL ? -1 : allocate_segname(filename);
+   s->filename = s->fnIdx==-1 ? NULL : &segnames[s->fnIdx].fname[0];
+   s->dev      = dev;
+   s->ino      = ino;
+   s->symtab   = NULL;
 
-   if (s != NULL && s->addr == addr && s->len == len) {
-      recycled = True;
-      recycleseg(s);
-
-      /* If we had a symtab, but the new mapping is incompatible, then
-	 free up the old symtab in preparation for a new one. */
-      if (s->symtab != NULL		&&
-	  (!(s->flags & SF_FILE)	||
-	   !(flags & SF_FILE)		||
-	   s->dev != dev		||
-	   s->ino != ino		||
-	   s->offset != off)) {
-	 VG_(symtab_decref)(s->symtab, s->addr);
-	 s->symtab = NULL;
-      }
-   } else {
-      recycled = False;
-      VG_(unmap_range)(addr, len);
-
-      s = VG_(SkipNode_Alloc)(&sk_segments);
-
-      s->addr   = addr;
-      s->len    = len;
-      s->symtab = NULL;
-   }
-
-   s->flags  = flags;
-   s->prot   = prot;
-   s->dev    = dev;
-   s->ino    = ino;
-   s->offset = off;
-   
-   if (filename != NULL)
-      s->filename = VG_(arena_strdup)(VG_AR_CORE, filename);
-   else
-      s->filename = NULL;
-
-   if (debug) {
-      Segment *ts;
-      for(ts = VG_(SkipNode_First)(&sk_segments);
-	  ts != NULL;
-	  ts = VG_(SkipNode_Next)(&sk_segments, ts))
-	 VG_(printf)("list: %8p->%8p ->%d (0x%x) prot=%x flags=%x\n",
-		     ts, ts->addr, ts->len, ts->len, ts->prot, ts->flags);
-
-      VG_(printf)("inserting s=%p addr=%p len=%d\n",
-		  s, s->addr, s->len);
-   }
-
-   if (!recycled)
-      VG_(SkipList_Insert)(&sk_segments, s);
+   /* Clean up right now */
+   preen_segments();
+   if (0) show_segments("after map_file_segment");
 
    /* If this mapping is of the beginning of a file, isn't part of
       Valgrind, is at least readable and seems to contain an object
-      file, then try reading symbols from it. */
-   if ((flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP	&&
-       s->symtab == NULL) {
-      if (off == 0									&&
-	  filename != NULL								&&
-	  (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)	&&
-	  len >= VKI_PAGE_SIZE							&&
-	  s->symtab == NULL								&&
-	  VG_(is_object_file)((void *)addr)) 
-      {
+      file, then try reading symbols from it.
+   */
+   if (s->symtab == NULL
+       && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP) {
+      if (off == 0
+	  && s->fnIdx != -1
+	  && (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)
+	  && len >= VKI_PAGE_SIZE
+          && VG_(is_object_file)((void *)addr)) {
          s->symtab = VG_(read_seg_symbols)(s);
-
          if (s->symtab != NULL) {
             s->flags |= SF_DYNLIB;
          }
       } else if (flags & SF_MMAP) {
+#if 0
 	 const SegInfo *info;
 
 	 /* Otherwise see if an existing symtab applies to this Segment */
@@ -648,12 +800,12 @@ VG_(map_file_segment)( Addr addr, SizeT len,
 	       VG_(symtab_incref)((SegInfo *)info);
 	    }
 	 }
+#endif
       }
    }
 
    /* clean up */
-   merge_segments(addr, len);
-#endif
+   preen_segments();
 }
 
 void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags, 
@@ -661,7 +813,6 @@ void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags,
 {
    struct vki_stat st;
    Char *name = NULL;
-   //vg_assert(0);
 
    st.st_dev = 0;
    st.st_ino = 0;
@@ -673,16 +824,14 @@ void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags,
 	 flags &= ~SF_FILE;
    }
 
-   //   if ((flags & SF_FILE) && filename == NULL && fd != -1)
-   //   name = VG_(resolve_filename)(fd);
+   if ((flags & SF_FILE) && filename == NULL && fd != -1)
+      name = VG_(resolve_filename_nodup)(fd);
 
    if (filename == NULL)
       filename = name;
 
-   VG_(map_file_segment)(addr, len, prot, flags, st.st_dev, st.st_ino, off, filename);
-
-   if (name)
-      VG_(arena_free)(VG_AR_CORE, name);
+   VG_(map_file_segment)(addr, len, prot, flags, 
+                         st.st_dev, st.st_ino, off, filename);
 }
 
 void VG_(map_segment)(Addr addr, SizeT len, UInt prot, UInt flags)
@@ -695,8 +844,7 @@ void VG_(map_segment)(Addr addr, SizeT len, UInt prot, UInt flags)
 /* set new protection flags on an address range */
 void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 {
-  Int r;
-   Segment *s, *next;
+   Int r;
    static const Bool debug = False || mem_debug;
 
    if (debug)
@@ -705,33 +853,21 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
    if (0) show_segments( "mprotect_range(before)" );
 
    /* Everything must be page-aligned */
-   vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
+   vg_assert(IS_PAGE_ALIGNED(a));
    len = PGROUNDUP(len);
 
-   /*VG_*/ (split_segment)(a);
-   /*VG_*/ (split_segment)(a+len);
+   split_segment(a);
+   split_segment(a+len);
 
    r = find_segment(a);
    vg_assert(r != -1);
    segments[r].prot = prot;
+
+   preen_segments();
+
    if (0) show_segments( "mprotect_range(after)");
-
-   return;
-
-vg_assert(0);
-   for(s = VG_(SkipList_Find)(&sk_segments, &a);
-       s != NULL && s->addr < a+len;
-       s = next)
-   {
-      next = VG_(SkipNode_Next)(&sk_segments, s);
-      if (s->addr < a)
-	 continue;
-
-      s->prot = prot;
-   }
-
-   merge_segments(a, len);
 }
+
 
 /* Try to find a map space for [addr,addr+len).  If addr==0, it means
    the caller is prepared to accept a space at any location; if not,
@@ -741,7 +877,6 @@ vg_assert(0);
 Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 {
    static const Bool debug = False || mem_debug;
-   Segment *s;
    Addr ret;
    Addr limit = (for_client ? VG_(client_end)-1   : VG_(valgrind_last));
    Addr base  = (for_client ? VG_(client_mapbase) : VG_(valgrind_base));
@@ -857,48 +992,8 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
                   addr, len, for_client, ret);
 
    return ret;
-
-   vg_assert(0);
-vg_assert(0);
-///////////
-   if (debug)
-      VG_(printf)("find_map_space: ret starts as %p-%p client=%d\n",
-		  ret, ret+len, for_client);
-
-   s = VG_(SkipList_Find)(&sk_segments, &ret);
-   if (s == NULL)
-      s = VG_(SkipNode_First)(&sk_segments);
-
-   for( ;
-       s != NULL && s->addr < (ret+len);
-       s = VG_(SkipNode_Next)(&sk_segments, s))
-   {
-      if (debug)
-	 VG_(printf)("s->addr=%p len=%d (%p) ret=%p\n",
-		     s->addr, s->len, s->addr+s->len, ret);
-
-      if (s->addr < (ret + len) && (s->addr + s->len) > ret)
-	 ret = s->addr+s->len;
-   }
-
-   if (debug) {
-      if (s)
-	 VG_(printf)("  s->addr=%p ->len=%d\n", s->addr, s->len);
-      else
-	 VG_(printf)("  s == NULL\n");
-   }
-
-   if (((limit - len)+1) < ret)
-      ret = 0;			/* no space */
-   else
-      ret += VKI_PAGE_SIZE; /* skip leading redzone */
-
-   if (debug)
-      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n\n",
-		  addr, len, for_client, ret);
-   
-   return ret;
 }
+
 
 /* Pad the entire process address space, from VG_(client_base)
    to VG_(valgrind_last) by creating an anonymous and inaccessible
@@ -970,8 +1065,6 @@ Segment *VG_(find_segment)(Addr a)
   if (0) show_segments("find_segment");
   if (r == -1) return NULL;
   return &segments[r];
-vg_assert(0);
-   return VG_(SkipList_Find)(&sk_segments, &a);
 }
 
 /* Assumes that 'a' is not in any segment.  Finds the lowest-addressed
@@ -1128,7 +1221,6 @@ Bool VG_(is_addressable)(Addr p, SizeT size)
 Addr VG_(client_alloc)(Addr addr, SizeT len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
-vg_assert(0);
 
    tl_assert(!(sf_flags & SF_FIXED));
    tl_assert(0 == addr);
@@ -1242,8 +1334,10 @@ vg_assert(0);
 void *VG_(shadow_alloc)(UInt size)
 {
    static Addr shadow_alloc = 0;
-   void *ret;
-vg_assert(0);
+   Addr try_here;
+   Int r;
+
+   if (0) show_segments("shadow_alloc(before)");
 
    vg_assert(VG_(needs).shadow_memory);
    vg_assert(!VG_(defined_init_shadow_page)());
@@ -1254,17 +1348,46 @@ vg_assert(0);
       shadow_alloc = VG_(shadow_base);
 
    if (shadow_alloc >= VG_(shadow_end))
-       return 0;
+      goto failed;
 
-   ret = (void *)shadow_alloc;
-   VG_(mprotect)(ret, size, VKI_PROT_READ|VKI_PROT_WRITE);
+   try_here = shadow_alloc;
+   vg_assert(IS_PAGE_ALIGNED(try_here));
+   vg_assert(IS_PAGE_ALIGNED(size));
+   vg_assert(size > 0);
+
+   if (0)
+      VG_(printf)("shadow_alloc: size %d, trying at %p\n", size, (void*)try_here);
+
+   /* this is big-bang allocated, so we don't expect to find a listed
+      segment for it. */
+   /* This is really an absolute disgrace.  Sometimes the big-bang
+      mapping is in the list (due to re-reads of /proc/self/maps,
+      presumably) and sometimes it isn't. */
+#if 0
+   r = find_segment(try_here);
+   vg_assert(r == -1);
+   r = find_segment(try_here+size-1);
+   vg_assert(r == -1);
+#endif
+
+   r = VG_(mprotect_native)( (void*)try_here, 
+                             size,  VKI_PROT_READ|VKI_PROT_WRITE );
+
+   if (r != 0)
+      goto failed;
 
    shadow_alloc += size;
+   return (void*)try_here;
 
-   return ret;
+  failed:
+   VG_(printf)(
+       "valgrind: Could not allocate address space (%p bytes)\n"
+       "valgrind:   for shadow memory chunk.\n",
+       (void*)size
+      ); 
+   VG_(exit)(1);
 }
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              vg_memory.c ---*/
 /*--------------------------------------------------------------------*/
-

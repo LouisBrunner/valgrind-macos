@@ -341,6 +341,11 @@ Int VG_(mprotect)( void *start, SizeT length, UInt prot )
       VG_(mprotect_range)((Addr)start, length, prot);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
+Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
+{
+   Int res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
+   return VG_(is_kerror)(res) ? -1 : 0;
+}
 
 void VG_(exit)( Int status )
 {

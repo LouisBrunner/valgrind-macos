@@ -1031,6 +1031,7 @@ extern void* VG_(mmap)( void* start, SizeT length, UInt prot, UInt flags,
                         UInt sf_flags, UInt fd, OffT offset );
 extern Int  VG_(munmap)( void* start, SizeT length );
 extern Int  VG_(mprotect)( void *start, SizeT length, UInt prot );
+extern Int VG_(mprotect_native)( void *start, SizeT length, UInt prot );
 
 
 /* Move an fd into the Valgrind-safe range */
@@ -1279,6 +1280,7 @@ struct _Segment {
    // These are valid if (flags & SF_FILE)
    OffT        offset;        // file offset
    const Char* filename;      // filename (NULL if unknown)
+   Int         fnIdx;         // filename table index (-1 if unknown)
    UInt        dev;           // device
    UInt        ino;           // inode
 
@@ -1358,7 +1360,8 @@ extern void VG_(proxy_handlesig)( const vki_siginfo_t *siginfo,
    Exports of vg_syscalls.c
    ------------------------------------------------------------------ */
 
-extern Char *VG_(resolve_filename)(Int fd);
+extern HChar* VG_(resolve_filename_nodup)(Int fd);
+extern HChar* VG_(resolve_filename)(Int fd);
 
 extern Bool VG_(pre_syscall) ( ThreadId tid );
 extern void VG_(post_syscall)( ThreadId tid, Bool restart );

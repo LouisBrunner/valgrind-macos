@@ -378,22 +378,39 @@ static OpenFd *allocated_fds;
 
 static int fd_count = 0;
 
-/* Given a file descriptor, attempt to deduce its filename.  To do this,
-   we use /proc/self/fd/<FD>.  If this doesn't point to a file, or if it
-   doesn't exist, we just return NULL.  Otherwise, we return a pointer
-   to the file name, which the caller is responsible for freeing. */
 
-Char *VG_(resolve_filename)(Int fd)
+
+/* Given a file descriptor, attempt to deduce its filename.  To do
+   this, we use /proc/self/fd/<FD>.  If this doesn't point to a file,
+   or if it doesn't exist, we just return NULL.  The caller is
+   responsible for copying the contents of buf out immediately. */
+
+static HChar resolve_filename_buf[VKI_PATH_MAX];
+
+HChar* VG_(resolve_filename_nodup) ( Int fd )
 {
-   char tmp[28], buf[VKI_PATH_MAX];
+   HChar tmp[64];
 
    VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
-   VG_(memset)(buf, 0, VKI_PATH_MAX);
+   VG_(memset)(resolve_filename_buf, 0, VKI_PATH_MAX);
 
-   if(VG_(readlink)(tmp, buf, VKI_PATH_MAX) == -1)
+   if (VG_(readlink)(tmp, resolve_filename_buf, VKI_PATH_MAX) == -1)
       return NULL;
 
-   return ((buf[0] == '/') ? VG_(arena_strdup)(VG_AR_CORE, buf) : NULL);
+   return (resolve_filename_buf[0] == '/') 
+             ? resolve_filename_buf 
+             : NULL;
+}
+
+/* Same as resolve_filename_nodup, except that the result is copied 
+   into new memory which the caller is responsible for freeing. */
+
+HChar* VG_(resolve_filename) ( Int fd )
+{
+   HChar* transient = VG_(resolve_filename_nodup)(fd);
+   return transient
+             ? VG_(arena_strdup)(VG_AR_CORE, transient)
+             : NULL;
 }
 
 
@@ -856,7 +873,9 @@ static Addr do_brk(Addr newbrk)
       VG_(printf)("\ndo_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
 		  VG_(brk_base), VG_(brk_limit), newbrk);
 
+#  if 0
    if (0) show_segments("in_brk");
+#  endif
 
    if (newbrk < VG_(brk_base) || newbrk >= VG_(client_end))
       return VG_(brk_limit);
@@ -869,10 +888,12 @@ static Addr do_brk(Addr newbrk)
    if (0)
       VG_(printf)("brk_limit=%p seg->addr=%p seg->end=%p\n", 
 		  VG_(brk_limit), seg->addr, seg->addr+seg->len);
-   vg_assert(VG_(brk_limit) >= seg->addr && VG_(brk_limit) <= (seg->addr + seg->len));
+   vg_assert(VG_(brk_limit) >= seg->addr && VG_(brk_limit) 
+             <= (seg->addr + seg->len));
 
-   seg = VG_(find_segment_above_mapped)(VG_(brk_limit)-1); //VG_(next_segment)(seg);
-   if (seg) VG_(printf)("NEXT addr = %p\n", seg->addr);
+   seg = VG_(find_segment_above_mapped)(VG_(brk_limit)-1);
+   if (0 && seg) 
+      VG_(printf)("NEXT addr = %p\n", seg->addr);
    if (seg != NULL && newbrk > seg->addr)
       return VG_(brk_limit);
 

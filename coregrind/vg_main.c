@@ -969,7 +969,8 @@ static Addr setup_client_stack(void* init_sp,
       ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
       VKI_PAGE_SIZE;			/* page for trampoline code */
 
-VG_(printf)("stacksize = %d\n", stacksize);
+   if (0) VG_(printf)("stacksize = %d\n", stacksize);
+
    // decide where stack goes!
    VG_(clstk_end) = VG_(client_end);
 
@@ -980,32 +981,24 @@ VG_(printf)("stacksize = %d\n", stacksize);
    cl_esp = ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (char *)(VG_(client_trampoline_code) - ROUNDUP(stringsize, sizeof(int)));
+   stringbase = strtab = (char *)(VG_(client_trampoline_code) 
+                         - ROUNDUP(stringsize, sizeof(int)));
 
    VG_(clstk_base) = PGROUNDDN(cl_esp);
 
-   if (1)
+   if (0)
       printf("stringsize=%d auxsize=%d stacksize=%d\n"
              "clstk_base %p\n"
              "clstk_end  %p\n",
 	     stringsize, auxsize, stacksize,
              (void*)VG_(clstk_base), (void*)VG_(clstk_end));
 
-
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
-#if 1
    res = mmap((void *)PGROUNDDN(cl_esp), VG_(clstk_end) - PGROUNDDN(cl_esp),
 	      PROT_READ | PROT_WRITE | PROT_EXEC, 
 	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-#else
-   /* Debug hack -- do not use. */
-   res = mmap((void *)(PGROUNDDN(cl_esp) - 0x10000), 
-                      (0x10000 + VG_(clstk_end) - PGROUNDDN(cl_esp)),
-	      PROT_READ | PROT_WRITE | PROT_EXEC, 
-	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-#endif
    vg_assert((void*)-1 != res); 
 
    /* ==================== copy client stack ==================== */
@@ -1140,7 +1133,7 @@ VG_(printf)("stacksize = %d\n", stacksize);
    VG_(client_argc) = *(Int*)cl_esp;
    VG_(client_argv) = (Char**)(cl_esp + sizeof(HWord));
 
-   VG_(printf)("startup SP = %p\n", cl_esp);
+   if (0) VG_(printf)("startup SP = %p\n", cl_esp);
    return cl_esp;
 }
 

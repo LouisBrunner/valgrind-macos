@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Profiling machinery.  #include this file into a skin to      ---*/
-/*--- enable --profile=yes, but not for release versions of skins, ---*/
+/*--- Profiling machinery.  #include this file into a tool to      ---*/
+/*--- enable --profile=yes, but not for release versions of tools, ---*/
 /*--- because it uses glibc code.                                  ---*/
 /*---                                                 vg_profile.c ---*/
 /*--------------------------------------------------------------------*/
@@ -76,7 +76,7 @@ void VGP_(register_profile_event) ( Int n, Char* name )
    if (vgp_names[n] != NULL) {
       VG_(printf)("\nProfile event #%d being registered as `%s'\n"
                   "already registered as `%s'.\n"
-                  "Note that skin and core event numbers must not overlap.\n",
+                  "Note that tool and core event numbers must not overlap.\n",
                   n, name, vgp_names[n]);
       VG_(skin_panic)("profile event already registered");
    }

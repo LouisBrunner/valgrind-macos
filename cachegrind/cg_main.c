@@ -69,7 +69,7 @@ typedef
       VgpCacheSimulate,
       VgpCacheResults
    } 
-   VgpSkinCC;
+   VgpToolCC;
 
 /*------------------------------------------------------------*/
 /*--- Output file related stuff                            ---*/

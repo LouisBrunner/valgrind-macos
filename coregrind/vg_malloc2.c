@@ -254,14 +254,14 @@ void ensure_mm_init ( void )
 
    /* Use a checked red zone size of 1 word for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
-      course the client's red zone can be checked by the skin, eg. 
+      course the client's red zone can be checked by the tool, eg. 
       by using addressibility maps, but not by the mechanism implemented
       here, which merely checks at the time of freeing that the red 
       zone words are unchanged. */
 
    arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_SKIN],      "skin",     1, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_SKIN],      "tool",     1, True, 262144, False );
 
    arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144, False );
 
@@ -1358,7 +1358,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 /*--- Skin-visible functions.                              ---*/
 /*------------------------------------------------------------*/
 
-/* All just wrappers to avoid exposing arenas to skins */
+/* All just wrappers to avoid exposing arenas to tools */
 
 void* VG_(malloc) ( Int nbytes )
 {

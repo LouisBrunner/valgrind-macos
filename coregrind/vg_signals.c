@@ -984,13 +984,13 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
             "delivering signal %d (%s) to thread %d: on ALT STACK", 
             sigNo, signame(sigNo), tid );
 
-      /* Signal delivery to skins */
+      /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
       
    } else {
       esp_top_of_frame = tst->m_esp;
 
-      /* Signal delivery to skins */
+      /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
    }
 
@@ -1170,7 +1170,7 @@ Int vg_pop_signal_frame ( ThreadId tid )
    tst->sig_mask  = frame->mask;
    VG_(proxy_setsigmask)(tid);
 
-   /* Notify skins */
+   /* Notify tools */
    VG_TRACK( post_deliver_signal, tid, sigNo );
 
    return sigNo;
@@ -1685,7 +1685,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    is a permissions fault, then it means that the client is
 	    using some memory which had not previously been used.
 	    This catches those faults, makes the memory accessible,
-	    and calls the skin to initialize that page.
+	    and calls the tool to initialize that page.
 	 */
 	 static Int recursion = 0;
 

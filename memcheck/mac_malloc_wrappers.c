@@ -44,7 +44,7 @@ static UInt cmalloc_bs_mallocd = 0;
 /* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
 UInt VG_(vg_malloc_redzone_szB) = 16;
 
-/* Function pointers for the two skins to track interesting events. */
+/* Function pointers for the two tools to track interesting events. */
 void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited )  = NULL;
 void (*MAC_(ban_mem_heap)) ( Addr a, UInt len )                  = NULL;
 void (*MAC_(die_mem_heap)) ( Addr a, UInt len )                  = NULL;

@@ -1544,7 +1544,7 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
    return True;
 }
 
-/* This is available to skins... always demangle C++ names,
+/* This is available to tools... always demangle C++ names,
    match anywhere in function, but don't show offsets. */
 Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 {
@@ -1553,7 +1553,7 @@ Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
                        /*show offset?*/False );
 }
 
-/* This is available to skins... always demangle C++ names,
+/* This is available to tools... always demangle C++ names,
    match anywhere in function, and show offset if nonzero. */
 Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
 {
@@ -1562,7 +1562,7 @@ Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
                        /*show offset?*/True );
 }
 
-/* This is available to skins... always demangle C++ names,
+/* This is available to tools... always demangle C++ names,
    only succeed if 'a' matches first instruction of function,
    and don't show offsets. */
 Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )

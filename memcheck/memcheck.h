@@ -82,7 +82,7 @@ typedef
       VG_USERREQ__COUNT_LEAKS,
 
       /* These two have been moved into core, because they are useful for
-         any skin that tracks heap blocks.  Hence the suffix.  But they're
+         any tool that tracks heap blocks.  Hence the suffix.  But they're
          still here for backwards compatibility, although Valgrind will
          abort with an explanatory message if you use them. */
       VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE,

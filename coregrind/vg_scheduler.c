@@ -1114,7 +1114,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                /* If __NR_exit, remember the supplied argument. */
                VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
 
-               /* Only run __libc_freeres if the skin says it's ok and
+               /* Only run __libc_freeres if the tool says it's ok and
                   it hasn't been overridden with --run-libc-freeres=no
                   on the command line. */
 
@@ -2961,10 +2961,10 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
-      /* Note:  for skins that replace malloc() et al, we want to call
+      /* Note:  for tools that replace malloc() et al, we want to call
          the replacement versions.  For those that don't, we want to call
          VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
-         malloc-replacing skins must replace, but have its default definition
+         malloc-replacing tools must replace, but have its default definition
          call */
 
       /* Note: for MALLOC and FREE, must set the appropriate "lock"... see
@@ -3280,7 +3280,7 @@ void do_client_request ( ThreadId tid )
 	    static Bool whined = False;
 
 	    if (!whined) {
-               // Allow for requests in core, but defined by skins, which
+               // Allow for requests in core, but defined by tools, which
                // have 0 and 0 in their two high bytes.
                Char c1 = (arg[0] >> 24) & 0xff;
                Char c2 = (arg[0] >> 16) & 0xff;

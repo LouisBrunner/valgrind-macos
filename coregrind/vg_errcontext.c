@@ -420,7 +420,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
 }
 
 /* Second top-level entry point to the error management subsystem, for
-   errors that the skin want to report immediately, eg. because they're
+   errors that the tool wants to report immediately, eg. because they're
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
    suppressed.  Bool `print_error' dictates whether to print the error. 
@@ -627,9 +627,9 @@ static Bool setLocationTy ( Char** p_caller, SuppLocTy* p_ty )
 }
 
 
-/* Look for "skin" in a string like "skin1,skin2,skin3" */
+/* Look for "tool" in a string like "tool1,tool2,tool3" */
 static __inline__
-Bool skin_name_present(Char *name, Char *names)
+Bool tool_name_present(Char *name, Char *names)
 {
    Bool  found;
    Char *s = NULL;   /* Shut gcc up */
@@ -653,7 +653,7 @@ static void load_one_suppressions_file ( Char* filename )
    Int   fd, i;
    Bool  eof;
    Char  buf[N_BUF+1];
-   Char* skin_names;
+   Char* tool_names;
    Char* supp_name;
 
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
@@ -664,7 +664,7 @@ static void load_one_suppressions_file ( Char* filename )
    }
 
    while (True) {
-      /* Assign and initialise the two suppression halves (core and skin) */
+      /* Assign and initialise the two suppression halves (core and tool) */
       Supp* supp;
       supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(Supp));
       supp->count = 0;
@@ -693,11 +693,11 @@ static void load_one_suppressions_file ( Char* filename )
       }
       buf[i]    = '\0';    /* Replace ':', splitting into two strings */
 
-      skin_names = & buf[0];
+      tool_names = & buf[0];
       supp_name  = & buf[i+1];
 
       /* Is it a core suppression? */
-      if (VG_(needs).core_errors && skin_name_present("core", skin_names))
+      if (VG_(needs).core_errors && tool_name_present("core", tool_names))
       {
          if (VG_STREQ(supp_name, "PThread"))
             supp->skind = PThreadSupp;
@@ -705,9 +705,9 @@ static void load_one_suppressions_file ( Char* filename )
             goto syntax_error;
       }
 
-      /* Is it a skin suppression? */
+      /* Is it a tool suppression? */
       else if (VG_(needs).skin_errors && 
-               skin_name_present(VG_(details).name, skin_names))
+               tool_name_present(VG_(details).name, tool_names))
       {
          if (SK_(recognised_suppression)(supp_name, supp)) 
          {

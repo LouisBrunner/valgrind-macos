@@ -154,7 +154,7 @@ typedef
    MAC_Chunk;
 
 /*------------------------------------------------------------*/
-/*--- Profiling of skins and memory events                 ---*/
+/*--- Profiling of tools and memory events                 ---*/
 /*------------------------------------------------------------*/
 
 typedef 
@@ -163,7 +163,7 @@ typedef
       VgpSetMem,
       VgpESPAdj
    } 
-   VgpSkinCC;
+   VgpToolCC;
 
 /* Define to collect detailed performance info. */
 /* #define MAC_PROFILE_MEMORY */
@@ -270,7 +270,7 @@ extern void MAC_(print_common_debug_usage)       ( void );
 /* For tracking malloc'd blocks */
 extern VgHashTable MAC_(malloc_list);
 
-/* Function pointers for the two skins to track interesting events. */
+/* Function pointers for the two tools to track interesting events. */
 extern void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
 extern void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
 extern void (*MAC_(die_mem_heap)) ( Addr a, UInt len );

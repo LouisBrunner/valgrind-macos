@@ -36,7 +36,7 @@
    have no prototypes in vg_include.h, since they are not intended to
    be called from within Valgrind.
 
-   This file can be #included into a skin that wishes to know about
+   This file can be #included into a tool that wishes to know about
    calls to malloc().  It should define functions SK_(malloc) et al
    that will be called.
    ------------------------------------------------------------------ */

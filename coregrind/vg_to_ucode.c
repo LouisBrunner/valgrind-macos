@@ -7172,8 +7172,8 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
     * in the basic block.  For them we patch in the x86 instruction size 
     * into the `extra4b' field of the basic-block-ending JMP. 
     *
-    * The INCEIPs and JMP.extra4b fields allows a skin to track x86
-    * instruction sizes, important for some skins (eg. cache simulation).
+    * The INCEIPs and JMP.extra4b fields allows a tool to track x86
+    * instruction sizes, important for some tools (eg. Cachegrind).
     */
    if (VG_(clo_single_step)) {
       eip = disInstr ( cb, eip, &isEnd );

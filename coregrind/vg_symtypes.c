@@ -689,7 +689,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	 else
 	    bufsz *= 2;
 
-	 /* use skin malloc so that the skin client can free it */
+	 /* use tool malloc so that the skin client can free it */
 	 n = VG_(malloc)(bufsz);
 	 if (buf != NULL && bufidx != 0)
 	    VG_(memcpy)(n, buf, bufidx);

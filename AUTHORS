@@ -2,7 +2,7 @@
 Julian Seward, jseward@acm.org, is the main author.
 
 Nicholas Nethercote, njn25@cam.ac.uk, did the core/tool
-generalisation, and wrote Cachegrind and some of the other skins.
+generalisation, and wrote Cachegrind and some of the other tools.
 
 Jeremy Fitzhardinge, jeremy@goop.org, wrote much of Helgrind, and lots
 of low-level syscall/signal stuff.

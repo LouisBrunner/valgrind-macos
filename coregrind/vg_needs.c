@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Stuff relating to skin data structures.                      ---*/
+/*--- Stuff relating to tool data structures.                      ---*/
 /*---                                                   vg_needs.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@
 
 
 /* ---------------------------------------------------------------------
-   Skin data structure initialisation
+   Tool data structure initialisation
    ------------------------------------------------------------------ */
 
 /* Init with default values. */

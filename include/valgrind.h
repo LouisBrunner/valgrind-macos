@@ -159,7 +159,7 @@ typedef
              Valgrind's output to /dev/null and still count errors. */
           VG_USERREQ__COUNT_ERRORS = 0x1201,
 
-          /* These are useful and can be interpreted by any skin that tracks
+          /* These are useful and can be interpreted by any tool that tracks
              malloc() et al, by using vg_replace_malloc.c. */
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,
           VG_USERREQ__FREELIKE_BLOCK   = 0x1302,
@@ -273,8 +273,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    })
 
 
-/* Counts the number of errors that have been recorded by a skin.  Nb:
-   the skin must record the errors with VG_(maybe_record_error)() or
+/* Counts the number of errors that have been recorded by a tool.  Nb:
+   the tool must record the errors with VG_(maybe_record_error)() or
    VG_(unique_error)() for them to be counted. */
 #define VALGRIND_COUNT_ERRORS                                           \
    ({unsigned int _qyy_res;                                             \

@@ -358,7 +358,7 @@ void VG_(sanity_check_needs)(void);
 /* Allocation arenas.  
 
       CORE      for the core's general use.
-      SKIN      for the skin to use (and the only one it uses).
+      TOOL      for the tool to use (and the only one it uses).
       SYMTAB    for Valgrind's symbol table storage.
       JITTER    for small storage during translation.
       CLIENT    for the client's mallocs/frees, if the skin replaces glibc's
@@ -375,7 +375,7 @@ typedef Int ArenaId;
 #define VG_N_ARENAS        9 
 
 #define VG_AR_CORE         0
-#define VG_AR_SKIN         1
+#define VG_AR_TOOL         1
 #define VG_AR_SYMTAB       2
 #define VG_AR_JITTER       3
 #define VG_AR_CLIENT       4

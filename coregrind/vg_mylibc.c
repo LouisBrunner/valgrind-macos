@@ -1037,7 +1037,7 @@ __inline__ Char* VG_(arena_strdup) ( ArenaId aid, const Char* s )
 /* Wrapper to avoid exposing tools to ArenaId's */
 Char* VG_(strdup) ( const Char* s )
 {
-   return VG_(arena_strdup) ( VG_AR_SKIN, s ); 
+   return VG_(arena_strdup) ( VG_AR_TOOL, s ); 
 }
 
 /* ---------------------------------------------------------------------

@@ -261,7 +261,7 @@ void ensure_mm_init ( void )
 
    arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_SKIN],      "tool",     1, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_TOOL],      "tool",     1, True, 262144, False );
 
    arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144, False );
 
@@ -1362,27 +1362,27 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 
 void* VG_(malloc) ( Int nbytes )
 {
-   return VG_(arena_malloc) ( VG_AR_SKIN, nbytes );
+   return VG_(arena_malloc) ( VG_AR_TOOL, nbytes );
 }
 
 void  VG_(free) ( void* ptr )
 {
-   VG_(arena_free) ( VG_AR_SKIN, ptr );
+   VG_(arena_free) ( VG_AR_TOOL, ptr );
 }
 
 void* VG_(calloc) ( Int nmemb, Int nbytes )
 {
-   return VG_(arena_calloc) ( VG_AR_SKIN, /*alignment*/4, nmemb, nbytes );
+   return VG_(arena_calloc) ( VG_AR_TOOL, /*alignment*/4, nmemb, nbytes );
 }
 
 void* VG_(realloc) ( void* ptr, Int size )
 {
-   return VG_(arena_realloc) ( VG_AR_SKIN, ptr, /*alignment*/4, size );
+   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, /*alignment*/4, size );
 }
 
 void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
 {
-   return VG_(arena_malloc_aligned) ( VG_AR_SKIN, req_alignB, req_pszB );
+   return VG_(arena_malloc_aligned) ( VG_AR_TOOL, req_alignB, req_pszB );
 }
 
 

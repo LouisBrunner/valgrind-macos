@@ -143,7 +143,7 @@ void *VG_(SkipNode_Alloc)(const SkipList *l)
    size += sizeof(SkipNode) + (h+1)*sizeof(SkipNode *);
 
    if (l->arena == -1)
-      *(Short *)&l->arena = VG_AR_SKIN;
+      *(Short *)&l->arena = VG_AR_TOOL;
 
    ret = VG_(arena_malloc)(l->arena, size);
 
@@ -288,7 +288,7 @@ void VG_(SkipList_Insert)(SkipList *l, void *data)
       Int size = sizeof(SkipNode) * sizeof(SkipNode *) * SK_MAXHEIGHT;
 
       if (l->arena == -1)
-	 *(Short *)&l->arena = VG_AR_SKIN;
+	 *(Short *)&l->arena = VG_AR_TOOL;
       
       l->head = VG_(arena_malloc)(l->arena, size);
       VG_(memset)(l->head, 0, size);

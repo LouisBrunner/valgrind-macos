@@ -1181,58 +1181,58 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
 
 static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
 {
-  TmpInfo* ti;
-  ULong res;
-  IRExpr* e2;
-  IRExpr** args2;
-  Int i;
+   TmpInfo* ti;
+   ULong    res;
+   IRExpr*  e2;
+   IRExpr** args2;
+   Int      i;
 
    switch (e->tag) {
 
-   case Iex_CCall:
-     args2 =  copyIexCCallArgs(e->Iex.CCall.args);
- for (i = 0; args2[i]; i++)
-   args2[i] = tbSubst_Expr(env,args2[i]);
- return IRExpr_CCall(e->Iex.CCall.name,
-		     e->Iex.CCall.retty,
-		     args2);
-
+      case Iex_CCall:
+         args2 = copyIexCCallArgs(e->Iex.CCall.args);
+         for (i = 0; args2[i]; i++)
+            args2[i] = tbSubst_Expr(env,args2[i]);
+         return IRExpr_CCall(e->Iex.CCall.name,
+                   e->Iex.CCall.retty,
+                   args2
+                );
       case Iex_Tmp:
-	if (lookupH64(env, &res, (ULong)(e->Iex.Tmp.tmp))) {
-	  ti = (TmpInfo*)res;
-	  e2 = ti->expr;
-	  if (e2) {
-	    ti->expr = NULL;
-	    return e2;
-	  } else {
-	    return e;
-	  }
-	} else {
-	  return e;
-	}
-
-   case Iex_Mux0X:
-     return IRExpr_Mux0X(
-			 tbSubst_Expr(env, e->Iex.Mux0X.cond),
-			 tbSubst_Expr(env, e->Iex.Mux0X.expr0),
-			 tbSubst_Expr(env, e->Iex.Mux0X.exprX)
-			 );
-
-   case Iex_Binop:
-     return IRExpr_Binop(
-			 e->Iex.Binop.op,
-			 tbSubst_Expr(env, e->Iex.Binop.arg1),
-			 tbSubst_Expr(env, e->Iex.Binop.arg2)
-			 );
-   case Iex_Unop:
-     return IRExpr_Unop(
-			 e->Iex.Unop.op,
-			 tbSubst_Expr(env, e->Iex.Unop.arg)
-			 );
-   case Iex_LDle:
-     return IRExpr_LDle(e->Iex.LDle.ty,
-			tbSubst_Expr(env,e->Iex.LDle.addr));
-   case Iex_Const:
+         if (lookupH64(env, &res, (ULong)(e->Iex.Tmp.tmp))) {
+            ti = (TmpInfo*)res;
+            e2 = ti->expr;
+            if (e2) {
+               ti->expr = NULL;
+               return e2;
+            } else {
+               return e;
+            }
+         } else {
+            return e;
+         }
+      case Iex_Mux0X:
+         return IRExpr_Mux0X(
+                   tbSubst_Expr(env, e->Iex.Mux0X.cond),
+                   tbSubst_Expr(env, e->Iex.Mux0X.expr0),
+                   tbSubst_Expr(env, e->Iex.Mux0X.exprX)
+                );
+      case Iex_Binop:
+         return IRExpr_Binop(
+                   e->Iex.Binop.op,
+                   tbSubst_Expr(env, e->Iex.Binop.arg1),
+                   tbSubst_Expr(env, e->Iex.Binop.arg2)
+                );
+      case Iex_Unop:
+         return IRExpr_Unop(
+                   e->Iex.Unop.op,
+                   tbSubst_Expr(env, e->Iex.Unop.arg)
+                );
+      case Iex_LDle:
+         return IRExpr_LDle(
+                   e->Iex.LDle.ty,
+                  tbSubst_Expr(env,e->Iex.LDle.addr)
+                );
+      case Iex_Const:
       case Iex_Get:
          return e;
       default: 
@@ -1248,9 +1248,9 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
    switch (st->tag) {
    case Ist_STle:
      return IRStmt_STle(
-			tbSubst_Expr(env, st->Ist.STle.addr),
-			tbSubst_Expr(env, st->Ist.STle.data)
-			);
+                        tbSubst_Expr(env, st->Ist.STle.addr),
+                        tbSubst_Expr(env, st->Ist.STle.data)
+                        );
       case Ist_Tmp:
          return IRStmt_Tmp(
                    st->Ist.Tmp.tmp,
@@ -1277,33 +1277,33 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
    or does a Get. */
 static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
 {
-  Int i;
+   Int i;
    switch (e->tag) {
-   case Iex_CCall:
-     for (i = 0; e->Iex.CCall.args[i]; i++)
-       setHints_Expr(doesLoad, doesGet, e->Iex.CCall.args[i]);
-     return;
-   case Iex_Mux0X:
-      setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.cond);
-      setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.expr0);
-      setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.exprX);
-      return;
-   case Iex_Binop:
-     setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
-     setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg2);
-     return;
-   case Iex_Unop:
-     setHints_Expr(doesLoad, doesGet, e->Iex.Unop.arg);
-     return;
-   case Iex_LDle:
-     *doesLoad |= True;
-     return;
+      case Iex_CCall:
+         for (i = 0; e->Iex.CCall.args[i]; i++)
+            setHints_Expr(doesLoad, doesGet, e->Iex.CCall.args[i]);
+         return;
+      case Iex_Mux0X:
+         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.cond);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.expr0);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.exprX);
+         return;
+      case Iex_Binop:
+         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg2);
+         return;
+      case Iex_Unop:
+         setHints_Expr(doesLoad, doesGet, e->Iex.Unop.arg);
+         return;
+      case Iex_LDle:
+         *doesLoad |= True;
+         return;
       case Iex_Get:
          *doesGet |= True;
          return;
-   case Iex_Tmp:
-   case Iex_Const:
-     return;
+      case Iex_Tmp:
+      case Iex_Const:
+         return;
       default: 
          vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
          vpanic("setHints_Expr");
@@ -1330,7 +1330,7 @@ static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
             continue;
          if (!ti->invalidateMe)
            continue;
-	 /* vex_printf("FOUND INVAL %d %d\n", ti->origPos, oldest_op); */
+         /* vex_printf("FOUND INVAL %d %d\n", ti->origPos, oldest_op); */
          if (ti->origPos < oldest_op) {
             oldest_op = ti->origPos;
             oldest_k = k;
@@ -1339,7 +1339,7 @@ static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
 
       /* No more binds to invalidate. */
       if (oldest_op == 1<<30)
-	return;
+        return;
 
       /* the oldest bind to invalidate has been identified */
       vassert(oldest_op != 1<<31 && oldest_k != 1<<31);
@@ -1436,7 +1436,7 @@ static void treebuild_BB ( IRBB* bb )
          continue;
      
       if (st->tag == Ist_Tmp) {
-	/* vex_printf("acquire binding\n"); */
+        /* vex_printf("acquire binding\n"); */
          if (!lookupH64(env, &res, (ULong)(st->Ist.Tmp.tmp))) {
             vpanic("treebuild_BB (phase 2): unmapped IRTemp");
          }
@@ -1476,10 +1476,10 @@ static void treebuild_BB ( IRBB* bb )
          /* We have to invalidate this binding. */
          ti->invalidateMe 
             = (ti->eDoesLoad && invStore) || (ti->eDoesGet && invPut);
-	 /*
-	 if (ti->invalidateMe)
-	   vex_printf("SET INVAL\n");
-	 */
+         /*
+         if (ti->invalidateMe)
+           vex_printf("SET INVAL\n");
+           */
       }
 
       dumpInvalidated ( env, bb, &j );

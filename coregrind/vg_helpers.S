@@ -147,7 +147,7 @@ VG_(helper_CPUID):
 	movl	$0x52b, %eax
 	movl	$0x0,   %ebx
 	movl	$0x0,   %ecx
-	movl	$0x1bf, %edx
+	movl	$0x008001bf, %edx
 	jmp	cpuid__99
 cpuid__0:
 	movl	$0x1,        %eax

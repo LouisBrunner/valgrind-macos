@@ -82,7 +82,7 @@ int main ( int argc, char** argv )
       returns False. */
    LibVEX_default_VexControl ( &vcon );
    vcon.iropt_level = 2;
-   vcon.guest_max_insns = 55;
+   vcon.guest_max_insns = 50;
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
@@ -127,9 +127,13 @@ int main ( int argc, char** argv )
                  VexArchPPC32, VexSubArchPPC32_noAV,
                  VexArchX86, VexSubArchX86_sse2,
 #endif
-#if 1 /* amd64 -> amd64 */
+#if 0 /* amd64 -> amd64 */
                  VexArchAMD64, VexSubArch_NONE, 
                  VexArchAMD64, VexSubArch_NONE, 
+#endif
+#if 1 /* x86 -> x86 */
+                 VexArchX86, VexSubArchX86_sse1, 
+                 VexArchX86, VexSubArchX86_sse1, 
 #endif
 
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,

@@ -491,15 +491,33 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    Int      argc;
    Char*    helperName;
    void*    helperAddr;
+   IRType   wordTy;
+
+   // Stay sane ...
+   tl_assert(sizeof(HWord) == sizeof(void*));
+   if (sizeof(HWord) == 4) {
+      wordTy = Ity_I32;
+   } else
+   if (sizeof(HWord) == 8) {
+      wordTy = Ity_I64;
+   } else {
+      VG_(tool_panic)("endOfInstr: strange word size");
+   }
+
+   if (loadAddrExpr) 
+      tl_assert(wordTy == typeOfIRExpr(bbOut->tyenv, loadAddrExpr));
+   if (storeAddrExpr) 
+      tl_assert(wordTy == typeOfIRExpr(bbOut->tyenv, storeAddrExpr));
+
 
    // Nb: instrLen will be zero if Vex failed to decode it.
    tl_assert( 0 == instrLen ||
               (instrLen >= MIN_INSTR_SIZE && instrLen <= MAX_INSTR_SIZE) );
 
    // Setup 1st arg: instr_info node's address
-   // XXX: not 64-bit clean
+   // Believed to be 64-bit clean
    do_details(i_node, bbSeenBefore, instrAddr, instrLen, dataSize );
-   arg1 = IRExpr_Const(IRConst_U32( (UInt)i_node ));
+   arg1 = mkIRExpr_HWord( (HWord)i_node );
 
    if (!loadAddrExpr && !storeAddrExpr) {
       // no load/store

@@ -311,7 +311,8 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestPPC32State);
          guest_word_type  = Ity_I32;
          guest_layout     = &ppc32Guest_layout;
-         vassert(subarch_guest == VexSubArchPPC32);
+         vassert(subarch_guest == VexSubArchPPC32_noAV
+                 || subarch_guest == VexSubArchPPC32_AV);
          break;
 
       default:
@@ -319,10 +320,10 @@ VexTranslateResult LibVEX_Translate (
    }
 
    /* yet more sanity checks ... */
-   if (arch_guest == VexArchX86 && arch_host == VexArchX86) {
+   if (arch_guest == arch_host) {
       /* doesn't necessarily have to be true, but if it isn't it means
-         we are simulating one flavour of x86 on a different one, which
-         is pretty strange. */
+         we are simulating one flavour of an architecture a different
+         flavour of the same architecture, which is pretty strange. */
       vassert(subarch_guest == subarch_host);
    }
 
@@ -543,6 +544,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchX86:      return "X86";
       case VexArchAMD64:    return "AMD64";
       case VexArchARM:      return "ARM";
+      case VexArchPPC32:    return "PPC32";
       default:              return "VexArch???";
    }
 }
@@ -550,13 +552,15 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
 const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
 {
    switch (subarch) {
-      case VexSubArch_INVALID: return "INVALID";
-      case VexSubArch_NONE:    return "NONE";
-      case VexSubArchX86_sse0: return "x86-sse0";
-      case VexSubArchX86_sse1: return "x86-sse1";
-      case VexSubArchX86_sse2: return "x86-sse2";
-      case VexSubArchARM_v4:   return "arm-v4";
-      default:                 return "VexSubArch???";
+      case VexSubArch_INVALID:   return "INVALID";
+      case VexSubArch_NONE:      return "NONE";
+      case VexSubArchX86_sse0:   return "x86-sse0";
+      case VexSubArchX86_sse1:   return "x86-sse1";
+      case VexSubArchX86_sse2:   return "x86-sse2";
+      case VexSubArchARM_v4:     return "arm-v4";
+      case VexSubArchPPC32_noAV: return "ppc32-noAltivec";
+      case VexSubArchPPC32_AV:   return "ppc32-Altivec";
+      default:                   return "VexSubArch???";
    }
 }
 

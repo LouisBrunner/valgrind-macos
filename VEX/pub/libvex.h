@@ -62,12 +62,13 @@ typedef
 typedef
    enum {
       VexSubArch_INVALID,
-      VexSubArch_NONE,    /* Arch has no variants */
-      VexSubArchX86_sse0, /* has SSE state but no insns (Pentium II) */
-      VexSubArchX86_sse1, /* SSE1 support (Pentium III) */
-      VexSubArchX86_sse2, /* SSE2 support (Pentium 4) */
-      VexSubArchARM_v4,   /* ARM version 4 */
-      VexSubArchPPC32     /* CAB: ? */
+      VexSubArch_NONE,        /* Arch has no variants */
+      VexSubArchX86_sse0,     /* has SSE state but no insns (Pentium II) */
+      VexSubArchX86_sse1,     /* SSE1 support (Pentium III) */
+      VexSubArchX86_sse2,     /* SSE2 support (Pentium 4) */
+      VexSubArchARM_v4,       /* ARM version 4 */
+      VexSubArchPPC32_noAV,   /* 32-bit PowerPC, no Altivec */
+      VexSubArchPPC32_AV      /* 32-bit PowerPC with Altivec */
    }
    VexSubArch;
 

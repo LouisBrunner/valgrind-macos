@@ -215,7 +215,8 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(subarch_guest == VexSubArchPPC32);
+   vassert(subarch_guest == VexSubArchPPC32_noAV
+           || subarch_guest == VexSubArchPPC32_AV);
 
    /* Start a new, empty extent. */
    vge->n_used  = 1;

@@ -919,7 +919,7 @@ static IRExpr* getReg_field ( PPC32Reg reg, UInt field_idx )
    vassert( field_idx <= 8 );
    vassert( reg < REG_NUMBER );
    
-   IRExpr* fld = getReg_masked( reg, (0xF << field_idx) );
+   IRExpr* fld = getReg_masked( reg, (0xF << (field_idx*4)) );
    
    if (field_idx != 0) {
       fld = binop(Iop_Shr32, fld, mkU8(field_idx * 4));
@@ -1044,7 +1044,7 @@ static void putReg_field ( PPC32Reg reg, UInt field_idx, IRExpr* src )
    if (field_idx != 0) {
       src = binop(Iop_Shl32, src, mkU8(field_idx * 4));
    }   
-   putReg_masked( reg, src, (0xF << field_idx) );
+   putReg_masked( reg, src, (0xF << (field_idx*4)) );
 }
 
 

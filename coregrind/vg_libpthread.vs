@@ -155,6 +155,11 @@
   GLIBC_2.2.3 {
     # Extensions.
     pthread_getattr_np;
+    # These are in GLIBC_PRIVATE in the real library now but keep them 
+    # here for now for backwards compatibiltiy - they will still be
+    # visible to programs linked agianst newer libraries because of
+    # the inheritance into GLIB_PRIVATE in this library.
+    __pthread_clock_gettime; __pthread_clock_settime;
   } GLIBC_2.2;
 
   GLIBC_2.2.6 {
@@ -193,6 +198,5 @@
 
   GLIBC_PRIVATE {
     __pthread_initialize_minimal; __pthread_cleanup_upto;
-    __pthread_clock_gettime; __pthread_clock_settime;
     __pthread_unwind;
-  };
+  } GLIBC_2.3.3;

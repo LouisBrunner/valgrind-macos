@@ -107,7 +107,13 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
    RECORD_OVERLAP_ERROR( s, &extra );
 }
 
-char* strrchr ( const char* s, int c )
+// GCC complains if we have a non-static function without a previous
+// declaration.  We don't really need such declarations for these functions
+// because we're overriding standard system functions, but this macro puts
+// them in anyway just to shut GCC up.
+#define DECL(a)   a; a
+
+DECL( char* strrchr ( const char* s, int c ) )
 {
    UChar  ch   = (UChar)((UInt)c);
    UChar* p    = (UChar*)s;
@@ -119,7 +125,7 @@ char* strrchr ( const char* s, int c )
    }
 }
 
-char* strchr ( const char* s, int c )
+DECL( char* strchr ( const char* s, int c ) )
 {
    UChar  ch = (UChar)((UInt)c);
    UChar* p  = (UChar*)s;
@@ -130,7 +136,7 @@ char* strchr ( const char* s, int c )
    }
 }
 
-char* strcat ( char* dst, const char* src )
+DECL( char* strcat ( char* dst, const char* src ) )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
@@ -149,7 +155,7 @@ char* strcat ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncat ( char* dst, const char* src, SizeT n )
+DECL( char* strncat ( char* dst, const char* src, SizeT n ) )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
@@ -170,21 +176,21 @@ char* strncat ( char* dst, const char* src, SizeT n )
    return dst_orig;
 }
 
-SizeT strnlen ( const char* str, SizeT n )
+DECL( SizeT strnlen ( const char* str, SizeT n ) )
 {
    SizeT i = 0;
    while (i < n && str[i] != 0) i++;
    return i;
 }
 
-SizeT strlen ( const char* str )
+DECL( SizeT strlen ( const char* str ) )
 {
    SizeT i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-char* strcpy ( char* dst, const char* src )
+DECL( char* strcpy ( char* dst, const char* src ) )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
@@ -203,7 +209,7 @@ char* strcpy ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncpy ( char* dst, const char* src, SizeT n )
+DECL( char* strncpy ( char* dst, const char* src, SizeT n ) )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
@@ -219,7 +225,7 @@ char* strncpy ( char* dst, const char* src, SizeT n )
    return dst_orig;
 }
 
-int strncmp ( const char* s1, const char* s2, SizeT nmax )
+DECL( int strncmp ( const char* s1, const char* s2, SizeT nmax ) )
 {
    SizeT n = 0;
    while (True) {
@@ -235,7 +241,7 @@ int strncmp ( const char* s1, const char* s2, SizeT nmax )
    }
 }
 
-int strcmp ( const char* s1, const char* s2 )
+DECL( int strcmp ( const char* s1, const char* s2 ) )
 {
    register unsigned char c1;
    register unsigned char c2;
@@ -251,7 +257,7 @@ int strcmp ( const char* s1, const char* s2 )
    return 0;
 }
 
-void* memchr(const void *s, int c, SizeT n)
+DECL( void* memchr(const void *s, int c, SizeT n) )
 {
    SizeT i;
    UChar c0 = (UChar)c;
@@ -261,7 +267,7 @@ void* memchr(const void *s, int c, SizeT n)
    return NULL;
 }
 
-void* memcpy( void *dst, const void *src, SizeT len )
+DECL( void* memcpy( void *dst, const void *src, SizeT len ) )
 {
    register char *d;
    register char *s;
@@ -302,7 +308,7 @@ void* memcpy( void *dst, const void *src, SizeT len )
    return dst;
 }
 
-int memcmp ( const void *s1V, const void *s2V, SizeT n )
+DECL( int memcmp ( const void *s1V, const void *s2V, SizeT n ) )
 {
    int res;
    unsigned char a0;
@@ -327,7 +333,7 @@ int memcmp ( const void *s1V, const void *s2V, SizeT n )
 /* Copy SRC to DEST, returning the address of the terminating '\0' in
    DEST. (minor variant of strcpy) */
 
-char* stpcpy ( char* dst, const char* src )
+DECL( char* stpcpy ( char* dst, const char* src ) )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
@@ -346,7 +352,7 @@ char* stpcpy ( char* dst, const char* src )
    return dst;
 }
 
-void *memset(void *s, Int c, SizeT n)
+DECL( void *memset(void *s, Int c, SizeT n) )
 {
    unsigned char *cp = s;
 
@@ -359,7 +365,7 @@ void *memset(void *s, Int c, SizeT n)
 
 /* Find the first occurrence of C in S or the final NUL byte.  */
 
-char* glibc232_strchrnul (const char* s, int c_in)
+DECL( char* glibc232_strchrnul (const char* s, int c_in) )
 {
    unsigned char  c        = (unsigned char) c_in;
    unsigned char* char_ptr = (unsigned char *)s;
@@ -373,7 +379,7 @@ char* glibc232_strchrnul (const char* s, int c_in)
 
 /* Find the first occurrence of C in S.  */
 
-char* glibc232_rawmemchr (const char* s, int c_in)
+DECL( char* glibc232_rawmemchr (const char* s, int c_in) )
 {
    unsigned char  c        = (unsigned char) c_in;
    unsigned char* char_ptr = (unsigned char *)s;
@@ -385,5 +391,5 @@ char* glibc232_rawmemchr (const char* s, int c_in)
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                     mac_replace_strmem.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -3552,6 +3552,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op_imm_A(cb, sz, OR, True, eip, "or" );
       break;
 
+   case 0x1C: /* SBB Ib, AL */
+      eip = dis_op_imm_A(cb, 1, SBB, True, eip, "sbb" );
+      break;
+
    case 0x24: /* AND Ib, AL */
       eip = dis_op_imm_A(cb, 1, AND, True, eip, "and" );
       break;

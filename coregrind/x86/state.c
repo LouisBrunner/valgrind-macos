@@ -49,50 +49,6 @@
 /*--- Determining arch/subarch.                            ---*/
 /*------------------------------------------------------------*/
 
-/* Standard macro to see if a specific flag is changeable */
-
-static inline Bool flag_is_changeable(UInt flag)
-{
-   UInt f1, f2;
-
-   asm("pushfl\n\t"
-       "pushfl\n\t"
-       "popl %0\n\t"
-       "movl %0,%1\n\t"
-       "xorl %2,%0\n\t"
-       "pushl %0\n\t"
-       "popfl\n\t"
-       "pushfl\n\t"
-       "popl %0\n\t"
-       "popfl\n\t"
-       : "=&r" (f1), "=&r" (f2)
-       : "ir" (flag));
-
-   return ((f1^f2) & flag) != 0;
-}
-
-/* Does this CPU support the CPUID instruction? */
-
-static Bool has_cpuid ( void )
-{
-   /* 21 is the ID flag */
-   return flag_is_changeable(1<<21);
-}
-
-/* Actually do a CPUID on the host. */
-
-static void do_cpuid ( UInt n,
-                       UInt* a, UInt* b,
-                       UInt* c, UInt* d )
-{
-   __asm__ __volatile__ (
-      "cpuid"
-      : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)      /* output */
-      : "0" (n)         /* input */
-   );
-}
-
-
 // Returns the architecture and subarchitecture, or indicates
 // that this subarchitecture is unable to run Valgrind
 // Returns False to indicate we cannot proceed further.
@@ -102,17 +58,17 @@ Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*    vex_arch,
    Bool have_sse0, have_sse1, have_sse2;
    UInt eax, ebx, ecx, edx;
 
-   if (!has_cpuid())
+   if (!VG_(has_cpuid)())
       /* we can't do cpuid at all.  Give up. */
       return False;
 
-   do_cpuid(0, &eax, &ebx, &ecx, &edx);
+   VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
    if (eax < 1)
      /* we can't ask for cpuid(x) for x > 0.  Give up. */
      return False;
 
    /* get capabilities bits into edx */
-   do_cpuid(1, &eax, &ebx, &ecx, &edx);
+   VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
 
    have_sse0 = (edx & (1<<24)) != 0; /* True => have fxsave/fxrstor */
    have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */

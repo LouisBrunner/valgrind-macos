@@ -28,13 +28,37 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if 0
-
 #include "core_asm.h"
 
 /*
-    int VG_(cpuid)(UInt eax,
-                   UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
+    Bool VG_(has_cpuid)(void)
+ */
+.globl VG_(has_cpuid)
+VG_(has_cpuid):
+        pushl   %ebp
+        movl    %esp, %ebp
+        pushl   %ecx
+        pushfl
+        pushfl
+        popl    %eax
+        movl    %eax, %ecx
+        xorl    $0x200000, %eax
+        pushl   %eax
+        popfl
+        pushfl
+        popl    %eax
+        popfl
+        xorl    %ecx, %eax
+        andl    $0x200000, %eax
+        shrl    $21, %eax
+        popl    %ecx
+        movl    %ebp, %esp
+        popl    %ebp
+        ret
+
+/*
+    void VG_(cpuid)(UInt eax,
+                    UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
  */
 .globl VG_(cpuid)
 VG_(cpuid):
@@ -78,8 +102,6 @@ VG_(cpuid):
         
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
-
-#endif /* 0 */
 
 ##--------------------------------------------------------------------##
 ##--- end                                    	                   ---##

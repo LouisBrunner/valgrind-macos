@@ -1114,6 +1114,20 @@ Addr dis_op2_G_E ( UCodeBlock* cb,
          return 1+eip0;
       }
 
+      /* gcc sometimes generates "sbbl %reg,%reg" to convert the carry
+         flag into 0 or -1 in reg.  This has no actual dependency on
+         reg, but memcheck can't see that, and so will yelp if reg
+         contains garbage.  A simple fix is to put zero into reg
+         before we start, zapping any undefinedness it might otherwise
+         contain.
+      */
+      if (opc == SBB && gregOfRM(rm) == eregOfRM(rm)) {
+         Int tzero = newTemp(cb);
+         uInstr2(cb, MOV, size, Literal, 0, TempReg, tzero);
+         uLiteral(cb, 0);
+         uInstr2(cb, PUT, size, TempReg, tzero, ArchReg, eregOfRM(rm));
+      }
+
       uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, tmp);
 
       if (opc == AND || opc == OR) {

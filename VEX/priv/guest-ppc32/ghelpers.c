@@ -142,7 +142,7 @@ UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
     case PPC32G_FLAG_OP_SUBFME:  // subfmeo
 	return ((~arg1) & ((~arg1)^res) & (1<<31)) ? 1:0;
 
-    case PPC32G_FLAG_OP_SUBZE:   // subfzeo
+    case PPC32G_FLAG_OP_SUBFZE:  // subfzeo
 	return (((~arg1)^(-1)) & ((~arg1)^res) & (1<<31)) ? 1:0;
 
     default:
@@ -170,7 +170,7 @@ UChar ppc32g_calculate_xer_ca ( UInt op, UInt res,
 
     case PPC32G_FLAG_OP_SUBFC:   // subfc, subfco
     case PPC32G_FLAG_OP_SUBFI:   // subfic
-    case PPC32G_FLAG_OP_SUBZE:   // subfze, subfzeo
+    case PPC32G_FLAG_OP_SUBFZE:  // subfze, subfzeo
 	return (res <= arg2) ? 1:0;
 
     case PPC32G_FLAG_OP_SUBFE:   // subfe, subfeo
@@ -276,6 +276,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR31 = 0;
 
    vex_state->guest_CIA  = 0;
+   vex_state->guest_NIA  = 0;
    vex_state->guest_LR   = 0;
    vex_state->guest_CTR  = 0;
 
@@ -288,6 +289,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_XER_SO = 0;
    vex_state->guest_XER_OV = 0;
    vex_state->guest_XER_CA = 0;
+   vex_state->guest_XER_BC = 0;
 
    vex_state->guest_EMWARN = 0;
 }

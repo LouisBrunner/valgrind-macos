@@ -105,7 +105,7 @@ enum {
     PPC32G_FLAG_OP_SUBFE,   // subfe, subfeo
     PPC32G_FLAG_OP_SUBFI,   // subfic
     PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
-    PPC32G_FLAG_OP_SUBZE,   // subfze, subfzeo
+    PPC32G_FLAG_OP_SUBFZE,   // subfze, subfzeo
     PPC32G_FLAG_OP_SHR      // srawi
 };
 

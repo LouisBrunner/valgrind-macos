@@ -81,6 +81,7 @@ typedef
       UInt guest_GPR31;
 
       UInt guest_CIA;    // Current Instruction Address (no architecturally visible register)
+      UInt guest_NIA;    // Next Instruction Address (no architecturally visible register)
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
@@ -96,7 +97,7 @@ typedef
       UChar guest_XER_SO;  // Summary Overflow
       UChar guest_XER_OV;  // Overflow
       UChar guest_XER_CA;  // Carry
-//    UChar guest_XER_ByteCount;
+      UChar guest_XER_BC;  // Byte Count
 
       /* Emulation warnings */
       UInt guest_EMWARN;
@@ -105,7 +106,7 @@ typedef
       UChar padding_1b1;
       UChar padding_1b2;
       UChar padding_1b3;
-      UInt  padding_4b;
+//      UInt  padding_4b;
    }
    VexGuestPPC32State;
 

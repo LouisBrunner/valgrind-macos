@@ -1649,11 +1649,12 @@ Bool vg_read_lib_symbols ( SegInfo* si )
             */
             snaffle_it
                =  ( (ELF32_ST_BIND(o_symtab[i].st_info) == STB_GLOBAL ||
-                     ELF32_ST_BIND(o_symtab[i].st_info) == STB_LOCAL /* ||
-		     ELF32_ST_BIND(o_symtab[i].st_info) == STB_WEAK */)
+                     ELF32_ST_BIND(o_symtab[i].st_info) == STB_LOCAL ||
+		     ELF32_ST_BIND(o_symtab[i].st_info) == STB_WEAK)
                     &&
                     (ELF32_ST_TYPE(o_symtab[i].st_info) == STT_FUNC ||
-                     (VG_(needs).data_syms && ELF32_ST_TYPE(o_symtab[i].st_info) == STT_OBJECT))
+                     (VG_(needs).data_syms 
+                      && ELF32_ST_TYPE(o_symtab[i].st_info) == STT_OBJECT))
                   );
 
             /* Secondly, if it's apparently in a GOT or PLT, it's really

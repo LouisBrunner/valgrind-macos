@@ -418,7 +418,33 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_syslog)
+      case __NR_syslog: /* syscall 103 */
+         /* int syslog(int type, char *bufp, int len); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("syslog (%d, %p, %d)\n",arg1,arg2,arg3);
+         switch(arg1) {
+            case 2: case 3: case 4:
+               must_be_writable( tst, "syslog(buf)", arg2, arg3);
+	       break;
+            default: 
+               break;
+         }
+         KERNEL_DO_SYSCALL(tid, res);
+         if (!VG_(is_kerror)(res)) {
+            switch (arg1) {
+               case 2: case 3: case 4:
+                  make_readable( arg2, arg3 );
+                  break;
+               default:
+                  break;
+            }
+         }
+         break;
+#     endif
+
       case __NR_personality: /* syscall 136 */
+         /* int personality(unsigned long persona); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("personality ( %d )\n", arg1);
          KERNEL_DO_SYSCALL(tid,res);

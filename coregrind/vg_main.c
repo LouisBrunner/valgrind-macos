@@ -74,9 +74,6 @@
 #define AT_SECURE 23   /* secure mode boolean */
 #endif	/* AT_SECURE */
 
-/* Amount to reserve for Valgrind's internal heap */
-#define VALGRIND_HEAPSIZE	(128*1024*1024)
-
 /* Amount to reserve for Valgrind's internal mappings */
 #define VALGRIND_MAPSIZE	(128*1024*1024)
 

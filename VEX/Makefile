@@ -29,7 +29,7 @@ PRIV_INCLUDES = -Ipriv
 
 
 CC = gcc341
-CCFLAGS = -g -Wall -Wshadow
+CCFLAGS = -g -Wall -Wshadow $(EXTRA_CFLAGS)
 
 #CC = icc
 #CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \
@@ -49,7 +49,7 @@ all: libvex.a
 	(cd hacked104 && make install)
 
 vex: libvex.a test_main.o
-	$(CC) $(CCFLAGS) -o vex libvex.a test_main.o
+	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a
 
 libvex.a: $(LIB_OBJS)
 	rm -f libvex.a

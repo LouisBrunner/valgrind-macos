@@ -68,25 +68,29 @@ docs/techdocs.html.
 
 Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-If you install from CVS :
+To install from CVS :
 
-  0. cd into the source directory
+  0. Check out the code from CVS, following the instructions at
+     http://sourceforge.net/cvs/?group_id=46268.  The 'modulename' is
+     "valgrind".
 
-  1. Run ./autogen.sh to setup the environment (you need the standard
-     autoconf tools to do so)
+  1. cd into the source directory.
 
-If you install from a tar.gz archive:
+  2. Run ./autogen.sh to setup the environment (you need the standard
+     autoconf tools to do so).
 
-  2. Run ./configure, with some options if you wish. The standard
+To install from a tar.gz archive:
+
+  3. Run ./configure, with some options if you wish. The standard
      options are documented in the INSTALL file.  The only interesting
-     one is the usual --prefix=/where/you/want/it/installed
+     one is the usual --prefix=/where/you/want/it/installed.
 
-  3. Do "make"
+  4. Do "make".
 
-  4. Do "make install", possibly as root if the destination permissions
+  5. Do "make install", possibly as root if the destination permissions
      require that.
 
-  5. See if it works.  Try "valgrind ls -l".  Either this works,
+  6. See if it works.  Try "valgrind ls -l".  Either this works,
      or it bombs out complaining it can't find argc/argv/envp.
      In that case, mail me a bug report.
 

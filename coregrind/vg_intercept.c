@@ -65,7 +65,7 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#ifdef GLIBC_2_1
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 

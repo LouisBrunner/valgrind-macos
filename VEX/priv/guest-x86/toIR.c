@@ -3916,12 +3916,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 2: /* FST single-real */
                DIP("fstS %s", dis_buf);
-               storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
+               storeLE(mkexpr(addr),
+                       binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
                break;
 
             case 3: /* FSTP single-real */
                DIP("fstpS %s", dis_buf);
-               storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
+               storeLE(mkexpr(addr), 
+                       binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
                fp_pop();
                break;
 
@@ -7230,16 +7232,18 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign( rmode, get_sse_roundingmode() );
 
       putXMMRegLane32F( 
-         gregOfRM(modrm), 0, 
-         binop(Iop_I32toF32, 
+         gregOfRM(modrm), 0,
+         binop(Iop_F64toF32, 
                mkexpr(rmode),
-               unop(Iop_64to32, mkexpr(arg64)) ) );
+               unop(Iop_I32toF64, 
+                    unop(Iop_64to32, mkexpr(arg64)) )) );
 
       putXMMRegLane32F(
          gregOfRM(modrm), 1, 
-         binop(Iop_I32toF32,
+         binop(Iop_F64toF32, 
                mkexpr(rmode),
-               unop(Iop_64HIto32, mkexpr(arg64)) ) );
+               unop(Iop_I32toF64,
+                    unop(Iop_64HIto32, mkexpr(arg64)) )) );
 
       goto decode_success;
    }
@@ -7269,8 +7273,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign( rmode, get_sse_roundingmode() );
 
       putXMMRegLane32F( 
-         gregOfRM(modrm), 0, 
-         binop(Iop_I32toF32, mkexpr(rmode), mkexpr(arg32)) );
+         gregOfRM(modrm), 0,
+         binop(Iop_F64toF32,
+               mkexpr(rmode),
+               unop(Iop_I32toF64, mkexpr(arg32)) ) );
 
       goto decode_success;
    }
@@ -7567,6 +7573,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4);
       delta = dis_SSE_E_to_G( sorb, delta+2, "orps", Iop_Or128 );
       goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F E0 = PAVGB -- 8x8 unsigned Packed Average, with rounding */
+   if (insn[0] == 0x0F && insn[1] == 0x56) {
    }
 
 //-- 

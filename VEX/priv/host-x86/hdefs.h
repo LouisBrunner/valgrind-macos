@@ -341,6 +341,7 @@ typedef
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
+      Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
       Xin_FpCMov,    /* FP fake floating point (un)conditional move */
       Xin_FpLdStCW,  /* fldcw / fstcw */
       Xin_FpStSW_AX, /* fstsw %ax */
@@ -478,13 +479,21 @@ typedef
             X86AMode* addr;
          } FpLdSt;
          /* Move 64-bit float to/from memory, converting to/from
-	    signed int on the way. */
+            signed int on the way.  Note the conversions will observe
+            the host FPU rounding mode currently in force. */
          struct {
             Bool      isLoad;
             UChar     sz; /* only 2, 4 or 8 */
             HReg      reg;
             X86AMode* addr;
          } FpLdStI;
+         /* By observing the current FPU rounding mode, round (etc)
+            src into dst given that dst should be interpreted as an
+            IEEE754 32-bit (float) type. */
+         struct {
+            HReg src;
+            HReg dst;
+         } Fp64to32;
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
          struct {
@@ -562,6 +571,7 @@ extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
 extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
+extern X86Instr* X86Instr_Fp64to32  ( HReg src, HReg dst );
 extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
 extern X86Instr* X86Instr_FpStSW_AX ( void );

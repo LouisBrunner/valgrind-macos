@@ -961,7 +961,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          if (sz == 2) {
             /* movzwl 0(%esp), %dst */
             addInstr(env, X86Instr_LoadEX(2,False,zero_esp,dst));
-        } else {
+         } else {
             /* movl 0(%esp), %dst */
             vassert(sz == 4);
             addInstr(env, X86Instr_Alu32R(
@@ -1888,6 +1888,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg tHi  = newVRegI(env);
       X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
       X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
+      /* paranoia */
+      set_FPU_rounding_default(env);
       /* subl $8, %esp */
       addInstr(env, 
                X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
@@ -2103,10 +2105,17 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_F64toF32) {
-      /* this is a no-op */
-      return iselDblExpr(env, e->Iex.Unop.arg);
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_F64toF32) {
+      /* Although the result is still held in a standard FPU register,
+         we need to round it to reflect the loss of accuracy/range
+         entailed in casting it to a 32-bit float. */
+      HReg dst = newVRegF(env);
+      HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+      addInstr(env, X86Instr_Fp64to32(src,dst));
+      set_FPU_rounding_default( env );
+      return dst;
    }
 
    if (e->tag == Iex_Get) {
@@ -2115,37 +2124,6 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg res = newVRegF(env);
       addInstr(env, X86Instr_FpLdSt( True/*load*/, 4, res, am ));
       return res;
-   }
-
-   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I32toF32) {
-      HReg dst = newVRegF(env);
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-      X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-
-      /* int value -> stack */
-      addInstr(env, X86Instr_Push(rmi));
-
-      /* Set host rounding mode */
-      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
-
-      /* get it back from the stack, into F80 form.  Rounding mode has
-         no effect as this can be done exactly. */
-      addInstr(env, X86Instr_FpLdStI(True/*load*/, 4, dst, zero_esp));
-
-      /* write it back to the stack, as a 32-bit float.  Rounding mode
-	 effects this. */
-      addInstr(env, X86Instr_FpLdSt(False/*store*/, 4, dst, zero_esp));
-
-      /* and finally ... fetch it back again.  (sigh) */
-      addInstr(env, X86Instr_FpLdSt(True/*load*/, 4, dst, zero_esp));
-
-      /* Restore default FPU rounding. */
-      set_FPU_rounding_default( env );
-
-      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                       X86RMI_Imm(4),
-                                       hregX86_ESP()));
-      return dst;
    }
 
    ppIRExpr(e);
@@ -2355,9 +2333,10 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegF(env);
             HReg rHi, rLo;
 	    iselInt64Expr( &rHi, &rLo, env, e->Iex.Unop.arg);
+            /* paranoia */
+            set_FPU_rounding_default(env);
             addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
-            set_FPU_rounding_default(env);
             addInstr(env, X86Instr_FpLdSt(
                              True/*load*/, 8, dst, 
                              X86AMode_IR(0, hregX86_ESP())));

@@ -689,6 +689,13 @@ X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz,
    vassert(sz == 2 || sz == 4 || sz == 8);
    return i;
 }
+X86Instr* X86Instr_Fp64to32 ( HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Fp64to32;
+   i->Xin.Fp64to32.src = src;
+   i->Xin.Fp64to32.dst = dst;
+   return i;
+}
 X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_FpCMov;
@@ -916,6 +923,12 @@ void ppX86Instr ( X86Instr* i ) {
             ppX86AMode(i->Xin.FpLdStI.addr);
          }
          return;
+      case Xin_Fp64to32:
+         vex_printf("gdtof ");
+         ppHRegX86(i->Xin.Fp64to32.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Fp64to32.dst);
+         return;
       case Xin_FpCMov:
          vex_printf("gcmov%s ", showX86CondCode(i->Xin.FpCMov.cond));
          ppHRegX86(i->Xin.FpCMov.src);
@@ -1110,6 +1123,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, i->Xin.FpLdStI.isLoad ? HRmWrite : HRmRead,
                        i->Xin.FpLdStI.reg);
          return;
+      case Xin_Fp64to32:
+         addHRegUse(u, HRmRead,  i->Xin.Fp64to32.src);
+         addHRegUse(u, HRmWrite, i->Xin.Fp64to32.dst);
+         return;
       case Xin_FpCMov:
          addHRegUse(u, HRmRead, i->Xin.FpCMov.src);
          addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
@@ -1235,6 +1252,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_FpLdStI:
          mapRegs_X86AMode(m, i->Xin.FpLdStI.addr);
          mapReg(m, &i->Xin.FpLdStI.reg);
+         return;
+      case Xin_Fp64to32:
+         mapReg(m, &i->Xin.Fp64to32.src);
+         mapReg(m, &i->Xin.Fp64to32.dst);
          return;
       case Xin_FpCMov:
          mapReg(m, &i->Xin.FpCMov.src);
@@ -2217,11 +2238,13 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       */
       p = do_ffree_st7(p);
       p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
-      p = do_fop2_st(p, i->Xin.FpBinary.op, 1+hregNumber(i->Xin.FpBinary.srcR));
+      p = do_fop2_st(p, i->Xin.FpBinary.op, 
+                        1+hregNumber(i->Xin.FpBinary.srcR));
       p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
       goto done;
 
    case Xin_FpLdSt:
+      vassert(i->Xin.FpLdSt.sz == 4 || i->Xin.FpLdSt.sz == 8);
       if (i->Xin.FpLdSt.isLoad) {
          /* Load from memory into %fakeN.  
             --> ffree %st(7) ; fld{s/l} amode ; fstp st(N+1) 
@@ -2276,6 +2299,22 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          goto done;
       }
       break;
+
+   case Xin_Fp64to32:
+      /* ffree %st7 ; fld %st(src) */
+      p = do_ffree_st7(p);
+      p = do_fld_st(p, 0+fregNo(i->Xin.Fp64to32.src));
+      /* subl $4, %esp */
+      *p++ = 0x83; *p++ = 0xEC; *p++ = 0x04;
+      /* fstps (%esp) */
+      *p++ = 0xD9; *p++ = 0x1C; *p++ = 0x24;
+      /* flds (%esp) */
+      *p++ = 0xD9; *p++ = 0x04; *p++ = 0x24;
+      /* addl $4, %esp */
+      *p++ = 0x83; *p++ = 0xC4; *p++ = 0x04;
+      /* fstp %st(1+dst) */
+      p = do_fstp_st(p, 1+fregNo(i->Xin.Fp64to32.dst));
+      goto done;
 
    case Xin_FpCMov:
       /* jmp fwds if !condition */

@@ -281,13 +281,10 @@ typedef
       */
       Iop_CmpF64,
 
-      /* int -> double */
-      Iop_I32toF64,  /* no rounding needed because result can always be
-                        represented exactly */
-
-      /* double -> int.  These take a first argument :: Ity_I32 
-         (an IRRoundingMode) which is an indication of the rounding mode,
-         as per the following encoding:
+      /* --- Int to/from FP conversions. --- */
+      /* For the most part, these take a first argument :: Ity_I32
+	 (as IRRoundingMode) which is an indication of the rounding
+         mode to use, as per the following encoding:
             00b  to nearest (the default)
             01b  to -infinity
             10b  to +infinity
@@ -306,20 +303,24 @@ typedef
          the "integer indefinite" value 0x80..00 is produced.
          On PPC it is either 0x80..00 or 0x7F..FF depending on the sign
          of the argument.
-      */
-      Iop_F64toI64, Iop_F64toI32, Iop_F64toI16,
 
-      /* these also take an I32 first argument encoding the
-         rounding mode. */
-      Iop_I64toF64,
-      Iop_I32toF32,
+         Rounding is required whenever the destination type cannot
+         represent exactly all values of the source type.
+      */
+      Iop_F64toI16,  /* IRRoundingMode(I32) x F64 -> I16 */
+      Iop_F64toI32,  /* IRRoundingMode(I32) x F64 -> I32 */
+      Iop_F64toI64,  /* IRRoundingMode(I32) x F64 -> I64 */
+
+      Iop_I16toF64,  /*                       I16 -> F64 */
+      Iop_I32toF64,  /*                       I32 -> F64 */
+      Iop_I64toF64,  /* IRRoundingMode(I32) x I64 -> F64 */
+
+      Iop_F32toF64,  /*                       F32 -> F64 */
+      Iop_F64toF32,  /* IRRoundingMode(I32) x F64 -> F32 */
 
       /* F64 -> F64, also takes an I32 first argument encoding the
          rounding mode. */
       Iop_RoundF64,
-
-      /* double <-> float.  What does this mean -- does it round? */
-      Iop_F32toF64, Iop_F64toF32,
 
       /* Reinterpretation.  Take an F64 and produce an I64 with 
          the same bit pattern, or vice versa. */

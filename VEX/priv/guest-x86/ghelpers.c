@@ -672,6 +672,7 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
 #  define unop(_op,_a1) IRExpr_Unop((_op),(_a1))
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
 #  define mkU32(_n) IRExpr_Const(IRConst_U32(_n))
+#  define mkU8(_n)  IRExpr_Const(IRConst_U8(_n))
 
    Int i, arity = 0;
    for (i = 0; args[i]; i++)
@@ -874,12 +875,56 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
+      /*---------------- COPY ----------------*/
+      /* This can happen, as a result of x87 FP compares: "fcom ... ;
+         fnstsw %ax ; sahf ; jbe" for example. */
+
+      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondBE)) {
+         /* COPY, then BE --> extract C and Z from dep1, and test (C
+            or Z == 1). */
+         return
+            unop(
+               Iop_1Uto32,
+               binop(
+                  Iop_CmpNE32,
+                  binop(
+                     Iop_And32,
+                     binop(
+                        Iop_Or32,
+                        binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_C)),
+                        binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_Z))
+                     ),
+                     mkU32(1)
+                  ),
+                  mkU32(0)
+               )
+            );
+      }
+      
+      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondB)) {
+         /* COPY, then B --> extract C dep1, and test (C == 1). */
+         return
+            unop(
+               Iop_1Uto32,
+               binop(
+                  Iop_CmpNE32,
+                  binop(
+                     Iop_And32,
+                     binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_C)),
+                     mkU32(1)
+                  ),
+                  mkU32(0)
+               )
+            );
+      }
+
       return NULL;
    }
 
 #  undef unop
 #  undef binop
 #  undef mkU32
+#  undef mkU8
 
    return NULL;
 }

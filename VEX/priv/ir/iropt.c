@@ -220,7 +220,7 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
             newargs[i] = flatten_Expr(bb, newargs[i]);
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, IRStmt_Tmp(t1,
-            IRExpr_CCall(ex->Iex.CCall.name,
+            IRExpr_CCall(ex->Iex.CCall.cee,
                          ex->Iex.CCall.retty,
                          newargs)));
          return IRExpr_Tmp(t1);
@@ -656,7 +656,7 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
             args2[i] = subst_Expr(env, args2[i]);
          }
          return IRExpr_CCall(
-                   ex->Iex.CCall.name,
+                   ex->Iex.CCall.cee,
                    ex->Iex.CCall.retty,
                    args2 
                 );
@@ -1362,7 +1362,7 @@ void spec_helpers_BB ( IRBB* bb,
           || st->Ist.Tmp.data->tag != Iex_CCall)
         continue;
 
-      ex = (*specHelper)( st->Ist.Tmp.data->Iex.CCall.name,
+      ex = (*specHelper)( st->Ist.Tmp.data->Iex.CCall.cee->name,
                           st->Ist.Tmp.data->Iex.CCall.args );
       if (!ex)
         /* the front end can't think of a suitable replacement */
@@ -1548,7 +1548,7 @@ static IRExpr* tbSubst_Expr ( TmpInfo** env, IRExpr* e )
          args2 = sopyIRExprVec(e->Iex.CCall.args);
          for (i = 0; args2[i]; i++)
             args2[i] = tbSubst_Expr(env,args2[i]);
-         return IRExpr_CCall(e->Iex.CCall.name,
+         return IRExpr_CCall(e->Iex.CCall.cee,
                    e->Iex.CCall.retty,
                    args2
                 );

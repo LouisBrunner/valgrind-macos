@@ -26,11 +26,6 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
                         Bool   (*byte_accessible)(Addr64),
                         Bool   host_bigendian );
 
-/* Used by the back end to look up addresses of helper
-   function calls inserted by bbToIR_X86Instr. */
-extern
-HWord x86guest_findhelper ( Char* function_name );
-
 /* Used by the optimiser to specialise calls to helpers. */
 extern
 IRExpr* x86guest_spechelper ( Char* function_name,
@@ -44,6 +39,24 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
 
 extern
 VexGuestLayoutInfo x86guest_layout;
+
+
+/*---------------------------------------------------------*/
+/*--- x86 guest helpers                                 ---*/
+/*---------------------------------------------------------*/
+
+/* --- CLEAN HELPERS --- */
+extern UInt  calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
+extern UInt  calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
+extern UInt  calculate_condition  ( UInt/*Condcode*/ cond, 
+                                    UInt cc_op, UInt cc_src, UInt cc_dst );
+extern UInt  calculate_FXAM ( UInt tag, ULong dbl );
+extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
+
+/* --- DIRTY HELPERS --- */
+extern ULong loadF80le  ( UInt );
+extern void  storeF80le ( UInt, ULong );
+extern void  dirtyhelper_CPUID ( VexGuestX86State* );
 
 
 /*---------------------------------------------------------*/

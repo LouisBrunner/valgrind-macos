@@ -590,7 +590,12 @@ static IRExpr* mk_calculate_eflags_all ( void )
    args[1]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
    args[2]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
    args[3]       = NULL;
-   return IRExpr_CCall("calculate_eflags_all", Ity_I32, args);
+   return IRExpr_CCall(
+             mkIRCallee(0/*regparm*/, "calculate_eflags_all", 
+                        (HWord)&calculate_eflags_all),
+             Ity_I32, 
+             args
+          );
 }
 
 /* Build IR to calculate just the carry flag from stored
@@ -602,12 +607,17 @@ static IRExpr* mk_calculate_eflags_c ( void )
    args[1]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
    args[2]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
    args[3]       = NULL;
-   return IRExpr_CCall("calculate_eflags_c", Ity_I32, args);
+   return IRExpr_CCall(
+             mkIRCallee(0/*regparm*/, "calculate_eflags_c", 
+                        (HWord)&calculate_eflags_c),
+             Ity_I32, 
+             args
+          );
 }
 
 /* Build IR to calculate some particular condition from stored
    CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_Bit. */
-static IRExpr* calculate_condition ( Condcode cond )
+static IRExpr* mk_calculate_condition ( Condcode cond )
 {
    IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
    args[0]       = mkU32(cond);
@@ -616,7 +626,13 @@ static IRExpr* calculate_condition ( Condcode cond )
    args[3]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
    args[4]       = NULL;
    return unop(Iop_32to1, 
-               IRExpr_CCall("calculate_condition", Ity_I32, args));
+               IRExpr_CCall(
+                  mkIRCallee(0/*regparm*/, "calculate_condition", 
+                             (HWord)&calculate_condition),
+                  Ity_I32, 
+                  args
+               )
+              );
 }
 
 
@@ -1371,12 +1387,12 @@ static void jcc_01( Condcode cond, Addr32 d32_false, Addr32 d32_true )
    Condcode condPos;
    condPos = positiveIse_Condcode ( cond, &invert );
    if (invert) {
-      stmt( IRStmt_Exit( calculate_condition(condPos),
+      stmt( IRStmt_Exit( mk_calculate_condition(condPos),
                          IRConst_U32(d32_false) ) );
       irbb->next     = mkU32(d32_true);
       irbb->jumpkind = Ijk_Boring;
    } else {
-      stmt( IRStmt_Exit( calculate_condition(condPos),
+      stmt( IRStmt_Exit( mk_calculate_condition(condPos),
                          IRConst_U32(d32_true) ) );
       irbb->next     = mkU32(d32_false);
       irbb->jumpkind = Ijk_Boring;
@@ -2353,11 +2369,16 @@ UInt dis_Grp2 ( UChar  sorb,
       IRTemp   r64  = newTemp(Ity_I64);
       IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
       args[0] = widenUto32(mkexpr(dst0)); /* thing to rotate */
-      args[1] = widenUto32(shift_expr);  /* rotate amount */
+      args[1] = widenUto32(shift_expr);   /* rotate amount */
       args[2] = widenUto32(mk_calculate_eflags_all());
       args[3] = mkU32(sz);
       args[4] = NULL;
-      assign( r64, IRExpr_CCall("calculate_RCR", Ity_I64, args) );
+      assign( r64, IRExpr_CCall(
+                      mkIRCallee(0/*regparm*/, "calculate_RCR", 
+                                 (HWord)&calculate_RCR),
+                      Ity_I64, 
+                      args
+            ));
       /* new eflags in hi half r64; new value in lo half r64 */
       assign( dst1, narrowTo(ty, unop(Iop_64to32, mkexpr(r64))) );
       stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
@@ -3152,7 +3173,7 @@ void dis_REP_op ( Condcode cond,
    if (cond == CondAlways) {
       jmp_lit(Ijk_Boring,eip);
    } else {
-      stmt( IRStmt_Exit( calculate_condition(cond),
+      stmt( IRStmt_Exit( mk_calculate_condition(cond),
 	                 IRConst_U32(eip) ) );
       jmp_lit(Ijk_Boring,eip_next);
    }
@@ -3772,7 +3793,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
                args[1] = unop(Iop_ReinterpF64asI64, get_ST_UNCHECKED(0));
                args[2] = NULL;
-               put_C3210(IRExpr_CCall("calculate_FXAM", Ity_I32, args));
+               put_C3210(IRExpr_CCall(
+                            mkIRCallee(0/*regparm*/, "calculate_FXAM", 
+                                       (HWord)&calculate_FXAM), 
+                            Ity_I32, 
+                            args
+                        ));
                break;
             }
 
@@ -3989,7 +4015,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       DIP("fcmovz %%st(%d), %%st(0)", r_src);
 	       put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,calculate_condition(CondZ)), 
+                                    unop(Iop_1Uto8,mk_calculate_condition(CondZ)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4054,7 +4080,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                IRTemp   val  = newTemp(Ity_I64);
                IRExpr** args = mkIRExprVec_1 ( mkexpr(addr) );
 
-               IRDirty* d = unsafeIRDirty_1_N ( val, "loadF80le", args );
+               IRDirty* d = unsafeIRDirty_1_N ( 
+                               val, 
+                               mkIRCallee(0, "loadF80le", (HWord)&loadF80le), 
+                               args 
+                            );
                /* declare that we're reading memory */
                d->mFx   = Ifx_Read;
                d->mAddr = mkexpr(addr);
@@ -4075,7 +4105,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                   = mkIRExprVec_2( mkexpr(addr), 
                                    unop(Iop_ReinterpF64asI64, get_ST(0)) );
 
-               IRDirty* d = unsafeIRDirty_0_N ( "storeF80le", args );
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               mkIRCallee(0, "storeF80le", 
+                                             (HWord)&storeF80le), 
+                               args 
+                            );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
                d->mAddr = mkexpr(addr);
@@ -4105,7 +4139,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       DIP("fcmovnz %%st(%d), %%st(0)", r_src);
 	       put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,calculate_condition(CondNZ)), 
+                                    unop(Iop_1Uto8,mk_calculate_condition(CondNZ)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -5230,7 +5264,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    assign( src, getIReg(size, gregOfRM(rm)) );
    assign( acc, getIReg(size, R_EAX) );
    setFlags_ADD_SUB(Iop_Sub8, dest, acc, ty);
-   assign( cond8, unop(Iop_1Uto8, calculate_condition(CondZ)) );
+   assign( cond8, unop(Iop_1Uto8, mk_calculate_condition(CondZ)) );
    assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
    assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
    putIReg(size, R_EAX, mkexpr(acc2));
@@ -5349,7 +5383,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
       assign( tmpd, getIReg(sz, gregOfRM(rm)) );
 
       putIReg(sz, gregOfRM(rm),
-                  IRExpr_Mux0X( unop(Iop_1Uto8,calculate_condition(cond)),
+                  IRExpr_Mux0X( unop(Iop_1Uto8,mk_calculate_condition(cond)),
                                 mkexpr(tmpd),
                                 mkexpr(tmps) )
              );
@@ -5367,7 +5401,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
       assign( tmpd, getIReg(sz, gregOfRM(rm)) );
 
       putIReg(sz, gregOfRM(rm),
-                  IRExpr_Mux0X( unop(Iop_1Uto8,calculate_condition(cond)),
+                  IRExpr_Mux0X( unop(Iop_1Uto8,mk_calculate_condition(cond)),
                                 mkexpr(tmpd),
                                 mkexpr(tmps) )
              );
@@ -8970,7 +9004,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
             declared to mod eax, wr ebx, ecx, edx
          */
          IRExpr** args = mkIRExprVec_0();
-         IRDirty* d    = unsafeIRDirty_0_N ( "dirtyhelper_CPUID", args );
+         IRDirty* d    = unsafeIRDirty_0_N ( 
+                            mkIRCallee(0, "dirtyhelper_CPUID", 
+                                          (HWord)&dirtyhelper_CPUID), 
+                            args 
+                         );
          /* declare guest state effects */
          d->needsBBP = True;
          d->nFxState = 4;
@@ -9145,7 +9183,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x9E: /* set-LEb/set-NGb (jump less or equal) */
       case 0x9F: /* set-Gb/set-NLEb (jump greater) */
 	 t1 = newTemp(Ity_I8);
-	 assign( t1, unop(Iop_1Uto8,calculate_condition(opc-0x90)) );
+	 assign( t1, unop(Iop_1Uto8,mk_calculate_condition(opc-0x90)) );
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             delta++;

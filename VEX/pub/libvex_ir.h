@@ -70,6 +70,30 @@ extern void ppIRConst ( IRConst* );
 extern Bool eqIRConst ( IRConst*, IRConst* );
 
 
+/* ------------------ Call targets ------------------ */
+
+/* Describes a helper function to call.  The name part is purely for
+   pretty printing and not actually used.  regparm=n tells the back
+   end that the callee has been declared
+   "__attribute__((regparm(n)))".  On some targets (x86) the back end
+   will need to construct a non-standard sequence to call a function
+   declared like this. */
+
+typedef
+   struct {
+      Int   regparm;
+      Char* name;
+      HWord addr;
+   }
+   IRCallee;
+
+extern IRCallee* mkIRCallee ( Int regparm, Char* name, HWord addr );
+
+extern IRCallee* dopyIRCallee ( IRCallee* );
+
+extern void ppIRCallee ( IRCallee* );
+
+
 /* ------------------ Guest state arrays ------------------ */
 
 typedef
@@ -378,8 +402,8 @@ typedef
             IRConst* con;
          } Const;
          struct {
-            Char*  name;
-            IRType retty;
+            IRCallee* cee;
+            IRType    retty;
             struct _IRExpr** args;
          }  CCall;
          struct {
@@ -399,7 +423,7 @@ extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_LDle   ( IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
-extern IRExpr* IRExpr_CCall  ( Char* name, IRType retty, IRExpr** args );
+extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 extern IRExpr*  dopyIRExpr ( IRExpr* );
@@ -479,14 +503,14 @@ extern void ppIREffect ( IREffect );
 typedef
    struct {
       /* What to call, and details of args/results */
-      Char*    name;   /* name of the function to call */
-      IRExpr** args;   /* arg list, ends in NULL */
-      IRTemp   tmp;    /* to assign result to, or INVALID_IRTEMP if none */
+      IRCallee* cee;    /* where to call */
+      IRExpr**  args;   /* arg list, ends in NULL */
+      IRTemp    tmp;    /* to assign result to, or INVALID_IRTEMP if none */
 
       /* Mem effects; we allow only one R/W/M region to be stated */
-      IREffect mFx;    /* indicates memory effects, if any */
-      IRExpr*  mAddr;  /* of access, or NULL if mFx==Ifx_None */
-      Int      mSize;  /* of access, or zero if mFx==Ifx_None */
+      IREffect  mFx;    /* indicates memory effects, if any */
+      IRExpr*   mAddr;  /* of access, or NULL if mFx==Ifx_None */
+      Int       mSize;  /* of access, or zero if mFx==Ifx_None */
 
       /* Guest state effects; up to N allowed */
       Bool needsBBP; /* True => also pass guest state ptr to callee */
@@ -509,11 +533,11 @@ extern IRDirty* dopyIRDirty ( IRDirty* );
    any value.  The call is marked as accessing neither guest state nor
    memory (hence the "unsafe" designation) -- you can mess with this
    later if need be.*/
-extern IRDirty* unsafeIRDirty_0_N ( Char* name, IRExpr** args );
+extern IRDirty* unsafeIRDirty_0_N ( IRCallee* cee, IRExpr** args );
 
 /* Similarly, make a zero-annotation dirty call which returns a value,
    and assign that to the given temp. */
-extern IRDirty* unsafeIRDirty_1_N ( IRTemp dst, Char* name, IRExpr** args );
+extern IRDirty* unsafeIRDirty_1_N ( IRTemp dst, IRCallee* cee, IRExpr** args );
 
 
 /* ------------------ Statements ------------------ */

@@ -48,6 +48,14 @@ void ppIRConst ( IRConst* con )
    }
 }
 
+void ppIRCallee ( IRCallee* ce )
+{
+   vex_printf("%s", ce->name);
+   if (ce->regparm > 0)
+      vex_printf("[%d]", ce->regparm);
+   vex_printf("{%p}", (void*)ce->addr);
+}
+
 void ppIRArray ( IRArray* arr )
 {
    vex_printf("(%d:%dx", arr->base, arr->nElems);
@@ -237,7 +245,8 @@ void ppIRExpr ( IRExpr* e )
       ppIRConst(e->Iex.Const.con);
       break;
     case Iex_CCall:
-      vex_printf("%s(", e->Iex.CCall.name);
+      ppIRCallee(e->Iex.CCall.cee);
+      vex_printf("(");
       for (i = 0; e->Iex.CCall.args[i] != NULL; i++) {
         ppIRExpr(e->Iex.CCall.args[i]);
         if (e->Iex.CCall.args[i+1] != NULL)
@@ -294,7 +303,8 @@ void ppIRDirty ( IRDirty* d )
       ppIRTemp(d->tmp);
       vex_printf(" = ");
    }
-   vex_printf("%s(", d->name);
+   ppIRCallee(d->cee);
+   vex_printf("(");
    for (i = 0; d->args[i] != NULL; i++) {
       ppIRExpr(d->args[i]);
       if (d->args[i+1] != NULL) {
@@ -453,7 +463,22 @@ IRConst* IRConst_F64i ( ULong f64i )
 }
 
 
-/* Constructors -- IRExpr */
+/* Constructors -- IRCallee */
+
+IRCallee* mkIRCallee ( Int regparm, Char* name, HWord addr )
+{
+   IRCallee* ce = LibVEX_Alloc(sizeof(IRCallee));
+   ce->regparm = regparm;
+   ce->name = name;
+   ce->addr = addr;
+   vassert(regparm >= 0);
+   vassert(name != NULL);
+   vassert(addr != 0);
+   return ce;
+}
+
+
+/* Constructors -- IRArray */
 
 IRArray* mkIRArray ( Int base, IRType elemTy, Int nElems )
 {
@@ -525,10 +550,10 @@ IRExpr* IRExpr_Const ( IRConst* con ) {
    e->Iex.Const.con = con;
    return e;
 }
-IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args ) {
+IRExpr* IRExpr_CCall ( IRCallee* cee, IRType retty, IRExpr** args ) {
    IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
    e->tag             = Iex_CCall;
-   e->Iex.CCall.name  = name;
+   e->Iex.CCall.cee   = cee;
    e->Iex.CCall.retty = retty;
    e->Iex.CCall.args  = args;
    return e;
@@ -570,7 +595,7 @@ IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 ) {
 
 IRDirty* emptyIRDirty ( void ) {
    IRDirty* d = LibVEX_Alloc(sizeof(IRDirty));
-   d->name     = NULL;
+   d->cee      = NULL;
    d->args     = NULL;
    d->tmp      = INVALID_IRTEMP;
    d->mFx      = Ifx_None;
@@ -581,15 +606,15 @@ IRDirty* emptyIRDirty ( void ) {
    return d;
 }
 
-IRDirty* unsafeIRDirty_0_N ( Char* name, IRExpr** args ) {
+IRDirty* unsafeIRDirty_0_N ( IRCallee* cee, IRExpr** args ) {
    IRDirty* d = emptyIRDirty();
-   d->name = name;
+   d->cee  = cee;
    d->args = args;
    return d;
 }
-IRDirty* unsafeIRDirty_1_N ( IRTemp dst, Char* name, IRExpr** args ) {
+IRDirty* unsafeIRDirty_1_N ( IRTemp dst, IRCallee* cee, IRExpr** args ) {
    IRDirty* d = emptyIRDirty();
-   d->name = name;
+   d->cee  = cee;
    d->args = args;
    d->tmp  = dst;
    return d;
@@ -722,6 +747,11 @@ IRConst* dopyIRConst ( IRConst* c )
    }
 }
 
+IRCallee* dopyIRCallee ( IRCallee* ce )
+{
+   return mkIRCallee(ce->regparm, ce->name, ce->addr);
+}
+
 IRArray* dopyIRArray ( IRArray* d )
 {
    return mkIRArray(d->base, d->elemTy, d->nElems);
@@ -751,7 +781,7 @@ IRExpr* dopyIRExpr ( IRExpr* e )
       case Iex_Const: 
          return IRExpr_Const(dopyIRConst(e->Iex.Const.con));
       case Iex_CCall:
-         return IRExpr_CCall(e->Iex.CCall.name,
+         return IRExpr_CCall(dopyIRCallee(e->Iex.CCall.cee),
                              e->Iex.CCall.retty,
                              dopyIRExprVec(e->Iex.CCall.args));
 
@@ -768,7 +798,7 @@ IRDirty* dopyIRDirty ( IRDirty* d )
 {
    Int      i;
    IRDirty* d2 = emptyIRDirty();
-   d2->name  = d->name;
+   d2->cee   = dopyIRCallee(d->cee);
    d2->args  = dopyIRExprVec(d->args);
    d2->tmp   = d->tmp;
    d2->mFx   = d->mFx;
@@ -1144,6 +1174,17 @@ static Bool saneIRArray ( IRArray* arr )
    return True;
 }
 
+static Bool saneIRCallee ( IRCallee* cee )
+{
+   if (cee->name == NULL)
+      return False;
+   if (cee->addr == 0)
+      return False;
+   if (cee->regparm < 0 || cee->regparm > 3)
+      return False;
+   return True;
+}
+
 
 /* Traverse a Stmt/Expr, inspecting IRTemp uses.  Report any out of
    range ones.  Report any which are read and for which the current
@@ -1367,7 +1408,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
       case Ist_Dirty:
          /* Mostly check for various kinds of ill-formed dirty calls. */
          d = stmt->Ist.Dirty.details;
-         if (d->name == NULL) goto bad_dirty;
+         if (d->cee == NULL) goto bad_dirty;
+         if (!saneIRCallee(d->cee)) goto bad_dirty;
          if (d->mFx == Ifx_None) {
             if (d->mAddr != NULL || d->mSize != 0)
                goto bad_dirty;

@@ -128,7 +128,6 @@ TranslateResult LibVEX_Translate (
    /* IN: optionally, two instrumentation functions. */
    IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
    IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
-   HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
@@ -147,11 +146,10 @@ TranslateResult LibVEX_Translate (
    HInstr*      (*genReload)   ( HReg, Int );
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB*, HWord(*)(Char*), HWord(*)(Char*) );
+   HInstrArray* (*iselBB)      ( IRBB* );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
                                          Bool(*)(Addr64), Bool );
    Int          (*emit)        ( UChar*, Int, HInstr* );
-   HWord        (*findHelper)  ( Char* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
@@ -177,7 +175,6 @@ TranslateResult LibVEX_Translate (
    iselBB                 = NULL;
    bbToIR                 = NULL;
    emit                   = NULL;
-   findHelper             = NULL;
    specHelper             = NULL;
    preciseMemExnsFn       = NULL;
    guest_word_size        = Ity_INVALID;
@@ -212,7 +209,6 @@ TranslateResult LibVEX_Translate (
       case InsnSetX86:
          preciseMemExnsFn = guest_x86_state_requires_precise_mem_exns;
          bbToIR           = bbToIR_X86Instr;
-         findHelper       = x86guest_findhelper;
          specHelper       = x86guest_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
 	 guest_word_size  = Ity_I32;
@@ -299,7 +295,7 @@ TranslateResult LibVEX_Translate (
                    " Instruction selection "
                    "------------------------\n");
 
-   vcode = iselBB ( irbb, findHelper, tool_findhelper );
+   vcode = iselBB ( irbb );
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n");

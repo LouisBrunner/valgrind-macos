@@ -129,7 +129,6 @@ TranslateResult LibVEX_Translate (
    /* IN: optionally, two instrumentation functions. */
    IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
    IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
-   HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */

@@ -143,12 +143,6 @@ static IRExpr* bind ( Int binder )
 
 /* This carries around:
 
-   - A function for looking up the address of vex front-end supplied
-     helper functions.
-
-   - A function for looking up the address of tool-supplied helper
-     functions.
-
    - A mapping from IRTemp to IRType, giving the type of any IRTemp we
      might encounter.  This is computed before insn selection starts,
      and does not change.
@@ -173,9 +167,6 @@ static IRExpr* bind ( Int binder )
 
 typedef
    struct {
-      HWord        (*find_helper_vex)(Char*);
-      HWord        (*find_helper_tool)(Char*);
-
       IRTypeEnv*   type_env;
 
       HReg*        vregmap;
@@ -301,47 +292,16 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg )
 }
 
 
-/* Find the address of a helper function, first by consulting vex's
-   own front end, and if that doesn't work, by consulting the
-   tool-supplied lookup function. */
-
-static
-HWord findHelper ( ISelEnv* env, Char* name )
-{
-   HWord helper;
-
-   /* Since the host -- for which we are generating code, and on which
-      the helpers are compiled -- is a 32-bit machine (x86) -- HWord
-      must be a 32-bit type. */
-   vassert(sizeof(HWord) == 4);
-
-   /* First see if vex's own front end has a binding for this fn. */
-   helper = env->find_helper_vex(name);
-
-   /* No?  Try the tool-supplied function. */
-   if (helper == 0 && env->find_helper_tool)
-      helper = env->find_helper_tool(name);
-
-   if (helper != 0)
-      return helper;
-
-   vex_printf("\nvex x86 back end: can't find helper: %s\n", name);
-   vpanic("findHelper(x86,host)");
-}
-
-
 /* Complete the call to a helper function, by calling the 
    helper and clearing the args off the stack. */
 
 static 
-void callHelperAndClearArgs ( ISelEnv* env, Char* name, Int n_arg_ws )
+void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
 {
-   HWord helper = findHelper( env, name );
    vassert(sizeof(HWord) == 4);
-
    addInstr(env, X86Instr_Alu32R(
                     Xalu_MOV,
-                    X86RMI_Imm(helper),
+                    X86RMI_Imm(cee->addr),
                     hregX86_EAX()));
    addInstr(env, X86Instr_Call(hregX86_EAX()));
    if (n_arg_ws > 0)
@@ -919,7 +879,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
 
       /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, e->Iex.CCall.name, n_arg_ws );
+      callHelperAndClearArgs( env, e->Iex.CCall.cee, n_arg_ws );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1654,7 +1614,7 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
 
       /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, e->Iex.CCall.name, n_arg_ws );
+      callHelperAndClearArgs( env, e->Iex.CCall.cee, n_arg_ws );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
@@ -2173,7 +2133,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
 
       /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, d->name, n_arg_ws );
+      callHelperAndClearArgs( env, d->cee, n_arg_ws );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == INVALID_IRTEMP)
@@ -2237,9 +2197,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb, 
-                          HWord(*find_helper_vex)(Char*),
-                          HWord(*find_helper_tool)(Char*) )
+HInstrArray* iselBB_X86 ( IRBB* bb )
 {
    Int     i, j;
    HReg    hreg, hregHI;
@@ -2247,10 +2205,6 @@ HInstrArray* iselBB_X86 ( IRBB* bb,
    /* Make up an initial environment to use. */
    ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
-
-   /* Register helper-function-finders. */
-   env->find_helper_vex  = find_helper_vex;
-   env->find_helper_tool = find_helper_tool;
 
    /* Set up output code array. */
    env->code = newHInstrArray();

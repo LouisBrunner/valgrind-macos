@@ -44,6 +44,8 @@
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
 #include "core.h"
 
+// Nb: the last line is repeated -- once for the declaration, once for the
+// definition.  If we don't have the declaration there GCC complains.
 #define LIBALIAS(ret, name, args) \
    ret VG_INTERCEPT(soname:libstdc++*, __libc_##name) args \
       __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
@@ -60,6 +62,7 @@
    ret VG_INTERCEPT(soname:libstdc++*, ##name) args \
       __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
                      visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, ##name) args; \
    ret VG_INTERCEPT(soname:libc.so.6, ##name) args
 
 extern void _exit(int);
@@ -82,8 +85,8 @@ static void init(void) __attribute__((constructor));
 // pretty ugly.  It's much better if this is the only file that needs them.
 
 __attribute__((format(__printf__, 1, 2)))
-int
-VALGRIND_INTERNAL_PRINTF(char *format, ...)
+static int
+internal_printf(char *format, ...)
 {
    UWord _qzz_res = 0;
    va_list vargs;
@@ -96,7 +99,7 @@ VALGRIND_INTERNAL_PRINTF(char *format, ...)
 
 #define MALLOC_TRACE(format, args...)  \
    if (info.clo_trace_malloc)          \
-      VALGRIND_INTERNAL_PRINTF(format, ## args )
+      internal_printf(format, ## args )
 
 #define MAYBE_SLOPPIFY(n)           \
    if (info.clo_sloppy_malloc) {    \
@@ -207,7 +210,7 @@ LIBALIAS(void*, realloc, ( void* ptrV, SizeT new_size ))
    if (new_size <= 0) {
       VG_INTERCEPT(soname:libc.so.6, free)(ptrV);
       if (info.clo_trace_malloc) 
-         VALGRIND_INTERNAL_PRINTF(" = 0" );
+         internal_printf(" = 0" );
       return NULL;
    }   
    if (!init_done) init();
@@ -298,7 +301,9 @@ static void panic(const char *str)
    *(int *)0 = 'x';
 }
 
+// As for LIBALIAS, we have the declaration to shut GCC up.
 #define PANIC(x) \
+   void VG_INTERCEPT(soname:libc.so.6, ## x)(void); \
    void VG_INTERCEPT(soname:libc.so.6, ## x)(void) \
    { \
       panic(#x); \

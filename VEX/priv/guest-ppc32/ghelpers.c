@@ -83,8 +83,6 @@ UInt ppc32g_calculate_cr7_all ( UInt op, UInt val, UInt xer_so )
 UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
                                UInt argL, UInt argR, UInt ov )
 {
-   ULong ul_tmp=0;
-   
    switch (op) {
    case PPC32G_FLAG_OP_ADD:     // addo, addc
    case PPC32G_FLAG_OP_ADDE:    // addeo
@@ -105,9 +103,14 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
    case PPC32G_FLAG_OP_DIVWU:   // divwuo
       return (argR == 0) ? 1:0;
       
-   case PPC32G_FLAG_OP_MULLW:   // mullwo
-      ul_tmp = (ULong)argL * (ULong)argR;
-      return (res != res) ? 1:0;
+   case PPC32G_FLAG_OP_MULLW: { // mullwo
+      /* OV true if result can't be represented in 32 bits
+         i.e sHi != sign extension of sLo */
+      Long l_res = (Long)((Int)argL) * (Long)((Int)argR);
+      Int sHi = (Int)(l_res >> 32);
+      Int sLo = (Int)l_res;
+      return (sHi != (sLo >> /*s*/ 31)) ? 1:0;
+   }
 
    case PPC32G_FLAG_OP_NEG:     // nego
       return (argL == 0x80000000) ? 1:0;

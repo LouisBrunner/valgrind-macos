@@ -2732,6 +2732,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          goto done;
       }
       if (i->Ain.Store.sz == 1) {
+         /* This is one place where it would be wrong to skip emitting
+            a rex byte of 0x40, since the mere presence of rex changes
+            the meaning of the byte register access.  Be careful. */
 	 *p++ = clearWBit( rexAMode_M( i->Ain.Store.src, i->Ain.Store.dst) );
          *p++ = 0x88;
          p = doAMode_M(p, i->Ain.Store.src, i->Ain.Store.dst);

@@ -3620,22 +3620,26 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* CVTTSD2SI -- convert a double-precision float value in memory or
-      xmm reg to int and put it in an ireg. */
-   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x2C) {
+   /* CVTTSD2SI (0xF2) -- convert a double-precision float value in
+      memory or xmm reg to int and put it in an ireg. */
+   /* CVTTSS2SI (0xF3) -- convert a single-precision float value in
+      memory or xmm reg to int and put it in an ireg. */
+   if ((insn[0] == 0xF2 || insn[0] == 0xF3)
+       && insn[1] == 0x0F && insn[2] == 0x2C) {
       vg_assert(sz == 4);
       modrm = insn[3];
       if (epartIsReg(modrm)) {
          /* We're moving a value in an xmm reg to an ireg. */
          eip += 4;
 	 t1 = newTemp(cb);
+         /* sz is 4 for both CVTTSD2SI and CVTTSS2SI. */
          uInstr3(cb, SSE3g_RegWr, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
                      TempReg, t1 );
          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
 	 if (dis)
-            VG_(printf)("cvttsd2si %s, %s\n", 
+            VG_(printf)("cvtts{s,d}2si %s, %s\n", 
                         nameXMMReg(eregOfRM(modrm)),
                         nameIReg(4,gregOfRM(modrm)) );
       } else {
@@ -3702,6 +3706,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
       vg_assert(sz == 4);
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, "divss",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MULSS -- multiply low 4 bytes of XMM reg. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x59) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, "mulss",
                                       insn[0], insn[1], insn[2] );
       goto decode_success;
    }
@@ -3800,8 +3812,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* PADDgg (src)xmmreg-or-mem, (dst)xmmreg */
    /* FC is B, FD is W, FE is D */
    if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0xFE) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "paddd",
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xFC || insn[1] == 0xFD || insn[1] == 0xFE)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padd{b,w,d}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }

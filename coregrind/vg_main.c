@@ -1312,6 +1312,18 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
       what, ld_preload_str, ld_library_path_str, 
       p_prel, p_path, VG_LIBDIR 
    );
+   VG_(printf)(
+      "\n"
+      "Note that this is often caused by mis-installation of valgrind.\n"
+      "Correct installation procedure is:\n"
+      "   ./configure --prefix=/install/dir\n"
+      "   make install\n"
+      "And then use /install/dir/bin/valgrind\n"
+      "Moving the installation directory elsewhere after 'make install'\n"
+      "will cause the above error.  Hand-editing the paths in the shell\n"
+      "scripts is also likely to cause problems.\n"
+      "\n"
+   );
    VG_(panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
 }
 

@@ -74,10 +74,9 @@
    fun:dl_open_worker
 }
 { 
-   __rawmemchr/internal_getgrgid_r(Cond)
+   __rawmemchr(Cond)
    Cond 
    fun:__rawmemchr
-   fun:internal_getgrgid_r
 } 
 { 
    _IO_vfprintf/__strnlen(Cond)

@@ -132,6 +132,8 @@ void eflags_to_vex ( UInt eflags_native,
 extern 
 UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state );
 
+extern
+void vex_initialise_x87 ( /*MOD*/VexGuestX86State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_X86_H */
 

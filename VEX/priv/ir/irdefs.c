@@ -578,8 +578,8 @@ void ppIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
       case Ist_IMark:
-         vex_printf("IMark(0x%llx, %d)", s->Ist.IMark.addr, 
-                                         s->Ist.IMark.len);
+         vex_printf( "------ IMark(0x%llx, %d) ------", 
+                     s->Ist.IMark.addr, s->Ist.IMark.len);
          break;
       case Ist_Put:
          vex_printf( "PUT(%d) = ", s->Ist.Put.offset);

@@ -472,11 +472,12 @@ void thread_exit_wrapper ( void* ret_val )
    root function return a value, it arranges to run the thread's
    cleanup handlers and exit correctly. */
 
-/* Struct used to convey info from pthread_create to
-   thread_wrapper. */
+/* Struct used to convey info from pthread_create to thread_wrapper.
+   Must be careful not to pass to the child thread any pointers to
+   objects which might be on the parent's stack.  */
 typedef
    struct {
-      pthread_attr_t* attr;
+      int   attr__detachstate;
       void* (*root_fn) ( void* );
       void* arg;
    }
@@ -490,15 +491,15 @@ static
 __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
-   int res;
-   pthread_attr_t* attr;
+   int   res;
+   int   attr__detachstate;
    void* (*root_fn) ( void* );
    void* arg;
    void* ret_val;
 
-   attr    = info->attr;
-   root_fn = info->root_fn;
-   arg     = info->arg;
+   attr__detachstate = info->attr__detachstate;
+   root_fn           = info->root_fn;
+   arg               = info->arg;
 
    /* Free up the arg block that pthread_create malloced. */
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
@@ -506,12 +507,11 @@ void thread_wrapper ( NewThreadInfo* info )
    my_assert(res == 0);
 
    /* Minimally observe the attributes supplied. */
-   if (attr) {
-      my_assert(attr->__detachstate == PTHREAD_CREATE_DETACHED
-             || attr->__detachstate == PTHREAD_CREATE_JOINABLE);
-      if (attr->__detachstate == PTHREAD_CREATE_DETACHED)
-         pthread_detach(pthread_self());
-   }
+   if (attr__detachstate != PTHREAD_CREATE_DETACHED
+       && attr__detachstate != PTHREAD_CREATE_JOINABLE)
+      pthread_error("thread_wrapper: invalid attr->__detachstate");
+   if (attr__detachstate == PTHREAD_CREATE_DETACHED)
+      pthread_detach(pthread_self());
 
    /* The root function might not return.  But if it does we simply
       move along to thread_exit_wrapper.  All other ways out for the
@@ -564,7 +564,11 @@ pthread_create (pthread_t *__restrict __thread,
                            sizeof(NewThreadInfo), 0, 0, 0);
    my_assert(info != NULL);
 
-   info->attr    = (pthread_attr_t*)__attr;
+   if (__attr)
+      info->attr__detachstate = __attr->__detachstate;
+   else 
+      info->attr__detachstate = PTHREAD_CREATE_JOINABLE;
+
    info->root_fn = __start_routine;
    info->arg     = __arg;
    VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,

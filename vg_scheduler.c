@@ -143,6 +143,11 @@ static void do_nontrivial_clientreq ( ThreadId tid );
 
 static void scheduler_sanity ( void );
 
+static void do_pthread_mutex_unlock ( ThreadId, 
+                                      void* /* pthread_cond_t* */ );
+static void do_pthread_mutex_lock ( ThreadId, Bool, 
+                                    void* /* pthread_cond_t* */ );
+
 
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
@@ -590,14 +595,16 @@ Bool fd_is_blockful ( Int fd )
 
 
 
-/* Do a purely thread-local request for tid, and put the result in its
-   %EDX, without changing its scheduling state in any way, nor that of
-   any other threads.  Return True if so.
+/* Possibly do a for tid.  Return values are:
 
-   If the request is non-trivial, return False; a more capable but
-   slower mechanism will deal with it.  
+   True = request done.  Thread may or may not be still runnable;
+   caller must check.  If it is still runnable, the result will be in
+   the thread's %EDX as expected.
+
+   False = request not done.  A more capable but slower mechanism will
+   deal with it.  
 */
-static 
+static
 Bool maybe_do_trivial_clientreq ( ThreadId tid )
 {
 #  define SIMPLE_RETURN(vvv)                      \
@@ -654,6 +661,16 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          SIMPLE_RETURN(VG_(clo_trace_pthread_level));
       case VG_USERREQ__READ_MILLISECOND_TIMER:
          SIMPLE_RETURN(VG_(read_millisecond_timer)());
+
+      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
+         do_pthread_mutex_unlock( tid, (void *)(arg[1]) );
+         return True;
+
+      /* This may make thread tid non-runnable, but the scheduler
+         checks for that on return from this function. */
+      case VG_USERREQ__PTHREAD_MUTEX_LOCK:
+         do_pthread_mutex_lock( tid, False, (void *)(arg[1]) );
+         return True;
 
       default:
          /* Too hard; wimp out. */
@@ -1092,6 +1109,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
       /* ======================= Phase 0 of 3 =======================
 	 Be paranoid.  Always a good idea. */
+     stage1:
       scheduler_sanity();
 
       /* ======================= Phase 1 of 3 =======================
@@ -1242,18 +1260,20 @@ VgSchedReturnCode VG_(scheduler) ( void )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            Bool is_triv = maybe_do_trivial_clientreq(tid);
-            if (is_triv) {
-               /* NOTE: a trivial request is something like a call to
-                  malloc() or free().  It DOES NOT change the
-                  Runnability of this thread nor the status of any
-                  other thread; it is purely thread-local. */
-               continue; /* with this thread */
+            Bool done = maybe_do_trivial_clientreq(tid);
+            if (done) {
+               /* The request is done.  We try and continue with the
+                  same thread if still runnable.  If not, go back to
+                  Stage 1 to select a new thread to run. */
+               if (vg_threads[tid].status == VgTs_Runnable)
+                  continue; /* with this thread */
+               else
+                  goto stage1;
 	    }
 	 }
 
-	 /* It's a non-trivial event.  Give up running this thread and
-            handle things the expensive way. */
+	 /* It's an event we can't quickly deal with.  Give up running
+            this thread and handle things the expensive way. */
 	 break;
       }
 
@@ -1753,12 +1773,14 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
 static
 void do_pthread_mutex_lock( ThreadId tid, 
                             Bool is_trylock, 
-                            pthread_mutex_t *mutex )
+                            void* /* pthread_mutex_t* */ mutexV )
 {
    Char  msg_buf[100];
    Char* caller
       = is_trylock ? "pthread_mutex_lock   "
                    : "pthread_mutex_trylock";
+
+   pthread_mutex_t* mutex = (pthread_mutex_t*)mutexV;
 
    if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "%s    mx %p ...", caller, mutex );
@@ -1847,9 +1869,10 @@ void do_pthread_mutex_lock( ThreadId tid,
 
 static
 void do_pthread_mutex_unlock ( ThreadId tid,
-                               pthread_mutex_t *mutex )
+                               void* /* pthread_mutex_t* */ mutexV )
 {
    Char msg_buf[100];
+   pthread_mutex_t* mutex = (pthread_mutex_t*)mutexV;
 
    if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "pthread_mutex_unlock     mx %p ...", mutex );

@@ -4329,7 +4329,7 @@ POST(pipe)
 
    MAYBE_PRINTF("SYSCALL[%d]       pipe --> %d (rd %d, wr %d)\n", 
 		VG_(getpid)(), res,
-		((UInt*)arg1)[0], ((UInt*)arg1)[1] );
+		((Int*)arg1)[0], ((Int*)arg1)[1] );
 }
 
 PRE(poll)
@@ -4695,7 +4695,7 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.socketpair(args)", 
 		     arg2, 4*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_write, tid, "socketcall.socketpair(sv)", 
-		     ((UInt*)arg2)[3], 2*sizeof(int) );
+		     ((UWord*)arg2)[3], 2*sizeof(int) );
       break;
 
    case VKI_SYS_SOCKET:
@@ -4710,7 +4710,7 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.bind(args)", 
 		     arg2, 3*sizeof(Addr) );
       pre_mem_read_sockaddr( tid, "socketcall.bind(my_addr.%s)",
-			     (struct vki_sockaddr *) (((UInt*)arg2)[1]), ((UInt*)arg2)[2]);
+			     (struct vki_sockaddr *) (((UWord*)arg2)[1]), ((UWord*)arg2)[2]);
       break;
                
    case VKI_SYS_LISTEN:
@@ -4724,8 +4724,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.accept(args)", 
 		     arg2, 3*sizeof(Addr) );
       {
-	 Addr addr_p     = ((UInt*)arg2)[1];
-	 Addr addrlen_p  = ((UInt*)arg2)[2];
+	 Addr addr_p     = ((UWord*)arg2)[1];
+	 Addr addrlen_p  = ((UWord*)arg2)[2];
 	 if (addr_p != (Addr)NULL) 
 	    buf_and_len_pre_check ( tid, addr_p, addrlen_p,
 				    "socketcall.accept(addr)",
@@ -4741,10 +4741,10 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.sendto(args)", arg2, 
 		     6*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.sendto(msg)",
-		     ((UInt*)arg2)[1], /* msg */
-		     ((UInt*)arg2)[2]  /* len */ );
+		     ((UWord*)arg2)[1], /* msg */
+		     ((UWord*)arg2)[2]  /* len */ );
       pre_mem_read_sockaddr( tid, "socketcall.sendto(to.%s)",
-			     (struct vki_sockaddr *) (((UInt*)arg2)[4]), ((UInt*)arg2)[5]);
+			     (struct vki_sockaddr *) (((UWord*)arg2)[4]), ((UWord*)arg2)[5]);
       break;
 
    case VKI_SYS_SEND:
@@ -4752,8 +4752,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.send(args)", arg2,
 		     4*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.send(msg)",
-		     ((UInt*)arg2)[1], /* msg */
-		     ((UInt*)arg2)[2]  /* len */ );
+		     ((UWord*)arg2)[1], /* msg */
+		     ((UWord*)arg2)[2]  /* len */ );
       break;
 
    case VKI_SYS_RECVFROM:
@@ -4762,10 +4762,10 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.recvfrom(args)", 
 		     arg2, 6*sizeof(Addr) );
       {
-	 Addr buf_p      = ((UInt*)arg2)[1];
-	 Int  len        = ((UInt*)arg2)[2];
-	 Addr from_p     = ((UInt*)arg2)[4];
-	 Addr fromlen_p  = ((UInt*)arg2)[5];
+	 Addr buf_p      = ((UWord*)arg2)[1];
+	 Int  len        = ((UWord*)arg2)[2];
+	 Addr from_p     = ((UWord*)arg2)[4];
+	 Addr fromlen_p  = ((UWord*)arg2)[5];
 
 	 SYSCALL_TRACK( pre_mem_write, tid, "socketcall.recvfrom(buf)", 
 			buf_p, len );
@@ -4786,8 +4786,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.recv(args)", 
 		     arg2, 4*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_write, tid, "socketcall.recv(buf)", 
-		     ((UInt*)arg2)[1], /* buf */
-		     ((UInt*)arg2)[2]  /* len */ );
+		     ((UWord*)arg2)[1], /* buf */
+		     ((UWord*)arg2)[2]  /* len */ );
       break;
 
    case VKI_SYS_CONNECT:
@@ -4797,11 +4797,11 @@ PRE(socketcall)
 		     arg2, 3*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_read, tid, 
 		     "socketcall.connect(serv_addr.sa_family)",
-		     ((UInt*)arg2)[1], /* serv_addr */
+		     ((UWord*)arg2)[1], /* serv_addr */
 		     sizeof(vki_sa_family_t));
       pre_mem_read_sockaddr( tid,
 			     "socketcall.connect(serv_addr.%s)",
-			     (struct vki_sockaddr *) (((UInt*)arg2)[1]), ((UInt*)arg2)[2]);
+			     (struct vki_sockaddr *) (((UWord*)arg2)[1]), ((UWord*)arg2)[2]);
       break;
 
    case VKI_SYS_SETSOCKOPT:
@@ -4810,8 +4810,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.setsockopt(args)", 
 		     arg2, 5*sizeof(Addr) );
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.setsockopt(optval)",
-		     ((UInt*)arg2)[3], /* optval */
-		     ((UInt*)arg2)[4]  /* optlen */ );
+		     ((UWord*)arg2)[3], /* optval */
+		     ((UWord*)arg2)[4]  /* optlen */ );
       break;
 
    case VKI_SYS_GETSOCKOPT:
@@ -4820,8 +4820,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.getsockopt(args)", 
 		     arg2, 5*sizeof(Addr) );
       {
-	 Addr optval_p  = ((UInt*)arg2)[3];
-	 Addr optlen_p  = ((UInt*)arg2)[4];
+	 Addr optval_p  = ((UWord*)arg2)[3];
+	 Addr optlen_p  = ((UWord*)arg2)[4];
 	 /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
 	 if (optval_p != (Addr)NULL) 
 	    buf_and_len_pre_check ( tid, optval_p, optlen_p,
@@ -4835,8 +4835,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.getsockname(args)",
 		     arg2, 3*sizeof(Addr) );
       {
-	 Addr name_p     = ((UInt*)arg2)[1];
-	 Addr namelen_p  = ((UInt*)arg2)[2];
+	 Addr name_p     = ((UWord*)arg2)[1];
+	 Addr namelen_p  = ((UWord*)arg2)[2];
 
 	 /* Nb: name_p cannot be NULL */
 	 buf_and_len_pre_check ( tid, name_p, namelen_p,
@@ -4850,8 +4850,8 @@ PRE(socketcall)
       SYSCALL_TRACK( pre_mem_read, tid, "socketcall.getpeername(args)",
 		     arg2, 3*sizeof(Addr) );
       {
-	 Addr name_p     = ((UInt*)arg2)[1];
-	 Addr namelen_p  = ((UInt*)arg2)[2];
+	 Addr name_p     = ((UWord*)arg2)[1];
+	 Addr namelen_p  = ((UWord*)arg2)[2];
 
 	 /* Nb: name_p cannot be NULL */
 	 buf_and_len_pre_check ( tid, name_p, namelen_p,
@@ -4911,16 +4911,16 @@ POST(socketcall)
    switch (arg1 /* request */) {
 
    case VKI_SYS_SOCKETPAIR: {
-      Int fd1 = ((UInt*)((UInt*)arg2)[3])[0];
-      Int fd2 = ((UInt*)((UInt*)arg2)[3])[1];
-      VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
+      Int fd1 = ((Int*)((UWord*)arg2)[3])[0];
+      Int fd2 = ((Int*)((UWord*)arg2)[3])[1];
+      VG_TRACK( post_mem_write, ((UWord*)arg2)[3], 2*sizeof(int) );
       if (!fd_allowed(fd1, "socketcall.socketpair", tid, True) ||
           !fd_allowed(fd2, "socketcall.socketpair", tid, True)) {
          VG_(close)(fd1);
          VG_(close)(fd2);
          set_result( -VKI_EMFILE );
       } else {
-         VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
+         VG_TRACK( post_mem_write, ((UWord*)arg2)[3], 2*sizeof(int) );
          if (VG_(clo_track_fds)) {
             record_fd_open(tid, fd1, NULL);
             record_fd_open(tid, fd2, NULL);
@@ -4954,8 +4954,8 @@ POST(socketcall)
 	 VG_(close)(res);
 	 set_result( -VKI_EMFILE );
       } else {
-	 Addr addr_p     = ((UInt*)arg2)[1];
-	 Addr addrlen_p  = ((UInt*)arg2)[2];
+	 Addr addr_p     = ((UWord*)arg2)[1];
+	 Addr addrlen_p  = ((UWord*)arg2)[2];
 
 	 if (addr_p != (Addr)NULL) 
 	    buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
@@ -4974,10 +4974,10 @@ POST(socketcall)
 
    case VKI_SYS_RECVFROM:
       {
-	 Addr buf_p      = ((UInt*)arg2)[1];
-	 Int  len        = ((UInt*)arg2)[2];
-	 Addr from_p     = ((UInt*)arg2)[4];
-	 Addr fromlen_p  = ((UInt*)arg2)[5];
+	 Addr buf_p      = ((UWord*)arg2)[1];
+	 Int  len        = ((UWord*)arg2)[2];
+	 Addr from_p     = ((UWord*)arg2)[4];
+	 Addr fromlen_p  = ((UWord*)arg2)[5];
 
 	 if (from_p != (Addr)NULL) 
 	    buf_and_len_post_check ( tid, res, from_p, fromlen_p,
@@ -4988,9 +4988,9 @@ POST(socketcall)
 
    case VKI_SYS_RECV:
       if (res >= 0 
-	  && ((UInt*)arg2)[1] != (UWord)NULL) {
-	 VG_TRACK( post_mem_write, ((UInt*)arg2)[1], /* buf */
-		   ((UInt*)arg2)[2]  /* len */ );
+	  && ((UWord*)arg2)[1] != (UWord)NULL) {
+	 VG_TRACK( post_mem_write, ((UWord*)arg2)[1], /* buf */
+		   ((UWord*)arg2)[2]  /* len */ );
       }
       break;
 
@@ -5002,8 +5002,8 @@ POST(socketcall)
 
    case VKI_SYS_GETSOCKOPT:
       {
-	 Addr optval_p  = ((UInt*)arg2)[3];
-	 Addr optlen_p  = ((UInt*)arg2)[4];
+	 Addr optval_p  = ((UWord*)arg2)[3];
+	 Addr optlen_p  = ((UWord*)arg2)[4];
 
 	 if (optval_p != (Addr)NULL) 
 	    buf_and_len_post_check ( tid, res, optval_p, optlen_p,
@@ -5013,8 +5013,8 @@ POST(socketcall)
 
    case VKI_SYS_GETSOCKNAME:
       {
-	 Addr name_p     = ((UInt*)arg2)[1];
-	 Addr namelen_p  = ((UInt*)arg2)[2];
+	 Addr name_p     = ((UWord*)arg2)[1];
+	 Addr namelen_p  = ((UWord*)arg2)[2];
 
 	 buf_and_len_post_check ( tid, res, name_p, namelen_p,
 				  "socketcall.getsockname(namelen_out)" );
@@ -5023,8 +5023,8 @@ POST(socketcall)
 
    case VKI_SYS_GETPEERNAME:
       {
-	 Addr name_p     = ((UInt*)arg2)[1];
-	 Addr namelen_p  = ((UInt*)arg2)[2];
+	 Addr name_p     = ((UWord*)arg2)[1];
+	 Addr namelen_p  = ((UWord*)arg2)[2];
 
 	 buf_and_len_post_check ( tid, res, name_p, namelen_p,
 				  "socketcall.getpeername(namelen_out)" );

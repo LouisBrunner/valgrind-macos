@@ -282,12 +282,10 @@ EOF
 fi
 
 
-
-
-
 AC_MSG_CHECKING([if this is an NPTL-based system])
-
-cat<<EOG > nptltest.c
+safe_LIBS="$LIBS"
+LIBS="$LIBS -lpthread"
+AC_RUN_IFELSE([
 #include <pthread.h>
 #include <stdio.h>
 int main (int argc, char * argv [])
@@ -298,30 +296,26 @@ int main (int argc, char * argv [])
    if (ret == 0) {
       ret = pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED);
      if (ret == 0) /* nptl */
-         printf("yes");
-     else          /* not nptl */
-         printf("no");
          return 0;
+     else          /* not nptl */
+         return 1;
    }
    return 1;
 }
-EOG
-
-${CC} -o nptltest nptltest.c -lpthread >&5 2>&1
-have_nptl=`./nptltest`
-
-if test "$?" != 0 ; then
+],
+[
+  NPTL_THREADING="yes"
+  AC_MSG_RESULT([yes])
+],
+[
+  NPTL_THREADING="no"
+  AC_MSG_RESULT([no])
+],
+[
   AC_MSG_RESULT([couldn't run test program])
   NPTL_THREADING="no"
-else
-  if test "${have_nptl}" == 'yes' ; then
-     NPTL_THREADING="yes"
-     AC_MSG_RESULT([yes])
-  else
-     NPTL_THREADING="no"
-     AC_MSG_RESULT([no])
-  fi
-fi
+])
+LIBS=$safe_LIBS
 
 AC_SUBST(NPTL_THREADING)
 

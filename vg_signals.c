@@ -365,6 +365,17 @@ static void VG_(oursignalhandler) ( Int sigNo )
    Int           dummy_local;
    vki_ksigset_t saved_procmask;
 
+   /*
+   if (sigNo == VKI_SIGUSR1) {
+      VG_(printf)("YOWZA!  SIGUSR1\n\n");
+      VG_(clo_trace_pthread_level) = 2;
+      VG_(clo_trace_sched) = True;
+      VG_(clo_trace_syscalls) = True;
+      VG_(clo_trace_signals) = True;
+      return;
+   }
+   */
+
    if (VG_(clo_trace_signals)) {
       VG_(start_msg)(Vg_DebugMsg);
       VG_(add_to_msg)("signal %d arrived ... ", sigNo );
@@ -541,6 +552,9 @@ void VG_(sigstartup_actions) ( void )
          vg_assert(ret == 0);
       }
    }
+
+   /* DEBUGGING HACK */
+   /* VG_(ksignal)(VKI_SIGUSR1, &VG_(oursignalhandler)); */
 
    /* Finally, restore the blocking mask. */
    VG_(restore_host_signals)( &saved_procmask );

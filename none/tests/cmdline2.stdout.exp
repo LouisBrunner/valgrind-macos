@@ -50,6 +50,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --trace-sched=no|yes      show thread scheduler details? [no]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --command-line-only=no|yes  only use command line options [no]
+
     --vex-iropt-verbosity             0 .. 9 [0]
     --vex-iropt-level                 0 .. 2 [2]
     --vex-iropt-precise-memory-exns   [no]

@@ -1512,14 +1512,14 @@ void usage ( Bool debug_help )
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
-"\n"
-"    --vex-iropt-verbosity             0 .. 9 [0]\n"
-"    --vex-iropt-level                 0 .. 2 [2]\n"
-"    --vex-iropt-precise-memory-exns   [no]\n"
 #if 0
 "    --model-pthreads=yes|no   model the pthreads library [no]\n"
 #endif
 "    --command-line-only=no|yes  only use command line options [no]\n"
+"\n"
+"    --vex-iropt-verbosity             0 .. 9 [0]\n"
+"    --vex-iropt-level                 0 .. 2 [2]\n"
+"    --vex-iropt-precise-memory-exns   [no]\n"
 "    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"
 "    --vex-guest-max-insns             1 .. 100 [50]\n"
 "    --vex-guest-chase-thresh          0 .. 99  [10]\n"

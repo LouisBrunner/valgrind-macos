@@ -5,7 +5,7 @@ dir=`dirname $0`
 $dir/../../tests/filter_stderr_basic |
 
 # Remove "Corecheck, ..." line and the following copyright line.
-sed "/^Nulgrind, a binary JIT-compiler./ , /./ d"
+sed "/^Nulgrind, a binary JIT-compiler./ , /./ d" |
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses

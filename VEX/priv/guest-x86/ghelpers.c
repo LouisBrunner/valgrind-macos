@@ -51,7 +51,7 @@
    Only change the signatures of these helper functions very
    carefully.  If you change the signature here, you'll have to change
    the parameters passed to it in the IR calls constructed by
-   x86toIR.c.
+   guest-x86/toIR.c.
 
    Some of this code/logic is derived from QEMU, which is copyright
    Fabrice Bellard, licensed under the LGPL.  It is used with
@@ -64,38 +64,38 @@
 
 
 static const UChar parity_table[256] = {
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
-    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0,
+    0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
 };
 
 /* n must be a constant to be efficient */
@@ -142,7 +142,7 @@ inline static Int lshift ( Int x, Int n )
      zf = ((DATA_UTYPE)res == 0) << 6;				\
      sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
      of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
-                 12 - DATA_BITS) & CC_MASK_O;			\
+                 12 - DATA_BITS) & X86G_CC_MASK_O;		\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -163,7 +163,7 @@ inline static Int lshift ( Int x, Int n )
      zf = ((DATA_UTYPE)res == 0) << 6;				\
      sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
      of = lshift((argL ^ argR) & (argL ^ res),	 		\
-                 12 - DATA_BITS) & CC_MASK_O; 			\
+                 12 - DATA_BITS) & X86G_CC_MASK_O; 		\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -175,7 +175,7 @@ inline static Int lshift ( Int x, Int n )
    PREAMBLE(DATA_BITS);						\
    { Int cf, pf, af, zf, sf, of;				\
      Int argL, argR, oldC, res;		       			\
-     oldC = CC_NDEP & CC_MASK_C;				\
+     oldC = CC_NDEP & X86G_CC_MASK_C;				\
      argL = CC_DEP1;						\
      argR = CC_DEP2 ^ oldC;	       				\
      res  = (argL + argR) + oldC;				\
@@ -188,7 +188,7 @@ inline static Int lshift ( Int x, Int n )
      zf = ((DATA_UTYPE)res == 0) << 6;				\
      sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
      of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
-                  12 - DATA_BITS) & CC_MASK_O;			\
+                  12 - DATA_BITS) & X86G_CC_MASK_O;		\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -200,7 +200,7 @@ inline static Int lshift ( Int x, Int n )
    PREAMBLE(DATA_BITS);						\
    { Int cf, pf, af, zf, sf, of;				\
      Int argL, argR, oldC, res;		       			\
-     oldC = CC_NDEP & CC_MASK_C;				\
+     oldC = CC_NDEP & X86G_CC_MASK_C;				\
      argL = CC_DEP1;						\
      argR = CC_DEP2 ^ oldC;	       				\
      res  = (argL - argR) - oldC;				\
@@ -213,7 +213,7 @@ inline static Int lshift ( Int x, Int n )
      zf = ((DATA_UTYPE)res == 0) << 6;				\
      sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
      of = lshift((argL ^ argR) & (argL ^ res), 			\
-                 12 - DATA_BITS) & CC_MASK_O;			\
+                 12 - DATA_BITS) & X86G_CC_MASK_O;		\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -244,7 +244,7 @@ inline static Int lshift ( Int x, Int n )
      res  = CC_DEP1;						\
      argL = res - 1;						\
      argR = 1;							\
-     cf = CC_NDEP & CC_MASK_C;					\
+     cf = CC_NDEP & X86G_CC_MASK_C;				\
      pf = parity_table[(UChar)res];				\
      af = (res ^ argL ^ argR) & 0x10;				\
      zf = ((DATA_UTYPE)res == 0) << 6;				\
@@ -264,7 +264,7 @@ inline static Int lshift ( Int x, Int n )
      res  = CC_DEP1;						\
      argL = res + 1;						\
      argR = 1;							\
-     cf = CC_NDEP & CC_MASK_C;					\
+     cf = CC_NDEP & X86G_CC_MASK_C;				\
      pf = parity_table[(UChar)res];				\
      af = (res ^ argL ^ argR) & 0x10;				\
      zf = ((DATA_UTYPE)res == 0) << 6;				\
@@ -281,13 +281,14 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    { Int cf, pf, af, zf, sf, of;				\
-     cf = (CC_DEP2 >> (DATA_BITS - 1)) & CC_MASK_C;		\
+     cf = (CC_DEP2 >> (DATA_BITS - 1)) & X86G_CC_MASK_C;	\
      pf = parity_table[(UChar)CC_DEP1];				\
      af = 0; /* undefined */					\
      zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
      sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
      /* of is defined if shift count == 1 */			\
-     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;\
+     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) 		\
+          & X86G_CC_MASK_O;					\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -304,7 +305,8 @@ inline static Int lshift ( Int x, Int n )
      zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
      sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
      /* of is defined if shift count == 1 */			\
-     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;\
+     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS)		\
+          & X86G_CC_MASK_O;					\
      return cf | pf | af | zf | sf | of;			\
    }								\
 }
@@ -317,9 +319,10 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    { Int fl 							\
-        = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
-          | (CC_MASK_C & CC_DEP1)				\
-          | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
+        = (CC_NDEP & ~(X86G_CC_MASK_O | X86G_CC_MASK_C))	\
+          | (X86G_CC_MASK_C & CC_DEP1)				\
+          | (X86G_CC_MASK_O & (lshift(CC_DEP1,  		\
+                                      11-(DATA_BITS-1)) 	\
                      ^ lshift(CC_DEP1, 11)));			\
      return fl;							\
    }								\
@@ -333,9 +336,10 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    { Int fl 							\
-        = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
-          | (CC_MASK_C & (CC_DEP1 >> (DATA_BITS-1)))		\
-          | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
+        = (CC_NDEP & ~(X86G_CC_MASK_O | X86G_CC_MASK_C))	\
+          | (X86G_CC_MASK_C & (CC_DEP1 >> (DATA_BITS-1)))	\
+          | (X86G_CC_MASK_O & (lshift(CC_DEP1, 			\
+                                      11-(DATA_BITS-1)) 	\
                      ^ lshift(CC_DEP1, 11-(DATA_BITS-1)+1)));	\
      return fl;							\
    }								\
@@ -388,8 +392,8 @@ inline static Int lshift ( Int x, Int n )
 
 #if PROFILE_EFLAGS
 
-static UInt tabc[CC_OP_NUMBER];
-static UInt tab[CC_OP_NUMBER][16];
+static UInt tabc[X86G_CC_OP_NUMBER];
+static UInt tab[X86G_CC_OP_NUMBER][16];
 static Bool initted     = False;
 static UInt n_calc_cond = 0;
 static UInt n_calc_all  = 0;
@@ -405,7 +409,7 @@ static void showCounts ( void )
               "    S   NS    P   NP    L   NL   LE  NLE\n");
    vex_printf("     ----------------------------------------------"
               "----------------------------------------\n");
-   for (op = 0; op < CC_OP_NUMBER; op++) {
+   for (op = 0; op < X86G_CC_OP_NUMBER; op++) {
 
       ch = ' ';
       if (op > 0 && (op-1) % 3 == 0) 
@@ -437,7 +441,7 @@ static void initCounts ( void )
 {
    Int op, co;
    initted = True;
-   for (op = 0; op < CC_OP_NUMBER; op++) {
+   for (op = 0; op < X86G_CC_OP_NUMBER; op++) {
       tabc[op] = 0;
       for (co = 0; co < 16; co++)
          tab[op][co] = 0;
@@ -448,109 +452,111 @@ static void initCounts ( void )
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
-UInt calculate_eflags_all ( UInt cc_op, 
-                            UInt cc_dep1_formal, 
-                            UInt cc_dep2_formal,
-                            UInt cc_ndep_formal )
+UInt x86g_calculate_eflags_all ( UInt cc_op, 
+                                 UInt cc_dep1_formal, 
+                                 UInt cc_dep2_formal,
+                                UInt cc_ndep_formal )
 {
 #  if PROFILE_EFLAGS
    n_calc_all++;
 #  endif
    switch (cc_op) {
-      case CC_OP_COPY:
+      case X86G_CC_OP_COPY:
          return cc_dep1_formal
-                & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
-                   | CC_MASK_A | CC_MASK_C | CC_MASK_P);
+                & (X86G_CC_MASK_O | X86G_CC_MASK_S | X86G_CC_MASK_Z 
+                   | X86G_CC_MASK_A | X86G_CC_MASK_C | X86G_CC_MASK_P);
 
-      case CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar  );
-      case CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );
-      case CC_OP_ADDL:   ACTIONS_ADD( 32, UInt   );
+      case X86G_CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar  );
+      case X86G_CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );
+      case X86G_CC_OP_ADDL:   ACTIONS_ADD( 32, UInt   );
 
-      case CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar  );
-      case CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
-      case CC_OP_ADCL:   ACTIONS_ADC( 32, UInt   );
+      case X86G_CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar  );
+      case X86G_CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
+      case X86G_CC_OP_ADCL:   ACTIONS_ADC( 32, UInt   );
 
-      case CC_OP_SUBB:   ACTIONS_SUB(  8, UChar  );
-      case CC_OP_SUBW:   ACTIONS_SUB( 16, UShort );
-      case CC_OP_SUBL:   ACTIONS_SUB( 32, UInt   );
+      case X86G_CC_OP_SUBB:   ACTIONS_SUB(  8, UChar  );
+      case X86G_CC_OP_SUBW:   ACTIONS_SUB( 16, UShort );
+      case X86G_CC_OP_SUBL:   ACTIONS_SUB( 32, UInt   );
 
-      case CC_OP_SBBB:   ACTIONS_SBB(  8, UChar  );
-      case CC_OP_SBBW:   ACTIONS_SBB( 16, UShort );
-      case CC_OP_SBBL:   ACTIONS_SBB( 32, UInt   );
+      case X86G_CC_OP_SBBB:   ACTIONS_SBB(  8, UChar  );
+      case X86G_CC_OP_SBBW:   ACTIONS_SBB( 16, UShort );
+      case X86G_CC_OP_SBBL:   ACTIONS_SBB( 32, UInt   );
 
-      case CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar  );
-      case CC_OP_LOGICW: ACTIONS_LOGIC( 16, UShort );
-      case CC_OP_LOGICL: ACTIONS_LOGIC( 32, UInt   );
+      case X86G_CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar  );
+      case X86G_CC_OP_LOGICW: ACTIONS_LOGIC( 16, UShort );
+      case X86G_CC_OP_LOGICL: ACTIONS_LOGIC( 32, UInt   );
 
-      case CC_OP_INCB:   ACTIONS_INC(  8, UChar  );
-      case CC_OP_INCW:   ACTIONS_INC( 16, UShort );
-      case CC_OP_INCL:   ACTIONS_INC( 32, UInt   );
+      case X86G_CC_OP_INCB:   ACTIONS_INC(  8, UChar  );
+      case X86G_CC_OP_INCW:   ACTIONS_INC( 16, UShort );
+      case X86G_CC_OP_INCL:   ACTIONS_INC( 32, UInt   );
 
-      case CC_OP_DECB:   ACTIONS_DEC(  8, UChar  );
-      case CC_OP_DECW:   ACTIONS_DEC( 16, UShort );
-      case CC_OP_DECL:   ACTIONS_DEC( 32, UInt   );
+      case X86G_CC_OP_DECB:   ACTIONS_DEC(  8, UChar  );
+      case X86G_CC_OP_DECW:   ACTIONS_DEC( 16, UShort );
+      case X86G_CC_OP_DECL:   ACTIONS_DEC( 32, UInt   );
 
-      case CC_OP_SHLB:   ACTIONS_SHL(  8, UChar  );
-      case CC_OP_SHLW:   ACTIONS_SHL( 16, UShort );
-      case CC_OP_SHLL:   ACTIONS_SHL( 32, UInt   );
+      case X86G_CC_OP_SHLB:   ACTIONS_SHL(  8, UChar  );
+      case X86G_CC_OP_SHLW:   ACTIONS_SHL( 16, UShort );
+      case X86G_CC_OP_SHLL:   ACTIONS_SHL( 32, UInt   );
 
-      case CC_OP_SHRB:   ACTIONS_SHR(  8, UChar  );
-      case CC_OP_SHRW:   ACTIONS_SHR( 16, UShort );
-      case CC_OP_SHRL:   ACTIONS_SHR( 32, UInt   );
+      case X86G_CC_OP_SHRB:   ACTIONS_SHR(  8, UChar  );
+      case X86G_CC_OP_SHRW:   ACTIONS_SHR( 16, UShort );
+      case X86G_CC_OP_SHRL:   ACTIONS_SHR( 32, UInt   );
 
-      case CC_OP_ROLB:   ACTIONS_ROL(  8, UChar  );
-      case CC_OP_ROLW:   ACTIONS_ROL( 16, UShort );
-      case CC_OP_ROLL:   ACTIONS_ROL( 32, UInt   );
+      case X86G_CC_OP_ROLB:   ACTIONS_ROL(  8, UChar  );
+      case X86G_CC_OP_ROLW:   ACTIONS_ROL( 16, UShort );
+      case X86G_CC_OP_ROLL:   ACTIONS_ROL( 32, UInt   );
 
-      case CC_OP_RORB:   ACTIONS_ROR(  8, UChar  );
-      case CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
-      case CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
+      case X86G_CC_OP_RORB:   ACTIONS_ROR(  8, UChar  );
+      case X86G_CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
+      case X86G_CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
 
-      case CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
-      case CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
-      case CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   ULong  );
+      case X86G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
+      case X86G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
+      case X86G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   ULong  );
 
-      case CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   Short );
-      case CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  Int   );
-      case CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    Long  );
+      case X86G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   Short );
+      case X86G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  Int   );
+      case X86G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    Long  );
 
       default:
          /* shouldn't really make these calls from generated code */
-         vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x, 0x%x )\n",
+         vex_printf("calculate_eflags_all(X86)( %d, 0x%x, 0x%x, 0x%x )\n",
                     cc_op, cc_dep1_formal, cc_dep2_formal, cc_ndep_formal );
-         vpanic("calculate_eflags_all");
+         vpanic("calculate_eflags_all(X86)");
    }
 }
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate just the carry flag from the supplied thunk parameters. */
-UInt calculate_eflags_c ( UInt cc_op, 
-                          UInt cc_dep1, 
-                          UInt cc_dep2,
-                          UInt cc_ndep )
+UInt x86g_calculate_eflags_c ( UInt cc_op, 
+                               UInt cc_dep1, 
+                               UInt cc_dep2,
+                               UInt cc_ndep )
 {
    /* Fast-case some common ones. */
    switch (cc_op) {
-      case CC_OP_LOGICL: case CC_OP_LOGICW: case CC_OP_LOGICB:
+      case X86G_CC_OP_LOGICL: 
+      case X86G_CC_OP_LOGICW: 
+      case X86G_CC_OP_LOGICB:
          return 0;
-      case CC_OP_SUBL:
+      case X86G_CC_OP_SUBL:
          return ((UInt)cc_dep1) < ((UInt)cc_dep2)
-                   ? CC_MASK_C : 0;
+                   ? X86G_CC_MASK_C : 0;
 #if 0
-      case CC_OP_SUBB:
+      case X86G_CC_OP_SUBB:
          return ((UInt)(cc_dep1 & 0xFF)) < ((UInt)(cc_dep2 & 0xFF))
-                   ? CC_MASK_C : 0;
+                   ? X86G_CC_MASK_C : 0;
 #endif
 #if 0
-      case CC_OP_DECL:
+      case X86G_CC_OP_DECL:
          return cc_src;
-      case CC_OP_ADDL:
+      case X86G_CC_OP_ADDL:
          return ( ((UInt)cc_src + (UInt)cc_dst) < ((UInt)cc_src) ) 
-                   ? CC_MASK_C : 0;
-      case CC_OP_SUBB:
+                   ? X86G_CC_MASK_C : 0;
+      case X86G_CC_OP_SUBB:
          return ( ((UInt)(cc_src & 0xFF)) > ((UInt)(cc_dst & 0xFF)) ) 
-                   ? CC_MASK_C : 0;
+                   ? X86G_CC_MASK_C : 0;
 #endif
       default: 
          break;
@@ -563,19 +569,21 @@ UInt calculate_eflags_c ( UInt cc_op,
 
    n_calc_c++;
 #  endif
-   return calculate_eflags_all(cc_op,cc_dep1,cc_dep2,cc_ndep) & CC_MASK_C;
+   return x86g_calculate_eflags_all(cc_op,cc_dep1,cc_dep2,cc_ndep) 
+          & X86G_CC_MASK_C;
 }
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* returns 1 or 0 */
-/*static*/ UInt calculate_condition ( UInt/*Condcode*/ cond, 
-                                      UInt cc_op, 
-                                      UInt cc_dep1, 
-                                      UInt cc_dep2,
-                                      UInt cc_ndep )
+UInt x86g_calculate_condition ( UInt/*X86Condcode*/ cond, 
+                                UInt cc_op, 
+                                UInt cc_dep1, 
+                                UInt cc_dep2,
+                                UInt cc_ndep )
 {
-   UInt eflags = calculate_eflags_all(cc_op, cc_dep1, cc_dep2, cc_ndep);
+   UInt eflags = x86g_calculate_eflags_all(cc_op, cc_dep1, 
+                                           cc_dep2, cc_ndep);
    UInt of,sf,zf,cf,pf;
    UInt inv = cond & 1;
 
@@ -590,51 +598,51 @@ UInt calculate_eflags_c ( UInt cc_op,
 #  endif
 
    switch (cond) {
-      case CondNO:
-      case CondO: /* OF == 1 */
-         of = eflags >> CC_SHIFT_O;
+      case X86CondNO:
+      case X86CondO: /* OF == 1 */
+         of = eflags >> X86G_CC_SHIFT_O;
          return 1 & (inv ^ of);
 
-      case CondNZ:
-      case CondZ: /* ZF == 1 */
-         zf = eflags >> CC_SHIFT_Z;
+      case X86CondNZ:
+      case X86CondZ: /* ZF == 1 */
+         zf = eflags >> X86G_CC_SHIFT_Z;
          return 1 & (inv ^ zf);
 
-      case CondNB:
-      case CondB: /* CF == 1 */
-         cf = eflags >> CC_SHIFT_C;
+      case X86CondNB:
+      case X86CondB: /* CF == 1 */
+         cf = eflags >> X86G_CC_SHIFT_C;
          return 1 & (inv ^ cf);
          break;
 
-      case CondNBE:
-      case CondBE: /* (CF or ZF) == 1 */
-         cf = eflags >> CC_SHIFT_C;
-         zf = eflags >> CC_SHIFT_Z;
+      case X86CondNBE:
+      case X86CondBE: /* (CF or ZF) == 1 */
+         cf = eflags >> X86G_CC_SHIFT_C;
+         zf = eflags >> X86G_CC_SHIFT_Z;
          return 1 & (inv ^ (cf | zf));
          break;
 
-      case CondNS:
-      case CondS: /* SF == 1 */
-         sf = eflags >> CC_SHIFT_S;
+      case X86CondNS:
+      case X86CondS: /* SF == 1 */
+         sf = eflags >> X86G_CC_SHIFT_S;
          return 1 & (inv ^ sf);
 
-      case CondNP:
-      case CondP: /* PF == 1 */
-         pf = eflags >> CC_SHIFT_P;
+      case X86CondNP:
+      case X86CondP: /* PF == 1 */
+         pf = eflags >> X86G_CC_SHIFT_P;
          return 1 & (inv ^ pf);
 
-      case CondNL:
-      case CondL: /* (SF xor OF) == 1 */
-         sf = eflags >> CC_SHIFT_S;
-         of = eflags >> CC_SHIFT_O;
+      case X86CondNL:
+      case X86CondL: /* (SF xor OF) == 1 */
+         sf = eflags >> X86G_CC_SHIFT_S;
+         of = eflags >> X86G_CC_SHIFT_O;
          return 1 & (inv ^ (sf ^ of));
          break;
 
-      case CondNLE:
-      case CondLE: /* ((SF xor OF) or ZF)  == 1 */
-         sf = eflags >> CC_SHIFT_S;
-         of = eflags >> CC_SHIFT_O;
-         zf = eflags >> CC_SHIFT_Z;
+      case X86CondNLE:
+      case X86CondLE: /* ((SF xor OF) or ZF)  == 1 */
+         sf = eflags >> X86G_CC_SHIFT_S;
+         of = eflags >> X86G_CC_SHIFT_O;
+         zf = eflags >> X86G_CC_SHIFT_Z;
          return 1 & (inv ^ ((sf ^ of) | zf));
          break;
 
@@ -657,8 +665,8 @@ static Bool isU32 ( IRExpr* e, UInt n )
           && e->Iex.Const.con->Ico.U32 == n;
 }
 
-IRExpr* x86guest_spechelper ( Char* function_name,
-                              IRExpr** args )
+IRExpr* guest_x86_spechelper ( Char* function_name,
+                               IRExpr** args )
 {
 #  define unop(_op,_a1) IRExpr_Unop((_op),(_a1))
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
@@ -688,16 +696,16 @@ IRExpr* x86guest_spechelper ( Char* function_name,
       cc_dep2 = args[2];
       cc_ndep = args[3];
 
-      if (isU32(cc_op, CC_OP_SUBL)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL)) {
          /* C after sub denotes unsigned less than */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
       }
-      if (isU32(cc_op, CC_OP_LOGICL)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICL)) {
          /* cflag after logic is zero */
          return mkU32(0);
       }
-      if (isU32(cc_op, CC_OP_DECL) || isU32(cc_op, CC_OP_INCL)) {
+      if (isU32(cc_op, X86G_CC_OP_DECL) || isU32(cc_op, X86G_CC_OP_INCL)) {
          /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
@@ -724,7 +732,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- ADDL ----------------*/
 
-      if (isU32(cc_op, CC_OP_ADDL) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_ADDL) && isU32(cond, X86CondZ)) {
          /* long add, then Z --> test (dst+src == 0) */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, 
@@ -734,34 +742,34 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- SUBL ----------------*/
 
-      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondZ)) {
          /* long sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, cc_dep1, cc_dep2));
       }
 
-      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondL)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondL)) {
          /* long sub/cmp, then L (signed less than) 
             --> test dst <s src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32S, cc_dep1, cc_dep2));
       }
 
-      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondLE)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondLE)) {
          /* long sub/cmp, then LE (signed less than or equal)
             --> test dst <=s src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32S, cc_dep1, cc_dep2));
       }
 
-      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondBE)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondBE)) {
          /* long sub/cmp, then BE (unsigned less than or equal)
             --> test dst <=u src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
 #if 0
-      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondB)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondB)) {
          /* long sub/cmp, then B (unsigned less than)
             --> test dst <u src */
          return unop(Iop_1Uto32,
@@ -770,7 +778,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 #endif
       /*---------------- SUBW ----------------*/
 
-      if (isU32(cc_op, CC_OP_SUBW) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBW) && isU32(cond, X86CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ16, 
@@ -780,7 +788,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- SUBB ----------------*/
 
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ8, 
@@ -788,7 +796,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
                            unop(Iop_32to8,cc_dep2)));
       }
 
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNZ)) {
          /* byte sub/cmp, then NZ --> test dst!=src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpNE8, 
@@ -796,7 +804,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
                            unop(Iop_32to8,cc_dep2)));
       }
 
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
+      if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNBE)) {
          /* long sub/cmp, then NBE (unsigned greater than)
             --> test src <=u dst */
          /* Note, args are opposite way round from the usual */
@@ -808,17 +816,17 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- LOGICL ----------------*/
 
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondZ)) {
          /* long and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondS)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondS)) {
          /* long and/or/xor, then S --> test dst <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
       }
 
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
             result and makes OF be zero.  LE computes (SZ ^ OF) | ZF, but
@@ -830,7 +838,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- LOGICW ----------------*/
 
-      if (isU32(cc_op, CC_OP_LOGICW) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondZ)) {
          /* byte and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(0xFFFF)), 
@@ -839,7 +847,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- LOGICB ----------------*/
 
-      if (isU32(cc_op, CC_OP_LOGICB) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondZ)) {
          /* byte and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
@@ -848,19 +856,19 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 
       /*---------------- DECL ----------------*/
 
-      if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_DECL) && isU32(cond, X86CondZ)) {
          /* dec L, then Z --> test dst == 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
-      if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondS)) {
+      if (isU32(cc_op, X86G_CC_OP_DECL) && isU32(cond, X86CondS)) {
          /* dec L, then S --> compare DST <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
       }
 
       /*---------------- SHRL ----------------*/
 
-      if (isU32(cc_op, CC_OP_SHRL) && isU32(cond, CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_SHRL) && isU32(cond, X86CondZ)) {
          /* SHRL, then Z --> test dep1 == 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
@@ -919,7 +927,7 @@ static inline Bool host_is_little_endian ( void )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-UInt calculate_FXAM ( UInt tag, ULong dbl ) 
+UInt x86g_calculate_FXAM ( UInt tag, ULong dbl ) 
 {
    Bool   mantissaIsZero;
    Int    bexp;
@@ -940,7 +948,7 @@ UInt calculate_FXAM ( UInt tag, ULong dbl )
       return 1,0,sign,1 */
    if (tag == 0) {
       /* vex_printf("Empty\n"); */
-      return FC_MASK_C3 | 0 | sign | FC_MASK_C0;
+      return X86G_FC_MASK_C3 | 0 | sign | X86G_FC_MASK_C0;
    }
 
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
@@ -956,35 +964,35 @@ UInt calculate_FXAM ( UInt tag, ULong dbl )
       Return 1,0,sign,0. */
    if (bexp == 0 && mantissaIsZero) {
       /* vex_printf("Zero\n"); */
-      return FC_MASK_C3 | 0 | sign | 0;
+      return X86G_FC_MASK_C3 | 0 | sign | 0;
    }
    
    /* If exponent is zero but mantissa isn't, it's a denormal.
       Return 1,1,sign,0. */
    if (bexp == 0 && !mantissaIsZero) {
       /* vex_printf("Denormal\n"); */
-      return FC_MASK_C3 | FC_MASK_C2 | sign | 0;
+      return X86G_FC_MASK_C3 | X86G_FC_MASK_C2 | sign | 0;
    }
 
    /* If the exponent is 7FF and the mantissa is zero, this is an infinity.
       Return 0,1,sign,1. */
    if (bexp == 0x7FF && mantissaIsZero) {
       /* vex_printf("Inf\n"); */
-      return 0 | FC_MASK_C2 | sign | FC_MASK_C0;
+      return 0 | X86G_FC_MASK_C2 | sign | X86G_FC_MASK_C0;
    }
 
    /* If the exponent is 7FF and the mantissa isn't zero, this is a NaN.
       Return 0,0,sign,1. */
    if (bexp == 0x7FF && !mantissaIsZero) {
       /* vex_printf("NaN\n"); */
-      return 0 | 0 | sign | FC_MASK_C0;
+      return 0 | 0 | sign | X86G_FC_MASK_C0;
    }
 
    /* Uh, ok, we give up.  It must be a normal finite number.
       Return 0,1,sign,0.
    */
    /* vex_printf("normal\n"); */
-   return 0 | FC_MASK_C2 | sign | 0;
+   return 0 | X86G_FC_MASK_C2 | sign | 0;
 }
 
 
@@ -1339,7 +1347,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */
-ULong loadF80le ( UInt addrU )
+ULong x86g_loadF80le ( UInt addrU )
 {
    ULong f64;
    convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
@@ -1348,7 +1356,7 @@ ULong loadF80le ( UInt addrU )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest memory) */
-void storeF80le ( UInt addrU, ULong f64 )
+void x86g_storeF80le ( UInt addrU, ULong f64 )
 {
    convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }
@@ -1463,10 +1471,10 @@ void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
 
    /* Mask out everything except O S Z A C P. */
    eflags_native
-      &= (CC_MASK_C | CC_MASK_P | CC_MASK_A 
-          | CC_MASK_Z | CC_MASK_S | CC_MASK_O);
+      &= (X86G_CC_MASK_C | X86G_CC_MASK_P | X86G_CC_MASK_A 
+          | X86G_CC_MASK_Z | X86G_CC_MASK_S | X86G_CC_MASK_O);
 
-   vex_state->guest_CC_OP   = CC_OP_COPY;
+   vex_state->guest_CC_OP   = X86G_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = eflags_native;
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0; /* unnecessary paranoia */
@@ -1476,7 +1484,7 @@ void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
 {
-   UInt eflags = calculate_eflags_all(
+   UInt eflags = x86g_calculate_eflags_all(
                     vex_state->guest_CC_OP,
                     vex_state->guest_CC_DEP1,
                     vex_state->guest_CC_DEP2,
@@ -1506,7 +1514,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_ESI = 0;
    vex_state->guest_EDI = 0;
 
-   vex_state->guest_CC_OP   = CC_OP_COPY;
+   vex_state->guest_CC_OP   = X86G_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;
@@ -1543,13 +1551,13 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    through the carry bit.  Result in low 32 bits, 
    new flags (OSZACP) in high 32 bits.
 */
-ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
+ULong x86g_calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 {
    UInt tempCOUNT = rot_amt & 0x1F, cf=0, of=0, tempcf;
 
    switch (sz) {
       case 4:
-         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         cf        = (eflags_in >> X86G_CC_SHIFT_C) & 1;
          of        = ((arg >> 31) ^ cf) & 1;
          while (tempCOUNT > 0) {
             tempcf = arg & 1;
@@ -1560,7 +1568,7 @@ ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
          break;
       case 2:
          while (tempCOUNT >= 17) tempCOUNT -= 17;
-         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         cf        = (eflags_in >> X86G_CC_SHIFT_C) & 1;
          of        = ((arg >> 15) ^ cf) & 1;
          while (tempCOUNT > 0) {
             tempcf = arg & 1;
@@ -1571,7 +1579,7 @@ ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
          break;
       case 1:
          while (tempCOUNT >= 9) tempCOUNT -= 9;
-         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         cf        = (eflags_in >> X86G_CC_SHIFT_C) & 1;
          of        = ((arg >> 7) ^ cf) & 1;
          while (tempCOUNT > 0) {
             tempcf = arg & 1;
@@ -1586,8 +1594,8 @@ ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 
    cf &= 1;
    of &= 1;
-   eflags_in &= ~(CC_MASK_C | CC_MASK_O);
-   eflags_in |= (cf << CC_SHIFT_C) | (of << CC_SHIFT_O);
+   eflags_in &= ~(X86G_CC_MASK_C | X86G_CC_MASK_O);
+   eflags_in |= (cf << X86G_CC_SHIFT_C) | (of << X86G_CC_SHIFT_O);
 
    return (((ULong)eflags_in) << 32) | ((ULong)arg);
 }
@@ -1596,7 +1604,7 @@ ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
 /* Claim to be a P54C P133 (pre-MMX Pentium) */
-void dirtyhelper_CPUID ( VexGuestX86State* st )
+void x86g_dirtyhelper_CPUID ( VexGuestX86State* st )
 {
    if (st->guest_EAX == 0) {
       st->guest_EAX = 0x1;
@@ -1889,7 +1897,7 @@ static inline UInt shr32S ( UInt v, ULong n )
 
 /* ------------ Normal addition ------------ */
 
-ULong calculate_add32x2 ( ULong xx, ULong yy )
+ULong x86g_calculate_add32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              sel32x2_1(xx) + sel32x2_1(yy),
@@ -1897,7 +1905,7 @@ ULong calculate_add32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_add16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_add16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              sel16x4_3(xx) + sel16x4_3(yy),
@@ -1907,7 +1915,7 @@ ULong calculate_add16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_add8x8 ( ULong xx, ULong yy )
+ULong x86g_calculate_add8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              sel8x8_7(xx) + sel8x8_7(yy),
@@ -1923,7 +1931,7 @@ ULong calculate_add8x8 ( ULong xx, ULong yy )
 
 /* ------------ Saturating addition ------------ */
 
-ULong calculate_qadd16Sx4 ( ULong xx, ULong yy )
+ULong x86g_calculate_qadd16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qadd16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1933,7 +1941,7 @@ ULong calculate_qadd16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qadd8Sx8 ( ULong xx, ULong yy )
+ULong x86g_calculate_qadd8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qadd8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1947,7 +1955,7 @@ ULong calculate_qadd8Sx8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qadd16Ux4 ( ULong xx, ULong yy )
+ULong x86g_calculate_qadd16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qadd16U( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1957,7 +1965,7 @@ ULong calculate_qadd16Ux4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qadd8Ux8 ( ULong xx, ULong yy )
+ULong x86g_calculate_qadd8Ux8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qadd8U( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1973,7 +1981,7 @@ ULong calculate_qadd8Ux8 ( ULong xx, ULong yy )
 
 /* ------------ Normal subtraction ------------ */
 
-ULong calculate_sub32x2 ( ULong xx, ULong yy )
+ULong x86g_calculate_sub32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              sel32x2_1(xx) - sel32x2_1(yy),
@@ -1981,7 +1989,7 @@ ULong calculate_sub32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_sub16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_sub16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              sel16x4_3(xx) - sel16x4_3(yy),
@@ -1991,7 +1999,7 @@ ULong calculate_sub16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_sub8x8 ( ULong xx, ULong yy )
+ULong x86g_calculate_sub8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              sel8x8_7(xx) - sel8x8_7(yy),
@@ -2007,7 +2015,7 @@ ULong calculate_sub8x8 ( ULong xx, ULong yy )
 
 /* ------------ Saturating subtraction ------------ */
 
-ULong calculate_qsub16Sx4 ( ULong xx, ULong yy )
+ULong x86g_calculate_qsub16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qsub16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2017,7 +2025,7 @@ ULong calculate_qsub16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qsub8Sx8 ( ULong xx, ULong yy )
+ULong x86g_calculate_qsub8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qsub8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2031,7 +2039,7 @@ ULong calculate_qsub8Sx8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qsub16Ux4 ( ULong xx, ULong yy )
+ULong x86g_calculate_qsub16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qsub16U( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2041,7 +2049,7 @@ ULong calculate_qsub16Ux4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_qsub8Ux8 ( ULong xx, ULong yy )
+ULong x86g_calculate_qsub8Ux8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qsub8U( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2057,7 +2065,7 @@ ULong calculate_qsub8Ux8 ( ULong xx, ULong yy )
 
 /* ------------ Multiplication ------------ */
 
-ULong calculate_mulhi16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_mulhi16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              mulhi16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2067,7 +2075,7 @@ ULong calculate_mulhi16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_mullo16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_mullo16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              mullo16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2077,7 +2085,7 @@ ULong calculate_mullo16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_pmaddwd ( ULong xx, ULong yy )
+ULong x86g_calculate_pmaddwd ( ULong xx, ULong yy )
 {
    return
       mk32x2( 
@@ -2090,7 +2098,7 @@ ULong calculate_pmaddwd ( ULong xx, ULong yy )
 
 /* ------------ Comparison ------------ */
 
-ULong calculate_cmpeq32x2 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpeq32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              cmpeq32( sel32x2_1(xx), sel32x2_1(yy) ),
@@ -2098,7 +2106,7 @@ ULong calculate_cmpeq32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_cmpeq16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpeq16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              cmpeq16( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2108,7 +2116,7 @@ ULong calculate_cmpeq16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_cmpeq8x8 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpeq8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              cmpeq8( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2122,7 +2130,7 @@ ULong calculate_cmpeq8x8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_cmpge32Sx2 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpge32Sx2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              cmpge32S( sel32x2_1(xx), sel32x2_1(yy) ),
@@ -2130,7 +2138,7 @@ ULong calculate_cmpge32Sx2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_cmpge16Sx4 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpge16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              cmpge16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2140,7 +2148,7 @@ ULong calculate_cmpge16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_cmpge8Sx8 ( ULong xx, ULong yy )
+ULong x86g_calculate_cmpge8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              cmpge8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2156,7 +2164,7 @@ ULong calculate_cmpge8Sx8 ( ULong xx, ULong yy )
 
 /* ------------ Pack / unpack ------------ */
 
-ULong calculate_packssdw ( ULong dst, ULong src )
+ULong x86g_calculate_packssdw ( ULong dst, ULong src )
 {
    UInt d = sel32x2_1(dst);
    UInt c = sel32x2_0(dst);
@@ -2173,7 +2181,7 @@ ULong calculate_packssdw ( ULong dst, ULong src )
           );
 }
 
-ULong calculate_packsswb ( ULong dst, ULong src )
+ULong x86g_calculate_packsswb ( ULong dst, ULong src )
 {
    UShort h = sel16x4_3(dst);
    UShort g = sel16x4_2(dst);
@@ -2197,7 +2205,7 @@ ULong calculate_packsswb ( ULong dst, ULong src )
           );
 }
 
-ULong calculate_packuswb ( ULong dst, ULong src )
+ULong x86g_calculate_packuswb ( ULong dst, ULong src )
 {
    UShort h = sel16x4_3(dst);
    UShort g = sel16x4_2(dst);
@@ -2221,7 +2229,7 @@ ULong calculate_packuswb ( ULong dst, ULong src )
           );
 }
 
-ULong calculate_punpckhbw ( ULong dst, ULong src )
+ULong x86g_calculate_punpckhbw ( ULong dst, ULong src )
 {
   return mk8x8(
             sel8x8_7(src),
@@ -2235,7 +2243,7 @@ ULong calculate_punpckhbw ( ULong dst, ULong src )
          );
 }
 
-ULong calculate_punpcklbw ( ULong dst, ULong src )
+ULong x86g_calculate_punpcklbw ( ULong dst, ULong src )
 {
   return mk8x8(
             sel8x8_3(src),
@@ -2249,7 +2257,7 @@ ULong calculate_punpcklbw ( ULong dst, ULong src )
          );
 }
 
-ULong calculate_punpckhwd ( ULong dst, ULong src )
+ULong x86g_calculate_punpckhwd ( ULong dst, ULong src )
 {
   return mk16x4(
             sel16x4_3(src),
@@ -2259,7 +2267,7 @@ ULong calculate_punpckhwd ( ULong dst, ULong src )
          );
 }
 
-ULong calculate_punpcklwd ( ULong dst, ULong src )
+ULong x86g_calculate_punpcklwd ( ULong dst, ULong src )
 {
   return mk16x4(
             sel16x4_1(src),
@@ -2269,7 +2277,7 @@ ULong calculate_punpcklwd ( ULong dst, ULong src )
          );
 }
 
-ULong calculate_punpckhdq ( ULong dst, ULong src )
+ULong x86g_calculate_punpckhdq ( ULong dst, ULong src )
 {
   return mk32x2(
             sel32x2_1(src),
@@ -2277,7 +2285,7 @@ ULong calculate_punpckhdq ( ULong dst, ULong src )
          );
 }
 
-ULong calculate_punpckldq ( ULong dst, ULong src )
+ULong x86g_calculate_punpckldq ( ULong dst, ULong src )
 {
   return mk32x2(
             sel32x2_0(src),
@@ -2287,7 +2295,7 @@ ULong calculate_punpckldq ( ULong dst, ULong src )
 
 /* ------------ Shifting ------------ */
 
-ULong calculate_shl16x4 ( ULong xx, ULong yy )
+ULong x86g_calculate_shl16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              shl16( sel16x4_3(xx), yy ),
@@ -2297,7 +2305,7 @@ ULong calculate_shl16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_shl32x2 ( ULong xx, ULong yy )
+ULong x86g_calculate_shl32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              shl32( sel32x2_1(xx), yy ),
@@ -2306,13 +2314,13 @@ ULong calculate_shl32x2 ( ULong xx, ULong yy )
 }
 
 
-ULong calculate_shl64x1 ( ULong xx, ULong yy )
+ULong x86g_calculate_shl64x1 ( ULong xx, ULong yy )
 {
    if (yy > 63) return 0;
    return xx << yy;
 }
 
-ULong calculate_shr16Ux4 ( ULong xx, ULong yy )
+ULong x86g_calculate_shr16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              shr16U( sel16x4_3(xx), yy ),
@@ -2322,7 +2330,7 @@ ULong calculate_shr16Ux4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_shr32Ux2 ( ULong xx, ULong yy )
+ULong x86g_calculate_shr32Ux2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              shr32U( sel32x2_1(xx), yy ),
@@ -2330,14 +2338,14 @@ ULong calculate_shr32Ux2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_shr64Ux1 ( ULong xx, ULong yy )
+ULong x86g_calculate_shr64Ux1 ( ULong xx, ULong yy )
 {
    if (yy > 63) return 0;
    return xx >> yy;
 }
 
 
-ULong calculate_shr16Sx4 ( ULong xx, ULong yy )
+ULong x86g_calculate_shr16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              shr16S( sel16x4_3(xx), yy ),
@@ -2347,7 +2355,7 @@ ULong calculate_shr16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_shr32Sx2 ( ULong xx, ULong yy )
+ULong x86g_calculate_shr32Sx2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              shr32S( sel32x2_1(xx), yy ),

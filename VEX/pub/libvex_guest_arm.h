@@ -38,9 +38,12 @@
 
 #include "libvex_basictypes.h"
 
+
 /*---------------------------------------------------------------*/
 /*--- Vex's representation of the ARM CPU state.              ---*/
 /*---------------------------------------------------------------*/
+
+/* R13 traditionally used as the stack pointer ? */
 
 typedef
    struct {
@@ -58,62 +61,28 @@ typedef
       UInt  guest_R11;
       UInt  guest_R12;
       UInt  guest_R13;
-      UInt  guest_R14;
 
+      /* aka the link register */
+      UInt  guest_R14; 
+
+      /* Program counter. */
       UInt  guest_R15;
 
-      UInt  guest_PSW;
-
+      /* System call number copied in here from swi insn literal
+         field. */
       UInt  guest_SYSCALLNO;
+
+      /* 3-word thunk used to calculate N(sign) Z(zero) C(carry,
+         unsigned overflow) and V(signed overflow) flags. */
+      UInt  guest_CC_OP;
+      UInt  guest_CC_DEP1;
+      UInt  guest_CC_DEP2;
 
       /* Padding to make it have an 8-aligned size */
       /* UInt   padding; */
    }
    VexGuestARMState;
 
-
-
-/*---------------------------------------------------------------*/
-/*--- Utility functions for arm guest stuff.                  ---*/
-/*---------------------------------------------------------------*/
-
-#if 0
-/* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
-
-/* Initialise all guest x86 state.  The FPU is put in default mode. */
-extern
-void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
-
-
-/* Convert a saved x87 FPU image (as created by fsave) and write it
-   into the supplied VexGuestX86State structure.  The non-FP parts of
-   said structure are left unchanged.  
-*/
-extern 
-void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
-                               /*OUT*/VexGuestX86State* vex_state );
-
-/* Extract from the supplied VexGuestX86State structure, an x87 FPU
-   image. */
-extern 
-void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state, 
-                               /*OUT*/UChar* x87_state );
-
-
-/* Given a 32-bit word containing native x86 %eflags values, set the
-   eflag-related fields in the supplied VexGuestX86State accordingly.
-   All other fields are left unchanged.  */
-
-extern
-void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
-                                  /*OUT*/VexGuestX86State* vex_state );
-
-/* Extract from the supplied VexGuestX86State structure the
-   corresponding native %eflags value. */
-
-extern 
-UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state );
-#endif /* 0 */
 
 #endif /* ndef __LIBVEX_PUB_GUEST_ARM_H */
 

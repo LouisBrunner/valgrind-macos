@@ -35,13 +35,17 @@
 
 #include "libvex.h"
 #include "libvex_guest_x86.h"
+#include "libvex_guest_arm.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"
 #include "host-generic/h_generic_regs.h"
-#include "host-x86/hdefs.h"
-#include "guest-x86/gdefs.h"
 #include "ir/iropt.h"
+
+#include "host-x86/hdefs.h"
+
+#include "guest-x86/gdefs.h"
+#include "guest-arm/gdefs.h"
 
 
 /* This file contains the top level interface to the library. */
@@ -216,9 +220,12 @@ TranslateResult LibVEX_Translate (
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
 
+
    /* First off, check that the guest and host insn sets
       are supported. */
+
    switch (iset_host) {
+
       case InsnSetX86:
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
@@ -234,22 +241,36 @@ TranslateResult LibVEX_Translate (
 	 host_is_bigendian = False;
          host_word_type    = Ity_I32;
          break;
+
       default:
          vpanic("LibVEX_Translate: unsupported target insn set");
    }
 
+
    switch (iset_guest) {
+
       case InsnSetX86:
          preciseMemExnsFn = guest_x86_state_requires_precise_mem_exns;
-         bbToIR           = bbToIR_X86Instr;
-         specHelper       = x86guest_spechelper;
+         bbToIR           = bbToIR_X86;
+         specHelper       = guest_x86_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
          guest_word_type  = Ity_I32;
          guest_layout     = &x86guest_layout;
          break;
+
+      case InsnSetARM:
+         preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
+         bbToIR           = NULL; /*bbToIR_ARM;*/
+         specHelper       = guest_arm_spechelper;
+         guest_sizeB      = sizeof(VexGuestARMState);
+         guest_word_type  = Ity_I32;
+         guest_layout     = &armGuest_layout;
+         break;
+
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
+
 
    if (vex_traceflags & VEX_TRACE_FE)
       vex_printf("\n------------------------" 

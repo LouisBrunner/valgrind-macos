@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (x86guest_defs.h) is                          ---*/
+/*--- This file (guest-x86/gdefs.h) is                        ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -38,8 +38,8 @@
 /* Some of this stuff is taken from QEMU, which is Copyright (c) 2003
    Fabrice Bellard, and licensed under the LGPL. */
 
-#ifndef __LIBVEX_X86GUEST_DEFS_H
-#define __LIBVEX_X86GUEST_DEFS_H
+#ifndef __LIBVEX_GUEST_X86_DEFS_H
+#define __LIBVEX_GUEST_X86_DEFS_H
 
 
 /*---------------------------------------------------------*/
@@ -47,17 +47,17 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_X86Instr ( UChar* x86code, 
-                        Addr64 eip, 
-                        Int*   guest_bytes_read, 
-                        Bool   (*byte_accessible)(Addr64),
-                        Bool   (*resteerOkFn)(Addr64),
-                        Bool   host_bigendian );
+IRBB* bbToIR_X86 ( UChar* x86code, 
+                   Addr64 eip, 
+                   Int*   guest_bytes_read, 
+                   Bool   (*byte_accessible)(Addr64),
+                   Bool   (*resteerOkFn)(Addr64),
+                   Bool   host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* x86guest_spechelper ( Char* function_name,
-                              IRExpr** args );
+IRExpr* guest_x86_spechelper ( Char* function_name,
+                               IRExpr** args );
 
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
@@ -75,84 +75,90 @@ VexGuestLayout x86guest_layout;
 
 /* --- CLEAN HELPERS --- */
 
-extern UInt  calculate_eflags_all ( UInt cc_op, 
-                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+extern UInt  x86g_calculate_eflags_all ( 
+                UInt cc_op, UInt cc_dep1, UInt cc_dep2, UInt cc_ndep 
+             );
 
-extern UInt  calculate_eflags_c   ( UInt cc_op, 
-                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+extern UInt  x86g_calculate_eflags_c ( 
+                UInt cc_op, UInt cc_dep1, UInt cc_dep2, UInt cc_ndep 
+             );
 
-extern UInt  calculate_condition  ( UInt/*Condcode*/ cond, 
-                                    UInt cc_op, 
-                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+extern UInt  x86g_calculate_condition ( 
+                UInt/*X86Condcode*/ cond, 
+                UInt cc_op, 
+                UInt cc_dep1, UInt cc_dep2, UInt cc_ndep 
+             );
 
-extern UInt  calculate_FXAM ( UInt tag, ULong dbl );
+extern UInt  x86g_calculate_FXAM ( UInt tag, ULong dbl );
 
-extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
+extern ULong x86g_calculate_RCR  ( 
+                UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
+             );
 
 /* --- Clean helpers for MMX --- */
 
-extern ULong calculate_add32x2 ( ULong, ULong );
-extern ULong calculate_add16x4 ( ULong, ULong );
-extern ULong calculate_add8x8  ( ULong, ULong );
+extern ULong x86g_calculate_add32x2 ( ULong, ULong );
+extern ULong x86g_calculate_add16x4 ( ULong, ULong );
+extern ULong x86g_calculate_add8x8  ( ULong, ULong );
 
-extern ULong calculate_qadd16Sx4 ( ULong, ULong );
-extern ULong calculate_qadd8Sx8  ( ULong, ULong );
+extern ULong x86g_calculate_qadd16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_qadd8Sx8  ( ULong, ULong );
 
-extern ULong calculate_qadd16Ux4 ( ULong, ULong );
-extern ULong calculate_qadd8Ux8  ( ULong, ULong );
+extern ULong x86g_calculate_qadd16Ux4 ( ULong, ULong );
+extern ULong x86g_calculate_qadd8Ux8  ( ULong, ULong );
 
-extern ULong calculate_sub32x2 ( ULong, ULong );
-extern ULong calculate_sub16x4 ( ULong, ULong );
-extern ULong calculate_sub8x8  ( ULong, ULong );
+extern ULong x86g_calculate_sub32x2 ( ULong, ULong );
+extern ULong x86g_calculate_sub16x4 ( ULong, ULong );
+extern ULong x86g_calculate_sub8x8  ( ULong, ULong );
 
-extern ULong calculate_qsub16Sx4 ( ULong, ULong );
-extern ULong calculate_qsub8Sx8  ( ULong, ULong );
+extern ULong x86g_calculate_qsub16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_qsub8Sx8  ( ULong, ULong );
 
-extern ULong calculate_qsub16Ux4 ( ULong, ULong );
-extern ULong calculate_qsub8Ux8  ( ULong, ULong );
+extern ULong x86g_calculate_qsub16Ux4 ( ULong, ULong );
+extern ULong x86g_calculate_qsub8Ux8  ( ULong, ULong );
 
-extern ULong calculate_mulhi16x4 ( ULong, ULong );
-extern ULong calculate_mullo16x4 ( ULong, ULong );
+extern ULong x86g_calculate_mulhi16x4 ( ULong, ULong );
+extern ULong x86g_calculate_mullo16x4 ( ULong, ULong );
 
-extern ULong calculate_pmaddwd ( ULong, ULong );
+extern ULong x86g_calculate_pmaddwd ( ULong, ULong );
 
-extern ULong calculate_cmpeq32x2  ( ULong, ULong );
-extern ULong calculate_cmpeq16x4  ( ULong, ULong );
-extern ULong calculate_cmpeq8x8   ( ULong, ULong );
-extern ULong calculate_cmpge32Sx2 ( ULong, ULong );
-extern ULong calculate_cmpge16Sx4 ( ULong, ULong );
-extern ULong calculate_cmpge8Sx8  ( ULong, ULong );
+extern ULong x86g_calculate_cmpeq32x2  ( ULong, ULong );
+extern ULong x86g_calculate_cmpeq16x4  ( ULong, ULong );
+extern ULong x86g_calculate_cmpeq8x8   ( ULong, ULong );
+extern ULong x86g_calculate_cmpge32Sx2 ( ULong, ULong );
+extern ULong x86g_calculate_cmpge16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_cmpge8Sx8  ( ULong, ULong );
 
-extern ULong calculate_packssdw ( ULong, ULong );
-extern ULong calculate_packsswb ( ULong, ULong );
-extern ULong calculate_packuswb ( ULong, ULong );
+extern ULong x86g_calculate_packssdw ( ULong, ULong );
+extern ULong x86g_calculate_packsswb ( ULong, ULong );
+extern ULong x86g_calculate_packuswb ( ULong, ULong );
 
-extern ULong calculate_punpckhbw ( ULong, ULong );
-extern ULong calculate_punpcklbw ( ULong, ULong );
-extern ULong calculate_punpckhwd ( ULong, ULong );
-extern ULong calculate_punpcklwd ( ULong, ULong );
-extern ULong calculate_punpckhdq ( ULong, ULong );
-extern ULong calculate_punpckldq ( ULong, ULong );
+extern ULong x86g_calculate_punpckhbw ( ULong, ULong );
+extern ULong x86g_calculate_punpcklbw ( ULong, ULong );
+extern ULong x86g_calculate_punpckhwd ( ULong, ULong );
+extern ULong x86g_calculate_punpcklwd ( ULong, ULong );
+extern ULong x86g_calculate_punpckhdq ( ULong, ULong );
+extern ULong x86g_calculate_punpckldq ( ULong, ULong );
 
-extern ULong calculate_shl16x4 ( ULong, ULong );
-extern ULong calculate_shl32x2 ( ULong, ULong );
-extern ULong calculate_shl64x1 ( ULong, ULong );
+extern ULong x86g_calculate_shl16x4 ( ULong, ULong );
+extern ULong x86g_calculate_shl32x2 ( ULong, ULong );
+extern ULong x86g_calculate_shl64x1 ( ULong, ULong );
 
-extern ULong calculate_shr16Ux4 ( ULong, ULong );
-extern ULong calculate_shr32Ux2 ( ULong, ULong );
-extern ULong calculate_shr64Ux1 ( ULong, ULong );
+extern ULong x86g_calculate_shr16Ux4 ( ULong, ULong );
+extern ULong x86g_calculate_shr32Ux2 ( ULong, ULong );
+extern ULong x86g_calculate_shr64Ux1 ( ULong, ULong );
 
-extern ULong calculate_shr16Sx4 ( ULong, ULong );
-extern ULong calculate_shr32Sx2 ( ULong, ULong );
+extern ULong x86g_calculate_shr16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_shr32Sx2 ( ULong, ULong );
 
 
 /* --- DIRTY HELPERS --- */
 
-extern ULong loadF80le  ( UInt );
+extern ULong x86g_loadF80le  ( UInt );
 
-extern void  storeF80le ( UInt, ULong );
+extern void  x86g_storeF80le ( UInt, ULong );
 
-extern void  dirtyhelper_CPUID ( VexGuestX86State* );
+extern void  x86g_dirtyhelper_CPUID ( VexGuestX86State* );
 
 
 /*---------------------------------------------------------*/
@@ -160,25 +166,25 @@ extern void  dirtyhelper_CPUID ( VexGuestX86State* );
 /*---------------------------------------------------------*/
 
 /* eflags masks */
-#define CC_SHIFT_O   11
-#define CC_SHIFT_S   7
-#define CC_SHIFT_Z   6
-#define CC_SHIFT_A   4
-#define CC_SHIFT_C   0
-#define CC_SHIFT_P   2
+#define X86G_CC_SHIFT_O   11
+#define X86G_CC_SHIFT_S   7
+#define X86G_CC_SHIFT_Z   6
+#define X86G_CC_SHIFT_A   4
+#define X86G_CC_SHIFT_C   0
+#define X86G_CC_SHIFT_P   2
 
-#define CC_MASK_O    (1 << CC_SHIFT_O)
-#define CC_MASK_S    (1 << CC_SHIFT_S)
-#define CC_MASK_Z    (1 << CC_SHIFT_Z)
-#define CC_MASK_A    (1 << CC_SHIFT_A)
-#define CC_MASK_C    (1 << CC_SHIFT_C)
-#define CC_MASK_P    (1 << CC_SHIFT_P)
+#define X86G_CC_MASK_O    (1 << X86G_CC_SHIFT_O)
+#define X86G_CC_MASK_S    (1 << X86G_CC_SHIFT_S)
+#define X86G_CC_MASK_Z    (1 << X86G_CC_SHIFT_Z)
+#define X86G_CC_MASK_A    (1 << X86G_CC_SHIFT_A)
+#define X86G_CC_MASK_C    (1 << X86G_CC_SHIFT_C)
+#define X86G_CC_MASK_P    (1 << X86G_CC_SHIFT_P)
 
 /* FPU flag masks */
-#define FC_MASK_C3   (1 << 14)
-#define FC_MASK_C2   (1 << 10)
-#define FC_MASK_C1   (1 << 9)
-#define FC_MASK_C0   (1 << 8)
+#define X86G_FC_MASK_C3   (1 << 14)
+#define X86G_FC_MASK_C2   (1 << 10)
+#define X86G_FC_MASK_C1   (1 << 9)
+#define X86G_FC_MASK_C0   (1 << 8)
 
 /* %EFLAGS thunk descriptors.  A four-word thunk is used to record
    details of the most recent flag-setting operation, so the flags can
@@ -298,96 +304,96 @@ extern void  dirtyhelper_CPUID ( VexGuestX86State* );
      both results (flags and actual value).
 */
 enum {
-    CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
-                   /* just copy DEP1 to output */
+    X86G_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
+                        /* just copy DEP1 to output */
 
-    CC_OP_ADDB,    /* 1 */
-    CC_OP_ADDW,    /* 2 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    CC_OP_ADDL,    /* 3 */
+    X86G_CC_OP_ADDB,    /* 1 */
+    X86G_CC_OP_ADDW,    /* 2 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    X86G_CC_OP_ADDL,    /* 3 */
 
-    CC_OP_SUBB,    /* 4 */
-    CC_OP_SUBW,    /* 5 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    CC_OP_SUBL,    /* 6 */
+    X86G_CC_OP_SUBB,    /* 4 */
+    X86G_CC_OP_SUBW,    /* 5 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    X86G_CC_OP_SUBL,    /* 6 */
 
-    CC_OP_ADCB,    /* 7 */
-    CC_OP_ADCW,    /* 8 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
-    CC_OP_ADCL,    /* 9 */
+    X86G_CC_OP_ADCB,    /* 7 */
+    X86G_CC_OP_ADCW,    /* 8 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
+    X86G_CC_OP_ADCL,    /* 9 */
 
-    CC_OP_SBBB,    /* 10 */
-    CC_OP_SBBW,    /* 11 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
-    CC_OP_SBBL,    /* 12 */
+    X86G_CC_OP_SBBB,    /* 10 */
+    X86G_CC_OP_SBBW,    /* 11 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
+    X86G_CC_OP_SBBL,    /* 12 */
 
-    CC_OP_LOGICB,  /* 13 */
-    CC_OP_LOGICW,  /* 14 DEP1 = result, DEP2 = 0, NDEP = unused */
-    CC_OP_LOGICL,  /* 15 */
+    X86G_CC_OP_LOGICB,  /* 13 */
+    X86G_CC_OP_LOGICW,  /* 14 DEP1 = result, DEP2 = 0, NDEP = unused */
+    X86G_CC_OP_LOGICL,  /* 15 */
 
-    CC_OP_INCB,    /* 16 */
-    CC_OP_INCW,    /* 17 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
-    CC_OP_INCL,    /* 18 */
+    X86G_CC_OP_INCB,    /* 16 */
+    X86G_CC_OP_INCW,    /* 17 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
+    X86G_CC_OP_INCL,    /* 18 */
 
-    CC_OP_DECB,    /* 19 */
-    CC_OP_DECW,    /* 20 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
-    CC_OP_DECL,    /* 21 */
+    X86G_CC_OP_DECB,    /* 19 */
+    X86G_CC_OP_DECW,    /* 20 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
+    X86G_CC_OP_DECL,    /* 21 */
 
-    CC_OP_SHLB,    /* 22 DEP1 = res, DEP2 = res', NDEP = unused */
-    CC_OP_SHLW,    /* 23 where res' is like res but shifted one bit less */
-    CC_OP_SHLL,    /* 24 */
+    X86G_CC_OP_SHLB,    /* 22 DEP1 = res, DEP2 = res', NDEP = unused */
+    X86G_CC_OP_SHLW,    /* 23 where res' is like res but shifted one bit less */
+    X86G_CC_OP_SHLL,    /* 24 */
 
-    CC_OP_SHRB,    /* 25 DEP1 = res, DEP2 = res', NDEP = unused */
-    CC_OP_SHRW,    /* 26 where res' is like res but shifted one bit less */
-    CC_OP_SHRL,    /* 27 */
+    X86G_CC_OP_SHRB,    /* 25 DEP1 = res, DEP2 = res', NDEP = unused */
+    X86G_CC_OP_SHRW,    /* 26 where res' is like res but shifted one bit less */
+    X86G_CC_OP_SHRL,    /* 27 */
 
-    CC_OP_ROLB,    /* 28 */
-    CC_OP_ROLW,    /* 29 DEP1 = res, DEP2 = 0, NDEP = old flags */
-    CC_OP_ROLL,    /* 30 */
+    X86G_CC_OP_ROLB,    /* 28 */
+    X86G_CC_OP_ROLW,    /* 29 DEP1 = res, DEP2 = 0, NDEP = old flags */
+    X86G_CC_OP_ROLL,    /* 30 */
 
-    CC_OP_RORB,    /* 31 */
-    CC_OP_RORW,    /* 32 DEP1 = res, DEP2 = 0, NDEP = old flags */
-    CC_OP_RORL,    /* 33 */
+    X86G_CC_OP_RORB,    /* 31 */
+    X86G_CC_OP_RORW,    /* 32 DEP1 = res, DEP2 = 0, NDEP = old flags */
+    X86G_CC_OP_RORL,    /* 33 */
 
-    CC_OP_UMULB,   /* 34 */
-    CC_OP_UMULW,   /* 35 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    CC_OP_UMULL,   /* 36 */
+    X86G_CC_OP_UMULB,   /* 34 */
+    X86G_CC_OP_UMULW,   /* 35 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    X86G_CC_OP_UMULL,   /* 36 */
 
-    CC_OP_SMULB,   /* 37 */
-    CC_OP_SMULW,   /* 38 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    CC_OP_SMULL,   /* 39 */
+    X86G_CC_OP_SMULB,   /* 37 */
+    X86G_CC_OP_SMULW,   /* 38 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    X86G_CC_OP_SMULL,   /* 39 */
 
-    CC_OP_NUMBER
+    X86G_CC_OP_NUMBER
 };
 
 typedef
    enum {
-      CondO      = 0,  /* overflow           */
-      CondNO     = 1,  /* no overflow        */
+      X86CondO      = 0,  /* overflow           */
+      X86CondNO     = 1,  /* no overflow        */
 
-      CondB      = 2,  /* below              */
-      CondNB     = 3,  /* not below          */
+      X86CondB      = 2,  /* below              */
+      X86CondNB     = 3,  /* not below          */
 
-      CondZ      = 4,  /* zero               */
-      CondNZ     = 5,  /* not zero           */
+      X86CondZ      = 4,  /* zero               */
+      X86CondNZ     = 5,  /* not zero           */
 
-      CondBE     = 6,  /* below or equal     */
-      CondNBE    = 7,  /* not below or equal */
+      X86CondBE     = 6,  /* below or equal     */
+      X86CondNBE    = 7,  /* not below or equal */
 
-      CondS      = 8,  /* negative           */
-      CondNS     = 9,  /* not negative       */
+      X86CondS      = 8,  /* negative           */
+      X86CondNS     = 9,  /* not negative       */
 
-      CondP      = 10, /* parity even        */
-      CondNP     = 11, /* not parity even    */
+      X86CondP      = 10, /* parity even        */
+      X86CondNP     = 11, /* not parity even    */
 
-      CondL      = 12, /* jump less          */
-      CondNL     = 13, /* not less           */
+      X86CondL      = 12, /* jump less          */
+      X86CondNL     = 13, /* not less           */
 
-      CondLE     = 14, /* less or equal      */
-      CondNLE    = 15, /* not less or equal  */
+      X86CondLE     = 14, /* less or equal      */
+      X86CondNLE    = 15, /* not less or equal  */
 
-      CondAlways = 16  /* HACK */
+      X86CondAlways = 16  /* HACK */
    }
-   Condcode;
+   X86Condcode;
 
-#endif /* ndef __LIBVEX_X86GUEST_DEFS_H */
+#endif /* ndef __LIBVEX_GUEST_X86_DEFS_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                     x86guest_defs.h ---*/
+/*--- end                                   guest-x86/gdefs.h ---*/
 /*---------------------------------------------------------------*/

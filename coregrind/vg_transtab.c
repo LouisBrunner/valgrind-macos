@@ -94,7 +94,7 @@ typedef
 /* A bogus TCEntry which hopefully does not match code from any valid
    address.  This is what all VG_(tt_fast) entries are made to point
    at when we want to invalidate it. */
-static const TCEntry vg_tc_bogus_TCEntry = { ((Addr)5), 0, 0, 0 };
+static const TCEntry vg_tc_bogus_TCEntry = { ((Addr)5), 0, 0 };
 
 
 /*------------------ DECLS ------------------*/

@@ -1095,6 +1095,9 @@ extern VGA_REGPARM(2)
 /* Return string for prot */
 extern const HChar *VG_(prot_str)(UInt prot);
 
+extern Addr VG_(get_memory_from_mmap_for_client)
+               (Addr base, SizeT len, UInt prot, UInt flags);
+
 //extern void VG_(print_shadow_stats)();
 
 /* ---------------------------------------------------------------------

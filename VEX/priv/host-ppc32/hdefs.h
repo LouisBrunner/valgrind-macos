@@ -122,37 +122,79 @@ extern HReg hregPPC32_FPR31 ( void );
 
 /* --------- Condition codes, Intel encoding. --------- */
 
+
 typedef
-   enum {
-      Pcc_O      = 0,  /* overflow           */
-      Pcc_NO     = 1,  /* no overflow        */
+   enum {   /* Maps Condition Register (bc bitfield BI) */
+#if 0
+      // field 0
+      Pcf_f0_SO  = 0,  /* summary overflow   */
+      Pcf_f0_EQ  = 1,  /* zero | equal       */
+      Pcf_f0_GT  = 2,  /* pos  | gt          */
+      Pcf_f0_LT  = 3,  /* neg  | lt          */
 
-      Pcc_B      = 2,  /* below              */
-      Pcc_NB     = 3,  /* not below          */
+      // field 1
+      Pcf_f1_SO  = 4,  /* summary overflow   */
+      Pcf_f1_EQ  = 5,  /* zero | equal       */
+      Pcf_f1_GT  = 6,  /* pos  | gt          */
+      Pcf_f1_LT  = 7,  /* neg  | lt          */
 
-      Pcc_Z      = 4,  /* zero               */
-      Pcc_NZ     = 5,  /* not zero           */
+      // field 2
+      Pcf_f2_SO  = 8,  /* summary overflow   */
+      Pcf_f2_EQ  = 9,  /* zero | equal       */
+      Pcf_f2_GT  = 10, /* pos  | gt          */
+      Pcf_f2_LT  = 11, /* neg  | lt          */
 
-      Pcc_BE     = 6,  /* below or equal     */
-      Pcc_NBE    = 7,  /* not below or equal */
+      // field 3
+      Pcf_f3_SO  = 12, /* summary overflow   */
+      Pcf_f3_EQ  = 13, /* zero | equal       */
+      Pcf_f3_GT  = 14, /* pos  | gt          */
+      Pcf_f3_LT  = 15, /* neg  | lt          */
 
-      Pcc_S      = 8,  /* negative           */
-      Pcc_NS     = 9,  /* not negative       */
+      // field 4
+      Pcf_f4_SO  = 16, /* summary overflow   */
+      Pcf_f4_EQ  = 17, /* zero | equal       */
+      Pcf_f4_GT  = 18, /* pos  | gt          */
+      Pcf_f4_LT  = 19, /* neg  | lt          */
 
-      Pcc_P      = 10, /* parity even        */
-      Pcc_NP     = 11, /* not parity even    */
+      // field 5
+      Pcf_f5_SO  = 20, /* summary overflow   */
+      Pcf_f5_EQ  = 21, /* zero | equal       */
+      Pcf_f5_GT  = 22, /* pos  | gt          */
+      Pcf_f5_LT  = 23, /* neg  | lt          */
 
-      Pcc_L      = 12, /* jump less          */
-      Pcc_NL     = 13, /* not less           */
+      // field 6 (floating point only)
+      Pcf_OX     = 24, /* summary overflow   */
+      Pcf_VX     = 25, /* zero | equal       */
+      Pcf_FEX    = 26, /* pos  | gt          */
+      Pcf_FX     = 27, /* neg  | lt          */
+#endif
 
-      Pcc_LE     = 14, /* less or equal      */
-      Pcc_NLE    = 15, /* not less or equal  */
+      // field 7 (integer only)
+      Pcf_SO  = 28, /* summary overflow   */
+      Pcf_EQ  = 29, /* zero | equal       */
+      Pcf_GT  = 30, /* pos  | gt          */
+      Pcf_LT  = 31, /* neg  | lt          */
+   }
+   PPC32CondFlag;
 
-      Pcc_ALWAYS = 16  /* the usual hack     */
+typedef
+   enum {   /* Reflects bc bitfield BO */
+      Pct_TRUE   = 0,
+      Pct_FALSE  = 1,
+      Pct_ALWAYS = 2
+   }
+   PPC32CondTest;
+
+typedef
+   struct {
+      PPC32CondFlag flag;
+      PPC32CondTest test;
    }
    PPC32CondCode;
 
 extern HChar* showPPC32CondCode ( PPC32CondCode );
+
+
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -246,8 +288,8 @@ extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
 typedef 
    enum {
       Palu_INVALID,
-      Palu_CMP,
-      Palu_ADD, Palu_SUB, Palu_ADC, Palu_SBB,
+      Palu_ADD, Palu_SUB,
+      // Palu_ADC, Palu_SBB,
       Palu_AND, Palu_OR, Palu_XOR,
       Palu_MUL
    }
@@ -266,6 +308,17 @@ typedef
    PPC32ShiftOp;
 
 extern HChar* showPPC32ShiftOp ( PPC32ShiftOp );
+
+
+/* --------- */
+typedef
+   enum {
+      Pcmp_U,  // unsigned
+      Pcmp_S   // signed
+   }
+   PPC32CmpOp;
+
+extern HChar* showPPC32CmpOp ( PPC32CmpOp );
 
 
 //.. /* --------- */
@@ -289,7 +342,8 @@ typedef
    enum {
       Pin_Alu32,     /* 32-bit mov/arith/logical */
       Pin_Sh32,      /* 32-bit shift/rotate */
-      Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
+//      Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
+      Pin_Cmp32,     /* 32-bit compare (SUB, set flags, discard result) */
       Pin_Unary32,   /* 32-bit not, neg, clz */
       Pin_MulL,      /* widening multiply */
       Pin_Div,       /* div */
@@ -335,10 +389,16 @@ typedef
             HReg         src;
             PPC32RI*     shft;
          } Sh32;
+//         struct {
+//            HReg     dst;
+//            PPC32RI* src;
+//         } Test32;
          struct {
-            HReg     dst;
-            PPC32RI* src;
-         } Test32;
+            PPC32CmpOp op;
+            UInt     crfD;
+            HReg     src1;
+            PPC32RI* src2;
+         } Cmp32;
          /* Not and Neg */
          struct {
             PPC32UnaryOp op;
@@ -495,7 +555,8 @@ typedef
 
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
+//extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg, HReg, PPC32RI* );

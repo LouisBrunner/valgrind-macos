@@ -292,8 +292,10 @@ extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 /* PROFILE: collect bb profiling data?  default: NO */
 extern Bool  VG_(clo_bbprofile);
 
-/* DEBUG: print generated code?  default: 00000 ( == NO ) */
+/* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern Bool  VG_(clo_trace_codegen);
+/* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
+extern Int   VG_(clo_trace_notbelow);
 /* DEBUG: print system calls?  default: NO */
 extern Bool  VG_(clo_trace_syscalls);
 /* DEBUG: print signal details?  default: NO */

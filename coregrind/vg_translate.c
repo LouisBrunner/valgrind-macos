@@ -346,12 +346,11 @@ static Bool need_to_handle_SP_assignment(void)
 Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
 {
-   Addr        redir, orig_addr0 = orig_addr;
-   Int         orig_size, tmpbuf_used;
-   Bool        notrace_until_done;
-   UInt        notrace_until_limit = 0;
-   //UInt        FULLTRACE_LIMIT = 1; //21068;
-   Segment     *seg;
+   Addr      redir, orig_addr0 = orig_addr;
+   Int       orig_size, tmpbuf_used, verbosity;
+   Bool      notrace_until_done;
+   UInt      notrace_until_limit = 0;
+   Segment*  seg;
 
    /* Make sure Vex is initialised right. */
    TranslateResult tres;
@@ -377,6 +376,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       Char name2[64] = "";
       VG_(get_fnname_w_offset)(orig_addr, name1, 64);
       VG_(get_fnname_w_offset)(redir, name2, 64);
+      name1[63] = name2[63] = 0;
       VG_(message)(Vg_UserMsg, 
                    "TRANSLATE: %p (%s) redirected to %p (%s)",
                    orig_addr, name1,
@@ -424,17 +424,11 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
-#if 0
-#  define DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(n)               \
-      ( debugging_translation                                   \
-        || (notrace_until_done                                  \
-            && (VG_(clo_trace_codegen) & (1 << (n-1))) ))
-#else
-#  define DECIDE_IF_PRINTING_CODEGEN                            \
-      ( debugging_translation                                   \
-        || (VG_(clo_trace_codegen) > 0                          \
-            && VG_(get_bbs_translated)() >= FULLTRACE_LIMIT))
-#endif
+   verbosity = 0;
+   if ( debugging_translation
+        || (VG_(clo_trace_codegen) > 0
+            && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) ))
+      verbosity = VG_(clo_trace_codegen);
 
    /* Actually do the translation. */
    tres = LibVEX_Translate ( 
@@ -449,14 +443,14 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                 : NULL,
              True, /* cleanup after instrumentation */
              NULL,
-             VG_(clo_trace_codegen)
+             verbosity
           );
 
    vg_assert(tres == TransOK);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 
-#undef DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE
+#undef DECIDE_IF_PRINTING_CODEGEN
 
    /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */

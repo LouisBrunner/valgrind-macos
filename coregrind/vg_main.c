@@ -1480,6 +1480,7 @@ Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Bool   VG_(clo_profile)        = False;
 Bool   VG_(clo_bbprofile)      = False;
 UChar  VG_(clo_trace_codegen)  = 0; // 00000000b
+Int    VG_(clo_trace_notbelow) = 0;
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;
@@ -1555,6 +1556,7 @@ void usage ( Bool debug_help )
 "    --bbprofile=no|yes        profile bbs? [no]\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
 "    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
+"    --trace-notbelow=<number>    only show BBs above <number> [0]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
@@ -1840,6 +1842,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             }
          }
       }
+
+      else VG_NUM_CLO ("--trace-notbelow",        VG_(clo_trace_notbelow))
 
       else if (VG_CLO_STREQ(arg, "--trace-pthread=none"))
          VG_(clo_trace_pthread_level) = 0;

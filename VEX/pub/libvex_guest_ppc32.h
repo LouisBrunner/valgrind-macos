@@ -118,13 +118,13 @@ typedef
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
-      /* thunk used to calculate CR0 flags. */
+      /* CR[7]: thunk used to calculate these flags. */
       UChar guest_CC_OP;    // boolean: 0=> dep1=result 1=> dep1=flags
       UInt  guest_CC_DEP1;  // Result of last op | flags
       UChar guest_CC_DEP2;  // XER_SO
 
-      // CR1:7: Used for 'compare' ops (bits 0:4 not used - thunk used for this)
-      UInt guest_CR1to7;
+      // CR[0:6]: Used for 'compare' ops
+      UInt guest_CR0to6;
 
       UInt guest_FPSCR;   // Floating Point Status and Control Register
 

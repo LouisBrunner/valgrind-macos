@@ -36,6 +36,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 /usr/include/valgrind/valgrind.h
 /usr/include/valgrind/memcheck.h
 /usr/include/valgrind/helgrind.h
+/usr/include/valgrind/tool.h
 /usr/include/valgrind/vg_constants_skin.h
 /usr/include/valgrind/vg_kerneliface.h
 /usr/include/valgrind/vg_skin.h

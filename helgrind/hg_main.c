@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_skin.h"
+#include "tool.h"
 #include "helgrind.h"
 
 static UInt n_eraser_warnings = 0;

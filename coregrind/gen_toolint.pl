@@ -140,7 +140,7 @@ if ($output eq "callwrap") {
     };
     $indent = "   ";
 } elsif ($output eq "initfunc") {
-    $include = "vg_skin.h";
+    $include = "tool.h";
     $generate = sub ($$$@) {
 	my ($pfx, $ret, $func, @args) = @_;
 	my $args = join ", ", @args;

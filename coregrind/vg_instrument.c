@@ -29,11 +29,11 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* We only import vg_skin.h here, because this file only provides functions
+/* We only import tool.h here, because this file only provides functions
    for doing things that could be done directly by the tool -- it's just to
    make tools' lives easier, rather than let them do something they
    couldn't otherwise do. */
-#include "vg_skin.h"
+#include "tool.h"
 
 
 void VG_(lit_to_reg)(UCodeBlock* cb, UInt lit, UInt t)

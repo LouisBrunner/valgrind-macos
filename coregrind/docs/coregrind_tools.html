@@ -462,7 +462,7 @@ provide definitions of six functions for comparing errors, printing out errors,
 reading suppressions from a suppressions file, etc.  While writing these
 functions requires some work, it's much less than doing error handling from
 scratch because the core is doing most of the work.  See the type
-<code>VgNeeds</code> in <code>include/vg_skin.h</code> for full details of all
+<code>VgNeeds</code> in <code>include/tool.h</code> for full details of all
 the needs.<p>
 
 Third, the tool can indicate which events in core it wants to be notified
@@ -478,7 +478,7 @@ appropriate function pointer, and the assigned function will be called each
 time this happens.<p>
 
 More information about ``details'', ``needs'' and ``trackable events'' can be
-found in <code>include/vg_skin.h</code>.<p>
+found in <code>include/tool.h</code>.<p>
 
 <a name="instr"></a>
 <h3>2.8&nbsp; Instrumentation</h3>
@@ -512,20 +512,20 @@ Please note that the core/tool split infrastructure is quite complex and
 not brilliantly documented.  Here are some important points, but there are
 undoubtedly many others that I should note but haven't thought of.<p>
 
-The file <code>include/vg_skin.h</code> contains all the types,
+The file <code>include/tool.h</code> contains all the types,
 macros, functions, etc. that a tool should (hopefully) need, and is the only
 <code>.h</code> file a tool should need to <code>#include</code>.<p>
 
 In particular, you probably shouldn't use anything from the C library (there
 are deep reasons for this, trust us).  Valgrind provides an implementation of a
 reasonable subset of the C library, details of which are in
-<code>vg_skin.h</code>.<p>
+<code>tool.h</code>.<p>
 
 Similarly, when writing a tool, you shouldn't need to look at any of the code
 in Valgrind's core.  Although it might be useful sometimes to help understand
 something.<p>
 
-<code>vg_skin.h</code> has a reasonable amount of documentation in it that
+<code>tool.h</code> has a reasonable amount of documentation in it that
 should hopefully be enough to get you going.  But ultimately, the tools
 distributed (Memcheck, Addrcheck, Cachegrind, Lackey, etc.) are probably the
 best documentation of all, for the moment.<p>
@@ -581,7 +581,7 @@ and you'll need to get rid of this to extract useful tracebacks from
 GDB.<p>
 
 If you just want to know whether a program point has been reached, using the
-<code>OINK</code> macro (in <code> include/vg_skin.h</code>) can be easier than
+<code>OINK</code> macro (in <code> include/tool.h</code>) can be easier than
 using GDB.<p>
 
 If you are having problems with your UCode instrumentation, it's likely that
@@ -689,7 +689,7 @@ The profiler is stack-based;  you can register a profiling event with
 <code>VGP_(register_profile_event)()</code> and then use the
 <code>VGP_PUSHCC</code> and <code>VGP_POPCC</code> macros to record time spent
 doing certain things.  New profiling event numbers must not overlap with the
-core profiling event numbers.  See <code>include/vg_skin.h</code> for details
+core profiling event numbers.  See <code>include/tool.h</code> for details
 and Memcheck for an example.
 
 

@@ -118,7 +118,7 @@ struct _ScopeRange {
 #define STRCHUNKSIZE	(64*1024)
 
 /* A structure which contains information pertaining to one mapped
-   text segment. (typedef in vg_skin.h) */
+   text segment. (typedef in tool.h) */
 struct _SegInfo {
    struct _SegInfo* next;	/* list of SegInfos */
 

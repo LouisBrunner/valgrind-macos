@@ -34,7 +34,7 @@
 // be inspected step-wise to an appropriate depth.  See comments on data
 // structures below for more info on how things work.
 
-#include "vg_skin.h"
+#include "tool.h"
 //#include "vg_profile.c"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK

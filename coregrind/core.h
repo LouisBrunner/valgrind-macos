@@ -43,10 +43,10 @@
 
 #include "vg_constants.h"
 
-/* All stuff visible to core and tools goes in vg_skin.h.  Things
+/* All stuff visible to core and tools goes in tool.h.  Things
  * visible to core but not visible to any tools should go in this
  * file, core.h. */
-#include "vg_skin.h"
+#include "tool.h"
 #include "valgrind.h"
 
 #undef SK_
@@ -285,7 +285,7 @@ extern void VGP_(done_profiling) ( void );
    ------------------------------------------------------------------ */
 /* These structs are not exposed to tools to mitigate possibility of
    binary-incompatibilities when the core/tool interface changes.  Instead,
-   set functions are provided (see include/vg_skin.h). */
+   set functions are provided (see include/tool.h). */
 typedef
    struct {
       Char* name;
@@ -1619,7 +1619,7 @@ extern Int VGOFF_(ldt);
 /* This thread's TLS pointer. */
 extern Int VGOFF_(tls_ptr);
 
-/* Nb: Most helper offsets are in include/vg_skin.h, for use by tools */
+/* Nb: Most helper offsets are in include/tool.h, for use by tools */
 
 extern Int VGOFF_(helper_undefined_instruction);
 

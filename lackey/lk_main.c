@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_skin.h"
+#include "tool.h"
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;

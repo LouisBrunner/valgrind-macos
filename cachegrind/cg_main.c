@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_skin.h"
+#include "tool.h"
 //#include "vg_profile.c"
 
 /* For cache simulation */

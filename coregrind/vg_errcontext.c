@@ -67,7 +67,7 @@ typedef
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
    enum (with element values in the normal range (0..)) for `ekind'. 
    Functions for getting/setting the tool-relevant fields are in
-   include/vg_skin.h.
+   include/tool.h.
 
    When errors are found and recorded with VG_(maybe_record_error)(), all
    the tool must do is pass in the four parameters;  core will
@@ -140,7 +140,7 @@ typedef
    SuppLocTy;
 
 /* Suppressions.  Tools can get/set tool-relevant parts with functions
-   declared in include/vg_skin.h.  Extensible via the 'extra' field. 
+   declared in include/tool.h.  Extensible via the 'extra' field. 
    Tools can use a normal enum (with element values in the normal range
    (0..)) for `skind'. */
 struct _Supp {

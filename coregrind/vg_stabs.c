@@ -1012,12 +1012,12 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
    case N_STSYM:
    case N_LCSYM:
       sym->kind = SyStatic;
-      sym->addr = si->offset + (Addr)val;
+      sym->u.addr = si->offset + (Addr)val;
       break;
 
    case N_PSYM:
       sym->kind = SyEBPrel;	/* +ve offset off EBP (erk, or ESP if no frame pointer) */
-      sym->offset = val;
+      sym->u.offset = val;
       break;
 
    case N_LSYM:
@@ -1025,17 +1025,17 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
 	 sym->kind = SyEBPrel;	/* -ve off EBP when there's a frame pointer */
       else
 	 sym->kind = SyESPrel;	/* +ve off ESP when there's no frame pointer */
-      sym->offset = val;
+      sym->u.offset = val;
       break;
 
    case N_RSYM:
       sym->kind = SyReg;
-      sym->regno = val;
+      sym->u.regno = val;
       break;
 
    case N_GSYM:
       sym->kind = SyGlobal;
-      sym->addr = 0;		/* XXX should really look up global address */
+      sym->u.addr = 0;		/* XXX should really look up global address */
       break;
 
    default:

@@ -97,7 +97,7 @@ struct _Sym {
       Int	offset;		/* offset on stack (-ve -> ebp; +ve -> esp) */
       Int	regno;		/* register number */
       Addr	addr;		/* static or global address */
-   };
+   } u;
 };
 
 struct _Scope {

@@ -90,18 +90,18 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
    /* stage2 needs this so it can clean up the padding we leave in
       place when we start it */
    auxv[0].a_type = AT_UME_PADFD;
-   auxv[0].a_val = as_getpadfd();
+   auxv[0].u.a_val = as_getpadfd();
 
    /* This will be needed by valgrind itself so that it can
       subsequently execve() children.  This needs to be done here
       because /proc/self/exe will go away once we unmap stage1. */
    auxv[1].a_type = AT_UME_EXECFD;
-   auxv[1].a_val = open("/proc/self/exe", O_RDONLY);
+   auxv[1].u.a_val = open("/proc/self/exe", O_RDONLY);
 
    /* make sure the rest are sane */
    for(i = new_entries; i < delta/sizeof(*auxv); i++) {
       auxv[i].a_type = AT_IGNORE;
-      auxv[i].a_val = 0;
+      auxv[i].u.a_val = 0;
    }
 
    /* OK, go through and patch up the auxv entries to match the new
@@ -109,27 +109,27 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
    seen = 0;
    for(; auxv->a_type != AT_NULL; auxv++) {
       if (0)
-	 printf("doing auxv %p %4x: %d %p\n", auxv, auxv->a_type, auxv->a_val, auxv->a_ptr);
+	 printf("doing auxv %p %4x: %d %p\n", auxv, auxv->a_type, auxv->u.a_val, auxv->u.a_ptr);
 
       switch(auxv->a_type) {
       case AT_PHDR:
 	 seen |= 1;
-	 auxv->a_val = info->phdr;
+	 auxv->u.a_val = info->phdr;
 	 break;
 
       case AT_PHNUM:
 	 seen |= 2;
-	 auxv->a_val = info->phnum;
+	 auxv->u.a_val = info->phnum;
 	 break;
 
       case AT_BASE:
 	 seen |= 4;
-	 auxv->a_val = info->interp_base;
+	 auxv->u.a_val = info->interp_base;
 	 break;
 
       case AT_ENTRY:
 	 seen |= 8;
-	 auxv->a_val = info->entry;
+	 auxv->u.a_val = info->entry;
 	 break;
       }
    }

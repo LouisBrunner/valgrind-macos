@@ -1777,28 +1777,28 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 	 v->size = VG_(st_sizeof)(sym->type);
 
 	 if (debug && 0)
-	    VG_(printf)("sym->name=%s sym->kind=%d offset=%d\n", sym->name, sym->kind, sym->offset);
+	    VG_(printf)("sym->name=%s sym->kind=%d offset=%d\n", sym->name, sym->kind, sym->u.offset);
 	 switch(sym->kind) {
 	    UInt reg;
 
 	 case SyGlobal:
 	 case SyStatic:
-	    if (sym->addr == 0) {
+	    if (sym->u.addr == 0) {
 	       /* XXX lookup value */
 	    }
-	    v->valuep = sym->addr;
+	    v->valuep = sym->u.addr;
 	    break;
 
 	 case SyReg:
-	    v->valuep = (Addr)regaddr(tid, sym->regno);
+	    v->valuep = (Addr)regaddr(tid, sym->u.regno);
 	    break;
 
 	 case SyEBPrel:
 	 case SyESPrel:
 	    reg = *regaddr(tid, sym->kind == SyESPrel ? R_ESP : R_EBP);
 	    if (debug)
-	       VG_(printf)("reg=%p+%d=%p\n", reg, sym->offset, reg+sym->offset);
-	    v->valuep = (Addr)(reg + sym->offset);
+	       VG_(printf)("reg=%p+%d=%p\n", reg, sym->u.offset, reg+sym->u.offset);
+	    v->valuep = (Addr)(reg + sym->u.offset);
 	    break;
 
 	 case SyType:

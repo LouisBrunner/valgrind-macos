@@ -90,12 +90,12 @@ static int scan_auxv(void)
    for(; auxv->a_type != AT_NULL; auxv++)
       switch(auxv->a_type) {
       case AT_UME_PADFD:
-	 as_setpadfd(auxv->a_val);
+	 as_setpadfd(auxv->u.a_val);
 	 found |= 1;
 	 break;
 
       case AT_UME_EXECFD:
-	 kp.vgexecfd = auxv->a_val;
+	 kp.vgexecfd = auxv->u.a_val;
 	 found |= 2;
 	 break;
       }
@@ -236,7 +236,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    auxsize = sizeof(*auxv);	/* there's always at least one entry: AT_NULL */
    for(cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
       if (cauxv->a_type == AT_PLATFORM)
-	 stringsize += strlen(cauxv->a_ptr) + 1;
+	 stringsize += strlen(cauxv->u.a_ptr) + 1;
       auxsize += sizeof(*cauxv);
    }
 
@@ -277,7 +277,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    mmap((void *)PGROUNDDN(cl_esp),
 	client_end - PGROUNDDN(cl_esp),
 	PROT_READ | PROT_WRITE | PROT_EXEC, 
-	MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+	MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
    
 
    /* ==================== copy client stack ==================== */
@@ -321,29 +321,29 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 	 if (info->phdr == 0)
 	    auxv->a_type = AT_IGNORE;
 	 else
-	    auxv->a_val = info->phdr;
+	    auxv->u.a_val = info->phdr;
 	 break;
 
       case AT_PHNUM:
 	 if (info->phdr == 0)
 	    auxv->a_type = AT_IGNORE;
 	 else
-	    auxv->a_val = info->phnum;
+	    auxv->u.a_val = info->phnum;
 	 break;
 
       case AT_BASE:
 	 if (info->interp_base == 0)
 	    auxv->a_type = AT_IGNORE;
 	 else
-	    auxv->a_val = info->interp_base;
+	    auxv->u.a_val = info->interp_base;
 	 break;
 
       case AT_PLATFORM:		/* points to a platform description string */
-	 auxv->a_ptr = copy_str(&strtab, orig_auxv->a_ptr);
+	 auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
 	 break;
 
       case AT_ENTRY:
-	 auxv->a_val = info->entry;
+	 auxv->u.a_val = info->entry;
 	 break;
 
       case AT_IGNORE:
@@ -373,7 +373,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 	    the kernel actually execve's) should never be SUID, and we
 	    need LD_PRELOAD/LD_LIBRARY_PATH to work for the client, we
 	    set AT_SECURE to 0. */
-	 auxv->a_val = 0;
+	 auxv->u.a_val = 0;
 	 break;
 
       case AT_SYSINFO:
@@ -924,7 +924,7 @@ int main(int argc, char **argv)
    
    /* make the redzone inaccessible */
    mmap((void *)client_end, REDZONE_SIZE, PROT_NONE,
-	MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+	MAP_FIXED|MAP_ANON|MAP_PRIVATE, -1, 0);
 
    munmap(CLIENT_BASE, client_size);	/* make client hole */
 
@@ -951,7 +951,7 @@ int main(int argc, char **argv)
       incrementally initialized as it is used */
    if (shadow_size != 0)
       mmap((char *)shadow_base, shadow_size, PROT_NONE,
-	   MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED, -1, 0);
+	   MAP_PRIVATE|MAP_ANON|MAP_FIXED, -1, 0);
 
    /* unpad us */
    as_unpad((void *)shadow_end, (void *)~0);

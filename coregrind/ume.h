@@ -91,7 +91,7 @@ struct ume_auxv
       void *a_ptr;
       int   a_val;
       void (*a_fcn)(void);
-   };
+   } u;
 };
 
 struct ume_auxv *find_auxv(int *orig_esp);

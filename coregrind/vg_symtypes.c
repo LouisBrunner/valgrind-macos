@@ -151,7 +151,7 @@ struct _SymType {
 	 SymResolver	*resolver;	/* symtab reader's resolver */
 	 void		*data;		/* data for resolver */
       } t_unresolved;
-   };
+   } u;
 };
 
 
@@ -186,7 +186,7 @@ static void resolve(SymType *st)
    if (st->kind != TyUnresolved)
       return;
 
-   (*st->t_unresolved.resolver)(st, st->t_unresolved.data);
+   (*st->u.t_unresolved.resolver)(st, st->u.t_unresolved.data);
 
    if (st->kind == TyUnresolved)
       st->kind = TyError;
@@ -200,8 +200,8 @@ SymType *VG_(st_mkunresolved)(SymType *st, SymResolver *resolver, void *data)
 
    st->kind = TyUnresolved;
    st->size = 0;
-   st->t_unresolved.resolver = resolver;
-   st->t_unresolved.data = data;
+   st->u.t_unresolved.resolver = resolver;
+   st->u.t_unresolved.data = data;
 
    return st;
 }
@@ -211,8 +211,8 @@ void VG_(st_unresolved_setdata)(SymType *st, SymResolver *resolver, void *data)
    if (st->kind != TyUnresolved)
       return;
 
-   st->t_unresolved.resolver = resolver;
-   st->t_unresolved.data = data;
+   st->u.t_unresolved.resolver = resolver;
+   st->u.t_unresolved.data = data;
 }
 
 Bool VG_(st_isresolved)(SymType *st)
@@ -246,7 +246,7 @@ SymType *VG_(st_mkint)(SymType *st, UInt size, Bool isSigned)
    
    st->kind = TyInt;
    st->size = size;
-   st->t_scalar.issigned = isSigned;
+   st->u.t_scalar.issigned = isSigned;
 
    return st;
 }
@@ -259,7 +259,7 @@ SymType *VG_(st_mkfloat)(SymType *st, UInt size)
    
    st->kind = TyFloat;
    st->size = size;
-   st->t_scalar.issigned = True;
+   st->u.t_scalar.issigned = True;
 
    return st;
 }
@@ -285,7 +285,7 @@ SymType *VG_(st_mkpointer)(SymType *st, SymType *ptr)
 
    st->kind = TyPointer;
    st->size = sizeof(void *);
-   st->t_pointer.type = ptr;
+   st->u.t_pointer.type = ptr;
 
    return st;
 }
@@ -298,9 +298,9 @@ SymType *VG_(st_mkrange)(SymType *st, SymType *ty, Int min, Int max)
 
    st->kind = TyRange;
    st->size = 0;		/* ? */
-   st->t_range.type = ty;
-   st->t_range.min = min;
-   st->t_range.max = max;
+   st->u.t_range.type = ty;
+   st->u.t_range.min = min;
+   st->u.t_range.max = max;
 
    return st;
 }
@@ -311,16 +311,16 @@ SymType *VG_(st_mkstruct)(SymType *st, UInt size, UInt nfields)
 
    vg_assert(st->kind == TyUnresolved || st->kind == TyUnknown || st->kind == TyStruct);
 
-   vg_assert(st->kind != TyStruct || st->t_struct.nfield == 0);
+   vg_assert(st->kind != TyStruct || st->u.t_struct.nfield == 0);
 
    st->kind = TyStruct;
    st->size = size;
-   st->t_struct.nfield = 0;
-   st->t_struct.nfieldalloc = nfields;
+   st->u.t_struct.nfield = 0;
+   st->u.t_struct.nfieldalloc = nfields;
    if (nfields != 0)
-      st->t_struct.fields = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(StField) * nfields);
+      st->u.t_struct.fields = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(StField) * nfields);
    else
-      st->t_struct.fields = NULL;
+      st->u.t_struct.fields = NULL;
    
    return st;
 }
@@ -331,16 +331,16 @@ SymType *VG_(st_mkunion)(SymType *st, UInt size, UInt nfields)
 
    vg_assert(st->kind == TyUnresolved || st->kind == TyUnknown || st->kind == TyUnion);
 
-   vg_assert(st->kind != TyUnion || st->t_struct.nfield == 0);
+   vg_assert(st->kind != TyUnion || st->u.t_struct.nfield == 0);
 
    st->kind = TyUnion;
    st->size = size;
-   st->t_struct.nfield = 0;
-   st->t_struct.nfieldalloc = nfields;
+   st->u.t_struct.nfield = 0;
+   st->u.t_struct.nfieldalloc = nfields;
    if (nfields != 0)
-      st->t_struct.fields = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(StField) * nfields);
+      st->u.t_struct.fields = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(StField) * nfields);
    else
-      st->t_struct.fields = NULL;
+      st->u.t_struct.fields = NULL;
 
    return st;
 }
@@ -351,17 +351,17 @@ void VG_(st_addfield)(SymType *st, Char *name, SymType *type, UInt off, UInt siz
 
    vg_assert(st->kind == TyStruct || st->kind == TyUnion);
 
-   if (st->t_struct.nfieldalloc == st->t_struct.nfield) {
+   if (st->u.t_struct.nfieldalloc == st->u.t_struct.nfield) {
       StField *n = VG_(arena_malloc)(VG_AR_SYMTAB, 
-				     sizeof(StField) * (st->t_struct.nfieldalloc + 2));
-      VG_(memcpy)(n, st->t_struct.fields, sizeof(*n) * st->t_struct.nfield);
-      if (st->t_struct.fields != NULL)
-	 VG_(arena_free)(VG_AR_SYMTAB, st->t_struct.fields);
-      st->t_struct.nfieldalloc++;
-      st->t_struct.fields = n;
+				     sizeof(StField) * (st->u.t_struct.nfieldalloc + 2));
+      VG_(memcpy)(n, st->u.t_struct.fields, sizeof(*n) * st->u.t_struct.nfield);
+      if (st->u.t_struct.fields != NULL)
+	 VG_(arena_free)(VG_AR_SYMTAB, st->u.t_struct.fields);
+      st->u.t_struct.nfieldalloc++;
+      st->u.t_struct.fields = n;
    }
 
-   f = &st->t_struct.fields[st->t_struct.nfield++];
+   f = &st->u.t_struct.fields[st->u.t_struct.nfield++];
    f->name = name;
    f->type = type;
    f->offset = off;
@@ -376,8 +376,8 @@ SymType *VG_(st_mkenum)(SymType *st, UInt ntags)
    vg_assert(st->kind == TyUnresolved || st->kind == TyUnknown || st->kind == TyEnum);
 
    st->kind = TyEnum;
-   st->t_enum.ntag = 0;
-   st->t_enum.tags = NULL;
+   st->u.t_enum.ntag = 0;
+   st->u.t_enum.tags = NULL;
    
    return st;
 }
@@ -389,8 +389,8 @@ SymType *VG_(st_mkarray)(SymType *st, SymType *idxtype, SymType *type)
    vg_assert(st->kind == TyUnresolved || st->kind == TyUnknown);
 
    st->kind = TyArray;
-   st->t_array.type = type;
-   st->t_array.idxtype = idxtype;
+   st->u.t_array.type = type;
+   st->u.t_array.idxtype = idxtype;
    
    return st;
 }
@@ -405,7 +405,7 @@ SymType *VG_(st_mktypedef)(SymType *st, Char *name, SymType *type)
    
    st->kind = TyTypedef;
    st->name = name;
-   st->t_typedef.type = type;
+   st->u.t_typedef.type = type;
 
    return st;
 }
@@ -418,7 +418,7 @@ SymType *VG_(st_basetype)(SymType *type, Bool do_resolve)
 	 resolve(type);
 
       if (type->kind == TyTypedef)
-	 type = type->t_typedef.type;
+	 type = type->u.t_typedef.type;
    }
 
    return type;
@@ -825,9 +825,9 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	    Int i;
 
 	    if (debug)
-	       VG_(printf)("    %d fields\n", type->t_struct.nfield);
-	    for(i = 0; i < type->t_struct.nfield; i++) {
-	       StField *f = &type->t_struct.fields[i];
+	       VG_(printf)("    %d fields\n", type->u.t_struct.nfield);
+	    for(i = 0; i < type->u.t_struct.nfield; i++) {
+	       StField *f = &type->u.t_struct.fields[i];
 	       newvar(f->name, f->type, var->valuep + (f->offset / 8), (f->size + 7) / 8);
 	    }
 	    break;
@@ -837,12 +837,12 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	    Int i; 
 	    Int offset;		/* offset of index for non-0-based arrays */
 	    Int min, max;	/* range of indicies we care about (0 based) */
-	    SymType *ty = type->t_array.type;
-	    vg_assert(type->t_array.idxtype->kind == TyRange);
+	    SymType *ty = type->u.t_array.type;
+	    vg_assert(type->u.t_array.idxtype->kind == TyRange);
 
-	    offset = type->t_array.idxtype->t_range.min;
+	    offset = type->u.t_array.idxtype->u.t_range.min;
 	    min = 0;
-	    max = type->t_array.idxtype->t_range.max - offset;
+	    max = type->u.t_array.idxtype->u.t_range.max - offset;
 
 	    if ((max-min+1) == 0) {
 #if SHADOWCHUNK
@@ -893,7 +893,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	    /* XXX work out a way of telling whether a pointer is
 	       actually a decayed array, and treat it accordingly */
 	    if (is_valid_addr(var->valuep))
-	       newvar(NULL, type->t_pointer.type, *(Addr *)var->valuep, -1);
+	       newvar(NULL, type->u.t_pointer.type, *(Addr *)var->valuep, -1);
 	    break;
 
 	 case TyUnresolved:

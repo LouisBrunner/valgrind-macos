@@ -39,6 +39,9 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
          return 0;
       case 2: /* MALLOC */
          return (HWord)malloc(arg2);
+      case 3: /* FREE */
+         free((void*)arg2);
+         return 0;
       default:
          assert(0);
    }

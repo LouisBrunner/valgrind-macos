@@ -46,11 +46,7 @@
    a way as to make the previous interception scheme stop working.
 */
 
-/* Sidestep the normal check which disallows using valgrind.h
-   directly. */
-#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
-
 #include "vg_include.h"
 #include "vg_kerneliface.h"
 

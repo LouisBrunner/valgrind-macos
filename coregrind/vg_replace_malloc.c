@@ -41,11 +41,8 @@
    that will be called.
    ------------------------------------------------------------------ */
 
-#include "vg_include.h"
-
-/* Sidestep the normal check which disallows using valgrind.h directly. */
-#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
+#include "vg_include.h"
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/

@@ -52,11 +52,7 @@
    myexit().  Also fprintf doesn't seem safe.
 */
 
-/* Sidestep the normal check which disallows using valgrind.h
-   directly. */
-#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"    /* For the request-passing mechanism */
-
 #include "vg_include.h"  /* For the VG_USERREQ__* constants */
 
 #define __USE_UNIX98

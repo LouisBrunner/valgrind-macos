@@ -1,9 +1,9 @@
 
 #include <stdio.h>
-/* Sidestep the normal check which disallows using valgrind.h
-   directly. */
-#define __VALGRIND_SOMESKIN_H
 #include "../../include/valgrind.h"
+
+
+
 
 int fooble ( void )
 {

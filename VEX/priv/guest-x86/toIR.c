@@ -113,17 +113,20 @@ static Addr32 guest_eip_curr_instr;
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
 
+/* Emergency verboseness just for this insn?  DEBUG ONLY */
+static Bool  insn_verbose = False;
+
 
 /*------------------------------------------------------------*/
 /*--- Debugging output                                     ---*/
 /*------------------------------------------------------------*/
 
 #define DIP(format, args...)           \
-   if (vex_traceflags & VEX_TRACE_FE)  \
+   if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
       vex_printf(format, ## args)
 
 #define DIS(buf, format, args...)      \
-   if (vex_traceflags & VEX_TRACE_FE)  \
+   if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
       vex_sprintf(buf, format, ## args)
 
 
@@ -250,13 +253,14 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
            || subarch_guest == VexSubArchX86_sse1
            || subarch_guest == VexSubArchX86_sse2);
 
+   vassert((guest_eip_start >> 32) == 0);
+
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
    guest_code        = x86code;
    guest_eip_bbstart = (Addr32)guest_eip_start;
    irbb              = emptyIRBB();
-
-   vassert((guest_eip_start >> 32) == 0);
+   insn_verbose      = False;
 
    /* Delta keeps track of how far along the x86code array we
       have so far gone. */
@@ -281,6 +285,7 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
 
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, subarch_guest, &size, &guest_next );
+      insn_verbose = False;
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {
@@ -6865,8 +6870,20 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* Skip a LOCK prefix. */
+   /* 2005 Jan 06: the following insns are observed to sometimes
+      have a LOCK prefix:
+         cmpxchgl %ecx,(%edx)
+         xchgl %eax, (%ecx)
+         xaddl %eax, (%ecx)
+      We need to catch any such which appear to be being used as
+      a memory barrier, for example  lock addl $0,0(%esp)
+      and emit an IR MFence construct.
+   */
    if (getIByte(delta) == 0xF0) { 
-      if (0) vex_printf("vex x86->IR: ignoring LOCK prefix\n");
+      if (1) {
+         vex_printf("vex x86->IR: ignoring LOCK prefix on: ");
+         insn_verbose = True;
+      }
       delta++;
    }
 

@@ -957,6 +957,7 @@ static void dead_BB ( IRBB* bb )
 
 /* Extract the min/max offsets from a guest state array descriptor. */
 
+inline
 static void getArrayBounds ( IRArray* descr, UInt* minoff, UInt* maxoff )
 {
    *minoff = descr->base;

@@ -476,6 +476,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
       case Iop_DivModU64to32:
+      case Iop_DivModS64to32:
          BINARY(Ity_I64,Ity_I64,Ity_I32);
 
       case Iop_64HIto32: case Iop_64LOto32:

@@ -324,7 +324,7 @@ void init_magically_inited_sword(Addr a)
 /*--- Implementation of lock sets.                         ---*/
 /*------------------------------------------------------------*/
 
-typedef struct hg_mutex hg_mutex_t; /* forward decl */
+typedef struct _Mutex Mutex; /* forward decl */
 typedef struct _LockSet LockSet;
 
 typedef enum MutexState {
@@ -334,9 +334,9 @@ typedef enum MutexState {
    MxDead			/* destroyed */
 } MutexState;
 
-struct hg_mutex {
+struct _Mutex {
    Addr               mutexp;
-   struct hg_mutex   *next;
+   Mutex             *next;
 
    MutexState         state;	/* mutex state */
    ThreadId           tid;	/* owner */
@@ -346,7 +346,7 @@ struct hg_mutex {
    UInt               mark;	/* mark for graph traversal */
 };
 
-static inline Int mutex_cmp(const hg_mutex_t *a, const hg_mutex_t *b)
+static inline Int mutex_cmp(const Mutex *a, const Mutex *b)
 {
    return a->mutexp - b->mutexp;
 }
@@ -355,7 +355,7 @@ struct _LockSet {
    UInt		      setsize;	/* number of members */
    UInt		      hash;	/* hash code */
    LockSet           *next;	/* next in hash chain */
-   const hg_mutex_t  *mutex[0];	/* locks */
+   const Mutex       *mutex[0];	/* locks */
 };
 
 static const LockSet *emptyset;
@@ -390,7 +390,7 @@ void pp_LockSet(const LockSet* p)
 
    VG_(printf)("{ ");
    for(i = 0; i < p->setsize; i++) {
-      const hg_mutex_t *mx = p->mutex[i];
+      const Mutex *mx = p->mutex[i];
 
       VG_(printf)("%p%(y ", mx->mutexp, mx->mutexp);
    }
@@ -406,8 +406,8 @@ static void print_LockSet(const Char *s, const LockSet *ls)
 
 /* Compute the hash of a LockSet */
 static inline UInt hash_LockSet_w_wo(const LockSet *ls, 
-				     const hg_mutex_t *with,
-				     const hg_mutex_t *without)
+				     const Mutex *with,
+				     const Mutex *without)
 {
    UInt i;
    UInt hash = 0;
@@ -415,7 +415,7 @@ static inline UInt hash_LockSet_w_wo(const LockSet *ls,
    sk_assert(with == NULL || with != without);
 
    for(i = 0; with != NULL || i < ls->setsize; i++) {
-      const hg_mutex_t *mx = i >= ls->setsize ? NULL : ls->mutex[i];
+      const Mutex *mx = i >= ls->setsize ? NULL : ls->mutex[i];
 
       if (without && mutex_cmp(without, mx) == 0)
 	 continue;
@@ -433,7 +433,7 @@ static inline UInt hash_LockSet_w_wo(const LockSet *ls,
    return hash % LOCKSET_HASH_SZ;
 }
 
-static inline UInt hash_LockSet_with(const LockSet *ls, const hg_mutex_t *with)
+static inline UInt hash_LockSet_with(const LockSet *ls, const Mutex *with)
 {
    UInt hash = hash_LockSet_w_wo(ls, with, NULL);
 
@@ -443,7 +443,7 @@ static inline UInt hash_LockSet_with(const LockSet *ls, const hg_mutex_t *with)
    return hash;
 }
 
-static inline UInt hash_LockSet_without(const LockSet *ls, const hg_mutex_t *without)
+static inline UInt hash_LockSet_without(const LockSet *ls, const Mutex *without)
 {
    UInt hash = hash_LockSet_w_wo(ls, NULL, without);
 
@@ -487,7 +487,7 @@ Bool structural_eq_LockSet(const LockSet* a, const LockSet* b)
  */
 static Bool 
 weird_LockSet_equals(const LockSet* a, const LockSet* b, 
-                     const hg_mutex_t *missing_mutex)
+                     const Mutex *missing_mutex)
 {
    static const Bool debug = False;
    Int ia, ib;
@@ -572,7 +572,7 @@ static const LockSet *lookup_LockSet(const LockSet *set)
    return NULL;
 }
 
-static const LockSet *lookup_LockSet_with(const LockSet *set, hg_mutex_t *mutex)
+static const LockSet *lookup_LockSet_with(const LockSet *set, Mutex *mutex)
 {
    UInt bucket = hash_LockSet_with(set, mutex);
    const LockSet *ret;
@@ -584,7 +584,7 @@ static const LockSet *lookup_LockSet_with(const LockSet *set, hg_mutex_t *mutex)
    return NULL;
 }
 
-static const LockSet *lookup_LockSet_without(const LockSet *set, hg_mutex_t *mutex)
+static const LockSet *lookup_LockSet_without(const LockSet *set, Mutex *mutex)
 {
    UInt bucket = hash_LockSet_without(set, mutex);
    const LockSet *ret;
@@ -611,7 +611,7 @@ static void insert_LockSet(LockSet *set)
 static inline
 LockSet *alloc_LockSet(UInt setsize)
 {
-   LockSet *ret = VG_(malloc)(sizeof(*ret) + sizeof(hg_mutex_t *) * setsize);
+   LockSet *ret = VG_(malloc)(sizeof(*ret) + sizeof(Mutex *) * setsize);
    ret->setsize = setsize;
    return ret;
 }
@@ -654,7 +654,7 @@ static inline Bool isempty(const LockSet *ls)
    return ls == NULL || ls->setsize == 0;
 }
 
-static Bool ismember(const LockSet *ls, const hg_mutex_t *mx)
+static Bool ismember(const LockSet *ls, const Mutex *mx)
 {
    Int i;
 
@@ -680,7 +680,7 @@ void sanity_check_locksets ( const Char* caller )
    for(i = 0; i < LOCKSET_HASH_SZ; i++) {
 
       for(ls = lockset_hash[i]; ls != NULL; ls = ls->next) {
-	 const hg_mutex_t *prev;
+	 const Mutex *prev;
 	 Int j;
 
 	 if (hash_LockSet(ls) != ls->hash) {
@@ -716,7 +716,7 @@ void sanity_check_locksets ( const Char* caller )
 }
 
 static
-LockSet *add_LockSet(const LockSet *ls, const hg_mutex_t *mx)
+LockSet *add_LockSet(const LockSet *ls, const Mutex *mx)
 {
    static const Bool debug = False;
    LockSet *ret = NULL;
@@ -763,7 +763,7 @@ LockSet *add_LockSet(const LockSet *ls, const hg_mutex_t *mx)
    exist in the table (unchecked).
 */
 static 
-LockSet *remove_LockSet ( const LockSet *ls, const hg_mutex_t *mx )
+LockSet *remove_LockSet ( const LockSet *ls, const Mutex *mx )
 {
    static const Bool debug = False;
    LockSet   *ret = NULL;
@@ -1046,18 +1046,18 @@ void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
 
 static UInt graph_mark;		/* current mark we're using for graph traversal */
 
-static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
+static void record_mutex_error(ThreadId tid, Mutex *mutex, 
 			       Char *str, ExeContext *ec);
-static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
+static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
 				   const LockSet *lockset_holding, 
 				   const LockSet *lockset_prev);
 
-static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
+static void set_mutex_state(Mutex *mutex, MutexState state,
 			    ThreadId tid, ThreadState *tst);
 
 #define M_MUTEX_HASHSZ	1021
 
-static hg_mutex_t *mutex_hash[M_MUTEX_HASHSZ];
+static Mutex *mutex_hash[M_MUTEX_HASHSZ];
 static UInt total_mutexes;
 
 static const Char *pp_MutexState(MutexState st)
@@ -1078,7 +1078,7 @@ static void pp_all_mutexes()
 
    locks = buckets = 0;
    for(i = 0; i < M_MUTEX_HASHSZ; i++) {
-      hg_mutex_t *mx;
+      Mutex *mx;
       Bool first = True;
 
       for(mx = mutex_hash[i]; mx != NULL; mx = mx->next) {
@@ -1098,11 +1098,11 @@ static void pp_all_mutexes()
 	       locks, buckets, total_mutexes);
 }
 
-/* find or create an hg_mutex for a program's mutex use */
-static hg_mutex_t *get_mutex(Addr mutexp)
+/* find or create a Mutex for a program's mutex use */
+static Mutex *get_mutex(Addr mutexp)
 {
    UInt bucket = ((UInt)mutexp) % M_MUTEX_HASHSZ;
-   hg_mutex_t *mp;
+   Mutex *mp;
    
    for(mp = mutex_hash[bucket]; mp != NULL; mp = mp->next)
       if (mp->mutexp == mutexp)
@@ -1129,7 +1129,7 @@ static hg_mutex_t *get_mutex(Addr mutexp)
    Remove the mutex from the hash if the callback returns True (mutex
    structure itself is not freed, because it may be pointed to by a
    LockSet. */
-static void find_mutex_range(Addr start, Addr end, Bool (*action)(hg_mutex_t *))
+static void find_mutex_range(Addr start, Addr end, Bool (*action)(Mutex *))
 {
    UInt first = start % M_MUTEX_HASHSZ;
    UInt last = (end+1) % M_MUTEX_HASHSZ;
@@ -1137,8 +1137,8 @@ static void find_mutex_range(Addr start, Addr end, Bool (*action)(hg_mutex_t *))
 
    /* Single pass over the hash table, looking for likely hashes */
    for(i = first; i != last; ) {
-      hg_mutex_t *mx;
-      hg_mutex_t **prev = &mutex_hash[i];
+      Mutex *mx;
+      Mutex **prev = &mutex_hash[i];
 
       for(mx = mutex_hash[i]; mx != NULL; prev = &mx->next, mx = mx->next) {
 	 if (mx->mutexp >= start && mx->mutexp < end && (*action)(mx))
@@ -1161,7 +1161,7 @@ void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
    Addr start = sc->data;
    Addr end = start + sc->size;
 
-   Bool deadmx(hg_mutex_t *mx) {
+   Bool deadmx(Mutex *mx) {
       if (mx->state != MxDead)
 	 set_mutex_state(mx, MxDead, tid, tst);
 
@@ -1187,9 +1187,9 @@ void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
 #define MARK_LOOP	(graph_mark+0)
 #define MARK_DONE	(graph_mark+1)
 
-static Bool check_cycle(const hg_mutex_t *start, const LockSet* lockset)
+static Bool check_cycle(const Mutex *start, const LockSet* lockset)
 {
-   Bool check_cycle_inner(const hg_mutex_t *mutex, const LockSet *ls)
+   Bool check_cycle_inner(const Mutex *mutex, const LockSet *ls)
    {
       static const Bool debug = False;
       Int i;
@@ -1199,13 +1199,13 @@ static Bool check_cycle(const hg_mutex_t *start, const LockSet* lockset)
       if (mutex->mark == MARK_DONE)
 	 return False;		/* been here before, its OK */
 
-      ((hg_mutex_t*)mutex)->mark = MARK_LOOP;
+      ((Mutex*)mutex)->mark = MARK_LOOP;
 	 
       if (debug)
 	 VG_(printf)("mark=%d visiting %p%(y mutex->lockset=%d\n",
 		     graph_mark, mutex->mutexp, mutex->mutexp, mutex->lockdep);
       for(i = 0; i < ls->setsize; i++) {
-	 const hg_mutex_t *mx = ls->mutex[i];
+	 const Mutex *mx = ls->mutex[i];
 
 	 if (debug)
 	    VG_(printf)("   %y ls=%p (ls->mutex=%p%(y)\n", 
@@ -1214,7 +1214,7 @@ static Bool check_cycle(const hg_mutex_t *start, const LockSet* lockset)
 	 if (check_cycle_inner(mx, mx->lockdep))
 	    return True;
       }
-      ((hg_mutex_t*)mutex)->mark = MARK_DONE;
+      ((Mutex*)mutex)->mark = MARK_DONE;
 	 
       return False;
    }
@@ -1226,7 +1226,7 @@ static Bool check_cycle(const hg_mutex_t *start, const LockSet* lockset)
 
 /* catch bad mutex state changes (though the common ones are handled
    by core) */
-static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
+static void set_mutex_state(Mutex *mutex, MutexState state,
 			    ThreadId tid, ThreadState *tst)
 {
    static const Bool debug = False;
@@ -1329,7 +1329,7 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
    Addr end;
 
    /* only clean up dead mutexes */
-   Bool cleanmx(hg_mutex_t *mx) {
+   Bool cleanmx(Mutex *mx) {
       return mx->state == MxDead;
    }
 
@@ -1728,7 +1728,7 @@ typedef
       Bool isWrite;
       shadow_word prevstate;
       /* MutexErr, LockGraphErr */
-      hg_mutex_t *mutex;
+      Mutex      *mutex;
       ExeContext *lasttouched;
       ThreadId    lasttid;
       /* LockGraphErr */
@@ -1890,7 +1890,7 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
    set_sword(a, error_sword);
 }
 
-static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
+static void record_mutex_error(ThreadId tid, Mutex *mutex, 
 			       Char *str, ExeContext *ec)
 {
    HelgrindError err_extra;
@@ -1905,7 +1905,7 @@ static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex,
 			   (Addr)mutex->mutexp, str, &err_extra);
 }
 
-static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
+static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
 				   const LockSet *lockset_holding,
 				   const LockSet *lockset_prev)
 {
@@ -2094,7 +2094,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
       VG_(message)(Vg_UserMsg, " while holding locks %s", msg);
 
       for(i = 0; i < heldset->setsize; i++) {
-	 const hg_mutex_t *lsmx = heldset->mutex[i];
+	 const Mutex *lsmx = heldset->mutex[i];
 
 	 if (!ismember(lsmx->lockdep, extra->mutex))
 	    continue;
@@ -2147,7 +2147,7 @@ Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
 static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
-   hg_mutex_t *mutex = get_mutex((Addr)void_mutex);
+   Mutex *mutex = get_mutex((Addr)void_mutex);
    const LockSet*  ls;
 
    set_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
@@ -2182,7 +2182,7 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
    Int i = 0;
-   hg_mutex_t *mutex = get_mutex((Addr)void_mutex);
+   Mutex *mutex = get_mutex((Addr)void_mutex);
    const LockSet *ls;
 
    set_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));

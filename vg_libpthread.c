@@ -1295,7 +1295,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
    /* If a timeout was specified, set ms_end to be the end wallclock
       time.  Easy considering that __timeout is in milliseconds. */
    if (__timeout > 0) {
-      ms_end += (unsigned int)__timeout;
+      ms_end = ms_now + (unsigned int)__timeout;
    }
 
    /* fprintf(stderr, "MY_POLL: before loop\n"); */

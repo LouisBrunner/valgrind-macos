@@ -4990,7 +4990,6 @@ POST(sys_waitpid)
 PRE(sys_wait4, MayBlock)
 {
    PRINT("sys_wait4 ( %d, %p, %d, %p )", ARG1,ARG2,ARG3,ARG4);
-   ARG3 &= ~(__VKI_WCLONE | __VKI_WALL);
 
    PRE_REG_READ4(long, "wait4", 
                  vki_pid_t, pid, unsigned int *, status, int, options,

@@ -391,8 +391,8 @@ Char* showX86ScalarSz ( X86ScalarSz sz ) {
 
 Char* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
-      case Xun_Not: return "not";
-      case Xun_Neg: return "neg";
+      case Xun_NOT: return "not";
+      case Xun_NEG: return "neg";
       default: vpanic("showX86UnaryOp");
    }
 }
@@ -1570,10 +1570,19 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       break;
 
    case Xin_Unary32:
-      if (i->Xin.Unary32.op == Xun_Not) {
+      if (i->Xin.Unary32.op == Xun_NOT) {
          *p++ = 0xF7;
          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
             p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
+            goto done;
+         } else {
+            goto bad;
+         }
+      }
+      if (i->Xin.Unary32.op == Xun_NEG) {
+         *p++ = 0xF7;
+         if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
+            p = doAMode_R(p, fake(3), i->Xin.Unary32.dst->Xrm.Reg.reg);
             goto done;
          } else {
             goto bad;

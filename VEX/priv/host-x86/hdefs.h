@@ -209,8 +209,8 @@ extern Char* showX86ScalarSz ( X86ScalarSz );
 /* --------- */
 typedef
    enum {
-      Xun_Neg,
-      Xun_Not
+      Xun_NEG,
+      Xun_NOT
    }
    X86UnaryOp;
 

@@ -2866,7 +2866,7 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
       con->Ico.U64 = yyy_value;
    } else {
       udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
-      con->Ico.U64 = (UInt)yyy_value;
+      con->Ico.U32 = (UInt)yyy_value;
    }
 
    /* negate the test condition */

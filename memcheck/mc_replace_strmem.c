@@ -47,12 +47,8 @@
 static __inline__
 Bool is_overlap ( void* dst, const void* src, UInt len )
 {
-   Int diff = src-dst;
-
-   if (diff < 0) 
-      diff = -diff;
-   /* Now we have diff >= 0, so a cast to UInt is harmless. */
-   return ( ((UInt)diff) < len);
+   UInt diff = src > dst ? src-dst : dst-src;
+   return (diff < len);
 }
 
 static __inline__

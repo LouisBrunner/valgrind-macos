@@ -189,6 +189,7 @@ static void clear_AddrInfo ( AddrInfo* ai )
    ai->rwoffset   = 0;
    ai->lastchange = NULL;
    ai->stack_tid  = VG_INVALID_THREADID;
+   ai->maybe_gcc  = False;
 }
 
 static void clear_ErrContext ( ErrContext* ec )
@@ -227,7 +228,9 @@ Bool vg_eq_ExeContext ( Bool top_2_only,
 static Bool eq_AddrInfo ( Bool cheap_addr_cmp,
                           AddrInfo* ai1, AddrInfo* ai2 )
 {
-   if (ai1->akind != ai2->akind) 
+   if (ai1->akind != Undescribed 
+       && ai2->akind != Undescribed
+       && ai1->akind != ai2->akind) 
       return False;
    if (ai1->akind == Freed || ai1->akind == Mallocd) {
       if (ai1->blksize != ai2->blksize)
@@ -288,8 +291,16 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
                       ai->stack_tid, a);
          break;
       case Unknown:
-         VG_(message)(Vg_UserMsg, 
-                      "   Address 0x%x is not stack'd, malloc'd or free'd", a);
+         if (ai->maybe_gcc) {
+            VG_(message)(Vg_UserMsg, 
+               "   Address 0x%x is just below %%esp.  Possibly a bug in GCC/G++",
+               a);
+            VG_(message)(Vg_UserMsg, 
+               "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
+	 } else {
+            VG_(message)(Vg_UserMsg, 
+               "   Address 0x%x is not stack'd, malloc'd or free'd", a);
+         }
          break;
       case Freed: case Mallocd: case UserG: case UserS: {
          UInt delta;
@@ -546,7 +557,10 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
 
    /* Didn't see it.  Copy and add. */
 
-   /* OK, we're really going to collect it. */
+   /* OK, we're really going to collect it.  First, describe any addr
+      info in the error. */
+   if (ec->addrinfo.akind == Undescribed)
+      VG_(describe_addr) ( ec->addr, &ec->addrinfo );
 
    p = VG_(malloc)(VG_AR_ERRCTXT, sizeof(ErrContext));
    *p = *ec;
@@ -604,12 +618,15 @@ void VG_(record_value_error) ( Int size )
 void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
 {
    ErrContext ec;
+   Bool       just_below_esp;
    if (vg_ignore_errors) return;
+
+   just_below_esp 
+      = VG_(is_just_below_ESP)( VG_(baseBlock)[VGOFF_(m_esp)], a );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
-   if (VG_(clo_workaround_gcc296_bugs) 
-       && VG_(is_just_below_ESP)( VG_(baseBlock)[VGOFF_(m_esp)], a ))
+   if (VG_(clo_workaround_gcc296_bugs) && just_below_esp)
       return;
 
    clear_ErrContext( &ec );
@@ -625,7 +642,8 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    ec.m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
    ec.m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
    ec.m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind     = Undescribed;
+   ec.addrinfo.maybe_gcc = just_below_esp;
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -648,7 +666,7 @@ void VG_(record_free_error) ( ThreadState* tst, Addr a )
    ec.m_eip   = tst->m_eip;
    ec.m_esp   = tst->m_esp;
    ec.m_ebp   = tst->m_ebp;
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -666,7 +684,7 @@ void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
    ec.m_eip   = tst->m_eip;
    ec.m_esp   = tst->m_esp;
    ec.m_ebp   = tst->m_ebp;
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -685,7 +703,7 @@ void VG_(record_jump_error) ( ThreadState* tst, Addr a )
    ec.m_eip   = tst->m_eip;
    ec.m_esp   = tst->m_esp;
    ec.m_ebp   = tst->m_ebp;
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -704,7 +722,7 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
    ec.m_eip   = tst->m_eip;
    ec.m_esp   = tst->m_esp;
    ec.m_ebp   = tst->m_ebp;
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind = Undescribed;
    ec.syscall_param = msg;
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );
@@ -724,7 +742,7 @@ void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
    ec.m_eip   = tst->m_eip;
    ec.m_esp   = tst->m_esp;
    ec.m_ebp   = tst->m_ebp;
-   VG_(describe_addr) ( a, &ec.addrinfo );
+   ec.addrinfo.akind = Undescribed;
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );
 }

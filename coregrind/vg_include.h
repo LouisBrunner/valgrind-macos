@@ -106,7 +106,7 @@
 
 /* These many bytes below %ESP are considered addressible if we're
    doing the --workaround-gcc296-bugs hack. */
-#define VG_GCC296_BUG_STACK_SLOP 256
+#define VG_GCC296_BUG_STACK_SLOP 1024
 
 /* The maximum number of calls we're prepared to save in a
    backtrace. */
@@ -1152,7 +1152,11 @@ extern void VG_(record_user_err) ( ThreadState* tst,
 
 /* The classification of a faulting address. */
 typedef 
-   enum { Stack, Unknown, Freed, Mallocd, UserG, UserS }
+   enum { Undescribed, /* as-yet unclassified */
+          Stack, 
+          Unknown, /* classification yielded nothing useful */
+          Freed, Mallocd, 
+          UserG, UserS }
    AddrKind;
 
 /* Records info about a faulting address. */
@@ -1168,6 +1172,8 @@ typedef
       ExeContext* lastchange;
       /* Stack */
       ThreadId stack_tid;
+      /* True if is just-below %esp -- could be a gcc bug. */
+      Bool maybe_gcc;
    }
    AddrInfo;
 

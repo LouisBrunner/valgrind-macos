@@ -32,24 +32,91 @@
 
 // See the comment accompanying the declaration of VGA_(thread_syscall)() in
 // coregrind/core.h for an explanation of what this does, and why.
-//
-// XXX: this function and these variables should be assembly code!  See the
-// x86 version.
-const Addr VGA_(sys_before), VGA_(sys_restarted),
-           VGA_(sys_after),  VGA_(sys_done);
-void VGA_(do_thread_syscall)(UWord sys,
-                             UWord arg1, UWord arg2, UWord arg3,
-                             UWord arg4, UWord arg5, UWord arg6,
-                             UWord *result, /*enum PXState*/Int *statep,
-                             /*enum PXState*/Int poststate)
-{
-   I_die_here;
-}
+asm(
+".text\n"
+"	.type vgArch_do_thread_syscall,@function\n"
+
+".globl  vgArch_do_thread_syscall\n"
+"vgArch_do_thread_syscall:\n"
+"	pushq	%r15\n"
+"	pushq	%r14\n"
+"	pushq	%r13\n"
+"	pushq	%r12\n"
+"	pushq	%rbx\n"
+"	pushq	%rbp\n"
+".vgArch_sys_before:\n"
+
+/* Params:
+        rdi = UWord sys
+        rsi = UWord arg1
+        rdx = UWord arg2
+        rcx = UWord arg3
+        r8  = UWord arg4
+        r9  = UWord arg5
+   Stack now looks like this (remaining args pushed R->L):
+        Int    poststate    80
+        Int*   statep       72
+        HWord* result       64
+        UWord  arg6         56
+        ReturnAddress       48
+        r15                 40
+        r14                 32
+        r13                 24
+        r12                 16
+        rbx                 8
+        rbp                 0+rsp
+*/
+
+/* Convert function calling convention --> syscall calling convention */
+"	movq	%rdi, %rax\n"         /* syscall */
+"	movq	%rsi, %rdi\n"         /* arg1 */
+"	movq	%rdx, %rsi\n"         /* arg2 */
+"	movq	%rcx, %rdx\n"         /* arg3 */
+"	movq	%r8,  %r10\n"         /* arg4 */
+"	movq	%r9,  %r8\n"          /* arg5 */
+"	movq    56(%rsp), %r9\n"      /* arg6 */ /* last arg from stack */
+".vgArch_sys_restarted:\n"
+"	syscall\n"
+".vgArch_sys_after:\n"
+"	movq	64(%rsp),%rbx\n"	/* rbx = HWord* result */
+"	movq	%rax, (%rbx)\n"		/* write the syscall retval */
+
+"	movl	72(%esp),%ebx\n"	/* rbx = Int* stateP */
+"	testl	%ebx, %ebx\n"
+"	jz	1f\n"
+
+"	movl	80(%rsp),%ecx\n"	/* write the post state (must be after retval write) */
+"	movl	%ecx,(%rbx)\n"
+
+".vgArch_sys_done:\n"			/* OK, all clear from here */
+"1:	popq	%rbp\n"
+"	popq	%rbx\n"
+"	popq	%r12\n"
+"	popq	%r13\n"
+"	popq	%r14\n"
+"	popq	%r15\n"
+"	ret\n"
+"	.size vgArch_do_thread_syscall,.-vgArch_do_thread_syscall\n"
+".previous\n"
+
+".section .rodata\n"
+"       .globl  vgArch_sys_before\n"
+"vgArch_sys_before:	.long	.vgArch_sys_before\n"
+"       .globl  vgArch_sys_restarted\n"
+"vgArch_sys_restarted:	.long	.vgArch_sys_restarted\n"
+"       .globl  vgArch_sys_after\n"
+"vgArch_sys_after:	.long	.vgArch_sys_after\n"
+"       .globl  vgArch_sys_done\n"
+"vgArch_sys_done:	.long	.vgArch_sys_done\n"
+".previous\n"
+);
+
 
 
 // Back up to restart a system call.
 void VGA_(restart_syscall)(ThreadArchState *arch)
 {
+   I_die_here;
 #if 0
    arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
 
@@ -109,21 +176,21 @@ PRE(sys_arch_prctl, 0)
 // generic, Linux-only (but arch-independent), or AMD64/Linux only.
 
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
-   //   (__NR_read,              sys_read),           // 0 
+   GENXY(__NR_read,              sys_read),           // 0 
    //   (__NR_write,             sys_write),          // 1 
-   //   (__NR_open,              sys_open),           // 2 
-   //   (__NR_close,             sys_close),          // 3 
-   //   (__NR_stat,              sys_newstat),        // 4 
+   GENX_(__NR_open,              sys_open),           // 2 
+   GENXY(__NR_close,             sys_close),          // 3 
+   GENXY(__NR_stat,              sys_newstat),        // 4 
 
-   //   (__NR_fstat,             sys_newfstat),       // 5 
+   GENXY(__NR_fstat,             sys_newfstat),       // 5 
    //   (__NR_lstat,             sys_newlstat),       // 6 
    //   (__NR_poll,              sys_poll),           // 7 
-   //   (__NR_lseek,             sys_lseek),          // 8 
-   //   (__NR_mmap,              sys_mmap),           // 9 
+   GENX_(__NR_lseek,             sys_lseek),          // 8 
+   GENX_(__NR_mmap,              sys_mmap2),          // 9 
 
-   //   (__NR_mprotect,          sys_mprotect),       // 10 
+   GENXY(__NR_mprotect,          sys_mprotect),       // 10 
    //   (__NR_munmap,            sys_munmap),         // 11 
-   //   (__NR_brk,               sys_brk),            // 12 
+   GENX_(__NR_brk,               sys_brk),            // 12 
    //   (__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
    //   (__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
@@ -133,8 +200,8 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_pwrite64,          sys_pwrite64),       // 18 
    //   (__NR_readv,             sys_readv),          // 19 
 
-   //   (__NR_writev,            sys_writev),         // 20 
-   //   (__NR_access,            sys_access),         // 21 
+   GENX_(__NR_writev,            sys_writev),         // 20 
+   GENX_(__NR_access,            sys_access),         // 21 
    //   (__NR_pipe,              sys_pipe),           // 22 
    //   (__NR_select,            sys_select),         // 23 
    //   (__NR_sched_yield,       sys_sched_yield),    // 24 
@@ -142,7 +209,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_mremap,            sys_mremap),         // 25 
    //   (__NR_msync,             sys_msync),          // 26 
    //   (__NR_mincore,           sys_mincore),        // 27 
-   //   (__NR_madvise,           sys_madvise),        // 28 
+   GENX_(__NR_madvise,           sys_madvise),        // 28 
    //   (__NR_shmget,            sys_shmget),         // 29 
 
    //   (__NR_shmat,             wrap_sys_shmat),     // 30 
@@ -184,7 +251,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_exit,              sys_exit),           // 60
    //   (__NR_wait4,             sys_wait4),          // 61 
    //   (__NR_kill,              sys_kill),           // 62 
-   //   (__NR_uname,             sys_uname),          // 63 
+   GENXY(__NR_uname,             sys_newuname),       // 63 
    //   (__NR_semget,            sys_semget),         // 64 
 
    //   (__NR_semop,             sys_semop),          // 65 

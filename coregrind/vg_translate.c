@@ -1798,7 +1798,16 @@ static void vg_improve ( UCodeBlock* cb )
    instrumentation, so the skin doesn't have to worry about the CCALLs
    it adds in, and we must do it before register allocation because
    spilled temps make it much harder to work out the %esp deltas.
-   Thus we have it as an extra phase between the two. */
+   Thus we have it as an extra phase between the two. 
+   
+   We look for "GETL %ESP, t_ESP", then track ADDs and SUBs of
+   literal values to t_ESP, and the total delta of the ADDs/SUBs.  Then if
+   "PUTL t_ESP, %ESP" happens, we call the helper with the known delta.  We
+   also cope with "MOVL t_ESP, tX", making tX the new t_ESP.  If any other
+   instruction clobbers t_ESP, we don't track it anymore, and fall back to
+   the delta-is-unknown case.  That case is also used when the delta is not
+   a nice small amount, or an unknown amount.
+*/
 static 
 UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
 {
@@ -1840,6 +1849,7 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
          if (u->val1 == t_ESP) {
             /* Known delta, common cases handled specially. */
             switch (delta) {
+            case   0: break;
             case   4: DO(die, 4);
             case  -4: DO(new, 4);
             case   8: DO(die, 8);
@@ -1855,22 +1865,36 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
          } else {
             /* Unknown delta */
             DO_GENERIC;
+
             /* now we know the temp that points to %ESP */
-            if ( t_ESP == INVALID_TEMPREG )
-               t_ESP = u->val1;
+            t_ESP = u->val1;
          }
          delta = 0;
 
 #        undef DO
 #        undef DO_GENERIC
 
-      } else if (Literal == u->tag1 && t_ESP == u->val2) {
-         if (ADD == u->opcode) delta += u->lit32;
-         if (SUB == u->opcode) delta -= u->lit32;
+      } else if (ADD == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
+         delta += u->lit32;
+
+      } else if (SUB == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
+         delta -= u->lit32;
 
       } else if (MOV == u->opcode && TempReg == u->tag1 && t_ESP == u->val1 &&
                                      TempReg == u->tag2) {
+         // t_ESP is transferred
          t_ESP = u->val2;
+
+      } else {
+         // Stop tracking t_ESP if it's clobbered by this instruction.
+         Int  tempUse [VG_MAX_REGS_USED];
+         Bool isWrites[VG_MAX_REGS_USED];
+         Int  j, n = VG_(get_reg_usage)(u, TempReg, tempUse, isWrites);
+
+         for (j = 0; j < n; j++) {
+            if (tempUse[j] == t_ESP && isWrites[j])
+               t_ESP = INVALID_TEMPREG;
+         }
       }
       VG_(copy_UInstr) ( cb, u );
    }
@@ -1925,13 +1949,13 @@ static
 UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 {
    TempInfo*    temp_info;
-   Int          real_to_temp[VG_MAX_REALREGS];
+   Int          real_to_temp [VG_MAX_REALREGS];
    Bool         is_spill_cand[VG_MAX_REALREGS];
    Int          ss_busy_until_before[VG_MAX_SPILLSLOTS];
    Int          i, j, k, m, r, tno, max_ss_no;
    Bool         wr, defer, isRead, spill_reqd;
-   UInt         realUse[VG_MAX_REGS_USED];
-   Int          tempUse[VG_MAX_REGS_USED];
+   UInt         realUse [VG_MAX_REGS_USED];
+   Int          tempUse [VG_MAX_REGS_USED];
    Bool         isWrites[VG_MAX_REGS_USED];
    UCodeBlock*  c2;
 
@@ -2442,3 +2466,4 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_translate.c ---*/
 /*--------------------------------------------------------------------*/
+

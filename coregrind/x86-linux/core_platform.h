@@ -56,6 +56,11 @@
 #define R_SYSCALL_ARG1                 R_EBX
 #define R_SYSCALL_RET                  R_EAX
 
+// Setting thread regs and shadow regs from within the core
+#define SET_SYSCALL_RETVAL(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, PLATFORM_SYSCALL_RET, R_SYSCALL_RET, \
+                  post_reg_write_syscall_return)
+
 #endif   // __X86_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

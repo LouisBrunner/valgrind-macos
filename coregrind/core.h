@@ -926,29 +926,29 @@ extern void VG_(scheduler_handle_fatal_signal)( Int sigNo );
    doesn't really need to be set at compile time. */
 #define VG_AR_CLIENT_STACKBASE_REDZONE_SZB   16
 
-/* Write a value to a client's thread register, and shadow (if necessary) */
-#define SET_THREAD_REG( zztid, zzval, zzreg, zzREG, zzevent, zzargs... ) \
-   do { VG_(threads)[zztid].arch.m_##zzreg = (zzval);             \
-        VG_TRACK( zzevent, zztid, R_##zzREG, ##zzargs );          \
+// Write a value to a client's thread register, and shadow (if necessary).
+// Note that there are some further similar macros in the arch- and
+// platform-specific parts;  these ones are the totally generic ones.
+#define SET_THREAD_REG( zztid, zzval, zzGETREG, zzREG, zzevent, zzargs... ) \
+   do { zzGETREG(VG_(threads)[zztid].arch) = (zzval);         \
+        VG_TRACK( zzevent, zztid, zzREG, ##zzargs );          \
    } while (0)
 
-#define SET_SYSCALL_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, eax, EAX, post_reg_write_syscall_return)
-
-#define SET_SIGNAL_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, esp, ESP, post_reg_write_deliver_signal)
-
 #define SET_CLREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_clientreq_return)
+   SET_THREAD_REG(zztid, zzval, ARCH_CLREQ_RET, R_CLREQ_RET, \
+                  post_reg_write_clientreq_return)
 
 #define SET_CLCALL_RETVAL(zztid, zzval, f) \
-   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_clientcall_return, f)
+   SET_THREAD_REG(zztid, zzval, ARCH_CLREQ_RET, R_CLREQ_RET, \
+                  post_reg_write_clientcall_return, f)
 
 #define SET_PTHREQ_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, esp, ESP, post_reg_write_pthread_return)
+   SET_THREAD_REG(zztid, zzval, ARCH_STACK_PTR, R_STACK_PTR, \
+                  post_reg_write_pthread_return)
 
 #define SET_PTHREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_pthread_return)
+   SET_THREAD_REG(zztid, zzval, ARCH_PTHREQ_RET, R_PTHREQ_RET, \
+                  post_reg_write_pthread_return)
 
 
 /* ---------------------------------------------------------------------
@@ -985,7 +985,7 @@ extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how,
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
-extern Bool VG_(signal_returns) ( ThreadId );
+extern Bool VG_(signal_returns) ( ThreadId tid );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 

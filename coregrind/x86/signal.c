@@ -160,6 +160,10 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
 }
 
+#define SET_SIGNAL_ESP(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, ARCH_STACK_PTR, R_STACK_PTR, \
+                  post_reg_write_deliver_signal)
+
 void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
                              const vki_ksiginfo_t *siginfo,
                              void *handler, UInt flags,

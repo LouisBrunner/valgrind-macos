@@ -44,10 +44,15 @@
 #define ARCH_FRAME_PTR(regs)           ((regs).m_ebp)
 
 #define ARCH_CLREQ_ARGS(regs)          ((regs).m_eax)
+#define ARCH_PTHREQ_RET(regs)          ((regs).m_edx)
+#define ARCH_CLREQ_RET(regs)           ((regs).m_edx)
 
-// Interesting register numbers
+// Accessors for the baseBlock
 #define R_STACK_PTR                    R_ESP
 #define R_FRAME_PTR                    R_EBP
+
+#define R_CLREQ_RET                    R_EDX
+#define R_PTHREQ_RET                   R_EDX
 
 // Stack frame layout and linkage
 #define FIRST_STACK_FRAME(ebp)         (ebp)

@@ -59,12 +59,15 @@
 /* Total number of integer registers available for allocation -- all of
    them except %esp, %ebp.  %ebp permanently points at VG_(baseBlock).
    
-   If you change this you'll have to also change at least these:
+   If you increase this you'll have to also change at least these:
      - VG_(rank_to_realreg)()
      - VG_(realreg_to_rank)()
      - ppRegsLiveness()
      - the RegsLive type (maybe -- RegsLive type must have more than
                           VG_MAX_REALREGS bits)
+
+   You can decrease it, and performance will drop because more spills will
+   occur.  If you decrease it too much, everything will fall over.
    
    Do not change this unless you really know what you are doing!  */
 #define VG_MAX_REALREGS 6
@@ -123,6 +126,7 @@ extern const Int VG_(skin_interface_minor_version);
 #define VG_DETERMINE_INTERFACE_VERSION \
 const Int VG_(skin_interface_major_version) = VG_CORE_INTERFACE_MAJOR_VERSION; \
 const Int VG_(skin_interface_minor_version) = VG_CORE_INTERFACE_MINOR_VERSION;
+
 
 /*====================================================================*/
 /*=== Command-line options                                         ===*/
@@ -717,6 +721,7 @@ extern Int     VG_(get_num_temps)  (UCodeBlock* cb);
 extern UInstr* VG_(get_instr)      (UCodeBlock* cb, Int i);
 extern UInstr* VG_(get_last_instr) (UCodeBlock* cb);
    
+
 /*====================================================================*/
 /*=== Instrumenting UCode                                          ===*/
 /*====================================================================*/
@@ -835,6 +840,49 @@ extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
 extern UInt VG_(get_shadow_archreg)     ( UInt archreg );
 extern void VG_(set_shadow_archreg)     ( UInt archreg, UInt val );
 extern Addr VG_(shadow_archreg_address) ( UInt archreg );
+
+
+/* ------------------------------------------------------------------ */
+/* Offsets of addresses of helper functions.  A "helper" function is one
+   which is called from generated code via CALLM. */
+
+extern Int VGOFF_(helper_idiv_64_32);
+extern Int VGOFF_(helper_div_64_32);
+extern Int VGOFF_(helper_idiv_32_16);
+extern Int VGOFF_(helper_div_32_16);
+extern Int VGOFF_(helper_idiv_16_8);
+extern Int VGOFF_(helper_div_16_8);
+
+extern Int VGOFF_(helper_imul_32_64);
+extern Int VGOFF_(helper_mul_32_64);
+extern Int VGOFF_(helper_imul_16_32);
+extern Int VGOFF_(helper_mul_16_32);
+extern Int VGOFF_(helper_imul_8_16);
+extern Int VGOFF_(helper_mul_8_16);
+
+extern Int VGOFF_(helper_CLD);
+extern Int VGOFF_(helper_STD);
+extern Int VGOFF_(helper_get_dirflag);
+
+extern Int VGOFF_(helper_CLC);
+extern Int VGOFF_(helper_STC);
+
+extern Int VGOFF_(helper_shldl);
+extern Int VGOFF_(helper_shldw);
+extern Int VGOFF_(helper_shrdl);
+extern Int VGOFF_(helper_shrdw);
+
+extern Int VGOFF_(helper_RDTSC);
+extern Int VGOFF_(helper_CPUID);
+
+extern Int VGOFF_(helper_bsf);
+extern Int VGOFF_(helper_bsr);
+
+extern Int VGOFF_(helper_fstsw_AX);
+extern Int VGOFF_(helper_SAHF);
+extern Int VGOFF_(helper_DAS);
+extern Int VGOFF_(helper_DAA);
+
 
 /*====================================================================*/
 /*=== Generating x86 code from UCode                               ===*/
@@ -1001,6 +1049,7 @@ extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
 /* Just grab the client's EIP, as a much smaller and cheaper
    indication of where they are. */
 extern Addr VG_(get_EIP)( ThreadState *tst );
+
 
 /*====================================================================*/
 /*=== Error reporting                                              ===*/

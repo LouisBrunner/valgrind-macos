@@ -1642,45 +1642,7 @@ extern Int VGOFF_(sh_eflags);
 /* This thread's LDT pointer. */
 extern Int VGOFF_(ldt);
 
-/* Offsets of addresses of helper functions.  A "helper" function is
-   one which is called from generated code. */
-
-extern Int VGOFF_(helper_idiv_64_32);
-extern Int VGOFF_(helper_div_64_32);
-extern Int VGOFF_(helper_idiv_32_16);
-extern Int VGOFF_(helper_div_32_16);
-extern Int VGOFF_(helper_idiv_16_8);
-extern Int VGOFF_(helper_div_16_8);
-
-extern Int VGOFF_(helper_imul_32_64);
-extern Int VGOFF_(helper_mul_32_64);
-extern Int VGOFF_(helper_imul_16_32);
-extern Int VGOFF_(helper_mul_16_32);
-extern Int VGOFF_(helper_imul_8_16);
-extern Int VGOFF_(helper_mul_8_16);
-
-extern Int VGOFF_(helper_CLD);
-extern Int VGOFF_(helper_STD);
-extern Int VGOFF_(helper_get_dirflag);
-
-extern Int VGOFF_(helper_CLC);
-extern Int VGOFF_(helper_STC);
-
-extern Int VGOFF_(helper_shldl);
-extern Int VGOFF_(helper_shldw);
-extern Int VGOFF_(helper_shrdl);
-extern Int VGOFF_(helper_shrdw);
-
-extern Int VGOFF_(helper_RDTSC);
-extern Int VGOFF_(helper_CPUID);
-
-extern Int VGOFF_(helper_bsf);
-extern Int VGOFF_(helper_bsr);
-
-extern Int VGOFF_(helper_fstsw_AX);
-extern Int VGOFF_(helper_SAHF);
-extern Int VGOFF_(helper_DAS);
-extern Int VGOFF_(helper_DAA);
+/* Nb: Most helper offsets are in include/vg_skin.h, for use by skins */
 
 extern Int VGOFF_(helper_undefined_instruction);
 

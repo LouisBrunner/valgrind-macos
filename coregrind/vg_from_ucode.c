@@ -1887,9 +1887,11 @@ static void synth_jcond_lit ( Condcode cond,
 {
    UInt mask;
    Bool simd;
-   Int tgt;
+   Int  tgt, tgt2, tgt_jump;
 
    VG_(init_target)(&tgt);
+   VG_(init_target)(&tgt2);
+   VG_(init_target)(&tgt_jump);
 
    /* Ensure simulated %EFLAGS are up-to-date, by copying back %eflags
       if need be */
@@ -1914,32 +1916,32 @@ static void synth_jcond_lit ( Condcode cond,
 
       switch (cond) {
 
-         case CondLE: 
-         case CondNLE:
+         case CondLE:		/*  Z || S != O ->  S || !P */
+         case CondNLE:		/* !Z && S == O -> !S &&  P */
             vg_assert(eax_trashable);
 
             VG_(emit_movv_offregmem_reg)
                ( 4, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
             /* eax == %EFLAGS */
 
-            VG_(emit_shiftopv_lit_reg)( False, 4, SHR, 11-7, R_EAX );
-            /* eax has OF in SF's place */
+	    VG_(emit_nonshiftopv_lit_reg)
+               ( False, 4, AND, EFlagO|EFlagS|EFlagZ, R_EAX );
+	    /* eax just contains OF, SF and ZF */
 
-            emit_nonshiftopv_offregmem_reg 
-               ( False, 4, XOR, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
-            /* eax has (OF xor SF) in SF's place */
+            VG_(emit_shiftopv_lit_reg)( False, 4, ROR, 7, R_EAX );
+            /* eax has OF and SF in lower 8 bits, and ZF in MSB */
 
-            VG_(emit_shiftopv_lit_reg)( False, 4, SHR, 7-6, R_EAX );
-            /* eax has (OF xor SF) in ZF's place */
-
-            emit_nonshiftopv_offregmem_reg 
-               ( False, 4, OR, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
-            /* eax has ((OF xor SF) or ZF) in SF's place */
-        
-            VG_(emit_nonshiftopv_lit_reg)( False, 4, AND, 1 << 6, R_EAX );
-            /* Z is now set iff ((OF xor SF) or ZF) == 1 */
-
-            if (cond == CondLE) cond = CondZ; else cond = CondNZ;
+	    if (cond == CondLE) {
+	       /* test Z */
+	       VG_(emit_jcondshort_target)(False, CondS, &tgt_jump);
+	       /* test OF != SF */
+	       cond = CondP;
+	    } else {
+	       /* test Z */
+	       VG_(emit_jcondshort_target)(False, CondS, &tgt2);
+	       /* test OF == SF */
+	       cond = CondNP;
+	    }
             break;
 
          case CondL: 
@@ -2018,9 +2020,12 @@ static void synth_jcond_lit ( Condcode cond,
    }
 
    VG_(emit_jcondshort_target) ( simd, cond, &tgt );
+
+   VG_(target_forward)(&tgt_jump);
    synth_jmp_lit ( addr, JmpBoring );
 
    VG_(target_forward)(&tgt);
+   VG_(target_forward)(&tgt2);
 }
 
 

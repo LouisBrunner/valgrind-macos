@@ -95,14 +95,12 @@ VG_(run_innerloop):
 	
 	/* fall into main loop */
 
-
 dispatch_boring:
 	/* save the jump address at VG_(baseBlock)[VGOFF_(m_eip)] */
 	movl	VGOFF_(m_eip), %esi
 	movl	%eax, (%ebp, %esi, 4)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	/* -------cmpl	$0, VG_(dispatch_ctr) */
 	subl $1, VG_(dispatch_ctr)
 	
 	jz	counter_is_zero
@@ -111,7 +109,6 @@ dispatch_boring:
 
 	/* Found a match.  Call the tce.payload field (+VG_CODE_OFFSET) */
 	addl	$VG_CODE_OFFSET, %ebx
-	incl	VG_(unchained_jumps_done)	      /* update stats */
 	call	*%ebx
 	
 	/* 

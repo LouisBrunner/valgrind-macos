@@ -120,11 +120,11 @@ static void *call_start __init_call = NULL;
 #define OP ror
 #include "test-i386-shift.h"
 
-#if 0
 #define OP rcr
 #define OP_CC
 #include "test-i386-shift.h"
 
+#if 0
 #define OP rcl
 #define OP_CC
 #include "test-i386-shift.h"

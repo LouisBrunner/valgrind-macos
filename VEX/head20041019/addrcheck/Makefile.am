@@ -1,7 +1,7 @@
 include $(top_srcdir)/Makefile.tool.am
 
 # include memcheck/ for mac_shared.h
-AM_CPPFLAGS += -I$(top_srcdir)/memcheck
+AM_CPPFLAGS += -I$(top_srcdir)/memcheck -fomit-frame-pointer
 
 val_PROGRAMS = vgskin_addrcheck.so vgpreload_addrcheck.so
 

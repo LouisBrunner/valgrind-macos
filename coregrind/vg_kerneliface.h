@@ -90,6 +90,13 @@ typedef
    vki_kstack_t;
 
 
+/* sigaltstack controls */
+#define VKI_SS_ONSTACK      1
+#define VKI_SS_DISABLE      2
+
+#define VKI_MINSIGSTKSZ     2048
+#define VKI_SIGSTKSZ        8192
+
 
 
 #define VKI_SIG_BLOCK          0    /* for blocking signals */
@@ -135,6 +142,7 @@ typedef
 
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */
 
+#define VKI_EPERM            1      /* Operation not permitted */
 #define VKI_EINTR            4      /* Interrupted system call */
 #define VKI_EINVAL          22      /* Invalid argument */
 #define VKI_ENOMEM          12      /* Out of memory */

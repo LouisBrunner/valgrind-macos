@@ -705,6 +705,7 @@ extern void VG_(handle_SCSS_change) ( Bool force_update );
 
 
 /* Fake system calls for signal handling. */
+extern void VG_(do__NR_sigaltstack)   ( ThreadId tid );
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
 extern void VG_(do__NR_sigprocmask)   ( ThreadId tid,
                                         Int how, 

@@ -399,11 +399,6 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          VG_(panic)("syscall exit() not caught by the scheduler?!");
          break;
 
-      case __NR_sigaltstack:
-         VG_(unimplemented)
-            ("client signals on alternative stack (SA_ONSTACK)");
-         break;
-
       case __NR_clone:
          VG_(unimplemented)
             ("clone(): not supported by Valgrind.\n   "
@@ -2972,6 +2967,28 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          is engaged.  Sometimes useful to disable (set to 0), for
          debugging purposes, to make clients more deterministic. */
 #     define SIGNAL_SIMULATION 1
+
+      case __NR_sigaltstack: /* syscall 186 */
+         /* int sigaltstack(const stack_t *ss, stack_t *oss); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("sigaltstack ( %p, %p )\n",arg1,arg2);
+         if (arg1 != (UInt)NULL) {
+            must_be_readable( tst, "sigaltstack(ss)", 
+                              arg1, sizeof(vki_kstack_t) );
+         }
+         if (arg2 != (UInt)NULL) {
+            must_be_writable( tst, "sigaltstack(ss)", 
+                              arg1, sizeof(vki_kstack_t) );
+         }
+#        if SIGNAL_SIMULATION
+         VG_(do__NR_sigaltstack) (tid);
+         res = tst->m_eax;
+#        else
+         KERNEL_DO_SYSCALL(tid,res);
+#        endif
+         if (!VG_(is_kerror)(res) && res == 0 && arg2 != (UInt)NULL)
+            make_readable( arg2, sizeof(vki_kstack_t));
+         break;
 
       case __NR_rt_sigaction:
       case __NR_sigaction:

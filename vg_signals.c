@@ -83,7 +83,12 @@ typedef
 
 typedef 
    struct {
+      /* per-signal info */
       SCSS_Per_Signal scss_per_sig[1+VKI_KNSIG];
+
+      /* Signal delivery stack, if any. */
+      vki_kstack_t altstack;
+
       /* Additional elements to SCSS not stored here:
          - for each thread, the thread's blocking mask
          - for each thread in WaitSIG, the set of waited-on sigs
@@ -291,11 +296,13 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
             ("sigactions with SA_NOMASK");
       vg_assert(!(scss_flags & VKI_SA_NOMASK));
       */
-      /* SA_ONSTACK: not allowed */
+      /* SA_ONSTACK: client setting is irrelevant here */
+      /*
       if (scss_flags & VKI_SA_ONSTACK)
          VG_(unimplemented)
             ("signals on an alternative stack (SA_ONSTACK)");
       vg_assert(!(scss_flags & VKI_SA_ONSTACK));
+      */
       /* ... but WE ask for on-stack ourselves ... */
       skss_flags |= VKI_SA_ONSTACK;
 
@@ -441,6 +448,74 @@ void VG_(handle_SCSS_change) ( Bool force_update )
 /* ---------------------------------------------------------------------
    Update/query SCSS in accordance with client requests.
    ------------------------------------------------------------------ */
+
+/* Logic for this alt-stack stuff copied directly from do_sigaltstack
+   in kernel/signal.[ch] */
+
+/* True if we are on the alternate signal stack.  */
+static Int on_sig_stack ( Addr m_esp )
+{
+   return (m_esp - (Addr)vg_scss.altstack.ss_sp 
+           < vg_scss.altstack.ss_size);
+}
+
+static Int sas_ss_flags ( Addr m_esp )
+{
+   return (vg_scss.altstack.ss_size == 0 
+              ? VKI_SS_DISABLE
+              : on_sig_stack(m_esp) ? VKI_SS_ONSTACK : 0);
+}
+
+
+void VG_(do__NR_sigaltstack) ( ThreadId tid )
+{
+   vki_kstack_t* ss;
+   vki_kstack_t* oss;
+   Addr          m_esp;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   ss    = (vki_kstack_t*)(VG_(threads)[tid].m_ebx);
+   oss   = (vki_kstack_t*)(VG_(threads)[tid].m_ecx);
+   m_esp = VG_(threads)[tid].m_esp;
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugExtraMsg, 
+         "__NR_sigaltstack: tid %d, "
+         "ss 0x%x, oss 0x%x (current %%esp %p)",
+         tid, (UInt)ss, (UInt)oss, (UInt)m_esp );
+
+   if (oss != NULL) {
+      oss->ss_sp    = vg_scss.altstack.ss_sp;
+      oss->ss_size  = vg_scss.altstack.ss_size;
+      oss->ss_flags = sas_ss_flags(m_esp);
+   }
+
+   if (ss != NULL) {
+      if (on_sig_stack(VG_(threads)[tid].m_esp)) {
+         SET_EAX(tid, -VKI_EPERM);
+         return;
+      }
+      if (ss->ss_flags != VKI_SS_DISABLE 
+          && ss->ss_flags != VKI_SS_ONSTACK 
+          && ss->ss_flags != 0) {
+         SET_EAX(tid, -VKI_EINVAL);
+         return;
+      }
+      if (ss->ss_flags == VKI_SS_DISABLE) {
+         vg_scss.altstack.ss_size = 0;
+         vg_scss.altstack.ss_sp = NULL;
+      } else {
+         if (ss->ss_size < VKI_MINSIGSTKSZ) {
+            SET_EAX(tid, -VKI_ENOMEM);
+            return;
+         }
+      }
+      vg_scss.altstack.ss_sp   = ss->ss_sp;
+      vg_scss.altstack.ss_size = ss->ss_size;
+   }
+   SET_EAX(tid, 0);
+}
+
 
 void VG_(do__NR_sigaction) ( ThreadId tid )
 {
@@ -757,20 +832,38 @@ static
 void vg_push_signal_frame ( ThreadId tid, int sigNo )
 {
    Int          i;
-   Addr         esp;
+   Addr         esp, esp_top_of_frame;
    VgSigFrame*  frame;
    ThreadState* tst;
 
+   vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
-   esp = tst->m_esp;
 
+   if (/* this signal asked to run on an alt stack */
+       (vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_ONSTACK)
+       && /* there is a defined and enabled alt stack, which we're not
+             already using.  Logic from get_sigframe in
+             arch/i386/kernel/signal.c. */
+          sas_ss_flags(tst->m_esp) == 0
+      ) {
+      esp_top_of_frame 
+         = (Addr)(vg_scss.altstack.ss_sp) + vg_scss.altstack.ss_size;
+      if (VG_(clo_trace_signals))
+         VG_(message)(Vg_DebugMsg,
+            "delivering signal %d to thread %d: on ALT STACK", 
+            sigNo, tid );
+   } else {
+      esp_top_of_frame = tst->m_esp;
+   }
+
+   esp = esp_top_of_frame;
    esp -= sizeof(VgSigFrame);
    frame = (VgSigFrame*)esp;
    /* Assert that the frame is placed correctly. */
    vg_assert( (sizeof(VgSigFrame) & 0x3) == 0 );
    vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
-              == ((Char*)(tst->m_esp)) );
+              == ((Char*)(esp_top_of_frame)) );
 
    frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
    frame->sigNo      = sigNo;
@@ -845,16 +938,9 @@ Int vg_pop_signal_frame ( ThreadId tid )
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
       tst->m_fpu[i] = frame->fpustate[i];
 
-   /* Mark the frame structure as nonaccessible.  Has to happen
-      _before_ vg_m_state.m_esp is given a new value.
-      handle_esp_assignment reads %ESP from baseBlock, so we park it
-      there first.  Re-place the junk there afterwards. */
-   if (VG_(clo_instrument)) {
-      vg_assert(VG_(baseBlock)[VGOFF_(m_esp)] == 0xDEADBEEF);
-      VG_(baseBlock)[VGOFF_(m_esp)] = tst->m_esp;
-      VGM_(handle_esp_assignment) ( frame->esp );
-      VG_(baseBlock)[VGOFF_(m_esp)] = 0xDEADBEEF;
-   }
+   /* Mark the frame structure as nonaccessible. */
+   if (VG_(clo_instrument))
+      VGM_(make_noaccess)( (Addr)frame, sizeof(VgSigFrame) );
 
    /* Restore machine state from the saved context. */
    tst->m_eax     = frame->eax;
@@ -1234,6 +1320,10 @@ void VG_(sigstartup_actions) ( void )
       vg_scss.scss_per_sig[i].scss_restorer = sa.ksa_restorer;
    }
 
+   /* Copy the alt stack, if any. */
+   ret = VG_(ksigaltstack)(NULL, &vg_scss.altstack);
+   vg_assert(ret == 0);
+
    /* Copy the process' signal mask into the root thread. */
    vg_assert(VG_(threads)[1].status == VgTs_Runnable);
    VG_(threads)[1].sig_mask = saved_procmask;
@@ -1305,6 +1395,10 @@ void VG_(sigshutdown_actions) ( void )
       vg_assert(ret == 0);
 
    }
+
+   /* Restore the sig alt stack. */
+   ret = VG_(ksigaltstack)(&vg_scss.altstack, NULL);
+   vg_assert(ret == 0);
 
    /* A bit of a kludge -- set the sigmask to that of the root
       thread. */

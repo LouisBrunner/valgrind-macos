@@ -390,3 +390,36 @@ Me
    Experimental feature: allow clients to set/check memory range
    permissions.  Read documentation pertaining to the --client-perms
    flag.
+
+----------------------------- 19 Mar 02 -------------------------------
+
+Harri Porten <porten@trolltech.com>
+   Syscalls fchown (95), fchown32 (207)
+
+Ulrich Drepper <drepper@redhat.com>
+   Syscall ftruncate64 (194)
+
+<hansen> (?? on irc; can't remember)
+   Syscall chown32 (212)
+
+Me
+   Modify implementation of "sahf" insn, so that the instrumenter
+   creates code which checks the definedness of just %AH rather than 
+   all of %EAX.  Fixes a spurious warning reported by Daniel
+   Veillard <veillard@redhat.com>.
+
+----------------------------- 20 Mar 02 -------------------------------
+
+Me
+   Allow suppressions with a single top-stack-frame spec, to help folks
+   who have to suppress errors in libraries compiled with
+   -fomit-frame-pointer.
+
+   Implement x86 "das" insn.  Stranger than strange.
+
+Adam Gundy <arg@cyberscience.com>
+   ioctls TCSETA, TCGETA.
+
+----------------------------- 24 Mar 02 -------------------------------
+
+Move to putting stuff in ChangeLog.  This file finishes here.

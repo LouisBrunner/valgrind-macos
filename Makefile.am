@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = 1.5
+AUTOMAKE_OPTIONS = 1.6 dist-bzip2
 
 ## coregrind must come before memcheck, addrcheck, helgrind, for
 ##   vg_replace_malloc.o.
@@ -30,9 +30,6 @@ BUILT_SOURCES = default.supp
 DISTCLEANFILES = default.supp
 
 default.supp: $(SUPP_FILES)
-
-bzdist: dist
-	gunzip -c $(PACKAGE)-$(VERSION).tar.gz | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check

@@ -270,14 +270,6 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
 /*--- New instrumentation machinery.                       ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uInstr3   VG_(new_UInstr3)
-#define uLiteral  VG_(set_lit_field)
-#define uCCall    VG_(set_ccall_fields)
-#define newTemp   VG_(get_new_temp)
-#define newShadow VG_(get_new_shadow)
-
 static
 TagOp get_Tag_ImproveOR_TQ ( Int sz )
 {

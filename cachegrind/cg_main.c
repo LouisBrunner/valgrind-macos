@@ -483,14 +483,6 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
 /*--- Cache simulation instrumentation phase               ---*/
 /*------------------------------------------------------------*/
 
-// SSS: do something about all these...
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uInstr3   VG_(new_UInstr3)
-#define uLiteral  VG_(set_lit_field)
-#define uCCall    VG_(set_ccall_fields)
-#define newTemp   VG_(get_new_temp)
-
 static Int compute_BBCC_array_size(UCodeBlock* cb)
 {
    UInstr* u_in;

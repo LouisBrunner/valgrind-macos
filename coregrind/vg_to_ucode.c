@@ -36,16 +36,6 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr0   VG_(new_UInstr0)
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uInstr3   VG_(new_UInstr3)
-#define nameIReg  VG_(name_of_int_reg)
-#define nameISize VG_(name_of_int_size)
-#define nameSReg  VG_(name_of_seg_reg)
-#define newTemp   VG_(get_new_temp)
-#define uLiteral  VG_(set_lit_field)
-
 #define dis       VG_(print_codegen)
 
 

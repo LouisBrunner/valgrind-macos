@@ -36,9 +36,6 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define nameIReg  VG_(name_of_int_reg)
-#define nameISize VG_(name_of_int_size)
-
 #define dis       VG_(print_codegen)
 
 /*------------------------------------------------------------*/

@@ -1731,12 +1731,6 @@ void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uLiteral  VG_(set_lit_field)
-#define uCCall    VG_(set_ccall_fields)
-#define newTemp   VG_(get_new_temp)
-
 UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
 /* Use this rather than eg. -1 because it's a UInt. */

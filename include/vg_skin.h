@@ -737,6 +737,16 @@ extern void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr );
 
 extern Bool VG_(any_flag_use)( UInstr* u );
 
+/* Macro versions of the above;  just shorter to type. */
+#define uInstr0   VG_(new_UInstr0)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uInstr3   VG_(new_UInstr3)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
+#define newShadow VG_(get_new_shadow)
+
 /* Refer to `the last instruction stuffed in' (can be lvalue). */
 #define LAST_UINSTR(cb) (cb)->instrs[(cb)->used-1]
 
@@ -812,6 +822,11 @@ extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
 extern Char* VG_(name_of_seg_reg)  ( Int sreg );
 extern Char* VG_(name_of_int_reg)  ( Int size, Int reg );
 extern Char  VG_(name_of_int_size) ( Int size );
+
+/* Shorter macros for convenience */
+#define nameIReg  VG_(name_of_int_reg)
+#define nameISize VG_(name_of_int_size)
+#define nameSReg  VG_(name_of_seg_reg)
 
 /* Randomly useful things */
 extern UInt  VG_(extend_s_8to32) ( UInt x );

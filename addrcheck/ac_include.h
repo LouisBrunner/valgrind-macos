@@ -91,8 +91,6 @@ extern Bool SK_(clo_workaround_gcc296_bugs);
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-// SSS: work out a consistent prefix convention here
-
 /* Functions defined in vg_addrcheck.c */
 extern void SK_(helperc_ACCESS4) ( Addr );
 extern void SK_(helperc_ACCESS2) ( Addr );

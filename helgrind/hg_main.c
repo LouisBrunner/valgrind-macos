@@ -860,12 +860,6 @@ Bool SK_(expensive_sanity_check)(void)
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uLiteral  VG_(set_lit_field)
-#define uCCall    VG_(set_ccall_fields)
-#define newTemp   VG_(get_new_temp)
-
 /* Create and return an instrumented version of cb_in.  Free cb_in
    before returning. */
 UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )

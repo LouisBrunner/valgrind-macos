@@ -39,13 +39,6 @@
    couldn't otherwise do. */
 #include "vg_skin.h"
 
-#define uInstr0   VG_(new_UInstr0)
-#define uInstr1   VG_(new_UInstr1)
-#define uInstr2   VG_(new_UInstr2)
-#define uLiteral  VG_(set_lit_field)
-#define uCCall    VG_(set_ccall_fields)
-#define newTemp   VG_(get_new_temp)
-
 
 void VG_(call_helper_0_0)(UCodeBlock* cb, Addr f)
 {

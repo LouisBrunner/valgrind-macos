@@ -31,9 +31,6 @@
 
 #include "vg_skin.h"
 
-//#define uInstr0   VG_(new_UInstr0)
-//#define uLiteral  VG_(set_lit_field)
-
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;
 static ULong n_BBs          = 0;

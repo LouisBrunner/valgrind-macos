@@ -636,10 +636,43 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#     if defined(__NR_setxattr)
+      case __NR_setxattr: /* syscall 226 */
+         /* int setxattr (const char *path, const char *name,
+                          const void *value, size_t size, int flags); */
+      case __NR_lsetxattr: /* syscall 227 */
+         /* int lsetxattr (const char *path, const char *name,
+                           const void *value, size_t size, int flags); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("setxattr ( %p, %p, %p, %d, %d )\n",
+                         arg1, arg2, arg3, arg4, arg5);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "setxattr(path)", arg1 );
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "setxattr(name)", arg2 );
+         SYSCALL_TRACK( pre_mem_read, tst, "setxattr(value)", arg3, arg4 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_fsetxattr)
+      case __NR_fsetxattr: /* syscall 228 */
+         /* int fsetxattr (int filedes, const char *name,
+                           const void *value, size_t size, int flags); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("fsetxattr ( %d, %p, %p, %d, %d )\n",
+                         arg1, arg2, arg3, arg4, arg5);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "fsetxattr(name)", arg2 );
+         SYSCALL_TRACK( pre_mem_read, tst, "fsetxattr(value)", arg3, arg4 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_getxattr)
       case __NR_getxattr: /* syscall 229 */
          /* ssize_t getxattr (const char *path, const char* name,
                               void* value, size_t size); */
+      case __NR_lgetxattr: /* syscall 230 */
+         /* ssize_t lgetxattr (const char *path, const char *name,
+                               void *value, size_t size); */
          MAYBE_PRINTF("getxattr ( %p, %p, %p, %d )\n", 
                         arg1,arg2,arg3, arg4);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "getxattr(path)", arg1 );
@@ -652,7 +685,72 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
          break;
 #     endif
-      
+
+#     if defined(__NR_fgetxattr)
+      case __NR_fgetxattr: /* syscall 231 */
+         /* ssize_t fgetxattr (int filedes, const char *name,
+                               void *value, size_t size); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("fgetxattr ( %d, %p, %p, %d )\n",
+                         arg1, arg2, arg3, arg4);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "fgetxattr(name)", arg2 );
+         SYSCALL_TRACK( pre_mem_write, tst, "fgetxattr(value)", arg3, arg4 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && res > 0 && arg3 != (Addr)NULL)
+             VG_TRACK( post_mem_write, arg3, res );
+         break;
+#     endif
+
+#     if defined(__NR_listxattr)
+      case __NR_listxattr: /* syscall 232 */
+         /* ssize_t listxattr (const char *path, char *list, size_t size); */
+      case __NR_llistxattr: /* syscall 233 */
+         /* ssize_t llistxattr (const char *path, char *list, size_t size); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("listxattr ( %p, %p, %d )\n", arg1, arg2, arg3);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "listxattr(path)", arg1 );
+         SYSCALL_TRACK( pre_mem_write, tst, "listxattr(list)", arg2, arg3 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && res > 0 && arg2 != (Addr)NULL)
+             VG_TRACK( post_mem_write, arg2, res );
+         break;
+#     endif
+
+#     if defined(__NR_flistxattr)
+      case __NR_flistxattr: /* syscall 234 */
+         /* ssize_t flistxattr (int filedes, char *list, size_t size); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("flistxattr ( %d, %p, %d )\n", arg1, arg2, arg3);
+         SYSCALL_TRACK( pre_mem_write, tst, "listxattr(list)", arg2, arg3 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && res > 0 && arg2 != (Addr)NULL)
+             VG_TRACK( post_mem_write, arg2, res );
+         break;
+#     endif
+
+#     if defined(__NR_removexattr)
+      case __NR_removexattr: /* syscall 235 */
+         /* int removexattr (const char *path, const char *name); */
+      case __NR_lremovexattr: /* syscall 236 */
+         /* int lremovexattr (const char *path, const char *name); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("removexattr ( %p, %p )\n", arg1, arg2);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "listxattr(path)", arg1 );
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "listxattr(name)", arg2 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_fremovexattr)
+      case __NR_fremovexattr: /* syscall 237 */
+         /* int fremovexattr (int filedes, const char *name); */
+         if (VG_(clo_trace_syscalls))
+             VG_(printf)("removexattr ( %d, %p )\n", arg1, arg2);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "listxattr(name)", arg2 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_quotactl)
       case __NR_quotactl: /* syscall 131 */
          /* int quotactl(int cmd, char *special, int uid, caddr_t addr); */
@@ -2112,6 +2210,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SNDCTL_DSP_SETTRIGGER:
                SYSCALL_TRACK( pre_mem_read,tst, "ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
                                 arg3, sizeof(int));
+               KERNEL_DO_SYSCALL(tid,res);
+               break;
+
+            case SNDCTL_DSP_POST:
+            case SNDCTL_DSP_RESET:
+            case SNDCTL_DSP_SYNC:
+            case SNDCTL_DSP_SETSYNCRO:
+            case SNDCTL_DSP_SETDUPLEX:
                KERNEL_DO_SYSCALL(tid,res);
                break;
 

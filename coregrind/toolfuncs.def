@@ -117,11 +117,11 @@ void,	print_debug_usage
 ## VG_(needs).client_requests
 
 ## If using client requests, the number of the first request should be equal
-## to VG_USERREQ_SKIN_BASE('X', 'Y'), where 'X' and 'Y' form a suitable two
+## to VG_USERREQ_TOOL_BASE('X', 'Y'), where 'X' and 'Y' form a suitable two
 ## character identification for the string.  The second and subsequent
 ## requests should follow.
 
-## This function should use the VG_IS_SKIN_USERREQ macro (in
+## This function should use the VG_IS_TOOL_USERREQ macro (in
 ## include/valgrind.h) to first check if it's a request for this tool.  Then
 ## should handle it if it's recognised (and return True), or return False if
 ## not recognised.  arg_block[0] holds the request number, any further args

@@ -3235,7 +3235,7 @@ static void bus_unlock(void)
 
 Bool TL_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 {
-   if (!VG_IS_SKIN_USERREQ('H','G',args[0]))
+   if (!VG_IS_TOOL_USERREQ('H','G',args[0]))
       return False;
 
    switch(args[0]) {

@@ -61,7 +61,7 @@
 
 typedef
    enum {
-      VG_USERREQ__HG_CLEAN_MEMORY = VG_USERREQ_SKIN_BASE('H','G'),
+      VG_USERREQ__HG_CLEAN_MEMORY = VG_USERREQ_TOOL_BASE('H','G'),
       VG_USERREQ__HG_KNOWN_RACE
    } Vg_HelgrindClientRequest;
 

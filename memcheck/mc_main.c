@@ -45,21 +45,6 @@ VG_DETERMINE_INTERFACE_VERSION
 #define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
 
 /*------------------------------------------------------------*/
-/*--- Command line options                                 ---*/
-/*------------------------------------------------------------*/
-
-Bool  SK_(clo_partial_loads_ok)       = True;
-Int   SK_(clo_freelist_vol)           = 1000000;
-Bool  SK_(clo_leak_check)             = False;
-VgRes SK_(clo_leak_resolution)        = Vg_LowRes;
-Bool  SK_(clo_show_reachable)         = False;
-Bool  SK_(clo_workaround_gcc296_bugs) = False;
-Bool  SK_(clo_check_addrVs)           = True;
-Bool  SK_(clo_cleanup)                = True;
-Bool  SK_(clo_avoid_strlen_errors)    = True;
-
-
-/*------------------------------------------------------------*/
 /*--- Profiling events                                     ---*/
 /*------------------------------------------------------------*/
 
@@ -121,147 +106,17 @@ typedef
 
 
 /*------------------------------------------------------------*/
-/*--- Crude profiling machinery.                           ---*/
-/*------------------------------------------------------------*/
-
-#ifdef VG_PROFILE_MEMORY
-
-#define N_PROF_EVENTS 150
-
-static UInt event_ctr[N_PROF_EVENTS];
-
-static void init_prof_mem ( void )
-{
-   Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++)
-      event_ctr[i] = 0;
-}
-
-static void done_prof_mem ( void )
-{
-   Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++) {
-      if ((i % 10) == 0) 
-         VG_(printf)("\n");
-      if (event_ctr[i] > 0)
-         VG_(printf)( "prof mem event %2d: %d\n", i, event_ctr[i] );
-   }
-   VG_(printf)("\n");
-}
-
-#define PROF_EVENT(ev)                                  \
-   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
-        event_ctr[ev]++;                                \
-   } while (False);
-
-#else
-
-static void init_prof_mem ( void ) { }
-static void done_prof_mem ( void ) { }
-
-#define PROF_EVENT(ev) /* */
-
-#endif
-
-/* Event index.  If just the name of the fn is given, this means the
-   number of calls to the fn.  Otherwise it is the specified event.
-
-   10   alloc_secondary_map
-
-   20   get_abit
-   21   get_vbyte
-   22   set_abit
-   23   set_vbyte
-   24   get_abits4_ALIGNED
-   25   get_vbytes4_ALIGNED
-
-   30   set_address_range_perms
-   31   set_address_range_perms(lower byte loop)
-   32   set_address_range_perms(quadword loop)
-   33   set_address_range_perms(upper byte loop)
-   
-   35   make_noaccess
-   36   make_writable
-   37   make_readable
-
-   40   copy_address_range_state
-   41   copy_address_range_state(byte loop)
-   42   check_writable
-   43   check_writable(byte loop)
-   44   check_readable
-   45   check_readable(byte loop)
-   46   check_readable_asciiz
-   47   check_readable_asciiz(byte loop)
-
-   50   make_aligned_word_NOACCESS
-   51   make_aligned_word_WRITABLE
-
-   60   helperc_LOADV4
-   61   helperc_STOREV4
-   62   helperc_LOADV2
-   63   helperc_STOREV2
-   64   helperc_LOADV1
-   65   helperc_STOREV1
-
-   70   rim_rd_V4_SLOWLY
-   71   rim_wr_V4_SLOWLY
-   72   rim_rd_V2_SLOWLY
-   73   rim_wr_V2_SLOWLY
-   74   rim_rd_V1_SLOWLY
-   75   rim_wr_V1_SLOWLY
-
-   80   fpu_read
-   81   fpu_read aligned 4
-   82   fpu_read aligned 8
-   83   fpu_read 2
-   84   fpu_read 10
-
-   85   fpu_write
-   86   fpu_write aligned 4
-   87   fpu_write aligned 8
-   88   fpu_write 2
-   89   fpu_write 10
-
-   90   fpu_read_check_SLOWLY
-   91   fpu_read_check_SLOWLY(byte loop)
-   92   fpu_write_check_SLOWLY
-   93   fpu_write_check_SLOWLY(byte loop)
-
-   100  is_plausible_stack_addr
-   101  handle_esp_assignment
-   102  handle_esp_assignment(-4)
-   103  handle_esp_assignment(+4)
-   104  handle_esp_assignment(-12)
-   105  handle_esp_assignment(-8)
-   106  handle_esp_assignment(+16)
-   107  handle_esp_assignment(+12)
-   108  handle_esp_assignment(0)
-   109  handle_esp_assignment(+8)
-   110  handle_esp_assignment(-16)
-   111  handle_esp_assignment(+20)
-   112  handle_esp_assignment(-20)
-   113  handle_esp_assignment(+24)
-   114  handle_esp_assignment(-24)
-
-   120  vg_handle_esp_assignment_SLOWLY
-   121  vg_handle_esp_assignment_SLOWLY(normal; move down)
-   122  vg_handle_esp_assignment_SLOWLY(normal; move up)
-   123  vg_handle_esp_assignment_SLOWLY(normal)
-   124  vg_handle_esp_assignment_SLOWLY(>= HUGE_DELTA)
-*/
-
-/*------------------------------------------------------------*/
 /*--- Function declarations.                               ---*/
 /*------------------------------------------------------------*/
 
-static UInt vgmext_rd_V4_SLOWLY ( Addr a );
-static UInt vgmext_rd_V2_SLOWLY ( Addr a );
-static UInt vgmext_rd_V1_SLOWLY ( Addr a );
-static void vgmext_wr_V4_SLOWLY ( Addr a, UInt vbytes );
-static void vgmext_wr_V2_SLOWLY ( Addr a, UInt vbytes );
-static void vgmext_wr_V1_SLOWLY ( Addr a, UInt vbytes );
-static void fpu_read_check_SLOWLY ( Addr addr, Int size );
-static void fpu_write_check_SLOWLY ( Addr addr, Int size );
+static UInt mc_rd_V4_SLOWLY ( Addr a );
+static UInt mc_rd_V2_SLOWLY ( Addr a );
+static UInt mc_rd_V1_SLOWLY ( Addr a );
+static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes );
+static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes );
+static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes );
+static void mc_fpu_read_check_SLOWLY ( Addr addr, Int size );
+static void mc_fpu_write_check_SLOWLY ( Addr addr, Int size );
 
 /*------------------------------------------------------------*/
 /*--- Data defns.                                          ---*/
@@ -276,51 +131,6 @@ typedef
 
 static SecMap* primary_map[ /*65536*/ 262144 ];
 static SecMap  distinguished_secondary_map;
-
-#define IS_DISTINGUISHED_SM(smap) \
-   ((smap) == &distinguished_secondary_map)
-
-#define ENSURE_MAPPABLE(addr,caller)                                   \
-   do {                                                                \
-      if (IS_DISTINGUISHED_SM(primary_map[(addr) >> 16])) {       \
-         primary_map[(addr) >> 16] = alloc_secondary_map(caller); \
-         /* VG_(printf)("new 2map because of %p\n", addr); */          \
-      }                                                                \
-   } while(0)
-
-#define BITARR_SET(aaa_p,iii_p)                         \
-   do {                                                 \
-      UInt   iii = (UInt)iii_p;                         \
-      UChar* aaa = (UChar*)aaa_p;                       \
-      aaa[iii >> 3] |= (1 << (iii & 7));                \
-   } while (0)
-
-#define BITARR_CLEAR(aaa_p,iii_p)                       \
-   do {                                                 \
-      UInt   iii = (UInt)iii_p;                         \
-      UChar* aaa = (UChar*)aaa_p;                       \
-      aaa[iii >> 3] &= ~(1 << (iii & 7));               \
-   } while (0)
-
-#define BITARR_TEST(aaa_p,iii_p)                        \
-      (0 != (((UChar*)aaa_p)[ ((UInt)iii_p) >> 3 ]      \
-               & (1 << (((UInt)iii_p) & 7))))           \
-
-
-#define VGM_BIT_VALID      0
-#define VGM_BIT_INVALID    1
-
-#define VGM_NIBBLE_VALID   0
-#define VGM_NIBBLE_INVALID 0xF
-
-#define VGM_BYTE_VALID     0
-#define VGM_BYTE_INVALID   0xFF
-
-#define VGM_WORD_VALID     0
-#define VGM_WORD_INVALID   0xFFFFFFFF
-
-#define VGM_EFLAGS_VALID   0xFFFFFFFE
-#define VGM_EFLAGS_INVALID 0xFFFFFFFF     /* not used */
 
 
 static void init_shadow_memory ( void )
@@ -340,33 +150,6 @@ static void init_shadow_memory ( void )
    /* These ones should never change; it's a bug in Valgrind if they do. */
    for (i = 65536; i < 262144; i++)
       primary_map[i] = &distinguished_secondary_map;
-}
-
-void SK_(post_clo_init) ( void )
-{
-}
-
-void SK_(fini) ( void )
-{
-   VG_(print_malloc_stats)();
-
-   if (VG_(clo_verbosity) == 1) {
-      if (!SK_(clo_leak_check))
-         VG_(message)(Vg_UserMsg, 
-             "For a detailed leak analysis,  rerun with: --leak-check=yes");
-
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected errors, rerun with: -v");
-   }
-   if (SK_(clo_leak_check)) SK_(detect_memory_leaks)();
-
-   done_prof_mem();
-
-   if (0) {
-      VG_(message)(Vg_DebugMsg, 
-        "------ Valgrind's client block stats follow ---------------" );
-      SK_(show_client_block_stats)();
-   }
 }
 
 /*------------------------------------------------------------*/
@@ -611,34 +394,34 @@ static void set_address_range_perms ( Addr a, UInt len,
 
 /* Set permissions for address ranges ... */
 
-void SK_(make_noaccess) ( Addr a, UInt len )
+void MC_(make_noaccess) ( Addr a, UInt len )
 {
    PROF_EVENT(35);
-   DEBUG("SK_(make_noaccess)(%p, %x)\n", a, len);
+   DEBUG("MC_(make_noaccess)(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID, VGM_BIT_INVALID );
 }
 
-void SK_(make_writable) ( Addr a, UInt len )
+void MC_(make_writable) ( Addr a, UInt len )
 {
    PROF_EVENT(36);
-   DEBUG("SK_(make_writable)(%p, %x)\n", a, len);
+   DEBUG("MC_(make_writable)(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_INVALID );
 }
 
-void SK_(make_readable) ( Addr a, UInt len )
+void MC_(make_readable) ( Addr a, UInt len )
 {
    PROF_EVENT(37);
-   DEBUG("SK_(make_readable)(%p, 0x%x)\n", a, len);
+   DEBUG("MC_(make_readable)(%p, 0x%x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
 /* Block-copy permissions (needed for implementing realloc()). */
 
-static void copy_address_range_state ( Addr src, Addr dst, UInt len )
+static void mc_copy_address_range_state ( Addr src, Addr dst, UInt len )
 {
    UInt i;
 
-   DEBUG("copy_address_range_state\n");
+   DEBUG("mc_copy_address_range_state\n");
 
    PROF_EVENT(40);
    for (i = 0; i < len; i++) {
@@ -655,7 +438,7 @@ static void copy_address_range_state ( Addr src, Addr dst, UInt len )
    exist, *bad_addr is set to the offending address, so the caller can
    know what it is. */
 
-Bool SK_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
+Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
@@ -672,14 +455,14 @@ Bool SK_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
    return True;
 }
 
-Bool SK_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
+Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
    UChar vbyte;
 
    PROF_EVENT(44);
-   DEBUG("SK_(check_readable)\n");
+   DEBUG("MC_(check_readable)\n");
    for (i = 0; i < len; i++) {
       abit  = get_abit(a);
       vbyte = get_vbyte(a);
@@ -698,12 +481,12 @@ Bool SK_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
 
-Bool SK_(check_readable_asciiz) ( Addr a, Addr* bad_addr )
+Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 {
    UChar abit;
    UChar vbyte;
    PROF_EVENT(46);
-   DEBUG("SK_(check_readable_asciiz)\n");
+   DEBUG("mc_check_readable_asciiz\n");
    while (True) {
       PROF_EVENT(47);
       abit  = get_abit(a);
@@ -726,7 +509,7 @@ Bool SK_(check_readable_asciiz) ( Addr a, Addr* bad_addr )
 /* Setting permissions for aligned words.  This supports fast stack
    operations. */
 
-static void make_noaccess_aligned ( Addr a, UInt len )
+static void mc_make_noaccess_aligned ( Addr a, UInt len )
 {
    SecMap* sm;
    UInt    sm_off;
@@ -742,7 +525,7 @@ static void make_noaccess_aligned ( Addr a, UInt len )
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "make_noaccess_aligned");
+      ENSURE_MAPPABLE(a, "mc_make_noaccess_aligned");
       sm     = primary_map[a >> 16];
       sm_off = a & 0xFFFF;
       ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
@@ -755,7 +538,7 @@ static void make_noaccess_aligned ( Addr a, UInt len )
    VGP_POPCC(VgpSetMem);
 }
 
-static void make_writable_aligned ( Addr a, UInt len )
+static void mc_make_writable_aligned ( Addr a, UInt len )
 {
    SecMap* sm;
    UInt    sm_off;
@@ -771,7 +554,7 @@ static void make_writable_aligned ( Addr a, UInt len )
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "make_writable_aligned");
+      ENSURE_MAPPABLE(a, "mc_make_writable_aligned");
       sm     = primary_map[a >> 16];
       sm_off = a & 0xFFFF;
       ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
@@ -786,8 +569,8 @@ static void make_writable_aligned ( Addr a, UInt len )
 
 
 static
-void check_is_writable ( CorePart part, ThreadState* tst,
-                         Char* s, Addr base, UInt size )
+void mc_check_is_writable ( CorePart part, ThreadState* tst,
+                            Char* s, Addr base, UInt size )
 {
    Bool ok;
    Addr bad_addr;
@@ -796,20 +579,20 @@ void check_is_writable ( CorePart part, ThreadState* tst,
 
    /* VG_(message)(Vg_DebugMsg,"check is writable: %x .. %x",
                                base,base+size-1); */
-   ok = SK_(check_writable) ( base, size, &bad_addr );
+   ok = MC_(check_writable) ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         SK_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
+         MC_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
          break;
 
       case Vg_CorePThread:
       case Vg_CoreSignal:
-         SK_(record_core_mem_error)( tst, /*isWrite=*/True, s );
+         MC_(record_core_mem_error)( tst, /*isWrite=*/True, s );
          break;
 
       default:
-         VG_(skin_panic)("check_is_writable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("mc_check_is_writable: unexpected CorePart");
       }
    }
 
@@ -817,8 +600,8 @@ void check_is_writable ( CorePart part, ThreadState* tst,
 }
 
 static
-void check_is_readable ( CorePart part, ThreadState* tst,
-                         Char* s, Addr base, UInt size )
+void mc_check_is_readable ( CorePart part, ThreadState* tst,
+                            Char* s, Addr base, UInt size )
 {     
    Bool ok;
    Addr bad_addr;
@@ -827,33 +610,33 @@ void check_is_readable ( CorePart part, ThreadState* tst,
    
    /* VG_(message)(Vg_DebugMsg,"check is readable: %x .. %x",
                                base,base+size-1); */
-   ok = SK_(check_readable) ( base, size, &bad_addr );
+   ok = MC_(check_readable) ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         SK_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
+         MC_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
          break;
       
       case Vg_CorePThread:
-         SK_(record_core_mem_error)( tst, /*isWrite=*/False, s );
+         MC_(record_core_mem_error)( tst, /*isWrite=*/False, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
-         SK_(record_jump_error)( tst, bad_addr );
+         MC_(record_jump_error)( tst, bad_addr );
          break;
 
       default:
-         VG_(skin_panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("mc_check_is_readable: unexpected CorePart");
       }
    }
    VGP_POPCC(VgpCheckMem);
 }
 
 static
-void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
-                                Char* s, Addr str )
+void mc_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
+                                   Char* s, Addr str )
 {
    Bool ok = True;
    Addr bad_addr;
@@ -862,9 +645,9 @@ void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    VGP_PUSHCC(VgpCheckMem);
 
    sk_assert(part == Vg_CoreSysCall);
-   ok = SK_(check_readable_asciiz) ( (Addr)str, &bad_addr );
+   ok = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      SK_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -872,32 +655,30 @@ void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
 
 
 static
-void memcheck_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
+void mc_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
-   DEBUG("new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
-   SK_(make_readable)(a, len);
+   DEBUG("mc_new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
+   MC_(make_readable)(a, len);
 }
 
 static
-void memcheck_new_mem_heap ( Addr a, UInt len, Bool is_inited )
+void mc_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 {
    if (is_inited) {
-      SK_(make_readable)(a, len);
+      MC_(make_readable)(a, len);
    } else {
-      SK_(make_writable)(a, len);
+      MC_(make_writable)(a, len);
    }
 }
 
 static
-void memcheck_set_perms (Addr a, UInt len, 
-                         Bool rr, Bool ww, Bool xx)
+void mc_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 {
-   DEBUG("memcheck_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
-                             a, len, rr, ww, xx);
-   if      (rr) SK_(make_readable)(a, len);
-   else if (ww) SK_(make_writable)(a, len);
-   else         SK_(make_noaccess)(a, len);
+   DEBUG("mc_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n", a, len, rr, ww, xx);
+   if      (rr) MC_(make_readable)(a, len);
+   else if (ww) MC_(make_writable)(a, len);
+   else         MC_(make_noaccess)(a, len);
 }
 
 
@@ -926,10 +707,10 @@ static __inline__ UInt shiftRight16 ( UInt x )
    function, which can handle all situations.
 */
 __attribute__ ((regparm(1)))
-UInt SK_(helperc_LOADV4) ( Addr a )
+UInt MC_(helperc_LOADV4) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_rd_V4_SLOWLY(a);
+   return mc_rd_V4_SLOWLY(a);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    SecMap* sm     = primary_map[sec_no];
@@ -945,16 +726,16 @@ UInt SK_(helperc_LOADV4) ( Addr a )
       return ((UInt*)(sm->vbyte))[ v_off >> 2 ];
    } else {
       /* Slow but general case. */
-      return vgmext_rd_V4_SLOWLY(a);
+      return mc_rd_V4_SLOWLY(a);
    }
 #  endif
 }
 
 __attribute__ ((regparm(2)))
-void SK_(helperc_STOREV4) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
-   vgmext_wr_V4_SLOWLY(a, vbytes);
+   mc_wr_V4_SLOWLY(a, vbytes);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    SecMap* sm     = primary_map[sec_no];
@@ -970,16 +751,16 @@ void SK_(helperc_STOREV4) ( Addr a, UInt vbytes )
       ((UInt*)(sm->vbyte))[ v_off >> 2 ] = vbytes;
    } else {
       /* Slow but general case. */
-      vgmext_wr_V4_SLOWLY(a, vbytes);
+      mc_wr_V4_SLOWLY(a, vbytes);
    }
 #  endif
 }
 
 __attribute__ ((regparm(1)))
-UInt SK_(helperc_LOADV2) ( Addr a )
+UInt MC_(helperc_LOADV2) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_rd_V2_SLOWLY(a);
+   return mc_rd_V2_SLOWLY(a);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    SecMap* sm     = primary_map[sec_no];
@@ -993,16 +774,16 @@ UInt SK_(helperc_LOADV2) ( Addr a )
              (UInt)( ((UShort*)(sm->vbyte))[ v_off >> 1 ] );
    } else {
       /* Slow but general case. */
-      return vgmext_rd_V2_SLOWLY(a);
+      return mc_rd_V2_SLOWLY(a);
    }
 #  endif
 }
 
 __attribute__ ((regparm(2)))
-void SK_(helperc_STOREV2) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
-   vgmext_wr_V2_SLOWLY(a, vbytes);
+   mc_wr_V2_SLOWLY(a, vbytes);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    SecMap* sm     = primary_map[sec_no];
@@ -1014,16 +795,16 @@ void SK_(helperc_STOREV2) ( Addr a, UInt vbytes )
       ((UShort*)(sm->vbyte))[ v_off >> 1 ] = vbytes & 0x0000FFFF;
    } else {
       /* Slow but general case. */
-      vgmext_wr_V2_SLOWLY(a, vbytes);
+      mc_wr_V2_SLOWLY(a, vbytes);
    }
 #  endif
 }
 
 __attribute__ ((regparm(1)))
-UInt SK_(helperc_LOADV1) ( Addr a )
+UInt MC_(helperc_LOADV1) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_rd_V1_SLOWLY(a);
+   return mc_rd_V1_SLOWLY(a);
 #  else
    UInt    sec_no = shiftRight16(a);
    SecMap* sm     = primary_map[sec_no];
@@ -1037,16 +818,16 @@ UInt SK_(helperc_LOADV1) ( Addr a )
              (UInt)( ((UChar*)(sm->vbyte))[ v_off ] );
    } else {
       /* Slow but general case. */
-      return vgmext_rd_V1_SLOWLY(a);
+      return mc_rd_V1_SLOWLY(a);
    }
 #  endif
 }
 
 __attribute__ ((regparm(2)))
-void SK_(helperc_STOREV1) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV1) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
-   vgmext_wr_V1_SLOWLY(a, vbytes);
+   mc_wr_V1_SLOWLY(a, vbytes);
 #  else
    UInt    sec_no = shiftRight16(a);
    SecMap* sm     = primary_map[sec_no];
@@ -1058,7 +839,7 @@ void SK_(helperc_STOREV1) ( Addr a, UInt vbytes )
       ((UChar*)(sm->vbyte))[ v_off ] = vbytes & 0x000000FF;
    } else {
       /* Slow but general case. */
-      vgmext_wr_V1_SLOWLY(a, vbytes);
+      mc_wr_V1_SLOWLY(a, vbytes);
    }
 #  endif
 }
@@ -1069,7 +850,7 @@ void SK_(helperc_STOREV1) ( Addr a, UInt vbytes )
 /*--- VG_(helperc_{LD,ST}V{1,2,4}) can't manage.           ---*/
 /*------------------------------------------------------------*/
 
-static UInt vgmext_rd_V4_SLOWLY ( Addr a )
+static UInt mc_rd_V4_SLOWLY ( Addr a )
 {
    Bool a0ok, a1ok, a2ok, a3ok;
    UInt vb0, vb1, vb2, vb3;
@@ -1113,10 +894,10 @@ static UInt vgmext_rd_V4_SLOWLY ( Addr a )
       error arose in the first place from an invalid address. 
    */
    /* VG_(printf)("%p (%d %d %d %d)\n", a, a0ok, a1ok, a2ok, a3ok); */
-   if (!SK_(clo_partial_loads_ok) 
+   if (!MC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      SK_(record_address_error)( a, 4, False );
+      MC_(record_address_error)( a, 4, False );
       return (VGM_BYTE_VALID << 24) | (VGM_BYTE_VALID << 16) 
              | (VGM_BYTE_VALID << 8) | VGM_BYTE_VALID;
    }
@@ -1125,11 +906,11 @@ static UInt vgmext_rd_V4_SLOWLY ( Addr a )
       - no addressing error
       - returned V word is invalid where the address is invalid, 
         and contains V bytes from memory otherwise. 
-      Case 3 is only allowed if SK_(clo_partial_loads_ok) is True
+      Case 3 is only allowed if MC_(clo_partial_loads_ok) is True
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(SK_(clo_partial_loads_ok));
+   sk_assert(MC_(clo_partial_loads_ok));
    {
       UInt vw = VGM_WORD_INVALID;
       vw <<= 8; vw |= (a3ok ? vb3 : VGM_BYTE_INVALID);
@@ -1140,7 +921,7 @@ static UInt vgmext_rd_V4_SLOWLY ( Addr a )
    }
 }
 
-static void vgmext_wr_V4_SLOWLY ( Addr a, UInt vbytes )
+static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 {
    /* Check the address for validity. */
    Bool aerr = False;
@@ -1159,10 +940,10 @@ static void vgmext_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      SK_(record_address_error)( a, 4, True );
+      MC_(record_address_error)( a, 4, True );
 }
 
-static UInt vgmext_rd_V2_SLOWLY ( Addr a )
+static UInt mc_rd_V2_SLOWLY ( Addr a )
 {
    /* Check the address for validity. */
    UInt vw   = VGM_WORD_INVALID;
@@ -1178,14 +959,14 @@ static UInt vgmext_rd_V2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      SK_(record_address_error)( a, 2, False );
+      MC_(record_address_error)( a, 2, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_VALID << 8) | (VGM_BYTE_VALID);
    }
    return vw;   
 }
 
-static void vgmext_wr_V2_SLOWLY ( Addr a, UInt vbytes )
+static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 {
    /* Check the address for validity. */
    Bool aerr = False;
@@ -1200,10 +981,10 @@ static void vgmext_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      SK_(record_address_error)( a, 2, True );
+      MC_(record_address_error)( a, 2, True );
 }
 
-static UInt vgmext_rd_V1_SLOWLY ( Addr a )
+static UInt mc_rd_V1_SLOWLY ( Addr a )
 {
    /* Check the address for validity. */
    UInt vw   = VGM_WORD_INVALID;
@@ -1217,14 +998,14 @@ static UInt vgmext_rd_V1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      SK_(record_address_error)( a, 1, False );
+      MC_(record_address_error)( a, 1, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_INVALID << 8) | (VGM_BYTE_VALID);
    }
    return vw;   
 }
 
-static void vgmext_wr_V1_SLOWLY ( Addr a, UInt vbytes )
+static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 {
    /* Check the address for validity. */
    Bool aerr = False;
@@ -1236,7 +1017,7 @@ static void vgmext_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      SK_(record_address_error)( a, 1, True );
+      MC_(record_address_error)( a, 1, True );
 }
 
 
@@ -1245,24 +1026,24 @@ static void vgmext_wr_V1_SLOWLY ( Addr a, UInt vbytes )
    Handlers for value check failures.
    ------------------------------------------------------------------ */
 
-void SK_(helperc_value_check0_fail) ( void )
+void MC_(helperc_value_check0_fail) ( void )
 {
-   SK_(record_value_error) ( 0 );
+   MC_(record_value_error) ( 0 );
 }
 
-void SK_(helperc_value_check1_fail) ( void )
+void MC_(helperc_value_check1_fail) ( void )
 {
-   SK_(record_value_error) ( 1 );
+   MC_(record_value_error) ( 1 );
 }
 
-void SK_(helperc_value_check2_fail) ( void )
+void MC_(helperc_value_check2_fail) ( void )
 {
-   SK_(record_value_error) ( 2 );
+   MC_(record_value_error) ( 2 );
 }
 
-void SK_(helperc_value_check4_fail) ( void )
+void MC_(helperc_value_check4_fail) ( void )
 {
-   SK_(record_value_error) ( 4 );
+   MC_(record_value_error) ( 4 );
 }
 
 
@@ -1271,7 +1052,7 @@ void SK_(helperc_value_check4_fail) ( void )
    ------------------------------------------------------------------ */
 
 __attribute__ ((regparm(2)))
-void SK_(fpu_read_check) ( Addr addr, Int size )
+void MC_(fpu_read_check) ( Addr addr, Int size )
 {
    /* Ensure the read area is both addressible and valid (ie,
       readable).  If there's an address error, don't report a value
@@ -1279,7 +1060,7 @@ void SK_(fpu_read_check) ( Addr addr, Int size )
       value error. 
 
       Try to be reasonably fast on the common case; wimp out and defer
-      to fpu_read_check_SLOWLY for everything else.  */
+      to mc_fpu_read_check_SLOWLY for everything else.  */
 
    SecMap* sm;
    UInt    sm_off, v_off, a_off;
@@ -1288,7 +1069,7 @@ void SK_(fpu_read_check) ( Addr addr, Int size )
    PROF_EVENT(80);
 
 #  ifdef VG_DEBUG_MEMORY
-   fpu_read_check_SLOWLY ( addr, size );
+   mc_fpu_read_check_SLOWLY ( addr, size );
 #  else
 
    if (size == 4) {
@@ -1306,7 +1087,7 @@ void SK_(fpu_read_check) ( Addr addr, Int size )
       /* Properly aligned, addressible and with valid data. */
       return;
      slow4:
-      fpu_read_check_SLOWLY ( addr, 4 );
+      mc_fpu_read_check_SLOWLY ( addr, 4 );
       return;
    }
 
@@ -1337,7 +1118,7 @@ void SK_(fpu_read_check) ( Addr addr, Int size )
          data. */
       return;
      slow8:
-      fpu_read_check_SLOWLY ( addr, 8 );
+      mc_fpu_read_check_SLOWLY ( addr, 8 );
       return;
    }
 
@@ -1345,30 +1126,24 @@ void SK_(fpu_read_check) ( Addr addr, Int size )
       cases go quickly.  */
    if (size == 2) {
       PROF_EVENT(83);
-      fpu_read_check_SLOWLY ( addr, 2 );
+      mc_fpu_read_check_SLOWLY ( addr, 2 );
       return;
    }
 
-   if (size == 10) {
+   if (size == 10 || size == 28 || size == 108) {
       PROF_EVENT(84);
-      fpu_read_check_SLOWLY ( addr, 10 );
-      return;
-   }
-
-   if (size == 28 || size == 108) {
-      PROF_EVENT(84); /* XXX assign correct event number */
-      fpu_read_check_SLOWLY ( addr, size );
+      mc_fpu_read_check_SLOWLY ( addr, size );
       return;
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(skin_panic)("vgmext_fpu_read_check: unhandled size");
+   VG_(skin_panic)("MC_(fpu_read_check): unhandled size");
 #  endif
 }
 
 
 __attribute__ ((regparm(2)))
-void SK_(fpu_write_check) ( Addr addr, Int size )
+void MC_(fpu_write_check) ( Addr addr, Int size )
 {
    /* Ensure the written area is addressible, and moan if otherwise.
       If it is addressible, make it valid, otherwise invalid. 
@@ -1381,7 +1156,7 @@ void SK_(fpu_write_check) ( Addr addr, Int size )
    PROF_EVENT(85);
 
 #  ifdef VG_DEBUG_MEMORY
-   fpu_write_check_SLOWLY ( addr, size );
+   mc_fpu_write_check_SLOWLY ( addr, size );
 #  else
 
    if (size == 4) {
@@ -1397,7 +1172,7 @@ void SK_(fpu_write_check) ( Addr addr, Int size )
       ((UInt*)(sm->vbyte))[ v_off >> 2 ] = VGM_WORD_VALID;
       return;
      slow4:
-      fpu_write_check_SLOWLY ( addr, 4 );
+      mc_fpu_write_check_SLOWLY ( addr, 4 );
       return;
    }
 
@@ -1425,7 +1200,7 @@ void SK_(fpu_write_check) ( Addr addr, Int size )
       /* Properly aligned, addressible and with valid data. */
       return;
      slow8:
-      fpu_write_check_SLOWLY ( addr, 8 );
+      mc_fpu_write_check_SLOWLY ( addr, 8 );
       return;
    }
 
@@ -1433,24 +1208,18 @@ void SK_(fpu_write_check) ( Addr addr, Int size )
       cases go quickly.  */
    if (size == 2) {
       PROF_EVENT(88);
-      fpu_write_check_SLOWLY ( addr, 2 );
+      mc_fpu_write_check_SLOWLY ( addr, 2 );
       return;
    }
 
-   if (size == 10) {
+   if (size == 10 || size == 28 || size == 108) {
       PROF_EVENT(89);
-      fpu_write_check_SLOWLY ( addr, 10 );
-      return;
-   }
-
-   if (size == 28 || size == 108) {
-      PROF_EVENT(89); /* XXX assign correct event number */
-      fpu_write_check_SLOWLY ( addr, size );
+      mc_fpu_write_check_SLOWLY ( addr, size );
       return;
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(skin_panic)("vgmext_fpu_write_check: unhandled size");
+   VG_(skin_panic)("MC_(fpu_write_check): unhandled size");
 #  endif
 }
 
@@ -1463,7 +1232,7 @@ void SK_(fpu_write_check) ( Addr addr, Int size )
    there's an addr error, don't report a value error even if it
    exists. */
 
-void fpu_read_check_SLOWLY ( Addr addr, Int size )
+void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
 {
    Int  i;
    Bool aerr = False;
@@ -1478,10 +1247,10 @@ void fpu_read_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      SK_(record_address_error)( addr, size, False );
+      MC_(record_address_error)( addr, size, False );
    } else {
      if (verr)
-        SK_(record_value_error)( size );
+        MC_(record_value_error)( size );
    }
 }
 
@@ -1489,7 +1258,7 @@ void fpu_read_check_SLOWLY ( Addr addr, Int size )
 /* Generic version.  Test for addr errors.  Valid addresses are
    given valid values, and invalid addresses invalid values. */
 
-void fpu_write_check_SLOWLY ( Addr addr, Int size )
+void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
 {
    Int  i;
    Addr a_here;
@@ -1508,125 +1277,8 @@ void fpu_write_check_SLOWLY ( Addr addr, Int size )
       }
    }
    if (aerr) {
-      SK_(record_address_error)( addr, size, True );
+      MC_(record_address_error)( addr, size, True );
    }
-}
-
-/*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-static __inline__
-void set_where( ShadowChunk* sc, ExeContext* ec )
-{
-   VG_(set_sc_extra)( sc, 0, (UInt)ec );
-}
-
-static __inline__
-ExeContext *get_where( ShadowChunk* sc )
-{
-   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
-}
-
-/*------------------------------------------------------------*/
-/*--- Postponing free()ing                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Holds blocks after freeing. */
-static ShadowChunk* vg_freed_list_start   = NULL;
-static ShadowChunk* vg_freed_list_end     = NULL;
-static Int          vg_freed_list_volume  = 0;
-
-static __attribute__ ((unused))
-       Int count_freelist ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n++;
-   return n;
-}
-
-static __attribute__ ((unused))
-       void freelist_sanity ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   /* VG_(printf)("freelist sanity\n"); */
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n += VG_(get_sc_size)(sc);
-   sk_assert(n == vg_freed_list_volume);
-}
-
-/* Put a shadow chunk on the freed blocks queue, possibly freeing up
-   some of the oldest blocks in the queue at the same time. */
-static void add_to_freed_queue ( ShadowChunk* sc )
-{
-   ShadowChunk* sc1;
-
-   /* Put it at the end of the freed list */
-   if (vg_freed_list_end == NULL) {
-      sk_assert(vg_freed_list_start == NULL);
-      vg_freed_list_end = vg_freed_list_start = sc;
-      vg_freed_list_volume = VG_(get_sc_size)(sc);
-   } else {    
-      sk_assert(VG_(get_sc_next)(vg_freed_list_end) == NULL);
-      VG_(set_sc_next)(vg_freed_list_end, sc);
-      vg_freed_list_end = sc;
-      vg_freed_list_volume += VG_(get_sc_size)(sc);
-   }
-   VG_(set_sc_next)(sc, NULL);
-
-   /* Release enough of the oldest blocks to bring the free queue
-      volume below vg_clo_freelist_vol. */
-   
-   while (vg_freed_list_volume > SK_(clo_freelist_vol)) {
-      /* freelist_sanity(); */
-      sk_assert(vg_freed_list_start != NULL);
-      sk_assert(vg_freed_list_end != NULL);
-
-      sc1 = vg_freed_list_start;
-      vg_freed_list_volume -= VG_(get_sc_size)(sc1);
-      /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
-      sk_assert(vg_freed_list_volume >= 0);
-
-      if (vg_freed_list_start == vg_freed_list_end) {
-         vg_freed_list_start = vg_freed_list_end = NULL;
-      } else {
-         vg_freed_list_start = VG_(get_sc_next)(sc1);
-      }
-      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
-      VG_(free_ShadowChunk) ( sc1 );
-   }
-}
-
-/* Return the first shadow chunk satisfying the predicate p. */
-ShadowChunk* SK_(any_matching_freed_ShadowChunks)
-                        ( Bool (*p) ( ShadowChunk* ))
-{
-   ShadowChunk* sc;
-
-   /* No point looking through freed blocks if we're not keeping
-      them around for a while... */
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      if (p(sc))
-         return sc;
-
-   return NULL;
-}
-
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   /* Record where freed */
-   set_where( sc, VG_(get_ExeContext) ( tst ) );
-
-   /* Put it out of harm's way for a while. */
-   add_to_freed_queue ( sc );
 }
 
 
@@ -1672,14 +1324,14 @@ Bool mc_is_valid_address ( Addr a )
 /* Leak detector for this skin.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
    skin. */
-void SK_(detect_memory_leaks) ( void )
+void MC_(detect_memory_leaks) ( void )
 {
    VG_(generic_detect_memory_leaks) ( 
       mc_is_valid_64k_chunk,
       mc_is_valid_address,
-      get_where,
-      SK_(clo_leak_resolution),
-      SK_(clo_show_reachable)
+      MC_(get_where),
+      MC_(clo_leak_resolution),
+      MC_(clo_show_reachable)
    );
 }
 
@@ -1818,31 +1470,6 @@ void show_bb ( Addr eip_next )
 }
 #endif /* 0 */
 
-/*------------------------------------------------------------*/
-/*--- Syscall wrappers                                     ---*/
-/*------------------------------------------------------------*/
-
-void* SK_(pre_syscall)  ( ThreadId tid, UInt syscallno, Bool isBlocking )
-{
-   Int sane = SK_(cheap_sanity_check)();
-   return (void*)sane;
-}
-
-void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
-                           void* pre_result, Int res, Bool isBlocking )
-{
-   Int  sane_before_call = (Int)pre_result;
-   Bool sane_after_call  = SK_(cheap_sanity_check)();
-
-   if ((Int)sane_before_call && (!sane_after_call)) {
-      VG_(message)(Vg_DebugMsg, "post-syscall: ");
-      VG_(message)(Vg_DebugMsg,
-                   "probable sanity check failure for syscall number %d\n",
-                   syscallno );
-      VG_(skin_panic)("aborting due to the above ... bye!");
-   }
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Setup                                                ---*/
@@ -1859,55 +1486,18 @@ Bool SK_(process_cmd_line_option)(Char* arg)
 #  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
 #  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
-   if      (STREQ(arg, "--partial-loads-ok=yes"))
-      SK_(clo_partial_loads_ok) = True;
-   else if (STREQ(arg, "--partial-loads-ok=no"))
-      SK_(clo_partial_loads_ok) = False;
-
-   else if (STREQN(15, arg, "--freelist-vol=")) {
-      SK_(clo_freelist_vol) = (Int)VG_(atoll)(&arg[15]);
-      if (SK_(clo_freelist_vol) < 0) SK_(clo_freelist_vol) = 0;
-   }
-
-   else if (STREQ(arg, "--leak-check=yes"))
-      SK_(clo_leak_check) = True;
-   else if (STREQ(arg, "--leak-check=no"))
-      SK_(clo_leak_check) = False;
-
-   else if (STREQ(arg, "--leak-resolution=low"))
-      SK_(clo_leak_resolution) = Vg_LowRes;
-   else if (STREQ(arg, "--leak-resolution=med"))
-      SK_(clo_leak_resolution) = Vg_MedRes;
-   else if (STREQ(arg, "--leak-resolution=high"))
-      SK_(clo_leak_resolution) = Vg_HighRes;
-   
-   else if (STREQ(arg, "--show-reachable=yes"))
-      SK_(clo_show_reachable) = True;
-   else if (STREQ(arg, "--show-reachable=no"))
-      SK_(clo_show_reachable) = False;
-
-   else if (STREQ(arg, "--workaround-gcc296-bugs=yes"))
-      SK_(clo_workaround_gcc296_bugs) = True;
-   else if (STREQ(arg, "--workaround-gcc296-bugs=no"))
-      SK_(clo_workaround_gcc296_bugs) = False;
-
-   else if (STREQ(arg, "--check-addrVs=yes"))
-      SK_(clo_check_addrVs) = True;
+   if (STREQ(arg, "--check-addrVs=yes"))
+      MC_(clo_check_addrVs) = True;
    else if (STREQ(arg, "--check-addrVs=no"))
-      SK_(clo_check_addrVs) = False;
-
-   else if (STREQ(arg, "--cleanup=yes"))
-      SK_(clo_cleanup) = True;
-   else if (STREQ(arg, "--cleanup=no"))
-      SK_(clo_cleanup) = False;
+      MC_(clo_check_addrVs) = False;
 
    else if (STREQ(arg, "--avoid-strlen-errors=yes"))
-      SK_(clo_avoid_strlen_errors) = True;
+      MC_(clo_avoid_strlen_errors) = True;
    else if (STREQ(arg, "--avoid-strlen-errors=no"))
-      SK_(clo_avoid_strlen_errors) = False;
+      MC_(clo_avoid_strlen_errors) = False;
 
    else
-      return False;
+      return MC_(process_common_cmd_line_option)(arg);
 
    return True;
 
@@ -1958,56 +1548,83 @@ void SK_(pre_clo_init)(void)
    VG_(needs_alternative_free)    ();
    VG_(needs_sanity_checks)       ();
 
-   VG_(track_new_mem_startup)      ( & memcheck_new_mem_startup );
-   VG_(track_new_mem_heap)         ( & memcheck_new_mem_heap );
-   VG_(track_new_mem_stack)        ( & SK_(make_writable) );
-   VG_(track_new_mem_stack_aligned)( & make_writable_aligned );
-   VG_(track_new_mem_stack_signal) ( & SK_(make_writable) );
-   VG_(track_new_mem_brk)          ( & SK_(make_writable) );
-   VG_(track_new_mem_mmap)         ( & memcheck_set_perms );
+   VG_(track_new_mem_startup)      ( & mc_new_mem_startup );
+   VG_(track_new_mem_heap)         ( & mc_new_mem_heap );
+   VG_(track_new_mem_stack)        ( & MC_(make_writable) );
+   VG_(track_new_mem_stack_aligned)( & mc_make_writable_aligned );
+   VG_(track_new_mem_stack_signal) ( & MC_(make_writable) );
+   VG_(track_new_mem_brk)          ( & MC_(make_writable) );
+   VG_(track_new_mem_mmap)         ( & mc_set_perms );
    
-   VG_(track_copy_mem_heap)        ( & copy_address_range_state );
-   VG_(track_copy_mem_remap)       ( & copy_address_range_state );
-   VG_(track_change_mem_mprotect)  ( & memcheck_set_perms );
+   VG_(track_copy_mem_heap)        ( & mc_copy_address_range_state );
+   VG_(track_copy_mem_remap)       ( & mc_copy_address_range_state );
+   VG_(track_change_mem_mprotect)  ( & mc_set_perms );
       
-   VG_(track_ban_mem_heap)         ( & SK_(make_noaccess) );
-   VG_(track_ban_mem_stack)        ( & SK_(make_noaccess) );
+   VG_(track_ban_mem_heap)         ( & MC_(make_noaccess) );
+   VG_(track_ban_mem_stack)        ( & MC_(make_noaccess) );
 
-   VG_(track_die_mem_heap)         ( & SK_(make_noaccess) );
-   VG_(track_die_mem_stack)        ( & SK_(make_noaccess) );
-   VG_(track_die_mem_stack_aligned)( & make_noaccess_aligned ); 
-   VG_(track_die_mem_stack_signal) ( & SK_(make_noaccess) ); 
-   VG_(track_die_mem_brk)          ( & SK_(make_noaccess) );
-   VG_(track_die_mem_munmap)       ( & SK_(make_noaccess) ); 
+   VG_(track_die_mem_heap)         ( & MC_(make_noaccess) );
+   VG_(track_die_mem_stack)        ( & MC_(make_noaccess) );
+   VG_(track_die_mem_stack_aligned)( & mc_make_noaccess_aligned ); 
+   VG_(track_die_mem_stack_signal) ( & MC_(make_noaccess) ); 
+   VG_(track_die_mem_brk)          ( & MC_(make_noaccess) );
+   VG_(track_die_mem_munmap)       ( & MC_(make_noaccess) ); 
 
-   VG_(track_bad_free)             ( & SK_(record_free_error) );
-   VG_(track_mismatched_free)      ( & SK_(record_freemismatch_error) );
+   VG_(track_bad_free)             ( & MC_(record_free_error) );
+   VG_(track_mismatched_free)      ( & MC_(record_freemismatch_error) );
 
-   VG_(track_pre_mem_read)         ( & check_is_readable );
-   VG_(track_pre_mem_read_asciiz)  ( & check_is_readable_asciiz );
-   VG_(track_pre_mem_write)        ( & check_is_writable );
-   VG_(track_post_mem_write)       ( & SK_(make_readable) );
+   VG_(track_pre_mem_read)         ( & mc_check_is_readable );
+   VG_(track_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
+   VG_(track_pre_mem_write)        ( & mc_check_is_writable );
+   VG_(track_post_mem_write)       ( & MC_(make_readable) );
 
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check4_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check0_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check2_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV1));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV1));
+   VG_(register_compact_helper)((Addr) & MC_(helper_value_check4_fail));
+   VG_(register_compact_helper)((Addr) & MC_(helper_value_check0_fail));
+   VG_(register_compact_helper)((Addr) & MC_(helper_value_check2_fail));
+   VG_(register_compact_helper)((Addr) & MC_(helperc_STOREV4));
+   VG_(register_compact_helper)((Addr) & MC_(helperc_STOREV1));
+   VG_(register_compact_helper)((Addr) & MC_(helperc_LOADV4));
+   VG_(register_compact_helper)((Addr) & MC_(helperc_LOADV1));
 
    /* These two made non-compact because 2-byte transactions are rare. */
-   VG_(register_noncompact_helper)((Addr) & SK_(helperc_STOREV2));
-   VG_(register_noncompact_helper)((Addr) & SK_(helperc_LOADV2));
-   VG_(register_noncompact_helper)((Addr) & SK_(fpu_write_check));
-   VG_(register_noncompact_helper)((Addr) & SK_(fpu_read_check));
-   VG_(register_noncompact_helper)((Addr) & SK_(helper_value_check1_fail));
+   VG_(register_noncompact_helper)((Addr) & MC_(helperc_STOREV2));
+   VG_(register_noncompact_helper)((Addr) & MC_(helperc_LOADV2));
+   VG_(register_noncompact_helper)((Addr) & MC_(fpu_write_check));
+   VG_(register_noncompact_helper)((Addr) & MC_(fpu_read_check));
+   VG_(register_noncompact_helper)((Addr) & MC_(helper_value_check1_fail));
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
 
    init_shadow_memory();
-   init_prof_mem();
+   MC_(init_prof_mem)();
+}
+
+void SK_(post_clo_init) ( void )
+{
+}
+
+void SK_(fini) ( void )
+{
+   VG_(print_malloc_stats)();
+
+   if (VG_(clo_verbosity) == 1) {
+      if (!MC_(clo_leak_check))
+         VG_(message)(Vg_UserMsg, 
+             "For a detailed leak analysis,  rerun with: --leak-check=yes");
+
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected errors, rerun with: -v");
+   }
+   if (MC_(clo_leak_check)) MC_(detect_memory_leaks)();
+
+   MC_(done_prof_mem)();
+
+   if (0) {
+      VG_(message)(Vg_DebugMsg, 
+        "------ Valgrind's client block stats follow ---------------" );
+      MC_(show_client_block_stats)();
+   }
 }
 
 /*--------------------------------------------------------------------*/

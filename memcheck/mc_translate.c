@@ -509,7 +509,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
       this basic block. */
    bogusLiterals = False;
 
-   if (SK_(clo_avoid_strlen_errors)) {
+   if (MC_(clo_avoid_strlen_errors)) {
       for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
          u_in = VG_(get_instr)(cb_in, i);
          switch (u_in->opcode) {
@@ -586,7 +586,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             address. */
 
          case LOAD: 
-            if (SK_(clo_check_addrVs)) {
+            if (MC_(clo_check_addrVs)) {
                uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
                uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
             }
@@ -597,7 +597,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
 
          case STORE:
-            if (SK_(clo_check_addrVs)) {
+            if (MC_(clo_check_addrVs)) {
                uInstr1(cb, TESTV,  4, TempReg, SHADOW(u_in->val2));
                uInstr1(cb, SETV,   4, TempReg, SHADOW(u_in->val2));
             }
@@ -1070,8 +1070,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
             uCCall(cb, 
-                   u_in->opcode==FPU_R ? (Addr) & SK_(fpu_read_check) 
-                                       : (Addr) & SK_(fpu_write_check),
+                   u_in->opcode==FPU_R ? (Addr) & MC_(fpu_read_check) 
+                                       : (Addr) & MC_(fpu_write_check),
                    2, 2, False);
 
             VG_(copy_UInstr)(cb, u_in);
@@ -1098,8 +1098,6 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 /*------------------------------------------------------------*/
 /*--- Clean up mem check instrumentation.                  ---*/
 /*------------------------------------------------------------*/
-
-Bool VG_(clo_memcheck_codegen) = False;
 
 #define dis    VG_(print_codegen)
 
@@ -1159,7 +1157,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       if (u->opcode == GETV && VGC_IS_SHADOW(u->val2) 
                             && next_is_write[u->val2]
-                            && !SK_(clo_check_addrVs)) {
+                            && !MC_(clo_check_addrVs)) {
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete GETV\n", i);
@@ -1167,7 +1165,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       if (u->opcode == TAG1 && VGC_IS_SHADOW(u->val1) 
                             && next_is_write[u->val1]
-                            && !SK_(clo_check_addrVs)) {
+                            && !MC_(clo_check_addrVs)) {
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG1\n", i);
@@ -1175,7 +1173,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       if (u->opcode == TAG2 && VGC_IS_SHADOW(u->val2) 
                             && next_is_write[u->val2]
-                            && !SK_(clo_check_addrVs)) {
+                            && !MC_(clo_check_addrVs)) {
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG2\n", i);
@@ -1507,7 +1505,7 @@ static void vg_cleanup ( UCodeBlock* cb )
 UCodeBlock* SK_(instrument) ( UCodeBlock* cb, Addr not_used )
 {
    cb = memcheck_instrument ( cb );
-   if (SK_(clo_cleanup)) {
+   if (MC_(clo_cleanup)) {
       if (dis) {
          VG_(pp_UCodeBlock) ( cb, "Unimproved instrumented UCode:" );
          VG_(printf)("Instrumentation improvements:\n");

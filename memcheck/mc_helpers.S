@@ -29,33 +29,33 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_constants_skin.h"
+#include "mc_constants.h"
 
-.global SK_(helper_value_check0_fail)
-SK_(helper_value_check0_fail):
+.global MC_(helper_value_check0_fail)
+MC_(helper_value_check0_fail):
 	pushal
-	call	SK_(helperc_value_check0_fail)
+	call	MC_(helperc_value_check0_fail)
 	popal
 	ret
 
-.global SK_(helper_value_check1_fail)
-SK_(helper_value_check1_fail):
+.global MC_(helper_value_check1_fail)
+MC_(helper_value_check1_fail):
 	pushal
-	call	SK_(helperc_value_check1_fail)
+	call	MC_(helperc_value_check1_fail)
 	popal
 	ret
 
-.global SK_(helper_value_check2_fail)
-SK_(helper_value_check2_fail):
+.global MC_(helper_value_check2_fail)
+MC_(helper_value_check2_fail):
 	pushal
-	call	SK_(helperc_value_check2_fail)
+	call	MC_(helperc_value_check2_fail)
 	popal
 	ret
 
-.global SK_(helper_value_check4_fail)
-SK_(helper_value_check4_fail):
+.global MC_(helper_value_check4_fail)
+MC_(helper_value_check4_fail):
 	pushal
-	call	SK_(helperc_value_check4_fail)
+	call	MC_(helperc_value_check4_fail)
 	popal
 	ret
 

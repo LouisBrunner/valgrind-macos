@@ -32,7 +32,7 @@
 #ifndef __MC_INCLUDE_H
 #define __MC_INCLUDE_H
 
-#include "vg_skin.h"
+#include "mc_common.h"
 
 /* UCode extension for efficient memory checking operations */
 typedef
@@ -87,122 +87,50 @@ typedef
    }
    TagOp;
 
-/* The classification of a faulting address. */
-typedef 
-   enum { Undescribed, /* as-yet unclassified */
-          Stack, 
-          Unknown, /* classification yielded nothing useful */
-          Freed, Mallocd, 
-          UserG, UserS 
-   }
-   AddrKind;
-
-/* Records info about a faulting address. */
-typedef
-   struct {
-      /* ALL */
-      AddrKind akind;
-      /* Freed, Mallocd */
-      Int blksize;
-      /* Freed, Mallocd */
-      Int rwoffset;
-      /* Freed, Mallocd */
-      ExeContext* lastchange;
-      /* Stack */
-      ThreadId stack_tid;
-      /* True if is just-below %esp -- could be a gcc bug. */
-      Bool maybe_gcc;
-   }
-   AddrInfo;
-
-
-/*------------------------------------------------------------*/
-/*--- Skin-specific command line options + defaults        ---*/
-/*------------------------------------------------------------*/
-
-/* Allow loads from partially-valid addresses?  default: YES */
-extern Bool SK_(clo_partial_loads_ok);
-
-/* Max volume of the freed blocks queue. */
-extern Int SK_(clo_freelist_vol);
-
-/* Do leak check at exit?  default: NO */
-extern Bool SK_(clo_leak_check);
-
-/* How closely should we compare ExeContexts in leak records? default: 2 */
-extern VgRes SK_(clo_leak_resolution);
-
-/* In leak check, show reachable-but-not-freed blocks?  default: NO */
-extern Bool SK_(clo_show_reachable);
-
-/* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
- * default: NO*/
-extern Bool SK_(clo_workaround_gcc296_bugs);
-
-/* Shall we V-check addrs? (they are always A checked too)   default: YES */
-extern Bool SK_(clo_check_addrVs);
-
-/* DEBUG: clean up instrumented code?  default: YES */
-extern Bool SK_(clo_cleanup);
-
-/* When instrumenting, omit some checks if tell-tale literals for
-   inlined strlen() are visible in the basic block.  default: YES */
-extern Bool SK_(clo_avoid_strlen_errors);
-
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
 /* Functions defined in vg_memcheck_helpers.S */
-extern void SK_(helper_value_check4_fail) ( void );
-extern void SK_(helper_value_check2_fail) ( void );
-extern void SK_(helper_value_check1_fail) ( void );
-extern void SK_(helper_value_check0_fail) ( void );
+extern void MC_(helper_value_check4_fail) ( void );
+extern void MC_(helper_value_check2_fail) ( void );
+extern void MC_(helper_value_check1_fail) ( void );
+extern void MC_(helper_value_check0_fail) ( void );
+
 
 /* Functions defined in vg_memcheck.c */
-extern void SK_(helperc_STOREV4) ( Addr, UInt );
-extern void SK_(helperc_STOREV2) ( Addr, UInt );
-extern void SK_(helperc_STOREV1) ( Addr, UInt );
+extern void MC_(helperc_STOREV4) ( Addr, UInt );
+extern void MC_(helperc_STOREV2) ( Addr, UInt );
+extern void MC_(helperc_STOREV1) ( Addr, UInt );
    
-extern UInt SK_(helperc_LOADV1) ( Addr );
-extern UInt SK_(helperc_LOADV2) ( Addr );
-extern UInt SK_(helperc_LOADV4) ( Addr );
+extern UInt MC_(helperc_LOADV1) ( Addr );
+extern UInt MC_(helperc_LOADV2) ( Addr );
+extern UInt MC_(helperc_LOADV4) ( Addr );
 
-extern void SK_(fpu_write_check) ( Addr addr, Int size );
-extern void SK_(fpu_read_check)  ( Addr addr, Int size );
+extern void MC_(fpu_write_check) ( Addr addr, Int size );
+extern void MC_(fpu_read_check)  ( Addr addr, Int size );
 
-extern ShadowChunk* SK_(any_matching_freed_ShadowChunks) 
-                        ( Bool (*p) ( ShadowChunk* ) );
 
 /* For client requests */
-extern void SK_(make_noaccess) ( Addr a, UInt len );
-extern void SK_(make_readable) ( Addr a, UInt len );
-extern void SK_(make_writable) ( Addr a, UInt len );
+extern void MC_(make_noaccess) ( Addr a, UInt len );
+extern void MC_(make_readable) ( Addr a, UInt len );
+extern void MC_(make_writable) ( Addr a, UInt len );
 
-extern Bool SK_(check_writable) ( Addr a, UInt len, Addr* bad_addr );
-extern Bool SK_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
+extern Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr );
+extern Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
 
-extern void SK_(detect_memory_leaks) ( void );
+extern void MC_(detect_memory_leaks) ( void );
 
 
 /* Functions defined in vg_memcheck_clientreqs.c */
-extern Bool SK_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
-extern void SK_(delete_client_stack_blocks_following_ESP_change) ( void );
-extern void SK_(show_client_block_stats) ( void );
+extern Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
+extern void MC_(show_client_block_stats) ( void );
+
 
 /* Functions defined in vg_memcheck_errcontext.c */
-extern void SK_(record_value_error)       ( Int size );
-extern void SK_(record_address_error)     ( Addr a, Int size, Bool isWrite );
-extern void SK_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,
-                                            Char* s );
-extern void SK_(record_param_error)       ( ThreadState* tst, Addr a,   
-                                            Bool isWriteLack, Char* msg );
-extern void SK_(record_jump_error)        ( ThreadState* tst, Addr a );
-extern void SK_(record_free_error)        ( ThreadState* tst, Addr a );
-extern void SK_(record_freemismatch_error)( ThreadState* tst, Addr a );
-extern void SK_(record_user_error)        ( ThreadState* tst, Addr a, 
-                                            Bool isWrite );
+extern void MC_(record_value_error) ( Int size );
+extern void MC_(record_user_error)  ( ThreadState* tst, Addr a, Bool isWrite );
 
 #endif
 

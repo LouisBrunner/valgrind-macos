@@ -120,9 +120,9 @@ static void synth_LOADV ( Int sz, Int a_reg, Int tv_reg,
    UInt tagv[] = { RealReg };
 
    switch (sz) {
-      case 4: helper = (Addr) & SK_(helperc_LOADV4); break;
-      case 2: helper = (Addr) & SK_(helperc_LOADV2); break;
-      case 1: helper = (Addr) & SK_(helperc_LOADV1); break;
+      case 4: helper = (Addr) & MC_(helperc_LOADV4); break;
+      case 2: helper = (Addr) & MC_(helperc_LOADV2); break;
+      case 1: helper = (Addr) & MC_(helperc_LOADV1); break;
       default: VG_(skin_panic)("synth_LOADV");
    }
    VG_(synth_ccall) ( helper, 1, 1, argv, tagv, tv_reg,
@@ -140,9 +140,9 @@ static void synth_STOREV ( Int sz, Int tv_tag, Int tv_val, Int a_reg,
 
    sk_assert(tv_tag == RealReg || tv_tag == Literal);
    switch (sz) {
-      case 4: helper = (Addr) SK_(helperc_STOREV4); break;
-      case 2: helper = (Addr) SK_(helperc_STOREV2); break;
-      case 1: helper = (Addr) SK_(helperc_STOREV1); break;
+      case 4: helper = (Addr) MC_(helperc_STOREV4); break;
+      case 2: helper = (Addr) MC_(helperc_STOREV2); break;
+      case 1: helper = (Addr) MC_(helperc_STOREV1); break;
       default: VG_(skin_panic)("synth_STOREV");
    }
    VG_(synth_ccall) ( helper, 2, 2, argv, tagv, INVALID_REALREG,
@@ -167,7 +167,7 @@ static void synth_SETV ( Int sz, Int reg )
 static void synth_TESTV ( Int sz, Int tag, Int val )
 {
    /* Important note.  Note that that the calls to
-      SK_(helper_value_check[0124]_fail) must be compact helpers due to
+      MC_(helper_value_check[0124]_fail) must be compact helpers due to
       the codegen scheme used below.  Since there are a shortage of
       compact helper slots, and since the size==1 case is never
       actually used, we assert against it. */
@@ -226,12 +226,12 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
    VG_(synth_call) (
       True, /* needed to guarantee that this insn is indeed 3 bytes long */
       ( sz==4 
-      ? VG_(helper_offset)((Addr) & SK_(helper_value_check4_fail))
+      ? VG_(helper_offset)((Addr) & MC_(helper_value_check4_fail))
       : ( sz==2 
-        ? VG_(helper_offset)((Addr) & SK_(helper_value_check2_fail))
+        ? VG_(helper_offset)((Addr) & MC_(helper_value_check2_fail))
         : ( sz==1 
-          ? VG_(helper_offset)((Addr) & SK_(helper_value_check1_fail))
-          : VG_(helper_offset)((Addr) & SK_(helper_value_check0_fail)))))
+          ? VG_(helper_offset)((Addr) & MC_(helper_value_check1_fail))
+          : VG_(helper_offset)((Addr) & MC_(helper_value_check0_fail)))))
    );
 }
 

@@ -189,7 +189,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
    sk_assert(vg_csb_used <= vg_csb_size);
 
    /* VG_(printf)("acsb  %p %d\n", aa, sz); */
-   SK_(make_noaccess) ( aa, sz );
+   MC_(make_noaccess) ( aa, sz );
 
    /* And make sure that they are in descending order of address. */
    i = vg_csb_used;
@@ -211,7 +211,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
 /*--- Externally visible functions.                        ---*/
 /*------------------------------------------------------------*/
 
-void SK_(show_client_block_stats) ( void )
+void MC_(show_client_block_stats) ( void )
 {
    VG_(message)(Vg_DebugMsg, 
       "general CBs: %d allocs, %d discards, %d maxinuse, %d search",
@@ -223,7 +223,7 @@ void SK_(show_client_block_stats) ( void )
    );
 }
 
-Bool SK_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
+Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 {
    Int i;
    /* VG_(printf)("try to identify %d\n", a); */
@@ -270,8 +270,8 @@ Bool SK_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
    return False;
 }
 
-
-void SK_(delete_client_stack_blocks_following_ESP_change) ( void )
+static __attribute__ ((unused))
+void delete_client_stack_blocks_following_ESP_change ( void )
 {
    Addr newESP = VG_(get_stack_pointer)();
 
@@ -300,21 +300,21 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 
    switch (arg[0]) {
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
-         ok = SK_(check_writable) ( arg[1], arg[2], &bad_addr );
+         ok = MC_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            SK_(record_user_error) ( tst, bad_addr, True );
+            MC_(record_user_error) ( tst, bad_addr, True );
          *ret = ok ? (UInt)NULL : bad_addr;
 	 break;
 
       case VG_USERREQ__CHECK_READABLE: /* check readable */
-         ok = SK_(check_readable) ( arg[1], arg[2], &bad_addr );
+         ok = MC_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            SK_(record_user_error) ( tst, bad_addr, False );
+            MC_(record_user_error) ( tst, bad_addr, False );
          *ret = ok ? (UInt)NULL : bad_addr;
 	 break;
 
       case VG_USERREQ__DO_LEAK_CHECK:
-         SK_(detect_memory_leaks)();
+         MC_(detect_memory_leaks)();
 	 *ret = 0; /* return value is meaningless */
 	 break;
 
@@ -325,7 +325,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
-         SK_(make_noaccess) ( arg[1], arg[2] );
+         MC_(make_noaccess) ( arg[1], arg[2] );
 	 *ret = i;
 	 break;
 
@@ -335,7 +335,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
-         SK_(make_writable) ( arg[1], arg[2] );
+         MC_(make_writable) ( arg[1], arg[2] );
          *ret = i;
 	 break;
 
@@ -345,7 +345,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
-         SK_(make_readable) ( arg[1], arg[2] );
+         MC_(make_readable) ( arg[1], arg[2] );
 	 *ret = i;
          break;
 

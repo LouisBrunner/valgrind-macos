@@ -15,6 +15,7 @@ val_PROGRAMS = vgskin_memcheck.so
 vgskin_memcheck_so_SOURCES = \
 	mc_main.c \
 	mc_clientreqs.c \
+	mc_common.c \
 	mc_errcontext.c \
 	mc_from_ucode.c \
 	mc_translate.c \
@@ -28,8 +29,6 @@ mcinclude_HEADERS = \
 
 noinst_HEADERS = \
 	mc_include.h
-
-MANUAL_DEPS = $(noinst_HEADERS)
 
 ##vgskin_memcheck.so$(EXEEXT): $(vgskin_memcheck_so_OBJECTS)
 ##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_memcheck.so \

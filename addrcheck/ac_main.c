@@ -30,211 +30,18 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "ac_include.h"
+#include "mc_common.h"
 //#include "vg_profile.c"
 
 VG_DETERMINE_INTERFACE_VERSION
 
 /*------------------------------------------------------------*/
-/*--- Defns                                                ---*/
-/*------------------------------------------------------------*/
-
-/* These many bytes below %ESP are considered addressible if we're
-   doing the --workaround-gcc296-bugs hack. */
-#define VG_GCC296_BUG_STACK_SLOP 1024
-
-
-typedef 
-   enum { 
-      /* Bad syscall params */
-      ParamSupp,
-      /* Memory errors in core (pthread ops, signal handling) */
-      CoreMemSupp,
-      /* Invalid read/write attempt at given size */
-      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp,
-      /* Invalid or mismatching free */
-      FreeSupp
-   } 
-   AddrCheckSuppKind;
-
-/* What kind of error it is. */
-typedef 
-   enum { CoreMemErr,
-          AddrErr, 
-          ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
-          FreeErr, FreeMismatchErr
-   }
-   AddrCheckErrorKind;
-
-/* What kind of memory access is involved in the error? */
-typedef
-   enum { ReadAxs, WriteAxs, ExecAxs }
-   AxsKind;
-
-/* Extra context for memory errors */
-typedef
-   struct {
-      /* AddrErr */
-      AxsKind axskind;
-      /* AddrErr */
-      Int size;
-      /* AddrErr, FreeErr, FreeMismatchErr, ParamErr, UserErr */
-      AcAddrInfo addrinfo;
-      /* ParamErr, UserErr, CoreMemErr */
-      Bool isWrite;
-   }
-   AddrCheckError;
-
-/*------------------------------------------------------------*/
 /*--- Comparing and printing errors                        ---*/
 /*------------------------------------------------------------*/
 
-static __inline__
-void clear_AcAddrInfo ( AcAddrInfo* ai )
-{
-   ai->akind      = Unknown;
-   ai->blksize    = 0;
-   ai->rwoffset   = 0;
-   ai->lastchange = NULL;
-   ai->stack_tid  = VG_INVALID_THREADID;
-   ai->maybe_gcc  = False;
-}
-
-static __inline__
-void clear_AddrCheckError ( AddrCheckError* err_extra )
-{
-   err_extra->axskind   = ReadAxs;
-   err_extra->size      = 0;
-   clear_AcAddrInfo ( &err_extra->addrinfo );
-   err_extra->isWrite   = False;
-}
-
-__attribute__((unused))
-static Bool eq_AcAddrInfo ( VgRes res, AcAddrInfo* ai1, AcAddrInfo* ai2 )
-{
-   if (ai1->akind != Undescribed 
-       && ai2->akind != Undescribed
-       && ai1->akind != ai2->akind) 
-      return False;
-   if (ai1->akind == Freed || ai1->akind == Mallocd) {
-      if (ai1->blksize != ai2->blksize)
-         return False;
-      if (!VG_(eq_ExeContext)(res, ai1->lastchange, ai2->lastchange))
-         return False;
-   }
-   return True;
-}
-
-/* Compare error contexts, to detect duplicates.  Note that if they
-   are otherwise the same, the faulting addrs and associated rwoffsets
-   are allowed to be different.  */
-
-Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
-{
-   AddrCheckError* e1_extra = VG_(get_error_extra)(e1);
-   AddrCheckError* e2_extra = VG_(get_error_extra)(e2);
-   
-   switch (VG_(get_error_kind)(e1)) {
-      case CoreMemErr: {
-         Char *e1s, *e2s;
-         if (e1_extra->isWrite != e2_extra->isWrite)   return False;
-         if (VG_(get_error_kind)(e2) != CoreMemErr)    return False; 
-         e1s = VG_(get_error_string)(e1);
-         e2s = VG_(get_error_string)(e2);
-         if (e1s == e2s)                               return True;
-         if (0 == VG_(strcmp)(e1s, e2s))               return True;
-         return False;
-      }
-
-      case UserErr:
-      case ParamErr:
-         if (e1_extra->isWrite != e2_extra->isWrite)           return False;
-         if (VG_(get_error_kind)(e1) == ParamErr 
-             && 0 != VG_(strcmp)(VG_(get_error_string)(e1),
-                                 VG_(get_error_string)(e2)))   return False;
-         return True;
-
-      case FreeErr:
-      case FreeMismatchErr:
-         /* JRS 2002-Aug-26: comparing addrs seems overkill and can
-            cause excessive duplication of errors.  Not even AddrErr
-            below does that.  So don't compare either the .addr field
-            or the .addrinfo fields. */
-         /* if (e1->addr != e2->addr) return False; */
-         /* if (!eq_AcAddrInfo(res, &e1_extra->addrinfo, &e2_extra->addrinfo)) 
-               return False;
-         */
-         return True;
-
-      case AddrErr:
-         /* if (e1_extra->axskind != e2_extra->axskind) return False; */
-         if (e1_extra->size != e2_extra->size) return False;
-         /*
-         if (!eq_AcAddrInfo(res, &e1_extra->addrinfo, &e2_extra->addrinfo)) 
-            return False;
-         */
-         return True;
-
-      default: 
-         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n",
-                     VG_(get_error_kind)(e1));
-         VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
-   }
-}
-
-static void pp_AcAddrInfo ( Addr a, AcAddrInfo* ai )
-{
-   switch (ai->akind) {
-      case Stack: 
-         VG_(message)(Vg_UserMsg, 
-                      "   Address 0x%x is on thread %d's stack", 
-                      a, ai->stack_tid);
-         break;
-      case Unknown:
-         if (ai->maybe_gcc) {
-            VG_(message)(Vg_UserMsg, 
-               "   Address 0x%x is just below %%esp.  Possibly a bug in GCC/G++",
-               a);
-            VG_(message)(Vg_UserMsg, 
-               "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
-	 } else {
-            VG_(message)(Vg_UserMsg, 
-               "   Address 0x%x is not stack'd, malloc'd or free'd", a);
-         }
-         break;
-      case Freed: case Mallocd: {
-         UInt delta;
-         UChar* relative;
-         if (ai->rwoffset < 0) {
-            delta    = (UInt)(- ai->rwoffset);
-            relative = "before";
-         } else if (ai->rwoffset >= ai->blksize) {
-            delta    = ai->rwoffset - ai->blksize;
-            relative = "after";
-         } else {
-            delta    = ai->rwoffset;
-            relative = "inside";
-         }
-         {
-            VG_(message)(Vg_UserMsg, 
-               "   Address 0x%x is %d bytes %s a block of size %d %s",
-               a, delta, relative, 
-               ai->blksize,
-               ai->akind==Mallocd ? "alloc'd" 
-                  : ai->akind==Freed ? "free'd" 
-                                     : "client-defined");
-         }
-         VG_(pp_ExeContext)(ai->lastchange);
-         break;
-      }
-      default:
-         VG_(skin_panic)("pp_AcAddrInfo");
-   }
-}
-
 void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 {
-   AddrCheckError* err_extra = VG_(get_error_extra)(err);
+   MemCheckError* err_extra = VG_(get_error_extra)(err);
 
    switch (VG_(get_error_kind)(err)) {
       case CoreMemErr:
@@ -261,10 +68,10 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
                                         "stated on the next line");
                break;
             default: 
-               VG_(skin_panic)("pp_SkinError(axskind)");
+               VG_(skin_panic)("SK_(pp_SkinError)(axskind)");
          }
          pp_ExeContext();
-         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case FreeErr:
@@ -275,7 +82,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
             VG_(message)(Vg_UserMsg, 
                          "Mismatched free() / delete / delete []");
          pp_ExeContext();
-         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case ParamErr:
@@ -290,7 +97,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
                 VG_(get_error_string)(err));
          }
          pp_ExeContext();
-         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case UserErr:
@@ -303,7 +110,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
                "unaddressable byte(s) found during client check request");
          }
          pp_ExeContext();
-         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       default: 
@@ -320,7 +127,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
 
-static void describe_addr ( Addr a, AcAddrInfo* ai )
+static void describe_addr ( Addr a, AddrInfo* ai )
 {
    ShadowChunk* sc;
    ThreadId     tid;
@@ -346,7 +153,7 @@ static void describe_addr ( Addr a, AcAddrInfo* ai )
       return;
    }
    /* Search for a recently freed block which might bracket it. */
-   sc = SK_(any_matching_freed_ShadowChunks)(addr_is_in_block);
+   sc = MC_(any_matching_freed_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Freed;
       ai->blksize    = VG_(get_sc_size)(sc);
@@ -373,121 +180,16 @@ static void describe_addr ( Addr a, AcAddrInfo* ai )
    necessary, and returns the copy. */
 void* SK_(dup_extra_and_update)(Error* err)
 {
-   AddrCheckError* new_extra;
+   MemCheckError* new_extra;
 
-   new_extra  = VG_(malloc)(sizeof(AddrCheckError));
-   *new_extra = *((AddrCheckError*)VG_(get_error_extra)(err));
+   new_extra  = VG_(malloc)(sizeof(MemCheckError));
+   *new_extra = *((MemCheckError*)VG_(get_error_extra)(err));
 
    if (new_extra->addrinfo.akind == Undescribed)
       describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
 
    return new_extra;
 }
-
-/* Is this address within some small distance below %ESP?  Used only
-   for the --workaround-gcc296-bugs kludge. */
-Bool VG_(is_just_below_ESP)( Addr esp, Addr aa )
-{
-   if ((UInt)esp > (UInt)aa
-       && ((UInt)esp - (UInt)aa) <= VG_GCC296_BUG_STACK_SLOP)
-      return True;
-   else
-      return False;
-}
-
-static
-void sk_record_address_error ( Addr a, Int size, Bool isWrite )
-{
-   AddrCheckError err_extra;
-   Bool           just_below_esp;
-
-   just_below_esp 
-      = VG_(is_just_below_ESP)( VG_(get_stack_pointer)(), a );
-
-   /* If this is caused by an access immediately below %ESP, and the
-      user asks nicely, we just ignore it. */
-   if (SK_(clo_workaround_gcc296_bugs) && just_below_esp)
-      return;
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.axskind = isWrite ? WriteAxs : ReadAxs;
-   err_extra.size    = size;
-   err_extra.addrinfo.akind     = Undescribed;
-   err_extra.addrinfo.maybe_gcc = just_below_esp;
-   VG_(maybe_record_error)( NULL, AddrErr, a, /*s*/NULL, &err_extra );
-}
-
-/* These ones are called from non-generated code */
-
-/* This is for memory errors in pthread functions, as opposed to pthread API
-   errors which are found by the core. */
-void SK_(record_core_mem_error) ( ThreadState* tst, Bool isWrite, Char* msg )
-{
-   AddrCheckError err_extra;
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.isWrite = isWrite;
-   VG_(maybe_record_error)( tst, CoreMemErr, /*addr*/0, msg, &err_extra );
-}
-
-void SK_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite, 
-                               Char* msg )
-{
-   AddrCheckError err_extra;
-
-   sk_assert(NULL != tst);
-   clear_AddrCheckError( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   err_extra.isWrite = isWrite;
-   VG_(maybe_record_error)( tst, ParamErr, a, msg, &err_extra );
-}
-
-void SK_(record_jump_error) ( ThreadState* tst, Addr a )
-{
-   AddrCheckError err_extra;
-
-   sk_assert(NULL != tst);
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.axskind = ExecAxs;
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, AddrErr, a, /*s*/NULL, &err_extra );
-}
-
-void SK_(record_free_error) ( ThreadState* tst, Addr a ) 
-{
-   AddrCheckError err_extra;
-
-   sk_assert(NULL != tst);
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, FreeErr, a, /*s*/NULL, &err_extra );
-}
-
-void SK_(record_freemismatch_error) ( ThreadState* tst, Addr a )
-{
-   AddrCheckError err_extra;
-
-   sk_assert(NULL != tst);
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, FreeMismatchErr, a, /*s*/NULL, &err_extra );
-}
-
-void SK_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
-{
-   AddrCheckError err_extra;
-
-   sk_assert(NULL != tst);
-
-   clear_AddrCheckError( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   err_extra.isWrite        = isWrite;
-   VG_(maybe_record_error)( tst, UserErr, a, /*s*/NULL, &err_extra );
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Suppressions                                         ---*/
@@ -514,73 +216,8 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
    return True;
 }
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
-{
-   Bool eof;
-
-   if (VG_(get_supp_kind)(su) == ParamSupp) {
-      eof = VG_(get_line) ( fd, buf, nBuf );
-      if (eof) return False;
-      VG_(set_supp_string)(su, VG_(strdup)(buf));
-   }
-   return True;
-}
-
-extern Bool SK_(error_matches_suppression)(Error* err, Supp* su)
-{
-   UInt su_size;
-   AddrCheckError* err_extra = VG_(get_error_extra)(err);
-   ErrorKind ekind = VG_(get_error_kind)(err);
-
-   switch (VG_(get_supp_kind)(su)) {
-      case ParamSupp:
-         return (ekind == ParamErr
-              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
-
-      case CoreMemSupp:
-         return (ekind == CoreMemErr
-              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
-
-      case Addr1Supp: su_size = 1; goto addr_case;
-      case Addr2Supp: su_size = 2; goto addr_case;
-      case Addr4Supp: su_size = 4; goto addr_case;
-      case Addr8Supp: su_size = 8; goto addr_case;
-      addr_case:
-         return (ekind == AddrErr && err_extra->size == su_size);
-
-      case FreeSupp:
-         return (ekind == FreeErr || ekind == FreeMismatchErr);
-
-      default:
-         VG_(printf)("Error:\n"
-                     "  unknown AddrCheck suppression type %d\n",
-                     VG_(get_supp_kind)(su));
-         VG_(skin_panic)("unknown suppression type in "
-                         "SK_(error_matches_suppression)");
-   }
-}
-
 #  undef STREQ
 
-
-/*--------------------------------------------------------------------*/
-/*--- Part of the AddrCheck skin: Maintain bitmaps of memory,      ---*/
-/*--- tracking the accessibility (A) each byte.                    ---*/
-/*--------------------------------------------------------------------*/
-
-#define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
-
-/*------------------------------------------------------------*/
-/*--- Command line options                                 ---*/
-/*------------------------------------------------------------*/
-
-Bool  SK_(clo_partial_loads_ok)       = True;
-Int   SK_(clo_freelist_vol)           = 1000000;
-Bool  SK_(clo_leak_check)             = False;
-VgRes SK_(clo_leak_resolution)        = Vg_LowRes;
-Bool  SK_(clo_show_reachable)         = False;
-Bool  SK_(clo_workaround_gcc296_bugs) = False;
-Bool  SK_(clo_cleanup)                = True;
 
 /*------------------------------------------------------------*/
 /*--- Profiling events                                     ---*/
@@ -592,6 +229,8 @@ typedef
       VgpSetMem
    } 
    VgpSkinCC;
+
+#define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
 
 /*------------------------------------------------------------*/
 /*--- Low-level support for memory checking.               ---*/
@@ -643,143 +282,13 @@ typedef
 
 
 /*------------------------------------------------------------*/
-/*--- Crude profiling machinery.                           ---*/
-/*------------------------------------------------------------*/
-
-#ifdef VG_PROFILE_MEMORY
-
-#define N_PROF_EVENTS 150
-
-static UInt event_ctr[N_PROF_EVENTS];
-
-static void init_prof_mem ( void )
-{
-   Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++)
-      event_ctr[i] = 0;
-}
-
-static void done_prof_mem ( void )
-{
-   Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++) {
-      if ((i % 10) == 0) 
-         VG_(printf)("\n");
-      if (event_ctr[i] > 0)
-         VG_(printf)( "prof mem event %2d: %d\n", i, event_ctr[i] );
-   }
-   VG_(printf)("\n");
-}
-
-#define PROF_EVENT(ev)                                  \
-   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
-        event_ctr[ev]++;                                \
-   } while (False);
-
-#else
-
-static void init_prof_mem ( void ) { }
-static void done_prof_mem ( void ) { }
-
-#define PROF_EVENT(ev) /* */
-
-#endif
-
-/* Event index.  If just the name of the fn is given, this means the
-   number of calls to the fn.  Otherwise it is the specified event.
-
-   10   alloc_secondary_map
-
-   20   get_abit
-   21   get_vbyte
-   22   set_abit
-   23   set_vbyte
-   24   get_abits4_ALIGNED
-   25   get_vbytes4_ALIGNED
-
-   30   set_address_range_perms
-   31   set_address_range_perms(lower byte loop)
-   32   set_address_range_perms(quadword loop)
-   33   set_address_range_perms(upper byte loop)
-   
-   35   make_noaccess
-   36   make_writable
-   37   make_readable
-
-   40   copy_address_range_state
-   41   copy_address_range_state(byte loop)
-   42   check_writable
-   43   check_writable(byte loop)
-   44   check_readable
-   45   check_readable(byte loop)
-   46   check_readable_asciiz
-   47   check_readable_asciiz(byte loop)
-
-   50   make_aligned_word_NOACCESS
-   51   make_aligned_word_WRITABLE
-
-   60   helperc_LOADV4
-   61   helperc_STOREV4
-   62   helperc_LOADV2
-   63   helperc_STOREV2
-   64   helperc_LOADV1
-   65   helperc_STOREV1
-
-   70   rim_rd_V4_SLOWLY
-   71   rim_wr_V4_SLOWLY
-   72   rim_rd_V2_SLOWLY
-   73   rim_wr_V2_SLOWLY
-   74   rim_rd_V1_SLOWLY
-   75   rim_wr_V1_SLOWLY
-
-   80   fpu_read
-   81   fpu_read aligned 4
-   82   fpu_read aligned 8
-   83   fpu_read 2
-   84   fpu_read 10
-
-   85   fpu_write
-   86   fpu_write aligned 4
-   87   fpu_write aligned 8
-   88   fpu_write 2
-   89   fpu_write 10
-
-   90   fpu_read_check_SLOWLY
-   91   fpu_read_check_SLOWLY(byte loop)
-   92   fpu_write_check_SLOWLY
-   93   fpu_write_check_SLOWLY(byte loop)
-
-   100  is_plausible_stack_addr
-   101  handle_esp_assignment
-   102  handle_esp_assignment(-4)
-   103  handle_esp_assignment(+4)
-   104  handle_esp_assignment(-12)
-   105  handle_esp_assignment(-8)
-   106  handle_esp_assignment(+16)
-   107  handle_esp_assignment(+12)
-   108  handle_esp_assignment(0)
-   109  handle_esp_assignment(+8)
-   110  handle_esp_assignment(-16)
-   111  handle_esp_assignment(+20)
-   112  handle_esp_assignment(-20)
-   113  handle_esp_assignment(+24)
-   114  handle_esp_assignment(-24)
-
-   120  vg_handle_esp_assignment_SLOWLY
-   121  vg_handle_esp_assignment_SLOWLY(normal; move down)
-   122  vg_handle_esp_assignment_SLOWLY(normal; move up)
-   123  vg_handle_esp_assignment_SLOWLY(normal)
-   124  vg_handle_esp_assignment_SLOWLY(>= HUGE_DELTA)
-*/
-
-/*------------------------------------------------------------*/
 /*--- Function declarations.                               ---*/
 /*------------------------------------------------------------*/
 
-static void vgmext_ACCESS4_SLOWLY ( Addr a );
-static void vgmext_ACCESS2_SLOWLY ( Addr a );
-static void vgmext_ACCESS1_SLOWLY ( Addr a );
-static void fpu_ACCESS_check_SLOWLY ( Addr addr, Int size );
+static void ac_ACCESS4_SLOWLY ( Addr a );
+static void ac_ACCESS2_SLOWLY ( Addr a );
+static void ac_ACCESS1_SLOWLY ( Addr a );
+static void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size );
 
 /*------------------------------------------------------------*/
 /*--- Data defns.                                          ---*/
@@ -793,52 +302,6 @@ typedef
 
 static AcSecMap* primary_map[ /*65536*/ 262144 ];
 static AcSecMap  distinguished_secondary_map;
-
-#define IS_DISTINGUISHED_SM(smap) \
-   ((smap) == &distinguished_secondary_map)
-
-#define ENSURE_MAPPABLE(addr,caller)                                   \
-   do {                                                                \
-      if (IS_DISTINGUISHED_SM(primary_map[(addr) >> 16])) {       \
-         primary_map[(addr) >> 16] = alloc_secondary_map(caller); \
-         /* VG_(printf)("new 2map because of %p\n", addr); */          \
-      }                                                                \
-   } while(0)
-
-#define BITARR_SET(aaa_p,iii_p)                         \
-   do {                                                 \
-      UInt   iii = (UInt)iii_p;                         \
-      UChar* aaa = (UChar*)aaa_p;                       \
-      aaa[iii >> 3] |= (1 << (iii & 7));                \
-   } while (0)
-
-#define BITARR_CLEAR(aaa_p,iii_p)                       \
-   do {                                                 \
-      UInt   iii = (UInt)iii_p;                         \
-      UChar* aaa = (UChar*)aaa_p;                       \
-      aaa[iii >> 3] &= ~(1 << (iii & 7));               \
-   } while (0)
-
-#define BITARR_TEST(aaa_p,iii_p)                        \
-      (0 != (((UChar*)aaa_p)[ ((UInt)iii_p) >> 3 ]      \
-               & (1 << (((UInt)iii_p) & 7))))           \
-
-
-#define VGM_BIT_VALID      0
-#define VGM_BIT_INVALID    1
-
-#define VGM_NIBBLE_VALID   0
-#define VGM_NIBBLE_INVALID 0xF
-
-#define VGM_BYTE_VALID     0
-#define VGM_BYTE_INVALID   0xFF
-
-#define VGM_WORD_VALID     0
-#define VGM_WORD_INVALID   0xFFFFFFFF
-
-#define VGM_EFLAGS_VALID   0xFFFFFFFE
-#define VGM_EFLAGS_INVALID 0xFFFFFFFF     /* not used */
-
 
 static void init_shadow_memory ( void )
 {
@@ -855,27 +318,6 @@ static void init_shadow_memory ( void )
    /* These ones should never change; it's a bug in Valgrind if they do. */
    for (i = 65536; i < 262144; i++)
       primary_map[i] = &distinguished_secondary_map;
-}
-
-void SK_(post_clo_init) ( void )
-{
-}
-
-void SK_(fini) ( void )
-{
-   VG_(print_malloc_stats)();
-
-   if (VG_(clo_verbosity) == 1) {
-      if (!SK_(clo_leak_check))
-         VG_(message)(Vg_UserMsg, 
-             "For a detailed leak analysis,  rerun with: --leak-check=yes");
-
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected errors, rerun with: -v");
-   }
-   if (SK_(clo_leak_check)) SK_(detect_memory_leaks)();
-
-   done_prof_mem();
 }
 
 /*------------------------------------------------------------*/
@@ -1070,27 +512,27 @@ static void set_address_range_perms ( Addr a, UInt len,
 
 /* Set permissions for address ranges ... */
 
-void SK_(make_noaccess) ( Addr a, UInt len )
+static void ac_make_noaccess ( Addr a, UInt len )
 {
    PROF_EVENT(35);
-   DEBUG("SK_(make_noaccess)(%p, %x)\n", a, len);
+   DEBUG("ac_make_noaccess(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID );
 }
 
-void SK_(make_accessible) ( Addr a, UInt len )
+static void ac_make_accessible ( Addr a, UInt len )
 {
-   PROF_EVENT(36);
-   DEBUG("SK_(make_accessible)(%p, %x)\n", a, len);
+   PROF_EVENT(38);
+   DEBUG("ac_make_accessible(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_VALID );
 }
 
 /* Block-copy permissions (needed for implementing realloc()). */
 
-static void copy_address_range_state ( Addr src, Addr dst, UInt len )
+static void ac_copy_address_range_state ( Addr src, Addr dst, UInt len )
 {
    UInt i;
 
-   DEBUG("copy_address_range_state\n");
+   DEBUG("ac_copy_address_range_state\n");
 
    PROF_EVENT(40);
    for (i = 0; i < len; i++) {
@@ -1105,13 +547,14 @@ static void copy_address_range_state ( Addr src, Addr dst, UInt len )
    exist, *bad_addr is set to the offending address, so the caller can
    know what it is. */
 
-Bool SK_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
+static __inline__
+Bool ac_check_accessible ( Addr a, UInt len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
-   PROF_EVENT(42);
+   PROF_EVENT(48);
    for (i = 0; i < len; i++) {
-      PROF_EVENT(43);
+      PROF_EVENT(49);
       abit = get_abit(a);
       if (abit == VGM_BIT_INVALID) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -1122,35 +565,16 @@ Bool SK_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
    return True;
 }
 
-Bool SK_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
-{
-   UInt  i;
-   UChar abit;
-
-   PROF_EVENT(44);
-   DEBUG("SK_(check_readable)\n");
-   for (i = 0; i < len; i++) {
-      abit  = get_abit(a);
-      PROF_EVENT(45);
-      if (abit != VGM_BIT_VALID) {
-         if (bad_addr != NULL) *bad_addr = a;
-         return False;
-      }
-      a++;
-   }
-   return True;
-}
-
-
 /* Check a zero-terminated ascii string.  Tricky -- don't want to
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
 
-Bool SK_(check_readable_asciiz) ( Addr a, Addr* bad_addr )
+static __inline__
+Bool ac_check_readable_asciiz ( Addr a, Addr* bad_addr )
 {
    UChar abit;
    PROF_EVENT(46);
-   DEBUG("SK_(check_readable_asciiz)\n");
+   DEBUG("ac_check_readable_asciiz\n");
    while (True) {
       PROF_EVENT(47);
       abit  = get_abit(a);
@@ -1172,7 +596,7 @@ Bool SK_(check_readable_asciiz) ( Addr a, Addr* bad_addr )
 /* Setting permissions for aligned words.  This supports fast stack
    operations. */
 
-static void make_noaccess_aligned ( Addr a, UInt len )
+static void ac_make_noaccess_aligned ( Addr a, UInt len )
 {
    AcSecMap* sm;
    UInt    sm_off;
@@ -1188,7 +612,7 @@ static void make_noaccess_aligned ( Addr a, UInt len )
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "make_noaccess_aligned");
+      ENSURE_MAPPABLE(a, "ac_make_noaccess_aligned");
       sm     = primary_map[a >> 16];
       sm_off = a & 0xFFFF;
       mask = 0x0F;
@@ -1200,7 +624,7 @@ static void make_noaccess_aligned ( Addr a, UInt len )
    VGP_POPCC(VgpSetMem);
 }
 
-static void make_writable_aligned ( Addr a, UInt len )
+static void ac_make_writable_aligned ( Addr a, UInt len )
 {
    AcSecMap* sm;
    UInt    sm_off;
@@ -1216,7 +640,7 @@ static void make_writable_aligned ( Addr a, UInt len )
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "make_writable_aligned");
+      ENSURE_MAPPABLE(a, "ac_make_writable_aligned");
       sm     = primary_map[a >> 16];
       sm_off = a & 0xFFFF;
       mask = 0x0F;
@@ -1229,75 +653,61 @@ static void make_writable_aligned ( Addr a, UInt len )
 }
 
 
-static
-void check_is_writable ( CorePart part, ThreadState* tst,
-                         Char* s, Addr base, UInt size )
+static __inline__
+void ac_check_is_accessible ( CorePart part, ThreadState* tst,
+                              Char* s, Addr base, UInt size, Bool isWrite )
 {
    Bool ok;
    Addr bad_addr;
 
    VGP_PUSHCC(VgpCheckMem);
 
-   /* VG_(message)(Vg_DebugMsg,"check is writable: %x .. %x",
-                               base,base+size-1); */
-   ok = SK_(check_writable) ( base, size, &bad_addr );
+   ok = ac_check_accessible ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         SK_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
+         MC_(record_param_error) ( tst, bad_addr, isWrite, s );
          break;
 
-      case Vg_CorePThread:
       case Vg_CoreSignal:
-         SK_(record_core_mem_error)( tst, /*isWrite=*/True, s );
-         break;
-
-      default:
-         VG_(skin_panic)("check_is_writable: Unknown or unexpected CorePart");
-      }
-   }
-
-   VGP_POPCC(VgpCheckMem);
-}
-
-static
-void check_is_readable ( CorePart part, ThreadState* tst,
-                         Char* s, Addr base, UInt size )
-{     
-   Bool ok;
-   Addr bad_addr;
-
-   VGP_PUSHCC(VgpCheckMem);
-   
-   /* VG_(message)(Vg_DebugMsg,"check is readable: %x .. %x",
-                               base,base+size-1); */
-   ok = SK_(check_readable) ( base, size, &bad_addr );
-   if (!ok) {
-      switch (part) {
-      case Vg_CoreSysCall:
-         SK_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
-         break;
-      
+         sk_assert(isWrite);     /* Should only happen with isWrite case */
+         /* fall through */
       case Vg_CorePThread:
-         SK_(record_core_mem_error)( tst, /*isWrite=*/False, s );
+         MC_(record_core_mem_error)( tst, isWrite, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
-         SK_(record_jump_error)( tst, bad_addr );
+         sk_assert(!isWrite);    /* Should only happen with !isWrite case */
+         MC_(record_jump_error)( tst, bad_addr );
          break;
 
       default:
-         VG_(skin_panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("ac_check_is_accessible: unexpected CorePart");
       }
    }
+
    VGP_POPCC(VgpCheckMem);
 }
 
 static
-void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
-                                Char* s, Addr str )
+void ac_check_is_writable ( CorePart part, ThreadState* tst,
+                            Char* s, Addr base, UInt size )
+{
+   ac_check_is_accessible ( part, tst, s, base, size, /*isWrite*/True );
+}
+
+static
+void ac_check_is_readable ( CorePart part, ThreadState* tst,
+                            Char* s, Addr base, UInt size )
+{     
+   ac_check_is_accessible ( part, tst, s, base, size, /*isWrite*/False );
+}
+
+static
+void ac_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
+                                   Char* s, Addr str )
 {
    Bool ok = True;
    Addr bad_addr;
@@ -1306,38 +716,38 @@ void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    VGP_PUSHCC(VgpCheckMem);
 
    sk_assert(part == Vg_CoreSysCall);
-   ok = SK_(check_readable_asciiz) ( (Addr)str, &bad_addr );
+   ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      SK_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
 }
 
 static
-void addrcheck_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
+void ac_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
    DEBUG("new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
-   SK_(make_accessible)(a, len);
+   ac_make_accessible(a, len);
 }
 
 static
-void addrcheck_new_mem_heap ( Addr a, UInt len, Bool is_inited )
+void ac_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 {
-   SK_(make_accessible)(a, len);
+   ac_make_accessible(a, len);
 }
 
 static
-void addrcheck_set_perms (Addr a, UInt len, 
+void ac_set_perms (Addr a, UInt len, 
                          Bool rr, Bool ww, Bool xx)
 {
-   DEBUG("addrcheck_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
+   DEBUG("ac_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
                               a, len, rr, ww, xx);
    if (rr || ww || xx) {
-      SK_(make_accessible)(a, len);
+      ac_make_accessible(a, len);
    } else {
-      SK_(make_noaccess)(a, len);
+      ac_make_noaccess(a, len);
    }
 }
 
@@ -1352,7 +762,6 @@ static __inline__ UInt rotateRight16 ( UInt x )
    return (x >> 16) | (x << 16);
 }
 
-
 static __inline__ UInt shiftRight16 ( UInt x )
 {
    return x >> 16;
@@ -1362,15 +771,15 @@ static __inline__ UInt shiftRight16 ( UInt x )
 /* Read/write 1/2/4 sized V bytes, and emit an address error if
    needed. */
 
-/* SK_(helperc_ACCESS{1,2,4}) handle the common case fast.
+/* ac_helperc_ACCESS{1,2,4} handle the common case fast.
    Under all other circumstances, it defers to the relevant _SLOWLY
    function, which can handle all situations.
 */
 __attribute__ ((regparm(1)))
-void SK_(helperc_ACCESS4) ( Addr a )
+static void ac_helperc_ACCESS4 ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_ACCESS4_SLOWLY(a);
+   return ac_ACCESS4_SLOWLY(a);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    AcSecMap* sm     = primary_map[sec_no];
@@ -1378,54 +787,54 @@ void SK_(helperc_ACCESS4) ( Addr a )
    UChar   abits  = sm->abits[a_off];
    abits >>= (a & 4);
    abits &= 15;
-   PROF_EVENT(60);
+   PROF_EVENT(66);
    if (abits == VGM_NIBBLE_VALID) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible.  So just return. */
       return;
    } else {
       /* Slow but general case. */
-      vgmext_ACCESS4_SLOWLY(a);
+      ac_ACCESS4_SLOWLY(a);
    }
 #  endif
 }
 
 __attribute__ ((regparm(1)))
-void SK_(helperc_ACCESS2) ( Addr a )
+static void ac_helperc_ACCESS2 ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_ACCESS2_SLOWLY(a);
+   return ac_ACCESS2_SLOWLY(a);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    AcSecMap* sm     = primary_map[sec_no];
    UInt    a_off  = (a & 0xFFFF) >> 3;
-   PROF_EVENT(62);
+   PROF_EVENT(67);
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;
    } else {
       /* Slow but general case. */
-      vgmext_ACCESS2_SLOWLY(a);
+      ac_ACCESS2_SLOWLY(a);
    }
 #  endif
 }
 
 __attribute__ ((regparm(1)))
-void SK_(helperc_ACCESS1) ( Addr a )
+static void ac_helperc_ACCESS1 ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return vgmext_ACCESS1_SLOWLY(a);
+   return ac_ACCESS1_SLOWLY(a);
 #  else
    UInt    sec_no = shiftRight16(a);
    AcSecMap* sm   = primary_map[sec_no];
    UInt    a_off  = (a & 0xFFFF) >> 3;
-   PROF_EVENT(64);
+   PROF_EVENT(68);
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;
    } else {
       /* Slow but general case. */
-      vgmext_ACCESS1_SLOWLY(a);
+      ac_ACCESS1_SLOWLY(a);
    }
 #  endif
 }
@@ -1436,11 +845,11 @@ void SK_(helperc_ACCESS1) ( Addr a )
 /*--- VG_(helperc_ACCESS{1,2,4}) can't manage.             ---*/
 /*------------------------------------------------------------*/
 
-static void vgmext_ACCESS4_SLOWLY ( Addr a )
+static void ac_ACCESS4_SLOWLY ( Addr a )
 {
    Bool a0ok, a1ok, a2ok, a3ok;
 
-   PROF_EVENT(70);
+   PROF_EVENT(76);
 
    /* First establish independently the addressibility of the 4 bytes
       involved. */
@@ -1462,51 +871,51 @@ static void vgmext_ACCESS4_SLOWLY ( Addr a )
       - emit addressing error
    */
    /* VG_(printf)("%p (%d %d %d %d)\n", a, a0ok, a1ok, a2ok, a3ok); */
-   if (!SK_(clo_partial_loads_ok) 
+   if (!MC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      sk_record_address_error( a, 4, False );
+      MC_(record_address_error)( a, 4, False );
       return;
    }
 
    /* Case 3: the address is partially valid.  
       - no addressing error
-      Case 3 is only allowed if SK_(clo_partial_loads_ok) is True
+      Case 3 is only allowed if MC_(clo_partial_loads_ok) is True
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(SK_(clo_partial_loads_ok));
+   sk_assert(MC_(clo_partial_loads_ok));
    {
       return;
    }
 }
 
-static void vgmext_ACCESS2_SLOWLY ( Addr a )
+static void ac_ACCESS2_SLOWLY ( Addr a )
 {
    /* Check the address for validity. */
    Bool aerr = False;
-   PROF_EVENT(72);
+   PROF_EVENT(77);
 
    if (get_abit(a+0) != VGM_BIT_VALID) aerr = True;
    if (get_abit(a+1) != VGM_BIT_VALID) aerr = True;
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      sk_record_address_error( a, 2, False );
+      MC_(record_address_error)( a, 2, False );
    }
 }
 
-static void vgmext_ACCESS1_SLOWLY ( Addr a )
+static void ac_ACCESS1_SLOWLY ( Addr a )
 {
    /* Check the address for validity. */
    Bool aerr = False;
-   PROF_EVENT(74);
+   PROF_EVENT(78);
 
    if (get_abit(a+0) != VGM_BIT_VALID) aerr = True;
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      sk_record_address_error( a, 1, False );
+      MC_(record_address_error)( a, 1, False );
    }
 }
 
@@ -1516,7 +925,7 @@ static void vgmext_ACCESS1_SLOWLY ( Addr a )
    ------------------------------------------------------------------ */
 
 __attribute__ ((regparm(2)))
-void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
+static void ac_fpu_ACCESS_check ( Addr addr, Int size )
 {
    /* Ensure the read area is both addressible and valid (ie,
       readable).  If there's an address error, don't report a value
@@ -1524,21 +933,21 @@ void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
       value error. 
 
       Try to be reasonably fast on the common case; wimp out and defer
-      to fpu_ACCESS_check_SLOWLY for everything else.  */
+      to ac_fpu_ACCESS_check_SLOWLY for everything else.  */
 
    AcSecMap* sm;
    UInt    sm_off, a_off;
    Addr    addr4;
 
-   PROF_EVENT(80);
+   PROF_EVENT(90);
 
 #  ifdef VG_DEBUG_MEMORY
-   fpu_ACCESS_check_SLOWLY ( addr, size );
+   ac_fpu_ACCESS_check_SLOWLY ( addr, size );
 #  else
 
    if (size == 4) {
       if (!IS_ALIGNED4_ADDR(addr)) goto slow4;
-      PROF_EVENT(81);
+      PROF_EVENT(91);
       /* Properly aligned. */
       sm     = primary_map[addr >> 16];
       sm_off = addr & 0xFFFF;
@@ -1547,13 +956,13 @@ void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
       /* Properly aligned and addressible. */
       return;
      slow4:
-      fpu_ACCESS_check_SLOWLY ( addr, 4 );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 4 );
       return;
    }
 
    if (size == 8) {
       if (!IS_ALIGNED4_ADDR(addr)) goto slow8;
-      PROF_EVENT(82);
+      PROF_EVENT(92);
       /* Properly aligned.  Do it in two halves. */
       addr4 = addr + 4;
       /* First half. */
@@ -1571,27 +980,21 @@ void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
       /* Both halves properly aligned and addressible. */
       return;
      slow8:
-      fpu_ACCESS_check_SLOWLY ( addr, 8 );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 8 );
       return;
    }
 
    /* Can't be bothered to huff'n'puff to make these (allegedly) rare
       cases go quickly.  */
    if (size == 2) {
-      PROF_EVENT(83);
-      fpu_ACCESS_check_SLOWLY ( addr, 2 );
+      PROF_EVENT(93);
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 2 );
       return;
    }
 
-   if (size == 10) {
-      PROF_EVENT(84);
-      fpu_ACCESS_check_SLOWLY ( addr, 10 );
-      return;
-   }
-
-   if (size == 28 || size == 108) {
-      PROF_EVENT(84); /* XXX assign correct event number */
-      fpu_ACCESS_check_SLOWLY ( addr, size );
+   if (size == 10 || size == 28 || size == 108) {
+      PROF_EVENT(94);
+      ac_fpu_ACCESS_check_SLOWLY ( addr, size );
       return;
    }
 
@@ -1605,139 +1008,20 @@ void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
    Slow, general cases for FPU access checks.
    ------------------------------------------------------------------ */
 
-void fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
+void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
 {
    Int  i;
    Bool aerr = False;
-   PROF_EVENT(90);
+   PROF_EVENT(100);
    for (i = 0; i < size; i++) {
-      PROF_EVENT(91);
+      PROF_EVENT(101);
       if (get_abit(addr+i) != VGM_BIT_VALID)
          aerr = True;
    }
 
    if (aerr) {
-      sk_record_address_error( addr, size, False );
+      MC_(record_address_error)( addr, size, False );
    }
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-static __inline__
-void set_where( ShadowChunk* sc, ExeContext* ec )
-{
-   VG_(set_sc_extra)( sc, 0, (UInt)ec );
-}
-
-static __inline__
-ExeContext *get_where( ShadowChunk* sc )
-{
-   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Postponing free()ing                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Holds blocks after freeing. */
-static ShadowChunk* vg_freed_list_start   = NULL;
-static ShadowChunk* vg_freed_list_end     = NULL;
-static Int          vg_freed_list_volume  = 0;
-
-static __attribute__ ((unused))
-       Int count_freelist ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n++;
-   return n;
-}
-
-static __attribute__ ((unused))
-       void freelist_sanity ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   /* VG_(printf)("freelist sanity\n"); */
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n += VG_(get_sc_size)(sc);
-   sk_assert(n == vg_freed_list_volume);
-}
-
-/* Put a shadow chunk on the freed blocks queue, possibly freeing up
-   some of the oldest blocks in the queue at the same time. */
-static void add_to_freed_queue ( ShadowChunk* sc )
-{
-   ShadowChunk* sc1;
-
-   /* Put it at the end of the freed list */
-   if (vg_freed_list_end == NULL) {
-      sk_assert(vg_freed_list_start == NULL);
-      vg_freed_list_end = vg_freed_list_start = sc;
-      vg_freed_list_volume = VG_(get_sc_size)(sc);
-   } else {    
-      sk_assert(VG_(get_sc_next)(vg_freed_list_end) == NULL);
-      VG_(set_sc_next)(vg_freed_list_end, sc);
-      vg_freed_list_end = sc;
-      vg_freed_list_volume += VG_(get_sc_size)(sc);
-   }
-   VG_(set_sc_next)(sc, NULL);
-
-   /* Release enough of the oldest blocks to bring the free queue
-      volume below vg_clo_freelist_vol. */
-   
-   while (vg_freed_list_volume > SK_(clo_freelist_vol)) {
-      /* freelist_sanity(); */
-      sk_assert(vg_freed_list_start != NULL);
-      sk_assert(vg_freed_list_end != NULL);
-
-      sc1 = vg_freed_list_start;
-      vg_freed_list_volume -= VG_(get_sc_size)(sc1);
-      /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
-      sk_assert(vg_freed_list_volume >= 0);
-
-      if (vg_freed_list_start == vg_freed_list_end) {
-         vg_freed_list_start = vg_freed_list_end = NULL;
-      } else {
-         vg_freed_list_start = VG_(get_sc_next)(sc1);
-      }
-      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
-      VG_(free_ShadowChunk) ( sc1 );
-   }
-}
-
-/* Return the first shadow chunk satisfying the predicate p. */
-ShadowChunk* SK_(any_matching_freed_ShadowChunks)
-                        ( Bool (*p) ( ShadowChunk* ))
-{
-   ShadowChunk* sc;
-
-   /* No point looking through freed blocks if we're not keeping
-      them around for a while... */
-   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      if (p(sc))
-         return sc;
-
-   return NULL;
-}
-
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   /* Record where freed */
-   set_where( sc, VG_(get_ExeContext) ( tst ) );
-
-   /* Put it out of harm's way for a while. */
-   add_to_freed_queue ( sc );
 }
 
 
@@ -1777,11 +1061,11 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
            do_LOAD_or_STORE:
             uInstr1(cb, CCALL, 0, TempReg, t_addr);
             switch (u_in->size) {
-               case 4: uCCall(cb, (Addr)&SK_(helperc_ACCESS4), 1, 1, False );
+               case 4: uCCall(cb, (Addr) & ac_helperc_ACCESS4, 1, 1, False );
                   break;
-               case 2: uCCall(cb, (Addr)&SK_(helperc_ACCESS2), 1, 1, False );
+               case 2: uCCall(cb, (Addr) & ac_helperc_ACCESS2, 1, 1, False );
                   break;
-               case 1: uCCall(cb, (Addr)&SK_(helperc_ACCESS1), 1, 1, False );
+               case 1: uCCall(cb, (Addr) & ac_helperc_ACCESS1, 1, 1, False );
                   break;
                default: 
                   VG_(skin_panic)("addrcheck::SK_(instrument):LOAD/STORE");
@@ -1796,7 +1080,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
 	    uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, (Addr)&SK_(fpu_ACCESS_check), 2, 2, False );
+            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
 
@@ -1851,14 +1135,14 @@ Bool ac_is_valid_address ( Addr a )
 /* Leak detector for this skin.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
    skin. */
-void SK_(detect_memory_leaks) ( void )
+static void ac_detect_memory_leaks ( void )
 {
    VG_(generic_detect_memory_leaks) ( 
       ac_is_valid_64k_chunk,
       ac_is_valid_address,
-      get_where,
-      SK_(clo_leak_resolution),
-      SK_(clo_show_reachable)
+      MC_(get_where),
+      MC_(clo_leak_resolution),
+      MC_(clo_show_reachable)
    );
 }
 
@@ -1900,184 +1184,13 @@ Bool SK_(expensive_sanity_check) ( void )
    return True;
 }
       
-/* ---------------------------------------------------------------------
-   Debugging machinery (turn on to debug).  Something of a mess.
-   ------------------------------------------------------------------ */
-
-#if 0
-/* Print the value tags on the 8 integer registers & flag reg. */
-
-static void uint_to_bits ( UInt x, Char* str )
-{
-   Int i;
-   Int w = 0;
-   /* str must point to a space of at least 36 bytes. */
-   for (i = 31; i >= 0; i--) {
-      str[w++] = (x & ( ((UInt)1) << i)) ? '1' : '0';
-      if (i == 24 || i == 16 || i == 8)
-         str[w++] = ' ';
-   }
-   str[w++] = 0;
-   sk_assert(w == 36);
-}
-
-/* Caution!  Not vthread-safe; looks in VG_(baseBlock), not the thread
-   state table. */
-
-static void vg_show_reg_tags ( void )
-{
-   Char buf1[36];
-   Char buf2[36];
-   UInt z_eax, z_ebx, z_ecx, z_edx, 
-        z_esi, z_edi, z_ebp, z_esp, z_eflags;
-
-   z_eax    = VG_(baseBlock)[VGOFF_(sh_eax)];
-   z_ebx    = VG_(baseBlock)[VGOFF_(sh_ebx)];
-   z_ecx    = VG_(baseBlock)[VGOFF_(sh_ecx)];
-   z_edx    = VG_(baseBlock)[VGOFF_(sh_edx)];
-   z_esi    = VG_(baseBlock)[VGOFF_(sh_esi)];
-   z_edi    = VG_(baseBlock)[VGOFF_(sh_edi)];
-   z_ebp    = VG_(baseBlock)[VGOFF_(sh_ebp)];
-   z_esp    = VG_(baseBlock)[VGOFF_(sh_esp)];
-   z_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
-   
-   uint_to_bits(z_eflags, buf1);
-   VG_(message)(Vg_DebugMsg, "efl %s\n", buf1);
-
-   uint_to_bits(z_eax, buf1);
-   uint_to_bits(z_ebx, buf2);
-   VG_(message)(Vg_DebugMsg, "eax %s   ebx %s\n", buf1, buf2);
-
-   uint_to_bits(z_ecx, buf1);
-   uint_to_bits(z_edx, buf2);
-   VG_(message)(Vg_DebugMsg, "ecx %s   edx %s\n", buf1, buf2);
-
-   uint_to_bits(z_esi, buf1);
-   uint_to_bits(z_edi, buf2);
-   VG_(message)(Vg_DebugMsg, "esi %s   edi %s\n", buf1, buf2);
-
-   uint_to_bits(z_ebp, buf1);
-   uint_to_bits(z_esp, buf2);
-   VG_(message)(Vg_DebugMsg, "ebp %s   esp %s\n", buf1, buf2);
-}
-
-
-/* For debugging only.  Scan the address space and touch all allegedly
-   addressible words.  Useful for establishing where Valgrind's idea of
-   addressibility has diverged from what the kernel believes. */
-
-static 
-void zzzmemscan_notify_word ( Addr a, UInt w )
-{
-}
-
-void zzzmemscan ( void )
-{
-   Int n_notifies
-      = VG_(scan_all_valid_memory)( zzzmemscan_notify_word );
-   VG_(printf)("zzzmemscan: n_bytes = %d\n", 4 * n_notifies );
-}
-#endif
-
-
-
-
-#if 0
-static Int zzz = 0;
-
-void show_bb ( Addr eip_next )
-{
-   VG_(printf)("[%4d] ", zzz);
-   vg_show_reg_tags( &VG_(m_shadow );
-   VG_(translate) ( eip_next, NULL, NULL, NULL );
-}
-#endif /* 0 */
-
-/*------------------------------------------------------------*/
-/*--- Syscall wrappers                                     ---*/
-/*------------------------------------------------------------*/
-
-void* SK_(pre_syscall)  ( ThreadId tid, UInt syscallno, Bool isBlocking )
-{
-   Int sane = SK_(cheap_sanity_check)();
-   return (void*)sane;
-}
-
-void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
-                           void* pre_result, Int res, Bool isBlocking )
-{
-   Int  sane_before_call = (Int)pre_result;
-   Bool sane_after_call  = SK_(cheap_sanity_check)();
-
-   if ((Int)sane_before_call && (!sane_after_call)) {
-      VG_(message)(Vg_DebugMsg, "post-syscall: ");
-      VG_(message)(Vg_DebugMsg,
-                   "probable sanity check failure for syscall number %d\n",
-                   syscallno );
-      VG_(skin_panic)("aborting due to the above ... bye!");
-   }
-}
-
-
 /*------------------------------------------------------------*/
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(written_shadow_regs_values)( UInt* gen_reg_value, UInt* eflags_value )
-{
-   *gen_reg_value = VGM_WORD_VALID;
-   *eflags_value  = VGM_EFLAGS_VALID;
-}
-
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-#  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
-
-   if      (STREQ(arg, "--partial-loads-ok=yes"))
-      SK_(clo_partial_loads_ok) = True;
-   else if (STREQ(arg, "--partial-loads-ok=no"))
-      SK_(clo_partial_loads_ok) = False;
-
-   else if (STREQN(15, arg, "--freelist-vol=")) {
-      SK_(clo_freelist_vol) = (Int)VG_(atoll)(&arg[15]);
-      if (SK_(clo_freelist_vol) < 0) SK_(clo_freelist_vol) = 0;
-   }
-
-   else if (STREQ(arg, "--leak-check=yes"))
-      SK_(clo_leak_check) = True;
-   else if (STREQ(arg, "--leak-check=no"))
-      SK_(clo_leak_check) = False;
-
-   else if (STREQ(arg, "--leak-resolution=low"))
-      SK_(clo_leak_resolution) = Vg_LowRes;
-   else if (STREQ(arg, "--leak-resolution=med"))
-      SK_(clo_leak_resolution) = Vg_MedRes;
-   else if (STREQ(arg, "--leak-resolution=high"))
-      SK_(clo_leak_resolution) = Vg_HighRes;
-   
-   else if (STREQ(arg, "--show-reachable=yes"))
-      SK_(clo_show_reachable) = True;
-   else if (STREQ(arg, "--show-reachable=no"))
-      SK_(clo_show_reachable) = False;
-
-   else if (STREQ(arg, "--workaround-gcc296-bugs=yes"))
-      SK_(clo_workaround_gcc296_bugs) = True;
-   else if (STREQ(arg, "--workaround-gcc296-bugs=no"))
-      SK_(clo_workaround_gcc296_bugs) = False;
-
-   else if (STREQ(arg, "--cleanup=yes"))
-      SK_(clo_cleanup) = True;
-   else if (STREQ(arg, "--cleanup=no"))
-      SK_(clo_cleanup) = False;
-
-   else
-      return False;
-
-   return True;
-
-#undef STREQ
-#undef STREQN
+   return MC_(process_common_cmd_line_option)(arg);
 }
 
 Char* SK_(usage)(void)
@@ -2120,46 +1233,67 @@ void SK_(pre_clo_init)(void)
    VG_(needs_alternative_free)    ();
    VG_(needs_sanity_checks)       ();
 
-   VG_(track_new_mem_startup)      ( & addrcheck_new_mem_startup );
-   VG_(track_new_mem_heap)         ( & addrcheck_new_mem_heap );
-   VG_(track_new_mem_stack)        ( & SK_(make_accessible) );
-   VG_(track_new_mem_stack_aligned)( & make_writable_aligned );
-   VG_(track_new_mem_stack_signal) ( & SK_(make_accessible) );
-   VG_(track_new_mem_brk)          ( & SK_(make_accessible) );
-   VG_(track_new_mem_mmap)         ( & addrcheck_set_perms );
+   VG_(track_new_mem_startup)      ( & ac_new_mem_startup );
+   VG_(track_new_mem_heap)         ( & ac_new_mem_heap );
+   VG_(track_new_mem_stack)        ( & ac_make_accessible );
+   VG_(track_new_mem_stack_aligned)( & ac_make_writable_aligned );
+   VG_(track_new_mem_stack_signal) ( & ac_make_accessible );
+   VG_(track_new_mem_brk)          ( & ac_make_accessible );
+   VG_(track_new_mem_mmap)         ( & ac_set_perms );
    
-   VG_(track_copy_mem_heap)        ( & copy_address_range_state );
-   VG_(track_copy_mem_remap)       ( & copy_address_range_state );
-   VG_(track_change_mem_mprotect)  ( & addrcheck_set_perms );
+   VG_(track_copy_mem_heap)        ( & ac_copy_address_range_state );
+   VG_(track_copy_mem_remap)       ( & ac_copy_address_range_state );
+   VG_(track_change_mem_mprotect)  ( & ac_set_perms );
       
-   VG_(track_ban_mem_heap)         ( & SK_(make_noaccess) );
-   VG_(track_ban_mem_stack)        ( & SK_(make_noaccess) );
+   VG_(track_ban_mem_heap)         ( & ac_make_noaccess );
+   VG_(track_ban_mem_stack)        ( & ac_make_noaccess );
 
-   VG_(track_die_mem_heap)         ( & SK_(make_noaccess) );
-   VG_(track_die_mem_stack)        ( & SK_(make_noaccess) );
-   VG_(track_die_mem_stack_aligned)( & make_noaccess_aligned ); 
-   VG_(track_die_mem_stack_signal) ( & SK_(make_noaccess) ); 
-   VG_(track_die_mem_brk)          ( & SK_(make_noaccess) );
-   VG_(track_die_mem_munmap)       ( & SK_(make_noaccess) ); 
+   VG_(track_die_mem_heap)         ( & ac_make_noaccess );
+   VG_(track_die_mem_stack)        ( & ac_make_noaccess );
+   VG_(track_die_mem_stack_aligned)( & ac_make_noaccess_aligned ); 
+   VG_(track_die_mem_stack_signal) ( & ac_make_noaccess ); 
+   VG_(track_die_mem_brk)          ( & ac_make_noaccess );
+   VG_(track_die_mem_munmap)       ( & ac_make_noaccess ); 
 
-   VG_(track_bad_free)             ( & SK_(record_free_error) );
-   VG_(track_mismatched_free)      ( & SK_(record_freemismatch_error) );
+   VG_(track_bad_free)             ( & MC_(record_free_error) );
+   VG_(track_mismatched_free)      ( & MC_(record_freemismatch_error) );
 
-   VG_(track_pre_mem_read)         ( & check_is_readable );
-   VG_(track_pre_mem_read_asciiz)  ( & check_is_readable_asciiz );
-   VG_(track_pre_mem_write)        ( & check_is_writable );
-   VG_(track_post_mem_write)       ( & SK_(make_accessible) );
+   VG_(track_pre_mem_read)         ( & ac_check_is_readable );
+   VG_(track_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
+   VG_(track_pre_mem_write)        ( & ac_check_is_writable );
+   VG_(track_post_mem_write)       ( & ac_make_accessible );
 
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS2));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS1));
-   VG_(register_compact_helper)((Addr) & SK_(fpu_ACCESS_check));
+   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS4);
+   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS2);
+   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS1);
+   VG_(register_compact_helper)((Addr) & ac_fpu_ACCESS_check);
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
 
    init_shadow_memory();
-   init_prof_mem();
+   MC_(init_prof_mem)();
+}
+
+void SK_(post_clo_init) ( void )
+{
+}
+
+void SK_(fini) ( void )
+{
+   VG_(print_malloc_stats)();
+
+   if (VG_(clo_verbosity) == 1) {
+      if (!MC_(clo_leak_check))
+         VG_(message)(Vg_UserMsg, 
+             "For a detailed leak analysis,  rerun with: --leak-check=yes");
+
+      VG_(message)(Vg_UserMsg, 
+                   "For counts of detected errors, rerun with: -v");
+   }
+   if (MC_(clo_leak_check)) ac_detect_memory_leaks();
+
+   MC_(done_prof_mem)();
 }
 
 /*--------------------------------------------------------------------*/

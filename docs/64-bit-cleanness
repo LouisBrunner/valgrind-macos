@@ -27,7 +27,6 @@ Symbol table stuff:
 
 Others:
 - search for the following casts: (UInt*), (Int*), (UInt *), (Int *)
-- should deref_UInt be deref_UWord??  Is socklen_t word-sized?
 - vki_sigset_t.sig use: the debug printing in do_setmask() is wrong -- it
   touches sig[1], thus assuming 32-bits.  Likewise in handle_SCSS_change()
 - client_auxv in vg_main.c is UInt** -- should it be UWord** ?

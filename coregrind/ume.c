@@ -144,25 +144,27 @@ void foreach_map(int (*fn)(void *start, void *end,
    }
 }
 
+static char *fillgap_addr;
+static char *fillgap_end;
+
+static int fillgap(void *segstart, void *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino) {
+   if ((char *)segstart >= fillgap_end)
+      return 0;
+
+   if ((char *)segstart > fillgap_addr)
+      mmap(fillgap_addr, (char *)segstart-fillgap_addr, PROT_NONE,
+           MAP_FIXED|MAP_PRIVATE, padfile, 0);
+   fillgap_addr = segend;
+   
+   return 1;
+}
+
 /* pad all the empty spaces in a range of address space to stop
    interlopers */
 void as_pad(void *start, void *end)
 {
    char buf[1024];
-   char *addr;
-
-   int fillgap(void *segstart, void *segend, const char *perm, off_t off, 
-	       int maj, int min, int ino) {
-      if (segstart >= end)
-	 return 0;
-
-      if ((char *)segstart > addr)
-	 mmap(addr, (char *)segstart-addr, PROT_NONE, MAP_FIXED|MAP_PRIVATE,
-	      padfile, 0);
-      addr = segend;
-	 
-      return 1;
-   }
 
    if (padfile == -1) {
       int seq = 1;
@@ -176,47 +178,54 @@ void as_pad(void *start, void *end)
       fstat(padfile, &padstat);
    }
 
-   addr = start;
+   fillgap_addr = start;
+   fillgap_end = end;
 
    foreach_map(fillgap);
 	
-   if (addr < (char *)end)
-      mmap(addr, (char *)end-addr, PROT_NONE, MAP_FIXED|MAP_PRIVATE,
-	   padfile, 0);
+   if (fillgap_addr < fillgap_end)
+      mmap(fillgap_addr, fillgap_end-fillgap_addr, PROT_NONE,
+           MAP_FIXED|MAP_PRIVATE, padfile, 0);
+}
+
+static void *killpad_start;
+static void *killpad_end;
+
+static int killpad(void *segstart, void *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino) {
+   void *b, *e;
+
+   if (padstat.st_dev != makedev(maj, min) || padstat.st_ino != ino)
+      return 1;
+   
+   if (segend <= killpad_start || segstart >= killpad_end)
+      return 1;
+   
+   if (segstart <= killpad_start)
+      b = killpad_start;
+   else
+      b = segstart;
+   
+   if (segend >= killpad_end)
+      e = killpad_end;
+   else
+      e = segend;
+   
+   munmap(b, (char *)e-(char *)b);
+   
+   return 1;
 }
 
 /* remove padding from a range of address space - padding is always a
    mapping of padfile*/
 void as_unpad(void *start, void *end)
 {
-   int killpad(void *segstart, void *segend, const char *perm, off_t off, 
-	       int maj, int min, int ino) {
-      void *b, *e;
-
-      if (padstat.st_dev != makedev(maj, min) || padstat.st_ino != ino)
-	 return 1;
-
-      if (segend <= start || segstart >= end)
-	 return 1;
-
-      if (segstart <= start)
-	 b = start;
-      else
-	 b = segstart;
-
-      if (segend >= end)
-	 e = end;
-      else
-	 e = segend;
-
-      munmap(b, (char *)e-(char *)b);
-
-      return 1;
-   }
-
    if (padfile == -1)	/* no padfile, no padding */
       return;
-
+   
+   killpad_start = start;
+   killpad_end = end;
+   
    foreach_map(killpad);
 }
 

@@ -856,10 +856,9 @@ static Census censi[MAX_N_CENSI];
 static UInt   curr_census = 0;
 
 // Must return False so that all stacks are traversed
-static UInt count_stack_size_counter;
-static Bool count_stack_size( Addr stack_min, Addr stack_max )
+static Bool count_stack_size( Addr stack_min, Addr stack_max, void *cp )
 {
-   count_stack_size_counter += (stack_max - stack_min);
+   *(UInt *)cp  += (stack_max - stack_min);
    return False;
 }
 
@@ -1079,10 +1078,9 @@ static void hp_census(void)
 
    // Stack(s) ---------------------------------------------------------
    if (clo_stacks) {
-      count_stack_size_counter = sigstacks_space;
+      census->stacks_space = sigstacks_space;
       // slightly abusing this function
-      VG_(first_matching_thread_stack)( count_stack_size );
-      census->stacks_space = count_stack_size_counter;
+      VG_(first_matching_thread_stack)( count_stack_size, &census->stacks_space );
       i++;
    }
 

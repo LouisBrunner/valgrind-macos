@@ -75,3 +75,10 @@ VG_(cpuid):
         movl    %ebp, %esp
         popl    %ebp
         ret
+        
+/* Let the linker know we don't need an executable stack */
+.section .note.GNU-stack,"",@progbits
+
+##--------------------------------------------------------------------##
+##--- end                                    	        vg_cpuid.S ---##
+##--------------------------------------------------------------------##

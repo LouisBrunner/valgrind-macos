@@ -165,7 +165,8 @@ Bool VG_(is_valid_or_empty_tid) ( ThreadId tid )
    VG_(baseBlock)-resident thread. 
 */
 ThreadId VG_(first_matching_thread_stack)
-              ( Bool (*p) ( Addr stack_min, Addr stack_max ))
+              ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
+                void* d )
 {
    ThreadId tid, tid_to_skip;
 
@@ -176,7 +177,7 @@ ThreadId VG_(first_matching_thread_stack)
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
       if ( p ( VG_(baseBlock)[VGOFF_(m_esp)], 
-               VG_(threads)[tid].stack_highest_word) )
+               VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
       else
          tid_to_skip = tid;
@@ -186,7 +187,7 @@ ThreadId VG_(first_matching_thread_stack)
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
       if ( p ( VG_(threads)[tid].m_esp,
-               VG_(threads)[tid].stack_highest_word) )
+               VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
    }
    return VG_INVALID_THREADID;

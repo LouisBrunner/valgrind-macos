@@ -1404,37 +1404,38 @@ static void find_mutex_range(Addr start, Addr end, Bool (*action)(Mutex *))
 #define MARK_LOOP	(graph_mark+0)
 #define MARK_DONE	(graph_mark+1)
 
+static Bool check_cycle_inner(const Mutex *mutex, const LockSet *ls)
+{
+   static const Bool debug = False;
+   Int i;
+
+   if (mutex->mark == MARK_LOOP)
+      return True;		/* found cycle */
+   if (mutex->mark == MARK_DONE)
+      return False;		/* been here before, its OK */
+   
+   ((Mutex*)mutex)->mark = MARK_LOOP;
+   
+   if (debug)
+      VG_(printf)("mark=%d visiting %p%(y mutex->lockset=%d\n",
+                  graph_mark, mutex->mutexp, mutex->mutexp, mutex->lockdep);
+   for(i = 0; i < ls->setsize; i++) {
+      const Mutex *mx = ls->mutex[i];
+     
+      if (debug)
+         VG_(printf)("   %y ls=%p (ls->mutex=%p%(y)\n", 
+                     mutex->mutexp, ls,
+                     mx->mutexp, mx->mutexp);
+      if (check_cycle_inner(mx, mx->lockdep))
+         return True;
+   }
+   ((Mutex*)mutex)->mark = MARK_DONE;
+   
+   return False;
+}
+
 static Bool check_cycle(const Mutex *start, const LockSet* lockset)
 {
-   Bool check_cycle_inner(const Mutex *mutex, const LockSet *ls)
-   {
-      static const Bool debug = False;
-      Int i;
-
-      if (mutex->mark == MARK_LOOP)
-	 return True;		/* found cycle */
-      if (mutex->mark == MARK_DONE)
-	 return False;		/* been here before, its OK */
-
-      ((Mutex*)mutex)->mark = MARK_LOOP;
-	 
-      if (debug)
-	 VG_(printf)("mark=%d visiting %p%(y mutex->lockset=%d\n",
-		     graph_mark, mutex->mutexp, mutex->mutexp, mutex->lockdep);
-      for(i = 0; i < ls->setsize; i++) {
-	 const Mutex *mx = ls->mutex[i];
-
-	 if (debug)
-	    VG_(printf)("   %y ls=%p (ls->mutex=%p%(y)\n", 
-			mutex->mutexp, ls,
-			mx->mutexp, mx->mutexp);
-	 if (check_cycle_inner(mx, mx->lockdep))
-	    return True;
-      }
-      ((Mutex*)mutex)->mark = MARK_DONE;
-	 
-      return False;
-   }
 
    graph_mark += 2;		/* clear all marks */
 
@@ -1581,17 +1582,17 @@ static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 /*--- Setting and checking permissions.                    ---*/
 /*------------------------------------------------------------*/
 
+/* only clean up dead mutexes */
+static
+Bool cleanmx(Mutex *mx) {
+   return mx->state == MxDead;
+}
+
 static
 void set_address_range_state ( Addr a, UInt len /* in bytes */, 
                                VgeInitStatus status )
 {
    Addr end;
-
-   /* only clean up dead mutexes */
-   Bool cleanmx(Mutex *mx) {
-      return mx->state == MxDead;
-   }
-
 
 #  if DEBUG_MAKE_ACCESSES
    VG_(printf)("make_access: 0x%x, %u, status=%u\n", a, len, status);
@@ -1870,19 +1871,22 @@ void* SK_(calloc) ( Int nmemb, Int size )
                               /*is_zeroed*/True );
 }
 
+static ThreadId deadmx_tid;
+
+static
+Bool deadmx(Mutex *mx) {
+   if (mx->state != MxDead)
+      set_mutex_state(mx, MxDead, deadmx_tid);
+   
+   return False;
+}
+
 static
 void die_and_free_mem ( ThreadId tid, HG_Chunk* hc,
                         HG_Chunk** prev_chunks_next_ptr )
 {
    Addr start = hc->data;
    Addr end   = start + hc->size;
-
-   Bool deadmx(Mutex *mx) {
-      if (mx->state != MxDead)
-         set_mutex_state(mx, MxDead, tid);
-
-      return False;
-   }
 
    /* Remove hc from the malloclist using prev_chunks_next_ptr to
       avoid repeating the hash table lookup.  Can't remove until at least
@@ -1908,6 +1912,7 @@ void die_and_free_mem ( ThreadId tid, HG_Chunk* hc,
       freechunkptr = 0;
 
    /* mark all mutexes in range dead */
+   deadmx_tid = tid;
    find_mutex_range(start, end, deadmx);
 }
 
@@ -2378,24 +2383,19 @@ void clear_HelgrindError ( HelgrindError* err_extra )
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
 
+/* Callback for searching malloc'd and free'd lists */
+static Bool addr_is_in_block(VgHashNode *node, void *ap)
+{
+   HG_Chunk* hc2 = (HG_Chunk*)node;
+   Addr a = *(Addr *)ap;
+   
+   return (hc2->data <= a && a < hc2->data + hc2->size);
+}
+
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
    HG_Chunk* hc;
    Int i;
-
-   /* Nested functions, yeah.  Need the lexical scoping of 'a'. */ 
-
-   /* Closure for searching thread stacks */
-   Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
-   {
-      return (stack_min <= a && a <= stack_max);
-   }
-   /* Closure for searching malloc'd and free'd lists */
-   Bool addr_is_in_block(VgHashNode *node)
-   {
-      HG_Chunk* hc2 = (HG_Chunk*)node;
-      return (hc2->data <= a && a < hc2->data + hc2->size);
-   }
 
    /* Search for it in segments */
    {
@@ -2431,7 +2431,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    }
 
    /* Search for a currently malloc'd block which might bracket it. */
-   hc = (HG_Chunk*)VG_(HT_first_match)(hg_malloc_list, addr_is_in_block);
+   hc = (HG_Chunk*)VG_(HT_first_match)(hg_malloc_list, addr_is_in_block, &a);
    if (NULL != hc) {
       ai->akind      = Mallocd;
       ai->blksize    = hc->size;

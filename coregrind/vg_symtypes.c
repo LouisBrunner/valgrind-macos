@@ -661,6 +661,33 @@ static inline Bool is_followable(SymType *ty)
    return ty->kind == TyPointer || is_composite(ty);
 }
 
+/* Result buffer */
+static Char *describe_addr_buf;
+static UInt describe_addr_bufidx;
+static UInt describe_addr_bufsz;
+
+/* Add a character to the result buffer */
+static void describe_addr_addbuf(Char c) {
+   if ((describe_addr_bufidx+1) >= describe_addr_bufsz) {
+      Char *n;
+    
+      if (describe_addr_bufsz == 0)
+         describe_addr_bufsz = 8;
+      else
+         describe_addr_bufsz *= 2;
+    
+      /* use tool malloc so that the skin client can free it */
+      n = VG_(malloc)(describe_addr_bufsz);
+      if (describe_addr_buf != NULL && describe_addr_bufidx != 0)
+         VG_(memcpy)(n, describe_addr_buf, describe_addr_bufidx);
+      if (describe_addr_buf != NULL)
+         VG_(free)(describe_addr_buf);
+      describe_addr_buf = n;
+   }
+   describe_addr_buf[describe_addr_bufidx++] = c;
+   describe_addr_buf[describe_addr_bufidx] = '\0';
+}
+
 #define MAX_PLY		7	/* max depth we go */
 #define MAX_ELEMENTS	5000	/* max number of array elements we scan */
 #define MAX_VARS	10000	/* max number of variables total traversed */
@@ -673,34 +700,12 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
    Variable *list;		/* worklist */
    Variable *keeplist;		/* container variables */
    Variable *found;		/* the chain we found */
-   Char *buf = NULL;		/* the result */
-   UInt bufsz = 0;
-   UInt bufidx = 0;
    Int created=0, freed=0;
    Int numvars = MAX_VARS;
 
-   /* add a character to the result buffer */
-   void addbuf(Char c) {
-      if ((bufidx+1) >= bufsz) {
-	 Char *n;
-
-	 if (bufsz == 0)
-	    bufsz = 8;
-	 else
-	    bufsz *= 2;
-
-	 /* use tool malloc so that the skin client can free it */
-	 n = VG_(malloc)(bufsz);
-	 if (buf != NULL && bufidx != 0)
-	    VG_(memcpy)(n, buf, bufidx);
-	 if (buf != NULL)
-	    VG_(free)(buf);
-	 buf = n;
-      }
-      buf[bufidx++] = c;
-      buf[bufidx] = '\0';
-   }
-
+   describe_addr_buf = NULL;
+   describe_addr_bufidx = 0;
+   describe_addr_bufsz = 0;
 
    clear_visited();
 
@@ -1013,7 +1018,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	       found->container->name = NULL;
 	       found->container = found->container->container;
 	    } else {
-	       bprintf(addbuf, "&(");
+	       bprintf(describe_addr_addbuf, "&(");
 	       ptr = False;
 	    }
 
@@ -1025,13 +1030,13 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 
 	 *ep++ = '\0';
 
-	 bprintf(addbuf, sp);
+	 bprintf(describe_addr_addbuf, sp);
 
 	 if (addr != found->valuep)
-	    bprintf(addbuf, "+%d", addr - found->valuep);
+	    bprintf(describe_addr_addbuf, "+%d", addr - found->valuep);
 
 	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
-	    bprintf(addbuf, " at %s:%d", file, line, addr);
+	    bprintf(describe_addr_addbuf, " at %s:%d", file, line, addr);
       }
    }
 
@@ -1043,9 +1048,9 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
    clear_visited();
 
    if (debug)
-      VG_(printf)("returning buf=%s\n", buf);
+      VG_(printf)("returning buf=%s\n", describe_addr_buf);
 
-   return buf;
+   return describe_addr_buf;
 }
 #endif /* TEST */
 

@@ -117,7 +117,10 @@ VG_(clone):
 VG_(sigreturn):
 	movl	$__NR_rt_sigreturn, %eax
 	int	$0x80
-	
+
+/* Let the linker know we don't need an executable stack */
+.section .note.GNU-stack,"",@progbits
+
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_syscall.S ---##
 ##--------------------------------------------------------------------##

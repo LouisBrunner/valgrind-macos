@@ -764,17 +764,20 @@ static void get_command_line( int argc, char** argv,
 
 /* Scan a colon-separated list, and call a function on each element.
    The string must be mutable, because we insert a temporary '\0', but
-   the string will end up unmodified.  (*func) should return 1 if it
+   the string will end up unmodified.  (*func) should return True if it
    doesn't need to see any more.
+
+   This routine will return True if (*func) returns True and False if
+   it reaches the end of the list without that happening.
 */
-static void scan_colsep(char *colsep, int (*func)(const char *))
+static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 {
    char *cp, *entry;
    int end;
 
    if (colsep == NULL ||
        *colsep == '\0')
-      return;
+      return False;
 
    entry = cp = colsep;
 
@@ -786,12 +789,21 @@ static void scan_colsep(char *colsep, int (*func)(const char *))
 
 	 *cp = '\0';
 	 if ((*func)(entry))
-	    end = 1;
+	    return True;
 	 *cp = save;
 	 entry = cp+1;
       }
       cp++;
    } while(!end);
+
+   return False;
+}
+
+static Bool contains(const char *p) {
+   if (VG_STREQ(p, VG_(libdir))) {
+      return True;
+   }
+   return False;
 }
 
 /* Prepare the client's environment.  This is basically a copy of our
@@ -855,22 +867,11 @@ static char **fix_environment(char **origenv, const char *preload)
    /* Walk over the new environment, mashing as we go */
    for (cpp = ret; cpp && *cpp; cpp++) {
       if (memcmp(*cpp, ld_library_path, ld_library_path_len) == 0) {
-	 int done = 0;
-	 int contains(const char *p) {
-	    if (VG_STREQ(p, VG_(libdir))) {
-	       done = 1;
-	       return 1;
-	    }
-	    return 0;
-	 }
-
 	 /* If the LD_LIBRARY_PATH already contains libdir, then don't
 	    bother adding it again, even if it isn't the first (it
 	    seems that the Java runtime will keep reexecing itself
 	    unless its paths are at the front of LD_LIBRARY_PATH) */
-	 scan_colsep(*cpp + ld_library_path_len, contains);
-
-	 if (!done) {
+         if (!scan_colsep(*cpp + ld_library_path_len, contains)) {
 	    int len = strlen(*cpp) + vgliblen*2 + 16;
 	    char *cp = malloc(len);
 
@@ -1202,33 +1203,35 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 /*=== Find executable                                              ===*/
 /*====================================================================*/
 
+static const char* executable_name;
+
+static Bool match_executable(const char *entry) {
+   char buf[strlen(entry) + strlen(executable_name) + 2];
+
+   /* empty PATH element means . */
+   if (*entry == '\0')
+      entry = ".";
+
+   snprintf(buf, sizeof(buf), "%s/%s", entry, executable_name);
+   
+   if (access(buf, R_OK|X_OK) == 0) {
+      executable_name = strdup(buf);
+      vg_assert(NULL != executable_name);
+      return True;
+   }
+   return False;
+}
+
 static const char* find_executable(const char* exec)
 {
    vg_assert(NULL != exec);
-   if (strchr(exec, '/') == NULL) {
+   executable_name = exec;
+   if (strchr(executable_name, '/') == NULL) {
       /* no '/' - we need to search the path */
       char *path = getenv("PATH");
-      int pathlen = path ? strlen(path) : 0;
-
-      int match_exe(const char *entry) {
-         char buf[pathlen + strlen(entry) + 3];
-
-         /* empty PATH element means . */
-         if (*entry == '\0')
-            entry = ".";
-
-         snprintf(buf, sizeof(buf), "%s/%s", entry, exec);
-
-         if (access(buf, R_OK|X_OK) == 0) {
-            exec = strdup(buf);
-            vg_assert(NULL != exec);
-            return 1;
-         }
-         return 0;
-      }
-      scan_colsep(path, match_exe);
+      scan_colsep(path, match_executable);
    }
-   return exec;
+   return executable_name;
 }
 
 
@@ -2627,6 +2630,13 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 /*=== main()                                                       ===*/
 /*====================================================================*/
 
+static int prmap(void *start, void *end, const char *perm, off_t off, 
+                 int maj, int min, int ino) {
+   printf("mapping %10p-%10p %s %02x:%02x %d\n",
+          start, end, perm, maj, min, ino);
+   return True;
+}
+
 int main(int argc, char **argv)
 {
    char **cl_argv;
@@ -2675,12 +2685,6 @@ int main(int argc, char **argv)
    scan_auxv();
 
    if (0) {
-      int prmap(void *start, void *end, const char *perm, off_t off, 
-                int maj, int min, int ino) {
-         printf("mapping %10p-%10p %s %02x:%02x %d\n",
-                start, end, perm, maj, min, ino);
-         return True;
-      }
       printf("========== main() ==========\n");
       foreach_map(prmap);
    }

@@ -723,7 +723,10 @@ VG_(helper_cmpxchg8b):
 VG_(helper_undefined_instruction):
 1:	ud2
 	jmp	1b
-			
+	        
+/* Let the linker know we don't need an executable stack */
+.section .note.GNU-stack,"",@progbits
+		
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_helpers.S ---##
 ##--------------------------------------------------------------------##

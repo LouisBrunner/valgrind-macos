@@ -156,6 +156,12 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
    return v_init_esp;
 }
 
+static int prmap(void *start, void *end, const char *perm, off_t off, int maj, int min, int ino) {
+   printf("mapping %10p-%10p %s %02x:%02x %d\n",
+          start, end, perm, maj, min, ino);
+   return 1;
+}
+
 static void hoops(void)
 {
    int err;
@@ -193,11 +199,6 @@ static void hoops(void)
    esp = fix_auxv(ume_exec_esp, &info);
 
    if (0) {
-      int prmap(void *start, void *end, const char *perm, off_t off, int maj, int min, int ino) {
-	 printf("mapping %10p-%10p %s %02x:%02x %d\n",
-		start, end, perm, maj, min, ino);
-	 return 1;
-      }
       printf("---------- launch stage 2 ----------\n");
       printf("eip=%p esp=%p\n", (void *)info.init_eip, esp);
       foreach_map(prmap);

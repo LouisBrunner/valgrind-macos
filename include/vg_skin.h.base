@@ -360,7 +360,8 @@ extern ThreadId VG_(get_current_tid)           ( void );
 /* Searches through all thread's stacks to see if any match.  Returns
    VG_INVALID_THREADID if none match. */
 extern ThreadId VG_(first_matching_thread_stack)
-                        ( Bool (*p) ( Addr stack_min, Addr stack_max ));
+                        ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
+                          void* d );
 
 
 /*====================================================================*/
@@ -1713,14 +1714,17 @@ extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
 extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_shadows );
 
 /* Returns first node that matches predicate `p', or NULL if none do.
-   Extra arguments can be implicitly passed to `p' using nested functions;
-   see memcheck/mc_errcontext.c for an example. */
+   Extra arguments can be implicitly passed to `p' using `d' which is an
+   opaque pointer passed to `p' each time it is called. */
 extern VgHashNode* VG_(HT_first_match) ( VgHashTable t,
-                                         Bool (*p)(VgHashNode*) );
+                                         Bool (*p)(VgHashNode*, void*),
+                                         void* d );
 
-/* Applies a function f() once to each node.  Again, nested functions
-   can be very useful. */
-extern void VG_(HT_apply_to_all_nodes)( VgHashTable t, void (*f)(VgHashNode*) );
+/* Applies a function f() once to each node.  Again, `d' can be used
+   to pass extra information to the function. */
+extern void VG_(HT_apply_to_all_nodes)( VgHashTable t,
+                                        void (*f)(VgHashNode*, void*),
+                                        void* d );
 
 /* Destroy a table. */
 extern void VG_(HT_destruct) ( VgHashTable t );

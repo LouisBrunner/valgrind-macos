@@ -343,7 +343,29 @@ void MAC_(pp_shared_SkinError) ( Error* err )
 /* Additional description function for describe_addr();  used by
    MemCheck for user blocks, which Addrcheck doesn't support. */
 Bool (*MAC_(describe_addr_supp)) ( Addr a, AddrInfo* ai ) = NULL;
-   
+
+/* Callback for searching thread stacks */
+static Bool addr_is_in_bounds(Addr stack_min, Addr stack_max, void *ap)
+{
+   Addr a = *(Addr *)ap;
+  
+   return (stack_min <= a && a <= stack_max);
+}
+
+/* Callback for searching free'd list */
+static Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc, void *ap)
+{
+   Addr a = *(Addr *)ap;
+  
+   return VG_(addr_is_in_block)( a, mc->data, mc->size );
+}
+
+/* Callback for searching malloc'd lists */
+static Bool addr_is_in_HashNode(VgHashNode* sh_ch, void *ap)
+{
+   return addr_is_in_MAC_Chunk( (MAC_Chunk*)sh_ch, ap );
+}
+
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
 static void describe_addr ( Addr a, AddrInfo* ai )
@@ -351,38 +373,20 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    MAC_Chunk* sc;
    ThreadId   tid;
 
-   /* Nested functions, yeah.  Need the lexical scoping of 'a'. */
-
-   /* Closure for searching thread stacks */
-   Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
-   {
-      return (stack_min <= a && a <= stack_max);
-   }
-   /* Closure for searching free'd list */
-   Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc)
-   {
-      return VG_(addr_is_in_block)( a, mc->data, mc->size );
-   }
-   /* Closure for searching malloc'd lists */
-   Bool addr_is_in_HashNode(VgHashNode* sh_ch)
-   {
-      return addr_is_in_MAC_Chunk( (MAC_Chunk*)sh_ch );
-   }
-
    /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
    if (NULL != MAC_(describe_addr_supp)) {
       if (MAC_(describe_addr_supp)( a, ai ))
          return;
    }
    /* Perhaps it's on a thread's stack? */
-   tid = VG_(first_matching_thread_stack)(addr_is_in_bounds);
+   tid = VG_(first_matching_thread_stack)(addr_is_in_bounds, &a);
    if (tid != VG_INVALID_THREADID) {
       ai->akind     = Stack;
       ai->stack_tid = tid;
       return;
    }
    /* Search for a recently freed block which might bracket it. */
-   sc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk);
+   sc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk, &a);
    if (NULL != sc) {
       ai->akind      = Freed;
       ai->blksize    = sc->size;
@@ -391,7 +395,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
       return;
    }
    /* Search for a currently malloc'd block which might bracket it. */
-   sc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode);
+   sc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode, &a);
    if (NULL != sc) {
       ai->akind      = Mallocd;
       ai->blksize    = sc->size;

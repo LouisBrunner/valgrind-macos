@@ -124,6 +124,14 @@ void MC_(show_client_block_stats) ( void )
    );
 }
 
+static Bool find_addr(VgHashNode* sh_ch, void* ap)
+{
+  MAC_Chunk *m = (MAC_Chunk*)sh_ch;
+  Addr a = *(Addr*)ap;
+
+  return VG_(addr_is_in_block)(a, m->data, m->size);
+}
+
 Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 {
    UInt i;
@@ -144,13 +152,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
             if(mp->chunks != NULL) {
                MAC_Chunk *mc;
 
-               Bool find_addr(VgHashNode* sh_ch)
-               {
-                  MAC_Chunk *m = (MAC_Chunk*)sh_ch;
-                  return VG_(addr_is_in_block)(a, m->data, m->size);
-               }
-
-               mc = (MAC_Chunk*)VG_(HT_first_match)(mp->chunks, find_addr);
+               mc = (MAC_Chunk*)VG_(HT_first_match)(mp->chunks, find_addr, &a);
                if(mc != NULL) {
                   ai->akind = UserG;
                   ai->blksize = mc->size;

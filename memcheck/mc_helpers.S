@@ -58,8 +58,10 @@ MC_(helper_value_check4_fail):
 	call	MC_(helperc_value_check4_fail)
 	popal
 	ret
+        
+/* Let the linker know we don't need an executable stack */
+.section .note.GNU-stack,"",@progbits
 
 ##--------------------------------------------------------------------##
 ##--- end                                    	      mc_helpers.S ---##
 ##--------------------------------------------------------------------##
-

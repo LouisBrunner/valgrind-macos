@@ -341,7 +341,7 @@ extern void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr pool );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 
-extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*) );
+extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*, void*), void* d );
 
 extern void MAC_(common_pre_clo_init) ( void );
 extern void MAC_(common_fini)         ( void (*leak_check)(void) );

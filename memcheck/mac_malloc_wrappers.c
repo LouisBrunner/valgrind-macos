@@ -116,14 +116,15 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
 }
 
 /* Return the first shadow chunk satisfying the predicate p. */
-MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*) )
+MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*, void*),
+                                                  void* d )
 {
    MAC_Chunk* mc;
 
    /* No point looking through freed blocks if we're not keeping
       them around for a while... */
    for (mc = freed_list_start; mc != NULL; mc = mc->next)
-      if (p(mc))
+      if (p(mc, d))
          return mc;
 
    return NULL;
@@ -439,24 +440,26 @@ void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    
 }
 
+static void destroy_mempool_nuke_chunk(VgHashNode *node, void *d)
+{
+   MAC_Chunk *mc = (MAC_Chunk *)node;
+   MAC_Mempool *mp = (MAC_Mempool *)d;
+  
+   /* Note: ban redzones again -- just in case user de-banned them
+      with a client request... */
+   MAC_(ban_mem_heap)(mc->data-mp->rzB, mp->rzB );
+   MAC_(die_mem_heap)(mc->data, mc->size );
+   MAC_(ban_mem_heap)(mc->data+mc->size, mp->rzB );
+}
+
 void MAC_(destroy_mempool)(Addr pool)
 {
-   MAC_Mempool*  mp;
+   MAC_Mempool* mp;
    MAC_Mempool** prev_next;
 
-   void nuke_chunk(VgHashNode *node)
-   {
-      MAC_Chunk *mc = (MAC_Chunk *)node;
-
-      /* Note: ban redzones again -- just in case user de-banned them
-         with a client request... */
-      MAC_(ban_mem_heap)(mc->data-mp->rzB, mp->rzB );
-      MAC_(die_mem_heap)(mc->data, mc->size );
-      MAC_(ban_mem_heap)(mc->data+mc->size, mp->rzB );
-   }
-
-   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
-                                        (VgHashNode***)&prev_next );
+   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list),
+                                         (UInt)pool,
+                                         (VgHashNode***)&prev_next );
 
    if (mp == NULL) {
       ThreadId      tid = VG_(get_current_or_recent_tid)();
@@ -466,7 +469,7 @@ void MAC_(destroy_mempool)(Addr pool)
    }
 
    *prev_next = mp->next;
-   VG_(HT_apply_to_all_nodes)(mp->chunks, nuke_chunk);
+   VG_(HT_apply_to_all_nodes)(mp->chunks, destroy_mempool_nuke_chunk, mp);
    VG_(HT_destruct)(mp->chunks);
 
    VG_(free)(mp);
@@ -520,26 +523,38 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    die_and_free_mem(mc, prev_chunk, mp->rzB);
 }
 
+typedef
+   struct {
+      UInt nblocks;
+     UInt nbytes;
+   }
+   MallocStats;
+
+static void malloc_stats_count_chunk(VgHashNode* node, void* d) {
+   MAC_Chunk* mc = (MAC_Chunk*)node;
+   MallocStats *ms = (MallocStats *)d;
+
+   ms->nblocks ++;
+   ms->nbytes  += mc->size;
+}
+
 void MAC_(print_malloc_stats) ( void )
 {
-   UInt nblocks = 0, nbytes = 0;
+   MallocStats ms;
+  
+   ms.nblocks = 0;
+   ms.nbytes = 0;
    
    /* Mmm... more lexical scoping */
-   void count_one_chunk(VgHashNode* node) {
-      MAC_Chunk* mc = (MAC_Chunk*)node;
-      nblocks ++;
-      nbytes  += mc->size;
-   }
-
    if (VG_(clo_verbosity) == 0)
       return;
 
    /* Count memory still in use. */
-   VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), count_one_chunk);
+   VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), malloc_stats_count_chunk, &ms);
 
    VG_(message)(Vg_UserMsg, 
                 "malloc/free: in use at exit: %d bytes in %d blocks.",
-                nbytes, nblocks);
+                ms.nbytes, ms.nblocks);
    VG_(message)(Vg_UserMsg, 
                 "malloc/free: %d allocs, %d frees, %u bytes allocated.",
                 cmalloc_n_mallocs,

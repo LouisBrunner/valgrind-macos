@@ -133,27 +133,31 @@ VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_shadows )
 }
 
 /* Return the first VgHashNode satisfying the predicate p. */
-VgHashNode* VG_(HT_first_match) ( VgHashTable table, Bool (*p) ( VgHashNode* ))
+VgHashNode* VG_(HT_first_match) ( VgHashTable table,
+                                  Bool (*p) ( VgHashNode*, void* ),
+                                  void* d )
 {
    UInt      i;
    VgHashNode* node;
 
    for (i = 0; i < VG_N_CHAINS; i++)
       for (node = table[i]; node != NULL; node = node->next)
-         if ( p(node) )
+         if ( p(node, d) )
             return node;
 
    return NULL;
 }
 
-void VG_(HT_apply_to_all_nodes)( VgHashTable table, void (*f)(VgHashNode*) )
+void VG_(HT_apply_to_all_nodes)( VgHashTable table,
+                                 void (*f)(VgHashNode*, void*),
+                                 void* d )
 {
    UInt      i;
    VgHashNode* node;
 
    for (i = 0; i < VG_N_CHAINS; i++) {
       for (node = table[i]; node != NULL; node = node->next) {
-         f(node);
+         f(node, d);
       }
    }
 }

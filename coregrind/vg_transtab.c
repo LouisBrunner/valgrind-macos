@@ -165,19 +165,28 @@ void unchain_tce(TCEntry *tce)
 }
 
 /* Unchain any jumps pointing to a sector we're about to free */
+static Addr sector_base;
+static Addr sector_len;
+
+static
+void unchain_site_for_sector(Addr a) {
+   Addr jmp = VG_(get_jmp_dest)(a);
+   if (jmp >= sector_base && jmp < (sector_base+sector_len))
+      VG_(unchain_jumpsite)(a);
+}
+
+static
+void unchain_tce_for_sector(TCEntry *tce) {
+   for_each_jumpsite(tce, unchain_site_for_sector);
+}
+
 static
 void unchain_sector(Int s, Addr base, UInt len)
 {
-   void unchain_site(Addr a) {
-      Addr jmp = VG_(get_jmp_dest)(a);
-      if (jmp >= base && jmp < (base+len))
-	 VG_(unchain_jumpsite)(a);
-   }
-   void _unchain_tce(TCEntry *tce) {
-      for_each_jumpsite(tce, unchain_site);
-   }
+   sector_base = base;
+   sector_len = len;
 
-   for_each_tc(s, _unchain_tce);
+   for_each_tc(s, unchain_tce_for_sector);
 }
 
 

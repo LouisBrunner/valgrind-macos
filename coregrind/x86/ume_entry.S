@@ -36,3 +36,6 @@ _ume_entry:
 	.data
 	.globl ume_exec_esp
 ume_exec_esp:	.long 0
+        
+/* Let the linker know we don't need an executable stack */
+.section .note.GNU-stack,"",@progbits

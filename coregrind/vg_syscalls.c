@@ -1030,33 +1030,7 @@ PRE(exit)
 PRE(ptrace)
 {
    /* long ptrace (enum __ptrace_request request, pid_t pid, 
-      void *addr, void *data); ... sort of. */
-   /* Sigh ... the /usr/include/sys/user.h on R H 6.2 doesn't 
-      define struct user_fpxregs_struct.  On the basis that it 
-      is defined as follows on my R H 7.2 (glibc-2.2.4) box, 
-      I kludge it.
-
-      struct user_fpxregs_struct
-      {
-      unsigned short int cwd;
-      unsigned short int swd;
-      unsigned short int twd;
-      unsigned short int fop;
-      long int fip;
-      long int fcs;
-      long int foo;
-      long int fos;
-      long int mxcsr;
-      long int reserved;
-      long int st_space[32];  8*16 bytes for each FP-reg = 128 bytes
-      long int xmm_space[32]; 8*16 bytes for each XMM-reg = 128 bytes
-      long int padding[56];
-      };
-   */
-   const Int sizeof_struct_user_fpxregs_struct
-      = sizeof(unsigned short) * (1 + 1 + 1 + 1) 
-      + sizeof(long int) * (1 + 1 + 1 + 1 + 1 + 1 + 32 + 32 + 56);
-
+                   void *addr, void *data); */
    MAYBE_PRINTF("ptrace ( %d, %d, %p, %p )\n", arg1,arg2,arg3,arg4);
    switch (arg1) {
    case 12:   /* PTRACE_GETREGS */
@@ -1069,7 +1043,7 @@ PRE(ptrace)
       break;
    case 18:   /* PTRACE_GETFPXREGS */
       SYSCALL_TRACK( pre_mem_write, tid, "ptrace(getfpxregs)", arg4, 
-		     sizeof_struct_user_fpxregs_struct);
+                     sizeof(struct user_fxsr_struct) );
       break;
    case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
       SYSCALL_TRACK( pre_mem_write, tid, "ptrace(peek)", arg4, 
@@ -1085,7 +1059,7 @@ PRE(ptrace)
       break;
    case 19:   /* PTRACE_SETFPXREGS */
       SYSCALL_TRACK( pre_mem_read, tid, "ptrace(setfpxregs)", arg4, 
-		     sizeof_struct_user_fpxregs_struct);
+                     sizeof(struct user_fxsr_struct) );
       break;
    default:
       break;
@@ -1094,10 +1068,6 @@ PRE(ptrace)
 
 POST(ptrace)
 {
-   const Int sizeof_struct_user_fpxregs_struct
-      = sizeof(unsigned short) * (1 + 1 + 1 + 1) 
-      + sizeof(long int) * (1 + 1 + 1 + 1 + 1 + 1 + 32 + 32 + 56);
-
    switch (arg1) {
    case 12:  /* PTRACE_GETREGS */
       VG_TRACK( post_mem_write, arg4, 
@@ -1109,7 +1079,7 @@ POST(ptrace)
       break;
    case 18:  /* PTRACE_GETFPXREGS */
       VG_TRACK( post_mem_write, arg4, 
-		sizeof_struct_user_fpxregs_struct);
+                sizeof(struct user_fxsr_struct) );
       break;
    case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
       VG_TRACK( post_mem_write, arg4, sizeof (long));
@@ -1121,7 +1091,10 @@ POST(ptrace)
 
 PRE(mount)
 {
-   MAYBE_PRINTF( "mount( %p, %p, %p )\n" ,arg1,arg2,arg3);
+   // int  mount(const char *source, const char *target,
+   //            const char *filesystemtype, unsigned long mountflags,
+   //            const void *data);
+   MAYBE_PRINTF( "mount( %p, %p, %p, %p, %p )\n" ,arg1,arg2,arg3);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid,"mount(specialfile)",arg1);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid,"mount(dir)",arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid,"mount(filesystemtype)",arg3);
@@ -1551,8 +1524,8 @@ PRE(mlockall)
 
 PRE(munlockall)
 {
-   /* int munlock(const void * addr, size_t len) */
-   MAYBE_PRINTF("munlock ( %p, %d )\n", arg1, arg2);
+   /* int munlockall(void) */
+   MAYBE_PRINTF("munlockall()\n");
 }
 
 PRE(sched_get_priority_max)
@@ -1637,10 +1610,10 @@ POST(sendfile64)
 
 PRE(pwrite64)
 {
-   /* ssize_t pwrite (int fd, const void *buf, size_t nbytes,
-      off_t offset); */
-   MAYBE_PRINTF("pwrite64 ( %d, %p, %d, %d )\n", arg1, arg2, arg3, arg4);
-   SYSCALL_TRACK( pre_mem_read, tid, "pwrite(buf)", arg2, arg3 );
+   // ssize_t pwrite64(int fd, const void *buf, size_t nbytes, loff_t offset);
+   MAYBE_PRINTF("pwrite64 ( %d, %p, %d, %lld )\n",
+                arg1, arg2, arg3, arg4|((ULong) arg5 << 32));
+   SYSCALL_TRACK( pre_mem_read, tid, "pwrite64(buf)", arg2, arg3 );
 }
 
 PRE(sync)
@@ -1670,8 +1643,9 @@ PRE(getsid)
 
 PRE(pread64)
 {
-   /* ssize_t pread64(int fd, void *buf, size_t count, off_t offset); */
-   MAYBE_PRINTF("pread ( %d, %p, %d, %d ) ...\n",arg1,arg2,arg3,arg4);
+   /* ssize_t pread64(int fd, void *buf, size_t count, loff_t offset); */
+   MAYBE_PRINTF("pread ( %d, %p, %d, %lld )\n",
+                arg1, arg2, arg3, arg4|((ULong) arg5 << 32));
    SYSCALL_TRACK( pre_mem_write, tid, "pread(buf)", arg2, arg3 );
 }
 
@@ -1853,7 +1827,7 @@ PRE(execve)
 
    /* If we got here, then the execve failed.  We've already made too much of a mess
       of ourselves to continue, so we have to abort. */
-   VG_(message)(Vg_UserMsg, "execve(%p \"%s\", %p, %p) failed, errno %d",
+   VG_(message)(Vg_UserMsg, "execve(%p(%s), %p, %p) failed, errno %d",
 		arg1, arg1, arg2, arg3, -res);
    VG_(core_panic)("EXEC FAILED: I can't recover from execve() failing, so I'm dying.\n"
 		   "Add more stringent tests in PRE(execve), or work out how to recover.");   
@@ -2192,7 +2166,9 @@ POSTALIAS(getgroups32, getgroups);
 
 PRE(getcwd)
 {
-   /* char *getcwd(char *buf, size_t size);  (but see comment below) */
+   // Note that this prototype is the kernel one, with a different return
+   // type to the glibc one!
+   /* long getcwd(char *buf, size_t size); */
    MAYBE_PRINTF("getcwd ( %p, %d )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_write, tid, "getcwd(buf)", arg1, arg2 );
 }
@@ -4068,7 +4044,7 @@ POST(_llseek)
 PRE(lstat)
 {
    /* int lstat(const char *file_name, struct stat *buf); */
-   MAYBE_PRINTF("lstat ( %p \"%s\", %p )\n",arg1,arg1,arg2);
+   MAYBE_PRINTF("lstat ( %p(%s), %p )\n",arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "lstat(file_name)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "lstat(buf)", arg2, 
 		  sizeof(struct stat) );
@@ -4084,7 +4060,7 @@ POST(lstat)
 PRE(lstat64)
 {
    /* int lstat64(const char *file_name, struct stat64 *buf); */
-   MAYBE_PRINTF("lstat64 ( %p \"%s\", %p )\n",arg1,arg1,arg2);
+   MAYBE_PRINTF("lstat64 ( %p(%s), %p )\n",arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "lstat64(file_name)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "lstat64(buf)", arg2, 
 		  sizeof(struct stat64) );
@@ -4284,8 +4260,14 @@ PRE(_newselect)
 
 PRE(open)
 {
-   /* int open(const char *pathname, int flags); */
-   MAYBE_PRINTF("open ( %p(%s), %d ) --> ",arg1,arg1,arg2);
+   /* int open(const char *pathname, int flags, mode_t mode); */
+   if (arg2 & VKI_O_CREAT) {
+      /* int open(const char *pathname, int flags, mode_t mode); */
+      MAYBE_PRINTF("open ( %p(%s), %d, %d ) --> ",arg1,arg1,arg2,arg3);
+   } else {
+      /* int open(const char *pathname, int flags); */
+      MAYBE_PRINTF("open ( %p(%s), %d ) --> ",arg1,arg1,arg2);
+   }
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "open(pathname)", arg1 );
 }
 
@@ -5098,7 +5080,7 @@ POST(statfs)
 
 PRE(statfs64)
 {
-   /* int statfs64(const char *path, struct statfs *buf); */
+   /* int statfs64(const char *path, struct statfs64 *buf); */
    MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", 
@@ -5191,8 +5173,8 @@ POST(times)
 
 PRE(truncate)
 {
-   /* int truncate(const char *path, size_t length); */
-   MAYBE_PRINTF("truncate ( %p \"%s\", %d )\n", arg1,arg1,arg2);
+   /* int truncate(const char *path, off_t length); */
+   MAYBE_PRINTF("truncate ( %p(%s), %d )\n", arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "truncate(path)", arg1 );
 }
 
@@ -5205,7 +5187,7 @@ PRE(umask)
 PRE(unlink)
 {
    /* int unlink(const char *pathname) */
-   MAYBE_PRINTF("unlink ( %p \"%s\" )\n",arg1, arg1);
+   MAYBE_PRINTF("unlink ( %p(%s) )\n",arg1, arg1);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "unlink(pathname)", arg1 );
 }
 
@@ -5702,7 +5684,7 @@ POST(mq_open)
 PRE(mq_unlink)
 {
    /* int mq_unlink(const char *name) */
-   MAYBE_PRINTF("mq_unlink ( %p \"%s\" )\n",arg1, arg1);
+   MAYBE_PRINTF("mq_unlink ( %p(%s) )\n",arg1, arg1);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "mq_unlink(name)", arg1 );
 }
 

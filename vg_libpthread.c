@@ -390,6 +390,15 @@ int fsync(int fd)
   return __libc_fsync(fd);
 }
 
+extern
+off_t __libc_lseek(int fildes, off_t offset, int whence);
+off_t lseek(int fildes, off_t offset, int whence)
+{
+  return __libc_lseek(fildes, offset, whence);
+}
+
+/*--------------------------------------------------*/
+
 /* I've no idea what these are, but they get called quite a lot.
    Anybody know? */
 

@@ -3603,16 +3603,14 @@ POST(ioctl)
    case TCSETSF:
       break; 
    case TCGETS:
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, VKI_SIZEOF_STRUCT_TERMIOS );
+      VG_TRACK( post_mem_write, arg3, VKI_SIZEOF_STRUCT_TERMIOS );
       break;
    case TCSETA:
    case TCSETAW:
    case TCSETAF:
       break;
    case TCGETA:
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, VKI_SIZEOF_STRUCT_TERMIO );
+      VG_TRACK( post_mem_write, arg3, VKI_SIZEOF_STRUCT_TERMIO );
       break;
    case TCSBRK:
    case TCXONC:
@@ -3620,8 +3618,7 @@ POST(ioctl)
    case TCFLSH:
       break;
    case TIOCGWINSZ:
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(struct winsize) );
+      VG_TRACK( post_mem_write, arg3, sizeof(struct winsize) );
       break;
    case TIOCSWINSZ:
    case TIOCMBIS:
@@ -3629,22 +3626,18 @@ POST(ioctl)
    case TIOCMSET:
       break;
    case TIOCLINUX:
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(char *) );
+      VG_TRACK( post_mem_write, arg3, sizeof(char *) );
       break;
    case TIOCGPGRP:
       /* Get process group ID for foreground processing group. */
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(pid_t) );
+      VG_TRACK( post_mem_write, arg3, sizeof(pid_t) );
       break;
    case TIOCSPGRP:
       /* Set a process group ID? */
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(pid_t) );
+      VG_TRACK( post_mem_write, arg3, sizeof(pid_t) );
       break;
    case TIOCGPTN: /* Get Pty Number (of pty-mux device) */
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(int));
+      VG_TRACK( post_mem_write, arg3, sizeof(int));
       break;
    case TIOCSCTTY:
       break;
@@ -3655,8 +3648,7 @@ POST(ioctl)
    case FIOASYNC:
       break;
    case FIONREAD:                /* identical to SIOCINQ */
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(int) );
+      VG_TRACK( post_mem_write, arg3, sizeof(int) );
       break;
 
       /* If you get compilation problems here, change the #if
@@ -3667,25 +3659,21 @@ POST(ioctl)
       break;
 #           if defined(SG_IO)
    case SG_IO:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct sg_io_hdr));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct sg_io_hdr));
       break;
 #           endif /* SG_IO */
    case SG_GET_SCSI_ID:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct sg_scsi_id));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct sg_scsi_id));
       break;
    case SG_SET_RESERVED_SIZE:
       break;
    case SG_SET_TIMEOUT:
       break;
    case SG_GET_RESERVED_SIZE:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(int));
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
       break;
    case SG_GET_TIMEOUT:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(int));
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
       break;
    case SG_GET_VERSION_NUM:
       break;
@@ -3703,86 +3691,73 @@ POST(ioctl)
 #              ifndef ISDN_MAX_CHANNELS
 #              define ISDN_MAX_CHANNELS 64
 #              endif
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, ISDN_MAX_CHANNELS 
-		   * 2 * sizeof(unsigned long) );
+      VG_TRACK( post_mem_write, arg3,
+                ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
       break;
    case VKI_IIOCNETGPN:
-      if (res == 0)
-	 VG_TRACK( post_mem_write, arg3, sizeof(isdn_net_ioctl_phone) );
+      VG_TRACK( post_mem_write, arg3, sizeof(isdn_net_ioctl_phone) );
       break;
 
       /* These all use struct ifreq AFAIK */
    case SIOCGIFINDEX:        /* get iface index              */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_ifindex,
-                   sizeof(((struct ifreq *)arg3)->ifr_ifindex) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_ifindex,
+                sizeof(((struct ifreq *)arg3)->ifr_ifindex) );
       break;
    case SIOCGIFFLAGS:        /* get flags                    */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_flags,
-                   sizeof(((struct ifreq *)arg3)->ifr_flags) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_flags,
+                sizeof(((struct ifreq *)arg3)->ifr_flags) );
       break;
    case SIOCGIFHWADDR:       /* Get hardware address         */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_hwaddr,
-                   sizeof(((struct ifreq *)arg3)->ifr_hwaddr) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_hwaddr,
+                sizeof(((struct ifreq *)arg3)->ifr_hwaddr) );
       break;
    case SIOCGIFMTU:          /* get MTU size                 */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_mtu,
-                   sizeof(((struct ifreq *)arg3)->ifr_mtu) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_mtu,
+                sizeof(((struct ifreq *)arg3)->ifr_mtu) );
       break;
    case SIOCGIFADDR:         /* get PA address               */
    case SIOCGIFDSTADDR:      /* get remote PA address        */
    case SIOCGIFBRDADDR:      /* get broadcast PA address     */
    case SIOCGIFNETMASK:      /* get network PA mask          */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_addr,
-                   sizeof(((struct ifreq *)arg3)->ifr_addr) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_addr,
+                sizeof(((struct ifreq *)arg3)->ifr_addr) );
       break;
    case SIOCGIFMETRIC:       /* get metric                   */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_metric,
-                   sizeof(((struct ifreq *)arg3)->ifr_metric) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_metric,
+                sizeof(((struct ifreq *)arg3)->ifr_metric) );
       break;
    case SIOCGIFMAP:          /* Get device parameters        */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_map,
-                   sizeof(((struct ifreq *)arg3)->ifr_map) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_map,
+                sizeof(((struct ifreq *)arg3)->ifr_map) );
       break;
      break;
    case SIOCGIFTXQLEN:       /* Get the tx queue length      */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_qlen,
-                   sizeof(((struct ifreq *)arg3)->ifr_qlen) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_qlen,
+                sizeof(((struct ifreq *)arg3)->ifr_qlen) );
       break;
    case SIOCGIFNAME:         /* get iface name               */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct ifreq *)arg3)->ifr_name,
-                   sizeof(((struct ifreq *)arg3)->ifr_name) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct ifreq *)arg3)->ifr_name,
+                sizeof(((struct ifreq *)arg3)->ifr_name) );
       break;
 #ifdef HAVE_LINUX_MII_H
    case SIOCGMIIPHY:         /* get hardware entry           */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
-                   sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
+                sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id) );
       break;
    case SIOCGMIIREG:         /* get hardware entry registers */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,
-                   (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out,
-                   sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out) );
+      VG_TRACK( post_mem_write,
+                (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out,
+                sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out) );
       break;
 #endif
    case SIOCGIFCONF:         /* get iface list               */
@@ -3801,21 +3776,18 @@ POST(ioctl)
       }
       break;
    case SIOCGSTAMP:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct timeval));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct timeval));
       break;
       /* SIOCOUTQ is an ioctl that, when called on a socket, returns
 	 the number of bytes currently in that socket's send buffer.
 	 It writes this value as an int to the memory location
 	 indicated by the third argument of ioctl(2). */
    case SIOCOUTQ:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(int));
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
       break;
    case SIOCGRARP:           /* get RARP table entry         */
    case SIOCGARP:            /* get ARP table entry          */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct arpreq));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct arpreq));
       break;
                     
    case SIOCSIFFLAGS:        /* set flags                    */
@@ -3869,8 +3841,7 @@ POST(ioctl)
    case SOUND_PCM_READ_BITS:
    case (SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
    case SOUND_PCM_READ_FILTER:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(int));
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
       break;
    case SNDCTL_SEQ_CTRLRATE:
    case SNDCTL_DSP_SPEED:
@@ -3894,8 +3865,7 @@ POST(ioctl)
       break;
    case SNDCTL_DSP_GETOSPACE:
    case SNDCTL_DSP_GETISPACE:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(audio_buf_info));
+      VG_TRACK( post_mem_write,arg3, sizeof(audio_buf_info));
       break;
    case SNDCTL_DSP_SETTRIGGER:
       break;
@@ -3919,42 +3889,35 @@ POST(ioctl)
       break;
    case RTC_RD_TIME:
    case RTC_ALM_READ:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct rtc_time));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct rtc_time));
       break;
    case RTC_ALM_SET:
       break;
    case RTC_IRQP_READ:
-      if(res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 #           endif /* GLIBC_2_1 */
 
 #           ifdef BLKGETSIZE
    case BLKGETSIZE:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 #           endif /* BLKGETSIZE */
 
       /* Hard disks */
    case HDIO_GET_IDENTITY: /* 0x030d */
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct hd_driveid));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct hd_driveid));
       break;
 
       /* CD ROM stuff (??)  */
    case CDROMSUBCHNL:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_subchnl));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_subchnl));
       break;
    case CDROMREADTOCHDR:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
       break;
    case CDROMREADTOCENTRY:
-      if (res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
       break;
    case CDROMMULTISESSION:
       VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_multisession));
@@ -3979,22 +3942,18 @@ POST(ioctl)
       break;
 
    case FIGETBSZ:
-      if (res == 0)
-         VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
    case FIBMAP:
-      if (res == 0)
-         VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 
 #ifdef HAVE_LINUX_FB_H
    case FBIOGET_VSCREENINFO: //0x4600
-      if (res == 0)
-         VG_TRACK( post_mem_write,arg3, sizeof(struct fb_var_screeninfo));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct fb_var_screeninfo));
       break;
    case FBIOGET_FSCREENINFO: //0x4602
-      if (res == 0)
-         VG_TRACK( post_mem_write,arg3, sizeof(struct fb_fix_screeninfo));
+      VG_TRACK( post_mem_write,arg3, sizeof(struct fb_fix_screeninfo));
       break;
 #endif
 

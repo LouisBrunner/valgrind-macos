@@ -227,19 +227,9 @@
 }
 
 ##----------------------------------------------------------------------##
-## SuSE 9 after FV changes (post 2.1.0)
-
+## SuSE 9.1 with post 2.1.2
 {
-   strlen/_dl_init_paths/dl_main/_dl_sysdep_start(Cond)
+   Ugly strchr error in /lib/ld-2.3.3.so
    Memcheck:Cond
-   fun:strlen
-   fun:_dl_init_paths
-   fun:dl_main
-   fun:_dl_sysdep_start
-}
-
-{
-   Ugly strchr error in /lib/ld-2.3.2.so
-   Memcheck:Cond
-   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.3.so
 }

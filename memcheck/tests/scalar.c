@@ -528,8 +528,8 @@ int main(void)
    SY(__NR_uname, x0);
 
    // __NR_modify_ldt 123
- //GO(__NR_modify_ldt, ".s .m");
- //SY(__NR_modify_ldt);
+   GO(__NR_modify_ldt, "3s 1m");
+   SY(__NR_modify_ldt, x0, x0, x0+1);
 
    // __NR_adjtimex 124
    // XXX: need to do properly, but deref'ing NULL...
@@ -549,8 +549,8 @@ int main(void)
    SY(__NR_create_module);
 
    // __NR_init_module 128
- //GO(__NR_init_module, ".s .m");
- //SY(__NR_init_module);
+   GO(__NR_init_module, "3s 2m");
+   SY(__NR_init_module, x0, x0+1, x0);
 
    // __NR_delete_module 129
    GO(__NR_delete_module, "n/a");

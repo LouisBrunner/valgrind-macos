@@ -1226,17 +1226,19 @@ PREx(sys_umount, 0)
    PRE_MEM_RASCIIZ( "umount2(path)", arg1);
 }
 
-PRE(modify_ldt)
+PREx(sys_modify_ldt, Special)
 {
    PRINT("modify_ldt ( %d, %p, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(int, "modify_ldt", int, func, void *, ptr,
+                 unsigned long, bytecount);
+   
    if (arg1 == 0) {
       /* read the LDT into ptr */
-      PRE_MEM_WRITE( "modify_ldt(ptr)(func=0)", arg2, arg3 );
+      PRE_MEM_WRITE( "modify_ldt(ptr)", arg2, arg3 );
    }
    if (arg1 == 1 || arg1 == 0x11) {
       /* write the LDT with the entry pointed at by ptr */
-      PRE_MEM_READ( "modify_ldt(ptr)(func=1 or 0x11)", arg2, 
-		    sizeof(vki_modify_ldt_t) );
+      PRE_MEM_READ( "modify_ldt(ptr)", arg2, sizeof(vki_modify_ldt_t) );
    }
    /* "do" the syscall ourselves; the kernel never sees it */
    res = VG_(sys_modify_ldt)( tid, arg1, (void*)arg2, arg3 );
@@ -1875,12 +1877,13 @@ PREx(sys_flock, MayBlock)
    PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
 }
 
-PRE(init_module)
+PREx(sys_init_module, MayBlock)
 {
-   /* int init_module(const char *name, struct module *image); */
-   PRINT("init_module ( %p, %p )", arg1, arg2 );
-   PRE_MEM_RASCIIZ( "init_module(name)", arg1 );
-   PRE_MEM_READ( "init_module(image)", arg2, VKI_SIZEOF_STRUCT_MODULE );
+   PRINT("sys_init_module ( %p, %llu, %p )", arg1, (ULong)arg2, arg3 );
+   PRE_REG_READ3(long, "init_module",
+                 void *, umod, unsigned long, len, const char *, uargs);
+   PRE_MEM_READ( "init_module(umod)", arg1, arg2 );
+   PRE_MEM_RASCIIZ( "init_module(uargs)", arg3 );
 }
 
 PREx(sys_ioperm, 0)
@@ -6482,14 +6485,14 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_clone,            sys_clone),        // 120 (x86) L
    //   (__NR_setdomainname,    sys_setdomainname),// 121 * (non-P?)
    SYSXY(__NR_uname,            sys_newuname),     // 122 * P
-   SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 (x86,amd64) L
+   SYSX_(__NR_modify_ldt,       sys_modify_ldt),   // 123 (x86,amd64) L
    SYSXY(__NR_adjtimex,         sys_adjtimex),     // 124 * L
 
    SYSXY(__NR_mprotect,         sys_mprotect),     // 125 * P
    SYSBA(__NR_sigprocmask,      sys_sigprocmask, SIG_SIM), // 126 *
    // Nb: create_module() was removed 2.4-->2.6
    SYSX_(__NR_create_module,    sys_ni_syscall),   // 127 * P -- unimplemented
-   SYSB_(__NR_init_module,      sys_init_module, MayBlock), // 128 *
+   SYSX_(__NR_init_module,      sys_init_module),  // 128 * L?
    //   (__NR_delete_module,    sys_delete_module),// 129 () (L?)
 
    // Nb: get_kernel_syms() was removed 2.4-->2.6

@@ -728,23 +728,6 @@ struct vki_shminfo64 {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/module.h
-//----------------------------------------------------------------------
-
-// [[This VKI_SIZEOF_* value is arch-specific, because it depends on the
-// word size.  The values are really guesses, but they are only needed for
-// init_module() which is very rare]]
-
-#if defined(KERNEL_2_2) || defined(KERNEL_2_4)
-// [[This is actually an over-estimate;  only 60 bytes are mandated.]]
-#  define VKI_SIZEOF_STRUCT_MODULE  96
-#else
-// [[This is a conservative guesstimate;  it can be longer, depending on
-//   certain #ifdefs.  Close enough.]]
-#  define VKI_SIZEOF_STRUCT_MODULE  160
-#endif
-
-//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
 

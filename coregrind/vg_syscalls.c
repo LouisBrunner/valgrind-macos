@@ -1265,6 +1265,11 @@ PRE(get_thread_area)
    }
 }
 
+PRE(set_tid_address)
+{
+   MAYBE_PRINTF("set_tid_address ( %p )\n", arg1);
+}
+
 PRE(setresgid)
 {
    /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
@@ -5201,6 +5206,7 @@ static const struct sys_info special_sys[] = {
    SYSB_(modify_ldt,		False),
    SYSB_(set_thread_area,	False),
    SYSB_(get_thread_area,	False),
+   SYSB_(set_tid_address,	False),
 
    SYSB_(execve,		False),
    SYSB_(brk,			False),

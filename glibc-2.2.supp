@@ -186,6 +186,15 @@
    fun:__libc_start_main
 }
 
+{
+   _dl_map_object_deps/dl_open_worker/_dl_catch_error/_dl_open
+   Helgrind:Eraser
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+}
+
 #-------- Threading bugs?
 # glibc 'knows' that destroying a locked mutex will unlock it
 {

@@ -33,7 +33,7 @@
 
 /* These includes are only used for making sense of the args for
    system calls. */
-#include "vg_unistd.h"    /* for system call numbers */
+#include "vki_unistd.h"    /* for system call numbers */
 #include <sys/mman.h>     /* for PROT_* */
 #include <sys/utsname.h>  /* for uname */
 #include <sys/time.h>     /* for struct timeval & struct timezone */

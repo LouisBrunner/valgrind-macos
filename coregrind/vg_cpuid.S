@@ -30,7 +30,7 @@
 */
 
 #include "core_asm.h"
-#include "vg_unistd.h"
+#include "vki_unistd.h"
 
 /*
     int VG_(cpuid)(UInt eax,

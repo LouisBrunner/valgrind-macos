@@ -81,7 +81,7 @@
 
 
 /* For system call numbers __NR_... */
-#include "vg_unistd.h"
+#include "vki_unistd.h"
 
 #include "core_asm.h"      // asm stuff
 #include "tool.h"          // tool stuff

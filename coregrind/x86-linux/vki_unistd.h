@@ -24,8 +24,9 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef _VG_ASM_I386_UNISTD_H_
-#define _VG_ASM_I386_UNISTD_H_
+#ifndef __X86_LINUX_VKI_UNISTD_H_
+#define __X86_LINUX_VKI_UNISTD_H_
+
 /* Taken from Linux 2.6.0-test1 include/asm-i386/unistd.h */
 
 /*
@@ -319,4 +320,4 @@
 
 #define NR_syscalls 284
 
-#endif /* _VG_ASM_I386_UNISTD_H_ */
+#endif /* __X86_LINUX_VKI_UNISTD_H_ */

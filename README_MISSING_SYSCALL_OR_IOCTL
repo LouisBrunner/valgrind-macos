@@ -96,7 +96,7 @@ following:
        grep NNN /usr/include/asm/unistd.h
 
     This should tell you something like  __NR_mysyscallname.
-    Copy this entry to coregrind/vg_unistd.h.
+    Copy this entry to coregrind/$(VG_PLATFORM)/vki_unistd.h.
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
     does.  Note that the actual kernel interface can differ from this,

@@ -1,7 +1,7 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-SUBDIRS = $(VG_ARCH) demangle . docs
+SUBDIRS = $(VG_ARCH) $(VG_PLATFORM) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=$(KICKSTART_BASE) \
@@ -145,7 +145,6 @@ noinst_HEADERS = \
 	ume.h			\
 	ume_arch.h		\
 	vg_symtab2.h		\
-        vg_unistd.h             \
 	vg_symtypes.h		\
 	vg_toolint.h		\
 	vg_unsafe.h

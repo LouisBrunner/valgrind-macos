@@ -3142,8 +3142,9 @@ static
 UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 {
    Int  len;
+   UInt src;
    Char dis_buf[32];
-   UInt opc_aux;
+   IRTemp t1;
 
    /* On entry, delta points at the second byte of the insn (the modrm
       byte).*/
@@ -3159,13 +3160,56 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD9 opcodes +-+-+-+-+-+-+-+ */
    else
    if (first_opcode == 0xD9) {
-      goto decode_fail;
+      if (modrm < 0xC0) {
+         goto decode_fail;
+      } else {
+         delta++;
+         switch (modrm) {
+            case 0xC0 ... 0xC7: /* FLD %st(?) */
+               src = (UInt)modrm - 0xC0;
+               DIP("fld %%st(%d)\n", src);
+	       t1 = newTemp(Ity_F64);
+	       assign(t1, get_ST(src));
+	       stmt( do_push() );
+	       stmt( put_ST(0, mkexpr(t1)) );
+               break;
+
+            default:
+               goto decode_fail;
+         }
+      }
    }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDA opcodes +-+-+-+-+-+-+-+ */
    else
    if (first_opcode == 0xDA) {
-      goto decode_fail;
+
+      if (modrm < 0xC0) {
+
+          /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+            case 1: /* FIMUL m32int */
+               DIP("fimull %s", dis_buf);
+               stmt( put_ST(0, 
+                        binop(Iop_MulF64, 
+                              get_ST(0),
+                              unop(Iop_I64toF64,
+                                   unop(Iop_32Sto64,
+                                        loadLE(Ity_I32, mkexpr(addr)))))));
+               break;
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDA\n");
+               goto decode_fail;
+         }
+      } else {
+         goto decode_fail;
+      }
    }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDB opcodes +-+-+-+-+-+-+-+ */
@@ -3186,18 +3230,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
       if (modrm < 0xC0) {
 
- 	 /* bits 5,4,3 are an opcode extension, and the modRM also
+          /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
-	 IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-	 delta += len;
+         IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+         delta += len;
 
          switch (gregOfRM(modrm)) {
 
             case 0: /* FLD double-real */
                DIP("fldD %s\n", dis_buf);
-	       stmt( do_push() );
-	       stmt( put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr))) );
-	       break;
+               stmt( do_push() );
+               stmt( put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr))) );
+               break;
 
 #if 0
             case 2: /* FST double-real */
@@ -3225,10 +3269,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 #endif
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", opc_aux);
-               vex_printf("first_opcode == 0xDD");
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDD\n");
                goto decode_fail;
-	 }
+         }
       } else {
          goto decode_fail;
       }
@@ -3653,7 +3697,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                             mask))) );
 
    setFlags_DSTus_DST1 ( left_shift ? Iop_Shl32 : Iop_Sar32,
-			 tmpSubSh, tmpRes, ty, tmpSH );
+                         tmpSubSh, tmpRes, ty, tmpSH );
 
    /* Put result back. */
 
@@ -4359,7 +4403,7 @@ void codegen_xchg_eAX_Reg ( Int sz, Int reg )
 //-- static
 //-- Addr dis_SSE3_reg_or_mem ( UCodeBlock* cb, 
 //--                            UChar sorb, 
-//-- 			   Addr eip,
+//--         		   Addr eip,
 //-- 			   Int sz,
 //--                            Char* name, 
 //--                            UChar opc1, 

@@ -245,8 +245,11 @@ extern Char* showX86ShiftOp ( X86ShiftOp );
 /* --------- */
 typedef
    enum {
-      Xfp_Add, Xfp_Sub, Xfp_Mul, Xfp_Div, 
-      Xfp_Sqrt, Xfp_Negate
+      Xfp_INVALID,
+      /* Binary */
+      Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, 
+      /* Unary */
+      Xfp_SQRT, Xfp_NEGATE, Xfp_MOV
    }
    X86FpOp;
 

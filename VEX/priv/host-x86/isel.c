@@ -841,6 +841,20 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* 32Sto64(e) */
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_32Sto64) {
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+      addInstr(env, mk_MOVsd_RR(src,tHi));
+      addInstr(env, mk_MOVsd_RR(src,tLo));
+      addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tHi)));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 64-bit shifts */
    if (e->tag == Iex_Binop
        && e->Iex.Binop.op == Iop_Shl64) {
@@ -949,6 +963,10 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_F64);
 
+   if (e->tag == Iex_Tmp) {
+      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   }
+
    if (e->tag == Iex_LDle) {
       X86AMode* am;
       HReg res = newVRegF(env);
@@ -958,8 +976,45 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
+   if (e->tag == Iex_GetI) {
+      /* First off, compute the index expression into an integer reg.
+         The written address will then be 0 + ebp + reg*1, that is, an
+         X86AMode_IRRS. */
+      HReg idx = iselIntExpr_R(env, e->Iex.GetI.offset);
+      HReg res = newVRegF(env);
+      addInstr(env, 
+               X86Instr_FpLdSt( True/*load*/, 8, res,
+                                X86AMode_IRRS(0, hregX86_EBP(), idx, 0)) );
+      return res;
+   }
+
+   if (e->tag == Iex_Binop) {
+      X86FpOp fpop = Xfp_INVALID;
+      switch (e->Iex.Binop.op) {
+         case Iop_MulF64: fpop = Xfp_MUL; break;
+         default: break;
+      }
+      if (fpop != Xfp_INVALID) {
+         HReg res  = newVRegF(env);
+         HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
+         HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
+         addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
+         return res;
+      }
+   }
+
+   if (e->tag == Iex_Unop) {
+      if (e->Iex.Unop.op == Iop_I64toF64) {
+         HReg iHi, iLo;
+         HReg dst = newVRegF(env);
+         iselIntExpr64(&iHi, &iLo, env, e->Iex.Unop.arg);
+         addInstr(env, X86Instr_FpI64(False/*i->f*/,dst,iHi,iLo));
+         return dst;
+      }
+   }
+
    ppIRExpr(e);
-   vpanic("iselIntExpr64");
+   vpanic("iselDblExpr");
 }
 
 
@@ -1015,9 +1070,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (ty == Ity_I8 || ty == Ity_I16) {
-         /* We're going to write to memory, so compute the RHS into an
-            X86RI. */
-         HReg r  = iselIntExpr_R(env, stmt->Ist.Put.expr);
+         HReg r = iselIntExpr_R(env, stmt->Ist.Put.expr);
          addInstr(env, X86Instr_Store(
                           ty==Ity_I8 ? 1 : 2,
                           r,
@@ -1062,6 +1115,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          lookupIRTemp64( &dstHi, &dstLo, env, tmp);
          addInstr(env, mk_MOVsd_RR(rHi,dstHi) );
          addInstr(env, mk_MOVsd_RR(rLo,dstLo) );
+         return;
+      }
+      if (ty == Ity_F64) {
+         HReg dst = lookupIRTemp(env, tmp);
+         HReg src = iselDblExpr(env, stmt->Ist.Tmp.expr);
+         addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
          return;
       }
       break;
@@ -1148,6 +1207,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
          case Ity_I32: hreg   = mkHReg(j++, HRcInt, True); break;
          case Ity_I64: hreg   = mkHReg(j++, HRcInt, True);
                        hregHI = mkHReg(j++, HRcInt, True); break;
+         case Ity_F64: hreg   = mkHReg(j++, HRcFloat, True); break;
          default: ppIRType(bb->tyenv->types[i]);
                   vpanic("iselBB: IRTemp type");
       }

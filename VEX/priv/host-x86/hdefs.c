@@ -410,12 +410,13 @@ Char* showX86ShiftOp ( X86ShiftOp op ) {
 
 Char* showX86FpOp ( X86FpOp op ) {
    switch (op) {
-      case Xfp_Add:    return "add";
-      case Xfp_Sub:    return "sub";
-      case Xfp_Mul:    return "mul";
-      case Xfp_Div:    return "div";
-      case Xfp_Sqrt:   return "sqrt";
-      case Xfp_Negate: return "chs";
+      case Xfp_ADD:    return "add";
+      case Xfp_SUB:    return "sub";
+      case Xfp_MUL:    return "mul";
+      case Xfp_DIV:    return "div";
+      case Xfp_SQRT:   return "sqrt";
+      case Xfp_NEGATE: return "chs";
+      case Xfp_MOV:    return "mov";
       default: vpanic("ppX86FpOp");
    }
 }
@@ -591,9 +592,9 @@ void ppX86Instr ( X86Instr* i ) {
       case Xin_Sh32:
          vex_printf("%sl ", showX86ShiftOp(i->Xin.Sh32.op));
          if (i->Xin.Sh32.src == 0)
-           vex_printf(" %%cl,"); 
+           vex_printf("%%cl,"); 
          else 
-            vex_printf(" $%d,", i->Xin.Sh32.src);
+            vex_printf("$%d,", i->Xin.Sh32.src);
          ppX86RM(i->Xin.Sh32.dst);
          return;
       case Xin_Test32:
@@ -674,6 +675,20 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppX86AMode(i->Xin.Store.dst);
          return;
+      case Xin_FpUnary:
+         vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
+         ppHRegX86(i->Xin.FpUnary.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpUnary.dst);
+         break;
+      case Xin_FpBinary:
+         vex_printf("g%sD ", showX86FpOp(i->Xin.FpBinary.op));
+         ppHRegX86(i->Xin.FpBinary.srcL);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpBinary.srcR);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpBinary.dst);
+         break;
       case Xin_FpLdSt:
          if (i->Xin.FpLdSt.isLoad) {
             vex_printf("gld%c " , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
@@ -685,6 +700,18 @@ void ppX86Instr ( X86Instr* i ) {
             ppHRegX86(i->Xin.FpLdSt.reg);
             vex_printf(", ");
             ppX86AMode(i->Xin.FpLdSt.addr);
+         }
+         return;
+      case Xin_FpI64:
+         if (i->Xin.FpI64.toInt) {
+            vassert(0);
+         } else {
+            vex_printf("gi64tof64 ");
+            ppHRegX86(i->Xin.FpI64.iregHi);
+            vex_printf(":");
+            ppHRegX86(i->Xin.FpI64.iregLo);
+            vex_printf(", ");
+            ppHRegX86(i->Xin.FpI64.freg);
          }
          return;
       default:
@@ -773,10 +800,28 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, i->Xin.Store.src);
          addRegUsage_X86AMode(u, i->Xin.Store.dst);
          return;
+      case Xin_FpUnary:
+         addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
+         addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
+         return;
+      case Xin_FpBinary:
+         addHRegUse(u, HRmRead, i->Xin.FpBinary.srcL);
+         addHRegUse(u, HRmRead, i->Xin.FpBinary.srcR);
+         addHRegUse(u, HRmWrite, i->Xin.FpBinary.dst);
+         return;
       case Xin_FpLdSt:
          addRegUsage_X86AMode(u, i->Xin.FpLdSt.addr);
          addHRegUse(u, i->Xin.FpLdSt.isLoad ? HRmWrite : HRmRead,
                        i->Xin.FpLdSt.reg);
+         return;
+      case Xin_FpI64:
+         if (i->Xin.FpI64.toInt) {
+            vassert(0);
+         } else {
+            addHRegUse(u, HRmWrite, i->Xin.FpI64.freg);
+            addHRegUse(u, HRmRead, i->Xin.FpI64.iregHi);
+            addHRegUse(u, HRmRead, i->Xin.FpI64.iregLo);
+         }
          return;
       default:
          ppX86Instr(i);
@@ -842,9 +887,19 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.Store.src);
          mapRegs_X86AMode(m, i->Xin.Store.dst);
          return;
+      case Xin_FpBinary:
+         mapReg(m, &i->Xin.FpBinary.srcL);
+         mapReg(m, &i->Xin.FpBinary.srcR);
+         mapReg(m, &i->Xin.FpBinary.dst);
+         return;
       case Xin_FpLdSt:
          mapRegs_X86AMode(m, i->Xin.FpLdSt.addr);
          mapReg(m, &i->Xin.FpLdSt.reg);
+         return;
+      case Xin_FpI64:
+         mapReg(m, &i->Xin.FpI64.freg);
+         mapReg(m, &i->Xin.FpI64.iregHi);
+         mapReg(m, &i->Xin.FpI64.iregLo);
          return;
       default:
          ppX86Instr(i);
@@ -852,18 +907,33 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
    }
 }
 
+/* Figure out if i represents a reg-reg move, and if so assign the
+   source and destination to *src and *dst.  If in doubt say No.  Used
+   by the register allocator to do move coalescing. 
+*/
 Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 {
-   if (i->tag != Xin_Alu32R)
-      return False;
-   if (i->Xin.Alu32R.op != Xalu_MOV)
-      return False;
-   if (i->Xin.Alu32R.src->tag != Xrmi_Reg)
-      return False;
-   *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
-   *dst = i->Xin.Alu32R.dst;
-   return True;
+   /* Moves between integer regs */
+   if (i->tag == Xin_Alu32R) {
+      if (i->Xin.Alu32R.op != Xalu_MOV)
+         return False;
+      if (i->Xin.Alu32R.src->tag != Xrmi_Reg)
+         return False;
+      *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
+      *dst = i->Xin.Alu32R.dst;
+      return True;
+   }
+   /* Moves between FP regs */
+   if (i->tag == Xin_FpUnary) {
+      if (i->Xin.FpUnary.op != Xfp_MOV)
+         return False;
+      *src = i->Xin.FpUnary.src;
+      *dst = i->Xin.FpUnary.dst;
+      return True;
+   }
+   return False;
 }
+
 
 /* x86 spill/reload using the hacked104 testbed.  Spill slots
    start at word 51, and there are 24 in total. 
@@ -1051,6 +1121,20 @@ static UChar* do_fld_st ( UChar* p, Int i )
    return p;
 }
 
+/* Emit f<op> %st(i), 1 <= i <= 5 */
+static UChar* do_fop_st ( UChar* p, X86FpOp op, Int i )
+{
+#  define fake(_n) mkHReg((_n), HRcInt, False)
+   Int subopc;
+   switch (op) {
+      case Xfp_MUL: subopc = 1; break;
+      default: vpanic("do_fop_st: unknown op");
+   }
+   *p++ = 0xD8;
+   p    = doAMode_R(p, fake(subopc), fake(i));
+   return p;
+#  undef fake
+}
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
@@ -1511,10 +1595,20 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       } /* if (i->Xin.Store.sz == 1) */
       break;
 
+   case Xin_FpBinary:
+      /* gop %srcL, %srcR, %dst
+         --> ffree %st7 ; fld %st(srcL) ; fop %st(1+srcR) ; fstp %st(1+dst)
+      */
+      p = do_ffree_st7(p);
+      p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+      p = do_fop_st(p, i->Xin.FpBinary.op, 1+hregNumber(i->Xin.FpBinary.srcR));
+      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+      goto done;
+
    case Xin_FpLdSt:
       if (i->Xin.FpLdSt.isLoad) {
          /* Load from memory into %fakeN.  
-            --> ffree %st(7) ; fld{s/l} amode ; fstp st(I+1) 
+            --> ffree %st(7) ; fld{s/l} amode ; fstp st(N+1) 
          */
          p = do_ffree_st7(p);
          *p++ = i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD;
@@ -1523,7 +1617,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          goto done;
       } else {
          /* Store from %fakeN into memory.
-            --> ffree %st(7) ; fld st(I) ; fstp{l|s} amode
+            --> ffree %st(7) ; fld st(N) ; fstp{l|s} amode
 	 */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdSt.reg));
@@ -1532,6 +1626,27 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          goto done;
       }
       break;
+
+   case Xin_FpI64:
+     if (i->Xin.FpI64.toInt) {
+       vassert(0);
+     } else {
+        /* gi64tof64 %hi:%lo %fakeN
+           --> ffree %st7; pushl hi ; pushl lo ; fildll 0(%esp) ; 
+               addl $8,%esp ; fstpl %st(N+1) 
+        */
+        /* ffree %st(7) */
+        p = do_ffree_st7(p);
+        /* pushl %hi ; pushl %lo */
+        *p++ = 0x50 + hregNumber(i->Xin.FpI64.iregHi);
+        *p++ = 0x50 + hregNumber(i->Xin.FpI64.iregLo);
+        /* fildll 0(%esp) */
+        *p++ = 0xDF; *p++ = 0x6C; *p++ = 0x24; *p++ = 0x00; 
+        /* addl $8, %esp */
+        *p++ = 0x83; *p++ = 0xC4; *p++ = 0x08; 
+        p = do_fstp_st(p, 1+hregNumber(i->Xin.FpI64.freg));
+        goto done;
+     }
 
    default: 
       goto bad;

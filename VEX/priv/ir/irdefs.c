@@ -90,6 +90,7 @@ void ppIROp ( IROp op )
       case Iop_8Sto16:   vex_printf("8Sto16");  return;
       case Iop_8Sto32:   vex_printf("8Sto32");  return;
       case Iop_16Sto32:  vex_printf("16Sto32"); return;
+      case Iop_32Sto64:  vex_printf("32Sto64"); return;
       case Iop_32to8:    vex_printf("32to8");   return;
       case Iop_32to1:    vex_printf("32to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
@@ -116,6 +117,9 @@ void ppIROp ( IROp op )
       case Iop_64to32:   vex_printf("64to32");   return;
       case Iop_32HLto64: vex_printf("32HLto64"); return;
 
+      case Iop_MulF64:   vex_printf("MulF64"); return;
+      case Iop_I64toF64: vex_printf("I64toF64"); return;
+
       default:           vpanic("ppIROp(1)");
    }
   
@@ -139,6 +143,12 @@ void ppIRExpr ( IRExpr* e )
       vex_printf( "GET(%d,", e->Iex.Get.offset);
       ppIRType(e->Iex.Get.ty);
       vex_printf(")");
+      break;
+    case Iex_GetI:
+      vex_printf( "GETI[%d,%d](", e->Iex.GetI.minoff, e->Iex.GetI.maxoff);
+      ppIRExpr(e->Iex.GetI.offset);
+      vex_printf("):");
+      ppIRType(e->Iex.GetI.ty);
       break;
     case Iex_Tmp:
       ppIRTemp(e->Iex.Tmp.tmp);
@@ -542,7 +552,11 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_8Sto32:  UNARY(Ity_I32,Ity_I8);
       case Iop_16Uto32: UNARY(Ity_I32,Ity_I16);
       case Iop_16Sto32: UNARY(Ity_I32,Ity_I16);
+      case Iop_32Sto64: UNARY(Ity_I64,Ity_I32);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
+
+      case Iop_MulF64:   BINARY(Ity_F64,Ity_F64,Ity_F64);
+      case Iop_I64toF64: UNARY(Ity_F64,Ity_I64);
 
       default:
          ppIROp(op);
@@ -618,6 +632,8 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return e->Iex.LDle.ty;
       case Iex_Get:
          return e->Iex.Get.ty;
+      case Iex_GetI:
+         return e->Iex.GetI.ty;
       case Iex_Tmp:
          return lookupIRTypeEnv(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
@@ -646,6 +662,7 @@ Bool isPlausibleType ( IRType ty )
    switch (ty) {
       case Ity_INVALID: case Ity_Bit:
       case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64: 
+      case Ity_F32: case Ity_F64:
          return True;
       default: 
          return False;
@@ -691,6 +708,9 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
    Int i;
    switch (expr->tag) {
       case Iex_Get: 
+         break;
+      case Iex_GetI:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.GetI.offset,def_counts);
          break;
       case Iex_Tmp: 
          if (expr->Iex.Tmp.tmp < 0 || expr->Iex.Tmp.tmp >= bb->tyenv->types_used)
@@ -759,6 +779,11 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
    switch (expr->tag) {
       case Iex_Get:
       case Iex_Tmp:
+         break;
+      case Iex_GetI:
+         tcExpr(bb,stmt, expr->Iex.GetI.offset, gWordTy );
+         if (typeOfIRExpr(tyenv,expr->Iex.GetI.offset) != Ity_I32)
+            sanityCheckFail(bb,stmt,"IRExpr.GetI.offset: not :: Ity_I32");
          break;
       case Iex_Binop: {
          IRType ttarg1, ttarg2;

@@ -308,7 +308,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
-/*--- x86 insn stream.                                     ---*/
+/*--- ppc32 insn stream.                                   ---*/
 /*------------------------------------------------------------*/
 
 /* Add a statement to the list held by "irbb". */
@@ -358,6 +358,19 @@ static UInt extend_s_16to32 ( UInt x )
 static UInt extend_s_24to32 ( UInt x )
 {
    return (UInt)((((Int)x) << 8) >> 8);
+}
+
+/* Do a big-endian load of a 32-bit word, regardless of the endianness
+   of the underlying host. */
+static UInt getUIntBigendianly ( HChar* hp )
+{
+   UChar* p = (UChar*)hp;
+   UInt   w = 0;
+   w = (w << 8) | p[0];
+   w = (w << 8) | p[1];
+   w = (w << 8) | p[2];
+   w = (w << 8) | p[3];
+   return w;
 }
 
 
@@ -1337,7 +1350,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       decode. */
    *size = 0;
 
-   theInstr = *(UInt*)(&guest_code[delta]);
+   theInstr = getUIntBigendianly( (HChar*)(&guest_code[delta]) );
 
 //   vex_printf("START: 0x%x, %,b\n", theInstr, theInstr );
 

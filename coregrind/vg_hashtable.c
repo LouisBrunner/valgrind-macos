@@ -46,8 +46,8 @@
 
 VgHashTable VG_(HT_construct)(void)
 {
-   /* VG_(malloc) initialises to zero */
-   return VG_(malloc)(VG_N_CHAINS * sizeof(VgHashNode*));
+   /* Initialises to zero, ie. all entries NULL */
+   return VG_(calloc)(VG_N_CHAINS * sizeof(VgHashNode*));
 }
 
 Int VG_(HT_count_nodes) ( VgHashTable table )

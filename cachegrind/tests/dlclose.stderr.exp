@@ -1,5 +1,4 @@
 
-discard syms in /.../tests/myprint.so due to munmap()
 
 I   refs:
 I1  misses:

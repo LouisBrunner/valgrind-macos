@@ -473,6 +473,7 @@ void MAC_(record_jump_error) ( ThreadId tid, Addr a )
    sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.axskind = ExecAxs;
+   err_extra.size    = 1;     // size only used for suppressions
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tid, AddrErr, a, /*s*/NULL, &err_extra );
 }

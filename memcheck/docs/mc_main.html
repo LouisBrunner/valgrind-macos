@@ -354,8 +354,6 @@ the malloc'd block to the standard output.
 <a name="suppfiles"></a>
 <h3>3.4&nbsp; Writing suppressions files</h3>
 
-<b>This should be moved into the core documentation section.  JRS 20021117</b>
-
 <p>
 A suppression file describes a bunch of errors which, for one reason
 or another, you don't want Valgrind to tell you about.  Usually the
@@ -369,7 +367,10 @@ You can ask to add suppressions from another file, by specifying
 <code>--suppressions=/path/to/file.supp</code>.
 
 <p>
-<b>20021117: the following is out of date and should be fixed.</b>
+A good way to get started writing your own suppressions is to 
+look at an existing suppressions file whilst reading the following
+documentation.  The file <code>glibc-2.2.supp</code>, in the source
+distribution, provides some good examples.
 
 <p>Each suppression has the following components:<br>
 <ul>
@@ -378,6 +379,30 @@ You can ask to add suppressions from another file, by specifying
       which it is referred to in the summary of used suppressions
       printed out when a program finishes.  It's not important what
       the name is; any identifying string will do.
+      </li><br>
+      <p>
+
+  <li>Something to indicate which skin(s) the suppression is intended
+      for.  Recall that valgrind-2.0.X is a modular system, in which
+      different instrumentation tools can observe your program whilst
+      it is running.  Since different tools detect different kinds of
+      errors, it is necessary to say which skin(s) the suppression is
+      meaningful to.
+      <p>
+      Skins will complain, at startup, if a skin does not understand
+      any suppression directed to it.  Skins ignore suppressions which
+      are not directed to them.  As a result, it is quite practical to
+      put suppressions for all skins into the same suppression file.
+      <p>
+      A suppression indicates the skins it is intended for by listing
+      their names, separated by commas, then a colon.  No spaces are
+      allowed, since our parser is very inflexible.  An example is:
+      <pre>
+         Addrcheck,Memcheck:
+      </pre>
+      meaning that the suppression is intended for both the Memcheck
+      and the Addrcheck skins.
+      </li><br>
       <p>
 
   <li>The nature of the error to suppress.  Either: 
@@ -399,7 +424,12 @@ You can ask to add suppressions from another file, by specifying
       meaning an invalid system call parameter error.  Or
       <code>Free</code>, meaning an invalid or mismatching free.
       Or <code>PThread</code>, meaning any kind of complaint to do
-      with the PThreads API.</li><br>
+      with the PThreads API.  
+      <p>
+      Last but not least,
+      you can suppress leak reports with <code>Leak</code>.  Leak
+      suppression was added in valgrind-1.9.3, I believe.
+      </li><br>
       <p>
 
   <li>The "immediate location" specification.  For Value and Addr
@@ -430,27 +460,27 @@ details in the suppression.  Here's an example:
 <pre>
   {
     __gconv_transform_ascii_internal/__mbrtowc/mbtowc
-    Value4
+    Memcheck:Value4
     fun:__gconv_transform_ascii_internal
     fun:__mbr*toc
     fun:mbtowc
   }
 </pre>
 
-<p>What is means is: suppress a use-of-uninitialised-value error, when
-the data size is 4, when it occurs in the function
-<code>__gconv_transform_ascii_internal</code>, when that is called
-from any function of name matching <code>__mbr*toc</code>, 
-when that is called from
-<code>mbtowc</code>.  It doesn't apply under any other circumstances.
-The string by which this suppression is identified to the user is
+<p>What is means is: in the Memcheck skin only, suppress a
+use-of-uninitialised-value error, when the data size is 4, when it
+occurs in the function <code>__gconv_transform_ascii_internal</code>,
+when that is called from any function of name matching
+<code>__mbr*toc</code>, when that is called from <code>mbtowc</code>.
+It doesn't apply under any other circumstances.  The string by which
+this suppression is identified to the user is
 __gconv_transform_ascii_internal/__mbrtowc/mbtowc.
 
-<p>Another example:
+<p>Another example, again for the Memcheck skin:
 <pre>
   {
     libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
-    Value4
+    Memcheck:Value4
     obj:/usr/X11R6/lib/libX11.so.6.2
     obj:/usr/X11R6/lib/libX11.so.6.2
     obj:/usr/X11R6/lib/libXaw.so.7.0

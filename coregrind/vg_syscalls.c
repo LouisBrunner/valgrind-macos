@@ -857,6 +857,8 @@ void check_cmsg_for_fds(Int tid, struct msghdr *msg)
 
          for (i = 0; i < fdc; i++)
             if(VG_(clo_track_fds))
+               // XXX: must we check the range on these fds with
+               //      fd_allowed()?
                record_fd_open (tid, fds[i], VG_(resolve_filename)(fds[i]));
       }
 
@@ -2145,9 +2147,15 @@ PRE(fcntl)
 
 POST(fcntl)
 {
-   if (arg2 == VKI_F_DUPFD)
-      if (VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(resolve_filename)(res));
+   if (arg2 == VKI_F_DUPFD) {
+      if (!fd_allowed(res, "fcntl(DUPFD)", tid)) {
+         VG_(close)(res);
+         res = -VKI_EMFILE;
+      } else {
+         if (VG_(clo_track_fds))
+            record_fd_open(tid, res, VG_(resolve_filename)(res));
+      }
+   }
 }
 
 PRE(fchdir)
@@ -2178,9 +2186,15 @@ PRE(fcntl64)
 
 POST(fcntl64)
 {
-   if (arg2 == VKI_F_DUPFD)
-      if(VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(resolve_filename)(res));
+   if (arg2 == VKI_F_DUPFD) {
+      if (!fd_allowed(res, "fcntl64(DUPFD)", tid)) {
+         VG_(close)(res);
+         res = -VKI_EMFILE;
+      } else {
+         if (VG_(clo_track_fds))
+            record_fd_open(tid, res, VG_(resolve_filename)(res));
+      }
+   }
 }
 
 PRE(fstat)
@@ -3878,7 +3892,7 @@ POST(open)
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
-      if(VG_(clo_track_fds))
+      if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
@@ -3922,7 +3936,7 @@ POST(creat)
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
-      if(VG_(clo_track_fds))
+      if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
@@ -3947,7 +3961,7 @@ POST(pipe)
       res = -VKI_EMFILE;
    } else {
       VG_TRACK( post_mem_write, arg1, 2*sizeof(int) );
-      if(VG_(clo_track_fds)) {
+      if (VG_(clo_track_fds)) {
          record_fd_open(tid, p[0], NULL);
          record_fd_open(tid, p[1], NULL);
       }
@@ -4496,21 +4510,31 @@ POST(socketcall)
 
    switch (arg1 /* request */) {
 
-   case SYS_SOCKETPAIR:
-      /* XXX TODO: check return fd against VG_(max_fd) */
+   case SYS_SOCKETPAIR: {
+      Int fd1 = ((UInt*)((UInt*)arg2)[3])[0];
+      Int fd2 = ((UInt*)((UInt*)arg2)[3])[1];
       VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
-      if(VG_(clo_track_fds)) {
-         record_fd_open(tid, ((UInt*)((UInt*)arg2)[3])[0], NULL);
-         record_fd_open(tid, ((UInt*)((UInt*)arg2)[3])[1], NULL);
+      if (!fd_allowed(fd1, "socketcall.socketpair", tid) ||
+          !fd_allowed(fd2, "socketcall.socketpair", tid)) {
+         VG_(close)(fd1);
+         VG_(close)(fd2);
+         res = -VKI_EMFILE;
+      } else {
+         VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
+         if (VG_(clo_track_fds)) {
+            record_fd_open(tid, fd1, NULL);
+            record_fd_open(tid, fd2, NULL);
+         }
       }
       break;
+   }
 
    case SYS_SOCKET:
       if (!fd_allowed(res, "socket", tid)) {
 	 VG_(close)(res);
 	 res = -VKI_EMFILE;
       } else {
-         if(VG_(clo_track_fds))
+         if (VG_(clo_track_fds))
             record_fd_open(tid, res, NULL);
       }
       break;
@@ -4536,7 +4560,7 @@ POST(socketcall)
 	 if (addr_p != (Addr)NULL) 
 	    buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
 				     "socketcall.accept(addrlen_out)" );
-         if(VG_(clo_track_fds))
+         if (VG_(clo_track_fds))
             record_fd_open(tid, res, NULL);
       }
       break;
@@ -4932,8 +4956,15 @@ POST(futex)
 {
    if (!VG_(is_kerror)(res)) {
       VG_TRACK( post_mem_write, arg1, sizeof(int) );
-      if (arg2 == VKI_FUTEX_FD && VG_(clo_track_fds))
-         record_fd_open(tid, res, NULL);
+      if (arg2 == VKI_FUTEX_FD) {
+         if (!fd_allowed(res, "futex", tid)) {
+            VG_(close)(res);
+            res = -VKI_ENFILE;
+         } else {
+            if (VG_(clo_track_fds))
+               record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+         }
+      }
    }
 }
 

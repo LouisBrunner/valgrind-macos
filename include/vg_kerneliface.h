@@ -374,6 +374,7 @@ struct vki_ucontext {
 #define	VKI_EFAULT          14      /* Bad address */
 #define VKI_EEXIST	    17	    /* File exists */
 #define VKI_EINVAL          22      /* Invalid argument */
+#define VKI_ENFILE          23      /* File table overflow */
 #define VKI_EMFILE	    24	    /* Too many open files */
 #define VKI_ENOSYS          38      /* Function not implemented */
 

@@ -415,7 +415,8 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_MUL:    return "mul";
       case Xfp_DIV:    return "div";
       case Xfp_SQRT:   return "sqrt";
-      case Xfp_NEGATE: return "chs";
+      case Xfp_NEG:    return "chs";
+      case Xfp_ABS:    return "abs";
       case Xfp_MOV:    return "mov";
       case Xfp_SIN:    return "sin";
       case Xfp_COS:    return "cos";
@@ -1258,7 +1259,8 @@ static UChar* do_fld_st ( UChar* p, Int i )
 static UChar* do_fop1_st ( UChar* p, X86FpOp op )
 {
    switch (op) {
-      case Xfp_NEGATE: *p++ = 0xD9; *p++ = 0xE0; break;
+      case Xfp_NEG:    *p++ = 0xD9; *p++ = 0xE0; break;
+      case Xfp_ABS:    *p++ = 0xD9; *p++ = 0xE1; break;
       case Xfp_SQRT:   *p++ = 0xD9; *p++ = 0xFA; break;
       case Xfp_ROUND:  *p++ = 0xD9; *p++ = 0xFC; break;
       case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;

@@ -1669,7 +1669,8 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Unop.op) {
-         case Iop_NegF64:  fpop = Xfp_NEGATE; break;
+         case Iop_NegF64:  fpop = Xfp_NEG; break;
+         case Iop_AbsF64:  fpop = Xfp_ABS; break;
          case Iop_SqrtF64: fpop = Xfp_SQRT; break;
          case Iop_SinF64:  fpop = Xfp_SIN; break;
          case Iop_CosF64:  fpop = Xfp_COS; break;

@@ -164,13 +164,13 @@ typedef
       Iop_AtanYXF64,
 
       /* Unary operations */
-      Iop_NegF64, Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
+      Iop_NegF64, Iop_AbsF64, Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
-            0x85 Unordered
+            0x45 Unordered
             0x01 LT
             0x00 GT
-            0x80 EQ
+            0x40 EQ
          This just happens to be the Intel encoding.  The values
          are recorded in the type IRCmpF64Result.
       */

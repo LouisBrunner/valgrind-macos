@@ -9,9 +9,10 @@
 /* TODO:
    SBB reg with itself
    is Iop_Neg* used?
-   xadd %reg,%reg fix
    MOVAPS fix (vg_to_ucode rev 1.143)
    check flag settings for cmpxchg
+   FUCOMI(P): what happens to A and S flags?  Currently are forced
+      to zero.
 */
 
 /* Translates x86 code to IR. */
@@ -3033,7 +3034,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
                       UInt        delta,
                       Int         litsize )
 {
-   Int    d32;
+   Int    d32, alen;
    Char   dis_buf[50];
    UChar  rm = getIByte(delta);
    IRType ty = szToITy(size);
@@ -3046,13 +3047,9 @@ UInt dis_imul_I_E_G ( UChar       sorb,
       assign(te, getIReg(size, eregOfRM(rm)));
       delta++;
    } else {
-      vassert(0);
-#if 0
-      UInt pair = disAMode ( cb, sorb, eip, dis_buf );
-      ta = LOW24(pair);
-      uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
-      eip += HI8(pair);
-#endif
+      IRTemp addr = disAMode( &alen, sorb, delta, dis_buf );
+      assign(te, loadLE(ty, mkexpr(addr)));
+      delta += alen;
    }
    d32 = getSDisp(litsize,delta);
    delta += litsize;
@@ -3317,7 +3314,7 @@ void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf,
 */
 static
 void fp_do_oprev_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
-                         IROp op, Bool dbl )
+                            IROp op, Bool dbl )
 {
    DIP("f%s%c %s", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
@@ -3357,7 +3354,7 @@ void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
 */
 static
 void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
-                      Bool pop_after )
+                         Bool pop_after )
 {
    DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
    put_ST_UNCHECKED( 
@@ -3524,23 +3521,28 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_NegF64, get_ST(0)));
                break;
 
-           case 0xE5: { /* FXAM */
-              /* This is an interesting one.  It examines %st(0),
-                 regardless of whether the tag says it's empty or not.
-                 Here, just pass both the tag (in our format) and the
-                 value (as a double, actually a ULong) to a helper
-                 function. */
-              IRExpr** args;
-              DIP("fxam");
-              args = LibVEX_Alloc(3 * sizeof(IRExpr*));
-              args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
-              args[1] = get_ST_UNCHECKED_as_ULong(0);
-              args[2] = NULL;
-              put_C3210(IRExpr_CCall("calculate_FXAM", Ity_I32, args));
-              break;
-           }
+            case 0xE1: /* FABS */
+               DIP("fabs\n");
+               put_ST_UNCHECKED(0, unop(Iop_AbsF64, get_ST(0)));
+               break;
 
-           case 0xE8: /* FLD1 */
+            case 0xE5: { /* FXAM */
+               /* This is an interesting one.  It examines %st(0),
+                  regardless of whether the tag says it's empty or not.
+                  Here, just pass both the tag (in our format) and the
+                  value (as a double, actually a ULong) to a helper
+                  function. */
+               IRExpr** args;
+               DIP("fxam");
+               args = LibVEX_Alloc(3 * sizeof(IRExpr*));
+               args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
+               args[1] = get_ST_UNCHECKED_as_ULong(0);
+               args[2] = NULL;
+               put_C3210(IRExpr_CCall("calculate_FXAM", Ity_I32, args));
+               break;
+            }
+
+            case 0xE8: /* FLD1 */
                DIP("fld1");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
@@ -3755,6 +3757,21 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
                break;
 
+            case 3: /* FCOMP double-real */
+               DIP("fcomp %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      loadLE(Ity_F64,mkexpr(addr))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               break;  
+
             case 4: /* FSUB double-real */
                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, True );
                break;
@@ -3765,6 +3782,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 6: /* FDIV double-real */
                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, True );
+               break;
+
+            case 7: /* FDIVR double-real */
+               fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, True );
                break;
 
             default:
@@ -3939,6 +3960,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
          switch (gregOfRM(modrm)) {
 
+            case 0: /* FILD m16int */
+               DIP("fildw %s\n", dis_buf);
+               fp_push();
+               put_ST(0, unop(Iop_I32toF64,
+                              unop(Iop_16Sto32,
+                                   loadLE(Ity_I16, mkexpr(addr)))));
+               break;
+
             case 3: /* FISTP m16 */
                DIP("fistps %s", dis_buf);
                storeLE( mkexpr(addr), 
@@ -3985,6 +4014,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                                    mkU8(11)),
                              binop(Iop_And32, get_C3210(), mkU32(0x4700))
                )));
+               break;
+
+            case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
+               r_dst = (UInt)modrm - 0xE8;
+               DIP("fucomip %%st(0),%%st(%d)\n", r_dst);
+               /* This is a bit of a hack (and isn't really right).
+                  It sets Z,P,C,O correctly, but forces A and S to
+                  zero, whereas the Intel documentation implies A and
+                  S are unchanged. */
+               stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+               stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+               stmt( IRStmt_Put( OFFB_CC_SRC,
+                        binop( Iop_And32,
+                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                               mkU32(0x45)
+                     )));
+               fp_pop();
                break;
 
             default: 
@@ -4869,7 +4915,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
    UChar dis_buf[50];
    Int   len;
 
-   IRType ty = szToITy(sz);
+   IRType ty   = szToITy(sz);
    IRTemp tmps = newTemp(ty);
    IRTemp tmpd = newTemp(ty);
 
@@ -4910,44 +4956,48 @@ UInt dis_cmov_E_G ( UChar       sorb,
 }
 
 
-//-- static
-//-- Addr dis_xadd_G_E ( UCodeBlock* cb, 
-//--                     UChar       sorb,
-//--                     Int         sz, 
-//--                     Addr        eip0 )
-//-- {
-//--    UChar rm  = getUChar(eip0);
-//--    UChar dis_buf[50];
-//-- 
-//--    Int tmpd = newTemp(cb);   
-//--    Int tmpt = newTemp(cb);
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
-//--       uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
-//--       uInstr2(cb, ADD, sz, TempReg, tmpd, TempReg, tmpt);
-//--       setFlagsFromUOpcode(cb, ADD);
-//--       uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
-//--       uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
-//--       DIP("xadd%c %s, %s\n", 
-//--           nameISize(sz), nameIReg(sz,gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
-//--       return 1+eip0;
-//--    } else {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       Int  tmpa  = LOW24(pair);
-//--       uInstr2(cb, LOAD, sz, TempReg, tmpa,          TempReg, tmpd);
-//--       uInstr2(cb, GET,  sz, ArchReg, gregOfRM(rm),  TempReg, tmpt);
-//--       uInstr2(cb,  ADD, sz, TempReg, tmpd, TempReg, tmpt);
-//--       setFlagsFromUOpcode(cb, ADD);
-//--       uInstr2(cb, STORE, sz, TempReg, tmpt, TempReg, tmpa);
-//--       uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
-//--       DIP("xadd%c %s, %s\n", 
-//--           nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
+static
+UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
+{
+   Int   len;
+   UChar rm = getIByte(delta0);
+   UChar dis_buf[50];
+
+   //   Int tmpd = newTemp(cb);
+   //Int tmpt = newTemp(cb);
+
+   IRType ty    = szToITy(sz);
+   IRTemp tmpd  = newTemp(ty);
+   IRTemp tmpt0 = newTemp(ty);
+   IRTemp tmpt1 = newTemp(ty);
+
+   if (epartIsReg(rm)) {
+     vassert(0);
+#if 0
+      uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
+      uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
+      uInstr2(cb, ADD, sz, TempReg, tmpd, TempReg, tmpt);
+      setFlagsFromUOpcode(cb, ADD);
+      uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
+      uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
+      DIP("xadd%c %s, %s\n",
+          nameISize(sz), nameIReg(sz,gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
+      return 1+eip0;
+#endif
+   } else {
+      IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
+      assign( tmpd,  loadLE(ty, mkexpr(addr)) );
+      assign( tmpt0, getIReg(sz, gregOfRM(rm)) );
+      setFlags_ADD_SUB( Iop_Add8, tmpt0, tmpd, ty );
+      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), mkexpr(tmpd), mkexpr(tmpt0)) );
+      storeLE( mkexpr(addr), mkexpr(tmpt1) );
+      putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
+      DIP("xadd%c %s, %s\n",
+          nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
+      return len+delta0;
+   }
+}
+
 //-- /* Moves of Ew into a segment register.
 //--       mov Ew, Sw  meaning
 //--       mov reg-or-mem, reg
@@ -7835,7 +7885,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          correctly pushes the old value. */
       vassert(sz == 2 || sz == 4);
       ty = sz==2 ? Ity_I16 : Ity_I32;
-      t1 = newTemp(ty); t2 = newTemp(ty);
+      t1 = newTemp(ty); t2 = newTemp(Ity_I32);
       assign(t1, getIReg(sz, opc-0x50));
       assign(t2, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)));
       putIReg(4, R_ESP, mkexpr(t2) );
@@ -7954,10 +8004,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       dis_string_op( cb, dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
 //--       break;
 //-- 
-//--    case 0xAA: /* STOS, no REP prefix */
+   case 0xAA: /* STOS, no REP prefix */
 //--    case 0xAB:
-//--       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
-//--       break;
+      dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
+      break;
 //--    
 //--    case 0xAC: /* LODS, no REP prefix */
 //--    case 0xAD:
@@ -8653,15 +8703,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                     "%cl", False );
          break;
 
-//--       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
+//--       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
 //-- 
 //--       case 0xC0: /* XADD Gb,Eb */
 //--          eip = dis_xadd_G_E ( cb, sorb, 1, eip );
 //--          break;
-//--       case 0xC1: /* XADD Gv,Ev */
-//--          eip = dis_xadd_G_E ( cb, sorb, sz, eip );
-//--          break;
-//-- 
+      case 0xC1: /* XADD Gv,Ev */
+         delta = dis_xadd_G_E ( sorb, sz, delta );
+         break;
+
 //--       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 //-- 
 //--       case 0x0D: /* PREFETCH / PREFETCHW - 3Dnow!ery*/

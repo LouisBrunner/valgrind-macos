@@ -317,6 +317,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
    if (e->tag == Iex_Unop
        && e->Iex.Unop.arg->tag == Iex_Const) {
       switch (e->Iex.Unop.op) {
+         case Iop_8Sto32: {
+            /* signed */ Int s32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            s32 <<= 24;
+            s32 >>= 24;
+            e2 = IRExpr_Const(IRConst_U32((UInt)s32));
+            break;
+         }
          case Iop_8Uto32:
             e2 = IRExpr_Const(IRConst_U32(
                     0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U8));
@@ -324,6 +331,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
          case Iop_16Uto32:
             e2 = IRExpr_Const(IRConst_U32(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
+            break;
+         case Iop_Not32:
+            e2 = IRExpr_Const(IRConst_U32(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
          default: 
             goto unhandled;
@@ -336,6 +347,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
           && e->Iex.Binop.arg2->tag == Iex_Const) {
          /* cases where both args are consts */
          switch (e->Iex.Binop.op) {
+            case Iop_Xor8:
+               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+               break;
             case Iop_And8:
                e2 = IRExpr_Const(IRConst_U8(0xFF & 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -355,6 +371,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         + e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_Xor32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
             case Iop_And32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -414,8 +435,6 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
-            case Iop_MullS32:
-               break;
             default:
                goto unhandled;
          }
@@ -460,9 +479,16 @@ static IRExpr* fold_Expr ( IRExpr* e )
    return e2;
 
  unhandled:
+#  if 0
    vex_printf("\n\n");
    ppIRExpr(e);
    vpanic("fold_Expr: no rule for the above");
+#  else
+   vex_printf("vex iropt: fold_Expr: no rule for: ");
+   ppIRExpr(e);
+   vex_printf("\n");
+   return e2;
+#  endif
 }
 
 

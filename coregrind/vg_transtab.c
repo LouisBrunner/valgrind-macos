@@ -42,7 +42,7 @@
    of code retranslation.  */
 
 /* Size of the translation cache, in bytes. */
-#define VG_TC_SIZE 16000000 
+#define VG_TC_SIZE /*16000000*/ /*32000000*/ 40000000
 
 /* Do a LRU pass when the translation cache becomes this full. */
 #define VG_TC_LIMIT_PERCENT 95
@@ -52,7 +52,7 @@
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
-#define VG_TT_SIZE /*19997*/ /*29989*/ /*50497*/ /*75083*/ 100129
+#define VG_TT_SIZE /*100129*/ /*200191*/ 250829
 
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80
@@ -122,10 +122,14 @@ void VG_(maybe_do_lru_pass) ( void )
    Int i, j, r, w, thresh, ttno;
    TTEntry* tte;
 
-   const Int tc_limit  = (Int)((VG_TC_SIZE * VG_TC_LIMIT_PERCENT) / 100.0);
-   const Int tt_limit  = (Int)((VG_TT_SIZE * VG_TT_LIMIT_PERCENT) / 100.0);
-   const Int tc_target = (Int)((VG_TC_SIZE * VG_TC_TARGET_PERCENT) / 100.0);
-   const Int tt_target = (Int)((VG_TT_SIZE * VG_TT_TARGET_PERCENT) / 100.0);
+   const Int tc_limit  = (Int)(((double)VG_TC_SIZE * (double)VG_TC_LIMIT_PERCENT)
+                                / (double)100.0);
+   const Int tt_limit  = (Int)(((double)VG_TT_SIZE * (double)VG_TT_LIMIT_PERCENT)
+                                / (double)100.0);
+   const Int tc_target = (Int)(((double)VG_TC_SIZE * (double)VG_TC_TARGET_PERCENT)
+                                / (double)100.0);
+   const Int tt_target = (Int)(((double)VG_TT_SIZE * (double)VG_TT_TARGET_PERCENT)
+                                / (double)100.0);
 
    /* Decide quickly if we need to do an LRU pass ? */
    if (vg_tc_used <= tc_limit && vg_tt_used <= tt_limit)

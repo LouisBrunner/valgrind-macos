@@ -1757,32 +1757,23 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* Spot the client-request magic sequence. */
    // Essentially a v. unlikely sequence of noops that we can catch
    {
-//      UInt* code = (UInt*)(guest_code + delta);
-
-       // Note: A prefferred no-op is "ori 0,0,0" (p551)
-
-
-      // CAB: easy way to rotate left?
+      UInt* code = (UInt*)(guest_code + delta);
 
       /* Spot this:                                       
-         E1A00EE0                   mov  r0, r0, ror #29
-	 E1A001E0                   mov  r0, r0, ror #3
-	 E1A00DE0                   mov  r0, r0, ror #27
-	 E1A002E0                   mov  r0, r0, ror #5
-	 E1A006E0                   mov  r0, r0, ror #13
-	 E1A009E0                   mov  r0, r0, ror #19
+	 0x60000000   ori 0,0,0            => r0 = r0 | 0
+	 0x5400E800   rlwinm 0,0,29,0,0    => r0 = rotl(r0,29)
+	 0x54001800   rlwinm 0,0,3,0,0     => r0 = rotl(r0,3)
+	 0x54006800   rlwinm 0,0,13,0,0    => r0 = rotl(r0,13)
+	 0x54009800   rlwinm 0,0,19,0,0    => r0 = rotl(r0,19)
+	 0x60000000   ori 0,0,0            => r0 = r0 | 0
       */
-      /* I suspect these will have to be turned the other way round to
-	 work on little-endian ppc32. */
-      if (0){
-/*
-	  code[0] == 0xE1A00EE0 &&
-          code[1] == 0xE1A001E0 &&
-          code[2] == 0xE1A00DE0 &&
-          code[3] == 0xE1A002E0 &&
-          code[4] == 0xE1A006E0 &&
-	  code[5] == 0xE1A009E0) {
-*/
+      if (code[0] == 0x60000000 &&
+          code[1] == 0x5400E800 &&
+          code[2] == 0x54001800 &&
+          code[3] == 0x54006800 &&
+          code[4] == 0x54009800 &&
+          code[5] == 0x60000000) {
+
          // uh ... I'll figure this out later.  possibly r0 = client_request(r0)
          DIP("?CAB? = client_request ( ?CAB? )\n");
 

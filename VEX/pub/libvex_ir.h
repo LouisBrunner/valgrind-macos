@@ -82,7 +82,9 @@ typedef
       Iop_Sar8,  Iop_Sar16,  Iop_Sar32,  Iop_Sar64,
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
-      Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64
+      Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
+      /* Specials */
+      Iop_32to1 /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
    }
    IROp;
 
@@ -100,7 +102,8 @@ data Expr
    | CONST Const           -- 8/16/32/64-bit int constant
 */
 typedef
-   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, Iex_Const }
+   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
+          Iex_Const, Iex_CCall }
    IRExprTag;
 
 typedef 
@@ -130,6 +133,11 @@ typedef
          struct {
             IRConst* con;
          } Const;
+         struct {
+            Char*  name;
+            IRType retty;
+            struct _IRExpr** args;
+         }  CCall;
       } Iex;
    }
    IRExpr;
@@ -140,9 +148,26 @@ extern IRExpr* IRExpr_Binop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const ( IRConst* con );
+extern IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args );
 
 extern void ppIRExpr ( IRExpr* );
 
+/* CCall info.  The name is the C helper function; the backends
+   will look it up in a table of known helpers, to get the address.
+
+   The args are a NULL-terminated array of arguments.  The stated
+   return IRType, and the implied argument types, must match that
+   of the function being called well enough so that the back end
+   can actually generate correct code for the call.  (too vague)
+
+   The called function must satisfy the following:
+
+   * no side effects -- must be a pure function
+   * it may not look at any of the guest state -- must depend
+     purely on passed parameters
+   * it may not access guest memory -- since that would
+     hide guest memory transactions from the instrumenters
+*/
 
 /* ------------------ Statements ------------------ */
 /*
@@ -216,8 +241,9 @@ typedef
    }
    IRNext;
 
-extern IRNext* IRNext_UJump ( IRConst* dst );
-extern IRNext* IRNext_IJump ( IRExpr* dst );
+extern IRNext* IRNext_UJump   ( IRConst* dst );
+extern IRNext* IRNext_CJump01 ( IRExpr* cond, IRConst* dst0, IRConst* dst1 );
+extern IRNext* IRNext_IJump   ( IRExpr* dst );
 
 extern void ppIRNext ( IRNext* );
 

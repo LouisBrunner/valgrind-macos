@@ -75,8 +75,8 @@ void ppIROp ( IROp op )
       case Iop_Not8 ... Iop_Not64:
          str = "Not"; base = Iop_Not8; break;
       /* other cases must explicitly "return;" */
-      default: 
-         vpanic("ppIROp(1)");
+      case Iop_32to1: vex_printf("32to1"); return;
+      default:        vpanic("ppIROp(1)");
    }
   
    switch (op - base) {
@@ -90,6 +90,7 @@ void ppIROp ( IROp op )
 
 void ppIRExpr ( IRExpr* e )
 {
+  Int i;
   switch (e->tag) {
     case Iex_Get:
       vex_printf( "GET(%d,", e->Iex.Get.offset);
@@ -122,6 +123,16 @@ void ppIRExpr ( IRExpr* e )
       break;
     case Iex_Const:
       ppIRConst(e->Iex.Const.con);
+      break;
+    case Iex_CCall:
+      vex_printf("%s(", e->Iex.CCall.name);
+      for (i = 0; e->Iex.CCall.args[i] != NULL; i++) {
+        ppIRExpr(e->Iex.CCall.args[i]);
+        if (e->Iex.CCall.args[i+1] != NULL)
+          vex_printf(",");
+      }
+      vex_printf("):");
+      ppIRType(e->Iex.CCall.retty);
       break;
     default:
       vpanic("ppIExpr");
@@ -288,6 +299,14 @@ IRExpr* IRExpr_Const ( IRConst* con ) {
    e->Iex.Const.con = con;
    return e;
 }
+IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args ) {
+   IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag             = Iex_CCall;
+   e->Iex.CCall.name  = name;
+   e->Iex.CCall.retty = retty;
+   e->Iex.CCall.args  = args;
+   return e;
+}
 
 
 /* Constructors -- IRStmt */
@@ -324,6 +343,14 @@ IRNext* IRNext_UJump ( IRConst* dst ) {
    IRNext* nx        = LibVEX_Alloc(sizeof(IRNext));
    nx->tag           = Inx_UJump;
    nx->Inx.UJump.dst = dst;
+   return nx;
+}
+IRNext* IRNext_CJump01 ( IRExpr* cond, IRConst* dst0, IRConst* dst1 ) {
+   IRNext* nx           = LibVEX_Alloc(sizeof(IRNext));
+   nx->tag              = Inx_CJump01;
+   nx->Inx.CJump01.cond = cond;
+   nx->Inx.CJump01.dst0 = dst0;
+   nx->Inx.CJump01.dst1 = dst1;
    return nx;
 }
 IRNext* IRNext_IJump ( IRExpr* dst ) {

@@ -1432,7 +1432,10 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 void VG_(nuke_all_threads_except) ( ThreadId me )
 {
    ThreadId tid;
-   VG_(printf)("HACK HACK HACK: nuke_all_threads_except\n"); return;
+   if (0) {
+      VG_(printf)("HACK HACK HACK: nuke_all_threads_except\n"); 
+      return;
+   }
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (tid == me
@@ -1441,18 +1444,14 @@ void VG_(nuke_all_threads_except) ( ThreadId me )
       if (1)
          VG_(printf)(
             "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
-VG_(printf)("OINK 49\n");
       VG_(proxy_delete)(tid, True);
-VG_(printf)("OINK 49a\n");
       VG_(threads)[tid].status = VgTs_Empty;
       VG_(threads)[tid].associated_mx = NULL;
       VG_(threads)[tid].associated_cv = NULL;
       VG_(threads)[tid].stack_base = (Addr)NULL;
       VG_(threads)[tid].stack_size = 0;
       cleanup_after_thread_exited( tid, True );
-VG_(printf)("OINK 4\n");
    }
-VG_(printf)("OINK 5\n");
 }
 
 

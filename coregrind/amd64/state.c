@@ -73,7 +73,7 @@ void VGA_(init_thread1state) ( Addr client_rip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
 
    /* Put essential stuff into the new state. */
-
+   VG_(printf)("startup rsp 0x%llx  rip 0x%llx\n", rsp_at_startup, client_rip);
    arch->vex.guest_RSP = rsp_at_startup;
    arch->vex.guest_RIP = client_rip;
 

@@ -869,10 +869,9 @@ static Bool proxy_wait(ProxyLWP *proxy, Bool block, Int *status)
       if (block) {
 	 Int lwp = proxy->lwp;
 
-VG_(printf)("OINK 503\n");
 	 if(proxy->lwp != 0)
+            /* JEREMY: amd64 hangs here at exit */
 	    do_futex(&proxy->lwp, VKI_FUTEX_WAIT, lwp, NULL, NULL);
-VG_(printf)("OINK 504\n");
 	 if (status)
 	    *status = proxy->exitcode;
 	 ret = True;
@@ -885,7 +884,6 @@ VG_(printf)("OINK 504\n");
    } else {
       Int flags = __VKI_WCLONE;
       Int res;
-VG_(printf)("OINK 506\n");
       if (!block)
 	 flags |= VKI_WNOHANG;
       res = VG_(waitpid)(proxy->lwp, status, flags);
@@ -962,14 +960,11 @@ void VG_(proxy_delete)(ThreadId tid, Bool force)
    vg_assert(proxy->tid == tid);
    if (proxy->terminating)
       return;		/* already going away */
-VG_(printf)("OINK 401\n");
+
    proxy->terminating = True;
-VG_(printf)("OINK 402\n");
    VG_(close)(proxy->topx);
    proxy->topx = -1;
-VG_(printf)("OINK 403\n");
    /* proxy thread will close proxy->frommain itself */
-VG_(printf)("OINK 404\n");
    if (force && lwp != 0) {
       /* wouldn't need to force it if it were already dead */
       vg_assert(tst->status != VgTs_Empty);
@@ -980,21 +975,16 @@ VG_(printf)("OINK 404\n");
 
    status = -1;
    res = False;
-VG_(printf)("OINK 405\n");
    /* We need to wait for the PX_Exiting message before doing the
       proxy_wait, because if we don't read the results pipe, the proxy
       may be blocked writing to it, causing a deadlock with us as we
       wait for it to exit. */
    sys_wait_results(True, tid, PX_Exiting, True);
-VG_(printf)("OINK 405a\n");
    res = proxy_wait(proxy, True, &status);
-VG_(printf)("OINK 406\n");
    if ((!res || status != 0) && VG_(clo_verbosity) > 1)
       VG_(printf)("proxy %d for tid %d exited status %d, res %d\n",
 		  lwp, tid, status, res);
-VG_(printf)("OINK 407\n");
    LWP_free(proxy);
-VG_(printf)("OINK 408\n");
    tst->proxy = NULL;
 }
 

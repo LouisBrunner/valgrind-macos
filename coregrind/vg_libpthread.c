@@ -82,6 +82,88 @@
 
 
 /* ---------------------------------------------------------------------
+   Our own definition of types that vary between LinuxThreads and NPTL.
+   ------------------------------------------------------------------ */
+
+/* Moving from LinuxThreads to NPTL, several crucial types (eg.
+   pthread_mutex_t, pthread_mutexattr_t, etc) in pthreadtypes.h were changed
+   in binary-compatible, but source-incompatible, ways.  We can similarly
+   use any layout we want, so long as it's binary-compatible.  However, we
+   can no longer use the LinuxThreads types, because they won't work on NPTL
+   systems.  Thus, we have to introduce a layer of indirection, and define
+   our own versions of these types (vg_pthread_mutex_t, etc).  NPTL does
+   pretty much the same thing, and it keeps many of its internal types
+   secret.
+
+   We can layout our types however we want, as long as we put the small
+   number of fields in the right place for binary compatibility (eg.
+   mutex->kind).  To make life easy, our versions have the exact same layout
+   as the LinuxThreads ones;  only the type names and field names are
+   different (they differ only by include "vg" at the start).
+
+   In our implementation of the pthread operations (pthread_mutex_lock(),
+   pthread_mutexattr_settype(), etc) we always cast the standard pthread
+   types to our own types, (eg. pthread_mutex_t --> vg_pthread_mutex_t),
+   before working with them.
+    
+   Note that we have various mutexes (and condvars) in this file that have the
+   type pthread_mutex_t (and pthread_cond_t).  That is fine, because they
+   are always only handled by calling the standard pthread functions (eg.
+   pthread_mutex_lock()) on them.  Phew.
+
+   WARNING: as a result of all this, we should *never* access these standard
+   pthread types as is;  they *must* be converted to the vg_pthread_foo_t
+   equivalent.   It would be nice if this was enforced...  (but compilation
+   on NPTL-only systems should fail if this rule isn't followed...?)
+*/
+
+#include <sched.h>   // for 'struct __sched_param'
+
+typedef struct __vg_pthread_attr_s
+{
+   int __vg_detachstate;
+   int __vg_schedpolicy;
+   struct __sched_param __vg_schedparam;
+   int __vg_inheritsched;
+   int __vg_scope;
+   size_t __vg_guardsize;
+   int __vg_stackaddr_set;
+   void *__vg_stackaddr;
+   size_t __vg_stacksize;
+} vg_pthread_attr_t;
+
+typedef struct
+{
+   int __vg_mutexkind;
+} vg_pthread_mutexattr_t;
+
+typedef struct _vg_pthread_rwlock_t
+{
+   struct _vg_pthread_fastlock __vg_rw_lock; /* Lock to guarantee mutual exclusion */
+   int __vg_rw_readers;                   /* Number of readers */
+   /*_pthread_descr*/ void* __vg_rw_writer;         /* Identity of writer, or NULL if none */
+   /*_pthread_descr*/ void* __vg_rw_read_waiting;   /* Threads waiting for reading */
+   /*_pthread_descr*/ void* __vg_rw_write_waiting;  /* Threads waiting for writing */
+   int __vg_rw_kind;                      /* Reader/Writer preference selection */
+   int __vg_rw_pshared;                   /* Shared between processes or not */
+} vg_pthread_rwlock_t;
+
+typedef struct
+{
+   int __vg_lockkind;
+   int __vg_pshared;
+} vg_pthread_rwlockattr_t;
+
+/* Converting pthread types to vg_pthread types.  We always check that the
+   passed-in type is as big as ours, for safety.  We also zero the pointer
+   to the original struct, to ensure we don't accidentally use it again. */
+
+#define CONVERT(foo, x, vg_x) \
+   my_assert(sizeof(*x) >= sizeof(vg_pthread_##foo##_t)); \
+   vg_x = (vg_pthread_##foo##_t*)x; \
+   x = 0;  // ensure we don't accidentally use x again!
+
+/* ---------------------------------------------------------------------
    Forwardses.
    ------------------------------------------------------------------ */
 
@@ -301,28 +383,38 @@ pthread_t pthread_self(void)
 
 int pthread_attr_init(pthread_attr_t *attr)
 {
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   
    /* Just initialise the fields which we might look at. */
-   attr->__detachstate = PTHREAD_CREATE_JOINABLE;
+   vg_attr->__vg_detachstate = PTHREAD_CREATE_JOINABLE;
    /* Linuxthreads sets this field to the value __getpagesize(), so I
       guess the following is OK. */
-   attr->__guardsize = VKI_BYTES_PER_PAGE;   return 0;
+   vg_attr->__vg_guardsize = VKI_BYTES_PER_PAGE;
+   return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+
    if (detachstate != PTHREAD_CREATE_JOINABLE 
        && detachstate != PTHREAD_CREATE_DETACHED) {
       pthread_error("pthread_attr_setdetachstate: "
                     "detachstate is invalid");
       return EINVAL;
    }
-   attr->__detachstate = detachstate;
+   vg_attr->__vg_detachstate = detachstate;
    return 0;
 }
 
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
-   *detachstate = attr->__detachstate;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+
+   *detachstate = vg_attr->__vg_detachstate;
    return 0;
 }
 
@@ -340,6 +432,7 @@ int pthread_attr_setstacksize (pthread_attr_t *__attr,
 {
    size_t limit;
    char buf[1024];
+
    ensure_valgrind("pthread_attr_setstacksize");
    limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
                                  - 1000; /* paranoia */
@@ -412,25 +505,28 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 {
    int    detached;
    size_t limit;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+
    ensure_valgrind("pthread_getattr_np");
    kludged("pthread_getattr_np", NULL);
    limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
                                  - 1000; /* paranoia */
-   attr->__detachstate = PTHREAD_CREATE_JOINABLE;
-   attr->__schedpolicy = SCHED_OTHER;
-   attr->__schedparam.sched_priority = 0;
-   attr->__inheritsched = PTHREAD_EXPLICIT_SCHED;
-   attr->__scope = PTHREAD_SCOPE_SYSTEM;
-   attr->__guardsize = VKI_BYTES_PER_PAGE;
-   attr->__stackaddr = NULL;
-   attr->__stackaddr_set = 0;
-   attr->__stacksize = limit;
+   vg_attr->__vg_detachstate = PTHREAD_CREATE_JOINABLE;
+   vg_attr->__vg_schedpolicy = SCHED_OTHER;
+   vg_attr->__vg_schedparam.sched_priority = 0;
+   vg_attr->__vg_inheritsched = PTHREAD_EXPLICIT_SCHED;
+   vg_attr->__vg_scope = PTHREAD_SCOPE_SYSTEM;
+   vg_attr->__vg_guardsize = VKI_BYTES_PER_PAGE;
+   vg_attr->__vg_stackaddr = NULL;
+   vg_attr->__vg_stackaddr_set = 0;
+   vg_attr->__vg_stacksize = limit;
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
                            2 /* get */, thread, 0, 0);
    my_assert(detached == 0 || detached == 1);
    if (detached)
-      attr->__detachstate = PTHREAD_CREATE_DETACHED;
+      vg_attr->__vg_detachstate = PTHREAD_CREATE_DETACHED;
    return 0;
 }
 
@@ -463,16 +559,20 @@ int pthread_attr_getstacksize ( const pthread_attr_t * _attr,
 
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
 {
-  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)
-    return EINVAL;
-  attr->__schedpolicy = policy;
-  return 0;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)
+      return EINVAL;
+   vg_attr->__vg_schedpolicy = policy;
+   return 0;
 }
 
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 {
-  *policy = attr->__schedpolicy;
-  return 0;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   *policy = vg_attr->__vg_schedpolicy;
+   return 0;
 }
 
 
@@ -498,7 +598,9 @@ int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
 WEAK 
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
 {
-   *guardsize = attr->__guardsize;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   *guardsize = vg_attr->__vg_guardsize;
    return 0;
 }  
 
@@ -785,6 +887,8 @@ pthread_create (pthread_t *__restrict __thredd,
    int            tid_child;
    NewThreadInfo* info;
    int            gs;
+   vg_pthread_attr_t* __vg_attr;
+   CONVERT(attr, __attr, __vg_attr);
 
    ensure_valgrind("pthread_create");
 
@@ -797,8 +901,8 @@ pthread_create (pthread_t *__restrict __thredd,
    info = my_malloc(sizeof(NewThreadInfo));
    my_assert(info != NULL);
 
-   if (__attr)
-      info->attr__detachstate = __attr->__detachstate;
+   if (__vg_attr)
+      info->attr__detachstate = __vg_attr->__vg_detachstate;
    else 
       info->attr__detachstate = PTHREAD_CREATE_JOINABLE;
 
@@ -983,12 +1087,17 @@ void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
 
 int __pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
-   attr->__mutexkind = PTHREAD_MUTEX_ERRORCHECK_NP;
+   vg_pthread_mutexattr_t* vg_attr;
+   CONVERT(mutexattr, attr, vg_attr);
+   vg_attr->__vg_mutexkind = PTHREAD_MUTEX_ERRORCHECK_NP;
    return 0;
 }
 
 int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
+   vg_pthread_mutexattr_t* vg_attr;
+   CONVERT(mutexattr, attr, vg_attr);
+
    switch (type) {
 #     ifndef GLIBC_2_1    
       case PTHREAD_MUTEX_TIMED_NP:
@@ -999,7 +1108,7 @@ int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 #     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
-         attr->__mutexkind = type;
+         vg_attr->__vg_mutexkind = type;
          return 0;
       default:
          pthread_error("pthread_mutexattr_settype: "
@@ -1033,11 +1142,16 @@ int __pthread_mutexattr_setpshared ( pthread_mutexattr_t* attr, int pshared)
 int __pthread_mutex_init(pthread_mutex_t *mutex, 
                          const  pthread_mutexattr_t *mutexattr)
 {
-   mutex->__m_count = 0;
-   mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
-   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
-   if (mutexattr)
-      mutex->__m_kind = mutexattr->__mutexkind;
+   vg_pthread_mutex_t* vg_mutex;
+   vg_pthread_mutexattr_t* vg_mutexattr;
+   CONVERT(mutex, mutex, vg_mutex); 
+   CONVERT(mutexattr, mutexattr, vg_mutexattr);
+   
+   vg_mutex->__vg_m_count = 0;
+   vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)VG_INVALID_THREADID;
+   vg_mutex->__vg_m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
+   if (vg_mutexattr)
+      vg_mutex->__vg_m_kind = vg_mutexattr->__vg_mutexkind;
    return 0;
 }
 
@@ -1045,19 +1159,21 @@ int __pthread_mutex_init(pthread_mutex_t *mutex,
 int __pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
-
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+   
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_LOCK,
-                              mutex, 0, 0, 0);
+                              vg_mutex, 0, 0, 0);
       return res;
    } else {
       /* Play at locking */
       if (0)
 	 kludged("prehistoric lock", NULL);
-      mutex->__m_owner = (_pthread_descr)1;
-      mutex->__m_count = 1;
-      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
+      vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)1;
+      vg_mutex->__vg_m_count = 1;
+      vg_mutex->__vg_m_kind |= VG_PTHREAD_PREHISTORY;
       return 0; /* success */
    }
 }
@@ -1066,19 +1182,21 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
 int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
-
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+   
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
-                              mutex, 0, 0, 0);
+                              vg_mutex, 0, 0, 0);
       return res;
    } else {
       /* Play at locking */
       if (0)
 	 kludged("prehistoric trylock", NULL);
-      mutex->__m_owner = (_pthread_descr)1;
-      mutex->__m_count = 1;
-      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
+      vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)1;
+      vg_mutex->__vg_m_count = 1;
+      vg_mutex->__vg_m_kind |= VG_PTHREAD_PREHISTORY;
       return 0; /* success */
    }
 }
@@ -1087,19 +1205,21 @@ int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
-
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+   
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
-                              mutex, 0, 0, 0);
+                              vg_mutex, 0, 0, 0);
       return res;
    } else {
       /* Play at locking */
       if (0)
 	 kludged("prehistoric unlock", NULL);
-      mutex->__m_owner = 0;
-      mutex->__m_count = 0;
-      mutex->__m_kind &= ~VG_PTHREAD_PREHISTORY;
+      vg_mutex->__vg_m_owner = 0;
+      vg_mutex->__vg_m_count = 0;
+      vg_mutex->__vg_m_kind &= ~VG_PTHREAD_PREHISTORY;
       return 0; /* success */
    }
 }
@@ -1107,20 +1227,22 @@ int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 
 int __pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+
    /* Valgrind doesn't hold any resources on behalf of the mutex, so no
       need to involve it. */
-   if (mutex->__m_count > 0) {
+   if (vg_mutex->__vg_m_count > 0) {
       /* Oh, the horror.  glibc's internal use of pthreads "knows"
 	 that destroying a lock does an implicit unlock.  Make it
 	 explicit. */
-      __pthread_mutex_unlock(mutex);
-      pthread_error("pthread_mutex_destroy: "
-		    "mutex is still in use");
+      __pthread_mutex_unlock( (pthread_mutex_t*)vg_mutex );
+      pthread_error("pthread_mutex_destroy: mutex is still in use");
       return EBUSY;
    }
-   mutex->__m_count = 0;
-   mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
-   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
+   vg_mutex->__vg_m_count = 0;
+   vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)VG_INVALID_THREADID;
+   vg_mutex->__vg_m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
    return 0;
 }
 
@@ -1144,7 +1266,9 @@ int pthread_condattr_destroy(pthread_condattr_t *attr)
 int pthread_cond_init( pthread_cond_t *cond,
 		       const pthread_condattr_t *cond_attr)
 {
-   cond->__c_waiting = (_pthread_descr)VG_INVALID_THREADID;
+   vg_pthread_cond_t* vg_cond;
+   CONVERT(cond, cond, vg_cond);
+   vg_cond->__vg_c_waiting = (/*_pthread_descr*/void*)VG_INVALID_THREADID;
    return 0;
 }
 
@@ -1192,10 +1316,13 @@ int pthread_setschedparam(pthread_t target_thread,
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
    int res;
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+
    ensure_valgrind("pthread_cond_wait");
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_COND_WAIT,
-			   cond, mutex, 0, 0);
+			   cond, vg_mutex, 0, 0);
    return res;
 }
 
@@ -1208,6 +1335,8 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
    struct  timeval timeval_now;
    unsigned long long int ull_ms_now_after_1970;
    unsigned long long int ull_ms_end_after_1970;
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
 
    ensure_valgrind("pthread_cond_timedwait");
    VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
@@ -1229,7 +1358,7 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
       = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_COND_TIMEDWAIT,
-			   cond, mutex, ms_end, 0);
+			   cond, vg_mutex, ms_end, 0);
    return res;
 }
 
@@ -2657,14 +2786,16 @@ void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
 /* Take the address of a LinuxThreads rwlock_t and return the shadow
    address of our version.  Further, if the LinuxThreads version
    appears to have been statically initialised, do the same to the one
-   we allocate here.  The pthread_rwlock_t.__rw_readers field is set
-   to zero by PTHREAD_RWLOCK_INITIALIZER, so we take zero as meaning
-   uninitialised and non-zero meaning initialised. 
+   we allocate here.  The vg_pthread_rwlock_t.__vg_rw_readers field is set
+   to zero by PTHREAD_RWLOCK_INITIALIZER (as are several other fields), so
+   we take zero as meaning uninitialised and non-zero meaning initialised. 
 */
 static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
 {
    int          res, i;
    vg_rwlock_t* vg_rwl;
+   vg_pthread_rwlock_t* vg_orig;
+   
    res = __pthread_mutex_lock(&rw_remap_mx);
    my_assert(res == 0);
 
@@ -2688,10 +2819,11 @@ static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
    vg_rwl = &rw_remap_new[i];
 
    /* Initialise the shadow, if required. */
-   if (orig->__rw_readers == 0) {
-      orig->__rw_readers = 1;
+   CONVERT(rwlock, orig, vg_orig);
+   if (vg_orig->__vg_rw_readers == 0) {
+      vg_orig->__vg_rw_readers = 1;
       init_vg_rwlock(vg_rwl);
-      if (orig->__rw_kind == PTHREAD_RWLOCK_PREFER_READER_NP)
+      if (vg_orig->__vg_rw_kind == PTHREAD_RWLOCK_PREFER_READER_NP)
          vg_rwl->prefer_w = 0;
    }
 
@@ -2703,14 +2835,19 @@ int pthread_rwlock_init ( pthread_rwlock_t* orig,
                           const pthread_rwlockattr_t* attr )
 {
    vg_rwlock_t* rwl;
+   vg_pthread_rwlock_t* vg_orig;
+   vg_pthread_rwlockattr_t* vg_attr;
+   CONVERT(rwlock, orig, vg_orig);
+   CONVERT(rwlockattr, attr, vg_attr);
+
    if (0) printf ("pthread_rwlock_init\n");
    /* Force the remapper to initialise the shadow. */
-   orig->__rw_readers = 0;
+   vg_orig->__vg_rw_readers = 0;
    /* Install the lock preference; the remapper needs to know it. */
-   orig->__rw_kind = PTHREAD_RWLOCK_DEFAULT_NP;
-   if (attr)
-      orig->__rw_kind = attr->__lockkind;
-   rwl = rw_remap ( orig );
+   vg_orig->__vg_rw_kind = PTHREAD_RWLOCK_DEFAULT_NP;
+   if (vg_attr)
+      vg_orig->__vg_rw_kind = vg_attr->__vg_lockkind;
+   rwl = rw_remap ( (pthread_rwlock_t*)vg_orig );
    return 0;
 }
 
@@ -2728,6 +2865,7 @@ int pthread_rwlock_rdlock ( pthread_rwlock_t* orig )
 {
    int res;
    vg_rwlock_t* rwl;
+
    if (0) printf ("pthread_rwlock_rdlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
@@ -2761,6 +2899,7 @@ int pthread_rwlock_tryrdlock ( pthread_rwlock_t* orig )
 {
    int res;
    vg_rwlock_t* rwl;
+
    if (0) printf ("pthread_rwlock_tryrdlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
@@ -2798,6 +2937,7 @@ int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
 {
    int res;
    vg_rwlock_t* rwl;
+
    if (0) printf ("pthread_rwlock_wrlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
@@ -2959,10 +3099,11 @@ int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
 int
 pthread_rwlockattr_init (pthread_rwlockattr_t *attr)
 {
-  attr->__lockkind = 0;
-  attr->__pshared = PTHREAD_PROCESS_PRIVATE;
-
-  return 0;
+   vg_pthread_rwlockattr_t* vg_attr;
+   CONVERT(rwlockattr, attr, vg_attr);
+   vg_attr->__vg_lockkind = 0;
+   vg_attr->__vg_pshared = PTHREAD_PROCESS_PRIVATE;
+   return 0;
 }
 
 /* Copied directly from LinuxThreads. */
@@ -2976,16 +3117,19 @@ pthread_rwlockattr_destroy (pthread_rwlockattr_t *attr)
 int
 pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attr, int pshared)
 {
-  if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
-    return EINVAL;
+   vg_pthread_rwlockattr_t* vg_attr;
+   CONVERT(rwlockattr, attr, vg_attr);
 
-  /* For now it is not possible to shared a conditional variable.  */
-  if (pshared != PTHREAD_PROCESS_PRIVATE)
-    return ENOSYS;
+   if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
+      return EINVAL;
 
-  attr->__pshared = pshared;
+   /* For now it is not possible to shared a conditional variable.  */
+   if (pshared != PTHREAD_PROCESS_PRIVATE)
+      return ENOSYS;
 
-  return 0;
+   vg_attr->__vg_pshared = pshared;
+
+   return 0;
 }
 
 

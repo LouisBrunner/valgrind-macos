@@ -644,6 +644,41 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 
 
 /* ---------------------------------------------------------------------
+   Exports of vg_libpthread.c
+   ------------------------------------------------------------------ */
+
+/* Replacements for pthread types, shared between vg_libpthread.c and
+   vg_scheduler.c.  See comment in vg_libpthread.c above the other
+   vg_pthread_*_t types for a description of how these are used. */
+
+struct _vg_pthread_fastlock
+{
+   long int __vg_status;   /* "Free" or "taken" or head of waiting list */
+   int __vg_spinlock;      /* Used by compare_and_swap emulation. Also,
+                           adaptive SMP lock stores spin count here. */
+};
+
+typedef struct
+{
+   int __vg_m_reserved;               /* Reserved for future use */
+   int __vg_m_count;                  /* Depth of recursive locking */
+   /*_pthread_descr*/ void* __vg_m_owner;       /* Owner thread (if recursive or errcheck) */
+   int __vg_m_kind;                   /* Mutex kind: fast, recursive or errcheck */
+   struct _vg_pthread_fastlock __vg_m_lock; /* Underlying fast lock */
+}  vg_pthread_mutex_t;
+
+typedef struct
+{
+  struct _vg_pthread_fastlock __vg_c_lock; /* Protect against concurrent access */
+  /*_pthread_descr*/ void* __vg_c_waiting;        /* Threads waiting on this condition */
+  // Padding ensures the size is 48 bytes
+  char __vg_padding[48 - sizeof(struct _vg_pthread_fastlock)
+         - sizeof(void*) - sizeof(long long)];
+  long long __vg_align;
+} vg_pthread_cond_t;
+
+
+/* ---------------------------------------------------------------------
    Exports of vg_scheduler.c
    ------------------------------------------------------------------ */
 
@@ -702,7 +737,7 @@ typedef
       When .status == WaitCV, points to the mutex associated with
       the condition variable indicated by the .associated_cv field.
       In all other cases, should be NULL. */
-   void* /*pthread_mutex_t* */ associated_mx;
+   vg_pthread_mutex_t* associated_mx;
 
    /* When .status == WaitCV, points to the condition variable I am
       waiting for.  In all other cases, should be NULL. */
@@ -980,6 +1015,7 @@ extern Int     VG_(longjmpd_on_signal);
    before Valgrind starts and then releases it afterwards, we can work
    out what's happening. */
 #define VG_PTHREAD_PREHISTORY		0x80000000
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_signals.c

@@ -35,7 +35,6 @@
 
 /* TODO:
    SBB reg with itself
-   is Iop_Neg* used?
    MOVAPS fix (vg_to_ucode rev 1.143)
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
@@ -593,7 +592,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
-           || op8 == Iop_Not8 || op8 == Iop_Neg8 );
+           || op8 == Iop_Not8 );
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
 }

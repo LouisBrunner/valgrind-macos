@@ -180,7 +180,6 @@ typedef
       Iop_CmpNE8,  Iop_CmpNE16,  Iop_CmpNE32,  Iop_CmpNE64,
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
-      Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
       /* Widening multiplies */
       Iop_MullS8, Iop_MullS16, Iop_MullS32,
       Iop_MullU8, Iop_MullU16, Iop_MullU32,
@@ -222,8 +221,6 @@ typedef
       Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */
       Iop_Not1,   /* :: Ity_Bit -> Ity_Bit */
-      Iop_Or1,    /* :: Ity_Bit, Ity_Bit -> Ity_Bit */
-      Iop_And1,   /* :: Ity_Bit, Ity_Bit -> Ity_Bit */
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */

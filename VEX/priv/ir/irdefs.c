@@ -127,8 +127,6 @@ void ppIROp ( IROp op )
          str = "CmpEQ"; base = Iop_CmpEQ8; break;
       case Iop_CmpNE8 ... Iop_CmpNE64:
          str = "CmpNE"; base = Iop_CmpNE8; break;
-      case Iop_Neg8 ... Iop_Neg64:
-         str = "Neg"; base = Iop_Neg8; break;
       case Iop_Not8 ... Iop_Not64:
          str = "Not"; base = Iop_Not8; break;
       /* other cases must explicitly "return;" */
@@ -142,8 +140,6 @@ void ppIROp ( IROp op )
       case Iop_32Uto64:  vex_printf("32Uto64"); return;
       case Iop_32to8:    vex_printf("32to8");   return;
 
-      case Iop_And1:     vex_printf("And1");    return;
-      case Iop_Or1:      vex_printf("Or1");     return;
       case Iop_Not1:     vex_printf("Not1");    return;
       case Iop_32to1:    vex_printf("32to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
@@ -968,14 +964,10 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
          BINARY(Ity_I64,Ity_I64,Ity_I8);
 
-      case Iop_Not8: case Iop_Neg8:
-         UNARY(Ity_I8,Ity_I8);
-      case Iop_Not16: case Iop_Neg16:
-         UNARY(Ity_I16,Ity_I16);
-      case Iop_Not32: case Iop_Neg32:
-         UNARY(Ity_I32,Ity_I32);
-      case Iop_Not64: case Iop_Neg64:
-         UNARY(Ity_I64,Ity_I64);
+      case Iop_Not8:   UNARY(Ity_I8,Ity_I8);
+      case Iop_Not16:  UNARY(Ity_I16,Ity_I16);
+      case Iop_Not32:  UNARY(Ity_I32,Ity_I32);
+      case Iop_Not64:  UNARY(Ity_I64,Ity_I64);
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
          COMPARISON(Ity_I8);
@@ -1016,8 +1008,6 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32HLto64:
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
-      case Iop_And1:
-      case Iop_Or1:    BINARY(Ity_Bit,Ity_Bit,Ity_Bit);
       case Iop_Not1:   UNARY(Ity_Bit,Ity_Bit);
       case Iop_1Uto8:  UNARY(Ity_I8,Ity_Bit);
       case Iop_1Sto8:  UNARY(Ity_I8,Ity_Bit);

@@ -317,6 +317,7 @@ AC_OUTPUT(
    tests/vg_regtest 
    tests/unused/Makefile 
    include/Makefile 
+   auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 
    coregrind/docs/Makefile

@@ -10,6 +10,38 @@
 
 #define STKSZ   (64*1024)
 
+//-------------------------------------------------------------------
+// Test foreach_map()
+//-------------------------------------------------------------------
+
+static int x;
+
+static int f(char *start, char *end, const char *perm, off_t off,
+             int maj, int min, int ino, void* dummy) {
+   // Just do some nonsense action with each of the values so that Memcheck
+   // checks that they are valid.
+   x = ( start == 0 ? 0 : 1 );
+   x = ( end   == 0 ? 0 : 1 );
+   x = ( perm  == 0 ? 0 : 1 );
+   x = ( off   == 0 ? 0 : 1 );
+   x = ( maj   == 0 ? 0 : 1 );
+   x = ( min   == 0 ? 0 : 1 );
+   x = ( ino   == 0 ? 0 : 1 );
+   x = ( dummy == 0 ? 0 : 1 );
+
+   return /*True*/1;
+}  
+
+static void test__foreach_map(void)
+{
+   fprintf(stderr, "Calling foreach_map()\n");
+   foreach_map(f, /*dummy*/NULL);
+}
+
+//-------------------------------------------------------------------
+// Test do_exec()
+//-------------------------------------------------------------------
+
 static void push_auxv(unsigned char **espp, int type, void *val)
 {
         struct ume_auxv *auxp = (struct ume_auxv *)*espp;
@@ -26,8 +58,7 @@ static void push(unsigned char **espp, void *v)
         *espp = (unsigned char *)vp;
 }
 
-
-int main(void)
+static void test__do_exec(void)
 {
    struct exeinfo info;
    int err;
@@ -39,6 +70,7 @@ int main(void)
    info.exe_end  = 0x50ffffff;
    info.map_base = 0x51000000;
    
+   fprintf(stderr, "Calling do_exec(\"hello\")\n");
    err = do_exec("hello", &info);
    assert(0 == err);
 
@@ -71,5 +103,13 @@ int main(void)
 
    jmp_with_stack(info.init_eip, (addr_t)esp);
 
+   assert(0);  // UNREACHABLE
+}
+
+int main(void)
+{
+   test__foreach_map();
+   test__do_exec();
+   
    return 0;
 }

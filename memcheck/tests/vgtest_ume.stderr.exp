@@ -1,1 +1,3 @@
+Calling foreach_map()
+Calling do_exec("hello")
 Hello, world!

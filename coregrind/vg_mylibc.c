@@ -1026,7 +1026,7 @@ static Int recDepth;
 
 static Bool string_match_wrk ( Char* pat, Char* str )
 {
-   vg_assert(recDepth >= 0 && recDepth < 250);
+   vg_assert(recDepth >= 0 && recDepth < 500);
    recDepth++;
    for (;;) {
       switch (*pat) {

@@ -243,15 +243,6 @@ static IRAtom* assignNew ( MCEnv* mce, IRType ty, IRExpr* e ) {
    return mkexpr(t);
 }
 
-/* Perhaps we should invent Iop_Not128. */
-static IRAtom* mkNot128 ( MCEnv* mce, IRAtom* e )
-{
-   IRAtom* at;
-   at = assignNew(mce, Ity_V128, mkV128(0xFFFF));
-   at = assignNew(mce, Ity_V128, binop(Iop_Xor128, e, at));
-   return at;
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Constructing definedness primitive ops               ---*/
@@ -323,9 +314,10 @@ static IRAtom* mkUifU128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
 
 static IRAtom* mkUifU ( MCEnv* mce, IRType vty,  IRAtom* a1, IRAtom* a2 ) {
    switch (vty) {
-      case Ity_I16: return mkUifU16(mce, a1, a2);
-      case Ity_I32: return mkUifU32(mce, a1, a2);
-      case Ity_I64: return mkUifU64(mce, a1, a2);
+      case Ity_I16:  return mkUifU16(mce, a1, a2);
+      case Ity_I32:  return mkUifU32(mce, a1, a2);
+      case Ity_I64:  return mkUifU64(mce, a1, a2);
+      case Ity_V128: return mkUifU128(mce, a1, a2);
       default:
          VG_(printf)("\n"); ppIRType(vty); VG_(printf)("\n");
          VG_(tool_panic)("memcheck:mkUifU");
@@ -468,7 +460,7 @@ static IRAtom* mkImproveOR128 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
    return assignNew(
              mce, Ity_V128, 
              binop(Iop_Or128, 
-                   assignNew(mce, Ity_V128, mkNot128(mce, data)), 
+                   assignNew(mce, Ity_V128, unop(Iop_Not128, data)), 
                    vbits) );
 }
 
@@ -515,6 +507,10 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
          return assignNew(mce, Ity_I32, unop(Iop_1Sto32, tmp1));
       case Ity_I64: 
          return assignNew(mce, Ity_I64, unop(Iop_1Sto64, tmp1));
+      case Ity_V128:
+         tmp1 = assignNew(mce, Ity_I64,  unop(Iop_1Sto64, tmp1));
+         tmp1 = assignNew(mce, Ity_V128, binop(Iop_64HLto128, tmp1, tmp1));
+         return tmp1;
       default: 
          ppIRType(dst_ty);
          VG_(tool_panic)("mkPCastTo(2)");
@@ -888,6 +884,29 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
 /*--- Helpers for dealing with vector primops.            ---*/
 /*------------------------------------------------------------*/
 
+/* Vector pessimisation -- pessimise within each lane individually. */
+
+static IRAtom* mkPCast8x16 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ8x16, at));
+}
+
+static IRAtom* mkPCast16x8 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ16x8, at));
+}
+
+static IRAtom* mkPCast32x4 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ32x4, at));
+}
+
+static IRAtom* mkPCast64x2 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
+}
+
+
 /* Here's a simple scheme capable of handling ops derived from SSE1
    code and while only generating ops that can be efficiently
    implemented in SSE1. */
@@ -931,7 +950,7 @@ IRAtom* binary32Fx4 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
    tl_assert(isShadowAtom(mce, vatomX));
    tl_assert(isShadowAtom(mce, vatomY));
    at = mkUifU128(mce, vatomX, vatomY);
-   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ32x4, at));
+   at = assignNew(mce, Ity_V128, mkPCast32x4(mce, at));
    return at;
 }
 
@@ -940,7 +959,7 @@ IRAtom* unary32Fx4 ( MCEnv* mce, IRAtom* vatomX )
 {
    IRAtom* at;
    tl_assert(isShadowAtom(mce, vatomX));
-   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ32x4, vatomX));
+   at = assignNew(mce, Ity_V128, mkPCast32x4(mce, vatomX));
    return at;
 }
 
@@ -977,7 +996,7 @@ IRAtom* binary64Fx2 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
    tl_assert(isShadowAtom(mce, vatomX));
    tl_assert(isShadowAtom(mce, vatomY));
    at = mkUifU128(mce, vatomX, vatomY);
-   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
+   at = assignNew(mce, Ity_V128, mkPCast64x2(mce, at));
    return at;
 }
 
@@ -986,7 +1005,7 @@ IRAtom* unary64Fx2 ( MCEnv* mce, IRAtom* vatomX )
 {
    IRAtom* at;
    tl_assert(isShadowAtom(mce, vatomX));
-   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, vatomX));
+   at = assignNew(mce, Ity_V128, mkPCast64x2(mce, vatomX));
    return at;
 }
 
@@ -1014,6 +1033,93 @@ IRAtom* unary64F0x2 ( MCEnv* mce, IRAtom* vatomX )
    return at;
 }
 
+/* --- --- Vector saturated narrowing --- --- */
+
+/* This is quite subtle.  What to do is simple:
+
+   Let the original narrowing op be QNarrowW{S,U}xN.  Produce:
+
+      the-narrowing-op( PCastWxN(vatom1), PCastWxN(vatom2))
+
+   Why this is right is not so simple.  Consider a lane in the args,
+   vatom1 or 2, doesn't matter.
+
+   After the PCast, that lane is all 0s (defined) or all
+   1s(undefined).
+
+   Both signed and unsigned saturating narrowing of all 0s produces
+   all 0s, which is what we want.
+
+   The all-1s case is more complex.  Unsigned narrowing interprets an
+   all-1s input as the largest unsigned integer, and so produces all
+   1s as a result since that is the largest unsigned value at the
+   smaller width.
+
+   Signed narrowing interprets all 1s as -1.  Fortunately, -1 narrows
+   to -1, so we still wind up with all 1s at the smaller width.
+
+   So: In short, pessimise the args, then apply the original narrowing
+   op.
+*/
+static
+IRAtom* vectorNarrow128 ( MCEnv* mce, IROp narrow_op, 
+                          IRAtom* vatom1, IRAtom* vatom2)
+{
+   IRAtom *at1, *at2, *at3;
+   IRAtom* (*pcast)( MCEnv*, IRAtom* );
+   switch (narrow_op) {
+      case Iop_QNarrow32Sx4: pcast = mkPCast32x4; break;
+      case Iop_QNarrow16Sx8: pcast = mkPCast16x8; break;
+      case Iop_QNarrow16Ux8: pcast = mkPCast16x8; break;
+      default: VG_(tool_panic)("vectorNarrow128");
+   }
+   tl_assert(isShadowAtom(mce,vatom1));
+   tl_assert(isShadowAtom(mce,vatom2));
+   at1 = assignNew(mce, Ity_V128, pcast(mce, vatom1));
+   at2 = assignNew(mce, Ity_V128, pcast(mce, vatom2));
+   at3 = assignNew(mce, Ity_V128, binop(narrow_op, at1, at2));
+   return at3;
+}
+
+
+/* --- --- Vector integer arithmetic --- --- */
+
+/* Simple ... UifU the args and per-lane pessimise the results. */
+static
+IRAtom* binary8Ix16 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU128(mce, vatom1, vatom2);
+   at = mkPCast8x16(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary16Ix8 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU128(mce, vatom1, vatom2);
+   at = mkPCast16x8(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary32Ix4 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU128(mce, vatom1, vatom2);
+   at = mkPCast32x4(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary64Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU128(mce, vatom1, vatom2);
+   at = mkPCast64x2(mce, at);
+   return at;   
+}
 
 
 /*------------------------------------------------------------*/
@@ -1042,6 +1148,62 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    switch (op) {
 
       /* 128-bit SIMD (SSE2-esque) */
+
+      case Iop_ShrN16x8:
+      case Iop_ShrN32x4:
+      case Iop_ShrN64x2:
+      case Iop_SarN16x8:
+      case Iop_SarN32x4:
+      case Iop_ShlN16x8:
+      case Iop_ShlN32x4:
+      case Iop_ShlN64x2:
+         /* Same scheme as with all other shifts. */
+         complainIfUndefined(mce, atom2);
+         return assignNew(mce, Ity_V128, binop(op, vatom1, atom2));
+
+      case Iop_QSub8Ux16:
+      case Iop_QSub8Sx16:
+      case Iop_Sub8x16:
+      case Iop_Min8Ux16:
+      case Iop_Max8Ux16:
+      case Iop_CmpGT8Sx16:
+      case Iop_CmpEQ8x16:
+      case Iop_Avg8Ux16:
+      case Iop_QAdd8Ux16:
+      case Iop_QAdd8Sx16:
+      case Iop_Add8x16:
+         return binary8Ix16(mce, vatom1, vatom2);
+
+      case Iop_QSub16Ux8:
+      case Iop_QSub16Sx8:
+      case Iop_Sub16x8:
+      case Iop_Mul16x8:
+      case Iop_MulHi16Sx8:
+      case Iop_MulHi16Ux8:
+      case Iop_Min16Sx8:
+      case Iop_Max16Sx8:
+      case Iop_CmpGT16Sx8:
+      case Iop_CmpEQ16x8:
+      case Iop_Avg16Ux8:
+      case Iop_QAdd16Ux8:
+      case Iop_QAdd16Sx8:
+      case Iop_Add16x8:
+         return binary16Ix8(mce, vatom1, vatom2);
+
+      case Iop_Sub32x4:
+      case Iop_CmpGT32Sx4:
+      case Iop_CmpEQ32x4:
+      case Iop_Add32x4:
+         return binary32Ix4(mce, vatom1, vatom2);
+
+      case Iop_Sub64x2:
+      case Iop_Add64x2:
+         return binary64Ix2(mce, vatom1, vatom2);
+
+      case Iop_QNarrow32Sx4:
+      case Iop_QNarrow16Sx8:
+      case Iop_QNarrow16Ux8:
+         return vectorNarrow128(mce, op, vatom1, vatom2);
 
       case Iop_Sub64Fx2:
       case Iop_Mul64Fx2:
@@ -1089,11 +1251,18 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add32F0x4:
          return binary32F0x4(mce, vatom1, vatom2);      
 
+      /* 128-bit data-steering */
       case Iop_Set128lo32:
       case Iop_Set128lo64:
-         return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
-
       case Iop_64HLto128:
+      case Iop_InterleaveLO64x2:
+      case Iop_InterleaveLO32x4:
+      case Iop_InterleaveLO16x8:
+      case Iop_InterleaveLO8x16:
+      case Iop_InterleaveHI64x2:
+      case Iop_InterleaveHI32x4:
+      case Iop_InterleaveHI16x8:
+      case Iop_InterleaveHI8x16:
          return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
 
       /* Scalar floating point */
@@ -1344,6 +1513,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:
       case Iop_ReinterpI32asF32:
+      case Iop_Not128:
       case Iop_Not64:
       case Iop_Not32:
       case Iop_Not16:

@@ -131,19 +131,20 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_ADD(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, res;						\
-   argL = CC_DEP1;						\
-   argR = CC_DEP2;						\
-   res  = argL + argR;						\
-   cf = (DATA_UTYPE)res < (DATA_UTYPE)argL;			\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
-               12 - DATA_BITS) & CC_MASK_O;			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, res;					\
+     argL = CC_DEP1;						\
+     argR = CC_DEP2;						\
+     res  = argL + argR;					\
+     cf = (DATA_UTYPE)res < (DATA_UTYPE)argL;			\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
+                 12 - DATA_BITS) & CC_MASK_O;			\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -151,19 +152,20 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_SUB(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, res;						\
-   argL = CC_DEP1;						\
-   argR = CC_DEP2;						\
-   res  = argL - argR;						\
-   cf = (DATA_UTYPE)argL < (DATA_UTYPE)argR;			\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = lshift((argL ^ argR) & (argL ^ res),	 		\
-               12 - DATA_BITS) & CC_MASK_O; 			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, res;					\
+     argL = CC_DEP1;						\
+     argR = CC_DEP2;						\
+     res  = argL - argR;					\
+     cf = (DATA_UTYPE)argL < (DATA_UTYPE)argR;			\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = lshift((argL ^ argR) & (argL ^ res),	 		\
+                 12 - DATA_BITS) & CC_MASK_O; 			\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -171,23 +173,24 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_ADC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, oldC, res;		       			\
-   oldC = CC_NDEP & CC_MASK_C;					\
-   argL = CC_DEP1;						\
-   argR = CC_DEP2 ^ oldC;	       				\
-   res  = (argL + argR) + oldC;					\
-   if (oldC)							\
-      cf = (DATA_UTYPE)res <= (DATA_UTYPE)argL;			\
-   else								\
-      cf = (DATA_UTYPE)res < (DATA_UTYPE)argL;			\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
-                12 - DATA_BITS) & CC_MASK_O;			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, oldC, res;		       			\
+     oldC = CC_NDEP & CC_MASK_C;				\
+     argL = CC_DEP1;						\
+     argR = CC_DEP2 ^ oldC;	       				\
+     res  = (argL + argR) + oldC;				\
+     if (oldC)							\
+        cf = (DATA_UTYPE)res <= (DATA_UTYPE)argL;		\
+     else							\
+        cf = (DATA_UTYPE)res < (DATA_UTYPE)argL;		\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
+                  12 - DATA_BITS) & CC_MASK_O;			\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -195,23 +198,24 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_SBB(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, oldC, res;		       			\
-   oldC = CC_NDEP & CC_MASK_C;					\
-   argL = CC_DEP1;						\
-   argR = CC_DEP2 ^ oldC;	       				\
-   res  = (argL - argR) - oldC;					\
-   if (oldC)							\
-      cf = (DATA_UTYPE)argL <= (DATA_UTYPE)argR;		\
-   else								\
-      cf = (DATA_UTYPE)argL < (DATA_UTYPE)argR;			\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = lshift((argL ^ argR) & (argL ^ res), 			\
-               12 - DATA_BITS) & CC_MASK_O;			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, oldC, res;		       			\
+     oldC = CC_NDEP & CC_MASK_C;				\
+     argL = CC_DEP1;						\
+     argR = CC_DEP2 ^ oldC;	       				\
+     res  = (argL - argR) - oldC;				\
+     if (oldC)							\
+        cf = (DATA_UTYPE)argL <= (DATA_UTYPE)argR;		\
+     else							\
+        cf = (DATA_UTYPE)argL < (DATA_UTYPE)argR;		\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = lshift((argL ^ argR) & (argL ^ res), 			\
+                 12 - DATA_BITS) & CC_MASK_O;			\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -219,14 +223,15 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_LOGIC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   cf = 0;							\
-   pf = parity_table[(UChar)CC_DEP1];				\
-   af = 0;							\
-   zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
-   sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;			\
-   of = 0;							\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     cf = 0;							\
+     pf = parity_table[(UChar)CC_DEP1];				\
+     af = 0;							\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     of = 0;							\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -234,18 +239,19 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_INC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, res;						\
-   res  = CC_DEP1;						\
-   argL = res - 1;						\
-   argR = 1;							\
-   cf = CC_NDEP & CC_MASK_C;					\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = ((res & DATA_MASK) == SIGN_MASK) << 11;			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, res;					\
+     res  = CC_DEP1;						\
+     argL = res - 1;						\
+     argR = 1;							\
+     cf = CC_NDEP & CC_MASK_C;					\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = ((res & DATA_MASK) == SIGN_MASK) << 11;		\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -253,19 +259,20 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_DEC(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   Int argL, argR, res;						\
-   res  = CC_DEP1;						\
-   argL = res + 1;						\
-   argR = 1;							\
-   cf = CC_NDEP & CC_MASK_C;					\
-   pf = parity_table[(UChar)res];				\
-   af = (res ^ argL ^ argR) & 0x10;				\
-   zf = ((DATA_UTYPE)res == 0) << 6;				\
-   sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-   of = ((res & DATA_MASK) 					\
-        == ((UInt)SIGN_MASK - 1)) << 11;			\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, res;					\
+     res  = CC_DEP1;						\
+     argL = res + 1;						\
+     argR = 1;							\
+     cf = CC_NDEP & CC_MASK_C;					\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((DATA_UTYPE)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = ((res & DATA_MASK) 					\
+          == ((UInt)SIGN_MASK - 1)) << 11;			\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -273,15 +280,16 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_SHL(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int cf, pf, af, zf, sf, of;					\
-   cf = (CC_DEP2 >> (DATA_BITS - 1)) & CC_MASK_C;		\
-   pf = parity_table[(UChar)CC_DEP1];				\
-   af = 0; /* undefined */					\
-   zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
-   sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;			\
-   /* of is defined if shift count == 1 */			\
-   of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;	\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     cf = (CC_DEP2 >> (DATA_BITS - 1)) & CC_MASK_C;		\
+     pf = parity_table[(UChar)CC_DEP1];				\
+     af = 0; /* undefined */					\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     /* of is defined if shift count == 1 */			\
+     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -289,15 +297,16 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_SHR(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);  					\
-   Int cf, pf, af, zf, sf, of;					\
-   cf = CC_DEP2 & 1;						\
-   pf = parity_table[(UChar)CC_DEP1];				\
-   af = 0; /* undefined */					\
-   zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
-   sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;			\
-   /* of is defined if shift count == 1 */			\
-   of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;	\
-   return cf | pf | af | zf | sf | of;				\
+   { Int cf, pf, af, zf, sf, of;				\
+     cf = CC_DEP2 & 1;						\
+     pf = parity_table[(UChar)CC_DEP1];				\
+     af = 0; /* undefined */					\
+     zf = ((DATA_UTYPE)CC_DEP1 == 0) << 6;			\
+     sf = lshift(CC_DEP1, 8 - DATA_BITS) & 0x80;		\
+     /* of is defined if shift count == 1 */			\
+     of = lshift(CC_DEP2 ^ CC_DEP1, 12 - DATA_BITS) & CC_MASK_O;\
+     return cf | pf | af | zf | sf | of;			\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -307,12 +316,13 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_ROL(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int fl 							\
-      = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
-        | (CC_MASK_C & CC_DEP1)					\
-        | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
-                   ^ lshift(CC_DEP1, 11)));			\
-   return fl;							\
+   { Int fl 							\
+        = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
+          | (CC_MASK_C & CC_DEP1)				\
+          | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
+                     ^ lshift(CC_DEP1, 11)));			\
+     return fl;							\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -322,12 +332,13 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_ROR(DATA_BITS,DATA_UTYPE)			\
 {								\
    PREAMBLE(DATA_BITS);						\
-   Int fl 							\
-      = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
-        | (CC_MASK_C & (CC_DEP1 >> (DATA_BITS-1)))		\
-        | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
-                   ^ lshift(CC_DEP1, 11-(DATA_BITS-1)+1)));	\
-   return fl;							\
+   { Int fl 							\
+        = (CC_NDEP & ~(CC_MASK_O | CC_MASK_C))			\
+          | (CC_MASK_C & (CC_DEP1 >> (DATA_BITS-1)))		\
+          | (CC_MASK_O & (lshift(CC_DEP1, 11-(DATA_BITS-1)) 	\
+                     ^ lshift(CC_DEP1, 11-(DATA_BITS-1)+1)));	\
+     return fl;							\
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -335,20 +346,21 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_UMUL(DATA_BITS,DATA_UTYPE,DATA_U2TYPE)          \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
-   Int cf, pf, af, zf, sf, of;                                  \
-   DATA_UTYPE  hi;                                              \
-   DATA_UTYPE  lo = ((DATA_UTYPE)CC_DEP1)                       \
-                    * ((DATA_UTYPE)CC_DEP2);                    \
-   DATA_U2TYPE rr = ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))        \
-                    * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2));     \
-   hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);                     \
-   cf = (hi != 0);                                              \
-   pf = parity_table[(UChar)lo];                                \
-   af = 0; /* undefined */                                      \
-   zf = (lo == 0) << 6;                                         \
-   sf = lshift(lo, 8 - DATA_BITS) & 0x80;                       \
-   of = cf << 11;                                               \
-   return cf | pf | af | zf | sf | of;                          \
+   { Int cf, pf, af, zf, sf, of;                                \
+     DATA_UTYPE  hi;                                            \
+     DATA_UTYPE  lo = ((DATA_UTYPE)CC_DEP1)                     \
+                      * ((DATA_UTYPE)CC_DEP2);                  \
+     DATA_U2TYPE rr = ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))      \
+                      * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2));   \
+     hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);                   \
+     cf = (hi != 0);                                            \
+     pf = parity_table[(UChar)lo];                              \
+     af = 0; /* undefined */                                    \
+     zf = (lo == 0) << 6;                                       \
+     sf = lshift(lo, 8 - DATA_BITS) & 0x80;                     \
+     of = cf << 11;                                             \
+     return cf | pf | af | zf | sf | of;                        \
+   }								\
 }
 
 /*-------------------------------------------------------------*/
@@ -356,20 +368,21 @@ inline static Int lshift ( Int x, Int n )
 #define ACTIONS_SMUL(DATA_BITS,DATA_STYPE,DATA_S2TYPE)          \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
-   Int cf, pf, af, zf, sf, of;                                  \
-   DATA_STYPE  hi;                                              \
-   DATA_STYPE  lo = ((DATA_STYPE)CC_DEP1)                       \
-                    * ((DATA_STYPE)CC_DEP2);                    \
-   DATA_S2TYPE rr = ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))        \
-                    * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2));     \
-   hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);                     \
-   cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));                     \
-   pf = parity_table[(UChar)lo];                                \
-   af = 0; /* undefined */                                      \
-   zf = (lo == 0) << 6;                                         \
-   sf = lshift(lo, 8 - DATA_BITS) & 0x80;                       \
-   of = cf << 11;                                               \
-   return cf | pf | af | zf | sf | of;                          \
+   { Int cf, pf, af, zf, sf, of;                                \
+     DATA_STYPE  hi;                                            \
+     DATA_STYPE  lo = ((DATA_STYPE)CC_DEP1)                     \
+                      * ((DATA_STYPE)CC_DEP2);                  \
+     DATA_S2TYPE rr = ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))      \
+                      * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2));   \
+     hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);                   \
+     cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));                   \
+     pf = parity_table[(UChar)lo];                              \
+     af = 0; /* undefined */                                    \
+     zf = (lo == 0) << 6;                                       \
+     sf = lshift(lo, 8 - DATA_BITS) & 0x80;                     \
+     of = cf << 11;                                             \
+     return cf | pf | af | zf | sf | of;                        \
+   }								\
 }
 
 
@@ -2403,22 +2416,24 @@ VexGuestLayout
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
              gdefs.h on meaning of thunk fields. */
-          .alwaysDefd[0]  = ALWAYSDEFD(guest_CC_OP),
-          .alwaysDefd[1]  = ALWAYSDEFD(guest_CC_NDEP),
 
-          .alwaysDefd[2]  = ALWAYSDEFD(guest_DFLAG),
-          .alwaysDefd[3]  = ALWAYSDEFD(guest_IDFLAG),
-          .alwaysDefd[4]  = ALWAYSDEFD(guest_EIP),
-          .alwaysDefd[5]  = ALWAYSDEFD(guest_FTOP),
-          .alwaysDefd[6]  = ALWAYSDEFD(guest_FPTAG),
-          .alwaysDefd[7]  = ALWAYSDEFD(guest_FPUCW),
-          .alwaysDefd[8]  = ALWAYSDEFD(guest_FC3210),
-          .alwaysDefd[9]  = ALWAYSDEFD(guest_CS),
-          .alwaysDefd[10] = ALWAYSDEFD(guest_DS),
-          .alwaysDefd[11] = ALWAYSDEFD(guest_ES),
-          .alwaysDefd[12] = ALWAYSDEFD(guest_FS),
-          .alwaysDefd[13] = ALWAYSDEFD(guest_GS),
-          .alwaysDefd[14] = ALWAYSDEFD(guest_SS)
+          .alwaysDefd 
+             = { /*  0 */ ALWAYSDEFD(guest_CC_OP),
+                 /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
+                 /*  2 */ ALWAYSDEFD(guest_DFLAG),
+                 /*  3 */ ALWAYSDEFD(guest_IDFLAG),
+                 /*  4 */ ALWAYSDEFD(guest_EIP),
+                 /*  5 */ ALWAYSDEFD(guest_FTOP),
+                 /*  6 */ ALWAYSDEFD(guest_FPTAG),
+                 /*  7 */ ALWAYSDEFD(guest_FPUCW),
+                 /*  8 */ ALWAYSDEFD(guest_FC3210),
+                 /*  9 */ ALWAYSDEFD(guest_CS),
+                 /* 10 */ ALWAYSDEFD(guest_DS),
+                 /* 11 */ ALWAYSDEFD(guest_ES),
+                 /* 12 */ ALWAYSDEFD(guest_FS),
+                 /* 13 */ ALWAYSDEFD(guest_GS),
+	         /* 14 */ ALWAYSDEFD(guest_SS) 
+               }
         };
 
 

@@ -1539,9 +1539,9 @@ extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 extern const Addr vga_sys_before, vga_sys_restarted,
                   vga_sys_after, vga_sys_done;
 
-extern void VGA_(restart_syscall)(arch_thread_t* tst);
+extern void VGA_(restart_syscall)(arch_thread_t* arch);
 
-extern void VGA_(thread_syscall)(Int syscallno, ThreadState* tst, 
+extern void VGA_(thread_syscall)(Int syscallno, arch_thread_t* arch, 
                                  enum PXState* state, enum PXState poststate);
 
 /* ---------------------------------------------------------------------

@@ -130,27 +130,27 @@ asm(
    Assumes that the only thread state which matters is the contents of
    %eax-%ebp and the return value in %eax.
  */
-void VGA_(thread_syscall)(Int syscallno, ThreadState *tst, 
+void VGA_(thread_syscall)(Int syscallno, arch_thread_t *arch, 
                           enum PXState *state , enum PXState poststate)
 {
-   do_thread_syscall(syscallno,   /* syscall no. */
-		     tst->arch.m_ebx,  /* arg 1 */
-		     tst->arch.m_ecx,  /* arg 2 */
-		     tst->arch.m_edx,  /* arg 3 */
-		     tst->arch.m_esi,  /* arg 4 */
-		     tst->arch.m_edi,  /* arg 5 */
-		     tst->arch.m_ebp,  /* arg 6 */
-		     &tst->arch.m_eax, /* result */
-		     state,	  /* state to update */
-		     poststate);  /* state when syscall has finished */
+   do_thread_syscall(syscallno,    // syscall no.
+		     arch->m_ebx,  // arg 1
+		     arch->m_ecx,  // arg 2
+		     arch->m_edx,  // arg 3
+		     arch->m_esi,  // arg 4
+		     arch->m_edi,  // arg 5
+		     arch->m_ebp,  // arg 6
+		     &arch->m_eax, // result
+		     state,	   // state to update
+		     poststate);   // state when syscall has finished
 }
 
 
 
 // Back up to restart a system call.
-void VGA_(restart_syscall)(arch_thread_t *tst)
+void VGA_(restart_syscall)(arch_thread_t *arch)
 {
-   tst->m_eip -= 2;             // sizeof(int $0x80)
+   arch->m_eip -= 2;             // sizeof(int $0x80)
 
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.
@@ -158,12 +158,12 @@ void VGA_(restart_syscall)(arch_thread_t *tst)
       int $0x80 == CD 80 
    */
    {
-      UChar *p = (UChar *)tst->m_eip;
+      UChar *p = (UChar *)arch->m_eip;
       
       if (p[0] != 0xcd || p[1] != 0x80)
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall at %p %02x %02x\n",
-                      tst->m_eip, p[0], p[1]); 
+                      arch->m_eip, p[0], p[1]); 
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
    }

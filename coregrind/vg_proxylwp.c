@@ -620,7 +620,8 @@ static Int proxylwp(void *v)
 
 	       /* ST:4 */
 	       
-	       VGA_(thread_syscall)(syscallno, tst, &px->state, PXS_SysDone);
+	       VGA_(thread_syscall)(syscallno, &tst->arch,
+                                    &px->state, PXS_SysDone);
 
 	       /* ST:5 */
 

@@ -576,7 +576,7 @@ PRE(sys_sigreturn, Special)
    VG_(poll_signals)(tid);
 
    /* placate return-must-be-set assertion */
-   SET_RESULT(0);
+   SET_RESULT(RES);
 }
 
 PRE(sys_modify_ldt, Special)

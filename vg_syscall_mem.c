@@ -1963,6 +1963,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                break;
 #           endif /* GLIBC_2_1 */
 
+#           ifdef BLKGETSIZE
+            case BLKGETSIZE:
+               must_be_writable(tst, "ioctl(BLKGETSIZE)", arg3,
+                                sizeof(unsigned long));
+               KERNEL_DO_SYSCALL(tid,res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable (arg3, sizeof(unsigned long));
+               break;
+#           endif /* BLKGETSIZE */
+
             /* CD ROM stuff (??)  */
             case CDROMSUBCHNL:
                 must_be_readable(tst, "ioctl(CDROMSUBCHNL (cdsc_format, char))",

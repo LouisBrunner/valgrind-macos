@@ -299,6 +299,28 @@ UInt run_thread_for_a_while ( ThreadId tid )
    /* Even more paranoia.  Check that what we have matches
       Vex's guest state layout requirements. */
 
+/* switch-back stuff (doesn't really work) */
+#if 0
+{
+  static Int nn =0;
+  dispatch_ctr_SAVED = VG_(dispatch_ctr)=2;
+  VG_(printf)("just prior to bb %d\n",nn++);
+  extern void switchback ( VexGuestAMD64State*, ULong );
+  HChar* p = VG_(getenv)("LIMIT");
+  Int lim = 0;
+  // VG_(printf)("p = %p\n", p);
+  while (*p >= '0' && *p <= '9') {
+     lim = 10 * lim + (Int)(*p - '0');
+     p++;
+  }
+  //VG_(printf)("LIMIT = %d\n", lim);
+  if (nn == lim) 
+  switchback( &VG_(threads)[tid].arch.vex,
+              LibVEX_GuestAMD64_get_rflags( &VG_(threads)[tid].arch.vex ));
+}
+#endif
+/* END switch-back stuff (doesn't really work) */
+
    if (0)
    VG_(printf)("%p %d %p %d %p %d\n",
 	       (void*)a_vex, sz_vex, (void*)a_vexsh, sz_vexsh,
@@ -1080,7 +1102,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          VG_(message)(Vg_DebugMsg, "thread %d:   completed %d bbs, trc %d", 
                                    tid, done_this_time, (Int)trc );
 
-      if (1 && trc != VG_TRC_INNER_FASTMISS)
+      if (0 && trc != VG_TRC_INNER_FASTMISS)
          VG_(message)(Vg_DebugMsg, "thread %d:  %llu bbs, event %s", 
                                    tid, VG_(bbs_done),
                                    name_of_sched_event(trc) );

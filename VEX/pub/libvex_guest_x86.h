@@ -124,34 +124,34 @@
 
 typedef
    struct {
-      UInt  guest_EAX;
+      UInt  guest_EAX;         /* 0 */
       UInt  guest_ECX;
       UInt  guest_EDX;
       UInt  guest_EBX;
       UInt  guest_ESP;
       UInt  guest_EBP;
       UInt  guest_ESI;
-      UInt  guest_EDI;
+      UInt  guest_EDI;         /* 28 */
       /* 4-word thunk used to calculate O S Z A C P flags. */
-      UInt  guest_CC_OP;
+      UInt  guest_CC_OP;       /* 32 */
       UInt  guest_CC_DEP1;
       UInt  guest_CC_DEP2;
-      UInt  guest_CC_NDEP;
+      UInt  guest_CC_NDEP;     /* 44 */
       /* The D flag is stored here, encoded as either -1 or +1 */
-      UInt  guest_DFLAG;
+      UInt  guest_DFLAG;       /* 48 */
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
-      UInt  guest_IDFLAG;
+      UInt  guest_IDFLAG;      /* 52 */
       /* EIP */
-      UInt  guest_EIP;
+      UInt  guest_EIP;         /* 56 */
       /* FPU */
-      UInt  guest_FTOP;
-      ULong guest_FPREG[8];
-      UChar guest_FPTAG[8];
-      UInt  guest_FPROUND;
-      UInt  guest_FC3210;
+      UInt  guest_FTOP;        /* 60 */
+      ULong guest_FPREG[8];    /* 64 */
+      UChar guest_FPTAG[8];   /* 128 */
+      UInt  guest_FPROUND;    /* 136 */
+      UInt  guest_FC3210;     /* 140 */
       /* SSE */
-      UInt  guest_SSEROUND;
-      U128  guest_XMM0;
+      UInt  guest_SSEROUND;   /* 144 */
+      U128  guest_XMM0;       /* 148 */
       U128  guest_XMM1;
       U128  guest_XMM2;
       U128  guest_XMM3;

@@ -2450,6 +2450,33 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
    switch (e->Iex.Unop.op) {
 
+      case Iop_CmpNEZ32x4: {
+         /* sigh, we have to generate crappy code for SSE1 */
+         /* basically, the idea is: for each lane:
+               movl lane, %r ; negl %r   (now CF = lane==0 ? 0 : 1)
+               sbbl %r, %r               (now %r = 1Sto32(CF))
+               movl %r, lane
+         */
+         Int       i;
+         X86AMode* am;
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         HReg      arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg      dst  = newVRegV(env);
+         HReg      r32  = newVRegI(env);
+         sub_from_esp(env, 16);
+         addInstr(env, X86Instr_SseLdSt(False/*store*/, arg, esp0));
+         for (i = 0; i < 4; i++) {
+            am = X86AMode_IR(i*4, hregX86_ESP());
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(am), r32));
+            addInstr(env, X86Instr_Unary32(Xun_NEG, X86RM_Reg(r32)));
+            addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(r32), r32));
+            addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r32), am));
+         }
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
+         add_to_esp(env, 16);
+         return dst;
+      }
+
       case Iop_Recip32Fx4: op = Xsse_RCPF;   goto do_32Fx4_unary;
       case Iop_RSqrt32Fx4: op = Xsse_RSQRTF; goto do_32Fx4_unary;
       case Iop_Sqrt32Fx4:  op = Xsse_SQRTF;  goto do_32Fx4_unary;

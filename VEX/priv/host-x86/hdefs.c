@@ -1855,6 +1855,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                         subopc_imm = 0; opc_imma = 0x05; break;
          case Xalu_SUB: opc = 0x2B; opc_rr = 0x29; 
                         subopc_imm = 5; opc_imma = 0x2D; break;
+         case Xalu_SBB: opc = 0x1B; opc_rr = 0x19; 
+                        subopc_imm = 3; opc_imma = 0x1D; break;
          case Xalu_AND: opc = 0x23; opc_rr = 0x21; 
                         subopc_imm = 4; opc_imma = 0x25; break;
          case Xalu_XOR: opc = 0x33; opc_rr = 0x31; 

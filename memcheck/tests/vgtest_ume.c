@@ -134,7 +134,7 @@ static void test__do_exec(void)
 
 //   fprintf(stderr, "ume_go: %p %p\n", (void*)info.init_eip, (void*)esp);
 
-   jmp_with_stack(info.init_eip, (addr_t)esp);
+   jmp_with_stack(info.init_eip, (Addr)esp);
 
    assert(0);  // UNREACHABLE
 }

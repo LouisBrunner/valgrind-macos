@@ -399,9 +399,9 @@ extern char _start[];
 
 static void layout_remaining_space(Addr argc_addr, float ratio)
 {
-   Int    ires;
-   void*  vres;
-   addr_t client_size, shadow_size;
+   Int   ires;
+   void* vres;
+   Addr  client_size, shadow_size;
 
    // VG_(valgrind_base) should have been set by scan_auxv, but if not,
    // this is a workable approximation
@@ -419,7 +419,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    VG_(client_end)     = VG_(client_base) + client_size;
    /* where !FIXED mmap goes */
    VG_(client_mapbase) = VG_(client_base) +
-         PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION));
+         PGROUNDDN((Addr)(client_size * CLIENT_HEAP_PROPORTION));
 
    VG_(shadow_base)    = VG_(client_end) + REDZONE_SIZE;
    VG_(shadow_end)     = VG_(valgrind_base);
@@ -926,7 +926,7 @@ static Addr setup_client_stack(void* init_sp,
    char **cpp;
    char *strtab;		/* string table */
    char *stringbase;
-   addr_t *ptr;
+   Addr *ptr;
    struct ume_auxv *auxv;
    const struct ume_auxv *orig_auxv;
    const struct ume_auxv *cauxv;
@@ -935,7 +935,7 @@ static Addr setup_client_stack(void* init_sp,
    int argc;			/* total argc */
    int envc;			/* total number of env vars */
    unsigned stacksize;		/* total client stack size */
-   addr_t cl_esp;		/* client stack base (initial esp) */
+   Addr cl_esp;	                /* client stack base (initial esp) */
 
    /* use our own auxv as a prototype */
    orig_auxv = find_auxv(init_sp);
@@ -1021,29 +1021,29 @@ static Addr setup_client_stack(void* init_sp,
 
    /* ==================== copy client stack ==================== */
 
-   ptr = (addr_t *)cl_esp;
+   ptr = (Addr*)cl_esp;
 
    /* --- argc --- */
    *ptr++ = argc;		/* client argc */
 
    /* --- argv --- */
    if (info->interp_name) {
-      *ptr++ = (addr_t)copy_str(&strtab, info->interp_name);
+      *ptr++ = (Addr)copy_str(&strtab, info->interp_name);
       free(info->interp_name);
    }
    if (info->interp_args) {
-      *ptr++ = (addr_t)copy_str(&strtab, info->interp_args);
+      *ptr++ = (Addr)copy_str(&strtab, info->interp_args);
       free(info->interp_args);
    }
    for (cpp = orig_argv; *cpp; ptr++, cpp++) {
-      *ptr = (addr_t)copy_str(&strtab, *cpp);
+      *ptr = (Addr)copy_str(&strtab, *cpp);
    }
    *ptr++ = 0;
 
    /* --- envp --- */
    VG_(client_envp) = (Char **)ptr;
    for (cpp = orig_envp; cpp && *cpp; ptr++, cpp++)
-      *ptr = (addr_t)copy_str(&strtab, *cpp);
+      *ptr = (Addr)copy_str(&strtab, *cpp);
    *ptr++ = 0;
 
    /* --- auxv --- */

@@ -54,11 +54,8 @@ void foreach_map(int (*fn)(char *start, char *end,
 #error ELFSZ needs to ==32 or ==64
 #endif
 
-/* Integer type the same size as a pointer */
-typedef ESZ(Addr) addr_t;
-
 // Jump to a new 'ip' with the stack 'sp'.
-void jmp_with_stack(addr_t ip, addr_t sp) __attribute__((noreturn));
+void jmp_with_stack(Addr ip, Addr sp) __attribute__((noreturn));
 
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/
@@ -68,18 +65,18 @@ void jmp_with_stack(addr_t ip, addr_t sp) __attribute__((noreturn));
 // inputs/outputs of do_exec().
 struct exeinfo
 {
-   addr_t map_base;     // IN: if non-zero, base address of mappings
+   Addr map_base;       // IN: if non-zero, base address of mappings
    char** argv;         // IN: the original argv
 
-   addr_t exe_base;     // INOUT: lowest (allowed) address of exe
-   addr_t exe_end;      // INOUT: highest (allowed) address
+   Addr exe_base;       // INOUT: lowest (allowed) address of exe
+   Addr exe_end;        // INOUT: highest (allowed) address
 
-   addr_t phdr;         // OUT: address phdr was mapped at
-   int    phnum;        // OUT: number of phdrs
-   addr_t interp_base;  // OUT: where interpreter (ld.so) was mapped
-   addr_t entry;        // OUT: entrypoint in main executable
-   addr_t init_eip;     // OUT: initial eip
-   addr_t brkbase;      // OUT: base address of brk segment
+   Addr phdr;           // OUT: address phdr was mapped at
+   int  phnum;          // OUT: number of phdrs
+   Addr interp_base;    // OUT: where interpreter (ld.so) was mapped
+   Addr entry;          // OUT: entrypoint in main executable
+   Addr init_eip;       // OUT: initial eip
+   Addr brkbase;        // OUT: base address of brk segment
 
    // These are the extra args added by #! scripts
    char*  interp_name;  // OUT: the interpreter name

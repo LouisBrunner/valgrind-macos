@@ -297,7 +297,7 @@ static void main2(void)
       foreach_map(prmap, /*dummy*/NULL);
    }
 
-   jmp_with_stack(info.init_eip, (addr_t)esp);   
+   jmp_with_stack(info.init_eip, (Addr)esp);   
 }
 
 int main(int argc, char** argv)
@@ -319,7 +319,7 @@ int main(int argc, char** argv)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
-   jmp_with_stack((addr_t)main2, (addr_t)stack + sizeof(stack));
+   jmp_with_stack((Addr)main2, (Addr)stack + sizeof(stack));
 }
 
 /*--------------------------------------------------------------------*/

@@ -414,7 +414,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
    info->exe_base = minaddr + ebase;
    info->exe_end  = maxaddr + ebase;
 
-   info->init_eip = (addr_t)entry;
+   info->init_eip = (Addr)entry;
 
    free(e);
 

@@ -628,7 +628,7 @@ typedef
       SSE2a1_MemWr,
 
       /* 4 bytes, writes an integer register.  Insns of the form
-         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 xmmreg ireg.
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg xmmreg.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced
          at codegen time by a reference to the relevant RealReg.
          Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.

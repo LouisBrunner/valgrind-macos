@@ -211,8 +211,9 @@ A12. One possible cause is that your program modifies its
      all.  Valgrind relies on the LD_PRELOAD, LD_LIBRARY_PATH and
      VG_ARGS variables.  Zeroing them will break things.
 
-     As of 1.9.6, Valgrind only uses these variables with 
-     --trace-children=yes, which should reduce the potential for
+     As of 1.9.6, Valgrind only uses these variables with
+     --trace-children=no, when executing execve() or using the
+     --stop-after=yes flag.  This should reduce the potential for
      problems.
 
 -----------------------------------------------------------------

@@ -46,6 +46,10 @@
 #define BASEBLOCK_VEX  \
    ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))
 
+/* Ditto the Vex shadow guest state. */
+#define BASEBLOCK_VEX_SHADOW  \
+   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex_shadow)]))
+
 // Accessors for the arch_thread_t
 #define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
 #define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
@@ -88,20 +92,11 @@
 
 /* State of the simulated CPU. */
 extern Int VGOFF_(m_vex);
+extern Int VGOFF_(m_vex_shadow);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);
 
-/* Records the valid bits for the 8 integer regs & flags reg. */
-extern Int VGOFF_(sh_eax);
-extern Int VGOFF_(sh_ecx);
-extern Int VGOFF_(sh_edx);
-extern Int VGOFF_(sh_ebx);
-extern Int VGOFF_(sh_esp);
-extern Int VGOFF_(sh_ebp);
-extern Int VGOFF_(sh_esi);
-extern Int VGOFF_(sh_edi);
-extern Int VGOFF_(sh_eflags);
 
 /* -----------------------------------------------------
    Read-only parts of baseBlock.
@@ -218,15 +213,8 @@ typedef struct {
    /* Saved machine context. */
    VexGuestX86State vex;
 
-   UInt sh_eax;
-   UInt sh_ebx;
-   UInt sh_ecx;
-   UInt sh_edx;
-   UInt sh_esi;
-   UInt sh_edi;
-   UInt sh_ebp;
-   UInt sh_esp;
-   UInt sh_eflags;
+   /* Saved shadow context. */
+   VexGuestX86State vex_shadow;
 } 
 arch_thread_t;
 

@@ -82,17 +82,8 @@ typedef
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
       /* Saved processor state. */
-      VexGuestX86State vex;      
-
-      UInt sh_eax;
-      UInt sh_ebx;
-      UInt sh_ecx;
-      UInt sh_edx;
-      UInt sh_esi;
-      UInt sh_edi;
-      UInt sh_ebp;
-      UInt sh_esp;
-      UInt sh_eflags;
+      VexGuestX86State vex;
+      VexGuestX86State vex_shadow;
 
       /* saved signal mask to be restored when handler returns */
       vki_ksigset_t	mask;
@@ -230,17 +221,8 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 
    frame->vex = tst->arch.vex;
 
-   if (VG_(needs).shadow_regs) {
-      frame->sh_eax     = tst->arch.sh_eax;
-      frame->sh_ecx     = tst->arch.sh_ecx;
-      frame->sh_edx     = tst->arch.sh_edx;
-      frame->sh_ebx     = tst->arch.sh_ebx;
-      frame->sh_ebp     = tst->arch.sh_ebp;
-      frame->sh_esp     = tst->arch.sh_esp;
-      frame->sh_esi     = tst->arch.sh_esi;
-      frame->sh_edi     = tst->arch.sh_edi;
-      frame->sh_eflags  = tst->arch.sh_eflags;
-   }
+   if (VG_(needs).shadow_regs)
+      frame->vex_shadow = tst->arch.vex_shadow;
 
    frame->mask = tst->sig_mask;
 
@@ -301,18 +283,8 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
    //   tst->arch.m_sse[i] = frame->m_sse[i];
 
    tst->arch.vex = frame->vex;
-
-   if (VG_(needs).shadow_regs) {
-      tst->arch.sh_eax     = frame->sh_eax;
-      tst->arch.sh_ecx     = frame->sh_ecx;
-      tst->arch.sh_edx     = frame->sh_edx;
-      tst->arch.sh_ebx     = frame->sh_ebx;
-      tst->arch.sh_ebp     = frame->sh_ebp; 
-      tst->arch.sh_esp     = frame->sh_esp;
-      tst->arch.sh_esi     = frame->sh_esi;
-      tst->arch.sh_edi     = frame->sh_edi;
-      tst->arch.sh_eflags  = frame->sh_eflags;
-   }
+   if (VG_(needs).shadow_regs)
+      tst->arch.vex_shadow = frame->vex_shadow;
 
    /* And restore the thread's status to what it was before the signal
       was delivered. */

@@ -37,16 +37,18 @@ void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val )
 
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
-
+   if (0)
+   VG_(printf)("set_thread_shadow_archreg(%d, %d, 0x%x)\n",
+	       tid, archreg, val);
    switch (archreg) {
-      case R_EAX: tst->arch.sh_eax = val; break;
-      case R_ECX: tst->arch.sh_ecx = val; break;
-      case R_EDX: tst->arch.sh_edx = val; break;
-      case R_EBX: tst->arch.sh_ebx = val; break;
-      case R_ESP: tst->arch.sh_esp = val; break;
-      case R_EBP: tst->arch.sh_ebp = val; break;
-      case R_ESI: tst->arch.sh_esi = val; break;
-      case R_EDI: tst->arch.sh_edi = val; break;
+      case R_EAX: tst->arch.vex_shadow.guest_EAX = val; break;
+      case R_ECX: tst->arch.vex_shadow.guest_ECX = val; break;
+      case R_EDX: tst->arch.vex_shadow.guest_EDX = val; break;
+      case R_EBX: tst->arch.vex_shadow.guest_EBX = val; break;
+      case R_ESP: tst->arch.vex_shadow.guest_ESP = val; break;
+      case R_EBP: tst->arch.vex_shadow.guest_EBP = val; break;
+      case R_ESI: tst->arch.vex_shadow.guest_ESI = val; break;
+      case R_EDI: tst->arch.vex_shadow.guest_EDI = val; break;
       default:    VG_(core_panic)( "set_thread_shadow_archreg");
    }
 }
@@ -58,15 +60,18 @@ UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
 
+   VG_(printf)("get_thread_shadow_archreg(%d, %d)\n",
+	       tid, archreg);
+
    switch (archreg) {
-      case R_EAX: return tst->arch.sh_eax;
-      case R_ECX: return tst->arch.sh_ecx;
-      case R_EDX: return tst->arch.sh_edx;
-      case R_EBX: return tst->arch.sh_ebx;
-      case R_ESP: return tst->arch.sh_esp;
-      case R_EBP: return tst->arch.sh_ebp;
-      case R_ESI: return tst->arch.sh_esi;
-      case R_EDI: return tst->arch.sh_edi;
+      case R_EAX: return tst->arch.vex_shadow.guest_EAX;
+      case R_ECX: return tst->arch.vex_shadow.guest_ECX;
+      case R_EDX: return tst->arch.vex_shadow.guest_EDX;
+      case R_EBX: return tst->arch.vex_shadow.guest_EBX;
+      case R_ESP: return tst->arch.vex_shadow.guest_ESP;
+      case R_EBP: return tst->arch.vex_shadow.guest_EBP;
+      case R_ESI: return tst->arch.vex_shadow.guest_ESI;
+      case R_EDI: return tst->arch.vex_shadow.guest_EDI;
       default:    VG_(core_panic)( "get_thread_shadow_archreg");
    }
 }
@@ -74,15 +79,17 @@ UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
 /* Return the baseBlock index for the specified shadow register */
 static Int shadow_reg_index ( Int arch )
 {
+   VG_(printf)("shadow_reg_index(%d)\n",
+	       arch);
    switch (arch) {
-      case R_EAX: return VGOFF_(sh_eax);
-      case R_ECX: return VGOFF_(sh_ecx);
-      case R_EDX: return VGOFF_(sh_edx);
-      case R_EBX: return VGOFF_(sh_ebx);
-      case R_ESP: return VGOFF_(sh_esp);
-      case R_EBP: return VGOFF_(sh_ebp);
-      case R_ESI: return VGOFF_(sh_esi);
-      case R_EDI: return VGOFF_(sh_edi);
+      case R_EAX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EAX)/4;
+      case R_ECX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ECX)/4;
+      case R_EDX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDX)/4;
+      case R_EBX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBX)/4;
+      case R_ESP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESP)/4;
+      case R_EBP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBP)/4;
+      case R_ESI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESI)/4;
+      case R_EDI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDI)/4;
       default:    VG_(core_panic)( "shadow_reg_index");
    }
 }

@@ -40,63 +40,13 @@
 
 /* The variables storing offsets. */
 Int VGOFF_(m_vex) = INVALID_OFFSET;
+Int VGOFF_(m_vex_shadow) = INVALID_OFFSET;
 
 Int VGOFF_(ldt)   = INVALID_OFFSET;
 Int VGOFF_(tls_ptr) = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
-Int VGOFF_(sh_eax) = INVALID_OFFSET;
-Int VGOFF_(sh_ecx) = INVALID_OFFSET;
-Int VGOFF_(sh_edx) = INVALID_OFFSET;
-Int VGOFF_(sh_ebx) = INVALID_OFFSET;
-Int VGOFF_(sh_esp) = INVALID_OFFSET;
-Int VGOFF_(sh_ebp) = INVALID_OFFSET;
-Int VGOFF_(sh_esi) = INVALID_OFFSET;
-Int VGOFF_(sh_edi) = INVALID_OFFSET;
-Int VGOFF_(sh_eflags) = INVALID_OFFSET;
-
-Int VGOFF_(helper_idiv_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_div_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_div_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_div_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_CLD) = INVALID_OFFSET;
-Int VGOFF_(helper_STD) = INVALID_OFFSET;
-Int VGOFF_(helper_get_dirflag) = INVALID_OFFSET;
-Int VGOFF_(helper_CLC) = INVALID_OFFSET;
-Int VGOFF_(helper_STC) = INVALID_OFFSET;
-Int VGOFF_(helper_CMC) = INVALID_OFFSET;
-Int VGOFF_(helper_shldl) = INVALID_OFFSET;
-Int VGOFF_(helper_shldw) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdw) = INVALID_OFFSET;
-Int VGOFF_(helper_IN) = INVALID_OFFSET;
-Int VGOFF_(helper_OUT) = INVALID_OFFSET;
-Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
-Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
-Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfl) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrl) = INVALID_OFFSET;
-Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
-Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_DAS) = INVALID_OFFSET;
-Int VGOFF_(helper_DAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAS) = INVALID_OFFSET;
-Int VGOFF_(helper_AAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAD) = INVALID_OFFSET;
-Int VGOFF_(helper_AAM) = INVALID_OFFSET;
-Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
 
 
 /* Here we assign actual offsets.  It's important on x86 to get the most
@@ -107,17 +57,13 @@ Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
    size of translations. */
 void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 {
-   Int shadow_off;
-   /* Those with offsets under 128 are carefully chosen. */
-
-   /* WORD offsets in this column */
    vg_assert(0 == sizeof(VexGuestX86State) % 8);
 
    /* First the guest state. */
    VGOFF_(m_vex) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
 
    /* Then equal sized shadow state. */
-   shadow_off = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
+   VGOFF_(m_vex_shadow) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
 
    /* Finally the spill area. */
    VGOFF_(spillslots) = VG_(alloc_BaB)( LibVEX_N_SPILL_BYTES/4 );
@@ -126,6 +72,9 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
    LibVEX_GuestX86_initialise(BASEBLOCK_VEX);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(BASEBLOCK_VEX_SHADOW, 0, sizeof(VexGuestX86State));
 
    /* Put essential stuff into the new state. */
    BASEBLOCK_VEX->guest_ESP = esp_at_startup;
@@ -136,29 +85,8 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
       = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
 
    if (VG_(needs).shadow_regs) {
-      /* 9   */ VGOFF_(sh_eax)    = shadow_off+0;
-      /* 10  */ VGOFF_(sh_ecx)    = shadow_off+1;
-      /* 11  */ VGOFF_(sh_edx)    = shadow_off+2;
-      /* 12  */ VGOFF_(sh_ebx)    = shadow_off+3;
-      /* 13  */ VGOFF_(sh_esp)    = shadow_off+4;
-      /* 14  */ VGOFF_(sh_ebp)    = shadow_off+5;
-      /* 15  */ VGOFF_(sh_esi)    = shadow_off+6;
-      /* 16  */ VGOFF_(sh_edi)    = shadow_off+7;
-      /* 17  */ VGOFF_(sh_eflags) = shadow_off+8;
       VG_TRACK( post_regs_write_init );
    }
-
-   /* 9,10,11 or 18,19,20... depends on number whether shadow regs are used
-    * and on compact helpers registered */ 
-
-   /* Make these most-frequently-called specialised ones compact, if they
-      are used. */
-   if (VG_(defined_new_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_new_mem_stack_4);
-
-   if (VG_(defined_die_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_die_mem_stack_4);
-
 }
 
 void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
@@ -200,25 +128,6 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
    asm volatile("movw %%ss, %0"
                 :
                 : "m" (BASEBLOCK_VEX->guest_SS));
-
-   VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
-
-#  define HELPER(name) \
-   VGOFF_(helper_##name) = VG_(alloc_BaB_1_set)( (Addr) & VG_(helper_##name))
-
-   /* Helper functions. */
-
-   HELPER(RDTSC);          HELPER(CPUID);
-
-   HELPER(DAS);            HELPER(DAA);
-   HELPER(AAS);            HELPER(AAA);
-   HELPER(AAD);            HELPER(AAM);
-   HELPER(IN);             HELPER(OUT);
-   HELPER(cmpxchg8b);
-
-   HELPER(undefined_instruction);
-
-#  undef HELPER
 }
 
 /* Junk to fill up a thread's shadow regs with when shadow regs aren't
@@ -233,17 +142,10 @@ void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
    *BASEBLOCK_VEX = arch->vex;
 
    if (VG_(needs).shadow_regs) {
-      VG_(baseBlock)[VGOFF_(sh_eax)] = arch->sh_eax;
-      VG_(baseBlock)[VGOFF_(sh_ebx)] = arch->sh_ebx;
-      VG_(baseBlock)[VGOFF_(sh_ecx)] = arch->sh_ecx;
-      VG_(baseBlock)[VGOFF_(sh_edx)] = arch->sh_edx;
-      VG_(baseBlock)[VGOFF_(sh_esi)] = arch->sh_esi;
-      VG_(baseBlock)[VGOFF_(sh_edi)] = arch->sh_edi;
-      VG_(baseBlock)[VGOFF_(sh_ebp)] = arch->sh_ebp;
-      VG_(baseBlock)[VGOFF_(sh_esp)] = arch->sh_esp;
-      VG_(baseBlock)[VGOFF_(sh_eflags)] = arch->sh_eflags;
+      *BASEBLOCK_VEX_SHADOW = arch->vex_shadow;
    } else {
       /* Fields shouldn't be used -- check their values haven't changed. */
+     /* ummm ... 
       vg_assert(
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eax &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebx &&
@@ -254,6 +156,7 @@ void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebp &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_esp &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eflags);
+     */
    }
 }
 
@@ -291,17 +194,10 @@ n",
    arch->vex = *BASEBLOCK_VEX;
 
    if (VG_(needs).shadow_regs) {
-      arch->sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
-      arch->sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
-      arch->sh_ecx = VG_(baseBlock)[VGOFF_(sh_ecx)];
-      arch->sh_edx = VG_(baseBlock)[VGOFF_(sh_edx)];
-      arch->sh_esi = VG_(baseBlock)[VGOFF_(sh_esi)];
-      arch->sh_edi = VG_(baseBlock)[VGOFF_(sh_edi)];
-      arch->sh_ebp = VG_(baseBlock)[VGOFF_(sh_ebp)];
-      arch->sh_esp = VG_(baseBlock)[VGOFF_(sh_esp)];
-      arch->sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
+      arch->vex_shadow = *BASEBLOCK_VEX_SHADOW;
    } else {
       /* Fill with recognisable junk */
+      /* can't easily do this ... 
       arch->sh_eax =
       arch->sh_ebx =
       arch->sh_ecx =
@@ -311,6 +207,7 @@ n",
       arch->sh_ebp =
       arch->sh_esp = 
       arch->sh_eflags = VG_UNUSED_SHADOW_REG_VALUE;
+      */
    }
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(ldt)] = junk;

@@ -628,8 +628,8 @@ HInstrArray* doRegisterAllocation (
          entry in the rreg_info array. */
       for (j = 0; j < n_available_real_regs; j++) {
          vassert(state[j].disp == Free 
-                || state[j].disp == Unavail
-                || state[j].disp == Bound);
+                 || state[j].disp == Unavail
+                 || state[j].disp == Bound);
          if (state[j].disp != Unavail)
             continue;
          for (k = 0; k < rreg_info_used; k++) 
@@ -680,7 +680,7 @@ HInstrArray* doRegisterAllocation (
          m = hregNumber(vregD);
          vassert(k >= 0 && k < n_vregs);
          vassert(m >= 0 && m < n_vregs);
-         if (vreg_info[k].dead_before != ii) goto cannot_coalesce;
+         if (vreg_info[k].dead_before != ii + 1) goto cannot_coalesce;
          if (vreg_info[m].live_after != ii) goto cannot_coalesce;
 #        if DEBUG_REGALLOC
          vex_printf("COALESCE ");
@@ -755,7 +755,7 @@ HInstrArray* doRegisterAllocation (
                   still live. */
                m = hregNumber(state[k].vreg);
                vassert(m >= 0 && m < n_vregs);
-               if (vreg_info[m].dead_before >= ii) {
+               if (vreg_info[m].dead_before > ii) {
                   vassert(vreg_info[m].reg_class != HRcINVALID);
                   EMIT_INSTR( (*genSpill)( state[k].rreg,
                                            vreg_info[m].spill_offset ) );
@@ -974,7 +974,7 @@ HInstrArray* doRegisterAllocation (
          after this instruction, and if so mark them as free. */
      post_insn_actions:
       for (j = 0; j < rreg_info_used; j++) {
-         if (rreg_info[j].dead_before == ii+0) {
+         if (rreg_info[j].dead_before == ii) {
             /* rreg_info[j].rreg is exiting a hard live range.  Mark
                it as such in the main state array. */
             for (k = 0; k < n_state; k++)

@@ -1929,7 +1929,7 @@ static void synth_jcond_lit ( Condcode cond,
             mask = EFlagS; goto simple; /* S=1        */
 
          case CondP:
-         //case CondNP: 
+         case CondNP: 
             mask = EFlagP; goto simple; /* P=1        */
 
          default: 

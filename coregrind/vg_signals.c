@@ -927,7 +927,7 @@ static Bool should_dump(const Segment *seg)
 
 static void fill_ehdr(Elf32_Ehdr *ehdr, Int num_phdrs)
 {
-   VG_(memset)(ehdr, 0, sizeof(ehdr));
+   VG_(memset)(ehdr, 0, sizeof(*ehdr));
 
    VG_(memcpy)(ehdr->e_ident, ELFMAG, SELFMAG);
    ehdr->e_ident[EI_CLASS]   = VG_ELF_CLASS;

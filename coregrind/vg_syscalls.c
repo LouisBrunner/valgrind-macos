@@ -597,7 +597,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             SYSCALL_TRACK( pre_mem_write, tst, 
                            "modify_ldt(ptr)(func=0)", arg2, arg3 );
          }
-         if (arg1 == 1) {
+         if (arg1 == 1 || arg1 == 0x11) {
             /* write the LDT with the entry pointed at by ptr */
             SYSCALL_TRACK( pre_mem_read, tst, 
                            "modify_ldt(ptr)(func=1)", arg2, 

@@ -1159,17 +1159,10 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
       vg_libpthread.c. */
    vg_assert(VG_(threads)[tid].cancel_pend != NULL);
 
-   /* Push a suitable arg, and mark it as readable. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 4);
-   * (UInt*)(VG_(threads)[tid].arch.m_esp) = (UInt)PTHREAD_CANCELED;
-   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.m_esp, sizeof(void*) );
-
-   /* Push a bogus return address.  It will not return, but we still
-      need to have it so that the arg is at the correct stack offset.
-      Don't mark as readable; any attempt to read this is and internal
-      valgrind bug since thread_exit_wrapper should not return. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 4);
-   * (UInt*)(VG_(threads)[tid].arch.m_esp) = 0xBEADDEEF;
+   /* Set an argument and bogus return address.  The return address will not
+      be used, but we still need to have it so that the arg is at the
+      correct stack offset. */
+   VGA_(set_arg_and_bogus_ret)(tid, (UInt)PTHREAD_CANCELED, 0xBEADDEEF);
 
    /* .cancel_pend will hold &thread_exit_wrapper */
    ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)VG_(threads)[tid].cancel_pend;
@@ -1710,8 +1703,7 @@ void do__quit ( ThreadId tid )
 }
 
 
-/* Should never be entered.  If it is, will be on the simulated
-   CPU. */
+/* Should never be entered.  If it is, will be on the simulated CPU. */
 static 
 void do__apply_in_new_thread_bogusRA ( void )
 {
@@ -1804,22 +1796,11 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_TRACK ( die_mem_stack, VG_(threads)[tid].stack_base, 
                              VG_(threads)[tid].stack_size
                              - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
-   VG_TRACK ( ban_mem_stack, VG_(threads)[tid].arch.m_esp, 
+   VG_TRACK ( ban_mem_stack, ARCH_STACK_PTR(VG_(threads)[tid].arch), 
                              VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
-   /* push two args */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 8);
-
-   VG_TRACK ( new_mem_stack, (Addr)VG_(threads)[tid].arch.m_esp, 2 * 4 );
-   VG_TRACK ( pre_mem_write, Vg_CorePThread, tid, "new thread: stack",
-                             (Addr)VG_(threads)[tid].arch.m_esp, 2 * 4 );
- 
-   /* push arg and (bogus) return address */
-   * (UInt*)(VG_(threads)[tid].arch.m_esp+4) = (UInt)arg;
-   * (UInt*)(VG_(threads)[tid].arch.m_esp) 
-      = (UInt)&do__apply_in_new_thread_bogusRA;
-
-   VG_TRACK ( post_mem_write, VG_(threads)[tid].arch.m_esp, 2 * 4 );
+   VGA_(thread_initial_stack)(tid, (UWord)arg,
+                              (Addr)&do__apply_in_new_thread_bogusRA);
 
    /* this is where we start */
    ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)fn;

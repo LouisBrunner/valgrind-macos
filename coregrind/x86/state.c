@@ -490,6 +490,40 @@ void VGA_(setup_child) ( arch_thread_t *regs, arch_thread_t *parent_regs )
    VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt) regs->tls;
 }  
 
+void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
+{
+   /* Push the arg, and mark it as readable. */
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - sizeof(UWord));
+   * (UInt*)(VG_(threads)[tid].arch.m_esp) = arg;
+   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.m_esp, sizeof(void*) );
+
+   /* Don't mark the pushed return address as readable; any attempt to read
+      this is an internal valgrind bug since thread_exit_wrapper() should not
+      return. */
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - sizeof(UWord));
+   * (UInt*)(VG_(threads)[tid].arch.m_esp) = ret;
+}
+
+void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
+{
+   Addr esp = (Addr)ARCH_STACK_PTR(VG_(threads)[tid].arch);
+
+   /* push two args */
+   esp -= 8;
+   SET_PTHREQ_ESP(tid, esp);
+   
+   VG_TRACK ( new_mem_stack, esp, 2 * 4 );
+   VG_TRACK ( pre_mem_write, Vg_CorePThread, tid, "new thread: stack",
+                             esp, 2 * 4 );
+
+   /* push arg and (bogus) return address */
+   *(UWord*)(esp+4) = arg;
+   *(UWord*)(esp)   = ret;
+
+   VG_TRACK ( post_mem_write, esp, 2 * 4 );
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Symtab stuff                                         ---*/
 /*------------------------------------------------------------*/

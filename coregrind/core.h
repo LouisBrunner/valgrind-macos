@@ -1502,6 +1502,9 @@ extern void VGA_(init_thread)    ( arch_thread_t* );
 extern void VGA_(cleanup_thread) ( arch_thread_t* );
 extern void VGA_(setup_child)    ( arch_thread_t*, arch_thread_t* );
 
+extern void VGA_(set_arg_and_bogus_ret) ( ThreadId tid, UWord arg, Addr ret );
+extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
+
 // Symtab stuff
 extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
 extern UInt* VGA_(reg_addr_from_tst) ( Int reg, arch_thread_t* );

@@ -543,6 +543,14 @@ static Int xmmGuestRegOffset ( UInt xmmreg )
 /* Lanes of vector registers are always numbered from zero being the
    least significant lane (rightmost in the register).  */
 
+static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
+{
+   /* Correct for little-endian host only. */
+   vassert(!host_is_bigendian);
+   vassert(laneno >= 0 && laneno < 8);
+   return xmmGuestRegOffset( xmmreg ) + 2 * laneno;
+}
+
 static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 {
    /* Correct for little-endian host only. */
@@ -641,6 +649,12 @@ static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I32);
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
+}
+
+static void putXMMRegLane16 ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
+   stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
 }
 
 static void assign ( IRTemp dst, IRExpr* e )
@@ -7433,84 +7447,79 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
       put it into the specified lane of mmx(G). */
-   if (insn[0] == 0x0F && insn[1] == 0xC4) {
-      if (sz == 4) {
-         /* Use t0 .. t3 to hold the 4 original 16-bit lanes of the
-            mmx reg.  t4 is the new lane value.  t5 is the original
-            mmx value. t6 is the new mmx value. */
-         Int lane;
-         t0 = newTemp(Ity_I16);
-         t1 = newTemp(Ity_I16);
-         t2 = newTemp(Ity_I16);
-         t3 = newTemp(Ity_I16);
-         t4 = newTemp(Ity_I16);
-         t5 = newTemp(Ity_I64);
-         t6 = newTemp(Ity_I64);
-         modrm = insn[2];
-         do_MMX_preamble();
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC4) {
+      /* Use t0 .. t3 to hold the 4 original 16-bit lanes of the
+         mmx reg.  t4 is the new lane value.  t5 is the original
+         mmx value. t6 is the new mmx value. */
+      Int lane;
+      t0 = newTemp(Ity_I16);
+      t1 = newTemp(Ity_I16);
+      t2 = newTemp(Ity_I16);
+      t3 = newTemp(Ity_I16);
+      t4 = newTemp(Ity_I16);
+      t5 = newTemp(Ity_I64);
+      t6 = newTemp(Ity_I64);
+      modrm = insn[2];
+      do_MMX_preamble();
 
-         assign(t5, getMMXReg(gregOfRM(modrm)));
+      assign(t5, getMMXReg(gregOfRM(modrm)));
 
-         assign(t0, unop(Iop_32to16,   unop(Iop_64to32,   mkexpr(t5))));
-         assign(t1, unop(Iop_32HIto16, unop(Iop_64to32,   mkexpr(t5))));
-         assign(t2, unop(Iop_32to16,   unop(Iop_64HIto32, mkexpr(t5))));
-         assign(t3, unop(Iop_32HIto16, unop(Iop_64HIto32, mkexpr(t5))));
+      assign(t0, unop(Iop_32to16,   unop(Iop_64to32,   mkexpr(t5))));
+      assign(t1, unop(Iop_32HIto16, unop(Iop_64to32,   mkexpr(t5))));
+      assign(t2, unop(Iop_32to16,   unop(Iop_64HIto32, mkexpr(t5))));
+      assign(t3, unop(Iop_32HIto16, unop(Iop_64HIto32, mkexpr(t5))));
 
-         if (epartIsReg(modrm)) {
-            assign(t4, getIReg(2, eregOfRM(modrm)));
-            lane = insn[3];
-            delta += 2+2;
-            DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
-                                      nameIReg(2,eregOfRM(modrm)),
-                                      nameMMXReg(gregOfRM(modrm)));
-         } else {
-            /* awaiting test case */
-            goto decode_failure;
-         }
-
-         switch (lane & 3) {
-            case 0: 
-               assign(t6, binop(Iop_32HLto64,
-                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
-                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t4))
-                          )
-                     );
-               break;
-            case 1: 
-               assign(t6, binop(Iop_32HLto64,
-                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
-                             binop(Iop_16HLto32, mkexpr(t4), mkexpr(t0))
-                          )
-                     );
-               break;
-            case 2: 
-               assign(t6, binop(Iop_32HLto64,
-                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t4)),
-                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
-                         )
-                     );
-               break;
-            case 3: 
-               assign(t6, binop(Iop_32HLto64,
-                             binop(Iop_16HLto32, mkexpr(t4), mkexpr(t2)),
-                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
-                          )
-                     );
-               break;
-            default: 
-               vassert(0);
-         }
-         putMMXReg(gregOfRM(modrm), mkexpr(t6));
-         goto decode_success;
-
+      if (epartIsReg(modrm)) {
+         assign(t4, getIReg(2, eregOfRM(modrm)));
+         lane = insn[3];
+         delta += 2+2;
+         DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
+                                   nameIReg(2,eregOfRM(modrm)),
+                                   nameMMXReg(gregOfRM(modrm)));
+      } else {
+         /* awaiting test case */
+         goto decode_failure;
       }
-      /* else fall through */
+
+      switch (lane & 3) {
+         case 0: 
+            assign(t6, binop(Iop_32HLto64,
+                          binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
+                          binop(Iop_16HLto32, mkexpr(t1), mkexpr(t4))
+                       )
+                  );
+            break;
+         case 1: 
+            assign(t6, binop(Iop_32HLto64,
+                          binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
+                          binop(Iop_16HLto32, mkexpr(t4), mkexpr(t0))
+                       )
+                  );
+            break;
+         case 2: 
+            assign(t6, binop(Iop_32HLto64,
+                          binop(Iop_16HLto32, mkexpr(t3), mkexpr(t4)),
+                          binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
+                      )
+                  );
+            break;
+         case 3: 
+            assign(t6, binop(Iop_32HLto64,
+                          binop(Iop_16HLto32, mkexpr(t4), mkexpr(t2)),
+                          binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
+                       )
+                  );
+            break;
+         default: 
+            vassert(0);
+      }
+      putMMXReg(gregOfRM(modrm), mkexpr(t6));
+      goto decode_success;
    }
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F EE = PMAXSW -- 16x4 signed max */
-   if (insn[0] == 0x0F && insn[1] == 0xEE) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xEE) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pmaxsw", False );
@@ -7519,8 +7528,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F DE = PMAXUB -- 8x8 unsigned max */
-   if (insn[0] == 0x0F && insn[1] == 0xDE) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xDE) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pmaxub", False );
@@ -7529,8 +7537,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F EA = PMINSW -- 16x4 signed min */
-   if (insn[0] == 0x0F && insn[1] == 0xEA) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xEA) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pminsw", False );
@@ -7539,8 +7546,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F DA = PMINUB -- 8x8 unsigned min */
-   if (insn[0] == 0x0F && insn[1] == 0xDA) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xDA) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pminub", False );
@@ -7551,9 +7557,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
       mmx(G), turn them into a byte, and put zero-extend of it in
       ireg(G). */
-   if (insn[0] == 0x0F && insn[1] == 0xD7) {
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
-      if (sz == 4 && epartIsReg(modrm)) {
+      if (epartIsReg(modrm)) {
          do_MMX_preamble();
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I32);
@@ -7574,8 +7580,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F E4 = PMULUH -- 16x4 hi-half of unsigned widening multiply */
-   if (insn[0] == 0x0F && insn[1] == 0xE4) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xE4) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pmuluh", False );
@@ -9096,6 +9101,255 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE3) {
       delta = dis_SSEint_E_to_G( sorb, delta+2, 
                                  "pavgw", Iop_Avg16Ux8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 74 = PCMPEQB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x74) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpeqb", Iop_CmpEQ8x16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 76 = PCMPEQD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x76) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpeqd", Iop_CmpEQ32x4, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 75 = PCMPEQW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x75) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpeqw", Iop_CmpEQ16x8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 64 = PCMPGTB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x64) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpgtb", Iop_CmpGT8Sx16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 66 = PCMPGTD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x66) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpgtd", Iop_CmpGT32Sx4, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 65 = PCMPGTW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x65) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pcmpgtw", Iop_CmpGT16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F C5 = PEXTRW -- extract 16-bit field from xmm(E) and put 
+      zero-extend of it in ireg(G). */
+   if (insn[0] == 0x0F && insn[1] == 0xC5) {
+      modrm = insn[2];
+      if (sz == 2 && epartIsReg(modrm)) {
+         t5 = newTemp(Ity_V128);
+         t4 = newTemp(Ity_I16);
+         assign(t5, getXMMReg(eregOfRM(modrm)));
+         breakup128to32s( t5, &t3, &t2, &t1, &t0 );
+         switch (insn[3] & 7) {
+            case 0:  assign(t4, unop(Iop_32to16,   mkexpr(t0))); break;
+            case 1:  assign(t4, unop(Iop_32HIto16, mkexpr(t0))); break;
+            case 2:  assign(t4, unop(Iop_32to16,   mkexpr(t1))); break;
+            case 3:  assign(t4, unop(Iop_32HIto16, mkexpr(t1))); break;
+            case 4:  assign(t4, unop(Iop_32to16,   mkexpr(t2))); break;
+            case 5:  assign(t4, unop(Iop_32HIto16, mkexpr(t2))); break;
+            case 6:  assign(t4, unop(Iop_32to16,   mkexpr(t3))); break;
+            case 7:  assign(t4, unop(Iop_32HIto16, mkexpr(t3))); break;
+            default: vassert(0);
+         }
+         putIReg(4, gregOfRM(modrm), unop(Iop_16Uto32, mkexpr(t4)));
+         DIP("pextrw $%d,%s,%s\n",
+             (Int)insn[3], nameXMMReg(eregOfRM(modrm)),
+                           nameIReg(4,gregOfRM(modrm)));
+         delta += 4;
+         goto decode_success;
+      } 
+      /* else fall through */
+   }
+
+   /* 66 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
+      put it into the specified lane of xmm(G). */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC4) {
+      Int lane;
+      t4 = newTemp(Ity_I16);
+      modrm = insn[2];
+
+      if (epartIsReg(modrm)) {
+         assign(t4, getIReg(2, eregOfRM(modrm)));
+         lane = insn[3];
+         delta += 2+2;
+         DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
+                                   nameIReg(2,eregOfRM(modrm)),
+                                   nameXMMReg(gregOfRM(modrm)));
+      } else {
+         /* awaiting test case */
+         goto decode_failure;
+      }
+
+      putXMMRegLane16( gregOfRM(modrm), lane & 7, mkexpr(t4) );
+      goto decode_success;
+   }
+
+   /* 66 0F EE = PMAXSW -- 16x8 signed max */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEE) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pmaxsw", Iop_Max16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F DE = PMAXUB -- 8x16 unsigned max */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDE) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pmaxub", Iop_Max8Ux16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F EA = PMINSW -- 16x8 signed min */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEA) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pminsw", Iop_Min16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F DA = PMINUB -- 8x16 unsigned min */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDA) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pminub", Iop_Min8Ux16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F D7 = PMOVMSKB -- extract sign bits from each of 16 lanes in
+      xmm(G), turn them into a byte, and put zero-extend of it in
+      ireg(G).  Doing this directly is just too cumbersome; give up
+      therefore and call a helper. */
+   /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         t0 = newTemp(Ity_I64);
+         t1 = newTemp(Ity_I64);
+         assign(t0, getXMMRegLane64(eregOfRM(modrm), 0));
+         assign(t1, getXMMRegLane64(eregOfRM(modrm), 1));
+         t5 = newTemp(Ity_I32);
+         assign(t5, mkIRExprCCall(
+                       Ity_I32, 0/*regparms*/, 
+                       "x86g_calculate_sse_pmovmskb",
+                       &x86g_calculate_sse_pmovmskb,
+                       mkIRExprVec_2( mkexpr(t0), mkexpr(t1) )));
+         putIReg(4, gregOfRM(modrm), mkexpr(t5));
+         DIP("pmovmskb %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                                 nameIReg(4,gregOfRM(modrm)));
+         delta += 3;
+         goto decode_success;
+      } 
+      /* else fall through */
+   }
+
+   /* 66 0F E4 = PMULHUW -- 16x8 hi-half of unsigned widening multiply */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE4) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pmulhuw", Iop_MulHi16Ux8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F E5 = PMULHW -- 16x8 hi-half of signed widening multiply */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE5) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pmulhw", Iop_MulHi16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F D5 = PMULHL -- 16x8 multiply */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD5) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pmullw", Iop_Mul16x8, False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE2 ---*** */
+   /* 0F F4 = PMULUDQ -- unsigned widening multiply of 32-lanes 0 x
+      0 to form 64-bit result */
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xF4) {
+      IRTemp sV = newTemp(Ity_I64);
+      IRTemp dV = newTemp(Ity_I64);
+      t1 = newTemp(Ity_I32);
+      t0 = newTemp(Ity_I32);
+      modrm = insn[2];
+
+      do_MMX_preamble();
+      assign( dV, getMMXReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getMMXReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("pmuludq %s,%s\n", nameMMXReg(eregOfRM(modrm)),
+                                nameMMXReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_I64, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("pmuludq %s,%s\n", dis_buf,
+                                nameMMXReg(gregOfRM(modrm)));
+      }
+
+      assign( t0, unop(Iop_64to32, mkexpr(dV)) );
+      assign( t1, unop(Iop_64to32, mkexpr(sV)) );
+      putMMXReg( gregOfRM(modrm),
+                 binop( Iop_MullU32, mkexpr(t0), mkexpr(t1) ) );
+      goto decode_success;
+   }
+
+   /* 66 0F F4 = PMULUDQ -- unsigned widening multiply of 32-lanes 0 x
+      0 to form lower 64-bit half and lanes 2 x 2 to form upper 64-bit
+      half */
+   /* This is a really poor translation -- could be improved if
+      performance critical */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xF4) {
+      IRTemp sV, dV;
+      IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
+      sV = newTemp(Ity_V128);
+      dV = newTemp(Ity_V128);
+      s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
+      t1 = newTemp(Ity_I64);
+      t0 = newTemp(Ity_I64);
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("pmuludq %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                                nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("pmuludq %s,%s\n", dis_buf,
+                                nameXMMReg(gregOfRM(modrm)));
+      }
+
+      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+
+      assign( t0, binop( Iop_MullU32, mkexpr(d0), mkexpr(s0)) );
+      putXMMRegLane64( gregOfRM(modrm), 0, mkexpr(t0) );
+      assign( t1, binop( Iop_MullU32, mkexpr(d2), mkexpr(s2)) );
+      putXMMRegLane64( gregOfRM(modrm), 1, mkexpr(t1) );
+      goto decode_success;
+   }
+
+   /* 66 0F EB = POR */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEB) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "por", Iop_Or128 );
       goto decode_success;
    }
 

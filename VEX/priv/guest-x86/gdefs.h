@@ -173,6 +173,7 @@ extern ULong x86g_calculate_psadbw ( ULong, ULong );
 
 extern ULong x86g_calculate_mull16uHIx4 ( ULong, ULong );
 
+extern UInt  x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 /* --- DIRTY HELPERS --- */
 

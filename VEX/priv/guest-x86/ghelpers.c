@@ -2686,6 +2686,15 @@ ULong x86g_calculate_mull16uHIx4 ( ULong xx, ULong yy )
           );
 }
 
+/* ------------ SSE2 misc helpers ------------ */
+
+UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
+{
+   UInt rHi8 = x86g_calculate_pmovmskb ( w64hi );
+   UInt rLo8 = x86g_calculate_pmovmskb ( w64lo );
+   return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
+}
+
 
 /*-----------------------------------------------------------*/
 /*--- Describing the x86 guest state, for the benefit     ---*/

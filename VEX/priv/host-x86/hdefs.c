@@ -2681,19 +2681,32 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_SseReRg:
 #     define XX(_n) *p++ = (_n)
       switch (i->Xin.SseReRg.op) {
-         case Xsse_PACKSSD: XX(0x66); XX(0x0F); XX(0x6B); break;
-         case Xsse_PACKSSW: XX(0x66); XX(0x0F); XX(0x63); break;
-         case Xsse_PACKUSW: XX(0x66); XX(0x0F); XX(0x67); break;
-         case Xsse_ADD8:    XX(0x66); XX(0x0F); XX(0xFC); break;
-         case Xsse_ADD16:   XX(0x66); XX(0x0F); XX(0xFD); break;
-         case Xsse_ADD32:   XX(0x66); XX(0x0F); XX(0xFE); break;
-         case Xsse_ADD64:   XX(0x66); XX(0x0F); XX(0xD4); break;
-         case Xsse_QADD8S:  XX(0x66); XX(0x0F); XX(0xEC); break;
-         case Xsse_QADD16S: XX(0x66); XX(0x0F); XX(0xED); break;
-         case Xsse_QADD8U:  XX(0x66); XX(0x0F); XX(0xDC); break;
-         case Xsse_QADD16U: XX(0x66); XX(0x0F); XX(0xDD); break;
-         case Xsse_AVG8U:   XX(0x66); XX(0x0F); XX(0xE0); break;
-         case Xsse_AVG16U:  XX(0x66); XX(0x0F); XX(0xE3); break;
+         case Xsse_PACKSSD:  XX(0x66); XX(0x0F); XX(0x6B); break;
+         case Xsse_PACKSSW:  XX(0x66); XX(0x0F); XX(0x63); break;
+         case Xsse_PACKUSW:  XX(0x66); XX(0x0F); XX(0x67); break;
+         case Xsse_ADD8:     XX(0x66); XX(0x0F); XX(0xFC); break;
+         case Xsse_ADD16:    XX(0x66); XX(0x0F); XX(0xFD); break;
+         case Xsse_ADD32:    XX(0x66); XX(0x0F); XX(0xFE); break;
+         case Xsse_ADD64:    XX(0x66); XX(0x0F); XX(0xD4); break;
+         case Xsse_QADD8S:   XX(0x66); XX(0x0F); XX(0xEC); break;
+         case Xsse_QADD16S:  XX(0x66); XX(0x0F); XX(0xED); break;
+         case Xsse_QADD8U:   XX(0x66); XX(0x0F); XX(0xDC); break;
+         case Xsse_QADD16U:  XX(0x66); XX(0x0F); XX(0xDD); break;
+         case Xsse_AVG8U:    XX(0x66); XX(0x0F); XX(0xE0); break;
+         case Xsse_AVG16U:   XX(0x66); XX(0x0F); XX(0xE3); break;
+         case Xsse_CMPEQ8:   XX(0x66); XX(0x0F); XX(0x74); break;
+         case Xsse_CMPEQ16:  XX(0x66); XX(0x0F); XX(0x75); break;
+         case Xsse_CMPEQ32:  XX(0x66); XX(0x0F); XX(0x76); break;
+         case Xsse_CMPGT8S:  XX(0x66); XX(0x0F); XX(0x64); break;
+         case Xsse_CMPGT16S: XX(0x66); XX(0x0F); XX(0x65); break;
+         case Xsse_CMPGT32S: XX(0x66); XX(0x0F); XX(0x66); break;
+         case Xsse_MAX16S:   XX(0x66); XX(0x0F); XX(0xEE); break;
+         case Xsse_MAX8U:    XX(0x66); XX(0x0F); XX(0xDE); break;
+         case Xsse_MIN16S:   XX(0x66); XX(0x0F); XX(0xEA); break;
+         case Xsse_MIN8U:    XX(0x66); XX(0x0F); XX(0xDA); break;
+         case Xsse_MULHI16U: XX(0x66); XX(0x0F); XX(0xE4); break;
+         case Xsse_MULHI16S: XX(0x66); XX(0x0F); XX(0xE5); break;
+         case Xsse_MUL16:    XX(0x66); XX(0x0F); XX(0xD5); break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.SseReRg.dst)),

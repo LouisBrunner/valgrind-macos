@@ -1136,10 +1136,81 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
 /*--- Memcheck main                                        ---*/
 /*------------------------------------------------------------*/
 
+#if 0 /* UNUSED */
+static Bool isBogusAtom ( IRAtom* at )
+{
+   ULong n = 0;
+   IRConst* con;
+   sk_assert(isAtom(at));
+   if (at->tag == Iex_Tmp)
+      return False;
+   sk_assert(at->tag == Iex_Const);
+   con = at->Iex.Const.con;
+   switch (con->tag) {
+      case Ico_U8:  n = (ULong)con->Ico.U8; break;
+      case Ico_U16: n = (ULong)con->Ico.U16; break;
+      case Ico_U32: n = (ULong)con->Ico.U32; break;
+      case Ico_U64: n = (ULong)con->Ico.U64; break;
+      default: ppIRExpr(at); sk_assert(0);
+   }
+   /* VG_(printf)("%llx\n", n); */
+   return (n == 0xFEFEFEFF
+           || n == 0x80808080
+           || n == 0x1010101
+           || n == 1010100);
+}
+
+static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
+{
+   Int     i;
+   IRExpr* e;
+   switch (st->tag) {
+      case Ist_Tmp:
+         e = st->Ist.Tmp.data;
+         switch (e->tag) {
+            case Iex_Get:
+            case Iex_Tmp:
+               return False;
+            case Iex_Unop: 
+               return isBogusAtom(e->Iex.Unop.arg);
+            case Iex_Binop: 
+               return isBogusAtom(e->Iex.Binop.arg1)
+                      || isBogusAtom(e->Iex.Binop.arg2);
+            case Iex_Mux0X:
+               return isBogusAtom(e->Iex.Mux0X.cond)
+                      || isBogusAtom(e->Iex.Mux0X.expr0)
+                      || isBogusAtom(e->Iex.Mux0X.exprX);
+            case Iex_LDle: 
+               return isBogusAtom(e->Iex.LDle.addr);
+            case Iex_CCall:
+               for (i = 0; e->Iex.CCall.args[i]; i++)
+                  if (isBogusAtom(e->Iex.CCall.args[i]))
+                     return True;
+               return False;
+            default: 
+               goto unhandled;
+         }
+      case Ist_Put:
+         return isBogusAtom(st->Ist.Put.data);
+      case Ist_STle:
+         return isBogusAtom(st->Ist.STle.addr) 
+                || isBogusAtom(st->Ist.STle.data);
+      case Ist_Exit:
+         return isBogusAtom(st->Ist.Exit.cond);
+      default: 
+      unhandled:
+         ppIRStmt(st);
+         VG_(skin_panic)("hasBogusLiterals");
+   }
+}
+#endif /* UNUSED */
+
+
 IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   Bool verboze = False;
-     //True; 
+   Bool verboze = False;  //True; 
+
+   /* Bool hasBogusLiterals = False; */
 
    Int i, j, first_stmt;
    IRStmt* st;
@@ -1168,6 +1239,17 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
       if (!st) continue;
 
       sk_assert(isFlatIRStmt(st));
+
+      /*
+      if (!hasBogusLiterals) {
+         hasBogusLiterals = checkForBogusLiterals(st);
+         if (hasBogusLiterals) {
+            VG_(printf)("bogus: ");
+            ppIRStmt(st);
+            VG_(printf)("\n");
+         }
+      }
+      */
       first_stmt = bb->stmts_used;
 
       if (verboze) {
@@ -1201,7 +1283,8 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_Exit:
-            complainIfUndefined( &mce, st->Ist.Exit.cond );
+            /* if (!hasBogusLiterals) */
+               complainIfUndefined( &mce, st->Ist.Exit.cond );
             break;
 
          default:

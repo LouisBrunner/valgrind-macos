@@ -715,34 +715,34 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 #  endif
 }
 
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_LOAD4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/False );
 }
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_STORE4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/True );
 }
 
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_LOAD2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/False );
 }
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_STORE2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/True );
 }
 
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_LOAD1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/False );
 }
-//REGPARM(1)
+REGPARM(1)
 static void ac_helperc_STORE1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/True );
@@ -912,13 +912,13 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 #  endif
 }
 
-//REGPARM(2)
+REGPARM(2)
 static void ac_helperc_LOADN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
-//REGPARM(2)
+REGPARM(2)
 static void ac_helperc_STOREN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
@@ -982,11 +982,11 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 
    Int         i;
    Int         sz;
-   Char*       helper;
-   IRStmt* st;
-   IRExpr* data;
-   IRExpr* addr;
-   Bool needSz;
+   IRCallee*   helper;
+   IRStmt*     st;
+   IRExpr*     data;
+   IRExpr*     addr;
+   Bool        needSz;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -1010,10 +1010,18 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
                sz = sizeofIRType(data->Iex.LDle.ty);
                needSz = False;
                switch (sz) {
-                  case 4: helper = "ac_helperc_LOAD4"; break;
-                  case 2: helper = "ac_helperc_LOAD2"; break;
-                  case 1: helper = "ac_helperc_LOAD1"; break;
-                  default: helper = "ac_helperc_LOADN"; needSz = True; break;
+                  case 4: helper = mkIRCallee(1, 
+                                      "ac_helperc_LOAD4", 
+                                      (HWord)&ac_helperc_LOAD4); break;
+                  case 2: helper = mkIRCallee(1, 
+                                      "ac_helperc_LOAD2",
+                                      (HWord)&ac_helperc_LOAD2); break;
+                  case 1: helper = mkIRCallee(1, 
+                                      "ac_helperc_LOAD1",
+                                      (HWord)&ac_helperc_LOAD1); break;
+                  default: helper = mkIRCallee(2, "ac_helperc_LOADN",
+                                      (HWord)&ac_helperc_LOADN);
+                           needSz = True; break;
                }
                if (needSz) {
                   addStmtToIRBB( 
@@ -1041,10 +1049,18 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
             sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
             needSz = False;
             switch (sz) {
-               case 4: helper = "ac_helperc_STORE4"; break;
-               case 2: helper = "ac_helperc_STORE2"; break;
-               case 1: helper = "ac_helperc_STORE1"; break;
-               default: helper = "ac_helperc_STOREN"; needSz = True; break;
+               case 4: helper = mkIRCallee(1, 
+                                   "ac_helperc_STORE4", 
+                                   (HWord)&ac_helperc_STORE4); break;
+               case 2: helper = mkIRCallee(1, 
+                                   "ac_helperc_STORE2",
+                                   (HWord)&ac_helperc_STORE2); break;
+               case 1: helper = mkIRCallee(1, 
+                                   "ac_helperc_STORE1",
+                                   (HWord)&ac_helperc_STORE1); break;
+               default: helper = mkIRCallee(2, "ac_helperc_STOREN",
+                                   (HWord)&ac_helperc_STOREN);
+                        needSz = True; break;
             }
             if (needSz) {
                addStmtToIRBB( 
@@ -1096,131 +1112,6 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 
    return bb;
 }
-
-#if 0
--------------------
-   cb = VG_(setup_UCodeBlock)(cb_in);
-
-   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
-
-      t_addr = t_size = INVALID_TEMPREG;
-      u_in = VG_(get_instr)(cb_in, i);
-
-      switch (u_in->opcode) {
-         case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
-            break;
-
-         /* For memory-ref instrs, copy the data_addr into a temporary
-          * to be passed to the helper at the end of the instruction.
-          */
-         case LOAD:
-            switch (u_in->size) {
-               case 4:  helper = (Addr)ac_helperc_LOAD4; break;
-               case 2:  helper = (Addr)ac_helperc_LOAD2; break;
-               case 1:  helper = (Addr)ac_helperc_LOAD1; break;
-               default: VG_(skin_panic)
-                           ("addrcheck::SK_(instrument):LOAD");
-            }
-            uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
-            uCCall (cb, helper, 1, 1, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case STORE:
-            switch (u_in->size) {
-               case 4:  helper = (Addr)ac_helperc_STORE4; break;
-               case 2:  helper = (Addr)ac_helperc_STORE2; break;
-               case 1:  helper = (Addr)ac_helperc_STORE1; break;
-               default: VG_(skin_panic)
-                           ("addrcheck::SK_(instrument):STORE");
-            }
-            uInstr1(cb, CCALL, 0, TempReg, u_in->val2);
-            uCCall (cb, helper, 1, 1, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case SSE3ag_MemRd_RegWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_READ_check;
-            goto do_Access_ARG1;
-         do_Access_ARG1:
-	    sk_assert(u_in->tag1 == TempReg);
-            t_addr = u_in->val1;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case MMX2_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG2;
-         case MMX2_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_WRITE_check;
-	    goto do_Access_ARG2;
-         case FPU_R:
-            helper = (Addr)ac_fpu_READ_check;
-            goto do_Access_ARG2;
-         case FPU_W:
-            helper = (Addr)ac_fpu_WRITE_check;
-            goto do_Access_ARG2;
-         do_Access_ARG2:
-	    sk_assert(u_in->tag2 == TempReg);
-            t_addr = u_in->val2;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case MMX2a1_MemRd:
-         case SSE3a_MemRd:
-         case SSE2a_MemRd:
-         case SSE3a1_MemRd:
-         case SSE2a1_MemRd:
-            helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG3;
-         case SSE2a_MemWr:
-	 case SSE3a_MemWr:
-            helper = (Addr)ac_fpu_WRITE_check;
-	    goto do_Access_ARG3;
-         do_Access_ARG3:
-	    sk_assert(u_in->size == 4 || u_in->size == 8
-                      || u_in->size == 16 || u_in->size == 512);
-            sk_assert(u_in->tag3 == TempReg);
-            t_addr = u_in->val3;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case SSE3e1_RegRd:
-         case SSE3e_RegWr:
-         case SSE3g1_RegWr:
-         case SSE5:
-         case SSE3g_RegWr:
-         case SSE3e_RegRd:
-         case SSE4:
-         case SSE3:
-         default:
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-      }
-   }
-
-   VG_(free_UCodeBlock)(cb_in);
-   return cb;
-}
-#endif
 
 
 /*------------------------------------------------------------*/

@@ -10,6 +10,7 @@ VALGRIND_2.1 {
 		*IRBB*;
 		*IRDirty*;
 		*IRType*;
+		*IRCallee*;
 		LibVEX_Alloc;
 
 	local:

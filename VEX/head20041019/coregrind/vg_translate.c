@@ -1405,8 +1405,11 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
 
       /* I don't know if it's really necessary to say that the call reads
 	 the stack pointer.  But anyway, we do. */      
-      dcall = unsafeIRDirty_0_N( "VG_(unknown_esp_update)", 
-                                 mkIRExprVec_1(st->Ist.Put.data) );
+      dcall = unsafeIRDirty_0_N( 
+                 mkIRCallee(1, "VG_(unknown_esp_update)", 
+	                    (HWord)&VG_(unknown_esp_update)),
+                 mkIRExprVec_1(st->Ist.Put.data) 
+              );
       dcall->nFxState = 1;
       dcall->fxState[0].fx     = Ifx_Read;
       dcall->fxState[0].offset = layout->offset_SP;
@@ -1459,15 +1462,6 @@ void log_bytes ( Char* bytes, Int nbytes )
 
    'tid' is the identity of the thread needing this block.
 */
-
-/* HACK HACK HACK */
-static HWord hacky_findhelper ( Char* function_name )
-{
-   if (0 == VG_(strcmp)(function_name, "VG_(unknown_esp_update)"))
-      return (HWord) & VG_(unknown_esp_update);
-   return SK_(tool_findhelper)( function_name );
-}
-
 
 Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
@@ -1567,7 +1561,6 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              VG_(need_to_handle_esp_assignment)()
                 ? vg_SP_update_pass
                 : NULL,
-             hacky_findhelper, /* SK_(tool_findhelper), */
              NULL,
              VG_(clo_trace_codegen)
           );

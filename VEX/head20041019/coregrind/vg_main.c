@@ -1646,6 +1646,7 @@ static void pre_process_cmd_line_options
       }
    }
 
+#if 0
    /* If no tool specified, can act appropriately without loading tool */
    if (*tool == NULL) {
       if (0 == *need_help) {
@@ -1656,6 +1657,9 @@ static void pre_process_cmd_line_options
          usage(/*help-debug?*/2 == *need_help);
       }
    }
+#endif
+   /* hardwire the only currently supported tool. */
+   *tool = "none";
 }
 
 static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
@@ -1968,6 +1972,10 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VERSION, VG_PLATFORM);
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");
+      VG_(message)(Vg_UserMsg,
+         "EXPERIMENTAL LibVEX/IR-based system.  Using LibVEX rev 396.");
+      VG_(message)(Vg_UserMsg, 
+         "Copyright (C) 2004, and GNU GPL'd, by OpenWorks LLP.");
    }
 
    if (VG_(clo_verbosity) > 0 && VG_(clo_log_to) != VgLogTo_Fd) {

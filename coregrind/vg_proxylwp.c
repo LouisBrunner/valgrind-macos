@@ -869,15 +869,15 @@ void VG_(proxy_create)(ThreadId tid)
 
    VG_(pipe)(p);
 
-   proxy->tid = tid;
-   proxy->tst = tst;
-   proxy->exitcode = 0;
-   proxy->lwp = 0;
+   proxy->tid              = tid;
+   proxy->tst              = tst;
+   proxy->exitcode         = 0;
+   proxy->lwp              = 0;
    proxy->siginfo.si_signo = 0;
-   proxy->frommain = VG_(safe_fd)(p[0]);
-   proxy->topx = VG_(safe_fd)(p[1]);
-   proxy->state = PXS_WaitReq;	/* start by waiting for requests */
-   proxy->terminating = False;
+   proxy->frommain         = VG_(safe_fd)(p[0]);
+   proxy->topx             = VG_(safe_fd)(p[1]);
+   proxy->state            = PXS_WaitReq;  /* start by waiting for requests */
+   proxy->terminating      = False;
 
    /* Make sure proxy LWP starts with all signals blocked (not even
       SEGV, BUS, ILL or FPE) */

@@ -40,10 +40,12 @@ rcrl
 readline1
 resolv
 seg_override
+semlimit
 sha1_test
 shortpush
 shorts
 smc1
+susphello
 syscall-restart1
 syscall-restart2
 system

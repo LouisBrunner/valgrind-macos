@@ -80,8 +80,41 @@ typedef
       UInt guest_GPR30;
       UInt guest_GPR31;
 
+      // Floating Point Registers
+      ULong guest_FPR0;
+      ULong guest_FPR1;
+      ULong guest_FPR2;
+      ULong guest_FPR3;
+      ULong guest_FPR4;
+      ULong guest_FPR5;
+      ULong guest_FPR6;
+      ULong guest_FPR7;
+      ULong guest_FPR8;
+      ULong guest_FPR9;
+      ULong guest_FPR10;
+      ULong guest_FPR11;
+      ULong guest_FPR12;
+      ULong guest_FPR13;
+      ULong guest_FPR14;
+      ULong guest_FPR15;
+      ULong guest_FPR16;
+      ULong guest_FPR17;
+      ULong guest_FPR18;
+      ULong guest_FPR19;
+      ULong guest_FPR20;
+      ULong guest_FPR21;
+      ULong guest_FPR22;
+      ULong guest_FPR23;
+      ULong guest_FPR24;
+      ULong guest_FPR25;
+      ULong guest_FPR26;
+      ULong guest_FPR27;
+      ULong guest_FPR28;
+      ULong guest_FPR29;
+      ULong guest_FPR30;
+      ULong guest_FPR31;
+
       UInt guest_CIA;    // Current Instruction Address (no arch visible register)
-//      UInt guest_NIA;    // Next Instruction Address (no arch visible register)
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
@@ -92,6 +125,8 @@ typedef
 
       // CR1:7: Used for 'compare' ops (bits 0:4 not used - thunk used for this)
       UInt guest_CR1to7;
+
+      UInt guest_FPSCR;   // Floating Point Status and Control Register
 
       /* XER */
       UChar guest_XER_SO;  // Summary Overflow
@@ -106,7 +141,7 @@ typedef
 //      UChar padding_1b1;
 //      UChar padding_1b2;
 //      UChar padding_1b3;
-      UInt  padding_4b;
+//      UInt  padding_4b;
    }
    VexGuestPPC32State;
 

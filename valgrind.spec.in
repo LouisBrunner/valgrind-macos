@@ -41,6 +41,9 @@ make install prefix=$RPM_BUILD_ROOT/usr
 /usr/include/valgrind/valgrind.h
 /usr/include/valgrind/memcheck.h
 /usr/include/valgrind/helgrind.h
+/usr/include/valgrind/vg_constants_skin.h
+/usr/include/valgrind/vg_kerneliface.h
+/usr/include/valgrind/vg_skin.h
 /usr/bin/valgrind
 /usr/bin/cg_annotate
 /usr/lib/valgrind/*

@@ -3627,6 +3627,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* CVTSS2SD -- convert one single float to double. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5A) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, "cvtss2sd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* SHUFPS */
    if (insn[0] == 0x0F && insn[1] == 0xC6) {
       vg_assert(sz == 4);
@@ -3643,6 +3651,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MULSD */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x59) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "mulsd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* ADDPS */
    if (insn[0] == 0x0F && insn[1] == 0x58) {
       vg_assert(sz == 4);
@@ -3655,6 +3671,24 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (sz == 2
        && insn[0] == 0x0F && insn[1] == 0xEF) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pxor",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PUNPCKLgg (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 60 is BW, 61 is WD, 62 is DQ */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x62) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "punpckldq",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PADDgg (src)xmmreg-or-mem, (dst)xmmreg */
+   /* FC is B, FD is W, FE is D */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xFE) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "paddd",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }

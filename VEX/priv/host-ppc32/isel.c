@@ -334,18 +334,22 @@ static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
    // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
    HReg zero = hregPPC32_GPR0();
 
-   if (src->tag == Pri_Imm &&
-       src->Pri.Imm.imm32 > 0xFFFF) {
+   if (src->tag == Pri_Imm) {
       UInt imm = src->Pri.Imm.imm32;
-      // CAB: addis (aka lis) would be good...
-      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm>>16)));
-      addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
-      return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
-   } else {
-      // Load immediate _without_ sign extend
-      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
-      return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
+      if (imm >= 0xFFFF8000 || imm <= 0x7FFF) { // sign-extendable from 16 bits?
+         return PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm & 0xFFFF));
+      }
+      if (imm > 0xFFFF) {
+         // CAB: addis (aka lis) would be good...
+         addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm>>16)));
+         addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
+         return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
+      }
    }
+
+   // Load immediate _without_ sign extend
+   addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
+   return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
 }
 
 /* If imm > 0xffff, mov to reg first */
@@ -1580,7 +1584,9 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U)) {
       HReg     r1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      PPC32RI* ri2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+      PPC32RI* ri2 = PPC32RI_Reg(
+         mk_RItoR(env, iselIntExpr_RI(env, e->Iex.Binop.arg2)));
+
       PPC32CmpOp cmp_op = Pcmp_U;
       if (e->Iex.Binop.op == Iop_CmpLT32S ||
           e->Iex.Binop.op == Iop_CmpLE32S) {

@@ -114,6 +114,10 @@ typedef unsigned char          Bool;
 #include "vg_kerneliface.h"
 
 
+/* Path to all our library/aux files */
+extern const Char *VG_(libdir);
+
+
 /*====================================================================*/
 /*=== Core/skin interface version                                  ===*/
 /*====================================================================*/

@@ -373,12 +373,16 @@ AC_OUTPUT(
    cachegrind/tests/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
-   corecheck/Makefile
-   corecheck/tests/Makefile
-   corecheck/docs/Makefile
    helgrind/Makefile
    helgrind/tests/Makefile
    helgrind/docs/Makefile
+   massif/Makefile
+   massif/hp2ps/Makefile
+   massif/tests/Makefile
+   massif/docs/Makefile
+   corecheck/Makefile
+   corecheck/tests/Makefile
+   corecheck/docs/Makefile
    lackey/Makefile
    lackey/tests/Makefile
    lackey/docs/Makefile

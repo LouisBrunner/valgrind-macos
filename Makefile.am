@@ -9,6 +9,7 @@ SUBDIRS = 	include coregrind . docs tests auxprogs \
 		cachegrind \
 		corecheck \
 		helgrind \
+		massif \
 		lackey \
 		none
 

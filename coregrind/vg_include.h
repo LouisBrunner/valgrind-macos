@@ -1365,9 +1365,6 @@ extern Int  VG_(vgexecfd);
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);
 
-/* Path to all our library/aux files */
-extern const Char *VG_(libdir);
-
 /* Determine if %esp adjustment must be noted */
 extern Bool VG_(need_to_handle_esp_assignment) ( void );
 

@@ -1,0 +1,69 @@
+
+Version 1.9.5 (7 April 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It occurs to me that it would be helpful for valgrind users to record
+in the source distribution the changes in each release.  So I now
+attempt to mend my errant ways :-)  Changes in this and future releases
+will be documented in the NEWS file in the source distribution.
+
+Major changes in 1.9.5:
+
+- (Critical bug fix): Fix a bug in the FPU simulation.  This was
+  causing some floating point conditional tests not to work right.
+  Several people reported this.  If you had floating point code which
+  didn't work right on 1.9.1 to 1.9.4, it's worth trying 1.9.5.
+
+- Partial support for Red Hat 9.  RH9 uses the new Native Posix 
+  Threads Library (NPTL), instead of the older LinuxThreads.  
+  This potentially causes problems with V which will take some
+  time to correct.  In the meantime we have partially worked around
+  this, and so 1.9.5 works on RH9.  Threaded programs still work,
+  but they may deadlock, because some system calls (accept, read,
+  write, etc) which should be nonblocking, in fact do block.  This
+  is a known bug which we are looking into.
+
+  If you can, your best bet (unfortunately) is to avoid using 
+  1.9.5 on a Red Hat 9 system, or on any NPTL-based distribution.
+  If your glibc is 2.3.1 or earlier, you're almost certainly OK.
+
+Minor changes in 1.9.5:
+
+- Added some #errors to valgrind.h to ensure people don't include
+  it accidentally in their sources.  This is a change from 1.0.X
+  which was never properly documented.  The right thing to include
+  is now memcheck.h.  Some people reported problems and strange
+  behaviour when (incorrectly) including valgrind.h in code with 
+  1.9.1 -- 1.9.4.  This is no longer possible.
+
+- Add some __extension__ bits and pieces so that gcc configured
+  for valgrind-checking compiles even with -Werror.  If you
+  don't understand this, ignore it.  Of interest to gcc developers
+  only.
+
+- Removed a pointless check which caused problems interworking 
+  with Clearcase.  V would complain about shared objects whose
+  names did not end ".so", and refuse to run.  This is now fixed.
+  In fact it was fixed in 1.9.4 but not documented.
+
+- Fixed a bug causing an assertion failure of "waiters == 1"
+  somewhere in vg_scheduler.c, when running large threaded apps,
+  notably MySQL.
+
+- Add support for the munlock system call (124).
+
+Some comments about future releases:
+
+1.9.5 is, we hope, the most stable Valgrind so far.  It pretty much
+supersedes the 1.0.X branch.  If you are a valgrind packager, please
+consider making 1.9.5 available to your users.  You can regard the
+1.0.X branch as obsolete: 1.9.5 is stable and vastly superior.  There
+are no plans at all for further releases of the 1.0.X branch.
+
+If you want a leading-edge valgrind, consider building the cvs head
+(from SourceForge), or getting a snapshot of it.  Current cool stuff
+going in includes MMX support (done); SSE/SSE2 support (in progress),
+a significant (10-20%) performance improvement (done), and the usual
+large collection of minor changes.  Hopefully we will be able to
+improve our NPTL support, but no promises.
+

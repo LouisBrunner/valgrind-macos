@@ -140,7 +140,7 @@ void SK_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout)
+IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
    IRDirty* di;
    Int      i;

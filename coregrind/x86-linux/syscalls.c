@@ -1493,8 +1493,8 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_getpmsg,           sys_getpmsg),        // 188
    GENX_(__NR_putpmsg,           sys_putpmsg),        // 189
 
-   // Nb: we convert vfork() to fork() in VG_(pre_syscall)().
-   //   (__NR_vfork,             sys_vfork),          // 190
+   // Nb: we treat vfork as fork
+   GENX_(__NR_vfork,             sys_fork),           // 190
    GENXY(__NR_ugetrlimit,        sys_getrlimit),      // 191
    GENXY(__NR_mmap2,             sys_mmap2),          // 192
    GENX_(__NR_truncate64,        sys_truncate64),     // 193

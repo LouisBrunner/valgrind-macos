@@ -33,7 +33,7 @@
 #include "valgrind.h" /* for VG_USERREQ__MAKE_NOACCESS and
                          VG_USERREQ__DO_LEAK_CHECK */
 
-/* BORKAGE/ISSUES as of 23 May 02
+/* BORKAGE/ISSUES as of 29 May 02
 
 - Currently, when a signal is run, just the ThreadStatus.status fields 
   are saved in the signal frame, along with the CPU state.  Question: 
@@ -49,9 +49,6 @@
   specified and they are interrupted by a signal.  nanosleep just
   pretends signals don't exist -- should be fixed.
 
-- Read/write syscall starts: don't crap out when the initial
-  nonblocking read/write returns an error.
-
 - So, what's the deal with signals and mutexes?  If a thread is
   blocked on a mutex, or for a condition variable for that matter, can
   signals still be delivered to it?  This has serious consequences --
@@ -59,6 +56,19 @@
 
 - Signals still not really right.  Each thread should have its
   own pending-set, but there is just one process-wide pending set.
+
+  TODO for valgrind-1.0:
+
+- Check memory permissions of client-space addresses passed from
+  vg_libpthread.c.
+
+  TODO sometime:
+
+- Mutex scrubbing - clearup_after_thread_exit: look for threads
+  blocked on mutexes held by the exiting thread, and release them
+  appropriately. (??)
+
+- pthread_atfork
 
 */
 

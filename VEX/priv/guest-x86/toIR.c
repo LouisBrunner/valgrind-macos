@@ -4722,7 +4722,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
          assign(res, binop(Iop_And64, argL, argR) ); 
          break;
       case 0xDF: 
-         assign(res, binop(Iop_And64, argL, unop(Iop_Not64, argR)) ); 
+         assign(res, binop(Iop_And64, unop(Iop_Not64, argL), argR) ); 
          break;
       case 0xEB: 
          assign(res, binop(Iop_Or64, argL, argR) ); 

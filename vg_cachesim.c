@@ -1060,6 +1060,10 @@ void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
     -1 != VG_(clo_##L##_cache).assoc ||     \
     -1 != VG_(clo_##L##_cache).line_size)
 
+   *I1c = VG_(clo_I1_cache);
+   *D1c = VG_(clo_D1_cache);
+   *L2c = VG_(clo_L2_cache);
+
    /* If any undefined on command-line, try CPUID */
    if (! CMD_LINE_DEFINED(I1) ||
        ! CMD_LINE_DEFINED(D1) ||

@@ -53,7 +53,7 @@ void VGP_(init_profiling) ( void )
 
 void VGP_(done_profiling) ( void )
 {
-   VGP_(core_panic)("done_profiling(), but not compiled for profiling??");
+   VG_(core_panic)("done_profiling(), but not compiled for profiling??");
 }
 
 void VGP_(pushcc) ( UInt cc )

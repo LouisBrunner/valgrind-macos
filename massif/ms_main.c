@@ -664,7 +664,8 @@ void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
 static void hp_census(void);
 
 static
-void* new_block ( void* p, SizeT size, SizeT align, Bool is_zeroed )
+void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
+                  Bool is_zeroed )
 {
    HP_Chunk* hc;
    Bool custom_alloc = (NULL == p);
@@ -692,7 +693,7 @@ void* new_block ( void* p, SizeT size, SizeT align, Bool is_zeroed )
    hc->data = (Addr)p;
    hc->where = NULL;    // paranoia
    if (clo_heap) {
-      hc->where = get_XCon( VG_(get_current_or_recent_tid)(), custom_alloc );
+      hc->where = get_XCon( tid, custom_alloc );
       if (0 != size) 
          update_XCon(hc->where, size);
    }
@@ -738,47 +739,47 @@ void die_block ( void* p, Bool custom_free )
 }
  
 
-void* TL_(malloc) ( SizeT n )
+void* TL_(malloc) ( ThreadId tid, SizeT n )
 {
-   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_new) ( SizeT n )
+void* TL_(__builtin_new) ( ThreadId tid, SizeT n )
 {
-   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_vec_new) ( SizeT n )
+void* TL_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 {
-   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(calloc) ( SizeT m, SizeT size )
+void* TL_(calloc) ( ThreadId tid, SizeT m, SizeT size )
 {
-   return new_block( NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
+   return new_block( tid, NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-void *TL_(memalign)( SizeT align, SizeT n )
+void *TL_(memalign)( ThreadId tid, SizeT align, SizeT n )
 {
-   return new_block( NULL, n, align, False );
+   return new_block( tid, NULL, n, align, False );
 }
 
-void TL_(free) ( void* p )
+void TL_(free) ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void TL_(__builtin_delete) ( void* p )
+void TL_(__builtin_delete) ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False);
 }
 
-void TL_(__builtin_vec_delete) ( void* p )
+void TL_(__builtin_vec_delete) ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void* TL_(realloc) ( void* p_old, SizeT new_size )
+void* TL_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 {
    HP_Chunk*    hc;
    HP_Chunk**   remove_handle;
@@ -814,8 +815,7 @@ void* TL_(realloc) ( void* p_old, SizeT new_size )
    }
    
    old_where = hc->where;
-   new_where = get_XCon( VG_(get_current_or_recent_tid)(),
-                         /*custom_malloc*/False);
+   new_where = get_XCon( tid, /*custom_malloc*/False);
 
    // Update HP_Chunk
    hc->data  = (Addr)p_new;
@@ -1136,7 +1136,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
       void* p         = (void*)argv[1];
       SizeT sizeB     =        argv[2];
       *ret            = 0;
-      res = new_block( p, sizeB, /*align -- ignored*/0, /*is_zeroed*/False );
+      res = new_block( tid, p, sizeB, /*align--ignored*/0, /*is_zeroed*/False );
       tl_assert(res == p);
       return True;
    }

@@ -89,7 +89,7 @@ void LibVEX_Init (
    __attribute__ ((noreturn))
    void (*failure_exit) ( void ),
    /* logging output function */
-   void (*log_bytes) ( Char*, Int nbytes ),
+   void (*log_bytes) ( HChar*, Int nbytes ),
    /* debug paranoia level */
    Int debuglevel,
    /* Are we supporting valgrind checking? */
@@ -212,7 +212,7 @@ VexTranslateResult LibVEX_Translate (
                                  Bool(*)(Addr64), 
                                  Bool, VexSubArch );
    Int          (*emit)        ( UChar*, Int, HInstr* );
-   IRExpr*      (*specHelper)  ( Char*, IRExpr** );
+   IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
    VexGuestLayout* guest_layout;
@@ -404,7 +404,7 @@ VexTranslateResult LibVEX_Translate (
          /* HACK */
          UChar* p = (UChar*)guest_bytes;
          UInt   guest_bytes_read = (UInt)guest_extents->len[0];
-         vex_printf(". 0 %llx %d\n.", guest_bytes_addr, guest_bytes_read );
+         vex_printf(". 0 %llx %u\n.", guest_bytes_addr, guest_bytes_read );
          for (i = 0; i < guest_bytes_read; i++)
          vex_printf(" %02x", (Int)p[i] );
          vex_printf("\n\n");

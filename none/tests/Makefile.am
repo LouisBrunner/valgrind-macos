@@ -1,15 +1,10 @@
 SUBDIRS =  ${VG_ARCH} .
 
-noinst_SCRIPTS = filter_cpuid filter_none_discards filter_stderr filter_int
+noinst_SCRIPTS = filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
-	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
-	bt_everything.stderr.exp \
-	bt_everything.stdout.exp bt_everything.vgtest \
-	bt_literal.stderr.exp bt_literal.stdout.exp \
-	bt_literal.vgtest \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
 	cmdline2.stderr.exp cmdline2.stdout.exp cmdline2.vgtest \
@@ -20,9 +15,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \
-	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
-	dastest.stderr.exp dastest.stdout.exp \
-	dastest.vgtest \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
@@ -31,26 +23,19 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
-	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
-	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
-	int.stderr.exp int.stdout.exp int.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mq.stderr.exp mq.vgtest \
 	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
-	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
-	rcl_assert.stderr.exp rcl_assert.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
-	seg_override.stderr.exp \
-	seg_override.stdout.exp seg_override.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
 	susphello.stdout.exp susphello.stderr.exp susphello.vgtest \
@@ -65,12 +50,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
-	cpuid dastest discard exec-sigmask execve fcntl_setown floored fork \
-	fpu_lazy_eflags fucomip \
-	int munmap_exe map_unmap mq mremap rcl_assert rcrl readline1 \
-	resolv rlimit_nofile seg_override sem semlimit sha1_test \
-	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
+	args bitfield1 closeall coolo_strlen \
+	discard exec-sigmask execve fcntl_setown floored fork \
+	fucomip \
+	munmap_exe map_unmap mq mremap rcrl readline1 \
+	resolv rlimit_nofile sem semlimit sha1_test \
+	shortpush shorts smc1 susphello pth_blockedsig \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -79,14 +64,9 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 args_SOURCES 		= args.c
-badseg_SOURCES		= badseg.c
 bitfield1_SOURCES 	= bitfield1.c
-bt_everything_SOURCES 	= bt_everything.c
-bt_literal_SOURCES 	= bt_literal.c
 closeall_SOURCES	= closeall.c
-cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 coolo_strlen_SOURCES 	= coolo_strlen.c
-dastest_SOURCES 	= dastest_c.c dastest_s.s
 discard_SOURCES 	= discard.c
 exec_sigmask_SOURCES	= exec-sigmask.c
 execve_SOURCES		= execve.c
@@ -94,21 +74,16 @@ fcntl_setown_SOURCES	= fcntl_setown.c
 fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
-fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
-int_SOURCES		= int.c
 map_unmap_SOURCES	= map_unmap.c
 mq_SOURCES		= mq.c
 mq_LDADD		= -lrt
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
-pushpopseg_SOURCES	= pushpopseg.c
-rcl_assert_SOURCES 	= rcl_assert.S
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
 resolv_SOURCES 		= resolv.c
 rlimit_nofile_SOURCES	= rlimit_nofile.c
-seg_override_SOURCES 	= seg_override.c
 sem_SOURCES		= sem.c
 semlimit_SOURCES	= semlimit.c
 semlimit_LDADD		= -lpthread

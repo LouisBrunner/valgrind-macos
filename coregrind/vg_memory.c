@@ -62,7 +62,7 @@ static ExeSeg* exeSegsHead = NULL;
    Also check no segments overlap, which would be very bad.  Check is linear
    for each seg added (quadratic overall) but the total number should be
    small (konqueror has around 50 --njn). */
-static void add_exe_segment_to_list( a, len ) 
+static void add_exe_segment_to_list( Addr a, UInt len ) 
 {
    Addr lo = a;
    Addr hi = a + len - 1;

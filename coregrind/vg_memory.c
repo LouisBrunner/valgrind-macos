@@ -96,7 +96,7 @@ static void add_exe_segment_to_list( Addr a, UInt len )
    }
 }
 
-static Bool remove_if_exe_segment_from_list( Addr a, UInt len )
+static Bool remove_if_exe_segment_from_list( Addr a )
 {
    ExeSeg **prev_next_ptr = & exeSegsHead, 
           *curr = exeSegsHead;
@@ -139,7 +139,7 @@ void VG_(new_exe_segment) ( Addr a, UInt len )
 // comment above vg_syscalls.c:mmap_segment() et al for more details.
 void VG_(remove_if_exe_segment) ( Addr a, UInt len )
 {
-   if (remove_if_exe_segment_from_list( a, len )) {
+   if (remove_if_exe_segment_from_list( a )) {
       VG_(invalidate_translations) ( a, len, False );
       VG_(maybe_unload_symbols)    ( a, len );
    }

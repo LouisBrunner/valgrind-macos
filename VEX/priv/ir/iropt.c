@@ -46,6 +46,85 @@
 #define DEBUG_IROPT 0
 
 
+/* What iropt does, 29 Dec 04.
+
+   It takes an IRBB and produces a new one with the same meaning,
+   defined thus:
+
+   After execution of the new BB, all guest state and guest memory is
+   the same as after execution of the original.  This is true
+   regardless of how the block was exited (at the end vs side exit).
+
+   In addition, parts of the guest state will be identical to that
+   created by execution of the original at the following observation
+   points:
+
+   * In a dirty helper call, any parts of the guest state that the
+     helper states that it reads or modifies will be up to date.
+     Also, guest memory will be up to date.  Parts of the guest state
+     not marked as being read or modified by the helper cannot be
+     assumed to be up-to-date at the point where the helper is called.
+
+   * Immediately prior to any load or store, those parts of the guest
+     state marked as requiring precise exceptions will be up to date.
+     Also, guest memory will be up to date.  Parts of the guest state
+     not marked as requiring precise exceptions cannot be assumed to
+     be up-to-date at the point of the load/store.
+
+   The relative order of loads and stores (including loads/stores of
+   guest memory done by dirty helpers annotated as such) is not
+   changed.  However, the relative order of loads with no intervening
+   stores/modifies may be changed.  
+
+   Transformation order
+   ~~~~~~~~~~~~~~~~~~~~
+
+   There are three levels of optimisation, controlled by
+   vex_control.iropt_level.  Define first:
+
+   "Cheap transformations" are the following sequence:
+      * Redundant-Get removal
+      * Redundant-Put removal
+      * Constant propagation/folding
+      * Dead code removal
+      * Specialisation of clean helper functions
+      * Dead code removal
+
+   "Expensive transformations" are the following sequence:
+      * CSE
+      * Folding of add/sub chains
+      * Redundant-GetI removal
+      * Redundant-PutI removal
+      * Dead code removal
+      * (redo flattening)
+
+   Then the transformations are as follows, as defined by
+   vex_control.iropt_level:
+
+   Level 0: 
+      * Flatten into atomic form.
+
+   Level 1: the following sequence:
+      * Flatten into atomic form.
+      * Cheap transformations.
+      * Flatten into atomic form.
+
+   Level 2: the following sequence
+      * Flatten into atomic form.
+      * Cheap transformations.
+      * If block contains GetI or PutI, Expensive transformations.
+      * Try unrolling loops.  Three possible outcomes:
+        - No effect: do nothing more.
+        - Unrolled a loop, and block does not contain GetI or PutI:
+          Do: * CSE
+              * Dead code removal
+              * Flatten into atomic form.
+        - Unrolled a loop, and block contains GetI or PutI:
+          Do: * Expensive transformations
+              * Cheap transformations
+              * Flatten into atomic form.
+*/
+
 /* Implementation notes, 12 Oct 04.
 
    TODO: improve pessimistic handling of precise exceptions
@@ -71,8 +150,9 @@
 /*--- Finite mappery, of a sort                               ---*/
 /*---------------------------------------------------------------*/
 
-/* General map from HWord-sized thing HWord-sized thing.  Could be
-   done faster by hashing. */
+/* General map from HWord-sized thing HWord-sized thing.  Could be by
+   hashing, but it's not clear whether or not this would really be any
+   faster. */
 
 typedef
    struct {
@@ -101,7 +181,7 @@ static HashHW* newHHW ( void )
 static Bool lookupHHW ( HashHW* h, /*OUT*/HWord* val, HWord key )
 {
    Int i;
-   //vex_printf("lookupHHW(%llx)\n", key );
+   /* vex_printf("lookupHHW(%llx)\n", key ); */
    for (i = 0; i < h->used; i++) {
       if (h->inuse[i] && h->key[i] == key) {
          if (val)
@@ -118,8 +198,8 @@ static Bool lookupHHW ( HashHW* h, /*OUT*/HWord* val, HWord key )
 static void addToHHW ( HashHW* h, HWord key, HWord val )
 {
    Int i, j;
+   /* vex_printf("addToHHW(%llx, %llx)\n", key, val); */
 
-   //vex_printf("addToHHW(%llx, %llx)\n", key, val);
    /* Find and replace existing binding, if any. */
    for (i = 0; i < h->used; i++) {
       if (h->inuse[i] && h->key[i] == key) {
@@ -158,7 +238,7 @@ static void addToHHW ( HashHW* h, HWord key, HWord val )
 
 
 /*---------------------------------------------------------------*/
-/*--- Flattening out a BB into pure SSA form                  ---*/
+/*--- Flattening out a BB into atomic SSA form                ---*/
 /*---------------------------------------------------------------*/
 
 /* Non-critical helper, heuristic for reducing the number of tmp-tmp
@@ -339,6 +419,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
    }
 }
 
+
 static IRBB* flatten_BB ( IRBB* in )
 {
    Int   i;
@@ -353,6 +434,374 @@ static IRBB* flatten_BB ( IRBB* in )
    return out;
 }
 
+
+/*---------------------------------------------------------------*/
+/*--- In-place removal of redundant GETs                      ---*/
+/*---------------------------------------------------------------*/
+
+/* Scan forwards, building up an environment binding (min offset, max
+   offset) pairs to values, which will either be temps or constants.
+
+   On seeing 't = Get(minoff,maxoff)', look up (minoff,maxoff) in the
+   env and if it matches, replace the Get with the stored value.  If
+   there is no match, add a (minoff,maxoff) :-> t binding.
+
+   On seeing 'Put (minoff,maxoff) = t or c', first remove in the env
+   any binding which fully or partially overlaps with (minoff,maxoff).
+   Then add a new (minoff,maxoff) :-> t or c binding.  */
+
+/* Extract the min/max offsets from a guest state array descriptor. */
+
+inline
+static void getArrayBounds ( IRArray* descr, UInt* minoff, UInt* maxoff )
+{
+   *minoff = descr->base;
+   *maxoff = *minoff + descr->nElems*sizeofIRType(descr->elemTy) - 1;
+   vassert((*minoff & ~0xFFFF) == 0);
+   vassert((*maxoff & ~0xFFFF) == 0);
+   vassert(*minoff <= *maxoff);
+}
+
+/* Create keys, of the form ((minoffset << 16) | maxoffset). */
+
+static UInt mk_key_GetPut ( Int offset, IRType ty )
+{
+   /* offset should fit in 16 bits. */
+   UInt minoff = offset;
+   UInt maxoff = minoff + sizeofIRType(ty) - 1;
+   vassert((minoff & ~0xFFFF) == 0);
+   vassert((maxoff & ~0xFFFF) == 0);
+   return (minoff << 16) | maxoff;
+}
+
+static UInt mk_key_GetIPutI ( IRArray* descr )
+{
+   UInt minoff, maxoff;
+   getArrayBounds( descr, &minoff, &maxoff );
+   vassert((minoff & ~0xFFFF) == 0);
+   vassert((maxoff & ~0xFFFF) == 0);
+   return (minoff << 16) | maxoff;
+}
+
+/* Supposing h has keys of the form generated by mk_key_GetPut and
+   mk_key_GetIPutI, invalidate any key which overlaps (k_lo
+   .. k_hi). 
+*/
+static void invalidateOverlaps ( HashHW* h, UInt k_lo, UInt k_hi )
+{
+   Int  j;
+   UInt e_lo, e_hi;
+   vassert(k_lo <= k_hi);
+   /* invalidate any env entries which in any way overlap (k_lo
+      .. k_hi) */
+   /* vex_printf("invalidate %d .. %d\n", k_lo, k_hi ); */
+
+   for (j = 0; j < h->used; j++) {
+      if (!h->inuse[j]) 
+         continue;
+      e_lo = (((UInt)h->key[j]) >> 16) & 0xFFFF;
+      e_hi = ((UInt)h->key[j]) & 0xFFFF;
+      vassert(e_lo <= e_hi);
+      if (e_hi < k_lo || k_hi < e_lo)
+         continue; /* no overlap possible */
+      else
+         /* overlap; invalidate */
+         h->inuse[j] = False;
+   }
+}
+
+
+static void redundant_get_removal_BB ( IRBB* bb )
+{
+   HashHW* env = newHHW();
+   UInt    key = 0; /* keep gcc -O happy */
+   Int     i, j;
+   HWord   val;
+
+   for (i = 0; i < bb->stmts_used; i++) {
+      IRStmt* st = bb->stmts[i];
+
+      if (!st)
+         continue;
+
+      /* Deal with Gets */
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.data->tag == Iex_Get) {
+         /* st is 't = Get(...)'.  Look up in the environment and see
+            if the Get can be replaced. */
+         IRExpr* get = st->Ist.Tmp.data;
+         key = (HWord)mk_key_GetPut( get->Iex.Get.offset, 
+                                     get->Iex.Get.ty );
+         if (lookupHHW(env, &val, (HWord)key)) {
+            /* found it */
+            /* Note, we could do better here.  If the types are
+               different we don't do the substitution, since doing so
+               could lead to invalidly-typed IR.  An improvement would
+               be to stick in a reinterpret-style cast, although that
+               would make maintaining flatness more difficult. */
+            IRExpr* valE    = (IRExpr*)val;
+            Bool    typesOK = typeOfIRExpr(bb->tyenv,valE) 
+                              == st->Ist.Tmp.data->Iex.Get.ty;
+            if (typesOK && DEBUG_IROPT) {
+               vex_printf("rGET: "); ppIRExpr(get);
+               vex_printf("  ->  "); ppIRExpr(valE);
+               vex_printf("\n");
+            }
+            if (typesOK)
+               bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp, valE);
+         } else {
+            /* Not found, but at least we know that t and the Get(...)
+               are now associated.  So add a binding to reflect that
+               fact. */
+            addToHHW( env, (HWord)key, 
+                           (HWord)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
+         }
+      }
+
+      /* Deal with Puts: invalidate any env entries overlapped by this
+         Put */
+      if (st->tag == Ist_Put || st->tag == Ist_PutI) {
+         UInt k_lo, k_hi;
+         if (st->tag == Ist_Put) {
+            key = mk_key_GetPut( st->Ist.Put.offset, 
+                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
+         } else {
+            vassert(st->tag == Ist_PutI);
+            key = mk_key_GetIPutI( st->Ist.PutI.descr );
+         }
+
+         k_lo = (key >> 16) & 0xFFFF;
+         k_hi = key & 0xFFFF;
+         invalidateOverlaps(env, k_lo, k_hi);
+      }
+      else
+      if (st->tag == Ist_Dirty) {
+         /* Deal with dirty helpers which write or modify guest state.
+            Invalidate the entire env.  We could do a lot better
+            here. */
+         IRDirty* d      = st->Ist.Dirty.details;
+         Bool     writes = False;
+         for (j = 0; j < d->nFxState; j++) {
+            if (d->fxState[j].fx == Ifx_Modify 
+                || d->fxState[j].fx == Ifx_Write)
+            writes = True;
+         }
+         if (writes) {
+            /* dump the entire env (not clever, but correct ...) */
+            for (j = 0; j < env->used; j++)
+               env->inuse[j] = False;
+            if (0) vex_printf("rGET: trash env due to dirty helper\n");
+         }
+      }
+
+      /* add this one to the env, if appropriate */
+      if (st->tag == Ist_Put) {
+         vassert(isAtom(st->Ist.Put.data));
+         addToHHW( env, (HWord)key, (HWord)(st->Ist.Put.data));
+      }
+
+   } /* for (i = 0; i < bb->stmts_used; i++) */
+
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- In-place removal of redundant PUTs                      ---*/
+/*---------------------------------------------------------------*/
+
+/* Find any Get uses in st and invalidate any partially or fully
+   overlapping ranges listed in env.  Due to the flattening phase, the
+   only stmt kind we expect to find a Get on is IRStmt_Tmp. */
+
+static void handle_gets_Stmt ( 
+               HashHW* env, 
+               IRStmt* st,
+               Bool (*preciseMemExnsFn)(Int,Int)
+            )
+{
+   Int     j;
+   UInt    key = 0; /* keep gcc -O happy */
+   Bool    isGet;
+   Bool    memRW = False;
+   IRExpr* e;
+
+   switch (st->tag) {
+
+      /* This is the only interesting case.  Deal with Gets in the RHS
+         expression. */
+      case Ist_Tmp:
+         e = st->Ist.Tmp.data;
+         switch (e->tag) {
+            case Iex_Get:
+               isGet = True;
+               key = mk_key_GetPut ( e->Iex.Get.offset, e->Iex.Get.ty );
+               break;
+            case Iex_GetI:
+               isGet = True;
+               key = mk_key_GetIPutI ( e->Iex.GetI.descr );
+               break;
+            case Iex_LDle:
+               isGet = False;
+               memRW = True;
+               break;
+            default: 
+               isGet = False;
+         }
+         if (isGet) {
+            UInt k_lo, k_hi;
+            k_lo = (key >> 16) & 0xFFFF;
+            k_hi = key & 0xFFFF;
+            invalidateOverlaps(env, k_lo, k_hi);
+         }
+         break;
+
+      /* Be very conservative for dirty helper calls; dump the entire
+         environment.  The helper might read guest state, in which
+         case it needs to be flushed first.  Also, the helper might
+         access guest memory, in which case all parts of the guest
+         state requiring precise exceptions needs to be flushed.  The
+         crude solution is just to flush everything; we could easily
+         enough do a lot better if needed. */
+      case Ist_Dirty:
+         for (j = 0; j < env->used; j++)
+            env->inuse[j] = False;
+         break;
+
+      /* all other cases are boring. */
+      case Ist_STle:
+         vassert(isAtom(st->Ist.STle.addr));
+         vassert(isAtom(st->Ist.STle.data));
+         memRW = True;
+         break;
+
+      case Ist_Exit:
+         vassert(isAtom(st->Ist.Exit.guard));
+         break;
+
+      case Ist_PutI:
+         vassert(isAtom(st->Ist.PutI.ix));
+         vassert(isAtom(st->Ist.PutI.data));
+         break;
+
+      default:
+         vex_printf("\n");
+         ppIRStmt(st);
+         vex_printf("\n");
+         vpanic("handle_gets_Stmt");
+   }
+
+   if (memRW) {
+      /* This statement accesses memory.  So we need to dump all parts
+         of the environment corresponding to guest state that may not
+         be reordered with respect to memory references.  That means
+         at least the stack pointer. */
+      for (j = 0; j < env->used; j++) {
+         if (!env->inuse[j])
+            continue;
+         if (vex_control.iropt_precise_memory_exns) {
+            /* Precise exceptions required.  Flush all guest state. */
+            env->inuse[j] = False;
+         } else {
+            /* Just flush the minimal amount required, as computed by
+               preciseMemExnsFn. */
+            HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
+            HWord k_hi = env->key[j] & 0xFFFF;
+            if (preciseMemExnsFn( k_lo, k_hi ))
+               env->inuse[j] = False;
+         }
+      }
+   } /* if (memRW) */
+
+}
+
+
+/* Scan backwards, building up a set of (min offset, max
+   offset) pairs, indicating those parts of the guest state
+   for which the next event is a write.
+
+   On seeing a conditional exit, empty the set.
+
+   On seeing 'Put (minoff,maxoff) = t or c', if (minoff,maxoff) is
+   completely within the set, remove the Put.  Otherwise, add
+   (minoff,maxoff) to the set.
+
+   On seeing 'Get (minoff,maxoff)', remove any part of the set
+   overlapping (minoff,maxoff).
+*/
+
+static void redundant_put_removal_BB ( 
+               IRBB* bb,
+               Bool (*preciseMemExnsFn)(Int,Int)
+            )
+{
+   Int     i, j;
+   Bool    isPut;
+   IRStmt* st;
+   UInt    key = 0; /* keep gcc -O happy */
+
+   HashHW* env = newHHW();
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (!st)
+         continue;
+
+      /* Deal with conditional exits. */
+      if (st->tag == Ist_Exit) {
+         /* Since control may not get beyond this point, we must empty
+            out the set, since we can no longer claim that the next
+            event for any part of the guest state is definitely a
+            write. */
+         vassert(isAtom(st->Ist.Exit.guard));
+         for (j = 0; j < env->used; j++)
+            env->inuse[j] = False;
+         continue;
+      }
+
+      /* Deal with Puts */
+      switch (st->tag) {
+         case Ist_Put: 
+            isPut = True;
+            key = mk_key_GetPut( st->Ist.Put.offset, 
+                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
+            vassert(isAtom(st->Ist.Put.data));
+            break;
+         case Ist_PutI:
+            isPut = True;
+            key = mk_key_GetIPutI( st->Ist.PutI.descr );
+            vassert(isAtom(st->Ist.PutI.ix));
+            vassert(isAtom(st->Ist.PutI.data));
+            break;
+         default: 
+            isPut = False;
+      }
+      if (isPut && st->tag != Ist_PutI) {
+         /* See if any single entry in env overlaps this Put.  This is
+            simplistic in that the transformation is valid if, say, two
+            or more entries in the env overlap this Put, but the use of
+            lookupHHW will only find a single entry which exactly
+            overlaps this Put.  This is suboptimal but safe. */
+         if (lookupHHW(env, NULL, (HWord)key)) {
+            /* This Put is redundant because a later one will overwrite
+               it.  So NULL (nop) it out. */
+            if (DEBUG_IROPT) {
+               vex_printf("rPUT: "); ppIRStmt(st);
+               vex_printf("\n");
+            }
+            bb->stmts[i] = NULL;
+         } else {
+            /* We can't demonstrate that this Put is redundant, so add it
+               to the running collection. */
+            addToHHW(env, (HWord)key, 0);
+         }
+         continue;
+      }
+
+      /* Deal with Gets.  These remove bits of the environment since
+         appearance of a Get means that the next event for that slice
+         of the guest state is no longer a write, but a read. */
+      handle_gets_Stmt( env, st, preciseMemExnsFn );
+   }
+}
 
 
 /*---------------------------------------------------------------*/
@@ -692,7 +1141,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
       Bool zero;
       /* assured us by the IR type rules */
       vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U8);
-      zero = 0 == e->Iex.Mux0X.cond->Iex.Const.con->Ico.U8;
+      zero = 0 == (0xFF & e->Iex.Mux0X.cond->Iex.Const.con->Ico.U8);
       e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
    }
 
@@ -1117,376 +1566,6 @@ static Bool isZeroU1 ( IRExpr* e )
    }
 }
 
-
-/*---------------------------------------------------------------*/
-/*--- In-place removal of redundant GETs                      ---*/
-/*---------------------------------------------------------------*/
-
-/* Scan forwards, building up an environment binding (min offset, max
-   offset) pairs to values, which will either be temps or constants.
-
-   On seeing 't = Get(minoff,maxoff)', look up (minoff,maxoff) in the
-   env and if it matches, replace the Get with the stored value.  If
-   there is no match, add a (minoff,maxoff) :-> t binding.
-
-   On seeing 'Put (minoff,maxoff) = t or c', first remove in the env
-   any binding which fully or partially overlaps with (minoff,maxoff).
-   Then add a new (minoff,maxoff) :-> t or c binding.  */
-
-/* Extract the min/max offsets from a guest state array descriptor. */
-
-inline
-static void getArrayBounds ( IRArray* descr, UInt* minoff, UInt* maxoff )
-{
-   *minoff = descr->base;
-   *maxoff = *minoff + descr->nElems*sizeofIRType(descr->elemTy) - 1;
-   vassert((*minoff & 0xFFFF0000) == 0);
-   vassert((*maxoff & 0xFFFF0000) == 0);
-   vassert(*minoff <= *maxoff);
-}
-
-/* Create keys, of the form ((minoffset << 16) | maxoffset). */
-
-static UInt mk_key_GetPut ( Int offset, IRType ty )
-{
-   /* offset should fit in 16 bits. */
-   UInt minoff = offset;
-   UInt maxoff = minoff + sizeofIRType(ty) - 1;
-   vassert((minoff & 0xFFFF0000) == 0);
-   vassert((maxoff & 0xFFFF0000) == 0);
-   return (minoff << 16) | maxoff;
-}
-
-static UInt mk_key_GetIPutI ( IRArray* descr )
-{
-   UInt minoff, maxoff;
-   getArrayBounds( descr, &minoff, &maxoff );
-   vassert((minoff & 0xFFFF0000) == 0);
-   vassert((maxoff & 0xFFFF0000) == 0);
-   return (minoff << 16) | maxoff;
-}
-
-/* Supposing h has keys of the form generated by mk_key_GetPut and
-   mk_key_GetIPutI, invalidate any key which overlaps (k_lo
-   .. k_hi). 
-*/
-static void invalidateOverlaps ( HashHW* h, UInt k_lo, UInt k_hi )
-{
-   Int  j;
-   UInt e_lo, e_hi;
-   vassert(k_lo <= k_hi);
-   /* invalidate any env entries which in any way overlap (k_lo
-      .. k_hi) */
-   /* vex_printf("invalidate %d .. %d\n", k_lo, k_hi ); */
-
-   for (j = 0; j < h->used; j++) {
-      if (!h->inuse[j]) 
-         continue;
-      e_lo = (((UInt)h->key[j]) >> 16) & 0xFFFF;
-      e_hi = ((UInt)h->key[j]) & 0xFFFF;
-      vassert(e_lo <= e_hi);
-      if (e_hi < k_lo || k_hi < e_lo)
-         continue; /* no overlap possible */
-      else
-         /* overlap; invalidate */
-         h->inuse[j] = False;
-   }
-}
-
-
-static void redundant_get_removal_BB ( IRBB* bb )
-{
-   HashHW* env = newHHW();
-   UInt    key = 0; /* keep gcc -O happy */
-   Int     i, j;
-   HWord   val;
-
-   for (i = 0; i < bb->stmts_used; i++) {
-      IRStmt* st = bb->stmts[i];
-
-      if (!st)
-         continue;
-
-      /* Deal with Gets */
-      if (st->tag == Ist_Tmp
-          && st->Ist.Tmp.data->tag == Iex_Get) {
-         /* st is 't = Get(...)'.  Look up in the environment and see
-            if the Get can be replaced. */
-         IRExpr* get = st->Ist.Tmp.data;
-         key = (HWord)mk_key_GetPut( get->Iex.Get.offset, 
-                                     get->Iex.Get.ty );
-         if (lookupHHW(env, &val, (HWord)key)) {
-            /* found it */
-            /* Note, we could do better here.  If the types are
-               different we don't do the substitution, since doing so
-               could lead to invalidly-typed IR.  An improvement would
-               be to stick in a reinterpret-style cast, although that
-               would make maintaining flatness more difficult. */
-            IRExpr* valE    = (IRExpr*)val;
-            Bool    typesOK = typeOfIRExpr(bb->tyenv,valE) 
-                              == st->Ist.Tmp.data->Iex.Get.ty;
-            if (typesOK && DEBUG_IROPT) {
-               vex_printf("rGET: "); ppIRExpr(get);
-               vex_printf("  ->  "); ppIRExpr(valE);
-               vex_printf("\n");
-            }
-            if (typesOK)
-               bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp, valE);
-         } else {
-            /* Not found, but at least we know that t and the Get(...)
-               are now associated.  So add a binding to reflect that
-               fact. */
-            addToHHW( env, (HWord)key, 
-                           (HWord)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
-         }
-      }
-
-      /* Deal with Puts: invalidate any env entries overlapped by this
-         Put */
-      if (st->tag == Ist_Put || st->tag == Ist_PutI) {
-         UInt k_lo, k_hi;
-         if (st->tag == Ist_Put) {
-            key = mk_key_GetPut( st->Ist.Put.offset, 
-                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
-         } else {
-            vassert(st->tag == Ist_PutI);
-            key = mk_key_GetIPutI( st->Ist.PutI.descr );
-         }
-
-         k_lo = (key >> 16) & 0xFFFF;
-         k_hi = key & 0xFFFF;
-         invalidateOverlaps(env, k_lo, k_hi);
-      }
-      else
-      if (st->tag == Ist_Dirty) {
-         /* Deal with dirty helpers which write or modify guest state.
-            Invalidate the entire env.  We could do a lot better
-            here. */
-         IRDirty* d      = st->Ist.Dirty.details;
-         Bool     writes = False;
-         for (j = 0; j < d->nFxState; j++) {
-            if (d->fxState[j].fx == Ifx_Modify 
-                || d->fxState[j].fx == Ifx_Write)
-            writes = True;
-         }
-         if (writes) {
-            /* dump the entire env (not clever, but correct ...) */
-            for (j = 0; j < env->used; j++)
-               env->inuse[j] = False;
-            if (0) vex_printf("rGET: trash env due to dirty helper\n");
-         }
-      }
-
-      /* add this one to the env, if appropriate */
-      if (st->tag == Ist_Put) {
-         vassert(isAtom(st->Ist.Put.data));
-         addToHHW( env, (HWord)key, (HWord)(st->Ist.Put.data));
-      }
-
-   } /* for (i = 0; i < bb->stmts_used; i++) */
-
-}
-
-
-/*---------------------------------------------------------------*/
-/*--- In-place removal of redundant PUTs                      ---*/
-/*---------------------------------------------------------------*/
-
-/* Find any Get uses in st and invalidate any partially or fully
-   overlapping ranges listed in env.  Due to the flattening phase, the
-   only stmt kind we expect to find a Get on is IRStmt_Tmp. */
-
-static void handle_gets_Stmt ( 
-               HashHW* env, 
-               IRStmt* st,
-               Bool (*preciseMemExnsFn)(Int,Int)
-            )
-{
-   Int     j;
-   UInt    key = 0; /* keep gcc -O happy */
-   Bool    isGet;
-   Bool    memRW = False;
-   IRExpr* e;
-
-   switch (st->tag) {
-
-      /* This is the only interesting case.  Deal with Gets in the RHS
-         expression. */
-      case Ist_Tmp:
-         e = st->Ist.Tmp.data;
-         switch (e->tag) {
-            case Iex_Get:
-               isGet = True;
-               key = mk_key_GetPut ( e->Iex.Get.offset, e->Iex.Get.ty );
-               break;
-            case Iex_GetI:
-               isGet = True;
-               key = mk_key_GetIPutI ( e->Iex.GetI.descr );
-               break;
-            case Iex_LDle:
-               isGet = False;
-               memRW = True;
-               break;
-            default: 
-               isGet = False;
-         }
-         if (isGet) {
-            UInt k_lo, k_hi;
-            k_lo = (key >> 16) & 0xFFFF;
-            k_hi = key & 0xFFFF;
-            invalidateOverlaps(env, k_lo, k_hi);
-         }
-         break;
-
-      /* Be very conservative for dirty helper calls; dump the entire
-         environment.  The helper might read guest state, in which
-         case it needs to be flushed first.  Also, the helper might
-         access guest memory, in which case all parts of the guest
-         state requiring precise exceptions needs to be flushed.  The
-         crude solution is just to flush everything; we could easily
-         enough do a lot better if needed. */
-      case Ist_Dirty:
-         for (j = 0; j < env->used; j++)
-            env->inuse[j] = False;
-         break;
-
-      /* all other cases are boring. */
-      case Ist_STle:
-         vassert(isAtom(st->Ist.STle.addr));
-         vassert(isAtom(st->Ist.STle.data));
-         memRW = True;
-         break;
-
-      case Ist_Exit:
-         vassert(isAtom(st->Ist.Exit.guard));
-         break;
-
-      case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.ix));
-         vassert(isAtom(st->Ist.PutI.data));
-         break;
-
-      default:
-         vex_printf("\n");
-         ppIRStmt(st);
-         vex_printf("\n");
-         vpanic("handle_gets_Stmt");
-   }
-
-   if (memRW) {
-      /* This statement accesses memory.  So we need to dump all parts
-         of the environment corresponding to guest state that may not
-         be reordered with respect to memory references.  That means
-         at least the stack pointer. */
-      for (j = 0; j < env->used; j++) {
-         if (!env->inuse[j])
-            continue;
-         if (vex_control.iropt_precise_memory_exns) {
-            /* Precise exceptions required.  Flush all guest state. */
-            env->inuse[j] = False;
-         } else {
-            /* Just flush the minimal amount required, as computed by
-               preciseMemExnsFn. */
-            HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
-            HWord k_hi = env->key[j] & 0xFFFF;
-            if (preciseMemExnsFn( k_lo, k_hi ))
-               env->inuse[j] = False;
-         }
-      }
-   } /* if (memRW) */
-
-}
-
-
-/* Scan backwards, building up a set of (min offset, max
-   offset) pairs, indicating those parts of the guest state
-   for which the next event is a write.
-
-   On seeing a conditional exit, empty the set.
-
-   On seeing 'Put (minoff,maxoff) = t or c', if (minoff,maxoff) is
-   completely within the set, remove the Put.  Otherwise, add
-   (minoff,maxoff) to the set.
-
-   On seeing 'Get (minoff,maxoff)', remove any part of the set
-   overlapping (minoff,maxoff).
-*/
-
-static void redundant_put_removal_BB ( 
-               IRBB* bb,
-               Bool (*preciseMemExnsFn)(Int,Int)
-            )
-{
-   Int     i, j;
-   Bool    isPut;
-   IRStmt* st;
-   UInt    key = 0; /* keep gcc -O happy */
-
-   HashHW* env = newHHW();
-   for (i = bb->stmts_used-1; i >= 0; i--) {
-      st = bb->stmts[i];
-      if (!st)
-         continue;
-
-      /* Deal with conditional exits. */
-      if (st->tag == Ist_Exit) {
-         /* Since control may not get beyond this point, we must empty
-            out the set, since we can no longer claim that the next
-            event for any part of the guest state is definitely a
-            write. */
-         vassert(isAtom(st->Ist.Exit.guard));
-         for (j = 0; j < env->used; j++)
-            env->inuse[j] = False;
-         continue;
-      }
-
-      /* Deal with Puts */
-      switch (st->tag) {
-         case Ist_Put: 
-            isPut = True;
-            key = mk_key_GetPut( st->Ist.Put.offset, 
-                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
-            vassert(isAtom(st->Ist.Put.data));
-            break;
-         case Ist_PutI:
-            isPut = True;
-            key = mk_key_GetIPutI( st->Ist.PutI.descr );
-            vassert(isAtom(st->Ist.PutI.ix));
-            vassert(isAtom(st->Ist.PutI.data));
-            break;
-         default: 
-            isPut = False;
-      }
-      if (isPut && st->tag != Ist_PutI) {
-         /* See if any single entry in env overlaps this Put.  This is
-            simplistic in that the transformation is valid if, say, two
-            or more entries in the env overlap this Put, but the use of
-            lookupHHW will only find a single entry which exactly
-            overlaps this Put.  This is suboptimal but safe. */
-         if (lookupHHW(env, NULL, (HWord)key)) {
-            /* This Put is redundant because a later one will overwrite
-               it.  So NULL (nop) it out. */
-            if (DEBUG_IROPT) {
-               vex_printf("rPUT: "); ppIRStmt(st);
-               vex_printf("\n");
-            }
-            bb->stmts[i] = NULL;
-         } else {
-            /* We can't demonstrate that this Put is redundant, so add it
-               to the running collection. */
-            addToHHW(env, (HWord)key, 0);
-         }
-         continue;
-      }
-
-      /* Deal with Gets.  These remove bits of the environment since
-         appearance of a Get means that the next event for that slice
-         of the guest state is no longer a write, but a read. */
-      handle_gets_Stmt( env, st, preciseMemExnsFn );
-   }
-}
-
-
 /*---------------------------------------------------------------*/
 /*--- Specialisation of helper function calls, in             ---*/
 /*--- collaboration with the front end                        ---*/
@@ -1530,8 +1609,1201 @@ void spec_helpers_BB ( IRBB* bb,
 
 
 /*---------------------------------------------------------------*/
+/*--- Common Subexpression Elimination                        ---*/
+/*---------------------------------------------------------------*/
+
+/* Expensive in time and space. */
+
+/* Uses two environments: 
+   a IRTemp -> IRTemp mapping 
+   a mapping from AvailExpr* to IRTemp 
+*/
+
+typedef
+   struct {
+      enum { Ut, Btt, Btc, Bct, Cf64i } tag;
+      union {
+         /* unop(tmp) */
+         struct {
+            IROp   op;
+            IRTemp arg;
+         } Ut;
+         /* binop(tmp,tmp) */
+         struct {
+            IROp   op;
+            IRTemp arg1;
+            IRTemp arg2;
+         } Btt;
+         /* binop(tmp,const) */
+         struct {
+            IROp    op;
+            IRTemp  arg1;
+            IRConst con2;
+         } Btc;
+         /* binop(const,tmp) */
+         struct {
+            IROp    op;
+            IRConst con1;
+            IRTemp  arg2;
+         } Bct;
+         /* F64i-style const */
+         struct {
+            ULong f64i;
+         } Cf64i;
+      } u;
+   }
+   AvailExpr;
+
+static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
+{
+   if (a1->tag != a2->tag)
+      return False;
+   switch (a1->tag) {
+      case Ut: 
+         return a1->u.Ut.op == a2->u.Ut.op 
+                && a1->u.Ut.arg == a2->u.Ut.arg;
+      case Btt: 
+         return a1->u.Btt.op == a2->u.Btt.op
+                && a1->u.Btt.arg1 == a2->u.Btt.arg1
+                && a1->u.Btt.arg2 == a2->u.Btt.arg2;
+      case Btc: 
+         return a1->u.Btc.op == a2->u.Btc.op
+                && a1->u.Btc.arg1 == a2->u.Btc.arg1
+                && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
+      case Bct: 
+         return a1->u.Bct.op == a2->u.Bct.op
+                && a1->u.Bct.arg2 == a2->u.Bct.arg2
+                && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1);
+      case Cf64i: 
+         return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
+      default: vpanic("eq_AvailExpr");
+   }
+}
+
+static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae ) 
+{
+   IRConst* con;
+   switch (ae->tag) {
+      case Ut:
+         return IRExpr_Unop( ae->u.Ut.op, IRExpr_Tmp(ae->u.Ut.arg) );
+      case Btt:
+         return IRExpr_Binop( ae->u.Btt.op,
+                              IRExpr_Tmp(ae->u.Btt.arg1),
+                              IRExpr_Tmp(ae->u.Btt.arg2) );
+      case Btc:
+         con = LibVEX_Alloc(sizeof(IRConst));
+         *con = ae->u.Btc.con2;
+         return IRExpr_Binop( ae->u.Btc.op,
+                              IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
+      case Bct:
+         con = LibVEX_Alloc(sizeof(IRConst));
+         *con = ae->u.Bct.con1;
+         return IRExpr_Binop( ae->u.Bct.op,
+                              IRExpr_Const(con), IRExpr_Tmp(ae->u.Bct.arg2) );
+      case Cf64i:
+         return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
+      default:
+         vpanic("availExpr_to_IRExpr");
+   }
+}
+
+inline
+static IRTemp subst_AvailExpr_Temp ( HashHW* env, IRTemp tmp )
+{
+   HWord res;
+   /* env :: IRTemp -> IRTemp */
+   if (lookupHHW( env, &res, (HWord)tmp ))
+      return (IRTemp)res;
+   else
+      return tmp;
+}
+
+static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
+{
+   /* env :: IRTemp -> IRTemp */
+   switch (ae->tag) {
+      case Ut:
+         ae->u.Ut.arg = subst_AvailExpr_Temp( env, ae->u.Ut.arg );
+         break;
+      case Btt:
+         ae->u.Btt.arg1 = subst_AvailExpr_Temp( env, ae->u.Btt.arg1 );
+         ae->u.Btt.arg2 = subst_AvailExpr_Temp( env, ae->u.Btt.arg2 );
+         break;
+      case Btc:
+         ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
+         break;
+      case Bct:
+         ae->u.Bct.arg2 = subst_AvailExpr_Temp( env, ae->u.Bct.arg2 );
+         break;
+      case Cf64i:
+         break;
+      default: 
+         vpanic("subst_AvailExpr");
+   }
+}
+
+static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
+{
+   AvailExpr* ae;
+
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.arg->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag      = Ut;
+      ae->u.Ut.op  = e->Iex.Unop.op;
+      ae->u.Ut.arg = e->Iex.Unop.arg->Iex.Tmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.arg1->tag == Iex_Tmp
+       && e->Iex.Binop.arg2->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Btt;
+      ae->u.Btt.op   = e->Iex.Binop.op;
+      ae->u.Btt.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+      ae->u.Btt.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Binop
+      && e->Iex.Binop.arg1->tag == Iex_Tmp
+      && e->Iex.Binop.arg2->tag == Iex_Const) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Btc;
+      ae->u.Btc.op   = e->Iex.Binop.op;
+      ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+      ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
+      return ae;
+   }
+
+   if (e->tag == Iex_Binop
+      && e->Iex.Binop.arg1->tag == Iex_Const
+      && e->Iex.Binop.arg2->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Bct;
+      ae->u.Bct.op   = e->Iex.Binop.op;
+      ae->u.Bct.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
+      ae->u.Bct.con1 = *(e->Iex.Binop.arg1->Iex.Const.con);
+      return ae;
+   }
+
+   if (e->tag == Iex_Const
+       && e->Iex.Const.con->tag == Ico_F64i) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag          = Cf64i;
+      ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
+      return ae;
+   }
+
+   return NULL;
+}
+
+
+/* The BB is modified in-place. */
+
+void do_cse_BB ( IRBB* bb )
+{
+   Int        i, j;
+   IRTemp     t, q;
+   IRStmt*    st;
+   AvailExpr* eprime;
+
+   HashHW* tenv = newHHW(); /* :: IRTemp -> IRTemp */
+   HashHW* aenv = newHHW(); /* :: AvailExpr* -> IRTemp */
+
+   vassert(sizeof(IRTemp) <= sizeof(HWord));
+
+   //ppIRBB(bb);
+   //vex_printf("\n\n");
+
+   /* Iterate forwards over the stmts.  
+      On seeing "t = E", where E is one of the 3 AvailExpr forms:
+         let E' = apply tenv substitution to E
+         search aenv for E'
+            if a mapping E' -> q is found, 
+               replace this stmt by "t = q"
+               and add binding t -> q to tenv
+            else
+               add binding E' -> t to aenv
+               replace this stmt by "t = E'"
+      Ignore any other kind of stmt.
+   */
+   for (i = 0; i < bb->stmts_used; i++) {
+      st = bb->stmts[i];
+
+      /* ignore not-interestings */
+      if ((!st) || st->tag != Ist_Tmp)
+         continue;
+
+      t = st->Ist.Tmp.tmp;
+      eprime = irExpr_to_AvailExpr(st->Ist.Tmp.data);
+      /* ignore if not of AvailExpr form */
+      if (!eprime)
+         continue;
+
+      /* vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n"); */
+
+      /* apply tenv */
+      subst_AvailExpr( tenv, eprime );
+
+      /* search aenv for eprime, unfortunately the hard way */
+      for (j = 0; j < aenv->used; j++)
+         if (aenv->inuse[j] && eq_AvailExpr(eprime, (AvailExpr*)aenv->key[j]))
+            break;
+
+      if (j < aenv->used) {
+         /* A binding E' -> q was found.  Replace stmt by "t = q" and
+            note the t->q binding in tenv. */
+         /* (this is the core of the CSE action) */
+         q = (IRTemp)aenv->val[j];
+         bb->stmts[i] = IRStmt_Tmp( t, IRExpr_Tmp(q) );
+         addToHHW( tenv, (HWord)t, (HWord)q );
+      } else {
+         /* No binding was found, so instead we add E' -> t to our
+            collection of available expressions, replace this stmt
+            with "t = E'", and move on. */
+         bb->stmts[i] = IRStmt_Tmp( t, availExpr_to_IRExpr(eprime) );
+         addToHHW( aenv, (HWord)eprime, (HWord)t );
+      }
+   }
+
+   //ppIRBB(bb);
+   //sanityCheckIRBB(bb, Ity_I32);
+   //vex_printf("\n\n");
+      
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- Add32/Sub32 chain collapsing                            ---*/
+/*---------------------------------------------------------------*/
+
+/* ----- Helper functions for Add32/Sub32 chain collapsing ----- */
+
+/* Is this expression "Add32(tmp,const)" or "Sub32(tmp,const)" ?  If
+   yes, set *tmp and *i32 appropriately.  *i32 is set as if the
+   root node is Add32, not Sub32. */
+
+static Bool isAdd32OrSub32 ( IRExpr* e, IRTemp* tmp, Int* i32 )
+{ 
+   if (e->tag != Iex_Binop)
+      return False;
+   if (e->Iex.Binop.op != Iop_Add32 && e->Iex.Binop.op != Iop_Sub32)
+      return False;
+   if (e->Iex.Binop.arg1->tag != Iex_Tmp)
+      return False;
+   if (e->Iex.Binop.arg2->tag != Iex_Const)
+      return False;
+   *tmp = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+   *i32 = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32);
+   if (e->Iex.Binop.op == Iop_Sub32)
+      *i32 = -*i32;
+   return True;
+}
+
+
+/* Figure out if tmp can be expressed as tmp2 +32 const, for some
+   other tmp2.  Scan backwards from the specified start point -- an
+   optimisation. */
+
+static Bool collapseChain ( IRBB* bb, Int startHere,
+                            IRTemp tmp,
+                            IRTemp* tmp2, Int* i32 )
+{
+   Int     j, ii;
+   IRTemp  vv;
+   IRStmt* st;
+   IRExpr* e;
+
+   /* the (var, con) pair contain the current 'representation' for
+      'tmp'.  We start with 'tmp + 0'.  */
+   IRTemp var = tmp;
+   Int    con = 0;
+
+   /* Scan backwards to see if tmp can be replaced by some other tmp
+     +/- a constant. */
+   for (j = startHere; j >= 0; j--) {
+      st = bb->stmts[j];
+      if (!st || st->tag != Ist_Tmp) 
+         continue;
+      if (st->Ist.Tmp.tmp != var)
+         continue;
+      e = st->Ist.Tmp.data;
+      if (!isAdd32OrSub32(e, &vv, &ii))
+         break;
+      var = vv;
+      con += ii;
+   }
+   if (j == -1)
+      /* no earlier binding for var .. ill-formed IR */
+      vpanic("collapseChain");
+
+   /* so, did we find anything interesting? */
+   if (var == tmp)
+      return False; /* no .. */
+      
+   *tmp2 = var;
+   *i32  = con;
+   return True;
+}
+
+
+/* ------- Main function for Add32/Sub32 chain collapsing ------ */
+
+static void collapse_AddSub_chains_BB ( IRBB* bb )
+{
+   IRStmt *st;
+   IRTemp var, var2;
+   Int    i, con, con2;
+
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (!st)
+         continue;
+
+      /* Try to collapse 't1 = Add32/Sub32(t2, con)'. */
+
+      if (st->tag == Ist_Tmp
+          && isAdd32OrSub32(st->Ist.Tmp.data, &var, &con)) {
+
+         /* So e1 is of the form Add32(var,con) or Sub32(var,-con).
+            Find out if var can be expressed as var2 + con2. */
+         if (collapseChain(bb, i-1, var, &var2, &con2)) {
+            if (DEBUG_IROPT) {
+               vex_printf("replacing1 ");
+               ppIRStmt(st);
+               vex_printf(" with ");
+            }
+            con2 += con;
+            bb->stmts[i] 
+               = IRStmt_Tmp(
+                    st->Ist.Tmp.tmp,
+                    (con2 >= 0) 
+                      ? IRExpr_Binop(Iop_Add32, 
+                                     IRExpr_Tmp(var2),
+                                     IRExpr_Const(IRConst_U32(con2)))
+                      : IRExpr_Binop(Iop_Sub32, 
+                                     IRExpr_Tmp(var2),
+                                     IRExpr_Const(IRConst_U32(-con2)))
+                 );
+            if (DEBUG_IROPT) {
+               ppIRStmt(bb->stmts[i]);
+               vex_printf("\n");
+            }
+         }
+
+         continue;
+      }
+
+      /* Try to collapse 't1 = GetI[t2, con]'. */
+
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.data->tag == Iex_GetI
+          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.Tmp.data->Iex.GetI.ix
+                                      ->Iex.Tmp.tmp, &var2, &con2)) {
+         if (DEBUG_IROPT) {
+            vex_printf("replacing3 ");
+            ppIRStmt(st);
+            vex_printf(" with ");
+         }
+         con2 += st->Ist.Tmp.data->Iex.GetI.bias;
+         bb->stmts[i]
+            = IRStmt_Tmp(
+                 st->Ist.Tmp.tmp,
+                 IRExpr_GetI(st->Ist.Tmp.data->Iex.GetI.descr,
+                             IRExpr_Tmp(var2),
+                             con2));
+         if (DEBUG_IROPT) {
+            ppIRStmt(bb->stmts[i]);
+            vex_printf("\n");
+         }
+         continue;
+      }
+
+      /* Perhaps st is PutI[t, con] ? */
+
+      if (st->tag == Ist_PutI
+          && st->Ist.PutI.ix->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.PutI.ix->Iex.Tmp.tmp, 
+                               &var2, &con2)) {
+         if (DEBUG_IROPT) {
+            vex_printf("replacing2 ");
+            ppIRStmt(st);
+            vex_printf(" with ");
+         }
+         con2 += st->Ist.PutI.bias;
+         bb->stmts[i]
+           = IRStmt_PutI(st->Ist.PutI.descr,
+                         IRExpr_Tmp(var2),
+                         con2,
+                         st->Ist.PutI.data);
+         if (DEBUG_IROPT) {
+            ppIRStmt(bb->stmts[i]);
+            vex_printf("\n");
+         }
+         continue;
+      }
+
+   } /* for */
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- PutI/GetI transformations                               ---*/
+/*---------------------------------------------------------------*/
+
+/* ------- Helper functions for PutI/GetI transformations ------ */
+
+/* Do a1 and a2 denote identical values?  Safe answer: False 
+*/
+static Bool identicalAtoms ( IRExpr* a1, IRExpr* a2 )
+{
+   vassert(isAtom(a1));
+   vassert(isAtom(a2));
+   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
+      return a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp;
+   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
+      return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
+   return False;
+}
+
+
+/* Determine, to the extent possible, the relationship between two
+   guest state accesses.  The possible outcomes are:
+
+   * Exact alias.  These two accesses denote precisely the same
+     piece of the guest state.
+
+   * Definitely no alias.  These two accesses are guaranteed not to
+     overlap any part of the guest state.
+
+   * Unknown -- if neither of the above can be established.
+
+   If in doubt, return Unknown.  */
+
+typedef
+   enum { ExactAlias, NoAlias, UnknownAlias }
+   GSAliasing;
+
+
+/* Produces the alias relation between an indexed guest
+   state access and a non-indexed access. */
+
+static
+GSAliasing getAliasingRelation_IC ( IRArray* descr1, IRExpr* ix1,
+                                    Int offset2, IRType ty2 )
+{
+   UInt minoff1, maxoff1, minoff2, maxoff2;
+
+   getArrayBounds( descr1, &minoff1, &maxoff1 );
+   minoff2 = offset2;
+   maxoff2 = minoff2 + sizeofIRType(ty2) - 1;
+
+   if (maxoff1 < minoff2 || maxoff2 < minoff1)
+      return NoAlias;
+
+   /* Could probably do better here if required.  For the moment
+      however just claim not to know anything more. */
+   return UnknownAlias;
+}
+
+
+/* Produces the alias relation between two indexed guest state
+   accesses. */
+
+static
+GSAliasing getAliasingRelation_II ( 
+              IRArray* descr1, IRExpr* ix1, Int bias1,
+              IRArray* descr2, IRExpr* ix2, Int bias2
+           )
+{
+   UInt minoff1, maxoff1, minoff2, maxoff2;
+   Int  iters;
+
+   /* First try hard to show they don't alias. */
+   getArrayBounds( descr1, &minoff1, &maxoff1 );
+   getArrayBounds( descr2, &minoff2, &maxoff2 );
+   if (maxoff1 < minoff2 || maxoff2 < minoff1)
+      return NoAlias;
+
+   /* So the two arrays at least partially overlap.  To get any
+      further we'll have to be sure that the descriptors are
+      identical. */
+   if (!eqIRArray(descr1, descr2))
+      return UnknownAlias;
+
+   /* The descriptors are identical.  Now the only difference can be
+      in the index expressions.  If they cannot be shown to be
+      identical, we have to say we don't know what the aliasing
+      relation will be.  Now, since the IR is flattened, the index
+      expressions should be atoms -- either consts or tmps.  So that
+      makes the comparison simple. */
+   vassert(isAtom(ix1));
+   vassert(isAtom(ix2));
+   if (!identicalAtoms(ix1,ix2))
+      return UnknownAlias;
+
+   /* Ok, the index expressions are identical.  So now the only way
+      they can be different is in the bias.  Normalise this
+      paranoidly, to reliably establish equality/non-equality. */
+
+   /* So now we know that the GetI and PutI index the same array
+      with the same base.  Are the offsets the same, modulo the
+      array size?  Do this paranoidly. */
+   vassert(descr1->nElems == descr2->nElems);
+   vassert(descr1->elemTy == descr2->elemTy);
+   vassert(descr1->base   == descr2->base);
+   iters = 0;
+   while (bias1 < 0 || bias2 < 0) {
+      bias1 += descr1->nElems;
+      bias2 += descr1->nElems;
+      iters++;
+      if (iters > 10)
+         vpanic("getAliasingRelation: iters");
+   }
+   vassert(bias1 >= 0 && bias2 >= 0);
+   bias1 %= descr1->nElems;
+   bias2 %= descr1->nElems;
+   vassert(bias1 >= 0 && bias1 < descr1->nElems);
+   vassert(bias2 >= 0 && bias2 < descr1->nElems);
+
+   /* Finally, biasP and biasG are normalised into the range 
+      0 .. descrP/G->nElems - 1.  And so we can establish
+      equality/non-equality. */
+
+   return bias1==bias2 ? ExactAlias : NoAlias;
+}
+
+
+/* Given the parts (descr, tmp, bias) for a GetI, scan backwards from
+   the given starting point to find, if any, a PutI which writes
+   exactly the same piece of guest state, and so return the expression
+   that the PutI writes.  This is the core of PutI-GetI forwarding. */
+
+static 
+IRExpr* findPutI ( IRBB* bb, Int startHere,
+                   IRArray* descrG, IRExpr* ixG, Int biasG )
+{
+   Int        j;
+   IRStmt*    st;
+   GSAliasing relation;
+
+   if (0) {
+      vex_printf("\nfindPutI ");
+      ppIRArray(descrG);
+      vex_printf(" ");
+      ppIRExpr(ixG);
+      vex_printf(" %d\n", biasG);
+   }
+
+   /* Scan backwards in bb from startHere to find a suitable PutI
+      binding for (descrG, ixG, biasG), if any. */
+
+   for (j = startHere; j >= 0; j--) {
+      st = bb->stmts[j];
+      if (!st) continue;
+
+      if (st->tag == Ist_Put) {
+         /* Non-indexed Put.  This can't give a binding, but we do
+            need to check it doesn't invalidate the search by
+            overlapping any part of the indexed guest state. */
+
+         relation
+            = getAliasingRelation_IC(
+                 descrG, ixG,
+                 st->Ist.Put.offset,
+                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
+
+         if (relation == NoAlias) {
+            /* we're OK; keep going */
+            continue;
+         } else {
+            /* relation == UnknownAlias || relation == ExactAlias */
+            /* If this assertion fails, we've found a Put which writes
+               an area of guest state which is read by a GetI.  Which
+               is unlikely (although not per se wrong). */
+            vassert(relation != ExactAlias);
+            /* This Put potentially writes guest state that the GetI
+               reads; we must fail. */
+            return NULL;
+         }
+      }
+
+      if (st->tag == Ist_PutI) {
+
+         relation = getAliasingRelation_II(
+                       descrG, ixG, biasG,
+                       st->Ist.PutI.descr,
+                       st->Ist.PutI.ix,
+                       st->Ist.PutI.bias
+                    );
+
+         if (relation == NoAlias) {
+            /* This PutI definitely doesn't overlap.  Ignore it and
+               keep going. */
+            continue; /* the for j loop */
+         }
+
+         if (relation == UnknownAlias) {
+            /* We don't know if this PutI writes to the same guest
+               state that the GetI, or not.  So we have to give up. */
+            return NULL;
+         }
+
+         /* Otherwise, we've found what we're looking for.  */
+         vassert(relation == ExactAlias);
+         return st->Ist.PutI.data;
+
+      } /* if (st->tag == Ist_PutI) */
+
+      if (st->tag == Ist_Dirty) {
+         /* Be conservative.  If the dirty call has any guest effects at
+            all, give up.  We could do better -- only give up if there
+            are any guest writes/modifies. */
+         if (st->Ist.Dirty.details->nFxState > 0)
+            return NULL;
+      }
+
+   } /* for */
+
+   /* No valid replacement was found. */
+   return NULL;
+}
+
+
+
+/* Assuming pi is a PutI stmt, is s2 identical to it (in the sense
+   that it writes exactly the same piece of guest state) ?  Safe
+   answer: False. */
+
+static Bool identicalPutIs ( IRStmt* pi, IRStmt* s2 )
+{
+   vassert(pi->tag == Ist_PutI);
+   if (s2->tag != Ist_PutI)
+      return False;
+
+   return getAliasingRelation_II( 
+             pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
+             s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
+          )
+          == ExactAlias;
+}
+
+
+/* Assuming pi is a PutI stmt, is s2 a Get/GetI/Put/PutI which might
+   overlap it?  Safe answer: True.  Note, we could do a lot better
+   than this if needed. */
+
+static 
+Bool guestAccessWhichMightOverlapPutI ( 
+        IRTypeEnv* tyenv, IRStmt* pi, IRStmt* s2 
+     )
+{
+   GSAliasing relation;
+   UInt       minoffP, maxoffP;
+
+   vassert(pi->tag == Ist_PutI);
+   getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
+   switch (s2->tag) {
+
+      case Ist_Dirty:
+         /* If the dirty call has any guest effects at all, give up.
+            Probably could do better. */
+         if (s2->Ist.Dirty.details->nFxState > 0)
+            return True;
+         return False;
+
+      case Ist_Put:
+         vassert(isAtom(s2->Ist.Put.data));
+         relation 
+            = getAliasingRelation_IC(
+                 pi->Ist.PutI.descr, pi->Ist.PutI.ix,
+                 s2->Ist.Put.offset, 
+                 typeOfIRExpr(tyenv,s2->Ist.Put.data)
+              );
+         goto have_relation;
+
+      case Ist_PutI:
+         vassert(isAtom(s2->Ist.PutI.ix));
+         vassert(isAtom(s2->Ist.PutI.data));
+         relation
+            = getAliasingRelation_II(
+                 pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
+                 s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
+              );
+         goto have_relation;
+
+      case Ist_Tmp:
+         if (s2->Ist.Tmp.data->tag == Iex_GetI) {
+            relation
+               = getAliasingRelation_II(
+                    pi->Ist.PutI.descr, pi->Ist.PutI.ix, 
+                                        pi->Ist.PutI.bias, 
+                    s2->Ist.Tmp.data->Iex.GetI.descr,
+                    s2->Ist.Tmp.data->Iex.GetI.ix,
+                    s2->Ist.Tmp.data->Iex.GetI.bias
+                 );
+            goto have_relation;
+         }
+         if (s2->Ist.Tmp.data->tag == Iex_Get) {
+            relation
+               = getAliasingRelation_IC(
+                    pi->Ist.PutI.descr, pi->Ist.PutI.ix,
+                    s2->Ist.Tmp.data->Iex.Get.offset,
+                    s2->Ist.Tmp.data->Iex.Get.ty
+                 );
+            goto have_relation;
+         }
+         return False;
+
+      case Ist_STle:
+         vassert(isAtom(s2->Ist.STle.addr));
+         vassert(isAtom(s2->Ist.STle.data));
+         return False;
+
+      default:
+         vex_printf("\n"); ppIRStmt(s2); vex_printf("\n");
+         vpanic("guestAccessWhichMightOverlapPutI");
+   }
+
+  have_relation:
+   if (relation == NoAlias)
+      return False;
+   else
+      return True; /* ExactAlias or UnknownAlias */
+}
+
+
+
+/* ---------- PutI/GetI transformations main functions --------- */
+
+/* Remove redundant GetIs, to the extent that they can be detected.
+   bb is modified in-place. */
+
+static
+void do_redundant_GetI_elimination ( IRBB* bb )
+{
+   Int     i;
+   IRStmt* st;
+
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (!st)
+         continue;
+
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.data->tag == Iex_GetI
+          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp) {
+         IRArray* descr = st->Ist.Tmp.data->Iex.GetI.descr;
+         IRExpr*  ix    = st->Ist.Tmp.data->Iex.GetI.ix;
+         Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
+         IRExpr*  replacement = findPutI(bb, i-1, descr, ix, bias);
+         if (replacement 
+             && isAtom(replacement)
+             /* Make sure we're doing a type-safe transformation! */
+             && typeOfIRExpr(bb->tyenv, replacement) == descr->elemTy) {
+            if (DEBUG_IROPT) {
+               vex_printf("rGI:  "); 
+               ppIRExpr(st->Ist.Tmp.data);
+               vex_printf(" -> ");
+               ppIRExpr(replacement);
+               vex_printf("\n");
+            }
+            bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp, replacement);
+         }
+      }
+   }
+
+}
+
+
+/* Remove redundant PutIs, to the extent which they can be detected.
+   bb is modified in-place. */
+
+static
+void do_redundant_PutI_elimination ( IRBB* bb )
+{
+   Int    i, j;
+   Bool   delete;
+   IRStmt *st, *stj;
+
+   for (i = 0; i < bb->stmts_used; i++) {
+      st = bb->stmts[i];
+      if (!st || st->tag != Ist_PutI)
+         continue;
+      /* Ok, search forwards from here to see if we can find another
+         PutI which makes this one redundant, and dodging various 
+         hazards.  Search forwards:
+         * If conditional exit, give up (because anything after that 
+           does not postdominate this put).
+         * If a Get which might overlap, give up (because this PutI 
+           not necessarily dead).
+         * If a Put which is identical, stop with success.
+         * If a Put which might overlap, but is not identical, give up.
+         * If a dirty helper call which might write guest state, give up.
+         * If a Put which definitely doesn't overlap, or any other 
+           kind of stmt, continue.
+      */
+      delete = False;
+      for (j = i+1; j < bb->stmts_used; j++) {
+         stj = bb->stmts[j];
+         if (!stj) 
+            continue;
+         if (identicalPutIs(st, stj)) {
+            /* success! */
+            delete = True;
+            break;
+         }
+         if (stj->tag == Ist_Exit)
+            /* give up */
+            break;
+         if (st->tag == Ist_Dirty)
+            /* give up; could do better here */
+            break;
+         if (guestAccessWhichMightOverlapPutI(bb->tyenv, st, stj))
+            /* give up */
+           break;
+      }
+
+      if (delete) {
+         if (DEBUG_IROPT) {
+            vex_printf("rPI:  "); 
+            ppIRStmt(st); 
+            vex_printf("\n");
+         }
+         bb->stmts[i] = NULL;
+      }
+
+   }
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- Loop unrolling                                          ---*/
+/*---------------------------------------------------------------*/
+
+/* Adjust all tmp values (names) in e by delta.  e is destructively
+   modified. */
+
+static void deltaIRExpr ( IRExpr* e, Int delta )
+{
+   Int i;
+   switch (e->tag) {
+      case Iex_Tmp:
+         e->Iex.Tmp.tmp += delta;
+         break;
+      case Iex_Get:
+      case Iex_Const:
+         break;
+      case Iex_GetI:
+         deltaIRExpr(e->Iex.GetI.ix, delta);
+         break;
+      case Iex_Binop:
+         deltaIRExpr(e->Iex.Binop.arg1, delta);
+         deltaIRExpr(e->Iex.Binop.arg2, delta);
+         break;
+      case Iex_Unop:
+         deltaIRExpr(e->Iex.Unop.arg, delta);
+         break;
+      case Iex_LDle:
+         deltaIRExpr(e->Iex.LDle.addr, delta);
+         break;
+      case Iex_CCall:
+         for (i = 0; e->Iex.CCall.args[i]; i++)
+            deltaIRExpr(e->Iex.CCall.args[i], delta);
+         break;
+      case Iex_Mux0X:
+         deltaIRExpr(e->Iex.Mux0X.cond, delta);
+         deltaIRExpr(e->Iex.Mux0X.expr0, delta);
+         deltaIRExpr(e->Iex.Mux0X.exprX, delta);
+         break;
+      default: 
+         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+         vpanic("deltaIRExpr");
+   }
+}
+
+/* Adjust all tmp values (names) in st by delta.  st is destructively
+   modified. */
+
+static void deltaIRStmt ( IRStmt* st, Int delta )
+{
+   Int      i;
+   IRDirty* d;
+   switch (st->tag) {
+      case Ist_Put:
+         deltaIRExpr(st->Ist.Put.data, delta);
+         break;
+      case Ist_PutI:
+         deltaIRExpr(st->Ist.PutI.ix, delta);
+         deltaIRExpr(st->Ist.PutI.data, delta);
+         break;
+      case Ist_Tmp: 
+         st->Ist.Tmp.tmp += delta;
+         deltaIRExpr(st->Ist.Tmp.data, delta);
+         break;
+      case Ist_Exit:
+         deltaIRExpr(st->Ist.Exit.guard, delta);
+         break;
+      case Ist_STle:
+         deltaIRExpr(st->Ist.STle.addr, delta);
+         deltaIRExpr(st->Ist.STle.data, delta);
+         break;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         deltaIRExpr(d->guard, delta);
+         for (i = 0; d->args[i]; i++)
+            deltaIRExpr(d->args[i], delta);
+         if (d->tmp != IRTemp_INVALID)
+            d->tmp += delta;
+         if (d->mAddr)
+            deltaIRExpr(d->mAddr, delta);
+         break;
+      default: 
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("deltaIRStmt");
+   }
+}
+
+
+/* If possible, return a loop-unrolled version of bb0.  The original
+   is changed.  If not possible, return NULL.  */
+
+/* The two schemas considered are:
+
+     X: BODY; goto X
+
+     which unrolls to (eg)  X: BODY;BODY; goto X
+
+   and
+
+       X: BODY; if (c) goto X; goto Y
+   which trivially transforms to
+       X: BODY; if (!c) goto Y; goto X;
+   so it falls in the scope of the first case.  
+
+   X and Y must be literal (guest) addresses.
+*/
+
+static Int calc_unroll_factor( IRBB* bb )
+{
+   Int n_stmts, i;
+
+   n_stmts = 0;
+   for (i = 0; i < bb->stmts_used; i++)
+     if (bb->stmts[i])
+        n_stmts++;
+
+   if (n_stmts <= vex_control.iropt_unroll_thresh/8) {
+      if (vex_control.iropt_verbosity > 0)
+         vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 8* n_stmts);
+      return 8;
+   }
+   if (n_stmts <= vex_control.iropt_unroll_thresh/4) {
+      if (vex_control.iropt_verbosity > 0)
+         vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 4* n_stmts);
+      return 4;
+   }
+
+   if (n_stmts <= vex_control.iropt_unroll_thresh/2) {
+      if (vex_control.iropt_verbosity > 0)
+         vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 2* n_stmts);
+      return 2;
+   }
+
+   if (vex_control.iropt_verbosity > 0)
+      vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
+
+   return 1;
+}
+
+
+static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
+{
+   Int      i, j, jmax, n_vars;
+   Bool     xxx_known;
+   Addr64   xxx_value, yyy_value;
+   IRExpr*  udst;
+   IRStmt*  st;
+   IRConst* con;
+   IRBB     *bb1, *bb2;
+   Int      unroll_factor;
+
+   if (vex_control.iropt_unroll_thresh <= 0)
+      return NULL;
+
+   /* First off, figure out if we can unroll this loop.  Do this
+      without modifying bb0. */
+
+   if (bb0->jumpkind != Ijk_Boring)
+      return NULL;
+
+   xxx_known = False;
+   xxx_value = 0;
+
+   /* Extract the next-guest address.  If it isn't a literal, we 
+      have to give up. */
+
+   udst = bb0->next;
+   if (udst->tag == Iex_Const
+       && (udst->Iex.Const.con->tag == Ico_U32
+           || udst->Iex.Const.con->tag == Ico_U64)) {
+      /* The BB ends in a jump to a literal location. */
+      xxx_known = True;
+      xxx_value = udst->Iex.Const.con->tag == Ico_U64
+                    ?  udst->Iex.Const.con->Ico.U64
+                    : (Addr64)(udst->Iex.Const.con->Ico.U32);
+   }
+
+   if (!xxx_known)
+      return NULL;
+
+   /* Now we know the BB ends to a jump to a literal location.  If
+      it's a jump to itself (viz, idiom #1), move directly to the
+      unrolling stage, first cloning the bb so the original isn't
+      modified. */
+   if (xxx_value == my_addr) {
+      unroll_factor = calc_unroll_factor( bb0 );
+      if (unroll_factor < 2)
+         return NULL;
+      bb1 = dopyIRBB( bb0 );
+      bb0 = NULL;
+      udst = NULL; /* is now invalid */
+      goto do_unroll;
+   }
+
+   /* Search for the second idiomatic form:
+        X: BODY; if (c) goto X; goto Y
+      We know Y, but need to establish that the last stmt
+      is 'if (c) goto X'.
+   */
+   yyy_value = xxx_value;
+   for (i = bb0->stmts_used-1; i >= 0; i--)
+      if (bb0->stmts[i])
+         break;
+
+   if (i < 0)
+      return NULL; /* block with no stmts.  Strange. */
+
+   st = bb0->stmts[i];
+   if (st->tag != Ist_Exit)
+      return NULL;
+   if (st->Ist.Exit.jk != Ijk_Boring)
+      return NULL;
+
+   con = st->Ist.Exit.dst;
+   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
+
+   xxx_value = con->tag == Ico_U64 
+                  ? st->Ist.Exit.dst->Ico.U64
+                  : (Addr64)(st->Ist.Exit.dst->Ico.U32);
+
+   /* If this assertion fails, we have some kind of type error. */
+   vassert(con->tag == udst->Iex.Const.con->tag);
+
+   if (xxx_value != my_addr)
+      /* We didn't find either idiom.  Give up. */
+      return NULL;
+
+   /* Ok, we found idiom #2.  Copy the BB, switch around the xxx and
+      yyy values (which makes it look like idiom #1), and go into
+      unrolling proper.  This means finding (again) the last stmt, in
+      the copied BB. */
+
+   unroll_factor = calc_unroll_factor( bb0 );
+   if (unroll_factor < 2)
+      return NULL;
+
+   bb1 = dopyIRBB( bb0 );
+   bb0 = NULL;
+   udst = NULL; /* is now invalid */
+   for (i = bb1->stmts_used-1; i >= 0; i--)
+      if (bb1->stmts[i])
+         break;
+
+   /* The next bunch of assertions should be true since we already
+      found and checked the last stmt in the original bb. */
+
+   vassert(i >= 0);
+
+   st = bb1->stmts[i];
+   vassert(st->tag == Ist_Exit);
+
+   con = st->Ist.Exit.dst;
+   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
+
+   udst = bb1->next;
+   vassert(udst->tag == Iex_Const);
+   vassert(udst->Iex.Const.con->tag == Ico_U32
+          || udst->Iex.Const.con->tag == Ico_U64);
+   vassert(con->tag == udst->Iex.Const.con->tag);
+
+   /* switch the xxx and yyy fields around */
+   if (con->tag == Ico_U64) {
+      udst->Iex.Const.con->Ico.U64 = xxx_value;
+      con->Ico.U64 = yyy_value;
+   } else {
+      udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
+      con->Ico.U64 = (UInt)yyy_value;
+   }
+
+   /* negate the test condition */
+   st->Ist.Exit.guard 
+      = IRExpr_Unop(Iop_Not1,dopyIRExpr(st->Ist.Exit.guard));
+
+   /* --- The unroller proper.  Both idioms are by now --- */
+   /* --- now converted to idiom 1. --- */
+
+  do_unroll:
+
+   vassert(unroll_factor == 2 
+           || unroll_factor == 4
+           || unroll_factor == 8);
+
+   jmax = unroll_factor==8 ? 3 : (unroll_factor==4 ? 2 : 1);
+   for (j = 1; j <= jmax; j++) {
+
+      n_vars = bb1->tyenv->types_used;
+
+      bb2 = dopyIRBB(bb1);
+      for (i = 0; i < n_vars; i++)
+         (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
+
+      for (i = 0; i < bb2->stmts_used; i++) {
+         if (bb2->stmts[i] == NULL)
+            continue;
+         /* deltaIRStmt destructively modifies the stmt, but 
+            that's OK since bb2 is a complete fresh copy of bb1. */
+         deltaIRStmt(bb2->stmts[i], n_vars);
+         addStmtToIRBB(bb1, bb2->stmts[i]);
+      }
+   }
+
+   if (DEBUG_IROPT) {
+      vex_printf("\nUNROLLED (%llx)\n", my_addr);
+      ppIRBB(bb1);
+      vex_printf("\n");
+   }
+
+   /* Flattening; sigh.  The unroller succeeds in breaking flatness
+      by negating the test condition.  This should be fixed properly.
+      For the moment use this shotgun approach.  */
+   return flatten_BB(bb1);
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- The tree builder                                        ---*/
 /*---------------------------------------------------------------*/
+
+/* This isn't part of IR optimisation.  Really it's a pass done prior
+   to instruction selection, which improves the code that the
+   instruction selector can produce. */
 
 typedef
    struct { 
@@ -2046,1193 +3318,6 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 }
 
 
-
-/*---------------------------------------------------------------*/
-/*--- Common Subexpression Elimination                        ---*/
-/*---------------------------------------------------------------*/
-
-/* Expensive in time and space. */
-
-/* Uses two environments: 
-   a IRTemp -> IRTemp mapping 
-   a mapping from AvailExpr* to IRTemp 
-*/
-
-typedef
-   struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i } tag;
-      union {
-         /* unop(tmp) */
-         struct {
-            IROp   op;
-            IRTemp arg;
-         } Ut;
-         /* binop(tmp,tmp) */
-         struct {
-            IROp   op;
-            IRTemp arg1;
-            IRTemp arg2;
-         } Btt;
-         /* binop(tmp,const) */
-         struct {
-            IROp    op;
-            IRTemp  arg1;
-            IRConst con2;
-         } Btc;
-         /* binop(const,tmp) */
-         struct {
-            IROp    op;
-            IRConst con1;
-            IRTemp  arg2;
-         } Bct;
-         /* F64i-style const */
-         struct {
-            ULong f64i;
-         } Cf64i;
-      } u;
-   }
-   AvailExpr;
-
-static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
-{
-   if (a1->tag != a2->tag)
-      return False;
-   switch (a1->tag) {
-      case Ut: 
-         return a1->u.Ut.op == a2->u.Ut.op 
-                && a1->u.Ut.arg == a2->u.Ut.arg;
-      case Btt: 
-         return a1->u.Btt.op == a2->u.Btt.op
-                && a1->u.Btt.arg1 == a2->u.Btt.arg1
-                && a1->u.Btt.arg2 == a2->u.Btt.arg2;
-      case Btc: 
-         return a1->u.Btc.op == a2->u.Btc.op
-                && a1->u.Btc.arg1 == a2->u.Btc.arg1
-                && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
-      case Bct: 
-         return a1->u.Bct.op == a2->u.Bct.op
-                && a1->u.Bct.arg2 == a2->u.Bct.arg2
-                && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1);
-      case Cf64i: 
-         return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
-      default: vpanic("eq_AvailExpr");
-   }
-}
-
-static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae ) 
-{
-   IRConst* con;
-   switch (ae->tag) {
-      case Ut:
-         return IRExpr_Unop( ae->u.Ut.op, IRExpr_Tmp(ae->u.Ut.arg) );
-      case Btt:
-         return IRExpr_Binop( ae->u.Btt.op,
-                              IRExpr_Tmp(ae->u.Btt.arg1),
-                              IRExpr_Tmp(ae->u.Btt.arg2) );
-      case Btc:
-         con = LibVEX_Alloc(sizeof(IRConst));
-         *con = ae->u.Btc.con2;
-         return IRExpr_Binop( ae->u.Btc.op,
-                              IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
-      case Bct:
-         con = LibVEX_Alloc(sizeof(IRConst));
-         *con = ae->u.Bct.con1;
-         return IRExpr_Binop( ae->u.Bct.op,
-                              IRExpr_Const(con), IRExpr_Tmp(ae->u.Bct.arg2) );
-      case Cf64i:
-         return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
-      default:
-         vpanic("availExpr_to_IRExpr");
-   }
-}
-
-inline
-static IRTemp subst_AvailExpr_Temp ( HashHW* env, IRTemp tmp )
-{
-   HWord res;
-   /* env :: IRTemp -> IRTemp */
-   if (lookupHHW( env, &res, (HWord)tmp ))
-      return (IRTemp)res;
-   else
-      return tmp;
-}
-
-static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
-{
-   /* env :: IRTemp -> IRTemp */
-   switch (ae->tag) {
-      case Ut:
-         ae->u.Ut.arg = subst_AvailExpr_Temp( env, ae->u.Ut.arg );
-         break;
-      case Btt:
-         ae->u.Btt.arg1 = subst_AvailExpr_Temp( env, ae->u.Btt.arg1 );
-         ae->u.Btt.arg2 = subst_AvailExpr_Temp( env, ae->u.Btt.arg2 );
-         break;
-      case Btc:
-         ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
-         break;
-      case Bct:
-         ae->u.Bct.arg2 = subst_AvailExpr_Temp( env, ae->u.Bct.arg2 );
-         break;
-      case Cf64i:
-         break;
-      default: 
-         vpanic("subst_AvailExpr");
-   }
-}
-
-static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
-{
-   AvailExpr* ae;
-
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.arg->tag == Iex_Tmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag      = Ut;
-      ae->u.Ut.op  = e->Iex.Unop.op;
-      ae->u.Ut.arg = e->Iex.Unop.arg->Iex.Tmp.tmp;
-      return ae;
-   }
-
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.arg1->tag == Iex_Tmp
-       && e->Iex.Binop.arg2->tag == Iex_Tmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Btt;
-      ae->u.Btt.op   = e->Iex.Binop.op;
-      ae->u.Btt.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
-      ae->u.Btt.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
-      return ae;
-   }
-
-   if (e->tag == Iex_Binop
-      && e->Iex.Binop.arg1->tag == Iex_Tmp
-      && e->Iex.Binop.arg2->tag == Iex_Const) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Btc;
-      ae->u.Btc.op   = e->Iex.Binop.op;
-      ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
-      ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
-      return ae;
-   }
-
-   if (e->tag == Iex_Binop
-      && e->Iex.Binop.arg1->tag == Iex_Const
-      && e->Iex.Binop.arg2->tag == Iex_Tmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag        = Bct;
-      ae->u.Bct.op   = e->Iex.Binop.op;
-      ae->u.Bct.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
-      ae->u.Bct.con1 = *(e->Iex.Binop.arg1->Iex.Const.con);
-      return ae;
-   }
-
-   if (e->tag == Iex_Const
-       && e->Iex.Const.con->tag == Ico_F64i) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag          = Cf64i;
-      ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
-      return ae;
-   }
-
-   return NULL;
-}
-
-
-/* The BB is modified in-place. */
-
-void do_cse_BB ( IRBB* bb )
-{
-   Int        i, j;
-   IRTemp     t, q;
-   IRStmt*    st;
-   AvailExpr* eprime;
-
-   HashHW* tenv = newHHW(); /* :: IRTemp -> IRTemp */
-   HashHW* aenv = newHHW(); /* :: AvailExpr* -> IRTemp */
-
-   vassert(sizeof(IRTemp) <= sizeof(HWord));
-
-   //ppIRBB(bb);
-   //vex_printf("\n\n");
-
-   /* Iterate forwards over the stmts.  
-      On seeing "t = E", where E is one of the 3 AvailExpr forms:
-         let E' = apply tenv substitution to E
-         search aenv for E'
-            if a mapping E' -> q is found, 
-               replace this stmt by "t = q"
-               and add binding t -> q to tenv
-            else
-               add binding E' -> t to aenv
-               replace this stmt by "t = E'"
-      Ignore any other kind of stmt.
-   */
-   for (i = 0; i < bb->stmts_used; i++) {
-      st = bb->stmts[i];
-
-      /* ignore not-interestings */
-      if ((!st) || st->tag != Ist_Tmp)
-         continue;
-
-      t = st->Ist.Tmp.tmp;
-      eprime = irExpr_to_AvailExpr(st->Ist.Tmp.data);
-      /* ignore if not of AvailExpr form */
-      if (!eprime)
-         continue;
-
-      /* vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n"); */
-
-      /* apply tenv */
-      subst_AvailExpr( tenv, eprime );
-
-      /* search aenv for eprime, unfortunately the hard way */
-      for (j = 0; j < aenv->used; j++)
-         if (aenv->inuse[j] && eq_AvailExpr(eprime, (AvailExpr*)aenv->key[j]))
-            break;
-
-      if (j < aenv->used) {
-         /* A binding E' -> q was found.  Replace stmt by "t = q" and
-            note the t->q binding in tenv. */
-         /* (this is the core of the CSE action) */
-         q = (IRTemp)aenv->val[j];
-         bb->stmts[i] = IRStmt_Tmp( t, IRExpr_Tmp(q) );
-         addToHHW( tenv, (HWord)t, (HWord)q );
-      } else {
-         /* No binding was found, so instead we add E' -> t to our
-            collection of available expressions, replace this stmt
-            with "t = E'", and move on. */
-         bb->stmts[i] = IRStmt_Tmp( t, availExpr_to_IRExpr(eprime) );
-         addToHHW( aenv, (HWord)eprime, (HWord)t );
-      }
-   }
-
-   //ppIRBB(bb);
-   //sanityCheckIRBB(bb, Ity_I32);
-   //vex_printf("\n\n");
-      
-}
-
-
-/*---------------------------------------------------------------*/
-/*--- Add32/Sub32 chain collapsing                            ---*/
-/*---------------------------------------------------------------*/
-
-/* ----- Helper functions for Add32/Sub32 chain collapsing ----- */
-
-/* Is this expression "Add32(tmp,const)" or "Sub32(tmp,const)" ?  If
-   yes, set *tmp and *i32 appropriately.  *i32 is set as if the
-   root node is Add32, not Sub32. */
-
-static Bool isAdd32OrSub32 ( IRExpr* e, IRTemp* tmp, Int* i32 )
-{ 
-   if (e->tag != Iex_Binop)
-      return False;
-   if (e->Iex.Binop.op != Iop_Add32 && e->Iex.Binop.op != Iop_Sub32)
-      return False;
-   if (e->Iex.Binop.arg1->tag != Iex_Tmp)
-      return False;
-   if (e->Iex.Binop.arg2->tag != Iex_Const)
-      return False;
-   *tmp = e->Iex.Binop.arg1->Iex.Tmp.tmp;
-   *i32 = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32);
-   if (e->Iex.Binop.op == Iop_Sub32)
-      *i32 = -*i32;
-   return True;
-}
-
-
-/* Figure out if tmp can be expressed as tmp2 +32 const, for some
-   other tmp2.  Scan backwards from the specified start point -- an
-   optimisation. */
-
-static Bool collapseChain ( IRBB* bb, Int startHere,
-                            IRTemp tmp,
-                            IRTemp* tmp2, Int* i32 )
-{
-   Int     j, ii;
-   IRTemp  vv;
-   IRStmt* st;
-   IRExpr* e;
-
-   /* the (var, con) pair contain the current 'representation' for
-      'tmp'.  We start with 'tmp + 0'.  */
-   IRTemp var = tmp;
-   Int    con = 0;
-
-   /* Scan backwards to see if tmp can be replaced by some other tmp
-     +/- a constant. */
-   for (j = startHere; j >= 0; j--) {
-      st = bb->stmts[j];
-      if (!st || st->tag != Ist_Tmp) 
-         continue;
-      if (st->Ist.Tmp.tmp != var)
-         continue;
-      e = st->Ist.Tmp.data;
-      if (!isAdd32OrSub32(e, &vv, &ii))
-         break;
-      var = vv;
-      con += ii;
-   }
-   if (j == -1)
-      /* no earlier binding for var .. ill-formed IR */
-      vpanic("collapseChain");
-
-   /* so, did we find anything interesting? */
-   if (var == tmp)
-      return False; /* no .. */
-      
-   *tmp2 = var;
-   *i32  = con;
-   return True;
-}
-
-
-/* ------- Main function for Add32/Sub32 chain collapsing ------ */
-
-static void collapse_AddSub_chains_BB ( IRBB* bb )
-{
-   IRStmt *st;
-   IRTemp var, var2;
-   Int    i, con, con2;
-
-   for (i = bb->stmts_used-1; i >= 0; i--) {
-      st = bb->stmts[i];
-      if (!st)
-         continue;
-
-      /* Try to collapse 't1 = Add32/Sub32(t2, con)'. */
-
-      if (st->tag == Ist_Tmp
-          && isAdd32OrSub32(st->Ist.Tmp.data, &var, &con)) {
-
-         /* So e1 is of the form Add32(var,con) or Sub32(var,-con).
-            Find out if var can be expressed as var2 + con2. */
-         if (collapseChain(bb, i-1, var, &var2, &con2)) {
-            if (DEBUG_IROPT) {
-               vex_printf("replacing1 ");
-               ppIRStmt(st);
-               vex_printf(" with ");
-            }
-            con2 += con;
-            bb->stmts[i] 
-               = IRStmt_Tmp(
-                    st->Ist.Tmp.tmp,
-                    (con2 >= 0) 
-                      ? IRExpr_Binop(Iop_Add32, 
-                                     IRExpr_Tmp(var2),
-                                     IRExpr_Const(IRConst_U32(con2)))
-                      : IRExpr_Binop(Iop_Sub32, 
-                                     IRExpr_Tmp(var2),
-                                     IRExpr_Const(IRConst_U32(-con2)))
-                 );
-            if (DEBUG_IROPT) {
-               ppIRStmt(bb->stmts[i]);
-               vex_printf("\n");
-            }
-         }
-
-         continue;
-      }
-
-      /* Try to collapse 't1 = GetI[t2, con]'. */
-
-      if (st->tag == Ist_Tmp
-          && st->Ist.Tmp.data->tag == Iex_GetI
-          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp
-          && collapseChain(bb, i-1, st->Ist.Tmp.data->Iex.GetI.ix
-                                      ->Iex.Tmp.tmp, &var2, &con2)) {
-         if (DEBUG_IROPT) {
-            vex_printf("replacing3 ");
-            ppIRStmt(st);
-            vex_printf(" with ");
-         }
-         con2 += st->Ist.Tmp.data->Iex.GetI.bias;
-         bb->stmts[i]
-            = IRStmt_Tmp(
-                 st->Ist.Tmp.tmp,
-                 IRExpr_GetI(st->Ist.Tmp.data->Iex.GetI.descr,
-                             IRExpr_Tmp(var2),
-                             con2));
-         if (DEBUG_IROPT) {
-            ppIRStmt(bb->stmts[i]);
-            vex_printf("\n");
-         }
-         continue;
-      }
-
-      /* Perhaps st is PutI[t, con] ? */
-
-      if (st->tag == Ist_PutI
-          && st->Ist.PutI.ix->tag == Iex_Tmp
-          && collapseChain(bb, i-1, st->Ist.PutI.ix->Iex.Tmp.tmp, 
-                               &var2, &con2)) {
-         if (DEBUG_IROPT) {
-            vex_printf("replacing2 ");
-            ppIRStmt(st);
-            vex_printf(" with ");
-         }
-         con2 += st->Ist.PutI.bias;
-         bb->stmts[i]
-           = IRStmt_PutI(st->Ist.PutI.descr,
-                         IRExpr_Tmp(var2),
-                         con2,
-                         st->Ist.PutI.data);
-         if (DEBUG_IROPT) {
-            ppIRStmt(bb->stmts[i]);
-            vex_printf("\n");
-         }
-         continue;
-      }
-
-   } /* for */
-}
-
-
-/*---------------------------------------------------------------*/
-/*--- PutI/GetI transformations                               ---*/
-/*---------------------------------------------------------------*/
-
-/* ------- Helper functions for PutI/GetI transformations ------ */
-
-/* Do a1 and a2 denote identical values?  Safe answer: False 
-*/
-static Bool identicalAtoms ( IRExpr* a1, IRExpr* a2 )
-{
-   vassert(isAtom(a1));
-   vassert(isAtom(a2));
-   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
-      return a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp;
-   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
-      return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
-   return False;
-}
-
-
-/* Determine, to the extent possible, the relationship between two
-   guest state accesses.  The possible outcomes are:
-
-   * Exact alias.  These two accesses denote precisely the same
-     piece of the guest state.
-
-   * Definely no alias.  These two accesses are guaranteed not to
-     overlap any part of the guest state.
-
-   * Unknown -- if neither of the above can be established.
-
-   If in doubt, return Unknown.  */
-
-typedef
-   enum { ExactAlias, NoAlias, UnknownAlias }
-   GSAliasing;
-
-
-/* Produces the alias relation between an indexed guest
-   state access and a non-indexed access. */
-
-static
-GSAliasing getAliasingRelation_IC ( IRArray* descr1, IRExpr* ix1,
-                                    Int offset2, IRType ty2 )
-{
-   UInt minoff1, maxoff1, minoff2, maxoff2;
-
-   getArrayBounds( descr1, &minoff1, &maxoff1 );
-   minoff2 = offset2;
-   maxoff2 = minoff2 + sizeofIRType(ty2) - 1;
-
-   if (maxoff1 < minoff2 || maxoff2 < minoff1)
-      return NoAlias;
-
-   /* Could probably do better here if required.  For the moment
-      however just claim not to know anything more. */
-   return UnknownAlias;
-}
-
-
-/* Produces the alias relation between two indexed guest state
-   accesses. */
-
-static
-GSAliasing getAliasingRelation_II ( 
-              IRArray* descr1, IRExpr* ix1, Int bias1,
-              IRArray* descr2, IRExpr* ix2, Int bias2
-           )
-{
-   UInt minoff1, maxoff1, minoff2, maxoff2;
-   Int  iters;
-
-   /* First try hard to show they don't alias. */
-   getArrayBounds( descr1, &minoff1, &maxoff1 );
-   getArrayBounds( descr2, &minoff2, &maxoff2 );
-   if (maxoff1 < minoff2 || maxoff2 < minoff1)
-      return NoAlias;
-
-   /* So the two arrays at least partially overlap.  To get any
-      further we'll have to be sure that the descriptors are
-      identical. */
-   if (!eqIRArray(descr1, descr2))
-      return UnknownAlias;
-
-   /* The descriptors are identical.  Now the only difference can be
-      in the index expressions.  If they cannot be shown to be
-      identical, we have to say we don't know what the aliasing
-      relation will be.  Now, since the IR is flattened, the index
-      expressions should be atoms -- either consts or tmps.  So that
-      makes the comparison simple. */
-   vassert(isAtom(ix1));
-   vassert(isAtom(ix2));
-   if (!identicalAtoms(ix1,ix2))
-      return UnknownAlias;
-
-   /* Ok, the index expressions are identical.  So now the only way
-      they can be different is in the bias.  Normalise this
-      paranoidly, to reliably establish equality/non-equality. */
-
-   /* So now we know that the GetI and PutI index the same array
-      with the same base.  Are the offsets the same, modulo the
-      array size?  Do this paranoidly. */
-   vassert(descr1->nElems == descr2->nElems);
-   vassert(descr1->elemTy == descr2->elemTy);
-   vassert(descr1->base   == descr2->base);
-   iters = 0;
-   while (bias1 < 0 || bias2 < 0) {
-      bias1 += descr1->nElems;
-      bias2 += descr1->nElems;
-      iters++;
-      if (iters > 10)
-         vpanic("getAliasingRelation: iters");
-   }
-   vassert(bias1 >= 0 && bias2 >= 0);
-   bias1 %= descr1->nElems;
-   bias2 %= descr1->nElems;
-   vassert(bias1 >= 0 && bias1 < descr1->nElems);
-   vassert(bias2 >= 0 && bias2 < descr1->nElems);
-
-   /* Finally, biasP and biasG are normalised into the range 
-      0 .. descrP/G->nElems - 1.  And so we can establish
-      equality/non-equality. */
-
-   return bias1==bias2 ? ExactAlias : NoAlias;
-}
-
-
-/* Given the parts (descr, tmp, bias) for a GetI, scan backwards from
-   the given starting point to find, if any, a PutI which writes
-   exactly the same piece of guest state, and so return the expression
-   that the PutI writes.  This is the core of PutI-GetI forwarding. */
-
-static 
-IRExpr* findPutI ( IRBB* bb, Int startHere,
-                   IRArray* descrG, IRExpr* ixG, Int biasG )
-{
-   Int        j;
-   IRStmt*    st;
-   GSAliasing relation;
-
-   if (0) {
-      vex_printf("\nfindPutI ");
-      ppIRArray(descrG);
-      vex_printf(" ");
-      ppIRExpr(ixG);
-      vex_printf(" %d\n", biasG);
-   }
-
-   /* Scan backwards in bb from startHere to find a suitable PutI
-      binding for (descrG, ixG, biasG), if any. */
-
-   for (j = startHere; j >= 0; j--) {
-      st = bb->stmts[j];
-      if (!st) continue;
-
-      if (st->tag == Ist_Put) {
-         /* Non-indexed Put.  This can't give a binding, but we do
-            need to check it doesn't invalidate the search by
-            overlapping any part of the indexed guest state. */
-
-         relation
-            = getAliasingRelation_IC(
-                 descrG, ixG,
-                 st->Ist.Put.offset,
-                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
-
-         if (relation == NoAlias) {
-            /* we're OK; keep going */
-            continue;
-         } else {
-            /* relation == UnknownAlias || relation == ExactAlias */
-            /* If this assertion fails, we've found a Put which writes
-               an area of guest state which is read by a GetI.  Which
-               is unlikely (although not per se wrong). */
-            vassert(relation != ExactAlias);
-            /* This Put potentially writes guest state that the GetI
-               reads; we must fail. */
-            return NULL;
-         }
-      }
-
-      if (st->tag == Ist_PutI) {
-
-         relation = getAliasingRelation_II(
-                       descrG, ixG, biasG,
-                       st->Ist.PutI.descr,
-                       st->Ist.PutI.ix,
-                       st->Ist.PutI.bias
-                    );
-
-         if (relation == NoAlias) {
-            /* This PutI definitely doesn't overlap.  Ignore it and
-               keep going. */
-            continue; /* the for j loop */
-         }
-
-         if (relation == UnknownAlias) {
-            /* We don't know if this PutI writes to the same guest
-               state that the GetI, or not.  So we have to give up. */
-            return NULL;
-         }
-
-         /* Otherwise, we've found what we're looking for.  */
-         vassert(relation == ExactAlias);
-         return st->Ist.PutI.data;
-
-      } /* if (st->tag == Ist_PutI) */
-
-      if (st->tag == Ist_Dirty) {
-         /* Be conservative.  If the dirty call has any guest effects at
-            all, give up.  We could do better -- only give up if there
-            are any guest writes/modifies. */
-         if (st->Ist.Dirty.details->nFxState > 0)
-            return NULL;
-      }
-
-   } /* for */
-
-   /* No valid replacement was found. */
-   return NULL;
-}
-
-
-
-/* Assuming pi is a PutI stmt, is s2 identical to it (in the sense
-   that it writes exactly the same piece of guest state) ?  Safe
-   answer: False. */
-
-static Bool identicalPutIs ( IRStmt* pi, IRStmt* s2 )
-{
-   vassert(pi->tag == Ist_PutI);
-   if (s2->tag != Ist_PutI)
-      return False;
-
-   return getAliasingRelation_II( 
-             pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
-             s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
-          )
-          == ExactAlias;
-}
-
-
-/* Assuming pi is a PutI stmt, is s2 a Get/GetI/Put/PutI which might
-   overlap it?  Safe answer: True.  Note, we could do a lot better
-   than this if needed. */
-
-static 
-Bool guestAccessWhichMightOverlapPutI ( 
-        IRTypeEnv* tyenv, IRStmt* pi, IRStmt* s2 
-     )
-{
-   GSAliasing relation;
-   UInt       minoffP, maxoffP;
-
-   vassert(pi->tag == Ist_PutI);
-   getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
-   switch (s2->tag) {
-
-      case Ist_Dirty:
-         /* If the dirty call has any guest effects at all, give up.
-            Probably could do better. */
-         if (s2->Ist.Dirty.details->nFxState > 0)
-            return True;
-         return False;
-
-      case Ist_Put:
-         vassert(isAtom(s2->Ist.Put.data));
-         relation 
-            = getAliasingRelation_IC(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.ix,
-                 s2->Ist.Put.offset, 
-                 typeOfIRExpr(tyenv,s2->Ist.Put.data)
-              );
-         goto have_relation;
-
-      case Ist_PutI:
-         vassert(isAtom(s2->Ist.PutI.ix));
-         vassert(isAtom(s2->Ist.PutI.data));
-         relation
-            = getAliasingRelation_II(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
-                 s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
-              );
-         goto have_relation;
-
-      case Ist_Tmp:
-         if (s2->Ist.Tmp.data->tag == Iex_GetI) {
-            relation
-               = getAliasingRelation_II(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.ix, 
-                                        pi->Ist.PutI.bias, 
-                    s2->Ist.Tmp.data->Iex.GetI.descr,
-                    s2->Ist.Tmp.data->Iex.GetI.ix,
-                    s2->Ist.Tmp.data->Iex.GetI.bias
-                 );
-            goto have_relation;
-         }
-         if (s2->Ist.Tmp.data->tag == Iex_Get) {
-            relation
-               = getAliasingRelation_IC(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.ix,
-                    s2->Ist.Tmp.data->Iex.Get.offset,
-                    s2->Ist.Tmp.data->Iex.Get.ty
-                 );
-            goto have_relation;
-         }
-         return False;
-
-      case Ist_STle:
-         vassert(isAtom(s2->Ist.STle.addr));
-         vassert(isAtom(s2->Ist.STle.data));
-         return False;
-
-      default:
-         vex_printf("\n"); ppIRStmt(s2); vex_printf("\n");
-         vpanic("guestAccessWhichMightOverlapPutI");
-   }
-
-  have_relation:
-   if (relation == NoAlias)
-      return False;
-   else
-      return True; /* ExactAlias or UnknownAlias */
-}
-
-
-
-/* ---------- PutI/GetI transformations main functions --------- */
-
-/* Do PutI -> GetI forwarding.  bb is modified in-place. */
-
-static
-void do_PutI_GetI_forwarding_BB ( IRBB* bb )
-{
-   Int     i;
-   IRStmt* st;
-
-   for (i = bb->stmts_used-1; i >= 0; i--) {
-      st = bb->stmts[i];
-      if (!st)
-         continue;
-
-      if (st->tag == Ist_Tmp
-          && st->Ist.Tmp.data->tag == Iex_GetI
-          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp) {
-         IRArray* descr = st->Ist.Tmp.data->Iex.GetI.descr;
-         IRExpr*  ix    = st->Ist.Tmp.data->Iex.GetI.ix;
-         Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
-         IRExpr*  replacement = findPutI(bb, i-1, descr, ix, bias);
-         if (replacement 
-             && isAtom(replacement)
-             /* Make sure we're doing a type-safe transformation! */
-             && typeOfIRExpr(bb->tyenv, replacement) == descr->elemTy) {
-            if (DEBUG_IROPT) {
-               vex_printf("PiGi: "); 
-               ppIRExpr(st->Ist.Tmp.data);
-               vex_printf(" -> ");
-               ppIRExpr(replacement);
-               vex_printf("\n");
-            }
-            bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp, replacement);
-         }
-      }
-   }
-
-}
-
-/* Remove redundant PutIs, to the extent which they can be detected.
-   bb is modified in-place. */
-
-static
-void do_redundant_PutI_elimination ( IRBB* bb )
-{
-   Int    i, j;
-   Bool   delete;
-   IRStmt *st, *stj;
-
-   for (i = 0; i < bb->stmts_used; i++) {
-      st = bb->stmts[i];
-      if (!st || st->tag != Ist_PutI)
-         continue;
-      /* Ok, search forwards from here to see if we can find another
-         PutI which makes this one redundant, and dodging various 
-         hazards.  Search forwards:
-         * If conditional exit, give up (because anything after that 
-           does not postdominate this put).
-         * If a Get which might overlap, give up (because this PutI 
-           not necessarily dead).
-         * If a Put which is identical, stop with success.
-         * If a Put which might overlap, but is not identical, give up.
-         * If a dirty helper call which might write guest state, give up.
-         * If a Put which definitely doesn't overlap, or any other 
-           kind of stmt, continue.
-      */
-      delete = False;
-      for (j = i+1; j < bb->stmts_used; j++) {
-         stj = bb->stmts[j];
-         if (!stj) 
-            continue;
-         if (identicalPutIs(st, stj)) {
-            /* success! */
-            delete = True;
-            break;
-         }
-         if (stj->tag == Ist_Exit)
-            /* give up */
-            break;
-         if (st->tag == Ist_Dirty)
-            /* give up; could do better here */
-            break;
-         if (guestAccessWhichMightOverlapPutI(bb->tyenv, st, stj))
-            /* give up */
-           break;
-      }
-
-      if (delete) {
-         if (DEBUG_IROPT) {
-            vex_printf("rPI:  "); 
-            ppIRStmt(st); 
-            vex_printf("\n");
-         }
-         bb->stmts[i] = NULL;
-      }
-
-   }
-}
-
-
-/*---------------------------------------------------------------*/
-/*--- Loop unrolling                                          ---*/
-/*---------------------------------------------------------------*/
-
-/* Adjust all tmp values (names) in e by delta.  e is destructively
-   modified. */
-
-static void deltaIRExpr ( IRExpr* e, Int delta )
-{
-   Int i;
-   switch (e->tag) {
-      case Iex_Tmp:
-         e->Iex.Tmp.tmp += delta;
-         break;
-      case Iex_Get:
-      case Iex_Const:
-         break;
-      case Iex_GetI:
-         deltaIRExpr(e->Iex.GetI.ix, delta);
-         break;
-      case Iex_Binop:
-         deltaIRExpr(e->Iex.Binop.arg1, delta);
-         deltaIRExpr(e->Iex.Binop.arg2, delta);
-         break;
-      case Iex_Unop:
-         deltaIRExpr(e->Iex.Unop.arg, delta);
-         break;
-      case Iex_LDle:
-         deltaIRExpr(e->Iex.LDle.addr, delta);
-         break;
-      case Iex_CCall:
-         for (i = 0; e->Iex.CCall.args[i]; i++)
-            deltaIRExpr(e->Iex.CCall.args[i], delta);
-         break;
-      case Iex_Mux0X:
-         deltaIRExpr(e->Iex.Mux0X.cond, delta);
-         deltaIRExpr(e->Iex.Mux0X.expr0, delta);
-         deltaIRExpr(e->Iex.Mux0X.exprX, delta);
-         break;
-      default: 
-         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-         vpanic("deltaIRExpr");
-   }
-}
-
-/* Adjust all tmp values (names) in st by delta.  st is destructively
-   modified. */
-
-static void deltaIRStmt ( IRStmt* st, Int delta )
-{
-   Int      i;
-   IRDirty* d;
-   switch (st->tag) {
-      case Ist_Put:
-         deltaIRExpr(st->Ist.Put.data, delta);
-         break;
-      case Ist_PutI:
-         deltaIRExpr(st->Ist.PutI.ix, delta);
-         deltaIRExpr(st->Ist.PutI.data, delta);
-         break;
-      case Ist_Tmp: 
-         st->Ist.Tmp.tmp += delta;
-         deltaIRExpr(st->Ist.Tmp.data, delta);
-         break;
-      case Ist_Exit:
-         deltaIRExpr(st->Ist.Exit.guard, delta);
-         break;
-      case Ist_STle:
-         deltaIRExpr(st->Ist.STle.addr, delta);
-         deltaIRExpr(st->Ist.STle.data, delta);
-         break;
-      case Ist_Dirty:
-         d = st->Ist.Dirty.details;
-         deltaIRExpr(d->guard, delta);
-         for (i = 0; d->args[i]; i++)
-            deltaIRExpr(d->args[i], delta);
-         if (d->tmp != IRTemp_INVALID)
-            d->tmp += delta;
-         if (d->mAddr)
-            deltaIRExpr(d->mAddr, delta);
-         break;
-      default: 
-         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
-         vpanic("deltaIRStmt");
-   }
-}
-
-
-/* If possible, return a loop-unrolled version of bb0.  The original
-   is changed.  If not possible, return NULL.  */
-
-/* The two schemas considered are:
-
-     X: BODY; goto X
-
-     which unrolls to (eg)  X: BODY;BODY; goto X
-
-   and
-
-       X: BODY; if (c) goto X; goto Y
-   which trivially transforms to
-       X: BODY; if (!c) goto Y; goto X;
-   so it falls in the scope of the first case.  
-
-   X and Y must be literal (guest) addresses.
-*/
-
-static Int calc_unroll_factor( IRBB* bb )
-{
-   Int n_stmts, i;
-
-   n_stmts = 0;
-   for (i = 0; i < bb->stmts_used; i++)
-     if (bb->stmts[i])
-        n_stmts++;
-
-   if (n_stmts <= vex_control.iropt_unroll_thresh/8) {
-      if (vex_control.iropt_verbosity > 0)
-         vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
-                    n_stmts, 8* n_stmts);
-      return 8;
-   }
-   if (n_stmts <= vex_control.iropt_unroll_thresh/4) {
-      if (vex_control.iropt_verbosity > 0)
-         vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
-                    n_stmts, 4* n_stmts);
-      return 4;
-   }
-
-   if (n_stmts <= vex_control.iropt_unroll_thresh/2) {
-      if (vex_control.iropt_verbosity > 0)
-         vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
-                    n_stmts, 2* n_stmts);
-      return 2;
-   }
-
-   if (vex_control.iropt_verbosity > 0)
-      vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
-
-   return 1;
-}
-
-
-static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
-{
-   Int      i, j, jmax, n_vars;
-   Bool     xxx_known;
-   Addr64   xxx_value, yyy_value;
-   IRExpr*  udst;
-   IRStmt*  st;
-   IRConst* con;
-   IRBB     *bb1, *bb2;
-   Int      unroll_factor;
-
-   if (vex_control.iropt_unroll_thresh <= 0)
-      return NULL;
-
-   /* First off, figure out if we can unroll this loop.  Do this
-      without modifying bb0. */
-
-   if (bb0->jumpkind != Ijk_Boring)
-      return NULL;
-
-   xxx_known = False;
-   xxx_value = 0;
-
-   /* Extract the next-guest address.  If it isn't a literal, we 
-      have to give up. */
-
-   udst = bb0->next;
-   if (udst->tag == Iex_Const
-       && (udst->Iex.Const.con->tag == Ico_U32
-           || udst->Iex.Const.con->tag == Ico_U64)) {
-      /* The BB ends in a jump to a literal location. */
-      xxx_known = True;
-      xxx_value = udst->Iex.Const.con->tag == Ico_U64
-                    ?  udst->Iex.Const.con->Ico.U64
-                    : (Addr64)(udst->Iex.Const.con->Ico.U32);
-   }
-
-   if (!xxx_known)
-      return NULL;
-
-   /* Now we know the BB ends to a jump to a literal location.  If
-      it's a jump to itself (viz, idiom #1), move directly to the
-      unrolling stage, first cloning the bb so the original isn't
-      modified. */
-   if (xxx_value == my_addr) {
-      unroll_factor = calc_unroll_factor( bb0 );
-      if (unroll_factor < 2)
-         return NULL;
-      bb1 = dopyIRBB( bb0 );
-      bb0 = NULL;
-      udst = NULL; /* is now invalid */
-      goto do_unroll;
-   }
-
-   /* Search for the second idiomatic form:
-        X: BODY; if (c) goto X; goto Y
-      We know Y, but need to establish that the last stmt
-      is 'if (c) goto X'.
-   */
-   yyy_value = xxx_value;
-   for (i = bb0->stmts_used-1; i >= 0; i--)
-      if (bb0->stmts[i])
-         break;
-
-   if (i < 0)
-      return NULL; /* block with no stmts.  Strange. */
-
-   st = bb0->stmts[i];
-   if (st->tag != Ist_Exit)
-      return NULL;
-   if (st->Ist.Exit.jk != Ijk_Boring)
-      return NULL;
-
-   con = st->Ist.Exit.dst;
-   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
-
-   xxx_value = con->tag == Ico_U64 
-                  ? st->Ist.Exit.dst->Ico.U64
-                  : (Addr64)(st->Ist.Exit.dst->Ico.U32);
-
-   /* If this assertion fails, we have some kind of type error. */
-   vassert(con->tag == udst->Iex.Const.con->tag);
-
-   if (xxx_value != my_addr)
-      /* We didn't find either idiom.  Give up. */
-      return NULL;
-
-   /* Ok, we found idiom #2.  Copy the BB, switch around the xxx and
-      yyy values (which makes it look like idiom #1), and go into
-      unrolling proper.  This means finding (again) the last stmt, in
-      the copied BB. */
-
-   unroll_factor = calc_unroll_factor( bb0 );
-   if (unroll_factor < 2)
-      return NULL;
-
-   bb1 = dopyIRBB( bb0 );
-   bb0 = NULL;
-   udst = NULL; /* is now invalid */
-   for (i = bb1->stmts_used-1; i >= 0; i--)
-      if (bb1->stmts[i])
-         break;
-
-   /* The next bunch of assertions should be true since we already
-      found and checked the last stmt in the original bb. */
-
-   vassert(i >= 0);
-
-   st = bb1->stmts[i];
-   vassert(st->tag == Ist_Exit);
-
-   con = st->Ist.Exit.dst;
-   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
-
-   udst = bb1->next;
-   vassert(udst->tag == Iex_Const);
-   vassert(udst->Iex.Const.con->tag == Ico_U32
-          || udst->Iex.Const.con->tag == Ico_U64);
-   vassert(con->tag == udst->Iex.Const.con->tag);
-
-   /* switch the xxx and yyy fields around */
-   if (con->tag == Ico_U64) {
-      udst->Iex.Const.con->Ico.U64 = xxx_value;
-      con->Ico.U64 = yyy_value;
-   } else {
-      udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
-      con->Ico.U64 = (UInt)yyy_value;
-   }
-
-   /* negate the test condition */
-   st->Ist.Exit.guard 
-      = IRExpr_Unop(Iop_Not1,dopyIRExpr(st->Ist.Exit.guard));
-
-   /* --- The unroller proper.  Both idioms are by now --- */
-   /* --- now converted to idiom 1. --- */
-
-  do_unroll:
-
-   vassert(unroll_factor == 2 
-           || unroll_factor == 4
-           || unroll_factor == 8);
-
-   jmax = unroll_factor==8 ? 3 : (unroll_factor==4 ? 2 : 1);
-   for (j = 1; j <= jmax; j++) {
-
-      n_vars = bb1->tyenv->types_used;
-
-      bb2 = dopyIRBB(bb1);
-      for (i = 0; i < n_vars; i++)
-         (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
-
-      for (i = 0; i < bb2->stmts_used; i++) {
-         if (bb2->stmts[i] == NULL)
-            continue;
-         /* deltaIRStmt destructively modifies the stmt, but 
-            that's OK since bb2 is a complete fresh copy of bb1. */
-         deltaIRStmt(bb2->stmts[i], n_vars);
-         addStmtToIRBB(bb1, bb2->stmts[i]);
-      }
-   }
-
-   if (DEBUG_IROPT) {
-      vex_printf("\nUNROLLED (%llx)\n", my_addr);
-      ppIRBB(bb1);
-      vex_printf("\n");
-   }
-
-   /* Flattening; sigh.  The unroller succeeds in breaking flatness
-      by negating the test condition.  This should be fixed properly.
-      For the moment use this shotgun approach.  */
-   return flatten_BB(bb1);
-}
-
 /*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
@@ -3298,7 +3383,7 @@ IRBB* expensive_transformations( IRBB* bb )
 {
    do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
-   do_PutI_GetI_forwarding_BB( bb );
+   do_redundant_GetI_elimination( bb );
    do_redundant_PutI_elimination( bb );
    do_deadcode_BB( bb );
    return flatten_BB( bb );
@@ -3380,9 +3465,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    Bool do_expensive;
    IRBB *bb, *bb2;
 
-   /* Completely disable iropt? */
-   if (vex_control.iropt_level <= 0) return bb0;
-
    n_total++;
 
    /* First flatten the block out, since all other
@@ -3394,6 +3476,9 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       vex_printf("\n========= FLAT\n\n" );
       ppIRBB(bb);
    }
+
+   /* If at level 0, stop now. */
+   if (vex_control.iropt_level <= 0) return bb;
 
    /* Now do a preliminary cleanup pass, and figure out if we also
       need to do 'expensive' optimisations.  Expensive optimisations

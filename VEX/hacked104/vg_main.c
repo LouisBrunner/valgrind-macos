@@ -140,6 +140,7 @@ static Int alloc_BaB_1_set ( Addr a )
 static void vg_init_baseBlock ( void )
 {
    baB_off = 0;
+   Int shadow;
 
    /* Those with offsets under 128 are carefully chosen. */
 
@@ -148,6 +149,18 @@ static void vg_init_baseBlock ( void )
    /* WORD offsets in this column */
    VGOFF_(m_vex)  = alloc_BaB( (3 + sizeof(VexGuestX86State)) / 4 );
    VGOFF_(m_eipS) = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
+
+   /* Now a lump of shadow state. */
+   shadow = alloc_BaB( (3 + sizeof(VexGuestX86State)) / 4 );
+
+   /* Now the spill area. */
+   VGOFF_(spillslots) = alloc_BaB(LibVEX_N_SPILL_BYTES/4);
+   VG_(printf)("1.0.4:  state at %d\n", 4* VGOFF_(m_vex));
+   VG_(printf)("1.0.4:  spill at %d\n", 4* VGOFF_(spillslots));
+   VG_(printf)("1.0.4: shadow at %d\n", 4* shadow );
+
+   LibVEX_GuestX86_initialise( (VexGuestX86State*)
+                               & VG_(baseBlock)[ VGOFF_(m_vex) ] );
 
 #undef offsetof
 
@@ -207,8 +220,6 @@ static void vg_init_baseBlock ( void )
    /* 55 .. 155  This overlaps the magic boundary at >= 32 words, but
       most spills are to low numbered spill slots, so the ones above
       the boundary don't see much action. */
-   VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);
-   VG_(printf)("1.0.4 spillslots: start at word %d\n", VGOFF_(spillslots));
    /* These two pushed beyond the boundary because 2-byte transactions
       are rare. */
    /* 50  */
@@ -993,9 +1004,9 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
    VG_(m_state_static)[20/4] = vex->guest_EBP;
    VG_(m_state_static)[24/4] = vex->guest_ESI;
    VG_(m_state_static)[28/4] = vex->guest_EDI;
-   VG_(m_state_static)[32/4] = vex_to_eflags( vex );
+   VG_(m_state_static)[32/4] = LibVEX_GuestX86_get_eflags( vex );
    VG_(m_state_static)[36/4] = vex->guest_EIP;
-   vex_to_x87( vex, (UChar*)&VG_(m_state_static)[40/4] );
+   LibVEX_GuestX86_get_x87( vex, (UChar*)&VG_(m_state_static)[40/4] );
 }
 
 
@@ -1011,9 +1022,9 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    vex->guest_EBP = VG_(m_state_static)[20/4];
    vex->guest_ESI = VG_(m_state_static)[24/4];
    vex->guest_EDI = VG_(m_state_static)[28/4];
-   eflags_to_vex( VG_(m_state_static)[32/4], vex );
+   LibVEX_GuestX86_put_eflags( VG_(m_state_static)[32/4], vex );
    vex->guest_EIP = VG_(m_state_static)[36/4];
-   x87_to_vex( (UChar*)&VG_(m_state_static)[40/4], vex );
+   LibVEX_GuestX86_put_x87( (UChar*)&VG_(m_state_static)[40/4], vex );
 }
 
 

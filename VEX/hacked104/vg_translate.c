@@ -3128,12 +3128,12 @@ void VG_(translate) ( ThreadState* tst,
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
+      VexControl vcon;
+      LibVEX_default_VexControl( &vcon );
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,  /* debug_paranoia */ 
-                    0,  /* verbosity */
-                    False, 
-		    //True, 
-                    50 /* max insns per bb */ );
+                    False,
+                    &vcon );
       vex_init_done = True;
    }
 
@@ -3160,11 +3160,17 @@ void VG_(translate) ( ThreadState* tst,
    }
 
    tres = LibVEX_Translate ( 
-             InsnSetX86, InsnSetX86,
-             (Char*)orig_addr, (Addr64)orig_addr, &t_orig_size,
-             tmpbuf, N_TMPBUF, &tmpbuf_used,
-             NULL, NULL,
-             debugging_translation ? 2 :
+             InsnSetX86, 
+             InsnSetX86,
+             (Char*)orig_addr, 
+             (Addr64)orig_addr, 
+             &t_orig_size,
+             tmpbuf, 
+             N_TMPBUF, 
+             &tmpbuf_used,
+             NULL, NULL, False,
+             NULL,
+             debugging_translation ? ((1<<7)) :
                 (VG_(overall_in_count) > v2thresh ? 2 : 0)
           );
 
@@ -3196,118 +3202,6 @@ void VG_(translate) ( ThreadState* tst,
       *trans_size = tmpbuf_used;
    }
 
-
-#if 0
-   Int         n_disassembled_bytes, final_code_size;
-   Bool        debugging_translation;
-   UChar*      final_code;
-   UCodeBlock* cb;
-
-   VGP_PUSHCC(VgpTranslate);
-
-   dis = True;
-   dis = debugging_translation;
-
-   /* Check if we're being asked to jump to a silly address, and if so
-      record an error message before potentially crashing the entire
-      system. */
-   if (VG_(clo_instrument) && !debugging_translation && !dis) {
-      Addr bad_addr;
-      Bool ok = VGM_(check_readable) ( orig_addr, 1, &bad_addr );
-      if (!ok) {
-         VG_(record_jump_error)(tst, bad_addr);
-      }
-   }
-
-   /* if (VG_(overall_in_count) >= 4800) dis=True; */
-   if (VG_(disassemble))
-      VG_(printf)("\n");
-   if (0 || dis 
-       || (VG_(overall_in_count) > 0 &&
-           (VG_(overall_in_count) % 1000 == 0))) {
-      if (0&& (VG_(clo_verbosity) > 1 || dis))
-         VG_(message)(Vg_UserMsg,
-              "trans# %d, bb# %lu, in %d, out %d",
-              VG_(overall_in_count), 
-              VG_(bbs_done),
-              VG_(overall_in_osize), VG_(overall_in_tsize) );
-   }
-   cb = VG_(allocCodeBlock)();
-
-   /* Disassemble this basic block into cb. */
-   //dis=True;
-   /* VGP_PUSHCC(VgpToUCode); */
-   n_disassembled_bytes = VG_(disBB) ( cb, orig_addr );
-   /* VGP_POPCC; */
-   //dis=False;
-   /* if (0&& VG_(translations_done) < 617)  */
-   /*    dis=False; */
-   /* Try and improve the code a bit. */
-   if (VG_(clo_optimise)) {
-      /* VGP_PUSHCC(VgpImprove); */
-      vg_improve ( cb );
-      if (VG_(disassemble)) 
-         VG_(ppUCodeBlock) ( cb, "Improved code:" );
-      /* VGP_POPCC; */
-   }
-   //dis = True;
-   /* Add instrumentation code. */
-   if (VG_(clo_instrument)) {
-      /* VGP_PUSHCC(VgpInstrument); */
-      cb = vg_instrument(cb);
-      /* VGP_POPCC; */
-      if (VG_(disassemble)) 
-         VG_(ppUCodeBlock) ( cb, "Instrumented code:" );
-      if (VG_(clo_cleanup)) {
-         /* VGP_PUSHCC(VgpCleanup); */
-         vg_cleanup(cb);
-         /* VGP_POPCC; */
-         if (VG_(disassemble)) 
-            VG_(ppUCodeBlock) ( cb, "Cleaned-up instrumented code:" );
-      }
-   }
-   //dis = False;
-
-   //dis = True;
-   /* Add cache simulation code. */
-   if (VG_(clo_cachesim)) {
-      /* VGP_PUSHCC(VgpCacheInstrument); */
-      cb = VG_(cachesim_instrument)(cb, orig_addr);
-      /* VGP_POPCC; */
-      if (VG_(disassemble)) 
-         VG_(ppUCodeBlock) ( cb, "Cachesim instrumented code:" );
-   }
-   //dis = False;
-   
-   /* Allocate registers. */
-   //dis = True;
-   /* VGP_PUSHCC(VgpRegAlloc); */
-   cb = vg_do_register_allocation ( cb );
-   /* VGP_POPCC; */
-   //dis = False;
-   /* 
-   if (VG_(disassemble))
-      VG_(ppUCodeBlock) ( cb, "After Register Allocation:");
-   */
-
-   /* VGP_PUSHCC(VgpFromUcode); */
-   /* NB final_code is allocated with VG_(jitmalloc), not VG_(malloc)
-      and so must be VG_(jitfree)'d. */
-   final_code = VG_(emit_code)(cb, &final_code_size );
-   /* VGP_POPCC; */
-   VG_(freeCodeBlock)(cb);
-
-   if (debugging_translation) {
-      /* Only done for debugging -- throw away final result. */
-      VG_(jitfree)(final_code);
-   } else {
-      /* Doing it for real -- return values to caller. */
-      *orig_size = n_disassembled_bytes;
-      *trans_addr = (Addr)final_code;
-      *trans_size = final_code_size;
-   }
-   VGP_POPCC;
-#endif
 }
 
 /*--------------------------------------------------------------------*/

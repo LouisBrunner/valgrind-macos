@@ -328,4 +328,19 @@ A14.  First of all: relax, it's probably not a bug, but a feature.
 
 -----------------------------------------------------------------
 
+Q15.  My program dies with a segmentation fault, but Valgrind doesn't give
+      any error messages before it, or none that look related.
+
+A15.  The one kind of segmentation fault that Valgrind won't give any
+      warnings about is writes to read-only memory.  Maybe your program is
+      writing to a static string like this:
+
+        char* s = "hello";
+        s[0] = 'j';
+
+      or something similar.  Writing to read-only memory can also apparently
+      make LinuxThreads behave strangely.
+
+-----------------------------------------------------------------
+
 (this is the end of the FAQ.)

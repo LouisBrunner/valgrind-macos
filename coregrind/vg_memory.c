@@ -66,7 +66,7 @@ static SkipList sk_segments = SKIPLIST_INIT(Segment, addr, addrcmp, straddr, VG_
 /*--- Maintain an ordered list of all the client's mappings  ---*/
 /*--------------------------------------------------------------*/
 
-Bool VG_(seg_contains)(const Segment *s, Addr p, UInt len)
+Bool VG_(seg_contains)(const Segment *s, Addr p, SizeT len)
 {
    Addr se = s->addr+s->len;
    Addr pe = p+len;
@@ -76,7 +76,7 @@ Bool VG_(seg_contains)(const Segment *s, Addr p, UInt len)
    return (p >= s->addr && pe <= se);
 }
 
-Bool VG_(seg_overlaps)(const Segment *s, Addr p, UInt len)
+Bool VG_(seg_overlaps)(const Segment *s, Addr p, SizeT len)
 {
    Addr se = s->addr+s->len;
    Addr pe = p+len;
@@ -105,7 +105,7 @@ static void freeseg(Segment *s)
 {
    recycleseg(s);
    if (s->symtab != NULL) {
-      VG_(symtab_decref)(s->symtab, s->addr, s->len);
+      VG_(symtab_decref)(s->symtab, s->addr);
       s->symtab = NULL;
    }
 
@@ -344,7 +344,7 @@ void VG_(map_file_segment)(Addr addr, SizeT len, UInt prot, UInt flags,
 	   s->dev != dev		||
 	   s->ino != ino		||
 	   s->offset != off)) {
-	 VG_(symtab_decref)(s->symtab, s->addr, s->len);
+	 VG_(symtab_decref)(s->symtab, s->addr);
 	 s->symtab = NULL;
       }
    } else {

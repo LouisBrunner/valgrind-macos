@@ -130,7 +130,7 @@ void VG_(read_procselfmaps)(void)
 
    So the sig of the called fn might be
 
-      void (*record_mapping)( Addr start, UInt size, 
+      void (*record_mapping)( Addr start, SizeT size, 
                               Char r, Char w, Char x, 
                               ULong foffset, UChar* filename )
 
@@ -141,7 +141,7 @@ void VG_(read_procselfmaps)(void)
        procmap_buf!
 */
 void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr addr, UInt len, Char rr, Char ww, Char xx, 
+   void (*record_mapping)( Addr addr, SizeT len, Char rr, Char ww, Char xx, 
 			   UInt dev, UInt ino, ULong foff, const UChar* filename )
    )
 {

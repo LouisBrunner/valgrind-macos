@@ -1171,7 +1171,7 @@ extern void VG_(read_procselfmaps) ( void );
    it's read from the buffer filled by VG_(read_procselfmaps_contents)(). */
 extern 
 void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr addr, UInt len, Char rr, Char ww, Char xx, 
+   void (*record_mapping)( Addr addr, SizeT len, Char rr, Char ww, Char xx, 
 			   UInt dev, UInt ino, ULong foff,
                            const UChar *filename ) );
 
@@ -1186,7 +1186,7 @@ extern Bool VG_(is_object_file)   ( const void *hdr );
 extern void VG_(mini_stack_dump)  ( Addr ips[], UInt n_ips );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
 extern void VG_(symtab_incref)	  ( SegInfo * );
-extern void VG_(symtab_decref)	  ( SegInfo *, Addr a, UInt len );
+extern void VG_(symtab_decref)	  ( SegInfo *, Addr a );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 
@@ -1296,7 +1296,7 @@ struct _Segment {
    UInt		flags;		/* SF_*					*/
 
    Addr		addr;		/* mapped addr (page aligned)		*/
-   UInt		len;		/* size of mapping (page aligned)	*/
+   SizeT	len;		/* size of mapping (page aligned)	*/
 
    /* These are valid if (flags & SF_FILE) */
    ULong	offset;		/* file offset				*/
@@ -1326,10 +1326,10 @@ extern Segment *VG_(find_segment)(Addr a);
 extern Segment *VG_(first_segment)(void);
 extern Segment *VG_(next_segment)(Segment *);
 
-extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);
-extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
+extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, SizeT size);
+extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, SizeT size);
 
-extern void VG_(pad_address_space)(void);
+extern void VG_(pad_address_space)  (void);
 extern void VG_(unpad_address_space)(void);
 
 extern REGPARM(1)

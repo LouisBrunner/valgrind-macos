@@ -2340,7 +2340,7 @@ Int VG_(helper_offset)(Addr a)
 /*====================================================================*/
 
 static void build_valgrind_map_callback 
-      ( Addr start, UInt size, Char rr, Char ww, Char xx, 
+      ( Addr start, SizeT size, Char rr, Char ww, Char xx, 
         UInt dev, UInt ino, ULong foffset, const UChar* filename )
 {
    UInt prot  = 0;
@@ -2364,7 +2364,7 @@ static void build_valgrind_map_callback
 Addr sp_at_startup___global_arg = 0;
 
 static void build_segment_map_callback 
-      ( Addr start, UInt size, Char rr, Char ww, Char xx,
+      ( Addr start, SizeT size, Char rr, Char ww, Char xx,
         UInt dev, UInt ino, ULong foffset, const UChar* filename )
 {
    UInt prot = 0;

@@ -12585,7 +12585,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
              nameISize(sz), nameIRegG(sz, pfx, modrm), 
                             nameIRegE(sz, pfx, modrm));
       } else {
-         goto decode_failure; /* awaiting test case */
          addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
          assign( t1, loadLE(ty, mkexpr(addr)) );
          assign( t2, getIRegG(sz, pfx, modrm) );

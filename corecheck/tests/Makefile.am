@@ -8,6 +8,7 @@ noinst_SCRIPTS = filter_stderr filter_fdleak
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	as_mmap.stderr.exp as_mmap.stderr.exp2 as_mmap.vgtest \
+	as_shm.stderr.exp as_shm.stdout.exp as_shm.vgtest \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_creat.stderr.exp fdleak_creat.vgtest \

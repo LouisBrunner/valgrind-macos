@@ -58,12 +58,12 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 {
    *nregs = 6;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-   *arr[0] = hregX86_EAX();
-   *arr[1] = hregX86_EBX();
-   *arr[2] = hregX86_ECX();
-   *arr[3] = hregX86_EDX();
-   *arr[4] = hregX86_ESI();
-   *arr[5] = hregX86_EDI();
+   (*arr)[0] = hregX86_EAX();
+   (*arr)[1] = hregX86_EBX();
+   (*arr)[2] = hregX86_ECX();
+   (*arr)[3] = hregX86_EDX();
+   (*arr)[4] = hregX86_ESI();
+   (*arr)[5] = hregX86_EDI();
 }
 
 

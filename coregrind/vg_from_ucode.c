@@ -1464,7 +1464,8 @@ static void emit_SSE3g ( FlagSet uses_sflags,
                          UChar second_byte, 
 			 UChar third_byte,
 			 UChar fourth_byte,
-                         Int ireg )
+                         Int ireg,
+                         Bool reads_ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1475,10 +1476,14 @@ static void emit_SSE3g ( FlagSet uses_sflags,
    fourth_byte |= (ireg & 7); /* patch in our ireg */
    VG_(emitB) ( fourth_byte );
    if (dis)
-      VG_(printf)("\n\t\tsse-reg-to-xmmreg--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
-                  (UInt)first_byte, (UInt)second_byte, 
-                  (UInt)third_byte, (UInt)fourth_byte,
-                  nameIReg(4,ireg) );
+      VG_(printf)(
+         reads_ireg
+            ? "\n\t\tireg-to-ssereg--0x%x:0x%x:0x%x:0x%x-(%s)\n" 
+            : "\n\t\tssereg-to-ireg--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         (UInt)first_byte, (UInt)second_byte, 
+         (UInt)third_byte, (UInt)fourth_byte,
+         nameIReg(4,ireg) 
+      );
 }
 
 static void emit_SSE4 ( FlagSet uses_sflags, 
@@ -3713,7 +3718,6 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == RealReg);
-         vg_assert(!anyFlagUse(u));
          if (!(*sselive)) {
             emit_get_sse_state();
             *sselive = True;
@@ -3727,6 +3731,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          break;
 
       case SSE3g_RegRd:
+      case SSE3g_RegWr:
          vg_assert(u->size == 4);
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
@@ -3741,7 +3746,8 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                       u->val1 & 0xFF,
                       (u->val2 >> 8) & 0xFF,
                       u->val2 & 0xFF,
-                      u->val3 );
+                      u->val3,
+                      u->opcode==SSE3g_RegRd ? True : False );
          break;
 
       case SSE4:

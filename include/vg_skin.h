@@ -643,6 +643,22 @@ typedef
       */
       SSE3g_RegRd,
 
+      /* 4 bytes, reads memory, writes an integer register, but is
+         nevertheless an SSE insn.  The insn is of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:mod ireg rm where mod indicates
+         memory (ie is not 11b) and ireg is the int reg written.  The
+         first 3 bytes are held in lit32[23:0] since there is
+         insufficient space elsewhere.  mod and rm are to be replaced
+         at codegen time by a reference to the Temp/RealReg holding
+         the address.  Arg1 holds this Temp/RealReg.  ireg is to be
+         replaced at codegen time by a reference to the relevant
+         RealReg in which the answer is to be written.  Arg2 holds
+         this Temp/RealReg.  Transfer to the destination reg is always
+         at size 4.  However the memory read can be at sizes 4 or 8
+         and so this is what the sz field holds.
+      */
+      SSE3ag_MemRd_RegWr,
+
       /* 5 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0], val2[15:0] and val3[7:0]. */
       SSE5,

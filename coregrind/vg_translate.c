@@ -561,8 +561,9 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemRd:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemRd:  return LIT0 && SZsse && CCf  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    default: 
@@ -879,6 +880,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE2a_MemWr: return "SSE2a_MWr";
       case SSE2a_MemRd: return "SSE2a_MRd";
       case SSE3g_RegRd: return "SSE3g_RRd";
+      case SSE3g_RegWr: return "SSE3g_RWr";
       case SSE3:        return "SSE3";
       case SSE4:        return "SSE4";
       case SSE3a_MemWr: return "SSE3a_MWr";
@@ -1049,6 +1051,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case SSE3g_RegRd:
+      case SSE3g_RegWr:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
                      (u->val2 >> 8) & 0xFF, u->val2 & 0xFF );
@@ -1216,7 +1219,9 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case SSE3a_MemWr:
       case SSE3a_MemRd:
       case SSE2a_MemWr: 
-      case SSE2a_MemRd: RD(3);
+      case SSE2a_MemRd: RD(3); break;
+
+      case SSE3g_RegWr: WR(3); break;
 
       case MMX2_RegRd: RD(2); break;
       case MMX2_RegWr: WR(2); break;
@@ -1375,7 +1380,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX2_RegRd: case MMX2_RegWr:
       case SSE2a_MemWr: case SSE2a_MemRd:
       case SSE3a_MemWr: case SSE3a_MemRd:
-      case SSE3g_RegRd:
+      case SSE3g_RegRd: case SSE3g_RegWr:
       case SSE4: case SSE3:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
@@ -2244,7 +2249,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
-   Int         notrace_until_limit = 0;
+   Int         notrace_until_limit = 15000;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation

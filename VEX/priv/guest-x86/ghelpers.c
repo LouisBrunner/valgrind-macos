@@ -299,7 +299,7 @@ static inline int lshift(int x, int n)
    switch (cc_op) {
       case CC_OP_COPY:
          return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
-                          | CC_MASK_A | CC_MASK_C | CC_MASK_O);
+                          | CC_MASK_A | CC_MASK_C | CC_MASK_P);
 
       case CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar  );
       case CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );

@@ -199,6 +199,11 @@ init_global_thread_specific_state ( void );
 static void
 init_thread_specific_state ( void );
 
+static void
+set_ret_val ( void* );
+static void *
+get_ret_val ( void );
+
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
    ------------------------------------------------------------------ */
@@ -675,17 +680,6 @@ void thread_exit_wrapper ( void* ret_val )
    pthread_key_t key;
    void**        specifics_ptr;
 
-   /* Run this thread's cleanup handlers. */
-   while (1) {
-      VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
-                              VG_USERREQ__CLEANUP_POP,
-                              &cu, 0, 0, 0);
-      if (res == -1) break; /* stack empty */
-      my_assert(res == 0);
-      if (0) printf("running exit cleanup handler");
-      cu.fn ( cu.arg );
-   }
-
    /* Run this thread's key finalizers.  Really this should be run
       PTHREAD_DESTRUCTOR_ITERATIONS times. */
    for (key = 0; key < VG_N_THREAD_KEYS; key++) {
@@ -694,9 +688,10 @@ void thread_exit_wrapper ( void* ret_val )
                               key, &cu, 0, 0 );
       if (res == 0) {
          /* valid key */
-         if (cu.fn && cu.arg)
-            cu.fn /* destructor for key */ 
-                  ( cu.arg /* specific for key for this thread */ );
+         my_assert(cu.type == VgCt_Function);
+         if (cu.data.function.fn && cu.data.function.arg)
+            cu.data.function.fn /* destructor for key */ 
+                  ( cu.data.function.arg /* specific for key for this thread */ );
          continue;
       }
       my_assert(res == -1);
@@ -775,13 +770,14 @@ static
 __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
-   int           attr__detachstate;
-   void*         tls_data;
-   int           tls_segment;
-   unsigned long sysinfo;
-   void*         (*root_fn) ( void* );
-   void*         arg;
-   void*         ret_val;
+   int             attr__detachstate;
+   void*           tls_data;
+   int             tls_segment;
+   unsigned long   sysinfo;
+   void*           (*root_fn) ( void* );
+   void*           arg;
+   void*           ret_val;
+   ThreadUnwindBuf ub;
 
    attr__detachstate = info->attr__detachstate;
    tls_data          = info->tls_data;
@@ -836,12 +832,234 @@ void thread_wrapper ( NewThreadInfo* info )
    /* Free up the arg block that pthread_create malloced. */
    my_free(info);
 
-   /* The root function might not return.  But if it does we simply
-      move along to thread_exit_wrapper.  All other ways out for the
-      thread (cancellation, or calling pthread_exit) lead there
-      too. */
-   ret_val = root_fn(arg);
+
+   if (setjmp(ub.jb) == 0) {
+      CleanupEntry cu;
+      int          res;
+      
+      cu.type = VgCt_Longjmp;
+      cu.data.longjmp.ub = &ub;
+      VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                              VG_USERREQ__CLEANUP_PUSH,
+                              &cu, 0, 0, 0);
+
+      /* The root function might not return.  But if it does we simply
+         move along to thread_exit_wrapper.  All other ways out for the
+         thread (cancellation, or calling pthread_exit) lead there
+         too. */
+      ret_val = root_fn(arg);
+   }
+   else {
+      ret_val = get_ret_val();
+   }
+   
    thread_exit_wrapper(ret_val);
+   /* NOTREACHED */
+}
+
+
+/* ---------------------------------------------------
+   CLEANUP STACKS
+   ------------------------------------------------ */
+
+void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
+                            void (*__routine) (void *),
+                            void *__arg)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("_pthread_cleanup_push");
+   cu.type = VgCt_Function;
+   cu.data.function.fn = __routine;
+   cu.data.function.arg = __arg;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_PUSH,
+                           &cu, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+void _pthread_cleanup_push_defer (struct _pthread_cleanup_buffer *__buffer,
+                                  void (*__routine) (void *),
+                                  void *__arg)
+{
+   /* As _pthread_cleanup_push, but first save the thread's original
+      cancellation type in __buffer and set it to Deferred. */
+   int orig_ctype;
+   ensure_valgrind("_pthread_cleanup_push_defer");
+   /* Set to Deferred, and put the old cancellation type in res. */
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   VALGRIND_MAGIC_SEQUENCE(orig_ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           PTHREAD_CANCEL_DEFERRED, 0, 0, 0);   
+   my_assert(orig_ctype != -1);
+   *((int*)(__buffer)) = orig_ctype;
+   /* Now push the cleanup. */
+   _pthread_cleanup_push(NULL, __routine, __arg);
+}
+
+
+void _pthread_cleanup_pop (struct _pthread_cleanup_buffer *__buffer,
+                           int __execute)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("_pthread_cleanup_push");
+   cu.type = VgCt_None; /* paranoia */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_POP,
+                           &cu, 0, 0, 0);
+   my_assert(cu.type == VgCt_Function);
+   if (res == 0) {
+      /* pop succeeded */
+     if (__execute) {
+        cu.data.function.fn ( cu.data.function.arg );
+     }
+     return;
+   }   
+   if (res == -1) {
+      /* stack underflow */
+      return;
+   }
+   barf("_pthread_cleanup_pop");
+}
+
+
+void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
+                                   int __execute)
+{
+   int orig_ctype, fake_ctype;
+   /* As _pthread_cleanup_pop, but after popping/running the handler,
+      restore the thread's original cancellation type from the first
+      word of __buffer. */
+   _pthread_cleanup_pop(NULL, __execute);
+   orig_ctype = *((int*)(__buffer));
+   my_assert(orig_ctype == PTHREAD_CANCEL_DEFERRED
+          || orig_ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   VALGRIND_MAGIC_SEQUENCE(fake_ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           orig_ctype, 0, 0, 0); 
+   my_assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
+}
+
+
+__attribute ((regparm (1)))
+void __pthread_register_cancel (ThreadUnwindBuf *ub)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("__pthread_register_cancel");
+   cu.type = VgCt_Longjmp;
+   cu.data.longjmp.ub = ub;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_PUSH,
+                           &cu, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+__attribute ((regparm (1)))
+void __pthread_register_cancel_defer (ThreadUnwindBuf *ub)
+{
+   /* As __pthread_register cancel, but save the thread's original
+      cancellation type and set it to Deferred. */
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("__pthread_register_cancel_defer");
+   cu.type = VgCt_Longjmp;
+   cu.data.longjmp.ub = ub;
+   /* Set to Deferred, and save the old cancellation type. */
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   VALGRIND_MAGIC_SEQUENCE(cu.data.longjmp.ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           PTHREAD_CANCEL_DEFERRED, 0, 0, 0);   
+   my_assert(cu.data.longjmp.ctype != -1);
+   /* Now push the cleanup. */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_PUSH,
+                           &cu, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+__attribute ((regparm (1)))
+void __pthread_unregister_cancel (ThreadUnwindBuf *ub)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("__pthread_unregister_cancel");
+   cu.type = VgCt_None; /* paranoia */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_POP,
+                           &cu, 0, 0, 0);
+   my_assert(cu.type == VgCt_Longjmp);
+   my_assert(cu.data.longjmp.ub == ub);
+   return;
+}
+
+
+__attribute ((regparm (1)))
+void __pthread_unregister_restore (ThreadUnwindBuf *ub)
+{
+   int          res;
+   CleanupEntry cu;
+   int          fake_ctype;
+   /* As __pthread_unregister_cancel, but after popping/running the
+      handler, restore the thread's original cancellation type. */
+   ensure_valgrind("__pthread_unregister_cancel_restore");
+   cu.type = VgCt_None; /* paranoia */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_POP,
+                           &cu, 0, 0, 0);
+   my_assert(cu.type == VgCt_Longjmp);
+   my_assert(cu.data.longjmp.ub == ub);
+   /* Restore the original cancellation type. */
+   my_assert(cu.data.longjmp.ctype == PTHREAD_CANCEL_DEFERRED
+          || cu.data.longjmp.ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   VALGRIND_MAGIC_SEQUENCE(fake_ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           cu.data.longjmp.ctype, 0, 0, 0); 
+   my_assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
+   return;
+}
+
+__attribute ((regparm (1)))
+__attribute ((__noreturn__))
+void __pthread_unwind (ThreadUnwindBuf *ub)
+{
+   int           res;
+   CleanupEntry  cu;
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                              VG_USERREQ__CLEANUP_POP,
+                              &cu, 0, 0, 0);
+      my_assert(res == 0);
+      if (cu.type == VgCt_Longjmp) break;
+      if (0) printf("running cleanup handler");
+      my_assert(cu.type == VgCt_Function);
+      cu.data.function.fn ( cu.data.function.arg );
+   }
+   my_assert(cu.type == VgCt_Longjmp);
+   my_assert(ub == NULL || ub == cu.data.longjmp.ub);
+   longjmp(cu.data.longjmp.ub->jb, 1);
+   /* NOTREACHED */
+}
+
+
+__attribute ((regparm (1)))
+__attribute ((__noreturn__))
+void __pthread_unwind_next (ThreadUnwindBuf *ub)
+{
+   __pthread_unwind(NULL);
    /* NOTREACHED */
 }
 
@@ -957,8 +1175,8 @@ pthread_join (pthread_t __th, void **__thread_return)
 void pthread_exit(void *retval)
 {
    ensure_valgrind("pthread_exit");
-   /* Simple! */
-   thread_exit_wrapper(retval);
+   set_ret_val(retval);
+   __pthread_unwind(NULL);
 }
 
 
@@ -990,94 +1208,6 @@ int pthread_detach(pthread_t th)
       return 0;
    }
    barf("pthread_detach");
-}
-
-
-/* ---------------------------------------------------
-   CLEANUP STACKS
-   ------------------------------------------------ */
-
-void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
-                            void (*__routine) (void *),
-                            void *__arg)
-{
-   int          res;
-   CleanupEntry cu;
-   ensure_valgrind("_pthread_cleanup_push");
-   cu.fn  = __routine;
-   cu.arg = __arg;
-   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
-                           VG_USERREQ__CLEANUP_PUSH,
-                           &cu, 0, 0, 0);
-   my_assert(res == 0);
-}
-
-
-void _pthread_cleanup_push_defer (struct _pthread_cleanup_buffer *__buffer,
-                                  void (*__routine) (void *),
-                                  void *__arg)
-{
-   /* As _pthread_cleanup_push, but first save the thread's original
-      cancellation type in __buffer and set it to Deferred. */
-   int orig_ctype;
-   ensure_valgrind("_pthread_cleanup_push_defer");
-   /* Set to Deferred, and put the old cancellation type in res. */
-   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
-   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
-   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
-   VALGRIND_MAGIC_SEQUENCE(orig_ctype, (-1) /* default */,
-                           VG_USERREQ__SET_CANCELTYPE,
-                           PTHREAD_CANCEL_DEFERRED, 0, 0, 0);   
-   my_assert(orig_ctype != -1);
-   *((int*)(__buffer)) = orig_ctype;
-   /* Now push the cleanup. */
-   _pthread_cleanup_push(NULL, __routine, __arg);
-}
-
-
-void _pthread_cleanup_pop (struct _pthread_cleanup_buffer *__buffer,
-                           int __execute)
-{
-   int          res;
-   CleanupEntry cu;
-   ensure_valgrind("_pthread_cleanup_push");
-   cu.fn = cu.arg = NULL; /* paranoia */
-   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
-                           VG_USERREQ__CLEANUP_POP,
-                           &cu, 0, 0, 0);
-   if (res == 0) {
-      /* pop succeeded */
-     if (__execute) {
-        cu.fn ( cu.arg );
-     }
-     return;
-   }   
-   if (res == -1) {
-      /* stack underflow */
-      return;
-   }
-   barf("_pthread_cleanup_pop");
-}
-
-
-void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
-                                   int __execute)
-{
-   int orig_ctype, fake_ctype;
-   /* As _pthread_cleanup_pop, but after popping/running the handler,
-      restore the thread's original cancellation type from the first
-      word of __buffer. */
-   _pthread_cleanup_pop(NULL, __execute);
-   orig_ctype = *((int*)(__buffer));
-   my_assert(orig_ctype == PTHREAD_CANCEL_DEFERRED
-          || orig_ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
-   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
-   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
-   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
-   VALGRIND_MAGIC_SEQUENCE(fake_ctype, (-1) /* default */,
-                           VG_USERREQ__SET_CANCELTYPE,
-                           orig_ctype, 0, 0, 0); 
-   my_assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
 }
 
 
@@ -1406,7 +1536,7 @@ int pthread_cancel(pthread_t thread)
    ensure_valgrind("pthread_cancel");
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__SET_CANCELPEND,
-                           thread, &thread_exit_wrapper, 0, 0);
+                           thread, &pthread_exit, 0, 0);
    my_assert(res != -1);
    return res;
 }
@@ -1835,6 +1965,7 @@ enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
 
 typedef
    struct {
+     void               *ret_val;
      int                *errno_ptr;
      int                *h_errno_ptr;
      struct __res_state *res_state_ptr;
@@ -1851,6 +1982,13 @@ static ThreadSpecificState thread_specific_state[VG_N_THREADS];
    after initialisation.  global_init_done_mx guards it. */
 static int             global_init_done    = 0;
 static pthread_mutex_t global_init_done_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static
+void cleanup_root(void *arg)
+{
+   thread_exit_wrapper(get_ret_val());
+   /* NOTREACHED */
+}
 
 static void
 init_global_thread_specific_state ( void )
@@ -1882,6 +2020,9 @@ init_global_thread_specific_state ( void )
    /* Signify init done. */
    global_init_done = 1;
 
+   /* Install a cleanup routine to handle the root thread exiting */
+   _pthread_cleanup_push(NULL, cleanup_root, NULL);
+
    /* Unlock and return. */
    res = __pthread_mutex_unlock(&global_init_done_mx);
    if (res != 0) barf("init_global_thread_specific_state: unlock");
@@ -1892,6 +2033,9 @@ init_thread_specific_state ( void )
 {
    int tid = pthread_self();
    int i;
+
+   /* No return value yet */
+   thread_specific_state[tid].ret_val = NULL;
 
    /* Initialise the errno and resolver state pointers. */
    thread_specific_state[tid].errno_ptr = NULL;
@@ -1909,6 +2053,26 @@ init_thread_specific_state ( void )
    */
    __uselocale(LC_GLOBAL_LOCALE);
 #  endif
+}
+
+static void
+set_ret_val ( void* ret_val )
+{
+   int tid;
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   thread_specific_state[tid].ret_val = ret_val;
+}
+
+static void *
+get_ret_val ( void )
+{
+   int tid;
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   return thread_specific_state[tid].ret_val;
 }
 
 int* __errno_location ( void )

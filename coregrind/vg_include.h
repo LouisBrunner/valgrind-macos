@@ -705,11 +705,34 @@ typedef
    }
    ThreadStatus;
 
+typedef
+   enum CleanupType {
+      VgCt_None,       /* this cleanup entry is not initialised */
+      VgCt_Function,   /* an old-style function pointer cleanup */
+      VgCt_Longjmp     /* a new-style longjmp based cleanup */
+   }
+   CleanupType;
+
+/* A thread unwind buffer */
+typedef
+   struct {
+      jmp_buf jb;
+   } ThreadUnwindBuf;
+
 /* An entry in a threads's cleanup stack. */
 typedef
    struct {
-      void (*fn)(void*);
-      void* arg;
+      CleanupType type;
+      union {
+         struct {
+            void (*fn)(void*);
+            void* arg;
+         } function;
+         struct {
+            ThreadUnwindBuf *ub;
+            int ctype;
+         } longjmp;
+      } data;
    }
    CleanupEntry;
 

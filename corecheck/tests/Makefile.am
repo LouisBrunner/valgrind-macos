@@ -18,6 +18,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fdleak_pipe.stderr.exp fdleak_pipe.vgtest \
 	fdleak_socketpair.stderr.exp fdleak_socketpair.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
+	pth_cancel1.stderr.exp pth_cancel1.stdout.exp pth_cancel1.vgtest \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \
 	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
 	pth_empty.stderr.exp pth_empty.vgtest \
@@ -33,7 +34,7 @@ check_PROGRAMS = \
 	erringfds fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair sigkill res_search \
-	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
+	pth_atfork1 pth_cancel1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_exit pth_mutexspeed pth_once \
 	as_mmap as_shm \
 	vgprintf
@@ -62,6 +63,8 @@ sigkill_SOURCES		= sigkill.c
 # Pthread ones
 pth_atfork1_SOURCES	= pth_atfork1.c
 pth_atfork1_LDADD	= -lpthread
+pth_cancel1_SOURCES	= pth_cancel1.c
+pth_cancel1_LDADD	= -lpthread
 pth_cancel2_SOURCES	= pth_cancel2.c
 pth_cancel2_LDADD	= -lpthread
 pth_cvsimple_SOURCES	= pth_cvsimple.c

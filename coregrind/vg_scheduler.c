@@ -1472,9 +1472,23 @@ void do__cleanup_push ( ThreadId tid, CleanupEntry* cu )
    vg_assert(VG_(is_valid_tid)(tid));
    sp = VG_(threads)[tid].custack_used;
    if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, 
-         "cleanup_push (fn %p, arg %p) -> slot %d", 
-         cu->fn, cu->arg, sp);
+      switch (cu->type) {
+         case VgCt_Function:
+            VG_(sprintf)(msg_buf, 
+               "cleanup_push (fn %p, arg %p) -> slot %d", 
+               cu->data.function.fn, cu->data.function.arg, sp);
+            break;
+         case VgCt_Longjmp:
+            VG_(sprintf)(msg_buf,
+               "cleanup_push (ub %p) -> slot %d",
+               cu->data.longjmp.ub, sp);
+            break;
+         default:
+            VG_(sprintf)(msg_buf,
+               "cleanup_push (unknown type) -> slot %d",
+               sp);
+            break;
+      }
       print_sched_event(tid, msg_buf);
    }
    vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
@@ -2654,15 +2668,16 @@ void do__get_key_destr_and_spec ( ThreadId tid,
    VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "get_key_destr_and_spec: cu",
                             (Addr)cu, sizeof(CleanupEntry) );
 
-   cu->fn = vg_thread_keys[key].destructor;
+   cu->type = VgCt_Function;
+   cu->data.function.fn = vg_thread_keys[key].destructor;
    if (VG_(threads)[tid].specifics_ptr == NULL) {
-      cu->arg = NULL;
+      cu->data.function.arg = NULL;
    } else {
       VG_TRACK( pre_mem_read, Vg_CorePThread, tid,
                 "get_key_destr_and_spec: key",
                 (Addr)(&VG_(threads)[tid].specifics_ptr[key]), 
                 sizeof(void*) );
-      cu->arg = VG_(threads)[tid].specifics_ptr[key];
+      cu->data.function.arg = VG_(threads)[tid].specifics_ptr[key];
    }
 
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );

@@ -510,6 +510,11 @@ void test_mul(void)
     test_idivl(0, 0x80000000, -1);
     test_idivl(0x12343, 0x12345678, 0x81234567);
 
+    test_idivq(0, 0x12345678, 12347);
+    test_idivq(0, -233223, -45);
+    test_idivq(0, 0x80000000, -1);
+    test_idivq(0x12343, 0x12345678, 0x81234567);
+
     test_divb(0x12341678, 0x127e);
     test_divb(0x43210123, -5);
     test_divb(0x12340004, -1);
@@ -523,6 +528,11 @@ void test_mul(void)
     test_divl(0, -233223, -45);
     test_divl(0, 0x80000000, -1);
     test_divl(0x12343, 0x12345678, 0x81234567);
+
+    test_divq(0, 0x12345678, 12347);
+    test_divq(0, -233223, -45);
+    test_divq(0, 0x80000000, -1);
+    test_divq(0x12343, 0x12345678, 0x81234567);
 }
 
 #define TEST_BSX(op, size, op0)\
@@ -1666,8 +1676,6 @@ int main(int argc, char **argv)
     void **ptr;
     void (*func)(void);
 
-    printf("hello\n");
-    printf("hello again\n");
 #if 1
     ptr = &call_start + 1;
     while (*ptr != NULL) {
@@ -1681,7 +1689,7 @@ int main(int argc, char **argv)
     //    test_floats();  REINSTATE64
     //test_bcd();
     //test_xchg();   REINSTATE64
-    //    test_string(); REINSTATE64 FIRST
+    test_string();
     //test_misc(); // REINSTATE
     test_lea();
     //    test_segs();

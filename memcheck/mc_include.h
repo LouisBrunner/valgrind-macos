@@ -150,8 +150,9 @@ extern void MC_(show_client_block_stats) ( void );
 
 
 /* Functions defined in vg_memcheck_errcontext.c */
-extern void MC_(record_value_error) ( Int size );
-extern void MC_(record_user_error)  ( ThreadState* tst, Addr a, Bool isWrite );
+extern void MC_(record_value_error)  ( Int size );
+extern void MC_(record_user_error)   ( ThreadState* tst, Addr a, Bool isWrite );
+extern void MC_(record_overlap_error)( ThreadState* tst, Char* function );
 
 
 #endif

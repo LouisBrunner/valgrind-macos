@@ -34,6 +34,8 @@ are:
         <li>Memory leaks -- where pointers to malloc'd blocks are lost
             forever</li>
         <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+        <li>Overlapping <code>src</code> and <code>dst</code> pointers in 
+            <code>memcpy()</code> and related functions</li>
         <li>Some misuses of the POSIX pthreads API</li>
     </ul>
     <p>

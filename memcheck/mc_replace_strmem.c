@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_skin.h"
+#include "mc_include.h"
 
 #define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
@@ -58,25 +58,17 @@ Bool is_overlap ( void* dst, const void* src, UInt len )
 static __inline__
 void complain2 ( Char* s, char* dst, const char* src )
 {
-   Char  buf[100];
-   int   res = 0;    /* unused; initialise to shut gcc up */
-
-   snprintf(buf, 100,
-            "Warning: src and dst overlap in %s(%p, %p)", s, dst, src );
-   VALGRIND_MAGIC_SEQUENCE(res, 0, /* irrelevant default */
-                           VG_USERREQ__LOGMESSAGE, buf, 0, 0, 0);
+   Char buf[256];
+   snprintf(buf, 100, "%s(%p, %p)", s, dst, src );
+   VALGRIND_NON_SIMD_tstCALL1( MC_(record_overlap_error), buf );
 }
 
 static __inline__
 void complain3 ( Char* s, void* dst, const void* src, int n )
 {
-   Char  buf[100];
-   int   res = 0;    /* unused; initialise to shut gcc up */
-
-   snprintf(buf, 100,
-            "Warning: src and dst overlap in %s(%p, %p, %d)", s, dst, src, n );
-   VALGRIND_MAGIC_SEQUENCE(res, 0, /* irrelevant default */
-                           VG_USERREQ__LOGMESSAGE, buf, 0, 0, 0);
+   Char buf[256];
+   snprintf(buf, 100, "%s(%p, %p, %d)", s, dst, src, n );
+   VALGRIND_NON_SIMD_tstCALL1( MC_(record_overlap_error), buf );
 }
 
 char* strrchr ( const char* s, int c )
@@ -104,7 +96,8 @@ char* strchr ( const char* s, int c )
 
 char* strcat ( char* dst, const char* src )
 {
-   Char* dst_orig = dst;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
    while (*dst) dst++;
    while (*src) *dst++ = *src++;
    *dst = 0;
@@ -112,14 +105,15 @@ char* strcat ( char* dst, const char* src )
    /* This is a bit redundant, I think;  any overlap and the strcat will
       go forever... or until a seg fault occurs. */
    if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
-      complain2("strcat", dst, src);
+      complain2("strcat", dst_orig, src_orig);
 
    return dst_orig;
 }
 
 char* strncat ( char* dst, const char* src, int n )
 {
-   Char* dst_orig = dst;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
    Int   m = 0;
 
    while (*dst) dst++;
@@ -129,7 +123,7 @@ char* strncat ( char* dst, const char* src, int n )
    /* This checks for overlap after copying, unavoidable without
       pre-counting lengths... should be ok */
    if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
-      complain3("strncat", dst, src, n);
+      complain3("strncat", dst_orig, src_orig, n);
 
    return dst_orig;
 }
@@ -143,7 +137,8 @@ unsigned int strlen ( const char* str )
 
 char* strcpy ( char* dst, const char* src )
 {
-   Char* dst_orig = dst;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
 
    while (*src) *dst++ = *src++;
    *dst = 0;
@@ -151,7 +146,7 @@ char* strcpy ( char* dst, const char* src )
    /* This checks for overlap after copying, unavoidable without
       pre-counting length... should be ok */
    if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
-      complain2("strcpy", dst, src);
+      complain2("strcpy", dst_orig, src_orig);
 
    return dst_orig;
 }

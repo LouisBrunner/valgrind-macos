@@ -108,7 +108,8 @@ int main(void)
    /* Nb: can't actually get strcat warning -- if any overlap occurs, it will
       always run forever, I think... */
 
-   strncat(a+20, a, 21);
+   for ( i = 0; i < 2; i++) 
+      strncat(a+20, a, 21);    // run twice to check 2nd error isn't shown
    strncat(a, a+20, 21);
 
    return 0;

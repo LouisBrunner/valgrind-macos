@@ -13,7 +13,7 @@ default skin.
 
 <h3>3.1&nbsp; Kinds of bugs that memcheck can find</h3>
 
-Memcheck is Valgrind-1.0.X checking mechanism bundled up into a skin.
+Memcheck is Valgrind-1.0.X's checking mechanism bundled up into a skin.
     All reads and writes of memory are checked, and calls to
     malloc/new/free/delete are intercepted. As a result, memcheck can
     detect the following problems:
@@ -25,6 +25,8 @@ Memcheck is Valgrind-1.0.X checking mechanism bundled up into a skin.
         <li>Memory leaks -- where pointers to malloc'd blocks are lost
             forever</li>
         <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+        <li>Overlapping <code>src</code> and <code>dst</code> pointers in 
+            <code>memcpy()</code> and related functions</li>
         <li>Some misuses of the POSIX pthreads API</li>
     </ul>
     <p>
@@ -226,7 +228,7 @@ point that Memcheck complains.
 <p>Sources of uninitialised data tend to be:
 <ul>
   <li>Local variables in procedures which have not been initialised,
-      as in the example above.</li><br><p>
+      as in the example above.</li><p>
 
   <li>The contents of malloc'd blocks, before you write something
       there.  In C++, the new operator is a wrapper round malloc, so
@@ -349,7 +351,26 @@ system call.
 <p>... because the program has tried to write uninitialised junk from
 the malloc'd block to the standard output.
 
-
+<h4>3.3.6&nbsp; Overlapping source and destination blocks</h4>
+The following C library functions copy some data from one memory block
+to another (or something similar): <code>memcpy()</code>,
+<code>strcpy()</code>, <code>strncpy()</code>, <code>strcat()</code>,
+<code>strncat()</code>.  The blocks pointed to by their <code>src</code> and
+<code>dst</code> pointers aren't allowed to overlap.  Memcheck checks
+for this.
+<p>
+For example:
+<pre>
+==27492== Source and destination overlap in memcpy(0xbffff294, 0xbffff280, 21)
+==27492==    at 0x40026CDC: memcpy (mc_replace_strmem.c:71)
+==27492==    by 0x804865A: main (overlap.c:40)
+==27492==    by 0x40246335: __libc_start_main (../sysdeps/generic/libc-start.c:129)
+==27492==    by 0x8048470: (within /auto/homes/njn25/grind/head6/memcheck/tests/overlap)
+==27492== 
+</pre>
+<p>
+You don't want the two blocks to overlap because one of them could get
+partially trashed by the copying.
 
 <a name="suppfiles"></a>
 <h3>3.4&nbsp; Writing suppressions files</h3>
@@ -423,6 +444,8 @@ distribution, provides some good examples.
       <code>Param</code>,
       meaning an invalid system call parameter error.  Or
       <code>Free</code>, meaning an invalid or mismatching free.
+      <code>Overlap</code>, meaning a <code>src</code>/<code>dst</code>
+      overlap in <code>memcpy() or a similar function</code>.
       Or <code>PThread</code>, meaning any kind of complaint to do
       with the PThreads API.  
       <p>
@@ -438,7 +461,10 @@ distribution, provides some good examples.
       executable containing the error location.  For Param errors,
       is the name of the offending system call parameter.  For Free
       errors, is the name of the function doing the freeing (eg,
-      <code>free</code>, <code>__builtin_vec_delete</code>, etc)</li><br>
+      <code>free</code>, <code>__builtin_vec_delete</code>, etc).
+      For Overlap errors, is the name of the function with the overlapping
+      arguments (eg. <code>memcpy()</code>, <code>strcpy()</code>, etc).
+      </li><br>
       <p>
 
   <li>The caller of the above "immediate location".  Again, either a

@@ -207,6 +207,9 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
          if (e1_extra->size != e2_extra->size) return False;
          return True;
 
+      case OverlapErr:
+         return True;
+
       case LeakErr:
          VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_SkinError),\n"
                          "since it's handled with VG_(unique_error)()!");
@@ -550,6 +553,9 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
       case FreeSupp:
          return (ekind == FreeErr || ekind == FreeMismatchErr);
 
+      case OverlapSupp:
+         return (ekind = OverlapErr);
+
       case LeakSupp:
          return (ekind == LeakErr);
 
@@ -589,6 +595,7 @@ Char* SK_(get_error_name) ( Error* err )
       default:              VG_(skin_panic)("unexpected size for Value");
       }
    case CoreMemErr:         return "CoreMem";
+   case OverlapErr:         return "Overlap";
    case LeakErr:            return "Leak";
    default:                 VG_(skin_panic)("get_error_name: unexpected type");
    }

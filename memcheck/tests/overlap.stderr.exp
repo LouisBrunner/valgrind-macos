@@ -1,13 +1,47 @@
 
-Warning: src and dst overlap in memcpy(0x........, 0x........, 21)
-Warning: src and dst overlap in memcpy(0x........, 0x........, 21)
-Warning: src and dst overlap in strncpy(0x........, 0x........, 21)
-Warning: src and dst overlap in strncpy(0x........, 0x........, 21)
-Warning: src and dst overlap in strcpy(0x........, 0x........)
-Warning: src and dst overlap in strncat(0x........, 0x........, 21)
-Warning: src and dst overlap in strncat(0x........, 0x........, 21)
+Source and destination overlap in memcpy(0x........, 0x........, 21)
+   at 0x........: memcpy (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:40)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Source and destination overlap in memcpy(0x........, 0x........, 21)
+   at 0x........: memcpy (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:42)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+Source and destination overlap in strncpy(0x........, 0x........, 21)
+   at 0x........: strncpy (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:45)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+Source and destination overlap in strncpy(0x........, 0x........, 21)
+   at 0x........: strncpy (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:47)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+Source and destination overlap in strcpy(0x........, 0x........)
+   at 0x........: strcpy (mc_replace_strmem.c:63)
+   by 0x........: main (overlap.c:54)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+Source and destination overlap in strncat(0x........, 0x........, 21)
+   at 0x........: strncat (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:112)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+Source and destination overlap in strncat(0x........, 0x........, 21)
+   at 0x........: strncat (mc_replace_strmem.c:71)
+   by 0x........: main (overlap.c:113)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/overlap)
+
+ERROR SUMMARY: 8 errors from 7 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.
 malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes

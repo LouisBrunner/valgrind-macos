@@ -85,6 +85,8 @@ typedef
       Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp,
       /* Invalid or mismatching free */
       FreeSupp,
+      /* Overlapping blocks in memcpy(), strcpy(), etc */
+      OverlapSupp,
       /* Something to be suppressed in a leak check. */
       LeakSupp
    } 
@@ -97,6 +99,7 @@ typedef
           AddrErr, 
           ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
           FreeErr, FreeMismatchErr,
+          OverlapErr,   /* Memcheck only */
           LeakErr
    }
    MAC_ErrorKind;

@@ -5007,6 +5007,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
    void* hAddr = NULL;
    Char* hName = NULL;
    switch (opc) {
+      /* Original MMX ones */
       case 0xFC: XXX(x86g_calculate_add8x8); break;
       case 0xFD: XXX(x86g_calculate_add16x4); break;
       case 0xFE: XXX(x86g_calculate_add32x2); break;
@@ -5066,6 +5067,14 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
       case 0xDF: break; /* ANDN */
       case 0xEB: break; /* OR */
       case 0xEF: break; /* XOR */
+
+      /* Introduced in SSE1 */
+      case 0xE0: XXX(x86g_calculate_avg8Ux8);  break;
+      case 0xE3: XXX(x86g_calculate_avg16Ux4); break;
+      case 0xEE: XXX(x86g_calculate_max16Sx4); break;
+      case 0xDE: XXX(x86g_calculate_max8Ux8);  break;
+      case 0xEA: XXX(x86g_calculate_min16Sx4); break;
+      case 0xDA: XXX(x86g_calculate_min8Ux8);  break;
 
       default: 
          vex_printf("\n0x%x\n", (Int)opc);
@@ -6940,7 +6949,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*OUT*/ Addr64* whereNext )
 {
    IRType    ty;
-   IRTemp    addr, t0, t1, t2, t3, t4;
+   IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
    Int       alen;
    UChar     opc, modrm, abyte;
    UInt      d32;
@@ -6968,7 +6977,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assert. */
    *size = 0;
 
-   addr = t0 = t1 = t2 = t3 = t4 = IRTemp_INVALID; 
+   addr = t0 = t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
 
    DIP("\t0x%x:  ", guest_eip_bbstart+delta);
 
@@ -7577,8 +7586,202 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F E0 = PAVGB -- 8x8 unsigned Packed Average, with rounding */
-   if (insn[0] == 0x0F && insn[1] == 0x56) {
+   if (insn[0] == 0x0F && insn[1] == 0xE0) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pavgb", False );
+      goto decode_success;
    }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F E3 = PAVGW -- 16x4 unsigned Packed Average, with rounding */
+   if (insn[0] == 0x0F && insn[1] == 0xE3) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pavgw", False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F C5 = PEXTRW -- extract 16-bit field from mmx(E) and put 
+      zero-extend of it in ireg(G). */
+   if (insn[0] == 0x0F && insn[1] == 0xC5) {
+      modrm = insn[2];
+      if (sz == 4 && epartIsReg(modrm)) {
+         do_MMX_preamble();
+         t0 = newTemp(Ity_I64);
+         t1 = newTemp(Ity_I16);
+         assign(t0, getMMXReg(eregOfRM(modrm)));
+         switch (insn[3] & 3) {
+            case 0: 
+               assign(t1, unop(Iop_32to16, 
+                               unop(Iop_64to32, mkexpr(t0)))); break;
+            case 1:
+               assign(t1, unop(Iop_32HIto16, 
+                               unop(Iop_64to32, mkexpr(t0)))); break;
+            case 2: 
+               assign(t1, unop(Iop_32to16, 
+                               unop(Iop_64HIto32, mkexpr(t0)))); break;
+            case 3: 
+               assign(t1, unop(Iop_32HIto16, 
+                               unop(Iop_64HIto32, mkexpr(t0)))); break;
+            default: 
+               vassert(0);
+         }
+         putIReg(4, gregOfRM(modrm), unop(Iop_16Uto32, mkexpr(t1)));
+         DIP("pextrw $%d,%s,%s\n",
+             (Int)insn[3], nameMMXReg(eregOfRM(modrm)),
+                           nameIReg(4,gregOfRM(modrm)));
+         delta += 4;
+         goto decode_success;
+      } 
+      /* else fall through */
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
+      put it into the specified lane of mmx(G). */
+   if (insn[0] == 0x0F && insn[1] == 0xC4) {
+      if (sz == 4) {
+         /* Use t0 .. t3 to hold the 4 original 16-bit lanes of the
+            mmx reg.  t4 is the new lane value.  t5 is the original
+            mmx value. t6 is the new mmx value. */
+         Int lane;
+         t0 = newTemp(Ity_I16);
+         t1 = newTemp(Ity_I16);
+         t2 = newTemp(Ity_I16);
+         t3 = newTemp(Ity_I16);
+         t4 = newTemp(Ity_I16);
+         t5 = newTemp(Ity_I64);
+         t6 = newTemp(Ity_I64);
+         modrm = insn[2];
+         do_MMX_preamble();
+
+         assign(t5, getMMXReg(gregOfRM(modrm)));
+
+         assign(t0, unop(Iop_32to16,   unop(Iop_64to32,   mkexpr(t5))));
+         assign(t1, unop(Iop_32HIto16, unop(Iop_64to32,   mkexpr(t5))));
+         assign(t2, unop(Iop_32to16,   unop(Iop_64HIto32, mkexpr(t5))));
+         assign(t3, unop(Iop_32HIto16, unop(Iop_64HIto32, mkexpr(t5))));
+
+         if (epartIsReg(modrm)) {
+            assign(t4, getIReg(2, eregOfRM(modrm)));
+            lane = insn[3];
+            delta += 2+2;
+            DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
+                                      nameIReg(2,eregOfRM(modrm)),
+                                      nameMMXReg(gregOfRM(modrm)));
+         } else {
+            /* awaiting test case */
+            goto decode_failure;
+         }
+
+         switch (lane & 3) {
+            case 0: 
+               assign(t6, binop(Iop_32HLto64,
+                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
+                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t4))
+                          )
+                     );
+               break;
+            case 1: 
+               assign(t6, binop(Iop_32HLto64,
+                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t2)),
+                             binop(Iop_16HLto32, mkexpr(t4), mkexpr(t0))
+                          )
+                     );
+               break;
+            case 2: 
+               assign(t6, binop(Iop_32HLto64,
+                             binop(Iop_16HLto32, mkexpr(t3), mkexpr(t4)),
+                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
+                         )
+                     );
+               break;
+            case 3: 
+               assign(t6, binop(Iop_32HLto64,
+                             binop(Iop_16HLto32, mkexpr(t4), mkexpr(t2)),
+                             binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
+                          )
+                     );
+               break;
+            default: 
+               vassert(0);
+         }
+         putMMXReg(gregOfRM(modrm), mkexpr(t6));
+         goto decode_success;
+
+      }
+      /* else fall through */
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F EE = PMAXSW -- 16x4 signed max */
+   if (insn[0] == 0x0F && insn[1] == 0xEE) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pmaxsw", False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F DE = PMAXUB -- 8x8 unsigned max */
+   if (insn[0] == 0x0F && insn[1] == 0xDE) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pmaxub", False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F EA = PMINSW -- 16x4 signed min */
+   if (insn[0] == 0x0F && insn[1] == 0xEA) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pminsw", False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F DA = PMINUB -- 8x8 unsigned min */
+   if (insn[0] == 0x0F && insn[1] == 0xDA) {
+      vassert(sz == 4);
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "pminub", False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
+      mmx(G), turn them into a byte, and put zero-extend of it in
+      ireg(G). */
+   if (insn[0] == 0x0F && insn[1] == 0xD7) {
+      modrm = insn[2];
+      if (sz == 4 && epartIsReg(modrm)) {
+         do_MMX_preamble();
+         t0 = newTemp(Ity_I64);
+         t1 = newTemp(Ity_I32);
+         assign(t0, getMMXReg(eregOfRM(modrm)));
+         assign(t1, mkIRExprCCall(
+                       Ity_I32, 0/*regparms*/, 
+                       "x86g_calculate_pmovmskb",
+                       &x86g_calculate_pmovmskb,
+                       mkIRExprVec_1(mkexpr(t0))));
+         putIReg(4, gregOfRM(modrm), mkexpr(t1));
+         DIP("pmovmskb %s,%s\n", nameMMXReg(eregOfRM(modrm)),
+                                 nameIReg(4,gregOfRM(modrm)));
+         delta += 3;
+         goto decode_success;
+      } 
+      /* else fall through */
+   }
+
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
@@ -8860,7 +9063,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 
    /* ---------------------------------------------------- */
-   /* --- end of the SSE/SSE2 decoder.                 --- */
+   /* --- end of the SSE decoder.                      --- */
    /* ---------------------------------------------------- */
 
    /* Get the primary opcode. */

@@ -1972,6 +1972,41 @@ static inline UInt shr32S ( UInt v, ULong n )
    return (v & 0x80000000) ? 0xFFFFFFFF : 0;
 }
 
+static inline UChar avg8U ( UChar xx, UChar yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi + yyi + 1) >> 1;
+   return (UChar)r;
+}
+
+static inline UShort avg16U ( UShort xx, UShort yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi + yyi + 1) >> 1;
+   return (UShort)r;
+}
+
+static inline Short max16S ( Short xx, Short yy )
+{
+   return (xx > yy) ? xx : yy;
+}
+
+static inline UChar max8U ( UChar xx, UChar yy )
+{
+   return (xx > yy) ? xx : yy;
+}
+
+static inline Short min16S ( Short xx, Short yy )
+{
+   return (xx < yy) ? xx : yy;
+}
+
+static inline UChar min8U ( UChar xx, UChar yy )
+{
+   return (xx < yy) ? xx : yy;
+}
 
 /* ------------ Normal addition ------------ */
 
@@ -2440,6 +2475,100 @@ ULong x86g_calculate_shr32Sx2 ( ULong xx, ULong yy )
              shr32S( sel32x2_0(xx), yy )
           );
 }
+
+/* ------------ MMX insns from SSE1: averaging ------------ */
+
+ULong x86g_calculate_avg8Ux8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             avg8U( sel8x8_7(xx), sel8x8_7(yy) ),
+             avg8U( sel8x8_6(xx), sel8x8_6(yy) ),
+             avg8U( sel8x8_5(xx), sel8x8_5(yy) ),
+             avg8U( sel8x8_4(xx), sel8x8_4(yy) ),
+             avg8U( sel8x8_3(xx), sel8x8_3(yy) ),
+             avg8U( sel8x8_2(xx), sel8x8_2(yy) ),
+             avg8U( sel8x8_1(xx), sel8x8_1(yy) ),
+             avg8U( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong x86g_calculate_avg16Ux4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             avg16U( sel16x4_3(xx), sel16x4_3(yy) ),
+             avg16U( sel16x4_2(xx), sel16x4_2(yy) ),
+             avg16U( sel16x4_1(xx), sel16x4_1(yy) ),
+             avg16U( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+/* ------------ MMX insns from SSE1: max/min ------------ */
+
+ULong x86g_calculate_max16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             max16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             max16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             max16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             max16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong x86g_calculate_max8Ux8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             max8U( sel8x8_7(xx), sel8x8_7(yy) ),
+             max8U( sel8x8_6(xx), sel8x8_6(yy) ),
+             max8U( sel8x8_5(xx), sel8x8_5(yy) ),
+             max8U( sel8x8_4(xx), sel8x8_4(yy) ),
+             max8U( sel8x8_3(xx), sel8x8_3(yy) ),
+             max8U( sel8x8_2(xx), sel8x8_2(yy) ),
+             max8U( sel8x8_1(xx), sel8x8_1(yy) ),
+             max8U( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong x86g_calculate_min16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             min16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             min16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             min16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             min16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong x86g_calculate_min8Ux8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             min8U( sel8x8_7(xx), sel8x8_7(yy) ),
+             min8U( sel8x8_6(xx), sel8x8_6(yy) ),
+             min8U( sel8x8_5(xx), sel8x8_5(yy) ),
+             min8U( sel8x8_4(xx), sel8x8_4(yy) ),
+             min8U( sel8x8_3(xx), sel8x8_3(yy) ),
+             min8U( sel8x8_2(xx), sel8x8_2(yy) ),
+             min8U( sel8x8_1(xx), sel8x8_1(yy) ),
+             min8U( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+/* ------------ MMX insns from SSE1: misc ------------ */
+
+UInt x86g_calculate_pmovmskb ( ULong xx )
+{
+   UInt r = 0;
+   if (xx & (1ULL << (64-1))) r |= (1<<7);
+   if (xx & (1ULL << (56-1))) r |= (1<<6);
+   if (xx & (1ULL << (48-1))) r |= (1<<5);
+   if (xx & (1ULL << (40-1))) r |= (1<<4);
+   if (xx & (1ULL << (32-1))) r |= (1<<3);
+   if (xx & (1ULL << (24-1))) r |= (1<<2);
+   if (xx & (1ULL << (16-1))) r |= (1<<1);
+   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
+   return r;
+}
+
+/* ------------ MMX insns from SSE1: multiply ------------ */
 
 
 

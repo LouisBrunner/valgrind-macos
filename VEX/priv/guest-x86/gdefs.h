@@ -155,6 +155,16 @@ extern ULong x86g_calculate_shr64Ux1 ( ULong, ULong );
 extern ULong x86g_calculate_shr16Sx4 ( ULong, ULong );
 extern ULong x86g_calculate_shr32Sx2 ( ULong, ULong );
 
+extern ULong x86g_calculate_avg8Ux8  ( ULong, ULong );
+extern ULong x86g_calculate_avg16Ux4 ( ULong, ULong );
+
+extern ULong x86g_calculate_max16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_max8Ux8  ( ULong, ULong );
+extern ULong x86g_calculate_min16Sx4 ( ULong, ULong );
+extern ULong x86g_calculate_min8Ux8  ( ULong, ULong );
+
+extern UInt x86g_calculate_pmovmskb ( ULong xx );
+
 
 /* --- DIRTY HELPERS --- */
 

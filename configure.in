@@ -70,7 +70,7 @@ AC_MSG_RESULT([none])
 
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
-CFLAGS="-Winline -Wall -Wshadow -O -fomit-frame-pointer -g"
+CFLAGS="-Winline -Wall -Werror -Wshadow -O -fomit-frame-pointer -g"
 AC_SUBST(CFLAGS)
 
 # Checks for the platform

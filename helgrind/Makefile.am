@@ -83,13 +83,14 @@ vg_clientfuncs.o: vg_clientfuncs.c $(MANUAL_DEPS)
 
 valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \
-	$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)
+		$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)
 
 valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
 	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)
 
 libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS)
-	$(CC) -Wall -g -O -shared -fpic -o libpthread.so $(libpthread_so_OBJECTS)
+	$(CC) -Wall -Werror -g -O -shared -fpic -o libpthread.so \
+		$(libpthread_so_OBJECTS)
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

@@ -4372,6 +4372,27 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MOVNTPS -- 16-byte store with temporal hint (which we
+      ignore). */
+   if (insn[0] == 0x0F
+       && insn[1] == 0x2B) {
+      eip = dis_SSE2_load_store_or_mov 
+               (cb, sorb, eip+2, 16, True /* is_store */, "movntps",
+                    insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVNTPD -- 16-byte store with temporal hint (which we
+      ignore). */
+   if (sz == 2
+       && insn[0] == 0x0F
+       && insn[1] == 0x2B) {
+      eip = dis_SSE3_load_store_or_mov 
+               (cb, sorb, eip+2, 16, True /* is_store */, "movntpd",
+                    0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* MOVD -- 4-byte move between xmmregs and (ireg or memory). */
    if (sz == 2 
        && insn[0] == 0x0F 

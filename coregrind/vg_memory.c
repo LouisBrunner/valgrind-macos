@@ -691,7 +691,8 @@ void sort_malloc_shadows ( ShadowChunk** shadows, UInt n_shadows )
    ShadowChunk* v;
 
    bigN = hi - lo + 1; if (bigN < 2) return;
-   hp = 0; while (incs[hp] < bigN) hp++; hp--;
+   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
+   vg_assert(0 <= hp && hp < 14);
 
    for (; hp >= 0; hp--) {
       h = incs[hp];

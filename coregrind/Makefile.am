@@ -24,6 +24,7 @@ val_PROGRAMS = \
 EXTRA_DIST = \
 	vg_libpthread.vs valgrind.vs \
 	gen_toolint.pl toolfuncs.def \
+	gen_intercepts.pl vg_replace_malloc.c.base vg_intercept.c.base \
 	vg_replace_malloc.c
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h

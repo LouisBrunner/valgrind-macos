@@ -2237,17 +2237,22 @@ UInt dis_Grp2 ( UChar  sorb,
 
    else 
    if (isRotate) {
-      Int    ccOp     = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-      Bool   left     = gregOfRM(modrm) == 0;
-      IRTemp rot_amt  = newTemp(Ity_I8);
-      IRTemp oldFlags = newTemp(Ity_I32);
+      Int    ccOp      = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+      Bool   left      = gregOfRM(modrm) == 0;
+      IRTemp rot_amt   = newTemp(Ity_I8);
+      IRTemp rot_amt32 = newTemp(Ity_I8);
+      IRTemp oldFlags  = newTemp(Ity_I32);
 
       /* rot_amt = shift_expr & mask */
       /* By masking the rotate amount thusly, the IR-level Shl/Shr
          expressions never shift beyond the word size and thus remain
          well defined. */
-      assign(rot_amt, binop(Iop_And8, 
-                            shift_expr, mkU8(8*sz-1)));
+      assign(rot_amt32, binop(Iop_And8, shift_expr, mkU8(31)));
+
+      if (ty == Ity_I32)
+         assign(rot_amt, mkexpr(rot_amt32));
+      else
+         assign(rot_amt, binop(Iop_And8, mkexpr(rot_amt32), mkU8(8*sz-1)));
 
       if (left) {
 
@@ -2293,15 +2298,15 @@ UInt dis_Grp2 ( UChar  sorb,
 
       /* CC_DST is the rotated value.  CC_SRC is flags before. */
       stmt( IRStmt_Put( OFFB_CC_OP,
-                        IRExpr_Mux0X( mkexpr(rot_amt),
+                        IRExpr_Mux0X( mkexpr(rot_amt32),
                                       IRExpr_Get(OFFB_CC_OP,Ity_I32),
                                       mkU32(ccOp))) );
       stmt( IRStmt_Put( OFFB_CC_DST, 
-                        IRExpr_Mux0X( mkexpr(rot_amt),
+                        IRExpr_Mux0X( mkexpr(rot_amt32),
                                       IRExpr_Get(OFFB_CC_DST,Ity_I32),
                                       widenUto32(mkexpr(dst1)))) );
       stmt( IRStmt_Put( OFFB_CC_SRC, 
-                        IRExpr_Mux0X( mkexpr(rot_amt),
+                        IRExpr_Mux0X( mkexpr(rot_amt32),
                                       IRExpr_Get(OFFB_CC_SRC,Ity_I32),
                                       mkexpr(oldFlags))) );
    } /* if (isRotate) */

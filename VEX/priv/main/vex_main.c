@@ -304,9 +304,7 @@ TranslateResult LibVEX_Translate (
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n");
 
-#if 0
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      vex_printf("\n-------- Virtual registerised code --------\n");
       for (i = 0; i < vcode->arr_used; i++) {
          vex_printf("%3d   ", i);
          ppInstr(vcode->arr[i]);
@@ -314,7 +312,6 @@ TranslateResult LibVEX_Translate (
       }
       vex_printf("\n");
    }
-#endif
 
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,

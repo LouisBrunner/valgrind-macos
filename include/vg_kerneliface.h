@@ -371,6 +371,19 @@ struct vki_ucontext {
 
 #define VKI_ERESTARTSYS	    512	    /* Restart the syscall */
 
+/* Copied from linux/isdn.h */
+
+#define VKI_IIOCGETCPS  _IO( 'I',21 )
+#define VKI_IIOCNETGPN  _IO( 'I',34 )
+
+#define ISDN_MSNLEN          32
+
+typedef struct {
+    char name[ 10 ];
+    char phone[ ISDN_MSNLEN ];
+    int  outgoing;
+} isdn_net_ioctl_phone;
+
 
 /* Gawd ... hack ... */
 

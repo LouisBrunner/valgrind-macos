@@ -2487,7 +2487,7 @@ PRE(ioctl)
       break;
 #       endif
 
-   case IIOCGETCPS:
+   case VKI_IIOCGETCPS:
       /* In early 2.4 kernels, ISDN_MAX_CHANNELS was only defined
        * when KERNEL was. I never saw a larger value than 64 though */
 #              ifndef ISDN_MAX_CHANNELS
@@ -2497,7 +2497,7 @@ PRE(ioctl)
 		     ISDN_MAX_CHANNELS 
 		     * 2 * sizeof(unsigned long) );
       break;
-   case IIOCNETGPN:
+   case VKI_IIOCNETGPN:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(IIOCNETGPN)",
 		     (UInt)&((isdn_net_ioctl_phone *)arg3)->name,
 		     sizeof(((isdn_net_ioctl_phone *)arg3)->name) );
@@ -2886,7 +2886,7 @@ POST(ioctl)
       break;
 #       endif
 
-   case IIOCGETCPS:
+   case VKI_IIOCGETCPS:
       /* In early 2.4 kernels, ISDN_MAX_CHANNELS was only defined
        * when KERNEL was. I never saw a larger value than 64 though */
 #              ifndef ISDN_MAX_CHANNELS
@@ -2896,7 +2896,7 @@ POST(ioctl)
 	 VG_TRACK( post_mem_write, arg3, ISDN_MAX_CHANNELS 
 		   * 2 * sizeof(unsigned long) );
       break;
-   case IIOCNETGPN:
+   case VKI_IIOCNETGPN:
       if (res == 0)
 	 VG_TRACK( post_mem_write, arg3, sizeof(isdn_net_ioctl_phone) );
       break;

@@ -57,7 +57,6 @@
 #include <linux/msg.h>    /* for struct msgbuf */
 #include <linux/sem.h>    /* for struct sembuf */
 
-#include <linux/isdn.h>   /* for ISDN ioctls */
 #include <scsi/sg.h>      /* for the SG_* ioctls */
 #include <sched.h>        /* for struct sched_param */
 #include <linux/sysctl.h> /* for struct __sysctl_args */

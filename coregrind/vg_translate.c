@@ -568,7 +568,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
-   case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
+   case SSE4:         return LIT0 && SZ0   && CCf  && Ls1 && Ls2 && N3  && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
          return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
@@ -1450,6 +1450,28 @@ static void vg_improve ( UCodeBlock* cb )
    Int*    last_live_before;
    FlagSet future_dead_flags;
 
+#  if 0
+   /* DEBUGGING HOOK */
+   {
+   static int n_done=0;
+   if (VG_(clo_stop_after) > 1000000000) {
+      if (n_done > (VG_(clo_stop_after) - 1000000000)) {
+         dis=False;
+         VG_(clo_trace_codegen)  = 0;
+         return;
+       }
+       if (n_done == (VG_(clo_stop_after) - 1000000000)) {
+         VG_(printf)("\n");
+         VG_(pp_UCodeBlock) ( cb, "Incoming:" );
+         dis = True;
+         VG_(clo_trace_codegen)  = 31;
+       }
+       n_done++;
+     }
+   }
+   /* end DEBUGGING HOOK */
+#  endif /* 0 */
+
    if (dis) 
       VG_(printf) ("Improvements:\n");
 
@@ -2267,7 +2289,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
-   Int         notrace_until_limit = 23500;
+   UInt        notrace_until_limit = 1900;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation

@@ -3981,6 +3981,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       codegen_LODS ( cb, 1 );
       if (dis) VG_(printf)("lodsb\n");
       break;
+   case 0xAD: /* LODSv, no REP prefix */
+      codegen_LODS ( cb, sz );
+      if (dis) VG_(printf)("lods%c\n", nameISize(sz));
+      break;
 
    case 0xAE: /* SCASb, no REP prefix */
       codegen_SCAS ( cb, 1 );

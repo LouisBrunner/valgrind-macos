@@ -7,3 +7,7 @@ config.h*
 stamp-h*
 valgrind
 valgrind.spec
+cachegrind
+vg_annotate
+vg_cachegen
+default.supp

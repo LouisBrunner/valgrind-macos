@@ -630,6 +630,11 @@ static IRExpr* mkU ( IRType ty, UInt i )
    vpanic("mkU(x86)");
 }
 
+static IRExpr* mkV128 ( UShort mask )
+{
+   return IRExpr_Const(IRConst_V128(mask));
+}
+
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
 {
    return IRExpr_LDle(ty,data);
@@ -6741,23 +6746,131 @@ static void putXMMRegHI64( Int xmmreg, IRExpr* e64 )
    );
 }
 
-static UInt dis_SSE_E_to_G ( UChar sorb, UInt delta, 
-                             HChar* opname, IROp op )
+static UInt dis_SSE_E_to_G_wrk ( 
+               UChar sorb, UInt delta, 
+               HChar* opname, IROp op,
+               Bool   invertG
+            )
 {
-   HChar dis_buf[50];
-   Int   alen;
-   UChar rm = getIByte(delta);
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRExpr* gpart
+      = invertG ? binop( Iop_Xor128, 
+                         getXMMReg(gregOfRM(rm)), 
+                         mkV128(0xFFFF) )
+                : getXMMReg(gregOfRM(rm));
    if (epartIsReg(rm)) {
       putXMMReg( gregOfRM(rm), 
-                 binop(op, getXMMReg(gregOfRM(rm)),
-                 getXMMReg(eregOfRM(rm))) );
+                 binop(op, gpart,
+                           getXMMReg(eregOfRM(rm))) );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRM(rm)),
                         nameXMMReg(gregOfRM(rm)) );
       return delta+1;
    } else {
-      vassert(0);
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, gpart,
+                           loadLE(Ity_V128, mkexpr(addr))) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+alen;
    }
+}
+
+static
+UInt dis_SSE_E_to_G ( UChar sorb, UInt delta, HChar* opname, IROp op )
+{
+   return dis_SSE_E_to_G_wrk( sorb, delta, opname, op, False );
+}
+
+static
+UInt dis_SSE_E_to_G_invG ( UChar sorb, UInt delta, HChar* opname, IROp op )
+{
+   return dis_SSE_E_to_G_wrk( sorb, delta, opname, op, True );
+}
+
+static void findSSECmpOp ( Bool* needNot, IROp* op, 
+                           Int imm8, Bool all_lanes, Int sz )
+{
+   imm8 &= 7;
+   *needNot = False;
+   *op      = Iop_INVALID;
+   if (imm8 >= 4) {
+      *needNot = True;
+      imm8 -= 4;
+   }
+
+   if (sz == 4 && all_lanes) {
+      switch (imm8) {
+         case 0: *op = Iop_CmpEQ32Fx4; return;
+         case 1: *op = Iop_CmpLT32Fx4; return;
+         case 2: *op = Iop_CmpLE32Fx4; return;
+         case 3: *op = Iop_CmpUN32Fx4; return;
+         default: break;
+      }
+   }
+   if (sz == 4 && !all_lanes) {
+      switch (imm8) {
+         case 0: *op = Iop_CmpEQ32F0x4; return;
+         case 1: *op = Iop_CmpLT32F0x4; return;
+         case 2: *op = Iop_CmpLE32F0x4; return;
+         case 3: *op = Iop_CmpUN32F0x4; return;
+         default: break;
+      }
+   }
+   if (sz == 8) {
+   }
+   vpanic("findSSECmpOp(x86,guest)");
+}
+
+static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta, 
+				HChar* opname, Bool all_lanes, Int sz )
+{
+   HChar   dis_buf[50];
+   Int     alen, imm8;
+   IRTemp  addr;
+   Bool    needNot = False;
+   IROp    op      = Iop_INVALID;
+   IRTemp  plain   = newTemp(Ity_V128);
+   UChar   rm      = getIByte(delta);
+   UShort  mask    = 0;
+   vassert(sz == 4 || sz == 8);
+   if (epartIsReg(rm)) {
+      imm8 = getIByte(delta+1);
+      findSSECmpOp(&needNot, &op, imm8, all_lanes, sz);
+      assign( plain, binop(op, getXMMReg(gregOfRM(rm)), 
+                               getXMMReg(eregOfRM(rm))) );
+      delta += 2;
+      DIP("%s $%d,%s,%s\n", opname,
+                            (Int)imm8,
+                            nameXMMReg(eregOfRM(rm)),
+                            nameXMMReg(gregOfRM(rm)) );
+   } else {
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      imm8 = getIByte(delta+alen);
+      findSSECmpOp(&needNot, &op, imm8, all_lanes, sz);
+      assign( plain, binop(op, getXMMReg(gregOfRM(rm)), 
+                               loadLE(Ity_V128, mkexpr(addr))) );
+      delta += alen+1;
+      DIP("%s $%d,%s,%s\n", opname,
+                            (Int)imm8,
+                            dis_buf,
+                            nameXMMReg(gregOfRM(rm)) );
+   }
+
+   if (needNot && all_lanes)
+      mask = 0xFFFF;
+   if (needNot && !all_lanes)
+      mask = 0x000F;
+
+   putXMMReg( gregOfRM(rm), 
+              needNot ? binop(Iop_Xor128, mkexpr(plain), mkV128(mask))
+                      : mkexpr(plain) );
+   return delta;
 }
 
 
@@ -6959,6 +7072,40 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* F3 0F 58 = ADDSS -- add 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x58) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+3, "addss", Iop_Add32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 55 = ANDNPS -- G = (not G) and E */
+   if (insn[0] == 0x0F && insn[1] == 0x55) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_invG( sorb, delta+2, "andnps", Iop_And128 );
+      goto decode_success;
+   }
+
+   /* 0F 54 = ANDPS -- G = G and E */
+   if (insn[0] == 0x0F && insn[1] == 0x54) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "andps", Iop_And128 );
+      goto decode_success;
+   }
+
+   /* 0F C2 = CMPPS -- 32Fx4 comparison from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0xC2) {
+      vassert(sz == 4);
+      delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmpps", True, 4 );
+      goto decode_success;
+   }
+
+   /* F3 0F C2 = CMPSS -- 32F0x4 comparison from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xC2) {
+      vassert(sz == 4);
+      delta = dis_SSEcmp_E_to_G( sorb, delta+3, "cmpss", False, 4 );
+      goto decode_success;
+   }
 
 
 //-- 

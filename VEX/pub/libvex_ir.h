@@ -72,9 +72,11 @@ typedef
       Ico_U16, 
       Ico_U32, 
       Ico_U64,
-      Ico_F64, /* 64-bit IEEE754 floating */
-      Ico_F64i /* 64-bit unsigned int to be interpreted literally
-                  as a IEEE754 double value. */
+      Ico_F64,   /* 64-bit IEEE754 floating */
+      Ico_F64i,  /* 64-bit unsigned int to be interpreted literally
+                    as a IEEE754 double value. */
+      Ico_V128   /* 128-bit restricted vector constant, with 1 bit for
+                    each of 16 byte lanes */
    }
    IRConstTag;
 
@@ -89,6 +91,7 @@ typedef
          ULong  U64;
          Double F64;
          ULong  F64i;
+         UShort V128;
       } Ico;
    }
    IRConst;
@@ -100,6 +103,7 @@ extern IRConst* IRConst_U32  ( UInt );
 extern IRConst* IRConst_U64  ( ULong );
 extern IRConst* IRConst_F64  ( Double );
 extern IRConst* IRConst_F64i ( ULong );
+extern IRConst* IRConst_V128 ( UShort );
 
 extern IRConst* dopyIRConst ( IRConst* );
 
@@ -318,13 +322,15 @@ typedef
       /* ------------------ 128-bit SIMD. ------------------ */
 
       /* 128-bit ops */
-      Iop_And128, Iop_Or128, Iop_Xor128, Iop_Andn128,
+      Iop_And128, Iop_Or128, Iop_Xor128, 
 
       /* --- 32x4 vector FP --- */
 
       /* binary */
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
       Iop_Max32Fx4, Iop_Min32Fx4,
+      Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4, 
+      Iop_CmpEQ32F0x4, Iop_CmpLT32F0x4, Iop_CmpLE32F0x4, Iop_CmpUN32F0x4, 
 
       /* unary */
       Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,

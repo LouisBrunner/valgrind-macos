@@ -72,6 +72,7 @@ void ppIRConst ( IRConst* con )
       case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64));
                      break;
       case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
+      case Ico_V128: vex_printf( "V128{0x%04x}", (UInt)(con->Ico.V128)); break;
       default: vpanic("ppIRConst");
    }
 }
@@ -218,7 +219,22 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF64asI64: vex_printf("ReinterpF64asI64"); return;
       case Iop_ReinterpI64asF64: vex_printf("ReinterpI64asF64"); return;
 
-      case Iop_Add32Fx4: vex_printf("Add32Fx4"); return;
+      case Iop_And128:  vex_printf("And128"); return;
+      case Iop_Or128:   vex_printf("Or128");  return;
+      case Iop_Xor128:  vex_printf("Xor128"); return;
+
+      case Iop_Add32Fx4:  vex_printf("Add32Fx4"); return;
+      case Iop_Add32F0x4: vex_printf("Add32F0x4"); return;
+
+      case Iop_CmpEQ32Fx4: vex_printf("CmpEQ32Fx4"); return;
+      case Iop_CmpLT32Fx4: vex_printf("CmpLT32Fx4"); return;
+      case Iop_CmpLE32Fx4: vex_printf("CmpLE32Fx4"); return;
+      case Iop_CmpUN32Fx4: vex_printf("CmpUN32Fx4"); return;
+
+      case Iop_CmpEQ32F0x4: vex_printf("CmpEQ32F0x4"); return;
+      case Iop_CmpLT32F0x4: vex_printf("CmpLT32F0x4"); return;
+      case Iop_CmpLE32F0x4: vex_printf("CmpLE32F0x4"); return;
+      case Iop_CmpUN32F0x4: vex_printf("CmpUN32F0x4"); return;
 
       case Iop_64HLto128: vex_printf("64HLto128"); return;
       case Iop_128to64:   vex_printf("128to64");   return;
@@ -505,7 +521,13 @@ IRConst* IRConst_F64i ( ULong f64i )
    c->Ico.F64i = f64i;
    return c;
 }
-
+IRConst* IRConst_V128 ( UShort con )
+{
+   IRConst* c  = LibVEX_Alloc(sizeof(IRConst));
+   c->tag      = Ico_V128;
+   c->Ico.V128 = con;
+   return c;
+}
 
 /* Constructors -- IRCallee */
 
@@ -805,6 +827,7 @@ IRConst* dopyIRConst ( IRConst* c )
       case Ico_U64:  return IRConst_U64(c->Ico.U64);
       case Ico_F64:  return IRConst_F64(c->Ico.F64);
       case Ico_F64i: return IRConst_F64i(c->Ico.F64i);
+      case Ico_V128: return IRConst_V128(c->Ico.V128);
       default: vpanic("dopyIRConst");
    }
 }
@@ -1070,7 +1093,12 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_128to64: case Iop_128HIto64: 
          UNARY(Ity_I64, Ity_V128);
 
-      case Iop_Add32Fx4:
+      case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
+      case Iop_CmpLE32Fx4: case Iop_CmpUN32Fx4:
+      case Iop_CmpEQ32F0x4: case Iop_CmpLT32F0x4:
+      case Iop_CmpLE32F0x4: case Iop_CmpUN32F0x4:
+      case Iop_Add32Fx4: case Iop_Add32F0x4:
+      case Iop_And128: case Iop_Or128: case Iop_Xor128:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
 
       default:
@@ -1155,6 +1183,7 @@ IRType typeOfIRConst ( IRConst* con )
       case Ico_U64:   return Ity_I64;
       case Ico_F64:   return Ity_F64;
       case Ico_F64i:  return Ity_F64;
+      case Ico_V128:  return Ity_V128;
       default: vpanic("typeOfIRConst");
    }
 }

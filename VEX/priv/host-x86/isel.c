@@ -2380,7 +2380,8 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
-   IRType ty = typeOfIRExpr(env->type_env,e);
+   X86SseOp op = Xsse_INVALID;
+   IRType   ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_V128);
 
@@ -2399,8 +2400,22 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
+   if (e->tag == Iex_LDle) {
+      HReg      dst = newVRegV(env);
+      X86AMode* am  = iselIntExpr_AMode(env, e->Iex.LDle.addr);
+      addInstr(env, X86Instr_SseLdSt( True/*load*/, dst, am ));
+      return dst;
+   }
+
+   if (e->tag == Iex_Const) {
+      HReg dst = newVRegV(env);
+      vassert(e->Iex.Const.con->tag == Ico_V128);
+      addInstr(env, X86Instr_SseConst(e->Iex.Const.con->Ico.V128, dst));
+      return dst;
+   }
+
    if (e->tag == Iex_Binop) {
-      switch (e->Iex.Binop.op) {
+   switch (e->Iex.Binop.op) {
       case Iop_64HLto128: {
          HReg r3, r2, r1, r0;
          X86AMode* esp0  = X86AMode_IR(0, hregX86_ESP());
@@ -2425,22 +2440,53 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(16), hregX86_ESP()));
          return dst;
       }
-      case Iop_Add32Fx4: {
+
+      case Iop_And128: op = Xsse_AND; goto do_128;
+      case Iop_Xor128: op = Xsse_XOR; goto do_128;
+      do_128: 
+      {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegV(env);
          addInstr(env, mk_vMOVsd_RR(argL, dst));
-         addInstr(env, X86Instr_Sse32Fx4(Xsse_ADDF, argR, dst));
+         addInstr(env, X86Instr_Sse128(op, argR, dst));
          return dst;
       }
+
+      case Iop_CmpEQ32Fx4: op = Xsse_CMPEQF; goto do_32Fx4;
+      case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
+      case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
+      case Iop_Add32Fx4:   op = Xsse_ADDF;   goto do_32Fx4;
+      do_32Fx4:
+      {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, X86Instr_Sse32Fx4(op, argR, dst));
+         return dst;
+      }
+
+      case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
+      case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
+      case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
+      case Iop_Add32F0x4:   op = Xsse_ADDF;   goto do_32F0x4;
+      do_32F0x4: {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, X86Instr_Sse32FLo(op, argR, dst));
+         return dst;
+      }
+
       default:
          break;
-      } /* switch (e->Iex.Binop.op) */
-
+   } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
 
    ppIRExpr(e);
-   vpanic("iseVecExpr_wrk");
+   vpanic("iselVecExpr_wrk");
 }
 
 

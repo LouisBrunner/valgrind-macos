@@ -500,14 +500,18 @@ HChar* showX86FpOp ( X86FpOp op ) {
 
 HChar* showX86SseOp ( X86SseOp op ) {
    switch (op) {
-      case Xsse_MOV:  return "mov(?!)";
-      case Xsse_AND:  return "add";
-      case Xsse_OR:   return "or";
-      case Xsse_XOR:  return "xor";
-      case Xsse_ANDN: return "andn";
-      case Xsse_ADDF: return "add";
-      case Xsse_SUBF: return "sub";
-      case Xsse_MULF: return "mul";
+      case Xsse_MOV:    return "mov(?!)";
+      case Xsse_AND:    return "and";
+      case Xsse_OR:     return "or";
+      case Xsse_XOR:    return "xor";
+      case Xsse_ANDN:   return "andn";
+      case Xsse_ADDF:   return "add";
+      case Xsse_SUBF:   return "sub";
+      case Xsse_MULF:   return "mul";
+      case Xsse_CMPEQF: return "cmpFeq";
+      case Xsse_CMPLTF: return "cmpFlt";
+      case Xsse_CMPLEF: return "cmpFle";
+      case Xsse_CMPUNF: return "cmpFun";
       default: vpanic("showX86SseOp");
    }
 }
@@ -712,6 +716,14 @@ X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst ) {
    return i;
 }
 
+X86Instr* X86Instr_SseConst ( UShort con, HReg dst ) {
+   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                 = Xin_SseConst;
+   i->Xin.SseConst.con    = con;
+   i->Xin.SseConst.dst    = dst;
+   vassert(hregClass(dst) == HRcVec128);
+   return i;
+}
 X86Instr* X86Instr_SseLdSt ( Bool isLoad, HReg reg, X86AMode* addr ) {
    X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
    i->tag                = Xin_SseLdSt;
@@ -726,8 +738,8 @@ X86Instr* X86Instr_Sse128 ( X86SseOp op, HReg src, HReg dst ) {
    i->Xin.Sse128.op  = op;
    i->Xin.Sse128.src = src;
    i->Xin.Sse128.dst = dst;
-   vassert(op == Xsse_MOV || op == Xsse_AND || op == Xsse_OR
-           || op == Xsse_XOR || op == Xsse_ANDN);
+   vassert(op == Xsse_MOV 
+           || op == Xsse_AND || op == Xsse_OR || op == Xsse_XOR);
    return i;
 }
 X86Instr* X86Instr_Sse32Fx4  ( X86SseOp op, HReg src, HReg dst ) {
@@ -922,6 +934,10 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.FpCmp.dst);
          break;
+      case Xin_SseConst:
+         vex_printf("const $0x%04x,", (Int)i->Xin.SseConst.con);
+         ppHRegX86(i->Xin.SseConst.dst);
+         break;
       case Xin_SseLdSt:
          vex_printf("movups ");
          if (i->Xin.SseLdSt.isLoad) {
@@ -1112,6 +1128,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, i->Xin.SseLdSt.isLoad ? HRmWrite : HRmRead,
                        i->Xin.SseLdSt.reg);
          return;
+      case Xin_SseConst:
+         addHRegUse(u, HRmWrite, i->Xin.SseConst.dst);
+         return;
       case Xin_Sse128:
          addHRegUse(u, HRmRead, i->Xin.Sse128.src);
          addHRegUse(u, i->Xin.Sse128.op==Xsse_MOV ? HRmWrite : HRmModify,
@@ -1121,6 +1140,11 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          vassert(i->Xin.Sse32Fx4.op != Xsse_MOV);
          addHRegUse(u, HRmRead,   i->Xin.Sse32Fx4.src);
          addHRegUse(u, HRmModify, i->Xin.Sse32Fx4.dst);
+         return;
+      case Xin_Sse32FLo:
+         vassert(i->Xin.Sse32FLo.op != Xsse_MOV);
+         addHRegUse(u, HRmRead,   i->Xin.Sse32FLo.src);
+         addHRegUse(u, HRmModify, i->Xin.Sse32FLo.dst);
          return;
       default:
          ppX86Instr(i);
@@ -1223,6 +1247,9 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.FpCmp.srcR);
          mapReg(m, &i->Xin.FpCmp.dst);
          return;
+      case Xin_SseConst:
+         mapReg(m, &i->Xin.SseConst.dst);
+         return;
       case Xin_SseLdSt:
          mapReg(m, &i->Xin.SseLdSt.reg);
          mapRegs_X86AMode(m, i->Xin.SseLdSt.addr);
@@ -1234,6 +1261,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Sse32Fx4:
          mapReg(m, &i->Xin.Sse32Fx4.src);
          mapReg(m, &i->Xin.Sse32Fx4.dst);
+         return;
+      case Xin_Sse32FLo:
+         mapReg(m, &i->Xin.Sse32FLo.src);
+         mapReg(m, &i->Xin.Sse32FLo.dst);
          return;
       default:
          ppX86Instr(i);
@@ -1528,6 +1559,36 @@ static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
 #  undef fake
 }
 
+/* Push a 32-bit word on the stack.  The word depends on tags[3:0];
+each byte is either 0x00 or 0xFF depending on the corresponding bit in tags[].
+*/
+static UChar* push_word_from_tags ( UChar* p, UShort tags )
+{
+   UInt w;
+   vassert(0 == (tags & ~0xF));
+   if (tags == 0) {
+      /* pushl $0x00000000 */
+      *p++ = 0x6A;
+      *p++ = 0x00;
+   }
+   else 
+   /* pushl $0xFFFFFFFF */
+   if (tags == 0xF) {
+      *p++ = 0x6A;
+      *p++ = 0xFF;
+   } else {
+      vassert(0); /* awaiting test case */
+      w = 0;
+      if (tags & 1) w |= 0x000000FF;
+      if (tags & 2) w |= 0x0000FF00;
+      if (tags & 4) w |= 0x00FF0000;
+      if (tags & 8) w |= 0xFF000000;
+      *p++ = 0x68;
+      p = emit32(p, w);
+   }
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
@@ -1536,6 +1597,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 {
    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
+   UInt   xtra;
    UChar* p = &buf[0];
    UChar* ptmp;
    vassert(nbuf >= 32);
@@ -2262,17 +2324,71 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = doAMode_R(p, hregX86_EAX(), i->Xin.FpCmp.dst);
       goto done;
 
+   case Xin_SseConst: {
+      UShort con = i->Xin.SseConst.con;
+      p = push_word_from_tags(p, (con >> 12) & 0xF);
+      p = push_word_from_tags(p, (con >> 8) & 0xF);
+      p = push_word_from_tags(p, (con >> 4) & 0xF);
+      p = push_word_from_tags(p, con & 0xF);
+      /* movl (%esp), %xmm-dst */
+      *p++ = 0x0F;
+      *p++ = 0x10;
+      *p++ = 0x04 + 8 * (7 & vregNo(i->Xin.SseConst.dst));
+      *p++ = 0x24;
+      /* addl $16, %esp */
+      *p++ = 0x83;
+      *p++ = 0xC4;
+      *p++ = 0x10;
+      goto done;
+   }
    case Xin_SseLdSt:
       *p++ = 0x0F; 
       *p++ = i->Xin.SseLdSt.isLoad ? 0x10 : 0x11;
       p = doAMode_M(p, fake(vregNo(i->Xin.SseLdSt.reg)), i->Xin.SseLdSt.addr);
       goto done;
 
-   case Xin_Sse32Fx4:
+   case Xin_Sse128:
       *p++ = 0x0F;
-      *p++ = 0x58;
+      switch (i->Xin.Sse128.op) {
+         case Xsse_XOR: *p++ = 0x57; break;
+         case Xsse_AND: *p++ = 0x54; break;
+         default: goto bad;
+      }
+      p = doAMode_R(p, fake(vregNo(i->Xin.Sse128.dst)),
+                       fake(vregNo(i->Xin.Sse128.src)) );
+      goto done;
+
+   case Xin_Sse32Fx4:
+      xtra = 0;
+      *p++ = 0x0F;
+      switch (i->Xin.Sse32Fx4.op) {
+         case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
+         case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
+         case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         default: goto bad;
+      }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32Fx4.dst)),
                        fake(vregNo(i->Xin.Sse32Fx4.src)) );
+      if (xtra & 0x100)
+         *p++ = (UChar)(xtra & 0xFF);
+      goto done;
+
+   case Xin_Sse32FLo:
+      xtra = 0;
+      *p++ = 0xF3;
+      *p++ = 0x0F;
+      switch (i->Xin.Sse32FLo.op) {
+         case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
+         case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
+         case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         default: goto bad;
+      }
+      p = doAMode_R(p, fake(vregNo(i->Xin.Sse32FLo.dst)),
+                       fake(vregNo(i->Xin.Sse32FLo.src)) );
+      if (xtra & 0x100)
+         *p++ = (UChar)(xtra & 0xFF);
       goto done;
 
    default: 
@@ -2290,97 +2406,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
 #  undef fake
 }
-
-
-#if 0
-/* Self-contained test; can be called directly from
-   main. */
-void test_asm86 ( void )
-{
-  UChar buf[32];
-  Int i, n;
-  HReg edi = hregX86_EDI();
-  HReg esi = hregX86_ESI();
-  HReg ecx = hregX86_ECX();
-  HReg ebp = hregX86_EBP();
-  HReg eax = hregX86_EAX();
-  HReg esp = hregX86_ESP();
-
-#define T(_iii)                                  \
-  do { X86Instr* iii = _iii;                     \
-       vex_printf("\n   ");                      \
-       ppX86Instr(iii);                          \
-       vex_printf("\n   ");                      \
-       n = emit_X86Instr( buf, 32, iii );        \
-       for (i = 0; i < n; i++) {                 \
-           if (buf[i] < 0x10)                    \
-              vex_printf("0%x ", (Int)buf[i]);   \
-           else                                  \
-              vex_printf("%x ", (Int)buf[i]);    \
-       }                                         \
-       vex_printf("\n");                         \
-  } while (0)
-
-#if 0
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(esi), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0x12345678), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(0,esi)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(0,ebp)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(1,ebp)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(127,esi)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(256,esi)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(1,esi,ecx,0)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(1,esi,ecx,3)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(127,esi,ecx,3)), edi) );
-T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(256,esi,ecx,3)), edi) );
-#endif
-
-#if 0
-T( X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(9), X86AMode_IR(0,esi)) );
-T( X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(edi), X86AMode_IR(0,esi)) );
-T( X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(999), X86AMode_IRRS(256,esi,ecx,3)) );
-T( X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(ebp), X86AMode_IRRS(256,esi,ecx,3)) );
-#endif
-
-#if 0
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x42), eax) );
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x41424344), eax) );
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x42), esp) );
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x41424344), esp) );
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Reg(esi), edi) );
-T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
-#endif
-
-#if 0
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x42), eax) );
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x41424344), eax) );
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x42), esp) );
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x41424344), esp) );
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Reg(esi), edi) );
-T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
-#endif
-
-#if 0
-T( X86Instr_Alu32M(Xalu_ADD, X86RI_Imm(0x42), X86AMode_IR(0x99,esi)) );
-T( X86Instr_Alu32M(Xalu_ADD, X86RI_Imm(0x4243), X86AMode_IR(0x99,esi)) );
-T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x99,ebp)) );
-T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x80,ebp)) );
-T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
-#endif
-
-#if 1
-T( X86Instr_Alu32M(Xalu_SUB, X86RI_Imm(0x42), X86AMode_IR(0x99,esi)) );
-T( X86Instr_Alu32M(Xalu_SUB, X86RI_Imm(0x4243), X86AMode_IR(0x99,esi)) );
-T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x99,ebp)) );
-T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x80,ebp)) );
-T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
-#endif
-
-#undef T
-}
-#endif
-
 
 /*---------------------------------------------------------------*/
 /*--- end                                    host-x86/hdefs.c ---*/

@@ -308,7 +308,8 @@ typedef
    enum {
       Xsse_INVALID,
       Xsse_MOV, Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
-      Xsse_ADDF, Xsse_SUBF, Xsse_MULF
+      Xsse_ADDF, Xsse_SUBF, Xsse_MULF,
+      Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF
    }
    X86SseOp;
 
@@ -344,6 +345,7 @@ typedef
       Xin_FpStSW_AX, /* fstsw %ax */
       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
 
+      Xin_SseConst,  /* Generate restricted SSE literal */
       Xin_SseLdSt,   /* SSE load/store, no alignment constraints */
       Xin_Sse128,    /* SSE binary typeless (and/or/xor/andn) */
       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
@@ -509,6 +511,10 @@ typedef
 
          /* Simplistic SSE[123] */
          struct {
+            UShort  con;
+            HReg    dst;
+         } SseConst;
+         struct {
             Bool      isLoad;
             HReg      reg;
             X86AMode* addr;
@@ -560,6 +566,7 @@ extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
 extern X86Instr* X86Instr_FpStSW_AX ( void );
 extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 
+extern X86Instr* X86Instr_SseConst  ( UShort con, HReg dst );
 extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
 extern X86Instr* X86Instr_Sse128    ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );

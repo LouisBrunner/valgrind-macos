@@ -1974,7 +1974,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
          assign( src64, binop(Iop_32HLto64, 
                  getIReg(4,R_EDX), getIReg(4,R_EAX)) );
          assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
-         putIReg( 4, R_EAX, unop(Iop_64LOto32,mkexpr(dst64)) );
+         putIReg( 4, R_EAX, unop(Iop_64to32,mkexpr(dst64)) );
          putIReg( 4, R_EDX, unop(Iop_64HIto32,mkexpr(dst64)) );
          break;
       }
@@ -2147,16 +2147,6 @@ UInt dis_Grp2 ( UChar  sorb,
 
    vassert(sz == 1 || sz == 2 || sz == 4);
 
-#if 0
-   switch (gregOfRM(modrm)) {
-      case 0: op8 = Iop_RolROL; break;  case 1: op8 = ROR; break;
-      case 2: op8 = RCL; break;  case 3: op8 = RCR; break;
-      case 4: op8 = Iop_Shl8; break;  case 5: op8 = Iop_Shr8; break;
-      case 7: op8 = Iop_Sar8; break;
-      default: vpanic("dis_Grp2(Reg): unhandled case(x86)");
-   }
-#endif
-
    /* Put value to shift/rotate in dst0. */
    if (epartIsReg(modrm)) {
       assign(dst0, getIReg(sz, eregOfRM(modrm)));
@@ -2172,6 +2162,11 @@ UInt dis_Grp2 ( UChar  sorb,
 
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
+
+   if (!isShift && !isRotate) {
+      vex_printf("\ncase %d\n", gregOfRM(modrm));
+      vpanic("dis_Grp2(Reg): unhandled case(x86)");
+   }
 
    if (isShift) {
 
@@ -2434,7 +2429,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
       setFlags_MUL ( Ity_I32, t1, tmp, thunkOp );
       assign( res64, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
       putIReg(4, R_EDX, unop(Iop_64HIto32,mkexpr(res64)));
-      putIReg(4, R_EAX, unop(Iop_64LOto32,mkexpr(res64)));
+      putIReg(4, R_EAX, unop(Iop_64to32,mkexpr(res64)));
       break;
    }
    default:
@@ -3383,17 +3378,24 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
       tmpRes   = newTemp(Ity_I32);
       tmpSubSh = newTemp(Ity_I32);
       mkpair   = Iop_32HLto64;
-      getres   = left_shift ? Iop_64HIto32 : Iop_64LOto32;
+      getres   = left_shift ? Iop_64HIto32 : Iop_64to32;
       shift    = left_shift ? Iop_Shl64 : Iop_Shr64;
       mask     = mkU8(31);
-      assign( tmpSH, binop(Iop_And8, shift_amt, mask) );
    } else {
       /* sz == 2 */
-      vassert(0);
+      tmpL     = newTemp(Ity_I32);
+      tmpRes   = newTemp(Ity_I16);
+      tmpSubSh = newTemp(Ity_I16);
+      mkpair   = Iop_16HLto32;
+      getres   = left_shift ? Iop_32HIto16 : Iop_32to16;
+      shift    = left_shift ? Iop_Shl32 : Iop_Shr32;
+      mask     = mkU8(15);
    }
 
    /* Do the shift, calculate the subshift value, and set 
       the flag thunk. */
+
+   assign( tmpSH, binop(Iop_And8, shift_amt, mask) );
 
    if (left_shift)
       assign( tmpL, binop(mkpair, mkexpr(esrc), mkexpr(gsrc)) );
@@ -3408,11 +3410,9 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                       binop(Iop_And8, 
                             binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
                             mask))) );
-   //assign( guard, binop(Iop_CmpNE8, mkexpr(tmpSH), mkU8(0)) );
 
-   setFlags_DSTus_DST1 ( 
-			left_shift ? Iop_Shl8 : Iop_Sar8,
-			tmpSubSh, tmpRes, ty, tmpSH );
+   setFlags_DSTus_DST1 ( left_shift ? Iop_Shl8 : Iop_Sar8,
+			 tmpSubSh, tmpRes, ty, tmpSH );
 
    /* Put result back. */
 
@@ -7261,13 +7261,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                          mkU8(d32), NULL );
       break;
 
-//--    case 0xD2: /* Grp2 CL,Eb */
-//--       modrm = getUChar(eip);
-//--       am_sz = lengthAMode(eip);
-//--       d_sz  = 0;
-//--       sz    = 1;
-//--       eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
-//--       break;
+   case 0xD2: /* Grp2 CL,Eb */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(delta);
+      d_sz  = 0;
+      sz    = 1;
+      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
+                         getIReg(1,R_ECX), "%cl" );
+      break;
 
    case 0xD3: /* Grp2 CL,Ev */
       modrm = getIByte(delta);

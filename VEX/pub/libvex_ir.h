@@ -98,9 +98,13 @@ typedef
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
       /* Narrowing conversions */
-      Iop_32to16, Iop_32to8,
+      Iop_32to8,
+      /* 16 <-> 32 bit conversions */
+      Iop_32to16,     // :: I32 -> I16, low half
+      Iop_32HIto16,   // :: I32 -> I16, high half
+      Iop_16HLto32,   // :: (I16,I16) -> I32
       /* 32 <-> 64 bit conversions */
-      Iop_64LOto32,   // :: I64 -> I32, low half
+      Iop_64to32,     // :: I64 -> I32, low half
       Iop_64HIto32,   // :: I64 -> I32, high half
       Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */

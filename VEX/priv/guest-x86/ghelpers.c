@@ -230,6 +230,19 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
+/* ROL: cf' = msb(result).  of' = msb(result) ^ lsb(result). */
+/* DST = result, SRC = old flags */
+#define ACTIONS_ROL(DATA_BITS,DATA_TYPE)		\
+{								\
+    PREAMBLE(DATA_BITS);					\
+    int fl 							\
+       = (CC_SRC & ~(CC_O | CC_C))				\
+         | (CC_C & (CC_DST >> (DATA_BITS-1)))			\
+         | (CC_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 		\
+                    ^ lshift(CC_DST, 11)));	\
+    return fl;							\
+}
+
 /* ROR: cf' = msb(result).  of' = msb(result) ^ msb-1(result). */
 /* DST = result, SRC = old flags */
 #define ACTIONS_ROR(DATA_BITS,DATA_TYPE)		\
@@ -267,39 +280,49 @@ static inline int lshift(int x, int n)
          return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
                           | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
-      case CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar );
+      case CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar  );
       case CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );
-      case CC_OP_ADDL:   ACTIONS_ADD( 32, UInt );
+      case CC_OP_ADDL:   ACTIONS_ADD( 32, UInt   );
 
-      case CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar );
+      case CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar  );
       case CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
-      case CC_OP_ADCL:   ACTIONS_ADC( 32, UInt );
+      case CC_OP_ADCL:   ACTIONS_ADC( 32, UInt   );
 
-      case CC_OP_SUBB:   ACTIONS_SUB(  8, UChar );
+      case CC_OP_SUBB:   ACTIONS_SUB(  8, UChar  );
       case CC_OP_SUBW:   ACTIONS_SUB( 16, UShort );
-      case CC_OP_SUBL:   ACTIONS_SUB( 32, UInt );
+      case CC_OP_SUBL:   ACTIONS_SUB( 32, UInt   );
 
-      case CC_OP_SBBB:   ACTIONS_SBB(  8, UChar );
+      case CC_OP_SBBB:   ACTIONS_SBB(  8, UChar  );
       case CC_OP_SBBW:   ACTIONS_SBB( 16, UShort );
-      case CC_OP_SBBL:   ACTIONS_SBB( 32, UInt );
+      case CC_OP_SBBL:   ACTIONS_SBB( 32, UInt   );
 
-      case CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar );
+      case CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar  );
       case CC_OP_LOGICW: ACTIONS_LOGIC( 16, UShort );
-      case CC_OP_LOGICL: ACTIONS_LOGIC( 32, UInt );
+      case CC_OP_LOGICL: ACTIONS_LOGIC( 32, UInt   );
 
-      case CC_OP_INCB:   ACTIONS_INC(  8, UChar );
+      case CC_OP_INCB:   ACTIONS_INC(  8, UChar  );
       case CC_OP_INCW:   ACTIONS_INC( 16, UShort );
-      case CC_OP_INCL:   ACTIONS_INC( 32, UInt );
+      case CC_OP_INCL:   ACTIONS_INC( 32, UInt   );
 
-      case CC_OP_DECB:   ACTIONS_DEC(  8, UChar );
+      case CC_OP_DECB:   ACTIONS_DEC(  8, UChar  );
       case CC_OP_DECW:   ACTIONS_DEC( 16, UShort );
-      case CC_OP_DECL:   ACTIONS_DEC( 32, UInt );
+      case CC_OP_DECL:   ACTIONS_DEC( 32, UInt   );
 
-      case CC_OP_SHLL:   ACTIONS_SHL( 32, UInt );
-      case CC_OP_SARL:   ACTIONS_SAR( 32, UInt );
+      case CC_OP_SHLB:   ACTIONS_SHL(  8, UChar  );
+      case CC_OP_SHLW:   ACTIONS_SHL( 16, UShort );
+      case CC_OP_SHLL:   ACTIONS_SHL( 32, UInt   );
 
+      case CC_OP_SARB:   ACTIONS_SAR(  8, UChar  );
+      case CC_OP_SARW:   ACTIONS_SAR( 16, UShort );
+      case CC_OP_SARL:   ACTIONS_SAR( 32, UInt   );
+
+      case CC_OP_ROLB:   ACTIONS_ROL(  8, UChar  );
+      case CC_OP_ROLW:   ACTIONS_ROL( 16, UShort );
+      case CC_OP_ROLL:   ACTIONS_ROL( 32, UInt   );
+
+      case CC_OP_RORB:   ACTIONS_ROR(  8, UChar  );
       case CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
-      case CC_OP_RORL:   ACTIONS_ROR( 32, UInt );
+      case CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
 
       case CC_OP_MULL:   ACTIONS_MUL( 32, UInt, Long );
 

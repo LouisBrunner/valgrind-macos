@@ -89,7 +89,6 @@ void ppIROp ( IROp op )
       case Iop_8Sto32:   vex_printf("8Sto32");  return;
       case Iop_16Sto32:  vex_printf("16Sto32"); return;
       case Iop_32to8:    vex_printf("32to8");   return;
-      case Iop_32to16:   vex_printf("32to16");  return;
       case Iop_32to1:    vex_printf("32to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
 
@@ -103,8 +102,12 @@ void ppIROp ( IROp op )
       case Iop_DivModU64to32: vex_printf("DivModU64to32"); return;
       case Iop_DivModS64to32: vex_printf("DivModS64to32"); return;
 
+      case Iop_32HIto16: vex_printf("32HIto16"); return;
+      case Iop_32to16:   vex_printf("32to16");   return;
+      case Iop_16HLto32: vex_printf("16HLto32"); return;
+
       case Iop_64HIto32: vex_printf("64HIto32"); return;
-      case Iop_64LOto32: vex_printf("64LOto32"); return;
+      case Iop_64to32:   vex_printf("64to32");   return;
       case Iop_32HLto64: vex_printf("32HLto64"); return;
 
       default:           vpanic("ppIROp(1)");
@@ -481,7 +484,12 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_DivModS64to32:
          BINARY(Ity_I64,Ity_I64,Ity_I32);
 
-      case Iop_64HIto32: case Iop_64LOto32:
+      case Iop_32HIto16: case Iop_32to16:
+         UNARY(Ity_I16,Ity_I32);
+      case Iop_16HLto32:
+         BINARY(Ity_I32,Ity_I16,Ity_I16);
+
+      case Iop_64HIto32: case Iop_64to32:
          UNARY(Ity_I32, Ity_I64);
       case Iop_32HLto64:
          BINARY(Ity_I64,Ity_I32,Ity_I32);
@@ -491,7 +499,6 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_8Uto32:  UNARY(Ity_I32,Ity_I8);
       case Iop_16Uto32: UNARY(Ity_I32,Ity_I16);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
-      case Iop_32to16:  UNARY(Ity_I16,Ity_I32);
 
       default:
          ppIROp(op);

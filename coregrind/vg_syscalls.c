@@ -2311,7 +2311,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             default: {
                UInt dir  = _IOC_DIR(arg2);
                UInt size = _IOC_SIZE(arg2);
-               if (/* size == 0 || */ dir == _IOC_NONE) {
+               if (VG_(strstr)(VG_(clo_weird_hacks), "lax-ioctls") != NULL) {
+                   /* 
+                    * Be very lax about ioctl handling; the only
+                    * assumption is that the size is correct. Doesn't
+                    * require the full buffer to be initialized when
+                    * writing.  Without this, using some device
+                    * drivers with a large number of strange ioctl
+                    * commands becomes very tiresome.
+                    */
+               } 
+               else if (/* size == 0 || */ dir == _IOC_NONE) {
                   VG_(message)(Vg_UserMsg, 
                      "Warning: noted but unhandled ioctl 0x%x"
                      " with no size/direction hints",

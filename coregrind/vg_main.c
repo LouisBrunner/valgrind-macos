@@ -630,7 +630,7 @@ static void usage ( void )
 "    --suppressions=<filename> suppress errors described in\n"
 "                              suppressions file <filename>\n"
 "    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
-"         recognised hacks are: ioctl-VTIME truncate-writes\n"
+"         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls\n"
 "\n"
 "  %s skin user options:\n";
 

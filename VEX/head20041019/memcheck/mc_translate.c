@@ -1032,6 +1032,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
 
       case Iop_ReinterpF64asI64:
+      case Iop_ReinterpI64asF64:
       case Iop_Not32:
       case Iop_Not16:
       case Iop_Not8:
@@ -1045,12 +1046,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
 
 static
-IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
+IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
 {
    void*    helper;
    Char*    hname;
    IRDirty* di;
    IRTemp   datavbits;
+   IRAtom*  addrAct;
 
    sk_assert(isOriginalAtom(mce,addr));
 
@@ -1078,11 +1080,23 @@ IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
                     VG_(skin_panic)("memcheck:do_shadow_LDle");
    }
 
+   /* Generate the actual address into addrAct. */
+   if (bias == 0) {
+      addrAct = addr;
+   } else {
+      IRType  tyAddr  = mce->hWordTy;
+      sk_assert( tyAddr == Ity_I32 || tyAddr == Ity_I64 );
+      IROp    mkAdd   = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
+      IRAtom* eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
+      addrAct = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias) );
+   }
+
    /* We need to have a place to park the V bits we're just about to
       read. */
    datavbits = newIRTemp(mce->bb->tyenv, ty);
    di = unsafeIRDirty_1_N( datavbits, 
-                           1/*regparms*/, hname, helper, mkIRExprVec_1( addr ));
+                           1/*regparms*/, hname, helper, 
+                           mkIRExprVec_1( addrAct ));
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di) );
 
@@ -1146,7 +1160,8 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
          return expr2vbits_Unop( mce, e->Iex.Unop.op, e->Iex.Unop.arg );
 
       case Iex_LDle:
-         return expr2vbits_LDle( mce, e->Iex.LDle.ty, e->Iex.LDle.addr );
+         return expr2vbits_LDle( mce, e->Iex.LDle.ty, 
+                                      e->Iex.LDle.addr, 0/*addr bias*/ );
 
       case Iex_CCall:
          return mkLazyN( mce, e->Iex.CCall.args, 
@@ -1196,27 +1211,41 @@ IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
 }
 
 
+/* Generate a shadow store.  addr is always the original address atom.
+   You can pass in either originals or V-bits for the data atom, but
+   obviously not both.  */
+
 static 
-void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
+void do_shadow_STle ( MCEnv* mce, 
+                      IRAtom* addr, UInt bias,
+                      IRAtom* data, IRAtom* vdata )
 {
    IRType   ty;
    IRDirty* di;
-   IRExpr*  datavbits;
    void*    helper = NULL;
    Char*    hname = NULL;
+   IRAtom*  addrAct;
 
-   ty = shadowType(typeOfIRExpr(mce->bb->tyenv, data));
+   if (data) {
+      sk_assert(!vdata);
+      sk_assert(isOriginalAtom(mce, data));
+      sk_assert(bias == 0);
+      vdata = expr2vbits( mce, data );
+   } else {
+      sk_assert(vdata);
+   }
 
    sk_assert(isOriginalAtom(mce,addr));
-   sk_assert(isOriginalAtom(mce,data));
+   sk_assert(isShadowAtom(mce,vdata));
+
+   ty = typeOfIRExpr(mce->bb->tyenv, vdata);
 
    /* First, emit a definedness test for the address.  This also sets
       the address (shadow) to 'defined' following the test. */
-   complainIfUndefined( mce, addr);
+   complainIfUndefined( mce, addr );
 
    /* Now cook up a call to the relevant helper function, to write the
       data V bits into shadow memory. */
-   datavbits = expr2vbits( mce, data );
    switch (ty) {
       case Ity_I64: helper = &MC_(helperc_STOREV8);
                     hname = "MC_(helperc_STOREV8)";
@@ -1233,18 +1262,29 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
       default:      VG_(skin_panic)("memcheck:do_shadow_STle");
    }
 
+   /* Generate the actual address into addrAct. */
+   if (bias == 0) {
+      addrAct = addr;
+   } else {
+      IRType  tyAddr  = mce->hWordTy;
+      sk_assert( tyAddr == Ity_I32 || tyAddr == Ity_I64 );
+      IROp    mkAdd   = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
+      IRAtom* eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
+      addrAct = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias) );
+   }
+
    if (ty == Ity_I64) {
       /* We can't do this with regparm 2 on 32-bit platforms, since
          the back ends aren't clever enough to handle 64-bit regparm
          args.  Therefore be different. */
       di = unsafeIRDirty_0_N( 
               1/*regparms*/, hname, helper, 
-              mkIRExprVec_2( addr, datavbits ));
+              mkIRExprVec_2( addrAct, vdata ));
    } else {
       di = unsafeIRDirty_0_N( 
               2/*regparms*/, hname, helper, 
-              mkIRExprVec_2( addr,
-                             zwidenToHostWord( mce, datavbits )));
+              mkIRExprVec_2( addrAct,
+                             zwidenToHostWord( mce, vdata )));
    }
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di) );
@@ -1269,11 +1309,10 @@ static IRType szToITy ( Int n )
 static
 void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 {
-   Int    i, offset, toDo;
-   IRAtom *two, *four, *addr, *src;
-   IROp   opAdd;
-   IRType tyAddr, tySrc, tyDst;
-   IRTemp dst;
+   Int     i, offset, toDo;
+   IRAtom* src;
+   IRType  tyAddr, tySrc, tyDst;
+   IRTemp  dst;
 
    /* First check the guard. */
    complainIfUndefined(mce, d->guard);
@@ -1308,8 +1347,6 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
    /* Inputs: memory.  First set up some info needed regardless of
       whether we're doing reads or writes. */
-   four   = two = NULL;
-   opAdd  = Iop_INVALID;
    tyAddr = Ity_INVALID;
 
    if (d->mFx != Ifx_None) {
@@ -1322,36 +1359,31 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
       tyAddr = typeOfIRExpr(mce->bb->tyenv, d->mAddr);
       sk_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
-      opAdd = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
-      four  = tyAddr==Ity_I32 ? mkU32(4) : mkU64(4);
-      two   = tyAddr==Ity_I32 ? mkU32(2) : mkU64(2);
+      sk_assert(tyAddr == mce->hWordTy); /* not really right */
    }
 
    /* Deal with memory inputs (reads or modifies) */
    if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
       offset = 0;
       toDo   = d->mSize;
-      addr   = d->mAddr;
       /* chew off 32-bit chunks */
       while (toDo >= 4) {
          here = mkPCastTo( 
                    mce, Ity_I32,
-                   expr2vbits_LDle ( mce, Ity_I32, addr )
+                   expr2vbits_LDle ( mce, Ity_I32, 
+                                     d->mAddr, d->mSize - toDo )
                 );
          curr = mkUifU32(mce, here, curr);
-         addr = assignNew(mce, tyAddr,
-                               binop(opAdd, addr, four));
          toDo -= 4;
       }
       /* chew off 16-bit chunks */
       while (toDo >= 2) {
          here = mkPCastTo( 
                    mce, Ity_I32,
-                   expr2vbits_LDle ( mce, Ity_I16, addr )
+                   expr2vbits_LDle ( mce, Ity_I16, 
+                                     d->mAddr, d->mSize - toDo )
                 );
          curr = mkUifU32(mce, here, curr);
-         addr = assignNew(mce, tyAddr,
-                               binop(opAdd, addr, two));
          toDo -= 2;
       }
       sk_assert(toDo == 0); /* also need to handle 1-byte excess */
@@ -1385,21 +1417,18 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
       offset = 0;
       toDo   = d->mSize;
-      addr   = d->mAddr;
       /* chew off 32-bit chunks */
       while (toDo >= 4) {
-         do_shadow_STle( mce, addr, 
+         do_shadow_STle( mce, d->mAddr, d->mSize - toDo,
+                         NULL, /* original data */
                          mkPCastTo( mce, Ity_I32, curr ) );
-         addr = assignNew(mce, tyAddr,
-                               binop(opAdd, addr, four));
          toDo -= 4;
       }
       /* chew off 16-bit chunks */
       while (toDo >= 2) {
-         do_shadow_STle( mce, addr, 
-                         mkPCastTo( mce, Ity_I32, curr ) );
-         addr = assignNew(mce, tyAddr,
-                               binop(opAdd, addr, two));
+         do_shadow_STle( mce, d->mAddr, d->mSize - toDo,
+                         NULL, /* original data */
+                         mkPCastTo( mce, Ity_I16, curr ) );
          toDo -= 2;
       }
       sk_assert(toDo == 0); /* also need to handle 1-byte excess */
@@ -1556,7 +1585,9 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_STle:
-            do_shadow_STle( &mce, st->Ist.STle.addr, st->Ist.STle.data );
+            do_shadow_STle( &mce, st->Ist.STle.addr, 0/* addr bias */,
+                                  st->Ist.STle.data,
+                                  NULL /* shadow data */ );
             break;
 
          case Ist_Exit:

@@ -2585,7 +2585,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
                "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
 	 } else {
             VG_(message)(Vg_UserMsg, 
-               " Address %p is not stack'd, malloc'd or free'd", a);
+               " Address %p is not stack'd, malloc'd or (recently) free'd", a);
          }
          break;
       case Segment:

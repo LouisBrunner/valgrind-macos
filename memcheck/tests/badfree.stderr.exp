@@ -1,7 +1,7 @@
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (badfree.c:12)
- Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)

@@ -362,7 +362,6 @@ Bool VG_(deliver_signals) ( ThreadId tid )
 
 static void VG_(oursignalhandler) ( Int sigNo )
 {
-   Bool          needs_to_be_delivered;
    Int           dummy_local;
    vki_ksigset_t saved_procmask;
 
@@ -395,8 +394,6 @@ static void VG_(oursignalhandler) ( Int sigNo )
    vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])));
 
    VG_(block_all_host_signals)( &saved_procmask );
-
-   needs_to_be_delivered = False;
 
    if (VG_(sighandler)[sigNo] == NULL) {
       if (VG_(clo_trace_signals)) {
@@ -434,16 +431,14 @@ static void VG_(oursignalhandler) ( Int sigNo )
          VG_(add_to_msg)("queued" );
          VG_(end_msg)();
       }
-      needs_to_be_delivered = True;
    }
 
    /* We've finished messing with the queue, so re-enable host
       signals. */
    VG_(restore_host_signals)( &saved_procmask );
 
-   if (needs_to_be_delivered 
-       && (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
-           || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL)) {
+   if ((sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
+       || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL)) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
       VG_(longjmpd_on_signal) = sigNo;

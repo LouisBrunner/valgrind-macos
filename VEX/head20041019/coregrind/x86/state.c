@@ -118,6 +118,27 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
    /* WORD offsets in this column */
    VGOFF_(m_vex) = VG_(alloc_BaB)( (3 + sizeof(VexGuestX86State)) / 4 );
 
+   /* Set up the new vex integer state in a marginally safe way. */
+   BASEBLOCK_VEX->guest_ESP = esp_at_startup;
+   BASEBLOCK_VEX->guest_EIP = client_eip;
+   BASEBLOCK_VEX->guest_CC_OP = 0; /* CC_OP_COPY */
+   BASEBLOCK_VEX->guest_CC_SRC = 0;
+   BASEBLOCK_VEX->guest_CC_DST = 0;
+
+   BASEBLOCK_VEX->guest_EAX = BASEBLOCK_VEX->guest_EBX
+                            = BASEBLOCK_VEX->guest_ECX
+                            = BASEBLOCK_VEX->guest_EDX
+                            = BASEBLOCK_VEX->guest_ESI
+                            = BASEBLOCK_VEX->guest_EDI
+                            = BASEBLOCK_VEX->guest_EBP
+                            = 0;
+
+   BASEBLOCK_VEX->guest_DFLAG = 1; /* forwards */
+
+   /* set up an initial FPU state (doesn't really matter what it is,
+      so long as it's somewhat valid) */
+   vex_initialise_x87(BASEBLOCK_VEX);
+
    if (VG_(needs).shadow_regs) {
       /* 9   */ VGOFF_(sh_eax)    = VG_(alloc_BaB_1_set)(0);
       /* 10  */ VGOFF_(sh_ecx)    = VG_(alloc_BaB_1_set)(0);
@@ -147,14 +168,16 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
 {
    /* (9/10 or 18/19) + n_compact_helpers */
-   VGOFF_(m_eip) = VG_(alloc_BaB_1_set)(client_eip);
-
+   VGOFF_(m_eip) 
+      = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
+   VG_(baseBlock)[VGOFF_(m_eip)] = client_eip;
+   VG_(printf)("o_vex %d, o_eip %d\n", VGOFF_(m_vex), VGOFF_(m_eip));
    /* There are currently 24 spill slots */
    /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
     * boundary at >= 32 words, but most spills are to low numbered spill
     * slots, so the ones above the boundary don't see much action. */
    VGOFF_(spillslots) = VG_(alloc_BaB)(VG_MAX_SPILLSLOTS);
-
+  VG_(printf)("SPILL SLOTS start at %d\n", VGOFF_(spillslots));
    /* I gave up counting at this point.  Since they're above the
       short-amode-boundary, there's no point. */
 
@@ -162,10 +185,6 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
    VG_(have_ssestate) = False;
    //	   VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
    //   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   /* set up an initial FPU state (doesn't really matter what it is,
-      so long as it's somewhat valid) */
-   vex_initialise_x87(BASEBLOCK_VEX);
 
    if (0) {
       if (VG_(have_ssestate))

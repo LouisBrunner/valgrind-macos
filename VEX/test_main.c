@@ -73,7 +73,7 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 1,  /* verbosity */
+                 0,  /* verbosity */
                  //False, 
 		 True, /* valgrind support */
                  &vcon );
@@ -117,7 +117,10 @@ int main ( int argc, char** argv )
       LibVEX_Translate ( InsnSetX86, InsnSetX86,
 			 origbuf, (Addr64)orig_addr, &orig_used,
 			 transbuf, N_TRANSBUF, &trans_used,
-			 NULL, NULL, 0 );
+			 NULL, /* instrument */
+                         NULL, /* tool-findhelper */
+                         NULL, /* access checker */
+                         0 );
       if (tres != TransOK)
          printf("\ntres = %d\n", (Int)tres);
       assert(tres == TransOK);

@@ -1,12 +1,4 @@
-
-SUBDIRS = . docs tests
-
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
-		@PREFERRED_STACK_BOUNDARY@ -g
-
-valdir = $(libdir)/valgrind
-inplacedir = $(top_builddir)/.in_place
+include $(top_srcdir)/Makefile.tool.am
 
 val_PROGRAMS = vgskin_helgrind.so vgpreload_helgrind.so
 
@@ -22,7 +14,3 @@ hgincludedir = $(includedir)/valgrind
 
 hginclude_HEADERS = helgrind.h
 
-all-local:
-	mkdir -p $(inplacedir)
-	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))
-	ln -f -s $(addprefix $(top_builddir)/$(subdir)/,$(val_PROGRAMS)) $(inplacedir)

@@ -1,13 +1,10 @@
+include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 SUBDIRS = x86 demangle . docs
 
-add_includes = -I$(srcdir)/demangle -I$(top_builddir)/include \
-		-I$(top_srcdir)/include -I$(srcdir)/x86
-
-valdir = $(libdir)/valgrind
-inplacedir = $(top_builddir)/.in_place
-
-AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(valdir)"\" \
+AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
+		-I$(srcdir)/x86 \
 		-DKICKSTART_BASE=$(KICKSTART_BASE)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32

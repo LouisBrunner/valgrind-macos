@@ -1,7 +1,9 @@
 
 AUTOMAKE_OPTIONS = foreign 1.6 dist-bzip2
 
-## include must be first for vg_skin.h
+include $(top_srcdir)/Makefile.all.am
+
+## include must be first for tool.h
 ## addrcheck must come after memcheck, for mac_*.o
 SUBDIRS = 	include coregrind . docs tests auxprogs \
 		memcheck \
@@ -12,13 +14,6 @@ SUBDIRS = 	include coregrind . docs tests auxprogs \
 		massif \
 		lackey \
 		none
-
-AM_CPPFLAGS = 
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
-		@PREFERRED_STACK_BOUNDARY@ -g
-
-valdir = $(libdir)/valgrind
-inplacedir = $(top_builddir)/.in_place
 
 SUPP_FILES = \
 	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \
@@ -44,7 +39,9 @@ EXTRA_DIST = \
 	ACKNOWLEDGEMENTS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
-	valgrind.spec.in valgrind.pc.in
+	valgrind.spec.in valgrind.pc.in \
+	Makefile.all.am Makefile.tool.am Makefile.core-AM_CPPFLAGS.am \
+	Makefile.tool-inplace.am
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

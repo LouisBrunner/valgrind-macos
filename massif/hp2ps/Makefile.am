@@ -1,11 +1,6 @@
+include $(top_srcdir)/Makefile.all.am
 
-valdir = $(libdir)/valgrind
-inplacedir = $(top_builddir)/.in_place
-
-AM_CPPFLAGS = $(add_includes)
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
-                @PREFERRED_STACK_BOUNDARY@ -g
-AM_CCASFLAGS = $(add_includes)
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g
 
 val_PROGRAMS = hp2ps 
 
@@ -59,8 +54,5 @@ noinst_HEADERS = \
        TraceElement.h \
        Utilities.h
 
-all-local:
-	mkdir -p $(inplacedir)
-	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))
-	ln -f -s $(addprefix ../$(subdir)/,$(val_PROGRAMS)) $(inplacedir)
+include $(top_srcdir)/Makefile.tool-inplace.am
 

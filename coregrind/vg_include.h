@@ -1047,7 +1047,6 @@ extern void VG_(copy_m_state_static_to_baseBlock) ( void );
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
-extern void VG_(nvidia_moan) ( void );
 
 /* The stack on which Valgrind runs.  We can't use the same stack as the
    simulatee -- that's an important design decision.  */

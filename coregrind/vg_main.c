@@ -1516,15 +1516,6 @@ void VG_(unimplemented) ( Char* msg )
 }
 
 
-void VG_(nvidia_moan) ( void) 
-{
-   VG_(message)(Vg_UserMsg,
-      "The following failure _might_ be caused by linking to NVidia's\n   "
-      "libGL.so, so avoiding it, if you can, _might_ help you.  For example,\n   "
-      "re-build any Qt libraries you are using without OpenGL support.");
-}
-
-
 /* ---------------------------------------------------------------------
    Sanity check machinery (permanently engaged).
    ------------------------------------------------------------------ */

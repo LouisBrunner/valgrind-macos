@@ -4465,8 +4465,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    default:
       VG_(printf)("disInstr: unhandled opcode 0x%x then 0x%x\n", 
                   (UInt)opc, (UInt)getUChar(eip));
-      if (opc == 0x8C)
-         VG_(nvidia_moan)();
       VG_(panic)("unhandled x86 opcode");
    }
 

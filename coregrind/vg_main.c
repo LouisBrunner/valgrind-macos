@@ -1481,7 +1481,7 @@ static void usage ( Bool debug_help )
 "    --log-file-exactly=<file> log messages to <file>\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
-"    --num-callers=<number>    show <num> callers in stack traces [4]\n"
+"    --num-callers=<number>    show <num> callers in stack traces [12]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"

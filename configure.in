@@ -50,25 +50,6 @@ case "${gcc_version}" in
 	;;
 esac
 
-# does this compiler support -mpreferred-stack-boundary=2 ?
-AC_MSG_CHECKING([for extra compiler options])
-
-CFLAGS="-mpreferred-stack-boundary=2"
-
-AC_TRY_COMPILE(, [
-
-int main () { return 0 ; }
-
-],
-[
-PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
-AC_MSG_RESULT([$PREFERRED_STACK_BOUNDARY])
-], [
-PREFERRED_STACK_BOUNDARY=""
-AC_MSG_RESULT([none])
-])
-
-AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 # Checks for the platform
 AC_CANONICAL_HOST
@@ -256,6 +237,28 @@ EOF
 
    rm -f conftest conftest.c
 fi
+
+# does this compiler support -mpreferred-stack-boundary=2 ?
+AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
+
+CFLAGS="-mpreferred-stack-boundary=2"
+
+AC_TRY_COMPILE(, [
+
+int main () { return 0 ; }
+
+],
+[
+PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
+AC_MSG_RESULT([$PREFERRED_STACK_BOUNDARY])
+], [
+PREFERRED_STACK_BOUNDARY=""
+AC_MSG_RESULT([no])
+])
+
+AC_SUBST(PREFERRED_STACK_BOUNDARY)
+
+
 
 # Checks for header files.
 AC_HEADER_STDC

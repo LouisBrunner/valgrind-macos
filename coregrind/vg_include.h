@@ -1450,11 +1450,8 @@ extern Addr VG_(sysinfo_page_addr);
    which match pattern. */
 extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
 
-/* Something of a function looking for a home ... start up GDB.  This
-   is called from VG_(swizzle_esp_then_start_GDB) and so runs on the
-   *client's* stack.  This is necessary to give GDB the illusion that
-   the client program really was running on the real cpu. */
-extern void VG_(start_GDB_whilst_on_client_stack) ( void );
+/* Something of a function looking for a home ... start up GDB. */
+extern void VG_(start_GDB) ( Int tid );
 
 /* VG_(bbs_done) in include/vg_skin.h */
 
@@ -1681,11 +1678,6 @@ extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg,
    ------------------------------------------------------------------ */
 
 extern void VG_(switch_to_real_CPU) ( void );
-
-extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,
-                                              Addr m_esp_at_error,
-                                              Addr m_ebp_at_error );
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_dispatch.S

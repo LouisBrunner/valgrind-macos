@@ -253,21 +253,8 @@ void do_actions_on_error(Error* err, Bool allow_GDB_attach)
    if (allow_GDB_attach &&
        VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) 
    {
-      Addr m_eip, m_esp, m_ebp; 
-      
-      if (VG_(is_running_thread)( err->tid )) {
-         m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-         m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-         m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-      } else {
-         ThreadState* tst = & VG_(threads)[ err->tid ];
-         m_eip = tst->m_eip;
-         m_esp = tst->m_esp;
-         m_ebp = tst->m_ebp;
-      }
-      VG_(printf)("starting gdb with eip=%p esp=%p ebp=%p\n",
-		  m_eip, m_esp, m_ebp);
-      VG_(swizzle_esp_then_start_GDB)( m_eip, m_esp, m_ebp );
+      VG_(printf)("starting gdb\n");
+      VG_(start_GDB)( err->tid );
    }
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(is_action_requested)( "Print suppression",

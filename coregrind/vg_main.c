@@ -31,6 +31,13 @@
 
 #include "vg_include.h"
 
+#include <stdlib.h>
+#include <sys/ptrace.h>
+#include <sys/signal.h>
+#include <sys/user.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 /* ---------------------------------------------------------------------
    Compute offsets into baseBlock.  See comments in vg_include.h.
    ------------------------------------------------------------------ */
@@ -1745,27 +1752,86 @@ void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
       *output++ = '\0';
 }
 
-/* RUNS ON THE CLIENT'S STACK, but on the real CPU.  Start GDB and get
-   it to attach to this process.  Called if the user requests this
-   service after an error has been shown, so she can poke around and
-   look at parameters, memory, etc.  You can't meaningfully get GDB to
-   continue the program, though; to continue, quit GDB.  */
-void VG_(start_GDB_whilst_on_client_stack) ( void )
+/* Start GDB and get it to attach to this process.  Called if the user
+   requests this service after an error has been shown, so she can
+   poke around and look at parameters, memory, etc.  You can't
+   meaningfully get GDB to continue the program, though; to continue,
+   quit GDB.  */
+void VG_(start_GDB) ( Int tid )
 {
-   Int   res;
-   UChar buf[100];
+   Int pid;
 
-   VG_(sprintf)(buf, "%s -nw /proc/%d/fd/%d %d",
-                VG_(clo_GDB_path), VG_(getpid)(), VG_(clexecfd), VG_(getpid)());
-   VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
-   res = VG_(system)(buf);
-   if (res == 0) {      
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, 
-         "GDB has detached.  Valgrind regains control.  We continue.");
-   } else {
-      VG_(message)(Vg_UserMsg, "Apparently failed!");
-      VG_(message)(Vg_UserMsg, "");
+   if ((pid = fork()) == 0)
+   {
+      ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+      VG_(kkill)(VG_(getpid)(), VKI_SIGSTOP);
+   }
+   else if (pid > 0) 
+   {
+      struct user_regs_struct regs;
+      Int status;
+      Int res;
+
+      if (VG_(is_running_thread)( tid )) {
+         regs.xcs = VG_(baseBlock)[VGOFF_(m_cs)];
+         regs.xss = VG_(baseBlock)[VGOFF_(m_ss)];
+         regs.xds = VG_(baseBlock)[VGOFF_(m_ds)];
+         regs.xes = VG_(baseBlock)[VGOFF_(m_es)];
+         regs.xfs = VG_(baseBlock)[VGOFF_(m_fs)];
+         regs.xgs = VG_(baseBlock)[VGOFF_(m_gs)];
+         regs.eax = VG_(baseBlock)[VGOFF_(m_eax)];
+         regs.ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
+         regs.ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
+         regs.edx = VG_(baseBlock)[VGOFF_(m_edx)];
+         regs.esi = VG_(baseBlock)[VGOFF_(m_esi)];
+         regs.edi = VG_(baseBlock)[VGOFF_(m_edi)];
+         regs.ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+         regs.esp = VG_(baseBlock)[VGOFF_(m_esp)];
+         regs.eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+         regs.eip = VG_(baseBlock)[VGOFF_(m_eip)];
+      } else {
+         ThreadState* tst = & VG_(threads)[ tid ];
+         
+         regs.xcs = tst->m_cs;
+         regs.xss = tst->m_ss;
+         regs.xds = tst->m_ds;
+         regs.xes = tst->m_es;
+         regs.xfs = tst->m_fs;
+         regs.xgs = tst->m_gs;
+         regs.eax = tst->m_eax;
+         regs.ebx = tst->m_ebx;
+         regs.ecx = tst->m_ecx;
+         regs.edx = tst->m_edx;
+         regs.esi = tst->m_esi;
+         regs.edi = tst->m_edi;
+         regs.ebp = tst->m_ebp;
+         regs.esp = tst->m_esp;
+         regs.eflags = tst->m_eflags;
+         regs.eip = tst->m_eip;
+      }
+
+      if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
+          WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
+          ptrace(PTRACE_SETREGS, pid, NULL, &regs) == 0 &&
+          ptrace(PTRACE_DETACH, pid, NULL, SIGSTOP) == 0) {
+         UChar buf[VG_(strlen)(VG_(clo_GDB_path)) + 100];
+
+         VG_(sprintf)(buf, "%s -nw /proc/%d/fd/%d %d",
+                      VG_(clo_GDB_path), VG_(main_pid), VG_(clexecfd), pid);
+         VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
+         res = VG_(system)(buf);
+         if (res == 0) {      
+            VG_(message)(Vg_UserMsg, "");
+            VG_(message)(Vg_UserMsg, 
+                         "GDB has detached.  Valgrind regains control.  We continue.");
+         } else {
+            VG_(message)(Vg_UserMsg, "Apparently failed!");
+            VG_(message)(Vg_UserMsg, "");
+         }
+      }
+
+      VG_(kkill)(pid, VKI_SIGKILL);
+      VG_(waitpid)(pid, &status, 0);
    }
 }
 

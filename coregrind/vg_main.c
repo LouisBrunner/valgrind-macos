@@ -501,6 +501,9 @@ static void layout_client_space(Addr argc_addr)
 
 static void layout_remaining_space(float ratio)
 {
+   Int   ires;
+   void* vres;
+   
    /* This tries to give the client as large as possible address space while
     * taking into account the tool's shadow needs.  */
    addr_t client_size = ROUNDDN((VG_(valgrind_base) - REDZONE_SIZE) / (1. + ratio), 
@@ -542,17 +545,21 @@ static void layout_remaining_space(float ratio)
 #undef SEGSIZE
 
    // Ban redzone
-   mmap((void *)VG_(client_end), REDZONE_SIZE, PROT_NONE,
-	MAP_FIXED|MAP_ANON|MAP_PRIVATE, -1, 0);
+   vres = mmap((void *)VG_(client_end), REDZONE_SIZE, PROT_NONE,
+               MAP_FIXED|MAP_ANON|MAP_PRIVATE, -1, 0);
+   vg_assert((void*)-1 != vres);
 
    // Make client hole
-   munmap((void*)VG_(client_base), client_size);
+   ires = munmap((void*)VG_(client_base), client_size);
+   vg_assert(0 == ires);
 
    // Map shadow memory.
    // Initially all inaccessible, incrementally initialized as it is used
-   if (shadow_size != 0)
-      mmap((char *)VG_(shadow_base), shadow_size, PROT_NONE,
-         MAP_PRIVATE|MAP_ANON|MAP_FIXED, -1, 0);
+   if (shadow_size != 0) {
+      vres = mmap((char *)VG_(shadow_base), shadow_size, PROT_NONE,
+                  MAP_PRIVATE|MAP_ANON|MAP_FIXED, -1, 0);
+      vg_assert((void*)-1 != vres);
+   }
 }
 
 /*====================================================================*/
@@ -980,6 +987,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 			       const struct exeinfo *info,
                                UInt** client_auxv)
 {
+   void* res;
    char **cpp;
    char *strtab;		/* string table */
    char *stringbase;
@@ -1066,11 +1074,10 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
-   mmap((void *)PGROUNDDN(cl_esp),
-	VG_(client_end) - PGROUNDDN(cl_esp),
-	PROT_READ | PROT_WRITE | PROT_EXEC, 
-	MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-   
+   res = mmap((void *)PGROUNDDN(cl_esp), VG_(client_end) - PGROUNDDN(cl_esp),
+	      PROT_READ | PROT_WRITE | PROT_EXEC, 
+	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+   vg_assert((void*)-1 != res); 
 
    /* ==================== copy client stack ==================== */
 

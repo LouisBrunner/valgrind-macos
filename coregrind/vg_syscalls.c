@@ -998,7 +998,8 @@ static Addr do_brk(Addr newbrk)
 			current, newaddr, current-newaddr);
 
 	 if (newaddr != current) {
-	    VG_(munmap)((void *)newaddr, current - newaddr);
+	    int res = VG_(munmap)((void *)newaddr, current - newaddr);
+            vg_assert(0 == res);
 	 }
 	 ret = newbrk;
       }

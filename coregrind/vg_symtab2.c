@@ -1105,7 +1105,8 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
    VG_(close)(fd);
    
    if (calc_gnu_debuglink_crc32(0, (UChar*)addr, *size) != crc) {
-      VG_(munmap)((void*)addr, *size);
+      int res = VG_(munmap)((void*)addr, *size);
+      vg_assert(0 == res);
       return 0;
    }
    
@@ -1492,11 +1493,17 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    }
    res = True;
 
-  out:
+  out: {
+   Int m_res;
    /* Last, but not least, heave the image(s) back overboard. */
-   if (dimage) VG_(munmap) ( (void*)dimage, n_dimage );
-   VG_(munmap) ( (void*)oimage, n_oimage );
+   if (dimage) {
+      m_res = VG_(munmap) ( (void*)dimage, n_dimage );
+      vg_assert(0 == m_res);
+   }
+   m_res = VG_(munmap) ( (void*)oimage, n_oimage );
+   vg_assert(0 == m_res);
    return res;
+  } 
 }
 
 /*------------------------------------------------------------*/

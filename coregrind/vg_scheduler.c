@@ -1939,8 +1939,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       if (VG_(threads)[tid].stack_size > 0)
          VG_(client_free)(VG_(threads)[tid].stack_base);
       new_stack = VG_(client_alloc)(0, new_stk_szb, 
-				    VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC, 
+				    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
 				    SF_STACK);
+      vg_assert(0 != new_stack);
       VG_(threads)[tid].stack_base = new_stack;
       VG_(threads)[tid].stack_size = new_stk_szb;
       VG_(threads)[tid].stack_highest_word

@@ -99,6 +99,10 @@ static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 jmp_buf VG_(scheduler_jmpbuf);
+/* This says whether scheduler_jmpbuf is actually valid.  Needed so
+   that our signal handler doesn't longjmp when the buffer isn't
+   actually valid. */
+Bool    VG_(scheduler_jmpbuf_valid) = False;
 /* ... and if so, here's the signal which caused it to do so. */
 Int     VG_(longjmpd_on_signal);
 
@@ -466,19 +470,26 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(VG_(bbs_to_go) > 0);
+   vg_assert(!VG_(scheduler_jmpbuf_valid));
 
    VGP_PUSHCC(VgpRun);
    VG_(load_thread_state) ( tid );
    if (__builtin_setjmp(VG_(scheduler_jmpbuf)) == 0) {
       /* try this ... */
+      VG_(scheduler_jmpbuf_valid) = True;
       trc = VG_(run_innerloop)();
+      VG_(scheduler_jmpbuf_valid) = False;
       /* We get here if the client didn't take a fault. */
    } else {
       /* We get here if the client took a fault, which caused our
          signal handler to longjmp. */
+      VG_(scheduler_jmpbuf_valid) = False;
       vg_assert(trc == 0);
       trc = VG_TRC_UNRESUMABLE_SIGNAL;
    }
+
+   vg_assert(!VG_(scheduler_jmpbuf_valid));
+
    VG_(save_thread_state) ( tid );
    VGP_POPCC;
    return trc;
@@ -596,6 +607,9 @@ void VG_(scheduler_init) ( void )
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
+
+   /* Not running client code right now. */
+   VG_(scheduler_jmpbuf_valid) = False;
 }
 
 

@@ -1258,6 +1258,7 @@ Bool VG_(deliver_signals) ( void )
 static 
 void vg_oursignalhandler ( Int sigNo )
 {
+   static UInt   segv_warns = 0;
    ThreadId      tid;
    Int           dummy_local;
    Bool          sane;
@@ -1352,12 +1353,25 @@ void vg_oursignalhandler ( Int sigNo )
       signals. */
    VG_(restore_all_host_signals)( &saved_procmask );
 
-   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
-       || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL) {
+   if ( (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
+         || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL)
+        &&
+        VG_(scheduler_jmpbuf_valid)
+      ) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
       VG_(longjmpd_on_signal) = sigNo;
       __builtin_longjmp(VG_(scheduler_jmpbuf),1);
+   }
+
+   if (sigNo == VKI_SIGSEGV && !VG_(scheduler_jmpbuf_valid)) {
+      if (++segv_warns <= 3) {
+	VG_(message)(Vg_UserMsg, 
+           "Warning: SIGSEGV not in user code; either from syscall kill()" );
+	VG_(message)(Vg_UserMsg, 
+           "   or possible Valgrind bug.  "
+           "This message is only shown 3 times." );
+      }
    }
 }
 

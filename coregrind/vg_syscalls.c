@@ -1043,6 +1043,8 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
    The Main Entertainment ...
    ------------------------------------------------------------------ */
 
+#define MayBlock   (1 << 0)
+#define PostOnFail (1 << 1)
 
 #define PRE(x)	\
 	static void before_##x(ThreadId tid, ThreadState *tst)
@@ -4076,9 +4078,7 @@ PRE(nanosleep)
 
 POST(nanosleep)
 {
-   /* Somewhat bogus ... is only written by the kernel if
-      res == -1 && errno == EINTR. */
-   if (arg2 != (UInt)NULL)
+   if (arg2 != (UInt)NULL && res == -VKI_EINTR)
       VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
 }
 
@@ -5504,12 +5504,12 @@ POST(io_cancel)
 #undef arg6
 
 struct sys_info {
-   Bool	may_block;		/* is a potentially blocking syscall */
+   UInt	flags;
    void	(*before)(ThreadId tid, ThreadState *tst);
    void	(*after)(ThreadId tid, ThreadState *tst);
 };
-#define SYSB_(name, blk)	[__NR_##name] = { blk, before_##name, NULL }
-#define SYSBA(name, blk)	[__NR_##name] = { blk, before_##name, after_##name }
+#define SYSB_(name, flags)	[__NR_##name] = { flags, before_##name, NULL }
+#define SYSBA(name, flags)	[__NR_##name] = { flags, before_##name, after_##name }
 
 static void bad_before(ThreadId tid, ThreadState *tst)
 {
@@ -5535,245 +5535,245 @@ static const struct sys_info bad_sys = { False, bad_before, bad_after };
 
 static const struct sys_info special_sys[] = {
    /* special */
-   SYSB_(exit_group,		False),
-   SYSB_(exit,			False),
-   SYSB_(clone,			False),
+   SYSB_(exit_group,		0),
+   SYSB_(exit,			0),
+   SYSB_(clone,			0),
 
-   SYSB_(modify_ldt,		False),
-   SYSB_(set_thread_area,	False),
-   SYSB_(get_thread_area,	False),
-   SYSB_(set_tid_address,	False),
+   SYSB_(modify_ldt,		0),
+   SYSB_(set_thread_area,	0),
+   SYSB_(get_thread_area,	0),
+   SYSB_(set_tid_address,	0),
 
-   SYSB_(execve,		False),
-   SYSB_(brk,			False),
-   SYSB_(mmap,			False),
-   SYSB_(mremap,		False),
+   SYSB_(execve,		0),
+   SYSB_(brk,			0),
+   SYSB_(mmap,			0),
+   SYSB_(mremap,		0),
 
-   SYSB_(io_setup,              False),
-   SYSB_(io_destroy,            False),
+   SYSB_(io_setup,              0),
+   SYSB_(io_destroy,            0),
 
 #if SIGNAL_SIMULATION
-   SYSBA(sigaltstack,		False),
-   SYSBA(rt_sigaction,		False),
-   SYSBA(sigaction,		False),
-   SYSBA(rt_sigprocmask,	False),
-   SYSBA(sigprocmask,		False),
+   SYSBA(sigaltstack,		0),
+   SYSBA(rt_sigaction,		0),
+   SYSBA(sigaction,		0),
+   SYSBA(rt_sigprocmask,	0),
+   SYSBA(sigprocmask,		0),
 #endif /* SIGNAL_SIMULATION */
 };
 #define MAX_SPECIAL_SYS		(sizeof(special_sys)/sizeof(special_sys[0]))
 
 static const struct sys_info sys_info[] = {
-   SYSBA(ptrace,		False),
-   SYSB_(mount,			True),
-   SYSB_(umount,		False),
+   SYSBA(ptrace,		0),
+   SYSB_(mount,			MayBlock),
+   SYSB_(umount,		0),
 
-   SYSB_(setresgid,		False),
-   SYSB_(vhangup,		False),
-   SYSB_(iopl,			False),
+   SYSB_(setresgid,		0),
+   SYSB_(vhangup,		0),
+   SYSB_(iopl,			0),
 
-   SYSB_(setxattr,		True),
-   SYSB_(lsetxattr,		True),
-   SYSB_(fsetxattr,		True),
-   SYSBA(getxattr,		True),
-   SYSBA(lgetxattr,		True),
-   SYSBA(fgetxattr,		True),
-   SYSBA(listxattr,		True),
-   SYSBA(llistxattr,		True),
-   SYSBA(flistxattr,		True),
-   SYSB_(removexattr,		True),
-   SYSB_(lremovexattr,		True),
-   SYSB_(fremovexattr,		True),
+   SYSB_(setxattr,		MayBlock),
+   SYSB_(lsetxattr,		MayBlock),
+   SYSB_(fsetxattr,		MayBlock),
+   SYSBA(getxattr,		MayBlock),
+   SYSBA(lgetxattr,		MayBlock),
+   SYSBA(fgetxattr,		MayBlock),
+   SYSBA(listxattr,		MayBlock),
+   SYSBA(llistxattr,		MayBlock),
+   SYSBA(flistxattr,		MayBlock),
+   SYSB_(removexattr,		MayBlock),
+   SYSB_(lremovexattr,		MayBlock),
+   SYSB_(fremovexattr,		MayBlock),
 
-   SYSB_(quotactl,		False),
-   SYSBA(lookup_dcookie,	False),
+   SYSB_(quotactl,		0),
+   SYSBA(lookup_dcookie,	0),
 
-   SYSB_(truncate64,		True),
-   SYSB_(fdatasync,		True),
-   SYSB_(msync,			True),
+   SYSB_(truncate64,		MayBlock),
+   SYSB_(fdatasync,		MayBlock),
+   SYSB_(msync,			MayBlock),
 
-   SYSBA(getpmsg,		True),
-   SYSB_(putpmsg,		True),
+   SYSBA(getpmsg,		MayBlock),
+   SYSB_(putpmsg,		MayBlock),
 
-   SYSBA(syslog,		True),
-   SYSB_(personality,		False),
-   SYSB_(chroot,		False),
-   SYSB_(madvise,		True),
-   SYSB_(nice,			False),
-   SYSB_(setresgid32,		False),
-   SYSB_(setfsuid32,		False),
-   SYSBA(_sysctl,		False),
+   SYSBA(syslog,		MayBlock),
+   SYSB_(personality,		0),
+   SYSB_(chroot,		0),
+   SYSB_(madvise,		MayBlock),
+   SYSB_(nice,			0),
+   SYSB_(setresgid32,		0),
+   SYSB_(setfsuid32,		0),
+   SYSBA(_sysctl,		0),
 
-   SYSB_(sched_getscheduler,	False),	/* ??? */
-   SYSB_(sched_setscheduler,	False),	/* ??? */
+   SYSB_(sched_getscheduler,	0),	/* ??? */
+   SYSB_(sched_setscheduler,	0),	/* ??? */
 
-   SYSB_(mlock,			True),
-   SYSB_(munlock,		True),
-   SYSB_(mlockall,		True),
-   SYSB_(munlockall,		True),
+   SYSB_(mlock,			MayBlock),
+   SYSB_(munlock,		MayBlock),
+   SYSB_(mlockall,		MayBlock),
+   SYSB_(munlockall,		MayBlock),
 
-   SYSB_(sched_get_priority_max,	False),	/* ??? */
-   SYSB_(sched_get_priority_min,	False),	/* ??? */
+   SYSB_(sched_get_priority_max,	0),	/* ??? */
+   SYSB_(sched_get_priority_min,	0),	/* ??? */
 
-   SYSB_(setpriority,		False),
-   SYSB_(getpriority,		False),
+   SYSB_(setpriority,		0),
+   SYSB_(getpriority,		0),
 
-   SYSB_(setfsgid,		False),
-   SYSB_(setregid,		False),
-   SYSB_(setresuid,		False),
-   SYSB_(setfsuid,		False),
+   SYSB_(setfsgid,		0),
+   SYSB_(setregid,		0),
+   SYSB_(setresuid,		0),
+   SYSB_(setfsuid,		0),
 
-   SYSBA(sendfile,		True),
-   SYSBA(sendfile64,		True),
-   SYSB_(pwrite64,		True),
-   SYSB_(sync,			True),
-   SYSBA(fstatfs,		False),
-   SYSB_(getsid,		False),
-   SYSBA(pread64,		True),
-   SYSB_(mknod,			False),
-   SYSB_(flock,			True),
-   SYSB_(init_module,		True),
-   SYSB_(ioperm,		False),
-   SYSBA(capget,		False),
-   SYSB_(capset,		False),
-   SYSB_(access,		False),
-   SYSB_(chdir,			False),
-   SYSB_(chmod,			False),
-   SYSB_(chown32,		False),
-   SYSB_(lchown32,		False),
-   SYSB_(chown,			False),
-   SYSBA(close,			False),
-   SYSBA(dup,			False),
-   SYSBA(dup2,			False),
-   SYSBA(fcntl,			True),
-   SYSB_(fchdir,		False),
-   SYSB_(fchown32,		False),
-   SYSB_(fchown,		False),
-   SYSB_(fchmod,		False),
-   SYSBA(fcntl64,		True),
-   SYSBA(fstat,			False),
-   SYSBA(fork,			False),
-   SYSB_(fsync,			True),
-   SYSB_(ftruncate,		True),
-   SYSB_(ftruncate64,		True),
-   SYSBA(getdents,		True),
-   SYSBA(getdents64,		True),
-   SYSBA(getgroups32,		True),
-   SYSBA(getgroups,		False),
-   SYSBA(getcwd,		False),
-   SYSB_(geteuid,		False),
-   SYSB_(geteuid32,		False),
-   SYSB_(getegid,		False),
-   SYSB_(getegid32,		False),
-   SYSB_(getgid,		False),
-   SYSB_(getgid32,		False),
-   SYSB_(getpid,		False),
-   SYSB_(getpgid,		False),
-   SYSB_(getpgrp,		False),
-   SYSB_(getppid,		False),
-   SYSBA(getresgid,		False),
-   SYSBA(getresgid32,		False),
-   SYSBA(getresuid,		False),
-   SYSBA(getresuid32,		False),
-   SYSBA(ugetrlimit,		False),
-   SYSBA(getrlimit,		False),
-   SYSBA(getrusage,		False),
-   SYSBA(gettimeofday,		False),
-   SYSB_(getuid,		False),
-   SYSB_(getuid32,		False),
-   SYSBA(ipc,			True),
-   SYSBA(ioctl,			True),
-   SYSBA(kill,			False),
-   SYSB_(link,			True),
-   SYSB_(lseek,			False),
-   SYSBA(_llseek,		False),
-   SYSBA(lstat,			False),
-   SYSBA(lstat64,		False),
-   SYSB_(mkdir,			True),
-   SYSBA(mprotect,		False),
-   SYSBA(munmap,		False),
-   SYSBA(mincore,		False),
-   SYSBA(nanosleep,		True),
-   SYSB_(_newselect,		True),
-   SYSBA(open,			True),
-   SYSBA(read,			True),
-   SYSB_(write,			True),
-   SYSBA(creat,			True),
-   SYSBA(pipe,			False),
-   SYSBA(poll,			True),
-   SYSBA(epoll_create,          False),
-   SYSB_(epoll_ctl,             False),
-   SYSBA(epoll_wait,		True),
-   SYSBA(readlink,		False),
-   SYSBA(readv,			True),
-   SYSB_(rename,		False),
-   SYSB_(rmdir,			True),
-   SYSBA(sched_setparam,	False),	/* ??? */
-   SYSBA(sched_getparam,	False),	/* ??? */
-   SYSB_(sched_yield,		False),	/* ??? */
-   SYSB_(select,		True),
-   SYSB_(setfsgid32,		False),
-   SYSB_(setgid32,		False),
-   SYSB_(setgid,		False),
-   SYSB_(setsid,		False),
-   SYSB_(setgroups32,		False),
-   SYSB_(setgroups,		False),
-   SYSBA(setpgid,		False),
-   SYSB_(setregid32,		False),
-   SYSB_(setresuid32,		False),
-   SYSB_(setreuid32,		False),
-   SYSB_(setreuid,		False),
-   SYSB_(setrlimit,		False),
-   SYSB_(setuid32,		False),
-   SYSB_(setuid,		False),
-   SYSBA(socketcall,		True),
-   SYSBA(stat,			False),
-   SYSBA(statfs,		False),
-   SYSBA(statfs64,		False),
-   SYSB_(symlink,		True),
-   SYSBA(stat64,		False),
-   SYSBA(fstat64,		False),
-   SYSBA(sysinfo,		False),
-   SYSBA(time,			False),
-   SYSBA(times,			False),
-   SYSB_(truncate,		True),
-   SYSB_(umask,			False),
-   SYSB_(unlink,		True),
-   SYSBA(uname,			False),
-   SYSB_(utime,			True),
-   SYSB_(utimes,                False),
-   SYSBA(waitpid,		True),
-   SYSBA(wait4,			True),
-   SYSB_(writev,		True),
-   SYSB_(prctl,			True),
-   SYSBA(adjtimex,		False),
-   SYSBA(mmap2,			False),
-   SYSBA(clock_gettime,         False),
-   SYSBA(futex,                 True),
-   SYSB_(acct,                  False),
+   SYSBA(sendfile,		MayBlock),
+   SYSBA(sendfile64,		MayBlock),
+   SYSB_(pwrite64,		MayBlock),
+   SYSB_(sync,			MayBlock),
+   SYSBA(fstatfs,		0),
+   SYSB_(getsid,		0),
+   SYSBA(pread64,		MayBlock),
+   SYSB_(mknod,			0),
+   SYSB_(flock,			MayBlock),
+   SYSB_(init_module,		MayBlock),
+   SYSB_(ioperm,		0),
+   SYSBA(capget,		0),
+   SYSB_(capset,		0),
+   SYSB_(access,		0),
+   SYSB_(chdir,			0),
+   SYSB_(chmod,			0),
+   SYSB_(chown32,		0),
+   SYSB_(lchown32,		0),
+   SYSB_(chown,			0),
+   SYSBA(close,			0),
+   SYSBA(dup,			0),
+   SYSBA(dup2,			0),
+   SYSBA(fcntl,			MayBlock),
+   SYSB_(fchdir,		0),
+   SYSB_(fchown32,		0),
+   SYSB_(fchown,		0),
+   SYSB_(fchmod,		0),
+   SYSBA(fcntl64,		MayBlock),
+   SYSBA(fstat,			0),
+   SYSBA(fork,			0),
+   SYSB_(fsync,			MayBlock),
+   SYSB_(ftruncate,		MayBlock),
+   SYSB_(ftruncate64,		MayBlock),
+   SYSBA(getdents,		MayBlock),
+   SYSBA(getdents64,		MayBlock),
+   SYSBA(getgroups32,		MayBlock),
+   SYSBA(getgroups,		0),
+   SYSBA(getcwd,		0),
+   SYSB_(geteuid,		0),
+   SYSB_(geteuid32,		0),
+   SYSB_(getegid,		0),
+   SYSB_(getegid32,		0),
+   SYSB_(getgid,		0),
+   SYSB_(getgid32,		0),
+   SYSB_(getpid,		0),
+   SYSB_(getpgid,		0),
+   SYSB_(getpgrp,		0),
+   SYSB_(getppid,		0),
+   SYSBA(getresgid,		0),
+   SYSBA(getresgid32,		0),
+   SYSBA(getresuid,		0),
+   SYSBA(getresuid32,		0),
+   SYSBA(ugetrlimit,		0),
+   SYSBA(getrlimit,		0),
+   SYSBA(getrusage,		0),
+   SYSBA(gettimeofday,		0),
+   SYSB_(getuid,		0),
+   SYSB_(getuid32,		0),
+   SYSBA(ipc,			MayBlock),
+   SYSBA(ioctl,			MayBlock),
+   SYSBA(kill,			0),
+   SYSB_(link,			MayBlock),
+   SYSB_(lseek,			0),
+   SYSBA(_llseek,		0),
+   SYSBA(lstat,			0),
+   SYSBA(lstat64,		0),
+   SYSB_(mkdir,			MayBlock),
+   SYSBA(mprotect,		0),
+   SYSBA(munmap,		0),
+   SYSBA(mincore,		0),
+   SYSBA(nanosleep,		MayBlock|PostOnFail),
+   SYSB_(_newselect,		MayBlock),
+   SYSBA(open,			MayBlock),
+   SYSBA(read,			MayBlock),
+   SYSB_(write,			MayBlock),
+   SYSBA(creat,			MayBlock),
+   SYSBA(pipe,			0),
+   SYSBA(poll,			MayBlock),
+   SYSBA(epoll_create,          0),
+   SYSB_(epoll_ctl,             0),
+   SYSBA(epoll_wait,		MayBlock),
+   SYSBA(readlink,		0),
+   SYSBA(readv,			MayBlock),
+   SYSB_(rename,		0),
+   SYSB_(rmdir,			MayBlock),
+   SYSBA(sched_setparam,	0),	/* ??? */
+   SYSBA(sched_getparam,	0),	/* ??? */
+   SYSB_(sched_yield,		0),	/* ??? */
+   SYSB_(select,		MayBlock),
+   SYSB_(setfsgid32,		0),
+   SYSB_(setgid32,		0),
+   SYSB_(setgid,		0),
+   SYSB_(setsid,		0),
+   SYSB_(setgroups32,		0),
+   SYSB_(setgroups,		0),
+   SYSBA(setpgid,		0),
+   SYSB_(setregid32,		0),
+   SYSB_(setresuid32,		0),
+   SYSB_(setreuid32,		0),
+   SYSB_(setreuid,		0),
+   SYSB_(setrlimit,		0),
+   SYSB_(setuid32,		0),
+   SYSB_(setuid,		0),
+   SYSBA(socketcall,		MayBlock),
+   SYSBA(stat,			0),
+   SYSBA(statfs,		0),
+   SYSBA(statfs64,		0),
+   SYSB_(symlink,		MayBlock),
+   SYSBA(stat64,		0),
+   SYSBA(fstat64,		0),
+   SYSBA(sysinfo,		0),
+   SYSBA(time,			0),
+   SYSBA(times,			0),
+   SYSB_(truncate,		MayBlock),
+   SYSB_(umask,			0),
+   SYSB_(unlink,		MayBlock),
+   SYSBA(uname,			0),
+   SYSB_(utime,			MayBlock),
+   SYSB_(utimes,                0),
+   SYSBA(waitpid,		MayBlock),
+   SYSBA(wait4,			MayBlock),
+   SYSB_(writev,		MayBlock),
+   SYSB_(prctl,			MayBlock),
+   SYSBA(adjtimex,		0),
+   SYSBA(mmap2,			0),
+   SYSBA(clock_gettime,         0),
+   SYSBA(futex,                 MayBlock),
+   SYSB_(acct,                  0),
 
    /* new signal handling makes these normal blocking syscalls */
-   SYSB_(pause,			True),
-   SYSB_(sigsuspend,		True),
-   SYSB_(rt_sigsuspend,		True),
-   SYSBA(rt_sigtimedwait,	True),
-   SYSBA(rt_sigqueueinfo,	False),
+   SYSB_(pause,			MayBlock),
+   SYSB_(sigsuspend,		MayBlock),
+   SYSB_(rt_sigsuspend,		MayBlock),
+   SYSBA(rt_sigtimedwait,	MayBlock),
+   SYSBA(rt_sigqueueinfo,	0),
 
-   SYSBA(sigpending,		True), /* not blocking, but must run in LWP context */
-   SYSBA(rt_sigpending,		True), /* not blocking, but must run in LWP context */
-   SYSB_(alarm,			True), /* not blocking, but must run in LWP context */
-   SYSBA(setitimer,		True), /* not blocking, but must run in LWP context */
-   SYSBA(getitimer,		True), /* not blocking, but must run in LWP context */
+   SYSBA(sigpending,		MayBlock), /* not blocking, but must run in LWP context */
+   SYSBA(rt_sigpending,		MayBlock), /* not blocking, but must run in LWP context */
+   SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */
+   SYSBA(setitimer,		MayBlock), /* not blocking, but must run in LWP context */
+   SYSBA(getitimer,		MayBlock), /* not blocking, but must run in LWP context */
 
-   SYSBA(io_getevents,          True),
-   SYSB_(io_submit,             False),
-   SYSBA(io_cancel,             False),
+   SYSBA(io_getevents,          MayBlock),
+   SYSB_(io_submit,             0),
+   SYSBA(io_cancel,             0),
 
 #if !SIGNAL_SIMULATION
-   SYSBA(sigaltstack,		False),
-   SYSBA(rt_sigaction,		False),
-   SYSBA(sigaction,		False),
-   SYSBA(rt_sigprocmask,	False),
-   SYSBA(sigprocmask,		False),
+   SYSBA(sigaltstack,		0),
+   SYSBA(rt_sigaction,		0),
+   SYSBA(sigaction,		0),
+   SYSBA(rt_sigprocmask,	0),
+   SYSBA(sigprocmask,		0),
 #endif /* !SIGNAL_SIMULATION */
 };
 #define MAX_SYS_INFO		(sizeof(sys_info)/sizeof(sys_info[0]))
@@ -5835,17 +5835,19 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       special = True;
    }
 
+   tst->sys_flags = sys->flags;
+
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
       VGP_PUSHCC(VgpSkinSysWrap);
-      tst->sys_pre_res = SK_(pre_syscall)(tid, syscallno, /*isBlocking*/sys->may_block);
+      tst->sys_pre_res = SK_(pre_syscall)(tid, syscallno, /*isBlocking*/(sys->flags & MayBlock) != 0);
       VGP_POPCC(VgpSkinSysWrap);
    }
 
    MAYBE_PRINTF("SYSCALL[%d,%d](%3d)%s%s:", 
 		VG_(getpid)(), tid, syscallno, 
 		special ? " special" : "",
-		sys->may_block ? " blocking" : "");
+		(sys->flags & MayBlock) != 0 ? " blocking" : "");
 
    if (special) {
       /* "Special" syscalls are implemented by Valgrind internally,
@@ -5853,9 +5855,11 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 therefore, is that the "before" function not only does the
 	 appropriate tests, but also performs the syscall itself and
 	 sets the result.  Special syscalls cannot block. */
-      vg_assert(sys->may_block == False);
+      vg_assert((tst->sys_flags & MayBlock) == 0);
 
       (sys->before)(tst->tid, tst);
+
+      vg_assert(tst->sys_flags == sys->flags);
 
       syscall_done = True;
    } else {
@@ -5865,7 +5869,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 /* "before" decided the syscall wasn't viable, so don't do
 	    anything - just pretend the syscall happened. */
 	 syscall_done = True;
-      } else if (sys->may_block) {
+      } else if ((tst->sys_flags & MayBlock) != 0) {
 	 /* Issue to worker.  If we're waiting on the syscall because
 	    it's in the hands of the ProxyLWP, then set the thread
 	    state to WaitSys. */
@@ -5944,7 +5948,8 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
    } 
 
    if (!restarted) {
-      if (!VG_(is_kerror)(tst->m_eax) && sys->after != NULL)
+      if (sys->after != NULL &&
+          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(tst->m_eax)))
 	 (sys->after)(tst->tid, tst);
 
       /* Do any post-syscall actions

@@ -805,6 +805,9 @@ typedef
    /* If VgTs_WaitSys, this is the syscall we're currently running */
    Int syscallno;
 
+   /* If VgTs_WaitSys, this is the syscall flags */
+   UInt sys_flags;
+
    /* Details about this thread's proxy LWP */
    ProxyLWP *proxy;
 

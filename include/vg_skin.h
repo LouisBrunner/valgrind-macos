@@ -1144,6 +1144,16 @@ extern ShadowChunk* VG_(any_matching_mallocd_ShadowChunks)
 extern ThreadId VG_(any_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max ));
 
+/* Do memory leak detection. */
+extern void VG_(generic_detect_memory_leaks) (
+          Bool is_valid_64k_chunk ( UInt ),
+          Bool is_valid_address ( Addr ),
+          ExeContext* get_where ( ShadowChunk* ),
+          VgRes leak_resolution,
+          Bool  show_reachable
+       );
+
+
 /*====================================================================*/
 /*=== Skin-specific stuff                                          ===*/
 /*====================================================================*/

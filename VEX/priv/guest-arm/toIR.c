@@ -1623,9 +1623,11 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out, HCha
     IRTemp oldFlagC = newTemp(Ity_I32);
 
     if (is_immed) {  // ARM ARM A5-2
+	// dst = src ROR rot << 1
+	//     = (src >> rot) | (src << (32-rot));
 	immed_8 = theInstr & 0xFF;
-	rot_imm = (theInstr >> 8) & 0xF;
-	imm = immed_8 << (rot_imm << 1);
+	rot_imm = ((theInstr >> 8) & 0xF) << 1;  
+	imm = (immed_8 >> rot_imm) | (immed_8 << (32-rot_imm));
 
 	if (rot_imm == 0) {
 	    assign( oldFlagC, binop(Iop_Shr32,
@@ -1823,10 +1825,7 @@ void dis_branch ( UInt theInstr )
     UInt signed_immed_24 = theInstr & 0xFFFFFF;
     UInt branch_offset;
     IRTemp addr = newTemp(Ity_I32);
-
-    DIP("b%c%s 0x%x\n", link ? 'l' : ' ',
-	name_ARMCondcode( (theInstr >> 28) & 0xF ),
-	signed_immed_24);
+    IRTemp dest = newTemp(Ity_I32);
 
     if (link) { // LR (R14) = addr of instr after branch instr
 	assign( addr, binop(Iop_Add32, getIReg(15), mkU32(4)) );
@@ -1835,10 +1834,17 @@ void dis_branch ( UInt theInstr )
 
     // PC = PC + (SignExtend(signed_immed_24) << 2)
     branch_offset = extend_s_24to32( signed_immed_24 ) << 2;
-    putIReg( 15, binop(Iop_Add32, getIReg(15), mkU32(branch_offset)) );
+    assign( dest, binop(Iop_Add32, getIReg(15), mkU32(branch_offset)) );
 
     irbb->jumpkind = link ? Ijk_Call : Ijk_Boring;
-    irbb->next     = mkU32(branch_offset);
+    irbb->next     = mkU32(dest);
+
+    // Note: Not actually writing to R15 - let the IR stuff do that.
+
+    DIP("b%s%s 0x%x\n",
+	link ? "l" : "",
+	name_ARMCondcode( (theInstr >> 28) & 0xF ),
+	branch_offset);
 }
 
 

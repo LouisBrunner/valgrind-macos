@@ -1277,11 +1277,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_capget,            sys_capget),         // 125 
    //   (__NR_capset,            sys_capset),         // 126 
-   //   (__NR_rt_sigpending,     sys_rt_sigpending),  // 127 
-   //   (__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 128 
-   //   (__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
+   GENXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 127 
+   GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 128 
+   GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
 
-   //   (__NR_rt_sigsuspend,     stub_rt_sigsuspend), // 130 
+   GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 130 
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 131 
    GENX_(__NR_utime,             sys_utime),          // 132 
    //   (__NR_mknod,             sys_mknod),          // 133 

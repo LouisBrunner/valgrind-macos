@@ -4066,7 +4066,11 @@ PRE(old_mmap, Special)
          SET_RESULT( -VKI_ENOMEM );
       }
    } else {
-      a1 = VG_(find_map_space)(a1, a2, True);
+      Addr a = VG_(find_map_space)(a1, a2, True);
+      if (a == 0 && a1 != 0)
+         a1 = VG_(find_map_space)(0, a2, True);
+      else
+         a1 = a;
       if (a1 == 0)
          SET_RESULT( -VKI_ENOMEM );
       else
@@ -4106,6 +4110,8 @@ PRE(sys_mmap2, 0)
 
    if (/*(ARG4 & VKI_MAP_FIXED) && */ (0 != (ARG1 & (VKI_PAGE_SIZE-1)))) {
       /* zap any misaligned addresses. */
+      /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
+         to fail.   Here, we catch them all. */
       SET_RESULT( -VKI_EINVAL );
       return;
    }
@@ -4114,7 +4120,11 @@ PRE(sys_mmap2, 0)
       if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
 	 SET_RESULT( -VKI_ENOMEM );
    } else {
-      ARG1 = VG_(find_map_space)(ARG1, ARG2, True);
+      Addr a = VG_(find_map_space)(ARG1, ARG2, True);
+      if (a == 0 && ARG1 != 0)
+         ARG1 = VG_(find_map_space)(0, ARG2, True);
+      else
+         ARG1 = a;
       if (ARG1 == 0)
 	 SET_RESULT( -VKI_ENOMEM );
       else 

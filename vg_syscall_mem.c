@@ -416,6 +416,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+      
+#     if defined(__NR_quotactl)
+      case __NR_quotactl: /* syscall 131 */
+         /* int quotactl(int cmd, char *special, int uid, caddr_t addr); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("quotactl (0x%x, %p, 0x%x, 0x%x )\n", 
+                        arg1,arg2,arg3, arg4);
+         must_be_readable_asciiz( tst, "quotactl(special)", arg2 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
 
 #     if defined(__NR_truncate64)
       case __NR_truncate64: /* syscall 193 */
@@ -779,9 +790,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                              size_t count) */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("sendfile ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
-         must_be_writable( tst, "sendfile(offset)", arg3, sizeof(off_t) );
+         if (arg3 != (UInt)NULL)
+            must_be_writable( tst, "sendfile(offset)", arg3, sizeof(off_t) );
          KERNEL_DO_SYSCALL(tid,res);
-         if (!VG_(is_kerror)(res)) {
+         if (!VG_(is_kerror)(res) && arg3 != (UInt)NULL) {
             make_readable( arg3, sizeof( off_t ) );
          }
          break;

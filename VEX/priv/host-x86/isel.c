@@ -2131,6 +2131,21 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_ReinterpI32asF32) {
+       /* Given an I32, produce an IEEE754 float with the same bit
+          pattern. */
+      HReg    dst = newVRegF(env);
+      X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Unop.arg);
+      /* paranoia */
+      addInstr(env, X86Instr_Push(rmi));
+      addInstr(env, X86Instr_FpLdSt(
+                       True/*load*/, 4, dst, 
+                       X86AMode_IR(0, hregX86_ESP())));
+      add_to_esp(env, 4);
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
 }
@@ -2216,6 +2231,14 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       vassert(e->Iex.LDle.ty == Ity_F64);
       am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
       addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, res, am));
+      return res;
+   }
+
+   if (e->tag == Iex_Get) {
+      X86AMode* am = X86AMode_IR( e->Iex.Get.offset,
+                                  hregX86_EBP() );
+      HReg res = newVRegF(env);
+      addInstr(env, X86Instr_FpLdSt( True/*load*/, 8, res, am ));
       return res;
    }
 
@@ -2751,6 +2774,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
          set_FPU_rounding_default(env); /* paranoia */
          addInstr(env, X86Instr_FpLdSt( False/*store*/, 4, f32, am ));
+         return;
+      }
+      if (ty == Ity_F64) {
+         HReg f64 = iselDblExpr(env, stmt->Ist.Put.data);
+         X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
+         set_FPU_rounding_default(env); /* paranoia */
+         addInstr(env, X86Instr_FpLdSt( False/*store*/, 8, f64, am ));
          return;
       }
       break;

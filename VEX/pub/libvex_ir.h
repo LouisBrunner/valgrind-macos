@@ -325,6 +325,7 @@ typedef
       /* Reinterpretation.  Take an F64 and produce an I64 with 
          the same bit pattern, or vice versa. */
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
+      Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
 
       /* ------------------ 128-bit SIMD. ------------------ */
 

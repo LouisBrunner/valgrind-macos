@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 /* TODO:
-   XOR reg with itself
    SBB reg with itself
    is Iop_Neg* used?
    xadd %reg,%reg fix
@@ -1517,19 +1516,21 @@ static UInt lengthAMode ( UInt delta )
 /*--- Disassembling common idioms                          ---*/
 /*------------------------------------------------------------*/
 
-//-- static
-//-- void codegen_XOR_reg_with_itself ( UCodeBlock* cb, Int size, 
-//--                                    Int ge_reg, Int tmp )
-//-- {
-//--    DIP("xor%c %s, %s\n", nameISize(size),
-//--                          nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
-//--    uInstr2(cb, MOV, size, Literal, 0, TempReg, tmp);
-//--    uLiteral(cb, 0);
-//--    uInstr2(cb, XOR, size, TempReg, tmp, TempReg, tmp);
-//--    setFlagsFromUOpcode(cb, XOR);
-//--    uInstr2(cb, PUT, size, TempReg, tmp, ArchReg, ge_reg);
-//-- }
-//-- 
+static
+void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
+{
+   IRType ty = szToITy(size);
+   /* reg := 0 */
+   putIReg(size, ge_reg, mkU(ty,0));
+   /* Flags: C,A,O=0, Z=1, S=0, P=1 */
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_SRC, mkU32(CC_MASK_Z|CC_MASK_P) ));
+   stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+   DIP("xor%c %s, %s\n", nameISize(size),
+                         nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
+}
+
+
 /* Handle binary integer instructions of the form
       op E, G  meaning
       op reg-or-mem, reg
@@ -1575,16 +1576,14 @@ UInt dis_op2_E_G ( UChar       sorb,
    IRTemp  addr = INVALID_IRTEMP;
 
    if (epartIsReg(rm)) {
-#if 0
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
          dependency. */
-      if (opc == XOR && gregOfRM(rm) == eregOfRM(rm)) {
-         codegen_XOR_reg_with_itself ( cb, size, gregOfRM(rm), tmp );
-         return 1+eip0;
+      if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)) {
+         codegen_XOR_reg_with_itself ( size, gregOfRM(rm) );
+         return 1+delta0;
       }
-#endif
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  getIReg(size,eregOfRM(rm)) );
       assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
@@ -1653,17 +1652,14 @@ UInt dis_op2_G_E ( UChar       sorb,
    IRTemp  addr = INVALID_IRTEMP;
 
    if (epartIsReg(rm)) {
-#if 0
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
          dependency. */
-      if (opc == XOR && gregOfRM(rm) == eregOfRM(rm)) {
-         codegen_XOR_reg_with_itself ( cb, size, gregOfRM(rm), tmp );
-         return 1+eip0;
+      if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)) {
+         codegen_XOR_reg_with_itself ( size, gregOfRM(rm) );
+         return 1+delta0;
       }
-#endif
-
       assign(dst0, getIReg(size,eregOfRM(rm)));
       assign(src,  getIReg(size,gregOfRM(rm)));
       assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));

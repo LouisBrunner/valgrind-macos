@@ -1038,7 +1038,6 @@ extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 /* Skins shouldn't need these...(?) */
 extern void VG_(start_rdtsc_calibration) ( void );
 extern void VG_(end_rdtsc_calibration) ( void );
-extern UInt VG_(read_millisecond_timer) ( void );
 
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(select)( Int n, 

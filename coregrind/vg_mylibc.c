@@ -1327,7 +1327,9 @@ static ULong              rdtsc_cal_end_raw;
 UInt VG_(read_millisecond_timer) ( void )
 {
    ULong rdtsc_now;
-   vg_assert(rdtsc_calibration_state == 2);
+   // If called before rdtsc setup completed (eg. from SK_(pre_clo_init)())
+   // just return 0.
+   if (rdtsc_calibration_state < 2) return 0;
    rdtsc_now = do_rdtsc_insn();
    vg_assert(rdtsc_now > rdtsc_cal_end_raw);
    rdtsc_now -= rdtsc_cal_end_raw;

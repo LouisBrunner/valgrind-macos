@@ -495,6 +495,11 @@ extern Int VG_(kkill)        ( Int pid, Int signo );
 extern Int VG_(ksigpending)  ( vki_ksigset_t* set );
 
 
+/* ------------------------------------------------------------------ */
+/* other, randomly useful functions */
+extern UInt VG_(read_millisecond_timer) ( void );
+
+
 /*====================================================================*/
 /*=== UCode definition                                             ===*/
 /*====================================================================*/

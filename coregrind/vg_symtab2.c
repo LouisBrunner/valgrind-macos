@@ -1899,19 +1899,28 @@ void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
 {
    UInt  i;
    UChar buf[M_VG_ERRTXT];
-   Char* how;
+   Bool  main_done = False;
 
    Int stop_at = n_eips;
 
    vg_assert(stop_at > 0);
 
+   /* This loop is the basis for the one in VG_(gen_suppressions)();  if you
+      change this, change it too! */
    i = 0;
    do {
       Addr eip = eips[i];
       if (i  > 0) eip--;            /* point to calling line */
-      if (i == 0) how = "at"; else how = "by";
       VG_(describe_eip)(eip, buf, M_VG_ERRTXT);
-      VG_(message)(Vg_UserMsg, "   %s %s", how, buf);
+
+      if ( ! VG_(clo_show_below_main)) {
+         // Stop after "main";  if main() is recursive, stop after last main().
+         if (VG_(strstr)(buf, " main ("))
+            main_done = True;
+         else if (main_done)
+            break;
+      }
+      VG_(message)(Vg_UserMsg, "   %s %s", ( i == 0 ? "at" : "by" ), buf);
       i++;
 
    } while (i < (UInt)stop_at && eips[i] != 0);

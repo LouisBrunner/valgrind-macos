@@ -493,12 +493,24 @@ options.  Options for the valgrind core may be freely mixed with those
 for the selected skin.
 
 <p>Valgrind's default settings succeed in giving reasonable behaviour
-in most cases.  Available options, in no particular order, are as
-follows:
+in most cases.  We group the available options by rough categories.
+
+<h4>Skin-selection option</h4>
+The single most important option.
+<ul>
+  <li><code>--skin=<i>name</i></code><br>
+      <p>Run the Valgrind tool called <i>name</i>, e.g. Memcheck, Addrcheck,
+      Cachegrind, etc.
+      </li><br><p>
+</ul>
+
+<h4>Basic Options</h4>
+These options work with all skins.
+
 <ul>
   <li><code>--help</code><br>
       <p>Show help for all options, both for the core and for the
-      selected skin.
+      selected skin. </li><br><p>
 
   <li><code>--version</code><br> <p>Show the version number of the
       valgrind core.  Skins can have their own version numbers.  There
@@ -520,8 +532,46 @@ follows:
       machinery.
       </li><br><p>
 
+  <li><code>--trace-children=no</code> [default]<br>
+      <code>--trace-children=yes</code>
+      <p>When enabled, Valgrind will trace into child processes.  This
+      is confusing and usually not what you want, so is disabled by
+      default.
+      </li><br><p>
+
+  <li><code>--logfile-fd=&lt;number&gt;</code> [default: 2, stderr]
+      <p>Specifies that Valgrind should send all of its
+      messages to the specified file descriptor.  The default, 2, is
+      the standard error channel (stderr).  Note that this may
+      interfere with the client's own use of stderr.  
+      </li><br><p>
+
+  <li><code>--logfile=&lt;filename&gt;</code>
+      <p>Specifies that Valgrind should send all of its
+      messages to the specified file.  In fact, the file name used
+      is created by concatenating the text <code>filename</code>,
+      ".pid" and the process ID, so as to create a file per process.
+      The specified file name may not be the empty string.
+      </li><br><p>
+
+  <li><code>--logsocket=&lt;ip-address:port-number&gt;</code>
+      <p>Specifies that Valgrind should send all of its messages to
+      the specified port at the specified IP address.  The port may be
+      omitted, in which case port 1500 is used.  If a connection
+      cannot be made to the specified socket, valgrind falls back to
+      writing output to the standard error (stderr).  This option is
+      intended to be used in conjunction with the
+      <code>valgrind-listener</code> program.  For further details,
+      see section <a href="#core-comment">2.3</a>.
+      </li><br><p>
+</ul>
+
+<h4>Error-related options</h4>
+These options are used by all skins that can report errors, e.g. Memcheck, but
+not Cachegrind.
+<ul>
   <li><code>--demangle=no</code><br>
-      <code>--demangle=yes</code> [the default]
+      <code>--demangle=yes</code> [default]
       <p>Disable/enable automatic demangling (decoding) of C++ names.
       Enabled by default.  When enabled, Valgrind will attempt to
       translate encoded C++ procedure names back to something
@@ -552,7 +602,59 @@ follows:
       deeply-nested call chains.  
       </li><br><p>
 
-  <li><code>--gdb-attach=no</code> [the default]<br>
+  <li><code>--error-limit=yes</code> [default]<br>
+      <code>--error-limit=no</code> <p>When enabled, valgrind stops
+      reporting errors after 30000 in total, or 300 different ones,
+      have been seen.  This is to stop the error tracking machinery
+      from becoming a huge performance overhead in programs with many
+      errors.  
+      </li><br><p>
+
+  <li><code>--show-below-main=yes</code><br>
+      <code>--show-below-main=no</code>  [default]
+      <p>By default, stack traces for errors do not show any functions that
+      appear beneath <code>main()</code>;  most of the time it's uninteresting
+      C library stuff.  If this option is enabled, these entries below
+      <code>main()</code> will be shown.
+      </li><br><p>
+
+  <li><code>--suppressions=&lt;filename&gt;</code> 
+      [default: $PREFIX/lib/valgrind/default.supp]
+      <p>Specifies an extra
+      file from which to read descriptions of errors to suppress.  You
+      may use as many extra suppressions files as you
+      like.
+      </li><br><p>
+
+  <li><code>--gen-suppressions=no</code> [default]<br>
+      <code>--gen-suppressions=yes</code>
+      <p>When enabled, Valgrind will pause after every error shown,
+      and print the line
+      <br>
+      <code>---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</code>
+      <p>
+      The prompt's behaviour is the same as for the <code>--gdb-attach</code>
+      option.
+      <p>
+      If you choose to, Valgrind will print out a suppression for this error.
+      You can then cut and paste it into a suppression file if you don't want
+      to hear about the error in the future.
+      <p>
+      This option is particularly useful with C++ programs, as it prints out
+      the suppressions with mangled names, as required.
+      <p>
+      Note that the suppressions printed are as specific as possible.  You
+      may want to common up similar ones, eg. by adding wildcards to function
+      names.  Also, sometimes two different errors are suppressed by the same
+      suppression, in which case Valgrind will output the suppression more than
+      once, but you only need to have one copy in your suppression file (but
+      having more than one won't cause problems).  Also, the suppression
+      name is given as <code>&lt;insert a suppression name here&gt;</code>;
+      the name doesn't really matter, it's only used with the
+      <code>-v</code> option which prints out all used suppression records.
+      </li><br><p>
+
+  <li><code>--gdb-attach=no</code> [default]<br>
       <code>--gdb-attach=yes</code>
       <p>When enabled, Valgrind will pause after every error shown,
       and print the line
@@ -601,36 +703,13 @@ follows:
       allows you to specify an alternative file descriptor from
       which to read input.  
       </li><br><p>
+</ul>
 
-  <li><code>--gen-suppressions=no</code> [the default]<br>
-      <code>--gen-suppressions=yes</code>
-      <p>When enabled, Valgrind will pause after every error shown,
-      and print the line
-      <br>
-      <code>---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</code>
-      <p>
-      The prompt's behaviour is the same as for the <code>--gdb-attach</code>
-      option.
-      <p>
-      If you choose to, Valgrind will print out a suppression for this error.
-      You can then cut and paste it into a suppression file if you don't want
-      to hear about the error in the future.
-      <p>
-      This option is particularly useful with C++ programs, as it prints out
-      the suppressions with mangled names, as required.
-      <p>
-      Note that the suppressions printed are as specific as possible.  You
-      may want to common up similar ones, eg. by adding wildcards to function
-      names.  Also, sometimes two different errors are suppressed by the same
-      suppression, in which case Valgrind will output the suppression more than
-      once, but you only need to have one copy in your suppression file (but
-      having more than one won't cause problems).  Also, the suppression
-      name is given as <code>&lt;insert a suppression name here&gt;</code>;
-      the name doesn't really matter, it's only used with the
-      <code>-v</code> option which prints out all used suppression records.
-      </li><br><p>
-
-  <li><code>--alignment=&lt;number></code> [default: 4]<br> <p>By
+<h4><code>malloc()</code>-related options</h4>
+For skins that use their own version of <code>malloc()</code> (e.g. Memcheck
+and Addrcheck), the following options apply.
+<ul>
+  <li><code>--alignment=&lt;number&gt;</code> [default: 4]<br> <p>By
       default valgrind's <code>malloc</code>, <code>realloc</code>,
       etc, return 4-byte aligned addresses.  These are suitable for
       any accesses on x86 processors. 
@@ -641,7 +720,7 @@ follows:
       increased using this parameter.  The supplied value must be
       between 4 and 4096 inclusive, and must be a power of two.</li><br><p>
 
-  <li><code>--sloppy-malloc=no</code> [the default]<br>
+  <li><code>--sloppy-malloc=no</code> [default]<br>
       <code>--sloppy-malloc=yes</code>
       <p>When enabled, all requests for malloc/calloc are rounded up
       to a whole number of machine words -- in other words, made
@@ -661,57 +740,13 @@ follows:
       work correctly, and you should fix it, at least if you hope for
       maximum portability.
       </li><br><p>
+</ul>
 
-  <li><code>--trace-children=no</code> [the default]<br>
-      <code>--trace-children=yes</code>
-      <p>When enabled, Valgrind will trace into child processes.  This
-      is confusing and usually not what you want, so is disabled by
-      default.
-      </li><br><p>
-
-  <li><code>--logfile-fd=&lt;number></code> [default: 2, stderr]
-      <p>Specifies that Valgrind should send all of its
-      messages to the specified file descriptor.  The default, 2, is
-      the standard error channel (stderr).  Note that this may
-      interfere with the client's own use of stderr.  
-      </li><br><p>
-
-  <li><code>--logfile=&lt;filename></code>
-      <p>Specifies that Valgrind should send all of its
-      messages to the specified file.  In fact, the file name used
-      is created by concatenating the text <code>filename</code>,
-      ".pid" and the process ID, so as to create a file per process.
-      The specified file name may not be the empty string.
-      </li><br><p>
-
-  <li><code>--logsocket=&lt;ip-address:port-number></code>
-      <p>Specifies that Valgrind should send all of its messages to
-      the specified port at the specified IP address.  The port may be
-      omitted, in which case port 1500 is used.  If a connection
-      cannot be made to the specified socket, valgrind falls back to
-      writing output to the standard error (stderr).  This option is
-      intended to be used in conjunction with the
-      <code>valgrind-listener</code> program.  For further details,
-      see section <a href="#core-comment">2.3</a>.
-      </li><br><p>
-
-  <li><code>--suppressions=&lt;filename></code> 
-      [default: $PREFIX/lib/valgrind/default.supp]
-      <p>Specifies an extra
-      file from which to read descriptions of errors to suppress.  You
-      may use as many extra suppressions files as you
-      like.
-      </li><br><p>
-
-  <li><code>--error-limit=yes</code> [default]<br>
-      <code>--error-limit=no</code> <p>When enabled, valgrind stops
-      reporting errors after 30000 in total, or 300 different ones,
-      have been seen.  This is to stop the error tracking machinery
-      from becoming a huge performance overhead in programs with many
-      errors.  
-      </li><br><p>
-
-  <li><code>--run-libc-freeres=yes</code> [the default]<br>
+<h4>Rare options</h4>
+These options apply to all skins, as they affect certain obscure workings of
+the Valgrind core.  Most people won't need to use these.
+<ul>
+  <li><code>--run-libc-freeres=yes</code> [default]<br>
       <code>--run-libc-freeres=no</code>
       <p>The GNU C library (<code>libc.so</code>), which is used by
       all programs, may allocate memory for its own uses.  Usually it
@@ -804,6 +839,27 @@ follows:
           device drivers with a large number of strange ioctl commands becomes
           very tiresome.
       </ul>
+      </li><br><p>
+
+  <li><code>--signal-polltime=&lt;time&gt;</code> [default=50]<br>
+      <p>How often to poll for signals (in milliseconds).  Only applies for
+      older kernels that need signal routing.
+      </li><br><p>
+
+  <li><code>--lowlat-signals=no</code> [default]<br>
+      <code>--lowlat-signals=yes</code><br>
+      <p>Improve wake-up latency when a thread receives a signal.
+      </li><br><p>
+
+  <li><code>--lowlat-syscalls=no</code> [default]<br>
+      <code>--lowlat-syscalls=yes</code><br>
+      <p>Improve wake-up latency when a thread's syscall completes. 
+      </li><br><p>
+
+  <li><code>--assume-2.4=no</code> [default]<br>
+      <code>--assume-2.4=yes</code><br>
+      <p>Assume we're running on a 2.4 kernel.  Only needed for some
+      distributions that are broken in obscure ways.
       </li><br><p>
 </ul>
 

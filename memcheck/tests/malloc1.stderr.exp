@@ -1,21 +1,15 @@
 Invalid write of size 1
    at 0x........: really (malloc1.c:20)
    by 0x........: main (malloc1.c:9)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 1 bytes inside a block of size 10 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: really (malloc1.c:19)
    by 0x........: main (malloc1.c:9)
-   by 0x........: __libc_start_main (...libc...)
 
 Invalid write of size 1
    at 0x........: really (malloc1.c:23)
    by 0x........: main (malloc1.c:9)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 1 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: really (malloc1.c:21)
    by 0x........: main (malloc1.c:9)
-   by 0x........: __libc_start_main (...libc...)

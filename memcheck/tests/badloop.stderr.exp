@@ -1,4 +1,2 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (badloop.c:12)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

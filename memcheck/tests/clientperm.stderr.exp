@@ -1,9 +1,5 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (clientperm.c:29)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (clientperm.c:36)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

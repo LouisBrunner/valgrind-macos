@@ -195,6 +195,7 @@ void VG_(gen_suppression)(Error* err)
 {
    Int         i;
    UChar       buf[M_VG_ERRTXT];
+   Bool        main_done = False;
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
 
@@ -222,10 +223,16 @@ void VG_(gen_suppression)(Error* err)
    i = 0;
    do {
       Addr eip = ec->eips[i];
-      if (i > 0)
-         eip--;                 /* point to calling line */
-
+      if (i > 0) eip--;                 /* point to calling line */
       if ( VG_(get_fnname_nodemangle) (eip, buf,  M_VG_ERRTXT) ) {
+         // Stop after "main";  if main() is recursive, stop after last main().
+
+         if ( ! VG_(clo_show_below_main)) {
+            if (VG_STREQ(buf, "main"))
+               main_done = True;
+            else if (main_done)
+               break;
+         }
          VG_(printf)("   fun:%s\n", buf);
       } else if ( VG_(get_objname)(eip, buf, M_VG_ERRTXT) ) {
          VG_(printf)("   obj:%s\n", buf);

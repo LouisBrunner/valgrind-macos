@@ -1,5 +1,3 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: gcc_cant_inline_me (manuel3.c:22)
    by 0x........: main (manuel3.c:14)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

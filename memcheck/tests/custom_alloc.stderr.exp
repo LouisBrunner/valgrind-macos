@@ -1,37 +1,25 @@
 Invalid write of size 4
    at 0x........: main (custom_alloc.c:79)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 48 bytes inside a block of size 100000 client-defined
    at 0x........: get_superblock (custom_alloc.c:25)
    by 0x........: custom_alloc (custom_alloc.c:40)
    by 0x........: main (custom_alloc.c:76)
-   by 0x........: __libc_start_main (...libc...)
 
 Invalid free() / delete / delete[]
    at 0x........: custom_free (custom_alloc.c:54)
    by 0x........: main (custom_alloc.c:83)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is not stack'd, malloc'd or free'd
 
 Mismatched free() / delete / delete []
    at 0x........: custom_free (custom_alloc.c:54)
    by 0x........: main (custom_alloc.c:86)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (custom_alloc.c:85)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid read of size 4
    at 0x........: main (custom_alloc.c:89)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 8 bytes inside a block of size 100000 client-defined
    at 0x........: get_superblock (custom_alloc.c:25)
    by 0x........: custom_alloc (custom_alloc.c:40)
    by 0x........: main (custom_alloc.c:76)
-   by 0x........: __libc_start_main (...libc...)

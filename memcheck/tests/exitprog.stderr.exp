@@ -1,9 +1,5 @@
 Invalid write of size 1
    at 0x........: main (exitprog.c:18)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 0 bytes after a block of size 1000000 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (exitprog.c:15)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

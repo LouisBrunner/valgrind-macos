@@ -1,5 +1,3 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: memcmp (mac_replace_strmem.c:...)
    by 0x........: main (memcmptest.c:13)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

@@ -1,59 +1,35 @@
 Invalid read of size 4
    at 0x........: main (badrw.c:12)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 4 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid write of size 4
    at 0x........: main (badrw.c:12)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 4 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid read of size 2
    at 0x........: main (badrw.c:13)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 4 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid write of size 2
    at 0x........: main (badrw.c:13)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 4 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid read of size 1
    at 0x........: main (badrw.c:14)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 1 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Invalid write of size 1
    at 0x........: main (badrw.c:14)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is 1 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (badrw.c:5)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

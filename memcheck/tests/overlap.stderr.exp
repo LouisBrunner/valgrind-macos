@@ -1,41 +1,27 @@
 Source and destination overlap in memcpy(0x........, 0x........, 21)
    at 0x........: memcpy (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:40)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in memcpy(0x........, 0x........, 21)
    at 0x........: memcpy (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:42)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in strncpy(0x........, 0x........, 21)
    at 0x........: strncpy (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:45)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in strncpy(0x........, 0x........, 21)
    at 0x........: strncpy (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:47)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in strcpy(0x........, 0x........)
    at 0x........: strcpy (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:54)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in strncat(0x........, 0x........, 21)
    at 0x........: strncat (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:112)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
 Source and destination overlap in strncat(0x........, 0x........, 21)
    at 0x........: strncat (mac_replace_strmem.c:...)
    by 0x........: main (overlap.c:113)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...

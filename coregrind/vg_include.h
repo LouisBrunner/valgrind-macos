@@ -265,6 +265,8 @@ extern Bool  VG_(clo_lowlat_signals);
 extern Bool  VG_(clo_run_libc_freeres);
 /* Use the basic-block chaining optimisation?  Default: YES */
 extern Bool VG_(clo_chain_bb);
+/* Continue stack traces below main()?  Default: NO */
+extern Bool VG_(clo_show_below_main);
 
 
 /* ---------------------------------------------------------------------

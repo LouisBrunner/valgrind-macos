@@ -558,6 +558,7 @@ Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_chain_bb)       = True;
+Bool   VG_(clo_show_below_main) = False;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
@@ -636,26 +637,33 @@ static void usage ( void )
 "usage: valgrind [options] prog-and-args\n"
 "\n"
 "  core user options, with defaults in [ ], are:\n"
+"    --skin=<name>             main task (skin to use) [Valgrind]\n"
+
 "    --help                    show this message\n"
 "    --version                 show version\n"
-"    --skin=<name>             main task (skin to use) [Valgrind]\n"
+
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
-"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
-"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
-"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
+
+"    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
+
+"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
+"    --logfile=<file>          log messages to <file>.pid<pid>\n"
+"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
+
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
-"    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
-"    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
-"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
-"    --logfile=<file>          log messages to <file>.pid<pid>\n"
+"    --show-below-main=no|yes  continue stack traces below main() [no]\n"
+"    --suppressions=<filename> suppress errors described in <filename>\n"
+"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
+
+"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
+"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
 "    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
-"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
-"    --suppressions=<filename> suppress errors described in\n"
-"                              suppressions file <filename>\n"
-"    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
+
+"    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
+"    --weird-hacks=hack1,hack2,...  [none]\n"
 "         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls\n"
 "    --signal-polltime=<time>  time, in mS, we should poll for signals.\n"
 "                              Only applies for older kernels which need\n"
@@ -970,6 +978,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_gen_suppressions) = True;
       else if (VG_CLO_STREQ(argv[i], "--gen-suppressions=no"))
          VG_(clo_gen_suppressions) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--show-below-main=yes"))
+         VG_(clo_show_below_main) = True;
+      else if (VG_CLO_STREQ(argv[i], "--show-below-main=no"))
+         VG_(clo_show_below_main) = False;
 
       else if (VG_CLO_STREQ(argv[i], "--demangle=yes"))
          VG_(clo_demangle) = True;

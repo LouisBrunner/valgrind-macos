@@ -1,13 +1,9 @@
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (badfree.c:12)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is not stack'd, malloc'd or free'd
 
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (badfree.c:15)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is on thread 1's stack

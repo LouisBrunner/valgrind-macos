@@ -1,5 +1,3 @@
 Invalid write of size 4
    at 0x........: main (signal2.c:17)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
    Address 0x........ is not stack'd, malloc'd or free'd

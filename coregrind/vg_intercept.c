@@ -114,7 +114,7 @@ WEAK int VGL_(msgrcv)( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int m
       *(__errno_location()) = -err;
       return -1;
    }
-   return 0;
+   return err;
 }
 
 int msgrcv( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg )

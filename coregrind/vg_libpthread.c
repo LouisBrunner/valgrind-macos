@@ -3376,7 +3376,7 @@ int VGL_(msgrcv)( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg
       return -1;
    }
 
-   return 0;
+   return err;
 }
 
 

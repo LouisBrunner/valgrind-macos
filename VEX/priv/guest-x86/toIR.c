@@ -3930,6 +3930,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
                break;
 
+            case 0xE0 ... 0xE7: /* FSUBR %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0, modrm - 0xE0, False );
+               break;
+
             case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
                break;
@@ -7345,13 +7349,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          putIReg(4, R_EAX, unop(Iop_16Sto32, getIReg(2, R_EAX)));
          DIP("cwde\n");
       } else {
-         vassert(0);
-//--          vg_assert(sz == 2);
-//--          uInstr2(cb, GET,   1, ArchReg, R_EAX, TempReg, t1);
-//--          uInstr1(cb, WIDEN, 2, TempReg, t1); /* 2 == dst size */
-//--          uWiden(cb, 1, True);
-//--          uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
-//--          DIP("cbw\n");
+         vassert(sz == 2);
+         putIReg(2, R_EAX, unop(Iop_8Sto16, getIReg(1, R_EAX)));
+         DIP("cbw\n");
       }
       break;
 
@@ -8124,7 +8124,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       break;
 //-- 
    case 0xAA: /* STOS, no REP prefix */
-//--    case 0xAB:
+   case 0xAB:
       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
       break;
 //--    

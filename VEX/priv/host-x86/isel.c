@@ -638,21 +638,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       switch (e->Iex.Unop.op) {
+         case Iop_8Uto16:
          case Iop_8Uto32:
          case Iop_16Uto32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-            UInt mask = e->Iex.Unop.op==Iop_8Uto32 ? 0xFF : 0xFFFF;
+            UInt mask = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
             addInstr(env, mk_MOVsd_RR(src,dst) );
             addInstr(env, X86Instr_Alu32R(Xalu_AND,
                                           X86RMI_Imm(mask), dst));
             return dst;
          }
+         case Iop_8Sto16:
          case Iop_8Sto32:
          case Iop_16Sto32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-            UInt amt = e->Iex.Unop.op==Iop_8Sto32 ? 24 : 16;
+            UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
             addInstr(env, mk_MOVsd_RR(src,dst) );
             addInstr(env, X86Instr_Sh32(Xsh_SHL, amt, X86RM_Reg(dst)));
             addInstr(env, X86Instr_Sh32(Xsh_SAR, amt, X86RM_Reg(dst)));

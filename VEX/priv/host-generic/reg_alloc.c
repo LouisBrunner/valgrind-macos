@@ -109,8 +109,9 @@ static Bool instrMentionsReg (
    the hope that this will minimise the number of consequent reloads.
 
    Only do the search for vregs which are Bound in the running state,
-   and for which the .mark field is set.  This allows the caller to
-   arbitrarily restrict the set of spill candidates to be considered.
+   and for which the .is_spill_cand field is set.  This allows the
+   caller to arbitrarily restrict the set of spill candidates to be
+   considered.
 
    Returns an index into the state array indicating the (v,r) pair to
    spill, or -1 if none was found.  */
@@ -344,7 +345,7 @@ HInstrArray* doRegisterAllocation (
                if (vreg_info[k].live_after == INVALID_INSTRNO)
                   vpanic("doRegisterAllocation: "
                          "first event for vreg is Read");
-               vreg_info[k].dead_before = ii;
+               vreg_info[k].dead_before = ii + 1;
                break;
             case HRmWrite:
                if (vreg_info[k].live_after == INVALID_INSTRNO)
@@ -435,7 +436,7 @@ HInstrArray* doRegisterAllocation (
                if (rreg_live_after[k] == INVALID_INSTRNO)
                   vpanic("doRegisterAllocation: "
                          "first event for rreg is Read");
-               rreg_dead_before[k] = ii;
+               rreg_dead_before[k] = ii+1;
                break;
             case HRmModify:
                if (rreg_live_after[k] == INVALID_INSTRNO)
@@ -843,7 +844,7 @@ HInstrArray* doRegisterAllocation (
                 && hregClass(state[k].rreg) == hregClass(vreg)) {
                m = hregNumber(state[k].vreg);
                vassert(m >= 0 && m < n_vregs);
-               if (vreg_info[m].dead_before < ii) {
+               if (vreg_info[m].dead_before <= ii) {
                   /* Ok, it's gone dead before the previous insn.  We
                      can use it. */
                   break;
@@ -920,16 +921,10 @@ HInstrArray* doRegisterAllocation (
 
          /* So here's the spill store.  Assert that we're spilling a
             live vreg. */
-	 if (vreg_info[m].live_after + 1 == vreg_info[m].dead_before) {
-            /* In this situation, m looks like it is the subject of a
-               dead store -- going live and then instantly dead.  So
-               in fact there's no point in spilling it. */
-	 } else {
-            vassert(vreg_info[m].dead_before > ii);
-            vassert(vreg_info[m].reg_class != HRcINVALID);
-            EMIT_INSTR( (*genSpill)( state[spillee].rreg,
-                                     vreg_info[m].spill_offset ) );
-	 }
+         vassert(vreg_info[m].dead_before > ii);
+         vassert(vreg_info[m].reg_class != HRcINVALID);
+         EMIT_INSTR( (*genSpill)( state[spillee].rreg,
+                                  vreg_info[m].spill_offset ) );
 
          /* Update the state to reflect the new assignment for this
             rreg. */

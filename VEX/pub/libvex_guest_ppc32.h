@@ -128,17 +128,13 @@ typedef
 
       /* 412 */ UInt guest_FPSCR;  // FP Status & Control Reg
 
-      /* XER */
-      /* 416 */ UInt guest_XER_SO; // Summary Overflow
-      /* 420 */ UInt guest_XER_OV; // Overflow
-      /* 424 */ UInt guest_XER_CA; // Carry
-      /* 428 */ UInt guest_XER_BC; // Byte Count
+      /* 416 */ UInt guest_XER;    // XER Register
 
       /* Emulation warnings */
-      /* 432 */ UInt guest_EMWARN;
+      /* 420 */ UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
-      UInt  padding;
+      /* UInt  padding; */
    }
    VexGuestPPC32State;
 

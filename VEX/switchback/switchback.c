@@ -219,15 +219,8 @@ asm(
 "   mtctr %r3\n"               // move r3 to CTR
 
 // XER
-"   lhz    %r3,416(%r31)\n"    // guest_XER_SO
-"   rlwimi %r4,%r3,31,0,0\n"   // rotate and insert to XER[31]
-"   lhz    %r3,417(%r31)\n"    // guest_XER_OV
-"   rlwimi %r4,%r3,30,1,1\n"   // rotate and insert to XER[30]
-"   lhz    %r3,418(%r31)\n"    // guest_XER_CA
-"   rlwimi %r4,%r3,29,2,2\n"   // rotate and insert to XER[30]
-"   lhz    %r3,419(%r31)\n"    // guest_XER_BC
-"   rlwimi %r4,%r3,0,25,31\n"  // rotate and insert to XER[0:6]
-"   mtxer  %r4\n"              // move r4 to XER
+"   lwz %r3,416(%r31)\n"       // guest_XER
+"   mtxer %r3\n"               // move r3 to XER
 
 // GPR's
 "   lwz %r0,    0(%r31)\n"
@@ -702,7 +695,7 @@ int main ( Int argc, HChar** argv )
    }
 
    LibVEX_default_VexControl(&vcon);
-   vcon.guest_max_insns=1;
+   vcon.guest_max_insns=50;
    vcon.guest_chase_thresh=0;
 //   vcon.iropt_level=2;
 

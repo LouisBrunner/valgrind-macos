@@ -785,17 +785,178 @@ X86Instr* genReload_X86 ( HReg rreg, Int offset )
 
 /* --------- The x86 assembler (bleh.) --------- */
 
+static UInt iregNo ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcInt);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 7);
+   return n;
+}
+
+static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
+{
+   return ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7);
+}
+
+static UChar mkSIB ( Int shift, Int regindex, Int regbase )
+{
+   return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
+}
+
+static UChar* emit32 ( UChar* p, UInt w32 )
+{
+   *p++ = (w32)       & 0x000000FF;
+   *p++ = (w32 >>  8) & 0x000000FF;
+   *p++ = (w32 >> 16) & 0x000000FF;
+   *p++ = (w32 >> 24) & 0x000000FF;
+   return p;
+}
+
+static Bool fits8bits ( UInt w32 )
+{
+   w32 &= 0xFFFFFF00;
+   return (w32 == 0 || w32 == 0xFFFFFF00);
+}
+
+
+/* Forming mod-reg-rm bytes and scale-index-base bytes.
+
+     greg,  0(ereg)    |  ereg != ESP && ereg != EBP
+                       =  00 greg ereg
+
+     greg,  d8(ereg)   |  ereg != ESP
+                       =  01 greg ereg, d8
+
+     greg,  d32(ereg)  |  ereg != ESP
+                       =  10 greg ereg, d32
+
+     -----------------------------------------------
+
+     greg,  d8(base,index,scale)  
+               |  index != ESP
+               =  01 greg 100, scale index base, d8
+
+     greg,  d32(base,index,scale)
+               |  index != ESP
+               =  10 greg 100, scale index base, d32
+*/
+static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am ) 
+{
+   if (am->tag == Xam_IR) {
+      if (am->Xam.IR.imm == 0 
+          && am->Xam.IR.reg != hregX86_ESP()
+          && am->Xam.IR.reg != hregX86_EBP() ) {
+         *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Xam.IR.reg));
+         return p;
+      }
+      if (fits8bits(am->Xam.IR.imm)
+          && am->Xam.IR.reg != hregX86_ESP()) {
+         *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Xam.IR.reg));
+         *p++ = am->Xam.IR.imm & 0xFF;
+         return p;
+      }
+      if (am->Xam.IR.reg != hregX86_ESP()) {
+         *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Xam.IR.reg));
+         p = emit32(p, am->Xam.IR.imm);
+         return p;
+      }
+      ppX86AMode(am);
+      vpanic("doAMode_M: can't emit amode IR");
+      /*NOTREACHED*/
+   }
+   if (am->tag == Xam_IRRS) {
+      if (fits8bits(am->Xam.IRRS.imm)
+          && am->Xam.IRRS.index != hregX86_ESP()) {
+         *p++ = mkModRegRM(1, iregNo(greg), 4);
+         *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index, 
+                                          am->Xam.IRRS.base);
+         *p++ = am->Xam.IRRS.imm & 0xFF;
+         return p;
+      }
+      if (am->Xam.IRRS.index != hregX86_ESP()) {
+         *p++ = mkModRegRM(2, iregNo(greg), 4);
+         *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index,
+                                          am->Xam.IRRS.base);
+         p = emit32(p, am->Xam.IRRS.imm);
+         return p;
+      }
+      ppX86AMode(am);
+      vpanic("doAMode_M: can't emit amode IRRS");
+      /*NOTREACHED*/
+   }
+   vpanic("doAMode_M: unknown amode");
+   /*NOTREACHED*/
+}
+
+
+/* Emit a mod-reg-rm byte when the rm bit denotes a reg. */
+static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg ) 
+{
+   *p++ = mkModRegRM(3, iregNo(greg), iregNo(ereg));
+   return p;
+}
+
+
+
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
 Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 {
+   UChar* p = &buf[0];
+   vassert(nbuf >= 32);
+
    switch (i->tag) {
-      default: 
-          ppX86Instr(i);
-         vpanic("emit_X86Instr");
+
+   case Xin_Alu32R:
+      if (i->Xin.Alu32R.op == Xalu_MOV) {
+         switch (i->Xin.Alu32R.src->tag) {
+         //       case Xrmi_Imm:
+         //*p++ = 0xB8 + iregNo(i->Xin.Alu32.dst);
+         //p = emit32(i->Xin.Alu32.src->Xrmi.Imm.imm32);
+         //return p;
+         //case Xrmi_Reg:
+         case Xrmi_Mem:
+            *p++ = 0x8B;
+            p = doAMode_M(p, i->Xin.Alu32R.dst, 
+                             i->Xin.Alu32R.src->Xrmi.Mem.am);
+            goto done;
+         default:
+            goto bad;
+         }
+      } else {
+         goto bad;
+      }
+      break;
+
+   case Xin_Alu32M:
+      if (i->Xin.Alu32M.op == Xalu_MOV) {
+	if (i->Xin.Alu32M.src->tag == Xri_Reg) {
+	  *p++ = 0x89;
+	  p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
+                           i->Xin.Alu32M.dst);
+	  goto done;
+	} else {
+	  goto bad;
+	}
+      } else {
+         goto bad;
+      }
+      break;
+
+
+    bad:
+     default: 
+        ppX86Instr(i);
+        vpanic("emit_X86Instr");
+	/*NOTREACHED*/
    }
+  done:
+   vassert(p - &buf[0] <= 32);
+   return p - &buf[0];
 }
 
 

@@ -1,0 +1,5 @@
+
+999 bytes in 999 blocks are definitely lost in loss record 2 of 2
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: test (trivialleak.c:8)
+   by 0x........: main (trivialleak.c:12)

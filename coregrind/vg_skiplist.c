@@ -24,6 +24,64 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* 
+   This file implements a generic skip-list type.
+
+   Skip-lists are described in William Pugh, Skip Lists: A
+   Probabilistic Alternative to Balanced Trees, CACM, 33(6):668-676,
+   June 1990. 
+   http://www.cs.unc.edu/~baruah/Teaching/2002f/HandOuts/skiplist-CACM.pdf
+
+   Skip-lists are a randomized linked-list, where a node in the list
+   has at least one "next" pointer, but may have more.  When
+   traversing the list, the "higher" next pointers allow you to skip
+   multiple list entries, allowing you to find the right place
+   quickly.  
+
+   On average, 1/2 the entries have one next pointer, 1/4 have 2, 1/8
+   have 3, etc.  This means that the skiplist has the same search
+   complexity as a balanced binary tree, but there is no need to
+   rebalance or do any other structural changes.  The randomness also
+   means that it is invulnerable to pathalogical workloads.
+
+   Because the each node can be a different size, this implementation
+   puts the SkipNode structure at the end of the allocation, with the
+   node data starting at the beginning.
+
+   low address ->+---------------+  ^
+		 | list data     |  |
+     key offset->:       key     : structure size
+		 |               |  |
+		 +---------------+  V
+		 | struct        |
+		 |   SkipNode    |
+		 +- - - - - - - -+
+		 | next pointers |
+		 :               :
+
+
+   When you declare the list with SKIPLIST_INIT, you specify the
+   structure for each list node, structure member you want to use as a
+   key, and the function for comparing keys.
+
+   Each node must be allocated with SkipNode_Alloc, which allocates
+   enough space for the client data, the SkipNode structure, and the
+   next pointers for this node.
+
+   The helper functions data_of_node and node_of_data do the correct
+   pointer arithmetic to sort all this out.  The SkipNode also has a
+   magic number which is checked after each operation to make sure
+   that we're really operating on a SkipNode.
+
+   The first node of the list, the head node, is special.  It contains
+   the maximum number of next pointers (SK_MAXHEIGHT).  It has no data
+   associated with it, and it always compares less-than to all other
+   nodes.  Because it has no data attached to it, it is always an
+   error to try and use data_of_node on it.  To detect this problem,
+   it has a different magic number from all other SkipNodes so that it
+   won't be accidentally used.
+ */
+
 #include "vg_include.h"
 
 #include <stdlib.h>
@@ -46,7 +104,10 @@ struct _SkipNode {
 };
 
 
-
+/* 
+   Compute the height of a new node.  1/2 will be 1, 1/4 2, 1/8 3,
+   etc.
+ */
 static inline Int get_height(void)
 {
    UInt ret = 0;
@@ -57,11 +118,19 @@ static inline Int get_height(void)
    return ret;
 }
 
+/* 
+   Given a pointer to the node's data, return a pointer to the key.
+ */
 static inline void *key_of_data(const SkipList *l, void *d)
 {
    return (void *)((Char *)d + l->keyoff);
 }
 
+/* 
+   Given a pointer to the node's data, return the pointer to the SkipNode
+   structure.  If the node has a bad magic number, it will die with an
+   assertion failure.
+ */
 static inline SkipNode *node_of_data(const SkipList *l, const void *d)
 {
    SkipNode *n = (SkipNode *)((Char *)d + l->size);
@@ -75,6 +144,9 @@ static inline SkipNode *node_of_data(const SkipList *l, const void *d)
    return n; 
 }
 
+/* 
+   Given a SkipNode structure, return the pointer to the node's data.
+ */
 static inline void *data_of_node(const SkipList *l, const SkipNode *n)
 {
    if (SKIPLIST_DEBUG && n->magic != SKIPLIST_MAGIC)
@@ -85,6 +157,9 @@ static inline void *data_of_node(const SkipList *l, const SkipNode *n)
    return (void *)((Char *)n - l->size);
 }
 
+/* 
+   Given a SkipNode structure, return the pointer to the node's key.
+ */
 static inline void *key_of_node(const SkipList *l, const SkipNode *n)
 {
    return key_of_data(l, data_of_node(l, n));
@@ -285,7 +360,7 @@ void VG_(SkipList_Insert)(SkipList *l, void *data)
    validate_skiplist(l, "SkipList_Insert before");
 
    if (l->head == NULL) {
-      Int size = sizeof(SkipNode) * sizeof(SkipNode *) * SK_MAXHEIGHT;
+      Int size = sizeof(SkipNode) + sizeof(SkipNode *) * SK_MAXHEIGHT;
 
       if (l->arena == -1)
 	 *(Short *)&l->arena = VG_AR_TOOL;

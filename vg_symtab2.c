@@ -277,6 +277,14 @@ void addLineInfo ( SegInfo* si,
        size = 1;
    }
 
+   /* hack! */
+   if (this >= 0 && this <= 100) {
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: ignoring bogus stabs entry "
+                    "%p %p %d: %d", this, next, entry, size);
+       return;
+   }
+
    vg_assert(this < si->start + si->size && next-1 >= si->start);
    vg_assert(lineno >= 0 && lineno <= MAX_LINENO);
 

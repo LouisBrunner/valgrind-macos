@@ -510,7 +510,6 @@ static void layout_remaining_space(float ratio)
 
    /* where !FIXED mmap goes */
    VG_(client_mapbase) = PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION)); 
-   VG_(client_trampoline_code) = VG_(client_end) - VKI_BYTES_PER_PAGE;
 
    VG_(shadow_base) = VG_(client_end) + REDZONE_SIZE;
    VG_(shadow_end)  = VG_(shadow_base) + shadow_size;
@@ -940,8 +939,7 @@ static char *copy_str(char **tab, const char *str)
    *cp++ = '\0';
 
    if (0)
-      printf("copied %p \"%s\" len %d\n",
-	     orig, orig, cp-orig);
+      printf("copied %p \"%s\" len %d\n", orig, orig, cp-orig);
 
    *tab = cp;
 
@@ -1049,15 +1047,19 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
       ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
       VKI_BYTES_PER_PAGE;		/* page for trampoline code */
 
+   // decide where stack goes!
+   VG_(clstk_end) = VG_(client_end);
+
+   VG_(client_trampoline_code) = VG_(clstk_end) - VKI_BYTES_PER_PAGE;
+
    /* cl_esp is the client's stack pointer */
-   cl_esp = VG_(client_end) - stacksize;
+   cl_esp = VG_(clstk_end) - stacksize;
    cl_esp = ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
    stringbase = strtab = (char *)(VG_(client_trampoline_code) - ROUNDUP(stringsize, sizeof(int)));
 
    VG_(clstk_base) = PGROUNDDN(cl_esp);
-   VG_(clstk_end)  = VG_(client_end);
 
    if (0)
       printf("stringsize=%d auxsize=%d stacksize=%d\n"
@@ -1069,7 +1071,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
-   res = mmap((void *)PGROUNDDN(cl_esp), VG_(client_end) - PGROUNDDN(cl_esp),
+   res = mmap((void *)PGROUNDDN(cl_esp), VG_(clstk_end) - PGROUNDDN(cl_esp),
 	      PROT_READ | PROT_WRITE | PROT_EXEC, 
 	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
    vg_assert((void*)-1 != res); 
@@ -1191,6 +1193,10 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    }
    *auxv = *orig_auxv;
    vg_assert(auxv->a_type == AT_NULL);
+
+   /* --- trampoline page --- */
+   VG_(memcpy)( (void *)VG_(client_trampoline_code),
+                &VG_(trampoline_code_start), VG_(trampoline_code_length) );
 
    vg_assert((strtab-stringbase) == stringsize);
 
@@ -2885,11 +2891,9 @@ int main(int argc, char **argv)
    esp_at_startup___global_arg = 0;
    
    //--------------------------------------------------------------
-   // Initialize our trampoline page (which is also sysinfo stuff)
-   //   p: setup_client_stack()  [for 'esp_at_startup']
+   // Protect client trampoline page (which is also sysinfo stuff)
+   //   p: segment stuff   [otherwise get seg faults...]
    //--------------------------------------------------------------
-   VG_(memcpy)( (void *)VG_(client_trampoline_code),
-                &VG_(trampoline_code_start), VG_(trampoline_code_length) );
    VG_(mprotect)( (void *)VG_(client_trampoline_code),
                  VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
 

@@ -2116,6 +2116,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       seg = VG_(find_segment)(fault);
       if (seg != NULL)
 	 seg = VG_(next_segment)(seg);
+      else 
+         seg = VG_(first_segment)();
 
       if (VG_(clo_trace_signals)) {
 	 if (seg == NULL)
@@ -2141,7 +2143,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    then extend the stack segment. 
 	 */
 	 Addr base = PGROUNDDN(esp);
-        if ((void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
+         if ((void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
                               VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
                               VKI_MAP_PRIVATE|VKI_MAP_FIXED|VKI_MAP_ANONYMOUS|VKI_MAP_CLIENT,
                               SF_STACK|SF_GROWDOWN,

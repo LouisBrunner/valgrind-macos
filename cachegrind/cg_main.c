@@ -399,6 +399,63 @@ static UInt hash(Char *s, UInt table_size)
     return hash_value;
 }
 
+/* This is a backup for get_BBCC() when removing BBs from the table.
+ * Necessary because the debug info can change when code is removed.  For
+ * example, when inserting, the info might be "myprint.c:myprint()", but
+ * upon removal, the info might be "myprint.c:???", which causes the
+ * hash-lookup to fail (but it doesn't always happen).  So we do a horrible,
+ * slow search through all the file nodes and function nodes (but we can do
+ * 3rd stage with the fast hash-lookup). */
+static BBCC* get_BBCC_slow_removal(Addr bb_orig_addr)
+{
+   Int        i, j;
+   UInt       BBCC_hash;
+   file_node *curr_file_node;
+   fn_node   *curr_fn_node;
+   BBCC     **prev_BBCC_next_ptr, *curr_BBCC;
+
+   for (i = 0; i < N_FILE_ENTRIES; i++) {
+
+      for (curr_file_node = BBCC_table[i]; 
+           NULL != curr_file_node;
+           curr_file_node = curr_file_node->next) 
+      {
+         for (j = 0; j < N_FN_ENTRIES; j++) {
+
+            for (curr_fn_node = curr_file_node->fns[j];
+                 NULL != curr_fn_node;
+                 curr_fn_node = curr_fn_node->next) 
+            {
+               BBCC_hash = bb_orig_addr % N_BBCC_ENTRIES;
+               prev_BBCC_next_ptr = &(curr_fn_node->BBCCs[BBCC_hash]);
+               curr_BBCC = curr_fn_node->BBCCs[BBCC_hash];
+
+               while (NULL != curr_BBCC) {
+                  if (bb_orig_addr == curr_BBCC->orig_addr) {
+                     // Found it!
+                     sk_assert(curr_BBCC->array_size > 0 
+                            && curr_BBCC->array_size < 1000000);
+                     if (VG_(clo_verbosity) > 2) {
+                         VG_(message)(Vg_DebugMsg, "did slow BB removal");
+                     }
+
+                     // Remove curr_BBCC from chain;  it will be used and
+                     // free'd by the caller.
+                     *prev_BBCC_next_ptr = curr_BBCC->next;
+                     return curr_BBCC;
+                  }
+
+                  prev_BBCC_next_ptr = &(curr_BBCC->next);
+                  curr_BBCC = curr_BBCC->next;
+               }
+            }
+         }
+      }
+   }
+   VG_(printf)("failing BB address: %p\n", bb_orig_addr);
+   VG_(skin_panic)("slow BB removal failed");
+}
+
 /* Do a three step traversal: by filename, then fn_name, then instr_addr.
  * In all cases prepends new nodes to their chain.  Returns a pointer to the
  * cost centre.  Also sets BB_seen_before by reference. 
@@ -449,18 +506,23 @@ static BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    }
    if (curr_BBCC == NULL) {
 
-      sk_assert(False == remove);
-
-      curr_fn_node->BBCCs[BBCC_hash] = curr_BBCC = 
-         new_BBCC(bb_orig_addr, cb, curr_fn_node->BBCCs[BBCC_hash]);
-      *BB_seen_before = False;
+      if (remove == False) {
+         curr_fn_node->BBCCs[BBCC_hash] = curr_BBCC = 
+            new_BBCC(bb_orig_addr, cb, curr_fn_node->BBCCs[BBCC_hash]);
+         *BB_seen_before = False;
+      } else {
+         // Ok, BB not found when removing:  the debug info must have
+         // changed.  Do a slow removal.
+         curr_BBCC = get_BBCC_slow_removal(bb_orig_addr);
+         *BB_seen_before = True;
+      }
 
    } else {
       sk_assert(bb_orig_addr == curr_BBCC->orig_addr);
       sk_assert(curr_BBCC->array_size > 0 && curr_BBCC->array_size < 1000000);
       if (VG_(clo_verbosity) > 2) {
           VG_(message)(Vg_DebugMsg, 
-            "BB retranslation, retrieving from BBCC table");
+            "BB retranslation/invalidation, retrieving from BBCC table");
       }
       *BB_seen_before = True;
 

@@ -1803,9 +1803,10 @@ extern void VG_(signalreturn_bogusRA)( void );
    Exports of vg_cachesim.c
    ------------------------------------------------------------------ */
 
-extern int log2( int x );
+extern Int VG_(log2) ( Int x );
 
-extern UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr);
+extern UCodeBlock* VG_(cachesim_instrument) ( UCodeBlock* cb_in, 
+                                              Addr orig_addr );
 
 typedef struct  _iCC  iCC;
 typedef struct _idCC idCC;

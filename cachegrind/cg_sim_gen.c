@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------*/
 /*--- Generic stuff shared by all cache simulation files.          ---*/
 /*---                                            vg_cachesim_gen.c ---*/
@@ -65,9 +66,9 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
 
    c->sets           = (c->size / c->line_size) / c->assoc;
    c->sets_min_1     = c->sets - 1;
-   c->assoc_bits     = log2(c->assoc);
-   c->line_size_bits = log2(c->line_size);
-   c->tag_shift      = c->line_size_bits + log2(c->sets);
+   c->assoc_bits     = VG_(log2)(c->assoc);
+   c->line_size_bits = VG_(log2)(c->line_size);
+   c->tag_shift      = c->line_size_bits + VG_(log2)(c->sets);
 
    if (c->assoc == 1) {
       VG_(sprintf)(c->desc_line, "%d B, %d B, direct-mapped", 
@@ -105,9 +106,9 @@ static void print_cache(cache_t2* c)
 
 #define CACHESIM(L, MISS_TREATMENT)                                         \
 /* The cache and associated bits and pieces. */                             \
-cache_t2 L;                                                            \
+cache_t2 L;                                                                 \
                                                                             \
-static void cachesim_##L##_initcache(cache_t config)                   \
+static void cachesim_##L##_initcache(cache_t config)                        \
 {                                                                           \
     cachesim_initcache(config, &L);                                         \
 }                                                                           \
@@ -122,11 +123,11 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
    Bool is_miss = False;                                                    \
    int* set;                                                                \
                                                                             \
-   /* First case: word entirely within line. */         \
-   if (set1 == set2) {                                         \
+   /* First case: word entirely within line. */                             \
+   if (set1 == set2) {                                                      \
                                                                             \
       /* Shifting is a bit faster than multiplying */                       \
-      set = &(L.tags[set1 << L.assoc_bits]);                                   \
+      set = &(L.tags[set1 << L.assoc_bits]);                                \
                                                                             \
       /* This loop is unrolled for just the first case, which is the most */\
       /* common.  We can't unroll any further because it would screw up   */\

@@ -291,18 +291,17 @@ typedef
 extern HChar* showAMD64AluOp ( AMD64AluOp );
 
 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xsh_INVALID,
-//..       Xsh_SHL, Xsh_SHR, Xsh_SAR, 
-//..       Xsh_ROL, Xsh_ROR
-//..    }
-//..    X86ShiftOp;
-//.. 
-//.. extern HChar* showX86ShiftOp ( X86ShiftOp );
-//.. 
-//.. 
+/* --------- */
+typedef
+   enum {
+      Ash_INVALID,
+      Ash_SHL, Ash_SHR, Ash_SAR
+   }
+   AMD64ShiftOp;
+
+extern HChar* showAMD64ShiftOp ( AMD64ShiftOp );
+
+
 //.. /* --------- */
 //.. typedef
 //..    enum {
@@ -367,7 +366,7 @@ typedef
    enum {
       Ain_Alu64R,    /* 64-bit mov/arith/logical, dst=REG */
       Ain_Alu64M,    /* 64-bit mov/arith/logical, dst=MEM */
-//..       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
+      Ain_Sh64,      /* 64-bit shift/rotate, dst=REG or MEM */
 //..       Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
 //..       Xin_Unary32,   /* 32-bit not and neg */
 //..       Xin_MulL,      /* widening multiply */
@@ -377,7 +376,7 @@ typedef
 //..       Xin_Call,      /* call to address in register */
 //..       Xin_Goto,      /* conditional/unconditional jmp to dst */
 //..       Xin_CMov32,    /* conditional move */
-//..       Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
+      Ain_LoadEX,    /* mov{s,z}{b,w,l}q from mem to reg */
 //..       Xin_Store,     /* store 16/8 bit value in memory */
 //..       Xin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
@@ -422,11 +421,11 @@ typedef
             AMD64RI*    src;
             AMD64AMode* dst;
          } Alu64M;
-//..          struct {
-//..             X86ShiftOp op;
-//..             UInt       src;  /* shift amount, or 0 means %cl */
-//..             X86RM*     dst;
-//..          } Sh32;
+         struct {
+            AMD64ShiftOp op;
+            UInt         src;  /* shift amount, or 0 means %cl */
+            AMD64RM*     dst;
+         } Sh64;
 //..          struct {
 //..             X86RI* src;
 //..             X86RM* dst;
@@ -482,13 +481,13 @@ typedef
 //..             X86RM*      src;
 //..             HReg        dst;
 //..          } CMov32;
-//..          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
-//..          struct {
-//..             UChar     szSmall;
-//..             Bool      syned;
-//..             X86AMode* src;
-//..             HReg      dst;
-//..          } LoadEX;
+         /* Sign/Zero extending loads.  Dst size is always 64 bits. */
+         struct {
+            UChar       szSmall;
+            Bool        syned;
+            AMD64AMode* src;
+            HReg        dst;
+         } LoadEX;
 //..          /* 16/8 bit stores, which are troublesome (particularly
 //..             8-bit) */
 //..          struct {
@@ -637,7 +636,7 @@ typedef
 extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
 //.. extern AMD64Instr* AMD64Instr_Alu32M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );
-//.. extern AMD64Instr* AMD64Instr_Sh32      ( AMD64ShiftOp, UInt, AMD64RM* );
+extern AMD64Instr* AMD64Instr_Sh64      ( AMD64ShiftOp, UInt, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Test32    ( AMD64RI* src, AMD64RM* dst );
 //.. extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, AMD64ScalarSz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Div       ( Bool syned, AMD64ScalarSz, AMD64RM* );
@@ -646,8 +645,8 @@ extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
 //.. extern AMD64Instr* AMD64Instr_Call      ( AMD64CondCode, Addr32, Int );
 //.. extern AMD64Instr* AMD64Instr_Goto      ( IRJumpKind, AMD64CondCode cond, AMD64RI* dst );
 //.. extern AMD64Instr* AMD64Instr_CMov32    ( AMD64CondCode, AMD64RM* src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
-//..                                       AMD64AMode* src, HReg dst );
+extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
+                                          AMD64AMode* src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Store     ( UChar sz, HReg src, AMD64AMode* dst );
 //.. extern AMD64Instr* AMD64Instr_Set32     ( AMD64CondCode cond, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );

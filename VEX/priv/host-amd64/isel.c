@@ -166,13 +166,13 @@ static void addInstr ( ISelEnv* env, AMD64Instr* instr )
    }
 }
 
-//.. static HReg newVRegI ( ISelEnv* env )
-//.. {
-//..    HReg reg = mkHReg(env->vreg_ctr, HRcInt32, True/*virtual reg*/);
-//..    env->vreg_ctr++;
-//..    return reg;
-//.. }
-//.. 
+static HReg newVRegI ( ISelEnv* env )
+{
+   HReg reg = mkHReg(env->vreg_ctr, HRcInt64, True/*virtual reg*/);
+   env->vreg_ctr++;
+   return reg;
+}
+
 //.. static HReg newVRegF ( ISelEnv* env )
 //.. {
 //..    HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True/*virtual reg*/);
@@ -268,17 +268,17 @@ static Bool fitsIn32Bits ( ULong x )
 //..           && e->Iex.Const.con->tag == Ico_U32
 //..           && e->Iex.Const.con->Ico.U32 == 0;
 //.. }
-//.. 
-//.. /* Make a int reg-reg move. */
-//.. 
-//.. static X86Instr* mk_iMOVsd_RR ( HReg src, HReg dst )
-//.. {
-//..    vassert(hregClass(src) == HRcInt32);
-//..    vassert(hregClass(dst) == HRcInt32);
-//..    return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
-//.. }
-//.. 
-//.. 
+
+/* Make a int reg-reg move. */
+
+static AMD64Instr* mk_iMOVsd_RR ( HReg src, HReg dst )
+{
+   vassert(hregClass(src) == HRcInt64);
+   vassert(hregClass(dst) == HRcInt64);
+   return AMD64Instr_Alu64R(Aalu_MOV, AMD64RMI_Reg(src), dst);
+}
+
+
 //.. /* Make a vector reg-reg move. */
 //.. 
 //.. static X86Instr* mk_vMOVsd_RR ( HReg src, HReg dst )
@@ -693,63 +693,67 @@ static Bool fitsIn32Bits ( ULong x )
 //..    addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, reg, zero_esp));
 //..    add_to_esp(env, 8);
 //.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* Select insns for an integer-typed expression, and add them to the
-//..    code list.  Return a reg holding the result.  This reg will be a
-//..    virtual register.  THE RETURNED REG MUST NOT BE MODIFIED.  If you
-//..    want to modify it, ask for a new vreg, copy it in there, and modify
-//..    the copy.  The register allocator will do its best to map both
-//..    vregs to the same real register, so the copies will often disappear
-//..    later in the game.
-//.. 
-//..    This should handle expressions of 32, 16 and 8-bit type.  All
-//..    results are returned in a 32-bit register.  For 16- and 8-bit
-//..    expressions, the upper 16/24 bits are arbitrary, so you should mask
-//..    or sign extend partial values if necessary.
-//.. */
-//.. 
-//.. static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    HReg r = iselIntExpr_R_wrk(env, e);
-//..    /* sanity checks ... */
-//.. #  if 0
-//..    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-//.. #  endif
-//..    vassert(hregClass(r) == HRcInt32);
-//..    vassert(hregIsVirtual(r));
-//..    return r;
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Integer expressions (64/32/16/8 bit)        ---*/
+/*---------------------------------------------------------*/
+
+/* Select insns for an integer-typed expression, and add them to the
+   code list.  Return a reg holding the result.  This reg will be a
+   virtual register.  THE RETURNED REG MUST NOT BE MODIFIED.  If you
+   want to modify it, ask for a new vreg, copy it in there, and modify
+   the copy.  The register allocator will do its best to map both
+   vregs to the same real register, so the copies will often disappear
+   later in the game.
+
+   This should handle expressions of 64, 32, 16 and 8-bit type.  All
+   results are returned in a 64-bit register.  For 32-, 16- and 8-bit
+   expressions, the upper 32/16/24 bits are arbitrary, so you should
+   mask or sign extend partial values if necessary.
+*/
+
+static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
+{
+   HReg r = iselIntExpr_R_wrk(env, e);
+   /* sanity checks ... */
+#  if 0
+   vex_printf("\niselIntExpr_R: "); ppIRExpr(e); vex_printf("\n");
+#  endif
+   vassert(hregClass(r) == HRcInt64);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
+{
 //..    MatchInfo mi;
 //..    DECLARE_PATTERN(p_32to1_then_1Uto8);
-//.. 
-//..    IRType ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
-//.. 
-//..    switch (e->tag) {
-//.. 
-//..    /* --------- TEMP --------- */
-//..    case Iex_Tmp: {
-//..       return lookupIRTemp(env, e->Iex.Tmp.tmp);
-//..    }
-//.. 
-//..    /* --------- LOAD --------- */
-//..    case Iex_LDle: {
-//..       HReg dst = newVRegI(env);
-//..       X86AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
+
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
+
+   switch (e->tag) {
+
+   /* --------- TEMP --------- */
+   case Iex_Tmp: {
+      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   }
+
+   /* --------- LOAD --------- */
+   case Iex_LDle: {
+      HReg dst = newVRegI(env);
+      AMD64AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
 //..       if (ty == Ity_I32) {
 //..          addInstr(env, X86Instr_Alu32R(Xalu_MOV,
 //..                                        X86RMI_Mem(amode), dst) );
 //..          return dst;
 //..       }
+      if (ty == Ity_I32) {
+         addInstr(env, AMD64Instr_LoadEX(4,False,amode,dst));
+         return dst;
+      }
 //..       if (ty == Ity_I16) {
 //..          addInstr(env, X86Instr_LoadEX(2,False,amode,dst));
 //..          return dst;
@@ -758,13 +762,13 @@ static Bool fitsIn32Bits ( ULong x )
 //..          addInstr(env, X86Instr_LoadEX(1,False,amode,dst));
 //..          return dst;
 //..       }
-//..       break;
-//..    }
-//.. 
-//..    /* --------- BINARY OP --------- */
-//..    case Iex_Binop: {
-//..       X86AluOp   aluOp;
-//..       X86ShiftOp shOp;
+      break;
+   }
+
+   /* --------- BINARY OP --------- */
+   case Iex_Binop: {
+      AMD64AluOp   aluOp;
+      AMD64ShiftOp shOp;
 //.. 
 //..       /* Pattern: Sub32(0,x) */
 //..       if (e->Iex.Binop.op == Iop_Sub32 && isZero32(e->Iex.Binop.arg1)) {
@@ -775,10 +779,10 @@ static Bool fitsIn32Bits ( ULong x )
 //..          return dst;
 //..       }
 //.. 
-//..       /* Is it an addition or logical style op? */
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_Add8: case Iop_Add16: case Iop_Add32:
-//..             aluOp = Xalu_ADD; break;
+      /* Is it an addition or logical style op? */
+      switch (e->Iex.Binop.op) {
+         case Iop_Add8: case Iop_Add16: case Iop_Add32: case Iop_Add64: 
+            aluOp = Aalu_ADD; break;
 //..          case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
 //..             aluOp = Xalu_SUB; break;
 //..          case Iop_And8: case Iop_And16: case Iop_And32: 
@@ -789,57 +793,42 @@ static Bool fitsIn32Bits ( ULong x )
 //..             aluOp = Xalu_XOR; break;
 //..          case Iop_Mul16: case Iop_Mul32: 
 //..             aluOp = Xalu_MUL; break;
-//..          default:
-//..             aluOp = Xalu_INVALID; break;
-//..       }
-//..       /* For commutative ops we assume any literal
-//..          values are on the second operand. */
-//..       if (aluOp != Xalu_INVALID) {
-//..          HReg dst    = newVRegI(env);
-//..          HReg reg    = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..          addInstr(env, mk_iMOVsd_RR(reg,dst));
-//..          addInstr(env, X86Instr_Alu32R(aluOp, rmi, dst));
-//..          return dst;
-//..       }
-//..       /* Could do better here; forcing the first arg into a reg
-//..          isn't always clever.
-//..          -- t70 = Xor32(And32(Xor32(LDle:I32(Add32(t41,0xFFFFFFA0:I32)),
-//..                         LDle:I32(Add32(t41,0xFFFFFFA4:I32))),LDle:I32(Add32(
-//..                         t41,0xFFFFFFA8:I32))),LDle:I32(Add32(t41,0xFFFFFFA0:I32)))
-//..             movl 0xFFFFFFA0(%vr41),%vr107
-//..             movl 0xFFFFFFA4(%vr41),%vr108
-//..             movl %vr107,%vr106
-//..             xorl %vr108,%vr106
-//..             movl 0xFFFFFFA8(%vr41),%vr109
-//..             movl %vr106,%vr105
-//..             andl %vr109,%vr105
-//..             movl 0xFFFFFFA0(%vr41),%vr110
-//..             movl %vr105,%vr104
-//..             xorl %vr110,%vr104
-//..             movl %vr104,%vr70
-//..       */
-//.. 
-//..       /* Perhaps a shift op? */
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:
-//..             shOp = Xsh_SHL; break;
+         default:
+            aluOp = Aalu_INVALID; break;
+      }
+      /* For commutative ops we assume any literal
+         values are on the second operand. */
+      if (aluOp != Aalu_INVALID) {
+         HReg dst      = newVRegI(env);
+         HReg reg      = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         AMD64RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(reg,dst));
+         addInstr(env, AMD64Instr_Alu64R(aluOp, rmi, dst));
+         return dst;
+      }
+
+      /* Perhaps a shift op? */
+      switch (e->Iex.Binop.op) {
+         case Iop_Shl64: case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:
+            shOp = Ash_SHL; break;
 //..          case Iop_Shr32: case Iop_Shr16: case Iop_Shr8: 
 //..             shOp = Xsh_SHR; break;
 //..          case Iop_Sar32: case Iop_Sar16: case Iop_Sar8: 
 //..             shOp = Xsh_SAR; break;
-//..          default:
-//..             shOp = Xsh_INVALID; break;
-//..       }
-//..       if (shOp != Xsh_INVALID) {
-//..          HReg dst = newVRegI(env);
-//.. 
-//..          /* regL = the value to be shifted */
-//..          HReg regL   = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          addInstr(env, mk_iMOVsd_RR(regL,dst));
-//.. 
-//..          /* Do any necessary widening for 16/8 bit operands */
-//..          switch (e->Iex.Binop.op) {
+         default:
+            shOp = Ash_INVALID; break;
+      }
+      if (shOp != Ash_INVALID) {
+         HReg dst = newVRegI(env);
+
+         /* regL = the value to be shifted */
+         HReg regL   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         addInstr(env, mk_iMOVsd_RR(regL,dst));
+
+         /* Do any necessary widening for 32/16/8 bit operands */
+         switch (e->Iex.Binop.op) {
+            case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: break;
+            default: vassert(0);
 //..             case Iop_Shr8:
 //..                addInstr(env, X86Instr_Alu32R(
 //..                                 Xalu_AND, X86RMI_Imm(0xFF), dst));
@@ -857,31 +846,31 @@ static Bool fitsIn32Bits ( ULong x )
 //..                addInstr(env, X86Instr_Sh32(Xsh_SAR, 16, X86RM_Reg(dst)));
 //..                break;
 //..             default: break;
-//..          }
-//.. 
-//..          /* Now consider the shift amount.  If it's a literal, we
-//..             can do a much better job than the general case. */
-//..          if (e->Iex.Binop.arg2->tag == Iex_Const) {
-//..             /* assert that the IR is well-typed */
-//..             Int nshift;
-//..             vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
-//..             nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
-//.. 	    vassert(nshift >= 0);
-//.. 	    if (nshift > 0)
-//..                /* Can't allow nshift==0 since that means %cl */
-//..                addInstr(env, X86Instr_Sh32(
-//..                                 shOp, 
-//..                                 nshift,
-//..                                 X86RM_Reg(dst)));
-//..          } else {
-//..             /* General case; we have to force the amount into %cl. */
-//..             HReg regR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..             addInstr(env, mk_iMOVsd_RR(regR,hregX86_ECX()));
-//..             addInstr(env, X86Instr_Sh32(shOp, 0/* %cl */, X86RM_Reg(dst)));
-//..          }
-//..          return dst;
-//..       }
-//.. 
+         }
+
+         /* Now consider the shift amount.  If it's a literal, we
+            can do a much better job than the general case. */
+         if (e->Iex.Binop.arg2->tag == Iex_Const) {
+            /* assert that the IR is well-typed */
+            Int nshift;
+            vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+            nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+            vassert(nshift >= 0);
+            if (nshift > 0)
+               /* Can't allow nshift==0 since that means %cl */
+               addInstr(env, AMD64Instr_Sh64(
+                                shOp, 
+                                nshift,
+                                AMD64RM_Reg(dst)));
+         } else {
+            /* General case; we have to force the amount into %cl. */
+            HReg regR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            addInstr(env, mk_iMOVsd_RR(regR,hregAMD64_RCX()));
+            addInstr(env, AMD64Instr_Sh64(shOp, 0/* %cl */, AMD64RM_Reg(dst)));
+         }
+         return dst;
+      }
+
 //..       /* Handle misc other ops. */
 //..       if (e->Iex.Binop.op == Iop_8HLto16) {
 //..          HReg hi8  = newVRegI(env);
@@ -1004,10 +993,10 @@ static Bool fitsIn32Bits ( ULong x )
 //.. 	 addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0x4700), dst));
 //..          return dst;
 //..       }
-//.. 
-//..       break;
-//..    }
-//.. 
+
+      break;
+   }
+
 //..    /* --------- UNARY OP --------- */
 //..    case Iex_Unop: {
 //..       /* 1Uto8(32to1(expr32)) */
@@ -1149,30 +1138,31 @@ static Bool fitsIn32Bits ( ULong x )
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* --------- GET --------- */
-//..    case Iex_Get: {
-//..       if (ty == Ity_I32) {
-//..          HReg dst = newVRegI(env);
-//..          addInstr(env, X86Instr_Alu32R(
-//..                           Xalu_MOV, 
-//..                           X86RMI_Mem(X86AMode_IR(e->Iex.Get.offset,
-//..                                                  hregX86_EBP())),
-//..                           dst));
-//..          return dst;
-//..       }
-//..       if (ty == Ity_I8 || ty == Ity_I16) {
-//..          HReg dst = newVRegI(env);
-//..          addInstr(env, X86Instr_LoadEX(
-//..                           ty==Ity_I8 ? 1 : 2,
-//..                           False,
-//..                           X86AMode_IR(e->Iex.Get.offset,hregX86_EBP()),
-//..                           dst));
-//..          return dst;
-//..       }
-//..       break;
-//..    }
-//.. 
+
+   /* --------- GET --------- */
+   case Iex_Get: {
+      if (ty == Ity_I64) {
+         HReg dst = newVRegI(env);
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_MOV, 
+                          AMD64RMI_Mem(
+                             AMD64AMode_IR(e->Iex.Get.offset,
+                                           hregAMD64_RBP())),
+                          dst));
+         return dst;
+      }
+      if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
+         HReg dst = newVRegI(env);
+         addInstr(env, AMD64Instr_LoadEX(
+                          ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4),
+                          False,
+                          AMD64AMode_IR(e->Iex.Get.offset,hregAMD64_RBP()),
+                          dst));
+         return dst;
+      }
+      break;
+   }
+
 //..    case Iex_GetI: {
 //..       X86AMode* am 
 //..          = genGuestArrayOffset(
@@ -1228,16 +1218,16 @@ static Bool fitsIn32Bits ( ULong x )
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    default: 
-//..    break;
-//..    } /* switch (e->tag) */
-//.. 
-//..    /* We get here if no pattern matched. */
-//..   irreducible:
-//..    ppIRExpr(e);
-//..    vpanic("iselIntExpr_R: cannot reduce tree");
-//.. }
+
+   default: 
+   break;
+   } /* switch (e->tag) */
+
+   /* We get here if no pattern matched. */
+  irreducible:
+   ppIRExpr(e);
+   vpanic("iselIntExpr_R(amd64): cannot reduce tree");
+}
 
 
 /*---------------------------------------------------------*/
@@ -1251,50 +1241,54 @@ static Bool fitsIn32Bits ( ULong x )
    result.  The expression may only be a 32-bit one.
 */
 
-//.. static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    X86AMode* am = iselIntExpr_AMode_wrk(env, e);
-//..    vassert(sane_AMode(am));
-//..    return am;
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    IRType ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(ty == Ity_I32);
-//.. 
-//..    /* Add32(expr1, Shl32(expr2, imm)) */
-//..    if (e->tag == Iex_Binop
-//..        && e->Iex.Binop.op == Iop_Add32
-//..        && e->Iex.Binop.arg2->tag == Iex_Binop
-//..        && e->Iex.Binop.arg2->Iex.Binop.op == Iop_Shl32
-//..        && e->Iex.Binop.arg2->Iex.Binop.arg2->tag == Iex_Const
-//..        && e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8) {
-//..       UInt shift = e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
-//..       if (shift == 1 || shift == 2 || shift == 3) {
-//..          HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          HReg r2 = iselIntExpr_R(env, e->Iex.Binop.arg2->Iex.Binop.arg1 );
-//..          return X86AMode_IRRS(0, r1, r2, shift);
-//..       }
-//..    }
-//.. 
-//..    /* Add32(expr,i) */
-//..    if (e->tag == Iex_Binop 
-//..        && e->Iex.Binop.op == Iop_Add32
-//..        && e->Iex.Binop.arg2->tag == Iex_Const
-//..        && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
-//..       HReg r1 = iselIntExpr_R(env,  e->Iex.Binop.arg1);
-//..       return X86AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32, r1);
-//..    }
-//.. 
-//..    /* Doesn't match anything in particular.  Generate it into
-//..       a register and use that. */
-//..    {
-//..       HReg r1 = iselIntExpr_R(env, e);
-//..       return X86AMode_IR(0, r1);
-//..    }
-//.. }
+static AMD64AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
+{
+   AMD64AMode* am = iselIntExpr_AMode_wrk(env, e);
+   vassert(sane_AMode(am));
+   return am;
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static AMD64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I64);
+
+   /* Add64(expr1, Shl64(expr2, imm)) */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_Add64
+       && e->Iex.Binop.arg2->tag == Iex_Binop
+       && e->Iex.Binop.arg2->Iex.Binop.op == Iop_Shl64
+       && e->Iex.Binop.arg2->Iex.Binop.arg2->tag == Iex_Const
+       && e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8) {
+      UInt shift = e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+      if (shift == 1 || shift == 2 || shift == 3) {
+         HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r2 = iselIntExpr_R(env, e->Iex.Binop.arg2->Iex.Binop.arg1 );
+         return AMD64AMode_IRRS(0, r1, r2, shift);
+      }
+   }
+
+   /* Add64(expr,i) */
+   if (e->tag == Iex_Binop 
+       && e->Iex.Binop.op == Iop_Add64
+       && e->Iex.Binop.arg2->tag == Iex_Const
+       && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U64
+       && fitsIn32Bits(e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)) {
+      HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      return AMD64AMode_IR(
+                (UInt)(0xFFFFFFFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U64), 
+                r1
+             );
+   }
+
+   /* Doesn't match anything in particular.  Generate it into
+      a register and use that. */
+   {
+      HReg r1 = iselIntExpr_R(env, e);
+      return AMD64AMode_IR(0, r1);
+   }
+}
 
 
 /* --------------------- RMIs --------------------- */
@@ -1356,11 +1350,10 @@ static AMD64RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
    /* special case: load from memory */
 
    /* default case: calculate into a register and return that */
-vassert(0);
-   //{
-   //   HReg r = iselIntExpr_R ( env, e );
-   //   return X86RMI_Reg(r);
-   //}
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return AMD64RMI_Reg(r);
+   }
 }
 
 

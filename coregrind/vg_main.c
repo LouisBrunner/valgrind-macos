@@ -535,9 +535,11 @@ Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 
-/* See big comment in vg_include.h for meaning of these three. */
+/* See big comment in vg_include.h for meaning of these three.
+   fd is initially stdout, for --help, but gets moved to stderr by default
+   immediately afterwards. */
 VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
-Int     VG_(clo_logfile_fd)    = 2;
+Int     VG_(clo_logfile_fd)    = 1;
 Char*   VG_(clo_logfile_name)  = NULL;
 
 Int    VG_(clo_input_fd)       = 0; /* stdin */
@@ -769,7 +771,8 @@ static void process_cmd_line_options ( void )
 
 #  define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
 
-   eventually_logfile_fd = VG_(clo_logfile_fd);
+   /* log to stderr by default, but usage message goes to stdout */
+   eventually_logfile_fd = 2; 
 
    /* Once logging is started, we can safely send messages pertaining
       to failures in initialisation. */
@@ -1176,10 +1179,10 @@ static void process_cmd_line_options ( void )
       indiscriminately chuck stuff into it without worrying what the
       nature of it is.  Oh the wonder of Unix streams. */
 
-   /* So far we should be still attached to stderr, so we can show on
+   /* So far we should be still attached to stdout, so we can show on
       the terminal any problems to do with processing command line
       opts. */
-   vg_assert(VG_(clo_logfile_fd) == 2 /* stderr */);
+   vg_assert(VG_(clo_logfile_fd) == 1 /* stdout */);
    vg_assert(VG_(logging_to_filedes) == True);
 
    switch (VG_(clo_log_to)) {

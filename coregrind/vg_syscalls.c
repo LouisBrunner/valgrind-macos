@@ -1689,6 +1689,9 @@ PRE(execve)
 	 VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
 	 VG_(mash_colon_env)(ld_preload_str, buf);
 
+	 VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
+	 VG_(mash_colon_env)(ld_preload_str, buf);
+
 	 VG_(sprintf)(buf, "%s*", VG_(libdir));
 	 VG_(mash_colon_env)(ld_library_path_str, buf);
 

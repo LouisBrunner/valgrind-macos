@@ -144,9 +144,9 @@ static void do_nontrivial_clientreq ( ThreadId tid );
 static void scheduler_sanity ( void );
 
 static void do_pthread_mutex_unlock ( ThreadId, 
-                                      void* /* pthread_cond_t* */ );
+                                      void* /* pthread_mutex_t* */ );
 static void do_pthread_mutex_lock ( ThreadId, Bool, 
-                                    void* /* pthread_cond_t* */ );
+                                    void* /* pthread_mutex_t* */ );
 
 static void do_pthread_getspecific ( ThreadId,
                                      UInt /* pthread_key_t */ );
@@ -623,6 +623,7 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
    UInt*        arg    = (UInt*)(tst->m_eax);
    UInt         req_no = arg[0];
 
+   /* VG_(printf)("req no = 0x%x\n", req_no); */
    switch (req_no) {
       case VG_USERREQ__MALLOC:
          SIMPLE_RETURN(
@@ -1324,7 +1325,10 @@ VgSchedReturnCode VG_(scheduler) ( void )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            Bool done = maybe_do_trivial_clientreq(tid);
+            Bool done; 
+            /* VG_(printf)("request 0x%x\n", 
+                           *(UInt*)(vg_threads[tid].m_eax)); */
+            done = maybe_do_trivial_clientreq(tid);
             if (done) {
                /* The request is done.  We try and continue with the
                   same thread if still runnable.  If not, go back to
@@ -1891,8 +1895,8 @@ void do_pthread_mutex_lock( ThreadId tid,
 {
    Char  msg_buf[100];
    Char* caller
-      = is_trylock ? "pthread_mutex_lock   "
-                   : "pthread_mutex_trylock";
+      = is_trylock ? "pthread_mutex_trylock"
+                   : "pthread_mutex_lock   ";
 
    pthread_mutex_t* mutex = (pthread_mutex_t*)mutexV;
 

@@ -420,6 +420,14 @@ X86Instr* X86Instr_Unary32  ( X86UnaryOp op, X86RM* dst ) {
    i->Xin.Unary32.dst = dst;
    return i;
 }
+X86Instr* X86Instr_MulL ( Bool syned, X86ScalarSz ssz , X86RM* src ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_MulL;
+   i->Xin.MulL.syned  = syned;
+   i->Xin.MulL.ssz    = ssz;
+   i->Xin.MulL.src    = src;
+   return i;
+}
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
@@ -493,6 +501,12 @@ void ppX86Instr ( X86Instr* i ) {
       case Xin_Unary32:
          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
          ppX86RM(i->Xin.Unary32.dst);
+         return;
+      case Xin_MulL:
+         vex_printf("%cmul%s ",
+                    i->Xin.MulL.syned ? 's' : 'u',
+                    showX86ScalarSz(i->Xin.MulL.ssz));
+         ppX86RM(i->Xin.MulL.src);
          return;
       case Xin_Sh32:
          vex_printf("%sl ", showX86ShiftOp(i->Xin.Sh32.op));

@@ -249,6 +249,7 @@ typedef
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
       Xin_Unary32,   /* 32-bit not and neg */
+      Xin_MulL,      /* widening multiply */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */

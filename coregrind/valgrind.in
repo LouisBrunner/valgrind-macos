@@ -41,6 +41,8 @@ do
     --verbose)              vgopts="$vgopts -v"; shift;;
     -q)                     vgopts="$vgopts $arg"; shift;;
     --quiet)                vgopts="$vgopts $arg"; shift;;
+    --event-horizon=no)     vgopts="$vgopts $arg"; shift;;
+    --event-horizon=yes)    vgopts="$vgopts $arg"; shift;;
     --check-addrVs=no)      vgopts="$vgopts $arg"; shift;;
     --check-addrVs=yes)     vgopts="$vgopts $arg"; shift;;
     --gdb-attach=no)        vgopts="$vgopts $arg"; shift;;
@@ -121,6 +123,7 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo "    --gdb-attach=no|yes       start GDB when errors detected? [no]"
    echo "    --demangle=no|yes         automatically demangle C++ names? [yes]"
    echo "    --num-callers=<number>    show <num> callers in stack traces [4]"
+   echo "    --event-horizon=no|yes    stop showing new errors if too many? [yes]"
    echo "    --partial-loads-ok=no|yes too hard to explain here; see manual [yes]"
    echo "    --leak-check=no|yes       search for memory leaks at exit? [no]"
    echo "    --leak-resolution=low|med|high"

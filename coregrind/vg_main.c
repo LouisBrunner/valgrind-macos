@@ -399,6 +399,7 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
    Values derived from command-line options.
    ------------------------------------------------------------------ */
 
+Bool   VG_(clo_event_horizon);
 Bool   VG_(clo_check_addrVs);
 Bool   VG_(clo_GDB_attach);
 Int    VG_(sanity_level);
@@ -532,6 +533,7 @@ static void process_cmd_line_options ( void )
 #  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
    /* Set defaults. */
+   VG_(clo_event_horizon)    = True;
    VG_(clo_check_addrVs)     = True;
    VG_(clo_GDB_attach)       = False;
    VG_(sanity_level)         = 1;
@@ -707,6 +709,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_verbosity)++;
       else if (STREQ(argv[i], "-q") || STREQ(argv[i], "--quiet"))
          VG_(clo_verbosity)--;
+
+      else if (STREQ(argv[i], "--event-horizon=yes"))
+         VG_(clo_event_horizon) = True;
+      else if (STREQ(argv[i], "--event-horizon=no"))
+         VG_(clo_event_horizon) = False;
 
       else if (STREQ(argv[i], "--check-addrVs=yes"))
          VG_(clo_check_addrVs) = True;

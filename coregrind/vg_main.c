@@ -1697,7 +1697,7 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    if (*p != ':') MUTANCY(2);  /* skin.so entry must precede it */
    coredir_first = p+1;
    coredir_last  = vg_prel - 1;
-   coredir_len   = coredir_last - coredir_first + 1;
+   coredir_len   = coredir_last - coredir_first;
    
    /* LD_PRELOAD: find "vgskin_foo.so" */
    sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
@@ -1723,16 +1723,15 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
       p--;
    }
    /* Blank from "vgskin_" to next LD_PRELOAD entry (must be one, since
-      the valgrind.so entry must follow) */
+      the valgrind.so entry must follow).  But leave the colon. */
    p = sk_prel;
    while (*p != ':' && *p != '\0') { 
       *p = ' ';
       p++;
    }
    if (*p == '\0') MUTANCY(7);    /* valgrind.so has disappeared?! */
-   *p = ' ';                        /* blank ending ':' */
 
-   /* LD_LIBRARY_PATH: coredir --> blank */
+   /* LD_LIBRARY_PATH: coredir --> blank (but leave the colon) */
    for (i = 0; i < coredir_len; i++)
       pth_path[i] = ' ';
       

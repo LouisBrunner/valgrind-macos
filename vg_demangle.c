@@ -47,8 +47,12 @@
 
 void VG_(demangle) ( Char* orig, Char* result, Int result_size )
 {
-   Int   n_result = 0;
-   Char* demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+   Int   n_result  = 0;
+   Char* demangled = NULL;
+
+   if (VG_(clo_demangle))
+      demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+
    if (demangled) {
       ADD_TO_RESULT(demangled, VG_(strlen)(demangled));
       VG_(free) (VG_AR_DEMANGLE, demangled);

@@ -1337,7 +1337,7 @@ void VG_(emit_target_delta) ( Int *tgt )
 void VG_(emit_jcondshort_delta) ( Bool simd, Condcode cond, Int delta )
 {
    vg_assert(delta >= -128 && delta <= 127);
-   VG_(new_emit)(simd, FlagsOSZCP, False);
+   VG_(new_emit)(simd, FlagsOSZCP, FlagsEmpty);
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emitB) ( (UChar)delta );
    if (dis)
@@ -1348,7 +1348,7 @@ void VG_(emit_jcondshort_delta) ( Bool simd, Condcode cond, Int delta )
 /* Same as above, but defers emitting the delta  */
 void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
 {
-   VG_(new_emit)(simd, FlagsOSZCP, False);
+   VG_(new_emit)(simd, FlagsOSZCP, FlagsEmpty);
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emit_target_delta) (tgt);
    if (dis)
@@ -1360,7 +1360,7 @@ void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
 
 static void emit_setb_reg ( Int reg, Condcode cond )
 {
-   VG_(new_emit)(True, FlagsOSZCP, False);
+   VG_(new_emit)(True, FlagsOSZCP, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0x90 + (UChar)cond );
    VG_(emit_amode_ereg_greg) ( reg, 0 );
    if (dis)
@@ -1371,7 +1371,7 @@ static void emit_setb_reg ( Int reg, Condcode cond )
 static void emit_ret ( void )
 {
    maybe_emit_put_eflags(); /* make sure flags are stored */
-   VG_(new_emit)(False, False, False);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0xC3 ); /* RET */
    if (dis)
       VG_(printf)("\n\t\tret\n");
@@ -1464,7 +1464,7 @@ static void emit_call_patchme( void )
    vg_assert(VG_PATCHME_CALLSZ == 5);
 
    maybe_emit_put_eflags();		/* save flags before end of BB */
-   VG_(new_emit)(False, False, False);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
 
    if (jumpidx >= VG_MAX_JUMPS) {
       /* If there too many jumps in this basic block, fall back to

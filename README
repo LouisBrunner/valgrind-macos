@@ -83,7 +83,9 @@ is in docs/manual.html.  The following auxiliary steps may enhance
 your valgrinding experience, though.
 
 6.  Create a file containing  enough suppressions so that
-       ./valgrind xedit
+
+       valgrind xedit
+
     runs without generating any errors.  This means you've more
     or less suppressed all the scummy errors from the X11 base
     libraries and from glibc, which will make it easier to spot

@@ -58,18 +58,19 @@ static /* const */ Int vg_tc_sector_szB = 0;
 
 /*------------------ TYPES ------------------*/
 
-#define CODE_ALIGNMENT	4	/* alignment of TCEntries */
+#define CODE_ALIGNMENT	sizeof(void*)     // alignment of TCEntries
 #define CODE_ALIGN(a)	(((a)+CODE_ALIGNMENT-1) & ~(CODE_ALIGNMENT-1))
 #define IS_ALIGNED(a)	(((a) & (CODE_ALIGNMENT-1)) == 0)
 
-/* An entry in TC.  Payload always is always padded out to a 4-aligned
+/* An entry in TC.  Payload always is always padded out to a word-aligned
    quantity so that these structs are always word-aligned. */
 typedef
    struct { 
-      /* +0 */ Addr   orig_addr;
-      /* +4 */ UShort orig_size;
-      /* +6 */ UShort trans_size;
-      /* +8 */ UShort jump_sites[VG_MAX_JUMPS];
+      /* 32-bit or 64-bit offsets */
+      /* +0 or  0 */ Addr   orig_addr;
+      /* +4 or  8 */ UShort orig_size;
+      /* +6 or 10 */ UShort trans_size;
+      /* +8 or 12 */ UShort jump_sites[VG_MAX_JUMPS];
       /* +VG_CODE_OFFSET */ UChar  payload[0];
    }
    TCEntry;

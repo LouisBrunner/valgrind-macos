@@ -219,7 +219,7 @@ typedef struct {
 #define VG_CLO_MAX_SFILES 10
 
 /* Should we stop collecting errors if too many appear?  default: YES */
-extern Bool  VG_(clo_event_horizon);
+extern Bool  VG_(clo_error_limit);
 /* Shall we V-check addrs (they are always A checked too): default: YES */
 extern Bool  VG_(clo_check_addrVs);
 /* Enquire about whether to attach to GDB at errors?   default: NO */

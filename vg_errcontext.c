@@ -497,7 +497,7 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
       the burden of the error-management system becoming excessive in
       extremely buggy programs, although it does make it pretty
       pointless to continue the Valgrind run after this point. */
-   if (VG_(clo_event_horizon) 
+   if (VG_(clo_error_limit) 
        && (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN
            || vg_n_errs_found >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
       if (!stopping_message) {
@@ -518,7 +518,7 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
          VG_(message)(Vg_UserMsg, 
             "Final error counts will be inaccurate.  Go fix your program!");
          VG_(message)(Vg_UserMsg, 
-            "Rerun with --event-horizon=no to disable this cutoff.  Note");
+            "Rerun with --error-limit=no to disable this cutoff.  Note");
          VG_(message)(Vg_UserMsg, 
             "that your program may now segfault without prior warning from");
          VG_(message)(Vg_UserMsg, 

@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int main (int, char **)
+int main (int argc, char ** argv)
 {
   float det = 625.f;
 

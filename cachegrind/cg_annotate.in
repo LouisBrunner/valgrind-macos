@@ -625,7 +625,7 @@ sub print_summary_and_fn_totals ()
 
         # Update the threshold counting
         my $filename = $fn_name;
-        $filename =~ s/:[^:]+$//;    # remove function name
+        $filename =~ s/:.+$//;    # remove function name
         $threshold_files->{$filename} = 1;
         $curr_total += $fn_CC->[$threshold_event_index] 
             if (defined $fn_CC->[$threshold_event_index]);

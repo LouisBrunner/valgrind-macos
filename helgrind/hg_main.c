@@ -30,6 +30,7 @@
 */
 
 #include "vg_skin.h"
+#include "helgrind.h"
 
 VG_DETERMINE_INTERFACE_VERSION
 
@@ -114,7 +115,7 @@ void VGE_(done_prof_mem) ( void )
 /*------------------------------------------------------------*/
 
 typedef enum 
-   { Vge_VirginInit, Vge_NonVirginInit, Vge_SegmentInit } 
+   { Vge_VirginInit, Vge_NonVirginInit, Vge_SegmentInit, Vge_Error } 
    VgeInitStatus;
 
 /* Should add up to 32 to fit in one word */
@@ -152,7 +153,8 @@ typedef
 static ESecMap* primary_map[ 65536 ];
 static ESecMap  distinguished_secondary_map;
 
-static shadow_word virgin_sword = { 0, Vge_Virgin };
+static const shadow_word virgin_sword = { 0, Vge_Virgin };
+static const shadow_word error_sword = { TID_INDICATING_ALL, Vge_Excl };
 
 #define VGE_IS_DISTINGUISHED_SM(smap) \
    ((smap) == &distinguished_secondary_map)
@@ -268,6 +270,11 @@ void init_virgin_sword(Addr a)
    set_sword(a, virgin_sword);
 }
 
+static __inline__
+void init_error_sword(Addr a)
+{
+   set_sword(a, error_sword);
+}
 
 /* 'a' is guaranteed to be 4-byte aligned here (not that that's important,
  * really) */
@@ -1375,6 +1382,13 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
          init_magically_inited_sword(a);
       }
       break;
+
+   case Vge_Error:
+      for ( ; a < end; a += 4) {
+         //PROF_EVENT(31);  PPP
+         init_error_sword(a);
+      }
+      break;
    
    default:
       VG_(printf)("init_status = %u\n", status);
@@ -1861,7 +1875,6 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
 				  shadow_word prevstate )
 {
    HelgrindError err_extra;
-   static const shadow_word err_sw = { TID_INDICATING_ALL, Vge_Excl };
 
    n_eraser_warnings++;
 
@@ -1874,7 +1887,7 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
                             (is_write ? "writing" : "reading"),
                             &err_extra);
 
-   set_sword(a, err_sw);
+   set_sword(a, error_sword);
 }
 
 static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
@@ -2441,6 +2454,34 @@ static void eraser_mem_help_write_N(Addr a, UInt size)
 }
 
 /*--------------------------------------------------------------------*/
+/*--- Client requests                                              ---*/
+/*--------------------------------------------------------------------*/
+
+Bool SK_(handle_client_request)(ThreadState *tst, UInt *args, UInt *ret)
+{
+   if (!VG_IS_SKIN_USERREQ('H','G',args[0]))
+      return False;
+
+   switch(args[0]) {
+   case VG_USERREQ__HG_CLEAN_MEMORY:
+      set_address_range_state(args[1], args[2], Vge_VirginInit);
+      *ret = 0;			/* meaningless */
+      break;
+
+   case VG_USERREQ__HG_KNOWN_RACE:
+      set_address_range_state(args[1], args[2], Vge_Error);
+      *ret = 0;			/* meaningless */
+      break;
+
+   default:
+      return False;
+   }
+
+   return True;
+}
+
+
+/*--------------------------------------------------------------------*/
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
@@ -2461,6 +2502,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    needs->data_syms             = True;
    needs->sizeof_shadow_block	= SHADOW_EXTRA;
    needs->alternative_free      = True;
+   needs->client_requests       = True;
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;

@@ -59,7 +59,6 @@ pth_simple_threads
 pth_specific
 pth_yield
 tls
-vgcore.pid*
 yield
 *.stdout.diff
 *.stderr.diff

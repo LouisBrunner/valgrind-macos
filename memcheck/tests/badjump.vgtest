@@ -1,1 +1,2 @@
 prog: badjump
+delete: vgcore.pid*

@@ -274,8 +274,10 @@ static void addto_StringMap ( StringMap* sm, char* name, void* addr )
 
 static void paranoid_addto_StringMap ( StringMap* sm, char* name, void* addr )
 {
+   if (0)
+       fprintf(stderr, "paranoid_addto_StringMap(%s,%p)\n", name, addr);
    if (search_StringMap(sm,name) != NULL) {
-      fprintf(stderr, "paranoid_addto_StringMap(%s,%p)\n", name, addr);
+      fprintf(stderr, "duplicate: paranoid_addto_StringMap(%s,%p)\n", name, addr);
       exit(1);
    }
    addto_StringMap(sm,name,addr);

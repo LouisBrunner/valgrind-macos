@@ -398,6 +398,7 @@ void buf_and_len_post_check( ThreadState* tst, Int res,
 
 /* Records the current end of the data segment so we can make sense of
    calls to brk(). */
+static
 Addr curr_dataseg_end;
 
 void VG_(init_dataseg_end_for_brk) ( void )

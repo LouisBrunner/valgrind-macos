@@ -839,6 +839,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
    }
 }
 
+static
 void pp_realregs_liveness ( UInstr* u )
 {
 #  define PRINT_RREG_LIVENESS(realReg,s) \
@@ -881,6 +882,7 @@ void VG_(up_UInstr) ( Int i, UInstr* u )
    VG_(printf)("\n");
 }
 
+static
 void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 {
    VG_(printf)("\t%4d: %s", instrNo, 

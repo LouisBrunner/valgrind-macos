@@ -67,11 +67,21 @@ VG_(run_innerloop):
 	movl	VG_(instr_ptr_offset), %esi
 	movl	(%ebp, %esi, 1), %eax
 
-	/* set host FPU mode to the default mode expected 
+	/* set host FPU control word to the default mode expected 
 	   by VEX-generated code. */
+	finit
 	pushl	$0x037F
-	fldcw	0(%esp)
+	fldcw	(%esp)
 	addl	$4, %esp
+	
+	/* set host SSE control word to the default mode expected 
+	   by VEX-generated code. */
+	pushl	$0x1F80
+	ldmxcsr	(%esp)
+	addl	$4, %esp
+
+	/* set dir flag to known value */
+	cld
 	
 	/* fall into main loop */
 

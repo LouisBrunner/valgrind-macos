@@ -132,7 +132,7 @@
 #define VG_N_CLEANUPSTACK 16
 
 /* Number of entries in each thread's fork-handler stack. */
-#define VG_N_FORKHANDLERSTACK 2
+#define VG_N_FORKHANDLERSTACK 4
 
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4

@@ -294,7 +294,7 @@ TranslateResult LibVEX_Translate (
    }
 
    /* If debugging, show the raw guest bytes for this bb. */
-   if (vex_traceflags & VEX_TRACE_FE) {
+   if (0 || (vex_traceflags & VEX_TRACE_FE)) {
       UChar* p = guest_bytes;
       vex_printf(". 0 %llx %d\n.", guest_bytes_addr, *guest_bytes_read );
       for (i = 0; i < *guest_bytes_read; i++)

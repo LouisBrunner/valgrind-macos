@@ -858,6 +858,15 @@ X86Instr* X86Instr_SseCMov ( X86CondCode cond, HReg src, HReg dst ) {
    vassert(cond != Xcc_ALWAYS);
    return i;
 }
+X86Instr* X86Instr_SseShuf ( Int order, HReg src, HReg dst ) {
+   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag               = Xin_SseShuf;
+   i->Xin.SseShuf.order = order;
+   i->Xin.SseShuf.src   = src;
+   i->Xin.SseShuf.dst   = dst;
+   vassert(order >= 0 && order <= 0xFF);
+   return i;
+}
 
 void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
@@ -1098,6 +1107,12 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.SseCMov.dst);
          return;
+      case Xin_SseShuf:
+         vex_printf("pshufd $0x%x,", i->Xin.SseShuf.order);
+         ppHRegX86(i->Xin.SseShuf.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.SseShuf.dst);
+         return;
 
       default:
          vpanic("ppX86Instr");
@@ -1303,13 +1318,25 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
                        i->Xin.Sse64FLo.dst);
          return;
       case Xin_SseReRg:
-         addHRegUse(u, HRmRead, i->Xin.SseReRg.src);
-         addHRegUse(u, i->Xin.SseReRg.op == Xsse_MOV ? HRmWrite : HRmModify, 
-                       i->Xin.SseReRg.dst);
+         if (i->Xin.SseReRg.op == Xsse_XOR
+             && i->Xin.SseReRg.src == i->Xin.SseReRg.dst) {
+            /* reg-alloc needs to understand 'xor r,r' as a write of r */
+            /* (as opposed to a rite of passage :-) */
+            addHRegUse(u, HRmWrite, i->Xin.SseReRg.dst);
+         } else {
+            addHRegUse(u, HRmRead, i->Xin.SseReRg.src);
+            addHRegUse(u, i->Xin.SseReRg.op == Xsse_MOV 
+                             ? HRmWrite : HRmModify, 
+                          i->Xin.SseReRg.dst);
+         }
          return;
       case Xin_SseCMov:
          addHRegUse(u, HRmRead,   i->Xin.SseCMov.src);
          addHRegUse(u, HRmModify, i->Xin.SseCMov.dst);
+         return;
+      case Xin_SseShuf:
+         addHRegUse(u, HRmRead,  i->Xin.SseShuf.src);
+         addHRegUse(u, HRmWrite, i->Xin.SseShuf.dst);
          return;
       default:
          ppX86Instr(i);
@@ -1450,6 +1477,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_SseCMov:
          mapReg(m, &i->Xin.SseCMov.src);
          mapReg(m, &i->Xin.SseCMov.dst);
+         return;
+      case Xin_SseShuf:
+         mapReg(m, &i->Xin.SseShuf.src);
+         mapReg(m, &i->Xin.SseShuf.dst);
          return;
       default:
          ppX86Instr(i);
@@ -2740,6 +2771,15 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
       /* Fill in the jump offset. */
       *(ptmp-1) = p - ptmp;
+      goto done;
+
+   case Xin_SseShuf:
+      *p++ = 0x66; 
+      *p++ = 0x0F; 
+      *p++ = 0x70; 
+      p = doAMode_R(p, fake(vregNo(i->Xin.SseShuf.dst)),
+                       fake(vregNo(i->Xin.SseShuf.src)) );
+      *p++ = (UChar)(i->Xin.SseShuf.order);
       goto done;
 
    default: 

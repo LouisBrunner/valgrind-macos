@@ -384,7 +384,8 @@ typedef
       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
       Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
       Xin_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
-      Xin_SseCMov    /* SSE conditional move */
+      Xin_SseCMov,   /* SSE conditional move */
+      Xin_SseShuf    /* SSE2 shuffle (pshufd) */
    }
    X86InstrTag;
 
@@ -596,6 +597,11 @@ typedef
             HReg        src;
             HReg        dst;
          } SseCMov;
+         struct {
+            Int    order; /* 0 <= order <= 0xFF */
+            HReg   src;
+            HReg   dst;
+         } SseShuf;
 
       } Xin;
    }
@@ -638,6 +644,7 @@ extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
+extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
 
 
 extern void ppX86Instr ( X86Instr* );

@@ -2461,6 +2461,43 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
    switch (e->Iex.Unop.op) {
 
+      case Iop_CmpNEZ64x2: {
+         /* only needed for sse2, so can use sse2 code */
+         /* Ideally, we want to do a 64Ix2 comparison against zero of
+            the operand.  Problem is no such insn exists.  Solution
+            therefore is to do a 32Ix4 comparison instead, and bitwise-
+            negate (NOT) the result.  Let a,b,c,d be 32-bit lanes, and 
+            let the not'd result of this initial comparison be a:b:c:d.
+            What we need to compute is (a|b):(a|b):(c|d):(c|d).  So, use
+            pshufd to create a value b:a:d:c, and OR that with a:b:c:d,
+            giving the required result.
+
+            The required selection sequence is 2,3,0,1, which
+            according to Intel's documentation means the pshufd
+            literal value is 0xB1, that is, 
+            (2 << 6) | (3 << 4) | (0 << 2) | (1 << 0) 
+         */
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg tmp  = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         HReg ones = newVRegV(env);
+         HReg r32  = newVRegI(env);
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0xFFFFFFFF), r32));
+         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
+         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
+         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
+         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, ones, esp0));
+         add_to_esp(env, 16);
+         addInstr(env, X86Instr_SseReRg(Xsse_XOR, tmp, tmp));
+         addInstr(env, X86Instr_SseReRg(Xsse_CMPEQ32, arg, tmp));
+         addInstr(env, X86Instr_SseReRg(Xsse_XOR, ones, tmp));
+         addInstr(env, X86Instr_SseShuf(0xB1, tmp, dst));
+         addInstr(env, X86Instr_SseReRg(Xsse_OR, tmp, dst));
+         return dst;
+      }
+
       case Iop_CmpNEZ32x4: {
          /* sigh, we have to generate crappy code for SSE1 */
          /* basically, the idea is: for each lane:

@@ -444,9 +444,11 @@ HInstrArray* doRegisterAllocation (
                vreg_info[k].dead_before = ii + 1;
                break;
             case HRmModify:
-               if (vreg_info[k].live_after == INVALID_INSTRNO)
+               if (vreg_info[k].live_after == INVALID_INSTRNO) {
+                  vex_printf("\n\nOFFENDING VREG = %d\n", k);
                   vpanic("doRegisterAllocation: "
                          "first event for vreg is Modify");
+               }
                vreg_info[k].dead_before = ii + 1;
                break;
             default:

@@ -1950,9 +1950,11 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       return ae;
    }
 
-   if (e->tag == Iex_LDle
+   /* Not right ... need to invalidate Ld-cses at store points and
+      dirty helper calls. */
+   if (0 && 
+       e->tag == Iex_LDle
        && e->Iex.LDle.addr->tag == Iex_Tmp) {
-     vex_printf("\ndsssssssssssssssssssssssssssssssssssssssssssss\n");
       ae = LibVEX_Alloc(sizeof(AvailExpr));
       ae->tag       = Ld;
       ae->u.Ld.addr = e->Iex.LDle.addr->Iex.Tmp.tmp;

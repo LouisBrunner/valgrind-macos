@@ -37,21 +37,18 @@ static int var;
 static void
 prepare (void)
 {
-  printf("prepare\n");
   var |= PREPARE_BIT;
 }
 
 static void
 parent (void)
 {
-  printf("parent\n");
   var |= PARENT_BIT;
 }
 
 static void
 child (void)
 {
-  printf("child\n");
   var |= CHILD_BIT;
 }
 
@@ -72,7 +69,11 @@ main (void)
 
   pthread_join (th, &res);
 
-  return (int) (long int) res;
+  if ( ( int ) ( long int ) res != 0 )
+      error(EXIT_FAILURE, 0, "pthread_join res != 0" );
+
+  printf ( "all ok\n" );
+  return 0;
 }
 
 

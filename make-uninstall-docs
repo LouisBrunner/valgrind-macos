@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# small tool to help documentation writers.
+# Copy docs out of an installation tree (`pwd`/Inst) back to the build tree
+# since it is a lot easier to edit them in the installation tree.
+# Use with care!
+
+cp  Inst/share/doc/valgrind/coregrind_core.html   coregrind/docs
+cp  Inst/share/doc/valgrind/coregrind_intro.html  coregrind/docs
+cp  Inst/share/doc/valgrind/coregrind_skins.html  coregrind/docs
+cp  Inst/share/doc/valgrind/manual.html           docs
+cp  Inst/share/doc/valgrind/ac_main.html          addrcheck/docs
+cp  Inst/share/doc/valgrind/mc_main.html          memcheck/docs
+cp  Inst/share/doc/valgrind/mc_techdocs.html      memcheck/docs
+cp  Inst/share/doc/valgrind/cg_main.html          cachegrind/docs
+cp  Inst/share/doc/valgrind/cg_techdocs.html      cachegrind/docs
+cp  Inst/share/doc/valgrind/cc_main.html          corecheck/docs
+cp  Inst/share/doc/valgrind/hg_main.html          helgrind/docs
+cp  Inst/share/doc/valgrind/lk_main.html          lackey/docs
+cp  Inst/share/doc/valgrind/nl_main.html          none/docs
+

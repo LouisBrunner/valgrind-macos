@@ -6352,23 +6352,7 @@ static void restart_syscall(ThreadId tid)
    vg_assert(tst->syscallno != -1);
 
    SYSNO = tst->syscallno;
-   tst->arch.m_eip -= 2;		/* sizeof(int $0x80) */
-
-   /* Make sure our caller is actually sane, and we're really backing
-      back over a syscall.
-
-      int $0x80 == CD 80 
-   */
-   {
-      UChar *p = (UChar *)tst->arch.m_eip;
-      
-      if (p[0] != 0xcd || p[1] != 0x80)
-	 VG_(message)(Vg_DebugMsg, 
-		      "?! restarting over syscall at %p %02x %02x\n",
-		      tst->arch.m_eip, p[0], p[1]);
-
-      vg_assert(p[0] == 0xcd && p[1] == 0x80);
-   }
+   VGA_(restart_syscall)(&tst->arch);
 }
 
 void VG_(post_syscall) ( ThreadId tid, Bool restart )

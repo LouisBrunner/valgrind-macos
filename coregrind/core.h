@@ -1520,7 +1520,11 @@ extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
                                       const vki_ksigset_t *mask);
 extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 
+// ---------------------------------------------------------------------
+// Platform-specific things defined in eg. x86/*.c
+// ---------------------------------------------------------------------
 
+void VGA_(restart_syscall)(arch_thread_t *tst);
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

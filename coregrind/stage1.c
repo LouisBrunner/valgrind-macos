@@ -306,7 +306,7 @@ int main(int argc, char** argv)
       valgrind_lib = cp;
 
    // Initial stack pointer is to argc, which is immediately before argv[0]
-   // on the stack.
+   // on the stack.  Nb: Assumes argc is word-aligned.
    init_sp = argv - 1;
 
    /* Set the address space limit as high as it will go, since we make

@@ -882,6 +882,64 @@ struct elf_prpsinfo
 	char	pr_psargs[ELF_PRARGSZ];	/* initial part of arg list */
 };
 
+/*
+ * linux/aio_abi.h
+ */
+
+typedef struct {
+	unsigned        id;     /* kernel internal index number */
+	unsigned        nr;     /* number of io_events */
+	unsigned        head;
+	unsigned        tail;
+ 
+	unsigned        magic;
+	unsigned        compat_features;
+	unsigned        incompat_features;
+	unsigned        header_length;  /* size of aio_ring */  
+} vki_aio_ring ;
+
+typedef vki_aio_ring *vki_aio_context_t;
+
+typedef struct {
+    ULong data;
+    ULong obj;
+    Long  result;
+    Long  result2;
+} vki_io_event;
+
+typedef struct {
+	/* these are internal to the kernel/libc. */
+	ULong	aio_data;	/* data to be returned in event's data */
+        ULong	aio_key;
+				/* the kernel sets aio_key to the req # */
+
+	/* common fields */
+        UShort	aio_lio_opcode;	/* see IOCB_CMD_ above */
+	UShort	aio_reqprio;
+	UInt	aio_fildes;
+
+	ULong	aio_buf;
+	ULong	aio_nbytes;
+	Long	aio_offset;
+
+	/* extra parameters */
+	ULong	aio_reserved2;	/* TODO: use this for a (struct sigevent *) */
+	ULong	aio_reserved3;
+} vki_iocb; /* 64 bytes */
+
+enum {
+    VKI_IOCB_CMD_PREAD = 0,
+    VKI_IOCB_CMD_PWRITE = 1,
+    VKI_IOCB_CMD_FSYNC = 2,
+    VKI_IOCB_CMD_FDSYNC = 3,
+    /* These two are experimental.
+     * IOCB_CMD_PREADX = 4,
+     * IOCB_CMD_POLL = 5,
+     */
+    VKI_IOCB_CMD_NOOP = 6,
+};
+
+
 #endif /*  __VG_KERNELIFACE_H */
 
 /*--------------------------------------------------------------------*/

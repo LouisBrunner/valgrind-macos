@@ -48,7 +48,7 @@
 
 extern void ppHRegPPC32 ( HReg );
 
-extern HReg hregPPC32_GPR0  ( void );
+extern HReg hregPPC32_GPR0  ( void );   // reserved
 extern HReg hregPPC32_GPR1  ( void );   // Stack Frame Pointer
 extern HReg hregPPC32_GPR2  ( void );   // TOC pointer - not used
 extern HReg hregPPC32_GPR3  ( void );

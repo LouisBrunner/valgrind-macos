@@ -43,6 +43,36 @@
 #include "host-generic/h_generic_regs.h"
 //.. #include "host-generic/h_generic_simd64.h"
 #include "host-ppc32/hdefs.h"
+
+/*---------------------------------------------------------*/
+/*--- Register Usage Conventions                        ---*/
+/*---------------------------------------------------------*/
+/*
+  Integer Regs
+  ------------
+  GPR0       Reserved
+  GPR1       Stack Pointer
+  GPR2       TOC pointer - not used
+  GPR3:12    Allocateable
+  GPR13      Thread-specific pointer - not used
+  GPR14:30   Allocateable
+  GPR31      GuestStatePointer
+
+  Of Allocateable regs:
+  GPR3:12    Caller-saved regs
+  GPR14:30   Callee-saved regs
+
+  GPR3:10    Parameter-carrying regs
+
+
+  Floating Point Regs
+  -------------------
+  FPR0:31    Allocateable
+
+  FPR0:13    Caller-saved regs
+  FPR14:31   Callee-saved regs  
+*/
+
 //.. 
 //.. 
 //.. /*---------------------------------------------------------*/
@@ -1147,7 +1177,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
-      addInstr(env, mk_iMOVds_RR(dst, hregPPC32_GPR0()));
+      addInstr(env, mk_iMOVds_RR(dst, hregPPC32_GPR3()));
       return dst;
    }
 

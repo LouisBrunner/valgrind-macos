@@ -779,7 +779,6 @@ void sched_do_syscall ( ThreadId tid )
    UInt saved_eax;
    UInt res, syscall_no;
    UInt fd;
-   Bool might_block, assumed_nonblocking;
    Bool orig_fd_blockness;
    Char msg_buf[100];
 
@@ -808,39 +807,18 @@ void sched_do_syscall ( ThreadId tid )
       return;
    }
 
-   switch (syscall_no) {
-      case __NR_read:
-      case __NR_write:
-         assumed_nonblocking 
-            = False;
-         might_block 
-            = fd_is_blockful(vg_threads[tid].m_ebx /* arg1 */);
-         break;
-      default: 
-         might_block = False;
-         assumed_nonblocking = True;
-   }
-   
-   if (assumed_nonblocking) {
+   if (syscall_no != __NR_read && syscall_no != __NR_write) {
       /* We think it's non-blocking.  Just do it in the normal way. */
       VG_(perform_assumed_nonblocking_syscall)(tid);
       /* The thread is still runnable. */
       return;
    }
 
-   /* It might block.  Take evasive action. */
-   switch (syscall_no) {
-      case __NR_read:
-      case __NR_write:
-         fd = vg_threads[tid].m_ebx; break;
-      default:
-         vg_assert(3+3 == 7);
-   }
-
    /* Set the fd to nonblocking, and do the syscall, which will return
       immediately, in order to lodge a request with the Linux kernel.
       We later poll for I/O completion using select().  */
 
+   fd = vg_threads[tid].m_ebx /* arg1 */;
    orig_fd_blockness = fd_is_blockful(fd);
    set_fd_nonblocking(fd);
    vg_assert(!fd_is_blockful(fd));
@@ -856,15 +834,22 @@ void sched_do_syscall ( ThreadId tid )
    else
       set_fd_nonblocking(fd);
 
-   if (res != -VKI_EWOULDBLOCK) {
-      /* It didn't block; it went through immediately.  So finish off
-         in the normal way.  Don't restore %EAX, since that now
-         (correctly) holds the result of the call. */
+   if (res != -VKI_EWOULDBLOCK || !orig_fd_blockness) {
+      /* Finish off in the normal way.  Don't restore %EAX, since that
+         now (correctly) holds the result of the call.  We get here if either:
+         1.  The call didn't block, or
+         2.  The fd was already in nonblocking mode before we started to
+             mess with it.  In this case, we're not expecting to handle 
+             the I/O completion -- the client is.  So don't file a 
+             completion-wait entry. 
+      */
       VG_(check_known_blocking_syscall)(tid, syscall_no, &res /* POST */);
       /* We're still runnable. */
       vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    } else {
+
+      vg_assert(res == -VKI_EWOULDBLOCK && orig_fd_blockness);
 
       /* It would have blocked.  First, restore %EAX to what it was
          before our speculative call. */

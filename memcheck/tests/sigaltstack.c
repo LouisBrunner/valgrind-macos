@@ -3,20 +3,22 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <signal.h>
+#include <sys/mman.h>
 
 void sig_handler(int sig){
   int var;
   fprintf(stderr, "caught signal, local var is on %p\n", &var);
 }
 
-
 int main(int argv, char** argc) {
   int res, i;
   stack_t sigstk;
   struct sigaction act;
-  sigstk.ss_sp = (char *)malloc(SIGSTKSZ);
+  static const int size = SIGSTKSZ;
+  char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+  sigstk.ss_sp = stk;
 
-  sigstk.ss_size = SIGSTKSZ;
+  sigstk.ss_size = size;
   sigstk.ss_flags = 0;
   fprintf(stderr, "calling sigaltstack, stack base is %p\n", sigstk.ss_sp);
   if (sigaltstack(&sigstk,0)<0) perror("sigaltstack");

@@ -4391,10 +4391,8 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       comes from.
    */
 
-   /* post_syscall expects us to be "waiting" even if we don't
-      block */
    tst->syscallno = syscallno;
-   tst->status = VgTs_WaitSys;
+   vg_assert(tst->status == VgTs_Runnable);
 
    if (syscallno < MAX_SPECIAL_SYS && special_sys[syscallno].before != NULL) {
       sys = &special_sys[syscallno];
@@ -4454,6 +4452,11 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 
    VGP_POPCC(VgpCoreSysWrap);
 
+   /* If we're waiting on the syscall because it's in the hands of the
+      ProxyLWP, then set the thread state to WaitSys. */
+   if (!syscall_done)
+      tst->status = VgTs_WaitSys;
+
    return syscall_done;
 }
 
@@ -4477,7 +4480,6 @@ void VG_(post_syscall) ( ThreadId tid )
    pre_res = tst->sys_pre_res;
 
    vg_assert(syscallno != -1);			/* must be a current syscall */
-   vg_assert(tst->status == VgTs_WaitSys);	/* should be blocked waiting */
 
    if (syscallno < MAX_SPECIAL_SYS && special_sys[syscallno].before != NULL) {
       sys = &special_sys[syscallno];
@@ -4488,7 +4490,7 @@ void VG_(post_syscall) ( ThreadId tid )
       sys = &bad_sys;
       special = True;
    }
-   
+
    if (!VG_(is_kerror)(tst->m_eax) && sys->after != NULL)
       (sys->after)(tst->tid, tst);
 

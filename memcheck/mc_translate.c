@@ -1013,6 +1013,21 @@ static IRAtom* mkPCast64x2 ( MCEnv* mce, IRAtom* at )
    return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
 }
 
+static IRAtom* mkPCast32x2 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_I64, unop(Iop_CmpNEZ32x2, at));
+}
+
+static IRAtom* mkPCast16x4 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_I64, unop(Iop_CmpNEZ16x4, at));
+}
+
+static IRAtom* mkPCast8x8 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_I64, unop(Iop_CmpNEZ8x8, at));
+}
+
 
 /* Here's a simple scheme capable of handling ops derived from SSE1
    code and while only generating ops that can be efficiently
@@ -1188,10 +1203,33 @@ IRAtom* vectorNarrow128 ( MCEnv* mce, IROp narrow_op,
    return at3;
 }
 
+static
+IRAtom* vectorNarrow64 ( MCEnv* mce, IROp narrow_op, 
+                         IRAtom* vatom1, IRAtom* vatom2)
+{
+   IRAtom *at1, *at2, *at3;
+   IRAtom* (*pcast)( MCEnv*, IRAtom* );
+   switch (narrow_op) {
+      case Iop_QNarrow32Sx2: pcast = mkPCast32x2; break;
+      case Iop_QNarrow16Sx4: pcast = mkPCast16x4; break;
+      case Iop_QNarrow16Ux4: pcast = mkPCast16x4; break;
+      default: VG_(tool_panic)("vectorNarrow64");
+   }
+   tl_assert(isShadowAtom(mce,vatom1));
+   tl_assert(isShadowAtom(mce,vatom2));
+   at1 = assignNew(mce, Ity_I64, pcast(mce, vatom1));
+   at2 = assignNew(mce, Ity_I64, pcast(mce, vatom2));
+   at3 = assignNew(mce, Ity_I64, binop(narrow_op, at1, at2));
+   return at3;
+}
+
 
 /* --- --- Vector integer arithmetic --- --- */
 
 /* Simple ... UifU the args and per-lane pessimise the results. */
+
+/* --- 128-bit versions --- */
+
 static
 IRAtom* binary8Ix16 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
 {
@@ -1228,6 +1266,35 @@ IRAtom* binary64Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
    return at;   
 }
 
+/* --- 64-bit versions --- */
+
+static
+IRAtom* binary8Ix8 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU64(mce, vatom1, vatom2);
+   at = mkPCast8x8(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary16Ix4 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU64(mce, vatom1, vatom2);
+   at = mkPCast16x4(mce, at);
+   return at;   
+}
+
+static
+IRAtom* binary32Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifU64(mce, vatom1, vatom2);
+   at = mkPCast32x2(mce, at);
+   return at;   
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Generate shadow values from all kinds of IRExprs.    ---*/
@@ -1254,7 +1321,68 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
 
-      /* 128-bit SIMD (SSE2-esque) */
+      /* 64-bit SIMD */
+
+      case Iop_ShrN16x4:
+      case Iop_ShrN32x2:
+      case Iop_SarN16x4:
+      case Iop_SarN32x2:
+      case Iop_ShlN16x4:
+      case Iop_ShlN32x2:
+         /* Same scheme as with all other shifts. */
+         complainIfUndefined(mce, atom2);
+         return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
+
+      case Iop_QNarrow32Sx2:
+      case Iop_QNarrow16Sx4:
+      case Iop_QNarrow16Ux4:
+         return vectorNarrow64(mce, op, vatom1, vatom2);
+
+      case Iop_Min8Ux8:
+      case Iop_Max8Ux8:
+      case Iop_Avg8Ux8:
+      case Iop_QSub8Sx8:
+      case Iop_QSub8Ux8:
+      case Iop_Sub8x8:
+      case Iop_CmpGT8Sx8:
+      case Iop_CmpEQ8x8:
+      case Iop_QAdd8Sx8:
+      case Iop_QAdd8Ux8:
+      case Iop_Add8x8:
+         return binary8Ix8(mce, vatom1, vatom2);
+
+      case Iop_Min16Sx4:
+      case Iop_Max16Sx4:
+      case Iop_Avg16Ux4:
+      case Iop_QSub16Ux4:
+      case Iop_QSub16Sx4:
+      case Iop_Sub16x4:
+      case Iop_Mul16x4:
+      case Iop_MulHi16Sx4:
+      case Iop_MulHi16Ux4:
+      case Iop_CmpGT16Sx4:
+      case Iop_CmpEQ16x4:
+      case Iop_QAdd16Sx4:
+      case Iop_QAdd16Ux4:
+      case Iop_Add16x4:
+         return binary16Ix4(mce, vatom1, vatom2);
+
+      case Iop_Sub32x2:
+      case Iop_CmpGT32Sx2:
+      case Iop_CmpEQ32x2:
+      case Iop_Add32x2:
+         return binary32Ix2(mce, vatom1, vatom2);
+
+      /* 64-bit data-steering */
+      case Iop_InterleaveLO32x2:
+      case Iop_InterleaveLO16x4:
+      case Iop_InterleaveLO8x8:
+      case Iop_InterleaveHI32x2:
+      case Iop_InterleaveHI16x4:
+      case Iop_InterleaveHI8x8:
+         return assignNew(mce, Ity_I64, binop(op, vatom1, vatom2));
+
+      /* 128-bit SIMD */
 
       case Iop_ShrN16x8:
       case Iop_ShrN32x4:
@@ -1333,8 +1461,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpEQ64F0x2:
       case Iop_Add64F0x2:
          return binary64F0x2(mce, vatom1, vatom2);      
-
-      /* 128-bit SIMD (SSE1-esque) */
 
       case Iop_Sub32Fx4:
       case Iop_Mul32Fx4:

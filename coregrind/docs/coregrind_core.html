@@ -1186,13 +1186,8 @@ most programs actually work fine.
 a kernel 2.2.X or 2.4.X system, subject to the following constraints:
 
 <ul>
-  <li>No MMX, SSE, SSE2, 3DNow instructions.  If the translator
-      encounters these, Valgrind will simply give up.  It may be
-      possible to add support for them at a later time. Intel added a
-      few instructions such as "cmov" to the integer instruction set
-      on Pentium and later processors, and these are supported.
-      Nevertheless it's safest to think of Valgrind as implementing
-      the 486 instruction set.</li>
+  <li>No support for 3DNow instructions.  If the translator encounters
+      these, Valgrind will simply give up.</li>
       <p>
 
   <li>Pthreads support is improving, but there are still significant
@@ -1214,7 +1209,12 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
 
   <li>If your program does its own memory management, rather than
       using malloc/new/free/delete, it should still work, but
-      Valgrind's error checking won't be so effective.</li>
+      Valgrind's error checking won't be so effective.
+      If you describe your program's memory management scheme
+      using "client requests" (Section 3.7 of this manual),
+      valgrind can do better.  Nevertheless, using malloc/new
+      and free/delete is still the best approach.
+      </li>
       <p>
 
   <li>Valgrind's signal simulation is not as robust as it could be.
@@ -1238,18 +1238,13 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
   <li>x86 instructions, and system calls, have been implemented on
       demand.  So it's possible, although unlikely, that a program
       will fall over with a message to that effect.  If this happens,
-      please mail me ALL the details printed out, so I can try and
+      please report ALL the details printed out, so we can try and
       implement the missing feature.</li>
       <p>
 
   <li>x86 floating point works correctly, but floating-point code may
       run even more slowly than integer code, due to my simplistic
       approach to FPU emulation.</li>
-      <p>
-
-  <li>You can't Valgrind-ize statically linked binaries.  Valgrind
-      relies on the dynamic-link mechanism to gain control at
-      startup.</li>
       <p>
 
   <li>Memory consumption of your program is majorly increased whilst

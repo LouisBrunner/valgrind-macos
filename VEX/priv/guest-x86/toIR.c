@@ -11,11 +11,10 @@
    is Iop_Neg* used?
    MOVAPS fix (vg_to_ucode rev 1.143)
    check flag settings for cmpxchg
-   check 16/8 bit div/idiv
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
 
-   Limitations:
+   x87 FP Limitations:
    * no FP exceptions, except for handling stack over/underflow
    * FP rounding mode observed only for float->int conversions
    * FP sin/cos/tan/sincos: C2 flag is always cleared.  IOW the
@@ -55,10 +54,167 @@ static UChar* guest_code;
 
 /* The guest address corresponding to guest_code[0]. */
 /* CONST */
-static Addr32 guest_eip;
+static Addr32 guest_eip_bbstart;
 
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
+
+
+/*------------------------------------------------------------*/
+/*--- Debugging output                                     ---*/
+/*------------------------------------------------------------*/
+
+#define DIP(format, args...)  \
+   if (print_codegen)         \
+      vex_printf(format, ## args)
+
+#define DIS(buf, format, args...)  \
+   if (print_codegen)              \
+      vex_sprintf(buf, format, ## args)
+
+
+/*------------------------------------------------------------*/
+/*--- Disassemble an entire basic block                    ---*/
+/*------------------------------------------------------------*/
+
+/* The results of disassembling an instruction.  There are three
+   possible outcomes.  For Dis_Resteer, the disassembler _must_
+   continue at the specified address.  For Dis_StopHere, the
+   disassembler _must_ terminate the BB.  For Dis_Continue, we may at
+   our option either disassemble the next insn, or terminate the BB;
+   but in the latter case we must set the bb's ->next field to point
+   to the next instruction.  */
+
+typedef
+   enum { 
+      Dis_StopHere, /* this insn terminates the BB; we must stop. */
+      Dis_Continue, /* we can optionally continue into the next insn */
+      Dis_Resteer   /* followed a branch; continue at the spec'd addr */
+   }
+   DisResult;
+
+
+/* forward decls .. */
+static IRExpr* mkU32 ( UInt i );
+
+/* disInstr disassembles an instruction located at &guest_code[delta],
+   and sets *size to its size.  If the returned value is Dis_Resteer,
+   the next guest address is assigned to *whereNext.  If chaseJumps
+   is False, disInstr may not return Dis_Resteer. */
+   
+static DisResult disInstr ( /*IN*/  Bool    resteerOK,
+                            /*IN*/  UInt    delta, 
+                            /*OUT*/ UInt*   size,
+                            /*OUT*/ Addr64* whereNext );
+
+
+/* This is the main (only, in fact) entry point for this module. */
+
+/* Disassemble a complete basic block, starting at eip, and dumping
+   the ucode into cb.  Returns the size, in bytes, of the basic
+   block. */
+IRBB* bbToIR_X86Instr ( UChar* x86code, 
+                        Addr64 guest_eip_start, 
+                        Int*   guest_bytes_read, 
+                        Bool   (*byte_accessible)(Addr64),
+                        Bool   host_bigendian )
+{
+   UInt       delta;
+   Int        n_instrs, size;
+   Addr64     guest_next;
+   Bool       resteerOK;
+   DisResult  dres;
+   static Int n_resteers = 0;
+   Int        d_resteers = 0;
+   Int        resteerBelow = 10;  /* the threshold value */
+
+   /* Set up globals. */
+   host_is_bigendian = host_bigendian;
+   print_codegen     = vex_verbosity >= 1;
+   guest_code        = x86code;
+   guest_eip_bbstart = (Addr32)guest_eip_start;
+   irbb              = emptyIRBB();
+
+   if (vex_guest_insns_per_bb <= resteerBelow)
+      resteerBelow = vex_guest_insns_per_bb-1;
+
+   vassert((guest_eip_start >> 32) == 0);
+   vassert(vex_guest_insns_per_bb >= 1);
+   vassert(resteerBelow < vex_guest_insns_per_bb);
+   vassert(resteerBelow >= 0);
+   vassert(vex_guest_insns_per_bb);
+
+   DIP("Original x86 code to IR:\n\n");
+
+   /* Delta keeps track of how far along the x86code array we
+      have so far gone. */
+   delta             = 0;
+   n_instrs          = 0;
+   *guest_bytes_read = 0;
+
+   while (True) {
+      vassert(n_instrs < vex_guest_insns_per_bb);
+
+      guest_next = 0;
+      resteerOK = n_instrs < resteerBelow;
+      dres = disInstr( resteerOK, delta, &size, &guest_next );
+      delta += size;
+      *guest_bytes_read += size;
+      n_instrs++;
+      DIP("\n");
+
+      vassert(size > 0 && size <= 18);
+      if (!resteerOK) 
+         vassert(dres != Dis_Resteer);
+      if (dres != Dis_Resteer) 
+         vassert(guest_next == 0);
+
+      switch (dres) {
+         case Dis_Continue:
+            vassert(irbb->next == NULL);
+            if (n_instrs < vex_guest_insns_per_bb) {
+               /* keep going */
+            } else {
+               irbb->next = mkU32(((Addr32)guest_eip_start)+delta);
+               return irbb;
+            }
+            break;
+         case Dis_StopHere:
+            vassert(irbb->next != NULL);
+            return irbb;
+         case Dis_Resteer:
+            vassert(irbb->next == NULL);
+            /* figure out a new delta to continue at. */
+            delta = (UInt)(guest_next - guest_eip_start);
+            n_resteers++;
+            d_resteers++;
+            if (0 && (n_resteers & 0xFF) == 0)
+	    vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
+		       n_resteers, d_resteers,
+                       (void*)(UInt)(guest_next), delta);
+            break;
+      }
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Helper bits and pieces for deconstructing the        ---*/
+/*--- x86 insn stream.                                     ---*/
+/*------------------------------------------------------------*/
+
+/* This is the Intel register encoding -- integer regs. */
+#define R_EAX 0
+#define R_ECX 1
+#define R_EDX 2
+#define R_EBX 3
+#define R_ESP 4
+#define R_EBP 5
+#define R_ESI 6
+#define R_EDI 7
+
+#define R_AL (0+R_EAX)
+#define R_AH (4+R_EAX)
 
 
 /* Add a statement to the list held by "irbb". */
@@ -82,38 +238,7 @@ static void unimplemented ( Char* str )
    vpanic(str);
 }
 
-
-/*------------------------------------------------------------*/
-/*--- Debugging output                                     ---*/
-/*------------------------------------------------------------*/
-
-#define DIP(format, args...)  \
-   if (print_codegen)         \
-      vex_printf(format, ## args)
-
-#define DIS(buf, format, args...)  \
-   if (print_codegen)              \
-      vex_sprintf(buf, format, ## args)
-
-
-/*------------------------------------------------------------*/
-/*--- Helper bits and pieces for deconstructing the        ---*/
-/*--- x86 insn stream.                                     ---*/
-/*------------------------------------------------------------*/
-
-/* This is the Intel register encoding -- integer regs. */
-#define R_EAX 0
-#define R_ECX 1
-#define R_EDX 2
-#define R_EBX 3
-#define R_ESP 4
-#define R_EBP 5
-#define R_ESI 6
-#define R_EDI 7
-
-#define R_AL (0+R_EAX)
-#define R_AH (4+R_EAX)
-
+/* Various simple conversions */
 
 static UInt extend_s_8to32( UInt x )
 {
@@ -2638,7 +2763,7 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
 
 /* Group 5 extended opcodes. */
 static
-UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
+UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
 {
    Int     len;
    UChar   modrm;
@@ -2667,14 +2792,14 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
             t2 = newTemp(Ity_I32);
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
-	    storeLE( mkexpr(t2), mkU32(guest_eip+delta+1));
+	    storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
 	    jmp_treg(Ijk_Call,t1);
-            *isEnd = True;
+            *whatNext = Dis_StopHere;
             break;
          case 4: /* jmp Ev */
             vassert(sz == 4);
             jmp_treg(Ijk_Boring,t1);
-            *isEnd = True;
+            *whatNext = Dis_StopHere;
             break;
          default: 
             vex_printf(
@@ -2707,14 +2832,14 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
             t2 = newTemp(Ity_I32);
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
-	    storeLE( mkexpr(t2), mkU32(guest_eip+delta+len));
+	    storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
 	    jmp_treg(Ijk_Call,t1);
-            *isEnd = True;
+            *whatNext = Dis_StopHere;
             break;
          case 4: /* JMP Ev */
             vassert(sz == 4);
             jmp_treg(Ijk_Boring,t1);
-            *isEnd = True;
+            *whatNext = Dis_StopHere;
             break;
          case 6: /* PUSH Ev */
             vassert(sz == 4 || sz == 2);
@@ -5781,22 +5906,30 @@ void dis_ret ( UInt d32 )
 
 
 /*------------------------------------------------------------*/
-/*--- Disassembling entire basic blocks                    ---*/
+/*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
-/* Disassemble a single instruction into IR, returning the updated
-   delta, and setting *isEnd to True if this is the last insn in a
-   basic block.  Also do debug printing if necessary. */
-
-static UInt disInstr ( UInt delta, Bool* isEnd )
+/* Disassemble a single instruction into IR.  The instruction
+   is located in host memory at &guest_code[delta].
+   Set *size to be the size of the instruction.
+   If the returned value is Dis_Resteer,
+   the next guest address is assigned to *whereNext.  If resteerOK
+   is False, disInstr may not return Dis_Resteer. */
+   
+static DisResult disInstr ( /*IN*/  Bool    resteerOK,
+                            /*IN*/  UInt    delta, 
+                            /*OUT*/ UInt*   size,
+                            /*OUT*/ Addr64* whereNext )
 {
-   IRType  ty;
-   IRTemp  addr, t1, t2;
-   Int     alen;
-   UChar   opc, modrm, abyte;
-   UInt    d32;
-   UChar   dis_buf[50];
-   Int     am_sz, d_sz;
+   IRType    ty;
+   IRTemp    addr, t1, t2;
+   Int       alen;
+   UChar     opc, modrm, abyte;
+   UInt      d32;
+   UChar     dis_buf[50];
+   Int       am_sz, d_sz;
+   DisResult whatNext = Dis_Continue;
+
    //Char  loc_buf[M_VG_ERRTXT];
 
    /* Holds eip at the start of the insn, so that we can print
@@ -5815,11 +5948,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    /* For printing the stmts after each insn. */
    Int first_stmt_idx = irbb->stmts_used;
 
-   *isEnd = False;
+   /* If we don't set *size properly, this causes bbToIR_X86Instr to
+      assert. */
+   *size = 0;
+
    addr = t1 = t2 = INVALID_IRTEMP; 
    //t3 = t4 = INVALID_IRTEMP;
 
-   DIP("\t0x%x:  ", guest_eip+delta);
+   DIP("\t0x%x:  ", guest_eip_bbstart+delta);
 
    /* Spot the client-request magic sequence. */
    {
@@ -5839,11 +5975,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
           code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
           code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
          ) {
+         DIP("%%edx = client_request ( %%eax )\n");         
          delta += 18;
-         jmp_lit(Ijk_ClientReq, guest_eip+delta);
-         *isEnd = True;
-         DIP("%%edx = client_request ( %%eax )\n");
-         return delta;
+         jmp_lit(Ijk_ClientReq, guest_eip_bbstart+delta);
+         whatNext = Dis_StopHere;
+         goto decode_success;
       }
    }
 
@@ -5874,6 +6010,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
             if ((op1 >= 0x70 && op1 <= 0x7F)
                 || (op1 == 0xE3)
                 || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
+               vex_printf("vex x86->IR: ignoring branch hint\n");
                sorb = getIByte(delta); delta++;
                break;
             }
@@ -7194,21 +7331,21 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       d32 = getUDisp16(delta); 
       delta += 2;
       dis_ret(d32);
-      *isEnd = True;
+      whatNext = Dis_StopHere;
       DIP("ret %d\n", d32);
       break;
    case 0xC3: /* RET */
       dis_ret(0);
-      *isEnd = True;
+      whatNext = Dis_StopHere;
       DIP("ret\n");
       break;
       
    case 0xE8: /* CALL J4 */
       d32 = getUDisp32(delta); delta += 4;
-      d32 += (guest_eip+delta); 
-      /* (guest_eip+delta) == return-to addr, d32 == call-to addr */
-      if (d32 == guest_eip+delta && getIByte(delta) >= 0x58 
-                                 && getIByte(delta) <= 0x5F) {
+      d32 += (guest_eip_bbstart+delta); 
+      /* (guest_eip_bbstart+delta) == return-to addr, d32 == call-to addr */
+      if (d32 == guest_eip_bbstart+delta && getIByte(delta) >= 0x58 
+                                         && getIByte(delta) <= 0x5F) {
          /* Specially treat the position-independent-code idiom 
                  call X
               X: popl %reg
@@ -7217,7 +7354,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
             since this generates better code, but for no other reason. */
          Int archReg = getIByte(delta) - 0x58;
          /* vex_printf("-- fPIC thingy\n"); */
-         putIReg(4, archReg, mkU32(guest_eip+delta));
+         putIReg(4, archReg, mkU32(guest_eip_bbstart+delta));
          delta++; /* Step over the POP */
          DIP("call 0x%x ; popl %s\n",d32,nameIReg(4,archReg));
       } else {
@@ -7225,9 +7362,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          t1 = newTemp(Ity_I32); 
          assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
          putIReg(4, R_ESP, mkexpr(t1));
-	 storeLE( mkexpr(t1), mkU32(guest_eip+delta));
-	 jmp_lit(Ijk_Call,d32);
-         *isEnd = True;
+	 storeLE( mkexpr(t1), mkU32(guest_eip_bbstart+delta));
+         if (resteerOK) {
+            /* follow into the call target. */
+            whatNext = Dis_Resteer;
+            *whereNext = d32;
+         } else {
+            jmp_lit(Ijk_Call,d32);
+            whatNext = Dis_StopHere;
+         }
          DIP("call 0x%x\n",d32);
       }
       break;
@@ -7432,7 +7575,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
       jmp_lit(Ijk_Syscall,((Addr32)guest_code)+delta);
-      *isEnd = True;
+      whatNext = Dis_StopHere;
       DIP("int $0x80\n");
       break;
 
@@ -7441,8 +7584,13 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0xEB: /* Jb (jump, byte offset) */
       d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
       delta++;
-      jmp_lit(Ijk_Boring,d32);
-      *isEnd = True;
+      if (resteerOK) {
+         whatNext   = Dis_Resteer;
+         *whereNext = d32;
+      } else {
+         jmp_lit(Ijk_Boring,d32);
+         whatNext = Dis_StopHere;
+      }
       DIP("jmp-8 0x%x\n", d32);
       break;
 
@@ -7450,8 +7598,13 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       vassert(sz == 4); /* JRS added 2004 July 11 */
       d32 = (((Addr32)guest_code)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      jmp_lit(Ijk_Boring,d32);
-      *isEnd = True;
+      if (resteerOK) {
+         whatNext   = Dis_Resteer;
+         *whereNext = d32;
+      } else {
+         jmp_lit(Ijk_Boring,d32);
+         whatNext = Dis_StopHere;
+      }
       DIP("jmp 0x%x\n", d32);
       break;
 
@@ -7474,7 +7627,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
       delta++;
       jcc_01((Condcode)(opc - 0x70), (Addr32)(guest_code+delta), d32);
-      *isEnd = True;
+      whatNext = Dis_StopHere;
       DIP("j%s-8 0x%x\n", name_Condcode(opc - 0x70), d32);
       break;
 
@@ -7513,7 +7666,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          jcc_lit(cb, eip, (opc == 0xE1 ? CondNZ : CondZ));
 //--       }
 //--       jmp_lit(cb, d32);
-//--       *isEnd = True;
+//--       whatNext = Dis_StopHere;
 //--       DIP("loop 0x%x\n", d32);
 //--       break;
 
@@ -8159,12 +8312,12 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
    /* REPNE prefix insn */
    case 0xF2: { 
-      Addr32 eip_orig = guest_eip + delta - 1;
+      Addr32 eip_orig = guest_eip_bbstart + delta - 1;
       vassert(sorb == 0);
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
-      *isEnd = True;         
+      whatNext = Dis_StopHere;         
 
       switch (abyte) {
       /* According to the Intel manual, "repne movs" should never occur, but
@@ -8173,7 +8326,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 	vassert(0);
 //--       case 0xA5: 
 	//         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
-	//                              guest_eip+delta, "repne movs" );
+	//                              guest_eip_bbstart+delta, "repne movs" );
 	//         break;
 //-- 
 //--       case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
@@ -8184,7 +8337,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
       case 0xAF:
          dis_REP_op ( CondNZ, dis_SCAS, sz, eip_orig,
-                              guest_eip+delta, "repne scas" );
+                              guest_eip_bbstart+delta, "repne scas" );
          break;
 
       default:
@@ -8196,30 +8349,30 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
       for the rest, it means REP) */
    case 0xF3: { 
-      Addr32 eip_orig = guest_eip + delta - 1;
+      Addr32 eip_orig = guest_eip_bbstart + delta - 1;
       vassert(sorb == 0);
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
-      *isEnd = True;
+      whatNext = Dis_StopHere;
 
       switch (abyte) {
       case 0xA4: sz = 1;   /* REP MOVS<sz> */
       case 0xA5:
          dis_REP_op ( CondAlways, dis_MOVS, sz, eip_orig, 
-                                  guest_eip+delta, "rep movs" );
+                                  guest_eip_bbstart+delta, "rep movs" );
          break;
 
       case 0xA6: sz = 1;   /* REPE CMP<sz> */
       case 0xA7:
          dis_REP_op ( CondZ, dis_CMPS, sz, eip_orig, 
-                             guest_eip+delta, "repe cmps" );
+                             guest_eip_bbstart+delta, "repe cmps" );
          break;
 
       case 0xAA: sz = 1;   /* REP STOS<sz> */
       case 0xAB:
          dis_REP_op ( CondAlways, dis_STOS, sz, eip_orig, 
-                                  guest_eip+delta, "rep stos" );
+                                  guest_eip_bbstart+delta, "rep stos" );
          break;
 //-- 
 //--       case 0xAE: sz = 1;   /* REPE SCAS<sz> */
@@ -8480,7 +8633,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    /* ------------------------ (Grp5 extensions) ---------- */
 
    case 0xFF: /* Grp5 Ev */
-      delta = dis_Grp5 ( sorb, sz, delta, isEnd );
+      delta = dis_Grp5 ( sorb, sz, delta, &whatNext );
       break;
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
@@ -8702,7 +8855,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          d32 = (((Addr32)guest_code)+delta+4) + getUDisp32(delta); 
          delta += 4;
          jcc_01((Condcode)(opc - 0x80), (Addr32)(guest_code+delta), d32);
-         *isEnd = True;
+         whatNext = Dis_StopHere;
          DIP("j%s-32 0x%x\n", name_Condcode(opc - 0x80), d32);
          break;
 
@@ -9295,7 +9448,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    /* just because everything else insists the last instruction of
       a BB is a jmp */
    //jmp_lit(cb, eip);
-   //*isEnd = True;
+   //whatNext = Dis_StopHere;
    //break;
    //return eip;
 
@@ -9305,15 +9458,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    /* All decode successes end up here. */
    DIP("\n");
    { Int i;
-     for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
-        if (print_codegen) {
+     if (print_codegen) {
+        for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
            vex_printf("              ");
            ppIRStmt(irbb->stmts[i]);
            vex_printf("\n");
         }
      }
    }
-   if (*isEnd) {
+   if (whatNext == Dis_StopHere) {
       vassert(irbb->next != NULL);
       if (print_codegen) {
          vex_printf("              ");
@@ -9324,63 +9477,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          vex_printf( "\n");
       }
    }
-   //for (; first_uinstr < cb->used; first_uinstr++) {
-   //   Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
-   //   if (!sane)
-   //      VG_(up_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
-   //   else if (VG_(print_codegen)) 
-   //      VG_(pp_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
-   //   vg_assert(sane);
-   // }
-   return delta;
-}
 
-
-/* Disassemble a complete basic block, starting at eip, and dumping
-   the ucode into cb.  Returns the size, in bytes, of the basic
-   block. */
-IRBB* bbToIR_X86Instr ( UChar* x86code, 
-                        Addr64 eip, 
-                        Int*   guest_bytes_read, 
-                        Bool   (*byte_accessible)(Addr64),
-                        Bool   host_bigendian )
-{
-   UInt delta;
-   Int  n_instrs;
-   Bool isEnd;
-
-   /* Set up globals. */
-   host_is_bigendian = host_bigendian;
-   print_codegen     = (vex_verbosity >= 1);
-   guest_code        = x86code;
-   guest_eip         = (Addr32)eip;
-   irbb              = emptyIRBB();
-
-   vassert((eip >> 32) == 0);
-   vassert(vex_guest_insns_per_bb >= 1);
-
-   DIP("Original x86 code to IR:\n\n");
-
-   /* Delta keeps track of how far along the x86code array we
-      have so far gone. */
-   isEnd    = False;
-   delta    = 0;
-   n_instrs = 0;
-   while (True) {
-      if (isEnd) break;
-      if (n_instrs == vex_guest_insns_per_bb) {
-         vassert(irbb->next == NULL);
-         irbb->next = mkU32(((Addr32)eip)+delta);
-         break;
-      }
-      vassert(n_instrs < vex_guest_insns_per_bb);
-      delta = disInstr ( delta, &isEnd );
-      n_instrs++;
-      DIP("\n");
-   }
-
-   *guest_bytes_read = delta;
-   return irbb;
+   *size = delta - delta_start;
+   return whatNext;
 }
 
 #undef DIP

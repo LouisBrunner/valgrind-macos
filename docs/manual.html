@@ -25,7 +25,7 @@
 
 <a name="title">&nbsp;</a>
 <h1 align=center>Valgrind, version 1.0</h1>
-<center>This manual was majorly updated on 20020613</center>
+<center>This manual was majorly updated on 20020713</center>
 <p>
 
 <center>
@@ -1785,7 +1785,6 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       </li>
 </ul>
 
-
 Programs which are known not to work are:
 
 <ul>
@@ -1794,6 +1793,27 @@ Programs which are known not to work are:
       don't understand why this should interact so badly with
       Valgrind.  Emacs works fine if you build it to use the standard
       malloc/free routines.</li><br>
+      <p>
+</ul>
+
+Known platform-specific limitations:
+
+<ul>
+  <li>(With valgrind versions 1.0pre4 and 1.0pre5) On Red Hat 7.3,
+      there have been reports of link errors (at program start time)
+      for threaded programs using <code>__pthread_clock_gettime</code>
+      and <code>__pthread_clock_settime</code>.  This appears to be
+      due to <code>/lib/librt-2.2.5.so</code> needing them.
+      Unfortunately I do not understand enough about this problem to
+      fix it properly, and I can't reproduce it on my test RedHat 7.3
+      system.  Please mail me if you have more information /
+      understanding.  </li><br>
+      <p>
+  <li>
+      Things are likely to go badly wrong on Red Hat 7.3.92 ("Limbo"
+      public beta), especially with threaded programs.  Don't expect
+      this to work.  Basically valgrind won't work as-is with any 
+      glibc-2.3 based system.</li><br>
       <p>
 </ul>
 

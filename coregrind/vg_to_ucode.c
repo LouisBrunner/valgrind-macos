@@ -4639,13 +4639,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0xC9: /* LEAVE */
       t1 = newTemp(cb); t2 = newTemp(cb);
       uInstr2(cb, GET,  4, ArchReg, R_EBP, TempReg, t1);
+      /* First PUT ESP looks redundant, but need it because ESP must
+         always be up-to-date for Memcheck to work... */
       uInstr2(cb, PUT,  4, TempReg, t1, ArchReg, R_ESP);
       uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t2);
       uInstr2(cb, PUT,  4, TempReg, t2, ArchReg, R_EBP);
       uInstr2(cb, ADD,  4, Literal, 0, TempReg, t1);
       uLiteral(cb, 4);
-      /* This 2nd PUT looks redundant, but Julian thinks it's not.
-       * --njn 03-feb-2003 */
       uInstr2(cb, PUT,  4, TempReg, t1, ArchReg, R_ESP);
       if (dis) VG_(printf)("leave");
       break;
@@ -5297,6 +5297,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        uInstr2(cb, GET,  4, ArchReg, R_ESP,    TempReg, t1);
        /* load M[ESP] to virtual register t3: t3 = M[t1] */
        uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
+       
+       /* increase ESP; must be done before the STORE.  Intel manual says:
+            If the ESP register is used as a base register for addressing
+            a destination operand in memory, the POP instruction computes
+            the effective address of the operand after it increments the
+            ESP register.
+       */
+       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
+       uLiteral(cb, sz);
+       uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
+
        /* resolve MODR/M */
        pair1 = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);              
        
@@ -5304,11 +5315,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        /*  uInstr2(cb, LOAD, sz, TempReg, tmpa, TempReg, tmpa); */
        /* store value from stack in memory, M[m32] = t3 */       
        uInstr2(cb, STORE, 4, TempReg, t3, TempReg, tmpa);
-
-       /* increase ESP */
-       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
-       uLiteral(cb, sz);
-       uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
 
        if (dis) 
           VG_(printf)("popl %s\n", dis_buf);

@@ -130,18 +130,19 @@ if [ $# != 0 ] ; then
         echo "program must rely on at least one shared object for Valgrind"
         echo "to work with it.  Read FAQ #5 for more information."
         exit 1 ;;
+     # ensure that there are no setuid or gid flags
+      *:\ set?id\ ELF*)
+     echo "\`$which_prog' is suid/sgid."
+        echo "Valgrind can't handle these executables, as it"
+        echo "requires the LD_PRELOAD feature in order to work."
+        echo ""
+        echo "Remove those flags and try again."
+        echo ""
+        exit 1
+        ;;
       esac
    fi
 
-   # Ensure that there is no suid or sgid flag
-   if [ `stat -c %a "$which_prog"` -gt 2000 ] ; then
-     echo "\`$which_prog' is suid/sgid."
-     echo "Valgrind can't handle these executables, as it"
-     echo "requires the LD_PRELOAD feature in order to work."
-     echo ""
-     echo "Remove those flags and try again."
-     exit 1
-   fi
    is_prog=1
 fi
 

@@ -1307,7 +1307,6 @@ static void fill_ehdr(Elf32_Ehdr *ehdr, Int num_phdrs)
    ehdr->e_ident[EI_CLASS] = ELFCLASS32;
    ehdr->e_ident[EI_DATA] = ELFDATA2LSB;
    ehdr->e_ident[EI_VERSION] = EV_CURRENT;
-   ehdr->e_ident[EI_OSABI] = ELFOSABI_LINUX;
 
    ehdr->e_type = ET_CORE;
    ehdr->e_machine = EM_386;

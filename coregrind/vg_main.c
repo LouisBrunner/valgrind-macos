@@ -1727,37 +1727,22 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BNUM_CLO("--vex-guest-chase-thresh",
                        VG_(clo_vex_control).guest_chase_thresh, 0, 99)
 
-      // for backwards compatibility, replaced by --log-fd
-      else if (VG_CLO_STREQN(13, arg, "--logfile-fd=")) {
-         VG_(clo_log_to)   = VgLogTo_Fd;
-         VG_(clo_log_name) = NULL;
-         eventually_log_fd = (Int)VG_(atoll)(&arg[13]);
-      }
       else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
          VG_(clo_log_to)   = VgLogTo_Fd;
          VG_(clo_log_name) = NULL;
          eventually_log_fd = (Int)VG_(atoll)(&arg[9]);
       }
 
-      // for backwards compatibility, replaced by --log-file
-      else if (VG_CLO_STREQN(10, arg, "--logfile=")) {
-         VG_(clo_log_to)   = VgLogTo_File;
-         VG_(clo_log_name) = &arg[10];
-      }
       else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
          VG_(clo_log_to)   = VgLogTo_File;
          VG_(clo_log_name) = &arg[11];
       }
+
       else if (VG_CLO_STREQN(19, arg, "--log-file-exactly=")) {
          VG_(clo_log_to)   = VgLogTo_FileExactly;
          VG_(clo_log_name) = &arg[19];
       }
 
-      // for backwards compatibility, replaced by --log-socket
-      else if (VG_CLO_STREQN(12, arg, "--logsocket=")) {
-         VG_(clo_log_to)   = VgLogTo_Socket;
-         VG_(clo_log_name) = &arg[12];
-      }
       else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
          VG_(clo_log_to)   = VgLogTo_Socket;
          VG_(clo_log_name) = &arg[13];

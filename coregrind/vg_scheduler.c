@@ -3545,11 +3545,6 @@ void do_client_request ( ThreadId tid )
          handle_signal_return(tid);
 	 break;
  
-      case VG_USERREQ__LOGMESSAGE:
-         VG_(message)(Vg_UserMsg, "%s", (Char*)(arg[1]));
-         RETURN_WITH(0);   /* irrelevant */
-         break;
-
       /* Requests from the client program */
 
       case VG_USERREQ__DISCARD_TRANSLATIONS:

@@ -448,8 +448,17 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
    request codes.  A few, publically-visible, request codes are also
    defined in valgrind.h, and similar headers for some skins. */
 
-#define VG_USERREQ__MALLOC              0x2001
-#define VG_USERREQ__FREE                0x2002
+#define VG_USERREQ__MALLOC                  0x2001
+#define VG_USERREQ__FREE                    0x2002
+
+/* 
+In vg_skin.h, so skins can use it.
+Call an arbitrary function with ThreadState as the first arg.
+#define VG_USERREQ__CLIENT_tstCALL0         0x2101
+#define VG_USERREQ__CLIENT_tstCALL1         0x2102
+#define VG_USERREQ__CLIENT_tstCALL2         0x2103
+#define VG_USERREQ__CLIENT_tstCALL3         0x2104
+*/
 
 /* (Fn, Arg): Create a new thread and run Fn applied to Arg in it.  Fn
    MUST NOT return -- ever.  Eventually it will do either __QUIT or
@@ -524,16 +533,12 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
 #define VG_USERREQ__PTHREAD_ERROR           0x3102
-/* 
-In vg_skin.h, so skins can use it.
-Write a string to the logging sink. 
-#define VG_USERREQ__LOGMESSAGE              0x3103
-*/
 
 /* 
 In vg_constants.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 */
+
 
 /* The scheduler does need to know the address of it so it can be
    called at program exit. */

@@ -1216,9 +1216,6 @@ extern Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind,
    Useful for reading in extra skin-specific suppression lines.  */
 extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 
-/* Client request: write a string to the logging sink. */
-#define VG_USERREQ__LOGMESSAGE              0x3103
-
 
 /*====================================================================*/
 /*=== Obtaining debug information                                  ===*/
@@ -1280,6 +1277,55 @@ typedef
    VgSectKind;
 
 extern VgSectKind VG_(seg_sect_kind)(Addr);
+
+
+/*====================================================================*/
+/*=== Calling functions from the sim'd CPU                         ===*/
+/*====================================================================*/
+
+#define VG_USERREQ__CLIENT_tstCALL0         0x2101
+#define VG_USERREQ__CLIENT_tstCALL1         0x2102
+#define VG_USERREQ__CLIENT_tstCALL2         0x2103
+#define VG_USERREQ__CLIENT_tstCALL3         0x2104
+
+/* These requests are like VALGRIND_NON_SIMD_CALL[0123] in valgrind.h,
+   except they insert the current ThreadState as the first argument to the
+   called function. */
+#define VALGRIND_NON_SIMD_tstCALL0(_qyy_fn)                    \
+   ({unsigned int _qyy_res;                                    \
+    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
+                            VG_USERREQ__CLIENT_tstCALL0,       \
+                            _qyy_fn,                           \
+                            0, 0, 0);                          \
+    _qyy_res;                                                  \
+   })
+
+#define VALGRIND_NON_SIMD_tstCALL1(_qyy_fn, _qyy_arg1)         \
+   ({unsigned int _qyy_res;                                    \
+    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
+                            VG_USERREQ__CLIENT_tstCALL1,       \
+                            _qyy_fn,                           \
+                            _qyy_arg1, 0, 0);                  \
+    _qyy_res;                                                  \
+   })
+
+#define VALGRIND_NON_SIMD_tstCALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
+   ({unsigned int _qyy_res;                                    \
+    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
+                            VG_USERREQ__CLIENT_tstCALL2,       \
+                            _qyy_fn,                           \
+                            _qyy_arg1, _qyy_arg2, 0);          \
+    _qyy_res;                                                  \
+   })
+
+#define VALGRIND_NON_SIMD_tstCALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
+   ({unsigned int _qyy_res;                                             \
+    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,           \
+                            VG_USERREQ__CLIENT_tstCALL3,                \
+                            _qyy_fn,                                    \
+                            _qyy_arg1, _qyy_arg2, _qyy_arg3);           \
+    _qyy_res;                                                           \
+   })
 
 
 /*====================================================================*/

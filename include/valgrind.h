@@ -145,30 +145,25 @@
    form 0x1000 + small_number.
 */
 
-#define VG_USERREQ_SKIN_BASE(a,b)	((unsigned int)(((a)&0xff) << 24 | ((b)&0xff) << 16))
-#define VG_IS_SKIN_USERREQ(a, b, v)	(VG_USERREQ_SKIN_BASE(a,b) == ((v) & 0xffff0000))
+#define VG_USERREQ_SKIN_BASE(a,b) \
+   ((unsigned int)(((a)&0xff) << 24 | ((b)&0xff) << 16))
+#define VG_IS_SKIN_USERREQ(a, b, v) \
+   (VG_USERREQ_SKIN_BASE(a,b) == ((v) & 0xffff0000))
 
 typedef
-   enum { VG_USERREQ__RUNNING_ON_VALGRIND = 0x1001,
-          VG_USERREQ__DISCARD_TRANSLATIONS,
+   enum { VG_USERREQ__RUNNING_ON_VALGRIND  = 0x1001,
+          VG_USERREQ__DISCARD_TRANSLATIONS = 0x1002,
 
           /* These allow any function of 0--3 args to be called from the
              simulated CPU but run on the real CPU */
-          VG_USERREQ__CLIENT_CALL0 = 0x1100,
-          VG_USERREQ__CLIENT_CALL1,
-          VG_USERREQ__CLIENT_CALL2,
-          VG_USERREQ__CLIENT_CALL3,
-
-          /* As above, but a pointer to the current ThreadState is inserted
-             as the first arg. */
-          VG_USERREQ__CLIENT_tstCALL0 = 0x1200,
-          VG_USERREQ__CLIENT_tstCALL1,
-          VG_USERREQ__CLIENT_tstCALL2,
-          VG_USERREQ__CLIENT_tstCALL3,
+          VG_USERREQ__CLIENT_CALL0 = 0x1101,
+          VG_USERREQ__CLIENT_CALL1 = 0x1102,
+          VG_USERREQ__CLIENT_CALL2 = 0x1103,
+          VG_USERREQ__CLIENT_CALL3 = 0x1104,
 
           /* Can be useful in regression testing suites -- eg. can send
              Valgrind's output to /dev/null and still count errors. */
-          VG_USERREQ__COUNT_ERRORS = 0x1300,
+          VG_USERREQ__COUNT_ERRORS = 0x1201,
 
           VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST
    } Vg_ClientRequest;

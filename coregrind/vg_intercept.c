@@ -201,12 +201,10 @@ static
 void cat_n_send ( char* pre, char* msg )
 {
    char  buf[1000];
-   int   res;
    if (get_pt_trace_level() >= 0) {
       snprintf(buf, sizeof(buf), "%s%s", pre, msg );
       buf[sizeof(buf)-1] = '\0';
-      VALGRIND_MAGIC_SEQUENCE(res, 0, /* irrelevant default */
-                              VG_USERREQ__LOGMESSAGE, buf, 0, 0, 0);
+      VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
    }
 }
 

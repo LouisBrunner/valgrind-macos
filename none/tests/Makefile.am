@@ -62,6 +62,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
 	system.stderr.exp system.vgtest \
 	thread-exits.stderr.exp thread-exits.stdout.exp thread-exits.vgtest \
+	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	tls.stderr.exp tls.stdout.exp  \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
@@ -76,7 +77,7 @@ check_PROGRAMS = \
 	stackgrowth sigstackgrowth \
 	smc1 susphello pending pth_blockedsig pth_stackalign \
 	syscall-restart1 syscall-restart2 system \
-	thread-exits \
+	thread-exits threaded-fork \
 	tls tls.so tls2.so \
 	coolo_sigaction gxx304 yield
 
@@ -102,12 +103,18 @@ floored_LDADD 		= -lm
 fucomip_SOURCES 	= fucomip.c
 getseg_SOURCES 		= getseg.c
 pending_SOURCES		= pending.c
+manythreads_SOURCES	= manythreads.c
+manythreads_LDADD	= -lpthread
 map_unaligned_SOURCES	= map_unaligned.c
 map_unmap_SOURCES	= map_unmap.c
 mq_SOURCES		= mq.c
 mq_LDADD		= -lrt
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
+pth_blockedsig_SOURCES	= pth_blockedsig.c
+pth_blockedsig_LDADD	= -lpthread
+pth_stackalign_SOURCES	= pth_stackalign.c
+pth_stackalign_LDADD	= -lpthread
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
 resolv_SOURCES 		= resolv.c
@@ -130,6 +137,8 @@ syscall_restart2_SOURCES = syscall-restart2.c
 system_SOURCES 		= system.c
 thread_exits_SOURCES	= thread-exits.c
 thread_exits_LDADD	= -lpthread
+threaded_fork_SOURCES	= threaded-fork.c
+threaded_fork_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so
 tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
@@ -143,14 +152,6 @@ tls2_so_LDFLAGS		= -shared
 yield_SOURCES		= yield.c
 yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
 yield_LDADD		= -lpthread
-
-# pthread C ones
-manythreads_SOURCES	= manythreads.c
-manythreads_LDADD	= -lpthread
-pth_blockedsig_SOURCES	= pth_blockedsig.c
-pth_blockedsig_LDADD	= -lpthread
-pth_stackalign_SOURCES	= pth_stackalign.c
-pth_stackalign_LDADD	= -lpthread
 
 # generic C++ ones
 coolo_sigaction_SOURCES	= coolo_sigaction.cpp

@@ -30,52 +30,10 @@
 #  The GNU General Public License is contained in the file LICENSE.
 
 #----------------------------------------------------------------------------
-# Annotator for valgrind --cachesim=yes.
+# Annotator for cachegrind. 
 #
-# Input file has the following format:
-# <file>         ::= <desc_line>* <cmd_line> <events_line> 
-#                    <data_line>+ <summary_line>
-# <desc_line>    ::= "desc:" <ws>? <non_nl_string>
-# <cmd_line>     ::= "cmd:" <ws>? <cmd>
-# <events_line>  ::= "events:" <ws>? (<event> <ws>)+
-# <data_line>    ::= <file_line> | <fn_line> | <count_line>
-# <file_line>    ::= ("fl=" | "fi=" | "fe=" ) <filename>
-# <fn_line>      ::= "fn="<filename>
-# <count_line>   ::= <line_num> <ws>? (<count> <ws>)+
-# <summary_line> ::= "summary:" <ws>? (<count> <ws>)+
-# <count>        ::= <num> | "."
+# File format is described in /docs/techdocs.html.
 #
-# where
-#
-# <non_nl_string> is any string not containing a newline
-# <cmd> is a command line invocation
-# <filename> and <fn_name> can be anything 
-# <num> and <line_num> are decimal numbers
-# <ws> is whitespace.
-# <nl> is a newline
-#
-# The contents of the "desc:" lines is printed out at the top of the summary.
-# This is a generic way of providing simulation specific information, eg. for
-# giving the cache configuration for cache simulation.
-#
-# Counts can be ".", to represent "N/A".
-#
-# The number of counts in each <line> and the <summary_line> should not exceed
-# the number of events in the <event_line>.  If the number in each <line> is
-# less, we use "." for the the missing counts (the last however-many).
-#
-# A <file_line> changes the current file name.  A <fn_line> changes the current
-# function name.  A <count_line> contains counts that pertain to the current
-# filename/fn_name.  A "fn=" <file_line> and a <fn_line> must appear before any
-# <count_line>s to give the context of the first <count_line>s.
-#
-# Each <file_line> should be immediately followed by a <fn_line>.  "fi="
-# <file_lines> are used to switch filenames for inlined functions;  "fe="
-# <file_lines> are similar, but are put at the end of a basic block in which
-# the file name hasn't been switched back to the original file name.  (fi and
-# fe lines behave the same, they are only distinguished to help debugging.)
-#
-#----------------------------------------------------------------------------
 # Performance improvements record, using cachegrind.out for cacheprof, doing no
 # source annotation (irrelevant ones removed):
 #                                                               user time

@@ -3918,7 +3918,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                              anyFlagUse(u), 
                              u->opcode, u->size, u->val1, u->val2 );
                           break;
-            default: VG_(core_panic)("emitUInstr:non-shift-op");
+            default: VG_(core_panic)("emitUInstr:shift-op");
          }
          break;
       }

@@ -5767,15 +5767,6 @@ POST(mq_getsetattr)
       VG_TRACK( post_mem_write, arg3, sizeof(struct vki_mq_attr) );
 }
 
-#undef SYSNO
-#undef res
-#undef arg1
-#undef arg2
-#undef arg3
-#undef arg4
-#undef arg5
-#undef arg6
-
 struct sys_info {
    UInt	flags;
    void	(*before)(ThreadId tid, ThreadState *tst);
@@ -5787,7 +5778,7 @@ struct sys_info {
 static void bad_before(ThreadId tid, ThreadState *tst)
 {
    VG_(message)
-      (Vg_DebugMsg,"WARNING: unhandled syscall: %d", tst->m_eax);
+      (Vg_DebugMsg,"WARNING: unhandled syscall: %d", SYSNO);
    if (VG_(clo_verbosity) > 1) {
       ExeContext *ec = VG_(get_ExeContext)(tid);
       VG_(pp_ExeContext)(ec);
@@ -5797,7 +5788,7 @@ static void bad_before(ThreadId tid, ThreadState *tst)
    VG_(message)
       (Vg_DebugMsg,"Read the file README_MISSING_SYSCALL_OR_IOCTL.");
 
-   tst->m_eax = -VKI_ENOSYS;
+   res = -VKI_ENOSYS;
 }
 
 static void bad_after(ThreadId tid, ThreadState *tst)
@@ -6074,10 +6065,10 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    tst = VG_(get_ThreadState)(tid);
 
    /* Convert vfork to fork, since we can't handle it otherwise. */
-   if (tst->m_eax == __NR_vfork)
-      tst->m_eax = __NR_fork;
+   if (SYSNO == __NR_vfork)
+      SYSNO = __NR_fork;
 
-   syscallno = tst->m_eax;
+   syscallno = SYSNO;
 
    if (tst->syscallno != -1)
       VG_(printf)("tid %d has syscall %d\n", tst->tid, tst->syscallno);
@@ -6145,7 +6136,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    } else {
       (sys->before)(tst->tid, tst);
 
-      if ((Int)tst->m_eax <= 0) {
+      if ((Int)res <= 0) {
 	 /* "before" decided the syscall wasn't viable, so don't do
 	    anything - just pretend the syscall happened. */
 	 syscall_done = True;
@@ -6158,12 +6149,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       } else {
 	 /* run the syscall directly */
 	 tst->m_eax = VG_(do_syscall)(syscallno, 
-				      tst->m_ebx,
-				      tst->m_ecx, 
-				      tst->m_edx,
-				      tst->m_esi,
-				      tst->m_edi,
-				      tst->m_ebp);
+				      arg1, arg2, arg3, arg4, arg5, arg6);
 	 syscall_done = True;
       }
    }
@@ -6185,7 +6171,7 @@ static void restart_syscall(ThreadId tid)
    vg_assert(tst->status == VgTs_WaitSys);
    vg_assert(tst->syscallno != -1);
 
-   tst->m_eax = tst->syscallno;
+   SYSNO = tst->syscallno;
    tst->m_eip -= 2;		/* sizeof(int $0x80) */
 
    /* Make sure our caller is actually sane, and we're really backing
@@ -6219,7 +6205,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
    tst = VG_(get_ThreadState)(tid);
 
    /* Tell the tool about the syscall return value */
-   SET_SYSCALL_RETVAL(tst->tid, tst->m_eax);
+   SET_SYSCALL_RETVAL(tst->tid, res);
 
    syscallno = tst->syscallno;
    pre_res = tst->sys_pre_res;
@@ -6236,7 +6222,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
       special = True;
    }
 
-   if (tst->m_eax == -VKI_ERESTARTSYS) {
+   if (res == -VKI_ERESTARTSYS) {
       /* Applications never expect to see this, so we should either
 	 restart the syscall or fail it with EINTR, depending on what
 	 our caller wants.  Generally they'll want to restart, but if
@@ -6257,7 +6243,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
    if (!restarted) {
       if (sys->after != NULL &&
-          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(tst->m_eax)))
+          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(res)))
 	 (sys->after)(tst->tid, tst);
 
       /* Do any post-syscall actions
@@ -6269,7 +6255,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
        */
       if (VG_(needs).syscall_wrapper) {
 	 VGP_PUSHCC(VgpSkinSysWrap);
-	 SK_(post_syscall)(tid, syscallno, pre_res, tst->m_eax, /*isBlocking*/True); // did block
+	 SK_(post_syscall)(tid, syscallno, pre_res, res, /*isBlocking*/True); // did block
 	 VGP_POPCC(VgpSkinSysWrap);
       }
    }
@@ -6279,6 +6265,15 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
    VGP_POPCC(VgpCoreSysWrap);
 }
+
+#undef SYSNO
+#undef res
+#undef arg1
+#undef arg2
+#undef arg3
+#undef arg4
+#undef arg5
+#undef arg6
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_syscalls.c ---*/

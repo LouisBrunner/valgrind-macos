@@ -25,6 +25,8 @@
 
 <a name="title">&nbsp;</a>
 <h1 align=center>Valgrind, snapshot 20020324</h1>
+<center>This manual was minimally updated on 20020415</center>
+<p>
 
 <center>
 <a href="mailto:jseward@acm.org">jseward@acm.org<br>
@@ -514,89 +516,6 @@ follows:
       buggy, so you may need to issue this flag if you use 3.0.4.
       </li><br><p>
 
-  <li><code>--client-perms=no</code> [default]<br>
-      <code>--client-perms=yes</code> <p>An experimental feature.
-      <p>
-      When enabled, and when <code>--instrument=yes</code> (which is
-      the default), Valgrind honours client directives to set and
-      query address range permissions.  This allows the client program
-      to tell Valgrind about changes in memory range permissions that
-      Valgrind would not otherwise know about, and so allows clients
-      to get Valgrind to do arbitrary custom checks.
-      <p>
-      Clients need to include the header file <code>valgrind.h</code>
-      to make this work.  The macros therein have the magical property
-      that they generate code in-line which Valgrind can spot.
-      However, the code does nothing when not run on Valgrind, so you
-      are not forced to run your program on Valgrind just because you
-      use the macros in this file.
-      <p>
-      A brief description of the available macros:
-      <ul>
-      <li><code>VALGRIND_MAKE_NOACCESS</code>,
-          <code>VALGRIND_MAKE_WRITABLE</code> and
-          <code>VALGRIND_MAKE_READABLE</code>.  These mark address
-          ranges as completely inaccessible, accessible but containing
-          undefined data, and accessible and containing defined data,
-          respectively.  Subsequent errors may have their faulting
-          addresses described in terms of these blocks.  Returns a
-          "block handle".
-      <p>
-      <li><code>VALGRIND_DISCARD</code>: At some point you may want
-          Valgrind to stop reporting errors in terms of the blocks
-          defined by the previous three macros.  To do this, the above
-          macros return a small-integer "block handle".  You can pass
-          this block handle to <code>VALGRIND_DISCARD</code>.  After
-          doing so, Valgrind will no longer be able to relate
-          addressing errors to the user-defined block associated with
-          the handle.  The permissions settings associated with the
-          handle remain in place; this just affects how errors are
-          reported, not whether they are reported.  Returns 1 for an
-          invalid handle and 0 for a valid handle (although passing
-          invalid handles is harmless).
-      <p>
-      <li><code>VALGRIND_CHECK_NOACCESS</code>,
-          <code>VALGRIND_CHECK_WRITABLE</code> and
-          <code>VALGRIND_CHECK_READABLE</code>: check immediately
-          whether or not the given address range has the relevant
-          property, and if not, print an error message.  Also, for the
-          convenience of the client, returns zero if the relevant
-          property holds; otherwise, the returned value is the address
-          of the first byte for which the property is not true.
-      <p>
-      <li><code>VALGRIND_CHECK_NOACCESS</code>: a quick and easy way
-          to find out whether Valgrind thinks a particular variable
-          (lvalue, to be precise) is addressible and defined.  Prints
-          an error message if not.  Returns no value.
-      <p>
-      <li><code>VALGRIND_MAKE_NOACCESS_STACK</code>: a highly
-          experimental feature.  Similarly to
-          <code>VALGRIND_MAKE_NOACCESS</code>, this marks an address
-          range as inaccessible, so that subsequent accesses to an
-          address in the range gives an error.  However, this macro
-          does not return a block handle.  Instead, all annotations
-          created like this are reviewed at each client
-          <code>ret</code> (subroutine return) instruction, and those
-          which now define an address range block the client's stack
-          pointer register (<code>%esp</code>) are automatically
-          deleted.
-          <p>
-          In other words, this macro allows the client to tell
-          Valgrind about red-zones on its own stack.  Valgrind
-          automatically discards this information when the stack
-          retreats past such blocks.  Beware: hacky and flaky.
-      </ul>
-      </li>
-      <p>
-      As of 17 March 02 (the time of writing this), there is a small
-      problem with all of these macros, which is that I haven't
-      figured out how to make them produce sensible (always-succeeds)
-      return values when the client is run on the real CPU or on
-      Valgrind without <code>--client-perms=yes</code>.  So if you
-      write client code which depends on the return values, be aware
-      that it may misbehave when not run with full Valgrindification.
-      If you always ignore the return values you should always be
-      safe.  I plan to fix this.
 </ul>
 
 There are also some options for debugging Valgrind itself.  You
@@ -640,6 +559,16 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
   <li><code>--trace-signals=no</code> [default]<br>
       <code>--trace-signals=yes</code>
       <p>Enable/disable tracing of signal handling.</li><br>
+      <p>
+
+  <li><code>--trace-sched=no</code> [default]<br>
+      <code>--trace-sched=yes</code>
+      <p>Enable/disable tracing of thread scheduling events.</li><br>
+      <p>
+
+  <li><code>--trace-pthread=no</code> [default]<br>
+      <code>--trace-pthread=yes</code>
+      <p>Enable/disable tracing of pthread-related events.</li><br>
       <p>
 
   <li><code>--trace-symtab=no</code> [default]<br>
@@ -715,7 +644,7 @@ qpngio.cpp, and so on.
 <p>Valgrind tries to establish what the illegal address might relate
 to, since that's often useful.  So, if it points into a block of
 memory which has already been freed, you'll be informed of this, and
-also where the block was free'd at..  Likewise, if it should turn out
+also where the block was free'd at.  Likewise, if it should turn out
 to be just off the end of a malloc'd block, a common result of
 off-by-one-errors in array subscripting, you'll be informed of this
 fact, and also where the block was malloc'd.
@@ -1057,8 +986,92 @@ shell script "valgrind". On line 4, set the environment variable
 installation into.
 
 
+<a name="install"></a>
+<h3>2.9&nbsp; The Client Request mechanism</h3>
+
+Valgrind has a trapdoor mechanism via which the client program can
+pass all manner of requests and queries to Valgrind.  Internally, this
+is used extensively to make malloc, free, signals, etc, work, although
+you don't see that.
+<p>
+For your convenience, a subset of these so-called client requests is
+provided to allow you to tell Valgrind facts about the behaviour of
+your program, and conversely to make queries.  In particular, your
+program can tell Valgrind about changes in memory range permissions
+that Valgrind would not otherwise know about, and so allows clients to
+get Valgrind to do arbitrary custom checks.
+<p>
+Clients need to include the header file <code>valgrind.h</code> to
+make this work.  The macros therein have the magical property that
+they generate code in-line which Valgrind can spot.  However, the code
+does nothing when not run on Valgrind, so you are not forced to run
+your program on Valgrind just because you use the macros in this file.
+<p>
+A brief description of the available macros:
+<ul>
+<li><code>VALGRIND_MAKE_NOACCESS</code>,
+    <code>VALGRIND_MAKE_WRITABLE</code> and
+    <code>VALGRIND_MAKE_READABLE</code>.  These mark address
+    ranges as completely inaccessible, accessible but containing
+    undefined data, and accessible and containing defined data,
+    respectively.  Subsequent errors may have their faulting
+    addresses described in terms of these blocks.  Returns a
+    "block handle".  Returns zero when not run on Valgrind.
+<p>
+<li><code>VALGRIND_DISCARD</code>: At some point you may want
+    Valgrind to stop reporting errors in terms of the blocks
+    defined by the previous three macros.  To do this, the above
+    macros return a small-integer "block handle".  You can pass
+    this block handle to <code>VALGRIND_DISCARD</code>.  After
+    doing so, Valgrind will no longer be able to relate
+    addressing errors to the user-defined block associated with
+    the handle.  The permissions settings associated with the
+    handle remain in place; this just affects how errors are
+    reported, not whether they are reported.  Returns 1 for an
+    invalid handle and 0 for a valid handle (although passing
+    invalid handles is harmless).  Always returns 0 when not run
+    on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_NOACCESS</code>,
+    <code>VALGRIND_CHECK_WRITABLE</code> and
+    <code>VALGRIND_CHECK_READABLE</code>: check immediately
+    whether or not the given address range has the relevant
+    property, and if not, print an error message.  Also, for the
+    convenience of the client, returns zero if the relevant
+    property holds; otherwise, the returned value is the address
+    of the first byte for which the property is not true.
+    Always returns 0 when not run on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_NOACCESS</code>: a quick and easy way
+    to find out whether Valgrind thinks a particular variable
+    (lvalue, to be precise) is addressible and defined.  Prints
+    an error message if not.  Returns no value.
+<p>
+<li><code>VALGRIND_MAKE_NOACCESS_STACK</code>: a highly
+    experimental feature.  Similarly to
+    <code>VALGRIND_MAKE_NOACCESS</code>, this marks an address
+    range as inaccessible, so that subsequent accesses to an
+    address in the range gives an error.  However, this macro
+    does not return a block handle.  Instead, all annotations
+    created like this are reviewed at each client
+    <code>ret</code> (subroutine return) instruction, and those
+    which now define an address range block the client's stack
+    pointer register (<code>%esp</code>) are automatically
+    deleted.
+    <p>
+    In other words, this macro allows the client to tell
+    Valgrind about red-zones on its own stack.  Valgrind
+    automatically discards this information when the stack
+    retreats past such blocks.  Beware: hacky and flaky, and
+    probably interacts badly with the new pthread support.
+</ul>
+</li>
+<p>
+
+
+
 <a name="problems"></a>
-<h3>2.9&nbsp; If you have problems</h3>
+<h3>2.10&nbsp; If you have problems</h3>
 Mail me (<a href="mailto:jseward@acm.org">jseward@acm.org</a>).
 
 <p>See <a href="#limits">Section 4</a> for the known limitations of

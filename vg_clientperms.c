@@ -263,7 +263,9 @@ Bool VG_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
       if (vg_cgbs[i].kind == CG_NotInUse) 
          continue;
       if (vg_cgbs[i].start - VG_AR_CLIENT_REDZONE_SZB <= a
-          && a < vg_cgbs[i].start + vg_cgbs[i].size + VG_AR_CLIENT_REDZONE_SZB) {
+          && a < vg_cgbs[i].start 
+                 + vg_cgbs[i].size 
+                 + VG_AR_CLIENT_REDZONE_SZB) {
          ai->akind = UserG;
          ai->blksize = vg_cgbs[i].size;
          ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
@@ -278,10 +280,10 @@ Bool VG_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 void VG_(delete_client_stack_blocks_following_ESP_change) ( void )
 {
    Addr newESP;
-   if (!VG_(clo_client_perms)) return;
    newESP = VG_(baseBlock)[VGOFF_(m_esp)];
-   while (vg_csb_used > 0 && 
-          vg_csbs[vg_csb_used-1].start + vg_csbs[vg_csb_used-1].size <= newESP) {
+   while (vg_csb_used > 0 
+          && vg_csbs[vg_csb_used-1].start + vg_csbs[vg_csb_used-1].size 
+             <= newESP) {
       vg_csb_used--;
       vg_csb_discards++;
       if (VG_(clo_verbosity) > 2)
@@ -303,11 +305,10 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
       VG_(printf)("client request: code %d,  addr %p,  len %d\n", 
                   arg[0], (void*)arg[1], arg[2] );
 
-   vg_assert(VG_(clo_client_perms));
-   vg_assert(VG_(clo_instrument));
-
    switch (arg[0]) {
       case VG_USERREQ__MAKE_NOACCESS: /* make no access */
+         if (!VG_(clo_instrument))
+            return 0;
          i = vg_alloc_client_block();
          /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
          vg_cgbs[i].kind  = CG_NoAccess;
@@ -318,6 +319,8 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          VGM_(make_noaccess) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
+         if (!VG_(clo_instrument))
+            return 0;
          i = vg_alloc_client_block();
          vg_cgbs[i].kind  = CG_Writable;
          vg_cgbs[i].start = arg[1];
@@ -327,6 +330,8 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          VGM_(make_writable) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_READABLE: /* make readable */
+         if (!VG_(clo_instrument))
+            return 0;
          i = vg_alloc_client_block();
          vg_cgbs[i].kind  = CG_Readable;
          vg_cgbs[i].start = arg[1];
@@ -337,17 +342,23 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          return i;
 
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
+         if (!VG_(clo_instrument))
+            return 0;
          ok = VGM_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             VG_(record_user_err) ( tst, bad_addr, True );
          return ok ? (UInt)NULL : bad_addr;
       case VG_USERREQ__CHECK_READABLE: /* check readable */
+         if (!VG_(clo_instrument))
+            return 0;
          ok = VGM_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             VG_(record_user_err) ( tst, bad_addr, False );
          return ok ? (UInt)NULL : bad_addr;
 
       case VG_USERREQ__DISCARD: /* discard */
+         if (!VG_(clo_instrument))
+            return 0;
          if (vg_cgbs == NULL 
              || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
             return 1;
@@ -357,6 +368,8 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          return 0;
 
       case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
+         if (!VG_(clo_instrument))
+            return 0;
          vg_add_client_stack_block ( tst, arg[1], arg[2] );
          return 0;
 
@@ -364,6 +377,8 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          return 1;
 
       case VG_USERREQ__DO_LEAK_CHECK:
+         if (!VG_(clo_instrument))
+            return 0;
          VG_(detect_memory_leaks)();
          return 0; /* return value is meaningless */
 

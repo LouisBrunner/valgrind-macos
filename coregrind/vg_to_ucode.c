@@ -3007,8 +3007,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    if (dis) VG_(printf)("\t0x%x:  ", eip);
 
-   /* Spot the client-request magic sequence, if required. */
-   if (1 /*VG_(clo_client_perms)*/) {
+   /* Spot the client-request magic sequence. */
+   {
       UChar* myeip = (UChar*)eip;
       /* Spot this:
          C1C01D                roll $29, %eax

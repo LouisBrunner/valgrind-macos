@@ -74,8 +74,6 @@ do
     --instrument=no)        vgopts="$vgopts $arg"; shift;;
     --cleanup=yes)          vgopts="$vgopts $arg"; shift;;
     --cleanup=no)           vgopts="$vgopts $arg"; shift;;
-    --client-perms=yes)     vgopts="$vgopts $arg"; shift;;
-    --client-perms=no)      vgopts="$vgopts $arg"; shift;;
     --smc-check=none)       vgopts="$vgopts $arg"; shift;;
     --smc-check=some)       vgopts="$vgopts $arg"; shift;;
     --smc-check=all)        vgopts="$vgopts $arg"; shift;;
@@ -135,7 +133,6 @@ if [ z"$argopts" = z   -o   z"$dousage" = z1 ]; then
    echo "    --workaround-gcc296-bugs=no|yes  self explanatory [no]"
    echo "    --suppressions=<filename> suppress errors described in"
    echo "                              suppressions file <filename>"
-   echo "    --client-perms=no|yes     handle client VG_MAKE_* requests? [no]"
    echo "    --check-addrVs=no|yes     experimental lighterweight checking? [yes]"
    echo "                              yes == Valgrind's original behaviour"
    echo

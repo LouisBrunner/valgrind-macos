@@ -420,7 +420,6 @@ Bool   VG_(clo_single_step);
 Bool   VG_(clo_optimise);
 Bool   VG_(clo_instrument);
 Bool   VG_(clo_cleanup);
-Bool   VG_(clo_client_perms);
 Int    VG_(clo_smc_check);
 Bool   VG_(clo_trace_syscalls);
 Bool   VG_(clo_trace_signals);
@@ -504,7 +503,6 @@ static void process_cmd_line_options ( void )
    VG_(clo_optimise)         = True;
    VG_(clo_instrument)       = True;
    VG_(clo_cleanup)          = True;
-   VG_(clo_client_perms)     = True;
    VG_(clo_smc_check)        = /* VG_CLO_SMC_SOME */ VG_CLO_SMC_NONE;
    VG_(clo_trace_syscalls)   = False;
    VG_(clo_trace_signals)    = False;
@@ -748,11 +746,6 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--cleanup=no"))
          VG_(clo_cleanup) = False;
 
-      else if (STREQ(argv[i], "--client-perms=yes"))
-         VG_(clo_client_perms) = True;
-      else if (STREQ(argv[i], "--client-perms=no"))
-         VG_(clo_client_perms) = False;
-
       else if (STREQ(argv[i], "--smc-check=none"))
          VG_(clo_smc_check) = VG_CLO_SMC_NONE;
       else if (STREQ(argv[i], "--smc-check=some"))
@@ -824,18 +817,6 @@ static void process_cmd_line_options ( void )
          "Please choose one or the other, but not both.");
       bad_option("--gdb-attach=yes and --trace-children=yes");
    }
-
-#if 0
-   if (VG_(clo_client_perms) && !VG_(clo_instrument)) {
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, 
-         "--client-perms=yes requires --instrument=yes");
-      bad_option("--client-perms=yes without --instrument=yes");
-   }
-
-   if (VG_(clo_client_perms))
-      vg_assert(VG_(clo_instrument));
-#endif
 
    VG_(clo_logfile_fd) = eventually_logfile_fd;
 

@@ -93,7 +93,7 @@ The two steps are:
   </li>
   <p>
   <li>Generate a function-by-function summary, and possibly annotate
-      source files with 'vg_annotate'. Source files to annotate can be
+      source files with 'cg_annotate'. Source files to annotate can be
       specified manually, or manually on the command line, or
       "interesting" source files can be annotated automatically with
       the <code>--auto=yes</code> option.  You can annotate C/C++
@@ -225,7 +225,7 @@ Combined instruction and data figures for the L2 cache follow that.<p>
 As well as printing summary information, Cachegrind also writes
 line-by-line cache profiling information to a file named
 <code>cachegrind.out.<i>pid</i></code>.  This file is human-readable, but is
-best interpreted by the accompanying program <code>vg_annotate</code>,
+best interpreted by the accompanying program <code>cg_annotate</code>,
 described in the next section.
 <p>
 Things to note about the <code>cachegrind.out.<i>pid</i></code> file:
@@ -277,14 +277,14 @@ The interesting cache-simulation specific options are:
 <a name="annotate"></a>
 <h3>1.6&nbsp; Annotating C/C++ programs</h3>
 
-Before using <code>vg_annotate</code>, it is worth widening your
+Before using <code>cg_annotate</code>, it is worth widening your
 window to be at least 120-characters wide if possible, as the output
 lines can be quite long.
 <p>
-To get a function-by-function summary, run <code>vg_annotate
+To get a function-by-function summary, run <code>cg_annotate
 --<i>pid</i></code> in a directory containing a
 <code>cachegrind.out.<i>pid</i></code> file.  The <code>--<i>pid</i></code>
-is required so that <code>vg_annotate</code> knows which log file to use when
+is required so that <code>cg_annotate</code> knows which log file to use when
 several are present.
 <p>
 The output looks like this:
@@ -370,9 +370,9 @@ First up is a summary of the annotation options:
       shown" line (and can be changed with the <code>--show</code> option).
       </li><p>
 
-  <li>Threshold: <code>vg_annotate</code> by default omits functions
+  <li>Threshold: <code>cg_annotate</code> by default omits functions
       that cause very low numbers of misses to avoid drowning you in
-      information.  In this case, vg_annotate shows summaries the
+      information.  In this case, cg_annotate shows summaries the
       functions that account for 99% of the <code>Ir</code> counts;
       <code>Ir</code> is chosen as the threshold event since it is the
       primary sort event.  The threshold can be adjusted with the
@@ -415,8 +415,8 @@ It is worth noting that functions will come from three types of source files:
 There are two ways to annotate source files -- by choosing them
 manually, or with the <code>--auto=yes</code> option. To do it
 manually, just specify the filenames as arguments to
-<code>vg_annotate</code>. For example, the output from running
-<code>vg_annotate concord.c</code> for our example produces the same
+<code>cg_annotate</code>. For example, the output from running
+<code>cg_annotate concord.c</code> for our example produces the same
 output as above followed by an annotated version of
 <code>concord.c</code>, a section of which looks like:
 
@@ -481,8 +481,8 @@ you know which part of a file the shown code comes from, eg:
 The amount of context to show around annotated lines is controlled by the
 <code>--context</code> option.<p>
 
-To get automatic annotation, run <code>vg_annotate --auto=yes</code>.
-vg_annotate will automatically annotate every source file it can find that is
+To get automatic annotation, run <code>cg_annotate --auto=yes</code>.
+cg_annotate will automatically annotate every source file it can find that is
 mentioned in the function-by-function summary.  Therefore, the files chosen for
 auto-annotation  are affected by the <code>--sort</code> and
 <code>--threshold</code> options.  Each source file is clearly marked
@@ -507,7 +507,7 @@ Use the <code>-I/--include</code> option to tell Valgrind where to look for
 source files if the filenames found from the debugging information aren't
 specific enough.
 
-Beware that vg_annotate can take some time to digest large
+Beware that cg_annotate can take some time to digest large
 <code>cachegrind.out.<i>pid</i></code> files, e.g. 30 seconds or more.  Also
 beware that auto-annotation can produce a lot of output if your program is
 large!
@@ -531,7 +531,7 @@ You can then profile and annotate source files in the same way as for C/C++
 programs.
 
 
-<h3>1.8&nbsp; <code>vg_annotate</code> options</h3>
+<h3>1.8&nbsp; <code>cg_annotate</code> options</h3>
 <ul>
   <li><code>--<i>pid</i></code></li><p>
 
@@ -590,7 +590,7 @@ programs.
   
 
 <h3>1.9&nbsp; Warnings</h3>
-There are a couple of situations in which vg_annotate issues warnings.
+There are a couple of situations in which cg_annotate issues warnings.
 
 <ul>
   <li>If a source file is more recent than the

@@ -395,7 +395,7 @@ instruction that doesn't write to memory.<p>
 The number of counts in each <code>line</code> and the
 <code>summary_line</code> should not exceed the number of events in the
 <code>event_line</code>.  If the number in each <code>line</code> is less,
-vg_annotate treats those missing as though they were a "." entry.  <p>
+cg_annotate treats those missing as though they were a "." entry.  <p>
 
 A <code>file_line</code> changes the current file name.  A <code>fn_line</code>
 changes the current function name.  A <code>count_line</code> contains counts
@@ -437,7 +437,7 @@ This is a summary of the important features:
 
 
 <h3>Annotation</h3>
-Annotation is done by vg_annotate.  It is a fairly straightforward Perl script
+Annotation is done by cg_annotate.  It is a fairly straightforward Perl script
 that slurps up all the cost centres, and then runs through all the chosen
 source files, printing out cost centres with them.  It too has been carefully
 optimised.
@@ -450,9 +450,9 @@ branch prediction -- all branches could be instrumented to interact with a
 branch prediction simulator, using very similar techniques to those described
 above.<p>
 
-In particular, vg_annotate would not need to change -- the file format is such
+In particular, cg_annotate would not need to change -- the file format is such
 that it is not specific to the cache simulation, but could be used for any kind
-of line-by-line information.  The only part of vg_annotate that is specific to
+of line-by-line information.  The only part of cg_annotate that is specific to
 the cache simulation is the name of the input file
 (<code>cachegrind.out</code>), although it would be very simple to add an
 option to control this.<p>

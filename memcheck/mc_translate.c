@@ -57,7 +57,6 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 #  define Ls1 (u->tag1 == Lit16)
 #  define Ls3 (u->tag3 == Lit16)
 #  define TRL1 (TR1 || L1)
-#  define TRA1 (TR1 || A1)
 #  define N2  (u->tag2 == NoValue)
 #  define N3  (u->tag3 == NoValue)
 #  define COND0    (u->cond         == 0)
@@ -89,7 +88,7 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
    case GETVF: 
    case PUTVF:  return LIT0 && SZ0 && CC0 &&  TR1 &&  N2 &&  N3 && XOTHER;
    case TESTV: 
-   case SETV:   return LIT0 && SZj && CC0 && TRA1 &&  N2 &&  N3 && XOTHER;
+   case SETV:   return LIT0 && SZj && CC0 &&  TR1 &&  N2 &&  N3 && XOTHER;
    case TAG1:   return LIT0 && SZ0 && CC0 &&  TR1 &&  N2 && Ls3 && XOTHER;
    case TAG2:   return LIT0 && SZ0 && CC0 &&  TR1 && TR2 && Ls3 && XOTHER;
    default:
@@ -111,7 +110,6 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 #  undef Ls1
 #  undef Ls3
 #  undef TRL1
-#  undef TRA1
 #  undef N2
 #  undef N3
 #  undef COND0

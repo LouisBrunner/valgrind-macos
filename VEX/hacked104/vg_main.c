@@ -31,7 +31,8 @@
 
 #include "vg_include.h"
 #include "vg_constants.h"
-
+#include "../pub/libvex.h"
+#include "../pub/libvex_guest_x86.h"
 
 /* ---------------------------------------------------------------------
    Compute offsets into baseBlock.  See comments in vg_include.h.
@@ -1026,7 +1027,6 @@ UInt VG_(m_state_static) [8 /* int regs, in Intel order */
 
 void VG_(copy_baseBlock_to_m_state_static) ( void )
 {
-   Int i;
    VG_(m_state_static)[ 0/4] = VG_(baseBlock)[VGOFF_(m_eax)];
    VG_(m_state_static)[ 4/4] = VG_(baseBlock)[VGOFF_(m_ecx)];
    VG_(m_state_static)[ 8/4] = VG_(baseBlock)[VGOFF_(m_edx)];
@@ -1052,10 +1052,9 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
 
    VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
-   /* Hack */
-   for (i = 0; i < (108/4); i++)
-      VG_(m_state_static)[40/4 + i] 
-         = 0;
+   /* Copy FPU state */
+   vex_to_x87( (UChar*)&VG_(baseBlock)[0],
+               (UChar*)&VG_(m_state_static)[40/4] );
 }
 
 
@@ -1073,7 +1072,13 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_cc_op)]    = 0; // CC_OP_COPY
    VG_(baseBlock)[VGOFF_(m_cc_src)]   = VG_(m_state_static)[32/4];
    VG_(baseBlock)[VGOFF_(m_cc_dst)]   = 0;
-   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = 1;
+   VG_(baseBlock)[VGOFF_(m_cc_dflag)] 
+      = (VG_(m_state_static)[32/4] & (1<<10)) 
+           ? 0xFFFFFFFF
+           : 0x00000001;
+   /* Mask out everything except O S Z A C P. */
+   VG_(baseBlock)[VGOFF_(m_cc_src)]
+      &= (0x0001 | 0x0004 | 0x0010 | 0x0040 | 0x0080 | 0x0800);
 
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
 
@@ -1086,15 +1091,10 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = 0;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = 0;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = 0;
-   /* stack grows down, towards lower numbered registers, and ftop is
-      decremented prior to use when pushing.  Hence the initial value
-      should be zero, as the decrement then changes it to 7 so we end
-      up first writing %f7. */
-   VG_(baseBlock)[VGOFF_(m_ftop)] = 0;
-   /* HACK; we know the ftag array is 8 bytes long; therefore
-      conveniently initialise it with 2 32-bit stores. */
-   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = 0;
-   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = 0;
+
+   /* Copy FPU state. */
+   x87_to_vex( (UChar*)&VG_(m_state_static)[40/4], 
+               (UChar*)&VG_(baseBlock)[0] );
 }
 
 

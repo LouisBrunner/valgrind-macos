@@ -1,7 +1,8 @@
 
 PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_ir.h				\
-		pub/libvex.h
+		pub/libvex.h				\
+		pub/libvex_guest_x86.h
 
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\

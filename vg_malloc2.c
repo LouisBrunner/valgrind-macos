@@ -1081,6 +1081,7 @@ void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
       a power of 2.  There must be a better way to do this.  What is
       it? */
    switch (req_alignB) {
+      case 4:
       case 8: case 16: case 32: case 64: case 128: case 256: 
       case 512: case 1024: case 2048: case 4096: case 8192: 
       case 16384: case 32768: case 65536: case 131072: 

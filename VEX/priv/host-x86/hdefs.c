@@ -599,6 +599,14 @@ X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
    vassert(cond != Xcc_ALWAYS);
    return i;
 }
+X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr )
+{
+   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                 = Xin_FpLdStCW;
+   i->Xin.FpLdStCW.isLoad = isLoad;
+   i->Xin.FpLdStCW.addr   = addr;
+   return i;
+}
 
 
 void ppX86Instr ( X86Instr* i ) {
@@ -759,6 +767,10 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.FpCMov.dst);
          return;
+      case Xin_FpLdStCW:
+         vex_printf(i->Xin.FpLdStCW.isLoad ? "fldcw " : "fstcw ");
+         ppX86AMode(i->Xin.FpLdStCW.addr);
+         return;
       default:
          vpanic("ppX86Instr");
    }
@@ -875,6 +887,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, i->Xin.FpCMov.src);
          addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
          return;
+      case Xin_FpLdStCW:
+         addRegUsage_X86AMode(u, i->Xin.FpLdStCW.addr);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -962,6 +977,9 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_FpCMov:
          mapReg(m, &i->Xin.FpCMov.src);
          mapReg(m, &i->Xin.FpCMov.dst);
+         return;
+      case Xin_FpLdStCW:
+         mapRegs_X86AMode(m, i->Xin.FpLdStCW.addr);
          return;
       default:
          ppX86Instr(i);
@@ -1843,6 +1861,15 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
       /* Fill in the jump offset. */
       *(ptmp-1) = p - ptmp;
+      goto done;
+
+   case Xin_FpLdStCW:
+      if (i->Xin.FpLdStCW.isLoad) {
+         *p++ = 0xD9;
+         p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdStCW.addr);
+      } else {
+         vassert(0);
+      }
       goto done;
 
    default: 

@@ -622,9 +622,12 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_AddF64: case Iop_SubF64: 
       case Iop_MulF64: case Iop_DivF64:
          BINARY(Ity_F64,Ity_F64,Ity_F64);
+
       case Iop_I32toF64: UNARY(Ity_F64,Ity_I32);
-      case Iop_F64toI32: UNARY(Ity_I32,Ity_F64);
-      case Iop_F64toI16: UNARY(Ity_I16,Ity_F64);
+
+      case Iop_F64toI32: BINARY(Ity_I32, Ity_I32,Ity_F64);
+      case Iop_F64toI16: BINARY(Ity_I16, Ity_I32,Ity_F64);
+
       case Iop_F32toF64: UNARY(Ity_F64,Ity_F32);
       case Iop_F64toF32: UNARY(Ity_F32,Ity_F64);
 
@@ -887,8 +890,14 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          tcExpr(bb,stmt, expr->Iex.Binop.arg1, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Binop.arg2, gWordTy );
          typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
-         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID)
-            sanityCheckFail(bb,stmt,"Iex.Binop: wrong arity op");
+         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID) {
+            vex_printf(" op name: " );
+            ppIROp(expr->Iex.Binop.op);
+            vex_printf("\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Binop: wrong arity op\n"
+               "... name of op precedes BB printout\n");
+         }
          ttarg1 = typeOfIRExpr(tyenv, expr->Iex.Binop.arg1);
          ttarg2 = typeOfIRExpr(tyenv, expr->Iex.Binop.arg2);
          if (t_arg1 != ttarg1 || t_arg2 != ttarg2) {

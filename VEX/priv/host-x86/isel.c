@@ -502,6 +502,66 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return b16;
       }
 
+      if (e->Iex.Binop.op == Iop_F64toI32 || e->Iex.Binop.op == Iop_F64toI16) {
+         Int  sz   = e->Iex.Binop.op == Iop_F64toI16 ? 2 : 4;
+         HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg rrm2 = newVRegI(env);
+         HReg dst  = newVRegI(env);
+
+         /* Used several times ... */
+         X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+
+	 /* rf now holds the value to be converted, and rrm holds the
+	    rounding mode value, encoded as per the IRRoundingMode
+	    enum.  The first thing to do is set the FPU's rounding
+	    mode accordingly. */
+
+         /* Create a space, both for the control word messing, and for
+	    the actual store conversion.
+         /* subl $4, %esp */
+         addInstr(env, 
+                  X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
+	 /* movl %rrm, %rrm2
+            andl $3, %rrm2   -- shouldn't be needed; paranoia
+            shll $10, %rrm2
+            orl  $0x037F, %rrm2
+            movl %rrm2, 0(%esp)
+            fldcw 0(%esp)
+	 */
+         addInstr(env, mk_MOVsd_RR(rrm, rrm2));
+	 addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
+	 addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
+	 addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
+	 addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
+	 addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+         /* gistw/l %rf, 0(%esp) */
+         addInstr(env, X86Instr_FpLdStI(False/*store*/, sz, rf, zero_esp));
+
+         if (sz == 2) {
+            /* movzwl 0(%esp), %dst */
+            addInstr(env, X86Instr_LoadEX(2,False,zero_esp,dst));
+        } else {
+            /* movl 0(%esp), %dst */
+            vassert(sz == 4);
+            addInstr(env, X86Instr_Alu32R(
+                             Xalu_MOV, X86RMI_Mem(zero_esp), dst));
+         }
+
+	 /* Restore default FPU control.
+            movl $0x037F, 0(%esp)
+            fldcw 0(%esp)
+	 */
+         addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
+	 addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+         /* addl $4, %esp */
+         addInstr(env, 
+                  X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+         return dst;
+      }
+
       break;
    }
 
@@ -610,39 +670,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                           X86RMI_Reg(tmp), dst));
             return dst;
          }
-
-         case Iop_F64toI32:
-         case Iop_F64toI16: {
-            Int  sz  = e->Iex.Unop.op == Iop_F64toI16 ? 2 : 4;
-            HReg dst = newVRegI(env);
-            HReg rf  = iselDblExpr(env, e->Iex.Unop.arg);
-            /* subl $sz, %esp */
-            addInstr(env, X86Instr_Alu32R(Xalu_SUB,
-                                          X86RMI_Imm(sz),
-                                          hregX86_ESP()));
-            /* gistw/l %rf, 0(%esp) */
-            addInstr(env, X86Instr_FpLdStI(
-                             False/*store*/, sz, rf, 
-                             X86AMode_IR(0, hregX86_ESP())));
-            if (sz == 2) {
-               /* movzwl 0(%esp), %dst */
-               addInstr(env, X86Instr_LoadEX(
-                                2,False,
-                                X86AMode_IR(0, hregX86_ESP()),dst));
-           } else {
-               /* movl 0(%esp), %dst */
-               vassert(sz == 4);
-               addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
-                                X86RMI_Mem(X86AMode_IR(0, hregX86_ESP())),
-                                dst));
-            }
-            /* addl $sz, %esp */
-            addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                          X86RMI_Imm(sz),
-                                          hregX86_ESP()));
-            return dst;
-         }
-
 
          case Iop_16to8:
          case Iop_32to8:
@@ -1012,8 +1039,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1);
-   DECLARE_PATTERN(p_eq32_literal);
-   DECLARE_PATTERN(p_ne32_zero);
+   //DECLARE_PATTERN(p_eq32_literal);
+   //DECLARE_PATTERN(p_ne32_zero);
    DECLARE_PATTERN(p_1Uto32_then_32to1);
 
    vassert(e);

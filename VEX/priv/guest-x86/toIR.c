@@ -3100,6 +3100,33 @@ static void put_ftop ( IRExpr* e )
 }
 
 
+/* --------- Get/set the FPU control word. --------- */
+/* Note, IA32 has this as a 16-bit value, so fstcw/fldcw need to cast
+   to/from 16 bits.  Here we represent it in 32 bits. */
+static IRExpr* /* :: Ity_I32 */ get_fpucw ( void )
+{
+   return IRExpr_Get( OFFB_FPUCW, Ity_I32 );
+}
+
+static void put_fpucw ( IRExpr* /* :: Ity_I32 */ e )
+{
+   stmt( IRStmt_Put( OFFB_FPUCW, e ) );
+}
+
+
+/* --------- Get the FPU rounding mode from the CW. --------- */
+/* Produces a value in 0 .. 3, which is encoded as per the type
+   IRRoundingMode.  On IA32 the relevant value is precisely bits 11
+   and 10 of the control word.
+*/
+static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
+{
+   return binop( Iop_And32, 
+                 binop(Iop_Shr32, get_fpucw(), mkU8(10)),
+                 mkU32(3) );
+}
+
+
 /* --------- Get/set FP register tag bytes. --------- */
 
 /* Given i, generate an expression which is the offset in the guest
@@ -3344,7 +3371,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fldF %s\n", dis_buf);
                fp_push();
                put_ST(0, unop(Iop_F32toF64,
-                              IRExpr_LDle(Ity_F32, mkexpr(addr))));
+                              loadLE(Ity_F32, mkexpr(addr))));
                break;
 
             case 3: /* FSTP single-real */
@@ -3353,13 +3380,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       fp_pop();
                break;
 
-            case 5:
-               vex_printf("vex x86->IR: ignoring fldcw\n");
+            case 5: 
+               DIP("fldcw %s", dis_buf);
+               put_fpucw( unop(Iop_16Uto32, loadLE(Ity_I16, mkexpr(addr))) );
                break;
 
             case 7:
-               vex_printf("vex x86->IR: ignoring fstcw\n");
-               storeLE(mkexpr(addr), mkU16(0x037F));
+               DIP("fstcw %s", dis_buf);
+               storeLE(mkexpr(addr), unop(Iop_32to16, get_fpucw()));
                break;
 
             default:
@@ -3492,9 +3520,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                               loadLE(Ity_I32, mkexpr(addr))));
                break;
 
+            case 2: /* FIST m32 */
+               DIP("fistl %s", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
+               break;
+
             case 3: /* FISTP m32 */
                DIP("fistpl %s", dis_buf);
-               storeLE(mkexpr(addr), unop(Iop_F64toI32,get_ST(0)));
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
 	       fp_pop();
                break;
 
@@ -3610,8 +3645,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 3: /* FISTP m16 */
                DIP("fistps %s", dis_buf);
-               storeLE(mkexpr(addr), unop(Iop_F64toI16,get_ST(0)));
-	       fp_pop();
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
+               fp_pop();
                break;
 
 #if 0
@@ -7089,13 +7125,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0xB0: /* MOV imm,AL */
    case 0xB1: /* MOV imm,CL */
    case 0xB2: /* MOV imm,DL */
-#if 0
    case 0xB3: /* MOV imm,BL */
    case 0xB4: /* MOV imm,AH */
    case 0xB5: /* MOV imm,CH */
    case 0xB6: /* MOV imm,DH */
    case 0xB7: /* MOV imm,BH */
-#endif
       d32 = getIByte(delta); delta += 1;
       putIReg(1, opc-0xB0, mkU8(d32));
       DIP("movb $0x%x,%s\n", d32, nameIReg(1,opc-0xB0));

@@ -74,6 +74,25 @@ extern void ppIRTemp ( IRTemp );
 
 /* ------------------ Binary and unary ops ------------------ */
 
+/* Encoding of rounding modes in Float -> Int conversions.  This is
+   the same as the encoding used by Intel IA32 to indicate x87
+   rounding mode. */
+typedef
+   enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
+   IRRoundingMode;
+
+/* Floating point comparison result values, as created by Iop_CmpF64.
+   This is also derived from what IA32 does. */
+typedef
+   enum {
+      Ircr_UN = 0x85,
+      Ircr_LT = 0x01,
+      Ircr_GT = 0x00,
+      Ircr_EQ = 0x80
+   }
+   IRCmpF64Result;
+
+
 typedef
    enum { 
       /* Do not change this ordering.  The IR generators
@@ -98,15 +117,21 @@ typedef
       /* Widening multiplies */
       Iop_MullS8, Iop_MullS16, Iop_MullS32,
       Iop_MullU8, Iop_MullU16, Iop_MullU32,
+
       /* Wierdo integer stuff */
       Iop_Clz32,   /* count leading zeroes */
       Iop_Ctz32,   /* count trailing zeros */
+      /* Ctz32/Clz32 are UNDEFINED when given arguments of zero.
+         You must ensure they are never given a zero argument. 
+      */
+
       /* Ordering not important after here. */
       Iop_CmpLT32S,
       Iop_CmpLE32S,
       Iop_CmpLT32U,
       Iop_CmpLE32U,
       /* Division */
+      /* TODO: clarify semantics wrt rounding, negative values, whatever */
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed
@@ -131,21 +156,55 @@ typedef
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */
-      /* FP stuff */
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
-      Iop_SqrtF64,
-      /* double <-> int */
-      Iop_I32toF64, 
-      Iop_F64toI32, Iop_F64toI16,
-      /* double <-> float */
+
+      /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
+
+      /* Simple operations */
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_RemF64,
+      Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
+
+      /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
+            0x85 Unordered
+            0x01 LT
+            0x00 GT
+            0x80 EQ
+         This just happens to be the Intel encoding.  The values
+         are recorded in the type IRCmpF64Result.
+      */
+      Iop_CmpF64,
+
+      /* int -> double */
+      Iop_I32toF64, Iop_I64toF64,
+
+      /* double -> int.  These take a first argument :: Ity_I32 
+         (an IRRoundingMode) which is an indication of the rounding mode,
+         as per the following encoding:
+            00b  to nearest (the default)
+            01b  to -infinity
+            10b  to +infinity
+            11b  to zero
+         This just happens to be the Intel encoding.  For reference only,
+         the PPC encoding is:
+            00b  to nearest (the default)
+            01b  to zero
+            10b  to +infinity
+            11b  to -infinity
+         Any PPC -> IR front end will have to translate these PPC
+         encodings to the standard encodings.
+
+         If one of these conversions gets an out-of-range condition,
+         or a NaN, as an argument, the result is host-defined.  On x86
+         the "integer indefinite" value 0x80..00 is produced.
+         On PPC it is either 0x80..00 or 0x7F..FF depending on the sign
+         of the argument.
+      */
+      Iop_F64toI64, Iop_F64toI32, Iop_F64toI16,
+
+      /* double <-> float.  What does this mean -- does it round? */
       Iop_F32toF64, Iop_F64toF32
    }
    IROp;
 
-/* Notes.
-    Ctz32/Clz32 are UNDEFINED when given arguments of zero.
-    You must ensure they are never given a zero argument. 
-*/
 
 extern void ppIROp ( IROp );
 

@@ -279,7 +279,8 @@ typedef
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
-      Xin_FpCMov     /* FP fake floating point (un)conditional move */
+      Xin_FpCMov,    /* FP fake floating point (un)conditional move */
+      Xin_FpLdStCW   /* fldcw / fstcw */
    }
    X86InstrTag;
 
@@ -413,6 +414,12 @@ typedef
             HReg        src;
             HReg        dst;
          } FpCMov;
+         /* Load/store the FPU's 16-bit control word (fldcw/fstcw) */
+         struct {
+            Bool      isLoad;
+            X86AMode* addr;
+         }
+         FpLdStCW;
       } Xin;
    }
    X86Instr;
@@ -439,6 +446,8 @@ extern X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst 
 extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_FpLdStI  ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_FpCMov   ( X86CondCode, HReg src, HReg dst );
+extern X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* );
+
 
 extern void ppX86Instr ( X86Instr* );
 

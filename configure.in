@@ -97,9 +97,9 @@ AC_MSG_CHECKING([for the kernel version])
 kernel=`uname -r`
 
 case "${kernel}" in
-     2.5.*) 
-	    AC_MSG_RESULT([2.5 family (${kernel})])
-	    AC_DEFINE([KERNEL_2_5], 1, [Define to 1 if you're using Linux 2.5.x])
+     2.6.*) 
+	    AC_MSG_RESULT([2.6 family (${kernel})])
+	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x])
 	    ;;
 
      2.4.*) 

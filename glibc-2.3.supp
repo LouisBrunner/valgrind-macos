@@ -243,6 +243,18 @@
    Memcheck:Cond
    obj:/lib/ld-2.3.3.so
 }
+
+##----------------------------------------------------------------------##
+## SuSE 9.1 with 3.0 branch (x86)
+{
+   Strstr dubiousness in pthread_initialize
+   Memcheck:Cond
+   fun:strstr
+   fun:pthread_initialize
+   obj:/lib/libpthread.so.0
+   obj:/lib/libpthread.so.0
+}
+
 ##----------------------------------------------------------------------##
 ## glibc-2.3.3 on FC2
 ## Assumes that sysctl returns \0-terminated strings in is_smp_system

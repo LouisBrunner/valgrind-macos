@@ -4,6 +4,9 @@ dir=`dirname $0`
 
 $dir/../../tests/filter_stderr_basic                |
 
+# Remove "Massif, ..." line and the following copyright line.
+sed "/^Massif, a space profiler./ , /./ d" |
+
 # Remove numbers from all lines (and "(n/a)" strings)
 sed "s/\(Total spacetime:   \).*$/\1/" |
 sed "s/\(heap:              \).*$/\1/" |

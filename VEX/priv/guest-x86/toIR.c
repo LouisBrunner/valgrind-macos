@@ -9472,7 +9472,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                        Ity_I32, 0/*regparms*/, 
                        "x86g_calculate_sse_pmovmskb",
                        &x86g_calculate_sse_pmovmskb,
-                       mkIRExprVec_2( mkexpr(t0), mkexpr(t1) )));
+                       mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
          putIReg(4, gregOfRM(modrm), mkexpr(t5));
          DIP("pmovmskb %s,%s\n", nameXMMReg(eregOfRM(modrm)),
                                  nameIReg(4,gregOfRM(modrm)));

@@ -81,7 +81,7 @@ VG_(run_innerloop):
 	
 	/* 28(%esp) holds guest_state */
 
-	/* Set up the baseBlock pointer */
+	/* Set up the guest state pointer */
 	movl	28(%esp), %ebp
 	
 	/* fetch m_eip into %eax */

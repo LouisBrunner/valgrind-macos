@@ -292,17 +292,8 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 }
 
 
-/* I've gone all object-oriented... initialisation depends on where the
-   error comes from:
-
-   - If from generated code (tst == NULL), the %EIP/%EBP values that we
-     need in order to attach GDB are picked up out of VG_(baseBlock) rather
-     than from the thread table (vg_threads in vg_scheduler.c).
-
-   - If not from generated code but in response to requests passed back to
-     the scheduler (tst != NULL), we pick up %EIP/%EBP values from the
-     stored thread state, not from VG_(baseBlock).  
-*/
+// Initialisation picks out values from the appropriate ThreadState as
+// necessary.
 static __inline__
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
                        Char* s, void* extra, ExeContext* where )

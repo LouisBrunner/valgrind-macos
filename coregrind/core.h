@@ -1223,9 +1223,6 @@ extern Int  VG_(clexecfd);
 Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
 Char* VG_(build_child_exename)     ( void );
 
-/* Determine if SP adjustment must be noted */
-extern Bool VG_(need_to_handle_SP_assignment) ( void );
-
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg )

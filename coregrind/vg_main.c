@@ -2161,29 +2161,6 @@ static void setup_file_descriptors(void)
       VG_(clexecfd) = VG_(safe_fd)( VG_(clexecfd) );
 }
 
-
-/*====================================================================*/
-/*=== baseBlock: definition + setup                                ===*/
-/*====================================================================*/
-
-Bool VG_(need_to_handle_SP_assignment)(void)
-{
-   return ( VG_(defined_new_mem_stack_4)()  ||
-            VG_(defined_die_mem_stack_4)()  ||
-            VG_(defined_new_mem_stack_8)()  ||
-            VG_(defined_die_mem_stack_8)()  ||
-            VG_(defined_new_mem_stack_12)() ||
-            VG_(defined_die_mem_stack_12)() ||
-            VG_(defined_new_mem_stack_16)() ||
-            VG_(defined_die_mem_stack_16)() ||
-            VG_(defined_new_mem_stack_32)() ||
-            VG_(defined_die_mem_stack_32)() ||
-            VG_(defined_new_mem_stack)()    ||
-            VG_(defined_die_mem_stack)()
-          );
-}
-
-
 /*====================================================================*/
 /*===  Initialise program data/text, etc.                          ===*/
 /*====================================================================*/
@@ -2620,7 +2597,6 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // Initialise the scheduler
-   //   p: init_baseBlock()  [baseBlock regs copied into VG_(threads)[1]]
    //   p: setup_file_descriptors() [else VG_(safe_fd)() breaks]
    //--------------------------------------------------------------
    VG_(scheduler_init)();

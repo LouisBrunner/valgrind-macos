@@ -35,7 +35,7 @@
 #include "libvex_guest_x86.h"
 
 /*------------------------------------------------------------*/
-/*--- baseBlock setup and operations                       ---*/
+/*--- Initialising the first thread                        ---*/
 /*------------------------------------------------------------*/
 
 Int VGOFF_(m_eip) = INVALID_OFFSET;

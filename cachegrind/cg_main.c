@@ -559,7 +559,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 }
 
-IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, 
+                        IRType gWordTy, IRType hWordTy )
 {
    Int      i, dataSize = 0, bbInfo_i;
    IRBB*    bbOut;
@@ -569,6 +570,11 @@ IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, IRType hWordTy )
    Addr     instrAddr, origAddr;
    UInt     instrLen;
    IRExpr  *loadAddrExpr, *storeAddrExpr;
+
+   if (gWordTy != hWordTy) {
+      /* We don't currently support this case. */
+      VG_(tool_panic)("host/guest word size mismatch");
+   }
 
    /* Set up BB */
    bbOut           = emptyIRBB();

@@ -986,7 +986,8 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+                      IRType gWordTy, IRType hWordTy )
 {
    Int         i, hsz;
    IRStmt*     st;
@@ -995,9 +996,15 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    IRExpr*     guard;
    IRDirty*    di;
    Bool        isLoad;
+   IRBB*       bb;
+
+   if (gWordTy != hWordTy) {
+      /* We don't currently support this case. */
+      VG_(tool_panic)("host/guest word size mismatch");
+   }
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
+   bb           = emptyIRBB();
    bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;

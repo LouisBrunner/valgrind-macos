@@ -26,7 +26,7 @@ void,		post_clo_init
 ## Instrument a basic block.  Must be a true function, ie. the same input
 ## always results in the same output, because basic blocks can be
 ## retranslated.  Unless you're doing something really strange...
-IRBB*,  instrument,  IRBB* bb,  VexGuestLayout* layout,  IRType hWordTy
+IRBB*, instrument, IRBB* bb, VexGuestLayout* layout, IRType gWordTy, IRType hWordTy
 
 ## Finish up, print out any results, etc.  `exitcode' is program's exit
 ## code.  The shadow can be found with VG_(get_exit_status_shadow)().

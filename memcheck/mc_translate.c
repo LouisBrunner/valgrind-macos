@@ -2383,16 +2383,23 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 }
 
 
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
+                        IRType gWordTy, IRType hWordTy )
 {
    Bool verboze = False; //True; 
 
    Int     i, j, first_stmt;
    IRStmt* st;
    MCEnv   mce;
+   IRBB*   bb;
+
+   if (gWordTy != hWordTy) {
+      /* We don't currently support this case. */
+      VG_(tool_panic)("host/guest word size mismatch");
+   }
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
+   bb           = emptyIRBB();
    bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;

@@ -129,13 +129,20 @@ void TL_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+                      IRType gWordTy, IRType hWordTy )
 {
    IRDirty* di;
    Int      i;
+   IRBB*    bb;
+
+   if (gWordTy != hWordTy) {
+      /* We don't currently support this case. */
+      VG_(tool_panic)("host/guest word size mismatch");
+   }
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
+   bb           = emptyIRBB();
    bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;

@@ -51,7 +51,8 @@ void TL_(post_clo_init)(void)
 {
 }
 
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+                      IRType gWordTy, IRType hWordTy )
 {
     return bb_in;
 }

@@ -52,11 +52,11 @@
 #define DEFINE_PATTERN(_patt,_expr)                            \
    do {                                                        \
       if (!(_patt)) {                                          \
-         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
-         LibVEX_SetAllocMode(AllocModePERMANENT);              \
+         vassert(vexGetAllocMode() == VexAllocModeTEMP);       \
+         vexSetAllocMode(VexAllocModePERM);                    \
          _patt = (_expr);                                      \
-         LibVEX_SetAllocMode(AllocModeTEMPORARY);              \
-         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
+         vexSetAllocMode(VexAllocModeTEMP);                    \
+         vassert(vexGetAllocMode() == VexAllocModeTEMP);       \
       }                                                        \
    } while (0)
 

@@ -75,6 +75,25 @@ extern UInt vex_sprintf ( Char* buf, const HChar *format, ... );
 extern Bool vex_streq ( const Char* s1, const Char* s2 );
 
 
+/* Storage management: clear the area, and allocate from it. */
+
+/* By default allocation occurs in the temporary area.  However, it is
+   possible to switch to permanent area allocation if that's what you
+   want.  Permanent area allocation is very limited, tho. */
+
+typedef
+   enum {
+      VexAllocModeTEMP, 
+      VexAllocModePERM 
+   }
+   VexAllocMode;
+
+extern void         vexSetAllocMode ( VexAllocMode );
+extern VexAllocMode vexGetAllocMode ( void );
+
+extern void vexClearTEMP ( void );
+
+
 #endif /* ndef __VEX_UTIL_H */
 
 /*---------------------------------------------------------------*/

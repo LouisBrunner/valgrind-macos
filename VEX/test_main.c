@@ -61,7 +61,7 @@ int main ( int argc, char** argv )
    Addr32 orig_addr;
    Int bb_number, n_bbs_done = 0;
    Int orig_nbytes, trans_used, orig_used;
-   TranslateResult tres;
+   VexTranslateResult tres;
    VexControl vcon;
 
    if (argc != 2) {
@@ -145,9 +145,9 @@ int main ( int argc, char** argv )
                  TEST_FLAGS 
               );
 
-      if (tres != TransOK)
+      if (tres != VexTransOK)
          printf("\ntres = %d\n", (Int)tres);
-      assert(tres == TransOK);
+      assert(tres == VexTransOK);
       assert(orig_used == orig_nbytes);
 
       sum = 0;
@@ -158,7 +158,7 @@ int main ( int argc, char** argv )
 
    fclose(f);
    printf("\n");
-   LibVEX_ClearTemporary(True);
+   LibVEX_ShowAllocStats();
 
    return 0;
 }

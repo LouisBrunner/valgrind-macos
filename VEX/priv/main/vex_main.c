@@ -55,7 +55,7 @@
 
 /* Exported to library client. */
 
-HChar* LibVEX_Version ( void )
+const HChar* LibVEX_Version ( void )
 {
 return
 #include "main/vex_svnversion.h"
@@ -146,7 +146,7 @@ void LibVEX_Init (
    vex_valgrind_support   = valgrind_support;
    vex_control            = *vcon;
    vex_initdone           = True;
-   LibVEX_SetAllocMode ( AllocModeTEMPORARY );
+   vexSetAllocMode ( VexAllocModeTEMP );
 }
 
 
@@ -154,7 +154,7 @@ void LibVEX_Init (
 
 /* Exported to library client. */
 
-TranslateResult LibVEX_Translate (
+VexTranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
    VexArch    arch_guest,
    VexSubArch subarch_guest,
@@ -232,7 +232,7 @@ TranslateResult LibVEX_Translate (
    vex_traceflags = traceflags;
 
    vassert(vex_initdone);
-   LibVEX_ClearTemporary(False);
+   vexClearTEMP();
 
 
    /* First off, check that the guest and host insn sets
@@ -314,9 +314,9 @@ TranslateResult LibVEX_Translate (
 
    if (irbb == NULL) {
       /* Access failure. */
-      LibVEX_ClearTemporary(False);
+      vexClearTEMP();
       vex_traceflags = 0;
-      return TransAccessFail;
+      return VexTransAccessFail;
    }
 
    /* If debugging, show the raw guest bytes for this bb. */
@@ -454,9 +454,9 @@ TranslateResult LibVEX_Translate (
          vex_printf("\n\n");
       }
       if (out_used + j > host_bytes_size) {
-         LibVEX_ClearTemporary(False);
+         vexClearTEMP();
          vex_traceflags = 0;
-         return TransOutputFull;
+         return VexTransOutputFull;
       }
       for (k = 0; k < j; k++) {
          host_bytes[out_used] = insn_bytes[k];
@@ -466,10 +466,10 @@ TranslateResult LibVEX_Translate (
    }
    *host_bytes_used = out_used;
 
-   LibVEX_ClearTemporary(False);
+   vexClearTEMP();
 
    vex_traceflags = 0;
-   return TransOK;
+   return VexTransOK;
 }
 
 

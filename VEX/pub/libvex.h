@@ -42,10 +42,12 @@
 
 
 /*---------------------------------------------------------------*/
-/*--- Top-level interface to the library.                     ---*/
+/*--- This file defines the top-level interface to LibVEX.    ---*/
 /*---------------------------------------------------------------*/
 
-/* Describes architectures and subarchitecture variants. */
+/*-------------------------------------------------------*/
+/*--- Architectures and architecture variants         ---*/
+/*-------------------------------------------------------*/
 
 typedef 
    enum { 
@@ -72,6 +74,10 @@ typedef
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
 extern const HChar* LibVEX_ppVexSubArch ( VexSubArch );
 
+
+/*-------------------------------------------------------*/
+/*--- Control of Vex's optimiser (iropt).             ---*/
+/*-------------------------------------------------------*/
 
 /* Control of Vex's optimiser. */
 
@@ -106,48 +112,38 @@ typedef
 
 /* Write the default settings into *vcon. */
 
-extern void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
+extern 
+void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
 
 
-/* Returns the Vex SVN version. */
+/*-------------------------------------------------------*/
+/*--- Version information                             ---*/
+/*-------------------------------------------------------*/
 
-extern HChar* LibVEX_Version ( void );
+/* Returns the Vex SVN version, as a statically allocated string. */
 
-
-/* Initialise the translator. */
-
-extern void LibVEX_Init (
-   /* failure exit function */
-   __attribute__ ((noreturn))
-   void (*failure_exit) ( void ),
-   /* logging output function */
-   void (*log_bytes) ( Char*, Int nbytes ),
-   /* debug paranoia level */
-   Int debuglevel,
-   /* Are we supporting valgrind checking? */
-   Bool valgrind_support,
-   /* Control ... */
-   /*READONLY*/VexControl* vcon
-);
+extern const HChar* LibVEX_Version ( void );
 
 
-/* Storage management: clear the area, and allocate from it. */
+/*-------------------------------------------------------*/
+/*--- Storage management control                      ---*/
+/*-------------------------------------------------------*/
 
-/* By default allocation occurs in the temporary area.  However, it is
-   possible to switch to permanent area allocation if that's what you
-   want.  Permanent area allocation is very limited, tho. */
-
-typedef
-   enum { AllocModeTEMPORARY, AllocModePERMANENT }
-   AllocMode;
-
-extern void      LibVEX_SetAllocMode ( AllocMode );
-extern AllocMode LibVEX_GetAllocMode ( void );
-
-extern void LibVEX_ClearTemporary ( Bool show_stats );
-
+/* Allocate in Vex's temporary allocation area.  Be careful with this.
+   You can only call it inside an instrumentation or optimisation
+   callback that you have previously specified in a call to
+   LibVEX_Translate.  The storage allocated will only stay alive until
+   translation of the current basic block is complete.
+ */
 extern void* LibVEX_Alloc ( Int nbytes );
 
+/* Show Vex allocation statistics. */
+extern void LibVEX_ShowAllocStats ( void );
+
+
+/*-------------------------------------------------------*/
+/*--- Describing guest state layout                   ---*/
+/*-------------------------------------------------------*/
 
 /* Describe the guest state enough that the instrumentation
    functions can work. */
@@ -177,15 +173,57 @@ typedef
    }
    VexGuestLayout;
 
+/* A note about guest state layout.
 
-/* Translate a basic block. */
+   LibVEX defines the layout for the guest state, in the file
+   pub/libvex_guest_<arch>.h.  The struct will have an 8-aligned size.
+   Each translated bb is assumed to be entered with a specified
+   register pointing at such a struct.  Beyond that is a shadow
+   state area with the same size as the struct.  Beyond that is
+   a spill area that LibVEX may spill into.  It must have size
+   LibVEX_N_SPILL_BYTES, and this must be a 16-aligned number.
+
+   On entry, the baseblock pointer register must be 8-aligned.
+*/
+
+#define LibVEX_N_SPILL_BYTES 768
+
+
+/*-------------------------------------------------------*/
+/*--- Initialisation of the library                   ---*/
+/*-------------------------------------------------------*/
+
+/* Initialise the library.  You must call this first. */
+
+extern void LibVEX_Init (
+   /* failure exit function */
+   __attribute__ ((noreturn))
+   void (*failure_exit) ( void ),
+   /* logging output function */
+   void (*log_bytes) ( Char*, Int nbytes ),
+   /* debug paranoia level */
+   Int debuglevel,
+   /* Are we supporting valgrind checking? */
+   Bool valgrind_support,
+   /* Control ... */
+   /*READONLY*/VexControl* vcon
+);
+
+
+/*-------------------------------------------------------*/
+/*--- Make a translation                              ---*/
+/*-------------------------------------------------------*/
 
 typedef
-   enum { TransOK, TransAccessFail, TransOutputFull }
-   TranslateResult;
+   enum { 
+      VexTransOK, 
+      VexTransAccessFail, 
+      VexTransOutputFull 
+   }
+   VexTranslateResult;
 
 extern 
-TranslateResult LibVEX_Translate (
+VexTranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
    VexArch    arch_guest,
    VexSubArch subarch_guest,
@@ -213,28 +251,16 @@ TranslateResult LibVEX_Translate (
 );
 
 
-/* Show accumulated statistics. */
+/*-------------------------------------------------------*/
+/*--- Show accumulated statistics                     ---*/
+/*-------------------------------------------------------*/
 
 extern void LibVEX_ShowStats ( void );
 
 
-
-/* A note about baseblock layout.
-
-   LibVEX defines the layout for the guest state, in the file
-   pub/libvex_guest_<arch>.h.  The struct will have an 8-aligned size.
-   Each translated bb is assumed to be entered with a specified
-   register pointing at such a struct.  Beyond that is a shadow
-   state area with the same size as the struct.  Beyond that is
-   a spill area that LibVEX may spill into.  It must have size
-   LibVEX_N_SPILL_BYTES, and this will be a 16-aligned number.
-
-   On entry, the baseblock pointer register must be 8-aligned.
-*/
-
-#define LibVEX_N_SPILL_BYTES 768
-
-
+/*-------------------------------------------------------*/
+/*--- Notes                                           ---*/
+/*-------------------------------------------------------*/
 
 /* Code generation conventions that need to be recorded somewhere.
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

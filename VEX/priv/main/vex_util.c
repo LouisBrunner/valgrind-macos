@@ -70,19 +70,15 @@ static ULong temporary_bytes_allocd_TOT = 0;
 static ULong temporary_count_allocs_TOT = 0;
 
 /* The current allocation mode. */
-static AllocMode mode = AllocModeTEMPORARY;
+static VexAllocMode mode = VexAllocModeTEMP;
 
 
-/* Exported to library client. */
-
-void LibVEX_SetAllocMode ( AllocMode m )
+void vexSetAllocMode ( VexAllocMode m )
 {
    mode = m;
 }
 
-/* Exported to library client. */
-
-AllocMode LibVEX_GetAllocMode ( void )
+VexAllocMode vexGetAllocMode ( void )
 {
    return mode;
 }
@@ -101,7 +97,7 @@ void* LibVEX_Alloc ( Int nbytes )
       return malloc(nbytes);
    } else {
       nbytes = (nbytes + ALIGN) & ~ALIGN;
-      if (mode == AllocModeTEMPORARY) {
+      if (mode == VexAllocModeTEMP) {
          if (temporary_used + nbytes > N_TEMPORARY_BYTES)
             vpanic("VEX temporary storage exhausted.\n"
                    "Increase N_TEMPORARY_BYTES and recompile.");
@@ -120,25 +116,27 @@ void* LibVEX_Alloc ( Int nbytes )
 #  undef ALIGN
 }
 
-/* Exported to library client. */
-
-void LibVEX_ClearTemporary ( Bool verb )
+void vexClearTEMP ( void )
 {
    /* vassert(vex_initdone); */ /* causes infinite assert loops */
    temporary_bytes_allocd_TOT += (ULong)temporary_bytes_allocd;
    temporary_count_allocs_TOT += (ULong)temporary_count_allocs;
-   if (verb) {
-      vex_printf("vex storage:  P %d,  T total %lld (%lld),  T curr %d (%d)\n",
-                 permanent_used,
-	 	 (Long)temporary_bytes_allocd_TOT, 
-                 (Long)temporary_count_allocs_TOT,
-		 temporary_bytes_allocd, temporary_count_allocs );
-   }
    temporary_used = 0;
    temporary_bytes_allocd = 0;
    temporary_count_allocs = 0;
 }
 
+
+/* Exported to library client. */
+
+void LibVEX_ShowAllocStats ( void )
+{
+   vex_printf("vex storage:  P %d,  T total %lld (%lld),  T curr %d (%d)\n",
+              permanent_used,
+              (Long)temporary_bytes_allocd_TOT, 
+              (Long)temporary_count_allocs_TOT,
+              temporary_bytes_allocd, temporary_count_allocs );
+}
 
 
 /*---------------------------------------------------------*/
@@ -521,8 +519,6 @@ UInt vex_sprintf ( Char* buf, const HChar *format, ... )
    vassert(vex_strlen(buf) == ret);
    return ret;
 }
-
-
 
 
 /*---------------------------------------------------------------*/

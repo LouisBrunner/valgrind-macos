@@ -662,7 +662,7 @@ vex_printf(str1, (int)loops);
       for(k=0;k<8;k++){
 	i=j[k];
 	InternalFPFToString(buffer,abase+i);
-	vex_printf("%6ld: (%s) ",i,buffer);
+	vex_printf("%6d: (%s) ",i,buffer);
 	switch(jtable[i % 16])
 	  {
 	  case 0: my_strcpy(buffer,"+"); break;

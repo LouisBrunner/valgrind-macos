@@ -165,6 +165,8 @@ typedef unsigned char Bool;
 
 #define VG_CLO_MAX_SFILES 10
 
+/* Shall we V-check addrs (they are always A checked too): default: YES */
+extern Bool VG_(clo_check_addrVs);
 /* Enquire about whether to attach to GDB at errors?   default: NO */
 extern Bool  VG_(clo_GDB_attach);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */

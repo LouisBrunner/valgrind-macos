@@ -40,6 +40,8 @@ do
     --verbose)              vgopts="$vgopts -v"; shift;;
     -q)                     vgopts="$vgopts $arg"; shift;;
     --quiet)                vgopts="$vgopts $arg"; shift;;
+    --check-addrVs=no)      vgopts="$vgopts $arg"; shift;;
+    --check-addrVs=yes)     vgopts="$vgopts $arg"; shift;;
     --gdb-attach=no)        vgopts="$vgopts $arg"; shift;;
     --gdb-attach=yes)       vgopts="$vgopts $arg"; shift;;
     --demangle=no)          vgopts="$vgopts $arg"; shift;;
@@ -130,6 +132,8 @@ if [ z"$argopts" = z   -o   z"$dousage" = z1 ]; then
    echo "    --suppressions=<filename> suppress errors described in"
    echo "                              suppressions file <filename>"
    echo "    --client-perms=no|yes     handle client VG_MAKE_* requests? [no]"
+   echo "    --check-addrVs=no|yes     experimental lighterweight checking? [yes]"
+   echo "                              yes == Valgrind's original behaviour"
    echo
    echo "  options for debugging Valgrind itself are:"
    echo "    --sanity-level=<number>   level of sanity checking to do [1]"

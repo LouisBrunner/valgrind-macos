@@ -433,6 +433,7 @@ UInt VG_(sanity_slow_count) = 0;
    Values derived from command-line options.
    ------------------------------------------------------------------ */
 
+Bool   VG_(clo_check_addrVs);
 Bool   VG_(clo_GDB_attach);
 Int    VG_(sanity_level);
 Int    VG_(clo_verbosity);
@@ -685,6 +686,7 @@ static void process_cmd_line_options ( void )
 #  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
    /* Set defaults. */
+   VG_(clo_check_addrVs)     = True;
    VG_(clo_GDB_attach)       = False;
    VG_(sanity_level)         = 1;
    VG_(clo_verbosity)        = 1;
@@ -851,6 +853,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_verbosity)++;
       else if (STREQ(argv[i], "-q") || STREQ(argv[i], "--quiet"))
          VG_(clo_verbosity)--;
+
+      else if (STREQ(argv[i], "--check-addrVs=yes"))
+         VG_(clo_check_addrVs) = True;
+      else if (STREQ(argv[i], "--check-addrVs=no"))
+         VG_(clo_check_addrVs) = False;
 
       else if (STREQ(argv[i], "--gdb-attach=yes"))
          VG_(clo_GDB_attach) = True;

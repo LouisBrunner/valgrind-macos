@@ -191,68 +191,6 @@ UInstr* VG_(get_last_instr) ( UCodeBlock* cb )
 }
    
 /*--------------------------------------------------------------------*/
-/* Suppressions */
-
-SuppKind VG_(get_supp_kind) ( Supp* su )
-{
-   return su->skind;
-}
-
-Char* VG_(get_supp_string) ( Supp* su )
-{
-   return su->string;
-}
-
-void* VG_(get_supp_extra)  ( Supp* su )
-{
-   return su->extra;
-}
-
-
-void VG_(set_supp_kind)   ( Supp* su, SuppKind skind )
-{
-   su->skind = skind;
-}
-
-void VG_(set_supp_string) ( Supp* su, Char* string )
-{
-   su->string = string;
-}
-
-void VG_(set_supp_extra)  ( Supp* su, void* extra )
-{
-   su->extra = extra;
-}
-
-/*--------------------------------------------------------------------*/
-/* Errors */
-
-ExeContext* VG_(get_error_where) ( Error* err )
-{
-   return err->where;
-}
-
-ErrorKind VG_(get_error_kind) ( Error* err )
-{
-   return err->ekind;
-}
-
-Addr VG_(get_error_address) ( Error* err )
-{
-   return err->addr;
-}
-
-Char* VG_(get_error_string) ( Error* err )
-{
-   return err->string;
-}
-
-void* VG_(get_error_extra)  ( Error* err )
-{
-   return err->extra;
-}
-
-/*--------------------------------------------------------------------*/
 /*--- end                                               vg_needs.c ---*/
 /*--------------------------------------------------------------------*/
 

@@ -53,6 +53,139 @@ static Supp* is_suppressible_error ( Error* err );
 
 
 /*------------------------------------------------------------*/
+/*--- Error type                                           ---*/
+/*------------------------------------------------------------*/
+
+/* Note: it is imperative this doesn't overlap with (0..) at all, as skins
+ * effectively extend it by defining their own enums in the (0..) range. */
+typedef
+   enum { 
+      PThreadErr      = -1,   // Pthreading error
+   }
+   CoreErrorKind;
+
+/* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
+   enum (with element values in the normal range (0..)) for `ekind'. 
+   Functions for getting/setting the tool-relevant fields are in
+   include/vg_skin.h.
+
+   When errors are found and recorded with VG_(maybe_record_error)(), all
+   the tool must do is pass in the four parameters;  core will
+   allocate/initialise the error record.
+*/
+struct _Error {
+   struct _Error* next;
+   // NULL if unsuppressed; or ptr to suppression record.
+   Supp* supp;
+   Int count;
+   ThreadId tid;
+
+   // The tool-specific part
+   ExeContext* where;      // Initialised by core
+   Int ekind;              // Used by ALL.  Must be in the range (0..)
+   Addr addr;              // Used frequently
+   Char* string;           // Used frequently
+   void* extra;            // For any tool-specific extras
+};
+
+ExeContext* VG_(get_error_where) ( Error* err )
+{
+   return err->where;
+}
+
+ErrorKind VG_(get_error_kind) ( Error* err )
+{
+   return err->ekind;
+}
+
+Addr VG_(get_error_address) ( Error* err )
+{
+   return err->addr;
+}
+
+Char* VG_(get_error_string) ( Error* err )
+{
+   return err->string;
+}
+
+void* VG_(get_error_extra)  ( Error* err )
+{
+   return err->extra;
+}
+
+/*------------------------------------------------------------*/
+/*--- Suppression type                                     ---*/
+/*------------------------------------------------------------*/
+
+/* Note: it is imperative this doesn't overlap with (0..) at all, as tools
+ * effectively extend it by defining their own enums in the (0..) range. */
+typedef
+   enum {
+      PThreadSupp = -1,    /* Matches PThreadErr */
+   }
+   CoreSuppKind;
+
+/* For each caller specified for a suppression, record the nature of
+   the caller name.  Not of interest to tools. */
+typedef
+   enum { 
+      ObjName,    /* Name is of an shared object file. */
+      FunName     /* Name is of a function. */
+   }
+   SuppLocTy;
+
+/* Suppressions.  Tools can get/set tool-relevant parts with functions
+   declared in include/vg_skin.h.  Extensible via the 'extra' field. 
+   Tools can use a normal enum (with element values in the normal range
+   (0..)) for `skind'. */
+struct _Supp {
+   struct _Supp* next;
+   Int count;     // The number of times this error has been suppressed.
+   Char* sname;   // The name by which the suppression is referred to.
+   /* First two (name of fn where err occurs, and immediate caller)
+    * are mandatory;  extra two are optional. */
+   SuppLocTy caller_ty[VG_N_SUPP_CALLERS];
+   Char*     caller   [VG_N_SUPP_CALLERS];
+
+   /* The tool-specific part */
+   SuppKind skind;   // What kind of suppression.  Must use the range (0..).
+   Char* string;     // String -- use is optional.  NULL by default.
+   void* extra;      // Anything else -- use is optional.  NULL by default.
+};
+
+SuppKind VG_(get_supp_kind) ( Supp* su )
+{
+   return su->skind;
+}
+
+Char* VG_(get_supp_string) ( Supp* su )
+{
+   return su->string;
+}
+
+void* VG_(get_supp_extra)  ( Supp* su )
+{
+   return su->extra;
+}
+
+
+void VG_(set_supp_kind)   ( Supp* su, SuppKind skind )
+{
+   su->skind = skind;
+}
+
+void VG_(set_supp_string) ( Supp* su, Char* string )
+{
+   su->string = string;
+}
+
+void VG_(set_supp_extra)  ( Supp* su, void* extra )
+{
+   su->extra = extra;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Helper fns                                           ---*/
 /*------------------------------------------------------------*/
 

@@ -23,6 +23,7 @@ void* fn(void* arg)
 
 int main(int argc, char** argv)
 {
+    pthread_t pid;
     if(2 != argc)
     {
         printf("Usage: %s <domain>\n", argv[0]);
@@ -35,7 +36,6 @@ int main(int argc, char** argv)
         return(1);
     }
 
-    pthread_t pid;
     if(0 != pthread_create(&pid, 0, fn, (void*)argv[1]))
     {
         printf("Failed to create thread.\n");

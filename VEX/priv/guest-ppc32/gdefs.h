@@ -74,8 +74,8 @@ VexGuestLayout ppc32Guest_layout;
 
 /* --- CLEAN HELPERS --- */
 
-// Calculate CR0 flags
-extern UInt ppc32g_calculate_cr0_all  ( UInt op, UInt word1, UInt xer_so );
+// Calculate CR7 flags
+extern UInt ppc32g_calculate_cr7_all  ( UInt op, UInt word1, UInt xer_so );
 
 // Calculate XER flags
 extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UInt ca );
@@ -88,7 +88,7 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, 
   Handy enumeration for flag calculation helper functions (xer_ca, ov)
  */
 enum {
-    PPC32G_FLAG_OP_ADD,     // addc, addo, addic
+    PPC32G_FLAG_OP_ADD=0,   // addc, addo, addic
     PPC32G_FLAG_OP_ADDE,    // adde, addeo
     PPC32G_FLAG_OP_ADDME,   // addme, addmeo
     PPC32G_FLAG_OP_ADDZE,   // addze, addzeo
@@ -102,9 +102,10 @@ enum {
     PPC32G_FLAG_OP_SUBFI,   // subfic
     PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
     PPC32G_FLAG_OP_SUBFZE,  // subfze, subfzeo
-    PPC32G_FLAG_OP_SHR,     // srawi
+    PPC32G_FLAG_OP_SRAW,    // sraw
+    PPC32G_FLAG_OP_SRAWI,   // srawi
 
-    PPC32G_CC_OP_NUMBER
+    PPC32G_FLAG_OP_NUMBER
 };
 
 
@@ -112,13 +113,13 @@ enum {
 /* Defines conditions which we can ask for */
 
 /*
-neg(lt):  CR0[0]==1
-pos(gt):  CR0[1]==1
-zero(eq): CR0[2]==1
+neg(lt):  CR[31]==1
+pos(gt):  CR[30]==1
+zero(eq): CR[29]==1
 
-summary overflow: XER[0]
-overflow:         XER[1]
-carry:            XER[2]
+summary overflow: XER[31]
+overflow:         XER[30]
+carry:            XER[29]
 */
 
 #if 0

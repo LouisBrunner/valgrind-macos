@@ -60,13 +60,13 @@
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-/* Calculates CR0[LT,GT,EQ,SO] flags from the supplied
+/* Calculates CR7[LT,GT,EQ,SO] flags from the supplied
    thunk parameters.
    Returns values in high field (correct wrt actual CR)
  */
-UInt ppc32g_calculate_cr0_all ( UInt op, UInt word1, UInt xer_so )
+UInt ppc32g_calculate_cr7_all ( UInt op, UInt word1, UInt xer_so )
 {
-    Int sword1 = (int)word1;
+    Int sword1 = (Int)word1;
     if (op) {
 	return (word1 & 0xF0000000);
     } else {
@@ -158,10 +158,21 @@ UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
     case PPC32G_FLAG_OP_SUBFME:  // subfme, subfmeo
 	return (res != -1) ? 1:0;
 
-    case PPC32G_FLAG_OP_SHR:     // srawi
-	// res = arg1 >> arg2
-	return (arg1 < 0 && (arg1 & arg2) != 0) ? 1:0;
-	
+    case PPC32G_FLAG_OP_SRAW:    // sraw
+	if ((arg2 & 0x20) == 0) {  // shift <= 31
+	    // ca = sign && (bits_shifted_out != 0)
+	    return (((arg1 & 0x80000000) &&
+		    ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
+	}
+	// shift > 31
+	// ca = sign && src != 0
+	return (((arg1 & 0x80000000) && (arg2 != 0)) != 0) ? 1:0;
+
+    case PPC32G_FLAG_OP_SRAWI:   // srawi
+	// ca = sign && (bits_shifted_out != 0)
+	return (((arg1 & 0x80000000) &&
+		 ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
+
     default:
 	break;
     }
@@ -210,7 +221,7 @@ void LibVEX_GuestPPC32_put_flags ( UInt flags_native,
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state )
 {
-   UInt flags = ppc32g_calculate_cr0_all(
+   UInt flags = ppc32g_calculate_cr7_all(
        vex_state->guest_CC_OP,
        vex_state->guest_CC_DEP1,
        vex_state->guest_CC_DEP2
@@ -262,7 +273,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
 
-   vex_state->guest_CR1to7 = 0;
+   vex_state->guest_CR0to6 = 0;
 
    vex_state->guest_XER_SO = 0;
    vex_state->guest_XER_OV = 0;

@@ -90,6 +90,17 @@ static Addr32 guest_cia_curr_instr;
 static IRBB* irbb;
 
 
+// Non-gpr/fpr registers
+typedef enum {
+    REG_LR,     // Link Register
+    REG_CTR,    // Count Register
+    REG_CR,     // Condition Register
+    REG_FPSCR,  // Floating Point Status and Control Register
+    REG_XER,    // Summary Overflow
+    REG_NUMBER
+} PPC32Reg;
+
+
 /*------------------------------------------------------------*/
 /*--- Debugging output                                     ---*/
 /*------------------------------------------------------------*/
@@ -106,7 +117,7 @@ static IRBB* irbb;
 
 
 /*------------------------------------------------------------*/
-/*--- Offsets of various parts of the ppc32 guest state.     ---*/
+/*--- Offsets of various parts of the ppc32 guest state.   ---*/
 /*------------------------------------------------------------*/
 
 #define OFFB_GPR0       offsetof(VexGuestPPC32State,guest_GPR0)
@@ -150,12 +161,51 @@ static IRBB* irbb;
 #define OFFB_CC_DEP1    offsetof(VexGuestPPC32State,guest_CC_DEP1)
 #define OFFB_CC_DEP2    offsetof(VexGuestPPC32State,guest_CC_DEP2)
 
-#define OFFB_CR1to7     offsetof(VexGuestPPC32State,guest_CR1to7)
+#define OFFB_CR0to6     offsetof(VexGuestPPC32State,guest_CR0to6)
 
 #define OFFB_XER_SO     offsetof(VexGuestPPC32State,guest_XER_SO)
 #define OFFB_XER_OV     offsetof(VexGuestPPC32State,guest_XER_OV)
 #define OFFB_XER_CA     offsetof(VexGuestPPC32State,guest_XER_CA)
 #define OFFB_XER_BC     offsetof(VexGuestPPC32State,guest_XER_BC)
+
+
+/*------------------------------------------------------------*/
+/*--- Offsets of bitfields within various ppc32 registers. ---*/
+/*------------------------------------------------------------*/
+#define OFFBIT_XER_SO 31
+#define OFFBIT_XER_OV 30
+#define OFFBIT_XER_CA 29
+#define OFFBIT_XER_BC 0
+
+
+
+/*------------------------------------------------------------*/
+/*--- Misc Helpers                                         ---*/
+/*------------------------------------------------------------*/
+
+static UInt MASK( UInt begin, UInt end )
+{
+    UInt m1 = ((UInt)(-1)) << begin;
+    UInt m2 = ((UInt)(-1)) << (end + 1);
+    UInt mask = m1 ^ m2;
+    if (begin > end) mask = ~mask;  // wrap mask
+    return mask;
+}
+
+
+static void vex_printf_binary( UInt x, UInt len, Bool spaces )
+{
+    UInt i;
+    vassert(len > 0 && len <= 32);
+    
+    for (i=len; i>0; i--) {
+	vex_printf("%d", ((x & (1<<(len-1))) != 0) );
+	x = x << 1;
+	if (((i-1)%4)==0 && (i > 1) && spaces) {
+	    vex_printf(" ");
+	}
+    }
+}
 
 
 
@@ -510,13 +560,11 @@ static IRExpr* mkU1 ( UInt i )
 
 static IRExpr* mkU8 ( UChar i )
 {
-   vassert(i < 256);
    return IRExpr_Const(IRConst_U8(i));
 }
 
 static IRExpr* mkU16 ( UShort i )
 {
-   vassert(i < 65536);
    return IRExpr_Const(IRConst_U16(i));
 }
 
@@ -533,7 +581,7 @@ static IRExpr* mkU ( IRType ty, UInt i )
    if (ty == Ity_I32) return mkU32(i);
    /* If this panics, it usually means you passed a size (1,2,4)
       value as the IRType, rather than a real IRType. */
-   vpanic("mkU(PPC32)");
+   vpanic("mkU(ppc32)");
 }
 #endif
 
@@ -570,7 +618,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    if (szSmall == 2 && szBig == 4) {
       return signd ? Iop_16Sto32 : Iop_16Uto32;
    }
-   vpanic("mkWidenOp(PPC32,guest)");
+   vpanic("mkWidenOp(ppc32,guest)");
 }
 #endif
 
@@ -611,22 +659,20 @@ static IRExpr* ROTL32 ( IRExpr* src, IRExpr* rot_amt )
 
 /* -------------- Evaluating the flags-thunk. -------------- */
 
-static IRExpr** get_ppc32g_cr0_args ( void )
+static IRExpr* mk_ppc32g_calculate_cr7_all ( void )
 {
-    IRExpr* x1 = unop(Iop_8Uto32, IRExpr_Get(OFFB_CC_OP,   Ity_I8));
-    IRExpr* x2 = IRExpr_Get(OFFB_CC_DEP1, Ity_I32);
-    IRExpr* x3 = unop(Iop_8Uto32, IRExpr_Get(OFFB_CC_DEP2, Ity_I8));
-    return mkIRExprVec_3( x1, x2, x3 );
-}
+   IRExpr* op = unop(Iop_8Uto32, IRExpr_Get(OFFB_CC_OP,   Ity_I8));
+   IRExpr* d1 = IRExpr_Get(OFFB_CC_DEP1, Ity_I32);
+   IRExpr* d2 = unop(Iop_8Uto32, IRExpr_Get(OFFB_CC_DEP2, Ity_I8));
 
-static IRExpr* mk_ppc32g_calculate_cr0_all ( void )
-{
+   IRExpr** args = mkIRExprVec_3( op, d1, d2 );
+
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/, 
-           "ppc32g_calculate_cr0_all", &ppc32g_calculate_cr0_all,
-           get_ppc32g_cr0_args()
+           "ppc32g_calculate_cr7_all", &ppc32g_calculate_cr7_all,
+           args
         );
 
    /* Exclude OP from definedness checking.  We're only
@@ -641,19 +687,17 @@ static IRExpr* mk_ppc32g_calculate_cr0_all ( void )
 
 
 // Calculate XER_OV flag
-static IRExpr* mk_ppc32g_calculate_xer_ov ( UInt op, IRTemp res,
-					    IRTemp arg1, IRTemp arg2 )
+static IRExpr* mk_ppc32g_calculate_xer_ov ( UInt op, IRExpr* res,
+					    IRExpr* arg1, IRExpr* arg2 )
 {
-    vassert(op < PPC32G_CC_OP_NUMBER);
-    vassert(typeOfIRTemp(irbb->tyenv,res) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg1) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg2) == Ity_I32);
+   vassert(op < PPC32G_FLAG_OP_NUMBER);
+   vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
+   vassert(typeOfIRExpr(irbb->tyenv,arg1) == Ity_I32);
+   vassert(typeOfIRExpr(irbb->tyenv,arg2) == Ity_I32);
 
-    IRExpr* xer_ov = unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_OV, Ity_I8));
+   IRExpr* xer_ov = unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_OV, Ity_I8));
 
-    IRExpr** args =
-	mkIRExprVec_5(
-	    mkU32(op), mkexpr(res), mkexpr(arg1), mkexpr(arg2), xer_ov );
+   IRExpr** args = mkIRExprVec_5( mkU32(op), res, arg1, arg2, xer_ov );
 
    IRExpr* call
       = mkIRExprCCall(
@@ -662,23 +706,21 @@ static IRExpr* mk_ppc32g_calculate_xer_ov ( UInt op, IRTemp res,
            "ppc32g_calculate_xer_ov", &ppc32g_calculate_xer_ov,
            args
         );
-   return call;
+   return unop(Iop_32to1, call);
 }
 
 // Calculate XER_CA flag
-static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRTemp res,
-					    IRTemp arg1, IRTemp arg2 )
+static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRExpr* res,
+					    IRExpr* arg1, IRExpr* arg2 )
 {
-    vassert(op < PPC32G_CC_OP_NUMBER);
-    vassert(typeOfIRTemp(irbb->tyenv,res) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg1) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg2) == Ity_I32);
+   vassert(op < PPC32G_FLAG_OP_NUMBER);
+   vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
+   vassert(typeOfIRExpr(irbb->tyenv,arg1) == Ity_I32);
+   vassert(typeOfIRExpr(irbb->tyenv,arg2) == Ity_I32);
 
-    IRExpr* xer_ca = unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_CA, Ity_I8));
+   IRExpr* xer_ca = unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_CA, Ity_I8));
 
-    IRExpr** args =
-	mkIRExprVec_5(
-	    mkU32(op), mkexpr(res), mkexpr(arg1), mkexpr(arg2), xer_ca );
+   IRExpr** args = mkIRExprVec_5( mkU32(op), res, arg1, arg2, xer_ca );
 
    IRExpr* call
       = mkIRExprCCall(
@@ -687,43 +729,8 @@ static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRTemp res,
            "ppc32g_calculate_xer_ca", &ppc32g_calculate_xer_ca,
            args
         );
-   return call;
+   return unop(Iop_32to1, call );
 }
-
-
-
-// Helper to set XER_OV,SO flags
-static void mk_ppc32g_set_xer_ov_so( UInt op, IRTemp res,
-				     IRTemp arg1, IRTemp arg2 )
-{
-    vassert(op < PPC32G_CC_OP_NUMBER);
-    vassert(typeOfIRTemp(irbb->tyenv,res) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg1) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg2) == Ity_I32);
-
-    IRTemp ov = newTemp(Ity_I8);
-    assign( ov, unop(Iop_32to8,
-		     mk_ppc32g_calculate_xer_ov(op, res, arg1, arg2)) );
-    stmt( IRStmt_Put( OFFB_XER_OV, mkexpr(ov) ));
-    stmt( IRStmt_Put( OFFB_XER_SO, mkexpr(ov) ));
-}
-
-// Helper to set XER_CA flag
-static void mk_ppc32g_set_xer_ca( UInt op, IRTemp res,
-				  IRTemp arg1, IRTemp arg2 )
-{
-    vassert(op < PPC32G_CC_OP_NUMBER);
-    vassert(typeOfIRTemp(irbb->tyenv,res) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg1) == Ity_I32);
-    vassert(typeOfIRTemp(irbb->tyenv,arg2) == Ity_I32);
-
-    stmt( IRStmt_Put( OFFB_XER_CA,
-		      unop(Iop_32to8,
-			   mk_ppc32g_calculate_xer_ca(op, res, arg1, arg2)) ));
-}
-
-
-
 
 
 
@@ -743,7 +750,7 @@ static IRExpr* widenUto32 ( IRExpr* e )
       case Ity_I32: return e;
       case Ity_I16: return unop(Iop_16Uto32,e);
       case Ity_I8:  return unop(Iop_8Uto32,e);
-      default: vpanic("widenUto32");
+      default: vpanic("widenUto32(ppc32)");
    }
 }
 #endif
@@ -765,28 +772,61 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    vex_printf(", ");
    ppIRType(dst_ty);
    vex_printf("\n");
-   vpanic("narrowTo(PPC32)");
+   vpanic("narrowTo(ppc32)");
 }
 
+
 /* Set the flags thunk OP=0, DEP1, DEP2 fields. */
-static  void setFlags_CR0_Result ( IRExpr* result )
+static  void setFlags_CR7 ( IRExpr* result )
 {
    vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_I32);
 
+   // => Delaying calculating result until needed...
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU8(0) ));
    stmt( IRStmt_Put( OFFB_CC_DEP1, result ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, IRExpr_Get(OFFB_XER_SO, Ity_I8) ));
 }
 
-/* Write exactly the given flags to field CR0
+/* Write exactly the given flags to field CR7
    Set the flags thunk OP=1, DEP1 fields, DEP2=0. */
-static void setFlags_CR0_Imm ( IRExpr* flags )
+static void setFlags_CR7_Imm ( IRExpr* flags )
 {
    vassert(typeOfIRExpr(irbb->tyenv,flags) == Ity_I32);
 
+   // Just in case...
+   IRExpr* flags_masked = binop(Iop_And32, flags, mkU32(0xF0000000));
+
+   // => Delaying calculating result until needed...
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU8(1)) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, flags) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, flags_masked) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU8(0)) );
+}
+
+static void setFlags_XER_OV_SO( UInt op, IRExpr* res,
+				IRExpr* arg1, IRExpr* arg2 )
+{
+    vassert(op < PPC32G_FLAG_OP_NUMBER);
+    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
+    vassert(typeOfIRExpr(irbb->tyenv,arg1) == Ity_I32);
+    vassert(typeOfIRExpr(irbb->tyenv,arg2) == Ity_I32);
+
+    // => Calculate result immediately
+    IRExpr* xer_ov = mk_ppc32g_calculate_xer_ov(op, res, arg1, arg2);
+    stmt( IRStmt_Put( OFFB_XER_SO, unop(Iop_1Uto8, xer_ov) ));
+    stmt( IRStmt_Put( OFFB_XER_OV, unop(Iop_1Uto8, xer_ov) ));
+}
+
+static void setFlags_XER_CA( UInt op, IRExpr* res,
+			     IRExpr* arg1, IRExpr* arg2 )
+{
+    vassert(op < PPC32G_FLAG_OP_NUMBER);
+    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
+    vassert(typeOfIRExpr(irbb->tyenv,arg1) == Ity_I32);
+    vassert(typeOfIRExpr(irbb->tyenv,arg2) == Ity_I32);
+
+    // => Calculate result immediately
+    IRExpr* xer_ca = mk_ppc32g_calculate_xer_ca(op, res, arg1, arg2);
+    stmt( IRStmt_Put( OFFB_XER_CA, unop(Iop_1Uto8, xer_ca) ));
 }
 
 
@@ -800,154 +840,248 @@ static void setFlags_CR0_Imm ( IRExpr* flags )
   Most registers are represented directly in the cpu_state
   Others are represented by the thunk
 */
-static IRExpr* getReg_LR ( ) {
-    return IRExpr_Get(OFFB_LR, Ity_I32);
-}
-static void putReg_LR ( IRExpr* src )
+
+/* Get single bits from given [register,idx] */
+static IRExpr* getReg_bit ( PPC32Reg reg, UInt bit_idx )
 {
-    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-    stmt( IRStmt_Put( OFFB_LR, src) );
+    vassert( bit_idx <= 32 );
+    vassert( reg < REG_NUMBER );
+
+    IRExpr* val;
+
+    switch (reg) {
+    case REG_XER:
+	switch (bit_idx) {
+	case OFFBIT_XER_SO:
+	    val = IRExpr_Get(OFFB_XER_SO, Ity_I8);
+	    break;
+	case OFFBIT_XER_OV:
+	    val = IRExpr_Get(OFFB_XER_OV, Ity_I8);
+	    break;
+	case OFFBIT_XER_CA:
+	    val = IRExpr_Get(OFFB_XER_CA, Ity_I8);
+	    break;
+	case OFFBIT_XER_BC:
+	    val = IRExpr_Get(OFFB_XER_BC, Ity_I8);
+	    break;
+	default:
+	    vpanic("getReg_bit(ppc32, bit_idx)");
+	}
+	break;
+
+    default:
+	vpanic("getReg_bit(ppc32, reg)");
+    }
+    return unop(Iop_8Uto32, binop(Iop_And8, val, mkU8(1)) );
 }
 
-static IRExpr* getReg_CTR ( ) {
-    return IRExpr_Get(OFFB_CTR, Ity_I32);
-}
-static void putReg_CTR ( IRExpr* src )
+/* Get single bits from given [register,idx],
+   shifted to position bit_idx  */
+static IRExpr* getReg_bit_shifted ( PPC32Reg reg, UInt bit_idx )
 {
-    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-    stmt( IRStmt_Put( OFFB_CTR, src) );
+    vassert( bit_idx <= 32 );
+    vassert( reg < REG_NUMBER );
+    return binop(Iop_Shl32, getReg_bit( reg, bit_idx ), mkU8(bit_idx));
 }
 
-static IRExpr* getReg_XER_SO ( )
+
+/* Get a word, controlled by a mask, from the given register */
+static IRExpr* getReg_masked ( PPC32Reg reg, UInt mask )
 {
-    return unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_SO, Ity_I8));
+    IRTemp val       = newTemp(Ity_I32);
+    IRExpr* irx_tmp1 = mkU32(0);
+    IRExpr* irx_tmp2 = mkU32(0);
+    IRExpr* irx_tmp3 = mkU32(0);
+    IRExpr* irx_tmp4 = mkU32(0);
+
+    vassert( mask > 0 );
+    vassert( reg < REG_NUMBER );
+
+    switch (reg) {
+    case REG_LR:
+	assign( val, IRExpr_Get(OFFB_LR, Ity_I32) );
+	break;
+
+    case REG_CTR:
+	assign( val, IRExpr_Get(OFFB_CTR, Ity_I32) );
+	break;
+
+    case REG_CR:	
+	if (mask & 0xF0000000) {
+	    // Call helper function to calculate latest CR7 from thunk:
+	    irx_tmp1 = mk_ppc32g_calculate_cr7_all();
+	}
+	irx_tmp2 = IRExpr_Get(OFFB_CR0to6, Ity_I32);
+	assign( val, binop(Iop_Or32, irx_tmp1, irx_tmp2) );
+	break;
+
+    case REG_XER:
+	if (mask & 0x80000000) {
+	    irx_tmp1 = getReg_bit_shifted( REG_XER, OFFBIT_XER_SO );
+	}
+	if (mask & 0x40000000) {
+	    irx_tmp2 = getReg_bit_shifted( REG_XER, OFFBIT_XER_OV );
+	}
+	if (mask & 0x20000000) {
+	    irx_tmp3 = getReg_bit_shifted( REG_XER, OFFBIT_XER_CA );
+	}
+	if (mask & 0x0000007F) {
+	    irx_tmp4 = unop(Iop_8Uto32, 
+			    binop(Iop_And8, 
+				  IRExpr_Get(OFFB_XER_BC, Ity_I8),
+				  mkU32(0x7F)));
+	}
+	assign( val, binop(Iop_Or32,
+			   binop(Iop_Or32, irx_tmp1, irx_tmp2),
+			   binop(Iop_Or32, irx_tmp3, irx_tmp4)) );
+	break;
+
+    case REG_FPSCR:
+    default:
+	vpanic("getReg(ppc32)");
+    }
+
+    return binop(Iop_And32, mkexpr(val), mkU32(mask));
 }
-static void putReg_XER_SO ( IRExpr* src )
+
+/* Get a word, controlled by a mask, from the given register */
+static IRExpr* getReg ( PPC32Reg reg )
+{
+    vassert( reg < REG_NUMBER );
+    return getReg_masked( reg, 0x0FFFFFFF );
+}
+
+
+/* Write single bit to given [register,idx] */
+static void putReg_bit ( PPC32Reg reg, UInt bit_idx, IRExpr* src )
 {
     vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I1 );
-    stmt( IRStmt_Put( OFFB_XER_SO, unop(Iop_1Uto8, src) ) );
+    vassert( bit_idx <= 32 );
+    vassert( reg < REG_NUMBER );
+
+    switch (reg) {
+    case REG_XER:
+	switch (bit_idx) {
+	case OFFBIT_XER_SO:
+	    stmt( IRStmt_Put( OFFB_XER_SO, unop(Iop_1Uto8, src) ));
+	    break;
+	case OFFBIT_XER_OV:
+	    stmt( IRStmt_Put( OFFB_XER_OV, unop(Iop_1Uto8, src) ));
+	    break;
+	case OFFBIT_XER_CA:
+	    stmt( IRStmt_Put( OFFB_XER_CA, unop(Iop_1Uto8, src) ));
+	    break;
+	case OFFBIT_XER_BC:
+	    stmt( IRStmt_Put( OFFB_XER_BC, unop(Iop_1Uto8, src) ));
+	    break;
+	default:
+	    vpanic("putReg_bit(ppc32, bit_idx)");
+	}
+	break;
+
+    default:
+	vpanic("putReg_bit(ppc32, reg)");
+    }
 }
 
-static IRExpr* getReg_XER_OV ( )
+/* Write a word, controlled by a mask, to the given register */
+static void putReg_masked ( PPC32Reg reg, IRExpr* src, UInt mask )
 {
-    return unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_OV, Ity_I8));
-}
-static void putReg_XER_OV ( IRExpr* src )
-{
-    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I1 );
-    stmt( IRStmt_Put( OFFB_XER_OV, unop(Iop_1Uto8, src) ) );
+    vassert( reg < REG_NUMBER );
+    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+    vassert( mask > 0 );
+
+    IRTemp src_mskd = newTemp(Ity_I32);
+    IRTemp old      = newTemp(Ity_I32);
+    IRTemp tmp      = newTemp(Ity_I32);
+
+    assign( src_mskd, binop(Iop_And32, src, mkU32(mask)) );
+
+    switch (reg) {
+    case REG_LR:
+	stmt( IRStmt_Put( OFFB_LR, src) );
+	break;
+
+    case REG_CTR:
+	stmt( IRStmt_Put( OFFB_CTR, src) );
+	break;
+
+    case REG_CR:
+	if (mask & 0xF0000000) { // CR 7:
+	    setFlags_CR7_Imm( mkexpr(src_mskd) );
+	}
+	// CR 0 to 6:
+	assign( old, binop(Iop_And32, getReg( REG_CR ), mkU32(~mask)) );
+	assign( tmp, binop(Iop_And32, mkexpr(src_mskd), mkU32(0x0FFFFFFF)) );
+	stmt( IRStmt_Put( OFFB_CR0to6, binop(Iop_Or32,
+					     mkexpr(tmp),mkexpr(old)) ));
+	break;
+
+    case REG_XER:
+	if (mask & (1 << OFFBIT_XER_SO)) {
+	    putReg_bit( REG_XER, OFFBIT_XER_SO,
+			unop(Iop_32to1,
+			     binop(Iop_Shr32, src, mkU8(OFFBIT_XER_SO))) );
+	}
+	if (mask & (1 << OFFBIT_XER_OV)) {
+	    putReg_bit( REG_XER, OFFBIT_XER_OV,
+			unop(Iop_32to1,
+			     binop(Iop_Shr32, src, mkU8(OFFBIT_XER_OV))) );
+	}
+	if (mask & (1 << OFFBIT_XER_CA)) {
+	    putReg_bit( REG_XER, OFFBIT_XER_CA,
+			unop(Iop_32to1,
+			     binop(Iop_Shr32, src, mkU8(OFFBIT_XER_CA))) );
+	}
+	if (mask & (0x7F << OFFBIT_XER_BC)) {
+	    stmt( IRStmt_Put( OFFB_XER_BC,
+			      binop(Iop_And8, mkU8(0x7F),
+				    unop(Iop_32to8, src)) ));
+	}
+	break;
+
+    case REG_FPSCR:
+    default:
+	vpanic("putReg(ppc32)");
+    }
 }
 
-static IRExpr* getReg_XER_CA ( )
-{
-    return unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_CA, Ity_I8));
-}
-static void putReg_XER_CA ( IRExpr* src )
-{
-    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I1 );
-    stmt( IRStmt_Put( OFFB_XER_CA, unop(Iop_1Uto8, src) ) );
-}
-
-static IRExpr* getReg_XER_BC ( )
-{
-    return unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_BC, Ity_I8));
-}
-static void putReg_XER_BC ( IRExpr* src )
-{
-    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I8 );
-    IRExpr* src_mskd = binop(Iop_And8, src, mkU8(0x7F));
-    stmt( IRStmt_Put( OFFB_XER_BC, src_mskd ) );
-}
-
-static IRExpr* getReg_XER ( )
-{
-    IRTemp xer_so = newTemp(Ity_I32);
-    IRTemp xer_ov = newTemp(Ity_I32);
-    IRTemp xer_ca = newTemp(Ity_I32);
-    IRTemp tmp    = newTemp(Ity_I32);
-
-    assign( xer_so, binop(Iop_Shl32, getReg_XER_SO(), mkU8(3)) );
-    assign( xer_ov, binop(Iop_Shl32, getReg_XER_OV(), mkU8(2)) );
-    assign( xer_ca, binop(Iop_Shl32, getReg_XER_CA(), mkU8(1)) );
-    assign( tmp, binop(Iop_Shl32,
-		       binop(Iop_Or32, mkexpr(xer_so),
-			     binop(Iop_Or32, mkexpr(xer_ov), mkexpr(xer_ca))),
-		       mkU8(28)) );
-    return binop(Iop_Or32, mkexpr(tmp), getReg_XER_BC());
-}
-static void putReg_XER ( IRExpr* src )
+/* Write a word to the given register */
+static void putReg ( PPC32Reg reg, IRExpr* src )
 {
     vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-
-    putReg_XER_SO( unop(Iop_32to1, binop(Iop_Shr32, src, mkU8(31))) );
-    putReg_XER_OV( unop(Iop_32to1, binop(Iop_Shr32, src, mkU8(30))) );
-    putReg_XER_CA( unop(Iop_32to1, binop(Iop_Shr32, src, mkU8(29))) );
-    putReg_XER_BC( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(0))) );
+    vassert( reg < REG_NUMBER );
+    putReg_masked( reg, src, 0xFFFFFFFF );
 }
 
 
-static IRExpr* getReg_CR ( )
-{
-    IRTemp cr0 = newTemp(Ity_I32);
-    IRTemp cr1to7 = newTemp(Ity_I32);
-    
-    assign( cr0, binop(Iop_And32, mkU32(0xF<<28),
-		       mk_ppc32g_calculate_cr0_all()) );
-    assign( cr1to7, binop(Iop_And32, mkU32(-1>>4),
-			  IRExpr_Get(OFFB_CR1to7, Ity_I32)) );
-    return binop(Iop_Or32, mkexpr(cr1to7), mkexpr(cr0));
-}
-
-/* Write given flags (least sig. nibble) to given field of CR
-   If given field is 8, set the whole of CR to flags, dep on mask
-   Note: For CR0, we're writing to the thunk.
-*/
-static void putReg_CR ( UInt field_idx, IRExpr* src, UInt mask )
+/* Write a nibble (least significant) to the given register,field */
+static void putReg_field ( PPC32Reg reg, UInt field_idx, IRExpr* src )
 {
     vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
     vassert( field_idx <= 8 );
+    vassert( reg < REG_NUMBER );
 
     UInt bit_idx = field_idx * 4;
+    UInt field_mask = 0x0000000F << field_idx;
 
-    IRTemp cr1to7_old = newTemp(Ity_I32);
-    IRTemp cr1to7_mskd = newTemp(Ity_I32);
-    IRTemp src_mskd = newTemp(Ity_I32);
-    IRTemp src1to7_mskd = newTemp(Ity_I32);
-    IRTemp tmp = newTemp(Ity_I32);
+    IRTemp val = newTemp(Ity_I32);
 
-    if (field_idx == 8) {
-	// Assign fields of src specified by mask to CR:
-	// CR = src & mask | CR & ~mask
-	assign( src_mskd, binop(Iop_And32, src, mkU32(mask)) );
-	if (mask & (0xF<<28)) {
-	    setFlags_CR0_Imm( binop(Iop_And32,
-				    mkexpr(src_mskd), mkU32(0xF<<28)) );
-	}
-	assign( src1to7_mskd, binop(Iop_And32,
-				    mkexpr(src_mskd), mkU32(-1>>4)) );
-	assign( cr1to7_old, binop(Iop_And32, mkU32(-1>>4), getReg_CR()) );
-	assign( cr1to7_mskd, binop(Iop_And32,
-				   mkexpr(cr1to7_old), mkU32(~mask)) );
-	stmt( IRStmt_Put( OFFB_CR1to7, binop(Iop_Or32,
-					     mkexpr(src1to7_mskd),
-					     mkexpr(cr1to7_mskd)) ));	      
-    } else {
-	// Assign lowest nibble of src to given field_idx of CR
-	assign( src_mskd, binop(Iop_And32, src, mkU32(0xF)) );
-	assign( tmp, binop(Iop_Shl32, mkexpr(src_mskd), 
-                                      mkU8(toUChar(bit_idx))) );
-	
-	if (field_idx == 7) {
-	    setFlags_CR0_Imm( mkexpr(tmp) );
-	} else {
-	    mask = 0xF << bit_idx;
-	    assign( cr1to7_old, binop(Iop_And32, mkU32(-1>>4), getReg_CR()) );
-	    assign( cr1to7_mskd, binop(Iop_And32,
-				       mkexpr(cr1to7_old), mkU32(~mask)) );
-	    stmt( IRStmt_Put( OFFB_CR1to7, binop(Iop_Or32,
-						 mkexpr(tmp),
-						 mkexpr(cr1to7_mskd)) ));
-	}
+    assign( val, binop(Iop_Shl32,
+		       binop(Iop_And32, src, mkU32(0xF)),
+		       mkU8(bit_idx)) );
+
+    switch (reg) {
+    case REG_CR:
+        putReg_masked( REG_CR, mkexpr(val), field_mask );
+	break;
+
+    case REG_XER:
+	putReg_masked( REG_XER, mkexpr(val), field_mask );
+	break;
+
+    default:
+	vpanic("putReg_field(ppc32)");
     }
 }
 
@@ -958,34 +1092,6 @@ static void putReg_CR ( UInt field_idx, IRExpr* src, UInt mask )
 
 
 
-/*------------------------------------------------------------*/
-/*--- Misc Helpers                                         ---*/
-/*------------------------------------------------------------*/
-
-static UInt CreateMask( UInt begin, UInt end )
-{
-    UInt m1 = ((UInt)(-1)) << begin;
-    UInt m2 = ((UInt)(-1)) << (end + 1);
-    UInt mask = m1 ^ m2;
-    if (begin > end) mask = ~mask;  // wrap mask
-    return mask;
-}
-
-
-
-static void vex_printf_binary( UInt x, UInt len, Bool spaces )
-{
-    UInt i;
-    vassert(len > 0 && len <= 32);
-    
-    for (i=len; i>0; i--) {
-	vex_printf("%d", ((x & (1<<(len-1))) != 0) );
-	x = x << 1;
-	if (((i-1)%4)==0 && (i > 1) && spaces) {
-	    vex_printf(" ");
-	}
-    }
-}
 
 
 
@@ -1005,8 +1111,10 @@ static Bool dis_int_arith ( UInt theInstr )
     UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
     UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
+    /* D-Form */
     UInt  SIMM_16 =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
+    /* XO-Form */
     UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
     UChar flag_OE = toUChar((theInstr >> 10) & 1);     /* theInstr[10]    */
     UInt  opc2    =         (theInstr >>  1) & 0x1FF;  /* theInstr[1:9]   */
@@ -1014,16 +1122,28 @@ static Bool dis_int_arith ( UInt theInstr )
 
     UInt EXTS_SIMM = 0;
 
-    IRTemp Ra = newTemp(Ity_I32);
-    IRTemp Rb = newTemp(Ity_I32);
-    IRTemp Rd = newTemp(Ity_I32);
-    IRTemp tmp = newTemp(Ity_I32);
+    IRTemp Ra     = newTemp(Ity_I32);
+    IRTemp Rb     = newTemp(Ity_I32);
+    IRTemp Rd     = newTemp(Ity_I32);
+    IRTemp res64  = newTemp(Ity_I64);  // multiplies need this.
+    IRTemp xer_ca = newTemp(Ity_I32);
 
-    IRTemp res64 = newTemp(Ity_I64);
+    UInt op    = PPC32G_FLAG_OP_NUMBER;
+    Bool do_ca = False;
+    Bool do_ov = False;
+    Bool do_rc = False;
+    IRExpr* arg1;
+    IRExpr* arg2;
 
     assign( Ra, getIReg(Ra_addr) );
     assign( Rb, getIReg(Rb_addr) );         // XO-Form: Rd, Ra, Rb
     EXTS_SIMM = extend_s_16to32(SIMM_16);   // D-Form:  Rd, Ra, EXTS(SIMM)
+
+    arg1 = mkexpr(Ra);
+    arg2 = mkU32(EXTS_SIMM);
+
+    assign( xer_ca, getReg_bit(REG_XER, OFFBIT_XER_CA) );
+
 
     switch (opc1) {
 
@@ -1032,7 +1152,6 @@ static Bool dis_int_arith ( UInt theInstr )
 	// li rD,val   == addi rD,0,val
 	// la disp(rA) == addi rD,rA,disp
 	DIP("addi %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	if ( Ra_addr == 0 ) {
 	    assign( Rd, mkU32(EXTS_SIMM) );
 	} else {
@@ -1042,93 +1161,81 @@ static Bool dis_int_arith ( UInt theInstr )
 
     case 0x0D: // addic  (Add Immediate Carrying, p381)
 	DIP("addic %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-	assign( tmp, mkU32(EXTS_SIMM) );
-	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, tmp );
+	op = PPC32G_FLAG_OP_ADD;
+	do_ca = True;
 	break;
 	
     case 0x0E: // addic. (Add Immediate Carrying and Record, p382)
 	DIP("addic. %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-	assign( tmp, mkU32(EXTS_SIMM) );
-	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, tmp );
-	setFlags_CR0_Result( mkexpr(Rd) );
+	op = PPC32G_FLAG_OP_ADD;
+	do_ca = True;
+	do_rc = True;
+	flag_Rc = 1;
 	break;
 
     case 0x0F: // addis  (Add Immediate Shifted, p383)
 	// lis rD,val == addis rD,0,val
 	DIP("addis %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	if ( Ra_addr == 0 ) {
 	    assign( Rd, mkU32(EXTS_SIMM << 16) );
 	} else {
-	    assign( Rd, binop( Iop_Add32, mkexpr(Ra),
-			       mkU32(EXTS_SIMM << 16) ));
+	    assign( Rd, binop(Iop_Add32, mkexpr(Ra),
+			      mkU32(EXTS_SIMM << 16)) );
 	}
 	break;
 
     case 0x07: // mulli    (Multiply Low Immediate, p544)
 	DIP("mulli %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	assign( res64, binop(Iop_MullS32, mkexpr(Ra), mkU32(EXTS_SIMM)) );
 	assign( Rd, unop(Iop_64to32, mkexpr(res64)) );
 	break;
 
     case 0x08: // subfic   (Subtract from Immediate Carrying, p613)
 	DIP("subfic %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-
 	assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-			  mkU32(EXTS_SIMM + 1)) );
-	assign( tmp, mkU32(EXTS_SIMM) );
-	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_SUBFI, Rd, Ra, tmp );
+			  mkU32(EXTS_SIMM)) );
+	op = PPC32G_FLAG_OP_SUBFI;
+	do_ca = True;
 	break;
 
 
     /* XO-Form */
     case 0x1F:
+       arg2 = mkexpr(Rb);
+       do_rc = True;    // All below record to CR
+
        switch (opc2) {
        case 0x10A: // add  (Add, p377)
 	   DIP("add%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_ADD;
+	   do_ov = True;
 	   break;
 
        case 0x00A: // addc      (Add Carrying, p378)
 	   DIP("addc%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_ADD;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x08A: // adde      (Add Extended, p379)
 	   DIP("adde%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = rA + rB + XER[CA]
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra),
-			     binop(Iop_Add32, getReg_XER_CA(), mkexpr(Rb))) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb );
-	   }
+			     binop(Iop_Add32, mkexpr(Rb), mkexpr(xer_ca))) );
+	   op = PPC32G_FLAG_OP_ADDE;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x0EA: // addme      (Add to Minus One Extended, p384)
@@ -1139,16 +1246,12 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("addme%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = rA + XER[CA] - 1
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra),
-			     binop(Iop_Sub32, getReg_XER_CA(), mkU32(1)) ));
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADDME, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDME, Rd, Ra, Rb );
-	   }
+			     binop(Iop_Sub32, mkexpr(xer_ca), mkU32(1)) ));
+	   op = PPC32G_FLAG_OP_ADDME;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x0CA: // addze      (Add to Zero Extended, p385)
@@ -1159,31 +1262,23 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("addze%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = rA + XER[CA]
-	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), getReg_XER_CA()) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADDZE, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDZE, Rd, Ra, Rb );
-	   }
+	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(xer_ca)) );
+	   op = PPC32G_FLAG_OP_ADDZE;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x1EB: // divw       (Divide Word, p421)
 	   DIP("divw%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
            assign( Rd, binop(Iop_DivS32, mkexpr(Ra), mkexpr(Rb)) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVW, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_DIVW;
+	   do_ov = True;
 	   /* Note:
 	      if (0x8000_0000 / -1) or (x / 0)
-	      => Rd=undef, if(flag_Rc) CR0=undef, if(flag_OE) XER_OV=1
+	      => Rd=undef, if(flag_Rc) CR7=undef, if(flag_OE) XER_OV=1
 	      => But _no_ exception raised. */
 	   break;
 
@@ -1191,13 +1286,9 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("divwu%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
            assign( Rd, binop(Iop_DivU32, mkexpr(Ra), mkexpr(Rb)) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVWU, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_DIVWU;
+	   do_ov = True;
 	   /* Note: ditto comment divw, for (x / 0) */
 	   break;
 
@@ -1208,10 +1299,8 @@ static Bool dis_int_arith ( UInt theInstr )
 	   }
 	   DIP("mulhw%s %d,%d,%d\n", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   assign( res64, binop(Iop_MullS32, mkexpr(Ra), mkexpr(Rb)) );
 	   assign( Rd, unop(Iop_64HIto32, mkexpr(res64)) );
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   break;
 
        case 0x00B: // mulhwu     (Multiply High Word Unsigned, p542)
@@ -1221,24 +1310,18 @@ static Bool dis_int_arith ( UInt theInstr )
 	   }
 	   DIP("mulhwu%s %d,%d,%d\n", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   assign( res64, binop(Iop_MullU32, mkexpr(Ra), mkexpr(Rb)) );
 	   assign( Rd, unop(Iop_64HIto32, mkexpr(res64)) );
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   break;
 
        case 0x0EB: // mullw      (Multiply Low Word, p545)
 	   DIP("mullw%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   assign( res64, binop(Iop_MullU32, mkexpr(Ra), mkexpr(Rb)) );
 	   assign( Rd, unop(Iop_64to32, mkexpr(res64)) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVWU, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_MULLW;
+	   do_ov = True;
 	   break;
 
        case 0x068: // neg        (Negate, p547)
@@ -1249,62 +1332,46 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("neg%s%s %d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr);
-
 	   // rD = (log not)rA + 1
-	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-			     mkU32(1)) );
-
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_NEG, Rd, Ra, Rb );
-	   }
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
+	   assign( Rd, binop(Iop_Add32,
+			     unop(Iop_Not32, mkexpr(Ra)), mkU32(1)) );
+	   op = PPC32G_FLAG_OP_NEG;
+	   do_ov = True;
 	   break;
 		   
        case 0x028: // subf       (Subtract From, p610)
 	   DIP("subf%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = (log not)rA + rB + 1
 	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
 			     binop(Iop_Add32, mkexpr(Rb), mkU32(1))) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_SUBF, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_SUBF;
+	   do_ov = True;
 	   break;
 
        case 0x008: // subfc      (Subtract from Carrying, p611)
 	   DIP("subfc%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = (log not)rA + rB + 1
 	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
 			     binop(Iop_Add32, mkexpr(Rb), mkU32(1))) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_SUBFC, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_SUBFC, Rd, Ra, Rb );
-	   }
+	   op = PPC32G_FLAG_OP_SUBFC;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x088: // subfe      (Subtract from Extended, p612)
 	   DIP("subfe%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-
 	   // rD = (log not)rA + rB + XER[CA]
 	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-			     binop(Iop_Add32, mkexpr(Rb), getReg_XER_CA())) );
-	   
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_SUBFE, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_SUBFE, Rd, Ra, Rb );
-	   }
+			     binop(Iop_Add32, mkexpr(Rb), mkexpr(xer_ca))) );
+	   op = PPC32G_FLAG_OP_SUBFE;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x0E8: // subfme     (Subtract from Minus One Extended, p614)
@@ -1315,16 +1382,12 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("subfme%s%s %d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr);
-
 	   // rD = (log not)rA + XER[CA] - 1
 	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-			     binop(Iop_Add32, getReg_XER_CA(), mkU32(-1))) );
-	   
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_SUBFME, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_SUBFME, Rd, Ra, Rb );
-	   }
+			     binop(Iop_Sub32, mkexpr(xer_ca), mkU32(1))) );
+	   op = PPC32G_FLAG_OP_SUBFME;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        case 0x0C8: // subfze     (Subtract from Zero Extended, p615)
@@ -1335,16 +1398,12 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("subfze%s%s %d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr);
-
 	   // rD = (log not)rA + XER[CA]
 	   assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-			     getReg_XER_CA()) );
-
-	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_SUBFZE, Rd, Ra, Rb );
-	   if (flag_OE) {
-	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_SUBFZE, Rd, Ra, Rb );
-	   }
+			     mkexpr(xer_ca)) );
+	   op = PPC32G_FLAG_OP_SUBFZE;
+	   do_ca = True;
+	   do_ov = True;
 	   break;
 
        default:
@@ -1358,6 +1417,18 @@ static Bool dis_int_arith ( UInt theInstr )
     }
 
     putIReg( Rd_addr, mkexpr(Rd) );
+
+    if (do_ov && flag_OE) {
+	vassert(op < PPC32G_FLAG_OP_NUMBER);
+	setFlags_XER_OV_SO( op, mkexpr(Rd), arg1, arg2 );
+    }
+    if (do_ca) {
+	vassert(op < PPC32G_FLAG_OP_NUMBER);
+	setFlags_XER_CA( op, mkexpr(Rd), arg1, arg2 );
+    }
+    if (do_rc && flag_Rc) {
+	setFlags_CR7( mkexpr(Rd) );
+    }
     return True;
 }
 
@@ -1381,11 +1452,12 @@ static Bool dis_int_cmp ( UInt theInstr )
     UChar b0      = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
     UInt EXTS_SIMM = 0;
-    IRTemp Ra = newTemp(Ity_I32);
-    IRTemp Rb = newTemp(Ity_I32);
-    IRTemp tmp = newTemp(Ity_I32);
-    IRTemp tst1 = newTemp(Ity_I1);
-    IRTemp tst2 = newTemp(Ity_I1);
+    IRTemp Ra    = newTemp(Ity_I32);
+    IRTemp Rb    = newTemp(Ity_I32);
+    IRTemp tmp   = newTemp(Ity_I32);
+    IRTemp cr_f7 = newTemp(Ity_I32);
+    IRTemp tst1  = newTemp(Ity_I1);
+    IRTemp tst2  = newTemp(Ity_I1);
 	
     assign( Ra, getIReg(Ra_addr) );
 
@@ -1451,7 +1523,9 @@ static Bool dis_int_cmp ( UInt theInstr )
 					     mkU32(8), mkU32(4) ),
 			       mkU32(2) ));
 
-    putReg_CR( 7-crfD, binop(Iop_Or32, mkexpr(tmp), getReg_XER_SO()), 0 );
+    assign( cr_f7, binop(Iop_Or32, mkexpr(tmp),
+			 getReg_bit(REG_XER, OFFBIT_XER_SO)) );
+    putReg_field( REG_CR, 7-crfD, mkexpr(cr_f7) );
     return True;
 }
 
@@ -1471,6 +1545,8 @@ static Bool dis_int_logic ( UInt theInstr )
     UInt  opc2    =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
     UChar flag_Rc = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
+    Bool do_rc = False;
+
     IRTemp Rs = newTemp(Ity_I32);
     IRTemp Ra = newTemp(Ity_I32);
     IRTemp Rb = newTemp(Ity_I32);
@@ -1484,14 +1560,16 @@ static Bool dis_int_logic ( UInt theInstr )
 	DIP("andi %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	assign( Ra, binop(Iop_And32, mkexpr(Rs), mkU32(UIMM_16)) );
 	putIReg( Ra_addr, mkexpr(Ra) );
-	setFlags_CR0_Result( mkexpr(Ra) );
+	do_rc = True;
+	flag_Rc = 1;
 	break;
 
     case 0x1D: // andis. (AND Immediate Shifted, p389)
 	DIP("andis %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	assign( Ra, binop(Iop_And32, mkexpr(Rs), mkU32(UIMM_16 << 16)) );
 	putIReg( Ra_addr, mkexpr(Ra) );
-	setFlags_CR0_Result( mkexpr(Ra) );
+	do_rc = True;
+	flag_Rc = 1;
 	break;
 
     case 0x18: // ori (OR Immediate, p551)
@@ -1619,12 +1697,16 @@ static Bool dis_int_logic ( UInt theInstr )
 	}
 
 	putIReg( Ra_addr, mkexpr(Ra) );
-	if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
+	do_rc = True;
 	break;
 
     default:
 	vex_printf("dis_int_logic(PPC32)(opc1)\n");
 	return False;
+    }
+
+    if (do_rc && flag_Rc) {
+	setFlags_CR7( mkexpr(Ra) );
     }
     return True;
 }
@@ -1638,12 +1720,12 @@ static Bool dis_int_rot ( UInt theInstr )
     UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
     UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
     UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-    UChar Shift_Imm = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar sh_imm    = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
     UChar MaskBegin = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
     UChar MaskEnd   = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
     UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-    UInt mask = CreateMask(MaskBegin, MaskEnd);
+    UInt mask = MASK(MaskBegin, MaskEnd);
     IRTemp rot_amt = newTemp(Ity_I8);
     IRTemp Rs = newTemp(Ity_I32);
     IRTemp Ra = newTemp(Ity_I32);
@@ -1656,20 +1738,20 @@ static Bool dis_int_rot ( UInt theInstr )
     switch (opc1) {
     case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, p561)
 	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
-	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
+	    Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
 	// Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
 	assign( Ra, binop(Iop_Or32,
 			  binop(Iop_And32, mkU32(mask),
-				ROTL32(mkexpr(Rs), mkU8(Shift_Imm))),
+				ROTL32(mkexpr(Rs), mkU8(sh_imm))),
 			  binop(Iop_And32, getIReg(Ra_addr), mkU32(~mask))) );
 	break;
 
     case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, p562)
 	DIP("rlwinm%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
-	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
+	    Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
 	// Ra = ROTL(Rs, Imm) & mask
 	assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs),
-					    mkU8(Shift_Imm)), mkU32(mask)) );
+					    mkU8(sh_imm)), mkU32(mask)) );
 	break;
 
     case 0x17: // rlwnm (Rotate Left Word then AND with Mask, p564)
@@ -1687,7 +1769,9 @@ static Bool dis_int_rot ( UInt theInstr )
 	return False;
     }
     putIReg( Ra_addr, mkexpr(Ra) );
-    if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
+    if (flag_Rc) {
+	setFlags_CR7( mkexpr(Ra) );
+    }
     return True;
 }
 
@@ -2043,8 +2127,8 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
     UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
     UInt exts_d_imm = extend_s_16to32(d_imm);
-    UInt reg_idx = 0;
-    UInt offset = 0;
+    UInt reg_idx    = 0;
+    UInt offset     = 0;
 
     IRTemp Ra = newTemp(Ity_I32);
     IRTemp EA = newTemp(Ity_I32);
@@ -2283,7 +2367,7 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
 	assign( ok, mkU1(1) );
     } else {
 	// ok = (CR[31-BI] == BO[3])
-	assign( cr_bi, binop(Iop_And32, getReg_CR(), mkU32(1<<(31-BI))) );
+	assign( cr_bi, getReg_masked( REG_CR, (0x80000000 >> BI)) );
 	assign( tmp, binop(Iop_CmpNE32, mkU32(0), mkexpr(cr_bi)) );
 
 	if ((BO >> 3) & 1) {
@@ -2302,7 +2386,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
     UChar opc1     = toUChar((theInstr >> 26) & 0x3F);    /* theInstr[26:31] */
     UChar BO       = toUChar((theInstr >> 21) & 0x1F);    /* theInstr[21:25] */
     UChar BI       = toUChar((theInstr >> 16) & 0x1F);    /* theInstr[16:20] */
-    UInt  BD       =        (theInstr >>  2) & 0x3FFF;    /* theInstr[2:15]  */
+    UInt  BD       =         (theInstr >>  2) & 0x3FFF;   /* theInstr[2:15]  */
     UChar b11to15  = toUChar((theInstr >> 11) & 0x1F);    /* theInstr[11:15] */
     UInt  opc2     =         (theInstr >>  1) & 0x3FF;    /* theInstr[1:10]  */
     UInt  LI_24    =         (theInstr >>  2) & 0xFFFFFF; /* theInstr[2:25]  */
@@ -2311,14 +2395,15 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 
     UInt exts_BD = extend_s_24to32(BD << 2);
     UInt exts_LI = extend_s_24to32(LI_24 << 2);
+
     Addr32 nia = 0;
 
-    IRTemp ctr = newTemp(Ity_I32);
-    IRTemp lr = newTemp(Ity_I32);
-    IRTemp ir_nia = newTemp(Ity_I32);
-    IRTemp ctr_ok  = newTemp(Ity_I1);
-    IRTemp cond_ok = newTemp(Ity_I1);
+    IRTemp ctr       = newTemp(Ity_I32);
+    IRTemp lr        = newTemp(Ity_I32);
+    IRTemp ir_nia    = newTemp(Ity_I32);
     IRTemp do_branch = newTemp(Ity_I32);
+    IRTemp ctr_ok    = newTemp(Ity_I1);
+    IRTemp cond_ok   = newTemp(Ity_I1);
 
     assign( ctr, IRExpr_Get(OFFB_CTR, Ity_I32) );
 
@@ -2402,7 +2487,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 
 	    assign( cond_ok, branch_cond_ok( BO, BI ) );
 
-	    assign( ir_nia, binop(Iop_And32, mkU32(-1 << 2), mkexpr(ctr)) );
+	    assign( ir_nia, binop(Iop_And32, mkU32(0xFFFFFFFC), mkexpr(ctr)) );
 
 	    if (flag_LK) {
 		assign( lr, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(cond_ok)),
@@ -2436,7 +2521,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 
 	    assign( ir_nia, binop(Iop_And32,
 				  IRExpr_Get(OFFB_LR, Ity_I32),
-				  mkU32(-1 << 2)) );
+				  mkU32(0xFFFFFFFC)) );
 	    if (flag_LK) {
 		assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
 					  IRExpr_Get(OFFB_LR, Ity_I32),
@@ -2491,19 +2576,20 @@ static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
 static Bool dis_memsync ( UInt theInstr )
 {
     /* X-Form, XL-Form */
-    UChar opc1      = toUChar((theInstr >> 26) & 0x3F);   /* theInstr[26:31] */
-    UChar b11to25   = toUChar((theInstr >> 11) & 0x7FFF); /* theInstr[11:25]  */
-    UChar Rd_addr   = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
-    UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
-    UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F);   /* theInstr[16:20] */
-    UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F);   /* theInstr[11:15] */
-    UInt  opc2      =         (theInstr >>  1) & 0x3FF;   /* theInstr[1:10]  */
-    UChar b0        = toUChar((theInstr >>  0) & 1);      /* theInstr[0]     */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);   /* theInstr[26:31] */
+    UInt  b11to25  =         (theInstr >> 11) & 0x7FFF;  /* theInstr[11:25] */
+    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
+    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
+    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F);   /* theInstr[16:20] */
+    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F);   /* theInstr[11:15] */
+    UInt  opc2     =         (theInstr >>  1) & 0x3FF;   /* theInstr[1:10]  */
+    UChar b0       = toUChar((theInstr >>  0) & 1);      /* theInstr[0]     */
 
     IRTemp EA = newTemp(Ity_I32);
     IRTemp Ra = newTemp(Ity_I32);
     IRTemp Rb = newTemp(Ity_I32);
     IRTemp Rs = newTemp(Ity_I32);
+    IRTemp cr_f7 = newTemp(Ity_I32);
 
     switch (opc1) {
     /* XL-Form */
@@ -2571,8 +2657,10 @@ static Bool dis_memsync ( UInt theInstr )
 	    }
 	    storeBE( mkexpr(EA), mkexpr(Rs) );
 
-	    // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
-	    putReg_CR( 7, binop(Iop_Or32, mkU32(2), getReg_XER_SO()), 0 );
+	    // Set CR7[LT GT EQ S0] = 0b001 || XER[SO]
+	    assign( cr_f7, binop(Iop_Or32, mkU32(2), 
+				 getReg_bit(REG_XER, OFFBIT_XER_SO)) );
+	    putReg_field( REG_CR, 7, mkexpr(cr_f7) );
 	    break;
 
         case 0x256: // sync (Synchronize, p616)
@@ -2604,24 +2692,26 @@ static Bool dis_memsync ( UInt theInstr )
 static Bool dis_int_shift ( UInt theInstr )
 {
     /* X-Form */
-    UChar opc1      = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-    UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-    UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-    UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-    UChar Shift_Imm = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-    UInt  opc2      =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-    UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar Rs_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar sh_imm  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar flag_Rc = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-    IRTemp shft_amt = newTemp(Ity_I8);
-    IRTemp sign     = newTemp(Ity_I32);
-    IRTemp sign_rb  = newTemp(Ity_I32);
-    IRTemp sext     = newTemp(Ity_I32);
-    IRTemp Rs       = newTemp(Ity_I32);
-    IRTemp Rs_shft  = newTemp(Ity_I32);
-    IRTemp Rs_out   = newTemp(Ity_I32);
-    IRTemp Ra       = newTemp(Ity_I32);
-    IRTemp Rb       = newTemp(Ity_I32);
-    IRTemp tmp      = newTemp(Ity_I32);
+    UInt op    = PPC32G_FLAG_OP_NUMBER;
+    Bool do_ca = False;
+
+    IRTemp sh_amt = newTemp(Ity_I8);
+    IRTemp sign   = newTemp(Ity_I32);
+    IRTemp rb_b5  = newTemp(Ity_I32);
+    IRTemp sext   = newTemp(Ity_I32);
+    IRTemp Rs     = newTemp(Ity_I32);
+    IRTemp Rs_sh  = newTemp(Ity_I32);
+    IRTemp Ra     = newTemp(Ity_I32);
+    IRTemp Rb     = newTemp(Ity_I32);
+    IRTemp mask   = newTemp(Ity_I32);
 
     assign( Rs, getIReg(Rs_addr) );
     assign( Rb, getIReg(Rb_addr) );
@@ -2631,97 +2721,74 @@ static Bool dis_int_shift ( UInt theInstr )
         case 0x018: // slw (Shift Left Word, p569)
 	    DIP("slw%s %d,%d,%d\n", flag_Rc ? "." : "",
 		Ra_addr, Rs_addr, Rb_addr);
-	    assign( shft_amt, binop(Iop_And8, mkU8(0x1F),
+	    assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
 				    unop(Iop_32to8, mkexpr(Rb))) );
-	    assign( Ra, binop(Iop_Shl32, mkexpr(Rs), mkexpr(shft_amt)) );
-	    if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
+	    assign( Ra, binop(Iop_Shl32, mkexpr(Rs), mkexpr(sh_amt)) );
 	    break;
 
         case 0x318: // sraw (Shift Right Algebraic Word, p572)
 	    DIP("sraw%s %d,%d,%d\n", flag_Rc ? "." : "",
 		Ra_addr, Rs_addr, Rb_addr);
 
-	    assign( shft_amt, binop(Iop_And8, mkU8(0x1F),
+	    assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
 				    unop(Iop_32to8, getIReg(Rb_addr))) );
-	    // Rs_shift = Rs >> shft_amt
-	    assign( Rs_shft, binop(Iop_Shr32, mkexpr(Rs), mkexpr(shft_amt)) );
-	    // bits shifted out
-	    assign( Rs_out, binop(Iop_And32, mkexpr(Rs),
-				  binop(Iop_Shr32, mkU32(-1),
-					binop(Iop_Sub8, mkU8(32),
-					      mkexpr(shft_amt)))) );
-	    // sign_rb = Rb[5]
-	    assign( sign_rb, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
+	    // Rs_shift = Rs >> sh_amt
+	    assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
+	    // rb_b5 = Rb[5]
+	    assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
 	    // sign = Rs[31]
 	    assign( sign, binop(Iop_Shr32, mkexpr(Rs), mkU8(31)) );
-	    // sign_ext = sign==0 ? 0 : (sign_rb==0 ? -1 : (-1<<(31-shft_amt)))
-	    assign( tmp, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign_rb)),
-				       mkU32(-1),
-				       binop(Iop_Shl32, mkU32(-1),
-					     binop(Iop_Sub8, mkU8(31),
-						   mkexpr(shft_amt))) ));
+	    // mask = rb_b5==0 ? (-1 >> sh_amt) : 0
+	    assign( mask, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
+					binop(Iop_Shr32, mkU32(-1), mkexpr(sh_amt)),
+					mkU32(0) ));
+	    // sign_ext = sign==0 ? 0 : ~mask
 	    assign( sext, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign)),
-					mkU32(0), mkexpr(tmp) ));
-	    // Ra = (sign_rb == 0 ? Rs_shft : 0) | sext
-	    assign( Ra, binop(Iop_Or32, mkexpr(sext),
-			      IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign_rb)),
-					    mkU32(0), mkexpr(Rs_shft))) );
-	    putIReg( Ra_addr, mkexpr(Ra) );
+					mkU32(0),
+					unop(Iop_Not32, mkexpr(mask)) ));
 
-	    // ca = sign & (Rs_out != 0)
-	    putReg_XER_CA( unop(Iop_32to1,
-				binop(Iop_And32, mkexpr(sign),
-				      unop(Iop_1Uto32,
-					   binop(Iop_CmpNE32, mkU32(0),
-						 mkexpr(Rs_out))))) );
-	    if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
+	    // Ra = (rb_b5 == 0 ? Rs_sh : 0) | sext
+	    assign( Ra, binop(Iop_Or32, mkexpr(sext),
+			      IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
+					    mkU32(0), mkexpr(Rs_sh))) );
+	    putIReg( Ra_addr, mkexpr(Ra) );
+	    op = PPC32G_FLAG_OP_SRAW;
+	    do_ca = True;
 	    break;
 
         case 0x338: // srawi (Shift Right Algebraic Word Immediate, p573)
 	    DIP("srawi%s %d,%d,%d\n", flag_Rc ? "." : "",
-		Ra_addr, Rs_addr, Shift_Imm);
+		Ra_addr, Rs_addr, sh_imm);
 
-	    assign( shft_amt, mkU8(Shift_Imm) );
-	    // Rs_shift = Rs >> shft_amt
-	    assign( Rs_shft, binop(Iop_Shr32, mkexpr(Rs), mkexpr(shft_amt)) );
-	    // bits shifted out
-	    assign( Rs_out, binop(Iop_And32, mkexpr(Rs),
-				  binop(Iop_Shr32, mkU32(-1),
-					binop(Iop_Sub8, mkU8(32),
-					      mkexpr(shft_amt)))) );
+	    assign( sh_amt, mkU8(sh_imm) );
+	    // Rs_shift = Rs >> sh_amt
+	    assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
 	    // sign = Rs[31]
 	    assign( sign, binop(Iop_And32, mkU32(1),
 				binop(Iop_Shr32, mkexpr(Rs), mkU8(31))) );
-	    // sign_ext = sign==0 ? 0 : (-1 << (31-shft_amt))
+	    // mask = (-1 >> sh_amt)
+	    assign( mask, binop(Iop_Shr32, mkU32(-1), mkexpr(sh_amt)) );
+	    // sign_ext = sign==0 ? 0 : ~mask
 	    assign( sext, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign)),
 					mkU32(0),
-					binop(Iop_Shl32, mkU32(-1),
-					      binop(Iop_Sub8, mkU8(31),
-						    mkexpr(shft_amt))) ));
-	    // Ra = Rs_shft | sext
-	    assign( Ra, binop(Iop_Or32, mkexpr(sext), mkexpr(Rs_shft)) );
+					unop(Iop_Not32, mkexpr(mask)) ));
+	    // Ra = Rs_shift | sext
+	    assign( Ra, binop(Iop_Or32, mkexpr(sext), mkexpr(Rs_sh)) );
 	    putIReg( Ra_addr, mkexpr(Ra) );
-
-	    // ca = sign & (Rs_out != 0)
-	    putReg_XER_CA( unop(Iop_32to1,
-				binop(Iop_And32, mkexpr(sign),
-				      unop(Iop_1Uto32,
-					   binop(Iop_CmpNE32, mkU32(0),
-						 mkexpr(Rs_out))))) );
-	    if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
+	    op = PPC32G_FLAG_OP_SRAWI;
+	    do_ca = True;
 	    break;
 
         case 0x218: // srw (Shift Right Word, p575)
 	    DIP("srw%s %d,%d,%d\n", flag_Rc ? "." : "",
 		Ra_addr, Rs_addr, Rb_addr);
-	    assign( shft_amt, binop(Iop_And8, mkU8(0x1F),
+	    assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
 				    unop(Iop_32to8, getIReg(Rb_addr))) );
-	    assign( Rs_shft, binop(Iop_Shr32, mkexpr(Rs), mkexpr(shft_amt)) );
-	    assign( sign_rb, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
-	    assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign_rb)),
-				      mkU32(0), mkexpr(Rs_shft) ));
+	    assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
+	    assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
+	    assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
+				      mkU32(0), mkexpr(Rs_sh) ));
 	    putIReg( Ra_addr, mkexpr(Ra) );
-	    if (flag_Rc) { setFlags_CR0_Result( mkexpr(Ra) ); }
 	    break;
 
         default:
@@ -2731,6 +2798,14 @@ static Bool dis_int_shift ( UInt theInstr )
     } else {
 	vex_printf("dis_int_shift(PPC32)(opc1)\n");
 	return False;
+    }
+
+    if (do_ca) {
+	vassert(op < PPC32G_FLAG_OP_NUMBER);
+	setFlags_XER_CA( op, mkexpr(Ra), mkexpr(Rs), mkexpr(Rb) );
+    }
+    if (flag_Rc) {
+	setFlags_CR7( mkexpr(Ra) );
     }
     return True;
 }
@@ -2855,6 +2930,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
     UChar b20      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
     UInt  CRM      =         (theInstr >> 12) & 0xFF;  /* theInstr[12:19] */
     UChar b11      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[20]    */
+
     UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
     UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
@@ -2862,7 +2938,9 @@ static Bool dis_proc_ctl ( UInt theInstr )
     UInt  mask;
     UChar i;
 
-    IRTemp Rs = newTemp(Ity_I32);
+    IRTemp xer_f7 = newTemp(Ity_I32);
+    IRTemp Rs     = newTemp(Ity_I32);
+
     assign( Rs, getIReg(Rs_addr) );
 
     if (opc1 != 0x1F || b0 != 0) {
@@ -2879,13 +2957,14 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	}
 	DIP("mcrxr %d\n", crfD);
 
-	// CR[7-crfD] = XER[0-3]
-	putReg_CR( 7-crfD, binop(Iop_Shr32, getReg_XER(), mkU8(28)), 0 );
+	// CR[7-crfD] = XER[28-31]
+	assign( xer_f7, binop(Iop_Shr32,
+			      getReg_masked( REG_XER, 0xF0000000 ),
+			      mkU8(28)) );
+	putReg_field( REG_CR, 7-crfD, mkexpr(xer_f7) );
 
 	// Clear XER[28 - 31]
-	putReg_XER_SO( mkU1(0) );
-	putReg_XER_OV( mkU1(0) );
-	putReg_XER_CA( mkU1(0) );
+	putReg_field( REG_XER, 7, mkU32(0) );
 	break;
 
     case 0x013: // mfcr (Move from Condition Register, p511)
@@ -2894,7 +2973,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	    return False;
 	}
 	DIP("mfcr %d\n", Rd_addr);
-	putIReg( Rd_addr, getReg_CR() );
+	putIReg( Rd_addr, getReg( REG_CR ) );
 	break;
 
     /* XFX-Form */
@@ -2903,13 +2982,13 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
 	switch (SPR_flipped) {  // Choose a register...
 	case 0x1:            // XER
-	    putIReg( Rd_addr, getReg_XER() );
+	    putIReg( Rd_addr, getReg( REG_XER ) );
 	    break;
 	case 0x8:            // LR
-	    putIReg( Rd_addr, getReg_LR() );
+	    putIReg( Rd_addr, getReg( REG_LR ) );
 	    break;
 	case 0x9:            // CTR
-	    putIReg( Rd_addr, getReg_CTR() );
+	    putIReg( Rd_addr, getReg( REG_CTR ) );
 	    break;
 	    
 	case 0x012: case 0x013: case 0x016:
@@ -2947,7 +3026,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 		mask = mask | (0xF << (7-i)*4);
 	    }
 	}
-	putReg_CR( 8, binop(Iop_And32, mkexpr(Rs), mkU32(mask)), mask );
+	putReg_masked( REG_CR, mkexpr(Rs), mask );
 	break;
 
     case 0x1D3: // mtspr (Move to Special-Purpose Register, p530)
@@ -2955,13 +3034,13 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
 	switch (SPR_flipped) {  // Choose a register...
 	case 0x1:            // XER
-	    putReg_XER( mkexpr(Rs) );
+	    putReg( REG_XER, mkexpr(Rs) );
 	    break;
 	case 0x8:            // LR
-	    putReg_LR( mkexpr(Rs) );
+	    putReg( REG_LR, mkexpr(Rs) );
 	    break;
 	case 0x9:            // CTR
-	    putReg_CTR( mkexpr(Rs) );
+	    putReg( REG_CTR, mkexpr(Rs) );
 	    break;
 
 	case 0x012: case 0x013: case 0x016:

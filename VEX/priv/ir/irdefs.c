@@ -297,6 +297,7 @@ void ppIROp ( IROp op )
       case Iop_32Uto128:   vex_printf("32Uto128"); return;
       case Iop_64Uto128:   vex_printf("64Uto128"); return;
       case Iop_Set128lo32: vex_printf("Set128lo32"); return;
+      case Iop_Set128lo64: vex_printf("Set128lo64"); return;
 
       default: vpanic("ppIROp(1)");
    }
@@ -1159,6 +1160,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32Uto128:   UNARY(Ity_V128, Ity_I32);
       case Iop_64Uto128:   UNARY(Ity_V128, Ity_I64);
       case Iop_Set128lo32: BINARY(Ity_V128, Ity_V128,Ity_I32);
+      case Iop_Set128lo64: BINARY(Ity_V128, Ity_V128,Ity_I64);
 
       case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
       case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2:

@@ -7101,6 +7101,48 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
    }
 }
 
+/* Lowest 64-bit lane only unary SSE operation, G = op(E). */
+
+static UInt dis_SSE_E_to_G_unary_lo64 ( 
+               UChar sorb, UInt delta, 
+               HChar* opname, IROp op
+            )
+{
+   /* First we need to get the old G value and patch the low 64 bits
+      of the E operand into it.  Then apply op and write back to G. */
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRTemp  oldG0 = newTemp(Ity_V128);
+   IRTemp  oldG1 = newTemp(Ity_V128);
+
+   assign( oldG0, getXMMReg(gregOfRM(rm)) );
+
+   if (epartIsReg(rm)) {
+      assign( oldG1, 
+              binop( Iop_Set128lo64,
+                     mkexpr(oldG0),
+                     getXMMRegLane64(eregOfRM(rm), 0)) );
+      putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+1;
+   } else {
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      assign( oldG1, 
+              binop( Iop_Set128lo64,
+                     mkexpr(oldG0),
+                     loadLE(Ity_I64, mkexpr(addr)) ));
+      putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+alen;
+   }
+}
+
 /* Helper for doing SSE FP comparisons. */
 
 static void findSSECmpOp ( Bool* needNot, IROp* op, 
@@ -7925,8 +7967,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 59 = MULPS -- mul 32Fx4 from R/M to R */
-   if (insn[0] == 0x0F && insn[1] == 0x59) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x59) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "mulps", Iop_Mul32Fx4 );
       goto decode_success;
    }
@@ -7939,8 +7980,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 56 = ORPS -- G = G and E */
-   if (insn[0] == 0x0F && insn[1] == 0x56) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x56) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "orps", Iop_Or128 );
       goto decode_success;
    }
@@ -8282,14 +8322,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F C6 /r ib = SHUFPS -- shuffle packed F32s */
-   if (insn[0] == 0x0F && insn[1] == 0xC6) {
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC6) {
       Int    select;
       IRTemp sV, dV;
       IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
       sV = newTemp(Ity_V128);
       dV = newTemp(Ity_V128);
       s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
-      vassert(sz == 4);
       modrm = insn[2];
       assign( dV, getXMMReg(gregOfRM(modrm)) );
 
@@ -8329,8 +8368,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 51 = SQRTPS -- approx sqrt 32Fx4 from R/M to R */
-   if (insn[0] == 0x0F && insn[1] == 0x51) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x51) {
       delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
                                         "sqrtps", Iop_Sqrt32Fx4 );
       goto decode_success;
@@ -8370,13 +8408,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 5C = SUBPS -- sub 32Fx4 from R/M to R */
-   if (insn[0] == 0x0F && insn[1] == 0x5C) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5C) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "subps", Iop_Sub32Fx4 );
       goto decode_success;
    }
 
-   /* F3 0F 58 = SUBSS -- sub 32F0x4 from R/M to R */
+   /* F3 0F 5C = SUBSS -- sub 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5C) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "subss", Iop_Sub32F0x4 );
@@ -8386,14 +8423,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 15 = UNPCKHPS -- unpack and interleave high part F32s */
    /* 0F 14 = UNPCKLPS -- unpack and interleave low part F32s */
    /* These just appear to be special cases of SHUFPS */
-   if (insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
+   if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
       IRTemp sV, dV;
       IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
       Bool hi = insn[1] == 0x15;
       sV = newTemp(Ity_V128);
       dV = newTemp(Ity_V128);
       s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
-      vassert(sz == 4);
       modrm = insn[2];
       assign( dV, getXMMReg(gregOfRM(modrm)) );
 
@@ -8425,8 +8461,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 57 = XORPS -- G = G and E */
-   if (insn[0] == 0x0F && insn[1] == 0x57) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x57) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorps", Iop_Xor128 );
       goto decode_success;
    }
@@ -9413,6 +9448,153 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       }
    }
 
+   /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x59) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "mulpd", Iop_Mul64Fx2 );
+      goto decode_success;
+   }
+
+   /* F2 0F 59 = MULSD -- mul 64F0x2 from R/M to R */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x59) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_lo64( sorb, delta+3, "mulsd", Iop_Mul64F0x2 );
+      goto decode_success;
+   }
+
+   /* 66 0F 56 = ORPD -- G = G and E */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x56) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orpd", Iop_Or128 );
+      goto decode_success;
+   }
+
+   /* 66 0F C6 /r ib = SHUFPD -- shuffle packed F64s */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC6) {
+      Int    select;
+      IRTemp sV = newTemp(Ity_V128);
+      IRTemp dV = newTemp(Ity_V128);
+      IRTemp s1 = newTemp(Ity_I64);
+      IRTemp s0 = newTemp(Ity_I64);
+      IRTemp d1 = newTemp(Ity_I64);
+      IRTemp d0 = newTemp(Ity_I64);
+
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRM(modrm)) );
+         select = (Int)insn[3];
+         delta += 2+2;
+         DIP("shufpd $%d,%s,%s\n", select, 
+                                   nameXMMReg(eregOfRM(modrm)),
+                                   nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         select = (Int)insn[2+alen];
+         delta += 3+alen;
+         DIP("shufpd $%d,%s,%s\n", select, 
+                                   dis_buf,
+                                   nameXMMReg(gregOfRM(modrm)));
+      }
+
+      assign( d1, unop(Iop_128HIto64, mkexpr(dV)) );
+      assign( d0, unop(Iop_128to64,   mkexpr(dV)) );
+      assign( s1, unop(Iop_128HIto64, mkexpr(sV)) );
+      assign( s0, unop(Iop_128to64,   mkexpr(sV)) );
+
+#     define SELD(n) mkexpr((n)==0 ? d0 : d1)
+#     define SELS(n) mkexpr((n)==0 ? s0 : s1)
+
+      putXMMReg(
+         gregOfRM(modrm), 
+         binop(Iop_64HLto128, SELS((select>>1)&1), SELD((select>>0)&1) )
+      );
+
+#     undef SELD
+#     undef SELS
+
+      goto decode_success;
+   }
+
+   /* 66 0F 51 = SQRTPD -- approx sqrt 64Fx2 from R/M to R */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x51) {
+      delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
+                                        "sqrtpd", Iop_Sqrt64Fx2 );
+      goto decode_success;
+   }
+
+   /* F2 0F 51 = SQRTSD -- approx sqrt 64F0x2 from R/M to R */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x51) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_unary_lo64( sorb, delta+3, 
+                                         "sqrtsd", Iop_Sqrt64F0x2 );
+      goto decode_success;
+   }
+
+   /* 66 0F 5C = SUBPD -- sub 64Fx2 from R/M to R */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x5C) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "subpd", Iop_Sub64Fx2 );
+      goto decode_success;
+   }
+
+   /* F2 0F 5C = SUBSD -- sub 64F0x2 from R/M to R */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5C) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_lo64( sorb, delta+3, "subsd", Iop_Sub64F0x2 );
+      goto decode_success;
+   }
+
+   /* 66 0F 15 = UNPCKHPD -- unpack and interleave high part F64s */
+   /* 66 0F 14 = UNPCKLPD -- unpack and interleave low part F64s */
+   /* These just appear to be special cases of SHUFPS */
+   if (sz == 2 && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
+      IRTemp s1 = newTemp(Ity_I64);
+      IRTemp s0 = newTemp(Ity_I64);
+      IRTemp d1 = newTemp(Ity_I64);
+      IRTemp d0 = newTemp(Ity_I64);
+      IRTemp sV = newTemp(Ity_V128);
+      IRTemp dV = newTemp(Ity_V128);
+      Bool   hi = insn[1] == 0x15;
+
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  nameXMMReg(eregOfRM(modrm)),
+                                  nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  dis_buf,
+                                  nameXMMReg(gregOfRM(modrm)));
+      }
+
+      assign( d1, unop(Iop_128HIto64, mkexpr(dV)) );
+      assign( d0, unop(Iop_128to64,   mkexpr(dV)) );
+      assign( s1, unop(Iop_128HIto64, mkexpr(sV)) );
+      assign( s0, unop(Iop_128to64,   mkexpr(sV)) );
+
+      if (hi) {
+         putXMMReg( gregOfRM(modrm), 
+                    binop(Iop_64HLto128, mkexpr(s1), mkexpr(d1)) );
+      } else {
+         putXMMReg( gregOfRM(modrm), 
+                    binop(Iop_64HLto128, mkexpr(s0), mkexpr(d0)) );
+      }
+
+      goto decode_success;
+   }
+
+   /* 66 0F 57 = XORPD -- G = G and E */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x57) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorpd", Iop_Xor128 );
+      goto decode_success;
+   }
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

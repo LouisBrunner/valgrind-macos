@@ -388,6 +388,7 @@ typedef
       Iop_32Uto128,
       Iop_64Uto128,
       Iop_Set128lo32,
+      Iop_Set128lo64,
       /* 128 -> 32 bit unpack */
       //Iop_128W3to32,   // :: V128 -> I32, bits 127-96
       //Iop_128W2to32,   // :: V128 -> I32, bits 95-64

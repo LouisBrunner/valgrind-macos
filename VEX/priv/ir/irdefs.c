@@ -618,6 +618,17 @@ IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2,
    vec[4] = NULL;
    return vec;
 }
+IRExpr** mkIRExprVec_5 ( IRExpr* arg1, IRExpr* arg2, 
+                         IRExpr* arg3, IRExpr* arg4, IRExpr* arg5 ) {
+   IRExpr** vec = LibVEX_Alloc(6 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = arg3;
+   vec[3] = arg4;
+   vec[4] = arg5;
+   vec[5] = NULL;
+   return vec;
+}
 
 
 /* Constructors -- IRDirty */

@@ -108,24 +108,6 @@ typedef
 static VgWaitedOnFd vg_waiting_fds[VG_N_WAITING_FDS];
 
 
-
-typedef
-   struct {
-      /* Is this slot in use, or free? */
-      Bool in_use;
-      /* When == 0, indicated not locked.
-         When > 0, number of times it has been locked by the owner. */
-      UInt count; 
-      /* if count > 0, owner indicates who by. */
-      ThreadId owner;
-      /* True if a recursive mutex.  When False, count must never
-         exceed 1. */
-      Bool is_rec;
-   }
-   VgMutex;
-
-static VgMutex vg_mutexes[VG_N_MUTEXES];
-
 /* Forwards */
 static void do_nontrivial_clientreq ( ThreadId tid );
 
@@ -133,6 +115,16 @@ static void do_nontrivial_clientreq ( ThreadId tid );
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
+
+static __inline__
+Bool is_valid_tid ( ThreadId tid )
+{
+   /* tid is unsigned, hence no < 0 test. */
+   if (tid >= VG_N_THREADS) return False;
+   if (vg_threads[tid].status == VgTs_Empty) return False;
+   return True;
+}
+
 
 /* For constructing error messages only: try and identify a thread
    whose stack this address currently falls within, or return
@@ -325,22 +317,6 @@ ThreadId VG_(get_current_tid) ( void )
 }
 
 
-/* Find an unused VgMutex record. */
-static
-MutexId vg_alloc_VgMutex ( void )
-{
-   Int i;
-   for (i = 0; i < VG_N_MUTEXES; i++) {
-      if (!vg_mutexes[i].in_use)
-         return i;
-   }
-   VG_(printf)("vg_alloc_VgMutex: no free slots available\n");
-   VG_(printf)("Increase VG_N_MUTEXES, rebuild and try again.\n");
-   VG_(panic)("VG_N_MUTEXES is too low");
-   /*NOTREACHED*/
-}
-
-
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
 __inline__
@@ -516,9 +492,6 @@ void VG_(scheduler_init) ( void )
    for (i = 0; i < VG_N_WAITING_FDS; i++)
       vg_waiting_fds[i].fd = -1; /* not in use */
 
-   for (i = 0; i < VG_N_MUTEXES; i++)
-      vg_mutexes[i].in_use = False;
-
    /* Assert this is thread zero, which has certain magic
       properties. */
    tid_main = vg_alloc_ThreadState();
@@ -526,6 +499,7 @@ void VG_(scheduler_init) ( void )
 
    vg_threads[tid_main].status      = VgTs_Runnable;
    vg_threads[tid_main].joiner      = VG_INVALID_THREADID;
+   vg_threads[tid_main].q_next      = VG_INVALID_THREADID;
    vg_threads[tid_main].retval      = NULL; /* not important */
    vg_threads[tid_main].stack_highest_word 
       = vg_threads[tid_main].m_esp /* -4  ??? */;
@@ -1286,6 +1260,10 @@ VgSchedReturnCode VG_(scheduler) ( void )
 */
 
 
+/* -----------------------------------------------------------
+   Thread CREATION, JOINAGE and CANCELLATION.
+   -------------------------------------------------------- */
+
 static
 void do_pthread_cancel ( ThreadId  tid_canceller,
                          pthread_t tid_cancellee )
@@ -1522,15 +1500,36 @@ void do_pthread_create ( ThreadId parent_tid,
    // ***** CHECK *thread is writable
    *thread = (pthread_t)tid;
 
-   /* return zero */
+   vg_threads[tid].q_next = VG_INVALID_THREADID;
    vg_threads[tid].joiner = VG_INVALID_THREADID;
    vg_threads[tid].status = VgTs_Runnable;
+
+   /* return zero */
    vg_threads[tid].m_edx  = 0; /* success */
 }
 
 
-/* Horrible hacks to do with pthread_mutex_t: the real pthread_mutex_t 
-   is a struct with at least 5 words:
+/* -----------------------------------------------------------
+   MUTEXes
+   -------------------------------------------------------- */
+
+/* Add a tid to the end of a queue threaded through the vg_threads
+   entries on the q_next fields. */
+static 
+void add_to_queue ( ThreadId q_start, ThreadId tid_to_add )
+{
+   vg_assert(is_valid_tid(q_start));
+   vg_assert(is_valid_tid(tid_to_add));
+   vg_assert(vg_threads[tid_to_add].q_next = VG_INVALID_THREADID);
+   while (vg_threads[q_start].q_next != VG_INVALID_THREADID) {
+      q_start = vg_threads[q_start].q_next;
+      vg_assert(is_valid_tid(q_start));
+   }
+   vg_threads[q_start].q_next = tid_to_add;
+}
+
+
+/* pthread_mutex_t is a struct with at 5 words:
       typedef struct
       {
         int __m_reserved;         -- Reserved for future use
@@ -1539,84 +1538,39 @@ void do_pthread_create ( ThreadId parent_tid,
         int __m_kind;      -- Mutex kind: fast, recursive or errcheck
         struct _pthread_fastlock __m_lock;  -- Underlying fast lock
       } pthread_mutex_t;
+
+   How we use it: __m_kind never changes and indicates whether or not
+   it is recursive.  __m_count indicates the lock count; if 0, the
+   mutex is not owned by anybody.  __m_owner has a ThreadId value
+   stuffed into it, but this is only meaningful if __m_count > 0,
+   since otherwise the mutex is actually unowned.
+
+   This is important to make the static initialisers work properly.
+   They set __m_reserved, __m_count and __m_owner to zero, and
+   __m_kind to the relevant kind.  The problem is that __m_owner == 0
+   is a valid ThreadId, but we distinguish the unowned case by
+   __m_count == 0 rather than __m_owner being some special value.
+
    Ours is just a single word, an index into vg_mutexes[].  
    For now I'll park it in the __m_reserved field.
 
-   Uninitialised mutexes (PTHREAD_MUTEX_INITIALIZER) all have
-   a zero __m_count field (see /usr/include/pthread.h).  So I'll
-   use zero to mean non-inited, and 1 to mean inited.
-
-   How convenient. 
-*/
-
-static
-void initialise_mutex ( ThreadId tid, 
-                        pthread_mutex_t *mutex )
-{
-   MutexId  mid;
-   Char     msg_buf[100];
-   Bool     is_rec;
-   /* vg_alloc_MutexId aborts if we can't allocate a mutex, for
-      whatever reason. */
-   mid = vg_alloc_VgMutex();
-   vg_mutexes[mid].in_use = True;
-   vg_mutexes[mid].count = 0;
-   vg_mutexes[mid].owner = VG_INVALID_THREADID; /* irrelevant */
-   is_rec = mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP;
-   vg_mutexes[mid].is_rec = is_rec;
-   vg_mutexes[mid].count  = 0;
-   mutex->__m_reserved = mid;
-   mutex->__m_count = 1; /* initialised */
-   if (VG_(clo_trace_pthread_level) >= 1) {
-      VG_(sprintf)(msg_buf, "(initialise mutex) (%p, %s) -> %d", 
-                            mutex, is_rec ? "RECURSIVE" : "NORMAL",
-                            mid );
-      print_pthread_event(tid, msg_buf);
-   }
-}
-
-/* Allocate a new MutexId and write it into *mutex.  Ideally take
-   notice of the attributes in *mutexattr.  */
-static
-void do_pthread_mutex_init ( ThreadId tid, 
-                             pthread_mutex_t *mutex, 
-                             const  pthread_mutexattr_t *mutexattr)
-{
-   Char     msg_buf[100];
-   /* Paranoia ... */
-   vg_assert(sizeof(pthread_mutex_t) >= sizeof(UInt));
-
-   if (mutexattr) 
-      mutex->__m_kind = mutexattr->__mutexkind;
-   initialise_mutex(tid, mutex);
-
-   if (VG_(clo_trace_pthread_level) >= 1) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_init (%p) -> %d", 
-                            mutex, mutex->__m_reserved );
-      print_pthread_event(tid, msg_buf);
-   }
-
-   /*
-   RETURN VALUE
-       pthread_mutex_init  always  returns 0. The other mutex functions 
-       return 0 on success and a non-zero error code on error.
-   */
-   /* THIS THREAD returns with 0. */
-   vg_threads[tid].m_edx = 0;
-}
+   We don't have to deal with mutex initialisation; the client side
+   deals with that for us.  */
 
 
 static
 void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
 {
-   MutexId  mid;
-   Char     msg_buf[100];
+   Char msg_buf[100];
 
-   /* *mutex contains the MutexId, or one of the magic values
-      PTHREAD_*MUTEX_INITIALIZER*, indicating we need to initialise it
-      now.  See comment(s) above re use of __m_count to indicated 
-      initialisation status.
-   */
+   if (VG_(clo_trace_pthread_level) >= 2) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p", mutex );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   /* Paranoia ... */
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
 
    /* POSIX doesn't mandate this, but for sanity ... */
    if (mutex == NULL) {
@@ -1624,54 +1578,46 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       return;
    }
 
-   if (mutex->__m_count == 0) {
-      /* The mutex->__m_kind will have been set by the static
-         initialisation. */
-      initialise_mutex(tid, mutex);
+   /* More paranoia ... */
+   switch (mutex->__m_kind) {
+      case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_RECURSIVE_NP:
+      case PTHREAD_MUTEX_ERRORCHECK_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+         if (mutex->__m_count >= 0) break;
+         /* else fall thru */
+      default:
+         vg_threads[tid].m_edx = EINVAL;
+         return;
    }
 
-   mid = mutex->__m_reserved;
-   if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
-      vg_threads[tid].m_edx = EINVAL;
-      return;
-   }
+   if (mutex->__m_count > 0) {
 
-   if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d (%p)", 
-                            mid, mutex );
-      print_pthread_event(tid, msg_buf);
-   }
-
-   /* Assert initialised. */
-   vg_assert(mutex->__m_count == 1);
-
-   /* Assume tid valid. */
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
-
-   if (vg_mutexes[mid].count > 0) {
+      vg_assert(is_valid_tid((ThreadId)mutex->__m_owner));
 
       /* Someone has it already. */
-      if (vg_mutexes[mid].owner == tid) {
+      if ((ThreadId)mutex->__m_owner == tid) {
          /* It's locked -- by me! */
-         if (vg_mutexes[mid].is_rec) {
+         if (mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP) {
             /* return 0 (success). */
-            vg_mutexes[mid].count++;
+            mutex->__m_count++;
             vg_threads[tid].m_edx = 0;
-	    VG_(printf)("!!!!!! tid %d, mutex %d -> locked %d\n", 
-                        tid, mid, vg_mutexes[mid].count);
+	    VG_(printf)("!!!!!! tid %d, mutex %p -> locked %d\n", 
+                        tid, mutex, mutex->__m_count);
             return;
          } else {
             vg_threads[tid].m_edx = EDEADLK;
             return;
          }
       } else {
-         /* Someone else has it; we have to wait. */
+         /* Someone else has it; we have to wait.  Add ourselves to
+            the end of the list of threads waiting for this mutex. */
          vg_threads[tid].status = VgTs_WaitMX;
-         vg_threads[tid].waited_on_mid = mid;
+         add_to_queue((ThreadId)mutex->__m_owner, tid);
          /* No assignment to %EDX, since we're blocking. */
          if (VG_(clo_trace_pthread_level) >= 1) {
-            VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: BLOCK", 
-                                  mid );
+            VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: BLOCK", 
+                                  mutex );
             print_pthread_event(tid, msg_buf);
          }
          return;
@@ -1679,8 +1625,9 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
 
    } else {
       /* We get it! [for the first time]. */
-      vg_mutexes[mid].count = 1;
-      vg_mutexes[mid].owner = tid;
+      mutex->__m_count = 1;
+      mutex->__m_owner = (_pthread_descr)tid;
+      vg_threads[tid].q_next = VG_INVALID_THREADID;
       /* return 0 (success). */
       vg_threads[tid].m_edx = 0;
    }
@@ -1692,77 +1639,79 @@ static
 void do_pthread_mutex_unlock ( ThreadId tid,
                                pthread_mutex_t *mutex )
 {
-   MutexId  mid;
    Int      i;
    Char     msg_buf[100];
 
-   if (mutex == NULL 
-       || mutex->__m_count != 1) {
-      vg_threads[tid].m_edx = EINVAL;
-      return;
-   }
-
-   mid = mutex->__m_reserved;
-   if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
-      vg_threads[tid].m_edx = EINVAL;
-      return;
-   }
-
    if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_unlock %d (%p)", 
-                            mid, mutex );
+      VG_(sprintf)(msg_buf, "pthread_mutex_unlock %p", mutex );
       print_pthread_event(tid, msg_buf);
    }
 
-   /* Assume tid valid */
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
+   /* Paranoia ... */
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   if (mutex == NULL) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+
+   /* More paranoia ... */
+   switch (mutex->__m_kind) {
+      case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_RECURSIVE_NP:
+      case PTHREAD_MUTEX_ERRORCHECK_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+         if (mutex->__m_count >= 0) break;
+         /* else fall thru */
+      default:
+         vg_threads[tid].m_edx = EINVAL;
+         return;
+   }
 
    /* Barf if we don't currently hold the mutex. */
-   if (vg_mutexes[mid].count == 0 /* nobody holds it */
-       || vg_mutexes[mid].owner != tid /* we don't hold it */) {
+   if (mutex->__m_count == 0 /* nobody holds it */
+       || (ThreadId)mutex->__m_owner != tid /* we don't hold it */) {
       vg_threads[tid].m_edx = EPERM;
       return;
    }
 
    /* If it's a multiply-locked recursive mutex, just decrement the
       lock count and return. */
-   if (vg_mutexes[mid].count > 1) {
-      vg_assert(vg_mutexes[mid].is_rec);
-      vg_mutexes[mid].count --;
+   if (mutex->__m_count > 1) {
+      vg_assert(mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP);
+      mutex->__m_count --;
       vg_threads[tid].m_edx = 0; /* success */
       return;
    }
 
-   /* Now we're sure mid is locked exactly once, and by the thread who
+   /* Now we're sure it is locked exactly once, and by the thread who
       is now doing an unlock on it.  */
-   vg_assert(vg_mutexes[mid].count == 1);
+   vg_assert(mutex->__m_count == 1);
 
-   /* Find some arbitrary thread waiting on this mutex, and make it
-      runnable.  If none are waiting, mark the mutex as not held. */
-   for (i = 0; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status == VgTs_Empty) 
-         continue;
-      if (vg_threads[i].status == VgTs_WaitMX 
-          && vg_threads[i].waited_on_mid == mid)
-         break;
-   }
+   /* Hand ownership of the mutex to the next in the queue waiting for
+      it.  This queue starts from our .q_next field.  If none are
+      waiting, mark the mutex as not held. */
 
-   vg_assert(i <= VG_N_THREADS);
-   if (i == VG_N_THREADS) {
+   if (vg_threads[tid].q_next == VG_INVALID_THREADID) {
       /* Nobody else is waiting on it. */
-      vg_mutexes[mid].count = 0;
+      mutex->__m_count = 0;
    } else {
       /* Notionally transfer the hold to thread i, whose
          pthread_mutex_lock() call now returns with 0 (success). */
       /* The .count is already == 1. */
-      vg_mutexes[mid].owner = i;
+      i = vg_threads[tid].q_next;
+      vg_assert(is_valid_tid(i));
+      mutex->__m_owner = (_pthread_descr)i;
       vg_threads[i].status = VgTs_Runnable;
       vg_threads[i].m_edx = 0; /* pth_lock() success */
+      /* remove Me (tid) from the queue for the mutex */
+      vg_threads[tid].q_next = VG_INVALID_THREADID;
 
       if (VG_(clo_trace_pthread_level) >= 1) {
-         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: RESUME", 
-                               mid );
-         print_pthread_event(tid, msg_buf);
+         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: RESUME", 
+                               mutex );
+         print_pthread_event(i, msg_buf);
       }
    }
 
@@ -1771,44 +1720,6 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    vg_threads[tid].m_edx = 0; /* Success. */
 }
 
-
-static void do_pthread_mutex_destroy ( ThreadId tid,
-                                       pthread_mutex_t *mutex )
-{
-   MutexId  mid;
-   Char     msg_buf[100];
-
-   if (mutex == NULL 
-       || mutex->__m_count != 1) {
-      vg_threads[tid].m_edx = EINVAL;
-      return;
-   }
-
-   mid = mutex->__m_reserved;
-   if (mid < 0 || mid >= VG_N_MUTEXES || !vg_mutexes[mid].in_use) {
-      vg_threads[tid].m_edx = EINVAL;
-      return;
-   }
-
-   if (VG_(clo_trace_pthread_level) >= 1) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_destroy %d (%p)", 
-                            mid, mutex );
-      print_pthread_event(tid, msg_buf);
-   }
-
-   /* Assume tid valid */
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
-
-   /* Barf if the mutex is currently held. */
-   if (vg_mutexes[mid].count > 0) {
-      vg_threads[tid].m_edx = EBUSY;
-      return;
-   }
-
-   mutex->__m_count = 0; /* uninitialised */
-   vg_mutexes[mid].in_use = False;
-   vg_threads[tid].m_edx = 0;
-}
 
 
 /* vthread tid is returning from a signal handler; modify its
@@ -1876,22 +1787,12 @@ void do_nontrivial_clientreq ( ThreadId tid )
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
          break;
 
-      case VG_USERREQ__PTHREAD_MUTEX_INIT:
-         do_pthread_mutex_init( tid, 
-                                (pthread_mutex_t *)(arg[1]),
-                                (pthread_mutexattr_t *)(arg[2]) );
-         break;
-
       case VG_USERREQ__PTHREAD_MUTEX_LOCK:
          do_pthread_mutex_lock( tid, (pthread_mutex_t *)(arg[1]) );
          break;
 
       case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
          do_pthread_mutex_unlock( tid, (pthread_mutex_t *)(arg[1]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_MUTEX_DESTROY:
-         do_pthread_mutex_destroy( tid, (pthread_mutex_t *)(arg[1]) );
          break;
 
       case VG_USERREQ__PTHREAD_CANCEL:

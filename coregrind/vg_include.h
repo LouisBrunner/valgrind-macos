@@ -126,16 +126,13 @@
    scheduler algorithms is surely O(N^2) in the number of threads,
    since that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 20
+#define VG_N_THREADS 10
 
 /* Number of file descriptors that can simultaneously be waited on for
    I/O to complete.  Perhaps this should be the same as VG_N_THREADS
    (surely a thread can't wait on more than one fd at once?.  Who
    knows.) */
 #define VG_N_WAITING_FDS 10
-
-/* Maximum number of mutexes allowed. */
-#define VG_N_MUTEXES 30
 
 
 /* ---------------------------------------------------------------------
@@ -400,10 +397,8 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_CREATE          0x3001
 #define VG_USERREQ__PTHREAD_JOIN            0x3002
 #define VG_USERREQ__PTHREAD_GET_THREADID    0x3003
-#define VG_USERREQ__PTHREAD_MUTEX_INIT      0x3004
 #define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3005
 #define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3006
-#define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3007
 #define VG_USERREQ__PTHREAD_CANCEL          0x3008
 
 /* Cosmetic ... */
@@ -437,11 +432,6 @@ typedef
    UInt 
    ThreadId;
 
-/* MutexIds are simply indices into the vg_mutexes[] array. */
-typedef
-   UInt
-   MutexId;
-
 
 #define VG_INVALID_THREADID ((ThreadId)(-1))
 
@@ -464,7 +454,7 @@ typedef
          that we don't try and allocate or deallocate its stack.  For
          convenience of generating error message, we also put the
          ThreadId in this tid field, but be aware that it should
-         ALWAYS just == the index in vg_threads[]. */
+         ALWAYS == the index in vg_threads[]. */
       ThreadId tid;
 
       /* Current scheduling status. */
@@ -474,8 +464,10 @@ typedef
          VG_INVALID_THREADID if no one asked to join yet. */
       ThreadId joiner;
 
-      /* Identity of mutex we are waiting on, if .status == WaitMX. */
-      MutexId waited_on_mid;
+      /* Link to the next member of the queue of threads waiting on
+         the same mutex or condition variable.  Only meaningful if
+         .status == WaitMX or WaitCV. */
+      ThreadId q_next;
 
       /* If VgTs_Sleeping, this is when we should wake up. */
       ULong awaken_at;

@@ -61,7 +61,7 @@ void myexit ( int arg )
 
 /* Give up without using printf etc, since they seem to give
    segfaults. */
-static
+static __inline__
 void ensure_valgrind ( char* caller )
 {
    char* str;
@@ -223,18 +223,18 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 int pthread_mutex_init(pthread_mutex_t *mutex, 
                        const  pthread_mutexattr_t *mutexattr)
 {
-   int res;
-   ensure_valgrind("pthread_mutex_init");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_MUTEX_INIT,
-                           mutex, mutexattr, 0, 0);
-   return res;
+   mutex->__m_count = 0;
+   mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
+   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
+   if (mutexattr)
+      mutex->__m_kind = mutexattr->__mutexkind;
+   return 0;
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = 5;
+   static int moans = 3;
    if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_lock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
@@ -250,7 +250,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = 5;
+   static int moans = 3;
    if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_unlock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
@@ -265,18 +265,11 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
 
 int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
-   int res;
-   static int moans = 5;
-   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
-      char* str = "pthread_mutex_destroy-NOT-INSIDE-VALGRIND\n";
-      write(2, str, strlen(str));
-      return 0;
-   } else {
-      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                              VG_USERREQ__PTHREAD_MUTEX_DESTROY,
-                              mutex, 0, 0, 0);
-   }
-   return res;
+   /* Valgrind doesn't hold any resources on behalf of the mutex, so no
+      need to involve it. */
+    if (mutex->__m_count > 0)
+       return EBUSY;
+    return 0;
 }
 
 
@@ -703,7 +696,7 @@ int select ( int n,
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec = 0;
-      nanosleep_interval.tv_nsec = 40 * 1000 * 1000; /* 40 milliseconds */
+      nanosleep_interval.tv_nsec = 20 * 1000 * 1000; /* 20 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

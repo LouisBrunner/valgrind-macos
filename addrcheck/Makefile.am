@@ -78,7 +78,7 @@ MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_clientmalloc.o: vg_clientmalloc.c $(MANUAL_DEPS)
+vg_clientfuncs.o: vg_clientfuncs.c $(MANUAL_DEPS)
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
 valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)

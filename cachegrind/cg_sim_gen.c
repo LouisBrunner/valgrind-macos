@@ -106,7 +106,7 @@ static void print_cache(cache_t2* c)
 
 #define CACHESIM(L, MISS_TREATMENT)                                         \
 /* The cache and associated bits and pieces. */                             \
-cache_t2 L;                                                                 \
+static cache_t2 L;                                                          \
                                                                             \
 static void cachesim_##L##_initcache(cache_t config)                        \
 {                                                                           \

@@ -727,7 +727,7 @@ static void mc_post_regs_write_init ( void )
       VG_(set_shadow_archreg)( i, VGM_WORD_VALID );
    VG_(set_shadow_eflags)( VGM_EFLAGS_VALID );
 #else
-   VG_(printf)("mc_post_regs_write_init()\n");
+   //VG_(printf)("mc_post_regs_write_init()\n");
 #endif
 }
 

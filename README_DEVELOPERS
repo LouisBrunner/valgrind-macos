@@ -1,6 +1,4 @@
 
-5 May 2003
-
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To run Valgrind without having to install it, run coregrind/valgrind (prefix

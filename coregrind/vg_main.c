@@ -473,8 +473,8 @@ static void scan_auxv(void)
 	 break;
       }
 
-   if ( ! (1|2) ) {
-      fprintf(stderr, "stage2 must be launched by stage1\n");
+   if ( found != (1|2) ) {
+      fprintf(stderr, "valgrind: stage2 must be launched by stage1\n");
       exit(127);
    }
 }

@@ -849,7 +849,6 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 UInt off, sz;
 	 SymType *fieldty;
 
-         //	 end = templ_name(p);
          end = SKIPPAST(p, ':', "method name") - 1;
 
 	 if (end[1] == ':') {
@@ -1031,7 +1030,6 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       VG_(printf)("initSym(si=%p, tab=%p, sym=%p, kind=%d, name=%p \"%s\", val=%d)\n",
 		  si, si->stab_typetab, sym, kind, name, name, val);
 
-   //   ty = templ_name(name);
    ty = VG_(strchr)(name, ':');
    while (ty && ty[1] == ':') ty = VG_(strchr)(ty + 2, ':');
 

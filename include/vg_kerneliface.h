@@ -671,8 +671,41 @@ struct vki_sockaddr {
   char            sa_data[14];   /* Address data. */
 };
 
+/* statfs structs */
+/*
+ * bits/statfs.h
+ */
 
-#endif /* ndef __VG_KERNELIFACE_H */
+struct statfs {
+        unsigned int f_type;
+        unsigned int f_bsize;
+        unsigned int f_blocks;
+        unsigned int f_bfree;
+        unsigned int f_bavail;
+        unsigned int f_files;
+        unsigned int f_ffree;
+        int f_fsid[ 2 ];
+        unsigned int f_namelen;
+        unsigned int f_frsize;
+        unsigned int f_spare[5];
+};
+
+struct statfs64 {
+        unsigned int f_type;
+        unsigned int f_bsize;
+        unsigned long long f_blocks;
+        unsigned long long f_bfree;
+        unsigned long long f_bavail;
+        unsigned long long f_files;
+        unsigned long long f_ffree;
+        int f_fsid[ 2 ];
+        unsigned int f_namelen;
+        unsigned int f_frsize;
+        unsigned int f_spare[5];
+};
+
+
+#endif /*  __VG_KERNELIFACE_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                         vg_kerneliface.h ---*/

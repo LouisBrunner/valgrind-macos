@@ -90,9 +90,6 @@
 /* 2.0 at least, for gid_t and loff_t */
 #include <sys/types.h>
 
-#include <asm/statfs.h>
-#undef statfs
-
 #include <sys/sysinfo.h>
 
 #include <sys/poll.h>

@@ -61,6 +61,7 @@ do
     --leak-resolution=high) vgopts="$vgopts $arg"; shift;;
     --sloppy-malloc=no)     vgopts="$vgopts $arg"; shift;;
     --sloppy-malloc=yes)    vgopts="$vgopts $arg"; shift;;
+    --alignment=*)          vgopts="$vgopts $arg"; shift;;
     --trace-children=no)    vgopts="$vgopts $arg"; shift;;
     --trace-children=yes)   vgopts="$vgopts $arg"; shift;;
     --workaround-gcc296-bugs=no)    vgopts="$vgopts $arg"; shift;;
@@ -130,6 +131,7 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo "                              amount of bt merging in leak check [low]"
    echo "    --show-reachable=no|yes   show reachable blocks in leak check? [no]"
    echo "    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]"
+   echo "    --alignment=<number>      set minimum alignment of allocations [4]"
    echo "    --trace-children=no|yes   Valgrind-ise child processes? [no]"
    echo "    --logfile-fd=<number>     file descriptor for messages [2=stderr]"
    echo "    --freelist-vol=<number>   volume of freed blocks queue [1000000]"

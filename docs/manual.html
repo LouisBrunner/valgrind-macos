@@ -461,6 +461,17 @@ follows:
       maximum portability.
       </li><br><p>
 
+  <li><code>--alignment=&lt;number></code> [default: 4]<br> <p>By
+      default valgrind's <code>malloc</code>, <code>realloc</code>,
+      etc, return 4-byte aligned addresses.  These are suitable for
+      any accesses on x86 processors. 
+      Some programs might however assume that <code>malloc</code> et
+      al return 8- or more aligned memory.
+      These programs are broken and should be fixed, but
+      if this is impossible for whatever reason the alignment can be
+      increased using this parameter.  The supplied value must be
+      between 4 and 4096 inclusive, and must be a power of two.</li><br><p>
+
   <li><code>--trace-children=no</code> [the default]</br>
       <code>--trace-children=yes</code>
       <p>When enabled, Valgrind will trace into child processes.  This

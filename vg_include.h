@@ -239,6 +239,9 @@ extern Int   VG_(clo_leak_resolution);
 /* Round malloc sizes upwards to integral number of words? default:
    NO */
 extern Bool  VG_(clo_sloppy_malloc);
+/* Minimum alignment in functions that don't specify alignment explicitly.
+   default: 0, i.e. use default of the machine (== 4) */
+extern Int   VG_(clo_alignment);
 /* Allow loads from partially-valid addresses?  default: YES */
 extern Bool  VG_(clo_partial_loads_ok);
 /* Simulate child processes? default: NO */

@@ -223,7 +223,8 @@ static ShadowChunk* client_malloc_shadow ( ThreadState* tst,
                align, size );
 #  endif
 
-   if (align == 0)
+   vg_assert(align >= 4);
+   if (align == 4)
       p = (Addr)VG_(malloc)(VG_AR_CLIENT, size);
    else
       p = (Addr)VG_(malloc_aligned)(VG_AR_CLIENT, align, size);
@@ -271,7 +272,7 @@ void* VG_(client_malloc) ( ThreadState* tst, UInt size, VgAllocKind kind )
       return VG_(malloc) ( VG_AR_CLIENT, size );
    }
 
-   sc = client_malloc_shadow ( tst, 0, size, kind );
+   sc = client_malloc_shadow ( tst, VG_(clo_alignment), size, kind );
    VGP_POPCC;
    return (void*)(sc->data);
 }
@@ -466,7 +467,8 @@ void* VG_(client_realloc) ( ThreadState* tst, void* ptrV, UInt size_new )
       return ptrV;
    } else {
       /* new size is bigger */
-      sc_new = client_malloc_shadow ( tst, 0, size_new, Vg_AllocMalloc );
+      sc_new = client_malloc_shadow ( tst, VG_(clo_alignment), 
+                                      size_new, Vg_AllocMalloc );
       for (i = 0; i < sc->size; i++)
          ((UChar*)(sc_new->data))[i] = ((UChar*)(sc->data))[i];
       VGM_(copy_address_range_perms) ( 

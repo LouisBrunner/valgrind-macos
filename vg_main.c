@@ -409,6 +409,7 @@ Bool   VG_(clo_leak_check);
 Bool   VG_(clo_show_reachable);
 Int    VG_(clo_leak_resolution);
 Bool   VG_(clo_sloppy_malloc);
+Int    VG_(clo_alignment);
 Bool   VG_(clo_partial_loads_ok);
 Bool   VG_(clo_trace_children);
 Int    VG_(clo_logfile_fd);
@@ -543,6 +544,7 @@ static void process_cmd_line_options ( void )
    VG_(clo_show_reachable)   = False;
    VG_(clo_leak_resolution)  = 2;
    VG_(clo_sloppy_malloc)    = False;
+   VG_(clo_alignment)        = 4;
    VG_(clo_partial_loads_ok) = True;
    VG_(clo_trace_children)   = False;
    VG_(clo_logfile_fd)       = 2; /* stderr */
@@ -757,6 +759,9 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--sloppy-malloc=no"))
          VG_(clo_sloppy_malloc) = False;
 
+      else if (STREQN(12, argv[i], "--alignment="))
+         VG_(clo_alignment) = (Int)VG_(atoll)(&argv[i][12]);
+
       else if (STREQ(argv[i], "--trace-children=yes"))
          VG_(clo_trace_children) = True;
       else if (STREQ(argv[i], "--trace-children=no"))
@@ -888,6 +893,16 @@ static void process_cmd_line_options ( void )
 
    if (VG_(clo_verbosity < 0))
       VG_(clo_verbosity) = 0;
+
+   if (VG_(clo_alignment) < 4 
+       || VG_(clo_alignment) > 4096
+       || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, 
+         "Invalid --alignment= setting.  "
+         "Should be a power of 2, >= 4, <= 4096.");
+      bad_option("--alignment");
+   }
 
    if (VG_(clo_GDB_attach) && VG_(clo_trace_children)) {
       VG_(message)(Vg_UserMsg, "");

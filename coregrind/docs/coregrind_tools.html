@@ -347,10 +347,10 @@ In what follows, all filenames are relative to Valgrind's top-level directory
   <li>Make a new directory <code>foobar/</code> which will hold the tool.
   </li><p>
 
-  <li>Copy <code>example/Makefile.am</code> into <code>foobar/</code>.
+  <li>Copy <code>none/Makefile.am</code> into <code>foobar/</code>.
       Edit it by replacing all occurrences of the string
-      ``<code>example</code>'' with ``<code>foobar</code>'' and the one
-      occurrence of the string ``<code>ex_</code>'' with ``<code>fb_</code>''.
+      ``<code>none</code>'' with ``<code>foobar</code>'' and the one
+      occurrence of the string ``<code>nl_</code>'' with ``<code>fb_</code>''.
       It might be worth trying to understand this file, at least a little;  you
       might have to do more complicated things with it later on.  In
       particular, the name of the <code>vgskin_foobar_so_SOURCES</code> variable
@@ -358,9 +358,9 @@ In what follows, all filenames are relative to Valgrind's top-level directory
       name must be passed to the <code>--tool</code> option to use the tool.
   </li><p>
 
-  <li>Copy <code>example/ex_main.c</code> into
+  <li>Copy <code>none/nl_main.c</code> into
       <code>foobar/</code>, renaming it as <code>fb_main.c</code>.
-      Edit it by changing the five lines in <code>SK_(pre_clo_init)()</code>
+      Edit it by changing the lines in <code>SK_(pre_clo_init)()</code>
       to something appropriate for the tool.  These fields are used in the
       startup message, except for <code>bug_reports_to</code> which is used
       if a tool assertion fails.

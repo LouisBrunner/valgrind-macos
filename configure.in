@@ -90,12 +90,12 @@ kernel=`uname -r`
 case "${kernel}" in
      2.4.*) 
 	    AC_MSG_RESULT([2.4 family (${kernel})])
-	    AC_DEFINE(KERNEL_2_4)
+	    AC_DEFINE([KERNEL_2_4], 1, [Define to 1 if you're using Linux 2.4.x])
 	    ;;
 
      2.2.*) 
 	    AC_MSG_RESULT([2.2 family (${kernel})])
-	    AC_DEFINE(KERNEL_2_2)
+	    AC_DEFINE([KERNEL_2_2], 1, [Define to 1 if you're using Linux 2.2.x])
 	    ;;
 
      *) 
@@ -145,19 +145,19 @@ glibc="2.3")
 case "${glibc}" in
      2.1)
 	AC_MSG_RESULT(2.1 family)
-	AC_DEFINE(GLIBC_2_1)
+	AC_DEFINE([GLIBC_2_1], 1, [Define to 1 if you're using glibc 2.1.x])
 	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.1.supp"
 	;;
 
      2.2)
 	AC_MSG_RESULT(2.2 family)
-	AC_DEFINE(GLIBC_2_2)
+	AC_DEFINE([GLIBC_2_2], 1, [Define to 1 if you're using glibc 2.2.x])
 	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
 	;;
 
      2.3)
 	AC_MSG_RESULT(2.3 family)
-	AC_DEFINE(GLIBC_2_3)
+	AC_DEFINE([GLIBC_2_3], 1, [Define to 1 if you're using glibc 2.3.x])
 	## Use the same suppression for as for 2.2.
 	## This is a horrible hack that should be gotten
 	## rid of.  JRS, 20021007.
@@ -182,7 +182,7 @@ vg_have_sched_priority=no)
 ])
 AC_MSG_RESULT($vg_have_sched_priority)
 if test "$vg_have_sched_priority" = yes; then
-AC_DEFINE(HAVE_SCHED_PRIORITY)
+AC_DEFINE([HAVE_SCHED_PRIORITY], 1, [pthread / sched_priority exists])
 fi
 
 AC_MSG_CHECKING([whether nfds_t is defined])
@@ -195,7 +195,7 @@ vg_have_nfds_t=no)
 ])
 AC_MSG_RESULT($vg_have_nfds_t)
 if test "$vg_have_nfds_t" = yes; then
-AC_DEFINE(HAVE_NFDS_T)
+AC_DEFINE([HAVE_NFDS_T], 1, [nfds_t exists])
 fi
 
 # try to detect the XFree version
@@ -245,7 +245,7 @@ EOF
 
 	*version=4*) 
 	   AC_MSG_RESULT([XFree 4.x family])
-	   AC_DEFINE(XFREE_4)
+	   AC_DEFINE([XFREE_4], 1, [Define to 1 if you're using XFree 4.x])
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
 	   # haaaaaaack!
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
@@ -253,7 +253,7 @@ EOF
 
 	*version=3*) 
 	   AC_MSG_RESULT([XFree 3.x family])
-	   AC_DEFINE(XFREE_3)
+	   AC_DEFINE([XFREE_3], 1, [Define to 1 if you're using XFree86 3.x])
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
 	   # haaaaaaack!
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"

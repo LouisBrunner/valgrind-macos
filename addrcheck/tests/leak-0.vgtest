@@ -1,0 +1,2 @@
+prog: ../../memcheck/tests/leak-0
+stderr_filter: ../../memcheck/tests/filter_leak_check_size

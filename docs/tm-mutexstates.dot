@@ -1,0 +1,22 @@
+digraph mutex_states {
+	// States
+	free;
+	locked;
+	unlocking;
+	dead;
+
+	// Valid transitions
+	dead -> free		[ label="initialized" ];
+	free -> locked		[ label="locked" ];
+	locked -> unlocking	[ label="unlocked\nby owner" ];
+	unlocking -> free	[ label="unlock completed" ];
+	unlocking -> locked	[ label="lock changed owner" ];
+	free -> dead		[ label="destroyed" ];
+
+	// Bad transitions
+	dead -> locked		[ style=dotted, label="locked\nafter destroy" ];
+	dead -> free		[ style=dotted, label="unlocked\nafter destroy" ];
+	
+	locked -> free		[ style=dotted, label="unlocked\nby non-owner" ];
+	locked -> dead		[ style=dotted, label="destroyed\nwhile locked" ];
+}

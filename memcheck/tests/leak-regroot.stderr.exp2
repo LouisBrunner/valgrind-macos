@@ -1,0 +1,18 @@
+
+searching for pointers to 2 not-freed blocks.
+checked ... bytes.
+
+LEAK SUMMARY:
+   definitely lost: 0 bytes in 0 blocks.
+   indirectly lost: 0 bytes in 0 blocks.
+   possibly lost:   0 bytes in 0 blocks.
+   still reachable: 34 bytes in 2 blocks.
+        suppressed: 0 bytes in 0 blocks.
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --show-reachable=yes
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 2 allocs, 2 frees, 34 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

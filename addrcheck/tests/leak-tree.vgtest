@@ -1,0 +1,3 @@
+prog: ../../memcheck/tests/leak-tree
+vgopts: --leak-resolution=high
+stderr_filter: ../../memcheck/tests/filter_leak_check_size

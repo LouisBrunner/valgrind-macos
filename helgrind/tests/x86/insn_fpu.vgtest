@@ -1,0 +1,3 @@
+vgopts: -q
+prog: ../../../none/tests/x86/insn_fpu
+prereq: ../../../tests/cputest x86-fpu

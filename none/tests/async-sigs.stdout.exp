@@ -1,0 +1,8 @@
+testing: blocking=0 caught=11 fatal=7... PASSED
+testing: blocking=0 caught=11 fatal=12... PASSED
+testing: blocking=0 caught=10 fatal=7... PASSED
+testing: blocking=0 caught=10 fatal=12... PASSED
+testing: blocking=1 caught=11 fatal=7... PASSED
+testing: blocking=1 caught=11 fatal=12... PASSED
+testing: blocking=1 caught=10 fatal=7... PASSED
+testing: blocking=1 caught=10 fatal=12... PASSED

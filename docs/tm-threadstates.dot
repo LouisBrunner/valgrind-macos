@@ -1,0 +1,47 @@
+digraph thread_states {
+	// States
+	alive;
+	running;
+	wait_mutex;
+	wait_condvar;
+	wait_join;
+	zombie;
+	dead;
+
+	// Legitimate transitions
+	alive -> running;
+	dead -> alive			[ label="reused" ];
+
+	running -> wait_join		[ label="wait for another\nthread termination" ];
+	wait_join -> running		[ label="target thread\nterminates" ];
+
+	running -> zombie		[ label="non-detached thread\nterminates" ];
+	zombie -> dead			[ label="join completed" ];
+	running -> dead			[ label="detached thread\nterminates" ];
+
+	running -> wait_mutex		[ label="wait for mutex\nacquisition" ];
+	wait_mutex -> running		[ label="mutex\nacquired" ];
+	wait_mutex -> running		[ label="mutex\ngiven up" ];
+
+	running -> wait_condvar		[ label="wait for condition variable" ];
+	wait_condvar -> running		[ label="woken" ];
+
+	// How to handle bad actions
+	wait_mutex -> zombie		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_mutex -> dead		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_mutex -> wait_condvar	[ style=dotted, label="waiting for\nmultiple objects" ];
+	wait_mutex -> wait_join		[ style=dotted, label="waiting for\nmultiple objects" ];
+
+	wait_condvar -> zombie		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_condvar -> dead		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_condvar -> wait_mutex	[ style=dotted, label="waiting for\nmultiple objects" ];
+	wait_condvar -> wait_join	[ style=dotted, label="waiting for\nmultiple objects" ];
+
+	wait_join -> zombie		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_join -> dead		[ style=dotted, label="thread dies\nwaiting" ];
+	wait_join -> wait_condvar	[ style=dotted, label="waiting for\nmultiple objects" ];
+	wait_join -> wait_mutex		[ style=dotted, label="waiting for\nmultiple objects" ];
+
+	zombie -> running		[ style=dotted, label="unholy\nresurrection" ];
+	dead -> running			[ style=dotted, label="unholy\nresurrection" ];	
+}

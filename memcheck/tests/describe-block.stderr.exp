@@ -1,0 +1,15 @@
+
+Invalid write of size 1
+   at 0x........: main (describe-block.c:6)
+ Address 0x........ is 0 bytes inside a magic foople zone of size 4096 client-defined
+   at 0x........: main (describe-block.c:5)
+
+Process terminating with default action of signal 11 (SIGSEGV)
+ Access not within mapped region at address 0x........
+   at 0x........: main (describe-block.c:6)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

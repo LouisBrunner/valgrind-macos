@@ -1,0 +1,69 @@
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 1 allocs, 1 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+Unaddressable byte(s) found during client check request
+   at 0x........: test2 (addressable.c:48)
+   by 0x........: main (addressable.c:125)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Invalid write of size 1
+   at 0x........: test2 (addressable.c:51)
+   by 0x........: main (addressable.c:125)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Process terminating with default action of signal 11 (SIGSEGV)
+ Access not within mapped region at address 0x........
+   at 0x........: test2 (addressable.c:51)
+   by 0x........: main (addressable.c:125)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 24 bytes in 1 blocks.
+malloc/free: 1 allocs, 0 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 1 allocs, 1 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+
+Process terminating with default action of signal 11 (SIGSEGV)
+ Bad permissions for mapped region at address 0x........
+   at 0x........: test4 (addressable.c:74)
+   by 0x........: main (addressable.c:125)
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 24 bytes in 1 blocks.
+malloc/free: 1 allocs, 0 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+Uninitialised byte(s) found during client check request
+   at 0x........: test5 (addressable.c:85)
+   by 0x........: main (addressable.c:125)
+ Address 0x........ is 10 bytes inside a block of size 20480 client-defined
+   at 0x........: test5 (addressable.c:82)
+   by 0x........: main (addressable.c:125)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: test5 (addressable.c:91)
+   by 0x........: main (addressable.c:125)
+ Address 0x........ is 20 bytes inside a block of size 20480 client-defined
+   at 0x........: test5 (addressable.c:82)
+   by 0x........: main (addressable.c:125)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 1 allocs, 1 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 1 allocs, 1 frees, 24 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

@@ -1,0 +1,13 @@
+
+Test 1:   PASS
+Test 2:   PASS
+Test 3:   PASS
+Test 4:   PASS
+Test 5:   PASS
+Test 6:   PASS
+Test 7:   PASS
+Test 8:   PASS
+Test 9: disInstr: unhandled instruction bytes: 0x........ 0x........ 0x........ 0x........
+          at 0x........: test9 (faultstatus.c:127)
+  FAIL: expected signal 11, not 4
+

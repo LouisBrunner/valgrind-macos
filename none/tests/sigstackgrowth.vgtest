@@ -1,0 +1,2 @@
+prog: sigstackgrowth
+vgopts: --sanity-level=3

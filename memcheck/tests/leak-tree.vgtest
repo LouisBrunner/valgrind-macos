@@ -1,0 +1,3 @@
+prog: leak-tree
+vgopts: --leak-resolution=high
+stderr_filter: filter_leak_check_size

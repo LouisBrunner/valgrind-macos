@@ -1,0 +1,2 @@
+prog: stackgrowth
+vgopts: --sanity-level=3

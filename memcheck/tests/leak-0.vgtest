@@ -1,0 +1,2 @@
+prog: leak-0
+stderr_filter: filter_leak_check_size

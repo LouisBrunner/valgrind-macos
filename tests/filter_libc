@@ -1,0 +1,26 @@
+#! /usr/bin/perl -w
+
+use strict;
+
+my @libc_symbols = qw(__libc_start_main accept execve fcntl
+                      getsockname poll readv recvmsg
+                      socket socketpair syscall writev);
+
+my $libc_symbols = join("|", @libc_symbols);
+
+while (<>)
+{
+    s/ __getsockname / getsockname /;
+    s/ __sigaction / sigaction /;
+    s/ __GI___/ __/;
+    s/ __([a-z]*)_nocancel / $1 /;
+
+    s/\(in \/.*libc.*\)$/(in \/...libc...)/;
+    s/\(within \/.*libc.*\)$/(within \/...libc...)/;
+
+    s/($libc_symbols) \(.+\.[cS]:\d+\)$/$1 (in \/...libc...)/;
+
+    print;
+}
+
+exit 0;

@@ -1851,12 +1851,10 @@ void show_bb ( Addr eip_next )
 /*------------------------------------------------------------*/
 
 Bool  MC_(clo_avoid_strlen_errors)    = True;
-Bool  MC_(clo_cleanup)                = True;
 
 Bool TL_(process_cmd_line_option)(Char* arg)
 {
         VG_BOOL_CLO("--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
-   else VG_BOOL_CLO("--cleanup",             MC_(clo_cleanup))
    else
       return MAC_(process_common_cmd_line_option)(arg);
 

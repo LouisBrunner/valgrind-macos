@@ -654,7 +654,14 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
                uLiteral(cb, VGOFF_(cachesim_log_mem_instr));
             }
 
-            VG_(copyUInstr)(cb, u_in);
+            /* Strict INCEIP updating is required so each x86 instruction's
+             * UCode is clearly marked.  But once we're here, we've found the
+             * end of the x86 instruction and the INCEIP isn't needed any
+             * more -- EIP is never referenced during operation, because the
+             * x86 instr addresses have been squirreled away in the CC.  So
+             * chop it out to save time and space. */
+            if (INCEIP != u_in->opcode)
+               VG_(copyUInstr)(cb, u_in);
 
             /* Update BBCC_ptr, EIP, de-init read/write temps for next instr */
             BBCC_ptr   += CC_size; 

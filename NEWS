@@ -1,4 +1,25 @@
 
+Snapshot 20030725 (25 July 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fixes some minor problems in 20030716.
+
+- Fix bugs in overlap checking for strcpy/memcpy etc.
+
+- Do overlap checking with Addrcheck as well as Memcheck.
+
+- Fix this:
+      Memcheck: the `impossible' happened:
+      get_error_name: unexpected type
+
+- Install headers needed to compile new skins.
+
+- Remove leading spaces and
+  colon created by this mechanism in the LD_LIBRARY_PATH / LD_PRELOAD
+  passed to non-traced children.
+
+
+
 Snapshot 20030716 (16 July 2003)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

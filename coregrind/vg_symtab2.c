@@ -672,7 +672,9 @@ void read_symtab( SegInfo* si, Char* tab_name,
    Int   i;
    Addr  sym_addr;
    RiSym risym;
-   
+   Char* t0;
+   Char* name;
+
    if (o_strtab == NULL || o_symtab == NULL) {
       VG_(symerr)("object doesn't have a ");
       VG_(symerr)(tab_name);
@@ -784,10 +786,10 @@ void read_symtab( SegInfo* si, Char* tab_name,
       }
 
       /* If we reach here, it's an interesting symbol; record it. */
-      Char* t0 = sym->st_name 
+      t0 = sym->st_name 
                     ? (Char*)(o_strtab+sym->st_name) 
                     : (Char*)"NONAME";
-      Char *name = VG_(addStr) ( si, t0, -1 );
+      name = VG_(addStr) ( si, t0, -1 );
       vg_assert(name != NULL
                 /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
       vg_assert( (Int)sym->st_value >= 0);

@@ -2068,7 +2068,7 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
                            - 1;
          vassert((minoffP & 0xFFFF0000) == 0);
          vassert((maxoffP & 0xFFFF0000) == 0);
-         vassert(minoffP < maxoffP);
+         vassert(minoffP <= maxoffP);
          if (maxoffP < minoffG || maxoffG < minoffP) {
             /* we're OK; keep going */
             continue;
@@ -2086,7 +2086,7 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
          maxoffP = minoffP + descrP->nElems*sizeofIRType(descrP->elemTy) - 1;
          vassert((minoffP & 0xFFFF0000) == 0);
          vassert((maxoffP & 0xFFFF0000) == 0);
-         vassert(minoffP < maxoffP);
+         vassert(minoffP <= maxoffP);
          if (maxoffP < minoffG || maxoffG < minoffP) {
             /* This PutI definitely doesn't overlap.  Ignore it and
                keep going. */

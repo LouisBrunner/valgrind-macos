@@ -328,7 +328,7 @@ typedef enum MutexState {
 } MutexState;
 
 struct hg_mutex {
-   void              *mutexp;
+   Addr               mutexp;
    struct hg_mutex   *next;
 
    MutexState         state;	/* mutex state */
@@ -341,7 +341,7 @@ struct hg_mutex {
 
 static inline Int mutex_cmp(const hg_mutex_t *a, const hg_mutex_t *b)
 {
-   return (UInt)a->mutexp - (UInt)b->mutexp;
+   return a->mutexp - b->mutexp;
 }
 
 struct _LockSet {
@@ -356,7 +356,7 @@ static const LockSet *emptyset;
 /* Each one is an index into the lockset table. */
 static const LockSet *thread_locks[VG_N_THREADS];
 
-#define LOCKSET_HASH_SZ	1023
+#define LOCKSET_HASH_SZ	1021
 
 static LockSet *lockset_hash[LOCKSET_HASH_SZ];
 
@@ -616,7 +616,6 @@ void free_LockSet(LockSet *p)
    VG_(free)(p);
 }
 
-static __attribute__((unused))
 void pp_all_LockSets ( void )
 {
    Int i;
@@ -627,12 +626,13 @@ void pp_all_LockSets ( void )
       const LockSet *ls = lockset_hash[i];
       Bool first = True;
       
-      if (ls != NULL)
-	 buckets++;
-
       for(; ls != NULL; ls = ls->next) {
-	 VG_(printf)(first ? "[%4d] = " :
-		             "         ", i);
+	 if (first) {
+	    buckets++;
+	    VG_(printf)("[%4d] = ", i);
+	 } else
+	    VG_(printf)("         ");
+
 	 sets++;
 	 first = False;
 	 pp_LockSet(ls);
@@ -998,10 +998,44 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
 }
 
 /*------------------------------------------------------------*/
-/*--- Implementation of mutex structure.                   ---*/
+/*--- Shadow chunks info                                   ---*/
 /*------------------------------------------------------------*/
 
-#define M_MUTEX_HASHSZ	1023
+#define SHADOW_EXTRA	2
+
+static __inline__
+void set_sc_where( ShadowChunk* sc, ExeContext* ec )
+{
+   sc->skin_extra[0] = (UInt)ec;
+}
+
+static __inline__
+ExeContext *get_sc_where( ShadowChunk* sc )
+{
+   return (ExeContext*)sc->skin_extra[0];
+}
+
+static __inline__
+void set_sc_tid(ShadowChunk *sc, ThreadId tid)
+{
+   sc->skin_extra[1] = (UInt)tid;
+}
+
+static __inline__
+ThreadId get_sc_tid(ShadowChunk *sc)
+{
+   return (ThreadId)sc->skin_extra[1];
+}
+
+void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
+{
+   set_sc_where( sc, VG_(get_ExeContext) ( tst ) );
+   set_sc_tid(sc, VG_(get_tid_from_ThreadState(tst)));
+}
+
+/*------------------------------------------------------------*/
+/*--- Implementation of mutex structure.                   ---*/
+/*------------------------------------------------------------*/
 
 static UInt graph_mark;		/* current mark we're using for graph traversal */
 
@@ -1011,10 +1045,54 @@ static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
 				   const LockSet *lockset_holding, 
 				   const LockSet *lockset_prev);
 
+static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
+			    ThreadId tid, ThreadState *tst);
+
+#define M_MUTEX_HASHSZ	1021
+
 static hg_mutex_t *mutex_hash[M_MUTEX_HASHSZ];
+static UInt total_mutexes;
+
+static const Char *pp_MutexState(MutexState st)
+{
+   switch(st) {
+   case MxLocked:	return "Locked";
+   case MxUnlocked:	return "Unlocked";
+   case MxDead:		return "Dead";
+   case MxUnknown:	return "Unknown";
+   }
+   return "???";
+}
+
+static void pp_all_mutexes()
+{
+   Int i;
+   Int locks, buckets;
+
+   locks = buckets = 0;
+   for(i = 0; i < M_MUTEX_HASHSZ; i++) {
+      hg_mutex_t *mx;
+      Bool first = True;
+
+      for(mx = mutex_hash[i]; mx != NULL; mx = mx->next) {
+	 if (first) {
+	    buckets++;
+	    VG_(printf)("[%4d] = ", i);
+	 } else
+	    VG_(printf)("         ");
+	 locks++;
+	 first = False;
+	 VG_(printf)("%p [%8s] -> %p%(y\n",
+		     mx, pp_MutexState(mx->state), mx->mutexp, mx->mutexp);
+      }
+   }
+
+   VG_(printf)("%d locks in %d buckets (%d allocated)\n", 
+	       locks, buckets, total_mutexes);
+}
 
 /* find or create an hg_mutex for a program's mutex use */
-static hg_mutex_t *get_mutex(void *mutexp)
+static hg_mutex_t *get_mutex(Addr mutexp)
 {
    UInt bucket = ((UInt)mutexp) % M_MUTEX_HASHSZ;
    hg_mutex_t *mp;
@@ -1022,6 +1100,8 @@ static hg_mutex_t *get_mutex(void *mutexp)
    for(mp = mutex_hash[bucket]; mp != NULL; mp = mp->next)
       if (mp->mutexp == mutexp)
 	 return mp;
+
+   total_mutexes++;
 
    mp = VG_(malloc)(sizeof(*mp));
    mp->mutexp = mutexp;
@@ -1038,16 +1118,64 @@ static hg_mutex_t *get_mutex(void *mutexp)
    return mp;
 }
 
-static const char *pp_MutexState(MutexState st)
+/* Find all mutexes in a range of memory, and call the callback.
+   Remove the mutex from the hash if the callback returns True (mutex
+   structure itself is not freed, because it may be pointed to by a
+   LockSet. */
+static void find_mutex_range(Addr start, Addr end, Bool (*action)(hg_mutex_t *))
 {
-   switch(st) {
-   case MxLocked:	return "Locked";
-   case MxUnlocked:	return "Unlocked";
-   case MxDead:		return "Dead";
-   case MxUnknown:	return "Unknown";
+   UInt first = start % M_MUTEX_HASHSZ;
+   UInt last = (end+1) % M_MUTEX_HASHSZ;
+   UInt i;
+
+   /* Single pass over the hash table, looking for likely hashes */
+   for(i = first; i != last; ) {
+      hg_mutex_t *mx;
+      hg_mutex_t **prev = &mutex_hash[i];
+
+      for(mx = mutex_hash[i]; mx != NULL; prev = &mx->next, mx = mx->next) {
+	 if (mx->mutexp >= start && mx->mutexp < end && (*action)(mx))
+	     *prev = mx->next;
+      }
+      
+      if (++i == M_MUTEX_HASHSZ)
+	 i = 0;
    }
-   return "???";
 }
+
+#define N_FREED_CHUNKS	2
+static Int freechunkptr = 0;
+static ShadowChunk *freechunks[N_FREED_CHUNKS];
+
+/* They're freeing some memory; look to see if it contains any mutexes. */
+void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
+{
+   ThreadId tid = VG_(get_tid_from_ThreadState)(tst);
+   Addr start = sc->data;
+   Addr end = start + sc->size;
+
+   Bool deadmx(hg_mutex_t *mx) {
+      if (mx->state != MxDead)
+	 set_mutex_state(mx, MxDead, tid, tst);
+
+      return False;
+   }
+
+   set_sc_where(sc, VG_(get_ExeContext)(tst));
+
+   /* maintain a small window so that the error reporting machinery
+      knows about this memory */
+   if (freechunks[freechunkptr] != NULL)
+      VG_(free_ShadowChunk)(freechunks[freechunkptr]);
+   freechunks[freechunkptr] = sc;
+
+   if (++freechunkptr == N_FREED_CHUNKS)
+      freechunkptr = 0;
+
+   /* mark all mutexes in range dead */
+   find_mutex_range(start, end, deadmx);
+}
+
 
 #define MARK_LOOP	(graph_mark+0)
 #define MARK_DONE	(graph_mark+1)
@@ -1102,9 +1230,16 @@ static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
 		  pp_MutexState(mutex->state), pp_MutexState(state));
 
    if (mutex->state == MxDead) {
+      Char *str;
+
+      switch(state) {
+      case MxLocked:	str = "lock dead mutex"; break;
+      case MxUnlocked:	str = "unlock dead mutex"; break;
+      default:		str = "operate on dead mutex"; break;
+      }
+
       /* can't do anything legal to a destroyed mutex */
-      record_mutex_error(tid, mutex, 
-			 "operate on dead mutex", mutex->location);
+      record_mutex_error(tid, mutex, str, mutex->location);
       return;
    }
 
@@ -1156,6 +1291,18 @@ static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
       mutex->tid = VG_INVALID_THREADID;
       break;
 
+   case MxDead:
+      if (mutex->state == MxLocked) {
+	 /* forcably remove offending lock from thread's lockset  */
+	 sk_assert(ismember(thread_locks[mutex->tid], mutex));
+	 thread_locks[mutex->tid] = remove_LockSet(thread_locks[mutex->tid], mutex);
+	 mutex->tid = VG_INVALID_THREADID;
+
+	 record_mutex_error(tid, mutex,
+			    "free locked mutex", mutex->location);
+      }
+      break;
+
    default:
       break;
    }
@@ -1174,6 +1321,12 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
 {
    Addr end;
 
+   /* only clean up dead mutexes */
+   Bool cleanmx(hg_mutex_t *mx) {
+      return mx->state == MxDead;
+   }
+
+
 #  if DEBUG_MAKE_ACCESSES
    VG_(printf)("make_access: 0x%x, %u, status=%u\n", a, len, status);
 #  endif
@@ -1188,6 +1341,9 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
                    len);
 
    VGP_PUSHCC(VgpSARP);
+
+   /* Remove mutexes in recycled memory range from hash */
+   find_mutex_range(a, a+len, cleanmx);
 
    /* Memory block may not be aligned or a whole word multiple.  In neat cases,
     * we have to init len/4 words (len is in bytes).  In nasty cases, it's
@@ -1492,42 +1648,6 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 }
 
 
-/*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-#define SHADOW_EXTRA	2
-
-static __inline__
-void set_sc_where( ShadowChunk* sc, ExeContext* ec )
-{
-   sc->skin_extra[0] = (UInt)ec;
-}
-
-static __inline__
-ExeContext *get_sc_where( ShadowChunk* sc )
-{
-   return (ExeContext*)sc->skin_extra[0];
-}
-
-static __inline__
-void set_sc_tid(ShadowChunk *sc, ThreadId tid)
-{
-   sc->skin_extra[1] = (UInt)tid;
-}
-
-static __inline__
-ThreadId get_sc_tid(ShadowChunk *sc)
-{
-   return (ThreadId)sc->skin_extra[1];
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   set_sc_where( sc, VG_(get_ExeContext) ( tst ) );
-   set_sc_tid(sc, VG_(get_tid_from_ThreadState(tst)));
-}
-
 /*--------------------------------------------------------------------*/
 /*--- Error and suppression handling                               ---*/
 /*--------------------------------------------------------------------*/
@@ -1553,7 +1673,8 @@ typedef
    enum { Undescribed, /* as-yet unclassified */
           Stack, 
           Unknown, /* classification yielded nothing useful */
-          Mallocd, 
+          Mallocd,
+	  Freed,
 	  Segment
    }
    AddrKind;
@@ -1640,6 +1761,7 @@ void clear_HelgrindError ( HelgrindError* err_extra )
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
    ShadowChunk* sc;
+   Int i;
 
    /* Nested functions, yeah.  Need the lexical scoping of 'a'. */ 
 
@@ -1697,6 +1819,23 @@ static void describe_addr ( Addr a, AddrInfo* ai )
       ai->lasttid    = get_sc_tid(sc);
       return;
    } 
+
+   /* Look in recently freed memory */
+   for(i = 0; i < N_FREED_CHUNKS; i++) {
+      sc = freechunks[i];
+      if (sc == NULL)
+	 continue;
+
+      if (a >= sc->data && a < sc->data+sc->size) {
+	 ai->akind      = Freed;
+	 ai->blksize    = sc->size;
+	 ai->rwoffset   = a - sc->data;
+	 ai->lastchange = get_sc_where(sc);
+	 ai->lasttid    = get_sc_tid(sc);
+	 return;
+      } 
+   }
+ 
    /* Clueless ... */
    ai->akind = Unknown;
    return;
@@ -1770,7 +1909,7 @@ static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
    err_extra.prev_lockset = lockset_prev;
    
    VG_(maybe_record_error)(VG_(get_ThreadState)(tid), LockGraphErr, 
-			   (Addr)mutex->mutexp, "", &err_extra);
+			   mutex->mutexp, "", &err_extra);
 }
 
 Bool SK_(eq_SkinError) ( VgRes not_used,
@@ -1816,7 +1955,8 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
 		     "  Address %p is in %s section of %s", 
 		     a, ai->section, ai->filename);
 	break;
-      case Mallocd: {
+      case Mallocd:
+      case Freed: {
          UInt delta;
          UChar* relative;
          if (ai->rwoffset < 0) {
@@ -1830,9 +1970,10 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
 	 VG_(message)(Vg_UserMsg, 
-		      "  Address %p is %d bytes %s a block of size %d alloc'd by thread %d at",
+		      "  Address %p is %d bytes %s a block of size %d %s by thread %d at",
 		      a, delta, relative, 
 		      ai->blksize,
+		      ai->akind == Mallocd ? "alloc'd" : "freed",
 		      ai->lasttid);
 
          VG_(pp_ExeContext)(ai->lastchange);
@@ -1993,13 +2134,13 @@ Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
 static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
-   hg_mutex_t *mutex = get_mutex(void_mutex);
+   hg_mutex_t *mutex = get_mutex((Addr)void_mutex);
    const LockSet*  ls;
 
    set_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
 
 #  if DEBUG_LOCKS
-   VG_(printf)("lock  (%u, %x)\n", tid, mutex->mutexp);
+   VG_(printf)("lock  (%u, %p)\n", tid, mutex->mutexp);
 #  endif
 
    /* VG_(printf)("LOCK: held %d, new %p\n", thread_locks[tid], mutex); */
@@ -2028,10 +2169,13 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
    Int i = 0;
-   hg_mutex_t *mutex = get_mutex(void_mutex);
+   hg_mutex_t *mutex = get_mutex((Addr)void_mutex);
    const LockSet *ls;
 
    set_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
+
+   if (!ismember(thread_locks[tid], mutex))
+       return;
 
    if (debug || DEBUG_LOCKS)
       VG_(printf)("unlock(%u, %p%(y)\n", tid, mutex->mutexp, mutex->mutexp);
@@ -2186,7 +2330,6 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
    }
 }
 
-
 static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 {
    ThreadId tid;
@@ -2317,6 +2460,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    needs->skin_errors           = True;
    needs->data_syms             = True;
    needs->sizeof_shadow_block	= SHADOW_EXTRA;
+   needs->alternative_free      = True;
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;
@@ -2366,7 +2510,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 
    /* Init lock table */
    for (i = 0; i < VG_N_THREADS; i++) 
-      thread_locks[i] = emptyset;
+      thread_locks[i] = empty;
 
    init_shadow_memory();
 }
@@ -2379,8 +2523,10 @@ void SK_(post_clo_init)(void)
 
 void SK_(fini)(void)
 {
-   if (DEBUG_LOCK_TABLE)
+   if (DEBUG_LOCK_TABLE) {
       pp_all_LockSets();
+      pp_all_mutexes();
+   }
 
    if (LOCKSET_SANITY)
       sanity_check_locksets("SK_(fini)");

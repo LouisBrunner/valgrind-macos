@@ -3339,6 +3339,7 @@ Addr dis_SSE2_reg_or_mem ( UCodeBlock* cb,
                            UChar opc1, 
                            UChar opc2 )
 {
+   UChar dis_buf[50];
    UChar modrm = getUChar(eip);
    if (epartIsReg(modrm)) {
       /* Completely internal SSE insn. */
@@ -3351,7 +3352,18 @@ Addr dis_SSE2_reg_or_mem ( UCodeBlock* cb,
                      nameXMMReg(gregOfRM(modrm)) );
       eip++;
    } else {
-      VG_(core_panic)("dis_SSE2_reg_or_mem: mem");
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, SSE2a_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, (UShort)modrm,
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s %s, %s\n", 
+                     name,
+                     dis_buf,
+                     nameXMMReg(gregOfRM(modrm)));
    }
    return eip;
 }
@@ -3790,6 +3802,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* CMPSD -- compare scalar doubles. */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xC2) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 8, "cmpsd",
+                                       insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* PSHUFD */
    if (sz == 2
        && insn[0] == 0x0F && insn[1] == 0x70) {
@@ -3860,6 +3880,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x58) {
       vg_assert(sz == 4);
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "addsd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MINSD */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5D) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "minsd",
                                       insn[0], insn[1], insn[2] );
       goto decode_success;
    }
@@ -4164,7 +4192,18 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                       0x66, insn[0], insn[1] );
       vg_assert(LAST_UINSTR(cb).opcode == SSE3a_MemRd 
                 || LAST_UINSTR(cb).opcode == SSE4);
-      uFlagsRWU(cb, FlagsEmpty, FlagsZCP, FlagsEmpty);
+      uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
+      goto decode_success;
+   }
+
+   /* COMISS (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x2F) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "comiss",
+                                      insn[0], insn[1] );
+      vg_assert(LAST_UINSTR(cb).opcode == SSE2a_MemRd 
+                || LAST_UINSTR(cb).opcode == SSE3);
+      uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
       goto decode_success;
    }
 
@@ -4286,6 +4325,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 	    VG_(printf)("movd %s, %s\n", 
 		        nameXMMReg(gregOfRM(modrm)),
 		        nameIReg(4,eregOfRM(modrm)));
+         eip += 3;
       } else
       if (epartIsReg(modrm) && !is_store) {
          t1 = newTemp(cb);
@@ -4298,6 +4338,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 	    VG_(printf)("movd %s, %s\n", 
 		        nameIReg(4,eregOfRM(modrm)),
 		        nameXMMReg(gregOfRM(modrm)));
+         eip += 3;
       } else {
          eip = dis_SSE3_load_store_or_mov
                   (cb, sorb, eip+2, 4, is_store, "movd", 

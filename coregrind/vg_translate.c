@@ -560,16 +560,16 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE2a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a_MemRd:  return LIT0 && SZ416 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemRd:  return LIT0 && SZsse && CCf  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemRd:  return LIT0 && SZsse && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
-   case SSE4:         return LIT0 && SZ0   && CCf  && Ls1 && Ls2 && N3  && XOTHER;
+   case SSE4:         return LIT0 && SZ0   && CCa  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE5:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && Ls3 && XOTHER;
    case SSE3ag_MemRd_RegWr:
                       return         SZ48  && CC0  && TR1 && TR2 && N3  && XOTHER;
@@ -2315,7 +2315,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
-   UInt        notrace_until_limit = 53000;
+   UInt        notrace_until_limit = 0;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation

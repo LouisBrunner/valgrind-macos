@@ -345,7 +345,8 @@ static IRBB* flatten_BB ( IRBB* in )
 /*--- Constant propagation and folding                        ---*/
 /*---------------------------------------------------------------*/
 
-/* The env in this section is a map from IRTemp to IRExpr*. */
+/* The env in this section is a map from IRTemp to IRExpr*,
+   that is, an array indexed by IRTemp. */
 
 /* Are both expressions simply the same IRTemp ? */
 static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
@@ -563,86 +564,81 @@ static IRExpr* fold_Expr ( IRExpr* e )
 /* Apply the subst to a simple 1-level expression -- guaranteed to be
    1-level due to previous flattening pass. */
 
-static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
+static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
 {
-   if (ex->tag == Iex_Tmp) {
-      ULong res;
-      if (lookupH64(env, &res, (ULong)ex->Iex.Tmp.tmp)) {
-         return (IRExpr*)res;
-      } else {
-         /* not bound in env */
+   switch (ex->tag) {
+      case Iex_Tmp:
+         if (env[(Int)ex->Iex.Tmp.tmp] != NULL) {
+            return env[(Int)ex->Iex.Tmp.tmp];
+         } else {
+            /* not bound in env */
+            return ex;
+         }
+
+      case Iex_Const:
+      case Iex_Get:
          return ex;
+
+      case Iex_GetI:
+         vassert(isAtom(ex->Iex.GetI.off));
+         return IRExpr_GetI(
+            ex->Iex.GetI.descr,
+            subst_Expr(env, ex->Iex.GetI.off),
+            ex->Iex.GetI.bias
+         );
+
+      case Iex_Binop:
+         vassert(isAtom(ex->Iex.Binop.arg1));
+         vassert(isAtom(ex->Iex.Binop.arg2));
+         return IRExpr_Binop(
+                   ex->Iex.Binop.op,
+                   subst_Expr(env, ex->Iex.Binop.arg1),
+                   subst_Expr(env, ex->Iex.Binop.arg2)
+                );
+
+      case Iex_Unop:
+         vassert(isAtom(ex->Iex.Unop.arg));
+         return IRExpr_Unop(
+                   ex->Iex.Unop.op,
+                   subst_Expr(env, ex->Iex.Unop.arg)
+                );
+
+      case Iex_LDle:
+         vassert(isAtom(ex->Iex.LDle.addr));
+         return IRExpr_LDle(
+                   ex->Iex.LDle.ty,
+                   subst_Expr(env, ex->Iex.LDle.addr)
+                );
+
+      case Iex_CCall: {
+         Int      i;
+         IRExpr** args2 = sopyIRExprVec(ex->Iex.CCall.args);
+         for (i = 0; args2[i]; i++) {
+            vassert(isAtom(args2[i]));
+            args2[i] = subst_Expr(env, args2[i]);
+         }
+         return IRExpr_CCall(
+                   ex->Iex.CCall.name,
+                   ex->Iex.CCall.retty,
+                   args2 
+                );
       }
+
+      case Iex_Mux0X:
+         vassert(isAtom(ex->Iex.Mux0X.cond));
+         vassert(isAtom(ex->Iex.Mux0X.expr0));
+         vassert(isAtom(ex->Iex.Mux0X.exprX));
+         return IRExpr_Mux0X(
+                   subst_Expr(env, ex->Iex.Mux0X.cond),
+                   subst_Expr(env, ex->Iex.Mux0X.expr0),
+                   subst_Expr(env, ex->Iex.Mux0X.exprX)
+                );
+
+      default:
+         vex_printf("\n\n"); ppIRExpr(ex);
+         vpanic("subst_Expr");
+      
    }
-
-   if (ex->tag == Iex_Const)
-      return ex;
-   if (ex->tag == Iex_Get)
-      return ex;
-
-   if (ex->tag == Iex_GetI) {
-      vassert(isAtom(ex->Iex.GetI.off));
-      return IRExpr_GetI(
-         ex->Iex.GetI.descr,
-         subst_Expr(env, ex->Iex.GetI.off),
-         ex->Iex.GetI.bias
-      );
-   }
-
-   if (ex->tag == Iex_Binop) {
-      vassert(isAtom(ex->Iex.Binop.arg1));
-      vassert(isAtom(ex->Iex.Binop.arg2));
-      return IRExpr_Binop(
-                ex->Iex.Binop.op,
-                subst_Expr(env, ex->Iex.Binop.arg1),
-                subst_Expr(env, ex->Iex.Binop.arg2)
-             );
-   }
-
-   if (ex->tag == Iex_Unop) {
-      vassert(isAtom(ex->Iex.Unop.arg));
-      return IRExpr_Unop(
-                ex->Iex.Unop.op,
-                subst_Expr(env, ex->Iex.Unop.arg)
-             );
-   }
-
-   if (ex->tag == Iex_LDle) {
-      vassert(isAtom(ex->Iex.LDle.addr));
-      return IRExpr_LDle(
-                ex->Iex.LDle.ty,
-                subst_Expr(env, ex->Iex.LDle.addr)
-             );
-   }
-
-   if (ex->tag == Iex_CCall) {
-      Int      i;
-      IRExpr** args2 = sopyIRExprVec(ex->Iex.CCall.args);
-      for (i = 0; args2[i]; i++) {
-         vassert(isAtom(args2[i]));
-         args2[i] = subst_Expr(env, args2[i]);
-      }
-      return IRExpr_CCall(
-                ex->Iex.CCall.name,
-                ex->Iex.CCall.retty,
-                args2 
-             );
-   }
-
-   if (ex->tag == Iex_Mux0X) {
-      vassert(isAtom(ex->Iex.Mux0X.cond));
-      vassert(isAtom(ex->Iex.Mux0X.expr0));
-      vassert(isAtom(ex->Iex.Mux0X.exprX));
-      return IRExpr_Mux0X(
-                subst_Expr(env, ex->Iex.Mux0X.cond),
-                subst_Expr(env, ex->Iex.Mux0X.expr0),
-                subst_Expr(env, ex->Iex.Mux0X.exprX)
-             );
-   }
-
-   vex_printf("\n\n");
-   ppIRExpr(ex);
-   vpanic("subst_Expr");
 }
 
 
@@ -650,7 +646,7 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
    Much simplified due to stmt being previously flattened.  Returning
    NULL means the statement has been turned into a no-op. */
 
-static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
+static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 {
 #  if 0
    vex_printf("\nsubst and fold stmt\n");
@@ -658,96 +654,95 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
    vex_printf("\n");
 #  endif
 
-   if (st->tag == Ist_Put) {
-      vassert(isAtom(st->Ist.Put.data));
-      return IRStmt_Put(
-                st->Ist.Put.offset, 
-                fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
-             );
-   }
+   switch (st->tag) {
+      case Ist_Put:
+         vassert(isAtom(st->Ist.Put.data));
+         return IRStmt_Put(
+                   st->Ist.Put.offset, 
+                   fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
+                );
 
-   if (st->tag == Ist_PutI) {
-      vassert(isAtom(st->Ist.PutI.off));
-      vassert(isAtom(st->Ist.PutI.data));
-      return IRStmt_PutI(
-                st->Ist.PutI.descr,
-                fold_Expr(subst_Expr(env, st->Ist.PutI.off)),
-                st->Ist.PutI.bias,
-                fold_Expr(subst_Expr(env, st->Ist.PutI.data))
-             );
-   }
+      case Ist_PutI:
+         vassert(isAtom(st->Ist.PutI.off));
+         vassert(isAtom(st->Ist.PutI.data));
+         return IRStmt_PutI(
+                   st->Ist.PutI.descr,
+                   fold_Expr(subst_Expr(env, st->Ist.PutI.off)),
+                   st->Ist.PutI.bias,
+                   fold_Expr(subst_Expr(env, st->Ist.PutI.data))
+                );
 
-   if (st->tag == Ist_Tmp) {
-      /* This is the one place where an expr (st->Ist.Tmp.data) is
-         allowed to be more than just a constant or a tmp. */
-      return IRStmt_Tmp(
-                st->Ist.Tmp.tmp,
-                fold_Expr(subst_Expr(env, st->Ist.Tmp.data))
-             );
-   }
+      case Ist_Tmp:
+         /* This is the one place where an expr (st->Ist.Tmp.data) is
+            allowed to be more than just a constant or a tmp. */
+         return IRStmt_Tmp(
+                   st->Ist.Tmp.tmp,
+                   fold_Expr(subst_Expr(env, st->Ist.Tmp.data))
+                );
 
-   if (st->tag == Ist_STle) {
-      vassert(isAtom(st->Ist.STle.addr));
-      vassert(isAtom(st->Ist.STle.data));
-      return IRStmt_STle(
-                fold_Expr(subst_Expr(env, st->Ist.STle.addr)),
-                fold_Expr(subst_Expr(env, st->Ist.STle.data))
-             );
-   }
+      case Ist_STle:
+         vassert(isAtom(st->Ist.STle.addr));
+         vassert(isAtom(st->Ist.STle.data));
+         return IRStmt_STle(
+                   fold_Expr(subst_Expr(env, st->Ist.STle.addr)),
+                   fold_Expr(subst_Expr(env, st->Ist.STle.data))
+                );
 
-   if (st->tag == Ist_Dirty) {
-      Int     i;
-      IRDirty *d, *d2;
-      d = st->Ist.Dirty.details;
-      d2 = emptyIRDirty();
-      *d2 = *d;
-      d2->args = sopyIRExprVec(d2->args);
-      if (d2->mFx != Ifx_None) {
-         vassert(isAtom(d2->mAddr));
-         d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
-      }
-      for (i = 0; d2->args[i]; i++) {
-         vassert(isAtom(d2->args[i]));
-         d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
-      }
-      return IRStmt_Dirty(d2);
-   }
-
-   if (st->tag == Ist_Exit) {
-      IRExpr* fcond;
-      vassert(isAtom(st->Ist.Exit.cond));
-      fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.cond));
-      if (fcond->tag == Iex_Const) {
-         /* Interesting.  The condition on this exit has folded down to
-            a constant. */
-         vassert(fcond->Iex.Const.con->tag == Ico_Bit);
-         if (fcond->Iex.Const.con->Ico.Bit == False) {
-            /* exit is never going to happen, so dump the statement. */
-            return NULL;
-         } else {
-            vassert(fcond->Iex.Const.con->Ico.Bit == True);
-            /* Hmmm.  The exit has become unconditional.  Leave it as
-               it is for now, since we'd have to truncate the BB at
-               this point, which is tricky. */
-            /* fall out into the reconstruct-the-exit code. */
-            vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
+      case Ist_Dirty: {
+         Int     i;
+         IRDirty *d, *d2;
+         d = st->Ist.Dirty.details;
+         d2 = emptyIRDirty();
+         *d2 = *d;
+         d2->args = sopyIRExprVec(d2->args);
+         if (d2->mFx != Ifx_None) {
+            vassert(isAtom(d2->mAddr));
+            d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
          }
+         for (i = 0; d2->args[i]; i++) {
+            vassert(isAtom(d2->args[i]));
+            d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
+         }
+         return IRStmt_Dirty(d2);
       }
-      return IRStmt_Exit(fcond,st->Ist.Exit.dst);
-   }
 
-   vex_printf("\n");
-   ppIRStmt(st);
-   vpanic("subst_and_fold_Stmt");
+      case Ist_Exit: {
+         IRExpr* fcond;
+         vassert(isAtom(st->Ist.Exit.cond));
+         fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.cond));
+         if (fcond->tag == Iex_Const) {
+            /* Interesting.  The condition on this exit has folded down to
+               a constant. */
+            vassert(fcond->Iex.Const.con->tag == Ico_Bit);
+            if (fcond->Iex.Const.con->Ico.Bit == False) {
+               /* exit is never going to happen, so dump the statement. */
+               return NULL;
+            } else {
+               vassert(fcond->Iex.Const.con->Ico.Bit == True);
+               /* Hmmm.  The exit has become unconditional.  Leave it as
+                  it is for now, since we'd have to truncate the BB at
+                  this point, which is tricky. */
+               /* fall out into the reconstruct-the-exit code. */
+               vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
+            }
+         }
+         return IRStmt_Exit(fcond,st->Ist.Exit.dst);
+      }
+
+   default:
+      vex_printf("\n"); ppIRStmt(st);
+      vpanic("subst_and_fold_Stmt");
+   }
 }
 
 
 static IRBB* cprop_BB ( IRBB* in )
 {
-   Int     i;
-   IRBB*   out;
-   Hash64* env;
-   IRStmt* st2;
+   Int      i;
+   IRBB*    out;
+   IRStmt*  st2;
+   Int      n_tmps = in->tyenv->types_used;
+   IRExpr** env = LibVEX_Alloc(n_tmps * sizeof(IRExpr*));
 
    out = emptyIRBB();
    out->tyenv = dopyIRTypeEnv( in->tyenv );
@@ -758,7 +753,8 @@ static IRBB* cprop_BB ( IRBB* in )
       propagation is done.  The environment is to be applied as we
       move along.  Keys are IRTemps.  Values are IRExpr*s.
    */
-   env = newH64();
+   for (i = 0; i < n_tmps; i++)
+      env[i] = NULL;
 
    /* For each original SSA-form stmt ... */
    for (i = 0; i < in->stmts_used; i++) {
@@ -790,15 +786,13 @@ static IRBB* cprop_BB ( IRBB* in )
           && st2->Ist.Tmp.data->Iex.Const.con->tag != Ico_F64i) {
          /* 't = const' -- add to env.  
              The pair (IRTemp, IRExpr*) is added. */
-         addToH64(env, (ULong)(st2->Ist.Tmp.tmp),
-                       (ULong)(st2->Ist.Tmp.data) );
+         env[(Int)(st2->Ist.Tmp.tmp)] = st2->Ist.Tmp.data;
       }
       else
       if (st2->tag == Ist_Tmp && st2->Ist.Tmp.data->tag == Iex_Tmp) {
          /* 't1 = t2' -- add to env.  
              The pair (IRTemp, IRExpr*) is added. */
-         addToH64(env, (ULong)(st2->Ist.Tmp.tmp),
-                       (ULong)(st2->Ist.Tmp.data) );
+         env[(Int)(st2->Ist.Tmp.tmp)] = st2->Ist.Tmp.data;
       }
       else {
          /* Not interesting, copy st2 into the output block. */

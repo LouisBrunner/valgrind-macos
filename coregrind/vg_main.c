@@ -1659,6 +1659,17 @@ void VG_(oynk) ( Int n )
    it to $(libdir)/lib/valgrinq, so as to make our libpthread.so
    disappear.  
 */
+static void slideleft ( Char* s )
+{
+   vg_assert(s && (*s == ' ' || *s == ':'));
+   while (True) {
+      s[0] = s[1];
+      if (s[0] == '\0') break;
+      s++;
+   }
+}
+
+
 void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
                                                 Char* ld_library_path_str )
 {
@@ -1737,7 +1748,14 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    /* LD_LIBRARY_PATH: "<coredir>:Y" --> "         :Y"  */
    for (i = 0; i < coredir_len; i++)
       coredir2[i] = ' ';
-      
+   
+   /* Zap the leading spaces and : in both strings. */
+   while (ld_preload_str[0] == ' ') slideleft(ld_preload_str);
+   if    (ld_preload_str[0] == ':') slideleft(ld_preload_str);
+
+   while (ld_library_path_str[0] == ' ') slideleft(ld_library_path_str);
+   if    (ld_library_path_str[0] == ':') slideleft(ld_library_path_str);
+
    /* VG_(printf)("post:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
 
    return;

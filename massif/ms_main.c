@@ -663,7 +663,7 @@ void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
 // Forward declaration
 static void hp_census(void);
 
-static __inline__
+static
 void* new_block ( void* p, Int size, UInt align, Bool is_zeroed )
 {
    HP_Chunk* hc;

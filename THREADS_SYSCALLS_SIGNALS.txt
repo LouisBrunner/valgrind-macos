@@ -1,0 +1,213 @@
+
+/* Make a thread the running thread.  The thread must previously been
+   sleeping, and not holding the CPU semaphore. This will set the
+   thread state to VgTs_Runnable, and the thread will attempt to take
+   the CPU semaphore.  By the time it returns, tid will be the running
+   thread. */
+extern void VG_(set_running) ( ThreadId tid );
+
+/* Set a thread into a sleeping state.  Before the call, the thread
+   must be runnable, and holding the CPU semaphore.  When this call
+   returns, the thread will be set to the specified sleeping state,
+   and will not be holding the CPU semaphore.  Note that another
+   thread could be running by the time this call returns, so the
+   caller must be careful not to touch any shared state.  It is also
+   the caller's responsibility to actually block until the thread is
+   ready to run again. */
+extern void VG_(set_sleeping) ( ThreadId tid, ThreadStatus state );
+
+
+The master semaphore is run_sema in vg_scheduler.c.
+
+--------------------------------------------------------------------
+
+Re:   New World signal handling
+From: Jeremy Fitzhardinge <jeremy@goop.org>
+To:   Julian Seward <jseward@acm.org>
+Date: Mon Mar 14 09:03:51 2005
+
+Well, the big-picture things to be clear about are:
+
+   1. signal handlers are process-wide global state
+   2. signal masks are per-thread (there's no notion of a process-wide
+      signal mask)
+   3. a signal can be targeted to either
+         1. the whole process (any eligable thread is picked for
+            delivery), or
+         2. a specific thread
+
+1 is why it is always a bug to temporarily reset a signal handler (say,
+for SIGSEGV), because if any other thread happens to be sent one in that
+window it will cause havok (I think there's still one instance of this
+in the symtab stuff).
+2 is the meat of your questions; more below.
+3 is responsible for some of the nitty detail in the signal stuff, so
+its worth bearing in mind to understand it all. (Note that even if a
+signal is targeting the whole process, its only ever delivered to one
+particular thread; there's no such thing as a broadcast signal.)
+
+While a thread are running core code or generated code, it has almost
+all its signals blocked (all but the fault signals: SEGV, BUS, ILL, etc).
+
+Every N basic blocks, each thread calls VG_(poll_signals) to see what
+signals are pending for it.  poll_signals grabs the next pending signal
+which the client signal mask doesn't block, and sets it up for delivery;
+it uses the sigtimedwait() syscall to fetch blocked pending signals
+rather than have them delivered to a signal handler.   This means that
+we avoid the complexity of having signals delivered asynchronously via
+the signal handlers; we can just poll for them synchronously when
+they're easy to deal with.
+
+Fault signals, being caused by a specific instruction, are the exception
+because they can't be held off; if they're blocked when an instruction
+raises one, the kernel will just summarily kill the process.  Therefore,
+they need to be always unblocked, and the signal handler is called when
+an instruction raises one of these exceptions. (It's also necessary to
+call poll_signals after any syscall which may raise a signal, since
+signal-raising syscalls are considered to be synchronous with respect to
+their signal; ie, calling kill(getpid(), SIGUSR1) will call the handler
+for SIGUSR1 before kill is seen to complete.)
+
+The one time when the thread's real signal mask actually matches the
+client's requested signal mask is while running a blocking syscall.  We
+have to set things up to accept signals during a syscall so that we get
+the right signal-interrupts-syscall semantics.  The tricky part about
+this is that there's no general atomic
+set-signal-mask-and-block-in-syscall mechanism, so we need to fake it
+with the stuff in VGA_(_client_syscall)/VGA_(interrupted_syscall). 
+These two basically form an explicit state machine, where the state
+variable is the instruction pointer, which allows it to determine what
+point the syscall got to when the async signal happens.  By keeping the
+window where signals are actually unblocked very narrow, the number of
+possible states is pretty small.
+
+This is all quite nice because the kernel does almost all the work of
+determining which thread should get a signal, what the correct action
+for a syscall when it has been interrupted is, etc.  Particularly nice
+is that we don't need to worry about all the queuing semantics, and the
+per-signal special cases (which is, roughly, signals 1-32 are not queued
+except when they are, and signals 33-64 are queued except when they aren't).
+
+BUT, there's another complexity: because the Unix signal mechanism has
+been overloaded to deal with two separate kinds of events (asynchronous
+signals raised by kill(), and synchronous faults raised by an
+instruction), we can't block a signal for one form and not the other. 
+That is, because we have to leave SIGSEGV unblocked for faulting
+instructions, it also leaves us open to getting an async SIGSEGV sent
+with kill(pid, SIGSEGV). 
+
+To handle this case, there's a small per-thread signal queue set up to
+deal with this case (I'm using tid 0's queue for "signals sent to the
+whole process" - a hack, I'll admit).  If an async SIGSEGV (etc) signal
+appears, then it is pushed onto the appropriate queue. 
+VG_(poll_signals) also checks these queues for pending signals to decide
+what signal to deliver next.  These queues are only manipulated with
+*all* signals blocked, so there's no risk of two concurrent async signal
+handlers modifying the queues at once.  Also, because the liklihood of
+actually being sent an async SIGSEGV is pretty low, the queues are only
+allocated on demand.
+
+
+
+There are two mechanisms to prevent disaster if multiple threads get
+signals concurrently.  One is that a signal handler is set up to block a
+set of signals while the signal is being delivered.  Valgrind's handlers
+block all signals, so there's no risk of a new signal being delivered to
+the same thread until the old handler has finished.
+
+The other is that if the thread which recieves the signal is not running
+(ie, doesn't hold the run_sema, which implies it must be waiting for a
+syscall to complete), then the signal handler will grab the run_sema
+before making any global state changes.  Since the only time we can get
+an async signal asynchronously is during a blocking syscall, this should
+be all the time. (And since synchronous signals are always the result of
+running an instruction, we should already be holding run_sema.)
+
+
+Valgrind will occasionally generate signals for itself. These are always
+synchronous faults as a result instruction fetch or something an
+instruction did.  The two mechanims are the synth_fault_* functions,
+which are used to signal a problem while fetching an instruction, or by
+getting generated code to call a helper which contains a fault-raising
+instruction (used to deal with illegal/unimplemented instructions and
+for instructions who's only job is to raise exceptions).
+
+That all explains how signals come in, but the second part is how they
+get delivered.
+
+The main function for this is VG_(deliver_signal).  There are three cases:
+
+   1. the process is ignoring the signal (SIG_IGN)
+   2. the process is using the default handler (SIG_DFL)
+   3. the process has a handler for the signal
+
+In general, VG_(deliver_signal) shouldn't be called for ignored signals;
+if it has been called, it assumes the ignore is being overridden (if an
+instruction gets a SEGV etc, SIG_IGN is ignored and treated as SIG_DFL).
+
+VG_(deliver_signal) handles the default handler case, and the
+client-specified signal handler case.
+
+The default handler case is relatively easy: the signal's default action
+is either Terminate, or Ignore.  We can ignore Ignore.
+
+Terminate always kills the entire process; there's no such thing as a
+thread-specific signal death. Terminate comes in two forms: with
+coredump, or without.  vg_default_action() will write a core file, and
+then will tell all the threads to start terminating; it then longjmps
+back to the current thread's scheduler loop.  The scheduler loop will
+terminate immediately, and the master_tid thread will wait for all the
+others to exit before shutting down the process (this is the same
+mechanism as exit_group).
+
+Delivering a signal to a client-side handler modifys the thread state so
+that there's a signal frame on the stack, and the instruction pointer is
+pointing to the handler.  The fiddly bit is that there are two
+completely different signal frame formats: old and RT.  While in theory
+the exact shape of these frames on stack is abstracted, there are real
+programs which know exactly where various parts of the structures are on
+stack (most notably, g++'s exception throwing code), which is why it has
+to have two separate pieces of code for each frame format.  Another
+tricky case is dealing with the client stack running out/overflowing
+while setting up the signal frame.
+
+Signal return is also interesting.  There are two syscalls, sigreturn
+and rt_sigreturn, which a signal handler will use to resume execution.
+The client will call the right one for the frame it was passed, so the
+core doesn't need to track that state.  The tricky part is moving the
+frame's register state back into the thread's state, particularly all
+the FPU state reformatting gunk.  Also, *sigreturn checks for new
+pending signals after the old frame has been cleaned up, since there's a
+requirement that all deliverable pending signals are delivered before
+the mainline code makes progress.  This means that a program could
+live-lock on signals, but that's what would happen running natively...
+
+Another thing to watch for: programs which unwind the stack (like gdb,
+or exception throwers) recognize the existence of a signal frame by
+looking at the code the return address points to: if it is one of the
+two specific signal return sequences, it knows its a signal frame. 
+That's why the signal handler return address must point to a very
+specific set of instructions.
+
+
+What else.  Ah, the two internal signals.
+
+SIGVGKILL is pretty straightforward: its just used to dislodge a thread
+from being blocked in a syscall, so that we can get the thread to
+terminate in a timely fashion.
+
+SIGVGCHLD is used by a thread to tell the master_tid that it has
+exited.  However, the only time the master_tid cares about this is when
+it has already exited, and its waiting for everyone else to exit.  If
+the master_tid hasn't exited, then this signal is ignored.  It isn't
+enough to simply block it, because that will cause a pile of queued
+SIGVGCHLDs to build up, eventually clogging the kernel's signal delivery
+mechanism.  If its unblocked and ignored, it doesn't interrupt syscalls
+and it doesn't accumulate.
+
+
+I hope that helps clarify things.  And explain why there's so much stuff
+in there: it's tracking a very complex and arcane underlying set of
+machinery.
+
+    J

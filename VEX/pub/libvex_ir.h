@@ -165,6 +165,7 @@ typedef
       /* Binary ops supported by IA32 but not mandated by 754. */
       Iop_AtanF64,      /* FPATAN,  arctan(arg1/arg2)       */
       Iop_Yl2xF64,      /* FYL2X,   arg1 * log2(arg2)       */
+      Iop_Yl2xp1F64,    /* FYL2XP1, arg1 * log2(arg2+1.0)   */
       Iop_PRemF64,      /* FPREM,   remainder(arg1/arg2)    */
       Iop_PRemC3210F64, /* C3210 flags resulting from FPREM, :: I32 */
 

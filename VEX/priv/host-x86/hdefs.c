@@ -1834,6 +1834,18 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_FpBinary:
+      if (i->Xin.FpBinary.op == Xfp_YL2X) {
+         /* Have to do this specially. */
+         /* ffree %st7 ; fld %st(srcL) ; 
+            ffree %st7 ; fld %st(srcR+1) ; fyl2x ; fstp(1+dst) */
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
+         *p++ = 0xD9; *p++ = 0xF1;
+         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+         goto done;
+      }
       if (i->Xin.FpBinary.op == Xfp_ATAN) {
          /* Have to do this specially. */
          /* ffree %st7 ; fld %st(srcL) ; 

@@ -3376,6 +3376,25 @@ void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
       fp_pop();
 }
 
+/* %eflags(Z,P,C) = UCOMI( st(0), st(i) ) */
+static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
+{
+   DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", i);
+   /* This is a bit of a hack (and isn't really right).  It sets
+      Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
+      documentation implies A and S are unchanged. 
+   */
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_SRC,
+                     binop( Iop_And32,
+                            binop(Iop_CmpF64, get_ST(0), get_ST(i)),
+                            mkU32(0x45)
+       )));
+   if (pop_after)
+      fp_pop();
+}
+
 
 static
 UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
@@ -3422,6 +3441,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
                break;
 
+            case 7: /* FDIVR single-real */
+               fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, False );
+               break;
+
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xD8\n");
@@ -3441,6 +3464,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
+               break;
+
+            case 0xE8 ... 0xEF: /* FSUBR %st(?),%st(0) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, modrm - 0xE8, 0, False );
                break;
 
             case 0xF0 ... 0xF7: /* FDIV %st(?),%st(0) */
@@ -3559,6 +3586,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
                break;
 
+            case 0xEA: /* FLDL2E */
+               DIP("fldl2e");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739)));
+               break;
+
             case 0xEC: /* FLDLG2 */
                DIP("fldlg2");
                fp_push();
@@ -3604,6 +3637,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_C3210( binop(Iop_PRemC3210F64, mkexpr(a1), mkexpr(a2)) );
                break;
             }
+
+            case 0xF9: /* FYL2XP1 */
+               DIP("fyl2xp1\n");
+               put_ST_UNCHECKED(1, binop(Iop_Yl2xp1F64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
 
             case 0xFA: /* FSQRT */
                DIP("fsqrt\n");
@@ -3660,13 +3700,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       fop = Iop_SubF64;
 	       goto do_fop_m32;
 
+            case 5: /* FISUBR m32int */ /* ST(0) = m32int - ST(0) */
+               DIP("fisubrl %s", dis_buf);
+	       fop = Iop_SubF64;
+	       goto do_foprev_m32;
+
             case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
                DIP("fisubl %s", dis_buf);
 	       fop = Iop_DivF64;
 	       goto do_fop_m32;
 
             case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
-               DIP("fisubrl %s", dis_buf);
+               DIP("fidivrl %s", dis_buf);
 	       fop = Iop_DivF64;
 	       goto do_foprev_m32;
 
@@ -3765,7 +3810,17 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          }
 
       } else {
-         goto decode_fail;
+
+         delta++;
+         switch (modrm) {
+
+            case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );
+               break;
+
+            default:
+               goto decode_fail;
+	 }
       }
    }
 
@@ -4049,20 +4104,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
-               r_dst = (UInt)modrm - 0xE8;
-               DIP("fucomip %%st(0),%%st(%d)\n", r_dst);
-               /* This is a bit of a hack (and isn't really right).
-                  It sets Z,P,C,O correctly, but forces A and S to
-                  zero, whereas the Intel documentation implies A and
-                  S are unchanged. */
-               stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-               stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
-               stmt( IRStmt_Put( OFFB_CC_SRC,
-                        binop( Iop_And32,
-                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
-                               mkU32(0x45)
-                     )));
-               fp_pop();
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );
                break;
 
             default: 

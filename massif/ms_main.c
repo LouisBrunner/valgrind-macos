@@ -849,7 +849,6 @@ static UInt   curr_census = 0;
 // Must return False so that all stacks are traversed
 static Bool count_stack_size( Addr stack_min, Addr stack_max, void *cp )
 {
-   VG_(printf)("stack_max=%p stack_min=%p delta=%d\n", stack_max, stack_min, stack_max-stack_min);
    *(UInt *)cp  += (stack_max - stack_min);
    return False;
 }

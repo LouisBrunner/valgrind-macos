@@ -1142,6 +1142,12 @@ void VGM_(fpu_read_check) ( Addr addr, Int size )
       return;
    }
 
+   if (size == 28) {
+      PROF_EVENT(84); /* XXX assign correct event number */
+      fpu_read_check_SLOWLY ( addr, 28 );
+      return;
+   }
+
    VG_(printf)("size is %d\n", size);
    VG_(panic)("vgm_fpu_read_check: unhandled size");
 #  endif

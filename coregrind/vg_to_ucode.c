@@ -2413,6 +2413,8 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
             case 2: /* FSTs */
             case 3: /* FSTPs */
                return dis_fpu_mem(cb, 4, wr, eip, first_byte); 
+            case 4: /* FLDENV */
+               return dis_fpu_mem(cb, 28, rd, eip, first_byte);
             case 5: /* FLDCW */
                return dis_fpu_mem(cb, 2, rd, eip, first_byte); 
             case 6: /* FNSTENV */

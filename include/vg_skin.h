@@ -830,6 +830,11 @@ extern Char* VG_(name_UCondcode) ( Condcode cond );
 extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo, 
                                    Int sz, Bool parens );
 
+/* ------------------------------------------------------------------ */
+/* Accessing shadow archregs */
+extern UInt VG_(get_shadow_archreg)     ( UInt archreg );
+extern void VG_(set_shadow_archreg)     ( UInt archreg, UInt val );
+extern Addr VG_(shadow_archreg_address) ( UInt archreg );
 
 /*====================================================================*/
 /*=== Generating x86 code from UCode                               ===*/

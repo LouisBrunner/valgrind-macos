@@ -2704,22 +2704,27 @@ static Int segRegOffset ( UInt archregs )
    }
 }
 
+/* Return the baseBlock index for the specified shadow register */
+Int shadow_reg_index ( Int arch )
+{
+   switch (arch) {
+      case R_EAX: return VGOFF_(sh_eax);
+      case R_ECX: return VGOFF_(sh_ecx);
+      case R_EDX: return VGOFF_(sh_edx);
+      case R_EBX: return VGOFF_(sh_ebx);
+      case R_ESP: return VGOFF_(sh_esp);
+      case R_EBP: return VGOFF_(sh_ebp);
+      case R_ESI: return VGOFF_(sh_esi);
+      case R_EDI: return VGOFF_(sh_edi);
+      default:    VG_(core_panic)( "shadow_reg_index");
+   }
+}
 
 /* Return the byte offset from %ebp (ie, into baseBlock)
    for the specified shadow register */
 Int VG_(shadow_reg_offset) ( Int arch )
 {
-   switch (arch) {
-      case R_EAX: return 4 * VGOFF_(sh_eax);
-      case R_ECX: return 4 * VGOFF_(sh_ecx);
-      case R_EDX: return 4 * VGOFF_(sh_edx);
-      case R_EBX: return 4 * VGOFF_(sh_ebx);
-      case R_ESP: return 4 * VGOFF_(sh_esp);
-      case R_EBP: return 4 * VGOFF_(sh_ebp);
-      case R_ESI: return 4 * VGOFF_(sh_esi);
-      case R_EDI: return 4 * VGOFF_(sh_edi);
-      default:    VG_(core_panic)( "shadowOffset");
-   }
+   return 4 * shadow_reg_index ( arch );
 }
 
 Int VG_(shadow_flags_offset) ( void )
@@ -2727,6 +2732,21 @@ Int VG_(shadow_flags_offset) ( void )
    return 4 * VGOFF_(sh_eflags);
 }
 
+/* Accessing shadow arch. registers */
+UInt VG_(get_shadow_archreg) ( UInt archreg )
+{
+   return VG_(baseBlock)[ shadow_reg_index(archreg) ];
+}
+
+void VG_(set_shadow_archreg) ( UInt archreg, UInt val )
+{
+   VG_(baseBlock)[ shadow_reg_index(archreg) ] = val;
+}
+
+Addr VG_(shadow_archreg_address) ( UInt archreg )
+{
+   return (Addr) & VG_(baseBlock)[ shadow_reg_index(archreg) ];
+}
 
 
 static void synth_WIDEN_signed ( Int sz_src, Int sz_dst, Int reg )

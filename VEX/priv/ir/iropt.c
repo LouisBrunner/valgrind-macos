@@ -1955,81 +1955,177 @@ static void cse_BB ( IRBB* bb )
       
 }
 
+
 /*---------------------------------------------------------------*/
 /*--- Add32/Sub32 chain collapsing                            ---*/
 /*---------------------------------------------------------------*/
 
-static Bool isAdd32OrSub32 ( IRExpr* e )
-{ if (e->tag != Iex_Binop)
-  return False;
-if (e->Iex.Binop.op != Iop_Add32 && e->Iex.Binop.op != Iop_Sub32)
-  return False;
- if (e->Iex.Binop.arg1->tag != Iex_Tmp)
-   return False;
- if (e->Iex.Binop.arg2->tag != Iex_Const)
-   return False;
- return True;
+/* Is this expression "Add32(tmp,const)" or "Sub32(tmp,const)" ?  If
+   yes, set *tmp and *i32 appropriately.  *i32 is set as if the
+   root node is Add32, not Sub32. */
+
+static Bool isAdd32OrSub32 ( IRExpr* e, IRTemp* tmp, Int* i32 )
+{ 
+   if (e->tag != Iex_Binop)
+      return False;
+   if (e->Iex.Binop.op != Iop_Add32 && e->Iex.Binop.op != Iop_Sub32)
+      return False;
+   if (e->Iex.Binop.arg1->tag != Iex_Tmp)
+      return False;
+   if (e->Iex.Binop.arg2->tag != Iex_Const)
+      return False;
+   *tmp = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+   *i32 = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32);
+   if (e->Iex.Binop.op == Iop_Sub32)
+      *i32 = -*i32;
+   return True;
 }
+
+
+/* Figure out if tmp can be expressed as tmp3 +32 const, for some
+   other tmp2.  Scan backwards from the specified start point -- an
+   optimisation. */
+
+static Bool collapseChain ( IRBB* bb, Int startHere,
+                            IRTemp tmp,
+                            IRTemp* tmp2, Int* i32 )
+{
+   Int     j, ii;
+   IRTemp  vv;
+   IRStmt* st;
+   IRExpr* e;
+
+   /* the (var, con) pair contain the current 'representation' for
+      'tmp'.  We start with 'tmp + 0'.  */
+   IRTemp var = tmp;
+   Int    con = 0;
+
+   /* Scan backwards to see if tmp can be replaced by some other tmp
+     +/- a constant. */
+   for (j = startHere; j >= 0; j--) {
+      st = bb->stmts[j];
+      if (!st || st->tag != Ist_Tmp) 
+         continue;
+      if (st->Ist.Tmp.tmp != var)
+         continue;
+      e = st->Ist.Tmp.data;
+      if (!isAdd32OrSub32(e, &vv, &ii))
+         break;
+      var = vv;
+      con += ii;
+   }
+   if (j == -1)
+      /* no earlier binding for var .. ill-formed IR */
+      vpanic("collapseChain");
+
+   /* so, did we find anything interesting? */
+   if (var == tmp)
+      return False; /* no .. */
+      
+   *tmp2 = var;
+   *i32  = con;
+   return True;
+}
+
+
+/* The main function.  Needs renaming. */
 
 static void track_deltas_BB ( IRBB* bb )
 {
-  Int i, j;
-  IRStmt *st, *st2;
-  IRExpr *e1, *e2;
-  IRTemp var;
-  Int con;
-return;
+   IRStmt *st;
+   IRTemp var, var2;
+   Int    i, con, con2;
+
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
-      if (!st || st->tag != Ist_Tmp)
-	continue;
-      e1 = st->Ist.Tmp.data;
-      if (!isAdd32OrSub32(e1)) continue;
+      if (!st)
+         continue;
 
-      /* ok.  So e1 is of the form Add32(v,c) or Sub32(v,c). */
-      var = e1->Iex.Binop.arg1->Iex.Tmp.tmp;
-      con = (Int)e1->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
-      if (e1->Iex.Binop.op == Iop_Sub32)
-	con = -con;
+      /* Try to collapse 't1 = Add32/Sub32(t2, con)'. */
 
-      for (j = i-1; j >= 0; j--) {
-	st2 = bb->stmts[j];
-	if (!st2 || st2->tag != Ist_Tmp) 
-	  continue;
-        if (st2->Ist.Tmp.tmp != var)
-	  continue;
-        e2 = st2->Ist.Tmp.data;
-	if (!isAdd32OrSub32(e2))
-	  break;
-var = e2->Iex.Binop.arg1->Iex.Tmp.tmp;
- if (e2->Iex.Binop.op == Iop_Sub32)
-con -= (Int)e2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
- else 
-con += (Int)e2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+      if (st->tag == Ist_Tmp
+          && isAdd32OrSub32(st->Ist.Tmp.data, &var, &con)) {
+
+         /* So e1 is of the form Add32(var,con) or Sub32(var,-con).
+            Find out if var can be expressed as var2 + con2. */
+         if (collapseChain(bb, i-1, var, &var2, &con2)) {
+            if (DEBUG_IROPT) {
+               vex_printf("replacing1 ");
+               ppIRStmt(st);
+               vex_printf(" with ");
+            }
+            con2 += con;
+            bb->stmts[i] 
+               = IRStmt_Tmp(
+                    st->Ist.Tmp.tmp,
+                    (con2 >= 0) 
+                      ? IRExpr_Binop(Iop_Add32, 
+                                     IRExpr_Tmp(var2),
+                                     IRExpr_Const(IRConst_U32(con2)))
+                      : IRExpr_Binop(Iop_Sub32, 
+                                     IRExpr_Tmp(var2),
+                                     IRExpr_Const(IRConst_U32(-con2)))
+                 );
+            if (DEBUG_IROPT) {
+               ppIRStmt(bb->stmts[i]);
+               vex_printf("\n");
+            }
+         }
+
+         continue;
       }
-      if (j == -1)
-	/* no earlier binding for var .. ill-formed IR */
-	vpanic("track_deltas_BB");
 
-      /* did we find anything interesting? */
-      if (var != e1->Iex.Binop.arg1->Iex.Tmp.tmp) {
-	//vex_printf("replacing ");
-	//ppIRStmt(st);
-	//vex_printf(" with ");
-	bb->stmts[i] 
-           = IRStmt_Tmp(st->Ist.Tmp.tmp,
-			(((Int)(con)) >= 0) 
-?
-			   IRExpr_Binop(Iop_Add32, IRExpr_Tmp(var),
-					IRExpr_Const(IRConst_U32(con)))
-			:
-			   IRExpr_Binop(Iop_Sub32, IRExpr_Tmp(var),
-					IRExpr_Const(IRConst_U32(-con)))
-			);
-	//ppIRStmt(bb->stmts[i]);
-	//vex_printf("\n");
+      /* Try to collapse 't1 = GetI[t2, con]'. */
+
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.data->tag == Iex_GetI
+          && st->Ist.Tmp.data->Iex.GetI.off->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.Tmp.data->Iex.GetI.off
+                                      ->Iex.Tmp.tmp, &var2, &con2)) {
+         if (DEBUG_IROPT) {
+            vex_printf("replacing3 ");
+            ppIRStmt(st);
+            vex_printf(" with ");
+         }
+         con2 += st->Ist.Tmp.data->Iex.GetI.bias;
+         bb->stmts[i]
+            = IRStmt_Tmp(
+                 st->Ist.Tmp.tmp,
+                 IRExpr_GetI(st->Ist.Tmp.data->Iex.GetI.descr,
+                             IRExpr_Tmp(var2),
+                             con2));
+         if (DEBUG_IROPT) {
+            ppIRStmt(bb->stmts[i]);
+            vex_printf("\n");
+         }
+         continue;
       }
-   }
+
+      /* Perhaps st is PutI[t, con] ? */
+
+      if (st->tag == Ist_PutI
+          && st->Ist.PutI.off->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.PutI.off->Iex.Tmp.tmp, 
+                               &var2, &con2)) {
+         if (DEBUG_IROPT) {
+            vex_printf("replacing2 ");
+            ppIRStmt(st);
+            vex_printf(" with ");
+         }
+         con2 += st->Ist.PutI.bias;
+         bb->stmts[i]
+           = IRStmt_PutI(st->Ist.PutI.descr,
+                         IRExpr_Tmp(var2),
+                         con2,
+                         st->Ist.PutI.data);
+         if (DEBUG_IROPT) {
+            ppIRStmt(bb->stmts[i]);
+            vex_printf("\n");
+         }
+         continue;
+      }
+
+   } /* for */
 
 }
 
@@ -2181,8 +2277,8 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    if (hasGetIorPutI(bb)) {
       n_expensive++;
       vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
-      //ppIRBB(bb); vex_printf("\n\n");
       cse_BB( bb );
+      //ppIRBB(bb); vex_printf("\n\n");
       track_deltas_BB( bb );
       /*
       ppIRBB(bb); vex_printf("\n\n");

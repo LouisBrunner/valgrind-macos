@@ -90,5 +90,14 @@
    obj:/usr/X11R6/lib/libXaw.so.7.0
 }
 
+{
+   libXpm.so.4.11/libXpm.so.4.11/libXpm.so.4.11
+   Cond
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+}
+
+
 ##----------------------------------------------------------------------##
 

@@ -947,7 +947,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
          /* cases where both args are consts */
          switch (e->Iex.Binop.op) {
 
-            /* --- Iop_Or --- */
+            /* -- Or -- */
             case Iop_Or8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -964,21 +964,53 @@ static IRExpr* fold_Expr ( IRExpr* e )
                         | e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
 
+            /* -- Xor -- */
             case Iop_Xor8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
+            case Iop_Xor32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+
+            /* -- And -- */
             case Iop_And8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
+            case Iop_And32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_And64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+               break;
+
+            /* -- Add -- */
             case Iop_Add8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
+            case Iop_Add32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_Add64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+               break;
+
+            /* -- Sub -- */
             case Iop_Sub8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -995,34 +1027,14 @@ static IRExpr* fold_Expr ( IRExpr* e )
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
-            case Iop_Add32:
-               e2 = IRExpr_Const(IRConst_U32(
-                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
-                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
-               break;
-            case Iop_Add64:
-               e2 = IRExpr_Const(IRConst_U64(
-                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
-                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
-               break;
-
-            case Iop_Xor32:
-               e2 = IRExpr_Const(IRConst_U32(
-                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
-                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
-               break;
-            case Iop_And32:
-               e2 = IRExpr_Const(IRConst_U32(
-                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
-                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
-               break;
-
+            /* -- Mul -- */
             case Iop_Mul32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         * e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
 
+            /* -- Shl -- */
             case Iop_Shl32:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
                shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
@@ -1040,6 +1052,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                            << shift)));
                break;
 
+            /* -- Sar -- */
             case Iop_Sar32: {
                /* paranoid ... */
                /*signed*/ Int s32;
@@ -1052,6 +1065,20 @@ static IRExpr* fold_Expr ( IRExpr* e )
                }
                break;
             }
+            case Iop_Sar64: {
+               /* paranoid ... */
+               /*signed*/ Long s64;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               s64   = (Long)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U64);
+               shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
+               if (shift >= 0 && shift <= 63) {
+                  s64 >>=/*signed*/ shift;
+                  e2 = IRExpr_Const(IRConst_U64((ULong)s64));
+               }
+               break;
+            }
+
+            /* -- Shr -- */
             case Iop_Shr32: {
                /* paranoid ... */
                /*unsigned*/ UInt s32;
@@ -1064,57 +1091,72 @@ static IRExpr* fold_Expr ( IRExpr* e )
                }
                break;
             }
+
+            /* -- CmpEQ -- */
             case Iop_CmpEQ32:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+               break;
+            case Iop_CmpEQ64:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));
+               break;
+
+            /* -- CmpNE -- */
+            case Iop_CmpNE8:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
+                        != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
                break;
             case Iop_CmpNE32:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
-
             case Iop_CmpNE64:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));
                break;
 
-            case Iop_CmpNE8:
-               e2 = IRExpr_Const(IRConst_U1(toBool(
-                       ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
-                        != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
-               break;
-
+            /* -- CmpLEU -- */
             case Iop_CmpLE32U:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
+
+            /* -- CmpLES -- */
             case Iop_CmpLE32S:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
 
+            /* -- CmpLTS -- */
             case Iop_CmpLT32S:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
+
+            /* -- CmpLTU -- */
             case Iop_CmpLT32U:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
 
+            /* -- nHLto2n -- */
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
                        (((ULong)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)) << 32)
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
+
             default:
                goto unhandled;
          }

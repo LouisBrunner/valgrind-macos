@@ -266,10 +266,11 @@ extern void VG_(popcc)  ( UInt cc );
 extern ULong VG_(bbs_done);
 
 /* Check if an address/whatever is aligned */
-#define IS_4_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0x3))
-#define IS_8_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0x7))
-#define IS_16_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & 0xf))
-#define IS_WORD_ALIGNED(aaa_p)  (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
+#define VG_IS_4_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x3))
+#define VG_IS_8_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x7))
+#define VG_IS_16_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0xf))
+#define VG_IS_WORD_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
+#define VG_IS_PAGE_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & (VKI_PAGE_SIZE-1)))
 
 
 /* ------------------------------------------------------------------ */
@@ -829,7 +830,7 @@ struct _SkipList {
    _strkey is a function which can return a string of your key - it's only used for debugging
    _arena is the arena to use for allocation - -1 is the default
  */
-#define SKIPLIST_INIT(_type, _key, _cmp, _strkey, _arena)		\
+#define VG_SKIPLIST_INIT(_type, _key, _cmp, _strkey, _arena)		\
 	{								\
 	   .arena       = _arena,					\
 	   .size	= sizeof(_type),				\

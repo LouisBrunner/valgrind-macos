@@ -246,7 +246,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    UChar   abits8;
    PROF_EVENT(24);
 #  ifdef VG_DEBUG_MEMORY
-   tl_assert(IS_4_ALIGNED(a));
+   tl_assert(VG_IS_4_ALIGNED(a));
 #  endif
    sm     = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
@@ -891,7 +891,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 #  else
 
    if (size == 4) {
-      if (!IS_4_ALIGNED(addr)) goto slow4;
+      if (!VG_IS_4_ALIGNED(addr)) goto slow4;
       PROF_EVENT(91);
       /* Properly aligned. */
       sm     = primary_map[PM_IDX(addr)];
@@ -906,7 +906,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
    }
 
    if (size == 8) {
-      if (!IS_4_ALIGNED(addr)) goto slow8;
+      if (!VG_IS_4_ALIGNED(addr)) goto slow8;
       PROF_EVENT(92);
       /* Properly aligned.  Do it in two halves. */
       addr4 = addr + 4;
@@ -1166,7 +1166,7 @@ static
 Bool ac_is_valid_address ( Addr a )
 {
    UChar abits;
-   tl_assert(IS_4_ALIGNED(a));
+   tl_assert(VG_IS_4_ALIGNED(a));
    abits = get_abits4_ALIGNED(a);
    if (abits == VGM_NIBBLE_VALID) {
       return True;

@@ -12,7 +12,7 @@ Memcheck is full of 32-bit assumptions:
   new_mem_stack_1wd, etc.  Also then need to change
   make_aligned_word_noaccess() et al (heaps of places)
 - also rotateRight16 and all its dependents...
-- all the calls to IS_ALIGNED4_ADDR are 32-bit specific code.  Likewise
+- all the calls to VG_IS_ALIGNED4_ADDR are 32-bit specific code.  Likewise
   with Addrcheck?  Not sure.  Plus there's one in vg_transtab.c which doesn't
   look right.
 

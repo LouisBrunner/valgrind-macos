@@ -416,7 +416,7 @@ extern            void MAC_(new_mem_stack) ( Addr a, SizeT len);
 void REGPARM(1) MAC_(new_mem_stack_4)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(110);                                                           \
-   if (IS_4_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_4_ALIGNED(new_ESP)) {                                            \
       ALIGNED4_NEW  ( new_ESP );                                              \
    } else {                                                                   \
       UNALIGNED_NEW ( new_ESP, 4 );                                           \
@@ -426,7 +426,7 @@ void REGPARM(1) MAC_(new_mem_stack_4)(Addr new_ESP)                           \
 void REGPARM(1) MAC_(die_mem_stack_4)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(120);                                                           \
-   if (IS_4_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_4_ALIGNED(new_ESP)) {                                            \
       ALIGNED4_DIE  ( new_ESP-4 );                                            \
    } else {                                                                   \
       UNALIGNED_DIE ( new_ESP-4, 4 );                                         \
@@ -436,9 +436,9 @@ void REGPARM(1) MAC_(die_mem_stack_4)(Addr new_ESP)                           \
 void REGPARM(1) MAC_(new_mem_stack_8)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(111);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_NEW  ( new_ESP );                                              \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_NEW  ( new_ESP   );                                            \
       ALIGNED4_NEW  ( new_ESP+4 );                                            \
    } else {                                                                   \
@@ -449,9 +449,9 @@ void REGPARM(1) MAC_(new_mem_stack_8)(Addr new_ESP)                           \
 void REGPARM(1) MAC_(die_mem_stack_8)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(121);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_DIE  ( new_ESP-8 );                                            \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_DIE  ( new_ESP-8 );                                            \
       ALIGNED4_DIE  ( new_ESP-4 );                                            \
    } else {                                                                   \
@@ -462,10 +462,10 @@ void REGPARM(1) MAC_(die_mem_stack_8)(Addr new_ESP)                           \
 void REGPARM(1) MAC_(new_mem_stack_12)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(112);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_NEW  ( new_ESP   );                                            \
       ALIGNED4_NEW  ( new_ESP+8 );                                            \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_NEW  ( new_ESP   );                                            \
       ALIGNED8_NEW  ( new_ESP+4 );                                            \
    } else {                                                                   \
@@ -477,10 +477,10 @@ void REGPARM(1) MAC_(die_mem_stack_12)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(122);                                                           \
    /* Note the -12 in the test */                                             \
-   if (IS_8_ALIGNED(new_ESP-12)) {                                            \
+   if (VG_IS_8_ALIGNED(new_ESP-12)) {                                         \
       ALIGNED8_DIE  ( new_ESP-12 );                                           \
       ALIGNED4_DIE  ( new_ESP-4  );                                           \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_DIE  ( new_ESP-12 );                                           \
       ALIGNED8_DIE  ( new_ESP-8  );                                           \
    } else {                                                                   \
@@ -491,10 +491,10 @@ void REGPARM(1) MAC_(die_mem_stack_12)(Addr new_ESP)                          \
 void REGPARM(1) MAC_(new_mem_stack_16)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(113);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_NEW  ( new_ESP   );                                            \
       ALIGNED8_NEW  ( new_ESP+8 );                                            \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_NEW  ( new_ESP    );                                           \
       ALIGNED8_NEW  ( new_ESP+4  );                                           \
       ALIGNED4_NEW  ( new_ESP+12 );                                           \
@@ -506,10 +506,10 @@ void REGPARM(1) MAC_(new_mem_stack_16)(Addr new_ESP)                          \
 void REGPARM(1) MAC_(die_mem_stack_16)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(123);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_DIE  ( new_ESP-16 );                                           \
       ALIGNED8_DIE  ( new_ESP-8  );                                           \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_DIE  ( new_ESP-16 );                                           \
       ALIGNED8_DIE  ( new_ESP-12 );                                           \
       ALIGNED4_DIE  ( new_ESP-4  );                                           \
@@ -521,12 +521,12 @@ void REGPARM(1) MAC_(die_mem_stack_16)(Addr new_ESP)                          \
 void REGPARM(1) MAC_(new_mem_stack_32)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(114);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_NEW  ( new_ESP    );                                           \
       ALIGNED8_NEW  ( new_ESP+8  );                                           \
       ALIGNED8_NEW  ( new_ESP+16 );                                           \
       ALIGNED8_NEW  ( new_ESP+24 );                                           \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_NEW  ( new_ESP    );                                           \
       ALIGNED8_NEW  ( new_ESP+4  );                                           \
       ALIGNED8_NEW  ( new_ESP+12 );                                           \
@@ -540,12 +540,12 @@ void REGPARM(1) MAC_(new_mem_stack_32)(Addr new_ESP)                          \
 void REGPARM(1) MAC_(die_mem_stack_32)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(124);                                                           \
-   if (IS_8_ALIGNED(new_ESP)) {                                               \
+   if (VG_IS_8_ALIGNED(new_ESP)) {                                            \
       ALIGNED8_DIE  ( new_ESP-32 );                                           \
       ALIGNED8_DIE  ( new_ESP-24 );                                           \
       ALIGNED8_DIE  ( new_ESP-16 );                                           \
       ALIGNED8_DIE  ( new_ESP- 8 );                                           \
-   } else if (IS_4_ALIGNED(new_ESP)) {                                        \
+   } else if (VG_IS_4_ALIGNED(new_ESP)) {                                     \
       ALIGNED4_DIE  ( new_ESP-32 );                                           \
       ALIGNED8_DIE  ( new_ESP-28 );                                           \
       ALIGNED8_DIE  ( new_ESP-20 );                                           \

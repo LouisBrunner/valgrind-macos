@@ -112,7 +112,7 @@ static Int pthread_cmp(const void *v1, const void *v2)
    return VG_(memcmp)(a, b, sizeof(*a));
 }
 
-static SkipList sk_pthread_map = SKIPLIST_INIT(struct pthread_map, id, pthread_cmp, 
+static SkipList sk_pthread_map = VG_SKIPLIST_INIT(struct pthread_map, id, pthread_cmp, 
 					       NULL, VG_AR_CORE);
 
 /* Find a ThreadId for a particular pthread_t; block until it becomes available */

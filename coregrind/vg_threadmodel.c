@@ -250,7 +250,7 @@
 //::    thread_setstate(th, TS_Dead);
 //:: }
 //:: 
-//:: static SkipList sk_threads = SKIPLIST_INIT(struct thread, tid, VG_(cmp_UInt), NULL, VG_AR_CORE);
+//:: static SkipList sk_threads = VG_SKIPLIST_INIT(struct thread, tid, VG_(cmp_UInt), NULL, VG_AR_CORE);
 //:: 
 //:: static struct thread *thread_get(ThreadId tid)
 //:: {
@@ -683,7 +683,7 @@
 //::    VG_(pp_ExeContext)(mx->ec_create);
 //:: }
 //:: 
-//:: static SkipList sk_mutex = SKIPLIST_INIT(struct mutex, mutex, VG_(cmp_Addr), NULL, VG_AR_CORE);
+//:: static SkipList sk_mutex = VG_SKIPLIST_INIT(struct mutex, mutex, VG_(cmp_Addr), NULL, VG_AR_CORE);
 //:: 
 //:: static struct mutex *mutex_get(Addr mutexp)
 //:: {
@@ -1007,7 +1007,7 @@
 //::    CVE_Blocked,
 //:: };
 //:: 
-//:: static SkipList sk_condvar = SKIPLIST_INIT(struct condvar, condvar, VG_(cmp_Addr),
+//:: static SkipList sk_condvar = VG_SKIPLIST_INIT(struct condvar, condvar, VG_(cmp_Addr),
 //:: 					   NULL, VG_AR_CORE);
 //:: 
 //:: static struct condvar *condvar_get(Addr condp)

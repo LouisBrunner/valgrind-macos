@@ -60,7 +60,7 @@
 		 :               :
 
 
-   When you declare the list with SKIPLIST_INIT, you specify the
+   When you declare the list with VG_SKIPLIST_INIT, you specify the
    structure for each list node, structure member you want to use as a
    key, and the function for comparing keys.
 

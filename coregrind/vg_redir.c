@@ -81,7 +81,7 @@ static Char *straddr(void *p)
    return buf;
 }
 
-static SkipList sk_resolved_redir = SKIPLIST_INIT(CodeRedirect, from_addr, 
+static SkipList sk_resolved_redir = VG_SKIPLIST_INIT(CodeRedirect, from_addr, 
 						  VG_(cmp_Addr), straddr, VG_AR_SYMTAB);
 static CodeRedirect *unresolved_redir = NULL;
 
@@ -518,7 +518,7 @@ void VG_(setup_code_redirect_table) ( void )
 //:: }
 //:: 
 //:: /* List of wrapped call invocations which are currently active */
-//:: static SkipList wrapped_frames = SKIPLIST_INIT(struct call_instance, key, keycmp, 
+//:: static SkipList wrapped_frames = VG_SKIPLIST_INIT(struct call_instance, key, keycmp, 
 //:: 					       NULL, VG_AR_SYMTAB);
 //:: 
 //:: static struct call_instance *find_call(Addr retaddr, Addr argsp, ThreadId tid)
@@ -611,11 +611,11 @@ void VG_(setup_code_redirect_table) ( void )
 //:: };
 //:: 
 //:: /* A mapping from eip of wrapped function entrypoints to actual wrappers */
-//:: static SkipList wrapped_functions = SKIPLIST_INIT(struct wrapped_function, eip, VG_(cmp_Addr),
+//:: static SkipList wrapped_functions = VG_SKIPLIST_INIT(struct wrapped_function, eip, VG_(cmp_Addr),
 //:: 						  NULL, VG_AR_SYMTAB);
 //:: 
 //:: /* A set of EIPs which are return addresses for wrapped functions */
-//:: static SkipList wrapper_returns = SKIPLIST_INIT(struct wrapper_return, eip, VG_(cmp_Addr),
+//:: static SkipList wrapper_returns = VG_SKIPLIST_INIT(struct wrapper_return, eip, VG_(cmp_Addr),
 //:: 						NULL, VG_AR_SYMTAB);
 //:: 
 //:: /* Wrap function starting at eip */

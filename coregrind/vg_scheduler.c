@@ -481,13 +481,13 @@ UInt run_thread_for_a_while ( ThreadId tid )
                (void*)a_vex, sz_vex, (void*)a_vexsh, sz_vexsh,
                (void*)a_spill, sz_spill );
 
-   vg_assert(IS_8_ALIGNED(sz_vex));
-   vg_assert(IS_8_ALIGNED(sz_vexsh));
-   vg_assert(IS_16_ALIGNED(sz_spill));
+   vg_assert(VG_IS_8_ALIGNED(sz_vex));
+   vg_assert(VG_IS_8_ALIGNED(sz_vexsh));
+   vg_assert(VG_IS_16_ALIGNED(sz_spill));
 
-   vg_assert(IS_4_ALIGNED(a_vex));
-   vg_assert(IS_4_ALIGNED(a_vexsh));
-   vg_assert(IS_4_ALIGNED(a_spill));
+   vg_assert(VG_IS_4_ALIGNED(a_vex));
+   vg_assert(VG_IS_4_ALIGNED(a_vexsh));
+   vg_assert(VG_IS_4_ALIGNED(a_spill));
 
    vg_assert(sz_vex == sz_vexsh);
    vg_assert(a_vex + sz_vex == a_vexsh);

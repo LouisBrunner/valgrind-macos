@@ -37,9 +37,6 @@
 
 static const Bool mem_debug = False;
 
-#define IS_PAGE_ALIGNED(_aa)  (((_aa) & (VKI_PAGE_SIZE-1)) == 0)
-
-
 /*--------------------------------------------------------------*/
 /*--- A simple, self-contained ordered array of segments.    ---*/
 /*--------------------------------------------------------------*/
@@ -347,7 +344,7 @@ static Int split_segment ( Addr a )
 {
    Int r;
    HWord delta;
-   vg_assert(IS_PAGE_ALIGNED(a));
+   vg_assert(VG_IS_PAGE_ALIGNED(a));
    r = find_segment(a);
    if (r == -1)
       /* not found */
@@ -562,8 +559,8 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    end = addr+len;
 
    /* Everything must be page-aligned */
-   vg_assert(IS_PAGE_ALIGNED(addr));
-   vg_assert(IS_PAGE_ALIGNED(len));
+   vg_assert(VG_IS_PAGE_ALIGNED(addr));
+   vg_assert(VG_IS_PAGE_ALIGNED(len));
 
    for (i = 0; i < segments_used; i++) {
 
@@ -675,7 +672,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
          addr, (ULong)len, prot, flags, dev, ino, off, filename);
 
    /* Everything must be page-aligned */
-   vg_assert(IS_PAGE_ALIGNED(addr));
+   vg_assert(VG_IS_PAGE_ALIGNED(addr));
    len = PGROUNDUP(len);
 
    /* Nuke/truncate any existing segment(s) covering [addr,addr+len) */
@@ -786,7 +783,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
    if (0) show_segments( "mprotect_range(before)" );
 
    /* Everything must be page-aligned */
-   vg_assert(IS_PAGE_ALIGNED(a));
+   vg_assert(VG_IS_PAGE_ALIGNED(a));
    len = PGROUNDUP(len);
 
    split_segment(a);
@@ -877,8 +874,8 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
       if (hole_start == hole_end+1)
          continue;
 
-      vg_assert(IS_PAGE_ALIGNED(hole_start));
-      vg_assert(IS_PAGE_ALIGNED(hole_end+1));
+      vg_assert(VG_IS_PAGE_ALIGNED(hole_start));
+      vg_assert(VG_IS_PAGE_ALIGNED(hole_end+1));
 
       /* ignore holes which fall outside the allowable area */
       if (!(hole_start >= base && hole_end <= limit))
@@ -886,7 +883,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
       vg_assert(hole_end > hole_start);
       hole_len = hole_end - hole_start + 1;
-      vg_assert(IS_PAGE_ALIGNED(hole_len));
+      vg_assert(VG_IS_PAGE_ALIGNED(hole_len));
 
       if (hole_len >= len && i_any == -1) {
          /* It will at least fit in this hole. */
@@ -1119,8 +1116,8 @@ Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
 
    p    = PGROUNDDN(p);
    size = PGROUNDUP(size);
-   vg_assert(IS_PAGE_ALIGNED(p));
-   vg_assert(IS_PAGE_ALIGNED(size));
+   vg_assert(VG_IS_PAGE_ALIGNED(p));
+   vg_assert(VG_IS_PAGE_ALIGNED(size));
 
    for (; size > 0; size -= VKI_PAGE_SIZE) {
       seg = VG_(find_segment)(p);
@@ -1288,8 +1285,8 @@ void *VG_(shadow_alloc)(UInt size)
       goto failed;
 
    try_here = shadow_alloc;
-   vg_assert(IS_PAGE_ALIGNED(try_here));
-   vg_assert(IS_PAGE_ALIGNED(size));
+   vg_assert(VG_IS_PAGE_ALIGNED(try_here));
+   vg_assert(VG_IS_PAGE_ALIGNED(size));
    vg_assert(size > 0);
 
    if (0)

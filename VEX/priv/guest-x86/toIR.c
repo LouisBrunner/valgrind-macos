@@ -10611,10 +10611,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       break;
  
    case 0x8D: /* LEA M,Gv */
-      vassert(sz == 4);
+      if (sz != 4)
+         goto decode_failure;
       modrm = getIByte(delta);
       if (epartIsReg(modrm)) 
-         vpanic("LEA M,Gv: modRM refers to register (x86)");
+         goto decode_failure;
       /* NOTE!  this is the one place where a segment override prefix
          has no effect on the address calculation.  Therefore we pass
          zero instead of sorb here. */

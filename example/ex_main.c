@@ -16,10 +16,6 @@ void SK_(pre_clo_init)()
       "Copyright (C) 2002, and put in the public domain, by Santa Claus.");
    VG_(details_bug_reports_to)  ("santa.claus@northpole.org");
 
-   /* Adjust this to be closer to reality once you have your skin
-      working. */
-   VG_(details_avg_translation_sizeB) ( 100 );
-
    /* No needs, no core events to track */
 }
 

@@ -1220,6 +1220,10 @@ extern void VG_(generic_detect_memory_leaks) (
 /* ------------------------------------------------------------------ */
 /* Details */
 
+/* Default value for avg_translations_sizeB (in bytes), indicating typical
+   code expansion of about 6:1. */
+#define VG_DEFAULT_TRANS_SIZEB   100
+
 /* Information used in the startup message.  `name' also determines the
    string used for identifying suppressions in a suppression file as
    belonging to this skin.  `version' can be NULL, in which case (not
@@ -1233,10 +1237,9 @@ extern void VG_(details_description)           ( Char* description );
 extern void VG_(details_copyright_author)      ( Char* copyright_author );
 
 /* Average size of a translation, in bytes, so that the translation
-   storage machinery can allocate memory appropriately.  Not critical.
-   If you're unsure, set to 100 (indicating typical code expansion of
-   about 6:1). */
-extern void VG_(details_avg_translation_sizeB) ( Int );
+   storage machinery can allocate memory appropriately.  Not critical,
+   setting is optional. */ 
+extern void VG_(details_avg_translation_sizeB) ( UInt size );
 
 /* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
    is called.  Should probably be an email address. */

@@ -293,7 +293,7 @@ typedef
       Char* description;
       Char* copyright_author;
       Char* bug_reports_to;
-      Int   avg_translation_sizeB;
+      UInt  avg_translation_sizeB;
    }
    VgDetails;
 

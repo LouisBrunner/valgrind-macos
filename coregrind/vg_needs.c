@@ -43,7 +43,7 @@ VgDetails VG_(details) = {
    .description           = NULL,
    .copyright_author      = NULL,
    .bug_reports_to        = NULL,
-   .avg_translation_sizeB = 0
+   .avg_translation_sizeB = VG_DEFAULT_TRANS_SIZEB,
 };
 
 VgNeeds VG_(needs) = {
@@ -109,15 +109,15 @@ void VG_(sanity_check_needs) ( void)
    if ((var)==(value)) {                                    \
       VG_(printf)("\nSkin error: `%s' not initialised\n",   \
                   VG__STRING(var));                         \
-      VG_(skin_panic)("Uninitialised needs field\n");       \
+      VG_(skin_panic)("Uninitialised details field\n");     \
    }
    
+   /* Ones that must be set */
    CHECK_NOT(VG_(details).name,             NULL);
    /* Nb: .version can be NULL */
    CHECK_NOT(VG_(details).description,      NULL);
    CHECK_NOT(VG_(details).copyright_author, NULL);
    CHECK_NOT(VG_(details).bug_reports_to,   NULL);
-   CHECK_NOT(VG_(details).avg_translation_sizeB, 0);
 
 #undef CHECK_NOT
 #undef INVALID_Bool
@@ -138,7 +138,7 @@ DETAILS(Char*, version)
 DETAILS(Char*, description)
 DETAILS(Char*, copyright_author)
 DETAILS(Char*, bug_reports_to)
-DETAILS(Int, avg_translation_sizeB)
+DETAILS(UInt,  avg_translation_sizeB)
 
 /*--------------------------------------------------------------------*/
 /* Setting needs */

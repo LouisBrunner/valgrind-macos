@@ -4355,7 +4355,8 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 
 
 static
-ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
+ULong dis_FPU ( /*OUT*/Bool* decode_ok, 
+                Prefix pfx, ULong delta )
 {
    Int    len;
    UInt   r_src, r_dst;
@@ -7026,48 +7027,37 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 }
 
 
-//.. static
-//.. UInt dis_xadd_G_E ( UChar sorb, Int sz, ULong delta0 )
-//.. {
-//..    Int   len;
-//..    UChar rm = getUChar(delta0);
-//..    HChar dis_buf[50];
-//.. 
-//..    //   Int tmpd = newTemp(cb);
-//..    //Int tmpt = newTemp(cb);
-//.. 
-//..    IRType ty    = szToITy(sz);
-//..    IRTemp tmpd  = newTemp(ty);
-//..    IRTemp tmpt0 = newTemp(ty);
-//..    IRTemp tmpt1 = newTemp(ty);
-//.. 
-//..    if (epartIsReg(rm)) {
-//..      vassert(0);
-//.. #if 0
-//..       uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
-//..       uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
-//..       uInstr2(cb, ADD, sz, TempReg, tmpd, TempReg, tmpt);
-//..       setFlagsFromUOpcode(cb, ADD);
-//..       uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
-//..       uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
-//..       DIP("xadd%c %s, %s\n",
-//..           nameISize(sz), nameIReg(sz,gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
-//..       return 1+eip0;
-//.. #endif
-//..    } else {
-//..       IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
-//..       assign( tmpd,  loadLE(ty, mkexpr(addr)) );
-//..       assign( tmpt0, getIReg(sz, gregOfRM(rm)) );
-//..       assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), mkexpr(tmpd), mkexpr(tmpt0)) );
-//..       setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
-//..       storeLE( mkexpr(addr), mkexpr(tmpt1) );
-//..       putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
-//..       DIP("xadd%c %s, %s\n",
-//..           nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
-//..       return len+delta0;
-//..    }
-//.. }
-//.. 
+static
+ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
+                     Prefix pfx, Int sz, ULong delta0 )
+{
+   Int   len;
+   UChar rm = getUChar(delta0);
+   HChar dis_buf[50];
+
+   IRType ty    = szToITy(sz);
+   IRTemp tmpd  = newTemp(ty);
+   IRTemp tmpt0 = newTemp(ty);
+   IRTemp tmpt1 = newTemp(ty);
+   *decode_ok = True;
+
+   if (epartIsReg(rm)) {
+      *decode_ok = False;
+      return delta0;
+   } else {
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
+      assign( tmpd,  loadLE(ty, mkexpr(addr)) );
+      assign( tmpt0, getIRegG(sz, pfx, rm) );
+      assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), mkexpr(tmpd), mkexpr(tmpt0)) );
+      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
+      storeLE( mkexpr(addr), mkexpr(tmpt1) );
+      putIRegG(sz, pfx, rm, mkexpr(tmpd));
+      DIP("xadd%c %s, %s\n",
+          nameISize(sz), nameIRegG(sz,pfx,rm), dis_buf);
+      return len+delta0;
+   }
+}
+
 //.. /* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
 //.. 
 //.. static
@@ -13154,15 +13144,19 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
         DIP("syscall\n");
         break;
 
-//..       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
-//.. 
+      /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
+
 //.. //--       case 0xC0: /* XADD Gb,Eb */
 //.. //--          eip = dis_xadd_G_E ( cb, sorb, 1, eip );
 //.. //--          break;
-//..       case 0xC1: /* XADD Gv,Ev */
-//..          delta = dis_xadd_G_E ( sorb, sz, delta );
-//..          break;
-//.. 
+      case 0xC1: { /* XADD Gv,Ev */ 
+         Bool decode_OK = False;
+         delta = dis_xadd_G_E ( &decode_OK, pfx, sz, delta );
+         if (!decode_OK)
+            goto decode_failure;
+         break;
+      }
+
 //..       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 //.. 
 //..       case 0x71: 

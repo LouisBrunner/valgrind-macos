@@ -50,7 +50,7 @@ static Bool verbose = True;
 /* Forwards */
 #if 0 /* UNUSED */
 static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
-static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType );
+static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType, IRType );
 #endif
 
 static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
@@ -193,6 +193,8 @@ int main ( int argc, char** argv )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
+#if 0 /* UNUSED */
+
 static
 __attribute((noreturn))
 void panic ( HChar* s )
@@ -201,7 +203,6 @@ void panic ( HChar* s )
   failure_exit();
 }
 
-#if 0 /* UNUSED */
 static
 IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
@@ -349,6 +350,8 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
+#if 0 /* UNUSED */
+
 #define tl_assert(xxx) assert(xxx)
 #define VG_(xxxx) xxxx
 #define tool_panic(zzz) panic(zzz)
@@ -361,10 +364,10 @@ static void MC_helperc_LOADV8 ( void );
 static void MC_helperc_LOADV4 ( void );
 static void MC_helperc_LOADV2 ( void );
 static void MC_helperc_LOADV1 ( void );
-//static void MC_helperc_STOREV8( void );
-//static void MC_helperc_STOREV4( void );
-//static void MC_helperc_STOREV2( void );
-//static void MC_helperc_STOREV1( void );
+static void MC_helperc_STOREV8( void );
+static void MC_helperc_STOREV4( void );
+static void MC_helperc_STOREV2( void );
+static void MC_helperc_STOREV1( void );
 static void MC_helperc_value_check0_fail( void );
 static void MC_helperc_value_check1_fail( void );
 static void MC_helperc_value_check4_fail( void );
@@ -374,10 +377,10 @@ static void MC_helperc_LOADV8 ( void ) { }
 static void MC_helperc_LOADV4 ( void ) { }
 static void MC_helperc_LOADV2 ( void ) { }
 static void MC_helperc_LOADV1 ( void ) { }
-//static void MC_helperc_STOREV8( void ) { }
-//static void MC_helperc_STOREV4( void ) { }
-//static void MC_helperc_STOREV2( void ) { }
-//static void MC_helperc_STOREV1( void ) { }
+static void MC_helperc_STOREV8( void ) { }
+static void MC_helperc_STOREV4( void ) { }
+static void MC_helperc_STOREV2( void ) { }
+static void MC_helperc_STOREV1( void ) { }
 static void MC_helperc_value_check0_fail( void ) { }
 static void MC_helperc_value_check1_fail( void ) { }
 static void MC_helperc_value_check4_fail( void ) { }
@@ -1040,7 +1043,6 @@ static Bool isAlwaysDefd ( MCEnv* mce, Int offset, Int size )
 }
 
 
-#if 0 /* UNUSED */
 /* Generate into bb suitable actions to shadow this Put.  If the state
    slice is marked 'always defined', do nothing.  Otherwise, write the
    supplied V bits to the shadow state.  We can pass in either an
@@ -1107,7 +1109,6 @@ void do_shadow_PUTI ( MCEnv* mce,
       stmt( mce->bb, IRStmt_PutI( new_descr, ix, bias, vatom ));
    }
 }
-#endif /* UNUSED */
 
 
 /* Return an expression which contains the V bits corresponding to the
@@ -1209,7 +1210,6 @@ IRAtom* mkLazyN ( MCEnv* mce,
 }
 
 
-#if 0 /* UNUSED */
 /*------------------------------------------------------------*/
 /*--- Generating expensive sequences for exact carry-chain ---*/
 /*--- propagation in add/sub and related operations.       ---*/
@@ -1266,7 +1266,6 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
       )
    );
 }
-#endif /* UNUSED */
 
 
 /*------------------------------------------------------------*/
@@ -2077,7 +2076,6 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
    }
 }
 
-#if 0 /* UNUSED */
 /*------------------------------------------------------------*/
 /*--- Generate shadow stmts from all kinds of IRStmts.     ---*/
 /*------------------------------------------------------------*/
@@ -2409,14 +2407,12 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    }
 
 }
-#endif /* UNUSED */
 
 
 /*------------------------------------------------------------*/
 /*--- Memcheck main                                        ---*/
 /*------------------------------------------------------------*/
 
-#if 0 /* UNUSED */
 static Bool isBogusAtom ( IRAtom* at )
 {
    ULong n = 0;
@@ -2476,18 +2472,16 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          return isBogusAtom(st->Ist.STle.addr) 
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
-         return isBogusAtom(st->Ist.Exit.cond);
+         return isBogusAtom(st->Ist.Exit.guard);
       default: 
       unhandled:
          ppIRStmt(st);
          VG_(tool_panic)("hasBogusLiterals");
    }
 }
-#endif /* UNUSED */
 
-
-#if 0 /* UNUSED */
-IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+                      IRType gWordTy, IRType hWordTy )
 {
    Bool verboze = False; //True; 
 
@@ -2573,6 +2567,10 @@ IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
          case Ist_Dirty:
             do_shadow_Dirty( &mce, st->Ist.Dirty.details );
+            break;
+
+         case Ist_IMark:
+         case Ist_NoOp:
             break;
 
          default:

@@ -43,8 +43,8 @@
 /* Alloc & copy, and dealloc. */
 extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
 extern void        VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
-extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
 #endif
+extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
 
 #endif   // __AMD64_PRIVATE_H
 

@@ -96,11 +96,8 @@ void VGA_(init_thread1state) ( Addr client_eip,
 
 void VGA_(clear_thread)( ThreadArchState *arch )
 {
-   I_die_here;
-#if 0
    arch->ldt = NULL;
    VG_(clear_TLS_for_thread)(arch->tls);
-#endif
 }  
 
 void VGA_(cleanup_thread) ( ThreadArchState *arch )

@@ -34,7 +34,17 @@
    Give a binding for everything the real libpthread.so binds.
    ------------------------------------------------------------------ */
 
-#include "vg_include.h"  /* For GLIBC_2_3, or not, as the case may be */
+# define strong_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+
+# define symbol_version(real, name, version) \
+  __asm__(".symver " #real "," #name "@" #version)
+
+# define default_symbol_version(real, name, version) \
+  __asm__(".symver " #real "," #name "@@" #version)
 
 extern void vgPlain_unimp ( char* );
 #define unimp(str) vgPlain_unimp(str)
@@ -163,48 +173,16 @@ void sem_unlink ( void )  { unimp("sem_unlink"); }
 //void siglongjmp ( void )  { unimp("siglongjmp"); }
 //void sigwait ( void )  { unimp("sigwait"); }
 
-void __pthread_clock_gettime ( void ) { unimp("__pthread_clock_gettime"); }
-void __pthread_clock_settime ( void ) { unimp("__pthread_clock_settime"); }
-#ifdef GLIBC_2_3
-/* Needed for Red Hat 8.0 */
-__asm__(".symver __pthread_clock_gettime,"
-        "__pthread_clock_gettime@GLIBC_PRIVATE");
-__asm__(".symver __pthread_clock_settime,"
-        "__pthread_clock_settime@GLIBC_PRIVATE");
-#endif
+void __pthread_clock_gettime_private ( void ) { unimp("__pthread_clock_gettime"); }
+void __pthread_clock_settime_private ( void ) { unimp("__pthread_clock_settime"); }
+strong_alias(__pthread_clock_gettime_private, __pthread_clock_gettime_223);
+strong_alias(__pthread_clock_settime_private, __pthread_clock_settime_223);
+symbol_version(__pthread_clock_gettime_223, __pthread_clock_gettime, GLIBC_2.2.3);
+symbol_version(__pthread_clock_settime_223, __pthread_clock_settime, GLIBC_2.2.3);
+default_symbol_version(__pthread_clock_gettime_private, __pthread_clock_gettime, GLIBC_PRIVATE);
+default_symbol_version(__pthread_clock_settime_private, __pthread_clock_settime, GLIBC_PRIVATE);
 
 
-#if 0
-void pthread_create@@GLIBC_2.1 ( void )  { unimp("pthread_create@@GLIBC_2.1"); }
-void pthread_create@GLIBC_2.0 ( void )  { unimp("pthread_create@GLIBC_2.0"); }
-
-void sem_wait@@GLIBC_2.1 ( void )  { unimp("sem_wait@@GLIBC_2.1"); }
-void sem_wait@GLIBC_2.0 ( void )  { unimp("sem_wait@GLIBC_2.0"); }
-
-void sem_trywait@@GLIBC_2.1 ( void )  { unimp("sem_trywait@@GLIBC_2.1"); }
-void sem_trywait@GLIBC_2.0 ( void )  { unimp("sem_trywait@GLIBC_2.0"); }
-
-void sem_post@@GLIBC_2.1 ( void )  { unimp("sem_post@@GLIBC_2.1"); }
-void sem_post@GLIBC_2.0 ( void )  { unimp("sem_post@GLIBC_2.0"); }
-
-void sem_destroy@@GLIBC_2.1 ( void )  { unimp("sem_destroy@@GLIBC_2.1"); }
-void sem_destroy@GLIBC_2.0 ( void )  { unimp("sem_destroy@GLIBC_2.0"); }
-void sem_getvalue@@GLIBC_2.1 ( void )  { unimp("sem_getvalue@@GLIBC_2.1"); }
-void sem_getvalue@GLIBC_2.0 ( void )  { unimp("sem_getvalue@GLIBC_2.0"); }
-void sem_init@@GLIBC_2.1 ( void )  { unimp("sem_init@@GLIBC_2.1"); }
-void sem_init@GLIBC_2.0 ( void )  { unimp("sem_init@GLIBC_2.0"); }
-
-void pthread_attr_init@@GLIBC_2.1 ( void )  { unimp("pthread_attr_init@@GLIBC_2.1"); }
-void pthread_attr_init@GLIBC_2.0 ( void )  { unimp("pthread_attr_init@GLIBC_2.0"); }
-#endif
-
-
-
-# define strong_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
-
-# define weak_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
 //weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
 //weak_alias(pthread_rwlock_init, __pthread_rwlock_init)

@@ -33,8 +33,6 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --db-command=<command>    command to start debugger [gdb -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]
 
-  user options for Nulgrind:
-    (none)
 
   debugging options for all Valgrind tools:
     --sanity-level=<number>   level of sanity checking to do [1]
@@ -43,7 +41,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --profile=no|yes          profile? (tool must be built for it) [no]
     --chain-bb=no|yes         do basic-block chaining? [yes]
     --branchpred=yes|no       generate branch prediction hints [no]
-    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]
+    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]
@@ -51,12 +49,27 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --trace-pthread=none|some|all  show pthread event details? [none]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
 
+    --vex-iropt-verbosity             0 .. 9 [0]
+    --vex-iropt-level                 0 .. 2 [2]
+    --vex-iropt-precise-memory-exns   [no]
+    --vex-iropt-unroll-thresh         0 .. 400 [120]
+    --vex-guest-max-insns             1 .. 100 [50]
+    --vex-guest-chase-thresh          0 .. 99  [10]
+
+    --trace-codegen values (omit the middle space):
+       1000 0000   show conversion into IR
+       0100 0000   show after initial opt
+       0010 0000   show after instrumentation
+       0001 0000   show after second opt
+       0000 1000   show after tree building
+       0000 0100   show selecting insns
+       0000 0010   show after reg-alloc
+       0000 0001   show final assembly
+
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated
                               with <number>'th error context [0=show none]
 
-  debugging options for Nulgrind:
-    (none)
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 

@@ -7410,6 +7410,22 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 0F 29 = MOVAPS -- move from G (xmm) to E (mem or xmm). */
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x29) {
+      modrm = getIByte(delta+2);
+
+      if (epartIsReg(modrm)) {
+         /* fall through; awaiting test case */
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
+         DIP("movaps %s,%s\n", nameXMMReg(gregOfRM(modrm)),
+                               dis_buf );
+         delta += 2+alen;
+         goto decode_success;
+      }
+   }
+
    /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
    /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x16) {

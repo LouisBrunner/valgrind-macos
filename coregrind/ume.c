@@ -50,6 +50,13 @@
 #include "ume.h"
 #include "vg_include.h"
 
+struct elfinfo
+{
+   ESZ(Ehdr)	e;
+   ESZ(Phdr)	*p;
+   int		fd;
+};
+
 static int padfile = -1;
 static struct stat padstat;
 

@@ -1,4 +1,9 @@
 
+/*--------------------------------------------------------------------*/
+/*--- A header file used by both stage1 and stage2.                ---*/
+/*---                                                        ume.h ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
@@ -30,6 +35,10 @@
 #include <elf.h>
 #include <sys/types.h>
 
+/*------------------------------------------------------------*/
+/*--- General stuff                                        ---*/
+/*------------------------------------------------------------*/
+
 #if	ELFSZ == 64
 #define ESZ(x)	Elf64_##x
 #elif	ELFSZ == 32
@@ -41,47 +50,49 @@
 /* Integer type the same size as a pointer */
 typedef ESZ(Addr) addr_t;
 
+/*------------------------------------------------------------*/
+/*--- Loading ELF files                                    ---*/
+/*------------------------------------------------------------*/
+
 struct exeinfo
 {
-   addr_t	map_base;	/* INPUT: if non-zero, base address of mappings  */
+   addr_t map_base;     // INPUT: if non-zero, base address of mappings
+   char** argv;         // INPUT: the original argv
 
-   addr_t	exe_base;	/* INOUT: lowest (allowed) address of exe	*/
-   addr_t	exe_end;	/* INOUT: highest (allowed) address	*/
+   addr_t exe_base;     // INOUT: lowest (allowed) address of exe
+   addr_t exe_end;      // INOUT: highest (allowed) address
 
-   addr_t	phdr;		/* address phdr was mapped at		*/
-   int		phnum;		/* number of phdrs			*/
-   addr_t	interp_base;	/* where interpreter (ld.so) was mapped	*/
-   addr_t	entry;		/* entrypoint in main executable	*/
-   addr_t	init_eip;	/* initial eip				*/
-   addr_t	brkbase;	/* base address of brk segment		*/
+   addr_t phdr;         // address phdr was mapped at
+   int    phnum;        // number of phdrs
+   addr_t interp_base;  // where interpreter (ld.so) was mapped
+   addr_t entry;        // entrypoint in main executable
+   addr_t init_eip;     // initial eip
+   addr_t brkbase;      // base address of brk segment
 
-   /* these are the extra args added by #! scripts */
-   char		*argv0;		/* INPUT: the interpreter name */
-   char		*argv1;		/* INPUT: the args for the interpreter */
-
-   char		**argv;		/* INPUT: the original argv */
+   // These are the extra args added by #! scripts
+   char*  argv0;        // INPUT: the interpreter name
+   char*  argv1;        // INPUT: the args for the interpreter
 };
 
 int do_exec(const char *exe, struct exeinfo *info);
 
+/*------------------------------------------------------------*/
+/*--- Address space padding                                ---*/
+/*------------------------------------------------------------*/
+
 void foreach_map(int (*fn)(void *start, void *end,
 			   const char *perm, off_t offset,
 			   int maj, int min, int ino));
+
 void as_pad(void *start, void *end);
 void as_unpad(void *start, void *end);
 void as_closepadfile(void);
 int  as_getpadfd(void);
 void as_setpadfd(int);
 
-struct elfinfo
-{
-   ESZ(Ehdr)	e;
-   ESZ(Phdr)	*p;
-   int		fd;
-};
-
-struct elfinfo *readelf(int fd, const char *filename);
-ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base);
+/*------------------------------------------------------------*/
+/*--- Finding and dealing with auxv                        ---*/
+/*------------------------------------------------------------*/
 
 struct ume_auxv
 {
@@ -100,3 +111,7 @@ struct ume_auxv *find_auxv(int *orig_esp);
 #define AT_UME_EXECFD	0xff02	/* stage1 executable fd */
 
 #endif /* _COREGRIND_UME_H */
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                    ume.h ---*/
+/*--------------------------------------------------------------------*/

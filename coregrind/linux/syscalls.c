@@ -314,8 +314,8 @@ PRE(sys_prctl, MayBlock)
    // XXX: too simplistic, often not all args are used
    // Nb: can't use "ARG2".."ARG5" here because that's our own macro...
    PRE_REG_READ5(long, "prctl",
-                 int, option, unsigned long, parg2, unsigned long, parg3,
-                 unsigned long, parg4, unsigned long, parg5);
+                 int, option, unsigned long, arg2, unsigned long, arg3,
+                 unsigned long, arg4, unsigned long, arg5);
    // XXX: totally wrong... we need to look at the 'option' arg, and do
    // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
 }

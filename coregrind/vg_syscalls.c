@@ -5656,8 +5656,8 @@ PRE(sys_clock_getres, 0)
    // Nb: we can't use "RES" as the param name because that's a macro
    // defined above!
    PRE_REG_READ2(long, "clock_getres", 
-                 vki_clockid_t, clk_id, struct timespec *, cres);
-   PRE_MEM_WRITE( "clock_getres(cres)", ARG2, sizeof(struct vki_timespec) );
+                 vki_clockid_t, clk_id, struct timespec *, res);
+   PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
 }
 
 POST(sys_clock_getres)

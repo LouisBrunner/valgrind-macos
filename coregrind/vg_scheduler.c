@@ -272,12 +272,6 @@ void VG_(resume_scheduler)(Int sigNo, vki_siginfo_t *info)
    }
 }
 
-/* Run the thread tid for a while, and return a VG_TRC_* value to the
-   scheduler indicating what happened. */
-void VG_(oynk) ( Int n )
-{
-  VG_(printf)("OYNK %d\n", n);
-}
 
 static
 UInt run_thread_for_a_while ( ThreadId tid )
@@ -286,10 +280,37 @@ UInt run_thread_for_a_while ( ThreadId tid )
    volatile Int dispatch_ctr_SAVED = VG_(dispatch_ctr);
    volatile Int done_this_time;
 
+   /* For paranoia purposes only */
+   volatile Addr a_vex    = (Addr) & VG_(threads)[tid].arch.vex;
+   volatile Addr a_vexsh  = (Addr) & VG_(threads)[tid].arch.vex_shadow;
+   volatile Addr a_spill  = (Addr) & VG_(threads)[tid].arch.vex_spill;
+   volatile UInt sz_vex   = (UInt) sizeof VG_(threads)[tid].arch.vex;
+   volatile UInt sz_vexsh = (UInt) sizeof VG_(threads)[tid].arch.vex_shadow;
+   volatile UInt sz_spill = (UInt) sizeof VG_(threads)[tid].arch.vex_spill;
+
+   /* Paranoia */
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(!scheduler_jmpbuf_valid);
    vg_assert(vg_tid_currently_running == VG_INVALID_THREADID);
+
+   /* Even more paranoia.  Check that what we have matches
+      Vex's guest state layout requirements. */
+
+#  define IS_8_ALIGNED(_xx) (0 == ((_xx) & 7))
+
+   vg_assert(IS_8_ALIGNED(sz_vex));
+   vg_assert(IS_8_ALIGNED(sz_vexsh));
+   vg_assert(IS_8_ALIGNED(a_vex));
+   vg_assert(IS_8_ALIGNED(a_vexsh));
+
+   vg_assert(sz_vex == sz_vexsh);
+   vg_assert(a_vex + sz_vex == a_vexsh);
+
+   vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
+   vg_assert(a_vex + 2 * sz_vex == a_spill);
+
+#  undef IS_8_ALIGNED
 
    VGP_PUSHCC(VgpRun);
 

@@ -57,6 +57,9 @@ suitable for use by anyone at all!
 - Read/write syscall starts: don't crap out when the initial
   nonblocking read/write returns an error.
 
+- Get rid of restrictions re use of sigaltstack; they are no longer
+  needed.  
+
 */
 
 
@@ -433,8 +436,8 @@ void VG_(scheduler_init) ( void )
 
    startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
    if ((startup_esp & VG_STARTUP_STACK_MASK) != VG_STARTUP_STACK_MASK) {
-      VG_(printf)("%esp at startup = %p is not near %p; aborting\n", 
-                  startup_esp, VG_STARTUP_STACK_MASK);
+      VG_(printf)("%%esp at startup = %p is not near %p; aborting\n", 
+                  (void*)startup_esp, (void*)VG_STARTUP_STACK_MASK);
       VG_(panic)("unexpected %esp at startup");
    }
 
@@ -685,6 +688,7 @@ void sched_do_syscall ( ThreadId tid )
    possibly much later: it delivers the results from ready fds to
    threads in WaitFD state. 
 */
+static
 void poll_for_ready_fds ( void )
 {
    vki_ksigset_t      saved_procmask;
@@ -827,6 +831,7 @@ void poll_for_ready_fds ( void )
 
 
 /* See comment attached to poll_for_ready_fds() for explaination. */
+static
 void complete_blocked_syscalls ( void )
 {
    Int      fd, i, res, syscall_no;

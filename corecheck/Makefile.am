@@ -54,7 +54,6 @@ valgrind_so_SOURCES = \
 	vg_to_ucode.c \
 	vg_translate.c \
 	vg_transtab.c \
-	vg_valgrinq_dummy.c \
 	vg_vtagops.c
 
 valgrind_so_LDADD = \

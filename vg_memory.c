@@ -1629,7 +1629,7 @@ void VGM_(init_memory_audit) ( void )
       VG_(panic)("vgm_init_memory_audit: can't determine data-seg end");
 
    if (0)
-      VG_(printf)("DS END is %p\n", VGM_(curr_dataseg_end));
+      VG_(printf)("DS END is %p\n", (void*)VGM_(curr_dataseg_end));
 
    /* Read the list of errors to suppress.  This should be found in
       the file specified by vg_clo_suppressions. */
@@ -1731,7 +1731,7 @@ UInt VG_(scan_all_valid_memory) ( void (*notify_word)( Addr, UInt ) )
          if (0)
          VG_(printf)(
             "vg_scan_all_valid_memory_sighandler: ignoring page at %p\n",
-            pageBase 
+            (void*)pageBase 
          );
       }
    }

@@ -481,7 +481,7 @@ void pp_vg_ksigaction ( vki_ksigaction* sa )
 {
    Int i;
    VG_(printf)("vg_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
-               sa->ksa_handler, sa->ksa_flags, sa->ksa_restorer);
+               sa->ksa_handler, (UInt)sa->ksa_flags, sa->ksa_restorer);
    VG_(printf)("vg_ksigaction: { ");
    for (i = 1; i < VKI_KNSIG; i++)
       if (VG_(ksigismember(&(sa->ksa_mask),i)))

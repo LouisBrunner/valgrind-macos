@@ -286,7 +286,8 @@ void VG_(delete_client_stack_blocks_following_ESP_change) ( void )
       vg_csb_discards++;
       if (VG_(clo_verbosity) > 2)
          VG_(printf)("discarding stack block %p for %d\n", 
-            vg_csbs[vg_csb_used].start, vg_csbs[vg_csb_used].size);
+            (void*)vg_csbs[vg_csb_used].start, 
+            vg_csbs[vg_csb_used].size);
    }
 }
 
@@ -300,7 +301,7 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
 
    if (VG_(clo_verbosity) > 2)
       VG_(printf)("client request: code %d,  addr %p,  len %d\n", 
-                  arg[0], arg[1], arg[2] );
+                  arg[0], (void*)arg[1], arg[2] );
 
    vg_assert(VG_(clo_client_perms));
    vg_assert(VG_(clo_instrument));

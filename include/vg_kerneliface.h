@@ -953,6 +953,17 @@ enum {
     VKI_IOCB_CMD_NOOP = 6,
 };
 
+/*
+ * linux/mqueue.h
+ */
+
+struct vki_mq_attr {
+	long	mq_flags;	/* message queue flags			*/
+	long	mq_maxmsg;	/* maximum number of messages		*/
+	long	mq_msgsize;	/* maximum message size			*/
+	long	mq_curmsgs;	/* number of messages currently queued	*/
+	long	__reserved[4];	/* ignored for input, zeroed for output */
+};
 
 #endif /*  __VG_KERNELIFACE_H */
 

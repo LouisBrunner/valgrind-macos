@@ -5548,6 +5548,118 @@ POST(io_cancel)
    VG_TRACK( post_mem_write, arg3, sizeof(vki_io_event) );
 }
 
+PRE(mq_open)
+{
+   /* mqd_t mq_open(const char *name, int oflag, ...); */
+   MAYBE_PRINTF("mq_open( %p(%s), %d )\n", arg1,arg1,arg2);
+   SYSCALL_TRACK( pre_mem_read_asciiz, tid, "mq_open(name)", arg1 );
+   if ((arg2 & VKI_O_CREAT) != 0 && arg4 != 0) {
+      const struct vki_mq_attr *attr = (struct vki_mq_attr *)arg4;
+      SYSCALL_TRACK( pre_mem_read, tid, "mq_open(attr->mq_maxmsg)",
+                     (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
+      SYSCALL_TRACK( pre_mem_read, tid, "mq_open(attr->mq_msgsize)",
+                     (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
+   }
+}
+
+POST(mq_open)
+{
+   if (!fd_allowed(res, "mq_open", tid, True)) {
+      VG_(close)(res);
+      res = -VKI_EMFILE;
+   } else {
+      if (VG_(clo_track_fds))
+         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+   }
+   MAYBE_PRINTF("%d\n",res);
+}
+
+PRE(mq_unlink)
+{
+   /* int mq_unlink(const char *name) */
+   MAYBE_PRINTF("mq_unlink ( %p \"%s\" )\n",arg1, arg1);
+   SYSCALL_TRACK( pre_mem_read_asciiz, tid, "mq_unlink(name)", arg1 );
+}
+
+PRE(mq_timedsend)
+{
+   /* int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
+                       unsigned msg_prio, const struct timespec *abs_timeout); */
+   MAYBE_PRINTF("mq_timedsend ( %d, %p, %d, %d, %p )\n",
+                arg1,arg2,arg3,arg4,arg5);
+   if (!fd_allowed(arg1, "mq_timedsend", tid, False)) {
+      res = -VKI_EBADF;
+   } else {
+      SYSCALL_TRACK( pre_mem_read, tid, "mq_timedsend(msg_ptr)", arg2, arg3 );
+      if (arg5 != 0)
+         SYSCALL_TRACK( pre_mem_read, tid, "mq_timedsend(abs_timeout)", arg5,
+                        sizeof(struct timespec) );
+   }
+}
+
+PRE(mq_timedreceive)
+{
+   /* ssize_t mq_timedreceive(mqd_t mqdes, char *restrict msg_ptr,
+                              size_t msg_len, unsigned *restrict msg_prio,
+                              const struct timespec *restrict abs_timeout); */
+   MAYBE_PRINTF("mq_timedreceive( %d, %p, %d, %p, %p )\n",
+                arg1,arg2,arg3,arg4,arg5);
+   if (!fd_allowed(arg1, "mq_timedreceive", tid, False)) {
+      res = -VKI_EBADF;
+   } else {
+      SYSCALL_TRACK( pre_mem_write, tid, "mq_timedreceive(msg_ptr)", arg2, arg3 );
+      if (arg4 != 0)
+         SYSCALL_TRACK( pre_mem_write, tid, "mq_timedreceive(msg_prio)",
+                        arg4, sizeof(unsigned int) );
+      if (arg5 != 0)
+         SYSCALL_TRACK( pre_mem_read, tid, "mq_timedreceive(abs_timeout)",
+                        arg5, sizeof(struct timespec) );
+   }
+}
+
+POST(mq_timedreceive)
+{
+   VG_TRACK( post_mem_write, arg2, arg3 );
+   if (arg4 != 0)
+      VG_TRACK( post_mem_write, arg4, sizeof(unsigned int) );
+}
+
+PRE(mq_notify)
+{
+   /* int mq_notify(mqd_t mqdes, const struct sigevent *notification); */
+   MAYBE_PRINTF("mq_notify( %d, %p )\n", arg1,arg2 );
+   if (!fd_allowed(arg1, "mq_notify", tid, False))
+      res = -VKI_EBADF;
+   else if (arg2 != 0)
+      SYSCALL_TRACK( pre_mem_read, tid, "mq_notify", arg2,
+                     sizeof(struct sigevent) );
+}
+
+PRE(mq_getsetattr)
+{
+   /* int mq_getsetattr(mqd_t mqdes, const struct mq_attr *restrict mqstat,
+                        struct mq_attr *restrict omqstat); */
+   MAYBE_PRINTF("mq_getsetattr( %d, %p, %p )\n", arg1,arg2,arg3 );
+   if (!fd_allowed(arg1, "mq_getsetattr", tid, False)) {
+      res = -VKI_EBADF;
+   } else {
+      if (arg2 != 0) {
+         const struct vki_mq_attr *attr = (struct vki_mq_attr *)arg2;
+         SYSCALL_TRACK( pre_mem_read, tid, "mq_getsetattr(mqstat->mq_flags)",
+                        (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
+      }
+      if (arg3 != 0)
+         SYSCALL_TRACK( pre_mem_write, tid, "mq_getsetattr(omqstat)", arg3,
+                        sizeof(struct vki_mq_attr) );
+   }   
+}
+
+POST(mq_getsetattr)
+{
+   if (arg3 != 0)
+      VG_TRACK( post_mem_write, arg3, sizeof(struct vki_mq_attr) );
+}
+
 #undef SYSNO
 #undef res
 #undef arg1
@@ -5821,6 +5933,13 @@ static const struct sys_info sys_info[] = {
    SYSBA(io_getevents,          MayBlock),
    SYSB_(io_submit,             0),
    SYSBA(io_cancel,             0),
+
+   SYSBA(mq_open,               0),
+   SYSB_(mq_unlink,             0),
+   SYSB_(mq_timedsend,          MayBlock),
+   SYSBA(mq_timedreceive,       MayBlock),
+   SYSB_(mq_notify,             0),
+   SYSBA(mq_getsetattr,         0),
 
 #if !SIGNAL_SIMULATION
    SYSBA(sigaltstack,		0),

@@ -41,6 +41,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	int.stderr.exp int.stdout.exp int.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
+	mq.stderr.exp mq.vgtest \
 	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
@@ -71,7 +72,7 @@ check_PROGRAMS = \
 	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask execve fcntl_setown floored fork \
 	fpu_lazy_eflags fucomip $(INSN_TESTS) \
-	int munmap_exe map_unmap mremap rcl_assert rcrl readline1 \
+	int munmap_exe map_unmap mq mremap rcl_assert rcrl readline1 \
 	resolv rlimit_nofile seg_override sem semlimit sha1_test \
 	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
@@ -115,6 +116,8 @@ insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
 int_SOURCES		= int.c
 map_unmap_SOURCES	= map_unmap.c
+mq_SOURCES		= mq.c
+mq_LDADD		= -lrt
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
 pushpopseg_SOURCES	= pushpopseg.c

@@ -42,16 +42,14 @@ anyone at all!
 
 - properly save scheduler private state in signal delivery frames.
 
-- fd-poll optimisation (don't select with empty sets)
-
 - signals interrupting read/write and nanosleep, and take notice
   of SA_RESTART or not
 
 - when a thread is done mark its stack as noaccess 
 
-- make signal return and .fini call be detected via request mechanism
+- 0xDEADBEEF syscall errors ... fix.
 
- */
+*/
 
 
 /* ---------------------------------------------------------------------
@@ -688,10 +686,11 @@ void poll_for_ready_fds ( void )
    Bool               rd_ok, wr_ok, ex_ok;
    Char               msg_buf[100];
 
+   struct vki_timespec* rem;
+   ULong                t_now;
+
    /* Awaken any sleeping threads whose sleep has expired. */
-   {
-   struct vki_timespec * rem;
-   ULong t_now = VG_(read_microsecond_timer)();
+   t_now = VG_(read_microsecond_timer)();
    for (tid = 0; tid < VG_N_THREADS; tid++) {
       if (vg_threads[tid].status != VgTs_Sleeping)
          continue;
@@ -715,8 +714,9 @@ void poll_for_ready_fds ( void )
          }
       }
    }
-   }
 
+   /* And look for threads waiting on file descriptors which are now
+      ready for I/O.*/
    timeout.tv_sec = 0;
    timeout.tv_usec = 0;
 
@@ -731,6 +731,7 @@ void poll_for_ready_fds ( void )
          continue;
       fd = vg_waiting_fds[i].fd;
       /* VG_(printf)("adding QUERY for fd %d\n", fd); */
+      vg_assert(fd >= 0);
       if (fd > fd_max) 
          fd_max = fd;
       tid = vg_waiting_fds[i].tid;
@@ -747,6 +748,10 @@ void poll_for_ready_fds ( void )
             break;
       }
    }
+
+   /* Short cut: if no fds are waiting, give up now. */
+   if (fd_max == -1)
+      return;
 
    /* BLOCK ALL SIGNALS.  We don't want the complication of select()
       getting interrupted. */

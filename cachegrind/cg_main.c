@@ -350,7 +350,7 @@ static void get_debug_info(Addr instr_addr, Char filename[FILENAME_LEN],
 static Int compute_BBCC_array_size(UCodeBlock* cb);
 
 static __inline__ 
-file_node* new_file_node(Char filename[FILENAME_LEN], file_node* next)
+file_node* new_file_node(Char filename[], file_node* next)
 {
    Int i;
    file_node* new = VG_(malloc)(sizeof(file_node));
@@ -363,7 +363,7 @@ file_node* new_file_node(Char filename[FILENAME_LEN], file_node* next)
 }
 
 static __inline__ 
-fn_node* new_fn_node(Char fn_name[FILENAME_LEN], fn_node* next)
+fn_node* new_fn_node(Char fn_name[], fn_node* next)
 {
    Int i;
    fn_node* new = VG_(malloc)(sizeof(fn_node));

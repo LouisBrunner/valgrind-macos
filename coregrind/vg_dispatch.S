@@ -77,8 +77,8 @@ VG_(run_innerloop):
 	pushl	%ebp
 
 	/* check to see if we're doing pointer checking */
-	movl	VG_(clo_pointercheck), %eax
-	testl	%eax,%eax
+	movb	VG_(clo_pointercheck), %al
+	testb	%al,%al
 	jz	1f
 	
 	pushl	%fs						/* save %fs     */
@@ -147,8 +147,8 @@ counter_is_zero:
 	jmp	run_innerloop_exit
 	
 run_innerloop_exit:
-	movl	VG_(clo_pointercheck), %ebx
-	testl	%ebx,%ebx
+	movb	VG_(clo_pointercheck), %bl
+	testb	%bl,%bl
 	jz	1f
 
 	/* restore %fs */

@@ -37,11 +37,8 @@
 // Nb: See the comment above the generic PRE/POST wrappers in
 // coregrind/vg_syscalls.c for notes about how they work.
 
-#define PRE(x,f) \
-   UInt VGA_(linux_##x##_flags) = f; \
-   void VGA_(linux_##x##_before)(ThreadId tid, ThreadState *tst)
-#define POST(x) \
-   void VGA_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
+#define PRE(name, f)     PRE_TEMPLATE( , vgArch_linux, name, f)
+#define POST(name)      POST_TEMPLATE( , vgArch_linux, name)
 
 #define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
 #define res     SYSCALL_RET(tst->arch)    // in POST(x)

@@ -80,11 +80,8 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 // Nb: See the comment above the generic PRE/POST wrappers in
 // coregrind/vg_syscalls.c for notes about how they work.
 
-#define PRE(x,f) \
-   static UInt arm_linux_##x##_flags = f; \
-   static void arm_linux_##x##_before(ThreadId tid, ThreadState *tst)
-#define POST(x) \
-   static void arm_linux_##x##_after (ThreadId tid, ThreadState *tst)
+#define PRE(name, f)     PRE_TEMPLATE(static, arm_linux, name, f)
+#define POST(name)      POST_TEMPLATE(static, arm_linux, name)
 
 #define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
 #define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
@@ -148,22 +145,9 @@ PRE(sys_clone, Special)
    The ARM/Linux syscall table
    ------------------------------------------------------------------ */
 
-#define GENX_(const, name) \
-   [const] = { &VGA_(gen_##name##_flags), VGA_(gen_##name##_before), NULL }
-#define GENXY(const, name) \
-   [const] = { &VGA_(gen_##name##_flags), VGA_(gen_##name##_before), \
-                                          VGA_(gen_##name##_after) }
-
-#define LINX_(const, name) \
-   [const] = { &VGA_(linux_##name##_flags), VGA_(linux_##name##_before), NULL }
-#define LINXY(const, name) \
-   [const] = { &VGA_(linux_##name##_flags), VGA_(linux_##name##_before), \
-                                            VGA_(linux_##name##_after) }
-#define PLAX_(const, name) \
-   [const] = { &arm_linux_##name##_flags, arm_linux_##name##_before, NULL }
-#define PLAXY(const, name) \
-   [const] = { &arm_linux_##name##_flags, arm_linux_##name##_before, \
-                                          arm_linux_##name##_after }
+// Macros for adding ARM/Linux-specific wrappers to the syscall table.
+#define PLAX_(const, name)    SYS_WRAPPER_ENTRY_X_(arm_linux, const, name) 
+#define PLAXY(const, name)    SYS_WRAPPER_ENTRY_XY(arm_linux, const, name) 
 
 // This table maps from __NR_xxx syscall numbers (from
 // linux/include/asm-arm/unistd.h) to the appropriate PRE/POST sys_foo()
@@ -175,15 +159,14 @@ PRE(sys_clone, Special)
 
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (restart_syscall)                             // 0
+   GENX_(__NR_exit,              sys_exit),           // 1
+   LINX_(__NR_mount,             sys_mount),          // 21
    PLAX_(__NR_syscall,           sys_syscall),        // 113
    PLAX_(__NR_clone,             sys_clone),          // 120
 };
 
 const UInt VGA_(syscall_table_size) = 
             sizeof(VGA_(syscall_table)) / sizeof(VGA_(syscall_table)[0]);
-
-#undef GENX_
-#undef GENXY
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

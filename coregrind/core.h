@@ -1388,13 +1388,30 @@ void VG_(record_fd_open)(Int tid, Int fd, char *pathname);
 #define NBRunInLWP (1 << 2)   // non-blocking, but must run in LWP context
 #define PostOnFail (1 << 3)
 
-// For each generic ("gen") wrapper, we declare the pre-wrapper, the
-// post-wrapper (which is actually not always needed), and the associated
-// flags.
-#define GEN_SYSCALL_WRAPPER(x) \
-   extern UInt VGA_(gen_##x##_flags); \
-   extern void VGA_(gen_##x##_before)(ThreadId tid, ThreadState *tst); \
-   extern void VGA_(gen_##x##_after) (ThreadId tid, ThreadState *tst)
+// Templates for generating the PRE and POST macros.  For ones that must be
+// publically visible, use an empty 'qual', 'prefix' should start with
+// "vgArch_", and there should be corresponding global declarations (like
+// the GEN_SYSCALL_WRAPPER ones below).  Otherwise, use "static" for 'qual',
+// and "vgArch_" should not be in the 'prefix'.
+#define PRE_TEMPLATE(qual, prefix, name, f) \
+   qual UInt prefix##_##name##_flags = f; \
+   qual void prefix##_##name##_before(ThreadId tid, ThreadState *tst)
+#define POST_TEMPLATE(qual, prefix, name) \
+   qual void prefix##_##name##_after (ThreadId tid, ThreadState *tst)
+
+// This macro is used to write other macros which making writing syscall
+// tables easier.
+#define SYS_WRAPPER_ENTRY_X_(prefix, const, name) \
+   [const] = { &prefix##_##name##_flags, \
+                prefix##_##name##_before, NULL }
+#define SYS_WRAPPER_ENTRY_XY(prefix, const, name) \
+   [const] = { &prefix##_##name##_flags, \
+                prefix##_##name##_before, \
+                prefix##_##name##_after }
+
+// Macros for adding generic wrappers to a syscall table.
+#define GENX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgArch_gen, const, name)
+#define GENXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgArch_gen, const, name)
 
 // Generic (platform-independent) syscall wrappers.  These are generally
 // POSIX or something like that;  those that are not POSIX are annotated
@@ -1408,6 +1425,14 @@ void VG_(record_fd_open)(Int tid, Int fd, char *pathname);
 //
 // Nb 2: if porting to a new OS, you should really check all these generic
 // wrappers to make sure they match your OS, painful as it might be.
+//
+// For each generic ("gen") wrapper, we declare the pre-wrapper, the
+// post-wrapper (which is actually not always needed), and the associated
+// flags.
+#define GEN_SYSCALL_WRAPPER(x) \
+   extern UInt VGA_(gen_##x##_flags); \
+   extern void VGA_(gen_##x##_before)(ThreadId tid, ThreadState *tst); \
+   extern void VGA_(gen_##x##_after) (ThreadId tid, ThreadState *tst)
 
 GEN_SYSCALL_WRAPPER(sys_ni_syscall);            // * P -- unimplemented
 GEN_SYSCALL_WRAPPER(sys_exit);

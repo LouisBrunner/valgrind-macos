@@ -32,12 +32,17 @@
 #ifndef __LINUX_CORE_OS_H
 #define __LINUX_CORE_OS_H
 
+// Macros for adding Linux-specific, arch-independent wrappers to a syscall
+// table.
+#define LINX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgArch_linux, const, name) 
+#define LINXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgArch_linux, const, name)
+
+// The following syscall wrappers are Linux-specific, but arch-independent.
 #define LINUX_SYSCALL_WRAPPER(x) \
    extern UInt VGA_(linux_##x##_flags); \
    extern void VGA_(linux_##x##_before)(ThreadId tid, ThreadState *tst); \
    extern void VGA_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
 
-// These syscalls are Linux-specific, but architecture-independent.
 LINUX_SYSCALL_WRAPPER(sys_mount);
 LINUX_SYSCALL_WRAPPER(sys_oldumount);
 LINUX_SYSCALL_WRAPPER(sys_umount);

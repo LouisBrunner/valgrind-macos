@@ -1011,16 +1011,8 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    XXX: some of these are arch-specific, and should be factored out.
 */
 
-#define Special    (1 << 0)
-#define MayBlock   (1 << 1)
-#define NBRunInLWP (1 << 2)   // non-blocking, but must run in LWP context
-#define PostOnFail (1 << 3)
-
-#define PRE(x,f) \
-   UInt VGA_(gen_##x##_flags) = f; \
-   void VGA_(gen_##x##_before)(ThreadId tid, ThreadState *tst)
-#define POST(x) \
-   void VGA_(gen_##x##_after) (ThreadId tid, ThreadState *tst)
+#define PRE(name, f)     PRE_TEMPLATE( , vgArch_gen, name, f)
+#define POST(name)      POST_TEMPLATE( , vgArch_gen, name)
 
 #define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
 #define res     SYSCALL_RET(tst->arch)    // in POST(x)

@@ -132,7 +132,7 @@ void VG_(read_procselfmaps)(void)
 
       void (*record_mapping)( Addr start, UInt size, 
                               Char r, Char w, Char x, 
-                              UInt foffset, UChar* filename )
+                              ULong foffset, UChar* filename )
 
    Note that the supplied filename is transiently stored; record_mapping 
    should make a copy if it wants to keep it.

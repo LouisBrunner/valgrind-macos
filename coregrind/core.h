@@ -79,7 +79,6 @@
    external tools.
 */
 
-
 /* For system call numbers __NR_... */
 #include "vki_unistd.h"
 
@@ -991,6 +990,12 @@ extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high );
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
+
+// Useful for making failing stubs, when certain things haven't yet been
+// implemented.
+#define I_die_here                                                    \
+   VG_(core_assert_fail) ("Unimplemented functionality",              \
+                           __FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 #define vg_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \

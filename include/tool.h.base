@@ -855,7 +855,6 @@ extern void VG_(HT_destruct) ( VgHashTable t );
    should allocate them with VG_(SkipNode_Alloc), which will allocate
    enough memory for the extra bits.
  */
-#include <stddef.h>		/* for offsetof */
 
 typedef struct _SkipList SkipList;
 typedef struct _SkipNode SkipNode;

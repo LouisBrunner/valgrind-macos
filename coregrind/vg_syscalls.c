@@ -1062,69 +1062,6 @@ PRE(sys_ni_syscall, Special)
    set_result( -VKI_ENOSYS );
 }
 
-// XXX: I think this is x86/linux-specific... at least some of the entries
-// are non-generic
-// XXX: Why is the memory pointed to by arg3 never checked?
-PRE(sys_ptrace, 0)
-{
-   PRINT("sys_ptrace ( %d, %d, %p, %p )", arg1,arg2,arg3,arg4);
-   PRE_REG_READ4(int, "ptrace", 
-                 long, request, long, pid, long, addr, long, data);
-   switch (arg1) {
-   case 12:   /* PTRACE_GETREGS */
-      PRE_MEM_WRITE( "ptrace(getregs)", arg4, 
-		     sizeof (struct vki_user_regs_struct));
-      break;
-   case 14:   /* PTRACE_GETFPREGS */
-      PRE_MEM_WRITE( "ptrace(getfpregs)", arg4, 
-		     sizeof (struct vki_user_i387_struct));
-      break;
-   case 18:   /* PTRACE_GETFPXREGS */
-      PRE_MEM_WRITE( "ptrace(getfpxregs)", arg4, 
-                     sizeof(struct vki_user_fxsr_struct) );
-      break;
-   case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
-      PRE_MEM_WRITE( "ptrace(peek)", arg4, 
-		     sizeof (long));
-      break;
-   case 13:   /* PTRACE_SETREGS */
-      PRE_MEM_READ( "ptrace(setregs)", arg4, 
-		     sizeof (struct vki_user_regs_struct));
-      break;
-   case 15:   /* PTRACE_SETFPREGS */
-      PRE_MEM_READ( "ptrace(setfpregs)", arg4, 
-		     sizeof (struct vki_user_i387_struct));
-      break;
-   case 19:   /* PTRACE_SETFPXREGS */
-      PRE_MEM_READ( "ptrace(setfpxregs)", arg4, 
-                     sizeof(struct vki_user_fxsr_struct) );
-      break;
-   default:
-      break;
-   }
-}
-
-// XXX: I think this is x86/linux-specific
-POST(sys_ptrace)
-{
-   switch (arg1) {
-   case 12:  /* PTRACE_GETREGS */
-      POST_MEM_WRITE( arg4, sizeof (struct vki_user_regs_struct));
-      break;
-   case 14:  /* PTRACE_GETFPREGS */
-      POST_MEM_WRITE( arg4, sizeof (struct vki_user_i387_struct));
-      break;
-   case 18:  /* PTRACE_GETFPXREGS */
-      POST_MEM_WRITE( arg4, sizeof(struct vki_user_fxsr_struct) );
-      break;
-   case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
-      POST_MEM_WRITE( arg4, sizeof (long));
-      break;
-   default:
-      break;
-   }
-}
-
 PRE(sys_set_tid_address, Special)
 {
    // We don't let this syscall run, and don't do anything to simulate it
@@ -4347,7 +4284,7 @@ PRE(sys_read, MayBlock)
 {
    PRINT("sys_read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "read",
-                 unsigned int, fd, char *, buf, size_t, count);
+                 unsigned int, fd, char *, buf, vki_size_t, count);
 
    if (!VG_(fd_allowed)(arg1, "read", tid, False))
       set_result( -VKI_EBADF );
@@ -4364,7 +4301,7 @@ PRE(sys_write, MayBlock)
 {
    PRINT("sys_write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "write",
-                 unsigned int, fd, const char *, buf, size_t, count);
+                 unsigned int, fd, const char *, buf, vki_size_t, count);
    if (!VG_(fd_allowed)(arg1, "write", tid, False))
       set_result( -VKI_EBADF );
    else

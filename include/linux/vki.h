@@ -329,6 +329,14 @@ struct vki_sched_param {
 };
 
 //----------------------------------------------------------------------
+// From nowhere: constants internal to Valgrind
+//----------------------------------------------------------------------
+
+#define VKI_SIGVGINT        (VKI_SIGRTMIN+0) // [[internal: interrupt]]
+#define VKI_SIGVGKILL       (VKI_SIGRTMIN+1) // [[internal: kill]]
+#define VKI_SIGVGRTUSERMIN  (VKI_SIGRTMIN+2) // [[internal: first
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------
 
@@ -479,6 +487,11 @@ typedef struct vki_sigevent {
 #define VKI_SYS_GETSOCKOPT	15	/* sys_getsockopt(2)		*/
 #define VKI_SYS_SENDMSG		16	/* sys_sendmsg(2)		*/
 #define VKI_SYS_RECVMSG		17	/* sys_recvmsg(2)		*/
+
+enum vki_sock_type {
+	VKI_SOCK_STREAM	= 1,
+	// [[others omitted]]
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/uio.h
@@ -1860,6 +1873,13 @@ struct vki_kbd_repeat {
 
 typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory */
 
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/linux/ptrace.h
+//----------------------------------------------------------------------
+
+#define VKI_PTRACE_PEEKTEXT	   1
+#define VKI_PTRACE_PEEKDATA	   2
+#define VKI_PTRACE_PEEKUSR	   3
 
 #endif // __LINUX_VKI_H
 

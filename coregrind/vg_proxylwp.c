@@ -359,15 +359,15 @@ static Bool recv_reply(struct PX_Reply *reply)
 static void thread_syscall(Int syscallno, ThreadArchState *arch, 
                            enum PXState *state , enum PXState poststate)
 {
-   VGA_(do_thread_syscall)(syscallno,            // syscall no.
-                           arch->vex.guest_EBX,  // arg 1
-                           arch->vex.guest_ECX,  // arg 2
-                           arch->vex.guest_EDX,  // arg 3
-                           arch->vex.guest_ESI,  // arg 4
-                           arch->vex.guest_EDI,  // arg 5
-                           arch->vex.guest_EBP,  // arg 6
-                           (UWord*)&arch->vex.guest_EAX, // result
-                           state,	   // state to update
+   VGA_(do_thread_syscall)(syscallno,
+                           arch->vex.PLATFORM_SYSCALL_ARG1,
+                           arch->vex.PLATFORM_SYSCALL_ARG2,
+                           arch->vex.PLATFORM_SYSCALL_ARG3,
+                           arch->vex.PLATFORM_SYSCALL_ARG4,
+                           arch->vex.PLATFORM_SYSCALL_ARG5,
+                           arch->vex.PLATFORM_SYSCALL_ARG6,
+                           (UWord*)&arch->vex.PLATFORM_SYSCALL_RET, // result
+                           state,	 // state to update
                            poststate);   // state when syscall has finished
 }
 

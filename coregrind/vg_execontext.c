@@ -311,6 +311,7 @@ void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
    *sp                 = STACK_PTR(tst->arch);
    *stack_highest_word = tst->stack_highest_word;
 
+#ifdef __x86__
    /* Nasty little hack to deal with sysinfo syscalls - if libc is
       using the sysinfo page for syscalls (the TLS version does), then
       ip will always appear to be in that page when doing a syscall,
@@ -325,6 +326,7 @@ void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
       *ip = *(Addr *)*sp;
       *sp += sizeof(Addr);
    }
+#endif
 }
 
 ExeContext* VG_(get_ExeContext) ( ThreadId tid )

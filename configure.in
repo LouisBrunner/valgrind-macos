@@ -29,7 +29,7 @@ CFLAGS=""
 
 AC_PROG_LN_S
 AC_PROG_CC
-AM_PROG_CC_C_O
+##AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -350,26 +350,33 @@ AC_OUTPUT(
    include/valgrind.h 
    include/Makefile 
    include/x86/Makefile 
+   include/arm/Makefile 
    include/linux/Makefile 
    include/x86-linux/Makefile 
+   include/arm-linux/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 
    coregrind/docs/Makefile
    coregrind/x86/Makefile
+   coregrind/arm/Makefile
    coregrind/linux/Makefile
    coregrind/x86-linux/Makefile
+   coregrind/arm-linux/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/tests/x86/Makefile
+   memcheck/tests/arm/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/x86/Makefile
+   cachegrind/arm/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile
+   cachegrind/tests/arm/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
    helgrind/Makefile
@@ -388,6 +395,7 @@ AC_OUTPUT(
    none/Makefile
    none/tests/Makefile
    none/tests/x86/Makefile
+   none/tests/arm/Makefile
    none/docs/Makefile
 ) 
 

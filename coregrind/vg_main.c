@@ -1120,9 +1120,11 @@ static Addr setup_client_stack(void* init_sp,
    *auxv = *orig_auxv;
    vg_assert(auxv->a_type == AT_NULL);
 
+#ifdef __x86__
    /* --- trampoline page --- */
    VG_(memcpy)( (void *)VG_(client_trampoline_code),
                 &VG_(trampoline_code_start), VG_(trampoline_code_length) );
+#endif
 
    vg_assert((strtab-stringbase) == stringsize);
 
@@ -1671,7 +1673,6 @@ static void pre_process_cmd_line_options
 static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 {
    Int  i, eventually_log_fd;
-   Int *auxp;
    Int  toolname_len = VG_(strlen)(toolname);
 
    /* log to stderr by default, but usage message goes to stdout */
@@ -1682,13 +1683,18 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
      config_error("Please use absolute paths in "
                   "./configure --prefix=... or --libdir=...");
 
-   for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
-      switch(auxp[0]) {
-      case AT_SYSINFO:
-	 auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
-	 break;
-      }
-   } 
+#ifdef __x86__
+   {
+      Int *auxp;
+      for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
+         switch(auxp[0]) {
+         case AT_SYSINFO:
+            auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
+            break;
+         }
+      } 
+   }
+#endif
 
    for (i = 1; i < vg_argc; i++) {
 
@@ -2565,12 +2571,14 @@ int main(int argc, char **argv)
    VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
    sp_at_startup___global_arg = 0;
    
+#ifdef __i386__
    //--------------------------------------------------------------
    // Protect client trampoline page (which is also sysinfo stuff)
    //   p: segment stuff   [otherwise get seg faults...]
    //--------------------------------------------------------------
    VG_(mprotect)( (void *)VG_(client_trampoline_code),
                  VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
+#endif
 
    //==============================================================
    // Can use VG_(map)() after segments set up

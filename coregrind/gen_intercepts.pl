@@ -28,19 +28,21 @@ use strict;
 while(<>) {
   if(/VG_INTERCEPT\s*\(\s*(.*?)\s*,\s*(.*?)\s*\)/) {
     my $ver = $1 . ":" . $2;
-    $ver =~ s/\*/\$2A/g;
-    $ver =~ s/\+/\$2B/g;
-    $ver =~ s/\-/\$2D/g;
-    $ver =~ s/\./\$2E/g;
-    $ver =~ s/\:/\$3A/g;
+    ($ver =~ /J/) and die "Argh, 'J' in intercept muck...";
+    $ver =~ s/\*/J2A/g;
+    $ver =~ s/\+/J2B/g;
+    $ver =~ s/\-/J2D/g;
+    $ver =~ s/\./J2E/g;
+    $ver =~ s/\:/J3A/g;
     s/VG_INTERCEPT\s*\(\s*(.*?)\s*,\s*(.*?)\s*\)/VG_INTERCEPT($ver)/g;
   } elsif(/VG_INTERCEPT_ALIAS\s*\(\s*(.*?)\s*,\s*(.*?)\s*\)/) {
     my $ver = $1 . ":" . $2;
-    $ver =~ s/\*/\$2A/g;
-    $ver =~ s/\+/\$2B/g;
-    $ver =~ s/\-/\$2D/g;
-    $ver =~ s/\./\$2E/g;
-    $ver =~ s/\:/\$3A/g;
+    ($ver =~ /J/) and die "Argh, 'J' in intercept muck...";
+    $ver =~ s/\*/J2A/g;
+    $ver =~ s/\+/J2B/g;
+    $ver =~ s/\-/J2D/g;
+    $ver =~ s/\./J2E/g;
+    $ver =~ s/\:/J3A/g;
     s/VG_INTERCEPT_ALIAS\s*\(\s*(.*?)\s*,\s*(.*?)\s*\)/VG_INTERCEPT_ALIAS($ver)/g;
   }
   print $_;

@@ -790,13 +790,13 @@ intercept_demangle(const Char* symbol, Char* result, Int nbytes)
    int len = VG_(strlen)(symbol);
 
    for(i = VG_INTERCEPT_PREFIX_LEN; i < len; i++) {
-      if(symbol[i] == '$') {
+      if(symbol[i] == 'J') {
          i++;
-         if(symbol[i] == '$') {
-            result[j] = '$';
-         } else if((symbol[i] >= '0' && symbol[i] <= '9') ||
-                   (symbol[i] >= 'a' && symbol[i] <= 'f') ||
-                   (symbol[i] >= 'A' && symbol[i] <= 'F')) {
+         vg_assert('J' != symbol[i]);
+         if((symbol[i] >= '0' && symbol[i] <= '9') ||
+            (symbol[i] >= 'a' && symbol[i] <= 'f') ||
+            (symbol[i] >= 'A' && symbol[i] <= 'F')) 
+         {
             int x = symbol[i++];
             int y = symbol[i];
             if(x >= '0' && x <= '9') {
@@ -2506,12 +2506,14 @@ void VG_(setup_code_redirect_table) ( void )
                        "soname:libpthread.so.0", redirects[i].to);
    }
 
+#ifdef __x86__
    /* Redirect _dl_sysinfo_int80, which is glibc's default system call
       routine, to the routine in our trampoline page so that the
       special sysinfo unwind hack in vg_execontext.c will kick in.
    */
    add_redirect_addr("soname:ld-linux.so.2", "_dl_sysinfo_int80",
                      VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+#endif
    
    /* Overenthusiastic use of PLT bypassing by the glibc people also
       means we need to patch the following functions to our own

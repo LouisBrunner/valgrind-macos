@@ -64,6 +64,8 @@ AllocMode LibVEX_GetAllocMode ( void )
 
 void* LibVEX_Alloc ( Int nbytes ) 
 {
+   /* 3 or 7 depending on host word size. */
+#  define ALIGN (sizeof(void*)-1)
    vassert(vex_initdone);
    vassert(nbytes >= 0);
    if (vex_valgrind_support) {
@@ -71,8 +73,7 @@ void* LibVEX_Alloc ( Int nbytes )
       extern void* malloc ( int );
       return malloc(nbytes);
    } else {
-      if (nbytes == 0) nbytes = 8;
-      nbytes = (nbytes + 7) & ~7;
+      nbytes = (nbytes + ALIGN) & ~ALIGN;
       if (mode == AllocModeTEMPORARY) {
          if (temporary_used + nbytes > N_TEMPORARY_BYTES)
             vpanic("VEX temporary storage exhausted.\n"
@@ -89,6 +90,7 @@ void* LibVEX_Alloc ( Int nbytes )
          return (void*)(&permanent[permanent_used - nbytes]);
       }
    }
+#  undef ALIGN
 }
 
 /* Exported to library client. */

@@ -3133,7 +3133,7 @@ void VG_(translate) ( ThreadState* tst,
                     0,  /* verbosity */
                     False, 
 		    //True, 
-                    20 /* max insns per bb */ );
+                    50 /* max insns per bb */ );
       vex_init_done = True;
    }
 

@@ -541,7 +541,6 @@ Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_chain_bb)       = True;
 
-
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
 Bool VG_(running_on_simd_CPU) = False;
@@ -1638,80 +1637,97 @@ void VG_(oynk) ( Int n )
 void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
                                                 Char* ld_library_path_str )
 {
-   Char* p_prel  = NULL;
-   Char* sk_prel = NULL;
-   Char* p_path  = NULL;
-   Int   what    = 0;
-   if (ld_preload_str == NULL || ld_library_path_str == NULL)
-      goto mutancy;
+   Char* vg_prel  = NULL;
+   Char* sk_prel  = NULL;
+   Char* pth_path = NULL;
+   Char* p;
+   Char* coredir_first;
+   Char* coredir_last;
+   Int   coredir_len;
+   Int   i;
+   Int   what;
 
-   /* VG_(printf)("%s %s\n", ld_preload_str, ld_library_path_str); */
+#define MUTANCY(n)   { what = n; goto mutancy; }
 
-   p_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
-   sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
-   p_path = VG_(strstr)(ld_library_path_str, VG_LIBDIR);
+   if (ld_preload_str == NULL || ld_library_path_str == NULL) MUTANCY(0);
 
-   what = 1;
-   if (p_prel == NULL) {
-      /* perhaps already happened? */
-      if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL)
-         goto mutancy;
-      if (VG_(strstr)(ld_library_path_str, "lib/valgrinq") == NULL)
-         goto mutancy;
+   /* VG_(printf)("pre:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
+
+   /* Setting up, finding things */
+
+   /* LD_PRELOAD: Search for "valgrind.so" */
+   vg_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
+
+   /* LD_PRELOAD: if "valgrind.so" not found, has been done before;
+      "valgrindq.so" should be there instead.  Then stop. */
+   if (NULL == vg_prel) {
+      if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL) MUTANCY(1);
       return;
    }
 
-   what = 2;
-   if (sk_prel == NULL) goto mutancy;
+   /* LD_PRELOAD: coredir == directory containing "valgrind.so" */
+   p = vg_prel;
 
-   what = 3;
-   if (p_path == NULL) goto mutancy;
+   for (p = vg_prel;  *p != ':' && p > ld_preload_str;  p--) { }
+   if (*p != ':') MUTANCY(2);  /* skin.so entry must precede it */
+   coredir_first = p+1;
+   coredir_last  = vg_prel - 1;
+   coredir_len   = coredir_last - coredir_first + 1;
+   
+   /* LD_PRELOAD: find "vgskin_foo.so" */
+   sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
+   if (sk_prel == NULL) MUTANCY(4);
 
-   what = 4;
-   {  
-      /* Blank from "vgskin_" back to prev. LD_PRELOAD entry, or start */
-      Char* p = sk_prel;
-      while (*p != ':' && p > ld_preload_str) { 
-         *p = ' ';
-         p--;
-      }
-      /* Blank from "vgskin_" to next LD_PRELOAD entry */
-      while (*p != ':' && *p != '\0') { 
-         *p = ' ';
-         p++;
-      }
-      if (*p == '\0') goto mutancy;    /* valgrind.so has disappeared?! */
-      *p = ' ';                        /* blank ending ':' */
+   /* LD_LIBRARY_PATH: find coredir */
+   *coredir_last = '\0';      /* Temporarily zero-terminate coredir */
+   pth_path = VG_(strstr)(ld_library_path_str, coredir_first);
+   if (pth_path == NULL) MUTANCY(5);
+   *coredir_last = '/';       /* Undo zero-termination */
+
+   /* Changing things */
+
+   /* LD_PRELOAD: "valgrind.so" --> "valgrinq.so" */
+   if (vg_prel[7] != 'd') MUTANCY(6);
+   vg_prel[7] = 'q';
+
+   /* LD_PRELOAD: "/.../vgskin_foo.so" --> blank */
+   /* Blank from "vgskin_" back to prev. LD_PRELOAD entry, or start */
+   p = sk_prel;
+   while (*p != ':' && p >= ld_preload_str) { 
+      *p = ' ';
+      p--;
    }
+   /* Blank from "vgskin_" to next LD_PRELOAD entry (must be one, since
+      the valgrind.so entry must follow) */
+   p = sk_prel;
+   while (*p != ':' && *p != '\0') { 
+      *p = ' ';
+      p++;
+   }
+   if (*p == '\0') MUTANCY(7);    /* valgrind.so has disappeared?! */
+   *p = ' ';                        /* blank ending ':' */
 
-   /* in LD_PRELOAD, turn valgrind.so into valgrinq.so. */
-   what = 5;
-   if (p_prel[7] != 'd') goto mutancy;
-   p_prel[7] = 'q';
+   /* LD_LIBRARY_PATH: coredir --> blank */
+   for (i = 0; i < coredir_len; i++)
+      pth_path[i] = ' ';
+      
+   /* VG_(printf)("post:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
 
-   /* in LD_LIBRARY_PATH, turn $libdir/valgrind (as configure'd) from 
-      .../lib/valgrind .../lib/valgrinq, which doesn't exist,
-      so that our own libpthread.so goes out of scope. */
-   p_path += VG_(strlen)(VG_LIBDIR);
-   what = 6;
-   if (p_path[0] != '/') goto mutancy;
-   p_path++; /* step over / */
-   what = 7;
-   if (p_path[7] != 'd') goto mutancy;
-   p_path[7] = 'q';
    return;
 
-  mutancy:
+
+mutancy:
    VG_(printf)(
       "\nVG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:\n"
       "   what                = %d\n"
       "   ld_preload_str      = `%s'\n"
       "   ld_library_path_str = `%s'\n"
-      "   p_prel              = `%s'\n"
-      "   p_path              = `%s'\n"
+      "   vg_prel             = `%s'\n"
+      "   sk_prel             = `%s'\n"
+      "   pth_path            = `%s'\n"
       "   VG_LIBDIR           = `%s'\n",
       what, ld_preload_str, ld_library_path_str, 
-      p_prel, p_path, VG_LIBDIR 
+      vg_prel, sk_prel, pth_path, VG_LIBDIR 
    );
    VG_(printf)(
       "\n"

@@ -46,14 +46,22 @@ vgopts=
 # --skin=<foo> arg, specifying skin used
 skin_arg=
 
-# Collect up args for Valgrind.  Only --version and --skin are intercepted 
-# here;  the rest are passed to vg_main.c.
+# --in-place=<dir> arg, for using non-installed version
+in_place_arg=
+
+# Default core+skin to use are the installed ones
+coredir=$VALGRIND
+skindir=$VALGRIND
+
+# Collect up args for Valgrind.  Only some are intercepted here;
+# the rest are passed to vg_main.c.
 while [ $# != 0 ]
 do
   arg=$1
   case "$arg" in
     --version)              echo "valgrind-$version"; exit 1 ;;
     --skin=*)               skin_arg=$arg;            shift;;
+    --in-place=*)           in_place_arg=$arg;        shift;;
     -*)                     vgopts="$vgopts $arg";    shift;;
     *)                      break;;
   esac
@@ -68,14 +76,22 @@ else
    skin=`echo $skin_arg | sed 's/--skin=//'`
 fi
 
+# If running uninstalled version in-place...
+if [ z"$in_place_arg" != z ]; then
+   in_place_dir=`echo $in_place_arg | sed 's/--in-place=//'`
+   skindir="$in_place_dir/$skin"
+   coredir="$in_place_dir/coregrind"
+   vgsupp="--suppressions=$in_place_dir/default.supp"
+fi
+
 # Setup skin shared object.
 skin_so="vgskin_${skin}.so"
-if [ ! -r $VALGRIND/$skin_so ] ; then
+if [ ! -r "$skindir/$skin_so" ] ; then
    echo
    echo "Skin error:"
    echo "  The shared library \`$skin_so' for the chosen"
    echo "  skin \`$skin' could not be found in"
-   echo "  $VALGRIND"
+   echo "  $skindir"
    echo
    exit 1
 fi
@@ -100,11 +116,11 @@ fi
 # libpthread.so fall out of visibility, independently of
 # whether valgrind.so is visible.
 
-LD_LIBRARY_PATH=$VALGRIND:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=$coredir:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
 # Insert skin .so before valgrind.so to override template functions.
-LD_PRELOAD=$VALGRIND/$skin_so:$VALGRIND/valgrind.so:$LD_PRELOAD
+LD_PRELOAD=$skindir/$skin_so:$coredir/valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
 #LD_DEBUG=files
 #LD_DEBUG=symbols

@@ -228,7 +228,7 @@ sub do_one_test($$)
     # Also, because the default valgrind is coregrind/valgrind which isn't
     # executable, prepend `sh'.
     my $skin=determine_skin();
-    mysystem("sh $valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+    mysystem("sh $valgrind --skin=$skin --in-place=$tests_dir $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");

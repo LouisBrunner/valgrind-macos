@@ -82,10 +82,13 @@ noinst_HEADERS = \
         vg_constants.h          \
 	vg_unsafe.h
 
-MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) 
+MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) libpthread.so.0
 
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
 vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 
+## Must have a libpthread.so.0 symlink
+libpthread.so.0:
+	ln -s libpthread.so libpthread.so.0

@@ -1,4 +1,4 @@
 vgopts: -q
 prog: ../../none/tests/insn_cmov
-cpu_test: cmov
+cpu_test: x86-cmov
 delete: cachegrind.out.*

@@ -1,2 +1,2 @@
 prog: insn_mmx
-cpu_test: mmx
+cpu_test: x86-mmx

@@ -1,4 +1,4 @@
 vgopts: -q
 prog: ../../none/tests/insn_mmxext
-cpu_test: mmxext
+cpu_test: x86-mmxext
 delete: cachegrind.out.*

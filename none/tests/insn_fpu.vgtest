@@ -1,2 +1,2 @@
 prog: insn_fpu
-cpu_test: fpu
+cpu_test: x86-fpu

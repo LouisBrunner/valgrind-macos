@@ -1052,7 +1052,7 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_cc_op)]    = 0; // CC_OP_COPY
    VG_(baseBlock)[VGOFF_(m_cc_src)]   = 0;
    VG_(baseBlock)[VGOFF_(m_cc_dst)]   = 0;
-   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = 0;
+   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = 1;
 
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
 
@@ -1285,6 +1285,7 @@ void VG_(main) ( void )
             presence of threads, or if the client happened to be
             running a signal handler. */
          /* Prepare to restore state to the real CPU. */
+	VG_(printf)("\n\nBBS done\n\n");
          VG_(load_thread_state)(1 /* root thread */ );
          VG_(copy_baseBlock_to_m_state_static)();
 

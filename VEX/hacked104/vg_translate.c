@@ -3114,8 +3114,9 @@ void VG_(translate) ( ThreadState* tst,
 {
 #  define N_TMPBUF 1000
    UChar tmpbuf[N_TMPBUF];
-   Int tmpbuf_used, i;
+   Int tmpbuf_used, i, t_orig_size;
    UChar* final;
+   Bool debugging_translation;
 
    TranslateResult tres;
    static Bool vex_init_done = False;
@@ -3126,7 +3127,7 @@ void VG_(translate) ( ThreadState* tst,
                     1,  /* verbosity */
                     False, 
 		    //True, 
-                    10 );
+                    1 /* max insns per bb */ );
       vex_init_done = True;
    }
 
@@ -3144,7 +3145,7 @@ void VG_(translate) ( ThreadState* tst,
 
    tres = LibVEX_Translate ( 
              InsnSetX86, InsnSetX86,
-             (Char*)orig_addr, (Addr64)orig_addr, orig_size,
+             (Char*)orig_addr, (Addr64)orig_addr, &t_orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              NULL, NULL
           );
@@ -3157,8 +3158,16 @@ void VG_(translate) ( ThreadState* tst,
    for (i = 0; i < tmpbuf_used; i++)
       final[i] = tmpbuf[i];
 
-   *trans_addr = (Addr)final;
-   *trans_size = tmpbuf_used;
+   debugging_translation
+      = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
+   if (debugging_translation) {
+      /* Only done for debugging -- throw away final result. */
+      VG_(jitfree)(final);
+   } else {
+      *orig_size = t_orig_size;
+      *trans_addr = (Addr)final;
+      *trans_size = tmpbuf_used;
+   }
 
 
 #if 0
@@ -3168,8 +3177,6 @@ void VG_(translate) ( ThreadState* tst,
    UCodeBlock* cb;
 
    VGP_PUSHCC(VgpTranslate);
-   debugging_translation
-      = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
 
    dis = True;
    dis = debugging_translation;

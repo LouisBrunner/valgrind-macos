@@ -1026,9 +1026,10 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 
    if (0)
       printf("stringsize=%d auxsize=%d stacksize=%d\n"
-             "clstk_base %x\n"
-             "clstk_end  %x\n",
-	     stringsize, auxsize, stacksize, VG_(clstk_base), VG_(clstk_end));
+             "clstk_base %p\n"
+             "clstk_end  %p\n",
+	     stringsize, auxsize, stacksize,
+             (void*)VG_(clstk_base), (void*)VG_(clstk_end));
 
 
    /* ==================== allocate space ==================== */
@@ -2645,8 +2646,9 @@ int main(int argc, char **argv)
    esp_at_startup = setup_client_stack(cl_argv, env, &info, &client_auxv);
 
    if (0)
-      printf("entry=%x client esp=%x vg_argc=%d brkbase=%x\n",
-	     client_eip, esp_at_startup, vg_argc, VG_(brk_base));
+      printf("entry=%p client esp=%p vg_argc=%d brkbase=%p\n",
+	     (void*)client_eip, (void*)esp_at_startup, vg_argc, 
+             (void*)VG_(brk_base));
 
    //==============================================================
    // Finished setting up operating environment.  Now initialise

@@ -1472,7 +1472,7 @@ __attribute__ ((noreturn))
 extern void VG_(missing_tool_func) ( const Char* fn );
 
 /* ---------------------------------------------------------------------
-   The state of the simulated CPU.
+   The baseBlock -- arch-neutral bits
    ------------------------------------------------------------------ */
 
 #define INVALID_OFFSET (-1)

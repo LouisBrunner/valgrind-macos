@@ -48,6 +48,23 @@
 #define MIN_INSTR_SIZE     1
 #define MAX_INSTR_SIZE    16
 
+/* Total number of integer registers available for allocation -- all of
+   them except %esp (points to Valgrind's stack) and %ebp (permanently
+   points at the baseBlock).
+
+   If you increase this you'll have to also change at least these:
+     - VG_(rank_to_realreg)()
+     - VG_(realreg_to_rank)()
+     - ppRegsLiveness()
+     - the RegsLive type (maybe -- RegsLive type must have more than
+                          VG_MAX_REALREGS bits)
+
+   You can decrease it, and performance will drop because more spills will
+   occur.  If you decrease it too much, everything will fall over.
+
+   Do not change this unless you really know what you are doing!  */
+#define VG_MAX_REALREGS 6
+
 
 /*====================================================================*/
 /*=== Instrumenting UCode                                          ===*/

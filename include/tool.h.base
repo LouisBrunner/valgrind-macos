@@ -40,19 +40,26 @@
 /*=== Basic types                                                  ===*/
 /*====================================================================*/
 
-typedef unsigned char          UChar;
-typedef unsigned short         UShort;
-typedef unsigned int           UInt;
-typedef unsigned long long int ULong;
+// By choosing the right types, we can get these right for 32-bit and 64-bit
+// platforms without having to do any conditional compilation or anything.
+//
+// Size in bits on:                          32-bit archs   64-bit archs
+//                                           ------------   ------------
+typedef unsigned char          UChar;     //  8              8
+typedef unsigned short         UShort;    // 16             16
+typedef unsigned int           UInt;      // 32             32
+typedef unsigned long          UWord;     // 32             64
+typedef unsigned long long     ULong;     // 64             64
 
-typedef signed char            Char;
-typedef signed short           Short;
-typedef signed int             Int;
-typedef signed long long int   Long;
+typedef signed char            Char;      //  8              8
+typedef signed short           Short;     // 16             16
+typedef signed int             Int;       // 32             32
+typedef signed long            Word;      // 32             64
+typedef signed long long       Long;      // 64             64
 
-typedef unsigned int           Addr;
+typedef UWord                  Addr;      // 32             64
 
-typedef unsigned char          Bool;
+typedef UChar                  Bool;      //  8              8
 #define False                  ((Bool)0)
 #define True                   ((Bool)1)
 
@@ -88,22 +95,6 @@ typedef unsigned char          Bool;
 /* Maximum number of pthread keys available.  Again, we start low until
    the need for a higher number presents itself. */
 #define VG_N_THREAD_KEYS 50
-
-/* Total number of integer registers available for allocation -- all of
-   them except %esp, %ebp.  %ebp permanently points at VG_(baseBlock).
-
-   If you increase this you'll have to also change at least these:
-     - VG_(rank_to_realreg)()
-     - VG_(realreg_to_rank)()
-     - ppRegsLiveness()
-     - the RegsLive type (maybe -- RegsLive type must have more than
-                          VG_MAX_REALREGS bits)
-
-   You can decrease it, and performance will drop because more spills will
-   occur.  If you decrease it too much, everything will fall over.
-
-   Do not change this unless you really know what you are doing!  */
-#define VG_MAX_REALREGS 6
 
 
 /*====================================================================*/

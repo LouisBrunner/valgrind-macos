@@ -1711,7 +1711,7 @@ static void bus_unlock(void);
 
 static
 void eraser_pre_mem_read(CorePart part, ThreadId tid,
-                         Char* s, UInt base, UInt size )
+                         Char* s, Addr base, UInt size )
 {
    if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(skin_panic)("a");}
    eraser_mem_read(base, size, tid);
@@ -1719,14 +1719,14 @@ void eraser_pre_mem_read(CorePart part, ThreadId tid,
 
 static
 void eraser_pre_mem_read_asciiz(CorePart part, ThreadId tid,
-                                Char* s, UInt base )
+                                Char* s, Addr base )
 {
    eraser_mem_read(base, VG_(strlen)((Char*)base), tid);
 }
 
 static
 void eraser_pre_mem_write(CorePart part, ThreadId tid,
-                          Char* s, UInt base, UInt size )
+                          Char* s, Addr base, UInt size )
 {
    eraser_mem_write(base, size, tid);
 }

@@ -63,7 +63,7 @@ static Int readchar ( Char* buf, Char* ch )
    return 1;
 }
 
-static Int readhex ( Char* buf, UInt* val )
+static Int readhex ( Char* buf, UWord* val )
 {
    Int n = 0;
    *val = 0;
@@ -148,9 +148,9 @@ void VG_(parse_procselfmaps) (
    Int    i, j, i_eol;
    Addr   start, endPlusOne;
    UChar* filename;
-   UInt   foffset;
    UChar  rr, ww, xx, pp, ch, tmp;
-   UInt	  maj, min, ino;
+   UInt	  ino;
+   UWord  foffset, maj, min;
 
    sk_assert( '\0' != procmap_buf[0] && 0 != buf_n_tot);
 

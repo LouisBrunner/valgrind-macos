@@ -1,0 +1,78 @@
+-------------------------------------------------------------------
+Guide to the directory structure
+-------------------------------------------------------------------
+Valgrind has 2 main levels of genericity.
+ 
+ 1. Multiple tools, plus the core.
+ 2. Multiple architectures, OSes, and platforms (arch/OS combinations).
+
+This requires a moderately complex directory structure.  This file is a
+guide to where different things live.
+
+
+Basic layout
+------------
+1. Core stuff lives in:
+    - include/              for declarations that must be seen by tools
+    - coregrind/            for code that need not be seen by tools
+    - coregrind/demangle/   the demangler
+
+   Tool stuff lives in:
+    - $TOOL/                main files
+    - $TOOL/tests           regression tests
+    - $TOOL/docs            documentation
+
+   Other stuff lives in:
+    - docs/                 main, non-tool-specific docs
+    - tests/                regression test machinery
+    - nightly/              overnight test stuff (should be in tests/)
+    - auxprogs/             auxiliary programs
+
+2. Generic things go in the directory specified in (1).  
+
+   Arch-specific, OS-specific, or platform-specific things go within a
+   subdirectory of the directory specified by step (1) above.
+
+   For example: 
+   - Cachegrind's main generic code goes in cachegrind/.
+   - Cachegrind's x86-specific code goes in cachegrind/x86/.
+   - Cachegrind's x86-specific tests go  in cachegrind/tests/x86/.
+   - x86/Linux-specific declarations that must be visible to tools go in
+     include/x86-linux/.
+
+   
+Guide to headers
+----------------
+Finding declarations in headers is not always easy.  The above rules dictate
+which directory something should go in.  As well as that, there are some things
+that must be visible in both C and assembly code files, but most things only be
+visible in C files; things that must be both C-visible and asm-visible go in
+files called *_asm.h.
+
+The most important header files are (at the time of writing):
+- include/tool.h     (auto-generated from tool.h.base + toolfuncs.def)
+- include/tool_asm.h
+- $ARCH/tool_arch.h
+- $OS/vki.h
+- $PLATFORM/vki*.h
+- coregrind/{core.h,core_asm.h}
+- $ARCH/{core_arch.h,core_arch_asm.h}
+- $OS/core_os.h
+- $PLATFORM/{core_platform.h,vki_unistd.h}
+
+There are a few others, but that is most of them.
+
+Having read the above text, it should be clear what is found in each of them.
+For example, coregrind/core_asm.h contains all the generic
+(non-arch/OS/platform-specific) declarations which should not be seen by
+tools and must be visible to both C and asm code.
+
+When searching for something, rgrep is very useful.  If you don't have a
+version of rgrep, use a command something like this:
+
+   find . -name '*.h' | xargs grep <pattern>
+
+The comment at the top of coregrind/core.h has some additional information
+about the exact hierarchy of the header files, but those details aren't
+important for just finding and placing things.
+

@@ -1418,7 +1418,6 @@ GEN_SYSCALL_WRAPPER(sys_mq_timedsend);          // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_timedreceive);       // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_notify);             // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
-GEN_SYSCALL_WRAPPER(sys_gettid);		// * L?
 
 #undef GEN_SYSCALL_WRAPPER
 

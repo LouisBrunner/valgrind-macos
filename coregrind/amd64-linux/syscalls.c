@@ -1109,7 +1109,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_tuxcall,           sys_ni_syscall),     // 184
 
    //   (__NR_security,          sys_ni_syscall),     // 185 
-   //   (__NR_gettid,            sys_gettid),         // 186 
+   LINX_(__NR_gettid,            sys_gettid),         // 186 
    //   (__NR_readahead,         sys_readahead),      // 187 
    //   (__NR_setxattr,          sys_setxattr),       // 188 
    //   (__NR_lsetxattr,         sys_lsetxattr),      // 189 

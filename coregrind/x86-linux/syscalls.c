@@ -1246,7 +1246,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_fcntl64,           sys_fcntl64),        // 221
    GENX_(222,                    sys_ni_syscall),     // 222
    GENX_(223,                    sys_ni_syscall),     // 223
-   GENX_(__NR_gettid,            sys_gettid),         // 224 */Linux
+   LINX_(__NR_gettid,            sys_gettid),         // 224
 
    //   (__NR_readahead,         sys_readahead),      // 225 */(Linux?)
    GENX_(__NR_setxattr,          sys_setxattr),       // 226

@@ -503,6 +503,12 @@ POST(sys_epoll_wait)
       POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
 }
 
+PRE(sys_gettid, 0)
+{
+   PRINT("sys_gettid ()");
+   PRE_REG_READ0(long, "gettid");
+}
+
 PRE(sys_tkill, Special)
 {
    /* int tkill(pid_t tid, int sig); */

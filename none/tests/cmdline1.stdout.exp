@@ -32,6 +32,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --db-attach=no|yes        start debugger when errors detected? [no]
     --db-command=<command>    command to start debugger [gdb -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]
+    --max-stackframe=<number> assume stack switch for SP changes larger
+                              than <number> bytes [2000000]
 
   user options for Nulgrind:
     (none)

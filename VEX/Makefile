@@ -50,11 +50,11 @@ CCFLAGS = -g -O -Wall -Wshadow -Winline $(EXTRA_CFLAGS)
 
 all: libvex.a
 	rm -f head20041019/coregrind/stage2
-	(cd head20041019/coregrind && make install)
-	(cd head20041019/none && make install)
-	(cd head20041019/lackey && make install)
-	(cd head20041019/addrcheck && make install)
-	(cd head20041019/memcheck && make install)
+	(cd head20041019/coregrind && make --quiet install)
+	(cd head20041019/none && make --quiet install)
+	(cd head20041019/lackey && make --quiet install)
+	(cd head20041019/addrcheck && make --quiet install)
+	(cd head20041019/memcheck && make --quiet install)
 
 vex: libvex.a test_main.o
 	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a

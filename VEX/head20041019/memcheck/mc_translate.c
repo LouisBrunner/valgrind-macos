@@ -346,6 +346,14 @@ static IRAtom* mkImproveAND8 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
    return assignNew(mce, Ity_I8, binop(Iop_Or8, data, vbits));
 }
 
+static IRAtom* mkImproveAND16 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(mce, Ity_I16, binop(Iop_Or16, data, vbits));
+}
+
 static IRAtom* mkImproveAND32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
 {
    sk_assert(isOriginalAtom(mce, data));
@@ -784,6 +792,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    sk_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
 
+      case Iop_F64toI64:
+         /* First arg is I32 (rounding mode), second is F64 (data). */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
       case Iop_F64toI32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
@@ -792,6 +804,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
 
+      case Iop_AtanF64:
       case Iop_AddF64:
       case Iop_DivF64:
       case Iop_SubF64:
@@ -869,6 +882,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_And32:
          uifu = mkUifU32; difd = mkDifD32; 
          and_or_ty = Ity_I32; improve = mkImproveAND32; goto do_And_Or;
+      case Iop_And16:
+         uifu = mkUifU16; difd = mkDifD16; 
+         and_or_ty = Ity_I16; improve = mkImproveAND16; goto do_And_Or;
       case Iop_And8:
          uifu = mkUifU8; difd = mkDifD8; 
          and_or_ty = Ity_I8; improve = mkImproveAND8; goto do_And_Or;
@@ -894,6 +910,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Xor8:
          return mkUifU8(mce, vatom1, vatom2);
+      case Iop_Xor16:
+         return mkUifU16(mce, vatom1, vatom2);
       case Iop_Xor32:
          return mkUifU32(mce, vatom1, vatom2);
 
@@ -915,9 +933,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_I32toF64:
       case Iop_I64toF64:
       case Iop_NegF64:
+      case Iop_SinF64:
+      case Iop_CosF64:
+      case Iop_SqrtF64:
          return mkPCastTo(mce, Ity_I64, vatom);
 
       case Iop_F64toF32:
+      case Iop_Clz32:
          return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_64to32:
@@ -940,6 +962,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_32to1:
          return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
 
+      case Iop_ReinterpF64asI64:
       case Iop_Not32:
       case Iop_Not8:
       case Iop_Not1:

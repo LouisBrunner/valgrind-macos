@@ -1198,7 +1198,12 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 
 /* Take a snapshot of the client's stack.  Search our collection of
    ExeContexts to see if we already have it, and if not, allocate a
-   new one.  Either way, return a pointer to the context. */
+   new one.  Either way, return a pointer to the context. 
+   
+   If called from generated code, `tst' can be NULL and it will use the
+   ThreadState of the current thread.  If called from elsewhere, `tst'
+   should not be NULL.
+*/
 extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
 
 /* Just grab the client's EIP, as a much smaller and cheaper
@@ -1738,11 +1743,14 @@ EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid,
 
 /* Signal events (not exhaustive) */
 
+/* ... pre_send_signal, post_send_signal ... */
+
 /* Called before a signal is delivered;  `alt_stack' indicates if it is
    delivered on an alternative stack. */
 EV VG_(track_pre_deliver_signal)  ( void (*f)(ThreadId tid, Int sigNum,
                                              Bool alt_stack) );
-/* Called after a signal is delivered. */
+/* Called after a signal is delivered.  Nb: unfortunately, if the signal
+   handler longjmps, this won't be called. */
 EV VG_(track_post_deliver_signal) ( void (*f)(ThreadId tid, Int sigNum ) );
 
 

@@ -60,13 +60,7 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline $(EXTRA_CFLAGS)
 # 167: argument of type unsigned char incompatible with formal of type char
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
 
-all: libvex.a
-	rm -f head20041019/coregrind/stage2
-	(cd head20041019/coregrind && make --quiet install)
-	(cd head20041019/none && make --quiet install)
-	(cd head20041019/lackey && make --quiet install)
-	(cd head20041019/addrcheck && make --quiet install)
-	(cd head20041019/memcheck && make --quiet install)
+all: vex
 
 vex: libvex.a test_main.o
 	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a
@@ -77,7 +71,6 @@ libvex.a: $(LIB_OBJS)
 
 clean:
 	rm -f $(LIB_OBJS) libvex.a vex test_main.o priv/main/vex_svnversion.h
-	(cd head20041019 && make --quiet clean)
 
 version:
 	rm -f priv/main/vex_svnversion.h

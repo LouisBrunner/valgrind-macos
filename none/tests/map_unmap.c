@@ -10,7 +10,7 @@ static unsigned int pagesize;
 
 static void *domap(void)
 {
-	void *ret = mmap(0, LEN, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	void *ret = mmap(0, LEN, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
 
 	if (ret == (void *)-1) {
 		perror("mmap");

@@ -42,6 +42,8 @@ A million repetitions of "a"
 
 #define SHA1HANDSOFF
 
+#include <config.h>
+
 #include <string.h>
 #include <sys/types.h>	/* for u_int*_t */
 
@@ -63,7 +65,14 @@ void SHA1Init(SHA1_CTX* context);
 void SHA1Update(SHA1_CTX* context, const unsigned char* data, u_int32_t len);
 void SHA1Final(unsigned char digest[20], SHA1_CTX* context);
 /* ================ end of sha1.h ================ */
+
+#ifdef HAVE_SYS_ENDIAN_H
+#include <sys/endian.h>
+#endif
+
+#ifdef HAVE_ENDIAN_H
 #include <endian.h>
+#endif
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 

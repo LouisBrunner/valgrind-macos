@@ -1,4 +1,5 @@
 
+#include <netinet/in.h>
 #include <resolv.h>
 #include <stdio.h>
 

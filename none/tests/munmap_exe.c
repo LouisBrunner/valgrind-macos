@@ -11,7 +11,7 @@ int main()
 {
     void* m;
     
-    m = mmap(NULL, 100, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    m = mmap(NULL, 100, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_ANON, -1, 0);
 
     if (m == (void*)-1) {
        fprintf(stderr, "error mmapping\n");

@@ -55,3 +55,5 @@ all-local:
 	rm -f $(addprefix $(top_builddir)/.in_place/,default.supp $(SUPP_FILES))
 	ln -s $(addprefix $(top_srcdir)/../,default.supp $(SUPP_FILES)) $(top_builddir)/.in_place
 
+distclean-local:
+	rm -rf $(top_builddir)/.in_place

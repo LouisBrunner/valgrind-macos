@@ -3501,62 +3501,6 @@ weak_alias(_IO_funlockfile, funlockfile);
 strong_alias(__pthread_mutexattr_settype, __pthread_mutexattr_setkind_np)
 weak_alias(__pthread_mutexattr_setkind_np, pthread_mutexattr_setkind_np)
 
-/* POSIX spinlocks, taken from glibc linuxthreads/sysdeps/i386 */
-
-typedef volatile int pthread_spinlock_t; /* Huh?  Guarded by __USE_XOPEN2K */
-
-int pthread_spin_init(pthread_spinlock_t *lock, int pshared)
-{
-  /* We can ignore the `pshared' parameter.  Since we are busy-waiting
-     all processes which can access the memory location `lock' points
-     to can use the spinlock.  */
-  *lock = 1;
-  return 0;
-}
-
-int pthread_spin_lock(pthread_spinlock_t *lock)
-{
-  asm volatile
-    ("\n"
-     "1:\n\t"
-     "lock; decl %0\n\t"
-     "js 2f\n\t"
-     ".section .text.spinlock,\"ax\"\n"
-     "2:\n\t"
-     "cmpl $0,%0\n\t"
-     "rep; nop\n\t"
-     "jle 2b\n\t"
-     "jmp 1b\n\t"
-     ".previous"
-     : "=m" (*lock));
-  return 0;
-}
-
-int pthread_spin_unlock(pthread_spinlock_t *lock)
-{
-  asm volatile
-    ("movl $1,%0"
-     : "=m" (*lock));
-  return 0;
-}
-
-int pthread_spin_destroy(pthread_spinlock_t *lock)
-{
-  /* Nothing to do.  */
-  return 0;
-}
-
-int pthread_spin_trylock(pthread_spinlock_t *lock)
-{
-  int oldval;
-
-  asm volatile
-    ("xchgl %0,%1"
-     : "=r" (oldval), "=m" (*lock)
-     : "0" (0));
-  return oldval > 0 ? 0 : EBUSY;
-}
-
 /*--------------------------------------------------------------------*/
-/*--- end                                          vg_libpthread.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

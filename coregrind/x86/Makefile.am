@@ -17,6 +17,7 @@ BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
+	libpthread.c \
 	signal.c \
 	state.c
 

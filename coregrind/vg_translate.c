@@ -476,6 +476,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case GETSEG: return LIT0 && SZ2  && CC0 &&  Se1 && TR2 &&  N3 && XOTHER;
    case USESEG: return LIT0 && SZ0  && CC0 &&  TR1 && TR2 &&  N3 && XOTHER;
    case NOP:    return LIT0 && SZ0  && CC0 &&   N1 &&  N2 &&  N3 && XOTHER;
+   case LOCK:   return LIT0 && SZ0  && CC0 &&   N1 &&  N2 &&  N3 && XOTHER;
    case GETF:   return LIT0 && SZ42 && CCr &&  TR1 &&  N2 &&  N3 && XOTHER;
    case PUTF:   return LIT0 && SZ42 && CCw &&  TR1 &&  N2 &&  N3 && XOTHER;
    case GET:    return LIT0 && SZi  && CC0 &&  AS1 && TR2 &&  N3 && XOTHER;
@@ -799,6 +800,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case LEA1:    return "LEA1";
       case LEA2:    return "LEA2";
       case NOP:     return "NOP";
+      case LOCK:    return "LOCK";
       case GET:     return "GET";
       case PUT:     return "PUT";
       case GETF:    return "GETF";
@@ -919,7 +921,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(pp_UOperand)(u, 2, 4, False);
          break;
 
-      case NOP:
+      case NOP: case LOCK:
          break;
 
       case FPU_W:
@@ -1092,7 +1094,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
       case LEA2: RD(1); RD(2); WR(3); break;
 
       case NOP:   case FPU:   case INCEIP: case CALLM_S: case CALLM_E:
-      case CLEAR: case CALLM: break;
+      case CLEAR: case CALLM: case LOCK: break;
 
       case CCALL:
          if (u->argc > 0)    RD(1); 
@@ -1225,6 +1227,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case LEA1:
       case LEA2:
       case NOP:
+      case LOCK:
       case PUT:
       case LOAD:
       case STORE:

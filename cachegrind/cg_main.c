@@ -731,7 +731,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
       if (instrumented_Jcond) sk_assert(u_in->opcode == JMP);
 
       switch (u_in->opcode) {
-         case NOP:  case CALLM_E:  case CALLM_S:
+         case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
             break;
 
          /* For memory-ref instrs, copy the data_addr into a temporary to be

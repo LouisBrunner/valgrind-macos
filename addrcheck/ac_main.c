@@ -1752,7 +1752,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
       u_in = &cb_in->instrs[i];
 
       switch (u_in->opcode) {
-         case NOP:  case CALLM_E:  case CALLM_S:
+         case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
             break;
 
          /* For memory-ref instrs, copy the data_addr into a temporary to be

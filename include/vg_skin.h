@@ -492,6 +492,8 @@ typedef
    enum {
       NOP,         /* Null op */
 
+      LOCK,	   /* Indicate the existance of a LOCK prefix (functionally NOP) */
+
       /* Moving values around */
       GET,  PUT,   /* simulated register <--> TempReg */
       GETF, PUTF,  /* simulated %eflags  <--> TempReg */

@@ -1981,7 +1981,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
    old_emitted_code_used = emitted_code_used;
    
    switch (u->opcode) {
-      case NOP: case CALLM_S: case CALLM_E: break;
+      case NOP: case LOCK: case CALLM_S: case CALLM_E: break;
 
       case INCEIP: {
         /* Note: Redundant INCEIP merging.  A potentially useful

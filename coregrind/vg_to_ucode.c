@@ -3254,6 +3254,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* Skip a LOCK prefix. */
    if (getUChar(eip) == 0xF0) { 
       /* VG_(printf)("LOCK LOCK LOCK LOCK LOCK \n"); */
+      uInstr0(cb, LOCK, 0);
       eip++;
    }
 

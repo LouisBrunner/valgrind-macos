@@ -541,6 +541,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
       switch (u_in->opcode) {
 
+         case LOCK:
          case NOP:
             break;
 
@@ -1260,6 +1261,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
 
          /* Deal with these quickly. */
          case NOP:
+         case LOCK:
          case INCEIP:
             break;
 

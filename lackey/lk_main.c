@@ -162,7 +162,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
       u = &cb_in->instrs[i];
 
       switch (u->opcode) {
-         case NOP: case CALLM_S: case CALLM_E:
+         case NOP: case LOCK: case CALLM_S: case CALLM_E:
             break;
    
          case INCEIP:

@@ -1732,6 +1732,9 @@ static void eraser_mem_help_write_2(Addr a, UInt val) REGPARM(2);
 static void eraser_mem_help_write_4(Addr a, UInt val) REGPARM(2);
 static void eraser_mem_help_write_N(Addr a, UInt size) REGPARM(2);
 
+static void bus_lock(void);
+static void bus_unlock(void);
+
 static
 void eraser_pre_mem_read(CorePart part, ThreadState* tst,
                          Char* s, UInt base, UInt size )
@@ -1863,6 +1866,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    Int         t_size = INVALID_TEMPREG;
    Int	       ntemps;
    Bool	       *stackref = NULL;
+   Bool        locked = False;	/* lock prefix */
 
    cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
@@ -1883,6 +1887,21 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
          case NOP: case CALLM_S: case CALLM_E:
             break;
     
+         case LOCK:
+	    locked = True;
+	    uInstr0(cb, CCALL, 0);
+	    uCCall(cb, (Addr)bus_lock, 0, 0, False);
+	    break;
+
+         case JMP: case INCEIP:
+	    if (locked) {
+	       uInstr0(cb, CCALL, 0);
+	       uCCall(cb, (Addr)bus_unlock, 0, 0, False);
+	    }
+	    locked = False;
+	    VG_(copy_UInstr)(cb, u_in);
+	    break;
+
          case GET:
 	    sk_assert(u_in->tag1 == ArchReg);
 	    sk_assert(u_in->tag2 == TempReg);
@@ -2935,6 +2954,21 @@ static void hg_thread_join(ThreadId joiner, ThreadId joinee)
    clearTLS(joinee);
 }
 
+static Int __BUS_HARDWARE_LOCK__;
+
+static void bus_lock(void)
+{
+   ThreadId tid = VG_(get_current_tid)();
+   eraser_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
+   eraser_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
+}
+
+static void bus_unlock(void)
+{
+   ThreadId tid = VG_(get_current_tid)();
+   eraser_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
+}
+
 /*--------------------------------------------------------------------*/
 /*--- Client requests                                              ---*/
 /*--------------------------------------------------------------------*/
@@ -3029,6 +3063,9 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    VG_(register_compact_helper)((Addr) & eraser_mem_help_write_2);
    VG_(register_compact_helper)((Addr) & eraser_mem_help_write_4);
    VG_(register_noncompact_helper)((Addr) & eraser_mem_help_write_N);
+
+   VG_(register_noncompact_helper)((Addr) & bus_lock);
+   VG_(register_noncompact_helper)((Addr) & bus_unlock);
 
    for(i = 0; i < LOCKSET_HASH_SZ; i++)
       lockset_hash[i] = NULL;

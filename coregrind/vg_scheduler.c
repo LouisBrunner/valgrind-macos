@@ -141,25 +141,9 @@ typedef UInt ThreadKey;
 
 
 /* Forwards */
-static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
-
-static void do_nontrivial_clientreq ( ThreadId tid );
-
+static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( void );
-
-static void do_pthread_mutex_unlock ( ThreadId, 
-                                      void* /* pthread_mutex_t* */ );
-static void do_pthread_mutex_lock ( ThreadId, Bool, 
-                                    void* /* pthread_mutex_t* */ );
-
-static void do_pthread_getspecific ( ThreadId,
-                                     UInt /* pthread_key_t */ );
-
-static void do__cleanup_push ( ThreadId tid, CleanupEntry* cu );
-static void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu );
-static void do__set_canceltype ( ThreadId tid, Int type );
-
-static void do__testcancel ( ThreadId tid );
+static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
 
 
 /* ---------------------------------------------------------------------
@@ -646,124 +630,6 @@ Bool fd_is_valid ( Int fd )
 
 
 
-/* Possibly do a for tid.  Return values are:
-
-   True = request done.  Thread may or may not be still runnable;
-   caller must check.  If it is still runnable, the result will be in
-   the thread's %EDX as expected.
-
-   False = request not done.  A more capable but slower mechanism will
-   deal with it.  
-
-   2002-06-19: the division between this dispatcher and the one at the
-   end of the file is completely artificial and should be got rid of.
-   There is no longer any good reason for it.  
-*/
-static
-Bool maybe_do_trivial_clientreq ( ThreadId tid )
-{
-#  define SIMPLE_RETURN(vvv)                      \
-       { tst->m_edx = (vvv);                      \
-         tst->sh_edx = VGM_WORD_VALID;            \
-         return True;                             \
-       }
-
-   ThreadState* tst    = &VG_(threads)[tid];
-   UInt*        arg    = (UInt*)(tst->m_eax);
-   UInt         req_no = arg[0];
-
-   /* VG_(printf)("req no = 0x%x\n", req_no); */
-   switch (req_no) {
-      case VG_USERREQ__MALLOC:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocMalloc ) 
-         );
-      case VG_USERREQ__BUILTIN_NEW:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNew )
-         );
-      case VG_USERREQ__BUILTIN_VEC_NEW:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNewVec )
-         );
-      case VG_USERREQ__FREE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocMalloc );
-	 SIMPLE_RETURN(0); /* irrelevant */
-      case VG_USERREQ__BUILTIN_DELETE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNew );
-	 SIMPLE_RETURN(0); /* irrelevant */
-      case VG_USERREQ__BUILTIN_VEC_DELETE:
-         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNewVec );
-	 SIMPLE_RETURN(0); /* irrelevant */
-      case VG_USERREQ__CALLOC:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_calloc) ( tst, arg[1], arg[2] )
-         );
-      case VG_USERREQ__REALLOC:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_realloc) ( tst, (void*)arg[1], arg[2] )
-         );
-      case VG_USERREQ__MEMALIGN:
-         SIMPLE_RETURN(
-            (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
-         );
-
-      /* These are heavily used -- or at least we want them to be
-         cheap. */
-      case VG_USERREQ__PTHREAD_GET_THREADID:
-         SIMPLE_RETURN(tid);
-      case VG_USERREQ__RUNNING_ON_VALGRIND:
-         SIMPLE_RETURN(1);
-      case VG_USERREQ__GET_PTHREAD_TRACE_LEVEL:
-         SIMPLE_RETURN(VG_(clo_trace_pthread_level));
-      case VG_USERREQ__READ_MILLISECOND_TIMER:
-         SIMPLE_RETURN(VG_(read_millisecond_timer)());
-
-      /* This may make thread tid non-runnable, but the scheduler
-         checks for that on return from this function. */
-      case VG_USERREQ__PTHREAD_MUTEX_LOCK:
-         do_pthread_mutex_lock( tid, False, (void *)(arg[1]) );
-         return True;
-
-      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
-         do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
-         return True;
-
-      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
-         do_pthread_mutex_unlock( tid, (void *)(arg[1]) );
-         return True;
-
-      case VG_USERREQ__PTHREAD_GETSPECIFIC:
- 	 do_pthread_getspecific ( tid, (UInt)(arg[1]) );
- 	 return True;
-
-      case VG_USERREQ__SET_CANCELTYPE:
-         do__set_canceltype ( tid, arg[1] );
- 	 return True;
-
-      case VG_USERREQ__CLEANUP_PUSH:
-         do__cleanup_push ( tid, (CleanupEntry*)(arg[1]) );
- 	 return True;
-
-      case VG_USERREQ__CLEANUP_POP:
-         do__cleanup_pop ( tid, (CleanupEntry*)(arg[1]) );
- 	 return True;
-
-      case VG_USERREQ__TESTCANCEL:
-         do__testcancel ( tid );
-         return True;
-
-      case VG_USERREQ__GET_N_SIGS_RETURNED:
-         SIMPLE_RETURN(VG_(threads)[tid].n_signals_returned);
-
-      default:
-         /* Too hard; wimp out. */
-         return False;
-   }
-#  undef SIMPLE_RETURN
-}
-
-
 /* vthread tid is returning from a signal handler; modify its
    stack/regs accordingly. */
 
@@ -1240,8 +1106,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    ThreadId tid, tid_next;
    UInt     trc;
    UInt     dispatch_ctr_SAVED;
-   Int      request_code, done_this_time, n_in_bounded_wait;
-   Char     msg_buf[100];
+   Int      done_this_time, n_in_bounded_wait;
    Addr     trans_addr;
    Bool     sigs_delivered;
 
@@ -1431,19 +1296,16 @@ VgSchedReturnCode VG_(scheduler) ( void )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            Bool done; 
             /* VG_(printf)("request 0x%x\n", 
                            *(UInt*)(VG_(threads)[tid].m_eax)); */
-            done = maybe_do_trivial_clientreq(tid);
-            if (done) {
-               /* The request is done.  We try and continue with the
-                  same thread if still runnable.  If not, go back to
-                  Stage 1 to select a new thread to run. */
-               if (VG_(threads)[tid].status == VgTs_Runnable)
-                  continue; /* with this thread */
-               else
-                  goto stage1;
-	    }
+            do_client_request(tid);
+            /* Following the request, we try and continue with the
+               same thread if still runnable.  If not, go back to
+               Stage 1 to select a new thread to run. */
+            if (VG_(threads)[tid].status == VgTs_Runnable)
+               continue; /* with this thread */
+            else
+               goto stage1;
 	 }
 
          if (trc == VG_TRC_EBP_JMP_SYSCALL) {
@@ -1516,14 +1378,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
                                    name_of_sched_event(trc) );
 
       /* Examine the thread's return code to figure out why it
-         stopped, and handle requests. */
+         stopped. */
 
       switch (trc) {
-
-         case VG_TRC_INNER_FASTMISS:
-            VG_(panic)("VG_(scheduler):  VG_TRC_INNER_FASTMISS");
-            /*NOTREACHED*/
-            break;
 
          case VG_TRC_INNER_COUNTERZERO:
             /* Timeslice is out.  Let a new thread be scheduled,
@@ -1540,30 +1397,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
                away.  Again, do nothing, so we wind up back at Phase
                1, whereupon the signal will be "delivered". */
 	    break;
-
-         case VG_TRC_EBP_JMP_CLIENTREQ: 
-            /* Do a client request for the vthread tid.  Note that
-               some requests will have been handled by
-               maybe_do_trivial_clientreq(), so we don't expect to see
-               those here. 
-            */
-            /* The thread's %EAX points at an arg block, the first
-               word of which is the request code. */
-            request_code = ((UInt*)(VG_(threads)[tid].m_eax))[0];
-            if (0) {
-               VG_(sprintf)(msg_buf, "request 0x%x", request_code );
-               print_sched_event(tid, msg_buf);
-	    }
-	    /* Do a non-trivial client request for thread tid.  tid's
-               %EAX points to a short vector of argument words, the
-               first of which is the request code.  The result of the
-               request is put in tid's %EDX.  Alternatively, perhaps
-               the request causes tid to become non-runnable and/or
-               other blocked threads become runnable.  In general we
-               can and often do mess with the state of arbitrary
-               threads at this point. */
-            do_nontrivial_clientreq(tid);
-            break;
 
          default: 
             VG_(printf)("\ntrc = %d\n", trc);
@@ -2287,14 +2120,12 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
 static
 void do_pthread_mutex_lock( ThreadId tid, 
                             Bool is_trylock, 
-                            void* /* pthread_mutex_t* */ mutexV )
+                            pthread_mutex_t* mutex )
 {
    Char  msg_buf[100];
    Char* caller
       = is_trylock ? "pthread_mutex_trylock"
                    : "pthread_mutex_lock   ";
-
-   pthread_mutex_t* mutex = (pthread_mutex_t*)mutexV;
 
    if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "%s    mx %p ...", caller, mutex );
@@ -2390,10 +2221,9 @@ void do_pthread_mutex_lock( ThreadId tid,
 
 static
 void do_pthread_mutex_unlock ( ThreadId tid,
-                               void* /* pthread_mutex_t* */ mutexV )
+                               pthread_mutex_t* mutex )
 {
    Char msg_buf[100];
-   pthread_mutex_t* mutex = (pthread_mutex_t*)mutexV;
 
    if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "pthread_mutex_unlock     mx %p ...", mutex );
@@ -3019,15 +2849,132 @@ void do_pthread_kill ( ThreadId tid, /* me */
 
 
 /* ---------------------------------------------------------------------
-   Handle non-trivial client requests.
+   Handle client requests.
    ------------------------------------------------------------------ */
 
+/* Do a client request for the thread tid.  After the request, tid may
+   or may not still be runnable; if not, the scheduler will have to
+   choose a new thread to run.  
+*/
 static
-void do_nontrivial_clientreq ( ThreadId tid )
+void do_client_request ( ThreadId tid )
 {
-   UInt* arg    = (UInt*)(VG_(threads)[tid].m_eax);
-   UInt  req_no = arg[0];
+#  define RETURN_WITH(vvv)                        \
+       { tst->m_edx = (vvv);                      \
+         tst->sh_edx = VGM_WORD_VALID;            \
+       }
+
+   ThreadState* tst    = &VG_(threads)[tid];
+   UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
+   UInt         req_no = arg[0];
+
+   /* VG_(printf)("req no = 0x%x\n", req_no); */
    switch (req_no) {
+
+      case VG_USERREQ__MALLOC:
+         RETURN_WITH(
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocMalloc ) 
+         );
+         break;
+
+      case VG_USERREQ__BUILTIN_NEW:
+         RETURN_WITH(
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNew )
+         );
+         break;
+
+      case VG_USERREQ__BUILTIN_VEC_NEW:
+         RETURN_WITH(
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNewVec )
+         );
+         break;
+
+      case VG_USERREQ__FREE:
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocMalloc );
+	 RETURN_WITH(0); /* irrelevant */
+         break;
+
+      case VG_USERREQ__BUILTIN_DELETE:
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNew );
+	 RETURN_WITH(0); /* irrelevant */
+         break;
+
+      case VG_USERREQ__BUILTIN_VEC_DELETE:
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNewVec );
+	 RETURN_WITH(0); /* irrelevant */
+         break;
+
+      case VG_USERREQ__CALLOC:
+         RETURN_WITH(
+            (UInt)VG_(client_calloc) ( tst, arg[1], arg[2] )
+         );
+         break;
+
+      case VG_USERREQ__REALLOC:
+         RETURN_WITH(
+            (UInt)VG_(client_realloc) ( tst, (void*)arg[1], arg[2] )
+         );
+         break;
+
+      case VG_USERREQ__MEMALIGN:
+         RETURN_WITH(
+            (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
+         );
+         break;
+
+      case VG_USERREQ__PTHREAD_GET_THREADID:
+         RETURN_WITH(tid);
+         break;
+
+      case VG_USERREQ__RUNNING_ON_VALGRIND:
+         RETURN_WITH(1);
+         break;
+
+      case VG_USERREQ__GET_PTHREAD_TRACE_LEVEL:
+         RETURN_WITH(VG_(clo_trace_pthread_level));
+         break;
+
+      case VG_USERREQ__READ_MILLISECOND_TIMER:
+         RETURN_WITH(VG_(read_millisecond_timer)());
+         break;
+
+      /* Some of these may make thread tid non-runnable, but the
+         scheduler checks for that on return from this function. */
+      case VG_USERREQ__PTHREAD_MUTEX_LOCK:
+         do_pthread_mutex_lock( tid, False, (void *)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
+         do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
+         do_pthread_mutex_unlock( tid, (void *)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_GETSPECIFIC:
+ 	 do_pthread_getspecific ( tid, (UInt)(arg[1]) );
+         break;
+
+      case VG_USERREQ__SET_CANCELTYPE:
+         do__set_canceltype ( tid, arg[1] );
+         break;
+
+      case VG_USERREQ__CLEANUP_PUSH:
+         do__cleanup_push ( tid, (CleanupEntry*)(arg[1]) );
+         break;
+
+      case VG_USERREQ__CLEANUP_POP:
+         do__cleanup_pop ( tid, (CleanupEntry*)(arg[1]) );
+         break;
+
+      case VG_USERREQ__TESTCANCEL:
+         do__testcancel ( tid );
+         break;
+
+      case VG_USERREQ__GET_N_SIGS_RETURNED:
+         RETURN_WITH(VG_(threads)[tid].n_signals_returned);
+         break;
 
       case VG_USERREQ__PTHREAD_JOIN:
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
@@ -3150,7 +3097,6 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__CHECK_WRITABLE:
       case VG_USERREQ__CHECK_READABLE:
       case VG_USERREQ__MAKE_NOACCESS_STACK:
-      case VG_USERREQ__RUNNING_ON_VALGRIND:
       case VG_USERREQ__DO_LEAK_CHECK:
       case VG_USERREQ__DISCARD_TRANSLATIONS:
          SET_EDX(
@@ -3164,12 +3110,14 @@ void do_nontrivial_clientreq ( ThreadId tid )
 	 break;
 
       default:
-         VG_(printf)("panic'd on private request = 0x%x\n", arg[0] );
-         VG_(panic)("handle_private_client_pthread_request: "
+         VG_(printf)("panic'd on client request = 0x%x\n", arg[0] );
+         VG_(panic)("do_client_request: "
                     "unknown request");
          /*NOTREACHED*/
          break;
    }
+
+#  undef RETURN_WITH
 }
 
 

@@ -163,8 +163,7 @@ Int VG_(sigaction) ( Int signum,
 
 Int VG_(sigaltstack)( const vki_stack_t* ss, vki_stack_t* oss )
 {
-   Int res
-     = VG_(do_syscall)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
+   Int res = VG_(do_syscall)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -1666,8 +1665,7 @@ UInt VG_(read_millisecond_timer) ( void )
    ULong now;
    Int res;
 
-   res = VG_(do_syscall)(__NR_gettimeofday, (UWord)&tv_now, 
-			 (UWord)NULL);
+   res = VG_(do_syscall)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
    
    now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
    

@@ -30,4 +30,7 @@ sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 # Reduce some libc incompatibility
 sed "s/ __getsockname / getsockname /"                                 |
 sed "s/ __sigaction / sigaction /"                                     |
-sed "s/ __GI___/ __/"
+sed "s/ __GI___/ __/"                                                  |
+
+# Remove line info out of order warnings
+sed "/warning: line info addresses out of order/d"

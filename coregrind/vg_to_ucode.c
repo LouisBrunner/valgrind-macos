@@ -5319,12 +5319,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0x1F: /* POP %DS */
    case 0x07: /* POP %ES */
+   case 0x17: /* POP %SS */
    {
       Int sreg = INVALID_TEMPREG;
       vg_assert(sz == 4);
       switch(opc) {
       case 0x1F: sreg = R_DS; break;
       case 0x07: sreg = R_ES; break;
+      case 0x17: sreg = R_SS; break;
       }
 
       t1 = newTemp(cb); t2 = newTemp(cb);

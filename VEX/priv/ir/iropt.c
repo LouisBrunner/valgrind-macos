@@ -21,6 +21,9 @@
 
 /* Implementation notes, 12 Oct 04.
 
+   TODO: improve pessimistic handling of precise exceptions
+     in the tree builder.
+
    TODO: check interaction of rGetI and dirty helpers. 
    
    F64i constants are treated differently from other constants.
@@ -28,11 +31,12 @@
    bound to temps.  This allows them to participate in CSE, which
    is important for getting good performance for x86 guest code.
 
-   ToDo:
-
    make spec_helpers_BB always return flat code
 
    CSE up F64 literals (already doing F64is)
+
+   CSE: consider carefully the requirement for precise exns
+        prior to making CSE any more aggressive.
 */
 
 
@@ -1857,7 +1861,16 @@ static void treebuild_BB ( IRBB* bb )
 
          /* We have to invalidate this binding. */
          ti->invalidateMe 
-            = (ti->eDoesLoad && invStore) || (ti->eDoesGet && invPut);
+            = /* a store invalidates loaded data */
+              (ti->eDoesLoad && invStore)
+              /* a put invalidates get'd data */
+              || (ti->eDoesGet && invPut)
+              /* a put invalidates loaded data.  Note, we could do
+                 much better here in the sense that we only need to
+                 invalidate trees containing loads if the Put in
+                 question is marked as requiring precise
+                 exceptions. */
+              || (ti->eDoesLoad && invPut);
          /*
          if (ti->invalidateMe)
            vex_printf("SET INVAL\n");

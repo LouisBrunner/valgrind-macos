@@ -66,9 +66,9 @@ void malloc_panic ( const Char* fn )
 /*--- Replacing malloc et al                               ---*/
 /*------------------------------------------------------------*/
 
-/* Default redzone for CLIENT arena of Valgrind's malloc() is 4 bytes */
+/* Default redzone size for CLIENT arena of Valgrind's malloc() */
 __attribute__ ((weak))
-UInt VG_(vg_malloc_redzone_szB) = 4;
+UInt VG_(vg_malloc_redzone_szB) = 8;
 
 Bool VG_(sk_malloc_called_by_scheduler) = False;
 

@@ -251,7 +251,7 @@ void ensure_mm_init ( void )
    
    if (init_done) return;
 
-   /* Use a checked red zone size of 1 word for our internal stuff,
+   /* Use checked red zones (of various sizes) for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
       course the client's red zone can be checked by the tool, eg. 
       by using addressibility maps, but not by the mechanism implemented
@@ -270,7 +270,6 @@ void ensure_mm_init ( void )
    sk_assert(VG_(vg_malloc_redzone_szB) < 128);
    sk_assert(VG_(vg_malloc_redzone_szB) >= 0);
    client_rz_szW = VG_(vg_malloc_redzone_szB)/4;
-   if (client_rz_szW % 2 == 1) client_rz_szW++;
 
    arena_init ( &vg_arena[VG_AR_CLIENT],    "client",  
                client_rz_szW, False, 262144, True );

@@ -1808,7 +1808,7 @@ static Int freechunkptr = 0;
 static HG_Chunk *freechunks[N_FREED_CHUNKS];
 
 /* Use a small redzone (paranoia) */
-UInt VG_(vg_malloc_redzone_szB) = 4;
+UInt VG_(vg_malloc_redzone_szB) = 8;
 
 
 /* Allocate a user-chunk of size bytes.  Also allocate its shadow

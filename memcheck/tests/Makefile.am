@@ -9,7 +9,7 @@
 ##     strict EIP updating
 ##---------------------------------------------------------------------------
 
-noinst_SCRIPTS = filter_leak_check_size filter_stderr
+noinst_SCRIPTS = filter_allocs filter_leak_check_size filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \

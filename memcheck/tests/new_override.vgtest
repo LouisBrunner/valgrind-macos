@@ -1,1 +1,2 @@
 prog: new_override
+stderr_filter: filter_allocs

@@ -1,0 +1,6 @@
+#! /bin/sh
+
+./filter_stderr | \
+sed "s/malloc\/free: in use at exit: [0-9]\+ bytes in [0-9]\+ blocks./malloc\/free: in use at exit: ... bytes in ... blocks./" | \
+sed "s/malloc.free: [0-9]\+ allocs, [0-9]\+ frees, [0-9]\+ bytes allocated./malloc\/free: ... allocs, ... frees, ... bytes allocated./"
+

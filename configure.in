@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT(coregrind/vg_clientmalloc.c)   # give me a source file, any source file...
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(valgrind, HEAD)
+AM_INIT_AUTOMAKE(valgrind, 1.1.0)
 
 AM_MAINTAINER_MODE
 

@@ -1,5 +1,5 @@
 
-SUBDIRS = .
+SUBDIRS = . docs
 
 INCLUDES = -I$(top_srcdir)/include
 

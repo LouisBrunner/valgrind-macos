@@ -303,6 +303,7 @@ AC_OUTPUT(
    coregrind/docs/Makefile
    coregrind/valgrind
    addrcheck/Makefile
+   addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/docs/Makefile

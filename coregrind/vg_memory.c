@@ -545,6 +545,17 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    return ret;
 }
 
+/* Pad the entire process address space, from VG_(client_base)
+   to VG_(valgrind_end) by creating an anonymous and inaccessible
+   mapping over any part of the address space which is not covered
+   by an entry in the segment list.
+
+   This is designed for use around system calls which allocate
+   memory in the process address space without providing a way to
+   control it's location such as io_setup. By choosing a suitable
+   address with VG_(find_map_space) and then adding a segment for
+   it and padding the address space valgrind can ensure that the
+   kernel has no choice but to put the memory where we want it. */
 void VG_(pad_address_space)(void)
 {
    Addr addr = VG_(client_base);
@@ -579,6 +590,8 @@ void VG_(pad_address_space)(void)
    return;
 }
 
+/* Removed the address space padding added by VG_(pad_address_space)
+   by removing any mappings that it created. */
 void VG_(unpad_address_space)(void)
 {
    Addr addr = VG_(client_base);

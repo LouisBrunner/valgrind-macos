@@ -20,6 +20,9 @@ sed "s/vg_replace_malloc.c:[0-9]\+/vg_replace_malloc.c:.../"           |
 # Anonymise vg_intercept lines
 sed "s/vg_intercept.c:[0-9]\+/vg_intercept.c:.../"                     |
 
+# Anonymise vg_libpthread lines
+sed "s/vg_libpthread.c:[0-9]\+/vg_libpthread.c:.../"                   |
+
 # Reduce some libc incompatibility
 sed "s/ __getsockname / getsockname /"                                 |
 sed "s/ __sigaction / sigaction /"                                     |

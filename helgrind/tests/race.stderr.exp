@@ -2,8 +2,8 @@
 Thread 3:
 Possible data race writing variable at 0x........ (shared)
    at 0x........: th (race.c:10)
-   by 0x........: thread_wrapper (vg_libpthread.c:661)
+   by 0x........: thread_wrapper (vg_libpthread.c:...)
    by 0x........: do__quit (vg_scheduler.c:1791)
-  Address 0x........ is in BSS section of /home/jeremy/cvs/valgrind/helgrind/tests/race
+  Address 0x........ is in BSS section of /...helgrind/tests...
   Previous state: shared RO, no locks
 

@@ -343,8 +343,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             /* assert that the IR is well-typed */
             Int nshift;
             vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
-	    vassert(nshift >= 0);
             nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+	    vassert(nshift >= 0);
 	    if (nshift > 0)
                addInstr(env, X86Instr_Sh32(
                                 shOp, 

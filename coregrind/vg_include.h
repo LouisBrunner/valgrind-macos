@@ -1018,10 +1018,7 @@ extern Int     VG_(longjmpd_on_signal);
 /* The red-zone size which we put at the bottom (highest address) of
    thread stacks, for paranoia reasons.  This can be arbitrary, and
    doesn't really need to be set at compile time. */
-#define VG_AR_CLIENT_STACKBASE_REDZONE_SZW 4
-
-#define VG_AR_CLIENT_STACKBASE_REDZONE_SZB \
-   (VG_AR_CLIENT_STACKBASE_REDZONE_SZW * VKI_BYTES_PER_WORD)
+#define VG_AR_CLIENT_STACKBASE_REDZONE_SZB   16
 
 /* Junk to fill up a thread's shadow regs with when shadow regs aren't
    being used. */

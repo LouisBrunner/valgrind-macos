@@ -1388,8 +1388,17 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 #           endif
 
+            /* Is the client exiting for good? */
             if (VG_(threads)[tid].m_eax == __NR_exit)
                return VgSrc_ExitSyscall;
+
+            /* Trap syscalls to __NR_sched_yield and just have this
+               thread yield instead.  Not essential, just an
+               optimisation. */
+	    if (VG_(threads)[tid].m_eax == __NR_sched_yield) {
+               SET_EAX(tid, 0); /* syscall returns with success */
+               goto stage1; /* find a new thread to run */
+	    }
 
             sched_do_syscall(tid);
 

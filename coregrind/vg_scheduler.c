@@ -3526,11 +3526,16 @@ void do_client_request ( ThreadId tid )
 	    static Bool whined = False;
 
 	    if (!whined) {
+               // Allow for requests in core, but defined by skins, which
+               // have 0 and 0 in their two high bytes.
+               Char c1 = (arg[0] >> 24) & 0xff;
+               Char c2 = (arg[0] >> 16) & 0xff;
+               if (c1 == 0) c1 = '_';
+               if (c2 == 0) c2 = '_';
 	       VG_(message)(Vg_UserMsg, "Warning:\n"
-			    "  unhandled client request: 0x%x (%c%c+%d).  Perhaps\n" 
-			    "  VG_(needs).client_requests should be set?\n",
-			    arg[0], (arg[0] >> 24) & 0xff, (arg[0] >> 16) & 0xff,
-			    arg[0] & 0xffff);
+                   "  unhandled client request: 0x%x (%c%c+0x%x).  Perhaps\n" 
+		   "  VG_(needs).client_requests should be set?\n",
+			    arg[0], c1, c2, arg[0] & 0xffff);
 	       whined = True;
 	    }
          }

@@ -823,18 +823,6 @@ details of their arguments.
     be leaked, dubious, reachable and suppressed.  Again, useful in
     test harness code, after calling <code>VALGRIND_DO_LEAK_CHECK</code>.
 <p>
-<li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
-    memory instead of using the standard
-    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, Memcheck will
-    not detect nearly as many errors, and the error messages won't be as
-    informative.  To improve this situation, use this macro just after your
-    custom allocator allocates some new memory.  See the comments in
-    <code>memcheck/memcheck.h</code> for information on how to use it.
-<p>
-<li><code>VALGRIND_FREELIKE_BLOCK</code>: This should be used in conjunction 
-    with <code>VALGRIND_MALLOCLIKE_BLOCK</code>.  Again, see
-    <code>memcheck/memcheck.h</code> for information on how to use it.  
-<p>
 <li><code>VALGRIND_GET_VBITS</code> and
     <code>VALGRIND_SET_VBITS</code>: allow you to get and set the V (validity)
     bits for an address range.  You should probably only set V bits that you

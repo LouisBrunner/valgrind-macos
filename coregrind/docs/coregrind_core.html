@@ -947,6 +947,19 @@ skin-specific documentation for explanations of the skin-specific macros).
     Memcheck, but for Cachegrind it will always return zero because 
     Cachegrind doesn't report errors.
 <p>
+<li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
+    memory instead of using the standard
+    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, skins that track
+    information about heap blocks will not do nearly as good a
+    job.  For example, Memcheck won't detect nearly as many errors, and the
+    error messages won't be as informative.  To improve this situation, use
+    this macro just after your custom allocator allocates some new memory.  See
+    the comments in <code>valgrind.h</code> for information on how to use it.
+<p>
+<li><code>VALGRIND_FREELIKE_BLOCK</code>: This should be used in conjunction 
+    with <code>VALGRIND_MALLOCLIKE_BLOCK</code>.  Again, see
+    <code>memcheck/memcheck.h</code> for information on how to use it.  
+<p>
 <li><code>VALGRIND_NON_SIMD_CALL[0123]</code>: executes a function of 0, 1, 2
      or 3 args in the client program on the <i>real</i> CPU, not the virtual
      CPU that Valgrind normally runs code on.  These are used in various ways

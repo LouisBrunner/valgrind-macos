@@ -827,7 +827,12 @@ void MAC_(common_fini)(void (*leak_check)(void))
 
 Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
 {
-   UInt* argv = (UInt*)arg;
+   Char* err  = 
+         "The client requests VALGRIND_MALLOCLIKE_BLOCK and\n"
+      "   VALGRIND_FREELIKE_BLOCK have moved.  Please recompile your\n"
+      "   program to incorporate the updates in the Valgrind header files.\n"
+      "   You shouldn't need to change the text of your program at all.\n"
+      "   Everything should then work as before.  Sorry for the bother.\n";
 
    // Not using 'tid' here because MAC_(new_block)() and MAC_(handle_free)()
    // grab it themselves.  But what they grab should match 'tid', check
@@ -846,22 +851,27 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
       *ret = 0;
       return True;
    }
+   case VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE:
+   case VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE:
+      VG_(skin_panic)(err);
+
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
-      Addr p         = (Addr)argv[1];
-      UInt sizeB     =       argv[2];
-      UInt rzB       =       argv[3];
-      Bool is_zeroed = (Bool)argv[4];
+      Addr p         = (Addr)arg[1];
+      UInt sizeB     =       arg[2];
+      UInt rzB       =       arg[3];
+      Bool is_zeroed = (Bool)arg[4];
 
       MAC_(new_block) ( p, sizeB, rzB, is_zeroed, MAC_AllocCustom );
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
-      Addr p         = (Addr)argv[1];
-      UInt rzB       =       argv[2];
+      Addr p         = (Addr)arg[1];
+      UInt rzB       =       arg[2];
 
       MAC_(handle_free) ( p, rzB, MAC_AllocCustom );
       return True;
    }
+
    default:
       return False;
    }

@@ -150,7 +150,9 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
    Bool  ok;
    Addr  bad_addr;
 
-   if (!VG_IS_SKIN_USERREQ('M','C',arg[0]))
+   if (!VG_IS_SKIN_USERREQ('M','C',arg[0])
+    && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
+    && VG_USERREQ__FREELIKE_BLOCK   != arg[0])
       return False;
 
    switch (arg[0]) {

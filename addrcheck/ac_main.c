@@ -1199,7 +1199,9 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
    static Int moans = 3;
 
    /* Overload memcheck client reqs */
-   if (!VG_IS_SKIN_USERREQ('M','C',arg[0]))
+   if (!VG_IS_SKIN_USERREQ('M','C',arg[0])
+    && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
+    && VG_USERREQ__FREELIKE_BLOCK   != arg[0])
       return False;
 
    switch (arg[0]) {

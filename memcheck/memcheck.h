@@ -80,8 +80,14 @@ typedef
       VG_USERREQ__CHECK_READABLE,
       VG_USERREQ__DO_LEAK_CHECK,
       VG_USERREQ__COUNT_LEAKS,
-      VG_USERREQ__MALLOCLIKE_BLOCK,
-      VG_USERREQ__FREELIKE_BLOCK,
+
+      /* These two have been moved into core, because they are useful for
+         any skin that tracks heap blocks.  Hence the suffix.  But they're
+         still here for backwards compatibility, although Valgrind will
+         abort with an explanatory message if you use them. */
+      VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE,
+      VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE,
+
       VG_USERREQ__GET_VBITS,
       VG_USERREQ__SET_VBITS
    } Vg_MemCheckClientRequest;
@@ -190,46 +196,22 @@ typedef
                             &leaked, &dubious, &reachable, &suppressed);\
    }
 
-#endif
 
-
-/* Mark a block of memory as having been allocated by a malloc()-like
-   function.  `addr' is the start of the usable block (ie. after any
-   redzone) `rzB' is redzone size if the allocator can apply redzones;
-   use '0' if not.  Adding redzones makes it more likely Valgrind will spot
-   block overruns.  `is_zeroed' indicates if the memory is zeroed, as it is
-   for calloc().  Put it immediately after the point where a block is
-   allocated. 
-   
-   If you're allocating memory via superblocks, and then handing out small
-   chunks of each superblock, if you don't have redzones on your small
-   blocks, it's worth marking the superblock with VALGRIND_MAKE_NOACCESS
-   when it's created, so that block overruns are detected.  But if you can
-   put redzones on, it's probably better to not do this, so that messages
-   for small overruns are described in terms of the small block rather than
-   the superblock (but if you have a big overrun that skips over a redzone,
-   you could miss an error this way).  See memcheck/tests/custom_alloc.c
-   for an example.
-
-   Nb: block must be freed via a free()-like function specified
-   with VALGRIND_FREELIKE_BLOCK or mismatch errors will occur. */
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)     \
+/* These two have been moved to valgrind.h;  still here so that a warning can
+   be printed out for any programs using the old ones. */
+#define VALGRIND_MALLOCLIKE_BLOCK__OLD_DO_NOT_USE(addr, sizeB, rzB, is_zeroed)\
    {unsigned int _qzz_res;                                         \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__MALLOCLIKE_BLOCK,          \
                             addr, sizeB, rzB, is_zeroed);          \
    }
-
-/* Mark a block of memory as having been freed by a free()-like function.
-   `rzB' is redzone size;  it must match that given to
-   VALGRIND_MALLOCLIKE_BLOCK.  Memory not freed will be detected by the leak
-   checker.  Put it immediately after the point where the block is freed. */
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)                         \
+#define VALGRIND_FREELIKE_BLOCK__OLD_DO_NOT_USE(addr, rzB)         \
    {unsigned int _qzz_res;                                         \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__FREELIKE_BLOCK,            \
                             addr, rzB, 0, 0);                      \
    }
+
 
 /* Get in zzvbits the validity data for the zznbytes starting at
    zzsrc.  Return values:
@@ -270,3 +252,6 @@ typedef
                             czzdst, czzvbits, zznbytes,0 );      \
     _qzz_res;                                                    \
    }))
+
+#endif
+

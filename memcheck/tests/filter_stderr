@@ -1,8 +1,6 @@
 #! /bin/sh
 
 # Skip first four lines (valgrind intro)  
-# XXX: be more clever/subtle; eg. if there's just a 1-line error message
-# don't cut it
 
 dir=`dirname $0`
 

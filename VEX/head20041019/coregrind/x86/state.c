@@ -171,7 +171,7 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
    VGOFF_(m_eip) 
       = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
    VG_(baseBlock)[VGOFF_(m_eip)] = client_eip;
-   VG_(printf)("o_vex %d, o_eip %d\n", VGOFF_(m_vex), VGOFF_(m_eip));
+
    /* There are currently 24 spill slots */
    /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
     * boundary at >= 32 words, but most spills are to low numbered spill

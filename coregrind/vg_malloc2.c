@@ -114,7 +114,7 @@ typedef
    struct {
       Char*       name;
       Bool        clientmem;        // Allocates in the client address space?
-      UInt        rz_szB;           // Red zone size in bytes
+      SizeT       rz_szB;           // Red zone size in bytes
       SizeT       min_sblock_szB;   // Minimum superblock size in bytes
       Block*      freelist[VG_N_MALLOC_LISTS];
       Superblock* sblocks;
@@ -204,17 +204,17 @@ SizeT get_bszB_hi ( Block* b )
 // Return the lower, upper and total overhead in bytes for a block.
 // These are determined purely by which arena the block lives in.
 static __inline__
-UInt overhead_szB_lo ( Arena* a )
+SizeT overhead_szB_lo ( Arena* a )
 {
    return sizeof(SizeT) + sizeof(void*) + a->rz_szB;
 }
 static __inline__
-UInt overhead_szB_hi ( Arena* a )
+SizeT overhead_szB_hi ( Arena* a )
 {
    return a->rz_szB + sizeof(void*) + sizeof(SizeT);
 }
 static __inline__
-UInt overhead_szB ( Arena* a )
+SizeT overhead_szB ( Arena* a )
 {
    return overhead_szB_lo(a) + overhead_szB_hi(a);
 }
@@ -300,7 +300,7 @@ UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
 // Return the minimum bszB for a block in this arena.  Can have zero-length
 // payloads, so it's the size of the admin bytes.
 static __inline__
-UInt min_useful_bszB ( Arena* a )
+SizeT min_useful_bszB ( Arena* a )
 {
    return overhead_szB(a);
 }
@@ -339,7 +339,7 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 // Initialise an arena.  rz_szB is the minimum redzone size;  it might be
 // made bigger to ensure that VG_MIN_MALLOC_ALIGNMENT is observed.
 static
-void arena_init ( ArenaId aid, Char* name, UInt rz_szB, SizeT min_sblock_szB )
+void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
 {
    SizeT i;
    Arena* a = arenaId_to_ArenaP(aid);
@@ -384,8 +384,8 @@ void VG_(print_all_arena_stats) ( void )
 static
 void ensure_mm_init ( void )
 {
-   static UInt client_rz_szB;
-   static Bool init_done = False;
+   static SizeT client_rz_szB;
+   static Bool  init_done = False;
    
    if (init_done) {
       // Make sure the client arena's redzone size never changes.  Could

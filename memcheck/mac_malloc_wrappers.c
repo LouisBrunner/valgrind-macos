@@ -42,7 +42,7 @@ static SizeT cmalloc_n_frees    = 0;
 static SizeT cmalloc_bs_mallocd = 0;
 
 /* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
-UInt VG_(vg_malloc_redzone_szB) = 16;
+SizeT VG_(vg_malloc_redzone_szB) = 16;
 
 /* Function pointers for the two tools to track interesting events. */
 void (*MAC_(new_mem_heap)) ( Addr a, SizeT len, Bool is_inited )  = NULL;

@@ -1159,7 +1159,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
 // Current directory at startup.
 static Char* base_dir;
 
-UInt VG_(vg_malloc_redzone_szB) = 0;
+SizeT VG_(vg_malloc_redzone_szB) = 0;
 
 void TL_(pre_clo_init)()
 { 

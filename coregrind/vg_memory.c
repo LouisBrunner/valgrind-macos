@@ -267,7 +267,7 @@ void VG_(init_memory) ( void )
 
 /* Does this address look like something in or vaguely near the
    current thread's stack? */
-static
+static __attribute__((unused))
 Bool is_plausible_stack_addr ( ThreadState* tst, Addr aa )
 {
    UInt a = (UInt)aa;
@@ -284,7 +284,8 @@ Bool is_plausible_stack_addr ( ThreadState* tst, Addr aa )
    the application is switching stacks ? */
 #define VG_HUGE_DELTA (VG_PLAUSIBLE_STACK_SIZE / 4)
 
-static Addr get_page_base ( Addr a )
+static  __attribute__((unused))
+Addr get_page_base ( Addr a )
 {
    return a & ~(VKI_BYTES_PER_PAGE-1);
 }
@@ -402,11 +403,14 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr old_esp, Addr new_esp )
       thing to do would be to make it writable -- but is needed to
       avoid huge numbers of errs in netscape.  To be investigated. */
 
-   { Addr invalid_down_to = get_page_base(new_esp) 
+   { 
+#    if 0
+     Addr invalid_down_to = get_page_base(new_esp) 
                             - 0 * VKI_BYTES_PER_PAGE;
      Addr valid_up_to     = get_page_base(new_esp) + VKI_BYTES_PER_PAGE
                             + 0 * VKI_BYTES_PER_PAGE;
      ThreadState* tst     = VG_(get_current_thread_state)();
+#    endif
      //PROF_EVENT(124); PPP
      if (VG_(clo_verbosity) > 1)
         VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "

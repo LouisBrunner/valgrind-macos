@@ -73,8 +73,8 @@ main(void)
 {
    pthread_t io_thread, killer_thread;   
 
-   extern void *io(void *);
-   extern void *killer(void  *);
+   //   extern void *io(void *);
+   // extern void *killer(void  *);
 
    if ((fd = open(".ktemp",O_CREAT | O_RDWR, 0666)) < 0)
       perror("open"), exit(1);

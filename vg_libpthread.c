@@ -61,6 +61,14 @@
 #include <sys/time.h>
 #endif
 
+
+/* ---------------------------------------------------------------------
+   Forwardses.
+   ------------------------------------------------------------------ */
+
+static void wait_for_fd_to_be_readable_or_erring ( int fd );
+
+
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
    ------------------------------------------------------------------ */
@@ -1072,6 +1080,7 @@ int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 __attribute__((weak))
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
+   wait_for_fd_to_be_readable_or_erring(s);
    return __libc_accept(s, addr, addrlen);
 }
 
@@ -1469,6 +1478,7 @@ int select ( int n,
 typedef unsigned long int nfds_t;
 #endif
 
+
 /* __attribute__((weak)) */
 int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {
@@ -1549,6 +1559,21 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       (void)my_do_syscall2(__NR_nanosleep, 
                            (int)(&nanosleep_interval), (int)NULL);
    }
+}
+
+
+/* Helper function used to make accept() non-blocking.  Idea is to use
+   the above nonblocking poll() to make this thread ONLY wait for the
+   specified fd to become ready, and then return. */
+static void wait_for_fd_to_be_readable_or_erring ( int fd )
+{
+   struct pollfd pfd;
+   fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd);
+   pfd.fd = fd;
+   pfd.events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
+   /* ... but not POLLOUT, you may notice. */
+   pfd.revents = 0;
+   (void)poll(&pfd, 1, -1 /* forever */);
 }
 
 

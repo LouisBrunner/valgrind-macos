@@ -33,10 +33,7 @@
 #include "valgrind.h" /* for VG_USERREQ__MAKE_NOACCESS and
                          VG_USERREQ__DO_LEAK_CHECK */
 
-/* BORKAGE/ISSUES as of 14 Apr 02
-
-Note!  This pthreads implementation is so poor as to not be
-suitable for use by anyone at all!
+/* BORKAGE/ISSUES as of 23 May 02
 
 - Currently, when a signal is run, just the ThreadStatus.status fields 
   are saved in the signal frame, along with the CPU state.  Question: 
@@ -55,17 +52,13 @@ suitable for use by anyone at all!
 - Read/write syscall starts: don't crap out when the initial
   nonblocking read/write returns an error.
 
-- Get rid of restrictions re use of sigaltstack; they are no longer
-  needed.  
-
-- Fix signals properly, so that each thread has its own blocking mask.
-  Currently this isn't done, and (worse?) signals are delivered to
-  Thread 1 (the root thread) regardless.  
-
-  So, what's the deal with signals and mutexes?  If a thread is
+- So, what's the deal with signals and mutexes?  If a thread is
   blocked on a mutex, or for a condition variable for that matter, can
   signals still be delivered to it?  This has serious consequences --
   deadlocks, etc.
+
+- Signals still not really right.  Each thread should have its
+  own pending-set, but there is just one process-wide pending set.
 
 */
 

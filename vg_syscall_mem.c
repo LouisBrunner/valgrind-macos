@@ -2334,7 +2334,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_sched_setparam: /* syscall 154 */
          /* int sched_setparam(pid_t pid, const struct sched_param *p); */
-         if (VG_(clo_instrument))
+         if (VG_(clo_trace_syscalls))
             VG_(printf)("sched_setparam ( %d, %p )\n", arg1, arg2 );
          must_be_readable( tst, "sched_setparam(ptr)",
                            arg2, sizeof(struct sched_param) );
@@ -2345,7 +2345,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_sched_getparam: /* syscall 155 */
          /* int sched_getparam(pid_t pid, struct sched_param *p); */
-         if (VG_(clo_instrument))
+         if (VG_(clo_trace_syscalls))
             VG_(printf)("sched_getparam ( %d, %p )\n", arg1, arg2 );
          must_be_writable( tst, "sched_getparam(ptr)",
                            arg2, sizeof(struct sched_param) );
@@ -2356,7 +2356,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_sched_yield: /* syscall 158 */
          /* int sched_yield(void); */
-         if (VG_(clo_instrument))
+         if (VG_(clo_trace_syscalls))
             VG_(printf)("sched_yield ()\n" );
          KERNEL_DO_SYSCALL(tid,res);
          break;

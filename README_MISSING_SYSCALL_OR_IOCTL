@@ -46,38 +46,40 @@ The syscall wrapper for time()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Removing the debug printing clutter, it looks like this:
 
-  case __NR_time: /* syscall 13 */
+  PRE(time)
+  {
      /* time_t time(time_t *t); */
+     MAYBE_PRINTF("time ( %p )\n",arg1);
+     if (arg1 != (UInt)NULL) {
+        SYSCALL_TRACK( pre_mem_write, tid, "time", arg1, sizeof(time_t) );
+     }
+  }
+
+  POST(time)
+  {  
+     if (arg1 != (UInt)NULL) {
+        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
+     }
+  }
+
+The first thing we do happens before the syscall occurs, in the PRE() function:
+if a non-NULL buffer is passed in as the argument, tell the tool that the
+buffer is about to be written to:
+
      if (arg1 != (UInt)NULL) {
         SYSCALL_TRACK( pre_mem_write, tst, "time", arg1, sizeof(time_t) );
      }
-     KERNEL_DO_SYSCALL(tid,res);
-     if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
-        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
-     }
-     break;
 
-The first thing we do is, if a non-NULL buffer is passed in as the argument,
-tell the tool that the buffer is about to be written to:
+Finally, the really important bit, after the syscall occurs, in the POST()
+function:  if, and only if, the system call was successful, tell the tool that
+the memory was written:
 
      if (arg1 != (UInt)NULL) {
-        SYSCALL_TRACK( pre_mem_write, tst, "time", arg1, sizeof(time_t) );
-     }
-
-Now Valgrind asks the kernel to actally do the system call, for the thread
-identified by thread ID "tid", depositing the return value in "res":
-
-     KERNEL_DO_SYSCALL(tid, res);
-
-Finally, the really important bit.  If, and only if, the system call
-was successful, tell the tool that the memory was written:
-
-     if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
         VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
      }
 
-The function VG_(is_kerror) tells you whether or not its argument
-represents a Linux kernel return error code.  Hence the test.
+The POST() function won't be called if the syscall failed, so you don't need 
+to worry about checking that in the POST() function.
 
 
 Writing your own syscall wrappers (see below for ioctl wrappers)
@@ -107,6 +109,10 @@ following:
     for  that parameter.  Then do the syscall.  Then, if the syscall
     succeeds, issue suitable VG_TRACK( post_mem_write, ... ) calls.
     (There's no need for post_mem_read calls.)
+
+    Also, add it to the sys_info[] array;  use SYSBA if it requires a PRE()
+    and POST() function, and SYSB_ if it only requires a PRE() function.
+    The 2nd arg of these macros indicate if the syscall is blocking.
     
     If you find this difficult, read the wrappers for other syscalls
     for ideas.  A good tip is to look for the wrapper for a syscall
@@ -125,13 +131,8 @@ following:
     sanity check failure" for the syscall wrapper you just made, if this
     is the case.
 
-    Note that many syscalls are bracketed by #if defined(__NR_mysyscall)
-    ... #endif, because they exist only in the 2.4 kernel and not
-    the 2.2 kernel.  This enables the same piece of code to serve both
-    kernels.  Please try and stick to this convention.
 
-
-4.  Once happy, send me the patch.  Pretty please.
+4.  Once happy, send us the patch.  Pretty please.
 
 
 
@@ -143,6 +144,6 @@ Is pretty much the same as writing syscall wrappers.
 There's a default case, sometimes it isn't correct and you have to write a
 more specific case to get the right behaviour.
 
-As above, please create a bugreport and attach the patch as described
+As above, please create a bug report and attach the patch as described
 on http://valgrind.kde.org/bugs.html
 

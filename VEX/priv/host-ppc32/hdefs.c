@@ -140,82 +140,109 @@ HReg hregPPC32_FPR29 ( void ) { return mkHReg(29, HRcFlt64, False); }
 HReg hregPPC32_FPR30 ( void ) { return mkHReg(30, HRcFlt64, False); }
 HReg hregPPC32_FPR31 ( void ) { return mkHReg(31, HRcFlt64, False); }
 
-
 void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
 {
-   *nregs = 64;
+   *nregs = 60;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[ 0] = hregPPC32_GPR0();
-   (*arr)[ 1] = hregPPC32_GPR1();
-   (*arr)[ 2] = hregPPC32_GPR2();
-   (*arr)[ 3] = hregPPC32_GPR3();
-   (*arr)[ 4] = hregPPC32_GPR4();
-   (*arr)[ 5] = hregPPC32_GPR5();
-   (*arr)[ 6] = hregPPC32_GPR6();
-   (*arr)[ 7] = hregPPC32_GPR7();
-   (*arr)[ 8] = hregPPC32_GPR8();
-   (*arr)[ 9] = hregPPC32_GPR9();
-   (*arr)[10] = hregPPC32_GPR10();
-   (*arr)[11] = hregPPC32_GPR11();
-   (*arr)[12] = hregPPC32_GPR12();
-   (*arr)[13] = hregPPC32_GPR13();
-   (*arr)[14] = hregPPC32_GPR14();
-   (*arr)[15] = hregPPC32_GPR15();
-   (*arr)[16] = hregPPC32_GPR16();
-   (*arr)[17] = hregPPC32_GPR17();
-   (*arr)[18] = hregPPC32_GPR18();
-   (*arr)[19] = hregPPC32_GPR19();
-   (*arr)[20] = hregPPC32_GPR20();
-   (*arr)[21] = hregPPC32_GPR21();
-   (*arr)[22] = hregPPC32_GPR22();
-   (*arr)[23] = hregPPC32_GPR23();
-   (*arr)[24] = hregPPC32_GPR24();
-   (*arr)[25] = hregPPC32_GPR25();
-   (*arr)[26] = hregPPC32_GPR26();
-   (*arr)[27] = hregPPC32_GPR27();
-   (*arr)[28] = hregPPC32_GPR28();
-   (*arr)[29] = hregPPC32_GPR29();
-   (*arr)[30] = hregPPC32_GPR30();
-   (*arr)[31] = hregPPC32_GPR31();
+   // GPR1 = stack pointer
+   // GPR2 = TOC pointer
+   (*arr)[ 1] = hregPPC32_GPR3();
+   (*arr)[ 2] = hregPPC32_GPR4();
+   (*arr)[ 3] = hregPPC32_GPR5();
+   (*arr)[ 4] = hregPPC32_GPR6();
+   (*arr)[ 5] = hregPPC32_GPR7();
+   (*arr)[ 6] = hregPPC32_GPR8();
+   (*arr)[ 7] = hregPPC32_GPR9();
+   (*arr)[ 8] = hregPPC32_GPR10();
+   (*arr)[ 9] = hregPPC32_GPR11();
+   (*arr)[10] = hregPPC32_GPR12();
+   // GPR13 = thread specific pointer
+   (*arr)[11] = hregPPC32_GPR14();
+   (*arr)[12] = hregPPC32_GPR15();
+   (*arr)[13] = hregPPC32_GPR16();
+   (*arr)[14] = hregPPC32_GPR17();
+   (*arr)[15] = hregPPC32_GPR18();
+   (*arr)[16] = hregPPC32_GPR19();
+   (*arr)[17] = hregPPC32_GPR20();
+   (*arr)[18] = hregPPC32_GPR21();
+   (*arr)[19] = hregPPC32_GPR22();
+   (*arr)[20] = hregPPC32_GPR23();
+   (*arr)[21] = hregPPC32_GPR24();
+   (*arr)[22] = hregPPC32_GPR25();
+   (*arr)[23] = hregPPC32_GPR26();
+   (*arr)[24] = hregPPC32_GPR27();
+   (*arr)[25] = hregPPC32_GPR28();
+   (*arr)[26] = hregPPC32_GPR29();
+   (*arr)[27] = hregPPC32_GPR30();
+   // GPR31 = GuestStatePtr
 
-   (*arr)[32] = hregPPC32_FPR0();
-   (*arr)[33] = hregPPC32_FPR1();
-   (*arr)[34] = hregPPC32_FPR2();
-   (*arr)[35] = hregPPC32_FPR3();
-   (*arr)[36] = hregPPC32_FPR4();
-   (*arr)[37] = hregPPC32_FPR5();
-   (*arr)[38] = hregPPC32_FPR6();
-   (*arr)[39] = hregPPC32_FPR7();
-   (*arr)[40] = hregPPC32_FPR8();
-   (*arr)[41] = hregPPC32_FPR9();
-   (*arr)[42] = hregPPC32_FPR10();
-   (*arr)[43] = hregPPC32_FPR11();
-   (*arr)[44] = hregPPC32_FPR12();
-   (*arr)[45] = hregPPC32_FPR13();
-   (*arr)[46] = hregPPC32_FPR14();
-   (*arr)[47] = hregPPC32_FPR15();
-   (*arr)[48] = hregPPC32_FPR16();
-   (*arr)[49] = hregPPC32_FPR17();
-   (*arr)[50] = hregPPC32_FPR18();
-   (*arr)[51] = hregPPC32_FPR19();
-   (*arr)[52] = hregPPC32_FPR20();
-   (*arr)[53] = hregPPC32_FPR21();
-   (*arr)[54] = hregPPC32_FPR22();
-   (*arr)[55] = hregPPC32_FPR23();
-   (*arr)[56] = hregPPC32_FPR24();
-   (*arr)[57] = hregPPC32_FPR25();
-   (*arr)[58] = hregPPC32_FPR26();
-   (*arr)[59] = hregPPC32_FPR27();
-   (*arr)[60] = hregPPC32_FPR28();
-   (*arr)[61] = hregPPC32_FPR29();
-   (*arr)[62] = hregPPC32_FPR30();
-   (*arr)[63] = hregPPC32_FPR31();
+   (*arr)[28] = hregPPC32_FPR0();
+   (*arr)[29] = hregPPC32_FPR1();
+   (*arr)[30] = hregPPC32_FPR2();
+   (*arr)[31] = hregPPC32_FPR3();
+   (*arr)[32] = hregPPC32_FPR4();
+   (*arr)[33] = hregPPC32_FPR5();
+   (*arr)[34] = hregPPC32_FPR6();
+   (*arr)[35] = hregPPC32_FPR7();
+   (*arr)[36] = hregPPC32_FPR8();
+   (*arr)[37] = hregPPC32_FPR9();
+   (*arr)[38] = hregPPC32_FPR10();
+   (*arr)[39] = hregPPC32_FPR11();
+   (*arr)[40] = hregPPC32_FPR12();
+   (*arr)[41] = hregPPC32_FPR13();
+   (*arr)[42] = hregPPC32_FPR14();
+   (*arr)[43] = hregPPC32_FPR15();
+   (*arr)[44] = hregPPC32_FPR16();
+   (*arr)[45] = hregPPC32_FPR17();
+   (*arr)[46] = hregPPC32_FPR18();
+   (*arr)[47] = hregPPC32_FPR19();
+   (*arr)[48] = hregPPC32_FPR20();
+   (*arr)[49] = hregPPC32_FPR21();
+   (*arr)[50] = hregPPC32_FPR22();
+   (*arr)[51] = hregPPC32_FPR23();
+   (*arr)[52] = hregPPC32_FPR24();
+   (*arr)[53] = hregPPC32_FPR25();
+   (*arr)[54] = hregPPC32_FPR26();
+   (*arr)[55] = hregPPC32_FPR27();
+   (*arr)[56] = hregPPC32_FPR28();
+   (*arr)[57] = hregPPC32_FPR29();
+   (*arr)[58] = hregPPC32_FPR30();
+   (*arr)[59] = hregPPC32_FPR31();
+}
+
+
+/* --------- Condition codes, Intel encoding. --------- */
+
+HChar* showPPC32CondCode ( PPC32CondCode cond )
+{
+   switch (cond) {
+      case Pcc_O:      return "o";
+      case Pcc_NO:     return "no";
+      case Pcc_B:      return "b";
+      case Pcc_NB:     return "nb";
+      case Pcc_Z:      return "z";
+      case Pcc_NZ:     return "nz";
+      case Pcc_BE:     return "be";
+      case Pcc_NBE:    return "nbe";
+      case Pcc_S:      return "s";
+      case Pcc_NS:     return "ns";
+      case Pcc_P:      return "p";
+      case Pcc_NP:     return "np";
+      case Pcc_L:      return "l";
+      case Pcc_NL:     return "nl";
+      case Pcc_LE:     return "le";
+      case Pcc_NLE:    return "nle";
+      case Pcc_ALWAYS: return "ALWAYS";
+      default: vpanic("ppPPC32CondCode");
+   }
 }
 
 
 /* --------- PPCAMode: memory address expressions. --------- */
 
 PPC32AMode* PPC32AMode_IR ( UInt idx, HReg base ) {
+   // CAB: Rem assert immediate
    PPC32AMode* am = LibVEX_Alloc(sizeof(PPC32AMode));
    am->tag = Pam_IR;
    am->Pam.IR.base = base;
@@ -261,7 +288,6 @@ void ppPPC32AMode ( PPC32AMode* am ) {
    }
 }
 
-#if 0
 static void addRegUsage_PPC32AMode ( HRegUsage* u, PPC32AMode* am ) {
    switch (am->tag) {
       case Pam_IR: 
@@ -275,9 +301,7 @@ static void addRegUsage_PPC32AMode ( HRegUsage* u, PPC32AMode* am ) {
          vpanic("addRegUsage_PPC32AMode");
    }
 }
-#endif
 
-#if 0
 static void mapRegs_PPC32AMode ( HRegRemap* m, PPC32AMode* am ) {
    switch (am->tag) {
       case Pam_IR: 
@@ -291,11 +315,11 @@ static void mapRegs_PPC32AMode ( HRegRemap* m, PPC32AMode* am ) {
          vpanic("mapRegs_PPC32AMode");
    }
 }
-#endif
 
 /* --------- Operand, which can be reg or immediate only. --------- */
 
 PPC32RI* PPC32RI_Imm ( UInt imm32 ) {
+   // CAB: Rem assert immediate
    PPC32RI* op       = LibVEX_Alloc(sizeof(PPC32RI));
    op->tag           = Pri_Imm;
    op->Pri.Imm.imm32 = imm32;
@@ -358,13 +382,13 @@ static void mapRegs_PPC32RI ( HRegRemap* m, PPC32RI* op ) {
 //..    }
 //.. }
 
-//.. HChar* showX86UnaryOp ( X86UnaryOp op ) {
-//..    switch (op) {
-//..       case Xun_NOT: return "not";
-//..       case Xun_NEG: return "neg";
-//..       default: vpanic("showX86UnaryOp");
-//..    }
-//.. }
+HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
+   switch (op) {
+      case Pun_NOT: return "not";
+      case Pun_NEG: return "neg";
+      default: vpanic("showPPC32UnaryOp");
+   }
+}
 
 HChar* showPPC32AluOp ( PPC32AluOp op ) {
    switch (op) {
@@ -434,20 +458,20 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
    i->Pin.Sh32.shft = shft;
    return i;
 }
-//.. X86Instr* X86Instr_Test32  ( X86RI* src, X86RM* dst ) {
-//..    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag            = Xin_Test32;
-//..    i->Xin.Test32.src = src;
-//..    i->Xin.Test32.dst = dst;
-//..    return i;
-//.. }
-//.. X86Instr* X86Instr_Unary32  ( X86UnaryOp op, X86RM* dst ) {
-//..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag             = Xin_Unary32;
-//..    i->Xin.Unary32.op  = op;
-//..    i->Xin.Unary32.dst = dst;
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_Test32  ( HReg dst, PPC32RI* src ) {
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_Test32;
+   i->Pin.Test32.dst = dst;
+   i->Pin.Test32.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, PPC32RI* dst ) {
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_Unary32;
+   i->Pin.Unary32.op  = op;
+   i->Pin.Unary32.dst = dst;
+   return i;
+}
 //.. X86Instr* X86Instr_MulL ( Bool syned, X86ScalarSz ssz , X86RM* src ) {
 //..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
 //..    i->tag             = Xin_MulL;
@@ -480,23 +504,23 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
 //..    i->Xin.Push.src = src;
 //..    return i;
 //.. }
-//.. X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms ) {
-//..    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag               = Xin_Call;
-//..    i->Xin.Call.cond     = cond;
-//..    i->Xin.Call.target   = target;
-//..    i->Xin.Call.regparms = regparms;
-//..    vassert(regparms >= 0 && regparms <= 3);
-//..    return i;
-//.. }
-//.. X86Instr* X86Instr_Goto ( IRJumpKind jk, X86CondCode cond, X86RI* dst ) {
-//..    X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag           = Xin_Goto;
-//..    i->Xin.Goto.cond = cond;
-//..    i->Xin.Goto.dst  = dst;
-//..    i->Xin.Goto.jk   = jk;
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_Call ( PPC32CondCode cond, Addr32 target, Int regparms ) {
+   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag               = Pin_Call;
+   i->Pin.Call.cond     = cond;
+   i->Pin.Call.target   = target;
+   i->Pin.Call.regparms = regparms;
+   vassert(regparms >= 0 && regparms < PPC32_N_REGPARMS);
+   return i;
+}
+PPC32Instr* PPC32Instr_Goto ( IRJumpKind jk, PPC32CondCode cond, PPC32RI* dst ) {
+   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag           = Pin_Goto;
+   i->Pin.Goto.cond = cond;
+   i->Pin.Goto.dst  = dst;
+   i->Pin.Goto.jk   = jk;
+   return i;
+}
 //.. X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
 //..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
 //..    i->tag             = Xin_CMov32;
@@ -506,15 +530,15 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
 //..    vassert(cond != Xcc_ALWAYS);
 //..    return i;
 //.. }
-PPC32Instr* PPC32Instr_LoadEX ( UChar szSmall, Bool syned,
+PPC32Instr* PPC32Instr_LoadEX ( UChar sz, Bool syned,
 				HReg dst, PPC32AMode* src ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag                = Pin_LoadEX;
-   i->Pin.LoadEX.szSmall = szSmall;
-   i->Pin.LoadEX.syned   = syned;
-   i->Pin.LoadEX.src     = src;
-   i->Pin.LoadEX.dst     = dst;
-   vassert(szSmall == 1 || szSmall == 2 || szSmall == 4);
+   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag              = Pin_LoadEX;
+   i->Pin.LoadEX.sz    = sz;
+   i->Pin.LoadEX.syned = syned;
+   i->Pin.LoadEX.src   = src;
+   i->Pin.LoadEX.dst   = dst;
+   vassert(sz == 1 || sz == 2 || sz == 4);
    return i;
 }
 PPC32Instr* PPC32Instr_Store ( UChar sz, PPC32AMode* dst, HReg src ) {
@@ -631,12 +655,29 @@ void ppPPC32Instr ( PPC32Instr* i )
 {
    switch (i->tag) {
       case Pin_Alu32:
-         vex_printf("%sl ", showPPC32AluOp(i->Pin.Alu32.op));
-         ppHRegPPC32(i->Pin.Alu32.dst);
-         vex_printf(",");
-         ppHRegPPC32(i->Pin.Alu32.src1);
-         vex_printf(",");
-         ppPPC32RI(i->Pin.Alu32.src2);
+	 if (i->Pin.Alu32.op == Palu_OR &&     // or Rd,Rs,Rs == mr Rd,Rs
+	     i->Pin.Alu32.src2->tag == Pri_Reg &&
+	     i->Pin.Alu32.src2->Pri.Reg.reg == i->Pin.Alu32.src1) {
+	     vex_printf("mr ");
+	     ppHRegPPC32(i->Pin.Alu32.dst);
+	     vex_printf(",");
+	     ppHRegPPC32(i->Pin.Alu32.src1);
+	     return;
+	 }
+	 if (i->Pin.Alu32.op == Palu_ADD &&     // add Rd,R0,Rs == li Rd,Rs
+	     i->Pin.Alu32.src1 == hregPPC32_GPR0()) {
+	     vex_printf("li ");
+	     ppHRegPPC32(i->Pin.Alu32.dst);
+	     vex_printf(",");
+	     ppPPC32RI(i->Pin.Alu32.src2);
+	     return;
+	 }
+	 vex_printf("%s ", showPPC32AluOp(i->Pin.Alu32.op));
+	 ppHRegPPC32(i->Pin.Alu32.dst);
+	 vex_printf(",");
+	 ppHRegPPC32(i->Pin.Alu32.src1);
+	 vex_printf(",");
+	 ppPPC32RI(i->Pin.Alu32.src2);
          return;
       case Pin_Sh32:
          vex_printf("%sl ", showPPC32ShiftOp(i->Pin.Sh32.op));
@@ -646,12 +687,12 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf(",");
          ppPPC32RI(i->Pin.Sh32.shft);
          return;
-//..       case Xin_Test32:
-//..          vex_printf("testl ");
-//..          ppX86RI(i->Xin.Test32.src);
-//..          vex_printf(",");
-//..          ppX86RM(i->Xin.Test32.dst);
-//..          return;
+      case Pin_Test32:
+         vex_printf("testl ");
+         ppHRegPPC32(i->Pin.Test32.dst);
+         vex_printf(",");
+         ppPPC32RI(i->Pin.Test32.src);
+         return;
 //..       case Xin_Unary32:
 //..          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
 //..          ppX86RM(i->Xin.Unary32.dst);
@@ -682,30 +723,33 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          vex_printf("pushl ");
 //..          ppX86RMI(i->Xin.Push.src);
 //..          return;
-//..       case Xin_Call:
-//..          vex_printf("call%s[%d] ", 
-//..                     i->Xin.Call.cond==Xcc_ALWAYS 
-//..                        ? "" : showX86CondCode(i->Xin.Call.cond), 
-//..                     i->Xin.Call.regparms);
-//..          vex_printf("0x%x", i->Xin.Call.target);
-//..          break;
-//..       case Xin_Goto:
-//..          if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..             vex_printf("if (%%eflags.%s) { ", 
-//..                        showX86CondCode(i->Xin.Goto.cond));
-//.. 	 }
-//..          if (i->Xin.Goto.jk != Ijk_Boring) {
-//..             vex_printf("movl $");
-//..             ppIRJumpKind(i->Xin.Goto.jk);
-//..             vex_printf(",%%ebp ; ");
-//..          }
-//..          vex_printf("movl ");
-//..          ppX86RI(i->Xin.Goto.dst);
-//..          vex_printf(",%%eax ; ret");
-//..          if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..             vex_printf(" }");
-//.. 	 }
-//..          return;
+      case Pin_Call:
+// CAB: not 'bc' ?
+         vex_printf("call%s[%d] ", 
+                    i->Pin.Call.cond==Pcc_ALWAYS 
+                       ? "" : showPPC32CondCode(i->Pin.Call.cond), 
+                    i->Pin.Call.regparms);
+         vex_printf("0x%x", i->Pin.Call.target);
+         break;
+      case Pin_Goto:
+         if (i->Pin.Goto.cond != Pcc_ALWAYS) {
+            vex_printf("if (%%eflags.%s) { ", 
+                       showPPC32CondCode(i->Pin.Goto.cond));
+	 }
+         if (i->Pin.Goto.jk != Ijk_Boring) {
+            vex_printf("movl $");
+            ppIRJumpKind(i->Pin.Goto.jk);
+            vex_printf(",%%r31 ; ");
+         }
+// CAB: what instead of movl ?
+         vex_printf("movl ");
+         ppPPC32RI(i->Pin.Goto.dst);
+// CAB: eax?
+         vex_printf(",%%eax ; ret");
+         if (i->Pin.Goto.cond != Pcc_ALWAYS) {
+            vex_printf(" }");
+	 }
+         return;
 //..       case Xin_CMov32:
 //..          vex_printf("cmov%s ", showX86CondCode(i->Xin.CMov32.cond));
 //..          ppX86RM(i->Xin.CMov32.src);
@@ -713,17 +757,16 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppHRegX86(i->Xin.CMov32.dst);
 //..          return;
        case Pin_LoadEX: {
-	 UChar sz = i->Pin.LoadEX.szSmall;
+	 UChar sz = i->Pin.LoadEX.sz;
 	 Bool syned = i->Pin.LoadEX.syned;
-	 Bool update = False;                     // CAB: ?
+// CAB: How to get 'update'... ?
+	 Bool update = False;
 	 Bool idxd = (i->Pin.LoadEX.src->tag == Pam_IR) ? True : False;
-
          vex_printf("l%c%c%s%s ",
-                    (sz==1) ? 'b' : sz==1 ? 'h' : 'w',
+                    (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                     syned ? 'a' : 'z',
 		    update ? "u" : "",
 		    idxd ? "x" : "" );
-
          ppHRegPPC32(i->Pin.LoadEX.dst);
          vex_printf(",");
          ppPPC32AMode(i->Pin.LoadEX.src);
@@ -731,26 +774,18 @@ void ppPPC32Instr ( PPC32Instr* i )
        }
        case Pin_Store: {
          UChar sz = i->Pin.Store.sz;
-	 Bool update = False;                     // CAB: ?
+// CAB: How to get 'update'... ?
+	 Bool update = False;
 	 Bool idxd = (i->Pin.Store.dst->tag == Pam_IR) ? True : False;
-
          vex_printf("st%c%s%s ",
-                    (sz==1) ? 'b' : sz==1 ? 'h' : 'w',
+                    (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
 		    update ? "u" : "",
 		    idxd ? "x" : "" );
-
          ppHRegPPC32(i->Pin.Store.src);
          vex_printf(",");
          ppPPC32AMode(i->Pin.Store.dst);
          return;
        }
-#if 0
-         vex_printf("mov%c ", i->Xin.Store.sz==1 ? 'b' : 'w');
-         ppHRegX86(i->Xin.Store.src);
-         vex_printf(",");
-         ppX86AMode(i->Xin.Store.dst);
-#endif
-         return;
 //..       case Xin_Set32:
 //..          vex_printf("setl%s ", showX86CondCode(i->Xin.Set32.cond));
 //..          ppHRegX86(i->Xin.Set32.dst);
@@ -919,22 +954,20 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
             return;
          }
 	 addHRegUse(u, HRmWrite, i->Pin.Alu32.dst);
-
-	 // CAB: Any circumstance where dst is read & written?
+// CAB TODO: Any circumstance where dst is read & written?
          return;
 
       case Pin_Sh32:
 	 addHRegUse(u, HRmWrite, i->Pin.Sh32.dst);
  	 addHRegUse(u, HRmRead, i->Pin.Sh32.src);
 	 addRegUsage_PPC32RI(u, i->Pin.Sh32.shft);
-
-	 // CAB: Any circumstance where dst is read & written?
+// CAB TODO: Any circumstance where dst is read & written?
          return;
 
-//..       case Xin_Test32:
-//..          addRegUsage_X86RI(u, i->Xin.Test32.src);
-//..          addRegUsage_X86RM(u, i->Xin.Test32.dst, HRmRead);
-//..          return;
+      case Pin_Test32:
+	 addHRegUse(u, HRmRead, i->Pin.Test32.dst);
+         addRegUsage_PPC32RI(u, i->Pin.Test32.src);
+         return;
 //..       case Xin_Unary32:
 //..          addRegUsage_X86RM(u, i->Xin.Unary32.dst, HRmModify);
 //..          return;
@@ -958,55 +991,64 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
 //..          addRegUsage_X86RMI(u, i->Xin.Push.src);
 //..          addHRegUse(u, HRmModify, hregX86_ESP());
 //..          return;
-//..       case Xin_Call:
-//..          /* This is a bit subtle. */
-//..          /* First off, claim it trashes all the callee-saved regs */
-//..          /* which I believe to be %eax,%ecx,%edx. */
-//..          addHRegUse(u, HRmWrite, hregX86_EAX());
-//..          addHRegUse(u, HRmWrite, hregX86_ECX());
-//..          addHRegUse(u, HRmWrite, hregX86_EDX());
-//..          /* Now we have to state any parameter-carrying registers
-//..             which might be read.  This depends on the regparmness. */
-//..          switch (i->Xin.Call.regparms) {
-//..             case 3: addHRegUse(u, HRmRead, hregX86_ECX()); /*fallthru*/
-//..             case 2: addHRegUse(u, HRmRead, hregX86_EDX()); /*fallthru*/
-//..             case 1: addHRegUse(u, HRmRead, hregX86_EAX()); break;
-//..             case 0: break;
-//..             default: vpanic("getRegUsage_X86Instr:Call:regparms");
-//..          }
-//..          /* Finally, there is the issue that the insn trashes a
-//..             register because the literal target address has to be
-//..             loaded into a register.  Fortunately, for the 0/1/2
-//..             regparm case, we can use EAX, EDX and ECX respectively, so
-//..             this does not cause any further damage.  For the 3-regparm
-//..             case, we'll have to choose another register arbitrarily --
-//..             since A, D and C are used for parameters -- and so we might
-//..             as well choose EDI. */
-//..          if (i->Xin.Call.regparms == 3)
-//..             addHRegUse(u, HRmWrite, hregX86_EDI());
-//..          /* Upshot of this is that the assembler really must observe
-//..             the here-stated convention of which register to use as an
-//..             address temporary, depending on the regparmness: 0==EAX,
-//..             1==EDX, 2==ECX, 3==EDI. */
-//..          return;
-//..       case Xin_Goto:
-//..          addRegUsage_X86RI(u, i->Xin.Goto.dst);
-//..          addHRegUse(u, HRmWrite, hregX86_EAX());
-//..          if (i->Xin.Goto.jk != Ijk_Boring)
-//..             addHRegUse(u, HRmWrite, hregX86_EBP());
-//..          return;
+      case Pin_Call:
+         /* This is a bit subtle. */
+         /* First off, claim it trashes all the caller-saved regs
+            which fall within the register allocator's jurisdiction.
+            These I believe to be: r0,r3:12
+         */
+         addHRegUse(u, HRmWrite, hregPPC32_GPR0());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR3());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR4());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR5());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR6());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR7());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR8());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR9());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR10());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR11());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR12());
+
+         /* Now we have to state any parameter-carrying registers
+            which might be read.  This depends on the regparmness. */
+         switch (i->Pin.Call.regparms) {
+            case  8: addHRegUse(u, HRmRead, hregPPC32_GPR10()); /*fallthru*/
+            case  7: addHRegUse(u, HRmRead, hregPPC32_GPR9() ); /*fallthru*/
+            case  6: addHRegUse(u, HRmRead, hregPPC32_GPR8() ); /*fallthru*/
+            case  5: addHRegUse(u, HRmRead, hregPPC32_GPR7() ); /*fallthru*/
+            case  4: addHRegUse(u, HRmRead, hregPPC32_GPR6() ); /*fallthru*/
+            case  3: addHRegUse(u, HRmRead, hregPPC32_GPR5() ); /*fallthru*/
+            case  2: addHRegUse(u, HRmRead, hregPPC32_GPR4() ); /*fallthru*/
+            case  1: addHRegUse(u, HRmRead, hregPPC32_GPR3() ); /*fallthru*/
+            case  0: break;
+            default: vpanic("getRegUsage_PPC32Instr:Call:regparms");
+         }
+         /* Finally, there is the issue that the insn trashes a
+            register because the literal target address has to be
+            loaded into a register.  Fortunately, ?CAB? is stated in the
+            ABI as a scratch register, and so seems a suitable victim.  */
+         addHRegUse(u, HRmWrite, hregPPC32_GPR3());
+         /* Upshot of this is that the assembler really must use ?CAB?,
+            and no other, as a destination temporary. */
+         return;
+      case Pin_Goto:
+         addRegUsage_PPC32RI(u, i->Pin.Goto.dst);
+         addHRegUse(u, HRmWrite, hregPPC32_GPR4());
+         if (i->Pin.Goto.jk != Ijk_Boring)
+            addHRegUse(u, HRmWrite, GuestStatePtr);
+         return;
 //..       case Xin_CMov32:
 //..          addRegUsage_X86RM(u, i->Xin.CMov32.src, HRmRead);
 //..          addHRegUse(u, HRmModify, i->Xin.CMov32.dst);
 //..          return;
-//..       case Xin_LoadEX:
-//..          addRegUsage_X86AMode(u, i->Xin.LoadEX.src);
-//..          addHRegUse(u, HRmWrite, i->Xin.LoadEX.dst);
-//..          return;
-//..       case Xin_Store:
-//..          addHRegUse(u, HRmRead, i->Xin.Store.src);
-//..          addRegUsage_X86AMode(u, i->Xin.Store.dst);
-//..          return;
+      case Pin_LoadEX:
+         addRegUsage_PPC32AMode(u, i->Pin.LoadEX.src);
+         addHRegUse(u, HRmWrite, i->Pin.LoadEX.dst);
+         return;
+      case Pin_Store:
+         addHRegUse(u, HRmRead, i->Pin.Store.src);
+         addRegUsage_PPC32AMode(u, i->Pin.Store.dst);
+         return;
 //..       case Xin_Set32:
 //..          addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
 //..          return;
@@ -1149,10 +1191,10 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
          mapReg(m, &i->Pin.Sh32.src);
          mapRegs_PPC32RI(m, i->Pin.Sh32.shft);
          return;
-//..       case Xin_Test32:
-//..          mapRegs_X86RI(m, i->Xin.Test32.src);
-//..          mapRegs_X86RM(m, i->Xin.Test32.dst);
-//..          return;
+      case Pin_Test32:
+         mapReg(m, &i->Pin.Test32.dst);
+         mapRegs_PPC32RI(m, i->Pin.Test32.src);
+         return;
 //..       case Xin_Unary32:
 //..          mapRegs_X86RM(m, i->Xin.Unary32.dst);
 //..          return;
@@ -1169,23 +1211,23 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
 //..       case Xin_Push:
 //..          mapRegs_X86RMI(m, i->Xin.Push.src);
 //..          return;
-//..       case Xin_Call:
-//..          return;
-//..       case Xin_Goto:
-//..          mapRegs_X86RI(m, i->Xin.Goto.dst);
-//..          return;
+      case Pin_Call:
+         return;
+      case Pin_Goto:
+         mapRegs_PPC32RI(m, i->Pin.Goto.dst);
+         return;
 //..       case Xin_CMov32:
 //..          mapRegs_X86RM(m, i->Xin.CMov32.src);
 //..          mapReg(m, &i->Xin.CMov32.dst);
 //..          return;
-//..       case Xin_LoadEX:
-//..          mapRegs_X86AMode(m, i->Xin.LoadEX.src);
-//..          mapReg(m, &i->Xin.LoadEX.dst);
-//..          return;
-//..       case Xin_Store:
-//..          mapReg(m, &i->Xin.Store.src);
-//..          mapRegs_X86AMode(m, i->Xin.Store.dst);
-//..          return;
+      case Pin_LoadEX:
+         mapRegs_PPC32AMode(m, i->Pin.LoadEX.src);
+         mapReg(m, &i->Pin.LoadEX.dst);
+         return;
+      case Pin_Store:
+         mapReg(m, &i->Pin.Store.src);
+         mapRegs_PPC32AMode(m, i->Pin.Store.dst);
+         return;
 //..       case Xin_Set32:
 //..          mapReg(m, &i->Xin.Set32.dst);
 //..          return;
@@ -1615,8 +1657,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       GrpN insns, in which the greg field is used as a sub-opcode
 //..       and does not really contain a register. */
 //.. #  define fake(_n) mkHReg((_n), HRcInt32, False)
-//.. 
-//..    /* vex_printf("asm  ");ppX86Instr(i); vex_printf("\n"); */
+
+   vex_printf("asm  ");ppPPC32Instr(i); vex_printf("\n");
 
    switch (i->tag) {
 
@@ -1724,7 +1766,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..             goto bad;
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Alu32M:
 //..       /* Deal specially with MOV */
 //..       if (i->Xin.Alu32M.op == Xalu_MOV) {
@@ -1773,7 +1815,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..             goto bad;
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Sh32:
 //..       opc_cl = opc_imm = subopc = 0;
 //..       switch (i->Xin.Sh32.op) {
@@ -1805,7 +1847,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          }
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Test32:
 //..       if (i->Xin.Test32.src->tag == Xri_Imm
 //..           && i->Xin.Test32.dst->tag == Xrm_Reg) {
@@ -1816,7 +1858,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          goto done;
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Unary32:
 //..       if (i->Xin.Unary32.op == Xun_NOT) {
 //..          *p++ = 0xF7;
@@ -1856,7 +1898,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          }
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Div:
 //..       subopc = i->Xin.Div.syned ? 7 : 6;
 //..       if (i->Xin.Div.ssz == Xss_32) {
@@ -1875,7 +1917,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          }
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Sh3232:
 //..       vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
 //..       if (i->Xin.Sh3232.amt == 0) {
@@ -1890,7 +1932,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          goto done;
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Push:
 //..       switch (i->Xin.Push.src->tag) {
 //..          case Xrmi_Mem: 
@@ -1907,7 +1949,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..         default: 
 //..             goto bad;
 //..       }
-//.. 
+
 //..    case Xin_Call:
 //..       /* See detailed comment for Xin_Call in getRegUsage_X86Instr above
 //..          for explanation of this. */
@@ -1931,7 +1973,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       *p++ = 0xFF;
 //..       *p++ = 0xD0 + irno;
 //..       goto done;
-//.. 
+
 //..    case Xin_Goto:
 //..       /* Use ptmp for backpatching conditional jumps. */
 //..       ptmp = NULL;

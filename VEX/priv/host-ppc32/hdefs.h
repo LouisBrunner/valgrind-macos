@@ -36,6 +36,9 @@
 #ifndef __LIBVEX_HOST_PPC32_HDEFS_H
 #define __LIBVEX_HOST_PPC32_HDEFS_H
 
+/* Num registers used for function calls */
+#define PPC32_N_REGPARMS 8
+
 
 /* --------- Registers. --------- */
 
@@ -45,20 +48,20 @@
 
 extern void ppHRegPPC32 ( HReg );
 
-extern HReg hregPPC32_GPR0 ( void );
-extern HReg hregPPC32_GPR1 ( void );
-extern HReg hregPPC32_GPR2 ( void );
-extern HReg hregPPC32_GPR3 ( void );
-extern HReg hregPPC32_GPR4 ( void );
-extern HReg hregPPC32_GPR5 ( void );
-extern HReg hregPPC32_GPR6 ( void );
-extern HReg hregPPC32_GPR7 ( void );
-extern HReg hregPPC32_GPR8 ( void );
-extern HReg hregPPC32_GPR9 ( void );
+extern HReg hregPPC32_GPR0  ( void );
+extern HReg hregPPC32_GPR1  ( void );   // Stack Frame Pointer
+extern HReg hregPPC32_GPR2  ( void );   // TOC pointer - not used
+extern HReg hregPPC32_GPR3  ( void );
+extern HReg hregPPC32_GPR4  ( void );
+extern HReg hregPPC32_GPR5  ( void );
+extern HReg hregPPC32_GPR6  ( void );
+extern HReg hregPPC32_GPR7  ( void );
+extern HReg hregPPC32_GPR8  ( void );
+extern HReg hregPPC32_GPR9  ( void );
 extern HReg hregPPC32_GPR10 ( void );
 extern HReg hregPPC32_GPR11 ( void );
 extern HReg hregPPC32_GPR12 ( void );
-extern HReg hregPPC32_GPR13 ( void );
+extern HReg hregPPC32_GPR13 ( void );   // thread specific pointer - not used
 extern HReg hregPPC32_GPR14 ( void );
 extern HReg hregPPC32_GPR15 ( void );
 extern HReg hregPPC32_GPR16 ( void );
@@ -76,18 +79,18 @@ extern HReg hregPPC32_GPR27 ( void );
 extern HReg hregPPC32_GPR28 ( void );
 extern HReg hregPPC32_GPR29 ( void );
 extern HReg hregPPC32_GPR30 ( void );
-extern HReg hregPPC32_GPR31 ( void );
+extern HReg hregPPC32_GPR31 ( void );    // GuestStatePtr
 
-extern HReg hregPPC32_FPR0 ( void );
-extern HReg hregPPC32_FPR1 ( void );
-extern HReg hregPPC32_FPR2 ( void );
-extern HReg hregPPC32_FPR3 ( void );
-extern HReg hregPPC32_FPR4 ( void );
-extern HReg hregPPC32_FPR5 ( void );
-extern HReg hregPPC32_FPR6 ( void );
-extern HReg hregPPC32_FPR7 ( void );
-extern HReg hregPPC32_FPR8 ( void );
-extern HReg hregPPC32_FPR9 ( void );
+extern HReg hregPPC32_FPR0  ( void );
+extern HReg hregPPC32_FPR1  ( void );
+extern HReg hregPPC32_FPR2  ( void );
+extern HReg hregPPC32_FPR3  ( void );
+extern HReg hregPPC32_FPR4  ( void );
+extern HReg hregPPC32_FPR5  ( void );
+extern HReg hregPPC32_FPR6  ( void );
+extern HReg hregPPC32_FPR7  ( void );
+extern HReg hregPPC32_FPR8  ( void );
+extern HReg hregPPC32_FPR9  ( void );
 extern HReg hregPPC32_FPR10 ( void );
 extern HReg hregPPC32_FPR11 ( void );
 extern HReg hregPPC32_FPR12 ( void );
@@ -112,40 +115,44 @@ extern HReg hregPPC32_FPR30 ( void );
 extern HReg hregPPC32_FPR31 ( void );
 
 
+#define StackFramePtr hregPPC32_GPR1()
+#define GuestStatePtr hregPPC32_GPR31()
 
-//.. /* --------- Condition codes, Intel encoding. --------- */
-//.. 
-//.. typedef
-//..    enum {
-//..       Xcc_O      = 0,  /* overflow           */
-//..       Xcc_NO     = 1,  /* no overflow        */
-//.. 
-//..       Xcc_B      = 2,  /* below              */
-//..       Xcc_NB     = 3,  /* not below          */
-//.. 
-//..       Xcc_Z      = 4,  /* zero               */
-//..       Xcc_NZ     = 5,  /* not zero           */
-//.. 
-//..       Xcc_BE     = 6,  /* below or equal     */
-//..       Xcc_NBE    = 7,  /* not below or equal */
-//.. 
-//..       Xcc_S      = 8,  /* negative           */
-//..       Xcc_NS     = 9,  /* not negative       */
-//.. 
-//..       Xcc_P      = 10, /* parity even        */
-//..       Xcc_NP     = 11, /* not parity even    */
-//.. 
-//..       Xcc_L      = 12, /* jump less          */
-//..       Xcc_NL     = 13, /* not less           */
-//.. 
-//..       Xcc_LE     = 14, /* less or equal      */
-//..       Xcc_NLE    = 15, /* not less or equal  */
-//.. 
-//..       Xcc_ALWAYS = 16  /* the usual hack     */
-//..    }
-//..    X86CondCode;
-//.. 
-//.. extern HChar* showX86CondCode ( X86CondCode );
+
+
+/* --------- Condition codes, Intel encoding. --------- */
+
+typedef
+   enum {
+      Pcc_O      = 0,  /* overflow           */
+      Pcc_NO     = 1,  /* no overflow        */
+
+      Pcc_B      = 2,  /* below              */
+      Pcc_NB     = 3,  /* not below          */
+
+      Pcc_Z      = 4,  /* zero               */
+      Pcc_NZ     = 5,  /* not zero           */
+
+      Pcc_BE     = 6,  /* below or equal     */
+      Pcc_NBE    = 7,  /* not below or equal */
+
+      Pcc_S      = 8,  /* negative           */
+      Pcc_NS     = 9,  /* not negative       */
+
+      Pcc_P      = 10, /* parity even        */
+      Pcc_NP     = 11, /* not parity even    */
+
+      Pcc_L      = 12, /* jump less          */
+      Pcc_NL     = 13, /* not less           */
+
+      Pcc_LE     = 14, /* less or equal      */
+      Pcc_NLE    = 15, /* not less or equal  */
+
+      Pcc_ALWAYS = 16  /* the usual hack     */
+   }
+   PPC32CondCode;
+
+extern HChar* showPPC32CondCode ( PPC32CondCode );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -223,15 +230,15 @@ extern void ppPPC32RI ( PPC32RI* );
 //.. 
 //.. extern HChar* showX86ScalarSz ( X86ScalarSz );
 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Pun_NEG,
-//..       Pun_NOT
-//..    }
-//..    PPC32UnaryOp;
-//.. 
-//.. extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
+/* --------- */
+typedef
+   enum {
+      Pun_NEG,
+      Pun_NOT
+   }
+   PPC32UnaryOp;
+
+extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
 
 
 /* --------- */
@@ -281,14 +288,14 @@ typedef
    enum {
       Pin_Alu32,     /* 32-bit mov/arith/logical */
       Pin_Sh32,      /* 32-bit shift/rotate */
-//..       Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
-//..       Xin_Unary32,   /* 32-bit not and neg */
+      Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
+      Pin_Unary32,   /* 32-bit not and neg */
 //..       Xin_MulL,      /* widening multiply */
 //..       Xin_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
-//..       Xin_Call,      /* call to address in register */
-//..       Xin_Goto,      /* conditional/unconditional jmp to dst */
+      Pin_Call,      /* call to address in register */
+      Pin_Goto,      /* conditional/unconditional jmp to dst */
 //..       Xin_CMov32,    /* conditional move */
       Pin_LoadEX,    /* load a 8|16|32 bit value from mem */
       Pin_Store,     /* store a 8|16|32 bit value to mem */
@@ -327,15 +334,15 @@ typedef
             HReg         src;
             PPC32RI*     shft;
          } Sh32;
-//..          struct {
-//..             X86RI* src;
-//..             X86RM* dst;
-//..          } Test32;
-//..          /* Not and Neg */
-//..          struct {
-//..             X86UnaryOp op;
-//..             X86RM*     dst;
-//..          } Unary32;
+         struct {
+            HReg     dst;
+            PPC32RI* src;
+         } Test32;
+         /* Not and Neg */
+         struct {
+            PPC32UnaryOp op;
+            PPC32RI*     dst;
+         } Unary32;
 //..          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
 //..          struct {
 //..             Bool        syned;
@@ -358,23 +365,23 @@ typedef
 //..          struct {
 //..             X86RMI* src;
 //..          } Push;
-//..          /* Pseudo-insn.  Call target (an absolute address), on given
-//..             condition (which could be Xcc_ALWAYS). */
-//..          struct {
-//..             X86CondCode cond;
-//..             Addr32      target;
-//..             Int         regparms; /* 0 .. 3 */
-//..          } Call;
-//..          /* Pseudo-insn.  Goto dst, on given condition (which could be
-//..             Xcc_ALWAYS).  Note importantly that if the jump is 
-//..             conditional (not Xcc_ALWAYS) the jump kind *must* be
-//..             Ijk_Boring.  Ie non-Boring conditional jumps are
-//..             not allowed. */
-//..          struct {
-//..             IRJumpKind  jk;
-//..             X86CondCode cond;
-//..             X86RI*      dst;
-//..          } Goto;
+         /* Pseudo-insn.  Call target (an absolute address), on given
+            condition (which could be Pcc_ALWAYS). */
+         struct {
+            PPC32CondCode cond;
+            Addr32        target;
+            Int           regparms; /* 0 .. 9 */
+         } Call;
+         /* Pseudo-insn.  Goto dst, on given condition (which could be
+            Pcc_ALWAYS).  Note importantly that if the jump is 
+            conditional (not Pcc_ALWAYS) the jump kind *must* be
+            Ijk_Boring.  Ie non-Boring conditional jumps are
+            not allowed. */
+         struct {
+            IRJumpKind    jk;
+            PPC32CondCode cond;
+            PPC32RI*      dst;
+         } Goto;
 //..          /* Mov src to dst on the given condition, which may not
 //..             be the bogus Xcc_ALWAYS. */
 //..          struct {
@@ -384,7 +391,7 @@ typedef
 //..          } CMov32;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
-            UChar       szSmall; /* 1|2|4 */
+            UChar       sz; /* 1|2|4 */
             Bool        syned;
             HReg        dst;
             PPC32AMode* src;
@@ -482,17 +489,17 @@ typedef
 
 
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
-//.. extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
-//.. extern X86Instr* X86Instr_Test32    ( X86RI* src, X86RM* dst );
+extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, PPC32RI* dst );
 //.. extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
-//.. extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
-//.. extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
+extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );
+extern PPC32Instr* PPC32Instr_Goto      ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
 //.. extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
-extern PPC32Instr* PPC32Instr_LoadEX    ( UChar szSmall, Bool syned,
+extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
 					  HReg dst, PPC32AMode* src );
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 //.. extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );

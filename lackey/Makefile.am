@@ -24,7 +24,7 @@ bzdist: dist
 EXTRA_DIST = $(val_DATA) \
 	PATCHES_APPLIED ACKNOWLEDGEMENTS \
 	README_KDE3_FOLKS \
-	README_MISSING_SYSCALL_OR_IOCTL TODO dosyms
+	README_MISSING_SYSCALL_OR_IOCTL TODO dosyms vg_libpthread.vs
 
 val_PROGRAMS = valgrind.so valgrinq.so libpthread.so
 
@@ -78,7 +78,10 @@ noinst_HEADERS = \
         vg_constants.h          \
         vg_unsafe.h
 
-MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
+MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) 
+
+vg_libpthread.vs:
+	echo Not making vg_libpthread.vs
 
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<

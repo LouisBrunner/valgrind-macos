@@ -152,12 +152,18 @@ some useful xls stylesheets in cvs:
 - http://cvs.sourceforge.net/viewcvs.py/perl-xml/perl-xml-faq/
 
 
-TODO:
-----
+TODO CRUCIAL:
+-------------
+- PS/PDF doesn't work because Latex runs out of memory
+- Need to generate text FAQ from the valgrind/docs/xml/FAQ.xml (done at 'make
+  dist' time along with the HTML docs using the "dist-hook"), and remove the
+  old text FAQ which is in valgrind/.
+
+TODO LESS CRUCIAL:
+------------------
 - get rid of blank pages in fo output
 - concat titlepage + subtitle page in fo output
 - generate an index for the user manual (??)
-- fix tex so it does not run out of memory
 - run through and check for not-linked hrefs: grep on 'http'
 - run through and check for bad email addresses: grep on '@' etc.
 - when we move to svn, change all refs to sourceforge.cvs

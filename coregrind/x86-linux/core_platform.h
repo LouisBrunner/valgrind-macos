@@ -61,8 +61,6 @@
    SET_THREAD_REG(zztid, zzval, PLATFORM_SYSCALL_RET, R_SYSCALL_RET, \
                   post_reg_write_syscall_return)
 
-#endif   // __X86_LINUX_CORE_PLATFORM_H
-
 /* ---------------------------------------------------------------------
    Exports of vg_ldt.c
    ------------------------------------------------------------------ */
@@ -120,6 +118,8 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    a5 = arg_block[4];                                           \
    a6 = arg_block[5];                                           \
 } while (0)
+
+#endif   // __X86_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

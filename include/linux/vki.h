@@ -1216,6 +1216,10 @@ struct vki_rtc_time {
 // From linux-2.6.8.1/include/linux/isdn.h
 //----------------------------------------------------------------------
 
+// [[Nb: Resolved this for the common case where CONFIG_COBALT_MICRO_SERVER
+//   is not defined]]
+#define VKI_ISDN_MAX_CHANNELS   64
+
 #define VKI_IIOCGETCPS  _VKI_IO('I',21)
 
 #define VKI_IIOCNETGPN  _VKI_IO('I',34)
@@ -1347,6 +1351,8 @@ struct vki_ppdev_frob_struct {
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/fs.h
 //----------------------------------------------------------------------
+
+#define VKI_BLKGETSIZE _VKI_IO(0x12,96) /* return device size /512 (long *arg) */
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */
@@ -1614,6 +1620,9 @@ typedef struct vki_audio_buf_info {
 #define VKI_SNDCTL_DSP_SETSYNCRO	_VKI_SIO  ('P', 21)
 #define VKI_SNDCTL_DSP_SETDUPLEX	_VKI_SIO  ('P', 22)
 #define VKI_SNDCTL_DSP_GETODELAY	_VKI_SIOR ('P', 23, int)
+
+#define VKI_SNDCTL_DSP_GETCHANNELMASK	_VKI_SIOWR('P', 64, int)
+#define VKI_SNDCTL_DSP_BIND_CHANNEL	_VKI_SIOWR('P', 65, int)
 
 #define VKI_SNDCTL_DSP_SETSPDIF		_VKI_SIOW ('P', 66, int)
 #define VKI_SNDCTL_DSP_GETSPDIF		_VKI_SIOR ('P', 67, int)

@@ -2917,13 +2917,8 @@ PRE(ioctl)
       break;
 
    case VKI_IIOCGETCPS:
-      /* In early 2.4 kernels, ISDN_MAX_CHANNELS was only defined
-       * when KERNEL was. I never saw a larger value than 64 though */
-#              ifndef ISDN_MAX_CHANNELS
-#              define ISDN_MAX_CHANNELS 64
-#              endif
       PRE_MEM_WRITE( "ioctl(IIOCGETCPS)", arg3,
-		     ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
+		     VKI_ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
       break;
    case VKI_IIOCNETGPN:
       PRE_MEM_READ( "ioctl(IIOCNETGPN)",
@@ -3144,9 +3139,7 @@ PRE(ioctl)
    case VKI_SNDCTL_DSP_GETFMTS:
    case VKI_SNDCTL_DSP_GETTRIGGER:
    case VKI_SNDCTL_DSP_GETODELAY:
-#           if defined(SNDCTL_DSP_GETSPDIF)
    case VKI_SNDCTL_DSP_GETSPDIF:
-#           endif
    case VKI_SNDCTL_DSP_GETCAPS:
    case VKI_SOUND_PCM_READ_RATE:
    case VKI_SOUND_PCM_READ_CHANNELS:
@@ -3164,12 +3157,8 @@ PRE(ioctl)
    case VKI_SOUND_PCM_WRITE_FILTER:
    case VKI_SNDCTL_DSP_SUBDIVIDE:
    case VKI_SNDCTL_DSP_SETFRAGMENT:
-#           if defined(SNDCTL_DSP_GETCHANNELMASK)
    case VKI_SNDCTL_DSP_GETCHANNELMASK:
-#           endif
-#           if defined(SNDCTL_DSP_BIND_CHANNEL)
    case VKI_SNDCTL_DSP_BIND_CHANNEL:
-#           endif
    case VKI_SNDCTL_TMR_TIMEBASE:
    case VKI_SNDCTL_TMR_TEMPO:
    case VKI_SNDCTL_TMR_SOURCE:
@@ -3218,11 +3207,9 @@ PRE(ioctl)
       PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", arg3, sizeof(unsigned long));
       break;
 
-#           ifdef BLKGETSIZE
-   case BLKGETSIZE:
+   case VKI_BLKGETSIZE:
       PRE_MEM_WRITE( "ioctl(BLKGETSIZE)", arg3, sizeof(unsigned long));
       break;
-#           endif /* BLKGETSIZE */
 
       /* Hard disks */
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
@@ -3510,12 +3497,7 @@ POST(ioctl)
       break;      
 
    case VKI_IIOCGETCPS:
-      /* In early 2.4 kernels, ISDN_MAX_CHANNELS was only defined
-       * when KERNEL was. I never saw a larger value than 64 though */
-#              ifndef ISDN_MAX_CHANNELS
-#              define ISDN_MAX_CHANNELS 64
-#              endif
-      POST_MEM_WRITE( arg3, ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
+      POST_MEM_WRITE( arg3, VKI_ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
       break;
    case VKI_IIOCNETGPN:
       POST_MEM_WRITE( arg3, sizeof(vki_isdn_net_ioctl_phone) );
@@ -3669,12 +3651,8 @@ POST(ioctl)
    case VKI_SOUND_PCM_WRITE_FILTER:
    case VKI_SNDCTL_DSP_SUBDIVIDE:
    case VKI_SNDCTL_DSP_SETFRAGMENT:
-#           if defined(SNDCTL_DSP_GETCHANNELMASK)
    case VKI_SNDCTL_DSP_GETCHANNELMASK:
-#           endif
-#           if defined(SNDCTL_DSP_BIND_CHANNEL)
    case VKI_SNDCTL_DSP_BIND_CHANNEL:
-#           endif
    case VKI_SNDCTL_TMR_TIMEBASE:
    case VKI_SNDCTL_TMR_TEMPO:
    case VKI_SNDCTL_TMR_SOURCE:
@@ -3714,11 +3692,9 @@ POST(ioctl)
       VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 
-#           ifdef BLKGETSIZE
-   case BLKGETSIZE:
+   case VKI_BLKGETSIZE:
       VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
-#           endif /* BLKGETSIZE */
 
       /* Hard disks */
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */

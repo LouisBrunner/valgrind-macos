@@ -2716,7 +2716,7 @@ static Bool dis_int_shift ( UInt theInstr )
          // Ra = Rs_shift | sext
          assign( Ra, binop(Iop_Or32, mkexpr(sext), mkexpr(Rs_sh)) );
          flag_op = PPC32G_FLAG_OP_SRAWI;
-         setFlags_XER_CA( flag_op, mkexpr(Ra), mkexpr(Rs), mkexpr(Rb) );
+         setFlags_XER_CA( flag_op, mkexpr(Ra), mkexpr(Rs), mkU32(sh_imm) );
          break;
       
       case 0x218: // srw (Shift Right Word, PPC32 p508)

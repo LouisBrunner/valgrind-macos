@@ -7567,9 +7567,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       eip = dis_mov_Ew_Sw(cb, sorb, eip);
 //--       break;
 //-- 
-//--    case 0xA0: /* MOV Ob,AL */
-//--       sz = 1;
-//--       /* Fall through ... */
+   case 0xA0: /* MOV Ob,AL */
+      sz = 1;
+      /* Fall through ... */
    case 0xA1: /* MOV Ov,eAX */
       d32 = getUDisp32(delta); delta += 4;
       ty = szToITy(sz);

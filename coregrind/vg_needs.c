@@ -45,9 +45,9 @@ void VG_(basic_tool_funcs)(
    void(*fini)(Int)
 )
 {
-   VG_(tool_interface).tool_post_clo_init = post_clo_init;
-   VG_(tool_interface).tool_instrument    = instrument;
-   VG_(tool_interface).tool_fini          = fini;
+   VG_(tdict).tool_post_clo_init = post_clo_init;
+   VG_(tdict).tool_instrument    = instrument;
+   VG_(tdict).tool_fini          = fini;
 }
 
 /*--------------------------------------------------------------------*/
@@ -167,7 +167,7 @@ void VG_(needs_basic_block_discards)(
 )
 {
    VG_(needs).basic_block_discards = True;
-   VG_(tool_interface).tool_discard_basic_block_info = discard;
+   VG_(tdict).tool_discard_basic_block_info = discard;
 }
 
 void VG_(needs_tool_errors)(
@@ -182,14 +182,14 @@ void VG_(needs_tool_errors)(
 )
 {
    VG_(needs).tool_errors = True;
-   VG_(tool_interface).tool_eq_Error                     = eq;
-   VG_(tool_interface).tool_pp_Error                     = pp;
-   VG_(tool_interface).tool_update_extra                 = update;
-   VG_(tool_interface).tool_recognised_suppression       = recog;
-   VG_(tool_interface).tool_read_extra_suppression_info  = read_extra;
-   VG_(tool_interface).tool_error_matches_suppression    = matches;
-   VG_(tool_interface).tool_get_error_name               = name;
-   VG_(tool_interface).tool_print_extra_suppression_info = print_extra;
+   VG_(tdict).tool_eq_Error                     = eq;
+   VG_(tdict).tool_pp_Error                     = pp;
+   VG_(tdict).tool_update_extra                 = update;
+   VG_(tdict).tool_recognised_suppression       = recog;
+   VG_(tdict).tool_read_extra_suppression_info  = read_extra;
+   VG_(tdict).tool_error_matches_suppression    = matches;
+   VG_(tdict).tool_get_error_name               = name;
+   VG_(tdict).tool_print_extra_suppression_info = print_extra;
 }
 
 void VG_(needs_command_line_options)(
@@ -199,9 +199,9 @@ void VG_(needs_command_line_options)(
 )
 {
    VG_(needs).command_line_options = True;
-   VG_(tool_interface).tool_process_cmd_line_option = process;
-   VG_(tool_interface).tool_print_usage             = usage;
-   VG_(tool_interface).tool_print_debug_usage       = debug_usage;
+   VG_(tdict).tool_process_cmd_line_option = process;
+   VG_(tdict).tool_print_usage             = usage;
+   VG_(tdict).tool_print_debug_usage       = debug_usage;
 }
 
 void VG_(needs_client_requests)(
@@ -209,7 +209,7 @@ void VG_(needs_client_requests)(
 )
 {
    VG_(needs).client_requests = True;
-   VG_(tool_interface).tool_handle_client_request = handle;
+   VG_(tdict).tool_handle_client_request = handle;
 }
 
 void VG_(needs_syscall_wrapper)(
@@ -218,8 +218,8 @@ void VG_(needs_syscall_wrapper)(
 )
 {
    VG_(needs).syscall_wrapper = True;
-   VG_(tool_interface).tool_pre_syscall  = pre;
-   VG_(tool_interface).tool_post_syscall = post;
+   VG_(tdict).tool_pre_syscall  = pre;
+   VG_(tdict).tool_post_syscall = post;
 }
 
 void VG_(needs_sanity_checks)(
@@ -228,8 +228,8 @@ void VG_(needs_sanity_checks)(
 )
 {
    VG_(needs).sanity_checks = True;
-   VG_(tool_interface).tool_cheap_sanity_check     = cheap;
-   VG_(tool_interface).tool_expensive_sanity_check = expen;
+   VG_(tdict).tool_cheap_sanity_check     = cheap;
+   VG_(tdict).tool_expensive_sanity_check = expen;
 }
 
 
@@ -248,15 +248,15 @@ extern void VG_(malloc_funcs)(
    SizeT client_malloc_redzone_szB
 )
 {
-   VG_(tool_interface).malloc_malloc               = malloc;
-   VG_(tool_interface).malloc___builtin_new        = __builtin_new;
-   VG_(tool_interface).malloc___builtin_vec_new    = __builtin_vec_new;
-   VG_(tool_interface).malloc_memalign             = memalign;
-   VG_(tool_interface).malloc_calloc               = calloc;
-   VG_(tool_interface).malloc_free                 = free;
-   VG_(tool_interface).malloc___builtin_delete     = __builtin_delete;
-   VG_(tool_interface).malloc___builtin_vec_delete = __builtin_vec_delete;
-   VG_(tool_interface).malloc_realloc              = realloc;
+   VG_(tdict).malloc_malloc               = malloc;
+   VG_(tdict).malloc___builtin_new        = __builtin_new;
+   VG_(tdict).malloc___builtin_vec_new    = __builtin_vec_new;
+   VG_(tdict).malloc_memalign             = memalign;
+   VG_(tdict).malloc_calloc               = calloc;
+   VG_(tdict).malloc_free                 = free;
+   VG_(tdict).malloc___builtin_delete     = __builtin_delete;
+   VG_(tdict).malloc___builtin_vec_delete = __builtin_vec_delete;
+   VG_(tdict).malloc_realloc              = realloc;
 
    VG_(set_client_malloc_redzone_szB)( client_malloc_redzone_szB );
 }

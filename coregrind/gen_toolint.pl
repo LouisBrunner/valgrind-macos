@@ -34,7 +34,7 @@ my $pre;
 my $post;
 my $generate;
 
-my $struct = "VG_(tool_interface)";
+my $struct = "VG_(tdict)";
 
 my %pfxmap = ("track" => "TL_",
 	      "tool"  => "TL_",

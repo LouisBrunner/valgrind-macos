@@ -1026,17 +1026,17 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__GET_MALLOCFUNCS: {
 	 struct vg_mallocfunc_info *info = (struct vg_mallocfunc_info *)arg[1];
 
-	 info->tl_malloc               = (Addr)TL_(malloc);
-	 info->tl_calloc               = (Addr)TL_(calloc);
-	 info->tl_realloc              = (Addr)TL_(realloc);
-	 info->tl_memalign             = (Addr)TL_(memalign);
-	 info->tl___builtin_new        = (Addr)TL_(__builtin_new);
-	 info->tl___builtin_vec_new    = (Addr)TL_(__builtin_vec_new);
-	 info->tl_free                 = (Addr)TL_(free);
-	 info->tl___builtin_delete     = (Addr)TL_(__builtin_delete);
-	 info->tl___builtin_vec_delete = (Addr)TL_(__builtin_vec_delete);
+	 info->tl_malloc               = VG_(tdict).malloc_malloc;
+	 info->tl_calloc               = VG_(tdict).malloc_calloc;
+	 info->tl_realloc              = VG_(tdict).malloc_realloc;
+	 info->tl_memalign             = VG_(tdict).malloc_memalign;
+	 info->tl___builtin_new        = VG_(tdict).malloc___builtin_new;
+	 info->tl___builtin_vec_new    = VG_(tdict).malloc___builtin_vec_new;
+	 info->tl_free                 = VG_(tdict).malloc_free;
+	 info->tl___builtin_delete     = VG_(tdict).malloc___builtin_delete;
+	 info->tl___builtin_vec_delete = VG_(tdict).malloc___builtin_vec_delete;
 
-	 info->arena_payload_szB       = (Addr)VG_(arena_payload_szB);
+	 info->arena_payload_szB       = VG_(arena_payload_szB);
 	 
 	 info->clo_sloppy_malloc       = VG_(clo_sloppy_malloc);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);

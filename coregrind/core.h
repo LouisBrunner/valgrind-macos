@@ -481,17 +481,17 @@ extern void  VG_(print_all_arena_stats) ( void );
 
 struct vg_mallocfunc_info {
    /* things vg_replace_malloc.o needs to know about */
-   Addr	tl_malloc;
-   Addr	tl_calloc;
-   Addr	tl_realloc;
-   Addr	tl_memalign;
-   Addr	tl___builtin_new;
-   Addr	tl___builtin_vec_new;
-   Addr	tl_free;
-   Addr	tl___builtin_delete;
-   Addr	tl___builtin_vec_delete;
+   void* (*tl_malloc)              (ThreadId tid, SizeT n);
+   void* (*tl___builtin_new)       (ThreadId tid, SizeT n);
+   void* (*tl___builtin_vec_new)   (ThreadId tid, SizeT n);
+   void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT n);
+   void* (*tl_calloc)              (ThreadId tid, SizeT nmemb, SizeT n);
+   void  (*tl_free)                (ThreadId tid, void* p);
+   void  (*tl___builtin_delete)    (ThreadId tid, void* p);
+   void  (*tl___builtin_vec_delete)(ThreadId tid, void* p);
+   void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
 
-   Addr	arena_payload_szB;
+   SizeT (*arena_payload_szB)      (ArenaId aid, void* payload);
 
    Bool	clo_sloppy_malloc;
    Bool	clo_trace_malloc;

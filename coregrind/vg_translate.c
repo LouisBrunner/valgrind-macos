@@ -100,8 +100,7 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
          dcall = unsafeIRDirty_0_N(                                     \
                     1/*regparms*/,                                      \
                     "track_" #kind "_mem_stack_" #syze,                 \
-                    VG_(tool_interface)                                 \
-                               .track_##kind##_mem_stack_##syze,        \
+                    VG_(tdict).track_##kind##_mem_stack_##syze,         \
                     mkIRExprVec_1(IRExpr_Tmp(curr))                     \
                  );                                                     \
          dcall->nFxState = 1;                                           \

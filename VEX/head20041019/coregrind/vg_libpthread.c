@@ -275,12 +275,27 @@ void barf ( const char* str )
 
 static void cat_n_send ( char* s1, char* s2, char* s3 )
 {
-   char  buf[1000];
+#  define N_BUF 1000
+   int  i;
+   char buf[N_BUF];
    if (get_pt_trace_level() >= 0) {
-      snprintf(buf, sizeof(buf), "%s%s%s", s1, s2, s3);
-      buf[sizeof(buf)-1] = '\0';
+      i = 0;
+      while (*s1) {
+         if (i >= N_BUF) break;
+         buf[i++] = *s1++;
+      }
+      while (*s2) {
+         if (i >= N_BUF) break;
+         buf[i++] = *s2++;
+      }
+      while (*s3) {
+         if (i >= N_BUF) break;
+         buf[i++] = *s3++;
+      }
+      buf[i] = 0;
       VALGRIND_INTERNAL_PRINTF(buf);
    }
+#  undef N_BUF
 }
 
 static void oh_dear ( char* fn, char* aux, char* s )

@@ -1570,7 +1570,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                                    tid, done_this_time, (Int)trc );
 
       if (0 && trc != VG_TRC_INNER_FASTMISS)
-         VG_(message)(Vg_DebugMsg, "thread %d:  %ld bbs, event %s", 
+         VG_(message)(Vg_DebugMsg, "thread %d:  %llu bbs, event %s", 
                                    tid, VG_(bbs_done),
                                    name_of_sched_event(trc) );
 

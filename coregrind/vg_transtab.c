@@ -194,7 +194,7 @@ void pp_tt_tc_status ( Char* submsg )
       tc_used += vg_tc_used[s];
 
    VG_(message)(Vg_DebugMsg, 
-       "%luk bbs: tt %d, tc %d, %s",
+       "%lluk bbs: tt %d, tc %d, %s",
        VG_(bbs_done) / 1000,
        vg_tt_used, tc_used, submsg );
 }

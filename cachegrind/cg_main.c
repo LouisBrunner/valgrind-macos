@@ -1633,7 +1633,7 @@ Int commify(ULong n, int field_width, char buf[COMMIFY_BUF_LEN])
 {
    int len, n_commas, i, j, new_len, space;
 
-   VG_(sprintf)(buf, "%lu", n);
+   VG_(sprintf)(buf, "%llu", n);
    len = VG_(strlen)(buf);
    n_commas = (len - 1) / 3;
    new_len = len + n_commas;

@@ -1327,7 +1327,7 @@ static void vg_show_counts ( void )
                 VG_(overall_out_tsize),
                 safe_idiv(10*VG_(overall_out_tsize), VG_(overall_out_osize)));
    VG_(message)(Vg_DebugMsg,
-      " dispatch: %lu jumps (bb entries), of which %u (%lu%%) were unchained.", 
+      " dispatch: %llu jumps (bb entries), of which %u (%lu%%) were unchained.",
       VG_(bbs_done), 
       VG_(unchained_jumps_done),
       ((ULong)(100) * (ULong)(VG_(unchained_jumps_done)))

@@ -2189,7 +2189,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
       Char fnname[64] = "";
       VG_(get_fnname_if_entry)(orig_addr, fnname, 64);
       VG_(printf)(
-              "==== BB %d %s(%p) in %dB, out %dB, BBs exec'd %lu ====\n\n",
+              "==== BB %d %s(%p) in %dB, out %dB, BBs exec'd %llu ====\n\n",
               VG_(overall_in_count), fnname, orig_addr, 
               VG_(overall_in_osize), VG_(overall_in_tsize),
               VG_(bbs_done));

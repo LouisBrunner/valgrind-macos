@@ -901,9 +901,6 @@ extern ThreadState VG_(threads)[VG_N_THREADS];
 /* Check that tid is in range and denotes a non-Empty thread. */
 extern Bool VG_(is_valid_tid) ( ThreadId tid );
 
-/* Check that tid is in range. */
-extern Bool VG_(is_valid_or_empty_tid) ( ThreadId tid );
-
 /* Determine if 'tid' is that of the current running thread (Nb: returns
    False if no thread is currently running. */
 extern Bool VG_(is_running_thread)(ThreadId tid);

@@ -125,7 +125,7 @@ Bool VG_(is_valid_tid) ( ThreadId tid )
 
 
 __inline__
-Bool VG_(is_valid_or_empty_tid) ( ThreadId tid )
+Bool is_valid_or_empty_tid ( ThreadId tid )
 {
    /* tid is unsigned, hence no < 0 test. */
    if (tid == 0) return False;
@@ -1368,7 +1368,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 static
 void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
-   vg_assert(VG_(is_valid_or_empty_tid)(tid));
+   vg_assert(is_valid_or_empty_tid(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
    /* Its stack is now off-limits */
    VG_TRACK( die_mem_stack, VG_(threads)[tid].stack_base,
@@ -1864,7 +1864,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* If we've created the main thread's tid, we're in deep trouble :) */
    vg_assert(tid != 1);
-   vg_assert(VG_(is_valid_or_empty_tid)(tid));
+   vg_assert(is_valid_or_empty_tid(tid));
 
    /* do this early, before the child gets any memory writes */
    VG_TRACK ( post_thread_create, parent_tid, tid );
@@ -2649,7 +2649,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
       print_pthread_event(tid, msg_buf);
    }
 
-   vg_assert(VG_(is_valid_or_empty_tid)(tid));
+   vg_assert(is_valid_or_empty_tid(tid));
 
    if (VG_(threads)[tid].status == VgTs_Empty) {
       SET_PTHREQ_RETVAL(tid, 1);
@@ -3342,7 +3342,7 @@ void scheduler_sanity ( void )
 
    for(top = timeouts; top != NULL; top = top->next) {
       vg_assert(top->time >= lasttime);
-      vg_assert(VG_(is_valid_or_empty_tid)(top->tid));
+      vg_assert(is_valid_or_empty_tid(top->tid));
 
 #if 0
       /* assert timeout entry is either stale, or associated with a

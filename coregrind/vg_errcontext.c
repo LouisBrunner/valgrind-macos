@@ -184,9 +184,13 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    /* Skin-relevant parts */
    err->ekind  = ekind;
    err->addr   = a;
-   err->string = s;
    err->extra  = extra;
-
+   if (s) {
+      err->string = VG_(arena_strdup)( VG_AR_ERRORS, s );
+   }
+   else {
+      err->string = NULL;
+   }
    /* sanity... */
    vg_assert( tid < VG_N_THREADS );
 }
@@ -341,6 +345,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    }
 
    /* Build ourselves the error */
+   err.string = NULL;
    construct_error ( &err, tid, ekind, a, s, extra, NULL );
 
    /* First, see if we've got an error record matching this one. */
@@ -366,6 +371,13 @@ void VG_(maybe_record_error) ( ThreadId tid,
             p->next         = vg_errors;
             vg_errors = p;
 	 }
+
+	 /* Free err.string, if we allocated it. */
+         if (err.string) {
+            VG_(arena_free)( VG_AR_ERRORS, err.string );
+	    err.string = NULL; /* paranoia */
+         }
+
          return;
       }
       p_prev = p;

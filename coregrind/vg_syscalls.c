@@ -1205,6 +1205,19 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (!VG_(is_kerror)(res) && arg2 != (Addr)NULL)
             VG_TRACK( post_mem_write, arg2, sizeof( vki_cap_user_data_t) );
          break;
+ 
+      /* Added by Gerald Carter <jerry@samba.org> 2002-12-17 */
+#     if defined(__NR_capset) /* 185 */
+      /* int capset(cap_user_header_t header, const cap_user_data_t data); */
+      case __NR_capset:
+         SYSCALL_TRACK( pre_mem_read, tst, "capset(header)", 
+                        arg1, sizeof(vki_cap_user_header_t) );
+         SYSCALL_TRACK( pre_mem_read, tst, "capset(data)", 
+                        arg2, sizeof( vki_cap_user_data_t) );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+      /* end modifications by <jerry@samba.org> */
 
       /* !!!!!!!!!!!!!!!!!!!!! mutant ones !!!!!!!!!!!!!!!!!!!!! */
 

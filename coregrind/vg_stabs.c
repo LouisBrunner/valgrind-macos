@@ -650,6 +650,13 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       break;
    }
 
+   case 'k':                    /* const */
+   case 'B': {                  /* volatile */
+      /* 'k' TYPE */
+      type = stabtype_parser(si, NULL, &p);
+      break;
+   }
+
    case 'x': {			/* reference to undefined type */
       /* 'x' ('s' | 'u' | 'e') NAME ':' */
       Int brac = 0;		/* < > brackets in type */

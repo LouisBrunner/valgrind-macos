@@ -4906,13 +4906,15 @@ PRE(sys_sigprocmask, Special)
    vki_sigset_t bigger_set;
    vki_sigset_t bigger_oldset;
 
-   VG_(memset)(&bigger_set, 0, sizeof(vki_sigset_t));
-   bigger_set.sig[0] = *(vki_old_sigset_t*)set;
+   VG_(memset)(&bigger_set,    0, sizeof(vki_sigset_t));
+   VG_(memset)(&bigger_oldset, 0, sizeof(vki_sigset_t));
+   if (set)
+      bigger_set.sig[0] = *(vki_old_sigset_t*)set;
 
    VG_(do_sys_sigprocmask) ( tid, 
                              ARG1 /*how*/, 
-                             &bigger_set,
-                             &bigger_oldset );
+                             set ? &bigger_set : NULL,
+                             oldset ? &bigger_oldset : NULL);
 
    if (oldset)
       *oldset = bigger_oldset.sig[0];

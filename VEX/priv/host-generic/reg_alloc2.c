@@ -955,7 +955,7 @@ HInstrArray* doRegisterAllocation (
          if (k_suboptimal >= 0)
             k = k_suboptimal;
 
-       have_rreg:
+     /* have_rreg: */
 
          if (k < n_state) {
             state[k].disp = Bound;

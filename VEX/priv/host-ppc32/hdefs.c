@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
 /*--- This file (host-ppc32/hdefs.c) is                       ---*/
-/*--- Copyright (c) 2005 OpenWorks LLP.  All rights reserved. ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004-2005 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -786,7 +786,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppPPC32RI(i->Pin.Sh32.shft);
       return;
    case Pin_Cmp32:
-      vex_printf("%s%s %%crf%d,", showPPC32CmpOp(i->Pin.Cmp32.op),
+      vex_printf("%s%s %%crf%u,", showPPC32CmpOp(i->Pin.Cmp32.op),
                  i->Pin.Cmp32.srcR->tag == Pri_Imm ? "i" : "",
                  (7 - i->Pin.Cmp32.crfD));
       ppHRegPPC32(i->Pin.Cmp32.srcL);
@@ -883,7 +883,7 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_Load: {
       UChar sz = i->Pin.Load.sz;
       Bool syned = i->Pin.Load.syned;
-      Bool idxd = (i->Pin.Load.src->tag == Pam_RR) ? True : False;
+      Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       vex_printf("l%c%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                  syned ? 'a' : 'z',
@@ -895,7 +895,7 @@ void ppPPC32Instr ( PPC32Instr* i )
    }
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
-      Bool idxd = (i->Pin.Store.dst->tag == Pam_RR) ? True : False;
+      Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
       vex_printf("st%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                  idxd ? "x" : "" );
@@ -915,7 +915,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       } else {
          vex_printf(": { mfcr r0 ; rlwinm ");
          ppHRegPPC32(i->Pin.Set32.dst);
-         vex_printf(",r0,%d,31,31", cc.flag+1);
+         vex_printf(",r0,%u,31,31", cc.flag+1);
          if (cc.test == Pct_FALSE) {
             vex_printf("; xori ");
             ppHRegPPC32(i->Pin.Set32.dst);
@@ -1076,7 +1076,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       return;
 
    default:
-      vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", i->tag);
+      vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", (Int)i->tag);
       vpanic("ppPPC32Instr(ppc32)");
    }
 }
@@ -1610,10 +1610,10 @@ static UInt iregNo ( HReg r )
 /* Emit 32bit instruction big-endianly */
 static UChar* emit32 ( UChar* p, UInt w32 )
 {
-   *p++ = (w32 >> 24) & 0x000000FF;
-   *p++ = (w32 >> 16) & 0x000000FF;
-   *p++ = (w32 >>  8) & 0x000000FF;
-   *p++ = (w32)       & 0x000000FF;
+   *p++ = toUChar((w32 >> 24) & 0x000000FF);
+   *p++ = toUChar((w32 >> 16) & 0x000000FF);
+   *p++ = toUChar((w32 >>  8) & 0x000000FF);
+   *p++ = toUChar((w32)       & 0x000000FF);
    return p;
 }
 

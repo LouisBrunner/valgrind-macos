@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
 /*--- This file (host-x86/isel.c) is                          ---*/
-/*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -258,9 +258,9 @@ static HReg        iselVecExpr     ( ISelEnv* env, IRExpr* e );
 
 static Bool isZero32 ( IRExpr* e )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U32
-          && e->Iex.Const.con->Ico.U32 == 0;
+   return toBool( e->tag == Iex_Const
+                  && e->Iex.Const.con->tag == Ico_U32
+                  && e->Iex.Const.con->Ico.U32 == 0 );
 }
 
 /* Make a int reg-reg move. */
@@ -352,7 +352,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
       parameters. */
    vassert(sizeof(void*) == 4);
 
-   addInstr(env, X86Instr_Call( cc, (UInt)Ptr_to_ULong(cee->addr), 
+   addInstr(env, X86Instr_Call( cc, toUInt(Ptr_to_ULong(cee->addr)),
                                     cee->regparms));
    if (n_arg_ws > 0)
       add_to_esp(env, 4*n_arg_ws);
@@ -956,7 +956,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 	 set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          /* gistw/l %rf, 0(%esp) */
-         addInstr(env, X86Instr_FpLdStI(False/*store*/, sz, rf, zero_esp));
+         addInstr(env, X86Instr_FpLdStI(False/*store*/, 
+                                        toUChar(sz), rf, zero_esp));
 
          if (sz == 2) {
             /* movzwl 0(%esp), %dst */
@@ -1156,7 +1157,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (ty == Ity_I8 || ty == Ity_I16) {
          HReg dst = newVRegI(env);
          addInstr(env, X86Instr_LoadEX(
-                          ty==Ity_I8 ? 1 : 2,
+                          toUChar(ty==Ity_I8 ? 1 : 2),
                           False,
                           X86AMode_IR(e->Iex.Get.offset,hregX86_EBP()),
                           dst));
@@ -1247,14 +1248,16 @@ static Bool sane_AMode ( X86AMode* am )
 {
    switch (am->tag) {
       case Xam_IR:
-         return hregClass(am->Xam.IR.reg) == HRcInt32
-                && (hregIsVirtual(am->Xam.IR.reg)
-                    || am->Xam.IR.reg == hregX86_EBP());
+         return 
+            toBool( hregClass(am->Xam.IR.reg) == HRcInt32
+                    && (hregIsVirtual(am->Xam.IR.reg)
+                        || am->Xam.IR.reg == hregX86_EBP()) );
       case Xam_IRRS:
-         return hregClass(am->Xam.IRRS.base) == HRcInt32
-                && hregIsVirtual(am->Xam.IRRS.base)
-                && hregClass(am->Xam.IRRS.index) == HRcInt32
-                && hregIsVirtual(am->Xam.IRRS.index);
+         return 
+            toBool( hregClass(am->Xam.IRRS.base) == HRcInt32
+                    && hregIsVirtual(am->Xam.IRRS.base)
+                    && hregClass(am->Xam.IRRS.index) == HRcInt32
+                    && hregIsVirtual(am->Xam.IRRS.index) );
       default:
         vpanic("sane_AMode: unknown x86 amode tag");
    }
@@ -1683,8 +1686,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    /* 64-bit literal */
    if (e->tag == Iex_Const) {
       ULong w64 = e->Iex.Const.con->Ico.U64;
-      UInt  wHi = ((UInt)(w64 >> 32)) & 0xFFFFFFFF;
-      UInt  wLo = ((UInt)w64) & 0xFFFFFFFF;
+      UInt  wHi = toUInt(w64 >> 32);
+      UInt  wLo = toUInt(w64);
       HReg  tLo = newVRegI(env);
       HReg  tHi = newVRegI(env);
       vassert(e->Iex.Const.con->tag == Ico_U64);
@@ -1776,7 +1779,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
                which. */
             HReg   tLo    = newVRegI(env);
             HReg   tHi    = newVRegI(env);
-            Bool   syned  = e->Iex.Binop.op == Iop_MullS32;
+            Bool   syned  = toBool(e->Iex.Binop.op == Iop_MullS32);
             X86RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
             HReg   rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
             addInstr(env, mk_iMOVsd_RR(rRight, hregX86_EAX()));
@@ -1797,7 +1800,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             HReg sHi, sLo;
             HReg   tLo     = newVRegI(env);
             HReg   tHi     = newVRegI(env);
-            Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
+            Bool   syned   = toBool(e->Iex.Binop.op == Iop_DivModS64to32);
             X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
             iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
             addInstr(env, mk_iMOVsd_RR(sHi, hregX86_EDX()));
@@ -3167,8 +3170,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
       if (tyd == Ity_I8 || tyd == Ity_I16) {
          HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
-         addInstr(env, X86Instr_Store(tyd==Ity_I8 ? 1 : 2,
-                                      r,am));
+         addInstr(env, X86Instr_Store( toUChar(tyd==Ity_I8 ? 1 : 2),
+                                       r,am ));
          return;
       }
       if (tyd == Ity_F64) {
@@ -3217,7 +3220,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_I8 || ty == Ity_I16) {
          HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
          addInstr(env, X86Instr_Store(
-                          ty==Ity_I8 ? 1 : 2,
+                          toUChar(ty==Ity_I8 ? 1 : 2),
                           r,
                           X86AMode_IR(stmt->Ist.Put.offset,
                                       hregX86_EBP())));
@@ -3337,7 +3340,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
-      passBBP = d->nFxState > 0 && d->needsBBP;
+
+      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, passBBP, d->guard, d->cee, d->args );

@@ -193,7 +193,7 @@ UInt armg_calculate_flags_all ( UInt cc_op,
 
    default:
       /* shouldn't really make these calls from generated code */
-      vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
+      vex_printf("armg_calculate_flags_all(ARM)( %u, 0x%x, 0x%x )\n",
                  cc_op, cc_dep1_formal, cc_dep2_formal );
       vpanic("armg_calculate_flags_all(ARM)");
    }
@@ -272,7 +272,7 @@ UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond,
    case ARMCondNV:   // should never get here: Illegal instr
    default:
       /* shouldn't really make these calls from generated code */
-      vex_printf("armg_calculate_condition(ARM)( %d, %d, 0x%x, 0x%x )\n",
+      vex_printf("armg_calculate_condition(ARM)( %u, %u, 0x%x, 0x%x )\n",
                  cond, cc_op, cc_dep1, cc_dep2 );
       vpanic("armg_calculate_condition(ARM)");
    }

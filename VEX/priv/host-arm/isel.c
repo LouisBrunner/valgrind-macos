@@ -834,7 +834,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
-      passBBP = d->nFxState > 0 && d->needsBBP;
+
+      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, passBBP, d->guard, d->cee, d->args );

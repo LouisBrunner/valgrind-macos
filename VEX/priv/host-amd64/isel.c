@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
 /*--- This file (host-amd64/isel.c) is                        ---*/
-/*--- Copyright (c) 2005 OpenWorks LLP.  All rights reserved. ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004-2005 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -248,14 +248,16 @@ static Bool sane_AMode ( AMD64AMode* am )
 {
    switch (am->tag) {
       case Aam_IR:
-         return hregClass(am->Aam.IR.reg) == HRcInt64
-                && (hregIsVirtual(am->Aam.IR.reg)
-                    || am->Aam.IR.reg == hregAMD64_RBP());
+         return 
+            toBool( hregClass(am->Aam.IR.reg) == HRcInt64
+                    && (hregIsVirtual(am->Aam.IR.reg)
+                        || am->Aam.IR.reg == hregAMD64_RBP()) );
       case Aam_IRRS:
-         return hregClass(am->Aam.IRRS.base) == HRcInt64
-                && hregIsVirtual(am->Aam.IRRS.base)
-                && hregClass(am->Aam.IRRS.index) == HRcInt64
-                && hregIsVirtual(am->Aam.IRRS.index);
+         return 
+            toBool( hregClass(am->Aam.IRRS.base) == HRcInt64
+                    && hregIsVirtual(am->Aam.IRRS.base)
+                    && hregClass(am->Aam.IRRS.index) == HRcInt64
+                    && hregIsVirtual(am->Aam.IRRS.index) );
       default:
         vpanic("sane_AMode: unknown amd64 amode tag");
    }
@@ -943,7 +945,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg      rax     = hregAMD64_RAX();
          HReg      rdx     = hregAMD64_RDX();
          HReg      dst     = newVRegI(env);
-         Bool      syned   = e->Iex.Binop.op == Iop_DivModS64to32;
+         Bool      syned   = toBool(e->Iex.Binop.op == Iop_DivModS64to32);
          AMD64RM*  rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
          /* Compute the left operand into a reg, and then 
             put the top half in edx and the bottom in eax. */
@@ -1369,7 +1371,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg dst = newVRegI(env);
          addInstr(env, AMD64Instr_LoadEX(
-                          ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4),
+                          toBool(ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4)),
                           False,
                           AMD64AMode_IR(e->Iex.Get.offset,hregAMD64_RBP()),
                           dst));
@@ -1500,7 +1502,7 @@ static AMD64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
           && simm32->Iex.Const.con->tag == Ico_U64
           && fitsIn32Bits(simm32->Iex.Const.con->Ico.U64)) {
          UInt shift = imm8->Iex.Const.con->Ico.U8;
-         UInt offset = (UInt)(0xFFFFFFFF & simm32->Iex.Const.con->Ico.U64);
+         UInt offset = toUInt(simm32->Iex.Const.con->Ico.U64);
          HReg r1 = iselIntExpr_R(env, expr1);
          HReg r2 = iselIntExpr_R(env, expr2);
          vassert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
@@ -1531,7 +1533,7 @@ static AMD64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
        && fitsIn32Bits(e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)) {
       HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
       return AMD64AMode_IR(
-                (UInt)(0xFFFFFFFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U64), 
+                toUInt(e->Iex.Binop.arg2->Iex.Const.con->Ico.U64), 
                 r1
              );
    }
@@ -1581,7 +1583,7 @@ static AMD64RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Const.con->tag) {
         case Ico_U64:
            if (fitsIn32Bits(e->Iex.Const.con->Ico.U64)) {
-              return AMD64RMI_Imm(0xFFFFFFFF & e->Iex.Const.con->Ico.U64);
+              return AMD64RMI_Imm(toUInt(e->Iex.Const.con->Ico.U64));
            }
            break;
          case Ico_U32:
@@ -1649,7 +1651,7 @@ static AMD64RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Const.con->tag) {
         case Ico_U64:
            if (fitsIn32Bits(e->Iex.Const.con->Ico.U64)) {
-              return AMD64RI_Imm(0xFFFFFFFF & e->Iex.Const.con->Ico.U64);
+              return AMD64RI_Imm(toUInt(e->Iex.Const.con->Ico.U64));
            }
            break;
          case Ico_U32:
@@ -2036,7 +2038,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
                which. */
             HReg     tLo    = newVRegI(env);
             HReg     tHi    = newVRegI(env);
-            Bool     syned  = e->Iex.Binop.op == Iop_MullS64;
+            Bool     syned  = toBool(e->Iex.Binop.op == Iop_MullS64);
             AMD64RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
             HReg     rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
             addInstr(env, mk_iMOVsd_RR(rRight, hregAMD64_RAX()));
@@ -2057,7 +2059,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
             HReg sHi, sLo;
             HReg     tLo     = newVRegI(env);
             HReg     tHi     = newVRegI(env);
-            Bool     syned   = e->Iex.Binop.op == Iop_DivModS128to64;
+            Bool     syned   = toBool(e->Iex.Binop.op == Iop_DivModS128to64);
             AMD64RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
             iselInt128Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
             addInstr(env, mk_iMOVsd_RR(sHi, hregAMD64_RDX()));
@@ -3413,8 +3415,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
          HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
-         addInstr(env, AMD64Instr_Store(tyd==Ity_I8 ? 1 : (tyd==Ity_I16 ? 2 : 4),
-                                        r,am));
+         addInstr(env, AMD64Instr_Store(
+                          toUChar(tyd==Ity_I8 ? 1 : (tyd==Ity_I16 ? 2 : 4)),
+                          r,am));
          return;
       }
       if (tyd == Ity_F64) {
@@ -3464,7 +3467,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
          addInstr(env, AMD64Instr_Store(
-                          ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4),
+                          toUChar(ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4)),
                           r,
                           AMD64AMode_IR(stmt->Ist.Put.offset,
                                         hregAMD64_RBP())));
@@ -3577,7 +3580,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
-      passBBP = d->nFxState > 0 && d->needsBBP;
+
+      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, passBBP, d->guard, d->cee, d->args );

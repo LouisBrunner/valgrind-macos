@@ -99,8 +99,6 @@ Int VGOFF_(helper_value_check4_fail) = INVALID_OFFSET;
 Int VGOFF_(helper_value_check2_fail) = INVALID_OFFSET;
 Int VGOFF_(helper_value_check1_fail) = INVALID_OFFSET;
 Int VGOFF_(helper_value_check0_fail) = INVALID_OFFSET;
-Int VGOFF_(helper_do_syscall) = INVALID_OFFSET;
-Int VGOFF_(helper_do_client_request) = INVALID_OFFSET;
 Int VGOFF_(helperc_LOADV4) = INVALID_OFFSET;
 Int VGOFF_(helperc_LOADV2) = INVALID_OFFSET;
 Int VGOFF_(helperc_LOADV1) = INVALID_OFFSET;
@@ -110,7 +108,6 @@ Int VGOFF_(helperc_STOREV1) = INVALID_OFFSET;
 Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
 Int VGOFF_(fpu_write_check) = INVALID_OFFSET;
 Int VGOFF_(fpu_read_check) = INVALID_OFFSET;
-Int VGOFF_(helper_request_normal_exit) = INVALID_OFFSET;
 
 
 /* This is the actual defn of baseblock. */
@@ -305,14 +302,6 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAS) );
    VGOFF_(helper_DAA)
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAA) );
-
-   VGOFF_(helper_request_normal_exit)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_request_normal_exit) );
-
-   VGOFF_(helper_do_syscall)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_do_syscall) );
-   VGOFF_(helper_do_client_request)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_do_client_request) );
 }
 
 
@@ -336,17 +325,6 @@ Addr VG_(esp_saved_over_syscall_d2);
 /* Counts downwards in vg_run_innerloop. */
 UInt VG_(dispatch_ctr);
 
-/* If vg_dispatch_ctr is set to 1 to force a stop, its
-   previous value is saved here. */
-UInt VG_(dispatch_ctr_SAVED);
-
-/* This is why vg_run_innerloop() exited. */
-UInt VG_(interrupt_reason);
-
-/* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
-jmp_buf VG_(toploop_jmpbuf);
-/* ... and if so, here's the signal which caused it to do so. */
-Int     VG_(longjmpd_on_signal);
 
 /* 64-bit counter for the number of basic blocks done. */
 ULong VG_(bbs_done);
@@ -423,10 +401,12 @@ UInt VG_(smc_discard_count) = 0;
 
 
 /* Counts pertaining to internal sanity checking. */
-
 UInt VG_(sanity_fast_count) = 0;
 UInt VG_(sanity_slow_count) = 0;
 
+/* Counts pertaining to the scheduler. */
+UInt VG_(num_scheduling_events_MINOR) = 0;
+UInt VG_(num_scheduling_events_MAJOR) = 0;
 
 
 /* ---------------------------------------------------------------------
@@ -479,176 +459,6 @@ Char** VG_(client_envp);
 /* A place into which to copy the value of env var VG_ARGS, so we
    don't have to modify the original. */
 static Char vg_cmdline_copy[M_VG_CMDLINE_STRLEN];
-
-
-/* ---------------------------------------------------------------------
-   Top level simulation loop.
-   ------------------------------------------------------------------ */
-
-/* Create a translation of the client basic block beginning at
-   orig_addr, and add it to the translation cache & translation table.
-   This probably doesn't really belong here, but, hey ... */
-void VG_(create_translation_for) ( Addr orig_addr )
-{
-   Addr    trans_addr;
-   TTEntry tte;
-   Int orig_size, trans_size;
-   /* Ensure there is space to hold a translation. */
-   VG_(maybe_do_lru_pass)();
-   VG_(translate)( orig_addr, &orig_size, &trans_addr, &trans_size );
-   /* Copy data at trans_addr into the translation cache.
-      Returned pointer is to the code, not to the 4-byte
-      header. */
-   /* Since the .orig_size and .trans_size fields are
-      UShort, be paranoid. */
-   vg_assert(orig_size > 0 && orig_size < 65536);
-   vg_assert(trans_size > 0 && trans_size < 65536);
-   tte.orig_size  = orig_size;
-   tte.orig_addr  = orig_addr;
-   tte.trans_size = trans_size;
-   tte.trans_addr = VG_(copy_to_transcache)
-                       ( trans_addr, trans_size );
-   tte.mru_epoch  = VG_(current_epoch);
-   /* Free the intermediary -- was allocated by VG_(emit_code). */
-   VG_(jitfree)( (void*)trans_addr );
-   /* Add to trans tab and set back pointer. */
-   VG_(add_to_trans_tab) ( &tte );
-   /* Update stats. */
-   VG_(this_epoch_in_count) ++;
-   VG_(this_epoch_in_osize) += orig_size;
-   VG_(this_epoch_in_tsize) += trans_size;
-   VG_(overall_in_count) ++;
-   VG_(overall_in_osize) += orig_size;
-   VG_(overall_in_tsize) += trans_size;
-   /* Record translated area for SMC detection. */
-   VG_(smc_mark_original) ( 
-      VG_(baseBlock)[VGOFF_(m_eip)], orig_size );
-}
-
-
-/* Runs the client program from %EIP (baseBlock[off_eip]) until it
-   asks to exit, or until vg_bbs_to_go jumps have happened (the latter
-   case is for debugging).  */
-
-void VG_(toploop) ( void )
-{
-   volatile UInt dispatch_ctr_SAVED;
-   volatile Int  done_this_time;
-
-   /* For the LRU structures, records when the epoch began. */
-   volatile ULong epoch_started_at = 0;
-
-   while (True) {
-     next_outer_loop:
-
-      /* Age the LRU structures if an epoch has been completed. */
-      if (VG_(bbs_done) - epoch_started_at >= VG_BBS_PER_EPOCH) {
-         VG_(current_epoch)++;
-         epoch_started_at = VG_(bbs_done);
-         if (VG_(clo_verbosity) > 2) {
-            UInt tt_used, tc_used;
-            VG_(get_tt_tc_used) ( &tt_used, &tc_used );
-            VG_(message)(Vg_UserMsg,
-               "%lu bbs, in: %d (%d -> %d), out %d (%d -> %d), TT %d, TC %d",
-               VG_(bbs_done), 
-               VG_(this_epoch_in_count),
-               VG_(this_epoch_in_osize),
-               VG_(this_epoch_in_tsize),
-               VG_(this_epoch_out_count),
-               VG_(this_epoch_out_osize),
-               VG_(this_epoch_out_tsize),
-               tt_used, tc_used
-            );
-	 }
-         VG_(this_epoch_in_count) = 0;
-         VG_(this_epoch_in_osize) = 0;
-         VG_(this_epoch_in_tsize) = 0;
-         VG_(this_epoch_out_count) = 0;
-         VG_(this_epoch_out_osize) = 0;
-         VG_(this_epoch_out_tsize) = 0;
-      }
-
-      /* Figure out how many bbs to ask vg_run_innerloop to do. */
-      if (VG_(bbs_to_go) >= VG_SIGCHECK_INTERVAL)
-         VG_(dispatch_ctr) = 1 + VG_SIGCHECK_INTERVAL;
-      else
-         VG_(dispatch_ctr) = 1 + (UInt)VG_(bbs_to_go);
-
-      /* ... and remember what we asked for. */
-      dispatch_ctr_SAVED = VG_(dispatch_ctr);
-
-      /* Now have a go at doing them. */
-      VG_(interrupt_reason) = VG_Y_SIGCHECK;
-      if (__builtin_setjmp(VG_(toploop_jmpbuf)) == 0) {
-         /* try this ... */
-         VG_(run_innerloop)();
-         /* We get here if the client didn't take a fault. */
-         switch (VG_(interrupt_reason)) {
-            case VG_Y_SIGCHECK:
-               /* The counter fell to zero and no other situation has
-                  been detected. */
-               vg_assert(VG_(dispatch_ctr) == 0);
-               done_this_time  = dispatch_ctr_SAVED - 1;
-               VG_(bbs_to_go)  -= (ULong)done_this_time;
-               VG_(bbs_done)   += (ULong)done_this_time;
-               /* Exit if the debug run has ended. */
-               if (VG_(bbs_to_go) == 0) goto debug_stop;
-               VG_(deliver_signals)();
-               VG_(do_sanity_checks)(False);
-               goto next_outer_loop;
-            case VG_Y_EXIT:
-               /* The target program tried to exit. */
-               done_this_time = dispatch_ctr_SAVED - VG_(dispatch_ctr_SAVED);
-               done_this_time --;
-               VG_(bbs_to_go)   -= (ULong)done_this_time;
-               VG_(bbs_done)    += (ULong)done_this_time;
-               return;
-            case VG_Y_SMC:
-               /* A write to original code was detected. */
-               done_this_time = dispatch_ctr_SAVED - VG_(dispatch_ctr_SAVED);
-               VG_(bbs_to_go)   -= (ULong)done_this_time;
-               VG_(bbs_done)    += (ULong)done_this_time;
-               VG_(flush_transtab)();
-               goto next_outer_loop;
-            case VG_Y_TRANSLATE: {
-               /* Need to provide a translation of code at vg_m_eip. */
-               done_this_time = dispatch_ctr_SAVED - VG_(dispatch_ctr);
-               vg_assert(done_this_time > 0);
-               done_this_time --;
-               VG_(bbs_to_go) -= (ULong)done_this_time;
-               VG_(bbs_done)  += (ULong)done_this_time;
-               VG_(create_translation_for)(VG_(baseBlock)[VGOFF_(m_eip)]);
-               goto next_outer_loop;
-            }
-            default:
-               VG_(panic)("vg_toploop: invalid interrupt reason");
-         }
-      } else {
-        /* We get here if the client took a fault, which caused our
-           signal handler to longjmp. */
-         done_this_time = dispatch_ctr_SAVED - VG_(dispatch_ctr);
-         VG_(bbs_to_go)   -= (ULong)done_this_time;
-         VG_(bbs_done)    += (ULong)done_this_time;
-         if (VG_(interrupt_reason) == VG_Y_EXIT) return;
-         VG_(deliver_signals)();
-         VG_(do_sanity_checks)(False);
-         VG_(unblock_host_signal)(VG_(longjmpd_on_signal));
-      }
-   }
-
-   /* NOTREACHED */
-
-  debug_stop:
-   /* If we exited because of a debug stop, print the translation 
-      of the last block executed -- by translating it again, and 
-      throwing away the result. */
-   VG_(printf)(
-      "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
-   VG_(translate)( VG_(baseBlock)[VGOFF_(m_eip)], NULL, NULL, NULL );
-   VG_(printf)("\n");
-   VG_(printf)(
-      "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
-}
 
 
 /* ---------------------------------------------------------------------
@@ -705,7 +515,7 @@ static void process_cmd_line_options ( void )
    VG_(clo_optimise)         = True;
    VG_(clo_instrument)       = True;
    VG_(clo_cleanup)          = True;
-   VG_(clo_client_perms)     = False;
+   VG_(clo_client_perms)     = True;
    VG_(clo_smc_check)        = /* VG_CLO_SMC_SOME */ VG_CLO_SMC_NONE;
    VG_(clo_trace_syscalls)   = False;
    VG_(clo_trace_signals)    = False;
@@ -1014,6 +824,7 @@ static void process_cmd_line_options ( void )
       bad_option("--gdb-attach=yes and --trace-children=yes");
    }
 
+#if 0
    if (VG_(clo_client_perms) && !VG_(clo_instrument)) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
@@ -1023,6 +834,7 @@ static void process_cmd_line_options ( void )
 
    if (VG_(clo_client_perms))
       vg_assert(VG_(clo_instrument));
+#endif
 
    VG_(clo_logfile_fd) = eventually_logfile_fd;
 
@@ -1106,8 +918,9 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
 static void vg_show_counts ( void )
 {
    VG_(message)(Vg_DebugMsg,
-                " dispatch: %lu basic blocks, %d tt_fast misses.", 
-                VG_(bbs_done),  VG_(tt_fast_misses));
+		"      lru: %d epochs, %d clearings.",
+		VG_(current_epoch),
+                VG_(number_of_lrus) );
    VG_(message)(Vg_DebugMsg,
                 "translate: new %d (%d -> %d), discard %d (%d -> %d).",
                 VG_(overall_in_count),
@@ -1117,9 +930,10 @@ static void vg_show_counts ( void )
                 VG_(overall_out_osize),
                 VG_(overall_out_tsize) );
    VG_(message)(Vg_DebugMsg,
-		"      lru: %d epochs, %d clearings.",
-		VG_(current_epoch),
-                VG_(number_of_lrus) );
+      " dispatch: %lu basic blocks, %d/%d sched events, %d tt_fast misses.", 
+      VG_(bbs_done), VG_(num_scheduling_events_MAJOR), 
+                     VG_(num_scheduling_events_MINOR), 
+                     VG_(tt_fast_misses));
    VG_(message)(Vg_DebugMsg, 
                 "reg-alloc: %d t-req-spill, "
                 "%d+%d orig+spill uis, %d total-reg-r.",
@@ -1150,7 +964,8 @@ static void vg_show_counts ( void )
 
 void VG_(main) ( void )
 {
-   Int i;
+   Int               i;
+   VgSchedReturnCode src;
 
    /* Set up our stack sanity-check words. */
    for (i = 0; i < 10; i++) {
@@ -1211,10 +1026,17 @@ void VG_(main) ( void )
       VG_(message)(Vg_UserMsg, "");
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
-   VG_(toploop)();
+
+   VG_(scheduler_init)();
+   src = VG_(scheduler)();
 
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
+
+   if (src == VgSrc_Deadlock) {
+     VG_(message)(Vg_UserMsg, 
+        "Warning: pthread scheduler exited due to deadlock");
+   }
 
    if (VG_(clo_instrument)) {
       VG_(show_all_errors)();
@@ -1226,8 +1048,9 @@ void VG_(main) ( void )
       if (VG_(clo_leak_check)) VG_(detect_memory_leaks)();
    }
    VG_(running_on_simd_CPU) = False;
-   
-   VG_(do_sanity_checks)(True /*include expensive checks*/ );
+
+   VG_(do_sanity_checks)( 0 /* root thread */, 
+                          True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
       vg_show_counts();
@@ -1262,6 +1085,7 @@ void VG_(main) ( void )
    }
 
    /* Prepare to restore state to the real CPU. */
+   VG_(load_thread_state)(0);
    VG_(copy_baseBlock_to_m_state_static)();
 
    /* This pushes a return address on the simulator's stack, which
@@ -1348,116 +1172,6 @@ extern void VG_(unimplemented) ( Char* msg )
    VG_(exit)(1);
 }
 
-
-/*-------------------------------------------------------------*/
-/*--- Replace some C lib things with equivs which don't get ---*/
-/*--- spurious value warnings.  THEY RUN ON SIMD CPU!       ---*/
-/*-------------------------------------------------------------*/
-
-char* strrchr ( const char* s, int c )
-{
-   UChar  ch   = (UChar)((UInt)c);
-   UChar* p    = (UChar*)s;
-   UChar* last = NULL;
-   while (True) {
-      if (*p == ch) last = p;
-      if (*p == 0) return last;
-      p++;
-   }
-}
-
-char* strchr ( const char* s, int c )
-{
-   UChar  ch = (UChar)((UInt)c);
-   UChar* p  = (UChar*)s;
-   while (True) {
-      if (*p == ch) return p;
-      if (*p == 0) return NULL;
-      p++;
-   }
-}
-
-char* strcat ( char* dest, const char* src )
-{
-   Char* dest_orig = dest;
-   while (*dest) dest++;
-   while (*src) *dest++ = *src++;
-   *dest = 0;
-   return dest_orig;
-}
-
-unsigned int strlen ( const char* str )
-{
-   UInt i = 0;
-   while (str[i] != 0) i++;
-   return i;
-}
-
-char* strcpy ( char* dest, const char* src )
-{
-   Char* dest_orig = dest;
-   while (*src) *dest++ = *src++;
-   *dest = 0;
-   return dest_orig;
-}
-
-int strncmp ( const char* s1, const char* s2, unsigned int nmax )
-{
-   unsigned int n = 0;
-   while (True) {
-      if (n >= nmax) return 0;
-      if (*s1 == 0 && *s2 == 0) return 0;
-      if (*s1 == 0) return -1;
-      if (*s2 == 0) return 1;
-
-      if (*(UChar*)s1 < *(UChar*)s2) return -1;
-      if (*(UChar*)s1 > *(UChar*)s2) return 1;
-
-      s1++; s2++; n++;
-   }
-}
-
-int strcmp ( const char* s1, const char* s2 )
-{
-   while (True) {
-      if (*s1 == 0 && *s2 == 0) return 0;
-      if (*s1 == 0) return -1;
-      if (*s2 == 0) return 1;
-
-      if (*(char*)s1 < *(char*)s2) return -1;
-      if (*(char*)s1 > *(char*)s2) return 1;
-
-      s1++; s2++;
-   }
-}
-
-void* memchr(const void *s, int c, unsigned int n)
-{
-   unsigned int i;
-   UChar c0 = (UChar)c;
-   UChar* p = (UChar*)s;
-   for (i = 0; i < n; i++)
-      if (p[i] == c0) return (void*)(&p[i]);
-   return NULL;
-}
-
-void* memcpy( void *dst, const void *src, unsigned int len )
-{
-    register char *d;
-    register char *s;
-    if ( dst > src ) {
-        d = (char *)dst + len - 1;
-        s = (char *)src + len - 1;
-        while ( len-- )
-            *d-- = *s--;
-    } else if ( dst < src ) {
-        d = (char *)dst;
-        s = (char *)src;
-        while ( len-- )
-            *d++ = *s++;
-    }
-    return dst;
-}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                vg_main.c ---*/

@@ -533,9 +533,9 @@ void VG_(smc_check4) ( Addr a )
 
    /* Force an exit before the next basic block, so the translation
       cache can be flushed appropriately. */
-   VG_(dispatch_ctr_SAVED) = VG_(dispatch_ctr);
-   VG_(dispatch_ctr)       = 1;
-   VG_(interrupt_reason)   = VG_Y_SMC;
+   //   VG_(dispatch_ctr_SAVED) = VG_(dispatch_ctr);
+   //VG_(dispatch_ctr)       = 1;
+   //VG_(interrupt_reason)   = VG_Y_SMC;
 }
 
 

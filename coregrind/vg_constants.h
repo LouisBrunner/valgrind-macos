@@ -50,23 +50,18 @@
 #define VGP_(str)   VGAPPEND(vgProf_,str)
 #define VGOFF_(str) VGAPPEND(vgOff_,str)
 
-/* Reasons why the inner simulation loop might stop (i.e. why has
-   vg_dispatch_ctr reached zero? */
-#define VG_Y_SIGCHECK   0     /* signal check due */
-#define VG_Y_SMC        1     /* write to code detected */
-#define VG_Y_EXIT       2     /* natural or debug end to simulation */
-#define VG_Y_TRANSLATE  3     /* translation of vg_m_eip needed */
 
-/* Check for pending signals every this-many jumps.  Since this
-   happens in the region of once per millisecond, we also take the
-   opportunity do do a bit of quick sanity checking at the same time.
-   Look at the call sites of VG_(deliver_signals). */
-#define VG_SIGCHECK_INTERVAL   1000
-
-/* A ,agic values that %ebp might be set to when returning to the
+/* Magic values that %ebp might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
-   start of VG_(baseBlock). */
-#define VG_EBP_DISPATCH_CHECKED 17
+   start of VG_(baseBlock).  These also are return values from
+   VG_(run_innerloop) to the scheduler. */
+#define VG_TRC_EBP_JMP_SPECIAL    17
+#define VG_TRC_EBP_JMP_SYSCALL    19
+#define VG_TRC_EBP_JMP_CLIENTREQ  23
+
+#define VG_TRC_INNER_COUNTERZERO  29  /* ebp can't have this; sched return only */
+#define VG_TRC_INNER_FASTMISS     31  /* ditto.  Means fast-cache miss. */
+#define VG_TRC_UNRESUMABLE_SIGNAL 37  /* ditto; got sigsegv/sigbus */
 
 /* Debugging hack for assembly code ... sigh. */
 #if 0
@@ -75,11 +70,12 @@
 #define OYNK(nnn)
 #endif
 
-#if 1
+#if 0
 #define OYNNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
 #else
 #define OYNNK(nnn)
 #endif
+
 
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 15
@@ -87,6 +83,7 @@
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
 
 /* Constants for the fast original-code-write check cache. */
+
 
 /* Usually you want this to be zero. */
 #define VG_SMC_FASTCHECK_IN_C 0

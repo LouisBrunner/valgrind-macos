@@ -1069,40 +1069,44 @@ static void synth_call_baseBlock_method ( Bool ensure_shortform,
 }
 
 
-/* Jump to the next translation, by loading its original addr into
-   %eax and returning to the scheduler.  Or, if is a RET transfer,
-   don't return; instead jump to vg_dispatch_when_RET, which checks
-   whether this is a signal handler returning, and takes suitable
-   evasive action.
-*/
-static void synth_jmp_reg ( Int reg, 
-                            Bool is_ret_dispatch,
-                            Bool is_call_dispatch )
+static void load_ebp_from_JmpKind ( JmpKind jmpkind )
 {
+   switch (jmpkind) {
+      case JmpBoring: 
+         break;
+      case JmpCall:
+      case JmpRet: 
+         emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_SPECIAL, R_EBP );
+         break;
+      case JmpSyscall: 
+         emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_SYSCALL, R_EBP );
+         break;
+      case JmpClientReq: 
+         emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_CLIENTREQ, R_EBP );
+         break;
+      default: 
+         VG_(panic)("load_ebp_from_JmpKind");
+   }
+}
+
+/* Jump to the next translation, by loading its original addr into
+   %eax and returning to the scheduler.  Signal special requirements
+   by loading a special value into %ebp first.  
+*/
+static void synth_jmp_reg ( Int reg, JmpKind jmpkind )
+{
+   load_ebp_from_JmpKind ( jmpkind );
    if (reg != R_EAX)
       emit_movv_reg_reg ( 4, reg, R_EAX );
-   if (is_ret_dispatch || is_call_dispatch) {
-      /* The (hopefully) rare case. */
-      vg_assert(!(is_ret_dispatch && is_call_dispatch));
-      emit_movv_lit_reg ( 4, VG_EBP_DISPATCH_CHECKED, R_EBP );
-   }
    emit_ret();
 }
 
 
 /* Same deal as synth_jmp_reg. */
-static void synth_jmp_lit ( Addr addr )
+static void synth_jmp_lit ( Addr addr, JmpKind jmpkind )
 {
+   load_ebp_from_JmpKind ( jmpkind );
    emit_movv_lit_reg ( 4, addr, R_EAX );
-   emit_ret();
-}
-
-
-/* Dispatch, but with a call-target check. */
-static void synth_jmp_lit_call_dispatch ( Addr addr )
-{
-   emit_movv_lit_reg ( 4, addr, R_EAX );
-   emit_movv_lit_reg ( 4, VG_EBP_DISPATCH_CHECKED, R_EBP );
    emit_ret();
 }
 
@@ -1124,7 +1128,7 @@ static void synth_jcond_lit ( Condcode cond, Addr addr )
   */
    emit_get_eflags();
    emit_jcondshort_delta ( invertCondition(cond), 5+1 );
-   synth_jmp_lit ( addr );
+   synth_jmp_lit ( addr, JmpBoring );
 }
 
 
@@ -1138,7 +1142,7 @@ static void synth_jmp_ifzero_reg_lit ( Int reg, Addr addr )
    */
    emit_cmpl_zero_reg ( reg );
    emit_jcondshort_delta ( CondNZ, 5+1 );
-   synth_jmp_lit ( addr );
+   synth_jmp_lit ( addr, JmpBoring );
 }
 
 
@@ -2472,25 +2476,29 @@ static void emitUInstr ( Int i, UInstr* u )
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
          if (u->cond == CondAlways) {
-            if (u->tag1 == RealReg) {
-               synth_jmp_reg ( u->val1, u->ret_dispatch, u->call_dispatch );
-            } else {
-               vg_assert(!u->ret_dispatch);
-               if (u->call_dispatch)
-                  synth_jmp_lit_call_dispatch ( 
-                     u->tag1==Literal ? u->lit32 : u->val1 );
-               else
-                  synth_jmp_lit ( 
-                     u->tag1==Literal ? u->lit32 : u->val1 );
+            switch (u->tag1) {
+               case RealReg:
+                  synth_jmp_reg ( u->val1, u->jmpkind );
+                  break;
+               case Literal:
+                  synth_jmp_lit ( u->lit32, u->jmpkind );
+                  break;
+               default: 
+                  VG_(panic)("emitUInstr(JMP, unconditional, default)");
+                  break;
             }
          } else {
-            if (u->tag1 == RealReg) {
-               VG_(panic)("emitUInstr: conditional jump to reg");
-            } else {
-               vg_assert(!u->ret_dispatch);
-               vg_assert(!u->call_dispatch);
-               synth_jcond_lit ( u->cond, 
-                                 u->tag1==Literal ? u->lit32 : u->val1 );
+            switch (u->tag1) {
+               case RealReg:
+                  VG_(panic)("emitUInstr(JMP, conditional, RealReg)");
+                  break;
+               case Literal:
+                  vg_assert(u->jmpkind == JmpBoring);
+                  synth_jcond_lit ( u->cond, u->lit32 );
+                  break;
+               default: 
+                  VG_(panic)("emitUInstr(JMP, conditional, default)");
+                  break;
             }
          }
          break;

@@ -153,8 +153,8 @@ void VG_(emptyUInstr) ( UInstr* u )
    u->val1 = u->val2 = u->val3 = 0;
    u->tag1 = u->tag2 = u->tag3 = NoValue;
    u->flags_r = u->flags_w = FlagsEmpty;
-   u->call_dispatch = False;
-   u->smc_check = u->signed_widen = u->ret_dispatch = False;
+   u->jmpkind = JmpBoring;
+   u->smc_check = u->signed_widen = False;
    u->lit32    = 0;
    u->opcode   = 0;
    u->size     = 0;
@@ -259,8 +259,7 @@ void copyAuxInfoFromTo ( UInstr* src, UInstr* dst )
    dst->extra4b       = src->extra4b;
    dst->smc_check     = src->smc_check;
    dst->signed_widen  = src->signed_widen;
-   dst->ret_dispatch  = src->ret_dispatch;
-   dst->call_dispatch = src->call_dispatch;
+   dst->jmpkind       = src->jmpkind;
    dst->flags_r       = src->flags_r;
    dst->flags_w       = src->flags_w;
 }
@@ -917,10 +916,15 @@ void VG_(ppUInstr) ( Int instrNo, UInstr* u )
 
       case JMP: case CC2VAL:
       case PUSH: case POP: case CLEAR: case CALLM:
-         if (u->opcode == JMP && u->ret_dispatch)
-            VG_(printf)("-r");
-         if (u->opcode == JMP && u->call_dispatch)
-            VG_(printf)("-c");
+         if (u->opcode == JMP) {
+            switch (u->jmpkind) {
+               case JmpCall:      VG_(printf)("-c"); break;
+               case JmpRet:       VG_(printf)("-r"); break;
+               case JmpSyscall:   VG_(printf)("-sys"); break;
+               case JmpClientReq: VG_(printf)("-cli"); break;
+               default: break;
+            }
+         }
          VG_(printf)("\t");
          ppUOperand(u, 1, u->size, False);
          break;

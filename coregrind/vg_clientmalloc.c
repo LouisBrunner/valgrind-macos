@@ -250,10 +250,9 @@ static ShadowChunk* client_malloc_shadow ( UInt align, UInt size,
 /* Allocate memory, noticing whether or not we are doing the full
    instrumentation thing. */
 
-void* VG_(client_malloc) ( UInt size, UInt raw_alloc_kind )
+void* VG_(client_malloc) ( UInt size, VgAllocKind kind )
 {
    ShadowChunk* sc;
-   VgAllocKind kind;
 
    VGP_PUSHCC(VgpCliMalloc);
    client_malloc_init();
@@ -263,21 +262,15 @@ void* VG_(client_malloc) ( UInt size, UInt raw_alloc_kind )
                count_freelist(), vg_freed_list_volume,
                size, raw_alloc_kind );
 #  endif
+
+   vg_cmalloc_n_mallocs ++;
+   vg_cmalloc_bs_mallocd += size;
+
    if (!VG_(clo_instrument)) {
       VGP_POPCC;
       return VG_(malloc) ( VG_AR_CLIENT, size );
    }
-   switch (raw_alloc_kind) {
-      case 0x4002: kind = Vg_AllocNewVec; break;
-      case 0x4001: kind = Vg_AllocNew; break;
-      case 0x4000: /* malloc */
-      case 6666:   /* calloc */
-                   kind = Vg_AllocMalloc; break;
-      default:     /* should not happen */
-                   /* therefore we make sure it doesn't -- JRS */
-                   VG_(panic)("VG_(client_malloc): raw_alloc_kind");
-                   break; /*NOTREACHED*/
-   }
+
    sc = client_malloc_shadow ( 0, size, kind );
    VGP_POPCC;
    return (void*)(sc->data);
@@ -295,6 +288,10 @@ void* VG_(client_memalign) ( UInt align, UInt size )
                count_freelist(), vg_freed_list_volume,
                align, size );
 #  endif
+
+   vg_cmalloc_n_mallocs ++;
+   vg_cmalloc_bs_mallocd += size;
+
    if (!VG_(clo_instrument)) {
       VGP_POPCC;
       return VG_(malloc_aligned) ( VG_AR_CLIENT, align, size );
@@ -305,11 +302,10 @@ void* VG_(client_memalign) ( UInt align, UInt size )
 }
 
 
-void VG_(client_free) ( void* ptrV, UInt raw_alloc_kind )
+void VG_(client_free) ( void* ptrV, VgAllocKind kind )
 {
    ShadowChunk* sc;
    UInt         ml_no;
-   VgAllocKind  kind;
 
    VGP_PUSHCC(VgpCliMalloc);
    client_malloc_init();
@@ -319,6 +315,9 @@ void VG_(client_free) ( void* ptrV, UInt raw_alloc_kind )
                count_freelist(), vg_freed_list_volume,
                ptrV, raw_alloc_kind );
 #  endif
+
+   vg_cmalloc_n_frees ++;
+
    if (!VG_(clo_instrument)) {
       VGP_POPCC;
       VG_(free) ( VG_AR_CLIENT, ptrV );
@@ -338,16 +337,6 @@ void VG_(client_free) ( void* ptrV, UInt raw_alloc_kind )
       VG_(record_free_error) ( (Addr)ptrV );
       VGP_POPCC;
       return;
-   }
-
-   switch (raw_alloc_kind) {
-      case 0x5002: kind = Vg_AllocNewVec; break;
-      case 0x5001: kind = Vg_AllocNew; break;
-      case 0x5000: 
-      default:
-         kind = Vg_AllocMalloc;
-         /* should only happen if bug in client code */
-         break;
    }
 
    /* check if its a matching free() / delete / delete [] */
@@ -385,6 +374,9 @@ void* VG_(client_calloc) ( UInt nmemb, UInt size1 )
                count_freelist(), vg_freed_list_volume,
                nmemb, size1 );
 #  endif
+
+   vg_cmalloc_n_mallocs ++;
+   vg_cmalloc_bs_mallocd += nmemb * size1;
 
    if (!VG_(clo_instrument)) {
       VGP_POPCC;
@@ -429,6 +421,10 @@ void* VG_(client_realloc) ( void* ptrV, UInt size_new )
                count_freelist(), vg_freed_list_volume,
                ptrV, size_new );
 #  endif
+
+   vg_cmalloc_n_frees ++;
+   vg_cmalloc_n_mallocs ++;
+   vg_cmalloc_bs_mallocd += size_new;
 
    if (!VG_(clo_instrument)) {
       vg_assert(ptrV != NULL && size_new != 0);
@@ -571,364 +567,6 @@ void VG_(describe_addr) ( Addr a, AddrInfo* ai )
    /* Clueless ... */
    ai->akind = Unknown;
    return;
-}
-
-/*------------------------------------------------------------*/
-/*--- Replace the C library versions with our own.  Hairy. ---*/
-/*------------------------------------------------------------*/
-
-/* Below are new versions of malloc, __builtin_new, free, 
-   __builtin_delete, calloc and realloc.
-
-   malloc, __builtin_new, free, __builtin_delete, calloc and realloc
-   can be entered either on the real CPU or the simulated one.  If on
-   the real one, this is because the dynamic linker is running the
-   static initialisers for C++, before starting up Valgrind itself.
-   In this case it is safe to route calls through to
-   VG_(malloc)/vg_free, since that is self-initialising.
-
-   Once Valgrind is initialised, vg_running_on_simd_CPU becomes True.
-   The call needs to be transferred from the simulated CPU back to the
-   real one and routed to the vg_client_* functions.  To do that, the
-   args are passed to vg_trap_here, which the simulator detects.  The
-   bogus epilogue fn call is to guarantee that gcc doesn't tailcall
-   vg_trap_here, since that would cause the simulator's detection to
-   fail -- it only checks the targets of call transfers, not jumps.
-   And of course we have to be sure gcc won't inline either the
-   vg_trap_here or vg_bogus_epilogue.  Ha ha ha.  What a mess.
-*/
-
-/* Place afterwards to guarantee it won't get inlined ... */
-static UInt vg_trap_here_WRAPPER ( UInt arg1, UInt arg2, UInt what_to_do );
-static void vg_bogus_epilogue ( void );
-
-/* ALL calls to malloc wind up here. */
-void* malloc ( UInt n )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("malloc[simd=%d](%d)", 
-                  (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += n;
-
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( 0, n, 0x4000 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(malloc)(VG_AR_CLIENT, n);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   }
-}
-
-void* __builtin_new ( UInt n )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("__builtin_new[simd=%d](%d)", 
-                  (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   vg_cmalloc_n_mallocs++;
-   vg_cmalloc_bs_mallocd += n;
-
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( 0, n, 0x4001 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(malloc)(VG_AR_CLIENT, n);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return v;
-   }
-}
-
-void* __builtin_vec_new ( Int n )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("__builtin_vec_new[simd=%d](%d)", 
-                  (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   vg_cmalloc_n_mallocs++;
-   vg_cmalloc_bs_mallocd += n;
-
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( 0, n, 0x4002 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(malloc)(VG_AR_CLIENT, n);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return v;
-   }
-}
-
-void free ( void* p )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("free[simd=%d](%p)\n", 
-                  (UInt)VG_(running_on_simd_CPU), p );
-   vg_cmalloc_n_frees ++;
-
-   if (p == NULL) 
-      return;
-   if (VG_(running_on_simd_CPU)) {
-      (void)vg_trap_here_WRAPPER ( 0, (UInt)p, 0x5000 );
-      vg_bogus_epilogue();
-   } else {
-      VG_(free)(VG_AR_CLIENT, p);      
-   }
-}
-
-void __builtin_delete ( void* p )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("__builtin_delete[simd=%d](%p)\n", 
-                  (UInt)VG_(running_on_simd_CPU), p );
-   vg_cmalloc_n_frees ++;
-
-   if (p == NULL) 
-      return;
-   if (VG_(running_on_simd_CPU)) {
-      (void)vg_trap_here_WRAPPER ( 0, (UInt)p, 0x5001 );
-      vg_bogus_epilogue();
-   } else {
-      VG_(free)(VG_AR_CLIENT, p);
-   }
-}
-
-void __builtin_vec_delete ( void* p )
-{
-   if (VG_(clo_trace_malloc))
-       VG_(printf)("__builtin_vec_delete[simd=%d](%p)\n", 
-                   (UInt)VG_(running_on_simd_CPU), p );
-   vg_cmalloc_n_frees ++;
-
-   if (p == NULL) 
-      return;
-   if (VG_(running_on_simd_CPU)) {
-      (void)vg_trap_here_WRAPPER ( 0, (UInt)p, 0x5002 );
-      vg_bogus_epilogue();
-   } else {
-      VG_(free)(VG_AR_CLIENT, p);
-   }
-}
-
-void* calloc ( UInt nmemb, UInt size )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("calloc[simd=%d](%d,%d)", 
-                  (UInt)VG_(running_on_simd_CPU), nmemb, size );
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += size * nmemb;
-
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( nmemb, size, 6666 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(calloc)(VG_AR_CLIENT, nmemb, size);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return v;
-   }
-}
-
-void* realloc ( void* ptrV, UInt new_size )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("realloc[simd=%d](%p,%d)", 
-                  (UInt)VG_(running_on_simd_CPU), ptrV, new_size );
-
-   if (VG_(clo_sloppy_malloc)) 
-      { while ((new_size % 4) > 0) new_size++; }
-
-   vg_cmalloc_n_frees ++;
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += new_size;
-
-   if (ptrV == NULL)
-      return malloc(new_size);
-   if (new_size == 0) {
-      free(ptrV);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = 0\n" );
-      return NULL;
-   }   
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( (UInt)ptrV, new_size, 7777 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(realloc)(VG_AR_CLIENT, ptrV, new_size);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return v;
-   }
-}
-
-void* memalign ( Int alignment, Int n )
-{
-   if (VG_(clo_trace_malloc))
-      VG_(printf)("memalign[simd=%d](al %d, size %d)", 
-                  (UInt)VG_(running_on_simd_CPU), alignment, n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += n;
-
-   if (VG_(running_on_simd_CPU)) {
-      UInt v = vg_trap_here_WRAPPER ( alignment, n, 8888 );
-      vg_bogus_epilogue();
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   } else {
-      void* v = VG_(malloc_aligned)(VG_AR_CLIENT, alignment, n);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = %p\n", v );
-      return (void*)v;
-   }
-}
-
-void* valloc ( Int size )
-{
-   return memalign(VKI_BYTES_PER_PAGE, size);
-}
-
-
-/* Various compatibility wrapper functions, for glibc and libstdc++. */
-void cfree ( void* p )
-{
-   free ( p );
-}
-
-void* mallinfo ( void )
-{ 
-   VG_(message)(Vg_UserMsg, 
-                "Warning: incorrectly-handled call to mallinfo()"); 
-   return NULL;
-}
-
-
-
-int mallopt ( int cmd, int value )
-{
-   /* In glibc-2.2.4, 1 denoted a successful return value for mallopt */
-   return 1;
-}
-
-
-/* Bomb out if we get any of these. */
-void pvalloc ( void )
-{ VG_(panic)("call to pvalloc\n"); }
-
-void malloc_stats ( void )
-{ VG_(panic)("call to malloc_stats\n"); }
-void malloc_usable_size ( void )
-{ VG_(panic)("call to malloc_usable_size\n"); }
-void malloc_trim ( void )
-{ VG_(panic)("call to malloc_trim\n"); }
-void malloc_get_state ( void )
-{ VG_(panic)("call to malloc_get_state\n"); }
-void malloc_set_state ( void )
-{ VG_(panic)("call to malloc_set_state\n"); }
-
-
-int __posix_memalign ( void **memptr, UInt alignment, UInt size )
-{
-    void *mem;
-
-    /* Test whether the SIZE argument is valid.  It must be a power of
-       two multiple of sizeof (void *).  */
-    if (size % sizeof (void *) != 0 || (size & (size - 1)) != 0)
-       return 22 /*EINVAL*/;
-
-    mem = memalign (alignment, size);
-
-    if (mem != NULL) {
-       *memptr = mem;
-       return 0;
-    }
-
-    return 12 /*ENOMEM*/;
-}
-
- 
-/*------------------------------------------------------------*/
-/*--- Magic supporting hacks.                              ---*/
-/*------------------------------------------------------------*/
-
-extern UInt VG_(trap_here) ( UInt arg1, UInt arg2, UInt what_to_do );
-
-static
-UInt vg_trap_here_WRAPPER ( UInt arg1, UInt arg2, UInt what_to_do )
-{
-   /* The point of this idiocy is to make a plain, ordinary call to
-      vg_trap_here which vg_dispatch_when_CALL can spot.  Left to
-      itself, with -fpic, gcc generates "call vg_trap_here@PLT" which
-      doesn't get spotted, for whatever reason.  I guess I could check
-      _all_ control flow transfers, but that would be an undesirable
-      performance overhead. 
-
-      If you compile without -fpic, gcc generates the obvious call
-      insn, so the wrappers below will work if they just call
-      vg_trap_here.  But I don't want to rule out building with -fpic,
-      hence this hack.  Sigh.
-   */
-   UInt v;
-
-#  define WHERE_TO       VG_(trap_here)
-#  define STRINGIFY(xx)  __STRING(xx)
-
-   asm("# call to vg_trap_here\n"
-       "\t pushl %3\n"
-       "\t pushl %2\n"
-       "\t pushl %1\n"
-       "\t call  "  STRINGIFY(WHERE_TO) "\n"
-       "\t addl $12, %%esp\n"
-       "\t movl %%eax, %0\n"
-       : "=r" (v)
-       : "r" (arg1), "r" (arg2), "r" (what_to_do)
-       : "eax", "esp", "cc", "memory");
-   return v;
-
-#  undef WHERE_TO
-#  undef STRINGIFY
-}
-
-/* Last, but not least ... */
-void vg_bogus_epilogue ( void )
-{
-   /* Runs on simulated CPU only. */
-}
-
-UInt VG_(trap_here) ( UInt arg1, UInt arg2, UInt what_to_do )
-{
-   /* Calls to this fn are detected in vg_dispatch.S and are handled
-      specially.  So this fn should never be entered.  */
-   VG_(panic)("vg_trap_here called!");
-   return 0; /*NOTREACHED*/
 }
 
 

@@ -232,7 +232,7 @@ Int VG_(ksignal)(Int signum, void (*sighandler)(Int))
 
 
 /* ---------------------------------------------------------------------
-   mmap/munmap, exit
+   mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */
 
 /* Returns -1 on failure. */
@@ -265,6 +265,43 @@ void VG_(exit)( Int status )
    /*NOTREACHED*/
    vg_assert(2+2 == 5);
 }
+
+/* Returns -1 on error. */
+Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
+{
+   Int res = vg_do_syscall3(__NR_fcntl, fd, cmd, arg);
+   return VG_(is_kerror)(res) ? -1 : res;
+}
+
+/* Returns -1 on error. */
+Int VG_(select)( Int n, 
+                 vki_fd_set* readfds, 
+                 vki_fd_set* writefds, 
+                 vki_fd_set* exceptfds, 
+                 struct vki_timeval * timeout )
+{
+   Int res;
+   UInt args[5];
+   args[0] = n;
+   args[1] = (UInt)readfds;
+   args[2] = (UInt)writefds;
+   args[3] = (UInt)exceptfds;
+   args[4] = (UInt)timeout;
+   res = vg_do_syscall1(__NR_select, (UInt)(&(args[0])) );
+   return VG_(is_kerror)(res) ? -1 : res;
+   return res;
+}
+
+/* Returns -1 on error, but 0 if ok or interrupted. */
+Int VG_(nanosleep)( const struct vki_timespec *req, 
+                    struct vki_timespec *rem )
+{
+   Int res;
+   res = vg_do_syscall2(__NR_nanosleep, (UInt)req, (UInt)rem);
+   if (res == -VKI_EINVAL) return -1;
+   return 0;
+}
+
 
 /* ---------------------------------------------------------------------
    printf implementation.  The key function, vg_vprintf(), emits chars 
@@ -809,7 +846,6 @@ void VG_(assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
                "valgrind", file, line, fn, expr );
    VG_(printf)("Please report this bug to me at: %s\n\n", EMAIL_ADDR);
    VG_(shutdown_logging)();
-   /* vg_restore_SIGABRT(); */
    VG_(exit)(1);
 }
 
@@ -819,7 +855,6 @@ void VG_(panic) ( Char* str )
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
    VG_(printf)("Please report this bug to me at: %s\n\n", EMAIL_ADDR);
    VG_(shutdown_logging)();
-   /* vg_restore_SIGABRT(); */
    VG_(exit)(1);
 }
 
@@ -900,6 +935,16 @@ Int VG_(getpid) ( void )
    return res;
 }
 
+/* Read a notional elapsed (wallclock-time) timer, giving a 64-bit
+   microseconds count. */
+ULong VG_(read_microsecond_timer)( void )
+{
+   Int                res;
+   struct vki_timeval tv;
+   res = vg_do_syscall2(__NR_gettimeofday, (UInt)&tv, (UInt)NULL);
+   vg_assert(!VG_(is_kerror)(res));
+   return (1000000ULL * (ULong)(tv.tv_sec)) + (ULong)(tv.tv_usec);
+}
 
 /* ---------------------------------------------------------------------
    Primitive support for bagging memory via mmap.

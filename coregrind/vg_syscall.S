@@ -41,10 +41,6 @@
 # m_state_static, and back afterwards.
 	
 VG_(do_syscall):
-	cmpl	$2, VG_(syscall_depth)
-	jz	do_syscall_DEPTH_2
-
-	# depth 1 copy follows ...
 	# Save all the int registers of the real machines state on the
 	# simulators stack.
 	pushal
@@ -103,76 +99,6 @@ VG_(do_syscall):
 	popal
 
 	ret
-
-
-
-
-
-
-
-
-do_syscall_DEPTH_2:
-
-	# depth 2 copy follows ...
-	# Save all the int registers of the real machines state on the
-	# simulators stack.
-	pushal
-
-	# and save the real FPU state too
-	fwait
-	fnsave	VG_(real_fpu_state_saved_over_syscall_d2)
-	frstor	VG_(real_fpu_state_saved_over_syscall_d2)
-
-	# remember what the simulators stack pointer is
-	movl	%esp, VG_(esp_saved_over_syscall_d2)
-	
-	# Now copy the simulated machines state into the real one
-	# esp still refers to the simulators stack
-	frstor	VG_(m_state_static)+40
-	movl	VG_(m_state_static)+32, %eax
-	pushl	%eax
-	popfl
-	movl	VG_(m_state_static)+0, %eax
-	movl	VG_(m_state_static)+4, %ecx
-	movl	VG_(m_state_static)+8, %edx
-	movl	VG_(m_state_static)+12, %ebx
-	movl	VG_(m_state_static)+16, %esp
-	movl	VG_(m_state_static)+20, %ebp
-	movl	VG_(m_state_static)+24, %esi
-	movl	VG_(m_state_static)+28, %edi
-
-	# esp now refers to the simulatees stack
-	# Do the actual system call
-	int	$0x80
-
-	# restore stack as soon as possible
-	# esp refers to simulatees stack
-	movl	%esp, VG_(m_state_static)+16
-	movl	VG_(esp_saved_over_syscall_d2), %esp
-	# esp refers to simulators stack
-
-	# ... and undo everything else.  
-	# Copy real state back to simulated state.	
-	movl	%eax, VG_(m_state_static)+0
-	movl	%ecx, VG_(m_state_static)+4
-	movl	%edx, VG_(m_state_static)+8
-	movl	%ebx, VG_(m_state_static)+12
-	movl	%ebp, VG_(m_state_static)+20
-	movl	%esi, VG_(m_state_static)+24
-	movl	%edi, VG_(m_state_static)+28
-	pushfl
-	popl	%eax
-	movl	%eax, VG_(m_state_static)+32
-	fwait
-	fnsave	VG_(m_state_static)+40
-	frstor	VG_(m_state_static)+40
-
-	# Restore the state of the simulator
-	frstor	VG_(real_fpu_state_saved_over_syscall_d2)
-	popal
-
-	ret
-
 
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_syscall.S ---##

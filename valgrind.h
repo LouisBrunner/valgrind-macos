@@ -48,19 +48,55 @@
 
 /* This defines the magic code sequence which the JITter spots and
    handles magically.  Don't look too closely at this; it will rot
-   your brain.  
+   your brain.  Valgrind dumps the result value in %EDX, so we first
+   copy the default value there, so that it is returned when not
+   running on Valgrind.  Since %EAX points to a block of mem
+   containing the args, you can pass as many args as you want like
+   this.  Currently this is set up to deal with 4 args since that's
+   the max that we appear to need (pthread_create).  
 */
-#define VALGRIND_MAGIC_SEQUENCE(_zzq_res,_zzq_code,_zzq_addr,_zzq_len)  \
-  asm volatile("movl %1, %%eax\n\t"                                     \
-               "movl %2, %%ebx\n\t"                                     \
-               "movl %3, %%ecx\n\t"                                     \
-               "roll $29, %%eax ; roll $3, %%eax\n\t"                   \
-               "roll $27, %%eax ; roll $5, %%eax\n\t"                   \
-               "movl %%eax, %0\t"                                       \
-               : "=r" (_zzq_res)                                        \
-               : "r" (_zzq_code), "r" (_zzq_addr), "r" (_zzq_len)       \
-               : "eax", "ebx", "ecx", "cc", "memory"                    \
-              );
+#define VALGRIND_MAGIC_SEQUENCE(                                        \
+        _zzq_rlval,   /* result lvalue */                               \
+        _zzq_default, /* result returned when running on real CPU */    \
+        _zzq_request, /* request code */                                \
+        _zzq_arg1,    /* request first param */                         \
+        _zzq_arg2,    /* request second param */                        \
+        _zzq_arg3,    /* request third param */                         \
+        _zzq_arg4     /* request fourth param */ )                      \
+                                                                        \
+  { volatile unsigned int _zzq_args[5];                                 \
+    _zzq_args[0] = (volatile unsigned int)_zzq_request;                 \
+    _zzq_args[1] = (volatile unsigned int)_zzq_arg1;                    \
+    _zzq_args[2] = (volatile unsigned int)_zzq_arg2;                    \
+    _zzq_args[3] = (volatile unsigned int)_zzq_arg3;                    \
+    _zzq_args[4] = (volatile unsigned int)_zzq_arg4;                    \
+    asm volatile("movl %1, %%eax\n\t"                                   \
+                 "movl %2, %%edx\n\t"                                   \
+                 "roll $29, %%eax ; roll $3, %%eax\n\t"                 \
+                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"                 \
+                 "roll $13, %%eax ; roll $19, %%eax\n\t"                \
+                 "movl %%edx, %0\t"                                     \
+                 : "=r" (_zzq_rlval)                                    \
+                 : "r" (&_zzq_args[0]), "r" (_zzq_default)              \
+                 : "eax", "edx", "cc", "memory"                         \
+                );                                                      \
+  }
+
+
+/* Some request codes.  There are many more of these, but most are not
+   exposed to end-user view.  These are the public ones, all of the
+   form 0x1000 + small_number. 
+*/
+
+#define VG_USERREQ__MAKE_NOACCESS        0x1001
+#define VG_USERREQ__MAKE_WRITABLE        0x1002
+#define VG_USERREQ__MAKE_READABLE        0x1003
+#define VG_USERREQ__DISCARD              0x1004
+#define VG_USERREQ__CHECK_WRITABLE       0x1005
+#define VG_USERREQ__CHECK_READABLE       0x1006
+#define VG_USERREQ__MAKE_NOACCESS_STACK  0x1007
+#define VG_USERREQ__RUNNING_ON_VALGRIND  0x1008
+#define VG_USERREQ__DO_LEAK_CHECK        0x1009 /* unimplemented */
 
 
 
@@ -71,7 +107,9 @@
    descriptions Valgrind will use in subsequent error messages. */
 #define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
    ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,1001,_qzz_addr,_qzz_len);   \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+                            VG_USERREQ__MAKE_NOACCESS,           \
+                            _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
    })
 
@@ -79,7 +117,9 @@
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_WRITABLE(_qzz_addr,_qzz_len)               \
    ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,1002,_qzz_addr,_qzz_len);   \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+                            VG_USERREQ__MAKE_WRITABLE,           \
+                            _qzz_addr,_ qzz_len, 0, 0);          \
     _qzz_res;                                                    \
    })
 
@@ -87,7 +127,9 @@
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_READABLE(_qzz_addr,_qzz_len)               \
    ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,1003,_qzz_addr,_qzz_len);   \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+                            VG_USERREQ__MAKE_READABLE,           \
+                            _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
    })
 
@@ -99,7 +141,9 @@
    handle. */
 #define VALGRIND_DISCARD(_qzz_blkindex)                          \
    ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,2004,0,_qzz_blkindex);      \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+                            VG_USERREQ__DISCARD,                 \
+                            0, _qzz_blkindex, 0, 0);             \
     _qzz_res;                                                    \
    })
 
@@ -111,20 +155,24 @@
    If suitable addressibility is not established, Valgrind prints an
    error message and returns the address of the first offending byte.
    Otherwise it returns zero. */
-#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)              \
-   ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,2002,_qzz_addr,_qzz_len);   \
-    _qzz_res;                                                    \
+#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)                \
+   ({unsigned int _qzz_res;                                        \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__CHECK_WRITABLE,            \
+                            _qzz_addr, _qzz_len, 0, 0);            \
+    _qzz_res;                                                      \
    })
 
 /* Check that memory at _qzz_addr is addressible and defined for
    _qzz_len bytes.  If suitable addressibility and definedness are not
    established, Valgrind prints an error message and returns the
    address of the first offending byte.  Otherwise it returns zero. */
-#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)              \
-   ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,2003,_qzz_addr,_qzz_len);   \
-    _qzz_res;                                                    \
+#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)                \
+   ({unsigned int _qzz_res;                                        \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__CHECK_READABLE,            \
+                            _qzz_addr, _qzz_len, 0, 0);            \
+    _qzz_res;                                                      \
    })
 
 
@@ -133,10 +181,10 @@
    are not established, Valgrind prints an error message and returns
    the address of the first offending byte.  Otherwise it returns
    zero. */
-#define VALGRIND_CHECK_DEFINED(__lvalue)                         \
-   (void)                                                        \
-   VALGRIND_CHECK_READABLE(                                      \
-      (volatile unsigned char *)&(__lvalue),                     \
+#define VALGRIND_CHECK_DEFINED(__lvalue)                           \
+   (void)                                                          \
+   VALGRIND_CHECK_READABLE(                                        \
+      (volatile unsigned char *)&(__lvalue),                       \
                       (unsigned int)(sizeof (__lvalue)))
 
 
@@ -146,11 +194,38 @@
    value.  The record associated with this setting will be
    automatically removed by Valgrind when the containing routine
    exits. */
-#define VALGRIND_MAKE_NOACCESS_STACK(_qzz_addr,_qzz_len)         \
-   ({unsigned int _qzz_res;                                      \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res,3001,_qzz_addr,_qzz_len);   \
-    _qzz_res;                                                    \
+#define VALGRIND_MAKE_NOACCESS_STACK(_qzz_addr,_qzz_len)           \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__MAKE_NOACCESS_STACK,       \
+                            _qzz_addr, _qzz_len, 0, 0);            \
+   }
+
+
+/* Returns 1 if running on Valgrind, 0 if running on the real CPU. 
+   Currently implemented but untested. */
+#define RUNNING_ON_VALGRIND                                        \
+   ({unsigned int _qzz_res;                                        \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* returned if not */,     \
+                            VG_USERREQ__RUNNING_ON_VALGRIND,       \
+                            0, 0, 0, 0);                           \
+    _qzz_res;                                                      \
    })
 
+
+/* Mark memory, intended to be on the client's stack, at _qzz_addr as
+   unaddressible and undefined for _qzz_len bytes.  Does not return a
+   value.  The record associated with this setting will be
+   automatically removed by Valgrind when the containing routine
+   exits.  
+
+   Currently implemented but untested.
+*/
+#define VALGRIND_DO_LEAK_CHECK                                     \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__DO_LEAK_CHECK,             \
+                            0, 0, 0, 0);                           \
+   }
 
 #endif

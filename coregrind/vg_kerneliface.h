@@ -135,6 +135,10 @@ typedef
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */
 
 #define VKI_EINVAL          22      /* Invalid argument */
+#define VKI_ENOMEM          12      /* Out of memory */
+
+#define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
+#define VKI_EAGAIN          11      /* Try again */
 
 
 /* Gawd ... hack ... */
@@ -164,6 +168,108 @@ typedef struct vki__user_cap_data_struct {
 
 /* Adam Gundy <arg@cyberscience.com>, 20 Mar 2002, says: */
 #define VKI_SIZEOF_STRUCT_TERMIO 17
+
+
+/* File descriptor sets, for doing select().  Copied from
+   /usr/src/linux-2.4.9-31/include/linux/posix_types.h 
+*/
+/*
+ * This allows for 1024 file descriptors: if NR_OPEN is ever grown
+ * beyond that you'll have to change this too. But 1024 fd's seem to be
+ * enough even for such "real" unices like OSF/1, so hopefully this is
+ * one limit that doesn't have to be changed [again].
+ *
+ * Note that POSIX wants the FD_CLEAR(fd,fdsetp) defines to be in
+ * <sys/time.h> (and thus <linux/time.h>) - but this is a more logical
+ * place for them. Solved by having dummy defines in <sys/time.h>.
+ */
+
+/*
+ * Those macros may have been defined in <gnu/types.h>. But we always
+ * use the ones here. 
+ */
+#undef VKI_NFDBITS
+#define VKI_NFDBITS       (8 * sizeof(unsigned long))
+
+#undef VKI_FD_SETSIZE
+#define VKI_FD_SETSIZE    1024
+
+#undef VKI_FDSET_LONGS
+#define VKI_FDSET_LONGS   (VKI_FD_SETSIZE/VKI_NFDBITS)
+
+#undef VKI_FDELT
+#define VKI_FDELT(d)      ((d) / VKI_NFDBITS)
+
+#undef VKI_FDMASK
+#define VKI_FDMASK(d)     (1UL << ((d) % VKI_NFDBITS))
+
+typedef struct {
+        unsigned long vki_fds_bits [VKI_FDSET_LONGS];
+} vki_fd_set;
+
+
+/* Gawd ...
+   Copied from /usr/src/linux-2.4.9-31/./include/asm-i386/posix_types.h
+*/
+#undef  VKI_FD_SET
+#define VKI_FD_SET(fd,fdsetp) \
+                __asm__ __volatile__("btsl %1,%0": \
+                        "=m" (*(vki_fd_set *) (fdsetp)):"r" ((int) (fd)))
+
+#undef  VKI_FD_CLR
+#define VKI_FD_CLR(fd,fdsetp) \
+                __asm__ __volatile__("btrl %1,%0": \
+                        "=m" (*(vki_fd_set *) (fdsetp)):"r" ((int) (fd)))
+
+#undef  VKI_FD_ISSET
+#define VKI_FD_ISSET(fd,fdsetp) (__extension__ ({ \
+                unsigned char __result; \
+                __asm__ __volatile__("btl %1,%2 ; setb %0" \
+                        :"=q" (__result) :"r" ((int) (fd)), \
+                        "m" (*(vki_fd_set *) (fdsetp))); \
+                __result; }))
+
+#undef  VKI_FD_ZERO
+#define VKI_FD_ZERO(fdsetp) \
+do { \
+        int __d0, __d1; \
+        __asm__ __volatile__("cld ; rep ; stosl" \
+                        :"=m" (*(vki_fd_set *) (fdsetp)), \
+                          "=&c" (__d0), "=&D" (__d1) \
+                        :"a" (0), "1" (VKI_FDSET_LONGS), \
+                        "2" ((vki_fd_set *) (fdsetp)) : "memory"); \
+} while (0)
+
+
+
+/* 
+./include/asm-i386/posix_types.h:typedef long           __kernel_suseconds_t;
+./include/linux/types.h:typedef __kernel_suseconds_t    suseconds_t;
+
+./include/asm-i386/posix_types.h:typedef long           __kernel_time_t;
+./include/linux/types.h:typedef __kernel_time_t         time_t;
+*/
+
+struct vki_timeval {
+        /* time_t */ long         tv_sec;         /* seconds */
+        /* suseconds_t */ long    tv_usec;        /* microseconds */
+};
+
+
+
+/* For fcntl on fds ..
+   from ./include/asm-i386/fcntl.h */
+#define VKI_F_GETFL         3       /* get file->f_flags */
+#define VKI_F_SETFL         4       /* set file->f_flags */
+
+#define VKI_O_NONBLOCK        04000
+
+/* For nanosleep ... 
+   from ./include/linux/time.h */
+struct vki_timespec {
+        /* time_t */ long tv_sec;         /* seconds */
+        long    tv_nsec;        /* nanoseconds */
+};
 
 
 #endif /* ndef __VG_KERNELIFACE_H */

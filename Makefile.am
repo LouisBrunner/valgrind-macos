@@ -29,6 +29,7 @@ val_PROGRAMS = valgrind.so valgrinq.so
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 
 valgrind_so_SOURCES = \
+	vg_scheduler.c \
 	vg_clientmalloc.c \
 	vg_clientperms.c \
 	vg_demangle.c \
@@ -70,10 +71,10 @@ noinst_HEADERS = \
         vg_unsafe.h
 
 
-vg_memory.o: vg_memory.c
+vg_memory.o: vg_memory.c $(noinst_HEADERS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_clientmalloc.o: vg_clientmalloc.c
+vg_clientmalloc.o: vg_clientmalloc.c $(noinst_HEADERS)
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
 

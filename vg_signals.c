@@ -37,13 +37,6 @@
 
 
 /* ---------------------------------------------------------------------
-   An implementation of signal sets and other grunge, identical to 
-   that in the target kernels (Linux 2.2.X and 2.4.X).
-   ------------------------------------------------------------------ */
-
-
-
-/* ---------------------------------------------------------------------
    Signal state for this process.
    ------------------------------------------------------------------ */
 
@@ -64,8 +57,29 @@ void* VG_(sighandler)[VKI_KNSIG];
 
 void* VG_(sigpending)[VKI_KNSIG];
 
-/* See decl in vg_include.h for explanation. */
-Int VG_(syscall_depth) = 0;
+
+/* ---------------------------------------------------------------------
+   Handy utilities to block/restore all host signals.
+   ------------------------------------------------------------------ */
+
+/* Block all host signals, dumping the old mask in *saved_mask. */
+void VG_(block_all_host_signals) ( /* OUT */ vki_ksigset_t* saved_mask )
+{
+   Int           ret;
+   vki_ksigset_t block_procmask;
+   VG_(ksigfillset)(&block_procmask);
+   ret = VG_(ksigprocmask)
+            (VKI_SIG_SETMASK, &block_procmask, saved_mask);
+   vg_assert(ret == 0);
+}
+
+/* Restore the blocking mask using the supplied saved one. */
+void VG_(restore_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
+{
+   Int ret;
+   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, saved_mask, NULL);
+   vg_assert(ret == 0);
+}
 
 
 /* ---------------------------------------------------------------------
@@ -78,9 +92,14 @@ Int VG_(syscall_depth) = 0;
 
 typedef
    struct {
-      UInt retaddr;  /* Sig handler's (bogus) return address */
-      Int  sigNo;    /* The arg to the sig handler.  */
+      /* These are parameters to the signal handler. */
+      UInt retaddr;   /* Sig handler's (bogus) return address */
+      Int  sigNo;     /* The arg to the sig handler.  */
+      Addr psigInfo;  /* ptr to siginfo_t; NULL for now. */
+      Addr puContext; /* ptr to ucontext; NULL for now. */
+      /* Sanity check word. */
       UInt magicPI;
+      /* Saved processor state. */
       UInt fpustate[VG_SIZE_OF_FPUSTATE_W];
       UInt eax;
       UInt ecx;
@@ -92,9 +111,14 @@ typedef
       UInt edi;
       Addr eip;
       UInt eflags;
+      /* Scheduler-private stuff: what was the thread's status prior to
+         delivering this signal? */
+      ThreadStatus status;
+      /* Sanity check word.  Is the highest-addressed word; do not
+         move!*/
       UInt magicE;
    }
-   VgSigContext;
+   VgSigFrame;
 
 
 
@@ -113,35 +137,52 @@ void VG_(signalreturn_bogusRA) ( void )
    handler.  This includes the signal number and a bogus return
    address.  */
 static
-void vg_push_signal_frame ( int sigNo )
+void vg_push_signal_frame ( ThreadId tid, int sigNo )
 {
    Int          i;
-   UInt         esp;
-   VgSigContext sigctx;
+   Addr         esp;
+   VgSigFrame*  frame;
+   ThreadState* tst;
+
+   tst = VG_(get_thread_state)(tid);
+   esp = tst->m_esp;
+
+   esp -= sizeof(VgSigFrame);
+   frame = (VgSigFrame*)esp;
+   /* Assert that the frame is placed correctly. */
+   vg_assert( (sizeof(VgSigFrame) & 0x3) == 0 );
+   vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
+              == ((Char*)(tst->m_esp)) );
+
+   frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
+   frame->sigNo      = sigNo;
+   frame->psigInfo   = (Addr)NULL;
+   frame->puContext  = (Addr)NULL;
+   frame->magicPI    = 0x31415927;
+
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      sigctx.fpustate[i] = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+      frame->fpustate[i] = tst->m_fpu[i];
 
-   sigctx.magicPI    = 0x31415927;
-   sigctx.magicE     = 0x27182818;
-   sigctx.eax        = VG_(baseBlock)[VGOFF_(m_eax)];
-   sigctx.ecx        = VG_(baseBlock)[VGOFF_(m_ecx)];
-   sigctx.edx        = VG_(baseBlock)[VGOFF_(m_edx)];
-   sigctx.ebx        = VG_(baseBlock)[VGOFF_(m_ebx)];
-   sigctx.ebp        = VG_(baseBlock)[VGOFF_(m_ebp)];
-   sigctx.esp        = VG_(baseBlock)[VGOFF_(m_esp)];
-   sigctx.esi        = VG_(baseBlock)[VGOFF_(m_esi)];
-   sigctx.edi        = VG_(baseBlock)[VGOFF_(m_edi)];
-   sigctx.eflags     = VG_(baseBlock)[VGOFF_(m_eflags)];
-   sigctx.eip        = VG_(baseBlock)[VGOFF_(m_eip)];
-   sigctx.retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
-   sigctx.sigNo      = sigNo;
+   frame->eax        = tst->m_eax;
+   frame->ecx        = tst->m_ecx;
+   frame->edx        = tst->m_edx;
+   frame->ebx        = tst->m_ebx;
+   frame->ebp        = tst->m_ebp;
+   frame->esp        = tst->m_esp;
+   frame->esi        = tst->m_esi;
+   frame->edi        = tst->m_edi;
+   frame->eip        = tst->m_eip;
+   frame->eflags     = tst->m_eflags;
 
-   esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   vg_assert((sizeof(VgSigContext) & 0x3) == 0);
+   frame->status     = tst->status;
 
-   esp -= sizeof(VgSigContext);
-   for (i = 0; i < sizeof(VgSigContext)/4; i++)
-      ((UInt*)esp)[i] = ((UInt*)(&sigctx))[i];
+   frame->magicE     = 0x27182818;
+
+   /* Set the thread so it will next run the handler. */
+   tst->m_esp  = esp;
+   tst->m_eip  = (Addr)VG_(sigpending)[sigNo];
+   /* This thread needs to be marked runnable, but we leave that the
+      caller to do. */
 
    /* Make sigNo and retaddr fields readable -- at 0(%ESP) and 4(%ESP) */
    if (VG_(clo_instrument)) {
@@ -149,11 +190,9 @@ void vg_push_signal_frame ( int sigNo )
       VGM_(make_readable) ( ((Addr)esp)+4 ,4 );
    }
 
-   VG_(baseBlock)[VGOFF_(m_esp)] = esp;
-   VG_(baseBlock)[VGOFF_(m_eip)] = (Addr)VG_(sigpending)[sigNo];
    /* 
    VG_(printf)("pushed signal frame; %%ESP now = %p, next %%EBP = %p\n", 
-               esp, VG_(baseBlock)[VGOFF_(m_eip)]);
+               esp, tst->m_eip);
    */
 }
 
@@ -162,43 +201,56 @@ void vg_push_signal_frame ( int sigNo )
    simulated machine state, and return the signal number that the
    frame was for. */
 static
-Int vg_pop_signal_frame ( void )
+Int vg_pop_signal_frame ( ThreadId tid )
 {
-   UInt          esp;
+   Addr          esp;
    Int           sigNo, i;
-   VgSigContext* sigctx;
-   /* esp is now pointing at the magicPI word on the stack, viz,
-      eight bytes above the bottom of the vg_sigcontext.
-   */
-   esp    = VG_(baseBlock)[VGOFF_(m_esp)];
-   sigctx = (VgSigContext*)(esp-4);
+   VgSigFrame*   frame;
+   ThreadState*  tst;
 
-   vg_assert(sigctx->magicPI == 0x31415927);
-   vg_assert(sigctx->magicE  == 0x27182818);
+   tst = VG_(get_thread_state)(tid);
+
+   /* esp is now pointing at the sigNo field in the signal frame. */
+   esp   = tst->m_esp;
+   frame = (VgSigFrame*)(esp-4);
+
+   vg_assert(frame->magicPI == 0x31415927);
+   vg_assert(frame->magicE  == 0x27182818);
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "vg_pop_signal_frame: valid magic");
 
    /* restore machine state */
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = sigctx->fpustate[i];
+      tst->m_fpu[i] = frame->fpustate[i];
 
-   /* Mark the sigctx structure as nonaccessible.  Has to happen
-      _before_ vg_m_state.m_esp is given a new value.*/
-   if (VG_(clo_instrument)) 
-      VGM_(handle_esp_assignment) ( sigctx->esp );
+   /* Mark the frame structure as nonaccessible.  Has to happen
+      _before_ vg_m_state.m_esp is given a new value.
+      handle_esp_assignment reads %ESP from baseBlock, so we park it
+      there first.  Re-place the junk there afterwards. */
+   if (VG_(clo_instrument)) {
+      vg_assert(VG_(baseBlock)[VGOFF_(m_esp)] == 0xDEADBEEF);
+      VG_(baseBlock)[VGOFF_(m_esp)] = tst->m_esp;
+      VGM_(handle_esp_assignment) ( frame->esp );
+      VG_(baseBlock)[VGOFF_(m_esp)] = 0xDEADBEEF;
+   }
 
    /* Restore machine state from the saved context. */
-   VG_(baseBlock)[VGOFF_(m_eax)]     = sigctx->eax;
-   VG_(baseBlock)[VGOFF_(m_ecx)]     = sigctx->ecx;
-   VG_(baseBlock)[VGOFF_(m_edx)]     = sigctx->edx;
-   VG_(baseBlock)[VGOFF_(m_ebx)]     = sigctx->ebx;
-   VG_(baseBlock)[VGOFF_(m_ebp)]     = sigctx->ebp;
-   VG_(baseBlock)[VGOFF_(m_esp)]     = sigctx->esp;
-   VG_(baseBlock)[VGOFF_(m_esi)]     = sigctx->esi;
-   VG_(baseBlock)[VGOFF_(m_edi)]     = sigctx->edi;
-   VG_(baseBlock)[VGOFF_(m_eflags)]  = sigctx->eflags;
-   VG_(baseBlock)[VGOFF_(m_eip)]     = sigctx->eip;
-   sigNo                             = sigctx->sigNo;
+   tst->m_eax     = frame->eax;
+   tst->m_ecx     = frame->ecx;
+   tst->m_edx     = frame->edx;
+   tst->m_ebx     = frame->ebx;
+   tst->m_ebp     = frame->ebp;
+   tst->m_esp     = frame->esp;
+   tst->m_esi     = frame->esi;
+   tst->m_edi     = frame->edi;
+   tst->m_eflags  = frame->eflags;
+   tst->m_eip     = frame->eip;
+   sigNo          = frame->sigNo;
+
+   /* And restore the thread's status to what it was before the signal
+      was delivered. */
+   tst->status    = frame->status;
+
    return sigNo;
 }
 
@@ -207,18 +259,17 @@ Int vg_pop_signal_frame ( void )
    VgSigContext and continue with whatever was going on before the
    handler ran.  */
 
-void VG_(signal_returns) ( void )
+void VG_(signal_returns) ( ThreadId tid )
 {
-   Int            sigNo, ret;
-   vki_ksigset_t  block_procmask;
+   Int            sigNo;
    vki_ksigset_t  saved_procmask;
 
    /* Block host signals ... */
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &block_procmask, &saved_procmask);
-   vg_assert(ret == 0);
+   VG_(block_all_host_signals)( &saved_procmask );
 
-   sigNo = vg_pop_signal_frame();
+   /* Pop the signal frame and restore tid's status to what it was
+      before the signal was delivered. */
+   sigNo = vg_pop_signal_frame(tid);
 
    /* You would have thought that the following assertion made sense
       here:
@@ -242,40 +293,18 @@ void VG_(signal_returns) ( void )
    VG_(sigpending)[sigNo] = VG_SIGIDLE;
 
    /* Unlock and return. */
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &saved_procmask, NULL);
-   vg_assert(ret == 0);
+   VG_(restore_host_signals)( &saved_procmask );
 
-   /* The main dispatch loop now continues at vg_m_eip. */
-}
-
-
-/* Restore the default host behaviour of SIGABRT, and unblock it,
-   so we can exit the simulator cleanly by doing exit/abort/assert fail.
-*/
-void VG_(restore_SIGABRT) ( void )
-{
-   vki_ksigset_t   set;
-   vki_ksigaction  act;
-   act.ksa_flags   = VKI_SA_RESTART;
-   act.ksa_handler = VKI_SIG_DFL;
-   VG_(ksigemptyset)(&act.ksa_mask);
-
-   VG_(ksigemptyset)(&set);
-   VG_(ksigaddset)(&set,VKI_SIGABRT);
-
-   /* If this doesn't work, tough.  Don't check return code. */
-   VG_(ksigaction)(VKI_SIGABRT, &act, NULL);
-   VG_(ksigprocmask)(VKI_SIG_UNBLOCK, &set, NULL);   
+   /* Scheduler now can resume this thread, or perhaps some other. */
 }
 
 
 /* Deliver all pending signals, by building stack frames for their
    handlers. */
-void VG_(deliver_signals) ( void )
+void VG_(deliver_signals) ( ThreadId tid )
 {
-   vki_ksigset_t  block_procmask;
    vki_ksigset_t  saved_procmask;
-   Int            ret, sigNo;
+   Int            sigNo;
    Bool           found;
  
    /* A cheap check.  We don't need to have exclusive access
@@ -295,10 +324,9 @@ void VG_(deliver_signals) ( void )
       blocking all the host's signals.  That means vg_oursignalhandler
       can't run whilst we are messing with stuff.
    */
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &block_procmask, &saved_procmask);
-   vg_assert(ret == 0);
+   VG_(block_all_host_signals)( &saved_procmask );
 
+   /* Look for signals to deliver ... */
    for (sigNo = 1; sigNo < VKI_KNSIG; sigNo++) {
       if (VG_(sigpending)[sigNo] == VG_SIGIDLE ||
           VG_(sigpending)[sigNo] == VG_SIGRUNNING) continue;
@@ -310,92 +338,17 @@ void VG_(deliver_signals) ( void )
          %EIP so that when execution continues, we will enter the
          signal handler with the frame on top of the client's stack,
          as it expects. */
-      vg_push_signal_frame ( sigNo );
-
+      vg_push_signal_frame ( tid, sigNo );
+      VG_(get_thread_state)(tid)->status = VgTs_Runnable;
+      
       /* Signify that the signal has been delivered. */
       VG_(sigpending)[sigNo] = VG_SIGRUNNING;
    }
 
    /* Unlock and return. */
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &saved_procmask, NULL);
-   vg_assert(ret == 0);
+   VG_(restore_host_signals)( &saved_procmask );
    return;
 }
-
-
-/* ----------- HACK ALERT ----------- */
-/* Note carefully that this runs with all host signals disabled! */
-static
-void vg_deliver_signal_immediately ( Int sigNo )
-{
-   Int   n_bbs_done;
-   Int   sigNo2;
-   Addr  next_orig_addr;
-   Addr  next_trans_addr;
-
-   if (VG_(clo_verbosity) > 0
-       && (True || VG_(clo_trace_signals)))
-      VG_(message)(Vg_DebugExtraMsg,
-         "deliver signal %d immediately: BEGIN", sigNo );
-   /* VG_(printf)("resumption addr is %p\n", 
-      VG_(baseBlock)[VGOFF_(m_eip)]); */
-
-   vg_push_signal_frame ( sigNo );
-   n_bbs_done = 0;
-
-   /* Single-step the client (ie, run the handler) until it jumps to
-      VG_(signalreturn_bogusRA) */
-
-   while (True) {
-
-      if (n_bbs_done >= VG_MAX_BBS_IN_IMMEDIATE_SIGNAL)
-         VG_(unimplemented)(
-            "handling signal whilst client blocked in syscall: "
-            "handler runs too long"
-         );
-
-      next_orig_addr = VG_(baseBlock)[VGOFF_(m_eip)];
-
-      if (next_orig_addr == (Addr)(&VG_(trap_here)))
-         VG_(unimplemented)(
-            "handling signal whilst client blocked in syscall: "
-            "handler calls malloc (et al)"
-         );
-
-      /* VG_(printf)("next orig addr = %p\n", next_orig_addr); */
-      if (next_orig_addr == (Addr)(&VG_(signalreturn_bogusRA)))
-         break;
-
-      next_trans_addr = VG_(search_transtab) ( next_orig_addr );
-      if (next_trans_addr == (Addr)NULL) {
-         VG_(create_translation_for) ( next_orig_addr );
-         next_trans_addr = VG_(search_transtab) ( next_orig_addr );
-      }
-
-      vg_assert(next_trans_addr != (Addr)NULL);
-      next_orig_addr = VG_(run_singleton_translation)(next_trans_addr);
-      VG_(baseBlock)[VGOFF_(m_eip)] = next_orig_addr;
-      n_bbs_done++;
-   }
-
-   sigNo2 = vg_pop_signal_frame();
-   vg_assert(sigNo2 == sigNo);
-
-   if (VG_(clo_verbosity) > 0
-       && (True || VG_(clo_trace_signals)))
-     VG_(message)(Vg_DebugExtraMsg,
-         "deliver signal %d immediately: END, %d bbs done", 
-         sigNo, n_bbs_done );
-
-   /* Invalidate the tt_fast cache.  We've been (potentially) adding
-      translations and even possibly doing LRUs without keeping it up
-      to date, so we'd better nuke it before going any further, to
-      avoid inconsistencies with the main TT/TC structure. */
-   VG_(invalidate_tt_fast)();
-}
-
-
-/* ----------- end of HACK ALERT ----------- */
 
 
 /* Receive a signal from the host, and either discard it or park it in
@@ -405,8 +358,7 @@ void vg_deliver_signal_immediately ( Int sigNo )
 
 static void VG_(oursignalhandler) ( Int sigNo )
 {
-   Int           ret;
-   vki_ksigset_t block_procmask;
+   Int           dummy_local;
    vki_ksigset_t saved_procmask;
 
    if (VG_(clo_trace_signals)) {
@@ -418,20 +370,24 @@ static void VG_(oursignalhandler) ( Int sigNo )
    /* Sanity check.  Ensure we're really running on the signal stack
       we asked for. */
    if ( !(
-            ((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&ret))
+            ((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local))
             &&
-            ((Char*)(&ret) < (Char*)(&(VG_(sigstack)[10000])))
+            ((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])))
          )
         ) {
-     VG_(message)(Vg_DebugMsg, "FATAL: signal delivered on the wrong stack?!");
-     VG_(message)(Vg_DebugMsg, "A possible workaround follows.  Please tell me");
-     VG_(message)(Vg_DebugMsg, "(jseward@acm.org) if the suggested workaround doesn't help.");
+     VG_(message)(Vg_DebugMsg, 
+        "FATAL: signal delivered on the wrong stack?!");
+     VG_(message)(Vg_DebugMsg, 
+        "A possible workaround follows.  Please tell me");
+     VG_(message)(Vg_DebugMsg, 
+        "(jseward@acm.org) if the suggested workaround doesn't help.");
      VG_(unimplemented)
-        ("support for progs compiled with -p/-pg; rebuild your prog without -p/-pg");
+        ("support for progs compiled with -p/-pg; "
+         "rebuild your prog without -p/-pg");
    }
 
-   vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&ret));
-   vg_assert((Char*)(&ret) < (Char*)(&(VG_(sigstack)[10000])));
+   vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local));
+   vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])));
 
    if (sigNo == VKI_SIGABRT && VG_(sighandler)[sigNo] == NULL) {
       /* We get here if SIGABRT is delivered and the client hasn't
@@ -442,21 +398,19 @@ static void VG_(oursignalhandler) ( Int sigNo )
          VG_(end_msg)();
       }
       VG_(ksignal)(VKI_SIGABRT, VKI_SIG_DFL);
-      VG_(interrupt_reason) = VG_Y_EXIT;
       VG_(longjmpd_on_signal) = VKI_SIGABRT;
-      __builtin_longjmp(VG_(toploop_jmpbuf),1);
+      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
    }
 
-   /* Block all host signals. */
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &block_procmask, &saved_procmask);
-   vg_assert(ret == 0);
+   VG_(block_all_host_signals)( &saved_procmask );
 
    if (VG_(sighandler)[sigNo] == NULL) {
       if (VG_(clo_trace_signals)) {
          VG_(add_to_msg)("unexpected!");
          VG_(end_msg)();
       }
+      /* Note: we panic with all signals blocked here.  Don't think
+         that matters. */
       VG_(panic)("vg_oursignalhandler: unexpected signal");
    }
 
@@ -478,47 +432,26 @@ static void VG_(oursignalhandler) ( Int sigNo )
       }
    } 
    else {
-      /* Ok, we'd better deliver it to the client, one way or another. */
+      /* Ok, we'd better deliver it to the client. */
       vg_assert(VG_(sigpending)[sigNo] == VG_SIGIDLE);
-
-      if (VG_(syscall_depth) == 0) {
-         /* The usual case; delivering a signal to the client, and the
-            client is not currently in a syscall.  Queue it up for
-            delivery at some point in the future. */
-         VG_(sigpending)[sigNo] = VG_(sighandler)[sigNo];
-         if (VG_(clo_trace_signals)) {
-            VG_(add_to_msg)("queued" );
-            VG_(end_msg)();
-         }
-      } else {
-         /* The nasty case, which was causing kmail to freeze up: the
-            client is (presumably blocked) in a syscall.  We have to
-            deliver the signal right now, because it may be that
-            running the sighandler is the only way that the syscall
-            will be able to return.  In which case, if we don't do
-            that, the client will deadlock. */
-         if (VG_(clo_trace_signals)) {
-            VG_(add_to_msg)("delivering immediately" );
-            VG_(end_msg)();
-         }
-         /* Note that this runs with all host signals blocked. */
-         VG_(sigpending)[sigNo] = VG_(sighandler)[sigNo];
-         vg_deliver_signal_immediately(sigNo);
-         VG_(sigpending)[sigNo] = VG_SIGIDLE;
-         /* VG_(printf)("resuming at %p\n", VG_(baseBlock)[VGOFF_(m_eip)]); */
+      /* Queue it up for delivery at some point in the future. */
+      VG_(sigpending)[sigNo] = VG_(sighandler)[sigNo];
+      if (VG_(clo_trace_signals)) {
+         VG_(add_to_msg)("queued" );
+         VG_(end_msg)();
       }
    }
 
-   /* We've finished messing with the queue, so re-enable host signals. */
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &saved_procmask, NULL);
+   /* We've finished messing with the queue, so re-enable host
+      signals. */
+   VG_(restore_host_signals)( &saved_procmask );
 
-   vg_assert(ret == 0);
    if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
        || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL) {
-      /* Can't continue; must longjmp and thus enter the sighandler
-         immediately. */
+      /* Can't continue; must longjmp back to the scheduler and thus
+         enter the sighandler immediately. */
       VG_(longjmpd_on_signal) = sigNo;
-      __builtin_longjmp(VG_(toploop_jmpbuf),1);
+      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
    }
 }
 
@@ -559,17 +492,14 @@ void VG_(sigstartup_actions) ( void )
 {
    Int i, ret;
 
-   vki_ksigset_t  block_procmask;
    vki_ksigset_t  saved_procmask;
    vki_kstack_t   altstack_info;
    vki_ksigaction sa;
 
-   /*  VG_(printf)("SIGSTARTUP\n"); */
+   /* VG_(printf)("SIGSTARTUP\n"); */
    /* Block all signals.  
       saved_procmask remembers the previous mask. */
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &block_procmask, &saved_procmask);
-   vg_assert(ret == 0);
+   VG_(block_all_host_signals)( &saved_procmask );
 
    /* Register an alternative stack for our own signal handler to run
       on. */
@@ -615,8 +545,7 @@ void VG_(sigstartup_actions) ( void )
    VG_(ksignal)(VKI_SIGABRT, &VG_(oursignalhandler));
 
    /* Finally, restore the blocking mask. */
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &saved_procmask, NULL);
-   vg_assert(ret == 0);   
+   VG_(restore_host_signals)( &saved_procmask );
 }
 
 
@@ -635,14 +564,10 @@ void VG_(sigshutdown_actions) ( void )
 {
    Int i, ret;
 
-   vki_ksigset_t  block_procmask;
    vki_ksigset_t  saved_procmask;
    vki_ksigaction sa;
 
-   /* Block all signals. */
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &block_procmask, &saved_procmask);
-   vg_assert(ret == 0);
+   VG_(block_all_host_signals)( &saved_procmask );
 
    /* copy the sim signal actions to the real ones. */
    for (i = 1; i < VKI_KNSIG; i++) {
@@ -654,9 +579,7 @@ void VG_(sigshutdown_actions) ( void )
       ret = VG_(ksigaction)(i, &sa, NULL);      
    }
 
-   /* Finally, copy the simulated process mask to the real one. */
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, &saved_procmask, NULL);
-   vg_assert(ret == 0);
+   VG_(restore_host_signals)( &saved_procmask );
 }
 
 
@@ -665,18 +588,16 @@ void VG_(sigshutdown_actions) ( void )
    ------------------------------------------------------------------ */
 
 /* Do more error checking? */
-void VG_(do__NR_sigaction) ( void )
+void VG_(do__NR_sigaction) ( ThreadId tid )
 {
    UInt res;
    void* our_old_handler;
    vki_ksigaction* new_action;
    vki_ksigaction* old_action;
-   UInt param1
-      = VG_(baseBlock)[VGOFF_(m_ebx)]; /* int sigNo */
-   UInt param2 
-      = VG_(baseBlock)[VGOFF_(m_ecx)]; /* k_sigaction* new_action */
-   UInt param3 
-      = VG_(baseBlock)[VGOFF_(m_edx)]; /* k_sigaction* old_action */
+   ThreadState* tst = VG_(get_thread_state)( tid );
+   UInt param1 = tst->m_ebx; /* int sigNo */
+   UInt param2 = tst->m_ecx; /* k_sigaction* new_action */
+   UInt param3 = tst->m_edx; /* k_sigaction* old_action */
    new_action  = (vki_ksigaction*)param2;
    old_action  = (vki_ksigaction*)param3;
 
@@ -722,7 +643,7 @@ void VG_(do__NR_sigaction) ( void )
       }
    }
 
-   KERNEL_DO_SYSCALL(res);
+   KERNEL_DO_SYSCALL(tid,res);
    /* VG_(printf)("RES = %d\n", res); */
 
    /* If the client asks for the old handler, maintain our fiction
@@ -750,7 +671,7 @@ void VG_(do__NR_sigaction) ( void )
    goto good;
 
   good:
-   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)0;
+   tst->m_eax = (UInt)0;
    return;
 
   bad_signo:

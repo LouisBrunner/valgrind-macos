@@ -10,7 +10,7 @@ void the_sighandler ( int signo )
 {
    int nw;
    //   assert(signo == SIGUSR1);
-   //   printf("sighandler running; should unblock now\n");
+   printf("sighandler running; should unblock now\n");
    nw = write(fds[1], "zzz", 1);
    //  assert(nw == 1);
 }

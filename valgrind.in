@@ -164,8 +164,10 @@ fi
 
 VG_ARGS="$VALGRIND_OPTS $vgsupp $vgopts"
 export VG_ARGS
-LD_PRELOAD=$VALGRIND/valgrind.so:$LD_PRELOAD
+LD_LIBRARY_PATH=$VALGRIND:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+LD_PRELOAD=valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
+#LD_DEBUG=files
+#export LD_DEBUG
 exec $argopts
-
-

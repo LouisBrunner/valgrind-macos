@@ -33,6 +33,8 @@
 #include "vg_include.h"
 #include "vg_constants.h"
 
+#include "valgrind.h"  /* for VG_USERREQ__* */
+
 
 /*------------------------------------------------------------*/
 /*--- General client block management.                     ---*/
@@ -287,73 +289,81 @@ void VG_(delete_client_stack_blocks_following_ESP_change) ( void )
 }
 
 
-UInt VG_(handle_client_request) ( UInt code, Addr aa, UInt nn )
+UInt VG_(handle_client_request) ( UInt* arg_block )
 {
-   Int  i;
-   Bool ok;
-   Addr bad_addr;
+   Int   i;
+   Bool  ok;
+   Addr  bad_addr;
+   UInt* arg = arg_block;
 
    if (VG_(clo_verbosity) > 2)
       VG_(printf)("client request: code %d,  addr %p,  len %d\n", 
-                  code, aa, nn );
+                  arg[0], arg[1], arg[2] );
 
    vg_assert(VG_(clo_client_perms));
    vg_assert(VG_(clo_instrument));
 
-   switch (code) {
-      case 1001: /* make no access */
+   switch (arg[0]) {
+      case VG_USERREQ__MAKE_NOACCESS: /* make no access */
          i = vg_alloc_client_block();
          /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
          vg_cgbs[i].kind  = CG_NoAccess;
-         vg_cgbs[i].start = aa;
-         vg_cgbs[i].size  = nn;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( False );
-         VGM_(make_noaccess) ( aa, nn );
+         VGM_(make_noaccess) ( arg[1], arg[2] );
          return i;
-      case 1002: /* make writable */
+      case VG_USERREQ__MAKE_WRITABLE: /* make writable */
          i = vg_alloc_client_block();
          vg_cgbs[i].kind  = CG_Writable;
-         vg_cgbs[i].start = aa;
-         vg_cgbs[i].size  = nn;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( False );
-         VGM_(make_writable) ( aa, nn );
+         VGM_(make_writable) ( arg[1], arg[2] );
          return i;
-      case 1003: /* make readable */
+      case VG_USERREQ__MAKE_READABLE: /* make readable */
          i = vg_alloc_client_block();
          vg_cgbs[i].kind  = CG_Readable;
-         vg_cgbs[i].start = aa;
-         vg_cgbs[i].size  = nn;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( False );
-         VGM_(make_readable) ( aa, nn );
+         VGM_(make_readable) ( arg[1], arg[2] );
          return i;
 
-      case 2002: /* check writable */
-         ok = VGM_(check_writable) ( aa, nn, &bad_addr );
+      case VG_USERREQ__CHECK_WRITABLE: /* check writable */
+         ok = VGM_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             VG_(record_user_err) ( bad_addr, True );
          return ok ? (UInt)NULL : bad_addr;
-      case 2003: /* check readable */
-         ok = VGM_(check_readable) ( aa, nn, &bad_addr );
+      case VG_USERREQ__CHECK_READABLE: /* check readable */
+         ok = VGM_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             VG_(record_user_err) ( bad_addr, False );
          return ok ? (UInt)NULL : bad_addr;
 
-      case 2004: /* discard */
+      case VG_USERREQ__DISCARD: /* discard */
          if (vg_cgbs == NULL 
-             || nn >= vg_cgb_used || vg_cgbs[nn].kind == CG_NotInUse)
+             || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
             return 1;
-         vg_assert(nn >= 0 && nn < vg_cgb_used);
-         vg_cgbs[nn].kind = CG_NotInUse;
+         vg_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
+         vg_cgbs[arg[2]].kind = CG_NotInUse;
          vg_cgb_discards++;
          return 0;
 
-      case 3001: /* make noaccess stack block */
-         vg_add_client_stack_block ( aa, nn );
+      case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
+         vg_add_client_stack_block ( arg[1], arg[2] );
          return 0;
+
+      case VG_USERREQ__RUNNING_ON_VALGRIND:
+         return 1;
+
+      case VG_USERREQ__DO_LEAK_CHECK:
+         VG_(detect_memory_leaks)();
+         return 0; /* return value is meaningless */
 
       default:
          VG_(message)(Vg_UserMsg, 
-                      "Warning: unknown client request code %d", code);
+                      "Warning: unknown client request code %d", arg[0]);
          return 1;
    }
 }

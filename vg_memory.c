@@ -2122,16 +2122,20 @@ Bool VG_(first_and_last_secondaries_look_plausible) ( void )
 /* A fast sanity check -- suitable for calling circa once per
    millisecond. */
 
-void VG_(do_sanity_checks) ( Bool force_expensive )
+void VG_(do_sanity_checks) ( ThreadId tid, Bool force_expensive )
 {
-   Int    i;
-   Bool   do_expensive_checks;
+   Int          i;
+   Bool         do_expensive_checks;
+   ThreadState* tst;
 
    if (VG_(sanity_level) < 1) return;
 
    /* --- First do all the tests that we can do quickly. ---*/
 
    VG_(sanity_fast_count)++;
+
+   tst = VG_(get_thread_state)(tid);
+   vg_assert(tst != NULL && tst->status != VgTs_Empty);
 
    /* Check that we haven't overrun our private stack. */
    for (i = 0; i < 10; i++) {
@@ -2146,19 +2150,13 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
    if (VG_(clo_instrument)) {
 
       /* Check that the eflags tag is as expected. */
-      UInt vv = VG_(baseBlock)[VGOFF_(sh_eflags)];
+      UInt vv = tst->sh_eflags;
       vg_assert(vv == VGM_EFLAGS_VALID || VGM_EFLAGS_INVALID);
 
       /* Check that nobody has spuriously claimed that the first or
          last 16 pages of memory have become accessible [...] */
       vg_assert(VG_(first_and_last_secondaries_look_plausible));
    }
-
-#  if 0
-   if ( (VG_(baseBlock)[VGOFF_(sh_eflags)] & 1) == 1)
-     VG_(printf)("UNDEF\n") ; else 
-       VG_(printf)("def\n") ;
-#  endif
 
    /* --- Now some more expensive checks. ---*/
 
@@ -2232,6 +2230,9 @@ static void uint_to_bits ( UInt x, Char* str )
    str[w++] = 0;
    vg_assert(w == 36);
 }
+
+/* Caution!  Not vthread-safe; looks in VG_(baseBlock), not the thread
+   state table. */
 
 void VG_(show_reg_tags) ( void )
 {

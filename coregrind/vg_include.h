@@ -117,6 +117,27 @@
    prime. */
 #define VG_N_EC_LISTS /*997*/ 4999
 
+/* Defines the thread-scheduling timeslice, in terms of the number of
+   basic blocks we attempt to run each thread for.  Smaller values
+   give finer interleaving but much increased scheduling overheads. */
+#define VG_SCHEDULING_QUANTUM   10000
+
+/* The maximum number of pthreads that we support.  This is
+   deliberately not very high since our implementation of some of the
+   scheduler algorithms is surely O(N^2) in the number of threads,
+   since that's simple, at least.  And (in practice) we hope that most
+   programs do not need many threads. */
+#define VG_N_THREADS 20
+
+/* Number of file descriptors that can simultaneously be waited on for
+   I/O to complete.  Perhaps this should be the same as VG_N_THREADS
+   (surely a thread can't wait on more than one fd at once?.  Who
+   knows.) */
+#define VG_N_WAITING_FDS 10
+
+/* Maximum number of mutexes allowed. */
+#define VG_N_MUTEXES 10
+
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -353,30 +374,219 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 
 /* ---------------------------------------------------------------------
+   Exports of vg_clientfuns.c
+   ------------------------------------------------------------------ */
+
+/* This doesn't export code or data that valgrind.so needs to link
+   against.  However, the scheduler does need to know the following
+   request codes.  A few, publically-visible, request codes are also
+   defined in valgrind.h. */
+
+#define VG_USERREQ__MALLOC              0x2001
+#define VG_USERREQ__BUILTIN_NEW         0x2002
+#define VG_USERREQ__BUILTIN_VEC_NEW     0x2003
+
+#define VG_USERREQ__FREE                0x2004
+#define VG_USERREQ__BUILTIN_DELETE      0x2005
+#define VG_USERREQ__BUILTIN_VEC_DELETE  0x2006
+
+#define VG_USERREQ__CALLOC              0x2007
+#define VG_USERREQ__REALLOC             0x2008
+#define VG_USERREQ__MEMALIGN            0x2009
+
+
+#define VG_USERREQ__PTHREAD_CREATE          0x3001
+#define VG_USERREQ__PTHREAD_CREATE_BOGUSRA  0x3002
+#define VG_USERREQ__PTHREAD_JOIN            0x3003
+#define VG_USERREQ__PTHREAD_GET_THREADID    0x3004
+#define VG_USERREQ__PTHREAD_MUTEX_INIT      0x3005
+#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3006
+#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3007
+#define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3008
+#define VG_USERREQ__PTHREAD_CANCEL          0x3009
+
+/* ---------------------------------------------------------------------
+   Constants pertaining to the simulated CPU state, VG_(baseBlock),
+   which need to go here to avoid ugly circularities.
+   ------------------------------------------------------------------ */
+
+/* How big is the saved FPU state? */
+#define VG_SIZE_OF_FPUSTATE 108
+/* ... and in words ... */
+#define VG_SIZE_OF_FPUSTATE_W ((VG_SIZE_OF_FPUSTATE+3)/4)
+
+
+/* ---------------------------------------------------------------------
+   Exports of vg_scheduler.c
+   ------------------------------------------------------------------ */
+
+/* ThreadIds are simply indices into the vg_threads[] array. */
+typedef 
+   UInt 
+   ThreadId;
+
+/* MutexIds are simply indices into the vg_mutexes[] array. */
+typedef
+   UInt
+   MutexId;
+
+
+#define VG_INVALID_THREADID ((ThreadId)(-1))
+
+typedef
+   enum { 
+      VgTs_Empty,      /* this slot is not in use */
+      VgTs_Runnable,   /* waiting to be scheduled */
+      VgTs_WaitJoiner, /* waiting for someone to do join on me */
+      VgTs_WaitJoinee, /* waiting for the thread I did join on */
+      VgTs_WaitFD,     /* waiting for I/O completion on a fd */
+      VgTs_WaitMX,     /* waiting on a mutex */
+      VgTs_Sleeping    /* sleeping for a while */
+   }
+   ThreadStatus;
+ 
+typedef
+   struct {
+      /* The thread identity is simply the index in vg_threads[].
+         ThreadId == 0 is the root thread and has the special property
+         that we don't try and allocate or deallocate its stack.  */
+
+      /* Current scheduling status. */
+      ThreadStatus status;
+
+      /* Identity of joiner (thread who called join on me), or
+         VG_INVALID_THREADID if no one asked to join yet. */
+      ThreadId joiner;
+
+      /* Identity of mutex we are waiting on, if .status == WaitMX. */
+      MutexId waited_on_mid;
+
+      /* If VgTs_Sleeping, this is when we should wake up. */
+      ULong awaken_at;
+
+      /* return value */
+      void* retval;
+
+      /* Stacks.  When a thread slot is freed, we don't deallocate its
+         stack; we just leave it lying around for the next use of the
+         slot.  If the next use of the slot requires a larger stack,
+         only then is the old one deallocated and a new one
+         allocated. 
+ 
+         For the main thread (threadid == 0), this mechanism doesn't
+         apply.  We don't know the size of the stack since we didn't
+         allocate it, and furthermore we never reallocate it. */
+
+      /* The allocated size of this thread's stack (permanently zero
+         if this is ThreadId == 0, since we didn't allocate its stack) */
+      UInt stack_size;
+
+      /* Address of the lowest word in this thread's stack.  NULL means
+         not allocated yet.
+      */
+      Addr stack_base;
+
+      /* Saved machine context. */
+      UInt m_eax;
+      UInt m_ebx;
+      UInt m_ecx;
+      UInt m_edx;
+      UInt m_esi;
+      UInt m_edi;
+      UInt m_ebp;
+      UInt m_esp;
+      UInt m_eflags;
+      UInt m_eip;
+      UInt m_fpu[VG_SIZE_OF_FPUSTATE_W];
+
+      UInt sh_eax;
+      UInt sh_ebx;
+      UInt sh_ecx;
+      UInt sh_edx;
+      UInt sh_esi;
+      UInt sh_edi;
+      UInt sh_ebp;
+      UInt sh_esp;
+      UInt sh_eflags;
+   }
+   ThreadState;
+
+
+/* Copy the specified thread's state into VG_(baseBlock) in
+   preparation for running it. */
+extern void VG_(load_thread_state)( ThreadId );
+
+/* Save the specified thread's state back in VG_(baseBlock), and fill
+   VG_(baseBlock) with junk, for sanity-check reasons. */
+extern void VG_(save_thread_state)( ThreadId );
+
+/* Get the thread state block for the specified thread. */
+extern ThreadState* VG_(get_thread_state)( ThreadId );
+
+
+/* Create, and add to TT/TC, the translation of a client basic
+   block. */
+extern void VG_(create_translation_for) ( Addr orig_addr );
+
+/* Return codes from the scheduler. */
+typedef
+   enum { VgSrc_Deadlock, VgSrc_Shutdown, VgSrc_BbsDone }
+   VgSchedReturnCode;
+
+/* The scheduler. */
+extern VgSchedReturnCode VG_(scheduler) ( void );
+
+extern void VG_(scheduler_init) ( void );
+
+
+/* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
+extern jmp_buf VG_(scheduler_jmpbuf);
+/* ... and if so, here's the signal which caused it to do so. */
+extern Int     VG_(longjmpd_on_signal);
+
+
+/* We check that the initial stack, which we can't move, is allocated
+   here.  VG_(scheduler_init) checks this.  
+*/
+#define VG_STARTUP_STACK_MASK  (Addr)0xBFFF8000
+
+
+/* The red-zone size which we put at the bottom (highest address) of
+   thread stacks, for paranoia reasons.  This can be arbitrary, and
+   doesn't really need to be set at compile time. */
+#define VG_AR_CLIENT_STACKBASE_REDZONE_SZW 4
+
+#define VG_AR_CLIENT_STACKBASE_REDZONE_SZB \
+   (VG_AR_CLIENT_STACKBASE_REDZONE_SZW * VKI_BYTES_PER_WORD)
+
+
+
+/* ---------------------------------------------------------------------
    Exports of vg_signals.c
    ------------------------------------------------------------------ */
 
-/* The maximum number of basic blocks that we're prepared to run in a
-   signal handler which is called when the client is stuck in a
-   blocking system call.  The purpose of this is to check that such a
-   signal handler doesn't merely do a longjmp() and keep going
-   forever; it should return instead.  NOTE that this doesn't apply to
-   signals delivered under normal conditions, only when they are
-   delivered and the client is already blocked in a system call. */
-#define VG_MAX_BBS_IN_IMMEDIATE_SIGNAL 50000
-
 extern void VG_(sigstartup_actions) ( void );
 
-extern void VG_(deliver_signals) ( void );
+extern void VG_(deliver_signals) ( ThreadId );
 extern void VG_(unblock_host_signal) ( Int sigNo );
 
 
 /* Fake system calls for signal handling. */
-extern void VG_(do__NR_sigaction)     ( void );
+extern void VG_(do__NR_sigaction)     ( ThreadId tid );
 extern void VG_(do__NR_sigprocmask)   ( Int how, vki_ksigset_t* set );
 
+/* Bogus return address for signal handlers.  Is never executed. */
+extern void VG_(signalreturn_bogusRA) ( void );
 
+/* Modify the current thread's state once we have detected it is
+   returning from a signal handler. */
+extern void VG_(signal_returns) ( ThreadId );
 
+/* Handy utilities to block/restore all host signals. */
+extern void VG_(block_all_host_signals) 
+                  ( /* OUT */ vki_ksigset_t* saved_mask );
+extern void VG_(restore_host_signals) 
+                  ( /* IN */ vki_ksigset_t* saved_mask );
 
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
@@ -420,6 +630,7 @@ extern Char* VG_(strdup) ( ArenaId aid, const Char* s);
 
 extern Char* VG_(getenv) ( Char* name );
 extern Int   VG_(getpid) ( void );
+extern ULong VG_(read_microsecond_timer)( void );
 
 
 extern Char VG_(toupper) ( Char c );
@@ -444,19 +655,28 @@ extern void VG_(assert_fail) ( Char* expr, Char* file,
                                Int line, Char* fn )
             __attribute__ ((__noreturn__));
 
-/* Later ... extern void vg_restore_SIGABRT ( void ); */
-
 /* Reading files. */
 extern Int  VG_(open_read) ( Char* pathname );
 extern void VG_(close)     ( Int fd );
 extern Int  VG_(read)      ( Int fd, void* buf, Int count);
 extern Int  VG_(write)     ( Int fd, void* buf, Int count);
 
+extern Int  VG_(fcntl) ( Int fd, Int cmd, Int arg );
+
+extern Int VG_(select)( Int n, 
+                        vki_fd_set* readfds, 
+                        vki_fd_set* writefds, 
+                        vki_fd_set* exceptfds, 
+                        struct vki_timeval * timeout );
+extern Int VG_(nanosleep)( const struct vki_timespec *req, 
+                           struct vki_timespec *rem );
+
+
 /* mmap-ery ... */
 extern void* VG_(mmap)( void* start, UInt length, 
                         UInt prot, UInt flags, UInt fd, UInt offset );
 
-extern Int VG_(munmap)( void* start, Int length );
+extern Int  VG_(munmap)( void* start, Int length );
 
 
 /* Print a (panic) message, and abort. */
@@ -594,6 +814,18 @@ typedef
    Condcode;
 
 
+/* Descriptions of additional properties of *unconditional* jumps. */
+typedef
+   enum {
+     JmpBoring=0,   /* boring unconditional jump */
+     JmpCall=1,     /* jump due to an x86 call insn */
+     JmpRet=2,      /* jump due to an x86 ret insn */
+     JmpSyscall=3,  /* do a system call, then jump */
+     JmpClientReq=4 /* do a client request, then jump */
+   }
+   JmpKind;
+
+
 /* Flags.  User-level code can only read/write O(verflow), S(ign),
    Z(ero), A(ux-carry), C(arry), P(arity), and may also write
    D(irection).  That's a total of 7 flags.  A FlagSet is a bitset,
@@ -662,8 +894,7 @@ typedef
       UChar   cond;            /* condition, for jumps */
       Bool    smc_check:1;     /* do a smc test, if writes memory. */
       Bool    signed_widen:1;  /* signed or unsigned WIDEN ? */
-      Bool    ret_dispatch:1;  /* Is this jump as a result of RET ? */
-      Bool    call_dispatch:1; /* Is this jump as a result of CALL ? */
+      JmpKind jmpkind:3;       /* additional properties of unconditional JMP */
    }
    UInstr;
 
@@ -845,7 +1076,7 @@ typedef
 
 extern Bool VG_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
 
-extern UInt VG_(handle_client_request) ( UInt code, Addr aa, UInt nn );
+extern UInt VG_(handle_client_request) ( UInt* arg_block );
 
 extern void VG_(delete_client_stack_blocks_following_ESP_change) ( void );
 
@@ -886,13 +1117,10 @@ extern void VG_(symtab_notify_munmap) ( Addr start, UInt length );
    Exports of vg_clientmalloc.c
    ------------------------------------------------------------------ */
 
-/* these numbers are not arbitary. if you change them,
-   adjust vg_dispatch.S as well */
-
 typedef
    enum { 
       Vg_AllocMalloc = 0,
-      Vg_AllocNew = 1,
+      Vg_AllocNew    = 1,
       Vg_AllocNewVec = 2 
    }
    VgAllocKind;
@@ -912,19 +1140,18 @@ extern void          VG_(clientmalloc_done) ( void );
 extern void          VG_(describe_addr) ( Addr a, AddrInfo* ai );
 extern ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows );
 
-/* This should never be called; if it is, something's seriously
-   wrong. */
-extern UInt VG_(trap_here) ( UInt arg1, UInt arg2, UInt what_to_do );
+/* These are called from the scheduler, when it intercepts a user
+   request. */
+extern void* VG_(client_malloc)   ( UInt size, VgAllocKind kind );
+extern void* VG_(client_memalign) ( UInt align, UInt size );
+extern void  VG_(client_free)     ( void* ptrV, VgAllocKind  kind );
+extern void* VG_(client_calloc)   ( UInt nmemb, UInt size1 );
+extern void* VG_(client_realloc)  ( void* ptrV, UInt size_new );
 
 
 /* ---------------------------------------------------------------------
    Exports of vg_main.c
    ------------------------------------------------------------------ */
-
-/* How big is the saved FPU state? */
-#define VG_SIZE_OF_FPUSTATE 108
-/* ... and in words ... */
-#define VG_SIZE_OF_FPUSTATE_W ((VG_SIZE_OF_FPUSTATE+3)/4)
 
 /* A structure used as an intermediary when passing the simulated
    CPU's state to some assembly fragments, particularly system calls.
@@ -941,10 +1168,6 @@ extern UInt VG_(m_state_static) [8 /* int regs, in Intel order */
 extern void VG_(copy_baseBlock_to_m_state_static) ( void );
 extern void VG_(copy_m_state_static_to_baseBlock) ( void );
 
-/* Create, and add to TT/TC, the translation of a client basic
-   block. */
-extern void VG_(create_translation_for) ( Addr orig_addr );
-
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg );
@@ -959,12 +1182,6 @@ extern UInt VG_(stack)[10000];
    signal handler.  If this happens it will be done by
    vg_deliver_signal_immediately(). */
 extern UInt VG_(sigstack)[10000];
-
-
-/* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
-extern jmp_buf VG_(toploop_jmpbuf);
-/* ... and if so, here's the signal which caused it to do so. */
-extern Int     VG_(longjmpd_on_signal);
 
 /* Holds client's %esp at the point we gained control.  From this the
    client's argc, argv and envp are deduced. */
@@ -993,13 +1210,6 @@ extern ULong VG_(bbs_to_go);
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
-
-/* If vg_dispatch_ctr is set to 1 to force a stop, its
-   previous value is saved here. */
-extern UInt VG_(dispatch_ctr_SAVED);
-
-/* This is why vg_run_innerloop() exited. */
-extern UInt VG_(interrupt_reason);
 
 /* Is the client running on the simulated CPU or the real one? */
 extern Bool VG_(running_on_simd_CPU); /* Initially False */
@@ -1068,6 +1278,10 @@ extern UInt VG_(smc_fancy_passed);
 extern UInt VG_(sanity_fast_count);
 extern UInt VG_(sanity_slow_count);
 
+/* Counts pertaining to the scheduler. */
+extern UInt VG_(num_scheduling_events_MINOR);
+extern UInt VG_(num_scheduling_events_MAJOR);
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
@@ -1095,7 +1309,7 @@ extern Bool VGM_(check_readable_asciiz) ( Addr a, Addr* bad_addr );
 
 /* Sanity checks which may be done at any time.  Doing them at
    signal-delivery time turns out to be convenient. */
-extern void VG_(do_sanity_checks) ( Bool force_expensive );
+extern void VG_(do_sanity_checks) ( ThreadId tid, Bool force_expensive );
 /* Very cheap ... */
 extern Bool VG_(first_and_last_secondaries_look_plausible) ( void );
 
@@ -1134,22 +1348,21 @@ extern Bool VG_(is_plausible_stack_addr) ( Addr );
    Exports of vg_syscall_mem.c
    ------------------------------------------------------------------ */
 
-/* Counts the depth of nested syscalls.  Is used in
-   VG_(deliver_signals) do discover whether or not the client is in a
-   syscall (presumably _blocked_ in a syscall) when a signal is
-   delivered.  If so, the signal delivery mechanism needs to behave
-   differently from normal. */
-extern Int VG_(syscall_depth);
+extern void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid );
 
-extern void VG_(wrap_syscall) ( void );
+extern void VG_(check_known_blocking_syscall) ( ThreadId tid, 
+                                                Int syscallno,
+                                                Int* /*IN*/ res );
 
 extern Bool VG_(is_kerror) ( Int res );
 
-#define KERNEL_DO_SYSCALL(result_lvalue)                 \
+#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)      \
+         VG_(load_thread_state)(thread_id);              \
          VG_(copy_baseBlock_to_m_state_static)();        \
          VG_(do_syscall)();                              \
          VG_(copy_m_state_static_to_baseBlock)();        \
-         result_lvalue = VG_(baseBlock)[VGOFF_(m_eax)];
+         VG_(save_thread_state)(thread_id);              \
+         result_lvalue = VG_(get_thread_state)(thread_id)->m_eax;
 
 
 /* ---------------------------------------------------------------------
@@ -1242,19 +1455,14 @@ extern void VG_(swizzle_esp_then_start_GDB) ( void );
    Exports of vg_dispatch.S
    ------------------------------------------------------------------ */
 
-extern void VG_(dispatch);
-extern void VG_(run_innerloop) ( void );
-
-/* Returns the next orig_addr to run. */
-extern Addr VG_(run_singleton_translation) ( Addr trans_addr );
+/* Run a thread for a (very short) while, until some event happens
+   which means we need to defer to the scheduler. */
+extern UInt VG_(run_innerloop) ( void );
 
 
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */
-
-/* For doing exits ... */
-extern void VG_(helper_request_normal_exit);
 
 /* SMC fast checks. */
 extern void VG_(helper_smc_check4);
@@ -1303,9 +1511,6 @@ extern void VG_(helper_value_check4_fail);
 extern void VG_(helper_value_check2_fail);
 extern void VG_(helper_value_check1_fail);
 extern void VG_(helper_value_check0_fail);
-
-extern void VG_(helper_do_syscall);
-extern void VG_(helper_do_client_request);
 
 
 /* ---------------------------------------------------------------------
@@ -1434,9 +1639,6 @@ extern Int VGOFF_(helper_value_check2_fail);
 extern Int VGOFF_(helper_value_check1_fail);
 extern Int VGOFF_(helper_value_check0_fail);
 
-extern Int VGOFF_(helper_do_syscall);
-extern Int VGOFF_(helper_do_client_request);
-
 extern Int VGOFF_(helperc_STOREV4); /* :: UInt -> Addr -> void */
 extern Int VGOFF_(helperc_STOREV2); /* :: UInt -> Addr -> void */
 extern Int VGOFF_(helperc_STOREV1); /* :: UInt -> Addr -> void */
@@ -1448,8 +1650,6 @@ extern Int VGOFF_(helperc_LOADV1); /* :: Addr -> UInt -> void */
 extern Int VGOFF_(handle_esp_assignment); /* :: Addr -> void */
 extern Int VGOFF_(fpu_write_check);       /* :: Addr -> Int -> void */
 extern Int VGOFF_(fpu_read_check);        /* :: Addr -> Int -> void */
-
-extern Int VGOFF_(helper_request_normal_exit);
 
 
 

@@ -48,45 +48,6 @@
 */
 
 
-/*
-   On entry:
-	%ECX value
-	%EBX value
-	%EAX value -- also the result
-	RA   <- %esp  -- after pushal+pushfl is 36(%esp)
-*/
-.global VG_(helper_do_client_request)
-VG_(helper_do_client_request):
-	pushal
-	pushfl
-	
-	movl	48(%esp), %eax
-	pushl	%eax
-	movl	48(%esp), %eax
-	pushl	%eax
-	movl	48(%esp), %eax
-	pushl	%eax
-
-	call	VG_(handle_client_request)
-	movl	%eax, 52(%esp)
-
-	addl	$12, %esp
-	
-	popfl
-	popal
-	ret
-
-
-.global VG_(helper_do_syscall)
-VG_(helper_do_syscall):
-	pushal
-	call	VG_(wrap_syscall)
-	popal
-#	movl	$VG_(baseBlock), %ebp
-	ret
-
-
-	
 .global VG_(helper_value_check0_fail)
 VG_(helper_value_check0_fail):
 	pushal
@@ -113,21 +74,6 @@ VG_(helper_value_check4_fail):
 	pushal
 	call	VG_(helperc_value_check4_fail)
 	popal
-	ret
-
-
-/* Set things up so the dispatch loop exits normally.  Used when it is
-   detected that the program wants to finish, ie it has called
-   vg_shutdown. 
-*/
-.global VG_(helper_request_normal_exit)
-VG_(helper_request_normal_exit):
-	pushl	%eax
-	movl	VG_(dispatch_ctr), %eax
-	movl	%eax, VG_(dispatch_ctr_SAVED)
-	movl	$1, VG_(dispatch_ctr)
-	movl	$VG_Y_EXIT, VG_(interrupt_reason)
-	popl	%eax
 	ret
 
 

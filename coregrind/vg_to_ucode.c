@@ -1607,7 +1607,7 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
             SMC_IF_ALL(cb);
             uInstr1(cb, JMP,   0, TempReg, t1);
             uCond(cb, CondAlways);
-            LAST_UINSTR(cb).call_dispatch = True;
+            LAST_UINSTR(cb).jmpkind = JmpCall;
             *isEnd = True;
             break;
          case 4: /* jmp Ev */
@@ -1654,7 +1654,7 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
             SMC_IF_ALL(cb);
             uInstr1(cb, JMP,   0, TempReg, t1);
             uCond(cb, CondAlways);
-            LAST_UINSTR(cb).call_dispatch = True;
+            LAST_UINSTR(cb).jmpkind = JmpCall;
             *isEnd = True;
             break;
          case 4: /* JMP Ev */
@@ -2859,32 +2859,6 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
 }
 
 
-/* Push %ECX, %EBX and %EAX, call helper_do_client_request, and put
-   the resulting %EAX value back. */
-static 
-void dis_ClientRequest ( UCodeBlock* cb )
-{
-   Int tmpc = newTemp(cb);
-   Int tmpb = newTemp(cb);
-   Int tmpa = newTemp(cb);
-   uInstr2(cb, GET,  4, ArchReg, R_ECX, TempReg, tmpc);
-   uInstr2(cb, GET,  4, ArchReg, R_EBX, TempReg, tmpb);
-   uInstr2(cb, GET,  4, ArchReg, R_EAX, TempReg, tmpa);
-   uInstr0(cb, CALLM_S, 0);
-   uInstr1(cb, PUSH, 4, TempReg, tmpc);
-   uInstr1(cb, PUSH, 4, TempReg, tmpb);
-   uInstr1(cb, PUSH, 4, TempReg, tmpa);
-   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_do_client_request));
-   uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-   uInstr1(cb, POP, 4, TempReg, tmpa);
-   uInstr1(cb, CLEAR, 0, Lit16, 8);
-   uInstr0(cb, CALLM_E, 0);
-   uInstr2(cb, PUT, 4, TempReg, tmpa, ArchReg, R_EAX);
-   if (dis) 
-      VG_(printf)("%%eax = client_request ( %%eax, %%ebx, %%ecx )\n");
-}
-
-
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
 /*------------------------------------------------------------*/
@@ -2909,21 +2883,31 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (dis) VG_(printf)("\t0x%x:  ", eip);
 
    /* Spot the client-request magic sequence, if required. */
-   if (VG_(clo_client_perms)) {
+   if (1 /*VG_(clo_client_perms)*/) {
       UChar* myeip = (UChar*)eip;
       /* Spot this:
          C1C01D                roll $29, %eax
          C1C003                roll $3,  %eax
-         C1C01B                roll $27, %eax
-         C1C005                roll $5,  %eax
+         C1C81B                rorl $27, %eax
+         C1C805                rorl $5,  %eax
+         C1C00D                roll $13, %eax
+         C1C013                roll $19, %eax      
       */
-      if (myeip[0] == 0xC1 && myeip[1] == 0xC0 && myeip[2] == 0x1D &&
-          myeip[3] == 0xC1 && myeip[4] == 0xC0 && myeip[5] == 0x03 &&
-          myeip[6] == 0xC1 && myeip[7] == 0xC0 && myeip[8] == 0x1B &&
-          myeip[9] == 0xC1 && myeip[10] == 0xC0 && myeip[11] == 0x05) {
-         vg_assert(VG_(clo_instrument));
-         dis_ClientRequest(cb);
-         eip += 12;
+      if (myeip[ 0] == 0xC1 && myeip[ 1] == 0xC0 && myeip[ 2] == 0x1D &&
+          myeip[ 3] == 0xC1 && myeip[ 4] == 0xC0 && myeip[ 5] == 0x03 &&
+          myeip[ 6] == 0xC1 && myeip[ 7] == 0xC8 && myeip[ 8] == 0x1B &&
+          myeip[ 9] == 0xC1 && myeip[10] == 0xC8 && myeip[11] == 0x05 &&
+          myeip[12] == 0xC1 && myeip[13] == 0xC0 && myeip[14] == 0x0D &&
+          myeip[15] == 0xC1 && myeip[16] == 0xC0 && myeip[17] == 0x13
+         ) {
+         eip += 18;
+         uInstr1(cb, JMP,  0, Literal, 0);
+         uLiteral(cb, eip);
+         uCond(cb, CondAlways);
+         LAST_UINSTR(cb).jmpkind = JmpClientReq;
+         *isEnd = True;
+         if (dis) 
+            VG_(printf)("%%edx = client_request ( %%eax )\n");
          return eip;
       }
    }
@@ -2978,9 +2962,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ESP);
       uInstr1(cb, JMP,  0, TempReg, t2);
       uCond(cb, CondAlways);
-
-      if (d32 == 0)
-         LAST_UINSTR(cb).ret_dispatch = True;
+      LAST_UINSTR(cb).jmpkind = JmpRet;
 
       *isEnd = True;
       if (dis) {
@@ -2992,22 +2974,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0xE8: /* CALL J4 */
       d32 = getUDisp32(eip); eip += 4;
       d32 += eip; /* eip now holds return-to addr, d32 is call-to addr */
-      if (d32 == (Addr)&VG_(shutdown)) {
-         /* Set vg_dispatch_ctr to 1, vg_interrupt_reason to VG_Y_EXIT,
-            and get back to the dispatch loop.  We ask for a jump to this
-            CALL insn because vg_dispatch will ultimately transfer control
-            to the real CPU, and we want this call to be the first insn
-            it does. */
-         uInstr0(cb, CALLM_S, 0);
-         uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_request_normal_exit));
-         uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-         uInstr0(cb, CALLM_E, 0);
-         uInstr1(cb, JMP, 0, Literal, 0);
-         uLiteral(cb, eip-5);
-         uCond(cb, CondAlways);
-         *isEnd = True;
-         if (dis) VG_(printf)("call 0x%x\n",d32);
-      } else
       if (d32 == eip && getUChar(eip) >= 0x58 
                      && getUChar(eip) <= 0x5F) {
          /* Specially treat the position-independent-code idiom 
@@ -3040,7 +3006,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          uInstr1(cb, JMP,   0, Literal, 0);
 	 uLiteral(cb, d32);
          uCond(cb, CondAlways);
-         LAST_UINSTR(cb).call_dispatch = True;
+         LAST_UINSTR(cb).jmpkind = JmpCall;
          *isEnd = True;
          if (dis) VG_(printf)("call 0x%x\n",d32);
       }
@@ -3179,14 +3145,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
-      t1 = newTemp(cb);
-      uInstr0(cb, CALLM_S, 0);
-      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_do_syscall) );
-      uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-      uInstr0(cb, CALLM_E, 0);
       uInstr1(cb, JMP,  0, Literal, 0);
       uLiteral(cb, eip);
       uCond(cb, CondAlways);
+      LAST_UINSTR(cb).jmpkind = JmpSyscall;
       *isEnd = True;
       if (dis) VG_(printf)("int $0x80\n");
       break;

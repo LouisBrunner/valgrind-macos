@@ -34,7 +34,7 @@ extern void ppIRType ( IRType );
 typedef
    enum { Ico_Bit=0x12000,
           Ico_U8, Ico_U16, Ico_U32, Ico_U64, Ico_F64,
-          Ico_NaN64 /* 64-bit IEEE NaN. */
+          Ico_NaN64 /* 64-bit IEEE QNaN. */
    }
    IRConstTag;
 
@@ -74,9 +74,9 @@ extern void ppIRTemp ( IRTemp );
 
 /* ------------------ Binary and unary ops ------------------ */
 
-/* Encoding of rounding modes in Float -> Int conversions.  This is
-   the same as the encoding used by Intel IA32 to indicate x87
-   rounding mode. */
+/* Encoding of IEEE754-specified rounding modes in Float -> Int
+   conversions.  This is the same as the encoding used by Intel IA32
+   to indicate x87 rounding mode. */
 typedef
    enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
    IRRoundingMode;
@@ -85,10 +85,10 @@ typedef
    This is also derived from what IA32 does. */
 typedef
    enum {
-      Ircr_UN = 0x85,
+      Ircr_UN = 0x45,
       Ircr_LT = 0x01,
       Ircr_GT = 0x00,
-      Ircr_EQ = 0x80
+      Ircr_EQ = 0x40
    }
    IRCmpF64Result;
 
@@ -135,6 +135,7 @@ typedef
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed
+
       /* Widening conversions */
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32, Iop_32Uto64,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32, Iop_32Sto64,
@@ -398,12 +399,6 @@ extern IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst );
 
 extern void ppIRStmt ( IRStmt* );
 
-/* Guards in Put: if NULL, the Put is always done.
-   If non-NULL, the expr must denote a value of Ity_Bit, and
-   the Put is only done if this evaluates to 1.  The expression
-   to be stored (expr) will be evaluated regardless of what
-   the guard is.
-*/
 
 /* ------------------ Basic Blocks ------------------ */
 

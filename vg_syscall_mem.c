@@ -1792,7 +1792,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0 && arg3 ) {
                   struct ifconf *ifc = (struct ifconf *) arg3;
-                  make_readable ( (Addr)(ifc->ifc_buf), (UInt)(ifc->ifc_len) );
+                  if (ifc->ifc_buf != NULL)
+                     make_readable ( (Addr)(ifc->ifc_buf), 
+                                     (UInt)(ifc->ifc_len) );
                }
                break;
             case SIOCGSTAMP:

@@ -507,7 +507,7 @@ void ppIRExpr ( IRExpr* e )
       vex_printf(")");
       break;
     default:
-      vpanic("ppIExpr");
+      vpanic("ppIRExpr");
   }
 }
 

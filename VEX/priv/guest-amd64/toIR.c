@@ -3492,8 +3492,10 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
                        nameIRegB(pfx, sz, eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
-      if (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 4)
+      if (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 4
+                               && gregOfRM(modrm) != 6) {
          assign(t1, loadLE(ty,mkexpr(addr)));
+      }
       switch (gregOfRM(modrm)) {
          case 0: /* INC */ 
             t2 = newTemp(ty);
@@ -3537,12 +3539,17 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             /* There is no encoding for 32-bit operand size; hence ... */
             if (sz == 4) sz = 8;
             vassert(sz == 8 || sz == 2);
-            if (sz != 8) goto unhandled; /* awaiting test case */
-            t2 = newTemp(Ity_I64);
-            assign( t2, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
-            putIReg64(R_RSP, mkexpr(t2) );
-            storeLE( mkexpr(t2), mkexpr(t1) );
-            break;
+            if (sz == 8) {
+               t3 = newTemp(Ity_I64);
+               assign(t3, loadLE(Ity_I64,mkexpr(addr)));
+               t2 = newTemp(Ity_I64);
+               assign( t2, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
+               putIReg64(R_RSP, mkexpr(t2) );
+               storeLE( mkexpr(t2), mkexpr(t3) );
+               break;
+	    } else {
+               goto unhandled; /* awaiting test case */
+	    }
          default: 
          unhandled:
             vex_printf(
@@ -3580,43 +3587,35 @@ void dis_string_op_increment ( Int sz, IRTemp t_inc )
    }
 }
 
-//.. static
-//.. void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
-//..                     Int sz, Char* name, UChar sorb )
-//.. {
-//..    IRTemp t_inc = newTemp(Ity_I32);
-//..    vassert(sorb == 0);
-//..    dis_string_op_increment(sz, t_inc);
-//..    dis_OP( sz, t_inc );
-//..    DIP("%s%c\n", name, nameISize(sz));
-//.. }
-//.. 
-//.. static 
-//.. void dis_MOVS ( Int sz, IRTemp t_inc )
-//.. {
-//..    IRType ty = szToITy(sz);
-//..    //IRTemp tv = newTemp(ty);        /* value being copied */
-//..    IRTemp td = newTemp(Ity_I32);   /* EDI */
-//..    IRTemp ts = newTemp(Ity_I32);   /* ESI */
-//.. 
-//..    //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-//..    //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-//..    assign( td, getIReg(4, R_EDI) );
-//..    assign( ts, getIReg(4, R_ESI) );
-//.. 
-//..    //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tv);
-//..    //uInstr2(cb, STORE,sz, TempReg, tv,    TempReg, td);
-//..    storeLE( mkexpr(td), loadLE(ty,mkexpr(ts)) );
-//.. 
-//..    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//..    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//.. 
-//..    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//..    //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//..    putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
-//..    putIReg( 4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
-//.. }
-//.. 
+static
+void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
+                    Int sz, HChar* name, Prefix pfx )
+{
+   IRTemp t_inc = newTemp(Ity_I64);
+   /* Really we ought to inspect the override prefixes, but we don't.
+      The following assertion catches any resulting sillyness. */
+   vassert(pfx == clearSegBits(pfx));
+   dis_string_op_increment(sz, t_inc);
+   dis_OP( sz, t_inc );
+   DIP("%s%c\n", name, nameISize(sz));
+}
+
+static 
+void dis_MOVS ( Int sz, IRTemp t_inc )
+{
+   IRType ty = szToITy(sz);
+   IRTemp td = newTemp(Ity_I64);   /* RDI */
+   IRTemp ts = newTemp(Ity_I64);   /* RSI */
+
+   assign( td, getIReg64(R_RDI) );
+   assign( ts, getIReg64(R_RSI) );
+
+   storeLE( mkexpr(td), loadLE(ty,mkexpr(ts)) );
+
+   putIReg64( R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
+   putIReg64( R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+}
+
 //.. //-- static 
 //.. //-- void dis_LODS ( UCodeBlock* cb, Int sz, Int t_inc )
 //.. //-- {
@@ -3697,10 +3696,15 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
 static 
 void dis_REP_op ( AMD64Condcode cond,
                   void (*dis_OP)(Int, IRTemp),
-                  Int sz, Addr64 rip, Addr64 rip_next, HChar* name )
+                  Int sz, Addr64 rip, Addr64 rip_next, HChar* name,
+                  Prefix pfx )
 {
    IRTemp t_inc = newTemp(Ity_I64);
    IRTemp tc    = newTemp(Ity_I64);  /*  RCX  */
+
+   /* Really we ought to inspect the override prefixes, but we don't.
+      The following assertion catches any resulting sillyness. */
+   vassert(pfx == clearSegBits(pfx));
 
    assign( tc, getIReg64(R_RCX) );
 
@@ -11810,12 +11814,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       d64 = getSDisp(imin(4,sz),delta); 
       delta += imin(4,sz);
       goto do_push_I;
-//..    case 0x6A: /* PUSH Ib, sign-extended to sz */
-//..       d32 = getSDisp8(delta); delta += 1;
-//..       goto do_push_I;
+   case 0x6A: /* PUSH Ib, sign-extended to sz */
+      /* Note, sz==4 is not possible in 64-bit mode.  Hence ... */
+      if (sz == 4) sz = 8;
+      d64 = getSDisp8(delta); delta += 1;
+      goto do_push_I;
    do_push_I:
       ty = szToITy(sz);
-      t1 = newTemp(Ity_I64); t2 = newTemp(ty);
+      t1 = newTemp(Ity_I64);
+      t2 = newTemp(ty);
       assign( t1, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
       putIReg64(R_RSP, mkexpr(t1) );
       storeLE( mkexpr(t1), mkU(ty,d64) );
@@ -11921,10 +11928,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..      dis_string_op( dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
 //..      break;
 //.. //-- 
-//..    case 0xAA: /* STOS, no REP prefix */
-//..    case 0xAB:
-//..       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
-//..       break;
 //.. //--    
 //.. //--    case 0xAC: /* LODS, no REP prefix */
 //.. //--    case 0xAD:
@@ -11942,11 +11945,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       DIP("cld\n");
       break;
 
-//..    case 0xFD: /* STD */
-//..       stmt( IRStmt_Put( OFFB_DFLAG, mkU32(0xFFFFFFFF)) );
-//..       DIP("std\n");
-//..       break;
-//.. 
+   case 0xFD: /* STD */
+      stmt( IRStmt_Put( OFFB_DFLAG, mkU64(-1ULL)) );
+      DIP("std\n");
+      break;
+
 //.. //--    case 0xF8: /* CLC */
 //.. //--       uInstr0(cb, CALLM_S, 0);
 //.. //--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CLC));
@@ -12007,43 +12010,95 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 //..    }
 
-   /* REPNE (F2) prefix insn */
-   case 0xAE: /* F2 AE: repne scasb */
+   /* ------ AE: SCAS variants ------ */
+   case 0xAE:
+   case 0xAF:
+      /* F2 AE/AF: repne scasb/repne scas{w,l,q} */
       if (haveF2(pfx) && !haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
          dis_REP_op ( AMD64CondNZ, dis_SCAS, sz, 
                       guest_rip_curr_instr,
-                      guest_rip_bbstart+delta, "repne scas" );
+                      guest_rip_bbstart+delta, "repne scas", pfx );
          whatNext = Dis_StopHere;
+         break;
+      }
+      /* AE/AF: scasb/scas{w,l,q} */
+      if (!haveF2(pfx) && !haveF3(pfx)) {
+         if (opc == 0xAE)
+            sz = 1;
+         dis_string_op( dis_SCAS, sz, "scas", pfx );
          break;
       }
       goto decode_failure;
 
-   /* REP/REPE (F3) prefix insn (for SCAS and CMPS, 0xF3 means REPE,
-      for the rest, it means REP) */
-   case 0xA6: /* F3 A6: repe cmpsb */
-   case 0xA7: /* F3 {48} A7: repe cmps{w,l,q} */
+   /* ------ A6, A7: CMPS variants ------ */
+   case 0xA6:
+   case 0xA7:
+      /* F3 A6/A7: repe cmps/rep cmps{w,l,q} */
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA6)
             sz = 1;
          dis_REP_op ( AMD64CondZ, dis_CMPS, sz, 
                       guest_rip_curr_instr,
-                      guest_rip_bbstart+delta, "repe cmps" );
+                      guest_rip_bbstart+delta, "repe cmps", pfx );
          whatNext = Dis_StopHere;
          break;
       }
       goto decode_failure;
 
-   case 0xAB: /* F3 {48} AB: rep stos{w,l,q} */
+   /* ------ AA, AB: STOS variants ------ */
+   case 0xAA:
+   case 0xAB:
+      /* F3 AA/AB: rep stosb/rep stos{w,l,q} */
       if (haveF3(pfx) && !haveF2(pfx)) {
+         if (opc == 0xAA)
+            sz = 1;
          dis_REP_op ( AMD64CondAlways, dis_STOS, sz,
                       guest_rip_curr_instr,
-                      guest_rip_bbstart+delta, "rep stos" );
-         whatNext = Dis_StopHere;
+                      guest_rip_bbstart+delta, "rep stos", pfx );
+        whatNext = Dis_StopHere;
+        break;
+      }
+      /* AA/AB: stosb/stos{w,l,q} */
+      if (!haveF3(pfx) && !haveF2(pfx)) {
+         if (opc == 0xAA)
+            sz = 1;
+         dis_string_op( dis_STOS, sz, "stos", pfx );
          break;
       }
       goto decode_failure;
+
+   /* ------ A4, A5: MOVS variants ------ */
+   case 0xA4:
+   case 0xA5:
+      /* F3 A4: rep movsb */
+      if (haveF3(pfx) && !haveF2(pfx)) {
+         if (opc == 0xA4)
+            sz = 1;
+         dis_REP_op ( AMD64CondAlways, dis_MOVS, sz,
+                      guest_rip_curr_instr,
+                      guest_rip_bbstart+delta, "rep movs", pfx );
+        whatNext = Dis_StopHere;
+        break;
+      }
+      /* A4: movsb */
+      if (!haveF3(pfx) && !haveF2(pfx)) {
+         if (opc == 0xA4)
+            sz = 1;
+         dis_string_op( dis_MOVS, sz, "movs", pfx );
+         break;
+      }
+      goto decode_failure;
+
+//..    case 0xA5: 
+//..       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
+//..       break;
+
+//..    case 0xA4: /* MOVS, no REP prefix */
+//..    case 0xA5: 
+//..       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
+//..       break;
 
 //..   case 0xF3: { 
 //..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;

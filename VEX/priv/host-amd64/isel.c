@@ -837,8 +837,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                 Aalu_AND, AMD64RMI_Imm(0xFFFF), dst));
                break;
             case Iop_Shr32:
-               addInstr(env, AMD64Instr_Alu64R(
-                                Aalu_AND, AMD64RMI_Imm(0xFFFFFFFF), dst));
+               addInstr(env, AMD64Instr_MovZLQ(dst,dst));
                break;
 //..             case Iop_Sar8:
 //..                addInstr(env, X86Instr_Sh32(Xsh_SHL, 24, X86RM_Reg(dst)));
@@ -853,7 +852,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, AMD64RM_Reg(dst)));
                break;
             default: 
-	      ppIROp(e->Iex.Binop.op);
+               ppIROp(e->Iex.Binop.op);
                vassert(0);
          }
 
@@ -892,17 +891,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg      dst     = newVRegI(env);
          Bool      syned   = e->Iex.Binop.op == Iop_DivModS64to32;
          AMD64RM*  rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
-         AMD64RMI* mask    = AMD64RMI_Imm(0xFFFFFFFF);
          /* Compute the left operand into a reg, and then 
             put the top half in edx and the bottom in eax. */
          HReg left64 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-
          addInstr(env, mk_iMOVsd_RR(left64, rdx));
          addInstr(env, mk_iMOVsd_RR(left64, rax));
-         addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, AMD64RM_Reg(rdx)));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHR, 32, AMD64RM_Reg(rdx)));
          addInstr(env, AMD64Instr_Div(syned, 4, rmRight));
-         addInstr(env, AMD64Instr_Alu64R(Aalu_AND, mask, rdx));
-         addInstr(env, AMD64Instr_Alu64R(Aalu_AND, mask, rax));
+	 addInstr(env, AMD64Instr_MovZLQ(rdx,rdx));
+	 addInstr(env, AMD64Instr_MovZLQ(rax,rax));
          addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(rdx)));
          addInstr(env, mk_iMOVsd_RR(rax, dst));
          addInstr(env, AMD64Instr_Alu64R(Aalu_OR, AMD64RMI_Reg(rdx), dst));
@@ -917,8 +914,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVsd_RR(hi32s, hi32));
          addInstr(env, mk_iMOVsd_RR(lo32s, lo32));
          addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(hi32)));
-         addInstr(env, AMD64Instr_Alu64R(
-                          Aalu_AND, AMD64RMI_Imm(0xFFFFFFFF), lo32));
+	 addInstr(env, AMD64Instr_MovZLQ(lo32,lo32));
          addInstr(env, AMD64Instr_Alu64R(
                           Aalu_OR, AMD64RMI_Reg(lo32), hi32));
          return hi32;

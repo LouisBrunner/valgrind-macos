@@ -895,7 +895,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       } else {
          vex_printf(": { mfcr r0 ; rlwinm ");
          ppHRegPPC32(i->Pin.Set32.dst);
-         vex_printf(",r0,%d,31,31,0", cc.flag+1);
+         vex_printf(",r0,%d,31,31", cc.flag+1);
          if (cc.test == Pct_FALSE) {
             vex_printf("; xori ");
             ppHRegPPC32(i->Pin.Set32.dst);
@@ -2042,8 +2042,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_Sh32: {
       UInt opc1 = 31, opc2, rB, sh;
       UInt op = i->Pin.Sh32.op;
-      UInt rS = iregNo(i->Pin.Sh32.dst);
-      UInt rA = iregNo(i->Pin.Sh32.src);
+      UInt rS = iregNo(i->Pin.Sh32.src);
+      UInt rA = iregNo(i->Pin.Sh32.dst);
       PPC32RITag ri_tag = i->Pin.Sh32.shft->tag;
 
       if ((op == Psh_SHL || op == Psh_SHR) && ri_tag == Pri_Imm)

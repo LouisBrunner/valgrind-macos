@@ -1004,6 +1004,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#     if defined(__NR_munlock)
+      case __NR_munlock:
+         /* int munlock(const void * addr, size_t len) */
+         MAYBE_PRINTF("munlock ( %p, %d )\n", arg1, arg2);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_mlockall)
       case __NR_mlockall:
          /* int mlockall(int flags); */

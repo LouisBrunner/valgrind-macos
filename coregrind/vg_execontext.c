@@ -193,7 +193,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(ebp_min <= ebp_max);*/
 
-   if (ebp_min + 4000000 > ebp_max) {
+   if (ebp_min + 4000000 <= ebp_max) {
       /* If the stack is ridiculously big, don't poke around ... but
          don't bomb out either.  Needed to make John Regehr's
          user-space threads package work. JRS 20021001 */

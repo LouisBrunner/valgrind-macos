@@ -101,9 +101,9 @@ extern ULong amd64g_calculate_condition (
 
 //extern ULong amd64g_create_fpucw ( ULong fpround );
 
-//extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
+extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 
-//extern ULong amd64g_create_mxcsr ( ULong sseround );
+extern ULong amd64g_create_mxcsr ( ULong sseround );
 
 /* Translate a guest virtual_addr into a guest linear address by
    consulting the supplied LDT/GDT structures.  Their representation

@@ -361,7 +361,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_XMM14     offsetof(VexGuestAMD64State,guest_XMM14)
 #define OFFB_XMM15     offsetof(VexGuestAMD64State,guest_XMM15)
 
-//.. #define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
+#define OFFB_EMWARN    offsetof(VexGuestAMD64State,guest_EMWARN)
 
 
 /*------------------------------------------------------------*/
@@ -4088,20 +4088,21 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 }
 
 
-//.. /*------------------------------------------------------------*/
-//.. /*---                                                      ---*/
-//.. /*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
-//.. /*---                                                      ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* --- Helper functions for dealing with the register stack. --- */
-//.. 
-//.. /* --- Set the emulation-warning pseudo-register. --- */
-//.. 
-//.. static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
-//.. {
-//..    stmt( IRStmt_Put( OFFB_EMWARN, e ) );
-//.. }
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* --- Helper functions for dealing with the register stack. --- */
+
+/* --- Set the emulation-warning pseudo-register. --- */
+
+static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
+   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+}
 
 /* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
 
@@ -7710,12 +7711,13 @@ static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
                    mkU64(3) ));
 }
 
-//.. static void put_sse_roundingmode ( IRExpr* sseround )
-//.. {
-//..    vassert(typeOfIRExpr(irbb->tyenv, sseround) == Ity_I32);
-//..    stmt( IRStmt_Put( OFFB_SSEROUND, sseround ) );
-//.. }
-//.. 
+static void put_sse_roundingmode ( IRExpr* sseround )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, sseround) == Ity_I32);
+   stmt( IRStmt_Put( OFFB_SSEROUND, 
+                     unop(Iop_32Uto64,sseround) ) );
+}
+
 //.. /* Break a 128-bit value up into four 32-bit ints. */
 //.. 
 //.. static void breakup128to32s ( IRTemp t128,
@@ -8384,53 +8386,55 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F AE /2 = LDMXCSR m32 -- load %mxcsr */
-//..    if (insn[0] == 0x0F && insn[1] == 0xAE
-//..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 2) {
-//.. 
-//..       IRTemp t64 = newTemp(Ity_I64);
-//..       IRTemp ew = newTemp(Ity_I32);
-//.. 
-//..       modrm = getUChar(delta+2);
-//..       vassert(!epartIsReg(modrm));
-//..       vassert(sz == 4);
-//.. 
-//..       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..       delta += 2+alen;
-//..       DIP("ldmxcsr %s\n", dis_buf);
-//.. 
-//..       /* The only thing we observe in %mxcsr is the rounding mode.
-//..          Therefore, pass the 32-bit value (SSE native-format control
-//..          word) to a clean helper, getting back a 64-bit value, the
-//..          lower half of which is the SSEROUND value to store, and the
-//..          upper half of which is the emulation-warning token which may
-//..          be generated.  
-//..       */
-//..       /* ULong x86h_check_ldmxcsr ( UInt ); */
-//..       assign( t64, mkIRExprCCall(
-//..                       Ity_I64, 0/*regparms*/, 
-//..                       "x86g_check_ldmxcsr",
-//..                       &x86g_check_ldmxcsr, 
-//..                       mkIRExprVec_1( loadLE(Ity_I32, mkexpr(addr)) )
-//..                    )
-//..             );
-//.. 
-//..       put_sse_roundingmode( unop(Iop_64to32, mkexpr(t64)) );
-//..       assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
-//..       put_emwarn( mkexpr(ew) );
-//..       /* Finally, if an emulation warning was reported, side-exit to
-//..          the next insn, reporting the warning, so that Valgrind's
-//..          dispatcher sees the warning. */
-//..       stmt( 
-//..          IRStmt_Exit(
-//..             binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
-//..             Ijk_EmWarn,
-//..             IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
-//..          )
-//..       );
-//..       goto decode_success;
-//..    }
-//.. 
+   /* 0F AE /2 = LDMXCSR m32 -- load %mxcsr */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && haveNo66noF2noF3(pfx)
+       && !epartIsReg(insn[2]) && gregLO3ofRM(insn[2]) == 2) {
+
+      IRTemp t64 = newTemp(Ity_I64);
+      IRTemp ew = newTemp(Ity_I32);
+
+      vassert(sz == 4);
+      addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+      delta += 2+alen;
+      DIP("ldmxcsr %s\n", dis_buf);
+
+      /* The only thing we observe in %mxcsr is the rounding mode.
+         Therefore, pass the 32-bit value (SSE native-format control
+         word) to a clean helper, getting back a 64-bit value, the
+         lower half of which is the SSEROUND value to store, and the
+         upper half of which is the emulation-warning token which may
+         be generated.  
+      */
+      /* ULong amd64h_check_ldmxcsr ( ULong ); */
+      assign( t64, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/, 
+                      "amd64g_check_ldmxcsr",
+                      &amd64g_check_ldmxcsr, 
+                      mkIRExprVec_1( 
+                         unop(Iop_32Uto64,
+                              loadLE(Ity_I32, mkexpr(addr))
+                         )
+                      )
+                   )
+            );
+
+      put_sse_roundingmode( unop(Iop_64to32, mkexpr(t64)) );
+      assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
+      put_emwarn( mkexpr(ew) );
+      /* Finally, if an emulation warning was reported, side-exit to
+         the next insn, reporting the warning, so that Valgrind's
+         dispatcher sees the warning. */
+      stmt( 
+         IRStmt_Exit(
+            binop(Iop_CmpNE64, unop(Iop_32Uto64,mkexpr(ew)), mkU64(0)),
+            Ijk_EmWarn,
+            IRConst_U64(guest_rip_bbstart+delta)
+         )
+      );
+      goto decode_success;
+   }
+
 //..    /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5F) {
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "maxps", Iop_Max32Fx4 );
@@ -8862,7 +8866,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* 0F 18 /2 = PREFETCH1 */
    /* 0F 18 /3 = PREFETCH2 */
    if (insn[0] == 0x0F && insn[1] == 0x18
-       && !haveF2orF3(pfx)
+       && haveNo66noF2noF3(pfx)
        && !epartIsReg(insn[2]) 
        && gregLO3ofRM(insn[2]) >= 0 && gregLO3ofRM(insn[2]) <= 3) {
       HChar* hintstr = "??";
@@ -9040,32 +9044,34 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                                          "sqrtss", Iop_Sqrt32F0x4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 0F AE /3 = STMXCSR m32 -- store %mxcsr */
-//..    if (insn[0] == 0x0F && insn[1] == 0xAE
-//..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 3) {
-//..       modrm = getUChar(delta+2);
-//..       vassert(sz == 4);
-//..       vassert(!epartIsReg(modrm));
-//.. 
-//..       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..       delta += 2+alen;
-//.. 
-//..       /* Fake up a native SSE mxcsr word.  The only thing it depends
-//..          on is SSEROUND[1:0], so call a clean helper to cook it up. 
-//..       */
-//..       /* UInt x86h_create_mxcsr ( UInt sseround ) */
-//..       DIP("stmxcsr %s\n", dis_buf);
-//..       storeLE( mkexpr(addr), 
-//..                mkIRExprCCall(
-//..                   Ity_I32, 0/*regp*/,
-//..                   "x86g_create_mxcsr", &x86g_create_mxcsr, 
-//..                   mkIRExprVec_1( get_sse_roundingmode() ) 
-//..                ) 
-//..              );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 0F AE /3 = STMXCSR m32 -- store %mxcsr */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && haveNo66noF2noF3(pfx)
+       && !epartIsReg(insn[2]) && gregLO3ofRM(insn[2]) == 3) {
+
+      vassert(sz == 4);
+      addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+      delta += 2+alen;
+
+      /* Fake up a native SSE mxcsr word.  The only thing it depends
+         on is SSEROUND[1:0], so call a clean helper to cook it up. 
+      */
+      /* ULong amd64h_create_mxcsr ( ULong sseround ) */
+      DIP("stmxcsr %s\n", dis_buf);
+      storeLE( 
+         mkexpr(addr), 
+         unop(Iop_64to32,      
+              mkIRExprCCall(
+                 Ity_I64, 0/*regp*/,
+                 "amd64g_create_mxcsr", &amd64g_create_mxcsr, 
+                 mkIRExprVec_1( unop(Iop_32Uto64,get_sse_roundingmode()) ) 
+	      ) 
+	 )
+      );
+      goto decode_success;
+   }
+
 //..    /* 0F 5C = SUBPS -- sub 32Fx4 from R/M to R */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5C) {
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "subps", Iop_Sub32Fx4 );

@@ -1202,6 +1202,52 @@ void amd64g_storeF80le ( ULong addrU, ULong f64 )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* CLEAN HELPER */
+/* mxcsr[15:0] contains a SSE native format MXCSR value.
+   Extract from it the required SSEROUND value and any resulting
+   emulation warning, and return (warn << 32) | sseround value.
+*/
+ULong amd64g_check_ldmxcsr ( ULong mxcsr )
+{
+   /* Decide on a rounding mode.  mxcsr[14:13] holds it. */
+   /* NOTE, encoded exactly as per enum IRRoundingMode. */
+   ULong rmode = (mxcsr >> 13) & 3;
+
+   /* Detect any required emulation warnings. */
+   VexEmWarn ew = EmWarn_NONE;
+
+   if ((mxcsr & 0x1F80) != 0x1F80) {
+      /* unmasked exceptions! */
+      ew = EmWarn_X86_sseExns;
+   }
+   else 
+   if (mxcsr & (1<<15)) {
+      /* FZ is set */
+      ew = EmWarn_X86_fz;
+   } 
+   else
+   if (mxcsr & (1<<6)) {
+      /* DAZ is set */
+      ew = EmWarn_X86_daz;
+   }
+
+   return (((ULong)ew) << 32) | ((ULong)rmode);
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* CLEAN HELPER */
+/* Given sseround as an IRRoundingMode value, create a suitable SSE
+   native format MXCSR value. */
+ULong amd64g_create_mxcsr ( ULong sseround )
+{
+   sseround &= 3;
+   return 0x1F80 | (sseround << 13);
+}
+
+
+
 /*---------------------------------------------------------------*/
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
 /*---------------------------------------------------------------*/
@@ -1417,7 +1463,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 11,
+          .n_alwaysDefd = 12,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -1441,7 +1487,8 @@ VexGuestLayout
                  // /* */ ALWAYSDEFD(guest_SS),
                  // /* */ ALWAYSDEFD(guest_LDT),
                  // /* */ ALWAYSDEFD(guest_GDT),
-                 /*  6 */ ALWAYSDEFD(guest_EMWARN)
+                 /* 10 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 11 */ ALWAYSDEFD(guest_SSEROUND)
                }
         };
 

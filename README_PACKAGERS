@@ -8,7 +8,7 @@ of Valgrind.  The following notes may save you some trouble.
 
 -- (Unfortunate but true) When you configure to build with the 
    --prefix=/foo/bar/xyzzy option, the prefix /foo/bar/xyzzy gets
-   baked into valgrind.so.  The consequence is that you _must_ install
+   baked into valgrind.  The consequence is that you _must_ install
    valgrind at the location specified in the prefix.  If you don't,
    it may appear to work, but will break doing some obscure things,
    particularly doing fork() and exec().
@@ -16,7 +16,7 @@ of Valgrind.  The following notes may save you some trouble.
    So you can't build a relocatable RPM / whatever from Valgrind.
 
 
--- Don't strip the debug info off valgrind.so or libpthread.so.
+-- Don't strip the debug info off stage2 or libpthread.so.
    Valgrind will still work if you do, but it will generate less
    helpful error messages.  Here's an example:
 
@@ -32,16 +32,15 @@ of Valgrind.  The following notes may save you some trouble.
       by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
 
    This tells you that some memory allocated with new[] was freed with
-   free().  If valgrind.so was stripped the message would look like
-   this:
+   free().  If stage2 was stripped the message would look like this:
 
    Mismatched free() / delete / delete []
-      at 0x40043249: (inside valgrind.so)
+      at 0x40043249: (inside stage2)
       by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
       by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
       by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
       Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
-      at 0x4004318C: (inside valgrind.so)
+      at 0x4004318C: (inside stage2)
       by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
       by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
       by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)

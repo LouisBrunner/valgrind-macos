@@ -186,13 +186,15 @@ char* strcpy ( char* dst, const char* src )
 
 char* strncpy ( char* dst, const char* src, int n )
 {
-   Char* dst_orig = dst;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
    Int   m = 0;
 
-   if (is_overlap(dst, src, n, n))
-      complain3("strncpy", dst, src, n);
-
    while (m   < n && *src) { m++; *dst++ = *src++; }
+   /* Check for overlap after copying; all n bytes of dst are relevant,
+      but only m+1 bytes of src if terminator was found */
+   if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n))
+      complain3("strncpy", dst, src, n);
    while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */
 
    return dst_orig;

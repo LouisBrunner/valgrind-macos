@@ -112,5 +112,14 @@ int main(void)
       strncat(a+20, a, 21);    // run twice to check 2nd error isn't shown
    strncat(a, a+20, 21);
 
+   /* This is ok, but once gave a warning when strncpy() was wrong,
+      and used 'n' for the length, even when the src was shorter than 'n' */
+   {
+      char dest[64];
+      char src [16];
+      strcpy( src, "short" );
+      strncpy( dest, src, 20 );
+   }
+
    return 0;
 }

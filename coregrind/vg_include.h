@@ -1358,10 +1358,7 @@ extern UInt VG_(bb_dechain_count);
 /* Number of unchained jumps performed. */
 extern UInt VG_(unchained_jumps_done);
 
-
-/* Counts pertaining to the scheduler. */
-extern UInt VG_(num_scheduling_events_MINOR);
-extern UInt VG_(num_scheduling_events_MAJOR);
+extern void VG_(print_scheduler_stats) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c

@@ -134,6 +134,17 @@ static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( void );
 static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
 
+/* Stats. */
+static UInt n_scheduling_events_MINOR = 0;
+static UInt n_scheduling_events_MAJOR = 0;
+
+void VG_(print_scheduler_stats)(void)
+{
+   VG_(message)(Vg_DebugMsg,
+      "           %d/%d major/minor sched events.", 
+      n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
+}
+
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
@@ -938,7 +949,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
       while (True) {
 
          /* For stats purposes only. */
-         VG_(num_scheduling_events_MAJOR) ++;
+         n_scheduling_events_MAJOR++;
 
 	 /* Route signals to their proper places */
 	 VG_(route_signals)();
@@ -1038,7 +1049,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
          VG_(last_run_tid) = tid;
 
          /* For stats purposes only. */
-         VG_(num_scheduling_events_MINOR) ++;
+         n_scheduling_events_MINOR++;
 
          if (0)
             VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs", 

@@ -201,11 +201,6 @@ UInt VG_(unchained_jumps_done) = 0;
 static UInt sanity_fast_count = 0;
 static UInt sanity_slow_count = 0;
 
-/* Counts pertaining to the scheduler. */
-UInt VG_(num_scheduling_events_MINOR) = 0;
-UInt VG_(num_scheduling_events_MAJOR) = 0;
-
-
 static __inline__ Int safe_idiv(Int a, Int b)
 {
    return (b == 0 ? 0 : a / b);
@@ -239,11 +234,9 @@ static void show_counts ( void )
          / ( VG_(bbs_done)==0 ? 1 : VG_(bbs_done) )
    );
 
+   VG_(print_scheduler_stats)();
    VG_(message)(Vg_DebugMsg,
-      "           %d/%d major/minor sched events.  %d tt_fast misses.", 
-                     VG_(num_scheduling_events_MAJOR), 
-                     VG_(num_scheduling_events_MINOR), 
-                     VG_(tt_fast_misses));
+      "           %d tt_fast misses.", VG_(tt_fast_misses));
 
    VG_(print_reg_alloc_stats)();
    VG_(message)(Vg_DebugMsg, 

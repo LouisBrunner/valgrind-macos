@@ -1194,7 +1194,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                qd = newTemp(cb);
                uInstr2(cb, MOV, 4, Literal, 0, TempReg, qd);
-               uLiteral(cb, qd);
+               uLiteral(cb, 0);
                create_PUTVF(cb, 0, qd);
             }
             VG_(copy_UInstr)(cb, u_in);

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <signal.h>
 
+/* spurious comment only here to test cvs mail notifications. */
+
 volatile int spin;
 
 void sig_hdlr ( int signo )

@@ -120,7 +120,10 @@ void LibVEX_Init (
    vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
 
    /* All the guest state structs must have an 8-aligned size. */
-   vassert(0 == sizeof(VexGuestX86State) % 8);
+   vassert(0 == sizeof(VexGuestX86State)   % 8);
+   vassert(0 == sizeof(VexGuestAMD64State) % 8);
+   vassert(0 == sizeof(VexGuestPPC32State) % 8);
+   vassert(0 == sizeof(VexGuestARMState)   % 8);
 
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is

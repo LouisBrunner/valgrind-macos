@@ -894,8 +894,6 @@ static Int proxy_clone(ProxyLWP *proxy)
 {
    Int ret = -1;
 
-   proxy->lwp = -1;
-
    if (have_settid != 0) {
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
@@ -920,11 +918,13 @@ static Int proxy_clone(ProxyLWP *proxy)
 	    proxy->lwp = ret;
 	 }
        }
+       else 
+           have_settid = 1;
    }
 
    if (ret < 0) {
       vg_assert(have_settid == 0);
-      vg_assert(proxy->lwp == -1);
+      vg_assert(proxy->lwp == 0);
 
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
@@ -948,6 +948,7 @@ static Bool proxy_wait(ProxyLWP *proxy, Bool block, Int *status)
    if (have_settid) {
       if (block) {
 	 Int lwp = proxy->lwp;
+
 
 	 if(proxy->lwp != 0)
 	    do_futex(&proxy->lwp, VKI_FUTEX_WAIT, lwp, NULL, NULL);

@@ -12,7 +12,8 @@
 
 
 extern IRBB* do_iropt_BB ( IRBB* bb,
-                           IRExpr* (*specHelper) ( Char*, IRExpr**) );
+                           IRExpr* (*specHelper) ( Char*, IRExpr**),
+                           Addr64 guest_addr );
 
 /*---------------------------------------------------------------*/
 /*--- end                                          ir/iropt.h ---*/

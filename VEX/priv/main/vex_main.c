@@ -188,7 +188,7 @@ TranslateResult LibVEX_Translate (
    sanityCheckIRBB(irbb, Ity_I32);
 
    /* Clean it up, hopefully a lot. */
-   irbb = do_iropt_BB ( irbb, specHelper );
+   irbb = do_iropt_BB ( irbb, specHelper, guest_bytes_addr );
    sanityCheckIRBB(irbb, Ity_I32);
 
    if (vex_verbosity > 0) {

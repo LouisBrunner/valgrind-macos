@@ -41,7 +41,8 @@ void ppIRConst ( IRConst* con )
       case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
       case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
-      case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64)); break;
+      case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64));
+                     break;
       case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
       default: vpanic("ppIRConst");
    }
@@ -597,7 +598,20 @@ IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
    return s;
 }
 
-/* Constructors -- IRBB (sort of) */
+
+/* Constructors -- IRTypeEnv */
+
+IRTypeEnv* emptyIRTypeEnv ( void )
+{
+   IRTypeEnv* env   = LibVEX_Alloc(sizeof(IRTypeEnv));
+   env->types       = LibVEX_Alloc(8 * sizeof(IRType));
+   env->types_size  = 8;
+   env->types_used  = 0;
+   return env;
+}
+
+
+/* Constructors -- IRBB */
 
 IRBB* emptyIRBB ( void )
 {
@@ -611,19 +625,168 @@ IRBB* emptyIRBB ( void )
    return bb;
 }
 
-void addStmtToIRBB ( IRBB* bb, IRStmt* st )
+
+/*---------------------------------------------------------------*/
+/*--- (Deep) copy constructors.  These make complete copies   ---*/
+/*--- the original, which can be modified without affecting   ---*/
+/*--- the original.                                           ---*/
+/*---------------------------------------------------------------*/
+
+/* Copying IR Expr vectors (for call args). */
+
+/* Shallow copy of an IRExpr vector */
+
+IRExpr** sopyIRExprVec ( IRExpr** vec )
 {
-   Int i;
-   if (bb->stmts_used == bb->stmts_size) {
-      IRStmt** stmts2 = LibVEX_Alloc(2 * bb->stmts_size * sizeof(IRStmt*));
-      for (i = 0; i < bb->stmts_size; i++)
-         stmts2[i] = bb->stmts[i];
-      bb->stmts = stmts2;
-      bb->stmts_size *= 2;
+   Int      i;
+   IRExpr** newvec;
+   for (i = 0; vec[i]; i++)
+      ;
+   newvec = LibVEX_Alloc((i+1)*sizeof(IRExpr*));
+   for (i = 0; vec[i]; i++)
+      newvec[i] = vec[i];
+   newvec[i] = NULL;
+   return newvec;
+}
+
+/* Deep copy of an IRExpr vector */
+
+IRExpr** dopyIRExprVec ( IRExpr** vec )
+{
+   Int      i;
+   IRExpr** newvec = sopyIRExprVec( vec );
+   for (i = 0; newvec[i]; i++)
+      newvec[i] = dopyIRExpr(newvec[i]);
+   return newvec;
+}
+
+/* Deep copy constructors for all heap-allocated IR types follow. */
+
+IRConst* dopyIRConst ( IRConst* c )
+{
+   switch (c->tag) {
+      case Ico_Bit:  return IRConst_Bit(c->Ico.Bit);
+      case Ico_U8:   return IRConst_U8(c->Ico.U8);
+      case Ico_U16:  return IRConst_U16(c->Ico.U16);
+      case Ico_U32:  return IRConst_U32(c->Ico.U32);
+      case Ico_U64:  return IRConst_U64(c->Ico.U64);
+      case Ico_F64:  return IRConst_F64(c->Ico.F64);
+      case Ico_F64i: return IRConst_F64i(c->Ico.F64i);
+      default: vpanic("dopyIRConst");
    }
-   vassert(bb->stmts_used < bb->stmts_size);
-   bb->stmts[bb->stmts_used] = st;
-   bb->stmts_used++;
+}
+
+IRArray* dopyIRArray ( IRArray* d )
+{
+   return mkIRArray(d->base, d->elemTy, d->nElems);
+}
+
+IRExpr* dopyIRExpr ( IRExpr* e )
+{
+   switch (e->tag) {
+      case Iex_Get: 
+         return IRExpr_Get(e->Iex.Get.offset, e->Iex.Get.ty);
+      case Iex_GetI: 
+         return IRExpr_GetI(dopyIRArray(e->Iex.GetI.descr), 
+                            dopyIRExpr(e->Iex.GetI.off),
+                            e->Iex.GetI.bias);
+      case Iex_Tmp: 
+         return IRExpr_Tmp(e->Iex.Tmp.tmp);
+      case Iex_Binop: 
+         return IRExpr_Binop(e->Iex.Binop.op,
+                             dopyIRExpr(e->Iex.Binop.arg1),
+                             dopyIRExpr(e->Iex.Binop.arg2));
+      case Iex_Unop: 
+         return IRExpr_Unop(e->Iex.Unop.op,
+                            dopyIRExpr(e->Iex.Unop.arg));
+      case Iex_LDle: 
+         return IRExpr_LDle(e->Iex.LDle.ty,
+                            dopyIRExpr(e->Iex.LDle.addr));
+      case Iex_Const: 
+         return IRExpr_Const(dopyIRConst(e->Iex.Const.con));
+      case Iex_CCall:
+         return IRExpr_CCall(e->Iex.CCall.name,
+                             e->Iex.CCall.retty,
+                             dopyIRExprVec(e->Iex.CCall.args));
+
+      case Iex_Mux0X: 
+         return IRExpr_Mux0X(dopyIRExpr(e->Iex.Mux0X.cond),
+                             dopyIRExpr(e->Iex.Mux0X.expr0),
+                             dopyIRExpr(e->Iex.Mux0X.exprX));
+      default:
+         vpanic("dopyIRExpr");
+   }
+}
+
+IRDirty* dopyIRDirty ( IRDirty* d )
+{
+   Int      i;
+   IRDirty* d2 = emptyIRDirty();
+   d2->name  = d->name;
+   d2->args  = dopyIRExprVec(d->args);
+   d2->tmp   = d->tmp;
+   d2->mFx   = d->mFx;
+   d2->mAddr = d->mAddr==NULL ? NULL : dopyIRExpr(d->mAddr);
+   d2->mSize = d->mSize;
+   d2->nFxState = d->nFxState;
+   for (i = 0; i < d2->nFxState; i++)
+      d2->fxState[i] = d->fxState[i];
+   return d2;
+}
+
+IRStmt* dopyIRStmt ( IRStmt* s )
+{
+   switch (s->tag) {
+      case Ist_Put: 
+         return IRStmt_Put(s->Ist.Put.offset, 
+                           dopyIRExpr(s->Ist.Put.data));
+      case Ist_PutI: 
+         return IRStmt_PutI(dopyIRArray(s->Ist.PutI.descr),
+                            dopyIRExpr(s->Ist.PutI.off),
+                            s->Ist.PutI.bias, 
+                            dopyIRExpr(s->Ist.PutI.data));
+      case Ist_Tmp:
+         return IRStmt_Tmp(s->Ist.Tmp.tmp,
+                           dopyIRExpr(s->Ist.Tmp.data));
+      case Ist_STle: 
+         return IRStmt_STle(dopyIRExpr(s->Ist.STle.addr),
+                            dopyIRExpr(s->Ist.STle.data));
+      case Ist_Dirty: 
+         return IRStmt_Dirty(dopyIRDirty(s->Ist.Dirty.details));
+      case Ist_Exit: 
+         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.cond), 
+                            dopyIRConst(s->Ist.Exit.dst));
+      default: 
+         vpanic("dopyIRStmt");
+   }
+}
+
+IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* src )
+{
+   Int        i;
+   IRTypeEnv* dst = LibVEX_Alloc(sizeof(IRTypeEnv));
+   dst->types_size = src->types_size;
+   dst->types_used = src->types_used;
+   dst->types = LibVEX_Alloc(dst->types_size * sizeof(IRType));
+   for (i = 0; i < src->types_used; i++)
+      dst->types[i] = src->types[i];
+   return dst;
+}
+
+IRBB* dopyIRBB ( IRBB* bb )
+{
+   Int      i;
+   IRStmt** sts2;
+   IRBB* bb2 = emptyIRBB();
+   bb2->tyenv = dopyIRTypeEnv(bb->tyenv);
+   bb2->stmts_used = bb2->stmts_size = bb->stmts_used;
+   sts2 = LibVEX_Alloc(bb2->stmts_used * sizeof(IRStmt*));
+   for (i = 0; i < bb2->stmts_used; i++)
+      sts2[i] = bb->stmts[i]==NULL ? NULL : dopyIRStmt(bb->stmts[i]);
+   bb2->stmts    = sts2;
+   bb2->next     = dopyIRExpr(bb->next);
+   bb2->jumpkind = bb->jumpkind;
+   return bb2;
 }
 
 
@@ -771,34 +934,28 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 
 
 /*---------------------------------------------------------------*/
-/*--- Helper functions for the IR -- IR Type Environments     ---*/
+/*--- Helper functions for the IR -- IR Basic Blocks          ---*/
 /*---------------------------------------------------------------*/
 
-/* Make a new, empty IRTypeEnv. */
-
-IRTypeEnv* emptyIRTypeEnv ( void )
-{
-   IRTypeEnv* env   = LibVEX_Alloc(sizeof(IRTypeEnv));
-   env->types       = LibVEX_Alloc(8 * sizeof(IRType));
-   env->types_size  = 8;
-   env->types_used  = 0;
-   return env;
-}
-
-/* Make an exact copy of the given IRTypeEnv, usually so we can
-   add new stuff to the copy without messing up the original. */
-
-IRTypeEnv* copyIRTypeEnv ( IRTypeEnv* src )
+void addStmtToIRBB ( IRBB* bb, IRStmt* st )
 {
    Int i;
-   IRTypeEnv* dst = LibVEX_Alloc(sizeof(IRTypeEnv));
-   dst->types_size = src->types_size;
-   dst->types_used = src->types_used;
-   dst->types = LibVEX_Alloc(dst->types_size * sizeof(IRType));
-   for (i = 0; i < src->types_used; i++)
-      dst->types[i] = src->types[i];
-   return dst;
+   if (bb->stmts_used == bb->stmts_size) {
+      IRStmt** stmts2 = LibVEX_Alloc(2 * bb->stmts_size * sizeof(IRStmt*));
+      for (i = 0; i < bb->stmts_size; i++)
+         stmts2[i] = bb->stmts[i];
+      bb->stmts = stmts2;
+      bb->stmts_size *= 2;
+   }
+   vassert(bb->stmts_used < bb->stmts_size);
+   bb->stmts[bb->stmts_used] = st;
+   bb->stmts_used++;
 }
+
+
+/*---------------------------------------------------------------*/
+/*--- Helper functions for the IR -- IR Type Environments     ---*/
+/*---------------------------------------------------------------*/
 
 /* Allocate a new IRTemp, given its type. */
 
@@ -866,7 +1023,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_Tmp:
          return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
-	 return typeOfIRConst(e->Iex.Const.con);
+         return typeOfIRConst(e->Iex.Const.con);
       case Iex_Binop:
          typeOfPrimop(e->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
          return t_dst;
@@ -1077,7 +1234,7 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
             sanityCheckFail(bb,stmt,
                "Iex.Binop: arg tys don't match op tys\n"
                "... additional details precede BB printout\n");
-	 }
+         }
          break;
       }
       case Iex_Unop:
@@ -1208,7 +1365,7 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
    Int*    def_counts = LibVEX_Alloc(n_temps * sizeof(Int));
 
    vassert(guest_word_size == Ity_I32
-	   || guest_word_size == Ity_I64);
+           || guest_word_size == Ity_I64);
 
    if (bb->stmts_used < 0 || bb->stmts_size < 8
        || bb->stmts_used > bb->stmts_size)

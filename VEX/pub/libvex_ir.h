@@ -64,6 +64,8 @@ extern IRConst* IRConst_U64  ( ULong );
 extern IRConst* IRConst_F64  ( Double );
 extern IRConst* IRConst_F64i ( ULong );
 
+extern IRConst* dopyIRConst ( IRConst* );
+
 extern void ppIRConst ( IRConst* );
 extern Bool eqIRConst ( IRConst*, IRConst* );
 
@@ -79,6 +81,8 @@ typedef
    IRArray;
 
 extern IRArray* mkIRArray ( Int, IRType, Int );
+
+extern IRArray* dopyIRArray ( IRArray* );
 
 extern void ppIRArray ( IRArray* );
 extern Bool eqIRArray ( IRArray*, IRArray* );
@@ -390,6 +394,11 @@ extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( Char* name, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
+extern IRExpr*  dopyIRExpr ( IRExpr* );
+extern IRExpr** sopyIRExprVec ( IRExpr** );
+extern IRExpr** dopyIRExprVec ( IRExpr** );
+
+
 extern void ppIRExpr ( IRExpr* );
 
 
@@ -477,6 +486,8 @@ typedef
 extern void     ppIRDirty ( IRDirty* );
 extern IRDirty* emptyIRDirty ( void );
 
+extern IRDirty* dopyIRDirty ( IRDirty* );
+
 
 /* ------------------ Statements ------------------ */
 
@@ -533,6 +544,8 @@ extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty ( IRDirty* details );
 extern IRStmt* IRStmt_Exit  ( IRExpr* cond, IRConst* dst );
 
+extern IRStmt* dopyIRStmt ( IRStmt* );
+
 extern void ppIRStmt ( IRStmt* );
 
 
@@ -570,6 +583,9 @@ typedef
    }
    IRTypeEnv;
 
+extern IRTemp     newIRTemp     ( IRTypeEnv*, IRType );
+extern IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* );
+
 extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
@@ -593,9 +609,13 @@ typedef
    IRBB;
 
 extern IRBB* emptyIRBB ( void );
-extern void  addStmtToIRBB ( IRBB*, IRStmt* );
+
+extern IRBB* dopyIRBB ( IRBB* );
 
 extern void ppIRBB ( IRBB* );
+
+extern void  addStmtToIRBB ( IRBB*, IRStmt* );
+
 
 
 /*---------------------------------------------------------------*/
@@ -604,8 +624,6 @@ extern void ppIRBB ( IRBB* );
 
 /* For messing with IR type environments */
 extern IRTypeEnv* emptyIRTypeEnv  ( void );
-extern IRTemp     newIRTemp       ( IRTypeEnv*, IRType );
-extern IRTypeEnv* copyIRTypeEnv   ( IRTypeEnv* );
 
 /* What is the type of this expression? */
 extern IRType typeOfIRConst ( IRConst* );

@@ -23,6 +23,10 @@
    They are not regarded as atoms, and instead lifted off and
    bound to temps.  This allows them to participate in CSE, which
    is important for getting good performance for x86 guest code.
+
+   ToDo:
+
+   make spec_helpers_BB always return flat code
 */
 
 
@@ -144,29 +148,13 @@ static Bool isAtom ( IRExpr* e )
 }
 
 
-/* Clone the NULL-terminated vector of IRExpr*s attached to a
-   CCall. */
-
-static IRExpr** copyIRExprCallArgs ( IRExpr** vec )
-{
-   Int      i;
-   IRExpr** newvec;
-   for (i = 0; vec[i]; i++)
-      ;
-   newvec = LibVEX_Alloc((i+1)*sizeof(IRExpr*));
-   for (i = 0; vec[i]; i++)
-      newvec[i] = vec[i];
-   newvec[i] = NULL;
-   return newvec;
-}
-
-
 /* Non-critical helper, heuristic for reducing the number of tmp-tmp
    copies made by flattening.  If in doubt return False. */
 
 static Bool isFlat ( IRExpr* e )
 {
-   if (e->tag == Iex_Get) return True;
+   if (e->tag == Iex_Get) 
+      return True;
    if (e->tag == Iex_Binop)
       return isAtom(e->Iex.Binop.arg1) && isAtom(e->Iex.Binop.arg2);
    if (e->tag == Iex_LDle)
@@ -224,7 +212,7 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
          return IRExpr_Tmp(t1);
 
       case Iex_CCall:
-         newargs = copyIRExprCallArgs(ex->Iex.CCall.args);
+         newargs = sopyIRExprVec(ex->Iex.CCall.args);
          for (i = 0; newargs[i]; i++)
             newargs[i] = flatten_Expr(bb, newargs[i]);
          t1 = newIRTemp(bb->tyenv, ty);
@@ -307,7 +295,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          d = st->Ist.Dirty.details;
          d2 = emptyIRDirty();
          *d2 = *d;
-         d2->args = copyIRExprCallArgs(d2->args);
+         d2->args = sopyIRExprVec(d2->args);
          if (d2->mFx != Ifx_None) {
             d2->mAddr = flatten_Expr(bb, d2->mAddr);
          } else {
@@ -334,7 +322,7 @@ static IRBB* flatten_BB ( IRBB* in )
    Int   i;
    IRBB* out;
    out = emptyIRBB();
-   out->tyenv = copyIRTypeEnv( in->tyenv );
+   out->tyenv = dopyIRTypeEnv( in->tyenv );
    for (i = 0; i < in->stmts_used; i++)
       if (in->stmts[i])
          flatten_Stmt( out, in->stmts[i] );
@@ -614,7 +602,7 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
 
    if (ex->tag == Iex_CCall) {
       Int      i;
-      IRExpr** args2 = copyIRExprCallArgs ( ex->Iex.CCall.args );
+      IRExpr** args2 = sopyIRExprVec(ex->Iex.CCall.args);
       for (i = 0; args2[i]; i++) {
          vassert(isAtom(args2[i]));
          args2[i] = subst_Expr(env, args2[i]);
@@ -698,7 +686,7 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
       d = st->Ist.Dirty.details;
       d2 = emptyIRDirty();
       *d2 = *d;
-      d2->args = copyIRExprCallArgs(d2->args);
+      d2->args = sopyIRExprVec(d2->args);
       if (d2->mFx != Ifx_None) {
          vassert(isAtom(d2->mAddr));
          d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
@@ -747,7 +735,7 @@ static IRBB* cprop_BB ( IRBB* in )
    IRStmt* st2;
 
    out = emptyIRBB();
-   out->tyenv = copyIRTypeEnv( in->tyenv );
+   out->tyenv = dopyIRTypeEnv( in->tyenv );
 
    /* Set up the env with which travels forward.  This holds a
       substitution, mapping IRTemps to atoms, that is, IRExprs which
@@ -1178,6 +1166,8 @@ static void redundant_put_removal_BB ( IRBB* bb )
    Hash64* env = newH64();
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
+      if (!st)
+         continue;
 
       /* Deal with conditional exits. */
       if (st->tag == Ist_Exit) {
@@ -1445,7 +1435,7 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
    switch (e->tag) {
 
       case Iex_CCall:
-         args2 = copyIRExprCallArgs(e->Iex.CCall.args);
+         args2 = sopyIRExprVec(e->Iex.CCall.args);
          for (i = 0; args2[i]; i++)
             args2[i] = tbSubst_Expr(env,args2[i]);
          return IRExpr_CCall(e->Iex.CCall.name,
@@ -2602,27 +2592,244 @@ void do_redundant_PutI_elimination ( IRBB* bb )
 
 
 /*---------------------------------------------------------------*/
+/*--- Loop unrolling                                          ---*/
+/*---------------------------------------------------------------*/
+
+static void deltaIRExpr ( IRExpr* e, Int delta )
+{
+  Int i;
+  switch (e->tag) {
+  case Iex_Tmp:
+    e->Iex.Tmp.tmp += delta;
+    break;
+  case Iex_Get:
+  case Iex_Const:
+    break;
+  case Iex_GetI:
+    deltaIRExpr(e->Iex.GetI.off, delta);
+    break;
+  case Iex_Binop:
+    deltaIRExpr(e->Iex.Binop.arg1, delta);
+    deltaIRExpr(e->Iex.Binop.arg2, delta);
+    break;
+  case Iex_Unop:
+    deltaIRExpr(e->Iex.Unop.arg, delta);
+    break;
+  case Iex_LDle:
+    deltaIRExpr(e->Iex.LDle.addr, delta);
+    break;
+  case Iex_CCall:
+    for (i = 0; e->Iex.CCall.args[i]; i++)
+      deltaIRExpr(e->Iex.CCall.args[i], delta);
+    break;
+  case Iex_Mux0X:
+    deltaIRExpr(e->Iex.Mux0X.cond, delta);
+    deltaIRExpr(e->Iex.Mux0X.expr0, delta);
+    deltaIRExpr(e->Iex.Mux0X.exprX, delta);
+    break;
+ default: vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+    vpanic("deltaIRExpr");
+  }
+}
+
+static void deltaIRStmt ( IRStmt* st, Int delta )
+{
+  switch (st->tag) {
+  case Ist_Put:
+    deltaIRExpr(st->Ist.Put.data, delta);
+    break;
+  case Ist_PutI:
+    deltaIRExpr(st->Ist.PutI.off, delta);
+    deltaIRExpr(st->Ist.PutI.data, delta);
+    break;
+  case Ist_Tmp: st->Ist.Tmp.tmp += delta;
+    deltaIRExpr(st->Ist.Tmp.data, delta);
+    break;
+  case Ist_Exit:
+    deltaIRExpr(st->Ist.Exit.cond, delta);
+    break;
+  case Ist_STle:
+    deltaIRExpr(st->Ist.STle.addr, delta);
+    deltaIRExpr(st->Ist.STle.data, delta);
+    break;
+  default: vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+    vpanic("deltaIRStmt");
+  }
+}
+
+/* If possible, return a loop-unrolled version of bb0.  The original
+   is changed.  If not possible, return NULL.  */
+
+/* The two schemas considered are:
+
+     X: BODY; goto X
+     --> X: BODY;BODY; goto X
+
+   and
+
+       X: BODY; if (c) goto X; goto Y
+   which trivially transforms to
+       X: BODY; if (!c) goto Y; goto X;
+   so it falls in the scope of the first case.  
+
+   X and Y must be literal (guest) addresses.
+*/
+
+static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
+{
+  Int i, n_vars;
+  Bool xxx_known;
+  Addr64 xxx_value, yyy_value;
+  IRExpr* udst;
+  IRStmt* st;
+  IRConst* con;
+  IRBB* bb1;
+  IRBB* bb2;
+
+   /* First off, figure out if we can unroll this loop.  Do this
+      without modifying bb0. */
+
+  if (bb0->jumpkind != Ijk_Boring)
+     return NULL;
+
+  xxx_known = False;
+  xxx_value = 0;
+
+  /* Extract the next-guest address.  If it isn't a literal, we 
+     have to give up. */
+
+  udst = bb0->next;
+  if (udst->tag == Iex_Const
+      && (udst->Iex.Const.con->tag == Ico_U32
+          || udst->Iex.Const.con->tag == Ico_U64)) {
+  /* The BB ends in a jump to a literal location. */
+  xxx_known = True;
+  xxx_value
+     = udst->Iex.Const.con->tag == Ico_U64
+         ?  udst->Iex.Const.con->Ico.U64
+         : (Addr64)(udst->Iex.Const.con->Ico.U32);
+  }
+
+  if (!xxx_known)
+    return NULL;
+
+  /* Now we know the BB ends to a jump to a literal location. 
+If it's a jump to itself (viz, idiom #1), move directly to the unrolling stage,
+first cloning the bb so the original isn't modified. */
+  if (xxx_value == my_addr) {
+    bb1 = dopyIRBB( bb0 );
+    bb0 = NULL;
+    udst = NULL; /* is now invalid */
+    goto do_unroll;
+  }
+
+  /* Search for the second idiomatic form:
+        X: BODY; if (c) goto X; goto Y
+     We know Y, but need to establish that the last stmt
+is 'if (c) goto X'.
+  */
+  yyy_value = xxx_value;
+  for (i = bb0->stmts_used-1; i >= 0; i--)
+    if (bb0->stmts[i])
+      break;
+
+  if (i < 0)
+    return NULL; /* block with no stmts.  Strange. */
+  st = bb0->stmts[i];
+  if (st->tag != Ist_Exit)
+    return NULL;
+
+  con = st->Ist.Exit.dst;
+  vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
+xxx_value
+= con->tag == Ico_U64 
+    ? st->Ist.Exit.dst->Ico.U64
+  : (Addr64)(st->Ist.Exit.dst->Ico.U32);
+
+/* If this assertion fails, we have some kind of type error. */
+ vassert(con->tag == udst->Iex.Const.con->tag);
+
+ if (xxx_value != my_addr)
+ /* We didn't find either idiom.  Give up. */
+   return NULL;
+
+   /* Ok, we found idiom #2.  Copy the BB, switch around the xxx and yyy values (which makes it look like idiom #1), and go into unrolling proper.  This means finding (again) the last stmt, in the copied BB. */
+    bb1 = dopyIRBB( bb0 );
+    bb0 = NULL;
+    udst = NULL; /* is now invalid */
+  for (i = bb1->stmts_used-1; i >= 0; i--)
+    if (bb1->stmts[i])
+      break;
+  /* The next bunch of assertions should be true since we already found and checked the last stmt in the original bb. */
+  vassert(i >= 0);
+  st = bb1->stmts[i];
+  vassert(st->tag == Ist_Exit);
+  con = st->Ist.Exit.dst;
+  vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
+  udst = bb1->next;
+  vassert(udst->tag == Iex_Const);
+  vassert(udst->Iex.Const.con->tag == Ico_U32
+          || udst->Iex.Const.con->tag == Ico_U64);
+ vassert(con->tag == udst->Iex.Const.con->tag);
+  /* switch the xxx and yyy fields around */
+ if (con->tag == Ico_U64) {
+   udst->Iex.Const.con->Ico.U64 = xxx_value;
+   con->Ico.U64 = yyy_value;
+ } else {
+   udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
+   con->Ico.U64 = (UInt)yyy_value;
+ }
+   /* negate the test condition; blargh */
+   st->Ist.Exit.cond = IRExpr_Unop(Iop_32to1,IRExpr_Unop(Iop_Not32,IRExpr_Unop(Iop_1Uto32,dopyIRExpr(st->Ist.Exit.cond))));
+
+ /* --- The unroller proper.  Both idioms are now converted to idiom 1. --- */
+
+ do_unroll:
+
+   n_vars = bb1->tyenv->types_used;
+
+   bb2 = dopyIRBB(bb1);
+   for (i = 0; i < n_vars; i++) {
+     (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
+   }
+   for (i = 0; i < bb2->stmts_used; i++) {
+     if (bb2->stmts[i] == NULL)
+       continue;
+     /* deltaIRStmt destructively modifies the stmt, but 
+	that's OK since bb2 is a complete fresh copy of bb1. */
+     deltaIRStmt(bb2->stmts[i], n_vars);
+     addStmtToIRBB(bb1, bb2->stmts[i]);
+   }
+
+   if (0) {
+    vex_printf("\nUNROLLED (%llx)\n", my_addr);
+    ppIRBB(bb1);
+    vex_printf("\n");
+   }
+
+    return flatten_BB(bb1);
+
+}
+
+/*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
 
-static Bool iropt_verbose = False;
+static Bool iropt_verbose = False; //True;
 
-
-/* Rules of the game:
-
-   - IRExpr/IRStmt trees should be treated as immutable, as they
-     may get shared.  So never change a field of such a tree node;
-     instead construct and return a new one if needed.
-*/
 
 /* Do a simple cleanup pass on bb.  This is: redundant Get removal,
    redundant Put removal, constant propagation, dead code removal,
    clean helper specialisation, and dead code removal (again).
-*/
+
+   Note, spec_helpers_BB destroys the 'flat' property, as the
+   expressions which replace clean helper calls can be arbitrarily
+   deep.  This should be fixed.  */
 
 static 
-IRBB* baseline_cleanup ( IRBB* bb,
-                         IRExpr* (*specHelper) ( Char*, IRExpr**) )
+IRBB* cheap_transformations ( 
+         IRBB* bb,
+         IRExpr* (*specHelper) ( Char*, IRExpr**) )
 {
    redundant_get_removal_BB ( bb );
    if (iropt_verbose) {
@@ -2658,11 +2865,27 @@ IRBB* baseline_cleanup ( IRBB* bb,
    return bb;
 }
 
+
+/* Do some more expensive transformations on bb, which are aimed at
+   optimising as much as possible in the presence of GetI and PutI.  */
+
+static
+IRBB* expensive_transformations( IRBB* bb )
+{
+   cse_BB( bb );
+   collapse_AddSub_chains_BB( bb );
+   do_PutI_GetI_forwarding_BB( bb );
+   do_redundant_PutI_elimination( bb );
+   dead_BB( bb );
+   return flatten_BB( bb );
+}
+
+
 /* Scan a flattened BB to see if it has any GetI or PutIs in it.  Used
    as a heuristic hack to see if iropt needs to do expensive
-   optimisations (CSE, PutI -> GetI forwarding) to improve code with
-   those in. 
-*/
+   optimisations (CSE, PutI -> GetI forwarding, redundant PutI
+   elimination) to improve code containing GetI or PutI.  */
+
 static Bool hasGetIorPutI ( IRBB* bb )
 {
    Int i, j;
@@ -2709,18 +2932,28 @@ static Bool hasGetIorPutI ( IRBB* bb )
 }
 
 
+/* ---------------- The main iropt entry point. ---------------- */
+
 /* exported from this file */
-/* The main iropt entry point. */
+/* Rules of the game:
+
+   - IRExpr/IRStmt trees should be treated as immutable, as they
+     may get shared.  So never change a field of such a tree node;
+     instead construct and return a new one if needed.
+*/
+
 
 IRBB* do_iropt_BB ( IRBB* bb0,
-                    IRExpr* (*specHelper) ( Char*, IRExpr**) )
+                    IRExpr* (*specHelper) ( Char*, IRExpr**),
+                    Addr64 guest_addr )
 {
    static UInt n_total     = 0;
    static UInt n_expensive = 0;
 
    Bool show_res = False;
+   Bool do_expensive;
 
-   IRBB *bb;
+   IRBB *bb, *bb2;
  
    n_total++;
 
@@ -2734,43 +2967,39 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       ppIRBB(bb);
    }
 
-   /* Now do a preliminary cleanup pass. */
+   /* Now do a preliminary cleanup pass, and figure out if we also
+      need to do 'expensive' optimisations.  Expensive optimisations
+      are deemed necessary if the block contains any GetIs or PutIs.
+      If needed, do expensive transformations and then another cheap
+      cleanup pass. */
 
-   bb = baseline_cleanup( bb, specHelper );
-
-   /* If there are GetI/PutI in this block, do some expensive
-      transformations:
-
-    - CSE 
-    - re-run of the baseline cleanup
-
-   */
-
-   if (hasGetIorPutI(bb)) {
+   bb = cheap_transformations( bb, specHelper );
+   do_expensive = hasGetIorPutI(bb);
+   if (do_expensive) {
       n_expensive++;
-      vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
-      cse_BB( bb );
-      //ppIRBB(bb); vex_printf("\n\n");
-      collapse_AddSub_chains_BB( bb );
-      do_PutI_GetI_forwarding_BB( bb );
-      do_redundant_PutI_elimination( bb );
-      /*
-      ppIRBB(bb); vex_printf("\n\n");
-      dead_BB( bb );
-      bb = cprop_BB ( bb );
-      dead_BB(bb);
-      */
-      //ppIRBB(bb); vex_printf("\n\nQQQQ\n");
-      bb = baseline_cleanup( flatten_BB(bb), specHelper );
-      //vassert(0);
-      //      vex_printf("expensive done\n");
       //show_res = True;
+      vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
+      bb = expensive_transformations( bb );
+      bb = cheap_transformations( bb, specHelper );
+   }
+
+   /* Now have a go at unrolling simple (single-BB) loops.  If
+      successful, clean up the results as much as possible. */
+
+   bb2 = maybe_loop_unroll_BB( bb, guest_addr );
+   if (bb2) {
+     //show_res = True;
+      bb = cheap_transformations( bb2, specHelper );
+      if (do_expensive) {
+         bb = expensive_transformations( bb );
+         bb = cheap_transformations( bb, specHelper );
+      }
    }
 
    /* Finally, rebuild trees, for the benefit of instruction
       selection. */
 
-   treebuild_BB ( bb );
+   treebuild_BB( bb );
    if (show_res || iropt_verbose) {
       vex_printf("\n========= TREEd \n\n" );
       ppIRBB(bb);

@@ -1978,6 +1978,8 @@ static void cse_BB ( IRBB* bb )
 /*--- Add32/Sub32 chain collapsing                            ---*/
 /*---------------------------------------------------------------*/
 
+/* ----- Helper functions for Add32/Sub32 chain collapsing ----- */
+
 /* Is this expression "Add32(tmp,const)" or "Sub32(tmp,const)" ?  If
    yes, set *tmp and *i32 appropriately.  *i32 is set as if the
    root node is Add32, not Sub32. */
@@ -2046,9 +2048,9 @@ static Bool collapseChain ( IRBB* bb, Int startHere,
 }
 
 
-/* The main function.  Needs renaming. */
+/* ------- Main function for Add32/Sub32 chain collapsing ------ */
 
-static void track_deltas_BB ( IRBB* bb )
+static void collapse_AddSub_chains_BB ( IRBB* bb )
 {
    IRStmt *st;
    IRTemp var, var2;
@@ -2266,21 +2268,25 @@ GSAliasing getAliasingRelation_II (
 }
 
 
+/* Given the parts (descr, tmp, bias) for a GetI, scan backwards from
+   the given starting point to find, if any, a PutI which writes
+   exactly the same piece of guest state, and so return the expression
+   that the PutI writes.  This is the core of PutI-GetI forwarding. */
+
 static 
 IRExpr* findPutI ( IRBB* bb, Int startHere,
-                   IRArray* descrG, IRTemp tmpG, Int biasG )
+                   IRArray* descrG, IRExpr* ixG, Int biasG )
 {
-   Int      j, iters, biasP;
-   UInt     minoffP, maxoffP, minoffG, maxoffG;
-   IRArray* descrP;
-   IRStmt*  st;
-   IRTemp   tmpP;
+   Int        j;
+   UInt       minoffP, maxoffP, minoffG, maxoffG;
+   IRStmt*    st;
+   GSAliasing relation;
 
    if (0) {
       vex_printf("\nfindPutI ");
       ppIRArray(descrG);
       vex_printf(" ");
-      ppIRTemp(tmpG);
+      ppIRExpr(ixG);
       vex_printf(" %d\n", biasG);
    }
 
@@ -2296,91 +2302,58 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
          /* Non-indexed Put.  This can't give a binding, but we do
             need to check it doesn't invalidate the search by
             overlapping any part of the indexed guest state. */
-         minoffP = st->Ist.Put.offset;
-         maxoffP = minoffP + sizeofIRType(
-                                typeOfIRExpr(bb->tyenv,st->Ist.Put.data)) 
-                           - 1;
-         vassert((minoffP & 0xFFFF0000) == 0);
-         vassert((maxoffP & 0xFFFF0000) == 0);
-         vassert(minoffP <= maxoffP);
-         if (maxoffP < minoffG || maxoffG < minoffP) {
+
+         relation
+            = getAliasingRelation_IC(
+                 descrG, ixG,
+                 st->Ist.Put.offset,
+                 typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
+
+         if (relation == NoAlias) {
             /* we're OK; keep going */
             continue;
          } else {
+            /* relation == UnknownAlias || relation == ExactAlias */
+            /* If this assertion fails, we've found a Put which writes
+               an area of guest state which is read by a GetI.  Which
+               is unlikely (although not per se wrong). */
+            vassert(relation != ExactAlias);
             /* This Put potentially writes guest state that the GetI
                reads; we must fail. */
-           return NULL;
+            return NULL;
          }
       }
 
       if (st->tag == Ist_PutI) {
-         /* Indexed Put.  First off, do an invalidation check. */
-         descrP = st->Ist.PutI.descr;
-         getArrayBounds( descrP, &minoffP, &maxoffP );
-         if (maxoffP < minoffG || maxoffG < minoffP) {
+
+         relation = getAliasingRelation_II(
+                       descrG, ixG, biasG,
+                       st->Ist.PutI.descr,
+                       st->Ist.PutI.off,
+                       st->Ist.PutI.bias
+                    );
+
+         if (relation == NoAlias) {
             /* This PutI definitely doesn't overlap.  Ignore it and
                keep going. */
-            continue;
+            continue; /* the for j loop */
          }
-         /* This PutI potentially writes the same array that the GetI
-            reads.  It's safe to keep going provided we can show the
-            PutI writes some *other* element in the same array -- not
-            this one. */
 
-         if (!eqIRArray(descrG, descrP))
-            /* The written array has different base, type or size from
-               the read array.  Better give up. */
+         if (relation == UnknownAlias) {
+            /* We don't know if this PutI writes to the same guest
+               state that the GetI, or not.  So we have to give up. */
             return NULL;
-
-         if (st->Ist.PutI.off->tag != Iex_Tmp) {
-            ppIRStmt(st);
-            vpanic("vex iropt: findPutI: .off is not Tmp");
-         }
-         tmpP = st->Ist.PutI.off->Iex.Tmp.tmp;
-         if (tmpP != tmpG) 
-            /* We can't show that the base offsets are different.
-               Prior CSE and Add/Sub-chain collapsing passes should
-               have made them the same wherever possible.  Give up. */
-            return NULL;
-
-         biasP = st->Ist.PutI.bias;
-         /* So now we know that the GetI and PutI index the same array
-            with the same base.  Are the offsets the same, modulo the
-            array size?  Do this paranoidly. */
-         vassert(descrP->nElems == descrG->nElems);
-         iters = 0;
-         while (biasP < 0 || biasG < 0) {
-            biasP += descrP->nElems;
-            biasG += descrP->nElems;
-            iters++;
-            if (iters > 10)
-               vpanic("findPutI: iters");
-         }
-         vassert(biasP >= 0 && biasG >= 0);
-         biasP %= descrP->nElems;
-         biasG %= descrP->nElems;
-
-         /* Finally, biasP and biasG are normalised into the range 
-            0 .. descrP/G->nElems - 1.  And so we can establish
-            equality/non-equality. */
-
-         /* Now we know the PutI doesn't invalidate the search.  But
-            does it supply a binding for the GetI ? */
-         if (0) {
-            vex_printf("considering P ");
-            ppIRStmt(st);
-            vex_printf("\n");
-         }
-         if (biasP == biasG) {
-            /* Yup, found a replacement. */
-            return st->Ist.PutI.data;
          }
 
-         /* else ... no, they don't match.  Keep going. */
+         /* Otherwise, we've found what we're looking for.  */
+         vassert(relation == ExactAlias);
+         return st->Ist.PutI.data;
+
       } /* if (st->tag == Ist_PutI) */
 
    } /* for */
 
+   /* No valid replacement was found. */
    return NULL;
 }
 
@@ -2501,10 +2474,13 @@ void do_PutI_GetI_forwarding_BB ( IRBB* bb )
           && st->Ist.Tmp.data->tag == Iex_GetI
           && st->Ist.Tmp.data->Iex.GetI.off->tag == Iex_Tmp) {
          IRArray* descr = st->Ist.Tmp.data->Iex.GetI.descr;
-         IRTemp   tmp   = st->Ist.Tmp.data->Iex.GetI.off->Iex.Tmp.tmp;
+         IRExpr*  ix    = st->Ist.Tmp.data->Iex.GetI.off;
          Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
-         IRExpr*  replacement = findPutI(bb, i-1, descr, tmp, bias);
-         if (replacement && isAtom(replacement)) {
+         IRExpr*  replacement = findPutI(bb, i-1, descr, ix, bias);
+         if (replacement 
+             && isAtom(replacement)
+             /* Make sure we're doing a type-safe transformation! */
+             && typeOfIRExpr(bb->tyenv, replacement) == descr->elemTy) {
             if (DEBUG_IROPT) {
                vex_printf("PiGi: "); 
                ppIRExpr(st->Ist.Tmp.data);
@@ -2538,12 +2514,12 @@ void do_redundant_PutI_elimination ( IRBB* bb )
          hazards.  Search forwards:
          * If conditional exit, give up (because anything after that 
            does not postdominate this put).
-	 * If a Get which might overlap, give up (because this PutI 
+         * If a Get which might overlap, give up (because this PutI 
            not necessarily dead).
-	 * If a Put which is identical, stop with success.
-	 * If a Put which might overlap, but is not identical, give up.
-	 * If a dirty helper call which might write guest state, give up.
-	 * If a Put which definitely doesn't overlap, or any other 
+         * If a Put which is identical, stop with success.
+         * If a Put which might overlap, but is not identical, give up.
+         * If a dirty helper call which might write guest state, give up.
+         * If a Put which definitely doesn't overlap, or any other 
            kind of stmt, continue.
       */
       delete = False;
@@ -2730,7 +2706,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
       cse_BB( bb );
       //ppIRBB(bb); vex_printf("\n\n");
-      track_deltas_BB( bb );
+      collapse_AddSub_chains_BB( bb );
       do_PutI_GetI_forwarding_BB( bb );
       do_redundant_PutI_elimination( bb );
       /*

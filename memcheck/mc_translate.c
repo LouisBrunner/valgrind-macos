@@ -1107,7 +1107,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case SSE3a_MemRd:
          case SSE3a_MemWr:
          case SSE2a_MemWr:
-         case SSE2a_MemRd: { 
+         case SSE2a_MemRd:
+         case SSE3a1_MemRd: { 
             Bool is_load;
             Int t_size;
 
@@ -1116,7 +1117,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
             t_size = INVALID_TEMPREG;
             is_load = u_in->opcode==SSE2a_MemRd 
-                      || u_in->opcode==SSE3a_MemRd;
+                      || u_in->opcode==SSE3a_MemRd
+                      || u_in->opcode==SSE3a1_MemRd;
 
             sk_assert(u_in->tag3 == TempReg);
 

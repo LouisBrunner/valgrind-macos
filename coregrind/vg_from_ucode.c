@@ -1583,6 +1583,30 @@ static void emit_SSE3g ( FlagSet uses_sflags,
       );
 }
 
+static void emit_SSE3a1 ( FlagSet uses_sflags, 
+                          FlagSet sets_sflags,
+                          UChar first_byte, 
+                          UChar second_byte, 
+ 			  UChar third_byte,
+ 			  UChar fourth_byte,
+ 			  UChar fifth_byte,
+                          Int ireg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   VG_(emitB) ( third_byte );
+   fourth_byte &= 0x38; /* mask out mod and rm fields */
+   emit_amode_regmem_reg ( ireg, fourth_byte >> 3 );
+   VG_(emitB) ( fifth_byte );
+   if (dis)
+      VG_(printf)("\n\t\tsse3a1-0x%x:0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+                  (UInt)first_byte, (UInt)second_byte, 
+                  (UInt)third_byte, (UInt)fourth_byte,
+                  (UInt)fifth_byte,
+                  nameIReg(4,ireg) );
+}
+
 static void emit_SSE4 ( FlagSet uses_sflags, 
                         FlagSet sets_sflags,
                         UChar first_byte, 
@@ -4063,6 +4087,25 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                        u->val3 );
          break;
 
+      case SSE3a1_MemRd:
+         vg_assert(u->size == 16);
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == Lit16);
+         vg_assert(u->tag3 == RealReg);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE3a1 ( u->flags_r, u->flags_w,
+                      (u->val1 >> 8) & 0xFF,
+                      u->val1 & 0xFF,
+                      (u->val2 >> 8) & 0xFF,
+                      u->val2 & 0xFF,
+                      (u->lit32 >> 8) & 0xFF,
+                      u->val3 );
+         break;
+
       case SSE5:
          vg_assert(u->size == 0);
          vg_assert(u->tag1 == Lit16);
@@ -4103,7 +4146,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == NoValue);
-         vg_assert(!anyFlagUse(u));
+         vg_assert(!readFlagUse(u));
          if (!(*sselive)) {
             emit_get_sse_state();
             *sselive = True;

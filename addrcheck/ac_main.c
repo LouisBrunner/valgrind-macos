@@ -979,15 +979,16 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
             break;
 
-         /* For memory-ref instrs, copy the data_addr into a temporary to be
-          * passed to the helper at the end of the instruction.
+         /* For memory-ref instrs, copy the data_addr into a temporary
+          * to be passed to the helper at the end of the instruction.
           */
          case LOAD:
             switch (u_in->size) {
                case 4:  helper = (Addr)ac_helperc_LOAD4; break;
                case 2:  helper = (Addr)ac_helperc_LOAD2; break;
                case 1:  helper = (Addr)ac_helperc_LOAD1; break;
-               default: VG_(skin_panic)("addrcheck::SK_(instrument):LOAD");
+               default: VG_(skin_panic)
+                           ("addrcheck::SK_(instrument):LOAD");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
             uCCall (cb, helper, 1, 1, False );
@@ -999,7 +1000,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 4:  helper = (Addr)ac_helperc_STORE4; break;
                case 2:  helper = (Addr)ac_helperc_STORE2; break;
                case 1:  helper = (Addr)ac_helperc_STORE1; break;
-               default: VG_(skin_panic)("addrcheck::SK_(instrument):STORE");
+               default: VG_(skin_panic)
+                           ("addrcheck::SK_(instrument):STORE");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val2);
             uCCall (cb, helper, 1, 1, False );
@@ -1046,7 +1048,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case SSE3a_MemRd: // this one causes trouble
+         case SSE3a_MemRd:
          case SSE2a_MemRd:
             helper = (Addr)ac_fpu_READ_check;
 	    goto do_Access_ARG3;
@@ -1055,7 +1057,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG3;
          do_Access_ARG3:
-	    sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+	    sk_assert(u_in->size == 4 
+                      || u_in->size == 8 || u_in->size == 16);
             sk_assert(u_in->tag3 == TempReg);
             t_addr = u_in->val3;
             t_size = newTemp(cb);
@@ -1066,10 +1069,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-	    //         case SSE2a1_MemRd:
-	    //         case SSE2a1_MemWr:
-	   //         case SSE3a1_MemRd:
-	   //         case SSE3a1_MemWr:
+         case SSE2a1_MemRd:
+         case SSE3a1_MemRd:
 	    VG_(pp_UInstr)(0,u_in);
 	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
 	    break;
@@ -1081,6 +1082,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case SSE3g_RegWr:
          case SSE3e_RegRd:
          case SSE4:
+         case SSE3:
          default:
             VG_(copy_UInstr)(cb, u_in);
             break;

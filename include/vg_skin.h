@@ -658,9 +658,7 @@ typedef
          holding the address.  Arg3 holds this Temp/Real Reg.
          Transfer is at stated size.  */
       SSE2a1_MemRd,
-#if 0
-      SSE2a1_MemWr,
-#endif
+
       /* 4 bytes, writes an integer register.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg bbb.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced
@@ -718,7 +716,7 @@ typedef
       /* 5 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0], val2[15:0] and val3[7:0]. */
       SSE5,
-#if 0
+
       /* 5 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
          Held in val1[15:0], val2[15:0], lit32[7:0].
@@ -726,8 +724,7 @@ typedef
          to the Temp/RealReg holding the address.  Arg3 holds this
          Temp/Real Reg.  Transfer is always at size 16.  */
       SSE3a1_MemRd,
-      SSE3a1_MemWr,
-#endif
+
       /* ------------------------ */
 
       /* Not strictly needed, but improve address calculation translations. */

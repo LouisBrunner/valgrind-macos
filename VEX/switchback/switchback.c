@@ -171,7 +171,7 @@ void switchback ( void )
 
 #elif defined(__powerpc__)
 
-static void flush_cache(void *ptr, int nbytes)
+static void invalidate_icache(void *ptr, int nbytes)
 {
    unsigned long startaddr = (unsigned long) ptr;
    unsigned long endaddr = startaddr + nbytes;
@@ -271,6 +271,7 @@ void switchback ( void )
 
    if (diff < -0x2000000 || diff >= 0x2000000) {
      // we're hosed.  Give up
+     assert(0);
    }
 
    sb_helper1 = (HWord)&gst;
@@ -282,7 +283,7 @@ void switchback ( void )
    /* branch to diff */
    p[0] = ((18<<26) | (diff & 0x3FFFFFC) | (0<<1) | (0<<0));
 
-   flush_cache( &p[0], sizeof(UInt) );
+   invalidate_icache( &p[0], sizeof(UInt) );
 
    switchback_asm(); // never returns
 }
@@ -358,10 +359,11 @@ asm(
 // CAB: todo
 
 // store registers to stack
-// load new stack pointer
-// call translation address
-// save return value
+// r31 (guest state ptr) := global var "gp"
+// call translation address in global var "f"
+// save return value (in r3) into global var "res"
 // reload registers from stack
+// return in usual way
 
 "   "
 );
@@ -421,7 +423,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
            NULL, /* access checker */
-           verbose ? TEST_FLAGS : 0//(1<<3)|(1<<2) //0
+           verbose ? TEST_FLAGS : (1<<7)|(1<<3) //0
         );
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;
@@ -429,10 +431,14 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    assert(trans_cache_used + ws_needed < N_TRANS_CACHE);
 
    for (i = 0; i < trans_used; i++) {
-     HChar* dst = ((HChar*)(&trans_cache[trans_cache_used])) + i;
-     HChar* src = (HChar*)(&transbuf[i]);
-     *dst = *src;
+      HChar* dst = ((HChar*)(&trans_cache[trans_cache_used])) + i;
+      HChar* src = (HChar*)(&transbuf[i]);
+      *dst = *src;
    }
+
+#if defined(__powerpc__)
+   invalidate_icache( &trans_cache[trans_cache_used], trans_used );
+#endif
 
    trans_tableP[trans_table_used] = &trans_cache[trans_cache_used];
    trans_table_used++;
@@ -556,7 +562,7 @@ int main ( Int argc, HChar** argv )
    }
 
    LibVEX_default_VexControl(&vcon);
-   vcon.guest_max_insns=50;
+   vcon.guest_max_insns=1;
    vcon.guest_chase_thresh=0;
 
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
@@ -575,18 +581,17 @@ int main ( Int argc, HChar** argv )
    gst.guest_RDI = (ULong)serviceFn;
    *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
 #  elif defined(__powerpc__)
-// CAB: ?
    gst.guest_CIA  = (UInt)entry;
-   gst.guest_GPR1 = (UInt)&gstack[25000];
-   gst.guest_GPR2 = (UInt)serviceFn;
-   gst.guest_GPR1 = 0x12345678;
+   gst.guest_GPR1 = (UInt)&gstack[25000]; /* stack pointer */
+   gst.guest_GPR3 = (UInt)serviceFn; /* param to entry */
+   gst.guest_LR = 0x12345678; /* bogus return address */
 #  else
 #  error "Unknown arch"
 #  endif
 
    printf("\n---START---\n");
 
-#if 1
+#if 0
    run_simulator();
 #else
    ( (void(*)(HWord(*)(HWord,HWord))) entry ) (serviceFn);

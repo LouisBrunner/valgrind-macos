@@ -783,11 +783,13 @@ void VG_(init_dataseg_end_for_brk) ( void )
 static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 {
    if (fd < 0 || fd > VG_MAX_FD || fd == VG_(clo_logfile_fd)) {
-      VG_(message)(Vg_UserMsg, "Warning: bad use of file descriptor %d in syscall %s()",
-		   fd, syscall);
+      VG_(message)(Vg_UserMsg, 
+         "Warning: invalid file descriptor %d in syscall %s()",
+         fd, syscall);
       if (fd == VG_(clo_logfile_fd))
-	 VG_(message)(Vg_UserMsg, "   Use --logfile-fd=<number> to select an alternative "
-		      "logfile fd.");
+	 VG_(message)(Vg_UserMsg, 
+            "   Use --logfile-fd=<number> to select an alternative "
+	    "logfile fd.");
       if (VG_(clo_verbosity) > 1) {
 	 ExeContext *ec = VG_(get_ExeContext)(tid);
 	 VG_(pp_ExeContext)(ec);

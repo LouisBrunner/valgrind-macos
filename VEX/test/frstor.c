@@ -15,7 +15,7 @@ void do_frstor ( void* p )
 int main ( void )
 {
    int i;
-   unsigned short* buf = malloc(54*sizeof(int));
+   unsigned short* buf = malloc(54*sizeof(short));
    for (i = 0; i < 54; i++)
       buf[i] = i;
    buf[0] = 0x037f;

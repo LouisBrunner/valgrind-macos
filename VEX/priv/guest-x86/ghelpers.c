@@ -658,7 +658,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
          return mkU32(0);
       }
       if (isU32(cc_op, CC_OP_DECL) || isU32(cc_op, CC_OP_INCL)) {
-         /* If the thunk is dec or inc, the cflag is supplied as CC_SRC. */
+         /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
 #     if 0
@@ -745,6 +745,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
                            unop(Iop_32to8,cc_dep1), 
                            unop(Iop_32to8,cc_dep2)));
       }
+
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
          /* long sub/cmp, then NBE (unsigned greater than)
             --> test src <=u dst */
@@ -761,12 +762,12 @@ IRExpr* x86guest_spechelper ( Char* function_name,
          /* long and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
-#if 1
+
       if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondS)) {
          /* long and/or/xor, then S --> test dst <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
       }
-#endif
+
       if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
@@ -792,12 +793,11 @@ IRExpr* x86guest_spechelper ( Char* function_name,
          /* dec L, then Z --> test dst == 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
-#if 1
+
       if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondS)) {
          /* dec L, then S --> compare DST <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
       }
-#endif
 
       return NULL;
    }

@@ -217,9 +217,8 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
         *fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
       else
         *fnames = VG_(arena_realloc)(
-                     VG_AR_SYMTAB, *fnames, VG_MIN_MALLOC_SZB,
-                     sizeof(UInt) 
-                        * (state_machine_regs.last_file_entry + 1));
+                     VG_AR_SYMTAB, *fnames,
+                     sizeof(UInt) * (state_machine_regs.last_file_entry + 1));
       (*fnames)[state_machine_regs.last_file_entry] = VG_(addStr) (si,name, -1);
       data += VG_(strlen) ((char *) data) + 1;
       read_leb128 (data, & bytes_read, 0);
@@ -370,7 +369,6 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
                fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
              else
                fnames = VG_(arena_realloc)(VG_AR_SYMTAB, fnames,
-                           VG_MIN_MALLOC_SZB,
                            sizeof(UInt) 
                               * (state_machine_regs.last_file_entry + 1));
              data += VG_(strlen) ((Char *) data) + 1;

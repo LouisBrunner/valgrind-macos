@@ -75,8 +75,7 @@ static char *ada_demangle  PARAMS ((const char *, int));
 #define xstrdup(ptr)        VG_(arena_strdup) (VG_AR_DEMANGLE, ptr)
 #define free(ptr)           VG_(arena_free)   (VG_AR_DEMANGLE, ptr)
 #define xmalloc(size)       VG_(arena_malloc) (VG_AR_DEMANGLE, size)
-#define xrealloc(ptr, size) VG_(arena_realloc)(VG_AR_DEMANGLE, ptr, \
-                                               VG_MIN_MALLOC_SZB, size)
+#define xrealloc(ptr, size) VG_(arena_realloc)(VG_AR_DEMANGLE, ptr, size)
 
 #define abort() vg_assert(0)
 #undef strstr

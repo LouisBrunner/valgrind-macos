@@ -1251,8 +1251,7 @@ SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb,
-                          SizeT bytes_per_memb )
+void* VG_(arena_calloc) ( ArenaId aid, SizeT nmemb, SizeT bytes_per_memb )
 {
    SizeT  size;
    UChar* p;
@@ -1262,10 +1261,7 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb,
    size = nmemb * bytes_per_memb;
    vg_assert(size >= nmemb && size >= bytes_per_memb);// check against overflow
 
-   if (alignB == VG_MIN_MALLOC_SZB)
-      p = VG_(arena_malloc) ( aid, size );
-   else
-      p = VG_(arena_malloc_aligned) ( aid, alignB, size );
+   p = VG_(arena_malloc) ( aid, size );
 
    VG_(memset)(p, 0, size);
 
@@ -1277,8 +1273,7 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb,
 }
 
 
-void* VG_(arena_realloc) ( ArenaId aid, void* ptr, 
-                           SizeT req_alignB, SizeT req_pszB )
+void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
 {
    Arena* a;
    SizeT  old_bszB, old_pszB;
@@ -1305,12 +1300,8 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
       return ptr;
    }
 
-   if (req_alignB == VG_MIN_MALLOC_SZB)
-      p_new = VG_(arena_malloc) ( aid, req_pszB );
-   else {
-      p_new = VG_(arena_malloc_aligned) ( aid, req_alignB, req_pszB );
-   }
-
+   p_new = VG_(arena_malloc) ( aid, req_pszB );
+      
    VG_(memcpy)(p_new, ptr, old_pszB);
 
    VG_(arena_free)(aid, ptr);
@@ -1338,13 +1329,12 @@ void  VG_(free) ( void* ptr )
 
 void* VG_(calloc) ( SizeT nmemb, SizeT bytes_per_memb )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, VG_MIN_MALLOC_SZB, nmemb,
-                              bytes_per_memb );
+   return VG_(arena_calloc) ( VG_AR_TOOL, nmemb, bytes_per_memb );
 }
 
 void* VG_(realloc) ( void* ptr, SizeT size )
 {
-   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, VG_MIN_MALLOC_SZB, size );
+   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, size );
 }
 
 void* VG_(malloc_aligned) ( SizeT req_alignB, SizeT req_pszB )

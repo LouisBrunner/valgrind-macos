@@ -192,20 +192,16 @@ void VGA_(init_thread1state) ( Addr client_eip,
 
 VexGuestX86SegDescr* VG_(alloc_zeroed_x86_GDT) ( void )
 {
-   Int nbytes 
-      = VEX_GUEST_X86_GDT_NENT * sizeof(VexGuestX86SegDescr);
-   return
-      VG_(arena_calloc)(VG_AR_CORE, VG_MIN_MALLOC_SZB, nbytes, 1);
+   Int nbytes = VEX_GUEST_X86_GDT_NENT * sizeof(VexGuestX86SegDescr);
+   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
 }
 
 /* Create a zeroed-out LDT. */
 
 VexGuestX86SegDescr* VG_(alloc_zeroed_x86_LDT) ( void )
 {
-   Int nbytes 
-      = VEX_GUEST_X86_LDT_NENT * sizeof(VexGuestX86SegDescr);
-   return
-      VG_(arena_calloc)(VG_AR_CORE, VG_MIN_MALLOC_SZB, nbytes, 1);
+   Int nbytes = VEX_GUEST_X86_LDT_NENT * sizeof(VexGuestX86SegDescr);
+   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
 }
 
 /* Free up an LDT or GDT allocated by the above fns. */

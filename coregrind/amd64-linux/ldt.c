@@ -110,8 +110,7 @@ VgLdtEntry* VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt )
  
    if (parent_ldt == NULL) {
       /* Allocate a new zeroed-out one. */
-      ldt = (VgLdtEntry*)VG_(arena_calloc)(VG_AR_CORE, VG_MIN_MALLOC_SZB, 
-                                           nbytes, 1);
+      ldt = (VgLdtEntry*)VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
    } else {
      ldt = (VgLdtEntry*)VG_(arena_malloc)(VG_AR_CORE, nbytes);
      for (i = 0; i < VG_M_LDT_ENTRIES; i++)

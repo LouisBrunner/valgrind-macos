@@ -181,7 +181,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
    vg_csbs[vg_csb_used].size  = sz;
    /* Actually running a thread at this point. */
    vg_csbs[vg_csb_used].where 
-      = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
+      = VG_(get_ExeContext) ( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    vg_csb_used++;
 
    if (vg_csb_used > vg_csb_used_MAX)
@@ -279,7 +279,8 @@ Bool VG_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 void VG_(delete_client_stack_blocks_following_ESP_change) ( void )
 {
    Addr newESP;
-   newESP = VG_(baseBlock)[VGOFF_(m_esp)];
+   newESP 
+     = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
    while (vg_csb_used > 0 
           && vg_csbs[vg_csb_used-1].start + vg_csbs[vg_csb_used-1].size 
              <= newESP) {
@@ -314,7 +315,7 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where 
-            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
+            = VG_(get_ExeContext) ( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
          VGM_(make_noaccess) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
@@ -325,7 +326,7 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where 
-            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
+            = VG_(get_ExeContext) ( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
          VGM_(make_writable) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_READABLE: /* make readable */
@@ -336,7 +337,7 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where 
-            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
+            = VG_(get_ExeContext) ( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
          VGM_(make_readable) ( arg[1], arg[2] );
          return i;
 

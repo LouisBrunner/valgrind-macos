@@ -37,6 +37,8 @@
 #include <stdarg.h>       /* ANSI varargs stuff  */
 #include <setjmp.h>       /* for jmp_buf         */
 
+#include "../pub/libvex_guest_x86.h"
+
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.
@@ -723,28 +725,7 @@ typedef
       Addr stack_highest_word;
 
       /* Saved machine context. */
-      UInt m_eax;
-      UInt m_ebx;
-      UInt m_ecx;
-      UInt m_edx;
-      UInt m_esi;
-      UInt m_edi;
-      UInt m_ebp;
-      UInt m_esp;
-
-      UInt m_cc_op;
-      UInt m_cc_src;
-      UInt m_cc_dst;
-      UInt m_cc_dflag;
-
-      UInt m_eip;
-
-      ULong m_f0, m_f1, m_f2, m_f3, m_f4, m_f5, m_f6, m_f7;
-      UInt  m_ftop;
-      UInt  m_fpucw;
-      UInt  m_ftag74;
-      UInt  m_ftag30;
-      UInt  m_fc3210;
+      VexGuestX86State vex;
 
       UInt sh_eax;
       UInt sh_ebx;
@@ -853,13 +834,13 @@ extern Int     VG_(longjmpd_on_signal);
 
 /* Write a value to the client's %EDX (request return value register)
    and set the shadow to indicate it is defined. */
-#define SET_EDX(zztid, zzval)                          \
-   do { VG_(threads)[zztid].m_edx = (zzval);             \
+#define SET_EDX(zztid, zzval)                            \
+   do { VG_(threads)[zztid].vex.guest_EDX = (zzval);     \
         VG_(threads)[zztid].sh_edx = VGM_WORD_VALID;     \
    } while (0)
 
-#define SET_EAX(zztid, zzval)                          \
-   do { VG_(threads)[zztid].m_eax = (zzval);             \
+#define SET_EAX(zztid, zzval)                            \
+   do { VG_(threads)[zztid].vex.guest_EAX = (zzval);     \
         VG_(threads)[zztid].sh_eax = VGM_WORD_VALID;     \
    } while (0)
 
@@ -1739,7 +1720,7 @@ extern Bool VG_(is_kerror) ( Int res );
          VG_(copy_m_state_static_to_baseBlock)();          \
          VG_(save_thread_state)(thread_id);                \
          VG_(threads)[thread_id].sh_eax = VGM_WORD_VALID;  \
-         result_lvalue = VG_(threads)[thread_id].m_eax;
+         result_lvalue = VG_(threads)[thread_id].vex.guest_EAX;
 
 
 /* ---------------------------------------------------------------------
@@ -1962,34 +1943,8 @@ extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
    -------------------------------------------------- */
 
 /* State of the simulated CPU. */
-extern Int VGOFF_(m_eax);
-extern Int VGOFF_(m_ecx);
-extern Int VGOFF_(m_edx);
-extern Int VGOFF_(m_ebx);
-extern Int VGOFF_(m_esp);
-extern Int VGOFF_(m_ebp);
-extern Int VGOFF_(m_esi);
-extern Int VGOFF_(m_edi);
-
-extern Int VGOFF_(m_cc_op);
-extern Int VGOFF_(m_cc_src);
-extern Int VGOFF_(m_cc_dst);
-extern Int VGOFF_(m_cc_dflag);
-
-extern Int VGOFF_(m_eip);
-
-extern Int VGOFF_(m_ftop);
-extern Int VGOFF_(m_f0);
-extern Int VGOFF_(m_f1);
-extern Int VGOFF_(m_f2);
-extern Int VGOFF_(m_f3);
-extern Int VGOFF_(m_f4);
-extern Int VGOFF_(m_f5);
-extern Int VGOFF_(m_f6);
-extern Int VGOFF_(m_f7);
-extern Int VGOFF_(m_ftag0);
-extern Int VGOFF_(m_fpucw);
-extern Int VGOFF_(m_fc3210);
+extern Int VGOFF_(m_vex);
+extern Int VGOFF_(m_eipS);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);

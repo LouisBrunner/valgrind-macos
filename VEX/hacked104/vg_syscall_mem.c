@@ -360,12 +360,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
    sane_before_call = True;
    sane_after_call  = True;
    tst              = & VG_(threads)[tid];
-   syscallno        = tst->m_eax;
-   arg1             = tst->m_ebx;
-   arg2             = tst->m_ecx;
-   arg3             = tst->m_edx;
-   arg4             = tst->m_esi;
-   arg5             = tst->m_edi;
+   syscallno        = tst->vex.guest_EAX;
+   arg1             = tst->vex.guest_EBX;
+   arg2             = tst->vex.guest_ECX;
+   arg3             = tst->vex.guest_EDX;
+   arg4             = tst->vex.guest_ESI;
+   arg5             = tst->vex.guest_EDI;
 
    /* Since buggy syscall wrappers sometimes break this, we may as well 
       check ourselves. */
@@ -1395,7 +1395,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* KLUDGE: we prefer to do a fork rather than vfork. 
             vfork gives a SIGSEGV, and the stated semantics looks
             pretty much impossible for us. */
-         tst->m_eax = __NR_fork;
+         tst->vex.guest_EAX = __NR_fork;
          /* fall through ... */
       case __NR_fork: /* syscall 2 */
          /* pid_t fork(void); */
@@ -1687,7 +1687,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int ipc ( unsigned int call, int first, int second, 
                       int third, void *ptr, long fifth); */
          {
-         UInt arg6 = tst->m_ebp;
+         UInt arg6 = tst->vex.guest_EBP;
 
          if (VG_(clo_trace_syscalls))
             VG_(printf)("ipc ( %d, %d, %d, %d, %p, %d )\n",
@@ -2453,7 +2453,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                        int flags, int fd, off_t offset); 
          */
          {
-         UInt arg6 = tst->m_ebp;
+         UInt arg6 = tst->vex.guest_EBP;
          if (VG_(clo_trace_syscalls))
             VG_(printf)("mmap2 ( %p, %d, %d, %d, %d, %d )\n",
                         arg1, arg2, arg3, arg4, arg5, arg6 );
@@ -3350,7 +3350,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
 #        if SIGNAL_SIMULATION
          VG_(do__NR_sigaltstack) (tid);
-         res = tst->m_eax;
+         res = tst->vex.guest_EAX;
 #        else
          KERNEL_DO_SYSCALL(tid,res);
 #        endif
@@ -3373,7 +3373,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* We do this one ourselves! */
 #        if SIGNAL_SIMULATION
          VG_(do__NR_sigaction)(tid);
-         res = tst->m_eax;
+         res = tst->vex.guest_EAX;
 #        else
          /* debugging signals; when we don't handle them. */
          KERNEL_DO_SYSCALL(tid,res);
@@ -3399,7 +3399,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                    arg1 /*how*/, 
                                    (vki_ksigset_t*) arg2,
                                    (vki_ksigset_t*) arg3 );
-         res = tst->m_eax;
+         res = tst->vex.guest_EAX;
 #        else
          KERNEL_DO_SYSCALL(tid,res);
 #        endif
@@ -3485,12 +3485,12 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
    sane_before_post = True;
    sane_after_post  = True;
    tst              = & VG_(threads)[tid];
-   arg1             = tst->m_ebx;
-   arg2             = tst->m_ecx;
-   arg3             = tst->m_edx;
+   arg1             = tst->vex.guest_EBX;
+   arg2             = tst->vex.guest_ECX;
+   arg3             = tst->vex.guest_EDX;
    /*
-   arg4             = tst->m_esi;
-   arg5             = tst->m_edi;
+   arg4             = tst->vex.guest_ESI;
+   arg5             = tst->vex.guest_EDI;
    */
 
    if (res != NULL

@@ -887,7 +887,7 @@ static void emit_call_star_EBP_off ( Int byte_off )
      VG_(printf)( "\n\t\tcall * %d(%%ebp)\n", byte_off );
 }
 
-
+#if 0
 static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
 {
    vg_assert(lit8 >= -128 && lit8 < 128);
@@ -900,7 +900,7 @@ static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
       VG_(printf)( "\n\t\taddl $%d, %d(%s)\n", lit8, off, 
                                                nameIReg(4,regmem));
 }
-
+#endif
 
 static void emit_add_lit_to_esp ( Int lit )
 {
@@ -1571,6 +1571,7 @@ static Int spillOrArchOffset ( Int size, Tag tag, UInt value )
       vg_assert(value >= 0 && value < VG_MAX_SPILLSLOTS);
       return 4 * (value + VGOFF_(spillslots));
    }
+#if 0
    if (tag == ArchReg) {
       switch (value) {
          case R_EAX: return 4 * VGOFF_(m_eax);
@@ -1591,6 +1592,7 @@ static Int spillOrArchOffset ( Int size, Tag tag, UInt value )
                      else return 4 * VGOFF_(m_edi);
       }
    }
+#endif
    VG_(panic)("spillOrArchOffset");
 }
 
@@ -2176,7 +2178,7 @@ static void emitUInstr ( Int i, UInstr* u )
 
       case INCEIP: {
          vg_assert(u->tag1 == Lit16);
-         emit_addlit8_offregmem ( u->val1, R_EBP, 4 * VGOFF_(m_eip) );
+         //emit_addlit8_offregmem ( u->val1, R_EBP, 4 * VGOFF_(m_eip) );
          break;
       }
 

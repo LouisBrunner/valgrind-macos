@@ -1375,7 +1375,7 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr );
 
 void VGM_(handle_esp_assignment) ( Addr new_espA )
 {
-   UInt old_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   UInt old_esp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
    UInt new_esp = (UInt)new_espA;
    Int  delta   = ((Int)new_esp) - ((Int)old_esp);
 
@@ -1510,7 +1510,7 @@ void VGM_(handle_esp_assignment) ( Addr new_espA )
 
 static void vg_handle_esp_assignment_SLOWLY ( Addr new_espA )
 {
-   UInt old_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   UInt old_esp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
    UInt new_esp = (UInt)new_espA;
    Int  delta   = ((Int)new_esp) - ((Int)old_esp);
    //   VG_(printf)("%d ", delta);
@@ -1616,7 +1616,7 @@ void init_memory_audit_callback (
                    start,start+size,rr,ww,xx,foffset,
                    size, filename?filename:(UChar*)"NULL");
 
-   r_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   r_esp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
    is_stack_segment = start <= r_esp && r_esp < start+size;
 
    /* Figure out the segment's permissions.

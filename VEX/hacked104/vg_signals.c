@@ -35,6 +35,8 @@
 #include "vg_unsafe.h"
 #include "valgrind.h"  /* for VALGRIND_MAGIC_SEQUENCE */
 
+#include "../pub/libvex_guest_x86.h"
+
 /* Define to give more sanity checking for signals. */
 #define DEBUG_SIGNALS
 
@@ -497,9 +499,9 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
    Addr          m_esp;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_kstack_t*)(VG_(threads)[tid].m_ebx);
-   oss   = (vki_kstack_t*)(VG_(threads)[tid].m_ecx);
-   m_esp = VG_(threads)[tid].m_esp;
+   ss    = (vki_kstack_t*)(VG_(threads)[tid].vex.guest_EBX);
+   oss   = (vki_kstack_t*)(VG_(threads)[tid].vex.guest_ECX);
+   m_esp = VG_(threads)[tid].vex.guest_ESP;
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -514,7 +516,7 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(VG_(threads)[tid].m_esp)) {
+      if (on_sig_stack(VG_(threads)[tid].vex.guest_ESP)) {
          SET_EAX(tid, -VKI_EPERM);
          return;
       }
@@ -548,9 +550,9 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    vki_ksigset_t    irrelevant_sigmask;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   signo     = VG_(threads)[tid].m_ebx; /* int sigNo */
-   new_act   = (vki_ksigaction*)(VG_(threads)[tid].m_ecx);
-   old_act   = (vki_ksigaction*)(VG_(threads)[tid].m_edx);
+   signo     = VG_(threads)[tid].vex.guest_EBX; /* int sigNo */
+   new_act   = (vki_ksigaction*)(VG_(threads)[tid].vex.guest_ECX);
+   old_act   = (vki_ksigaction*)(VG_(threads)[tid].vex.guest_EDX);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -899,21 +901,7 @@ typedef
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
       /* Saved processor state. */
-      UInt eax;
-      UInt ecx;
-      UInt edx;
-      UInt ebx;
-      UInt ebp;
-      UInt esp;
-      UInt esi;
-      UInt edi;
-      Addr eip;
-      UInt cc_op;
-      UInt cc_src;
-      UInt cc_dst;
-      UInt cc_dflag;
-      ULong f0, f1, f2, f3, f4, f5, f6, f7;
-      UInt ftop;
+      VexGuestX86State vex;
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
       ThreadStatus status;
@@ -944,7 +932,7 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tst->m_esp) == 0
+          sas_ss_flags(tst->vex.guest_ESP) == 0
       ) {
       esp_top_of_frame 
          = (Addr)(vg_scss.altstack.ss_sp) + vg_scss.altstack.ss_size;
@@ -953,7 +941,7 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
             "delivering signal %d to thread %d: on ALT STACK", 
             sigNo, tid );
    } else {
-      esp_top_of_frame = tst->m_esp;
+      esp_top_of_frame = tst->vex.guest_ESP;
    }
 
    esp = esp_top_of_frame;
@@ -971,38 +959,15 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    frame->puContext  = (Addr)NULL;
    frame->magicPI    = 0x31415927;
 
-   frame->f0         = tst->m_f0;
-   frame->f1         = tst->m_f1;
-   frame->f2         = tst->m_f2;
-   frame->f3         = tst->m_f3;
-   frame->f4         = tst->m_f4;
-   frame->f5         = tst->m_f5;
-   frame->f6         = tst->m_f6;
-   frame->f7         = tst->m_f7;
-   frame->ftop       = tst->m_ftop;
-
-   frame->eax        = tst->m_eax;
-   frame->ecx        = tst->m_ecx;
-   frame->edx        = tst->m_edx;
-   frame->ebx        = tst->m_ebx;
-   frame->ebp        = tst->m_ebp;
-   frame->esp        = tst->m_esp;
-   frame->esi        = tst->m_esi;
-   frame->edi        = tst->m_edi;
-   frame->eip        = tst->m_eip;
-
-   frame->cc_op    = tst->m_cc_op;
-   frame->cc_src   = tst->m_cc_src;
-   frame->cc_dst   = tst->m_cc_dst;
-   frame->cc_dflag = tst->m_cc_dflag;
+   frame->vex = tst->vex;
 
    frame->status     = tst->status;
 
    frame->magicE     = 0x27182818;
 
    /* Set the thread so it will next run the handler. */
-   tst->m_esp  = esp;
-   tst->m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
+   tst->vex.guest_ESP = esp;
+   tst->vex.guest_EIP = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
@@ -1037,7 +1002,7 @@ Int vg_pop_signal_frame ( ThreadId tid )
    tst = & VG_(threads)[tid];
 
    /* Correctly reestablish the frame base address. */
-   esp   = tst->m_esp;
+   esp   = tst->vex.guest_ESP;
    frame = (VgSigFrame*)
               (esp -4 /* because the handler's RET pops the RA */
                   +20 /* because signalreturn_bogusRA pushes 5 words */);
@@ -1049,40 +1014,15 @@ Int vg_pop_signal_frame ( ThreadId tid )
          "vg_pop_signal_frame (thread %d): valid magic", tid);
 
    /* restore machine state */
-   tst->m_f0      = frame->f0;
-   tst->m_f1      = frame->f1;
-   tst->m_f2      = frame->f2;
-   tst->m_f3      = frame->f3;
-   tst->m_f4      = frame->f4;
-   tst->m_f5      = frame->f5;
-   tst->m_f6      = frame->f6;
-   tst->m_f7      = frame->f7;
-   tst->m_ftop    = frame->ftop;
+   tst->vex = frame->vex;
 
    /* Mark the frame structure as nonaccessible. */
    if (VG_(clo_instrument))
       VGM_(make_noaccess)( (Addr)frame, sizeof(VgSigFrame) );
 
-   /* Restore machine state from the saved context. */
-   tst->m_eax     = frame->eax;
-   tst->m_ecx     = frame->ecx;
-   tst->m_edx     = frame->edx;
-   tst->m_ebx     = frame->ebx;
-   tst->m_ebp     = frame->ebp;
-   tst->m_esp     = frame->esp;
-   tst->m_esi     = frame->esi;
-   tst->m_edi     = frame->edi;
-
-   tst->m_cc_op  = frame->cc_op;
-   tst->m_cc_src = frame->cc_src;
-   tst->m_cc_dst = frame->cc_dst;
-   tst->m_cc_dflag = frame->cc_dflag;
-
-   tst->m_eip     = frame->eip;
-
    /* don't use the copy exposed to the handler; it might have changed
       it. */
-   sigNo          = frame->sigNo_private; 
+   sigNo = frame->sigNo_private; 
 
    /* And restore the thread's status to what it was before the signal
       was delivered. */
@@ -1184,7 +1124,7 @@ Bool VG_(deliver_signals) ( void )
             VG_(message)(Vg_DebugMsg,
                "releasing thread %d from sigwait() due to signal %d",
                tid, sigNo );
-         sigwait_args = (UInt*)(tst->m_eax);
+         sigwait_args = (UInt*)(tst->vex.guest_EAX);
          if (NULL != (UInt*)(sigwait_args[2])) {
             *(Int*)(sigwait_args[2]) = sigNo;
             if (VG_(clo_instrument))

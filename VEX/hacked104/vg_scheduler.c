@@ -195,7 +195,7 @@ ThreadId VG_(identify_stack_addr)( Addr a )
       VG_(baseBlock). */
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
-      if (VG_(baseBlock)[VGOFF_(m_esp)] <= a
+      if ( ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP <= a
           && a <= VG_(threads)[tid].stack_highest_word) 
          return tid;
       else
@@ -205,7 +205,7 @@ ThreadId VG_(identify_stack_addr)( Addr a )
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
-      if (VG_(threads)[tid].m_esp <= a 
+      if (VG_(threads)[tid].vex.guest_ESP <= a 
           && a <= VG_(threads)[tid].stack_highest_word)
          return tid;
    }
@@ -238,8 +238,8 @@ void VG_(pp_sched_status) ( void )
                   VG_(threads)[i].associated_mx,
                   VG_(threads)[i].associated_cv );
       VG_(pp_ExeContext)( 
-         VG_(get_ExeContext)( False, VG_(threads)[i].m_eip, 
-                                     VG_(threads)[i].m_ebp ));
+         VG_(get_ExeContext)( False, VG_(threads)[i].vex.guest_EIP, 
+                                     VG_(threads)[i].vex.guest_EBP ));
    }
    VG_(printf)("\n");
 }
@@ -375,35 +375,8 @@ void VG_(load_thread_state) ( ThreadId tid )
 {
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
-   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(threads)[tid].m_eax;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(threads)[tid].m_ebx;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(threads)[tid].m_ecx;
-   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(threads)[tid].m_edx;
-   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(threads)[tid].m_esi;
-   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
-   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
-
-   VG_(baseBlock)[VGOFF_(m_cc_op)]    = VG_(threads)[tid].m_cc_op;
-   VG_(baseBlock)[VGOFF_(m_cc_src)]   = VG_(threads)[tid].m_cc_src;
-   VG_(baseBlock)[VGOFF_(m_cc_dst)]   = VG_(threads)[tid].m_cc_dst;
-   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = VG_(threads)[tid].m_cc_dflag;
-
-   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
-
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = VG_(threads)[tid].m_f0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = VG_(threads)[tid].m_f1;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = VG_(threads)[tid].m_f2;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = VG_(threads)[tid].m_f3;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = VG_(threads)[tid].m_f4;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = VG_(threads)[tid].m_f5;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = VG_(threads)[tid].m_f6;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = VG_(threads)[tid].m_f7;
-   VG_(baseBlock)[VGOFF_(m_ftop)]    = VG_(threads)[tid].m_ftop;
-   VG_(baseBlock)[VGOFF_(m_fpucw)]   = VG_(threads)[tid].m_fpucw;
-   VG_(baseBlock)[VGOFF_(m_fc3210)]  = VG_(threads)[tid].m_fc3210;
-   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = VG_(threads)[tid].m_ftag30;
-   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = VG_(threads)[tid].m_ftag74;
+   *(VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]) 
+      = VG_(threads)[tid].vex;
 
    VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
    VG_(baseBlock)[VGOFF_(sh_ebx)] = VG_(threads)[tid].sh_ebx;
@@ -428,40 +401,12 @@ void VG_(load_thread_state) ( ThreadId tid )
 __inline__
 void VG_(save_thread_state) ( ThreadId tid )
 {
-   const UInt  junk   = 0xDEADBEEF;
-   const ULong junk64 = 0xDEADBEEFDEADBEEFLL;
+   Int        i;
+   const UInt junk   = 0xDEADBEEF;
 
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
-
-   VG_(threads)[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
-   VG_(threads)[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-   VG_(threads)[tid].m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-   VG_(threads)[tid].m_edx = VG_(baseBlock)[VGOFF_(m_edx)];
-   VG_(threads)[tid].m_esi = VG_(baseBlock)[VGOFF_(m_esi)];
-   VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
-   VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-
-   VG_(threads)[tid].m_cc_op    = VG_(baseBlock)[VGOFF_(m_cc_op)];
-   VG_(threads)[tid].m_cc_src   = VG_(baseBlock)[VGOFF_(m_cc_src)];
-   VG_(threads)[tid].m_cc_dst   = VG_(baseBlock)[VGOFF_(m_cc_dst)];
-   VG_(threads)[tid].m_cc_dflag = VG_(baseBlock)[VGOFF_(m_cc_dflag)];
-
-   VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-
-   VG_(threads)[tid].m_f0   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]);
-   VG_(threads)[tid].m_f1   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]);
-   VG_(threads)[tid].m_f2   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]);
-   VG_(threads)[tid].m_f3   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]);
-   VG_(threads)[tid].m_f4   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]);
-   VG_(threads)[tid].m_f5     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]);
-   VG_(threads)[tid].m_f6     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]);
-   VG_(threads)[tid].m_f7     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]);
-   VG_(threads)[tid].m_ftop   = VG_(baseBlock)[VGOFF_(m_ftop)];
-   VG_(threads)[tid].m_fpucw  = VG_(baseBlock)[VGOFF_(m_fpucw)];
-   VG_(threads)[tid].m_fc3210 = VG_(baseBlock)[VGOFF_(m_fc3210)];
-   VG_(threads)[tid].m_ftag30 = VG_(baseBlock)[VGOFF_(m_ftag0)+0];
-   VG_(threads)[tid].m_ftag74 = VG_(baseBlock)[VGOFF_(m_ftag0)+1];
+   VG_(threads)[tid].vex
+      = *(VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]) ;
 
    VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
    VG_(threads)[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
@@ -474,33 +419,8 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
 
    /* Fill it up with junk. */
-   VG_(baseBlock)[VGOFF_(m_eax)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cc_op)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cc_src)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cc_dst)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eip)] = junk;
-
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = junk64;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = junk64;
-   VG_(baseBlock)[VGOFF_(m_ftop)]    = junk;
-   VG_(baseBlock)[VGOFF_(m_fpucw)]   = junk;
-   VG_(baseBlock)[VGOFF_(m_fc3210)]  = junk;
-   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = junk;
-   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = junk;
+   for (i = 0; i < (3 + sizeof(VexGuestX86State)) / 4; i++)
+      VG_(baseBlock)[VGOFF_(m_vex) + i] = junk;
 
    vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }
@@ -605,7 +525,8 @@ void VG_(scheduler_init) ( void )
    Addr     startup_esp;
    ThreadId tid_main;
 
-   startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   startup_esp 
+      = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
 
    if (VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_1)
        || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_2) 
@@ -652,7 +573,7 @@ void VG_(scheduler_init) ( void )
    VG_(save_thread_state) ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
-      = VG_(threads)[tid_main].m_esp /* -4  ??? */;
+      = VG_(threads)[tid_main].vex.guest_ESP /* -4  ??? */;
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
@@ -714,8 +635,8 @@ void cleanup_waiting_fd_table ( ThreadId tid )
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_WaitFD);
-   vg_assert(VG_(threads)[tid].m_eax == __NR_read 
-             || VG_(threads)[tid].m_eax == __NR_write);
+   vg_assert(VG_(threads)[tid].vex.guest_EAX == __NR_read 
+             || VG_(threads)[tid].vex.guest_EAX == __NR_write);
 
    /* Excessively paranoidly ... find the fd this op was waiting
       for, and mark it as not being waited on. */
@@ -723,7 +644,7 @@ void cleanup_waiting_fd_table ( ThreadId tid )
    for (i = 0; i < VG_N_WAITING_FDS; i++) {
       if (vg_waiting_fds[i].tid == tid) {
          waiters++;
-         vg_assert(vg_waiting_fds[i].syscall_no == VG_(threads)[tid].m_eax);
+         vg_assert(vg_waiting_fds[i].syscall_no == VG_(threads)[tid].vex.guest_EAX);
       }
    }
    vg_assert(waiters == 1);
@@ -756,11 +677,11 @@ void handle_signal_return ( ThreadId tid )
       return;
 
    if (VG_(threads)[tid].status == VgTs_WaitFD
-       && (VG_(threads)[tid].m_eax == __NR_read 
-           || VG_(threads)[tid].m_eax == __NR_write)) {
+       && (VG_(threads)[tid].vex.guest_EAX == __NR_read 
+           || VG_(threads)[tid].vex.guest_EAX == __NR_write)) {
       /* read() or write() interrupted.  Force a return with EINTR. */
       cleanup_waiting_fd_table(tid);
-      VG_(threads)[tid].m_eax = -VKI_EINTR;
+      VG_(threads)[tid].vex.guest_EAX = -VKI_EINTR;
       VG_(threads)[tid].status = VgTs_Runnable;
 
       if (VG_(clo_trace_sched)) {
@@ -772,12 +693,12 @@ void handle_signal_return ( ThreadId tid )
    }
 
    if (VG_(threads)[tid].status == VgTs_Sleeping
-       && VG_(threads)[tid].m_eax == __NR_nanosleep) {
+       && VG_(threads)[tid].vex.guest_EAX == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param, but that's
          too much effort ... we just say that 1 nanosecond was not
          used, and return EINTR. */
-      rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
+      rem = (struct vki_timespec *)VG_(threads)[tid].vex.guest_ECX; /* arg2 */
       if (rem != NULL) {
          rem->tv_sec = 0;
          rem->tv_nsec = 1;
@@ -807,12 +728,12 @@ void sched_do_syscall ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   syscall_no = VG_(threads)[tid].m_eax; /* syscall number */
+   syscall_no = VG_(threads)[tid].vex.guest_EAX; /* syscall number */
 
    if (syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
-      req = (struct vki_timespec*)VG_(threads)[tid].m_ebx; /* arg1 */
+      req = (struct vki_timespec*)VG_(threads)[tid].vex.guest_EBX; /* arg1 */
       t_now = VG_(read_millisecond_timer)();     
       t_awaken 
          = t_now
@@ -840,7 +761,7 @@ void sched_do_syscall ( ThreadId tid )
       immediately, in order to lodge a request with the Linux kernel.
       We later poll for I/O completion using select().  */
 
-   fd = VG_(threads)[tid].m_ebx /* arg1 */;
+   fd = VG_(threads)[tid].vex.guest_EBX /* arg1 */;
 
    /* Deal with error case immediately. */
    if (!fd_is_valid(fd)) {
@@ -863,7 +784,7 @@ void sched_do_syscall ( ThreadId tid )
    VG_(check_known_blocking_syscall)(tid, syscall_no, NULL /* PRE */);
 
    /* This trashes the thread's %eax; we have to preserve it. */
-   saved_eax = VG_(threads)[tid].m_eax;
+   saved_eax = VG_(threads)[tid].vex.guest_EAX;
    KERNEL_DO_SYSCALL(tid,res);
 
    /* Restore original blockfulness of the fd. */
@@ -891,7 +812,7 @@ void sched_do_syscall ( ThreadId tid )
 
       /* It would have blocked.  First, restore %EAX to what it was
          before our speculative call. */
-      VG_(threads)[tid].m_eax = saved_eax;
+      VG_(threads)[tid].vex.guest_EAX = saved_eax;
       /* Put this fd in a table of fds on which we are waiting for
          completion. The arguments for select() later are constructed
          from this table.  */
@@ -957,14 +878,14 @@ void poll_for_ready_fds ( void )
             /* Resume this thread.  Set to zero the remaining-time
                (second) arg of nanosleep, since it's used up all its
                time. */
-            vg_assert(VG_(threads)[tid].m_eax == __NR_nanosleep);
-            rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
+            vg_assert(VG_(threads)[tid].vex.guest_EAX == __NR_nanosleep);
+            rem = (struct vki_timespec *)VG_(threads)[tid].vex.guest_ECX; /* arg2 */
             if (rem != NULL) {
 	       rem->tv_sec = 0;
                rem->tv_nsec = 0;
             }
             /* Make the syscall return 0 (success). */
-            VG_(threads)[tid].m_eax = 0;
+            VG_(threads)[tid].vex.guest_EAX = 0;
 	    /* Reschedule this thread. */
             VG_(threads)[tid].status = VgTs_Runnable;
             if (VG_(clo_trace_sched)) {
@@ -1114,7 +1035,7 @@ void complete_blocked_syscalls ( void )
          sched_do_syscall() doesn't change %EAX in the case where the
          call would have blocked. */
       syscall_no = vg_waiting_fds[i].syscall_no;
-      vg_assert(syscall_no == VG_(threads)[tid].m_eax);
+      vg_assert(syscall_no == VG_(threads)[tid].vex.guest_EAX);
 
       /* In a rare case pertaining to writing into a pipe, write()
          will block when asked to write > 4096 bytes even though the
@@ -1125,11 +1046,11 @@ void complete_blocked_syscalls ( void )
          the short write.  That shoulds dubious to me, so we don't do
          it by default. */
       if (syscall_no == __NR_write 
-          && VG_(threads)[tid].m_edx /* arg3, count */ > 4096
+          && VG_(threads)[tid].vex.guest_EDX /* arg3, count */ > 4096
           && VG_(strstr)(VG_(clo_weird_hacks), "truncate-writes") != NULL) {
          /* VG_(printf)("truncate write from %d to 4096\n", 
-            VG_(threads)[tid].m_edx ); */
-         VG_(threads)[tid].m_edx = 4096;
+            VG_(threads)[tid].vex.guest_EDX ); */
+         VG_(threads)[tid].vex.guest_EDX = 4096;
       }
 
       KERNEL_DO_SYSCALL(tid,res);
@@ -1370,11 +1291,11 @@ VgSchedReturnCode VG_(scheduler) ( void )
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
             trans_addr 
-               = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
+               = VG_(search_transtab) ( VG_(threads)[tid].vex.guest_EIP );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               create_translation_for( tid, VG_(threads)[tid].m_eip ); 
-               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
+               create_translation_for( tid, VG_(threads)[tid].vex.guest_EIP ); 
+               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].vex.guest_EIP ); 
                if (trans_addr == (Addr)0)
                   VG_(panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
             }
@@ -1382,7 +1303,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            UInt reqno = *(UInt*)(VG_(threads)[tid].m_eax);
+            UInt reqno = *(UInt*)(VG_(threads)[tid].vex.guest_EAX);
             /* VG_(printf)("request 0x%x\n", reqno); */
 
             /* Are we really absolutely totally quitting? */
@@ -1412,7 +1333,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                to exit. */
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].vex.guest_ESP;
               VG_(printf)("\nBEFORE\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1431,10 +1352,10 @@ VgSchedReturnCode VG_(scheduler) ( void )
                the unprotected malloc/free system. */
 
             /* If __NR_exit, remember the supplied argument. */
-            if (VG_(threads)[tid].m_eax == __NR_exit)
-               VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
+            if (VG_(threads)[tid].vex.guest_EAX == __NR_exit)
+               VG_(exitcode) = VG_(threads)[tid].vex.guest_EBX; /* syscall arg1 */
 
-            if (VG_(threads)[tid].m_eax == __NR_exit 
+            if (VG_(threads)[tid].vex.guest_EAX == __NR_exit 
                 && !VG_(clo_instrument)) {
                if (VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
@@ -1443,14 +1364,14 @@ VgSchedReturnCode VG_(scheduler) ( void )
                return VgSrc_ExitSyscall;
             }
 
-            if (VG_(threads)[tid].m_eax == __NR_exit) {
+            if (VG_(threads)[tid].vex.guest_EAX == __NR_exit) {
                vg_assert(VG_(clo_instrument));
                if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
                      "Caught __NR_exit; running __libc_freeres()");
                }
                VG_(nuke_all_threads_except) ( tid );
-               VG_(threads)[tid].m_eip = (UInt)(&VG_(__libc_freeres_wrapper));
+               VG_(threads)[tid].vex.guest_EIP = (UInt)(&VG_(__libc_freeres_wrapper));
 	       vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                goto stage1; /* party on, dudes (but not for much longer :) */
             }
@@ -1458,7 +1379,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an
                optimisation. */
-	    if (VG_(threads)[tid].m_eax == __NR_sched_yield) {
+	    if (VG_(threads)[tid].vex.guest_EAX == __NR_sched_yield) {
                SET_EAX(tid, 0); /* syscall returns with success */
                goto stage1; /* find a new thread to run */
 	    }
@@ -1467,7 +1388,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].vex.guest_ESP;
               VG_(printf)("AFTER\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1560,7 +1481,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    VG_(printf)(
       "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
    VG_(translate)( &VG_(threads)[tid], 
-                   VG_(threads)[tid].m_eip, NULL, NULL, NULL );
+                   VG_(threads)[tid].vex.guest_EIP, NULL, NULL, NULL );
    VG_(printf)("\n");
    VG_(printf)(
       "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
@@ -1600,9 +1521,9 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
       handler -- which is really thread_exit_wrapper() in
       vg_libpthread.c. */
    vg_assert(VG_(threads)[tid].cancel_pend != NULL);
-   VG_(threads)[tid].m_esp -= 4;
-   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
-   VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
+   VG_(threads)[tid].vex.guest_ESP -= 4;
+   * (UInt*)(VG_(threads)[tid].vex.guest_ESP) = (UInt)PTHREAD_CANCELED;
+   VG_(threads)[tid].vex.guest_EIP = (UInt)VG_(threads)[tid].cancel_pend;
    VG_(threads)[tid].status = VgTs_Runnable;
    /* Make sure we aren't cancelled again whilst handling this
       cancellation. */
@@ -2126,29 +2047,29 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
                      - VG_AR_CLIENT_STACKBASE_REDZONE_SZB; /* -4  ??? */;
    }
 
-   VG_(threads)[tid].m_esp 
+   VG_(threads)[tid].vex.guest_ESP 
       = VG_(threads)[tid].stack_base 
         + VG_(threads)[tid].stack_size
         - VG_AR_CLIENT_STACKBASE_REDZONE_SZB;
 
    if (VG_(clo_instrument))
-      VGM_(make_noaccess)( VG_(threads)[tid].m_esp, 
+      VGM_(make_noaccess)( VG_(threads)[tid].vex.guest_ESP, 
                            VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
    /* push arg */
-   VG_(threads)[tid].m_esp -= 4;
-   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)arg;
+   VG_(threads)[tid].vex.guest_ESP -= 4;
+   * (UInt*)(VG_(threads)[tid].vex.guest_ESP) = (UInt)arg;
 
    /* push (bogus) return address */
-   VG_(threads)[tid].m_esp -= 4;
-   * (UInt*)(VG_(threads)[tid].m_esp) 
+   VG_(threads)[tid].vex.guest_ESP -= 4;
+   * (UInt*)(VG_(threads)[tid].vex.guest_ESP) 
       = (UInt)&do__apply_in_new_thread_bogusRA;
 
    if (VG_(clo_instrument))
-      VGM_(make_readable)( VG_(threads)[tid].m_esp, 2 * 4 );
+      VGM_(make_readable)( VG_(threads)[tid].vex.guest_ESP, 2 * 4 );
 
    /* this is where we start */
-   VG_(threads)[tid].m_eip = (UInt)fn;
+   VG_(threads)[tid].vex.guest_EIP = (UInt)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
@@ -3140,12 +3061,12 @@ static
 void do_client_request ( ThreadId tid )
 {
 #  define RETURN_WITH(vvv)                        \
-       { tst->m_edx = (vvv);                      \
+       { tst->vex.guest_EDX = (vvv);              \
          tst->sh_edx = VGM_WORD_VALID;            \
        }
 
    ThreadState* tst    = &VG_(threads)[tid];
-   UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
+   UInt*        arg    = (UInt*)(tst->vex.guest_EAX);
    UInt         req_no = arg[0];
 
    /* VG_(printf)("req no = 0x%x\n", req_no); */
@@ -3467,7 +3388,7 @@ void scheduler_sanity ( void )
       if (VG_(threads)[i].status != VgTs_Empty) {
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
-                      - (Addr)VG_(threads)[i].m_esp;
+                      - (Addr)VG_(threads)[i].vex.guest_ESP;
          if (i > 1 /* not the root thread */ 
              && stack_used 
                 >= (VG_PTHREAD_STACK_MIN - 1000 /* paranoia */)) {

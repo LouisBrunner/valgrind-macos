@@ -633,14 +633,16 @@ void VG_(record_value_error) ( Int size )
    clear_ErrContext( &ec );
    ec.count = 1;
    ec.next  = NULL;
-   ec.where = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
-                                          VG_(baseBlock)[VGOFF_(m_ebp)] );
+   ec.where 
+      = VG_(get_ExeContext)( False, 
+           ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EIP, 
+           ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EBP );
    ec.ekind = ValueErr;
    ec.size  = size;
    ec.tid   = VG_(get_current_tid)();
-   ec.m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-   ec.m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   ec.m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+   ec.m_eip = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EIP;
+   ec.m_esp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
+   ec.m_ebp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EBP;
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -651,7 +653,7 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    if (vg_ignore_errors) return;
 
    just_below_esp 
-      = VG_(is_just_below_ESP)( VG_(baseBlock)[VGOFF_(m_esp)], a );
+      = VG_(is_just_below_ESP)( ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP, a );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
@@ -661,16 +663,18 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
-                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
+   ec.where
+      = VG_(get_ExeContext)( False, 
+           ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EIP, 
+           ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EBP );
    ec.ekind   = AddrErr;
    ec.axskind = isWrite ? WriteAxs : ReadAxs;
    ec.size    = size;
    ec.addr    = a;
    ec.tid     = VG_(get_current_tid)();
-   ec.m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-   ec.m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   ec.m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+   ec.m_eip = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EIP;
+   ec.m_esp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_ESP;
+   ec.m_ebp = ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))->guest_EBP;
    ec.addrinfo.akind     = Undescribed;
    ec.addrinfo.maybe_gcc = just_below_esp;
    VG_(maybe_add_context) ( &ec );
@@ -688,13 +692,13 @@ void VG_(record_free_error) ( ThreadState* tst, Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    ec.ekind   = FreeErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
-   ec.m_eip   = tst->m_eip;
-   ec.m_esp   = tst->m_esp;
-   ec.m_ebp   = tst->m_ebp;
+   ec.m_eip   = tst->vex.guest_EIP;
+   ec.m_esp   = tst->vex.guest_ESP;
+   ec.m_ebp   = tst->vex.guest_EBP;
    ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
@@ -706,13 +710,13 @@ void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    ec.ekind   = FreeMismatchErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
-   ec.m_eip   = tst->m_eip;
-   ec.m_esp   = tst->m_esp;
-   ec.m_ebp   = tst->m_ebp;
+   ec.m_eip   = tst->vex.guest_EIP;
+   ec.m_esp   = tst->vex.guest_ESP;
+   ec.m_ebp   = tst->vex.guest_EBP;
    ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
@@ -724,14 +728,14 @@ void VG_(record_jump_error) ( ThreadState* tst, Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    ec.ekind   = AddrErr;
    ec.axskind = ExecAxs;
    ec.addr    = a;
    ec.tid     = tst->tid;
-   ec.m_eip   = tst->m_eip;
-   ec.m_esp   = tst->m_esp;
-   ec.m_ebp   = tst->m_ebp;
+   ec.m_eip   = tst->vex.guest_EIP;
+   ec.m_esp   = tst->vex.guest_ESP;
+   ec.m_ebp   = tst->vex.guest_EBP;
    ec.addrinfo.akind = Undescribed;
    VG_(maybe_add_context) ( &ec );
 }
@@ -744,13 +748,13 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    ec.ekind   = ParamErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
-   ec.m_eip   = tst->m_eip;
-   ec.m_esp   = tst->m_esp;
-   ec.m_ebp   = tst->m_ebp;
+   ec.m_eip   = tst->vex.guest_EIP;
+   ec.m_esp   = tst->vex.guest_ESP;
+   ec.m_ebp   = tst->vex.guest_EBP;
    ec.addrinfo.akind = Undescribed;
    ec.syscall_param = msg;
    ec.isWriteableLack = isWriteLack;
@@ -764,13 +768,13 @@ void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->vex.guest_EIP, tst->vex.guest_EBP );
    ec.ekind   = UserErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
-   ec.m_eip   = tst->m_eip;
-   ec.m_esp   = tst->m_esp;
-   ec.m_ebp   = tst->m_ebp;
+   ec.m_eip   = tst->vex.guest_EIP;
+   ec.m_esp   = tst->vex.guest_ESP;
+   ec.m_ebp   = tst->vex.guest_EBP;
    ec.addrinfo.akind = Undescribed;
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );
@@ -784,14 +788,14 @@ void VG_(record_pthread_err) ( ThreadId tid, Char* msg )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, VG_(threads)[tid].m_eip, 
-                                            VG_(threads)[tid].m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, VG_(threads)[tid].vex.guest_EIP, 
+                                            VG_(threads)[tid].vex.guest_EBP );
    ec.ekind   = PThreadErr;
    ec.tid     = tid;
    ec.syscall_param = msg;
-   ec.m_eip   = VG_(threads)[tid].m_eip;
-   ec.m_esp   = VG_(threads)[tid].m_esp;
-   ec.m_ebp   = VG_(threads)[tid].m_ebp;
+   ec.m_eip   = VG_(threads)[tid].vex.guest_EIP;
+   ec.m_esp   = VG_(threads)[tid].vex.guest_ESP;
+   ec.m_ebp   = VG_(threads)[tid].vex.guest_EBP;
    VG_(maybe_add_context) ( &ec );
 }
 

@@ -52,7 +52,7 @@
 	
 /* The C world needs a way to get started simulating.  So we provide
    a function void vg_run_innerloop ( void ), which starts running
-   from vg_m_eip, and exits when the counter reaches zero.  This loop
+   from vg_m_eipS, and exits when the counter reaches zero.  This loop
    can also exit if vg_oursignalhandler() catches a non-resumable
    signal, for example SIGSEGV.  It then longjmp()s back past here.
 */
@@ -72,8 +72,8 @@ VG_(run_innerloop):
 	# Set up the baseBlock pointer
 	movl	$VG_(baseBlock), %ebp
 
-	# fetch m_eip into %eax
-	movl	VGOFF_(m_eip), %esi
+	# fetch m_eipS into %eax
+	movl	VGOFF_(m_eipS), %esi
 	movl	(%ebp, %esi, 4), %eax
 	
 	# Start off dispatching paranoically, since we no longer have
@@ -102,8 +102,8 @@ dispatch_main:
 	jnz	dispatch_exceptional
 
 dispatch_boring:
-	# save the jump address at VG_(baseBlock)[VGOFF_(m_eip)],
-	movl	VGOFF_(m_eip), %esi
+	# save the jump address at VG_(baseBlock)[VGOFF_(m_eipS)],
+	movl	VGOFF_(m_eipS), %esi
 	movl	%eax, (%ebp, %esi, 4)
 	
 	# do a timeslice check.
@@ -171,7 +171,7 @@ dispatch_exceptional:
 dispatch_syscall:
 	# save %eax in %EIP and defer to sched
 	movl	$VG_(baseBlock), %ebp
-	movl	VGOFF_(m_eip), %esi
+	movl	VGOFF_(m_eipS), %esi
 	movl	%eax, (%ebp, %esi, 4)
 	movl	$VG_TRC_EBP_JMP_SYSCALL, %eax
 	jmp	run_innerloop_exit
@@ -179,7 +179,7 @@ dispatch_syscall:
 dispatch_clientreq:
 	# save %eax in %EIP and defer to sched
 	movl	$VG_(baseBlock), %ebp
-	movl	VGOFF_(m_eip), %esi
+	movl	VGOFF_(m_eipS), %esi
 	movl	%eax, (%ebp, %esi, 4)
 	movl	$VG_TRC_EBP_JMP_CLIENTREQ, %eax
 	jmp	run_innerloop_exit
@@ -187,7 +187,7 @@ dispatch_clientreq:
 dispatch_stkadj:
 	# save %eax in %EIP
 	movl	$VG_(baseBlock), %ebp
-	movl	VGOFF_(m_eip), %esi
+	movl	VGOFF_(m_eipS), %esi
 	movl	%eax, (%ebp, %esi, 4)
 
 	# see if we need to mess with stack blocks

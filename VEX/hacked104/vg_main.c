@@ -42,34 +42,8 @@
 
 #define INVALID_OFFSET (-1)
 
-Int VGOFF_(m_eax) = INVALID_OFFSET;
-Int VGOFF_(m_ecx) = INVALID_OFFSET;
-Int VGOFF_(m_edx) = INVALID_OFFSET;
-Int VGOFF_(m_ebx) = INVALID_OFFSET;
-Int VGOFF_(m_esp) = INVALID_OFFSET;
-Int VGOFF_(m_ebp) = INVALID_OFFSET;
-Int VGOFF_(m_esi) = INVALID_OFFSET;
-Int VGOFF_(m_edi) = INVALID_OFFSET;
-
-Int VGOFF_(m_cc_op) = INVALID_OFFSET;
-Int VGOFF_(m_cc_src) = INVALID_OFFSET;
-Int VGOFF_(m_cc_dst) = INVALID_OFFSET;
-Int VGOFF_(m_cc_dflag) = INVALID_OFFSET;
-
-Int VGOFF_(m_eip) = INVALID_OFFSET;
-
-Int VGOFF_(m_ftop) = INVALID_OFFSET;
-Int VGOFF_(m_f0) = INVALID_OFFSET;
-Int VGOFF_(m_f1) = INVALID_OFFSET;
-Int VGOFF_(m_f2) = INVALID_OFFSET;
-Int VGOFF_(m_f3) = INVALID_OFFSET;
-Int VGOFF_(m_f4) = INVALID_OFFSET;
-Int VGOFF_(m_f5) = INVALID_OFFSET;
-Int VGOFF_(m_f6) = INVALID_OFFSET;
-Int VGOFF_(m_f7) = INVALID_OFFSET;
-Int VGOFF_(m_ftag0) = INVALID_OFFSET;
-Int VGOFF_(m_fpucw) = INVALID_OFFSET;
-Int VGOFF_(m_fc3210) = INVALID_OFFSET;
+Int VGOFF_(m_vex)  = INVALID_OFFSET;
+Int VGOFF_(m_eipS) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
@@ -169,35 +143,13 @@ static void vg_init_baseBlock ( void )
 
    /* Those with offsets under 128 are carefully chosen. */
 
+#define offsetof(type,memb) ((Int)&((type*)0)->memb)
+
    /* WORD offsets in this column */
-   /* 0   */ VGOFF_(m_eax)      = alloc_BaB(1);
-   /* 1   */ VGOFF_(m_ecx)      = alloc_BaB(1);
-   /* 2   */ VGOFF_(m_edx)      = alloc_BaB(1);
-   /* 3   */ VGOFF_(m_ebx)      = alloc_BaB(1);
-   /* 4   */ VGOFF_(m_esp)      = alloc_BaB(1);
-   /* 5   */ VGOFF_(m_ebp)      = alloc_BaB(1);
-   /* 6   */ VGOFF_(m_esi)      = alloc_BaB(1);
-   /* 7   */ VGOFF_(m_edi)      = alloc_BaB(1);
+   VGOFF_(m_vex)  = alloc_BaB( (3 + sizeof(VexGuestX86State)) / 4 );
+   VGOFF_(m_eipS) = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
 
-   /* 8   */ VGOFF_(m_cc_op)    = alloc_BaB(1);
-   /* 9   */ VGOFF_(m_cc_src)   = alloc_BaB(1);
-   /* 10  */ VGOFF_(m_cc_dst)   = alloc_BaB(1);
-   /* 11  */ VGOFF_(m_cc_dflag) = alloc_BaB(1);
-
-   /* 12  */ VGOFF_(m_eip)      = alloc_BaB(1);
-
-   /* 13 */ VGOFF_(m_ftop)   = alloc_BaB(1);
-   /* 14 */ VGOFF_(m_f0)     = alloc_BaB(2);
-   /* 16 */ VGOFF_(m_f1)     = alloc_BaB(2);
-   /* 18 */ VGOFF_(m_f2)     = alloc_BaB(2);
-   /* 20 */ VGOFF_(m_f3)     = alloc_BaB(2);
-   /* 22 */ VGOFF_(m_f4)     = alloc_BaB(2);
-   /* 24 */ VGOFF_(m_f5)     = alloc_BaB(2);
-   /* 26 */ VGOFF_(m_f6)     = alloc_BaB(2);
-   /* 28 */ VGOFF_(m_f7)     = alloc_BaB(2);
-   /* 30 */ VGOFF_(m_ftag0)  = alloc_BaB(2);
-   /* 32 */ VGOFF_(m_fpucw)  = alloc_BaB(1);
-   /* 33 */ VGOFF_(m_fc3210) = alloc_BaB(1);
+#undef offsetof
 
    /* 34  */ VGOFF_(sh_eax)    = alloc_BaB(1);
    /* 35  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
@@ -1031,74 +983,37 @@ UInt VG_(m_state_static) [8 /* int regs, in Intel order */
 
 void VG_(copy_baseBlock_to_m_state_static) ( void )
 {
-   VG_(m_state_static)[ 0/4] = VG_(baseBlock)[VGOFF_(m_eax)];
-   VG_(m_state_static)[ 4/4] = VG_(baseBlock)[VGOFF_(m_ecx)];
-   VG_(m_state_static)[ 8/4] = VG_(baseBlock)[VGOFF_(m_edx)];
-   VG_(m_state_static)[12/4] = VG_(baseBlock)[VGOFF_(m_ebx)];
-   VG_(m_state_static)[16/4] = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(m_state_static)[20/4] = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(m_state_static)[24/4] = VG_(baseBlock)[VGOFF_(m_esi)];
-   VG_(m_state_static)[28/4] = VG_(baseBlock)[VGOFF_(m_edi)];
-
-   { extern UInt calculate_eflags_all(UInt,UInt,UInt);
-     UInt eflags = calculate_eflags_all(
-		      VG_(baseBlock)[VGOFF_(m_cc_op)],
-		      VG_(baseBlock)[VGOFF_(m_cc_src)],
-		      VG_(baseBlock)[VGOFF_(m_cc_dst)]
-                   );
-     UInt dflag = VG_(baseBlock)[VGOFF_(m_cc_dflag)];
-     vg_assert(dflag == 1 || dflag == 0xFFFFFFFF);
-     if (dflag == 0xFFFFFFFF)
-        eflags |= (1<<10);
-						     
-      VG_(m_state_static)[32/4] = eflags;
-   }
-
-   VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_eip)];
-
-   /* Copy FPU state */
-   vex_to_x87( (UChar*)&VG_(baseBlock)[0],
-               (UChar*)&VG_(m_state_static)[40/4] );
+   VexGuestX86State* vex 
+     = (VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]);
+   VG_(m_state_static)[ 0/4] = vex->guest_EAX;
+   VG_(m_state_static)[ 4/4] = vex->guest_ECX;
+   VG_(m_state_static)[ 8/4] = vex->guest_EDX;
+   VG_(m_state_static)[12/4] = vex->guest_EBX;
+   VG_(m_state_static)[16/4] = vex->guest_ESP;
+   VG_(m_state_static)[20/4] = vex->guest_EBP;
+   VG_(m_state_static)[24/4] = vex->guest_ESI;
+   VG_(m_state_static)[28/4] = vex->guest_EDI;
+   VG_(m_state_static)[32/4] = vex_to_eflags( vex );
+   VG_(m_state_static)[36/4] = vex->guest_EIP;
+   vex_to_x87( vex, (UChar*)&VG_(m_state_static)[40/4] );
 }
 
 
 void VG_(copy_m_state_static_to_baseBlock) ( void )
 {
-   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(m_state_static)[ 0/4];
-   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(m_state_static)[ 4/4];
-   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(m_state_static)[ 8/4];
-   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(m_state_static)[12/4];
-   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(m_state_static)[16/4];
-   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(m_state_static)[20/4];
-   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[24/4];
-   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[28/4];
-
-   VG_(baseBlock)[VGOFF_(m_cc_op)]    = 0; // CC_OP_COPY
-   VG_(baseBlock)[VGOFF_(m_cc_src)]   = VG_(m_state_static)[32/4];
-   VG_(baseBlock)[VGOFF_(m_cc_dst)]   = 0;
-   VG_(baseBlock)[VGOFF_(m_cc_dflag)] 
-      = (VG_(m_state_static)[32/4] & (1<<10)) 
-           ? 0xFFFFFFFF
-           : 0x00000001;
-   /* Mask out everything except O S Z A C P. */
-   VG_(baseBlock)[VGOFF_(m_cc_src)]
-      &= (0x0001 | 0x0004 | 0x0010 | 0x0040 | 0x0080 | 0x0800);
-
-   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
-
-   /* Make the FPU register stack appear to be empty. */
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = 0;
-   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = 0;
-
-   /* Copy FPU state. */
-   x87_to_vex( (UChar*)&VG_(m_state_static)[40/4], 
-               (UChar*)&VG_(baseBlock)[0] );
+   VexGuestX86State* vex 
+     = (VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]);
+   vex->guest_EAX = VG_(m_state_static)[ 0/4];
+   vex->guest_ECX = VG_(m_state_static)[ 4/4];
+   vex->guest_EDX = VG_(m_state_static)[ 8/4];
+   vex->guest_EBX = VG_(m_state_static)[12/4];
+   vex->guest_ESP = VG_(m_state_static)[16/4];
+   vex->guest_EBP = VG_(m_state_static)[20/4];
+   vex->guest_ESI = VG_(m_state_static)[24/4];
+   vex->guest_EDI = VG_(m_state_static)[28/4];
+   eflags_to_vex( VG_(m_state_static)[32/4], vex );
+   vex->guest_EIP = VG_(m_state_static)[36/4];
+   x87_to_vex( (UChar*)&VG_(m_state_static)[40/4], vex );
 }
 
 

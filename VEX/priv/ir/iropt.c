@@ -754,7 +754,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                   it is for now, since we'd have to truncate the BB at
                   this point, which is tricky. */
                /* fall out into the reconstruct-the-exit code. */
-               vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
+               if (UNROLL_VERBOSE) /* really a misuse of UNROLL_VERBOSE */
+                  vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
             }
          }
          return IRStmt_Exit(fcond,st->Ist.Exit.dst);
@@ -3129,7 +3130,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    Bool do_expensive;
 
    IRBB *bb, *bb2;
- 
+
    n_total++;
 
    /* First flatten the block out, since all other

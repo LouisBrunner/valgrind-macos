@@ -28,8 +28,7 @@ UCodeBlock*,	instrument,	UCodeBlock* cb, Addr orig_addr
 
 ## Finish up, print out any results, etc.  `exitcode' is program's exit
 ## code.  The shadow (if the `shadow_regs' need is set) can be found with
-## VG_(get_shadow_archreg)(R_EBX), since %ebx holds the argument to the
-## exit() syscall.
+## VG_(get_exit_status_shadow)().
 void,	fini,	Int exitcode
 
 

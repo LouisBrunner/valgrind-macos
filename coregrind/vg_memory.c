@@ -677,10 +677,10 @@ Segment *VG_(next_segment)(Segment *s)
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
 REGPARM(1)
-void VG_(unknown_esp_update)(Addr new_ESP)
+void VG_(unknown_esp_update)(Addr new_SP)
 {
-   Addr old_ESP = VG_(get_archreg)(R_ESP);
-   Int  delta   = (Int)new_ESP - (Int)old_ESP;
+   Addr old_SP = VG_(get_archreg)(R_STACK_PTR);
+   Int  delta  = (Int)new_SP - (Int)old_SP;
 
    if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {
       /* %esp has changed by more than HUGE_DELTA.  We take this to mean
@@ -694,12 +694,12 @@ void VG_(unknown_esp_update)(Addr new_ESP)
          happening. */
       if (VG_(clo_verbosity) > 1)
            VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
-                                    "%%esp: %p --> %p", old_ESP, new_ESP);
+                                    "%%esp: %p --> %p", old_SP, new_SP);
    } else if (delta < 0) {
-      VG_TRACK( new_mem_stack, new_ESP, -delta );
+      VG_TRACK( new_mem_stack, new_SP, -delta );
 
    } else if (delta > 0) {
-      VG_TRACK( die_mem_stack, old_ESP,  delta );
+      VG_TRACK( die_mem_stack, old_SP,  delta );
    }
 }
 

@@ -2799,12 +2799,12 @@ void do__get_stack_info ( ThreadId tid, ThreadId which, StackInfo* si )
 
 void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UInt ret_shadow )
 {
-   VG_(set_thread_shadow_archreg)(tid, R_EAX, ret_shadow);
+   VG_(set_thread_shadow_archreg)(tid, R_SYSCALL_RET, ret_shadow);
 }
 
 UInt VG_(get_exit_status_shadow) ( void )
 {
-   return VG_(get_shadow_archreg)(R_EBX);
+   return VG_(get_shadow_archreg)(R_SYSCALL_ARG1);
 }
 
 void VG_(intercept_libc_freeres_wrapper)(Addr addr)

@@ -1265,7 +1265,8 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
-      iselStmt(env,bb->stmts[i]);
+      if (bb->stmts[i])
+         iselStmt(env,bb->stmts[i]);
 
    iselNext(env,bb->next,bb->jumpkind);
 

@@ -51,7 +51,8 @@ static Bool lookupH64 ( Hash64* h, /*OUT*/ULong* val, ULong key )
    //vex_printf("lookupH64(%llx)\n", key );
    for (i = 0; i < h->used; i++) {
       if (h->inuse[i] && h->key[i] == key) {
-         *val = h->val[i];
+         if (val)
+            *val = h->val[i];
          return True;
       }
    }
@@ -540,6 +541,111 @@ static IRBB* cprop_BB ( IRBB* in )
 
 
 /*---------------------------------------------------------------*/
+/*--- Dead code (t = E) removal                               ---*/
+/*---------------------------------------------------------------*/
+
+/* The type of the Hash64 map is: a map from IRTemp to nothing
+   -- really just operating a set or IRTemps.
+*/
+
+static void addUses_Expr ( Hash64* set, IRExpr* e )
+{
+   Int i;
+   switch (e->tag) {
+      case Iex_Mux0X:
+         addUses_Expr(set, e->Iex.Mux0X.cond);
+         addUses_Expr(set, e->Iex.Mux0X.expr0);
+         addUses_Expr(set, e->Iex.Mux0X.exprX);
+         return;
+      case Iex_CCall:
+         for (i = 0; e->Iex.CCall.args[i]; i++)
+            addUses_Expr(set, e->Iex.CCall.args[i]);
+         return;
+      case Iex_LDle:
+         addUses_Expr(set, e->Iex.LDle.addr);
+         return;
+      case Iex_Binop:
+         addUses_Expr(set, e->Iex.Binop.arg1);
+         addUses_Expr(set, e->Iex.Binop.arg2);
+         return;
+      case Iex_Unop:
+         addUses_Expr(set, e->Iex.Unop.arg);
+         return;
+      case Iex_Tmp:
+         addToH64(set, (ULong)(e->Iex.Tmp.tmp), 0);
+         return;
+      case Iex_Const:
+      case Iex_Get:
+         return;
+      default:
+         vex_printf("\n");
+         ppIRExpr(e);
+         vpanic("addUses_Expr");
+   }
+}
+
+static void addUses_Stmt ( Hash64* set, IRStmt* st )
+{
+   switch (st->tag) {
+      case Ist_Exit:
+         addUses_Expr(set, st->Ist.Exit.cond);
+         return;
+      case Ist_Tmp:
+         addUses_Expr(set, st->Ist.Tmp.expr);
+         return;
+      case Ist_Put:
+         addUses_Expr(set, st->Ist.Put.expr);
+         return;
+      case Ist_STle:
+         addUses_Expr(set, st->Ist.STle.addr);
+         addUses_Expr(set, st->Ist.STle.data);
+         return;
+      default:
+         vex_printf("\n");
+         ppIRStmt(st);
+         vpanic("addUses_Stmt");
+      }
+}
+
+
+
+/* Note, this destructively modifies the given IRBB. */
+
+/* Scan backwards through statements, carrying a set of IRTemps which
+   are known to be used after the current point.  On encountering 't =
+   E', delete the binding if it is not used.  Otherwise, add any temp
+   uses to the set and keep on moving backwards. */
+
+void dead_BB ( IRBB* bb )
+{
+   Int     i;
+   Hash64* set = newH64();
+   IRStmt* st;
+
+   /* start off by recording IRTemp uses in the next field. */
+   addUses_Expr(set, bb->next);
+
+   /* Work backwards through the stmts */
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (st->tag == Ist_Tmp
+          && !lookupH64(set, NULL, (ULong)(st->Ist.Tmp.tmp))) {
+          /* it's an IRTemp which never got used.  Delete it. */
+         if (1) {
+            vex_printf("DEAD: ");
+            ppIRStmt(st);
+            vex_printf("\n");
+         }
+         bb->stmts[i] = NULL;
+      } else {
+         /* Note any IRTemp uses made by the current statement. */
+         addUses_Stmt(set, st);
+      }
+   }
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
 
@@ -563,6 +669,11 @@ IRBB* do_iropt_BB ( IRBB* bb0 )
    cpd  = cprop_BB ( flat );
    if (verbose) {
       vex_printf("\n========= CPROPD\n\n" );
+      ppIRBB(cpd);
+   }
+   dead_BB ( cpd );
+   if (verbose) {
+      vex_printf("\n========= DEAD\n\n" );
       ppIRBB(cpd);
    }
    return cpd;

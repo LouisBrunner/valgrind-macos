@@ -278,8 +278,10 @@ void ppIRBB ( IRBB* bb )
    ppIRTypeEnv(bb->tyenv);
    vex_printf("\n");
    for (i = 0; i < bb->stmts_used; i++) {
-      vex_printf( "   ");
-      ppIRStmt(bb->stmts[i]);
+      if (bb->stmts[i]) {
+         vex_printf( "   ");
+         ppIRStmt(bb->stmts[i]);
+      }
       vex_printf( "\n");
    }
    vex_printf( "   goto {");
@@ -764,7 +766,7 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
          if (expr->Iex.Tmp.tmp < 0 || expr->Iex.Tmp.tmp >= bb->tyenv->types_used)
             sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
          if (def_counts[expr->Iex.Tmp.tmp] < 1)
-            sanityCheckFail(bb,stmt, "IRTemp def before use in IRExpr");
+            sanityCheckFail(bb,stmt, "IRTemp use before def in IRExpr");
          break;
       case Iex_Binop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg1,def_counts);
@@ -980,6 +982,8 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
 
    for (i = 0; i < bb->stmts_used; i++) {
       stmt = bb->stmts[i];
+      if (!stmt)
+         continue;
       useBeforeDef_Stmt(bb,stmt,def_counts);
       if (stmt->tag == Ist_Tmp) {
          if (stmt->Ist.Tmp.tmp < 0 || stmt->Ist.Tmp.tmp >= n_temps)
@@ -992,7 +996,8 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
 
    /* Typecheck everything. */
    for (i = 0; i < bb->stmts_used; i++)
-      tcStmt( bb, bb->stmts[i], guest_word_size );
+      if (bb->stmts[i])
+         tcStmt( bb, bb->stmts[i], guest_word_size );
    if (typeOfIRExpr(bb->tyenv,bb->next) != guest_word_size)
       sanityCheckFail(bb, NULL, "bb->next field has wrong type");
 }

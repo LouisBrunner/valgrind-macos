@@ -55,52 +55,40 @@ instead at docs/manual.html.
 
 Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-At the moment, very rudimentary. 
 
-This tarball is set up for a standard Red Hat 7.2 machine.  No
-configure script, no autoconf, no nothing.  Do the following:
+If you install from CVS :
 
-0.  Unpack the sources and cd into the source directory.
+  0. cd into the source directory
 
-1.  Do "make"
+  1. Run ./autogen.sh to setup the environment (you need the standard
+     autoconf tools to do so)
 
-2.  See if it works.  Try "./valgrind ls -l".  Either this works,
-    or it bombs out complaining it can't find argc/argv/envp.
-    If this happens, you'll have to futz around with 
-    vg_main.c:710 to vg_main.c:790 to try and find suitable offsets.
-    It's not hard; many have been successful here.
+If you install from a tar.gz archive:
 
-Once step 2 is successful, you can now use valgrind.  Documentation
+  2. Run ./configure, with some options if you wish. The standard
+     options are documented in the INSTALL file.
+
+  3. Do "make"
+
+  4. As root, do "make install"
+
+  5. See if it works.  Try "valgrind ls -l".  Either this works,
+     or it bombs out complaining it can't find argc/argv/envp.
+     If this happens, you'll have to futz around with 
+     vg_main.c:710 to vg_main.c:790 to try and find suitable offsets.
+     It's not hard; many have been successful here.
+
+Once step 5 is successful, you can now use valgrind.  Documentation
 is in docs/manual.html.  The following auxiliary steps may enhance
 your valgrinding experience, though.
 
-3.  Add enough suppressions to the default suppression file
-    (linux24.supp) so that
+3.  Add enough suppressions to the suppression file for your kernel
+    (linux24.supp for instance) so that
        ./valgrind xedit
     runs without generating any errors.  This means you've more
     or less suppressed all the scummy errors from the X11 base
     libraries and from glibc, which will make it easier to spot
     genuine errors in your own code.
-
-    If you are using a machine with a 2.2 kernel (RedHat 6.2,
-    or Debian) you probably will want to edit the "valgrind"
-    shell script, to select the linux22.supp suppression file
-    (uncomment line 13; comment out line 14)
-
-If any kind soul would like to contribute a basic autoconf-style
-configuration/install mechanism (the usual autoconf ; ./configure ;
-make ; make install deal), that would be very much appreciated.  I
-will get round to it eventually, but there are only 24 hours in each
-day.
-
-If you want to install it somewhere other than the build directory:
-the files needed for installation are: valgrind.so, valgrinq.so,
-valgrind, VERSION, linux24.supp. You can copy these to any directory
-you like.
-
-I find it simplest to symlink <build_dir>/valgrind to somewhere
-else in my path, so I can use it in-place.  No need to "install"
-really.
 
 Julian Seward (jseward@acm.org)
 15 Feb 2002

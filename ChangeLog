@@ -1,0 +1,14 @@
+2002-03-22  Frédéric Gobry  <frederic.gobry@smartdata.ch>
+
+	* Makefile.am, demangle/Makefile.am: added base dependencies for
+	the explicit compilation rules (not doing so could lead to a
+	situation where the automatic dependency mechanism fails)
+
+	* configure.in: additional checks for xfree and gcc
+	
+	* Makefile.in, configure, ...: removed generated files, as they
+	don't belong to the CVS repository. Use autogen.sh to recreate
+	them. (they are in the tarballs however).
+
+	* README: updated the installation procedure
+

@@ -4,10 +4,53 @@ AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(valgrind, 20020317)
 
 # Checks for programs.
+CFLAGS=""
+
 AC_PROG_LN_S
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_RANLIB
+
+# Check for the compiler support
+if test "${GCC}" != "yes" ; then
+   AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
+fi
+
+# We don't want gcc 2.7
+AC_MSG_CHECKING([for a supported version of gcc])
+
+gcc_version=`${CC} --version`
+
+case "${gcc_version}" in
+     gcc-2.7.*)
+	AC_MSG_RESULT([no (${gcc_version})])
+	AC_MSG_ERROR([please use a recent (>= gcc-2.95) version of gcc])
+	;;
+
+     *)
+	AC_MSG_RESULT([ok (${gcc_version})])
+	;;
+esac
+
+# does this compiler support -mpreferred-stack-boundary=2 ?
+AC_MSG_CHECKING([for extra compiler options])
+
+CFLAGS="-mpreferred-stack-boundary=2"
+
+AC_TRY_COMPILE(, [
+
+int main () { return 0 ; }
+
+],
+[
+PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
+AC_MSG_RESULT([$PREFERRED_STACK_BOUNDARY])
+], [
+PREFERRED_STACK_BOUNDARY=""
+AC_MSG_RESULT([none])
+])
+
+AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 CFLAGS="-Winline -Wall -Wshadow -O -fomit-frame-pointer -g"
 AC_SUBST(CFLAGS)
@@ -17,7 +60,7 @@ AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
 
-case ${host_cpu} in
+case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
         ;;
@@ -30,7 +73,7 @@ esac
 
 AC_MSG_CHECKING([for a supported OS])
 
-case ${host_os} in
+case "${host_os}" in
      *linux*) 
 	AC_MSG_RESULT([ok (${host_os})])
         ;;
@@ -47,7 +90,7 @@ AC_MSG_CHECKING([for the kernel version])
 
 kernel=`uname -r`
 
-case ${kernel} in
+case "${kernel}" in
      2.4.*) 
 	    AC_MSG_RESULT([2.4 family (${kernel})])
 	    AC_DEFINE(KERNEL_2_4)
@@ -94,7 +137,7 @@ AC_EGREP_CPP([GLIBC_22], [
 ],
 glibc="2.2")
 
-case ${glibc} in
+case "${glibc}" in
      2.1)
 	AC_MSG_RESULT(2.1 family)
 	AC_DEFINE(GLIBC_2_1)
@@ -112,6 +155,62 @@ case ${glibc} in
 esac
 
 # try to detect the XFree version
+
+AC_PATH_X
+
+if test "${no_x}" != 'yes' ; then
+
+   AC_MSG_CHECKING([XFree version])
+
+   cat<<EOF > conftest.c
+#include <X11/Xlib.h>
+
+int main (int argc, char * argv [])
+{
+  Display * display = XOpenDisplay (NULL);
+
+  if (display) {
+    printf ("%s version=%d\n", ServerVendor (display), VendorRelease (display));
+  }
+
+  return 0;
+}
+EOF
+
+   ${CC} -o conftest conftest.c -I${x_includes} -L${x_libraries} -lX11 >&5 2>&1
+
+   if test "$?" != 0 ; then
+     AC_MSG_RESULT([cannot compile test program])
+   else
+     xfree=`./conftest`
+
+     case "${xfree}" in
+	*XFree86*) 
+	   ;;
+
+	*) AC_MSG_RESULT([not a XFree86 server])
+	   ;;
+     esac
+
+     case "${xfree}" in
+
+	*version=4*) 
+	   AC_MSG_RESULT([XFree 4.x family])
+	   AC_DEFINE(XFREE_4)
+	   ;;
+
+	*version=3*) 
+	   AC_MSG_RESULT([XFree 3.x family])
+	   AC_DEFINE(XFREE_3)
+	   ;;
+
+	*) AC_MSG_RESULT([unknown XFree86 server (${xfree})])
+	   ;;
+     esac
+   fi
+
+   rm -f conftest conftest.c
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -131,7 +230,9 @@ AC_TYPE_SIGNAL
 
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
 
-AC_OUTPUT(valgrind 
+AC_OUTPUT(
+   valgrind
+   valgrind.spec
    Makefile 
    docs/Makefile 
    tests/Makefile 

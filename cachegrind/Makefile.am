@@ -65,10 +65,10 @@ noinst_HEADERS = \
 install-data-hook:
 	cd ${valdir} && rm -f default.supp && $(LN_S) $(DEFAULT_SUPP) default.supp
 
-vg_memory.o:
-	$(COMPILE) -O2 -mpreferred-stack-boundary=2 -c $<
+vg_memory.o: vg_memory.c
+	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_clientmalloc.o:
+vg_clientmalloc.o: vg_clientmalloc.c
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
 

@@ -8,39 +8,39 @@ noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
-	args.stderr.exp args.stderr.exp.hd args.stdout.exp args.vgtest \
-	bitfield1.stderr.exp bitfield1.stderr.exp.hd bitfield1.vgtest \
-	bt_everything.stderr.exp bt_everything.stderr.exp.hd \
+	args.stderr.exp args.stdout.exp args.vgtest \
+	bitfield1.stderr.exp bitfield1.vgtest \
+	bt_everything.stderr.exp \
 	bt_everything.stdout.exp bt_everything.vgtest \
-	bt_literal.stderr.exp bt_literal.stderr.exp.hd bt_literal.stdout.exp \
+	bt_literal.stderr.exp bt_literal.stdout.exp \
 	bt_literal.vgtest \
-	coolo_sigaction.stderr.exp coolo_sigaction.stderr.exp.hd \
+	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
-	coolo_strlen.stderr.exp coolo_strlen.stderr.exp.hd coolo_strlen.vgtest \
-	cpuid.stderr.exp cpuid.stderr.exp.hd cpuid.stdout.exp cpuid.vgtest \
-	dastest.stderr.exp dastest.stderr.exp.hd dastest.stdout.exp \
+	coolo_strlen.stderr.exp coolo_strlen.vgtest \
+	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
+	dastest.stderr.exp dastest.stdout.exp \
 	dastest.vgtest \
-	discard.stderr.exp discard.stderr.exp.hd discard.stdout.exp \
+	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
-	floored.stderr.exp floored.stderr.exp.hd floored.stdout.exp \
+	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
-	fork.stderr.exp fork.stderr.exp.hd fork.stdout.exp fork.vgtest \
-	fucomip.stderr.exp fucomip.stderr.exp.hd fucomip.vgtest \
-	gxx304.stderr.exp gxx304.stderr.exp.hd gxx304.vgtest \
-	munmap_exe.stderr.exp munmap_exe.stderr.exp.hd munmap_exe.vgtest \
-	pth_blockedsig.stderr.exp pth_blockedsig.stderr.exp.hd \
+	fork.stderr.exp fork.stdout.exp fork.vgtest \
+	fucomip.stderr.exp fucomip.vgtest \
+	gxx304.stderr.exp gxx304.vgtest \
+	munmap_exe.stderr.exp munmap_exe.vgtest \
+	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
-	rcl_assert.stderr.exp rcl_assert.stderr.exp.hd rcl_assert.vgtest \
-	rcrl.stderr.exp rcrl.stderr.exp.hd rcrl.stdout.exp rcrl.vgtest \
-	readline1.stderr.exp readline1.stderr.exp.hd readline1.stdout.exp \
+	rcl_assert.stderr.exp rcl_assert.vgtest \
+	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
+	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
-	resolv.stderr.exp resolv.stderr.exp.hd resolv.stdout.exp resolv.vgtest \
-	seg_override.stderr.exp seg_override.stderr.exp.hd \
+	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
+	seg_override.stderr.exp \
 	seg_override.stdout.exp seg_override.vgtest \
-	sha1_test.stderr.exp sha1_test.stderr.exp.hd sha1_test.vgtest \
-	shortpush.stderr.exp shortpush.stderr.exp.hd shortpush.vgtest \
-	shorts.stderr.exp shorts.stderr.exp.hd shorts.vgtest \
-	smc1.stderr.exp smc1.stderr.exp.hd smc1.stdout.exp smc1.vgtest
+	sha1_test.stderr.exp sha1_test.vgtest \
+	shortpush.stderr.exp shortpush.vgtest \
+	shorts.stderr.exp shorts.vgtest \
+	smc1.stderr.exp smc1.stdout.exp smc1.vgtest
 
 noinst_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \

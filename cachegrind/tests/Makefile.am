@@ -1,9 +1,9 @@
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = filter_stderr \
-	dlclose.vgtest dlclose.stderr.exp dlclose.stderr.exp.hd \
+	dlclose.vgtest dlclose.stderr.exp \
 	dlclose.stdout.exp \
-	fpu-28-108.vgtest fpu-28-108.stderr.exp fpu-28-108.stderr.exp.hd
+	fpu-28-108.vgtest fpu-28-108.stderr.exp
 
 noinst_PROGRAMS = \
 	dlclose fpu-28-108 myprint.so

@@ -10,21 +10,21 @@ noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
-	erringfds.stderr.exp erringfds.stderr.exp.hd erringfds.stdout.exp \
+	erringfds.stderr.exp erringfds.stdout.exp \
 	erringfds.vgtest \
-	malloc3.stderr.exp malloc3.stderr.exp.hd malloc3.stdout.exp \
+	malloc3.stderr.exp malloc3.stdout.exp \
 	malloc3.vgtest \
-	pth_atfork1.stderr.exp pth_atfork1.stderr.exp.hd \
+	pth_atfork1.stderr.exp \
 	pth_atfork1.stdout.exp pth_atfork1.vgtest \
-	pth_cancel2.stderr.exp pth_cancel2.stderr.exp.hd pth_cancel2.vgtest \
-	pth_cvsimple.stderr.exp pth_cvsimple.stderr.exp.hd \
+	pth_cancel2.stderr.exp pth_cancel2.vgtest \
+	pth_cvsimple.stderr.exp \
 	pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
-	pth_empty.stderr.exp pth_empty.stderr.exp.hd pth_empty.vgtest \
-	pth_mutexspeed.stderr.exp pth_mutexspeed.stderr.exp.hd \
+	pth_empty.stderr.exp pth_empty.vgtest \
+	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
-	pth_once.stderr.exp pth_once.stderr.exp.hd pth_once.stdout.exp \
+	pth_once.stderr.exp pth_once.stdout.exp \
 	pth_once.vgtest \
-	sigkill.stderr.exp sigkill.stderr.exp.hd sigkill.vgtest
+	sigkill.stderr.exp sigkill.vgtest
 
 noinst_PROGRAMS = \
 	erringfds malloc3 sigkill \

@@ -13,6 +13,3 @@ val_PROGRAMS = vgskin_none.so
 vgskin_none_so_SOURCES 	 = nl_main.c
 vgskin_none_so_LDFLAGS   = -shared
 
-##vgskin_none.so$(EXEEXT): $(vgskin_none_so_OBJECTS)
-##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_none.so \
-##		$(vgskin_none_so_OBJECTS)

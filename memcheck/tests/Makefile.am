@@ -13,14 +13,14 @@ noinst_SCRIPTS = filter_allocs filter_leak_check_size filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
-	badaddrvalue.stderr.exp badaddrvalue.stderr.exp.hd \
+	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
 	badjump.stderr.exp badjump.vgtest \
 	badloop.stderr.exp badloop.vgtest \
-	buflen_check.stderr.exp buflen_check.stderr.exp.hd buflen_check.vgtest \
-	clientperm.stderr.exp clientperm.stderr.exp.hd \
+	buflen_check.stderr.exp buflen_check.vgtest \
+	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	errs1.stderr.exp errs1.vgtest \
@@ -44,7 +44,7 @@ EXTRA_DIST = \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
-	signal2.stderr.exp signal2.stderr.exp.hd \
+	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \

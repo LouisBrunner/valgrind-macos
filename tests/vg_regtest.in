@@ -30,13 +30,8 @@
 # usage: vg_regtest [options] <dirs | files>
 #
 # Options:
-#   --stable:   use stable-branch stderr results (*.stderr.exp.hd)
-#   --dev:      use dev-branch stderr results    (*.stderr.exp - default)
 #   --all:      run tests in all subdirs
 #   --valgrind: valgrind to use.  Default is one built from this source tree.
-#
-# The stable-branch/dev-branch distinction allows slight differences in stderr
-# results.
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -51,8 +46,6 @@
 #   - prog:   <prog to run>                         (compulsory)
 #   - args:   <args for prog>                       (default: none)
 #   - vgopts: <Valgrind options>                    (default: none)
-#   - vgopts.st:  <options, --stable only>          (default: none)
-#   - vgopts.dev: <options, --dev only>             (default: none)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
 #
@@ -60,11 +53,8 @@
 # always change, eg. process id numbers.
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp.  It can be missing
-# if it would be empty.
-#
-# Expected stderr (filtered) is kept in <test>.stderr.exp for --dev, and
-# <test>.stderr.exp.hd for --stable (silly ".hd" extension for historical
-# reasons).
+# if it would be empty.  Expected stderr (filtered) is kept in
+# <test>.stderr.exp. 
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff.
@@ -78,7 +68,7 @@ use strict;
 #----------------------------------------------------------------------------
 # Global vars
 #----------------------------------------------------------------------------
-my $usage="vg_regtest [--stable|--dev, --all, --valgrind]\n";
+my $usage="vg_regtest [--all, --valgrind]\n";
 
 my $tmp="vg_regtest.tmp.$$";
 
@@ -91,7 +81,7 @@ my $stderr_filter;      # filter program to run stderr results file through
 
 my @failures;           # List of failed tests
 
-my $exp = "";           # --dev is default
+my $num_tests_done = 0;
 
 # Default valgrind to use is this build tree's one
 my $prefix="@prefix@";
@@ -137,11 +127,7 @@ sub process_command_line()
     
     for my $arg (@ARGV) {
         if ($arg =~ /^-/) {
-            if      ($arg =~ /^--stable$/) {
-                $exp = ".hd";
-            } elsif ($arg =~ /^--dev$/) {
-                $exp = "";
-            } elsif ($arg =~ /^--all$/) {
+            if      ($arg =~ /^--all$/) {
                 $alldirs = 1;
             } elsif ($arg =~ /^--valgrind=(.*)$/) {
                 $valgrind = $1;
@@ -189,10 +175,6 @@ sub read_vgtest_file($)
             $prog = validate_program(".", $1);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
-        } elsif ($line =~ /^\s*vgopts\.st:\s*(.*)$/) {
-            $vgopts = $1 if ($exp eq ".hd");
-        } elsif ($line =~ /^\s*vgopts\.dev:\s*(.*)$/) {
-            $vgopts = $1 if ($exp eq "");
         } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
             $stdout_filter = validate_program(".", $1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
@@ -237,14 +219,10 @@ sub do_one_test($$)
 
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 
-    # If --dev, pass the appropriate --skin option for the directory (can be
-    # overridden by an "args:" or "args.dev:" line, though)
-    if ($exp eq ".hd") {
-        mysystem("$valgrind $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
-    } else {
-        my $skin=determine_skin();
-        mysystem("$valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
-    }
+    # Pass the appropriate --skin option for the directory (can be overridden
+    # by an "args:" or "args.dev:" line, though)
+    my $skin=determine_skin();
+    mysystem("$valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");
@@ -260,13 +238,7 @@ sub do_one_test($$)
                      ? "$name.stdout.exp" 
                      : "/dev/null" );
 
-    # If stable-branch and dev-branch have the same expected stderr output,
-    # foo.stderr.exp.hd might be missing, so use foo.stderr.exp instead if
-    # --stable is true.
-    my $stderr_exp = "$name.stderr.exp$exp";
-    if ($exp eq ".hd" && not -r $stderr_exp) {
-       $stderr_exp = "$name.stderr.exp";
-    }
+    my $stderr_exp = "$name.stderr.exp";
     (-r $stderr_exp) or die "Could not read `$stderr_exp'\n";
 
     mysystem("diff -C0 $stdout_exp $name.stdout.out > $name.stdout.diff");
@@ -280,6 +252,7 @@ sub do_one_test($$)
             unlink("$name.$ext.out", "$name.$ext.diff");
         }
     }
+    $num_tests_done++;
 }
 
 #----------------------------------------------------------------------------
@@ -292,7 +265,8 @@ sub test_one_dir($$)
     my ($dir, $prev_dirs) = @_;
     $dir =~ s/\/$//;    # trim a trailing '/'
 
-    if ($dir =~ /^(CVS|docs)$/) { return; }    # ignore CVS/ and docs/ dirs
+    # ignore CVS/ and docs/ and doc/ dirs
+    if ($dir =~ /^(CVS|docs|doc)$/) { return; } 
 
     chdir($dir) or die "Could not change into $dir\n";
 
@@ -328,8 +302,11 @@ sub test_one_dir($$)
 #----------------------------------------------------------------------------
 sub summarise_results 
 {
-    print "\n== Failed tests ===============================\n";
-    if (0 == @failures) {
+    my $x = ( $num_tests_done == 1 ? "test" : "tests" );
+    my $n_failures = @failures;
+    
+    print "\n== $num_tests_done $x, $n_failures failed: ===============================\n";
+    if (0 == $n_failures) {
         print "   (none)\n";
     } else {
         foreach my $failure (@failures) {

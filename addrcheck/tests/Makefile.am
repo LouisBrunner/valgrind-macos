@@ -4,4 +4,4 @@ noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
-	true.stderr.exp true.stderr.exp.hd true.vgtest
+	true.stderr.exp true.vgtest

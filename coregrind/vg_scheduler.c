@@ -472,6 +472,10 @@ void VG_(save_thread_state) ( ThreadId tid )
       by the normal actions of the thread, only by the modify_ldt
       syscall, in which case we will correctly be updating
       VG_(threads)[tid].ldt. */
+   if ((void*)VG_(threads)[tid].ldt != (void*)VG_(baseBlock)[VGOFF_(ldt)])
+      VG_(printf)("VG_(threads)[%d].ldt=%p  VG_(baseBlock)[VGOFF_(ldt)]=%p\n",
+		  tid, (void*)VG_(threads)[tid].ldt, (void*)VG_(baseBlock)[VGOFF_(ldt)]);
+
    vg_assert((void*)VG_(threads)[tid].ldt 
              == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
 
@@ -2140,6 +2144,18 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
    VG_(load_thread_state)(parent_tid);
+
+   /* We inherit our parent's LDT. */
+   if (VG_(threads)[parent_tid].ldt == NULL) {
+      /* We hope this is the common case. */
+      VG_(baseBlock)[VGOFF_(ldt)] = 0;
+   } else {
+      /* No luck .. we have to take a copy of the parent's. */
+      VG_(threads)[tid].ldt
+        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].ldt );
+      VG_(baseBlock)[VGOFF_(ldt)] = (UInt)VG_(threads)[tid].ldt;
+   }
+
    VG_(save_thread_state)(tid);
    vg_tid_last_in_baseBlock = tid;
 
@@ -2203,16 +2219,6 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* We inherit our parent's signal mask. */
    VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
    VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
-
-   /* We inherit our parent's LDT. */
-   if (VG_(threads)[parent_tid].ldt == NULL) {
-      /* We hope this is the common case. */
-      VG_(threads)[tid].ldt = NULL;
-   } else {
-      /* No luck .. we have to take a copy of the parent's. */
-      VG_(threads)[tid].ldt 
-        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].ldt );
-   }
 
    /* return child's tid to parent */
    SET_EDX(parent_tid, tid); /* success */

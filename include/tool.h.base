@@ -995,7 +995,7 @@ extern Bool VG_(clo_sloppy_malloc);
 /* DEBUG: print malloc details?  default: NO */
 extern Bool VG_(clo_trace_malloc);
 /* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use default of the machine (== 4) */
+   default: VG_MIN_MALLOC_SZB */
 extern UInt VG_(clo_alignment);
 
 extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );

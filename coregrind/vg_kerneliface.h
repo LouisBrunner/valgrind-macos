@@ -141,6 +141,7 @@ typedef
 
 /* Copied from linux-2.4.19/include/asm-i386/fcntl.h */
 
+#define VKI_O_ACCMODE	       0003
 #define VKI_O_RDONLY             00
 #define VKI_O_WRONLY             01
 #define VKI_O_RDWR               02

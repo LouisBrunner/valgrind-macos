@@ -65,7 +65,8 @@
 #ifdef GLIBC_2_1
 #include <sys/time.h>
 #endif
-
+#include <sys/stat.h>
+#include <sys/poll.h>
 #include <stdio.h>
 
 
@@ -1797,26 +1798,158 @@ ssize_t read(int fd, void *buf, size_t count)
    return __libc_read(fd, buf, count);
 }
 
- 
-extern
-int __libc_open64(const char *pathname, int flags, mode_t mode);
-__attribute__((weak))
-int open64(const char *pathname, int flags, mode_t mode)
+/*
+ * Ugh, this is horrible but here goes:
+ *
+ * Open of a named pipe (fifo file) can block.  In a threaded program,
+ * this means that the whole thing can block.  We therefore need to
+ * make the open appear to block to the caller, but still keep polling
+ * for everyone else.
+ *
+ * There are four cases:
+ *
+ * - the caller asked for O_NONBLOCK.  The easy one: we just do it.
+ *
+ * - the caller asked for a blocking O_RDONLY open.  We open it with
+ *   O_NONBLOCK and then use poll to wait for it to become ready.
+ *
+ * - the caller asked for a blocking O_WRONLY open.  Unfortunately, this
+ *   will fail with ENXIO when we make it non-blocking.  Doubly
+ *   unfortunate is that we can only rely on these semantics if it is
+ *   actually a fifo file; the hack is that if we see that it is a
+ *   O_WRONLY open and we get ENXIO, then stat the path and see if it
+ *   actually is a fifo.  This is racy, but it is the best we can do.
+ *   If it is a fifo, then keep trying the open until it works; if not
+ *   just return the error.
+ *
+ * - the caller asked for a blocking O_RDWR open.  Well, under Linux,
+ *   this never blocks, so we just clear the non-blocking flag and
+ *   return.
+ *
+ * This code assumes that for whatever we open, O_NONBLOCK followed by
+ * a fcntl clearing O_NONBLOCK is the same as opening without
+ * O_NONBLOCK.  Also assumes that stat and fstat have no side-effects.
+ *
+ * XXX Should probably put in special cases for some devices as well,
+ * like serial ports.  Unfortunately they don't work like fifos, so
+ * this logic will become even more tortured.  Wait until we really
+ * need it.
+ */ 
+static inline int _open(const char *pathname, int flags, mode_t mode,
+			int (*openp)(const char *, int, mode_t))
 {
+   int fd;
+   struct stat st;
+   struct vki_timespec nanosleep_interval;
+   int saved_errno;
+
    __my_pthread_testcancel();
-   return __libc_open64(pathname, flags, mode);
+
+   /* Assume we can only get O_RDONLY, O_WRONLY or O_RDWR */
+   my_assert((flags & VKI_O_ACCMODE) != VKI_O_ACCMODE);
+
+   for(;;) {
+      fd = (*openp)(pathname, flags | VKI_O_NONBLOCK, mode);
+
+      /* return immediately if caller wanted nonblocking anyway */
+      if (flags & VKI_O_NONBLOCK)
+	 return fd;
+
+      saved_errno = errno;
+
+      if (fd != -1)
+	 break;			/* open worked */
+
+      /* If we got ENXIO and we're opening WRONLY, and it turns out
+	 to really be a FIFO, then poll waiting for open to succeed */
+      if (errno == ENXIO &&
+	  (flags & VKI_O_ACCMODE) == VKI_O_WRONLY &&
+	  (stat(pathname, &st) == 0 && S_ISFIFO(st.st_mode))) {
+
+	 /* OK, we're opening a FIFO for writing; sleep and spin */
+	 nanosleep_interval.tv_sec  = 0;
+	 nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
+	 /* It's critical here that valgrind's nanosleep implementation
+	    is nonblocking. */
+	 (void)my_do_syscall2(__NR_nanosleep, 
+			      (int)(&nanosleep_interval), (int)NULL);
+      } else {
+	 /* it was just an error */
+	 errno = saved_errno;
+	 return -1;
+      }
+   }
+
+   /* OK, we've got a nonblocking FD for a caller who wants blocking;
+      reset the flags to what they asked for */
+   fcntl(fd, VKI_F_SETFL, flags);
+
+   /* Return now if one of:
+      - we were opening O_RDWR (never blocks)
+      - we opened with O_WRONLY (polling already done)
+      - the thing we opened wasn't a FIFO after all (or fstat failed)
+   */
+   if ((flags & VKI_O_ACCMODE) != VKI_O_RDONLY ||
+       (fstat(fd, &st) == -1 || !S_ISFIFO(st.st_mode))) {
+      errno = saved_errno;
+      return fd;
+   }
+
+   /* OK, drop into the poll loop looking for something to read on the fd */
+   my_assert((flags & VKI_O_ACCMODE) == VKI_O_RDONLY);
+   for(;;) {
+      struct pollfd pollfd;
+      int res;
+
+      pollfd.fd = fd;
+      pollfd.events = POLLIN;
+      pollfd.revents = 0;
+
+      res = my_do_syscall3(__NR_poll, (int)&pollfd, 1, 0);
+      
+      my_assert(res == 0 || res == 1);
+
+      if (res == 1) {
+	 /* OK, got it.
+
+	    XXX This is wrong: we're waiting for either something to
+	    read or a HUP on the file descriptor, but the semantics of
+	    fifo open are that we should unblock as soon as someone
+	    simply opens the other end, not that they write something.
+	    With luck this won't matter in practice.
+	 */
+	 my_assert(pollfd.revents & (POLLIN|POLLHUP));
+	 break;
+      }
+
+      /* Still nobody home; sleep and spin */
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+	 is nonblocking. */
+      (void)my_do_syscall2(__NR_nanosleep, 
+			   (int)(&nanosleep_interval), (int)NULL);
+   }
+
+   errno = saved_errno;
+   return fd;
 }
 
+extern
+int __libc_open64(const char *pathname, int flags, mode_t mode);
+/* __attribute__((weak)) */
+int open64(const char *pathname, int flags, mode_t mode)
+{
+   return _open(pathname, flags, mode, __libc_open64);
+}
 
 extern
 int __libc_open(const char *pathname, int flags, mode_t mode);
-__attribute__((weak))
+/* __attribute__((weak)) */
 int open(const char *pathname, int flags, mode_t mode)
 {
-   __my_pthread_testcancel();
-   return __libc_open(pathname, flags, mode);
+   return _open(pathname, flags, mode, __libc_open);
 }
-
 
 extern
 int __libc_close(int fd);

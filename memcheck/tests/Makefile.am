@@ -3,8 +3,9 @@
 ## - lots more mmap/munmap/mremap/mprotect ones
 ##---------------------------------------------------------------------------
 
-noinst_SCRIPTS = filter_allocs filter_leak_check_size filter_stderr \
-                 filter_stderr_backtrace
+noinst_SCRIPTS = filter_allocs filter_leak_check_size filter_mismatches \
+		 filter_stderr filter_stderr_backtrace filter_pushfpopf \
+		 filter_tronical
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badaddrvalue.stderr.exp \

@@ -2,7 +2,7 @@
 SUBDIRS = . unused
 
 noinst_SCRIPTS = \
-	vg_regtest
+	vg_regtest \
 	filter_addresses \
 	filter_discards \
 	filter_stderr_basic \

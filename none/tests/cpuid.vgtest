@@ -1,1 +1,2 @@
 prog: cpuid
+stdout_filter: filter_cpuid

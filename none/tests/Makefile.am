@@ -1,4 +1,4 @@
-noinst_SCRIPTS = filter_stderr
+noinst_SCRIPTS = filter_cpuid  filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \

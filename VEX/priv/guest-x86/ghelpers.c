@@ -506,7 +506,7 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
    tab[cc_op][cond]++;
    n_calc_cond++;
 
-   if (0 == ((n_calc_all+n_calc_c) & 0x0FFF)) showCounts();
+   if (0 == ((n_calc_all+n_calc_c) & 0x3FFF)) showCounts();
 #  endif
 
    switch (cond) {
@@ -651,65 +651,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
       cc_src = args[2];
       cc_dst = args[3];
 
-      if (isU32(cc_op, CC_OP_LOGICB) && isU32(cond, CondZ)) {
-         /* byte and/or/xor, then Z --> test dst==0 */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dst,mkU32(255)), 
-                                        mkU32(0)));
-      }
-
-      if (isU32(cc_op, CC_OP_SUBW) && isU32(cond, CondZ)) {
-         /* byte sub/cmp, then Z --> test dst==src */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ16, 
-                           unop(Iop_32to16,cc_dst), 
-                           unop(Iop_32to16,cc_src)));
-      }
-
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondZ)) {
-         /* byte sub/cmp, then Z --> test dst==src */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ8, 
-                           unop(Iop_32to8,cc_dst), 
-                           unop(Iop_32to8,cc_src)));
-      }
-
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
-         /* byte sub/cmp, then Z --> test dst!=src */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpNE8, 
-                           unop(Iop_32to8,cc_dst), 
-                           unop(Iop_32to8,cc_src)));
-      }
-
-      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
-         /* long sub/cmp, then NBE (unsigned greater than)
-            --> test src <=u dst */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpLT32U, 
-                           binop(Iop_And32,cc_src,mkU32(0xFFFF)),
-			   binop(Iop_And32,cc_dst,mkU32(0xFFFF))));
-      }
-
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondZ)) {
-         /* long and/or/xor, then Z --> test dst==0 */
-         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
-      }
-
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondS)) {
-         /* long and/or/xor, then S --> test dst <s 0 */
-         return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dst, mkU32(0)));
-      }
-
-      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
-         /* long and/or/xor, then LE
-            This is pretty subtle.  LOGIC sets SF and ZF according to the
-            result and makes OF be zero.  LE computes (SZ ^ OF) | ZF, but
-            OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
-            the result is <=signed 0.  Hence ...
-         */
-         return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dst, mkU32(0)));
-      }
+      /*---------------- SUBL ----------------*/
 
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondZ)) {
          /* long sub/cmp, then Z --> test dst==src */
@@ -744,6 +686,76 @@ IRExpr* x86guest_spechelper ( Char* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, cc_dst, cc_src));
       }
+
+      /*---------------- SUBW ----------------*/
+
+      if (isU32(cc_op, CC_OP_SUBW) && isU32(cond, CondZ)) {
+         /* byte sub/cmp, then Z --> test dst==src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ16, 
+                           unop(Iop_32to16,cc_dst), 
+                           unop(Iop_32to16,cc_src)));
+      }
+
+      /*---------------- SUBB ----------------*/
+
+      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondZ)) {
+         /* byte sub/cmp, then Z --> test dst==src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ8, 
+                           unop(Iop_32to8,cc_dst), 
+                           unop(Iop_32to8,cc_src)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
+         /* byte sub/cmp, then Z --> test dst!=src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE8, 
+                           unop(Iop_32to8,cc_dst), 
+                           unop(Iop_32to8,cc_src)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
+         /* long sub/cmp, then NBE (unsigned greater than)
+            --> test src <=u dst */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, 
+                           binop(Iop_And32,cc_src,mkU32(0xFFFF)),
+			   binop(Iop_And32,cc_dst,mkU32(0xFFFF))));
+      }
+
+      /*---------------- LOGICL ----------------*/
+
+      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondZ)) {
+         /* long and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondS)) {
+         /* long and/or/xor, then S --> test dst <s 0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dst, mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
+         /* long and/or/xor, then LE
+            This is pretty subtle.  LOGIC sets SF and ZF according to the
+            result and makes OF be zero.  LE computes (SZ ^ OF) | ZF, but
+            OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
+            the result is <=signed 0.  Hence ...
+         */
+         return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dst, mkU32(0)));
+      }
+
+      /*---------------- LOGICB ----------------*/
+
+      if (isU32(cc_op, CC_OP_LOGICB) && isU32(cond, CondZ)) {
+         /* byte and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dst,mkU32(255)), 
+                                        mkU32(0)));
+      }
+
+      /*---------------- DECL ----------------*/
 
       if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondZ)) {
          /* dec L, then Z --> test dst == 0 */

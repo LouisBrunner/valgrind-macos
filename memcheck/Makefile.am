@@ -20,8 +20,7 @@ vgtool_memcheck_so_SOURCES = \
 	mc_main.c \
 	mc_errcontext.c \
 	mc_from_ucode.c \
-	mc_translate.c \
-	mc_helpers.S
+	mc_translate.c
 vgtool_memcheck_so_LDFLAGS = -shared
 
 mcincludedir = $(includedir)/valgrind

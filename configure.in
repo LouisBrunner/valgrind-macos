@@ -120,11 +120,6 @@ esac
 
 AC_SUBST(DEFAULT_SUPP)
 
-AC_PROG_EGREP
-
-# Ok, this is linux. Check the kernel version
-AC_MSG_CHECKING([the glibc version])
-
 glibc=""
 
 AC_EGREP_CPP([GLIBC_21], [
@@ -156,6 +151,9 @@ AC_EGREP_CPP([GLIBC_23], [
 #endif
 ],
 glibc="2.3")
+
+# Ok, this is linux. Check the kernel version
+AC_MSG_CHECKING([the glibc version])
 
 case "${glibc}" in
      2.1)

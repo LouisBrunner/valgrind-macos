@@ -1566,6 +1566,7 @@ extern void VG_(mprotect_range)(Addr addr, UInt len, UInt prot);
 extern Addr VG_(find_map_space)(Addr base, UInt len, Bool for_client);
 
 extern Segment *VG_(find_segment)(Addr a);
+extern Segment *VG_(first_segment)(void);
 extern Segment *VG_(next_segment)(Segment *);
 
 extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);

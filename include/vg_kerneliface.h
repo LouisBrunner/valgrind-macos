@@ -763,6 +763,124 @@ struct statfs64 {
 #define VKI_FUTEX_FD      2
 #define VKI_FUTEX_REQUEUE 3
 
+/* 
+ * linux/elfcore.h
+ */
+
+struct elf_siginfo
+{
+	int	si_signo;			/* signal number */
+	int	si_code;			/* extra code */
+	int	si_errno;			/* errno */
+};
+
+/*
+ * This is the old layout of "struct pt_regs", and
+ * is still the layout used by user mode (the new
+ * pt_regs doesn't have all registers as the kernel
+ * doesn't use the extra segment registers)
+ */
+struct user_regs_struct {
+	long ebx, ecx, edx, esi, edi, ebp, eax;
+	unsigned short ds, __ds, es, __es;
+	unsigned short fs, __fs, gs, __gs;
+	long orig_eax, eip;
+	unsigned short cs, __cs;
+	long eflags, esp;
+	unsigned short ss, __ss;
+};
+
+struct user_i387_struct {
+	long	cwd;
+	long	swd;
+	long	twd;
+	long	fip;
+	long	fcs;
+	long	foo;
+	long	fos;
+	long	st_space[20];	/* 8*10 bytes for each FP-reg = 80 bytes */
+};
+
+struct user_fxsr_struct {
+	unsigned short	cwd;
+	unsigned short	swd;
+	unsigned short	twd;
+	unsigned short	fop;
+	long	fip;
+	long	fcs;
+	long	foo;
+	long	fos;
+	long	mxcsr;
+	long	reserved;
+	long	st_space[32];	/* 8*16 bytes for each FP-reg = 128 bytes */
+	long	xmm_space[32];	/* 8*16 bytes for each XMM-reg = 128 bytes */
+	long	padding[56];
+};
+
+typedef unsigned long elf_greg_t;
+
+#define ELF_NGREG (sizeof (struct user_regs_struct) / sizeof(elf_greg_t))
+typedef elf_greg_t elf_gregset_t[ELF_NGREG];
+
+typedef struct user_i387_struct elf_fpregset_t;
+typedef struct user_fxsr_struct elf_fpxregset_t;
+
+
+/*
+ * Definitions to generate Intel SVR4-like core files.
+ * These mostly have the same names as the SVR4 types with "elf_"
+ * tacked on the front to prevent clashes with linux definitions,
+ * and the typedef forms have been avoided.  This is mostly like
+ * the SVR4 structure, but more Linuxy, with things that Linux does
+ * not support and which gdb doesn't really use excluded.
+ * Fields present but not used are marked with "XXX".
+ */
+struct elf_prstatus
+{
+#if 0
+	long	pr_flags;	/* XXX Process flags */
+	short	pr_why;		/* XXX Reason for process halt */
+	short	pr_what;	/* XXX More detailed reason */
+#endif
+	struct elf_siginfo pr_info;	/* Info associated with signal */
+	short	pr_cursig;		/* Current signal */
+	unsigned long pr_sigpend;	/* Set of pending signals */
+	unsigned long pr_sighold;	/* Set of held signals */
+#if 0
+	struct sigaltstack pr_altstack;	/* Alternate stack info */
+	struct sigaction pr_action;	/* Signal action for current sig */
+#endif
+	Int	pr_pid;
+	Int	pr_ppid;
+	Int	pr_pgrp;
+	Int	pr_sid;
+	struct vki_timeval pr_utime;	/* User time */
+	struct vki_timeval pr_stime;	/* System time */
+	struct vki_timeval pr_cutime;	/* Cumulative user time */
+	struct vki_timeval pr_cstime;	/* Cumulative system time */
+#if 0
+	long	pr_instr;		/* Current instruction */
+#endif
+	elf_gregset_t pr_reg;	/* GP registers */
+	int pr_fpvalid;		/* True if math co-processor being used.  */
+};
+
+#define ELF_PRARGSZ	(80)	/* Number of chars for args */
+
+struct elf_prpsinfo
+{
+	char	pr_state;	/* numeric process state */
+	char	pr_sname;	/* char for pr_state */
+	char	pr_zomb;	/* zombie */
+	char	pr_nice;	/* nice val */
+	unsigned long pr_flag;	/* flags */
+	Int	pr_uid;
+	Int	pr_gid;
+	Int	pr_pid, pr_ppid, pr_pgrp, pr_sid;
+	/* Lots missing */
+	char	pr_fname[16];	/* filename of executable */
+	char	pr_psargs[ELF_PRARGSZ];	/* initial part of arg list */
+};
 
 #endif /*  __VG_KERNELIFACE_H */
 

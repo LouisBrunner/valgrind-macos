@@ -47,7 +47,6 @@
 #include <sys/stat.h>
 #include <sys/ptrace.h>
 #include <sys/signal.h>
-#include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -311,12 +310,12 @@ void VG_(start_debugger) ( Int tid )
       Int res;
 
       if (VG_(is_running_thread)( tid )) {
-         regs.xcs = VG_(baseBlock)[VGOFF_(m_cs)];
-         regs.xss = VG_(baseBlock)[VGOFF_(m_ss)];
-         regs.xds = VG_(baseBlock)[VGOFF_(m_ds)];
-         regs.xes = VG_(baseBlock)[VGOFF_(m_es)];
-         regs.xfs = VG_(baseBlock)[VGOFF_(m_fs)];
-         regs.xgs = VG_(baseBlock)[VGOFF_(m_gs)];
+         regs.cs  = VG_(baseBlock)[VGOFF_(m_cs)];
+         regs.ss  = VG_(baseBlock)[VGOFF_(m_ss)];
+         regs.ds  = VG_(baseBlock)[VGOFF_(m_ds)];
+         regs.es  = VG_(baseBlock)[VGOFF_(m_es)];
+         regs.fs  = VG_(baseBlock)[VGOFF_(m_fs)];
+         regs.gs  = VG_(baseBlock)[VGOFF_(m_gs)];
          regs.eax = VG_(baseBlock)[VGOFF_(m_eax)];
          regs.ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
          regs.ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
@@ -330,12 +329,12 @@ void VG_(start_debugger) ( Int tid )
       } else {
          ThreadState* tst = & VG_(threads)[ tid ];
          
-         regs.xcs = tst->m_cs;
-         regs.xss = tst->m_ss;
-         regs.xds = tst->m_ds;
-         regs.xes = tst->m_es;
-         regs.xfs = tst->m_fs;
-         regs.xgs = tst->m_gs;
+         regs.cs  = tst->m_cs;
+         regs.ss  = tst->m_ss;
+         regs.ds  = tst->m_ds;
+         regs.es  = tst->m_es;
+         regs.fs  = tst->m_fs;
+         regs.gs  = tst->m_gs;
          regs.eax = tst->m_eax;
          regs.ebx = tst->m_ebx;
          regs.ecx = tst->m_ecx;

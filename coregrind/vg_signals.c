@@ -1276,6 +1276,395 @@ void VG_(kill_self)(Int sigNo)
    VG_(ksigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
 }
 
+/*
+  Dump core
+   
+  Generate a standard ELF core file corresponding to the client state
+  at the time of a crash.
+ */
+#include <elf.h>
+#ifndef NT_PRXFPREG
+#define NT_PRXFPREG     0x46e62b7f      /* copied from gdb5.1/include/elf/common.h */
+#endif /* NT_PRXFPREG */
+
+/* If true, then this Segment may be mentioned in the core */
+static Bool may_dump(const Segment *seg)
+{
+   return (seg->flags & SF_VALGRIND) == 0 && VG_(is_client_addr)(seg->addr);
+}
+
+/* If true, then this Segment's contents will be in the core */
+static Bool should_dump(const Segment *seg)
+{
+   return may_dump(seg); // && (seg->prot & VKI_PROT_WRITE);
+}
+
+static void fill_ehdr(Elf32_Ehdr *ehdr, Int num_phdrs)
+{
+   VG_(memset)(ehdr, 0, sizeof(ehdr));
+
+   VG_(memcpy)(ehdr->e_ident, ELFMAG, SELFMAG);
+   ehdr->e_ident[EI_CLASS] = ELFCLASS32;
+   ehdr->e_ident[EI_DATA] = ELFDATA2LSB;
+   ehdr->e_ident[EI_VERSION] = EV_CURRENT;
+   ehdr->e_ident[EI_OSABI] = ELFOSABI_LINUX;
+
+   ehdr->e_type = ET_CORE;
+   ehdr->e_machine = EM_386;
+   ehdr->e_version = EV_CURRENT;
+   ehdr->e_entry = 0;
+   ehdr->e_phoff = sizeof(Elf32_Ehdr);
+   ehdr->e_shoff = 0;
+   ehdr->e_flags = 0;
+   ehdr->e_ehsize = sizeof(Elf32_Ehdr);
+   ehdr->e_phentsize = sizeof(Elf32_Phdr);
+   ehdr->e_phnum = num_phdrs;
+   ehdr->e_shentsize = 0;
+   ehdr->e_shnum = 0;
+   ehdr->e_shstrndx = 0;
+
+}
+
+static void fill_phdr(Elf32_Phdr *phdr, const Segment *seg, UInt off, Bool write)
+{
+   write = write && should_dump(seg);
+
+   VG_(memset)(phdr, 0, sizeof(*phdr));
+
+   phdr->p_type = PT_LOAD;
+   phdr->p_offset = off;
+   phdr->p_vaddr = seg->addr;
+   phdr->p_paddr = 0;
+   phdr->p_filesz = write ? seg->len : 0;
+   phdr->p_memsz = seg->len;
+   phdr->p_flags = 0;
+
+   if (seg->prot & VKI_PROT_READ)
+      phdr->p_flags |= PF_R;
+   if (seg->prot & VKI_PROT_WRITE)
+      phdr->p_flags |= PF_W;
+   if (seg->prot & VKI_PROT_EXEC)
+      phdr->p_flags |= PF_X;
+
+   phdr->p_align = VKI_BYTES_PER_PAGE;
+}
+
+struct note {
+   struct note *next;
+   Elf32_Nhdr note;
+   Char name[0];
+};
+
+static UInt note_size(const struct note *n)
+{
+   return sizeof(Elf32_Nhdr) + ROUNDUP(VG_(strlen)(n->name)+1, 4) + ROUNDUP(n->note.n_descsz, 4);
+}
+
+static void add_note(struct note **list, const Char *name, UInt type, const void *data, UInt datasz)
+{
+   Int namelen = VG_(strlen)(name)+1;
+   Int notelen = sizeof(struct note) + 
+      ROUNDUP(namelen, 4) + 
+      ROUNDUP(datasz, 4);
+   struct note *n = VG_(arena_malloc)(VG_AR_CORE, notelen);
+
+   VG_(memset)(n, 0, notelen);
+
+   n->next = *list;
+   *list = n;
+
+   n->note.n_type = type;
+   n->note.n_namesz = namelen;
+   n->note.n_descsz = datasz;
+
+   VG_(memcpy)(n->name, name, namelen);
+   VG_(memcpy)(n->name+ROUNDUP(namelen,4), data, datasz);
+}
+
+static void write_note(Int fd, const struct note *n)
+{
+   VG_(write)(fd, &n->note, note_size(n));
+}
+
+static void fill_prpsinfo(const ThreadState *tst, struct elf_prpsinfo *prpsinfo)
+{
+   Char *name;
+
+   VG_(memset)(prpsinfo, 0, sizeof(*prpsinfo));
+
+   switch(tst->status) {
+   case VgTs_Runnable:
+      prpsinfo->pr_sname = 'R';
+      break;
+
+   case VgTs_WaitJoinee:
+      prpsinfo->pr_sname = 'Z';
+      prpsinfo->pr_zomb = 1;
+      break;
+
+   case VgTs_WaitJoiner:
+   case VgTs_WaitMX:
+   case VgTs_WaitCV:
+   case VgTs_WaitSys:
+   case VgTs_Sleeping:
+      prpsinfo->pr_sname = 'S';
+      break;
+
+   case VgTs_Empty:
+      /* ? */
+      break;
+   }
+
+   prpsinfo->pr_uid = 0;
+   prpsinfo->pr_gid = 0;
+   
+   name = VG_(resolve_filename)(VG_(clexecfd));
+
+   if (name != NULL) {
+      Char *n = name+VG_(strlen)(name)-1;
+
+      while(n > name && *n != '/')
+	 n--;
+      if (n != name)
+	 n++;
+
+      VG_(strncpy)(prpsinfo->pr_fname, n, sizeof(prpsinfo->pr_fname));
+   }
+}
+
+static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, const vki_ksiginfo_t *si)
+{
+   struct user_regs_struct *regs;
+
+   VG_(memset)(prs, 0, sizeof(*prs));
+
+   prs->pr_info.si_signo = si->si_signo;
+   prs->pr_info.si_code = si->si_code;
+   prs->pr_info.si_errno = 0;
+
+   prs->pr_cursig = si->si_signo;
+
+   prs->pr_pid = VG_(main_pid) + tst->tid;	/* just to distinguish threads from each other */
+   prs->pr_ppid = 0;
+   prs->pr_pgrp = VG_(main_pgrp);
+   prs->pr_sid = VG_(main_pgrp);
+   
+   regs = (struct user_regs_struct *)prs->pr_reg;
+
+   vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
+
+   if (VG_(is_running_thread)(tst->tid)) {
+      regs->eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+      regs->esp = VG_(baseBlock)[VGOFF_(m_esp)];
+      regs->eip = VG_(baseBlock)[VGOFF_(m_eip)];
+
+      regs->ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
+      regs->ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
+      regs->edx = VG_(baseBlock)[VGOFF_(m_edx)];
+      regs->esi = VG_(baseBlock)[VGOFF_(m_esi)];
+      regs->edi = VG_(baseBlock)[VGOFF_(m_edi)];
+      regs->ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+      regs->eax = VG_(baseBlock)[VGOFF_(m_eax)];
+
+      regs->cs = VG_(baseBlock)[VGOFF_(m_cs)];
+      regs->ds = VG_(baseBlock)[VGOFF_(m_ds)];
+      regs->ss = VG_(baseBlock)[VGOFF_(m_ss)];
+      regs->es = VG_(baseBlock)[VGOFF_(m_es)];
+      regs->fs = VG_(baseBlock)[VGOFF_(m_fs)];
+      regs->gs = VG_(baseBlock)[VGOFF_(m_gs)];
+   } else {
+      regs->eflags = tst->m_eflags;
+      regs->esp = tst->m_esp;
+      regs->eip = tst->m_eip;
+
+      regs->ebx = tst->m_ebx;
+      regs->ecx = tst->m_ecx;
+      regs->edx = tst->m_edx;
+      regs->esi = tst->m_esi;
+      regs->edi = tst->m_edi;
+      regs->ebp = tst->m_ebp;
+      regs->eax = tst->m_eax;
+
+      regs->cs = tst->m_cs;
+      regs->ds = tst->m_ds;
+      regs->ss = tst->m_ss;
+      regs->es = tst->m_es;
+      regs->fs = tst->m_fs;
+      regs->gs = tst->m_gs;
+   }
+}
+
+static void fill_fpu(const ThreadState *tst, elf_fpregset_t *fpu)
+{
+   const Char *from;
+
+   if (VG_(is_running_thread)(tst->tid)) {
+      from = (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
+   } else {
+      from = (const Char *)&tst->m_sse;
+   }
+
+   if (VG_(have_ssestate)) {
+      UShort *to;
+      Int i;
+
+      /* This is what the kernel does */
+      VG_(memcpy)(fpu, from, 7*sizeof(long));
+   
+      to = (UShort *)&fpu->st_space[0];
+      from += 18 * sizeof(UShort);
+
+      for(i = 0; i < 8; i++, to += 5, from += 8) 
+	 VG_(memcpy)(to, from, 5*sizeof(UShort));
+   } else
+      VG_(memcpy)(fpu, from, sizeof(*fpu));
+}
+
+static void fill_xfpu(const ThreadState *tst, elf_fpxregset_t *xfpu)
+{
+   UShort *from;
+
+   if (VG_(is_running_thread)(tst->tid)) 
+      from = (UShort *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
+   else 
+      from = (UShort *)tst->m_sse;
+
+   VG_(memcpy)(xfpu, from, sizeof(*xfpu));
+}
+
+static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
+{
+   Char buf[1000];
+   Char *basename = "vgcore";
+   Char *coreext = "";
+   Int seq = 0;
+   Int core_fd;
+   Segment *seg;
+   Elf32_Ehdr ehdr;
+   Elf32_Phdr *phdrs;
+   Int num_phdrs;
+   Int i;
+   UInt off;
+   struct note *notelist, *note;
+   UInt notesz;
+   struct elf_prpsinfo prpsinfo;
+   struct elf_prstatus prstatus;
+
+   if (VG_(clo_logfile_name) != NULL) {
+      coreext = ".core";
+      basename = VG_(clo_logfile_name);
+   }
+
+   for(;;) {
+      if (seq == 0)
+	 VG_(sprintf)(buf, "%s%s.pid%d",
+		      basename, coreext, VG_(main_pid));
+      else
+	 VG_(sprintf)(buf, "%s%s.pid%d.%d",
+		      basename, coreext, VG_(main_pid), seq);
+      seq++;
+
+      core_fd = VG_(open)(buf, 			   
+			  VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
+			  VKI_S_IRUSR|VKI_S_IWUSR);
+      if (core_fd >= 0)
+	 break;
+
+      if (core_fd != -VKI_EEXIST)
+	 return;		/* can't create file */
+   }
+
+   /* First, count how many memory segments to dump */
+   num_phdrs = 1;		/* start with notes */
+   for(seg = VG_(first_segment)();
+       seg != NULL;
+       seg = VG_(next_segment)(seg)) {
+      if (!may_dump(seg))
+	 continue;
+
+      num_phdrs++;
+   }
+
+   fill_ehdr(&ehdr, num_phdrs);
+
+   /* Second, work out their layout */
+   phdrs = VG_(arena_malloc)(VG_AR_CORE, sizeof(*phdrs) * num_phdrs);
+
+   for(i = 1; i < VG_N_THREADS; i++) {
+      elf_fpregset_t fpu;
+
+      if (VG_(threads)[i].status == VgTs_Empty)
+	 continue;
+
+      if (VG_(have_ssestate)) {
+	 elf_fpxregset_t xfpu;
+
+	 fill_xfpu(&VG_(threads)[i], &xfpu);
+	 add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
+      }
+
+      fill_fpu(&VG_(threads)[i], &fpu);
+      add_note(&notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
+
+      fill_prstatus(&VG_(threads)[i], &prstatus, si);
+      add_note(&notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
+   }
+
+   fill_prpsinfo(&VG_(threads)[tid], &prpsinfo);
+   add_note(&notelist, "CORE", NT_PRPSINFO, &prpsinfo, sizeof(prpsinfo));
+
+   for(note = notelist, notesz = 0; note != NULL; note = note->next)
+      notesz += note_size(note);
+
+   off = sizeof(ehdr) + sizeof(*phdrs) * num_phdrs;
+
+   phdrs[0].p_type = PT_NOTE;
+   phdrs[0].p_offset = off;
+   phdrs[0].p_vaddr = 0;
+   phdrs[0].p_paddr = 0;
+   phdrs[0].p_filesz = notesz;
+   phdrs[0].p_memsz = 0;
+   phdrs[0].p_flags = 0;
+   phdrs[0].p_align = 0;
+
+   off += notesz;
+
+   off = PGROUNDUP(off);
+
+   for(seg = VG_(first_segment)(), i = 1;
+       seg != NULL;
+       seg = VG_(next_segment)(seg), i++) {
+      if (!may_dump(seg))
+	 continue;
+
+      fill_phdr(&phdrs[i], seg, off, (seg->len + off) < max_size);
+      
+      off += phdrs[i].p_filesz;
+   }
+
+   /* write everything out */
+   VG_(write)(core_fd, &ehdr, sizeof(ehdr));
+   VG_(write)(core_fd, phdrs, sizeof(*phdrs) * num_phdrs);
+
+   for(note = notelist; note != NULL; note = note->next)
+      write_note(core_fd, note);
+   
+   VG_(lseek)(core_fd, phdrs[1].p_offset, VKI_SEEK_SET);
+
+   for(seg = VG_(first_segment)(), i = 1;
+       seg != NULL;
+       seg = VG_(next_segment)(seg), i++) {
+      if (!should_dump(seg))
+	 continue;
+
+      vg_assert(VG_(lseek)(core_fd, 0, VKI_SEEK_CUR) == phdrs[i].p_offset);
+      if (phdrs[i].p_filesz > 0)
+	 VG_(write)(core_fd, (void *)seg->addr, seg->len);
+   }
+
+   VG_(close)(core_fd);
+}
+
 /* 
    Perform the default action of a signal.  Returns if the default
    action isn't fatal.
@@ -1393,6 +1782,19 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 
       if (VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) {
          VG_(start_debugger)( tid );
+      }
+
+      if (core) {
+	 static struct vki_rlimit zero = { 0, 0 };
+	 struct vki_rlimit corelim;
+
+	 VG_(getrlimit)(VKI_RLIMIT_CORE, &corelim);
+
+	 if (corelim.rlim_cur > 0)
+	    make_coredump(tid, info, corelim.rlim_cur);
+
+	 /* make sure we don't get a confusing kernel-generated coredump */
+	 VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);
       }
 
       if (VG_(fatal_signal_set)) {

@@ -1147,7 +1147,7 @@ PRE(ptrace)
       break;
    case 14:   /* PTRACE_GETFPREGS */
       SYSCALL_TRACK( pre_mem_write, tid, "ptrace(getfpregs)", arg4, 
-		     sizeof (struct user_fpregs_struct));
+		     sizeof (struct user_i387_struct));
       break;
    case 18:   /* PTRACE_GETFPXREGS */
       SYSCALL_TRACK( pre_mem_write, tid, "ptrace(getfpxregs)", arg4, 
@@ -1163,7 +1163,7 @@ PRE(ptrace)
       break;
    case 15:   /* PTRACE_SETFPREGS */
       SYSCALL_TRACK( pre_mem_read, tid, "ptrace(setfpregs)", arg4, 
-		     sizeof (struct user_fpregs_struct));
+		     sizeof (struct user_i387_struct));
       break;
    case 19:   /* PTRACE_SETFPXREGS */
       SYSCALL_TRACK( pre_mem_read, tid, "ptrace(setfpxregs)", arg4, 
@@ -1187,7 +1187,7 @@ POST(ptrace)
       break;
    case 14:  /* PTRACE_GETFPREGS */
       VG_TRACK( post_mem_write, arg4, 
-		sizeof (struct user_fpregs_struct));
+		sizeof (struct user_i387_struct));
       break;
    case 18:  /* PTRACE_GETFPXREGS */
       VG_TRACK( post_mem_write, arg4, 

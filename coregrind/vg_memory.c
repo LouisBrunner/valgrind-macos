@@ -551,6 +551,11 @@ Segment *VG_(find_segment)(Addr a)
    return VG_(SkipList_Find)(&sk_segments, &a);
 }
 
+Segment *VG_(first_segment)(void)
+{
+   return VG_(SkipNode_First)(&sk_segments);
+}
+
 Segment *VG_(next_segment)(Segment *s)
 {
    return VG_(SkipNode_Next)(&sk_segments, s);

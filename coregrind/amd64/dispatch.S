@@ -170,12 +170,6 @@ dispatch_exceptional:
 	jmp	run_innerloop_exit
 
 	
-.data
-panic_msg_ebp:
-.ascii	"vg_dispatch: %ebp has invalid value!"
-.byte	0
-.text	
-        
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 #endif

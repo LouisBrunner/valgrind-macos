@@ -1734,12 +1734,12 @@ PRE(fstatfs)
    /* int fstatfs(int fd, struct statfs *buf); */
    MAYBE_PRINTF("fstatfs ( %d, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_write, tid, "stat(buf)", 
-		  arg2, sizeof(struct statfs) );
+		  arg2, sizeof(struct vki_statfs) );
 }
 
 POST(fstatfs)
 {
-   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
+   VG_TRACK( post_mem_write, arg2, sizeof(struct vki_statfs) );
 }
 
 PRE(getsid)
@@ -3380,7 +3380,16 @@ PRE(ioctl)
    case CDROM_DRIVE_STATUS: /* 0x5326 */
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
-      
+
+   case FIGETBSZ:
+      SYSCALL_TRACK( pre_mem_write,tid, "ioctl(FIGETBSZ)", arg3,
+                     sizeof(unsigned long));
+      break;
+   case FIBMAP:
+      SYSCALL_TRACK( pre_mem_read,tid, "ioctl(FIBMAP)", arg3,
+                     sizeof(unsigned long));
+      break;
+
 #ifdef HAVE_LINUX_FB_H
    case FBIOGET_VSCREENINFO: /* 0x4600 */
       SYSCALL_TRACK( pre_mem_write,tid,
@@ -3811,6 +3820,15 @@ POST(ioctl)
 	 for readability).  JRS 20021117 */
    case CDROM_DRIVE_STATUS: /* 0x5326 */
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
+      break;
+
+   case FIGETBSZ:
+      if (res == 0)
+         VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      break;
+   case FIBMAP:
+      if (res == 0)
+         VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 
 #ifdef HAVE_LINUX_FB_H
@@ -4914,12 +4932,12 @@ PRE(statfs)
    MAYBE_PRINTF("statfs ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "statfs(buf)", 
-		  arg2, sizeof(struct statfs) );
+		  arg2, sizeof(struct vki_statfs) );
 }
 
 POST(statfs)
 {
-   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
+   VG_TRACK( post_mem_write, arg2, sizeof(struct vki_statfs) );
 }
 
 PRE(statfs64)
@@ -4928,12 +4946,12 @@ PRE(statfs64)
    MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", 
-		  arg2, sizeof(struct statfs64) );
+		  arg2, sizeof(struct vki_statfs64) );
 }
 
 POST(statfs64)
 {
-   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs64) );
+   VG_TRACK( post_mem_write, arg2, sizeof(struct vki_statfs64) );
 }
 
 PRE(symlink)

@@ -64,6 +64,7 @@
 #include <signal.h>       /* for siginfo_t */
 #include <linux/timex.h>  /* for adjtimex */
 #include <linux/hdreg.h>  /* for hard drive ioctls */
+#include <linux/fs.h>     /* for filing system ioctls */
 #ifdef HAVE_LINUX_FB_H
 #include <linux/fb.h>     /* for fb_* structs */
 #endif

@@ -726,7 +726,7 @@ struct vki_sockaddr {
  * bits/statfs.h
  */
 
-struct statfs {
+struct vki_statfs {
         unsigned int f_type;
         unsigned int f_bsize;
         unsigned int f_blocks;
@@ -740,7 +740,7 @@ struct statfs {
         unsigned int f_spare[5];
 };
 
-struct statfs64 {
+struct vki_statfs64 {
         unsigned int f_type;
         unsigned int f_bsize;
         unsigned long long f_blocks;

@@ -33,10 +33,44 @@
 #ifndef __CORE_H
 #define __CORE_H
 
-/* ---------------------------------------------------------------------
-   Build options and table sizes.  You should be able to change these
-   options or sizes, recompile, and still have a working system.
-   ------------------------------------------------------------------ */
+/*
+   Header hierarchy:
+
+   - core C   files include core.h
+   - core asm files include core_asm.h
+   - tool C   files include tool.h
+   - tool asm files include tool_asm.h
+
+   - The hierarchy of the header files themselves is based around the
+     following rules:
+
+      - core headers     include  tool headers
+      - generic headers  include  arch/OS/platform headers
+      - C headers        include  asm headers
+
+     This gives the following hierarchy (only showing 'arch' headers, not
+     'os' or 'platform' headers), where arrows indicate inclusion:
+
+        (tool_arch_asm.h?) <------- core_arch_asm.h
+            ^     ^                    ^     ^
+           /       \                  /       \
+          /         \                /         \
+      tool_asm.h <---\---------- core_asm.h     \
+          ^           \              ^           \
+           \    tool_arch.h <---------\---- core_arch.h
+            \         ^                \         ^
+             \       /                  \       /
+              \     /                    \     /
+              tool.h <------------------ core.h
+
+   Note that core.h contains the *declarations* of arch-specific functions
+   and variables, which can be used by the core_arch.h file of any
+   architecture.  (The functions/variables are *defined* within arch/.)
+   However, arch-specific macros and types cannot go into core.h, because
+   there is no separation between declaration and definition for
+   macros/types, so they instead go into $VG_ARCH/core_arch.h.
+*/
+
 
 /* For system call numbers __NR_... */
 #include "vg_unistd.h"
@@ -48,6 +82,12 @@
 
 #undef SK_
 #define SK_(x)	vgSkinInternal_##x
+
+
+/* ---------------------------------------------------------------------
+   Build options and table sizes.  You should be able to change these
+   options or sizes, recompile, and still have a working system.
+   ------------------------------------------------------------------ */
 
 /* Total number of spill slots available for allocation, if a TempReg
    doesn't make it into a RealReg.  Just bomb the entire system if

@@ -1221,12 +1221,6 @@ void VG_(read_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
-/* We assume the executable is loaded here ... can't really find
-   out.  There is a hacky sanity check in VG_(init_memory)()
-   which should trip up most stupidities.
-*/
-#define VG_ASSUMED_EXE_BASE  (Addr)0x8048000
-
 extern void VG_(maybe_read_symbols)   ( void );
 extern void VG_(read_symtab_callback) ( Addr start, UInt size, 
                                         Char rr, Char ww, Char xx,

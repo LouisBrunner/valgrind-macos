@@ -154,32 +154,6 @@ void startup_segment_callback ( Addr start, UInt size,
    UInt r_esp;
    Bool is_stack_segment;
 
-   /* Sanity check ... if this is the executable's text segment,
-      ensure it is loaded where we think it ought to be.  Any file
-      name which doesn't contain ".so" is assumed to be the
-      executable. */
-   if (filename != NULL
-       && xx == 'x'
-       && VG_(strstr(filename, ".so")) == NULL
-      ) {
-      /* We assume this is the executable. */
-      if (start != VG_ASSUMED_EXE_BASE) {
-         VG_(message)(Vg_UserMsg,
-                      "FATAL: executable base addr not as assumed.");
-         VG_(message)(Vg_UserMsg, "name %s, actual %p, assumed %p.",
-                      filename, start, VG_ASSUMED_EXE_BASE);
-         VG_(message)(Vg_UserMsg,
-            "One reason this could happen is that you have a shared object");
-         VG_(message)(Vg_UserMsg,
-            " whose name doesn't contain the characters \".so\", so Valgrind ");
-         VG_(message)(Vg_UserMsg,
-            "naively assumes it is the executable.  ");
-         VG_(message)(Vg_UserMsg,
-            "In that case, rename it appropriately.");
-         VG_(core_panic)("VG_ASSUMED_EXE_BASE doesn't match reality");
-      }
-   }
-
    if (0)
       VG_(message)(Vg_DebugMsg,
                    "initial map %8x-%8x %c%c%c? %8x (%d) (%s)",

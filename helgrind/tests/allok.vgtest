@@ -1,0 +1,2 @@
+prog: allok
+vgopts: --optimise=no

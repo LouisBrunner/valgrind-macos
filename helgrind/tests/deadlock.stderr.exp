@@ -1,0 +1,15 @@
+
+Thread 3:
+Mutex 0x........(m1) locked in inconsistent order
+   at 0x........: __pthread_mutex_lock (vg_libpthread.c:945)
+   by 0x........: t2 (deadlock.c:20)
+   by 0x........: thread_wrapper (vg_libpthread.c:661)
+   by 0x........: do__quit (vg_scheduler.c:1791)
+ while holding locks 0x........(m2)
+  0x........(m2) last locked at
+   at 0x........: __pthread_mutex_lock (vg_libpthread.c:945)
+   by 0x........: t2 (deadlock.c:19)
+   by 0x........: thread_wrapper (vg_libpthread.c:661)
+   by 0x........: do__quit (vg_scheduler.c:1791)
+  while depending on locks 0x........(m1)
+

@@ -164,7 +164,7 @@ Int VG_(sigaction) ( Int signum,
 Int VG_(sigaltstack)( const vki_stack_t* ss, vki_stack_t* oss )
 {
    Int res
-     = VG_(do_syscall)(__NR_sigaltstack, (UInt)ss, (UInt)oss);
+     = VG_(do_syscall)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -220,7 +220,7 @@ Int VG_(tkill)( Int tid, Int signo )
 
 Int VG_(sigpending) ( vki_sigset_t* set )
 {
-   Int res = VG_(do_syscall)(__NR_sigpending, (UInt)set);
+   Int res = VG_(do_syscall)(__NR_sigpending, (UWord)set);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -268,9 +268,9 @@ Int VG_(gettid)(void)
    mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */
 
-static Int munmap_inner(void *start, UInt length)
+static Int munmap_inner(void *start, SizeT length)
 {
-   return VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
+   return VG_(do_syscall)(__NR_munmap, (UWord)start, length );
 }
 
 static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags, UInt fd, UInt offset)
@@ -339,8 +339,8 @@ Int VG_(mprotect)( void *start, SizeT length, UInt prot )
 
 void VG_(exit)( Int status )
 {
-   (void)VG_(do_syscall)(__NR_exit_group, (UInt)status );
-   (void)VG_(do_syscall)(__NR_exit, (UInt)status );
+   (void)VG_(do_syscall)(__NR_exit_group, status );
+   (void)VG_(do_syscall)(__NR_exit, status );
    /* Why are we still alive here? */
    /*NOTREACHED*/
    *(volatile Int *)0 = 'x';
@@ -1233,7 +1233,7 @@ Int VG_(open) ( const Char* pathname, Int flags, Int mode )
    /* fd = open( pathname, O_RDONLY ); */
    /* ... so we go direct to the horse's mouth, which seems to work
       ok: */
-   fd = VG_(do_syscall)(__NR_open, (UInt)pathname, flags, mode);
+   fd = VG_(do_syscall)(__NR_open, (UWord)pathname, flags, mode);
    /* VG_(printf)("result = %d\n", fd); */
    /* return -ve error code */
    return fd;
@@ -1255,7 +1255,7 @@ Int VG_(read) ( Int fd, void* buf, Int count)
 {
    Int res;
    /* res = read( fd, buf, count ); */
-   res = VG_(do_syscall)(__NR_read, fd, (UInt)buf, count);
+   res = VG_(do_syscall)(__NR_read, fd, (UWord)buf, count);
    /* return -ERRNO on error */
    return res;
 }
@@ -1264,7 +1264,7 @@ Int VG_(write) ( Int fd, const void* buf, Int count)
 {
    Int res;
    /* res = write( fd, buf, count ); */
-   res = VG_(do_syscall)(__NR_write, fd, (UInt)buf, count);
+   res = VG_(do_syscall)(__NR_write, fd, (UWord)buf, count);
    /* return -ERRNO on error */
    return res;
 }
@@ -1273,7 +1273,7 @@ Int VG_(lseek) ( Int fd, Long offset, Int whence)
 {
    Int res;
    /* res = lseek( fd, offset, whence ); */
-   res = VG_(do_syscall)(__NR_lseek, fd, (UInt)offset, whence);
+   res = VG_(do_syscall)(__NR_lseek, fd, (UWord)offset, whence);
    if (VG_(is_kerror)(res)) res = -1;
    return res;
 }
@@ -1281,35 +1281,35 @@ Int VG_(lseek) ( Int fd, Long offset, Int whence)
 Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
    Int res;
-   res = VG_(do_syscall)(__NR_stat, (UInt)file_name, (UInt)buf);
+   res = VG_(do_syscall)(__NR_stat, (UWord)file_name, (UWord)buf);
    return res;			/* return -ve error */
 }
 
 Int VG_(fstat) ( Int fd, struct vki_stat* buf )
 {
    Int res;
-   res = VG_(do_syscall)(__NR_fstat, (UInt)fd, (UInt)buf);
+   res = VG_(do_syscall)(__NR_fstat, fd, (UWord)buf);
    return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
 Int VG_(dup2) ( Int oldfd, Int newfd )
 {
    Int res;
-   res = VG_(do_syscall)(__NR_dup2, (UInt)oldfd, (UInt)newfd);
+   res = VG_(do_syscall)(__NR_dup2, oldfd, newfd);
    return VG_(is_kerror)(res) ? (-1) : res;
 }
 
 Int VG_(rename) ( Char* old_name, Char* new_name )
 {
    Int res;
-   res = VG_(do_syscall)(__NR_rename, (UInt)old_name, (UInt)new_name);
+   res = VG_(do_syscall)(__NR_rename, (UWord)old_name, (UWord)new_name);
    return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
 Int VG_(unlink) ( Char* file_name )
 {
    Int res;
-   res = VG_(do_syscall)(__NR_unlink, (UInt)file_name);
+   res = VG_(do_syscall)(__NR_unlink, (UWord)file_name);
    return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
@@ -1319,7 +1319,7 @@ Char* VG_(getcwd) ( Char* buf, SizeT size )
 {
    Int res;
    vg_assert(buf != NULL);
-   res = VG_(do_syscall)(__NR_getcwd, (UInt)buf, size);
+   res = VG_(do_syscall)(__NR_getcwd, (UWord)buf, size);
    return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
 }
 
@@ -1450,7 +1450,7 @@ Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
    Int res;
    /* res = getrlimit( resource, rlim ); */
-   res = VG_(do_syscall)(__NR_getrlimit, (UInt)resource, (UInt)rlim);
+   res = VG_(do_syscall)(__NR_getrlimit, resource, (UWord)rlim);
    if(VG_(is_kerror)(res)) res = -1;
    return res;
 }
@@ -1461,7 +1461,7 @@ Int VG_(setrlimit) (Int resource, struct vki_rlimit *rlim)
 {
    Int res;
    /* res = setrlimit( resource, rlim ); */
-   res = VG_(do_syscall)(__NR_setrlimit, (UInt)resource, (UInt)rlim);
+   res = VG_(do_syscall)(__NR_setrlimit, resource, (UWord)rlim);
    if(VG_(is_kerror)(res)) res = -1;
    return res;
 }
@@ -1472,7 +1472,7 @@ Int VG_(getdents) (UInt fd, struct vki_dirent *dirp, UInt count)
 {
    Int res;
    /* res = getdents( fd, dirp, count ); */
-   res = VG_(do_syscall)(__NR_getdents, fd, (UInt)dirp, count);
+   res = VG_(do_syscall)(__NR_getdents, fd, (UWord)dirp, count);
    if (VG_(is_kerror)(res)) res = -1;
    return res;
 }
@@ -1482,7 +1482,7 @@ Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)
 {
    Int res;
    /* res = readlink( path, buf, bufsiz ); */
-   res = VG_(do_syscall)(__NR_readlink, (UInt)path, (UInt)buf, bufsiz);
+   res = VG_(do_syscall)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
    if (VG_(is_kerror)(res)) res = -1;
    return res;
 }
@@ -1666,8 +1666,8 @@ UInt VG_(read_millisecond_timer) ( void )
    ULong now;
    Int res;
 
-   res = VG_(do_syscall)(__NR_gettimeofday, (UInt)&tv_now, 
-			 (UInt)NULL);
+   res = VG_(do_syscall)(__NR_gettimeofday, (UWord)&tv_now, 
+			 (UWord)NULL);
    
    now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
    
@@ -1945,7 +1945,7 @@ Int my_socket ( Int domain, Int type, Int protocol )
    args[0] = domain;
    args[1] = type;
    args[2] = protocol;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SOCKET, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SOCKET, (UWord)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -1960,7 +1960,7 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    args[0] = sockfd;
    args[1] = (UInt)serv_addr;
    args[2] = addrlen;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_CONNECT, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_CONNECT, (UWord)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -1981,7 +1981,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    args[1] = (UInt)msg;
    args[2] = count;
    args[3] = flags;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SEND, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SEND, (UWord)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -1994,7 +1994,7 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    args[0] = sd;
    args[1] = (UInt)name;
    args[2] = (UInt)namelen;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
@@ -2007,7 +2007,7 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    args[0] = sd;
    args[1] = (UInt)name;
    args[2] = (UInt)namelen;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
@@ -2023,7 +2023,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    args[2] = (UInt)optname;
    args[3] = (UInt)optval;
    args[4] = (UInt)optlen;
-   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;

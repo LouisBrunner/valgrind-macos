@@ -70,6 +70,14 @@
    Memcheck:Cond
    fun:_dl_relocate_object_internal
 }
+{
+   index/*-2.2.5.so/*-2.2.5.so
+   Memcheck:Cond
+   fun:index
+   obj:*-2.2.5.so
+   obj:*-2.2.5.so
+}
+
 
 #-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
 {

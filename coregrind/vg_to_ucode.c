@@ -3122,7 +3122,7 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
 */
 static
 Addr dis_mov_Ew_Sw ( UCodeBlock* cb, 
-                    UChar       sorb,
+                     UChar       sorb,
                      Addr        eip0 )
 {
    UChar rm  = getUChar(eip0);
@@ -3147,6 +3147,54 @@ Addr dis_mov_Ew_Sw ( UCodeBlock* cb,
       uInstr2(cb, PUTSEG, 2, TempReg, tmpb, ArchRegS, gregOfRM(rm));
       if (dis) VG_(printf)("movw %s,%s\n",
                            dis_buf,nameSReg(gregOfRM(rm)));
+      return HI8(pair)+eip0;
+   }
+}
+
+
+/* Moves of a segment register to Ew.
+      mov Sw, Ew  meaning
+      mov reg, reg-or-mem
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   Sw(src) is seg reg.
+   Ew(dst) is reg-or-mem
+
+   If E is reg, -->    GETSEG %Sw,  tmp
+                       PUTW tmp, %Ew
+ 
+   If E is mem, -->    (getAddr E) -> tmpa
+                       GETSEG %Sw, tmpv
+                       STW tmpv, (tmpa) 
+*/
+static
+Addr dis_mov_Sw_Ew ( UCodeBlock* cb, 
+                     UChar       sorb,
+                     Addr        eip0 )
+{
+   UChar rm = getUChar(eip0);
+   UChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      Int tmpv = newTemp(cb);
+      uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
+      uInstr2(cb, PUT,    2, TempReg, tmpv, ArchReg, eregOfRM(rm));
+      if (dis) VG_(printf)("movw %s,%s\n",
+                           nameSReg(gregOfRM(rm)),
+                           nameIReg(2,eregOfRM(rm)));
+      return 1+eip0;
+   }
+
+   /* E refers to memory */    
+   {
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
+      Int  tmpa = LOW24(pair);
+      Int  tmpv = newTemp(cb);
+      uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
+      uInstr2(cb, STORE,  2, TempReg, tmpv, TempReg, tmpa);
+      if (dis) VG_(printf)("mov %s,%s\n",
+                           nameSReg(gregOfRM(rm)), dis_buf);
       return HI8(pair)+eip0;
    }
 }
@@ -3586,6 +3634,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis)
          VG_(printf)("lea%c %s, %s\n", nameISize(sz), dis_buf, 
                                        nameIReg(sz,gregOfRM(modrm)));
+      break;
+
+   case 0x8C: /* MOV Sw,Ew -- MOV from a SEGMENT REGISTER */
+      eip = dis_mov_Sw_Ew(cb, sorb, eip);
       break;
 
    case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */

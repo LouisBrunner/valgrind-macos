@@ -527,6 +527,33 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         /* The segment registers do not have their definedness
+            tracked.  We therefore make fake shadows on GETSEG and
+            test them on PUTSEG.  This will catch writing garbage to a
+            segment register; therefore we can assume it to be defined
+            when read (GETSEGd).  Since the first arg of USESEG is
+            fetched by GETSEG, we can assume it to be defined, and so
+            the definedness of the result is simply the definedness of
+            the second (virtual_address) arg of USESEG.  The upshot of
+            all this is that instrumentation of USESEG is a no-op! */
+
+         case PUTSEG:
+            vg_assert(u_in->tag1 == TempReg);
+            uInstr1(cb, TESTV, 2, TempReg, SHADOW(u_in->val1));
+            uInstr1(cb, SETV,  2, TempReg, SHADOW(u_in->val1));
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case GETSEG:
+            vg_assert(u_in->tag2 == TempReg);
+            uInstr1(cb, SETV,  2, TempReg, SHADOW(u_in->val2));
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case USESEG:
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
          /* Loads and stores.  Test the V bits for the address.  24
             Mar 02: since the address is A-checked anyway, there's not
             really much point in doing the V-check too, unless you

@@ -2199,8 +2199,8 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
       case USESEG: {
          /* Lazy: copy all three vals;  synth_ccall ignores any unnecessary
             ones. */
-         UInt argv[]  = { u->val1, u->val2, 0 };
-         UInt tagv[]  = { RealReg, RealReg, NoValue };
+         UInt argv[]  = { u->val1, u->val2 };
+         UInt tagv[]  = { RealReg, RealReg };
          UInt ret_reg = u->val2;
 
          vg_assert(u->tag1 == RealReg);

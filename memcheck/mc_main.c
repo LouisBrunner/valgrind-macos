@@ -2371,6 +2371,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 
    VG_(register_compact_helper)((Addr) & SK_(helper_value_check4_fail));
    VG_(register_compact_helper)((Addr) & SK_(helper_value_check0_fail));
+   VG_(register_compact_helper)((Addr) & SK_(helper_value_check2_fail));
    VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV4));
    VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV1));
    VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV4));
@@ -2381,7 +2382,6 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
    VG_(register_noncompact_helper)((Addr) & SK_(helperc_LOADV2));
    VG_(register_noncompact_helper)((Addr) & SK_(fpu_write_check));
    VG_(register_noncompact_helper)((Addr) & SK_(fpu_read_check));
-   VG_(register_noncompact_helper)((Addr) & SK_(helper_value_check2_fail));
    VG_(register_noncompact_helper)((Addr) & SK_(helper_value_check1_fail));
 
    /* Events to track */

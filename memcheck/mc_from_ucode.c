@@ -169,6 +169,13 @@ static void synth_SETV ( Int sz, Int reg )
 
 static void synth_TESTV ( Int sz, Int tag, Int val )
 {
+   /* Important note.  Note that that the calls to
+      SK_(helper_value_check[0124]_fail) must be compact helpers due to
+      the codegen scheme used below.  Since there are a shortage of
+      compact helper slots, and since the size==1 case is never
+      actually used, we assert against it. */
+   vg_assert(sz == 0 || sz == 2 || sz == 4);
+
    vg_assert(tag == ArchReg || tag == RealReg);
    if (tag == ArchReg) {
       switch (sz) {

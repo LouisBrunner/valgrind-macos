@@ -254,7 +254,7 @@ static UInt n_heap_blocks = 0;
 #define MAX_ALLOC_FNS      32      // includes the builtin ones
 
 // First six filled in, rest should be zeroed.  argc/argv-style vector.
-static UInt  n_alloc_fns = 8;
+static UInt  n_alloc_fns = 9;
 static Char* alloc_fns[MAX_ALLOC_FNS] = { 
    "malloc",
    "operator new(unsigned)",
@@ -264,6 +264,7 @@ static Char* alloc_fns[MAX_ALLOC_FNS] = {
    "calloc",
    "realloc",
    "my_malloc",   // from vg_libpthread.c
+   "memalign",
 };
 
 
@@ -778,6 +779,11 @@ void* SK_(__builtin_vec_new) ( Int n )
 void* SK_(calloc) ( Int m, Int size )
 {
    return new_block( m*size, VG_(clo_alignment), /*is_zeroed*/True );
+}
+
+void *SK_(memalign)( Int align, Int n )
+{
+   return new_block( n, align, False );
 }
 
 void SK_(free) ( void* p )

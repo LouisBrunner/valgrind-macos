@@ -30,6 +30,7 @@ mismatches
 mmaptest
 nanoleak
 new_override
+null_socket
 overlap
 pushfpopf
 realloc1

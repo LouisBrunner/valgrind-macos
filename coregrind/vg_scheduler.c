@@ -628,7 +628,7 @@ void VG_(scheduler_init) ( void )
 
    /* Initial thread's stack is the original process stack */
    VG_(threads)[tid_main].client_stack_highest_word 
-                                            = VG_(clstk_end) - sizeof(UInt);
+                                            = VG_(clstk_end) - sizeof(UWord);
    VG_(threads)[tid_main].client_stack_szB  = VG_(client_rlimit_stack).rlim_cur;
 
    VG_(atfork)(NULL, NULL, sched_fork_cleanup);

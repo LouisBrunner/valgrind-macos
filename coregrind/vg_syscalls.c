@@ -4052,13 +4052,27 @@ PRE(statfs)
    /* int statfs(const char *path, struct statfs *buf); */
    MAYBE_PRINTF("statfs ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs(path)", arg1 );
-   SYSCALL_TRACK( pre_mem_write, tid, "stat(buf)", 
+   SYSCALL_TRACK( pre_mem_write, tid, "statfs(buf)", 
+		  arg2, sizeof(struct statfs) );
+}
+
+PRE(statfs64)
+{
+   /* int statfs64(const char *path, struct statfs *buf); */
+   MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
+   SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
+   SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", 
 		  arg2, sizeof(struct statfs) );
 }
 
 POST(statfs)
 {
    VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
+}
+
+POST(statfs64)
+{
+   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs64) );
 }
 
 PRE(symlink)
@@ -4279,6 +4293,30 @@ PRE(adjtimex)
 POST(adjtimex)
 {
    VG_TRACK(post_mem_write, arg1, sizeof(struct timex));
+}
+
+PRE(clock_gettime)
+{
+    /* int clock_gettime(clockid_t clk_id, struct timespec *tp); */
+    MAYBE_PRINTF("clock_gettime(%d, %p)\n" ,arg1,arg2);
+    SYSCALL_TRACK(pre_mem_write, tid, "clock_gettime(tp)",
+                   arg2, sizeof(struct timespec));
+}
+
+POST(clock_gettime)
+{
+    if (!VG_(is_kerror)(res) && res == 0)
+       VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
+}
+
+PRE(utimes)
+{
+    /* int utimes(const char *filename, struct timeval *tvp); */
+    MAYBE_PRINTF("utimes ( %p, %p )\n", arg1,arg2);
+    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "utimes(filename)", arg1 );
+    if (arg2 != (UInt)NULL)
+         SYSCALL_TRACK( pre_mem_read, tid, "utimes(tvp)", arg2,
+                       sizeof(struct timeval) );
 }
 
 #define SIGNAL_SIMULATION	1
@@ -4656,6 +4694,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(socketcall,		True),
    SYSBA(stat,			False),
    SYSBA(statfs,		False),
+   SYSBA(statfs64,		False),
    SYSB_(symlink,		True),
    SYSBA(stat64,		False),
    SYSBA(fstat64,		False),
@@ -4667,11 +4706,13 @@ static const struct sys_info sys_info[] = {
    SYSB_(unlink,		True),
    SYSBA(uname,			False),
    SYSB_(utime,			True),
+   SYSB_(utimes,                False),
    SYSBA(waitpid,		True),
    SYSBA(wait4,			True),
    SYSB_(writev,		True),
    SYSB_(prctl,			True),
    SYSBA(adjtimex,		False),
+   SYSBA(clock_gettime,         False),
 
    /* new signal handling makes these normal blocking syscalls */
    SYSB_(pause,			True),

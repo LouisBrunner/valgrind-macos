@@ -33,7 +33,7 @@
 #ifndef __VG_KERNELIFACE_H
 #define __VG_KERNELIFACE_H
 
-/* This file is ONLY to be included into vg_include.h.  Do not include
+/* This file is ONLY to be included into core.h.  Do not include
    it directly into valgrind source .c files.  This file defines types
    and constants for the kernel interface, and to make that clear
    everything is prefixed VKI. */

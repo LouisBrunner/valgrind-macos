@@ -518,13 +518,13 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
 
    if (ss != NULL) {
       if (on_sig_stack(VG_(threads)[tid].m_esp)) {
-         SET_EAX(tid, -VKI_EPERM);
+         SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
          return;
       }
       if (ss->ss_flags != VKI_SS_DISABLE 
           && ss->ss_flags != VKI_SS_ONSTACK 
           && ss->ss_flags != 0) {
-         SET_EAX(tid, -VKI_EINVAL);
+         SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
          return;
       }
       if (ss->ss_flags == VKI_SS_DISABLE) {
@@ -532,14 +532,14 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
          vg_scss.altstack.ss_sp = NULL;
       } else {
          if (ss->ss_size < VKI_MINSIGSTKSZ) {
-            SET_EAX(tid, -VKI_ENOMEM);
+            SET_SYSCALL_RETVAL(tid, -VKI_ENOMEM);
             return;
          }
       }
       vg_scss.altstack.ss_sp   = ss->ss_sp;
       vg_scss.altstack.ss_size = ss->ss_size;
    }
-   SET_EAX(tid, 0);
+   SET_SYSCALL_RETVAL(tid, 0);
 }
 
 
@@ -597,7 +597,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
       VG_(block_all_host_signals)( &irrelevant_sigmask );
       VG_(handle_SCSS_change)( False /* lazy update */ );
    }
-   SET_EAX(tid, 0);
+   SET_SYSCALL_RETVAL(tid, 0);
    return;
 
   bad_signo:
@@ -605,7 +605,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
       VG_(message)(Vg_UserMsg,
                    "Warning: bad signal number %d in __NR_sigaction.", 
                    signo);
-   SET_EAX(tid, -VKI_EINVAL);
+   SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    return;
 
   bad_sigkill_or_sigstop:
@@ -614,7 +614,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
          "Warning: attempt to set %s handler in __NR_sigaction.", 
          signo == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
 
-   SET_EAX(tid, -VKI_EINVAL);
+   SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    return;
 }
 
@@ -713,11 +713,11 @@ void VG_(do__NR_sigprocmask) ( ThreadId tid,
       vg_assert(VG_(is_valid_tid)(tid));
       do_setmask ( VG_INVALID_THREADID, how, set, oldset );
       /* Syscall returns 0 (success) to its thread. */
-      SET_EAX(tid, 0);
+      SET_SYSCALL_RETVAL(tid, 0);
    } else {
       VG_(message)(Vg_DebugMsg, 
                   "sigprocmask: unknown `how' field %d", how);
-      SET_EAX(tid, -VKI_EINVAL);
+      SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    }
 }
 
@@ -904,17 +904,29 @@ typedef
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
       /* Saved processor state. */
-      UInt ssestate[VG_SIZE_OF_SSESTATE_W];
-      UInt eax;
-      UInt ecx;
-      UInt edx;
-      UInt ebx;
-      UInt ebp;
-      UInt esp;
-      UInt esi;
-      UInt edi;
-      Addr eip;
-      UInt eflags;
+      UInt m_sse[VG_SIZE_OF_SSESTATE_W];
+
+      UInt m_eax;
+      UInt m_ecx;
+      UInt m_edx;
+      UInt m_ebx;
+      UInt m_ebp;
+      UInt m_esp;
+      UInt m_esi;
+      UInt m_edi;
+      UInt m_eflags;
+      Addr m_eip;
+
+      UInt sh_eax;
+      UInt sh_ebx;
+      UInt sh_ecx;
+      UInt sh_edx;
+      UInt sh_esi;
+      UInt sh_edi;
+      UInt sh_ebp;
+      UInt sh_esp;
+      UInt sh_eflags;
+
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
       ThreadStatus status;
@@ -989,25 +1001,41 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    frame->magicPI    = 0x31415927;
 
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      frame->ssestate[i] = tst->m_sse[i];
+      frame->m_sse[i] = tst->m_sse[i];
 
-   frame->eax        = tst->m_eax;
-   frame->ecx        = tst->m_ecx;
-   frame->edx        = tst->m_edx;
-   frame->ebx        = tst->m_ebx;
-   frame->ebp        = tst->m_ebp;
-   frame->esp        = tst->m_esp;
-   frame->esi        = tst->m_esi;
-   frame->edi        = tst->m_edi;
-   frame->eip        = tst->m_eip;
-   frame->eflags     = tst->m_eflags;
+   frame->m_eax      = tst->m_eax;
+   frame->m_ecx      = tst->m_ecx;
+   frame->m_edx      = tst->m_edx;
+   frame->m_ebx      = tst->m_ebx;
+   frame->m_ebp      = tst->m_ebp;
+   frame->m_esp      = tst->m_esp;
+   frame->m_esi      = tst->m_esi;
+   frame->m_edi      = tst->m_edi;
+   frame->m_eflags   = tst->m_eflags;
+   frame->m_eip      = tst->m_eip;
+
+   if (VG_(needs).shadow_regs) {
+      frame->sh_eax     = tst->sh_eax;
+      frame->sh_ecx     = tst->sh_ecx;
+      frame->sh_edx     = tst->sh_edx;
+      frame->sh_ebx     = tst->sh_ebx;
+      frame->sh_ebp     = tst->sh_ebp;
+      frame->sh_esp     = tst->sh_esp;
+      frame->sh_esi     = tst->sh_esi;
+      frame->sh_edi     = tst->sh_edi;
+      frame->sh_eflags  = tst->sh_eflags;
+   }
 
    frame->status     = tst->status;
 
    frame->magicE     = 0x27182818;
 
+   /* Ensure 'tid' and 'tst' correspond */
+   vg_assert(& VG_(threads)[tid] == tst);
    /* Set the thread so it will next run the handler. */
-   tst->m_esp  = esp;
+   /* tst->m_esp  = esp; */
+   SET_SIGNAL_ESP(tid, esp);
+
    tst->m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
@@ -1021,7 +1049,6 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
                esp, tst->m_eip);
    */
 }
-
 
 /* Clear the signal frame created by vg_push_signal_frame, restore the
    simulated machine state, and return the signal number that the
@@ -1049,25 +1076,36 @@ Int vg_pop_signal_frame ( ThreadId tid )
       VG_(message)(Vg_DebugMsg, 
          "vg_pop_signal_frame (thread %d): valid magic", tid);
 
-   /* restore machine state */
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      tst->m_sse[i] = frame->ssestate[i];
-
    /* Mark the frame structure as nonaccessible. */
    VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
 
-   /* Restore machine state from the saved context. */
-   tst->m_eax     = frame->eax;
-   tst->m_ecx     = frame->ecx;
-   tst->m_edx     = frame->edx;
-   tst->m_ebx     = frame->ebx;
-   tst->m_ebp     = frame->ebp;
-   tst->m_esp     = frame->esp;
-   tst->m_esi     = frame->esi;
-   tst->m_edi     = frame->edi;
-   tst->m_eflags  = frame->eflags;
-   tst->m_eip     = frame->eip;
+   /* restore machine state */
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      tst->m_sse[i] = frame->m_sse[i];
 
+   tst->m_eax     = frame->m_eax;
+   tst->m_ecx     = frame->m_ecx;
+   tst->m_edx     = frame->m_edx;
+   tst->m_ebx     = frame->m_ebx;
+   tst->m_ebp     = frame->m_ebp; 
+   tst->m_esp     = frame->m_esp;
+   tst->m_esi     = frame->m_esi;
+   tst->m_edi     = frame->m_edi;
+   tst->m_eflags  = frame->m_eflags;
+   tst->m_eip     = frame->m_eip;
+
+   if (VG_(needs).shadow_regs) {
+      tst->sh_eax     = frame->sh_eax;
+      tst->sh_ecx     = frame->sh_ecx;
+      tst->sh_edx     = frame->sh_edx;
+      tst->sh_ebx     = frame->sh_ebx;
+      tst->sh_ebp     = frame->sh_ebp; 
+      tst->sh_esp     = frame->sh_esp;
+      tst->sh_esi     = frame->sh_esi;
+      tst->sh_edi     = frame->sh_edi;
+      tst->sh_eflags  = frame->sh_eflags;
+   }
+   
    /* don't use the copy exposed to the handler; it might have changed
       it. */
    sigNo          = frame->sigNo_private; 
@@ -1180,7 +1218,7 @@ Bool VG_(deliver_signals) ( void )
             *(Int*)(sigwait_args[2]) = sigNo;
             VG_TRACK( post_mem_write, (Addr)sigwait_args[2], sizeof(UInt));
          }
-	 SET_EDX(tid, 0);
+	 SET_SIGNAL_EDX(tid, 0);
          tst->status = VgTs_Runnable;
          VG_(ksigemptyset)(&tst->sigs_waited_for);
          scss_changed = True;

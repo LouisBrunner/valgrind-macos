@@ -686,6 +686,29 @@ void mc_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 
 
 /*------------------------------------------------------------*/
+/*--- Register event handlers                              ---*/
+/*------------------------------------------------------------*/
+
+static void mc_post_regs_write_init ( void )
+{
+   UInt i;
+   for (i = R_EAX; i <= R_EDI; i++)
+      VG_(set_shadow_archreg)( i, VGM_WORD_VALID );
+   VG_(set_shadow_eflags)( VGM_EFLAGS_VALID );
+}
+
+static void mc_post_reg_write(ThreadId tid, UInt reg)
+{
+   VG_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
+}
+
+static void mc_post_reg_write_clientcall(ThreadId tid, UInt reg, Addr f )
+{
+   VG_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Functions called directly from generated code.       ---*/
 /*------------------------------------------------------------*/
 
@@ -1473,14 +1496,8 @@ void show_bb ( Addr eip_next )
 
 
 /*------------------------------------------------------------*/
-/*--- Setup                                                ---*/
+/*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
-
-void SK_(written_shadow_regs_values)( UInt* gen_reg_value, UInt* eflags_value )
-{
-   *gen_reg_value = VGM_WORD_VALID;
-   *eflags_value  = VGM_EFLAGS_VALID;
-}
 
 Bool  MC_(clo_avoid_strlen_errors)    = True;
 Bool  MC_(clo_cleanup)                = True;
@@ -1581,6 +1598,13 @@ void SK_(pre_clo_init)(void)
    VG_(track_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
    VG_(track_pre_mem_write)        ( & mc_check_is_writable );
    VG_(track_post_mem_write)       ( & MC_(make_readable) );
+
+   VG_(track_post_regs_write_init)             ( & mc_post_regs_write_init );
+   VG_(track_post_reg_write_syscall_return)    ( & mc_post_reg_write );
+   VG_(track_post_reg_write_deliver_signal)    ( & mc_post_reg_write );
+   VG_(track_post_reg_write_pthread_return)    ( & mc_post_reg_write );
+   VG_(track_post_reg_write_clientreq_return)  ( & mc_post_reg_write );
+   VG_(track_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
 
    /* Three compact slots taken up by stack memory helpers */
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check4_fail));

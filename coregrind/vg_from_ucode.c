@@ -2952,6 +2952,11 @@ void VG_(set_shadow_archreg) ( UInt archreg, UInt val )
    VG_(baseBlock)[ shadow_reg_index(archreg) ] = val;
 }
 
+void VG_(set_shadow_eflags) ( UInt val )
+{
+   VG_(baseBlock)[ VGOFF_(sh_eflags) ] = val;
+}
+
 UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
 {
    ThreadState* tst;

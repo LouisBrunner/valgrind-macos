@@ -279,6 +279,7 @@ int VGR_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
                            VG_USERREQ__READ_MILLISECOND_TIMER,
                            0, 0, 0, 0);
 
+
    /* CHECK SIZES FOR struct pollfd */
    my_assert(sizeof(struct timeval) == sizeof(struct vki_timeval));
 
@@ -357,7 +358,6 @@ int VGR_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
             return 0;
          }
       }
-
    }
 }
 

@@ -95,6 +95,14 @@ VgTrackEvents VG_(track_events) = {
    .pre_mem_write                = NULL,
    .post_mem_write               = NULL,
 
+   /* Register events */
+   .post_regs_write_init             = NULL,
+   .post_reg_write_syscall_return    = NULL,
+   .post_reg_write_deliver_signal    = NULL,
+   .post_reg_write_pthread_return    = NULL,
+   .post_reg_write_clientreq_return  = NULL,
+   .post_reg_write_clientcall_return = NULL,
+
    /* Scheduler events */
    .thread_run                   = NULL,
 
@@ -129,7 +137,8 @@ void VG_(sanity_check_needs) ( void)
          VG_(track_events).new_mem_stack_12 ||
          VG_(track_events).new_mem_stack_16 ||
          VG_(track_events).new_mem_stack_32) &&
-       ! VG_(track_events).new_mem_stack) {
+       ! VG_(track_events).new_mem_stack) 
+   {
       VG_(printf)("\nSkin error: one of the specialised `new_mem_stack_n'\n"
                   "events tracked, but not the generic `new_mem_stack' one.\n");
       VG_(skin_panic)("`new_mem_stack' should be defined\n");
@@ -140,10 +149,23 @@ void VG_(sanity_check_needs) ( void)
          VG_(track_events).die_mem_stack_12 ||
          VG_(track_events).die_mem_stack_16 ||
          VG_(track_events).die_mem_stack_32) &&
-       ! VG_(track_events).die_mem_stack) {
+       ! VG_(track_events).die_mem_stack) 
+   {
       VG_(printf)("\nSkin error: one of the specialised `die_mem_stack_n'\n"
                   "events tracked, but not the generic `die_mem_stack' one.\n");
       VG_(skin_panic)("`die_mem_stack' should be defined\n");
+   }
+
+   if ( (VG_(track_events).post_reg_write_syscall_return    ||
+         VG_(track_events).post_reg_write_deliver_signal    ||
+         VG_(track_events).post_reg_write_pthread_return    ||
+         VG_(track_events).post_reg_write_clientreq_return  ||
+         VG_(track_events).post_reg_write_clientcall_return) &&
+       ! VG_(needs).shadow_regs) 
+   {
+      VG_(printf)("\nSkin error: one of the `post_reg_write'\n"
+                  "events tracked, but `shadow_regs' need not set.\n");
+      VG_(skin_panic)("`shadow_regs' should be set\n");
    }
 
 #undef CHECK_NOT
@@ -231,6 +253,13 @@ TRACK(pre_mem_read_asciiz, CorePart part, ThreadState* tst, Char* s, Addr a)
 TRACK(pre_mem_write,       CorePart part, ThreadState* tst, Char* s, Addr a,
                            UInt size)
 TRACK(post_mem_write,      Addr a, UInt size)
+
+TRACK(post_regs_write_init,             void );
+TRACK(post_reg_write_syscall_return,    ThreadId tid, UInt reg );
+TRACK(post_reg_write_deliver_signal,    ThreadId tid, UInt reg );
+TRACK(post_reg_write_pthread_return,    ThreadId tid, UInt reg );
+TRACK(post_reg_write_clientreq_return,  ThreadId tid, UInt reg );
+TRACK(post_reg_write_clientcall_return, ThreadId tid, UInt reg, Addr f );
 
 TRACK(thread_run, ThreadId tid)
 

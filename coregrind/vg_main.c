@@ -390,9 +390,6 @@ static void vg_init_baseBlock ( void )
 
    /* Initialise shadow regs */
    if (VG_(needs).shadow_regs) {
-      UInt eflags;
-   
-      SK_(written_shadow_regs_values) ( & VG_(written_shadow_reg), & eflags );
       VG_(baseBlock)[VGOFF_(sh_esp)]    = 
       VG_(baseBlock)[VGOFF_(sh_ebp)]    =
       VG_(baseBlock)[VGOFF_(sh_eax)]    =
@@ -400,11 +397,9 @@ static void vg_init_baseBlock ( void )
       VG_(baseBlock)[VGOFF_(sh_edx)]    =
       VG_(baseBlock)[VGOFF_(sh_ebx)]    =
       VG_(baseBlock)[VGOFF_(sh_esi)]    =
-      VG_(baseBlock)[VGOFF_(sh_edi)]    = VG_(written_shadow_reg);
-      VG_(baseBlock)[VGOFF_(sh_eflags)] = eflags;
-
-   } else {
-      VG_(written_shadow_reg) = VG_UNUSED_SHADOW_REG_VALUE;
+      VG_(baseBlock)[VGOFF_(sh_edi)]    = 0;
+      VG_(baseBlock)[VGOFF_(sh_eflags)] = 0;
+      VG_TRACK( post_regs_write_init );
    }
 }
 

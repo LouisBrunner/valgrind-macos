@@ -160,7 +160,10 @@ static ThreadKeyState vg_thread_keys[VG_N_THREAD_KEYS];
 typedef UInt ThreadKey;
 
 
-UInt VG_(written_shadow_reg);
+UInt VG_(syscall_altered_shadow_reg);
+UInt VG_(signal_delivery_altered_shadow_reg);
+UInt VG_(pthread_op_altered_shadow_reg);
+UInt VG_(client_request_altered_shadow_reg);
 
 /* Forwards */
 static void do_client_request ( ThreadId tid );
@@ -441,8 +444,6 @@ void VG_(load_thread_state) ( ThreadId tid )
       VG_(baseBlock)[VGOFF_(sh_eflags)] = VG_(threads)[tid].sh_eflags;
    } else {
       /* Fields shouldn't be used -- check their values haven't changed. */
-      /* Nb: they are written to by some macros like SET_EDX, but they
-       *     should just write VG_UNUSED_SHADOW_REG_VALUE. */
       vg_assert(
          VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_eax &&
          VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_ebx &&
@@ -788,8 +789,7 @@ void handle_signal_return ( ThreadId tid )
 
    vg_assert(VG_(is_valid_tid)(tid));
 
-   /* Increment signal-returned counter.  Used only to implement
-      pause(). */
+   /* Increment signal-returned counter.  Used only to implement pause(). */
    VG_(threads)[tid].n_signals_returned++;
 
    restart_blocked_syscalls = VG_(signal_returns)(tid);
@@ -803,9 +803,8 @@ void handle_signal_return ( ThreadId tid )
            || VG_(threads)[tid].m_eax == __NR_write)) {
       /* read() or write() interrupted.  Force a return with EINTR. */
       cleanup_waiting_fd_table(tid);
-      VG_(threads)[tid].m_eax = -VKI_EINTR;
+      SET_SYSCALL_RETVAL(tid, -VKI_EINTR);
       VG_(threads)[tid].status = VgTs_Runnable;
-
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "read() / write() interrupted by signal; return EINTR" );
@@ -825,7 +824,7 @@ void handle_signal_return ( ThreadId tid )
          rem->tv_sec = 0;
          rem->tv_nsec = 1;
       }
-      SET_EAX(tid, -VKI_EINTR);
+      SET_SYSCALL_RETVAL(tid, -VKI_EINTR);
       VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
@@ -841,7 +840,7 @@ void handle_signal_return ( ThreadId tid )
 static
 void sched_do_syscall ( ThreadId tid )
 {
-   UInt  saved_eax;
+   UInt  saved_meax, saved_sheax;
    Int   res, syscall_no;
    UInt  fd;
    void* pre_res;
@@ -908,7 +907,8 @@ void sched_do_syscall ( ThreadId tid )
    pre_res = VG_(pre_known_blocking_syscall)(tid, syscall_no);
 
    /* This trashes the thread's %eax; we have to preserve it. */
-   saved_eax = VG_(threads)[tid].m_eax;
+   saved_meax  = VG_(threads)[tid].m_eax;
+   saved_sheax = VG_(threads)[tid].sh_eax;
    KERNEL_DO_SYSCALL(tid,res);
 
    /* Restore original blockfulness of the fd. */
@@ -936,11 +936,13 @@ void sched_do_syscall ( ThreadId tid )
 
       /* It would have blocked.  First, restore %EAX to what it was
          before our speculative call. */
-      VG_(threads)[tid].m_eax = saved_eax;
+      saved_meax  = VG_(threads)[tid].m_eax  = saved_meax;
+      saved_sheax = VG_(threads)[tid].sh_eax = saved_sheax;
+      
       /* Put this fd in a table of fds on which we are waiting for
          completion. The arguments for select() later are constructed
          from this table.  */
-      add_waiting_fd(tid, fd, saved_eax /* which holds the syscall # */,
+      add_waiting_fd(tid, fd, saved_meax /* which holds the syscall # */,
                      pre_res);
       /* Deschedule thread until an I/O completion happens. */
       VG_(threads)[tid].status = VgTs_WaitFD;
@@ -948,7 +950,6 @@ void sched_do_syscall ( ThreadId tid )
          VG_(sprintf)(msg_buf,"block until I/O ready on fd %d", fd);
 	 print_sched_event(tid, msg_buf);
       }
-
    }
 }
 
@@ -1010,7 +1011,8 @@ void poll_for_ready_fds ( void )
                rem->tv_nsec = 0;
             }
             /* Make the syscall return 0 (success). */
-            VG_(threads)[tid].m_eax = 0;
+            SET_SYSCALL_RETVAL(tid, 0);
+            
 	    /* Reschedule this thread. */
             VG_(threads)[tid].status = VgTs_Runnable;
             if (VG_(clo_trace_sched)) {
@@ -1526,7 +1528,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                thread yield instead.  Not essential, just an
                optimisation. */
 	    if (VG_(threads)[tid].m_eax == __NR_sched_yield) {
-               SET_EAX(tid, 0); /* syscall returns with success */
+               SET_SYSCALL_RETVAL(tid, 0); /* syscall returns with success */
                goto stage1; /* find a new thread to run */
 	    }
 
@@ -1670,7 +1672,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    vg_assert(VG_(threads)[tid].cancel_pend != NULL);
 
    /* Push a suitable arg, and mark it as readable. */
-   VG_(threads)[tid].m_esp -= 4;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 4);
    * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
    VG_TRACK( post_mem_write, VG_(threads)[tid].m_esp, sizeof(void*) );
 
@@ -1678,7 +1680,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
       need to have it so that the arg is at the correct stack offset.
       Don't mark as readable; any attempt to read this is and internal
       valgrind bug since thread_exit_wrapper should not return. */
-   VG_(threads)[tid].m_esp -= 4;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 4);
    * (UInt*)(VG_(threads)[tid].m_esp) = 0xBEADDEEF;
 
    /* .cancel_pend will hold &thread_exit_wrapper */
@@ -1790,7 +1792,7 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 
       /* joiner returns with success */
       VG_(threads)[jnr].status = VgTs_Runnable;
-      SET_EDX(jnr, 0);
+      SET_PTHREQ_RETVAL(jnr, 0);
    }
 }
 
@@ -1838,7 +1840,7 @@ void do__cleanup_push ( ThreadId tid, CleanupEntry* cu )
    VG_(threads)[tid].custack[sp] = *cu;
    sp++;
    VG_(threads)[tid].custack_used = sp;
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -1855,7 +1857,7 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
    }
    vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
    if (sp == 0) {
-     SET_EDX(tid, -1);
+     SET_PTHREQ_RETVAL(tid, -1);
      return;
    }
    sp--;
@@ -1864,7 +1866,7 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
    *cu = VG_(threads)[tid].custack[sp];
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
    VG_(threads)[tid].custack_used = sp;
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -1877,7 +1879,7 @@ void do_pthread_yield ( ThreadId tid )
       VG_(sprintf)(msg_buf, "yield");
       print_sched_event(tid, msg_buf);
    }
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -1898,7 +1900,7 @@ void do__testcancel ( ThreadId tid )
      make_thread_jump_to_cancelhdlr ( tid );
    } else {
       /* No, we keep going. */
-      SET_EDX(tid, 0);
+      SET_PTHREQ_RETVAL(tid, 0);
    }
 }
 
@@ -1925,8 +1927,8 @@ void do__set_cancelstate ( ThreadId tid, Int state )
    } else {
       VG_(core_panic)("do__set_cancelstate");
    }
-   SET_EDX(tid, old_st ? PTHREAD_CANCEL_ENABLE 
-                       : PTHREAD_CANCEL_DISABLE);
+   SET_PTHREQ_RETVAL(tid, old_st ? PTHREAD_CANCEL_ENABLE 
+                                 : PTHREAD_CANCEL_DISABLE);
 }
 
 
@@ -1952,7 +1954,7 @@ void do__set_canceltype ( ThreadId tid, Int type )
    } else {
       VG_(core_panic)("do__set_canceltype");
    }
-   SET_EDX(tid, old_ty ? PTHREAD_CANCEL_DEFERRED 
+   SET_PTHREQ_RETVAL(tid, old_ty ? PTHREAD_CANCEL_DEFERRED 
                        : PTHREAD_CANCEL_ASYNCHRONOUS);
 }
 
@@ -1977,20 +1979,20 @@ void do__set_or_get_detach ( ThreadId tid,
    }
 
    if (!VG_(is_valid_tid)(det)) {
-      SET_EDX(tid, -1);
+      SET_PTHREQ_RETVAL(tid, -1);
       return;
    }
 
    switch (what) {
       case 2: /* get */
-         SET_EDX(tid, VG_(threads)[det].detached ? 1 : 0);
+         SET_PTHREQ_RETVAL(tid, VG_(threads)[det].detached ? 1 : 0);
          return;
       case 1: /* set detached.  If someone is in a join-wait for det,
                  do not detach. */
          for (i = 1; i < VG_N_THREADS; i++) {
             if (VG_(threads)[i].status == VgTs_WaitJoinee
                 && VG_(threads)[i].joiner_jee_tid == det) {
-               SET_EDX(tid, 0);
+               SET_PTHREQ_RETVAL(tid, 0);
                if (VG_(clo_trace_sched)) {
                   VG_(sprintf)(msg_buf,
                      "tid %d not detached because %d in join-wait for it",
@@ -2001,11 +2003,11 @@ void do__set_or_get_detach ( ThreadId tid,
             }
          }
          VG_(threads)[det].detached = True;
-         SET_EDX(tid, 0); 
+         SET_PTHREQ_RETVAL(tid, 0); 
          return;
       case 0: /* set not detached */
          VG_(threads)[det].detached = False;
-         SET_EDX(tid, 0);
+         SET_PTHREQ_RETVAL(tid, 0);
          return;
       default:
          VG_(core_panic)("do__set_or_get_detach");
@@ -2031,7 +2033,7 @@ void do__set_cancelpend ( ThreadId tid,
       }
       VG_(record_pthread_error)( tid, 
          "pthread_cancel: target thread does not exist, or invalid");
-      SET_EDX(tid, -VKI_ESRCH);
+      SET_PTHREQ_RETVAL(tid, -VKI_ESRCH);
       return;
    }
 
@@ -2045,7 +2047,7 @@ void do__set_cancelpend ( ThreadId tid,
    }
 
    /* Thread doing the cancelling returns with success. */
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 
    /* Perhaps we can nuke the cancellee right now? */
    do__testcancel(cee);
@@ -2066,7 +2068,7 @@ void do_pthread_join ( ThreadId tid,
    if (jee == tid) {
       VG_(record_pthread_error)( tid, 
          "pthread_join: attempt to join to self");
-      SET_EDX(tid, EDEADLK); /* libc constant, not a kernel one */
+      SET_PTHREQ_RETVAL(tid, EDEADLK); /* libc constant, not a kernel one */
       VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
@@ -2082,7 +2084,7 @@ void do_pthread_join ( ThreadId tid,
       /* Invalid thread to join to. */
       VG_(record_pthread_error)( tid, 
          "pthread_join: target thread does not exist, or invalid");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
@@ -2096,7 +2098,7 @@ void do_pthread_join ( ThreadId tid,
          VG_(record_pthread_error)( tid, 
             "pthread_join: another thread already "
             "in join-wait for target thread");
-         SET_EDX(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, EINVAL);
          VG_(threads)[tid].status = VgTs_Runnable;
          return;
       }
@@ -2246,9 +2248,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       - mark everything below %esp inaccessible
       - mark redzone at stack end inaccessible
     */
-   VG_(threads)[tid].m_esp = VG_(threads)[tid].stack_base 
-                           + VG_(threads)[tid].stack_size
-                           - VG_AR_CLIENT_STACKBASE_REDZONE_SZB;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].stack_base 
+                       + VG_(threads)[tid].stack_size
+                       - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
 
    VG_TRACK ( die_mem_stack, VG_(threads)[tid].stack_base, 
                            + new_stk_szb - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
@@ -2256,7 +2258,8 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
                              VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
    /* push two args */
-   VG_(threads)[tid].m_esp -= 8;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 8);
+
    VG_TRACK ( new_mem_stack, (Addr)VG_(threads)[tid].m_esp, 2 * 4 );
    VG_TRACK ( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid], 
                              "new thread: stack",
@@ -2282,7 +2285,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
 
    /* return child's tid to parent */
-   SET_EDX(parent_tid, tid); /* success */
+   SET_PTHREQ_RETVAL(parent_tid, tid); /* success */
 }
 
 
@@ -2403,7 +2406,7 @@ void do_pthread_mutex_lock( ThreadId tid,
    if (mutex == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_lock/trylock: mutex is NULL");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
 
@@ -2423,7 +2426,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_mutex_lock/trylock: mutex is invalid");
-         SET_EDX(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, EINVAL);
          return;
    }
 
@@ -2437,16 +2440,16 @@ void do_pthread_mutex_lock( ThreadId tid,
          if (mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP) {
             /* return 0 (success). */
             mutex->__m_count++;
-            SET_EDX(tid, 0);
+            SET_PTHREQ_RETVAL(tid, 0);
             if (0)
                VG_(printf)("!!!!!! tid %d, mx %p -> locked %d\n", 
                            tid, mutex, mutex->__m_count);
             return;
          } else {
             if (is_trylock)
-               SET_EDX(tid, EBUSY);
+               SET_PTHREQ_RETVAL(tid, EBUSY);
             else
-               SET_EDX(tid, EDEADLK);
+               SET_PTHREQ_RETVAL(tid, EDEADLK);
             return;
          }
       } else {
@@ -2455,13 +2458,13 @@ void do_pthread_mutex_lock( ThreadId tid,
          /* GUARD: __m_count > 0 && __m_owner is valid */
          if (is_trylock) {
             /* caller is polling; so return immediately. */
-            SET_EDX(tid, EBUSY);
+            SET_PTHREQ_RETVAL(tid, EBUSY);
          } else {
 	    VG_TRACK ( pre_mutex_lock, tid, mutex );
 
             VG_(threads)[tid].status        = VgTs_WaitMX;
             VG_(threads)[tid].associated_mx = mutex;
-            SET_EDX(tid, 0); /* pth_mx_lock success value */
+            SET_PTHREQ_RETVAL(tid, 0); /* pth_mx_lock success value */
             if (VG_(clo_trace_pthread_level) >= 1) {
                VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
                                      caller, mutex );
@@ -2481,12 +2484,11 @@ void do_pthread_mutex_lock( ThreadId tid,
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
 
-      VG_TRACK( post_mutex_lock, tid, mutex);
-
       /* return 0 (success). */
-      SET_EDX(tid, 0);
-   }
+      SET_PTHREQ_RETVAL(tid, 0);
 
+      VG_TRACK( post_mutex_lock, tid, mutex);
+   }
 }
 
 
@@ -2508,7 +2510,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    if (mutex == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_unlock: mutex is NULL");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
 
@@ -2536,7 +2538,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_mutex_unlock: mutex is invalid");
-         SET_EDX(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, EINVAL);
          return;
    }
 
@@ -2545,7 +2547,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       /* nobody holds it */
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_unlock: mutex is not locked");
-      SET_EDX(tid, EPERM);
+      SET_PTHREQ_RETVAL(tid, EPERM);
       return;
    }
 
@@ -2553,7 +2555,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       /* we don't hold it */
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_unlock: mutex is locked by a different thread");
-      SET_EDX(tid, EPERM);
+      SET_PTHREQ_RETVAL(tid, EPERM);
       return;
    }
 
@@ -2562,7 +2564,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    if (mutex->__m_count > 1) {
       vg_assert(mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP);
       mutex->__m_count --;
-      SET_EDX(tid, 0); /* success */
+      SET_PTHREQ_RETVAL(tid, 0); /* success */
       return;
    }
 
@@ -2575,7 +2577,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    release_one_thread_waiting_on_mutex ( mutex, "pthread_mutex_lock" );
 
    /* Our (tid's) pth_unlock() returns with 0 (success). */
-   SET_EDX(tid, 0); /* Success. */
+   SET_PTHREQ_RETVAL(tid, 0); /* Success. */
 }
 
 
@@ -2627,7 +2629,7 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
       /* Currently unheld; hand it out to thread tid. */
       vg_assert(mx->__m_count == 0);
       VG_(threads)[tid].status        = VgTs_Runnable;
-      SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
+      SET_PTHREQ_RETVAL(tid, ETIMEDOUT);  /* pthread_cond_wait return value */
       VG_(threads)[tid].associated_cv = NULL;
       VG_(threads)[tid].associated_mx = NULL;
       mx->__m_owner = (_pthread_descr)tid;
@@ -2647,7 +2649,7 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
       VG_TRACK( pre_mutex_lock, tid, mx );
 
       VG_(threads)[tid].status        = VgTs_WaitMX;
-      SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
+      SET_PTHREQ_RETVAL(tid, ETIMEDOUT);  /* pthread_cond_wait return value */
       VG_(threads)[tid].associated_cv = NULL;
       VG_(threads)[tid].associated_mx = mx;
       if (VG_(clo_trace_pthread_level) >= 1) {
@@ -2718,7 +2720,7 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          VG_(threads)[i].status        = VgTs_WaitMX;
          VG_(threads)[i].associated_cv = NULL;
          VG_(threads)[i].associated_mx = mx;
-         SET_EDX(i, 0); /* pth_cond_wait success value */
+         SET_PTHREQ_RETVAL(i, 0); /* pth_cond_wait success value */
 
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "%s   cv %p: BLOCK for mx %p", 
@@ -2758,7 +2760,7 @@ void do_pthread_cond_wait ( ThreadId tid,
    if (mutex == NULL || cond == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_cond_wait/timedwait: cond or mutex is NULL");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
 
@@ -2778,7 +2780,7 @@ void do_pthread_cond_wait ( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_cond_wait/timedwait: mutex is invalid");
-         SET_EDX(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, EINVAL);
          return;
    }
 
@@ -2788,7 +2790,7 @@ void do_pthread_cond_wait ( ThreadId tid,
          VG_(record_pthread_error)( tid, 
             "pthread_cond_wait/timedwait: mutex is unlocked "
             "or is locked but not owned by thread");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
 
@@ -2833,7 +2835,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
    if (cond == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_cond_signal/broadcast: cond is NULL");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
    
@@ -2843,7 +2845,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
       caller
    );
 
-   SET_EDX(tid, 0); /* success */
+   SET_PTHREQ_RETVAL(tid, 0); /* success */
 }
 
 
@@ -2879,9 +2881,9 @@ void do_pthread_key_validate ( ThreadId tid,
              && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (is_valid_key((ThreadKey)key)) {
-      SET_EDX(tid, 1);
+      SET_PTHREQ_RETVAL(tid, 1);
    } else {
-      SET_EDX(tid, 0);
+      SET_PTHREQ_RETVAL(tid, 0);
    }
 }
 
@@ -2909,7 +2911,7 @@ void do_pthread_key_create ( ThreadId tid,
          break;
 
    if (i == VG_N_THREAD_KEYS) {
-      /* SET_EDX(tid, EAGAIN); 
+      /* SET_PTHREQ_RETVAL(tid, EAGAIN); 
          return; 
       */
       VG_(core_panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
@@ -2926,7 +2928,7 @@ void do_pthread_key_create ( ThreadId tid,
    *key = i;
    VG_TRACK( post_mem_write, (Addr)key, sizeof(pthread_key_t) );
 
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -2946,13 +2948,13 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
    if (!is_valid_key(key)) {
       VG_(record_pthread_error)( tid, 
          "pthread_key_delete: key is invalid");
-      SET_EDX(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, EINVAL);
       return;
    }
 
    vg_thread_keys[key].inuse = False;
    vg_thread_keys[key].destructor = NULL;
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -2974,7 +2976,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    vg_assert(VG_(is_valid_or_empty_tid)(tid));
 
    if (VG_(threads)[tid].status == VgTs_Empty) {
-      SET_EDX(tid, 1);
+      SET_PTHREQ_RETVAL(tid, 1);
       return;
    }
 
@@ -2982,7 +2984,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    vg_assert(specifics_ptr == NULL 
              || IS_ALIGNED4_ADDR(specifics_ptr));
 
-   SET_EDX(tid, (UInt)specifics_ptr);
+   SET_PTHREQ_RETVAL(tid, (UInt)specifics_ptr);
 }
 
 
@@ -3000,7 +3002,7 @@ void do_pthread_setspecific_ptr ( ThreadId tid, void** ptr )
              && VG_(threads)[tid].status == VgTs_Runnable);
 
    VG_(threads)[tid].specifics_ptr = ptr;
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -3023,7 +3025,7 @@ void do__get_key_destr_and_spec ( ThreadId tid,
    vg_assert(key >= 0 && key < VG_N_THREAD_KEYS);
 
    if (!vg_thread_keys[key].inuse) {
-      SET_EDX(tid, -1);
+      SET_PTHREQ_RETVAL(tid, -1);
       return;
    }
    VG_TRACK( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid], 
@@ -3042,7 +3044,7 @@ void do__get_key_destr_and_spec ( ThreadId tid,
    }
 
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -3087,7 +3089,7 @@ void do_pthread_sigmask ( ThreadId tid,
       VG_TRACK( post_mem_write, (Addr)oldmask, sizeof(vki_ksigset_t) );
 
    /* Success. */
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -3138,17 +3140,17 @@ void do_pthread_kill ( ThreadId tid, /* me */
    if (!VG_(is_valid_tid)(thread)) {
       VG_(record_pthread_error)( tid, 
          "pthread_kill: invalid target thread");
-      SET_EDX(tid, -VKI_ESRCH);
+      SET_PTHREQ_RETVAL(tid, -VKI_ESRCH);
       return;
    }
 
    if (sig < 1 || sig > VKI_KNSIG) {
-      SET_EDX(tid, -VKI_EINVAL);
+      SET_PTHREQ_RETVAL(tid, -VKI_EINVAL);
       return;
    }
 
    VG_(send_signal_to_thread)( thread, sig );
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -3170,9 +3172,9 @@ void do__set_fhstack_used ( ThreadId tid, Int n )
 
    if (n >= 0 && n < VG_N_FORKHANDLERSTACK) {
       vg_fhstack_used = n;
-      SET_EDX(tid, 0);
+      SET_PTHREQ_RETVAL(tid, 0);
    } else {
-      SET_EDX(tid, -1);
+      SET_PTHREQ_RETVAL(tid, -1);
    }
 }
 
@@ -3192,7 +3194,7 @@ void do__get_fhstack_used ( ThreadId tid )
 
    n = vg_fhstack_used;
    vg_assert(n >= 0 && n < VG_N_FORKHANDLERSTACK);
-   SET_EDX(tid, n);
+   SET_PTHREQ_RETVAL(tid, n);
 }
 
 static
@@ -3211,12 +3213,12 @@ void do__set_fhstack_entry ( ThreadId tid, Int n, ForkHandlerEntry* fh )
                            (Addr)fh, sizeof(ForkHandlerEntry));
 
    if (n < 0 || n >= VG_N_FORKHANDLERSTACK) {
-      SET_EDX(tid, -1);
+      SET_PTHREQ_RETVAL(tid, -1);
       return;
    } 
 
    vg_fhstack[n] = *fh;
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 }
 
 
@@ -3237,14 +3239,28 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
                             (Addr)fh, sizeof(ForkHandlerEntry));
 
    if (n < 0 || n >= VG_N_FORKHANDLERSTACK) {
-      SET_EDX(tid, -1);
+      SET_PTHREQ_RETVAL(tid, -1);
       return;
    } 
 
    *fh = vg_fhstack[n];
-   SET_EDX(tid, 0);
+   SET_PTHREQ_RETVAL(tid, 0);
 
    VG_TRACK( post_mem_write, (Addr)fh, sizeof(ForkHandlerEntry) );
+}
+
+/* ---------------------------------------------------------------------
+   Specifying shadow register values
+   ------------------------------------------------------------------ */
+
+void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UInt ret_shadow )
+{
+   VG_(set_thread_shadow_archreg)(tid, R_EAX, ret_shadow);
+}
+
+UInt VG_(get_exit_status_shadow) ( void )
+{
+   return VG_(get_shadow_archreg)(R_EBX);
 }
 
 
@@ -3259,11 +3275,6 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
 static
 void do_client_request ( ThreadId tid )
 {
-#  define RETURN_WITH(vvv)                      \
-       { tst->m_edx = (vvv);                    \
-         tst->sh_edx = VG_(written_shadow_reg); \
-       }
-
    ThreadState* tst    = &VG_(threads)[tid];
    UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
    UInt         req_no = arg[0];
@@ -3271,63 +3282,45 @@ void do_client_request ( ThreadId tid )
    /* VG_(printf)("req no = 0x%x\n", req_no); */
    switch (req_no) {
 
-      /* For the CLIENT_{,tst}CALL[0123] ones, have to do some nasty casting
-         to make gcc believe it's a function. */
       case VG_USERREQ__CLIENT_CALL0: {
          UInt (*f)(void) = (void*)arg[1];
-         RETURN_WITH(
-            f ( )
-         );
+         SET_CLCALL_RETVAL(tid, f ( ), (Addr)f);
          break;
       }
       case VG_USERREQ__CLIENT_CALL1: {
          UInt (*f)(UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( arg[2] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( arg[2] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL2: {
          UInt (*f)(UInt, UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( arg[2], arg[3] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL3: {
          UInt (*f)(UInt, UInt, UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( arg[2], arg[3], arg[4] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3], arg[4] ), (Addr)f );
          break;
       }
 
       case VG_USERREQ__CLIENT_tstCALL0: {
          UInt (*f)(ThreadState*) = (void*)arg[1];
-         RETURN_WITH(
-            f ( tst )
-         );
+         SET_CLCALL_RETVAL(tid, f ( tst ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_tstCALL1: {
          UInt (*f)(ThreadState*, UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( tst, arg[2] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( tst, arg[2] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_tstCALL2: {
          UInt (*f)(ThreadState*, UInt, UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( tst, arg[2], arg[3] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( tst, arg[2], arg[3] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_tstCALL3: {
          UInt (*f)(ThreadState*, UInt, UInt, UInt) = (void*)arg[1];
-         RETURN_WITH(
-            f ( tst, arg[2], arg[3], arg[4] )
-         );
+         SET_CLCALL_RETVAL(tid, f ( tst, arg[2], arg[3], arg[4] ), (Addr)f );
          break;
       }
 
@@ -3341,8 +3334,8 @@ void do_client_request ( ThreadId tid )
          the comment in vg_defaults.c/SK_(malloc)() for why. */
       case VG_USERREQ__MALLOC:
          VG_(sk_malloc_called_by_scheduler) = True;
-         RETURN_WITH(
-            (UInt)SK_(malloc) ( tst, arg[1] ) 
+         SET_PTHREQ_RETVAL(
+            tid, (UInt)SK_(malloc) ( tst, arg[1] ) 
          );
          VG_(sk_malloc_called_by_scheduler) = False;
          break;
@@ -3351,23 +3344,23 @@ void do_client_request ( ThreadId tid )
          VG_(sk_malloc_called_by_scheduler) = True;
          SK_(free) ( tst, (void*)arg[1] );
          VG_(sk_malloc_called_by_scheduler) = False;
-	 RETURN_WITH(0); /* irrelevant */
+	 SET_PTHREQ_RETVAL(tid, 0); /* irrelevant */
          break;
 
       case VG_USERREQ__PTHREAD_GET_THREADID:
-         RETURN_WITH(tid);
+         SET_PTHREQ_RETVAL(tid, tid);
          break;
 
       case VG_USERREQ__RUNNING_ON_VALGRIND:
-         RETURN_WITH(1);
+         SET_CLREQ_RETVAL(tid, 1);
          break;
 
       case VG_USERREQ__GET_PTHREAD_TRACE_LEVEL:
-         RETURN_WITH(VG_(clo_trace_pthread_level));
+         SET_PTHREQ_RETVAL(tid, VG_(clo_trace_pthread_level));
          break;
 
       case VG_USERREQ__READ_MILLISECOND_TIMER:
-         RETURN_WITH(VG_(read_millisecond_timer)());
+         SET_PTHREQ_RETVAL(tid, VG_(read_millisecond_timer)());
          break;
 
       /* Some of these may make thread tid non-runnable, but the
@@ -3405,7 +3398,7 @@ void do_client_request ( ThreadId tid )
          break;
 
       case VG_USERREQ__GET_N_SIGS_RETURNED:
-         RETURN_WITH(VG_(threads)[tid].n_signals_returned);
+         SET_PTHREQ_RETVAL(tid, VG_(threads)[tid].n_signals_returned);
          break;
 
       case VG_USERREQ__PTHREAD_JOIN:
@@ -3517,12 +3510,12 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__NUKE_OTHER_THREADS:
          VG_(nuke_all_threads_except) ( tid );
-         SET_EDX(tid, 0);
+         SET_PTHREQ_RETVAL(tid, 0);
          break;
 
       case VG_USERREQ__PTHREAD_ERROR:
          VG_(record_pthread_error)( tid, (Char*)(arg[1]) );
-         SET_EDX(tid, 0);
+         SET_PTHREQ_RETVAL(tid, 0);
          break;
 
       case VG_USERREQ__SET_FHSTACK_USED:
@@ -3557,11 +3550,11 @@ void do_client_request ( ThreadId tid )
 
          VG_(invalidate_translations)( arg[1], arg[2], True );
 
-         SET_EDX( tid, 0 );     /* return value is meaningless */
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 	 break;
 
       case VG_USERREQ__COUNT_ERRORS:  
-         SET_EDX( tid, VG_(n_errs_found) );
+         SET_CLREQ_RETVAL( tid, VG_(n_errs_found) );
          break;
 
       default:
@@ -3573,7 +3566,7 @@ void do_client_request ( ThreadId tid )
                            arg[0], (void*)arg[1], arg[2] );
 
 	    if (SK_(handle_client_request) ( &VG_(threads)[tid], arg, &ret ))
-		SET_EDX(tid, ret);
+		SET_CLREQ_RETVAL(tid, ret);
          } else {
 	    static Bool whined = False;
 
@@ -3588,8 +3581,6 @@ void do_client_request ( ThreadId tid )
          }
          break;
    }
-
-#  undef RETURN_WITH
 }
 
 

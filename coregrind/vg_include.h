@@ -353,6 +353,16 @@ typedef
       void (*post_mem_write) ( Addr a, UInt size );
 
 
+      /* Register events */
+      void (*post_regs_write_init)             ( void );
+      void (*post_reg_write_syscall_return)    ( ThreadId tid, UInt reg );
+      void (*post_reg_write_deliver_signal)    ( ThreadId tid, UInt reg );
+      void (*post_reg_write_pthread_return)    ( ThreadId tid, UInt reg );
+      void (*post_reg_write_clientreq_return)  ( ThreadId tid, UInt reg );
+      void (*post_reg_write_clientcall_return) ( ThreadId tid, UInt reg,
+                                                 Addr f );
+
+
       /* Scheduler events (not exhaustive) */
       void (*thread_run) ( ThreadId tid );
 
@@ -923,24 +933,38 @@ extern Int     VG_(longjmpd_on_signal);
    (VG_AR_CLIENT_STACKBASE_REDZONE_SZW * VKI_BYTES_PER_WORD)
 
 /* Junk to fill up a thread's shadow regs with when shadow regs aren't
- * being used. */
+   being used. */
 #define VG_UNUSED_SHADOW_REG_VALUE  0x27182818
+/* For sanity checking:  if this ends up in a thread's shadow regs when
+   shadow regs aren't being used, something went wrong. */
+#define   VG_USED_SHADOW_REG_VALUE  0x31415927
 
-/* What we set a shadow register to when written by SET_EAX and similar
- * things. */
-extern UInt VG_(written_shadow_reg);
-
-/* Write a value to the client's %EDX (request return value register)
-   and set the shadow to indicate it is defined. */
-#define SET_EDX(zztid, zzval)                                  \
-   do { VG_(threads)[zztid].m_edx = (zzval);                   \
-        VG_(threads)[zztid].sh_edx = VG_(written_shadow_reg);  \
+/* Write a value to a client's thread register, and shadow (if necessary) */
+#define SET_THREAD_REG( zztid, zzval, zzreg, zzREG, zzevent, zzargs... ) \
+   do { VG_(threads)[zztid].m_##zzreg = (zzval);                  \
+        VG_TRACK( zzevent, zztid, R_##zzREG, ##zzargs );          \
    } while (0)
 
-#define SET_EAX(zztid, zzval)                                  \
-   do { VG_(threads)[zztid].m_eax = (zzval);                   \
-        VG_(threads)[zztid].sh_eax = VG_(written_shadow_reg);  \
-   } while (0)
+#define SET_SYSCALL_RETVAL(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, eax, EAX, post_reg_write_syscall_return)
+
+#define SET_SIGNAL_EDX(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_deliver_signal)
+
+#define SET_SIGNAL_ESP(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, esp, ESP, post_reg_write_deliver_signal)
+
+#define SET_CLREQ_RETVAL(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_clientreq_return)
+
+#define SET_CLCALL_RETVAL(zztid, zzval, f) \
+   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_clientcall_return, f)
+
+#define SET_PTHREQ_ESP(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, esp, ESP, post_reg_write_pthread_return)
+
+#define SET_PTHREQ_RETVAL(zztid, zzval) \
+   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_pthread_return)
 
 
 /* This is or'd into a pthread mutex's __m_kind field if it is used
@@ -1435,14 +1459,14 @@ extern void  VG_(post_known_blocking_syscall)( ThreadId tid, Int syscallno,
 
 extern Bool VG_(is_kerror) ( Int res );
 
-#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)               \
-         VG_(load_thread_state)(thread_id);                       \
-         VG_(copy_baseBlock_to_m_state_static)();                 \
-         VG_(do_syscall)();                                       \
-         VG_(copy_m_state_static_to_baseBlock)();                 \
-         VG_(save_thread_state)(thread_id);                       \
-         VG_(threads)[thread_id].sh_eax = VG_(written_shadow_reg);\
-         result_lvalue = VG_(threads)[thread_id].m_eax;
+#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)      \
+         VG_(load_thread_state)(thread_id);              \
+         VG_(copy_baseBlock_to_m_state_static)();        \
+         VG_(do_syscall)();                              \
+         VG_(copy_m_state_static_to_baseBlock)();        \
+         VG_(save_thread_state)(thread_id);              \
+         result_lvalue = VG_(threads)[thread_id].m_eax;  \
+         VG_TRACK( post_reg_write_syscall_return, thread_id, R_EAX );
 
 
 /* ---------------------------------------------------------------------

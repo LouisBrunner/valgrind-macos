@@ -159,17 +159,6 @@ void SK_(discard_basic_block_info)(Addr a, UInt size)
 
 
 /* ---------------------------------------------------------------------
-   For throwing out basic block level info when code is invalidated
-   ------------------------------------------------------------------ */
-
-__attribute__ ((weak))
-void SK_(written_shadow_regs_values)(UInt* gen_reg, UInt* eflags)
-{
-   non_fund_panic("SK_(written_shadow_regs_values)");
-}
-
-
-/* ---------------------------------------------------------------------
    Command line arg template function
    ------------------------------------------------------------------ */
 

@@ -616,7 +616,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
          /* "do" the syscall ourselves; the kernel never sees it */
          res = VG_(sys_modify_ldt)( tid, arg1, (void*)arg2, arg3 );
-         SET_EAX(tid, res);
+         SET_SYSCALL_RETVAL(tid, res);
          if (arg1 == 0 && !VG_(is_kerror)(res) && res > 0) {
             VG_TRACK( post_mem_write, arg2, res );
          }
@@ -1373,7 +1373,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
               "alternative logfile fd." );
             /* Pretend the close succeeded, regardless.  (0 == success) */
             res = 0;
-            SET_EAX(tid, res);
+            SET_SYSCALL_RETVAL(tid, res);
          } else {
             KERNEL_DO_SYSCALL(tid,res);
          }
@@ -2661,6 +2661,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                VG_TRACK( post_mem_write, (Addr)(&arr[i].revents), 
                                          sizeof(Short) );
          }
+         /* For some unknown reason, %ebx sometimes gets changed by poll...
+            let the skin know (using the `post_reg_write_syscall_return'
+            event isn't ideal... */
+         if (arg1 != tst->m_ebx) {
+            VG_TRACK( post_reg_write_syscall_return, tid, R_EBX );
+         }
          break;
  
       case __NR_readlink: /* syscall 85 */
@@ -3398,7 +3404,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #        if SIGNAL_SIMULATION
          VG_(do_sigpending)( tid, (vki_ksigset_t*)arg1 );
          res = 0;
-	 SET_EAX(tid, res);
+	 SET_SYSCALL_RETVAL(tid, res);
 #        else
          KERNEL_DO_SYSCALL(tid, res);
 #        endif

@@ -987,6 +987,7 @@ extern UInt VG_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
 
 extern UInt VG_(get_shadow_archreg)     ( UInt archreg );
 extern void VG_(set_shadow_archreg)     ( UInt archreg, UInt val );
+extern void VG_(set_shadow_eflags)      ( UInt val );
 extern Addr VG_(shadow_archreg_address) ( UInt archreg );
 
 extern UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
@@ -1207,7 +1208,8 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
 
 /* Just grab the client's EIP, as a much smaller and cheaper
-   indication of where they are. */
+   indication of where they are.  ThreadState should be NULL if it's called
+   from within generated code. */
 extern Addr VG_(get_EIP)( ThreadState *tst );
 
 
@@ -1470,6 +1472,23 @@ extern void VG_(HT_destruct) ( VgHashTable t );
 
 
 /*====================================================================*/
+/*=== Functions for shadow registers                               ===*/
+/*====================================================================*/
+
+/* Nb: make sure the shadow_regs 'need' is set before using these! */
+
+/* This one lets you override the shadow of the return value register for a
+   syscall.  Call it from SK_(post_syscall)() (not SK_(pre_syscall)()!) to
+   override the default shadow register value. */
+extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid, 
+                                                  UInt ret_shadow );
+
+/* This can be called from SK_(fini)() to find the shadow of the argument
+   to exit(), ie. the shadow of the program's return value. */
+extern UInt VG_(get_exit_status_shadow) ( void );
+
+
+/*====================================================================*/
 /*=== General stuff for replacing functions                        ===*/
 /*====================================================================*/
 
@@ -1498,9 +1517,6 @@ extern Bool VG_(is_running_on_simd_CPU) ( void );
 /*====================================================================*/
 /*=== Specific stuff for replacing malloc() and friends            ===*/
 /*====================================================================*/
-
-/* ------------------------------------------------------------------ */
-/* Replacing malloc() and friends */
 
 /* If a skin replaces malloc() et al, the easiest way to do so is to link
    with coregrind/vg_replace_malloc.c, and follow the following instructions.
@@ -1536,8 +1552,8 @@ extern Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size );
 
 /* ------------------------------------------------------------------ */
 /* Some options that can be used by a skin if malloc() et al are replaced. 
-   The skin should use the VG_(process...)() and VG_(print...)() functions
-   to give control over these aspects of Valgrind's version of malloc(). */
+   The skin should call the functions in the appropriate places to give
+   control over these aspects of Valgrind's version of malloc(). */
 
 /* Round malloc sizes upwards to integral number of words? default: NO */
 extern Bool VG_(clo_sloppy_malloc);
@@ -1711,6 +1727,30 @@ EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadState* tst,
 EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
 
 
+/* Register events -- if `shadow_regs' need is set, all should probably be
+   used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
+   changed register. */
+
+/* Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
+   and use VG_(set_shadow_eflags)() to set eflags. */
+EV VG_(track_post_regs_write_init)  ( void (*f)() );    
+
+/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these 
+   events. */
+EV VG_(track_post_reg_write_syscall_return)    
+                                    ( void (*f)(ThreadId tid, UInt reg) );
+EV VG_(track_post_reg_write_deliver_signal)
+                                    ( void (*f)(ThreadId tid, UInt reg) );
+EV VG_(track_post_reg_write_pthread_return)
+                                    ( void (*f)(ThreadId tid, UInt reg) );
+EV VG_(track_post_reg_write_clientreq_return)
+                                    ( void (*f)(ThreadId tid, UInt reg) );
+   /* This one is called for malloc() et al if they are replaced by a skin. */
+EV VG_(track_post_reg_write_clientcall_return)
+                                    ( void (*f)(ThreadId tid, UInt reg,
+                                                Addr called_function) );
+
+
 /* Scheduler events (not exhaustive) */
 
 EV VG_(track_thread_run) ( void (*f)(ThreadId tid) );
@@ -1865,10 +1905,8 @@ extern void SK_(discard_basic_block_info) ( Addr a, UInt size );
 /* ------------------------------------------------------------------ */
 /* VG_(needs).shadow_regs */
 
-/* Valid values for general registers and EFLAGS register, for initialising
-   and updating registers when written in certain places in core. */
-extern void SK_(written_shadow_regs_values) ( UInt* gen_reg, UInt* eflags );
-
+/* No functions must be defined, but the post_reg[s]_write_* events should
+   be tracked. */
 
 /* ------------------------------------------------------------------ */
 /* VG_(needs).command_line_options */
@@ -1886,7 +1924,19 @@ extern void SK_(print_debug_usage)       ( void );
 /* ------------------------------------------------------------------ */
 /* VG_(needs).client_requests */
 
-extern Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret );
+/* If using client requests, the number of the first request should be equal
+   to VG_USERREQ_SKIN_BASE('X','Y'), where 'X' and 'Y' form a suitable two
+   character identification for the string.  The second and subsequent
+   requests should follow. */
+
+/* This function should use the VG_IS_SKIN_USERREQ macro (in
+   include/valgrind.h) to first check if it's a request for this skin.  Then
+   should handle it if it's recognised (and return True), or return False if
+   not recognised.  arg_block[0] holds the request number, any further args
+   from the request are in arg_block[1..].  'ret' is for the return value...
+   it should probably be filled, if only with 0. */
+extern Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block,
+                                         UInt *ret );
 
 
 /* ------------------------------------------------------------------ */

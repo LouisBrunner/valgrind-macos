@@ -904,9 +904,12 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       return True;
    }
 
-   case _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP:
-      *ret = (Addr)MAC_(record_overlap_error);
+   case _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR: {
+      Char*         s     = (Char*)        arg[1];
+      OverlapExtra* extra = (OverlapExtra*)arg[2];
+      MAC_(record_overlap_error)(tid, s, extra);
       return True;
+   }
 
    case VG_USERREQ__CREATE_MEMPOOL: {
       Addr pool      = (Addr)arg[1];

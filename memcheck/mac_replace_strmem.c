@@ -34,27 +34,14 @@
 #include "memcheck.h"
 #include "valgrind.h"
 
-static Addr record_overlap_error;
-
-static int init_done;
-
-/* Startup hook - called as init section */
-static void init(void) __attribute__((constructor));
-static void init(void) 
-{
-   if (init_done)
-      return;
-
-   VALGRIND_MAGIC_SEQUENCE(record_overlap_error, 0,
-			   _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP,
-			   0, 0, 0, 0);
-   init_done = 1;
-}
-
 /* ---------------------------------------------------------------------
-   The normal versions of these functions are hyper-optimised, which fools
-   Memcheck and cause spurious value warnings.  So we replace them with
-   simpler versions.  THEY RUN ON SIMD CPU!
+   We have our own versions of these functions for two reasons:
+   (a) it allows us to do overlap checking
+   (b) some of the normal versions are hyper-optimised, which fools
+       Memcheck and cause spurious value warnings.  Our versions are
+       simpler.
+
+   THEY RUN ON THE SIMD CPU!
    ------------------------------------------------------------------ */
 
 /* Figure out if [dst .. dst+dstlen-1] overlaps with 
@@ -91,6 +78,15 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
    }
 }
 
+// This is a macro rather than a function because we don't want to have an
+// extra function in the stack trace.
+#define RECORD_OVERLAP_ERROR(s, p_extra) \
+{ \
+   Word unused_res; \
+   VALGRIND_MAGIC_SEQUENCE(unused_res, 0, \
+			   _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR, \
+			   s, p_extra, 0, 0); \
+}
 
 static __inline__
 void complain2 ( Char* s, char* dst, const char* src )
@@ -98,8 +94,7 @@ void complain2 ( Char* s, char* dst, const char* src )
    OverlapExtra extra = {
       .src = (Addr)src, .dst = (Addr)dst, .len = -1,
    };
-   init();
-   VALGRIND_NON_SIMD_CALL2( record_overlap_error, s, &extra );
+   RECORD_OVERLAP_ERROR( s, &extra );
 }
 
 static __inline__
@@ -109,8 +104,7 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
    OverlapExtra extra = {
       .src = (Addr)src, .dst = (Addr)dst, .len = n,
    };
-   init();
-   VALGRIND_NON_SIMD_CALL2( record_overlap_error, s, &extra );
+   RECORD_OVERLAP_ERROR( s, &extra );
 }
 
 char* strrchr ( const char* s, int c )

@@ -94,7 +94,8 @@ typedef
       VG_USERREQ__CREATE_BLOCK,
 
       /* This is just for memcheck's internal use - don't use it */
-      _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP = VG_USERREQ_TOOL_BASE('M','C')+256
+      _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR 
+         = VG_USERREQ_TOOL_BASE('M','C') + 256
    } Vg_MemCheckClientRequest;
 
 

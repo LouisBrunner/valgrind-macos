@@ -47,7 +47,7 @@ void SK_(post_clo_init)(void)
 {
 }
 
-IRBB* SK_(instrument)(IRBB* bb)
+IRBB* SK_(instrument)(IRBB* bb, VexGuestLayoutInfo* layout)
 {
     return bb;
 }

@@ -98,7 +98,7 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res, UInt argL, UInt argR )
       /* OV true if result can't be represented in 32 bits
          i.e sHi != sign extension of sLo */
       Long l_res = (Long)((Int)argL) * (Long)((Int)argR);
-      Int sHi = (Int)(l_res >> 32);
+      Int sHi = (Int)toUInt(l_res >> 32);
       Int sLo = (Int)l_res;
       return (sHi != (sLo >> /*s*/ 31)) ? 1:0;
    }

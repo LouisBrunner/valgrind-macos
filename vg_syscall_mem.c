@@ -417,6 +417,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_truncate64)
+      case __NR_truncate64: /* syscall 193 */
+         /* int truncate64(const char *path, off64_t length); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("truncate64 ( %p, %lld )\n",
+                        arg1, ((ULong)arg2) | (((ULong) arg3) << 32));
+         must_be_readable_asciiz( tst, "truncate64(path)", arg1 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_fdatasync)
       case __NR_fdatasync: /* syscall 148 */
          /* int fdatasync(int fd); */

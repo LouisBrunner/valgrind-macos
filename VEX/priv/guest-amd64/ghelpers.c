@@ -110,28 +110,27 @@ Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
 
 
 
-#define ALWAYSDEFD(field)                           \
-    { offsetof(VexGuestX86State, field),            \
-      (sizeof ((VexGuestX86State*)0)->field) }
+#define ALWAYSDEFD(field)                             \
+    { offsetof(VexGuestAMD64State, field),            \
+      (sizeof ((VexGuestAMD64State*)0)->field) }
 
 VexGuestLayout
-amd64guest_layout;
-#if 0
+   amd64guest_layout
       = {
           /* Total size of the guest state, in bytes. */
-          .total_sizeB = sizeof(VexGuestX86State),
+          .total_sizeB = sizeof(VexGuestAMD64State),
 
           /* Describe the stack pointer. */
-          .offset_SP = offsetof(VexGuestX86State,guest_ESP),
-          .sizeof_SP = 4,
+          .offset_SP = offsetof(VexGuestAMD64State,guest_RSP),
+          .sizeof_SP = 8,
 
           /* Describe the instruction pointer. */
-          .offset_IP = offsetof(VexGuestX86State,guest_EIP),
-          .sizeof_IP = 4,
+          .offset_IP = offsetof(VexGuestAMD64State,guest_RIP),
+          .sizeof_IP = 8,
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 18,
+          .n_alwaysDefd = 4,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -139,25 +138,24 @@ amd64guest_layout;
           .alwaysDefd
              = { /*  0 */ ALWAYSDEFD(guest_CC_OP),
                  /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
-                 /*  2 */ ALWAYSDEFD(guest_DFLAG),
-                 /*  3 */ ALWAYSDEFD(guest_IDFLAG),
-                 /*  4 */ ALWAYSDEFD(guest_EIP),
-                 /*  5 */ ALWAYSDEFD(guest_FTOP),
-                 /*  6 */ ALWAYSDEFD(guest_FPTAG),
-                 /*  7 */ ALWAYSDEFD(guest_FPROUND),
-                 /*  8 */ ALWAYSDEFD(guest_FC3210),
-                 /*  9 */ ALWAYSDEFD(guest_CS),
-                 /* 10 */ ALWAYSDEFD(guest_DS),
-                 /* 11 */ ALWAYSDEFD(guest_ES),
-                 /* 12 */ ALWAYSDEFD(guest_FS),
-                 /* 13 */ ALWAYSDEFD(guest_GS),
-                 /* 14 */ ALWAYSDEFD(guest_SS),
-                 /* 15 */ ALWAYSDEFD(guest_LDT),
-                 /* 16 */ ALWAYSDEFD(guest_GDT),
-                 /* 17 */ ALWAYSDEFD(guest_EMWARN)
+		 // /*  2 */ ALWAYSDEFD(guest_DFLAG),
+                 // /*  3 */ ALWAYSDEFD(guest_IDFLAG),
+                 /*  3 */ ALWAYSDEFD(guest_RIP),
+                 // /*  5 */ ALWAYSDEFD(guest_FTOP),
+                 // /*  6 */ ALWAYSDEFD(guest_FPTAG),
+                 // /*  7 */ ALWAYSDEFD(guest_FPROUND),
+                 // /*  8 */ ALWAYSDEFD(guest_FC3210),
+                 // /*  9 */ ALWAYSDEFD(guest_CS),
+                 // /* 10 */ ALWAYSDEFD(guest_DS),
+                 // /* 11 */ ALWAYSDEFD(guest_ES),
+                 // /* 12 */ ALWAYSDEFD(guest_FS),
+                 // /* 13 */ ALWAYSDEFD(guest_GS),
+                 // /* 14 */ ALWAYSDEFD(guest_SS),
+                 // /* 15 */ ALWAYSDEFD(guest_LDT),
+                 // /* 16 */ ALWAYSDEFD(guest_GDT),
+                 /* 4 */ ALWAYSDEFD(guest_EMWARN)
                }
         };
-#endif
 
 
 /* VISIBLE TO LIBVEX CLIENT */

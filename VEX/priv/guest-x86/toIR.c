@@ -6939,7 +6939,7 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
       assign( oldG1, 
               binop( Iop_Set128lo32,
                      mkexpr(oldG0),
-                     getXMMRegLane32(0, eregOfRM(rm))) );
+                     getXMMRegLane32(eregOfRM(rm), 0)) );
       putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
       DIP("%s %s,%s\n", opname,
                         nameXMMReg(eregOfRM(rm)),

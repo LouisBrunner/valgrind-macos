@@ -660,7 +660,7 @@ void MAC_(do_detect_memory_leaks) (
                                MAC_(bytes_reachable), blocks_reachable );
       VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
                                MAC_(bytes_suppressed), blocks_suppressed );
-      if (mode == LC_Summary)
+      if (mode == LC_Summary && blocks_leaked > 0)
 	 VG_(message)(Vg_UserMsg,
 		      "Use --leak-check=full to see details of leaked memory.");
       else if (!MAC_(clo_show_reachable)) {

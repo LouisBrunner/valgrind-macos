@@ -32,7 +32,7 @@
    PThread
    fun:pthread_error
    fun:__pthread_mutex_destroy
-   fun:_IO_default_finish
+   fun:_IO_default_finish*
 }
 
 {
@@ -176,11 +176,11 @@
 
 #--------------
 {
-   _dl_relocate_object/dl_open_worker/_dl_catch_error(Cond)
+   _dl_relocate_object*/dl_open_worker/_dl_catch_error*(Cond)
    Cond
-   fun:_dl_relocate_object
+   fun:_dl_relocate_object*
    fun:dl_open_worker
-   fun:_dl_catch_error
+   fun:_dl_catch_error*
 }
 {
    _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)

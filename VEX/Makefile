@@ -67,7 +67,7 @@ clean:
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)
 ALL_INCLUDES = $(PUB_INCLUDES) $(PRIV_INCLUDES)
 
-test_main.o: $(PUB_HEADERS) test_main.c
+test_main.o: $(PUB_HEADERS) test_main.c test_main.h
 	$(CC) $(CCFLAGS) $(PUB_INCLUDES) -o test_main.o \
 					 -c test_main.c
 

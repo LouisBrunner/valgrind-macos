@@ -13,6 +13,9 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 
+#include "test_main.h"
+
+
 /*---------------------------------------------------------------*/
 /*--- Test                                                    ---*/
 /*---------------------------------------------------------------*/
@@ -49,7 +52,7 @@ int main ( int argc, char** argv )
    Int i;
    UInt u, sum;
    Addr32 orig_addr;
-   Int bb_number;
+   Int bb_number, n_bbs_done = 0;
    Int orig_nbytes, trans_used, orig_used;
    TranslateResult tres;
    VexControl vcon;
@@ -73,59 +76,58 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 //False, 
-		 True, /* valgrind support */
+                 TEST_VSUPPORT, /* valgrind support */
                  &vcon );
 
-#if 0
-   {extern void test_asm86(void);
-   test_asm86();
-   return 0;
-   }
-#endif
 
    while (!feof(f)) {
+
       fgets(linebuf, N_LINEBUF,f);
-      //printf("%s", linebuf);
-      assert(linebuf[0] != 0);
+      if (linebuf[0] == 0) continue;
       if (linebuf[0] != '.') continue;
+
+      if (n_bbs_done == TEST_N_BBS) break;
+      n_bbs_done++;
+
       /* first line is:   . bb-number bb-addr n-bytes */
       assert(3 == sscanf(&linebuf[1], " %d %x %d\n", 
                                  & bb_number,
-                    		 & orig_addr, & orig_nbytes ));
+                                 & orig_addr, & orig_nbytes ));
       assert(orig_nbytes >= 1);
       assert(!feof(f));
       fgets(linebuf, N_LINEBUF,f);
       assert(linebuf[0] == '.');
+
       /* second line is:   . byte byte byte etc */
-      //printf("%s", linebuf);
       if (verbose)
          printf("============ Basic Block %d, "
                 "Start %x, nbytes %2d ============", 
-                bb_number, orig_addr, orig_nbytes);
+                n_bbs_done-1, orig_addr, orig_nbytes);
+
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
-	 assert(1 == sscanf(&linebuf[2 + 3*i], "%x", &u));
-	 origbuf[i] = (UChar)u;
+         assert(1 == sscanf(&linebuf[2 + 3*i], "%x", &u));
+         origbuf[i] = (UChar)u;
       }
 
-            if (bb_number == 10000) break;
-      {
-      for (i = 0; i < 1; i++)
-      tres =
-      LibVEX_Translate ( InsnSetX86, InsnSetX86,
-			 origbuf, (Addr64)orig_addr, &orig_used,
-			 transbuf, N_TRANSBUF, &trans_used,
-			 NULL, /* instrument1 */
-			 NULL, /* instrument2 */
-                         NULL, /* tool-findhelper */
-                         NULL, /* access checker */
-                         (1<<2) );
+      for (i = 0; i < TEST_N_ITERS; i++)
+         tres
+            = LibVEX_Translate ( 
+                 InsnSetX86, InsnSetX86,
+                 origbuf, (Addr64)orig_addr, &orig_used,
+                 transbuf, N_TRANSBUF, &trans_used,
+                 NULL, /* instrument1 */
+                 NULL, /* instrument2 */
+                 NULL, /* tool-findhelper */
+                 NULL, /* access checker */
+                 TEST_FLAGS 
+              );
+
       if (tres != TransOK)
          printf("\ntres = %d\n", (Int)tres);
       assert(tres == TransOK);
       assert(orig_used == orig_nbytes);
-      }
+
       sum = 0;
       for (i = 0; i < trans_used; i++)
          sum += (UInt)transbuf[i];

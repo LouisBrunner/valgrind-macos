@@ -21,6 +21,12 @@ libarch_a_SOURCES = \
 	signals.c \
 	state.c
 
+if USE_PIE
+libarch_a_CFLAGS = $(AM_CFLAGS) -fpie
+else
+libarch_a_CFLAGS = $(AM_CFLAGS)
+endif
+
 # Extract ld's default linker script and hack it to our needs
 stage2.lds: Makefile
 	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \

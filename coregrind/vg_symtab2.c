@@ -397,7 +397,9 @@ static Int compare_RiSym(void *va, void *vb) {
    RiSym *a = (RiSym *)va;
    RiSym *b = (RiSym *)vb;
    
-   return a->addr - b->addr;
+   if (a->addr < b->addr) return -1;
+   if (a->addr > b->addr) return  1;
+   return 0;
 }
 
 /* Two symbols have the same address.  Which name do we prefer?
@@ -604,7 +606,9 @@ static Int compare_ScopeRange(void *va, void *vb) {
    ScopeRange *a = (ScopeRange *)va;
    ScopeRange *b = (ScopeRange *)vb;
    
-   return a->addr - b->addr;
+   if (a->addr < b->addr) return -1;
+   if (a->addr > b->addr) return  1;
+   return 0;
 }
 
 static 
@@ -673,7 +677,9 @@ static Int compare_RiLoc(void *va, void *vb) {
    RiLoc *a = (RiLoc *)va;
    RiLoc *b = (RiLoc *)vb;
 
-   return a->addr - b->addr;
+   if (a->addr < b->addr) return -1;
+   if (a->addr > b->addr) return  1;
+   return 0;
 }
 
 static 

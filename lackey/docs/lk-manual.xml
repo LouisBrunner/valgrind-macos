@@ -1,0 +1,39 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="lk-manual" xreflabel="Lackey">
+
+<title>Lackey: a very simple profiler</title>
+
+<para>Lackey is a simple Valgrind tool that does some basic
+program measurement.  It adds quite a lot of simple
+instrumentation to the program's code.  It is primarily intended
+to be of use as an example tool.</para>
+
+<para>It measures three things:</para>
+
+<orderedlist>
+
+ <listitem>
+  <para>The number of calls to
+  <computeroutput>_dl_runtime_resolve()</computeroutput>, the
+  function in glibc's dynamic linker that resolves function
+  lookups into shared objects.</para>
+ </listitem>
+
+ <listitem>
+  <para>The number of UCode instructions (UCode is Valgrind's
+  RISC-like intermediate language), x86 instructions, and basic
+  blocks executed by the program, and some ratios between the
+  three counts.</para>
+ </listitem>
+
+ <listitem>
+  <para>The number of conditional branches encountered and the
+  proportion of those taken.</para>
+ </listitem>
+
+</orderedlist>
+
+</chapter>

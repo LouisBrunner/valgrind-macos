@@ -1,0 +1,12 @@
+<!-- misc. strings -->
+<!ENTITY vg-url      "http://www.valgrind.org">
+<!ENTITY vg-jemail   "jseward@valgrind.org">
+<!ENTITY vg-vemail   "valgrind@valgrind.org">
+<!ENTITY vg-lifespan "2000-2004">
+<!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
+
+<!-- valgrind release + version stuff -->
+<!ENTITY rel-type    "Development release">
+<!ENTITY rel-version "2.1.2">
+<!ENTITY rel-date    "July 18 2004">
+

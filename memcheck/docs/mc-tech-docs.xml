@@ -1,0 +1,2747 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="mc-tech-docs" 
+         xreflabel="The design and implementation of Valgrind">
+
+<title>The Design and Implementation of Valgrind</title>
+<subtitle>Detailed technical notes for hackers, maintainers and
+          the overly-curious</subtitle>
+
+<sect1 id="mc-tech-docs.intro" xreflabel="Introduction">
+<title>Introduction</title>
+
+<para>This document contains a detailed, highly-technical
+description of the internals of Valgrind.  This is not the user
+manual; if you are an end-user of Valgrind, you do not want to
+read this.  Conversely, if you really are a hacker-type and want
+to know how it works, I assume that you have read the user manual
+thoroughly.</para>
+
+<para>You may need to read this document several times, and
+carefully.  Some important things, I only say once.</para>
+
+
+
+
+<sect2 id="mc-tech-docs.history" xreflabel="History">
+<title>History</title>
+
+<para>Valgrind came into public view in late Feb 2002.  However,
+it has been under contemplation for a very long time, perhaps
+seriously for about five years.  Somewhat over two years ago, I
+started working on the x86 code generator for the Glasgow Haskell
+Compiler (http://www.haskell.org/ghc), gaining familiarity with
+x86 internals on the way.  I then did Cacheprof
+(http://www.cacheprof.org), gaining further x86 experience.  Some
+time around Feb 2000 I started experimenting with a user-space
+x86 interpreter for x86-Linux.  This worked, but it was clear
+that a JIT-based scheme would be necessary to give reasonable
+performance for Valgrind.  Design work for the JITter started in
+earnest in Oct 2000, and by early 2001 I had an x86-to-x86
+dynamic translator which could run quite large programs.  This
+translator was in a sense pointless, since it did not do any
+instrumentation or checking.</para>
+
+<para>Most of the rest of 2001 was taken up designing and
+implementing the instrumentation scheme.  The main difficulty,
+which consumed a lot of effort, was to design a scheme which did
+not generate large numbers of false uninitialised-value warnings.
+By late 2001 a satisfactory scheme had been arrived at, and I
+started to test it on ever-larger programs, with an eventual eye
+to making it work well enough so that it was helpful to folks
+debugging the upcoming version 3 of KDE.  I've used KDE since
+before version 1.0, and wanted to Valgrind to be an indirect
+contribution to the KDE 3 development effort.  At the start of
+Feb 02 the kde-core-devel crew started using it, and gave a huge
+amount of helpful feedback and patches in the space of three
+weeks.  Snapshot 20020306 is the result.</para>
+
+<para>In the best Unix tradition, or perhaps in the spirit of
+Fred Brooks' depressing-but-completely-accurate epitaph "build
+one to throw away; you will anyway", much of Valgrind is a second
+or third rendition of the initial idea.  The instrumentation
+machinery (<filename>vg_translate.c</filename>,
+<filename>vg_memory.c</filename>) and core CPU simulation
+(<filename>vg_to_ucode.c</filename>,
+<filename>vg_from_ucode.c</filename>) have had three redesigns
+and rewrites; the register allocator, low-level memory manager
+(<filename>vg_malloc2.c</filename>) and symbol table reader
+(<filename>vg_symtab2.c</filename>) are on the second rewrite.
+In a sense, this document serves to record some of the knowledge
+gained as a result.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.overview" xreflabel="Design overview">
+<title>Design overview</title>
+
+<para>Valgrind is compiled into a Linux shared object,
+<filename>valgrind.so</filename>, and also a dummy one,
+<filename>valgrinq.so</filename>, of which more later.  The
+<filename>valgrind</filename> shell script adds
+<filename>valgrind.so</filename> to the
+<computeroutput>LD_PRELOAD</computeroutput> list of extra
+libraries to be loaded with any dynamically linked library.  This
+is a standard trick, one which I assume the
+<computeroutput>LD_PRELOAD</computeroutput> mechanism was
+developed to support.</para>
+
+<para><filename>valgrind.so</filename> is linked with the
+<computeroutput>-z initfirst</computeroutput> flag, which
+requests that its initialisation code is run before that of any
+other object in the executable image.  When this happens,
+valgrind gains control.  The real CPU becomes "trapped" in
+<filename>valgrind.so</filename> and the translations it
+generates.  The synthetic CPU provided by Valgrind does, however,
+return from this initialisation function.  So the normal startup
+actions, orchestrated by the dynamic linker
+<filename>ld.so</filename>, continue as usual, except on the
+synthetic CPU, not the real one.  Eventually
+<computeroutput>main</computeroutput> is run and returns, and
+then the finalisation code of the shared objects is run,
+presumably in inverse order to which they were initialised.
+Remember, this is still all happening on the simulated CPU.
+Eventually <filename>valgrind.so</filename>'s own finalisation
+code is called.  It spots this event, shuts down the simulated
+CPU, prints any error summaries and/or does leak detection, and
+returns from the initialisation code on the real CPU.  At this
+point, in effect the real and synthetic CPUs have merged back
+into one, Valgrind has lost control of the program, and the
+program finally <computeroutput>exit()s</computeroutput> back to
+the kernel in the usual way.</para>
+
+<para>The normal course of activity, once Valgrind has started
+up, is as follows.  Valgrind never runs any part of your program
+(usually referred to as the "client"), not a single byte of it,
+directly.  Instead it uses function
+<computeroutput>VG_(translate)</computeroutput> to translate
+basic blocks (BBs, straight-line sequences of code) into
+instrumented translations, and those are run instead.  The
+translations are stored in the translation cache (TC),
+<computeroutput>vg_tc</computeroutput>, with the translation
+table (TT), <computeroutput>vg_tt</computeroutput> supplying the
+original-to-translation code address mapping.  Auxiliary array
+<computeroutput>VG_(tt_fast)</computeroutput> is used as a
+direct-map cache for fast lookups in TT; it usually achieves a
+hit rate of around 98% and facilitates an orig-to-trans lookup in
+4 x86 insns, which is not bad.</para>
+
+<para>Function <computeroutput>VG_(dispatch)</computeroutput> in
+<filename>vg_dispatch.S</filename> is the heart of the JIT
+dispatcher.  Once a translated code address has been found, it is
+executed simply by an x86 <computeroutput>call</computeroutput>
+to the translation.  At the end of the translation, the next
+original code addr is loaded into
+<computeroutput>%eax</computeroutput>, and the translation then
+does a <computeroutput>ret</computeroutput>, taking it back to
+the dispatch loop, with, interestingly, zero branch
+mispredictions.  The address requested in
+<computeroutput>%eax</computeroutput> is looked up first in
+<computeroutput>VG_(tt_fast)</computeroutput>, and, if not found,
+by calling C helper
+<computeroutput>VG_(search_transtab)</computeroutput>.  If there
+is still no translation available,
+<computeroutput>VG_(dispatch)</computeroutput> exits back to the
+top-level C dispatcher
+<computeroutput>VG_(toploop)</computeroutput>, which arranges for
+<computeroutput>VG_(translate)</computeroutput> to make a new
+translation.  All fairly unsurprising, really.  There are various
+complexities described below.</para>
+
+<para>The translator, orchestrated by
+<computeroutput>VG_(translate)</computeroutput>, is complicated
+but entirely self-contained.  It is described in great detail in
+subsequent sections.  Translations are stored in TC, with TT
+tracking administrative information.  The translations are
+subject to an approximate LRU-based management scheme.  With the
+current settings, the TC can hold at most about 15MB of
+translations, and LRU passes prune it to about 13.5MB.  Given
+that the orig-to-translation expansion ratio is about 13:1 to
+14:1, this means TC holds translations for more or less a
+megabyte of original code, which generally comes to about 70000
+basic blocks for C++ compiled with optimisation on.  Generating
+new translations is expensive, so it is worth having a large TC
+to minimise the (capacity) miss rate.</para>
+
+<para>The dispatcher,
+<computeroutput>VG_(dispatch)</computeroutput>, receives hints
+from the translations which allow it to cheaply spot all control
+transfers corresponding to x86
+<computeroutput>call</computeroutput> and
+<computeroutput>ret</computeroutput> instructions.  It has to do
+this in order to spot some special events:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>Calls to
+    <computeroutput>VG_(shutdown)</computeroutput>.  This is
+    Valgrind's cue to exit.  NOTE: actually this is done a
+    different way; it should be cleaned up.</para>
+  </listitem>
+
+  <listitem>
+    <para>Returns of system call handlers, to the return address
+    <computeroutput>VG_(signalreturn_bogusRA)</computeroutput>.
+    The signal simulator needs to know when a signal handler is
+    returning, so we spot jumps (returns) to this address.</para>
+  </listitem>
+
+  <listitem>
+    <para>Calls to <computeroutput>vg_trap_here</computeroutput>.
+    All <computeroutput>malloc</computeroutput>,
+    <computeroutput>free</computeroutput>, etc calls that the
+    client program makes are eventually routed to a call to
+    <computeroutput>vg_trap_here</computeroutput>, and Valgrind
+    does its own special thing with these calls.  In effect this
+    provides a trapdoor, by which Valgrind can intercept certain
+    calls on the simulated CPU, run the call as it sees fit
+    itself (on the real CPU), and return the result to the
+    simulated CPU, quite transparently to the client
+    program.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Valgrind intercepts the client's
+<computeroutput>malloc</computeroutput>,
+<computeroutput>free</computeroutput>, etc, calls, so that it can
+store additional information.  Each block
+<computeroutput>malloc</computeroutput>'d by the client gives
+rise to a shadow block in which Valgrind stores the call stack at
+the time of the <computeroutput>malloc</computeroutput> call.
+When the client calls <computeroutput>free</computeroutput>,
+Valgrind tries to find the shadow block corresponding to the
+address passed to <computeroutput>free</computeroutput>, and
+emits an error message if none can be found.  If it is found, the
+block is placed on the freed blocks queue
+<computeroutput>vg_freed_list</computeroutput>, it is marked as
+inaccessible, and its shadow block now records the call stack at
+the time of the <computeroutput>free</computeroutput> call.
+Keeping <computeroutput>free</computeroutput>'d blocks in this
+queue allows Valgrind to spot all (presumably invalid) accesses
+to them.  However, once the volume of blocks in the free queue
+exceeds <computeroutput>VG_(clo_freelist_vol)</computeroutput>,
+blocks are finally removed from the queue.</para>
+
+<para>Keeping track of <literal>A</literal> and
+<literal>V</literal> bits (note: if you don't know what these
+are, you haven't read the user guide carefully enough) for memory
+is done in <filename>vg_memory.c</filename>.  This implements a
+sparse array structure which covers the entire 4G address space
+in a way which is reasonably fast and reasonably space efficient.
+The 4G address space is divided up into 64K sections, each
+covering 64Kb of address space.  Given a 32-bit address, the top
+16 bits are used to select one of the 65536 entries in
+<computeroutput>VG_(primary_map)</computeroutput>.  The resulting
+"secondary" (<computeroutput>SecMap</computeroutput>) holds A and
+V bits for the 64k of address space chunk corresponding to the
+lower 16 bits of the address.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.design" xreflabel="Design decisions">
+<title>Design decisions</title>
+
+<para>Some design decisions were motivated by the need to make
+Valgrind debuggable.  Imagine you are writing a CPU simulator.
+It works fairly well.  However, you run some large program, like
+Netscape, and after tens of millions of instructions, it crashes.
+How can you figure out where in your simulator the bug is?</para>
+
+<para>Valgrind's answer is: cheat.  Valgrind is designed so that
+it is possible to switch back to running the client program on
+the real CPU at any point.  Using the
+<computeroutput>--stop-after= </computeroutput> flag, you can ask
+Valgrind to run just some number of basic blocks, and then run
+the rest of the way on the real CPU.  If you are searching for a
+bug in the simulated CPU, you can use this to do a binary search,
+which quickly leads you to the specific basic block which is
+causing the problem.</para>
+
+<para>This is all very handy.  It does constrain the design in
+certain unimportant ways.  Firstly, the layout of memory, when
+viewed from the client's point of view, must be identical
+regardless of whether it is running on the real or simulated CPU.
+This means that Valgrind can't do pointer swizzling -- well, no
+great loss -- and it can't run on the same stack as the client --
+again, no great loss.  Valgrind operates on its own stack,
+<computeroutput>VG_(stack)</computeroutput>, which it switches to
+at startup, temporarily switching back to the client's stack when
+doing system calls for the client.</para>
+
+<para>Valgrind also receives signals on its own stack,
+<computeroutput>VG_(sigstack)</computeroutput>, but for different
+gruesome reasons discussed below.</para>
+
+<para>This nice clean
+switch-back-to-the-real-CPU-whenever-you-like story is muddied by
+signals.  Problem is that signals arrive at arbitrary times and
+tend to slightly perturb the basic block count, with the result
+that you can get close to the basic block causing a problem but
+can't home in on it exactly.  My kludgey hack is to define
+<computeroutput>SIGNAL_SIMULATION</computeroutput> to 1 towards
+the bottom of <filename>vg_syscall_mem.c</filename>, so that
+signal handlers are run on the real CPU and don't change the BB
+counts.</para>
+
+<para>A second hole in the switch-back-to-real-CPU story is that
+Valgrind's way of delivering signals to the client is different
+from that of the kernel.  Specifically, the layout of the signal
+delivery frame, and the mechanism used to detect a sighandler
+returning, are different.  So you can't expect to make the
+transition inside a sighandler and still have things working, but
+in practice that's not much of a restriction.</para>
+
+<para>Valgrind's implementation of
+<computeroutput>malloc</computeroutput>,
+<computeroutput>free</computeroutput>, etc, (in
+<filename>vg_clientmalloc.c</filename>, not the low-level stuff
+in <filename>vg_malloc2.c</filename>) is somewhat complicated by
+the need to handle switching back at arbitrary points.  It does
+work tho.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.correctness" xreflabel="Correctness">
+<title>Correctness</title>
+
+<para>There's only one of me, and I have a Real Life (tm) as well
+as hacking Valgrind [allegedly :-].  That means I don't have time
+to waste chasing endless bugs in Valgrind.  My emphasis is
+therefore on doing everything as simply as possible, with
+correctness, stability and robustness being the number one
+priority, more important than performance or functionality.  As a
+result:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>The code is absolutely loaded with assertions, and
+    these are <command>permanently enabled.</command> I have no
+    plan to remove or disable them later.  Over the past couple
+    of months, as valgrind has become more widely used, they have
+    shown their worth, pulling up various bugs which would
+    otherwise have appeared as hard-to-find segmentation
+    faults.</para>
+
+    <para>I am of the view that it's acceptable to spend 5% of
+    the total running time of your valgrindified program doing
+    assertion checks and other internal sanity checks.</para>
+  </listitem>
+
+  <listitem>
+    <para>Aside from the assertions, valgrind contains various
+    sets of internal sanity checks, which get run at varying
+    frequencies during normal operation.
+    <computeroutput>VG_(do_sanity_checks)</computeroutput> runs
+    every 1000 basic blocks, which means 500 to 2000 times/second
+    for typical machines at present.  It checks that Valgrind
+    hasn't overrun its private stack, and does some simple checks
+    on the memory permissions maps.  Once every 25 calls it does
+    some more extensive checks on those maps.  Etc, etc.</para>
+    <para>The following components also have sanity check code,
+    which can be enabled to aid debugging:</para>
+    <itemizedlist>
+      <listitem><para>The low-level memory-manager
+        (<computeroutput>VG_(mallocSanityCheckArena)</computeroutput>).
+        This does a complete check of all blocks and chains in an
+        arena, which is very slow.  Is not engaged by default.</para>
+      </listitem>
+
+      <listitem>
+        <para>The symbol table reader(s): various checks to
+        ensure uniqueness of mappings; see
+        <computeroutput>VG_(read_symbols)</computeroutput> for a
+        start.  Is permanently engaged.</para>
+      </listitem>
+
+      <listitem>
+        <para>The A and V bit tracking stuff in
+        <filename>vg_memory.c</filename>.  This can be compiled
+        with cpp symbol
+        <computeroutput>VG_DEBUG_MEMORY</computeroutput> defined,
+        which removes all the fast, optimised cases, and uses
+        simple-but-slow fallbacks instead.  Not engaged by
+        default.</para>
+      </listitem>
+
+      <listitem>
+        <para>Ditto
+        <computeroutput>VG_DEBUG_LEAKCHECK</computeroutput>.</para>
+      </listitem>
+
+      <listitem>
+        <para>The JITter parses x86 basic blocks into sequences
+        of UCode instructions.  It then sanity checks each one
+        with <computeroutput>VG_(saneUInstr)</computeroutput> and
+        sanity checks the sequence as a whole with
+        <computeroutput>VG_(saneUCodeBlock)</computeroutput>.
+        This stuff is engaged by default, and has caught some
+        way-obscure bugs in the simulated CPU machinery in its
+        time.</para>
+      </listitem>
+
+      <listitem>
+        <para>The system call wrapper does
+        <computeroutput>VG_(first_and_last_secondaries_look_plausible)</computeroutput>
+        after every syscall; this is known to pick up bugs in the
+        syscall wrappers.  Engaged by default.</para>
+      </listitem>
+
+      <listitem>
+        <para>The main dispatch loop, in
+        <computeroutput>VG_(dispatch)</computeroutput>, checks
+        that translations do not set
+        <computeroutput>%ebp</computeroutput> to any value
+        different from
+        <computeroutput>VG_EBP_DISPATCH_CHECKED</computeroutput>
+        or <computeroutput>&amp; VG_(baseBlock)</computeroutput>.
+        In effect this test is free, and is permanently
+        engaged.</para>
+      </listitem>
+
+      <listitem>
+        <para>There are a couple of ifdefed-out consistency
+        checks I inserted whilst debugging the new register
+        allocater,
+        <computeroutput>vg_do_register_allocation</computeroutput>.</para>
+      </listitem>
+    </itemizedlist>
+  </listitem>
+
+  <listitem>
+    <para>I try to avoid techniques, algorithms, mechanisms, etc,
+    for which I can supply neither a convincing argument that
+    they are correct, nor sanity-check code which might pick up
+    bugs in my implementation.  I don't always succeed in this,
+    but I try.  Basically the idea is: avoid techniques which
+    are, in practice, unverifiable, in some sense.  When doing
+    anything, always have in mind: "how can I verify that this is
+    correct?"</para>
+  </listitem>
+
+</itemizedlist>
+
+
+<para>Some more specific things are:</para>
+<itemizedlist>
+  <listitem>
+    <para>Valgrind runs in the same namespace as the client, at
+    least from <filename>ld.so</filename>'s point of view, and it
+    therefore absolutely had better not export any symbol with a
+    name which could clash with that of the client or any of its
+    libraries.  Therefore, all globally visible symbols exported
+    from <filename>valgrind.so</filename> are defined using the
+    <computeroutput>VG_</computeroutput> CPP macro.  As you'll
+    see from <filename>vg_constants.h</filename>, this appends
+    some arbitrary prefix to the symbol, in order that it be, we
+    hope, globally unique.  Currently the prefix is
+    <computeroutput>vgPlain_</computeroutput>.  For convenience
+    there are also <computeroutput>VGM_</computeroutput>,
+    <computeroutput>VGP_</computeroutput> and
+    <computeroutput>VGOFF_</computeroutput>.  All locally defined
+    symbols are declared <computeroutput>static</computeroutput>
+    and do not appear in the final shared object.</para>
+
+    <para>To check this, I periodically do <computeroutput>nm
+    valgrind.so | grep " T "</computeroutput>, which shows you
+    all the globally exported text symbols.  They should all have
+    an approved prefix, except for those like
+    <computeroutput>malloc</computeroutput>,
+    <computeroutput>free</computeroutput>, etc, which we
+    deliberately want to shadow and take precedence over the same
+    names exported from <filename>glibc.so</filename>, so that
+    valgrind can intercept those calls easily.  Similarly,
+    <computeroutput>nm valgrind.so | grep " D "</computeroutput>
+    allows you to find any rogue data-segment symbol
+    names.</para>
+  </listitem>
+
+  <listitem>
+    <para>Valgrind tries, and almost succeeds, in being
+    completely independent of all other shared objects, in
+    particular of <filename>glibc.so</filename>.  For example, we
+    have our own low-level memory manager in
+    <filename>vg_malloc2.c</filename>, which is a fairly standard
+    malloc/free scheme augmented with arenas, and
+    <filename>vg_mylibc.c</filename> exports reimplementations of
+    various bits and pieces you'd normally get from the C
+    library.</para>
+
+    <para>Why all the hassle?  Because imagine the potential
+    chaos of both the simulated and real CPUs executing in
+    <filename>glibc.so</filename>.  It just seems simpler and
+    cleaner to be completely self-contained, so that only the
+    simulated CPU visits <filename>glibc.so</filename>.  In
+    practice it's not much hassle anyway.  Also, valgrind starts
+    up before glibc has a chance to initialise itself, and who
+    knows what difficulties that could lead to.  Finally, glibc
+    has definitions for some types, specifically
+    <computeroutput>sigset_t</computeroutput>, which conflict
+    (are different from) the Linux kernel's idea of same.  When
+    Valgrind wants to fiddle around with signal stuff, it wants
+    to use the kernel's definitions, not glibc's definitions.  So
+    it's simplest just to keep glibc out of the picture
+    entirely.</para>
+
+    <para>To find out which glibc symbols are used by Valgrind,
+    reinstate the link flags <computeroutput>-nostdlib
+    -Wl,-no-undefined</computeroutput>.  This causes linking to
+    fail, but will tell you what you depend on.  I have mostly,
+    but not entirely, got rid of the glibc dependencies; what
+    remains is, IMO, fairly harmless.  AFAIK the current
+    dependencies are: <computeroutput>memset</computeroutput>,
+    <computeroutput>memcmp</computeroutput>,
+    <computeroutput>stat</computeroutput>,
+    <computeroutput>system</computeroutput>,
+    <computeroutput>sbrk</computeroutput>,
+    <computeroutput>setjmp</computeroutput> and
+    <computeroutput>longjmp</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>Similarly, valgrind should not really import any
+    headers other than the Linux kernel headers, since it knows
+    of no API other than the kernel interface to talk to.  At the
+    moment this is really not in a good state, and
+    <computeroutput>vg_syscall_mem</computeroutput> imports, via
+    <filename>vg_unsafe.h</filename>, a significant number of
+    C-library headers so as to know the sizes of various structs
+    passed across the kernel boundary.  This is of course
+    completely bogus, since there is no guarantee that the C
+    library's definitions of these structs matches those of the
+    kernel.  I have started to sort this out using
+    <filename>vg_kerneliface.h</filename>, into which I had
+    intended to copy all kernel definitions which valgrind could
+    need, but this has not gotten very far.  At the moment it
+    mostly contains definitions for
+    <computeroutput>sigset_t</computeroutput> and
+    <computeroutput>struct sigaction</computeroutput>, since the
+    kernel's definition for these really does clash with glibc's.
+    I plan to use a <computeroutput>vki_</computeroutput> prefix
+    on all these types and constants, to denote the fact that
+    they pertain to <command>V</command>algrind's
+    <command>K</command>ernel
+    <command>I</command>nterface.</para>
+
+    <para>Another advantage of having a
+    <filename>vg_kerneliface.h</filename> file is that it makes
+    it simpler to interface to a different kernel.  Once can, for
+    example, easily imagine writing a new
+    <filename>vg_kerneliface.h</filename> for FreeBSD, or x86
+    NetBSD.</para>
+  </listitem>
+
+</itemizedlist>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.limits" xreflabel="Current limitations">
+<title>Current limitations</title>
+
+<para>Support for weird (non-POSIX) signal stuff is patchy.  Does
+anybody care?</para>
+
+</sect2>
+
+</sect1>
+
+
+
+
+
+<sect1 id="mc-tech-docs.jitter" xreflabel="The instrumenting JITter">
+<title>The instrumenting JITter</title>
+
+<para>This really is the heart of the matter.  We begin with
+various side issues.</para>
+
+
+<sect2 id="mc-tech-docs.storage" 
+       xreflabel="Run-time storage, and the use of host registers">
+<title>Run-time storage, and the use of host registers</title>
+
+<para>Valgrind translates client (original) basic blocks into
+instrumented basic blocks, which live in the translation cache
+TC, until either the client finishes or the translations are
+ejected from TC to make room for newer ones.</para>
+
+<para>Since it generates x86 code in memory, Valgrind has
+complete control of the use of registers in the translations.
+Now pay attention.  I shall say this only once, and it is
+important you understand this.  In what follows I will refer to
+registers in the host (real) cpu using their standard names,
+<computeroutput>%eax</computeroutput>,
+<computeroutput>%edi</computeroutput>, etc.  I refer to registers
+in the simulated CPU by capitalising them:
+<computeroutput>%EAX</computeroutput>,
+<computeroutput>%EDI</computeroutput>, etc.  These two sets of
+registers usually bear no direct relationship to each other;
+there is no fixed mapping between them.  This naming scheme is
+used fairly consistently in the comments in the sources.</para>
+
+<para>Host registers, once things are up and running, are used as
+follows:</para>
+
+<itemizedlist>
+  <listitem>
+    <para><computeroutput>%esp</computeroutput>, the real stack
+    pointer, points somewhere in Valgrind's private stack area,
+    <computeroutput>VG_(stack)</computeroutput> or, transiently,
+    into its signal delivery stack,
+    <computeroutput>VG_(sigstack)</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>%edi</computeroutput> is used as a
+    temporary in code generation; it is almost always dead,
+    except when used for the
+    <computeroutput>Left</computeroutput> value-tag operations.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>%eax</computeroutput>,
+    <computeroutput>%ebx</computeroutput>,
+    <computeroutput>%ecx</computeroutput>,
+    <computeroutput>%edx</computeroutput> and
+    <computeroutput>%esi</computeroutput> are available to
+    Valgrind's register allocator.  They are dead (carry
+    unimportant values) in between translations, and are live
+    only in translations.  The one exception to this is
+    <computeroutput>%eax</computeroutput>, which, as mentioned
+    far above, has a special significance to the dispatch loop
+    <computeroutput>VG_(dispatch)</computeroutput>: when a
+    translation returns to the dispatch loop,
+    <computeroutput>%eax</computeroutput> is expected to contain
+    the original-code-address of the next translation to run.
+    The register allocator is so good at minimising spill code
+    that using five regs and not having to save/restore
+    <computeroutput>%edi</computeroutput> actually gives better
+    code than allocating to <computeroutput>%edi</computeroutput>
+    as well, but then having to push/pop it around special
+    uses.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>%ebp</computeroutput> points
+    permanently at
+    <computeroutput>VG_(baseBlock)</computeroutput>.  Valgrind's
+    translations are position-independent, partly because this is
+    convenient, but also because translations get moved around in
+    TC as part of the LRUing activity.  <command>All</command>
+    static entities which need to be referred to from generated
+    code, whether data or helper functions, are stored starting
+    at <computeroutput>VG_(baseBlock)</computeroutput> and are
+    therefore reached by indexing from
+    <computeroutput>%ebp</computeroutput>.  There is but one
+    exception, which is that by placing the value
+    <computeroutput>VG_EBP_DISPATCH_CHECKED</computeroutput> in
+    <computeroutput>%ebp</computeroutput> just before a return to
+    the dispatcher, the dispatcher is informed that the next
+    address to run, in <computeroutput>%eax</computeroutput>,
+    requires special treatment.</para>
+  </listitem>
+
+  <listitem>
+    <para>The real machine's FPU state is pretty much
+    unimportant, for reasons which will become obvious.  Ditto
+    its <computeroutput>%eflags</computeroutput> register.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>The state of the simulated CPU is stored in memory, in
+<computeroutput>VG_(baseBlock)</computeroutput>, which is a block
+of 200 words IIRC.  Recall that
+<computeroutput>%ebp</computeroutput> points permanently at the
+start of this block.  Function
+<computeroutput>vg_init_baseBlock</computeroutput> decides what
+the offsets of various entities in
+<computeroutput>VG_(baseBlock)</computeroutput> are to be, and
+allocates word offsets for them.  The code generator then emits
+<computeroutput>%ebp</computeroutput> relative addresses to get
+at those things.  The sequence in which entities are allocated
+has been carefully chosen so that the 32 most popular entities
+come first, because this means 8-bit offsets can be used in the
+generated code.</para>
+
+<para>If I was clever, I could make
+<computeroutput>%ebp</computeroutput> point 32 words along
+<computeroutput>VG_(baseBlock)</computeroutput>, so that I'd have
+another 32 words of short-form offsets available, but that's just
+complicated, and it's not important -- the first 32 words take
+99% (or whatever) of the traffic.</para>
+
+<para>Currently, the sequence of stuff in
+<computeroutput>VG_(baseBlock)</computeroutput> is as
+follows:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>9 words, holding the simulated integer registers,
+    <computeroutput>%EAX</computeroutput>
+    .. <computeroutput>%EDI</computeroutput>, and the simulated
+    flags, <computeroutput>%EFLAGS</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>Another 9 words, holding the V bit "shadows" for the
+    above 9 regs.</para>
+  </listitem>
+
+  <listitem>
+    <para>The <command>addresses</command> of various helper
+    routines called from generated code:
+    <computeroutput>VG_(helper_value_check4_fail)</computeroutput>,
+    <computeroutput>VG_(helper_value_check0_fail)</computeroutput>,
+    which register V-check failures,
+    <computeroutput>VG_(helperc_STOREV4)</computeroutput>,
+    <computeroutput>VG_(helperc_STOREV1)</computeroutput>,
+    <computeroutput>VG_(helperc_LOADV4)</computeroutput>,
+    <computeroutput>VG_(helperc_LOADV1)</computeroutput>, which
+    do stores and loads of V bits to/from the sparse array which
+    keeps track of V bits in memory, and
+    <computeroutput>VGM_(handle_esp_assignment)</computeroutput>,
+    which messes with memory addressibility resulting from
+    changes in <computeroutput>%ESP</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>The simulated <computeroutput>%EIP</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>24 spill words, for when the register allocator can't
+    make it work with 5 measly registers.</para>
+  </listitem>
+
+  <listitem>
+    <para>Addresses of helpers
+    <computeroutput>VG_(helperc_STOREV2)</computeroutput>,
+    <computeroutput>VG_(helperc_LOADV2)</computeroutput>.  These
+    are here because 2-byte loads and stores are relatively rare,
+    so are placed above the magic 32-word offset boundary.</para>
+  </listitem>
+
+  <listitem>
+    <para>For similar reasons, addresses of helper functions
+    <computeroutput>VGM_(fpu_write_check)</computeroutput> and
+    <computeroutput>VGM_(fpu_read_check)</computeroutput>, which
+    handle the A/V maps testing and changes required by FPU
+    writes/reads.</para>
+  </listitem>
+
+  <listitem>
+    <para>Some other boring helper addresses:
+    <computeroutput>VG_(helper_value_check2_fail)</computeroutput>
+    and
+    <computeroutput>VG_(helper_value_check1_fail)</computeroutput>.
+    These are probably never emitted now, and should be
+    removed.</para>
+  </listitem>
+
+  <listitem>
+    <para>The entire state of the simulated FPU, which I believe
+    to be 108 bytes long.</para>
+  </listitem>
+
+  <listitem>
+    <para>Finally, the addresses of various other helper
+    functions in <filename>vg_helpers.S</filename>, which deal
+    with rare situations which are tedious or difficult to
+    generate code in-line for.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>As a general rule, the simulated machine's state lives
+permanently in memory at
+<computeroutput>VG_(baseBlock)</computeroutput>.  However, the
+JITter does some optimisations which allow the simulated integer
+registers to be cached in real registers over multiple simulated
+instructions within the same basic block.  These are always
+flushed back into memory at the end of every basic block, so that
+the in-memory state is up-to-date between basic blocks.  (This
+flushing is implied by the statement above that the real
+machine's allocatable registers are dead in between simulated
+blocks).</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.startup" 
+       xreflabel="Startup, shutdown, and system calls">
+<title>Startup, shutdown, and system calls</title>
+
+<para>Getting into of Valgrind
+(<computeroutput>VG_(startup)</computeroutput>, called from
+<filename>valgrind.so</filename>'s initialisation section),
+really means copying the real CPU's state into
+<computeroutput>VG_(baseBlock)</computeroutput>, and then
+installing our own stack pointer, etc, into the real CPU, and
+then starting up the JITter.  Exiting valgrind involves copying
+the simulated state back to the real state.</para>
+
+<para>Unfortunately, there's a complication at startup time.
+Problem is that at the point where we need to take a snapshot of
+the real CPU's state, the offsets in
+<computeroutput>VG_(baseBlock)</computeroutput> are not set up
+yet, because to do so would involve disrupting the real machine's
+state significantly.  The way round this is to dump the real
+machine's state into a temporary, static block of memory,
+<computeroutput>VG_(m_state_static)</computeroutput>.  We can
+then set up the <computeroutput>VG_(baseBlock)</computeroutput>
+offsets at our leisure, and copy into it from
+<computeroutput>VG_(m_state_static)</computeroutput> at some
+convenient later time.  This copying is done by
+<computeroutput>VG_(copy_m_state_static_to_baseBlock)</computeroutput>.</para>
+
+<para>On exit, the inverse transformation is (rather
+unnecessarily) used: stuff in
+<computeroutput>VG_(baseBlock)</computeroutput> is copied to
+<computeroutput>VG_(m_state_static)</computeroutput>, and the
+assembly stub then copies from
+<computeroutput>VG_(m_state_static)</computeroutput> into the
+real machine registers.</para>
+
+<para>Doing system calls on behalf of the client
+(<filename>vg_syscall.S</filename>) is something of a half-way
+house.  We have to make the world look sufficiently like that
+which the client would normally have to make the syscall actually
+work properly, but we can't afford to lose control.  So the trick
+is to copy all of the client's state, <command>except its program
+counter</command>, into the real CPU, do the system call, and
+copy the state back out.  Note that the client's state includes
+its stack pointer register, so one effect of this partial
+restoration is to cause the system call to be run on the client's
+stack, as it should be.</para>
+
+<para>As ever there are complications.  We have to save some of
+our own state somewhere when restoring the client's state into
+the CPU, so that we can keep going sensibly afterwards.  In fact
+the only thing which is important is our own stack pointer, but
+for paranoia reasons I save and restore our own FPU state as
+well, even though that's probably pointless.</para>
+
+<para>The complication on the above complication is, that for
+horrible reasons to do with signals, we may have to handle a
+second client system call whilst the client is blocked inside
+some other system call (unbelievable!).  That means there's two
+sets of places to dump Valgrind's stack pointer and FPU state
+across the syscall, and we decide which to use by consulting
+<computeroutput>VG_(syscall_depth)</computeroutput>, which is in
+turn maintained by
+<computeroutput>VG_(wrap_syscall)</computeroutput>.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.ucode" xreflabel="Introduction to UCode">
+<title>Introduction to UCode</title>
+
+<para>UCode lies at the heart of the x86-to-x86 JITter.  The
+basic premise is that dealing the the x86 instruction set head-on
+is just too darn complicated, so we do the traditional
+compiler-writer's trick and translate it into a simpler,
+easier-to-deal-with form.</para>
+
+<para>In normal operation, translation proceeds through six
+stages, coordinated by
+<computeroutput>VG_(translate)</computeroutput>:</para>
+
+<orderedlist>
+  <listitem>
+    <para>Parsing of an x86 basic block into a sequence of UCode
+    instructions (<computeroutput>VG_(disBB)</computeroutput>).</para>
+  </listitem>
+
+  <listitem>
+    <para>UCode optimisation
+    (<computeroutput>vg_improve</computeroutput>), with the aim
+    of caching simulated registers in real registers over
+    multiple simulated instructions, and removing redundant
+    simulated <computeroutput>%EFLAGS</computeroutput>
+    saving/restoring.</para>
+  </listitem>
+
+  <listitem>
+    <para>UCode instrumentation
+    (<computeroutput>vg_instrument</computeroutput>), which adds
+    value and address checking code.</para>
+  </listitem>
+
+  <listitem>
+    <para>Post-instrumentation cleanup
+    (<computeroutput>vg_cleanup</computeroutput>), removing
+    redundant value-check computations.</para>
+  </listitem>
+
+  <listitem>
+    <para>Register allocation
+    (<computeroutput>vg_do_register_allocation</computeroutput>),
+    which, note, is done on UCode.</para>
+  </listitem>
+
+  <listitem>
+    <para>Emission of final instrumented x86 code
+    (<computeroutput>VG_(emit_code)</computeroutput>).</para>
+  </listitem>
+
+</orderedlist>
+
+<para>Notice how steps 2, 3, 4 and 5 are simple UCode-to-UCode
+transformation passes, all on straight-line blocks of UCode (type
+<computeroutput>UCodeBlock</computeroutput>).  Steps 2 and 4 are
+optimisation passes and can be disabled for debugging purposes,
+with <computeroutput>--optimise=no</computeroutput> and
+<computeroutput>--cleanup=no</computeroutput> respectively.</para>
+
+<para>Valgrind can also run in a no-instrumentation mode, given
+<computeroutput>--instrument=no</computeroutput>.  This is useful
+for debugging the JITter quickly without having to deal with the
+complexity of the instrumentation mechanism too.  In this mode,
+steps 3 and 4 are omitted.</para>
+
+<para>These flags combine, so that
+<computeroutput>--instrument=no</computeroutput> together with
+<computeroutput>--optimise=no</computeroutput> means only steps
+1, 5 and 6 are used.
+<computeroutput>--single-step=yes</computeroutput> causes each
+x86 instruction to be treated as a single basic block.  The
+translations are terrible but this is sometimes instructive.</para>
+
+<para>The <computeroutput>--stop-after=N</computeroutput> flag
+switches back to the real CPU after
+<computeroutput>N</computeroutput> basic blocks.  It also re-JITs
+the final basic block executed and prints the debugging info
+resulting, so this gives you a way to get a quick snapshot of how
+a basic block looks as it passes through the six stages mentioned
+above.  If you want to see full information for every block
+translated (probably not, but still ...) find, in
+<computeroutput>VG_(translate)</computeroutput>, the lines</para>
+<programlisting><![CDATA[
+dis = True;
+dis = debugging_translation;]]></programlisting>
+
+<para>and comment out the second line.  This will spew out
+debugging junk faster than you can possibly imagine.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.tags" xreflabel="UCode operand tags: type 'Tag'">
+<title>UCode operand tags: type <computeroutput>Tag</computeroutput></title>
+
+<para>UCode is, more or less, a simple two-address RISC-like
+code.  In keeping with the x86 AT&amp;T assembly syntax,
+generally speaking the first operand is the source operand, and
+the second is the destination operand, which is modified when the
+uinstr is notionally executed.</para>
+
+<para>UCode instructions have up to three operand fields, each of
+which has a corresponding <computeroutput>Tag</computeroutput>
+describing it.  Possible values for the tag are:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><computeroutput>NoValue</computeroutput>: indicates
+    that the field is not in use.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>Lit16</computeroutput>: the field
+    contains a 16-bit literal.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>Literal</computeroutput>: the field
+    denotes a 32-bit literal, whose value is stored in the
+    <computeroutput>lit32</computeroutput> field of the uinstr
+    itself.  Since there is only one
+    <computeroutput>lit32</computeroutput> for the whole uinstr,
+    only one operand field may contain this tag.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>SpillNo</computeroutput>: the field
+    contains a spill slot number, in the range 0 to 23 inclusive,
+    denoting one of the spill slots contained inside
+    <computeroutput>VG_(baseBlock)</computeroutput>.  Such tags
+    only exist after register allocation.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>RealReg</computeroutput>: the field
+    contains a number in the range 0 to 7 denoting an integer x86
+    ("real") register on the host.  The number is the Intel
+    encoding for integer registers.  Such tags only exist after
+    register allocation.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>ArchReg</computeroutput>: the field
+    contains a number in the range 0 to 7 denoting an integer x86
+    register on the simulated CPU.  In reality this means a
+    reference to one of the first 8 words of
+    <computeroutput>VG_(baseBlock)</computeroutput>.  Such tags
+    can exist at any point in the translation process.</para>
+  </listitem>
+
+  <listitem>
+    <para>Last, but not least,
+    <computeroutput>TempReg</computeroutput>.  The field contains
+    the number of one of an infinite set of virtual (integer)
+    registers. <computeroutput>TempReg</computeroutput>s are used
+    everywhere throughout the translation process; you can have
+    as many as you want.  The register allocator maps as many as
+    it can into <computeroutput>RealReg</computeroutput>s and
+    turns the rest into
+    <computeroutput>SpillNo</computeroutput>s, so
+    <computeroutput>TempReg</computeroutput>s should not exist
+    after the register allocation phase.</para>
+
+    <para><computeroutput>TempReg</computeroutput>s are always 32
+    bits long, even if the data they hold is logically shorter.
+    In that case the upper unused bits are required, and, I
+    think, generally assumed, to be zero.
+    <computeroutput>TempReg</computeroutput>s holding V bits for
+    quantities shorter than 32 bits are expected to have ones in
+    the unused places, since a one denotes "undefined".</para>
+  </listitem>
+
+</itemizedlist>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.uinstr" 
+       xreflabel="UCode instructions: type 'UInstr'">
+<title>UCode instructions: type <computeroutput>UInstr</computeroutput></title>
+
+<para>UCode was carefully designed to make it possible to do
+register allocation on UCode and then translate the result into
+x86 code without needing any extra registers ... well, that was
+the original plan, anyway.  Things have gotten a little more
+complicated since then.  In what follows, UCode instructions are
+referred to as uinstrs, to distinguish them from x86
+instructions.  Uinstrs of course have uopcodes which are
+(naturally) different from x86 opcodes.</para>
+
+<para>A uinstr (type <computeroutput>UInstr</computeroutput>)
+contains various fields, not all of which are used by any one
+uopcode:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Three 16-bit operand fields,
+    <computeroutput>val1</computeroutput>,
+    <computeroutput>val2</computeroutput> and
+    <computeroutput>val3</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>Three tag fields,
+    <computeroutput>tag1</computeroutput>,
+    <computeroutput>tag2</computeroutput> and
+    <computeroutput>tag3</computeroutput>.  Each of these has a
+    value of type <computeroutput>Tag</computeroutput>, and they
+    describe what the <computeroutput>val1</computeroutput>,
+    <computeroutput>val2</computeroutput> and
+    <computeroutput>val3</computeroutput> fields contain.</para>
+  </listitem>
+
+  <listitem>
+    <para>A 32-bit literal field.</para>
+  </listitem>
+
+  <listitem>
+    <para>Two <computeroutput>FlagSet</computeroutput>s,
+    specifying which x86 condition codes are read and written by
+    the uinstr.</para>
+  </listitem>
+
+  <listitem>
+    <para>An opcode byte, containing a value of type
+    <computeroutput>Opcode</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>A size field, indicating the data transfer size
+    (1/2/4/8/10) in cases where this makes sense, or zero
+    otherwise.</para>
+  </listitem>
+
+  <listitem>
+    <para>A condition-code field, which, for jumps, holds a value
+    of type <computeroutput>Condcode</computeroutput>, indicating
+    the condition which applies.  The encoding is as it is in the
+    x86 insn stream, except we add a 17th value
+    <computeroutput>CondAlways</computeroutput> to indicate an
+    unconditional transfer.</para>
+  </listitem>
+
+  <listitem>
+    <para>Various 1-bit flags, indicating whether this insn
+    pertains to an x86 CALL or RET instruction, whether a
+    widening is signed or not, etc.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>UOpcodes (type <computeroutput>Opcode</computeroutput>) are
+divided into two groups: those necessary merely to express the
+functionality of the x86 code, and extra uopcodes needed to
+express the instrumentation.  The former group contains:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><computeroutput>GET</computeroutput> and
+    <computeroutput>PUT</computeroutput>, which move values from
+    the simulated CPU's integer registers
+    (<computeroutput>ArchReg</computeroutput>s) into
+    <computeroutput>TempReg</computeroutput>s, and back.
+    <computeroutput>GETF</computeroutput> and
+    <computeroutput>PUTF</computeroutput> do the corresponding
+    thing for the simulated
+    <computeroutput>%EFLAGS</computeroutput>.  There are no
+    corresponding insns for the FPU register stack, since we
+    don't explicitly simulate its registers.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>LOAD</computeroutput> and
+    <computeroutput>STORE</computeroutput>, which, in RISC-like
+    fashion, are the only uinstrs able to interact with
+    memory.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>MOV</computeroutput> and
+    <computeroutput>CMOV</computeroutput> allow unconditional and
+    conditional moves of values between
+    <computeroutput>TempReg</computeroutput>s.</para>
+  </listitem>
+
+  <listitem>
+    <para>ALU operations.  Again in RISC-like fashion, these only
+    operate on <computeroutput>TempReg</computeroutput>s (before
+    reg-alloc) or <computeroutput>RealReg</computeroutput>s
+    (after reg-alloc).  These are:
+    <computeroutput>ADD</computeroutput>,
+    <computeroutput>ADC</computeroutput>,
+    <computeroutput>AND</computeroutput>,
+    <computeroutput>OR</computeroutput>,
+    <computeroutput>XOR</computeroutput>,
+    <computeroutput>SUB</computeroutput>,
+    <computeroutput>SBB</computeroutput>,
+    <computeroutput>SHL</computeroutput>,
+    <computeroutput>SHR</computeroutput>,
+    <computeroutput>SAR</computeroutput>,
+    <computeroutput>ROL</computeroutput>,
+    <computeroutput>ROR</computeroutput>,
+    <computeroutput>RCL</computeroutput>,
+    <computeroutput>RCR</computeroutput>,
+    <computeroutput>NOT</computeroutput>,
+    <computeroutput>NEG</computeroutput>,
+    <computeroutput>INC</computeroutput>,
+    <computeroutput>DEC</computeroutput>,
+    <computeroutput>BSWAP</computeroutput>,
+    <computeroutput>CC2VAL</computeroutput> and
+    <computeroutput>WIDEN</computeroutput>.
+    <computeroutput>WIDEN</computeroutput> does signed or
+    unsigned value widening.
+    <computeroutput>CC2VAL</computeroutput> is used to convert
+    condition codes into a value, zero or one.  The rest are
+    obvious.</para>
+
+    <para>To allow for more efficient code generation, we bend
+    slightly the restriction at the start of the previous para:
+    for <computeroutput>ADD</computeroutput>,
+    <computeroutput>ADC</computeroutput>,
+    <computeroutput>XOR</computeroutput>,
+    <computeroutput>SUB</computeroutput> and
+    <computeroutput>SBB</computeroutput>, we allow the first
+    (source) operand to also be an
+    <computeroutput>ArchReg</computeroutput>, that is, one of the
+    simulated machine's registers.  Also, many of these ALU ops
+    allow the source operand to be a literal.  See
+    <computeroutput>VG_(saneUInstr)</computeroutput> for the
+    final word on the allowable forms of uinstrs.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>LEA1</computeroutput> and
+    <computeroutput>LEA2</computeroutput> are not strictly
+    necessary, but allow faciliate better translations.  They
+    record the fancy x86 addressing modes in a direct way, which
+    allows those amodes to be emitted back into the final
+    instruction stream more or less verbatim.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>CALLM</computeroutput> calls a
+    machine-code helper, one of the methods whose address is
+    stored at some
+    <computeroutput>VG_(baseBlock)</computeroutput> offset.
+    <computeroutput>PUSH</computeroutput> and
+    <computeroutput>POP</computeroutput> move values to/from
+    <computeroutput>TempReg</computeroutput> to the real
+    (Valgrind's) stack, and
+    <computeroutput>CLEAR</computeroutput> removes values from
+    the stack.  <computeroutput>CALLM_S</computeroutput> and
+    <computeroutput>CALLM_E</computeroutput> delimit the
+    boundaries of call setups and clearings, for the benefit of
+    the instrumentation passes.  Getting this right is critical,
+    and so <computeroutput>VG_(saneUCodeBlock)</computeroutput>
+    makes various checks on the use of these uopcodes.</para>
+
+    <para>It is important to understand that these uopcodes have
+    nothing to do with the x86
+    <computeroutput>call</computeroutput>,
+    <computeroutput>return,</computeroutput>
+    <computeroutput>push</computeroutput> or
+    <computeroutput>pop</computeroutput> instructions, and are
+    not used to implement them.  Those guys turn into
+    combinations of <computeroutput>GET</computeroutput>,
+    <computeroutput>PUT</computeroutput>,
+    <computeroutput>LOAD</computeroutput>,
+    <computeroutput>STORE</computeroutput>,
+    <computeroutput>ADD</computeroutput>,
+    <computeroutput>SUB</computeroutput>, and
+    <computeroutput>JMP</computeroutput>.  What these uopcodes
+    support is calling of helper functions such as
+    <computeroutput>VG_(helper_imul_32_64)</computeroutput>,
+    which do stuff which is too difficult or tedious to emit
+    inline.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>FPU</computeroutput>,
+    <computeroutput>FPU_R</computeroutput> and
+    <computeroutput>FPU_W</computeroutput>.  Valgrind doesn't
+    attempt to simulate the internal state of the FPU at all.
+    Consequently it only needs to be able to distinguish FPU ops
+    which read and write memory from those that don't, and for
+    those which do, it needs to know the effective address and
+    data transfer size.  This is made easier because the x86 FP
+    instruction encoding is very regular, basically consisting of
+    16 bits for a non-memory FPU insn and 11 (IIRC) bits + an
+    address mode for a memory FPU insn.  So our
+    <computeroutput>FPU</computeroutput> uinstr carries the 16
+    bits in its <computeroutput>val1</computeroutput> field.  And
+    <computeroutput>FPU_R</computeroutput> and
+    <computeroutput>FPU_W</computeroutput> carry 11 bits in that
+    field, together with the identity of a
+    <computeroutput>TempReg</computeroutput> or (later)
+    <computeroutput>RealReg</computeroutput> which contains the
+    address.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>JIFZ</computeroutput> is unique, in
+    that it allows a control-flow transfer which is not deemed to
+    end a basic block.  It causes a jump to a literal (original)
+    address if the specified argument is zero.</para>
+  </listitem>
+
+  <listitem>
+    <para>Finally, <computeroutput>INCEIP</computeroutput>
+    advances the simulated <computeroutput>%EIP</computeroutput>
+    by the specified literal amount.  This supports lazy
+    <computeroutput>%EIP</computeroutput> updating, as described
+    below.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Stages 1 and 2 of the 6-stage translation process mentioned
+above deal purely with these uopcodes, and no others.  They are
+sufficient to express pretty much all the x86 32-bit
+protected-mode instruction set, at least everything understood by
+a pre-MMX original Pentium (P54C).</para>
+
+<para>Stages 3, 4, 5 and 6 also deal with the following extra
+"instrumentation" uopcodes.  They are used to express all the
+definedness-tracking and -checking machinery which valgrind does.
+In later sections we show how to create checking code for each of
+the uopcodes above.  Note that these instrumentation uopcodes,
+although some appearing complicated, have been carefully chosen
+so that efficient x86 code can be generated for them.  GNU
+superopt v2.5 did a great job helping out here.  Anyways, the
+uopcodes are as follows:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><computeroutput>GETV</computeroutput> and
+    <computeroutput>PUTV</computeroutput> are analogues to
+    <computeroutput>GET</computeroutput> and
+    <computeroutput>PUT</computeroutput> above.  They are
+    identical except that they move the V bits for the specified
+    values back and forth to
+    <computeroutput>TempRegs</computeroutput>, rather than moving
+    the values themselves.</para>
+  </listitem>
+
+  <listitem>
+    <para>Similarly, <computeroutput>LOADV</computeroutput> and
+    <computeroutput>STOREV</computeroutput> read and write V bits
+    from the synthesised shadow memory that Valgrind maintains.
+    In fact they do more than that, since they also do
+    address-validity checks, and emit complaints if the
+    read/written addresses are unaddressible.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>TESTV</computeroutput>, whose
+    parameters are a <computeroutput>TempReg</computeroutput> and
+    a size, tests the V bits in the
+    <computeroutput>TempReg</computeroutput>, at the specified
+    operation size (0/1/2/4 byte) and emits an error if any of
+    them indicate undefinedness.  This is the only uopcode
+    capable of doing such tests.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>SETV</computeroutput>, whose parameters
+    are also <computeroutput>TempReg</computeroutput> and a size,
+    makes the V bits in the
+    <computeroutput>TempReg</computeroutput> indicated
+    definedness, at the specified operation size.  This is
+    usually used to generate the correct V bits for a literal
+    value, which is of course fully defined.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>GETVF</computeroutput> and
+    <computeroutput>PUTVF</computeroutput> are analogues to
+    <computeroutput>GETF</computeroutput> and
+    <computeroutput>PUTF</computeroutput>.  They move the single
+    V bit used to model definedness of
+    <computeroutput>%EFLAGS</computeroutput> between its home in
+    <computeroutput>VG_(baseBlock)</computeroutput> and the
+    specified <computeroutput>TempReg</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>TAG1</computeroutput> denotes one of a
+    family of unary operations on
+    <computeroutput>TempReg</computeroutput>s containing V bits.
+    Similarly, <computeroutput>TAG2</computeroutput> denotes one
+    in a family of binary operations on V bits.</para>
+  </listitem>
+
+</itemizedlist>
+
+
+<para>These 10 uopcodes are sufficient to express Valgrind's
+entire definedness-checking semantics.  In fact most of the
+interesting magic is done by the
+<computeroutput>TAG1</computeroutput> and
+<computeroutput>TAG2</computeroutput> suboperations.</para>
+
+<para>First, however, I need to explain about V-vector operation
+sizes.  There are 4 sizes: 1, 2 and 4, which operate on groups of
+8, 16 and 32 V bits at a time, supporting the usual 1, 2 and 4
+byte x86 operations.  However there is also the mysterious size
+0, which really means a single V bit.  Single V bits are used in
+various circumstances; in particular, the definedness of
+<computeroutput>%EFLAGS</computeroutput> is modelled with a
+single V bit.  Now might be a good time to also point out that
+for V bits, 1 means "undefined" and 0 means "defined".
+Similarly, for A bits, 1 means "invalid address" and 0 means
+"valid address".  This seems counterintuitive (and so it is), but
+testing against zero on x86s saves instructions compared to
+testing against all 1s, because many ALU operations set the Z
+flag for free, so to speak.</para>
+
+<para>With that in mind, the tag ops are:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <formalpara>
+    <title>(UNARY) Pessimising casts:</title>
+    <para><computeroutput>VgT_PCast40</computeroutput>,
+    <computeroutput>VgT_PCast20</computeroutput>,
+    <computeroutput>VgT_PCast10</computeroutput>,
+    <computeroutput>VgT_PCast01</computeroutput>,
+    <computeroutput>VgT_PCast02</computeroutput> and
+    <computeroutput>VgT_PCast04</computeroutput>.  A "pessimising
+    cast" takes a V-bit vector at one size, and creates a new one
+    at another size, pessimised in the sense that if any of the
+    bits in the source vector indicate undefinedness, then all
+    the bits in the result indicate undefinedness.  In this case
+    the casts are all to or from a single V bit, so for example
+    <computeroutput>VgT_PCast40</computeroutput> is a pessimising
+    cast from 32 bits to 1, whereas
+    <computeroutput>VgT_PCast04</computeroutput> simply copies
+    the single source V bit into all 32 bit positions in the
+    result.  Surprisingly, these ops can all be implemented very
+    efficiently.</para>
+    </formalpara>
+
+    <para>There are also the pessimising casts
+    <computeroutput>VgT_PCast14</computeroutput>, from 8 bits to
+    32, <computeroutput>VgT_PCast12</computeroutput>, from 8 bits
+    to 16, and <computeroutput>VgT_PCast11</computeroutput>, from
+    8 bits to 8.  This last one seems nonsensical, but in fact it
+    isn't a no-op because, as mentioned above, any undefined (1)
+    bits in the source infect the entire result.</para>
+  </listitem>
+
+  <listitem>
+    <formalpara>
+    <title>(UNARY) Propagating undefinedness upwards in a
+    word:</title>
+    <para><computeroutput>VgT_Left4</computeroutput>,
+    <computeroutput>VgT_Left2</computeroutput> and
+    <computeroutput>VgT_Left1</computeroutput>.  These are used
+    to simulate the worst-case effects of carry propagation in
+    adds and subtracts.  They return a V vector identical to the
+    original, except that if the original contained any undefined
+    bits, then it and all bits above it are marked as undefined
+    too.  Hence the Left bit in the names.</para></formalpara>
+  </listitem>
+
+  <listitem>
+    <formalpara>
+    <title>(UNARY) Signed and unsigned value widening:</title> 
+    <para><computeroutput>VgT_SWiden14</computeroutput>,
+    <computeroutput>VgT_SWiden24</computeroutput>,
+    <computeroutput>VgT_SWiden12</computeroutput>,
+    <computeroutput>VgT_ZWiden14</computeroutput>,
+    <computeroutput>VgT_ZWiden24</computeroutput> and
+    <computeroutput>VgT_ZWiden12</computeroutput>.  These mimic
+    the definedness effects of standard signed and unsigned
+    integer widening.  Unsigned widening creates zero bits in the
+    new positions, so
+    <computeroutput>VgT_ZWiden*</computeroutput> accordingly park
+    mark those parts of their argument as defined.  Signed
+    widening copies the sign bit into the new positions, so
+    <computeroutput>VgT_SWiden*</computeroutput> copies the
+    definedness of the sign bit into the new positions.  Because
+    1 means undefined and 0 means defined, these operations can
+    (fascinatingly) be done by the same operations which they
+    mimic.  Go figure.</para>
+    </formalpara>
+  </listitem>
+
+  <listitem>
+    <formalpara>
+    <title>(BINARY) Undefined-if-either-Undefined,
+    Defined-if-either-Defined:</title>
+    <para><computeroutput>VgT_UifU4</computeroutput>,
+    <computeroutput>VgT_UifU2</computeroutput>,
+    <computeroutput>VgT_UifU1</computeroutput>,
+    <computeroutput>VgT_UifU0</computeroutput>,
+    <computeroutput>VgT_DifD4</computeroutput>,
+    <computeroutput>VgT_DifD2</computeroutput>,
+    <computeroutput>VgT_DifD1</computeroutput>.  These do simple
+    bitwise operations on pairs of V-bit vectors, with
+    <computeroutput>UifU</computeroutput> giving undefined if
+    either arg bit is undefined, and
+    <computeroutput>DifD</computeroutput> giving defined if
+    either arg bit is defined.  Abstract interpretation junkies,
+    if any make it this far, may like to think of them as meets
+    and joins (or is it joins and meets) in the definedness
+    lattices.</para>
+    </formalpara>
+  </listitem>
+
+  <listitem>
+    <formalpara>
+    <title>(BINARY; one value, one V bits) Generate argument
+    improvement terms for AND and OR</title>
+    <para><computeroutput>VgT_ImproveAND4_TQ</computeroutput>,
+    <computeroutput>VgT_ImproveAND2_TQ</computeroutput>,
+    <computeroutput>VgT_ImproveAND1_TQ</computeroutput>,
+    <computeroutput>VgT_ImproveOR4_TQ</computeroutput>,
+    <computeroutput>VgT_ImproveOR2_TQ</computeroutput>,
+    <computeroutput>VgT_ImproveOR1_TQ</computeroutput>.  These
+    help out with AND and OR operations.  AND and OR have the
+    inconvenient property that the definedness of the result
+    depends on the actual values of the arguments as well as
+    their definedness.  At the bit level:</para></formalpara>
+<programlisting><![CDATA[
+1 AND undefined = undefined, but
+0 AND undefined = 0, and
+similarly 
+0 OR undefined = undefined, but
+1 OR undefined = 1.]]></programlisting>
+    
+    <para>It turns out that gcc (quite legitimately) generates
+    code which relies on this fact, so we have to model it
+    properly in order to avoid flooding users with spurious value
+    errors.  The ultimate definedness result of AND and OR is
+    calculated using <computeroutput>UifU</computeroutput> on the
+    definedness of the arguments, but we also
+    <computeroutput>DifD</computeroutput> in some "improvement"
+    terms which take into account the above phenomena.</para>
+
+    <para><computeroutput>ImproveAND</computeroutput> takes as
+    its first argument the actual value of an argument to AND
+    (the T) and the definedness of that argument (the Q), and
+    returns a V-bit vector which is defined (0) for bits which
+    have value 0 and are defined; this, when
+    <computeroutput>DifD</computeroutput> into the final result
+    causes those bits to be defined even if the corresponding bit
+    in the other argument is undefined.</para>
+
+    <para>The <computeroutput>ImproveOR</computeroutput> ops do
+    the dual thing for OR arguments.  Note that XOR does not have
+    this property that one argument can make the other
+    irrelevant, so there is no need for such complexity for
+    XOR.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>That's all the tag ops.  If you stare at this long enough,
+and then run Valgrind and stare at the pre- and post-instrumented
+ucode, it should be fairly obvious how the instrumentation
+machinery hangs together.</para>
+
+<para>One point, if you do this: in order to make it easy to
+differentiate <computeroutput>TempReg</computeroutput>s carrying
+values from <computeroutput>TempReg</computeroutput>s carrying V
+bit vectors, Valgrind prints the former as (for example)
+<computeroutput>t28</computeroutput> and the latter as
+<computeroutput>q28</computeroutput>; the fact that they carry
+the same number serves to indicate their relationship.  This is
+purely for the convenience of the human reader; the register
+allocator and code generator don't regard them as
+different.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-manual.trans" xreflabel="Translation into UCode">
+<title>Translation into UCode</title>
+
+<para><computeroutput>VG_(disBB)</computeroutput> allocates a new
+<computeroutput>UCodeBlock</computeroutput> and then uses
+<computeroutput>disInstr</computeroutput> to translate x86
+instructions one at a time into UCode, dumping the result in the
+<computeroutput>UCodeBlock</computeroutput>.  This goes on until
+a control-flow transfer instruction is encountered.</para>
+
+<para>Despite the large size of
+<filename>vg_to_ucode.c</filename>, this translation is really
+very simple.  Each x86 instruction is translated entirely
+independently of its neighbours, merrily allocating new
+<computeroutput>TempReg</computeroutput>s as it goes.  The idea
+is to have a simple translator -- in reality, no more than a
+macro-expander -- and the -- resulting bad UCode translation is
+cleaned up by the UCode optimisation phase which follows.  To
+give you an idea of some x86 instructions and their translations
+(this is a complete basic block, as Valgrind sees it):</para>
+<programlisting><![CDATA[
+0x40435A50:  incl %edx
+     0: GETL      %EDX, t0
+     1: INCL      t0  (-wOSZAP)
+     2: PUTL      t0, %EDX
+
+0x40435A51:  movsbl (%edx),%eax
+     3: GETL      %EDX, t2
+     4: LDB       (t2), t2
+     5: WIDENL_Bs t2
+     6: PUTL      t2, %EAX
+
+0x40435A54:  testb $0x20, 1(%ecx,%eax,2)
+     7: GETL      %EAX, t6
+     8: GETL      %ECX, t8
+     9: LEA2L     1(t8,t6,2), t4
+    10: LDB       (t4), t10
+    11: MOVB      $0x20, t12
+    12: ANDB      t12, t10  (-wOSZACP)
+    13: INCEIPo   $9
+
+0x40435A59:  jnz-8 0x40435A50
+    14: Jnzo      $0x40435A50  (-rOSZACP)
+    15: JMPo      $0x40435A5B]]></programlisting>
+
+<para>Notice how the block always ends with an unconditional jump
+to the next block.  This is a bit unnecessary, but makes many
+things simpler.</para>
+
+<para>Most x86 instructions turn into sequences of
+<computeroutput>GET</computeroutput>,
+<computeroutput>PUT</computeroutput>,
+<computeroutput>LEA1</computeroutput>,
+<computeroutput>LEA2</computeroutput>,
+<computeroutput>LOAD</computeroutput> and
+<computeroutput>STORE</computeroutput>.  Some complicated ones
+however rely on calling helper bits of code in
+<filename>vg_helpers.S</filename>.  The ucode instructions
+<computeroutput>PUSH</computeroutput>,
+<computeroutput>POP</computeroutput>,
+<computeroutput>CALL</computeroutput>,
+<computeroutput>CALLM_S</computeroutput> and
+<computeroutput>CALLM_E</computeroutput> support this.  The
+calling convention is somewhat ad-hoc and is not the C calling
+convention.  The helper routines must save all integer registers,
+and the flags, that they use.  Args are passed on the stack
+underneath the return address, as usual, and if result(s) are to
+be returned, it (they) are either placed in dummy arg slots
+created by the ucode <computeroutput>PUSH</computeroutput>
+sequence, or just overwrite the incoming args.</para>
+
+<para>In order that the instrumentation mechanism can handle
+calls to these helpers,
+<computeroutput>VG_(saneUCodeBlock)</computeroutput> enforces the
+following restrictions on calls to helpers:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Each <computeroutput>CALL</computeroutput> uinstr must
+    be bracketed by a preceding
+    <computeroutput>CALLM_S</computeroutput> marker (dummy
+    uinstr) and a trailing
+    <computeroutput>CALLM_E</computeroutput> marker.  These
+    markers are used by the instrumentation mechanism later to
+    establish the boundaries of the
+    <computeroutput>PUSH</computeroutput>,
+    <computeroutput>POP</computeroutput> and
+    <computeroutput>CLEAR</computeroutput> sequences for the
+    call.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>PUSH</computeroutput>,
+    <computeroutput>POP</computeroutput> and
+    <computeroutput>CLEAR</computeroutput> may only appear inside
+    sections bracketed by
+    <computeroutput>CALLM_S</computeroutput> and
+    <computeroutput>CALLM_E</computeroutput>, and nowhere else.</para>
+  </listitem>
+
+  <listitem>
+    <para>In any such bracketed section, no two
+    <computeroutput>PUSH</computeroutput> insns may push the same
+    <computeroutput>TempReg</computeroutput>.  Dually, no two two
+    <computeroutput>POP</computeroutput>s may pop the same
+    <computeroutput>TempReg</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+    <para>Finally, although this is not checked, args should be
+    removed from the stack with
+    <computeroutput>CLEAR</computeroutput>, rather than
+    <computeroutput>POP</computeroutput>s into a
+    <computeroutput>TempReg</computeroutput> which is not
+    subsequently used.  This is because the instrumentation
+    mechanism assumes that all values
+    <computeroutput>POP</computeroutput>ped from the stack are
+    actually used.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Some of the translations may appear to have redundant
+<computeroutput>TempReg</computeroutput>-to-<computeroutput>TempReg</computeroutput>
+moves.  This helps the next phase, UCode optimisation, to
+generate better code.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.optim" xreflabel="UCode optimisation">
+<title>UCode optimisation</title>
+
+<para>UCode is then subjected to an improvement pass
+(<computeroutput>vg_improve()</computeroutput>), which blurs the
+boundaries between the translations of the original x86
+instructions.  It's pretty straightforward.  Three
+transformations are done:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Redundant <computeroutput>GET</computeroutput>
+    elimination.  Actually, more general than that -- eliminates
+    redundant fetches of ArchRegs.  In our running example,
+    uinstr 3 <computeroutput>GET</computeroutput>s
+    <computeroutput>%EDX</computeroutput> into
+    <computeroutput>t2</computeroutput> despite the fact that, by
+    looking at the previous uinstr, it is already in
+    <computeroutput>t0</computeroutput>.  The
+    <computeroutput>GET</computeroutput> is therefore removed,
+    and <computeroutput>t2</computeroutput> renamed to
+    <computeroutput>t0</computeroutput>.  Assuming
+    <computeroutput>t0</computeroutput> is allocated to a host
+    register, it means the simulated
+    <computeroutput>%EDX</computeroutput> will exist in a host
+    CPU register for more than one simulated x86 instruction,
+    which seems to me to be a highly desirable property.</para>
+
+    <para>There is some mucking around to do with subregisters;
+    <computeroutput>%AL</computeroutput> vs
+    <computeroutput>%AH</computeroutput>
+    <computeroutput>%AX</computeroutput> vs
+    <computeroutput>%EAX</computeroutput> etc.  I can't remember
+    how it works, but in general we are very conservative, and
+    these tend to invalidate the caching.</para>
+  </listitem>
+
+  <listitem>
+    <para>Redundant <computeroutput>PUT</computeroutput>
+    elimination.  This annuls
+    <computeroutput>PUT</computeroutput>s of values back to
+    simulated CPU registers if a later
+    <computeroutput>PUT</computeroutput> would overwrite the
+    earlier <computeroutput>PUT</computeroutput> value, and there
+    is no intervening reads of the simulated register
+    (<computeroutput>ArchReg</computeroutput>).</para>
+
+    <para>As before, we are paranoid when faced with subregister
+    references.  Also, <computeroutput>PUT</computeroutput>s of
+    <computeroutput>%ESP</computeroutput> are never annulled,
+    because it is vital the instrumenter always has an up-to-date
+    <computeroutput>%ESP</computeroutput> value available,
+    <computeroutput>%ESP</computeroutput> changes affect
+    addressibility of the memory around the simulated stack
+    pointer.</para>
+
+    <para>The implication of the above paragraph is that the
+    simulated machine's registers are only lazily updated once
+    the above two optimisation phases have run, with the
+    exception of <computeroutput>%ESP</computeroutput>.
+    <computeroutput>TempReg</computeroutput>s go dead at the end
+    of every basic block, from which is is inferrable that any
+    <computeroutput>TempReg</computeroutput> caching a simulated
+    CPU reg is flushed (back into the relevant
+    <computeroutput>VG_(baseBlock)</computeroutput> slot) at the
+    end of every basic block.  The further implication is that
+    the simulated registers are only up-to-date at in between
+    basic blocks, and not at arbitrary points inside basic
+    blocks.  And the consequence of that is that we can only
+    deliver signals to the client in between basic blocks.  None
+    of this seems any problem in practice.</para>
+  </listitem>
+
+  <listitem>
+    <para>Finally there is a simple def-use thing for condition
+    codes.  If an earlier uinstr writes the condition codes, and
+    the next uinsn along which actually cares about the condition
+    codes writes the same or larger set of them, but does not
+    read any, the earlier uinsn is marked as not writing any
+    condition codes.  This saves a lot of redundant cond-code
+    saving and restoring.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>The effect of these transformations on our short block is
+rather unexciting, and shown below.  On longer basic blocks they
+can dramatically improve code quality.</para>
+
+<programlisting><![CDATA[
+at 3: delete GET, rename t2 to t0 in (4 .. 6)
+at 7: delete GET, rename t6 to t0 in (8 .. 9)
+at 1: annul flag write OSZAP due to later OSZACP
+
+Improved code:
+     0: GETL      %EDX, t0
+     1: INCL      t0
+     2: PUTL      t0, %EDX
+     4: LDB       (t0), t0
+     5: WIDENL_Bs t0
+     6: PUTL      t0, %EAX
+     8: GETL      %ECX, t8
+     9: LEA2L     1(t8,t0,2), t4
+    10: LDB       (t4), t10
+    11: MOVB      $0x20, t12
+    12: ANDB      t12, t10  (-wOSZACP)
+    13: INCEIPo   $9
+    14: Jnzo      $0x40435A50  (-rOSZACP)
+    15: JMPo      $0x40435A5B]]></programlisting>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.instrum" xreflabel="UCode instrumentation">
+<title>UCode instrumentation</title>
+
+<para>Once you understand the meaning of the instrumentation
+uinstrs, discussed in detail above, the instrumentation scheme is
+fairly straightforward.  Each uinstr is instrumented in
+isolation, and the instrumentation uinstrs are placed before the
+original uinstr.  Our running example continues below.  I have
+placed a blank line after every original ucode, to make it easier
+to see which instrumentation uinstrs correspond to which
+originals.</para>
+
+<para>As mentioned somewhere above,
+<computeroutput>TempReg</computeroutput>s carrying values have
+names like <computeroutput>t28</computeroutput>, and each one has
+a shadow carrying its V bits, with names like
+<computeroutput>q28</computeroutput>.  This pairing aids in
+reading instrumented ucode.</para>
+
+<para>One decision about all this is where to have "observation
+points", that is, where to check that V bits are valid.  I use a
+minimalistic scheme, only checking where a failure of validity
+could cause the original program to (seg)fault.  So the use of
+values as memory addresses causes a check, as do conditional
+jumps (these cause a check on the definedness of the condition
+codes).  And arguments <computeroutput>PUSH</computeroutput>ed
+for helper calls are checked, hence the weird restrictions on
+help call preambles described above.</para>
+
+<para>Another decision is that once a value is tested, it is
+thereafter regarded as defined, so that we do not emit multiple
+undefined-value errors for the same undefined value.  That means
+that <computeroutput>TESTV</computeroutput> uinstrs are always
+followed by <computeroutput>SETV</computeroutput> on the same
+(shadow) <computeroutput>TempReg</computeroutput>s.  Most of
+these <computeroutput>SETV</computeroutput>s are redundant and
+are removed by the post-instrumentation cleanup phase.</para>
+
+<para>The instrumentation for calling helper functions deserves
+further comment.  The definedness of results from a helper is
+modelled using just one V bit.  So, in short, we do pessimising
+casts of the definedness of all the args, down to a single bit,
+and then <computeroutput>UifU</computeroutput> these bits
+together.  So this single V bit will say "undefined" if any part
+of any arg is undefined.  This V bit is then pessimally cast back
+up to the result(s) sizes, as needed.  If, by seeing that all the
+args are got rid of with <computeroutput>CLEAR</computeroutput>
+and none with <computeroutput>POP</computeroutput>, Valgrind sees
+that the result of the call is not actually used, it immediately
+examines the result V bit with a
+<computeroutput>TESTV</computeroutput> --
+<computeroutput>SETV</computeroutput> pair.  If it did not do
+this, there would be no observation point to detect that the some
+of the args to the helper were undefined.  Of course, if the
+helper's results are indeed used, we don't do this, since the
+result usage will presumably cause the result definedness to be
+checked at some suitable future point.</para>
+
+<para>In general Valgrind tries to track definedness on a
+bit-for-bit basis, but as the above para shows, for calls to
+helpers we throw in the towel and approximate down to a single
+bit.  This is because it's too complex and difficult to track
+bit-level definedness through complex ops such as integer
+multiply and divide, and in any case there is no reasonable code
+fragments which attempt to (eg) multiply two partially-defined
+values and end up with something meaningful, so there seems
+little point in modelling multiplies, divides, etc, in that level
+of detail.</para>
+
+<para>Integer loads and stores are instrumented with firstly a
+test of the definedness of the address, followed by a
+<computeroutput>LOADV</computeroutput> or
+<computeroutput>STOREV</computeroutput> respectively.  These turn
+into calls to (for example)
+<computeroutput>VG_(helperc_LOADV4)</computeroutput>.  These
+helpers do two things: they perform an address-valid check, and
+they load or store V bits from/to the relevant address in the
+(simulated V-bit) memory.</para>
+
+<para>FPU loads and stores are different.  As above the
+definedness of the address is first tested.  However, the helper
+routine for FPU loads
+(<computeroutput>VGM_(fpu_read_check)</computeroutput>) emits an
+error if either the address is invalid or the referenced area
+contains undefined values.  It has to do this because we do not
+simulate the FPU at all, and so cannot track definedness of
+values loaded into it from memory, so we have to check them as
+soon as they are loaded into the FPU, ie, at this point.  We
+notionally assume that everything in the FPU is defined.</para>
+
+<para>It follows therefore that FPU writes first check the
+definedness of the address, then the validity of the address, and
+finally mark the written bytes as well-defined.</para>
+
+<para>If anyone is inspired to extend Valgrind to MMX/SSE insns,
+I suggest you use the same trick.  It works provided that the
+FPU/MMX unit is not used to merely as a conduit to copy partially
+undefined data from one place in memory to another.
+Unfortunately the integer CPU is used like that (when copying C
+structs with holes, for example) and this is the cause of much of
+the elaborateness of the instrumentation here described.</para>
+
+<para><computeroutput>vg_instrument()</computeroutput> in
+<filename>vg_translate.c</filename> actually does the
+instrumentation.  There are comments explaining how each uinstr
+is handled, so we do not repeat that here.  As explained already,
+it is bit-accurate, except for calls to helper functions.
+Unfortunately the x86 insns
+<computeroutput>bt/bts/btc/btr</computeroutput> are done by
+helper fns, so bit-level accuracy is lost there.  This should be
+fixed by doing them inline; it will probably require adding a
+couple new uinstrs.  Also, left and right rotates through the
+carry flag (x86 <computeroutput>rcl</computeroutput> and
+<computeroutput>rcr</computeroutput>) are approximated via a
+single V bit; so far this has not caused anyone to complain.  The
+non-carry rotates, <computeroutput>rol</computeroutput> and
+<computeroutput>ror</computeroutput>, are much more common and
+are done exactly.  Re-visiting the instrumentation for AND and
+OR, they seem rather verbose, and I wonder if it could be done
+more concisely now.</para>
+
+<para>The lowercase <computeroutput>o</computeroutput> on many of
+the uopcodes in the running example indicates that the size field
+is zero, usually meaning a single-bit operation.</para>
+
+<para>Anyroads, the post-instrumented version of our running
+example looks like this:</para>
+
+<programlisting><![CDATA[
+Instrumented code:
+     0: GETVL     %EDX, q0
+     1: GETL      %EDX, t0
+
+     2: TAG1o     q0 = Left4 ( q0 )
+     3: INCL      t0
+
+     4: PUTVL     q0, %EDX
+     5: PUTL      t0, %EDX
+
+     6: TESTVL    q0
+     7: SETVL     q0
+     8: LOADVB    (t0), q0
+     9: LDB       (t0), t0
+
+    10: TAG1o     q0 = SWiden14 ( q0 )
+    11: WIDENL_Bs t0
+
+    12: PUTVL     q0, %EAX
+    13: PUTL      t0, %EAX
+
+    14: GETVL     %ECX, q8
+    15: GETL      %ECX, t8
+
+    16: MOVL      q0, q4
+    17: SHLL      $0x1, q4
+    18: TAG2o     q4 = UifU4 ( q8, q4 )
+    19: TAG1o     q4 = Left4 ( q4 )
+    20: LEA2L     1(t8,t0,2), t4
+
+    21: TESTVL    q4
+    22: SETVL     q4
+    23: LOADVB    (t4), q10
+    24: LDB       (t4), t10
+
+    25: SETVB     q12
+    26: MOVB      $0x20, t12
+
+    27: MOVL      q10, q14
+    28: TAG2o     q14 = ImproveAND1_TQ ( t10, q14 )
+    29: TAG2o     q10 = UifU1 ( q12, q10 )
+    30: TAG2o     q10 = DifD1 ( q14, q10 )
+    31: MOVL      q12, q14
+    32: TAG2o     q14 = ImproveAND1_TQ ( t12, q14 )
+    33: TAG2o     q10 = DifD1 ( q14, q10 )
+    34: MOVL      q10, q16
+    35: TAG1o     q16 = PCast10 ( q16 )
+    36: PUTVFo    q16
+    37: ANDB      t12, t10  (-wOSZACP)
+
+    38: INCEIPo   $9
+
+    39: GETVFo    q18
+    40: TESTVo    q18
+    41: SETVo     q18
+    42: Jnzo      $0x40435A50  (-rOSZACP)
+
+    43: JMPo      $0x40435A5B]]></programlisting>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.cleanup" 
+       xreflabel="UCode post-instrumentation cleanup">
+<title>UCode post-instrumentation cleanup</title>
+
+<para>This pass, coordinated by
+<computeroutput>vg_cleanup()</computeroutput>, removes redundant
+definedness computation created by the simplistic instrumentation
+pass.  It consists of two passes,
+<computeroutput>vg_propagate_definedness()</computeroutput>
+followed by
+<computeroutput>vg_delete_redundant_SETVs</computeroutput>.</para>
+
+<para><computeroutput>vg_propagate_definedness()</computeroutput>
+is a simple constant-propagation and constant-folding pass.  It
+tries to determine which
+<computeroutput>TempReg</computeroutput>s containing V bits will
+always indicate "fully defined", and it propagates this
+information as far as it can, and folds out as many operations as
+possible.  For example, the instrumentation for an ADD of a
+literal to a variable quantity will be reduced down so that the
+definedness of the result is simply the definedness of the
+variable quantity, since the literal is by definition fully
+defined.</para>
+
+<para><computeroutput>vg_delete_redundant_SETVs</computeroutput>
+removes <computeroutput>SETV</computeroutput>s on shadow
+<computeroutput>TempReg</computeroutput>s for which the next
+action is a write.  I don't think there's anything else worth
+saying about this; it is simple.  Read the sources for
+details.</para>
+
+<para>So the cleaned-up running example looks like this.  As
+above, I have inserted line breaks after every original
+(non-instrumentation) uinstr to aid readability.  As with
+straightforward ucode optimisation, the results in this block are
+undramatic because it is so short; longer blocks benefit more
+because they have more redundancy which gets eliminated.</para>
+
+<programlisting><![CDATA[
+at 29: delete UifU1 due to defd arg1
+at 32: change ImproveAND1_TQ to MOV due to defd arg2
+at 41: delete SETV
+at 31: delete MOV
+at 25: delete SETV
+at 22: delete SETV
+at 7: delete SETV
+
+     0: GETVL     %EDX, q0
+     1: GETL      %EDX, t0
+
+     2: TAG1o     q0 = Left4 ( q0 )
+     3: INCL      t0
+
+     4: PUTVL     q0, %EDX
+     5: PUTL      t0, %EDX
+
+     6: TESTVL    q0
+     8: LOADVB    (t0), q0
+     9: LDB       (t0), t0
+
+    10: TAG1o     q0 = SWiden14 ( q0 )
+    11: WIDENL_Bs t0
+
+    12: PUTVL     q0, %EAX
+    13: PUTL      t0, %EAX
+
+    14: GETVL     %ECX, q8
+    15: GETL      %ECX, t8
+
+    16: MOVL      q0, q4
+    17: SHLL      $0x1, q4
+    18: TAG2o     q4 = UifU4 ( q8, q4 )
+    19: TAG1o     q4 = Left4 ( q4 )
+    20: LEA2L     1(t8,t0,2), t4
+
+    21: TESTVL    q4
+    23: LOADVB    (t4), q10
+    24: LDB       (t4), t10
+
+    26: MOVB      $0x20, t12
+
+    27: MOVL      q10, q14
+    28: TAG2o     q14 = ImproveAND1_TQ ( t10, q14 )
+    30: TAG2o     q10 = DifD1 ( q14, q10 )
+    32: MOVL      t12, q14
+    33: TAG2o     q10 = DifD1 ( q14, q10 )
+    34: MOVL      q10, q16
+    35: TAG1o     q16 = PCast10 ( q16 )
+    36: PUTVFo    q16
+    37: ANDB      t12, t10  (-wOSZACP)
+
+    38: INCEIPo   $9
+    39: GETVFo    q18
+    40: TESTVo    q18
+    42: Jnzo      $0x40435A50  (-rOSZACP)
+
+    43: JMPo      $0x40435A5B]]></programlisting>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.transfrom" xreflabel="Translation from UCode">
+<title>Translation from UCode</title>
+
+<para>This is all very simple, even though
+<filename>vg_from_ucode.c</filename> is a big file.
+Position-independent x86 code is generated into a dynamically
+allocated array <computeroutput>emitted_code</computeroutput>;
+this is doubled in size when it overflows.  Eventually the array
+is handed back to the caller of
+<computeroutput>VG_(translate)</computeroutput>, who must copy
+the result into TC and TT, and free the array.</para>
+
+<para>This file is structured into four layers of abstraction,
+which, thankfully, are glued back together with extensive
+<computeroutput>__inline__</computeroutput> directives.  From the
+bottom upwards:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Address-mode emitters,
+    <computeroutput>emit_amode_regmem_reg</computeroutput> et
+    al.</para>
+  </listitem>
+
+  <listitem>
+    <para>Emitters for specific x86 instructions.  There are
+    quite a lot of these, with names such as
+    <computeroutput>emit_movv_offregmem_reg</computeroutput>.
+    The <computeroutput>v</computeroutput> suffix is Intel
+    parlance for a 16/32 bit insn; there are also
+    <computeroutput>b</computeroutput> suffixes for 8 bit
+    insns.</para>
+  </listitem>
+
+  <listitem>
+    <para>The next level up are the
+    <computeroutput>synth_*</computeroutput> functions, which
+    synthesise possibly a sequence of raw x86 instructions to do
+    some simple task.  Some of these are quite complex because
+    they have to work around Intel's silly restrictions on
+    subregister naming.  See
+    <computeroutput>synth_nonshiftop_reg_reg</computeroutput> for
+    example.</para>
+  </listitem>
+
+  <listitem>
+    <para>Finally, at the top of the heap, we have
+    <computeroutput>emitUInstr()</computeroutput>, which emits
+    code for a single uinstr.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Some comments:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>The hack for FPU instructions becomes apparent here.
+    To do a <computeroutput>FPU</computeroutput> ucode
+    instruction, we load the simulated FPU's state into from its
+    <computeroutput>VG_(baseBlock)</computeroutput> into the real
+    FPU using an x86 <computeroutput>frstor</computeroutput>
+    insn, do the ucode <computeroutput>FPU</computeroutput> insn
+    on the real CPU, and write the updated FPU state back into
+    <computeroutput>VG_(baseBlock)</computeroutput> using an
+    <computeroutput>fnsave</computeroutput> instruction.  This is
+    pretty brutal, but is simple and it works, and even seems
+    tolerably efficient.  There is no attempt to cache the
+    simulated FPU state in the real FPU over multiple
+    back-to-back ucode FPU instructions.</para>
+
+    <para><computeroutput>FPU_R</computeroutput> and
+    <computeroutput>FPU_W</computeroutput> are also done this
+    way, with the minor complication that we need to patch in
+    some addressing mode bits so the resulting insn knows the
+    effective address to use.  This is easy because of the
+    regularity of the x86 FPU instruction encodings.</para>
+  </listitem>
+
+  <listitem>
+    <para>An analogous trick is done with ucode insns which
+    claim, in their <computeroutput>flags_r</computeroutput> and
+    <computeroutput>flags_w</computeroutput> fields, that they
+    read or write the simulated
+    <computeroutput>%EFLAGS</computeroutput>.  For such cases we
+    first copy the simulated
+    <computeroutput>%EFLAGS</computeroutput> into the real
+    <computeroutput>%eflags</computeroutput>, then do the insn,
+    then, if the insn says it writes the flags, copy back to
+    <computeroutput>%EFLAGS</computeroutput>.  This is a bit
+    expensive, which is why the ucode optimisation pass goes to
+    some effort to remove redundant flag-update annotations.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>And so ... that's the end of the documentation for the
+instrumentating translator!  It's really not that complex,
+because it's composed as a sequence of simple(ish) self-contained
+transformations on straight-line blocks of code.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.dispatch" xreflabel="Top-level dispatch loop">
+<title>Top-level dispatch loop</title>
+
+<para>Urk.  In <computeroutput>VG_(toploop)</computeroutput>.
+This is basically boring and unsurprising, not to mention fiddly
+and fragile.  It needs to be cleaned up.</para>
+
+<para>The only perhaps surprise is that the whole thing is run on
+top of a <computeroutput>setjmp</computeroutput>-installed
+exception handler, because, supposing a translation got a
+segfault, we have to bail out of the Valgrind-supplied exception
+handler <computeroutput>VG_(oursignalhandler)</computeroutput>
+and immediately start running the client's segfault handler, if
+it has one.  In particular we can't finish the current basic
+block and then deliver the signal at some convenient future
+point, because signals like SIGILL, SIGSEGV and SIGBUS mean that
+the faulting insn should not simply be re-tried.  (I'm sure there
+is a clearer way to explain this).</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.lazy" 
+       xreflabel="Lazy updates of the simulated program counter">
+<title>Lazy updates of the simulated program counter</title>
+
+<para>Simulated <computeroutput>%EIP</computeroutput> is not
+updated after every simulated x86 insn as this was regarded as
+too expensive.  Instead ucode
+<computeroutput>INCEIP</computeroutput> insns move it along as
+and when necessary.  Currently we don't allow it to fall more
+than 4 bytes behind reality (see
+<computeroutput>VG_(disBB)</computeroutput> for the way this
+works).</para>
+
+<para>Note that <computeroutput>%EIP</computeroutput> is always
+brought up to date by the inner dispatch loop in
+<computeroutput>VG_(dispatch)</computeroutput>, so that if the
+client takes a fault we know at least which basic block this
+happened in.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.signals" xreflabel="Signals">
+<title>Signals</title>
+
+<para>Horrible, horrible.  <filename>vg_signals.c</filename>.
+Basically, since we have to intercept all system calls anyway, we
+can see when the client tries to install a signal handler.  If it
+does so, we make a note of what the client asked to happen, and
+ask the kernel to route the signal to our own signal handler,
+<computeroutput>VG_(oursignalhandler)</computeroutput>.  This
+simply notes the delivery of signals, and returns.</para>
+
+<para>Every 1000 basic blocks, we see if more signals have
+arrived.  If so,
+<computeroutput>VG_(deliver_signals)</computeroutput> builds
+signal delivery frames on the client's stack, and allows their
+handlers to be run.  Valgrind places in these signal delivery
+frames a bogus return address,
+<computeroutput>VG_(signalreturn_bogusRA)</computeroutput>, and
+checks all jumps to see if any jump to it.  If so, this is a sign
+that a signal handler is returning, and if so Valgrind removes
+the relevant signal frame from the client's stack, restores the
+from the signal frame the simulated state before the signal was
+delivered, and allows the client to run onwards.  We have to do
+it this way because some signal handlers never return, they just
+<computeroutput>longjmp()</computeroutput>, which nukes the
+signal delivery frame.</para>
+
+<para>The Linux kernel has a different but equally horrible hack
+for detecting signal handler returns.  Discovering it is left as
+an exercise for the reader.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.todo">
+<title>To be written</title>
+
+<para>The following is a list of as-yet-not-written stuff. Apologies.</para>
+<orderedlist>
+  <listitem>
+    <para>The translation cache and translation table</para>
+  </listitem>
+  <listitem>
+    <para>Exceptions, creating new translations</para>
+  </listitem>
+  <listitem>
+    <para>Self-modifying code</para>
+  </listitem>
+  <listitem>
+    <para>Errors, error contexts, error reporting, suppressions</para>
+  </listitem>
+  <listitem>
+    <para>Client malloc/free</para>
+  </listitem>
+  <listitem>
+    <para>Low-level memory management</para>
+  </listitem>
+  <listitem>
+    <para>A and V bitmaps</para>
+  </listitem>
+  <listitem>
+    <para>Symbol table management</para>
+  </listitem>
+  <listitem>
+    <para>Dealing with system calls</para>
+  </listitem>
+  <listitem>
+    <para>Namespace management</para>
+  </listitem>
+  <listitem>
+    <para>GDB attaching</para>
+  </listitem>
+  <listitem>
+    <para>Non-dependence on glibc or anything else</para>
+  </listitem>
+  <listitem>
+    <para>The leak detector</para>
+  </listitem>
+  <listitem>
+    <para>Performance problems</para>
+  </listitem>
+  <listitem>
+    <para>Continuous sanity checking</para>
+  </listitem>
+  <listitem>
+    <para>Tracing, or not tracing, child processes</para>
+  </listitem>
+  <listitem>
+    <para>Assembly glue for syscalls</para>
+  </listitem>
+</orderedlist>
+
+</sect2>
+
+</sect1>
+
+
+
+
+<sect1 id="mc-tech-docs.extensions" xreflabel="Extensions">
+<title>Extensions</title>
+
+<para>Some comments about Stuff To Do.</para>
+
+<sect2 id="mc-tech-docs.bugs" xreflabel="Bugs">
+<title>Bugs</title>
+
+<para>Stephan Kulow and Marc Mutz report problems with kmail in
+KDE 3 CVS (RC2 ish) when run on Valgrind.  Stephan has it
+deadlocking; Marc has it looping at startup.  I can't repro
+either behaviour. Needs repro-ing and fixing.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.threads" xreflabel="Threads">
+<title>Threads</title>
+
+<para>Doing a good job of thread support strikes me as almost a
+research-level problem.  The central issues are how to do fast
+cheap locking of the
+<computeroutput>VG_(primary_map)</computeroutput> structure,
+whether or not accesses to the individual secondary maps need
+locking, what race-condition issues result, and whether the
+already-nasty mess that is the signal simulator needs further
+hackery.</para>
+
+<para>I realise that threads are the most-frequently-requested
+feature, and I am thinking about it all.  If you have guru-level
+understanding of fast mutual exclusion mechanisms and race
+conditions, I would be interested in hearing from you.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.verify" xreflabel="Verification suite">
+<title>Verification suite</title>
+
+<para>Directory <computeroutput>tests/</computeroutput> contains
+various ad-hoc tests for Valgrind.  However, there is no
+systematic verification or regression suite, that, for example,
+exercises all the stuff in <filename>vg_memory.c</filename>, to
+ensure that illegal memory accesses and undefined value uses are
+detected as they should be.  It would be good to have such a
+suite.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.porting" xreflabel="Porting to other platforms">
+<title>Porting to other platforms</title>
+
+<para>It would be great if Valgrind was ported to FreeBSD and x86
+NetBSD, and to x86 OpenBSD, if it's possible (doesn't OpenBSD use
+a.out-style executables, not ELF ?)</para>
+
+<para>The main difficulties, for an x86-ELF platform, seem to
+be:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>You'd need to rewrite the
+    <computeroutput>/proc/self/maps</computeroutput> parser
+    (<filename>vg_procselfmaps.c</filename>).  Easy.</para>
+  </listitem>
+
+  <listitem>
+    <para>You'd need to rewrite
+    <filename>vg_syscall_mem.c</filename>, or, more specifically,
+    provide one for your OS.  This is tedious, but you can
+    implement syscalls on demand, and the Linux kernel interface
+    is, for the most part, going to look very similar to the *BSD
+    interfaces, so it's really a copy-paste-and-modify-on-demand
+    job.  As part of this, you'd need to supply a new
+    <filename>vg_kerneliface.h</filename> file.</para>
+  </listitem>
+
+  <listitem>
+    <para>You'd also need to change the syscall wrappers for
+    Valgrind's internal use, in
+    <filename>vg_mylibc.c</filename>.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>All in all, I think a port to x86-ELF *BSDs is not really
+very difficult, and in some ways I would like to see it happen,
+because that would force a more clear factoring of Valgrind into
+platform dependent and independent pieces.  Not to mention, *BSD
+folks also deserve to use Valgrind just as much as the Linux crew
+do.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="mc-tech-docs.easystuff" 
+       xreflabel="Easy stuff which ought to be done">
+<title>Easy stuff which ought to be done</title>
+
+
+<sect2 id="mc-tech-docs.mmx" xreflabel="MMX Instructions">
+<title>MMX Instructions</title>
+
+<para>MMX insns should be supported, using the same trick as for
+FPU insns.  If the MMX registers are not used to copy
+uninitialised junk from one place to another in memory, this
+means we don't have to actually simulate the internal MMX unit
+state, so the FPU hack applies.  This should be fairly
+easy.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.fixstabs" xreflabel="Fix stabs-info Reader">
+<title>Fix stabs-info reader</title>
+
+<para>The machinery in <filename>vg_symtab2.c</filename> which
+reads "stabs" style debugging info is pretty weak.  It usually
+correctly translates simulated program counter values into line
+numbers and procedure names, but the file name is often
+completely wrong.  I think the logic used to parse "stabs"
+entries is weak.  It should be fixed.  The simplest solution,
+IMO, is to copy either the logic or simply the code out of GNU
+binutils which does this; since GDB can clearly get it right,
+binutils (or GDB?) must have code to do this somewhere.</para>
+
+</sect2>
+
+
+
+<sect2 id="mc-tech-docs.x86instr" xreflabel="BT/BTC/BTS/BTR">
+<title>BT/BTC/BTS/BTR</title>
+
+<para>These are x86 instructions which test, complement, set, or
+reset, a single bit in a word.  At the moment they are both
+incorrectly implemented and incorrectly instrumented.</para>
+
+<para>The incorrect instrumentation is due to use of helper
+functions.  This means we lose bit-level definedness tracking,
+which could wind up giving spurious uninitialised-value use
+errors.  The Right Thing to do is to invent a couple of new
+UOpcodes, I think <computeroutput>GET_BIT</computeroutput> and
+<computeroutput>SET_BIT</computeroutput>, which can be used to
+implement all 4 x86 insns, get rid of the helpers, and give
+bit-accurate instrumentation rules for the two new
+UOpcodes.</para>
+
+<para>I realised the other day that they are mis-implemented too.
+The x86 insns take a bit-index and a register or memory location
+to access.  For registers the bit index clearly can only be in
+the range zero to register-width minus 1, and I assumed the same
+applied to memory locations too.  But evidently not; for memory
+locations the index can be arbitrary, and the processor will
+index arbitrarily into memory as a result.  This too should be
+fixed.  Sigh.  Presumably indexing outside the immediate word is
+not actually used by any programs yet tested on Valgrind, for
+otherwise they (presumably) would simply not work at all.  If you
+plan to hack on this, first check the Intel docs to make sure my
+understanding is really correct.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.prefetch" xreflabel="Using PREFETCH Instructions">
+<title>Using PREFETCH Instructions</title>
+
+<para>Here's a small but potentially interesting project for
+performance junkies.  Experiments with valgrind's code generator
+and optimiser(s) suggest that reducing the number of instructions
+executed in the translations and mem-check helpers gives
+disappointingly small performance improvements.  Perhaps this is
+because performance of Valgrindified code is limited by cache
+misses.  After all, each read in the original program now gives
+rise to at least three reads, one for the
+<computeroutput>VG_(primary_map)</computeroutput>, one of the
+resulting secondary, and the original.  Not to mention, the
+instrumented translations are 13 to 14 times larger than the
+originals.  All in all one would expect the memory system to be
+hammered to hell and then some.</para>
+
+<para>So here's an idea.  An x86 insn involving a read from
+memory, after instrumentation, will turn into ucode of the
+following form:</para>
+<programlisting><![CDATA[
+... calculate effective addr, into ta and qa ...
+  TESTVL qa             -- is the addr defined?
+  LOADV (ta), qloaded   -- fetch V bits for the addr
+  LOAD  (ta), tloaded   -- do the original load]]></programlisting>
+
+<para>At the point where the
+<computeroutput>LOADV</computeroutput> is done, we know the
+actual address (<computeroutput>ta</computeroutput>) from which
+the real <computeroutput>LOAD</computeroutput> will be done.  We
+also know that the <computeroutput>LOADV</computeroutput> will
+take around 20 x86 insns to do.  So it seems plausible that doing
+a prefetch of <computeroutput>ta</computeroutput> just before the
+<computeroutput>LOADV</computeroutput> might just avoid a miss at
+the <computeroutput>LOAD</computeroutput> point, and that might
+be a significant performance win.</para>
+
+<para>Prefetch insns are notoriously tempermental, more often
+than not making things worse rather than better, so this would
+require considerable fiddling around.  It's complicated because
+Intels and AMDs have different prefetch insns with different
+semantics, so that too needs to be taken into account.  As a
+general rule, even placing the prefetches before the
+<computeroutput>LOADV</computeroutput> insn is too near the
+<computeroutput>LOAD</computeroutput>; the ideal distance is
+apparently circa 200 CPU cycles.  So it might be worth having
+another analysis/transformation pass which pushes prefetches as
+far back as possible, hopefully immediately after the effective
+address becomes available.</para>
+
+<para>Doing too many prefetches is also bad because they soak up
+bus bandwidth / cpu resources, so some cleverness in deciding
+which loads to prefetch and which to not might be helpful.  One
+can imagine not prefetching client-stack-relative
+(<computeroutput>%EBP</computeroutput> or
+<computeroutput>%ESP</computeroutput>) accesses, since the stack
+in general tends to show good locality anyway.</para>
+
+<para>There's quite a lot of experimentation to do here, but I
+think it might make an interesting week's work for
+someone.</para>
+
+<para>As of 15-ish March 2002, I've started to experiment with
+this, using the AMD
+<computeroutput>prefetch/prefetchw</computeroutput> insns.</para>
+
+</sect2>
+
+
+<sect2 id="mc-tech-docs.pranges" xreflabel="User-defined Permission Ranges">
+<title>User-defined Permission Ranges</title>
+
+<para>This is quite a large project -- perhaps a month's hacking
+for a capable hacker to do a good job -- but it's potentially
+very interesting.  The outcome would be that Valgrind could
+detect a whole class of bugs which it currently cannot.</para>
+
+<para>The presentation falls into two pieces.</para>
+
+<sect3 id="mc-tech-docs.psetting" 
+  xreflabel="Part 1: User-defined Address-range Permission Setting">
+<title>Part 1: User-defined Address-range Permission Setting</title>
+
+<para>Valgrind intercepts the client's
+<computeroutput>malloc</computeroutput>,
+<computeroutput>free</computeroutput>, etc calls, watches system
+calls, and watches the stack pointer move.  This is currently the
+only way it knows about which addresses are valid and which not.
+Sometimes the client program knows extra information about its
+memory areas.  For example, the client could at some point know
+that all elements of an array are out-of-date.  We would like to
+be able to convey to Valgrind this information that the array is
+now addressable-but-uninitialised, so that Valgrind can then warn
+if elements are used before they get new values.</para>
+
+<para>What I would like are some macros like this:</para>
+<programlisting><![CDATA[
+  VALGRIND_MAKE_NOACCESS(addr, len)
+  VALGRIND_MAKE_WRITABLE(addr, len)
+  VALGRIND_MAKE_READABLE(addr, len)]]></programlisting>
+
+<para>and also, to check that memory is
+addressible/initialised,</para>
+<programlisting><![CDATA[
+  VALGRIND_CHECK_ADDRESSIBLE(addr, len)
+  VALGRIND_CHECK_INITIALISED(addr, len)]]></programlisting>
+
+<para>I then include in my sources a header defining these
+macros, rebuild my app, run under Valgrind, and get user-defined
+checks.</para>
+
+<para>Now here's a neat trick.  It's a nuisance to have to
+re-link the app with some new library which implements the above
+macros.  So the idea is to define the macros so that the
+resulting executable is still completely stand-alone, and can be
+run without Valgrind, in which case the macros do nothing, but
+when run on Valgrind, the Right Thing happens.  How to do this?
+The idea is for these macros to turn into a piece of inline
+assembly code, which (1) has no effect when run on the real CPU,
+(2) is easily spotted by Valgrind's JITter, and (3) no sane
+person would ever write, which is important for avoiding false
+matches in (2).  So here's a suggestion:</para>
+<programlisting><![CDATA[
+  VALGRIND_MAKE_NOACCESS(addr, len)]]></programlisting>
+
+<para>becomes (roughly speaking)</para>
+<programlisting><![CDATA[
+  movl addr, %eax
+  movl len,  %ebx
+  movl $1,   %ecx   -- 1 describes the action; MAKE_WRITABLE might be
+                    -- 2, etc
+  rorl $13, %ecx
+  rorl $19, %ecx
+  rorl $11, %eax
+  rorl $21, %eax]]></programlisting>
+
+<para>The rotate sequences have no effect, and it's unlikely they
+would appear for any other reason, but they define a unique
+byte-sequence which the JITter can easily spot.  Using the
+operand constraints section at the end of a gcc inline-assembly
+statement, we can tell gcc that the assembly fragment kills
+<computeroutput>%eax</computeroutput>,
+<computeroutput>%ebx</computeroutput>,
+<computeroutput>%ecx</computeroutput> and the condition codes, so
+this fragment is made harmless when not running on Valgrind, runs
+quickly when not on Valgrind, and does not require any other
+library support.</para>
+
+
+</sect3>
+
+
+<sect3 id="mc-tech-docs.prange-detect" 
+  xreflabel="Part 2: Using it to detect Interference between Stack 
+Variables">
+<title>Part 2: Using it to detect Interference between Stack 
+Variables</title>
+
+<para>Currently Valgrind cannot detect errors of the following
+form:</para>
+<programlisting><![CDATA[
+void fooble ( void )
+{
+  int a[10];
+  int b[10];
+  a[10] = 99;
+}]]></programlisting>
+
+<para>Now imagine rewriting this as</para>
+<programlisting><![CDATA[
+void fooble ( void )
+{
+  int spacer0;
+  int a[10];
+  int spacer1;
+  int b[10];
+  int spacer2;
+  VALGRIND_MAKE_NOACCESS(&spacer0, sizeof(int));
+  VALGRIND_MAKE_NOACCESS(&spacer1, sizeof(int));
+  VALGRIND_MAKE_NOACCESS(&spacer2, sizeof(int));
+  a[10] = 99;
+}]]></programlisting>
+
+<para>Now the invalid write is certain to hit
+<computeroutput>spacer0</computeroutput> or
+<computeroutput>spacer1</computeroutput>, so Valgrind will spot
+the error.</para>
+
+<para>There are two complications.</para>
+
+<orderedlist>
+
+  <listitem>
+    <para>The first is that we don't want to annotate sources by
+    hand, so the Right Thing to do is to write a C/C++ parser,
+    annotator, prettyprinter which does this automatically, and
+    run it on post-CPP'd C/C++ source.  See
+    http://www.cacheprof.org for an example of a system which
+    transparently inserts another phase into the gcc/g++
+    compilation route.  The parser/prettyprinter is probably not
+    as hard as it sounds; I would write it in Haskell, a powerful
+    functional language well suited to doing symbolic
+    computation, with which I am intimately familar.  There is
+    already a C parser written in Haskell by someone in the
+    Haskell community, and that would probably be a good starting
+    point.</para>
+  </listitem>
+
+
+  <listitem>
+    <para>The second complication is how to get rid of these
+    <computeroutput>NOACCESS</computeroutput> records inside
+    Valgrind when the instrumented function exits; after all,
+    these refer to stack addresses and will make no sense
+    whatever when some other function happens to re-use the same
+    stack address range, probably shortly afterwards.  I think I
+    would be inclined to define a special stack-specific
+    macro:</para>
+<programlisting><![CDATA[
+  VALGRIND_MAKE_NOACCESS_STACK(addr, len)]]></programlisting>
+    <para>which causes Valgrind to record the client's
+    <computeroutput>%ESP</computeroutput> at the time it is
+    executed.  Valgrind will then watch for changes in
+    <computeroutput>%ESP</computeroutput> and discard such
+    records as soon as the protected area is uncovered by an
+    increase in <computeroutput>%ESP</computeroutput>.  I
+    hesitate with this scheme only because it is potentially
+    expensive, if there are hundreds of such records, and
+    considering that changes in
+    <computeroutput>%ESP</computeroutput> already require
+    expensive messing with stack access permissions.</para>
+  </listitem>
+</orderedlist>
+
+<para>This is probably easier and more robust than for the
+instrumenter program to try and spot all exit points for the
+procedure and place suitable deallocation annotations there.
+Plus C++ procedures can bomb out at any point if they get an
+exception, so spotting return points at the source level just
+won't work at all.</para>
+
+<para>Although some work, it's all eminently doable, and it would
+make Valgrind into an even-more-useful tool.</para>
+
+</sect3>
+
+</sect2>
+
+</sect1>
+</chapter>

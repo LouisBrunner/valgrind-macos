@@ -1,0 +1,57 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="hg-manual" xreflabel="Helgrind: a data-race detector">
+  <title>Helgrind: a data-race detector</title>
+
+<para>Helgrind is a Valgrind tool for detecting data races in C
+and C++ programs that use the Pthreads library.</para>
+
+<para>To use this tool, you specify
+<computeroutput>--tool=helgrind</computeroutput> on the Valgrind
+command line.</para>
+
+<para>It uses the Eraser algorithm described in:
+
+ <address>Eraser: A Dynamic Data Race Detector for Multithreaded Programs
+  Stefan Savage, Michael Burrows, Greg Nelson, Patrick Sobalvarro and Thomas Anderson
+  ACM Transactions on Computer Systems, 15(4):391-411
+  November 1997.
+ </address>
+</para>
+
+<para>We also incorporate significant improvements from this paper:
+
+ <address>Runtime Checking of Multithreaded Applications with Visual Threads
+  Jerry J. Harrow, Jr.
+  Proceedings of the 7th International SPIN Workshop on Model Checking of Software
+  Stanford, California, USA
+  August 2000
+  LNCS 1885, pp331--342
+  K. Havelund, J. Penix, and W. Visser, editors.
+ </address>
+</para>
+
+<para>Basically what Helgrind does is to look for memory
+locations which are accessed by more than one thread.  For each
+such location, Helgrind records which of the program's
+(pthread_mutex_)locks were held by the accessing thread at the
+time of the access.  The hope is to discover that there is indeed
+at least one lock which is used by all threads to protect that
+location.  If no such lock can be found, then there is
+(apparently) no consistent locking strategy being applied for
+that location, and so a possible data race might result.</para>
+
+<para>Helgrind also allows for "thread segment lifetimes".  If
+the execution of two threads cannot overlap -- for example, if
+your main thread waits on another thread with a
+<computeroutput>pthread_join()</computeroutput> operation -- they
+can both access the same variable without holding a lock.</para>
+
+<para>There's a lot of other sophistication in Helgrind, aimed at
+reducing the number of false reports, and at producing useful
+error reports.  We hope to have more documentation one
+day...</para>
+
+</chapter>

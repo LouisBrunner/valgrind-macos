@@ -1,0 +1,22 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="nl-manual" xreflabel="Nulgrind">
+
+<title>Nulgrind: the ``null'' tool</title>
+<subtitle>A tool that does not very much at all</subtitle>
+
+<para>Nulgrind is the minimal tool for Valgrind.  It does no
+initialisation or finalisation, and adds no instrumentation to
+the program's code.  It is mainly of use for Valgrind's
+developers for debugging and regression testing.</para>
+
+<para>Nonetheless you can run programs with Nulgrind.  They will
+run roughly 5 times more slowly than normal, for no useful
+effect.  Note that you need to use the option
+<computeroutput>--tool=none</computeroutput> to run Nulgrind
+(ie. not <computeroutput>--tool=nulgrind</computeroutput>).</para>
+
+</chapter>
+

@@ -1,3 +1,1 @@
-docdir = $(datadir)/doc/valgrind
-
-dist_doc_DATA = nl_main.html
+EXTRA_DIST = nl-manual.xml

@@ -1,3 +1,1 @@
-docdir = $(datadir)/doc/valgrind
-
-dist_doc_DATA = cg_main.html cg_techdocs.html 
+EXTRA_DIST = cg-manual.xml cg-tech-docs.xml 

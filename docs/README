@@ -1,0 +1,166 @@
+Valgrind Documentation
+----------------------
+This text assumes the following directory structure:
+
+Distribution text files (eg. README):
+  valgrind/
+
+Main /docs/ dir:
+  valgrind/docs/
+
+Top-level XML files: 
+  valgrind/docs/xml/
+
+Tool specific XML docs:
+  valgrind/<toolname>/docs/
+
+All images used in the docs:
+  valgrind/docs/images/
+
+Stylesheets, catalogs, parsing/formatting scripts:
+  valgrind/docs/lib/
+
+Some files of note:
+  docs/xml/index.xml:       Top-level book-set wrapper
+  docs/xml/FAQ.xml:         The FAQ
+  docs/xml/vg-entities.xml: Various strings, dates etc. used all over
+  docs/xml/xml_help.txt:    Basic guide to common XML tags.
+
+
+Overview
+---------
+The Documentation Set contains all books, articles,
+etc. pertaining to Valgrind, and is designed to be built as:
+- chunked html files
+- PDF file
+- PS file
+
+The whole thing is a "book set", made up of multiple books (the user
+manual, the FAQ, the tech-docs, the licenses).  Each book could be
+made individually, but the build system doesn't do that.
+
+CSS: the style-sheet used by the docs is the same as that used by the
+website (consistency is king).  It might be worth doing a pre-build diff
+to check whether the website stylesheet has changed.
+
+
+The build process
+-----------------
+It's not obvious exactly when things get built, and so on.  Here's an
+overview:
+
+- The HTML docs can be built manually by running 'make html-docs' in
+  valgrind/docs/.  (Don't use 'make html'; that is a valid built-in
+  automake target, but does nothing.)  Likewise for PDF/PS with 'make
+  print-docs'.
+
+- 'make dist' puts the XML files into the tarball.  It also builds the
+  HTML docs and puts them in too, in valgrind/docs/html/ (including
+  style sheets, images, etc).
+
+- 'make install' installs the HTML docs in
+  $(install)/share/doc/valgrind/html/, if they are present.  (They will
+  be present if you are installing from the result of a 'make dist'.
+  They might not be present if you are developing in a Subversion
+  workspace and have not built them.)  It doesn't install the XML docs,
+  as they're not useful installed.
+
+If the XML processing tools ever mature enough to become standard, we
+could just build the docs from XML when doing 'make install', which
+would be simpler.
+
+
+The XML Toolchain
+------------------
+I spent some time on the docbook-apps list in order to ascertain
+the most-useful / widely-available / least-fragile / advanced
+toolchain.  Basically, everything has problems of one sort or
+another, so I ended up going with what I felt was the
+least-problematical of the various options.
+
+The maintainer is responsible for ensure the following tools are
+present on his system:
+- xmllint:   using libxml version 20607
+- xsltproc:  using libxml 20607, libxslt 10102 and libexslt 802
+             (Nb:be sure to use a version based on libxml2 
+              version 2.6.11 or later.  There was a bug in 
+	            xml:base processing in versions before that.)
+- pdfxmltex: pdfTeX (Web2C 7.4.5) 3.14159-1.10b
+- pdftops:   version 3.00
+- DocBook:   version 4.2
+- bzip2
+- lynx
+
+A big problem is latency.  Norman Walsh is constantly updating
+DocBook, but the tools tend to lag behind somewhat.  It is
+important that the versions get on with each other.  If you
+decide to upgrade something, then it is your responsibility to
+ascertain whether things still work nicely - this *cannot* be
+assumed.
+
+Print output: if make expires with an error, cat output.
+If you see something like this:
+  ! TeX capacity exceeded, sorry [pool size=436070]
+
+then look at this:
+  http://lists.debian.org/debian-doc/2003/12/msg00020.html
+and modify your texmf files accordingly.
+
+
+Catalog Locations
+------------------
+oasis:
+http://www.oasis-open.org/docbook/xml/4.2/catalog.xml
+http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd
+
+Suse 9.1: 
+/usr/share/xml/docbook/ stylesheet/nwalsh/1.64.1/html/docbook.xsl
+/usr/share/xml/docbook/ schema/dtd/4.2/docbookx.dtd
+/usr/share/xml/docbook/ schema/dtd/4.2/catalog.xml
+
+
+Notes:
+------
+- the end of file.xml must have only ONE newline after the last tag:
+  </book>
+
+- pdfxmltex barfs if given a filename with an underscore in it
+  
+
+References:
+----------
+- samba have got all the stuff
+http://websvn.samba.org/listing.php?rep=4&path=/trunk/&opt=dir&sc=1
+
+excellent on-line howto reference:
+- http://www.cogent.ca/
+
+using automake with docbook:
+- http://www.movement.uklinux.net/docs/docbook-autotools/index.html
+
+Debugging catalog processing:
+- http://xmlsoft.org/catalog.html#Declaring
+  xmlcatalog -v <catalog-file>
+
+shell script to generate xml catalogs for docbook 4.1.2:
+- http://xmlsoft.org/XSLT/docbook.html
+
+configure.in re pdfxmltex
+- http://cvs.sourceforge.net/viewcvs.py/logreport/service/configure.in?rev=1.325
+
+some useful xls stylesheets in cvs:
+- http://cvs.sourceforge.net/viewcvs.py/perl-xml/perl-xml-faq/
+
+
+TODO:
+----
+- get rid of blank pages in fo output
+- concat titlepage + subtitle page in fo output
+- generate an index for the user manual (??)
+- fix tex so it does not run out of memory
+- run through and check for not-linked hrefs: grep on 'http'
+- run through and check for bad email addresses: grep on '@' etc.
+- when we move to svn, change all refs to sourceforge.cvs
+- go through and wrap refs+addresses in '<address>' tags
+
+

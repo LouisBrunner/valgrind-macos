@@ -1,0 +1,1248 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"[
+<!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities;
+]>
+
+<chapter id="writing-tools" xreflabel="Writing a New Valgrind Tool">
+<title>Writing a New Valgrind Tool</title>
+
+<sect1 id="writing-tools.intro" xreflabel="Introduction">
+<title>Introduction</title>
+
+<sect2 id="writing-tools.supexec" xreflabel="Supervised Execution">
+<title>Supervised Execution</title>
+
+<para>Valgrind provides a generic infrastructure for supervising
+the execution of programs.  This is done by providing a way to
+instrument programs in very precise ways, making it relatively
+easy to support activities such as dynamic error detection and
+profiling.</para>
+
+<para>Although writing a tool is not easy, and requires learning
+quite a few things about Valgrind, it is much easier than
+instrumenting a program from scratch yourself.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.tools" xreflabel="Tools">
+<title>Tools</title>
+
+<para>The key idea behind Valgrind's architecture is the division
+between its "core" and "tools".</para>
+
+<para>The core provides the common low-level infrastructure to
+support program instrumentation, including the x86-to-x86 JIT
+compiler, low-level memory manager, signal handling and a
+scheduler (for pthreads).  It also provides certain services that
+are useful to some but not all tools, such as support for error
+recording and suppression.</para>
+
+<para>But the core leaves certain operations undefined, which
+must be filled by tools.  Most notably, tools define how program
+code should be instrumented.  They can also define certain
+variables to indicate to the core that they would like to use
+certain services, or be notified when certain interesting events
+occur.  But the core takes care of all the hard work.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.execspaces" xreflabel="Execution Spaces">
+<title>Execution Spaces</title>
+
+<para>An important concept to understand before writing a tool is
+that there are three spaces in which program code executes:</para>
+
+
+<orderedlist>
+
+ <listitem>
+  <para>User space: this covers most of the program's execution.
+  The tool is given the code and can instrument it any way it
+  likes, providing (more or less) total control over the
+  code.</para>
+
+  <para>Code executed in user space includes all the program
+  code, almost all of the C library (including things like the
+  dynamic linker), and almost all parts of all other
+  libraries.</para>
+ </listitem>
+
+  <listitem>
+   <para>Core space: a small proportion of the program's execution
+   takes place entirely within Valgrind's core.  This includes:</para>
+   <itemizedlist>
+    <listitem>
+      <para>Dynamic memory management 
+      (<computeroutput>malloc()</computeroutput> etc.)</para>
+    </listitem>
+    <listitem>
+     <para>Pthread operations and scheduling</para>
+    </listitem>
+    <listitem>
+     <para>Signal handling</para>
+    </listitem>
+   </itemizedlist>
+
+   <para>A tool has no control over these operations; it never
+   "sees" the code doing this work and thus cannot instrument it.
+   However, the core provides hooks so a tool can be notified
+   when certain interesting events happen, for example when when
+   dynamic memory is allocated or freed, the stack pointer is
+   changed, or a pthread mutex is locked, etc.</para>
+
+   <para>Note that these hooks only notify tools of events
+   relevant to user space.  For example, when the core allocates
+   some memory for its own use, the tool is not notified of this,
+   because it's not directly part of the supervised program's
+   execution.</para>
+  </listitem>
+
+  <listitem>
+   <para>Kernel space: execution in the kernel.  Two kinds:</para>
+    <orderedlist>
+     <listitem>
+      <para>System calls: can't be directly observed by either
+      the tool or the core.  But the core does have some idea of
+      what happens to the arguments, and it provides hooks for a
+      tool to wrap system calls.</para>
+     </listitem>
+     <listitem>
+      <para>Other: all other kernel activity (e.g. process
+      scheduling) is totally opaque and irrelevant to the
+      program.</para>
+     </listitem>
+    </orderedlist>
+  </listitem>
+
+  <listitem>
+   <para>It should be noted that a tool only has direct control
+   over code executed in user space.  This is the vast majority
+   of code executed, but it is not absolutely all of it, so any
+   profiling information recorded by a tool won't be totally
+   accurate.</para>
+  </listitem>
+
+</orderedlist>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="writing-tools.writingatool" xreflabel="Writing a Tool">
+<title>Writing a Tool</title>
+
+
+<sect2 id="writing-tools.whywriteatool" xreflabel="Why write a tool?">
+<title>Why write a tool?</title>
+
+<para>Before you write a tool, you should have some idea of what
+it should do.  What is it you want to know about your programs of
+interest?  Consider some existing tools:</para>
+
+<itemizedlist>
+
+ <listitem>
+  <para><command>memcheck</command>: among other things, performs
+  fine-grained validity and addressibility checks of every memory
+  reference performed by the program.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>addrcheck</command>: performs lighterweight
+  addressibility checks of every memory reference performed by
+  the program.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>cachegrind</command>: tracks every instruction
+  and memory reference to simulate instruction and data caches,
+  tracking cache accesses and misses that occur on every line in
+  the program.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>helgrind</command>: tracks every memory access
+  and mutex lock/unlock to determine if a program contains any
+  data races.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>lackey</command>: does simple counting of
+  various things: the number of calls to a particular function
+  (<computeroutput>_dl_runtime_resolve()</computeroutput>); the
+  number of basic blocks, x86 instruction, UCode instructions
+  executed; the number of branches executed and the proportion of
+  those which were taken.</para>
+ </listitem>
+</itemizedlist>
+
+<para>These examples give a reasonable idea of what kinds of
+things Valgrind can be used for.  The instrumentation can range
+from very lightweight (e.g. counting the number of times a
+particular function is called) to very intrusive (e.g.
+memcheck's memory checking).</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.suggestedtools" xreflabel="Suggested tools">
+<title>Suggested tools</title>
+
+<para>Here is a list of ideas we have had for tools that should
+not be too hard to implement.</para>
+
+<itemizedlist>
+ <listitem>
+  <para><command>branch profiler</command>: A machine's branch
+  prediction hardware could be simulated, and each branch
+  annotated with the number of predicted and mispredicted
+  branches.  Would be implemented quite similarly to Cachegrind,
+  and could reuse the
+  <computeroutput>cg_annotate</computeroutput> script to annotate
+  source code.</para>
+
+  <para>The biggest difficulty with this is the simulation; the
+  chip-makers are very cagey about how their chips do branch
+  prediction.  But implementing one or more of the basic
+  algorithms could still give good information.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>coverage tool</command>: Cachegrind can already
+  be used for doing test coverage, but it's massive overkill to
+  use it just for that.</para>
+
+  <para>It would be easy to write a coverage tool that records
+  how many times each basic block was recorded.  Again, the
+  <computeroutput>cg_annotate</computeroutput> script could be
+  used for annotating source code with the gathered information.
+  Although, <computeroutput>cg_annotate</computeroutput> is only
+  designed for working with single program runs.  It could be
+  extended relatively easily to deal with multiple runs of a
+  program, so that the coverage of a whole test suite could be
+  determined.</para>
+
+  <para>In addition to the standard coverage information, such a
+  tool could record extra information that would help a user
+  generate test cases to exercise unexercised paths.  For
+  example, for each conditional branch, the tool could record all
+  inputs to the conditional test, and print these out when
+  annotating.</para>
+ </listitem>
+
+ <listitem>
+  <para><command>run-time type checking</command>: A nice example
+  of a dynamic checker is given in this paper:</para>
+  <address>Debugging via Run-Time Type Checking
+  Alexey Loginov, Suan Hsi Yong, Susan Horwitz and Thomas Reps
+  Proceedings of Fundamental Approaches to Software Engineering
+  April 2001.
+  </address>
+
+  <para>Similar is the tool described in this paper:</para>
+  <address>Run-Time Type Checking for Binary Programs
+  Michael Burrows, Stephen N. Freund, Janet L. Wiener
+  Proceedings of the 12th International Conference on Compiler Construction (CC 2003)
+  April 2003.
+  </address>
+
+  <para>This approach can find quite a range of bugs,
+  particularly in C and C++ programs, and could be implemented
+  quite nicely as a Valgrind tool.</para>
+
+  <para>Ways to speed up this run-time type checking are
+  described in this paper:</para>
+  <address>Reducing the Overhead of Dynamic Analysis
+  Suan Hsi Yong and Susan Horwitz
+  Proceedings of Runtime Verification '02
+  July 2002.
+  </address>
+
+  <para>Valgrind's client requests could be used to pass
+  information to a tool about which elements need instrumentation
+  and which don't.</para>
+ </listitem>
+</itemizedlist>
+
+<para>We would love to hear from anyone who implements these or
+other tools.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.howtoolswork" xreflabel="How tools work">
+<title>How tools work</title>
+
+<para>Tools must define various functions for instrumenting
+programs that are called by Valgrind's core, yet they must be
+implemented in such a way that they can be written and compiled
+without touching Valgrind's core.  This is important, because one
+of our aims is to allow people to write and distribute their own
+tools that can be plugged into Valgrind's core easily.</para>
+
+<para>This is achieved by packaging each tool into a separate
+shared object which is then loaded ahead of the core shared
+object <computeroutput>valgrind.so</computeroutput>, using the
+dynamic linker's <computeroutput>LD_PRELOAD</computeroutput>
+variable.  Any functions defined in the tool that share the name
+with a function defined in core (such as the instrumentation
+function <computeroutput>SK_(instrument)()</computeroutput>)
+override the core's definition.  Thus the core can call the
+necessary tool functions.</para>
+
+<para>This magic is all done for you; the shared object used is
+chosen with the <computeroutput>--tool</computeroutput> option to
+the <computeroutput>valgrind</computeroutput> startup script.
+The default tool used is
+<computeroutput>memcheck</computeroutput>, Valgrind's original
+memory checker.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.gettingcode" xreflabel="Getting the code">
+<title>Getting the code</title>
+
+<para>To write your own tool, you'll need to check out a copy of
+Valgrind from the CVS repository, rather than using a packaged
+distribution.  This is because it contains several extra files
+needed for writing tools.</para>
+
+<para>To check out the code from the CVS repository, first login:</para>
+<programlisting><![CDATA[
+cvs -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind
+login]]></programlisting>
+
+<para>Then checkout the code.  To get a copy of the current
+development version (recommended for the brave only):</para>
+<programlisting><![CDATA[
+cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind 
+co valgrind]]></programlisting>
+
+<para>To get a copy of the stable released branch:</para>
+<programlisting><![CDATA[
+cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind
+co -r <TAG> valgrind]]></programlisting>
+
+<para>where &lt;<computeroutput>TAG</computeroutput>&gt; has the
+form <computeroutput>VALGRIND_X_Y_Z</computeroutput> for version
+X.Y.Z.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.gettingstarted" xreflabel="Getting started">
+<title>Getting started</title>
+
+<para>Valgrind uses GNU <computeroutput>automake</computeroutput>
+and <computeroutput>autoconf</computeroutput> for the creation of
+Makefiles and configuration.  But don't worry, these instructions
+should be enough to get you started even if you know nothing
+about those tools.</para>
+
+<para>In what follows, all filenames are relative to Valgrind's
+top-level directory <computeroutput>valgrind/</computeroutput>.</para>
+
+<orderedlist>
+ <listitem>
+  <para>Choose a name for the tool, and an abbreviation that can
+  be used as a short prefix.  We'll use
+  <computeroutput>foobar</computeroutput> and
+  <computeroutput>fb</computeroutput> as an example.</para>
+ </listitem>
+
+ <listitem>
+  <para>Make a new directory
+  <computeroutput>foobar/</computeroutput> which will hold the
+  tool.</para>
+ </listitem>
+
+ <listitem>
+  <para>Copy <computeroutput>none/Makefile.am</computeroutput>
+  into <computeroutput>foobar/</computeroutput>.  Edit it by
+  replacing all occurrences of the string
+  <computeroutput>"none"</computeroutput> with
+  <computeroutput>"foobar"</computeroutput> and the one
+  occurrence of the string <computeroutput>"nl_"</computeroutput>
+  with <computeroutput>"fb_"</computeroutput>.  It might be worth
+  trying to understand this file, at least a little; you might
+  have to do more complicated things with it later on.  In
+  particular, the name of the
+  <computeroutput>vgskin_foobar_so_SOURCES</computeroutput>
+  variable determines the name of the tool's shared object, which
+  determines what name must be passed to the
+  <computeroutput>--tool</computeroutput> option to use the
+  tool.</para>
+ </listitem>
+
+ <listitem>
+  <para>Copy <filename>none/nl_main.c</filename> into
+  <computeroutput>foobar/</computeroutput>, renaming it as
+  <filename>fb_main.c</filename>.  Edit it by changing the lines
+  in <computeroutput>SK_(pre_clo_init)()</computeroutput> to
+  something appropriate for the tool.  These fields are used in
+  the startup message, except for
+  <computeroutput>bug_reports_to</computeroutput> which is used
+  if a tool assertion fails.</para>
+ </listitem>
+
+  <listitem>
+   <para>Edit <computeroutput>Makefile.am</computeroutput>,
+   adding the new directory
+   <computeroutput>foobar</computeroutput> to the
+   <computeroutput>SUBDIRS</computeroutput> variable.</para>
+  </listitem>
+
+  <listitem>
+   <para>Edit <computeroutput>configure.in</computeroutput>,
+   adding <computeroutput>foobar/Makefile</computeroutput> to the
+   <computeroutput>AC_OUTPUT</computeroutput> list.</para>
+  </listitem>
+
+  <listitem>
+   <para>Run:</para>
+<programlisting><![CDATA[
+  autogen.sh
+  ./configure --prefix=`pwd`/inst
+  make install]]></programlisting>
+
+   <para>It should automake, configure and compile without
+   errors, putting copies of the tool's shared object
+   <computeroutput>vgskin_foobar.so</computeroutput> in
+   <computeroutput>foobar/</computeroutput> and
+   <computeroutput>inst/lib/valgrind/</computeroutput>.</para>
+  </listitem>
+
+  <listitem>
+   <para>You can test it with a command like:</para>
+<programlisting><![CDATA[
+  inst/bin/valgrind --tool=foobar date]]></programlisting>
+
+   <para>(almost any program should work;
+   <computeroutput>date</computeroutput> is just an example).
+   The output should be something like this:</para>
+<programlisting><![CDATA[
+  ==738== foobar-0.0.1, a foobarring tool for x86-linux.
+  ==738== Copyright (C) 1066AD, and GNU GPL'd, by J. Random Hacker.
+  ==738== Built with valgrind-1.1.0, a program execution monitor.
+  ==738== Copyright (C) 2000-2003, and GNU GPL'd, by Julian Seward.
+  ==738== Estimated CPU clock rate is 1400 MHz
+  ==738== For more details, rerun with: -v
+  ==738== Wed Sep 25 10:31:54 BST 2002
+  ==738==]]></programlisting>
+
+   <para>The tool does nothing except run the program
+   uninstrumented.</para>
+  </listitem>
+
+</orderedlist>
+
+<para>These steps don't have to be followed exactly - you can
+choose different names for your source files, and use a different
+<computeroutput>--prefix</computeroutput> for
+<computeroutput>./configure</computeroutput>.</para>
+
+<para>Now that we've setup, built and tested the simplest
+possible tool, onto the interesting stuff...</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.writingcode" xreflabel="Writing the Code">
+<title>Writing the code</title>
+
+<para>A tool must define at least these four functions:</para>
+<programlisting><![CDATA[
+  SK_(pre_clo_init)()
+  SK_(post_clo_init)()
+  SK_(instrument)()
+  SK_(fini)()]]></programlisting>
+
+<para>Also, it must use the macro
+<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput>
+exactly once in its source code.  If it doesn't, you will get a
+link error involving
+<computeroutput>VG_(skin_interface_major_version)</computeroutput>.
+This macro is used to ensure the core/tool interface used by the
+core and a plugged-in tool are binary compatible.</para>
+
+<para>In addition, if a tool wants to use some of the optional
+services provided by the core, it may have to define other
+functions.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.init" xreflabel="Initialisation">
+<title>Initialisation</title>
+
+<para>Most of the initialisation should be done in
+<computeroutput>SK_(pre_clo_init)()</computeroutput>.  Only use
+<computeroutput>SK_(post_clo_init)()</computeroutput> if a tool
+provides command line options and must do some initialisation
+after option processing takes place
+(<computeroutput>"clo"</computeroutput> stands for "command line
+options").</para>
+
+<para>First of all, various "details" need to be set for a tool,
+using the functions
+<computeroutput>VG_(details_*)()</computeroutput>.  Some are all
+compulsory, some aren't.  Some are used when constructing the
+startup message,
+<computeroutput>detail_bug_reports_to</computeroutput> is used if
+<computeroutput>VG_(skin_panic)()</computeroutput> is ever
+called, or a tool assertion fails.  Others have other uses.</para>
+
+<para>Second, various "needs" can be set for a tool, using the
+functions <computeroutput>VG_(needs_*)()</computeroutput>.  They
+are mostly booleans, and can be left untouched (they default to
+<computeroutput>False</computeroutput>).  They determine whether
+a tool can do various things such as: record, report and suppress
+errors; process command line options; wrap system calls; record
+extra information about malloc'd blocks, etc.</para>
+
+<para>For example, if a tool wants the core's help in recording
+and reporting errors, it must set the
+<computeroutput>skin_errors</computeroutput> need to
+<computeroutput>True</computeroutput>, and then provide
+definitions of six functions for comparing errors, printing out
+errors, reading suppressions from a suppressions file, etc.
+While writing these functions requires some work, it's much less
+than doing error handling from scratch because the core is doing
+most of the work.  See the type
+<computeroutput>VgNeeds</computeroutput> in
+<filename>include/vg_skin.h</filename> for full details of all
+the needs.</para>
+
+<para>Third, the tool can indicate which events in core it wants
+to be notified about, using the functions
+<computeroutput>VG_(track_*)()</computeroutput>.  These include
+things such as blocks of memory being malloc'd, the stack pointer
+changing, a mutex being locked, etc.  If a tool wants to know
+about this, it should set the relevant pointer in the structure
+to point to a function, which will be called when that event
+happens.</para>
+
+<para>For example, if the tool want to be notified when a new
+block of memory is malloc'd, it should call
+<computeroutput>VG_(track_new_mem_heap)()</computeroutput> with
+an appropriate function pointer, and the assigned function will
+be called each time this happens.</para>
+
+<para>More information about "details", "needs" and "trackable
+events" can be found in
+<filename>include/vg_skin.h</filename>.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.instr" xreflabel="Instrumentation">
+<title>Instrumentation</title>
+
+<para><computeroutput>SK_(instrument)()</computeroutput> is the
+interesting one.  It allows you to instrument
+<emphasis>UCode</emphasis>, which is Valgrind's RISC-like
+intermediate language.  UCode is described in 
+<xref linkend="mc-tech-docs.ucode"/>.</para>
+
+<para>The easiest way to instrument UCode is to insert calls to C
+functions when interesting things happen.  See the tool "Lackey"
+(<filename>lackey/lk_main.c</filename>) for a simple example of
+this, or Cachegrind (<filename>cachegrind/cg_main.c</filename>)
+for a more complex example.</para>
+
+<para>A much more complicated way to instrument UCode, albeit one
+that might result in faster instrumented programs, is to extend
+UCode with new UCode instructions.  This is recommended for
+advanced Valgrind hackers only!  See Memcheck for an example.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.fini" xreflabel="Finalisation">
+<title>Finalisation</title>
+
+<para>This is where you can present the final results, such as a
+summary of the information collected.  Any log files should be
+written out at this point.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.otherinfo" xreflabel="Other Important Information">
+<title>Other Important Information</title>
+
+<para>Please note that the core/tool split infrastructure is
+quite complex and not brilliantly documented.  Here are some
+important points, but there are undoubtedly many others that I
+should note but haven't thought of.</para>
+
+<para>The file <filename>include/vg_skin.h</filename> contains
+all the types, macros, functions, etc. that a tool should
+(hopefully) need, and is the only <filename>.h</filename> file a
+tool should need to
+<computeroutput>#include</computeroutput>.</para>
+
+<para>In particular, you probably shouldn't use anything from the
+C library (there are deep reasons for this, trust us).  Valgrind
+provides an implementation of a reasonable subset of the C
+library, details of which are in
+<filename>vg_skin.h</filename>.</para>
+
+<para>Similarly, when writing a tool, you shouldn't need to look
+at any of the code in Valgrind's core.  Although it might be
+useful sometimes to help understand something.</para>
+
+<para><filename>vg_skin.h</filename> has a reasonable amount of
+documentation in it that should hopefully be enough to get you
+going.  But ultimately, the tools distributed (Memcheck,
+Addrcheck, Cachegrind, Lackey, etc.) are probably the best
+documentation of all, for the moment.</para>
+
+<para>Note that the <computeroutput>VG_</computeroutput> and
+<computeroutput>SK_</computeroutput> macros are used heavily.
+These just prepend longer strings in front of names to avoid
+potential namespace clashes.  We strongly recommend using the
+<computeroutput>SK_</computeroutput> macro for any global
+functions and variables in your tool, or writing a similar
+macro.</para>
+
+</sect2>
+
+
+<sect2 id="writing-tools.advice" xreflabel="Words of Advice">
+<title>Words of Advice</title>
+
+<para>Writing and debugging tools is not trivial.  Here are some
+suggestions for solving common problems.</para>
+
+
+<sect3 id="writing-tools.segfaults">
+<title>Segmentation Faults</title>
+
+<para>If you are getting segmentation faults in C functions used
+by your tool, the usual GDB command:</para>
+<screen><![CDATA[
+  gdb <prog> core]]></screen>
+<para>usually gives the location of the segmentation fault.</para>
+
+</sect3>
+
+
+<sect3 id="writing-tools.debugfns">
+<title>Debugging C functions</title>
+
+<para>If you want to debug C functions used by your tool, you can
+attach GDB to Valgrind with some effort:</para>
+<orderedlist>
+ <listitem>
+  <para>Enable the following code in
+  <filename>coregrind/vg_main.c</filename> by changing
+  <computeroutput>if (0)</computeroutput> 
+  into <computeroutput>if (1)</computeroutput>:
+<programlisting><![CDATA[
+  /* Hook to delay things long enough so we can get the pid and
+     attach GDB in another shell. */
+  if (0) { 
+    Int p, q;
+    for ( p = 0; p < 50000; p++ )
+      for ( q = 0; q < 50000; q++ ) ;
+  }]]></programlisting>
+  and rebuild Valgrind.</para>
+ </listitem>
+
+ <listitem>
+  <para>Then run:</para>
+<programlisting><![CDATA[
+  valgrind <prog>]]></programlisting>
+  <para>Valgrind starts the program, printing its process id, and
+  then delays for a few seconds (you may have to change the loop
+  bounds to get a suitable delay).</para>
+ </listitem>
+
+ <listitem>
+  <para>In a second shell run:</para>
+<programlisting><![CDATA[
+  gdb <prog pid>]]></programlisting>
+ </listitem>
+
+</orderedlist>
+
+<para>GDB may be able to give you useful information.  Note that
+by default most of the system is built with
+<computeroutput>-fomit-frame-pointer</computeroutput>, and you'll
+need to get rid of this to extract useful tracebacks from GDB.</para>
+
+</sect3>
+
+
+<sect3 id="writing-tools.ucode-probs">
+<title>UCode Instrumentation Problems</title>
+
+<para>If you are having problems with your UCode instrumentation,
+it's likely that GDB won't be able to help at all.  In this case,
+Valgrind's <computeroutput>--trace-codegen</computeroutput>
+option is invaluable for observing the results of
+instrumentation.</para>
+
+</sect3>
+
+
+<sect3 id="writing-tools.misc">
+<title>Miscellaneous</title>
+
+<para>If you just want to know whether a program point has been
+reached, using the <computeroutput>OINK</computeroutput> macro
+(in <filename>include/vg_skin.h</filename>) can be easier than
+using GDB.</para>
+
+<para>The other debugging command line options can be useful too
+(run <computeroutput>valgrind -h</computeroutput> for the
+list).</para>
+
+</sect3>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="writing-tools.advtopics" xreflabel="Advanced Topics">
+<title>Advanced Topics</title>
+
+<para>Once a tool becomes more complicated, there are some extra
+things you may want/need to do.</para>
+
+<sect2 id="writing-tools.suppressions" xreflabel="Suppressions">
+<title>Suppressions</title>
+
+<para>If your tool reports errors and you want to suppress some
+common ones, you can add suppressions to the suppression files.
+The relevant files are
+<computeroutput>valgrind/*.supp</computeroutput>; the final
+suppression file is aggregated from these files by combining the
+relevant <computeroutput>.supp</computeroutput> files depending
+on the versions of linux, X and glibc on a system.</para>
+
+<para>Suppression types have the form
+<computeroutput>tool_name:suppression_name</computeroutput>.  The
+<computeroutput>tool_name</computeroutput> here is the name you
+specify for the tool during initialisation with
+<computeroutput>VG_(details_name)()</computeroutput>.</para>
+
+</sect2>
+
+
+<!--
+<sect2 id="writing-tools.docs" xreflabel="Documentation">
+<title>Documentation</title>
+
+<para>As of version &rel-version;, Valgrind documentation has
+been converted to XML. Why? 
+See <ulink url="http://www.ucc.ie/xml/">The XML FAQ</ulink>.
+</para>
+
+
+<sect3 id="writing-tools.xml" xreflabel="The XML Toolchain">
+<title>The XML Toolchain</title>
+
+<para>If you are feeling conscientious and want to write some
+documentation for your tool, please use XML.  The Valgrind
+Docs use the following toolchain and versions:</para>
+
+<programlisting>
+ xmllint:   using libxml version 20607
+ xsltproc:  using libxml 20607, libxslt 10102 and libexslt 802
+ pdfxmltex: pdfTeX (Web2C 7.4.5) 3.14159-1.10b
+ pdftops:   version 3.00
+ DocBook:   version 4.2
+</programlisting>
+
+<para><command>Latency:</command> you should note that latency is
+a big problem: DocBook is constantly being updated, but the tools
+tend to lag behind somewhat.  It is important that the versions
+get on with each other, so if you decide to upgrade something,
+then you need to ascertain whether things still work nicely -
+this *cannot* be assumed.</para>
+
+<para><command>Stylesheets:</command> The Valgrind docs use
+various custom stylesheet layers, all of which are in
+<computeroutput>valgrind/docs/lib/</computeroutput>. You
+shouldn't need to modify these in any way.</para>
+
+<para><command>Catalogs:</command> Assuming that you have the
+various tools listed above installed, you will probably need to
+modify
+<computeroutput>valgrind/docs/lib/vg-catalog.xml</computeroutput>
+so that the parser can find your DocBook installation. Catalogs
+provide a mapping from generic addresses to specific local
+directories on a given machine.  Just add another
+<computeroutput>group</computeroutput> to this file, reflecting
+your local installation.</para>
+
+</sect3>
+
+
+<sect3 id="writing-tools.writing" xreflabel="Writing the Documentation">
+<title>Writing the Documentation</title>
+
+<para>If you aren't confident using XML, or you have problems
+with the toolchain, then write your documentation in text format,
+email it to
+<computeroutput>valgrind@valgrind.org</computeroutput>, and
+someone will convert it to XML for you.  Otherwise, follow these
+steps (using <computeroutput>foobar</computeroutput> as the
+example tool name again):</para>
+
+<orderedlist>
+
+  <listitem>
+   <para>Make a directory
+  <computeroutput>valgrind/foobar/docs/</computeroutput>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Copy the xml tool documentation template file 
+  <computeroutput>valgrind/docs/xml/tool-template.xml</computeroutput>
+  to <computeroutput>foobar/docs/</computeroutput>, and rename it
+  to
+  <computeroutput>foobar/docs/fb-manual.xml</computeroutput>.</para>
+  <para><command>Note</command>: there is a *really stupid* tetex
+  bug with underscores in filenames, so don't use '_'.</para>
+ </listitem>
+
+ <listitem>
+  <para>Write the documentation. There are some helpful bits and
+  pieces on using xml markup in
+  <filename>valgrind/docs/xml/xml_help.txt</filename>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Validate <computeroutput>foobar/docs/fb-manual.xml</computeroutput>
+  using the shell script
+  <filename>valgrind/docs/lib/xmlproc.sh</filename>.</para>
+<screen><![CDATA[
+% cd valgrind/docs/lib/
+% ./xmlproc.sh -valid ../../foobar/docs/fb-manual.xml
+]]></screen>
+
+   <para>If you have linked to other documents in the Valgrind
+   Documentation Set, you will get errors of the form:</para>
+
+<screen><![CDATA[
+fb-manual.xml:1632: element xref: validity error : 
+        IDREF attribute linkend references an unknown ID "mc-tech-docs"
+]]></screen>
+
+   <para>Ignore (only) these - they will disappear when
+   <filename>fb-manual.xml</filename> is integrated into the
+   Set.</para>
+
+  <para>Because the xml toolchain is fragile, it is important to
+  ensure that <computeroutput>fb-manual.xml</computeroutput> won't
+  break the documentation set build.  Note that just because an
+  xml file happily transforms to html does not necessarily mean
+  the same holds true for pdf/ps.</para>
+ </listitem>
+
+ <listitem>
+  <para>You can (re-)generate <filename>fb-manual.html</filename>
+  while you are writing <filename>fb-manual.xml</filename> to help
+  you see how it's looking.  The generated file
+  <filename>fb-manual.html</filename> will be output in
+  <computeroutput>foobar/docs/</computeroutput>.</para>
+
+<screen><![CDATA[
+% ./xmlproc.sh -html ../../foobar/docs/fb-manual.xml
+]]></screen>
+ </listitem>
+
+ <listitem>
+  <para>When you have finished, generate html, pdf and ps output
+  to check all is well:</para>
+
+<screen><![CDATA[
+% cp ../../foobar/fb-manual.xml .
+% ./xmlproc.sh -test fb-manual.xml
+]]></screen>
+
+   <para>Check the output files (<filename>index.html,
+   fb-manual.pdf, fb-manual.ps</filename>) in
+   <computeroutput>/lib/test/</computeroutput> with the relevant
+   viewers.  When you are happy and have finished tinkering with
+   <computeroutput>fb-manual.xml</computeroutput>:</para>
+
+<screen><![CDATA[
+% ./xmlproc.sh -clean fb-manual.xml
+]]></screen>
+</listitem>
+
+ <listitem>
+  <para>In order for your documentation to be included in the
+  User Manual, the relevant entries must be made in
+  <filename>/valgrind/docs/xml/vg-bookset.xml</filename> in this
+  format (hopefully, it should be pretty obvious):</para>
+
+<programlisting><![CDATA[
+<!ENTITY fb-manual   SYSTEM "../../foobar/docs/fb-manual.xml">
+... ...
+&fb-manual;
+]]></programlisting>
+
+  <para>Send a patch for this to
+  <computeroutput>valgrind@valgrind.org</computeroutput>.</para>
+
+  <para>To achieve true anality, try for a full doc-set build:</para>
+<screen><![CDATA[
+% cd valgrind/docs/
+% make all
+]]></screen>
+ </listitem>
+
+</orderedlist>
+
+</sect3>
+
+</sect2>
+-->
+<sect2 id="writing-tools.docs" xreflabel="Documentation">
+<title>Documentation</title>
+
+<para>As of version &rel-version;, Valgrind documentation has
+been converted to XML. Why? 
+See <ulink url="http://www.ucc.ie/xml/">The XML FAQ</ulink>.
+</para>
+
+
+<sect3 id="writing-tools.xml" xreflabel="The XML Toolchain">
+<title>The XML Toolchain</title>
+
+<para>If you are feeling conscientious and want to write some
+documentation for your tool, please use XML.  The Valgrind
+Docs use the following toolchain and versions:</para>
+
+<programlisting>
+ xmllint:   using libxml version 20607
+ xsltproc:  using libxml 20607, libxslt 10102 and libexslt 802
+ pdfxmltex: pdfTeX (Web2C 7.4.5) 3.14159-1.10b
+ pdftops:   version 3.00
+ DocBook:   version 4.2
+</programlisting>
+
+<para><command>Latency:</command> you should note that latency is
+a big problem: DocBook is constantly being updated, but the tools
+tend to lag behind somewhat.  It is important that the versions
+get on with each other, so if you decide to upgrade something,
+then you need to ascertain whether things still work nicely -
+this *cannot* be assumed.</para>
+
+<para><command>Stylesheets:</command> The Valgrind docs use
+various custom stylesheet layers, all of which are in
+<computeroutput>valgrind/docs/lib/</computeroutput>. You
+shouldn't need to modify these in any way.</para>
+
+<para><command>Catalogs:</command> Assuming that you have the
+various tools listed above installed, you will probably need to
+modify
+<computeroutput>valgrind/docs/lib/vg-catalog.xml</computeroutput>
+so that the parser can find your DocBook installation. Catalogs
+provide a mapping from generic addresses to specific local
+directories on a given machine.  Just add another
+<computeroutput>group</computeroutput> to this file, reflecting
+your local installation.</para>
+
+</sect3>
+
+
+<sect3 id="writing-tools.writing" xreflabel="Writing the Documentation">
+<title>Writing the Documentation</title>
+
+<para>Follow these steps (using <computeroutput>foobar</computeroutput>
+as the example tool name again):</para>
+
+<orderedlist>
+
+  <listitem>
+   <para>Make a directory
+  <computeroutput>valgrind/foobar/docs/</computeroutput>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Copy the XML documentation file for the tool Nulgrind from
+  <computeroutput>valgrind/none/docs/nl-manual.xml</computeroutput>
+  to <computeroutput>foobar/docs/</computeroutput>, and rename it
+  to
+  <computeroutput>foobar/docs/fb-manual.xml</computeroutput>.</para>
+  <para><command>Note</command>: there is a *really stupid* tetex
+  bug with underscores in filenames, so don't use '_'.</para>
+ </listitem>
+
+ <listitem>
+  <para>Write the documentation. There are some helpful bits and
+  pieces on using xml markup in
+  <filename>valgrind/docs/xml/xml_help.txt</filename>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Include it in the User Manual by adding the relevant entry must
+  be added to <filename>valgrind/docs/xml/manual.xml</filename>.  Copy
+  and edit an existing entry.</para>
+ </listitem>
+
+ <listitem>
+  <para>Validate <computeroutput>foobar/docs/fb-manual.xml</computeroutput>
+  using the following command from within <filename>valgrind/docs/</filename>:
+  </para>
+<screen><![CDATA[
+% make valid
+]]></screen>
+
+   <para>You will probably get errors that look like this:</para>
+
+<screen><![CDATA[
+./xml/index.xml:5: element chapter: validity error : No declaration for
+attribute base of element chapter
+]]></screen>
+
+  <para>Ignore (only) these -- they're not important.</para>
+
+  <para>Because the xml toolchain is fragile, it is important to
+  ensure that <filename>fb-manual.xml</filename> won't
+  break the documentation set build.  Note that just because an
+  xml file happily transforms to html does not necessarily mean
+  the same holds true for pdf/ps.</para>
+ </listitem>
+
+ <listitem>
+  <para>You can (re-)generate the HTML docs
+  while you are writing <filename>fb-manual.xml</filename> to help
+  you see how it's looking.  The generated files end up in
+  <filename>valgrind/docs/html/</filename>.  Use the following
+  command, within <filename>valgrind/docs/</filename>:</para>
+
+<screen><![CDATA[
+% make html-docs
+]]></screen>
+ </listitem>
+
+ <listitem>
+  <para>When you have finished, also generate pdf and ps output
+  to check all is well, from within <filename>valgrind/docs/</filename>:
+  </para>
+
+<screen><![CDATA[
+% make print-docs
+]]></screen>
+
+   <para>Check the output <filename>.pdf</filename> and
+   <filename>.ps</filename> files in
+   <computeroutput>valgrind/docs/print/</computeroutput>. 
+   </para>
+</listitem>
+
+</orderedlist>
+
+</sect3>
+
+</sect2>
+
+
+<sect2 id="writing-tools.regtests" xreflabel="Regression Tests">
+<title>Regression Tests</title>
+
+<para>Valgrind has some support for regression tests.  If you
+want to write regression tests for your tool:</para>
+
+<orderedlist>
+ <listitem>
+  <para>Make a directory
+  <computeroutput>foobar/tests/</computeroutput>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Edit <computeroutput>foobar/Makefile.am</computeroutput>,
+  adding <computeroutput>tests</computeroutput> to the
+  <computeroutput>SUBDIRS</computeroutput> variable.</para>
+ </listitem>
+
+ <listitem>
+  <para>Edit <computeroutput>configure.in</computeroutput>,
+  adding <computeroutput>foobar/tests/Makefile</computeroutput>
+  to the <computeroutput>AC_OUTPUT</computeroutput> list.</para>
+ </listitem>
+
+ <listitem>
+  <para>Write
+  <computeroutput>foobar/tests/Makefile.am</computeroutput>.  Use
+  <computeroutput>memcheck/tests/Makefile.am</computeroutput> as
+  an example.</para>
+ </listitem>
+
+ <listitem>
+  <para>Write the tests, <computeroutput>.vgtest</computeroutput>
+  test description files,
+  <computeroutput>.stdout.exp</computeroutput> and
+  <computeroutput>.stderr.exp</computeroutput> expected output
+  files.  (Note that Valgrind's output goes to stderr.)  Some
+  details on writing and running tests are given in the comments
+  at the top of the testing script
+  <computeroutput>tests/vg_regtest</computeroutput>.</para>
+ </listitem>
+
+ <listitem>
+  <para>Write a filter for stderr results
+  <computeroutput>foobar/tests/filter_stderr</computeroutput>.
+  It can call the existing filters in
+  <computeroutput>tests/</computeroutput>.  See
+  <computeroutput>memcheck/tests/filter_stderr</computeroutput>
+  for an example; in particular note the
+  <computeroutput>$dir</computeroutput> trick that ensures the
+  filter works correctly from any directory.</para>
+ </listitem>
+
+</orderedlist>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.profiling" xreflabel="Profiling">
+<title>Profiling</title>
+
+<para>To do simple tick-based profiling of a tool, include the
+line:</para>
+<programlisting><![CDATA[
+  #include "vg_profile.c"]]></programlisting>
+<para>in the tool somewhere, and rebuild (you may have to
+<computeroutput>make clean</computeroutput> first).  Then run
+Valgrind with the <computeroutput>--profile=yes</computeroutput>
+option.</para>
+
+<para>The profiler is stack-based; you can register a profiling
+event with
+<computeroutput>VGP_(register_profile_event)()</computeroutput>
+and then use the <computeroutput>VGP_PUSHCC</computeroutput> and
+<computeroutput>VGP_POPCC</computeroutput> macros to record time
+spent doing certain things.  New profiling event numbers must not
+overlap with the core profiling event numbers.  See
+<filename>include/vg_skin.h</filename> for details and Memcheck
+for an example.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.mkhackery" xreflabel="Other Makefile Hackery">
+<title>Other Makefile Hackery</title>
+
+<para>If you add any directories under
+<computeroutput>valgrind/foobar/</computeroutput>, you will need
+to add an appropriate <filename>Makefile.am</filename> to it, and
+add a corresponding entry to the
+<computeroutput>AC_OUTPUT</computeroutput> list in
+<filename>valgrind/configure.in</filename>.</para>
+
+<para>If you add any scripts to your tool (see Cachegrind for an
+example) you need to add them to the
+<computeroutput>bin_SCRIPTS</computeroutput> variable in
+<filename>valgrind/foobar/Makefile.am</filename>.</para>
+
+</sect2>
+
+
+
+<sect2 id="writing-tools.ifacever" xreflabel="Core/tool Interface Versions">
+<title>Core/tool Interface Versions</title>
+
+<para>In order to allow for the core/tool interface to evolve
+over time, Valgrind uses a basic interface versioning system.
+All a tool has to do is use the
+<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput>
+macro exactly once in its code.  If not, a link error will occur
+when the tool is built.</para>
+
+<para>The interface version number has the form X.Y.  Changes in
+Y indicate binary compatible changes.  Changes in X indicate
+binary incompatible changes.  If the core and tool has the same
+major version number X they should work together.  If X doesn't
+match, Valgrind will abort execution with an explanation of the
+problem.</para>
+
+<para>This approach was chosen so that if the interface changes
+in the future, old tools won't work and the reason will be
+clearly explained, instead of possibly crashing mysteriously.  We
+have attempted to minimise the potential for binary incompatible
+changes by means such as minimising the use of naked structs in
+the interface.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="writing-tools.finalwords" xreflabel="Final Words">
+<title>Final Words</title>
+
+<para>This whole core/tool business is under active development,
+although it's slowly maturing.</para>
+
+<para>The first consequence of this is that the core/tool
+interface will continue to change in the future; we have no
+intention of freezing it and then regretting the inevitable
+stupidities.  Hopefully most of the future changes will be to add
+new features, hooks, functions, etc, rather than to change old
+ones, which should cause a minimum of trouble for existing tools,
+and we've put some effort into future-proofing the interface to
+avoid binary incompatibility.  But we can't guarantee anything.
+The versioning system should catch any incompatibilities.  Just
+something to be aware of.</para>
+
+<para>The second consequence of this is that we'd love to hear
+your feedback about it:</para>
+
+<itemizedlist>
+ <listitem>
+  <para>If you love it or hate it</para>
+ </listitem>
+ <listitem>
+  <para>If you find bugs</para>
+ </listitem>
+ <listitem>
+  <para>If you write a tool</para>
+ </listitem>
+ <listitem>
+  <para>If you have suggestions for new features, needs,
+  trackable events, functions</para>
+ </listitem>
+ <listitem>
+  <para>If you have suggestions for making tools easier to
+  write</para>
+ </listitem>
+ <listitem>
+  <para>If you have suggestions for improving this
+  documentation</para>
+ </listitem>
+ <listitem>
+  <para>If you don't understand something</para>
+ </listitem>
+</itemizedlist>
+
+<para>or anything else!</para>
+
+<para>Happy programming.</para>
+
+</sect1>
+
+</chapter>

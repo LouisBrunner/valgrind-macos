@@ -1,0 +1,32 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<book id="manual" xreflabel="Valgrind User Manual">
+
+  <bookinfo>
+    <title>Valgrind User Manual</title>
+  </bookinfo>
+
+  <xi:include href="manual-intro.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="manual-core.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../memcheck/docs/mc-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../addrcheck/docs/ac-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../cachegrind/docs/cg-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../massif/docs/ms-manual.xml" parse="xml"  
+       xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../helgrind/docs/hg-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../none/docs/nl-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../corecheck/docs/cc-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../lackey/docs/lk-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</book>

@@ -356,6 +356,9 @@ AC_OUTPUT(
    valgrind.spec
    valgrind.pc
    docs/Makefile 
+   docs/lib/Makefile
+   docs/images/Makefile
+   docs/xml/Makefile
    tests/Makefile 
    tests/vg_regtest 
    tests/unused/Makefile 
@@ -371,7 +374,6 @@ AC_OUTPUT(
    auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 
-   coregrind/docs/Makefile
    coregrind/amd64/Makefile
    coregrind/arm/Makefile
    coregrind/x86/Makefile

@@ -1,0 +1,174 @@
+ <!-- -*- sgml -*- -->
+----------------------------------------------
+Docbook Reference Manual (1999):
+- http://www.oreilly.com/catalog/docbook/
+DocBook XSL: The Complete Guide (2002)
+- http://www.sagehill.net/docbookxsl/index.html
+
+DocBook elements (what tags are allowed where)
+- http://www.oreilly.com/catalog/docbook/chapter/book/refelem.html
+
+Catalogs:
+- http://www.sagehill.net/docbookxsl/WriteCatalog.html
+
+
+----------------------------------------------
+xml to html markup transformations:
+
+<programlisting> --> <pre class="programlisting">
+<screen>         --> <pre class="screen">
+<computeroutput> --> <tt class="computeroutput">
+<literal>        --> <tt>
+<emphasis>       --> <i>
+<command>        --> <b class="command">
+<blockquote>     --> <div class="blockquote">
+                     <blockquote class="blockquote">
+
+Important: inside <screen> and <programlisting> blocks, do NOT
+use 'html entities' in your markup, eg. '&lt;' If you *do* use
+them, they will be output verbatim, which is not what you want.
+
+
+----------------------------------------------
+
+<ulink url="http://..">http://kcachegrind.sourceforge.net</ulink>
+
+
+----------------------------------------------
+<variablelist>                         --> <dl>
+ <varlistentry>
+  <term>TTF</term>                     --> <dt>
+  <listitem>TrueType fonts.</listitem> --> <dd>
+ </varlistentry>
+</variablelist>                        --> <dl>
+
+
+----------------------------------------------
+<itemizedlist>          --> <ul>
+ <listitem>             --> <li>
+  <para>....</para>
+  <para>....</para>
+ </listitem>            --> </li>
+</itemizedlist>         --> </ul>
+
+
+----------------------------------------------
+<orderedlist>           --> <ol>
+ <listitem>             --> <li>
+  <para>....</para>
+  <para>....</para>
+ </listitem>            --> </li>
+</orderedlist>          --> </ol>
+
+
+----------------------------------------------
+To achieve this:
+
+This is a paragraph of text before a list:
+
+  * some text
+
+  * some more text
+
+and this is some more text after the list.
+
+Do this:
+<para>This is a paragraph of text before a list:</para>
+<itemizedlist>
+ <listitem>
+  <para>some text</para>
+ </listitem>
+ <listitem>
+  <para>some more text</para>
+ </listitem>
+</itemizedlist>
+
+
+----------------------------------------------
+To achieve this:
+For further details, see <a href="clientreq">The Mechanism</a>
+
+Do this:
+
+  Given:
+  <sect1 id="clientreq" xreflabel="The Mechanism">
+   <title>The Mechanism</title>
+   <para>...</para>
+  </sect1>
+
+  Then do:
+  For further details, see <xref linkend="clientreq"/>.
+
+
+----------------------------------------------
+To achieve this:
+<p><b>Warning:</b> Only do this if ...</p>
+
+Do this:
+<formalpara>
+ <title>Warning:</title>
+ <para>Only do this if ...</para>
+</formalpara>
+
+Or this:
+<para><command>Warning:</command> Only do this if ... </para>
+
+
+----------------------------------------------
+To achieve this:
+<p>It uses the Eraser algorithm described in:<br />
+<br />
+  Eraser: A Dynamic Data Race Detector for Multithreaded Programs<br />
+  Stefan Savage, Michael Burrows, Patrick Sobalvarro and Thomas Anderson<br />
+  ACM Transactions on Computer Systems, 15(4):391-411<br />
+  November 1997.<br />
+</p>
+
+Do this:
+<literallayout>
+It uses the Eraser algorithm described in:
+
+  Eraser: A Dynamic Data Race Detector for Multithreaded Programs
+  Stefan Savage, Michael Burrows, Patrick Sobalvarro and Thomas Anderson
+  ACM Transactions on Computer Systems, 15(4):391-411
+  November 1997.
+</literallayout>
+
+
+----------------------------------------------
+To achieve this:
+<pre>
+/* Hook to delay things long enough so we can get the pid 
+   and attach GDB in another shell. */
+if (0) { 
+  Int p, q;
+  for ( p = 0; p < 50000; p++ )
+    for ( q = 0; q < 50000; q++ ) ;
+</pre>
+
+Do this:
+<programlisting><![CDATA[
+/* Hook to delay things long enough so we can get the pid
+   and attach GDB in another shell. */
+if (0) { 
+  Int p, q;
+  for ( p = 0; p < 50000; p++ )
+    for ( q = 0; q < 50000; q++ ) ;
+}]]></programlisting>
+
+
+(do the same thing for <screen> tag)
+
+
+----------------------------------------------
+To achieve this:
+  where <i><code>TAG</code></i> has the ...
+
+Do this:
+  where <emphasis><computeroutput>TAG</computeroutput></emphasis> has the ...
+
+Note: you cannot put <emphasis> inside <computeroutput>, unfortunately.
+
+----------------------------------------------
+
+Any other helpful hints?  Please tell us.

@@ -1,0 +1,82 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<book id="dist" xreflabel="Distribution Documents">
+
+  <bookinfo>
+    <title>Distribution Documents</title>
+  </bookinfo>
+
+  <!-- Nb: because these are all text files, we have to wrap them in suitable
+       XML.  Hence the chapter/title stuff -->
+
+  <chapter id="dist.acknowledge" xreflabel="Acknowledgements">
+    <title>ACKNOWLEDGEMENTS</title>
+    <literallayout>
+      <xi:include href="../../ACKNOWLEDGEMENTS" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.authors" xreflabel="Valgrind Developers">
+    <title id="dist.authors.title">AUTHORS</title>
+    <literallayout>
+        <xi:include href="../../AUTHORS" parse="text"  
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.install" xreflabel="Install">
+    <title>INSTALL</title>
+    <literallayout>
+      <xi:include href="../../INSTALL" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.news" xreflabel="News">
+    <title>NEWS</title>
+    <literallayout>
+      <xi:include href="../../NEWS" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.readme" xreflabel="Readme">
+    <title>README</title>
+    <literallayout>
+      <xi:include href="../../README" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.readme-missing" 
+             xreflabel="Readme Missing Syscall or Ioctl">
+    <title>README_MISSING_SYSCALL_OR_IOCTL</title>
+    <literallayout>
+      <xi:include href="../../README_MISSING_SYSCALL_OR_IOCTL" 
+          parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.readme-packagers" 
+             xreflabel="Readme Packagers">
+    <title>README_PACKAGERS</title>
+    <literallayout>
+      <xi:include href="../../README_PACKAGERS" 
+          parse="text" 
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
+  <chapter id="dist.todo" xreflabel="Todo">
+    <title>TODO</title>
+    <literallayout>
+      <xi:include href="../../TODO" 
+          parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+</book>

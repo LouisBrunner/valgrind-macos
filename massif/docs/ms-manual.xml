@@ -1,0 +1,465 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="ms-manual" xreflabel="Massif: a heap profiler">
+  <title>Massif: a heap profiler</title>
+
+<para>To use this tool, you must specify
+<computeroutput>--tool=massif</computeroutput> on the Valgrind
+command line.</para>
+
+<sect1 id="ms-manual.spaceprof" xreflabel="Heap profiling">
+<title>Heap profiling</title>
+
+<para>Massif is a heap profiler, i.e. it measures how much heap
+memory programs use.  In particular, it can give you information
+about:</para>
+
+<itemizedlist>
+  <listitem><para>Heap blocks;</para></listitem>
+  <listitem><para>Heap administration blocks;</para></listitem>
+  <listitem><para>Stack sizes.</para></listitem>
+</itemizedlist>
+
+<para>Heap profiling is useful to help you reduce the amount of
+memory your program uses.  On modern machines with virtual
+memory, this provides the following benefits:</para>
+
+<itemizedlist>
+  <listitem><para>It can speed up your program -- a smaller
+    program will interact better with your machine's caches,
+    avoid paging, and so on.</para></listitem>
+
+  <listitem><para>If your program uses lots of memory, it will
+    reduce the chance that it exhausts your machine's swap
+    space.</para></listitem>
+</itemizedlist>
+
+<para>Also, there are certain space leaks that aren't detected by
+traditional leak-checkers, such as Memcheck's.  That's because
+the memory isn't ever actually lost -- a pointer remains to it --
+but it's not in use.  Programs that have leaks like this can
+unnecessarily increase the amount of memory they are using over
+time.</para>
+
+
+
+<sect2 id="ms-manual.heapprof" 
+       xreflabel="Why Use a Heap Profiler?">
+<title>Why Use a Heap Profiler?</title>
+
+<para>Everybody knows how useful time profilers are for speeding
+up programs.  They are particularly useful because people are
+notoriously bad at predicting where are the bottlenecks in their
+programs.</para>
+
+<para>But the story is different for heap profilers.  Some
+programming languages, particularly lazy functional languages
+like <ulink url="http://www.haskell.org">Haskell</ulink>, have
+quite sophisticated heap profilers.  But there are few tools as
+powerful for profiling C and C++ programs.</para>
+
+<para>Why is this?  Maybe it's because C and C++ programmers must
+think that they know where the memory is being allocated.  After
+all, you can see all the calls to
+<computeroutput>malloc()</computeroutput> and
+<computeroutput>new</computeroutput> and
+<computeroutput>new[]</computeroutput>, right?  But, in a big
+program, do you really know which heap allocations are being
+executed, how many times, and how large each allocation is?  Can
+you give even a vague estimate of the memory footprint for your
+program?  Do you know this for all the libraries your program
+uses?  What about administration bytes required by the heap
+allocator to track heap blocks -- have you thought about them?
+What about the stack?  If you are unsure about any of these
+things, maybe you should think about heap profiling.</para>
+
+<para>Massif can tell you these things.</para>
+
+<para>Or maybe it's because it's relatively easy to add basic
+heap profiling functionality into a program, to tell you how many
+bytes you have allocated for certain objects, or similar.  But
+this information might only be simple like total counts for the
+whole program's execution.  What about space usage at different
+points in the program's execution, for example?  And
+reimplementing heap profiling code for each project is a
+pain.</para>
+
+<para>Massif can save you this effort.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="ms-manual.using" xreflabel="Using Massif">
+<title>Using Massif</title>
+
+
+<sect2 id="ms-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>First off, as for normal Valgrind use, you probably want to
+compile with debugging info (the
+<computeroutput>-g</computeroutput> flag).  But, as opposed to
+Memcheck, you probably <command>do</command> want to turn
+optimisation on, since you should profile your program as it will
+be normally run.</para>
+
+<para>Then, run your program with <computeroutput>valgrind
+--tool=massif</computeroutput> in front of the normal command
+line invocation.  When the program finishes, Massif will print
+summary space statistics.  It also creates a graph representing
+the program's heap usage in a file called
+<filename>massif.pid.ps</filename>, which can be read by any
+PostScript viewer, such as Ghostview.</para>
+
+<para>It also puts detailed information about heap consumption in
+a file <filename>massif.pid.txt</filename> (text format) or
+<filename>massif.pid.html</filename> (HTML format), where
+<emphasis>pid</emphasis> is the program's process id.</para>
+
+</sect2>
+
+
+<sect2 id="ms-manual.basicresults" xreflabel="Basic Results of Profiling">
+<title>Basic Results of Profiling</title>
+
+<para>To gather heap profiling information about the program
+<computeroutput>prog</computeroutput>, type:</para>
+<screen><![CDATA[
+% valgrind --tool=massif prog]]></screen>
+
+<para>The program will execute (slowly).  Upon completion,
+summary statistics that look like this will be printed:</para>
+<programlisting><![CDATA[
+==27519== Total spacetime:   2,258,106 ms.B
+==27519== heap:              24.0%
+==27519== heap admin:         2.2%
+==27519== stack(s):          73.7%]]></programlisting>
+
+<para>All measurements are done in
+<emphasis>spacetime</emphasis>, i.e. space (in bytes) multiplied
+by time (in milliseconds).  Note that because Massif slows a
+program down a lot, the actual spacetime figure is fairly
+meaningless; it's the relative values that are
+interesting.</para>
+
+<para>Which entries you see in the breakdown depends on the
+command line options given.  The above example measures all the
+possible parts of memory:</para>
+
+<itemizedlist>
+  <listitem><para>Heap: number of words allocated on the heap, via
+    <computeroutput>malloc()</computeroutput>,
+    <computeroutput>new</computeroutput> and
+    <computeroutput>new[]</computeroutput>.</para>
+  </listitem>
+  <listitem>
+    <para>Heap admin: each heap block allocated requires some
+    administration data, which lets the allocator track certain
+    things about the block.  It is easy to forget about this, and
+    if your program allocates lots of small blocks, it can add
+    up.  This value is an estimate of the space required for this
+    administration data.</para>
+  </listitem>
+  <listitem>
+    <para>Stack(s): the spacetime used by the programs' stack(s).
+    (Threaded programs can have multiple stacks.)  This includes
+    signal handler stacks.</para>
+  </listitem>
+</itemizedlist>
+
+</sect2>
+
+
+<sect2 id="ms-manual.graphs" xreflabel="Spacetime Graphs">
+<title>Spacetime Graphs</title>
+
+<para>As well as printing summary information, Massif also
+creates a file representing a spacetime graph,
+<filename>massif.pid.hp</filename>.  It will produce a file
+called <filename>massif.pid.ps</filename>, which can be viewed in
+a PostScript viewer.</para>
+
+<para>Massif uses a program called
+<computeroutput>hp2ps</computeroutput> to convert the raw data
+into the PostScript graph.  It's distributed with Massif, but
+came originally from the 
+<ulink url="http://haskell.cs.yale.edu/ghc/">Glasgow Haskell
+Compiler</ulink>.  You shouldn't need to worry about this at all.
+However, if the graph creation fails for any reason, Massif will
+tell you, and will leave behind a file named
+<filename>massif.pid.hp</filename>, containing the raw heap
+profiling data.</para>
+
+<para>Here's an example graph:</para>
+<mediaobject id="spacetime-graph">
+  <imageobject>
+    <imagedata fileref="images/massif-graph-sm.png" format="PNG"/>
+  </imageobject>
+  <textobject>
+    <phrase>Spacetime Graph</phrase>
+  </textobject>
+</mediaobject>
+
+<para>The graph is broken into several bands.  Most bands
+represent a single line of your program that does some heap
+allocation; each such band represents all the allocations and
+deallocations done from that line.  Up to twenty bands are shown;
+less significant allocation sites are merged into "other" and/or
+"OTHER" bands.  The accompanying text/HTML file produced by
+Massif has more detail about these heap allocation bands.  Then
+there are single bands for the stack(s) and heap admin
+bytes.</para>
+
+<formalpara>
+<title>Note:</title>
+<para>it's the height of a band that's important.  Don't let the
+ups and downs caused by other bands confuse you.  For example,
+the <computeroutput>read_alias_file</computeroutput> band in the
+example has the same height all the time it's in existence.</para>
+</formalpara>
+
+<para>The triangles on the x-axis show each point at which a
+memory census was taken.  These aren't necessarily evenly spread;
+Massif only takes a census when memory is allocated or
+deallocated.  The time on the x-axis is wallclock time, which is
+not ideal because you can get different graphs for different
+executions of the same program, due to random OS delays.  But
+it's not too bad, and it becomes less of a problem the longer a
+program runs.</para>
+
+<para>Massif takes censuses at an appropriate timescale; censuses
+take place less frequently as the program runs for longer.  There
+is no point having more than 100-200 censuses on a single
+graph.</para>
+
+<para>The graphs give a good overview of where your program's
+space use comes from, and how that varies over time.  The
+accompanying text/HTML file gives a lot more information about
+heap use.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="ms-manual.heapdetails" 
+       xreflabel="Details of Heap Allocations">
+<title>Details of Heap Allocations</title>
+
+<para>The text/HTML file contains information to help interpret
+the heap bands of the graph.  It also contains a lot of extra
+information about heap allocations that you don't see in the
+graph.</para>
+
+
+<para>Here's part of the information that accompanies the above
+graph.</para>
+
+<blockquote>
+<literallayout>== 0 ===========================</literallayout>
+
+<para>Heap allocation functions accounted for 50.8% of measured
+spacetime</para>
+
+<para>Called from:</para>
+<itemizedlist>
+  <listitem id="a401767D1"><para>
+    <ulink url="#b401767D1">22.1%</ulink>: 0x401767D0:
+    _nl_intern_locale_data (in /lib/i686/libc-2.3.2.so)</para>
+  </listitem>
+  <listitem id="a4017C394"><para>
+    <ulink url="#b4017C394">8.6%</ulink>: 0x4017C393:
+    read_alias_file (in /lib/i686/libc-2.3.2.so)</para>
+  </listitem>
+  <listitem>
+    <para>... ... <emphasis>(several entries omitted)</emphasis></para>
+  </listitem>
+  <listitem>
+    <para>and 6 other insignificant places</para>
+  </listitem>
+</itemizedlist>
+</blockquote>
+
+<para>The first part shows the total spacetime due to heap
+allocations, and the places in the program where most memory was
+allocated (Nb: if this program had been compiled with
+<computeroutput>-g</computeroutput>, actual line numbers would be
+given).  These places are sorted, from most significant to least,
+and correspond to the bands seen in the graph.  Insignificant
+sites (accounting for less than 0.5% of total spacetime) are
+omitted.</para>
+
+<para>That alone can be useful, but often isn't enough.  What if
+one of these functions was called from several different places
+in the program?  Which one of these is responsible for most of
+the memory used?  For
+<computeroutput>_nl_intern_locale_data()</computeroutput>, this
+question is answered by clicking on the 
+<ulink url="#b401767D1">22.1%</ulink> link, which takes us to the
+following part of the file:</para>
+
+<blockquote id="b401767D1">
+<literallayout>== 1 ===========================</literallayout>
+
+<para>Context accounted for <ulink url="#a401767D1">22.1%</ulink>
+of measured spacetime</para>
+
+<para><computeroutput> 0x401767D0: _nl_intern_locale_data (in
+/lib/i686/libc-2.3.2.so)</computeroutput></para>
+
+<para>Called from:</para>
+<itemizedlist>
+  <listitem id="a40176F96"><para>
+    <ulink url="#b40176F96">22.1%</ulink>: 0x40176F95:
+    _nl_load_locale_from_archive (in
+    /lib/i686/libc-2.3.2.so)</para>
+  </listitem>
+</itemizedlist>
+</blockquote>
+
+<para>At this level, we can see all the places from which
+<computeroutput>_nl_load_locale_from_archive()</computeroutput>
+was called such that it allocated memory at 0x401767D0.  (We can
+click on the top <ulink url="#a40176F96">22.1%</ulink> link to go back
+to the parent entry.)  At this level, we have moved beyond the
+information presented in the graph.  In this case, it is only
+called from one place.  We can again follow the link for more
+detail, moving to the following part of the file.</para>
+
+<blockquote>
+<literallayout>== 2 ===========================</literallayout>
+<para id="b40176F96">
+Context accounted for <ulink url="#a40176F96">22.1%</ulink> of
+measured spacetime</para>
+
+<para><computeroutput> 0x401767D0: _nl_intern_locale_data (in
+/lib/i686/libc-2.3.2.so)</computeroutput> <computeroutput>
+0x40176F95: _nl_load_locale_from_archive (in
+/lib/i686/libc-2.3.2.so)</computeroutput></para>
+
+<para>Called from:</para>
+<itemizedlist>
+  <listitem id="a40176185">
+    <para>22.1%: 0x40176184: _nl_find_locale (in
+    /lib/i686/libc-2.3.2.so)</para>
+  </listitem>
+</itemizedlist>
+</blockquote>
+
+<para>In this way we can dig deeper into the call stack, to work
+out exactly what sequence of calls led to some memory being
+allocated.  At this point, with a call depth of 3, the
+information runs out (thus the address of the child entry,
+0x40176184, isn't a link).  We could rerun the program with a
+greater <computeroutput>--depth</computeroutput> value if we
+wanted more information.</para>
+
+<para>Sometimes you will get a code location like this:</para>
+<programlisting><![CDATA[
+30.8% : 0xFFFFFFFF: ???]]></programlisting>
+
+<para>The code address isn't really 0xFFFFFFFF -- that's
+impossible.  This is what Massif does when it can't work out what
+the real code address is.</para>
+
+<para>Massif produces this information in a plain text file by
+default, or HTML with the
+<computeroutput>--format=html</computeroutput> option.  The plain
+text version obviously doesn't have the links, but a similar
+effect can be achieved by searching on the code addresses.  (In
+Vim, the '*' and '#' searches are ideal for this.)</para>
+
+
+<sect2 id="ms-manual.accuracy" xreflabel="Accuracy">
+<title>Accuracy</title>
+
+<para>The information should be pretty accurate.  Some
+approximations made might cause some allocation contexts to be
+attributed with less memory than they actually allocated, but the
+amounts should be miniscule.</para>
+
+<para>The heap admin spacetime figure is an approximation, as
+described above.  If anyone knows how to improve its accuracy,
+please let us know.</para>
+
+</sect2>
+
+</sect1>
+
+
+<sect1 id="ms-manual.options" xreflabel="Massif options">
+<title>Massif options</title>
+
+<para>Massif-specific options are:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><computeroutput>--heap=no</computeroutput></para>
+    <para><computeroutput>--heap=yes</computeroutput> [default]</para>
+    <para>When enabled, profile heap usage in detail.  Without
+    it, the <filename>massif.pid.txt</filename> or
+    <filename>massif.pid.html</filename> will be very
+    short.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>--heap-admin=n</computeroutput>
+    [default: 8]</para>
+    <para>The number of admin bytes per block to use.  This can
+    only be an estimate of the average, since it may vary.  The
+    allocator used by <computeroutput>glibc</computeroutput>
+    requires somewhere between 4--15 bytes per block, depending
+    on various factors.  It also requires admin space for freed
+    blocks, although Massif does not count this.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>--stacks=no</computeroutput></para>
+    <para><computeroutput>--stacks=yes</computeroutput> [default]</para>
+    <para>When enabled, include stack(s) in the profile.
+    Threaded programs can have multiple stacks.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>--depth=n</computeroutput>
+    [default: 3]</para>
+    <para>Depth of call chains to present in the detailed heap
+    information.  Increasing it will give more information, but
+    Massif will run the program more slowly, using more memory,
+    and produce a bigger <computeroutput>.txt</computeroutput> /
+    <computeroutput>.hp</computeroutput> file.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>--alloc-fn=name</computeroutput></para>
+    <para>Specify a function that allocates memory.  This is
+    useful for functions that are wrappers to
+    <computeroutput>malloc()</computeroutput>, which can fill up
+    the context information uselessly (and give very
+    uninformative bands on the graph).  Functions specified will
+    be ignored in contexts, i.e. treated as though they were
+    <computeroutput>malloc()</computeroutput>.  This option can
+    be specified multiple times on the command line, to name
+    multiple functions.</para>
+  </listitem>
+
+  <listitem>
+    <para><computeroutput>--format=text</computeroutput> [default]</para>
+    <para><computeroutput>--format=html</computeroutput></para>
+    <para>Produce the detailed heap information in text or HTML
+    format.  The file suffix used will be either
+    <computeroutput>.txt</computeroutput> or
+    <computeroutput>.html</computeroutput>.</para>
+  </listitem>
+
+</itemizedlist>
+
+</sect1>
+</chapter>

@@ -1,0 +1,674 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
+
+<book id="FAQ" xreflabel="Valgrind FAQ">
+
+  <bookinfo>
+    <title>Valgrind FAQ</title>
+  </bookinfo>
+
+
+<chapter id="faq.background" xreflabel="Background">
+<title>Background</title>
+
+<qandaset id="qset.background">
+
+<qandaentry id="faq.pronounce">
+ <question>
+  <para>How do you pronounce "Valgrind"?</para>
+ </question>
+ <answer>
+  <para>The "Val" as in the world "value".  The "grind" is
+  pronounced with a short 'i' -- ie. "grinned" (rhymes with
+  "tinned") rather than "grined" (rhymes with "find").</para>
+  <para>Don't feel bad: almost everyone gets it wrong at
+  first.</para>
+ </answer>
+</qandaentry>
+
+<qandaentry id="faq.whence">
+ <question>
+  <para>Where does the name "Valgrind" come from?</para>
+ </question>
+ <answer>
+  <para>From Nordic mythology.  Originally (before release) the
+  project was named Heimdall, after the watchman of the Nordic
+  gods.  He could "see a hundred miles by day or night, hear the
+  grass growing, see the wool growing on a sheep's back" (etc).
+  This would have been a great name, but it was already taken by
+  a security package "Heimdal".</para> <para>Keeping with the
+  Nordic theme, Valgrind was chosen.  Valgrind is the name of the
+  main entrance to Valhalla (the Hall of the Chosen Slain in
+  Asgard).  Over this entrance there resides a wolf and over it
+  there is the head of a boar and on it perches a huge eagle,
+  whose eyes can see to the far regions of the nine worlds.  Only
+  those judged worthy by the guardians are allowed to pass
+  through Valgrind.  All others are refused entrance.</para>
+  <para>It's not short for "value grinder", although that's not a
+  bad guess.</para>
+  </answer>
+ </qandaentry>
+
+</qandaset>
+
+</chapter>
+
+
+<chapter id="faq.installing" 
+       xreflabel="Compiling, installing and configuring">
+<title>Compiling, installing and configuring</title>
+<qandaset id="qset.installing">
+
+<qandaentry id="faq.make_dies">
+ <question>
+  <para>When I trying building Valgrind, 'make' dies partway with
+  an assertion failure, something like this: 
+<screen>
+% make: expand.c:489: allocated_variable_append: 
+        Assertion 'current_variable_set_list->next != 0' failed.
+</screen>
+  </para>
+ </question>
+ <answer>
+  <para>It's probably a bug in 'make'.  Some, but not all,
+  instances of version 3.79.1 have this bug, see
+  www.mail-archive.com/bug-make@gnu.org/msg01658.html.  Try
+  upgrading to a more recent version of 'make'.  Alternatively,
+  we have heard that unsetting the CFLAGS environment variable
+  avoids the problem.</para>
+ </answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+
+
+<chapter id="faq.abort" 
+       xreflabel="Valgrind aborts unexpectedly">
+<title>Valgrind aborts unexpectedly</title>
+<qandaset id="qset.abort">
+
+<qandaentry id="faq.exit_errors">
+ <question>
+  <para>Programs run OK on Valgrind, but at exit produce a bunch
+  of errors a bit like this:</para>
+ </question>
+ <answer><para>
+<programlisting>
+==20755== Invalid read of size 4
+==20755==    at 0x40281C8A: _nl_unload_locale (loadlocale.c:238)
+==20755==    by 0x4028179D: free_mem (findlocale.c:257)
+==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
+==20755==    by 0x40048DCC: vgPlain___libc_freeres_wrapper (vg_clientfuncs.c:585)
+==20755==    Address 0x40CC304C is 8 bytes inside a block of size 380 free'd
+==20755==    at 0x400484C9: free (vg_clientfuncs.c:180)
+==20755==    by 0x40281CBA: _nl_unload_locale (loadlocale.c:246)
+==20755==    by 0x40281218: free_mem (setlocale.c:461)
+==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
+</programlisting>
+
+ and then die with a segmentation fault.</para>
+ <para>When the program exits, Valgrind runs the procedure
+ <literal>__libc_freeres()</literal> in glibc.  This is a hook
+ for memory debuggers, so they can ask glibc to free up any
+ memory it has used.  Doing that is needed to ensure that
+ Valgrind doesn't incorrectly report space leaks in glibc.</para>
+ <para>Problem is that running
+ <literal>__libc_freeres()</literal> in older glibc versions
+ causes this crash.</para> <para>WORKAROUND FOR 1.1.X and later
+ versions of Valgrind: use the
+ <literal>--run-libc-freeres=no</literal> flag.  You may then get
+ space leak reports for glibc-allocations (please _don't_ report
+ these to the glibc people, since they are not real leaks), but
+ at least the program runs.</para>
+ </answer>
+</qandaentry>
+
+<qandaentry id="faq.bugdeath">
+ <question>
+  <para>My (buggy) program dies like this:</para>
+ </question>
+ <answer>
+  <screen>
+% valgrind: vg_malloc2.c:442 (bszW_to_pszW): Assertion 'pszW >= 0' failed.
+</screen>
+
+  <para>If Memcheck (the memory checker) shows any invalid reads,
+  invalid writes and invalid frees in your program, the above may
+  happen.  Reason is that your program may trash Valgrind's
+  low-level memory manager, which then dies with the above
+  assertion, or something like this.  The cure is to fix your
+  program so that it doesn't do any illegal memory accesses.  The
+  above failure will hopefully go away after that.</para>
+ </answer>
+</qandaentry>
+
+<qandaentry id="faq.msgdeath">
+ <question>
+  <para>My program dies, printing a message like this along the
+    way:</para>
+ </question>
+ <answer>
+<screen>
+% disInstr: unhandled instruction bytes: 0x66 0xF 0x2E 0x5
+</screen>
+
+  <para>Older versions did not support some x86 instructions,
+  particularly SSE/SSE2 instructions.  Try a newer Valgrind; we
+  now support almost all instructions.  If it still happens with
+  newer versions, if the failing instruction is an SSE/SSE2
+  instruction, you might be able to recompile your progrma
+  without it by using the flag
+  <computeroutput>-march</computeroutput> to gcc.  Either way,
+  let us know and we'll try to fix it.</para>
+
+  <para>Another possibility is that your program has a bug and
+  erroneously jumps to a non-code address, in which case you'll
+  get a SIGILL signal.  Memcheck/Addrcheck may issue a warning
+  just before this happens, but they might not if the jump
+  happens to land in addressable memory.</para>
+ </answer>
+</qandaentry>
+
+<qandaentry id="faq.defdeath">
+ <question>
+  <para>My program dies like this:</para>
+ </question>
+ <answer>
+<screen>
+% error: /lib/librt.so.1: symbol __pthread_clock_settime, 
+  version GLIBC_PRIVATE not defined in file libpthread.so.0 with link time reference
+</screen>
+
+  <para>This is a total swamp.  Nevertheless there is a way out.
+  It's a problem which is not easy to fix.  Really the problem is
+  that <filename>/lib/librt.so.1</filename> refers to some
+  symbols <literal>__pthread_clock_settime</literal> and
+  <literal>__pthread_clock_gettime</literal> in
+  <filename>/lib/libpthread.so</filename> which are not intended
+  to be exported, ie they are private.</para>
+
+  <para>Best solution is to ensure your program does not use
+  <filename>/lib/librt.so.1</filename>.</para>
+
+  <para>However ... since you're probably not using it directly,
+  or even knowingly, that's hard to do.  You might instead be
+  able to fix it by playing around with
+  <filename>coregrind/vg_libpthread.vs</filename>.  Things to
+  try:</para>
+
+  <para>Remove this:</para>
+<programlisting>
+GLIBC_PRIVATE {
+  __pthread_clock_gettime;
+  __pthread_clock_settime;
+};
+</programlisting>
+
+<para>or maybe remove this</para>
+<programlisting>
+GLIBC_2.2.3 {
+  __pthread_clock_gettime;
+  __pthread_clock_settime;
+}  GLIBC_2.2;
+</programlisting>
+
+<para>or maybe add this:</para>
+<programlisting>
+GLIBC_2.2.4 {
+  __pthread_clock_gettime;
+  __pthread_clock_settime;
+} GLIBC_2.2;
+
+GLIBC_2.2.5 {
+  __pthread_clock_gettime;
+  __pthread_clock_settime;
+} GLIBC_2.2;
+</programlisting>
+
+  <para>or some combination of the above.  After each change you
+  need to delete <filename>coregrind/libpthread.so</filename> and
+  do <computeroutput>make &amp;&amp; make
+  install</computeroutput>.</para>
+
+  <para>I just don't know if any of the above will work.  If you
+  can find a solution which works, I would be interested to hear
+  it.</para>
+
+  <para>To which someone replied:</para>
+<screen>
+I deleted this:
+
+GLIBC_2.2.3 { 
+   __pthread_clock_gettime; 
+   __pthread_clock_settime; 
+} GLIBC_2.2; 
+
+and it worked.
+</screen>
+
+ </answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+
+<chapter id="faq.unexpected" 
+       xreflabel="Valgrind behaves unexpectedly">
+<title>Valgrind behaves unexpectedly</title>
+<qandaset id="qset.unexpected">
+
+<qandaentry id="faq.no-output">
+ <question>
+  <para>I try running "valgrind my-program", but my-program runs
+  normally, and Valgrind doesn't emit any output at all.</para>
+ </question>
+ <answer>
+  <para><command>For versions prior to 2.1.1:</command></para>
+
+  <para>Valgrind doesn't work out-of-the-box with programs that
+  are entirely statically linked.  It does a quick test at
+  startup, and if it detects that the program is statically
+  linked, it aborts with an explanation.</para>
+
+  <para>This test may fail in some obscure cases, eg. if you run
+  a script under Valgrind and the script interpreter is
+  statically linked.</para>
+
+  <para>If you still want static linking, you can ask gcc to link
+  certain libraries statically.  Try the following options:</para>
+<screen>
+-Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
+</screen>
+
+  <para>Just make sure you end with
+  <computeroutput>-Wl,-Bdynamic</computeroutput> so that libc is
+  dynamically linked.</para>
+
+  <para>If you absolutely cannot use dynamic libraries, you can
+  try statically linking together all the .o files in coregrind/,
+  all the .o files of the tool of your choice (eg. those in
+  memcheck/), and the .o files of your program.  You'll end up
+  with a statically linked binary that runs permanently under
+  Valgrind's control.  Note that we haven't tested this procedure
+  thoroughly.</para>
+
+  <para><command>For versions 2.1.1 and later:</command></para>
+  <para>Valgrind does now work with static binaries, although
+  beware that some of the tools won't operate as well as normal,
+  because they have access to less information about how the
+  program runs.  Eg. Memcheck will miss some errors that it would
+  otherwise find.  This is because Valgrind doesn't replace
+  malloc() and friends with its own versions.  It's best if your
+  program is dynamically linked with glibc.</para>
+ </answer>
+</qandaentry>
+
+<qandaentry id="faq.slowthread">
+ <question>
+  <para>My threaded server process runs unbelievably slowly on
+  Valgrind.  So slowly, in fact, that at first I thought it had
+  completely locked up.</para>
+ </question>
+ <answer>
+  <para>We are not completely sure about this, but one
+  possibility is that laptops with power management fool
+  Valgrind's timekeeping mechanism, which is (somewhat in error)
+  based on the x86 RDTSC instruction.  A "fix" which is claimed
+  to work is to run some other cpu-intensive process at the same
+  time, so that the laptop's power-management clock-slowing does
+  not kick in.  We would be interested in hearing more feedback
+  on this.</para>
+
+  <para>Another possible cause is that versions prior to 1.9.6
+  did not support threading on glibc 2.3.X systems well.
+  Hopefully the situation is much improved with 1.9.6 and later
+  versions.</para>
+ </answer>
+</qandaentry>
+
+
+<qandaentry id="faq.reports">
+ <question>
+  <para>My program uses the C++ STL and string classes.  Valgrind
+  reports 'still reachable' memory leaks involving these classes
+  at the exit of the program, but there should be none.</para>
+ </question>
+ <answer>
+  <para>First of all: relax, it's probably not a bug, but a
+  feature.  Many implementations of the C++ standard libraries
+  use their own memory pool allocators.  Memory for quite a
+  number of destructed objects is not immediately freed and given
+  back to the OS, but kept in the pool(s) for later re-use.  The
+  fact that the pools are not freed at the exit() of the program
+  cause Valgrind to report this memory as still reachable.  The
+  behaviour not to free pools at the exit() could be called a bug
+  of the library though.</para>
+
+  <para>Using gcc, you can force the STL to use malloc and to
+  free memory as soon as possible by globally disabling memory
+  caching.  Beware!  Doing so will probably slow down your
+  program, sometimes drastically.</para>
+  <itemizedlist>
+   <listitem>
+    <para>With gcc 2.91, 2.95, 3.0 and 3.1, compile all source
+    using the STL with <literal>-D__USE_MALLOC</literal>. Beware!
+    This is removed from gcc starting with version 3.3.</para>
+   </listitem>
+   <listitem>
+    <para>With 3.2.2 and later, you should export the environment
+    variable <literal>GLIBCPP_FORCE_NEW</literal> before running
+    your program.</para>
+   </listitem>
+  </itemizedlist>
+
+  <para>There are other ways to disable memory pooling: using the
+  <literal>malloc_alloc</literal> template with your objects (not
+  portable, but should work for gcc) or even writing your own
+  memory allocators. But all this goes beyond the scope of this
+  FAQ.  Start by reading <ulink
+  url="http://gcc.gnu.org/onlinedocs/libstdc++/ext/howto.html#3">
+  http://gcc.gnu.org/onlinedocs/libstdc++/ext/howto.html#3</ulink>
+  if you absolutely want to do that. But beware:</para>
+
+  <orderedlist>
+   <listitem>
+    <para>there are currently changes underway for gcc which are
+    not totally reflected in the docs right now ("now" == 26 Apr
+    03)</para>
+   </listitem>
+   <listitem>
+    <para>allocators belong to the more messy parts of the STL
+    and people went at great lengths to make it portable across
+    platforms. Chances are good that your solution will work on
+    your platform, but not on others.</para>
+   </listitem>
+  </orderedlist>
+ </answer>
+</qandaentry>
+
+
+<qandaentry id="faq.unhelpful">
+ <question>
+  <para>The stack traces given by Memcheck (or another tool)
+  aren't helpful.  How can I improve them?</para>
+ </question>
+ <answer>
+  <para>If they're not long enough, use
+  <literal>--num-callers</literal> to make them longer.</para>
+  <para>If they're not detailed enough, make sure you are
+  compiling with <literal>-g</literal> to add debug information.
+  And don't strip symbol tables (programs should be unstripped
+  unless you run 'strip' on them; some libraries ship
+  stripped).</para>
+
+  <para>Also, <literal>-fomit-frame-pointer</literal> and
+  <literal>-fstack-check</literal> can make stack traces
+  worse.</para>
+
+  <para>Some example sub-traces:</para>
+
+  <para>With debug information and unstripped (best):</para>
+<programlisting>
+Invalid write of size 1
+   at 0x80483BF: really (malloc1.c:20)
+   by 0x8048370: main (malloc1.c:9)
+</programlisting>
+
+  <para>With no debug information, unstripped:</para>
+<programlisting>
+Invalid write of size 1
+   at 0x80483BF: really (in /auto/homes/njn25/grind/head5/a.out)
+   by 0x8048370: main (in /auto/homes/njn25/grind/head5/a.out)
+</programlisting>
+
+  <para>With no debug information, stripped:</para>
+<programlisting>
+Invalid write of size 1
+   at 0x80483BF: (within /auto/homes/njn25/grind/head5/a.out)
+   by 0x8048370: (within /auto/homes/njn25/grind/head5/a.out)
+   by 0x42015703: __libc_start_main (in /lib/tls/libc-2.3.2.so)
+   by 0x80482CC: (within /auto/homes/njn25/grind/head5/a.out)
+</programlisting>
+
+  <para>With debug information and -fomit-frame-pointer:</para>
+<programlisting>
+Invalid write of size 1
+   at 0x80483C4: really (malloc1.c:20)
+   by 0x42015703: __libc_start_main (in /lib/tls/libc-2.3.2.so)
+   by 0x80482CC: ??? (start.S:81)
+</programlisting>
+
+ </answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+
+<chapter id="faq.notfound" xreflabel="Memcheck doesn't find my bug">
+<title>Memcheck doesn't find my bug</title>
+<qandaset id="qset.notfound">
+
+<qandaentry id="faq.hiddenbug">
+ <question>
+  <para>I try running "valgrind --tool=memcheck my_program" and
+  get Valgrind's startup message, but I don't get any errors and
+  I know my program has errors.</para>
+ </question>
+ <answer>
+  <para>By default, Valgrind only traces the top-level process.
+  So if your program spawns children, they won't be traced by
+  Valgrind by default.  Also, if your program is started by a
+  shell script, Perl script, or something similar, Valgrind will
+  trace the shell, or the Perl interpreter, or equivalent.</para>
+
+  <para>To trace child processes, use the
+  <literal>--trace-children=yes</literal> option.</para>
+
+  <para>If you are tracing large trees of processes, it can be
+  less disruptive to have the output sent over the network.  Give
+  Valgrind the flag
+  <literal>--log-socket=127.0.0.1:12345</literal> (if you want
+  logging output sent to <literal>port 12345</literal> on
+  <literal>localhost</literal>).  You can use the
+  valgrind-listener program to listen on that port:</para>
+<programlisting>
+valgrind-listener 12345
+</programlisting>
+
+  <para>Obviously you have to start the listener process first.
+  See the Manual: <ulink url="http://www.valgrind.org/docs/bookset/manual-core.out2file.html">Directing output to file</ulink> for more details.</para>
+ </answer>
+</qandaentry>
+
+
+<qandaentry id="faq.overruns">
+ <question>
+  <para>Why doesn't Memcheck find the array overruns in this program?</para>
+ </question>
+ <answer>
+<programlisting>
+int static[5];
+
+int main(void)
+{
+  int stack[5];
+
+  static[5] = 0;
+  stack [5] = 0;
+          
+  return 0;
+}
+</programlisting>
+  <para>Unfortunately, Memcheck doesn't do bounds checking on
+  static or stack arrays.  We'd like to, but it's just not
+  possible to do in a reasonable way that fits with how Memcheck
+  works.  Sorry.</para>
+ </answer>
+</qandaentry>
+
+
+<qandaentry id="faq.segfault">
+ <question>
+  <para>My program dies with a segmentation fault, but Memcheck
+  doesn't give any error messages before it, or none that look
+  related.</para>
+ </question>
+ <answer>
+  <para>One possibility is that your program accesses to memory
+  with inappropriate permissions set, such as writing to
+  read-only memory.  Maybe your program is writing to a static
+  string like this:</para>
+<programlisting>
+char* s = "hello";
+s[0] = 'j';
+</programlisting>
+
+  <para>or something similar.  Writing to read-only memory can
+  also apparently make LinuxThreads behave strangely.</para>
+ </answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+
+<chapter id="faq.misc" 
+       xreflabel="Miscellaneous">
+<title>Miscellaneous</title>
+<qandaset id="qset.misc">
+
+<qandaentry id="faq.writesupp">
+ <question>
+  <para>I tried writing a suppression but it didn't work.  Can
+  you write my suppression for me?</para>
+ </question>
+ <answer>
+  <para>Yes!  Use the
+  <computeroutput>--gen-suppressions=yes</computeroutput> feature
+  to spit out suppressions automatically for you.  You can then
+  edit them if you like, eg.  combining similar automatically
+  generated suppressions using wildcards like
+  <literal>'*'</literal>.</para>
+
+  <para>If you really want to write suppressions by hand, read
+  the manual carefully.  Note particularly that C++ function
+  names must be <literal>_mangled_</literal>.</para>
+ </answer>
+</qandaentry>
+
+
+<qandaentry id="faq.deflost">
+ <question>
+  <para>With Memcheck/Addrcheck's memory leak detector, what's
+  the difference between "definitely lost", "possibly lost",
+  "still reachable", and "suppressed"?</para>
+ </question>
+ <answer>
+  <para>The details are in the Manual: 
+   <ulink url="http://www.valgrind.org/docs/bookset/mc-manual.leaks.html">Memory leak detection</ulink>.</para>
+
+  <para>In short:</para>
+   <itemizedlist>
+    <listitem>
+     <para>"definitely lost" means your program is leaking memory
+     -- fix it!</para>
+    </listitem>
+    <listitem>
+     <para>"possibly lost" means your program is probably leaking
+     memory, unless you're doing funny things with
+     pointers.</para>
+    </listitem>
+    <listitem>
+     <para>"still reachable" means your program is probably ok --
+     it didn't free some memory it could have.  This is quite
+     common and often reasonable.  Don't use
+     <computeroutput>--show-reachable=yes</computeroutput> if you
+     don't want to see these reports.</para>
+    </listitem>
+    <listitem>
+     <para>"suppressed" means that a leak error has been
+     suppressed.  There are some suppressions in the default
+     suppression files.  You can ignore suppressed errors.</para>
+    </listitem>
+   </itemizedlist>
+  </answer>
+</qandaentry>
+
+
+</qandaset>
+</chapter>
+
+
+<!-- template 
+<chapter id="faq." 
+       xreflabel="xx">
+<title>xx</title>
+<qandaset id="qset.">
+
+<qandaentry id="faq.deflost">
+ <question>
+  <para></para>
+ </question>
+ <answer>
+  <para></para>
+ </answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+-->
+
+
+
+<chapter id="faq.help" xreflabel="How To Get Further Assistance">
+<title>How To Get Further Assistance</title>
+
+
+<para>Please read all of this section before posting.</para>
+
+<para>If you think an answer is incomplete or inaccurate, please
+e-mail <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>.</para>
+
+<para>Read the appropriate section(s) of the Manual(s): 
+<ulink url="http://www.valgrind.org/docs/">Valgrind 
+Documentation</ulink>.</para>
+
+<para>Read the <ulink url="http://www.valgrind.org/docs/">Distribution Documents</ulink>.</para>
+
+<para><ulink url="http://search.gmane.org">Search</ulink> the 
+<ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name 
+<computeroutput>gmane.comp.debugging.valgrind</computeroutput>.</para>
+
+<para>Only when you have tried all of these things and are still stuck,
+should you post to the <ulink url="&vg-users-list;">valgrind-users
+mailing list</ulink>. In which case, please read the following
+carefully.  Making a complete posting will greatly increase the chances
+that an expert or fellow user reading it will have enough information
+and motivation to reply.</para>
+
+<para>Make sure you give full details of the problem,
+including the full output of <computeroutput>valgrind
+-v</computeroutput>, if applicable.  Also which Linux distribution
+you're using (Red Hat, Debian, etc) and its version number.</para>
+
+<para>You are in little danger of making your posting too long
+unless you include large chunks of valgrind's (unsuppressed)
+output, so err on the side of giving too much information.</para>
+
+<para>Clearly written subject lines and message bodies are appreciated,
+too.</para>
+
+<para>Finally, remember that, despite the fact that most of the
+community are very helpful and responsive to emailed questions,
+you are probably requesting help from unpaid volunteers, so you
+have no guarantee of receiving an answer.</para>
+
+</chapter>
+
+</book>

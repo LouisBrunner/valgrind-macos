@@ -1130,24 +1130,24 @@ extern UInt VG_(lit_to_newreg) ( UCodeBlock* cb, UInt lit         );
 
 EV VG_(ccall_0_0)   ( CB_F                                    );
 
-EV VG_(ccall_R_0)   ( CB_F, UInt r1,                      RPn );
-EV VG_(ccall_L_0)   ( CB_F, UInt r1,                      RPn );
-EV VG_(ccall_R_R)   ( CB_F, UInt r1, UInt r_ret,          RPn );
-EV VG_(ccall_L_R)   ( CB_F, UInt r1, UInt r_ret,          RPn );
+EV VG_(ccall_R_0)   ( CB_F, UInt R1,                      RPn );
+EV VG_(ccall_L_0)   ( CB_F, UInt L1,                      RPn );
+EV VG_(ccall_R_R)   ( CB_F, UInt R1, UInt R_ret,          RPn );
+EV VG_(ccall_L_R)   ( CB_F, UInt L1, UInt R_ret,          RPn );
 
-EV VG_(ccall_RR_0)  ( CB_F, UInt r1, UInt r2,             RPn );
-EV VG_(ccall_RL_0)  ( CB_F, UInt r1, UInt r2,             RPn );
-EV VG_(ccall_LR_0)  ( CB_F, UInt r1, UInt r2,             RPn );
-EV VG_(ccall_LL_0)  ( CB_F, UInt r1, UInt r2,             RPn );
-EV VG_(ccall_RR_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
-EV VG_(ccall_RL_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
-EV VG_(ccall_LR_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
-EV VG_(ccall_LL_R)  ( CB_F, UInt r1, UInt r2, UInt r_ret, RPn );
+EV VG_(ccall_RR_0)  ( CB_F, UInt R1, UInt R2,             RPn );
+EV VG_(ccall_RL_0)  ( CB_F, UInt R1, UInt RL,             RPn );
+EV VG_(ccall_LR_0)  ( CB_F, UInt L1, UInt R2,             RPn );
+EV VG_(ccall_LL_0)  ( CB_F, UInt L1, UInt L2,             RPn );
+EV VG_(ccall_RR_R)  ( CB_F, UInt R1, UInt R2, UInt R_ret, RPn );
+EV VG_(ccall_RL_R)  ( CB_F, UInt R1, UInt L2, UInt R_ret, RPn );
+EV VG_(ccall_LR_R)  ( CB_F, UInt L1, UInt R2, UInt R_ret, RPn );
+EV VG_(ccall_LL_R)  ( CB_F, UInt L1, UInt L2, UInt R_ret, RPn );
 
-EV VG_(ccall_RRR_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
-EV VG_(ccall_RLL_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
-EV VG_(ccall_LLR_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
-EV VG_(ccall_LLL_0) ( CB_F, UInt r1, UInt r2, UInt r3,    RPn );
+EV VG_(ccall_RRR_0) ( CB_F, UInt R1, UInt R2, UInt R3,    RPn );
+EV VG_(ccall_RLL_0) ( CB_F, UInt R1, UInt L2, UInt L3,    RPn );
+EV VG_(ccall_LLR_0) ( CB_F, UInt L1, UInt L2, UInt R3,    RPn );
+EV VG_(ccall_LLL_0) ( CB_F, UInt L1, UInt L2, UInt L3,    RPn );
 
 #undef CB_F
 #undef EV

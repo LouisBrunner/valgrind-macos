@@ -9,7 +9,7 @@
 #  This file is part of Cachegrind, a Valgrind tool for cache
 #  profiling programs.
 #
-#  Copyright (C) 2002-2003 Nicholas Nethercote
+#  Copyright (C) 2002-2004 Nicholas Nethercote
 #     njn25@cam.ac.uk
 #
 #  This program is free software; you can redistribute it and/or
@@ -158,7 +158,7 @@ usage: cg_annotate [options] --<pid> [source-files]
     -I --include=<dir>    add <dir> to list of directories to search for 
                           source files
 
-  Cachegrind is Copyright (C) 2002-2003 Nicholas Nethercote.
+  Cachegrind is Copyright (C) 2002-2004 Nicholas Nethercote.
   Both are licensed under the GNU General Public License, version 2.
   Bug reports, feedback, admiration, abuse, etc, to: njn25\@cam.ac.uk.
                                                 

@@ -1,4 +1,8 @@
 
+/*--------------------------------------------------------------------*/
+/*--- Startup: stage 1                                    stage1.c ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
@@ -205,3 +209,7 @@ int main(int argc, char **argv)
    /* move onto another stack so we can play with the main one */
    ume_go((addr_t)hoops, (addr_t)stack + sizeof(stack));
 }
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                 stage1.c ---*/
+/*--------------------------------------------------------------------*/

@@ -8,7 +8,7 @@
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
 
-   Copyright (C) 2000-2003 Nicholas Nethercote
+   Copyright (C) 2000-2004 Nicholas Nethercote
       njn25@cam.ac.uk
 
    This program is free software; you can redistribute it and/or

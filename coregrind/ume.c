@@ -1,4 +1,8 @@
 
+/*--------------------------------------------------------------------*/
+/*--- User-mode execve()                                     ume.c ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
@@ -684,3 +688,7 @@ int do_exec(const char *exe, struct exeinfo *info)
 
    return do_exec_inner(exe, info);
 }
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                    ume.c ---*/
+/*--------------------------------------------------------------------*/

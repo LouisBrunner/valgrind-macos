@@ -12,7 +12,7 @@
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
 
-   Copyright (C) 2000-2003 Julian Seward.  All rights reserved.
+   Copyright (C) 2000-2004 Julian Seward.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

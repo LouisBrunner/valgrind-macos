@@ -163,8 +163,6 @@ UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
 ULong VG_(bbs_done);
-/* 64-bit counter for the number of bbs to go before a debug exit. */
-ULong VG_(bbs_to_go);
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 ThreadId VG_(last_run_tid) = 0;
@@ -1425,7 +1423,6 @@ Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;
 Bool   VG_(clo_trace_sched)    = False;
 Int    VG_(clo_trace_pthread_level) = 0;
-ULong  VG_(clo_stop_after)     = 1000000000000000LL;
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
@@ -1528,8 +1525,6 @@ void usage ( Bool debug_help )
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --trace-pthread=none|some|all  show pthread event details? [none]\n"
-"    --stop-after=<number>     switch to real CPU after executing\n"
-"                              <number> basic blocks [infinity]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
@@ -1860,9 +1855,6 @@ static void process_cmd_line_options
       else if (VG_CLO_STREQ(arg, "--lowlat-syscalls=no"))
 	 VG_(clo_lowlat_syscalls) = False;
 
-      else if (VG_CLO_STREQN(13, arg, "--stop-after="))
-         VG_(clo_stop_after) = VG_(atoll)(&arg[13]);
-
       else if (VG_CLO_STREQN(13, arg, "--dump-error="))
          VG_(clo_dump_error) = (Int)VG_(atoll)(&arg[13]);
 
@@ -2058,8 +2050,6 @@ static void process_cmd_line_options
       config_error("Can't use --gen-suppressions=yes with this skin,\n"
                    "   as it doesn't generate errors.");
    }
-
-   VG_(bbs_to_go) = VG_(clo_stop_after);
 }
 
 
@@ -2098,7 +2088,7 @@ static void setup_file_descriptors(void)
 
 
 /*====================================================================*/
-/*=== m_state_static + baseBlock: definition, setup, copying       ===*/
+/*=== baseBlock: definition + setup                                ===*/
 /*====================================================================*/
 
 /* The variables storing offsets. */
@@ -2188,15 +2178,6 @@ Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
-/* See comment about this in vg_include.h.  Change only with great care. */
-__attribute__ ((aligned (16)))
-UInt VG_(m_state_static) [6 /* segment regs, Intel order */
-                          + 8 /* int regs, in Intel order */ 
-                          + 1 /* %eflags */ 
-                          + 1 /* %eip */
-                          + VG_SIZE_OF_SSESTATE_W /* FPU state */
-                         ];
-
 /* Words. */
 static Int baB_off = 0;
 
@@ -2223,36 +2204,6 @@ Int VG_(extractDflag)(UInt eflags)
 
    return ret;
 }
-
-static void copy_baseBlock_to_m_state_static( void )
-{
-   Int i;
-   VG_(m_state_static)[ 0/4] = VG_(baseBlock)[VGOFF_(m_cs)];
-   VG_(m_state_static)[ 4/4] = VG_(baseBlock)[VGOFF_(m_ss)];
-   VG_(m_state_static)[ 8/4] = VG_(baseBlock)[VGOFF_(m_ds)];
-   VG_(m_state_static)[12/4] = VG_(baseBlock)[VGOFF_(m_es)];
-   VG_(m_state_static)[16/4] = VG_(baseBlock)[VGOFF_(m_fs)];
-   VG_(m_state_static)[20/4] = VG_(baseBlock)[VGOFF_(m_gs)];
-
-   VG_(m_state_static)[24/4] = VG_(baseBlock)[VGOFF_(m_eax)];
-   VG_(m_state_static)[28/4] = VG_(baseBlock)[VGOFF_(m_ecx)];
-   VG_(m_state_static)[32/4] = VG_(baseBlock)[VGOFF_(m_edx)];
-   VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_ebx)];
-   VG_(m_state_static)[40/4] = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(m_state_static)[44/4] = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(m_state_static)[48/4] = VG_(baseBlock)[VGOFF_(m_esi)];
-   VG_(m_state_static)[52/4] = VG_(baseBlock)[VGOFF_(m_edi)];
-
-   VG_(m_state_static)[56/4] 
-      = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
-                         VG_(baseBlock)[VGOFF_(m_dflag)]);
-   VG_(m_state_static)[60/4] = VG_(baseBlock)[VGOFF_(m_eip)];
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(m_state_static)[64/4 + i] 
-         = VG_(baseBlock)[VGOFF_(m_ssestate) + i];
-}
-
 
 /* Returns the offset, in words. */
 static Int alloc_BaB ( Int words )
@@ -2872,7 +2823,7 @@ int main(int argc, char **argv)
    SK_(post_clo_init)();
 
    //--------------------------------------------------------------
-   // Set up baseBlock, copy machine state (m_state_static)
+   // Set up baseBlock
    //   p: {pre,post}_clo_init()  [for tool helper registration]
    //      load_client()          [for 'client_eip']
    //      setup_client_stack()   [for 'esp_at_startup']
@@ -3103,25 +3054,6 @@ int main(int argc, char **argv)
          VG_(exit)(0);
          VG_(core_panic)("entered the afterlife in main() -- Deadlock");
          break;
-
-      case VgSrc_BbsDone: 
-         /* Tricky; we have to try and switch back to the real CPU.
-            This is all very dodgy and won't work at all in the
-            presence of threads, or if the client happened to be
-            running a signal handler. */
-         /* Prepare to restore state to the real CPU. */
-         VG_(sigshutdown_actions)();
-         VG_(load_thread_state)(1 /* root thread */ );
-         copy_baseBlock_to_m_state_static();
-
-	 VG_(proxy_shutdown)();
-
-         /* This pushes a return address on the simulator's stack,
-            which is abandoned.  We call vg_sigshutdown_actions() at
-            the end of vg_switch_to_real_CPU(), so as to ensure that
-            the original stack and machine state is restored before
-            the real signal mechanism is restored.  */
-         VG_(switch_to_real_CPU)();
 
       case VgSrc_FatalSig:
 	 /* We were killed by a fatal signal, so replicate the effect */

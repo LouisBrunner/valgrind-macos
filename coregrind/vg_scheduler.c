@@ -517,7 +517,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    volatile UInt trc = 0;
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-   vg_assert(VG_(bbs_to_go) > 0);
    vg_assert(!VG_(scheduler_jmpbuf_valid));
 
    VGP_PUSHCC(VgpRun);
@@ -901,10 +900,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
          or declare deadlock, or sleep if there are no runnable
          threads but some are blocked on I/O.  */
 
-      /* Was a debug-stop requested? */
-      if (VG_(bbs_to_go) == 0) 
-         goto debug_stop;
-
       /* Do the following loop until a runnable thread is found, or
          deadlock is detected. */
       while (True) {
@@ -996,10 +991,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
          decrement is done before the bb is actually run, so you
          always get at least one decrement even if nothing happens.
       */
-      if (VG_(bbs_to_go) >= VG_SCHEDULING_QUANTUM)
-         VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
-      else
-         VG_(dispatch_ctr) = (UInt)VG_(bbs_to_go) + 1;
+      VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
 
       /* ... and remember what we asked for. */
       dispatch_ctr_SAVED = VG_(dispatch_ctr);
@@ -1186,7 +1178,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
       done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 1;
       vg_assert(done_this_time >= 0);
-      VG_(bbs_to_go)   -= (ULong)done_this_time;
       VG_(bbs_done)    += (ULong)done_this_time;
 
       if (0 && trc != VG_TRC_INNER_FASTMISS)
@@ -1207,18 +1198,12 @@ VgSchedReturnCode VG_(scheduler) ( void )
             /* Explicit yield.  Let a new thread be scheduled,
                simply by doing nothing, causing us to arrive back at
                Phase 1. */
-            if (VG_(bbs_to_go) == 0) {
-               goto debug_stop;
-            }
             break;
 
          case VG_TRC_INNER_COUNTERZERO:
             /* Timeslice is out.  Let a new thread be scheduled,
                simply by doing nothing, causing us to arrive back at
                Phase 1. */
-            if (VG_(bbs_to_go) == 0) {
-               goto debug_stop;
-            }
             vg_assert(VG_(dispatch_ctr) == 0);
             break;
 
@@ -1256,20 +1241,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
    /* NOTREACHED */
    VG_(core_panic)("scheduler: post-main-loop ?!");
    /* NOTREACHED */
-
-  debug_stop:
-   /* If we exited because of a debug stop, print the translation 
-      of the last block executed -- by translating it again, and 
-      throwing away the result. */
-   VG_(printf)(
-      "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
-   VG_(translate)( tid, 
-                   VG_(threads)[tid].m_eip, NULL, NULL, NULL, NULL );
-   VG_(printf)("\n");
-   VG_(printf)(
-      "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
-
-   return VgSrc_BbsDone;
 }
 
 void VG_(need_resched) ( ThreadId prefer )

@@ -63,7 +63,6 @@ stage2_SOURCES = \
 	vg_proxylwp.c \
 	vg_dummy_profile.c \
 	vg_signals.c \
-	vg_startup.S \
 	vg_symtab2.c \
 	vg_dwarf.c \
 	vg_stabs.c \

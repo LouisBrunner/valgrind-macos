@@ -199,9 +199,8 @@ A12. One possible cause is that your program modifies its
      VG_ARGS variables.  Zeroing them will break things.
 
      As of 1.9.6, Valgrind only uses these variables with
-     --trace-children=no, when executing execve() or using the
-     --stop-after=yes flag.  This should reduce the potential for
-     problems.
+     --trace-children=no or when executing execve().  This should 
+     reduce the potential for problems.
 
 -----------------------------------------------------------------
 

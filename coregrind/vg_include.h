@@ -243,8 +243,6 @@ extern Bool  VG_(clo_trace_sched);
 /* DEBUG: print pthread (mutex etc) events?  default: 0 (none), 1
    (some), 2 (all) */
 extern Int   VG_(clo_trace_pthread_level);
-/* Stop after this many basic blocks.  default: Infinity. */
-extern ULong VG_(clo_stop_after);
 /* Display gory details for the k'th most popular error.  default:
    Infinity. */
 extern Int   VG_(clo_dump_error);
@@ -822,7 +820,7 @@ typedef
       registers are not shadowed.
 
       Although the segment registers are 16 bits long, storage
-      management here, in VG_(baseBlock) and in VG_(m_state_static) is
+      management here and in VG_(baseBlock) is
       simplified if we pretend they are 32 bits. */
    UInt m_cs;
    UInt m_ss;
@@ -910,8 +908,6 @@ typedef
                             even if we wait for a long time */
       VgSrc_ExitSyscall, /* client called exit().  This is the normal
                             route out. */
-      VgSrc_BbsDone,     /* In a debugging run, the specified number of
-                            bbs has been completed. */
       VgSrc_FatalSig	 /* Killed by the default action of a fatal
 			    signal */
    }
@@ -1336,7 +1332,7 @@ extern Addr VG_(code_redirect)	  (Addr orig);
 
 /* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
    the SSE state all over the place.  This is set up very early, in
-   vg_startup.S.  We have to determine it early since we can't even
+   main().  We have to determine it early since we can't even
    correctly snapshot the startup machine state without it. */
 extern Bool VG_(have_ssestate);
 
@@ -1371,25 +1367,6 @@ extern Int  VG_(clexecfd);
 
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
-
-/* A structure used as an intermediary when passing the simulated
-   CPU's state to VG_(switch_to_real_CPU)(), for --stop-after=yes.
-   Stuff is copied from baseBlock to here, because it's much easier
-   to copy the state into the real registers from this structure than
-   the baseBlock, because it's layout is simpler.
-   Alignment: the SSE state must be 16-byte aligned.  We ask for the whole
-   struct to be 16-byte aligned, and the SSE state starts at the 6+8+1+1th
-   == 16th word, so it too must be 16-byte aligned.  Consequence: change
-   this struct only _very carefully_ !  See also above comment re masking
-   MXCSR. 
-*/
-__attribute__ ((aligned (16)))
-extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
-                                 + 8 /* int regs, in Intel order */ 
-                                 + 1 /* %eflags */ 
-                                 + 1 /* %eip */
-                                 + VG_SIZE_OF_SSESTATE_W /* SSE state */
-                                ];
 
 /* Determine if %esp adjustment must be noted */
 extern Bool VG_(need_to_handle_esp_assignment) ( void );
@@ -1641,12 +1618,6 @@ extern Addr VG_(search_transtab) ( Addr original_addr );
 extern Int VG_(do_syscall) ( UInt, ... );
 extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg, 
 			Int *child_tid, Int *parent_tid);
-
-/* ---------------------------------------------------------------------
-   Exports of vg_startup.S
-   ------------------------------------------------------------------ */
-
-extern void VG_(switch_to_real_CPU) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_dispatch.S

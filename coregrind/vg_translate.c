@@ -1509,28 +1509,6 @@ static void vg_improve ( UCodeBlock* cb )
    Int*    last_live_before;
    FlagSet future_dead_flags;
 
-#  if 0
-   /* DEBUGGING HOOK */
-   {
-   static int n_done=0;
-   if (VG_(clo_stop_after) > 1000000000) {
-      if (n_done > (VG_(clo_stop_after) - 1000000000)) {
-         dis=False;
-         VG_(clo_trace_codegen)  = 0;
-         return;
-       }
-       if (n_done == (VG_(clo_stop_after) - 1000000000)) {
-         VG_(printf)("\n");
-         VG_(pp_UCodeBlock) ( cb, "Incoming:" );
-         dis = True;
-         VG_(clo_trace_codegen)  = 31;
-       }
-       n_done++;
-     }
-   }
-   /* end DEBUGGING HOOK */
-#  endif /* 0 */
-
    if (dis) 
       VG_(printf) ("Improvements:\n");
 

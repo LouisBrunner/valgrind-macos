@@ -268,6 +268,8 @@ static void      iselIntExpr64     ( HReg* rHi, HReg* rLo,
 static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
 static X86CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
 
+static HReg iselDblExpr ( ISelEnv* env, IRExpr* e );
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
@@ -608,6 +610,40 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                           X86RMI_Reg(tmp), dst));
             return dst;
          }
+
+         case Iop_F64toI32:
+         case Iop_F64toI16: {
+            Int  sz  = e->Iex.Unop.op == Iop_F64toI16 ? 2 : 4;
+            HReg dst = newVRegI(env);
+            HReg rf  = iselDblExpr(env, e->Iex.Unop.arg);
+            /* subl $sz, %esp */
+            addInstr(env, X86Instr_Alu32R(Xalu_SUB,
+                                          X86RMI_Imm(sz),
+                                          hregX86_ESP()));
+            /* gistw/l %rf, 0(%esp) */
+            addInstr(env, X86Instr_FpLdStI(
+                             False/*store*/, sz, rf, 
+                             X86AMode_IR(0, hregX86_ESP())));
+            if (sz == 2) {
+               /* movzwl 0(%esp), %dst */
+               addInstr(env, X86Instr_LoadEX(
+                                2,False,
+                                X86AMode_IR(0, hregX86_ESP()),dst));
+           } else {
+               /* movl 0(%esp), %dst */
+               vassert(sz == 4);
+               addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
+                                X86RMI_Mem(X86AMode_IR(0, hregX86_ESP())),
+                                dst));
+            }
+            /* addl $sz, %esp */
+            addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                          X86RMI_Imm(sz),
+                                          hregX86_ESP()));
+            return dst;
+         }
+
+
          case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:
@@ -1304,6 +1340,32 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
     positive zero         0           0             .000000---0
 */
 
+static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
+{
+   //   MatchInfo mi;
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_F32);
+
+   if (e->tag == Iex_LDle) {
+      X86AMode* am;
+      HReg res = newVRegF(env);
+      vassert(e->Iex.LDle.ty == Ity_F32);
+      am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
+      addInstr(env, X86Instr_FpLdSt(True/*load*/, 4, res, am));
+      return res;
+   }
+
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_F64toF32) {
+      /* this is a no-op */
+      return iselDblExpr(env, e->Iex.Unop.arg);
+   }
+
+   ppIRExpr(e);
+   vpanic("iselFltExpr");
+}
+
+
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 {
    //   MatchInfo mi;
@@ -1388,13 +1450,26 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Unop) {
-      if (e->Iex.Unop.op == Iop_I64toF64) {
-         HReg iHi, iLo;
-         HReg dst = newVRegF(env);
-         iselIntExpr64(&iHi, &iLo, env, e->Iex.Unop.arg);
-         addInstr(env, X86Instr_FpI64(False/*i->f*/,dst,iHi,iLo));
-         return dst;
+      switch (e->Iex.Unop.op) {
+         case Iop_I32toF64: {
+            HReg dst = newVRegF(env);
+            HReg ri  = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(ri)));
+            addInstr(env, X86Instr_FpLdStI(
+                             True/*load*/, 4, dst, 
+                             X86AMode_IR(0, hregX86_ESP())));
+	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                          X86RMI_Imm(4),
+                                          hregX86_ESP()));
+            return dst;
+         }
+         case Iop_F32toF64:
+            /* this is a no-op */
+            return iselFltExpr(env, e->Iex.Unop.arg);
+         default: 
+            break;
       }
+
    }
 
    /* --------- MULTIPLEX --------- */
@@ -1453,6 +1528,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (tyd == Ity_F64) {
          HReg r = iselDblExpr(env, stmt->Ist.STle.data);
          addInstr(env, X86Instr_FpLdSt(False/*store*/, 8, r, am));
+         return;
+      }
+      if (tyd == Ity_F32) {
+         HReg r = iselFltExpr(env, stmt->Ist.STle.data);
+         addInstr(env, X86Instr_FpLdSt(False/*store*/, 4, r, am));
          return;
       }
       break;
@@ -1624,6 +1704,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
          case Ity_I32: hreg   = mkHReg(j++, HRcInt, True); break;
          case Ity_I64: hreg   = mkHReg(j++, HRcInt, True);
                        hregHI = mkHReg(j++, HRcInt, True); break;
+         case Ity_F32:
          case Ity_F64: hreg   = mkHReg(j++, HRcFloat, True); break;
          default: ppIRType(bb->tyenv->types[i]);
                   vpanic("iselBB: IRTemp type");

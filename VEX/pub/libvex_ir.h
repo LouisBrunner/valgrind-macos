@@ -134,7 +134,11 @@ typedef
       /* FP stuff */
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
       Iop_SqrtF64,
-      Iop_I64toF64, Iop_F64toI64
+      /* double <-> int */
+      Iop_I32toF64, 
+      Iop_F64toI32, Iop_F64toI16,
+      /* double <-> float */
+      Iop_F32toF64, Iop_F64toF32
    }
    IROp;
 

@@ -580,13 +580,14 @@ X86Instr* X86Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
    vassert(sz == 4 || sz == 8);
    return i;
 }
-X86Instr* X86Instr_FpI64 ( Bool toInt, HReg freg, HReg iregHi, HReg iregLo ) {
-   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag              = Xin_FpI64;
-   i->Xin.FpI64.toInt  = toInt;
-   i->Xin.FpI64.freg   = freg;
-   i->Xin.FpI64.iregHi = iregHi;
-   i->Xin.FpI64.iregLo = iregLo;
+X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
+   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                = Xin_FpLdStI;
+   i->Xin.FpLdStI.isLoad = isLoad;
+   i->Xin.FpLdStI.sz     = sz;
+   i->Xin.FpLdStI.reg    = reg;
+   i->Xin.FpLdStI.addr   = addr;
+   vassert(sz == 2 || sz == 4 || sz == 8);
    return i;
 }
 X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
@@ -737,16 +738,19 @@ void ppX86Instr ( X86Instr* i ) {
             ppX86AMode(i->Xin.FpLdSt.addr);
          }
          return;
-      case Xin_FpI64:
-         if (i->Xin.FpI64.toInt) {
-            vassert(0);
-         } else {
-            vex_printf("gi64tof64 ");
-            ppHRegX86(i->Xin.FpI64.iregHi);
-            vex_printf(":");
-            ppHRegX86(i->Xin.FpI64.iregLo);
+      case Xin_FpLdStI:
+         if (i->Xin.FpLdStI.isLoad) {
+            vex_printf("gild%s ", i->Xin.FpLdStI.sz==8 ? "ll" : 
+                                  i->Xin.FpLdStI.sz==4 ? "l" : "w");
+            ppX86AMode(i->Xin.FpLdStI.addr);
             vex_printf(", ");
-            ppHRegX86(i->Xin.FpI64.freg);
+            ppHRegX86(i->Xin.FpLdStI.reg);
+         } else {
+            vex_printf("gist%s ", i->Xin.FpLdStI.sz==8 ? "ll" : 
+                                  i->Xin.FpLdStI.sz==4 ? "l" : "w");
+            ppHRegX86(i->Xin.FpLdStI.reg);
+            vex_printf(", ");
+            ppX86AMode(i->Xin.FpLdStI.addr);
          }
          return;
       case Xin_FpCMov:
@@ -862,14 +866,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, i->Xin.FpLdSt.isLoad ? HRmWrite : HRmRead,
                        i->Xin.FpLdSt.reg);
          return;
-      case Xin_FpI64:
-         if (i->Xin.FpI64.toInt) {
-            vassert(0);
-         } else {
-            addHRegUse(u, HRmWrite, i->Xin.FpI64.freg);
-            addHRegUse(u, HRmRead, i->Xin.FpI64.iregHi);
-            addHRegUse(u, HRmRead, i->Xin.FpI64.iregLo);
-         }
+      case Xin_FpLdStI:
+         addRegUsage_X86AMode(u, i->Xin.FpLdStI.addr);
+         addHRegUse(u, i->Xin.FpLdStI.isLoad ? HRmWrite : HRmRead,
+                       i->Xin.FpLdStI.reg);
          return;
       case Xin_FpCMov:
          addHRegUse(u, HRmRead, i->Xin.FpCMov.src);
@@ -955,10 +955,9 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapRegs_X86AMode(m, i->Xin.FpLdSt.addr);
          mapReg(m, &i->Xin.FpLdSt.reg);
          return;
-      case Xin_FpI64:
-         mapReg(m, &i->Xin.FpI64.freg);
-         mapReg(m, &i->Xin.FpI64.iregHi);
-         mapReg(m, &i->Xin.FpI64.iregLo);
+      case Xin_FpLdStI:
+         mapRegs_X86AMode(m, i->Xin.FpLdStI.addr);
+         mapReg(m, &i->Xin.FpLdStI.reg);
          return;
       case Xin_FpCMov:
          mapReg(m, &i->Xin.FpCMov.src);
@@ -1774,6 +1773,41 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       break;
 
+   case Xin_FpLdStI:
+      if (i->Xin.FpLdStI.isLoad) {
+         /* Load from memory into %fakeN, converting from an int.  
+            --> ffree %st(7) ; fild{w/l/ll} amode ; fstp st(N+1) 
+         */
+         switch (i->Xin.FpLdStI.sz) {
+            case 8:  vassert(0); opc = 0xDF; subopc_imm = 5; break;
+            case 4:  opc = 0xDB; subopc_imm = 0; break;
+            case 2:  vassert(0); opc = 0xDF; subopc_imm = 0; break;
+            default: vpanic("emitX86Instr(Xin_FpLdStI-load)");
+         }
+         p = do_ffree_st7(p);
+         *p++ = opc;
+         p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
+         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdStI.reg));
+         goto done;
+      } else {
+         /* Store from %fakeN into memory, converting to an int.
+            --> ffree %st(7) ; fld st(N) ; fistp{w/l/ll} amode
+	 */
+         switch (i->Xin.FpLdStI.sz) {
+            case 8:  vassert(0); opc = 0xDF; subopc_imm = 7; break;
+            case 4:  opc = 0xDB; subopc_imm = 3; break;
+            case 2:  opc = 0xDF; subopc_imm = 3; break;
+            default: vpanic("emitX86Instr(Xin_FpLdStI-store)");
+         }
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdStI.reg));
+         *p++ = opc;
+         p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
+         goto done;
+      }
+      break;
+
+#if 0
    case Xin_FpI64:
      if (i->Xin.FpI64.toInt) {
        vassert(0);
@@ -1794,6 +1828,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
         p = do_fstp_st(p, 1+fregNo(i->Xin.FpI64.freg));
         goto done;
      }
+#endif
 
    case Xin_FpCMov:
       /* jmp fwds if !condition */

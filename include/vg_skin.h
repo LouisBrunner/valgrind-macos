@@ -428,6 +428,10 @@ extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 
 extern Char* VG_(getcwd) ( Char* buf, Int size );
 
+/* Easier to use than VG_(getcwd)() -- does the buffer fiddling itself.
+   String put into 'cwd' is VG_(malloc)'d, and should be VG_(free)'d.
+   Returns False if it fails.  Will fail if the pathname is > 65535 bytes. */
+extern Bool VG_(getcwd_alloc) ( Char** cwd );
 
 /* ------------------------------------------------------------------ */
 /* assert.h */

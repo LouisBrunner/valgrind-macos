@@ -1212,6 +1212,25 @@ Char* VG_(getcwd) ( Char* buf, Int size )
    return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
 }
 
+/* Alternative version that does allocate the memory.  Easier to use. */
+Bool VG_(getcwd_alloc) ( Char** out )
+{
+   UInt size = 4;
+
+   *out = NULL;
+   while (True) {
+      *out = VG_(malloc)(size);
+      if (NULL == VG_(getcwd)(*out, size)) {
+         VG_(free)(*out);
+         if (size > 65535)
+            return False;
+         size *= 2;
+      } else {
+         return True;
+      }
+   }
+}
+
 
 /* ---------------------------------------------------------------------
    Misc functions looking for a proper home.

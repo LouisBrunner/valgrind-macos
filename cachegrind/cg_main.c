@@ -2022,7 +2022,6 @@ void SK_(print_debug_usage)(void)
 
 void SK_(pre_clo_init)(void)
 {
-   UInt  buf_size = 100;
    Char* base_dir = NULL;
    
    VG_(details_name)            ("Cachegrind");
@@ -2043,17 +2042,14 @@ void SK_(pre_clo_init)(void)
    VG_(register_compact_helper)((Addr) & log_0I_2D_cache_access);
    VG_(register_compact_helper)((Addr) & log_1I_2D_cache_access);
 
-   /* getcwd() fails if the buffer isn't big enough -- keep doubling size
-      until it succeeds. */
-   while (NULL == base_dir) {
-      base_dir = VG_(malloc)(buf_size);
-      if (NULL == VG_(getcwd)(base_dir, buf_size))
-         buf_size *= 2;
-   }
+   /* Get working directory */
+   sk_assert( VG_(getcwd_alloc)(&base_dir) );
+
    /* Block is big enough for dir name + cachegrind.out.<pid> */
    cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
    VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
                 base_dir, VG_(getpid)());
+   VG_(free)(base_dir);
 }
 
 void SK_(post_clo_init)(void)

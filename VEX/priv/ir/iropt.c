@@ -403,6 +403,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U8(
                     0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
             break;
+         case Iop_32to1:
+            e2 = IRExpr_Const(IRConst_Bit(
+                    0==e->Iex.Unop.arg->Iex.Const.con->Ico.U32
+                       ? False : True));
+            break;
          case Iop_Not32:
             e2 = IRExpr_Const(IRConst_U32(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
@@ -510,6 +515,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+
+            case Iop_CmpLE32U:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
+                        <= (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+               break;
+
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
                        (((ULong)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)) << 32)
@@ -2713,6 +2725,8 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
 
 static void deltaIRStmt ( IRStmt* st, Int delta )
 {
+   Int      i;
+   IRDirty* d;
    switch (st->tag) {
       case Ist_Put:
          deltaIRExpr(st->Ist.Put.data, delta);
@@ -2721,7 +2735,8 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.PutI.off, delta);
          deltaIRExpr(st->Ist.PutI.data, delta);
          break;
-      case Ist_Tmp: st->Ist.Tmp.tmp += delta;
+      case Ist_Tmp: 
+         st->Ist.Tmp.tmp += delta;
          deltaIRExpr(st->Ist.Tmp.data, delta);
          break;
       case Ist_Exit:
@@ -2730,6 +2745,15 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
       case Ist_STle:
          deltaIRExpr(st->Ist.STle.addr, delta);
          deltaIRExpr(st->Ist.STle.data, delta);
+         break;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         for (i = 0; d->args[i]; i++)
+            deltaIRExpr(d->args[i], delta);
+         if (d->tmp != INVALID_IRTEMP)
+            d->tmp += delta;
+         if (d->mAddr)
+            deltaIRExpr(d->mAddr, delta);
          break;
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");

@@ -265,7 +265,6 @@ static void main2(void)
    assert(info.exe_base >= PGROUNDUP(&_end));
    info.map_base = info.exe_base + 0x01000000;
 #else
-
    // If this system doesn't have PIE (position-independent executables),
    // we have to choose a hardwired location for stage2.
    info.exe_base = PGROUNDUP(&_end);

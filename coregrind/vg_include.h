@@ -979,6 +979,7 @@ extern Int     VG_(longjmpd_on_signal);
    ------------------------------------------------------------------ */
 
 extern void VG_(sigstartup_actions) ( void );
+extern void VG_(sigshutdown_actions) ( void );
 
 extern Bool VG_(deliver_signals) ( void );
 extern void VG_(unblock_host_signal) ( Int sigNo );

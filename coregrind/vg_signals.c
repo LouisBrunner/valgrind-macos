@@ -1560,10 +1560,6 @@ void VG_(sigstartup_actions) ( void )
    get here?  Hmm.
    I guess we wind up in vg_signalreturn_bogusRA, *or* the
    handler has done/will do a longjmp, in which case we're ok.
-
-   It is important (see vg_startup.S) that this proc does not
-   change the state of the real FPU, since it is called when
-   running the program on the real CPU.
 */
 void VG_(sigshutdown_actions) ( void )
 {

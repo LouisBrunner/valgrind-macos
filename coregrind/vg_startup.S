@@ -205,26 +205,6 @@ qq4merge:
 	movl	VG_(m_state_static)+48, %esi
 	movl	VG_(m_state_static)+52, %edi
 
-	pushal
-	pushfl
-	# We hope that vg_sigshutdown_actions does not alter
-	# the FPU state.
-	call	 VG_(sigshutdown_actions)
-	popfl
-	popal
-	
-	# re-restore the FPU state anyway ...
-	pushfl
-	cmpb	$0, VG_(have_ssestate)
-	jz	qq5nosse
-	andl	$0x0000FFBF, VG_(m_state_static)+64+24
-	fxrstor	VG_(m_state_static)+64
-	jmp	qq5merge
-qq5nosse:
-	frstor	VG_(m_state_static)+64
-qq5merge:
-	popfl
-
 	jmp	*VG_(m_state_static)+60
 
 

@@ -1598,6 +1598,7 @@ void VG_(main) ( void )
             presence of threads, or if the client happened to be
             running a signal handler. */
          /* Prepare to restore state to the real CPU. */
+         VG_(sigshutdown_actions)();
          VG_(load_thread_state)(1 /* root thread */ );
          VG_(copy_baseBlock_to_m_state_static)();
 
@@ -1606,6 +1607,7 @@ void VG_(main) ( void )
             the end of vg_switch_to_real_CPU(), so as to ensure that
             the original stack and machine state is restored before
             the real signal mechanism is restored.  */
+	VG_(printf)("BBS DONE\n\n");
          VG_(switch_to_real_CPU)();
 
       default:

@@ -1077,7 +1077,14 @@ __attribute__ ((noreturn))
 static void report_and_quit ( Char* report )
 {
    VG_(pp_sched_status)();
-   VG_(printf)("Please report this bug to: %s\n\n", report);
+   VG_(printf)("\n");
+   VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
+   VG_(printf)("It contains workarounds to several common problems.\n");
+   VG_(printf)("\n");
+   VG_(printf)("If that doesn't help, please report this bug to: %s\n\n", 
+               report);
+   VG_(printf)("In the bug report, send all the above text, the valgrind\n");
+   VG_(printf)("version, and what Linux distro you are using.  Thanks.\n");
    VG_(shutdown_logging)();
    VG_(exit)(1);
 }

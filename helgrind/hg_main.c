@@ -86,7 +86,7 @@ static enum {
    EC_All
 } clo_execontext = EC_None;
 
-static Bool clo_priv_stacks = True;
+static Bool clo_priv_stacks = False;
 
 /*------------------------------------------------------------*/
 /*--- Crude profiling machinery.                           ---*/
@@ -3212,7 +3212,7 @@ Char *SK_(usage)(void)
 {
    return ""
 "    --show-last-access=no|some|all  show location of last word access on error [no]\n"
-"    --private-stacks=yes|no         assume thread stacks are used privately [yes]\n"
+"    --private-stacks=yes|no         assume thread stacks are used privately [no]\n"
       ;
 }
 

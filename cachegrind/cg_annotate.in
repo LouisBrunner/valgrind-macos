@@ -408,18 +408,6 @@ sub read_input_file()
             $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
 
-        } elsif (s/^(fi|fe)=(.*)$//) {
-            (defined $curr_name) or die("Line $.: Unexpected fi/fe line\n");
-            $fn_totals{$curr_name} = $curr_fn_CC;
-            $all_ind_CCs{$curr_file} = $curr_file_ind_CCs;
-
-            $curr_file = $2;
-            $curr_name = "$curr_file:$curr_fn";
-            $curr_file_ind_CCs = $all_ind_CCs{$curr_file};
-            $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
-            $curr_fn_CC = $fn_totals{$curr_name};
-            $curr_fn_CC = [] unless (defined $curr_fn_CC);
-
         } elsif (s/^\s*$//) {
             # blank, do nothing
         

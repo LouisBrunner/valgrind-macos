@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Cachegrind: cache detection; instrumentation, recording and  ---*/
-/*--- results printing.                                            ---*/
+/*--- Cachegrind: every but the simulation itself.                 ---*/
 /*---                                                    cg_main.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -46,18 +45,10 @@ typedef struct {
 /*--- Constants                                            ---*/
 /*------------------------------------------------------------*/
 
-/* According to IA-32 Intel Architecture Software Developer's Manual: Vol 2 */
-#define MAX_x86_INSTR_SIZE              16
-
-#define MIN_LINE_SIZE   16
-
-/* Size of various buffers used for storing strings */
-#define FILENAME_LEN                    256
-#define FN_NAME_LEN                     256
-#define BUF_LEN                         512
-#define COMMIFY_BUF_LEN                 128
-#define RESULTS_BUF_LEN                 128
-#define LINE_BUF_LEN                     64
+#define MAX_x86_INSTR_SIZE    16    // According to ia32 sw dev manual vol 2
+#define MIN_LINE_SIZE         16
+#define FILE_LEN              256
+#define FN_LEN                256
 
 /*------------------------------------------------------------*/
 /*--- Profiling events                                     ---*/
@@ -65,29 +56,14 @@ typedef struct {
 
 typedef 
    enum { 
-      VgpGetBBCC = VgpFini+1,
+      VgpGetLineCC = VgpFini+1,
       VgpCacheSimulate,
       VgpCacheResults
    } 
    VgpToolCC;
 
 /*------------------------------------------------------------*/
-/*--- Output file related stuff                            ---*/
-/*------------------------------------------------------------*/
-
-static Char* cachegrind_out_file;
-
-static void file_err ( void )
-{
-   VG_(message)(Vg_UserMsg,
-      "error: can't open cache simulation output file `%s'",
-      cachegrind_out_file );
-   VG_(message)(Vg_UserMsg,
-      "       ... so simulation results will be missing.");
-}
-
-/*------------------------------------------------------------*/
-/*--- Cost center types, operations                        ---*/
+/*--- Types and Data Structures                            ---*/
 /*------------------------------------------------------------*/
 
 typedef struct _CC CC;
@@ -97,753 +73,473 @@ struct _CC {
    ULong m2;
 };
 
-static __inline__ void initCC(CC* cc) {
-    cc->a  = 0;
-    cc->m1 = 0;
-    cc->m2 = 0;
-}
-
-typedef 
-   enum {
-      InstrCC,         /* eg. mov %eax,   %ebx                      */
-      ReadCC,          /* eg. mov (%ecx), %esi                      */
-      WriteCC,         /* eg. mov %eax,   (%edx)                    */
-      ModCC,           /* eg. incl (%eax) (read+write one addr)     */
-      ReadWriteCC,     /* eg. call*l (%esi), pushl 0x4(%ebx), movsw 
-                               (read+write two different addrs)      */
-   } CC_type;
-
-/* Instruction-level cost-centres.  
- *
- * WARNING:  the 'tag' field *must* be the first byte of both CC types.
- *
- * This is because we use it to work out what kind of CC we're dealing with.
- */ 
-typedef
-   struct {
-      /* word 1 */
-      UChar tag;
-      UChar instr_size;
-      /* 2 bytes padding */
-
-      /* words 2+ */
-      Addr instr_addr;
-      CC I;
-   }
-   iCC;
-
-typedef
-   struct _idCC {
-      /* word 1 */
-      UChar tag;
-      UChar instr_size;
-      UChar data_size;
-      /* 1 byte padding */
-
-      /* words 2+ */
-      Addr instr_addr;
-      CC I;
-      CC D;
-   }
-   idCC;
-
-typedef
-   struct _iddCC {
-      /* word 1 */
-      UChar tag;
-      UChar instr_size;
-      UChar data_size;
-      /* 1 byte padding */
-
-      /* words 2+ */
-      Addr instr_addr;
-      CC I;
-      CC Da;
-      CC Db;
-   }
-   iddCC;
-
-static void init_iCC(iCC* cc, Addr instr_addr, UInt instr_size)
-{
-   cc->tag        = InstrCC;
-   cc->instr_size = instr_size;
-   cc->instr_addr = instr_addr;
-   initCC(&cc->I);
-}
-
-static void init_idCC(CC_type X_CC, idCC* cc, Addr instr_addr,
-                      UInt instr_size, UInt data_size)
-{
-   cc->tag        = X_CC;
-   cc->instr_size = instr_size;
-   cc->data_size  = data_size;
-   cc->instr_addr = instr_addr;
-   initCC(&cc->I);
-   initCC(&cc->D);
-}
-
-static void init_iddCC(iddCC* cc, Addr instr_addr,
-                       UInt instr_size, UInt data_size)
-{
-   cc->tag        = ReadWriteCC;
-   cc->instr_size = instr_size;
-   cc->data_size  = data_size;
-   cc->instr_addr = instr_addr;
-   initCC(&cc->I);
-   initCC(&cc->Da);
-   initCC(&cc->Db);
-}
-
-#define ADD_CC_TO(CC_type, cc, total)           \
-   total.a  += ((CC_type*)BBCC_ptr)->cc.a;      \
-   total.m1 += ((CC_type*)BBCC_ptr)->cc.m1;     \
-   total.m2 += ((CC_type*)BBCC_ptr)->cc.m2;
-          
-/* If 1, address of each instruction is printed as a comment after its counts
- * in cachegrind.out */
-#define PRINT_INSTR_ADDRS 0
-
-static __inline__ void sprint_iCC(Char buf[BUF_LEN], iCC* cc)
-{
-#if PRINT_INSTR_ADDRS
-   VG_(sprintf)(buf, "%llu %llu %llu # %x\n",
-                      cc->I.a, cc->I.m1, cc->I.m2, cc->instr_addr);
-#else
-   VG_(sprintf)(buf, "%llu %llu %llu\n",
-                      cc->I.a, cc->I.m1, cc->I.m2);
-#endif
-}
-
-static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], idCC* cc)
-{
-#if PRINT_INSTR_ADDRS
-   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu # %x\n",
-                      cc->I.a, cc->I.m1, cc->I.m2, 
-                      cc->D.a, cc->D.m1, cc->D.m2, cc->instr_addr);
-#else
-   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu\n",
-                      cc->I.a, cc->I.m1, cc->I.m2, 
-                      cc->D.a, cc->D.m1, cc->D.m2);
-#endif
-}
-
-static __inline__ void sprint_write_CC(Char buf[BUF_LEN], idCC* cc)
-{
-#if PRINT_INSTR_ADDRS
-   VG_(sprintf)(buf, "%llu %llu %llu . . . %llu %llu %llu # %x\n",
-                      cc->I.a, cc->I.m1, cc->I.m2, 
-                      cc->D.a, cc->D.m1, cc->D.m2, cc->instr_addr);
-#else
-   VG_(sprintf)(buf, "%llu %llu %llu . . . %llu %llu %llu\n",
-                      cc->I.a, cc->I.m1, cc->I.m2, 
-                      cc->D.a, cc->D.m1, cc->D.m2);
-#endif
-}
-
-static __inline__ void sprint_read_write_CC(Char buf[BUF_LEN], iddCC* cc)
-{
-#if PRINT_INSTR_ADDRS
-   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu # %x\n",
-                      cc->I.a,  cc->I.m1,  cc->I.m2, 
-                      cc->Da.a, cc->Da.m1, cc->Da.m2,
-                      cc->Db.a, cc->Db.m1, cc->Db.m2, cc->instr_addr);
-#else
-   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                      cc->I.a,  cc->I.m1,  cc->I.m2, 
-                      cc->Da.a, cc->Da.m1, cc->Da.m2,
-                      cc->Db.a, cc->Db.m1, cc->Db.m2);
-#endif
-}
-
-
-/*------------------------------------------------------------*/
-/*--- BBCC hash table stuff                                ---*/
-/*------------------------------------------------------------*/
-
-/* The table of BBCCs is of the form hash(filename, hash(fn_name,
- * hash(BBCCs))).  Each hash table is separately chained.  The sizes below work
- * fairly well for Konqueror. */
+//------------------------------------------------------------
+// Primary data structure #1: CC table
+// - Holds the per-source-line hit/miss stats, grouped by file/function/line.
+// - hash(file, hash(fn, hash(line+CC)))
+// - Each hash table is separately chained.
+// - The array sizes below work fairly well for Konqueror.
+// - Lookups done by instr_addr, which is converted immediately to a source
+//   location.
+// - Traversed for dumping stats at end in file/func/line hierarchy.
 
 #define N_FILE_ENTRIES        251
 #define   N_FN_ENTRIES         53
-#define N_BBCC_ENTRIES         37
+#define N_LINE_ENTRIES         37
 
-/* The cost centres for a basic block are stored in a contiguous array.
- * They are distinguishable by their tag field. */
-typedef struct _BBCC BBCC;
-struct _BBCC {
-   Addr  orig_addr;
-   UInt  array_size;    /* byte-size of variable length array */
-   BBCC* next;
-   Addr  array[0];      /* variable length array */
+typedef struct _lineCC lineCC;
+struct _lineCC {
+   Int      line;
+   CC       Ir;
+   CC       Dr;
+   CC       Dw;
+   lineCC*  next;
 };
 
-typedef struct _fn_node fn_node;
-struct _fn_node {
-   Char*    fn_name;
-   BBCC*    BBCCs[N_BBCC_ENTRIES];
-   fn_node* next;
+typedef struct _fnCC fnCC;
+struct _fnCC {
+   Char*   fn;
+   fnCC*   next;
+   lineCC* lines[N_LINE_ENTRIES];
 };
 
-typedef struct _file_node file_node;
-struct _file_node {
-   Char*      filename;
-   fn_node*   fns[N_FN_ENTRIES];
-   file_node* next;
+typedef struct _fileCC fileCC;
+struct _fileCC {
+   Char*   file;
+   fileCC* next;
+   fnCC*   fns[N_FN_ENTRIES];
 };
 
-/* BBCC_table structure:  list(filename, list(fn_name, list(BBCC))) */
-static file_node *BBCC_table[N_FILE_ENTRIES];
+// Top level of CC table.  Auto-zeroed.
+static fileCC *CC_table[N_FILE_ENTRIES];
 
+//------------------------------------------------------------
+// Primary data structre #2: Instr-info table
+// - Holds the cached info about each instr that is used for simulation.
+// - table(BB_start_addr, list(instr_info))
+// - For each BB, each instr_info in the list holds info about the
+//   instruction (instr_size, instr_addr, etc), plue a pointer to its line
+//   CC.  This node is what's passed to the simulation function.
+// - When BBs are discarded the relevant list(instr_details) is freed.
+
+typedef struct _instr_info instr_info;
+struct _instr_info {
+   Addr            instr_addr;
+   UChar           instr_size;
+   UChar           data_size;
+   struct _lineCC* parent;       // parent line-CC
+};
+
+typedef struct _BB_info BB_info;
+struct _BB_info {
+   BB_info*   next;              // next field
+   Addr       BB_addr;           // key
+   Int        n_instrs;
+   instr_info instrs[0];
+};
+
+VgHashTable instr_info_table;    // hash(Addr, BB_info)
+
+//------------------------------------------------------------
+// Stats
 static Int  distinct_files      = 0;
 static Int  distinct_fns        = 0;
-
+static Int  distinct_lines      = 0;
 static Int  distinct_instrs     = 0;
+
 static Int  full_debug_BBs      = 0;
 static Int  file_line_debug_BBs = 0;
-static Int  fn_name_debug_BBs   = 0;
+static Int  fn_debug_BBs        = 0;
 static Int  no_debug_BBs        = 0;
 
 static Int  BB_retranslations   = 0;
 
-static CC Ir_discards;
-static CC Dr_discards;
-static CC Dw_discards;
+/*------------------------------------------------------------*/
+/*--- CC table operations                                  ---*/
+/*------------------------------------------------------------*/
 
-static void init_BBCC_table()
+static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
+                           Char fn[FN_LEN], Int* line)
 {
-   Int i;
-   for (i = 0; i < N_FILE_ENTRIES; i++)
-      BBCC_table[i] = NULL;
-}
+   Bool found_file_line = VG_(get_filename_linenum)(instr_addr, file,
+                                                    FILE_LEN, line);
+   Bool found_fn        = VG_(get_fnname)(instr_addr, fn, FN_LEN);
 
-static void get_debug_info(Addr instr_addr, Char filename[FILENAME_LEN],
-                           Char fn_name[FN_NAME_LEN], Int* line_num)
-{
-   Bool found1, found2;
-
-   found1 = VG_(get_filename_linenum)(instr_addr, filename,
-                                      FILENAME_LEN, line_num);
-   found2 = VG_(get_fnname)(instr_addr, fn_name, FN_NAME_LEN);
-
-   if (!found1 && !found2) {
-      no_debug_BBs++;
-      VG_(strcpy)(filename, "???");
-      VG_(strcpy)(fn_name,  "???");
-      *line_num = 0;
-
-   } else if ( found1 &&  found2) {
-      full_debug_BBs++;
-
-   } else if ( found1 && !found2) {
-      file_line_debug_BBs++;
-      VG_(strcpy)(fn_name,  "???");
-
-   } else  /*(!found1 &&  found2)*/ {
-      fn_name_debug_BBs++;
-      VG_(strcpy)(filename, "???");
-      *line_num = 0;
+   if (!found_file_line) {
+      VG_(strcpy)(file, "???");
+      *line = 0;
+   }
+   if (!found_fn) {
+      VG_(strcpy)(fn,  "???");
+   }
+   if (found_file_line) {
+      if (found_fn) full_debug_BBs++;
+      else          file_line_debug_BBs++;
+   } else {
+      if (found_fn) fn_debug_BBs++;
+      else          no_debug_BBs++;
    }
 }
-
-/* Forward declaration. */
-static Int compute_BBCC_array_size(UCodeBlock* cb);
-
-static __inline__ 
-file_node* new_file_node(Char filename[], file_node* next)
-{
-   Int i;
-   file_node* new = VG_(malloc)(sizeof(file_node));
-   new->filename  = VG_(strdup)(filename);
-   for (i = 0; i < N_FN_ENTRIES; i++) {
-      new->fns[i] = NULL;
-   }
-   new->next      = next;
-   return new;
-}
-
-static __inline__ 
-fn_node* new_fn_node(Char fn_name[], fn_node* next)
-{
-   Int i;
-   fn_node* new = VG_(malloc)(sizeof(fn_node));
-   new->fn_name = VG_(strdup)(fn_name);
-   for (i = 0; i < N_BBCC_ENTRIES; i++) {
-      new->BBCCs[i] = NULL;
-   }
-   new->next    = next;
-   return new;
-}
-
-static __inline__ 
-BBCC* new_BBCC(Addr bb_orig_addr, UCodeBlock* cb, BBCC* next)
-{
-   Int BBCC_array_size = compute_BBCC_array_size(cb);
-   BBCC* new;
-
-   new = (BBCC*)VG_(malloc)(sizeof(BBCC) + BBCC_array_size);
-   new->orig_addr  = bb_orig_addr;
-   new->array_size = BBCC_array_size;
-   new->next = next;
-
-   return new;
-}
-
-#define HASH_CONSTANT   256
 
 static UInt hash(Char *s, UInt table_size)
 {
-    int hash_value = 0;
-    for ( ; *s; s++)
-        hash_value = (HASH_CONSTANT * hash_value + *s) % table_size;
-    return hash_value;
+   const int hash_constant = 256;
+   int hash_value = 0;
+   for ( ; *s; s++)
+      hash_value = (hash_constant * hash_value + *s) % table_size;
+   return hash_value;
 }
 
-/* This is a backup for get_BBCC() when removing BBs from the table.
- * Necessary because the debug info can change when code is removed.  For
- * example, when inserting, the info might be "myprint.c:myprint()", but
- * upon removal, the info might be "myprint.c:???", which causes the
- * hash-lookup to fail (but it doesn't always happen).  So we do a horrible,
- * slow search through all the file nodes and function nodes (but we can do
- * 3rd stage with the fast hash-lookup). */
-static BBCC* get_BBCC_slow_removal(Addr bb_orig_addr)
+static __inline__ 
+fileCC* new_fileCC(Char filename[], fileCC* next)
 {
-   Int        i, j;
-   UInt       BBCC_hash;
-   file_node *curr_file_node;
-   fn_node   *curr_fn_node;
-   BBCC     **prev_BBCC_next_ptr, *curr_BBCC;
-
-   for (i = 0; i < N_FILE_ENTRIES; i++) {
-
-      for (curr_file_node = BBCC_table[i]; 
-           NULL != curr_file_node;
-           curr_file_node = curr_file_node->next) 
-      {
-         for (j = 0; j < N_FN_ENTRIES; j++) {
-
-            for (curr_fn_node = curr_file_node->fns[j];
-                 NULL != curr_fn_node;
-                 curr_fn_node = curr_fn_node->next) 
-            {
-               BBCC_hash = bb_orig_addr % N_BBCC_ENTRIES;
-               prev_BBCC_next_ptr = &(curr_fn_node->BBCCs[BBCC_hash]);
-               curr_BBCC = curr_fn_node->BBCCs[BBCC_hash];
-
-               while (NULL != curr_BBCC) {
-                  if (bb_orig_addr == curr_BBCC->orig_addr) {
-                     // Found it!
-                     sk_assert(curr_BBCC->array_size > 0 
-                            && curr_BBCC->array_size < 1000000);
-                     if (VG_(clo_verbosity) > 2) {
-                         VG_(message)(Vg_DebugMsg, "did slow BB removal");
-                     }
-
-                     // Remove curr_BBCC from chain;  it will be used and
-                     // free'd by the caller.
-                     *prev_BBCC_next_ptr = curr_BBCC->next;
-                     return curr_BBCC;
-                  }
-
-                  prev_BBCC_next_ptr = &(curr_BBCC->next);
-                  curr_BBCC = curr_BBCC->next;
-               }
-            }
-         }
-      }
-   }
-   VG_(printf)("failing BB address: %p\n", bb_orig_addr);
-   VG_(skin_panic)("slow BB removal failed");
+   // Using calloc() zeroes the fns[] array
+   fileCC* cc = VG_(calloc)(1, sizeof(fileCC));
+   cc->file   = VG_(strdup)(filename);
+   cc->next   = next;
+   return cc;
 }
 
-/* Do a three step traversal: by filename, then fn_name, then instr_addr.
- * In all cases prepends new nodes to their chain.  Returns a pointer to the
- * cost centre.  Also sets BB_seen_before by reference. 
- */ 
-static BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
-                      Bool remove, Bool *BB_seen_before)
+static __inline__ 
+fnCC* new_fnCC(Char fn[], fnCC* next)
 {
-   file_node *curr_file_node;
-   fn_node   *curr_fn_node;
-   BBCC     **prev_BBCC_next_ptr, *curr_BBCC;
-   Char       filename[FILENAME_LEN], fn_name[FN_NAME_LEN];
-   UInt       filename_hash, fnname_hash, BBCC_hash;
-   Int        dummy_line_num;
+   // Using calloc() zeroes the lines[] array
+   fnCC* cc = VG_(calloc)(1, sizeof(fnCC));
+   cc->fn   = VG_(strdup)(fn);
+   cc->next = next;
+   return cc;
+}
 
-   get_debug_info(bb_orig_addr, filename, fn_name, &dummy_line_num);
+static __inline__ 
+lineCC* new_lineCC(Int line, lineCC* next)
+{
+   // Using calloc() zeroes the Ir/Dr/Dw CCs and the instrs[] array
+   lineCC* cc = VG_(calloc)(1, sizeof(lineCC));
+   cc->line   = line;
+   cc->next   = next;
+   return cc;
+}
 
-   VGP_PUSHCC(VgpGetBBCC);
-   filename_hash = hash(filename, N_FILE_ENTRIES);
-   curr_file_node = BBCC_table[filename_hash];
-   while (NULL != curr_file_node && 
-          VG_(strcmp)(filename, curr_file_node->filename) != 0) {
-      curr_file_node = curr_file_node->next;
+static __inline__ 
+instr_info* new_instr_info(Addr instr_addr, lineCC* parent, instr_info* next)
+{
+   // Using calloc() zeroes instr_size and data_size
+   instr_info* ii = VG_(calloc)(1, sizeof(instr_info));
+   ii->instr_addr = instr_addr;
+   ii->parent     = parent; 
+   return ii;
+}
+
+// Do a three step traversal: by file, then fn, then line.
+// In all cases prepends new nodes to their chain.  Returns a pointer to the
+// line node, creates a new one if necessary.
+static lineCC* get_lineCC(Addr orig_addr)
+{
+   fileCC *curr_fileCC;
+   fnCC   *curr_fnCC;
+   lineCC *curr_lineCC;
+   Char    file[FILE_LEN], fn[FN_LEN];
+   Int     line;
+   UInt    file_hash, fn_hash, line_hash;
+
+   get_debug_info(orig_addr, file, fn, &line);
+
+   VGP_PUSHCC(VgpGetLineCC);
+
+   // level 1
+   file_hash = hash(file, N_FILE_ENTRIES);
+   curr_fileCC   = CC_table[file_hash];
+   while (NULL != curr_fileCC && !VG_STREQ(file, curr_fileCC->file)) {
+      curr_fileCC = curr_fileCC->next;
    }
-   if (NULL == curr_file_node) {
-      BBCC_table[filename_hash] = curr_file_node = 
-         new_file_node(filename, BBCC_table[filename_hash]);
+   if (NULL == curr_fileCC) {
+      CC_table[file_hash] = curr_fileCC = 
+         new_fileCC(file, CC_table[file_hash]);
       distinct_files++;
    }
 
-   fnname_hash = hash(fn_name, N_FN_ENTRIES);
-   curr_fn_node = curr_file_node->fns[fnname_hash];
-   while (NULL != curr_fn_node && 
-          VG_(strcmp)(fn_name, curr_fn_node->fn_name) != 0) {
-      curr_fn_node = curr_fn_node->next;
+   // level 2
+   fn_hash = hash(fn, N_FN_ENTRIES);
+   curr_fnCC   = curr_fileCC->fns[fn_hash];
+   while (NULL != curr_fnCC && !VG_STREQ(fn, curr_fnCC->fn)) {
+      curr_fnCC = curr_fnCC->next;
    }
-   if (NULL == curr_fn_node) {
-      curr_file_node->fns[fnname_hash] = curr_fn_node = 
-         new_fn_node(fn_name, curr_file_node->fns[fnname_hash]);
+   if (NULL == curr_fnCC) {
+      curr_fileCC->fns[fn_hash] = curr_fnCC = 
+         new_fnCC(fn, curr_fileCC->fns[fn_hash]);
       distinct_fns++;
    }
 
-   BBCC_hash = bb_orig_addr % N_BBCC_ENTRIES;
-   prev_BBCC_next_ptr = &(curr_fn_node->BBCCs[BBCC_hash]);
-   curr_BBCC = curr_fn_node->BBCCs[BBCC_hash];
-   while (NULL != curr_BBCC && bb_orig_addr != curr_BBCC->orig_addr) {
-      prev_BBCC_next_ptr = &(curr_BBCC->next);
-      curr_BBCC = curr_BBCC->next;
+   // level 3
+   line_hash   = line % N_LINE_ENTRIES;
+   curr_lineCC = curr_fnCC->lines[line_hash];
+   while (NULL != curr_lineCC && line != curr_lineCC->line) {
+      curr_lineCC = curr_lineCC->next;
    }
-   if (curr_BBCC == NULL) {
-
-      if (remove == False) {
-         curr_fn_node->BBCCs[BBCC_hash] = curr_BBCC = 
-            new_BBCC(bb_orig_addr, cb, curr_fn_node->BBCCs[BBCC_hash]);
-         *BB_seen_before = False;
-      } else {
-         // Ok, BB not found when removing:  the debug info must have
-         // changed.  Do a slow removal.
-         curr_BBCC = get_BBCC_slow_removal(bb_orig_addr);
-         *BB_seen_before = True;
-      }
-
-   } else {
-      sk_assert(bb_orig_addr == curr_BBCC->orig_addr);
-      sk_assert(curr_BBCC->array_size > 0 && curr_BBCC->array_size < 1000000);
-      if (VG_(clo_verbosity) > 2) {
-          VG_(message)(Vg_DebugMsg, 
-            "BB retranslation/invalidation, retrieving from BBCC table");
-      }
-      *BB_seen_before = True;
-
-      if (True == remove) {
-          // Remove curr_BBCC from chain;  it will be used and free'd by the
-          // caller.
-          *prev_BBCC_next_ptr = curr_BBCC->next;
-
-      } else {
-          BB_retranslations++;
-      }
+   if (NULL == curr_lineCC) {
+      curr_fnCC->lines[line_hash] = curr_lineCC = 
+         new_lineCC(line, curr_fnCC->lines[line_hash]);
+      distinct_lines++;
    }
-   VGP_POPCC(VgpGetBBCC);
-   return curr_BBCC;
+
+   VGP_POPCC(VgpGetLineCC);
+   return curr_lineCC;
 }
 
 /*------------------------------------------------------------*/
-/*--- Cache simulation instrumentation phase               ---*/
+/*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
-static Int compute_BBCC_array_size(UCodeBlock* cb)
-{
-   UInstr* u_in;
-   Int     i, CC_size, BBCC_size = 0;
-   Bool    is_LOAD, is_STORE, is_FPU_R, is_FPU_W;
-   Int     t_read, t_write;
-    
-   is_LOAD = is_STORE = is_FPU_R = is_FPU_W = False;
-   t_read = t_write = INVALID_TEMPREG;
-
-   for (i = 0; i < VG_(get_num_instrs)(cb); i++) {
-      u_in = VG_(get_instr)(cb, i);
-      switch(u_in->opcode) {
-
-         case INCEIP: 
-            goto case_for_end_of_instr;
-         
-         case JMP:
-            if (u_in->cond != CondAlways) break;
-
-            goto case_for_end_of_instr;
-
-            case_for_end_of_instr:
-
-            if (((is_LOAD && is_STORE) || (is_FPU_R && is_FPU_W)) && 
-                 t_read != t_write)
-               CC_size = sizeof(iddCC);
-            else if (is_LOAD || is_STORE || is_FPU_R || is_FPU_W)
-               CC_size = sizeof(idCC);
-            else
-               CC_size = sizeof(iCC);
-
-            BBCC_size += CC_size;
-            is_LOAD = is_STORE = is_FPU_R = is_FPU_W = False;
-            break;
-
-         case LOAD:
-            /* Two LDBs are possible for a single instruction */
-            /* Also, a STORE can come after a LOAD for bts/btr/btc */
-            sk_assert(/*!is_LOAD &&*/ /* !is_STORE && */ 
-                      !is_FPU_R && !is_FPU_W);
-            t_read = u_in->val1;
-            is_LOAD = True;
-            break;
-
-         case STORE:
-            /* Multiple STOREs are possible for 'pushal' */
-            sk_assert(            /*!is_STORE &&*/ !is_FPU_R && !is_FPU_W);
-            t_write = u_in->val2;
-            is_STORE = True;
-            break;
-
-         case MMX2_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            /* fall through */
-         case FPU_R:
-            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
-            t_read = u_in->val2;
-            is_FPU_R = True;
-            break;
-
-         case MMX2a1_MemRd:
-            sk_assert(u_in->size == 8);
-            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
-            t_read = u_in->val3;
-            is_FPU_R = True;
-            break;
-
-         case SSE2a_MemRd:
-         case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
-            t_read = u_in->val3;
-            is_FPU_R = True;
-            break;
-
-         case SSE3a_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
-            t_read = u_in->val3;
-            is_FPU_R = True;
-            break;
-
-         case SSE3a1_MemRd:
-            sk_assert(u_in->size == 8 || u_in->size == 16);
-            t_read = u_in->val3;
-            is_FPU_R = True;
-            break;
-
-         case SSE3ag_MemRd_RegWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            t_read = u_in->val1;
-            is_FPU_R = True;
-            break;
-
-         case MMX2_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            /* fall through */
-         case FPU_W:
-            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
-            t_write = u_in->val2;
-            is_FPU_W = True;
-            break;
-
-         case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
-            t_write = u_in->val3;
-            is_FPU_W = True;
-            break;
-
-         case SSE3a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
-            t_write = u_in->val3;
-            is_FPU_W = True;
-            break;
-
-         default:
-            break;
-      }
-   }
-
-   return BBCC_size;
-}
-
 static __attribute__ ((regparm (1)))
-void log_1I_0D_cache_access(iCC* cc)
+void log_1I_0D_cache_access(instr_info* n)
 {
    //VG_(printf)("1I_0D: CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size)
+   //            n, n->instr_addr, n->instr_size)
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(cc->instr_addr, cc->instr_size, &cc->I.m1, &cc->I.m2);
-   cc->I.a++;
+   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+                     &n->parent->Ir.m1, &n->parent->Ir.m2);
+   n->parent->Ir.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
-/* Difference between this function and log_1I_0D_cache_access() is that
-   this one can be passed any kind of CC, not just an iCC.  So we have to
-   be careful to make sure we don't make any assumptions about CC layout.
-   (As it stands, they would be safe, but this will avoid potential heartache
-   if anyone else changes CC layout.)  
-   Note that we only do the switch for the JIFZ version because if we always
-   called this switching version, things would run about 5% slower. */
-static __attribute__ ((regparm (1)))
-void log_1I_0D_cache_access_JIFZ(iCC* cc)
+static __attribute__ ((regparm (2)))
+void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
 {
-   UChar instr_size;
-   Addr instr_addr;
-   CC* I;
-
-   //VG_(printf)("1I_0D: CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size)
+   //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
+   //            n, n->instr_addr, n->instr_size, data_addr, n->data_size)
    VGP_PUSHCC(VgpCacheSimulate);
+   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+                     &n->parent->Ir.m1, &n->parent->Ir.m2);
+   n->parent->Ir.a++;
 
-   switch(cc->tag) {
-       case InstrCC:
-           instr_size = cc->instr_size;
-           instr_addr = cc->instr_addr;
-           I = &(cc->I);
-           break;
-       case ReadCC:
-       case WriteCC:
-       case ModCC:
-           instr_size = ((idCC*)cc)->instr_size;
-           instr_addr = ((idCC*)cc)->instr_addr;
-           I = &( ((idCC*)cc)->I );
-           break;
-       case ReadWriteCC:
-           instr_size = ((iddCC*)cc)->instr_size;
-           instr_addr = ((iddCC*)cc)->instr_addr;
-           I = &( ((iddCC*)cc)->I );
-           break;
-       default:
-           VG_(skin_panic)("Unknown CC type in log_1I_0D_cache_access_JIFZ()\n");
-           break;
-   }
-   cachesim_I1_doref(instr_addr, instr_size, &I->m1, &I->m2);
-   I->a++;
+   cachesim_D1_doref(data_addr, n->data_size, 
+                     &n->parent->Dr.m1, &n->parent->Dr.m2);
+   n->parent->Dr.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
-__attribute__ ((regparm (2))) static 
-void log_0I_1D_cache_access(idCC* cc, Addr data_addr)
+static __attribute__ ((regparm (2)))
+void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
 {
-   //VG_(printf)("0I_1D: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size, data_addr, cc->data_size)
+   //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
+   //            n, n->instr_addr, n->instr_size, data_addr, n->data_size)
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_D1_doref(data_addr,      cc->data_size,  &cc->D.m1, &cc->D.m2);
-   cc->D.a++;
+   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+                     &n->parent->Ir.m1, &n->parent->Ir.m2);
+   n->parent->Ir.a++;
+
+   cachesim_D1_doref(data_addr, n->data_size, 
+                     &n->parent->Dw.m1, &n->parent->Dw.m2);
+   n->parent->Dw.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
-__attribute__ ((regparm (2))) static
-void log_1I_1D_cache_access(idCC* cc, Addr data_addr)
-{
-   //VG_(printf)("1I_1D: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size, data_addr, cc->data_size)
-   VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(cc->instr_addr, cc->instr_size, &cc->I.m1, &cc->I.m2);
-   cc->I.a++;
-
-   cachesim_D1_doref(data_addr,      cc->data_size,  &cc->D.m1, &cc->D.m2);
-   cc->D.a++;
-   VGP_POPCC(VgpCacheSimulate);
-}
-
-__attribute__ ((regparm (3))) static 
-void log_0I_2D_cache_access(iddCC* cc, Addr data_addr1, Addr data_addr2)
-{
-   //VG_(printf)("0I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=0x%x, daddr2=%p, size=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size, data_addr1, data_addr2, cc->data_size)
-   VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_D1_doref(data_addr1, cc->data_size,  &cc->Da.m1, &cc->Da.m2);
-   cc->Da.a++;
-   cachesim_D1_doref(data_addr2, cc->data_size,  &cc->Db.m1, &cc->Db.m2);
-   cc->Db.a++;
-   VGP_POPCC(VgpCacheSimulate);
-}
-
-__attribute__ ((regparm (3))) static
-void log_1I_2D_cache_access(iddCC* cc, Addr data_addr1, Addr data_addr2)
+static __attribute__ ((regparm (3)))
+void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 {
    //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",
-   //            cc, cc->instr_addr, cc->instr_size, data_addr1, data_addr2, cc->data_size)
+   //            n, n->instr_addr, n->instr_size, data_addr1, data_addr2, n->data_size)
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(cc->instr_addr, cc->instr_size, &cc->I.m1,  &cc->I.m2);
-   cc->I.a++;
+   cachesim_I1_doref(n->instr_addr, n->instr_size,
+                     &n->parent->Ir.m1,  &n->parent->Ir.m2);
+   n->parent->Ir.a++;
 
-   cachesim_D1_doref(data_addr1,     cc->data_size,  &cc->Da.m1, &cc->Da.m2);
-   cc->Da.a++;
-   cachesim_D1_doref(data_addr2,     cc->data_size,  &cc->Db.m1, &cc->Db.m2);
-   cc->Db.a++;
+   cachesim_D1_doref(data_addr1, n->data_size,
+                     &n->parent->Dr.m1, &n->parent->Dr.m2);
+   n->parent->Dr.a++;
+   cachesim_D1_doref(data_addr2, n->data_size,
+                     &n->parent->Dw.m1, &n->parent->Dw.m2);
+   n->parent->Dw.a++;
    VGP_POPCC(VgpCacheSimulate);
+}
+
+/*------------------------------------------------------------*/
+/*--- Instrumentation                                      ---*/
+/*------------------------------------------------------------*/
+
+BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
+{
+   Int          i, n_instrs;
+   UInstr*      u_in;
+   BB_info*     bb_info;
+   VgHashNode** dummy;
+   
+   // Count number of x86 instrs in BB
+   n_instrs = 1;     // start at 1 because last x86 instr has no INCEIP
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u_in = VG_(get_instr)(cb_in, i);
+      if (INCEIP == u_in->opcode) n_instrs++;
+   }
+
+   // Get the BB_info
+   bb_info = (BB_info*)VG_(HT_get_node)(instr_info_table, orig_addr, &dummy);
+   *bb_seen_before = ( NULL == bb_info ? False : True );
+   if (*bb_seen_before) {
+      // BB must have been translated before, but flushed from the TT
+      sk_assert(bb_info->n_instrs == n_instrs );
+      BB_retranslations++;
+   } else {
+      // BB never translated before (at this address, at least;  could have
+      // been unloaded and then reloaded elsewhere in memory)
+      bb_info = 
+         VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
+      bb_info->BB_addr = orig_addr;
+      bb_info->n_instrs = n_instrs;
+      VG_(HT_add_node)( instr_info_table, (VgHashNode*)bb_info );
+      distinct_instrs++;
+   }
+   return bb_info;
+}
+
+void do_details( instr_info* n, Bool bb_seen_before,
+                 Addr instr_addr, Int instr_size, Int data_size )
+{
+   lineCC* parent = get_lineCC(instr_addr);
+   if (bb_seen_before) {
+      sk_assert( n->instr_addr == instr_addr );
+      sk_assert( n->instr_size == instr_size );
+      sk_assert( n->data_size  == data_size );
+      // Don't assert that (n->parent == parent)... it's conceivable that
+      // the debug info might change;  the other asserts should be enough to
+      // detect anything strange.
+   } else {
+      n->instr_addr = instr_addr;
+      n->instr_size = instr_size;
+      n->data_size  = data_size;
+      n->parent     = parent;
+   }
+}
+
+Bool is_valid_data_size(Int data_size)
+{
+   return (4 == data_size || 2  == data_size || 1 == data_size || 
+           8 == data_size || 10 == data_size || MIN_LINE_SIZE == data_size);
+}
+
+// Instrumentation for the end of each x86 instruction.
+void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
+                      UInt instr_addr, UInt instr_size, UInt data_size,
+                      Int t_read,  Int t_read_addr, 
+                      Int t_write, Int t_write_addr)
+{
+   Addr    helper;
+   Int     argc;
+   Int     t_CC_addr, 
+           t_data_addr1 = INVALID_TEMPREG,
+           t_data_addr2 = INVALID_TEMPREG;
+
+   sk_assert(instr_size >= 1 && 
+             instr_size <= MAX_x86_INSTR_SIZE);
+
+#define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
+#define INV(qqt)    (INVALID_TEMPREG == (qqt))
+
+   // Work out what kind of x86 instruction it is
+   if (!IS_(read) && !IS_(write)) {
+      sk_assert( 0 == data_size );
+      sk_assert(INV(t_read) && INV(t_write));
+      helper = (Addr) & log_1I_0D_cache_access;
+      argc = 1;
+
+   } else if (IS_(read) && !IS_(write)) {
+      sk_assert( is_valid_data_size(data_size) );
+      sk_assert(!INV(t_read) && INV(t_write));
+      helper = (Addr) & log_1I_1Dr_cache_access;
+      argc = 2;
+      t_data_addr1 = t_read_addr;
+
+   } else if (!IS_(read) && IS_(write)) {
+      sk_assert( is_valid_data_size(data_size) );
+      sk_assert(INV(t_read) && !INV(t_write));
+      helper = (Addr) & log_1I_1Dw_cache_access;
+      argc = 2;
+      t_data_addr1 = t_write_addr;
+
+   } else {
+      sk_assert(IS_(read) && IS_(write));
+      sk_assert( is_valid_data_size(data_size) );
+      sk_assert(!INV(t_read) && !INV(t_write));
+      if (t_read == t_write) {
+         helper = (Addr) & log_1I_1Dr_cache_access;
+         argc = 2;
+         t_data_addr1 = t_read_addr;
+      } else {
+         helper = (Addr) & log_1I_2D_cache_access;
+         argc = 3;
+         t_data_addr1 = t_read_addr;
+         t_data_addr2 = t_write_addr;
+      }
+   }
+#undef IS_
+   // Setup 1st arg: CC addr
+   do_details( i_node, bb_seen_before, instr_addr, instr_size, data_size );
+   t_CC_addr = newTemp(cb);
+   uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
+   uLiteral(cb, (Addr)i_node);
+
+   // Call the helper
+   if      (1 == argc)
+      uInstr1(cb, CCALL, 0, TempReg, t_CC_addr);
+   else if (2 == argc)
+      uInstr2(cb, CCALL, 0, TempReg, t_CC_addr, 
+                            TempReg, t_data_addr1);
+   else if (3 == argc)
+      uInstr3(cb, CCALL, 0, TempReg, t_CC_addr, 
+                            TempReg, t_data_addr1,
+                            TempReg, t_data_addr2);
+   else
+      VG_(skin_panic)("argc... not 1 or 2 or 3?");
+
+   uCCall(cb, helper, argc, argc, False);
 }
 
 UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
-/* Use this rather than eg. -1 because it's a UInt. */
-#define INVALID_DATA_SIZE   999999
-
    UCodeBlock* cb;
-   Int         i;
    UInstr*     u_in;
-   BBCC*       BBCC_node;
-   Int         t_CC_addr, t_read_addr, t_write_addr, t_data_addr1,
-               t_data_addr2, t_read, t_write;
-   Int         CC_size = -1;    /* Shut gcc warnings up */
+   Int         i, bb_info_i;
+   BB_info*    bb_info;
+   Bool        bb_seen_before = False;
+   Int         t_read_addr, t_write_addr, t_read, t_write;
    Addr        x86_instr_addr = orig_addr;
-   UInt        x86_instr_size, data_size = INVALID_DATA_SIZE;
-   Addr        helper;
-   Int         argc;
-   Bool        BB_seen_before     = False;
-   Bool        instrumented_Jcond = False;
-   Bool        has_rep_prefix     = False;
-   Addr        BBCC_ptr0, BBCC_ptr; 
+   UInt        x86_instr_size, data_size = 0;
+   Bool        instrumented_Jcc = False;
 
-   /* Get BBCC (creating if necessary -- requires a counting pass over the BB
-    * if it's the first time it's been seen), and point to start of the 
-    * BBCC array.  */
-   BBCC_node = get_BBCC(orig_addr, cb_in, /*remove=*/False, &BB_seen_before);
-   BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
+   bb_info = get_BB_info(cb_in, orig_addr, &bb_seen_before);
+   bb_info_i = 0;
 
    cb = VG_(setup_UCodeBlock)(cb_in);
 
-   t_CC_addr = t_read_addr = t_write_addr = t_data_addr1 = t_data_addr2 =
-               t_read = t_write = INVALID_TEMPREG;
+   t_read_addr = t_write_addr = t_read = t_write = INVALID_TEMPREG;
 
    for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
       u_in = VG_(get_instr)(cb_in, i);
 
-      /* What this is all about:  we want to instrument each x86 instruction 
-       * translation.  The end of these are marked in three ways.  The three
-       * ways, and the way we instrument them, are as follows:
-       *
-       * 1. UCode, INCEIP         --> UCode, Instrumentation, INCEIP
-       * 2. UCode, Juncond        --> UCode, Instrumentation, Juncond
-       * 3. UCode, Jcond, Juncond --> UCode, Instrumentation, Jcond, Juncond
-       *
-       * The last UInstr in a basic block is always a Juncond.  Jconds,
-       * when they appear, are always second last.  We check this with 
-       * various assertions.
-       *
-       * We must put the instrumentation before any jumps so that it is always
-       * executed.  We don't have to put the instrumentation before the INCEIP
-       * (it could go after) but we do so for consistency.
-       *
-       * x86 instruction sizes are obtained from INCEIPs (for case 1) or
-       * from .extra4b field of the final JMP (for case 2 & 3).
-       *
-       * Note that JIFZ is treated differently.
-       *
-       * The instrumentation is just a call to the appropriate helper function,
-       * passing it the address of the instruction's CC.
-       */
-      if (instrumented_Jcond) sk_assert(u_in->opcode == JMP);
+      // We want to instrument each x86 instruction with a call to the
+      // appropriate simulation function, which depends on whether the
+      // instruction does memory data reads/writes.  x86 instructions can
+      // end in three ways, and this is how they are instrumented:
+      //
+      // 1. UCode, INCEIP   --> UCode, Instrumentation, INCEIP
+      // 2. UCode, JMP      --> UCode, Instrumentation, JMP
+      // 3. UCode, Jcc, JMP --> UCode, Instrumentation, Jcc, JMP
+      //
+      // The last UInstr in a BB is always a JMP.  Jccs, when they appear,
+      // are always second last.  This is checked with assertions.
+      // Instrumentation must go before any jumps.  (JIFZ is the exception;
+      // if a JIFZ succeeds, no simulation is done for the instruction.)
+      //
+      // x86 instruction sizes are obtained from INCEIPs (for case 1) or
+      // from .extra4b field of the final JMP (for case 2 & 3).
+
+      if (instrumented_Jcc) sk_assert(u_in->opcode == JMP);
 
       switch (u_in->opcode) {
-         case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
-            break;
 
-         /* For memory-ref instrs, copy the data_addr into a temporary to be
-          * passed to the cachesim_* helper at the end of the instruction.
-          */
+         // For memory-ref instrs, copy the data_addr into a temporary to be
+         // passed to the cachesim_* helper at the end of the instruction.
          case LOAD: 
+         case SSE3ag_MemRd_RegWr:
             t_read      = u_in->val1;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
@@ -851,57 +547,21 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case MMX2_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            /* fall through */
          case FPU_R:
+         case MMX2_MemRd:
             t_read      = u_in->val2;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val2,  TempReg, t_read_addr);
-            data_size = ( u_in->size <= MIN_LINE_SIZE
-                        ? u_in->size
-                        : MIN_LINE_SIZE);
+            data_size = u_in->size; 
             VG_(copy_UInstr)(cb, u_in);
             break;
             break;
 
          case MMX2a1_MemRd:
-            sk_assert(u_in->size == 8);
-            t_read      = u_in->val3;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
-            data_size = ( u_in->size <= MIN_LINE_SIZE
-                        ? u_in->size
-                        : MIN_LINE_SIZE);
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
-            t_read = u_in->val3;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
-            /* 512 B data-sized instructions will be done inaccurately
-             * but they're very rare and this avoids errors from
-             * hitting more than two cache lines in the simulation. */
-            data_size = ( u_in->size <= MIN_LINE_SIZE
-                        ? u_in->size
-                        : MIN_LINE_SIZE);
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
          case SSE3a_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
-            t_read = u_in->val3;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
-            data_size = u_in->size;
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
          case SSE3a1_MemRd:
-            sk_assert(u_in->size == 8 || u_in->size == 16);
             t_read = u_in->val3;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
@@ -909,234 +569,76 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case SSE3ag_MemRd_RegWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            t_read = u_in->val1;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
-            data_size = u_in->size;
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         /* Note that we must set t_write_addr even for mod instructions;
-          * That's how the code above determines whether it does a write.
-          * Without it, it would think a mod instruction is a read.
-          * As for the MOV, if it's a mod instruction it's redundant, but it's
-          * not expensive and mod instructions are rare anyway. */
-         case MMX2_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
-            /* fall through */
+         // Note that we must set t_write_addr even for mod instructions;
+         // That's how the code above determines whether it does a write.
+         // Without it, it would think a mod instruction is a read.
+         // As for the MOV, if it's a mod instruction it's redundant, but it's
+         // not expensive and mod instructions are rare anyway. */
          case STORE:
          case FPU_W:
+         case MMX2_MemWr:
             t_write      = u_in->val2;
             t_write_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val2, TempReg, t_write_addr);
-            /* 28 and 108 B data-sized instructions will be done
-             * inaccurately but they're very rare and this avoids errors
-             * from hitting more than two cache lines in the simulation. */
-            data_size = ( u_in->size <= MIN_LINE_SIZE
-                        ? u_in->size
-                        : MIN_LINE_SIZE);
+            data_size = u_in->size;
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
-           /* fall through */
          case SSE3a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
             t_write = u_in->val3;
             t_write_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3, TempReg, t_write_addr);
-            /* 512 B data-sized instructions will be done inaccurately
-             * but they're very rare and this avoids errors from
-             * hitting more than two cache lines in the simulation. */
-            data_size = ( u_in->size <= MIN_LINE_SIZE
-                        ? u_in->size
-                        : MIN_LINE_SIZE);
+            data_size = u_in->size; 
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         /* For rep-prefixed instructions, log a single I-cache access
-          * before the UCode loop that implements the repeated part, which
-          * is where the multiple D-cache accesses are logged. */
-         case JIFZ:
-            has_rep_prefix = True;
-
-            /* Setup 1st and only arg: CC addr */
-            t_CC_addr = newTemp(cb);
-            uInstr2(cb, MOV,  4, Literal, 0, TempReg, t_CC_addr);
-            uLiteral(cb, BBCC_ptr);
-
-            /* Call helper */
-            uInstr1(cb, CCALL, 0, TempReg, t_CC_addr);
-            uCCall(cb, (Addr) & log_1I_0D_cache_access_JIFZ, 1, 1, False);
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-
-         /* INCEIP: insert instrumentation */
+         // INCEIP: insert instrumentation
          case INCEIP:
             x86_instr_size = u_in->val1;
             goto instrument_x86_instr;
 
-         /* JMP: insert instrumentation if the first JMP */
+         // JMP: insert instrumentation if the first JMP
          case JMP:
-            if (instrumented_Jcond) {
+            if (instrumented_Jcc) {
                sk_assert(CondAlways == u_in->cond);
                sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
                VG_(copy_UInstr)(cb, u_in);
-               instrumented_Jcond = False;    /* reset */
+               instrumented_Jcc = False;     // rest
                break;
-            }
-            /* The first JMP... instrument. */
-            if (CondAlways != u_in->cond) {
-               sk_assert(i+2 == VG_(get_num_instrs)(cb_in));
-               instrumented_Jcond = True;
             } else {
-               sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
-            }
-
-            /* Get x86 instr size from final JMP. */
-            x86_instr_size = VG_(get_last_instr)(cb_in)->extra4b;
-
-            goto instrument_x86_instr;
-
-
-            /* Code executed at the end of each x86 instruction. */
-            instrument_x86_instr:
-             
-            /* Initialise the CC in the BBCC array appropriately if it
-             * hasn't been initialised before.  Then call appropriate sim
-             * function, passing it the CC address. */
-            sk_assert(x86_instr_size >= 1 && 
-                      x86_instr_size <= MAX_x86_INSTR_SIZE);
-
-#define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
-
-            if (!IS_(read) && !IS_(write)) {
-               sk_assert(INVALID_DATA_SIZE == data_size);
-               sk_assert(INVALID_TEMPREG == t_read_addr  && 
-                         INVALID_TEMPREG == t_read       && 
-                         INVALID_TEMPREG == t_write_addr &&
-                         INVALID_TEMPREG == t_write);
-               CC_size = sizeof(iCC);
-               if (!BB_seen_before)
-                   init_iCC((iCC*)BBCC_ptr, x86_instr_addr, x86_instr_size);
-               helper = ( has_rep_prefix 
-                        ? (Addr)0      /* no extra log needed */
-                        : (Addr) & log_1I_0D_cache_access
-                        );
-               argc = 1;
-
-            } else { 
-               sk_assert(4 == data_size || 2  == data_size || 1 == data_size || 
-                         8 == data_size || 10 == data_size ||
-                         MIN_LINE_SIZE == data_size);
-               
-               if (IS_(read) && !IS_(write)) {
-                  CC_size = sizeof(idCC);
-                  /* If it uses 'rep', we've already logged the I-cache 
-                   * access at the JIFZ UInstr (see JIFZ case below) so
-                   * don't do it here */
-                  helper = ( has_rep_prefix 
-                           ? (Addr) & log_0I_1D_cache_access
-                           : (Addr) & log_1I_1D_cache_access
-                           );
-                  argc = 2;
-                  if (!BB_seen_before)
-                     init_idCC(ReadCC, (idCC*)BBCC_ptr, x86_instr_addr,
-                               x86_instr_size, data_size);
-                  sk_assert(INVALID_TEMPREG != t_read_addr  && 
-                            INVALID_TEMPREG != t_read       && 
-                            INVALID_TEMPREG == t_write_addr &&
-                            INVALID_TEMPREG == t_write);
-                  t_data_addr1 = t_read_addr;
-
-               } else if (!IS_(read) && IS_(write)) {
-                  CC_size = sizeof(idCC);
-                  helper = ( has_rep_prefix 
-                           ? (Addr) & log_0I_1D_cache_access
-                           : (Addr) & log_1I_1D_cache_access
-                           );
-                  argc = 2;
-                  if (!BB_seen_before)
-                     init_idCC(WriteCC, (idCC*)BBCC_ptr, x86_instr_addr,
-                               x86_instr_size, data_size);
-                  sk_assert(INVALID_TEMPREG == t_read_addr  && 
-                            INVALID_TEMPREG == t_read       && 
-                            INVALID_TEMPREG != t_write_addr &&
-                            INVALID_TEMPREG != t_write);
-                  t_data_addr1 = t_write_addr;
-
+               // The first JMP... instrument.
+               if (CondAlways != u_in->cond) {
+                  sk_assert(i+2 == VG_(get_num_instrs)(cb_in));
+                  instrumented_Jcc = True;
                } else {
-                  sk_assert(IS_(read) && IS_(write));
-                  sk_assert(INVALID_TEMPREG != t_read_addr  && 
-                            INVALID_TEMPREG != t_read       && 
-                            INVALID_TEMPREG != t_write_addr &&
-                            INVALID_TEMPREG != t_write);
-                  if (t_read == t_write) {
-                     CC_size = sizeof(idCC);
-                     helper = ( has_rep_prefix 
-                              ? (Addr) & log_0I_1D_cache_access
-                              : (Addr) & log_1I_1D_cache_access
-                              );
-                     argc = 2;
-                     if (!BB_seen_before)
-                        init_idCC(ModCC, (idCC*)BBCC_ptr, x86_instr_addr,
-                                  x86_instr_size, data_size);
-                     t_data_addr1 = t_read_addr;
-                  } else {
-                     CC_size = sizeof(iddCC);
-                     helper = ( has_rep_prefix 
-                              ? (Addr) & log_0I_2D_cache_access
-                              : (Addr) & log_1I_2D_cache_access
-                              );
-                     argc = 3;
-                     if (!BB_seen_before)
-                        init_iddCC((iddCC*)BBCC_ptr, x86_instr_addr,
-                                    x86_instr_size, data_size);
-                     t_data_addr1 = t_read_addr;
-                     t_data_addr2 = t_write_addr;
-                  }
+                  sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
                }
-#undef IS_
+               // Get x86 instr size from final JMP.
+               x86_instr_size = VG_(get_last_instr)(cb_in)->extra4b;
+               goto instrument_x86_instr;
             }
 
-            /* Call the helper, if necessary */
-            if ((Addr)0 != helper) {
+            // Code executed at the end of each x86 instruction.
+         instrument_x86_instr:
+            // Large (eg. 28B, 108B, 512B) data-sized instructions will be
+            // done inaccurately but they're very rare and this avoids
+            // errors from hitting more than two cache lines in the
+            // simulation.
+            if (data_size > MIN_LINE_SIZE) data_size = MIN_LINE_SIZE;
 
-               /* Setup 1st arg: CC addr */
-               t_CC_addr = newTemp(cb);
-               uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
-               uLiteral(cb, BBCC_ptr);
+            end_of_x86_instr(cb, &bb_info->instrs[ bb_info_i ], bb_seen_before,
+                             x86_instr_addr, x86_instr_size, data_size,
+                             t_read, t_read_addr, t_write, t_write_addr);
 
-               /* Call the helper */
-               if      (1 == argc)
-                  uInstr1(cb, CCALL, 0, TempReg, t_CC_addr);
-               else if (2 == argc)
-                  uInstr2(cb, CCALL, 0, TempReg, t_CC_addr, 
-                                        TempReg, t_data_addr1);
-               else if (3 == argc)
-                  uInstr3(cb, CCALL, 0, TempReg, t_CC_addr, 
-                                        TempReg, t_data_addr1,
-                                        TempReg, t_data_addr2);
-               else
-                  VG_(skin_panic)("argc... not 1 or 2 or 3?");
-               
-               uCCall(cb, helper, argc, argc, False);
-            }
-
-            /* Copy original UInstr (INCEIP or JMP) */
+            // Copy original UInstr (INCEIP or JMP)
             VG_(copy_UInstr)(cb, u_in);
 
-            /* Update BBCC_ptr, EIP, de-init read/write temps for next instr */
-            BBCC_ptr       += CC_size; 
+            // Update loop state for next x86 instr
+            bb_info_i++;
             x86_instr_addr += x86_instr_size;
-            t_CC_addr = t_read_addr = t_write_addr = t_data_addr1 = 
-                        t_data_addr2 = t_read = t_write = INVALID_TEMPREG;
-            data_size = INVALID_DATA_SIZE;
-            has_rep_prefix = False; 
+            t_read_addr = t_write_addr = t_read = t_write = INVALID_TEMPREG;
+            data_size = 0;
             break;
 
          default:
@@ -1145,8 +647,9 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
       }
    }
 
-   /* Just check everything looks ok */
-   sk_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
+   // BB address should be the same as the first instruction's address.
+   sk_assert(bb_info->BB_addr == bb_info->instrs[0].instr_addr );
+   sk_assert(bb_info_i == bb_info->n_instrs);
 
    VG_(free_UCodeBlock)(cb_in);
    return cb;
@@ -1158,21 +661,15 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 /*--- Automagic cache initialisation stuff                 ---*/
 /*------------------------------------------------------------*/
 
-/* Total reads/writes/misses.  Calculated during CC traversal at the end. */
-static CC Ir_total;
-static CC Dr_total;
-static CC Dw_total;
-
 #define UNDEFINED_CACHE     ((cache_t) { -1, -1, -1 }) 
 
 static cache_t clo_I1_cache = UNDEFINED_CACHE;
 static cache_t clo_D1_cache = UNDEFINED_CACHE;
 static cache_t clo_L2_cache = UNDEFINED_CACHE;
 
-/* All CPUID info taken from sandpile.org/a32/cpuid.htm */
-/* Probably only works for Intel and AMD chips, and probably only for some of
- * them. 
- */
+// All CPUID info taken from sandpile.org/a32/cpuid.htm */
+// Probably only works for Intel and AMD chips, and probably only for some of
+// them. 
 
 static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 {
@@ -1239,9 +736,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x10: case 0x15: case 0x1a: 
       case 0x88: case 0x89: case 0x8a: case 0x8d:
       case 0x90: case 0x96: case 0x9b:
-         VG_(message)(Vg_DebugMsg,
-            "error: IA-64 cache stats!  Cachegrind doesn't run on IA-64...");
-         VG_(skin_panic)("IA-64 detected");
+         VG_(skin_panic)("IA-64 cache detected?!");
 
       case 0x22: case 0x23: case 0x25: case 0x29: 
           VG_(message)(Vg_DebugMsg, 
@@ -1362,7 +857,6 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    VG_(cpuid)(0x80000006, &dummy, &dummy, &L2i, &dummy);
 
    VG_(cpuid)(0x1, &model, &dummy, &dummy, &dummy);
-   /*VG_(message)(Vg_UserMsg,"CPU model %04x",model);*/
 
    /* Check for Duron bug */
    if (model == 0x630) {
@@ -1526,51 +1020,40 @@ void check_cache(cache_t* cache, cache_t* dflt, Char *name)
    }
 }
 
-/* On entry, args are undefined.  Fill them with any info from the
- * command-line, then fill in any remaining with CPUID instruction if possible,
- * otherwise use defaults.  Then check them and fix if not ok. */
 static 
 void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
-   /* Defaults are for a model 3 or 4 Athlon */
+#define DEFINED(L)   (-1 != L.size  || -1 != L.assoc || -1 != L.line_size)
+
+   Int res, n_clos = 0;
+
+   // Defaults are for a model 3 or 4 Athlon
    cache_t I1_dflt = (cache_t) {  65536, 2, 64 };
    cache_t D1_dflt = (cache_t) {  65536, 2, 64 };
    cache_t L2_dflt = (cache_t) { 262144, 8, 64 };
 
-#define CMD_LINE_DEFINED(L)            \
-   (-1 != clo_##L##_cache.size  ||     \
-    -1 != clo_##L##_cache.assoc ||     \
-    -1 != clo_##L##_cache.line_size)
+   // Set caches to default.
+   *I1c = I1_dflt;
+   *D1c = D1_dflt;
+   *L2c = L2_dflt;
 
-   *I1c = clo_I1_cache;
-   *D1c = clo_D1_cache;
-   *L2c = clo_L2_cache;
+   // Then replace with any info we can get from CPUID.
+   res = get_caches_from_CPUID(I1c, D1c, L2c);
+   res = -1;
 
-   /* If any undefined on command-line, try CPUID */
-   if (! CMD_LINE_DEFINED(I1) ||
-       ! CMD_LINE_DEFINED(D1) ||
-       ! CMD_LINE_DEFINED(L2)) { 
+   // Then replace with any defined on the command line.
+   if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; n_clos++; }
+   if (DEFINED(clo_D1_cache)) { *D1c = clo_D1_cache; n_clos++; }
+   if (DEFINED(clo_L2_cache)) { *L2c = clo_L2_cache; n_clos++; }
 
-      /* Overwrite CPUID result for any cache defined on command-line */
-      if (0 == get_caches_from_CPUID(I1c, D1c, L2c)) {
-   
-         if (CMD_LINE_DEFINED(I1)) *I1c = clo_I1_cache;
-         if (CMD_LINE_DEFINED(D1)) *D1c = clo_D1_cache;
-         if (CMD_LINE_DEFINED(L2)) *L2c = clo_L2_cache;
-
-      /* CPUID failed, use defaults for each undefined by command-line */
-      } else {
-         VG_(message)(Vg_DebugMsg, 
-                      "Couldn't detect cache configuration, using one "
-                      "or more defaults ");
-
-         *I1c = (CMD_LINE_DEFINED(I1) ? clo_I1_cache : I1_dflt);
-         *D1c = (CMD_LINE_DEFINED(D1) ? clo_D1_cache : D1_dflt);
-         *L2c = (CMD_LINE_DEFINED(L2) ? clo_L2_cache : L2_dflt);
-      }
+   // Warn if CPUID failed and config not completely specified from cmd line.
+   if (res != 0 && n_clos < 3) {
+      VG_(message)(Vg_DebugMsg, 
+                   "Warning: Couldn't detect cache config, using one "
+                   "or more defaults ");
    }
-#undef CMD_LINE_DEFINED
 
+   // Then check values and fix if not acceptable.
    check_cache(I1c, &I1_dflt, "I1");
    check_cache(D1c, &D1_dflt, "D1");
    check_cache(L2c, &L2_dflt, "L2");
@@ -1584,221 +1067,116 @@ void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
       VG_(message)(Vg_UserMsg, "  L2: %dB, %d-way, %dB lines",
                                L2c->size, L2c->assoc, L2c->line_size);
    }
+#undef CMD_LINE_DEFINED
 }
 
 /*------------------------------------------------------------*/
 /*--- SK_(fini)() and related function                     ---*/
 /*------------------------------------------------------------*/
 
-static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl, 
-                                                 Char *first_instr_fn)
+// Total reads/writes/misses.  Calculated during CC traversal at the end.
+// All auto-zeroed.
+static CC Ir_total;
+static CC Dr_total;
+static CC Dw_total;
+
+static Char* cachegrind_out_file;
+
+static void file_err ( void )
 {
-   Addr BBCC_ptr0, BBCC_ptr;
-   Char buf[BUF_LEN], curr_file[BUF_LEN], 
-        fbuf[BUF_LEN+4], lbuf[LINE_BUF_LEN];
-   UInt line_num;
-
-   BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
-
-   /* Mark start of basic block in output, just to ease debugging */
-   VG_(write)(fd, (void*)"\n", 1);  
-
-   VG_(strcpy)(curr_file, first_instr_fl);
-   
-   while (BBCC_ptr - BBCC_ptr0 < BBCC_node->array_size) {
-
-      /* We pretend the CC is an iCC for getting the tag.  This is ok
-       * because both CC types have tag as their first byte.  Once we know
-       * the type, we can cast and act appropriately. */
-
-      Char fl_buf[FILENAME_LEN];
-      Char fn_buf[FN_NAME_LEN];
-
-      Addr instr_addr;
-      switch ( ((iCC*)BBCC_ptr)->tag ) {
-
-         case InstrCC:
-            instr_addr = ((iCC*)BBCC_ptr)->instr_addr;
-            sprint_iCC(buf, (iCC*)BBCC_ptr);
-            ADD_CC_TO(iCC, I, Ir_total);
-            BBCC_ptr += sizeof(iCC);
-            break;
-
-         case ReadCC:
-         case  ModCC:
-            instr_addr = ((idCC*)BBCC_ptr)->instr_addr;
-            sprint_read_or_mod_CC(buf, (idCC*)BBCC_ptr);
-            ADD_CC_TO(idCC, I, Ir_total);
-            ADD_CC_TO(idCC, D, Dr_total);
-            BBCC_ptr += sizeof(idCC);
-            break;
-
-         case WriteCC:
-            instr_addr = ((idCC*)BBCC_ptr)->instr_addr;
-            sprint_write_CC(buf, (idCC*)BBCC_ptr);
-            ADD_CC_TO(idCC, I, Ir_total);
-            ADD_CC_TO(idCC, D, Dw_total);
-            BBCC_ptr += sizeof(idCC);
-            break;
-
-         case ReadWriteCC:
-            instr_addr = ((iddCC*)BBCC_ptr)->instr_addr;
-            sprint_read_write_CC(buf, (iddCC*)BBCC_ptr);
-            ADD_CC_TO(iddCC, I,  Ir_total);
-            ADD_CC_TO(iddCC, Da, Dr_total);
-            ADD_CC_TO(iddCC, Db, Dw_total);
-            BBCC_ptr += sizeof(iddCC);
-            break;
-
-         default:
-            VG_(skin_panic)("Unknown CC type in fprint_BBCC()\n");
-            break;
-      }
-      distinct_instrs++;
-      
-      get_debug_info(instr_addr, fl_buf, fn_buf, &line_num);
-
-      /* Allow for filename switching in the middle of a BB;  if this happens,
-       * must print the new filename with the function name. */
-      if (0 != VG_(strcmp)(fl_buf, curr_file)) {
-         VG_(strcpy)(curr_file, fl_buf);
-         VG_(sprintf)(fbuf, "fi=%s\n", curr_file);
-         VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
-      }
-
-      /* If the function name for this instruction doesn't match that of the
-       * first instruction in the BB, print warning. */
-      if (VG_(clo_verbosity > 2) && 0 != VG_(strcmp)(fn_buf, first_instr_fn)) {
-         VG_(printf)("Mismatched function names\n");
-         VG_(printf)("  filenames: BB:%s, instr:%s;"
-                     "  fn_names:  BB:%s, instr:%s;"
-                     "  line: %d\n", 
-                     first_instr_fl, fl_buf, 
-                     first_instr_fn, fn_buf, 
-                     line_num);
-      }
-
-      VG_(sprintf)(lbuf, "%u ", line_num);
-      VG_(write)(fd, (void*)lbuf, VG_(strlen)(lbuf));   /* line number */
-      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));     /* cost centre */
-   }
-   /* If we switched filenames in the middle of the BB without switching back,
-    * switch back now because the subsequent BB may be relying on falling under
-    * the original file name. */
-   if (0 != VG_(strcmp)(first_instr_fl, curr_file)) {
-      VG_(sprintf)(fbuf, "fe=%s\n", first_instr_fl);
-      VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
-   }
-
-   /* Mark end of basic block */
-   /* VG_(write)(fd, (void*)"#}\n", 3); */
-
-   sk_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
+   VG_(message)(Vg_UserMsg,
+      "error: can't open cache simulation output file `%s'",
+      cachegrind_out_file );
+   VG_(message)(Vg_UserMsg,
+      "       ... so simulation results will be missing.");
 }
 
-static void fprint_BBCC_table_and_calc_totals(void)
+static void fprint_lineCC(Int fd, lineCC* n)
 {
-   Int        fd;
-   Char       buf[BUF_LEN];
-   file_node *curr_file_node;
-   fn_node   *curr_fn_node;
-   BBCC      *curr_BBCC;
-   Int        i,j,k;
+   Char buf[512];
+   VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                      n->line,
+                      n->Ir.a, n->Ir.m1, n->Ir.m2, 
+                      n->Dr.a, n->Dr.m1, n->Dr.m2,
+                      n->Dw.a, n->Dw.m1, n->Dw.m2);
+   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+
+   Ir_total.a += n->Ir.a;  Ir_total.m1 += n->Ir.m1;  Ir_total.m2 += n->Ir.m2;
+   Dr_total.a += n->Dr.a;  Dr_total.m1 += n->Dr.m1;  Dr_total.m2 += n->Dr.m2;
+   Dw_total.a += n->Dw.a;  Dw_total.m1 += n->Dw.m1;  Dw_total.m2 += n->Dw.m2;
+}
+
+static void fprint_CC_table_and_calc_totals(void)
+{
+   Int     fd;
+   Char    buf[512];
+   fileCC *curr_fileCC;
+   fnCC   *curr_fnCC;
+   lineCC *curr_lineCC;
+   Int     i, j, k;
 
    VGP_PUSHCC(VgpCacheResults);
 
    fd = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                        VKI_S_IRUSR|VKI_S_IWUSR);
    if (fd < 0) {
-      /* If the file can't be opened for whatever reason (conflict
-         between multiple cachegrinded processes?), give up now. */
+      // If the file can't be opened for whatever reason (conflict
+      // between multiple cachegrinded processes?), give up now.
       file_err(); 
       return;
    }
 
-   /* "desc:" lines (giving I1/D1/L2 cache configuration) */
-   VG_(sprintf)(buf, "desc: I1 cache:         %s\n", I1.desc_line);
-   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-   VG_(sprintf)(buf, "desc: D1 cache:         %s\n", D1.desc_line);
-   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-   VG_(sprintf)(buf, "desc: L2 cache:         %s\n", L2.desc_line);
+   // "desc:" lines (giving I1/D1/L2 cache configuration).  The spaces after
+   // the 2nd colon makes cg_annotate's output look nicer.
+   VG_(sprintf)(buf, "desc: I1 cache:         %s\n"
+                     "desc: D1 cache:         %s\n"
+                     "desc: L2 cache:         %s\n",
+                     I1.desc_line, D1.desc_line, L2.desc_line);
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
-   /* "cmd:" line */
+   // "cmd:" line
    VG_(strcpy)(buf, "cmd:");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    for (i = 0; i < VG_(client_argc); i++) {
        VG_(sprintf)(buf, " %s", VG_(client_argv)[i]);
        VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    }
-   /* "events:" line */
+   // "events:" line
    VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw\n");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
-   /* Six loops here:  three for the hash table arrays, and three for the
-    * chains hanging off the hash table arrays. */
+   // Six loops here:  three for the hash table arrays, and three for the
+   // chains hanging off the hash table arrays.
    for (i = 0; i < N_FILE_ENTRIES; i++) {
-      curr_file_node = BBCC_table[i];
-      while (curr_file_node != NULL) {
-         VG_(sprintf)(buf, "fl=%s\n", curr_file_node->filename);
+      curr_fileCC = CC_table[i];
+      while (curr_fileCC != NULL) {
+         VG_(sprintf)(buf, "fl=%s\n", curr_fileCC->file);
          VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
          for (j = 0; j < N_FN_ENTRIES; j++) {
-            curr_fn_node = curr_file_node->fns[j];
-            while (curr_fn_node != NULL) {
-               VG_(sprintf)(buf, "fn=%s\n", curr_fn_node->fn_name);
+            curr_fnCC = curr_fileCC->fns[j];
+            while (curr_fnCC != NULL) {
+               VG_(sprintf)(buf, "fn=%s\n", curr_fnCC->fn);
                VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
-               for (k = 0; k < N_BBCC_ENTRIES; k++) {
-                  curr_BBCC = curr_fn_node->BBCCs[k];
-                  while (curr_BBCC != NULL) {
-                     fprint_BBCC(fd, curr_BBCC, 
-                             
-                             curr_file_node->filename,
-                             curr_fn_node->fn_name);
-
-                     curr_BBCC = curr_BBCC->next;
+               for (k = 0; k < N_LINE_ENTRIES; k++) {
+                  curr_lineCC = curr_fnCC->lines[k];
+                  while (curr_lineCC != NULL) {
+                     fprint_lineCC(fd, curr_lineCC);
+                     curr_lineCC = curr_lineCC->next;
                   }
                }
-               curr_fn_node = curr_fn_node->next;
+               curr_fnCC = curr_fnCC->next;
             }
          }
-         curr_file_node = curr_file_node->next;
+         curr_fileCC = curr_fileCC->next;
       }
    }
 
-   /* Print stats from any discarded basic blocks */
-   if (0 != Ir_discards.a) {
-
-      VG_(sprintf)(buf, "fl=(discarded)\n");
-      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-      VG_(sprintf)(buf, "fn=(discarded)\n");
-      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-
-      /* Use 0 as line number */
-      VG_(sprintf)(buf, "0 %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                   Ir_discards.a, Ir_discards.m1, Ir_discards.m2, 
-                   Dr_discards.a, Dr_discards.m1, Dr_discards.m2, 
-                   Dw_discards.a, Dw_discards.m1, Dw_discards.m2);
-      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-
-      Ir_total.a  += Ir_discards.a;
-      Ir_total.m1 += Ir_discards.m1;
-      Ir_total.m2 += Ir_discards.m2;
-      Dr_total.a  += Dr_discards.a;
-      Dr_total.m1 += Dr_discards.m1;
-      Dr_total.m2 += Dr_discards.m2;
-      Dw_total.a  += Dw_discards.a;
-      Dw_total.m1 += Dw_discards.m1;
-      Dw_total.m2 += Dw_discards.m2;
-   }
-
-   /* Summary stats must come after rest of table, since we calculate them
-    * during traversal.  */ 
+   // Summary stats must come after rest of table, since we calculate them
+   // during traversal.  */ 
    VG_(sprintf)(buf, "summary: "
-                     "%llu %llu %llu "
-                     "%llu %llu %llu "
-                     "%llu %llu %llu\n", 
+                     "%llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
                      Ir_total.a, Ir_total.m1, Ir_total.m2,
                      Dr_total.a, Dr_total.m1, Dr_total.m2,
                      Dw_total.a, Dw_total.m1, Dw_total.m2);
@@ -1834,10 +1212,7 @@ void percentify(Int n, Int ex, Int field_width, char buf[])
 
 void SK_(fini)(Int exitcode)
 {
-   static char buf1[RESULTS_BUF_LEN], 
-               buf2[RESULTS_BUF_LEN], 
-               buf3[RESULTS_BUF_LEN],
-               fmt [RESULTS_BUF_LEN];
+   static char buf1[128], buf2[128], buf3[128], fmt [128];
 
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
@@ -1845,7 +1220,7 @@ void SK_(fini)(Int exitcode)
    Int l1, l2, l3;
    Int p;
 
-   fprint_BBCC_table_and_calc_totals();
+   fprint_CC_table_and_calc_totals();
 
    if (VG_(clo_verbosity) == 0) 
       return;
@@ -1925,14 +1300,16 @@ void SK_(fini)(Int exitcode)
    VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )", buf1, buf2,buf3);
             
 
-   /* Hash table stats */
+   // Various stats
    if (VG_(clo_verbosity) > 1) {
-       int BB_lookups = full_debug_BBs      + fn_name_debug_BBs +
+       int BB_lookups = full_debug_BBs      + fn_debug_BBs +
                         file_line_debug_BBs + no_debug_BBs;
       
        VG_(message)(Vg_DebugMsg, "");
        VG_(message)(Vg_DebugMsg, "Distinct files:   %d", distinct_files);
        VG_(message)(Vg_DebugMsg, "Distinct fns:     %d", distinct_fns);
+       VG_(message)(Vg_DebugMsg, "Distinct lines:   %d", distinct_lines);
+       VG_(message)(Vg_DebugMsg, "Distinct instrs:  %d", distinct_instrs);
        VG_(message)(Vg_DebugMsg, "BB lookups:       %d", BB_lookups);
        VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)", 
                     full_debug_BBs    * 100 / BB_lookups,
@@ -1941,95 +1318,46 @@ void SK_(fini)(Int exitcode)
                     file_line_debug_BBs * 100 / BB_lookups,
                     file_line_debug_BBs);
        VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)", 
-                    fn_name_debug_BBs * 100 / BB_lookups,
-                    fn_name_debug_BBs);
+                    fn_debug_BBs * 100 / BB_lookups,
+                    fn_debug_BBs);
        VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)", 
                     no_debug_BBs      * 100 / BB_lookups,
                     no_debug_BBs);
        VG_(message)(Vg_DebugMsg, "BBs Retranslated: %d", BB_retranslations);
-       VG_(message)(Vg_DebugMsg, "Distinct instrs:  %d", distinct_instrs);
    }
    VGP_POPCC(VgpCacheResults);
 }
 
+/*--------------------------------------------------------------------*/
+/*--- Discarding BB info                                           ---*/
+/*--------------------------------------------------------------------*/
 
-/* Called when a translation is invalidated due to self-modifying code or
- * unloaded of a shared object.
- *
- * Finds the BBCC in the table, removes it, adds the counts to the discard
- * counters, and then frees the BBCC. */
+// Called when a translation is invalidated due to code unloading.
 void SK_(discard_basic_block_info) ( Addr a, UInt size )
 {
-   BBCC *BBCC_node;
-   Addr BBCC_ptr0, BBCC_ptr;
-   Bool BB_seen_before;
-    
-   if (0)
-      VG_(printf)( "discard_basic_block_info: addr %p, size %u\n", a, size);
+   VgHashNode** prev_next_ptr;
+   VgHashNode*  bb_info;
 
-   /* 2nd arg won't be used since BB should have been seen before (assertions
-    * ensure this). */
-   BBCC_node = get_BBCC(a, NULL, /*remove=*/True, &BB_seen_before);
-   BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
+   if (0) VG_(printf)( "discard_basic_block_info: %p, %u\n", a, size);
 
-   sk_assert(True == BB_seen_before);
-
-   while (BBCC_ptr - BBCC_ptr0 < BBCC_node->array_size) {
-
-      /* We pretend the CC is an iCC for getting the tag.  This is ok
-       * because both CC types have tag as their first byte.  Once we know
-       * the type, we can cast and act appropriately. */
-
-      switch ( ((iCC*)BBCC_ptr)->tag ) {
-
-         case InstrCC:
-            ADD_CC_TO(iCC, I, Ir_discards);
-            BBCC_ptr += sizeof(iCC);
-            break;
-
-         case ReadCC:
-         case  ModCC:
-            ADD_CC_TO(idCC, I, Ir_discards);
-            ADD_CC_TO(idCC, D, Dr_discards);
-            BBCC_ptr += sizeof(idCC);
-            break;
-
-         case WriteCC:
-            ADD_CC_TO(idCC, I, Ir_discards);
-            ADD_CC_TO(idCC, D, Dw_discards);
-            BBCC_ptr += sizeof(idCC);
-            break;
-
-         case ReadWriteCC:
-            ADD_CC_TO(iddCC, I, Ir_discards);
-            ADD_CC_TO(iddCC, Da, Dr_discards);
-            ADD_CC_TO(iddCC, Db, Dw_discards);
-            BBCC_ptr += sizeof(iddCC);
-            break;
-
-         default:
-            VG_(skin_panic)("Unknown CC type in VG_(discard_basic_block_info)()\n");
-            break;
-      }
-   }
-   VG_(free)(BBCC_node);
+   // Get BB info, remove from table, free BB info.  Simple!
+   bb_info = VG_(HT_get_node)(instr_info_table, a, &prev_next_ptr);
+   sk_assert(NULL != bb_info);
+   *prev_next_ptr = bb_info->next;
+   VG_(free)(bb_info);
 }
 
 /*--------------------------------------------------------------------*/
 /*--- Command line processing                                      ---*/
 /*--------------------------------------------------------------------*/
 
-static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
+static void parse_cache_opt ( cache_t* cache, char* opt )
 {
-   int   i1, i2, i3;
-   int   i;
-   char *opt = VG_(strdup)(orig_opt);
+   int   i = 0, i2, i3;
 
-   i = i1 = opt_len;
-
-   /* Option looks like "--I1=65536,2,64".
-    * Find commas, replace with NULs to make three independent 
-    * strings, then extract numbers.  Yuck. */
+   // Option argument looks like "65536,2,64".
+   // Find commas, replace with NULs to make three independent 
+   // strings, then extract numbers, put NULs back.  Yuck.
    while (VG_(isdigit)(opt[i])) i++;
    if (',' == opt[i]) {
       opt[i++] = '\0';
@@ -2043,27 +1371,27 @@ static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
    while (VG_(isdigit)(opt[i])) i++;
    if ('\0' != opt[i]) goto bad;
 
-   cache->size      = (Int)VG_(atoll)(opt + i1);
+   cache->size      = (Int)VG_(atoll)(opt);
    cache->assoc     = (Int)VG_(atoll)(opt + i2);
    cache->line_size = (Int)VG_(atoll)(opt + i3);
 
-   VG_(free)(opt);
-
+   opt[i2-1] = ',';
+   opt[i3-1] = ',';
    return;
 
   bad:
-   VG_(bad_option)(orig_opt);
+   VG_(bad_option)(opt);
 }
 
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-   /* 5 is length of "--I1=" */
+   // 5 is length of "--I1="
    if      (VG_CLO_STREQN(5, arg, "--I1="))
-      parse_cache_opt(&clo_I1_cache, arg,   5);
+      parse_cache_opt(&clo_I1_cache, &arg[5]);
    else if (VG_CLO_STREQN(5, arg, "--D1="))
-      parse_cache_opt(&clo_D1_cache, arg,   5);
+      parse_cache_opt(&clo_D1_cache, &arg[5]);
    else if (VG_CLO_STREQN(5, arg, "--L2="))
-      parse_cache_opt(&clo_L2_cache, arg,   5);
+      parse_cache_opt(&clo_L2_cache, &arg[5]);
    else
       return False;
 
@@ -2106,10 +1434,8 @@ void SK_(pre_clo_init)(void)
    VG_(needs_command_line_options)();
 
    VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access);
-   VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access_JIFZ);
-   VG_(register_compact_helper)((Addr) & log_0I_1D_cache_access);
-   VG_(register_compact_helper)((Addr) & log_1I_1D_cache_access);
-   VG_(register_compact_helper)((Addr) & log_0I_2D_cache_access);
+   VG_(register_compact_helper)((Addr) & log_1I_1Dr_cache_access);
+   VG_(register_compact_helper)((Addr) & log_1I_1Dw_cache_access);
    VG_(register_compact_helper)((Addr) & log_1I_2D_cache_access);
 
    /* Get working directory */
@@ -2120,19 +1446,13 @@ void SK_(pre_clo_init)(void)
    VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
                 base_dir, VG_(getpid)());
    VG_(free)(base_dir);
+
+   instr_info_table = VG_(HT_construct)();
 }
 
 void SK_(post_clo_init)(void)
 {
    cache_t I1c, D1c, L2c; 
-
-   initCC(&Ir_total);
-   initCC(&Dr_total);
-   initCC(&Dw_total);
-   
-   initCC(&Ir_discards);
-   initCC(&Dr_discards);
-   initCC(&Dw_discards);
 
    get_caches(&I1c, &D1c, &L2c);
 
@@ -2140,34 +1460,12 @@ void SK_(post_clo_init)(void)
    cachesim_D1_initcache(D1c);
    cachesim_L2_initcache(L2c);
 
-   VGP_(register_profile_event)(VgpGetBBCC,       "get-BBCC");
+   VGP_(register_profile_event)(VgpGetLineCC,     "get-lineCC");
    VGP_(register_profile_event)(VgpCacheSimulate, "cache-simulate");
    VGP_(register_profile_event)(VgpCacheResults,  "cache-results");
-   
-   init_BBCC_table();
 }
 
 VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
-
-#if 0
-Bool SK_(cheap_sanity_check)(void) { return True; }
-
-extern TTEntry* vg_tt;
-
-Bool SK_(expensive_sanity_check)(void)
-{ 
-   Int i;
-   Bool dummy;
-   for (i = 0; i < 200191; i++) {
-      if (vg_tt[i].orig_addr != (Addr)1 &&
-          vg_tt[i].orig_addr != (Addr)3) {
-         VG_(printf)(".");
-         get_BBCC(vg_tt[i].orig_addr, NULL, /*remove=*/True, &dummy);
-      }
-   }
-   return True;
-}
-#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                cg_main.c ---*/

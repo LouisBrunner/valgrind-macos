@@ -1291,9 +1291,10 @@ PREx(sys_vhangup, 0)
    PRE_REG_READ0(long, "vhangup");
 }
 
-PRE(iopl)
+PREx(sys_iopl, 0)
 {
-   PRINT("iopl ( %d )", arg1);
+   PRINT("sys_iopl ( %d )", arg1);
+   PRE_REG_READ1(long, "iopl", unsigned long, level);
 }
 
 PREx(sys_setxattr, MayBlock)
@@ -2276,9 +2277,15 @@ POSTx(sys_fork)
    }
 }
 
-PRE(clone)
+// XXX: x86-specific
+PREx(sys_clone, Special)
 {
-   PRINT("clone ( %d, %p, %p, %p, %p )",arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_clone ( %d, %p, %p, %p, %p )",arg1,arg2,arg3,arg4,arg5);
+   // XXX: really not sure about the last two args... if they are really
+   // there, we should do PRE_MEM_READs for both of them...
+   PRE_REG_READ4(int, "clone",
+                 unsigned long, flags, void *, child_stack,
+                 int *, parent_tidptr, int *, child_tidptr);
 
    if (arg2 == 0 &&
        (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
@@ -2290,7 +2297,7 @@ PRE(clone)
    } else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
-          "We do now support programs linked against\n   "
+          "We do support programs linked against\n   "
           "libpthread.so, though.  Re-run with -v and ensure that\n   "
           "you are picking up Valgrind's implementation of libpthread.so.");
    }
@@ -2644,9 +2651,16 @@ PREx(sys_getuid, 0)
    PRE_REG_READ0(long, "getuid");
 }
 
-PRE(ipc)
+// XXX: x86-specific
+// XXX: should use the constants here (eg. SHMAT), not the numbers directly!
+PREx(sys_ipc, 0)
 {
-   PRINT("ipc ( %d, %d, %d, %d, %p, %d )", arg1,arg2,arg3,arg4,arg5,arg6);
+   PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", arg1,arg2,arg3,arg4,arg5,arg6);
+   // XXX: this is simplistic -- some args are not used in all circumstances.
+   PRE_REG_READ6(int, "ipc",
+                 vki_uint, call, int, first, int, second, int, third,
+                 void *, ptr, long, fifth)
+
    switch (arg1 /* call */) {
    case 1: /* IPCOP_semop */
       PRE_MEM_READ( "semop(sops)", arg5, arg3 * sizeof(struct vki_sembuf) );
@@ -2901,7 +2915,7 @@ PRE(ipc)
    }   
 }
 
-POST(ipc)
+POSTx(sys_ipc)
 {
    switch (arg1 /* call */) {
    case 1: /* IPCOP_semop */
@@ -5569,20 +5583,21 @@ POSTx(sys_waitpid)
       POST_MEM_WRITE( arg2, sizeof(int) );
 }
 
-PRE(wait4)
+PREx(sys_wait4, MayBlock)
 {
-   /* pid_t wait4(pid_t pid, int *status, int options,
-      struct rusage *rusage) */
-   PRINT("wait4 ( %d, %p, %d, %p )", arg1,arg2,arg3,arg4);
+   PRINT("sys_wait4 ( %d, %p, %d, %p )", arg1,arg2,arg3,arg4);
    arg3 &= ~(__VKI_WCLONE | __VKI_WALL);
 
+   PRE_REG_READ4(long, "wait4", 
+                 vki_pid_t, pid, unsigned int *, status, int, options,
+                 struct rusage *, rusage);
    if (arg2 != (Addr)NULL)
       PRE_MEM_WRITE( "wait4(status)", arg2, sizeof(int) );
    if (arg4 != (Addr)NULL)
       PRE_MEM_WRITE( "wait4(rusage)", arg4, sizeof(struct vki_rusage) );
 }
 
-POST(wait4)
+POSTx(sys_wait4)
 {
    if (arg2 != (Addr)NULL)
       POST_MEM_WRITE( arg2, sizeof(int) );
@@ -6428,19 +6443,19 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_fstat,            sys_newfstat),     // 108 * P (SVr4,BSD4.3)
    //   (__NR_olduname,         sys_uname),        // 109 (?) L -- obsolete
 
-   SYSB_(__NR_iopl,             sys_iopl, 0),      // 110 
+   SYSX_(__NR_iopl,             sys_iopl),         // 110 (x86/amd64) L
    SYSX_(__NR_vhangup,          sys_vhangup),      // 111 * L
    SYSX_(__NR_idle,             sys_ni_syscall),   // 112 * P -- unimplemented
    //   (__NR_vm86old,          sys_vm86old),      // 113 (x86) L
-   SYSBA(__NR_wait4,            sys_wait4, MayBlock), // 114 *
+   SYSXY(__NR_wait4,            sys_wait4),        // 114 * P
 
    //   (__NR_swapoff,          sys_swapoff),      // 115 * L 
    SYSXY(__NR_sysinfo,          sys_sysinfo),      // 116 * L
-   SYSBA(__NR_ipc,              sys_ipc, 0),       // 117 
+   SYSXY(__NR_ipc,              sys_ipc),          // 117 (x86) L
    SYSX_(__NR_fsync,            sys_fsync),        // 118 * L
    //   (__NR_sigreturn,        sys_sigreturn),    // 119 () L
 
-   SYSB_(__NR_clone,            sys_clone, Special), // 120 (very non-gen) L
+   SYSX_(__NR_clone,            sys_clone),        // 120 (x86) L
    //   (__NR_setdomainname,    sys_setdomainname),// 121 * (non-P?)
    SYSXY(__NR_uname,            sys_newuname),     // 122 * P
    SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 (x86,amd64) L

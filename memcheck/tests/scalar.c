@@ -8,8 +8,6 @@ int main(void)
 
    // All __NR_xxx numbers are taken from x86
 
-   // 0--49
-   
    // __NR_restart_syscall 1  XXX ???
    // (see below)
 
@@ -442,9 +440,9 @@ int main(void)
    // __NR_olduname 109
    // (obsolete, not handled by Valgrind)
 
-   // __NR_iopl 110
- //GO(__NR_iopl, ".s .m");
- //SY(__NR_iopl);
+   // __NR_iopl 110 --> sys_iopl()
+   GO(__NR_iopl, "1s 0m");
+   SY(__NR_iopl, x0);
 
    // __NR_vhangup 111 --> sys_vhangup()
    GO(__NR_vhangup, "0e");
@@ -458,9 +456,9 @@ int main(void)
  //GO(__NR_vm86old, ".s .m");
  //SY(__NR_vm86old);
 
-   // __NR_wait4 114
- //GO(__NR_wait4, ".s .m");
- //SY(__NR_wait4);
+   // __NR_wait4 114 --> sys_wait4()
+   GO(__NR_wait4, "4s 2m");
+   SY(__NR_wait4, x0, x0+1, x0, x0+1);
 
    // __NR_swapoff 115
  //GO(__NR_swapoff, ".s .m");
@@ -471,8 +469,12 @@ int main(void)
    SY(__NR_sysinfo, x0);
 
    // __NR_ipc 117
- //GO(__NR_ipc, ".s .m");
- //SY(__NR_ipc);
+   // XXX: This is simplistic -- doesn't treat any of the sub-ops.
+   // XXX: Also, should be 6 scalar errors, except glibc's syscall() doesn't
+   //      use the 6th one!
+   #include <asm/ipc.h>
+   GO(__NR_ipc, "5s 0m");
+   SY(__NR_ipc, x0+4, x0, x0, x0, x0, x0);
 
    // __NR_fsync 118 --> sys_fsync()
    GO(__NR_fsync, "1s 0m");
@@ -483,8 +485,11 @@ int main(void)
  //SY(__NR_sigreturn);
 
    // __NR_clone 120
- //GO(__NR_clone, ".s .m");
- //SY(__NR_clone);
+   #include <sched.h>
+   #include <signal.h>
+   // XXX: should really be "4s 2m"?  Not sure... (see PRE(sys_clone))
+   GO(__NR_clone, "4s 0m");
+   SY(__NR_clone, x0|CLONE_PARENT_SETTID|SIGCHLD, x0, x0, x0);
 
    // __NR_setdomainname 121
  //GO(__NR_setdomainname, ".s .m");

@@ -127,6 +127,8 @@ typedef __vki_kernel_time_t	vki_time_t;
 typedef __vki_kernel_clock_t	vki_clock_t;
 typedef __vki_kernel_caddr_t	vki_caddr_t;
 
+typedef unsigned int	        vki_uint;
+
 //----------------------------------------------------------------------
 // Now the rest of the arch-specific stuff
 //----------------------------------------------------------------------

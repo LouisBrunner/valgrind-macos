@@ -599,6 +599,11 @@ static void process_cmd_line_options ( void )
        if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
                                   VG_STARTUP_STACK_BASE_2 )) {
           sp = (UInt*)VG_STARTUP_STACK_BASE_2;
+       } else 
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_3 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_3;
+ 
        } else {
           args_grok_error(
              "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "

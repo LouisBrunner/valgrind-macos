@@ -19,6 +19,17 @@ val_PROGRAMS = \
 	libpthread.so \
 	vg_inject.so
 
+noinst_LIBRARIES = lib_replace_malloc.a
+
+noinst_HEADERS = \
+	core.h			\
+	core_asm.h		\
+	ume.h			\
+	vg_symtab2.h		\
+	vg_symtypes.h		\
+	vg_toolint.h		\
+	vg_unsafe.h
+
 EXTRA_DIST = \
 	vg_libpthread.vs valgrind.vs \
 	gen_toolint.pl toolfuncs.def \
@@ -115,35 +126,23 @@ libpthread_so_SOURCES = \
 	${VG_PLATFORM}/syscall.S
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
 libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
-	-shared -fpic -ldl \
+	-shared -ldl \
 	-Wl,-version-script $(srcdir)/vg_libpthread.vs \
 	-Wl,-z,nodelete \
 	-Wl,--soname=libpthread.so.0
 
 vg_inject_so_SOURCES = \
 	vg_intercept.c 
-
-# Not really true, but we need to build vg_replace_malloc.o somehow
-vg_inject_so_DEPENDENCIES = \
-	vg_replace_malloc.o
-
+vg_inject_so_CFLAGS = $(AM_CFLAGS) -fpic
 vg_inject_so_LDFLAGS = \
 	-shared \
 	-Wl,--soname,vg_inject.so \
 	-Wl,-z,initfirst
 
-noinst_HEADERS = \
-	core.h			\
-	core_asm.h		\
-	ume.h			\
-	vg_symtab2.h		\
-	vg_symtypes.h		\
-	vg_toolint.h		\
-	vg_unsafe.h
+lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
+lib_replace_malloc_a_CFLAGS  = $(AM_CFLAGS) -fpic
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) $(inplacedir)/libpthread.so.0
-
-vg_replace_malloc.o vg_intercept.o vg_libpthread.o: CFLAGS += -fno-omit-frame-pointer -g -fpic
 
 all-local:
 	mkdir -p $(inplacedir)

@@ -75,7 +75,7 @@ main(void)
 
 	for (thread_num = 0; thread_num < NUM_THREADS; thread_num++) {
 	  pthread_join(threads[thread_num], NULL);
-	  printf("main: joined to thread %d\n", thread_num);
+	  //printf("main: joined to thread %d\n", thread_num);
 	}
 	printf("main: Goodbye\n");
         return 0;

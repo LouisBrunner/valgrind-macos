@@ -14,10 +14,12 @@ vgskin_addrcheck_so_LDADD = \
 
 vgpreload_addrcheck_so_SOURCES = 
 vgpreload_addrcheck_so_LDADD = \
-	$(top_builddir)/coregrind/vg_replace_malloc.o \
 	../memcheck/mac_replace_strmem.o
 vgpreload_addrcheck_so_DEPENDENCIES = \
-	$(top_builddir)/coregrind/vg_replace_malloc.o \
+	$(top_builddir)/coregrind/lib_replace_malloc.a \
 	../memcheck/mac_replace_strmem.o
-vgpreload_addrcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst
+vgpreload_addrcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
+	-Wl,--whole-archive \
+	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	-Wl,--no-whole-archive
 

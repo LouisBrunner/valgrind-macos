@@ -6,9 +6,11 @@ vgskin_helgrind_so_SOURCES = hg_main.c
 vgskin_helgrind_so_LDFLAGS = -shared
 
 vgpreload_helgrind_so_SOURCES = 
-vgpreload_helgrind_so_LDADD = $(top_builddir)/coregrind/vg_replace_malloc.o
-vgpreload_helgrind_so_DEPENDENCIES = $(top_builddir)/coregrind/vg_replace_malloc.o
-vgpreload_helgrind_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst
+vgpreload_helgrind_so_DEPENDENCIES = $(top_builddir)/coregrind/lib_replace_malloc.a
+vgpreload_helgrind_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
+	-Wl,--whole-archive \
+	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	-Wl,--no-whole-archive
 
 hgincludedir = $(includedir)/valgrind
 

@@ -198,7 +198,7 @@ static ULong *allocstack(ThreadId tid)
       if (stk != (void *)-1) {
 	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
 	 tst->os_state.stack = (UInt *)stk + VKI_PAGE_SIZE/sizeof(UInt);
-	 tst->os_state.stacksize = VG_STACK_SIZE_W;
+	 tst->os_state.stacksize = VGA_STACK_SIZE_W;
       } else 
 	 return (ULong *)-1;
    }

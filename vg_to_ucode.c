@@ -4545,6 +4545,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       default:
          VG_(printf)("disInstr: unhandled 2-byte opcode 0x%x\n", 
                      (UInt)opc);
+	 VG_(printf)("This _might_ be the result of executing an "
+                     "MMX, SSE, SSE2 or 3DNow!\n" );
+	 VG_(printf)("instruction.  Valgrind does not currently "
+                     "support such instructions.  Sorry.\n" );
          VG_(unimplemented)("unhandled x86 0x0F 2-byte opcode");
       }
 

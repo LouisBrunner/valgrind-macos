@@ -259,8 +259,8 @@ static Char* alloc_fns[MAX_ALLOC_FNS] = {
    "malloc",
    "operator new(unsigned)",
    "operator new[](unsigned)",
-   "operator new(unsigned, std::nothrow_t const&)"
-   "operator new[](unsigned, std::nothrow_t const&)"
+   "operator new(unsigned, std::nothrow_t const&)",
+   "operator new[](unsigned, std::nothrow_t const&)",
    "__builtin_new",
    "__builtin_vec_new",
    "calloc",

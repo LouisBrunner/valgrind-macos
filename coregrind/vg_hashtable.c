@@ -113,7 +113,7 @@ void sort_hash_array ( VgHashNode** shadows, UInt n_shadows )
 
    bigN = hi - lo + 1; if (bigN < 2) return;
    hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
-   sk_assert(0 <= hp && hp < 14);
+   vg_assert(0 <= hp && hp < 14);
 
    for (; hp >= 0; hp--) {
       h = incs[hp];
@@ -161,13 +161,13 @@ VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable table,
          arr[j++] = node;
       }
    }
-   sk_assert(j == *n_shadows);
+   vg_assert(j == *n_shadows);
 
    sort_hash_array(arr, *n_shadows);
 
    /* Sanity check; assert that the blocks are now in order */
    for (i = 0; i < *n_shadows-1; i++) {
-      sk_assert( arr[i]->key < arr[i+1]->key );
+      vg_assert( arr[i]->key < arr[i+1]->key );
    }
 
    return arr;

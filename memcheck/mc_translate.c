@@ -1059,10 +1059,12 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case MMX2_MemRd: case MMX2_MemWr:
          case FPU_R: case FPU_W: {
             Int t_size = INVALID_TEMPREG;
+            Bool is_load;
 
             if (u_in->opcode == MMX2_MemRd || u_in->opcode == MMX2_MemWr)
                sk_assert(u_in->size == 4 || u_in->size == 8);
 
+            is_load = u_in->opcode==FPU_R || u_in->opcode==MMX2_MemRd;
             sk_assert(u_in->tag2 == TempReg);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
@@ -1071,9 +1073,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
             uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-            uCCall(cb, 
-                   u_in->opcode==FPU_R ? (Addr) & MC_(fpu_read_check) 
-                                       : (Addr) & MC_(fpu_write_check),
+            uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
+                               : (Addr) & MC_(fpu_write_check),
                    2, 2, False);
 
             VG_(copy_UInstr)(cb, u_in);

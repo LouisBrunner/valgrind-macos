@@ -38,6 +38,7 @@
 
 #include "../../../pub/libvex_basictypes.h"
 #include "../../../pub/libvex_ir.h"
+#include "../../../pub/libvex.h"
 
 
 /*====================================================================*/

@@ -5,13 +5,11 @@ VALGRIND_2.1 {
 		vgProf_*;
                 vgOff_*;
                 vgArch_*;
-		ppIRBB;
-		emptyIR*;
-		*IRTypeEnv;
 		*IRExpr*;
 		*IRStmt*;
 		*IRBB*;
 		*IRDirty*;
+		*IRType*;
 		LibVEX_Alloc;
 
 	local:

@@ -1336,7 +1336,7 @@ extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
 extern void VG_(pad_address_space)(void);
 extern void VG_(unpad_address_space)(void);
 
-extern REGPARM(1)
+extern //REGPARM(1)
        void VG_(unknown_esp_update) ( Addr new_ESP );
 
 /* ---------------------------------------------------------------------
@@ -1481,7 +1481,7 @@ extern void VG_(missing_tool_func) ( const Char* fn );
    startup time, are given values denoting offsets into baseBlock.
    These offsets are in *words* from the start of baseBlock. */
 
-#define VG_BASEBLOCK_WORDS 157
+#define VG_BASEBLOCK_WORDS 200 // 157
 
 extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 

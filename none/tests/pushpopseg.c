@@ -23,8 +23,8 @@ int main(int argc, char **argv)
       : "ax"
       );
 
-  printf("sp change after push = %d\n", sp2 - sp1);
-  printf("sp change after pop = %d\n", sp3 - sp2);
+  printf("sp change after push = %ld\n", sp2 - sp1);
+  printf("sp change after pop = %ld\n", sp3 - sp2);
   printf("fs after push and pop = %04x\n", fs1);
    
   asm("movw %4, %%fs\n"
@@ -39,8 +39,8 @@ int main(int argc, char **argv)
       : "ax"
       );
 
-  printf("sp change after push = %d\n", sp2 - sp1);
-  printf("sp change after pop = %d\n", sp3 - sp2);
+  printf("sp change after push = %ld\n", sp2 - sp1);
+  printf("sp change after pop = %ld\n", sp3 - sp2);
   printf("fs after push and pop = %04x\n", fs1);
  
   exit(0);

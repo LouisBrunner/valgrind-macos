@@ -386,8 +386,6 @@ extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, 
                                   SizeT nmemb, SizeT bytes_per_memb );
 extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT size );
-extern void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, 
-                                         SizeT req_pszB );
 
 extern SizeT VG_(arena_payload_szB) ( ArenaId aid, void* payload );
 

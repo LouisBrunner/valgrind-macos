@@ -1140,7 +1140,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    .    .               .   .   .               .   .
 
 */
-void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
+static 
+void* arena_malloc_aligned ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 {
    SizeT  base_pszB_req, base_pszB_act, frag_bszB;
    Block  *base_b, *align_b;
@@ -1160,9 +1161,9 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB 
    if (req_alignB < VG_MIN_MALLOC_SZB
        || req_alignB > 1048576
        || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-      VG_(printf)("VG_(arena_malloc_aligned)(%p, %d, %d)\nbad alignment", 
+      VG_(printf)("arena_malloc_aligned(%p, %d, %d)\nbad alignment", 
                   a, req_alignB, req_pszB );
-      VG_(core_panic)("VG_(arena_malloc_aligned)");
+      VG_(core_panic)("arena_malloc_aligned");
       /*NOTREACHED*/
    }
    // Paranoid
@@ -1335,20 +1336,14 @@ void* VG_(realloc) ( void* ptr, SizeT size )
    return VG_(arena_realloc) ( VG_AR_TOOL, ptr, size );
 }
 
-void* VG_(malloc_aligned) ( SizeT req_alignB, SizeT req_pszB )
-{
-   return VG_(arena_malloc_aligned) ( VG_AR_TOOL, req_alignB, req_pszB );
-}
-
-
 void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )                 
 {                                                                             
-   // 'align' should be valid by now.  VG_(arena_malloc_aligned)() will
+   // 'align' should be valid by now.  arena_malloc_aligned() will
    // abort if it's not.
    if (VG_MIN_MALLOC_SZB == align)
-      return VG_(arena_malloc)         ( VG_AR_CLIENT, nbytes ); 
+      return VG_(arena_malloc)    ( VG_AR_CLIENT, nbytes ); 
    else                                                                       
-      return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );
+      return arena_malloc_aligned ( VG_AR_CLIENT, align, nbytes );
 }                                                                             
 
 void VG_(cli_free) ( void* p )                                   

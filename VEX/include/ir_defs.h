@@ -9,45 +9,54 @@
 #ifndef __IR_DEFS_H
 #define __IR_DEFS_H
 
-#include <stdio.h>       /* FILE*  */
-
 
 /*---------------------------------------------------------------*/
 /*--- Type definitions for the IR                             ---*/
 /*---------------------------------------------------------------*/
 
-/* Types */
+/* ------------------ Types ------------------ */
 
 typedef 
    enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
    IRType;
 
+extern void ppIRType ( FILE* f, IRType );
 
-/* Constants */
+
+/* ------------------ Constants ------------------ */
 
 typedef
-   enum { Ico_u8, Ico_u16, Ico_u32, Ico_u64 }
+   enum { Ico_U8, Ico_U16, Ico_U32, Ico_U64 }
    IRConstTag;
 
 typedef
    struct _IRConst {
       IRConstTag tag;
       union {
-         UChar  u8;
-         UShort u16;
-         UInt   u32;
-         ULong  u64;
+         UChar  U8;
+         UShort U16;
+         UInt   U32;
+         ULong  U64;
       } Ico;
    }
    IRConst;
 
+extern IRConst* IRConst_U8  ( UChar );
+extern IRConst* IRConst_U16 ( UShort );
+extern IRConst* IRConst_U32 ( UInt );
+extern IRConst* IRConst_U64 ( ULong );
 
-/* Temporaries */
+extern void ppIRConst ( FILE* f, IRConst* );
+
+
+/* ------------------ Temporaries ------------------ */
 
 typedef int IRTemp;
 
+extern void ppIRTemp ( FILE* f, IRTemp );
 
-/* Binary and unary ops */
+
+/* ------------------ Binary and unary ops ------------------ */
 
 typedef
    enum { Iop_Add32, 
@@ -65,9 +74,11 @@ typedef
    }
    IROp;
 
+extern void ppIROp ( FILE* f, IROp );
 
-/* Expressions
 
+/* ------------------ Expressions ------------------ */
+/*
 data Expr
    = GET   Int Int         -- offset, size
    | TMP   Temp            -- value of temporary
@@ -111,9 +122,18 @@ typedef
    }
    IRExpr;
 
+extern IRExpr* IRExpr_Get   ( Int off, Int sz );
+extern IRExpr* IRExpr_Tmp   ( IRTemp tmp );
+extern IRExpr* IRExpr_Binop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
+extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
+extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
+extern IRExpr* IRExpr_Const ( IRConst* con );
 
-/* Statements:
+extern void ppIRExpr ( FILE* f, IRExpr* );
 
+
+/* ------------------ Statements ------------------ */
+/*
 data Stmt
    = PUT    Int Int Expr      -- offset, size, value
    | TMP    Temp Expr         -- store value in Temp
@@ -130,23 +150,30 @@ typedef
          struct {
             Int     offset;
             Int     size;
-            struct _IRExpr* expr;
+            IRExpr* expr;
          } Put;
          struct {
             IRTemp  tmp;
-            struct _IRExpr* expr;
+            IRExpr* expr;
          } Tmp;
          struct {
-            struct _IRExpr* addr;
-            struct _IRExpr* data;
+            IRExpr* addr;
+            IRExpr* data;
          } STle;
       } Ist;
       struct _IRStmt* link;
    }
    IRStmt;
 
+extern IRStmt* IRStmt_Put  ( Int off, Int sz, IRExpr* value );
+extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
+extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 
-/* Basic block enders.
+extern void ppIRStmt ( FILE* f, IRStmt* );
+
+
+/* ------------------ Basic block enders. ------------------ */
+/*
    IRConst represents a guest address, which is either a
    32 or 64 bit integer, depending on the architecture we're simulating.
 
@@ -178,52 +205,64 @@ typedef
    }
    IRNext;
 
+extern IRNext* IRNext_UJump ( IRConst* dst );
+
+extern void ppIRNext ( FILE* f, IRNext* );
+
+
+/* ------------------ Basic Blocks ------------------ */
+
+/* A bunch of statements, expressions, etc, are incomplete without an
+   environment indicating the type of each IRTemp.  So this provides
+   one. 
+*/
+typedef
+   struct { 
+      IRTemp name; 
+      IRType type; 
+   }
+   IRTypeEnvMaplet;
+
+typedef
+   struct {
+      IRTypeEnvMaplet* map;
+      Int map_size;
+      Int map_used;
+   }
+   IRTypeEnv;
+
+extern void ppIRTypeEnv ( FILE* f, IRTypeEnv* );
+
 
 /* Basic blocks contain 3 fields:
-   - An association list, giving a type for each temp
+   - A table giving a type for each temp
    - A list of statements
    - A Next
 */
 typedef
    struct _IRBB {
-      struct _IRStmt* stmts;
-      struct _IRNext* next;
+      IRTypeEnv* tyenv;
+      IRStmt*    stmts;
+      IRNext*    next;
    }
    IRBB;
 
+extern IRBB* mk_IRBB ( IRTypeEnv*, IRStmt*, IRNext* );
+
+extern void ppIRBB ( FILE* f, IRBB* );
+
 
 /*---------------------------------------------------------------*/
-/*--- Basic functions for the IR                              ---*/
+/*--- Helper functions for the IR                             ---*/
 /*---------------------------------------------------------------*/
 
-/* Printers ... */
-extern void ppIRType    ( FILE* f, IRType     );
-extern void ppIRConst   ( FILE* f, IRConst*   );
-extern void ppIRTemp    ( FILE* f, IRTemp     );
-extern void ppIROp      ( FILE* f, IROp       );
-extern void ppIRExpr    ( FILE* f, IRExpr*    );
-extern void ppIRStmt    ( FILE* f, IRStmt*    );
-extern void ppIRNext    ( FILE* f, IRNext*    );
-extern void ppIRBB      ( FILE* f, IRBB*      );
+/* For messing with IR type environments */
+extern IRTypeEnv* newIRTypeEnv    ( void );
+extern void       addToIRTypeEnv  ( IRTypeEnv*, IRTemp, IRType );
+extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 
-/* Constructors -- IRExpr */
-extern IRExpr* mkExGet   ( Int off, Int sz );
-extern IRExpr* mkExTmp   ( IRTemp tmp );
-extern IRExpr* mkExBinop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
-extern IRExpr* mkExUnop  ( IROp op, IRExpr* arg );
-extern IRExpr* mkExLDle  ( IRType ty, IRExpr* addr );
-extern IRExpr* mkExConst ( IRConst* con );
-
-/* Constructors -- IRStmt */
-extern IRStmt* mkStPut  ( Int off, Int sz, IRExpr* value );
-extern IRStmt* mkStTmp  ( IRTemp tmp, IRExpr* expr );
-extern IRStmt* mkStSTle ( IRExpr* addr, IRExpr* value );
-
-/* Constructors -- IRNext */
-extern IRNext* mkNxUJump ( IRConst* dst );
-
-/* Constructors -- IRBB */
-extern IRBB* mkIRBB ( IRStmt* stmts, IRNext* next );
+/* What is the type of this expression? */
+extern IRType typeOfIRExpr ( IRTypeEnv*, IRExpr* );
 
 
 #endif /* ndef __IR_DEFS_H */

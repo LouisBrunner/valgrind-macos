@@ -116,7 +116,7 @@
    I/O to complete.  Perhaps this should be the same as VG_N_THREADS
    (surely a thread can't wait on more than one fd at once?.  Who
    knows.) */
-#define VG_N_WAITING_FDS 10
+#define VG_N_WAITING_FDS 20
 
 /* Stack size for a thread.  We try and check that they do not go
    beyond it. */

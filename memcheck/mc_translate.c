@@ -1080,7 +1080,37 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
          }
 
-         /* For FPU insns not referencing memory, just copy thru. */
+         /* ... and the same deal for SSE insns referencing memory. */
+         case SSE3a_MemRd:
+         case SSE3a_MemWr:
+         case SSE2a_MemWr:
+         case SSE2a_MemRd: { 
+            Bool is_load;
+            Int t_size;
+
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+
+            t_size = INVALID_TEMPREG;
+            is_load = u_in->opcode==SSE2a_MemRd
+                      || u_in->opcode==SSE3a_MemRd;
+            sk_assert(u_in->tag3 == TempReg);
+            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
+            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+
+            t_size = newTemp(cb);
+            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+            uLiteral(cb, u_in->size);
+            uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+            uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
+                               : (Addr) & MC_(fpu_write_check),
+                   2, 2, False);
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+         }
+
+         /* For FPU, MMX and SSE insns not referencing memory, just
+	    copy thru. */
+         case SSE4: case SSE3:
          case MMX1: case MMX2: case MMX3:
          case FPU: 
             VG_(copy_UInstr)(cb, u_in);

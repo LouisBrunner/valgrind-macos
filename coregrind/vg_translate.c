@@ -410,6 +410,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define SZ1  (u->size == 1)
 #  define SZ0  (u->size == 0)
 #  define SZ42 (u->size == 4 || u->size == 2)
+#  define SZ48 (u->size == 4 || u->size == 8)
 #  define SZi  (u->size == 4 || u->size == 2 || u->size == 1)
 #  define SZf  (  u->size ==  4 || u->size ==  8 || u->size ==   2     \
                || u->size == 10 || u->size == 28 || u->size == 108)
@@ -548,7 +549,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case MMX1:
    case MMX2:       return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case MMX3:       return LIT0 && SZ0  && CC0 &&  Ls1 && Ls1 &&  N3 && XOTHER;
-   case MMX2_MemRd: return LIT0 && SZ8  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_MemRd: return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_MemWr: return LIT0 && SZ8  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_RegRd: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    default: 
@@ -570,6 +571,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef SZ1
 #  undef SZ0
 #  undef SZ42
+#  undef SZ48
 #  undef SZi
 #  undef SZf
 #  undef SZ4m

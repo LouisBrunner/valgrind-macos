@@ -4849,8 +4849,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
             tmpa = LOW24(pair);
             eip += HI8(pair);
-            uInstr2(cb, LOAD, 4, TempReg, tmpa, TempReg, tmpa);
-            uInstr2(cb, MMX2_RegRd, 4, 
+            uInstr2(cb, MMX2_MemRd, 4, 
                         Lit16, 
                         (((UShort)(opc)) << 8) | ((UShort)modrm),
                         TempReg, tmpa);

@@ -539,7 +539,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             break;
 
          case MMX2_MemRd:
-            sk_assert(u_in->size == 8);
+            sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case FPU_R:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
@@ -548,7 +548,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             break;
 
          case MMX2_MemWr:
-            sk_assert(u_in->size == 8);
+            sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case FPU_W:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
@@ -752,7 +752,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          case MMX2_MemRd:
-            sk_assert(u_in->size == 8);
+            sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case FPU_R:
             t_read      = u_in->val2;
@@ -770,7 +770,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
           * As for the MOV, if it's a mod instruction it's redundant, but it's
           * not expensive and mod instructions are rare anyway. */
          case MMX2_MemWr:
-            sk_assert(u_in->size == 8);
+            sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case STORE:
          case FPU_W:

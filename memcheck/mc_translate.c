@@ -1060,6 +1060,9 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case FPU_R: case FPU_W: {
             Int t_size = INVALID_TEMPREG;
 
+            if (u_in->opcode == MMX2_MemRd || u_in->opcode == MMX2_MemWr)
+               sk_assert(u_in->size == 4 || u_in->size == 8);
+
             sk_assert(u_in->tag2 == TempReg);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));

@@ -69,9 +69,6 @@ extern REGPARM(1) UInt MC_(helperc_LOADV2)  ( Addr );
 extern REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
 extern REGPARM(1) ULong MC_(helperc_LOADV8)  ( Addr );
 
-extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, SizeT size );
-extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, SizeT size );
-
 /* Functions defined in mc_errcontext.c */
 extern void MC_(record_value_error)  ( ThreadId tid, Int size );
 extern void MC_(record_user_error)   ( ThreadId tid, Addr a, Bool isWrite,

@@ -892,26 +892,40 @@ static Int have_settid = -1;	/* -1 -> unknown */
 */
 static Int proxy_clone(ProxyLWP *proxy)
 {
-   Int ret;
+   Int ret = -1;
+
+   proxy->lwp = -1;
 
    if (have_settid != 0) {
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
 		       VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VM |
-		       VKI_CLONE_SIGHAND | VKI_CLONE_THREAD /*| 
-		       VKI_CLONE_PARENT_SETTID 
-		       VKI_CLONE_CHILD_CLEARTID | VKI_CLONE_DETACHED*/, 
+		       VKI_CLONE_SIGHAND | VKI_CLONE_THREAD | 
+		       VKI_CLONE_PARENT_SETTID |
+		       VKI_CLONE_CHILD_CLEARTID | VKI_CLONE_DETACHED,
 		       proxy, &proxy->lwp, &proxy->lwp);
-      if ( have_settid < 0 && !proxy->lwp ) {
+
+      if ( have_settid == -1 && (ret < 0 || proxy->lwp == 0) ) {
          have_settid = 0;
-         proxy->lwp = ret;
-         VG_(do_signal_routing) = True; /* XXX True, it seems kernels
-                                        which have futex also have
-                                        sensible signal handling, but
-                                        it would be nice to test it
-                                        directly. */
+	 
+	 /* Assume that not having parent_settid also means that we've
+	    got 2.4-style signal handling, which means we need to do
+	    more work. */
+         VG_(do_signal_routing) = True;
+
+	 if (ret > 0) {
+	    /* If clone actually succeeded and just ignored the
+	       CLONE_PARENT_SETTID flag, then use the LWP it created
+	       for us. */
+	    proxy->lwp = ret;
+	 }
        }
-   } else {
+   }
+
+   if (ret < 0) {
+      vg_assert(have_settid == 0);
+      vg_assert(proxy->lwp == -1);
+
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
 		       VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VM |

@@ -284,7 +284,7 @@ void* VG_(mmap)( void* start, UInt length,
       if (flags & VKI_MAP_CLIENT) {
          vg_assert(VG_(client_base) <= res && res+length < VG_(client_end));
       } else {
-         vg_assert(VG_(valgrind_base) <= res && res+length <= VG_(valgrind_last));
+         vg_assert(VG_(valgrind_base) <= res && res+length-1 <= VG_(valgrind_last));
       }
 
       sf_flags |= SF_MMAP;
@@ -1663,7 +1663,7 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
                  VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 0, -1, 0);
 
    if (p != ((void*)(-1))) {
-      vg_assert(p >= (void*)VG_(valgrind_base) && p <= (void*)VG_(valgrind_last));
+      vg_assert((void*)VG_(valgrind_base) <= p && p <= (void*)VG_(valgrind_last));
       tot_alloc += (UInt)nBytes;
       if (0)
          VG_(printf)(

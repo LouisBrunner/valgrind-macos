@@ -4760,6 +4760,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* CVTPD2PS -- convert two doubles to two floats. */
+   if (sz == 2 &&
+       insn[0] == 0x0F && insn[1] == 0x5A) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtpd2ps",
+                                 0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* SQRTPD: square root of packed double. */
    if (sz == 2
        && insn[0] == 0x0F && insn[1] == 0x51) {

@@ -757,7 +757,9 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       break;
 
    case PPC32_SPR_XER:
-      vassert((mask & 0xE000003F) == mask); // Only valid bits of xer
+      vassert((mask & 0xF000007F) == mask); // Only valid bits of xer
+      // actually, bit28 not valid, but sometimes asked for anyway - always 0:
+      mask = mask & ~(1<<28);
       assign( val, IRExpr_Get(OFFB_XER, Ity_I32) );
       break;
 
@@ -786,7 +788,12 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
 static IRExpr* getReg ( PPC32SPR reg )
 {
    vassert( reg < PPC32_SPR_MAX );
-   return getReg_masked( reg, 0xFFFFFFFF );
+   switch (reg) {
+   case PPC32_SPR_XER:
+      return getReg_masked( reg, 0xE000007F ); // Only valid bits of xer
+   default:
+      return getReg_masked( reg, 0xFFFFFFFF );
+   }
 }
 
 /* Get a right-shifted nibble from given reg[field_idx]
@@ -827,6 +834,9 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
    vassert( reg < PPC32_SPR_MAX );
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
    
+   IRTemp src_mskd = newTemp(Ity_I32);
+   IRTemp reg_old  = newTemp(Ity_I32);
+
    switch (reg) {
    case PPC32_SPR_CIA:
       vassert(mask == 0xFFFFFFFF);    // Only ever need whole reg
@@ -844,14 +854,17 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
       break;
 
    case PPC32_SPR_XER:
-      vassert((mask & 0xE000003F) == mask); // Only valid bits of xer
-      stmt( IRStmt_Put( OFFB_XER, src ) );
+      vassert((mask & 0xF000007F) == mask); // Only valid bits of xer
+      // actually, bit28 not valid, but sometimes asked for anyway - always 0:
+      mask = mask & ~(1<<28);
+      assign( src_mskd, binop(Iop_And32, src, mkU32(mask)) );
+      assign( reg_old, getReg_masked( PPC32_SPR_XER, (~mask & 0xE000007F) ) );
+
+      stmt( IRStmt_Put( OFFB_XER,
+                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
       break;
 
    case PPC32_SPR_CR: {
-      IRTemp src_mskd = newTemp(Ity_I32);
-      IRTemp old      = newTemp(Ity_I32);
-
       if (mask & 0xF0000000) { // CR 7:
          /* Write exactly the given flags to field CR7
             Set the flags thunk OP=1, DEP1=flags, DEP2=0(unused). */
@@ -863,10 +876,10 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
       }
       // CR 0 to 6:
       assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0x0FFFFFFF)) );
-      assign( old, getReg_masked( PPC32_SPR_CR, (~mask & 0x0FFFFFFF) ) );
+      assign( reg_old, getReg_masked( PPC32_SPR_CR, (~mask & 0x0FFFFFFF) ) );
 
       stmt( IRStmt_Put( OFFB_CR0to6,
-                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(old)) ));
+                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
       break;
    }
 
@@ -880,7 +893,15 @@ static void putReg ( PPC32SPR reg, IRExpr* src )
 {
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
    vassert( reg < PPC32_SPR_MAX );
-   putReg_masked( reg, src, 0xFFFFFFFF );
+
+   switch (reg) {
+   case PPC32_SPR_XER:
+      putReg_masked( reg, src, 0xE000007F ); // Only valid bits of xer
+      break;
+   default:
+      putReg_masked( reg, src, 0xFFFFFFFF );
+      break;
+   }
 }
 
 /* Write least-significant nibble of src to reg[field_idx] */

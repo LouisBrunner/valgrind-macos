@@ -158,10 +158,13 @@ mmaptest_SOURCES 	= mmaptest.c
 memalign_test_SOURCES 	= memalign_test.c
 memalign2_SOURCES 	= memalign2.c
 memcmptest_SOURCES 	= memcmptest.c
+memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
 mempool_SOURCES 	= mempool.c
 nanoleak_SOURCES 	= nanoleak.c
 null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c
+# Don't allow GCC to inline memcpy(), because then we can't intercept it
+overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
 pointer_trace_SOURCES	= pointer-trace.c
 post_syscall_SOURCES	= post-syscall.c
 realloc1_SOURCES 	= realloc1.c

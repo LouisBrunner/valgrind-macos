@@ -119,12 +119,14 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
    case Iex_Binop:
       /* Add32(x,y).  For commutative ops we assume any literal
          values are on the second operand. */
-      if (e->Iex.Binop.op == Iop_Add32) {
+      if (e->Iex.Binop.op == Iop_Add32
+          || e->Iex.Binop.op == Iop_Sub32) {
          HReg dst    = newVRegI(env);
          HReg reg    = iselIntExpr_R(env, e->Iex.Binop.arg1);
          X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
          addInstr(env, mk_MOV_RR(reg,dst));
-         addInstr(env, X86Instr_Alu32R(Xalu_ADD, rmi, dst));
+         addInstr(env, X86Instr_Alu32R(e->Iex.Binop.op == Iop_Add32 
+                                         ? Xalu_ADD : Xalu_SUB, rmi, dst));
          return dst;
       }
       if (e->Iex.Binop.op == Iop_Shl32) {
@@ -136,6 +138,18 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 	 addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/* %cl */, X86RM_Reg(dst)));
 	 return dst;
       }
+
+   case Iex_Get: {
+      IRType ty = e->Iex.Get.ty;
+      if (ty == Ity_I32) {
+         HReg dst = newVRegI(env);
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
+		  		       X86RMI_Mem(X86AMode_IR(e->Iex.Get.offset, hregX86_EBP())),
+				       dst));
+         return dst;
+      }
+   }
+
 
 #if 0
    /* 32-bit literals */
@@ -159,7 +173,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 
    /* We get here if no pattern matched. */
    ppIRExpr(e);
-   vpanic("iselExprI: cannot reduce tree");
+   vpanic("iselIntExpr_R: cannot reduce tree");
 }
 
 
@@ -197,14 +211,14 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
        && e->Iex.Binop.arg2->tag == Iex_Const
        && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
       HReg r1 = iselIntExpr_R(env,  e->Iex.Binop.arg1);
-      return X86AMode_IR(r1, e->Iex.Binop.arg2->Iex.Const.con->Ico.U32);
+      return X86AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32, r1);
    }
 
    /* Doesn't match anything in particular.  Generate it into
       a register and use that. */
    {
       HReg r1 = iselIntExpr_R(env, e);
-      return X86AMode_IR(r1, 0);
+      return X86AMode_IR(0, r1);
    }
 }
 
@@ -265,32 +279,46 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    switch (stmt->tag) {
 
-   case Ist_Put:
-     if (stmt->Ist.Put.size == 4) {
-       /* We're going to write to memory, so compute the
-	  RHS into an X86RI. */
-       X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.expr);
-       addInstr(env,
-		X86Instr_Alu32M(
-                   Xalu_MOV,
-                   ri,
-		   X86AMode_IR(stmt->Ist.Put.offset,hregX86_EBP())
-	       ));
-       return;
-     }
-
-   case Ist_Tmp: {
-     IRTemp tmp = stmt->Ist.Tmp.tmp;
-     IRType ty = lookupIRTypeEnv(env->type_env, tmp);
-     if (ty == Ity_I32) {
-       X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
-       HReg dst = lookupIRTemp(env, tmp);
-       addInstr(env, 
-		X86Instr_Alu32R(Xalu_MOV,rmi,dst));
-       return;
+   case Ist_STle: {
+      IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
+      vassert(tya == Ity_I32);
+      if (tyd == Ity_I32) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
+         X86RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
+         addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
+         return;
+      }
+      break;
    }
 
-  }
+   case Ist_Put: {
+      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.expr);
+      if (ty == Ity_I32) {
+         /* We're going to write to memory, so compute the RHS into an
+            X86RI. */
+         X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.expr);
+         addInstr(env,
+                  X86Instr_Alu32M(
+                     Xalu_MOV,
+                     ri,
+                     X86AMode_IR(stmt->Ist.Put.offset,hregX86_EBP())
+                 ));
+         return;
+      }
+      break;
+   }
+   case Ist_Tmp: {
+      IRTemp tmp = stmt->Ist.Tmp.tmp;
+      IRType ty = lookupIRTypeEnv(env->type_env, tmp);
+      if (ty == Ity_I32) {
+         X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV,rmi,dst));
+         return;
+      }
+      break;
+   }
 
    default: break;
    }

@@ -273,9 +273,12 @@ void* memcpy( void *dst, const void *src, unsigned int len )
    register char *d;
    register char *s;
 
+   if (len == 0)
+      return dst;
+
    if (is_overlap(dst, src, len, len))
       complain3("memcpy", dst, src, len);
-      
+
    if ( dst > src ) {
       d = (char *)dst + len - 1;
       s = (char *)src + len - 1;

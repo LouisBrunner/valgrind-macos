@@ -4182,6 +4182,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       case 0x48: /* CMOVSb (cmov negative) */
       case 0x49: /* CMOVSb (cmov not negative) */
       case 0x4A: /* CMOVP (cmov parity even) */
+      case 0x4B: /* CMOVNP (cmov parity odd) */
       case 0x4C: /* CMOVLb/CMOVNGEb (cmov less) */
       case 0x4D: /* CMOVGEb/CMOVNLb (cmov greater or equal) */
       case 0x4E: /* CMOVLEb/CMOVNGb (cmov less or equal) */
@@ -4272,6 +4273,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       case 0x88: /* JSb (jump negative) */
       case 0x89: /* JSb (jump not negative) */
       case 0x8A: /* JP (jump parity even) */
+      case 0x8B: /* JNP/JPO (jump parity odd) */
       case 0x8C: /* JLb/JNGEb (jump less) */
       case 0x8D: /* JGEb/JNLb (jump greater or equal) */
       case 0x8E: /* JLEb/JNGb (jump less or equal) */

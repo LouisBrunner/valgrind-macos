@@ -1703,7 +1703,6 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         vassert(0);
          helper_ADC( size, dst1, dst0, src );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else
@@ -1968,7 +1967,7 @@ UInt dis_movx_E_G ( UChar       sorb,
    UChar rm = getIByte(delta);
    if (epartIsReg(rm)) {
       putIReg(szd, gregOfRM(rm),
-	           unop(mkWidenOp(szs,szd,False), 
+	           unop(mkWidenOp(szs,szd,sign_extend), 
 		        getIReg(szs,eregOfRM(rm))));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
@@ -1984,7 +1983,7 @@ UInt dis_movx_E_G ( UChar       sorb,
       IRTemp addr = disAMode ( &len, sorb, delta, dis_buf );
 
       putIReg(szd, gregOfRM(rm),
-	           unop(mkWidenOp(szs,szd,False), 
+	           unop(mkWidenOp(szs,szd,sign_extend), 
                         loadLE(szToITy(szs),mkexpr(addr))));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
@@ -3632,12 +3631,25 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       fop = Iop_DivF64;
 	       goto do_fop_m32;
 
+            case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
+               DIP("fisubrl %s", dis_buf);
+	       fop = Iop_DivF64;
+	       goto do_foprev_m32;
+
             do_fop_m32:
                put_ST_UNCHECKED(0, 
                   binop(fop, 
                         get_ST(0),
                         unop(Iop_I32toF64,
                              loadLE(Ity_I32, mkexpr(addr)))));
+               break;
+
+            do_foprev_m32:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        unop(Iop_I32toF64,
+                             loadLE(Ity_I32, mkexpr(addr))),
+                        get_ST(0)));
                break;
 
             default:
@@ -7562,10 +7574,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x12: /* ADC Eb,Gb */
 //--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
 //--       break;
-//--    case 0x13: /* ADC Ev,Gv */
-//--       delta = dis_op2_E_G ( sorb, True, ADC, True, sz, delta, "adc" );
-//--       break;
-//-- 
+   case 0x13: /* ADC Ev,Gv */
+      delta = dis_op2_E_G ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
+      break;
+
 //--    case 0x1A: /* SBB Eb,Gb */
 //--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
 //--       break;

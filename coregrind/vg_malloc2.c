@@ -187,6 +187,8 @@ void* align_upwards ( void* p, Int align )
 /*--- Arena management stuff                               ---*/
 /*------------------------------------------------------------*/
 
+#define CORE_ARENA_MIN_SZW    262144
+
 /* The arena structures themselves. */
 static Arena vg_arena[VG_N_ARENAS];
 
@@ -246,10 +248,16 @@ void VG_(show_all_arena_stats) ( void )
 static
 void ensure_mm_init ( void )
 {
-   Int client_rz_szW;
+   static Int  client_rz_szW;
    static Bool init_done = False;
    
-   if (init_done) return;
+   if (init_done) {
+      // Make sure the client arena's redzone size never changes.  Could
+      // happen if VG_(arena_malloc) was called too early, ie. before the
+      // tool was loaded.
+      vg_assert(client_rz_szW == VG_(vg_malloc_redzone_szB)/4);
+      return;
+   }
 
    /* Use checked red zones (of various sizes) for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
@@ -258,7 +266,7 @@ void ensure_mm_init ( void )
       here, which merely checks at the time of freeing that the red 
       zone words are unchanged. */
 
-   arena_init ( &vg_arena[VG_AR_CORE],      "core",     2, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_CORE],      "core",     2, True, CORE_ARENA_MIN_SZW, False );
 
    arena_init ( &vg_arena[VG_AR_TOOL],      "tool",     2, True, 262144, False );
 
@@ -316,29 +324,44 @@ Bool VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa )
 /*--- Superblock management stuff                          ---*/
 /*------------------------------------------------------------*/
 
+// If not enough memory available, either aborts (for non-client memory)
+// or returns 0 (for client memory).
 static
 Superblock* newSuperblock ( Arena* a, Int cszW )
 {
+   static Bool called_before = False;
+   static Word bootstrap_superblock[CORE_ARENA_MIN_SZW];
+   Int cszB;
    Superblock* sb;
+
    cszW += 2; /* Take into account sb->next and sb->n_words fields */
    if (cszW < a->min_sblockW) cszW = a->min_sblockW;
    while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
 
-   if (a->clientmem) {
+   cszB = cszW * sizeof(Word);
+
+   if (!called_before) {
+      // First time we're called -- use the special static bootstrap
+      // superblock (see comment at top of main() for details).
+      called_before = True;
+      vg_assert(a == &vg_arena[VG_AR_CORE]);
+      vg_assert(CORE_ARENA_MIN_SZW*sizeof(Word) >= cszB);
+      sb = (Superblock*)bootstrap_superblock;
+
+   } else if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
       sb = (Superblock *)
-           VG_(client_alloc)(0, cszW * sizeof(Word), 
+           VG_(client_alloc)(0, cszB,
                              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
       if (NULL == sb) {
          return 0;
       }
    } else {
       // non-client allocation -- abort if it fails
-      sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
-				       "newSuperblock" );
+      sb = VG_(get_memory_from_mmap) ( cszB, "newSuperblock" );
    }
    sb->n_payload_words = cszW - 2;
-   a->bytes_mmaped += cszW * sizeof(Word);
+   a->bytes_mmaped += cszB;
    if (0)
       VG_(message)(Vg_DebugMsg, "newSuperblock, %d payload words", 
                                 sb->n_payload_words);

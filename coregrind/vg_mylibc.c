@@ -372,54 +372,6 @@ Int VG_(nanosleep)( const struct vki_timespec *req,
    return 0;
 }
 
-extern Char _end;
-Char *VG_(curbrk) = NULL;
-extern void *__curbrk;		/* in glibc */
-
-void* VG_(brk) ( void* end_data_segment )
-{
-   Addr end;
-   Addr brkpage;
-   Addr endpage;
-
-   if (VG_(curbrk) == NULL) {
-      VG_(curbrk) = &_end;
-      __curbrk = (void *)VG_(curbrk);
-   }
-   
-   end = (Addr)end_data_segment;
-   brkpage = PGROUNDUP(VG_(curbrk));
-   endpage = PGROUNDUP(end);
-
-   if (0 && VG_(curbrk) != __curbrk)
-      VG_(printf)("__curbrk changed unexpectedly: VG_(curbrk)=%p, __curbrk=%p\n",
-		  VG_(curbrk), __curbrk);
-
-   if (0)
-      VG_(printf)("brk(end_data_segment=%p); brkpage=%p endpage=%p end=%p curbrk=%p &_end=%p\n",
-		  end_data_segment, brkpage, endpage, end, VG_(curbrk), &_end);
-
-   if (endpage < (Addr)&_end) {
-      __curbrk = (void *)VG_(curbrk);
-      return (void *)VG_(curbrk);
-   }
-
-   if (brkpage != endpage) {
-      if (brkpage > endpage) {
-         Int res = munmap_inner((void *)brkpage, brkpage-endpage);
-         vg_assert(0 == res);
-      } else {
-         Addr res = mmap_inner((void *)brkpage, endpage-brkpage, 
-                       VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-                       VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0);
-         vg_assert((Addr)-1 != res);
-      }
-   }
-   VG_(curbrk) = (Char *)__curbrk = end_data_segment;
-
-   return end_data_segment;
-}
-
 
 /* ---------------------------------------------------------------------
    printf implementation.  The key function, vg_vprintf(), emits chars 
@@ -1675,16 +1627,12 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
 {
    static UInt tot_alloc = 0;
    void* p;
-   Char *b = VG_(brk)(0);
-
-   p = (void *)PGROUNDUP(b);
-   b = VG_(brk)(p + PGROUNDUP(nBytes));
-
-   if (b != (p + PGROUNDUP(nBytes)))
-       p = (void *)-1;
+   p = VG_(mmap)(0, nBytes,
+                 VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+                 VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 0, -1, 0);
 
    if (p != ((void*)(-1))) {
-      vg_assert(p >= (void *)VG_(valgrind_mmap_end) && p < (void *)VG_(valgrind_end));
+      vg_assert(p >= (void*)VG_(valgrind_base) && p < (void*)VG_(valgrind_end));
       tot_alloc += (UInt)nBytes;
       if (0)
          VG_(printf)(

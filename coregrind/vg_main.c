@@ -74,9 +74,6 @@
 #define AT_SECURE 23   /* secure mode boolean */
 #endif	/* AT_SECURE */
 
-/* Amount to reserve for Valgrind's internal mappings */
-#define VALGRIND_MAPSIZE	(128*1024*1024)
-
 /* redzone gap between client address space and shadow */
 #define REDZONE_SIZE		(1 * 1024*1024)
 
@@ -111,7 +108,6 @@ Addr VG_(shadow_base);	         /* skin's shadow memory */
 Addr VG_(shadow_end);
 
 Addr VG_(valgrind_base);	 /* valgrind's address range */
-Addr VG_(valgrind_mmap_end);	 /* valgrind's mmaps are between valgrind_base and here */
 Addr VG_(valgrind_end);
 
 vki_rlimit VG_(client_rlimit_data);
@@ -492,8 +488,7 @@ static void scan_auxv(void)
 static void layout_client_space(Addr argc_addr)
 {
    VG_(client_base)       = CLIENT_BASE;
-   VG_(valgrind_mmap_end) = (addr_t)&kickstart_base; /* end of V's mmaps */
-   VG_(valgrind_base)     = VG_(valgrind_mmap_end) - VALGRIND_MAPSIZE;
+   VG_(valgrind_base)     = (addr_t)&kickstart_base;
    VG_(valgrind_end)      = ROUNDUP(argc_addr, 0x10000); /* stack */
 
    as_pad((void *)VG_(client_base), (void *)VG_(valgrind_base));
@@ -530,15 +525,13 @@ static void layout_remaining_space(float ratio)
          "shadow_base        %8x (%dMB)\n"
          "shadow_end         %8x (%dMB)\n"
          "valgrind_base      %8x (%dMB)\n"
-         "valgrind_mmap_end  %8x (%dMB)\n"
          "valgrind_end       %8x\n",
          VG_(client_base),       SEGSIZE(client_base,       client_mapbase),
          VG_(client_mapbase),    SEGSIZE(client_mapbase,    client_end),
          VG_(client_end),        SEGSIZE(client_end,        shadow_base),
          VG_(shadow_base),       SEGSIZE(shadow_base,       shadow_end),
          VG_(shadow_end),        SEGSIZE(shadow_end,        valgrind_base),
-         VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_mmap_end),
-         VG_(valgrind_mmap_end), SEGSIZE(valgrind_mmap_end, valgrind_end),
+         VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_end),
          VG_(valgrind_end)
       );
 
@@ -2639,6 +2632,53 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 /*=== main()                                                       ===*/
 /*====================================================================*/
 
+/*
+  This code decides on the layout of the client and Valgrind address
+  spaces, loads valgrind.so and the skin.so into the valgrind part,
+  loads the client executable (and the dynamic linker, if necessary)
+  into the client part, and calls into Valgrind proper.
+
+  The code is careful not to allow spurious mappings to appear in the
+  wrong parts of the address space.  In particular, to make sure
+  dlopen puts things in the right place, it will pad out the forbidden
+  chunks of address space so that dlopen is forced to put things where
+  we want them.
+
+  The memory map it creates is:
+
+  CLIENT_BASE    +-------------------------+
+                 | client address space    |
+	         :                         :
+	         :                         :
+		 | client stack            |
+  client_end     +-------------------------+
+                 | redzone                 |
+  shadow_base    +-------------------------+
+                 |                         |
+	         : shadow memory for skins :
+	         | (may be 0 sized)        |
+  shadow_end     +-------------------------+
+                 : gap (may be 0 sized)    :
+  valgrind_base  +-------------------------+
+                 | kickstart executable    |
+                 | valgrind heap  vvvvvvvvv| (barely used)
+                 -                         -
+                 | valgrind .so files      |
+		 | and mappings            |
+                 -                         -
+                 | valgrind stack ^^^^^^^^^|
+  valgrind_end   +-------------------------+
+		 : kernel                  :
+
+  Nb: Before we can do general allocations with VG_(arena_malloc)() and
+  VG_(mmap)(), we need to build the segment skip-list, so we know where
+  we can put things.  However, building that structure requires
+  allocating memory.  So we need to a bootstrapping process.  It's done
+  by making VG_(arena_malloc)() have a special static superblock that's
+  used for the first 1MB's worth of allocations.  This is enough to
+  build the segment skip-list.
+*/
+
 static int prmap(void *start, void *end, const char *perm, off_t off, 
                  int maj, int min, int ino) {
    printf("mapping %10p-%10p %s %02x:%02x %d\n",
@@ -2689,7 +2729,7 @@ int main(int argc, char **argv)
    
    //--------------------------------------------------------------
    // Check we were launched by stage1
-   //   p: n/a  [must be first step]
+   //   p: n/a
    //--------------------------------------------------------------
    scan_auxv();
 
@@ -2736,12 +2776,12 @@ int main(int argc, char **argv)
 
    //==============================================================
    // Can use VG_(malloc)() and VG_(arena_malloc)() only after load_tool()
-   // -- redzone size is now set.
+   // -- redzone size is now set.  This is checked by vg_malloc2.c.
    //==============================================================
    
    //--------------------------------------------------------------
    // Finalise address space layout
-   //   p: layout_client_space(), load_tool()           [for 'toolinfo']
+   //   p: layout_client_space(), load_tool()  [for 'toolinfo']
    //--------------------------------------------------------------
    layout_remaining_space( toolinfo->shadow_ratio );
 
@@ -2785,12 +2825,6 @@ int main(int argc, char **argv)
    //==============================================================
 
    //--------------------------------------------------------------
-   // Read /proc/self/maps into a buffer
-   //   p: all memory layout, environment setup   [so memory maps are right]
-   //--------------------------------------------------------------
-   VG_(read_procselfmaps)();
-
-   //--------------------------------------------------------------
    // atfork
    //   p: n/a
    //--------------------------------------------------------------
@@ -2804,35 +2838,64 @@ int main(int argc, char **argv)
    setup_file_descriptors();
 
    //--------------------------------------------------------------
-   // Setup tool
-   //   p: VG_(read_procselfmaps)()  [so if sk_pre_clo_init calls
-   //        VG_(malloc), any mmap'd superblocks aren't erroneously
-   //        identified later as being owned by the client]
-   // XXX: is that necessary, now that we look for V's segments separately?
-   // XXX: alternatively, if sk_pre_clo_init does use VG_(malloc)(), is it
-   //      wrong to ignore any segments that might add in parse_procselfmaps?
-   //   p: setup_client_stack() [for 'VG_(client_arg[cv]']
+   // Read /proc/self/maps into a buffer
+   //   p: all memory layout, environment setup   [so memory maps are right]
+   //--------------------------------------------------------------
+   VG_(read_procselfmaps)();
+
+   //--------------------------------------------------------------
+   // Build segment map (Valgrind segments only)
+   //   p: read proc/self/maps
+   //   p: sk_pre_clo_init()  [to setup new_mem_startup tracker]
+   //--------------------------------------------------------------
+   VG_(parse_procselfmaps) ( build_valgrind_map_callback );
+
+   //==============================================================
+   // Can use VG_(arena_malloc)() with non-CORE arena after segments set up
+   //==============================================================
+
+   //--------------------------------------------------------------
+   // Init tool: pre_clo_init, process cmd line, post_clo_init
+   //   p: setup_client_stack()      [for 'VG_(client_arg[cv]']
+   //   p: load_tool()               [for 'tool']
+   //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
+   //   p: parse_procselfmaps        [so VG segments are setup so tool can
+   //                                 call VG_(malloc)]
    //--------------------------------------------------------------
    (*toolinfo->sk_pre_clo_init)();
    VG_(tool_init_dlsym)(tool_dlhandle);
    VG_(sanity_check_needs)();
 
-   //--------------------------------------------------------------
    // If --tool and --help/--help-debug was given, now give the core+tool
    // help message
-   //   p: pre_clo_init()
-   //--------------------------------------------------------------
    if (need_help) {
       usage(/*--help-debug?*/2 == need_help);
    }
+   process_cmd_line_options(client_auxv, tool);
+
+   SK_(post_clo_init)();
 
    //--------------------------------------------------------------
-   // Process Valgrind's + tool's command-line options
-   //   p: load_tool()               [for 'tool']
-   //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
-   //   p: sk_pre_clo_init           [to set 'command_line_options' need]
+   // Build segment map (all segments)
+   //   p: setup_client_stack()  [for 'esp_at_startup']
+   //   p: init tool             [for 'new_mem_startup']
    //--------------------------------------------------------------
-   process_cmd_line_options(client_auxv, tool);
+   esp_at_startup___global_arg = esp_at_startup;
+   VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
+   esp_at_startup___global_arg = 0;
+   
+   //--------------------------------------------------------------
+   // Initialize our trampoline page (which is also sysinfo stuff)
+   //   p: setup_client_stack()  [for 'esp_at_startup']
+   //--------------------------------------------------------------
+   VG_(memcpy)( (void *)VG_(client_trampoline_code),
+                &VG_(trampoline_code_start), VG_(trampoline_code_length) );
+   VG_(mprotect)( (void *)VG_(client_trampoline_code),
+                 VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
+
+   //==============================================================
+   // Can use VG_(map)() after segments set up
+   //==============================================================
 
    //--------------------------------------------------------------
    // Allow GDB attach
@@ -2845,12 +2908,6 @@ int main(int argc, char **argv)
       /* do "jump *$eip" to skip this in gdb */
       VG_(do_syscall)(__NR_pause);
    }
-
-   //--------------------------------------------------------------
-   // Setup tool, post command-line processing
-   //   p: process_cmd_line_options  [tool assumes it]
-   //--------------------------------------------------------------
-   SK_(post_clo_init)();
 
    //--------------------------------------------------------------
    // Set up baseBlock
@@ -2907,52 +2964,6 @@ int main(int argc, char **argv)
    VGP_PUSHCC(VgpStartup);
 
    //--------------------------------------------------------------
-   // Reserve Valgrind's kickstart, heap and stack
-   //   p: XXX ???
-   //--------------------------------------------------------------
-   VG_(map_segment)(VG_(valgrind_mmap_end),
-                    VG_(valgrind_end)-VG_(valgrind_mmap_end),
-                    VKI_PROT_NONE, SF_VALGRIND|SF_FIXED);
-
-   //--------------------------------------------------------------
-   // Identify Valgrind's segments
-   //   p: read proc/self/maps
-   //   p: VG_(map_segment)   [XXX ???]
-   //   p: sk_pre_clo_init()  [to setup new_mem_startup tracker]
-   //--------------------------------------------------------------
-   VG_(parse_procselfmaps) ( build_valgrind_map_callback );
-
-   // XXX: I can't see why these two need to be separate;  could they be
-   // folded together?  If not, need a comment explaining why.
-   //
-   // XXX: can we merge reading and parsing of /proc/self/maps?
-   //
-   // XXX: can we dynamically allocate the /proc/self/maps buffer? (or mmap
-   //      it?)  Or does that disturb its contents...
-
-   //--------------------------------------------------------------
-   // Build segment map (all segments)
-   //   p: setup_client_stack()  [for 'esp_at_startup']
-   //--------------------------------------------------------------
-   esp_at_startup___global_arg = esp_at_startup;
-   VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
-   esp_at_startup___global_arg = 0;
-   
-   //==============================================================
-   // Can only use VG_(map)() after VG_(map_segment)()  [XXX ???]
-   //==============================================================
-
-   //--------------------------------------------------------------
-   // Build segment map (all segments)
-   //   p: setup_client_stack()  [for 'esp_at_startup']
-   //--------------------------------------------------------------
-   /* Initialize our trampoline page (which is also sysinfo stuff) */
-   VG_(memcpy)( (void *)VG_(client_trampoline_code),
-                &VG_(trampoline_code_start), VG_(trampoline_code_length) );
-   VG_(mprotect)( (void *)VG_(client_trampoline_code),
-                 VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
-
-   //--------------------------------------------------------------
    // Read suppression file
    //   p: process_cmd_line_options()  [for VG_(clo_suppressions)]
    //--------------------------------------------------------------
@@ -2988,8 +2999,6 @@ int main(int argc, char **argv)
    //   p: process_cmd_line_options() [for VG_(clo_pointercheck)]
    //--------------------------------------------------------------
    setup_pointercheck();
-
-
 
    //--------------------------------------------------------------
    // Run!

@@ -28,48 +28,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/*
-  User-mode exec
-
-  This bootstraps Valgrind.  This code decides on the layout of the
-  client and Valgrind address spaces, loads valgrind.so and the
-  skin.so into the valgrind part, loads the client executable (and the
-  dynamic linker, if necessary) into the client part, and calls into
-  Valgrind proper.
-
-  The code is careful not to allow spurious mappings to appear in the
-  wrong parts of the address space.  In particular, to make sure
-  dlopen puts things in the right place, it will pad out the forbidden
-  chunks of address space so that dlopen is forced to put things where
-  we want them.
-
-  The memory map it creates is:
-
-  CLIENT_BASE    +-------------------------+
-                 | client address space    |
-	         :                         :
-	         :                         :
-		 | client stack            |
-  client_end     +-------------------------+
-                 | redzone                 |
-  shadow_base    +-------------------------+
-                 |                         |
-	         : shadow memory for skins :
-	         | (may be 0 sized)        |
-  shadow_end     +-------------------------+
-                 : gap (may be 0 sized)    :
-  valgrind_base  +-------------------------+
-                 | valgrind .so files      |
-		 | and mappings            |
-  valgrind_mmap_end                        -
-                 | kickstart executable    |
-                 -                         -
-                 | valgrind heap  vvvvvvvvv|
-  valgrind_end   -                         -
-		 | valgrind stack ^^^^^^^^^|
-                 +-------------------------+
-		 : kernel                  :
- */
 
 #define _GNU_SOURCE
 #define _FILE_OFFSET_BITS 64

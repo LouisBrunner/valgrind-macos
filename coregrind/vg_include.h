@@ -1133,9 +1133,6 @@ extern void VG_(core_assert_fail) ( const Char* expr, const Char* file,
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 
-/* VG_(brk) not public so skins cannot screw with curr_dataseg_end */
-extern void* VG_(brk) ( void* end_data_segment );
-
 /* Skins use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 
@@ -1438,7 +1435,6 @@ extern Addr VG_(brk_limit);	/* current brk */
 extern Addr VG_(shadow_base);	/* skin's shadow memory */
 extern Addr VG_(shadow_end);
 extern Addr VG_(valgrind_base);	/* valgrind's address range */
-extern Addr VG_(valgrind_mmap_end);
 extern Addr VG_(valgrind_end);
 
 extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */

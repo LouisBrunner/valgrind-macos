@@ -52,7 +52,6 @@ stage2_SOURCES = \
 	vg_errcontext.c \
 	vg_execontext.c \
 	vg_from_ucode.c \
-	vg_glibc.c \
 	vg_hashtable.c \
 	vg_helpers.S \
 	vg_instrument.c \
@@ -81,7 +80,7 @@ stage2_SOURCES = \
 	vg_cpuid.S
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs x86/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
-	-Wl,-defsym,kickstart_base=0xb8000000 \
+	-Wl,-defsym,kickstart_base=0xb0000000 \
 	-Wl,-T,x86/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 
 stage2_LDADD= \

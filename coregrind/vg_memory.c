@@ -493,7 +493,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    static const Bool debug = False || mem_debug;
    Segment *s;
    Addr ret;
-   Addr limit = (for_client ? VG_(client_end) : VG_(valgrind_mmap_end));
+   Addr limit = (for_client ? VG_(client_end) : VG_(valgrind_end));
 
    if (addr == 0)
       addr = for_client ? VG_(client_mapbase) : VG_(valgrind_base);

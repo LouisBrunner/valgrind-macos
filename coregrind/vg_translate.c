@@ -287,7 +287,7 @@ __attribute__ ((noreturn))
 static
 void failure_exit ( void )
 {
-   LibVEX_ClearTemporary(True);
+   LibVEX_ShowAllocStats();
    VG_(core_panic)("LibVEX called failure_exit().");
 }
 
@@ -353,7 +353,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    Segment*  seg;
 
    /* Make sure Vex is initialised right. */
-   TranslateResult tres;
+   VexTranslateResult tres;
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
@@ -451,7 +451,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              verbosity
           );
 
-   vg_assert(tres == TransOK);
+   vg_assert(tres == VexTransOK);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 

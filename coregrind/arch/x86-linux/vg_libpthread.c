@@ -134,6 +134,8 @@ static void kludged ( char* msg )
 #include <pthread.h>
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
+#include <sys/time.h> /* gettimeofday */
 
 /* ---------------------------------------------------
    THREAD ATTRIBUTES
@@ -421,6 +423,40 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
    return res;
 }
 
+int pthread_cond_timedwait ( pthread_cond_t *cond, 
+                             pthread_mutex_t *mutex, 
+                             const struct  timespec *abstime )
+{
+   int res;
+   unsigned int ms_now, ms_end;
+   struct  timeval timeval_now;
+   unsigned long long int ull_ms_now_after_1970;
+   unsigned long long int ull_ms_end_after_1970;
+
+   ensure_valgrind("pthread_cond_timedwait");
+   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__READ_MILLISECOND_TIMER,
+                           0, 0, 0, 0);
+   assert(ms_now != 0xFFFFFFFF);
+   res = gettimeofday(&timeval_now, NULL);
+   assert(res == 0);
+
+   ull_ms_now_after_1970 
+      = 1000ULL * ((unsigned long long int)(timeval_now.tv_sec))
+        + ((unsigned long long int)(timeval_now.tv_usec / 1000000));
+   ull_ms_end_after_1970
+      = 1000ULL * ((unsigned long long int)(abstime->tv_sec))
+        + ((unsigned long long int)(abstime->tv_nsec / 1000000));
+   assert(ull_ms_end_after_1970 >= ull_ms_now_after_1970);
+   ms_end 
+      = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_TIMEDWAIT,
+			   cond, mutex, ms_end, 0);
+   return res;
+}
+
+
 int pthread_cond_signal(pthread_cond_t *cond)
 {
    int res;
@@ -471,8 +507,12 @@ int pthread_cancel(pthread_t thread)
 int pthread_key_create(pthread_key_t *key,  
                        void  (*destr_function)  (void *))
 {
-   ignored("pthread_key_create");
-   return 0;
+   int res;
+   ensure_valgrind("pthread_key_create");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_CREATE,
+                           key, destr_function, 0, 0);
+   return res;
 }
 
 int pthread_key_delete(pthread_key_t key)
@@ -483,14 +523,22 @@ int pthread_key_delete(pthread_key_t key)
 
 int pthread_setspecific(pthread_key_t key, const void *pointer)
 {
-   ignored("pthread_setspecific");
-   return 0;
+   int res;
+   ensure_valgrind("pthread_setspecific");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_SETSPECIFIC,
+                           key, pointer, 0, 0);
+   return res;
 }
 
 void * pthread_getspecific(pthread_key_t key)
 {
-   ignored("pthread_setspecific");
-   return NULL;
+   int res;
+   ensure_valgrind("pthread_getspecific");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_GETSPECIFIC,
+                           key, 0 , 0, 0);
+   return (void*)res;
 }
 
 
@@ -784,7 +832,6 @@ int do_syscall_select( int n,
    * (unchecked) libc error numbers (EINTR etc) are the negation of the
      kernel's error numbers (VKI_EINTR etc).
 */
-#include <assert.h>
 
 
 int select ( int n, 
@@ -793,16 +840,19 @@ int select ( int n,
              fd_set *xfds, 
              struct timeval *timeout )
 {
+   unsigned int ms_now, ms_end;
    int    res;
    fd_set rfds_copy;
    fd_set wfds_copy;
    fd_set xfds_copy;
    struct vki_timeval  t_now;
-   struct vki_timeval  t_end;
    struct vki_timeval  zero_timeout;
    struct vki_timespec nanosleep_interval;
 
-   ensure_valgrind("select");
+   /* gcc's complains about ms_end being used uninitialised -- classic
+      case it can't understand, where ms_end is both defined and used
+      only if timeout != NULL.  Hence ... */
+   ms_end = 0;
 
    /* We assume that the kernel and libc data layouts are identical
       for the following types.  These asserts provide a crude
@@ -811,8 +861,17 @@ int select ( int n,
        || sizeof(struct timeval) != sizeof(struct vki_timeval))
       barf("valgrind's hacky non-blocking select(): data sizes error");
 
-   /* If a zero timeout specified, this call is harmless. */
-   if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
+   /* Detect the current time and simultaneously find out if we are
+      running on Valgrind. */
+   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__READ_MILLISECOND_TIMER,
+                           0, 0, 0, 0);
+
+   /* If a zero timeout specified, this call is harmless.  Also go
+      this route if we're not running on Valgrind, for whatever
+      reason. */
+   if ( (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0)
+        || (ms_now == 0xFFFFFFFF) ) {
       res = do_syscall_select( n, (vki_fd_set*)rfds, 
                                    (vki_fd_set*)wfds, 
                                    (vki_fd_set*)xfds, 
@@ -825,35 +884,29 @@ int select ( int n,
       }
    }
 
-   /* If a timeout was specified, set t_end to be the end wallclock
-      time. */
+   /* If a timeout was specified, set ms_end to be the end millisecond
+      counter [wallclock] time. */
    if (timeout) {
       res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
       assert(res == 0);
-      t_end = t_now;
-      t_end.tv_usec += timeout->tv_usec;
-      t_end.tv_sec  += timeout->tv_sec;
-      if (t_end.tv_usec >= 1000000) {
-         t_end.tv_usec -= 1000000;
-         t_end.tv_sec += 1;
-      }
+      ms_end = ms_now;
+      ms_end += (timeout->tv_usec / 1000);
+      ms_end += (timeout->tv_sec * 1000);
       /* Stay sane ... */
-      assert (t_end.tv_sec > t_now.tv_sec
-              || (t_end.tv_sec == t_now.tv_sec 
-                  && t_end.tv_usec >= t_now.tv_usec));
+      assert (ms_end >= ms_now);
    }
 
    /* fprintf(stderr, "MY_SELECT: before loop\n"); */
 
    /* Either timeout == NULL, meaning wait indefinitely, or timeout !=
-      NULL, in which case t_end holds the end time. */
+      NULL, in which case ms_end holds the end time. */
    while (1) {
       if (timeout) {
-         res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
-         assert(res == 0);
-         if (t_now.tv_sec > t_end.tv_sec
-             || (t_now.tv_sec == t_end.tv_sec 
-                 && t_now.tv_usec > t_end.tv_usec)) {
+         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                                 VG_USERREQ__READ_MILLISECOND_TIMER,
+                                 0, 0, 0, 0);
+         assert(ms_now != 0xFFFFFFFF);
+         if (ms_now >= ms_end) {
             /* timeout; nothing interesting happened. */
             if (rfds) FD_ZERO(rfds);
             if (wfds) FD_ZERO(wfds);
@@ -892,7 +945,7 @@ int select ( int n,
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 75 * 1000 * 1000; /* 75 milliseconds */
+      nanosleep_interval.tv_nsec = 100 * 1000 * 1000; /* 100 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 
@@ -907,19 +960,28 @@ int select ( int n,
 
 int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {
+   unsigned int        ms_now, ms_end;
    int                 res, i;
-   struct vki_timeval  t_now;
-   struct vki_timeval  t_end;
    struct vki_timespec nanosleep_interval;
 
    ensure_valgrind("poll");
+
+   /* Detect the current time and simultaneously find out if we are
+      running on Valgrind. */
+   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__READ_MILLISECOND_TIMER,
+                           0, 0, 0, 0);
 
    if (/* CHECK SIZES FOR struct pollfd */
        sizeof(struct timeval) != sizeof(struct vki_timeval))
       barf("valgrind's hacky non-blocking poll(): data sizes error");
 
-   /* If a zero timeout specified, this call is harmless. */
-   if (__timeout == 0) {
+   /* dummy initialisation to keep gcc -Wall happy */
+   ms_end = 0;
+
+   /* If a zero timeout specified, this call is harmless.  Also do
+      this if not running on Valgrind. */
+   if (__timeout == 0 || ms_now == 0xFFFFFFFF) {
       res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, __timeout);
       if (is_kerror(res)) {
          * (__errno_location()) = -res;
@@ -929,36 +991,25 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       }
    }
 
-   /* If a timeout was specified, set t_end to be the end wallclock
-      time. */
+   /* If a timeout was specified, set ms_end to be the end wallclock
+      time.  Easy considering that __timeout is in milliseconds. */
    if (__timeout > 0) {
-      res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
-      assert(res == 0);
-      t_end = t_now;
-      t_end.tv_usec += 1000 * (__timeout % 1000);
-      t_end.tv_sec  += (__timeout / 1000);
-      if (t_end.tv_usec >= 1000000) {
-         t_end.tv_usec -= 1000000;
-         t_end.tv_sec += 1;
-      }
-      /* Stay sane ... */
-      assert (t_end.tv_sec > t_now.tv_sec
-              || (t_end.tv_sec == t_now.tv_sec 
-                  && t_end.tv_usec >= t_now.tv_usec));
+      ms_end += (unsigned int)__timeout;
    }
 
    /* fprintf(stderr, "MY_POLL: before loop\n"); */
 
    /* Either timeout < 0, meaning wait indefinitely, or timeout > 0,
       in which case t_end holds the end time. */
+   assert(__timeout != 0);
+
    while (1) {
-      assert(__timeout != 0);
       if (__timeout > 0) {
-         res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
-         assert(res == 0);
-         if (t_now.tv_sec > t_end.tv_sec
-             || (t_now.tv_sec == t_end.tv_sec 
-                 && t_now.tv_usec > t_end.tv_usec)) {
+         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                                 VG_USERREQ__READ_MILLISECOND_TIMER,
+                                 0, 0, 0, 0);
+         assert(ms_now != 0xFFFFFFFF);
+         if (ms_now >= ms_end) {
             /* timeout; nothing interesting happened. */
             for (i = 0; i < __nfds; i++) 
                __fds[i].revents = 0;
@@ -966,8 +1017,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
          }
       }
 
-      /* These could be trashed each time round the loop, so restore
-         them each time. */
+      /* Do a return-immediately poll. */
       res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, 0 );
       if (is_kerror(res)) {
          /* Some kind of error.  Set errno and return.  */
@@ -981,7 +1031,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 100 * 1000 * 1000; /* 100 milliseconds */
+      nanosleep_interval.tv_nsec = 99 * 1000 * 1000; /* 99 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

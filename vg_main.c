@@ -971,6 +971,9 @@ void VG_(main) ( void )
    VGP_(init_profiling)();
 #  endif
 
+   /* Start calibration of our RDTSC-based clock. */
+   VG_(start_rdtsc_calibration)();
+
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    /* {extern unsigned int sleep(unsigned int seconds); sleep(10);} */
@@ -983,6 +986,10 @@ void VG_(main) ( void )
       VG_(read_symbols)();
       VGP_POPCC;
    }
+
+   /* End calibration of our RDTSC-based clock, leaving it as long as
+      we can. */
+   VG_(end_rdtsc_calibration)();
 
    /* This should come after init_memory_audit; otherwise the latter
       carefully sets up the permissions maps to cover the anonymous

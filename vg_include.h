@@ -102,7 +102,7 @@
 
 /* These many bytes below %ESP are considered addressible if we're
    doing the --workaround-gcc296-bugs hack. */
-#define VG_GCC296_BUG_STACK_SLOP 256
+#define VG_GCC296_BUG_STACK_SLOP /*256*/ 1024
 
 /* The maximum number of calls we're prepared to save in a
    backtrace. */
@@ -123,10 +123,14 @@
 
 /* The maximum number of pthreads that we support.  This is
    deliberately not very high since our implementation of some of the
-   scheduler algorithms is surely O(N^2) in the number of threads,
-   since that's simple, at least.  And (in practice) we hope that most
+   scheduler algorithms is surely O(N) in the number of threads, since
+   that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 20
+#define VG_N_THREADS 100
+
+/* Maximum number of pthread keys available.  Again, we start low until
+   the need for a higher number presents itself. */
+#define VG_N_THREAD_KEYS 10
 
 /* Number of file descriptors that can simultaneously be waited on for
    I/O to complete.  Perhaps this should be the same as VG_N_THREADS
@@ -403,8 +407,15 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_CANCEL          0x3007
 #define VG_USERREQ__PTHREAD_EXIT            0x3008
 #define VG_USERREQ__PTHREAD_COND_WAIT       0x3009
-#define VG_USERREQ__PTHREAD_COND_SIGNAL     0x300A
-#define VG_USERREQ__PTHREAD_COND_BROADCAST  0x300B
+#define VG_USERREQ__PTHREAD_COND_TIMEDWAIT  0x300A
+#define VG_USERREQ__PTHREAD_COND_SIGNAL     0x300B
+#define VG_USERREQ__PTHREAD_COND_BROADCAST  0x300C
+#define VG_USERREQ__PTHREAD_KEY_CREATE      0x300D
+#define VG_USERREQ__PTHREAD_KEY_DELETE      0x300E
+#define VG_USERREQ__PTHREAD_SETSPECIFIC     0x300F
+#define VG_USERREQ__PTHREAD_GETSPECIFIC     0x3010
+
+#define VG_USERREQ__READ_MILLISECOND_TIMER  0x4001
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -466,7 +477,12 @@ typedef
          ALWAYS == the index in vg_threads[]. */
       ThreadId tid;
 
-      /* Current scheduling status. */
+      /* Current scheduling status. 
+
+         Complications: whenever this is set to VgTs_WaitMX, you
+         should also set .m_edx to whatever the required return value
+         is for pthread_mutex_lock / pthread_cond_timedwait for when
+         the mutex finally gets unblocked. */
       ThreadStatus status;
 
       /* Identity of joiner (thread who called join on me), or
@@ -483,11 +499,20 @@ typedef
          waiting for.  In all other cases, should be NULL. */
       void* /* pthread_cond_t* */ associated_cv;
 
-      /* If VgTs_Sleeping, this is when we should wake up. */
-      ULong awaken_at;
+      /* If VgTs_Sleeping, this is when we should wake up, measured in
+         milliseconds as supplied by VG_(read_millisecond_counter). 
+ 
+         If VgTs_WaitCV, this indicates the time at which
+         pthread_cond_timedwait should wake up.  If == 0xFFFFFFFF,
+         this means infinitely far in the future, viz,
+         pthread_cond_wait. */
+      UInt awaken_at;
 
       /* return value */
       void* retval;
+
+      /* thread-specific data */
+      void* specifics[VG_N_THREAD_KEYS];
 
       /* Stacks.  When a thread slot is freed, we don't deallocate its
          stack; we just leave it lying around for the next use of the
@@ -662,7 +687,10 @@ extern Char* VG_(strdup) ( ArenaId aid, const Char* s);
 
 extern Char* VG_(getenv) ( Char* name );
 extern Int   VG_(getpid) ( void );
-extern ULong VG_(read_microsecond_timer)( void );
+
+extern void VG_(start_rdtsc_calibration) ( void );
+extern void VG_(end_rdtsc_calibration) ( void );
+extern UInt VG_(read_millisecond_timer) ( void );
 
 
 extern Char VG_(toupper) ( Char c );

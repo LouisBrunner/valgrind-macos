@@ -291,13 +291,14 @@ Int VG_(select)( Int n,
    return res;
 }
 
-/* Returns -1 on error, but 0 if ok or interrupted. */
+/* Returns -1 on error, 0 if ok, 1 if interrupted. */
 Int VG_(nanosleep)( const struct vki_timespec *req, 
                     struct vki_timespec *rem )
 {
    Int res;
    res = vg_do_syscall2(__NR_nanosleep, (UInt)req, (UInt)rem);
    if (res == -VKI_EINVAL) return -1;
+   if (res == -VKI_EINTR)  return 1;
    return 0;
 }
 
@@ -936,17 +937,6 @@ Int VG_(getpid) ( void )
    return res;
 }
 
-/* Read a notional elapsed (wallclock-time) timer, giving a 64-bit
-   microseconds count. */
-ULong VG_(read_microsecond_timer)( void )
-{
-   Int                res;
-   struct vki_timeval tv;
-   res = vg_do_syscall2(__NR_gettimeofday, (UInt)&tv, (UInt)NULL);
-   vg_assert(!VG_(is_kerror)(res));
-   return (1000000ULL * (ULong)(tv.tv_sec)) + (ULong)(tv.tv_usec);
-}
-
 /* Return -1 if error, else 0.  NOTE does not indicate return code of
    child! */
 Int VG_(system) ( Char* cmd )
@@ -979,6 +969,129 @@ Int VG_(system) ( Char* cmd )
       }
    }
 }
+
+
+/* ---------------------------------------------------------------------
+   Support for a millisecond-granularity counter using RDTSC.
+   ------------------------------------------------------------------ */
+
+static __inline__ ULong do_rdtsc_insn ( void )
+{
+   ULong x;
+   __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
+   return x;
+}
+
+/* 0 = pre-calibration, 1 = calibration, 2 = running */
+static Int   rdtsc_calibration_state     = 0;
+static ULong rdtsc_ticks_per_millisecond = 0; /* invalid value */
+
+static struct vki_timeval rdtsc_cal_start_timeval;
+static struct vki_timeval rdtsc_cal_end_timeval;
+
+static ULong              rdtsc_cal_start_raw;
+static ULong              rdtsc_cal_end_raw;
+
+UInt VG_(read_millisecond_timer) ( void )
+{
+   ULong rdtsc_now;
+   vg_assert(rdtsc_calibration_state == 2);
+   rdtsc_now = do_rdtsc_insn();
+   vg_assert(rdtsc_now > rdtsc_cal_end_raw);
+   rdtsc_now -= rdtsc_cal_end_raw;
+   rdtsc_now /= rdtsc_ticks_per_millisecond;
+   return (UInt)rdtsc_now;
+}
+
+
+void VG_(start_rdtsc_calibration) ( void )
+{
+   Int res;
+   vg_assert(rdtsc_calibration_state == 0);
+   rdtsc_calibration_state = 1;
+   rdtsc_cal_start_raw = do_rdtsc_insn();
+   res = vg_do_syscall2(__NR_gettimeofday, (UInt)&rdtsc_cal_start_timeval, 
+                                           (UInt)NULL);
+   vg_assert(!VG_(is_kerror)(res));
+}
+
+void VG_(end_rdtsc_calibration) ( void )
+{
+   Int   res, loops;
+   ULong cpu_clock_MHZ;
+   ULong cal_clock_ticks;
+   ULong cal_wallclock_microseconds;
+   ULong wallclock_start_microseconds;
+   ULong wallclock_end_microseconds;
+   struct vki_timespec req;
+   struct vki_timespec rem;
+   
+   vg_assert(rdtsc_calibration_state == 1);
+   rdtsc_calibration_state = 2;
+
+   /* Try and delay for 20 milliseconds, so that we can at least have
+      some minimum level of accuracy. */
+   req.tv_sec = 0;
+   req.tv_nsec = 20 * 1000 * 1000;
+   loops = 0;
+   while (True) {
+      res = VG_(nanosleep)(&req, &rem);
+      vg_assert(res == 0 /*ok*/ || res == 1 /*interrupted*/);
+      if (res == 0)
+         break;
+      if (rem.tv_sec == 0 && rem.tv_nsec == 0) 
+         break;
+      req = rem;
+      loops++;
+      if (loops > 100) 
+         VG_(panic)("calibration nanosleep loop failed?!");
+   }
+
+   /* Now read both timers, and do the Math. */
+   rdtsc_cal_end_raw = do_rdtsc_insn();
+   res = vg_do_syscall2(__NR_gettimeofday, (UInt)&rdtsc_cal_end_timeval, 
+                                           (UInt)NULL);
+
+   vg_assert(rdtsc_cal_end_raw > rdtsc_cal_start_raw);
+   cal_clock_ticks = rdtsc_cal_end_raw - rdtsc_cal_start_raw;
+
+   wallclock_start_microseconds
+      = (1000000ULL * (ULong)(rdtsc_cal_start_timeval.tv_sec)) 
+         + (ULong)(rdtsc_cal_start_timeval.tv_usec);
+   wallclock_end_microseconds
+      = (1000000ULL * (ULong)(rdtsc_cal_end_timeval.tv_sec)) 
+         + (ULong)(rdtsc_cal_end_timeval.tv_usec);
+   vg_assert(wallclock_end_microseconds > wallclock_start_microseconds);
+   cal_wallclock_microseconds 
+      = wallclock_end_microseconds - wallclock_start_microseconds;
+
+   /* Since we just nanoslept for 20 ms ... */
+   vg_assert(cal_wallclock_microseconds >= 20000);
+
+   /* Now we know (roughly) that cal_clock_ticks on RDTSC take
+      cal_wallclock_microseconds elapsed time.  Calculate the RDTSC
+      ticks-per-millisecond value. */
+   if (0)
+      VG_(printf)("%lld ticks in %lld microseconds\n", 
+                  cal_clock_ticks,  cal_wallclock_microseconds );
+
+   rdtsc_ticks_per_millisecond   
+      = cal_clock_ticks / (cal_wallclock_microseconds / 1000ULL);
+   cpu_clock_MHZ
+      = (1000ULL * rdtsc_ticks_per_millisecond) / 1000000ULL;
+   if (VG_(clo_verbosity) >= 1)
+      VG_(message)(Vg_UserMsg, "Estimated CPU clock rate is %d MHz",
+                               (UInt)cpu_clock_MHZ);
+   if (cpu_clock_MHZ < 100 || cpu_clock_MHZ > 10000)
+      VG_(panic)("end_rdtsc_calibration: "
+                 "estimated CPU MHz outside range 100 .. 10000");
+   /* Paranoia about division by zero later. */
+   vg_assert(rdtsc_ticks_per_millisecond != 0);
+   if (0)
+      VG_(printf)("ticks per millisecond %llu\n", 
+                  rdtsc_ticks_per_millisecond);
+}
+
 
 
 /* ---------------------------------------------------------------------

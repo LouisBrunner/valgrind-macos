@@ -119,7 +119,26 @@ typedef
 static VgWaitedOnFd vg_waiting_fds[VG_N_WAITING_FDS];
 
 
+/* Keeping track of keys. */
+typedef
+   struct {
+      /* Has this key been allocated ? */
+      Bool inuse;
+      /* If .inuse==True, records the address of the associated
+         destructor, or NULL if none. */
+      void (*destructor)(void*);
+   }
+   ThreadKeyState;
+
+/* And our array of thread keys. */
+static ThreadKeyState vg_thread_keys[VG_N_THREAD_KEYS];
+
+typedef UInt ThreadKey;
+
+
 /* Forwards */
+static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
+
 static void do_nontrivial_clientreq ( ThreadId tid );
 
 static void scheduler_sanity ( void );
@@ -511,6 +530,11 @@ void VG_(scheduler_init) ( void )
    for (i = 0; i < VG_N_WAITING_FDS; i++)
       vg_waiting_fds[i].fd = -1; /* not in use */
 
+   for (i = 0; i < VG_N_THREAD_KEYS; i++) {
+      vg_thread_keys[i].inuse      = False;
+      vg_thread_keys[i].destructor = NULL;
+   }
+
    /* Assert this is thread zero, which has certain magic
       properties. */
    tid_main = vg_alloc_ThreadState();
@@ -523,6 +547,8 @@ void VG_(scheduler_init) ( void )
    vg_threads[tid_main].retval        = NULL; /* not important */
    vg_threads[tid_main].stack_highest_word 
       = vg_threads[tid_main].m_esp /* -4  ??? */;
+   for (i = 0; i < VG_N_THREAD_KEYS; i++)
+      vg_threads[tid_main].specifics[i] = NULL;
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
@@ -618,13 +644,16 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
             (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
          );
 
-      /* These are heavily used. */
+      /* These are heavily used -- or at least we want them to be
+         cheap. */
       case VG_USERREQ__PTHREAD_GET_THREADID:
          SIMPLE_RETURN(tid);
       case VG_USERREQ__RUNNING_ON_VALGRIND:
          SIMPLE_RETURN(1);
       case VG_USERREQ__GET_PTHREAD_TRACE_LEVEL:
          SIMPLE_RETURN(VG_(clo_trace_pthread_level));
+      case VG_USERREQ__READ_MILLISECOND_TIMER:
+         SIMPLE_RETURN(VG_(read_millisecond_timer)());
 
       default:
          /* Too hard; wimp out. */
@@ -692,18 +721,18 @@ void sched_do_syscall ( ThreadId tid )
    syscall_no = vg_threads[tid].m_eax; /* syscall number */
 
    if (syscall_no == __NR_nanosleep) {
-      ULong t_now, t_awaken;
+      UInt t_now, t_awaken;
       struct vki_timespec* req;
       req = (struct vki_timespec*)vg_threads[tid].m_ebx; /* arg1 */
-      t_now = VG_(read_microsecond_timer)();     
+      t_now = VG_(read_millisecond_timer)();     
       t_awaken 
          = t_now
-           + (ULong)1000000ULL * (ULong)(req->tv_sec) 
-           + (ULong)( (UInt)(req->tv_nsec) / 1000 );
+           + (UInt)1000ULL * (UInt)(req->tv_sec) 
+           + (UInt)(req->tv_nsec) / 1000000;
       vg_threads[tid].status    = VgTs_Sleeping;
       vg_threads[tid].awaken_at = t_awaken;
       if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf, "at %lu: nanosleep for %lu", 
+         VG_(sprintf)(msg_buf, "at %d: nanosleep for %d", 
                                t_now, t_awaken-t_now);
 	 print_sched_event(tid, msg_buf);
       }
@@ -820,16 +849,16 @@ void poll_for_ready_fds ( void )
    Char               msg_buf[100];
 
    struct vki_timespec* rem;
-   ULong                t_now;
+   UInt                 t_now;
 
    /* Awaken any sleeping threads whose sleep has expired. */
    for (tid = 1; tid < VG_N_THREADS; tid++)
      if (vg_threads[tid].status == VgTs_Sleeping)
         break;
 
-   /* Avoid pointless calls to VG_(read_microsecond_timer). */
+   /* Avoid pointless calls to VG_(read_millisecond_timer). */
    if (tid < VG_N_THREADS) {
-      t_now = VG_(read_microsecond_timer)();
+      t_now = VG_(read_millisecond_timer)();
       for (tid = 1; tid < VG_N_THREADS; tid++) {
          if (vg_threads[tid].status != VgTs_Sleeping)
             continue;
@@ -848,7 +877,7 @@ void poll_for_ready_fds ( void )
 	    /* Reschedule this thread. */
             vg_threads[tid].status = VgTs_Runnable;
             if (VG_(clo_trace_sched)) {
-               VG_(sprintf)(msg_buf, "at %lu: nanosleep done", 
+               VG_(sprintf)(msg_buf, "at %d: nanosleep done", 
                                      t_now);
                print_sched_event(tid, msg_buf);
             }
@@ -1005,16 +1034,30 @@ void complete_blocked_syscalls ( void )
 
 
 static
+void check_for_pthread_cond_timedwait ( void )
+{
+   Int i;
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (vg_threads[i].status != VgTs_WaitCV)
+         continue;
+      if (vg_threads[i].awaken_at == 0xFFFFFFFF /* no timeout */)
+         continue;
+      if (VG_(read_millisecond_timer)() >= vg_threads[i].awaken_at)
+         do_pthread_cond_timedwait_TIMEOUT(i);
+   }
+}
+
+
+static
 void nanosleep_for_a_while ( void )
 {
    Int res;
    struct vki_timespec req;
    struct vki_timespec rem;
    req.tv_sec = 0;
-   req.tv_nsec = 20 * 1000 * 1000;
+   req.tv_nsec = 50 * 1000 * 1000;
    res = VG_(nanosleep)( &req, &rem );   
-   /* VG_(printf)("after ns, unused = %d\n", rem.tv_nsec ); */
-   vg_assert(res == 0);
+   vg_assert(res == 0 /* ok */ || res == 1 /* interrupted by signal */);
 }
 
 
@@ -1079,6 +1122,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             threads. */
          poll_for_ready_fds();
          complete_blocked_syscalls();
+         check_for_pthread_cond_timedwait();
 
          /* See if there are any signals which need to be delivered.  If
             so, choose thread(s) to deliver them to, and build signal
@@ -1527,6 +1571,7 @@ void do_pthread_create ( ThreadId parent_tid,
                          void* (*start_routine)(void *), 
                          void* arg )
 {
+   Int      i;
    Addr     new_stack;
    UInt     new_stk_szb;
    ThreadId tid;
@@ -1606,6 +1651,9 @@ void do_pthread_create ( ThreadId parent_tid,
    vg_threads[tid].associated_cv = NULL;
    vg_threads[tid].joiner        = VG_INVALID_THREADID;
    vg_threads[tid].status        = VgTs_Runnable;
+
+   for (i = 0; i < VG_N_THREAD_KEYS; i++)
+      vg_threads[tid].specifics[i] = NULL;
 
    /* return zero */
    vg_threads[tid].m_edx  = 0; /* success */
@@ -1691,7 +1739,7 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
       mutex->__m_owner = (_pthread_descr)i;
       vg_threads[i].status        = VgTs_Runnable;
       vg_threads[i].associated_mx = NULL;
-      vg_threads[i].m_edx         = 0; /* pth_lock() success */
+      /* m_edx already holds pth_mx_lock() success (0) */
 
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, "%s       mx %p: RESUME", 
@@ -1773,7 +1821,7 @@ void do_pthread_mutex_lock( ThreadId tid,
          } else {
             vg_threads[tid].status        = VgTs_WaitMX;
             vg_threads[tid].associated_mx = mutex;
-            /* No assignment to %EDX, since we're blocking. */
+            vg_threads[tid].m_edx         = 0; /* pth_mx_lock success value */
             if (VG_(clo_trace_pthread_level) >= 1) {
                VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
                                      caller, mutex );
@@ -1890,6 +1938,56 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    don't need to think too hard there.  */
 
 
+static 
+void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
+{
+   Char             msg_buf[100];
+   pthread_mutex_t* mx;
+   pthread_cond_t*  cv;
+
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_WaitCV
+             && vg_threads[tid].awaken_at != 0xFFFFFFFF);
+   mx = vg_threads[tid].associated_mx;
+   vg_assert(mx != NULL);
+   cv = vg_threads[tid].associated_cv;
+   vg_assert(cv != NULL);
+
+   if (mx->__m_owner == VG_INVALID_THREADID) {
+      /* Currently unheld; hand it out to thread tid. */
+      vg_assert(mx->__m_count == 0);
+      vg_threads[tid].status        = VgTs_Runnable;
+      vg_threads[tid].m_edx         = ETIMEDOUT; 
+                                      /* pthread_cond_wait return value */
+      vg_threads[tid].associated_cv = NULL;
+      vg_threads[tid].associated_mx = NULL;
+      mx->__m_owner = (_pthread_descr)tid;
+      mx->__m_count = 1;
+
+      if (VG_(clo_trace_pthread_level) >= 1) {
+         VG_(sprintf)(msg_buf, "pthread_cond_timedwai cv %p: TIMEOUT with mx %p", 
+                               cv, mx );
+         print_pthread_event(tid, msg_buf);
+      }
+   } else {
+      /* Currently held.  Make thread tid be blocked on it. */
+      vg_assert(mx->__m_count > 0);
+      vg_threads[tid].status        = VgTs_WaitMX;
+      vg_threads[tid].m_edx         = ETIMEDOUT; 
+                                      /* pthread_cond_wait return value */
+      vg_threads[tid].associated_cv = NULL;
+      vg_threads[tid].associated_mx = mx;
+      if (VG_(clo_trace_pthread_level) >= 1) {
+         VG_(sprintf)(msg_buf, 
+            "pthread_cond_timedwai cv %p: TIMEOUT -> BLOCK for mx %p", 
+            cv, mx );
+         print_pthread_event(tid, msg_buf);
+      }
+
+   }
+}
+
+
 static
 void release_N_threads_waiting_on_cond ( pthread_cond_t* cond, 
                                          Int n_to_release, 
@@ -1920,8 +2018,6 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 
       mx = vg_threads[i].associated_mx;
       vg_assert(mx != NULL);
-      vg_assert(mx->__m_count > 0);
-      vg_assert(is_valid_tid((ThreadId)mx->__m_owner));
 
       if (mx->__m_owner == VG_INVALID_THREADID) {
          /* Currently unheld; hand it out to thread i. */
@@ -1931,7 +2027,7 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          vg_threads[i].associated_mx = NULL;
          mx->__m_owner = (_pthread_descr)i;
          mx->__m_count = 1;
-         vg_threads[i].m_edx = 0; /* pthread_cond_wait returns success */
+         /* .m_edx already holds pth_cond_wait success value (0) */
 
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "%s   cv %p: RESUME with mx %p", 
@@ -1941,9 +2037,11 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 
       } else {
          /* Currently held.  Make thread i be blocked on it. */
+         vg_assert(mx->__m_count > 0);
          vg_threads[i].status        = VgTs_WaitMX;
          vg_threads[i].associated_cv = NULL;
          vg_threads[i].associated_mx = mx;
+         vg_threads[i].m_edx         = 0; /* pth_cond_wait success value */
 
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "%s   cv %p: BLOCK for mx %p", 
@@ -1961,14 +2059,18 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 static
 void do_pthread_cond_wait ( ThreadId tid,
                             pthread_cond_t *cond, 
-                            pthread_mutex_t *mutex )
+                            pthread_mutex_t *mutex,
+			    UInt ms_end )
 {
    Char msg_buf[100];
 
+   /* If ms_end == 0xFFFFFFFF, wait forever (no timeout).  Otherwise,
+      ms_end is the ending millisecond. */
+
    /* pre: mutex should be a valid mutex and owned by tid. */
    if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_cond_wait        cv %p, mx %p ...", 
-                            cond, mutex );
+      VG_(sprintf)(msg_buf, "pthread_cond_wait        cv %p, mx %p, end %d ...", 
+                            cond, mutex, ms_end );
       print_pthread_event(tid, msg_buf);
    }
 
@@ -2007,6 +2109,7 @@ void do_pthread_cond_wait ( ThreadId tid,
    vg_threads[tid].status        = VgTs_WaitCV;
    vg_threads[tid].associated_cv = cond;
    vg_threads[tid].associated_mx = mutex;
+   vg_threads[tid].awaken_at     = ms_end;
 
    if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, 
@@ -2052,6 +2155,133 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
    );
 
    vg_threads[tid].m_edx = 0; /* success */
+}
+
+
+/* -----------------------------------------------------------
+   THREAD SPECIFIC DATA
+   -------------------------------------------------------- */
+
+static __inline__
+Bool is_valid_key ( ThreadKey k )
+{
+   /* k unsigned; hence no < 0 check */
+   if (k >= VG_N_THREAD_KEYS) return False;
+   if (!vg_thread_keys[k].inuse) return False;
+   return True;
+}
+
+static
+void do_pthread_key_create ( ThreadId tid,
+                             pthread_key_t* key,
+                             void (*destructor)(void*) )
+{
+   Int  i;
+   Char msg_buf[100];
+
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, "pthread_key_create      *key %p, destr %p", 
+                            key, destructor );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(sizeof(pthread_key_t) == sizeof(ThreadKey));
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   for (i = 0; i < VG_N_THREAD_KEYS; i++)
+      if (!vg_thread_keys[i].inuse)   
+         break;
+
+   if (i == VG_N_THREAD_KEYS) {
+      /* vg_threads[tid].m_edx = EAGAIN; 
+         return; 
+      */
+      VG_(panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
+                 " increase and recompile");
+   }
+
+   vg_thread_keys[i].inuse = True;
+   /* TODO: check key for addressibility */
+   *key = i;
+   vg_threads[tid].m_edx = 0;
+}
+
+
+static
+void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, "pthread_key_delete       key %d", 
+                            key );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+   
+   if (!is_valid_key(key)) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+
+   vg_thread_keys[key].inuse = False;
+
+   /* Optional.  We're not required to do this, although it shouldn't
+      make any difference to programs which use the key/specifics
+      functions correctly.  */
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (vg_threads[tid].status != VgTs_Empty)
+         vg_threads[tid].specifics[key] = NULL;
+   }
+}
+
+
+static 
+void do_pthread_getspecific ( ThreadId tid, pthread_key_t key )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, "pthread_getspecific      key %d", 
+                            key );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   if (!is_valid_key(key)) {
+      vg_threads[tid].m_edx = (UInt)NULL;
+      return;
+   }
+
+   vg_threads[tid].m_edx = (UInt)vg_threads[tid].specifics[key];
+}
+
+
+static
+void do_pthread_setspecific ( ThreadId tid, 
+                              pthread_key_t key, 
+                              void *pointer )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, "pthread_setspecific      key %d, ptr %p", 
+                            key, pointer );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   if (!is_valid_key(key)) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+
+   vg_threads[tid].specifics[key] = pointer;
+   vg_threads[tid].m_edx = 0;
 }
 
 
@@ -2105,7 +2335,15 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__PTHREAD_COND_WAIT:
          do_pthread_cond_wait( tid, 
                                (pthread_cond_t *)(arg[1]),
-                               (pthread_mutex_t *)(arg[2]) );
+                               (pthread_mutex_t *)(arg[2]),
+                               0xFFFFFFFF /* no timeout */ );
+         break;
+
+      case VG_USERREQ__PTHREAD_COND_TIMEDWAIT:
+         do_pthread_cond_wait( tid, 
+                               (pthread_cond_t *)(arg[1]),
+                               (pthread_mutex_t *)(arg[2]),
+                               arg[3] /* timeout millisecond point */ );
          break;
 
       case VG_USERREQ__PTHREAD_COND_SIGNAL:
@@ -2121,6 +2359,28 @@ void do_nontrivial_clientreq ( ThreadId tid )
 	    True, /* broadcast, not signal */
             (pthread_cond_t *)(arg[1]) );
          break;
+
+      case VG_USERREQ__PTHREAD_KEY_CREATE:
+ 	 do_pthread_key_create ( tid, 
+                                 (pthread_key_t*)(arg[1]),
+                                 (void(*)(void*))(arg[2]) );
+	 break;
+
+      case VG_USERREQ__PTHREAD_KEY_DELETE:
+ 	 do_pthread_key_delete ( tid, 
+                                 (pthread_key_t)(arg[1]) );
+ 	 break;
+
+      case VG_USERREQ__PTHREAD_GETSPECIFIC:
+ 	 do_pthread_getspecific ( tid, 
+                                  (pthread_key_t)(arg[1]) );
+ 	 break;
+
+      case VG_USERREQ__PTHREAD_SETSPECIFIC:
+ 	 do_pthread_setspecific ( tid, 
+                                  (pthread_key_t)(arg[1]),
+				  (void*)(arg[2]) );
+ 	 break;
 
       case VG_USERREQ__MAKE_NOACCESS:
       case VG_USERREQ__MAKE_WRITABLE:
@@ -2160,6 +2420,7 @@ void scheduler_sanity ( void )
    pthread_mutex_t* mx;
    pthread_cond_t*  cv;
    Int              i;
+
    /* VG_(printf)("scheduler_sanity\n"); */
    for (i = 1; i < VG_N_THREADS; i++) {
       mx = vg_threads[i].associated_mx;
@@ -2189,6 +2450,11 @@ void scheduler_sanity ( void )
          /* vg_assert(cv == NULL); */
          /* vg_assert(mx == NULL); */
       }
+   }
+
+   for (i = 0; i < VG_N_THREAD_KEYS; i++) {
+      if (!vg_thread_keys[i].inuse)
+         vg_assert(vg_thread_keys[i].destructor == NULL);
    }
 }
 

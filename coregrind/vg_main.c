@@ -2259,36 +2259,6 @@ Int VG_(helper_offset)(Addr a)
 
 
 /*====================================================================*/
-/*=== Setup pointercheck                                           ===*/
-/*====================================================================*/
-
-static void setup_pointercheck(void)
-{
-   int ret;
-
-   if (VG_(clo_pointercheck)) {
-      vki_modify_ldt_t ldt = { 
-         VG_POINTERCHECK_SEGIDX,    // entry_number
-         VG_(client_base),          // base_addr
-         (VG_(client_end)-VG_(client_base)) / VKI_BYTES_PER_PAGE, // limit
-         1,                         // seg_32bit
-         0,                         // contents: data, RW, non-expanding
-         0,                         // ! read_exec_only
-         1,                         // limit_in_pages
-         0,                         // ! seg not present
-         1,                         // useable
-      };
-      ret = VG_(do_syscall)(__NR_modify_ldt, 1, &ldt, sizeof(ldt));
-      if (ret < 0) {
-	 VG_(message)(Vg_UserMsg,
-		      "Warning: ignoring --pointercheck=yes, "
-		      "because modify_ldt failed (errno=%d)", -ret);
-	 VG_(clo_pointercheck) = False;
-      }
-   }
-}
-
-/*====================================================================*/
 /*===  Initialise program data/text, etc.                          ===*/
 /*====================================================================*/
 
@@ -2793,7 +2763,8 @@ int main(int argc, char **argv)
    // Setup pointercheck
    //   p: process_cmd_line_options() [for VG_(clo_pointercheck)]
    //--------------------------------------------------------------
-   setup_pointercheck();
+   if (VG_(clo_pointercheck))
+      VG_(clo_pointercheck) = VGA_(setup_pointercheck)();
 
    //--------------------------------------------------------------
    // Run!

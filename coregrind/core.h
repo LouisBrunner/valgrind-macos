@@ -1499,6 +1499,8 @@ extern void VGA_(init_high_baseBlock) ( Addr client_eip, Addr esp_at_startup );
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
+extern Bool VGA_(setup_pointercheck) ( void );
+
 extern void VGA_(regs_for_ptrace_from_BB)  ( struct user_regs_struct* regs );
 extern void VGA_(regs_for_ptrace_from_tst) ( arch_thread_t* arch,
                                              struct user_regs_struct* regs );

@@ -3260,21 +3260,20 @@ Addr dis_MMXop_regmem_to_reg ( UCodeBlock* cb,
        op   (src)xmmreg, (dst)xmmreg
    or
        op   (src)address, (dst)xmmreg
-   It is assumed that there are 3 opcode bytes preceding the start
-   of the address mode.  eip points to the first opcode byte.
+   3 opcode bytes.
+   Supplied eip points to the first address mode byte.
 */
 static
 Addr dis_SSE3_reg_or_mem ( UCodeBlock* cb, 
                            UChar sorb, 
+			   Addr eip,
+			   Int sz,
                            Char* name, 
-                           Int sz, 
-                           Addr eip )
+                           UChar opc1, 
+                           UChar opc2, 
+                           UChar opc3 )
 {
-   UChar opc1 = getUChar(eip); 
-   UChar opc2 = getUChar(eip+1);
-   UChar opc3 = getUChar(eip+2);
-   UChar modrm = getUChar(eip+3);
-   eip += 3;
+   UChar modrm = getUChar(eip);
    if (epartIsReg(modrm)) {
       /* Completely internal SSE insn. */
       uInstr2(cb, SSE4, 0,  /* ignore sz for internal ops */
@@ -3296,20 +3295,19 @@ Addr dis_SSE3_reg_or_mem ( UCodeBlock* cb,
        op   (src)xmmreg, (dst)xmmreg
    or
        op   (src)address, (dst)xmmreg
-   It is assumed that there are 2 opcode bytes preceding the start
-   of the address mode.  eip points to the first opcode byte.
+   2 opcode bytes.
+   Supplied eip points to the first address mode byte.
 */
 static
 Addr dis_SSE2_reg_or_mem ( UCodeBlock* cb, 
                            UChar sorb, 
-                           Char* name, 
+                           Addr eip,
                            Int sz, 
-                           Addr eip )
+                           Char* name,
+                           UChar opc1, 
+                           UChar opc2 )
 {
-   UChar opc1 = getUChar(eip); 
-   UChar opc2 = getUChar(eip+1);
-   UChar modrm = getUChar(eip+2);
-   eip += 2;
+   UChar modrm = getUChar(eip);
    if (epartIsReg(modrm)) {
       /* Completely internal SSE insn. */
       uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
@@ -3331,22 +3329,20 @@ Addr dis_SSE2_reg_or_mem ( UCodeBlock* cb,
        op   (src)xmmreg, (dst)xmmreg
    or
        op   (src)address, (dst)xmmreg
-   It is assumed that there are 2 opcode bytes preceding the start of
-   the address mode.  Also there is an 8-bit immediate following the
-   address mode.  eip points to the first opcode byte.
+   2 opcode bytes and an 8-bit immediate after the amode.
+   Supplied eip points to the first address mode byte.
 */
 static
 Addr dis_SSE2_reg_or_mem_Imm8 ( UCodeBlock* cb, 
                                 UChar sorb, 
-                                Char* name, 
+				Addr eip,
                                 Int sz, 
-                                Addr eip )
+                                Char* name,
+				UChar opc1, 
+				UChar opc2 )
 {
-   UChar opc1 = getUChar(eip); 
-   UChar opc2 = getUChar(eip+1);
-   UChar modrm = getUChar(eip+2);
+   UChar modrm = getUChar(eip);
    UChar imm8;
-   eip += 2;
    if (epartIsReg(modrm)) {
       /* Completely internal SSE insn. */
       eip++;
@@ -3361,6 +3357,110 @@ Addr dis_SSE2_reg_or_mem_Imm8 ( UCodeBlock* cb,
       eip++;
    } else {
       VG_(core_panic)("dis_SSE2_reg_or_mem_Imm8: mem");
+   }
+   return eip;
+}
+
+
+/* Disassemble an SSE insn which is either a simple reg-reg move or a
+   move between registers and memory.  Supplied eip points to the
+   first address mode byte.
+*/
+static
+Addr dis_SSE3_load_store_or_mov ( UCodeBlock* cb, 
+                                  UChar sorb,
+                                  Addr eip, 
+                                  Int sz,
+				  Bool is_store, 
+                                  Char* name,
+                                  UChar insn0, 
+                                  UChar insn1, 
+                                  UChar insn2 )
+{
+   UChar dis_buf[50];
+   UChar modrm; 
+   UInt  pair;
+   Int   t1;
+   modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal; we can issue SSE4. */
+      eip++;
+      uInstr2(cb, SSE4, 0, /* ignore sz for internal ops */
+                  Lit16, (((UShort)insn0) << 8) | (UShort)insn1,
+                  Lit16, (((UShort)insn2) << 8) | (UShort)modrm );
+      if (dis && is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     nameXMMReg(gregOfRM(modrm)),
+                     nameXMMReg(eregOfRM(modrm)) );
+      if (dis && !is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                      nameXMMReg(eregOfRM(modrm)), 
+                      nameXMMReg(gregOfRM(modrm)) );
+   } else {
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      t1   = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, is_store ? SSE3a_MemWr : SSE3a_MemRd, sz,
+                  Lit16, (((UShort)insn0) << 8) | (UShort)insn1,
+                  Lit16, (((UShort)insn2) << 8) | (UShort)modrm,
+                  TempReg, t1 );
+      if (dis && is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     nameXMMReg(gregOfRM(modrm)), dis_buf );
+      if (dis && !is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     dis_buf, nameXMMReg(gregOfRM(modrm)) );
+   }
+   return eip;
+}
+
+
+/* Disassemble an SSE insn which is either a simple reg-reg move or a
+   move between registers and memory.  Supplied eip points to the
+   first address mode byte. */
+static
+Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb, 
+                                  UChar sorb,
+                                  Addr eip, 
+                                  Int sz,
+				  Bool is_store, 
+                                  Char* name,
+                                  UChar insn0, 
+                                  UChar insn1 )
+{
+   UChar dis_buf[50];
+   UChar modrm; 
+   UInt  pair;
+   Int   t1;
+   modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal; we can issue SSE3. */
+      eip++;
+      uInstr2(cb, SSE3, 0, /* ignore sz for internal ops */
+                  Lit16, (((UShort)insn0) << 8) | (UShort)insn1,
+                  Lit16, (UShort)modrm );
+      if (dis && is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     nameXMMReg(gregOfRM(modrm)),
+                     nameXMMReg(eregOfRM(modrm)) );
+      if (dis && !is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                      nameXMMReg(eregOfRM(modrm)), 
+                      nameXMMReg(gregOfRM(modrm)) );
+   } else {
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      t1   = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, is_store ? SSE2a_MemWr : SSE2a_MemRd, sz,
+                  Lit16, (((UShort)insn0) << 8) | (UShort)insn1,
+                  Lit16, (UShort)modrm,
+                  TempReg, t1 );
+      if (dis && is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     nameXMMReg(gregOfRM(modrm)), dis_buf );
+      if (dis && !is_store)
+         VG_(printf)("%s %s, %s\n", name,
+                     dis_buf, nameXMMReg(gregOfRM(modrm)) );
    }
    return eip;
 }
@@ -3522,88 +3622,113 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* DIVSS -- divide low 4 bytes of XMM reg. */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
       vg_assert(sz == 4);
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, "divss", 4, eip );
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, "divss",
+                                      insn[0], insn[1], insn[2] );
       goto decode_success;
    }
 
    /* SHUFPS */
    if (insn[0] == 0x0F && insn[1] == 0xC6) {
       vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, "shufps", 16, eip );
+      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "shufps",
+                                           insn[0], insn[1] );
       goto decode_success;
    }
 
    /* MULPS */
    if (insn[0] == 0x0F && insn[1] == 0x59) {
       vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, "mulps", 16, eip );
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "mulps",
+                                      insn[0], insn[1] );
       goto decode_success;
    }
 
    /* ADDPS */
    if (insn[0] == 0x0F && insn[1] == 0x58) {
       vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, "addps", 16, eip );
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "addps",
+                                      insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PXOR (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xEF) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pxor",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVSD -- move 8 bytes of XMM reg to/from XMM reg or mem. */
+   if (insn[0] == 0xF2
+       && insn[1] == 0x0F 
+       && (insn[2] == 0x11 || insn[2] == 0x10)) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_load_store_or_mov 
+               ( cb, sorb, eip+3, 8, insn[2]==0x11, "movsd",
+		 insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MOVQ -- move 8 bytes of XMM reg to/from XMM reg or mem.  How
+      does this differ from MOVSD ?? */
+   if (sz == 2
+       && insn[0] == 0x0F
+       && insn[1] == 0xD6) {
+      eip = dis_SSE3_load_store_or_mov 
+               ( cb, sorb, eip+2, 8, False /*load*/, "movq",
+                     0x66, insn[0], insn[1] );
       goto decode_success;
    }
 
    /* MOVSS -- move 4 bytes of XMM reg to/from XMM reg or mem. */
-   if (insn[0] == 0xF3 && insn[1] == 0x0F && (insn[2] == 0x11 
-                                              || insn[2] == 0x10)) {
+   if (insn[0] == 0xF3
+       && insn[1] == 0x0F 
+       && (insn[2] == 0x11 || insn[2] == 0x10)) {
       vg_assert(sz == 4);
-      if (epartIsReg(insn[3])) {
-         /* MOVSS xmm, xmm */
-         VG_(core_panic)("MOVSS reg");
-         eip = dis_SSE3_reg_or_mem ( cb, sorb, "movss", 4, eip );
-      } else {
-         Bool store = insn[2] == 0x11;
-         pair = disAMode ( cb, sorb, eip+3, dis?dis_buf:NULL );
-         t1   = LOW24(pair);
-         eip += 3+HI8(pair);
-         uInstr3(cb, store ? SSE3a_MemWr : SSE3a_MemRd, 4,
-                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
-                     TempReg, t1 );
-         if (dis && store)
-            VG_(printf)("movss %s, %s\n", 
-                        nameXMMReg(gregOfRM(insn[3])), dis_buf );
-         if (dis && !store)
-            VG_(printf)("movss %s, %s\n", 
-                        dis_buf, nameXMMReg(gregOfRM(insn[3])) );
-      }
+      eip = dis_SSE3_load_store_or_mov 
+               ( cb, sorb, eip+3, 4, insn[2]==0x11, "movss",
+                     insn[0], insn[1], insn[2] );
       goto decode_success;
    }
 
-   /* MOVAPS (28,29) -- aligned load/store of XMM reg, or x-x reg move */
-   /* MOVUPS (10,11) -- unaligned load/store of XMM reg, or x-x reg move */
+   /* MOVAPS (28,29) -- aligned load/store of XMM reg, or x-x reg
+      move */
+   /* MOVUPS (10,11) -- unaligned load/store of XMM reg, or x-x reg
+      move */
    if (insn[0] == 0x0F && (insn[1] == 0x28
                            || insn[1] == 0x29
                            || insn[1] == 0x10
                            || insn[1] == 0x11)) {
+      UChar* name = (insn[1] == 0x10 || insn[1] == 0x11)
+                    ? "movups" : "movaps";
+      Bool store = insn[1] == 0x29 || insn[1] == 11;
       vg_assert(sz == 4);
-      modrm = insn[2];
-      if (epartIsReg(modrm)) {
-         VG_(core_panic)("MOVAPS - reg");
-      } else {
-         Bool store = insn[1] == 0x29 || insn[1] == 11;
-         pair = disAMode ( cb, sorb, eip+2, dis?dis_buf:NULL );
-         t1   = LOW24(pair);
-         eip += 2+HI8(pair);
-         uInstr3(cb, store ? SSE2a_MemWr : SSE2a_MemRd, 16,
-                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-                     Lit16, (UShort)insn[2],
-                     TempReg, t1 );
-	 if (dis) {
-            UChar* name = (insn[1] == 0x10 || insn[1] == 0x11)
-	                  ? "movups" : "movaps";
-            if (store)
-               VG_(printf)("%s %s, %s\n", 
-                           name, nameXMMReg(gregOfRM(modrm)), dis_buf );
-            else
-               VG_(printf)("%s %s, %s\n", 
-                           name, dis_buf, nameXMMReg(gregOfRM(modrm)) );
-	 }
-      }
+      eip = dis_SSE2_load_store_or_mov
+               ( cb, sorb, eip+2, 16, store, name,
+                     insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVDQA -- aligned 16-byte load/store. */
+   if (sz == 2 
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x6F || insn[1] == 0x7F)) {
+      Bool is_store = insn[1]==0x7F;
+      eip = dis_SSE3_load_store_or_mov
+               (cb, sorb, eip+2, 16, is_store, "movdqa", 
+                    0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVD -- 4-byte load/store. */
+   if (sz == 2 
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x6E || insn[1] == 0x7E)) {
+      Bool is_store = insn[1]==0x7E;
+      eip = dis_SSE3_load_store_or_mov
+               (cb, sorb, eip+2, 4, is_store, "movd", 
+                    0x66, insn[0], insn[1] );
       goto decode_success;
    }
 

@@ -412,6 +412,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define SZ42 (u->size == 4 || u->size == 2)
 #  define SZ48 (u->size == 4 || u->size == 8)
 #  define SZ416 (u->size == 4 || u->size == 16)
+#  define SZsse (u->size == 4 || u->size == 8 || u->size == 16)
 #  define SZi  (u->size == 4 || u->size == 2 || u->size == 1)
 #  define SZf  (  u->size ==  4 || u->size ==  8 || u->size ==   2     \
                || u->size == 10 || u->size == 28 || u->size == 108)
@@ -559,8 +560,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemRd:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
@@ -585,6 +586,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef SZ42
 #  undef SZ48
 #  undef SZ416
+#  undef SZsse
 #  undef SZi
 #  undef SZf
 #  undef SZ4m
@@ -1042,7 +1044,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case SSE3a_MemRd:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
-                     (u->val1 >> 8) & 0xFF, u->val2 & 0xFF );
+                     (u->val2 >> 8) & 0xFF, u->val2 & 0xFF );
          VG_(pp_UOperand)(u, 3, 4, True);
          break;
 

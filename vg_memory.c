@@ -1514,6 +1514,14 @@ void init_memory_audit_callback (
                       "FATAL: executable base addr not as assumed.");
          VG_(message)(Vg_UserMsg, "name %s, actual %p, assumed %p.",
                       filename, start, VG_ASSUMED_EXE_BASE);
+         VG_(message)(Vg_UserMsg,
+            "One reason this could happen is that you have a shared object");
+         VG_(message)(Vg_UserMsg,
+            " whose name doesn't contain the characters \".so\", so Valgrind ");
+         VG_(message)(Vg_UserMsg,
+            "naively assumes it is the executable.  ");
+         VG_(message)(Vg_UserMsg,
+            "In that case, rename it appropriately.");
          VG_(panic)("VG_ASSUMED_EXE_BASE doesn't match reality");
       }
    }

@@ -1643,6 +1643,16 @@ int sendmsg(int s, const struct msghdr *msg, int flags)
 
 
 extern
+int __libc_recvmsg(int s, struct msghdr *msg, int flags);
+__attribute__((weak))
+int recvmsg(int s, struct msghdr *msg, int flags)
+{
+   __my_pthread_testcancel();
+   return __libc_recvmsg(s, msg, flags);
+}
+
+
+extern
 int __libc_recvfrom(int s, void *buf, size_t len, int flags,
                     struct sockaddr *from, socklen_t *fromlen);
 __attribute__((weak))

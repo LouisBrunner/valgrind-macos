@@ -207,8 +207,8 @@ weak_alias(_IO_ftrylockfile, ftrylockfile)
 //__attribute__((weak)) void pwrite ( void ) { vgPlain_unimp("pwrite"); }
 //__attribute__((weak)) void msync ( void ) { vgPlain_unimp("msync"); }
 __attribute__((weak)) void pause ( void ) { vgPlain_unimp("pause"); }
-__attribute__((weak)) void recvfrom ( void ) { vgPlain_unimp("recvfrom"); }
-__attribute__((weak)) void recvmsg ( void ) { vgPlain_unimp("recvmsg"); }
+//__attribute__((weak)) void recvfrom ( void ) { vgPlain_unimp("recvfrom"); }
+//__attribute__((weak)) void recvmsg ( void ) { vgPlain_unimp("recvmsg"); }
 //__attribute__((weak)) void sendmsg ( void ) { vgPlain_unimp("sendmsg"); }
 __attribute__((weak)) void tcdrain ( void ) { vgPlain_unimp("tcdrain"); }
 //--//__attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }

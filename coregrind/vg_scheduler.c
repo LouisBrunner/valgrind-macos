@@ -152,7 +152,7 @@ ThreadId VG_(first_matching_thread_stack)
       VG_(baseBlock). */
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
-      if ( p ( VG_(baseBlock)[VGOFF_(m_esp)], 
+      if ( p ( VG_(baseBlock)[VGOFF_STACK_PTR], 
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
       else
@@ -162,7 +162,7 @@ ThreadId VG_(first_matching_thread_stack)
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
-      if ( p ( VG_(threads)[tid].arch.m_esp,
+      if ( p ( ARCH_STACK_PTR(VG_(threads)[tid].arch),
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
    }
@@ -194,8 +194,9 @@ void VG_(pp_sched_status) ( void )
                   VG_(threads)[i].associated_mx,
                   VG_(threads)[i].associated_cv );
       VG_(pp_ExeContext)( 
-         VG_(get_ExeContext2)( VG_(threads)[i].arch.m_eip, VG_(threads)[i].arch.m_ebp,
-                               VG_(threads)[i].arch.m_esp, 
+         VG_(get_ExeContext2)( ARCH_INSTR_PTR(VG_(threads)[i].arch),
+                               ARCH_FRAME_PTR(VG_(threads)[i].arch),
+                               ARCH_STACK_PTR(VG_(threads)[i].arch),
                                VG_(threads)[i].stack_highest_word)
       );
    }
@@ -836,18 +837,19 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 #        if 0
          if (VG_(bbs_done) > 31700000 + 0) {
             dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
-            VG_(translate)(&VG_(threads)[tid], VG_(threads)[tid].arch.m_eip,
+            VG_(translate)(&VG_(threads)[tid], 
+                           ARCH_INSTR_PTR(VG_(threads)[tid].arch),
                            /*debugging*/True);
          }
-         vg_assert(VG_(threads)[tid].arch.m_eip != 0);
+         vg_assert(ARCH_INSTR_PTR(VG_(threads)[tid].arch) != 0);
 #        endif
 
          trc = run_thread_for_a_while ( tid );
 
 #        if 0
-         if (0 == VG_(threads)[tid].arch.m_eip) {
+         if (0 == ARCH_INSTR_PTR(VG_(threads)[tid].arch)) {
             VG_(printf)("tid = %d,  dc = %llu\n", tid, VG_(bbs_done));
-            vg_assert(0 != VG_(threads)[tid].arch.m_eip);
+            vg_assert(0 != ARCH_INSTR_PTR(VG_(threads)[tid].arch));
          }
 #        endif
 
@@ -859,11 +861,14 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
-            trans_addr = VG_(search_transtab) ( VG_(threads)[tid].arch.m_eip );
+            trans_addr = VG_(search_transtab) 
+                              ( ARCH_INSTR_PTR(VG_(threads)[tid].arch) );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               VG_(translate)( tid, VG_(threads)[tid].arch.m_eip, /*debug*/False ); 
-               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].arch.m_eip ); 
+               VG_(translate)( tid, ARCH_INSTR_PTR(VG_(threads)[tid].arch),
+                               /*debug*/False ); 
+               trans_addr = VG_(search_transtab) 
+                                 ( ARCH_INSTR_PTR(VG_(threads)[tid].arch) ); 
                if (trans_addr == (Addr)0)
                   VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
             }
@@ -901,7 +906,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                to exit. */
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].arch.m_esp;
+              esp=(UInt*)ARCH_STACK_PTR(VG_(threads)[tid].arch);
               VG_(printf)("\nBEFORE\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -939,7 +944,8 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                         "Caught __NR_exit; running __libc_freeres()");
                   }
                   VG_(nuke_all_threads_except) ( tid );
-                  VG_(threads)[tid].arch.m_eip = (UInt)__libc_freeres_wrapper;
+                  ARCH_INSTR_PTR(VG_(threads)[tid].arch) = 
+                        (UInt)__libc_freeres_wrapper;
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
 
@@ -971,7 +977,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].arch.m_esp;
+              esp=(UInt*)ARCH_STACK_PTR(VG_(threads)[tid].arch);
               VG_(printf)("AFTER\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1165,7 +1171,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    * (UInt*)(VG_(threads)[tid].arch.m_esp) = 0xBEADDEEF;
 
    /* .cancel_pend will hold &thread_exit_wrapper */
-   VG_(threads)[tid].arch.m_eip = (UInt)VG_(threads)[tid].cancel_pend;
+   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)VG_(threads)[tid].cancel_pend;
 
    VG_(proxy_abort_syscall)(tid);
 
@@ -1832,7 +1838,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_TRACK ( post_mem_write, VG_(threads)[tid].arch.m_esp, 2 * 4 );
 
    /* this is where we start */
-   VG_(threads)[tid].arch.m_eip = (UInt)fn;
+   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UInt)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "new thread, created by %d", parent_tid );
@@ -3264,7 +3270,7 @@ void scheduler_sanity ( void )
       if (VG_(threads)[i].status != VgTs_Empty) {
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
-                      - (Addr)VG_(threads)[i].arch.m_esp;
+                      - (Addr)ARCH_STACK_PTR(VG_(threads)[i].arch);
          Int
          stack_avail = VG_(threads)[i].stack_size
                        - VG_AR_CLIENT_STACKBASE_REDZONE_SZB

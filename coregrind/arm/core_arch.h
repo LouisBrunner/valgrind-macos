@@ -118,10 +118,10 @@ struct _ThreadArchAux {
    ------------------------------------------------------------------ */
 
 // Valgrind's signal stack size, in words.
-#define VG_SIGSTACK_SIZE_W    10000
+#define VGA_SIGSTACK_SIZE_W   10000
 
 // Base address of client address space.
-#define CLIENT_BASE	0x00000000ul
+#define VGA_CLIENT_BASE       0x0ul
 
 #endif   // __ARM_CORE_ARCH_H
 

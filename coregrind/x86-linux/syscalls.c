@@ -186,7 +186,7 @@ static UInt *allocstack(ThreadId tid)
    UInt *esp;
 
    if (tst->os_state.stack == NULL) {
-      void *stk = VG_(mmap)(0, VG_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
+      void *stk = VG_(mmap)(0, VGA_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
 			    VKI_PROT_READ|VKI_PROT_WRITE,
 			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
 			    SF_VALGRIND,
@@ -195,7 +195,7 @@ static UInt *allocstack(ThreadId tid)
       if (stk != (void *)-1) {
 	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
 	 tst->os_state.stack = (UInt *)stk + VKI_PAGE_SIZE/sizeof(UInt);
-	 tst->os_state.stacksize = VG_STACK_SIZE_W;
+	 tst->os_state.stacksize = VGA_STACK_SIZE_W;
       } else 
 	 return (UInt *)-1;
    }

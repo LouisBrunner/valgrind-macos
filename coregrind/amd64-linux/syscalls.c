@@ -189,7 +189,7 @@ static ULong *allocstack(ThreadId tid)
    UInt*  pUInt;
 
    if (tst->os_state.stack == NULL) {
-      void *stk = VG_(mmap)(0, VG_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
+      void *stk = VG_(mmap)(0, VGA_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
 			    VKI_PROT_READ|VKI_PROT_WRITE,
 			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
 			    SF_VALGRIND,

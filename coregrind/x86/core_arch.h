@@ -118,13 +118,13 @@ typedef VexGuestX86State VexGuestArchState;
    ------------------------------------------------------------------ */
 
 // Valgrind's signal stack size, in words.
-#define VG_SIGSTACK_SIZE_W    10000
+#define VGA_SIGSTACK_SIZE_W   10000
 
 // Valgrind's stack size, in words.
-#define VG_STACK_SIZE_W    16384
+#define VGA_STACK_SIZE_W      16384
 
 // Base address of client address space.
-#define CLIENT_BASE	0x00000000ul
+#define VGA_CLIENT_BASE       0x0ul
 
 /* ---------------------------------------------------------------------
    Signal stuff (should be plat)

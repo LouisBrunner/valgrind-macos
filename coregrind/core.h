@@ -863,6 +863,11 @@ typedef struct ProxyLWP ProxyLWP;
 
    /* Architecture-specific thread state */
    ThreadArchState arch;
+
+   /* Used in the syscall handlers.  Set to True to indicate that the
+      PRE routine for a syscall has set the syscall result already and
+      so the syscall does not need to be handed to the kernel. */
+   Bool syscall_result_set;
 };
 //ThreadState;
 
@@ -1424,7 +1429,10 @@ void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
 #define ARG5    SYSCALL_ARG5(tst->arch)
 #define ARG6    SYSCALL_ARG6(tst->arch)
 
-#define SET_RESULT(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
+#define SET_RESULT(val)                                \
+   do { PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val)); \
+        tst->syscall_result_set = True;                \
+   } while (0)
 
 #define PRINT(format, args...)  \
    if (VG_(clo_trace_syscalls))        \

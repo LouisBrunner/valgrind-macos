@@ -3694,6 +3694,7 @@ PRE(old_mmap, Special)
 
    if (RES != -VKI_ENOMEM) {
       PLATFORM_DO_MMAP(RES, a1, a2, a3, a4, a5, a6);
+      SET_RESULT(RES);
 
       if (!VG_(is_kerror)(RES)) {
          vg_assert(VG_(valid_client_addr)(RES, a2, tid, "old_mmap"));
@@ -4901,6 +4902,7 @@ PRE(sys_rt_sigaction, Special)
    // sys_rt_sigaction... perhaps this function should be renamed
    // VG_(do_sys_rt_sigaction)()  --njn
    VG_(do_sys_sigaction)(tid);
+   SET_RESULT( 0/*success*/ );
 }
 
 POST(sys_rt_sigaction)
@@ -4968,11 +4970,13 @@ PRE(sys_rt_sigprocmask, Special)
    // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
    if (sizeof(vki_sigset_t) != ARG4)
       SET_RESULT( -VKI_EMFILE );
-   else
+   else {
       VG_(do_sys_sigprocmask) ( tid, 
 				ARG1 /*how*/, 
 				(vki_sigset_t*) ARG2,
 				(vki_sigset_t*) ARG3 );
+      SET_RESULT( 0/*success*/ );
+   }
 }
 
 POST(sys_rt_sigprocmask)
@@ -5319,6 +5323,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       VGP_PUSHCC(VgpToolSysWrap);
       TL_(pre_syscall)(tid, syscallno);
       VGP_POPCC(VgpToolSysWrap);
+      /* This may result in tst->syscall_result_set becoming True. */
    }
 
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
@@ -5334,22 +5339,22 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 sets the result.  Special syscalls cannot block. */
       vg_assert(!mayBlock && !runInLWP);
 
+      tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
 
       vg_assert(tst->sys_flags == flags);
+      vg_assert(tst->syscall_result_set == True);
 
       PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
       syscall_done = True;
    } else {
+      tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
 
-      /* JRS 2005 Feb 10: checking RES <= 0 causes sys_read to appear
-         to fail on amd64, because RES and the syscall number (0) live
-         in the same guest register -- %RAX.  Bad. */
-      if ((Word)RES < 0) {
-	 /* "before" decided the syscall wasn't viable, so don't do
-	    anything - just pretend the syscall happened. */
-         PRINT(" ==> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
+      if (tst->syscall_result_set) {
+	 /* "before" decided to provide a syscall result itself, so
+	    don't do anything - just pretend the syscall happened. */
+         PRINT(" ==> %lld (0x%llx)\n", (Long)RES, (ULong)RES);
 	 syscall_done = True;
       } else if (runInLWP) {
 	 /* Issue to worker.  If we're waiting on the syscall because

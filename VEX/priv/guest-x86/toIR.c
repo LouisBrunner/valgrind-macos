@@ -3624,6 +3624,8 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
       Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
       documentation implies A and S are unchanged. 
    */
+   /* It's also fishy in that it is used both for COMIP and
+      UCOMIP, and they aren't the same (although similar). */
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    stmt( IRStmt_Put( OFFB_CC_DEP1,
@@ -3792,7 +3794,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       if (modrm < 0xC0) {
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
-           specifies an address. */
+            specifies an address. */
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
 
@@ -4017,6 +4019,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
             }
 
+            case 0xF7: /* FINCSTP */
+               DIP("fprem\n");
+               put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
+               break;
+
             case 0xF8: { /* FPREM -- not IEEE compliant */
                IRTemp a1 = newTemp(Ity_F64);
                IRTemp a2 = newTemp(Ity_F64);
@@ -4079,7 +4086,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
       if (modrm < 0xC0) {
 
-          /* bits 5,4,3 are an opcode extension, and the modRM also
+         /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
          IROp   fop;
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
@@ -4178,7 +4185,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    if (first_opcode == 0xDB) {
       if (modrm < 0xC0) {
 
-          /* bits 5,4,3 are an opcode extension, and the modRM also
+         /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
@@ -4298,7 +4305,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       if (modrm < 0xC0) {
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
-           specifies an address. */
+            specifies an address. */
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
 
@@ -4405,7 +4412,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
       if (modrm < 0xC0) {
 
-          /* bits 5,4,3 are an opcode extension, and the modRM also
+         /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
@@ -4598,7 +4605,68 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    if (first_opcode == 0xDE) {
 
       if (modrm < 0xC0) {
-         goto decode_fail;
+
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IROp   fop;
+         IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+
+            case 0: /* FIADD m16int */ /* ST(0) += m16int */
+               DIP("fiaddw %s", dis_buf);
+               fop = Iop_AddF64;
+               goto do_fop_m16;
+
+            case 1: /* FIMUL m16int */ /* ST(0) *= m16int */
+               DIP("fimulw %s", dis_buf);
+               fop = Iop_MulF64;
+               goto do_fop_m16;
+
+            case 4: /* FISUB m16int */ /* ST(0) -= m16int */
+               DIP("fisubw %s", dis_buf);
+               fop = Iop_SubF64;
+               goto do_fop_m16;
+
+            case 5: /* FISUBR m16int */ /* ST(0) = m16int - ST(0) */
+               DIP("fisubrw %s", dis_buf);
+               fop = Iop_SubF64;
+               goto do_foprev_m16;
+
+            case 6: /* FIDIV m16int */ /* ST(0) /= m16int */
+               DIP("fisubw %s", dis_buf);
+               fop = Iop_DivF64;
+               goto do_fop_m16;
+
+            case 7: /* FIDIVR m16int */ /* ST(0) = m16int / ST(0) */
+               DIP("fidivrw %s", dis_buf);
+               fop = Iop_DivF64;
+               goto do_foprev_m16;
+
+            do_fop_m16:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        get_ST(0),
+                        unop(Iop_I32toF64,
+                             unop(Iop_16Sto32, 
+                                  loadLE(Ity_I16, mkexpr(addr))))));
+               break;
+
+            do_foprev_m16:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        unop(Iop_I32toF64,
+                             unop(Iop_16Sto32, 
+                                  loadLE(Ity_I16, mkexpr(addr)))),
+                        get_ST(0)));
+               break;
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDE\n");
+               goto decode_fail;
+         }
 
       } else {
 
@@ -4656,7 +4724,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
       if (modrm < 0xC0) {
 
-          /* bits 5,4,3 are an opcode extension, and the modRM also
+         /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
@@ -4727,6 +4795,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );
+               break;
+
+            case 0xF0 ... 0xF7: /* FCOMIP %st(0),%st(?) */
+               /* not really right since COMIP != UCOMIP */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, True );
                break;
 
             default: 
@@ -6619,7 +6692,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*OUT*/ Addr64* whereNext )
 {
    IRType    ty;
-   IRTemp    addr, t1, t2;
+   IRTemp    addr, t1, t2, t3, t4;
    Int       alen;
    UChar     opc, modrm, abyte;
    UInt      d32;
@@ -6646,8 +6719,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assert. */
    *size = 0;
 
-   addr = t1 = t2 = IRTemp_INVALID; 
-   //t3 = t4 = IRTemp_INVALID;
+   addr = t1 = t2 = t3 = t4 = IRTemp_INVALID; 
 
    DIP("\t0x%x:  ", guest_eip_bbstart+delta);
 
@@ -8786,47 +8858,40 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       DIP("popa%c\n", nameISize(sz));
 //--       break;
 //--     }
-//-- 
-//--    case 0x8F: /* POPL/POPW m32 */
-//--      { UInt pair1;
-//--        Int  tmpa;
-//--        UChar rm = getIByte(delta);
-//-- 
-//--        /* make sure this instruction is correct POP */
-//--        vg_assert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
-//--        /* and has correct size */
-//--        vg_assert(sz == 4);      
-//--        
-//--        t1 = newTemp(cb); t3 = newTemp(cb);
-//--        /* set t1 to ESP: t1 = ESP */
-//--        uInstr2(cb, GET,  4, ArchReg, R_ESP,    TempReg, t1);
-//--        /* load M[ESP] to virtual register t3: t3 = M[t1] */
-//--        uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
-//--        
-//--        /* increase ESP; must be done before the STORE.  Intel manual says:
-//--             If the ESP register is used as a base register for addressing
-//--             a destination operand in memory, the POP instruction computes
-//--             the effective address of the operand after it increments the
-//--             ESP register.
-//--        */
-//--        uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
-//--        uLiteral(cb, sz);
-//--        uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
-//-- 
-//--        /* resolve MODR/M */
-//--        pair1 = disAMode ( cb, sorb, eip, dis_buf );              
-//--        
-//--        tmpa = LOW24(pair1);
-//--        /*  uInstr2(cb, LOAD, sz, TempReg, tmpa, TempReg, tmpa); */
-//--        /* store value from stack in memory, M[m32] = t3 */       
-//--        uInstr2(cb, STORE, 4, TempReg, t3, TempReg, tmpa);
-//-- 
-//--        DIP("popl %s\n", dis_buf);
-//-- 
-//--        eip += HI8(pair1);
-//--        break;
-//--      }
-//-- 
+
+   case 0x8F: /* POPL/POPW m32 */
+     { Int len;
+       UChar rm = getIByte(delta);
+
+       /* make sure this instruction is correct POP */
+       vassert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
+       /* and has correct size */
+       vassert(sz == 4);      
+       
+       t1 = newTemp(Ity_I32); t3 = newTemp(Ity_I32);
+       /* set t1 to ESP: t1 = ESP */
+       assign( t1, getIReg(4, R_ESP) );
+       /* load M[ESP] to virtual register t3: t3 = M[t1] */
+       assign( t3, loadLE(Ity_I32, mkexpr(t1)) );
+       
+       /* increase ESP; must be done before the STORE.  Intel manual says:
+            If the ESP register is used as a base register for addressing
+            a destination operand in memory, the POP instruction computes
+            the effective address of the operand after it increments the
+            ESP register.
+       */
+       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t1), mkU32(sz)) );
+
+       /* resolve MODR/M */
+       addr = disAMode ( &len, sorb, delta, dis_buf);
+       storeLE( mkexpr(addr), mkexpr(t3) );
+
+       DIP("popl %s\n", dis_buf);
+
+       delta += len;
+       break;
+     }
+
 //--    case 0x1F: /* POP %DS */
 //--       dis_pop_segreg( cb, R_DS, sz ); break;
 //--    case 0x07: /* POP %ES */
@@ -8874,7 +8939,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       break;
 
    case 0x9C: /* PUSHF */ {
-      IRTemp t3, t4;
       vassert(sz == 2 || sz == 4);
       vassert(sz == 4);  // wait for sz==2 test case
 

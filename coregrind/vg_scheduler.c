@@ -97,12 +97,12 @@ static ForkHandlerEntry vg_fhstack[VG_N_FORKHANDLERSTACK];
 
 
 /* The tid of the thread currently in VG_(baseBlock). */
-static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
+static ThreadId vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 
 /* The tid either currently in baseBlock, or was in baseBlock before
    was saved it out; this is only updated when a new thread is loaded
    into the baseBlock */
-static Int vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
+static ThreadId vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 jmp_buf VG_(scheduler_jmpbuf);
@@ -842,7 +842,7 @@ static
 void sched_do_syscall ( ThreadId tid )
 {
    UInt  saved_eax;
-   UInt  res, syscall_no;
+   Int   res, syscall_no;
    UInt  fd;
    void* pre_res;
    Bool  orig_fd_blockness;

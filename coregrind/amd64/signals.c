@@ -485,18 +485,23 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr rsp_top_of_frame,
                              const vki_sigset_t *mask,
 			     void *restorer)
 {
-   Addr		rsp;
+   Addr rsp;
+   struct rt_sigframe *frame;
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
    rsp = build_rt_sigframe(tst, rsp_top_of_frame, siginfo, 
                                 handler, flags, mask, restorer);
+   frame = (struct rt_sigframe *)rsp;
 
    /* Set the thread so it will next run the handler. */
-   /* tst->m_esp  = esp; */
+   /* tst->m_rsp  = rsp; */
    SET_SIGNAL_RSP(tid, rsp);
 
    //VG_(printf)("handler = %p\n", handler);
    tst->arch.vex.guest_RIP = (Addr) handler;
+   tst->arch.vex.guest_RDI = (ULong) siginfo->si_signo;
+   tst->arch.vex.guest_RSI = (Addr) &frame->sigInfo;
+   tst->arch.vex.guest_RDX = (Addr) &frame->uContext;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 

@@ -1838,7 +1838,7 @@ PRE(execve)
 PRE(access)
 {
    /* int access(const char *pathname, int mode); */
-   MAYBE_PRINTF("access ( %p, %d )\n", arg1,arg2);
+   MAYBE_PRINTF("access ( %p(%s), %d )\n", arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "access(pathname)", arg1 );
 }
 

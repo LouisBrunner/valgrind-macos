@@ -97,8 +97,8 @@ following:
 
 
 3.  Add a case to the already-huge collection of wrappers in 
-    vg_syscall_mem.c.  For each in-memory parameter which is read or
-    written by the syscall, do one of
+    coregrind/vg_syscalls.c.  For each in-memory parameter which is 
+    read or written by the syscall, do one of
     
       SYSCALL_TRACK( pre_mem_read, ... )
       SYSCALL_TRACK( pre_mem_read_asciiz, ... ) 

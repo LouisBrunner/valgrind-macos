@@ -136,7 +136,8 @@ void mprotect_segment ( Addr a, UInt len, Int prot )
 }
 
 static 
-void mremap_segment ( old_addr, old_size, new_addr, new_size )
+void mremap_segment ( Addr old_addr, UInt old_size, Addr new_addr,
+                      UInt new_size )
 {
    /* If the block moves, assume new and old blocks can't overlap; seems to
     * be valid judging from Linux kernel code in mm/mremap.c */
@@ -577,7 +578,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_mount)
-      case __NR_mount:
+      case __NR_mount: /* syscall 21 */
          /* int mount(const char *specialfile, const char *dir,
             const char *filesystemtype, unsigned long rwflag,
             const void *data); */
@@ -590,7 +591,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_umount)
-      case __NR_umount:
+      case __NR_umount: /* syscall 22 */
          /* int umount(const char *path) */
          MAYBE_PRINTF("umount( %p )\n", arg1);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst,"umount(path)",arg1);
@@ -988,7 +989,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_sched_getscheduler)
-      case __NR_sched_getscheduler:
+      case __NR_sched_getscheduler: /* syscall 157 */
          /* int sched_getscheduler(pid_t pid); */
          MAYBE_PRINTF("sched_getscheduler ( %d )\n", arg1);
          KERNEL_DO_SYSCALL(tid,res);
@@ -996,7 +997,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_sched_setscheduler)
-      case __NR_sched_setscheduler:
+      case __NR_sched_setscheduler: /* syscall 156 */
          /* int sched_setscheduler(pid_t pid, int policy, 
                 const struct sched_param *p); */
          MAYBE_PRINTF("sched_setscheduler ( %d, %d, %p )\n",arg1,arg2,arg3);
@@ -1009,7 +1010,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_mlock)
-      case __NR_mlock:
+      case __NR_mlock: /* syscall 150 */
          /* int mlock(const void * addr, size_t len) */
          MAYBE_PRINTF("mlock ( %p, %d )\n", arg1, arg2);
          KERNEL_DO_SYSCALL(tid,res);
@@ -1017,7 +1018,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_munlock)
-      case __NR_munlock:
+      case __NR_munlock: /* syscall 151 */
          /* int munlock(const void * addr, size_t len) */
          MAYBE_PRINTF("munlock ( %p, %d )\n", arg1, arg2);
          KERNEL_DO_SYSCALL(tid,res);
@@ -1025,7 +1026,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_mlockall)
-      case __NR_mlockall:
+      case __NR_mlockall: /* syscall 152 */
          /* int mlockall(int flags); */
          MAYBE_PRINTF("mlockall ( %x )\n", arg1);
          KERNEL_DO_SYSCALL(tid,res);
@@ -1033,7 +1034,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #     if defined(__NR_munlockall)
-      case __NR_munlockall:
+      case __NR_munlockall: /* syscall 153 */
          /* int munlockall(void); */
          MAYBE_PRINTF("munlockall ( )\n");
          KERNEL_DO_SYSCALL(tid,res);
@@ -1041,7 +1042,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
 #if   defined(__NR_sched_get_priority_max)
-      case __NR_sched_get_priority_max:
+      case __NR_sched_get_priority_max: /* syscall 159 */
          /* int sched_get_priority_max(int policy); */
          MAYBE_PRINTF("sched_get_priority_max ( %d )\n", arg1);
          KERNEL_DO_SYSCALL(tid,res);
@@ -3387,8 +3388,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_TRACK( post_mem_write, arg2, sizeof(vki_kstack_t));
          break;
 
-      case __NR_rt_sigaction:
-      case __NR_sigaction:
+      case __NR_rt_sigaction: /* syscall 174 */
+      case __NR_sigaction:    /* syscall 67  */
          /* int sigaction(int signum, struct k_sigaction *act, 
                                       struct k_sigaction *oldact); */
          MAYBE_PRINTF("sigaction ( %d, %p, %p )\n",arg1,arg2,arg3);
@@ -3410,8 +3411,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_TRACK( post_mem_write, arg3, sizeof(vki_ksigaction));
          break;
 
-      case __NR_rt_sigprocmask:
-      case __NR_sigprocmask:
+      case __NR_rt_sigprocmask: /* syscall 175 */
+      case __NR_sigprocmask:    /* syscall 126 */
          /* int sigprocmask(int how, k_sigset_t *set, 
                                      k_sigset_t *oldset); */
          MAYBE_PRINTF("sigprocmask ( %d, %p, %p )\n",arg1,arg2,arg3);

@@ -459,12 +459,10 @@ static void assign ( IRTemp dst, IRExpr* e )
    stmt( IRStmt_Tmp(dst, e) );
 }
 
-#if 0
 static void storeBE ( IRExpr* addr, IRExpr* data )
 {
    stmt( IRStmt_STle(addr,data) );
 }
-#endif
 
 static IRExpr* unop ( IROp op, IRExpr* a )
 {
@@ -1144,17 +1142,98 @@ static Bool dis_int_logic ( UInt theInstr )
 
 
 
+static Bool dis_int_store ( UInt theInstr )
+{
+    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
+    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
+    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[11:15] -> [16:20] */
+
+    /* D-Form */
+    UInt  d_16    = (theInstr >>  0) & 0xFFFF;    /* theInstr[16:31] -> [0:15] */
+
+    /* X-Form */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10] */
+    UChar b31     = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0] */
+
+    IRTemp Rs   = newTemp(Ity_I32);
+    IRTemp tmp1 = newTemp(Ity_I32);
+    IRTemp tmp2 = newTemp(Ity_I32);
+
+    switch (opc1) {
+    case 0x26: // stb
+	return False;
+
+    case 0x27: // stbu
+	return False;
+
+    case 0x2C: // sth
+	return False;
+
+    case 0x2D: // sthu
+	return False;
+
+    case 0x24: // stw
+	DIP("stw %d,%d(%d)\n", Rs_addr, d_16, Ra_addr);
+	assign( Rs, mkexpr(Rs_addr) );
+	if (Ra_addr == 0) {
+	    assign( tmp1, mkU32(0) );
+	} else {
+	    assign( tmp1, getIReg(Ra_addr) );
+	}
+	assign( tmp2, binop(Iop_Add32, mkexpr(tmp1),
+			    mkU32(extend_s_16to32(d_16))) );
+	storeBE( mkexpr(tmp2), mkexpr(Rs_addr) );
+	break;
+
+    case 0x25: // stwu
+	return False;
+
+    /* X Form */
+    case 0x1F:
+	if (b31 != 0) { return False; }
+	switch (opc2) {
+	case 0x0F7: // stbux
+	    return False;
+
+	case 0x0D7: // stbx
+	    return False;
+
+	case 0x1B7: // sthux
+	    return False;
+
+	case 0x197: // sthx
+	    return False;
+
+	case 0x0B7: // stwux
+	    return False;
+
+	case 0x097: // stwx
+	    return False;
+
+	default:
+	    return False;
+	}
+	break;
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
 static Bool dis_branch ( theInstr )
 {
     UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
-    UChar BO       = (theInstr >>  6) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
-    UChar BI       = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] -> [16:20] */
-    UInt  BD       = (theInstr >> 16) & 0x3FFF;    /* theInstr[16:29] -> [2:15]  */
-    UChar b16to20  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] -> [11:15] */
-    UInt  opc2     = (theInstr >> 21) & 0x3FF;     /* theInstr[21:30] -> [1:10]  */
-    UInt  LI       = (theInstr >>  6) & 0xFFFFFF;  /* theInstr[6:29]  -> [2:25]  */
-    UChar flag_AA  = (theInstr >> 30) & 1;         /* theInstr[30]    -> [1]     */
-    UChar flag_LK  = (theInstr >> 31) & 1;         /* theInstr[31]    -> [0]     */
+    UChar BO       = (theInstr >> 21) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
+    UChar BI       = (theInstr >> 16) & 0x1F;      /* theInstr[11:15] -> [16:20] */
+    UInt  BD       = (theInstr >>  2) & 0x3FFF;    /* theInstr[16:29] -> [2:15]  */
+    UChar b16to20  = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
+    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10]  */
+    UInt  LI_24    = (theInstr >>  2) & 0xFFFFFF;  /* theInstr[6:29]  -> [2:25]  */
+    UChar flag_AA  = (theInstr >>  1) & 1;         /* theInstr[30]    -> [1]     */
+    UChar flag_LK  = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0]     */
 
     IRTemp ctr = newTemp(Ity_I32);
     IRTemp cia = newTemp(Ity_I32);
@@ -1171,11 +1250,14 @@ static Bool dis_branch ( theInstr )
 
     assign( lr, binop(Iop_Add32, mkexpr(cia), mkU32(4)) );
 
-    vex_printf("disInstr(ppc32): In: 0x%8x, %,031b\n", theInstr, theInstr );
+//    vex_printf("disInstr(ppc32): In: 0x%8x, %,031b\n", theInstr, theInstr );
+//    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24);
+//    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24 << 2);
+//    vex_printf("disInstr(ppc32): LI: %,031b\n", extend_s_24to32(LI_24 << 2));
 
     switch (opc1) {
     case 0x12: // b                  (Branch)
-	assign( tmp, mkU32(extend_s_24to32(LI << 2)) );
+	assign( tmp, mkU32(extend_s_24to32(LI_24 << 2)) );
 	if (flag_AA) {
 	    assign( nia, mkexpr(tmp) );
 	} else {
@@ -1188,7 +1270,7 @@ static Bool dis_branch ( theInstr )
 	irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
 	irbb->next     = mkexpr(nia);
 
-	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI);
+	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
 	break;
 
     case 0x10: // bc                 (Branch Conditional)
@@ -1406,10 +1488,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    opc1 = (theInstr >> 26) & 0x3F;     /* opcode1: [0:5] -> [26:31] */
    opc2 = (theInstr >> 1 ) & 0x3FF;    /* opcode2: [21:30] -> [1:10] */
 
-   vex_printf("\n");
-   vex_printf("disInstr(ppc32): instr:   0x%8x, %,039b\n", theInstr, theInstr );
-   vex_printf("disInstr(ppc32): opcode1: 0x%02x, %06b\n", opc1, opc1 );
-   vex_printf("disInstr(ppc32): opcode2: 0x%02x, %010b\n", opc2, opc2 );
+//   vex_printf("\n");
+//   vex_printf("disInstr(ppc32): instr:   0x%8x, %,039b\n", theInstr, theInstr );
+//   vex_printf("disInstr(ppc32): opcode1: 0x%02x, %06b\n", opc1, opc1 );
+//   vex_printf("disInstr(ppc32): opcode2: 0x%02x, %010b\n", opc2, opc2 );
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {
@@ -1444,6 +1526,18 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x1A: // xori
    case 0x1B: // xoris
        if (dis_int_logic(theInstr)) break;
+       goto decode_failure;
+
+   /*
+     Integer Store Instructions
+   */
+   case 0x26: // stb
+   case 0x27: // stbu
+   case 0x2C: // sth
+   case 0x2D: // sthu
+   case 0x24: // stw
+   case 0x25: // stwu
+       if (dis_int_store(theInstr)) break;
        goto decode_failure;
 
    /*
@@ -1497,29 +1591,39 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
        /*
 	 Integer Compare Instructions
-	 Rc=0
        */
-       case 0x000: // cmp, b9=0
-       case 0x020: // cmpl, b9=0
+       case 0x000: // cmp
+       case 0x020: // cmpl
 	   if (dis_int_cmp(theInstr)) break;
 	   goto decode_failure;
 
        /*
 	 Integer Logical Instructions
-	 No OE, have Rc:
        */
        case 0x01C: // and
        case 0x03C: // andc
-       case 0x01A: // cntlzw, B=0
+       case 0x01A: // cntlzw
        case 0x11C: // eqv
-       case 0x3BA: // extsb, B=0
-       case 0x39A: // extsh, B=0
+       case 0x3BA: // extsb
+       case 0x39A: // extsh
        case 0x1DA: // nand
        case 0x07C: // nor
        case 0x1BC: // or
        case 0x19C: // orc
        case 0x13C: // xor
 	   if (dis_int_logic(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Integer Store Instructions
+       */
+       case 0x0F7: // stbux
+       case 0x0D7: // stbx
+       case 0x1B7: // sthux
+       case 0x197: // sthx
+       case 0x0B7: // stwux
+       case 0x097: // stwx
+	   if (dis_int_store(theInstr)) break;
 	   goto decode_failure;
 
        default:

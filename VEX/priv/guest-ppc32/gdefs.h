@@ -45,7 +45,7 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_PPC32 ( UChar*           pp32code, 
+IRBB* bbToIR_PPC32 ( UChar*           ppc32code, 
 		     Addr64           eip, 
 		     VexGuestExtents* vge,
 		     Bool             (*byte_accessible)(Addr64),

@@ -1164,37 +1164,66 @@ void VG_(oynk) ( Int n )
    "valgrinq.so", which doesn't do anything.  This is used to avoid
    tracing into child processes.  To make this work the build system
    also supplies a dummy file, "valgrinq.so". 
+
+   Also look for $(libdir)/lib/valgrind in LD_LIBRARY_PATH and change
+   it to $(libdir)/lib/valgrinq, so as to make our libpthread.so
+   disappear.  
 */
 void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
                                                 Char* ld_library_path_str )
 {
-   Char* p;
-   vg_assert(ld_preload_str != NULL);
-   vg_assert(ld_library_path_str != NULL);
-   /* VG_(printf)("%s %s\n", ld_preload_str, ld_library_path_str); */
-   /* in LD_PRELOAD, turn valgrind.so into valgrinq.so. */
-   p = VG_(strstr)(ld_preload_str, "valgrind.so");
+   Char* p_prel = NULL;
+   Char* p_path = NULL;
+   Int   what = 0;
+   if (ld_preload_str == NULL || ld_library_path_str == NULL)
+      goto mutancy;
 
-   if (p == NULL) {
+   /* VG_(printf)("%s %s\n", ld_preload_str, ld_library_path_str); */
+
+   p_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
+   p_path = VG_(strstr)(ld_library_path_str, VG_LIBDIR);
+
+   if (p_prel == NULL) {
       /* perhaps already happened? */
-      vg_assert(VG_(strstr)(ld_preload_str, "valgrinq.so") != NULL);
-      vg_assert(VG_(strstr)(ld_library_path_str, "lib/valgrinq") != NULL);
+      what = 1;
+      if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL)
+         goto mutancy;
+      if (VG_(strstr)(ld_library_path_str, "lib/valgrinq") == NULL)
+         goto mutancy;
       return;
    }
 
-   vg_assert(p[7] == 'd');
-   p[7] = 'q';
+   what = 2;
+   if (p_path == NULL) goto mutancy;
+
+   /* in LD_PRELOAD, turn valgrind.so into valgrinq.so. */
+   what = 3;
+   if (p_prel[7] != 'd') goto mutancy;
+   p_prel[7] = 'q';
 
    /* in LD_LIBRARY_PATH, turn $libdir/valgrind (as configure'd) from 
       .../lib/valgrind .../lib/valgrinq, which doesn't exist,
       so that our own libpthread.so goes out of scope. */
-   p = VG_(strstr)(ld_library_path_str, VG_LIBDIR);
-   vg_assert(NULL != p);
-   p += VG_(strlen)(VG_LIBDIR);
-   p += VG_(strlen)("/valgrind");
-   p --;
-   vg_assert(p[0] == 'd');
-   p[0] = 'q';
+   p_path += VG_(strlen)(VG_LIBDIR);
+   what = 4;
+   if (p_path[0] != '/') goto mutancy;
+   p_path++; /* step over / */
+   what = 5;
+   if (p_path[7] != 'd') goto mutancy;
+   p_path[7] = 'q';
+   return;
+
+  mutancy:
+   VG_(printf)(
+      "\nVG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:\n"
+      "   what                = %d\n"
+      "   ld_preload_str      = `%s'\n"
+      "   ld_library_path_str = `%s'\n"
+      "   p_prel              = `%s'\n"
+      "   p_path              = `%s'\n"
+      "   VG_LIBDIR           = `%s'\n",
+       what, ld_preload_str, ld_library_path_str, p_prel, p_path, VG_LIBDIR );
+   VG_(panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
 }
 
 

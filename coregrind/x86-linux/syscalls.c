@@ -307,20 +307,6 @@ PRE(sys_get_thread_area, Special)
    The x86/Linux syscall table
    ------------------------------------------------------------------ */
 
-// XXX: temporary: I've started labelled each entry with the target of its
-// __NR_foo-->sys_foo() mapping, and the __NR_foo number (for x86), and
-// properties of the sys_foo() function:
-//   '*' ones are Linux-generic (ie. present in
-//       linux-2.6.8.1/include/linux/syscalls.h);  non-generic ones have an
-//       indication of which architecture they are specific to.
-//   "##" ones are Linux-generic, but within a "#ifdef CONFIG_UID16".
-//   "%%" ones are Linux-generic, but within a "#if BITS_PER_LONG == 32"
-//   'P' ones are POSIX-generic, according to man pages.  
-//   'L' ones are Linux-specific, according to man pages.
-
-// XXX: this does duplicate the vki_unistd.h file somewhat -- could make
-// this table replace that somehow...
-
 #define GENX_(const, name) \
    [const] = { &VGA_(gen_##name##_flags), VGA_(gen_##name##_before), NULL }
 #define GENXY(const, name) \

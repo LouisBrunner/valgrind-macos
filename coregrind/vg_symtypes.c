@@ -399,6 +399,7 @@ SymType *VG_(st_mktypedef)(SymType *st, Char *name, SymType *type)
 {
    st = alloc(st);
 
+   vg_assert(st != type);
    vg_assert(st->kind == TyUnresolved || st->kind == TyUnknown ||
 	     st->kind == TyStruct || st->kind == TyUnion ||
 	     st->kind == TyTypedef);

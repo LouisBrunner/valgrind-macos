@@ -180,7 +180,7 @@ void* __builtin_new ( Int n )
 }
 
 /* gcc 3.X.X mangles them differently. */
-void* _Znwj ( Int n )
+__attribute__((weak)) void* _Znwj ( Int n )
 {
   return __builtin_new(n);
 }
@@ -205,7 +205,7 @@ void* __builtin_vec_new ( Int n )
 }
 
 /* gcc 3.X.X mangles them differently. */
-void* _Znaj ( Int n )
+__attribute__((weak)) void* _Znaj ( Int n )
 {
   return __builtin_vec_new(n);
 }

@@ -3812,6 +3812,41 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       break;
     }
 
+   case 0x8F: /* POPL/POPW m32 */
+     { UInt pair1;
+       Int  tmpa;
+       UChar rm = getUChar(eip);
+
+       /* make sure this instruction is correct POP */
+       vg_assert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
+       /* and has correct size */
+       vg_assert(sz == 4);      
+       
+       t1 = newTemp(cb); t3 = newTemp(cb);
+       /* set t1 to ESP: t1 = ESP */
+       uInstr2(cb, GET,  4, ArchReg, R_ESP,    TempReg, t1);
+       /* load M[ESP] to virtual register t3: t3 = M[t1] */
+       uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
+       /* resolve MODR/M */
+       pair1 = disAMode ( cb, eip, dis?dis_buf:NULL);              
+       
+       tmpa = LOW24(pair1);
+       /*  uInstr2(cb, LOAD, sz, TempReg, tmpa, TempReg, tmpa); */
+       /* store value from stack in memory, M[m32] = t3 */       
+       uInstr2(cb, STORE, 4, TempReg, t3, TempReg, tmpa);
+
+       /* increase ESP */
+       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
+       uLiteral(cb, sz);
+       uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
+
+       if (dis) 
+          VG_(printf)("popl %s\n", dis_buf);
+
+       eip += HI8(pair1);
+       break;
+     }
+
    /* ------------------------ PUSH ----------------------- */
 
    case 0x50: /* PUSH eAX */

@@ -504,7 +504,6 @@ static IRExpr* mkexpr ( IRTemp tmp )
 
 static IRExpr* mkU8 ( UChar i )
 {
-   vassert(i < 256);
    return IRExpr_Const(IRConst_U8(i));
 }
 

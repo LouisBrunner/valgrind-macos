@@ -762,7 +762,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( a, 4, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 4, False );
       return;
    }
 
@@ -789,7 +789,7 @@ static void ac_ACCESS2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( a, 2, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 2, False );
    }
 }
 
@@ -803,7 +803,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( a, 1, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 1, False );
    }
 }
 
@@ -908,7 +908,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( addr, size, False );
+      MAC_(record_address_error)( /*tst*/NULL, addr, size, False );
    }
 }
 

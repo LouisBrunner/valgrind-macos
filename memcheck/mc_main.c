@@ -938,7 +938,7 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( a, 4, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 4, False );
       return (VGM_BYTE_VALID << 24) | (VGM_BYTE_VALID << 16) 
              | (VGM_BYTE_VALID << 8) | VGM_BYTE_VALID;
    }
@@ -981,7 +981,7 @@ static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( a, 4, True );
+      MAC_(record_address_error)( /*tst*/NULL, a, 4, True );
 }
 
 static UInt mc_rd_V2_SLOWLY ( Addr a )
@@ -1000,7 +1000,7 @@ static UInt mc_rd_V2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( a, 2, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 2, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_VALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1022,7 +1022,7 @@ static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( a, 2, True );
+      MAC_(record_address_error)( /*tst*/NULL, a, 2, True );
 }
 
 static UInt mc_rd_V1_SLOWLY ( Addr a )
@@ -1039,7 +1039,7 @@ static UInt mc_rd_V1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( a, 1, False );
+      MAC_(record_address_error)( /*tst*/NULL, a, 1, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_INVALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1058,7 +1058,7 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( a, 1, True );
+      MAC_(record_address_error)( /*tst*/NULL, a, 1, True );
 }
 
 
@@ -1069,22 +1069,22 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
 void MC_(helperc_value_check0_fail) ( void )
 {
-   MC_(record_value_error) ( 0 );
+   MC_(record_value_error) ( /*tst*/NULL, 0 );
 }
 
 void MC_(helperc_value_check1_fail) ( void )
 {
-   MC_(record_value_error) ( 1 );
+   MC_(record_value_error) ( /*tst*/NULL, 1 );
 }
 
 void MC_(helperc_value_check2_fail) ( void )
 {
-   MC_(record_value_error) ( 2 );
+   MC_(record_value_error) ( /*tst*/NULL, 2 );
 }
 
 void MC_(helperc_value_check4_fail) ( void )
 {
-   MC_(record_value_error) ( 4 );
+   MC_(record_value_error) ( /*tst*/NULL, 4 );
 }
 
 
@@ -1290,10 +1290,10 @@ void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( addr, size, False );
+      MAC_(record_address_error)( /*tst*/NULL, addr, size, False );
    } else {
      if (verr)
-        MC_(record_value_error)( size );
+        MC_(record_value_error)( /*tst*/NULL, size );
    }
 }
 
@@ -1320,7 +1320,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
       }
    }
    if (aerr) {
-      MAC_(record_address_error)( addr, size, True );
+      MAC_(record_address_error)( /*tst*/NULL, addr, size, True );
    }
 }
 
@@ -1332,6 +1332,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
 /* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
    error, 3 == addressing error. */
 Int MC_(get_or_set_vbits_for_client) ( 
+   ThreadState* tst,
    Addr dataV, 
    Addr vbitsV, 
    UInt size, 
@@ -1344,6 +1345,8 @@ Int MC_(get_or_set_vbits_for_client) (
    UInt* vbits = (UInt*)vbitsV;
    UInt  szW   = size / 4; /* sigh */
    UInt  i;
+   UInt* dataP  = NULL; /* bogus init to keep gcc happy */
+   UInt* vbitsP = NULL; /* ditto */
 
    /* Check alignment of args. */
    if (!(IS_ALIGNED4_ADDR(data) && IS_ALIGNED4_ADDR(vbits)))
@@ -1353,8 +1356,8 @@ Int MC_(get_or_set_vbits_for_client) (
   
    /* Check that arrays are addressible. */
    for (i = 0; i < szW; i++) {
-      UInt* dataP  = &data[i];
-      UInt* vbitsP = &vbits[i];
+      dataP  = &data[i];
+      vbitsP = &vbits[i];
       if (get_abits4_ALIGNED((Addr)dataP) != VGM_NIBBLE_VALID) {
          addressibleD = False;
          break;
@@ -1365,12 +1368,12 @@ Int MC_(get_or_set_vbits_for_client) (
       }
    }
    if (!addressibleD) {
-      MAC_(record_address_error)( dataV, size, 
+      MAC_(record_address_error)( tst, (Addr)dataP, 4, 
                                   setting ? True : False );
       return 3;
    }
    if (!addressibleV) {
-      MAC_(record_address_error)( vbitsV, size, 
+      MAC_(record_address_error)( tst, (Addr)vbitsP, 4, 
                                   setting ? False : True );
       return 3;
    }
@@ -1380,7 +1383,7 @@ Int MC_(get_or_set_vbits_for_client) (
       /* setting */
       for (i = 0; i < szW; i++) {
          if (get_vbytes4_ALIGNED( (Addr)&vbits[i] ) != VGM_WORD_VALID)
-            MC_(record_value_error)(4);
+            MC_(record_value_error)(tst, 4);
          set_vbytes4_ALIGNED( (Addr)&data[i], vbits[i] );
       }
    } else {

@@ -292,7 +292,8 @@ extern void MAC_(new_block) ( ThreadState* tst, Addr p, UInt size,
 extern void MAC_(handle_free) ( ThreadState* tst, Addr p, UInt rzB,
                                 MAC_AllocKind kind );
 
-extern void MAC_(record_address_error)     ( Addr a, Int size, Bool isWrite );
+extern void MAC_(record_address_error)     ( ThreadState* tst, Addr a,
+                                             Int size, Bool isWrite );
 extern void MAC_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,
                                              Char* s );
 extern void MAC_(record_param_error)       ( ThreadState* tst, Addr a,   

@@ -382,9 +382,10 @@ static Bool is_just_below_ESP( Addr esp, Addr aa )
       return False;
 }
 
-/* This one called from generated code. */
+/* This one called from generated code and non-generated code. */
 
-void MAC_(record_address_error) ( Addr a, Int size, Bool isWrite )
+void MAC_(record_address_error) ( ThreadState* tst, Addr a, Int size,
+                                  Bool isWrite )
 {
    MAC_Error err_extra;
    Bool      just_below_esp;
@@ -401,7 +402,7 @@ void MAC_(record_address_error) ( Addr a, Int size, Bool isWrite )
    err_extra.size    = size;
    err_extra.addrinfo.akind     = Undescribed;
    err_extra.addrinfo.maybe_gcc = just_below_esp;
-   VG_(maybe_record_error)( NULL, AddrErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tst, AddrErr, a, /*s*/NULL, &err_extra );
 }
 
 /* These ones are called from non-generated code */

@@ -133,14 +133,14 @@ void SK_(pp_SkinError) ( Error* err )
 
 /* Creates a copy of the `extra' part, updates the copy with address info if
    necessary, and returns the copy. */
-/* This one called from generated code. */
-void MC_(record_value_error) ( Int size )
+/* This one called from generated code and non-generated code. */
+void MC_(record_value_error) ( ThreadState* tst, Int size )
 {
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.size = size;
-   VG_(maybe_record_error)( NULL, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tst, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
 }
 
 /* These two called from non-generated code */

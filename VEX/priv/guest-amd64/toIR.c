@@ -655,7 +655,7 @@ static ULong getSDisp32 ( ULong delta )
 /* Get a 64-bit value out of the insn stream. */
 static ULong getDisp64 ( ULong delta )
 {
-   UInt v = 0;
+   ULong v = 0;
    v |= guest_code[delta+7]; v <<= 8;
    v |= guest_code[delta+6]; v <<= 8;
    v |= guest_code[delta+5]; v <<= 8;
@@ -1858,7 +1858,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
          { UChar rm = and8(mod_reg_rm, 7);
            Long d   = getSDisp8(delta);
-           DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
+           if (d == 0) {
+              DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
+           } else {
+              DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
+           }
            *len = 2;
            return disAMode_copy2tmp(
                   handleSegOverride(pfx,
@@ -1890,7 +1894,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       case 0x05: 
          { ULong d = getSDisp32(delta);
            *len = 5;
-           DIS(buf, "%s0x%llx(%%rip)", sorbTxt(pfx), d);
+           DIS(buf, "%s%lld(%%rip)", sorbTxt(pfx), d);
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
                         binop(Iop_Add64, mkU64(guest_rip_curr_instr), 
@@ -1945,7 +1949,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
 
          if ((!index_is_SP) && base_is_BPor13) {
             ULong d = getSDisp32(delta);
-            DIS(buf, "%s0x%llx(,%s,%d)", sorbTxt(pfx), d, 
+            DIS(buf, "%s%lld(,%s,%d)", sorbTxt(pfx), d, 
                       nameIRegX(pfx,8,index_r), 1<<scale);
             *len = 6;
             return
@@ -1966,7 +1970,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
 
          if (index_is_SP && base_is_BPor13) {
             ULong d = getSDisp32(delta);
-            DIS(buf, "%s0x%llx()", sorbTxt(pfx), d);
+            DIS(buf, "%s%lld", sorbTxt(pfx), d);
             *len = 6;
             return disAMode_copy2tmp(
                    handleSegOverride(pfx, mkU64(d)));
@@ -3154,7 +3158,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
                                getIRegB(pfx,sz,eregOfRM(modrm)),
                                mkU(ty, d64 & mkSizeMask(sz))));
             setFlags_DEP1( Iop_And8, dst1, ty );
-            DIP("test%c $0x%llx, %s\n", 
+            DIP("test%c $%lld, %s\n", 
                 nameISize(sz), d64, 
                 nameIRegB(pfx, sz, eregOfRM(modrm)));
             break;
@@ -3339,6 +3343,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
    IRTemp  t1 = newTemp(ty);
    IRTemp  t2 = IRTemp_INVALID;
    IRTemp  t3 = IRTemp_INVALID;
+   Bool    showSz = True;
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
@@ -3370,6 +3375,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+1));
             jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
+            showSz = False;
             break;
          case 4: /* jmp Ev */
             /* Ignore any sz value and operate as if sz==8. */
@@ -3379,6 +3385,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             assign(t3, getIRegB(pfx,sz,eregOfRM(modrm)));
             jmp_treg(Ijk_Boring,t3);
             *whatNext = Dis_StopHere;
+            showSz = False;
             break;
          default: 
             vex_printf(
@@ -3387,7 +3394,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
       }
       delta++;
       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-                       nameISize(sz), 
+                       showSz ? nameISize(sz) : ' ', 
                        nameIRegB(pfx, sz, eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf );
@@ -3411,6 +3418,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
+            sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
             t2 = newTemp(Ity_I64);
@@ -3419,14 +3427,17 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+len));
             jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
+            showSz = False;
             break;
          case 4: /* JMP Ev */
             /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
+            sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
             jmp_treg(Ijk_Boring,t3);
             *whatNext = Dis_StopHere;
+            showSz = False;
             break;
          case 6: /* PUSH Ev */
 vassert(0);
@@ -3445,7 +3456,8 @@ vassert(0);
       }
       delta += len;
       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-                       nameISize(sz), dis_buf);
+                       showSz ? nameISize(sz) : ' ', 
+                       dis_buf);
    }
    return delta;
 }
@@ -6678,10 +6690,9 @@ ULong dis_cmov_E_G ( Prefix        pfx,
                               mkexpr(tmps) )
               );
 
-      DIP("cmov%c%s %s,%s\n", nameISize(sz), 
-                              name_AMD64Condcode(cond),
-                              dis_buf,
-                              nameIRegR(pfx,sz,gregOfRM(rm)));
+      DIP("cmov%s %s,%s\n", name_AMD64Condcode(cond),
+                            dis_buf,
+                            nameIRegR(pfx,sz,gregOfRM(rm)));
       return len+delta0;
    }
 }
@@ -10945,7 +10956,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (sz == 4) {
          putIRegR( PFX_EMPTY, 4, R_RAX, 
                    unop(Iop_16Sto32, getIRegR(PFX_EMPTY, 2, R_RAX)) );
-         DIP("cwde\n");
+         DIP("cwtl\n");
          break;
       }
       if (sz == 2) {
@@ -11258,11 +11269,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          allowed in the instruction stream. */
       if (sz == 8) {
          d64 = getDisp64(delta);
-         delta += sz;
-         putIRegB(pfx, sz, opc-0xB8, 
-                       mkU(szToITy(sz), d64));
+         delta += 8;
+         putIRegB(pfx, 8, opc-0xB8, mkU64(d64));
          DIP("movabsq $%lld,%s\n", d64, 
-                                   nameIRegB(pfx,sz,opc-0xB8));
+                                   nameIRegB(pfx,8,opc-0xB8));
       } else {
          d64 = getSDisp(imin(4,sz),delta);
          delta += imin(4,sz);

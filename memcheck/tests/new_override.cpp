@@ -6,7 +6,7 @@ public:
   int a, b, c, d;
 };
 
-void *operator new(size_t size)
+void *operator new[](size_t size)
 {
   void *ret = malloc(size);
   printf("Here.\n");

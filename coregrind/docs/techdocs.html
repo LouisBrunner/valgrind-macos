@@ -1192,7 +1192,7 @@ next block.  This is a bit unnecessary, but makes many things simpler.
 
 <p>
 Most x86 instructions turn into sequences of <code>GET</code>,
-</code>PUT</code>, <code>LEA1</code>, <code>LEA2</code>,
+<code>PUT</code>, <code>LEA1</code>, <code>LEA2</code>,
 <code>LOAD</code> and <code>STORE</code>.  Some complicated ones
 however rely on calling helper bits of code in 
 <code>vg_helpers.S</code>.  The ucode instructions <code>PUSH</code>,
@@ -2106,9 +2106,6 @@ points at the source level just won't work at all.
 <p>
 Although some work, it's all eminently doable, and it would make
 Valgrind into an even-more-useful tool.
-
-<p>
-Update: as of 17 March 2002, this (these hooks) are done.
 
 
 <p>

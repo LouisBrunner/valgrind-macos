@@ -67,7 +67,7 @@ void VGP_(init_profiling) ( void )
 
    vgp_nticks = 0;
    vgp_sp = -1;
-   VGP_(pushcc) ( VgpRun );
+   VGP_(pushcc) ( VgpUnc );
 
    value.it_interval.tv_sec  = 0;
    value.it_interval.tv_usec = 10 * 1000;

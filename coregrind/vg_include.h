@@ -293,9 +293,11 @@ extern void VG_(shutdown_logging) ( void );
 
 #define VGP_M_STACK 10
 
-#define VGP_M_CCS 24  /* == the # of elems in VGP_LIST */
+#define VGP_M_CCS 26  /* == the # of elems in VGP_LIST */
 #define VGP_LIST \
-   VGP_PAIR(VgpRun=0,      "running"),                \
+   VGP_PAIR(VgpUnc=0,      "unclassified"),           \
+   VGP_PAIR(VgpRun,        "running"),                \
+   VGP_PAIR(VgpSched,      "scheduler"),              \
    VGP_PAIR(VgpMalloc,     "low-lev malloc/free"),    \
    VGP_PAIR(VgpCliMalloc,  "client  malloc/free"),    \
    VGP_PAIR(VgpTranslate,  "translate-main"),         \

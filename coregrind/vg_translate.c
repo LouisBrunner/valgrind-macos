@@ -3085,32 +3085,32 @@ void VG_(translate) ( ThreadState* tst,
    cb = VG_(allocCodeBlock)();
 
    /* Disassemble this basic block into cb. */
-   VGP_PUSHCC(VgpToUCode);
+   /* VGP_PUSHCC(VgpToUCode); */
    n_disassembled_bytes = VG_(disBB) ( cb, orig_addr );
-   VGP_POPCC;
+   /* VGP_POPCC; */
    /* dis=True; */
    /* if (0&& VG_(translations_done) < 617)  */
    /*    dis=False; */
    /* Try and improve the code a bit. */
    if (VG_(clo_optimise)) {
-      VGP_PUSHCC(VgpImprove);
+      /* VGP_PUSHCC(VgpImprove); */
       vg_improve ( cb );
       if (VG_(disassemble)) 
          VG_(ppUCodeBlock) ( cb, "Improved code:" );
-      VGP_POPCC;
+      /* VGP_POPCC; */
    }
    /* dis=False; */
    /* Add instrumentation code. */
    if (VG_(clo_instrument)) {
-      VGP_PUSHCC(VgpInstrument);
+      /* VGP_PUSHCC(VgpInstrument); */
       cb = vg_instrument(cb);
-      VGP_POPCC;
+      /* VGP_POPCC; */
       if (VG_(disassemble)) 
          VG_(ppUCodeBlock) ( cb, "Instrumented code:" );
       if (VG_(clo_cleanup)) {
-         VGP_PUSHCC(VgpCleanup);
+         /* VGP_PUSHCC(VgpCleanup); */
          vg_cleanup(cb);
-         VGP_POPCC;
+         /* VGP_POPCC; */
          if (VG_(disassemble)) 
             VG_(ppUCodeBlock) ( cb, "Cleaned-up instrumented code:" );
       }
@@ -3120,9 +3120,9 @@ void VG_(translate) ( ThreadState* tst,
 
    /* Add cache simulation code. */
    if (VG_(clo_cachesim)) {
-      VGP_PUSHCC(VgpCacheInstrument);
+      /* VGP_PUSHCC(VgpCacheInstrument); */
       cb = VG_(cachesim_instrument)(cb, orig_addr);
-      VGP_POPCC;
+      /* VGP_POPCC; */
       if (VG_(disassemble)) 
          VG_(ppUCodeBlock) ( cb, "Cachesim instrumented code:" );
    }
@@ -3130,20 +3130,20 @@ void VG_(translate) ( ThreadState* tst,
    //VG_(disassemble) = False;
    
    /* Allocate registers. */
-   VGP_PUSHCC(VgpRegAlloc);
+   /* VGP_PUSHCC(VgpRegAlloc); */
    cb = vg_do_register_allocation ( cb );
-   VGP_POPCC;
+   /* VGP_POPCC; */
    /* dis=False; */
    /* 
    if (VG_(disassemble))
       VG_(ppUCodeBlock) ( cb, "After Register Allocation:");
    */
 
-   VGP_PUSHCC(VgpFromUcode);
+   /* VGP_PUSHCC(VgpFromUcode); */
    /* NB final_code is allocated with VG_(jitmalloc), not VG_(malloc)
       and so must be VG_(jitfree)'d. */
    final_code = VG_(emit_code)(cb, &final_code_size );
-   VGP_POPCC;
+   /* VGP_POPCC; */
    VG_(freeCodeBlock)(cb);
 
    if (debugging_translation) {

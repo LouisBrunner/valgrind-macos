@@ -465,6 +465,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
    vg_assert(VG_(bbs_to_go) > 0);
 
+   VGP_PUSHCC(VgpRun);
    VG_(load_thread_state) ( tid );
    if (__builtin_setjmp(VG_(scheduler_jmpbuf)) == 0) {
       /* try this ... */
@@ -477,6 +478,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
       trc = VG_TRC_UNRESUMABLE_SIGNAL;
    }
    VG_(save_thread_state) ( tid );
+   VGP_POPCC;
    return trc;
 }
 

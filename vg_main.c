@@ -1050,8 +1050,10 @@ void VG_(main) ( void )
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
 
+   VGP_PUSHCC(VgpSched);
    VG_(scheduler_init)();
    src = VG_(scheduler)();
+   VGP_POPCC;
 
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");

@@ -898,8 +898,6 @@ static Bool dis_int_arith ( UInt theInstr )
     IRTemp Rd = newTemp(Ity_I32);
     IRTemp tmp = newTemp(Ity_I32);
 
-    IRTemp src1_64 = newTemp(Ity_I64);
-    IRTemp src2_64 = newTemp(Ity_I64);
     IRTemp res64 = newTemp(Ity_I64);
 
     assign( Ra, getIReg(Ra_addr) );
@@ -949,7 +947,7 @@ static Bool dis_int_arith ( UInt theInstr )
     case 0x07: // mulli    (Multiply Low Immediate, p544)
 	DIP("mulli %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	assign( res64, binop(Iop_MullS32, mkexpr(Ra), mkU32(EXTS_SIMM)) );
-	assign( Rd, unop(Iop_64HIto32, mkexpr(res64)) );
+	assign( Rd, unop(Iop_64to32, mkexpr(res64)) );
 	break;
 
     case 0x08: // subfic   (Subtract from Immediate Carrying, p613)
@@ -1047,38 +1045,33 @@ static Bool dis_int_arith ( UInt theInstr )
 	   DIP("divw%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-	   // CAB: Don't think this is right...
-	   assign( src1_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Ra)) );
-	   assign( src2_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Rb)) );
-	   assign( res64, binop(Iop_DivModS64to32,
-				mkexpr(src1_64), mkexpr(src2_64)) );
-	   assign( Rd, unop(Iop_64to32,mkexpr(res64)) );
+           assign( Rd, binop(Iop_DivS32, mkexpr(Ra), mkexpr(Rb)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   if (flag_OE) {
 	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVW, Rd, Ra, Rb );
 	   }
 	   // CAB: How to represent the following, if at all ?
 	   // If (0x8000_0000 / -1) or (x / 0)
-	   //  => Rd=undef, if(flag_Rc) => CR0=undef, if(OE) => XER_OV=1
+	   //  => Rd=undef, if(flag_Rc) => CR0=undef
+
+	   // CAB: No exception raised for x/0 ?
 	   break;
 
        case 0x1CB: // divwu      (Divide Word Unsigned, p422)
 	   DIP("divwu%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-	   // CAB: Don't think this is right...
-	   assign( src1_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Ra)) );
-	   assign( src2_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Rb)) );
-	   assign( res64, binop(Iop_DivModU64to32,
-				mkexpr(src1_64), mkexpr(src2_64)) );
-	   assign( Rd, unop(Iop_64to32,mkexpr(res64)) );
+           assign( Rd, binop(Iop_DivU32, mkexpr(Ra), mkexpr(Rb)) );
+
 	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   if (flag_OE) {
 	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVWU, Rd, Ra, Rb );
 	   }
 	   // CAB: How to represent the following, if at all ?
 	   // If (x / 0)
-	   //  => Rd=undef, if(flag_Rc) => CR0=undef, if(OE) => XER_OV=1
+	   //  => Rd=undef, if(flag_Rc) => CR0=undef
+
+	   // CAB: No exception raised for x/0 ?
 	   break;
 
        case 0x04B: // mulhw      (Multiply High Word, p541)
@@ -2259,9 +2252,7 @@ static Bool dis_branch ( theInstr )
 		stmt( IRStmt_Put( OFFB_LR, mkexpr(lr) ));
 	    }
 
-	    // CAB: Can't give ir_nia as IRConst, so reversing things...
-	    // Not sure about this at all...
-	    stmt( IRStmt_Exit( unop(Iop_32to1, unop(Iop_Not32, mkexpr(cond_ok))),
+	    stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(cond_ok))),
 			       Ijk_Boring,
 			       IRConst_U32(guest_cia_curr_instr + 4) ));
 
@@ -2314,9 +2305,7 @@ static Bool dis_branch ( theInstr )
 		stmt( IRStmt_Put( OFFB_LR, mkexpr(lr) ));
 	    }
 
-	    // CAB: Can't give ir_nia as IRConst, so reversing things...
-	    // Not sure about this at all...
-	    stmt( IRStmt_Exit( unop(Iop_32to1, unop(Iop_Not32, mkexpr(do_branch))),
+	    stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(do_branch))),
 			       Ijk_Boring,
 			       IRConst_U32(guest_cia_curr_instr + 4) ));
 
@@ -2397,7 +2386,6 @@ static Bool dis_memsync ( UInt theInstr )
 	}
 	DIP("isync\n");
 	
-	// CAB: This right?  What's the diff from 'sync' ?
 	stmt( IRStmt_MFence() );
 	break;
 

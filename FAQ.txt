@@ -343,4 +343,17 @@ A15.  The one kind of segmentation fault that Valgrind won't give any
 
 -----------------------------------------------------------------
 
+Q16.  When I trying building Valgrind, 'make' dies partway with an
+      assertion failure, something like this: make: expand.c:489:
+      
+        allocated_variable_append: Assertion 
+        `current_variable_set_list->next != 0' failed.
+      
+A16.  It's probably a bug in 'make'.  Some, but not all, instances of
+      version 3.79.1 have this bug, see 
+      www.mail-archive.com/bug-make@gnu.org/msg01658.html.  Try upgrading to a
+      more recent version of 'make'.
+
+-----------------------------------------------------------------
+
 (this is the end of the FAQ.)

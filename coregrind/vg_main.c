@@ -2103,7 +2103,7 @@ Int VGOFF_(m_eflags) = INVALID_OFFSET;
 Int VGOFF_(m_dflag)  = INVALID_OFFSET;
 Int VGOFF_(m_ssestate) = INVALID_OFFSET;
 Int VGOFF_(ldt)   = INVALID_OFFSET;
-Int VGOFF_(tls)   = INVALID_OFFSET;
+Int VGOFF_(tls_ptr) = INVALID_OFFSET;
 Int VGOFF_(m_cs)  = INVALID_OFFSET;
 Int VGOFF_(m_ss)  = INVALID_OFFSET;
 Int VGOFF_(m_ds)  = INVALID_OFFSET;
@@ -2374,7 +2374,7 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    VGOFF_(ldt)   = alloc_BaB_1_set((UInt)NULL);
 
    /* TLS pointer: pretend the root thread has no TLS array for now. */
-   VGOFF_(tls)   = alloc_BaB_1_set((UInt)NULL);
+   VGOFF_(tls_ptr) = alloc_BaB_1_set((UInt)NULL);
 
    /* segment registers */
    VGOFF_(m_cs)  = alloc_BaB_1_set(0);

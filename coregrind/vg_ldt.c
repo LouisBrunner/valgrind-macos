@@ -200,7 +200,7 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
 
       /* Come up with a suitable GDT entry.  We look at the thread's TLS
 	 array, which is pointed to by a VG_(baseBlock) entry. */
-      the_tls = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(tls)];
+      the_tls = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(tls_ptr)];
       base = (Addr)wine_ldt_get_base ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
       limit = (UInt)wine_ldt_get_limit ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
    } else {

@@ -1614,7 +1614,7 @@ extern Int VGOFF_(sh_eflags);
 extern Int VGOFF_(ldt);
 
 /* This thread's TLS pointer. */
-extern Int VGOFF_(tls);
+extern Int VGOFF_(tls_ptr);
 
 /* Nb: Most helper offsets are in include/vg_skin.h, for use by tools */
 

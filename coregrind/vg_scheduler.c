@@ -296,7 +296,7 @@ static void load_thread_state ( ThreadId tid )
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
    VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)VG_(threads)[tid].ldt;
-   VG_(baseBlock)[VGOFF_(tls)]  = (UInt)VG_(threads)[tid].tls;
+   VG_(baseBlock)[VGOFF_(tls_ptr)]  = (UInt)VG_(threads)[tid].tls;
    VG_(baseBlock)[VGOFF_(m_cs)] = VG_(threads)[tid].m_cs;
    VG_(baseBlock)[VGOFF_(m_ss)] = VG_(threads)[tid].m_ss;
    VG_(baseBlock)[VGOFF_(m_ds)] = VG_(threads)[tid].m_ds;
@@ -383,13 +383,13 @@ static void save_thread_state ( ThreadId tid )
       syscall, in which case we will correctly be updating
       VG_(threads)[tid].tls.  This printf happens iff the following
       assertion fails. */
-   if ((void*)VG_(threads)[tid].tls != (void*)VG_(baseBlock)[VGOFF_(tls)])
-      VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls)]=%p\n",
+   if ((void*)VG_(threads)[tid].tls != (void*)VG_(baseBlock)[VGOFF_(tls_ptr)])
+      VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls_ptr)]=%p\n",
 		  tid, (void*)VG_(threads)[tid].tls, 
-                       (void*)VG_(baseBlock)[VGOFF_(tls)]);
+                       (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
 
    vg_assert((void*)VG_(threads)[tid].tls 
-             == (void*)VG_(baseBlock)[VGOFF_(tls)]);
+             == (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
 
    VG_(threads)[tid].m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
    VG_(threads)[tid].m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
@@ -440,7 +440,7 @@ static void save_thread_state ( ThreadId tid )
 
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(ldt)] = junk;
-   VG_(baseBlock)[VGOFF_(tls)] = junk;
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = junk;
    VG_(baseBlock)[VGOFF_(m_cs)] = junk;
    VG_(baseBlock)[VGOFF_(m_ss)] = junk;
    VG_(baseBlock)[VGOFF_(m_ds)] = junk;
@@ -586,7 +586,7 @@ void VG_(scheduler_init) ( void )
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    vg_tid_last_in_baseBlock = tid_main;
-   VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid_main].tls;
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid_main].tls;
    save_thread_state ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
@@ -1922,7 +1922,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* Initialise the thread's TLS array */
    VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
-   VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid].tls;
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid].tls;
 
    save_thread_state(tid);
    vg_tid_last_in_baseBlock = tid;

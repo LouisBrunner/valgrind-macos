@@ -673,7 +673,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- MULTIPLEX --------- */
    case Iex_Mux0X: {
-      if (ty == Ity_I32 
+     if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
         HReg r8;
         HReg rX   = iselIntExpr_R(env, e->Iex.Mux0X.exprX);

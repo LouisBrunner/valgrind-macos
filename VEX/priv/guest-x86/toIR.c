@@ -4053,7 +4053,6 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
       DIP("cmpxchg%c %s,%s\n", nameISize(size),
                                nameIReg(size,gregOfRM(rm)),
                                nameIReg(size,eregOfRM(rm)) );
-      vassert(0);
    } else {
       addr = disAMode ( &len, sorb, delta0, dis_buf );
       assign( dest, loadLE(ty, mkexpr(addr)) );
@@ -7740,9 +7739,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
-//--       case 0xB0: /* CMPXCHG Gb,Eb */
-//--          eip = dis_cmpxchg_G_E ( cb, sorb, 1, eip );
-//--          break;
+      case 0xB0: /* CMPXCHG Gb,Eb */
+         delta = dis_cmpxchg_G_E ( sorb, 1, delta );
+         break;
       case 0xB1: /* CMPXCHG Gv,Ev */
          delta = dis_cmpxchg_G_E ( sorb, sz, delta );
          break;

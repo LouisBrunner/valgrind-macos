@@ -417,14 +417,23 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_fdatasync)
+      case __NR_fdatasync: /* syscall 148 */
+         /* int fdatasync(int fd); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("fdatasync ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_msync) /* syscall 144 */
       case __NR_msync:
          /* int msync(const void *start, size_t length, int flags); */
-            if (VG_(clo_trace_syscalls))
-               VG_(printf)("msync ( %p, %d, %d )\n", arg1,arg2,arg3);
-      must_be_readable( tst, "msync(start)", arg1, arg2 );
-      KERNEL_DO_SYSCALL(tid,res);  
-      break;
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("msync ( %p, %d, %d )\n", arg1,arg2,arg3);
+         must_be_readable( tst, "msync(start)", arg1, arg2 );
+         KERNEL_DO_SYSCALL(tid,res);  
+         break;
 #     endif
 
 #     if defined(__NR_getpmsg) /* syscall 188 */

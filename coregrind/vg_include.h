@@ -1449,28 +1449,14 @@ extern Bool VG_(is_kerror) ( Int res );
    Exports of vg_transtab.c
    ------------------------------------------------------------------ */
 
-/* An entry in the translation table (TT). */
-typedef
-   struct {
-      /* +0 */  Addr   orig_addr;
-      /* +4 */  Addr   trans_addr;
-      /* +8 */  UInt   mru_epoch;
-      /* +12 */ UShort orig_size;
-      /* +14 */ UShort trans_size;
-   }
-   TTEntry;
-
-/* The number of basic blocks in an epoch (one age-step). */
-#define VG_BBS_PER_EPOCH 20000
-
 /* The fast-cache for tt-lookup. */
 extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 extern void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used );
-extern void VG_(maybe_do_lru_pass) ( void );
-extern void VG_(flush_transtab) ( void );
-extern Addr VG_(copy_to_transcache) ( Addr trans_addr, Int trans_size );
-extern void VG_(add_to_trans_tab) ( TTEntry* tte );
+
+extern Int  VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
+                                    Addr trans_addr, Int trans_size );
+
 extern void VG_(invalidate_translations) ( Addr start, UInt range );
 
 extern void VG_(init_tt_tc) ( void );
@@ -1478,7 +1464,6 @@ extern void VG_(init_tt_tc) ( void );
 extern void VG_(sanity_check_tc_tt) ( void );
 extern Addr VG_(search_transtab) ( Addr original_addr );
 
-extern void VG_(invalidate_tt_fast)( void );
 
 
 /* ---------------------------------------------------------------------

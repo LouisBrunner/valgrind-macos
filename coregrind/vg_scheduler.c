@@ -316,37 +316,32 @@ Char* name_of_sched_event ( UInt event )
 static
 void create_translation_for ( ThreadId tid, Addr orig_addr )
 {
-   Addr    trans_addr;
-   TTEntry tte;
-   Int orig_size, trans_size;
-   /* Ensure there is space to hold a translation. */
-   VG_(maybe_do_lru_pass)();
+   Addr trans_addr;
+   Int  orig_size, trans_size, tcbytes_allocated;
+
+   /* Make a translation, into temporary storage. */
    VG_(translate)( &VG_(threads)[tid],
                    orig_addr, &orig_size, &trans_addr, &trans_size );
-   /* Copy data at trans_addr into the translation cache.
-      Returned pointer is to the code, not to the 4-byte
-      header. */
+
+   /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are
       UShort, be paranoid. */
    vg_assert(orig_size > 0 && orig_size < 65536);
    vg_assert(trans_size > 0 && trans_size < 65536);
-   tte.orig_size  = orig_size;
-   tte.orig_addr  = orig_addr;
-   tte.trans_size = trans_size;
-   tte.trans_addr = VG_(copy_to_transcache)
-                       ( trans_addr, trans_size );
-   tte.mru_epoch  = VG_(current_epoch);
+
+   tcbytes_allocated
+      = VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size );
+
    /* Free the intermediary -- was allocated by VG_(emit_code). */
    VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
-   /* Add to trans tab and set back pointer. */
-   VG_(add_to_trans_tab) ( &tte );
+
    /* Update stats. */
    VG_(this_epoch_in_count) ++;
    VG_(this_epoch_in_osize) += orig_size;
    VG_(this_epoch_in_tsize) += trans_size;
    VG_(overall_in_count) ++;
    VG_(overall_in_osize) += orig_size;
-   VG_(overall_in_tsize) += trans_size;
+   VG_(overall_in_tsize) += tcbytes_allocated; //trans_size; 
 }
 
 
@@ -587,35 +582,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    VG_(save_thread_state) ( tid );
    VGP_POPCC(VgpRun);
    return trc;
-}
-
-
-/* Increment the LRU epoch counter. */
-static
-void increment_epoch ( void )
-{
-   VG_(current_epoch)++;
-   if (VG_(clo_verbosity) > 2) {
-      UInt tt_used, tc_used;
-      VG_(get_tt_tc_used) ( &tt_used, &tc_used );
-      VG_(message)(Vg_UserMsg,
-         "%lu bbs, in: %d (%d -> %d), out %d (%d -> %d), TT %d, TC %d",
-          VG_(bbs_done), 
-          VG_(this_epoch_in_count),
-          VG_(this_epoch_in_osize),
-          VG_(this_epoch_in_tsize),
-          VG_(this_epoch_out_count),
-          VG_(this_epoch_out_osize),
-          VG_(this_epoch_out_tsize),
-          tt_used, tc_used
-       );
-   }
-   VG_(this_epoch_in_count) = 0;
-   VG_(this_epoch_in_osize) = 0;
-   VG_(this_epoch_in_tsize) = 0;
-   VG_(this_epoch_out_count) = 0;
-   VG_(this_epoch_out_osize) = 0;
-   VG_(this_epoch_out_tsize) = 0;
 }
 
 
@@ -1253,9 +1219,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
    Addr     trans_addr;
    Bool     sigs_delivered;
 
-   /* For the LRU structures, records when the epoch began. */
-   ULong lru_epoch_started_at = 0;
-
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
    VG_(last_run_tid) = tid = 1;
@@ -1275,12 +1238,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
          status of various threads.  Then select a new thread to run,
          or declare deadlock, or sleep if there are no runnable
          threads but some are blocked on I/O.  */
-
-      /* Age the LRU structures if an epoch has been completed. */
-      if (VG_(bbs_done) - lru_epoch_started_at >= VG_BBS_PER_EPOCH) {
-         lru_epoch_started_at = VG_(bbs_done);
-         increment_epoch();
-      }
 
       /* Was a debug-stop requested? */
       if (VG_(bbs_to_go) == 0) 

@@ -34,22 +34,17 @@
 /* #define DEBUG_TRANSTAB */
 
 
-/*------------------------------------------------------------*/
-/*--- Management of the LRU-based translation table+cache. ---*/
-/*------------------------------------------------------------*/
+/*-------------------------------------------------------------*/
+/*--- Management of the FIFO-based translation table+cache. ---*/
+/*-------------------------------------------------------------*/
 
-/* These sizes were set up so as to be able to debug large KDE 3
-   applications (are there any small ones?) without excessive amounts
-   of code retranslation.  */
+/*------------------ CONSTANTS ------------------*/
 
-/* Size of the translation cache, in bytes. */
-#define VG_TC_SIZE /*1000000*/ /*16000000*/ 32000000 /*40000000*/
+/* Number of sectors the TC is divided into. */
+#define VG_TC_N_SECTORS 8
 
-/* Do a LRU pass when the translation cache becomes this full. */
-#define VG_TC_LIMIT_PERCENT 98
+#define VG_TC_QSIZE 2000000
 
-/* When doing an LRU pass, reduce TC fullness to this level. */
-#define VG_TC_TARGET_PERCENT 85
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
@@ -58,37 +53,66 @@
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80
 
-/* When doing an LRU pass, reduce TT fullness to this level. */
-#define VG_TT_TARGET_PERCENT /*60*/ 70
+#define VG_TT_LIMIT ((VG_TT_SIZE * VG_TT_LIMIT_PERCENT) / 100)
 
-/* The number of age steps we track.  0 means the current epoch,
-   N_EPOCHS-1 means used the epoch N_EPOCHS-1 or more ago.  */
-#define VG_N_EPOCHS /*2000*/ /*4000*/ 20000
 
-/* This TT entry is empty.  There is no associated TC storage. */
-#define VG_TTE_EMPTY   ((Addr)1)
-/* This TT entry has been deleted, in the sense that it does not
-   contribute to the orig->trans mapping.  However, the ex-translation
-   it points at still occupies space in TC.  This slot cannot be
-   re-used without doing an LRU pass. */
+/*------------------ TYPES ------------------*/
+
+/* An entry in TC.  Payload always is always padded out to a 4-aligned
+   quantity so that these structs are always word-aligned. */
+typedef
+   struct { 
+      /* +0 */ Addr   orig_addr;
+      /* +4 */ UShort orig_size;
+      /* +6 */ UShort trans_size;
+      /* +8 */ UChar  payload[0];
+   }
+   TCEntry;
+
+/* An entry in TT. */
+typedef
+   struct {
+      Addr     orig_addr;
+      TCEntry* tcentry;
+   }
+   TTEntry;
+
+/* Denotes an empty TT slot, when TTEntry.orig_addr holds this
+   value. */
+#define VG_TTE_EMPTY ((Addr)1)
+
+/* Denotes an empty TT slot, when TTEntry.orig_addr holds this
+   value. */
 #define VG_TTE_DELETED ((Addr)3)
 
-/* The TC.  This used to be statically allocated, but that forces many
-   SecMap arrays to be pointlessly allocated at startup, bloating the
-   process size by about 22M and making startup slow.  So now we
-   dynamically allocate it at startup time.
-   was: static UChar vg_tc[VG_TC_SIZE];
-*/
-static UChar* vg_tc = NULL;
+/* A bogus TCEntry which hopefully does not match code from any valid
+   address.  This is what all VG_(tt_fast) entries are made to point
+   at when we want to invalidate it. */
+static const TCEntry vg_tc_bogus_TCEntry = { ((Addr)5), 0, 0 };
 
-/* Count of bytes used in the TC.  This includes those pointed to from
-   VG_TTE_DELETED entries. */
-static Int vg_tc_used = 0;
 
-/* The TT.  Like TC, for the same reason, is dynamically allocated at
-   startup. 
-   was: static TTEntry vg_tt[VG_TT_SIZE];
-*/
+/*------------------ DECLS ------------------*/
+
+/* The translation cache sectors.  These are NULL until allocated
+   dynamically. */
+static UChar* vg_tc[VG_TC_N_SECTORS];
+
+/* Count of bytes used in each sector of the TC. */
+static Int vg_tc_used[VG_TC_N_SECTORS];
+
+/* The age of each sector, so we can find the oldest.  We just use the
+   global count of translations made when the sector was brought into
+   use.  Doesn't matter if this mechanism gets confused (wraps around
+   4G) once in a while. */
+static Int vg_tc_age[VG_TC_N_SECTORS];
+
+/* The number of the sector currently being allocated in. */
+static Int vg_tc_current;
+
+
+/*------------------ TRANSLATION TABLE ------------------*/
+
+/* The translation table.  An array of VG_TT_SIZE TTEntrys. */
 static TTEntry* vg_tt = NULL;
 
 /* Count of non-empty TT entries.  This includes deleted ones. */
@@ -98,233 +122,251 @@ static Int vg_tt_used = 0;
    pointer to a TT entry which may or may not be the correct one, but
    which we hope usually is.  This array is referred to directly from
    vg_dispatch.S. */
-Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
-
-/* For reading/writing the misaligned TT-index word at immediately
-   preceding every translation in TC. */
-#if 0
-   /* Big sigh.  However reasonable this seems, there are those who
-      set AC in %EFLAGS (Alignment Check) to 1, causing bus errors.  A
-      proper solution is for valgrind to properly virtualise AC, like
-      the other flags (DOSZACP).  The current cheap hack simply avoids
-      all misaligned accesses, so valgrind doesn't fault even if AC is
-      set. */
-#  define VG_READ_MISALIGNED_WORD(aaa) (*((UInt*)(aaa)))
-#  define VG_WRITE_MISALIGNED_WORD(aaa,vvv) *((UInt*)(aaa)) = ((UInt)(vvv))
-#else
-  static __inline__
-  UInt VG_READ_MISALIGNED_WORD ( Addr aaa )
-  {
-     UInt w = 0;
-     UChar* p = (UChar*)aaa;
-     w = 0xFF & ((UInt)(p[3]));
-     w = (w << 8) | (0xFF & ((UInt)(p[2])));
-     w = (w << 8) | (0xFF & ((UInt)(p[1])));
-     w = (w << 8) | (0xFF & ((UInt)(p[0])));
-     return w;
-  }
-
-  static __inline__
-  void VG_WRITE_MISALIGNED_WORD ( Addr aaa, UInt vvv )
-  {
-     UChar* p = (UChar*)aaa;
-     p[0] = vvv & 0xFF;
-     p[1] = (vvv >> 8) & 0xFF;
-     p[2] = (vvv >> 16) & 0xFF;
-     p[3] = (vvv >> 24) & 0xFF;
-  }
-#endif
+Addr /* TCEntry*, really */ VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 
-/* Used for figuring out an age threshold for translations. */
-static Int vg_bytes_in_epoch[VG_N_EPOCHS];
-static Int vg_entries_in_epoch[VG_N_EPOCHS];
+/*------------------ TT HELPERS ------------------*/
+
+/* Invalidate the tt_fast cache, for whatever reason, by pointing all
+   entries at vg_tc_bogus_TCEntry.  */
+static
+void vg_invalidate_tt_fast( void )
+{
+   Int j;
+   for (j = 0; j < VG_TT_FAST_SIZE; j++)
+      VG_(tt_fast)[j] = (Addr)&vg_tc_bogus_TCEntry;
+}
+
+
+static
+void add_tt_entry ( TCEntry* tce )
+{
+   UInt i;
+   /* VG_(printf)("add_TT_entry orig_addr %p\n", tce->orig_addr); */
+   /* Hash to get initial probe point. */
+   i = ((UInt)(tce->orig_addr)) % VG_TT_SIZE;
+   while (True) {
+      if (vg_tt[i].orig_addr == tce->orig_addr)
+         VG_(core_panic)("add_TT_entry: duplicate");
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY)
+         break;
+      i++;
+      if (i == VG_TT_SIZE) 
+         i = 0;
+   }
+   vg_tt[i].orig_addr = tce->orig_addr;
+   vg_tt[i].tcentry = tce;
+   vg_tt_used++;
+   /* sanity ... */
+   vg_assert(vg_tt_used < VG_TT_SIZE-1000);
+}
+
+
+/* Search TT to find the translated address of the supplied original,
+   or NULL if not found.  This routine is used when we miss in
+   VG_(tt_fast). 
+*/
+static __inline__
+TTEntry* search_tt ( Addr orig_addr )
+{
+   Int i;
+   /* Hash to get initial probe point. */
+   i = ((UInt)orig_addr) % VG_TT_SIZE;
+   while (True) {
+      if (vg_tt[i].orig_addr == orig_addr)
+         return &vg_tt[i];
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY)
+         return NULL;
+      i++;
+      if (i == VG_TT_SIZE) i = 0;
+   }
+}
+
+
+static
+void initialise_tt ( void )
+{
+   Int i;
+   vg_tt_used = 0;
+   for (i = 0; i < VG_TT_SIZE; i++) {
+      vg_tt[i].orig_addr = VG_TTE_EMPTY;
+   }
+   vg_invalidate_tt_fast();
+}
+
+
+static 
+void rebuild_TT ( void )
+{
+   Int      s;
+   UChar*   pc;
+   UChar*   pc_lim;
+   TCEntry* tce;
+
+   /* Throw away TT. */
+   initialise_tt();
+   
+   /* Rebuild TT from the remaining quarters. */
+   for (s = 0; s < VG_TC_N_SECTORS; s++) {
+      pc     = &(vg_tc[s][0]);
+      pc_lim = &(vg_tc[s][vg_tc_used[s]]);
+      while (True) {
+         if (pc >= pc_lim) break;
+         tce = (TCEntry*)pc;
+         pc += sizeof(TCEntry) + tce->trans_size;
+         if (tce->orig_addr != VG_TTE_DELETED)
+            add_tt_entry(tce);
+      }
+   }
+   VG_(printf)("TT: rebuild of TC complete, %d entries\n",
+               vg_tt_used );
+}
+
+
+/*------------------ TC HELPERS ------------------*/
+
+/* Find the oldest non-NULL, non-empty sector, or -1 if none such. */
+static 
+Int find_oldest_sector ( void ) 
+{
+   Int oldest_age, oldest, i;
+   oldest_age = 1000 * 1000 * 1000;
+   oldest = -1;
+   for (i = 0; i < VG_TC_N_SECTORS; i++) {
+      if (vg_tc[i] == NULL) 
+         continue;
+      if (vg_tc_used[i] == 0)
+         continue;
+      if (vg_tc_age[i] < oldest_age) {
+         oldest = i;
+         oldest_age = vg_tc_age[i];
+      }
+   }
+   return oldest;
+}
+
+
+/* Discard the oldest sector, if any such exists. */
+static
+void discard_oldest_sector ( void )
+{
+   Int s = find_oldest_sector();
+   if (s != -1) {
+      vg_assert(s >= 0 && s < VG_TC_N_SECTORS);
+      VG_(printf)("TT: discard sector %d (holding %d bytes)\n", 
+                  s, vg_tc_used[s]);
+      vg_tc_used[s] = 0;
+   }
+}
+
+
+/* Find an empty sector and bring it into use.  If there isn't one,
+   try and allocate one.  If that fails, return -1. */
+static
+Int maybe_commission_sector ( void )
+{
+   Int s;
+   for (s = 0; s < VG_TC_N_SECTORS; s++) {
+      if (vg_tc[s] != NULL && vg_tc_used[s] == 0) {
+         vg_tc_age[s] = VG_(overall_in_count);
+         VG_(printf)("TT: commission sector %d at time %d\n",
+                     s, vg_tc_age[s] );
+#        ifdef DEBUG_TRANSTAB
+         VG_(sanity_check_tc_tt)();
+#        endif
+         return s;
+      }
+   }
+   for (s = 0; s < VG_TC_N_SECTORS; s++) {
+      if (vg_tc[s] == NULL) {
+         vg_tc[s] = VG_(get_memory_from_mmap) 
+                       ( VG_TC_QSIZE, "trans-cache(sector)" );
+         vg_tc_used[s] = 0;
+         VG_(printf)("TT: allocate   sector %d of %d bytes\n",
+                     s, VG_TC_QSIZE );
+         return maybe_commission_sector();
+      }
+   }
+   return -1;
+}
+
+void VG_(init_tt_tc) ( void )
+{
+   Int s;
+   for (s = 0; s < VG_TC_N_SECTORS; s++) {
+      vg_tc[s] = NULL;
+      vg_tc_used[s] = 0;
+      vg_tc_age[s] = 0;
+   }
+   vg_tc_current = 0;
+
+   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry),
+                                       "trans-table" );
+   /* The main translation table is empty. */
+   initialise_tt();
+
+#  ifdef DEBUG_TRANSTAB
+   VG_(sanity_check_tc_tt)();
+#  endif
+}
+
+
+static
+UChar* allocate ( Int nBytes )
+{
+   Int i;
+
+   vg_assert(0 == (nBytes & 3));
+
+   /* Ensure the TT is still OK. */
+   while (vg_tt_used >= VG_TT_LIMIT) {
+      (void)discard_oldest_sector();
+      rebuild_TT();
+      vg_assert(vg_tt_used < VG_TT_LIMIT);
+   }
+
+   /* Can we get it into the current sector? */
+   if (vg_tc_current >= 0 
+       && vg_tc_current < VG_TC_N_SECTORS
+       && vg_tc[vg_tc_current] != NULL
+       && vg_tc_used[vg_tc_current] + nBytes <= VG_TC_QSIZE) {
+      /* Yes. */
+      UChar* p = &(vg_tc[vg_tc_current][ vg_tc_used[vg_tc_current] ]);
+      vg_tc_used[vg_tc_current] += nBytes;
+      return p;
+   }
+
+   /* Perhaps we can bring a new sector into use, for the first
+      time. */
+   vg_tc_current = maybe_commission_sector();
+   if (vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS)
+      return allocate(nBytes);
+
+   /* That didn't work.  We'll have to dump the oldest.  We take the
+      opportunity to dump the N oldest at once. */
+   for (i = 0; i < 1; i++)
+      (void)discard_oldest_sector();
+
+   rebuild_TT();
+   vg_tc_current = maybe_commission_sector();
+   vg_assert(vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS);
+#  ifdef DEBUG_TRANSTAB
+   VG_(sanity_check_tc_tt)();
+#  endif
+
+   return allocate(nBytes);
+}
 
 
 /* Just so these counts can be queried without making them globally
    visible. */
 void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used )
 {
+   Int s;
    *tt_used = vg_tt_used;
-   *tc_used = vg_tc_used;
-}
-
-
-/* Do the LRU thing on TT/TC, clearing them back to the target limits
-   if they are over the threshold limits. 
-*/
-void VG_(maybe_do_lru_pass) ( void )
-{
-   Int i, j, r, w, thresh, ttno;
-   TTEntry* tte;
-
-   const Int tc_limit  = (Int)(((double)VG_TC_SIZE * (double)VG_TC_LIMIT_PERCENT)
-                                / (double)100.0);
-   const Int tt_limit  = (Int)(((double)VG_TT_SIZE * (double)VG_TT_LIMIT_PERCENT)
-                                / (double)100.0);
-   const Int tc_target = (Int)(((double)VG_TC_SIZE * (double)VG_TC_TARGET_PERCENT)
-                                / (double)100.0);
-   const Int tt_target = (Int)(((double)VG_TT_SIZE * (double)VG_TT_TARGET_PERCENT)
-                                / (double)100.0);
-
-   /* Decide quickly if we need to do an LRU pass ? */
-   if (vg_tc_used <= tc_limit && vg_tt_used <= tt_limit)
-      return;
-
-#  ifdef DEBUG_TRANSTAB
-   VG_(sanity_check_tc_tt)();
-#  endif
-
-   VGP_PUSHCC(VgpDoLRU);
-   /*   
-   VG_(printf)(
-      "limits: tc_limit %d, tt_limit %d, tc_target %d, tt_target %d\n",
-      tc_limit, tt_limit, tc_target, tt_target);
-   */
-
-   if (VG_(clo_verbosity) > 2)
-      VG_(printf)(" pre-LRU: tc %d (target %d),  tt %d (target %d)\n",
-	          vg_tc_used, tc_target, vg_tt_used, tt_target);
-
-   /* Yes we do.  Figure out what threshold age is required in order to
-      shrink both the TC and TT occupancy below TC_TARGET_PERCENT and
-      TT_TARGET_PERCENT respectively. */
-
-   VG_(number_of_lrus)++;
-
-   /* Count the number of TC bytes and TT entries in each epoch. */
-   for (i = 0; i < VG_N_EPOCHS; i++)
-      vg_bytes_in_epoch[i] = vg_entries_in_epoch[i] = 0;
-
-   for (i = 0; i < VG_TT_SIZE; i++) {
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY 
-          || vg_tt[i].orig_addr == VG_TTE_DELETED) 
-            continue;
-      j = vg_tt[i].mru_epoch;
-      vg_assert(j <= VG_(current_epoch));
-      j = VG_(current_epoch) - j;
-      if (j >= VG_N_EPOCHS) j = VG_N_EPOCHS-1;
-      vg_assert(0 <= j && j < VG_N_EPOCHS);
-      /* Greater j now means older. */
-      vg_entries_in_epoch[j]++;
-      vg_bytes_in_epoch[j] += 4+vg_tt[i].trans_size;
-   }
-
-   /*
-   for (i = 0; i < VG_N_EPOCHS; i++)
-      VG_(printf)("epoch %d: ents %d, bytes %d\n", 
-                  i, vg_entries_in_epoch[i], vg_bytes_in_epoch[i]);
-   */
-
-   /* Cumulatise.  Make vg_{bytes,entries}_in_epoch[n] contain the
-      counts for itself and all younger epochs. */
-   for (i = 1; i < VG_N_EPOCHS; i++) {
-      vg_entries_in_epoch[i] += vg_entries_in_epoch[i-1];
-      vg_bytes_in_epoch[i] += vg_bytes_in_epoch[i-1];
-   }
-
-   for (thresh = 0; thresh < VG_N_EPOCHS; thresh++) {
-      if (vg_entries_in_epoch[thresh] > tt_target 
-          || vg_bytes_in_epoch[thresh] >= tc_target)
-         break;
-   }
-
-   if (VG_(clo_verbosity) > 2)
-      VG_(printf)(
-         "     LRU: discard translations %d or more epochs since last use\n",
-         thresh
-      );
-
-   thresh = VG_(current_epoch) - thresh;
-
-   /* Ok, so we will hit our targets if we retain all entries most
-      recently used at most thresh epochs ago.  Traverse the TT and
-      mark such entries as deleted. */
-   for (i = 0; i < VG_TT_SIZE; i++) {
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY 
-          || vg_tt[i].orig_addr == VG_TTE_DELETED) 
-         continue;
-      if (vg_tt[i].mru_epoch <= thresh) {
-         vg_tt[i].orig_addr = VG_TTE_DELETED;
-	 VG_(this_epoch_out_count) ++;
-	 VG_(this_epoch_out_osize) += vg_tt[i].orig_size;
-	 VG_(this_epoch_out_tsize) += vg_tt[i].trans_size;
-	 VG_(overall_out_count) ++;
-	 VG_(overall_out_osize) += vg_tt[i].orig_size;
-	 VG_(overall_out_tsize) += vg_tt[i].trans_size;
-      }
-   }
-
-   /* Now compact the TC, sliding live entries downwards to fill spaces
-      left by deleted entries.  In this loop, r is the offset in TC of
-      the current translation under consideration, and w is the next
-      allocation point. */
-   r = w = 0;
-   while (True) {
-      if (r >= vg_tc_used) break;
-      /* The first four bytes of every translation contain the index
-         of its TT entry.  The TT entry's .trans_addr field points at
-         the start of the code proper, not at this 4-byte index, so
-         that we don't constantly have to keep adding 4 in the main
-         lookup/dispatch loop. */
-
-      ttno = VG_READ_MISALIGNED_WORD((Addr)(&vg_tc[r]));
-      vg_assert(ttno >= 0 && ttno < VG_TT_SIZE);
-      tte = & vg_tt[ ttno ];
-      vg_assert(tte->orig_addr != VG_TTE_EMPTY);
-      if (tte->orig_addr != VG_TTE_DELETED) {
-         /* We want to keep this one alive. */
-         /* Sanity check the pointer back to TC. */
-         vg_assert(tte->trans_addr == (Addr)&vg_tc[r+4]);
-         for (i = 0; i < 4+tte->trans_size; i++)
-            vg_tc[w+i] = vg_tc[r+i];
-         tte->trans_addr = (Addr)&vg_tc[w+4];
-         w += 4+tte->trans_size;
-      } else {
-         tte->orig_addr = VG_TTE_EMPTY;
-         vg_tt_used--;
-      }
-      r += 4+tte->trans_size;
-   }
-   /* should have traversed an exact number of translations, with no
-      slop at the end. */
-   vg_assert(w <= r);
-   vg_assert(r == vg_tc_used);
-   vg_assert(w <= r);
-   vg_assert(w <= tc_target);
-   vg_tc_used = w;
-
-   vg_assert(vg_tt_used >= 0);
-   vg_assert(vg_tt_used <= tt_target);
-
-   /* Invalidate the fast cache, since it is now out of date.  It will get
-      reconstructed incrementally when the client resumes. */
-   VG_(invalidate_tt_fast)();
-
-   if (VG_(clo_verbosity) > 2)
-      VG_(printf)("post-LRU: tc %d (target %d),  tt %d (target %d)\n",
-	          vg_tc_used, tc_target, vg_tt_used, tt_target);
-
-   if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg,   
-         "epoch %d (bb %luk): thresh %d, "
-         "out %d (%dk -> %dk), new TT %d, TC %dk",
-         VG_(current_epoch), 
-         VG_(bbs_done) / 1000,
-         VG_(current_epoch) - thresh, 
-         VG_(this_epoch_out_count),
-         VG_(this_epoch_out_osize) / 1000,
-         VG_(this_epoch_out_tsize) / 1000,
-         vg_tt_used, vg_tc_used / 1000
-      );
-
-#  ifdef DEBUG_TRANSTAB
-   for (i = 0; i < VG_TT_SIZE; i++)
-      vg_assert(vg_tt[i].orig_addr != VG_TTE_DELETED);
-#  endif
-   VG_(sanity_check_tc_tt)();
-
-   VGP_POPCC(VgpDoLRU);
+   *tc_used = 0;
+   for (s = 0; s < VG_TC_N_SECTORS; s++)
+      *tc_used += vg_tc_used[s];
 }
 
 
@@ -332,6 +374,33 @@ void VG_(maybe_do_lru_pass) ( void )
 */
 void VG_(sanity_check_tc_tt) ( void )
 {
+  Int i, s;
+  TTEntry* tte;
+  TCEntry* tce;
+  /* Checks: 
+     - Each TT entry points to a valid and corresponding TC entry.
+   */
+   for (i = 0; i < VG_TT_SIZE; i++) {
+      tte = &vg_tt[i];
+      /* empty slots are harmless. */
+      if (tte->orig_addr == VG_TTE_EMPTY) continue;
+      /* all others should agree with the TC entry. */
+      tce = tte->tcentry;
+      vg_assert(IS_ALIGNED4_ADDR(tce));
+      /* does this point into a valid TC sector? */
+      for (s = 0; s < VG_TC_N_SECTORS; s++)
+	if (vg_tc[s] != NULL
+            && ((Addr)tce) >= (Addr)&vg_tc[s][0]
+            && ((Addr)tce) <  (Addr)&vg_tc[s][ vg_tc_used[s] ])
+	  break; 
+      vg_assert(s < VG_TC_N_SECTORS);
+      /* It should agree with the TC entry on the orig_addr.  This may
+         be VG_TTE_DELETED, or a real orig addr. */
+      vg_assert(tte->orig_addr == tce->orig_addr);
+   }
+
+
+#if 0
    Int      i, counted_entries, counted_bytes;
    TTEntry* tte;
    counted_entries = 0;
@@ -349,100 +418,44 @@ void VG_(sanity_check_tc_tt) ( void )
    }
    vg_assert(counted_entries == vg_tt_used);
    vg_assert(counted_bytes == vg_tc_used);
+#endif
 }
 
 
 /* Add this already-filled-in entry to the TT.  Assumes that the
    relevant code chunk has been placed in TC, along with a dummy back
-   pointer, which is inserted here.  
+   pointer, which is inserted here.  Return # of tc bytes allocated,
+   for stats purposes only.
 */
-extern void VG_(add_to_trans_tab) ( TTEntry* tte )
+Int VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
+                             Addr trans_addr, Int trans_size )
 {
-   Int i;
+   Int i, nBytes, trans_size_aligned;
+   TCEntry* tce;
    /*
    VG_(printf)("add_to_trans_tab(%d) %x %d %x %d\n",
                vg_tt_used, tte->orig_addr, tte->orig_size, 
                tte->trans_addr, tte->trans_size);
    */
-   vg_assert(tte->orig_addr != VG_TTE_DELETED 
-             && tte->orig_addr != VG_TTE_EMPTY);
-   /* Hash to get initial probe point. */
-   i = ((UInt)(tte->orig_addr)) % VG_TT_SIZE;
-   while (True) {
-      if (vg_tt[i].orig_addr == tte->orig_addr)
-         VG_(core_panic)("add_to_trans_tab: duplicate");
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY) {
-         /* Put it here, and set the back pointer. */
-         vg_tt[i] = *tte;
-         VG_WRITE_MISALIGNED_WORD(tte->trans_addr-4, i);
-         vg_tt_used++;
-         return;
-      }
-      i++;
-      if (i == VG_TT_SIZE) i = 0;
+
+   /* figure out how many bytes we require. */
+   trans_size_aligned = trans_size;
+   while ((trans_size_aligned & 3) != 0) 
+      trans_size_aligned++;
+   nBytes = trans_size_aligned + sizeof(TCEntry);
+   vg_assert((nBytes & 3) == 0);
+
+   tce = (TCEntry*)allocate(nBytes);
+   /* VG_(printf)("allocate returned %p\n", tce); */
+   tce->orig_addr  = orig_addr;
+   tce->orig_size  = (UShort)orig_size;  /* what's the point of storing this? */
+   tce->trans_size = (UShort)trans_size_aligned;
+   for (i = 0; i < trans_size; i++) {
+      tce->payload[i] = ((UChar*)trans_addr)[i];
    }
-}
 
-
-/* Copy a new translation's code into TC, leaving a 4-byte hole for
-   the back pointer, and returning a pointer to the code proper (not
-   the hole) in TC. 
-*/
-Addr VG_(copy_to_transcache) ( Addr trans_addr, Int trans_size )
-{
-   Int i;
-   Addr ret_addr;
-   if (4+trans_size > VG_TC_SIZE-vg_tc_used)
-      VG_(core_panic)("copy_to_transcache: not enough free space?!");
-   /* Leave a hole for the back pointer to the TT entry. */
-   vg_tc_used += 4;
-   ret_addr = (Addr)&vg_tc[vg_tc_used];
-   for (i = 0; i < trans_size; i++)
-      vg_tc[vg_tc_used+i] = ((UChar*)trans_addr)[i];
-   vg_tc_used += trans_size;
-   return ret_addr;
-}
-
-
-/* Invalidate the tt_fast cache, for whatever reason.  Tricky.  We
-   have to find a TTE_EMPTY slot to point all entries at. */
-void VG_(invalidate_tt_fast)( void )
-{
-   Int i, j;
-   for (i = 0; i < VG_TT_SIZE && vg_tt[i].orig_addr != VG_TTE_EMPTY; i++)
-      ;
-   vg_assert(i < VG_TT_SIZE 
-             && vg_tt[i].orig_addr == VG_TTE_EMPTY);
-   for (j = 0; j < VG_TT_FAST_SIZE; j++)
-      VG_(tt_fast)[j] = (Addr)&vg_tt[i];
-}
-
-
-/* Search TT to find the translated address of the supplied original,
-   or NULL if not found.  This routine is used when we miss in
-   VG_(tt_fast). 
-*/
-static __inline__ TTEntry* search_trans_table ( Addr orig_addr )
-{
-   //static Int queries = 0;
-   //static Int probes = 0;
-   Int i;
-   /* Hash to get initial probe point. */
-   //   if (queries == 10000) {
-   //  VG_(printf)("%d queries, %d probes\n", queries, probes);
-   //  queries = probes = 0;
-   //}
-   //queries++;
-   i = ((UInt)orig_addr) % VG_TT_SIZE;
-   while (True) {
-      //probes++;
-      if (vg_tt[i].orig_addr == orig_addr)
-         return &vg_tt[i];
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY)
-         return NULL;
-      i++;
-      if (i == VG_TT_SIZE) i = 0;
-   }
+   add_tt_entry(tce);
+   return trans_size;  /* nBytes; */
 }
 
 
@@ -454,7 +467,7 @@ Addr VG_(search_transtab) ( Addr original_addr )
 {
    TTEntry* tte;
    VGP_PUSHCC(VgpSlowFindT);
-   tte = search_trans_table ( original_addr );
+   tte = search_tt ( original_addr );
    if (tte == NULL) {
       /* We didn't find it.  vg_run_innerloop will have to request a
          translation. */
@@ -464,11 +477,10 @@ Addr VG_(search_transtab) ( Addr original_addr )
       /* Found it.  Put the search result into the fast cache now.
          Also set the mru_epoch to mark this translation as used. */
       UInt cno = (UInt)original_addr & VG_TT_FAST_MASK;
-      VG_(tt_fast)[cno] = (Addr)tte;
+      VG_(tt_fast)[cno] = (Addr)(tte->tcentry);
       VG_(tt_fast_misses)++;
-      tte->mru_epoch = VG_(current_epoch);
       VGP_POPCC(VgpSlowFindT);
-      return tte->trans_addr;
+      return (Addr)&(tte->tcentry->payload[0]);
    }
 }
 
@@ -478,10 +490,10 @@ Addr VG_(search_transtab) ( Addr original_addr )
 */
 void VG_(invalidate_translations) ( Addr start, UInt range )
 {
-   Addr  i_start, i_end, o_start, o_end;
-   UInt  out_count, out_osize, out_tsize;
-   Int   i;
-
+   Addr     i_start, i_end, o_start, o_end;
+   UInt     out_count, out_osize, out_tsize;
+   Int      i;
+   TCEntry* tce;
 #  ifdef DEBUG_TRANSTAB
    VG_(sanity_check_tc_tt)();
 #  endif
@@ -492,34 +504,36 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
    for (i = 0; i < VG_TT_SIZE; i++) {
       if (vg_tt[i].orig_addr == VG_TTE_EMPTY
           || vg_tt[i].orig_addr == VG_TTE_DELETED) continue;
-      o_start = vg_tt[i].orig_addr;
-      o_end = o_start + vg_tt[i].orig_size - 1;
+      tce = vg_tt[i].tcentry;
+      o_start = tce->orig_addr;
+      o_end   = o_start + tce->trans_size - 1;
       if (o_end < i_start || o_start > i_end)
          continue;
 
       if (VG_(needs).basic_block_discards)
-         SK_(discard_basic_block_info)( vg_tt[i].orig_addr, 
-                                         vg_tt[i].orig_size );
+         SK_(discard_basic_block_info)( tce->orig_addr, 
+                                        tce->orig_size );
 
       vg_tt[i].orig_addr = VG_TTE_DELETED;
+      tce->orig_addr = VG_TTE_DELETED;
       VG_(this_epoch_out_count) ++;
-      VG_(this_epoch_out_osize) += vg_tt[i].orig_size;
-      VG_(this_epoch_out_tsize) += vg_tt[i].trans_size;
+      VG_(this_epoch_out_osize) += tce->orig_size;
+      VG_(this_epoch_out_tsize) += tce->trans_size;
       VG_(overall_out_count) ++;
-      VG_(overall_out_osize) += vg_tt[i].orig_size;
-      VG_(overall_out_tsize) += vg_tt[i].trans_size;
+      VG_(overall_out_osize) += tce->orig_size;
+      VG_(overall_out_tsize) += tce->trans_size;
       out_count ++;
-      out_osize += vg_tt[i].orig_size;
-      out_tsize += vg_tt[i].trans_size;
+      out_osize += tce->orig_size;
+      out_tsize += tce->trans_size;
    }
 
    if (out_count > 0) {
-      VG_(invalidate_tt_fast)();
+      vg_invalidate_tt_fast();
       VG_(sanity_check_tc_tt)();
 #     ifdef DEBUG_TRANSTAB
       { Addr aa;
         for (aa = i_start; aa <= i_end; aa++)
-           vg_assert(search_trans_table ( aa ) == NULL);
+           vg_assert(search_tt ( aa ) == NULL);
       }
 #     endif
    }
@@ -534,33 +548,6 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 /*------------------------------------------------------------*/
 /*--- Initialisation.                                      ---*/
 /*------------------------------------------------------------*/
-
-void VG_(init_tt_tc) ( void )
-{
-   Int i;
-
-   /* Allocate the translation table and translation cache. */
-   vg_assert(vg_tc == NULL);
-   vg_tc = VG_(get_memory_from_mmap) ( VG_TC_SIZE * sizeof(UChar), 
-                                       "trans-cache" );
-   vg_assert(vg_tc != NULL);
-
-   vg_assert(vg_tt == NULL);
-   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry),
-                                       "trans-table" );
-   vg_assert(vg_tt != NULL);
-
-   /* The main translation table is empty. */
-   vg_tt_used = 0;
-   for (i = 0; i < VG_TT_SIZE; i++) {
-      vg_tt[i].orig_addr = VG_TTE_EMPTY;
-   }
-
-   /* The translation table's fast cache is empty.  Point all entries
-      at the first TT entry, which is, of course, empty. */
-   for (i = 0; i < VG_TT_FAST_SIZE; i++)
-      VG_(tt_fast)[i] = (Addr)(&vg_tt[0]);
-}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_transtab.c ---*/

@@ -109,17 +109,15 @@ dispatch_boring:
 	andl	$VG_TT_FAST_MASK, %ebx	
 	/* ebx = tt_fast index */
 	movl	VG_(tt_fast)(,%ebx,4), %ebx	
-	/* ebx points at a tt entry
-	   now compare target with the tte.orig_addr field (+0) */
+	/* ebx points at a tc entry
+	   now compare target with the tce.orig_addr field (+0) */
 	cmpl	%eax, (%ebx)
 	jnz	fast_lookup_failed
-#if 1
-	/* Found a match.  Set the tte.mru_epoch field (+8)
-	   and call the tte.trans_addr field (+4) */
-	movl	VG_(current_epoch), %ecx
-	movl	%ecx, 8(%ebx)
-#endif
-	call	*4(%ebx)
+
+	/* Found a match.  Call the tce.payload field (+8) */
+	addl	$8, %ebx
+	call	*%ebx
+	
 	cmpl	$VG_(baseBlock), %ebp
 	jnz	dispatch_exceptional
 
@@ -127,27 +125,25 @@ dispatch_boring_unroll2:
 	/* save the jump address at VG_(baseBlock)[VGOFF_(m_eip)] */
 	movl	VGOFF_(m_eip), %esi
 	movl	%eax, (%ebp, %esi, 4)
-#if 1
+
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	decl	VG_(dispatch_ctr)
 	jz	counter_is_zero
-#endif
+
 	/* try a fast lookup in the translation cache */
 	movl	%eax, %ebx
 	andl	$VG_TT_FAST_MASK, %ebx	
 	/* ebx = tt_fast index */
 	movl	VG_(tt_fast)(,%ebx,4), %ebx	
-	/* ebx points at a tt entry
-	   now compare target with the tte.orig_addr field (+0) */
+	/* ebx points at a tc entry
+	   now compare target with the tce.orig_addr field (+0) */
 	cmpl	%eax, (%ebx)
 	jnz	fast_lookup_failed
-#if 1
-	/* Found a match.  Set the tte.mru_epoch field (+8)
-	   and call the tte.trans_addr field (+4) */
-	movl	VG_(current_epoch), %ecx
-	movl	%ecx, 8(%ebx)
-#endif
-	call	*4(%ebx)
+
+	/* Found a match.  Call the tce.payload field (+8) */
+	addl	$8, %ebx
+	call	*%ebx
+	
 	cmpl	$VG_(baseBlock), %ebp
 	jz	dispatch_boring
 

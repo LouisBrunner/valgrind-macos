@@ -120,7 +120,7 @@ void VG_(print_UInstr_histogram)(void)
    Int i, j;
    UInt total_counts = 0;
    UInt total_size   = 0;
-   
+
    for (i = 0; i < 100; i++) {
       total_counts += histogram[i].counts;
       total_size   += histogram[i].size;

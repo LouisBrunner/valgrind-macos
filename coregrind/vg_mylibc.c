@@ -1500,14 +1500,14 @@ UShort my_htons ( UShort x )
      -1 if there is a parse error
      -2 if no parse error, but specified host:port cannot be opened
      the relevant file (socket) descriptor, otherwise.
-   If no socket is specified, VG_CLO_DEFAULT_LOGSOCKET is used.
+ is used.
 */
 Int VG_(connect_via_socket)( UChar* str )
 {
    Int sd, res;
    struct vki_sockaddr_in servAddr;
    UInt   ip   = 0;
-   UShort port = VG_CLO_DEFAULT_LOGSOCKET;
+   UShort port = VG_CLO_DEFAULT_LOGPORT;
    Bool   ok   = parse_inet_addr_and_port(str, &ip, &port);
    if (!ok) 
       return -1;

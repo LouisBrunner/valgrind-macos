@@ -318,6 +318,9 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
                        delta, subarch_guest, &size, &guest_next );
       insn_verbose = False;
 
+      /* stay sane ... */
+      vassert(size >= 0 && size <= 18);
+
       /* Fill in the insn-mark length field. */
       vassert(first_stmt_idx >= 0 && first_stmt_idx < irbb->stmts_used);
       imark = irbb->stmts[first_stmt_idx];
@@ -358,7 +361,6 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
       n_instrs++;
       DIP("\n");
 
-      vassert(size >= 0 && size <= 18);
       if (!resteerOK) 
          vassert(dres != Dis_Resteer);
       if (dres != Dis_Resteer) 

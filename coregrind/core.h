@@ -226,6 +226,7 @@ typedef
    enum {
       VgLogTo_Fd,
       VgLogTo_File,
+      VgLogTo_FileExactly,
       VgLogTo_Socket
    } VgLogTo;
 

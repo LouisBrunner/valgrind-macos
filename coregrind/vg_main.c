@@ -1541,6 +1541,7 @@ void usage ( Bool debug_help )
 "  user options for Valgrind tools that report errors:\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>.pid<pid>\n"
+"    --log-file-exactly=<file> log messages to <file>\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
@@ -1807,6 +1808,10 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_log_to)   = VgLogTo_File;
          VG_(clo_log_name) = &arg[11];
       }
+      else if (VG_CLO_STREQN(19, arg, "--log-file-exactly=")) {
+         VG_(clo_log_to)   = VgLogTo_FileExactly;
+         VG_(clo_log_name) = &arg[19];
+      }
 
       // for backwards compatibility, replaced by --log-socket
       else if (VG_CLO_STREQN(12, arg, "--logsocket=")) {
@@ -1937,19 +1942,44 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 			   VKI_S_IRUSR|VKI_S_IWUSR);
 	    if (eventually_log_fd >= 0) {
 	       VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
-	       break;
+	       break; /* for (;;) */
 	    } else {
 	       if (eventually_log_fd != -VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
 			       "Can't create/open log file `%s.pid%d'; giving up!", 
 			       VG_(clo_log_name), pid);
 		  VG_(bad_option)(
-		     "--log-file=<file> didn't work out for some reason.");
-		  break;
+		     "--log-file=<file> (didn't work out for some reason.)");
+		  break; /* for (;;) */
 	       }
 	    }
 	 }
-         break;
+         break; /* switch (VG_(clo_log_to)) */
+      }
+
+      case VgLogTo_FileExactly: {
+         Char logfilename[1000];
+
+         vg_assert(VG_(clo_log_name) != NULL);
+         vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
+         VG_(sprintf)(logfilename, "%s", VG_(clo_log_name));
+
+         eventually_log_fd 
+            = VG_(open)(logfilename, 
+                        VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
+                        VKI_S_IRUSR|VKI_S_IWUSR);
+         if (eventually_log_fd >= 0) {
+            VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
+         } 
+         else if (eventually_log_fd != -VKI_EEXIST) {
+            VG_(message)(Vg_UserMsg, 
+                         "Can't create/open log file `%s'; giving up!", 
+                         VG_(clo_log_name));
+            VG_(bad_option)(
+               "--log-file-exactly=<file> (didn't work out for some reason.)");
+            /*NOTREACHED*/
+	 }
+         break; /* switch (VG_(clo_log_to)) */
       }
 
       case VgLogTo_Socket: {

@@ -195,6 +195,12 @@ places:</para>
    since it means that each process writes to its own logfile,
    rather than the result being jumbled up in one big
    logfile.</para>
+
+   <para>If you want to specify precisely the file name to use,
+   without the trailing
+   <computeroutput>.pid12345</computeroutput>part, you can instead use
+   <computeroutput>--log-file-exactly=filename</computeroutput>.
+   </para>
   </listitem>
 
   <listitem id="manual-core.out2socket" 

@@ -221,7 +221,7 @@ LIBALIAS(void*, memalign, ( Int alignment, Int n ))
 
 LIBALIAS(void*, valloc, ( Int size ))
 {
-   return VG_INTERCEPT(soname:libc.so.6, memalign)(VKI_BYTES_PER_PAGE, size);
+   return VG_INTERCEPT(soname:libc.so.6, memalign)(VKI_PAGE_SIZE, size);
 }
 
 

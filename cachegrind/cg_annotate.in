@@ -3,7 +3,7 @@
 ##--------------------------------------------------------------------##
 ##--- The cache simulation framework: instrumentation, recording   ---##
 ##--- and results printing.                                        ---##
-##---                                                  vg_annotate ---##
+##---                                               cg_annotate.in ---##
 ##--------------------------------------------------------------------##
 
 #  This file is part of Cachegrind, a Valgrind skin for cache
@@ -142,7 +142,7 @@ my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: vg_annotate [options] --<pid> [source-files]
+usage: cg_annotate [options] --<pid> [source-files]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
@@ -180,7 +180,7 @@ sub process_cmd_line()
 
             # --version
             if ($arg =~ /^-v$|^--version$/) {
-                die("vg_annotate-$version\n");
+                die("cg_annotate-$version\n");
 
             # --show=A,B,C
             } elsif ($arg =~ /^--show=(.*)$/) {
@@ -901,7 +901,7 @@ my $threshold_files = print_summary_and_fn_totals();
 annotate_ann_files($threshold_files);
 
 ##--------------------------------------------------------------------##
-##--- end                                           vg_annotate.in ---##
+##--- end                                           cg_annotate.in ---##
 ##--------------------------------------------------------------------##
 
 

@@ -161,6 +161,8 @@ TODO CRUCIAL:
 
 TODO LESS CRUCIAL:
 ------------------
+- writing-tools.xml refers to vg-catalog.xml but it's not in the repo... should
+  it be, and if so, how should it be used?
 - get rid of blank pages in fo output
 - concat titlepage + subtitle page in fo output
 - generate an index for the user manual (??)

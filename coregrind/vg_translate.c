@@ -199,23 +199,6 @@ void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr )
    cb->used++;
 }
 
-/* Copy auxiliary info from one uinstr to another. */
-static __inline__ 
-void copyAuxInfoFromTo ( UInstr* src, UInstr* dst )
-{
-   dst->cond            = src->cond;
-   dst->extra4b         = src->extra4b;
-   dst->signed_widen    = src->signed_widen;
-   dst->jmpkind         = src->jmpkind;
-   dst->flags_r         = src->flags_r;
-   dst->flags_w         = src->flags_w;
-   dst->argc            = src->argc;
-   dst->regparms_n      = src->regparms_n;
-   dst->has_ret_val     = src->has_ret_val;
-   dst->regs_live_after = src->regs_live_after;
-}
-
-
 /* Set the lit32 field of the most recent uinsn. */
 void VG_(set_lit_field) ( UCodeBlock* cb, UInt lit32 )
 {

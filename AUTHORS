@@ -1,14 +1,13 @@
 
-Julian Seward was the original author, creating the
-dynamic translation framework, memcheck stuff, and the
-signal/syscall/threads support gunk.
+Julian Seward was the original founder, designer and author, created the
+dynamic translation framework, wrote Memcheck and Addrcheck, and did
+lots of other things.
 
-Nicholas Nethercote did the core/tool generalisation, and wrote
-Cachegrind and some of the other tools, and tons of other stuff.
+Nicholas Nethercote did the core/tool generalisation, wrote
+Cachegrind and Massif, and tons of other stuff.
 
-Jeremy Fitzhardinge wrote Helgrind, and lots of syscall/signal
-simulation stuff, including a complete redesign of how syscalls and
-signals are handled.  Also code generation improvements.
+Jeremy Fitzhardinge wrote Helgrind and totally overhauled low-level
+syscall/signal and address space layout stuff, among many other things.
 
 Tom Hughes did a vast number of bug fixes, and helped out with support
 for more recent Linux/glibc versions.
@@ -17,15 +16,19 @@ Robert Walsh added file descriptor leakage checking, new library
 interception machinery, support for client allocation pools, and minor
 other tweakage.
 
-readelf's dwarf2 source line reader, written by Nick Clifton, was
-modified to be used in Valgrind by Daniel Berlin.
+Dirk Mueller contributed the malloc-free mismatch checking stuff
+and other bits and pieces, and acted as our KDE liaison.
+
+Cerion Armour-Brown helped with porting efforts to PowerPC.
+
+Frederic Gobry helped with autoconf and automake.
+
+Daniel Berlin modified readelf's dwarf2 source line reader, written by Nick
+Clifton, for use in Valgrind.
 
 Michael Matz and Simon Hausmann modified the GNU binutils
 demangler(s) for use in Valgrind.
 
-Dirk Mueller contrib'd the malloc-free mismatch checking stuff,
-and other bits and pieces.
-
-Lots of other people sent bug reports, patches, and very 
-helpful feedback.  I thank you all.
+And lots and lots of other people sent bug reports, patches, and very 
+helpful feedback.  Thank you all.
 

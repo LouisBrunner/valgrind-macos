@@ -134,7 +134,9 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
 	 break;
 
       case AT_SYSINFO:
+#ifdef AT_SYSINFO_EHDR
       case AT_SYSINFO_EHDR:
+#endif
 	 auxv->a_type = AT_IGNORE;
 	 break;
       }

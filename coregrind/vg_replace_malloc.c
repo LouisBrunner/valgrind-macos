@@ -45,7 +45,7 @@
 
 /* Sidestep the normal check which disallows using valgrind.h directly. */
 #define __VALGRIND_SOMESKIN_H
-#include "valgrind.h"            /* for VG_NON_SIMD_tstCALL[12] */
+#include "valgrind.h"            /* for VALGRIND_NON_SIMD_tstCALL[12] */
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/
@@ -150,7 +150,7 @@ void* malloc ( Int n )
    MAYBE_SLOPPIFY(n);
 
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL1( SK_(malloc), n );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL1( SK_(malloc), n );
    } else if (VG_(clo_alignment) != 4) {
       v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, VG_(clo_alignment), n);
    } else {
@@ -169,7 +169,7 @@ void* __builtin_new ( Int n )
    MAYBE_SLOPPIFY(n);
 
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL1( SK_(__builtin_new), n );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL1( SK_(__builtin_new), n );
    } else if (VG_(clo_alignment) != 4) {
       v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, VG_(clo_alignment), n);
    } else {
@@ -194,7 +194,7 @@ void* __builtin_vec_new ( Int n )
    MAYBE_SLOPPIFY(n);
 
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL1( SK_(__builtin_vec_new), n );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL1( SK_(__builtin_vec_new), n );
    } else if (VG_(clo_alignment) != 4) {
       v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, VG_(clo_alignment), n);
    } else {
@@ -217,7 +217,7 @@ void free ( void* p )
    if (p == NULL) 
       return;
    if (VG_(is_running_on_simd_CPU)()) {
-      (void)VG_NON_SIMD_tstCALL1( SK_(free), p );
+      (void)VALGRIND_NON_SIMD_tstCALL1( SK_(free), p );
    } else {
       VG_(arena_free)(VG_AR_CLIENT, p);      
    }
@@ -230,7 +230,7 @@ void __builtin_delete ( void* p )
    if (p == NULL) 
       return;
    if (VG_(is_running_on_simd_CPU)()) {
-      (void)VG_NON_SIMD_tstCALL1( SK_(__builtin_delete), p );
+      (void)VALGRIND_NON_SIMD_tstCALL1( SK_(__builtin_delete), p );
    } else {
       VG_(arena_free)(VG_AR_CLIENT, p);
    }
@@ -249,7 +249,7 @@ void __builtin_vec_delete ( void* p )
    if (p == NULL) 
       return;
    if (VG_(is_running_on_simd_CPU)()) {
-      (void)VG_NON_SIMD_tstCALL1( SK_(__builtin_vec_delete), p );
+      (void)VALGRIND_NON_SIMD_tstCALL1( SK_(__builtin_vec_delete), p );
    } else {
       VG_(arena_free)(VG_AR_CLIENT, p);
    }
@@ -270,7 +270,7 @@ void* calloc ( Int nmemb, Int size )
    MAYBE_SLOPPIFY(size);
 
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL2( SK_(calloc), nmemb, size );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL2( SK_(calloc), nmemb, size );
    } else {
       v = VG_(arena_calloc)(VG_AR_CLIENT, VG_(clo_alignment), nmemb, size);
    }
@@ -296,7 +296,7 @@ void* realloc ( void* ptrV, Int new_size )
       return NULL;
    }   
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL2( SK_(realloc), ptrV, new_size );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL2( SK_(realloc), ptrV, new_size );
    } else {
       v = VG_(arena_realloc)(VG_AR_CLIENT, ptrV, VG_(clo_alignment), new_size);
    }
@@ -314,7 +314,7 @@ void* memalign ( Int alignment, Int n )
    MAYBE_SLOPPIFY(n);
 
    if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VG_NON_SIMD_tstCALL2( SK_(memalign), alignment, n );
+      v = (void*)VALGRIND_NON_SIMD_tstCALL2( SK_(memalign), alignment, n );
    } else {
       v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, alignment, n);
    }

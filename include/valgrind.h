@@ -199,7 +199,7 @@ typedef
 
 /* These requests allow control to move from the simulated CPU to the
    real CPU, calling an arbitary function */
-#define VG_NON_SIMD_CALL0(_qyy_fn)                             \
+#define VALGRIND_NON_SIMD_CALL0(_qyy_fn)                       \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL0,          \
@@ -208,7 +208,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_CALL1(_qyy_fn, _qyy_arg1)                  \
+#define VALGRIND_NON_SIMD_CALL1(_qyy_fn, _qyy_arg1)            \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL1,          \
@@ -217,7 +217,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_CALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)       \
+#define VALGRIND_NON_SIMD_CALL2(_qyy_fn, _qyy_arg1, _qyy_arg2) \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL2,          \
@@ -226,7 +226,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_CALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
+#define VALGRIND_NON_SIMD_CALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
    ({unsigned int _qyy_res;                                          \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,        \
                             VG_USERREQ__CLIENT_CALL3,                \
@@ -238,7 +238,7 @@ typedef
 
 /* These requests are similar to those above;  they insert the current
    ThreadState as the first argument to the called function. */
-#define VG_NON_SIMD_tstCALL0(_qyy_fn)                          \
+#define VALGRIND_NON_SIMD_tstCALL0(_qyy_fn)                    \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_tstCALL0,       \
@@ -247,7 +247,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_tstCALL1(_qyy_fn, _qyy_arg1)               \
+#define VALGRIND_NON_SIMD_tstCALL1(_qyy_fn, _qyy_arg1)         \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_tstCALL1,       \
@@ -256,7 +256,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_tstCALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
+#define VALGRIND_NON_SIMD_tstCALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
    ({unsigned int _qyy_res;                                    \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_tstCALL2,       \
@@ -265,7 +265,7 @@ typedef
     _qyy_res;                                                  \
    })
 
-#define VG_NON_SIMD_tstCALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
+#define VALGRIND_NON_SIMD_tstCALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
    ({unsigned int _qyy_res;                                             \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,           \
                             VG_USERREQ__CLIENT_tstCALL3,                \

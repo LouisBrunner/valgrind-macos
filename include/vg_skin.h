@@ -1342,7 +1342,7 @@ extern void VG_(HT_destruct) ( VgHashTable t );
 /* Is the client running on the simulated CPU or the real one? 
 
    Nb: If it is, and you want to call a function to be run on the real CPU,
-   use one of the VG_NON_SIMD_CALL[123] macros in valgrind.h to call it.
+   use one of the VALGRIND_NON_SIMD_CALL[123] macros in valgrind.h to call it.
 
    Nb: don't forget the function parentheses when using this in a 
    condition... write this:

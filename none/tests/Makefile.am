@@ -8,6 +8,7 @@ noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
+	args.stderr.exp args.stderr.exp.hd args.stdout.exp args.vgtest \
 	bitfield1.stderr.exp bitfield1.stderr.exp.hd bitfield1.vgtest \
 	bt_everything.stderr.exp bt_everything.stderr.exp.hd \
 	bt_everything.stdout.exp bt_everything.vgtest \
@@ -42,7 +43,7 @@ EXTRA_DIST = \
 	smc1.stderr.exp smc1.stderr.exp.hd smc1.stdout.exp smc1.vgtest
 
 noinst_PROGRAMS = \
-	bitfield1 bt_everything bt_literal coolo_strlen \
+	args bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest discard floored fork fucomip munmap_exe rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
@@ -52,6 +53,7 @@ CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 CXXFLAGS = $(CFLAGS)
 
 # generic C ones
+args_SOURCES 		= args.c
 bitfield1_SOURCES 	= bitfield1.c
 bt_everything_SOURCES 	= bt_everything.c
 bt_literal_SOURCES 	= bt_literal.c

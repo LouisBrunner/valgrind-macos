@@ -616,6 +616,7 @@ typedef UChar FlagSet;
 #define FlagsOSACP  (FlagO | FlagS |         FlagA | FlagC | FlagP)
 #define FlagsSZACP  (        FlagS | FlagZ | FlagA | FlagC | FlagP)
 #define FlagsSZAP   (        FlagS | FlagZ | FlagA |         FlagP)
+#define FlagsZCP    (                FlagZ         | FlagC | FlagP)
 #define FlagsOC     (FlagO |                         FlagC        )
 #define FlagsAC     (                        FlagA | FlagC        )
 

@@ -2598,8 +2598,13 @@ static void emitUInstr ( Int i, UInstr* u )
       case FPU:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
+         vg_assert(u->flags_r == FlagsEmpty);
+         if (u->flags_w != FlagsEmpty) 
+            emit_get_eflags();
          synth_fpu_no_mem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF );
+         if (u->flags_w != FlagsEmpty) 
+            emit_put_eflags();
          break;
 
       default: 

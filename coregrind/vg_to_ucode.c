@@ -2244,14 +2244,39 @@ Addr dis_fpu_mem ( UCodeBlock* cb, Int size, Bool is_write,
 static 
 Addr dis_fpu_no_mem ( UCodeBlock* cb, Addr eip, UChar first_byte )
 {
+   Bool  sets_ZCP    = False;
    UChar second_byte = getUChar(eip); eip++;
    vg_assert(second_byte >= 0xC0);
+
+   if (first_byte == 0xDB && second_byte >= 0xF0 && second_byte <= 0xF7) {
+      /* FCOMI */
+      sets_ZCP = True;
+   } else
+   if (first_byte == 0xDF && second_byte >= 0xF0 && second_byte <= 0xF7) {
+      /* FCOMIP */
+      sets_ZCP = True;
+   } else
+   if (first_byte == 0xDB && second_byte >= 0xE8 && second_byte <= 0xEF) {
+      /* FUCOMI */
+      sets_ZCP = True;
+   } else
+   if (first_byte == 0xDF && second_byte >= 0xE8 && second_byte <= 0xEF) {
+      /* FUCOMIP */
+      sets_ZCP = True;
+   } 
+
    uInstr1(cb, FPU, 0,
                Lit16,
                (((UShort)first_byte) << 8) | ((UShort)second_byte)
           );
-   if (dis) VG_(printf)("fpu 0x%x:0x%x\n",
-                        (UInt)first_byte, (UInt)second_byte );
+   if (sets_ZCP) {
+      /* VG_(printf)("!!! --- FPU insn which writes %EFLAGS\n"); */
+      uFlagsRWU(cb, FlagsEmpty, FlagsZCP, FlagsEmpty);
+   }
+
+   if (dis) VG_(printf)("fpu 0x%x:0x%x%s\n",
+                        (UInt)first_byte, (UInt)second_byte,
+                        sets_ZCP ? " -wZCP" : "" );
    return eip;
 }
 

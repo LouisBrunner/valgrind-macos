@@ -478,6 +478,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
 #  define CC0 (u->flags_r == FlagsEmpty && u->flags_w == FlagsEmpty)
 #  define FLG_RD (u->flags_r == FlagsALL && u->flags_w == FlagsEmpty)
 #  define FLG_WR (u->flags_r == FlagsEmpty && u->flags_w == FlagsALL)
+#  define FLG_WR_MAYBE (u->flags_r == FlagsEmpty && \
+                    (u->flags_w == FlagsEmpty || u->flags_w == FlagsZCP))
 #  define CC1 (!(CC0))
 #  define SZ4_IF_TR1 ((u->tag1 == TempReg || u->tag1 == RealReg) \
                       ? (u->size == 4) : True)
@@ -540,7 +542,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
       case FPU_R:  case FPU_W: 
          return CC0 && Ls1 && TR2 && N3;
       case FPU: 
-         return SZ0 && CC0 && Ls1 && N2 && N3;
+         return SZ0 && FLG_WR_MAYBE && Ls1 && N2 && N3;
       case LOADV:
          return CC0 && TR1 && TR2 && N3;
       case STOREV:
@@ -590,6 +592,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
 #  undef N3
 #  undef FLG_RD
 #  undef FLG_WR
+#  undef FLG_WR_MAYBE
 }
 
 

@@ -3,6 +3,9 @@
 	* vg_to_ucode.c (disInstr): Implement DAA as well as DAS.
          Byrial Jensen <byrial@image.dk>
 
+	 (dis_fpu_no_mem): Detect FPU instructions which set %EFLAGS and
+	 mark the resulting UInstrs accordingly.
+
 	* vg_errcontext.c (pp_ErrContext): Change message "Use of
 	uninitialized CPU condition code" to "Conditional jump or move
 	depends on uninitialised value(s)", since that will be more

@@ -2644,8 +2644,23 @@ void codegen_xchg_eAX_Reg ( UCodeBlock* cb, Int sz, Int reg )
 static 
 void codegen_SAHF ( UCodeBlock* cb )
 {
-   Int t  = newTemp(cb);
+   Int t   = newTemp(cb);
+   Int t2  = newTemp(cb);
    uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t);
+
+   /* Mask out parts of t not corresponding to %AH.  This stops the
+      instrumenter complaining if they are undefined.  Otherwise, the
+      instrumenter would check all 32 bits of t at the PUSH, which
+      could be the cause of incorrect warnings.  Discovered by Daniel
+      Veillard <veillard@redhat.com>. 
+   */
+   uInstr2(cb, MOV, 4, Literal, 0, TempReg, t2);
+   uLiteral(cb, 0x0000FF00);
+   uInstr2(cb, AND, 4, TempReg, t2, TempReg, t);
+   /* We deliberately don't set the condition codes here, since this
+      AND is purely internal to Valgrind and nothing to do with the
+      client's state. */
+
    uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, PUSH,  4, TempReg, t);
    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_SAHF));

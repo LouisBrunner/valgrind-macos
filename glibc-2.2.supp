@@ -16,6 +16,40 @@
 #     (optionally: caller3 name)
 # }
 
+#-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
+{
+   __stpcpy/*
+   Cond
+   fun:__stpcpy
+   fun:*
+}
+{
+   strlen/decompose_rpath/_dl_map_object
+   Cond
+   fun:strlen
+   fun:decompose_rpath
+   fun:_dl_map_object
+}
+{
+   strlen/_dl_sym/dlsym_doit
+   Cond
+   fun:strlen
+   fun:_dl_sym
+   fun:dlsym_doit
+}
+{
+   trecurse/__gconv_release_shlib(Addr4)
+   Addr4
+   fun:trecurse
+   fun:__gconv_release_shlib
+}
+{
+   do_release_shlib/trecurse(Addr4)
+   Addr4
+   fun:do_release_shlib
+   fun:trecurse
+}
+
 #-------- R H Limbo (glibc-2.2.90) stuff
 {
    elf_dynamic_do_rela.8/_dl_relocate_object_internal

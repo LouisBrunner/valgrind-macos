@@ -182,6 +182,7 @@ typedef
 #define VKI_ENOMEM          12      /* Out of memory */
 #define	VKI_EFAULT          14      /* Bad address */
 #define VKI_ESRCH            3      /* No such process */
+#define VKI_ENOSYS          38      /* Function not implemented */
 
 #define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
 #define VKI_EAGAIN          11      /* Try again */
@@ -380,6 +381,34 @@ struct vki_stat {
 */
 
 #define VKI_SIZEOF_STRUCT_MODULE 96
+
+
+/* This is the structure passed to the modify_ldt syscall.  Just so as
+   to confuse and annoy everyone, this is _not_ the same as an
+   VgLdtEntry and has to be translated into such.  The logic for doing
+   so, in vg_ldt.c, is copied from the kernel sources. */
+/*
+ * ldt.h
+ *
+ * Definitions of structures used with the modify_ldt system call.
+ */
+typedef struct vki_modify_ldt_ldt_s {
+        unsigned int  entry_number;
+        unsigned long base_addr;
+        unsigned int  limit;
+        unsigned int  seg_32bit:1;
+        unsigned int  contents:2;
+        unsigned int  read_exec_only:1;
+        unsigned int  limit_in_pages:1;
+        unsigned int  seg_not_present:1;
+        unsigned int  useable:1;
+} vki_modify_ldt_t;
+
+#define VKI_MODIFY_LDT_CONTENTS_DATA        0
+#define VKI_MODIFY_LDT_CONTENTS_STACK       1
+#define VKI_MODIFY_LDT_CONTENTS_CODE        2
+
+
 
 #endif /* ndef __VG_KERNELIFACE_H */
 

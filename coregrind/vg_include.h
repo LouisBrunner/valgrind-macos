@@ -408,6 +408,53 @@ extern void VG_(__libc_freeres_wrapper)( void );
 
 
 /* ---------------------------------------------------------------------
+   Exports of vg_ldt.c
+   ------------------------------------------------------------------ */
+
+/* This is the hardware-format for a segment descriptor, ie what the
+   x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
+
+typedef struct _LDT_ENTRY {
+    union {
+       struct {
+          UShort      LimitLow;
+          UShort      BaseLow;
+          unsigned    BaseMid         : 8;
+          unsigned    Type            : 5;
+          unsigned    Dpl             : 2;
+          unsigned    Pres            : 1;
+          unsigned    LimitHi         : 4;
+          unsigned    Sys             : 1;
+          unsigned    Reserved_0      : 1;
+          unsigned    Default_Big     : 1;
+          unsigned    Granularity     : 1;
+          unsigned    BaseHi          : 8;
+       } Bits;
+       struct {
+          UInt word1;
+          UInt word2;
+       } Words;
+    } 
+    LdtEnt;
+} VgLdtEntry;
+
+/* Maximum number of LDT entries supported (by the x86). */
+#define VG_M_LDT_ENTRIES     8192
+/* The size of each LDT entry == sizeof(VgLdtEntry) */
+#define VG_LDT_ENTRY_SIZE  8
+
+/* Alloc & copy, and dealloc. */
+extern VgLdtEntry* 
+         VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt );
+extern void       
+         VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
+
+/* Simulate the modify_ldt syscall. */
+extern Int VG_(sys_modify_ldt) ( ThreadId tid,
+                                 Int func, void* ptr, UInt bytecount );
+
+
+/* ---------------------------------------------------------------------
    Exports of vg_scheduler.c
    ------------------------------------------------------------------ */
 
@@ -546,13 +593,33 @@ struct _ThreadState {
    */
    Addr stack_base;
 
-  /* Address of the highest legitimate word in this stack.  This is
-     used for error messages only -- not critical for execution
-     correctness.  Is is set for all stacks, specifically including
-     ThreadId == 0 (the main thread). */
+   /* Address of the highest legitimate word in this stack.  This is
+      used for error messages only -- not critical for execution
+      correctness.  Is is set for all stacks, specifically including
+      ThreadId == 0 (the main thread). */
    Addr stack_highest_word;
 
-   /* Saved machine context. */
+   /* Pointer to this thread's Local (Segment) Descriptor Table.
+      Starts out as NULL, indicating there is no table, and we hope to
+      keep it that way.  If the thread does __NR_modify_ldt to create
+      entries, we allocate a 8192-entry table at that point.  This is
+      a straight copy of the Linux kernel's scheme.  Don't forget to
+      deallocate this at thread exit. */
+   VgLdtEntry* ldt;
+
+   /* Saved machine context.  Note the FPU state, %EIP and segment
+      registers are not shadowed.
+
+      Although the segment registers are 16 bits long, storage
+      management here, in VG_(baseBlock) and in VG_(m_state_static) is
+      simplified if we pretend they are 32 bits. */
+   UInt m_cs;
+   UInt m_ss;
+   UInt m_ds;
+   UInt m_es;
+   UInt m_fs;
+   UInt m_gs;
+
    UInt m_eax;
    UInt m_ebx;
    UInt m_ecx;
@@ -965,7 +1032,8 @@ extern void VG_(do_sanity_checks) ( Bool force_expensive );
    Stuff is copied from baseBlock to here, the assembly magic runs,
    and then the inverse copy is done. 
  */
-extern UInt VG_(m_state_static) [8 /* int regs, in Intel order */ 
+extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
+                                 + 8 /* int regs, in Intel order */ 
                                  + 1 /* %eflags */ 
                                  + 1 /* %eip */
                                  + VG_SIZE_OF_FPUSTATE_W /* FPU state */
@@ -1278,6 +1346,13 @@ extern Int VGOFF_(m_eflags);
 extern Int VGOFF_(m_fpustate);
 extern Int VGOFF_(m_eip);
 
+extern Int VGOFF_(m_cs);
+extern Int VGOFF_(m_ss);
+extern Int VGOFF_(m_ds);
+extern Int VGOFF_(m_es);
+extern Int VGOFF_(m_fs);
+extern Int VGOFF_(m_gs);
+
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);
 
@@ -1295,6 +1370,9 @@ extern Int VGOFF_(sh_eflags);
 /* -----------------------------------------------------
    Read-only parts of baseBlock.
    -------------------------------------------------- */
+
+/* This thread's LDT pointer. */
+extern Int VGOFF_(ldt);
 
 /* Offsets of addresses of helper functions.  A "helper" function is
    one which is called from generated code. */

@@ -398,6 +398,14 @@ void VG_(load_thread_state) ( ThreadId tid )
    Int i;
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
+   VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)VG_(threads)[tid].ldt;
+   VG_(baseBlock)[VGOFF_(m_cs)] = VG_(threads)[tid].m_cs;
+   VG_(baseBlock)[VGOFF_(m_ss)] = VG_(threads)[tid].m_ss;
+   VG_(baseBlock)[VGOFF_(m_ds)] = VG_(threads)[tid].m_ds;
+   VG_(baseBlock)[VGOFF_(m_es)] = VG_(threads)[tid].m_es;
+   VG_(baseBlock)[VGOFF_(m_fs)] = VG_(threads)[tid].m_fs;
+   VG_(baseBlock)[VGOFF_(m_gs)] = VG_(threads)[tid].m_gs;
+
    VG_(baseBlock)[VGOFF_(m_eax)] = VG_(threads)[tid].m_eax;
    VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(threads)[tid].m_ebx;
    VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(threads)[tid].m_ecx;
@@ -456,6 +464,21 @@ void VG_(save_thread_state) ( ThreadId tid )
 
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
 
+
+   /* We don't copy out the LDT entry, because it can never be changed
+      by the normal actions of the thread, only by the modify_ldt
+      syscall, in which case we will correctly be updating
+      VG_(threads)[tid].ldt. */
+   vg_assert((void*)VG_(threads)[tid].ldt 
+             == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
+
+   VG_(threads)[tid].m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
+   VG_(threads)[tid].m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
+   VG_(threads)[tid].m_ds = VG_(baseBlock)[VGOFF_(m_ds)];
+   VG_(threads)[tid].m_es = VG_(baseBlock)[VGOFF_(m_es)];
+   VG_(threads)[tid].m_fs = VG_(baseBlock)[VGOFF_(m_fs)];
+   VG_(threads)[tid].m_gs = VG_(baseBlock)[VGOFF_(m_gs)];
+
    VG_(threads)[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
    VG_(threads)[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
    VG_(threads)[tid].m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
@@ -494,6 +517,14 @@ void VG_(save_thread_state) ( ThreadId tid )
    }
 
    /* Fill it up with junk. */
+   VG_(baseBlock)[VGOFF_(ldt)] = junk;
+   VG_(baseBlock)[VGOFF_(m_cs)] = junk;
+   VG_(baseBlock)[VGOFF_(m_ss)] = junk;
+   VG_(baseBlock)[VGOFF_(m_ds)] = junk;
+   VG_(baseBlock)[VGOFF_(m_es)] = junk;
+   VG_(baseBlock)[VGOFF_(m_fs)] = junk;
+   VG_(baseBlock)[VGOFF_(m_gs)] = junk;
+
    VG_(baseBlock)[VGOFF_(m_eax)] = junk;
    VG_(baseBlock)[VGOFF_(m_ebx)] = junk;
    VG_(baseBlock)[VGOFF_(m_ecx)] = junk;
@@ -581,6 +612,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 {
    Int j;
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   VG_(threads)[tid].ldt                  = NULL;
    VG_(threads)[tid].tid                  = tid;
    VG_(threads)[tid].status               = VgTs_Empty;
    VG_(threads)[tid].associated_mx        = NULL;
@@ -1659,6 +1691,10 @@ void cleanup_after_thread_exited ( ThreadId tid )
          vg_waiting_fds[i].fd = -1; /* not in use */
       }
    }
+
+   /* Deallocate its LDT, if it ever had one. */
+   VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].ldt );
+   VG_(threads)[tid].ldt = NULL;
 }
 
 
@@ -2185,6 +2221,16 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* We inherit our parent's signal mask. */
    VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
    VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
+
+   /* We inherit our parent's LDT. */
+   if (VG_(threads)[parent_tid].ldt == NULL) {
+      /* We hope this is the common case. */
+      VG_(threads)[tid].ldt = NULL;
+   } else {
+      /* No luck .. we have to take a copy of the parent's. */
+      VG_(threads)[tid].ldt 
+        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].ldt );
+   }
 
    /* return child's tid to parent */
    SET_EDX(parent_tid, tid); /* success */

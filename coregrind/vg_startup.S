@@ -85,21 +85,27 @@ really_start_up:
 	# have not yet been set up.  Instead, they are copied to a
 	# temporary place (m_state_static).  In vg_main.c, once the
 	# baseBlock offsets are set up, values are copied into baseBlock.
-	movl	%eax, VG_(m_state_static)+0
-	movl	%ecx, VG_(m_state_static)+4
-	movl	%edx, VG_(m_state_static)+8
-	movl	%ebx, VG_(m_state_static)+12
-	movl	%esp, VG_(m_state_static)+16
-	movl	%ebp, VG_(m_state_static)+20
-	movl	%esi, VG_(m_state_static)+24
-	movl	%edi, VG_(m_state_static)+28
+	movw	%cs, VG_(m_state_static)+0
+	movw	%ss, VG_(m_state_static)+4
+	movw	%ds, VG_(m_state_static)+8
+	movw	%es, VG_(m_state_static)+12
+	movw	%fs, VG_(m_state_static)+16
+	movw	%gs, VG_(m_state_static)+20
+	movl	%eax, VG_(m_state_static)+24
+	movl	%ecx, VG_(m_state_static)+28
+	movl	%edx, VG_(m_state_static)+32
+	movl	%ebx, VG_(m_state_static)+36
+	movl	%esp, VG_(m_state_static)+40
+	movl	%ebp, VG_(m_state_static)+44
+	movl	%esi, VG_(m_state_static)+48
+	movl	%edi, VG_(m_state_static)+52
 	pushfl
 	popl	%eax
-	movl	%eax, VG_(m_state_static)+32
+	movl	%eax, VG_(m_state_static)+56
 	fwait
-	fnsave	VG_(m_state_static)+40
-	frstor	VG_(m_state_static)+40
-
+	fnsave	VG_(m_state_static)+64
+	frstor	VG_(m_state_static)+64
+	
 	# keep the first and last 10 words free to check for overruns	
 	movl	$VG_(stack)+39996 -40, %esp
 
@@ -108,7 +114,7 @@ really_start_up:
 	# simulator.  So vg_main starts the simulator running at
 	# the insn labelled first_insn_to_simulate.
 
-	movl	$first_insn_to_simulate, VG_(m_state_static)+36
+	movl	$first_insn_to_simulate, VG_(m_state_static)+60
 	jmp	VG_(main)
 first_insn_to_simulate:
 	# Nothing else to do -- just return in the "normal" way.
@@ -136,18 +142,24 @@ VG_(switch_to_real_CPU):
 	# of the rest of the program continues on the real CPU,
 	# and there is no way for the simulator to regain control
 	# after this point.
-	frstor	VG_(m_state_static)+40
-	movl	VG_(m_state_static)+32, %eax
+	frstor	VG_(m_state_static)+64
+	movl	VG_(m_state_static)+56, %eax
 	pushl	%eax
 	popfl
-	movl	VG_(m_state_static)+0, %eax
-	movl	VG_(m_state_static)+4, %ecx
-	movl	VG_(m_state_static)+8, %edx
-	movl	VG_(m_state_static)+12, %ebx
-	movl	VG_(m_state_static)+16, %esp
-	movl	VG_(m_state_static)+20, %ebp
-	movl	VG_(m_state_static)+24, %esi
-	movl	VG_(m_state_static)+28, %edi
+	movw	VG_(m_state_static)+0, %cs
+	movw	VG_(m_state_static)+4, %ss
+	movw	VG_(m_state_static)+8, %ds
+	movw	VG_(m_state_static)+12, %es
+	movw	VG_(m_state_static)+16, %fs
+	movw	VG_(m_state_static)+20, %gs
+	movl	VG_(m_state_static)+24, %eax
+	movl	VG_(m_state_static)+28, %ecx
+	movl	VG_(m_state_static)+32, %edx
+	movl	VG_(m_state_static)+36, %ebx
+	movl	VG_(m_state_static)+40, %esp
+	movl	VG_(m_state_static)+44, %ebp
+	movl	VG_(m_state_static)+48, %esi
+	movl	VG_(m_state_static)+52, %edi
 
 	pushal
 	pushfl
@@ -157,8 +169,8 @@ VG_(switch_to_real_CPU):
 	popfl
 	popal
 	# re-restore the FPU state anyway ...
-	frstor	VG_(m_state_static)+40	
-	jmp	*VG_(m_state_static)+36
+	frstor	VG_(m_state_static)+64
+	jmp	*VG_(m_state_static)+60
 
 
 

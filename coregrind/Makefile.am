@@ -54,7 +54,8 @@ valgrind_so_SOURCES = \
 	vg_syscall.S \
 	vg_to_ucode.c \
 	vg_translate.c \
-	vg_transtab.c
+	vg_transtab.c \
+	vg_ldt.c
 valgrind_so_LDFLAGS = -Wl,-z -Wl,initfirst -shared
 valgrind_so_LDADD = \
 	demangle/cp-demangle.o \

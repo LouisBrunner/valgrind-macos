@@ -54,18 +54,31 @@ VG_(do_syscall):
 	
 	# Now copy the simulated machines state into the real one
 	# esp still refers to the simulators stack
-	frstor	VG_(m_state_static)+40
-	movl	VG_(m_state_static)+32, %eax
+	frstor	VG_(m_state_static)+64
+	movl	VG_(m_state_static)+56, %eax
 	pushl	%eax
 	popfl
-	movl	VG_(m_state_static)+0, %eax
-	movl	VG_(m_state_static)+4, %ecx
-	movl	VG_(m_state_static)+8, %edx
-	movl	VG_(m_state_static)+12, %ebx
-	movl	VG_(m_state_static)+16, %esp
-	movl	VG_(m_state_static)+20, %ebp
-	movl	VG_(m_state_static)+24, %esi
-	movl	VG_(m_state_static)+28, %edi
+#if 0
+	/* don't bother to save/restore seg regs across the kernel iface.  
+	   Once we have our hands on them, our simulation of it is 
+	   completely internal, and the kernel sees nothing.  
+	   What's more, loading new values in to %cs seems 
+	   to be impossible anyway. */
+	movw	VG_(m_state_static)+0, %cs
+	movw	VG_(m_state_static)+4, %ss
+	movw	VG_(m_state_static)+8, %ds
+	movw	VG_(m_state_static)+12, %es
+	movw	VG_(m_state_static)+16, %fs
+	movw	VG_(m_state_static)+20, %gs
+#endif
+	movl	VG_(m_state_static)+24, %eax
+	movl	VG_(m_state_static)+28, %ecx
+	movl	VG_(m_state_static)+32, %edx
+	movl	VG_(m_state_static)+36, %ebx
+	movl	VG_(m_state_static)+40, %esp
+	movl	VG_(m_state_static)+44, %ebp
+	movl	VG_(m_state_static)+48, %esi
+	movl	VG_(m_state_static)+52, %edi
 
 	# esp now refers to the simulatees stack
 	# Do the actual system call
@@ -73,25 +86,33 @@ VG_(do_syscall):
 
 	# restore stack as soon as possible
 	# esp refers to simulatees stack
-	movl	%esp, VG_(m_state_static)+16
+	movl	%esp, VG_(m_state_static)+40
 	movl	VG_(esp_saved_over_syscall), %esp
 	# esp refers to simulators stack
 
 	# ... and undo everything else.  
-	# Copy real state back to simulated state.	
-	movl	%eax, VG_(m_state_static)+0
-	movl	%ecx, VG_(m_state_static)+4
-	movl	%edx, VG_(m_state_static)+8
-	movl	%ebx, VG_(m_state_static)+12
-	movl	%ebp, VG_(m_state_static)+20
-	movl	%esi, VG_(m_state_static)+24
-	movl	%edi, VG_(m_state_static)+28
+	# Copy real state back to simulated state.
+#if 0
+	movw	%cs, VG_(m_state_static)+0
+	movw	%ss, VG_(m_state_static)+4
+	movw	%ds, VG_(m_state_static)+8
+	movw	%es, VG_(m_state_static)+12
+	movw	%fs, VG_(m_state_static)+16
+	movw	%gs, VG_(m_state_static)+20
+#endif
+	movl	%eax, VG_(m_state_static)+24
+	movl	%ecx, VG_(m_state_static)+28
+	movl	%edx, VG_(m_state_static)+32
+	movl	%ebx, VG_(m_state_static)+36
+	movl	%ebp, VG_(m_state_static)+44
+	movl	%esi, VG_(m_state_static)+48
+	movl	%edi, VG_(m_state_static)+52
 	pushfl
 	popl	%eax
-	movl	%eax, VG_(m_state_static)+32
+	movl	%eax, VG_(m_state_static)+56
 	fwait
-	fnsave	VG_(m_state_static)+40
-	frstor	VG_(m_state_static)+40
+	fnsave	VG_(m_state_static)+64
+	frstor	VG_(m_state_static)+64
 
 	# Restore the state of the simulator
 	frstor	VG_(real_fpu_state_saved_over_syscall)

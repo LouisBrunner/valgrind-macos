@@ -49,6 +49,13 @@ Int VGOFF_(m_esi) = INVALID_OFFSET;
 Int VGOFF_(m_edi) = INVALID_OFFSET;
 Int VGOFF_(m_eflags) = INVALID_OFFSET;
 Int VGOFF_(m_fpustate) = INVALID_OFFSET;
+Int VGOFF_(ldt)   = INVALID_OFFSET;
+Int VGOFF_(m_cs)  = INVALID_OFFSET;
+Int VGOFF_(m_ss)  = INVALID_OFFSET;
+Int VGOFF_(m_ds)  = INVALID_OFFSET;
+Int VGOFF_(m_es)  = INVALID_OFFSET;
+Int VGOFF_(m_fs)  = INVALID_OFFSET;
+Int VGOFF_(m_gs)  = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
@@ -230,6 +237,16 @@ static void vg_init_baseBlock ( void )
 
    VGOFF_(m_fpustate) = alloc_BaB(VG_SIZE_OF_FPUSTATE_W);
 
+   /* This thread's LDT pointer, and segment registers. */
+   VGOFF_(ldt)   = alloc_BaB(1);
+   VGOFF_(m_cs)  = alloc_BaB(1);
+   VGOFF_(m_ss)  = alloc_BaB(1);
+   VGOFF_(m_ds)  = alloc_BaB(1);
+   VGOFF_(m_es)  = alloc_BaB(1);
+   VGOFF_(m_fs)  = alloc_BaB(1);
+   VGOFF_(m_gs)  = alloc_BaB(1);
+
+   /* Helper functions. */
    VGOFF_(helper_idiv_64_32)
       = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32) );
    VGOFF_(helper_div_64_32)
@@ -296,7 +313,7 @@ static void vg_init_baseBlock ( void )
    VGOFF_(helper_DAA)
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAA) );
 
-   /* Allocate slots for compact helpers */
+   /* Allocate slots for noncompact helpers */
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
                                VG_(noncompact_helper_offsets), 
                                VG_(noncompact_helper_addrs));
@@ -1000,7 +1017,8 @@ static void process_cmd_line_options ( void )
    Copying to/from m_state_static.
    ------------------------------------------------------------------ */
 
-UInt VG_(m_state_static) [8 /* int regs, in Intel order */ 
+UInt VG_(m_state_static) [6 /* segment regs, Intel order */
+                          + 8 /* int regs, in Intel order */ 
                           + 1 /* %eflags */ 
                           + 1 /* %eip */
                           + VG_SIZE_OF_FPUSTATE_W /* FPU state */
@@ -1009,20 +1027,27 @@ UInt VG_(m_state_static) [8 /* int regs, in Intel order */
 void VG_(copy_baseBlock_to_m_state_static) ( void )
 {
    Int i;
-   VG_(m_state_static)[ 0/4] = VG_(baseBlock)[VGOFF_(m_eax)];
-   VG_(m_state_static)[ 4/4] = VG_(baseBlock)[VGOFF_(m_ecx)];
-   VG_(m_state_static)[ 8/4] = VG_(baseBlock)[VGOFF_(m_edx)];
-   VG_(m_state_static)[12/4] = VG_(baseBlock)[VGOFF_(m_ebx)];
-   VG_(m_state_static)[16/4] = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(m_state_static)[20/4] = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(m_state_static)[24/4] = VG_(baseBlock)[VGOFF_(m_esi)];
-   VG_(m_state_static)[28/4] = VG_(baseBlock)[VGOFF_(m_edi)];
+   VG_(m_state_static)[ 0/4] = VG_(baseBlock)[VGOFF_(m_cs)];
+   VG_(m_state_static)[ 4/4] = VG_(baseBlock)[VGOFF_(m_ss)];
+   VG_(m_state_static)[ 8/4] = VG_(baseBlock)[VGOFF_(m_ds)];
+   VG_(m_state_static)[12/4] = VG_(baseBlock)[VGOFF_(m_es)];
+   VG_(m_state_static)[16/4] = VG_(baseBlock)[VGOFF_(m_fs)];
+   VG_(m_state_static)[20/4] = VG_(baseBlock)[VGOFF_(m_gs)];
 
-   VG_(m_state_static)[32/4] = VG_(baseBlock)[VGOFF_(m_eflags)];
-   VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_eip)];
+   VG_(m_state_static)[24/4] = VG_(baseBlock)[VGOFF_(m_eax)];
+   VG_(m_state_static)[28/4] = VG_(baseBlock)[VGOFF_(m_ecx)];
+   VG_(m_state_static)[32/4] = VG_(baseBlock)[VGOFF_(m_edx)];
+   VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_ebx)];
+   VG_(m_state_static)[40/4] = VG_(baseBlock)[VGOFF_(m_esp)];
+   VG_(m_state_static)[44/4] = VG_(baseBlock)[VGOFF_(m_ebp)];
+   VG_(m_state_static)[48/4] = VG_(baseBlock)[VGOFF_(m_esi)];
+   VG_(m_state_static)[52/4] = VG_(baseBlock)[VGOFF_(m_edi)];
+
+   VG_(m_state_static)[56/4] = VG_(baseBlock)[VGOFF_(m_eflags)];
+   VG_(m_state_static)[60/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(m_state_static)[40/4 + i] 
+      VG_(m_state_static)[64/4 + i] 
          = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
 }
 
@@ -1030,21 +1055,28 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
 void VG_(copy_m_state_static_to_baseBlock) ( void )
 {
    Int i;
-   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(m_state_static)[ 0/4];
-   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(m_state_static)[ 4/4];
-   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(m_state_static)[ 8/4];
-   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(m_state_static)[12/4];
-   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(m_state_static)[16/4];
-   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(m_state_static)[20/4];
-   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[24/4];
-   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[28/4];
+   VG_(baseBlock)[VGOFF_(m_cs)] = VG_(m_state_static)[ 0/4];
+   VG_(baseBlock)[VGOFF_(m_ss)] = VG_(m_state_static)[ 4/4];
+   VG_(baseBlock)[VGOFF_(m_ds)] = VG_(m_state_static)[ 8/4];
+   VG_(baseBlock)[VGOFF_(m_es)] = VG_(m_state_static)[12/4];
+   VG_(baseBlock)[VGOFF_(m_fs)] = VG_(m_state_static)[16/4];
+   VG_(baseBlock)[VGOFF_(m_gs)] = VG_(m_state_static)[20/4];
 
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[32/4];
-   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
+   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(m_state_static)[24/4];
+   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(m_state_static)[28/4];
+   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(m_state_static)[32/4];
+   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(m_state_static)[36/4];
+   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(m_state_static)[40/4];
+   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(m_state_static)[44/4];
+   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[48/4];
+   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[52/4];
+
+   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[56/4];
+   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[60/4];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
       VG_(baseBlock)[VGOFF_(m_fpustate) + i]
-         = VG_(m_state_static)[40/4 + i];
+         = VG_(m_state_static)[64/4 + i];
 }
 
 Addr VG_(get_stack_pointer) ( void )
@@ -1150,6 +1182,9 @@ void VG_(main) ( void )
    /* Set up baseBlock offsets and copy the saved machine's state into it. */
    vg_init_baseBlock();
    VG_(copy_m_state_static_to_baseBlock)();
+   /* Pretend that the root thread has a completely empty LDT to start
+      with. */
+   VG_(baseBlock)[VGOFF_(ldt)] = (UInt)NULL;
    vg_init_shadow_regs();
 
    /* Process Valgrind's command-line opts (from env var VG_OPTS). */
@@ -1157,13 +1192,11 @@ void VG_(main) ( void )
 
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
-#if 0
-   { 
+   if (0) { 
       Int p, q;
       for (p = 0; p < 50000; p++)
          for (q = 0; q < 50000; q++) ;
    }
-#endif
 
    /* Initialise the scheduler, and copy the client's state from
       baseBlock into VG_(threads)[1].  This has to come before signal
@@ -1216,7 +1249,6 @@ void VG_(main) ( void )
       VG_(message)(Vg_UserMsg, "");
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
-
 
    /* Run! */
    VG_(running_on_simd_CPU) = True;

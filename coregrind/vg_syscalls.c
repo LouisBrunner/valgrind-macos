@@ -473,15 +473,32 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
              "you are picking up Valgrind's implementation of libpthread.so.");
          break;
 
+      /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+
 #     if defined(__NR_modify_ldt)
-      case __NR_modify_ldt:
-         VG_(nvidia_moan)();
-         VG_(unimplemented)
-            ("modify_ldt(): I (JRS) haven't investigated this yet; sorry.");
+      case __NR_modify_ldt: /* syscall 123 */
+         /* int modify_ldt(int func, void *ptr, 
+                           unsigned long bytecount); */
+         MAYBE_PRINTF("modify_ldt ( %d, %p, %d )\n", arg1,arg2,arg3);
+         if (arg1 == 0) {
+            /* read the LDT into ptr */
+            SYSCALL_TRACK( pre_mem_write, tst, 
+                           "modify_ldt(ptr)(func=0)", arg2, arg3 );
+         }
+         if (arg1 == 1) {
+            /* write the LDT with the entry pointed at by ptr */
+            SYSCALL_TRACK( pre_mem_read, tst, 
+                           "modify_ldt(ptr)(func=1)", arg2, 
+                           sizeof(struct vki_modify_ldt_ldt_s) );
+         }
+         /* "do" the syscall ourselves; the kernel never sees it */
+         res = VG_(sys_modify_ldt)( tid, arg1, (void*)arg2, arg3 );
+         SET_EAX(tid, res);
+         if (arg1 == 0 && !VG_(is_kerror)(res) && res > 0) {
+            VG_TRACK( post_mem_write, arg2, res );
+         }
          break;
 #     endif
-
-      /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
 #     if defined(__NR_vhangup)
       case __NR_vhangup: /* syscall 111 */

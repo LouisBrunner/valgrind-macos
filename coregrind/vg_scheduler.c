@@ -1911,6 +1911,7 @@ void do_pthread_mutex_lock( ThreadId tid,
 
    /* POSIX doesn't mandate this, but for sanity ... */
    if (mutex == NULL) {
+      /* VG_(printf)("NULL mutex\n"); */
       SET_EDX(tid, EINVAL);
       return;
    }
@@ -1921,11 +1922,13 @@ void do_pthread_mutex_lock( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+      case PTHREAD_MUTEX_FAST_NP:
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
+         /* VG_(printf)("unknown __m_kind %d in mutex\n", mutex->__m_kind); */
          SET_EDX(tid, EINVAL);
          return;
    }
@@ -2013,6 +2016,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+      case PTHREAD_MUTEX_FAST_NP:
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;
@@ -2230,6 +2234,7 @@ void do_pthread_cond_wait ( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+      case PTHREAD_MUTEX_FAST_NP:
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;

@@ -1426,6 +1426,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    UCodeBlock* cb;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
+   UInt        FULLTRACE_LIMIT = 21068;
    Segment     *seg;
 
    /* Make sure Vex is initialised right. */
@@ -1488,11 +1489,11 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    cb = alloc_UCodeBlock( orig_addr );
 
    /* If doing any code printing, print a basic block start marker */
-   if (VG_(clo_trace_codegen) && notrace_until_done) {
+   if (VG_(clo_trace_codegen)) {
       Char fnname[64] = "";
       VG_(get_fnname_if_entry)(orig_addr, fnname, 64);
       VG_(printf)(
-              "==== BB %d %s(%p) approx BBs exec'd %llu ====\n\n",
+              "==== BB %d %s(%p) approx BBs exec'd %llu ====\n",
               VG_(get_bbs_translated)(), fnname, orig_addr, 
               VG_(bbs_done));
    }
@@ -1506,8 +1507,8 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 #else
 #  define DECIDE_IF_PRINTING_CODEGEN                            \
       ( debugging_translation                                   \
-        || (notrace_until_done                                  \
-            && (VG_(clo_trace_codegen) > 0)))
+        || (VG_(clo_trace_codegen) > 0                          \
+            && VG_(get_bbs_translated)() >= FULLTRACE_LIMIT))
 #endif
 
    /* Actually do the translation. */

@@ -618,7 +618,7 @@ sub print_summary_and_fn_totals ()
         my $reached_all_thresholds = 1;
         foreach my $i (0 .. scalar @thresholds - 1) {
             my $prop = $curr_totals[$i] * 100 / $summary_CC->[$sort_order[$i]];
-            $reached_all_thresholds &= ($prop >= $thresholds[$i]);
+            $reached_all_thresholds &&= ($prop >= $thresholds[$i]);
         }
         last if $reached_all_thresholds;
 

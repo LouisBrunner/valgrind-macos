@@ -193,9 +193,9 @@ while (<>)
     print qq|\{\n|;
 
     my @intregs = @IntRegs;
-    my @mmregs = map { "mm$_" } (0 .. 7);
-    my @xmmregs = map { "xmm$_" } (0 .. 7);
-    my @fpregs = map { "st$_" } (0 .. 7);
+    my @mmregs  = map { "mm$_" }  (6,7,0,1,2,3,4,5);
+    my @xmmregs = map { "xmm$_" } (4,5,0,1,2,3,6,7);
+    my @fpregs  = map { "st$_" }  (0 .. 7);
 
     my @presets;
     my $presetc = 0;

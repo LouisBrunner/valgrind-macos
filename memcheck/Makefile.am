@@ -93,7 +93,7 @@ valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
 	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)
 
-libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS)
+libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS) vg_libpthread.vs
 	$(CC) -Wall -Werror -g -O -shared -fpic -o libpthread.so \
 		$(libpthread_so_OBJECTS) \
 		-Wl,-version-script vg_libpthread.vs

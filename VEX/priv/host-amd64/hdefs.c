@@ -77,6 +77,30 @@ void ppHRegAMD64 ( HReg reg )
    }
 }
 
+static void ppHRegAMD64_lo32 ( HReg reg ) 
+{
+   Int r;
+   static HChar* ireg32_names[16] 
+     = { "%eax",  "%ecx",  "%edx",  "%ebx",  "%esp",  "%ebp",  "%esi",  "%edi",
+         "%r8d",  "%r9d",  "%r10d", "%r11d", "%r12d", "%r13d", "%r14d", "%r15d" };
+   /* Be generic for all virtual regs. */
+   if (hregIsVirtual(reg)) {
+      ppHReg(reg);
+      vex_printf("d");
+      return;
+   }
+   /* But specific for real regs. */
+   switch (hregClass(reg)) {
+      case HRcInt64:
+         r = hregNumber(reg);
+         vassert(r >= 0 && r < 16);
+         vex_printf("%s", ireg32_names[r]);
+         return;
+      default:
+         vpanic("ppHRegAMD64_lo32: invalid regclass");
+   }
+}
+
 HReg hregAMD64_RAX ( void ) { return mkHReg( 0, HRcInt64, False); }
 HReg hregAMD64_RCX ( void ) { return mkHReg( 1, HRcInt64, False); }
 HReg hregAMD64_RDX ( void ) { return mkHReg( 2, HRcInt64, False); }
@@ -1020,20 +1044,27 @@ void ppAMD64Instr ( AMD64Instr* i )
          ppHRegAMD64(i->Ain.CMov64.dst);
          return;
       case Ain_MovZLQ:
-         vex_printf("movzlq ");
-         ppHRegAMD64(i->Ain.MovZLQ.src);
+         vex_printf("movl{zlq} ");
+         ppHRegAMD64_lo32(i->Ain.MovZLQ.src);
          vex_printf(",");
-         ppHRegAMD64(i->Ain.MovZLQ.dst);
+         ppHRegAMD64_lo32(i->Ain.MovZLQ.dst);
          return;
       case Ain_LoadEX:
-         vex_printf("mov%c%cq ",
-                    i->Ain.LoadEX.syned ? 's' : 'z',
-                    i->Ain.LoadEX.szSmall==1 
-                       ? 'b' 
-                       : (i->Ain.LoadEX.szSmall==2 ? 'w' : 'l'));
-         ppAMD64AMode(i->Ain.LoadEX.src);
-         vex_printf(",");
-         ppHRegAMD64(i->Ain.LoadEX.dst);
+         if (i->Ain.LoadEX.szSmall==4 && !i->Ain.LoadEX.syned) {
+            vex_printf("movl ");
+            ppAMD64AMode(i->Ain.LoadEX.src);
+            vex_printf(",");
+            ppHRegAMD64_lo32(i->Ain.LoadEX.dst);
+         } else {
+            vex_printf("mov%c%cq ",
+                       i->Ain.LoadEX.syned ? 's' : 'z',
+                       i->Ain.LoadEX.szSmall==1 
+                          ? 'b' 
+                          : (i->Ain.LoadEX.szSmall==2 ? 'w' : 'l'));
+            ppAMD64AMode(i->Ain.LoadEX.src);
+            vex_printf(",");
+            ppHRegAMD64(i->Ain.LoadEX.dst);
+         }
          return;
       case Ain_Store:
          vex_printf("mov%c ", i->Ain.Store.sz==1 ? 'b' 
@@ -1826,23 +1857,42 @@ static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg )
 }
 
 
-static UChar rexOfAMode ( HReg greg, AMD64AMode* am )
+/* Clear the W bit on a REX byte, thereby changing the operand size
+   back to whatever that instruction's default operand size is. */
+static inline UChar clearWBit ( UChar rex )
+{
+   return rex & ~(1<<3);
+}
+
+
+/* Make up a REX byte, with W=1 (size=64), for a (greg,amode) pair. */
+static UChar rexAMode_M ( HReg greg, AMD64AMode* am )
 {
    if (am->tag == Aam_IR) {
       UChar W = 1;  /* we want 64-bit mode */
-      UChar R = 1 & iregBit3(greg);
+      UChar R = iregBit3(greg);
       UChar X = 0; /* not relevant */
-      UChar B = 1 & iregBit3(am->Aam.IR.reg);
+      UChar B = iregBit3(am->Aam.IR.reg);
       return 0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0));
    }
    if (am->tag == Aam_IRRS) {
       UChar W = 1;  /* we want 64-bit mode */
-      UChar R = 1 & iregBit3(greg);
-      UChar X = 1 & iregBit3(am->Aam.IRRS.index);
-      UChar B = 1 & iregBit3(am->Aam.IRRS.base);
+      UChar R = iregBit3(greg);
+      UChar X = iregBit3(am->Aam.IRRS.index);
+      UChar B = iregBit3(am->Aam.IRRS.base);
       return 0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0));
    }
    vassert(0);
+}
+
+/* Make up a REX byte, with W=1 (size=64), for a (greg,ereg) pair. */
+static UChar rexAMode_R ( HReg greg, HReg ereg )
+{
+   UChar W = 1;  /* we want 64-bit mode */
+   UChar R = iregBit3(greg);
+   UChar X = 0; /* not relevant */
+   UChar B = iregBit3(ereg);
+   return 0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0));
 }
 
 
@@ -1947,18 +1997,18 @@ static UChar rexOfAMode ( HReg greg, AMD64AMode* am )
 
 Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 {
-  //   UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
+   UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 //.. 
 //..    UInt   xtra;
    UChar* p = &buf[0];
-//..    UChar* ptmp;
-//..    vassert(nbuf >= 32);
-//.. 
-//..    /* Wrap an integer as a int register, for use assembling
-//..       GrpN insns, in which the greg field is used as a sub-opcode
-//..       and does not really contain a register. */
-//.. #  define fake(_n) mkHReg((_n), HRcInt32, False)
-//.. 
+   UChar* ptmp;
+   vassert(nbuf >= 32);
+
+   /* Wrap an integer as a int register, for use assembling
+      GrpN insns, in which the greg field is used as a sub-opcode
+      and does not really contain a register. */
+#  define fake(_n) mkHReg((_n), HRcInt64, False)
+
 //..    /* vex_printf("asm  ");ppAMD64Instr(i); vex_printf("\n"); */
 
    switch (i->tag) {
@@ -1979,7 +2029,7 @@ vassert(0);
                                 i->Ain.Alu64R.dst);
                goto done;
             case Armi_Mem:
-               *p++ = rexOfAMode(i->Ain.Alu64R.dst,
+               *p++ = rexAMode_M(i->Ain.Alu64R.dst,
                                  i->Ain.Alu64R.src->Armi.Mem.am);
                *p++ = 0x8B;
                p = doAMode_M(p, i->Ain.Alu64R.dst, 
@@ -2019,77 +2069,86 @@ vassert(0);
 //..                goto bad;
 //..          }
 //..       }
-//..       /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP */
-//..       opc = opc_rr = subopc_imm = opc_imma = 0;
-//..       switch (i->Xin.Alu32R.op) {
-//..          case Xalu_ADC: opc = 0x13; opc_rr = 0x11; 
-//..                         subopc_imm = 2; opc_imma = 0x15; break;
-//..          case Xalu_ADD: opc = 0x03; opc_rr = 0x01; 
-//..                         subopc_imm = 0; opc_imma = 0x05; break;
-//..          case Xalu_SUB: opc = 0x2B; opc_rr = 0x29; 
-//..                         subopc_imm = 5; opc_imma = 0x2D; break;
-//..          case Xalu_SBB: opc = 0x1B; opc_rr = 0x19; 
-//..                         subopc_imm = 3; opc_imma = 0x1D; break;
-//..          case Xalu_AND: opc = 0x23; opc_rr = 0x21; 
-//..                         subopc_imm = 4; opc_imma = 0x25; break;
-//..          case Xalu_XOR: opc = 0x33; opc_rr = 0x31; 
-//..                         subopc_imm = 6; opc_imma = 0x35; break;
-//..          case Xalu_OR:  opc = 0x0B; opc_rr = 0x09; 
-//..                         subopc_imm = 1; opc_imma = 0x0D; break;
-//..          case Xalu_CMP: opc = 0x3B; opc_rr = 0x39; 
-//..                         subopc_imm = 7; opc_imma = 0x3D; break;
-//..          default: goto bad;
-//..       }
-//..       switch (i->Xin.Alu32R.src->tag) {
-//..          case Xrmi_Imm:
-//..             if (i->Xin.Alu32R.dst == hregAMD64_EAX()
-//..                 && !fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
-//..                *p++ = opc_imma;
-//..                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
-//..             } else
-//..             if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
-//..                *p++ = 0x83; 
-//..                p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
-//..                *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
-//..             } else {
-//..                *p++ = 0x81; 
-//..                p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
-//..                p    = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
-//..             }
-//..             goto done;
-//..          case Xrmi_Reg:
-//..             *p++ = opc_rr;
-//..             p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
-//..                              i->Xin.Alu32R.dst);
-//..             goto done;
-//..          case Xrmi_Mem:
-//..             *p++ = opc;
-//..             p = doAMode_M(p, i->Xin.Alu32R.dst,
-//..                              i->Xin.Alu32R.src->Xrmi.Mem.am);
-//..             goto done;
-//..          default: 
-//..             goto bad;
-//..       }
+      /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP */
+      opc = opc_rr = subopc_imm = opc_imma = 0;
+      switch (i->Ain.Alu64R.op) {
+         case Aalu_ADC: opc = 0x13; opc_rr = 0x11; 
+                        subopc_imm = 2; opc_imma = 0x15; break;
+         case Aalu_ADD: opc = 0x03; opc_rr = 0x01; 
+                        subopc_imm = 0; opc_imma = 0x05; break;
+         case Aalu_SUB: opc = 0x2B; opc_rr = 0x29; 
+                        subopc_imm = 5; opc_imma = 0x2D; break;
+         case Aalu_SBB: opc = 0x1B; opc_rr = 0x19; 
+                        subopc_imm = 3; opc_imma = 0x1D; break;
+         case Aalu_AND: opc = 0x23; opc_rr = 0x21; 
+                        subopc_imm = 4; opc_imma = 0x25; break;
+         case Aalu_XOR: opc = 0x33; opc_rr = 0x31; 
+                        subopc_imm = 6; opc_imma = 0x35; break;
+         case Aalu_OR:  opc = 0x0B; opc_rr = 0x09; 
+                        subopc_imm = 1; opc_imma = 0x0D; break;
+         case Aalu_CMP: opc = 0x3B; opc_rr = 0x39; 
+                        subopc_imm = 7; opc_imma = 0x3D; break;
+         default: goto bad;
+      }
+      switch (i->Ain.Alu64R.src->tag) {
+         case Armi_Imm:
+            if (i->Ain.Alu64R.dst == hregAMD64_RAX()
+                && !fits8bits(i->Ain.Alu64R.src->Armi.Imm.imm32)) {
+vassert(0);
+               *p++ = opc_imma;
+               p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+            } else
+            if (fits8bits(i->Ain.Alu64R.src->Armi.Imm.imm32)) {
+               *p++ = rexAMode_R( fake(0), i->Ain.Alu64R.dst );
+               *p++ = 0x83; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Ain.Alu64R.dst);
+               *p++ = 0xFF & i->Ain.Alu64R.src->Armi.Imm.imm32;
+            } else {
+vassert(0);
+               *p++ = 0x81; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Ain.Alu64R.dst);
+               p    = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+            }
+            goto done;
+         case Armi_Reg:
+            *p++ = rexAMode_R( i->Ain.Alu64R.src->Armi.Reg.reg,
+                               i->Ain.Alu64R.dst);
+            *p++ = opc_rr;
+            p = doAMode_R(p, i->Ain.Alu64R.src->Armi.Reg.reg,
+                             i->Ain.Alu64R.dst);
+            goto done;
+         case Armi_Mem:
+vassert(0);
+            *p++ = opc;
+            p = doAMode_M(p, i->Ain.Alu64R.dst,
+                             i->Ain.Alu64R.src->Armi.Mem.am);
+            goto done;
+         default: 
+            goto bad;
+      }
       break;
 
-//..    case Xin_Alu32M:
-//..       /* Deal specially with MOV */
-//..       if (i->Xin.Alu32M.op == Xalu_MOV) {
-//..          switch (i->Xin.Alu32M.src->tag) {
-//..             case Xri_Reg:
-//..                *p++ = 0x89;
-//..                p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
-//..                                 i->Xin.Alu32M.dst);
-//..                goto done;
-//..             case Xri_Imm:
-//..                *p++ = 0xC7;
-//..                p = doAMode_M(p, fake(0), i->Xin.Alu32M.dst);
-//..                p = emit32(p, i->Xin.Alu32M.src->Xri.Imm.imm32);
-//..                goto done;
-//..             default: 
-//..                goto bad;
-//..          }
-//..       }
+   case Ain_Alu64M:
+      /* Deal specially with MOV */
+      if (i->Ain.Alu64M.op == Aalu_MOV) {
+         switch (i->Ain.Alu64M.src->tag) {
+            case Ari_Reg:
+               *p++ = rexAMode_M(i->Ain.Alu64M.src->Ari.Reg.reg,
+                                 i->Ain.Alu64M.dst);
+               *p++ = 0x89;
+               p = doAMode_M(p, i->Ain.Alu64M.src->Ari.Reg.reg,
+                                i->Ain.Alu64M.dst);
+               goto done;
+            case Ari_Imm:
+               *p++ = rexAMode_M(fake(0), i->Ain.Alu64M.dst);
+               *p++ = 0xC7;
+               p = doAMode_M(p, fake(0), i->Ain.Alu64M.dst);
+               p = emit32(p, i->Ain.Alu64M.src->Ari.Imm.imm32);
+               goto done;
+            default: 
+               goto bad;
+         }
+      }
 //..       /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP.  MUL is not
 //..          allowed here. */
 //..       opc = subopc_imm = opc_imma = 0;
@@ -2119,8 +2178,8 @@ vassert(0);
 //..          default: 
 //..             goto bad;
 //..       }
-//..       break;
-//.. 
+      break;
+
 //..    case Xin_Sh32:
 //..       opc_cl = opc_imm = subopc = 0;
 //..       switch (i->Xin.Sh32.op) {
@@ -2278,76 +2337,77 @@ vassert(0);
 //..       *p++ = 0xFF;
 //..       *p++ = 0xD0 + irno;
 //..       goto done;
-//.. 
-//..    case Xin_Goto:
-//..       /* Use ptmp for backpatching conditional jumps. */
-//..       ptmp = NULL;
-//.. 
-//..       /* First off, if this is conditional, create a conditional
-//.. 	 jump over the rest of it. */
-//..       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..          /* jmp fwds if !condition */
-//..          *p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
-//..          ptmp = p; /* fill in this bit later */
-//..          *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
-//..       }
-//.. 
-//..       /* If a non-boring, set %ebp (the guest state pointer)
-//..          appropriately. */
-//..       /* movl $magic_number, %ebp */
-//..       switch (i->Xin.Goto.jk) {
-//..          case Ijk_ClientReq: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
-//..          case Ijk_Syscall: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
-//..          case Ijk_Yield: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_YIELD); break;
-//..          case Ijk_EmWarn:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_EMWARN); break;
-//..          case Ijk_MapFail:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_MAPFAIL); break;
-//..          case Ijk_NoDecode:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_NODECODE); break;
-//..          case Ijk_Ret:
-//.. 	 case Ijk_Call:
-//..          case Ijk_Boring:
-//..             break;
-//..          default: 
-//..             ppIRJumpKind(i->Xin.Goto.jk);
-//..             vpanic("emit_AMD64Instr.Xin_Goto: unknown jump kind");
-//..       }
-//.. 
-//..       /* Get the destination address into %eax */
-//..       if (i->Xin.Goto.dst->tag == Xri_Imm) {
-//..          /* movl $immediate, %eax ; ret */
-//..          *p++ = 0xB8;
-//..          p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
-//..       } else {
-//..          vassert(i->Xin.Goto.dst->tag == Xri_Reg);
-//..          /* movl %reg, %eax ; ret */
-//..          if (i->Xin.Goto.dst->Xri.Reg.reg != hregAMD64_EAX()) {
-//..             *p++ = 0x89;
-//..             p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregAMD64_EAX());
-//..          }
-//..       }
-//.. 
-//..       /* ret */
-//..       *p++ = 0xC3;
-//.. 
-//..       /* Fix up the conditional jump, if there was one. */
-//..       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..          Int delta = p - ptmp;
-//.. 	 vassert(delta > 0 && delta < 20);
-//..          *ptmp = (UChar)(delta-1);
-//..       }
-//..       goto done;
-//.. 
+
+   case Ain_Goto:
+vassert(0);
+      /* Use ptmp for backpatching conditional jumps. */
+      ptmp = NULL;
+
+      /* First off, if this is conditional, create a conditional
+         jump over the rest of it. */
+      if (i->Ain.Goto.cond != Acc_ALWAYS) {
+         /* jmp fwds if !condition */
+         *p++ = 0x70 + (i->Ain.Goto.cond ^ 1);
+         ptmp = p; /* fill in this bit later */
+         *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+      }
+
+      /* If a non-boring, set %rbp (the guest state pointer)
+         appropriately. */
+      /* movl $magic_number, %rbp */
+      switch (i->Ain.Goto.jk) {
+         case Ijk_ClientReq: 
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
+         case Ijk_Syscall: 
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
+         case Ijk_Yield: 
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_YIELD); break;
+         case Ijk_EmWarn:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_EMWARN); break;
+         case Ijk_MapFail:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_MAPFAIL); break;
+         case Ijk_NoDecode:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_NODECODE); break;
+         case Ijk_Ret:
+         case Ijk_Call:
+         case Ijk_Boring:
+            break;
+         default: 
+            ppIRJumpKind(i->Ain.Goto.jk);
+            vpanic("emit_AMD64Instr.Ain_Goto: unknown jump kind");
+      }
+
+      /* Get the destination address into %rax */
+      if (i->Ain.Goto.dst->tag == Ari_Imm) {
+         /* movl $immediate, %eax ; ret */
+         *p++ = 0xB8;
+         p = emit32(p, i->Ain.Goto.dst->Ari.Imm.imm32);
+      } else {
+         vassert(i->Ain.Goto.dst->tag == Ari_Reg);
+         /* movl %reg, %eax ; ret */
+         if (i->Ain.Goto.dst->Ari.Reg.reg != hregAMD64_RAX()) {
+            *p++ = 0x89;
+            p = doAMode_R(p, i->Ain.Goto.dst->Ari.Reg.reg, hregAMD64_RAX());
+         }
+      }
+
+      /* ret */
+      *p++ = 0xC3;
+
+      /* Fix up the conditional jump, if there was one. */
+      if (i->Ain.Goto.cond != Acc_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta > 0 && delta < 20);
+         *ptmp = (UChar)(delta-1);
+      }
+      goto done;
+
 //..    case Xin_CMov32:
 //..       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
 //.. #if 0
@@ -2394,8 +2454,17 @@ vassert(0);
 //..       goto done;
 //.. #endif
 //..       break;
-//.. 
-//..    case Xin_LoadEX:
+
+   case Ain_MovZLQ:
+      /* Produce a 32-bit reg-reg move, since the implicit zero-extend
+         does what we want. */
+      *p++ = clearWBit (
+                rexAMode_R(i->Ain.MovZLQ.src, i->Ain.MovZLQ.dst));
+      *p++ = 0x89;
+      p = doAMode_R(p, i->Ain.MovZLQ.src, i->Ain.MovZLQ.dst);
+      goto done;
+
+   case Ain_LoadEX:
 //..       if (i->Xin.LoadEX.szSmall == 1 && !i->Xin.LoadEX.syned) {
 //..          /* movzbl */
 //..          *p++ = 0x0F;
@@ -2410,8 +2479,20 @@ vassert(0);
 //..          p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
 //..          goto done;
 //..       }
-//..       break;
-//.. 
+      if (i->Ain.LoadEX.szSmall == 4 && !i->Ain.LoadEX.syned) {
+         /* movzlq */
+         /* This isn't really an existent AMD64 instruction per se.
+            Rather, we have to do a 32-bit load.  Because a 32-bit
+            write implicitly clears the upper 32 bits of the target
+            register, we get what we want. */
+         *p++ = clearWBit(
+                rexAMode_M(i->Ain.LoadEX.dst, i->Ain.LoadEX.src));
+         *p++ = 0x8B;
+         p = doAMode_M(p, i->Ain.LoadEX.dst, i->Ain.LoadEX.src);
+         goto done;
+      }
+      break;
+
 //..    case Xin_Set32:
 //..       /* Make the destination register be 1 or 0, depending on whether
 //..          the relevant condition holds.  We have to dodge and weave

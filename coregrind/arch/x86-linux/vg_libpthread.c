@@ -185,6 +185,7 @@ void vgPlain_unimp ( char* what )
 }
 
 
+static
 void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
 {
    static Bool entered = False;

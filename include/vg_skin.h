@@ -357,12 +357,13 @@ extern Int VG_(log2) ( Int x );
 /* unistd.h, fcntl.h, sys/stat.h */
 extern Int  VG_(getpid) ( void );
 
-extern Int  VG_(open)  ( const Char* pathname, Int flags, Int mode );
-extern Int  VG_(read)  ( Int fd, void* buf, Int count);
-extern Int  VG_(write) ( Int fd, void* buf, Int count);
-extern void VG_(close) ( Int fd );
+extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
+extern Int  VG_(read)   ( Int fd, void* buf, Int count);
+extern Int  VG_(write)  ( Int fd, void* buf, Int count);
+extern void VG_(close)  ( Int fd );
 
-extern Int  VG_(stat)  ( Char* file_name, struct vki_stat* buf );
+extern Int  VG_(unlink) ( Char* file_name );
+extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 
 
 /* ------------------------------------------------------------------ */

@@ -1091,6 +1091,14 @@ Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
       VG_(is_kerror)(res) ? (-1) : 0;
 }
 
+Int VG_(unlink) ( Char* file_name )
+{
+   Int res;
+   res = vg_do_syscall1(__NR_unlink, (UInt)file_name);
+   return
+      VG_(is_kerror)(res) ? (-1) : 0;
+}
+
 /* Misc functions looking for a proper home. */
 
 /* We do getenv without libc's help by snooping around in

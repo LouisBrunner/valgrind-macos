@@ -52,24 +52,6 @@
 /*--- Structs n stuff                                      ---*/
 /*------------------------------------------------------------*/
 
-/* Stabs entry types, from:
- *   The "stabs" debug format
- *   Menapace, Kingdon and MacKenzie
- *   Cygnus Support
- */
-typedef enum { N_GSYM  = 32,    /* Global symbol                    */
-               N_FUN   = 36,    /* Function start or end            */
-               N_STSYM = 38,    /* Data segment file-scope variable */
-               N_LCSYM = 40,    /* BSS segment file-scope variable  */
-               N_RSYM  = 64,    /* Register variable                */
-               N_SLINE = 68,    /* Source line number               */
-               N_SO    = 100,   /* Source file path and name        */
-               N_LSYM  = 128,   /* Stack variable or type           */
-               N_SOL   = 132,   /* Include file name                */
-               N_LBRAC = 192,   /* Start of lexical block           */
-               N_RBRAC = 224    /* End   of lexical block           */
-             } stab_types;
-      
 /* A structure to hold an ELF symbol (very crudely). */
 typedef 
    struct { 
@@ -258,6 +240,53 @@ void addLoc ( SegInfo* si, RiLoc* loc )
 }
 
 
+/* Top-level place to call to add a source-location mapping entry. */
+
+static __inline__
+void addLineInfo ( SegInfo* si,
+                   Int      fnmoff,
+                   Addr     this,
+                   Addr     next,
+                   Int      lineno,
+                   Int      entry )
+{
+   RiLoc loc;
+   Int size = next - this;
+
+   /* Ignore zero-sized locs */
+   if (this == next) return;
+
+   /* Maximum sanity checking.  Some versions of GNU as do a shabby
+    * job with stabs entries; if anything looks suspicious, revert to
+    * a size of 1.  This should catch the instruction of interest
+    * (since if using asm-level debug info, one instruction will
+    * correspond to one line, unlike with C-level debug info where
+    * multiple instructions can map to the one line), but avoid
+    * catching any other instructions bogusly. */
+   if (this > next) {
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: stabs addresses out of order "
+                    "at entry %d: 0x%x 0x%x", entry, this, next);
+       size = 1;
+   }
+
+   if (size > MAX_LOC_SIZE) {
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: stabs line address range too large "
+                    "at entry %d: %d", entry, size);
+       size = 1;
+   }
+
+   vg_assert(this < si->start + si->size && next-1 >= si->start);
+   vg_assert(lineno >= 0 && lineno <= MAX_LINENO);
+
+   loc.addr      = this;
+   loc.size      = (UShort)size;
+   loc.lineno    = lineno;
+   loc.fnmoff    = fnmoff;
+   addLoc ( si, &loc );
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers                                              ---*/
@@ -316,6 +345,7 @@ void safeCopy ( UChar* dst, UInt maxlen, UChar* src )
    }
 }
 #endif
+
 
 /*------------------------------------------------------------*/
 /*--- Canonicalisers                                       ---*/
@@ -474,7 +504,8 @@ void canonicaliseSymtab ( SegInfo* si )
 /* Sort the location table by starting address.  Mash the table around
    so as to establish the property that addresses are in order and the
    ranges do not overlap.  This facilitates using binary search to map
-   addresses to locations when we come to query the table.  */
+   addresses to locations when we come to query the table.  
+*/
 static 
 void canonicaliseLoctab ( SegInfo* si )
 {
@@ -562,82 +593,229 @@ void canonicaliseLoctab ( SegInfo* si )
 
 
 /*------------------------------------------------------------*/
-/*--- Read info from a .so/exe file.                       ---*/
+/*--- Read STABS format debug info.                        ---*/
 /*------------------------------------------------------------*/
 
-static __inline__
-void addLineInfo ( SegInfo* si,
-                   Int      fnmoff,
-                   Addr     this,
-                   Addr     next,
-                   Int      lineno,
-                   Int      entry )
+/* Stabs entry types, from:
+ *   The "stabs" debug format
+ *   Menapace, Kingdon and MacKenzie
+ *   Cygnus Support
+ */
+typedef enum { N_GSYM  = 32,    /* Global symbol                    */
+               N_FUN   = 36,    /* Function start or end            */
+               N_STSYM = 38,    /* Data segment file-scope variable */
+               N_LCSYM = 40,    /* BSS segment file-scope variable  */
+               N_RSYM  = 64,    /* Register variable                */
+               N_SLINE = 68,    /* Source line number               */
+               N_SO    = 100,   /* Source file path and name        */
+               N_LSYM  = 128,   /* Stack variable or type           */
+               N_SOL   = 132,   /* Include file name                */
+               N_LBRAC = 192,   /* Start of lexical block           */
+               N_RBRAC = 224    /* End   of lexical block           */
+             } stab_types;
+      
+
+/* Read stabs-format debug info.  This is all rather horrible because
+   stabs is a underspecified, kludgy hack.
+*/
+static
+void read_debuginfo_stabs ( SegInfo* si,
+                            UChar* stabC,   Int stab_sz, 
+                            UChar* stabstr, Int stabstr_sz )
 {
-   RiLoc loc;
-   Int size = next - this;
+   Int    i;
+   Int    curr_filenmoff;
+   Addr   curr_fnbaseaddr;
+   Char  *curr_file_name, *curr_fn_name;
+   Int    n_stab_entries;
+   Int    prev_lineno, lineno;
+   Int    lineno_overflows;
+   Bool   same_file;
+   struct nlist* stab = (struct nlist*)stabC;
+   /* Ok.  It all looks plausible.  Go on and read debug data. 
+         stab kinds: 100   N_SO     a source file name
+                      68   N_SLINE  a source line number
+                      36   N_FUN    start of a function
 
-   /* Ignore zero-sized locs */
-   if (this == next) return;
+      In this loop, we maintain a current file name, updated as 
+      N_SO/N_SOLs appear, and a current function base address, 
+      updated as N_FUNs appear.  Based on that, address ranges for 
+      N_SLINEs are calculated, and stuffed into the line info table.
 
-   /* Maximum sanity checking.  Some versions of GNU as do a shabby job with
-    * stabs entries;  if anything looks suspicious, revert to a size of 1.
-    * This should catch the instruction of interest (since if using asm-level
-    * debug info, one instruction will correspond to one line, unlike with
-    * C-level debug info where multiple instructions can map to the one line), 
-    * but avoid catching any other instructions bogusly. */
-   if (this > next) {
-       VG_(message)(Vg_DebugMsg, 
-                    "warning: stabs addresses out of order "
-                    "at entry %d: 0x%x 0x%x", entry, this, next);
-       size = 1;
-   }
+      Finding the instruction address range covered by an N_SLINE is
+      complicated;  see the N_SLINE case below.
+   */
+   curr_filenmoff  = addStr(si,"???");
+   curr_fnbaseaddr = (Addr)NULL;
+   curr_file_name = curr_fn_name = (Char*)NULL;
+   lineno = prev_lineno = 0;
+   lineno_overflows = 0;
+   same_file = True;
 
-   if (size > MAX_LOC_SIZE) {
-       VG_(message)(Vg_DebugMsg, 
-                    "warning: stabs line address range too large "
-                    "at entry %d: %d", entry, size);
-       size = 1;
-   }
+   n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
-   vg_assert(this < si->start + si->size && next-1 >= si->start);
-   vg_assert(lineno >= 0 && lineno <= MAX_LINENO);
+   for (i = 0; i < n_stab_entries; i++) {
+#     if 0
+      VG_(printf) ( "   %2d  ", i );
+      VG_(printf) ( "type=0x%x   othr=%d   desc=%d   value=0x%x   strx=%d  %s",
+                    stab[i].n_type, stab[i].n_other, stab[i].n_desc, 
+                    (int)stab[i].n_value,
+                    (int)stab[i].n_un.n_strx, 
+                    stabstr + stab[i].n_un.n_strx );
+      VG_(printf)("\n");
+#     endif
 
-   loc.addr      = this;
-   loc.size      = (UShort)size;
-   loc.lineno    = lineno;
-   loc.fnmoff    = fnmoff;
-   addLoc ( si, &loc );
+      Char *no_fn_name = "???";
+
+      switch (stab[i].n_type) {
+         UInt next_addr;
+
+         /* Two complicated things here:
+	  *
+          * 1. the n_desc field in 'struct n_list' in a.out.h is only
+          *    16-bits, which gives a maximum of 65535 lines.  We handle
+          *    files bigger than this by detecting heuristically
+          *    overflows -- if the line count goes from 65000-odd to
+          *    0-odd within the same file, we assume it's an overflow.
+          *    Once we switch files, we zero the overflow count.
+          *
+          * 2. To compute the instr address range covered by a single
+          *    line, find the address of the next thing and compute the
+          *    difference.  The approach used depends on what kind of
+          *    entry/entries follow...
+          */
+         case N_SLINE: {
+            Int this_addr = (UInt)stab[i].n_value;
+
+            /* Although stored as a short, neg values really are >
+             * 32768, hence the UShort cast.  Then we use an Int to
+             * handle overflows. */
+            prev_lineno = lineno;
+            lineno      = (Int)((UShort)stab[i].n_desc);
+
+            if (prev_lineno > lineno + OVERFLOW_DIFFERENCE && same_file) {
+               VG_(message)(Vg_DebugMsg, 
+                  "Line number overflow detected (%d --> %d) in %s", 
+                  prev_lineno, lineno, curr_file_name);
+               lineno_overflows++;
+            }
+            same_file = True;
+
+            LOOP:
+            if (i+1 >= n_stab_entries) {
+               /* If it's the last entry, just guess the range is
+                * four; can't do any better */
+               next_addr = this_addr + 4;
+            } else {    
+               switch (stab[i+1].n_type) {
+                  /* Easy, common case: use address of next entry */
+                  case N_SLINE: case N_SO:
+                     next_addr = (UInt)stab[i+1].n_value;
+                     break;
+
+                  /* Boring one: skip, look for something more
+                     useful. */
+                  case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
+                  case N_STSYM: case N_LCSYM: case N_GSYM:
+                     i++;
+                     goto LOOP;
+                     
+                  /* Should be an end of fun entry, use its address */
+                  case N_FUN: 
+                     if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
+                        next_addr = (UInt)stab[i+1].n_value;
+                     } else {
+                        VG_(message)(Vg_DebugMsg, 
+                                     "warning: function %s missing closing "
+                                     "N_FUN stab at entry %d",
+                                     curr_fn_name, i );
+                        next_addr = this_addr;  /* assume zero-size loc */
+                     }
+                     break;
+
+                  /* N_SOL should be followed by an N_SLINE which can
+                     be used */
+                  case N_SOL:
+                     if (i+2 < n_stab_entries && N_SLINE == stab[i+2].n_type) {
+                        next_addr = (UInt)stab[i+2].n_value;
+                        break;
+                     } else {
+                        VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
+                                    stab[i+1].n_type, i, n_stab_entries);
+                        VG_(panic)("unhandled N_SOL stabs case");
+                     }
+
+                  default:
+                     VG_(printf)("unhandled (other) stabs case: %d %d", 
+                                 stab[i+1].n_type,i);
+                     /* VG_(panic)("unhandled (other) stabs case"); */
+                     next_addr = this_addr + 4;
+                     break;
+               }
+            }
+            
+            addLineInfo ( si, curr_filenmoff, curr_fnbaseaddr + this_addr, 
+                          curr_fnbaseaddr + next_addr,
+                          lineno + lineno_overflows * LINENO_OVERFLOW, i);
+            break;
+         }
+
+         case N_FUN: {
+            if ('\0' != (stabstr + stab[i].n_un.n_strx)[0] ) {
+               /* N_FUN with a name -- indicates the start of a fn.  */
+               curr_fnbaseaddr = si->offset + (Addr)stab[i].n_value;
+               curr_fn_name = stabstr + stab[i].n_un.n_strx;
+            } else {
+               curr_fn_name = no_fn_name;
+            }
+            break;
+         }
+
+         case N_SOL:
+            if (lineno_overflows != 0) {
+               VG_(message)(Vg_UserMsg, 
+                            "Warning: file %s is very big (> 65535 lines) "
+                            "Line numbers and annotation for this file might "
+                            "be wrong.  Sorry",
+                            curr_file_name);
+            }
+            /* fall through! */
+         case N_SO: 
+            lineno_overflows = 0;
+
+         /* seems to give lots of locations in header files */
+         /* case 130: */ /* BINCL */
+         { 
+            UChar* nm = stabstr + stab[i].n_un.n_strx;
+            UInt len = VG_(strlen)(nm);
+            
+            if (len > 0 && nm[len-1] != '/') {
+               curr_filenmoff = addStr ( si, nm );
+               curr_file_name = stabstr + stab[i].n_un.n_strx;
+            }
+            else
+               if (len == 0)
+                  curr_filenmoff = addStr ( si, "?1\0" );
+
+            break;
+         }
+
+#        if 0
+         case 162: /* EINCL */
+            curr_filenmoff = addStr ( si, "?2\0" );
+            break;
+#        endif
+
+         default:
+            break;
+      }
+   } /* for (i = 0; i < stab_sz/(int)sizeof(struct nlist); i++) */
 }
 
 
-static 
-UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
-{
-  UInt result = 0;
-  UInt num_read = 0;
-  Int  shift = 0;
-  UChar     byte;
-
-  do
-    {
-      byte = * data ++;
-      num_read ++;
-
-      result |= (byte & 0x7f) << shift;
-
-      shift += 7;
-
-    }
-  while (byte & 0x80);
-
-  if (length_return != NULL)
-    * length_return = num_read;
-
-  if (sign && (shift < 32) && (byte & 0x40))
-    result |= -1 << shift;
-
-  return result;
-}
+/*------------------------------------------------------------*/
+/*--- Read DWARF2 format debug info.                       ---*/
+/*------------------------------------------------------------*/
 
 /* Structure found in the .debug_line section.  */
 typedef struct
@@ -704,6 +882,37 @@ typedef struct State_Machine_Registers
    in the File Table.  */
   UInt  last_file_entry;
 } SMR;
+
+
+static 
+UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
+{
+  UInt result = 0;
+  UInt num_read = 0;
+  Int  shift = 0;
+  UChar     byte;
+
+  do
+    {
+      byte = * data ++;
+      num_read ++;
+
+      result |= (byte & 0x7f) << shift;
+
+      shift += 7;
+
+    }
+  while (byte & 0x80);
+
+  if (length_return != NULL)
+    * length_return = num_read;
+
+  if (sign && (shift < 32) && (byte & 0x40))
+    result |= -1 << shift;
+
+  return result;
+}
+
 
 static SMR state_machine_regs;
 
@@ -788,17 +997,14 @@ process_extended_line_op (si, fnames, data, is_stmt, pointer_size)
 }
 
 
-static Int
-handle_debug_lines (si, section, start)
-     SegInfo *     si;
-     Elf32_Shdr * section;
-     UChar *       start;
+static
+void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 {
   DWARF2_External_LineInfo * external;
   DWARF2_Internal_LineInfo   info;
   UChar *            standard_opcodes;
-  UChar *            data = start;
-  UChar *            end  = start + section->sh_size;
+  UChar *            data = dwarf2;
+  UChar *            end  = dwarf2 + dwarf2_sz;
   UChar *            end_of_sequence;
   UInt *fnames = NULL;
 
@@ -812,23 +1018,22 @@ handle_debug_lines (si, section, start)
 
       if (info.li_length == 0xffffffff)
        {
-         VG_(message) (Vg_UserMsg,"64-bit DWARF line info is not supported yet.");
+         vg_symerr("64-bit DWARF line info is not supported yet.");
          break;
        }
 
-      if (info.li_length + sizeof (external->li_length) > section->sh_size)
+      if (info.li_length + sizeof (external->li_length) > dwarf2_sz)
        {
-        VG_(message) 
-           (Vg_UserMsg,"The line info appears to be corrupt - the section is too small");
-         return 0;
+        vg_symerr("DWARF line info appears to be corrupt - the section is too small");
+         return;
        }
 
       /* Check its version number.  */
       info.li_version =*((UShort *) (external->li_version));
       if (info.li_version != 2)
        {
-         VG_(message) (Vg_UserMsg,"Only DWARF version 2 line info is currently supported.");
-         return 0;
+         vg_symerr("Only DWARF version 2 line info is currently supported.");
+         return;
        }
 
       info.li_prologue_length = *((UInt *)(external->li_prologue_length));
@@ -1005,9 +1210,12 @@ handle_debug_lines (si, section, start)
       VG_(free)(VG_AR_SYMTAB, fnames);
       fnames = NULL;
     }
-
-  return 1;
 }
+
+
+/*------------------------------------------------------------*/
+/*--- Read info from a .so/exe file.                       ---*/
+/*------------------------------------------------------------*/
 
 /* Read the symbols from the object/exe specified by the SegInfo into
    the tables within the supplied SegInfo.  */
@@ -1017,25 +1225,18 @@ void vg_read_lib_symbols ( SegInfo* si )
    Elf32_Ehdr*   ehdr;       /* The ELF header                          */
    Elf32_Shdr*   shdr;       /* The section table                       */
    UChar*        sh_strtab;  /* The section table's string table        */
-   struct nlist* stab;       /* The .stab table                         */
+   UChar*        stab;       /* The .stab table                         */
    UChar*        stabstr;    /* The .stab string table                  */
+   UChar*        dwarf2;     /* The DWARF2 location info table          */
    Int           stab_sz;    /* Size in bytes of the .stab table        */
    Int           stabstr_sz; /* Size in bytes of the .stab string table */
+   Int           dwarf2_sz;  /* Size in bytes of the DWARF2 srcloc table*/
    Int           fd;
    Int           i;
    Bool          ok;
    Addr          oimage;
    Int           n_oimage;
    struct vki_stat stat_buf;
-
-   /* for the .stabs reader */
-   Int    curr_filenmoff;
-   Addr   curr_fnbaseaddr;
-   Char  *curr_file_name, *curr_fn_name;
-   Int    n_stab_entries;
-   Int    prev_lineno, lineno;
-   Int    lineno_overflows;
-   Bool   same_file;
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
@@ -1303,15 +1504,19 @@ void vg_read_lib_symbols ( SegInfo* si )
       }
    }
 
-   /* Reading of the "stabs" debug format information, if any. */
+   /* Reading of the stabs and/or dwarf2 debug format information, if
+      any. */
    stabstr    = NULL;
    stab       = NULL;
+   dwarf2     = NULL;
    stabstr_sz = 0;
    stab_sz    = 0;
-   /* find the .stabstr and .stab sections */
+   dwarf2_sz  = 0;
+
+   /* find the .stabstr / .stab / .debug_line sections */
    for (i = 0; i < ehdr->e_shnum; i++) {
       if (0 == VG_(strcmp)(".stab",sh_strtab + shdr[i].sh_name)) {
-         stab = (struct nlist *)(oimage + shdr[i].sh_offset);
+         stab = (UChar*)(oimage + shdr[i].sh_offset);
          stab_sz = shdr[i].sh_size;
       }
       if (0 == VG_(strcmp)(".stabstr",sh_strtab + shdr[i].sh_name)) {
@@ -1319,11 +1524,12 @@ void vg_read_lib_symbols ( SegInfo* si )
          stabstr_sz = shdr[i].sh_size;
       }
       if (0 == VG_(strcmp)(".debug_line",sh_strtab + shdr[i].sh_name)) {
-         handle_debug_lines (si, &shdr[i], (UChar *)(oimage + shdr[i].sh_offset));
+         dwarf2 = (UChar *)(oimage + shdr[i].sh_offset);
+	 dwarf2_sz = shdr[i].sh_size;
       }
    }
 
-   if (stab == NULL || stabstr == NULL) {
+   if ((stab == NULL || stabstr == NULL) && dwarf2 == NULL) {
       vg_symerr("   object doesn't have any debug info");
       VG_(munmap) ( (void*)oimage, n_oimage );
       return;
@@ -1332,185 +1538,25 @@ void vg_read_lib_symbols ( SegInfo* si )
    if ( stab_sz + (UChar*)stab > n_oimage + (UChar*)oimage
         || stabstr_sz + (UChar*)stabstr 
            > n_oimage + (UChar*)oimage ) {
-      vg_symerr("   ELF debug data is beyond image end?!");
+      vg_symerr("   ELF (stabs) debug data is beyond image end?!");
       VG_(munmap) ( (void*)oimage, n_oimage );
       return;
    }
 
-   /* Ok.  It all looks plausible.  Go on and read debug data. 
-         stab kinds: 100   N_SO     a source file name
-                      68   N_SLINE  a source line number
-                      36   N_FUN    start of a function
+   if ( dwarf2_sz + (UChar*)dwarf2 > n_oimage + (UChar*)oimage ) {
+      vg_symerr("   ELF (dwarf2) debug data is beyond image end?!");
+      VG_(munmap) ( (void*)oimage, n_oimage );
+      return;
+   }
 
-      In this loop, we maintain a current file name, updated as 
-      N_SO/N_SOLs appear, and a current function base address, 
-      updated as N_FUNs appear.  Based on that, address ranges for 
-      N_SLINEs are calculated, and stuffed into the line info table.
+   /* Looks plausible.  Go on and read debug data. */
+   if (stab != NULL && stabstr != NULL) {
+      read_debuginfo_stabs ( si, stab, stab_sz, stabstr, stabstr_sz );
+   }
 
-      Finding the instruction address range covered by an N_SLINE is
-      complicated;  see the N_SLINE case below.
-   */
-   curr_filenmoff  = addStr(si,"???");
-   curr_fnbaseaddr = (Addr)NULL;
-   curr_file_name = curr_fn_name = (Char*)NULL;
-   lineno = prev_lineno = 0;
-   lineno_overflows = 0;
-   same_file = True;
-
-   n_stab_entries = stab_sz/(int)sizeof(struct nlist);
-
-   for (i = 0; i < n_stab_entries; i++) {
-#     if 0
-      VG_(printf) ( "   %2d  ", i );
-      VG_(printf) ( "type=0x%x   othr=%d   desc=%d   value=0x%x   strx=%d  %s",
-                    stab[i].n_type, stab[i].n_other, stab[i].n_desc, 
-                    (int)stab[i].n_value,
-                    (int)stab[i].n_un.n_strx, 
-                    stabstr + stab[i].n_un.n_strx );
-      VG_(printf)("\n");
-#     endif
-
-      Char *no_fn_name = "???";
-
-      switch (stab[i].n_type) {
-         UInt next_addr;
-
-         /* Two complicated things here:
-          * 1. the n_desc field in 'struct n_list' in a.out.h is only 16-bits,
-          *    which gives a maximum of 65535 lines.  We handle files bigger
-          *    than this by detecting heuristically overflows -- if the line
-          *    count goes from 65000-odd to 0-odd within the same file, we
-          *    assume it's an overflow.  Once we switch files, we zero the
-          *    overflow count
-          *
-          * 2. To compute the instr address range covered by a single line,
-          *    find the address of the next thing and compute the difference.
-          *    The approach used depends on what kind of entry/entries
-          *    follow... 
-          */
-         case N_SLINE: {
-            Int this_addr = (UInt)stab[i].n_value;
-
-            /* Although stored as a short, neg values really are > 32768, hence
-             * the UShort cast.  Then we use an Int to handle overflows. */
-            prev_lineno = lineno;
-            lineno      = (Int)((UShort)stab[i].n_desc);
-
-            if (prev_lineno > lineno + OVERFLOW_DIFFERENCE && same_file) {
-                VG_(message)(Vg_DebugMsg, 
-                             "Line number overflow detected (%d --> %d) in %s", 
-                             prev_lineno, lineno, curr_file_name);
-                lineno_overflows++;
-            }
-            same_file = True;
-
-            LOOP:
-            if (i+1 >= n_stab_entries) {
-               /* If it's the last entry, just guess the range is four;  can't
-                * do any better */
-               next_addr = this_addr + 4;
-            } else {    
-               switch (stab[i+1].n_type) {
-                  /* Easy, common case: use address of next entry */
-                  case N_SLINE: case N_SO:
-                     next_addr = (UInt)stab[i+1].n_value;
-                     break;
-
-                  /* Boring one: skip, look for something more useful. */
-                  case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
-                  case N_STSYM: case N_LCSYM: case N_GSYM:
-                     i++;
-                     goto LOOP;
-                     
-                  /* Should be an end of fun entry, use its address */
-                  case N_FUN: 
-                     if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
-                        next_addr = (UInt)stab[i+1].n_value;
-                     } else {
-                        VG_(message)(Vg_DebugMsg, 
-                                     "warning: function %s missing closing "
-                                     "N_FUN stab at entry %d",
-                                     curr_fn_name, i );
-                        next_addr = this_addr;  /* assume zero-size loc */
-                     }
-                     break;
-
-                  /* N_SOL should be followed by an N_SLINE which can be used */
-                  case N_SOL:
-                     if (i+2 < n_stab_entries && N_SLINE == stab[i+2].n_type) {
-                        next_addr = (UInt)stab[i+2].n_value;
-                        break;
-                     } else {
-                        VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
-                                    stab[i+1].n_type, i, n_stab_entries);
-                        VG_(panic)("unhandled N_SOL stabs case");
-                     }
-
-                  default:
-                     VG_(printf)("unhandled (other) stabs case: %d %d", 
-                                 stab[i+1].n_type,i);
-                     /* VG_(panic)("unhandled (other) stabs case"); */
-                     next_addr = this_addr + 4;
-                     break;
-               }
-            }
-            
-            addLineInfo ( si, curr_filenmoff, curr_fnbaseaddr + this_addr, 
-                          curr_fnbaseaddr + next_addr,
-                          lineno + lineno_overflows * LINENO_OVERFLOW, i);
-            break;
-         }
-
-         case N_FUN: {
-            if ('\0' != (stabstr + stab[i].n_un.n_strx)[0] ) {
-               /* N_FUN with a name -- indicates the start of a fn.  */
-               curr_fnbaseaddr = si->offset + (Addr)stab[i].n_value;
-               curr_fn_name = stabstr + stab[i].n_un.n_strx;
-            } else {
-               curr_fn_name = no_fn_name;
-            }
-            break;
-         }
-
-         case N_SOL:
-            if (lineno_overflows != 0) {
-               VG_(message)(Vg_UserMsg, 
-                            "Warning: file %s is very big (> 65535 lines) "
-                            "Line numbers and annotation for this file might "
-                            "be wrong.  Sorry",
-                            curr_file_name);
-            }
-            /* fall through! */
-         case N_SO: 
-            lineno_overflows = 0;
-
-         /* seems to give lots of locations in header files */
-         /* case 130: */ /* BINCL */
-         { 
-            UChar* nm = stabstr + stab[i].n_un.n_strx;
-            UInt len = VG_(strlen)(nm);
-            
-            if (len > 0 && nm[len-1] != '/') {
-               curr_filenmoff = addStr ( si, nm );
-               curr_file_name = stabstr + stab[i].n_un.n_strx;
-            }
-            else
-               if (len == 0)
-                  curr_filenmoff = addStr ( si, "?1\0" );
-
-            break;
-         }
-
-#        if 0
-         case 162: /* EINCL */
-            curr_filenmoff = addStr ( si, "?2\0" );
-            break;
-#        endif
-
-         default:
-            break;
-      }
-   } /* for (i = 0; i < stab_sz/(int)sizeof(struct nlist); i++) */
+   if (dwarf2 != NULL) {
+      read_debuginfo_dwarf2 ( si, dwarf2, dwarf2_sz );
+   }
 
    /* Last, but not least, heave the oimage back overboard. */
    VG_(munmap) ( (void*)oimage, n_oimage );

@@ -146,7 +146,7 @@ TranslateResult LibVEX_Translate (
 
    /* Turn it into virtual-registerised code. */
    vcode = iselBB ( irbb );
-return TransOK;
+LibVEX_Clear(True); return TransOK;
 
    vex_printf("\n-------- Virtual registerised code --------\n");
    for (i = 0; i < vcode->arr_used; i++) {

@@ -677,19 +677,19 @@ static
 void pre_mem_read_sendmsg ( ThreadId tid,
                             Char *msg, Addr base, SizeT size )
 {
-   Char *outmsg = strdupcat ( "socketcall.sendmsg", msg, VG_AR_TRANSIENT );
+   Char *outmsg = strdupcat ( "socketcall.sendmsg", msg, VG_AR_CORE );
    PRE_MEM_READ( outmsg, base, size );
 
-   VG_(arena_free) ( VG_AR_TRANSIENT, outmsg );
+   VG_(arena_free) ( VG_AR_CORE, outmsg );
 }
 
 static 
 void pre_mem_write_recvmsg ( ThreadId tid,
                              Char *msg, Addr base, SizeT size )
 {
-   Char *outmsg = strdupcat ( "socketcall.recvmsg", msg, VG_AR_TRANSIENT );
+   Char *outmsg = strdupcat ( "socketcall.recvmsg", msg, VG_AR_CORE );
    PRE_MEM_WRITE( outmsg, base, size );
-   VG_(arena_free) ( VG_AR_TRANSIENT, outmsg );
+   VG_(arena_free) ( VG_AR_CORE, outmsg );
 }
 
 static
@@ -769,7 +769,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
 
-   outmsg = VG_(arena_malloc) ( VG_AR_TRANSIENT,
+   outmsg = VG_(arena_malloc) ( VG_AR_CORE,
                                 VG_(strlen)( description ) + 30 );
 
    VG_(sprintf) ( outmsg, description, ".sa_family" );
@@ -819,7 +819,7 @@ void pre_mem_read_sockaddr ( ThreadId tid,
          break;
    }
    
-   VG_(arena_free) ( VG_AR_TRANSIENT, outmsg );
+   VG_(arena_free) ( VG_AR_CORE, outmsg );
 }
 
 /* Dereference a pointer to a UInt. */

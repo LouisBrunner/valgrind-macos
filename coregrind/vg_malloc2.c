@@ -415,12 +415,10 @@ void ensure_mm_init ( void )
    arena_init ( VG_AR_CORE,      "core",     4, CORE_ARENA_MIN_SZB );
    arena_init ( VG_AR_TOOL,      "tool",     4,            1048576 );
    arena_init ( VG_AR_SYMTAB,    "symtab",   4,            1048576 );
-   arena_init ( VG_AR_JITTER,    "JITter",   4,              32768 );
    arena_init ( VG_AR_CLIENT,    "client",  client_rz_szB, 1048576 );
    arena_init ( VG_AR_DEMANGLE,  "demangle", 12/*paranoid*/, 65536 );
    arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              65536 );
    arena_init ( VG_AR_ERRORS,    "errors",   4,              65536 );
-   arena_init ( VG_AR_TRANSIENT, "transien", 4,              65536 );
 
    init_done = True;
 #  ifdef DEBUG_MALLOC

@@ -5944,7 +5944,8 @@ PREx(sys_sigprocmask, SIG_SIM)
 				&bigger_set,
 				&bigger_oldset );
 
-      *oldset = bigger_oldset.sig[0];
+      if (oldset)
+        *oldset = bigger_oldset.sig[0];
    }
 }
 

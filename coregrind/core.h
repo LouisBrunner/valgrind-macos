@@ -515,8 +515,8 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 /* Internal equivalent of VALGRIND_PRINTF . */
 #define VG_USERREQ__INTERNAL_PRINTF         0x3103
-/* Internal equivalent of VALGRIND_PRINTF_BACKTRACE . */
-#define VG_USERREQ__INTERNAL_PRINTF_BACKTRACE 0x3104
+/* Internal equivalent of VALGRIND_PRINTF_BACKTRACE . (no longer used) */
+//#define VG_USERREQ__INTERNAL_PRINTF_BACKTRACE 0x3104
 
 /* Denote the finish of __libc_freeres_wrapper(). 
    A synonym for exit. */
@@ -911,38 +911,6 @@ extern void   VG_(nanosleep)(struct vki_timespec *);
 /* Low-level -- send bytes directly to the message sink.  Do not
    use. */
 extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
-
-// Functions for printing from code within Valgrind, but which runs on the
-// sim'd CPU.  Defined here because needed for vg_replace_malloc.c.  The
-// weak attribute ensures the multiple definitions are not a problem.  They
-// must be functions rather than macros so that va_list can be used.
-
-__attribute__((weak))
-int
-VALGRIND_INTERNAL_PRINTF(char *format, ...)
-{
-   UWord _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-                           (UWord)format, (UWord)vargs, 0, 0);
-   va_end(vargs);
-   return _qzz_res;
-}
-
-__attribute__((weak))
-int
-VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
-{
-   UWord _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
-                           (UWord)format, (UWord)vargs, 0, 0);
-   va_end(vargs);
-   return _qzz_res;
-}
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_demangle.c

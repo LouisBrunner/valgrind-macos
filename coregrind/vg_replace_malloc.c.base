@@ -74,15 +74,25 @@ static int init_done;
 /* Startup hook - called as init section */
 static void init(void) __attribute__((constructor));
 
-/* Below are new versions of malloc, __builtin_new, free, 
-   __builtin_delete, calloc, realloc, memalign, and friends.
+// Functions for printing from code within Valgrind, but which runs on the
+// sim'd CPU.  They must be functions rather than macros so that va_list can
+// be used.
+// Nb: at one point, these were used by multiple files that run on the sim'd
+// CPU, and so were *defined* in core.h with the 'weak' attribute.  That was
+// pretty ugly.  It's much better if this is the only file that needs them.
 
-   None of these functions are called directly - they are not meant to
-   be found by the dynamic linker.  They get called because
-   vg_replace_malloc installs a bunch of code redirects which causes
-   Valgrind to use these functions rather than the ones they're
-   replacing.
-*/
+__attribute__((format(__printf__, 1, 2)))
+int
+VALGRIND_INTERNAL_PRINTF(char *format, ...)
+{
+   UWord _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
+                           (UWord)format, (UWord)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
 
 #define MALLOC_TRACE(format, args...)  \
    if (info.clo_trace_malloc)          \
@@ -93,7 +103,15 @@ static void init(void) __attribute__((constructor));
       n = (n+(VG_SLOPPY_MALLOC_SZB-1)) & ~(VG_SLOPPY_MALLOC_SZB-1); \
    }
 
-/* ALL calls to malloc() and friends wind up here. */
+/* Below are new versions of malloc, __builtin_new, free, 
+   __builtin_delete, calloc, realloc, memalign, and friends.
+
+   None of these functions are called directly - they are not meant to
+   be found by the dynamic linker.  But ALL client calls to malloc() and
+   friends wind up here eventually.  They get called because vg_replace_malloc
+   installs a bunch of code redirects which causes Valgrind to use these
+   functions rather than the ones they're replacing. */
+
 #define ALLOC(fff, vgfff) \
 LIBALIAS(void *, fff, (SizeT n)) \
 { \

@@ -315,8 +315,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    /* OK, we're really going to collect it.  First make a copy,
       because the error context is on the stack and will disappear shortly.
       We can duplicate the main part ourselves, but use
-      SK_(dup_extra_and_update) to duplicate the `extra' part (unless it's
-      NULL).
+      SK_(dup_extra_and_update) to duplicate the `extra' part.
      
       SK_(dup_extra_and_update) can also update the `extra' part.  This is
       for when there are more details to fill in which take time to work out
@@ -326,9 +325,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
     */
    p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
-   if (NULL != err.extra)
-      p->extra = SK_(dup_extra_and_update)(p);
-
+   p->extra = SK_(dup_extra_and_update)(p);
    p->next = vg_errors;
    p->supp = is_suppressible_error(&err);
    vg_errors = p;

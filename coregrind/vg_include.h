@@ -1188,7 +1188,6 @@ struct _Error {
    /* NULL if unsuppressed; or ptr to suppression record. */
    Supp* supp;
    Int count;
-   ExeContext* where;
    ThreadId tid;
    /* These record %EIP, %ESP and %EBP at the error point.  They
       are only used to make GDB-attaching convenient; there is no
@@ -1199,6 +1198,8 @@ struct _Error {
    UInt m_ebp;
 
    /* The skin-specific part */
+   /* Initialised by core */
+   ExeContext* where;
    /* Used by ALL.  Must be in the range (0..) */
    Int ekind;
    /* Used frequently */

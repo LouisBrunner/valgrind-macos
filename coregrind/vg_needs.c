@@ -277,6 +277,11 @@ void VG_(set_supp_extra)  ( Supp* su, void* extra )
 /*--------------------------------------------------------------------*/
 /* Errors */
 
+ExeContext* VG_(get_error_where) ( Error* err )
+{
+   return err->ekind;
+}
+
 ErrorKind VG_(get_error_kind) ( Error* err )
 {
    return err->ekind;

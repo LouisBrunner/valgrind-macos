@@ -550,8 +550,9 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case MMX2:       return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case MMX3:       return LIT0 && SZ0  && CC0 &&  Ls1 && Ls1 &&  N3 && XOTHER;
    case MMX2_MemRd: return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
-   case MMX2_MemWr: return LIT0 && SZ8  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_MemWr: return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_RegRd: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_RegWr: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
          return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
@@ -859,6 +860,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case MMX2_MemRd: return "MMX2_MRd" ;
       case MMX2_MemWr: return "MMX2_MWr" ;
       case MMX2_RegRd: return "MMX2_RRd" ;
+      case MMX2_RegWr: return "MMX2_RWr" ;
       default:
          if (VG_(needs).extended_UCode)
             return SK_(name_XUOpcode)(opc);
@@ -992,6 +994,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, u->val2 & 0xFF );
          break;
 
+      case MMX2_RegWr:
       case MMX2_RegRd:
          VG_(printf)("\t0x%x:0x%x, ",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
@@ -1157,6 +1160,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case LEA2: RD(1); RD(2); WR(3); break;
 
       case MMX2_RegRd: RD(2); break;
+      case MMX2_RegWr: WR(2); break;
 
       case MMX1: case MMX2: case MMX3:
       case NOP:   case FPU:   case INCEIP: case CALLM_S: case CALLM_E:
@@ -1308,7 +1312,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case FPU: case FPU_R: case FPU_W:
       case MMX1: case MMX2: case MMX3:
       case MMX2_MemRd: case MMX2_MemWr:
-      case MMX2_RegRd:
+      case MMX2_RegRd: case MMX2_RegWr:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
       case GETSEG: case PUTSEG: 

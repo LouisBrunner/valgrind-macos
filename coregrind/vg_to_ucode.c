@@ -4829,6 +4829,37 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             VG_(printf)("emms\n");
          break;
 
+      case 0x7E: /* MOVD (src)mmxreg, (dst)ireg-or-mem */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (epartIsReg(modrm)) {
+            eip++;
+            t1 = newTemp(cb);
+            uInstr2(cb, MMX2_RegWr, 4, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, t1 );
+            uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, eregOfRM(modrm));
+            if (dis)
+               VG_(printf)("movd %s, %s\n", 
+                           nameMMXReg(gregOfRM(modrm)),
+                           nameIReg(4,eregOfRM(modrm)));
+         } else {
+            Int tmpa;
+            pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+            tmpa = LOW24(pair);
+            eip += HI8(pair);
+            uInstr2(cb, MMX2_MemWr, 4, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm),
+                        TempReg, tmpa);
+            if (dis)
+               VG_(printf)("movd %s, %s\n", 
+                           nameMMXReg(gregOfRM(modrm)),
+                           dis_buf);
+         }
+         break;
+
       case 0x6E: /* MOVD (src)ireg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          modrm = getUChar(eip);

@@ -1097,9 +1097,13 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+	 /* The MMX register is assumed to be fully defined, so
+	    that's what this register becomes. */
          case MMX2_RegWr:
-            VG_(skin_panic)(
-               "I don't know how to instrument MMX2_RegWr (yet)");
+            sk_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->size == 4);
+            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
+            VG_(copy_UInstr)(cb, u_in);	 
             break;
 
          default:

@@ -20,6 +20,7 @@ Test file may not reference any other symbols.
 #include "../pub/libvex_basictypes.h"
 #include "../pub/libvex_guest_x86.h"
 #include "../pub/libvex_guest_amd64.h"
+#include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex.h"
 #include "linker.h"
 
@@ -179,14 +180,14 @@ asm(
 // LR
 //"   mtlr %r2\n"                // move continuation_addr to LR
 "   lwz %r4, 412(%r2)\n"       // guest_LR
-"   mtlr r4\n";                // move to LR
+"   mtlr r4\n"                // move to LR
 
 // CR
 "   lis  %r4,sb_helper2\n"     // load hi-wd of flags to r4
 "   addi %r4,%r4,sb_helper2\n" // load lo-wd of flags to r4
 "   mtcr %r4\n"                // move r4 to CR
 "   lwz  %r4, 404(%r2)\n"      // guest_CR0to6
-"   mtcrf 0x3F,%r4\n";         // set remaining fields of CR
+"   mtcrf 0x3F,%r4\n"         // set remaining fields of CR
 
 // CTR
 //"   lwz %r4,392(%r2)\n"        // guest_CTR
@@ -237,6 +238,12 @@ asm(
 "   lwz %r29, 116(%r2)\n"
 "   lwz %r30, 120(%r2)\n"
 "   lwz %r31, 124(%r2)\n"
+"nop_start_point:\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
 
 // Cache Sync - which instr?
 /*
@@ -249,10 +256,20 @@ eieio ...
 
 "   bctr\n"   // branch to count register
 );
+extern void nop_start_point;
 void switchback ( void )
 {
+   UInt* p = &nop_start_point;
    sb_helper1 = (HWord)&gst;
    sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
+
+   /* stay sane ... */
+   assert(p[0] == 0 /* whatever the encoding for nop is */);
+   /*
+p[0] = "goto ..."
+p[1] = gst->guest_CIA
+    */
+
    switchback_asm(); // never returns
 }
 
@@ -332,7 +349,7 @@ asm(
 // save return value
 // reload registers from stack
 
-"   ret\n"
+"   "
 );
 
 #else

@@ -2642,7 +2642,10 @@ static Bool dis_int_shift ( UInt theInstr )
              Ra_addr, Rs_addr, Rb_addr);
          assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
                                unop(Iop_32to8, mkexpr(Rb))) );
-         assign( Ra, binop(Iop_Shl32, mkexpr(Rs), mkexpr(sh_amt)) );
+         assign( Rs_sh, binop(Iop_Shl32, mkexpr(Rs), mkexpr(sh_amt)) );
+         assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
+         assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
+                                   mkexpr(Rs_sh), mkU32(0) ));
          break;
          
       case 0x318: // sraw (Shift Right Algebraic Word, PPC32 p506)
@@ -2700,7 +2703,7 @@ static Bool dis_int_shift ( UInt theInstr )
          DIP("srw%s r%d,r%d,r%d\n", flag_Rc ? "." : "",
              Ra_addr, Rs_addr, Rb_addr);
          assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
-                               unop(Iop_32to8, getIReg(Rb_addr))) );
+                               unop(Iop_32to8, mkexpr(Rb))) );
          assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
          assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
          assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),

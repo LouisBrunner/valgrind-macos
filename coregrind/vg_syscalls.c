@@ -540,7 +540,7 @@ Char *inet2name(struct sockaddr_in *sa, UInt len, Char *name)
          VG_(sprintf)(name, "%u.%u.%u.%u:%u",
                       addr & 0xFF, (addr>>8) & 0xFF,
                       (addr>>16) & 0xFF, (addr>>24) & 0xFF,
-                      sa->sin_port);
+                      ntohs(sa->sin_port));
       }
    }
 

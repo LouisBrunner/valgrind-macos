@@ -2469,18 +2469,18 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 }
 
 typedef
-int (*recv_t)(int s, void *msg, size_t len, int flags);
+ssize_t (*recv_t)(int s, void *msg, size_t len, int flags);
 WEAK
-int recv(int s, void *msg, size_t len, int flags)
+ssize_t recv(int s, void *msg, size_t len, int flags)
 {
    __my_pthread_testcancel();
    return FORWARD(recv, __libc_recv, s, msg, len, flags);
 }
 
 typedef
-int (*send_t)(int s, const void *msg, size_t len, int flags);
+ssize_t (*send_t)(int s, const void *msg, size_t len, int flags);
 WEAK
-int send(int s, const void *msg, size_t len, int flags)
+ssize_t send(int s, const void *msg, size_t len, int flags)
 {
    __my_pthread_testcancel();
    return FORWARD(send, __libc_send, s, msg, len, flags);
@@ -2488,9 +2488,9 @@ int send(int s, const void *msg, size_t len, int flags)
 
 
 typedef 
-int (*sendmsg_t)(int s, const struct msghdr *msg, int flags);
+ssize_t (*sendmsg_t)(int s, const struct msghdr *msg, int flags);
 WEAK
-int sendmsg(int s, const struct msghdr *msg, int flags)
+ssize_t sendmsg(int s, const struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
    return FORWARD(sendmsg, __libc_sendmsg, s, msg, flags);
@@ -2498,9 +2498,9 @@ int sendmsg(int s, const struct msghdr *msg, int flags)
 
 
 typedef
-int (*recvmsg_t)(int s, struct msghdr *msg, int flags);
+ssize_t (*recvmsg_t)(int s, struct msghdr *msg, int flags);
 WEAK
-int recvmsg(int s, struct msghdr *msg, int flags)
+ssize_t recvmsg(int s, struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
    return FORWARD(recvmsg, __libc_recvmsg, s, msg, flags);
@@ -2508,11 +2508,11 @@ int recvmsg(int s, struct msghdr *msg, int flags)
 
 
 typedef
-int (*recvfrom_t)(int s, void *buf, size_t len, int flags,
+ssize_t (*recvfrom_t)(int s, void *buf, size_t len, int flags,
                   struct sockaddr *from, socklen_t *fromlen);
 WEAK
-int recvfrom(int s, void *buf, size_t len, int flags,
-             struct sockaddr *from, socklen_t *fromlen)
+ssize_t recvfrom(int s, void *buf, size_t len, int flags,
+                 struct sockaddr *from, socklen_t *fromlen)
 {
    __my_pthread_testcancel();
    return FORWARD(recvfrom, __libc_recfrom, s, buf, len, flags, from, fromlen);
@@ -2520,11 +2520,11 @@ int recvfrom(int s, void *buf, size_t len, int flags,
 
 
 typedef
-int (*sendto_t)(int s, const void *msg, size_t len, int flags, 
-                const struct sockaddr *to, socklen_t tolen);
+ssize_t (*sendto_t)(int s, const void *msg, size_t len, int flags, 
+                    const struct sockaddr *to, socklen_t tolen);
 WEAK
-int sendto(int s, const void *msg, size_t len, int flags, 
-           const struct sockaddr *to, socklen_t tolen)
+ssize_t sendto(int s, const void *msg, size_t len, int flags, 
+               const struct sockaddr *to, socklen_t tolen)
 {
    __my_pthread_testcancel();
    return FORWARD(sendto, __libc_sendto, s, msg, len, flags, to, tolen);

@@ -402,13 +402,10 @@ void VG_(proxy_shutdown)(void)
    handler is being run with all signals blocked; the longjmp is
    there to make sure they stay masked until the application thread is
    ready to run its signal handler. */
-void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo, 
-			  const struct vki_sigcontext *sigcontext)
+void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo, Addr ip, Int sysnum)
 {
    UChar local;
    ProxyLWP *px = LWP_TSD(&local);
-   Addr eip = sigcontext->eip;
-   Int eax = sigcontext->eax;
 
    vg_assert(siginfo->si_signo != 0);
    if (px->siginfo.si_signo != 0) {
@@ -423,7 +420,7 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo,
 
    /* First look to see if the EIP is within our interesting ranges
       near a syscall to work out what should happen. */
-   if (sys_before <= eip && eip <= sys_restarted) {
+   if (sys_before <= ip && ip <= sys_restarted) {
       /* We are before the syscall actually ran, or it did run and
 	 wants to be restarted.  Either way, set the return code to
 	 indicate a restart.  This is not really any different from
@@ -431,15 +428,15 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo,
 	 the proxy and machine state here. */
       vg_assert(px->state == PXS_RunSyscall);
       vg_assert(PLATFORM_SYSCALL_RET(px->tst->arch) == -VKI_ERESTARTSYS);
-   } else if (sys_after <= eip && eip <= sys_done) {
+   } else if (sys_after <= ip && ip <= sys_done) {
       /* We're after the syscall.  Either it was interrupted by the
 	 signal, or the syscall completed normally.  In either case
-	 eax contains the correct syscall return value, and the new
-	 state is effectively PXS_SysDone. */
+         the usual register contains the correct syscall return value, and
+         the new state is effectively PXS_SysDone. */
       vg_assert(px->state == PXS_RunSyscall ||
 		px->state == PXS_SysDone);
       px->state = PXS_SysDone;
-      PLATFORM_SYSCALL_RET(px->tst->arch) = eax;
+      PLATFORM_SYSCALL_RET(px->tst->arch) = sysnum;
    }
    px_printf("  signalled in state %s\n", pxs_name(px->state));
 

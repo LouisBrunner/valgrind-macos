@@ -1361,7 +1361,7 @@ void VG_(sanity_check_proxy)(void);
    back into the proxy's main loop, so it doesn't return. */
 __attribute__ ((__noreturn__))
 extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo, 
-				  const struct vki_sigcontext *sigcontext );
+				  Addr ip, Int sysnum );
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscalls.c

@@ -1652,7 +1652,8 @@ void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_uconte
 
    vg_assert(VG_(gettid)() != VG_(main_pid));
 
-   VG_(proxy_handlesig)(info, &uc->uc_mcontext);
+   VG_(proxy_handlesig)(info, UCONTEXT_INSTR_PTR(uc),
+                              UCONTEXT_SYSCALL_NUM(uc));
 }
 
 /* 
@@ -1679,7 +1680,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	 proxy LWP code has a bug) */
       vg_assert(info->si_code <= VKI_SI_USER);
 
-      VG_(proxy_handlesig)(info, &uc->uc_mcontext);
+      VG_(proxy_handlesig)(info, UCONTEXT_INSTR_PTR(uc),
+                                 UCONTEXT_SYSCALL_NUM(uc));
       return;
    }
 
@@ -1852,9 +1854,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */
       VG_(core_panic_at)("Killed by fatal signal",
-                         VG_(get_ExeContext2)(uc->uc_mcontext.eip,
-                                              uc->uc_mcontext.ebp,
-                                              uc->uc_mcontext.esp,
+                         VG_(get_ExeContext2)(UCONTEXT_INSTR_PTR(uc),
+                                              UCONTEXT_FRAME_PTR(uc),
+                                              UCONTEXT_STACK_PTR(uc),
                                               VG_(valgrind_last)));
    }
 }
@@ -1876,7 +1878,8 @@ static void proxy_sigvg_handler(int signo, vki_ksiginfo_t *si, struct vki_uconte
       vg_assert(si->si_code == VKI_SI_TKILL);
       vg_assert(si->_sifields._kill._pid == VG_(main_pid));
    
-      VG_(proxy_handlesig)(si, &uc->uc_mcontext);
+      VG_(proxy_handlesig)(si, UCONTEXT_INSTR_PTR(uc),
+                               UCONTEXT_SYSCALL_NUM(uc));
    }
 }
 

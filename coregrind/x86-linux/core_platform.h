@@ -84,7 +84,14 @@ extern Int VG_(sys_get_thread_area) ( ThreadId tid,
    address, return a linear address, and do limit checks too. */
 extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 
+/* ---------------------------------------------------------------------
+   ucontext stuff
+   ------------------------------------------------------------------ */
 
+#define UCONTEXT_INSTR_PTR(uc)   ((uc)->uc_mcontext.eip)
+#define UCONTEXT_STACK_PTR(uc)   ((uc)->uc_mcontext.esp)
+#define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.ebp)
+#define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.eax)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

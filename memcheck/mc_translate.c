@@ -968,6 +968,52 @@ IRAtom* unary32F0x4 ( MCEnv* mce, IRAtom* vatomX )
    return at;
 }
 
+/* --- ... and ... 64Fx2 versions of the same ... --- */
+
+static
+IRAtom* binary64Fx2 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   tl_assert(isShadowAtom(mce, vatomY));
+   at = mkUifU128(mce, vatomX, vatomY);
+   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
+   return at;
+}
+
+static
+IRAtom* unary64Fx2 ( MCEnv* mce, IRAtom* vatomX )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, vatomX));
+   return at;
+}
+
+static
+IRAtom* binary64F0x2 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   tl_assert(isShadowAtom(mce, vatomY));
+   at = mkUifU128(mce, vatomX, vatomY);
+   at = assignNew(mce, Ity_I64, unop(Iop_128to64, at));
+   at = mkPCastTo(mce, Ity_I64, at);
+   at = assignNew(mce, Ity_V128, binop(Iop_Set128lo64, vatomX, at));
+   return at;
+}
+
+static
+IRAtom* unary64F0x2 ( MCEnv* mce, IRAtom* vatomX )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   at = assignNew(mce, Ity_I64, unop(Iop_128to64, vatomX));
+   at = mkPCastTo(mce, Ity_I64, at);
+   at = assignNew(mce, Ity_V128, binop(Iop_Set128lo64, vatomX, at));
+   return at;
+}
+
 
 
 /*------------------------------------------------------------*/
@@ -995,7 +1041,31 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
 
-      /* 128-bit SIMD */
+      /* 128-bit SIMD (SSE2-esque) */
+
+      case Iop_Sub64Fx2:
+      case Iop_Mul64Fx2:
+      case Iop_Min64Fx2:
+      case Iop_Max64Fx2:
+      case Iop_Div64Fx2:
+      case Iop_CmpLT64Fx2:
+      case Iop_CmpLE64Fx2:
+      case Iop_CmpEQ64Fx2:
+      case Iop_Add64Fx2:
+         return binary64Fx2(mce, vatom1, vatom2);      
+
+      case Iop_Sub64F0x2:
+      case Iop_Mul64F0x2:
+      case Iop_Min64F0x2:
+      case Iop_Max64F0x2:
+      case Iop_Div64F0x2:
+      case Iop_CmpLT64F0x2:
+      case Iop_CmpLE64F0x2:
+      case Iop_CmpEQ64F0x2:
+      case Iop_Add64F0x2:
+         return binary64F0x2(mce, vatom1, vatom2);      
+
+      /* 128-bit SIMD (SSE1-esque) */
 
       case Iop_Sub32Fx4:
       case Iop_Mul32Fx4:
@@ -1020,6 +1090,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return binary32F0x4(mce, vatom1, vatom2);      
 
       case Iop_Set128lo32:
+      case Iop_Set128lo64:
          return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
 
       case Iop_64HLto128:
@@ -1206,6 +1277,12 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    tl_assert(isOriginalAtom(mce,atom));
    switch (op) {
 
+      case Iop_Sqrt64Fx2:
+         return unary64Fx2(mce, vatom);
+
+      case Iop_Sqrt64F0x2:
+         return unary64F0x2(mce, vatom);
+
       case Iop_Sqrt32Fx4:
       case Iop_RSqrt32Fx4:
       case Iop_Recip32Fx4:
@@ -1217,6 +1294,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return unary32F0x4(mce, vatom);
 
       case Iop_32Uto128:
+      case Iop_64Uto128:
          return assignNew(mce, Ity_V128, unop(op, vatom));
 
       case Iop_F32toF64: 
@@ -1265,6 +1343,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:
+      case Iop_ReinterpI32asF32:
       case Iop_Not64:
       case Iop_Not32:
       case Iop_Not16:

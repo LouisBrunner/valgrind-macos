@@ -58,7 +58,7 @@ set:
 	ret
 .Lfe1:
 	.size	 set,.Lfe1-set
-	.section	.rodata.str1.1,"ams",@progbits,1
+	.section	.rodata
 .LC0:
 	.string	"blieb\n"
 .text

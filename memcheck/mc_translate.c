@@ -1135,8 +1135,10 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             VG_(copy_UInstr)(cb, u_in);
 	    break;
          }
-         /* For FPU, MMX and SSE insns not referencing memory, just copy thru. */
-         case SSE4: case SSE3:
+
+         /* For FPU, MMX and SSE insns not referencing memory, just
+            copy thru. */
+         case SSE5: case SSE4: case SSE3:
          case MMX1: case MMX2: case MMX3:
          case FPU: 
             VG_(copy_UInstr)(cb, u_in);

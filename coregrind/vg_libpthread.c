@@ -3160,7 +3160,6 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_unlock\n");
    rwl = rw_remap ( orig );
-   rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
    my_assert(res == 0);
    if (!rwl->initted) {

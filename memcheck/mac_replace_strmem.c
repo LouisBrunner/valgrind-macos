@@ -279,6 +279,26 @@ void* memcpy( void *dst, const void *src, unsigned int len )
    return dst;
 }
 
+int memcmp ( const void *s1V, const void *s2V, unsigned int n )
+{
+   int res;
+   unsigned char a0;
+   unsigned char b0;
+   unsigned char* s1 = (unsigned char*)s1V;
+   unsigned char* s2 = (unsigned char*)s2V;
+
+   while (n != 0) {
+      a0 = s1[0];
+      b0 = s2[0];
+      s1 += 1;
+      s2 += 1;
+      res = ((int)a0) - ((int)b0);
+      if (res != 0)
+         return res;
+      n -= 1;
+   }
+   return 0;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                     mac_replace_strmem.c ---*/

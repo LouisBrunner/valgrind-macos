@@ -298,6 +298,14 @@ static IRBB* flatten_BB ( IRBB* in )
 /*--- Constant propagation and folding                        ---*/
 /*---------------------------------------------------------------*/
 
+/* Are both expressions simply the same IRTemp ? */
+static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
+{
+   return e1->tag == Iex_Tmp
+          && e2->tag == Iex_Tmp
+          && e1->Iex.Tmp.tmp == e2->Iex.Tmp.tmp;
+}
+
 static IRExpr* fold_Expr ( IRExpr* e )
 {
    Int     shift;
@@ -407,13 +415,25 @@ static IRExpr* fold_Expr ( IRExpr* e )
            default:
               goto unhandled;
          }
+
       } else {
+
          /* other cases (identities, etc) */
+         /* Add32(x,0) ==> x */
          if (e->Iex.Binop.op == Iop_Add32
              && e->Iex.Binop.arg2->tag == Iex_Const
              && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
             e2 = e->Iex.Binop.arg1;
-         }
+         } else
+
+         /* And8/16/32(t,t) ==> t, for some IRTemp t */
+         if ((e->Iex.Binop.op == Iop_And32
+              || e->Iex.Binop.op == Iop_And16
+              || e->Iex.Binop.op == Iop_And8)
+             && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+            e2 = e->Iex.Binop.arg1;
+	 }
+
       }
    }
 

@@ -1835,6 +1835,17 @@ int VGL_(accept)(int s, struct sockaddr *addr, socklen_t *addrlen)
    return __libc_accept(s, addr, addrlen);
 }
 
+extern
+int __libc_recv(int s, void *buf, size_t len, int flags);
+
+int VGL_(recv)(int s, void *buf, size_t len, int flags)
+{
+   __my_pthread_testcancel();
+   wait_for_fd_to_be_readable_or_erring(s);
+   __my_pthread_testcancel();
+   return __libc_recv(s, buf, len, flags);
+}
+
 
 extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);

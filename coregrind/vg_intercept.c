@@ -109,3 +109,20 @@ int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
    return VGL_(accept)(s, addr, addrlen);
 }
+
+/* -------------------------------- recv -------------------------------- */
+
+extern
+int __libc_recv(int s, void *buf, size_t len, int flags);
+
+WEAK int VGL_(recv)(int s, void *buf, size_t len, int flags)
+{
+     return __libc_recv(s, buf, len, flags);
+}
+
+int recv(int s, void *buf, size_t len, int flags)
+{
+     return VGL_(recv)(s, buf, len, flags);
+}
+
+strong_alias(recv, __recv)

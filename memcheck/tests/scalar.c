@@ -597,8 +597,8 @@ int main(void)
    SY(__NR_setfsgid, x0);
 
    // __NR__llseek 140
- //GO(__NR__llseek, ".s .m");
- //SY(__NR__llseek);
+   GO(__NR__llseek, "5s 1m");
+   SY(__NR__llseek, x0, x0, x0, x0, x0);
 
    // __NR_getdents 141
    GO(__NR_getdents, "3s 1m");
@@ -617,12 +617,12 @@ int main(void)
    SY(__NR_msync, x0, x0, x0);
 
    // __NR_readv 145
- //GO(__NR_readv, ".s .m");
- //SY(__NR_readv);
+   GO(__NR_readv, "3s 1m");
+   SY(__NR_readv, x0, x0, x0+1);
 
    // __NR_writev 146
- //GO(__NR_writev, ".s .m");
- //SY(__NR_writev);
+   GO(__NR_writev, "3s 1m");
+   SY(__NR_writev, x0, x0, x0+1);
 
    // __NR_getsid 147
    GO(__NR_getsid, "1s 0m");

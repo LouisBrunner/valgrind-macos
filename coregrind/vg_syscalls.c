@@ -4447,16 +4447,17 @@ PREx(sys_lseek, 0)
                  unsigned int, fd, vki_off_t, offset, unsigned int, whence);
 }
 
-PRE(_llseek)
+PREx(sys_llseek, 0)
 {
-   /* int _llseek(unsigned int fd, unsigned long offset_high,       
-      unsigned long  offset_low, 
-      loff_t * result, unsigned int whence); */
    PRINT("llseek ( %d, 0x%x, 0x%x, %p, %d )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ5(long, "llseek",
+                 unsigned int, fd, unsigned long, offset_high,
+                 unsigned long, offset_low, vki_loff_t *, result,
+                 unsigned int, whence);
    PRE_MEM_WRITE( "llseek(result)", arg4, sizeof(vki_loff_t));
 }
 
-POST(_llseek)
+POSTx(sys_llseek)
 {
    if (res == 0)
       POST_MEM_WRITE( arg4, sizeof(vki_loff_t) );
@@ -4840,25 +4841,30 @@ POSTx(sys_readlink)
    POST_MEM_WRITE( arg2, res );
 }
 
-PRE(readv)
+PREx(sys_readv, MayBlock)
 {
-   /* int readv(int fd, const struct iovec * vector, size_t count); */
    Int i;
    struct vki_iovec * vec;
-   PRINT("readv ( %d, %p, %llu )",arg1,arg2,(ULong)arg3);
+   PRINT("sys_readv ( %d, %p, %llu )",arg1,arg2,(ULong)arg3);
+   PRE_REG_READ3(ssize_t, "readv",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count);
    if (!fd_allowed(arg1, "readv", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_READ( "readv(vector)", arg2, arg3 * sizeof(struct vki_iovec) );
-      /* ToDo: don't do any of the following if the vector is invalid */
-      vec = (struct vki_iovec *)arg2;
-      for (i = 0; i < (Int)arg3; i++)
-	 PRE_MEM_WRITE( "readv(vector[...])",
-			(Addr)vec[i].iov_base, vec[i].iov_len );
+
+      if (arg2 != (UWord)NULL) {
+         /* ToDo: don't do any of the following if the vector is invalid */
+         vec = (struct vki_iovec *)arg2;
+         for (i = 0; i < (Int)arg3; i++)
+            PRE_MEM_WRITE( "readv(vector[...])",
+                           (Addr)vec[i].iov_base, vec[i].iov_len );
+      }
    }
 }
 
-POST(readv)
+POSTx(sys_readv)
 {
    if (res > 0) {
       Int i;
@@ -5630,22 +5636,26 @@ POSTx(sys_wait4)
       POST_MEM_WRITE( arg4, sizeof(struct vki_rusage) );
 }
 
-PRE(writev)
+PREx(sys_writev, MayBlock)
 {
-   /* int writev(int fd, const struct iovec * vector, size_t count); */
    Int i;
    struct vki_iovec * vec;
-   PRINT("writev ( %d, %p, %llu )",arg1,arg2,(ULong)arg3);
+   PRINT("sys_writev ( %d, %p, %llu )",arg1,arg2,(ULong)arg3);
+   PRE_REG_READ3(ssize_t, "writev",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count);
    if (!fd_allowed(arg1, "writev", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_READ( "writev(vector)", 
 		     arg2, arg3 * sizeof(struct vki_iovec) );
-      /* ToDo: don't do any of the following if the vector is invalid */
-      vec = (struct vki_iovec *)arg2;
-      for (i = 0; i < (Int)arg3; i++)
-	 PRE_MEM_READ( "writev(vector[...])",
-			(Addr)vec[i].iov_base, vec[i].iov_len );
+      if (arg2 != (UWord)NULL) {
+         /* ToDo: don't do any of the following if the vector is invalid */
+         vec = (struct vki_iovec *)arg2;
+         for (i = 0; i < (Int)arg3; i++)
+            PRE_MEM_READ( "writev(vector[...])",
+                           (Addr)vec[i].iov_base, vec[i].iov_len );
+      }
    }
 }
 
@@ -6508,14 +6518,14 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setfsuid,         sys_setfsuid16),   // 138 ## L
    SYSX_(__NR_setfsgid,         sys_setfsgid16),   // 139 ## L
 
-   SYSBA(__NR__llseek,          sys_llseek, 0),    // 140 *
+   SYSXY(__NR__llseek,          sys_llseek),       // 140 * L
    SYSXY(__NR_getdents,         sys_getdents),     // 141 * (SVr4,SVID)
    SYSX_(__NR__newselect,       sys_select),       // 142 * (4.4BSD...)
    SYSX_(__NR_flock,            sys_flock),        // 143 * (4.4BSD...)
    SYSX_(__NR_msync,            sys_msync),        // 144 * P
 
-   SYSBA(__NR_readv,            sys_readv, MayBlock), // 145 *
-   SYSB_(__NR_writev,           sys_writev, MayBlock), // 146 *
+   SYSXY(__NR_readv,            sys_readv),        // 145 * P
+   SYSX_(__NR_writev,           sys_writev),       // 146 * P
    SYSX_(__NR_getsid,           sys_getsid),       // 147 * P
    SYSX_(__NR_fdatasync,        sys_fdatasync),    // 148 * P
    SYSBA(__NR__sysctl,          sys_sysctl, 0),    // 149 *

@@ -738,6 +738,14 @@ static void process_cmd_line_options ( void )
              VG_(printf)("Looks like you've got a early 2.4.X kernel here.\n");
           sp -= 22;
        } else
+       if (sp[2] == VKI_AT_CLKTCK
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_HWCAP
+           && sp[-4-1] == 0) {
+          if (0)
+             VG_(printf)("Looks like a >> 2.5.43 kernel here.\n");
+          sp -= 4;
+       } else
          args_grok_error(
             "ELF frame does not look like 2.2.X or 2.4.X.\n   "
             "See kernel sources linux/fs/binfmt_elf.c to make sense of this."

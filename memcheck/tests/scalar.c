@@ -12,7 +12,7 @@
 // meaningful with the syscalls.
 
 void GO(char* s) {
-   fprintf(stderr, "---------- %s ----------\n", s);
+   fprintf(stderr, "---------- %s\n", s);
 }
 
 int main(void)
@@ -62,8 +62,14 @@ int main(void)
    // __NR_break 17
    // __NR_oldstat 18
    // __NR_lseek 19
-   // __NR_getpid 20
+   // __NR_getpid 20 --> sys_getpid()
+   GO("__NR_getpid, 0 errors");
+   syscall(__NR_getpid);
+
    // __NR_mount 21
+   GO("__NR_mount, 4 scalar errors, 3 memory errors");
+   syscall(__NR_mount, s0, s0, s0, i0, s0);
+   
    // __NR_umount 22
    // __NR_setuid 23
    // __NR_getuid 24
@@ -106,7 +112,11 @@ int main(void)
    // __NR_chroot 61
    // __NR_ustat 62
    // __NR_dup2 63
+
    // __NR_getppid 64
+   GO("__NR_getppid, 0 errors");
+   syscall(__NR_getppid);
+
    // __NR_getpgrp 65
    // __NR_setsid 66
    // __NR_sigaction 67

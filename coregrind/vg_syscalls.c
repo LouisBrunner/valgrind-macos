@@ -1162,15 +1162,19 @@ POST(ptrace)
    }
 }
 
-PRE(mount)
+PRE(sys_mount)
 {
-   // int  mount(const char *source, const char *target,
-   //            const char *filesystemtype, unsigned long mountflags,
-   //            const void *data);
-   PRINT( "mount( %p, %p, %p, %p, %p )" ,arg1,arg2,arg3);
-   PRE_MEM_RASCIIZ( "mount(specialfile)", arg1);
-   PRE_MEM_RASCIIZ( "mount(dir)", arg2);
-   PRE_MEM_RASCIIZ( "mount(filesystemtype)", arg3);
+   // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
+   // We are conservative and check everything, except the memory pointed to
+   // by 'data'.
+   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,arg1,arg2,arg3);
+   PRE_REG_READ5(long, "mount",
+                 char __user *, source, char __user *, target,
+                 char __user *, type, unsigned long, flags,
+                 void __user *, data);
+   PRE_MEM_RASCIIZ( "mount(source)", arg1);
+   PRE_MEM_RASCIIZ( "mount(target)", arg2);
+   PRE_MEM_RASCIIZ( "mount(type)", arg3);
 }
 
 PRE(umount)
@@ -2265,10 +2269,10 @@ PRE(getgid32)
    PRINT("getgid32 ()");
 }
 
-PRE(getpid)
+PRE(sys_getpid)
 {
-   /* pid_t getpid(void); */
-   PRINT("getpid ()");
+   PRINT("sys_getpid ()");
+   PRE_REG_READ0(long, "getpid");
 }
 
 PRE(getpgid)
@@ -2283,10 +2287,10 @@ PRE(getpgrp)
    PRINT("getpgrp ()");
 }
 
-PRE(getppid)
+PRE(sys_getppid)
 {
-   /* pid_t getppid(void); */
-   PRINT("getppid ()");
+   PRINT("sys_getppid ()");
+   PRE_REG_READ0(long, "getppid");
 }
 
 PRE(getresgid)
@@ -5788,7 +5792,7 @@ static const struct sys_info special_sys[] = {
 
 static const struct sys_info sys_info[] = {
    SYSBA(ptrace,		0),
-   SYSB_(mount,			MayBlock),
+   SYSX_(__NR_mount,            sys_mount,      MayBlock),
    SYSB_(umount,		0),
 
    SYSB_(setresgid,		0),
@@ -5891,10 +5895,10 @@ static const struct sys_info sys_info[] = {
    SYSB_(getegid32,		0),
    SYSB_(getgid,		0),
    SYSB_(getgid32,		0),
-   SYSB_(getpid,		0),
+   SYSX_(__NR_getpid,           sys_getpid,     0),
    SYSB_(getpgid,		0),
    SYSB_(getpgrp,		0),
-   SYSB_(getppid,		0),
+   SYSX_(__NR_getppid,		sys_getppid,    0),
    SYSBA(getresgid,		0),
    SYSBA(getresgid32,		0),
    SYSBA(getresuid,		0),

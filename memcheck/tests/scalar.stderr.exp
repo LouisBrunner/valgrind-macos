@@ -1,4 +1,4 @@
----------- __NR_read, 1+3 scalar errors ----------
+---------- __NR_read, 1+3 scalar errors
 Syscall param (syscallno) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -18,7 +18,7 @@ Syscall param read(count) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
----------- __NR_write, 3 scalar errors, 1 memory error ----------
+---------- __NR_write, 3 scalar errors, 1 memory error
 
 Syscall param write(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -40,7 +40,7 @@ Syscall param write(buf) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
----------- __NR_open(2), 2 scalar errors, 1 memory error ----------
+---------- __NR_open(2), 2 scalar errors, 1 memory error
 
 Syscall param open(filename) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -57,13 +57,59 @@ Syscall param open(filename) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
----------- __NR_open(3), 1 scalar error ----------
+---------- __NR_open(3), 1 scalar error
 
 Syscall param open(mode) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
----------- __NR_exit, 1 scalar error ----------
+---------- __NR_getpid, 0 errors
+---------- __NR_mount, 4 scalar errors, 3 memory errors
+
+Syscall param mount(source) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mount(target) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mount(type) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mount(flags) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mount(data) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mount(source) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mount(target) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mount(type) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+---------- __NR_getppid, 0 errors
+---------- __NR_exit, 1 scalar error
 
 Syscall param exit(error_code) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)

@@ -674,13 +674,18 @@ void thread_wrapper ( NewThreadInfo* info )
    THREADs
    ------------------------------------------------ */
 
-WEAK
-int pthread_yield ( void )
+static void __valgrind_pthread_yield ( void )
 {
    int res;
    ensure_valgrind("pthread_yield");
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_YIELD, 0, 0, 0, 0);
+}
+
+WEAK
+int pthread_yield ( void )
+{
+   __valgrind_pthread_yield();
    return 0;
 }
 
@@ -1497,34 +1502,97 @@ void ** __pthread_getspecific_addr(pthread_key_t key)
 }
 #endif
 
+
 /* ---------------------------------------------------
    ONCEry
    ------------------------------------------------ */
 
+/* This protects reads and writes of the once_control variable
+   supplied.  It is never held whilst any particular initialiser is
+   running. */
 static pthread_mutex_t once_masterlock = PTHREAD_MUTEX_INITIALIZER;
 
+/* Initialiser needs to be run. */
+#define P_ONCE_NOT_DONE  ((PTHREAD_ONCE_INIT) + 0)
+
+/* Initialiser currently running. */
+#define P_ONCE_RUNNING   ((PTHREAD_ONCE_INIT) + 1)
+
+/* Initialiser has completed. */
+#define P_ONCE_COMPLETED ((PTHREAD_ONCE_INIT) + 2)
 
 int __pthread_once ( pthread_once_t *once_control, 
                      void (*init_routine) (void) )
 {
    int res;
+   int done;
    ensure_valgrind("pthread_once");
 
-   res = __pthread_mutex_lock(&once_masterlock);
+#  define TAKE_LOCK                                   \
+      res = __pthread_mutex_lock(&once_masterlock);   \
+      my_assert(res == 0);
 
-   /* init routine called us again ? */
-   if (res != 0)
-       return 0;
+#  define RELEASE_LOCK                                \
+      res = __pthread_mutex_unlock(&once_masterlock); \
+      my_assert(res == 0);
 
-   if (*once_control == 0) {
-      *once_control = 1;
-      init_routine();
+   /* Grab the lock transiently, so we can safely see what state this
+      once_control is in. */
+
+   TAKE_LOCK;
+
+   switch (*once_control) {
+
+      case P_ONCE_NOT_DONE:
+ 	 /* Not started.  Change state to indicate running, drop the
+	    lock and run.  */
+         *once_control = P_ONCE_RUNNING;
+	 RELEASE_LOCK;
+         init_routine();
+         /* re-take the lock, and set state to indicate done. */
+	 TAKE_LOCK;
+         *once_control = P_ONCE_COMPLETED;
+	 RELEASE_LOCK;
+	 break;
+
+      case P_ONCE_RUNNING:
+	 /* This is the tricky case.  The initialiser is running in
+            some other thread, but we have to delay this thread till
+            the other one completes.  So we sort-of busy wait.  In
+            fact it makes sense to yield now, because what we want to
+            happen is for the thread running the initialiser to
+            complete ASAP. */
+	 RELEASE_LOCK;
+         done = 0;
+         while (1) {
+            /* Let others run for a while. */
+	    __valgrind_pthread_yield();
+	    /* Grab the lock and see if we're done waiting. */
+	    TAKE_LOCK;
+            if (*once_control == P_ONCE_COMPLETED)
+               done = 1;
+	    RELEASE_LOCK;
+	    if (done)
+               break;
+	 }
+	 break;
+
+      case P_ONCE_COMPLETED:
+      default: 
+ 	 /* Easy.  It's already done.  Just drop the lock. */
+         RELEASE_LOCK;
+	 break;
    }
 
-   __pthread_mutex_unlock(&once_masterlock);
-
    return 0;
+
+#  undef TAKE_LOCK
+#  undef RELEASE_LOCK
 }
+
+#undef P_ONCE_NOT_DONE
+#undef P_ONCE_RUNNING
+#undef P_ONCE_COMPLETED
 
 
 /* ---------------------------------------------------

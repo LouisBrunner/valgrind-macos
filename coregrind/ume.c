@@ -34,17 +34,13 @@
 
 #include "core.h"
 
-#include <stddef.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <elf.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/stat.h>
-#include <dlfcn.h>
 #include <assert.h>
 
 #include "ume.h"

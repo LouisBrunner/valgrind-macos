@@ -31,13 +31,11 @@
 #define _FILE_OFFSET_BITS	64
 
 #include <stdio.h>
-#include <elf.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <sys/resource.h>
 
 #include "core.h"

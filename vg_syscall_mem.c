@@ -416,6 +416,24 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+
+#     if defined(__NR_getxattr)
+      case __NR_getxattr: /* syscall 229 */
+         /* ssize_t getxattr (const char *path, const char* name,
+                              void* value, size_t size); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("getxattr ( %p, %p, %p, %d )\n", 
+                        arg1,arg2,arg3, arg4);
+         must_be_readable_asciiz( tst, "getxattr(path)", arg1 );
+         must_be_readable_asciiz( tst, "getxattr(name)", arg2 );
+         must_be_writable( tst, "getxattr(value)", arg3, arg4 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && res > 0 
+                                  && arg3 != (Addr)NULL) {
+            make_readable( arg3, res );
+         }
+         break;
+#     endif
       
 #     if defined(__NR_quotactl)
       case __NR_quotactl: /* syscall 131 */

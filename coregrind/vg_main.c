@@ -987,7 +987,7 @@ static Addr setup_client_stack(void* init_sp,
       sizeof(char **) +			/* terminal NULL */
       auxsize +				/* auxv */
       ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
-      VKI_PAGE_SIZE;		/* page for trampoline code */
+      VKI_PAGE_SIZE;			/* page for trampoline code */
 
    // decide where stack goes!
    VG_(clstk_end) = VG_(client_end);

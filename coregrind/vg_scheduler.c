@@ -2571,8 +2571,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    }
 
    specifics_ptr = VG_(threads)[tid].specifics_ptr;
-   vg_assert(specifics_ptr == NULL 
-             || IS_ALIGNED4_ADDR(specifics_ptr));
+   vg_assert(specifics_ptr == NULL || IS_ALIGNED4_ADDR(specifics_ptr));
 
    SET_PTHREQ_RETVAL(tid, (UWord)specifics_ptr);
 }

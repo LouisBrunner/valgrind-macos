@@ -368,10 +368,8 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
    }
 
    /* Sanity checks. */
-   vg_assert(dst->skss_per_sig[VKI_SIGKILL].skss_handler 
-             == VKI_SIG_DFL);
-   vg_assert(dst->skss_per_sig[VKI_SIGSTOP].skss_handler 
-             == VKI_SIG_DFL);
+   vg_assert(dst->skss_per_sig[VKI_SIGKILL].skss_handler == VKI_SIG_DFL);
+   vg_assert(dst->skss_per_sig[VKI_SIGSTOP].skss_handler == VKI_SIG_DFL);
 
    if (0)
       pp_SKSS();
@@ -1699,7 +1697,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
    */
 
    if (VG_(clo_trace_signals)) {
-      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d", sigNo, info->si_code );
+      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d",
+                   sigNo, info->si_code );
    }
    vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 

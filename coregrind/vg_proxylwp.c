@@ -884,10 +884,11 @@ void VG_(proxy_create)(ThreadId tid)
    VG_(block_all_host_signals)(&mask);
 
    ret = proxy_clone(proxy);
+
    if (ret < 0) {
-	   VG_(printf)("Error %d trying to create proxy LWP for tid %d\n",
-		       ret, tid);
-	   VG_(core_panic)("Can't start proxy LWPs");
+      VG_(printf)("Error %d trying to create proxy LWP for tid %d\n",
+                  ret, tid);
+      VG_(core_panic)("Can't start proxy LWPs");
    }
 
    VG_(restore_all_host_signals)(&mask);

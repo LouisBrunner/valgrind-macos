@@ -1,4 +1,8 @@
 
+23 March 05
+~~~~~~~~~~~
+Do we still need ARCH_PTHREQ_RET (or *PTHREQ* for that matter) ?
+
 Notes pertaining to the 2.4.0 - 3.0 merge
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 As of 10 March (svn rev 3266, vex svn rev 1019) the merged code base

@@ -1645,7 +1645,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             // prefix matches, convert "--toolname:foo" to "--foo"
             if (0)
                VG_(printf)("tool-specific arg: %s\n", arg);
-            arg += toolname_len + 1;
+            arg = strdup(arg + toolname_len + 1);
             arg[0] = '-';
             arg[1] = '-';
 
@@ -1657,14 +1657,14 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       
       /* Ignore these options - they've already been handled */
       if (VG_CLO_STREQN(7, arg, "--tool="))
-	 continue;
+	 goto skip_arg;
       if (VG_CLO_STREQN(7, arg, "--exec="))
-	 continue;
+	 goto skip_arg;
       if (VG_CLO_STREQN(20, arg, "--command-line-only="))
-	 continue;
+	 goto skip_arg;
 
       if (     VG_CLO_STREQ(arg, "--"))
-	 continue;
+	 goto skip_arg;
 
       else if (VG_CLO_STREQ(arg, "-v") ||
                VG_CLO_STREQ(arg, "--verbose"))
@@ -1819,6 +1819,9 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
              || ! TL_(process_cmd_line_option)(arg) ) {
          VG_(bad_option)(arg);
       }
+    skip_arg:
+      if (arg != vg_argv[i])
+         free(arg);
    }
 
    /* Make VEX control parameters sane */

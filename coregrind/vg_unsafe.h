@@ -41,6 +41,7 @@
 /* ugly hack to avoid that kernel headers redefine stuff from sys/time.h */
 #define _LINUX_TIME_H
 #endif
+#include <linux/fs.h>     /* for filing system ioctls */
 #include <linux/net.h>    /* for the SYS_* constants */
 #include <sys/resource.h> /* for struct rlimit */
 #include <linux/shm.h>    /* for struct shmid_ds & struct ipc_perm */
@@ -65,7 +66,6 @@
 #include <linux/timex.h>  /* for adjtimex */
 #include <linux/hdreg.h>  /* for hard drive ioctls */
 #include <linux/netlink.h>/* Some systems need this for linux/fs.h */
-#include <linux/fs.h>     /* for filing system ioctls */
 #ifdef HAVE_LINUX_FB_H
 #include <linux/fb.h>     /* for fb_* structs */
 #endif

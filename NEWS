@@ -104,9 +104,12 @@ connected to any bug report numbers, AFAICS:
   descriptors from the reserved area.
   (This actually came from bug #83998).
 
-* Major overhaul of Cachegrind implementation.  Only user visible change
+* Major overhaul of Cachegrind implementation.  First user-visible change
   is that cachegrind.out files are now typically 90% smaller than they
-  used to be.  Code annotation times are correspondingly much smaller.
+  used to be;  code annotation times are correspondingly much smaller.
+  Second user-visible change is that hit/miss counts for code that is
+  unloaded at run-time is no longer dumped into a single "discard" pile,
+  but accurately preserved.
 
 * Client requests for telling valgrind about memory pools.
 

@@ -5,6 +5,7 @@ noinst_SCRIPTS = \
 	vg_regtest \
 	filter_addresses \
 	filter_discards \
+	filter_numbers \
 	filter_stderr_basic \
 	filter_test_paths
 

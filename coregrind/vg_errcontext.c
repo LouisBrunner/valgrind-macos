@@ -182,18 +182,14 @@ void construct_error ( Error* err, ThreadState* tst,
    err->next     = NULL;
    err->supp     = NULL;
    err->count    = 1;
+   err->where    = VG_(get_ExeContext)( tst );
+
    if (NULL == tst) {
       err->tid   = VG_(get_current_tid)();
-      err->where = 
-         VG_(get_ExeContext2)( VG_(baseBlock)[VGOFF_(m_eip)], 
-                               VG_(baseBlock)[VGOFF_(m_ebp)],
-                               VG_(baseBlock)[VGOFF_(m_esp)],
-                               VG_(threads)[err->tid].stack_highest_word);
       err->m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
       err->m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
       err->m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    } else {
-      err->where = VG_(get_ExeContext) ( tst );
       err->tid   = tst->tid;
       err->m_eip = tst->m_eip;
       err->m_esp = tst->m_esp;

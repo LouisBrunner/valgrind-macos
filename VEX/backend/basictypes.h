@@ -1,4 +1,11 @@
 
+/*---------------------------------------------------------------*/
+/*---                                                         ---*/
+/*--- This file (basictypes.h) is                             ---*/
+/*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
+/*---                                                         ---*/
+/*---------------------------------------------------------------*/
+
 #ifndef __BASICTYPES_H
 #define __BASICTYPES_H
 

@@ -49,8 +49,12 @@ CCFLAGS = -g -O -Wall -Wshadow -Winline $(EXTRA_CFLAGS)
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
 
 all: libvex.a
-	rm -f hacked104/valgrind.so
-	(cd hacked104 && make install)
+	rm -f head20041019/coregrind/stage2
+	(cd head20041019/coregrind && make install)
+	(cd head20041019/none && make install)
+	(cd head20041019/lackey && make install)
+	(cd head20041019/addrcheck && make install)
+	(cd head20041019/memcheck && make install)
 
 vex: libvex.a test_main.o
 	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a

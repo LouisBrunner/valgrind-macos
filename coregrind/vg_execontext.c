@@ -63,9 +63,12 @@ static UInt vg_ec_cmpAlls;
 
 
 /* Initialise this subsystem. */
-void VG_(init_ExeContext_storage) ( void )
+static void init_ExeContext_storage ( void )
 {
    Int i;
+   static Bool init_done = False;
+   if (init_done)
+      return;
    vg_ec_searchreqs = 0;
    vg_ec_searchcmps = 0;
    vg_ec_totstored = 0;
@@ -74,12 +77,14 @@ void VG_(init_ExeContext_storage) ( void )
    vg_ec_cmpAlls = 0;
    for (i = 0; i < VG_N_EC_LISTS; i++)
       vg_ec_list[i] = NULL;
+   init_done = True;
 }
 
 
 /* Show stats. */
 void VG_(show_ExeContext_stats) ( void )
 {
+   init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
       "exectx: %d lists, %d contexts (avg %d per list)",
       VG_N_EC_LISTS, vg_ec_totstored, 
@@ -103,6 +108,7 @@ void VG_(show_ExeContext_stats) ( void )
 /* Print an ExeContext. */
 void VG_(pp_ExeContext) ( ExeContext* e )
 {
+   init_ExeContext_storage();
    VG_(mini_stack_dump) ( e );
 }
 
@@ -169,6 +175,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
 
    VGP_PUSHCC(VgpExeContext);
 
+   init_ExeContext_storage();
    vg_assert(VG_(clo_backtrace_size) >= 2 
              && VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 

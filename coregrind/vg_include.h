@@ -1154,9 +1154,6 @@ struct _ExeContext {
 };
 
 
-/* Initialise the ExeContext storage mechanism. */
-extern void VG_(init_ExeContext_storage) ( void );
-
 /* Print stats (informational only). */
 extern void VG_(show_ExeContext_stats) ( void );
 

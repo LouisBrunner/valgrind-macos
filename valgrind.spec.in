@@ -4,7 +4,7 @@ Version: @VERSION@
 Release: 1
 Copyright: GPL
 Group: Development/Debuggers
-Packager: Frederic Gobry  <frederic.gobry@smartdata.ch>
+Packager: Jeremy Fitzhardinge <jeremy@goop.org>
 Source: @PACKAGE@-@VERSION@.tar.bz2
 
 Buildroot: %{_tmppath}/@PACKAGE@
@@ -38,7 +38,9 @@ make install prefix=$RPM_BUILD_ROOT/usr
 
 %files
 %defattr(-,root,root)
-/usr/include/valgrind.h
+/usr/include/valgrind/valgrind.h
+/usr/include/valgrind/memcheck.h
+/usr/include/valgrind/helgrind.h
 /usr/bin/valgrind
 /usr/bin/cg_annotate
 /usr/lib/valgrind/*

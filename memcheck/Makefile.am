@@ -27,7 +27,9 @@ mcincludedir = $(includedir)/valgrind
 mcinclude_HEADERS = \
 	memcheck.h
 
-noinst_HEADERS = \
+noinst_HEADERS =	\
+	mc_common.h	\
+	mc_constants.h	\
 	mc_include.h
 
 ##vgskin_memcheck.so$(EXEEXT): $(vgskin_memcheck_so_OBJECTS)

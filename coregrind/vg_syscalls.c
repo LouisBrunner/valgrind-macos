@@ -296,7 +296,8 @@ void pre_mem_read_sockaddr ( ThreadState* tst,
                                       strlen( description ) + 30 );
 
    VG_(sprintf) ( outmsg, description, ".sa_family" );
-   SYSCALL_TRACK( pre_mem_read, tst, outmsg, (UInt) &sa->sa_family, sizeof (sa_family_t));
+   SYSCALL_TRACK( pre_mem_read, tst, outmsg, 
+                  (UInt) &sa->sa_family, sizeof (sa_family_t));
                
    switch (sa->sa_family) {
                   
@@ -1080,7 +1081,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                              size_t count) */
          MAYBE_PRINTF("sendfile ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
          if (arg3 != (UInt)NULL)
-            SYSCALL_TRACK( pre_mem_write, tst, "sendfile(offset)", arg3, sizeof(off_t) );
+            SYSCALL_TRACK( pre_mem_write, tst, "sendfile(offset)",
+                           arg3, sizeof(off_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg3 != (UInt)NULL) {
             VG_TRACK( post_mem_write, arg3, sizeof( off_t ) );
@@ -1111,7 +1113,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_fstatfs: /* syscall 100 */
          /* int fstatfs(int fd, struct statfs *buf); */
          MAYBE_PRINTF("fstatfs ( %d, %p )\n",arg1,arg2);
-         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", arg2, sizeof(struct statfs) );
+         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", 
+                        arg2, sizeof(struct statfs) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
@@ -1550,9 +1553,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_getresgid: /* syscall 171 */
          /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
          MAYBE_PRINTF("getresgid ( %p, %p, %p )\n", arg1,arg2,arg3);
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(rgid)", arg1, sizeof(gid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(egid)", arg2, sizeof(gid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(sgid)", arg3, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(rgid)", 
+                                       arg1, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(egid)", 
+                                       arg2, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid(sgid)", 
+                                       arg3, sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg1, sizeof(gid_t) );
@@ -1565,9 +1571,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_getresgid32: /* syscall 211 */
          /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
          MAYBE_PRINTF("getresgid32 ( %p, %p, %p )\n", arg1,arg2,arg3);
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(rgid)", arg1, sizeof(gid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(egid)", arg2, sizeof(gid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(sgid)", arg3, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(rgid)", 
+                                       arg1, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(egid)", 
+                                       arg2, sizeof(gid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresgid32(sgid)", 
+                                       arg3, sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg1, sizeof(gid_t) );
@@ -1580,9 +1589,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_getresuid: /* syscall 165 */
          /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
          MAYBE_PRINTF("getresuid ( %p, %p, %p )\n", arg1,arg2,arg3);
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(ruid)", arg1, sizeof(uid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(euid)", arg2, sizeof(uid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(suid)", arg3, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(ruid)", 
+                                       arg1, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(euid)", 
+                                       arg2, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid(suid)", 
+                                       arg3, sizeof(uid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg1, sizeof(uid_t) );
@@ -1595,9 +1607,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_getresuid32: /* syscall 209 */
          /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
          MAYBE_PRINTF("getresuid32 ( %p, %p, %p )\n", arg1,arg2,arg3);
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(ruid)", arg1, sizeof(uid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(euid)", arg2, sizeof(uid_t) );
-         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(suid)", arg3, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(ruid)", 
+                                       arg1, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(euid)", 
+                                       arg2, sizeof(uid_t) );
+         SYSCALL_TRACK( pre_mem_write, tst, "getresuid32(suid)", 
+                                       arg3, sizeof(uid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg1, sizeof(uid_t) );
@@ -1708,7 +1723,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   KERNEL_DO_SYSCALL(tid,res);
 
                   if ( !VG_(is_kerror)(res) && res > 0 ) {
-                     VG_TRACK( post_mem_write, (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+                     VG_TRACK( post_mem_write, (UInt)&msgp->mtype, 
+                                               sizeof(msgp->mtype) );
                      VG_TRACK( post_mem_write, (UInt)msgp->mtext, res );
                   }
                   break;
@@ -1724,7 +1740,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                            sizeof(struct msqid_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         if ( !VG_(is_kerror)(res) && res > 0 ) {
-                           VG_TRACK( post_mem_write, arg5, sizeof(struct msqid_ds) );
+                           VG_TRACK( post_mem_write, arg5, 
+                                                     sizeof(struct msqid_ds) );
                         }
                         break;
                      case IPC_SET:
@@ -1738,7 +1755,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                            sizeof(struct msqid64_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         if ( !VG_(is_kerror)(res) && res > 0 ) {
-                           VG_TRACK( post_mem_write, arg5, sizeof(struct msqid64_ds) );
+                           VG_TRACK( post_mem_write, arg5, 
+                                                     sizeof(struct msqid64_ds) );
                         }
                         break;
 #                    endif
@@ -1777,7 +1795,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      if ( segmentSize > 0 ) {
                         /* we don't distinguish whether it's read-only or
                          * read-write -- it doesn't matter really. */
-                        VG_TRACK( new_mem_mmap, addr, segmentSize, True, True, False );
+                        VG_TRACK( new_mem_mmap, addr, segmentSize, 
+                                                True, True, False );
                      }
                   }
                   break;
@@ -1832,7 +1851,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   }
                   KERNEL_DO_SYSCALL(tid,res);
                   if ( arg5 && !VG_(is_kerror)(res) && res == 0 && out_arg )
-                          VG_TRACK( post_mem_write, arg5, sizeof(struct shmid_ds) );
+                          VG_TRACK( post_mem_write, arg5, 
+                                                    sizeof(struct shmid_ds) );
                }
                break;
             default:
@@ -1933,7 +1953,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   VG_TRACK( post_mem_write, arg3, sizeof(pid_t) );
                break;
             case TIOCGPTN: /* Get Pty Number (of pty-mux device) */
-               SYSCALL_TRACK( pre_mem_write,tst, "ioctl(TIOCGPTN)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_write, tst, "ioctl(TIOCGPTN)", 
+                                             arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                    VG_TRACK( post_mem_write, arg3, sizeof(int));
@@ -1943,19 +1964,23 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case TIOCSPTLCK: /* Lock/unlock Pty */
-               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(TIOCSPTLCK)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(TIOCSPTLCK)", 
+                                            arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIONBIO:
-               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(FIONBIO)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(FIONBIO)", 
+                                            arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIOASYNC:
-               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(FIOASYNC)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(FIOASYNC)", 
+                                            arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIONREAD:
-               SYSCALL_TRACK( pre_mem_write, tst, "ioctl(FIONREAD)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_write, tst, "ioctl(FIONREAD)", 
+                                             arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   VG_TRACK( post_mem_write, arg3, sizeof(int) );
@@ -1998,7 +2023,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case SG_GET_RESERVED_SIZE:
-               SYSCALL_TRACK( pre_mem_write, tst, "ioctl(SG_GET_RESERVED_SIZE)", arg3, 
+               SYSCALL_TRACK( pre_mem_write, tst, 
+                                             "ioctl(SG_GET_RESERVED_SIZE)", arg3, 
                                  sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -2137,7 +2163,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                break;
 
             case SIOCSPGRP:
-               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(SIOCSPGRP)", arg3, sizeof(int) );
+               SYSCALL_TRACK( pre_mem_read, tst, "ioctl(SIOCSPGRP)", arg3, 
+                                            sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
@@ -2162,7 +2189,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SOUND_PCM_READ_BITS:
             case (SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
             case SOUND_PCM_READ_FILTER:
-               SYSCALL_TRACK( pre_mem_write,tst,"ioctl(SNDCTL_XXX|SOUND_XXX (SIOR, int))", 
+               SYSCALL_TRACK( pre_mem_write,tst,
+                                 "ioctl(SNDCTL_XXX|SOUND_XXX (SIOR, int))", 
                                 arg3,
                                 sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
@@ -2207,7 +2235,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   VG_TRACK( post_mem_write,arg3, sizeof(audio_buf_info));
                break;
             case SNDCTL_DSP_SETTRIGGER:
-               SYSCALL_TRACK( pre_mem_read,tst, "ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
+               SYSCALL_TRACK( pre_mem_read,tst, 
+                                "ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
                                 arg3, sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -2233,8 +2262,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                break;
             case RTC_RD_TIME:
             case RTC_ALM_READ:
-               SYSCALL_TRACK( pre_mem_write,tst, "ioctl(RTC_RD_TIME/ALM_READ)", arg3,
-                                sizeof(struct rtc_time));
+               SYSCALL_TRACK( pre_mem_write,tst, "ioctl(RTC_RD_TIME/ALM_READ)", 
+                                arg3, sizeof(struct rtc_time));
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror) && res == 0)
                   VG_TRACK( post_mem_write,arg3, sizeof(struct rtc_time));
@@ -2265,30 +2294,36 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             /* CD ROM stuff (??)  */
             case CDROMSUBCHNL:
-                SYSCALL_TRACK( pre_mem_read,tst, "ioctl(CDROMSUBCHNL (cdsc_format, char))",
+                SYSCALL_TRACK( pre_mem_read,tst, 
+                   "ioctl(CDROMSUBCHNL (cdsc_format, char))",
                    (int) &(((struct cdrom_subchnl *) arg3)->cdsc_format), 
                    sizeof(((struct cdrom_subchnl *) arg3)->cdsc_format));
-                SYSCALL_TRACK( pre_mem_write,tst, "ioctl(CDROMSUBCHNL)", arg3, 
+                SYSCALL_TRACK( pre_mem_write,tst, 
+                   "ioctl(CDROMSUBCHNL)", arg3, 
                    sizeof(struct cdrom_subchnl));
                 KERNEL_DO_SYSCALL(tid,res);
                 if (!VG_(is_kerror)(res) && res == 0)
                    VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_subchnl));
                 break;
             case CDROMREADTOCHDR:
-                SYSCALL_TRACK( pre_mem_write,tst, "ioctl(CDROMREADTOCHDR)", arg3, 
+                SYSCALL_TRACK( pre_mem_write,tst, 
+                   "ioctl(CDROMREADTOCHDR)", arg3, 
                    sizeof(struct cdrom_tochdr));
                 KERNEL_DO_SYSCALL(tid,res);
                 if (!VG_(is_kerror)(res) && res == 0)
                    VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
                 break;
             case CDROMREADTOCENTRY:
-                 SYSCALL_TRACK( pre_mem_read,tst, "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
+                 SYSCALL_TRACK( pre_mem_read,tst, 
+                    "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
                     (int) &(((struct cdrom_tocentry *) arg3)->cdte_format), 
                     sizeof(((struct cdrom_tocentry *) arg3)->cdte_format));
-                 SYSCALL_TRACK( pre_mem_read,tst, "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
+                 SYSCALL_TRACK( pre_mem_read,tst, 
+                    "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
                     (int) &(((struct cdrom_tocentry *) arg3)->cdte_track), 
                     sizeof(((struct cdrom_tocentry *) arg3)->cdte_track));
-                 SYSCALL_TRACK( pre_mem_write,tst, "ioctl(CDROMREADTOCENTRY)", arg3, 
+                 SYSCALL_TRACK( pre_mem_write,tst, 
+                    "ioctl(CDROMREADTOCENTRY)", arg3, 
                     sizeof(struct cdrom_tocentry));
                  KERNEL_DO_SYSCALL(tid,res);
                  if (!VG_(is_kerror)(res) && res == 0)
@@ -2333,9 +2368,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      " writing a proper wrapper." );
                } else {
                   if ((dir & _IOC_WRITE) && size > 0)
-                     SYSCALL_TRACK( pre_mem_read,tst, "ioctl(generic)", arg3, size);
+                     SYSCALL_TRACK( pre_mem_read,tst, "ioctl(generic)", 
+                                                      arg3, size);
                   if ((dir & _IOC_READ) && size > 0)
-                     SYSCALL_TRACK( pre_mem_write,tst, "ioctl(generic)", arg3, size);
+                     SYSCALL_TRACK( pre_mem_write,tst, "ioctl(generic)", 
+                                                       arg3, size);
                }
                KERNEL_DO_SYSCALL(tid,res);
                if (size > 0 && (dir & _IOC_READ)
@@ -2373,7 +2410,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                         loff_t * result, unsigned int whence); */
          MAYBE_PRINTF("llseek ( %d, 0x%x, 0x%x, %p, %d )\n",
                         arg1,arg2,arg3,arg4,arg5);
-         SYSCALL_TRACK( pre_mem_write, tst, "llseek(result)", arg4, sizeof(loff_t));
+         SYSCALL_TRACK( pre_mem_write, tst, "llseek(result)", arg4, 
+                                       sizeof(loff_t));
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0)
             VG_TRACK( post_mem_write, arg4, sizeof(loff_t) );
@@ -2383,7 +2421,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int lstat(const char *file_name, struct stat *buf); */
          MAYBE_PRINTF("lstat ( %p, %p )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "lstat(file_name)", arg1 );
-         SYSCALL_TRACK( pre_mem_write, tst, "lstat(buf)", arg2, sizeof(struct stat) );
+         SYSCALL_TRACK( pre_mem_write, tst, "lstat(buf)", arg2, 
+                                       sizeof(struct stat) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg2, sizeof(struct stat) );
@@ -2395,7 +2434,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int lstat64(const char *file_name, struct stat64 *buf); */
          MAYBE_PRINTF("lstat64 ( %p, %p )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "lstat64(file_name)", arg1 );
-         SYSCALL_TRACK( pre_mem_write, tst, "lstat64(buf)", arg2, sizeof(struct stat64) );
+         SYSCALL_TRACK( pre_mem_write, tst, "lstat64(buf)", arg2, 
+                                            sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             VG_TRACK( post_mem_write, arg2, sizeof(struct stat64) );
@@ -2521,7 +2561,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_pipe: /* syscall 42 */
          /* int pipe(int filedes[2]); */
          MAYBE_PRINTF("pipe ( %p ) ...\n", arg1);
-         SYSCALL_TRACK( pre_mem_write, tst, "pipe(filedes)", arg1, 2*sizeof(int) );
+         SYSCALL_TRACK( pre_mem_write, tst, "pipe(filedes)", 
+                                            arg1, 2*sizeof(int) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg1, 2*sizeof(int) );
@@ -2550,7 +2591,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             Int i;
             struct pollfd * arr = (struct pollfd *)arg1;
             for (i = 0; i < arg2; i++)
-               VG_TRACK( post_mem_write, (Addr)(&arr[i].revents), sizeof(Short) );
+               VG_TRACK( post_mem_write, (Addr)(&arr[i].revents), 
+                                         sizeof(Short) );
          }
          break;
  
@@ -2752,7 +2794,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_setrlimit: /* syscall 75 */
          /* int setrlimit (int resource, const struct rlimit *rlim); */
          MAYBE_PRINTF("setrlimit ( %d, %p )\n", arg1,arg2);
-         SYSCALL_TRACK( pre_mem_read, tst, "setrlimit(rlim)", arg2, sizeof(struct rlimit) );
+         SYSCALL_TRACK( pre_mem_read, tst, "setrlimit(rlim)", 
+                                      arg2, sizeof(struct rlimit) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -2895,7 +2938,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                               struct sockaddr *serv_addr, int addrlen ); */
                SYSCALL_TRACK( pre_mem_read, tst, "socketcall.connect(args)", 
                                  arg2, 3*sizeof(Addr) );
-               SYSCALL_TRACK( pre_mem_read, tst, "socketcall.connect(serv_addr.sa_family)",
+               SYSCALL_TRACK( pre_mem_read, tst, 
+                                 "socketcall.connect(serv_addr.sa_family)",
                                  ((UInt*)arg2)[1], /* serv_addr */
                                  sizeof (sa_family_t));
                pre_mem_read_sockaddr( tst,
@@ -3022,7 +3066,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int stat(const char *file_name, struct stat *buf); */
          MAYBE_PRINTF("stat ( %p, %p )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "stat(file_name)", arg1 );
-         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", arg2, sizeof(struct stat) );
+         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", 
+                                       arg2, sizeof(struct stat) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg2, sizeof(struct stat) );
@@ -3032,7 +3077,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int statfs(const char *path, struct statfs *buf); */
          MAYBE_PRINTF("statfs ( %p, %p )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "statfs(path)", arg1 );
-         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", arg2, sizeof(struct statfs) );
+         SYSCALL_TRACK( pre_mem_write, tst, "stat(buf)", 
+                                       arg2, sizeof(struct statfs) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
@@ -3051,7 +3097,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int stat64(const char *file_name, struct stat64 *buf); */
          MAYBE_PRINTF("stat64 ( %p, %p )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_read_asciiz, tst, "stat64(file_name)", arg1 );
-         SYSCALL_TRACK( pre_mem_write, tst, "stat64(buf)", arg2, sizeof(struct stat64) );
+         SYSCALL_TRACK( pre_mem_write, tst, "stat64(buf)", 
+                                       arg2, sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg2, sizeof(struct stat64) );
@@ -3062,7 +3109,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_fstat64: /* syscall 197 */
          /* int fstat64(int filedes, struct stat64 *buf); */
          MAYBE_PRINTF("fstat64 ( %d, %p )\n",arg1,arg2);
-         SYSCALL_TRACK( pre_mem_write, tst, "fstat64(buf)", arg2, sizeof(struct stat64) );
+         SYSCALL_TRACK( pre_mem_write, tst, "fstat64(buf)", 
+                                       arg2, sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg2, sizeof(struct stat64) );
@@ -3072,7 +3120,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_sysinfo: /* syscall 116 */
          /* int sysinfo(struct sysinfo *info); */
          MAYBE_PRINTF("sysinfo ( %p )\n",arg1);
-         SYSCALL_TRACK( pre_mem_write, tst, "sysinfo(info)", arg1, sizeof(struct sysinfo) );
+         SYSCALL_TRACK( pre_mem_write, tst, "sysinfo(info)", 
+                                       arg1, sizeof(struct sysinfo) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             VG_TRACK( post_mem_write, arg1, sizeof(struct sysinfo) );
@@ -3093,7 +3142,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_times: /* syscall 43 */
          /* clock_t times(struct tms *buf); */
          MAYBE_PRINTF("times ( %p )\n",arg1);
-         SYSCALL_TRACK( pre_mem_write, tst, "times(buf)", arg1, sizeof(struct tms) );
+         SYSCALL_TRACK( pre_mem_write, tst, "times(buf)", 
+                                       arg1, sizeof(struct tms) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
             VG_TRACK( post_mem_write, arg1, sizeof(struct tms) );
@@ -3123,7 +3173,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_uname: /* syscall 122 */
          /* int uname(struct utsname *buf); */
          MAYBE_PRINTF("uname ( %p )\n",arg1);
-         SYSCALL_TRACK( pre_mem_write, tst, "uname(buf)", arg1, sizeof(struct utsname) );
+         SYSCALL_TRACK( pre_mem_write, tst, "uname(buf)", 
+                                       arg1, sizeof(struct utsname) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
             VG_TRACK( post_mem_write, arg1, sizeof(struct utsname) );
@@ -3146,7 +3197,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          MAYBE_PRINTF("wait4 ( %d, %p, %d, %p )\n",
                       arg1,arg2,arg3,arg4);
          if (arg2 != (Addr)NULL)
-            SYSCALL_TRACK( pre_mem_write, tst, "wait4(status)", arg2, sizeof(int) );
+            SYSCALL_TRACK( pre_mem_write, tst, "wait4(status)", 
+                                          arg2, sizeof(int) );
          if (arg4 != (Addr)NULL)
             SYSCALL_TRACK( pre_mem_write, tst, "wait4(rusage)", arg4, 
                               sizeof(struct rusage) );

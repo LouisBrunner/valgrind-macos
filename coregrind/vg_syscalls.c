@@ -1111,6 +1111,13 @@ PREx(sys_exit, Special)
    VG_(core_panic)("syscall exit() not caught by the scheduler?!");
 }
 
+PREx(sys_ni_syscall, Special)
+{
+   PRINT("non-existent syscall! (ni_syscall)");
+   PRE_REG_READ0(long, "ni_syscall");
+   set_result( -VKI_ENOSYS );
+}
+
 PRE(ptrace)
 {
    /* long ptrace (enum __ptrace_request request, pid_t pid, 
@@ -5792,13 +5799,14 @@ static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 
 // XXX: temporary: I've started labelled each entry with the target of its
 // __NR_foo-->sys_foo() mapping, and the __NR_foo number (for x86), and
-// marked those that are generic (ie.  present in
-// linux-2.6.8.1/include/linux/syscalls.h) with a '*', and non-generic ones
-// with an indication of which architecture they are specific to.
-// Those with "##" are generic, but within a "#ifdef CONFIG_UID16".
-// Those with "%%" are generic, but within a "#if BITS_PER_LONG == 32"
-
-// Those with 'P' are generic/POSIX.  Those with 'L' are Linux-only.
+// properties of the sys_foo() function:
+//   '*' ones are Linux-generic (ie. present in
+//       linux-2.6.8.1/include/linux/syscalls.h);  non-generic ones have an
+//       indication of which architecture they are specific to.
+//   "##" ones are Linux-generic, but within a "#ifdef CONFIG_UID16".
+//   "%%" ones are Linux-generic, but within a "#if BITS_PER_LONG == 32"
+//   'P' ones are POSIX-generic, according to man pages.  
+//   'L' ones are Linux-specific, according to man pages.
 
 // XXX: this does duplicate the vki_unistd.h file somewhat -- could make
 // this table replace that somehow...
@@ -5826,7 +5834,7 @@ static const struct sys_info sys_info[] = {
 
    SYSX_(__NR_chmod,            sys_chmod), // 15 * P
    // lchown		        sys_lchown16 ## // 16
-   // break		        sys_ni_syscall // 17
+   SYSX_(__NR_break,            sys_ni_syscall), // 17 * P
    // oldstat		        sys_stat // 18 *
    SYSX_(__NR_lseek,            sys_lseek), // 19 * P
 
@@ -5843,11 +5851,11 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_pause,            sys_pause), // 29 *
 
    SYSB_(utime,			MayBlock), // 30 sys_utime *
-   // stty		               31 sys_ni_syscall
-   // gtty		               32 sys_ni_syscall
+   SYSX_(__NR_stty,             sys_ni_syscall), // 31 * P
+   SYSX_(__NR_gtty,             sys_ni_syscall), // 32 * P
    SYSB_(access,		0), // 33 sys_access *
    SYSB_(nice,			0), // 34 sys_nice *
-   // ftime		               35 sys_ni_syscall
+   SYSX_(__NR_ftime,            sys_ni_syscall), // 35 * P
 
    SYSX_(__NR_sync,             sys_sync), // 36 *
    SYSBA(kill,			0), // 37 sys_kill *
@@ -5858,7 +5866,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(dup,			0), // 41 sys_dup *
    SYSBA(pipe,			0), // 42 sys_pipe
    SYSBA(times,			0), // 43 sys_times *
-   // prof		               44  sys_ni_syscall
+   SYSX_(__NR_prof,             sys_ni_syscall), // 44 * P
    SYSB_(brk,			Special), // 45  sys_brk *
 
    SYSB_(setgid,		0), // 46 sys_setgid16 ##
@@ -5869,13 +5877,13 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_getegid,          sys_getegid16), // 50 ##
    SYSB_(acct,                  0), // 51 sys_acct *
    SYSX_(__NR_umount2,          sys_umount), // 52 * L
-   // lock		               53 sys_ni_syscall
+   SYSX_(__NR_lock,             sys_ni_syscall), // 53 * P
    SYSBA(ioctl,			MayBlock), // 54 sys_ioctl *
 
    SYSBA(fcntl,			0), // 55 sys_fcntl *
-   // mpx		               56  sys_ni_syscall
+   SYSX_(__NR_mpx,              sys_ni_syscall), // 56 * P
    SYSBA(setpgid,		0), // 57 sys_setpgid *
-   // ulimit		               58   // sys_ni_syscall
+   SYSX_(__NR_ulimit,           sys_ni_syscall), // 58 * P
    // oldolduname	               59 sys_olduname
 
    SYSB_(umask,			0), // 60 sys_umask *
@@ -5940,7 +5948,7 @@ static const struct sys_info sys_info[] = {
 
    SYSB_(iopl,			0), // 110 sys_iopl
    SYSX_(__NR_vhangup,          sys_vhangup), // 111 *
-   // idle		               112 sys_ni_syscall
+   SYSX_(__NR_idle,             sys_ni_syscall), // 112 * P
    // vm86old		               113 sys_vm86old
    SYSBA(wait4,			MayBlock), // 114 sys_wait4 *
 
@@ -5958,12 +5966,12 @@ static const struct sys_info sys_info[] = {
    SYSBA(mprotect,		0), // 125 sys_mprotect *
 
    SYSBA(sigprocmask,		SIG_SIM), // 126 sys_sigprocmask *
-   // XXX: create_module was removed 2.4-->2.6
-   // create_module	               127 sys_ni_syscall
+   // Nb: create_module() was removed 2.4-->2.6
+   SYSX_(__NR_create_module,    sys_ni_syscall), // 127 * P
    SYSB_(init_module,		MayBlock), // 128 sys_init_module *
    // delete_module	               129 sys_delete_module *
-   // XXX: get_kernel_syms was removed 2.4-->2.6
-   // get_kernel_syms	               130 sys_ni_syscall
+   // Nb: get_kernel_syms() was removed 2.4-->2.6
+   SYSX_(__NR_get_kernel_syms,  sys_ni_syscall), // 130 * P
 
    SYSB_(quotactl,		0), // 131 sys_quotactl *
    SYSB_(getpgid,		0), // 132 sys_getpgid *
@@ -5972,7 +5980,7 @@ static const struct sys_info sys_info[] = {
    // sysfs		               135 sys_sysfs *
    SYSB_(personality,		0), // 136 sys_personality *
 
-   // afs_syscall	               137 sys_ni_syscall
+   SYSX_(__NR_afs_syscall,      sys_ni_syscall), // 137 * P
    SYSB_(setfsuid,		0), // 138 sys_setfsuid16 ##
    SYSB_(setfsgid,		0), // 139 sys_setfsgid16 ##
 
@@ -6008,7 +6016,7 @@ static const struct sys_info sys_info[] = {
 
    SYSBA(getresuid,		0), // 165 sys_getresuid16 ##
    // vm86		               166 sys_vm86
-   // query_module	               167 sys_ni_syscall
+   SYSX_(__NR_query_module,     sys_ni_syscall), // 167 * P
    SYSBA(poll,			MayBlock), // 168 sys_poll *
    // nfsservctl		       169 sys_nfsservctl *
 
@@ -6078,8 +6086,10 @@ static const struct sys_info sys_info[] = {
    // include/linux/syscalls.h...
    SYSBA(fcntl64,		0), // 221 sys_fcntl64 *
 
-   // 222 reserved for TUX sys_ni_syscall
-   /* 223 is unused */ // sys_ni_syscall
+   // Nb: 222 is reserved for TUX (whatever that means --njn)
+   SYSX_(222,                   sys_ni_syscall), // 222 * P
+   // Nb: 223 is unused
+   SYSX_(223,                   sys_ni_syscall), // 223 * P
    // gettid		               224 sys_gettid *
 
    // readahead		               225 sys_readahead *
@@ -6113,7 +6123,8 @@ static const struct sys_info sys_info[] = {
    SYSBA(io_cancel,             0), // 249 sys_io_cancel *
 
    // fadvise64		               250 sys_fadvise64 *
-   // 251 is empty...   // sys_ni_syscall
+   // Nb: 251 is unused
+   SYSX_(251,                   sys_ni_syscall), // 251 * P
    SYSX_(__NR_exit_group,       sys_exit_group), // 252 *
    SYSBA(lookup_dcookie,	0), // 253 sys_lookup_dcookie *
    SYSBA(epoll_create,          0), // 254 sys_epoll_create *
@@ -6140,7 +6151,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(utimes,                0), // 271 sys_utimes *
 
    // fadvise64_64	               272 sys_fadvise64_64 *
-   // vserver		               273 sys_ni_syscall
+   SYSX_(__NR_vserver,          sys_ni_syscall), // 273 * P
    // mbind		               274 sys_mbind
 
    // get_mempolicy	               275 sys_get_mempolicy
@@ -6152,7 +6163,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(mq_timedreceive,       MayBlock), // (mq_open+3) sys_mq_timedreceive *
    SYSB_(mq_notify,             0), // (mq_open+4) sys_mq_notify *
    SYSBA(mq_getsetattr,         0), // (mq_open+5) sys_mq_getsetarr *
-   // sys_kexec_load	               283 sys_ni_syscall *
+   SYSX_(__NR_sys_kexec_load,   sys_ni_syscall), // 283 * P
 };
 #define MAX_SYS_INFO		(sizeof(sys_info)/sizeof(sys_info[0]))
 

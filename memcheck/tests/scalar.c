@@ -23,7 +23,7 @@ int main(void)
    SY(__NR_read+i0, i0, s0, i0);
 
    // __NR_write 4 --> sys_write()
-   GO(__NR_write, "3S 1m");
+   GO(__NR_write, "3s 1m");
    SY(__NR_write, i0, s0, i0+1);
 
    // __NR_open 5 --> sys_open()
@@ -64,23 +64,27 @@ int main(void)
    SY(__NR_time, s0+1);
 
    // __NR_mknod 14 --> sys_mknod()
-   GO(__NR_mknod, "3S 1M");
+   GO(__NR_mknod, "3s 1m");
    SY(__NR_mknod, s0, i0, i0);
 
    // __NR_chmod 15 --> sys_chmod()
-   GO(__NR_chmod, "2S 1M");
+   GO(__NR_chmod, "2s 1m");
    SY(__NR_chmod, s0, i0);
 
    // __NR_lchown 16
-   // __NR_break 17
+
+   // __NR_break 17 --> sys_ni_syscall()
+   GO(__NR_break, "0e");
+   SY(__NR_break);
+
    // __NR_oldstat 18
 
    // __NR_lseek 19 --> sys_lseek()
-   GO(__NR_lseek, "3S 0M");
+   GO(__NR_lseek, "3s 0m");
    SY(__NR_lseek, i0, i0, i0);
 
    // __NR_getpid 20 --> sys_getpid()
-   GO(__NR_getpid, "0S 0M");
+   GO(__NR_getpid, "0s 0m");
    SY(__NR_getpid);
 
    // __NR_mount 21 --> sys_mount()
@@ -108,11 +112,22 @@ int main(void)
    // XXX: will have to be tested separately
 
    // __NR_utime 30
-   // __NR_stty 31
-   // __NR_gtty 32
+
+   // __NR_stty 31 --> sys_ni_syscall()
+   GO(__NR_stty, "0e");
+   SY(__NR_stty);
+
+   // __NR_gtty 32 --> sys_ni_syscall()
+   GO(__NR_gtty, "0e");
+   SY(__NR_gtty);
+
    // __NR_access 33
+
    // __NR_nice 34
-   // __NR_ftime 35
+
+   // __NR_ftime 35 --> sys_ni_syscall()
+   GO(__NR_ftime, "0e");
+   SY(__NR_ftime);
 
    // __NR_sync 36 --> sys_sync()
    GO(__NR_sync, "0e");
@@ -125,7 +140,11 @@ int main(void)
    // __NR_dup 41
    // __NR_pipe 42
    // __NR_times 43
-   // __NR_prof 44
+
+   // __NR_prof 44 --> sys_ni_syscall()
+   GO(__NR_prof, "0e");
+   SY(__NR_prof);
+
    // __NR_brk 45
    // __NR_setgid 46
 
@@ -149,12 +168,23 @@ int main(void)
    GO(__NR_umount2, "2s 1m");
    SY(__NR_umount2, s0, i0);
 
-   // __NR_lock 53
+   // __NR_lock 53 --> sys_ni_syscall()
+   GO(__NR_lock, "0e");
+   SY(__NR_lock);
+
    // __NR_ioctl 54
    // __NR_fcntl 55
-   // __NR_mpx 56
+
+   // __NR_mpx 56 --> sys_ni_syscall()
+   GO(__NR_mpx, "0e");
+   SY(__NR_mpx);
+
    // __NR_setpgid 57
-   // __NR_ulimit 58
+
+   // __NR_ulimit 58 --> sys_ni_syscall()
+   GO(__NR_ulimit, "0e");
+   SY(__NR_ulimit);
+
    // __NR_oldolduname 59
    // __NR_umask 60
    // __NR_chroot 61
@@ -222,7 +252,10 @@ int main(void)
    GO(__NR_vhangup, "0e");
    SY(__NR_vhangup);
    
-   // __NR_idle 112
+   // __NR_idle 112 --> sys_ni_syscall()
+   GO(__NR_idle, "0e");
+   SY(__NR_idle);
+
    // __NR_vm86old 113
    // __NR_wait4 114
    // __NR_swapoff 115
@@ -237,17 +270,29 @@ int main(void)
    // __NR_adjtimex 124
    // __NR_mprotect 125
    // __NR_sigprocmask 126
-   // __NR_create_module 127
+
+   // __NR_create_module 127 --> sys_ni_syscall()
+   GO(__NR_create_module, "0e");
+   SY(__NR_create_module);
+
    // __NR_init_module 128
    // __NR_delete_module 129
-   // __NR_get_kernel_syms 130
+
+   // __NR_get_kernel_syms 130 --> sys_ni_syscall()
+   GO(__NR_get_kernel_syms, "0e");
+   SY(__NR_get_kernel_syms);
+
    // __NR_quotactl 131
    // __NR_getpgid 132
    // __NR_fchdir 133
    // __NR_bdflush 134
    // __NR_sysfs 135
    // __NR_personality 136
-   // __NR_afs_syscall 137
+
+   // __NR_afs_syscall 137 --> sys_ni_syscall()
+   GO(__NR_afs_syscall, "0e");
+   SY(__NR_afs_syscall);
+
    // __NR_setfsuid 138
    // __NR_setfsgid 139
    // __NR__llseek 140
@@ -281,7 +326,11 @@ int main(void)
    // __NR_setresuid 164
    // __NR_getresuid 165
    // __NR_vm86 166
-   // __NR_query_module 167
+
+   // __NR_query_module 167 --> sys_ni_syscall()
+   GO(__NR_query_module, "0e");
+   SY(__NR_query_module);
+
    // __NR_poll 168
    // __NR_nfsservctl 169
    // __NR_setresgid 170
@@ -353,7 +402,15 @@ int main(void)
    // __NR_madvise 219
    // __NR_getdents64 220
    // __NR_fcntl64 221
-/* 223 is unused */
+
+   // 222 --> sys_ni_syscall()
+   GO(222, "0e");
+   SY(222);
+
+   // 223 --> sys_ni_syscall()
+   GO(223, "0e");
+   SY(223);
+
    // __NR_gettid 224
    // __NR_readahead 225
    // __NR_setxattr 226
@@ -382,6 +439,10 @@ int main(void)
    // __NR_io_cancel 249
    // __NR_fadvise64 250
 
+   // 251 --> sys_ni_syscall()
+   GO(251, "0e");
+   SY(251);
+
    // __NR_exit_group 252
    // __NR_lookup_dcookie 253
    // __NR_epoll_create 254
@@ -403,7 +464,11 @@ int main(void)
    // __NR_tgkill 270
    // __NR_utimes 271
    // __NR_fadvise64_64 272
-   // __NR_vserver 273
+
+   // __NR_vserver 273 --> sys_ni_syscall()
+   //GO(__NR_vserver, "0e");
+   //SY(__NR_vserver);
+
    // __NR_mbind 274
    // __NR_get_mempolicy 275
    // __NR_set_mempolicy 276
@@ -413,7 +478,10 @@ int main(void)
    // __NR_mq_timedreceive (__NR_mq_open+3)
    // __NR_mq_notify (__NR_mq_open+4)
    // __NR_mq_getsetattr (__NR_mq_open+5)
-   // __NR_sys_kexec_load 283
+   
+   // __NR_sys_kexec_load 283 --> sys_ni_syscall()
+   //GO(__NR_sys_kexec_load, "0e");
+   //SY(__NR_sys_kexec_load);
 
    GO(9999, "1e");
    SY(9999);

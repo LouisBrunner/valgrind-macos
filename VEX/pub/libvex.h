@@ -54,7 +54,8 @@ typedef
       VexArch_INVALID,
       VexArchX86, 
       VexArchAMD64, 
-      VexArchARM 
+      VexArchARM,
+      VexArchPPC
    }
    VexArch;
 
@@ -65,7 +66,8 @@ typedef
       VexSubArchX86_sse0, /* has SSE state but no insns (Pentium II) */
       VexSubArchX86_sse1, /* SSE1 support (Pentium III) */
       VexSubArchX86_sse2, /* SSE2 support (Pentium 4) */
-      VexSubArchARM_v4    /* ARM version 4 */
+      VexSubArchARM_v4,   /* ARM version 4 */
+      VexSubArchPPC_32    /* 32 bit */
    }
    VexSubArch;
 

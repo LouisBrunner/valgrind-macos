@@ -1432,7 +1432,7 @@ static void emit_SSE2a ( FlagSet uses_sflags,
    third_byte &= 0x38; /* mask out mod and rm fields */
    emit_amode_regmem_reg ( ireg, third_byte >> 3 );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x-(%s)\n", 
+      VG_(printf)("\n\t\tsse2a-0x%x:0x%x:0x%x-(%s)\n", 
                   (UInt)first_byte, (UInt)second_byte, (UInt)third_byte,
                   nameIReg(4,ireg) );
 }
@@ -1452,19 +1452,19 @@ static void emit_SSE3a ( FlagSet uses_sflags,
    fourth_byte &= 0x38; /* mask out mod and rm fields */
    emit_amode_regmem_reg ( ireg, fourth_byte >> 3 );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+      VG_(printf)("\n\t\tsse3a-0x%x:0x%x:0x%x:0x%x-(%s)\n", 
                   (UInt)first_byte, (UInt)second_byte, 
                   (UInt)third_byte, (UInt)fourth_byte,
                   nameIReg(4,ireg) );
 }
 
-static void emit_SSE3g_RegRd ( FlagSet uses_sflags, 
-                               FlagSet sets_sflags,
-                               UChar first_byte, 
-                               UChar second_byte, 
-	                       UChar third_byte,
-			       UChar fourth_byte,
-                               Int ireg )
+static void emit_SSE3e ( FlagSet uses_sflags, 
+                         FlagSet sets_sflags,
+                         UChar first_byte, 
+                         UChar second_byte, 
+                         UChar third_byte,
+			 UChar fourth_byte,
+                         Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1476,21 +1476,21 @@ static void emit_SSE3g_RegRd ( FlagSet uses_sflags,
    VG_(emitB) ( fourth_byte );
    if (dis)
       VG_(printf)(
-         "\n\t\tireg-to-ssereg--0x%x:0x%x:0x%x:0x%x-(%s)\n",
+         "\n\t\tsse3e--0x%x:0x%x:0x%x:0x%x-(%s)\n",
          (UInt)first_byte, (UInt)second_byte, 
          (UInt)third_byte, (UInt)fourth_byte,
          nameIReg(4,ireg) 
       );
 }
 
-static void emit_SSE3g1_RegRd ( FlagSet uses_sflags, 
-                                FlagSet sets_sflags,
-                                UChar first_byte, 
-                                UChar second_byte, 
- 			        UChar third_byte,
-                                UChar fourth_byte,
-			        UChar fifth_byte,
-                                Int ireg )
+static void emit_SSE3e1 ( FlagSet uses_sflags, 
+                          FlagSet sets_sflags,
+                          UChar first_byte, 
+                          UChar second_byte, 
+ 			  UChar third_byte,
+                          UChar fourth_byte,
+			  UChar fifth_byte,
+                          Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1503,21 +1503,21 @@ static void emit_SSE3g1_RegRd ( FlagSet uses_sflags,
    VG_(emitB) ( fifth_byte );
    if (dis)
       VG_(printf)(
-         "\n\t\tireg-to-ssereg--0x%x:0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         "\n\t\tsse3e1--0x%x:0x%x:0x%x:0x%x:0x%x-(%s)\n", 
          (UInt)first_byte, (UInt)second_byte, 
          (UInt)third_byte, (UInt)fourth_byte, (UInt)fifth_byte,
          nameIReg(4,ireg) 
       );
 }
 
-static void emit_SSE3g1_RegWr ( FlagSet uses_sflags, 
-                                FlagSet sets_sflags,
-                                UChar first_byte, 
-                                UChar second_byte, 
- 			        UChar third_byte,
-                                UChar fourth_byte,
-			        UChar fifth_byte,
-                                Int ireg )
+static void emit_SSE3g1 ( FlagSet uses_sflags, 
+                          FlagSet sets_sflags,
+                          UChar first_byte, 
+                          UChar second_byte, 
+                          UChar third_byte,
+                          UChar fourth_byte,
+			  UChar fifth_byte,
+                          Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1530,20 +1530,20 @@ static void emit_SSE3g1_RegWr ( FlagSet uses_sflags,
    VG_(emitB) ( fifth_byte );
    if (dis)
       VG_(printf)(
-         "\n\t\tssereg-to-ireg--0x%x:0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         "\n\t\tsse3g1_reg_wr--0x%x:0x%x:0x%x:0x%x:0x%x-(%s)\n", 
          (UInt)first_byte, (UInt)second_byte, 
          (UInt)third_byte, (UInt)fourth_byte, (UInt)fifth_byte,
          nameIReg(4,ireg) 
       );
 }
 
-static void emit_SSE3g_RegWr ( FlagSet uses_sflags, 
-                               FlagSet sets_sflags,
-                               UChar first_byte, 
-                               UChar second_byte, 
- 			       UChar third_byte,
-                               UChar fourth_byte,
-                               Int ireg )
+static void emit_SSE3g ( FlagSet uses_sflags, 
+                         FlagSet sets_sflags,
+                         UChar first_byte, 
+                         UChar second_byte, 
+ 			 UChar third_byte,
+                         UChar fourth_byte,
+                         Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1555,7 +1555,7 @@ static void emit_SSE3g_RegWr ( FlagSet uses_sflags,
    VG_(emitB) ( fourth_byte );
    if (dis)
       VG_(printf)(
-         "\n\t\tssereg-to-ireg--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         "\n\t\tsse3g--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
          (UInt)first_byte, (UInt)second_byte, 
          (UInt)third_byte, (UInt)fourth_byte,
          nameIReg(4,ireg) 
@@ -1575,7 +1575,7 @@ static void emit_SSE4 ( FlagSet uses_sflags,
    VG_(emitB) ( third_byte );
    VG_(emitB) ( fourth_byte );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x:0x%x\n", 
+      VG_(printf)("\n\t\tsse4-0x%x:0x%x:0x%x:0x%x\n", 
                   (UInt)first_byte, (UInt)second_byte, 
                   (UInt)third_byte, (UInt)fourth_byte );
 }
@@ -1595,7 +1595,7 @@ static void emit_SSE5 ( FlagSet uses_sflags,
    VG_(emitB) ( fourth_byte );
    VG_(emitB) ( fifth_byte );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x:0x%x:0x%x\n", 
+      VG_(printf)("\n\t\tsse5-0x%x:0x%x:0x%x:0x%x:0x%x\n", 
                   (UInt)first_byte, (UInt)second_byte, 
                   (UInt)third_byte, (UInt)fourth_byte,
                   (UInt)fifth_byte );
@@ -1612,7 +1612,7 @@ static void emit_SSE3 ( FlagSet uses_sflags,
    VG_(emitB) ( second_byte );
    VG_(emitB) ( third_byte );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x\n", 
+      VG_(printf)("\n\t\tsse3-0x%x:0x%x:0x%x\n", 
                   (UInt)first_byte, (UInt)second_byte, 
                   (UInt)third_byte );
 }
@@ -1633,7 +1633,7 @@ static void emit_SSE3ag_MemRd_RegWr ( FlagSet uses_sflags,
       dest_reg. */
    emit_amode_regmem_reg ( addr_reg, dest_reg );
    if (dis)
-      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x(addr=%s, dest=%s)\n", 
+      VG_(printf)("\n\t\tsse3ag_mem_rd_reg_wr-0x%x:0x%x:0x%x(addr=%s, dest=%s)\n", 
                   (UInt)first_byte, (UInt)second_byte, 
             	  (UInt)third_byte, nameIReg(4, addr_reg), 
                                     nameIReg(4, dest_reg));
@@ -3849,6 +3849,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                       u->val3 );
          break;
 
+      case SSE3e_RegWr:
       case SSE3e_RegRd:
       case SSE3g_RegWr:
          vg_assert(u->size == 4);
@@ -3860,20 +3861,20 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
             emit_get_sse_state();
             *sselive = True;
          }
-	 if (u->opcode==SSE3e_RegRd) {
-            emit_SSE3g_RegRd ( u->flags_r, u->flags_w,
-                               (u->val1 >> 8) & 0xFF,
-                               u->val1 & 0xFF,
-                               (u->val2 >> 8) & 0xFF,
-                               u->val2 & 0xFF,
-                               u->val3 );
+	 if (u->opcode==SSE3e_RegRd || u->opcode==SSE3e_RegWr) {
+            emit_SSE3e ( u->flags_r, u->flags_w,
+                         (u->val1 >> 8) & 0xFF,
+                         u->val1 & 0xFF,
+                         (u->val2 >> 8) & 0xFF,
+                         u->val2 & 0xFF,
+                         u->val3 );
 	 } else {
-            emit_SSE3g_RegWr ( u->flags_r, u->flags_w,
-                               (u->val1 >> 8) & 0xFF,
-                               u->val1 & 0xFF,
-                               (u->val2 >> 8) & 0xFF,
-                               u->val2 & 0xFF,
-                               u->val3 );
+            emit_SSE3g ( u->flags_r, u->flags_w,
+                         (u->val1 >> 8) & 0xFF,
+                         u->val1 & 0xFF,
+                         (u->val2 >> 8) & 0xFF,
+                         u->val2 & 0xFF,
+                         u->val3 );
 	 }
          break;
 
@@ -3887,13 +3888,13 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
             emit_get_sse_state();
             *sselive = True;
          }
-         emit_SSE3g1_RegWr ( u->flags_r, u->flags_w,
-                             (u->val1 >> 8) & 0xFF,
-                             u->val1 & 0xFF,
-                             (u->val2 >> 8) & 0xFF,
-                             u->val2 & 0xFF,
-                             u->lit32 & 0xFF,
-                             u->val3 );
+         emit_SSE3g1 ( u->flags_r, u->flags_w,
+                       (u->val1 >> 8) & 0xFF,
+                       u->val1 & 0xFF,
+                       (u->val2 >> 8) & 0xFF,
+                       u->val2 & 0xFF,
+                       u->lit32 & 0xFF,
+                       u->val3 );
          break;
 
       case SSE3e1_RegRd:
@@ -3906,13 +3907,13 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
             emit_get_sse_state();
             *sselive = True;
          }
-         emit_SSE3g1_RegRd ( u->flags_r, u->flags_w,
-                             (u->val1 >> 8) & 0xFF,
-                             u->val1 & 0xFF,
-                             (u->val2 >> 8) & 0xFF,
-                             u->val2 & 0xFF,
-                             u->lit32 & 0xFF,
-                             u->val3 );
+         emit_SSE3e1 ( u->flags_r, u->flags_w,
+                       (u->val1 >> 8) & 0xFF,
+                       u->val1 & 0xFF,
+                       (u->val2 >> 8) & 0xFF,
+                       u->val2 & 0xFF,
+                       u->lit32 & 0xFF,
+                       u->val3 );
          break;
 
       case SSE5:

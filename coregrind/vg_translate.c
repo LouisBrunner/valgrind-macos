@@ -564,6 +564,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemRd:  return LIT0 && SZsse && CCf  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3e_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
@@ -887,6 +888,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE2a_MemWr: return "SSE2a_MWr";
       case SSE2a_MemRd: return "SSE2a_MRd";
       case SSE3e_RegRd: return "SSE3e_RRd";
+      case SSE3e_RegWr: return "SSE3e_RWr";
       case SSE3g_RegWr: return "SSE3g_RWr";
       case SSE3g1_RegWr: return "SSE3g1_RWr";
       case SSE3e1_RegRd: return "SSE3e1_RRd";
@@ -1061,6 +1063,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(pp_UOperand)(u, 3, 4, True);
          break;
 
+      case SSE3e_RegWr:
       case SSE3e_RegRd:
       case SSE3g_RegWr:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x",
@@ -1257,6 +1260,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case SSE3e1_RegRd:
       case SSE2a_MemRd: RD(3); break;
 
+      case SSE3e_RegWr:
       case SSE3g1_RegWr:
       case SSE3g_RegWr: WR(3); break;
 
@@ -1419,7 +1423,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX2_ERegRd: case MMX2_ERegWr:
       case SSE2a_MemWr: case SSE2a_MemRd:
       case SSE3a_MemWr: case SSE3a_MemRd:
-      case SSE3e_RegRd: case SSE3g_RegWr: 
+      case SSE3e_RegRd: case SSE3g_RegWr: case SSE3e_RegWr:
       case SSE3g1_RegWr: case SSE3e1_RegRd:
       case SSE4: case SSE3: case SSE5: case SSE3ag_MemRd_RegWr:
       case WIDEN:

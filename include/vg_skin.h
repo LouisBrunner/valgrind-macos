@@ -654,6 +654,7 @@ typedef
          Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
       */
       SSE3e_RegRd,
+      SSE3e_RegWr, /* variant that writes Ereg, not reads it */
 
       /* 5 bytes, reads an integer register.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb: 11 bbb ireg :bbbbbbbb. Held in

@@ -1020,6 +1020,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
 	    break;
 
+         case SSE3e_RegWr:
          case SSE3g1_RegWr:
          case SSE5:
          case SSE3g_RegWr:

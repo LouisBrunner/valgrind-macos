@@ -4209,7 +4209,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       Bool is_store = insn[1]==0x7E;
       modrm = insn[2];
       if (epartIsReg(modrm) && is_store) {
-	 VG_(core_panic)("MOVD reg - store (to ireg)");
+         t1 = newTemp(cb);
+         uInstr3(cb, SSE3e_RegWr, 4,
+                     Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                     Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                     TempReg, t1 );
+	 uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, eregOfRM(modrm));
+	 if (dis)
+	    VG_(printf)("movd %s, %s\n", 
+		        nameXMMReg(gregOfRM(modrm)),
+		        nameIReg(4,eregOfRM(modrm)));
       } else
       if (epartIsReg(modrm) && !is_store) {
          t1 = newTemp(cb);

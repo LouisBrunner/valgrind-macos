@@ -639,7 +639,7 @@ void VG_(print_tt_tc_stats) ( void )
 /*------------------------------------------------------------*/
 
 /* Only the top N_MAX bbs will be displayed. */
-#define N_MAX 10
+#define N_MAX 200
 
 static TTEntry* tops[N_MAX];
 

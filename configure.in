@@ -70,9 +70,6 @@ AC_MSG_RESULT([none])
 
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
-CFLAGS="-Winline -Wall -Wshadow -O -fomit-frame-pointer -g"
-AC_SUBST(CFLAGS)
-
 # Checks for the platform
 AC_CANONICAL_HOST
 
@@ -237,7 +234,6 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h malloc.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h termios.h unistd.h utime.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_TYPE_UID_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T

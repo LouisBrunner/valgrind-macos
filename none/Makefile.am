@@ -1,5 +1,7 @@
 SUBDIRS = demangle . docs tests
 
+CFLAGS = -Winline -Wall -Werror -Wshadow -O -fomit-frame-pointer -g
+
 valdir = $(libdir)/valgrind
 
 LDFLAGS = -Wl,-z -Wl,initfirst

@@ -404,6 +404,9 @@ extern Int   VG_(system) ( Char* cmd );
 
 extern Long  VG_(atoll)  ( Char* str );
 
+/* Like atoll(), but converts a number of base 16 */
+extern Long  VG_(atoll16) ( Char* str );
+
 /* Like atoll(), but converts a number of base 2..36 */
 extern Long  VG_(atoll36) ( UInt base, Char* str );
 

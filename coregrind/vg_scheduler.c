@@ -1713,7 +1713,8 @@ void do__set_cancelpend ( ThreadId tid,
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   if (!VG_(is_valid_tid)(cee)) {
+   if (!VG_(is_valid_tid)(cee) ||
+       VG_(threads)[cee].status == VgTs_WaitJoiner) {
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "set_cancelpend for invalid tid %d", cee);

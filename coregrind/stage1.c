@@ -61,7 +61,8 @@ static const char stage2[] = "stage2";
    communicate some extra information to stage2 (namely, the fd of the
    padding file, so it can identiry and remove the padding later).
 */
-static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
+static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
+                      int padfile)
 {
    struct ume_auxv *auxv;
    int *newesp;
@@ -90,7 +91,7 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
    /* stage2 needs this so it can clean up the padding we leave in
       place when we start it */
    auxv[0].a_type = AT_UME_PADFD;
-   auxv[0].u.a_val = as_getpadfd();
+   auxv[0].u.a_val = padfile;
 
    /* This will be needed by valgrind itself so that it can
       subsequently execve() children.  This needs to be done here
@@ -155,7 +156,8 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
    return v_init_esp;
 }
 
-static int prmap(void *start, void *end, const char *perm, off_t off, int maj, int min, int ino) {
+static int prmap(char *start, char *end, const char *perm, off_t off, int maj,
+                 int min, int ino, void* dummy) {
    printf("mapping %10p-%10p %s %02x:%02x %d\n",
           start, end, perm, maj, min, ino);
    return 1;
@@ -163,7 +165,7 @@ static int prmap(void *start, void *end, const char *perm, off_t off, int maj, i
 
 static void hoops(void)
 {
-   int err;
+   int err, padfile;
    struct exeinfo info;
    extern char _end;
    int *esp;
@@ -193,14 +195,15 @@ static void hoops(void)
 
    /* Make sure stage2's dynamic linker can't tromp on the lower part
       of the address space. */
-   as_pad(0, (void *)info.map_base);
+   padfile = as_openpadfile();
+   as_pad(0, (void *)info.map_base, padfile);
    
-   esp = fix_auxv(ume_exec_esp, &info);
+   esp = fix_auxv(ume_exec_esp, &info, padfile);
 
    if (0) {
       printf("---------- launch stage 2 ----------\n");
       printf("eip=%p esp=%p\n", (void *)info.init_eip, esp);
-      foreach_map(prmap);
+      foreach_map(prmap, /*dummy*/NULL);
    }
 
    ume_go(info.init_eip, (addr_t)esp);   

@@ -50,6 +50,11 @@
 /* Integer type the same size as a pointer */
 typedef ESZ(Addr) addr_t;
 
+void foreach_map(int (*fn)(char *start, char *end,
+			   const char *perm, off_t offset,
+			   int maj, int min, int ino, void* extra),
+                 void* extra);
+
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/
 /*------------------------------------------------------------*/
@@ -86,16 +91,11 @@ int do_exec(const char *exe, struct exeinfo *info);
 /*--- Address space padding                                ---*/
 /*------------------------------------------------------------*/
 
-void foreach_map(int (*fn)(void *start, void *end,
-			   const char *perm, off_t offset,
-			   int maj, int min, int ino));
-
 // Padding functions used at startup to force things where we want them.
-void as_pad(void *start, void *end);
-void as_unpad(void *start, void *end);
-void as_closepadfile(void);
-int  as_getpadfd(void);
-void as_setpadfd(int);
+int  as_openpadfile (void);
+void as_pad         (void *start, void *end, int padfile);
+void as_unpad       (void *start, void *end, int padfile);
+void as_closepadfile(int padfile);
 
 /*------------------------------------------------------------*/
 /*--- Finding and dealing with auxv                        ---*/

@@ -455,15 +455,15 @@ static void newpid(ThreadId unused)
 /*====================================================================*/
 
 /* Look for our AUXV table */
-static void scan_auxv(void)
+int scan_auxv(void)
 {
    const struct ume_auxv *auxv = find_auxv((int *)ume_exec_esp);
-   int found = 0;
+   int padfile = -1, found = 0;
 
    for (; auxv->a_type != AT_NULL; auxv++)
       switch(auxv->a_type) {
       case AT_UME_PADFD:
-	 as_setpadfd(auxv->u.a_val);
+	 padfile = auxv->u.a_val;
 	 found |= 1;
 	 break;
 
@@ -477,6 +477,8 @@ static void scan_auxv(void)
       fprintf(stderr, "valgrind: stage2 must be launched by stage1\n");
       exit(127);
    }
+   vg_assert(padfile >= 0);
+   return padfile;
 }
 
 
@@ -484,34 +486,28 @@ static void scan_auxv(void)
 /*=== Address space determination                                  ===*/
 /*====================================================================*/
 
-/* Pad client space so it doesn't get filled in before the right time */
-static void layout_client_space(Addr argc_addr)
+static void layout_remaining_space(Addr argc_addr, float ratio)
 {
-   VG_(client_base)       = CLIENT_BASE;
-   VG_(valgrind_base)     = (addr_t)&kickstart_base;
-   VG_(valgrind_end)      = ROUNDUP(argc_addr, 0x10000); /* stack */
+   Int    ires;
+   void*  vres;
+   addr_t client_size, shadow_size;
 
-   as_pad((void *)VG_(client_base), (void *)VG_(valgrind_base));
-}
+   VG_(valgrind_base)  = (addr_t)&kickstart_base;
+   VG_(valgrind_end)   = ROUNDUP(argc_addr, 0x10000); // stack
 
-static void layout_remaining_space(float ratio)
-{
-   Int   ires;
-   void* vres;
-   
-   /* This tries to give the client as large as possible address space while
-    * taking into account the tool's shadow needs.  */
-   addr_t client_size = ROUNDDN((VG_(valgrind_base) - REDZONE_SIZE) / (1. + ratio), 
+   // This gives the client the largest possible address space while
+   // taking into account the tool's shadow needs.
+   client_size         = ROUNDDN((VG_(valgrind_base)-REDZONE_SIZE) / (1.+ratio),
                          CLIENT_SIZE_MULTIPLE);
-   addr_t shadow_size = PGROUNDUP(client_size * ratio);
-
+   VG_(client_base)    = CLIENT_BASE;
    VG_(client_end)     = VG_(client_base) + client_size;
    /* where !FIXED mmap goes */
    VG_(client_mapbase) = VG_(client_base) +
          PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION));
 
-   VG_(shadow_base) = VG_(client_end) + REDZONE_SIZE;
-   VG_(shadow_end)  = VG_(shadow_base) + shadow_size;
+   shadow_size         = PGROUNDUP(client_size * ratio);
+   VG_(shadow_base)    = VG_(client_end) + REDZONE_SIZE;
+   VG_(shadow_end)     = VG_(shadow_base) + shadow_size;
 
 #define SEGSIZE(a,b) ((VG_(b) - VG_(a))/(1024*1024))
 
@@ -2696,8 +2692,8 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
   build the segment skip-list.
 */
 
-static int prmap(void *start, void *end, const char *perm, off_t off, 
-                 int maj, int min, int ino) {
+static int prmap(char *start, char *end, const char *perm, off_t off, 
+                 int maj, int min, int ino, void* dummy) {
    printf("mapping %10p-%10p %s %02x:%02x %d\n",
           start, end, perm, maj, min, ino);
    return True;
@@ -2720,6 +2716,7 @@ int main(int argc, char **argv)
    VgSchedReturnCode src;
    Int exitcode = 0;
    vki_rlimit zero = { 0, 0 };
+   Int padfile;
 
    //============================================================
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -2748,11 +2745,11 @@ int main(int argc, char **argv)
    // Check we were launched by stage1
    //   p: n/a
    //--------------------------------------------------------------
-   scan_auxv();
+   padfile = scan_auxv();
 
    if (0) {
       printf("========== main() ==========\n");
-      foreach_map(prmap);
+      foreach_map(prmap, /*dummy*/NULL);
    }
 
    //--------------------------------------------------------------
@@ -2763,12 +2760,6 @@ int main(int argc, char **argv)
       if (cp != NULL)
 	 VG_(libdir) = cp;
    }
-
-   //--------------------------------------------------------------
-   // Begin working out address space layout
-   //   p: n/a
-   //--------------------------------------------------------------
-   layout_client_space( (Addr) & argc );
 
    //--------------------------------------------------------------
    // Get valgrind args + client args (inc. from VALGRIND_OPTS/.valgrindrc).
@@ -2785,7 +2776,6 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // With client padded out, map in tool
-   //   p: layout_client_space()          [for padding]
    //   p: set-libdir                     [for VG_(libdir)]
    //   p: pre_process_cmd_line_options() [for 'tool']
    //--------------------------------------------------------------
@@ -2798,13 +2788,12 @@ int main(int argc, char **argv)
    
    //--------------------------------------------------------------
    // Finalise address space layout
-   //   p: layout_client_space(), load_tool()  [for 'toolinfo']
+   //   p: load_tool()  [for 'toolinfo']
    //--------------------------------------------------------------
-   layout_remaining_space( toolinfo->shadow_ratio );
+   layout_remaining_space( (Addr) & argc, toolinfo->shadow_ratio );
 
    //--------------------------------------------------------------
    // Load client executable, finding in $PATH if necessary
-   //   p: layout_client_space()           [so there's space]
    //   p: pre_process_cmd_line_options()  [for 'exec', 'need_help']
    //   p: layout_remaining_space          [so there's space]
    //--------------------------------------------------------------
@@ -2815,8 +2804,8 @@ int main(int argc, char **argv)
    //   p: layout_remaining_space()  [everything must be mapped in before now]  
    //   p: load_client()             [ditto] 
    //--------------------------------------------------------------
-   as_unpad((void *)VG_(shadow_end), (void *)~0);
-   as_closepadfile();		/* no more padding */
+   as_unpad((void *)VG_(shadow_end), (void *)~0, padfile);
+   as_closepadfile(padfile);  // no more padding
 
    //--------------------------------------------------------------
    // Set up client's environment

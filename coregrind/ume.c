@@ -57,11 +57,6 @@ struct elfinfo
    int		fd;
 };
 
-static int padfile = -1;
-static struct stat padstat;
-
-extern int kickstart_base;	/* linker created */
-
 static void check_mmap(void* res, void* base, int len)
 {
    if ((void*)-1 == res) {
@@ -72,9 +67,12 @@ static void check_mmap(void* res, void* base, int len)
    }
 }
 
-void foreach_map(int (*fn)(void *start, void *end,
+// 'extra' allows the caller to pass in extra args to 'fn', like free
+// variables to a closure.
+void foreach_map(int (*fn)(char *start, char *end,
 			   const char *perm, off_t offset,
-			   int maj, int min, int ino))
+			   int maj, int min, int ino, void* extra),
+                 void* extra)
 {
    static char buf[10240];
    char *bufptr = buf;
@@ -114,81 +112,103 @@ void foreach_map(int (*fn)(void *start, void *end,
       if (bufptr != NULL)
 	 bufptr++; /* skip \n */
 
-      if (!(*fn)(segstart, segend, perm, offset, maj, min, ino))
+      if (!(*fn)(segstart, segend, perm, offset, maj, min, ino, extra))
 	 break;
    }
 }
 
-static char *fillgap_addr;
-static char *fillgap_end;
+typedef struct {
+   char* fillgap_start;
+   char* fillgap_end;
+   int   fillgap_padfile;
+} fillgap_extra;
 
-static int fillgap(void *segstart, void *segend, const char *perm, off_t off, 
-                   int maj, int min, int ino) {
-   if ((char *)segstart >= fillgap_end)
+static int fillgap(char *segstart, char *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino, void* e)
+{
+   fillgap_extra* extra = e;
+
+   if (segstart >= extra->fillgap_end)
       return 0;
 
-   if ((char *)segstart > fillgap_addr) {
-      void* res = mmap(fillgap_addr, (char *)segstart-fillgap_addr, PROT_NONE,
-                       MAP_FIXED|MAP_PRIVATE, padfile, 0);
-      check_mmap(res, fillgap_addr, (char*)segstart - fillgap_addr);
+   if (segstart > extra->fillgap_start) {
+      void* res = mmap(extra->fillgap_start, segstart - extra->fillgap_start,
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, 
+                       extra->fillgap_padfile, 0);
+      check_mmap(res, extra->fillgap_start, segstart - extra->fillgap_start);
    }
-   fillgap_addr = segend;
+   extra->fillgap_start = segend;
    
    return 1;
 }
 
-/* pad all the empty spaces in a range of address space to stop
-   interlopers */
-void as_pad(void *start, void *end)
+// Choose a name for the padfile, open it.
+int as_openpadfile(void)
 {
-   char buf[1024];
+   char buf[256];
+   int padfile;
+   int seq = 1;
+   do {
+      snprintf(buf, 256, "/tmp/.pad.%d.%d", getpid(), seq++);
+      padfile = open(buf, O_RDWR|O_CREAT|O_EXCL, 0);
+      unlink(buf);
+      if (padfile == -1 && errno != EEXIST) {
+         fprintf(stderr, "valgrind: couldn't open padfile\n");
+         exit(44);
+      }
+   } while(padfile == -1);
 
-   if (padfile == -1) {
-      int seq = 1;
-      do {
-	 sprintf(buf, "/tmp/.pad.%d.%d", getpid(), seq++);
-	 padfile = open(buf, O_RDWR|O_CREAT|O_EXCL, 0);
-	 unlink(buf);
-	 if (padfile == -1 && errno != EEXIST)
-	    exit(44);
-      } while(padfile == -1);
-      fstat(padfile, &padstat);
-   }
+   return padfile;
+}
 
-   fillgap_addr = start;
-   fillgap_end = end;
+// Pad all the empty spaces in a range of address space to stop interlopers.
+void as_pad(void *start, void *end, int padfile)
+{
+   fillgap_extra extra;
+   extra.fillgap_start   = start;
+   extra.fillgap_end     = end;
+   extra.fillgap_padfile = padfile;
 
-   foreach_map(fillgap);
+   foreach_map(fillgap, &extra);
 	
-   if (fillgap_addr < fillgap_end) {
-      void* res = mmap(fillgap_addr, fillgap_end-fillgap_addr, PROT_NONE,
-                       MAP_FIXED|MAP_PRIVATE, padfile, 0);
-      check_mmap(res, fillgap_addr, fillgap_end - fillgap_addr);
+   if (extra.fillgap_start < extra.fillgap_end) {
+      void* res = mmap(extra.fillgap_start, 
+                       extra.fillgap_end - extra.fillgap_start,
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, padfile, 0);
+      check_mmap(res, extra.fillgap_start, 
+                 extra.fillgap_end - extra.fillgap_start);
    }
 }
 
-static void *killpad_start;
-static void *killpad_end;
+typedef struct {
+   char*        killpad_start;
+   char*        killpad_end;
+   struct stat* killpad_padstat;
+} killpad_extra;
 
-static int killpad(void *segstart, void *segend, const char *perm, off_t off, 
-                   int maj, int min, int ino)
+static int killpad(char *segstart, char *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino, void* ex)
 {
+   killpad_extra* extra = ex;
    void *b, *e;
    int res;
 
-   if (padstat.st_dev != makedev(maj, min) || padstat.st_ino != ino)
+   assert(NULL != extra->killpad_padstat);
+
+   if (extra->killpad_padstat->st_dev != makedev(maj, min) || 
+       extra->killpad_padstat->st_ino != ino)
       return 1;
    
-   if (segend <= killpad_start || segstart >= killpad_end)
+   if (segend <= extra->killpad_start || segstart >= extra->killpad_end)
       return 1;
    
-   if (segstart <= killpad_start)
-      b = killpad_start;
+   if (segstart <= extra->killpad_start)
+      b = extra->killpad_start;
    else
       b = segstart;
    
-   if (segend >= killpad_end)
-      e = killpad_end;
+   if (segend >= extra->killpad_end)
+      e = extra->killpad_end;
    else
       e = segend;
    
@@ -198,37 +218,32 @@ static int killpad(void *segstart, void *segend, const char *perm, off_t off,
    return 1;
 }
 
-/* remove padding from a range of address space - padding is always a
-   mapping of padfile*/
-void as_unpad(void *start, void *end)
+// Remove padding of 'padfile' from a range of address space.
+void as_unpad(void *start, void *end, int padfile)
 {
-   if (padfile == -1)	/* no padfile, no padding */
-      return;
+   static struct stat padstat;
+   killpad_extra extra;
+   int res;
+
+   assert(padfile > 0);
    
-   killpad_start = start;
-   killpad_end = end;
-   
-   foreach_map(killpad);
+   res = fstat(padfile, &padstat);
+   assert(0 == res);
+   extra.killpad_padstat = &padstat;
+   extra.killpad_start   = start;
+   extra.killpad_end     = end;
+   foreach_map(killpad, &extra);
 }
 
-void as_closepadfile(void)
+void as_closepadfile(int padfile)
 {
-   /* don't unpad */
-   close(padfile);
-   padfile = -1;
+   int res = close(padfile);
+   assert(0 == res);
 }
 
-int as_getpadfd(void)
-{
-   return padfile;
-}
-
-void as_setpadfd(int fd)
-{
-   as_closepadfile();
-   padfile = fd;
-   fstat(padfile, &padstat);
-}
+/*------------------------------------------------------------*/
+/*--- Finding auxv on the stack                            ---*/
+/*------------------------------------------------------------*/
 
 struct ume_auxv *find_auxv(int *esp)
 {
@@ -245,6 +260,9 @@ struct ume_auxv *find_auxv(int *esp)
    return (struct ume_auxv *)esp;
 }
 
+/*------------------------------------------------------------*/
+/*--- Loading ELF files                                    ---*/
+/*------------------------------------------------------------*/
 
 struct elfinfo *readelf(int fd, const char *filename)
 {
@@ -298,8 +316,6 @@ struct elfinfo *readelf(int fd, const char *filename)
 
    return e;
 }
-
-#define REMAINS(x, a)   ((x)        & ((a)-1))
 
 /* Map an ELF file.  Returns the brk address. */
 ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
@@ -380,9 +396,8 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
    return elfbrk;
 }
 
-
+// Forward declaration.
 static int do_exec_inner(const char *exe, struct exeinfo *info);
-
 
 static int match_ELF(const char *hdr, int len)
 {
@@ -390,7 +405,8 @@ static int match_ELF(const char *hdr, int len)
    return (len > sizeof(*e)) && memcmp(&e->e_ident[0], ELFMAG, SELFMAG) == 0;
 }
 
-static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo *info)
+static int load_ELF(char *hdr, int len, int fd, const char *name,
+                    struct exeinfo *info)
 {
    struct elfinfo *e;
    struct elfinfo *interp = NULL;
@@ -530,7 +546,8 @@ static int match_script(const char *hdr, Int len)
    return (len > 2) && memcmp(hdr, "#!", 2) == 0;
 }
 
-static int load_script(char *hdr, int len, int fd, const char *name, struct exeinfo *info)
+static int load_script(char *hdr, int len, int fd, const char *name,
+                       struct exeinfo *info)
 {
    char *interp;
    char *const end = hdr+len;
@@ -582,17 +599,6 @@ static int load_script(char *hdr, int len, int fd, const char *name, struct exei
    return do_exec_inner(interp, info);
 }
 
-struct binfmt {
-   int	(*match)(const char *hdr, int len);
-   int	(*load) (      char *hdr, int len, int fd, const char *name, struct exeinfo *);
-};
-
-static const struct binfmt formats[] = {
-   { match_ELF,		load_ELF },
-   { match_script,	load_script },
-};
-
-
 static int do_exec_inner(const char *exe, struct exeinfo *info)
 {
    int fd;
@@ -601,6 +607,14 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
    int i;
    int ret;
    struct stat st;
+   static const struct {
+      int (*match)(const char *hdr, int len);
+      int (*load) (      char *hdr, int len, int fd2, const char *name,
+                         struct exeinfo *);
+   } formats[] = {
+      { match_ELF,    load_ELF },
+      { match_script, load_script },
+   };
 
    fd = open(exe, O_RDONLY);
    if (fd == -1) {

@@ -80,6 +80,26 @@ static enum _eflags_state {
 	UPD_Both,		/* both are current */
 } eflags_state;
 
+/* ia32 static prediction is very simple.  Other implementations are
+   more complex, so we get the condition anyway. */
+static JumpPred static_pred(Condcode cond, Int forward)
+{
+   if (cond == CondAlways)
+      return JP_TAKEN;
+   
+   return forward ? JP_NOT_TAKEN : JP_TAKEN;
+}
+
+static const Char *predstr(JumpPred p)
+{
+   switch(p) {
+   default:
+   case JP_NONE:	return "";
+   case JP_TAKEN:	return ",pt";
+   case JP_NOT_TAKEN:	return ",pn";
+   }
+}
+
 /* single site for resetting state */
 static void reset_state(void)
 {
@@ -1937,8 +1957,9 @@ static inline Int tgt_addr(Int tgt)
 
 static inline Int mk_tgt(Int state, Int addr)
 {
-   vg_assert(state == TGT_UNDEF 
-             || state == TGT_FORWARD || state == TGT_BACKWARD);
+   vg_assert(state == TGT_UNDEF ||
+	     state == TGT_FORWARD ||
+	     state == TGT_BACKWARD);
    vg_assert((addr & 0xffff0000) == 0);
 
    return state | addr;
@@ -1997,26 +2018,38 @@ void VG_(emit_target_delta) ( Int *tgt )
 /* Emit a jump short with an 8-bit signed offset.  Note that the
    offset is that which should be added to %eip once %eip has been
    advanced over this insn.  */
-void VG_(emit_jcondshort_delta) ( Bool simd_flags, Condcode cond, Int delta )
+void VG_(emit_jcondshort_delta) ( Bool simd_flags, Condcode cond, Int delta, JumpPred pred )
 {
    vg_assert(delta >= -128 && delta <= 127);
    VG_(new_emit)(simd_flags, FlagsOSZCP, FlagsEmpty);
+
+   if (VG_(clo_branchpred) && 
+       pred != JP_NONE && 
+       pred != static_pred(cond, delta > 0))
+      VG_(emitB)(pred == JP_TAKEN ? 0x3e : 0x2e);
+
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emitB) ( (UChar)delta );
    if (dis)
-      VG_(printf)( "\n\t\tj%s-8\t%%eip+%d\n", 
-                   VG_(name_UCondcode)(cond), delta );
+      VG_(printf)( "\n\t\tj%s-8%s\t%%eip+%d\n", 
+                   VG_(name_UCondcode)(cond), predstr(pred), delta );
 }
 
 /* Same as above, but defers emitting the delta  */
-void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
+void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt, JumpPred pred )
 {
    VG_(new_emit)(simd, FlagsOSZCP, FlagsEmpty);
+
+   if (VG_(clo_branchpred) &&
+       pred != JP_NONE && 
+       pred != static_pred(cond, tgt_state(*tgt) != TGT_BACKWARD))
+      VG_(emitB)(pred == JP_TAKEN ? 0x3e : 0x2e);
+
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emit_target_delta) (tgt);
    if (dis)
-      VG_(printf)( "\n\t\tj%s-8\t%%eip+(%d)\n", 
-                   VG_(name_UCondcode)(cond), tgt_addr(*tgt) );
+      VG_(printf)( "\n\t\tj%s-8%s\t%%eip+(%d)\n", 
+                   VG_(name_UCondcode)(cond), predstr(pred), tgt_addr(*tgt) );
 }
 
 
@@ -2614,12 +2647,12 @@ static void synth_jcond_lit ( Condcode cond,
 
 	    if (cond == CondLE) {
 	       /* test Z */
-	       VG_(emit_jcondshort_target)(False, CondS, &tgt_jump);
+	       VG_(emit_jcondshort_target)(False, CondS, &tgt_jump, JP_NONE);
 	       /* test OF != SF */
 	       cond = CondP;
 	    } else {
 	       /* test Z */
-	       VG_(emit_jcondshort_target)(False, CondS, &tgt2);
+	       VG_(emit_jcondshort_target)(False, CondS, &tgt2, JP_NONE);
 	       /* test OF == SF */
 	       cond = CondNP;
 	    }
@@ -2701,7 +2734,7 @@ static void synth_jcond_lit ( Condcode cond,
       }
    }
 
-   VG_(emit_jcondshort_target) ( simd, cond, &tgt );
+   VG_(emit_jcondshort_target) ( simd, cond, &tgt, JP_NONE );
 
    VG_(target_forward)(&tgt_jump);
    synth_jmp_lit ( addr, JmpBoring );
@@ -2720,7 +2753,7 @@ static void synth_jmp_ifzero_reg_lit ( Int reg, Addr addr )
  
    VG_(emit_cmpl_zero_reg) ( False, reg );
 
-   VG_(emit_jcondshort_target) ( False, CondNZ, &tgt );
+   VG_(emit_jcondshort_target) ( False, CondNZ, &tgt, JP_NONE );
    synth_jmp_lit ( addr, JmpBoring );
  
    VG_(target_forward)(&tgt);
@@ -3234,7 +3267,7 @@ static void synth_cmovl_reg_reg ( Condcode cond, Int src, Int dst )
 
    VG_(init_target)(&tgt);
 
-   VG_(emit_jcondshort_target) ( True, invertCondition(cond), &tgt);
+   VG_(emit_jcondshort_target) ( True, invertCondition(cond), &tgt, JP_NONE);
    emit_movl_reg_reg ( src, dst );
 
    VG_(target_forward)(&tgt);
@@ -4286,16 +4319,19 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
 
    if (dis) VG_(printf)("Generated x86 code:\n");
 
-   /* Generate decl VG_(dispatch_ctr) and drop into dispatch if we hit
+   /* Generate subl $1, VG_(dispatch_ctr) and drop into dispatch if we hit
       zero.  We have to do this regardless of whether we're t-chaining
-      or not. */
+      or not. (The ia32 optimisation guide recommends sub over dec.) */
    VG_(init_target)(&tgt);
    VG_(new_emit)(False, FlagsEmpty, FlagsOSZAP);
-   VG_(emitB) (0xFF);	/* decl */
-   emit_amode_litmem_reg((Addr)&VG_(dispatch_ctr), 1);
+   VG_(emitB) (0x83);	/* subl */
+   emit_amode_litmem_reg((Addr)&VG_(dispatch_ctr), 5);
+   VG_(emitB) (0x01);
+
    if (dis)
-      VG_(printf)("\n\t\tdecl (%p)\n", &VG_(dispatch_ctr));
-   VG_(emit_jcondshort_target)(False, CondNZ, &tgt);
+      VG_(printf)("\n\t\tsubl $1, (%p)\n", &VG_(dispatch_ctr));
+
+   VG_(emit_jcondshort_target)(False, CondNZ, &tgt, JP_TAKEN);
    VG_(emit_movv_lit_reg) ( 4, VG_TRC_INNER_COUNTERZERO, R_EBP );
    emit_ret();
    VG_(target_forward)(&tgt);

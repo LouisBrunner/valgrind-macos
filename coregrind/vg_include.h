@@ -270,6 +270,8 @@ extern Bool  VG_(clo_track_fds);
 extern Bool  VG_(clo_run_libc_freeres);
 /* Use the basic-block chaining optimisation?  Default: YES */
 extern Bool VG_(clo_chain_bb);
+/* Generate branch-prediction hints? */
+extern Bool VG_(clo_branchpred);
 /* Continue stack traces below main()?  Default: NO */
 extern Bool VG_(clo_show_below_main);
 /* Test each client pointer dereference to check it's within the

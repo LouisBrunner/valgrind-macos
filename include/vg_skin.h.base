@@ -1315,8 +1315,14 @@ extern void VG_(target_back)	       ( Int *tgt );
 extern void VG_(target_forward)	       ( Int *tgt );
 extern void VG_(emit_target_delta)     ( Int *tgt );
 
-extern void VG_(emit_jcondshort_delta) ( Bool simd_cc, Condcode cond, Int delta );
-extern void VG_(emit_jcondshort_target)( Bool simd_cc, Condcode cond, Int *tgt );
+typedef enum {
+   JP_NONE,			/* no prediction */
+   JP_TAKEN,			/* predict taken */
+   JP_NOT_TAKEN,		/* predict not taken */
+} JumpPred;
+
+extern void VG_(emit_jcondshort_delta) ( Bool simd_cc, Condcode cond, Int delta, JumpPred );
+extern void VG_(emit_jcondshort_target)( Bool simd_cc, Condcode cond, Int *tgt, JumpPred );
 
 
 /*====================================================================*/

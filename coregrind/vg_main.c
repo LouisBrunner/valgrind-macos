@@ -586,6 +586,7 @@ Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_chain_bb)       = True;
 Bool   VG_(clo_show_below_main) = False;
 Bool   VG_(clo_pointercheck)   = True;
+Bool   VG_(clo_branchpred)     = False;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
@@ -692,6 +693,7 @@ void VG_(usage) ( void )
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
+"    --branchpred=yes|no       generate branch prediction hints [no]\n"
 "    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
@@ -895,6 +897,11 @@ static void process_cmd_line_options ( const KickstartParams *kp )
 	 VG_(clo_chain_bb) = True;
       else if (VG_CLO_STREQ(argv[i], "--chain-bb=no"))
 	 VG_(clo_chain_bb) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--branchpred=yes"))
+	 VG_(clo_branchpred) = True;
+      else if (VG_CLO_STREQ(argv[i], "--branchpred=no"))
+	 VG_(clo_branchpred) = False;
 
       else if (VG_CLO_STREQ(argv[i], "--single-step=yes"))
          VG_(clo_single_step) = True;

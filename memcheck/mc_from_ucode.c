@@ -166,12 +166,16 @@ static void synth_SETV ( Int sz, Int reg )
 
 static void synth_TESTV ( Int sz, Int tag, Int val )
 {
+   Int tgt;			/* jump target */
+
    /* Important note.  Note that that the calls to
       MC_(helper_value_check[0124]_fail) must be compact helpers due to
       the codegen scheme used below.  Since there are a shortage of
       compact helper slots, and since the size==1 case is never
       actually used, we assert against it. */
    sk_assert(sz == 0 || sz == 2 || sz == 4);
+
+   VG_(init_target)(&tgt);
 
    sk_assert(tag == ArchReg || tag == RealReg);
    if (tag == ArchReg) {
@@ -222,9 +226,12 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
             VG_(skin_panic)("synth_TESTV(RealReg)");
       }
    }
-   VG_(emit_jcondshort_delta) ( False, CondZ, 3 );
+   
+   /* predict taken because we assume failures are rare */
+   VG_(emit_jcondshort_target) ( False, CondZ, &tgt, JP_TAKEN );
+
    VG_(synth_call) (
-      True, /* needed to guarantee that this insn is indeed 3 bytes long */
+      False,
       ( sz==4 
       ? VG_(helper_offset)((Addr) & MC_(helper_value_check4_fail))
       : ( sz==2 
@@ -234,6 +241,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
 	  : VG_(helper_offset)((Addr) & MC_(helper_value_check0_fail))))),
       False, FlagsEmpty, FlagsOSZACP /* helpers don't preserve flags */
    );
+   VG_(target_forward)(&tgt);
 }
 
 

@@ -44,6 +44,13 @@ static UInt cmalloc_bs_mallocd = 0;
 /* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
 UInt VG_(vg_malloc_redzone_szB) = 16;
 
+/* Function pointers for the two skins to track interesting events. */
+void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
+void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
+void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
+void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
+
+
 /*------------------------------------------------------------*/
 /*--- Tracking malloc'd and free'd blocks                  ---*/
 /*------------------------------------------------------------*/
@@ -127,18 +134,20 @@ void add_MAC_Chunk ( ThreadState* tst, Addr p, UInt size, MAC_AllocKind kind )
    mc->allockind = kind;
    mc->where     = VG_(get_ExeContext)(tst);
 
+   /* The following line puts the shadow chunk, and hence the pointer
+      to the real chunk, off-limits to the client.  This seems to be
+      necessary to make the leak checker work reliably.  Problem is,
+      this seems to point to something deeper being wrong: this chunk
+      is allocated in the AR_SKIN arena and so should by default be
+      off-limits to the client anyway. */
+   MAC_(ban_mem_heap)( (Addr)mc, sizeof(MAC_Chunk));
+
    VG_(HT_add_node)( MAC_(malloc_list), (VgHashNode*)mc );
 }
 
 /*------------------------------------------------------------*/
 /*--- client_malloc(), etc                                 ---*/
 /*------------------------------------------------------------*/
-
-/* Function pointers for the two skins to track interesting events. */
-void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
-void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
-void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
-void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
 
 /* Allocate memory and note change in memory available */
 __inline__

@@ -45,7 +45,7 @@
  * make it very clear what went wrong! */
 
 static __attribute__ ((noreturn))
-void fund_panic ( Char* fn )
+void fund_panic ( const Char* fn )
 {
    VG_(printf)(
       "\nSkin error:\n"
@@ -56,7 +56,7 @@ void fund_panic ( Char* fn )
 }
 
 static __attribute__ ((noreturn))
-void non_fund_panic ( Char* fn )
+void non_fund_panic ( const Char* fn )
 {
    VG_(printf)(
       "\nSkin error:\n"
@@ -67,7 +67,7 @@ void non_fund_panic ( Char* fn )
 }
 
 static __attribute__ ((noreturn))
-void malloc_panic ( Char* fn )
+void malloc_panic ( const Char* fn )
 {
    VG_(printf)(
       "\nSkin error:\n"

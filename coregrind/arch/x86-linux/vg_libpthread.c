@@ -175,11 +175,10 @@ __asm__ (
 
 static
 __attribute__((noreturn))
-void barf ( char* str )
+void barf ( const char* str )
 {
    char buf[1000];
-   buf[0] = 0;
-   strcat(buf, "\nvalgrind's libpthread.so: ");
+   strcpy(buf, "\nvalgrind's libpthread.so: ");
    strcat(buf, str);
    strcat(buf, "\n\n");
    VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
@@ -221,7 +220,7 @@ void vgPlain_unimp ( char* what )
 
 
 static
-void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
+void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
    char buf[1000];
    static Bool entered = False;

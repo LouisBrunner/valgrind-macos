@@ -1028,8 +1028,8 @@ extern void VG_(restore_all_host_signals)
 			           __FILE__, __LINE__,                \
                                    __PRETTY_FUNCTION__), 0)))
 __attribute__ ((__noreturn__))
-extern void VG_(core_assert_fail) ( Char* expr, Char* file, 
-                                    Int line, Char* fn );
+extern void VG_(core_assert_fail) ( const Char* expr, const Char* file, 
+                                    Int line, const Char* fn );
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 
@@ -1275,6 +1275,8 @@ void VG_(read_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
+extern void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips );
+extern Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf);
 extern void VG_(read_symbols)         ( void );
 extern void VG_(read_symtab_callback) ( Addr start, UInt size, 
                                         Char rr, Char ww, Char xx,

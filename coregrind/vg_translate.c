@@ -1245,7 +1245,6 @@ void VG_(pp_UCodeBlock) ( UCodeBlock* cb, Char* title )
    read-modified-written, it appears first as a read and then as a write.
    'tag' indicates whether we are looking at TempRegs or RealRegs.
 */
-__inline__
 Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 {
 #  define RD(ono)    VG_UINSTR_READS_REG(ono, regs, isWrites)

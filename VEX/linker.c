@@ -216,7 +216,7 @@ typedef
    }
    StringMap;
 
-StringMap* new_StringMap ( void )
+static StringMap* new_StringMap ( void )
 {
    StringMap* sm = malloc(sizeof(StringMap));
    sm->sm_size = 10;
@@ -225,7 +225,7 @@ StringMap* new_StringMap ( void )
    return sm;
 }
 
-void delete_StringMap ( StringMap* sm )
+static void delete_StringMap ( StringMap* sm )
 {
    assert(sm->maplets != NULL);
    free(sm->maplets);
@@ -233,7 +233,7 @@ void delete_StringMap ( StringMap* sm )
    free(sm);
 }
 
-void ensure_StringMap ( StringMap* sm )
+static void ensure_StringMap ( StringMap* sm )
 {
    int i;
    Maplet* mp2;
@@ -248,7 +248,7 @@ void ensure_StringMap ( StringMap* sm )
    sm->maplets = mp2;
 }
 
-void* search_StringMap ( StringMap* sm, char* name )
+static void* search_StringMap ( StringMap* sm, char* name )
 {
    int i;
    for (i = 0; i < sm->sm_used; i++)
@@ -257,7 +257,7 @@ void* search_StringMap ( StringMap* sm, char* name )
    return NULL;
 }
 
-void addto_StringMap ( StringMap* sm, char* name, void* addr )
+static void addto_StringMap ( StringMap* sm, char* name, void* addr )
 {
    ensure_StringMap(sm);
    sm->maplets[sm->sm_used].mp_name = name;
@@ -265,7 +265,7 @@ void addto_StringMap ( StringMap* sm, char* name, void* addr )
    sm->sm_used++;
 }
 
-void paranoid_addto_StringMap ( StringMap* sm, char* name, void* addr )
+static void paranoid_addto_StringMap ( StringMap* sm, char* name, void* addr )
 {
    if (search_StringMap(sm,name) != NULL) {
       fprintf(stderr, "paranoid_addto_StringMap(%s,%p)\n", name, addr);
@@ -284,7 +284,7 @@ void paranoid_addto_StringMap ( StringMap* sm, char* name, void* addr )
 StringMap*  global_symbol_table = NULL;
 ObjectCode* global_object_list = NULL;
 
-void initLinker ( void )
+static void initLinker ( void )
 {
    if (global_symbol_table != NULL)
       return;
@@ -302,8 +302,8 @@ void initLinker ( void )
 /* -----------------------------------------------------------------
  * lookup a symbol in the global symbol table
  */
-void *
-lookupSymbol( char *lbl )
+static 
+void * lookupSymbol( char *lbl )
 {
    void *val;
    initLinker() ;
@@ -348,8 +348,8 @@ findElfSection ( void* objImage, Elf_Word sh_type )
    return ptr;
 }
 
-char*
-alloc_fixup_bytes ( ObjectCode* oc, int nbytes )
+static
+char* alloc_fixup_bytes ( ObjectCode* oc, int nbytes )
 {
    char* res;
    assert(nbytes % 4 == 0);
@@ -370,6 +370,7 @@ alloc_fixup_bytes ( ObjectCode* oc, int nbytes )
 //
 // RESOLVE
 
+static
 void* lookup_magic_hacks ( char* sym )
 {
    if (0==strcmp(sym, "printf")) return (void*)(&printf);
@@ -377,6 +378,7 @@ void* lookup_magic_hacks ( char* sym )
 }
 
 #ifdef arm_TARGET_ARCH
+static
 void gen_armle_goto ( char* fixup, char* dstP )
 {
   Elf_Word w = (Elf_Word)dstP;
@@ -1142,8 +1144,8 @@ ocGetNames_ELF ( ObjectCode* oc )
  *
  * Returns: 1 if ok, 0 on error.
  */
-int
-loadObj( char *path )
+static
+int loadObj( char *path )
 {
    ObjectCode* oc;
    struct stat st;
@@ -1254,8 +1256,8 @@ loadObj( char *path )
  *
  * Returns: 1 if ok, 0 on error.
  */
-int
-resolveObjs( void )
+static
+int resolveObjs( void )
 {
     ObjectCode *oc;
     int r;
@@ -1277,21 +1279,29 @@ resolveObjs( void )
  * Top-level linker.
  */
 
-void linker_top ( int n_objs, char** object_names )
+/* Load and link a bunch of .o's, and return the address of
+   'main'.  Or NULL if something borks.
+*/
+void* linker_top_level ( int n_objs, char** object_names )
 {
-   int i, r;
+   int   i, r;
+   void* mainp;
+
    initLinker();
    for (i = 0; i < n_objs; i++) {
       r = loadObj( object_names[i] );
-     if (r != 1) exit(1);
+      if (r != 1) return NULL;
    }
    r = resolveObjs();
-   if (r != 1) exit(1);
-   printf("success!\n");
+   if (r != 1) return NULL;
+   mainp = search_StringMap ( global_symbol_table, "main" );
+   if (mainp == NULL) return NULL;
+   printf("Linker: success!\n");
+   return mainp;
 }
 
 
-
+#if 0
 int main ( int argc, char** argv )
 {
    void* mainp;
@@ -1310,3 +1320,4 @@ int main ( int argc, char** argv )
 
    return 0;
 }
+#endif

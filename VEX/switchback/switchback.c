@@ -25,8 +25,8 @@ Test file may not reference any other symbols.
 #include "../pub/libvex_trc_values.h"
 #include "linker.h"
 
-static Int n_bbs_done = 0;
-static Int n_translations_made = 0;
+static ULong n_bbs_done = 0;
+static Int   n_translations_made = 0;
 
 
 #if defined(__i386__)
@@ -94,7 +94,7 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
       case 0: /* EXIT */
          printf("---STOP---\n");
          printf("serviceFn:EXIT\n");
-	 printf("%d bbs simulated\n", n_bbs_done);
+	 printf("%llu bbs simulated\n", n_bbs_done);
 	 printf("%d translations made, %d tt bytes\n", 
                 n_translations_made, 8*trans_cache_used);
          exit(0);
@@ -483,7 +483,7 @@ Bool run_translation ( HWord translation )
 {
    if (DEBUG_TRACE_FLAGS) {
       printf(" run translation %p\n", (void*)translation );
-      printf(" simulated bb: %d\n", n_bbs_done);
+      printf(" simulated bb: %llu\n", n_bbs_done);
    }
    f = translation;
    gp = (HWord)&gst;
@@ -612,7 +612,7 @@ static void dump_translations ( Addr64 start, UInt len )
 }
 
 
-static Int    stopAfter = 0;
+static ULong  stopAfter = 0;
 static UChar* entry     = NULL;
 
 
@@ -621,7 +621,7 @@ static
 void failure_exit ( void )
 {
    fprintf(stdout, "VEX did failure_exit.  Bye.\n");
-   fprintf(stdout, "bb counter = %d\n\n", n_bbs_done);
+   fprintf(stdout, "bb counter = %llu\n\n", n_bbs_done);
    exit(1);
 }
 
@@ -684,20 +684,20 @@ static void run_simulator ( void )
 
       // Switchback
       if (n_bbs_done == stopAfter) {
-         printf("---begin SWITCHBACK at bb:%d---\n", n_bbs_done);
+         printf("---begin SWITCHBACK at bb:%llu---\n", n_bbs_done);
 #if 1
          if (last_guest) {
-            printf("\n*** Last run translation (bb:%d):\n", n_bbs_done-1);
+            printf("\n*** Last run translation (bb:%llu):\n", n_bbs_done-1);
             make_translation(last_guest,True);
          }
 #endif
 #if 0
          if (next_guest) {
-            printf("\n*** Current translation (bb:%d):\n", n_bbs_done);
+            printf("\n*** Current translation (bb:%llu):\n", n_bbs_done);
             make_translation(next_guest,True);
          }
 #endif
-         printf("---  end SWITCHBACK at bb:%d ---\n", n_bbs_done);
+         printf("---  end SWITCHBACK at bb:%llu ---\n", n_bbs_done);
          switchback();
          assert(0); /*NOTREACHED*/
       }
@@ -717,6 +717,8 @@ static void run_simulator ( void )
 static void usage ( void )
 {
    printf("usage: switchback file.o #bbs\n");
+   printf("   - begins switchback for basic block #bbs\n");
+   printf("   - use -1 for largest possible run without switchback\n\n");
    exit(1);
 }
 
@@ -741,7 +743,7 @@ int main ( Int argc, HChar** argv )
       usage();
 
    oname = argv[1];
-   stopAfter = atoi(argv[2]);
+   stopAfter = (ULong)atoll(argv[2]);
 
    if (stat(oname, &buf)) {
       printf("switchback: can't stat %s\n", oname);

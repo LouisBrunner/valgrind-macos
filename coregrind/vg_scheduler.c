@@ -1001,7 +1001,7 @@ void poll_for_ready_fds ( void )
          VG_(printf)("offending fd = %d\n", fd);
          VG_(panic)("poll_for_ready_fds: multiple events on fd");
       }
-      
+
       /* An I/O event completed for fd.  Find the thread which
          requested this. */
       for (i = 0; i < VG_N_WAITING_FDS; i++) {
@@ -1050,9 +1050,25 @@ void complete_blocked_syscalls ( void )
          number, because the speculative call made by
          sched_do_syscall() doesn't change %EAX in the case where the
          call would have blocked. */
-
       syscall_no = vg_waiting_fds[i].syscall_no;
       vg_assert(syscall_no == VG_(threads)[tid].m_eax);
+
+      /* In a rare case pertaining to writing into a pipe, write()
+         will block when asked to write > 4096 bytes even though the
+         kernel claims, when asked via select(), that blocking will
+         not occur for a write on that fd.  This can cause deadlocks.
+         An easy answer is to limit the size of the write to 4096
+         anyway and hope that the client program's logic can handle
+         the short write.  That shoulds dubious to me, so we don't do
+         it by default. */
+      if (syscall_no == __NR_write 
+          && VG_(threads)[tid].m_edx /* arg3, count */ > 4096
+          && VG_(strstr)(VG_(clo_weird_hacks), "truncate-writes") != NULL) {
+         /* VG_(printf)("truncate write from %d to 4096\n", 
+            VG_(threads)[tid].m_edx ); */
+         VG_(threads)[tid].m_edx = 4096;
+      }
+
       KERNEL_DO_SYSCALL(tid,res);
       VG_(check_known_blocking_syscall)(tid, syscall_no, &res /* POST */);
 

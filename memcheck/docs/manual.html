@@ -619,6 +619,37 @@ follows:
           To find out if your program is blocking unexpectedly in the
           <code>read</code> system call, run with
           <code>--trace-syscalls=yes</code> flag.
+      <p>
+      <li><code>truncate-writes</code> Use this if you have a threaded
+          program which appears to unexpectedly block whilst writing
+          into a pipe.  The effect is to modify all calls to
+          <code>write()</code> so that requests to write more than
+          4096 bytes are treated as if they only requested a write of
+          4096 bytes.  Valgrind does this by changing the
+          <code>count</code> argument of <code>write()</code>, as
+          passed to the kernel, so that it is at most 4096.  The
+          amount of data written will then be less than the client
+          program asked for, but the client should have a loop around
+          its <code>write()</code> call to check whether the requested
+          number of bytes have been written.  If not, it should issue
+          further <code>write()</code> calls until all the data is
+          written.
+          <p>
+          This all sounds pretty dodgy to me, which is why I've made
+          this behaviour only happen on request.  It is not the
+          default behaviour.  At the time of writing this (30 June
+          2002) I have only seen one example where this is necessary,
+          so either the problem is extremely rare or nobody is using
+          Valgrind :-)
+          <p>
+          On experimentation I see that <code>truncate-writes</code>
+          doesn't interact well with <code>ioctl-VTIME</code>, so you
+          probably don't want to try both at once.
+          <p>
+          As above, to find out if your program is blocking
+          unexpectedly in the <code>write()</code> system call, you
+          may find the <code>--trace-syscalls=yes
+          --trace-sched=yes</code> flags useful.
       </ul>
 
       </li><p>

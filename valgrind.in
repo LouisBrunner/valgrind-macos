@@ -145,7 +145,7 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually"
    echo "    --L2=<size>,<assoc>,<line_size>  set L2 cache manually"
    echo "    --weird-hacks=hack1,hack2,...  [no hacks selected]"
-   echo "         recognised hacks are: ioctl-VTIME"
+   echo "         recognised hacks are: ioctl-VTIME truncate-writes"
    echo ""
    echo
    echo "  options for debugging Valgrind itself are:"

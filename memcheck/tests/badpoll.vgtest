@@ -1,0 +1,2 @@
+prog: badpoll
+vgopts: -q

@@ -11,6 +11,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badjump.stderr.exp badjump.vgtest \
 	badjump2.stderr.exp badjump2.vgtest \
 	badloop.stderr.exp badloop.vgtest \
+	badpoll.stderr.exp badpoll.vgtest \
 	badrw.stderr.exp badrw.vgtest \
 	brk.stderr.exp brk.vgtest \
 	brk2.stderr.exp brk2.vgtest \
@@ -69,7 +70,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badjump2 \
-	badloop badrw brk brk2 buflen_check \
+	badloop badpoll badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog execve execve2 \
 	fprw fwrite hello inits inline \
@@ -94,6 +95,7 @@ badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
 badjump2_SOURCES 	= badjump2.c
 badloop_SOURCES 	= badloop.c
+badpoll_SOURCES		= badpoll.c
 badrw_SOURCES		= badrw.c
 brk_SOURCES 		= brk.c
 brk2_SOURCES 		= brk2.c

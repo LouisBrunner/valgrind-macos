@@ -4339,24 +4339,32 @@ PRE(poll)
 	short events;     -- requested events
 	short revents;    -- returned events
       };
-      int poll(struct pollfd *ufds, unsigned int nfds, 
-      int timeout) 
+      int poll(struct pollfd *ufds, unsigned int nfds, int timeout) 
    */
+   UInt i;
+   struct vki_pollfd* ufds = (struct vki_pollfd *)arg1;
    MAYBE_PRINTF("poll ( %p, %d, %d )\n",arg1,arg2,arg3);
-   /* In fact some parts of this struct should be readable too.
-      This should be fixed properly. */
-   SYSCALL_TRACK( pre_mem_write, tid, "poll(ufds)", 
-		  arg1, arg2 * sizeof(struct vki_pollfd) );
+
+   for (i = 0; i < arg2; i++) {
+      // 'fd' and 'events' field are inputs;  'revents' is output.
+      // XXX: this is x86 specific -- the pollfd struct varies across
+      // different architectures.
+      SYSCALL_TRACK( pre_mem_read, tid, "poll(ufds)",
+                     (Addr)(&ufds[i]), sizeof(int) + sizeof(short) );
+      SYSCALL_TRACK( pre_mem_write, tid, "poll(ufds)", 
+                     (Addr)(&ufds[i].revents), sizeof(short) );
+   }
 }
 
 POST(poll)
 {
    if (res > 0) {
       UInt i;
-      struct vki_pollfd * arr = (struct vki_pollfd *)arg1;
+      struct vki_pollfd* ufds = (struct vki_pollfd *)arg1;
+      // XXX: again, this is x86-specific
       for (i = 0; i < arg2; i++)
-	 VG_TRACK( post_mem_write, (Addr)(&arr[i].revents), 
-		   sizeof(Short) );
+	 VG_TRACK( post_mem_write, (Addr)(&ufds[i].revents), 
+		   sizeof(short) );
    }
 }
 

@@ -304,8 +304,8 @@ Bool VG_(signal_returns) ( ThreadId tid )
 
 
 /* Deliver all pending signals, by building stack frames for their
-   handlers. */
-void VG_(deliver_signals) ( ThreadId tid )
+   handlers.  Return True if any signals were delivered. */
+Bool VG_(deliver_signals) ( ThreadId tid )
 {
    vki_ksigset_t  saved_procmask;
    Int            sigNo;
@@ -322,7 +322,7 @@ void VG_(deliver_signals) ( ThreadId tid )
       if (VG_(sigpending)[sigNo] != VG_SIGIDLE &&
           VG_(sigpending)[sigNo] != VG_SIGRUNNING) found = True;
 
-   if (!found) return;
+   if (!found) return False;
 
    /* Now we have to do it properly.  Get exclusive access by
       blocking all the host's signals.  That means vg_oursignalhandler
@@ -351,7 +351,7 @@ void VG_(deliver_signals) ( ThreadId tid )
 
    /* Unlock and return. */
    VG_(restore_host_signals)( &saved_procmask );
-   return;
+   return True;
 }
 
 

@@ -672,6 +672,10 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          do_pthread_mutex_lock( tid, False, (void *)(arg[1]) );
          return True;
 
+      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
+         do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
+         return True;
+
       default:
          /* Too hard; wimp out. */
          return False;
@@ -1095,6 +1099,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    Int      request_code, done_this_time, n_in_fdwait_or_sleep;
    Char     msg_buf[100];
    Addr     trans_addr;
+   Bool     sigs_delivered;
 
    /* For the LRU structures, records when the epoch began. */
    ULong lru_epoch_started_at = 0;
@@ -1155,8 +1160,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
             even if, as a result, it has missed the unlocking of it.
             Potential deadlock.  This sounds all very strange, but the
             POSIX standard appears to require this behaviour.  */
-         VG_(deliver_signals)( 1 /*HACK*/ );
-         VG_(do_sanity_checks)( 1 /*HACK*/, False );
+         sigs_delivered = VG_(deliver_signals)( 1 /*HACK*/ );
+	 if (sigs_delivered)
+            VG_(do_sanity_checks)( 1 /*HACK*/, False );
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;
@@ -2333,18 +2339,6 @@ void do_nontrivial_clientreq ( ThreadId tid )
 
       case VG_USERREQ__PTHREAD_JOIN:
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_MUTEX_LOCK:
-         do_pthread_mutex_lock( tid, False, (pthread_mutex_t *)(arg[1]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
-         do_pthread_mutex_lock( tid, True, (pthread_mutex_t *)(arg[1]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
-         do_pthread_mutex_unlock( tid, (pthread_mutex_t *)(arg[1]) );
          break;
 
       case VG_USERREQ__PTHREAD_CANCEL:

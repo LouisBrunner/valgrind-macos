@@ -556,8 +556,38 @@ Syscall param pipe(filedes) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+ 43:          __NR_times 1s 1m
+-----------------------------------------------------
+
+Syscall param times(buf) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param times(buf) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
  44:           __NR_prof 0e
 -----------------------------------------------------
+-----------------------------------------------------
+ 45:            __NR_brk 1s 0m
+-----------------------------------------------------
+
+Syscall param brk(end_data_segment) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+ 46:         __NR_setgid 1s 0m
+-----------------------------------------------------
+
+Syscall param setgid16(gid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
 -----------------------------------------------------
  47:         __NR_getgid 0e
 -----------------------------------------------------
@@ -604,11 +634,74 @@ Syscall param umount2(path) points to unaddressable byte(s)
  53:           __NR_lock 0e
 -----------------------------------------------------
 -----------------------------------------------------
+ 54:          __NR_ioctl 3s 1m
+-----------------------------------------------------
+
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param ioctl(TCSET{S,SW,SF}) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+ 55:          __NR_fcntl 3s 0m
+-----------------------------------------------------
+
+Syscall param fcntl(fd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fcntl(cmd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fcntl(arg) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
  56:            __NR_mpx 0e
 -----------------------------------------------------
 -----------------------------------------------------
+ 57:        __NR_setpgid 2s 0m
+-----------------------------------------------------
+
+Syscall param setpgid(pid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setpgid(pgid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
  58:         __NR_ulimit 0e
 -----------------------------------------------------
+-----------------------------------------------------
+ 60:          __NR_umask 1s 0m
+-----------------------------------------------------
+
+Syscall param umask(mask) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
 -----------------------------------------------------
  64:        __NR_getppid 0e
 -----------------------------------------------------
@@ -670,6 +763,14 @@ Syscall param uname(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 
 Syscall param setuid(uid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+214:       __NR_setgid32 1s 0m
+-----------------------------------------------------
+
+Syscall param setgid(gid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...

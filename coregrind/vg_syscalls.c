@@ -1064,6 +1064,11 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    --trace-syscalls=yes output, we use the sys_foo() name to avoid
    ambiguity.
 
+   Note that we use our own vki_* types.  The one exception is in
+   PRE_REG_READn calls, where pointer types haven't been changed, because
+   they don't need to be -- eg. for "foo*" to be used, the type foo need not
+   be visible.
+
    XXX: some of these are arch-specific, and should be factored out.
 */
 
@@ -1938,7 +1943,7 @@ PREx(sys_alarm, NBRunInLWP)
    PRE_REG_READ1(unsigned long, "alarm", unsigned int, seconds);
 }
 
-PRE(brk)
+PREx(sys_brk, Special)
 {
    Addr brk_limit = VG_(brk_limit);
 
@@ -1957,7 +1962,8 @@ PRE(brk)
 
       Both will seg fault if you shrink it back into a text segment.
    */
-   PRINT("brk ( %p )",arg1);
+   PRINT("sys_brk ( %p )", arg1);
+   PRE_REG_READ1(unsigned long, "brk", unsigned long, end_data_segment);
 
    set_result( do_brk(arg1) );
 
@@ -2049,15 +2055,16 @@ POST(dup2)
       record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
-PRE(fcntl)
+PREx(sys_fcntl, 0)
 {
-   /* int fcntl(int fd, int cmd, int arg); */
-   PRINT("fcntl ( %d, %d, %d )",arg1,arg2,arg3);
+   PRINT("sys_fcntl ( %d, %d, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "fcntl",
+                 unsigned int, fd, unsigned int, cmd, unsigned long, arg);
    if (arg2 == VKI_F_SETLKW)
       tst->sys_flags |= MayBlock;
 }
 
-POST(fcntl)
+POST(sys_fcntl)
 {
    if (arg2 == VKI_F_DUPFD) {
       if (!fd_allowed(res, "fcntl(DUPFD)", tid, True)) {
@@ -2908,19 +2915,12 @@ POST(ipc)
    }
 }
 
-PRE(ioctl)
+PREx(sys_ioctl, MayBlock)
 {
-   /* int ioctl(int d, int request, ...)
-      [The  "third"  argument  is traditionally char *argp, 
-      and will be so named for this discussion.]
-   */
-   /*
-     VG_(message)(
-     Vg_DebugMsg, 
-     "is an IOCTL,  request = 0x%x,   d = %d,   argp = 0x%x", 
-     arg2,arg1,arg3);
-   */
-   PRINT("ioctl ( %d, 0x%x, %p )",arg1,arg2,arg3);
+   PRINT("sys_ioctl ( %d, 0x%x, %p )",arg1,arg2,arg3);
+   PRE_REG_READ3(long, "ioctl",
+                 unsigned int, fd, unsigned int, request, unsigned long, arg);
+
    switch (arg2 /* request */) {
    case VKI_TCSETS:
    case VKI_TCSETSW:
@@ -3509,19 +3509,8 @@ PRE(ioctl)
    }   
 }
 
-POST(ioctl)
+POST(sys_ioctl)
 {
-   /* int ioctl(int d, int request, ...)
-      [The  "third"  argument  is traditionally char *argp, 
-      and will be so named for this discussion.]
-   */
-   /*
-     VG_(message)(
-     Vg_DebugMsg, 
-     "is an IOCTL,  request = 0x%x,   d = %d,   argp = 0x%x", 
-     arg2,arg1,arg3);
-   */
-   PRINT("ioctl ( %d, 0x%x, %p )",arg1,arg2,arg3);
    switch (arg2 /* request */) {
    case VKI_TCSETS:
    case VKI_TCSETSW:
@@ -4498,10 +4487,16 @@ PRE(setfsgid32)
    PRINT("setfsgid ( %d )", arg1);
 }
 
-PRE(setgid)
+PREx(sys_setgid16, 0)
 {
-   /* int setgid(gid_t gid); */
-   PRINT("setgid ( %d )", arg1);
+   PRINT("sys_setgid16 ( %d )", arg1);
+   PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
+}
+
+PREx(sys_setgid, 0)
+{
+   PRINT("sys_setgid ( %d )", arg1);
+   PRE_REG_READ1(long, "setgid", vki_gid_t, gid);
 }
 
 PREALIAS(setgid32, setgid);
@@ -4522,13 +4517,13 @@ PRE(setgroups)
 
 PREALIAS(setgroups32, setgroups);
 
-PRE(setpgid)
+PREx(sys_setpgid, 0)
 {
-   /* int setpgid(pid_t pid, pid_t pgid); */
    PRINT("setpgid ( %d, %d )", arg1, arg2);
+   PRE_REG_READ2(long, "setpgid", vki_pid_t, pid, vki_pid_t, pgid);
 }
 
-POST(setpgid)
+POST(sys_setpgid)
 {
    VG_(main_pgrp) = VG_(getpgrp)();
 }
@@ -5067,14 +5062,14 @@ POST(sys_time)
    }
 }
 
-PRE(times)
+PREx(sys_times, 0)
 {
-   /* clock_t times(struct tms *buf); */
-   PRINT("times ( %p )",arg1);
+   PRINT("sys_times ( %p )", arg1);
+   PRE_REG_READ1(long, "times", struct tms *, buf);
    PRE_MEM_WRITE( "times(buf)", arg1, sizeof(struct vki_tms) );
 }
 
-POST(times)
+POST(sys_times)
 {
    if (arg1 != (UWord)NULL) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_tms) );
@@ -5088,10 +5083,10 @@ PRE(truncate)
    PRE_MEM_RASCIIZ( "truncate(path)", arg1 );
 }
 
-PRE(umask)
+PREx(sys_umask, 0)
 {
-   /* mode_t umask(mode_t mask); */
-   PRINT("umask ( %d )", arg1);
+   PRINT("sys_umask ( %d )", arg1);
+   PRE_REG_READ1(long, "umask", int, mask);
 }
 
 PREx(sys_unlink, MayBlock)
@@ -5872,11 +5867,11 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_rmdir,            sys_rmdir),        // 40 * P
    SYSXY(__NR_dup,              sys_dup),          // 41 * P
    SYSXY(__NR_pipe,             sys_pipe),         // 42 (x86) P
-   SYSBA(times,			0), // 43 sys_times *
+   SYSXY(__NR_times,            sys_times),        // 43 * P
    SYSX_(__NR_prof,             sys_ni_syscall),   // 44 * P -- unimplemented
 
-   SYSB_(brk,			Special), // 45  sys_brk *
-   SYSB_(setgid,		0), // 46 sys_setgid16 ##
+   SYSX_(__NR_brk,              sys_brk),          // 45 * non-P
+   SYSX_(__NR_setgid,           sys_setgid16),     // 46 ## (SVr4,SVID)
    SYSX_(__NR_getgid,           sys_getgid16),     // 47 ## P
    //   (__NR_signal,           sys_signal),       // 48 * (ANSI C?)
    SYSX_(__NR_geteuid,          sys_geteuid16),    // 49 ## P
@@ -5885,15 +5880,15 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_acct,             sys_acct),         // 51 * (SVR4, non-POSIX)
    SYSX_(__NR_umount2,          sys_umount),       // 52 * L
    SYSX_(__NR_lock,             sys_ni_syscall),   // 53 * P -- unimplemented
-   SYSBA(ioctl,			MayBlock), // 54 sys_ioctl *
+   SYSXY(__NR_ioctl,            sys_ioctl),        // 54 * (varying)
 
-   SYSBA(fcntl,			0), // 55 sys_fcntl *
+   SYSXY(__NR_fcntl,            sys_fcntl),        // 55 * (P...complex)
    SYSX_(__NR_mpx,              sys_ni_syscall),   // 56 * P -- unimplemented
-   SYSBA(setpgid,		0), // 57 sys_setpgid *
+   SYSXY(__NR_setpgid,          sys_setpgid),      // 57 * P
    SYSX_(__NR_ulimit,           sys_ni_syscall),   // 58 * P -- unimplemented
    //   (__NR_oldolduname,      sys_olduname),     // 59 (?) L -- obsolete
 
-   SYSB_(umask,			0), // 60 sys_umask *
+   SYSX_(__NR_umask,            sys_umask),        // 60 * P
    SYSB_(chroot,		0), // 61 sys_chroot *
    //   (__NR_ustat,            sys_ustat)         // 62 * (SVr4, deprecated)
    SYSBA(dup2,			0), // 63 sys_dup2 *
@@ -5902,8 +5897,8 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_getpgrp,          sys_getpgrp), // 65 *
    SYSX_(__NR_setsid,           sys_setsid), // 66 *
    SYSBA(sigaction,		SIG_SIM), // 67 sys_sigaction
-   //   (__NR_sgetmask,         sys_sgetmask), // 68 * (ANSI C)
-   //   (__NR_ssetmask,         sys_ssetmask), // 69 * (ANSI C)
+   //   (__NR_sgetmask,         sys_sgetmask),     // 68 * (ANSI C)
+   //   (__NR_ssetmask,         sys_ssetmask),     // 69 * (ANSI C)
 
    SYSB_(setreuid,		0), // 70 sys_setreuid16 ##
    SYSB_(setregid,		0), // 71 sys_setregid16 ##
@@ -5921,7 +5916,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(setgroups,		0), // 81 sys_setgroups16 ##
    SYSB_(select,		MayBlock), // 82 old_select
    SYSB_(symlink,		MayBlock), // 83 sys_symlink *
-   //   (__NR_oldlstat,         sys_lstat), // 84 * L -- obsolete
+   //   (__NR_oldlstat,         sys_lstat),        // 84 * L -- obsolete
 
    SYSBA(readlink,		0), // 85 sys_readlink *
    //   (__NR_uselib,           sys_uselib),       // 86 * L
@@ -6080,7 +6075,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(getresgid32,		0), // 211 sys_getresgid *
    SYSB_(chown32,		0), // 212 sys_chown *
    SYSX_(__NR_setuid32,         sys_setuid), // 213 *
-   SYSB_(setgid32,		0), // 214 sys_setgid *
+   SYSX_(__NR_setgid32,         sys_setgid), // 214 * (SVr4,SVID)
 
    SYSB_(setfsuid32,		0), // 215 sys_setfsuid *
    SYSB_(setfsgid32,		0), // 216 sys_setfsgid *

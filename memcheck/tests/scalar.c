@@ -12,6 +12,9 @@ int main(void)
 
    // All __NR_xxx numbers are taken from x86
    
+   // __NR_restart_syscall 1  XXX ???
+   // (see below)
+
    // __NR_exit 1 
    // (see below)
 
@@ -143,7 +146,7 @@ int main(void)
    GO(__NR_access, "2s 1m");
    SY(__NR_access, s0, i0);
 
-   // __NR_nice 34
+   // __NR_nice 34 --> sys_nice()
    GO(__NR_nice, "1s 0m");
    SY(__NR_nice, i0);
 
@@ -155,44 +158,52 @@ int main(void)
    GO(__NR_sync, "0e");
    SY(__NR_sync);
 
-   // __NR_kill 37
+   // __NR_kill 37 --> sys_kill()
    GO(__NR_kill, "2s 0m");
    SY(__NR_kill, i0, i0);
 
-   // __NR_rename 38
+   // __NR_rename 38 --> sys_rename()
    GO(__NR_rename, "2s 2m");
    SY(__NR_rename, s0, s0);
 
-   // __NR_mkdir 39
+   // __NR_mkdir 39 --> sys_mkdir()
    GO(__NR_mkdir, "2s 1m");
    SY(__NR_mkdir, s0, i0);
 
-   // __NR_rmdir 40
+   // __NR_rmdir 40 --> sys_rmdir()
    GO(__NR_rmdir, "1s 1m");
    SY(__NR_rmdir, s0);
 
-   // __NR_dup 41
+   // __NR_dup 41 --> sys_dup()
    GO(__NR_dup, "1s 0m");
    SY(__NR_dup, i0);
 
-   // __NR_pipe 42
+   // __NR_pipe 42 --> arch/sys_pipe()
    GO(__NR_pipe, "1s 1m");
    SY(__NR_pipe, s0);
 
-   // __NR_times 43
+   // __NR_times 43 --> sys_times()
+   GO(__NR_times, "1s 1m");
+   SY(__NR_times, s0);
 
    // __NR_prof 44 --> sys_ni_syscall()
    GO(__NR_prof, "0e");
    SY(__NR_prof);
 
-   // __NR_brk 45
-   // __NR_setgid 46
+   // __NR_brk 45 --> sys_brk()
+   GO(__NR_brk, "1s 0m");
+   SY(__NR_brk, i0);
+
+   // __NR_setgid 46 --> sys_setgid16()
+   GO(__NR_setgid, "1s 0m");
+   SY(__NR_setgid);
 
    // __NR_getgid 47 --> sys_getgid16()
    GO(__NR_getgid, "0e");
    SY(__NR_getgid);
 
    // __NR_signal 48
+   // (Not yet handled by Valgrind)
 
    // __NR_geteuid 49 --> sys_geteuid16()
    GO(__NR_geteuid, "0e");
@@ -214,14 +225,22 @@ int main(void)
    GO(__NR_lock, "0e");
    SY(__NR_lock);
 
-   // __NR_ioctl 54
-   // __NR_fcntl 55
+   // __NR_ioctl 54 --> sys_ioctl()
+   #include <asm/ioctls.h>
+   GO(__NR_ioctl, "3s 1m");
+   SY(__NR_ioctl, i0, i0+TCSETS, s0);
+
+   // __NR_fcntl 55 --> sys_fcntl()
+   GO(__NR_fcntl, "3s 0m");
+   SY(__NR_fcntl, i0, i0, i0);
 
    // __NR_mpx 56 --> sys_ni_syscall()
    GO(__NR_mpx, "0e");
    SY(__NR_mpx);
 
    // __NR_setpgid 57
+   GO(__NR_setpgid, "2s 0m");
+   SY(__NR_setpgid, i0, i0);
 
    // __NR_ulimit 58 --> sys_ni_syscall()
    GO(__NR_ulimit, "0e");
@@ -231,6 +250,9 @@ int main(void)
    // (obsolete, not handled by Valgrind)
 
    // __NR_umask 60
+   GO(__NR_umask, "1s 0m");
+   SY(__NR_umask, i0);
+
    // __NR_chroot 61
    // __NR_ustat 62
    // __NR_dup2 63
@@ -449,6 +471,9 @@ int main(void)
    SY(__NR_setuid32, i0);
 
    // __NR_setgid32 214
+   GO(__NR_setgid32, "1s 0m");
+   SY(__NR_setgid32);
+
    // __NR_setfsuid32 215
    // __NR_setfsgid32 216
    // __NR_pivot_root 217

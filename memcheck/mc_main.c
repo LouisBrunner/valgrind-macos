@@ -808,7 +808,7 @@ void check_is_writable ( CorePart part, ThreadState* tst,
          break;
 
       default:
-         VG_(panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(panic)("check_is_writable: Unknown or unexpected CorePart");
       }
    }
 

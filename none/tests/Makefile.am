@@ -50,6 +50,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
+	system.stdout.exp system.vgtest
 	yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
@@ -59,7 +60,7 @@ check_PROGRAMS = \
 	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	tls.so tls2.so tls pth_blockedsig \
-	syscall-restart1 syscall-restart2 \
+	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
@@ -107,6 +108,7 @@ shortpush_SOURCES 	= shortpush.c
 shorts_SOURCES 		= shorts.c
 syscall_restart1_SOURCES = syscall-restart1.c
 syscall_restart2_SOURCES = syscall-restart2.c
+system_SOURCES 		= system.c
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so
 tls_LDFLAGS		= -Wl,-rpath,$(srcdir)

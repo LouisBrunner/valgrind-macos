@@ -132,6 +132,8 @@ VG_(helper_IN):
 	pushl   %edx
 	movl	16(%esp), %eax
 	movl	12(%esp), %edx
+
+	pushfl
 	cmpl	$4, %eax
 	je	in_dword
 	cmpl	$2, %eax
@@ -145,6 +147,7 @@ in_word:
 in_dword:
 	inl	(%dx),%eax
 in_done:
+	popfl
 	movl	%eax,12(%esp)
 	popl	%edx
 	popl	%eax
@@ -164,6 +167,8 @@ VG_(helper_OUT):
 	pushl   %edx
 	movl	16(%esp), %edx
 	movl	12(%esp), %eax
+
+	pushfl
 	cmpl	$4, 20(%esp)
 	je	out_dword
 	cmpl	$2, 20(%esp)
@@ -177,6 +182,7 @@ out_word:
 out_dword:
 	outl	%eax,(%dx)
 out_done:
+	popfl
 	popl	%edx
 	popl	%eax
 	ret

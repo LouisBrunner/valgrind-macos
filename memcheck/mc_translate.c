@@ -1110,7 +1110,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             }
 
             /* Is it a read ?  Better check the V bits right now. */
-            if ( u_in->opcode == SSE3e_RegRd
+            if ( u_in->opcode == SSE2e1_RegRd
+                 || u_in->opcode == SSE3e_RegRd
                  || u_in->opcode == SSE3e1_RegRd )
 	       uInstr1(cb, TESTV, u_in->size, 
                            TempReg, SHADOW(u_in->val3));

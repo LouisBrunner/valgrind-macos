@@ -39,63 +39,6 @@
 #include "mac_shared.h"
 #include "mc_asm.h"
 
-/*------------------------------------------------------------*/
-/*--- Types                                                ---*/
-/*------------------------------------------------------------*/
-
-/* UCode extension for efficient memory checking operations */
-typedef
-   enum {
-      /* uinstrs which are not needed for mere translation of x86 code,
-         only for instrumentation of it. */
-      LOADV = DUMMY_FINAL_UOPCODE + 1,
-      STOREV,
-      GETV,
-      PUTV,
-      TESTV,
-      SETV, 
-      /* Get/set the v-bit (and it is only one bit) for the simulated
-         %eflags register. */
-      GETVF,
-      PUTVF,
-
-      /* Do a unary or binary tag op.  Only for post-instrumented
-         code.  For TAG1, first and only arg is a TempReg, and is both
-         arg and result reg.  For TAG2, first arg is src, second is
-         dst, in the normal way; both are TempRegs.  In both cases,
-         3rd arg is a RiCHelper with a Lit16 tag.  This indicates
-         which tag op to do. */
-      TAG1,
-      TAG2
-   }
-   MemCheckOpcode;
-
-
-/* Lists the names of value-tag operations used in instrumented
-   code.  These are the third argument to TAG1 and TAG2 uinsns. */
-typedef
-   enum { 
-     /* Unary. */
-     Tag_PCast40, Tag_PCast20, Tag_PCast10,
-     Tag_PCast01, Tag_PCast02, Tag_PCast04,
-
-     Tag_PCast14, Tag_PCast12, Tag_PCast11,
-
-     Tag_Left4, Tag_Left2, Tag_Left1,
-
-     Tag_SWiden14, Tag_SWiden24, Tag_SWiden12,
-     Tag_ZWiden14, Tag_ZWiden24, Tag_ZWiden12,
-
-     /* Binary; 1st is rd; 2nd is rd+wr */
-     Tag_UifU4, Tag_UifU2, Tag_UifU1, Tag_UifU0,
-     Tag_DifD4, Tag_DifD2, Tag_DifD1,
-
-     Tag_ImproveAND4_TQ, Tag_ImproveAND2_TQ, Tag_ImproveAND1_TQ,
-     Tag_ImproveOR4_TQ, Tag_ImproveOR2_TQ, Tag_ImproveOR1_TQ,
-     Tag_DebugFn
-   }
-   TagOp;
-
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/
@@ -113,20 +56,21 @@ extern Bool MC_(clo_avoid_strlen_errors);
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-/* Functions defined in mc_helpers.S */
-extern void MC_(helper_value_check4_fail) ( void );
-extern void MC_(helper_value_check2_fail) ( void );
-extern void MC_(helper_value_check1_fail) ( void );
-extern void MC_(helper_value_check0_fail) ( void );
-
 /* Functions defined in mc_main.c */
+extern REGPARM(1) void MC_(helperc_complain_undef) ( HWord );
+extern void MC_(helperc_value_check4_fail) ( void );
+extern void MC_(helperc_value_check1_fail) ( void );
+extern void MC_(helperc_value_check0_fail) ( void );
+
+extern REGPARM(1) void MC_(helperc_STOREV8) ( Addr, ULong );
 extern REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UInt );
 extern REGPARM(2) void MC_(helperc_STOREV2) ( Addr, UInt );
 extern REGPARM(2) void MC_(helperc_STOREV1) ( Addr, UInt );
-   
+
 extern REGPARM(1) UInt MC_(helperc_LOADV1)  ( Addr );
 extern REGPARM(1) UInt MC_(helperc_LOADV2)  ( Addr );
 extern REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
+extern REGPARM(1) ULong MC_(helperc_LOADV8)  ( Addr );
 
 extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, SizeT size );
 extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, SizeT size );

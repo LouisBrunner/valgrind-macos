@@ -234,8 +234,8 @@ extern UInt MAC_(event_ctr)[N_PROF_EVENTS];
 #define VGM_WORD_VALID     0
 #define VGM_WORD_INVALID   0xFFFFFFFF
 
-#define VGM_EFLAGS_VALID   0xFFFFFFFE
-#define VGM_EFLAGS_INVALID 0xFFFFFFFF     /* not used */
+#define VGM_WORD64_VALID     0x0ULL
+#define VGM_WORD64_INVALID   0xFFFFFFFFFFFFFFFFULL
 
 /*------------------------------------------------------------*/
 /*--- Command line options + defaults                      ---*/

@@ -518,10 +518,9 @@ follows:
       </li><br><p>
 
   <li><code>--cachesim=no</code> [default]<br>
-      <code>--cachesim=yes</code>
-      <p>When enabled, turns off memory checking, and turns on cache profiling.
-      Cache profiling is described in detail in <a href="#cache">Section 7</a>.
-      </li><p>
+      <code>--cachesim=yes</code> <p>When enabled, turns off memory
+      checking, and turns on cache profiling.  Cache profiling is
+      described in detail in <a href="#cache">Section 7</a>.  </li><p>
 </ul>
 
 There are also some options for debugging Valgrind itself.  You
@@ -1799,45 +1798,56 @@ program as it will be normally run.
 
 The three steps are:
 <ol>
-  <li>Generate a cache simulator for your machine's cache configuration with
-      `vg_cachegen' and recompile Valgrind with <code>make install</code>.
-      Valgrind comes with a default simulator, but it is unlikely to be correct
-      for your system, so you should generate a simulator yourself.</li>
-  <li>Run your program with <code>valgrind --cachesim=yes</code> in front of 
-      the normal command line invocation.  When the program finishes, Valgrind
-      will print summary cache statistics. It also collects line-by-line
-      information in a file <code>cachegrind.out</code>.</li>
-  <li>Generate a function-by-function summary, and possibly annotate source
-      files with 'vg_annotate'. Source files to annotate can be specified
-      manually, or manually on the command line, or "interesting" source files
-      can be annotated automatically with the <code>--auto=yes</code> option.
-      You can annotate C/C++ files or assembly language files equally
-      easily.</li>
+  <li>Generate a cache simulator for your machine's cache
+      configuration with the supplied <code>vg_cachegen</code>
+      program, and recompile Valgrind with <code>make install</code>.
+      <p>
+      The default settings are for an AMD Athlon, and you will get
+      useful information with the defaults, so you can skip this step
+      if you want.  Nevertheless, for accurate cache profiles you will
+      need use <code>vg_cachegen</code> to customise
+      <code>cachegrind</code> for your system.
+      <p>
+      This step only needs to be done once, unless you are interested
+      in simulating different cache configurations (eg. first
+      concentrating on instruction cache misses, then on data cache
+      misses).      
+  </li>
+  <p>
+  <li>Run your program with <code>cachegrind</code> in front of the
+      normal command line invocation.  When the program finishes,
+      Valgrind will print summary cache statistics. It also collects
+      line-by-line information in a file <code>cachegrind.out</code>.
+      <p>
+      This step should be done every time you want to collect
+      information about a new program, a changed program, or about the
+      same program with different input.
+  </li>
+  <p>
+  <li>Generate a function-by-function summary, and possibly annotate
+      source files with 'vg_annotate'. Source files to annotate can be
+      specified manually, or manually on the command line, or
+      "interesting" source files can be annotated automatically with
+      the <code>--auto=yes</code> option.  You can annotate C/C++
+      files or assembly language files equally easily.</li>
+      <p>
+      This step can be performed as many times as you like for each
+      Step 2.  You may want to do multiple annotations showing
+      different information each time.<p>
 </ol>
-
-<a href="#generate">Step 1</a> only needs to be done once, unless you are
-interested in simulating different cache configurations (eg. first
-concentrating on instruction cache misses, then on data cache misses).<p>
-
-<a href="#profile">Step 2</a> should be done every time you want to collect
-information about a new program, a changed program, or about the same program
-with different input.<p>
-
-<a href="#annotate">Step 3</a> can be performed as many times as you like for
-each Step 2; you may want to do multiple annotations showing different
-information each time.<p>
 
 The steps are described in detail in the following sections.<p>
 
 
 <a name="generate"></a>
 <h3>7.3&nbsp; Generating a cache simulator</h3>
-Although Valgrind comes with a pre-generated cache simulator, it most likely
-won't match the cache configuration of your machine, so you should generate
-a new simulator.<p>
 
-You need to generate three files, one for each of the I1, D1 and L2 caches.
-For each cache, you need to know the:
+Although Valgrind comes with a pre-generated cache simulator, it most
+likely won't match the cache configuration of your machine, so you
+should generate a new simulator.<p>
+
+You need to generate three files, one for each of the I1, D1 and L2
+caches.  For each cache, you need to know the:
 <ul>
   <li>Cache size (bytes);
   <li>Line size (bytes);
@@ -1851,9 +1861,10 @@ vg_cachegen takes three options:
   <li><code>--L2=size,line_size,associativity</code>
 </ul>
 
-You can specify one, two or all three caches per invocation of vg_cachegen.  It
-checks that the configuration is sensible before generating the simulators;  to
-see the allowed values, run <code>vg_cachegen -h</code>.<p>
+You can specify one, two or all three caches per invocation of
+vg_cachegen.  It checks that the configuration is sensible before
+generating the simulators; to see the allowed values, run
+<code>vg_cachegen -h</code>.<p>
 
 An example invocation would be:
 
@@ -1861,37 +1872,43 @@ An example invocation would be:
   vg_cachegen --I1=65536,64,2 --D1=65536,64,2 --L2=262144,64,8
 </code></blockquote>
 
-This simulates a machine with a 128KB split L1 2-way associative cache, and a
-256KB unified 8-way associative L2 cache.  Both caches have 64B lines.<p>
+This simulates a machine with a 128KB split L1 2-way associative
+cache, and a 256KB unified 8-way associative L2 cache.  Both caches
+have 64B lines.<p>
 
-If you don't know your cache configuration, you'll have to find it out.
-(Ideally vg_cachegen could auto-identify your cache configuration using the
-CPUID instruction, which could be done automatically during installation, and
-this whole step could be skipped...)<p>
+If you don't know your cache configuration, you'll have to find it
+out.  (Ideally <code>vg_cachegen</code> could auto-identify your cache
+configuration using the CPUID instruction, which could be done
+automatically during installation, and this whole step could be
+skipped.)<p>
 
 
 <h3>7.4&nbsp; Cache simulation specifics</h3>
-vg_cachegen only generates simulations for a machine with a split L1 cache and
-a unified L2 cache.  This configuration is used for all x86-based machines we
-are aware of.<p>
+
+<code>vg_cachegen</code> only generates simulations for a machine with
+a split L1 cache and a unified L2 cache.  This configuration is used
+for all (modern) x86-based machines we are aware of.  Old Cyrix CPUs
+had a unified I and D L1 cache, but they are ancient history now.<p>
 
 The more specific characteristics of the simulation are as follows.
 
 <ul>
-  <li>Write-allocate: when a write miss occurs, the block written to is brought
-      into the D1 cache.  Most modern caches have this property.</li><p>
+  <li>Write-allocate: when a write miss occurs, the block written to
+      is brought into the D1 cache.  Most modern caches have this
+      property.</li><p>
 
-  <li>Bit-selection hash function:  the line(s) in the cache to which a memory
-      block maps is chosen by the middle bits M--(M+N-1) of the byte address,
-      where:
+  <li>Bit-selection hash function: the line(s) in the cache to which a
+      memory block maps is chosen by the middle bits M--(M+N-1) of the
+      byte address, where:
       <ul>
         <li>&nbsp;line size = 2^M bytes&nbsp;</li>
         <li>(cache size / line size) = 2^N bytes</li>
       </ul> </li><p>
 
-  <li>Inclusive L2 cache:  the L2 cache replicates all the entries of the L1
-      cache.  This is standard on Pentium chips, but AMD Athlons use an
-      exclusive L2 cache that only holds blocks evicted from L1.</li><p>
+  <li>Inclusive L2 cache: the L2 cache replicates all the entries of
+      the L1 cache.  This is standard on Pentium chips, but AMD
+      Athlons use an exclusive L2 cache that only holds blocks evicted
+      from L1.  Ditto AMD Durons and most modern VIAs.</li><p>
 </ul>
 
 Other noteworthy behaviour:
@@ -1924,14 +1941,18 @@ does.
 
 <a name="profile"></a>
 <h3>7.5&nbsp; Profiling programs</h3>
-Cache profiling is enabled by using the <code>--cachesim=yes</code> option to
-Valgrind.  This automatically turns off Valgrind's memory checking functions,
-since the cache simulation is slow enough already, and you probably don't want
-to do both at once.<p>
 
-To gather cache profiling information about the program <code>ls -l<code, type:
+Cache profiling is enabled by using the <code>--cachesim=yes</code>
+option to the <code>valgrind</code> shell script.  Alternatively, it
+is probably more convenient to use the <code>cachegrind</code> script.
+This automatically turns off Valgrind's memory checking functions,
+since the cache simulation is slow enough already, and you probably
+don't want to do both at once.
+<p>
+To gather cache profiling information about the program <code>ls
+-l<code, type:
 
-<blockquote><code>valgrind --cachesim=yes ls -l</code></blockquote>
+<blockquote><code>cachegrind ls -l</code></blockquote>
 
 The program will execute (slowly).  Upon completion, summary statistics
 that look like this will be printed:
@@ -1967,30 +1988,36 @@ Combined instruction and data figures for the L2 cache follow that.<p>
 
 
 <h3>7.6&nbsp; Output file</h3>
-As well as printing summary information, Valgrind also writes line-by-line
-cache profiling information to a file named <code>cachegrind.out</code> .  This
-file is human-readable, but is best interpreted by the accompanying program
-vg_annotate, described in the next section.<p>
 
+As well as printing summary information, Cachegrind also writes
+line-by-line cache profiling information to a file named
+<code>cachegrind.out</code>.  This file is human-readable, but is best
+interpreted by the accompanying program <code>vg_annotate</code>,
+described in the next section.
+<p>
 Things to note about the <code>cachegrind.out</code> file:
 <ul>
-  <li>It is written every time <code>valgrind --cachesim=yes</code> is run; it
-      will automatically overwrite any existing <code>cachegrind.out<code/> in
-      the current directory.</li>
-  <li>It can be quite large: <code>ls -l</code> generates a file of about
-      350KB; browsing a few files and web pages with Konqueror generates a file
-      of around 10MB.</li>
+  <li>It is written every time <code>valgrind --cachesim=yes</code> or
+      <code>cachegrind</code> is run, and will overwrite any existing
+      <code>cachegrind.out</code> in the current directory.</li>
+  <p>
+  <li>It can be huge: <code>ls -l</code> generates a file of about
+      350KB.  Browsing a few files and web pages with a Konqueror
+      built with full debugging information generates a file
+      of around 15 MB.</li>
 </ul>
 
 
 <a name="annotate"></a>
 <h3>7.7&nbsp; Annotating C/C++ programs</h3>
-Before using vg_annotate, it is worth widening your window to be at least
-120-characters wide if possible, as the output lines can be quite long.<p>
 
+Before using <code>vg_annotate</code>, it is worth widening your
+window to be at least 120-characters wide if possible, as the output
+lines can be quite long.
+<p>
 To get a function-by-function summary, run <code>vg_annotate</code> in
-directory containing a <code>cachegrind.out</code> file.  The output looks like
-this:
+directory containing a <code>cachegrind.out</code> file.  The output
+looks like this:
 
 <pre>
 --------------------------------------------------------------------------------
@@ -2073,12 +2100,13 @@ First up is a summary of the annotation options:
       shown" line (and can be changed with the <code>--sort</code> option).
       </li><p>
 
-  <li>Threshold: vg_annotate by default omits functions that cause very low
-      numbers of misses to avoid drowing you in information.  In this case,
-      vg_annotate shows summaries the functions that account for 99%   of the
-      <code>Ir</code> counts; <code>Ir</code> is chosen as the treshold event
-      since it is  the primary sort event.  The threshold can be adjusted with
-      the <code>--threshold</code> option.</li><p>
+  <li>Threshold: <code>vg_annotate</code> by default omits functions
+      that cause very low numbers of misses to avoid drowning you in
+      information.  In this case, vg_annotate shows summaries the
+      functions that account for 99% of the <code>Ir</code> counts;
+      <code>Ir</code> is chosen as the threshold event since it is the
+      primary sort event.  The threshold can be adjusted with the
+      <code>--threshold</code> option.</li><p>
 
   <li>Chosen for annotation: names of files specified manually for annotation; 
       in this case none.</li><p>
@@ -2090,14 +2118,15 @@ First up is a summary of the annotation options:
 Then follows summary statistics for the whole program. These are similar
 to the summary provided when running <code>valgrind --cachesim=yes</code>.<p>
   
-Then follows function-by-function statistics. Each function is identified by a
-<code>file_name:function_name</code> pair. If a column contains only a
-`.' it means  the function never performs that event (eg. the third row shows
-that <code>strcmp()</code> contains no instructions that write to memory). The
-name <code>???</code> is used if the the file name and/or function name could
-not be determined from debugging information. (If most of the entries have the
-form <code>???:???</code> the program probably wasn't compiled with
-<code>-g</code>.)<p> 
+Then follows function-by-function statistics. Each function is
+identified by a <code>file_name:function_name</code> pair. If a column
+contains only a dot it means the function never performs
+that event (eg. the third row shows that <code>strcmp()</code>
+contains no instructions that write to memory). The name
+<code>???</code> is used if the the file name and/or function name
+could not be determined from debugging information. If most of the
+entries have the form <code>???:???</code> the program probably wasn't
+compiled with <code>-g</code>.  <p>
 
 It is worth noting that functions will come from three types of source files:
 <ol>
@@ -2111,12 +2140,13 @@ It is worth noting that functions will come from three types of source files:
   </li>
 </ol>
 
-There are two ways to annotate source files -- by choosing them manually, or
-with the <code>--auto=yes</code> option. To do it manually, just
-specify the filenames as arguments to vg_annotate. For example, the output from
-running <code>vg_annotate concord.c</code> for our example produces the same
-output as above followed by an annotated version of <code>concord.c</code>, a
-section of which looks like:
+There are two ways to annotate source files -- by choosing them
+manually, or with the <code>--auto=yes</code> option. To do it
+manually, just specify the filenames as arguments to
+<code>vg_annotate</code>. For example, the output from running
+<code>vg_annotate concord.c</code> for our example produces the same
+output as above followed by an annotated version of
+<code>concord.c</code>, a section of which looks like:
 
 <pre>
 --------------------------------------------------------------------------------
@@ -2211,15 +2241,16 @@ auto-annotation can produce a lot of output if your program is large!
 
 
 <h3>7.8&nbsp; Annotating assembler programs</h3>
-Valgrind can annotate assembler programs too, or annotate the assembler
-generated for your C program.  Sometimes this is useful for understanding what
-is really happening when an interesting line of C code is translated into
-multiple instructions.<p>
+
+Valgrind can annotate assembler programs too, or annotate the
+assembler generated for your C program.  Sometimes this is useful for
+understanding what is really happening when an interesting line of C
+code is translated into multiple instructions.<p>
 
 To do this, you just need to assemble your <code>.s</code> files with
-assembler-level debug information.  gcc doesn't do this, but you can use GNU as
-with the <code>--gstabs</code> option to generate object files with this
-information, eg:
+assembler-level debug information.  gcc doesn't do this, but you can
+use the GNU assembler with the <code>--gstabs</code> option to
+generate object files with this information, eg:
 
 <blockquote><code>as --gstabs foo.s</code></blockquote>
 
@@ -2227,7 +2258,7 @@ You can then profile and annotate source files in the same way as for C/C++
 programs.
 
 
-<h3>7.9&nbsp; vg_annotate options</h3>
+<h3>7.9&nbsp; <code>vg_annotate</code> options</h3>
 <ul>
   <li><code>-h, --help</code></li><p>
   <li><code>-v, --version</code><p>
@@ -2398,11 +2429,13 @@ hopefully they should be close enough to be useful.<p>
 <ul>
   <li>Use CPUID instruction to auto-identify cache configuration during 
       installation.  This would save the user from having to know their cache
-      configuration and using vg_cachegen.</li><p>
+      configuration and using vg_cachegen.</li>
+  <p>
   <li>Program start-up/shut-down calls a lot of functions that aren't
       interesting and just complicate the output.  Would be nice to exclude
-      these somehow.</li><p>
-  <li>Handle files with &gt;65535 lines</li><p>
+      these somehow.</li>
+  <p>
+  <li>Handle files with more than 65535 lines.</li><p>
 </ul> 
 <hr width="100%">
 </body>

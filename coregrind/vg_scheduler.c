@@ -1101,7 +1101,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
          VG_(message)(Vg_DebugMsg, "thread %d:  %ld bbs, event %s", 
                                    tid, VG_(bbs_done),
                                    name_of_sched_event(trc) );
-      vg_assert(VG_(bbs_done) < 1000000);
+
       /* Examine the thread's return code to figure out why it
          stopped, and handle requests. */
 

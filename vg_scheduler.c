@@ -110,10 +110,14 @@ typedef
    struct {
       /* Is this slot in use, or free? */
       Bool in_use;
-      /* If in_use, is this mutex held by some thread, or not? */
-      Bool held;
-      /* if held==True, owner indicates who by. */
+      /* When == 0, indicated not locked.
+         When > 0, number of times it has been locked by the owner. */
+      UInt count; 
+      /* if count > 0, owner indicates who by. */
       ThreadId owner;
+      /* True if a recursive mutex.  When False, count must never
+         exceed 1. */
+      Bool is_rec;
    }
    VgMutex;
 
@@ -1470,21 +1474,27 @@ void do_pthread_create ( ThreadId parent_tid,
 */
 
 static
-void initialise_mutex ( ThreadId tid, pthread_mutex_t *mutex )
+void initialise_mutex ( ThreadId tid, 
+                        pthread_mutex_t *mutex )
 {
    MutexId  mid;
    Char     msg_buf[100];
+   Bool     is_rec;
    /* vg_alloc_MutexId aborts if we can't allocate a mutex, for
       whatever reason. */
    mid = vg_alloc_VgMutex();
    vg_mutexes[mid].in_use = True;
-   vg_mutexes[mid].held = False;
+   vg_mutexes[mid].count = 0;
    vg_mutexes[mid].owner = VG_INVALID_THREADID; /* irrelevant */
+   is_rec = mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP;
+   vg_mutexes[mid].is_rec = is_rec;
+   vg_mutexes[mid].count  = 0;
    mutex->__m_reserved = mid;
    mutex->__m_count = 1; /* initialised */
    if (VG_(clo_trace_pthread_level) >= 1) {
-      VG_(sprintf)(msg_buf, "(initialise mutex) (%p) -> %d", 
-                            mutex, mid );
+      VG_(sprintf)(msg_buf, "(initialise mutex) (%p, %s) -> %d", 
+                            mutex, is_rec ? "RECURSIVE" : "NORMAL",
+                            mid );
       print_pthread_event(tid, msg_buf);
    }
 }
@@ -1500,6 +1510,8 @@ void do_pthread_mutex_init ( ThreadId tid,
    /* Paranoia ... */
    vg_assert(sizeof(pthread_mutex_t) >= sizeof(UInt));
 
+   if (mutexattr) 
+      mutex->__m_kind = mutexattr->__mutexkind;
    initialise_mutex(tid, mutex);
 
    if (VG_(clo_trace_pthread_level) >= 1) {
@@ -1537,6 +1549,8 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
    }
 
    if (mutex->__m_count == 0) {
+      /* The mutex->__m_kind will have been set by the static
+         initialisation. */
       initialise_mutex(tid, mutex);
    }
 
@@ -1558,27 +1572,43 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
    /* Assume tid valid. */
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
-   if (vg_mutexes[mid].held) {
+   if (vg_mutexes[mid].count > 0) {
+
+      /* Someone has it already. */
       if (vg_mutexes[mid].owner == tid) {
-         vg_threads[tid].m_edx = EDEADLK;
+         /* It's locked -- by me! */
+         if (vg_mutexes[mid].is_rec) {
+            /* return 0 (success). */
+            vg_mutexes[mid].count++;
+            vg_threads[tid].m_edx = 0;
+	    VG_(printf)("!!!!!! tid %d, mutex %d -> locked %d\n", 
+                        tid, mid, vg_mutexes[mid].count);
+            return;
+         } else {
+            vg_threads[tid].m_edx = EDEADLK;
+            return;
+         }
+      } else {
+         /* Someone else has it; we have to wait. */
+         vg_threads[tid].status = VgTs_WaitMX;
+         vg_threads[tid].waited_on_mid = mid;
+         /* No assignment to %EDX, since we're blocking. */
+         if (VG_(clo_trace_pthread_level) >= 1) {
+            VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: BLOCK", 
+                                  mid );
+            print_pthread_event(tid, msg_buf);
+         }
          return;
       }
-      /* Someone else has it; we have to wait. */
-      vg_threads[tid].status = VgTs_WaitMX;
-      vg_threads[tid].waited_on_mid = mid;
-      /* No assignment to %EDX, since we're blocking. */
-      if (VG_(clo_trace_pthread_level) >= 1) {
-         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: BLOCK", 
-                               mid );
-         print_pthread_event(tid, msg_buf);
-      }
+
    } else {
-      /* We get it! */
-      vg_mutexes[mid].held  = True;
+      /* We get it! [for the first time]. */
+      vg_mutexes[mid].count = 1;
       vg_mutexes[mid].owner = tid;
       /* return 0 (success). */
       vg_threads[tid].m_edx = 0;
    }
+
 }
 
 
@@ -1612,10 +1642,24 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    /* Barf if we don't currently hold the mutex. */
-   if (!vg_mutexes[mid].held || vg_mutexes[mid].owner != tid) {
+   if (vg_mutexes[mid].count == 0 /* nobody holds it */
+       || vg_mutexes[mid].owner != tid /* we don't hold it */) {
       vg_threads[tid].m_edx = EPERM;
       return;
    }
+
+   /* If it's a multiply-locked recursive mutex, just decrement the
+      lock count and return. */
+   if (vg_mutexes[mid].count > 1) {
+      vg_assert(vg_mutexes[mid].is_rec);
+      vg_mutexes[mid].count --;
+      vg_threads[tid].m_edx = 0; /* success */
+      return;
+   }
+
+   /* Now we're sure mid is locked exactly once, and by the thread who
+      is now doing an unlock on it.  */
+   vg_assert(vg_mutexes[mid].count == 1);
 
    /* Find some arbitrary thread waiting on this mutex, and make it
       runnable.  If none are waiting, mark the mutex as not held. */
@@ -1630,10 +1674,11 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    vg_assert(i <= VG_N_THREADS);
    if (i == VG_N_THREADS) {
       /* Nobody else is waiting on it. */
-      vg_mutexes[mid].held = False;
+      vg_mutexes[mid].count = 0;
    } else {
       /* Notionally transfer the hold to thread i, whose
          pthread_mutex_lock() call now returns with 0 (success). */
+      /* The .count is already == 1. */
       vg_mutexes[mid].owner = i;
       vg_threads[i].status = VgTs_Runnable;
       vg_threads[i].m_edx = 0; /* pth_lock() success */
@@ -1679,7 +1724,7 @@ static void do_pthread_mutex_destroy ( ThreadId tid,
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    /* Barf if the mutex is currently held. */
-   if (vg_mutexes[mid].held) {
+   if (vg_mutexes[mid].count > 0) {
       vg_threads[tid].m_edx = EBUSY;
       return;
    }

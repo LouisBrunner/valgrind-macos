@@ -23,7 +23,6 @@
 #include "valgrind.h"    /* For the request-passing mechanism */
 #include "vg_include.h"  /* For the VG_USERREQ__* constants */
 
-#include <pthread.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -116,6 +115,14 @@ static void ignored ( char* msg )
    Pass pthread_ calls to Valgrind's request mechanism.
    ------------------------------------------------------------------ */
 
+#include <pthread.h>
+#include <stdio.h>
+#include <errno.h>
+
+/* ---------------------------------------------------
+   THREAD ATTRIBUTES
+   ------------------------------------------------ */
+
 int pthread_attr_init(pthread_attr_t *attr)
 {
    ignored("pthread_attr_init");
@@ -128,6 +135,11 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
    return 0;
 }
 
+
+
+/* ---------------------------------------------------
+   THREADs
+   ------------------------------------------------ */
 
 int
 pthread_create (pthread_t *__restrict __thread,
@@ -157,20 +169,6 @@ pthread_join (pthread_t __th, void **__thread_return)
 }
 
 
-/* What are these?  Anybody know?  I don't. */
-
-void _pthread_cleanup_push_defer ( void )
-{
-  //  char* str = "_pthread_cleanup_push_defer\n";
-  //  write(2, str, strlen(str));
-}
-
-void _pthread_cleanup_pop_restore ( void )
-{
-  //  char* str = "_pthread_cleanup_pop_restore\n";
-  //  write(2, str, strlen(str));
-}
-
 
 static int thread_specific_errno[VG_N_THREADS];
 
@@ -188,11 +186,39 @@ int* __errno_location ( void )
 }
 
 
+/* ---------------------------------------------------
+   MUTEX ATTRIBUTES
+   ------------------------------------------------ */
+
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
-   ignored("pthread_mutexattr_init");
+   attr->__mutexkind = PTHREAD_MUTEX_ERRORCHECK_NP;
    return 0;
 }
+
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+{
+   switch (type) {
+      case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_RECURSIVE_NP:
+      case PTHREAD_MUTEX_ERRORCHECK_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+         attr->__mutexkind = type;
+         return 0;
+      default:
+         return EINVAL;
+   }
+}
+
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+{
+   return 0;
+}
+
+
+/* ---------------------------------------------------
+   MUTEXes
+   ------------------------------------------------ */
 
 int pthread_mutex_init(pthread_mutex_t *mutex, 
                        const  pthread_mutexattr_t *mutexattr)
@@ -203,18 +229,6 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
                            VG_USERREQ__PTHREAD_MUTEX_INIT,
                            mutex, mutexattr, 0, 0);
    return res;
-}
-
-int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
-{
-   ignored("pthread_mutexattr_destroy");
-   return 0;
-}
-
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
-{
-   ignored("pthread_mutexattr_settype");
-   return 0;
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex)
@@ -249,18 +263,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
    }
 }
 
-pthread_t pthread_self(void)
-{
-   int tid;
-   ensure_valgrind("pthread_self");
-   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
-                           VG_USERREQ__PTHREAD_GET_THREADID,
-                           0, 0, 0, 0);
-   if (tid < 0 || tid >= VG_N_THREADS)
-      barf("pthread_self: invalid ThreadId");
-   return tid;
-}
-
 int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
    int res;
@@ -277,6 +279,10 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
    return res;
 }
 
+
+/* ---------------------------------------------------
+   CANCELLATION
+   ------------------------------------------------ */
 
 int pthread_setcanceltype(int type, int *oldtype)
 {
@@ -296,6 +302,9 @@ int pthread_cancel(pthread_t thread)
 }
 
 
+/* ---------------------------------------------------
+   THREAD-SPECIFICs
+   ------------------------------------------------ */
 
 int pthread_key_create(pthread_key_t *key,  
                        void  (*destr_function)  (void *))
@@ -322,16 +331,47 @@ void * pthread_getspecific(pthread_key_t key)
    return NULL;
 }
 
+
+/* ---------------------------------------------------
+   MISC
+   ------------------------------------------------ */
+
+/* What are these?  Anybody know?  I don't. */
+
+void _pthread_cleanup_push_defer ( void )
+{
+  //  char* str = "_pthread_cleanup_push_defer\n";
+  //  write(2, str, strlen(str));
+}
+
+void _pthread_cleanup_pop_restore ( void )
+{
+  //  char* str = "_pthread_cleanup_pop_restore\n";
+  //  write(2, str, strlen(str));
+}
+
+
+pthread_t pthread_self(void)
+{
+   int tid;
+   ensure_valgrind("pthread_self");
+   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   if (tid < 0 || tid >= VG_N_THREADS)
+      barf("pthread_self: invalid ThreadId");
+   return tid;
+}
+
+
 /* ---------------------------------------------------------------------
    These are here (I think) because they are deemed cancellation
    points by POSIX.  For the moment we'll simply pass the call along
    to the corresponding thread-unaware (?) libc routine.
    ------------------------------------------------------------------ */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 

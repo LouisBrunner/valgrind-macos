@@ -150,6 +150,30 @@ PRE(old_select, MayBlock)
    }
 }
 
+
+/* Horrible hack.  Do sys_clone, and if you are then the child,
+   continue at child_next_eip instead of returning. */
+static Bool  ELAN3_HACK = True;
+static void* child_wherenext;
+static UInt clone_child_native ( void* child_next_eip, UInt arg1, UInt arg2 )
+{ 
+   UInt __res;
+   UInt syscallno = __NR_clone;
+   child_wherenext = child_next_eip;
+   __asm__ volatile (
+      "int  $0x80\n\t"
+      "cmpl $0, %%eax\n\t"
+      "jnz  laLaloLo345321\n\t"
+      "jmp  *child_wherenext\n"
+      "laLaloLo345321:"
+      : "=a" (__res)
+      : "0" (syscallno),
+        "b" (arg1),
+        "c" (arg2)
+   );
+   return __res;
+}
+
 PRE(sys_clone, Special)
 {
    PRINT("sys_clone ( %d, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -159,14 +183,27 @@ PRE(sys_clone, Special)
                  unsigned long, flags, void *, child_stack,
                  int *, parent_tidptr, int *, child_tidptr);
 
-   if (ARG2 == 0 &&
-       (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
-     || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
+   if (ARG2 == 0 
+       && (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
+           || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD)))
    {
       VGA_(gen_sys_fork_before)(tid, tst);
       SET_RESULT( VG_(do_syscall5)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
       VGA_(gen_sys_fork_after) (tid, tst);
-   } else {
+   } 
+   else
+   if (ELAN3_HACK) {
+      Int res = clone_child_native( (void*)tst->arch.vex.guest_EIP, ARG1, ARG2 );
+      /* clone_child_native only returns in the parent's context, and
+         so res must be either > 0, in which case it is the pid of the
+         child, or < 0, which is an error code.  
+      */
+      if (1) 
+         VG_(printf)("valgrind: ELAN3_HACK: child pid = %d\n", res);
+      vg_assert(res != 0);
+      SET_RESULT(res);
+   } 
+   else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
           "We do support programs linked against\n   "

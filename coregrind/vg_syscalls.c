@@ -1552,7 +1552,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 
       case __NR_getpgrp: /* syscall 65 */
-         /* pid_t getppgrp(void); */
+         /* pid_t getpgrp(void); */
          MAYBE_PRINTF("getpgrp ()\n");
          KERNEL_DO_SYSCALL(tid,res);
          break;

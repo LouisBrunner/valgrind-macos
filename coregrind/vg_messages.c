@@ -32,6 +32,9 @@
 
 #include "vg_include.h"
 
+#include <time.h>
+#include <sys/time.h>
+
 
 static char vg_mbuf[M_VG_MSGBUF];
 static int vg_n_mbuf;
@@ -41,6 +44,24 @@ static void add_to_buf ( Char c )
   if (vg_n_mbuf >= (M_VG_MSGBUF-1)) return;
   vg_mbuf[vg_n_mbuf++] = c;
   vg_mbuf[vg_n_mbuf]   = 0;
+}
+
+static void add_timestamp ( Char *buf )
+{
+   struct timeval tv;
+   struct tm tm;
+  
+   if ( gettimeofday( &tv, NULL ) == 0 &&
+        localtime_r( &tv.tv_sec, &tm ) == &tm ) {
+      VG_(sprintf)( buf, "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
+   }
+   else {
+      VG_(strcpy)( buf, "" );
+   }
+   
+   return;
 }
 
 
@@ -79,9 +100,14 @@ int VG_(message) ( VgMsgKind kind, Char* format, ... )
 
 int VG_(start_msg) ( VgMsgKind kind )
 {
+   Char ts[32];
    Char c;
    vg_n_mbuf = 0;
    vg_mbuf[vg_n_mbuf] = 0;
+   if (VG_(clo_time_stamp))
+     add_timestamp(ts);
+   else
+     VG_(strcpy)(ts, "");
    switch (kind) {
       case Vg_UserMsg:       c = '='; break;
       case Vg_DebugMsg:      c = '-'; break;
@@ -89,8 +115,8 @@ int VG_(start_msg) ( VgMsgKind kind )
       case Vg_ClientMsg:     c = '*'; break;
       default:               c = '?'; break;
    }
-   return VG_(add_to_msg)( "%c%c%d%c%c ", 
-                           c,c, VG_(getpid)(), c,c );
+   return VG_(add_to_msg)( "%c%c%s%d%c%c ", 
+                           c,c, ts, VG_(getpid)(), c,c );
 }
 
 

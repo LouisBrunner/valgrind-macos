@@ -204,6 +204,9 @@ extern VgLogTo VG_(clo_log_to);
 extern Int     VG_(clo_log_fd);
 extern Char*   VG_(clo_log_name);
 
+/* Add timestamps to log messages?  default: NO */
+extern Bool  VG_(clo_time_stamp);
+
 /* The file descriptor to read for input.  default: 0 == stdin */
 extern Int   VG_(clo_input_fd);
 /* The number of suppression files specified. */

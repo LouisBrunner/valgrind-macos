@@ -9,6 +9,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     -v --verbose              be more verbose, incl counts of errors
     --trace-children=no|yes   Valgrind-ise child processes? [no]
     --track-fds=no|yes        track open file descriptors? [no]
+    --time-stamp=no|yes       add timestamps to log messages? [no]
 
   uncommon user options for all Valgrind tools:
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]

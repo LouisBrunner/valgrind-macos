@@ -1433,6 +1433,8 @@ VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
 Int     VG_(clo_log_fd)        = 1;
 Char*   VG_(clo_log_name)      = NULL;
 
+Bool   VG_(clo_time_stamp)     = False;
+
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
@@ -1481,6 +1483,7 @@ void usage ( Bool debug_help )
 "    -v --verbose              be more verbose, incl counts of errors\n"
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
+"    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
@@ -1685,6 +1688,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))
       else VG_BOOL_CLO("--single-step",      VG_(clo_single_step))
+      else VG_BOOL_CLO("--time-stamp",       VG_(clo_time_stamp))
       else VG_BOOL_CLO("--track-fds",        VG_(clo_track_fds))
       else VG_BOOL_CLO("--trace-children",   VG_(clo_trace_children))
       else VG_BOOL_CLO("--trace-sched",      VG_(clo_trace_sched))

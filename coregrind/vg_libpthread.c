@@ -3063,7 +3063,7 @@ static vg_rwlock_t* rw_lookup ( pthread_rwlock_t* orig )
    CONVERT(rwlock, orig, vg_orig);
 
    if (vg_orig->__vg_rw_writer == NULL)
-      rwl = rw_new ((pthread_rwlock_t*)orig);
+      rwl = rw_new ((pthread_rwlock_t*)vg_orig);
    else if (((Addr)vg_orig->__vg_rw_writer ^ RWLOCK_CHECK_MAGIC) == (Addr)vg_orig->__vg_rw_read_waiting)
       rwl = vg_orig->__vg_rw_writer;
    else

@@ -7,7 +7,7 @@
 
 VG_DETERMINE_INTERFACE_VERSION
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)()
 {
    VG_(details_name)            ("Example");
    VG_(details_version)         ("0.0.1");

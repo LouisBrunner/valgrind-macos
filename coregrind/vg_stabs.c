@@ -413,41 +413,11 @@ static UInt atou(Char **pp, Int base)
    return ret;
 }
 
-static Bool isoperator(Char op)
-{
-   switch(op) {
-   case 'a'...'z':
-   case 'A'...'Z':
-   case '0'...'9':
-   case '_':
-   case ':':
-   case '\'':
-   case '"':
-   case '$':
-      return False;
-      
-   default:
-      return True;
-   }
-}
-
 /* Skip a ':'-delimited name which may have ::, 'char' or other things in
    <> brackets */
 static Char *templ_name(Char *p)
 {
    Int brac = 0;
-
-   /* Special case: if the name is "operatorX", where X is not an
-      otherwise valid operator name, then just skip to the terminating
-      ':' and ignore the '<>' bracketing stuff.  That's because names
-      like "operator<" and "operator<=" can appear here, and it can be
-      terminated by ::. */
-   if (VG_(strncmp)(p, "operator", 8) == 0 && isoperator(p[8])) {
-      p += 8;
-      while(*p != ':')
-	 p++;
-      return p;
-   }
 
    for(;;) {
       if (*p == '<')
@@ -879,7 +849,8 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 UInt off, sz;
 	 SymType *fieldty;
 
-	 end = templ_name(p);
+         //	 end = templ_name(p);
+         end = SKIPPAST(p, ':', "method name") - 1;
 
 	 if (end[1] == ':') {
 	    /* c++ method names end in :: */
@@ -1060,7 +1031,9 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       VG_(printf)("initSym(si=%p, tab=%p, sym=%p, kind=%d, name=%p \"%s\", val=%d)\n",
 		  si, si->stab_typetab, sym, kind, name, name, val);
 
-   ty = templ_name(name);
+   //   ty = templ_name(name);
+   ty = VG_(strchr)(name, ':');
+   while (ty && ty[1] == ':') ty = VG_(strchr)(ty + 2, ':');
 
    len = ty - name;
 

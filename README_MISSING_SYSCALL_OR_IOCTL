@@ -78,8 +78,12 @@ the memory was written:
         VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
      }
 
-The POST() function won't be called if the syscall failed, so you don't need 
-to worry about checking that in the POST() function.
+The POST() function won't be called if the syscall failed, so you
+don't need to worry about checking that in the POST() function.
+(Note: this is sometimes a bug; some syscalls do return results when
+they "fail" - for example, nanosleep returns the amount of unslept
+time if interrupted. TODO: add another per-syscall flag for this
+case.)
 
 
 Writing your own syscall wrappers (see below for ioctl wrappers)
@@ -92,10 +96,16 @@ following:
        grep NNN /usr/include/asm/unistd.h
 
     This should tell you something like  __NR_mysyscallname.
-
+    Copy this entry to coregrind/vg_unistd.h.
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
-    does.
+    does.  Note that the actual kernel interface can differ from this,
+    so you might also want to check a version of the Linux kernel
+    source.
+
+    NOTE: any syscall which has something to do with signals or
+    threads is probably "special", and needs more careful handling.
+    Post something to valgrind-developers if you aren't sure.
 
 
 3.  Add a case to the already-huge collection of wrappers in 
@@ -110,17 +120,22 @@ following:
     succeeds, issue suitable VG_TRACK( post_mem_write, ... ) calls.
     (There's no need for post_mem_read calls.)
 
-    Also, add it to the sys_info[] array;  use SYSBA if it requires a PRE()
-    and POST() function, and SYSB_ if it only requires a PRE() function.
-    The 2nd arg of these macros indicate if the syscall is blocking.
+    Also, add it to the sys_info[] array; use SYSBA if it requires a
+    PRE() and POST() function, and SYSB_ if it only requires a PRE()
+    function.  The 2nd arg of these macros indicate if the syscall
+    could possibly block.
     
     If you find this difficult, read the wrappers for other syscalls
     for ideas.  A good tip is to look for the wrapper for a syscall
     which has a similar behaviour to yours, and use it as a 
     starting point.
 
-    If you have to #include headers for structure definitions,
-    put your #includes into vg_unsafe.h.
+    If you need structure definitions for your syscall, you can copy
+    structure definitions from the kernel headers into
+    include/vg_kerneliface.h, with the appropriate vki_* name
+    mangling.  Alternatively, you can #include headers for structure
+    definitions, put your #includes into vg_unsafe.h (copying
+    syscall-related things into vg_kerneliface.h is preferred though).
 
     Test it.
 
@@ -139,7 +154,9 @@ following:
 
 Writing your own ioctl wrappers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Is pretty much the same as writing syscall wrappers.
+
+Is pretty much the same as writing syscall wrappers, except that all
+the action happens within PRE(ioctl) and POST(ioctl).
 
 There's a default case, sometimes it isn't correct and you have to write a
 more specific case to get the right behaviour.

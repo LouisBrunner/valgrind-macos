@@ -105,7 +105,7 @@ void ppIRStmt ( IRStmt* s )
 {
   switch (s->tag) {
     case Ist_Put:
-      vex_printf( "Put(%d,%d) = ", s->Ist.Put.offset, s->Ist.Put.size);
+      vex_printf( "PUT(%d,%d) = ", s->Ist.Put.offset, s->Ist.Put.size);
       ppIRExpr(s->Ist.Put.expr);
       break;
     case Ist_Tmp:

@@ -3306,7 +3306,12 @@ void scheduler_sanity ( void )
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
                       - (Addr)VG_(threads)[i].m_esp;
-         if (i > 1 /* not the root thread */ 
+
+	 /* This test is a bit bogus - it doesn't take into account
+	    alternate signal stacks, for a start.  Also, if a thread
+	    has it's stack pointer somewhere strange, killing Valgrind
+	    isn't the right answer. */
+         if (0 && i > 1 /* not the root thread */ 
              && stack_used 
                 >= (VG_PTHREAD_STACK_MIN - 1000 /* paranoia */)) {
             VG_(message)(Vg_UserMsg,

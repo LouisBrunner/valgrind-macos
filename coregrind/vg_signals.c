@@ -173,9 +173,6 @@ typedef
       /* per-signal info */
       SCSS_Per_Signal scss_per_sig[1+VKI_KNSIG];
 
-      /* Signal delivery stack, if any. */
-      vki_kstack_t altstack;
-
       /* Additional elements to SCSS not stored here:
          - for each thread, the thread's blocking mask
          - for each thread in WaitSIG, the set of waited-on sigs
@@ -456,17 +453,21 @@ void VG_(handle_SCSS_change) ( Bool force_update )
    in kernel/signal.[ch] */
 
 /* True if we are on the alternate signal stack.  */
-static Int on_sig_stack ( Addr m_esp )
+static Int on_sig_stack ( ThreadId tid, Addr m_esp )
 {
-   return (m_esp - (Addr)vg_scss.altstack.ss_sp 
-           < vg_scss.altstack.ss_size);
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+
+   return (m_esp - (Addr)tst->altstack.ss_sp 
+           < tst->altstack.ss_size);
 }
 
-static Int sas_ss_flags ( Addr m_esp )
+static Int sas_ss_flags ( ThreadId tid, Addr m_esp )
 {
-   return (vg_scss.altstack.ss_size == 0 
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+
+   return (tst->altstack.ss_size == 0 
               ? VKI_SS_DISABLE
-              : on_sig_stack(m_esp) ? VKI_SS_ONSTACK : 0);
+              : on_sig_stack(tid, m_esp) ? VKI_SS_ONSTACK : 0);
 }
 
 
@@ -488,13 +489,13 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
          tid, (UInt)ss, (UInt)oss, (UInt)m_esp );
 
    if (oss != NULL) {
-      oss->ss_sp    = vg_scss.altstack.ss_sp;
-      oss->ss_size  = vg_scss.altstack.ss_size;
-      oss->ss_flags = vg_scss.altstack.ss_flags | sas_ss_flags(m_esp);
+      oss->ss_sp    = VG_(threads)[tid].altstack.ss_sp;
+      oss->ss_size  = VG_(threads)[tid].altstack.ss_size;
+      oss->ss_flags = VG_(threads)[tid].altstack.ss_flags | sas_ss_flags(tid, m_esp);
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(VG_(threads)[tid].m_esp)) {
+      if (on_sig_stack(tid, VG_(threads)[tid].m_esp)) {
          SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
          return;
       }
@@ -505,16 +506,16 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
          return;
       }
       if (ss->ss_flags == VKI_SS_DISABLE) {
-         vg_scss.altstack.ss_flags = VKI_SS_DISABLE;
+         VG_(threads)[tid].altstack.ss_flags = VKI_SS_DISABLE;
       } else {
          if (ss->ss_size < VKI_MINSIGSTKSZ) {
             SET_SYSCALL_RETVAL(tid, -VKI_ENOMEM);
             return;
          }
 
-	 vg_scss.altstack.ss_sp   = ss->ss_sp;
-	 vg_scss.altstack.ss_size = ss->ss_size;
-	 vg_scss.altstack.ss_flags = 0;
+	 VG_(threads)[tid].altstack.ss_sp   = ss->ss_sp;
+	 VG_(threads)[tid].altstack.ss_size = ss->ss_size;
+	 VG_(threads)[tid].altstack.ss_flags = 0;
       }
    }
    SET_SYSCALL_RETVAL(tid, 0);
@@ -921,7 +922,7 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    uc->uc_flags = 0;
    uc->uc_link = 0;
    uc->uc_sigmask = *set;
-   uc->uc_stack = vg_scss.altstack;
+   uc->uc_stack = tst->altstack;
 
 #define SC(reg)	sc->reg = tst->m_##reg
    SC(gs);
@@ -975,23 +976,23 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tst->m_esp) == 0
+          sas_ss_flags(tid, tst->m_esp) == 0
       ) {
       esp_top_of_frame 
-         = (Addr)(vg_scss.altstack.ss_sp) + vg_scss.altstack.ss_size;
+         = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg,
             "delivering signal %d (%s) to thread %d: on ALT STACK", 
             sigNo, signame(sigNo), tid );
 
       /* Signal delivery to tools */
-      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
+      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
       esp_top_of_frame = tst->m_esp;
 
       /* Signal delivery to tools */
-      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
+      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
    }
 
    esp = esp_top_of_frame;
@@ -2337,7 +2338,7 @@ void VG_(sigstartup_actions) ( void )
    VG_(ksigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
    /* Copy the alt stack, if any. */
-   ret = VG_(ksigaltstack)(NULL, &vg_scss.altstack);
+   ret = VG_(ksigaltstack)(NULL, &VG_(threads)[1].altstack);
    vg_assert(ret == 0);
 
    /* Copy the process' signal mask into the root thread. */
@@ -2404,7 +2405,7 @@ void VG_(sigshutdown_actions) ( void )
    }
 
    /* Restore the sig alt stack. */
-   ret = VG_(ksigaltstack)(&vg_scss.altstack, NULL);
+   ret = VG_(ksigaltstack)(&VG_(threads)[1].altstack, NULL);
    vg_assert(ret == 0);
 
    /* A bit of a kludge -- set the sigmask to that of the root

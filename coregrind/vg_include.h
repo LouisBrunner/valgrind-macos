@@ -844,6 +844,9 @@ typedef
       ThreadId == 0 (the main thread). */
    Addr stack_highest_word;
 
+   /* Alternate signal stack */
+   vki_kstack_t altstack;
+
    /* Pointer to this thread's Local (Segment) Descriptor Table.
       Starts out as NULL, indicating there is no table, and we hope to
       keep it that way.  If the thread does __NR_modify_ldt to create

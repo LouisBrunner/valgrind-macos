@@ -129,6 +129,7 @@ libpthread_so_SOURCES = \
 	${VG_ARCH}/libpthread.c \
 	${VG_PLATFORM}/syscall.S
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
+libpthread_so_CFLAGS = $(AM_CFLAGS) -fpic -fno-omit-frame-pointer
 libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
 	-shared -ldl \
 	-Wl,-version-script $(srcdir)/vg_libpthread.vs \

@@ -12,6 +12,7 @@ cpuid
 dastest
 discard
 exec-sigmask
+execve
 floored
 fork
 fpu_lazy_eflags
@@ -42,6 +43,7 @@ rcrl
 readline1
 resolv
 seg_override
+sem
 semlimit
 sha1_test
 shortpush

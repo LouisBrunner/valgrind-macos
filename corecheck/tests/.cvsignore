@@ -4,6 +4,7 @@ erringfds
 malloc3
 sigkill
 pth_atfork1
+pth_cancel1
 pth_cancel2
 pth_cvsimple
 pth_empty

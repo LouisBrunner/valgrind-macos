@@ -89,6 +89,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 #define UCONTEXT_STACK_PTR(uc)   ((uc)->uc_mcontext.rsp)
 #define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.rbp)
 #define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.rax)
+#define UCONTEXT_SYSCALL_RET(uc) ((uc)->uc_mcontext.rax)
 
 /* ---------------------------------------------------------------------
    mmap() stuff

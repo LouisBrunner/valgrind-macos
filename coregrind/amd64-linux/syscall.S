@@ -30,6 +30,7 @@
 
 #include "core_asm.h"
 #include "vki_unistd.h"
+#include "libvex_guest_offsets.h"
 
 /*
 	Perform a Linux syscall with the "syscall" instruction.
@@ -115,11 +116,161 @@ VG_(clone):
 1:      // PARENT or ERROR
         ret
 
-
 .globl VG_(sigreturn)
 VG_(sigreturn):
         movq    $__NR_rt_sigreturn, %rax
         syscall
+
+/*----------------------------------------------------------------*/
+/*
+	Perform a syscall for the client.  This will run a syscall
+	with the client's specific per-thread signal mask.
+	
+	The structure of this function is such that, if the syscall is
+	interrupted by a signal, we can determine exactly what
+	execution state we were in with respect to the execution of
+	the syscall by examining the value of %eip in the signal
+	handler.  This means that we can always do the appropriate
+	thing to precisely emulate the kernel's signal/syscall
+	interactions.
+
+	The syscall number is taken from the argument, even though it
+	should also be in guest_state->guest_RAX.  The syscall result
+	is written back to guest_state->guest_RAX on completion.
+	
+	Returns 0 if the syscall was successfully called (even if the
+	syscall itself failed), or a -ve error code if one of the
+	sigprocmasks failed (there's no way to determine which one
+	failed).
+
+	VGA_(interrupted_syscall)() does the thread state fixup in the
+	case where we were interrupted by a signal.
+	
+	Prototype:
+
+	Int VGA_(_client_syscall)(Int syscallno,		// rdi
+				  void* guest_state,		// rsi
+				  const vki_sigset_t *sysmask,	// rdx
+				  const vki_sigset_t *postmask,	// rcx
+				  Int nsigwords)		// r8
+				   
+*/
+
+/* from vki_arch.h */	
+#define VKI_SIG_SETMASK	2
+	
+.globl VGA_(_client_syscall)
+VGA_(_client_syscall):
+	/* save callee-saved regs */
+	pushq	%rbx
+	pushq	%rbp
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+
+#define FSZ	((4+1)*4)	/* 4 args + ret addr */
+
+#define PUSH_di_si_dx_cx_8	\
+	pushq	%rdi ; 		\
+	pushq	%rsi ;		\
+	pushq	%rdx ;		\
+	pushq	%rcx ;		\
+	pushq	%r8
+
+#define	POP_di_si_dx_cx_8	\
+	popq	%r8 ;		\
+	popq	%rcx ;		\
+	popq	%rdx ;		\
+	popq	%rsi ;		\
+	popq	%rdi
+
+1:	/* Even though we can't take a signal until the sigprocmask completes,
+	   start the range early.
+	   If eip is in the range [1,2), the syscall hasn't been started yet */
+
+	/* Set the signal mask which should be current during the syscall. */
+	/* Save and restore all 5 arg regs round the call.  This is easier
+           than figuring out the minimal set to save/restore. */
+
+	PUSH_di_si_dx_cx_8
+
+		movq	$__NR_rt_sigprocmask, %rax	// syscall #
+		movq	$VKI_SIG_SETMASK, %rdi		// how
+		movq	%rdx, %rsi			// sysmask
+		movq	%rcx, %rdx			// postmask
+		movq	%r8, %r10			// nsigwords
+		syscall
+
+	POP_di_si_dx_cx_8
+	
+	testl	%eax, %eax
+	js	5f	/* sigprocmask failed */
+
+	/* OK, that worked.  Now do the syscall proper. */
+	
+	PUSH_di_si_dx_cx_8
+
+		movq	%rsi, %rax	/* rax --> VexGuestAMD64State * */
+		pushq	%rdi		/* syscallno -> stack */
+		movq	OFFSET_amd64_RDI(%rax), %rdi
+		movq	OFFSET_amd64_RSI(%rax), %rsi
+		movq	OFFSET_amd64_RDX(%rax), %rdx
+		movq	OFFSET_amd64_R10(%rax), %r10
+		movq	OFFSET_amd64_R8(%rax), %r8
+		movq	OFFSET_amd64_R9(%rax), %r9
+		popq	%rax	/* syscallno -> %rax */
+	
+		/* If rip==2, then the syscall was either just about
+		   to start, or was interrupted and the kernel was 
+		   restarting it. */
+2:		syscall
+3:		/* In the range [3, 4), the syscall result is in %rax, 
+		   but hasn't been committed to RAX. */
+
+	POP_di_si_dx_cx_8
+
+	movq	%rax, OFFSET_amd64_RAX(%rsi)	/* save back to RAX */
+
+4:	/* Re-block signals.  If eip is in [4,5), then the syscall is complete and 
+	   we needn't worry about it. */
+	PUSH_di_si_dx_cx_8
+
+		movq	$__NR_rt_sigprocmask, %rax	// syscall #
+		movq	$VKI_SIG_SETMASK, %rdi		// how
+		movq	%rcx, %rsi			// postmask
+		xorq	%rdx, %rdx			// NULL
+		movq	%r8, %r10			// nsigwords
+		syscall
+
+	POP_di_si_dx_cx_8
+
+5:	/* now safe from signals */
+		
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%rbp
+	popq	%rbx
+#undef FSZ
+	ret
+
+.section .rodata
+/* export the ranges so that VGA_(interrupted_syscall) can do the
+	right thing */
+	
+.globl VGA_(blksys_setup)
+.globl VGA_(blksys_restart)
+.globl VGA_(blksys_complete)
+.globl VGA_(blksys_committed)
+.globl VGA_(blksys_finished)
+VGA_(blksys_setup):	.quad 1b
+VGA_(blksys_restart):	.quad 2b
+VGA_(blksys_complete):	.quad 3b
+VGA_(blksys_committed):	.quad 4b
+VGA_(blksys_finished):	.quad 5b
+.previous
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

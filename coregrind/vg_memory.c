@@ -1318,9 +1318,9 @@ void *VG_(shadow_alloc)(UInt size)
 
   failed:
    VG_(printf)(
-       "valgrind: Could not allocate address space (%p bytes)\n"
+       "valgrind: Could not allocate address space (0x%x bytes)\n"
        "valgrind:   for shadow memory chunk.\n",
-       (void*)size
+       size
       ); 
    VG_(exit)(1);
 }

@@ -43,11 +43,11 @@
    ------------------------------------------------------------------ */
 
 /* These are addresses within VGA_(client_syscall).  See syscall.S for details. */
-extern const Word VGA_(blksys_setup);
-extern const Word VGA_(blksys_restart);
-extern const Word VGA_(blksys_complete);
-extern const Word VGA_(blksys_committed);
-extern const Word VGA_(blksys_finished);
+extern const Addr VGA_(blksys_setup);
+extern const Addr VGA_(blksys_restart);
+extern const Addr VGA_(blksys_complete);
+extern const Addr VGA_(blksys_committed);
+extern const Addr VGA_(blksys_finished);
 
 // Back up to restart a system call.
 void VGA_(restart_syscall)(ThreadArchState *arch)
@@ -83,11 +83,12 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
      3. save result to EAX
      4. re-block signals
 
-   If a signal happens at	Then	Why?
-   1-2				restart	nothing has happened (restart syscall)
-   2				restart	syscall hasn't started, or kernel wants to restart
-   2-3				save	syscall complete, but results not saved
-   3-4				-	syscall complete, results saved
+   If a signal
+   happens at      Then     Why?
+   [1-2)           restart  nothing has happened (restart syscall)
+   [2]             restart  syscall hasn't started, or kernel wants to restart
+   [2-3)           save     syscall complete, but results not saved
+   [3-4)           syscall complete, results saved
 
    Sometimes we never want to restart an interrupted syscall (because
    sigaction says not to), so we only restart if "restart" is True.
@@ -98,6 +99,7 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
    syscall is set up for restart, which means that the pre-wrapper may
    get called multiple times.
  */
+/* NB: this is identical to the amd64 version */
 void VGA_(interrupted_syscall)(ThreadId tid, 
 			       struct vki_ucontext *uc,
 			       Bool restart)

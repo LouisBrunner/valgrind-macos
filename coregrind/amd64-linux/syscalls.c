@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "ume.h"                /* for jmp_with_stack */
 
 
 /* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */
@@ -38,119 +39,141 @@
 #define ARCH_GET_GS 0x1004
 
 
-
-// See the comment accompanying the declaration of VGA_(thread_syscall)() in
-// coregrind/core.h for an explanation of what this does, and why.
-asm(
-".text\n"
-"	.type vgArch_do_thread_syscall,@function\n"
-
-".globl  vgArch_do_thread_syscall\n"
-"vgArch_do_thread_syscall:\n"
-"	pushq	%r15\n"
-"	pushq	%r14\n"
-"	pushq	%r13\n"
-"	pushq	%r12\n"
-"	pushq	%rbx\n"
-"	pushq	%rbp\n"
-".vgArch_sys_before:\n"
-
-/* Params:
-        rdi = UWord sys
-        rsi = UWord arg1
-        rdx = UWord arg2
-        rcx = UWord arg3
-        r8  = UWord arg4
-        r9  = UWord arg5
-   Stack now looks like this (remaining args pushed R->L):
-        Int    poststate    80
-        Int*   statep       72
-        HWord* result       64
-        UWord  arg6         56
-        ReturnAddress       48
-        r15                 40
-        r14                 32
-        r13                 24
-        r12                 16
-        rbx                 8
-        rbp                 0+rsp
-*/
-
-/* Convert function calling convention --> syscall calling convention */
-"	movq	%rdi, %rax\n"         /* syscall */
-"	movq	%rsi, %rdi\n"         /* arg1 */
-"	movq	%rdx, %rsi\n"         /* arg2 */
-"	movq	%rcx, %rdx\n"         /* arg3 */
-"	movq	%r8,  %r10\n"         /* arg4 */
-"	movq	%r9,  %r8\n"          /* arg5 */
-"	movq    56(%rsp), %r9\n"      /* arg6 */ /* last arg from stack */
-".vgArch_sys_restarted:\n"
-"	syscall\n"
-".vgArch_sys_after:\n"
-"	movq	64(%rsp),%rbx\n"	/* rbx = HWord* result */
-"	movq	%rax, (%rbx)\n"		/* write the syscall retval */
-
-"	movl	72(%esp),%ebx\n"	/* rbx = Int* stateP */
-"	testl	%ebx, %ebx\n"
-"	jz	1f\n"
-
-"	movl	80(%rsp),%ecx\n"	/* write the post state (must be after retval write) */
-"	movl	%ecx,(%rbx)\n"
-
-".vgArch_sys_done:\n"			/* OK, all clear from here */
-"1:	popq	%rbp\n"
-"	popq	%rbx\n"
-"	popq	%r12\n"
-"	popq	%r13\n"
-"	popq	%r14\n"
-"	popq	%r15\n"
-"	ret\n"
-"	.size vgArch_do_thread_syscall,.-vgArch_do_thread_syscall\n"
-".previous\n"
-
-".section .rodata\n"
-"       .globl  vgArch_sys_before\n"
-"vgArch_sys_before:	.long	.vgArch_sys_before\n"
-"       .globl  vgArch_sys_restarted\n"
-"vgArch_sys_restarted:	.long	.vgArch_sys_restarted\n"
-"       .globl  vgArch_sys_after\n"
-"vgArch_sys_after:	.long	.vgArch_sys_after\n"
-"       .globl  vgArch_sys_done\n"
-"vgArch_sys_done:	.long	.vgArch_sys_done\n"
-".previous\n"
-);
-
-
-
-// Back up to restart a system call.
-void VGA_(restart_syscall)(ThreadArchState *arch)
-{
-   I_die_here;
-#if 0
-   arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
-
-   /* Make sure our caller is actually sane, and we're really backing
-      back over a syscall.
-
-      int $0x80 == CD 80 
-   */
-   {
-      UChar *p = (UChar *)arch->vex.guest_EIP;
-      
-      if (p[0] != 0xcd || p[1] != 0x80)
-         VG_(message)(Vg_DebugMsg,
-                      "?! restarting over syscall at %p %02x %02x\n",
-                      arch->vex.guest_EIP, p[0], p[1]); 
-
-      vg_assert(p[0] == 0xcd && p[1] == 0x80);
-   }
-#endif
-}
-
 /* ---------------------------------------------------------------------
    Stacks, thread wrappers, clone
    Note.  Why is this stuff here?
    ------------------------------------------------------------------ */
+
+/* These are addresses within VGA_(client_syscall).  See syscall.S for details. */
+extern const Addr VGA_(blksys_setup);
+extern const Addr VGA_(blksys_restart);
+extern const Addr VGA_(blksys_complete);
+extern const Addr VGA_(blksys_committed);
+extern const Addr VGA_(blksys_finished);
+
+// Back up to restart a system call.
+void VGA_(restart_syscall)(ThreadArchState *arch)
+{
+   arch->vex.guest_RIP -= 2;             // sizeof(syscall)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      syscall == 0F 05 
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_RIP;
+      
+      if (p[0] != 0x0F || p[1] != 0x05)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %p %02x %02x\n",
+                      arch->vex.guest_RIP, p[0], p[1]); 
+
+      vg_assert(p[0] == 0x0F && p[1] == 0x05);
+   }
+}
+
+/* 
+   Fix up the VCPU state when a syscall is interrupted by a signal.
+
+   To do this, we determine the precise state of the syscall by
+   looking at the (real) rip at the time the signal happened.  The
+   syscall sequence looks like:
+
+     1. unblock signals
+     2. perform syscall
+     3. save result to RAX
+     4. re-block signals
+
+   If a signal
+   happens at      Then     Why?
+   [1-2)           restart  nothing has happened (restart syscall)
+   [2]             restart  syscall hasn't started, or kernel wants to restart
+   [2-3)           save     syscall complete, but results not saved
+   [3-4)           syscall complete, results saved
+
+   Sometimes we never want to restart an interrupted syscall (because
+   sigaction says not to), so we only restart if "restart" is True.
+
+   This will also call VG_(post_syscall)() if the syscall has actually
+   completed (either because it was interrupted, or because it
+   actually finished).  It will not call VG_(post_syscall)() if the
+   syscall is set up for restart, which means that the pre-wrapper may
+   get called multiple times.
+ */
+/* NB: this is identical to the x86 version */
+void VGA_(interrupted_syscall)(ThreadId tid, 
+			       struct vki_ucontext *uc,
+			       Bool restart)
+{
+   static const Bool debug = 0;
+
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadArchState *th_regs = &tst->arch;
+   Word ip = UCONTEXT_INSTR_PTR(uc);
+
+   if (debug)
+      VG_(printf)("interrupted_syscall: ip=%p; restart=%d eax=%d\n", 
+		  ip, restart, UCONTEXT_SYSCALL_NUM(uc));
+
+   if (ip < VGA_(blksys_setup) || ip >= VGA_(blksys_finished)) {
+      VG_(printf)("  not in syscall (%p - %p)\n", VGA_(blksys_setup), VGA_(blksys_finished));
+      vg_assert(tst->syscallno == -1);
+      return;
+   }
+
+   vg_assert(tst->syscallno != -1);
+
+   if (ip >= VGA_(blksys_setup) && ip < VGA_(blksys_restart)) {
+      /* syscall hasn't even started; go around again */
+      if (debug)
+	 VG_(printf)("  not started: restart\n");
+      VGA_(restart_syscall)(th_regs);
+   } else if (ip == VGA_(blksys_restart)) {
+      /* We're either about to run the syscall, or it was interrupted
+	 and the kernel restarted it.  Restart if asked, otherwise
+	 EINTR it. */
+      if (restart)
+	 VGA_(restart_syscall)(th_regs);
+      else {
+	 th_regs->vex.PLATFORM_SYSCALL_RET = -VKI_EINTR;
+	 VG_(post_syscall)(tid);
+      }
+   } else if (ip >= VGA_(blksys_complete) && ip < VGA_(blksys_committed)) {
+      /* Syscall complete, but result hasn't been written back yet.
+	 The saved real CPU %rax has the result, which we need to move
+	 to RAX. */
+      if (debug)
+	 VG_(printf)("  completed: ret=%d\n", UCONTEXT_SYSCALL_RET(uc));
+      th_regs->vex.PLATFORM_SYSCALL_RET = UCONTEXT_SYSCALL_RET(uc);
+      VG_(post_syscall)(tid);
+   } else if (ip >= VGA_(blksys_committed) && ip < VGA_(blksys_finished)) {
+      /* Result committed, but the signal mask has not been restored;
+	 we expect our caller (the signal handler) will have fixed
+	 this up. */
+      if (debug)
+	 VG_(printf)("  all done\n");
+      VG_(post_syscall)(tid);
+   } else
+      VG_(core_panic)("?? strange syscall interrupt state?");
+   
+   tst->syscallno = -1;
+}
+
+extern void VGA_(_client_syscall)(Int syscallno, 
+                                  void* guest_state,
+				  const vki_sigset_t *syscall_mask,
+				  const vki_sigset_t *restore_mask,
+				  Int nsigwords);
+
+void VGA_(client_syscall)(Int syscallno, ThreadState *tst,
+			  const vki_sigset_t *syscall_mask)
+{
+   vki_sigset_t saved;
+   VGA_(_client_syscall)(syscallno, &tst->arch.vex, 
+                         syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord));
+}
+
 
 /* 
    Allocate a stack for this thread.
@@ -205,7 +228,7 @@ static ULong *allocstack(ThreadId tid)
         pUInt++)
       *pUInt = FILL;
    /* rsp is left at top of stack */
-   rsp = pUInt;
+   rsp = (ULong*)pUInt;
 
    if (0)
       VG_(printf)("stack for tid %d at %p (%x); esp=%p\n",

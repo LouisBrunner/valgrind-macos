@@ -500,26 +500,35 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    /* cond will be 0 if all defined, and 1 if any not defined. */
 
    IRDirty* di;
-   if (sz == 4) {
-      di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                              "MC_(helperc_value_check4_fail)",
-                              &MC_(helperc_value_check4_fail),
-                              mkIRExprVec_0() 
-                            );
-   }
-   else if (sz == 0) {
-      di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                              "MC_(helperc_value_check0_fail)",
-                              &MC_(helperc_value_check0_fail),
-                              mkIRExprVec_0() 
-                            );
-   }
-   else {
-      di = unsafeIRDirty_0_N( 1/*regparms*/, 
-                              "MC_(helperc_complain_undef)",
-                              &MC_(helperc_complain_undef),
-                              mkIRExprVec_1( mkIRExpr_HWord( sz ))
-                            );
+   switch (sz) {
+      case 0:
+         di = unsafeIRDirty_0_N( 0/*regparms*/, 
+                                 "MC_(helperc_value_check0_fail)",
+                                 &MC_(helperc_value_check0_fail),
+                                 mkIRExprVec_0() 
+                               );
+         break;
+      case 1:
+         di = unsafeIRDirty_0_N( 0/*regparms*/, 
+                                 "MC_(helperc_value_check1_fail)",
+                                 &MC_(helperc_value_check1_fail),
+                                 mkIRExprVec_0() 
+                               );
+         break;
+      case 4:
+         di = unsafeIRDirty_0_N( 0/*regparms*/, 
+                                 "MC_(helperc_value_check4_fail)",
+                                 &MC_(helperc_value_check4_fail),
+                                 mkIRExprVec_0() 
+                               );
+         break;
+      default:
+         di = unsafeIRDirty_0_N( 1/*regparms*/, 
+                                 "MC_(helperc_complain_undef)",
+                                 &MC_(helperc_complain_undef),
+                                 mkIRExprVec_1( mkIRExpr_HWord( sz ))
+                               );
+         break;
    }
    di->guard = cond;
    setHelperAnns( mce, di );
@@ -575,15 +584,23 @@ static Bool isAlwaysDefd ( MCEnv* mce, Int offset, Int size )
 
 /* Generate into bb suitable actions to shadow this Put.  If the state
    slice is marked 'always defined', do nothing.  Otherwise, write the
-   supplied V bits to the shadow state. 
+   supplied V bits to the shadow state.  We can pass in either an
+   original atom or a V-atom, but not both.  In the former case the
+   relevant V-bits are then generated from the original.
 */
 static
-void do_shadow_PUT ( MCEnv* mce, Int offset, IRAtom* atom )
+void do_shadow_PUT ( MCEnv* mce,  Int offset, 
+                     IRAtom* atom, IRAtom* vatom )
 {
-   sk_assert(isOriginalAtom(mce, atom));
-   IRAtom* vatom = expr2vbits( mce, atom );
-   sk_assert(isShadowAtom(mce, vatom));
-   sk_assert(sameKindedAtoms(atom, vatom));
+   if (atom) {
+      sk_assert(!vatom);
+      sk_assert(isOriginalAtom(mce, atom));
+      vatom = expr2vbits( mce, atom );
+   } else {
+      sk_assert(vatom);
+      sk_assert(isShadowAtom(mce, vatom));
+   }
+
    IRType ty = typeOfIRExpr(mce->bb->tyenv, vatom);
    sk_assert(ty != Ity_Bit);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
@@ -825,6 +842,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_ScaleF64:
       case Iop_Yl2xF64:
+      case Iop_Yl2xp1F64:
       case Iop_PRemF64:
       case Iop_AtanF64:
       case Iop_AddF64:
@@ -1074,7 +1092,7 @@ IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
 
 static
 IRAtom* expr2vbits_Mux0X ( MCEnv* mce, 
-			   IRAtom* cond, IRAtom* expr0, IRAtom* exprX )
+                           IRAtom* cond, IRAtom* expr0, IRAtom* exprX )
 {
    IRAtom *vbitsC, *vbits0, *vbitsX;
    IRType ty;
@@ -1216,9 +1234,9 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
    }
 
    if (ty == Ity_I64) {
-      /* We can't do this with regparm 2 on x86, since the back end
-         isn't clever enough to handle 64-bit regparm args.  Therefore
-         be different. */
+      /* We can't do this with regparm 2 on 32-bit platforms, since
+         the back ends aren't clever enough to handle 64-bit regparm
+         args.  Therefore be different. */
       di = unsafeIRDirty_0_N( 
               1/*regparms*/, hname, helper, 
               mkIRExprVec_2( addr, datavbits ));
@@ -1230,6 +1248,163 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
    }
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di) );
+}
+
+
+/* Do lazy pessimistic propagation through a dirty helper call, by
+   looking at the annotations on it.  This is the most complex part of
+   Memcheck. */
+
+static IRType szToITy ( Int n )
+{
+   switch (n) {
+      case 1: return Ity_I8;
+      case 2: return Ity_I16;
+      case 4: return Ity_I32;
+      case 8: return Ity_I64;
+      default: VG_(skin_panic)("szToITy(memcheck)");
+   }
+}
+
+static
+void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
+{
+   Int    i, offset, toDo;
+   IRAtom *two, *four, *addr, *src;
+   IROp   opAdd;
+   IRType tyAddr, tySrc, tyDst;
+   IRTemp dst;
+
+   /* First check the guard. */
+   complainIfUndefined(mce, d->guard);
+
+   /* Now round up all inputs and PCast over them. */
+   IRAtom* here;
+   IRAtom* curr = definedOfType(Ity_I32);
+
+   /* Inputs: unmasked args */
+   for (i = 0; d->args[i]; i++) {
+      if (d->cee->mcx_mask & (1<<i)) {
+         /* ignore this arg */
+      } else {
+         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, d->args[i]) );
+         curr = mkUifU32(mce, here, curr);
+      }
+   }
+
+   /* Inputs: guest state that we read. */
+   for (i = 0; i < d->nFxState; i++) {
+      sk_assert(d->fxState[i].fx != Ifx_None);
+      if (d->fxState[i].fx == Ifx_Write)
+         continue;
+      /* This state element is read or modified.  So we need to
+         consider it. */
+      tySrc = szToITy( d->fxState[i].size );
+      src   = assignNew( mce, tySrc, 
+                         shadow_GET(mce, d->fxState[i].offset, tySrc ) );
+      here = mkPCastTo( mce, Ity_I32, src );
+      curr = mkUifU32(mce, here, curr);
+   }
+
+   /* Inputs: memory.  First set up some info needed regardless of
+      whether we're doing reads or writes. */
+   four   = two = NULL;
+   opAdd  = Iop_INVALID;
+   tyAddr = Ity_INVALID;
+
+   if (d->mFx != Ifx_None) {
+      /* Because we may do multiple shadow loads/stores from the same
+         base address, it's best to do a single test of its
+         definedness right now.  Post-instrumentation optimisation
+         should remove all but this test. */
+      sk_assert(d->mAddr);
+      complainIfUndefined(mce, d->mAddr);
+
+      tyAddr = typeOfIRExpr(mce->bb->tyenv, d->mAddr);
+      sk_assert(tyAddr == Ity_I32 || tyAddr == Ity_I64);
+      opAdd = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
+      four  = tyAddr==Ity_I32 ? mkU32(4) : mkU64(4);
+      two   = tyAddr==Ity_I32 ? mkU32(2) : mkU64(2);
+   }
+
+   /* Deal with memory inputs (reads or modifies) */
+   if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
+      offset = 0;
+      toDo   = d->mSize;
+      addr   = d->mAddr;
+      /* chew off 32-bit chunks */
+      while (toDo >= 4) {
+         here = mkPCastTo( 
+                   mce, Ity_I32,
+                   expr2vbits_LDle ( mce, Ity_I32, addr )
+                );
+         curr = mkUifU32(mce, here, curr);
+         addr = assignNew(mce, tyAddr,
+                               binop(opAdd, addr, four));
+         toDo -= 4;
+      }
+      /* chew off 16-bit chunks */
+      while (toDo >= 2) {
+         here = mkPCastTo( 
+                   mce, Ity_I32,
+                   expr2vbits_LDle ( mce, Ity_I16, addr )
+                );
+         curr = mkUifU32(mce, here, curr);
+         addr = assignNew(mce, tyAddr,
+                               binop(opAdd, addr, two));
+         toDo -= 2;
+      }
+      sk_assert(toDo == 0); /* also need to handle 1-byte excess */
+   }
+
+   /* Whew!  So curr is a 32-bit V-value summarising pessimistically
+      all the inputs to the helper.  Now we need to re-distribute the
+      results to all destinations. */
+
+   /* Outputs: the destination temporary, if there is one. */
+   if (d->tmp != INVALID_IRTEMP) {
+      dst   = findShadowTmp(mce, d->tmp);
+      tyDst = typeOfIRTemp(mce->bb->tyenv, d->tmp);
+      assign( mce->bb, dst, mkPCastTo( mce, tyDst, curr) );
+   }
+
+   /* Outputs: guest state that we write or modify. */
+   for (i = 0; i < d->nFxState; i++) {
+      sk_assert(d->fxState[i].fx != Ifx_None);
+      if (d->fxState[i].fx == Ifx_Read)
+         continue;
+      /* this state element is written or modified.  So we need to
+         consider it. */
+      tyDst = szToITy( d->fxState[i].size );
+      do_shadow_PUT( mce, d->fxState[i].offset,
+                          NULL, /* original atom */
+                          mkPCastTo( mce, tyDst, curr ) );
+   }
+
+   /* Outputs: memory that we write or modify. */
+   if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
+      offset = 0;
+      toDo   = d->mSize;
+      addr   = d->mAddr;
+      /* chew off 32-bit chunks */
+      while (toDo >= 4) {
+         do_shadow_STle( mce, addr, 
+                         mkPCastTo( mce, Ity_I32, curr ) );
+         addr = assignNew(mce, tyAddr,
+                               binop(opAdd, addr, four));
+         toDo -= 4;
+      }
+      /* chew off 16-bit chunks */
+      while (toDo >= 2) {
+         do_shadow_STle( mce, addr, 
+                         mkPCastTo( mce, Ity_I32, curr ) );
+         addr = assignNew(mce, tyAddr,
+                               binop(opAdd, addr, two));
+         toDo -= 2;
+      }
+      sk_assert(toDo == 0); /* also need to handle 1-byte excess */
+   }
+
 }
 
 
@@ -1309,7 +1484,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 
 IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   Bool verboze = False;  //True; 
+   Bool verboze = False; //True; 
 
    /* Bool hasBogusLiterals = False; */
 
@@ -1368,7 +1543,8 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          case Ist_Put:
             do_shadow_PUT( &mce, 
                            st->Ist.Put.offset,
-                           st->Ist.Put.data );
+                           st->Ist.Put.data,
+                           NULL /* shadow atom */ );
             break;
 
          case Ist_PutI:
@@ -1386,6 +1562,10 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          case Ist_Exit:
             /* if (!hasBogusLiterals) */
                complainIfUndefined( &mce, st->Ist.Exit.cond );
+            break;
+
+         case Ist_Dirty:
+            do_shadow_Dirty( &mce, st->Ist.Dirty.details );
             break;
 
          default:

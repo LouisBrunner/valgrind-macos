@@ -664,49 +664,42 @@ void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
 static void hp_census(void);
 
 static __inline__
-void new_block_meta ( void* p, Int size, Bool custom_malloc )
+void* new_block ( void* p, Int size, UInt align, Bool is_zeroed )
 {
    HP_Chunk* hc;
-
-   VGP_PUSHCC(VgpCliMalloc);
-
-   if (0 == size) n_zero_allocs++;
-   
-   // Make new HP_Chunk node, add to malloclist
-   hc       = VG_(malloc)(sizeof(HP_Chunk));
-   hc->size = size;
-   hc->data = (Addr)p;
-
-   if (clo_heap) {
-      hc->where = get_XCon( VG_(get_current_or_recent_tid)(), custom_malloc );
-      if (size != 0) 
-         update_XCon(hc->where, size);
-   } else {
-      hc->where = NULL;    // paranoia
-   }
-
-   add_HP_Chunk( hc );
-
-   hp_census();      // do a census!
-
-   VGP_POPCC(VgpCliMalloc);
-}
-
-static __inline__
-void* new_block ( Int size, UInt align, Bool is_zeroed )
-{
-   void* p;
-
+   Bool custom_alloc = (NULL == p);
    if (size < 0) return NULL;
 
    VGP_PUSHCC(VgpCliMalloc);
 
    // Update statistics
    n_allocs++;
+   if (0 == size) n_zero_allocs++;
 
-   p = VG_(cli_malloc)( align, size );
-   if (is_zeroed) VG_(memset)(p, 0, size);
-   new_block_meta(p, size, /*custom_malloc*/False);
+   // Allocate and zero if necessary
+   if (!p) {
+      p = VG_(cli_malloc)( align, size );
+      if (!p) {
+         VGP_POPCC(VgpCliMalloc);
+         return NULL;
+      }
+      if (is_zeroed) VG_(memset)(p, 0, size);
+   }
+
+   // Make new HP_Chunk node, add to malloclist
+   hc       = VG_(malloc)(sizeof(HP_Chunk));
+   hc->size = size;
+   hc->data = (Addr)p;
+   hc->where = NULL;    // paranoia
+   if (clo_heap) {
+      hc->where = get_XCon( VG_(get_current_or_recent_tid)(), custom_alloc );
+      if (0 != size) 
+         update_XCon(hc->where, size);
+   }
+   add_HP_Chunk( hc );
+
+   // do a census!
+   hp_census();      
 
    VGP_POPCC(VgpCliMalloc);
    return p;
@@ -715,60 +708,59 @@ void* new_block ( Int size, UInt align, Bool is_zeroed )
 static __inline__
 void die_block ( void* p, Bool custom_free )
 {
-   HP_Chunk*  hc;
-   HP_Chunk** remove_handle;
+   HP_Chunk *hc, **remove_handle;
    
    VGP_PUSHCC(VgpCliMalloc);
 
    // Update statistics
    n_frees++;
 
-   hc = get_HP_Chunk ( p, &remove_handle );
+   // Remove HP_Chunk from malloclist
+   hc = get_HP_Chunk( p, &remove_handle );
    if (hc == NULL)
       return;   // must have been a bogus free(), or p==NULL
-
    sk_assert(hc->data == (Addr)p);
+   remove_HP_Chunk(hc, remove_handle);
 
    if (clo_heap && hc->size != 0)
       update_XCon(hc->where, -hc->size);
 
-   // Actually free the heap block
+   VG_(free)( hc );
+
+   // Actually free the heap block, if necessary
    if (!custom_free)
       VG_(cli_free)( p );
 
-   // Remove HP_Chunk from malloclist, destroy
-   remove_HP_Chunk(hc, remove_handle);
+   // do a census!
+   hp_census();
 
-   hp_census();      // do a census!
-
-   VG_(free)( hc );
    VGP_POPCC(VgpCliMalloc);
 }
  
 
 void* SK_(malloc) ( Int n )
 {
-   return new_block( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 void* SK_(__builtin_new) ( Int n )
 {
-   return new_block( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 void* SK_(__builtin_vec_new) ( Int n )
 {
-   return new_block( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
 void* SK_(calloc) ( Int m, Int size )
 {
-   return new_block( m*size, VG_(clo_alignment), /*is_zeroed*/True );
+   return new_block( NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
 void *SK_(memalign)( Int align, Int n )
 {
-   return new_block( n, align, False );
+   return new_block( NULL, n, align, False );
 }
 
 void SK_(free) ( void* p )
@@ -1133,10 +1125,12 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* argv, UInt* ret )
 {
    switch (argv[0]) {
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
+      void* res;
       void* p         = (void*)argv[1];
       UInt  sizeB     =        argv[2];
       *ret            = 0;
-      new_block_meta( p, sizeB, /*custom_malloc*/True );
+      res = new_block( p, sizeB, /*align -- ignored*/0, /*is_zeroed*/False );
+      sk_assert(res == p);
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {

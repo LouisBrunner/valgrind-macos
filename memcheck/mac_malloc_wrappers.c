@@ -132,8 +132,7 @@ MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*, void*),
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-MAC_Chunk* add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind,
-                           VgHashTable table)
+void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind, VgHashTable table)
 {
    MAC_Chunk* mc;
 
@@ -153,8 +152,6 @@ MAC_Chunk* add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind,
    } 
 
    VG_(HT_add_node)( table, (VgHashNode*)mc );
-
-   return mc;
 }
 
 /*------------------------------------------------------------*/
@@ -163,18 +160,27 @@ MAC_Chunk* add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind,
 
 /* Allocate memory and note change in memory available */
 __inline__
-MAC_Chunk* MAC_(new_block) ( Addr p, UInt size,
-                             UInt rzB, Bool is_zeroed, MAC_AllocKind kind,
-                             VgHashTable table)
+void* MAC_(new_block) ( Addr p, UInt size, UInt align, UInt rzB,
+                        Bool is_zeroed, MAC_AllocKind kind, VgHashTable table)
 {
-   MAC_Chunk *mc;
-
    VGP_PUSHCC(VgpCliMalloc);
-
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += size;
 
-   mc = add_MAC_Chunk( p, size, kind, table );
+   // Allocate and zero if necessary
+   if (p) {
+      sk_assert(MAC_AllocCustom == kind);
+   } else {
+      sk_assert(MAC_AllocCustom != kind);
+      p = (Addr)VG_(cli_malloc)( align, size );
+      if (!p) {
+         VGP_POPCC(VgpCliMalloc);
+         return NULL;
+      }
+      if (is_zeroed) VG_(memset)((void*)p, 0, size);
+   }
+
+   add_MAC_Chunk( p, size, kind, table );
 
    MAC_(ban_mem_heap)( p-rzB, rzB );
    MAC_(new_mem_heap)( p, size, is_zeroed );
@@ -182,7 +188,7 @@ MAC_Chunk* MAC_(new_block) ( Addr p, UInt size,
 
    VGP_POPCC(VgpCliMalloc);
 
-   return mc;
+   return (void*)p;
 }
 
 void* SK_(malloc) ( Int n )
@@ -191,11 +197,9 @@ void* SK_(malloc) ( Int n )
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to malloc()", n );
       return NULL;
    } else {
-      Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocMalloc,
-                        MAC_(malloc_list));
-      return (void*)p;
+      return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
+         VG_(vg_malloc_redzone_szB), /*is_zeroed*/False, MAC_AllocMalloc,
+         MAC_(malloc_list));
    }
 }
 
@@ -205,11 +209,9 @@ void* SK_(__builtin_new) ( Int n )
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to __builtin_new()", n);
       return NULL;
    } else {
-      Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocNew,
-                        MAC_(malloc_list));
-      return (void*)p;
+      return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
+         VG_(vg_malloc_redzone_szB), /*is_zeroed*/False, MAC_AllocNew,
+         MAC_(malloc_list));
    }
 }
 
@@ -220,11 +222,9 @@ void* SK_(__builtin_vec_new) ( Int n )
                    "Warning: silly arg (%d) to __builtin_vec_new()", n );
       return NULL;
    } else {
-      Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocNewVec,
-                        MAC_(malloc_list));
-      return (void*)p;
+      return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
+         VG_(vg_malloc_redzone_szB), /*is_zeroed*/False, MAC_AllocNewVec,
+         MAC_(malloc_list));
    }
 }
 
@@ -234,32 +234,22 @@ void* SK_(memalign) ( Int align, Int n )
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to memalign()", n);
       return NULL;
    } else {
-      Addr p = (Addr)VG_(cli_malloc)( align, n );
-      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocMalloc,
-                        MAC_(malloc_list));
-      return (void*)p;
+      return MAC_(new_block) ( 0, n, align, 
+         VG_(vg_malloc_redzone_szB), /*is_zeroed*/False, MAC_AllocMalloc,
+         MAC_(malloc_list));
    }
 }
 
 void* SK_(calloc) ( Int nmemb, Int size1 )
 {
-   Int   n, i;
-
-   n = nmemb * size1;
-
    if (nmemb < 0 || size1 < 0) {
       VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()",
                                nmemb, size1 );
       return NULL;
    } else {
-      Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/True, MAC_AllocMalloc,
-                        MAC_(malloc_list));
-      for (i = 0; i < n; i++) 
-         ((UChar*)p)[i] = 0;
-      return (void*)p;
+      return MAC_(new_block) ( 0, nmemb*size1, VG_(clo_alignment),
+         VG_(vg_malloc_redzone_szB), /*is_zeroed*/True, MAC_AllocMalloc,
+         MAC_(malloc_list));
    }
 }
 
@@ -479,7 +469,6 @@ void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size)
 {
    MAC_Mempool*  mp;
    MAC_Mempool** prev_next;
-   MAC_Chunk*    mc;
 
    mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
                                         (VgHashNode***)&prev_next );
@@ -491,8 +480,8 @@ void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size)
       return;
    }
 
-   mc = MAC_(new_block)(addr, size, mp->rzB, mp->is_zeroed, MAC_AllocCustom,
-                        mp->chunks);
+   MAC_(new_block)(addr, size, /*ignored*/0, mp->rzB, mp->is_zeroed,
+                   MAC_AllocCustom, mp->chunks);
 }
 
 void MAC_(mempool_free)(Addr pool, Addr addr)

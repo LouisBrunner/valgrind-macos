@@ -880,8 +880,8 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
       UInt rzB       =       arg[3];
       Bool is_zeroed = (Bool)arg[4];
 
-      MAC_(new_block) ( p, sizeB, rzB, is_zeroed, MAC_AllocCustom,
-                        MAC_(malloc_list) );
+      MAC_(new_block) ( p, sizeB, /*ignored*/0, rzB, is_zeroed, 
+                        MAC_AllocCustom, MAC_(malloc_list) );
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {

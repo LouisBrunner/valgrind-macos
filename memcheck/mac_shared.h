@@ -317,9 +317,9 @@ extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
-extern MAC_Chunk* MAC_(new_block) ( Addr p, UInt size, UInt rzB,
-                                    Bool is_zeroed, MAC_AllocKind kind,
-                                    VgHashTable table);
+extern void* MAC_(new_block) ( Addr p, UInt size, UInt align, UInt rzB,
+                               Bool is_zeroed, MAC_AllocKind kind,
+                               VgHashTable table);
 extern void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind );
 
 extern void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed);

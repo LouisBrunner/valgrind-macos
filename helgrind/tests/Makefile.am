@@ -11,7 +11,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	race.stderr.exp race.vgtest		\
 	race2.stderr.exp race2.vgtest		\
-	readshared.stderr.exp readshared.vgtest
+	readshared.stderr.exp readshared.vgtest \
+	toobig-allocs.stderr.exp toobig-allocs.vgtest
 
 check_PROGRAMS = \
 	allok deadlock inherit race race2 readshared

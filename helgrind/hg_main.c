@@ -1838,6 +1838,9 @@ void* alloc_and_new_mem ( Int size, UInt alignment, Bool is_zeroed )
    if (size < 0) return NULL;
 
    p = (Addr)VG_(cli_malloc)(alignment, size);
+   if (!p) {
+      return NULL;
+   }
    if (is_zeroed) VG_(memset)((void*)p, 0, size);
    add_HG_Chunk ( VG_(get_current_or_recent_tid)(), p, size );
    eraser_new_mem_heap( p, size, is_zeroed );

@@ -2,4 +2,5 @@ Makefile.in
 Makefile
 cputest
 vg_regtest
+toobig-allocs
 true

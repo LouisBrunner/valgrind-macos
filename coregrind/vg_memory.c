@@ -676,12 +676,17 @@ Bool VG_(is_addressable)(Addr p, Int size)
 /*--- manage allocation of memory on behalf of the client          ---*/
 /*--------------------------------------------------------------------*/
 
+// Returns 0 on failure.
 Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt flags)
 {
    len = PGROUNDUP(len);
 
    if (!(flags & SF_FIXED))
       addr = VG_(find_map_space)(addr, len, True);
+
+   // Don't do the mapping if we couldn't find space!
+   if (0 == addr)
+      return 0;
 
    flags |= SF_CORE;
 

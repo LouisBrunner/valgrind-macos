@@ -9,4 +9,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	overlap.stderr.exp overlap.stdout.exp overlap.vgtest
+	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	toobig-allocs.stderr.exp toobig-allocs.vgtest
+

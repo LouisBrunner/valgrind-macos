@@ -326,12 +326,18 @@ Superblock* newSuperblock ( Arena* a, Int cszW )
    while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
 
    if (a->clientmem) {
+      // client allocation -- return 0 to client if it fails
       sb = (Superblock *)
            VG_(client_alloc)(0, cszW * sizeof(Word), 
-                                VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
-   } else
+                             VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
+      if (NULL == sb) {
+         return 0;
+      }
+   } else {
+      // non-client allocation -- abort if it fails
       sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
 				       "newSuperblock" );
+   }
    sb->n_payload_words = cszW - 2;
    a->bytes_mmaped += cszW * sizeof(Word);
    if (0)
@@ -1023,7 +1029,12 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
    if (lno == VG_N_MALLOC_LISTS) {
       req_bszW = pszW_to_bszW(a, req_pszW);      
       new_sb = newSuperblock(a, req_bszW);
-      vg_assert(new_sb != NULL);
+      if (NULL == new_sb) {
+         // Should only fail if for client, otherwise, should have aborted
+         // already.
+         vg_assert(VG_AR_CLIENT == aid);
+         return NULL;
+      }
       new_sb->next = a->sblocks;
       a->sblocks = new_sb;
       b = &(new_sb->payload_words[0]);

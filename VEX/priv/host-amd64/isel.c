@@ -1092,16 +1092,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             return dst;
 //..          }
 //..          case Iop_8Sto16:
-//..          case Iop_8Sto32:
+         case Iop_8Sto32: {
 //..          case Iop_16Sto32: {
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
-//..             addInstr(env, mk_iMOVsd_RR(src,dst) );
-//..             addInstr(env, X86Instr_Sh32(Xsh_SHL, amt, X86RM_Reg(dst)));
-//..             addInstr(env, X86Instr_Sh32(Xsh_SAR, amt, X86RM_Reg(dst)));
-//..             return dst;
-//..          }
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 48 : 56;
+            addInstr(env, mk_iMOVsd_RR(src,dst) );
+            addInstr(env, AMD64Instr_Sh64(Ash_SHL, amt, AMD64RM_Reg(dst)));
+            addInstr(env, AMD64Instr_Sh64(Ash_SAR, amt, AMD64RM_Reg(dst)));
+            return dst;
+         }
 //.. 	 case Iop_Not8:
 //.. 	 case Iop_Not16:
 //..          case Iop_Not32: {
@@ -1184,8 +1184,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          case Iop_16to8:
 //..          case Iop_32to8:
 //..          case Iop_32to16:
-//..             /* These are no-ops. */
-//..             return iselIntExpr_R(env, e->Iex.Unop.arg);
+         case Iop_64to32:
+            /* These are no-ops. */
+            return iselIntExpr_R(env, e->Iex.Unop.arg);
 
          default: 
             break;
@@ -1583,13 +1584,13 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(r),r));
 //..       return Xcc_Z;
 //..    }
-//.. 
-//..    /* Not1(...) */
-//..    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
-//..       /* Generate code for the arg, and negate the test condition */
-//..       return 1 ^ iselCondCode(env, e->Iex.Unop.arg);
-//..    }
-//.. 
+
+   /* Not1(...) */
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
+      /* Generate code for the arg, and negate the test condition */
+      return 1 ^ iselCondCode(env, e->Iex.Unop.arg);
+   }
+
 //..    /* 32to1(1Uto32(expr1)) -- the casts are pointless, ignore them */
 //..    DEFINE_PATTERN(p_1Uto32_then_32to1,
 //..                   unop(Iop_32to1,unop(Iop_1Uto32,bind(0))));

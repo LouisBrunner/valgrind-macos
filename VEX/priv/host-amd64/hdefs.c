@@ -2298,7 +2298,8 @@ vassert(0);
       if (i->Ain.MulL.sz == 8) {
          switch (i->Ain.MulL.src->tag)  {
             case Arm_Mem:
-               vassert(0);
+               *p++ = rexAMode_M( fake(0),
+                                  i->Ain.MulL.src->Arm.Mem.am);
                *p++ = 0xF7;
                p = doAMode_M(p, fake(subopc),
                                 i->Ain.MulL.src->Arm.Mem.am);

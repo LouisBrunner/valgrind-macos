@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
 /*--- This file (libvex_ir.h) is                              ---*/
-/*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,9 +39,32 @@
 #include "libvex_basictypes.h"
 
 
+
 /*---------------------------------------------------------------*/
 /*--- Type definitions for the IR                             ---*/
 /*---------------------------------------------------------------*/
+
+/* General comments about naming schemes:
+
+   All publically visible functions contain the name of the primary
+   type on which they operate (IRFoo, IRBar, etc).  Hence you should
+   be able to identify these functions by grepping for "IR[A-Z]".
+
+   For some type 'IRFoo':
+
+   - ppIRFoo is the printing method for IRFoo, printing it to the
+     output channel specified in the LibVEX_Initialise call.
+
+   - eqIRFoo is a structural equality predicate for IRFoos.
+
+   - dopyIRFoo is a deep copy constructor for IRFoos. 
+     It recursively traverses the entire argument tree and
+     produces a complete new tree.
+
+   - sopyIRFoo is the shallow copy constructor for IRFoos.
+     It creates a new top-level copy of the supplied object,
+     but does not copy any sub-objects.
+*/
 
 /* ------------------ Types ------------------ */
 
@@ -695,9 +718,15 @@ IRExpr* mkIRExprCCall ( IRType retty,
                         IRExpr** args );
 
 
-inline static Bool isAtom ( IRExpr* e ) {
+/* Convenience functions for atoms, that is, IRExprs which
+   are either Iex_Tmp or Iex_Const. */
+static inline Bool isIRAtom ( IRExpr* e ) {
    return toBool(e->tag == Iex_Tmp || e->tag == Iex_Const);
 }
+
+/* Are these two IR atoms identical?  Causes an assertion
+   failure if they are passed non-atoms. */
+extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 
 
 /* ------------------ Jump kinds ------------------ */
@@ -973,7 +1002,7 @@ extern void sanityCheckIRBB ( IRBB*  bb,
 extern Bool isFlatIRStmt ( IRStmt* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */
-extern Bool isPlausibleType ( IRType ty );
+extern Bool isPlausibleIRType ( IRType ty );
 
 #endif /* ndef __LIBVEX_IR_H */
 

@@ -1543,7 +1543,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 }
 
 /* Is this any value actually in the enumeration 'IRType' ? */
-Bool isPlausibleType ( IRType ty )
+Bool isPlausibleIRType ( IRType ty )
 {
    switch (ty) {
       case Ity_INVALID: case Ity_I1:
@@ -1580,10 +1580,10 @@ Bool isFlatIRStmt ( IRStmt* st )
 
    switch (st->tag) {
       case Ist_Put:
-         return isAtom(st->Ist.Put.data);
+         return isIRAtom(st->Ist.Put.data);
       case Ist_PutI:
-         return toBool( isAtom(st->Ist.PutI.ix) 
-                        && isAtom(st->Ist.PutI.data) );
+         return toBool( isIRAtom(st->Ist.PutI.ix) 
+                        && isIRAtom(st->Ist.PutI.data) );
       case Ist_Tmp:
          /* This is the only interesting case.  The RHS can be any
             expression, *but* all its subexpressions *must* be
@@ -1592,44 +1592,44 @@ Bool isFlatIRStmt ( IRStmt* st )
          switch (e->tag) {
             case Iex_Binder: return True;
             case Iex_Get:    return True;
-            case Iex_GetI:   return isAtom(e->Iex.GetI.ix);
+            case Iex_GetI:   return isIRAtom(e->Iex.GetI.ix);
             case Iex_Tmp:    return True;
             case Iex_Binop:  return toBool(
-                                    isAtom(e->Iex.Binop.arg1) 
-                                    && isAtom(e->Iex.Binop.arg2));
-            case Iex_Unop:   return isAtom(e->Iex.Unop.arg);
-            case Iex_LDle:   return isAtom(e->Iex.LDle.addr);
+                                    isIRAtom(e->Iex.Binop.arg1) 
+                                    && isIRAtom(e->Iex.Binop.arg2));
+            case Iex_Unop:   return isIRAtom(e->Iex.Unop.arg);
+            case Iex_LDle:   return isIRAtom(e->Iex.LDle.addr);
             case Iex_Const:  return True;
             case Iex_CCall:  for (i = 0; e->Iex.CCall.args[i]; i++)
-                                if (!isAtom(e->Iex.CCall.args[i])) 
+                                if (!isIRAtom(e->Iex.CCall.args[i])) 
                                    return False;
                              return True;
             case Iex_Mux0X:  return toBool (
-                                    isAtom(e->Iex.Mux0X.cond) 
-                                    && isAtom(e->Iex.Mux0X.expr0) 
-                                    && isAtom(e->Iex.Mux0X.exprX));
+                                    isIRAtom(e->Iex.Mux0X.cond) 
+                                    && isIRAtom(e->Iex.Mux0X.expr0) 
+                                    && isIRAtom(e->Iex.Mux0X.exprX));
             default:         vpanic("isFlatIRStmt(e)");
          }
          /*notreached*/
          vassert(0);
       case Ist_STle:
-         return toBool( isAtom(st->Ist.STle.addr) 
-                        && isAtom(st->Ist.STle.data) );
+         return toBool( isIRAtom(st->Ist.STle.addr) 
+                        && isIRAtom(st->Ist.STle.data) );
       case Ist_Dirty:
          di = st->Ist.Dirty.details;
-         if (!isAtom(di->guard)) 
+         if (!isIRAtom(di->guard)) 
             return False;
          for (i = 0; di->args[i]; i++)
-            if (!isAtom(di->args[i])) 
+            if (!isIRAtom(di->args[i])) 
                return False;
-         if (di->mAddr && !isAtom(di->mAddr)) 
+         if (di->mAddr && !isIRAtom(di->mAddr)) 
             return False;
          return True;
       case Ist_IMark:
       case Ist_MFence:
          return True;
       case Ist_Exit:
-         return isAtom(st->Ist.Exit.guard);
+         return isIRAtom(st->Ist.Exit.guard);
       default: 
          vpanic("isFlatIRStmt(st)");
    }
@@ -2019,7 +2019,7 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
    /* Ensure each temp has a plausible type. */
    for (i = 0; i < n_temps; i++) {
       IRType ty = typeOfIRTemp(bb->tyenv,(IRTemp)i);
-      if (!isPlausibleType(ty)) {
+      if (!isPlausibleIRType(ty)) {
          vex_printf("Temp t%d declared with implausible type 0x%x\n",
                     i, (UInt)ty);
          sanityCheckFail(bb,NULL,"Temp declared with implausible type");
@@ -2035,7 +2035,7 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
          if (!isFlatIRStmt(stmt))
             sanityCheckFail(bb, stmt, "IRStmt: is not flat");
       }
-      if (!isAtom(bb->next))
+      if (!isIRAtom(bb->next))
          sanityCheckFail(bb, NULL, "bb->next is not an atom");
    }
 
@@ -2162,6 +2162,17 @@ IRExpr* mkIRExprCCall ( IRType retty,
 {
    return IRExpr_CCall ( mkIRCallee ( regparms, name, addr ), 
                          retty, args );
+}
+
+Bool eqIRAtom ( IRExpr* a1, IRExpr* a2 )
+{
+   vassert(isIRAtom(a1));
+   vassert(isIRAtom(a2));
+   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
+      return toBool(a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp);
+   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
+      return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
+   return False;
 }
 
 /*---------------------------------------------------------------*/

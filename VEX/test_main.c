@@ -222,7 +222,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    bb->jumpkind = bb_in->jumpkind;
 
    /* No loads to consider in ->next. */
-   assert(isAtom(bb_in->next));
+   assert(isIRAtom(bb_in->next));
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
       st = bb_in->stmts[i];
@@ -270,8 +270,8 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          case Ist_STle:
             data = st->Ist.STle.data;
             addr = st->Ist.STle.addr;
-            assert(isAtom(data));
-            assert(isAtom(addr));
+            assert(isIRAtom(data));
+            assert(isIRAtom(addr));
             sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
             needSz = False;
             switch (sz) {
@@ -305,16 +305,16 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_Put:
-            assert(isAtom(st->Ist.Put.data));
+            assert(isIRAtom(st->Ist.Put.data));
             break;
 
          case Ist_PutI:
-            assert(isAtom(st->Ist.PutI.ix));
-            assert(isAtom(st->Ist.PutI.data));
+            assert(isIRAtom(st->Ist.PutI.ix));
+            assert(isIRAtom(st->Ist.PutI.data));
             break;
 
          case Ist_Exit:
-            assert(isAtom(st->Ist.Exit.guard));
+            assert(isIRAtom(st->Ist.Exit.guard));
             break;
 
          case Ist_Dirty:
@@ -514,7 +514,7 @@ static void newShadowTmp ( MCEnv* mce, IRTemp orig )
 /*------------------------------------------------------------*/
 
 /* An atom is either an IRExpr_Const or an IRExpr_Tmp, as defined by
-   isAtom() in libvex_ir.h.  Because this instrumenter expects flat
+   isIRAtom() in libvex_ir.h.  Because this instrumenter expects flat
    input, most of this code deals in atoms.  Usefully, a value atom
    always has a V-value which is also an atom: constants are shadowed
    by constants, and temps are shadowed by the corresponding shadow
@@ -995,7 +995,7 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    /* Set the shadow tmp to be defined.  First, update the
       orig->shadow tmp mapping to reflect the fact that this shadow is
       getting a new value. */
-   tl_assert(isAtom(vatom));
+   tl_assert(isIRAtom(vatom));
    /* sameKindedAtoms ... */
    if (vatom->tag == Iex_Tmp) {
       tl_assert(atom->tag == Iex_Tmp);
@@ -2421,7 +2421,7 @@ static Bool isBogusAtom ( IRAtom* at )
 {
    ULong n = 0;
    IRConst* con;
-   tl_assert(isAtom(at));
+   tl_assert(isIRAtom(at));
    if (at->tag == Iex_Tmp)
       return False;
    tl_assert(at->tag == Iex_Const);

@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
 /*--- This file (ir/iropt.c) is                               ---*/
-/*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -251,10 +251,10 @@ static Bool isFlat ( IRExpr* e )
    if (e->tag == Iex_Get) 
       return True;
    if (e->tag == Iex_Binop)
-      return toBool( isAtom(e->Iex.Binop.arg1) 
-                     && isAtom(e->Iex.Binop.arg2) );
+      return toBool( isIRAtom(e->Iex.Binop.arg1) 
+                     && isIRAtom(e->Iex.Binop.arg2) );
    if (e->tag == Iex_LDle)
-      return isAtom(e->Iex.LDle.addr);
+      return isIRAtom(e->Iex.LDle.addr);
    return False;
 }
 
@@ -363,7 +363,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          addStmtToIRBB(bb, st);
          break;
       case Ist_Put:
-         if (isAtom(st->Ist.Put.data)) {
+         if (isIRAtom(st->Ist.Put.data)) {
             /* optimisation to reduce the amount of heap wasted
                by the flattener */
             addStmtToIRBB(bb, st);
@@ -605,7 +605,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
 
       /* add this one to the env, if appropriate */
       if (st->tag == Ist_Put) {
-         vassert(isAtom(st->Ist.Put.data));
+         vassert(isIRAtom(st->Ist.Put.data));
          addToHHW( env, (HWord)key, (HWord)(st->Ist.Put.data));
       }
 
@@ -681,18 +681,18 @@ static void handle_gets_Stmt (
 
       /* all other cases are boring. */
       case Ist_STle:
-         vassert(isAtom(st->Ist.STle.addr));
-         vassert(isAtom(st->Ist.STle.data));
+         vassert(isIRAtom(st->Ist.STle.addr));
+         vassert(isIRAtom(st->Ist.STle.data));
          memRW = True;
          break;
 
       case Ist_Exit:
-         vassert(isAtom(st->Ist.Exit.guard));
+         vassert(isIRAtom(st->Ist.Exit.guard));
          break;
 
       case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.ix));
-         vassert(isAtom(st->Ist.PutI.data));
+         vassert(isIRAtom(st->Ist.PutI.ix));
+         vassert(isIRAtom(st->Ist.PutI.data));
          break;
 
       case Ist_IMark:
@@ -768,7 +768,7 @@ static void redundant_put_removal_BB (
             out the set, since we can no longer claim that the next
             event for any part of the guest state is definitely a
             write. */
-         vassert(isAtom(st->Ist.Exit.guard));
+         vassert(isIRAtom(st->Ist.Exit.guard));
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
          continue;
@@ -780,13 +780,13 @@ static void redundant_put_removal_BB (
             isPut = True;
             key = mk_key_GetPut( st->Ist.Put.offset, 
                                  typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
-            vassert(isAtom(st->Ist.Put.data));
+            vassert(isIRAtom(st->Ist.Put.data));
             break;
          case Ist_PutI:
             isPut = True;
             key = mk_key_GetIPutI( st->Ist.PutI.descr );
-            vassert(isAtom(st->Ist.PutI.ix));
-            vassert(isAtom(st->Ist.PutI.data));
+            vassert(isIRAtom(st->Ist.PutI.ix));
+            vassert(isIRAtom(st->Ist.PutI.data));
             break;
          default: 
             isPut = False;
@@ -1318,7 +1318,7 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
          return ex;
 
       case Iex_GetI:
-         vassert(isAtom(ex->Iex.GetI.ix));
+         vassert(isIRAtom(ex->Iex.GetI.ix));
          return IRExpr_GetI(
             ex->Iex.GetI.descr,
             subst_Expr(env, ex->Iex.GetI.ix),
@@ -1326,8 +1326,8 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
          );
 
       case Iex_Binop:
-         vassert(isAtom(ex->Iex.Binop.arg1));
-         vassert(isAtom(ex->Iex.Binop.arg2));
+         vassert(isIRAtom(ex->Iex.Binop.arg1));
+         vassert(isIRAtom(ex->Iex.Binop.arg2));
          return IRExpr_Binop(
                    ex->Iex.Binop.op,
                    subst_Expr(env, ex->Iex.Binop.arg1),
@@ -1335,14 +1335,14 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
                 );
 
       case Iex_Unop:
-         vassert(isAtom(ex->Iex.Unop.arg));
+         vassert(isIRAtom(ex->Iex.Unop.arg));
          return IRExpr_Unop(
                    ex->Iex.Unop.op,
                    subst_Expr(env, ex->Iex.Unop.arg)
                 );
 
       case Iex_LDle:
-         vassert(isAtom(ex->Iex.LDle.addr));
+         vassert(isIRAtom(ex->Iex.LDle.addr));
          return IRExpr_LDle(
                    ex->Iex.LDle.ty,
                    subst_Expr(env, ex->Iex.LDle.addr)
@@ -1352,7 +1352,7 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
          Int      i;
          IRExpr** args2 = sopyIRExprVec(ex->Iex.CCall.args);
          for (i = 0; args2[i]; i++) {
-            vassert(isAtom(args2[i]));
+            vassert(isIRAtom(args2[i]));
             args2[i] = subst_Expr(env, args2[i]);
          }
          return IRExpr_CCall(
@@ -1363,9 +1363,9 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
       }
 
       case Iex_Mux0X:
-         vassert(isAtom(ex->Iex.Mux0X.cond));
-         vassert(isAtom(ex->Iex.Mux0X.expr0));
-         vassert(isAtom(ex->Iex.Mux0X.exprX));
+         vassert(isIRAtom(ex->Iex.Mux0X.cond));
+         vassert(isIRAtom(ex->Iex.Mux0X.expr0));
+         vassert(isIRAtom(ex->Iex.Mux0X.exprX));
          return IRExpr_Mux0X(
                    subst_Expr(env, ex->Iex.Mux0X.cond),
                    subst_Expr(env, ex->Iex.Mux0X.expr0),
@@ -1394,15 +1394,15 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 
    switch (st->tag) {
       case Ist_Put:
-         vassert(isAtom(st->Ist.Put.data));
+         vassert(isIRAtom(st->Ist.Put.data));
          return IRStmt_Put(
                    st->Ist.Put.offset, 
                    fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
                 );
 
       case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.ix));
-         vassert(isAtom(st->Ist.PutI.data));
+         vassert(isIRAtom(st->Ist.PutI.ix));
+         vassert(isIRAtom(st->Ist.PutI.data));
          return IRStmt_PutI(
                    st->Ist.PutI.descr,
                    fold_Expr(subst_Expr(env, st->Ist.PutI.ix)),
@@ -1419,8 +1419,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                 );
 
       case Ist_STle:
-         vassert(isAtom(st->Ist.STle.addr));
-         vassert(isAtom(st->Ist.STle.data));
+         vassert(isIRAtom(st->Ist.STle.addr));
+         vassert(isIRAtom(st->Ist.STle.data));
          return IRStmt_STle(
                    fold_Expr(subst_Expr(env, st->Ist.STle.addr)),
                    fold_Expr(subst_Expr(env, st->Ist.STle.data))
@@ -1434,13 +1434,13 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          *d2 = *d;
          d2->args = sopyIRExprVec(d2->args);
          if (d2->mFx != Ifx_None) {
-            vassert(isAtom(d2->mAddr));
+            vassert(isIRAtom(d2->mAddr));
             d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
          }
-         vassert(isAtom(d2->guard));
+         vassert(isIRAtom(d2->guard));
          d2->guard = fold_Expr(subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
-            vassert(isAtom(d2->args[i]));
+            vassert(isIRAtom(d2->args[i]));
             d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
          }
          return IRStmt_Dirty(d2);
@@ -1454,7 +1454,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 
       case Ist_Exit: {
          IRExpr* fcond;
-         vassert(isAtom(st->Ist.Exit.guard));
+         vassert(isIRAtom(st->Ist.Exit.guard));
          fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.guard));
          if (fcond->tag == Iex_Const) {
             /* Interesting.  The condition on this exit has folded down to
@@ -2209,20 +2209,6 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
 
 /* ------- Helper functions for PutI/GetI transformations ------ */
 
-/* Do a1 and a2 denote identical values?  Safe answer: False 
-*/
-static Bool identicalAtoms ( IRExpr* a1, IRExpr* a2 )
-{
-   vassert(isAtom(a1));
-   vassert(isAtom(a2));
-   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
-      return toBool(a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp);
-   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
-      return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
-   return False;
-}
-
-
 /* Determine, to the extent possible, the relationship between two
    guest state accesses.  The possible outcomes are:
 
@@ -2293,9 +2279,9 @@ GSAliasing getAliasingRelation_II (
       relation will be.  Now, since the IR is flattened, the index
       expressions should be atoms -- either consts or tmps.  So that
       makes the comparison simple. */
-   vassert(isAtom(ix1));
-   vassert(isAtom(ix2));
-   if (!identicalAtoms(ix1,ix2))
+   vassert(isIRAtom(ix1));
+   vassert(isIRAtom(ix2));
+   if (!eqIRAtom(ix1,ix2))
       return UnknownAlias;
 
    /* Ok, the index expressions are identical.  So now the only way
@@ -2478,7 +2464,7 @@ Bool guestAccessWhichMightOverlapPutI (
          return False;
 
       case Ist_Put:
-         vassert(isAtom(s2->Ist.Put.data));
+         vassert(isIRAtom(s2->Ist.Put.data));
          relation 
             = getAliasingRelation_IC(
                  pi->Ist.PutI.descr, pi->Ist.PutI.ix,
@@ -2488,8 +2474,8 @@ Bool guestAccessWhichMightOverlapPutI (
          goto have_relation;
 
       case Ist_PutI:
-         vassert(isAtom(s2->Ist.PutI.ix));
-         vassert(isAtom(s2->Ist.PutI.data));
+         vassert(isIRAtom(s2->Ist.PutI.ix));
+         vassert(isIRAtom(s2->Ist.PutI.data));
          relation
             = getAliasingRelation_II(
                  pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
@@ -2521,8 +2507,8 @@ Bool guestAccessWhichMightOverlapPutI (
          return False;
 
       case Ist_STle:
-         vassert(isAtom(s2->Ist.STle.addr));
-         vassert(isAtom(s2->Ist.STle.data));
+         vassert(isIRAtom(s2->Ist.STle.addr));
+         vassert(isIRAtom(s2->Ist.STle.data));
          return False;
 
       default:
@@ -2563,7 +2549,7 @@ void do_redundant_GetI_elimination ( IRBB* bb )
          Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
          IRExpr*  replacement = findPutI(bb, i-1, descr, ix, bias);
          if (replacement 
-             && isAtom(replacement)
+             && isIRAtom(replacement)
              /* Make sure we're doing a type-safe transformation! */
              && typeOfIRExpr(bb->tyenv, replacement) == descr->elemTy) {
             if (DEBUG_IROPT) {
@@ -3594,25 +3580,25 @@ static Bool hasGetIorPutI ( IRBB* bb )
                return True;
             break;
          case Ist_Put:
-            vassert(isAtom(st->Ist.Put.data));
+            vassert(isIRAtom(st->Ist.Put.data));
             break;
          case Ist_STle:
-            vassert(isAtom(st->Ist.STle.addr));
-            vassert(isAtom(st->Ist.STle.data));
+            vassert(isIRAtom(st->Ist.STle.addr));
+            vassert(isIRAtom(st->Ist.STle.data));
             break;
          case Ist_Dirty:
             d = st->Ist.Dirty.details;
-            vassert(isAtom(d->guard));
+            vassert(isIRAtom(d->guard));
             for (j = 0; d->args[j]; j++)
-               vassert(isAtom(d->args[j]));
+               vassert(isIRAtom(d->args[j]));
             if (d->mFx != Ifx_None)
-               vassert(isAtom(d->mAddr));
+               vassert(isIRAtom(d->mAddr));
             break;
          case Ist_IMark:
          case Ist_MFence:
             break;
          case Ist_Exit:
-            vassert(isAtom(st->Ist.Exit.guard));
+            vassert(isIRAtom(st->Ist.Exit.guard));
             break;
          default: 
             ppIRStmt(st);

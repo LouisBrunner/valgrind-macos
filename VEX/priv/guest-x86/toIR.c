@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004-2005 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -435,7 +435,7 @@ static void stmt ( IRStmt* st )
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
-   vassert(isPlausibleType(ty));
+   vassert(isPlausibleIRType(ty));
    return newIRTemp( irbb->tyenv, ty );
 }
 

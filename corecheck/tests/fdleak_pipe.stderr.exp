@@ -1,0 +1,27 @@
+
+
+FILE DESCRIPTORS: 6 open at exit.
+Open file descriptor .:
+   at 0x........: __pipe (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Open file descriptor .:
+   at 0x........: __pipe (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

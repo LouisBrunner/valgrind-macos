@@ -654,6 +654,15 @@ not Cachegrind.
       <code>-v</code> option which prints out all used suppression records.
       </li><br><p>
 
+  <li><code>--track-fds=no</code> [default]<br>
+      <code>--track-fds=yes</code>
+      <p>When enabled, Valgrind will print out a list of open file
+      descriptors on exit.  Along with each file descriptor, Valgrind
+      prints out a stack backtrace of where the file was opened and any
+      details relating to the file descriptor such as the file name or
+      socket details.
+      <br><p>
+
   <li><code>--gdb-attach=no</code> [default]<br>
       <code>--gdb-attach=yes</code>
       <p>When enabled, Valgrind will pause after every error shown,

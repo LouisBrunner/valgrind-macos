@@ -1,0 +1,45 @@
+
+
+FILE DESCRIPTORS: 6 open at exit.
+Open AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:...
+   at 0x........: __libc_accept (...libc...)
+   by 0x........: main (fdleak_ipv4.c:100)
+
+Open AF_INET socket 3: 127.0.0.1:... <-> unbound
+   at 0x........: __socket (in /...libc...)
+   by 0x........: main (fdleak_ipv4.c:100)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+FILE DESCRIPTORS: 5 open at exit.
+Open AF_INET socket 3: 127.0.0.1:... <-> 127.0.0.1:...
+   at 0x........: __socket (in /...libc...)
+   by 0x........: main (fdleak_ipv4.c:104)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

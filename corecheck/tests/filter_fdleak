@@ -1,0 +1,26 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic                    |
+
+# Anonymise addresses
+$dir/../../tests/filter_addresses                       |
+
+# Anonymise line numbers in mac_replace_strmem.c
+sed "s/mac_replace_strmem.c:[0-9]\+/mac_replace_strmem.c:.../"  |
+
+$dir/../../tests/filter_test_paths                      |
+
+# Anonymise paths like "(in /foo/bar/libc-baz.so)"
+sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |
+
+# Anonymise paths like "__libc_start_main (../foo/bar/libc-quux.c:129)"
+sed "s/__libc_\(.*\) (.*)$/__libc_\1 (...libc...)/"	|
+
+sed s/"^Open AF_UNIX socket [0-9]\+: <unknown>/Open AF_UNIX socket .: <unknown>/" |
+sed s/"^Open \(AF_UNIX socket\|file descriptor\) [0-9]\+: \/dev\/null/Open \\1 .: \/dev\/null/" |
+sed s/"^Open \(AF_UNIX socket\|file descriptor\) [0-9]\+: \/tmp\/\(sock\|data1\|data2\|file\)\.[0-9]\+/Open \\1 .: \/tmp\/\\2/" |
+sed s/"^Open file descriptor [0-9]\+: .*/Open file descriptor .: ./" |
+sed s/"^Open file descriptor [0-9]\+:$/Open file descriptor .:/" |
+sed s/"127.0.0.1:[0-9]\+/127.0.0.1:.../g"

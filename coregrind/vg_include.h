@@ -257,6 +257,9 @@ extern Bool  VG_(clo_assume_24);
 extern Bool  VG_(clo_lowlat_syscalls);
 extern Bool  VG_(clo_lowlat_signals);
 
+/* Track open file descriptors? */
+extern Bool  VG_(clo_track_fds);
+
 /* Should we run __libc_freeres at exit?  Sometimes causes crashes.
    Default: YES.  Note this is subservient to VG_(needs).libc_freeres;
    if the latter says False, then the setting of VG_(clo_weird_hacks)
@@ -1573,6 +1576,10 @@ extern Bool VG_(is_kerror) ( Int res );
 /* Internal atfork handlers */
 typedef void (*vg_atfork_t)(ThreadId);
 extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
+
+/* fd leakage calls. */
+extern void VG_(init_preopened_fds) ( void );
+extern void VG_(fd_stats) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c

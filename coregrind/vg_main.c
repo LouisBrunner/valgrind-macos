@@ -557,6 +557,7 @@ Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
+Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_chain_bb)       = True;
 Bool   VG_(clo_show_below_main) = False;
 
@@ -657,6 +658,8 @@ static void usage ( void )
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
+
+"    --track-fds=no|yes        Track open file descriptors? [no]\n"
 
 "    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
 "    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
@@ -998,6 +1001,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_run_libc_freeres) = True;
       else if (VG_CLO_STREQ(argv[i], "--run-libc-freeres=no"))
          VG_(clo_run_libc_freeres) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--track-fds=yes"))
+         VG_(clo_track_fds) = True;
+      else if (VG_CLO_STREQ(argv[i], "--track-fds=no"))
+         VG_(clo_track_fds) = False;
 
       else if (VG_CLO_STREQN(15, argv[i], "--sanity-level="))
          VG_(sanity_level) = (Int)VG_(atoll)(&argv[i][15]);
@@ -1601,6 +1609,10 @@ void VG_(main) ( void )
    /* Set up baseBlock offsets and copy the saved machine's state into it. */
    vg_init_baseBlock();
 
+   /* Search for file descriptors that are inherited from our parent. */
+   if (VG_(clo_track_fds))
+      VG_(init_preopened_fds)();
+
    /* Initialise the scheduler, and copy the client's state from
       baseBlock into VG_(threads)[1].  Must be before:
       - VG_(sigstartup_actions)()
@@ -1674,6 +1686,10 @@ void VG_(main) ( void )
      VG_(message)(Vg_UserMsg, 
         "Warning: pthread scheduler exited due to deadlock");
    }
+
+   /* Print out file descriptor summary and stats. */
+   if(VG_(clo_track_fds))
+      VG_(fd_stats)();
 
    if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(show_all_errors)();

@@ -1204,6 +1204,15 @@ Int VG_(write) ( Int fd, const void* buf, Int count)
    return res;
 }
 
+Int VG_(lseek) ( Int fd, Long offset, Int whence)
+{
+   Int res;
+   /* res = lseek( fd, offset, whence ); */
+   res = VG_(do_syscall)(__NR_lseek, fd, (UInt)offset, whence);
+   if (VG_(is_kerror)(res)) res = -1;
+   return res;
+}
+
 Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
    Int res;
@@ -1288,6 +1297,37 @@ Char* VG_(getenv) ( Char* varname )
    return NULL;
 }
 
+
+/* Support for getrlimit. */
+Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
+{
+   Int res;
+   /* res = getrlimit( resource, rlim ); */
+   res = VG_(do_syscall)(__NR_getrlimit, (UInt)resource, (UInt)rlim);
+   if(VG_(is_kerror)(res)) res = -1;
+   return res;
+}
+
+
+/* Support for getdents. */
+Int VG_(getdents) (UInt fd, struct vki_dirent *dirp, UInt count)
+{
+   Int res;
+   /* res = getdents( fd, dirp, count ); */
+   res = VG_(do_syscall)(__NR_getdents, fd, (UInt)dirp, count);
+   if (VG_(is_kerror)(res)) res = -1;
+   return res;
+}
+
+/* Support for a readlink.  */
+Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)
+{
+   Int res;
+   /* res = readlink( path, buf, bufsiz ); */
+   res = VG_(do_syscall)(__NR_readlink, (UInt)path, (UInt)buf, bufsiz);
+   if (VG_(is_kerror)(res)) res = -1;
+   return res;
+}
 
 /* You'd be amazed how many places need to know the current pid. */
 Int VG_(getpid) ( void )
@@ -1618,9 +1658,12 @@ void VG_(ssort)( void* base, UInt nmemb, UInt size,
    /usr/src/linux-2.4.9-31 */
 
 /* kernel, ./include/linux/net.h */
-#define SYS_SOCKET     1               /* sys_socket(2)        */
-#define SYS_CONNECT    3               /* sys_connect(2)       */
-#define SYS_SEND       9               /* sys_send(2)          */
+#define SYS_SOCKET      1              /* sys_socket(2)        */
+#define SYS_CONNECT     3              /* sys_connect(2)       */
+#define SYS_GETSOCKNAME 6              /* sys_getsockname(2)   */
+#define SYS_GETPEERNAME 7              /* sys_getpeername(2)   */
+#define SYS_SEND        9              /* sys_send(2)          */
+#define SYS_GETSOCKOPT  15             /* sys_getsockopt(2)    */
 
 typedef UInt __u32;
 
@@ -1630,7 +1673,6 @@ struct vki_in_addr {
 };
 
 /* kernel, include/linux/socket.h */
-typedef unsigned short  vki_sa_family_t;
 #define AF_INET                2       /* Internet IP Protocol        */
 #define MSG_NOSIGNAL           0x4000  /* Do not generate SIGPIPE */
 
@@ -1818,6 +1860,48 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    args[3] = flags;
    res = VG_(do_syscall)(__NR_socketcall, SYS_SEND, (UInt)&args);
    if (VG_(is_kerror)(res)) 
+      res = -1;
+   return res;
+}
+
+Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
+{
+   Int res;
+   UInt args[3];
+   args[0] = sd;
+   args[1] = (UInt)name;
+   args[2] = (UInt)namelen;
+   res = VG_(do_syscall)(__NR_socketcall, SYS_GETSOCKNAME, (UInt)&args);
+   if(VG_(is_kerror)(res))
+      res = -1;
+   return res;
+}
+
+Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
+{
+   Int res;
+   UInt args[3];
+   args[0] = sd;
+   args[1] = (UInt)name;
+   args[2] = (UInt)namelen;
+   res = VG_(do_syscall)(__NR_socketcall, SYS_GETPEERNAME, (UInt)&args);
+   if(VG_(is_kerror)(res))
+      res = -1;
+   return res;
+}
+
+Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
+                      Int *optlen)
+{
+   Int res;
+   UInt args[5];
+   args[0] = sd;
+   args[1] = (UInt)level;
+   args[2] = (UInt)optname;
+   args[3] = (UInt)optval;
+   args[4] = (UInt)optlen;
+   res = VG_(do_syscall)(__NR_socketcall, SYS_GETSOCKOPT, (UInt)&args);
+   if(VG_(is_kerror)(res))
       res = -1;
    return res;
 }

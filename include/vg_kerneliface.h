@@ -330,6 +330,10 @@ struct vki_ucontext {
 #define VKI_O_DIRECTORY     0200000 /* must be a directory */
 #define VKI_O_NOFOLLOW      0400000 /* don't follow links */
 
+#define VKI_SEEK_SET              0
+#define VKI_SEEK_CUR              1
+#define VKI_SEEK_END              2
+
 /* Copied from linux-2.4.19/include/linux/stat.h */
 
 #define VKI_S_IRWXU 00700
@@ -632,6 +636,41 @@ typedef struct vki_modify_ldt_ldt_s {
 #define VKI_CLONE_DETACHED	0x00400000	/* parent wants no child-exit signal */
 #define VKI_CLONE_UNTRACED	0x00800000	/* set if the tracing process can't force VKI_CLONE_PTRACE on this clone */
 #define VKI_CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
+
+/* This is the structure passed to the getdents syscall. */
+/*
+ * linux/dirent.h
+ */
+typedef struct vki_dirent {
+	long           d_ino;
+	long           d_off;
+	unsigned short d_reclen;
+	char           d_name[256];
+} vki_dirent;
+
+
+
+/* This is the structure passed to the getrlimit syscall. */
+/*
+ * bits/resource.h
+ */
+typedef struct vki_rlimit {
+	unsigned long rlim_cur;
+	unsigned long rlim_max;
+} vki_rlimit;
+
+#define VKI_RLIMIT_NOFILE 7
+
+/* Socket stuff. */
+/*
+ * sys/socket.h
+ */
+typedef unsigned short vki_sa_family_t;
+struct vki_sockaddr {
+  vki_sa_family_t sa_family;     /* Address family. */
+  char            sa_data[14];   /* Address data. */
+};
+
 
 #endif /* ndef __VG_KERNELIFACE_H */
 

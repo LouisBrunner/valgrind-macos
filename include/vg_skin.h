@@ -362,6 +362,9 @@ extern void  VG_(skin_panic) ( Char* str );
 /* Looks up VG_(client_envp) */
 extern Char* VG_(getenv) ( Char* name );
 
+/* Get client resource limit*/
+extern Int VG_(getrlimit) ( Int resource, struct vki_rlimit *rlim );
+
 /* Crude stand-in for the glibc system() call. */
 extern Int   VG_(system) ( Char* cmd );
 
@@ -420,6 +423,8 @@ extern Int VG_(log2) ( Int x );
 
 /* ------------------------------------------------------------------ */
 /* unistd.h, fcntl.h, sys/stat.h */
+extern Int  VG_(getdents)( UInt fd, struct vki_dirent *dirp, UInt count );
+extern Int  VG_(readlink)( Char* path, Char* buf, UInt bufsize );
 extern Int  VG_(getpid)  ( void );
 extern Int  VG_(getppid) ( void );
 extern Int  VG_(getpgrp) ( void );
@@ -429,6 +434,7 @@ extern Int  VG_(setpgid) ( Int pid, Int pgrp );
 extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
 extern Int  VG_(read)   ( Int fd, void* buf, Int count);
 extern Int  VG_(write)  ( Int fd, const void* buf, Int count);
+extern Int  VG_(lseek)  ( Int fd, Long offset, Int whence);
 extern void VG_(close)  ( Int fd );
 
 extern Int  VG_(pipe)   ( Int fd[2] );
@@ -512,6 +518,14 @@ extern Int VG_(ktkill)       ( Int pid, Int signo );
 extern Int VG_(ksigpending)  ( vki_ksigset_t* set );
 
 extern Int VG_(waitpid)	     ( Int pid, Int *status, Int options );
+
+/* ------------------------------------------------------------------ */
+/* socket.h. */
+
+extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen);
+extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen);
+extern Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
+                             Int *optlen);
 
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */

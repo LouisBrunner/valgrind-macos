@@ -257,6 +257,291 @@ Bool VG_(is_kerror) ( Int res )
       return False;
 }
 
+/* One of these is allocated for each open file descriptor.  */
+
+typedef struct OpenFd
+{
+   Int fd;                        /* The file descriptor */
+   Char *pathname;                /* NULL if not a regular file or unknown */
+   ExeContext *where;             /* NULL if inherited from parent */
+   struct OpenFd *next, *prev;
+} OpenFd;
+
+/* List of allocated file descriptors. */
+
+static OpenFd *allocated_fds;
+
+/* Count of open file descriptors. */
+
+static int fd_count = 0;
+
+/* Given a file descriptor, attempt to deduce it's filename.  To do this,
+   we use /proc/self/fd/<FD>.  If this doesn't point to a file, or if it
+   doesn't exist, we just return NULL.  Otherwise, we return a pointer
+   to the file name, which the caller is responsible for freeing. */
+
+static
+Char *resolve_fname(Int fd)
+{
+   char tmp[28], buf[PATH_MAX];
+
+   VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
+   VG_(memset)(buf, 0, PATH_MAX);
+
+   if(VG_(readlink)(tmp, buf, PATH_MAX) == -1)
+      return NULL;
+
+   return ((buf[0] == '/') ? VG_(strdup)(buf) : NULL);
+}
+
+
+/* Note the fact that a file descriptor was just closed. */
+
+static
+void record_fd_close(Int tid, Int fd)
+{
+   OpenFd *i = allocated_fds;
+
+   while(i) {
+      if(i->fd == fd) {
+         if(i->prev)
+            i->prev->next = i->next;
+         else
+            allocated_fds = i->next;
+         if(i->next)
+            i->next->prev = i->prev;
+         if(i->pathname) 
+            VG_(free) (i->pathname);
+         VG_(free) (i);
+         fd_count--;
+         break;
+      }
+      i = i->next;
+   }
+}
+
+/* Note the fact that a file descriptor was just opened.  If the
+   tid is -1, this indicates an inherited fd.  If the pathname is NULL,
+   this either indicates a non-standard file (i.e. a pipe or socket or
+   some such thing) or that we don't know the filename.  If the fd is
+   already open, then we're probably doing a dup2() to an existing fd,
+   so just overwrite the existing one. */
+
+static
+void record_fd_open(Int tid, Int fd, char *pathname)
+{
+   OpenFd *i;
+
+   /* Check to see if this fd is already open. */
+   i = allocated_fds;
+   while (i) {
+      if (i->fd == fd) {
+         if (i->pathname) VG_(free)(i->pathname);
+         break;
+      }
+      i = i->next;
+   }
+
+   /* Not already one: allocate an OpenFd */
+   if (i == NULL) {
+      i = VG_(malloc)(sizeof(OpenFd));
+
+      i->prev = NULL;
+      i->next = allocated_fds;
+      if(allocated_fds) allocated_fds->prev = i;
+      allocated_fds = i;
+      fd_count++;
+   }
+
+   i->fd = fd;
+   i->pathname = pathname;
+   i->where = (tid == -1) ? NULL : VG_(get_ExeContext)(tid);
+}
+
+static
+Char *unix2name(struct sockaddr_un *sa, UInt len, Char *name)
+{
+   if(sa == NULL || len == 0 || sa->sun_path[0] == '\0') {
+      VG_(sprintf)(name, "<unknown>");
+   } else {
+      VG_(sprintf)(name, "%s", sa->sun_path);
+   }
+
+   return name;
+}
+
+static
+Char *inet2name(struct sockaddr_in *sa, UInt len, Char *name)
+{
+   if(sa == NULL || len == 0) {
+      VG_(sprintf)(name, "<unknown>");
+   } else {
+      UInt addr = sa->sin_addr.s_addr;
+
+      if (addr == 0) {
+         VG_(sprintf)(name, "<unbound>");
+      } else {
+         VG_(sprintf)(name, "%u.%u.%u.%u:%u",
+                      addr & 0xFF, (addr>>8) & 0xFF,
+                      (addr>>16) & 0xFF, (addr>>24) & 0xFF,
+                      sa->sin_port);
+      }
+   }
+
+   return name;
+}
+
+
+/*
+ * Try get some details about a socket.
+ */
+
+static void
+getsockdetails(int fd)
+{
+   union u {
+      struct sockaddr a;
+      struct sockaddr_in in;
+      struct sockaddr_un un;
+   } laddr;
+   socklen_t llen;
+
+   llen = sizeof(laddr);
+   VG_(memset)(&laddr, 0, llen);
+
+   if(VG_(getsockname)(fd, (struct vki_sockaddr *)&(laddr.a), &llen) != -1) {
+      switch(laddr.a.sa_family) {
+      case AF_INET: {
+         static char lname[32];
+         static char pname[32];
+         struct sockaddr_in paddr;
+         socklen_t plen = sizeof(struct sockaddr_in);
+
+         if(VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
+            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s", fd,
+                         inet2name(&(laddr.in), llen, lname),
+                         inet2name(&paddr, plen, pname));
+         } else {
+            VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> unbound",
+                         fd, inet2name(&(laddr.in), llen, lname));
+         }
+         return;
+         }
+      case AF_UNIX: {
+         static char lname[256];
+         VG_(message)(Vg_UserMsg, "Open AF_UNIX socket %d: %s", fd,
+                      unix2name(&(laddr.un), llen, lname));
+         return;
+         }
+      default:
+         VG_(message)(Vg_UserMsg, "Open pf-%d socket %d:",
+                      laddr.a.sa_family, fd);
+         return;
+      }
+   }
+
+   VG_(message)(Vg_UserMsg, "Open socket %d:", fd);
+}
+
+
+/* Dump out a summary, and optionally a more detailed list, of open file
+   descriptors. */
+
+void VG_(fd_stats) ()
+{
+   OpenFd *i = allocated_fds;
+
+   VG_(message)(Vg_UserMsg,
+                "FILE DESCRIPTORS: %d open at exit.", fd_count);
+
+   while(i) {
+      if(i->pathname) {
+         VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s", i->fd,
+                      i->pathname);
+      } else {
+         int val;
+         socklen_t len = sizeof(val);
+
+         if(VG_(getsockopt)(i->fd, SOL_SOCKET, SO_TYPE, &val, &len) == -1) {
+            VG_(message)(Vg_UserMsg, "Open file descriptor %d:", i->fd);
+         } else {
+            getsockdetails(i->fd);
+         }
+      }
+
+      if(i->where) {
+         VG_(pp_ExeContext)(i->where);
+         VG_(message)(Vg_UserMsg, "");
+      } else {
+         VG_(message)(Vg_UserMsg, "   <inherited from parent>");
+         VG_(message)(Vg_UserMsg, "");
+      }
+
+      i = i->next;
+   }
+
+   VG_(message)(Vg_UserMsg, "");
+}
+
+/* If /proc/self/fd doesn't exist for some weird reason (like you've
+   got a kernel that doesn't have /proc support compiled in), then we
+   need to find out what file descriptors we inherited from our parent
+   process the hard way - by checking each fd in turn. */
+
+static
+void do_hacky_preopened()
+{
+   struct vki_rlimit lim;
+   unsigned int count;
+   int i;
+
+   if(VG_(getrlimit) (VKI_RLIMIT_NOFILE, &lim) == -1) {
+      /* Hmm.  getrlimit() failed.  Now we're screwed, so just choose
+         an arbitrarily high number.  1024 happens to be the limit in
+         the 2.4 kernels. */
+      count = 1024;
+   } else {
+      count = lim.rlim_cur;
+   }
+
+   for (i = 0; i < count; i++)
+      if(VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
+         record_fd_open(-1, i, NULL);
+}
+
+/* Initialize the list of open file descriptors with the file descriptors
+   we inherited from out parent process. */
+
+void VG_(init_preopened_fds)()
+{
+   int f, ret;
+   struct vki_dirent d;
+
+   f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
+   if(f == -1) {
+      do_hacky_preopened();
+      return;
+   }
+
+   while((ret = VG_(getdents)(f, &d, sizeof(d))) != 0) {
+      if(ret == -1)
+         goto out;
+
+      if(VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
+         int fno = VG_(atoll)(d.d_name);
+
+         if(fno != f)
+            if(VG_(clo_track_fds))
+               record_fd_open(-1, fno, resolve_fname(fno));
+      }
+
+      VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
+   }
+
+out:
+   VG_(close)(f);
+}
+
 static
 UInt get_shm_size ( Int shmid )
 {
@@ -339,6 +624,27 @@ void msghdr_foreachfield (
       foreach_func ( tid, 
                      "(msg.msg_control)", 
                      (Addr)msg->msg_control, msg->msg_controllen );
+}
+
+void check_cmsg_for_fds(Int tid, struct msghdr *msg)
+{
+   struct cmsghdr *cm = CMSG_FIRSTHDR(msg);
+
+   while (cm) {
+      if (cm->cmsg_level == SOL_SOCKET &&
+          cm->cmsg_type == SCM_RIGHTS ) {
+         int *fds = (int *) CMSG_DATA(cm);
+         int fdc = (cm->cmsg_len - CMSG_ALIGN(sizeof(struct cmsghdr)))
+                         / sizeof(int);
+         int i;
+
+         for (i = 0; i < fdc; i++)
+            if(VG_(clo_track_fds))
+               record_fd_open (tid, fds[i], resolve_fname(fds[i]));
+      }
+
+      cm = CMSG_NXTHDR(msg, cm);
+   }
 }
 
 static
@@ -1369,6 +1675,10 @@ PRE(close)
       res = -VKI_EBADF;
 }
 
+POST(close)
+{
+   if(VG_(clo_track_fds)) record_fd_close(tid, arg1);
+}
 
 PRE(dup)
 {
@@ -1382,6 +1692,9 @@ POST(dup)
    if (!fd_allowed(res, "dup", tid)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
+   } else {
+      if(VG_(clo_track_fds))
+         record_fd_open(tid, res, resolve_fname(res));
    }
 }
 
@@ -1398,12 +1711,21 @@ POST(dup2)
    MAYBE_PRINTF("SYSCALL[%d]       dup2 ( %d, %d ) = %d\n", 
 		VG_(getpid)(), 
 		arg1, arg2, res);
+   if(VG_(clo_track_fds))
+      record_fd_open(tid, res, resolve_fname(res));
 }
 
 PRE(fcntl)
 {
    /* int fcntl(int fd, int cmd, int arg); */
    MAYBE_PRINTF("fcntl ( %d, %d, %d )\n",arg1,arg2,arg3);
+}
+
+POST(fcntl)
+{
+   if (arg2 == VKI_F_DUPFD)
+      if(VG_(clo_track_fds))
+         record_fd_open(tid, res, resolve_fname(res));
 }
 
 PRE(fchdir)
@@ -1428,9 +1750,15 @@ PRE(fchmod)
 
 PRE(fcntl64)
 {
-   /* I don't know what the prototype for this is supposed to be. */
-   /* ??? int fcntl(int fd, int cmd); */
-   MAYBE_PRINTF("fcntl64 (?!) ( %d, %d )\n", arg1,arg2);
+   /* int fcntl64(int fd, int cmd, int arg); */
+   MAYBE_PRINTF("fcntl64 ( %d, %d, %d )\n", arg1,arg2,arg3);
+}
+
+POST(fcntl64)
+{
+   if (arg2 == VKI_F_DUPFD)
+      if(VG_(clo_track_fds))
+         record_fd_open(tid, res, resolve_fname(res));
 }
 
 PRE(fstat)
@@ -3003,6 +3331,9 @@ POST(open)
    if (!fd_allowed(res, "open", tid)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
+   } else {
+      if(VG_(clo_track_fds))
+         record_fd_open(tid, res, VG_(strdup)((Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
 }
@@ -3044,6 +3375,9 @@ POST(creat)
    if (!fd_allowed(res, "creat", tid)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
+   } else {
+      if(VG_(clo_track_fds))
+         record_fd_open(tid, res, VG_(strdup)((Char*)arg1));
    }
    MAYBE_PRINTF("%d\n",res);
 }
@@ -3065,8 +3399,13 @@ POST(pipe)
       VG_(close)(p[0]);
       VG_(close)(p[1]);
       res = -VKI_EMFILE;
-   } else 
+   } else {
       VG_TRACK( post_mem_write, arg1, 2*sizeof(int) );
+      if(VG_(clo_track_fds)) {
+         record_fd_open(tid, p[0], NULL);
+         record_fd_open(tid, p[1], NULL);
+      }
+   }
 
    MAYBE_PRINTF("SYSCALL[%d]       pipe --> %d (rd %d, wr %d)\n", 
 		VG_(getpid)(), res,
@@ -3563,12 +3902,19 @@ POST(socketcall)
    case SYS_SOCKETPAIR:
       /* XXX TODO: check return fd against VG_MAX_FD */
       VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
+      if(VG_(clo_track_fds)) {
+         record_fd_open(tid, ((UInt*)((UInt*)arg2)[3])[0], NULL);
+         record_fd_open(tid, ((UInt*)((UInt*)arg2)[3])[1], NULL);
+      }
       break;
 
    case SYS_SOCKET:
       if (!fd_allowed(res, "socket", tid)) {
 	 VG_(close)(res);
 	 res = -VKI_EMFILE;
+      } else {
+         if(VG_(clo_track_fds))
+            record_fd_open(tid, res, NULL);
       }
       break;
 
@@ -3593,6 +3939,8 @@ POST(socketcall)
 	 if (addr_p != (Addr)NULL) 
 	    buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
 				     "socketcall.accept(addrlen_out)" );
+         if(VG_(clo_track_fds))
+            record_fd_open(tid, res, NULL);
       }
       break;
    }
@@ -3673,6 +4021,7 @@ POST(socketcall)
       struct msghdr *msg = (struct msghdr *)((UInt *)arg2)[ 1 ];
 
       msghdr_foreachfield( tid, msg, post_mem_write_recvmsg );
+      check_cmsg_for_fds( tid, msg );
 
       break;
    }
@@ -4222,15 +4571,15 @@ static const struct sys_info sys_info[] = {
    SYSB_(chown32,		False),
    SYSB_(lchown32,		False),
    SYSB_(chown,			False),
-   SYSB_(close,			False),
+   SYSBA(close,			False),
    SYSBA(dup,			False),
    SYSBA(dup2,			False),
-   SYSB_(fcntl,			True),
+   SYSBA(fcntl,			True),
    SYSB_(fchdir,		False),
    SYSB_(fchown32,		False),
    SYSB_(fchown,		False),
    SYSB_(fchmod,		False),
-   SYSB_(fcntl64,		True),
+   SYSBA(fcntl64,		True),
    SYSBA(fstat,			False),
    SYSBA(fork,			False),
    SYSB_(fsync,			True),

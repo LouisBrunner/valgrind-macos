@@ -2,6 +2,8 @@ SUBDIRS = xml lib images
 
 EXTRA_DIST = README porting-HOWTO
 
+dist_man_MANS = valgrind.1	# Unsure about this --njn
+
 ##-------------------------------------------------------------------
 ## Below here is more ordinary make stuff...
 ##-------------------------------------------------------------------

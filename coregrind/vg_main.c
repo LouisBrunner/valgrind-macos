@@ -90,6 +90,8 @@ Int VGOFF_(helper_shldl) = INVALID_OFFSET;
 Int VGOFF_(helper_shldw) = INVALID_OFFSET;
 Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
 Int VGOFF_(helper_shrdw) = INVALID_OFFSET;
+Int VGOFF_(helper_IN) = INVALID_OFFSET;
+Int VGOFF_(helper_OUT) = INVALID_OFFSET;
 Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
 Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
 Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
@@ -309,75 +311,79 @@ static void vg_init_baseBlock ( void )
 
    /* Helper functions. */
    VGOFF_(helper_idiv_64_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32));
    VGOFF_(helper_div_64_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_64_32) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_64_32));
    VGOFF_(helper_idiv_32_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_32_16) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_32_16));
    VGOFF_(helper_div_32_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_32_16) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_32_16));
    VGOFF_(helper_idiv_16_8)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_16_8) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_16_8));
    VGOFF_(helper_div_16_8)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_16_8) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_16_8));
 
    VGOFF_(helper_imul_32_64)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_32_64) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_32_64));
    VGOFF_(helper_mul_32_64)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_32_64) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_32_64));
    VGOFF_(helper_imul_16_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_16_32) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_16_32));
    VGOFF_(helper_mul_16_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_16_32) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_16_32));
    VGOFF_(helper_imul_8_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_8_16) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_8_16));
    VGOFF_(helper_mul_8_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_8_16) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_8_16));
 
    VGOFF_(helper_CLD)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CLD) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CLD));
    VGOFF_(helper_STD)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_STD) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_STD));
    VGOFF_(helper_get_dirflag)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_get_dirflag) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_get_dirflag));
 
    VGOFF_(helper_CLC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CLC) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CLC));
    VGOFF_(helper_STC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_STC) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_STC));
 
    VGOFF_(helper_shldl)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shldl) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shldl));
    VGOFF_(helper_shldw)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shldw) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shldw));
    VGOFF_(helper_shrdl)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdl) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdl));
    VGOFF_(helper_shrdw)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdw) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdw));
 
    VGOFF_(helper_RDTSC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_RDTSC) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_RDTSC));
    VGOFF_(helper_CPUID)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CPUID) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CPUID));
 
    VGOFF_(helper_bsf)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bsf) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_bsf));
    VGOFF_(helper_bsr)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bsr) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_bsr));
 
    VGOFF_(helper_fstsw_AX)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_fstsw_AX) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_fstsw_AX));
    VGOFF_(helper_SAHF)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_SAHF) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_SAHF));
    VGOFF_(helper_LAHF)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_LAHF) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_LAHF));
    VGOFF_(helper_DAS)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_DAS) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_DAS));
    VGOFF_(helper_DAA)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_DAA) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_DAA));
+   VGOFF_(helper_IN)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_IN));
+   VGOFF_(helper_OUT)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_OUT));
 
    VGOFF_(helper_undefined_instruction)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction) );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction));
 
    /* Allocate slots for noncompact helpers */
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
@@ -1194,6 +1200,10 @@ static void process_cmd_line_options ( void )
    if (VG_(clo_verbosity) > 1) {
       if (VG_(clo_log_to) != VgLogTo_Fd)
          VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Command line:");
+      for (i = 0; i < VG_(client_argc); i++)
+         VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
       for (i = 0; i < argc; i++) {
          VG_(message)(Vg_UserMsg, "   %s", argv[i]);
@@ -1659,6 +1669,17 @@ void VG_(oynk) ( Int n )
    it to $(libdir)/lib/valgrinq, so as to make our libpthread.so
    disappear.  
 */
+static void slideleft ( Char* s )
+{
+   vg_assert(s && (*s == ' ' || *s == ':'));
+   while (True) {
+      s[0] = s[1];
+      if (s[0] == '\0') break;
+      s++;
+   }
+}
+
+
 void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
                                                 Char* ld_library_path_str )
 {
@@ -1737,7 +1758,14 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    /* LD_LIBRARY_PATH: "<coredir>:Y" --> "         :Y"  */
    for (i = 0; i < coredir_len; i++)
       coredir2[i] = ' ';
-      
+   
+   /* Zap the leading spaces and : in both strings. */
+   while (ld_preload_str[0] == ' ') slideleft(ld_preload_str);
+   if    (ld_preload_str[0] == ':') slideleft(ld_preload_str);
+
+   while (ld_library_path_str[0] == ' ') slideleft(ld_library_path_str);
+   if    (ld_library_path_str[0] == ':') slideleft(ld_library_path_str);
+
    /* VG_(printf)("post:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
 
    return;

@@ -56,6 +56,7 @@
 
 /* This has some nasty duplication of stuff from vg_libpthread.c */
 
+#include <string.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <stdio.h>
@@ -251,6 +252,25 @@ void __my_pthread_testcancel(void)
                            VG_USERREQ__TESTCANCEL,
                            0, 0, 0, 0);
    my_assert(res == 0);
+}
+
+static
+void my_free ( void* ptr )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__FREE, ptr, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+static
+void* my_malloc ( int nbytes )
+{
+   void* res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__MALLOC, nbytes, 0, 0, 0);
+   my_assert(res != (void*)0);
+   return res;
 }
 
 /* ================================ poll ================================ */
@@ -536,10 +556,10 @@ int VGR_(select) ( int n,
                    /*struct timeval*/ void *timeoutV )
 {
    unsigned int ms_now, ms_end;
-   int    res;
-   fd_set rfds_copy;
-   fd_set wfds_copy;
-   fd_set xfds_copy;
+   int    res, fdsetsz;
+   fd_set *rfds_copy = NULL;
+   fd_set *wfds_copy = NULL;
+   fd_set *xfds_copy = NULL;
    struct vki_timeval  t_now;
    struct vki_timeval  zero_timeout;
    struct vki_timespec nanosleep_interval;
@@ -584,6 +604,18 @@ int VGR_(select) ( int n,
       }
    }
 
+# define howmany(x,y) (((x)+((y)-1))/(y))  /* Borrowed from Openssh */
+
+   /* Select is a scalable function. We should create data structures
+    * dynamically and therefore scaled so that we don't get invalid read
+    * or writes. See OpenBSD select 2 man page. */
+   fdsetsz = howmany(n+1, NFDBITS) * sizeof(fd_mask);
+   if (rfds) rfds_copy = (fd_set*)my_malloc(fdsetsz);
+   if (wfds) wfds_copy = (fd_set*)my_malloc(fdsetsz);
+   if (xfds) xfds_copy = (fd_set*)my_malloc(fdsetsz);
+
+#undef howmany
+
    /* If a timeout was specified, set ms_end to be the end millisecond
       counter [wallclock] time. */
    if (timeout) {
@@ -608,29 +640,34 @@ int VGR_(select) ( int n,
 
       /* These could be trashed each time round the loop, so restore
          them each time. */
-      if (rfds) rfds_copy = *rfds;
-      if (wfds) wfds_copy = *wfds;
-      if (xfds) xfds_copy = *xfds;
+      if (rfds) memcpy(rfds_copy, rfds, fdsetsz);
+      if (wfds) memcpy(wfds_copy, wfds, fdsetsz);
+      if (xfds) memcpy(xfds_copy, xfds, fdsetsz);
 
       zero_timeout.tv_sec = zero_timeout.tv_usec = 0;
 
       res = do_syscall_select( n, 
-                               rfds ? (vki_fd_set*)(&rfds_copy) : NULL,
-                               wfds ? (vki_fd_set*)(&wfds_copy) : NULL,
-                               xfds ? (vki_fd_set*)(&xfds_copy) : NULL,
+                               rfds ? (vki_fd_set*)(rfds_copy) : NULL,
+                               wfds ? (vki_fd_set*)(wfds_copy) : NULL,
+                               xfds ? (vki_fd_set*)(xfds_copy) : NULL,
                                & zero_timeout );
       if (is_kerror(res)) {
          /* Some kind of error (including EINTR).  Set errno and
             return.  The sets are unspecified in this case. */
          * (__errno_location()) = -res;
+         if (rfds_copy) my_free(rfds_copy);
+         if (wfds_copy) my_free(wfds_copy);
+         if (xfds_copy) my_free(xfds_copy);
          return -1;
       }
       if (res > 0) {
-         /* one or more fds is ready.  Copy out resulting sets and
-            return. */
-         if (rfds) *rfds = rfds_copy;
-         if (wfds) *wfds = wfds_copy;
-         if (xfds) *xfds = xfds_copy;
+         /* one or more fds is ready.  Copy out resulting sets and return. */
+         if (rfds) memcpy(rfds,rfds_copy, fdsetsz);
+         if (wfds) memcpy(wfds, wfds_copy, fdsetsz);
+         if (xfds) memcpy(xfds, xfds_copy, fdsetsz);
+         if (rfds_copy) my_free(rfds_copy);
+         if (wfds_copy) my_free(wfds_copy);
+         if (xfds_copy) my_free(xfds_copy);
          return res;
       }
 
@@ -649,6 +686,9 @@ int VGR_(select) ( int n,
          /* The nanosleep was interrupted by a signal.  So we do the
             same. */
          * (__errno_location()) = EINTR;
+         if (rfds_copy) my_free(rfds_copy);
+         if (wfds_copy) my_free(wfds_copy);
+         if (xfds_copy) my_free(xfds_copy);
          return -1;
       }
 
@@ -660,14 +700,16 @@ int VGR_(select) ( int n,
                                  0, 0, 0, 0);
          my_assert(ms_now != 0xFFFFFFFF);
          if (ms_now >= ms_end) {
-            /* timeout; nothing interesting happened. */
-            if (rfds) FD_ZERO(rfds);
-            if (wfds) FD_ZERO(wfds);
-            if (xfds) FD_ZERO(xfds);
+            /* memset is used because FD_ZERO is not scalable */
+            if (rfds) memset(rfds, 0, fdsetsz);
+            if (wfds) memset(wfds, 0, fdsetsz);
+            if (xfds) memset(xfds, 0, fdsetsz);
+            if (rfds_copy) my_free(rfds_copy);
+            if (wfds_copy) my_free(wfds_copy);
+            if (xfds_copy) my_free(xfds_copy);
             return 0;
          }
       }
-
    }
 }
 

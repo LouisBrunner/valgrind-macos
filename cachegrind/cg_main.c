@@ -407,8 +407,8 @@ static UInt hash(Char *s, UInt table_size)
  * In all cases prepends new nodes to their chain.  Returns a pointer to the
  * cost centre.  Also sets BB_seen_before by reference. 
  */ 
-static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
-                                 Bool remove, Bool *BB_seen_before)
+static BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
+                      Bool remove, Bool *BB_seen_before)
 {
    file_node *curr_file_node;
    fn_node   *curr_fn_node;
@@ -546,12 +546,49 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             is_FPU_R = True;
             break;
 
+         case SSE2a_MemRd:
+         case SSE2a1_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
+         case SSE3a_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
+         case SSE3a1_MemRd:
+            sk_assert(u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
+         case SSE3ag_MemRd_RegWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+            t_read = u_in->val1;
+            is_FPU_R = True;
+            break;
+
          case MMX2_MemWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case FPU_W:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_write = u_in->val2;
+            is_FPU_W = True;
+            break;
+
+         case SSE2a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_write = u_in->val3;
+            is_FPU_W = True;
+            break;
+
+         case SSE3a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_write = u_in->val3;
             is_FPU_W = True;
             break;
 
@@ -763,6 +800,43 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case SSE2a_MemRd:
+         case SSE2a1_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3a_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3a1_MemRd:
+            sk_assert(u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3ag_MemRd_RegWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+            t_read = u_in->val1;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
          /* Note that we must set t_write_addr even for mod instructions;
           * That's how the code above determines whether it does a write.
           * Without it, it would think a mod instruction is a read.
@@ -785,6 +859,17 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case SSE2a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+           /* fall through */
+         case SSE3a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_write = u_in->val3;
+            t_write_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3, TempReg, t_write_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
 
          /* For rep-prefixed instructions, log a single I-cache access
           * before the UCode loop that implements the repeated part, which
@@ -1064,13 +1149,17 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       /* TLB info, ignore */
       case 0x01: case 0x02: case 0x03: case 0x04:
       case 0x50: case 0x51: case 0x52: case 0x5b: case 0x5c: case 0x5d:
+      case 0xb0: case 0xb3:
+
           break;      
 
       case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
       case 0x08: *I1c = (cache_t) { 16, 4, 32 }; break;
+      case 0x30: *I1c = (cache_t) { 32, 8, 64 }; break;
 
       case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
       case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
+      case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
 
       /* IA-64 info -- panic! */
       case 0x10: case 0x15: case 0x1a: 
@@ -1137,6 +1226,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x83: *L2c = (cache_t) {  512, 8, 32 };  L2_found = True;  break;
       case 0x84: *L2c = (cache_t) { 1024, 8, 32 };  L2_found = True;  break;
       case 0x85: *L2c = (cache_t) { 2048, 8, 32 };  L2_found = True;  break;
+      case 0x86: *L2c = (cache_t) {  512, 4, 64 };  L2_found = True; break;
+      case 0x87: *L2c = (cache_t) { 1024, 8, 64 };  L2_found = True; break;
 
       default:
           VG_(message)(Vg_DebugMsg, 
@@ -1277,6 +1368,19 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
    } else if (0 == VG_(strcmp)(vendor_id, "AuthenticAMD")) {
       ret = AMD_cache_info(I1c, D1c, L2c);
+
+   } else if (0 == VG_(strcmp)(vendor_id, "CentaurHauls")) {
+      /* Total kludge.  Pretend to be a VIA Nehemiah. */
+      D1c->size      = 64;
+      D1c->assoc     = 16;
+      D1c->line_size = 16;
+      I1c->size      = 64;
+      I1c->assoc     = 4;
+      I1c->line_size = 16;
+      L2c->size      = 64;
+      L2c->assoc     = 16;
+      L2c->line_size = 16;
+      ret = 0;
 
    } else {
       VG_(message)(Vg_DebugMsg, "CPU vendor ID not recognised (%s)",

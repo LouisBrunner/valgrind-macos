@@ -19,10 +19,7 @@ are:
 
 <ul>
 <li>The <b>memcheck</b> skin detects memory-management problems in
-    your programs.  It provides services identical to those supplied
-    by the valgrind-1.0.X series.  Memcheck is essentially
-    valgrind-1.0.X packaged up into a skin.
-    <p>
+    your programs. 
     All reads and writes of memory are checked, and calls to
     malloc/new/free/delete are intercepted. As a result, memcheck can
     detect the following problems:
@@ -43,8 +40,8 @@ are:
     lying undetected for long periods, then causing occasional,
     difficult-to-diagnose crashes.
 <p>
-<li><b>cachegrind</b> is a packaging of Nick Nethercote's cache
-    profiler from valgrind-1.0.X.  It performs detailed simulation of
+<li><b>cachegrind</b> is a cache profiler.
+    It performs detailed simulation of
     the I1, D1 and L2 caches in your CPU and so can accurately
     pinpoint the sources of cache misses in your code.  If you desire,
     it will show the number of cache misses, memory references and
@@ -64,7 +61,7 @@ are:
     presents these profiling results in a graphical and
     easier-to-understand form.
 <p>
-<li>The new <b>addrcheck</b> skin is a lightweight version of
+<li>The <b>addrcheck</b> skin is a lightweight version of
     memcheck.  It is identical to memcheck except
     for the single detail that it does not do any uninitialised-value
     checks.  All of the other checks -- primarily the fine-grained
@@ -121,11 +118,9 @@ difficult to make it portable, so we have chosen at the outset to
 concentrate on what we believe to be a widely used platform: Linux on
 x86s.  Valgrind uses the standard Unix <code>./configure</code>,
 <code>make</code>, <code>make install</code> mechanism, and we have
-attempted to ensure that it works on machines with kernel 2.2 or 2.4
-and glibc 2.1.X, 2.2.X or 2.3.1.  This should cover the vast majority
-of modern Linux installations.  Note that glibc-2.3.2+, with the
-NPTL (next generation posix threads?) package won't work.  We hope to
-be able to fix this, but it won't be easy.
+attempted to ensure that it works on machines with kernel 2.4
+and glibc 2.2.X or 2.3.X.  This should cover the vast majority
+of modern Linux installations. 
 
 
 <p>

@@ -1,8 +1,12 @@
 
-Julian Seward, jseward@acm.org, is the main author.
+Julian Seward, jseward@acm.org, is the original author.
 
 Nicholas Nethercote, njn25@cam.ac.uk, did the core/skin
-generalisation, and wrote Cachegrind and some of the other skins.
+generalisation, and wrote Cachegrind and some of the other skins, and
+generally hacked on just about every part of the system by now.
+
+Jeremy Fitzhardinge, jeremy@goop.org, contributed tons of
+improvements, including the Helgrind thread-checking tool.
 
 readelf's dwarf2 source line reader, written by Nick Clifton, was
 modified to be used in Valgrind by Daniel Berlin.
@@ -10,7 +14,8 @@ modified to be used in Valgrind by Daniel Berlin.
 Michael Matz and Simon Hausmann modified the GNU binutils
 demangler(s) for use in Valgrind.
 
-Dirk Mueller contrib'd the malloc-free mismatch checking stuff.
+Dirk Mueller contrib'd the malloc-free mismatch checking stuff
+and various other bits and pieces.
 
 Lots of other people sent bug reports, patches, and very 
 helpful feedback.  I thank you all.

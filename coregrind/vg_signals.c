@@ -601,7 +601,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    return;
 
   bad_signo:
-   if (VG_(needs).core_errors)
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
       VG_(message)(Vg_UserMsg,
                    "Warning: bad signal number %d in __NR_sigaction.", 
                    signo);
@@ -609,7 +609,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    return;
 
   bad_sigkill_or_sigstop:
-   if (VG_(needs).core_errors)
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
       VG_(message)(Vg_UserMsg,
          "Warning: attempt to set %s handler in __NR_sigaction.", 
          signo == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );

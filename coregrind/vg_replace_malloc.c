@@ -185,6 +185,12 @@ void* _Znwj ( Int n )
   return __builtin_new(n);
 }
 
+/* operator new(unsigned, std::nothrow_t const&) */
+void* _ZnwjRKSt9nothrow_t ( Int n )
+{
+  return __builtin_new(n);
+}
+
 void* __builtin_vec_new ( Int n )
 {
    void* v;
@@ -206,6 +212,11 @@ void* __builtin_vec_new ( Int n )
 
 /* gcc 3.X.X mangles them differently. */
 void* _Znaj ( Int n )
+{
+  return __builtin_vec_new(n);
+}
+
+void* _ZnajRKSt9nothrow_t ( Int n )
 {
   return __builtin_vec_new(n);
 }

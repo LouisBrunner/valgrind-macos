@@ -1,8 +1,8 @@
 
-A mini-FAQ for valgrind, version 1.9.6
+A mini-FAQ for valgrind, version 2.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Last revised 5 May 2003
-~~~~~~~~~~~~~~~~~~~~~~~
+Last revised 5 November 2003
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -----------------------------------------------------------------
 
@@ -87,18 +87,27 @@ A4. Known issue with RHAS 2.1, due to funny stack permissions at
 Q5. I try running "valgrind my_program", but my_program runs normally,
     and Valgrind doesn't emit any output at all.
 
-A5. Is my_program statically linked?  Valgrind doesn't work with
-    statically linked binaries.  my_program must rely on at least one 
-    shared object.  To determine if a my_program is statically linked, 
-    run:
+A5. Valgrind doesn't work out-of-the-box with programs that are entirely
+    statically linked.  It does a quick test at startup, and if it detects
+    that the program is statically linked, it aborts with an explanation.
+    
+    This test may fail in some obscure cases, eg. if you run a script
+    under Valgrind and the script interpreter is statically linked.
 
-      ldd my_program
+    If you still want static linking, you can ask gcc to link certain
+    libraries statically.  Try the following options:
 
-    It will show what shared objects my_program relies on, or say:
+        -Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
 
-      not a dynamic executable
+    Just make sure you end with -Wl,-Bdynamic so that libc is dynamically
+    linked.
 
-    if my_program is statically linked.
+    If you absolutely cannot use dynamic libraries, you can try statically
+    linking together all the .o files in coregrind/, all the .o files of the
+    skin of your choice (eg. those in memcheck/), and the .o files of your
+    program.  You'll end up with a statically linked binary that runs
+    permanently under Valgrind's control.  Note that we haven't tested this
+    procedure thoroughly.
 
 -----------------------------------------------------------------
 
@@ -143,21 +152,17 @@ A7. We are not completely sure about this, but one possibility
 
 -----------------------------------------------------------------
 
-Q8. My program dies (exactly) like this:
+Q8. My program dies, printing a message like this along the way: 
 
-      REPE then 0xF
-      valgrind: the `impossible' happened:
-         Unhandled REPE case
+      disInstr: unhandled instruction bytes: 0x66 0xF 0x2E 0x5
 
-A8. Yeah ... that I believe is a SSE or SSE2 instruction.  Are you
-    building your app with -march=pentium4 or -march=athlon or
-    something like that?  If you can somehow dissuade gcc from 
-    producing SSE/SSE2 instructions, you may be able to avoid this.
-    Some folks have reported that removing the flag -march=...
-    works around this.
-
-    I'd be interested to hear if you can get rid of it by changing
-    your application build flags.
+A8. Valgrind doesn't support the full x86 instruction set, although it
+    now supports many SSE and SSE2 instructions.  If you know the
+    failing instruction is an SSE/SSE2 instruction, you might be able
+    to recompile your program without it by fiddling with the
+    -march=... flag(s) for gcc.  In particular, get rid of
+    -march=pentium4 or -march=athlon if you can.  Either way, let us
+    know and we'll try to fix it.
 
 -----------------------------------------------------------------
 
@@ -206,14 +211,15 @@ Q12. My program dies like this (often at exit):
      VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:
      (loads of text)
 
-A12. We're not entirely sure about this, and would appreciate
-     someone sending a simple test case for us to look at.
-     One possible cause is that your program modifies its
+A12. One possible cause is that your program modifies its
      environment variables, possibly including zeroing them
-     all.  Avoid this if you can.
+     all.  Valgrind relies on the LD_PRELOAD, LD_LIBRARY_PATH and
+     VG_ARGS variables.  Zeroing them will break things.
 
-     1.9.6 contains a fix which hopefully reduces the chances
-     of your program bombing out like this.
+     As of 1.9.6, Valgrind only uses these variables with
+     --trace-children=no, when executing execve() or using the
+     --stop-after=yes flag.  This should reduce the potential for
+     problems.
 
 -----------------------------------------------------------------
 
@@ -325,6 +331,48 @@ A14.  First of all: relax, it's probably not a bug, but a feature.
             people went at great lengths to make it portable across
             platforms. Chances are good that your solution will work
             on your platform, but not on others.
+
+-----------------------------------------------------------------
+
+Q15.  My program dies with a segmentation fault, but Valgrind doesn't give
+      any error messages before it, or none that look related.
+
+A15.  The one kind of segmentation fault that Valgrind won't give any
+      warnings about is writes to read-only memory.  Maybe your program is
+      writing to a static string like this:
+
+        char* s = "hello";
+        s[0] = 'j';
+
+      or something similar.  Writing to read-only memory can also apparently
+      make LinuxThreads behave strangely.
+
+-----------------------------------------------------------------
+
+Q16.  When I trying building Valgrind, 'make' dies partway with an
+      assertion failure, something like this: make: expand.c:489:
+      
+        allocated_variable_append: Assertion 
+        `current_variable_set_list->next != 0' failed.
+      
+A16.  It's probably a bug in 'make'.  Some, but not all, instances of
+      version 3.79.1 have this bug, see 
+      www.mail-archive.com/bug-make@gnu.org/msg01658.html.  Try upgrading to a
+      more recent version of 'make'.
+
+-----------------------------------------------------------------
+
+Q17.  I tried writing a suppression but it didn't work.  Can you 
+      write my suppression for me?
+
+A17.  Yes!  Use the --gen-suppressions=yes feature to spit out
+      suppressions automatically for you.  You can then edit them
+      if you like, eg. combining similar automatically generated
+      suppressions using wildcards like '*'.
+
+      If you really want to write suppressions by hand, read the 
+      manual carefully.  Note particularly that C++ function names
+      must be _mangled_.
 
 -----------------------------------------------------------------
 

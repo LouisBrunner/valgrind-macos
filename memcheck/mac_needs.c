@@ -527,6 +527,7 @@ Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
    else if (VG_STREQ(name, "Addr16"))  skind = Addr16Supp;
    else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
    else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
+   else if (VG_STREQ(name, "Overlap")) skind = OverlapSupp;
    else
       return False;
 

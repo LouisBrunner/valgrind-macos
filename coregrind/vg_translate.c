@@ -70,7 +70,7 @@ void VG_(free_UCodeBlock) ( UCodeBlock* cb )
 
 
 /* Ensure there's enough space in a block to add one uinstr. */
-static __inline__
+static
 void ensureUInstr ( UCodeBlock* cb )
 {
    if (cb->used == cb->size) {
@@ -405,6 +405,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define LIT8 (((u->lit32) & 0xFFFFFF00) == 0)
 #  define LIT1 (!(LIT0))
 #  define LITm (u->tag1 == Literal ? True : LIT0 )
+#  define SZ16 (u->size == 16)
 #  define SZ8  (u->size == 8)
 #  define SZ4  (u->size == 4)
 #  define SZ2  (u->size == 2)
@@ -566,10 +567,11 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE3a_MemRd:  return LIT0 && SZsse && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a1_MemRd: return LIT8 && SZ16  && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
+   case SSE3:         return LIT0 && SZ0   && CCa  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE4:         return LIT0 && SZ0   && CCa  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE5:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && Ls3 && XOTHER;
    case SSE3ag_MemRd_RegWr:
@@ -588,6 +590,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef LIT1
 #  undef LIT8
 #  undef LITm
+#  undef SZ16
 #  undef SZ8
 #  undef SZ4
 #  undef SZ2
@@ -892,6 +895,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE3e_RegRd: return "SSE3e_RRd";
       case SSE3e_RegWr: return "SSE3e_RWr";
       case SSE3g_RegWr: return "SSE3g_RWr";
+      case SSE3a1_MemRd: return "SSE3a1_MRd";
       case SSE3g1_RegWr: return "SSE3g1_RWr";
       case SSE3e1_RegRd: return "SSE3e1_RRd";
       case SSE3:        return "SSE3";
@@ -1077,6 +1081,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 
       case SSE3g1_RegWr:
       case SSE3e1_RegRd:
+      case SSE3a1_MemRd:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
                      (u->val2 >> 8) & 0xFF, u->val2 & 0xFF,
@@ -1245,7 +1250,7 @@ void VG_(pp_UCodeBlock) ( UCodeBlock* cb, Char* title )
    read-modified-written, it appears first as a read and then as a write.
    'tag' indicates whether we are looking at TempRegs or RealRegs.
 */
-__inline__
+/* __inline__ */
 Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 {
 #  define RD(ono)    VG_UINSTR_READS_REG(ono, regs, isWrites)
@@ -1256,6 +1261,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case LEA1: RD(1); WR(2); break;
       case LEA2: RD(1); RD(2); WR(3); break;
 
+      case SSE3a1_MemRd:
       case SSE2a1_MemRd:
       case SSE3e_RegRd:
       case SSE3a_MemWr:
@@ -1342,7 +1348,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 
 /* Change temp regs in u into real regs, as directed by the
  * temps[i]-->reals[i] mapping. */
-static __inline__
+static
 void patchUInstr ( UInstr* u, Int temps[], UInt reals[], Int n_tmap )
 {
    Int i;
@@ -1390,7 +1396,7 @@ Int containingArchRegOf ( Int sz, Int aregno )
    reg.  Otherwise return -1.  Used in redundant-PUT elimination.
    Note that this is not required for skins extending UCode because
    this happens before instrumentation. */
-static __inline__ 
+static
 Int maybe_uinstrReadsArchReg ( UInstr* u )
 {
    switch (u->opcode) {
@@ -1426,7 +1432,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX2_MemRd: case MMX2_MemWr:
       case MMX2_ERegRd: case MMX2_ERegWr:
       case SSE2a_MemWr: case SSE2a_MemRd: case SSE2a1_MemRd:
-      case SSE3a_MemWr: case SSE3a_MemRd:
+      case SSE3a_MemWr: case SSE3a_MemRd: case SSE3a1_MemRd:
       case SSE3e_RegRd: case SSE3g_RegWr: case SSE3e_RegWr:
       case SSE3g1_RegWr: case SSE3e1_RegRd:
       case SSE4: case SSE3: case SSE5: case SSE3ag_MemRd_RegWr:
@@ -1799,7 +1805,16 @@ static void vg_improve ( UCodeBlock* cb )
    instrumentation, so the skin doesn't have to worry about the CCALLs
    it adds in, and we must do it before register allocation because
    spilled temps make it much harder to work out the %esp deltas.
-   Thus we have it as an extra phase between the two. */
+   Thus we have it as an extra phase between the two. 
+   
+   We look for "GETL %ESP, t_ESP", then track ADDs and SUBs of
+   literal values to t_ESP, and the total delta of the ADDs/SUBs.  Then if
+   "PUTL t_ESP, %ESP" happens, we call the helper with the known delta.  We
+   also cope with "MOVL t_ESP, tX", making tX the new t_ESP.  If any other
+   instruction clobbers t_ESP, we don't track it anymore, and fall back to
+   the delta-is-unknown case.  That case is also used when the delta is not
+   a nice small amount, or an unknown amount.
+*/
 static 
 UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
 {
@@ -1841,6 +1856,7 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
          if (u->val1 == t_ESP) {
             /* Known delta, common cases handled specially. */
             switch (delta) {
+            case   0: break;
             case   4: DO(die, 4);
             case  -4: DO(new, 4);
             case   8: DO(die, 8);
@@ -1856,19 +1872,36 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
          } else {
             /* Unknown delta */
             DO_GENERIC;
+
+            /* now we know the temp that points to %ESP */
+            t_ESP = u->val1;
          }
          delta = 0;
 
 #        undef DO
 #        undef DO_GENERIC
 
-      } else if (Literal == u->tag1 && t_ESP == u->val2) {
-         if (ADD == u->opcode) delta += u->lit32;
-         if (SUB == u->opcode) delta -= u->lit32;
+      } else if (ADD == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
+         delta += u->lit32;
+
+      } else if (SUB == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
+         delta -= u->lit32;
 
       } else if (MOV == u->opcode && TempReg == u->tag1 && t_ESP == u->val1 &&
                                      TempReg == u->tag2) {
+         // t_ESP is transferred
          t_ESP = u->val2;
+
+      } else {
+         // Stop tracking t_ESP if it's clobbered by this instruction.
+         Int  tempUse [VG_MAX_REGS_USED];
+         Bool isWrites[VG_MAX_REGS_USED];
+         Int  j, n = VG_(get_reg_usage)(u, TempReg, tempUse, isWrites);
+
+         for (j = 0; j < n; j++) {
+            if (tempUse[j] == t_ESP && isWrites[j])
+               t_ESP = INVALID_TEMPREG;
+         }
       }
       VG_(copy_UInstr) ( cb, u );
    }
@@ -1923,13 +1956,13 @@ static
 UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 {
    TempInfo*    temp_info;
-   Int          real_to_temp[VG_MAX_REALREGS];
+   Int          real_to_temp [VG_MAX_REALREGS];
    Bool         is_spill_cand[VG_MAX_REALREGS];
    Int          ss_busy_until_before[VG_MAX_SPILLSLOTS];
    Int          i, j, k, m, r, tno, max_ss_no;
    Bool         wr, defer, isRead, spill_reqd;
-   UInt         realUse[VG_MAX_REGS_USED];
-   Int          tempUse[VG_MAX_REGS_USED];
+   UInt         realUse [VG_MAX_REGS_USED];
+   Int          tempUse [VG_MAX_REGS_USED];
    Bool         isWrites[VG_MAX_REGS_USED];
    UCodeBlock*  c2;
 
@@ -2440,3 +2473,4 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_translate.c ---*/
 /*--------------------------------------------------------------------*/
+

@@ -1,4 +1,4 @@
-
+/* -*- c-basic-offset: 3 -*- */
 /*--------------------------------------------------------------------*/
 /*--- Instrument UCode to perform memory checking operations.      ---*/
 /*---                                               mc_translate.c ---*/
@@ -1059,10 +1059,12 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case MMX2_MemRd: case MMX2_MemWr:
          case FPU_R: case FPU_W: {
             Int t_size = INVALID_TEMPREG;
+            Bool is_load;
 
             if (u_in->opcode == MMX2_MemRd || u_in->opcode == MMX2_MemWr)
                sk_assert(u_in->size == 4 || u_in->size == 8);
 
+            is_load = u_in->opcode==FPU_R || u_in->opcode==MMX2_MemRd;
             sk_assert(u_in->tag2 == TempReg);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
@@ -1071,46 +1073,96 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
             uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-            uCCall(cb, 
-                   u_in->opcode==FPU_R ? (Addr) & MC_(fpu_read_check) 
-                                       : (Addr) & MC_(fpu_write_check),
-                   2, 2, False);
-
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-         }
-
-         /* ... and the same deal for SSE insns referencing memory. */
-         case SSE3a_MemRd:
-         case SSE3a_MemWr:
-         case SSE2a_MemWr:
-         case SSE2a_MemRd: { 
-            Bool is_load;
-            Int t_size;
-
-            sk_assert(u_in->size == 4 || u_in->size == 16);
-
-            t_size = INVALID_TEMPREG;
-            is_load = u_in->opcode==SSE2a_MemRd
-                      || u_in->opcode==SSE3a_MemRd;
-            sk_assert(u_in->tag3 == TempReg);
-            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
-            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
-
-            t_size = newTemp(cb);
-            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
-            uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
             uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
                                : (Addr) & MC_(fpu_write_check),
                    2, 2, False);
+
             VG_(copy_UInstr)(cb, u_in);
             break;
          }
 
+	 /* SSE ins referencing scalar integer registers */
+	 case SSE3g_RegWr:
+         case SSE3e_RegRd:
+         case SSE3e_RegWr: 
+         case SSE3g1_RegWr:
+         case SSE3e1_RegRd:
+            sk_assert(u_in->tag3 == TempReg);
+
+            if (u_in->opcode == SSE3e1_RegRd) {
+               sk_assert(u_in->size == 2);
+            } else {
+               sk_assert(u_in->size == 4);
+            }
+
+            /* Is it a read ?  Better check the V bits right now. */
+            if ( u_in->opcode == SSE3e_RegRd
+                 || u_in->opcode == SSE3e1_RegRd )
+	       uInstr1(cb, TESTV, u_in->size, 
+                           TempReg, SHADOW(u_in->val3));
+
+	    /* And for both read and write, set the register to be
+	       defined. */
+	    uInstr1(cb, SETV, u_in->size, 
+                        TempReg, SHADOW(u_in->val3));
+
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         /* ... and the same deal for SSE insns referencing memory */
+         case SSE3a_MemRd:
+         case SSE3a_MemWr:
+         case SSE2a_MemWr:
+         case SSE2a_MemRd:
+         case SSE3a1_MemRd: { 
+            Bool is_load;
+            Int t_size;
+
+            sk_assert(u_in->size == 4 
+                      || u_in->size == 8 || u_in->size == 16);
+
+            t_size = INVALID_TEMPREG;
+            is_load = u_in->opcode==SSE2a_MemRd 
+                      || u_in->opcode==SSE3a_MemRd
+                      || u_in->opcode==SSE3a1_MemRd;
+
+            sk_assert(u_in->tag3 == TempReg);
+
+	    uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
+	    uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, u_in->size);
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+	    uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
+		   : (Addr) & MC_(fpu_write_check),
+		   2, 2, False);
+
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+         }
+
+	 case SSE3ag_MemRd_RegWr:
+	 {
+	    Int t_size;
+
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+	    sk_assert(u_in->tag1 == TempReg);
+	    uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
+	    uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
+            t_size = newTemp(cb);
+	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, u_in->size);
+            uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
+            uCCall(cb, (Addr) MC_(fpu_read_check), 2, 2, False );
+	    uInstr1(cb, SETV, 4, TempReg, SHADOW(u_in->val2));
+            VG_(copy_UInstr)(cb, u_in);
+	    break;
+         }
+
          /* For FPU, MMX and SSE insns not referencing memory, just
-	    copy thru. */
-         case SSE4: case SSE3:
+            copy thru. */
+         case SSE5: case SSE4: case SSE3:
          case MMX1: case MMX2: case MMX3:
          case FPU: 
             VG_(copy_UInstr)(cb, u_in);

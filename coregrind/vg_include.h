@@ -99,13 +99,9 @@
    backtrace. */
 #define VG_DEEPEST_BACKTRACE 50
 
-/* Number of lists in which we keep track of malloc'd but not free'd
-   blocks.  Should be prime. */
-#define VG_N_MALLOCLISTS 997
-
 /* Number of lists in which we keep track of ExeContexts.  Should be
    prime. */
-#define VG_N_EC_LISTS /*997*/ 4999
+#define VG_N_EC_LISTS 4999 /* a prime number */
 
 /* Defines the thread-scheduling timeslice, in terms of the number of
    basic blocks we attempt to run each thread for.  Smaller values
@@ -132,7 +128,7 @@
 #define VG_N_CLEANUPSTACK 16
 
 /* Number of entries in each thread's fork-handler stack. */
-#define VG_N_FORKHANDLERSTACK 2
+#define VG_N_FORKHANDLERSTACK 4
 
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
@@ -1566,6 +1562,9 @@ extern void VG_(helper_shldl);
 extern void VG_(helper_shldw);
 extern void VG_(helper_shrdl);
 extern void VG_(helper_shrdw);
+
+extern void VG_(helper_IN);
+extern void VG_(helper_OUT);
 
 extern void VG_(helper_RDTSC);
 extern void VG_(helper_CPUID);

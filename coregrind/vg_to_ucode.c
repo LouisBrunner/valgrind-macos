@@ -1,4 +1,4 @@
-
+/* -*- c-basic-offset: 3 -*- */
 /*--------------------------------------------------------------------*/
 /*--- The JITter: translate x86 code to ucode.                     ---*/
 /*---                                                vg_to_ucode.c ---*/
@@ -104,7 +104,7 @@ static Char* nameGrp8 ( Int opc_aux )
    return grp8_names[opc_aux];
 }
 
-Char* VG_(name_of_int_reg) ( Int size, Int reg )
+const Char* VG_(name_of_int_reg) ( Int size, Int reg )
 {
    static Char* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", 
@@ -125,7 +125,7 @@ Char* VG_(name_of_int_reg) ( Int size, Int reg )
    return NULL; /*notreached*/
 }
 
-Char* VG_(name_of_seg_reg) ( Int sreg )
+const Char* VG_(name_of_seg_reg) ( Int sreg )
 {
    switch (sreg) {
       case R_ES: return "%es";
@@ -138,23 +138,23 @@ Char* VG_(name_of_seg_reg) ( Int sreg )
    }
 }
 
-Char* VG_(name_of_mmx_reg) ( Int mmxreg )
+const Char* VG_(name_of_mmx_reg) ( Int mmxreg )
 {
-   static Char* mmx_names[8] 
+   static const Char* mmx_names[8] 
      = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
    if (mmxreg < 0 || mmxreg > 7) VG_(core_panic)("name_of_mmx_reg");
    return mmx_names[mmxreg];
 }
 
-Char* VG_(name_of_xmm_reg) ( Int xmmreg )
+const Char* VG_(name_of_xmm_reg) ( Int xmmreg )
 {
-   static Char* xmm_names[8] 
+   static const Char* xmm_names[8] 
      = { "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7" };
    if (xmmreg < 0 || xmmreg > 7) VG_(core_panic)("name_of_xmm_reg");
    return xmm_names[xmmreg];
 }
 
-Char* VG_(name_of_mmx_gran) ( UChar gran )
+const Char* VG_(name_of_mmx_gran) ( UChar gran )
 {
    switch (gran) {
       case 0: return "b";
@@ -165,7 +165,7 @@ Char* VG_(name_of_mmx_gran) ( UChar gran )
    }
 }
 
-Char VG_(name_of_int_size) ( Int size )
+const Char VG_(name_of_int_size) ( Int size )
 {
    switch (size) {
       case 4: return 'l';
@@ -699,7 +699,6 @@ void codegen_XOR_reg_with_itself ( UCodeBlock* cb, Int size,
    setFlagsFromUOpcode(cb, XOR);
    uInstr2(cb, PUT, size, TempReg, tmp, ArchReg, ge_reg);
 }
-
 
 /* Handle binary integer instructions of the form
       op E, G  meaning
@@ -3437,6 +3436,7 @@ Addr dis_SSE3_reg_or_mem_Imm8 ( UCodeBlock* cb,
 				UChar opc2,
                                 UChar opc3 )
 {
+   UChar dis_buf[50];
    UChar modrm = getUChar(eip);
    UChar imm8;
    if (epartIsReg(modrm)) {
@@ -3453,7 +3453,21 @@ Addr dis_SSE3_reg_or_mem_Imm8 ( UCodeBlock* cb,
                      nameXMMReg(gregOfRM(modrm)), (Int)imm8 );
       eip++;
    } else {
-      VG_(core_panic)("dis_SSE3_reg_or_mem_Imm8: mem");
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      imm8 = getUChar(eip);
+      eip++;
+      uInstr3(cb, SSE3a1_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, (((UShort)(opc3)) << 8) | ((UShort)modrm),
+                  TempReg, tmpa);
+      uLiteral(cb, imm8);
+      if (dis)
+         VG_(printf)("%s %s, %s, $%d\n", 
+                     name,
+                     dis_buf,
+                     nameXMMReg(gregOfRM(modrm)), (Int)imm8 );
    }
    return eip;
 }
@@ -3562,6 +3576,35 @@ Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb,
    return eip;
 }
 
+static 
+void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
+{
+    Int t1 = newTemp(cb), t2 = newTemp(cb);
+    vg_assert(sz == 4);
+    uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
+    uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
+    uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
+    uLiteral(cb, 4);
+    uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
+    uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
+    if (dis)
+       VG_(printf)("push %s\n", VG_(name_of_seg_reg)(sreg));
+}
+
+static
+void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
+{
+   Int t1 = newTemp(cb), t2 = newTemp(cb);
+   vg_assert(sz == 4);
+   uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
+   uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
+   uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);
+   uLiteral(cb, sz);
+   uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg,  R_ESP);
+   uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
+   if (dis) 
+      VG_(printf)("pop %s\n", VG_(name_of_seg_reg)(sreg));
+}
 
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
@@ -3697,6 +3740,19 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* SFENCE -- flush all pending store operations to memory */
+   if (insn[0] == 0x0F && insn[1] == 0xAE 
+       && (gregOfRM(insn[2]) == 7)) {
+      vg_assert(sz == 4);
+      eip += 3;
+      uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
+                  Lit16, (UShort)insn[2] );
+      if (dis)
+         VG_(printf)("sfence\n");
+      goto decode_success;
+   }
+
    /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float
       value in memory or xmm reg to int and put it in an ireg.
       Truncate. */
@@ -3820,11 +3876,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* CMPPS -- compare packed floats */
+   /* sz==4: CMPPS -- compare packed floats */
+   /* sz==2: CMPPD -- compare packed doubles */
    if (insn[0] == 0x0F && insn[1] == 0xC2) {
-      vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "cmpps",
-                                       insn[0], insn[1] );
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "cmpps",
+                                          insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "cmppd",
+                                          0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -3834,6 +3896,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
                                            "pshufd",
                                            0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PSHUFW */
+   if (sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x70) {
+      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
+                                           "pshufw",
+                                           insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -3880,6 +3951,20 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
                                       sz8 ? "divsd" : "divss",
                                       insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* DIVPS */
+   /* 0x66: DIVPD */
+   if (insn[0] == 0x0F && insn[1] == 0x5E) {
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "divps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "divpd",
+                                         0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -3936,9 +4021,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    }
 
    /* 0xF2: MINSD */
-   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5D) {
+   /* 0xF3: MINSS */
+   if ((insn[0] == 0xF2 || insn[0] == 0xF3) 
+       && insn[1] == 0x0F && insn[2] == 0x5D) {
+      Bool sz8 = insn[0] == 0xF2;
       vg_assert(sz == 4);
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "minsd",
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
+                                      sz8 ? "minsd" : "minss",
                                       insn[0], insn[1], insn[2] );
       goto decode_success;
    }
@@ -4074,7 +4163,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
-
+   /* 0xE0: PAVGB(src)xmmreg-or-mem, (dst)xmmreg, size 4 */
+   if (sz == 4
+       && insn[0] == 0x0F 
+       && insn[1] == 0xE0 ) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "pavg{b,w}",
+                                      insn[0], insn[1] );
+      goto decode_success;
+   }
+ 
    /* 0x60: PUNPCKLBW (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x61: PUNPCKLWD (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x62: PUNPCKLDQ (src)xmmreg-or-mem, (dst)xmmreg */
@@ -4099,14 +4196,33 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* 0x14: UNPCKLPD (src)xmmreg-or-mem, (dst)xmmreg */
-   /* 0x15: UNPCKHPD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x14: UNPCKLPD (src)xmmreg-or-mem, (dst)xmmreg.  Reads a+0
+      .. a+7, so we can say size 8 */
+   /* 0x15: UNPCKHPD (src)xmmreg-or-mem, (dst)xmmreg.  Reads a+8
+      .. a+15, but we have no way to express this, so better say size
+      16.  Sigh. */
    if (sz == 2
        && insn[0] == 0x0F 
        && (insn[1] == 0x14 || insn[1] == 0x15)) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 
+                                      insn[1]==0x14 ? 8 : 16, 
                                       "unpck{l,h}pd",
                                       0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x14: UNPCKLPS (src)xmmreg-or-mem, (dst)xmmreg  Reads a+0
+      .. a+7, so we can say size 8 */
+   /* 0x15: UNPCKHPS (src)xmmreg-or-mem, (dst)xmmreg  Reads a+8
+      .. a+15, but we have no way to express this, so better say size
+      16.  Sigh.  */
+   if (sz == 4
+       && insn[0] == 0x0F
+       && (insn[1] == 0x14 || insn[1] == 0x15)) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 
+                                      insn[1]==0x14 ? 8 : 16, 
+                                      "unpck{l,h}ps",
+                                      insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -4268,10 +4384,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* COMISD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* (U)COMISD (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0x2F) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "comisd",
+       && insn[0] == 0x0F
+       && ( insn[1] == 0x2E || insn[1] == 0x2F ) ) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "{u}comisd",
                                       0x66, insn[0], insn[1] );
       vg_assert(LAST_UINSTR(cb).opcode == SSE3a_MemRd 
                 || LAST_UINSTR(cb).opcode == SSE4);
@@ -4279,10 +4396,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* COMISS (src)xmmreg-or-mem, (dst)xmmreg */
+   /* (U)COMISS (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 4
-       && insn[0] == 0x0F && insn[1] == 0x2F) {
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "comiss",
+       && insn[0] == 0x0F
+       && ( insn[1] == 0x2E || insn[ 1 ] == 0x2F )) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "{u}comiss",
                                       insn[0], insn[1] );
       vg_assert(LAST_UINSTR(cb).opcode == SSE2a_MemRd 
                 || LAST_UINSTR(cb).opcode == SSE3);
@@ -4312,6 +4430,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MOVQ -- move 8 bytes of XMM reg or mem to XMM reg.  How
+      does this differ from MOVSD ?? */
+   if (insn[0] == 0xF3
+       && insn[1] == 0x0F
+       && insn[2] == 0x7E) {
+      eip = dis_SSE3_load_store_or_mov
+               ( cb, sorb, eip+3, 8, False /*load*/, "movq",
+                     insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* MOVSS -- move 4 bytes of XMM reg to/from XMM reg or mem. */
    if (insn[0] == 0xF3
        && insn[1] == 0x0F 
@@ -4338,10 +4467,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVAPS (28,29) -- aligned load/store of xmm reg, or xmm-xmm reg
-      move */
-   /* MOVUPS (10,11) -- unaligned load/store of xmm reg, or xmm-xmm
-      reg move */
+   /* sz==4: MOVAPS (28,29) -- aligned load/store of xmm reg, or
+      xmm-xmm reg move */
+   /* sz==4: MOVUPS (10,11) -- unaligned load/store of xmm reg, or
+      xmm-xmm reg move */
+   /* sz==2: MOVAPD (28,29) -- aligned load/store of xmm reg, or
+      xmm-xmm reg move */
+   /* sz==2: MOVUPD (10,11) -- unaligned load/store of xmm reg, or
+      xmm-xmm reg move */
    if (insn[0] == 0x0F && (insn[1] == 0x28
                            || insn[1] == 0x29
                            || insn[1] == 0x10
@@ -4349,10 +4482,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       UChar* name = (insn[1] == 0x10 || insn[1] == 0x11)
                     ? "movups" : "movaps";
       Bool store = insn[1] == 0x29 || insn[1] == 11;
-      vg_assert(sz == 4);
-      eip = dis_SSE2_load_store_or_mov
-               ( cb, sorb, eip+2, 16, store, name,
-                     insn[0], insn[1] );
+      vg_assert(sz == 2 || sz == 4);
+      if (sz == 4) {
+         eip = dis_SSE2_load_store_or_mov
+                  ( cb, sorb, eip+2, 16, store, name,
+                        insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_load_store_or_mov
+                  ( cb, sorb, eip+2, 16, store, name,
+                        0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -4375,7 +4514,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* Cannot be used for reg-reg moves, according to Intel docs. */
       vg_assert(!epartIsReg(insn[2]));
       eip = dis_SSE3_load_store_or_mov
-               (cb, sorb, eip+2, 16, is_store, "movlpd", 
+               (cb, sorb, eip+2, 8, is_store, "movlpd", 
                     0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4388,6 +4527,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+3, 16, is_store, "movdqu", 
                     insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MOVNTDQ -- 16-byte store with temporal hint (which we
+      ignore). */
+   if (sz == 2
+       && insn[0] == 0x0F
+       && insn[1] == 0xE7) {
+      eip = dis_SSE3_load_store_or_mov 
+               (cb, sorb, eip+2, 16, True /* is_store */, "movntdq",
+                    0x66, insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -4474,6 +4624,133 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* SQRTSD: square root of scalar double. */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x51) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, 
+                                      "sqrtsd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* SQRTSS: square root of scalar float. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x51) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4,
+                                      "sqrtss",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MOVLPS -- 8-byte load/store.  How is this different from MOVLPS
+      ? */
+   if (insn[0] == 0x0F 
+       && (insn[1] == 0x12 || insn[1] == 0x13)) {
+      Bool is_store = insn[1]==0x13;
+      vg_assert(sz == 4);
+      /* Cannot be used for reg-reg moves, according to Intel docs. */
+      //      vg_assert(!epartIsReg(insn[2]));
+      eip = dis_SSE2_load_store_or_mov
+               (cb, sorb, eip+2, 8, is_store, "movlps", 
+                    insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xF3: RCPSS -- reciprocal of scalar float */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x53) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, 
+                                      "rcpss",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MOVMSKPD -- extract 2 sign bits from a xmm reg and copy them to 
+      an ireg.  Top 30 bits of ireg are set to zero. */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x50) {
+      modrm = insn[2];
+      /* Intel docs don't say anything about a memory source being
+	 allowed here. */
+      vg_assert(epartIsReg(modrm));
+      t1 = newTemp(cb);
+      uInstr3(cb, SSE3g_RegWr, 4,
+                  Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                  Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                  TempReg, t1 );
+      uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      if (dis)
+         VG_(printf)("movmskpd %s, %s\n", 
+                      nameXMMReg(eregOfRM(modrm)),
+                      nameIReg(4,gregOfRM(modrm)));
+      eip += 3;
+      goto decode_success;
+   }
+
+   /* ANDNPS */
+   /* 0x66: ANDNPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (insn[0] == 0x0F && insn[1] == 0x55) {
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "andnps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "andnpd",
+                                         0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
+   /* MOVHPD -- 8-byte load/store. */
+   if (sz == 2 
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x16 || insn[1] == 0x17)) {
+      Bool is_store = insn[1]==0x17;
+      /* Cannot be used for reg-reg moves, according to Intel docs. */
+      vg_assert(!epartIsReg(insn[2]));
+      eip = dis_SSE3_load_store_or_mov
+               (cb, sorb, eip+2, 8, is_store, "movhpd", 
+                    0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PMOVMSKB -- extract 16 sign bits from a xmm reg and copy them to 
+      an ireg.  Top 16 bits of ireg are set to zero. */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
+      modrm = insn[2];
+      /* Intel docs don't say anything about a memory source being
+	 allowed here. */
+      vg_assert(epartIsReg(modrm));
+      t1 = newTemp(cb);
+      uInstr3(cb, SSE3g_RegWr, 4,
+                  Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                  Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                  TempReg, t1 );
+      uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      if (dis)
+         VG_(printf)("pmovmskb %s, %s\n", 
+                      nameXMMReg(eregOfRM(modrm)),
+                      nameIReg(4,gregOfRM(modrm)));
+      eip += 3;
+      goto decode_success;
+   }
+
+   /* CVTDQ2PD -- convert one single double. to float. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xE6) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtdq2pd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* SQRTPD: square root of packed double. */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x51) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                      "sqrtpd",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* Fall through into the non-SSE decoder. */
 
    } /* if (VG_(have_ssestate)) */
@@ -4557,16 +4834,39 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       }
       break;
 
+   case 0xC8: /* ENTER */ 
+      d32 = getUDisp16(eip); eip += 2;
+      abyte = getUChar(eip); eip++;
+
+      vg_assert(sz == 4);           
+      vg_assert(abyte == 0);
+
+      t1 = newTemp(cb); t2 = newTemp(cb);
+      uInstr2(cb, GET,   sz, ArchReg, R_EBP, TempReg, t1);
+      uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t2);
+      uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t2);
+      uLiteral(cb, sz);
+      uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
+      uInstr2(cb, STORE,  4, TempReg, t1,    TempReg, t2);
+      uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_EBP);
+      if (d32) {
+         uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t2);
+	 uLiteral(cb, d32);
+	 uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
+      }
+      if (dis) VG_(printf)("enter 0x%x, 0x%x", d32, abyte);
+      break;
+
    case 0xC9: /* LEAVE */
       t1 = newTemp(cb); t2 = newTemp(cb);
       uInstr2(cb, GET,  4, ArchReg, R_EBP, TempReg, t1);
+      /* First PUT ESP looks redundant, but need it because ESP must
+         always be up-to-date for Memcheck to work... */
       uInstr2(cb, PUT,  4, TempReg, t1, ArchReg, R_ESP);
       uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t2);
       uInstr2(cb, PUT,  4, TempReg, t2, ArchReg, R_EBP);
       uInstr2(cb, ADD,  4, Literal, 0, TempReg, t1);
       uLiteral(cb, 4);
-      /* This 2nd PUT looks redundant, but Julian thinks it's not.
-       * --njn 03-feb-2003 */
       uInstr2(cb, PUT,  4, TempReg, t1, ArchReg, R_ESP);
       if (dis) VG_(printf)("leave");
       break;
@@ -4657,6 +4957,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x41: /* INC eCX */
    case 0x42: /* INC eDX */
    case 0x43: /* INC eBX */
+   case 0x44: /* INC eSP */
    case 0x45: /* INC eBP */
    case 0x46: /* INC eSI */
    case 0x47: /* INC eDI */
@@ -4675,6 +4976,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x49: /* DEC eCX */
    case 0x4A: /* DEC eDX */
    case 0x4B: /* DEC eBX */
+   case 0x4C: /* DEC eSP */
    case 0x4D: /* DEC eBP */
    case 0x4E: /* DEC eSI */
    case 0x4F: /* DEC eDI */
@@ -5215,6 +5517,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        uInstr2(cb, GET,  4, ArchReg, R_ESP,    TempReg, t1);
        /* load M[ESP] to virtual register t3: t3 = M[t1] */
        uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
+       
+       /* increase ESP; must be done before the STORE.  Intel manual says:
+            If the ESP register is used as a base register for addressing
+            a destination operand in memory, the POP instruction computes
+            the effective address of the operand after it increments the
+            ESP register.
+       */
+       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
+       uLiteral(cb, sz);
+       uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
+
        /* resolve MODR/M */
        pair1 = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);              
        
@@ -5223,17 +5536,19 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        /* store value from stack in memory, M[m32] = t3 */       
        uInstr2(cb, STORE, 4, TempReg, t3, TempReg, tmpa);
 
-       /* increase ESP */
-       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t1);
-       uLiteral(cb, sz);
-       uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
-
        if (dis) 
           VG_(printf)("popl %s\n", dis_buf);
 
        eip += HI8(pair1);
        break;
      }
+
+   case 0x1F: /* POP %DS */
+      dis_pop_segreg( cb, R_DS, sz ); break;
+   case 0x07: /* POP %ES */
+      dis_pop_segreg( cb, R_ES, sz ); break;
+   case 0x17: /* POP %SS */
+      dis_pop_segreg( cb, R_SS, sz ); break;
 
    /* ------------------------ PUSH ----------------------- */
 
@@ -5337,7 +5652,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis)
          VG_(printf)("pusha%c\n", nameISize(sz));
       break;
-    }
+   }
+
+   case 0x0E: /* PUSH %CS */
+      dis_push_segreg( cb, R_CS, sz ); break;
+   case 0x1E: /* PUSH %DS */
+      dis_push_segreg( cb, R_DS, sz ); break;
+   case 0x06: /* PUSH %ES */
+      dis_push_segreg( cb, R_ES, sz ); break;
+   case 0x16: /* PUSH %SS */
+      dis_push_segreg( cb, R_SS, sz ); break;
 
    /* ------------------------ SCAS et al ----------------- */
 
@@ -5535,6 +5859,80 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       if (dis)
          VG_(printf)("xlat%c [ebx]\n", nameISize(sz));
+      break;
+
+   /* ------------------------ IN / OUT ----------------------- */
+
+   case 0xE4: /* IN ib, %al        */
+   case 0xE5: /* IN ib, %{e}ax     */
+   case 0xEC: /* IN (%dx),%al      */
+   case 0xED: /* IN (%dx),%{e}ax   */
+      t1 = newTemp(cb);
+      t2 = newTemp(cb);
+      t3 = newTemp(cb);
+
+      uInstr0(cb, CALLM_S, 0);
+      /* operand size? */
+      uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
+      uLiteral(cb, ( opc == 0xE4 || opc == 0xEC ) ? 1 : sz);
+      uInstr1(cb, PUSH,  4, TempReg, t1);
+      /* port number ? */
+      if ( opc == 0xE4 || opc == 0xE5 ) {
+         abyte = getUChar(eip); eip++;
+         uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
+         uLiteral(cb, abyte);
+      }
+      else
+         uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, t2);
+
+      uInstr1(cb, PUSH,  4, TempReg, t2);
+      uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_IN));
+      uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+      uInstr1(cb, POP,   4, TempReg, t2);
+      uInstr1(cb, CLEAR, 0, Lit16,   4);
+      uInstr0(cb, CALLM_E, 0);
+      uInstr2(cb, PUT,   4, TempReg, t2, ArchReg, R_EAX);
+      if (dis) {
+         if ( opc == 0xE4 || opc == 0xE5 )
+            VG_(printf)("in 0x%x, %%eax/%%ax/%%al\n", getUChar(eip-1) );
+         else
+            VG_(printf)("in (%%dx), %%eax/%%ax/%%al\n");
+      }
+      break;
+   case 0xE6: /* OUT %al,ib       */
+   case 0xE7: /* OUT %{e}ax,ib    */
+   case 0xEE: /* OUT %al,(%dx)    */
+   case 0xEF: /* OUT %{e}ax,(%dx) */
+      t1 = newTemp(cb);
+      t2 = newTemp(cb);
+      t3 = newTemp(cb);
+
+      uInstr0(cb, CALLM_S, 0);
+      /* operand size? */
+      uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
+      uLiteral(cb, ( opc == 0xE6 || opc == 0xEE ) ? 1 : sz);
+      uInstr1(cb, PUSH,  4, TempReg, t1);
+      /* port number ? */
+      if ( opc == 0xE6 || opc == 0xE7 ) {
+         abyte = getUChar(eip); eip++;
+         uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
+         uLiteral(cb, abyte);
+      }
+      else
+         uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, t2);
+      uInstr1(cb, PUSH,  4, TempReg, t2);
+      uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t3);
+      uInstr1(cb, PUSH,  4, TempReg, t3);
+      uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_OUT));
+      uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+      uInstr1(cb, CLEAR,  0, Lit16,  12);
+      uInstr0(cb, CALLM_E, 0);
+      if (dis) {
+         if ( opc == 0xE4 || opc == 0xE5 )
+            VG_(printf)("out %%eax/%%ax/%%al, 0x%x\n", getUChar(eip-1) );
+         else
+            VG_(printf)("out %%eax/%%ax/%%al, (%%dx)\n");
+      }
       break;
 
    /* ------------------------ (Grp1 extensions) ---------- */
@@ -6098,6 +6496,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          break;
 
       case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
+      case 0xE7: /* MOVNTQ (src)mmxreg, (dst)mmxreg-or-mem */
          vg_assert(sz == 4);
          modrm = getUChar(eip);
          if (epartIsReg(modrm)) {
@@ -6112,7 +6511,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                         (((UShort)(opc)) << 8) | ((UShort)modrm),
                         TempReg, tmpa);
             if (dis)
-               VG_(printf)("movq %s, %s\n", 
+               VG_(printf)("mov(nt)q %s, %s\n", 
                            nameMMXReg(gregOfRM(modrm)),
                            dis_buf);
          }
@@ -6245,6 +6644,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psra", True );
          break;
+
+      case 0xA1: /* POP %FS */
+         dis_pop_segreg( cb, R_FS, sz ); break;
+      case 0xA9: /* POP %GS */
+         dis_pop_segreg( cb, R_GS, sz ); break;
+
+      case 0xA0: /* PUSH %FS */
+         dis_push_segreg( cb, R_FS, sz ); break;
+      case 0xA8: /* PUSH %GS */
+         dis_push_segreg( cb, R_GS, sz ); break;
 
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 

@@ -1,5 +1,5 @@
 
-19 June 2002
+5 November 2003
 
 The purpose of this small doc is to guide you in using Valgrind to
 find and fix memory management bugs in KDE3.
@@ -10,13 +10,9 @@ Here's a getting-started-quickly checklist.  It might sound daunting,
 but once set up things work fairly well.
 
 
-* You need an x86 box running a Linux 2.2 or 2.4 kernel, with glibc 
-  2.1.X or 2.2.X and XFree86 3.X or 4.X.  In practice this means 
-  practically any recent Linux distro.  Valgrind is developed on a 
-  vanilla Red Hat 7.2 installation, so at least works ok there.  
-  I imagine Mandrake 8 and SuSE 7.X would be ok too.  It is known to 
-  work on Red Hats 6.2, 7.2 and 7.3, at the very least.
-
+* You need an x86 box running a Linux 2.4 kernel, with glibc 
+  2.2.X or 2.3.X and XFree86 3.X or 4.X.  In practice this means 
+  practically any recent Linux distro.
 
 * You need a reasonably fast machine, since programs run 25-100 x
   slower on Valgrind.  I work with a 1133 MHz PIII with 512 M of
@@ -24,13 +20,11 @@ but once set up things work fairly well.
   usable, but in all, the faster your machine, the more useful 
   valgrind will be.
 
-
 * You need at least 256M of memory for reasonable behaviour.  Valgrind
   inflates the memory use of KDE apps approximately 3-4 x, so (eg) 
   konqueror needs ~ 140M of memory to get started, although to be fair,
   at least 40 M of that is due to reading the debug info -- this is for
   a konqueror and all libraries built with -O -g.
-
 
 * You need to compile the KDE to be debugged, using a decent gcc/g++:
 
@@ -40,17 +34,6 @@ but once set up things work fairly well.
     do with your program.  You can use the --workaround-gcc296-bugs=yes 
     flag to ignore them.  See the manual for details; this is not really 
     a good solution.
-
-  - I recommend you use gcc/g++ 2.95.3.  It seems to compile
-    KDE without problems, and does not suffer from the above bug.  It's
-    what I have been using.
-
-  - gcc-3.  3.0.4 was observed to have a scheduling bug causing it to
-    occasionally generate writes below the stack pointer.  gcc-3.1 seems
-    better in that respect.
-
-  It's ok to build Valgrind with the default gcc on Red Hat 7.2.
-
 
 * So: build valgrind -- see the README file.  It's the standard
   ./configure ; make ; make install deal.
@@ -65,19 +48,14 @@ but once set up things work fairly well.
 * If you are debugging KDE apps, be prepared for the fact that
   Valgrind finds bugs in the underlying Qt (qt-copy from CVS) too.
 
-* Please read the Valgrind manual, docs/index.html.  It contains 
-  considerable details about how to use it, what's really going on, 
-  etc.
-
-* There are some significant limitations:
-  - No MMX, SSE, SSE2 insns.  Basically a 486 instruction set only.
-  - Various other minor limitations listed in the manual.
-
-* If you have trouble with it, please let me know (jseward@acm.org)
-  and I'll see if I can help you out.
+* Please read the Valgrind manual, share/doc/valgrind/manual.html 
+  in the installation tree.  It contains considerable details about 
+  how to use it, what's really going on, etc.
 
 
 Have fun!  If you find Valgrind useful in finding and fixing bugs,
-I shall consider my efforts to have been worthwhile.
+our efforts will have been worthwhile.
 
 Julian Seward (jseward@acm.org)
+Nick Nethercote (njn25@cam.ac.uk)
+Jeremy Fitzhardinge (jeremy@goop.org)

@@ -186,13 +186,15 @@ char* strcpy ( char* dst, const char* src )
 
 char* strncpy ( char* dst, const char* src, int n )
 {
-   Char* dst_orig = dst;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
    Int   m = 0;
 
-   if (is_overlap(dst, src, n, n))
-      complain3("strncpy", dst, src, n);
-
    while (m   < n && *src) { m++; *dst++ = *src++; }
+   /* Check for overlap after copying; all n bytes of dst are relevant,
+      but only m+1 bytes of src if terminator was found */
+   if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n))
+      complain3("strncpy", dst, src, n);
    while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */
 
    return dst_orig;
@@ -279,6 +281,26 @@ void* memcpy( void *dst, const void *src, unsigned int len )
    return dst;
 }
 
+int memcmp ( const void *s1V, const void *s2V, unsigned int n )
+{
+   int res;
+   unsigned char a0;
+   unsigned char b0;
+   unsigned char* s1 = (unsigned char*)s1V;
+   unsigned char* s2 = (unsigned char*)s2V;
+
+   while (n != 0) {
+      a0 = s1[0];
+      b0 = s2[0];
+      s1 += 1;
+      s2 += 1;
+      res = ((int)a0) - ((int)b0);
+      if (res != 0)
+         return res;
+      n -= 1;
+   }
+   return 0;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                     mac_replace_strmem.c ---*/

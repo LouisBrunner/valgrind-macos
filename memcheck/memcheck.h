@@ -68,7 +68,6 @@
    See comment near the top of valgrind.h on how to use them.
 */
 
-#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
 
 typedef
@@ -174,6 +173,26 @@ typedef
       (volatile unsigned char *)&(__lvalue),                       \
                       (unsigned int)(sizeof (__lvalue)))
 
+/* Do a memory leak check mid-execution.  */
+#define VALGRIND_DO_LEAK_CHECK                                     \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__DO_LEAK_CHECK,             \
+                            0, 0, 0, 0);                           \
+   }
+
+/* Return number of leaked, dubious, reachable and suppressed bytes found by
+   all previous leak checks.  They must be lvalues. */
+#define VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed)    \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                                \
+                            VG_USERREQ__COUNT_LEAKS,                    \
+                            &leaked, &dubious, &reachable, &suppressed);\
+   }
+
+#endif
+
+
 /* Mark a block of memory as having been allocated by a malloc()-like
    function.  `addr' is the start of the usable block (ie. after any
    redzone) `rzB' is redzone size if the allocator can apply redzones;
@@ -211,26 +230,6 @@ typedef
                             VG_USERREQ__FREELIKE_BLOCK,            \
                             addr, rzB, 0, 0);                      \
    }
-
-/* Do a memory leak check mid-execution.  */
-#define VALGRIND_DO_LEAK_CHECK                                     \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__DO_LEAK_CHECK,             \
-                            0, 0, 0, 0);                           \
-   }
-
-/* Return number of leaked, dubious, reachable and suppressed bytes found by
-   all previous leak checks.  They must be lvalues. */
-#define VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed)    \
-   {unsigned int _qzz_res;                                              \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                                \
-                            VG_USERREQ__COUNT_LEAKS,                    \
-                            &leaked, &dubious, &reachable, &suppressed);\
-   }
-
-#endif
-
 
 /* Get in zzvbits the validity data for the zznbytes starting at
    zzsrc.  Return values:

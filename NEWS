@@ -1,4 +1,141 @@
 
+Stable release 2.0.0 (5 Nov 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2.0.0 improves SSE/SSE2 support, fixes some minor bugs, and
+improves support for SuSE 9 and the Red Hat "Severn" beta.
+
+- Further improvements to SSE/SSE2 support.  The entire test suite of
+  the GNU Scientific Library (gsl-1.4) compiled with Intel Icc 7.1
+  20030307Z '-g -O -xW' now works.  I think this gives pretty good
+  coverage of SSE/SSE2 floating point instructions, or at least the
+  subset emitted by Icc.
+
+- Also added support for the following instructions:
+    MOVNTDQ UCOMISD UNPCKLPS UNPCKHPS SQRTSS
+    PUSH/POP %{FS,GS}, and PUSH %CS (Nb: there is no POP %CS).
+
+- CFI support for GDB version 6.  Needed to enable newer GDBs
+  to figure out where they are when using --gdb-attach=yes.
+
+- Fix this:
+      mc_translate.c:1091 (memcheck_instrument): Assertion
+      `u_in->size == 4 || u_in->size == 16' failed.
+
+- Return an error rather than panicing when given a bad socketcall.
+
+- Fix checking of syscall rt_sigtimedwait().
+
+- Implement __NR_clock_gettime (syscall 265).  Needed on Red Hat Severn.
+
+- Fixed bug in overlap check in strncpy() -- it was assuming the src was 'n'
+  bytes long, when it could be shorter, which could cause false
+  positives.
+
+- Support use of select() for very large numbers of file descriptors.
+
+- Don't fail silently if the executable is statically linked, or is
+  setuid/setgid. Print an error message instead.
+
+- Support for old DWARF-1 format line number info.
+
+
+
+Snapshot 20031012 (12 October 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three months worth of bug fixes, roughly.  Most significant single
+change is improved SSE/SSE2 support, mostly thanks to Dirk Mueller.
+
+20031012 builds on Red Hat Fedora ("Severn") but doesn't really work
+(curiosly, mozilla runs OK, but a modest "ls -l" bombs).  I hope to
+get a working version out soon.  It may or may not work ok on the
+forthcoming SuSE 9; I hear positive noises about it but haven't been
+able to verify this myself (not until I get hold of a copy of 9).
+
+A detailed list of changes, in no particular order:
+
+- Describe --gen-suppressions in the FAQ.
+
+- Syscall __NR_waitpid supported.
+
+- Minor MMX bug fix.
+
+- -v prints program's argv[] at startup.
+
+- More glibc-2.3 suppressions.
+
+- Suppressions for stack underrun bug(s) in the c++ support library
+  distributed with Intel Icc 7.0.
+
+- Fix problems reading /proc/self/maps.
+
+- Fix a couple of messages that should have been suppressed by -q, 
+  but weren't.
+
+- Make Addrcheck understand "Overlap" suppressions.
+
+- At startup, check if program is statically linked and bail out if so.
+
+- Cachegrind: Auto-detect Intel Pentium-M, also VIA Nehemiah
+
+- Memcheck/addrcheck: minor speed optimisations
+
+- Handle syscall __NR_brk more correctly than before.
+
+- Fixed incorrect allocate/free mismatch errors when using
+  operator new(unsigned, std::nothrow_t const&)
+  operator new[](unsigned, std::nothrow_t const&)
+
+- Support POSIX pthread spinlocks.
+
+- Fixups for clean compilation with gcc-3.3.1.
+
+- Implemented more opcodes: 
+    - push %es
+    - push %ds
+    - pop %es
+    - pop %ds
+    - movntq
+    - sfence
+    - pshufw
+    - pavgb
+    - ucomiss
+    - enter
+    - mov imm32, %esp
+    - all "in" and "out" opcodes
+    - inc/dec %esp
+    - A whole bunch of SSE/SSE2 instructions
+
+- Memcheck: don't bomb on SSE/SSE2 code.
+
+
+
+Snapshot 20030725 (25 July 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fixes some minor problems in 20030716.
+
+- Fix bugs in overlap checking for strcpy/memcpy etc.
+
+- Do overlap checking with Addrcheck as well as Memcheck.
+
+- Fix this:
+      Memcheck: the `impossible' happened:
+      get_error_name: unexpected type
+
+- Install headers needed to compile new skins.
+
+- Remove leading spaces and colon in the LD_LIBRARY_PATH / LD_PRELOAD
+  passed to non-traced children.
+
+- Fix file descriptor leak in valgrind-listener.
+
+- Fix longstanding bug in which the allocation point of a 
+  block resized by realloc was not correctly set.  This may
+  have caused confusing error messages.
+
+
 Snapshot 20030716 (16 July 2003)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

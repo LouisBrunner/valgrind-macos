@@ -66,14 +66,14 @@
 }
 {
    realpath is inefficiently coded
-   Memcheck:Overlap
+   Addrcheck,Memcheck:Overlap
    fun:memcpy
    fun:realpath*
 }
 
 {
    realpath stupidity part II
-   Memcheck:Overlap
+   Addrcheck,Memcheck:Overlap
    fun:strcpy
    fun:realpath*
 }
@@ -142,4 +142,11 @@
    fun:__pthread_key_create
 }
 
-
+##----------------------------------------------------------------------##
+## Bugs in helper library supplied with Intel Icc 7.0 (65)
+## in /opt/intel/compiler70/ia32/lib/libcxa.so.3
+{
+   Intel compiler70/ia32/lib/libcxa.so.3 below-esp accesses
+   Addrcheck,Memcheck:Addr4
+   obj:/opt/intel/compiler70/ia32/lib/libcxa.so.3
+}

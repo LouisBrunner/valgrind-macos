@@ -1,21 +1,4 @@
 
-5 May 2003
-
-Building and not installing it
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To run Valgrind without having to install it, run coregrind/valgrind (prefix
-with "sh" because it's not executable) with the --in-place=<dir> option, where
-<dir> is the root of the source tree (and must be an absolute path).  Eg:
-
-  sh ~/grind/head4/coregrind/valgrind --in-place=/homes/njn25/grind/head4
-
-This allows you to compile and run with "make" instead of "make install",
-saving you time.
-
-I recommend compiling with "make --quiet" to further reduce the amount of
-output spewed out during compilation, letting you actually see any errors,
-warnings, etc.
-
 
 Running the regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,4 +15,8 @@ file.  Eg:
   perl tests/vg_regtest memcheck
   perl tests/vg_regtest memcheck/tests/badfree.vgtest
   perl tests/vg_regtest memcheck/tests/badfree
+
+
+Nick Nethercote (njn25@cam.ac.uk)
+Last updated 5 November 2003
 

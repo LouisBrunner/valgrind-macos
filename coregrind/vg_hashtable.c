@@ -36,7 +36,7 @@
 
 /* Holds malloc'd but not freed blocks.  Static, so zero-inited by default. */
 
-#define VG_N_CHAINS 997
+#define VG_N_CHAINS 4999 /* a prime number */
 
 #define VG_CHAIN_NO(aa) (((UInt)(aa)) % VG_N_CHAINS)
 

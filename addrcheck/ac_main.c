@@ -236,7 +236,7 @@ static __inline__ UChar get_abit ( Addr a )
              ? VGM_BIT_INVALID : VGM_BIT_VALID;
 }
 
-static __inline__ void set_abit ( Addr a, UChar abit )
+static /* __inline__ */ void set_abit ( Addr a, UChar abit )
 {
    AcSecMap* sm;
    UInt    sm_off;
@@ -276,7 +276,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-static __inline__ 
+static /* __inline__ */
 void set_address_range_perms ( Addr a, UInt len, 
                                UInt example_a_bit )
 {
@@ -957,15 +957,16 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
             break;
 
-         /* For memory-ref instrs, copy the data_addr into a temporary to be
-          * passed to the helper at the end of the instruction.
+         /* For memory-ref instrs, copy the data_addr into a temporary
+          * to be passed to the helper at the end of the instruction.
           */
          case LOAD: 
             t_addr = u_in->val1; 
             goto do_LOAD_or_STORE;
-         case STORE: t_addr = u_in->val2;
+         case STORE: 
+            t_addr = u_in->val2;
             goto do_LOAD_or_STORE;
-           do_LOAD_or_STORE:
+         do_LOAD_or_STORE:
             uInstr1(cb, CCALL, 0, TempReg, t_addr);
             switch (u_in->size) {
                case 4: uCCall(cb, (Addr) & ac_helperc_ACCESS4, 1, 1, False );
@@ -1012,10 +1013,11 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case SSE3a_MemRd: // this one causes trouble
+         case SSE3a_MemRd:
          case SSE2a_MemRd:
          case SSE2a_MemWr:
 	 case SSE3a_MemWr:
+         case SSE3a1_MemRd:
 	    sk_assert(u_in->size == 4 || u_in->size == 8 
                       || u_in->size == 16);
 	    goto do_Access_ARG3;
@@ -1030,10 +1032,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-	    //         case SSE2a1_MemRd:
-	    //         case SSE2a1_MemWr:
-	   //         case SSE3a1_MemRd:
-	   //         case SSE3a1_MemWr:
+         case SSE2a1_MemRd:
 	    VG_(pp_UInstr)(0,u_in);
 	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
 	    break;
@@ -1045,6 +1044,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case SSE3g_RegWr:
          case SSE3e_RegRd:
          case SSE4:
+         case SSE3:
          default:
             VG_(copy_UInstr)(cb, u_in);
             break;

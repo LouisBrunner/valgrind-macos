@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT(coregrind/vg_main.c)   # give me a source file, any source file...
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(valgrind, 20030716)
+AM_INIT_AUTOMAKE(valgrind, 2.0.0)
 
 AM_MAINTAINER_MODE
 
@@ -97,9 +97,9 @@ AC_MSG_CHECKING([for the kernel version])
 kernel=`uname -r`
 
 case "${kernel}" in
-     2.5.*) 
-	    AC_MSG_RESULT([2.5 family (${kernel})])
-	    AC_DEFINE([KERNEL_2_5], 1, [Define to 1 if you're using Linux 2.5.x])
+     2.6.*) 
+	    AC_MSG_RESULT([2.6 family (${kernel})])
+	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x])
 	    ;;
 
      2.4.*) 
@@ -114,7 +114,7 @@ case "${kernel}" in
 
      *) 
 	    AC_MSG_RESULT([unsupported (${kernel})])
-	    AC_MSG_ERROR([Valgrind works on kernels 2.2 and 2.4])
+	    AC_MSG_ERROR([Valgrind works on kernels 2.2, 2.4 and 2.6])
 	    ;;
 esac
 
@@ -279,6 +279,23 @@ EOF
 
    rm -f conftest conftest.c
 fi
+
+
+# check if the GNU as supports CFI directives
+AC_MSG_CHECKING([if gas accepts .cfi])
+AC_TRY_LINK(, [
+
+__asm__ __volatile__ (".cfi_startproc\n"
+                      ".cfi_adjust_cfa_offset 0x0\n"
+                      ".cfi_endproc\n");
+],
+[
+  AC_DEFINE_UNQUOTED([HAVE_GAS_CFI], 1, [Define if your GNU as supports .cfi])
+  AC_MSG_RESULT(yes)
+],
+  AC_MSG_RESULT(no)
+)
+
 
 
 AC_MSG_CHECKING([if this is an NPTL-based system])

@@ -75,15 +75,11 @@ VexGuestLayout ppc32Guest_layout;
 /* --- CLEAN HELPERS --- */
 
 // Calculate CR0 flags
-extern UChar ppc32g_calculate_cr0_all  ( UInt op, UInt word1, UInt xer_so );
-extern UChar ppc32g_calculate_cr0_bit0 ( UInt op, UInt word1, UInt xer_so );
-extern UChar ppc32g_calculate_cr0_bit1 ( UInt op, UInt word1, UInt xer_so );
-extern UChar ppc32g_calculate_cr0_bit2 ( UInt op, UInt word1, UInt xer_so );
-extern UChar ppc32g_calculate_cr0_bit3 ( UInt op, UInt word1, UInt xer_so );
+extern UInt ppc32g_calculate_cr0_all  ( UInt op, UInt word1, UInt xer_so );
 
 // Calculate XER flags
-extern UChar ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UInt ca );
-extern UChar ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, UInt ca );
+extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UInt ca );
+extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, UInt ca );
 
 
 

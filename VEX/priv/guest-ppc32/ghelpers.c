@@ -61,49 +61,28 @@
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculates CR0[LT,GT,EQ,SO] flags from the supplied
-   thunk parameters. */
-UChar ppc32g_calculate_cr0_all ( UInt op, UInt word1, UInt xer_so )
+   thunk parameters.
+   Returns values in high field (correct wrt actual CR)
+ */
+UInt ppc32g_calculate_cr0_all ( UInt op, UInt word1, UInt xer_so )
 {
-    Int sword1 = (Int)word1;
+    Int sword1 = (int)word1;
     if (op) {
 	return (word1 & 0xF0000000);
     } else {
 	return
-	    (xer_so & 1)
-	    | (((sword1 == 0) ? 1:0) << 1)
-	    | (((sword1 >  0) ? 1:0) << 2)
-	    | (((sword1 <  0) ? 1:0) << 3);
+	    ((xer_so & 1) << 28)
+	    | (((sword1 == 0) ? 1:0) << 29)
+	    | (((sword1 >  0) ? 1:0) << 30)
+	    | (((sword1 <  0) ? 1:0) << 31);
     }
 }
-
-UChar ppc32g_calculate_cr0_bit0 ( UInt op, UInt word1, UInt xer_so )
-{
-    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 0) & 1;
-}
-
-UChar ppc32g_calculate_cr0_bit1 ( UInt op, UInt word1, UInt xer_so )
-{
-    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 1) & 1;
-}
-
-UChar ppc32g_calculate_cr0_bit2 ( UInt op, UInt word1, UInt xer_so )
-{
-    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 2) & 1;
-}
-
-UChar ppc32g_calculate_cr0_bit3 ( UInt op, UInt word1, UInt xer_so )
-{
-    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 3) & 1;
-}
-
-
-
 
 
 
 // Calculate XER_OV
-UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
-				UInt arg1, UInt arg2, UInt ov )
+UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
+			       UInt arg1, UInt arg2, UInt ov )
 {
     ULong ul_tmp=0;
 
@@ -154,8 +133,8 @@ UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
 }
 
 // Calculate XER_CA
-UChar ppc32g_calculate_xer_ca ( UInt op, UInt res,
-				UInt arg1, UInt arg2, UInt ca )
+UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
+			       UInt arg1, UInt arg2, UInt ca )
 {
     switch (op) {
     case PPC32G_FLAG_OP_ADD:     // addc, addco, addic

@@ -3837,8 +3837,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* 0xF3: MULSS -- multiply low 4 bytes of XMM reg. */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
        && insn[1] == 0x0F && insn[2] == 0x59) {
-      vg_assert(sz == 4);
       Bool sz8 = insn[0] == 0xF2;
+      vg_assert(sz == 4);
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
                                       sz8 ? "mulss" : "mulsd",
                                       insn[0], insn[1], insn[2] );
@@ -3863,8 +3863,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* 0xF3: DIVSS -- divide low 4 bytes of XMM reg. */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
        && insn[1] == 0x0F && insn[2] == 0x5E) {
-      vg_assert(sz == 4);
       Bool sz8 = insn[0] == 0xF2;
+      vg_assert(sz == 4);
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
                                       sz8 ? "divsd" : "divss",
                                       insn[0], insn[1], insn[2] );

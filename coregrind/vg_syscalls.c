@@ -292,8 +292,13 @@ void pre_mem_read_sockaddr ( ThreadState* tst,
                                  Char *description,
                                  struct sockaddr *sa, UInt salen )
 {
-   Char *outmsg = VG_(arena_malloc) ( VG_AR_TRANSIENT, 
-                                      strlen( description ) + 30 );
+   Char *outmsg;
+
+   /* NULL/zero-length sockaddrs are legal */
+   if ( sa == NULL || salen == 0 ) return;
+
+   outmsg = VG_(arena_malloc) ( VG_AR_TRANSIENT,
+                                strlen( description ) + 30 );
 
    VG_(sprintf) ( outmsg, description, ".sa_family" );
    SYSCALL_TRACK( pre_mem_read, tst, outmsg, 

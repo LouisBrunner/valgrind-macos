@@ -65,23 +65,23 @@ void VG_(print_reg_alloc_stats)(void)
 #define VG_UNION_FLAG_SETS(set1,set2) \
    ( ((FlagSet)set1) | ((FlagSet)set2) )
 
-/* This one is called by the core */
-UCodeBlock* VG_(alloc_UCodeBlock) ( void )
+// This one is local.
+static UCodeBlock* alloc_UCodeBlock ( Addr orig_eip )
 {
    UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
-   cb->used = cb->size = cb->nextTemp = 0;
-   cb->instrs = NULL;
+   cb->orig_eip = orig_eip;
+   cb->used     = 0;
+   cb->size     = 0;
+   cb->instrs   = NULL;
+   cb->nextTemp = 0;
    return cb;
 }
 
-/* This one is called by tools */
+// This one is called by tools.
 UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb_in )
 {
-   UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
-   cb->orig_eip = cb_in->orig_eip;
-   cb->used = cb->size = 0;
+   UCodeBlock* cb = alloc_UCodeBlock( cb_in->orig_eip );
    cb->nextTemp = cb_in->nextTemp;
-   cb->instrs = NULL;
    return cb;
 }
 
@@ -2153,8 +2153,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
    /* Resulting code goes here.  We generate it all in a forwards
       pass. */
-   c2 = VG_(alloc_UCodeBlock)();
-   c2->orig_eip = c1->orig_eip;
+   c2 = alloc_UCodeBlock( c1->orig_eip );
 
    /* At the start, no TempRegs are assigned to any real register.
       Correspondingly, all temps claim to be currently resident in
@@ -2461,8 +2460,7 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
    } else
       seg->flags |= SF_CODE;	/* contains cached code */
 
-   cb = VG_(alloc_UCodeBlock)();
-   cb->orig_eip = orig_addr;
+   cb = alloc_UCodeBlock( orig_addr );
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_codegen) && notrace_until_done) {

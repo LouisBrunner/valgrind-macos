@@ -967,24 +967,25 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       /* MUL */
       if (i->Xin.Alu32R.op == Xalu_MUL) {
-	switch (i->Xin.Alu32R.src->tag) {
-case Xrmi_Reg:
-  *p++ = 0x0F;
-  *p++ = 0xAF;
-  p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.src->Xrmi.Reg.reg);
-  goto done;
-	case Xrmi_Imm:
-	  if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
-	    *p++ = 0x6B;
-	    p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
-	    *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
-	    goto done;
-	  } else {
-	    goto bad;
-	  }
-
-	default: goto bad;
-	}
+         switch (i->Xin.Alu32R.src->tag) {
+            case Xrmi_Reg:
+               *p++ = 0x0F;
+               *p++ = 0xAF;
+               p = doAMode_R(p, i->Xin.Alu32R.dst,
+                                i->Xin.Alu32R.src->Xrmi.Reg.reg);
+               goto done;
+            case Xrmi_Imm:
+               if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
+                  *p++ = 0x6B;
+                  p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
+                  *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
+                  goto done;
+               } else {
+                  goto bad;
+               }
+            default:
+               goto bad;
+         }
       }
       /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP */
       opc = opc_rr = subopc_imm = opc_imma = 0;
@@ -1085,116 +1086,121 @@ case Xrmi_Reg:
       break;
 
    case Xin_Sh32:
-     opc_cl = opc_imm = subopc = 0;
-     switch (i->Xin.Sh32.op) {
-     case Xsh_SHR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
-     case Xsh_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
-     case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
-     default: goto bad;
-     }
-     if (i->Xin.Sh32.src == 0) {
-       *p++ = opc_cl;
-       switch (i->Xin.Sh32.dst->tag) {
-       case Xrm_Reg:
-	 p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst->Xrm.Reg.reg);
-	 goto done;
-       default:
-	 goto bad;
-       }
-     } else {
-       goto bad;
-     }
-     break;
+      opc_cl = opc_imm = subopc = 0;
+      switch (i->Xin.Sh32.op) {
+         case Xsh_SHR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
+         case Xsh_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
+         case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
+         default: goto bad;
+      }
+      if (i->Xin.Sh32.src == 0) {
+         *p++ = opc_cl;
+         switch (i->Xin.Sh32.dst->tag) {
+            case Xrm_Reg:
+               p = doAMode_R(p, fake(subopc), 
+                                i->Xin.Sh32.dst->Xrm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      } else {
+         goto bad;
+      }
+      break;
 
    case Xin_Test32:
-     if (i->Xin.Test32.src->tag == Xri_Imm
-         && i->Xin.Test32.dst->tag == Xrm_Reg) {
-       /* testl $imm32, %reg */
-       *p++ = 0xF7;
-       p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
-       p = emit32(p, i->Xin.Test32.src->Xri.Imm.imm32);
-       goto done;
-     }
-     break;
+      if (i->Xin.Test32.src->tag == Xri_Imm
+          && i->Xin.Test32.dst->tag == Xrm_Reg) {
+         /* testl $imm32, %reg */
+         *p++ = 0xF7;
+         p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
+         p = emit32(p, i->Xin.Test32.src->Xri.Imm.imm32);
+         goto done;
+      }
+      break;
 
    case Xin_Unary32:
-     if (i->Xin.Unary32.op == Xun_Not) {
-       *p++ = 0xF7;
-       if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-	 p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
-	 goto done;
-       } else {
-	 goto bad;
-       }
-     }
-     break;
+      if (i->Xin.Unary32.op == Xun_Not) {
+         *p++ = 0xF7;
+         if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
+            p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
+            goto done;
+         } else {
+            goto bad;
+         }
+      }
+      break;
 
    case Xin_MulL:
-     subopc = i->Xin.MulL.syned ? 5 : 4;
-     if (i->Xin.MulL.ssz == Xss_32) {
-       vassert(!i->Xin.MulL.syned); // remove when a test case appears
-       *p++ = 0xF7;
-       switch (i->Xin.MulL.src->tag)  {
-       case Xrm_Mem:
-	 p = doAMode_M(p, fake(subopc),
-		     i->Xin.MulL.src->Xrm.Mem.am);
-       goto bad;
-       case Xrm_Reg:
-	 p = doAMode_R(p, fake(subopc), 
-		       i->Xin.MulL.src->Xrm.Reg.reg);
-	 goto done;
-       default: goto bad;
-       }
-     }
-     break;
+      subopc = i->Xin.MulL.syned ? 5 : 4;
+      if (i->Xin.MulL.ssz == Xss_32) {
+         vassert(!i->Xin.MulL.syned); // remove when a test case appears
+         *p++ = 0xF7;
+         switch (i->Xin.MulL.src->tag)  {
+            case Xrm_Mem:
+               p = doAMode_M(p, fake(subopc),
+                                i->Xin.MulL.src->Xrm.Mem.am);
+               goto bad;
+            case Xrm_Reg:
+               p = doAMode_R(p, fake(subopc), 
+                                i->Xin.MulL.src->Xrm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      break;
 
    case Xin_Div:
-     subopc = i->Xin.Div.syned ? 7 : 6;
-     if (i->Xin.Div.ssz == Xss_32) {
-       vassert(!i->Xin.Div.syned); // remove when a test case appears
-       *p++ = 0xF7;
-       switch (i->Xin.Div.src->tag)  {
-       case Xrm_Mem:
-	 p = doAMode_M(p, fake(subopc),
-		     i->Xin.Div.src->Xrm.Mem.am);
-       goto bad;
-       case Xrm_Reg:
-	 p = doAMode_R(p, fake(subopc), 
-		       i->Xin.Div.src->Xrm.Reg.reg);
-	 goto done;
-       default: goto bad;
-       }
-     }
-     break;
+      subopc = i->Xin.Div.syned ? 7 : 6;
+      if (i->Xin.Div.ssz == Xss_32) {
+         vassert(!i->Xin.Div.syned); // remove when a test case appears
+         *p++ = 0xF7;
+         switch (i->Xin.Div.src->tag)  {
+            case Xrm_Mem:
+               p = doAMode_M(p, fake(subopc),
+                                i->Xin.Div.src->Xrm.Mem.am);
+               goto bad;
+            case Xrm_Reg:
+               p = doAMode_R(p, fake(subopc), 
+                                i->Xin.Div.src->Xrm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      break;
 
    case Xin_Sh3232:
-     vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
-     if (i->Xin.Sh3232.amt == 0) {
-       /* shldl/shrdl by %cl */
-       *p++ = 0x0F;
-       *p++ = i->Xin.Sh3232.op == Xsh_SHL ? 0xA5 : 0xAD;
-       p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
-       if (i->Xin.Sh3232.op == Xsh_SHR) goto bad; // await test case
-       goto done;
-     }
-     break;
+      vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
+      if (i->Xin.Sh3232.amt == 0) {
+         /* shldl/shrdl by %cl */
+         *p++ = 0x0F;
+         *p++ = i->Xin.Sh3232.op == Xsh_SHL ? 0xA5 : 0xAD;
+         p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
+         if (i->Xin.Sh3232.op == Xsh_SHR) goto bad; // await test case
+         // Check carefully if rLo and rHi play opposite roles in SHR
+         goto done;
+      }
+      break;
 
    case Xin_Push:
-     switch (i->Xin.Push.src->tag) {
-     case Xrmi_Mem: 
-       *p++ = 0xFF;
-       p = doAMode_M(p, fake(6), i->Xin.Push.src->Xrmi.Mem.am);
-       goto done;
-     default: goto bad;
-     }
+      switch (i->Xin.Push.src->tag) {
+         case Xrmi_Mem: 
+            *p++ = 0xFF;
+            p = doAMode_M(p, fake(6), i->Xin.Push.src->Xrmi.Mem.am);
+            goto done;
+         default: 
+            goto bad;
+      }
 
    case Xin_Call:
-     *p++ = 0xFF;
-     p = doAMode_R(p, fake(2), i->Xin.Call.target);
-     goto done;
+      *p++ = 0xFF;
+      p = doAMode_R(p, fake(2), i->Xin.Call.target);
+      goto done;
 
    case Xin_Goto:
-     /* unconditional jump to immediate */
+      /* unconditional jump to immediate */
       if (i->Xin.Goto.cond == Xcc_ALWAYS
           && i->Xin.Goto.dst->tag == Xri_Imm) {
          /* movl $immediate, %eax ; ret */
@@ -1203,23 +1209,23 @@ case Xrmi_Reg:
          *p++ = 0xC3;
          goto done;
       }
-     /* unconditional jump to reg */
+      /* unconditional jump to reg */
       if (i->Xin.Goto.cond == Xcc_ALWAYS
           && i->Xin.Goto.dst->tag == Xri_Reg) {
          /* movl %reg, %eax ; ret */
          if (i->Xin.Goto.dst->Xri.Reg.reg != hregX86_EAX()) {
             *p++ = 0x89;
             p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregX86_EAX());
-          }
-          *p++ = 0xC3;
-          goto done;
-       }
-     /* conditional jump to immediate */
+         }
+         *p++ = 0xC3;
+         goto done;
+      }
+      /* conditional jump to immediate */
       if (i->Xin.Goto.cond != Xcc_ALWAYS
           && i->Xin.Goto.dst->tag == Xri_Imm) {
-	/* jmp fwds if !condition */
-	*p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
-	*p++ = 6; /* # of bytes in the next bit */
+         /* jmp fwds if !condition */
+         *p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
+         *p++ = 6; /* # of bytes in the next bit */
          /* movl $immediate, %eax ; ret */
          *p++ = 0xB8;
          p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
@@ -1229,90 +1235,94 @@ case Xrmi_Reg:
       break;
 
    case Xin_CMov32:
-     vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
-     *p++ = 0x0F;
-     *p++ = 0x40 + i->Xin.CMov32.cond;
-     if (i->Xin.CMov32.src->tag == Xrm_Reg) {
-       p = doAMode_R(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Reg.reg);
-       goto done;
-     }
-     if (i->Xin.CMov32.src->tag == Xrm_Mem) {
-       p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
-       goto done;
-     }
-     break;
+      vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
+      *p++ = 0x0F;
+      *p++ = 0x40 + i->Xin.CMov32.cond;
+      if (i->Xin.CMov32.src->tag == Xrm_Reg) {
+         p = doAMode_R(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Reg.reg);
+         goto done;
+      }
+      if (i->Xin.CMov32.src->tag == Xrm_Mem) {
+         p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
+         goto done;
+      }
+      break;
 
    case Xin_LoadEX:
-     if (i->Xin.LoadEX.szSmall == 1 && !i->Xin.LoadEX.syned) {
-       /* movzbl */
-       *p++ = 0x0F;
-       *p++ = 0xB6;
-       p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
-       goto done;
-     }
-     if (i->Xin.LoadEX.szSmall == 2 && !i->Xin.LoadEX.syned) {
-       /* movzwl */
-       *p++ = 0x0F;
-       *p++ = 0xB7;
-       p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
-       goto done;
-     }
-     break;
+      if (i->Xin.LoadEX.szSmall == 1 && !i->Xin.LoadEX.syned) {
+         /* movzbl */
+         *p++ = 0x0F;
+         *p++ = 0xB6;
+         p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
+         goto done;
+      }
+      if (i->Xin.LoadEX.szSmall == 2 && !i->Xin.LoadEX.syned) {
+         /* movzwl */
+         *p++ = 0x0F;
+         *p++ = 0xB7;
+         p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
+         goto done;
+      }
+      break;
 
    case Xin_Store:
-     if (i->Xin.Store.sz == 2) {
-	 *p++ = 0x66;
-	 *p++ = 0x89;
-	 p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
-	 goto done;
-     }
-
-     if (i->Xin.Store.sz == 1) {
-       /* we have to do complex dodging and weaving if
-	  src is not the low 8 bits of %eax/%ebx/%ecx/%edx. */
-       if (iregNo(i->Xin.Store.src) < 4) {
-	 /* we're OK, can do it directly */
-	 *p++ = 0x88;
-	 p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
-	 goto done;
-       } else {
-	 /* bleh.  This means the source is %edi or %esi.  Since the
-address mode can only mention three registers, at least one of 
-%eax/%ebx/%ecx/%edx
-must be available to temporarily swap the source into, so the
-store can happen. */
-	 HReg eax = hregX86_EAX(), ebx = hregX86_EBX(), ecx = hregX86_ECX(), edx = hregX86_EDX();
-	 Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
-	 HRegUsage u;
-	 Int j;
-   initHRegUsage(&u);
-      addRegUsage_X86AMode(&u,  i->Xin.Store.dst);
-      for (j = 0; j < u.n_used; j++) {
-	HReg r = u.hreg[j];
-	if (r == eax) a_ok = False;
-	if (r == ebx) b_ok = False;
-	if (r == ecx) c_ok = False;
-	if (r == edx) d_ok = False;
+      if (i->Xin.Store.sz == 2) {
+         /* This case, at least, is simple, given that we can
+            reference the low 16 bits of any integer register. */
+         *p++ = 0x66;
+         *p++ = 0x89;
+         p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
+         goto done;
       }
-      HReg swap = INVALID_HREG;
-      if (a_ok) swap = eax;
-      if (b_ok) swap = ebx;
-      if (c_ok) swap = ecx;
-      if (d_ok) swap = edx;
-      vassert(swap != INVALID_HREG);
-      /* xchgl %source, %swap */
-      *p++ = 0x87;
-      p = doAMode_R(p, i->Xin.Store.src, swap);
-      /* movb lo8{%swap}, (dst) */
-	 *p++ = 0x88;
-	 p = doAMode_M(p, swap, i->Xin.Store.dst);
-      /* xchgl %source, %swap */
-      *p++ = 0x87;
-      p = doAMode_R(p, i->Xin.Store.src, swap);
-      goto done;
-       }
-     }
-     break;
+
+      if (i->Xin.Store.sz == 1) {
+         /* We have to do complex dodging and weaving if src is not
+            the low 8 bits of %eax/%ebx/%ecx/%edx. */
+         if (iregNo(i->Xin.Store.src) < 4) {
+            /* we're OK, can do it directly */
+            *p++ = 0x88;
+            p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
+           goto done;
+         } else {
+            /* Bleh.  This means the source is %edi or %esi.  Since
+               the address mode can only mention three registers, at
+               least one of %eax/%ebx/%ecx/%edx must be available to
+               temporarily swap the source into, so the store can
+               happen.  So we have to look at the regs mentioned
+               in the amode. */
+            HReg eax = hregX86_EAX(), ebx = hregX86_EBX(), 
+                 ecx = hregX86_ECX(), edx = hregX86_EDX();
+            Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
+            HRegUsage u;
+            Int j;
+            initHRegUsage(&u);
+            addRegUsage_X86AMode(&u,  i->Xin.Store.dst);
+            for (j = 0; j < u.n_used; j++) {
+               HReg r = u.hreg[j];
+               if (r == eax) a_ok = False;
+               if (r == ebx) b_ok = False;
+               if (r == ecx) c_ok = False;
+               if (r == edx) d_ok = False;
+            }
+            HReg swap = INVALID_HREG;
+            if (a_ok) swap = eax;
+            if (b_ok) swap = ebx;
+            if (c_ok) swap = ecx;
+            if (d_ok) swap = edx;
+            vassert(swap != INVALID_HREG);
+            /* xchgl %source, %swap. Could do better if swap is %eax. */
+            *p++ = 0x87;
+            p = doAMode_R(p, i->Xin.Store.src, swap);
+            /* movb lo8{%swap}, (dst) */
+            *p++ = 0x88;
+            p = doAMode_M(p, swap, i->Xin.Store.dst);
+            /* xchgl %source, %swap. Could do better if swap is %eax. */
+            *p++ = 0x87;
+            p = doAMode_R(p, i->Xin.Store.src, swap);
+            goto done;
+         }
+      } /* if (i->Xin.Store.sz == 1) */
+      break;
 
    default: 
       goto bad;
@@ -1327,7 +1337,7 @@ store can happen. */
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
 
-#   undef fake
+#  undef fake
 }
 
 

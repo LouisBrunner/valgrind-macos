@@ -79,8 +79,11 @@ extern const Char *VG_(libdir);
 /* The major version number indicates binary-incompatible changes to the
    interface;  if the core and tool major versions don't match, Valgrind
    will abort.  The minor version indicates binary-compatible changes.
+
+   (Update: as it happens, we're never using the minor version number, because
+   there's no point in doing so.)
 */
-#define VG_CORE_INTERFACE_MAJOR_VERSION   6
+#define VG_CORE_INTERFACE_MAJOR_VERSION   7
 #define VG_CORE_INTERFACE_MINOR_VERSION   0
 
 typedef struct _ToolInfo {

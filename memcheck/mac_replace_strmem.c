@@ -320,22 +320,29 @@ int memcmp ( const void *s1V, const void *s2V, unsigned int n )
    return 0;
 }
 
-/* glibc-2.3.2/sysdeps/generic/stpcpy.c */
-/* Copy SRC to DEST, returning the address of the terminating '\0' in DEST.  */
-char *
-stpcpy (dest, src)
-     char *dest;
-     const char *src;
+
+/* Copy SRC to DEST, returning the address of the terminating '\0' in
+   DEST. (minor variant of strcpy) */
+
+char* stpcpy ( char* dst, const char* src )
 {
-  register char *d = dest;
-  register const char *s = src;
+   const Char* src_orig = src;
+         Char* dst_orig = dst;
 
-  do
-    *d++ = *s;
-  while (*s++ != '\0');
+   while (*src) *dst++ = *src++;
+   *dst = 0;
 
-  return d - 1;
+   /* This checks for overlap after copying, unavoidable without
+      pre-counting length... should be ok */
+   if (is_overlap(dst_orig, 
+                  src_orig, 
+                  (Addr)dst-(Addr)dst_orig+1, 
+                  (Addr)src-(Addr)src_orig+1))
+      complain2("stpcpy", dst_orig, src_orig);
+
+   return dst;
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                     mac_replace_strmem.c ---*/

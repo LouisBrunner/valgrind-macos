@@ -125,7 +125,7 @@
 #define VG_N_SEMAPHORES 50
 
 /* Number of entries in the rwlock-remapping table. */
-#define VG_N_RWLOCKS 50
+#define VG_N_RWLOCKS 500
 
 /* Number of entries in each thread's cleanup stack. */
 #define VG_N_CLEANUPSTACK 8

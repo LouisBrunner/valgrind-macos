@@ -32,40 +32,7 @@
 #include "core_asm.h"
 #include "amd64_private_asm.h"
 
-/*------------------------------------------------------------*/
-/*--- The dispatch loop.                                   ---*/
-/*------------------------------------------------------------*/
 
-.globl switchback
-switchback:
-	/* %rdi -> guest state */
-	/* %rsi is rflags */
-	movq	0(%rdi), %rax
-	movq	8(%rdi), %rcx
-	movq	16(%rdi), %rdx
-	movq	24(%rdi), %rbx
-	movq	32(%rdi), %rsp
-	movq	40(%rdi), %rbp
-	movq	64(%rdi), %r8
-	movq	72(%rdi), %r9
-	movq	80(%rdi), %r10
-	movq	88(%rdi), %r11
-	movq	96(%rdi), %r12
-	movq	104(%rdi), %r13
-	movq	112(%rdi), %r14
-	movq	120(%rdi), %r15
-	/* now we need to deal with rsi rdi rflags rip */
-
-	pushq	168(%rdi) /* %RIP -> stack */
-
-	pushq	%rsi
-	popfq
-
-	movq	48(%rdi), %rsi
-	movq	56(%rdi), %rdi
-
-	ret
-	
 /*------------------------------------------------------------*/
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/

@@ -2963,8 +2963,8 @@ void do_client_request ( ThreadId tid )
       /* Note:  for tools that replace malloc() et al, we want to call
          the replacement versions.  For those that don't, we want to call
          VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
-         malloc-replacing tools must replace, but have its default definition
-         call */
+         malloc-replacing tools must replace, but have the default definition
+         of SK_(malloc)() call VG_(cli_malloc)().  */
 
       /* Note: for MALLOC and FREE, must set the appropriate "lock"... see
          the comment in vg_defaults.c/SK_(malloc)() for why. */

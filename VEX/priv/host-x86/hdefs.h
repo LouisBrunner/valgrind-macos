@@ -409,7 +409,8 @@ extern X86Instr* X86Instr_Store    ( UChar sz, HReg src, X86AMode* dst );
 extern X86Instr* X86Instr_FpUnary  ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
 extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-extern X86Instr* X86Instr_FpI64    ( Bool toInt, HReg freg, HReg iregHi, HReg iregLo );
+extern X86Instr* X86Instr_FpI64    ( Bool toInt, HReg freg, 
+                                     HReg iregHi, HReg iregLo );
 
 extern void ppX86Instr ( X86Instr* );
 

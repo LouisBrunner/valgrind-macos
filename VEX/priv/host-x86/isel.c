@@ -208,6 +208,13 @@ static HReg newVRegI ( ISelEnv* env )
    return reg;
 }
 
+static HReg newVRegF ( ISelEnv* env )
+{
+   HReg reg = mkHReg(env->vreg_ctr, HRcFloat, True/*virtual reg*/);
+   env->vreg_ctr++;
+   return reg;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
@@ -928,6 +935,36 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
 
 /*---------------------------------------------------------*/
+/*--- ISEL: Floating point expressions (64 bit)         ---*/
+/*---------------------------------------------------------*/
+
+/* Compute a 64-bit floating point value into a register, the identity
+   of which is returned.  As with iselIntExpr_R, the reg may be either
+   real or virtual; in any case it must not be changed by subsequent
+   code emitted by the caller.  */
+
+static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
+{
+  //   MatchInfo mi;
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_F64);
+
+   if (e->tag == Iex_LDle) {
+      X86AMode* am;
+      HReg res = newVRegF(env);
+      vassert(e->Iex.LDle.ty == Ity_F64);
+      am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
+      addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, res, am));
+      return res;
+   }
+
+   ppIRExpr(e);
+   vpanic("iselIntExpr64");
+}
+
+
+
+/*---------------------------------------------------------*/
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
 
@@ -959,7 +996,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                                       r,am));
          return;
       }
-
       break;
    }
 
@@ -987,6 +1023,24 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                           r,
                           X86AMode_IR(stmt->Ist.Put.offset,
                                       hregX86_EBP())));
+         return;
+      }
+      break;
+   }
+
+   /* --------- Indexed PUT --------- */
+   case Ist_PutI: {
+      /* First off, compute the index expression into an integer reg.
+         The written address will then be 0 + ebp + reg*1, that is, an
+         X86AMode_IRRS. */
+      HReg idx = iselIntExpr_R(env, stmt->Ist.PutI.offset);
+
+      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.expr);
+      if (ty == Ity_F64) {
+         HReg val = iselDblExpr(env, stmt->Ist.PutI.expr);
+         addInstr(env, 
+            X86Instr_FpLdSt( False/*store*/, 8, val,
+                             X86AMode_IRRS(0, hregX86_EBP(), idx, 0)) );
          return;
       }
       break;

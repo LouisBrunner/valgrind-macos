@@ -676,12 +676,12 @@ void ppX86Instr ( X86Instr* i ) {
          return;
       case Xin_FpLdSt:
          if (i->Xin.FpLdSt.isLoad) {
-            vex_printf("gld%c" , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
+            vex_printf("gld%c " , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
             ppX86AMode(i->Xin.FpLdSt.addr);
             vex_printf(", ");
             ppHRegX86(i->Xin.FpLdSt.reg);
          } else {
-            vex_printf("gst%c" , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
+            vex_printf("gst%c " , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
             ppHRegX86(i->Xin.FpLdSt.reg);
             vex_printf(", ");
             ppX86AMode(i->Xin.FpLdSt.addr);
@@ -773,6 +773,11 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, i->Xin.Store.src);
          addRegUsage_X86AMode(u, i->Xin.Store.dst);
          return;
+      case Xin_FpLdSt:
+         addRegUsage_X86AMode(u, i->Xin.FpLdSt.addr);
+         addHRegUse(u, i->Xin.FpLdSt.isLoad ? HRmWrite : HRmRead,
+                       i->Xin.FpLdSt.reg);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -837,6 +842,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.Store.src);
          mapRegs_X86AMode(m, i->Xin.Store.dst);
          return;
+      case Xin_FpLdSt:
+         mapRegs_X86AMode(m, i->Xin.FpLdSt.addr);
+         mapReg(m, &i->Xin.FpLdSt.reg);
+         return;
       default:
          ppX86Instr(i);
          vpanic("mapRegs_X86Instr");
@@ -857,12 +866,12 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 }
 
 /* x86 spill/reload using the hacked104 testbed.  Spill slots
-   start at word 34, and there are 24 in total. 
+   start at word 51, and there are 24 in total. 
 */
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
-   Int base = 4 * 34;
+   Int base = 4 * 51;
    vassert(offset >= 0);
    vassert(offset <= 4*(24-1));
    vassert(!hregIsVirtual(rreg));
@@ -880,7 +889,7 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
-   Int base = 4 * 34;
+   Int base = 4 * 51;
    vassert(offset >= 0);
    vassert(offset <= 4*(24-1));
    vassert(!hregIsVirtual(rreg));
@@ -1015,6 +1024,32 @@ static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg )
    return p;
 }
 
+
+/* Emit ffree %st(7) */
+static UChar* do_ffree_st7 ( UChar* p )
+{
+   *p++ = 0xDD;
+   *p++ = 0xC7;
+   return p;
+}
+
+/* Emit fstp %st(i), 1 <= i <= 5 */
+static UChar* do_fstp_st ( UChar* p, Int i )
+{
+   vassert(1 <= i && i <= 5);
+   *p++ = 0xDD;
+   *p++ = 0xD8+i;
+   return p;
+}
+
+/* Emit fld %st(i), 0 <= i <= 5 */
+static UChar* do_fld_st ( UChar* p, Int i )
+{
+   vassert(0 <= i && i <= 5);
+   *p++ = 0xD9;
+   *p++ = 0xC0+i;
+   return p;
+}
 
 
 /* Emit an instruction into buf and return the number of bytes used.
@@ -1474,6 +1509,28 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             goto done;
          }
       } /* if (i->Xin.Store.sz == 1) */
+      break;
+
+   case Xin_FpLdSt:
+      if (i->Xin.FpLdSt.isLoad) {
+         /* Load from memory into %fakeN.  
+            --> ffree %st(7) ; fld{s/l} amode ; fstp st(I+1) 
+         */
+         p = do_ffree_st7(p);
+         *p++ = i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD;
+	 p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdSt.reg));
+         goto done;
+      } else {
+         /* Store from %fakeN into memory.
+            --> ffree %st(7) ; fld st(I) ; fstp{l|s} amode
+	 */
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdSt.reg));
+         *p++ = i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD;
+         p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+         goto done;
+      }
       break;
 
    default: 

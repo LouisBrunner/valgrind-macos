@@ -8,7 +8,7 @@ LDFLAGS = -Wl,-z -Wl,initfirst
 
 INCLUDES = -I$(srcdir)/demangle
 
-bin_SCRIPTS = valgrind vg_annotate vg_cachegen
+bin_SCRIPTS = valgrind cachegrind vg_annotate vg_cachegen
 
 SUPP_FILES = glibc-2.1.supp glibc-2.2.supp xfree-3.supp xfree-4.supp
 

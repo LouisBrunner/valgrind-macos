@@ -1,0 +1,135 @@
+#!/bin/sh
+# Should point to the installation directory
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+VALGRIND="@libdir@/valgrind"
+
+
+# Other stuff ...
+version="@VERSION@"
+emailto="jseward@acm.org"
+
+# name we were invoked with
+vgname=`echo $0 | sed 's,^.*/,,'`
+
+# Cachegrind options
+vgopts=
+
+# Prog and arg to run
+argopts=
+
+# Show usage info?
+dousage=0
+
+# show version info?
+doversion=0
+
+# Collect up args for Cachegrind
+while [ $+ != 0 ]
+do
+  arg=$1
+  case "$arg" in
+#   options for the user
+    --help)                 dousage=1; break;;
+    --version)              doversion=1; break;;
+    --logfile-fd=*)         vgopts="$vgopts $arg"; shift;;
+    -v)                     vgopts="$vgopts $arg"; shift;;
+    --verbose)              vgopts="$vgopts -v"; shift;;
+    -q)                     vgopts="$vgopts $arg"; shift;;
+    --quiet)                vgopts="$vgopts $arg"; shift;;
+    --demangle=no)          vgopts="$vgopts $arg"; shift;;
+    --demangle=yes)         vgopts="$vgopts $arg"; shift;;
+    --trace-children=no)    vgopts="$vgopts $arg"; shift;;
+    --trace-children=yes)   vgopts="$vgopts $arg"; shift;;
+    --suppressions=*)       vgopts="$vgopts $arg"; shift;;
+#   options for debugging Cachegrind
+    --sanity-level=*)       vgopts="$vgopts $arg"; shift;;
+    --single-step=yes)      vgopts="$vgopts $arg"; shift;;
+    --single-step=no)       vgopts="$vgopts $arg"; shift;;
+    --optimise=yes)         vgopts="$vgopts $arg"; shift;;
+    --optimise=no)          vgopts="$vgopts $arg"; shift;;
+    --instrument=yes)       vgopts="$vgopts $arg"; shift;;
+    --instrument=no)        vgopts="$vgopts $arg"; shift;;
+    --cleanup=yes)          vgopts="$vgopts $arg"; shift;;
+    --cleanup=no)           vgopts="$vgopts $arg"; shift;;
+    --smc-check=none)       vgopts="$vgopts $arg"; shift;;
+    --smc-check=some)       vgopts="$vgopts $arg"; shift;;
+    --smc-check=all)        vgopts="$vgopts $arg"; shift;;
+    --trace-syscalls=yes)   vgopts="$vgopts $arg"; shift;;
+    --trace-syscalls=no)    vgopts="$vgopts $arg"; shift;;
+    --trace-signals=yes)    vgopts="$vgopts $arg"; shift;;
+    --trace-signals=no)     vgopts="$vgopts $arg"; shift;;
+    --trace-symtab=yes)     vgopts="$vgopts $arg"; shift;;
+    --trace-symtab=no)      vgopts="$vgopts $arg"; shift;;
+    --trace-malloc=yes)     vgopts="$vgopts $arg"; shift;;
+    --trace-malloc=no)      vgopts="$vgopts $arg"; shift;;
+    --trace-sched=yes)      vgopts="$vgopts $arg"; shift;;
+    --trace-sched=no)       vgopts="$vgopts $arg"; shift;;
+    --trace-pthread=none)   vgopts="$vgopts $arg"; shift;;
+    --trace-pthread=some)   vgopts="$vgopts $arg"; shift;;
+    --trace-pthread=all)    vgopts="$vgopts $arg"; shift;;
+    --stop-after=*)         vgopts="$vgopts $arg"; shift;;
+    --dump-error=*)         vgopts="$vgopts $arg"; shift;;
+    -*)                     dousage=1; break;;
+    *)                      break;;
+  esac
+done
+
+if [ z"$doversion" = z1 ]; then
+   echo "cachegrind-$version"
+   exit 1
+fi
+
+if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
+   echo
+   echo "usage: $vgname [options] prog-and-args"
+   echo
+   echo "  options for the user, with defaults in [ ], are:"
+   echo "    --help                    show this message"
+   echo "    --version                 show version"
+   echo "    -q --quiet                run silently; only print error msgs"
+   echo "    -v --verbose              be more verbose, incl counts of errors"
+   echo "    --demangle=no|yes         automatically demangle C++ names? [yes]"
+   echo "    --trace-children=no|yes   Cachegrind-ise child processes? [no]"
+   echo "    --logfile-fd=<number>     file descriptor for messages [2=stderr]"
+   echo "    --suppressions=<filename> is ignored"
+   echo
+   echo "  options for debugging Cachegrind itself are:"
+   echo "    --sanity-level=<number>   level of sanity checking to do [1]"
+   echo "    --single-step=no|yes      translate each instr separately? [no]"
+   echo "    --optimise=no|yes         improve intermediate code? [yes]"
+   echo "    --instrument=no|yes       actually do memory checks? [yes]"
+   echo "    --cleanup=no|yes          improve after instrumentation? [yes]"
+   echo "    --smc-check=none|some|all check writes for s-m-c? [some]"
+   echo "    --trace-syscalls=no|yes   show all system calls? [no]"
+   echo "    --trace-signals=no|yes    show signal handling details? [no]"
+   echo "    --trace-symtab=no|yes     show symbol table details? [no]"
+   echo "    --trace-malloc=no|yes     show client malloc details? [no]"
+   echo "    --trace-sched=no|yes      show thread scheduler details? [no]"
+   echo "    --trace-pthread=none|some|all  show pthread event details? [no]"
+   echo "    --stop-after=<number>     switch to real CPU after executing"
+   echo "                              <number> basic blocks [infinity]"
+   echo "    --dump-error=<number>     show translation for basic block"
+   echo "                              associated with <number>'th"
+   echo "                              error context [0=don't show any]"
+   echo
+   echo "  Extra options are read from env variable \$CACHEGRIND_OPTS"
+   echo
+   echo "  Valgrind is Copyright (C) 2000-2002 Julian Seward"
+   echo "  and licensed under the GNU General Public License, version 2."
+   echo "  Bug reports, feedback, admiration, abuse, etc, to: $emailto."
+   echo
+   exit 1
+fi
+
+
+VG_ARGS="$CACHEGRIND_OPTS $vgsupp $vgopts --cachesim=yes"
+export VG_ARGS
+LD_LIBRARY_PATH=$VALGRIND:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+LD_PRELOAD=valgrind.so:$LD_PRELOAD
+export LD_PRELOAD
+#LD_DEBUG=files
+#LD_DEBUG=symbols
+#export LD_DEBUG
+exec "$@"

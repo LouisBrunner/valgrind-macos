@@ -840,10 +840,17 @@ static void process_cmd_line_options ( void )
        VG_(clo_instrument) = False;
    }
 
-   if (VG_(clo_verbosity > 0))
-      VG_(message)(Vg_UserMsg, 
-                   "valgrind-%s, a memory error detector for x86 GNU/Linux.",
-                   VERSION);
+   if (VG_(clo_verbosity > 0)) {
+      if (VG_(clo_cachesim)) {
+         VG_(message)(Vg_UserMsg, 
+            "cachegrind-%s, an I1/D1/L2 cache profiler for x86 GNU/Linux.",
+            VERSION);
+      } else {
+         VG_(message)(Vg_UserMsg, 
+            "valgrind-%s, a memory error detector for x86 GNU/Linux.",
+            VERSION);
+      }
+   }
 
    if (VG_(clo_verbosity > 0))
       VG_(message)(Vg_UserMsg, 
@@ -855,7 +862,7 @@ static void process_cmd_line_options ( void )
       }
    }
 
-   if (VG_(clo_n_suppressions) == 0) {
+   if (VG_(clo_n_suppressions) == 0 && !VG_(clo_cachesim)) {
       config_error("No error-suppression files were specified.");
    }
 }

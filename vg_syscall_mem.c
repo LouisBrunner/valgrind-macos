@@ -418,6 +418,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+      case __NR_chroot: /* syscall 61 */
+         /* int chroot(const char *path); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("chroot ( %p )\n", arg1);
+         must_be_readable_asciiz( tst, "chroot(path)", arg1 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+
 #     if defined(__NR_madvise)
       case __NR_madvise: /* syscall 219 */
          /* int madvise(void *start, size_t length, int advice ); */

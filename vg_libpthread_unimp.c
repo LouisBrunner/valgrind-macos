@@ -227,8 +227,8 @@ __attribute__((weak)) void pthread_attr_setstack ( void )
                       { vgPlain_unimp("pthread_attr_setstack"); }
 __attribute__((weak)) void pthread_attr_setstackaddr ( void )
                       { vgPlain_unimp("pthread_attr_setstackaddr"); }
-__attribute__((weak)) void pthread_attr_setstacksize ( void )
-                      { vgPlain_unimp("pthread_attr_setstacksize"); }
+//__attribute__((weak)) void pthread_attr_setstacksize ( void )
+//                      { vgPlain_unimp("pthread_attr_setstacksize"); }
 __attribute__((weak)) void pthread_getconcurrency ( void )
                       { vgPlain_unimp("pthread_getconcurrency"); }
 __attribute__((weak)) void pthread_kill_other_threads_np ( void )

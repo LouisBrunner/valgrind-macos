@@ -156,15 +156,6 @@ static void kludged ( char* msg )
 static void not_inside ( char* msg )
 {
    VG_(startup)();
-   return;
-   if (get_pt_trace_level() >= 0) {
-      char* ig = "valgrind's libpthread.so: NOT INSIDE VALGRIND "
-                 "during call to: ";
-      write(2, ig, strlen(ig));
-      write(2, msg, strlen(msg));
-      ig = "\n";
-      write(2, ig, strlen(ig));
-   }
 }
 
 void vgPlain_unimp ( char* what )
@@ -215,6 +206,19 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
       ignored("pthread_attr_setinheritsched");
    return 0;
 }
+
+__attribute__((weak))
+int pthread_attr_setstacksize (pthread_attr_t *__attr,
+                               size_t __stacksize)
+{
+   ensure_valgrind("pthread_attr_setstacksize");
+   if (__stacksize < VG_PTHREAD_STACK_SIZE)
+      return 0;
+   barf("pthread_attr_setstacksize: "
+        "requested size >= VG_PTHREAD_STACK_SIZE\n   "
+        "edit vg_include.h and rebuild.");
+}
+
 
 /* This is completely bogus. */
 int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,  

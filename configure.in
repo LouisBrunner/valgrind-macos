@@ -7,8 +7,13 @@ AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 
 # Where is VEX ?
+# Nb: For the 2nd arg, the help string, AS_HELP_STRING is the proper way, but
+#     older autoconfs don't support it... here's what it would say:
+#
+#    AS_HELP_STRING([--with-vex], [Vex directory (must be specified!)]),
+#
 AC_ARG_WITH(vex, 
-    AS_HELP_STRING([--with-vex], [Vex directory (must be specified!)]),
+    [  --with-vex=<DIR>        Vex directory (must be specified!)],
 [
     AC_CHECK_FILE($withval/pub/libvex.h,
         [VEX_DIR=$withval],
@@ -39,9 +44,7 @@ AC_PATH_PROG(PERL, perl)
 
 # figure out where gdb lives
 AC_PATH_PROG(GDB, gdb)
-# autoheader tries to execute the 3rd string or something;  I get warnings when
-# it's defined.  So just leave it undefined.  --njn 2002-Apr-18
-AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", "")
+AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", [path to GDB])
 
 # some older automake's don't have it so try something on our own
 ifdef([AM_PROG_AS],[AM_PROG_AS],
@@ -92,6 +95,18 @@ case "${host_cpu}" in
         VG_ARCH="x86"
         KICKSTART_BASE="0xb0000000"
         ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CCASFLAGS=""
+        ;;
+
+     x86_64) 
+        AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="amd64"
+        # OOO: relocations under x86-64 small model are 32-bit signed
+        # quantities; therefore going above 0x7fffffff doesn't work... this is
+        # a problem.
+        KICKSTART_BASE="0x70000000"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=64" 
         ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
@@ -170,11 +185,7 @@ AC_SUBST(VG_PLATFORM)
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 
 case $VG_PLATFORM in
-    x86-linux)
-        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
-        ;;
-
-    arm-linux)
+    x86-linux|amd64-linux|arm-linux)
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
         ;;
 

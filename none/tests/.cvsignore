@@ -33,6 +33,7 @@ mremap
 munmap_exe
 pluto
 pth_blockedsig
+pth_stackalign
 rcrl
 readline1
 resolv

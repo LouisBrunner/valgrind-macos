@@ -1812,9 +1812,8 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
-   new_stk_szb = si->size + VG_AR_CLIENT_STACKBASE_REDZONE_SZB + si->guardsize;
-   new_stk_szb = (new_stk_szb + VKI_PAGE_SIZE - 1) & ~VKI_PAGE_SIZE;
-    
+   new_stk_szb = PGROUNDUP(si->size + VG_AR_CLIENT_STACKBASE_REDZONE_SZB + si->guardsize);
+
    VG_(threads)[tid].stack_guard_size = si->guardsize;
 
    if (new_stk_szb > VG_(threads)[tid].stack_size) {

@@ -32,6 +32,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
+	pth_stackalign.stderr.exp \
+	pth_stackalign.stdout.exp pth_stackalign.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
@@ -56,7 +58,7 @@ check_PROGRAMS = \
 	fucomip \
 	munmap_exe map_unmap mq mremap rcrl readline1 \
 	resolv rlimit_nofile sem semlimit sha1_test \
-	shortpush shorts smc1 susphello pth_blockedsig \
+	shortpush shorts smc1 susphello pth_blockedsig pth_stackalign \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -115,6 +117,8 @@ yield_LDADD		= -lpthread
 # pthread C ones
 pth_blockedsig_SOURCES	= pth_blockedsig.c
 pth_blockedsig_LDADD	= -lpthread
+pth_stackalign_SOURCES	= pth_stackalign.c
+pth_stackalign_LDADD	= -lpthread
 
 # generic C++ ones
 coolo_sigaction_SOURCES	= coolo_sigaction.cpp

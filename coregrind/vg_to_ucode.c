@@ -4111,6 +4111,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          codegen_REPE_STOS ( cb, sz, eip_orig, eip );
          *isEnd = True;
          if (dis) VG_(printf)("repe stos%c\n", nameISize(sz));
+      }
+      else
+      if (abyte == 0x90) { /* REPE NOP (PAUSE) */
+         if (dis) VG_(printf)("repe nop (P4 pause)\n");
+         /* do nothing; apparently a hint to the P4 re spin-wait loop */
       } else {
          VG_(printf)("REPE then 0x%x\n", (UInt)abyte);
          VG_(panic)("Unhandled REPE case");

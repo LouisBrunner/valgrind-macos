@@ -1068,7 +1068,7 @@ pthread_create (pthread_t *__restrict __thredd,
    info->arg     = __arg;
    sigprocmask(SIG_SETMASK, NULL, &info->sigmask);
 
-   if (__attr) {
+   if (__vg_attr) {
       si.base = (Addr)__vg_attr->__vg_stackaddr;
       si.size = __vg_attr->__vg_stacksize;
       si.guardsize = __vg_attr->__vg_guardsize;

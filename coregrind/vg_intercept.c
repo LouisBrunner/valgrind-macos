@@ -61,6 +61,9 @@
 #include <stdio.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#ifdef KERNEL_2_6
+#include <linux/compiler.h>
+#endif
 #include <asm/ipc.h>		/* for ipc_kludge */
 #include <sys/poll.h>
 #include <sys/socket.h>

@@ -1071,16 +1071,18 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
+   X86AMode* am;
    Int base = 4 * 55;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
+   am = X86AMode_IR(offset + base, hregX86_EBP());
+
    switch (hregClass(rreg)) {
       case HRcInt:
-        return
-        X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
-                          X86AMode_IR(offset + base, 
-                                      hregX86_EBP()));
+         return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
+      case HRcFloat:
+         return X86Instr_FpLdSt ( False/*store*/, 8, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genSpill_X86: unimplemented regclass");
@@ -1089,17 +1091,17 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
+   X86AMode* am;
    Int base = 4 * 55;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
+   am = X86AMode_IR(offset + base, hregX86_EBP());
    switch (hregClass(rreg)) {
       case HRcInt:
-        return
-        X86Instr_Alu32R ( Xalu_MOV, 
-                          X86RMI_Mem(X86AMode_IR(offset + base, 
-                                                 hregX86_EBP())),
-                          rreg );
+         return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
+      case HRcFloat:
+         return X86Instr_FpLdSt ( True/*load*/, 8, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_X86: unimplemented regclass");

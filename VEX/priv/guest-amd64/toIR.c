@@ -86,17 +86,17 @@
 #include "guest-amd64/gdefs.h"
 
 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Globals                                              ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* These are set at the start of the translation of a BB, so
-//..    that we don't have to pass them around endlessly. */
-//.. 
-//.. /* We need to know this to do sub-register accesses correctly. */
-//.. /* CONST */
-//.. static Bool host_is_bigendian;
-//.. 
+/*------------------------------------------------------------*/
+/*--- Globals                                              ---*/
+/*------------------------------------------------------------*/
+
+/* These are set at the start of the translation of a BB, so
+   that we don't have to pass them around endlessly. */
+
+/* We need to know this to do sub-register accesses correctly. */
+/* CONST */
+static Bool host_is_bigendian;
+
 //.. /* Pointer to the guest code area. */
 //.. /* CONST */
 //.. static UChar* guest_code;
@@ -109,47 +109,104 @@
 //..    translated. */
 //.. /* CONST for any specific insn, not for the entire BB */
 //.. static Addr32 guest_eip_curr_instr;
-//.. 
-//.. /* The IRBB* into which we're generating code. */
-//.. static IRBB* irbb;
-//.. 
+
+/* The IRBB* into which we're generating code. */
+static IRBB* irbb;
+
 //.. /* Emergency verboseness just for this insn?  DEBUG ONLY */
 //.. static Bool  insn_verbose = False;
+
+
+/*------------------------------------------------------------*/
+/*--- Helpers for constructing IR.                         ---*/
+/*------------------------------------------------------------*/
+ 
+/* Add a statement to the list held by "irbb". */
+static void stmt ( IRStmt* st )
+{
+   addStmtToIRBB( irbb, st );
+}
+ 
+static IRExpr* unop ( IROp op, IRExpr* a )
+{
+   return IRExpr_Unop(op, a);
+}
+
+//.. static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
+//.. {
+//..    return IRExpr_Binop(op, a1, a2);
+//.. }
 //.. 
+//.. static IRExpr* mkexpr ( IRTemp tmp )
+//.. {
+//..    return IRExpr_Tmp(tmp);
+//.. }
 //.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Debugging output                                     ---*/
-//.. /*------------------------------------------------------------*/
+//.. static IRExpr* mkU8 ( UInt i )
+//.. {
+//..    vassert(i < 256);
+//..    return IRExpr_Const(IRConst_U8(i));
+//.. }
 //.. 
-//.. #define DIP(format, args...)           \
-//..    if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
-//..       vex_printf(format, ## args)
+//.. static IRExpr* mkU16 ( UInt i )
+//.. {
+//..    vassert(i < 65536);
+//..    return IRExpr_Const(IRConst_U16(i));
+//.. }
 //.. 
-//.. #define DIS(buf, format, args...)      \
-//..    if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
-//..       vex_sprintf(buf, format, ## args)
+//.. static IRExpr* mkU32 ( UInt i )
+//.. {
+//..    return IRExpr_Const(IRConst_U32(i));
+//.. }
 //.. 
+//.. static IRExpr* mkU64 ( ULong i )
+//.. {
+//..    return IRExpr_Const(IRConst_U64(i));
+//.. }
 //.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Offsets of various parts of the x86 guest state.     ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. #define OFFB_EAX       offsetof(VexGuestX86State,guest_EAX)
-//.. #define OFFB_EBX       offsetof(VexGuestX86State,guest_EBX)
-//.. #define OFFB_ECX       offsetof(VexGuestX86State,guest_ECX)
-//.. #define OFFB_EDX       offsetof(VexGuestX86State,guest_EDX)
-//.. #define OFFB_ESP       offsetof(VexGuestX86State,guest_ESP)
-//.. #define OFFB_EBP       offsetof(VexGuestX86State,guest_EBP)
-//.. #define OFFB_ESI       offsetof(VexGuestX86State,guest_ESI)
-//.. #define OFFB_EDI       offsetof(VexGuestX86State,guest_EDI)
-//.. 
-//.. #define OFFB_EIP       offsetof(VexGuestX86State,guest_EIP)
-//.. 
-//.. #define OFFB_CC_OP     offsetof(VexGuestX86State,guest_CC_OP)
-//.. #define OFFB_CC_DEP1   offsetof(VexGuestX86State,guest_CC_DEP1)
-//.. #define OFFB_CC_DEP2   offsetof(VexGuestX86State,guest_CC_DEP2)
-//.. #define OFFB_CC_NDEP   offsetof(VexGuestX86State,guest_CC_NDEP)
-//.. 
+
+
+/*------------------------------------------------------------*/
+/*--- Debugging output                                     ---*/
+/*------------------------------------------------------------*/
+
+#define DIP(format, args...)           \
+   if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
+      vex_printf(format, ## args)
+
+#define DIS(buf, format, args...)      \
+   if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
+      vex_sprintf(buf, format, ## args)
+
+
+/*------------------------------------------------------------*/
+/*--- Offsets of various parts of the amd64 guest state.   ---*/
+/*------------------------------------------------------------*/
+
+#define OFFB_RAX       offsetof(VexGuestAMD64State,guest_RAX)
+#define OFFB_RBX       offsetof(VexGuestAMD64State,guest_RBX)
+#define OFFB_RCX       offsetof(VexGuestAMD64State,guest_RCX)
+#define OFFB_RDX       offsetof(VexGuestAMD64State,guest_RDX)
+#define OFFB_RSP       offsetof(VexGuestAMD64State,guest_RSP)
+#define OFFB_RBP       offsetof(VexGuestAMD64State,guest_RBP)
+#define OFFB_RSI       offsetof(VexGuestAMD64State,guest_RSI)
+#define OFFB_RDI       offsetof(VexGuestAMD64State,guest_RDI)
+#define OFFB_R8        offsetof(VexGuestAMD64State,guest_R8)
+#define OFFB_R9        offsetof(VexGuestAMD64State,guest_R9)
+#define OFFB_R10       offsetof(VexGuestAMD64State,guest_R10)
+#define OFFB_R11       offsetof(VexGuestAMD64State,guest_R11)
+#define OFFB_R12       offsetof(VexGuestAMD64State,guest_R12)
+#define OFFB_R13       offsetof(VexGuestAMD64State,guest_R13)
+#define OFFB_R14       offsetof(VexGuestAMD64State,guest_R14)
+#define OFFB_R15       offsetof(VexGuestAMD64State,guest_R15)
+
+#define OFFB_RIP       offsetof(VexGuestAMD64State,guest_RIP)
+
+#define OFFB_CC_OP     offsetof(VexGuestAMD64State,guest_CC_OP)
+#define OFFB_CC_DEP1   offsetof(VexGuestAMD64State,guest_CC_DEP1)
+#define OFFB_CC_DEP2   offsetof(VexGuestAMD64State,guest_CC_DEP2)
+#define OFFB_CC_NDEP   offsetof(VexGuestAMD64State,guest_CC_NDEP)
+
 //.. #define OFFB_FPREGS    offsetof(VexGuestX86State,guest_FPREG[0])
 //.. #define OFFB_FPTAGS    offsetof(VexGuestX86State,guest_FPTAG[0])
 //.. #define OFFB_DFLAG     offsetof(VexGuestX86State,guest_DFLAG)
@@ -363,41 +420,43 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //..       }
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Helper bits and pieces for deconstructing the        ---*/
-//.. /*--- x86 insn stream.                                     ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* This is the Intel register encoding -- integer regs. */
-//.. #define R_EAX 0
-//.. #define R_ECX 1
-//.. #define R_EDX 2
-//.. #define R_EBX 3
-//.. #define R_ESP 4
-//.. #define R_EBP 5
-//.. #define R_ESI 6
-//.. #define R_EDI 7
-//.. 
+
+
+/*------------------------------------------------------------*/
+/*--- Helper bits and pieces for deconstructing the        ---*/
+/*--- amd64 insn stream.                                   ---*/
+/*------------------------------------------------------------*/
+
+/* This is the AMD64 register encoding -- integer regs. */
+#define R_RAX 0
+#define R_RCX 1
+#define R_RDX 2
+#define R_RBX 3
+#define R_RSP 4
+#define R_RBP 5
+#define R_RSI 6
+#define R_RDI 7
+#define R_R8  8
+#define R_R9  9
+#define R_R10 10
+#define R_R11 11
+#define R_R12 12
+#define R_R13 13
+#define R_R14 14
+#define R_R15 15
+
 //.. #define R_AL (0+R_EAX)
 //.. #define R_AH (4+R_EAX)
-//.. 
-//.. /* This is the Intel register encoding -- segment regs. */
-//.. #define R_ES 0
-//.. #define R_CS 1
-//.. #define R_SS 2
-//.. #define R_DS 3
-//.. #define R_FS 4
-//.. #define R_GS 5
-//.. 
-//.. 
-//.. /* Add a statement to the list held by "irbb". */
-//.. static void stmt ( IRStmt* st )
-//.. {
-//..    addStmtToIRBB( irbb, st );
-//.. }
-//.. 
+
+/* This is the Intel register encoding -- segment regs. */
+#define R_ES 0
+#define R_CS 1
+#define R_SS 2
+#define R_DS 3
+#define R_FS 4
+#define R_GS 5
+
+
 //.. /* Generate a new temporary of the given type. */
 //.. static IRTemp newTemp ( IRType ty )
 //.. {
@@ -512,32 +571,262 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //..   }
 //..   return 0; /*notreached*/
 //.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Helpers for constructing IR.                         ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
+
+
+/*------------------------------------------------------------*/
+/*--- For dealing with prefixes.                           ---*/
+/*------------------------------------------------------------*/
+
+/* The idea is to pass around an int holding a bitmask summarising
+   info from the prefixes seen on the current instruction, including
+   info from the REX byte.  This info is used in various places, but
+   most especially when making sense of register fields in
+   instructions.
+
+   The top 16 bits of the prefix are 0x3141, just as a hacky way
+   to ensure it really is a valid prefix.
+*/
+
+typedef UInt  Prefix;
+
+#define PFX_ASO  (1<<0)     /* address-size override present (0x67) */
+#define PFX_66   (1<<1)     /* operand-size override-to-16 present (0x66) */
+#define PFX_REX  (1<<2)     /* REX byte present (0x40 to 0x4F) */
+#define PFX_REXW (1<<3)     /* REX W bit, if REX present, else 0 */
+#define PFX_REXR (1<<4)     /* REX R bit, if REX present, else 0 */
+#define PFX_REXX (1<<5)     /* REX X bit, if REX present, else 0 */
+#define PFX_REXB (1<<6)     /* REX B bit, if REX present, else 0 */
+#define PFX_LOCK (1<<7)     /* bus LOCK prefix present (0xF0) */
+#define PFX_F2   (1<<8)     /* REP/REPE/REPZ prefix present (0xF2) */
+#define PFX_F3   (1<<9)     /* REPNE/REPNZ prefix present (0xF3) */
+#define PFX_CS   (1<<10)    /* CS segment prefix present (0x2E) */
+#define PFX_DS   (1<<11)    /* DS segment prefix present (0x3E) */
+#define PFX_ES   (1<<12)    /* ES segment prefix present (0x26) */
+#define PFX_FS   (1<<13)    /* FS segment prefix present (0x64) */
+#define PFX_GS   (1<<14)    /* GS segment prefix present (0x65) */
+#define PFX_SS   (1<<15)    /* SS segment prefix present (0x36) */
+
+static inline Bool IS_VALID_PFX ( Prefix pfx ) {
+   return (pfx & 0xFFFF0000) == 0x31410000;
+}
+
+static inline Bool haveREX ( Prefix pfx ) {
+   return (pfx & PFX_REX) ? True : False;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- For dealing with integer registers.                  ---*/
+/*------------------------------------------------------------*/
+
+/* A type to enumerate register-field extension bits from the 
+   REX byte. */
+typedef 
+   enum { RegR=0x17000, RegX, RegB }
+   RegField;
+
+
+/* Fetches the relevant reg field extension bit from pfx.  Returns 1
+   or 0. */
+static inline
+UInt getRX ( Prefix pfx, RegField rf ) {
+   switch (rf) {
+      case RegR: return (pfx & PFX_REXR) ? 1 : 0;
+      case RegX: return (pfx & PFX_REXX) ? 1 : 0;
+      case RegB: return (pfx & PFX_REXB) ? 1 : 0;
+      default: vpanic("getRFExpr(amd64)");
+   }
+}
+
+
+static IRType szToITy ( UInt n )
+{
+   switch (n) {
+      case 1: return Ity_I8;
+      case 2: return Ity_I16;
+      case 4: return Ity_I32;
+      case 8: return Ity_I64;
+      default: vpanic("szToITy(amd64)");
+   }
+}
+
+
+/* A key function, to figure out what part of the integer register
+   bank we're referring to.  This is like the x86 one but with the
+   (not inconsiderable) added confusion of the REX byte hack.
+
+   On a little-endian host, less significant bits of the guest
+   registers are at lower addresses.  Therefore, if a reference to a
+   register low half has the safe guest state offset as a reference to
+   the full register.  
+*/
+static 
+Int integerGuestRegOffset ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
+{
+   UInt hiBit;
+   /* lo3bits contains the low 3 bits of register descriptor from the
+      instruction proper.  In various cases we'll need to extract a
+      4th bit from the REX byte.  Sigh. */
+   vassert(lo3bits < 8);
+   vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
+   vassert(rf == RegR || rf == RegX || rf == RegB);
+   vassert(IS_VALID_PFX(pfx));
+
+   /* The following is correct for little-endian host only. */
+   vassert(!host_is_bigendian);
+
+   /* First deal with the irregular case: if sz is 1 and no REX is
+      present, we need to use the old-style Intel crazy scheme. */
+   if (sz == 1 && !haveREX(pfx)) {
+      switch (lo3bits) {
+         case R_RAX: return OFFB_RAX;
+         case R_RCX: return OFFB_RCX;
+         case R_RDX: return OFFB_RDX;
+         case R_RBX: return OFFB_RBX;
+         case R_RSP: return 1+ OFFB_RAX;
+         case R_RBP: return 1+ OFFB_RCX;
+         case R_RSI: return 1+ OFFB_RDX;
+         case R_RDI: return 1+ OFFB_RBX;
+         default: vpanic("integerGuestRegOffset(amd64,le)(1, no REX)");
+      }
+   }
+
+   hiBit = haveREX(pfx) ? getRX(pfx,rf) : 0;
+
+   /* Note special case, which we could assert for, but don't: If sz
+      == 8, a REX byte must have been present.  Asserting that would
+      make this function unsuitable for dealing with registers
+      contained in amodes, since they are always 64-bits long
+      regardless of the presence of REX. */
+
+   switch ((hiBit << 3) | lo3bits) {
+      case R_RAX: return OFFB_RAX;
+      case R_RCX: return OFFB_RCX;
+      case R_RDX: return OFFB_RDX;
+      case R_RBX: return OFFB_RBX;
+      case R_RSP: return OFFB_RSP;
+      case R_RBP: return OFFB_RBP;
+      case R_RSI: return OFFB_RSI;
+      case R_RDI: return OFFB_RDI;
+      case R_R8:  return OFFB_R8;
+      case R_R9:  return OFFB_R9;
+      case R_R10: return OFFB_R10;
+      case R_R11: return OFFB_R11;
+      case R_R12: return OFFB_R12;
+      case R_R13: return OFFB_R13;
+      case R_R14: return OFFB_R14;
+      case R_R15: return OFFB_R15;
+      default: vpanic("integerGuestRegOffset(amd64,le)(reg)");
+   }
+}
+
+
+/* Produce the name of an integer register, for printing purposes. */
+
+static 
+HChar* nameIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
+{
+   UInt hiBit, idx;
+
+   static HChar* ireg64_names[16]
+     = { "%rax", "%rcx", "%rdx", "%rbx", "%rsp", "%rbp", "%rsi", "%rdi",
+         "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
+   static HChar* ireg32_names[16]
+     = { "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi",
+         "%r8d", "%r9d", "%r10d","%r11d","%r12d","%r13d","%r14d","%r15d" };
+   static HChar* ireg16_names[16]
+     = { "%ax",  "%cx",  "%dx",  "%bx",  "%sp",  "%bp",  "%si",  "%di",
+         "%r8w", "%r9w", "%r10w","%r11w","%r12w","%r13w","%r14w","%r15w" };
+   static HChar* ireg8_names[16]
+     = { "%al",  "%cl",  "%dl",  "%bl",  "%spl", "%bpl", "%sil", "%dil",
+         "%r8b", "%r9b", "%r10b","%r11b","%r12b","%r13b","%r14b","%r15b" };
+   static HChar* ireg8_crazies[8] 
+     = { "%al", "%cl", "%dl", "%bl", "%ah", "%ch", "%dh", "%bh" };
+
+   vassert(lo3bits < 8);
+   vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
+   vassert(rf == RegR || rf == RegX || rf == RegB);
+   vassert(IS_VALID_PFX(pfx));
+
+   /* see logic in integerGuestRegOffset to make sense of this */
+   if (sz == 1 && !haveREX(pfx))
+      return ireg8_crazies[lo3bits];
+
+   hiBit = haveREX(pfx) ? getRX(pfx,rf) : 0;
+   idx = (hiBit << 3) | lo3bits;
+   vassert(idx < 16);
+
+   switch (sz) {
+      case 8: return ireg64_names[idx];
+      case 4: return ireg32_names[idx];
+      case 2: return ireg16_names[idx];
+      case 1: return ireg8_names[idx];
+   }
+
+   vpanic("nameIReg(AMD64)");
+   return NULL; /*notreached*/
+}
+
+
+/* Generate an IR expression to fetch the guest state corresponding to
+   the specified integer register. */
+static
+IRExpr* getIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
+{
+   return IRExpr_Get( integerGuestRegOffset(pfx,rf,sz,lo3bits),
+                      szToITy(sz) );
+}
+static IRExpr* getIRegR ( Prefix pfx, Int sz, UInt lo3bits ) {
+  return getIReg ( pfx, RegR, sz, lo3bits );
+}
+static IRExpr* getIRegX ( Prefix pfx, Int sz, UInt lo3bits ) {
+  return getIReg ( pfx, RegX, sz, lo3bits );
+}
+static IRExpr* getIRegB ( Prefix pfx, Int sz, UInt lo3bits ) {
+  return getIReg ( pfx, RegB, sz, lo3bits );
+}
+
+
+
+/* Generate an IR expression to write the guest state corresponding to
+   the specified integer register.  Also implements the AMD64
+   behaviour that writes to the low 32 bits of a register zero out the
+   upper 32 bits.
+*/
+static 
+void putIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits, IRExpr* e )
+{
+   if (sz == 8 || sz == 2 || sz == 1) {
+      stmt( IRStmt_Put(integerGuestRegOffset(pfx,rf,sz,lo3bits), 
+                       e ));
+   }
+   else
+   if (sz == 4) {
+      stmt( IRStmt_Put(integerGuestRegOffset(pfx,rf,8,lo3bits), 
+                       unop(Iop_32Uto64,e) ));
+   }
+   else
+   vpanic("putIReg(amd64)");
+}
+static void putIRegR ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
+   putIReg ( pfx, RegR, sz, lo3bits, e );
+}
+static void putIRegX ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
+   putIReg ( pfx, RegX, sz, lo3bits, e );
+}
+static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
+   putIReg ( pfx, RegB, sz, lo3bits, e );
+}
+
+
+
+
+
 //.. /* Create a 1/2/4 byte read of an x86 integer registers.  For 16/8 bit
 //..    register references, we need to take the host endianness into
 //..    account.  Supplied value is 0 .. 7 and in the Intel instruction
 //..    encoding. */
 //.. 
-//.. static IRType szToITy ( Int n )
-//.. {
-//..    switch (n) {
-//..       case 1: return Ity_I8;
-//..       case 2: return Ity_I16;
-//..       case 4: return Ity_I32;
-//..       default: vpanic("szToITy(x86)");
-//..    }
-//.. }
-//.. 
-//.. /* On a little-endian host, less significant bits of the guest
-//..    registers are at lower addresses.  Therefore, if a reference to a
-//..    register low half has the safe guest state offset as a reference to
-//..    the full register.
-//.. */
 //.. static Int integerGuestRegOffset ( Int sz, UInt archreg )
 //.. {
 //..    vassert(archreg < 8);
@@ -627,24 +916,6 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //..    return xmmGuestRegOffset( xmmreg ) + 8 * laneno;
 //.. }
 //.. 
-//.. static IRExpr* getIReg ( Int sz, UInt archreg )
-//.. {
-//..    vassert(sz == 1 || sz == 2 || sz == 4);
-//..    vassert(archreg < 8);
-//..    return IRExpr_Get( integerGuestRegOffset(sz,archreg),
-//..                       szToITy(sz) );
-//.. }
-//.. 
-//.. /* Ditto, but write to a reg instead. */
-//.. static void putIReg ( Int sz, UInt archreg, IRExpr* e )
-//.. {
-//..    IRType ty = typeOfIRExpr(irbb->tyenv, e);
-//..    vassert(sz == 1 || sz == 2 || sz == 4);
-//..    vassert(archreg < 8);
-//..    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
-//..    stmt( IRStmt_Put(integerGuestRegOffset(sz,archreg), e) );
-//.. }
-//.. 
 //.. static IRExpr* getSReg ( UInt sreg )
 //.. {
 //..    return IRExpr_Get( segmentGuestRegOffset(sreg), Ity_I16 );
@@ -725,43 +996,6 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //.. static void storeLE ( IRExpr* addr, IRExpr* data )
 //.. {
 //..    stmt( IRStmt_STle(addr,data) );
-//.. }
-//.. 
-//.. static IRExpr* unop ( IROp op, IRExpr* a )
-//.. {
-//..    return IRExpr_Unop(op, a);
-//.. }
-//.. 
-//.. static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
-//.. {
-//..    return IRExpr_Binop(op, a1, a2);
-//.. }
-//.. 
-//.. static IRExpr* mkexpr ( IRTemp tmp )
-//.. {
-//..    return IRExpr_Tmp(tmp);
-//.. }
-//.. 
-//.. static IRExpr* mkU8 ( UInt i )
-//.. {
-//..    vassert(i < 256);
-//..    return IRExpr_Const(IRConst_U8(i));
-//.. }
-//.. 
-//.. static IRExpr* mkU16 ( UInt i )
-//.. {
-//..    vassert(i < 65536);
-//..    return IRExpr_Const(IRConst_U16(i));
-//.. }
-//.. 
-//.. static IRExpr* mkU32 ( UInt i )
-//.. {
-//..    return IRExpr_Const(IRConst_U32(i));
-//.. }
-//.. 
-//.. static IRExpr* mkU64 ( ULong i )
-//.. {
-//..    return IRExpr_Const(IRConst_U64(i));
 //.. }
 //.. 
 //.. static IRExpr* mkU ( IRType ty, UInt i )
@@ -1235,27 +1469,6 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //.. //--    if (opc_aux < 4 || opc_aux > 7) VG_(core_panic)("nameGrp8");
 //.. //--    return grp8_names[opc_aux];
 //.. //-- }
-//.. 
-//.. static HChar* nameIReg ( Int size, Int reg )
-//.. {
-//..    static HChar* ireg32_names[8] 
-//..      = { "%eax", "%ecx", "%edx", "%ebx", 
-//..          "%esp", "%ebp", "%esi", "%edi" };
-//..    static HChar* ireg16_names[8] 
-//..      = { "%ax", "%cx", "%dx", "%bx", "%sp", "%bp", "%si", "%di" };
-//..    static HChar* ireg8_names[8] 
-//..      = { "%al", "%cl", "%dl", "%bl", 
-//..          "%ah{sp}", "%ch{bp}", "%dh{si}", "%bh{di}" };
-//..    if (reg < 0 || reg > 7) goto bad;
-//..    switch (size) {
-//..       case 4: return ireg32_names[reg];
-//..       case 2: return ireg16_names[reg];
-//..       case 1: return ireg8_names[reg];
-//..    }
-//..   bad:
-//..    vpanic("nameIReg(X86)");
-//..    return NULL; /*notreached*/
-//.. }
 //.. 
 //.. static HChar* nameSReg ( UInt sreg )
 //.. {

@@ -4877,6 +4877,7 @@ PRE(sys_sigaltstack, Special)
    }
 
    VG_(do_sys_sigaltstack) (tid);
+   SET_RESULT(RES); /* sigh */
 }
 
 POST(sys_sigaltstack)
@@ -4902,7 +4903,8 @@ PRE(sys_rt_sigaction, Special)
    // sys_rt_sigaction... perhaps this function should be renamed
    // VG_(do_sys_rt_sigaction)()  --njn
    VG_(do_sys_sigaction)(tid);
-   SET_RESULT( 0/*success*/ );
+   /* Mark that the result is set. */
+   SET_RESULT(RES);
 }
 
 POST(sys_rt_sigaction)
@@ -4975,7 +4977,8 @@ PRE(sys_rt_sigprocmask, Special)
 				ARG1 /*how*/, 
 				(vki_sigset_t*) ARG2,
 				(vki_sigset_t*) ARG3 );
-      SET_RESULT( 0/*success*/ );
+      /* Mark that the result is set. */
+      SET_RESULT(RES);
    }
 }
 
@@ -5323,7 +5326,6 @@ Bool VG_(pre_syscall) ( ThreadId tid )
       VGP_PUSHCC(VgpToolSysWrap);
       TL_(pre_syscall)(tid, syscallno);
       VGP_POPCC(VgpToolSysWrap);
-      /* This may result in tst->syscall_result_set becoming True. */
    }
 
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
@@ -5341,6 +5343,8 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 
       tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
+      /* This *must* result in tst->syscall_result_set becoming
+         True. */
 
       vg_assert(tst->sys_flags == flags);
       vg_assert(tst->syscall_result_set == True);
@@ -5350,6 +5354,8 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    } else {
       tst->syscall_result_set = False;
       (sys->before)(tst->tid, tst);
+      /* This *may* result in tst->syscall_result_set becoming
+         True. */
 
       if (tst->syscall_result_set) {
 	 /* "before" decided to provide a syscall result itself, so

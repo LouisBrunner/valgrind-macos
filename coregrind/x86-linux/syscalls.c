@@ -245,7 +245,7 @@ PRE(sys_modify_ldt, Special)
       PRE_MEM_READ( "modify_ldt(ptr)", ARG2, sizeof(vki_modify_ldt_t) );
    }
    /* "do" the syscall ourselves; the kernel never sees it */
-   RES = VG_(sys_modify_ldt)( tid, ARG1, (void*)ARG2, ARG3 );
+   SET_RESULT( VG_(sys_modify_ldt)( tid, ARG1, (void*)ARG2, ARG3 ) );
 
    if (ARG1 == 0 && !VG_(is_kerror)(RES) && RES > 0) {
       POST_MEM_WRITE( ARG2, RES );

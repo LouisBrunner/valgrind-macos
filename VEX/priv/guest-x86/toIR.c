@@ -876,7 +876,7 @@ static IRExpr* mk_x86g_calculate_eflags_c ( void )
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
-           0/*regparm*/, 
+           3/*regparm*/, 
            "x86g_calculate_eflags_c", &x86g_calculate_eflags_c,
            args
         );

@@ -495,8 +495,7 @@ int main(void)
    SY(__NR_clone, x0|CLONE_PARENT_SETTID|SIGCHLD, x0, x0, x0);
 
    // __NR_setdomainname 121
- //GO(__NR_setdomainname, ".s .m");
- //SY(__NR_setdomainname);
+   // (Not yet handled by Valgrind)
 
    // __NR_uname 122
    GO(__NR_uname, "1s 1m");
@@ -681,9 +680,9 @@ int main(void)
    GO(__NR_query_module, "0e");
    SY(__NR_query_module);
 
-   // __NR_poll 168
- //GO(__NR_poll, ".s .m");
- //SY(__NR_poll);
+   // __NR_poll 168 --> sys_poll()
+   GO(__NR_poll, "3s 1m");
+   SY(__NR_poll, x0, x0+1, x0);
 
    // __NR_nfsservctl 169
  //GO(__NR_nfsservctl, ".s .m");
@@ -1022,17 +1021,17 @@ int main(void)
    GO(__NR_lookup_dcookie, "4s 1m");
    SY(__NR_lookup_dcookie, x0, x0, x0, x0+1);
 
-   // __NR_epoll_create 254
- //GO(__NR_epoll_create, ".s .m");
- //SY(__NR_epoll_create);
+   // __NR_epoll_create 254 --> sys_epoll_create()
+   GO(__NR_epoll_create, "1s 0m");
+   SY(__NR_epoll_create, x0);
 
-   // __NR_epoll_ctl 255
- //GO(__NR_epoll_ctl, ".s .m");
- //SY(__NR_epoll_ctl);
+   // __NR_epoll_ctl 255 --> sys_epoll_ctl()
+   GO(__NR_epoll_ctl, "4s 1m");
+   SY(__NR_epoll_ctl, x0, x0, x0, x0);
 
-   // __NR_epoll_wait 256
- //GO(__NR_epoll_wait, ".s .m");
- //SY(__NR_epoll_wait);
+   // __NR_epoll_wait 256 --> sys_epoll_wait()
+   GO(__NR_epoll_wait, "4s 1m");
+   SY(__NR_epoll_wait, x0, x0, x0+1, x0);
 
    // __NR_remap_file_pages 257
  //GO(__NR_remap_file_pages, ".s .m");

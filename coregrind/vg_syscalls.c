@@ -4740,7 +4740,8 @@ POSTx(sys_pipe)
    }
 }
 
-PRE(poll)
+// XXX: x86-specific, due to pollfd struct
+PREx(sys_poll, MayBlock)
 {
    /* struct pollfd {
         int fd;           -- file descriptor
@@ -4751,7 +4752,9 @@ PRE(poll)
    */
    UInt i;
    struct vki_pollfd* ufds = (struct vki_pollfd *)arg1;
-   PRINT("poll ( %p, %d, %d )\n",arg1,arg2,arg3);
+   PRINT("sys_poll ( %p, %d, %d )\n", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "poll",
+                 struct pollfd *, ufds, unsigned int, nfds, long, timeout);
                      
    for (i = 0; i < arg2; i++) {
       // 'fd' and 'events' field are inputs;  'revents' is output.
@@ -4763,7 +4766,7 @@ PRE(poll)
    }  
 }
 
-POST(poll)
+POSTx(sys_poll)
 {
    if (res > 0) {
       UInt i;
@@ -4774,15 +4777,15 @@ POST(poll)
    }
 }
 
-PRE(epoll_create)
+PREx(sys_epoll_create, 0)
 {
-   /* int epoll_create(int size) */
-   PRINT("epoll_create ( %d )", arg1);
+   PRINT("sys_epoll_create ( %d )", arg1);
+   PRE_REG_READ1(long, "epoll_create", int, size);
 }
 
-POST(epoll_create)
+POSTx(sys_epoll_create)
 {
-   if (!fd_allowed(res, "open", tid, True)) {
+   if (!fd_allowed(res, "epoll_create", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
@@ -4791,28 +4794,30 @@ POST(epoll_create)
    }
 }
 
-PRE(epoll_ctl)
+PREx(sys_epoll_ctl, 0)
 {
-   /* int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) */
    static const char* epoll_ctl_s[3] = {
       "EPOLL_CTL_ADD",
       "EPOLL_CTL_DEL",
       "EPOLL_CTL_MOD"
    };
-   PRINT("epoll_ctl ( %d, %s, %d, %p )", 
-                arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
+   PRINT("sys_epoll_ctl ( %d, %s, %d, %p )", 
+         arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
+   PRE_REG_READ4(long, "epoll_ctl",
+                 int, epfd, int, op, int, fd, struct epoll_event *, event);
    PRE_MEM_READ( "epoll_ctl(event)", arg4, sizeof(struct epoll_event) );
 }
 
-PRE(epoll_wait)
+PREx(sys_epoll_wait, MayBlock)
 {
-   /* int epoll_wait(int epfd, struct epoll_event * events, 
-                     int maxevents, int timeout) */
-   PRINT("epoll_wait ( %d, %p, %d, %d )", arg1, arg2, arg3, arg4);
+   PRINT("sys_epoll_wait ( %d, %p, %d, %d )", arg1, arg2, arg3, arg4);
+   PRE_REG_READ4(long, "epoll_wait",
+                 int, epfd, struct epoll_event *, events,
+                 int, maxevents, int, timeout);
    PRE_MEM_WRITE( "epoll_wait(events)", arg2, sizeof(struct epoll_event)*arg3);
 }
 
-POST(epoll_wait)
+POSTx(sys_epoll_wait)
 {
    if (res > 0)
       POST_MEM_WRITE( arg2, sizeof(struct epoll_event)*res ) ;
@@ -6533,7 +6538,7 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_getresuid,        sys_getresuid16),  // 165 ## L
    //   (__NR_vm86,             sys_vm86),         // 166 (x86) L
    SYSX_(__NR_query_module,     sys_ni_syscall),   // 167 * P -- unimplemented
-   SYSBA(__NR_poll,             sys_poll, MayBlock), // 168 *
+   SYSXY(__NR_poll,             sys_poll),         // 168 * (XPG4-UNIX)
    //   (__NR_nfsservctl,       sys_nfsservctl),   // 169 * L
 
    SYSX_(__NR_setresgid,        sys_setresgid16),  // 170 ## (non-standard)
@@ -6640,10 +6645,10 @@ static const struct sys_info sys_info[] = {
    SYSX_(251,                   sys_ni_syscall),      // 251 * P -- unused
    SYSX_(__NR_exit_group,       sys_exit_group),      // 252 *
    SYSXY(__NR_lookup_dcookie,   sys_lookup_dcookie),  // 253 (*/32/64) L
-   SYSBA(__NR_epoll_create,     sys_epoll_create, 0), // 254 *
+   SYSXY(__NR_epoll_create,     sys_epoll_create),    // 254 * L
 
-   SYSB_(__NR_epoll_ctl,        sys_epoll_ctl, 0), // 255 *
-   SYSBA(__NR_epoll_wait,       sys_epoll_wait, MayBlock), // 256 *
+   SYSX_(__NR_epoll_ctl,        sys_epoll_ctl),       // 255 * L
+   SYSXY(__NR_epoll_wait,       sys_epoll_wait),      // 256 * L
    //   (__NR_remap_file_pages, sys_remap_file_pages),   // 257 * L
    SYSX_(__NR_set_tid_address,  sys_set_tid_address), // 258 * ?
    SYSBA(__NR_timer_create,     sys_timer_create, 0), // 259 

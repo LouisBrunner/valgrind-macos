@@ -905,6 +905,9 @@ static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
 
 void __pthread_kill_other_threads_np ( void )
 {
+   /* If we need this, implement it properly! */
+   vgPlain_unimp("__pthread_kill_other_threads_np");
+#if 0
    int i, res, me;
    __pthread_mutex_lock(&massacre_mx);
    me = pthread_self();
@@ -915,6 +918,7 @@ void __pthread_kill_other_threads_np ( void )
          printf("----------- NUKED %d\n", i);
    }
    __pthread_mutex_unlock(&massacre_mx);
+#endif
 }
 
 

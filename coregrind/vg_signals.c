@@ -1716,11 +1716,11 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 		   sigNo, terminate ? "terminate" : "", core ? "+core" : "");
 
    if (terminate) {
+      struct vki_rlimit corelim;
+
       if (core) {
 	 /* If they set the core-size limit to zero, don't generate a
 	    core file */
-	 static struct vki_rlimit zero = { 0, 0 };
-	 struct vki_rlimit corelim;
 	 
 	 VG_(getrlimit)(VKI_RLIMIT_CORE, &corelim);
 
@@ -1796,6 +1796,8 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
       }
 
       if (core) {
+	 static struct vki_rlimit zero = { 0, 0 };
+
 	 make_coredump(tid, info, corelim.rlim_cur);
 
 	 /* make sure we don't get a confusing kernel-generated coredump */

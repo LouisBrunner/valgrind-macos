@@ -11178,15 +11178,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       break;
 
   case 0xA6: /* CMPSb, no REP prefix */
-//--    case 0xA7:
+  case 0xA7:
      dis_string_op( dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
      break;
-//-- 
+
    case 0xAA: /* STOS, no REP prefix */
    case 0xAB:
       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
       break;
-//--    
+
 //--    case 0xAC: /* LODS, no REP prefix */
 //--    case 0xAD:
 //--       dis_string_op( cb, dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );

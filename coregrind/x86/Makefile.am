@@ -11,7 +11,6 @@ noinst_HEADERS = \
 noinst_LIBRARIES = libarch.a
 
 EXTRA_DIST =		\
-	ume_archdefs.c	\
 	ume_entry.S	\
 	ume_go.c
 

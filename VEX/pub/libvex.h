@@ -84,7 +84,9 @@ TranslateResult LibVEX_Translate (
    /* IN: optionally, an instrumentation function. */
    IRBB* (*instrument) ( IRBB* ),
    /* IN: optionally, an access check function for guest code. */
-   Bool (*byte_accessible) ( Addr64 )
+   Bool (*byte_accessible) ( Addr64 ),
+   /* IN: if > 0, use this verbosity for this bb */
+   Int  bb_verbosity
 );
 
 

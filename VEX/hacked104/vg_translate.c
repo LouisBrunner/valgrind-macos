@@ -3121,7 +3121,8 @@ void VG_(translate) ( ThreadState* tst,
    UChar* final;
    Bool debugging_translation;
 
-static Bool vverb = False;
+   static Int v0thresh = 6000;
+   static Int v2thresh = 6140;
 
    TranslateResult tres;
    static Bool vex_init_done = False;
@@ -3129,14 +3130,14 @@ static Bool vverb = False;
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,  /* debug_paranoia */ 
-                    vverb ? 1 : 0,  /* verbosity */
+                    0,  /* verbosity */
                     False, 
 		    //True, 
-                    20 /* max insns per bb */ );
+                    1 /* max insns per bb */ );
       vex_init_done = True;
    }
 
-   if (vverb) {
+   if (VG_(overall_in_count) > v2thresh) {
      VG_(printf)("\n\n");
          VG_(message)(Vg_UserMsg,
                      "=======================================================");
@@ -3146,7 +3147,8 @@ static Bool vverb = False;
               VG_(bbs_done),
               VG_(overall_in_osize), VG_(overall_in_tsize) );
      VG_(printf)("\n");
-   } else {
+   } else
+   if (VG_(overall_in_count) > v0thresh) {
          VG_(message)(Vg_UserMsg,
               "trans# %d, bb# %lu, in %d, out %d =======================",
               VG_(overall_in_count), 
@@ -3158,7 +3160,8 @@ static Bool vverb = False;
              InsnSetX86, InsnSetX86,
              (Char*)orig_addr, (Addr64)orig_addr, &t_orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
-             NULL, NULL
+             NULL, NULL,
+             VG_(overall_in_count) > v2thresh ? 2 : 0
           );
 
    vg_assert(tres == TransOK);

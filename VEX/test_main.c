@@ -109,7 +109,7 @@ int main ( int argc, char** argv )
       LibVEX_Translate ( InsnSetX86, InsnSetX86,
 			 origbuf, (Addr64)orig_addr, &orig_used,
 			 transbuf, N_TRANSBUF, &trans_used,
-			 NULL, NULL );
+			 NULL, NULL, 0 );
       assert(tres == TransOK);
       assert(orig_used == orig_nbytes);
       }

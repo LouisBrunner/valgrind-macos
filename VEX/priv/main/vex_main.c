@@ -29,7 +29,7 @@ void LibVEX_Init (
    void (*log_bytes) ( Char*, Int nbytes ),
    /* debug paranoia level */
    Int debuglevel,
-   /* verbosity level */
+   /* initial verbosity level */
    Int verbosity,
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
@@ -76,7 +76,9 @@ TranslateResult LibVEX_Translate (
    /* IN: optionally, an instrumentation function. */
    IRBB* (*instrument) ( IRBB* ),
    /* IN: optionally, an access check function for guest code. */
-   Bool (*byte_accessible) ( Addr64 )
+   Bool (*byte_accessible) ( Addr64 ),
+   /* IN: if > 0, use this verbosity for this bb */
+   Int  bb_verbosity
 )
 {
    /* This the bundle of functions we need to do the back-end stuff
@@ -101,7 +103,7 @@ TranslateResult LibVEX_Translate (
    IRBB*        irbb;
    HInstrArray* vcode;
    HInstrArray* rcode;
-   Int          i, j, k, out_used;
+   Int          i, j, k, out_used, saved_verbosity;
    UChar        insn_bytes[32];
 
    available_real_regs    = NULL;
@@ -117,6 +119,10 @@ TranslateResult LibVEX_Translate (
    bbToIR                 = NULL;
    emit                   = NULL;
    findHelper             = NULL;
+
+   saved_verbosity = vex_verbosity;
+   if (bb_verbosity > 0)
+      vex_verbosity = bb_verbosity;
 
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
@@ -160,6 +166,7 @@ TranslateResult LibVEX_Translate (
    if (irbb == NULL) {
       /* Access failure. */
       LibVEX_ClearTemporary(False);
+      vex_verbosity = saved_verbosity;
       return TransAccessFail;
    }
    sanityCheckIRBB(irbb, Ity_I32);
@@ -216,6 +223,7 @@ TranslateResult LibVEX_Translate (
       }
       if (out_used + j > host_bytes_size) {
          LibVEX_ClearTemporary(False);
+         vex_verbosity = saved_verbosity;
          return TransOutputFull;
       }
       for (k = 0; k < j; k++) {
@@ -229,6 +237,7 @@ TranslateResult LibVEX_Translate (
    //   LibVEX_ClearTemporary(True);
    LibVEX_ClearTemporary(False);
 
+   vex_verbosity = saved_verbosity;
    return TransOK;
 }
 

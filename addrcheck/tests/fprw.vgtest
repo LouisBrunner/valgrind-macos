@@ -1,2 +1,2 @@
-vgopts: --single-step=yes -q
+vgopts: -q
 prog:   ../../memcheck/tests/fprw

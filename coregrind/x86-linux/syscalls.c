@@ -312,6 +312,14 @@ UInt get_sem_count( Int semid )
 
   return buf.sem_nsems;
 }
+
+// XXX: this duplicates a function in coregrind/vg_syscalls.c, yuk
+static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
+{
+   Addr* a_p = (Addr*)a;
+   PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );
+   return *a_p;
+}
  
 // XXX: should use the constants here (eg. SHMAT), not the numbers directly!
 PRE(sys_ipc, 0)
@@ -753,7 +761,7 @@ POST(sys_ipc)
    }
 }
 
-PRE(sys_sigaction, SIG_SIM)
+PRE(sys_sigaction, Special)
 {
    PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "sigaction",
@@ -764,8 +772,7 @@ PRE(sys_sigaction, SIG_SIM)
    if (ARG3 != 0)
       PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
 
-   if (SIGNAL_SIMULATION)
-      VG_(do_sys_sigaction)(tid);
+   VG_(do_sys_sigaction)(tid);
 }
 
 POST(sys_sigaction)

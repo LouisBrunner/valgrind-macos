@@ -816,14 +816,6 @@ static UInt deref_UInt ( ThreadId tid, Addr a, Char* s )
       return *a_p;
 }
 
-/* Dereference a pointer to a pointer. */
-static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
-{
-   Addr* a_p = (Addr*)a;
-   PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );
-   return *a_p;
-}
-
 static 
 void buf_and_len_pre_check( ThreadId tid, Addr buf_p, Addr buflen_p,
                             Char* buf_s, Char* buflen_s )
@@ -1550,7 +1542,10 @@ PRE(sys_capset, 0)
 void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 {
    while (True) {
-      Addr a_deref = deref_Addr( tid, a, s1 );
+      Addr a_deref;
+      Addr* a_p = (Addr*)a;
+      PRE_MEM_READ( s1, (Addr)a_p, sizeof(Addr) );
+      a_deref = *a_p;
       if (0 == a_deref)
          break;
       PRE_MEM_RASCIIZ( s2, a_deref );
@@ -4843,16 +4838,8 @@ POST(sys_rt_sigqueueinfo)
    }
 }
 
-#define SIGNAL_SIMULATION	1
-
-#if SIGNAL_SIMULATION
-#define SIG_SIM   Special
-#else
-#define SIG_SIM   0
-#endif
-
 // XXX: x86-specific
-PRE(sys_sigaltstack, SIG_SIM)
+PRE(sys_sigaltstack, Special)
 {
    /* int sigaltstack(const stack_t *ss, stack_t *oss); */
    PRINT("sigaltstack ( %p, %p )",ARG1,ARG2);
@@ -4865,8 +4852,7 @@ PRE(sys_sigaltstack, SIG_SIM)
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );
    }
 
-   if (SIGNAL_SIMULATION)
-      VG_(do_sys_sigaltstack) (tid);
+   VG_(do_sys_sigaltstack) (tid);
 }
 
 POST(sys_sigaltstack)
@@ -4876,7 +4862,7 @@ POST(sys_sigaltstack)
 }
 
 // XXX: x86-specific
-PRE(sys_rt_sigaction, SIG_SIM)
+PRE(sys_rt_sigaction, Special)
 {
    PRINT("sys_rt_sigaction ( %d, %p, %p, %d )", ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "rt_sigaction",
@@ -4888,9 +4874,10 @@ PRE(sys_rt_sigaction, SIG_SIM)
    if (ARG3 != 0)
       PRE_MEM_WRITE( "rt_sigaction(oldact)", ARG3, sizeof(struct vki_sigaction));
 
-   // XXX: hmm... doesn't seem quite right...
-   if (SIGNAL_SIMULATION)
-      VG_(do_sys_sigaction)(tid);
+   // XXX: doesn't seem right to be calling do_sys_sigaction for
+   // sys_rt_sigaction... perhaps this function should be renamed
+   // VG_(do_sys_rt_sigaction)()  --njn
+   VG_(do_sys_sigaction)(tid);
 }
 
 POST(sys_rt_sigaction)
@@ -4903,7 +4890,7 @@ POST(sys_rt_sigaction)
 //      sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
 // This wrapper is only suitable for 32-bit architectures.
 #ifndef __amd64__
-PRE(sys_sigprocmask, SIG_SIM)
+PRE(sys_sigprocmask, Special)
 {
    PRINT("sys_sigprocmask ( %d, %p, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sigprocmask", 
@@ -4913,25 +4900,23 @@ PRE(sys_sigprocmask, SIG_SIM)
    if (ARG3 != 0)
       PRE_MEM_WRITE( "sigprocmask(oldset)", ARG3, sizeof(vki_old_sigset_t));
 
-   if (SIGNAL_SIMULATION) {
-      // Nb: We must convert the smaller vki_old_sigset_t params into bigger
-      // vki_sigset_t params.
-      vki_old_sigset_t* set    = (vki_old_sigset_t*)ARG2;
-      vki_old_sigset_t* oldset = (vki_old_sigset_t*)ARG3;
-      vki_sigset_t bigger_set;
-      vki_sigset_t bigger_oldset;
+   // Nb: We must convert the smaller vki_old_sigset_t params into bigger
+   // vki_sigset_t params.
+   vki_old_sigset_t* set    = (vki_old_sigset_t*)ARG2;
+   vki_old_sigset_t* oldset = (vki_old_sigset_t*)ARG3;
+   vki_sigset_t bigger_set;
+   vki_sigset_t bigger_oldset;
 
-      VG_(memset)(&bigger_set, 0, sizeof(vki_sigset_t));
-      bigger_set.sig[0] = *(vki_old_sigset_t*)set;
+   VG_(memset)(&bigger_set, 0, sizeof(vki_sigset_t));
+   bigger_set.sig[0] = *(vki_old_sigset_t*)set;
 
-      VG_(do_sys_sigprocmask) ( tid, 
-				ARG1 /*how*/, 
-				&bigger_set,
-				&bigger_oldset );
+   VG_(do_sys_sigprocmask) ( tid, 
+                             ARG1 /*how*/, 
+                             &bigger_set,
+                             &bigger_oldset );
 
-      if (oldset)
-         *oldset = bigger_oldset.sig[0];
-   }
+   if (oldset)
+      *oldset = bigger_oldset.sig[0];
 }
 
 POST(sys_sigprocmask)
@@ -4941,7 +4926,7 @@ POST(sys_sigprocmask)
 }
 #endif
 
-PRE(sys_rt_sigprocmask, SIG_SIM)
+PRE(sys_rt_sigprocmask, Special)
 {
    PRINT("sys_rt_sigprocmask ( %d, %p, %p, %llu )",ARG1,ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(long, "rt_sigprocmask", 
@@ -4955,7 +4940,7 @@ PRE(sys_rt_sigprocmask, SIG_SIM)
    // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
    if (sizeof(vki_sigset_t) != ARG4)
       SET_RESULT( -VKI_EMFILE );
-   else if (SIGNAL_SIMULATION)
+   else
       VG_(do_sys_sigprocmask) ( tid, 
 				ARG1 /*how*/, 
 				(vki_sigset_t*) ARG2,

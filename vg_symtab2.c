@@ -1924,7 +1924,7 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
    Bool   know_srcloc;
    UInt   lineno; 
    UChar  ibuf[20];
-   UInt   i, n, clueless;
+   UInt   i, n;
 
    UChar  buf[M_VG_ERRTXT];
    UChar  buf_fn[M_VG_ERRTXT];
@@ -1968,8 +1968,7 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
    }
    VG_(message)(Vg_UserMsg, "%s", buf);
 
-   clueless = 0;
-   for (i = 1; i < stop_at; i++) {
+   for (i = 1; i < stop_at && ec->eips[i] != 0; i++) {
       know_fnname  = VG_(what_fn_is_this)(False,ec->eips[i], buf_fn, M_VG_ERRTXT);
       know_objname = vg_what_object_is_this(ec->eips[i],buf_obj, M_VG_ERRTXT);
       know_srcloc  = VG_(what_line_is_this)(ec->eips[i], 
@@ -1977,12 +1976,8 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
                                           &lineno);
       n = 0;
       APPEND("   by ");
-      if (ec->eips[i] == 0) {
-         APPEND("<bogus frame pointer> ");
-      } else {
-         VG_(sprintf)(ibuf,"0x%x: ",ec->eips[i]);
-         APPEND(ibuf);
-      }
+      VG_(sprintf)(ibuf,"0x%x: ",ec->eips[i]);
+      APPEND(ibuf);
       if (know_fnname) { 
          APPEND(buf_fn) 
          if (!know_srcloc && know_objname) {
@@ -1998,9 +1993,6 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
          } else {
             APPEND("???");
          }
-         if (!know_srcloc) clueless++;
-         if (clueless == 2)
-            i = stop_at; /* force exit after this iteration */
       };
       if (know_srcloc) {
          APPEND(" (");

@@ -116,7 +116,7 @@ typedef
             struct _IRExpr* addr;
          } LDle;
          struct {
-            struct _IRConst* con;
+            IRConst* con;
          } Const;
       } Iex;
    }
@@ -187,19 +187,19 @@ typedef
    IRNextTag;
 
 typedef
-   struct _IRNext {
+   struct {
       IRNextTag tag;
       union {
          struct {
-            struct _IRConst* dst;
+            IRConst* dst;
          } UJump;
          struct {
-            struct _IRExpr*  cond;
-            struct _IRConst* dst0;
-            struct _IRConst* dst1;
+            IRExpr*  cond;
+            IRConst* dst0;
+            IRConst* dst1;
          } CJump01;
          struct {
-            struct _IRExpr* dst;
+            IRExpr* dst;
          } IJump;
       } Inx;
    }

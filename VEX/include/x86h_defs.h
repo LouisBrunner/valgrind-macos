@@ -23,8 +23,8 @@ extern void ppHRegX86 ( FILE*, HReg );
 
 typedef
    enum {
-     Xam_IR,
-     Xam_IRRS
+     Xam_IR,        /* Immediate + Reg */
+     Xam_IRRS       /* Immediate + Reg1 + (Reg2 << Shift) */
    }
    X86AModeTag;
 
@@ -52,19 +52,19 @@ extern X86AMode* X86AMode_IRRS ( UInt, HReg, HReg, Int );
 extern void ppX86AMode ( FILE*, X86AMode* );
 
 
-/* --------- Operands.  Not all are valid for all insns. --------- */
+/* --------- Operand, which can be reg, immediate or memory. --------- */
 
 typedef 
    enum {
-      Xop_Imm,
-      Xop_Reg,
-      Xop_Mem
+      Xrmi_Imm,
+      Xrmi_Reg,
+      Xrmi_Mem
    }
-   X86OperandTag;
+   X86RMITag;
 
 typedef
    struct {
-      X86OperandTag tag;
+      X86RMITag tag;
       union {
          struct {
             UInt imm32;
@@ -76,33 +76,109 @@ typedef
             X86AMode* am;
          } Mem;
       }
-      Xop;
+      Xrmi;
    }
-   X86Operand;
+   X86RMI;
 
-extern X86Operand* X86Operand_Imm ( UInt );
-extern X86Operand* X86Operand_Reg ( HReg );
-extern X86Operand* X86Operand_Mem ( X86AMode* );
+extern X86RMI* X86RMI_Imm ( UInt );
+extern X86RMI* X86RMI_Reg ( HReg );
+extern X86RMI* X86RMI_Mem ( X86AMode* );
 
-extern void ppX86Operand ( FILE*, X86Operand* );
+extern void ppX86RMI ( FILE*, X86RMI* );
+
+
+/* --------- Operand, which can be reg or immediate only. --------- */
+
+typedef 
+   enum {
+      Xri_Imm,
+      Xri_Reg
+   }
+   X86RITag;
+
+typedef
+   struct {
+      X86RITag tag;
+      union {
+         struct {
+            UInt imm32;
+         } Imm;
+         struct {
+            HReg reg;
+         } Reg;
+      }
+      Xri;
+   }
+   X86RI;
+
+extern X86RI* X86RI_Imm ( UInt );
+extern X86RI* X86RI_Reg ( HReg );
+
+extern void ppX86RI ( FILE*, X86RI* );
+
+
+/* --------- Operand, which can be reg or memory only. --------- */
+
+typedef 
+   enum {
+      Xrm_Reg,
+      Xrm_Mem
+   }
+   X86RMTag;
+
+typedef
+   struct {
+      X86RMTag tag;
+      union {
+         struct {
+            HReg reg;
+         } Reg;
+         struct {
+            X86AMode* am;
+         } Mem;
+      }
+      Xrm;
+   }
+   X86RM;
+
+extern X86RM* X86RM_Reg ( HReg );
+extern X86RM* X86RM_Mem ( X86AMode* );
+
+extern void ppX86RM ( FILE*, X86RM* );
 
 
 /* --------- Instructions. --------- */
 
+/* --------- */
 typedef 
-   enum { Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, Xalu_AND, Xalu_OR, Xalu_XOR }
+   enum { 
+      Xalu_MOV,
+      Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
+      Xalu_AND, Xalu_OR, Xalu_XOR 
+   }
    X86AluOp;
 
 extern void ppX86AluOp ( FILE*, X86AluOp );
 
 
+/* --------- */
 typedef
    enum {
-      Xin_LD32,     /* 32-bit integer load */
-      Xin_ST32,     /* 32-bit integer store */
-      Xin_Alu32,    /* 32-bit arith/logical, R-R, R-M, M-R */
-      Xin_Mov32,    /* 32-bit move R-R R-M M-R I-R I-M */
-      Xin_Alu16     /* 16-bit arith/logical, R-R, R-M, M-R */
+      Xsh_SHL, Xsh_SHR, Xsh_SAR, 
+      Xsh_ROL, Xsh_ROR
+   }
+   X86ShiftOp;
+
+extern void ppX86ShiftOp ( FILE*, X86ShiftOp );
+
+
+/* --------- */
+typedef
+   enum {
+      Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
+      Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
+      Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
+      Xin_RET
    }
    X86InstrTag;
 
@@ -112,37 +188,31 @@ typedef
    struct {
       X86InstrTag tag;
       union {
-	 struct {
-	    HReg src;
-	    X86AMode* dst;
-	 } ST32;
-	 struct {
-	    X86AMode* src;
-	    HReg dst;
-	 } LD32;
          struct {
-            X86AluOp    op;
-            X86Operand* src;
-            X86Operand* dst;
-         } Alu32;
+            X86AluOp op;
+            X86RMI*  src;
+            HReg     dst;
+         } Alu32R;
          struct {
-            X86Operand* src;
-            X86Operand* dst;
-         } Mov32;
+            X86AluOp  op;
+            X86RI*    src;
+            X86AMode* dst;
+         } Alu32M;
          struct {
-            X86AluOp    op;
-            X86Operand* src;
-            X86Operand* dst;
-         } Alu16;
+            X86ShiftOp op;
+            UInt       src;  /* shift amount, or 0 means %cl */
+            X86RM*     dst;
+         } Sh32;
+ 	 struct {
+	 } RET;
       } Xin;
    }
    X86Instr;
 
-extern X86Instr* X86Instr_ST32  ( HReg, X86AMode* );
-extern X86Instr* X86Instr_LD32  ( X86AMode*, HReg );
-extern X86Instr* X86Instr_Alu32 ( X86AluOp, X86Operand*, X86Operand* );
-extern X86Instr* X86Instr_Mov32 ( X86Operand*, X86Operand* );
-extern X86Instr* X86Instr_Alu16 ( X86AluOp, X86Operand*, X86Operand* );
+extern X86Instr* X86Instr_Alu32R ( X86AluOp, X86RMI*, HReg );
+extern X86Instr* X86Instr_Alu32M ( X86AluOp, X86RI*,  X86AMode* );
+extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
+extern X86Instr* X86Instr_RET    ( void );
 
 extern void ppX86Instr ( FILE*, X86Instr* );
 

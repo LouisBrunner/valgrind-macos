@@ -87,42 +87,102 @@ void ppX86AMode ( FILE* f, X86AMode* am ) {
 }
 
 
-/* --------- X86Operand.  Not all are valid for all insns. --------- */
+/* --------- Operand, which can be reg, immediate or memory. --------- */
 
-X86Operand* X86Operand_Imm ( UInt imm32 ) {
-   X86Operand* op    = malloc(sizeof(X86Operand));
-   op->tag           = Xop_Imm;
-   op->Xop.Imm.imm32 = imm32;
+X86RMI* X86RMI_Imm ( UInt imm32 ) {
+   X86RMI* op         = malloc(sizeof(X86RMI));
+   op->tag            = Xrmi_Imm;
+   op->Xrmi.Imm.imm32 = imm32;
    return op;
 }
 
-X86Operand* X86Operand_Reg ( HReg reg ) {
-   X86Operand* op  = malloc(sizeof(X86Operand));
-   op->tag         = Xop_Reg;
-   op->Xop.Reg.reg = reg;
+X86RMI* X86RMI_Reg ( HReg reg ) {
+   X86RMI* op       = malloc(sizeof(X86RMI));
+   op->tag          = Xrmi_Reg;
+   op->Xrmi.Reg.reg = reg;
    return op;
 }
 
-X86Operand* X86Operand_Mem ( X86AMode* am ) {
-   X86Operand* op = malloc(sizeof(X86Operand));
-   op->tag        = Xop_Mem;
-   op->Xop.Mem.am = am;
+X86RMI* X86RMI_Mem ( X86AMode* am ) {
+   X86RMI* op      = malloc(sizeof(X86RMI));
+   op->tag         = Xrmi_Mem;
+   op->Xrmi.Mem.am = am;
    return op;
 }
 
-void ppX86Operand ( FILE* f, X86Operand* op ) {
+void ppX86RMI ( FILE* f, X86RMI* op ) {
    switch (op->tag) {
-      case Xop_Imm: 
-         fprintf(f, "$0x%x", op->Xop.Imm.imm32);
+      case Xrmi_Imm: 
+         fprintf(f, "$0x%x", op->Xrmi.Imm.imm32);
          return;
-      case Xop_Reg: 
-         ppHRegX86(f, op->Xop.Reg.reg);
+      case Xrmi_Reg: 
+         ppHRegX86(f, op->Xrmi.Reg.reg);
          return;
-      case Xop_Mem: 
-         ppX86AMode(f, op->Xop.Mem.am);
+      case Xrmi_Mem: 
+         ppX86AMode(f, op->Xrmi.Mem.am);
          return;
      default: 
-         panic("ppX86Operand");
+         panic("ppX86RMI");
+   }
+}
+
+
+/* --------- Operand, which can be reg or immediate only. --------- */
+
+X86RI* X86RI_Imm ( UInt imm32 ) {
+   X86RI* op         = malloc(sizeof(X86RI));
+   op->tag           = Xri_Imm;
+   op->Xri.Imm.imm32 = imm32;
+   return op;
+}
+
+X86RI* X86RI_Reg ( HReg reg ) {
+   X86RI* op       = malloc(sizeof(X86RI));
+   op->tag         = Xri_Reg;
+   op->Xri.Reg.reg = reg;
+   return op;
+}
+
+void ppX86RI ( FILE* f, X86RI* op ) {
+   switch (op->tag) {
+      case Xri_Imm: 
+         fprintf(f, "$0x%x", op->Xri.Imm.imm32);
+         return;
+      case Xri_Reg: 
+         ppHRegX86(f, op->Xri.Reg.reg);
+         return;
+     default: 
+         panic("ppX86RI");
+   }
+}
+
+
+/* --------- Operand, which can be reg or memory only. --------- */
+
+X86RM* X86RM_Reg ( HReg reg ) {
+   X86RM* op       = malloc(sizeof(X86RM));
+   op->tag         = Xrm_Reg;
+   op->Xrm.Reg.reg = reg;
+   return op;
+}
+
+X86RM* X86RM_Mem ( X86AMode* am ) {
+   X86RM* op      = malloc(sizeof(X86RM));
+   op->tag        = Xrm_Mem;
+   op->Xrm.Mem.am = am;
+   return op;
+}
+
+void ppX86RM ( FILE* f, X86RM* op ) {
+   switch (op->tag) {
+      case Xrm_Mem: 
+         ppX86AMode(f, op->Xrm.Mem.am);
+         return;
+      case Xrm_Reg: 
+         ppHRegX86(f, op->Xrm.Reg.reg);
+         return;
+     default: 
+         panic("ppX86RM");
    }
 }
 
@@ -132,6 +192,7 @@ void ppX86Operand ( FILE* f, X86Operand* op ) {
 void ppX86AluOp ( FILE* f, X86AluOp op ) {
    Char* name;
    switch (op) {
+      case Xalu_MOV: name = "mov"; break;
       case Xalu_ADD: name = "add"; break;
       case Xalu_SUB: name = "sub"; break;
       case Xalu_ADC: name = "adc"; break;
@@ -144,81 +205,80 @@ void ppX86AluOp ( FILE* f, X86AluOp op ) {
    fprintf(f, "%s", name);
 }
 
-X86Instr* X86Instr_ST32 ( HReg src, X86AMode* dst ) {
+void ppX86ShiftOp ( FILE* f, X86ShiftOp op ) {
+   Char* name;
+   switch (op) {
+      case Xsh_SHL: name = "shl"; break;
+      case Xsh_SHR: name = "shr"; break;
+      case Xsh_SAR: name = "sar"; break;
+      case Xsh_ROL: name = "rol"; break;
+      case Xsh_ROR: name = "ror"; break;
+      default: panic("ppX86ShiftOp");
+   }
+   fprintf(f, "%s", name);
+}
+
+X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
+   X86Instr* i       = malloc(sizeof(X86Instr));
+   i->tag            = Xin_Alu32R;
+   i->Xin.Alu32R.op  = op;
+   i->Xin.Alu32R.src = src;
+   i->Xin.Alu32R.dst = dst;
+   return i;
+}
+
+X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
+   X86Instr* i       = malloc(sizeof(X86Instr));
+   i->tag            = Xin_Alu32M;
+   i->Xin.Alu32M.op  = op;
+   i->Xin.Alu32M.src = src;
+   i->Xin.Alu32M.dst = dst;
+   return i;
+}
+
+X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    X86Instr* i     = malloc(sizeof(X86Instr));
-   i->tag          = Xin_ST32;
-   i->Xin.ST32.src = src;
-   i->Xin.ST32.dst = dst;
+   i->tag          = Xin_Sh32;
+   i->Xin.Sh32.op  = op;
+   i->Xin.Sh32.src = src;
+   i->Xin.Sh32.dst = dst;
    return i;
 }
 
-X86Instr* X86Instr_LD32 ( X86AMode* src, HReg dst ) {
+X86Instr* X86Instr_RET ( void ) {
    X86Instr* i     = malloc(sizeof(X86Instr));
-   i->tag          = Xin_LD32;
-   i->Xin.LD32.src = src;
-   i->Xin.LD32.dst = dst;
+   i->tag          = Xin_RET;
    return i;
 }
 
-X86Instr* X86Instr_Alu32 ( X86AluOp op, X86Operand* src, X86Operand* dst ) {
-   X86Instr* i      = malloc(sizeof(X86Instr));
-   i->tag           = Xin_Alu32;
-   i->Xin.Alu32.op  = op;
-   i->Xin.Alu32.src = src;
-   i->Xin.Alu32.dst = dst;
-   return i;
-}
-
-X86Instr* X86Instr_Mov32 ( X86Operand* src, X86Operand* dst ) {
-   X86Instr* i      = malloc(sizeof(X86Instr));
-   i->tag           = Xin_Mov32;
-   i->Xin.Mov32.src = src;
-   i->Xin.Mov32.dst = dst;
-   return i;
-}
-
-X86Instr* X86Instr_Alu16 ( X86AluOp op, X86Operand* src, X86Operand* dst ) {
-   X86Instr* i      = malloc(sizeof(X86Instr));
-   i->tag           = Xin_Alu16;
-   i->Xin.Alu16.op  = op;
-   i->Xin.Alu16.src = src;
-   i->Xin.Alu16.dst = dst;
-   return i;
-}
 
 void ppX86Instr ( FILE* f, X86Instr* i ) {
    switch (i->tag) {
-      case Xin_ST32:
-         fprintf(f, "movl ");
-         ppHRegX86(f, i->Xin.ST32.src);
-         fprintf(f, ",");
-         ppX86AMode(f, i->Xin.ST32.dst);
-         return;
-      case Xin_LD32:
-         fprintf(f, "movl ");
-         ppX86AMode(f, i->Xin.LD32.src);
-         fprintf(f, ",");
-         ppHRegX86(f, i->Xin.LD32.dst);
-         return;
-      case Xin_Alu32:
-         ppX86AluOp(f, i->Xin.Alu32.op);
+      case Xin_Alu32R:
+         ppX86AluOp(f, i->Xin.Alu32R.op);
          fprintf(f, "l ");
-         ppX86Operand(f, i->Xin.Alu32.src);
+         ppX86RMI(f, i->Xin.Alu32R.src);
          fprintf(f, ",");
-         ppX86Operand(f, i->Xin.Alu32.dst);
+         ppHRegX86(f, i->Xin.Alu32R.dst);
          return;
-      case Xin_Mov32:
-         fprintf(f, "movl ");
-         ppX86Operand(f, i->Xin.Mov32.src);
+      case Xin_Alu32M:
+         ppX86AluOp(f, i->Xin.Alu32M.op);
+         fprintf(f, "l ");
+         ppX86RI(f, i->Xin.Alu32M.src);
          fprintf(f, ",");
-         ppX86Operand(f, i->Xin.Mov32.dst);
+         ppX86AMode(f, i->Xin.Alu32M.dst);
          return;
-      case Xin_Alu16:
-         ppX86AluOp(f, i->Xin.Alu16.op);
-         fprintf(f, "w ");
-         ppX86Operand(f, i->Xin.Alu16.src);
-         fprintf(f, ",");
-         ppX86Operand(f, i->Xin.Alu16.dst);
+      case Xin_Sh32:
+         ppX86ShiftOp(f, i->Xin.Sh32.op);
+         fprintf(f, "l ");
+         if (i->Xin.Sh32.src == 0)
+	   fprintf(f, " %%cl,"); 
+         else 
+            fprintf(f, " $%d,", i->Xin.Sh32.src);
+         ppX86RM(f, i->Xin.Sh32.dst);
+         return;
+      case Xin_RET:
+         fprintf(f, "ret");
          return;
       default:
          panic("ppX86Instr");

@@ -90,6 +90,18 @@ static HReg newVRegI ( ISelEnv* env )
 /*--- ISEL: Integer expressions                         ---*/
 /*---------------------------------------------------------*/
 
+/* forwards ... */
+static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e );
+
+
+static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
+{
+   assert(hregClass(src) == HRcInt);
+   assert(hregClass(dst) == HRcInt);
+   return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
+}
+
+
 /* Select insns for an integer-typed expression, and add them to the
    code list.  Return a vreg holding the result.  The vreg MUST NOT BE
    MODIFIED.  If you want to modify it, ask for a new vreg, copy it in
@@ -97,7 +109,7 @@ static HReg newVRegI ( ISelEnv* env )
    best to map both vregs to the same real register, so the copies
    will often disappear later in the game.
 */
-HReg iselExprI ( ISelEnv* env, IRExpr* e )
+static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
    assert(e);
    assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
@@ -108,20 +120,18 @@ HReg iselExprI ( ISelEnv* env, IRExpr* e )
    return lookupIRTemp(env, e->Iex.Tmp.tmp);
 
    case Iex_Binop:
-      /* Add32(x,y) */
+      /* Add32(x,y).  For commutative ops we assume any literal
+         values are on the second operand. */
       if (e->Iex.Binop.op == Iop_Add32) {
-         HReg res = newVRegI(env);
-         HReg src = iselExprI(env, e->Iex.Binop.arg1);
-         HReg dst = iselExprI(env, e->Iex.Binop.arg2);
-         addInstr(env, X86Instr_Mov32(
-                          X86Operand_Reg(dst),
-                          X86Operand_Reg(res)));
-         addInstr(env, X86Instr_Alu32(
-                          Xalu_ADD, X86Operand_Reg(src),
-                                    X86Operand_Reg(res)) );
-         return res;
+         HReg dst    = newVRegI(env);
+         HReg reg    = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_MOV_RR(reg,dst));
+         addInstr(env, X86Instr_Alu32R(Xalu_ADD, rmi, dst));
+         return dst;
       }
 
+#if 0
    /* 32-bit literals */
    case Iex_Const: {
       switch (e->Iex.Const.con->tag) {
@@ -135,6 +145,7 @@ HReg iselExprI ( ISelEnv* env, IRExpr* e )
          default: break;
       }
    }
+#endif
 
    default: 
    break;
@@ -146,11 +157,15 @@ HReg iselExprI ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* Similarly, return an AMode which computes the value of the
-   specified expression, possibly also adding insns to the code list
-   as a result.  
+/*---------------------------------------------------------*/
+/*--- ISEL: Integer expression auxiliaries              ---*/
+/*---------------------------------------------------------*/
+
+/* Return an AMode which computes the value of the specified
+   expression, possibly also adding insns to the code list as a
+   result.  
 */
-X86AMode* iselAMode ( ISelEnv* env, IRExpr* e )
+static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 {
    assert(e);
    assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
@@ -164,8 +179,8 @@ X86AMode* iselAMode ( ISelEnv* env, IRExpr* e )
        && e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
       UInt shift = e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
       if (shift == 2 || shift == 4 || shift == 8) {
-         HReg r1 = iselExprI(env, e->Iex.Binop.arg1);
-         HReg r2 = iselExprI(env, e->Iex.Binop.arg2->Iex.Binop.arg1 );
+         HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r2 = iselIntExpr_R(env, e->Iex.Binop.arg2->Iex.Binop.arg1 );
          return X86AMode_IRRS(0, r1, r2, shift);
       }
    }
@@ -175,15 +190,59 @@ X86AMode* iselAMode ( ISelEnv* env, IRExpr* e )
        && e->Iex.Binop.op == Iop_Add32
        && e->Iex.Binop.arg2->tag == Iex_Const
        && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
-      HReg r1 = iselExprI(env,  e->Iex.Binop.arg1);
+      HReg r1 = iselIntExpr_R(env,  e->Iex.Binop.arg1);
       return X86AMode_IR(r1, e->Iex.Binop.arg2->Iex.Const.con->Ico.U32);
    }
 
    /* Doesn't match anything in particular.  Generate it into
       a register and use that. */
    {
-      HReg r1 = iselExprI(env, e);
+      HReg r1 = iselIntExpr_R(env, e);
       return X86AMode_IR(r1, 0);
+   }
+}
+
+
+/* Similarly, calculate an expression into an X86RMI operand. */
+
+static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
+{
+   assert(e);
+   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+
+   /* special case: immediate */
+   if (e->tag == Iex_Const 
+       && e->Iex.Const.con->tag == Ico_U32) {
+      return X86RMI_Imm(e->Iex.Const.con->Ico.U32);
+   }
+
+   /* special case: load from memory */
+
+   /* default case: calculate into a register and return that */
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return X86RMI_Reg(r);
+   }
+}
+
+
+/* Calculate an expression into an X86RI operand. */
+
+static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
+{
+   assert(e);
+   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+
+   /* special case: immediate */
+   if (e->tag == Iex_Const 
+       && e->Iex.Const.con->tag == Ico_U32) {
+      return X86RI_Imm(e->Iex.Const.con->Ico.U32);
+   }
+
+   /* default case: calculate into a register and return that */
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return X86RI_Reg(r);
    }
 }
 
@@ -194,17 +253,24 @@ X86AMode* iselAMode ( ISelEnv* env, IRExpr* e )
 
 void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
+   fprintf(stdout, "-- ");
+   ppIRStmt(stdout, stmt);
+   fprintf(stdout, "\n");
+
    switch (stmt->tag) {
 
    case Ist_Put:
      if (stmt->Ist.Put.size == 4) {
-       HReg ebp = mkHReg(5, HRcInt, False);
-       HReg reg = iselExprI(env, stmt->Ist.Put.expr);
+       /* We're going to write to memory, so compute the
+	  RHS into an X86RI. */
+       HReg   ebp = mkHReg(5, HRcInt, False);
+       X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.expr);
        addInstr(env,
-		X86Instr_ST32(reg,
-			      X86AMode_IR(stmt->Ist.Put.offset,
-					  ebp)
-			      ));
+		X86Instr_Alu32M(
+                   Xalu_MOV,
+                   ri,
+		   X86AMode_IR(stmt->Ist.Put.offset,ebp)
+	       ));
        return;
      }
 
@@ -221,8 +287,22 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
 void iselNext ( ISelEnv* env, IRNext* next )
 {
+   fprintf(stdout, "-- ");
+   ppIRNext(stdout, next);
+   fprintf(stdout, "\n");
+
    switch (next->tag) {
-   default: 
+   case Inx_UJump: {
+      HReg eax = mkHReg(0, HRcInt, False);
+      assert(next->Inx.UJump.dst->tag == Ico_U32);
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV, 
+                       X86RMI_Imm(next->Inx.UJump.dst->Ico.U32),
+                       eax));
+      addInstr(env, X86Instr_RET());
+      return;
+   }
+   default:
       ppIRNext(stderr, next);
       panic("iselNext");
    }
@@ -267,6 +347,7 @@ void /* not really, but for the time being ... */
       }
       env->vregmap[i].vreg = hreg;
    }
+   env->ctr = 100;  //env->n_vregmap;
 
    /* Ok, finally we can iterate over the statements. */
    for (stmt = bb->stmts; stmt; stmt=stmt->link)

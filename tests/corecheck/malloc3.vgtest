@@ -1,2 +1,0 @@
-prog: malloc3
-stdout_filter: ../filter_addresses

@@ -1,6 +1,0 @@
-
-Warning: silly arg (-1) to malloc()
-Warning: silly args (0,-1) to calloc()
-Warning: silly args (-1,-1) to calloc()
-
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

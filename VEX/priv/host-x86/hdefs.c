@@ -1006,6 +1006,16 @@ static UInt iregNo ( HReg r )
    return n;
 }
 
+static UInt fregNo ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcFloat);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 3);
+   return n;
+}
+
 static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
 {
    return ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7);
@@ -1213,6 +1223,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                p = doAMode_R(p, i->Xin.Alu32R.dst,
                                 i->Xin.Alu32R.src->Xrmi.Reg.reg);
                goto done;
+            case Xrmi_Mem:
+               *p++ = 0x0F;
+               *p++ = 0xAF;
+               p = doAMode_M(p, i->Xin.Alu32R.dst,
+                                i->Xin.Alu32R.src->Xrmi.Mem.am);
+               goto done;
             case Xrmi_Imm:
                if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
                   *p++ = 0x6B;
@@ -1389,7 +1405,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             case Xrm_Mem:
                p = doAMode_M(p, fake(subopc),
                                 i->Xin.MulL.src->Xrm.Mem.am);
-               goto bad;
+               goto done;
             case Xrm_Reg:
                p = doAMode_R(p, fake(subopc), 
                                 i->Xin.MulL.src->Xrm.Reg.reg);
@@ -1408,7 +1424,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             case Xrm_Mem:
                p = doAMode_M(p, fake(subopc),
                                 i->Xin.Div.src->Xrm.Mem.am);
-               goto bad;
+               goto done;
             case Xrm_Reg:
                p = doAMode_R(p, fake(subopc), 
                                 i->Xin.Div.src->Xrm.Reg.reg);
@@ -1710,7 +1726,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
         *p++ = 0xDF; *p++ = 0x6C; *p++ = 0x24; *p++ = 0x00; 
         /* addl $8, %esp */
         *p++ = 0x83; *p++ = 0xC4; *p++ = 0x08; 
-        p = do_fstp_st(p, 1+iregNo(i->Xin.FpI64.freg));
+        p = do_fstp_st(p, 1+fregNo(i->Xin.FpI64.freg));
         goto done;
      }
 

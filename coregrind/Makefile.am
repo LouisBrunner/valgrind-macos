@@ -4,7 +4,7 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 SUBDIRS = $(VG_ARCH) $(VG_PLATFORM) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
-		-DKICKSTART_BASE=$(KICKSTART_BASE) \
+		-DKICKSTART_BASE=@KICKSTART_BASE@ \
 		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32
@@ -47,12 +47,6 @@ valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
-# Where stage2 will be put.
-# Nb: Hard-wiring this sucks.  A configure-time test would be better.  A
-#     load-time test would be even better, but would require building stage2 in
-#     a position-independent way...
-KICKSTART_BASE=0xb0000000
-
 stage2_SOURCES = \
 	ume.c \
 	\
@@ -86,7 +80,7 @@ stage2_SOURCES = \
 	vg_transtab.c
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -g \
-	-Wl,-defsym,kickstart_base=$(KICKSTART_BASE) \
+	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ \
 	-Wl,-T,${VG_ARCH}/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 
 stage2_LDADD= \

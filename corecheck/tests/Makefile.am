@@ -20,13 +20,13 @@ EXTRA_DIST = \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	sigkill.stderr.exp sigkill.vgtest
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	erringfds sigkill \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_mutexspeed pth_once
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 # C ones
 erringfds_SOURCES 	= erringfds.c

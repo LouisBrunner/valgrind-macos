@@ -1,16 +1,16 @@
 noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = filter_stderr \
+EXTRA_DIST = $(noinst_SCRIPTS) \
 	dlclose.vgtest dlclose.stderr.exp \
 	dlclose.stdout.exp \
 	fpu-28-108.vgtest fpu-28-108.stderr.exp
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	dlclose fpu-28-108 myprint.so
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-CXXFLAGS = $(CFLAGS)
-CCASFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CXXFLAGS = $(AM_CFLAGS)
+AM_CCASFLAGS = $(AM_CFLAGS)
 
 # C ones
 dlclose_SOURCES		= dlclose.c

@@ -1,7 +1,7 @@
 
 SUBDIRS = demangle . docs
 
-CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
 
@@ -9,7 +9,7 @@ valdir = $(libdir)/valgrind
 
 INCLUDES = -I$(srcdir)/demangle -I$(top_srcdir)/include
 
-CCASFLAGS = $(INCLUDES)
+AM_CCASFLAGS = $(INCLUDES)
 
 bin_SCRIPTS = valgrind
 

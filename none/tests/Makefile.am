@@ -44,7 +44,7 @@ EXTRA_DIST = \
 	shorts.stderr.exp shorts.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest discard floored fork fpu_lazy_eflags \
 	fucomip munmap_exe rcl_assert \
@@ -52,8 +52,8 @@ noinst_PROGRAMS = \
 	pth_blockedsig \
 	coolo_sigaction gxx304
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 args_SOURCES 		= args.c

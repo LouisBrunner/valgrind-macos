@@ -57,7 +57,7 @@ EXTRA_DIST = \
 	tronical.stderr.exp tronical.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check clientperm \
 	doublefree errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
@@ -66,8 +66,8 @@ noinst_PROGRAMS = \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
+AM_CXXFLAGS = $(AM_CFLAGS)
 INCLUDES = -I$(top_srcdir)/include
 
 # C ones

@@ -10,11 +10,11 @@ noinst_SCRIPTS = \
 	filter_stderr_basic \
 	filter_test_paths
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	true
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 true_SOURCES 	= true.c

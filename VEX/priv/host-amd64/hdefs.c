@@ -779,14 +779,14 @@ AMD64Instr* AMD64Instr_Set64 ( AMD64CondCode cond, HReg dst ) {
    i->Ain.Set64.dst  = dst;
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
-//..    AMD64Instr* i          = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag               = Xin_Bsfr32;
-//..    i->Xin.Bsfr32.isFwds = isFwds;
-//..    i->Xin.Bsfr32.src    = src;
-//..    i->Xin.Bsfr32.dst    = dst;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Bsfr64 ( Bool isFwds, HReg src, HReg dst ) {
+   AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag               = Ain_Bsfr64;
+   i->Ain.Bsfr64.isFwds = isFwds;
+   i->Ain.Bsfr64.src    = src;
+   i->Ain.Bsfr64.dst    = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_MFence ( void )
 {
    AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
@@ -1120,12 +1120,12 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf("setq%s ", showAMD64CondCode(i->Ain.Set64.cond));
          ppHRegAMD64(i->Ain.Set64.dst);
          return;
-//..       case Xin_Bsfr32:
-//..          vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
-//..          ppHRegAMD64(i->Xin.Bsfr32.src);
-//..          vex_printf(",");
-//..          ppHRegAMD64(i->Xin.Bsfr32.dst);
-//..          return;
+      case Ain_Bsfr64:
+         vex_printf("bs%cq ", i->Ain.Bsfr64.isFwds ? 'f' : 'r');
+         ppHRegAMD64(i->Ain.Bsfr64.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Bsfr64.dst);
+         return;
       case Ain_MFence:
          vex_printf("mfence" );
          return;
@@ -1433,10 +1433,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
       case Ain_Set64:
          addHRegUse(u, HRmWrite, i->Ain.Set64.dst);
          return;
-//..       case Xin_Bsfr32:
-//..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
-//..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
-//..          return;
+      case Ain_Bsfr64:
+         addHRegUse(u, HRmRead, i->Ain.Bsfr64.src);
+         addHRegUse(u, HRmWrite, i->Ain.Bsfr64.dst);
+         return;
       case Ain_MFence:
          return;
 //..       case Xin_FpUnary:
@@ -1631,10 +1631,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
       case Ain_Set64:
          mapReg(m, &i->Ain.Set64.dst);
          return;
-//..       case Xin_Bsfr32:
-//..          mapReg(m, &i->Xin.Bsfr32.src);
-//..          mapReg(m, &i->Xin.Bsfr32.dst);
-//..          return;
+      case Ain_Bsfr64:
+         mapReg(m, &i->Ain.Bsfr64.src);
+         mapReg(m, &i->Ain.Bsfr64.dst);
+         return;
       case Ain_MFence:
          return;
 //..       case Xin_FpUnary:
@@ -2695,15 +2695,16 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       *p++ = toUChar(0xC0 + (reg & 7));
       goto done;
 
-//..    case Xin_Bsfr32:
-//..       *p++ = 0x0F;
-//..       if (i->Xin.Bsfr32.isFwds) {
-//..          *p++ = 0xBC;
-//..       } else {
-//..          *p++ = 0xBD;
-//..       }
-//..       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
-//..       goto done;
+   case Ain_Bsfr64:
+      *p++ = rexAMode_R(i->Ain.Bsfr64.dst, i->Ain.Bsfr64.src);
+      *p++ = 0x0F;
+      if (i->Ain.Bsfr64.isFwds) {
+         *p++ = 0xBC;
+      } else {
+         *p++ = 0xBD;
+      }
+      p = doAMode_R(p, i->Ain.Bsfr64.dst, i->Ain.Bsfr64.src);
+      goto done;
 
    case Ain_MFence:
       /* mfence */

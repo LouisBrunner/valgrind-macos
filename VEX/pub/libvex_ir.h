@@ -223,10 +223,10 @@ typedef
       Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
 
       /* Wierdo integer stuff */
-      Iop_Clz32,   /* count leading zeroes */
-      Iop_Ctz32,   /* count trailing zeros */
-      /* Ctz32/Clz32 are UNDEFINED when given arguments of zero.
-         You must ensure they are never given a zero argument. 
+      Iop_Clz64, Iop_Clz32,   /* count leading zeroes */
+      Iop_Ctz64, Iop_Ctz32,   /* count trailing zeros */
+      /* Ctz64/Ctz32/Clz64/Clz32 are UNDEFINED when given arguments of
+         zero.  You must ensure they are never given a zero argument.
       */
 
       /* Ordering not important after here. */

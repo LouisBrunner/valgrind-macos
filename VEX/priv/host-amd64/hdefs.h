@@ -370,7 +370,7 @@ typedef
       Ain_LoadEX,    /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,     /* store 32/16/8 bit value in memory */
       Ain_Set64,     /* convert condition code to 32-bit value */
-//..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
+      Ain_Bsfr64,    /* 64-bit bsf/bsr */
       Ain_MFence,    /* mem fence */
 //.. 
 //..       Xin_FpUnary,   /* FP fake unary op */
@@ -503,12 +503,12 @@ typedef
             AMD64CondCode cond;
             HReg          dst;
          } Set64;
-//..          /* 32-bit bsf or bsr. */
-//..          struct {
-//..             Bool isFwds;
-//..             HReg src;
-//..             HReg dst;
-//..          } Bsfr32;
+         /* 64-bit bsf or bsr. */
+         struct {
+            Bool isFwds;
+            HReg src;
+            HReg dst;
+         } Bsfr64;
          /* Mem fence.  In short, an insn which flushes all preceding
             loads and stores as much as possible before continuing.
             On AMD64 we emit a real "mfence". */
@@ -670,7 +670,7 @@ extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
                                           AMD64AMode* src, HReg dst );
 extern AMD64Instr* AMD64Instr_Store     ( UChar sz, HReg src, AMD64AMode* dst );
 extern AMD64Instr* AMD64Instr_Set64     ( AMD64CondCode cond, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_Bsfr64    ( Bool isFwds, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_MFence    ( void );
 //.. 
 //.. extern AMD64Instr* AMD64Instr_FpUnary   ( AMD64FpOp op, HReg src, HReg dst );

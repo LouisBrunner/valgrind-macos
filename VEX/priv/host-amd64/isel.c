@@ -1276,12 +1276,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 //..          case Iop_1Uto32:
-//..          case Iop_1Uto8: {
-//..             HReg dst         = newVRegI(env);
-//..             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Set32(cond,dst));
-//..             return dst;
-//..          }
+         case Iop_1Uto8: {
+            HReg dst           = newVRegI(env);
+            AMD64CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, AMD64Instr_Set64(cond,dst));
+            return dst;
+         }
 //..          case Iop_1Sto8:
 //..          case Iop_1Sto16:
 //..          case Iop_1Sto32: {
@@ -1293,13 +1293,13 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(dst)));
 //..             return dst;
 //..          }
-//..          case Iop_Ctz32: {
-//..             /* Count trailing zeroes, implemented by x86 'bsfl' */
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Bsfr32(True,src,dst));
-//..             return dst;
-//..          }
+         case Iop_Ctz64: {
+            /* Count trailing zeroes, implemented by amd64 'bsfq' */
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, AMD64Instr_Bsfr64(True,src,dst));
+            return dst;
+         }
 //..          case Iop_Clz32: {
 //..             /* Count leading zeroes.  Do 'bsrl' to establish the index
 //..                of the highest set bit, and subtract that value from

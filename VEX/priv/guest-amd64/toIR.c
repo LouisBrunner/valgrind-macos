@@ -771,7 +771,8 @@ static IRType szToITy ( Int n )
       case 2: return Ity_I16;
       case 4: return Ity_I32;
       case 8: return Ity_I64;
-      default: vpanic("szToITy(amd64)");
+      default: vex_printf("\nszToITy(%d)\n", n);
+               vpanic("szToITy(amd64)");
    }
 }
 
@@ -6696,112 +6697,123 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..  
 //..    return delta;
 //.. }
-//.. 
-//.. 
-//.. 
-//.. /* Handle BSF/BSR.  Only v-size seems necessary. */
-//.. static
-//.. UInt dis_bs_E_G ( UChar sorb, Int sz, ULong delta, Bool fwds )
-//.. {
-//..    Bool   isReg;
-//..    UChar  modrm;
-//..    HChar  dis_buf[50];
-//..    
-//..    IRType ty  = szToITy(sz);
-//..    IRTemp src = newTemp(ty);
-//..    IRTemp dst = newTemp(ty);
-//.. 
-//..    IRTemp src32 = newTemp(Ity_I32);
-//..    IRTemp dst32 = newTemp(Ity_I32);
-//..    IRTemp src8  = newTemp(Ity_I8);
-//.. 
-//..    vassert(sz == 4 || sz == 2);
-//.. 
-//..    modrm = getUChar(delta);
-//.. 
-//..    isReg = epartIsReg(modrm);
-//..    if (isReg) {
-//..       delta++;
-//..       assign( src, getIReg(sz, eregOfRM(modrm)) );
-//..    } else {
-//..       Int    len;
-//..       IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..       delta += len;
-//..       assign( src, loadLE(ty, mkexpr(addr)) );
-//..    }
-//.. 
-//..    DIP("bs%c%c %s, %s\n",
-//..        fwds ? 'f' : 'r', nameISize(sz), 
-//..        ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
-//..        nameIReg(sz, gregOfRM(modrm)));
-//.. 
-//..    /* Generate an 8-bit expression which is zero iff the 
-//..       original is zero, and nonzero otherwise */
-//..    assign( src8,
-//..            unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_CmpNE8),
-//..                            mkexpr(src), mkU(ty,0))) );
-//.. 
-//..    /* Flags: Z is 1 iff source value is zero.  All others 
-//..       are undefined -- we force them to zero. */
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..    stmt( IRStmt_Put( 
-//..             OFFB_CC_DEP1,
-//..             IRExpr_Mux0X( mkexpr(src8),
-//..                           /* src==0 */
-//..                           mkU32(X86G_CC_MASK_Z),
-//..                           /* src!=0 */
-//..                           mkU32(0)
-//..                         )
-//..        ));
-//.. 
-//..    /* Result: iff source value is zero, we can't use
-//..       Iop_Clz32/Iop_Ctz32 as they have no defined result in that case.
-//..       But anyway, Intel x86 semantics say the result is undefined in
-//..       such situations.  Hence handle the zero case specially. */
-//.. 
-//..    /* Bleh.  What we compute:
-//.. 
-//..           bsf32:  if src == 0 then 0 else  Ctz32(src)
-//..           bsr32:  if src == 0 then 0 else  31 - Clz32(src)
-//.. 
-//..           bsf16:  if src == 0 then 0 else  Ctz32(16Uto32(src))
-//..           bsr16:  if src == 0 then 0 else  31 - Clz32(16Uto32(src))
-//.. 
-//..       First, widen src to 32 bits if it is not already.
-//.. 
-//..       Postscript 15 Oct 04: it seems that at least VIA Nehemiah leaves the
-//..       dst register unchanged when src == 0.  Hence change accordingly.
-//..    */
-//..    if (sz == 2)
-//..       assign( src32, unop(Iop_16Uto32, mkexpr(src)) );
-//..    else
-//..       assign( src32, mkexpr(src) );
-//.. 
-//..    /* The main computation, guarding against zero. */
-//..    assign( dst32,   
-//..            IRExpr_Mux0X( 
-//..               mkexpr(src8),
-//..               /* src == 0 -- leave dst unchanged */
-//..               widenUto32( getIReg( sz, gregOfRM(modrm) ) ),
-//..               /* src != 0 */
-//..               fwds ? unop(Iop_Ctz32, mkexpr(src32))
-//..                    : binop(Iop_Sub32, 
-//..                            mkU32(31), 
-//..                            unop(Iop_Clz32, mkexpr(src32)))
-//..            )
-//..          );
-//.. 
-//..    if (sz == 2)
-//..       assign( dst, unop(Iop_32to16, mkexpr(dst32)) );
-//..    else
-//..       assign( dst, mkexpr(dst32) );
-//.. 
-//..    /* dump result back */
-//..    putIReg( sz, gregOfRM(modrm), mkexpr(dst) );
-//.. 
-//..    return delta;
-//.. }
+
+
+
+/* Handle BSF/BSR.  Only v-size seems necessary. */
+static
+ULong dis_bs_E_G ( Prefix pfx, Int sz, ULong delta, Bool fwds )
+{
+   Bool   isReg;
+   UChar  modrm;
+   HChar  dis_buf[50];
+
+   IRType ty    = szToITy(sz);
+   IRTemp src   = newTemp(ty);
+   IRTemp dst   = newTemp(ty);
+   IRTemp src64 = newTemp(Ity_I64);
+   IRTemp dst64 = newTemp(Ity_I64);
+   IRTemp src8  = newTemp(Ity_I8);
+
+   vassert(sz == 8 || sz == 4 || sz == 2);
+
+   modrm = getUChar(delta);
+   isReg = epartIsReg(modrm);
+   if (isReg) {
+      delta++;
+      assign( src, getIRegE(sz, pfx, modrm) );
+   } else {
+      Int    len;
+      IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+      delta += len;
+      assign( src, loadLE(ty, mkexpr(addr)) );
+   }
+
+   DIP("bs%c%c %s, %s\n",
+       fwds ? 'f' : 'r', nameISize(sz), 
+       ( isReg ? nameIRegE(sz, pfx, modrm) : dis_buf ), 
+       nameIRegG(sz, pfx, modrm));
+
+   /* First, widen src to 64 bits if it is not already. */
+   assign( src64, widenUto64(mkexpr(src)) );
+
+   /* Generate an 8-bit expression which is zero iff the 
+      original is zero, and nonzero otherwise */
+   assign( src8,
+           unop(Iop_1Uto8, 
+                binop(Iop_CmpNE64,
+                      mkexpr(src64), mkU64(0))) );
+
+   /* Flags: Z is 1 iff source value is zero.  All others 
+      are undefined -- we force them to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_DEP1,
+            IRExpr_Mux0X( mkexpr(src8),
+                          /* src==0 */
+                          mkU64(AMD64G_CC_MASK_Z),
+                          /* src!=0 */
+                          mkU64(0)
+                        )
+       ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+
+   /* Result: iff source value is zero, we can't use
+      Iop_Clz64/Iop_Ctz64 as they have no defined result in that case.
+      But anyway, amd64 semantics say the result is undefined in
+      such situations.  Hence handle the zero case specially. */
+
+   /* Bleh.  What we compute:
+
+          bsf64:  if src == 0 then {dst is unchanged} 
+                              else Ctz64(src)
+
+          bsr64:  if src == 0 then {dst is unchanged} 
+                              else 63 - Clz64(src)
+
+          bsf32:  if src == 0 then {dst is unchanged} 
+                              else Ctz64(32Uto64(src))
+
+          bsr32:  if src == 0 then {dst is unchanged}
+                              else 63 - Clz64(32Uto64(src))
+
+          bsf16:  if src == 0 then {dst is unchanged} 
+                              else Ctz64(32Uto64(16Uto32(src)))
+
+          bsr16:  if src == 0 then {dst is unchanged} 
+                              else 63 - Clz64(32Uto64(16Uto32(src)))
+   */
+
+   /* The main computation, guarding against zero. */
+   assign( dst64,
+           IRExpr_Mux0X( 
+              mkexpr(src8),
+              /* src == 0 -- leave dst unchanged */
+              widenUto64( getIRegG( sz, pfx, modrm ) ),
+              /* src != 0 */
+              fwds ? unop(Iop_Ctz64, mkexpr(src64))
+                   : binop(Iop_Sub64, 
+                           mkU64(63), 
+                           unop(Iop_Clz64, mkexpr(src64)))
+           )
+         );
+
+   if (sz == 2)
+      assign( dst, unop(Iop_32to16, unop(Iop_64to32, mkexpr(dst64))) );
+   else
+   if (sz == 4)
+      assign( dst, unop(Iop_64to32, mkexpr(dst64)) );
+   else
+      assign( dst, mkexpr(dst64) );
+
+   /* dump result back */
+   putIRegG( sz, pfx, modrm, mkexpr(dst) );
+
+   return delta;
+}
 
 
 /* swap rAX with the reg specified by reg and REX.B */
@@ -8975,19 +8987,20 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                                          "rsqrtss", Iop_RSqrt32F0x4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 0F AE /7 = SFENCE -- flush pending operations to memory */
-//..    if (insn[0] == 0x0F && insn[1] == 0xAE
-//..        && epartIsReg(insn[2]) && gregOfRM(insn[2]) == 7) {
-//..       vassert(sz == 4);
-//..       delta += 3;
-//..       /* Insert a memory fence.  It's sometimes important that these
-//..          are carried through to the generated code. */
-//..       stmt( IRStmt_MFence() );
-//..       DIP("sfence\n");
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 0F AE /7 = SFENCE -- flush pending operations to memory */
+   if (haveNo66noF2noF3(pfx) 
+       && insn[0] == 0x0F && insn[1] == 0xAE
+       && epartIsReg(insn[2]) && gregLO3ofRM(insn[2]) == 7
+       && sz == 4) {
+      delta += 3;
+      /* Insert a memory fence.  It's sometimes important that these
+         are carried through to the generated code. */
+      stmt( IRStmt_MFence() );
+      DIP("sfence\n");
+      goto decode_success;
+   }
+
 //..    /* 0F C6 /r ib = SHUFPS -- shuffle packed F32s */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC6) {
 //..       Int    select;
@@ -10124,21 +10137,22 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       /* else fall through */
 //..    }
-//.. 
-//..    /* 0F C3 = MOVNTI -- for us, just a plain ireg store. */
-//..    if (insn[0] == 0x0F && insn[1] == 0xC3) {
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta+2);
-//..       if (!epartIsReg(modrm)) {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          storeLE( mkexpr(addr), getIReg(4, gregOfRM(modrm)) );
-//..          DIP("movnti %s,%s\n", dis_buf,
-//..                                nameIReg(4, gregOfRM(modrm)));
-//..          delta += 2+alen;
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
+
+   /* 0F C3 = MOVNTI -- for us, just a plain ireg store. */
+   if (haveNo66noF2noF3(pfx) &&
+       insn[0] == 0x0F && insn[1] == 0xC3) {
+      vassert(sz == 4 || sz == 8);
+      modrm = getUChar(delta+2);
+      if (!epartIsReg(modrm)) {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         storeLE( mkexpr(addr), getIRegG(sz, pfx, modrm) );
+         DIP("movnti %s,%s\n", dis_buf,
+                               nameIRegG(sz, pfx, modrm));
+         delta += 2+alen;
+         goto decode_success;
+      }
+      /* else fall through */
+   }
 
    /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
       or lo half xmm).  */
@@ -12843,11 +12857,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          break;
       }
 
-//..       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
-//.. 
-//..       case 0xBC: /* BSF Gv,Ev */
-//..          delta = dis_bs_E_G ( sorb, sz, delta, True );
-//..          break;
+      /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
+
+      case 0xBC: /* BSF Gv,Ev */
+         if (haveF2orF3(pfx)) goto decode_failure;
+         delta = dis_bs_E_G ( pfx, sz, delta, True );
+         break;
 //..       case 0xBD: /* BSR Gv,Ev */
 //..          delta = dis_bs_E_G ( sorb, sz, delta, False );
 //..          break;

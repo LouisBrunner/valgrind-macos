@@ -11,6 +11,7 @@
    is Iop_Neg* used?
    xadd %reg,%reg fix
    MOVAPS fix (vg_to_ucode rev 1.143)
+   check flag settings for cmpxchg
 */
 
 /* Translates x86 code to IR. */
@@ -2803,7 +2804,6 @@ void dis_string_op_increment(Int sz, Int t_inc)
    }
 }
 
-#if 0
 static
 void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
                     Int sz, Char* name, UChar sorb )
@@ -2814,7 +2814,6 @@ void dis_string_op( void (*dis_OP)( Int, IRTemp ),
    dis_OP( sz, t_inc );
    DIP("%s%c\n", name, nameISize(sz));
 }
-#endif
 
 static 
 void dis_MOVS ( Int sz, IRTemp t_inc )
@@ -4031,64 +4030,58 @@ void codegen_xchg_eAX_Reg ( Int sz, Int reg )
 //--    uInstr2(cb, PUT,   4,  TempReg, t,   ArchReg, R_EAX);
 //-- }
 //-- 
-//-- 
-//-- static
-//-- Addr dis_cmpxchg_G_E ( UCodeBlock* cb, 
-//--                        UChar       sorb,
-//--                        Int         size, 
-//--                        Addr        eip0 )
-//-- {
-//--    Int   ta, junk, dest, src, acc;
-//--    UChar dis_buf[50];
-//--    UChar rm;
-//-- 
-//--    rm   = getUChar(eip0);
-//--    acc  = newTemp(cb);
-//--    src  = newTemp(cb);
-//--    dest = newTemp(cb);
-//--    junk = newTemp(cb);
-//--    /* Only needed to get gcc's dataflow analyser off my back. */
-//--    ta   = INVALID_TEMPREG;
-//-- 
-//--    if (epartIsReg(rm)) {
-//--      uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, dest);
-//--      eip0++;
-//--      DIP("cmpxchg%c %s,%s\n", nameISize(size),
-//--                               nameIReg(size,gregOfRM(rm)),
-//--                               nameIReg(size,eregOfRM(rm)) );
-//--    } else {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       ta        = LOW24(pair);
-//--       uInstr2(cb, LOAD, size, TempReg, ta, TempReg, dest);
-//--       eip0 += HI8(pair);
-//--       DIP("cmpxchg%c %s,%s\n", nameISize(size), 
-//--                                nameIReg(size,gregOfRM(rm)), dis_buf);
-//--    }
-//-- 
-//--    uInstr2(cb, GET, size, ArchReg, gregOfRM(rm), TempReg, src);
-//--    uInstr2(cb, GET, size, ArchReg, R_EAX,        TempReg, acc);
-//--    uInstr2(cb, MOV, 4,    TempReg, acc,          TempReg, junk);
-//--    uInstr2(cb, SUB, size, TempReg, dest,         TempReg, junk);
-//--    setFlagsFromUOpcode(cb, SUB);
-//-- 
-//--    uInstr2(cb, CMOV, 4, TempReg, src,  TempReg, dest);
-//--    uCond(cb, CondZ);
-//--    uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//--    uInstr2(cb, CMOV, 4, TempReg, dest, TempReg, acc);
-//--    uCond(cb, CondNZ);
-//--    uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//-- 
-//--    uInstr2(cb, PUT, size, TempReg, acc, ArchReg, R_EAX);
-//--    if (epartIsReg(rm)) {
-//--      uInstr2(cb, PUT,   size, TempReg, dest, ArchReg, eregOfRM(rm));
-//--    } else {
-//--      uInstr2(cb, STORE, size, TempReg, dest, TempReg, ta);
-//--    }
-//-- 
-//--    return eip0;
-//-- }
-//-- 
-//-- 
+
+static
+UInt dis_cmpxchg_G_E ( UChar       sorb,
+                       Int         size, 
+                       UInt        delta0 )
+{
+   UChar dis_buf[50];
+   Int   len;
+
+   IRType ty    = szToITy(size);
+   IRTemp acc   = newTemp(ty);
+   IRTemp src   = newTemp(ty);
+   IRTemp dest  = newTemp(ty);
+   IRTemp dest2 = newTemp(ty);
+   IRTemp acc2  = newTemp(ty);
+   IRTemp cond8 = newTemp(Ity_I8);
+   IRTemp addr  = INVALID_IRTEMP;
+   UChar  rm    = getUChar(delta0);
+
+   if (epartIsReg(rm)) {
+      assign( dest, getIReg(size, eregOfRM(rm)) );
+      delta0++;
+      DIP("cmpxchg%c %s,%s\n", nameISize(size),
+                               nameIReg(size,gregOfRM(rm)),
+                               nameIReg(size,eregOfRM(rm)) );
+      vassert(0);
+   } else {
+      addr = disAMode ( &len, sorb, delta0, dis_buf );
+      assign( dest, loadLE(ty, mkexpr(addr)) );
+      delta0 += len;
+      DIP("cmpxchg%c %s,%s\n", nameISize(size), 
+                               nameIReg(size,gregOfRM(rm)), dis_buf);
+   }
+
+   assign( src, getIReg(size, gregOfRM(rm)) );
+   assign( acc, getIReg(size, R_EAX) );
+   setFlags_ADD_SUB(Iop_Sub8, dest, acc, ty);
+   assign( cond8, unop(Iop_1Uto8, calculate_condition(CondZ)) );
+   assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
+   assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
+   putIReg(size, R_EAX, mkexpr(acc2));
+
+   if (epartIsReg(rm)) {
+      putIReg(size, eregOfRM(rm), mkexpr(dest2));
+   } else {
+      storeLE( mkexpr(addr), mkexpr(dest2) );
+   }
+
+   return delta0;
+}
+
+
 //-- static
 //-- Addr dis_cmpxchg8b ( UCodeBlock* cb, 
 //--                      UChar       sorb,
@@ -4155,71 +4148,76 @@ void codegen_xchg_eAX_Reg ( Int sz, Int reg )
 //--    
 //--    return eip0;
 //-- }
-//-- 
-//-- 
-//-- /* Handle conditional move instructions of the form
-//--       cmovcc E(reg-or-mem), G(reg)
-//-- 
-//--    E(src) is reg-or-mem
-//--    G(dst) is reg.
-//-- 
-//--    If E is reg, -->    GET %E, tmps
-//--                        GET %G, tmpd
-//--                        CMOVcc tmps, tmpd
-//--                        PUT tmpd, %G
-//--  
-//--    If E is mem  -->    (getAddr E) -> tmpa
-//--                        LD (tmpa), tmps
-//--                        GET %G, tmpd
-//--                        CMOVcc tmps, tmpd
-//--                        PUT tmpd, %G
-//-- */
-//-- static
-//-- Addr dis_cmov_E_G ( UCodeBlock* cb, 
-//--                     UChar       sorb,
-//--                     Int         size, 
-//--                     Condcode    cond,
-//--                     Addr        eip0 )
-//-- {
-//--    UChar rm  = getUChar(eip0);
-//--    UChar dis_buf[50];
-//-- 
-//--    Int tmps = newTemp(cb);
-//--    Int tmpd = newTemp(cb);   
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       uInstr2(cb, GET,  size, ArchReg, eregOfRM(rm), TempReg, tmps);
-//--       uInstr2(cb, GET,  size, ArchReg, gregOfRM(rm), TempReg, tmpd);
-//--       uInstr2(cb, CMOV,    4, TempReg, tmps, TempReg, tmpd);
-//--       uCond(cb, cond);
-//--       uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//--       uInstr2(cb, PUT, size, TempReg, tmpd, ArchReg, gregOfRM(rm));
-//--       DIP("cmov%c%s %s,%s\n", nameISize(size), 
-//--                               VG_(name_UCondcode)(cond),
-//--                               nameIReg(size,eregOfRM(rm)),
-//--                               nameIReg(size,gregOfRM(rm)));
-//--       return 1+eip0;
-//--    }
-//-- 
-//--    /* E refers to memory */    
-//--    {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       Int  tmpa = LOW24(pair);
-//--       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmps);
-//--       uInstr2(cb, GET,  size, ArchReg, gregOfRM(rm), TempReg, tmpd);
-//--       uInstr2(cb, CMOV,    4, TempReg, tmps, TempReg, tmpd);
-//--       uCond(cb, cond);
-//--       uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//--       uInstr2(cb, PUT, size, TempReg, tmpd, ArchReg, gregOfRM(rm));
-//--       DIP("cmov%c%s %s,%s\n", nameISize(size), 
-//--                               VG_(name_UCondcode)(cond),
-//--                               dis_buf,
-//--                               nameIReg(size,gregOfRM(rm)));
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
+
+
+/* Handle conditional move instructions of the form
+      cmovcc E(reg-or-mem), G(reg)
+
+   E(src) is reg-or-mem
+   G(dst) is reg.
+
+   If E is reg, -->    GET %E, tmps
+                       GET %G, tmpd
+                       CMOVcc tmps, tmpd
+                       PUT tmpd, %G
+ 
+   If E is mem  -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmps
+                       GET %G, tmpd
+                       CMOVcc tmps, tmpd
+                       PUT tmpd, %G
+*/
+static
+UInt dis_cmov_E_G ( UChar       sorb,
+                    Int         sz, 
+                    Condcode    cond,
+                    UInt        delta0 )
+{
+   UChar rm  = getIByte(delta0);
+   UChar dis_buf[50];
+   Int   len;
+
+   IRType ty = szToITy(sz);
+   IRTemp tmps = newTemp(ty);
+   IRTemp tmpd = newTemp(ty);
+
+   if (epartIsReg(rm)) {
+      assign( tmps, getIReg(sz, eregOfRM(rm)) );
+      assign( tmpd, getIReg(sz, gregOfRM(rm)) );
+
+      putIReg(sz, gregOfRM(rm),
+                  IRExpr_Mux0X( unop(Iop_1Uto8,calculate_condition(cond)),
+                                mkexpr(tmpd),
+                                mkexpr(tmps) )
+             );
+      DIP("cmov%c%s %s,%s\n", nameISize(sz), 
+                              name_Condcode(cond),
+                              nameIReg(sz,eregOfRM(rm)),
+                              nameIReg(sz,gregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */    
+   {
+      IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
+      assign( tmps, loadLE(ty, mkexpr(addr)) );
+      assign( tmpd, getIReg(sz, gregOfRM(rm)) );
+
+      putIReg(sz, gregOfRM(rm),
+                  IRExpr_Mux0X( unop(Iop_1Uto8,calculate_condition(cond)),
+                                mkexpr(tmpd),
+                                mkexpr(tmps) )
+             );
+
+      DIP("cmov%c%s %s,%s\n", nameISize(sz), 
+                              name_Condcode(cond),
+                              dis_buf,
+                              nameIReg(sz,gregOfRM(rm)));
+      return len+delta0;
+   }
+}
+
+
 //-- static
 //-- Addr dis_xadd_G_E ( UCodeBlock* cb, 
 //--                     UChar       sorb,
@@ -5002,8 +5000,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
    /* Skip a LOCK prefix. */
    if (getIByte(delta) == 0xF0) { 
-      /* VG_(printf)("LOCK LOCK LOCK LOCK LOCK \n"); */
-      vpanic("x86 LOCK.  what to do?");
+      vex_printf("vex x86->IR: ignoring LOCK prefix\n");
       delta++;
    }
 
@@ -6639,17 +6636,23 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP("j%s-8 0x%x\n", name_Condcode(opc - 0x70), d32);
       break;
 
-//--    case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
-//--                  manual says it depends on address size override,
-//--                  which doesn't sound right to me. */
-//--       d32 = (eip+1) + getSDisp8(eip); eip++;
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET,  4,  ArchReg, R_ECX, TempReg, t1);
-//--       uInstr2(cb, JIFZ, 4,  TempReg, t1,    Literal, 0);
-//--       uLiteral(cb, d32);
-//--       DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
-//--       break;
-//-- 
+   case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
+                 manual says it depends on address size override,
+                 which doesn't sound right to me. */
+      vassert(sz==4); /* possibly also OK for sz==2 */
+      d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta);
+      delta++;
+      ty = szToITy(sz);
+      stmt( IRStmt_Exit(
+               binop(mkSizedOp(ty,Iop_CmpEQ8),
+                     getIReg(sz,R_ECX),
+                     mkU(ty,0)),
+            IRConst_U32(d32)) 
+          );
+
+      DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
+      break;
+
 //--    case 0xE0: /* LOOPNE disp8 */
 //--    case 0xE1: /* LOOPE  disp8 */
 //--    case 0xE2: /* LOOP   disp8 */
@@ -7253,14 +7256,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       dis_push_segreg( cb, R_ES, sz ); break;
 //--    case 0x16: /* PUSH %SS */
 //--       dis_push_segreg( cb, R_SS, sz ); break;
-//-- 
-//--    /* ------------------------ SCAS et al ----------------- */
-//-- 
-//--    case 0xA4: /* MOVS, no REP prefix */
-//--    case 0xA5: 
-//--       dis_string_op( cb, dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
-//--       break;
-//-- 
+
+   /* ------------------------ SCAS et al ----------------- */
+
+   case 0xA4: /* MOVS, no REP prefix */
+   case 0xA5: 
+      dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
+      break;
+
 //--    case 0xA6: /* CMPSb, no REP prefix */
 //--    case 0xA7:
 //--       dis_string_op( cb, dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
@@ -7698,36 +7701,36 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       case 0xBB: /* BTC Gv,Ev */
 //--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpComp );
 //--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
-//-- 
+
+      /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
+ 
 //--       case 0x40:
 //--       case 0x41:
-//--       case 0x42: /* CMOVBb/CMOVNAEb (cmov below) */
-//--       case 0x43: /* CMOVNBb/CMOVAEb (cmov not below) */
-//--       case 0x44: /* CMOVZb/CMOVEb (cmov zero) */
-//--       case 0x45: /* CMOVNZb/CMOVNEb (cmov not zero) */
-//--       case 0x46: /* CMOVBEb/CMOVNAb (cmov below or equal) */
-//--       case 0x47: /* CMOVNBEb/CMOVAb (cmov not below or equal) */
+      case 0x42: /* CMOVBb/CMOVNAEb (cmov below) */
+      case 0x43: /* CMOVNBb/CMOVAEb (cmov not below) */
+      case 0x44: /* CMOVZb/CMOVEb (cmov zero) */
+      case 0x45: /* CMOVNZb/CMOVNEb (cmov not zero) */
+      case 0x46: /* CMOVBEb/CMOVNAb (cmov below or equal) */
+      case 0x47: /* CMOVNBEb/CMOVAb (cmov not below or equal) */
 //--       case 0x48: /* CMOVSb (cmov negative) */
-//--       case 0x49: /* CMOVSb (cmov not negative) */
+      case 0x49: /* CMOVSb (cmov not negative) */
 //--       case 0x4A: /* CMOVP (cmov parity even) */
 //--       case 0x4B: /* CMOVNP (cmov parity odd) */
-//--       case 0x4C: /* CMOVLb/CMOVNGEb (cmov less) */
-//--       case 0x4D: /* CMOVGEb/CMOVNLb (cmov greater or equal) */
-//--       case 0x4E: /* CMOVLEb/CMOVNGb (cmov less or equal) */
-//--       case 0x4F: /* CMOVGb/CMOVNLEb (cmov greater) */
-//--          eip = dis_cmov_E_G(cb, sorb, sz, (Condcode)(opc - 0x40), eip);
-//--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xB0: /* CMPXCHG Gv,Ev */
+      case 0x4C: /* CMOVLb/CMOVNGEb (cmov less) */
+      case 0x4D: /* CMOVGEb/CMOVNLb (cmov greater or equal) */
+      case 0x4E: /* CMOVLEb/CMOVNGb (cmov less or equal) */
+      case 0x4F: /* CMOVGb/CMOVNLEb (cmov greater) */
+         delta = dis_cmov_E_G(sorb, sz, (Condcode)(opc - 0x40), delta);
+         break;
+
+      /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
+
+//--       case 0xB0: /* CMPXCHG Gb,Eb */
 //--          eip = dis_cmpxchg_G_E ( cb, sorb, 1, eip );
 //--          break;
-//--       case 0xB1: /* CMPXCHG Gv,Ev */
-//--          eip = dis_cmpxchg_G_E ( cb, sorb, sz, eip );
-//--          break;
+      case 0xB1: /* CMPXCHG Gv,Ev */
+         delta = dis_cmpxchg_G_E ( sorb, sz, delta );
+         break;
 //--       case 0xC7: /* CMPXCHG8B Gv */
 //--          eip = dis_cmpxchg8b ( cb, sorb, eip );
 //--          break;

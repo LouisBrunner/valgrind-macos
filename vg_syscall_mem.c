@@ -2140,10 +2140,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("mmap2 ( %p, %d, %d, %d, %d, %d )\n",
                         arg1, arg2, arg3, arg4, arg5, arg6 );
          KERNEL_DO_SYSCALL(tid,res);
-         /* !!! shouldn't we also be doing the symtab loading stuff as
-            in __NR_mmap ? */
          if (!VG_(is_kerror)(res))
             approximate_mmap_permissions( (Addr)res, arg2, arg3 );
+         if (!VG_(is_kerror)(res)
+             && (arg3 & PROT_EXEC)) {
+            /* The client mmap'ed a segment with executable
+               permissions.  Tell the symbol-table loader, so that it
+               has an opportunity to pick up more symbols if this mmap
+               was caused by the client loading a new .so via
+               dlopen().  This is important for debugging KDE. */
+            VG_(read_symbols)();
+         }
          }
          break;
 #     endif

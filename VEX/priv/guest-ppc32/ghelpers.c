@@ -276,7 +276,6 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR31 = 0;
 
    vex_state->guest_CIA  = 0;
-//   vex_state->guest_NIA  = 0;
    vex_state->guest_LR   = 0;
    vex_state->guest_CTR  = 0;
 

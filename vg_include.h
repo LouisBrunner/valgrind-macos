@@ -672,7 +672,9 @@ extern void VG_(restore_host_signals)
    ------------------------------------------------------------------ */
 
 
-#define NULL ((void*)0)
+#if !defined(NULL)
+#  define NULL ((void*)0)
+#endif
 
 extern void VG_(exit)( Int status )
             __attribute__ ((__noreturn__));

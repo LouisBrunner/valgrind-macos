@@ -1779,6 +1779,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                break;
 
             /* Real Time Clock (/dev/rtc) ioctls */
+#           ifndef GLIBC_2_1
             case RTC_UIE_ON:
             case RTC_UIE_OFF:
             case RTC_AIE_ON:
@@ -1808,6 +1809,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                if(!VG_(is_kerror) && res == 0)
                    make_readable(arg3, sizeof(unsigned long));
                break;
+#           endif /* GLIBC_2_1 */
 
             /* CD ROM stuff (??)  */
             case CDROMSUBCHNL:

@@ -49,6 +49,8 @@ realloc1
 realloc2
 realloc3
 scalar
+scalar_fork
+scalar_supp
 sigaltstack
 signal2
 str_tester

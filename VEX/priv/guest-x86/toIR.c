@@ -34,7 +34,7 @@
 #include "guest-x86/gdefs.h"
 
 
-#define RESTEER_THRESH 10
+#define RESTEER_THRESH 0; //10
 
 
 /*------------------------------------------------------------*/
@@ -7692,7 +7692,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
-      jmp_lit(Ijk_Syscall,((Addr32)guest_code)+delta);
+      jmp_lit(Ijk_Syscall,((Addr32)guest_eip_bbstart)+delta);
       whatNext = Dis_StopHere;
       DIP("int $0x80\n");
       break;
@@ -7700,7 +7700,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* ------------------------ Jcond, byte offset --------- */
 
    case 0xEB: /* Jb (jump, byte offset) */
-      d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
+      d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
       if (resteerOK) {
          whatNext   = Dis_Resteer;
@@ -7714,7 +7714,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    case 0xE9: /* Jv (jump, 16/32 offset) */
       vassert(sz == 4); /* JRS added 2004 July 11 */
-      d32 = (((Addr32)guest_code)+delta+sz) + getSDisp(sz,delta); 
+      d32 = (((Addr32)guest_eip_bbstart)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
       if (resteerOK) {
          whatNext   = Dis_Resteer;
@@ -7742,9 +7742,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x7D: /* JGEb/JNLb (jump greater or equal) */
    case 0x7E: /* JLEb/JNGb (jump less or equal) */
    case 0x7F: /* JGb/JNLEb (jump greater) */
-      d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
+      d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
-      jcc_01((Condcode)(opc - 0x70), (Addr32)(guest_code+delta), d32);
+      jcc_01((Condcode)(opc - 0x70), (Addr32)(guest_eip_bbstart+delta), d32);
       whatNext = Dis_StopHere;
       DIP("j%s-8 0x%x\n", name_Condcode(opc - 0x70), d32);
       break;
@@ -7753,7 +7753,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                  manual says it depends on address size override,
                  which doesn't sound right to me. */
       vassert(sz==4); /* possibly also OK for sz==2 */
-      d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta);
+      d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta);
       delta++;
       ty = szToITy(sz);
       stmt( IRStmt_Exit(
@@ -8994,9 +8994,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x8D: /* JGEb/JNLb (jump greater or equal) */
       case 0x8E: /* JLEb/JNGb (jump less or equal) */
       case 0x8F: /* JGb/JNLEb (jump greater) */
-         d32 = (((Addr32)guest_code)+delta+4) + getUDisp32(delta); 
+         d32 = (((Addr32)guest_eip_bbstart)+delta+4) + getUDisp32(delta); 
          delta += 4;
-         jcc_01((Condcode)(opc - 0x80), (Addr32)(guest_code+delta), d32);
+         jcc_01((Condcode)(opc - 0x80), (Addr32)(guest_eip_bbstart+delta), d32);
          whatNext = Dis_StopHere;
          DIP("j%s-32 0x%x\n", name_Condcode(opc - 0x80), d32);
          break;

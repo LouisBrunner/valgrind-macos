@@ -516,8 +516,8 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
             return;
          }
 
-	 VG_(threads)[tid].altstack.ss_sp   = ss->ss_sp;
-	 VG_(threads)[tid].altstack.ss_size = ss->ss_size;
+	 VG_(threads)[tid].altstack.ss_sp    = ss->ss_sp;
+	 VG_(threads)[tid].altstack.ss_size  = ss->ss_size;
 	 VG_(threads)[tid].altstack.ss_flags = 0;
       }
    }
@@ -2032,10 +2032,10 @@ void VG_(sigstartup_actions) ( void )
 
    /* Our private internal signals are treated as ignored */
    vg_scss.scss_per_sig[VKI_SIGVGINT].scss_handler = VKI_SIG_IGN;
-   vg_scss.scss_per_sig[VKI_SIGVGINT].scss_flags = VKI_SA_SIGINFO;
+   vg_scss.scss_per_sig[VKI_SIGVGINT].scss_flags   = VKI_SA_SIGINFO;
    VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGINT].scss_mask);
    vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
-   vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_flags = VKI_SA_SIGINFO;
+   vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
    VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
    /* Copy the process' signal mask into the root thread. */
@@ -2044,8 +2044,8 @@ void VG_(sigstartup_actions) ( void )
    VG_(proxy_setsigmask)(1);
 
    /* Register an alternative stack for our own signal handler to run on. */
-   altstack_info.ss_sp = &(sigstack[0]);
-   altstack_info.ss_size = sizeof(sigstack);
+   altstack_info.ss_sp    = &(sigstack[0]);
+   altstack_info.ss_size  = sizeof(sigstack);
    altstack_info.ss_flags = 0;
    ret = VG_(sigaltstack)(&altstack_info, NULL);
    if (ret != 0) {

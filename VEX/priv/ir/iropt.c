@@ -345,6 +345,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
    if (e->tag == Iex_Unop
        && e->Iex.Unop.arg->tag == Iex_Const) {
       switch (e->Iex.Unop.op) {
+         case Iop_1Uto32:
+            e2 = IRExpr_Const(IRConst_U32(
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    ? 1 : 0));
+            break;
          case Iop_8Sto32: {
             /* signed */ Int s32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
             s32 <<= 24;

@@ -33,6 +33,8 @@
 
 
 /* Implementation notes, 12 Oct 04.
+
+   TODO: check interaction of rGetI and dirty helpers. 
    
    F64i constants are treated differently from other constants.
    They are not regarded as atoms, and instead lifted off and
@@ -1038,7 +1040,6 @@ static UInt mk_key_GetIPutI ( IRArray* descr )
    mk_key_GetIPutI, invalidate any key which overlaps (k_lo
    .. k_hi). 
 */
-
 static void invalidateOverlaps ( HashHW* h, UInt k_lo, UInt k_hi )
 {
    Int  j;
@@ -1067,8 +1068,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
 {
    HashHW* env = newHHW();
    UInt    key = 0; /* keep gcc -O happy */
-   Int     i;
-   Bool    isPut;
+   Int     i, j;
    HWord   val;
 
    for (i = 0; i < bb->stmts_used; i++) {
@@ -1103,27 +1103,40 @@ static void redundant_get_removal_BB ( IRBB* bb )
          }
       }
 
-      /* Deal with Puts */
-      switch (st->tag) {
-         case Ist_Put: 
-            isPut = True;
+      /* Deal with Puts: invalidate any env entries overlapped by this
+         Put */
+      if (st->tag == Ist_Put || st->tag == Ist_PutI) {
+         UInt k_lo, k_hi;
+         if (st->tag == Ist_Put) {
             key = mk_key_GetPut( st->Ist.Put.offset, 
                                  typeOfIRExpr(bb->tyenv,st->Ist.Put.data) );
-            break;
-         case Ist_PutI:
-            isPut = True;
+         } else {
+            vassert(st->tag == Ist_PutI);
             key = mk_key_GetIPutI( st->Ist.PutI.descr );
-            break;
-         default: 
-            isPut = False;
-      }
+         }
 
-      /* invalidate any env entries overlapped by this Put */
-      if (isPut) {
-         UInt k_lo, k_hi;
          k_lo = (key >> 16) & 0xFFFF;
          k_hi = key & 0xFFFF;
          invalidateOverlaps(env, k_lo, k_hi);
+      }
+      else
+      if (st->tag == Ist_Dirty) {
+         /* Deal with dirty helpers which write or modify guest state.
+            Invalidate the entire env.  We could do a lot better
+            here. */
+         IRDirty* d      = st->Ist.Dirty.details;
+         Bool     writes = False;
+         for (j = 0; j < d->nFxState; j++) {
+            if (d->fxState[j].fx == Ifx_Modify 
+                || d->fxState[j].fx == Ifx_Write)
+            writes = True;
+         }
+         if (writes) {
+            /* dump the entire env (not clever, but correct ...) */
+            for (j = 0; j < env->used; j++)
+               env->inuse[j] = False;
+    vex_printf("rGET: trash env due to dirty helper\n");
+         }
       }
 
       /* add this one to the env, if appropriate */

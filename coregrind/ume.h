@@ -46,14 +46,6 @@ void foreach_map(int (*fn)(char *start, char *end,
 			   int maj, int min, int ino, void* extra),
                  void* extra);
 
-#if	ELFSZ == 64
-#define ESZ(x)	Elf64_##x
-#elif	ELFSZ == 32
-#define ESZ(x)	Elf32_##x
-#else
-#error ELFSZ needs to ==32 or ==64
-#endif
-
 // Jump to a new 'ip' with the stack 'sp'.
 void jmp_with_stack(Addr ip, Addr sp) __attribute__((noreturn));
 

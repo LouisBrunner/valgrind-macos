@@ -46,6 +46,14 @@
 
 #include "ume.h"
 
+#if	ELFSZ == 64
+#define ESZ(x)	Elf64_##x
+#elif	ELFSZ == 32
+#define ESZ(x)	Elf32_##x
+#else
+#error ELFSZ needs to ==32 or ==64
+#endif
+
 struct elfinfo
 {
    ESZ(Ehdr)	e;

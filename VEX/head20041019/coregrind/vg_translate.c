@@ -1659,10 +1659,14 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    redir = VG_(code_redirect)(orig_addr);
 
    if (redir != orig_addr && VG_(clo_verbosity) >= 2) {
+      Char name1[64] = "";
+      Char name2[64] = "";
+      VG_(get_fnname_if_entry)(orig_addr, name1, 64);
+      VG_(get_fnname_if_entry)(redir, name2, 64);
       VG_(message)(Vg_UserMsg, 
-                   "TRANSLATE: %p redirected to %p",
-                   orig_addr, 
-                   redir );
+                   "TRANSLATE: %p (%s) redirected to %p (%s)",
+                   orig_addr, name1,
+                   redir, name2 );
    }
    orig_addr = redir;
 

@@ -185,6 +185,8 @@ static void print_all_stats ( void )
                 "   sanity: %d cheap, %d expensive checks.",
                 sanity_fast_count, sanity_slow_count );
 
+   VG_(print_ExeContext_stats)();
+
    // Memory stats
    if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_DebugMsg, "");
@@ -194,10 +196,6 @@ static void print_all_stats ( void )
       VG_(print_all_arena_stats)();
       VG_(message)(Vg_DebugMsg, "");
       //VG_(print_shadow_stats)();
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, 
-         "------ Valgrind's ExeContext management stats follow ------" );
-      VG_(print_ExeContext_stats)();
    }
 }
 

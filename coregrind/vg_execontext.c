@@ -86,12 +86,12 @@ void VG_(print_ExeContext_stats) ( void )
 {
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
-      "exectx: %d lists, %d contexts (avg %d per list)",
+      "   exectx: %d lists, %d contexts (avg %d per list)",
       VG_N_EC_LISTS, ec_totstored, 
       ec_totstored / VG_N_EC_LISTS 
    );
    VG_(message)(Vg_DebugMsg, 
-      "exectx: %d searches, %d full compares (%d per 1000)",
+      "   exectx: %d searches, %d full compares (%d per 1000)",
       ec_searchreqs, ec_searchcmps, 
       ec_searchreqs == 0 
          ? 0 
@@ -99,7 +99,7 @@ void VG_(print_ExeContext_stats) ( void )
            / ((ULong)ec_searchreqs )) 
    );
    VG_(message)(Vg_DebugMsg, 
-      "exectx: %d cmp2, %d cmp4, %d cmpAll",
+      "   exectx: %d cmp2, %d cmp4, %d cmpAll",
       ec_cmp2s, ec_cmp4s, ec_cmpAlls 
    );
 }

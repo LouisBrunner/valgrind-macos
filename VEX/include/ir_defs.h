@@ -9,13 +9,19 @@
 #ifndef __IR_DEFS_H
 #define __IR_DEFS_H
 
-//#include "storage.h"
-#include <stdio.h>
+#include <stdio.h>       /* FILE*  */
 
 
 /*---------------------------------------------------------------*/
 /*--- Type definitions for the IR                             ---*/
 /*---------------------------------------------------------------*/
+
+/* Types */
+
+typedef 
+   enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
+   IRType;
+
 
 /* Constants */
 
@@ -24,7 +30,7 @@ typedef
    IRConstTag;
 
 typedef
-   struct {
+   struct _IRConst {
       IRConstTag tag;
       union {
          UChar  u8;
@@ -41,13 +47,6 @@ typedef
 typedef int IRTemp;
 
 
-/* Types */
-
-typedef 
-   enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
-   IRType;
-
-
 /* Binary and unary ops */
 
 typedef
@@ -60,11 +59,57 @@ typedef
           Iop_Shl32,
           Iop_Shr32,
           Iop_Sar32,
-          // Tags for unary ops
+          /* Tags for unary ops */
           Iop_Not32,
           Iop_Neg32
    }
    IROp;
+
+
+/* Expressions
+
+data Expr
+   = GET   Int Int         -- offset, size
+   | TMP   Temp            -- value of temporary
+   | BINOP Op Expr Expr    -- binary op
+   | UNOP  Op Expr         -- unary op
+   | LDle  Type Expr       -- load of the given type, Expr:: 32 or 64
+   | CONST Const           -- 8/16/32/64-bit int constant
+*/
+typedef
+   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, Iex_Const }
+   IRExprTag;
+
+typedef 
+   struct _IRExpr {
+      IRExprTag tag;
+      union {
+         struct {
+            Int offset;
+            Int size;
+         } Get;
+         struct {
+            IRTemp tmp;
+         } Tmp;
+         struct {
+            IROp op;
+            struct _IRExpr* arg1;
+            struct _IRExpr* arg2;
+         } Binop;
+         struct {
+            IROp op;
+            struct _IRExpr* arg;
+         } Unop;
+         struct {
+            IRType ty;
+            struct _IRExpr* addr;
+         } LDle;
+         struct {
+            struct _IRConst* con;
+         } Const;
+      } Iex;
+   }
+   IRExpr;
 
 
 /* Statements:
@@ -119,12 +164,12 @@ typedef
       IRNextTag tag;
       union {
          struct {
-            IRConst dst;
+            struct _IRConst* dst;
          } UJump;
          struct {
-            struct _IRExpr* cond;
-            IRConst dst0;
-            IRConst dst1;
+            struct _IRExpr*  cond;
+            struct _IRConst* dst0;
+            struct _IRConst* dst1;
          } CJump01;
          struct {
             struct _IRExpr* dst;
@@ -134,59 +179,11 @@ typedef
    IRNext;
 
 
-/* Expressions
-
-data Expr
-   = GET   Int Int         -- offset, size
-   | TMP   Temp            -- value of temporary
-   | BINOP Op Expr Expr    -- binary op
-   | UNOP  Op Expr         -- unary op
-   | LDle  Type Expr       -- load of the given type, Expr:: 32 or 64
-   | CONST Const           -- 8/16/32/64-bit int constant
-*/
-typedef
-   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, Iex_Const }
-   IRExprTag;
-
-typedef 
-   struct _IRExpr {
-      IRExprTag tag;
-      union {
-         struct {
-            Int offset;
-            Int size;
-         } Get;
-         struct {
-            IRTemp tmp;
-         } Tmp;
-         struct {
-            IROp op;
-            struct _IRExpr* arg1;
-            struct _IRExpr* arg2;
-         } Binop;
-         struct {
-            IROp op;
-            struct _IrExpr* arg;
-         } Unop;
-         struct {
-            IRType ty;
-            struct _IRExpr* addr;
-         } LDle;
-         struct {
-            IRConst con;
-         } Const;
-      } Iex;
-   }
-   IRExpr;
-
-
 /* Basic blocks contain 3 fields:
    - An association list, giving a type for each temp
    - A list of statements
    - A Next
 */
-#define IR_BB      190    /* arity = 3 */
-
 typedef
    struct _IRBB {
       struct _IRStmt* stmts;
@@ -200,40 +197,33 @@ typedef
 /*---------------------------------------------------------------*/
 
 /* Printers ... */
-extern void ppIRBB      ( FILE* f, IRBB*      );
-extern void ppIRNext    ( FILE* f, IRNext*    );
-extern void ppIRStmt    ( FILE* f, IRStmt*    );
-extern void ppIRExpr    ( FILE* f, IRExpr*    );
-extern void ppIRTemp    ( FILE* f, IRTemp*    );
-extern void ppIRType    ( FILE* f, IRType*    );
+extern void ppIRType    ( FILE* f, IRType     );
 extern void ppIRConst   ( FILE* f, IRConst*   );
+extern void ppIRTemp    ( FILE* f, IRTemp     );
 extern void ppIROp      ( FILE* f, IROp       );
+extern void ppIRExpr    ( FILE* f, IRExpr*    );
+extern void ppIRStmt    ( FILE* f, IRStmt*    );
+extern void ppIRNext    ( FILE* f, IRNext*    );
+extern void ppIRBB      ( FILE* f, IRBB*      );
 
-/* Constructors -- IRBB */
-extern IRBB* mkBB ( IRStmt* stmts, IRNext* next );
-
-/* Constructors -- IRNext */
-extern IRNext* mkUJump ( IRConst* dst );
+/* Constructors -- IRExpr */
+extern IRExpr* mkExGet   ( Int off, Int sz );
+extern IRExpr* mkExTmp   ( IRTemp tmp );
+extern IRExpr* mkExBinop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
+extern IRExpr* mkExUnop  ( IROp op, IRExpr* arg );
+extern IRExpr* mkExLDle  ( IRType ty, IRExpr* addr );
+extern IRExpr* mkExConst ( IRConst* con );
 
 /* Constructors -- IRStmt */
 extern IRStmt* mkStPut  ( Int off, Int sz, IRExpr* value );
 extern IRStmt* mkStTmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* mkStSTle ( IRExpr* addr, IRExpr* value );
 
-/* Constructors -- IRExpr */
-extern IRExpr mkExGet   ( Int off, Int sz );
-extern IRExpr mkExTmp   ( IRTemp tmp );
-extern IRExpr mkExBinop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
-extern IRExpr mkExUnop  ( IROp op, IRExpr* arg );
-extern IRExpr mkExLDle  ( IRType ty, IRExpr* addr );
-extern IRExpr mkExConst ( IRConst* con );
+/* Constructors -- IRNext */
+extern IRNext* mkNxUJump ( IRConst* dst );
 
-/* Constructors -- IRTemp */
-extern IRTemp mkIRTemp  ( Int n );
-
-/* Constructors -- IRType */
-/* Constructors -- IRAtomI */
-/* Constructors -- IROp */
+/* Constructors -- IRBB */
+extern IRBB* mkIRBB ( IRStmt* stmts, IRNext* next );
 
 
 #endif /* ndef __IR_DEFS_H */

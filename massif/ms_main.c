@@ -1058,7 +1058,7 @@ static void hp_census(void)
          VGP_POPCC(VgpCensusTreeSize);
          census->xtree_snapshots[i] =
             VG_(calloc)(xtree_size+1, sizeof(XPtSnapshot));
-         if (VG_(clo_verbosity) > 1)
+         if (0 && VG_(clo_verbosity) > 1)
             VG_(printf)("calloc: %d (%d B)\n", xtree_size+1,
                         (xtree_size+1) * sizeof(XPtSnapshot));
 

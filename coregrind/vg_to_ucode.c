@@ -3648,6 +3648,18 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          sorb = getUChar(eip); eip++; 
          break;
       case 0x2E: /* %CS: */
+         /* 2E prefix on a conditional branch instruction is a
+            branch-prediction hint, which can safely be ignored.  */
+         {
+            UChar op1 = getUChar(eip+1);
+            UChar op2 = getUChar(eip+2);
+            if ((op1 >= 0x70 && op1 <= 0x7F)
+                || (op1 == 0xE3)
+                || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
+               sorb = getUChar(eip); eip++;
+               break;
+            }
+         }
          VG_(unimplemented)("x86 segment override (SEG=CS) prefix");
          /*NOTREACHED*/
          break;

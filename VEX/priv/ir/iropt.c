@@ -980,7 +980,8 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
                break;
             case Iex_GetI:
                isGet = True;
-               key = mk_key_GetIPutI ( e->Iex.GetI.minoff, e->Iex.GetI.maxoff );
+               key = mk_key_GetIPutI ( e->Iex.GetI.minoff, 
+                                       e->Iex.GetI.maxoff );
                break;
             default: 
                isGet = False;
@@ -1001,6 +1002,11 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
 
       case Ist_Exit:
          vassert(isAtom(st->Ist.Exit.cond));
+         return;
+
+      case Ist_PutI:
+         vassert(isAtom(st->Ist.PutI.offset));
+         vassert(isAtom(st->Ist.PutI.expr));
          return;
 
       default:
@@ -1061,12 +1067,13 @@ static void redundant_put_removal_BB ( IRBB* bb )
             isPut = True;
             key = mk_key_GetIPutI( st->Ist.PutI.minoff, 
                                    st->Ist.PutI.maxoff );
+            vassert(isAtom(st->Ist.PutI.offset));
             vassert(isAtom(st->Ist.PutI.expr));
             break;
          default: 
             isPut = False;
       }
-      if (isPut) {
+      if (isPut && st->tag != Ist_PutI) {
          /* See if any single entry in env overlaps this Put.  This is
             simplistic in that the transformation is valid if, say, two
             or more entries in the env overlap this Put, but the use of

@@ -267,6 +267,7 @@ static void get_debug_info(Addr instr_addr, Char filename[FILENAME_LEN],
       no_debug_BBs++;
       VG_(strcpy)(filename, "???");
       VG_(strcpy)(fn_name,  "???");
+      *line_num = 0;
 
    } else if ( found1 &&  found2) {
       full_debug_BBs++;
@@ -278,6 +279,7 @@ static void get_debug_info(Addr instr_addr, Char filename[FILENAME_LEN],
    } else  /*(!found1 &&  found2)*/ {
       fn_name_debug_BBs++;
       VG_(strcpy)(filename, "???");
+      *line_num = 0;
    }
 }
 

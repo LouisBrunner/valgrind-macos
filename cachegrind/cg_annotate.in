@@ -121,6 +121,8 @@ my @thresholds;
 
 my $default_threshold = 99;
 
+my $single_threshold  = $default_threshold;
+
 # If on, automatically annotates all files that are involved in getting over
 # all the threshold counts.
 my $auto_annotate = 0;
@@ -200,7 +202,7 @@ sub process_cmd_line()
 
             # --threshold=X (tolerates a trailing '%')
             } elsif ($arg =~ /^--threshold=([\d\.]+)%?$/) {
-                $thresholds[0] = $1;
+                $single_threshold = $1;
                 ($1 >= 0 && $1 <= 100) or die($usage);
 
             # --auto=yes|no
@@ -343,13 +345,14 @@ sub read_input_file()
         push(@sort_order, $events{$sort_event});
     }
 
-    # If no --threshold args give, default to 99% for the primary sort event,
-    # and 0% for the rest.
+    # If multiple threshold args weren't given via --sort, stick in the single
+    # threshold (either from --threshold if used, or the default otherwise) for
+    # the primary sort event, and 0% for the rest.
     if (not @thresholds) {
         foreach my $e (@sort_order) {
             push(@thresholds, 0);
         }
-        $thresholds[0] = $default_threshold;
+        $thresholds[0] = $single_threshold;
     }
 
     my $curr_file;

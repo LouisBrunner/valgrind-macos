@@ -1,3 +1,19 @@
+Snapshot 2003XXXX (XX XXXX 2003)
+
+- Implemented more opcodes: 
+    - push %es
+    - push %ds
+    - pop %es
+    - pop %ds
+    - movntq
+    - sfence
+    - pshufw
+    - pavgb
+    - ucomiss
+    - enter
+
+- Memcheck: Implemented handling of more SSE(2) constructs
+
 
 Snapshot 20030725 (25 July 2003)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

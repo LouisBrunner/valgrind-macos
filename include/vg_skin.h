@@ -8,7 +8,7 @@
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
 
-   Copyright (C) 2000-2003 Julian Seward 
+   Copyright (C) 2000-2003 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -42,7 +42,7 @@
 /*=== Build options and table sizes.                               ===*/
 /*====================================================================*/
 
-/* You should be able to change these options or sizes, recompile, and 
+/* You should be able to change these options or sizes, recompile, and
    still have a working system. */
 
 /* The maximum number of pthreads that we support.  This is
@@ -58,7 +58,7 @@
 
 /* Total number of integer registers available for allocation -- all of
    them except %esp, %ebp.  %ebp permanently points at VG_(baseBlock).
-   
+
    If you increase this you'll have to also change at least these:
      - VG_(rank_to_realreg)()
      - VG_(realreg_to_rank)()
@@ -68,7 +68,7 @@
 
    You can decrease it, and performance will drop because more spills will
    occur.  If you decrease it too much, everything will fall over.
-   
+
    Do not change this unless you really know what you are doing!  */
 #define VG_MAX_REALREGS 6
 
@@ -276,26 +276,26 @@ extern Bool VG_(within_m_state_static_OR_threads)(Addr a);
 #define VG_INVALID_THREADID ((ThreadId)(0))
 
 /* ThreadIds are simply indices into the VG_(threads)[] array. */
-typedef 
-   UInt 
+typedef
+   UInt
    ThreadId;
 
 /* When looking for the current ThreadId, this is the safe option and
    probably the one you want.
-  
+
    Details: Use this one from non-generated code, eg. from functions called
    on events like 'new_mem_heap'.  In such a case, the "current" thread is
    temporarily suspended as Valgrind's dispatcher is running.  This function
    is also suitable to be called from generated code (ie. from UCode, or a C
    function called directly from UCode).
-   
+
    If you use VG_(get_current_tid)() from non-generated code, it will return
    0 signifying the invalid thread, which is probably not what you want. */
 extern ThreadId VG_(get_current_or_recent_tid) ( void );
 
 /* When looking for the current ThreadId, only use this one if you know what
    you are doing.
-  
+
    Details: Use this one from generated code, eg. from C functions called
    from UCode.  (VG_(get_current_or_recent_tid)() is also suitable in that
    case.)  If you use this function from non-generated code, it will return
@@ -328,12 +328,12 @@ extern ThreadId VG_(first_matching_thread_stack)
  *
  * Note that they all output to the file descriptor given by the
  * --logfile-fd=N argument, which defaults to 2 (stderr).  Hence no
- * need for VG_(fprintf)().  
+ * need for VG_(fprintf)().
  */
 extern UInt VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
 extern UInt VG_(sprintf) ( Char* buf, Char *format, ... );
-extern UInt VG_(vprintf) ( void(*send)(Char), 
+extern UInt VG_(vprintf) ( void(*send)(Char),
                            const Char *format, va_list vargs );
 
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );
@@ -397,7 +397,7 @@ extern Int   VG_(memcmp)         ( const void* s1, const void* s2, Int n );
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );
 extern Int   VG_(strncmp_ws)     ( const Char* s1, const Char* s2, Int nmax );
 
-/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the 
+/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
    last character. */
 extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
 
@@ -441,13 +441,13 @@ extern Char* VG_(getcwd) ( Char* buf, Int size );
                                    __PRETTY_FUNCTION__), 0)))
 
 __attribute__ ((__noreturn__))
-extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file, 
+extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file,
                                     Int line, const Char* fn );
 
 
 /* ------------------------------------------------------------------ */
 /* system/mman.h */
-extern void* VG_(mmap)( void* start, UInt length, 
+extern void* VG_(mmap)( void* start, UInt length,
                         UInt prot, UInt flags, UInt fd, UInt offset );
 extern Int  VG_(munmap)( void* start, Int length );
 
@@ -456,8 +456,8 @@ extern void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who );
 
 
 /* ------------------------------------------------------------------ */
-/* signal.h.  
-  
+/* signal.h.
+
    Note that these use the vk_ (kernel) structure
    definitions, which are different in places from those that glibc
    defines -- hence the 'k' prefix.  Since we're operating right at the
@@ -478,10 +478,10 @@ extern void VG_(ksigaddset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
 extern void VG_(ksigdelset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
 
 /* --- Mess with the kernel's sig state --- */
-extern Int VG_(ksigprocmask) ( Int how, const vki_ksigset_t* set, 
+extern Int VG_(ksigprocmask) ( Int how, const vki_ksigset_t* set,
                                        vki_ksigset_t* oldset );
-extern Int VG_(ksigaction)   ( Int signum,  
-                               const vki_ksigaction* act,  
+extern Int VG_(ksigaction)   ( Int signum,
+                               const vki_ksigaction* act,
                                vki_ksigaction* oldact );
 
 extern Int VG_(ksignal)      ( Int signum, void (*sighandler)(Int) );
@@ -538,7 +538,7 @@ typedef
       WIDEN,                              /* Signed or unsigned widening   */
 
       /* Conditional or unconditional jump  */
-      JMP,         
+      JMP,
 
       /* FPU ops */
       FPU,           /* Doesn't touch memory */
@@ -564,7 +564,7 @@ typedef
       /* 2 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:mod mmxreg r/m.
          Held in val1[15:0], and mod and rm are to be replaced
-         at codegen time by a reference to the Temp/RealReg holding 
+         at codegen time by a reference to the Temp/RealReg holding
          the address.  Arg2 holds this Temp/Real Reg.
          Transfer is always at size 8.
       */
@@ -696,9 +696,9 @@ typedef
 #if 0
       /* 5 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
-         Held in val1[15:0], val2[15:0], lit32[7:0].  
-         mod and rm are to be replaced at codegen time by a reference 
-         to the Temp/RealReg holding the address.  Arg3 holds this 
+         Held in val1[15:0], val2[15:0], lit32[7:0].
+         mod and rm are to be replaced at codegen time by a reference
+         to the Temp/RealReg holding the address.  Arg3 holds this
          Temp/Real Reg.  Transfer is always at size 16.  */
       SSE3a1_MemRd,
       SSE3a1_MemWr,
@@ -732,7 +732,7 @@ typedef
 
          Seven possibilities: 'arg[123]' show where args go, 'ret' shows
          where return value goes (if present).
-        
+
          CCALL(-,    -,    -   )    void f(void)
          CCALL(arg1, -,    -   )    void f(UInt arg1)
          CCALL(arg1, arg2, -   )    void f(UInt arg1, UInt arg2)
@@ -745,8 +745,8 @@ typedef
       /* This opcode makes it easy for skins that extend UCode to do this to
          avoid opcode overlap:
 
-           enum { EU_OP1 = DUMMY_FINAL_UOPCODE + 1, ... } 
-   
+           enum { EU_OP1 = DUMMY_FINAL_UOPCODE + 1, ... }
+
          WARNING: Do not add new opcodes after this one!  They can be added
          before, though. */
       DUMMY_FINAL_UOPCODE
@@ -774,7 +774,7 @@ typedef
       CondLE     = 14, /* less or equal      */
       CondNLE    = 15, /* not less or equal  */
       CondAlways = 16  /* Jump always        */
-   } 
+   }
    Condcode;
 
 
@@ -793,7 +793,7 @@ typedef
 /* Flags.  User-level code can only read/write O(verflow), S(ign),
    Z(ero), A(ux-carry), C(arry), P(arity), and may also write
    D(irection).  That's a total of 7 flags.  A FlagSet is a bitset,
-   thusly: 
+   thusly:
       76543210
        DOSZACP
    and bit 7 must always be zero since it is unused.
@@ -882,7 +882,7 @@ typedef
       Bool    signed_widen:1;  /* signed or unsigned WIDEN ? */
       JmpKind jmpkind:3;       /* additional properties of unconditional JMP */
 
-      /* Additional properties for UInstrs that call C functions:  
+      /* Additional properties for UInstrs that call C functions:
            - CCALL
            - PUT (when %ESP is the target)
            - possibly skin-specific UInstrs
@@ -897,12 +897,12 @@ typedef
          to use this information requires converting between register ranks
          and the Intel register numbers, using VG_(realreg_to_rank)()
          and/or VG_(rank_to_realreg)() */
-      RRegSet regs_live_after:VG_MAX_REALREGS; 
+      RRegSet regs_live_after:VG_MAX_REALREGS;
    }
    UInstr;
 
 
-typedef 
+typedef
    struct _UCodeBlock
    UCodeBlock;
 
@@ -911,7 +911,7 @@ extern Int     VG_(get_num_temps)  (UCodeBlock* cb);
 
 extern UInstr* VG_(get_instr)      (UCodeBlock* cb, Int i);
 extern UInstr* VG_(get_last_instr) (UCodeBlock* cb);
-   
+
 
 /*====================================================================*/
 /*=== Instrumenting UCode                                          ===*/
@@ -965,7 +965,7 @@ extern void VG_(new_UInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
                               Tag tag2, UInt val2,
                               Tag tag3, UInt val3 );
 
-/* Set read/write/undefined flags.  Undefined flags are treaten as written, 
+/* Set read/write/undefined flags.  Undefined flags are treaten as written,
    but it's worth keeping them logically distinct. */
 extern void VG_(set_flag_fields)  ( UCodeBlock* cb, FlagSet fr, FlagSet fw,
                                     FlagSet fu);
@@ -1016,7 +1016,7 @@ extern UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb );
 extern void        VG_(free_UCodeBlock)  ( UCodeBlock* cb );
 
 /* ------------------------------------------------------------------ */
-/* UCode pretty/ugly printing.  Probably only useful to call from a skin 
+/* UCode pretty/ugly printing.  Probably only useful to call from a skin
    if VG_(needs).extended_UCode == True. */
 
 /* When True, all generated code is/should be printed. */
@@ -1029,7 +1029,7 @@ extern void  VG_(pp_UInstr_regs) ( Int instrNo, UInstr* u );
 extern void  VG_(up_UInstr)      ( Int instrNo, UInstr* u );
 extern Char* VG_(name_UOpcode)   ( Bool upper, Opcode opc );
 extern Char* VG_(name_UCondcode) ( Condcode cond );
-extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo, 
+extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
                                    Int sz, Bool parens );
 
 /* ------------------------------------------------------------------ */
@@ -1123,11 +1123,11 @@ extern Int VGOFF_(helper_DAA);
 #define R_GS 5
 
 /* For pretty printing x86 code */
-extern Char* VG_(name_of_mmx_gran) ( UChar gran );
-extern Char* VG_(name_of_mmx_reg)  ( Int mmxreg );
-extern Char* VG_(name_of_seg_reg)  ( Int sreg );
-extern Char* VG_(name_of_int_reg)  ( Int size, Int reg );
-extern Char  VG_(name_of_int_size) ( Int size );
+extern const Char* VG_(name_of_mmx_gran) ( UChar gran );
+extern const Char* VG_(name_of_mmx_reg)  ( Int mmxreg );
+extern const Char* VG_(name_of_seg_reg)  ( Int sreg );
+extern const Char* VG_(name_of_int_reg)  ( Int size, Int reg );
+extern const Char  VG_(name_of_int_size) ( Int size );
 
 /* Shorter macros for convenience */
 #define nameIReg    VG_(name_of_int_reg)
@@ -1157,7 +1157,7 @@ extern Int VG_(realreg_to_rank) ( Int realreg );
 extern Int VG_(rank_to_realreg) ( Int rank    );
 
 /* Call a subroutine.  Does no argument passing, stack manipulations, etc. */
-extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset, 
+extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset,
 			      Bool upd_cc, FlagSet use_flags, FlagSet set_flags );
 
 /* For calling C functions -- saves caller save regs, pushes args, calls,
@@ -1169,7 +1169,7 @@ extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset,
    by some other x86 assembly code;  this will invalidate the results of
    vg_realreg_liveness_analysis() and everything will fall over.  */
 extern void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
-                               Tag tagv[], Int ret_reg, 
+                               Tag tagv[], Int ret_reg,
                                RRegSet regs_live_before,
                                RRegSet regs_live_after );
 
@@ -1233,17 +1233,17 @@ extern void VG_(emit_jcondshort_target)( Bool simd_cc, Condcode cond, Int *tgt )
 
 /* Generic resolution type used in a few different ways, such as deciding
    how closely to compare two errors for equality. */
-typedef 
-   enum { Vg_LowRes, Vg_MedRes, Vg_HighRes } 
+typedef
+   enum { Vg_LowRes, Vg_MedRes, Vg_HighRes }
    VgRes;
 
 typedef
    struct _ExeContext
    ExeContext;
 
-/* Compare two ExeContexts.  Number of callers considered depends on `res': 
-     Vg_LowRes:  2 
-     Vg_MedRes:  4 
+/* Compare two ExeContexts.  Number of callers considered depends on `res':
+     Vg_LowRes:  2
+     Vg_MedRes:  4
      Vg_HighRes: all */
 extern Bool VG_(eq_ExeContext) ( VgRes res,
                                  ExeContext* e1, ExeContext* e2 );
@@ -1255,10 +1255,10 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
    ExeContexts to see if we already have it, and if not, allocate a
    new one.  Either way, return a pointer to the context.  Context size
    controlled by --num-callers option.
-   
+
    If called from generated code, use VG_(get_current_tid)() to get the
    current ThreadId.  If called from non-generated code, the current
-   ThreadId should be passed in by the core. 
+   ThreadId should be passed in by the core.
 */
 extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
 
@@ -1269,7 +1269,7 @@ extern Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n );
 
 /* Just grab the client's EIP, as a much smaller and cheaper
    indication of where they are.  Use is basically same as for
-   VG_(get_ExeContext)() above. 
+   VG_(get_ExeContext)() above.
 */
 extern Addr VG_(get_EIP)( ThreadId tid );
 
@@ -1289,9 +1289,9 @@ extern void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips );
 /*====================================================================*/
 
 /* ------------------------------------------------------------------ */
-/* Suppressions describe errors which we want to suppress, ie, not 
+/* Suppressions describe errors which we want to suppress, ie, not
    show the user, usually because it is caused by a problem in a library
-   which we can't fix, replace or work around.  Suppressions are read from 
+   which we can't fix, replace or work around.  Suppressions are read from
    a file at startup time.  This gives flexibility so that new
    suppressions can be added to the file as and when needed.
 */
@@ -1351,23 +1351,23 @@ void*       VG_(get_error_extra)   ( Error* err );
 
 /* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
-   incremented.  
-   
+   incremented.
+
    'tid' can be found as for VG_(get_ExeContext)().  The `extra' field can
    be stack-allocated;  it will be copied by the core if needed (but it
    won't be copied if it's NULL).
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
    NULL for them.  */
-extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind, 
+extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
                                       Addr a, Char* s, void* extra );
 
 /* Similar to VG_(maybe_record_error)(), except this one doesn't record the
    error -- useful for errors that can only happen once.  The errors can be
    suppressed, though.  Return value is True if it was suppressed.
-   `print_error' dictates whether to print the error, which is a bit of a 
+   `print_error' dictates whether to print the error, which is a bit of a
    hack that's useful sometimes if you just want to know if the error would
-   be suppressed without possibly printing it.  `count_error' dictates 
+   be suppressed without possibly printing it.  `count_error' dictates
    whether to add the error in the error total count (another mild hack). */
 extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,
@@ -1375,7 +1375,7 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Bool allow_GDB_attach, Bool count_error );
 
 /* Gets a non-blank, non-comment line of at most nBuf chars from fd.
-   Skips leading spaces on the line.  Returns True if EOF was hit instead. 
+   Skips leading spaces on the line.  Returns True if EOF was hit instead.
    Useful for reading in extra skin-specific suppression lines.  */
 extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 
@@ -1393,12 +1393,12 @@ extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 extern Bool VG_(get_filename) ( Addr a, Char* filename, Int n_filename );
 extern Bool VG_(get_fnname)   ( Addr a, Char* fnname,   Int n_fnname   );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
-extern Bool VG_(get_fnname_w_offset)   
+extern Bool VG_(get_fnname_w_offset)
                               ( Addr a, Char* fnname,   Int n_fnname   );
 
 /* This one is more efficient if getting both filename and line number,
    because the two lookups are done together. */
-extern Bool VG_(get_filename_linenum) 
+extern Bool VG_(get_filename_linenum)
                               ( Addr a, Char* filename, Int n_filename,
                                         UInt* linenum );
 
@@ -1476,7 +1476,7 @@ extern VgHashTable VG_(HT_construct) ( void );
 /* Add a node to the table. */
 extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
 
-/* Looks up a node in the hash table.  Also returns the address of the 
+/* Looks up a node in the hash table.  Also returns the address of the
    previous node's `next' pointer which allows it to be removed from the
    list later without having to look it up again.  */
 extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
@@ -1484,7 +1484,7 @@ extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
 
 /* Allocates a sorted array of pointers to all the shadow chunks of malloc'd
    blocks. */
-extern VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable t, 
+extern VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable t,
                                               /*OUT*/ UInt* n_shadows );
 
 /* Returns first node that matches predicate `p', or NULL if none do.
@@ -1510,7 +1510,7 @@ extern void VG_(HT_destruct) ( VgHashTable t );
 /* This one lets you override the shadow of the return value register for a
    syscall.  Call it from SK_(post_syscall)() (not SK_(pre_syscall)()!) to
    override the default shadow register value. */
-extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid, 
+extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid,
                                                   UInt ret_shadow );
 
 /* This can be called from SK_(fini)() to find the shadow of the argument
@@ -1527,21 +1527,21 @@ extern UInt VG_(get_exit_status_shadow) ( void );
 /* ------------------------------------------------------------------ */
 /* General stuff, for replacing any functions */
 
-/* Is the client running on the simulated CPU or the real one? 
+/* Is the client running on the simulated CPU or the real one?
 
    Nb: If it is, and you want to call a function to be run on the real CPU,
    use one of the VALGRIND_NON_SIMD_CALL[123] macros in valgrind.h to call it.
 
-   Nb: don't forget the function parentheses when using this in a 
+   Nb: don't forget the function parentheses when using this in a
    condition... write this:
 
      if (VG_(is_running_on_simd_CPU)()) { ... }    // calls function
 
    not this:
-     
+
      if (VG_(is_running_on_simd_CPU)) { ... }      // address of var!
 */
-extern Bool VG_(is_running_on_simd_CPU) ( void ); 
+extern Bool VG_(is_running_on_simd_CPU) ( void );
 
 
 /*====================================================================*/
@@ -1554,9 +1554,9 @@ extern Bool VG_(is_running_on_simd_CPU) ( void );
 
 /* Arena size for valgrind's own malloc();  default value is 0, but can
    be overridden by skin -- but must be done so *statically*, eg:
-  
+
      Int VG_(vg_malloc_redzone_szB) = 4;
-  
+
    It can't be done from a function like SK_(pre_clo_init)().  So it can't,
    for example, be controlled with a command line option, unfortunately. */
 extern UInt VG_(vg_malloc_redzone_szB);
@@ -1574,14 +1574,14 @@ extern void  SK_(__builtin_vec_delete) ( void* p );
 extern void* SK_(realloc)              ( void* p, Int size );
 
 /* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
-extern void* VG_(cli_malloc) ( UInt align, Int nbytes ); 
+extern void* VG_(cli_malloc) ( UInt align, Int nbytes );
 extern void  VG_(cli_free)   ( void* p );
 
 /* Check if an address is within a range, allowing for redzones at edges */
 extern Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size );
 
 /* ------------------------------------------------------------------ */
-/* Some options that can be used by a skin if malloc() et al are replaced. 
+/* Some options that can be used by a skin if malloc() et al are replaced.
    The skin should call the functions in the appropriate places to give
    control over these aspects of Valgrind's version of malloc(). */
 
@@ -1623,7 +1623,7 @@ extern void VG_(details_copyright_author)      ( Char* copyright_author );
 
 /* Average size of a translation, in bytes, so that the translation
    storage machinery can allocate memory appropriately.  Not critical,
-   setting is optional. */ 
+   setting is optional. */
 extern void VG_(details_avg_translation_sizeB) ( UInt size );
 
 /* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
@@ -1643,7 +1643,7 @@ extern void VG_(needs_libc_freeres) ( void );
    - pthread API errors (many;  eg. unlocking a non-locked mutex)
    - invalid file descriptors to blocking syscalls read() and write()
    - bad signal numbers passed to sigaction()
-   - attempt to install signal handler for SIGKILL or SIGSTOP */  
+   - attempt to install signal handler for SIGKILL or SIGSTOP */
 extern void VG_(needs_core_errors) ( void );
 
 /* Booleans that indicate extra operations are defined;  if these are True,
@@ -1687,7 +1687,7 @@ extern void VG_(needs_data_syms) ( void );
 
 /* Part of the core from which this call was made.  Useful for determining
    what kind of error message should be emitted. */
-typedef 
+typedef
    enum { Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall, Vg_CoreTranslate }
    CorePart;
 
@@ -1695,8 +1695,8 @@ typedef
 
 /* Events happening in core to track.  To be notified, pass a callback
    function to the appropriate function.  To ignore an event, don't do
-   anything (default is for events to be ignored). 
-   
+   anything (default is for events to be ignored).
+
    Note that most events aren't passed a ThreadId.  To find out the ThreadId
    of the affected thread, use VG_(get_current_or_recent_tid)().  For the
    ones passed a ThreadId, use that instead, since
@@ -1709,7 +1709,7 @@ typedef
    malloc() et al.  See above how to do this.) */
 
 /* These ones occur at startup, upon some signals, and upon some syscalls */
-EV VG_(track_new_mem_startup) ( void (*f)(Addr a, UInt len, 
+EV VG_(track_new_mem_startup) ( void (*f)(Addr a, UInt len,
                                           Bool rr, Bool ww, Bool xx) );
 EV VG_(track_new_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
 EV VG_(track_new_mem_brk)     ( void (*f)(Addr a, UInt len) );
@@ -1726,12 +1726,12 @@ EV VG_(track_die_mem_munmap)  ( void (*f)(Addr a, UInt len) );
 
 /* These ones are called when %esp changes.  A skin could track these itself
    (except for ban_mem_stack) but it's much easier to use the core's help.
-  
+
    The specialised ones are called in preference to the general one, if they
    are defined.  These functions are called a lot if they are used, so
    specialising can optimise things significantly.  If any of the
-   specialised cases are defined, the general case must be defined too. 
-   
+   specialised cases are defined, the general case must be defined too.
+
    Nb: they must all use the __attribute__((regparm(n))) attribute. */
 EV VG_(track_new_mem_stack_4)  ( void (*f)(Addr new_ESP) );
 EV VG_(track_new_mem_stack_8)  ( void (*f)(Addr new_ESP) );
@@ -1759,7 +1759,7 @@ EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadId tid,
                                           Char* s, Addr a, UInt size) );
 /* Not implemented yet -- have to add in lots of places, which is a
    pain.  Won't bother unless/until there's a need. */
-/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadId tid, Char* s, 
+/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadId tid, Char* s,
                                             Addr a, UInt size) ); */
 EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
 
@@ -1770,11 +1770,11 @@ EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
 
 /* Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
    and use VG_(set_shadow_eflags)() to set eflags. */
-EV VG_(track_post_regs_write_init)  ( void (*f)() );    
+EV VG_(track_post_regs_write_init)  ( void (*f)() );
 
-/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these 
+/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these
    events. */
-EV VG_(track_post_reg_write_syscall_return)    
+EV VG_(track_post_reg_write_syscall_return)
                                     ( void (*f)(ThreadId tid, UInt reg) );
 EV VG_(track_post_reg_write_deliver_signal)
                                     ( void (*f)(ThreadId tid, UInt reg) );
@@ -1801,20 +1801,20 @@ EV VG_(track_post_thread_create)( void (*f)(ThreadId tid, ThreadId child) );
    about to resume. */
 EV VG_(track_post_thread_join)  ( void (*f)(ThreadId joiner, ThreadId joinee) );
 
-      
+
 /* Mutex events (not exhaustive) */
 
 /* Called before a thread can block while waiting for a mutex (called
    regardless of whether the thread will block or not). */
-EV VG_(track_pre_mutex_lock)    ( void (*f)(ThreadId tid, 
+EV VG_(track_pre_mutex_lock)    ( void (*f)(ThreadId tid,
                                           void* /*pthread_mutex_t* */ mutex) );
 /* Called once the thread actually holds the mutex (always paired with
    pre_mutex_lock). */
-EV VG_(track_post_mutex_lock)   ( void (*f)(ThreadId tid, 
+EV VG_(track_post_mutex_lock)   ( void (*f)(ThreadId tid,
                                           void* /*pthread_mutex_t* */ mutex) );
 /* Called after a thread has released a mutex (no need for a corresponding
    pre_mutex_unlock, because unlocking can't block). */
-EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid, 
+EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid,
                                           void* /*pthread_mutex_t* */ mutex) );
 
 
@@ -1852,7 +1852,7 @@ EV VG_(track_post_deliver_signal) ( void (*f)(ThreadId tid, Int sigNum ) );
 /* Initialise skin.   Must do the following:
      - initialise the `details' struct, via the VG_(details_*)() functions
      - register any helpers called by generated code
-  
+
    May do the following:
      - initialise the `needs' struct to indicate certain requirements, via
        the VG_(needs_*)() functions
@@ -1915,7 +1915,7 @@ extern Bool SK_(recognised_suppression) ( Char* name, Supp* su );
 
 /* Read any extra info for this suppression kind.  Most likely for filling
    in the `extra' and `string' parts (with VG_(set_supp_{extra,string})())
-   of a suppression if necessary.  Should return False if a syntax error 
+   of a suppression if necessary.  Should return False if a syntax error
    occurred, True otherwise. */
 extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
                                                Supp* su );
@@ -2014,8 +2014,8 @@ extern void  SK_(pp_XUInstr)     ( UInstr* u );
 /* VG_(needs).syscall_wrapper */
 
 /* If either of the pre_ functions malloc() something to return, the
- * corresponding post_ function had better free() it! 
- */ 
+ * corresponding post_ function had better free() it!
+ */
 extern void* SK_( pre_syscall) ( ThreadId tid, UInt syscallno,
                                  Bool is_blocking );
 extern void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,

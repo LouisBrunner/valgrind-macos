@@ -1,4 +1,4 @@
-
+/* -*- c-basic-offset: 3 -*- */
 /*--------------------------------------------------------------------*/
 /*--- The JITter: translate x86 code to ucode.                     ---*/
 /*---                                                vg_to_ucode.c ---*/
@@ -104,7 +104,7 @@ static Char* nameGrp8 ( Int opc_aux )
    return grp8_names[opc_aux];
 }
 
-Char* VG_(name_of_int_reg) ( Int size, Int reg )
+const Char* VG_(name_of_int_reg) ( Int size, Int reg )
 {
    static Char* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", 
@@ -125,7 +125,7 @@ Char* VG_(name_of_int_reg) ( Int size, Int reg )
    return NULL; /*notreached*/
 }
 
-Char* VG_(name_of_seg_reg) ( Int sreg )
+const Char* VG_(name_of_seg_reg) ( Int sreg )
 {
    switch (sreg) {
       case R_ES: return "%es";
@@ -138,23 +138,23 @@ Char* VG_(name_of_seg_reg) ( Int sreg )
    }
 }
 
-Char* VG_(name_of_mmx_reg) ( Int mmxreg )
+const Char* VG_(name_of_mmx_reg) ( Int mmxreg )
 {
-   static Char* mmx_names[8] 
+   static const Char* mmx_names[8] 
      = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
    if (mmxreg < 0 || mmxreg > 7) VG_(core_panic)("name_of_mmx_reg");
    return mmx_names[mmxreg];
 }
 
-Char* VG_(name_of_xmm_reg) ( Int xmmreg )
+const Char* VG_(name_of_xmm_reg) ( Int xmmreg )
 {
-   static Char* xmm_names[8] 
+   static const Char* xmm_names[8] 
      = { "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7" };
    if (xmmreg < 0 || xmmreg > 7) VG_(core_panic)("name_of_xmm_reg");
    return xmm_names[xmmreg];
 }
 
-Char* VG_(name_of_mmx_gran) ( UChar gran )
+const Char* VG_(name_of_mmx_gran) ( UChar gran )
 {
    switch (gran) {
       case 0: return "b";
@@ -165,7 +165,7 @@ Char* VG_(name_of_mmx_gran) ( UChar gran )
    }
 }
 
-Char VG_(name_of_int_size) ( Int size )
+const Char VG_(name_of_int_size) ( Int size )
 {
    switch (size) {
       case 4: return 'l';
@@ -3698,6 +3698,19 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* SFENCE -- flush all pending store operations to memory */
+   if (insn[0] == 0x0F && insn[1] == 0xAE 
+       && (gregOfRM(insn[2]) == 7)) {
+      vg_assert(sz == 4);
+      eip += 3;
+      uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
+                  Lit16, (UShort)insn[2] );
+      if (dis)
+         VG_(printf)("sfence\n");
+      goto decode_success;
+   }
+
    /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float
       value in memory or xmm reg to int and put it in an ireg.
       Truncate. */
@@ -3835,6 +3848,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
                                            "pshufd",
                                            0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PSHUFW */
+   if (sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x70) {
+      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
+                                           "pshufw",
+                                           insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -4075,7 +4097,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
-
+   /* 0xE0: PAVGB(src)xmmreg-or-mem, (dst)xmmreg, size 4 */
+   if (sz == 4
+       && insn[0] == 0x0F 
+       && insn[1] == 0xE0 ) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "pavg{b,w}",
+                                      insn[0], insn[1] );
+      goto decode_success;
+   }
+ 
    /* 0x60: PUNPCKLBW (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x61: PUNPCKLWD (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x62: PUNPCKLDQ (src)xmmreg-or-mem, (dst)xmmreg */
@@ -4280,10 +4310,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* COMISS (src)xmmreg-or-mem, (dst)xmmreg */
+   /* (U)COMISS (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 4
-       && insn[0] == 0x0F && insn[1] == 0x2F) {
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "comiss",
+       && insn[0] == 0x0F
+       && ( insn[1] == 0x2E || insn[ 1 ] == 0x2F )) {
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "{u}comiss",
                                       insn[0], insn[1] );
       vg_assert(LAST_UINSTR(cb).opcode == SSE2a_MemRd 
                 || LAST_UINSTR(cb).opcode == SSE3);
@@ -4556,6 +4587,29 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          *isEnd = True;
          if (dis) VG_(printf)("call 0x%x\n",d32);
       }
+      break;
+
+   case 0xC8: /* ENTER */ 
+      d32 = getUDisp16(eip); eip += 2;
+      abyte = getUChar(eip); eip++;
+
+      vg_assert(sz == 4);           
+      vg_assert(abyte == 0);
+
+      t1 = newTemp(cb); t2 = newTemp(cb);
+      uInstr2(cb, GET,   sz, ArchReg, R_EBP, TempReg, t1);
+      uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t2);
+      uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t2);
+      uLiteral(cb, sz);
+      uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
+      uInstr2(cb, STORE,  4, TempReg, t1,    TempReg, t2);
+      uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_EBP);
+      if (d32) {
+         uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t2);
+	 uLiteral(cb, d32);
+	 uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
+      }
+      if (dis) VG_(printf)("enter 0x%x, 0x%x", d32, abyte);
       break;
 
    case 0xC9: /* LEAVE */
@@ -5236,6 +5290,28 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        break;
      }
 
+   case 0x1F: /* POP %DS */
+   case 0x07: /* POP %ES */
+   {
+      Int sreg = INVALID_TEMPREG;
+      vg_assert(sz == 4);
+      switch(opc) {
+      case 0x1F: sreg = R_DS; break;
+      case 0x07: sreg = R_ES; break;
+      }
+
+      t1 = newTemp(cb); t2 = newTemp(cb);
+      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
+      uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
+      uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);
+      uLiteral(cb, sz);
+      uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg,  R_ESP);
+      uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
+      if (dis) 
+         VG_(printf)("pop %s\n", VG_(name_of_seg_reg)(sreg));
+      break;
+   }      
+
    /* ------------------------ PUSH ----------------------- */
 
    case 0x50: /* PUSH eAX */
@@ -5338,6 +5414,28 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis)
          VG_(printf)("pusha%c\n", nameISize(sz));
       break;
+    }
+
+    case 0x06: /* PUSH %ES */
+    case 0x1E: /* PUSH %DS */
+    {
+       Int sreg = INVALID_TEMPREG;
+       switch(opc) {
+	   case 0x06: sreg = R_ES; break;
+           case 0x1E: sreg = R_DS; break;
+       }
+ 
+       vg_assert(sz == 4);
+       t1 = newTemp(cb); t2 = newTemp(cb);
+       uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
+       uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
+       uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
+       uLiteral(cb, 4);
+       uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
+       uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
+       if(dis)
+          VG_(printf)("push %s\n", VG_(name_of_seg_reg)(sreg));
+       break;
     }
 
    /* ------------------------ SCAS et al ----------------- */
@@ -6099,6 +6197,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          break;
 
       case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
+      case 0xE7: /* MOVNTQ (src)mmxreg, (dst)mmxreg-or-mem */
          vg_assert(sz == 4);
          modrm = getUChar(eip);
          if (epartIsReg(modrm)) {
@@ -6113,7 +6212,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                         (((UShort)(opc)) << 8) | ((UShort)modrm),
                         TempReg, tmpa);
             if (dis)
-               VG_(printf)("movq %s, %s\n", 
+               VG_(printf)("mov(nt)q %s, %s\n", 
                            nameMMXReg(gregOfRM(modrm)),
                            dis_buf);
          }

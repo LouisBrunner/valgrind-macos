@@ -43,7 +43,8 @@ check_PROGRAMS = \
 	as_mmap as_shm \
 	vgprintf
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0 -I$(top_srcdir)/include
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
+AM_CPPFLAGS = -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 vgprintf_SOURCES	= vgprintf.c

@@ -59,7 +59,8 @@ check_PROGRAMS = \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CPPFLAGS = -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones

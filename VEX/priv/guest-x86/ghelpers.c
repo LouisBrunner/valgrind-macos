@@ -1443,9 +1443,14 @@ ULong x86g_check_ldmxcsr ( UInt mxcsr )
       ew = EmWarn_X86_sseExns;
    }
    else 
-   if ((mxcsr & (1<<6)) || (mxcsr & (1<<15))) {
-      /* FZ or DAZ is set */
-      ew = EmWarn_X86_fz_daz;
+   if (mxcsr & (1<<15)) {
+      /* FZ is set */
+      ew = EmWarn_X86_fz;
+   } 
+   else
+   if (mxcsr & (1<<6)) {
+      /* DAZ is set */
+      ew = EmWarn_X86_daz;
    }
 
    return (((ULong)ew) << 32) | ((ULong)rmode);

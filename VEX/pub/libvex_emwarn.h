@@ -67,8 +67,11 @@ typedef
       /* unmasking SSE FP exceptions is not supported */
       EmWarn_X86_sseExns,
       
-      /* setting mxcsr.fz or mxcsr.daz is not supported */
-      EmWarn_X86_fz_daz,
+      /* setting mxcsr.fz is not supported */
+      EmWarn_X86_fz,
+      
+      /* setting mxcsr.daz is not supported */
+      EmWarn_X86_daz,
       
       EmWarn_NUMBER
    }

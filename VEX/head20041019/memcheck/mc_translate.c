@@ -259,7 +259,7 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 /*------------------------------------------------------------*/
 /*--- New instrumentation machinery.                       ---*/
 /*------------------------------------------------------------*/
-
+#if 0
 static
 TagOp get_Tag_ImproveOR_TQ ( Int sz )
 {
@@ -1634,25 +1634,586 @@ static void vg_cleanup ( UCodeBlock* cb )
    vg_propagate_definedness ( cb );
    vg_delete_redundant_SETVs ( cb );
 }
+#endif
 
-
-/* Caller will print out final instrumented code if necessary;  we
-   print out intermediate instrumented code here if necessary. */
-UCodeBlock* SK_(instrument) ( UCodeBlock* cb, Addr not_used )
-{
-   cb = memcheck_instrument ( cb );
-   if (MC_(clo_cleanup)) {
-      if (dis) {
-         VG_(pp_UCodeBlock) ( cb, "Unimproved instrumented UCode:" );
-         VG_(printf)("Instrumentation improvements:\n");
-      }
-      vg_cleanup(cb);
-      if (dis) VG_(printf)("\n");
-   }
-   return cb;
-}
 
 #undef dis
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+/* An atom is either an IRExpr_Const or an IRExpr_Tmp, as defined by
+   isAtom() in libvex_ir.h.  Because this instrumenter expects flat
+   input, most of this code deals in atoms.  Usefully, a value atom
+   always has a V-value which is also an atom: constants are shadowed
+   by constants, and temps are shadowed by the corresponding shadow
+   temporary. */
+typedef  IRExpr  IRAtom;
+
+/* Check that both args are atoms and are identically-kinded. */
+static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
+{
+   if (a1->tag == Iex_Tmp && a1->tag == Iex_Tmp)
+      return True;
+   if (a1->tag == Iex_Const && a1->tag == Iex_Const)
+      return True;
+   return False;
+}
+
+/* Carries around state during memcheck instrumentation. */
+typedef
+   struct {
+      /* MODIFIED: the bb being constructed.  IRStmts are added. */
+      IRBB* bb;
+
+      /* MODIFIED: a table [0 .. #temps_in_original_bb-1] which maps
+         original temps to their current their current shadow temp.
+         Initially all entries are IRTemp_INVALID.  Entries are added
+         lazily since many original temps are not used due to
+         optimisation prior to instrumentation.  Note that floating
+         point original tmps are shadowed by integer tmps of the same
+         size, and Bit-typed original tmps are shadowed by the type
+         Ity_I8. */
+      IRTemp* tmpMap;
+      Int     n_originalTmps; /* for range checking */
+
+      /* READONLY: the guest layout */
+      VexGuestLayout* layout;
+      /* READONLY: the host word type.  Needed for constructing
+         arguments of type 'HWord' to be passed to helper functions.
+         Ity_I32 or Ity_I64 only. */
+      IRType hWordTy;
+   }
+   MCEnv;
+
+static Bool isOriginalAtom ( MCEnv* mce, IRAtom* a1 )
+{
+   if (a1->tag == Iex_Const)
+      return True;
+   if (a1->tag == Iex_Tmp && a1->Iex.Tmp.tmp < mce->n_originalTmps)
+      return True;
+   return False;
+}
+
+static Bool isShadowAtom ( MCEnv* mce, IRAtom* a1 )
+{
+   if (a1->tag == Iex_Const)
+      return True;
+   if (a1->tag == Iex_Tmp && a1->Iex.Tmp.tmp >= mce->n_originalTmps)
+      return True;
+   return False;
+}
+
+
+
+
+/* Shadow state is always accessed using integer types.  This returns
+   an integer type with the same size (as per sizeofIRType) as the
+   given type. 
+*/
+static IRType shadowType ( IRType ty )
+{
+   switch (ty) {
+      case Ity_I32: return ty;
+      default: VG_(skin_panic)("memcheck:shadowType");
+   }
+}
+
+/* Find the tmp currently shadowing the given original tmp.  If none
+   so far exists, allocate one.  */
+static IRTemp findShadowTmp ( MCEnv* mce, IRTemp orig )
+{
+   sk_assert(orig < mce->n_originalTmps);
+   if (mce->tmpMap[orig] == INVALID_IRTEMP) {
+      mce->tmpMap[orig] 
+         = newIRTemp(mce->bb->tyenv, 
+                     shadowType(mce->bb->tyenv->types[orig]));
+   }
+   return mce->tmpMap[orig];
+}
+
+/* Allocate a new shadow for the given original tmp.  This means any
+   previous shadow is abandoned.  This is needed because it is
+   necessary to give a new value to a shadow once it has been tested
+   for undefinedness, but unfortunately IR's SSA property disallows
+   this.  Instead we must abandon the old shadow, allocate a new one
+   and use that instead. */
+static void newShadowTmp ( MCEnv* mce, IRTemp orig )
+{
+   sk_assert(orig < mce->n_originalTmps);
+   mce->tmpMap[orig] 
+      = newIRTemp(mce->bb->tyenv, 
+                  shadowType(mce->bb->tyenv->types[orig]));
+}
+
+
+static IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e );
+
+#define assign(_bb,_tmp,_expr)   \
+   addStmtToIRBB((_bb), IRStmt_Tmp((_tmp),(_expr)))
+#define stmt(_bb,_stmt)    \
+   addStmtToIRBB((_bb), (_stmt))
+
+
+#define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
+#define unop(_op, _arg)          IRExpr_Unop((_op),(_arg))
+#define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
+#define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
+#define mkexpr(_tmp)             IRExpr_Tmp((_tmp))
+
+static IRAtom* assignNew ( MCEnv* mce, IRType ty, IRExpr* e ) {
+   IRTemp t = newIRTemp(mce->bb->tyenv, ty);
+   assign(mce->bb, t, e);
+   return mkexpr(t);
+}
+
+/* Should only be supplied shadow types (I8/I16/I32/UI64). */
+static IRExpr* definedOfType ( IRType ty ) {
+   switch (ty) {
+      case Ity_I32: return mkU32(0);
+      default:      VG_(skin_panic)("memcheck:definedOfType");
+   }
+}
+
+static IRAtom* mkUifU32 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   sk_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I32, binop(Iop_Or32, a1, a2));
+}
+
+static IRExpr* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   /* It's safe to duplicate a1 since it's only an atom */
+   return assignNew(mce, Ity_I32, 
+                         binop(Iop_Or32, a1, unop(Iop_Neg32, a1)));
+}
+
+static void setHelperAnns ( MCEnv* mce, IRDirty* di ) {
+   di->nFxState = 2;
+   di->fxState[0].fx     = Ifx_Read;
+   di->fxState[0].offset = mce->layout->offset_SP;
+   di->fxState[0].size   = mce->layout->sizeof_SP;
+   di->fxState[1].fx     = Ifx_Read;
+   di->fxState[1].offset = mce->layout->offset_IP;
+   di->fxState[1].size   = mce->layout->sizeof_IP;
+}
+
+static IRAtom* genPCastTo( MCEnv* mce, IRAtom* vbits, IRType dst_ty ) {
+   /* First of all, collapse vbits down to a single bit. */
+   sk_assert(isShadowAtom(mce,vbits));
+   IRType  ty   = typeOfIRExpr(mce->bb->tyenv, vbits);
+   IRAtom* tmp1 = NULL;
+   switch (ty) {
+      case Ity_I32: 
+         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE32, vbits, mkU32(0)));
+         break;
+      default:
+         VG_(skin_panic)("genPCastTo(1)");
+   }
+   sk_assert(tmp1);
+   /* Now widen up to the dst type. */
+   switch (dst_ty) {
+      case Ity_Bit:
+         return tmp1;
+      case Ity_I32: 
+         return assignNew(mce, Ity_I32, unop(Iop_1Sto32, tmp1));
+      default: 
+         ppIRType(dst_ty);
+         VG_(skin_panic)("genPCastTo(2)");
+   }
+}
+
+/* Examine the always-defined sections declared in layout to see if
+   the (offset,size) section is within one.  Note, is is an error to
+   partially fall into such a region: (offset,size) should either be
+   completely in such a region or completely not-in such a region. 
+*/
+static Bool isAlwaysDefd ( MCEnv* mce, Int offset, Int size )
+{
+   Int minoffD, maxoffD, i;
+   Int minoff = offset;
+   Int maxoff = minoff + size - 1;
+   sk_assert((minoff & ~0xFFFF) == 0);
+   sk_assert((maxoff & ~0xFFFF) == 0);
+
+   for (i = 0; i < mce->layout->n_alwaysDefd; i++) {
+      minoffD = mce->layout->alwaysDefd[i].offset;
+      maxoffD = minoffD + mce->layout->alwaysDefd[i].size - 1;
+      sk_assert((minoffD & ~0xFFFF) == 0);
+      sk_assert((maxoffD & ~0xFFFF) == 0);
+
+      if (maxoff < minoffD || maxoffD < minoff)
+         continue; /* no overlap */
+      if (minoff >= minoffD && maxoff <= maxoffD)
+         return True; /* completely contained in an always-defd section */
+
+      VG_(skin_panic)("memcheck:isAlwaysDefd:partial overlap");
+   }
+   return False; /* could not find any containing section */
+}
+
+
+static
+void complainIfUndefined ( MCEnv* mce, IRAtom* vatom, IRAtom* atom )
+{
+   /* vatom is required to be the V-bits shadow for atom. */
+   sk_assert(isOriginalAtom(mce, atom));
+   sk_assert(isShadowAtom(mce, vatom));
+   sk_assert(sameKindedAtoms(atom, vatom));
+
+   IRType ty = typeOfIRExpr(mce->bb->tyenv, vatom);
+   Int    sz = sizeofIRType(ty);
+
+   IRExpr* cond = genPCastTo( mce, vatom, Ity_Bit );
+   /* cond will be 0 if all defined, and 1 if any not defined. */
+
+   IRDirty* di 
+      = unsafeIRDirty_0_N( 1/*regparms*/, 
+                           "MC_(helperc_complain_undef)",
+                           &MC_(helperc_complain_undef),
+                           mkIRExprVec_1( mkIRExpr_HWord(sz) ));
+   di->guard = cond;
+   setHelperAnns( mce, di );
+   stmt( mce->bb, IRStmt_Dirty(di));
+
+   /* Set the shadow tmp to be defined.  First, update the
+      orig->shadow tmp mapping to reflect the fact that this shadow is
+      getting a new value. */
+   sk_assert(isAtom(vatom));
+   /* sameKindedAtoms ... */
+   if (vatom->tag == Iex_Tmp) {
+      sk_assert(atom->tag == Iex_Tmp);
+      newShadowTmp(mce, atom->Iex.Tmp.tmp);
+      assign(mce->bb, findShadowTmp(mce, atom->Iex.Tmp.tmp), 
+                      definedOfType(ty));
+   }
+}
+
+
+/* Generate into bb suitable actions to shadow this Put.  If the state
+   slice is marked 'always defined', emit a complaint if any of the
+   supplied V bits are 1, and do not modify shadow state.  Otherwise,
+   write the supplied V bits to the shadow state. */
+static
+void do_shadow_PUT ( MCEnv* mce, Int offset, IRAtom* vatom, IRAtom* atom )
+{
+   /* vatom is required to be the V-bits shadow for atom. */
+   sk_assert(isOriginalAtom(mce, atom));
+   sk_assert(isShadowAtom(mce, vatom));
+   sk_assert(sameKindedAtoms(atom, vatom));
+   IRType ty = typeOfIRExpr(mce->bb->tyenv, vatom);
+   sk_assert(ty != Ity_Bit);
+   if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
+      /* emit code to emit a complaint if any of the vbits are 1. */
+      complainIfUndefined(mce, vatom, atom);
+   } else {
+      /* Do a plain shadow Put. */
+      stmt( mce->bb, IRStmt_Put( offset + mce->layout->total_sizeB, vatom ) );
+   }
+}
+
+
+/* Return an expression which contains the V bits corresponding to the
+   given GET (passed in in pieces). 
+*/
+static 
+IRExpr* shadow_GET ( MCEnv* mce, Int offset, IRType ty )
+{
+   IRType tyS = shadowType(ty);
+   sk_assert(ty != Ity_Bit);
+   if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
+      /* Always defined, return all zeroes of the relevant type */
+      return definedOfType(tyS);
+   } else {
+      /* return a cloned version of the Get that refers to the shadow
+         area. */
+      return IRExpr_Get( offset + mce->layout->total_sizeB, tyS );
+   }
+}
+
+
+/* Return an expression which contains the V bits corresponding to the
+   given GETI (passed in in pieces). 
+*/
+static
+IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
+{
+   IRType ty   = descr->elemTy;
+   IRType tyS  = shadowType(ty);
+   Int arrSize = descr->nElems * sizeofIRType(ty);
+   sk_assert(ty != Ity_Bit);
+   sk_assert(isOriginalAtom(mce,ix));
+   if (isAlwaysDefd(mce, descr->base, arrSize)) {
+      /* Always defined, return all zeroes of the relevant type */
+      return definedOfType(tyS);
+   } else {
+      /* return a cloned version of the Get that refers to the shadow
+         area. */
+      IRArray* new_descr 
+         = mkIRArray( descr->base + mce->layout->total_sizeB, 
+                      tyS, descr->nElems);
+      return IRExpr_GetI( new_descr, ix, bias );
+   }
+}
+
+
+static 
+IRExpr* expr2vbits_Binop ( MCEnv* mce,
+                           IROp op,
+                           IRExpr* atom1, IRExpr* atom2,
+                           IRExpr* vatom1, IRExpr* vatom2 )
+{
+   IRAtom* ta;
+   sk_assert(isOriginalAtom(mce,atom1));
+   sk_assert(isOriginalAtom(mce,atom2));
+   sk_assert(isShadowAtom(mce,vatom1));
+   sk_assert(isShadowAtom(mce,vatom2));
+   sk_assert(sameKindedAtoms(atom1,vatom1));
+   sk_assert(sameKindedAtoms(atom2,vatom2));
+   switch (op) {
+      case Iop_Sub32:
+      case Iop_Add32:
+         ta = mkUifU32(mce,vatom1,vatom2);
+         return mkLeft32(mce, ta);
+      default:
+         ppIROp(op);
+         VG_(skin_panic)("memcheck:expr2vbits_Binop");
+   }
+}
+
+
+static
+IRExpr* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
+{
+   void*    helper;
+   Char*    hname;
+   IRDirty* di;
+   IRTemp   datavbits;
+
+   sk_assert(isOriginalAtom(mce,addr));
+
+   /* First, emit a definedness test for the address.  This also sets
+      the address (shadow) to 'defined' following the test. */
+   complainIfUndefined( mce, expr2vbits( mce, addr ), addr );
+
+   /* Now cook up a call to the relevant helper function, to read the
+      data V bits from shadow memory. */
+   switch (ty) {
+      case Ity_I32: helper = &MC_(helperc_LOADV4);
+                    hname = "MC_(helperc_LOADV4)";
+                    break;
+      case Ity_I16: helper = &MC_(helperc_LOADV2);
+                    hname = "MC_(helperc_LOADV2)";
+                    break;
+      case Ity_I8:  helper = &MC_(helperc_LOADV1);
+                    hname = "MC_(helperc_LOADV1)";
+                    break;
+      default:      VG_(skin_panic)("memcheck:do_shadow_LDle");
+   }
+
+   /* We need to have a place to park the V bits we're just about to
+      read. */
+   datavbits = newIRTemp(mce->bb->tyenv, ty);
+   di = unsafeIRDirty_1_N( datavbits, 
+                           1/*regparms*/, hname, helper, mkIRExprVec_1( addr ));
+   setHelperAnns( mce, di );
+   stmt( mce->bb, IRStmt_Dirty(di) );
+
+   return mkexpr(datavbits);
+}
+
+
+static
+IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
+{
+   IRExpr *v1, *v2;
+   switch (e->tag) {
+
+      case Iex_Get:
+         return shadow_GET( mce, e->Iex.Get.offset, e->Iex.Get.ty );
+
+      case Iex_Tmp:
+         return IRExpr_Tmp( findShadowTmp(mce, e->Iex.Tmp.tmp) );
+
+      case Iex_Const:
+         return definedOfType(shadowType(typeOfIRExpr(mce->bb->tyenv, e)));
+
+      case Iex_Binop:
+         v1 = expr2vbits( mce, e->Iex.Binop.arg1);
+         v2 = expr2vbits( mce, e->Iex.Binop.arg2);
+         return expr2vbits_Binop(
+                   mce,
+                   e->Iex.Binop.op,
+                   e->Iex.Binop.arg1, e->Iex.Binop.arg2,
+                   v1, v2 
+                );
+
+      case Iex_LDle:
+         return expr2vbits_LDle( mce, e->Iex.LDle.ty, e->Iex.LDle.addr );
+
+      default: 
+         VG_(printf)("\n");
+         ppIRExpr(e);
+         VG_(printf)("\n");
+         VG_(skin_panic)("memcheck: expr2vbits");
+   }
+}
+
+static
+IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
+{
+   /* vatom is vbits-value and as such can only have an integer
+      type. */
+   sk_assert(isShadowAtom(mce,vatom));
+   IRType tyH = mce->hWordTy;
+   IRType ty  = typeOfIRExpr(mce->bb->tyenv, vatom);
+   switch (ty) {
+      case Ity_I32:
+         if (tyH == Ity_I32) return vatom;
+         goto unhandled;
+      unhandled:
+         default: VG_(skin_panic)("zwidenToHostWord");
+   }
+}
+
+static 
+void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
+{
+   IRType   ty;
+   IRDirty* di;
+   IRExpr*  datavbits;
+   void*    helper = NULL;
+   Char*    hname = NULL;
+
+   ty = shadowType(typeOfIRExpr(mce->bb->tyenv, data));
+
+   sk_assert(isOriginalAtom(mce,addr));
+   sk_assert(isOriginalAtom(mce,data));
+
+   /* First, emit a definedness test for the address.  This also sets
+      the address (shadow) to 'defined' following the test. */
+   complainIfUndefined( mce, expr2vbits( mce, addr ), addr);
+
+   /* Now cook up a call to the relevant helper function, to write the
+      data V bits into shadow memory. */
+   datavbits = expr2vbits( mce, data );
+   switch (ty) {
+      case Ity_I32: helper = &MC_(helperc_STOREV4);
+                    hname = "MC_(helperc_STOREV4)";
+                    break;
+      case Ity_I16: helper = &MC_(helperc_STOREV2);
+                    hname = "MC_(helperc_STOREV2)";
+                    break;
+      case Ity_I8:  helper = &MC_(helperc_STOREV1);
+                    hname = "MC_(helperc_STOREV1)";
+                    break;
+      default:      VG_(skin_panic)("memcheck:do_shadow_STle");
+   }
+
+   di = unsafeIRDirty_0_N( 
+           2/*regparms*/, hname, helper, 
+           mkIRExprVec_2( addr,
+                          zwidenToHostWord( mce, datavbits )));
+   setHelperAnns( mce, di );
+   stmt( mce->bb, IRStmt_Dirty(di) );
+}
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+{
+   Bool verbose = True; 
+
+   Int i, j, n_types, first_stmt;
+   IRStmt* st;
+   MCEnv mce;
+
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+   /* Allocate shadow IRTemps.
+      0       ..   n_types-1 are the original IRTemps.
+      n_types .. 2*n_types-1 are the shadow IRTemps. 
+   */
+   n_types = bb->tyenv->types_used;
+   for (i = 0; i < n_types; i++)
+      newIRTemp(bb->tyenv, shadowType(bb->tyenv->types[i]));
+
+   /* Set up the running environment.  Only .bb is modified as we go
+      along. */
+   mce.bb             = bb;
+   mce.layout         = layout;
+   mce.n_originalTmps = n_types;
+   mce.hWordTy        = hWordTy;
+   mce.tmpMap         = LibVEX_Alloc(n_types * sizeof(IRTemp));
+   for (i = 0; i < n_types; i++)
+      mce.tmpMap[i] = INVALID_IRTEMP;
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+      st = bb_in->stmts[i];
+      if (!st) continue;
+
+      sk_assert(isFlatIRStmt(st));
+      first_stmt = bb->stmts_used;
+
+      if (verbose) {
+         ppIRStmt(st);
+         VG_(printf)("\n\n");
+      }
+
+      switch (st->tag) {
+
+         case Ist_Tmp:
+            assign( bb, findShadowTmp(&mce, st->Ist.Tmp.tmp), 
+                        expr2vbits( &mce, st->Ist.Tmp.data) );
+            break;
+
+         case Ist_Put:
+            do_shadow_PUT( &mce, 
+                           st->Ist.Put.offset,
+                           expr2vbits( &mce, st->Ist.Put.data),
+                           st->Ist.Put.data );
+            break;
+
+         case Ist_STle:
+            do_shadow_STle( &mce, st->Ist.STle.addr, st->Ist.STle.data );
+            break;
+
+         default:
+            VG_(printf)("\n");
+            ppIRStmt(st);
+            VG_(printf)("\n");
+            VG_(skin_panic)("memcheck: unhandled IRStmt");
+
+      } /* switch (st->tag) */
+
+      if (verbose) {
+         for (j = first_stmt; j < bb->stmts_used; j++) {
+            VG_(printf)("   ");
+            ppIRStmt(bb->stmts[j]);
+            VG_(printf)("\n");
+         }
+         VG_(printf)("\n");
+      }
+
+      addStmtToIRBB(bb, st);
+
+   }
+
+   /* Uh, ok.  Now we need to complain if the jump target is
+      undefined. */
+   complainIfUndefined( &mce, expr2vbits( &mce, bb->next ), bb->next );
+
+   return bb;
+
+#  undef IRSHADOW
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           mc_translate.c ---*/

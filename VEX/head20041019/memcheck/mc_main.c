@@ -721,10 +721,14 @@ void mc_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 
 static void mc_post_regs_write_init ( void )
 {
+#if 0
    UInt i;
    for (i = FIRST_ARCH_REG; i <= LAST_ARCH_REG; i++)
       VG_(set_shadow_archreg)( i, VGM_WORD_VALID );
    VG_(set_shadow_eflags)( VGM_EFLAGS_VALID );
+#else
+   VG_(printf)("mc_post_regs_write_init()\n");
+#endif
 }
 
 static void mc_post_reg_write(ThreadId tid, UInt reg)
@@ -1100,6 +1104,11 @@ void MC_(helperc_value_check2_fail) ( void )
 void MC_(helperc_value_check4_fail) ( void )
 {
    MC_(record_value_error) ( VG_(get_current_tid)(), 4 );
+}
+
+REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
+{
+   MC_(record_value_error) ( VG_(get_current_tid)(), (Int)sz );
 }
 
 
@@ -1692,6 +1701,7 @@ void SK_(pre_clo_init)(void)
    VG_(init_post_reg_write_clientreq_return)  ( & mc_post_reg_write );
    VG_(init_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
 
+#if 0
    /* Three compact slots taken up by stack memory helpers */
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check4_fail));
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check0_fail));
@@ -1707,6 +1717,7 @@ void SK_(pre_clo_init)(void)
    VG_(register_noncompact_helper)((Addr) & MC_(fpu_write_check));
    VG_(register_noncompact_helper)((Addr) & MC_(fpu_read_check));
    VG_(register_noncompact_helper)((Addr) & MC_(helper_value_check1_fail));
+#endif
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

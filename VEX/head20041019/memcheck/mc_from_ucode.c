@@ -45,6 +45,8 @@
 /* See the corresponding comment at the top of vg_from_ucode.c to find out
  * how all this works */
 
+#if 0
+
 /*----------------------------------------------------*/
 /*--- v-size (4, or 2 with OSO) insn emitters      ---*/
 /*----------------------------------------------------*/
@@ -655,6 +657,8 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
          VG_(skin_panic)("emit_XUInstr: unhandled extension opcode");
    }
 }
+
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                          mc_from_ucode.c ---*/

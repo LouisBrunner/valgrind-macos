@@ -175,6 +175,12 @@ void ppIRStmt ( IRStmt* s )
       vex_printf( ") = ");
       ppIRExpr(s->Ist.STle.data);
       break;
+    case Ist_Exit:
+      vex_printf( "if (" );
+      ppIRExpr(s->Ist.Exit.cond);
+      vex_printf( ") goto ");
+      ppIRConst(s->Ist.Exit.dst);
+      break;
     default: 
       vpanic("ppIRStmt");
   }
@@ -354,7 +360,14 @@ IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value ) {
    s->Ist.STle.data = value;
    return s;
 }
-
+IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
+   IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag           = Ist_Exit;
+   s->link          = NULL;
+   s->Ist.Exit.cond = cond;
+   s->Ist.Exit.dst  = dst;
+   return s;
+}
 
 /* Constructors -- IRNext */
 

@@ -499,7 +499,9 @@ typedef
       CondNL     = 13, /* not less           */
 
       CondLE     = 14, /* less or equal      */
-      CondNLE    = 15  /* not less or equal  */
+      CondNLE    = 15, /* not less or equal  */
+
+      CondAlways = 16  /* HACK */
    }
    Condcode;
 
@@ -522,6 +524,7 @@ static Char* name_Condcode ( Condcode cond )
       case CondNL:     return "nl";
       case CondLE:     return "le";
       case CondNLE:    return "nle";
+      case CondAlways: return "ALWAYS";
       default: vpanic("name_Condcode");
    }
 }
@@ -2457,63 +2460,63 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
    return delta;
 }
 
-//-- /*------------------------------------------------------------*/
-//-- /*--- Disassembling string ops (including REP prefixes)    ---*/
-//-- /*------------------------------------------------------------*/
-//-- 
-//-- /* Code shared by all the string ops */
-//-- static
-//-- void dis_string_op_increment(UCodeBlock* cb, Int sz, Int t_inc)
-//-- {
-//--    uInstr0 (cb, CALLM_S, 0);
-//--    uInstr2 (cb, MOV,   4, Literal, 0, TempReg, t_inc);
-//--    uLiteral(cb, 0);
-//--    uInstr1 (cb, PUSH,  4, TempReg, t_inc);
-//-- 
-//--    uInstr1  (cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-//--    uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-//-- 
-//--    uInstr1(cb, POP,   4, TempReg, t_inc);
-//--    uInstr0(cb, CALLM_E, 0);
-//-- 
-//--    if (sz == 4 || sz == 2) {
-//--       uInstr2(cb, SHL, 4, Literal, 0, TempReg, t_inc);
-//--       uLiteral(cb, sz/2);
-//--    }
-//-- }
-//-- 
-//-- static
-//-- void dis_string_op( UCodeBlock* cb, void (*dis_OP)( UCodeBlock*, Int, Int ), 
-//--                     Int sz, Char* name, UChar sorb )
-//-- {
-//--    Int t_inc = newTemp(cb);
-//--    vg_assert(sorb == 0);
-//--    dis_string_op_increment(cb, sz, t_inc);
-//--    dis_OP( cb, sz, t_inc );
-//--    DIP("%s%c\n", name, nameISize(sz));
-//-- }
-//-- 
-//-- 
-//-- static 
-//-- void dis_MOVS ( UCodeBlock* cb, Int sz, Int t_inc )
-//-- {
-//--    Int tv = newTemp(cb);   /* value being copied */
-//--    Int td = newTemp(cb);   /* EDI */
-//--    Int ts = newTemp(cb);   /* ESI */
-//-- 
-//--    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-//--    uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-//-- 
-//--    uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tv);
-//--    uInstr2(cb, STORE,sz, TempReg, tv,    TempReg, td);
-//-- 
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//-- 
-//--    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//--    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//-- }
-//-- 
+/*------------------------------------------------------------*/
+/*--- Disassembling string ops (including REP prefixes)    ---*/
+/*------------------------------------------------------------*/
+
+/* Code shared by all the string ops */
+static
+void dis_string_op_increment(Int sz, Int t_inc)
+{
+   if (sz == 4 || sz == 2) {
+      assign( t_inc, 
+              binop(Iop_Shl32, IRExpr_Get( OFFB_DFLAG, Ity_I32 ),
+                               mkU32(sz/2) ) );
+   } else {
+      assign( t_inc, 
+              IRExpr_Get( OFFB_DFLAG, Ity_I32 ) );
+   }
+}
+
+#if 0
+static
+void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
+                    Int sz, Char* name, UChar sorb )
+{
+   IRTemp t_inc = newTemp(Ity_I32);
+   vassert(sorb == 0);
+   dis_string_op_increment(sz, t_inc);
+   dis_OP( sz, t_inc );
+   DIP("%s%c\n", name, nameISize(sz));
+}
+#endif
+
+static 
+void dis_MOVS ( Int sz, IRTemp t_inc )
+{
+   IRType ty = szToITy(sz);
+   //IRTemp tv = newTemp(ty);        /* value being copied */
+   IRTemp td = newTemp(Ity_I32);   /* EDI */
+   IRTemp ts = newTemp(Ity_I32);   /* ESI */
+
+   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
+   //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
+   assign( td, getIReg(4, R_EDI) );
+   assign( ts, getIReg(4, R_ESI) );
+
+   //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tv);
+   //uInstr2(cb, STORE,sz, TempReg, tv,    TempReg, td);
+   storeLE( mkexpr(td), loadLE(ty,mkexpr(ts)) );
+
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
+
+   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
+   //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
+   putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
+   putIReg( 4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
+}
+
 //-- static 
 //-- void dis_LODS ( UCodeBlock* cb, Int sz, Int t_inc )
 //-- {
@@ -2527,98 +2530,136 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
 //--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
 //--    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
 //-- }
-//-- 
-//-- static 
-//-- void dis_STOS ( UCodeBlock* cb, Int sz, Int t_inc )
-//-- {
-//--    Int ta = newTemp(cb);   /* EAX */
-//--    Int td = newTemp(cb);   /* EDI */
-//-- 
-//--    uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
-//--    uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
-//--    uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
-//-- 
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//--    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//-- }
-//-- 
-//-- static 
-//-- void dis_CMPS ( UCodeBlock* cb, Int sz, Int t_inc )
-//-- {
-//--    Int tdv = newTemp(cb);  /* (EDI) */
-//--    Int tsv = newTemp(cb);  /* (ESI) */
-//--    Int td  = newTemp(cb);  /*  EDI  */
-//--    Int ts  = newTemp(cb);  /*  ESI  */
-//-- 
-//--    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-//--    uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-//-- 
-//--    uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
-//--    uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
-//-- 
-//--    uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
-//--    setFlagsFromUOpcode(cb, SUB);
-//-- 
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//-- 
-//--    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//--    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//-- }
-//-- 
-//-- static 
-//-- void dis_SCAS ( UCodeBlock* cb, Int sz, Int t_inc )
-//-- {
-//--    Int ta  = newTemp(cb);  /*  EAX  */
-//--    Int td  = newTemp(cb);  /*  EDI  */
-//--    Int tdv = newTemp(cb);  /* (EDI) */
-//-- 
-//--    uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
-//--    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-//--    uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
-//--    /* next uinstr kills ta, but that's ok -- don't need it again */
-//--    uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
-//--    setFlagsFromUOpcode(cb, SUB);
-//-- 
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//--    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//-- }
-//-- 
-//-- 
-//-- /* Wrap the appropriate string op inside a REP/REPE/REPNE.
-//--    We assume the insn is the last one in the basic block, and so emit a jump
-//--    to the next insn, rather than just falling through. */
-//-- static 
-//-- void dis_REP_op ( UCodeBlock* cb, Int cond,
-//--                   void (*dis_OP)(UCodeBlock*, Int, Int),
-//--                   Int sz, Addr eip, Addr eip_next, Char* name )
-//-- {
-//--    Int t_inc = newTemp(cb);
-//--    Int tc    = newTemp(cb);  /*  ECX  */
-//-- 
-//--    dis_string_op_increment(cb, sz, t_inc);
-//-- 
-//--    uInstr2 (cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-//--    uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-//--    uLiteral(cb, eip_next);
-//--    uInstr1 (cb, DEC,   4, TempReg, tc);
-//--    uInstr2 (cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
-//-- 
-//--    dis_OP  (cb, sz, t_inc);
-//-- 
-//--    if (cond == CondAlways) {
-//--       jmp_lit(cb, eip);
-//--    } else {
-//--       jcc_lit(cb, eip, cond);
-//--       jmp_lit(cb, eip_next);
-//--    }
-//--    DIP("%s%c\n", name, nameISize(sz));
-//-- }
-//-- 
-//-- /*------------------------------------------------------------*/
-//-- /*--- Arithmetic, etc.                                     ---*/
-//-- /*------------------------------------------------------------*/
-//-- 
+
+static 
+void dis_STOS ( Int sz, IRTemp t_inc )
+{
+   IRType ty = szToITy(sz);
+   IRTemp ta = newTemp(ty);        /* EAX */
+   IRTemp td = newTemp(Ity_I32);   /* EDI */
+
+   //uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
+   assign( ta, getIReg(sz, R_EAX) );
+
+   //uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
+   assign( td, getIReg(4, R_EDI) );
+
+   //uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
+   storeLE( mkexpr(ta), mkexpr(td) );
+
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
+   putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
+}
+
+static 
+void dis_CMPS ( Int sz, IRTemp t_inc )
+{
+   IRType ty  = szToITy(sz);
+   IRTemp tdv = newTemp(sz);      /* (EDI) */
+   IRTemp tsv = newTemp(sz);      /* (ESI) */
+   IRTemp td  = newTemp(Ity_I32); /*  EDI  */
+   IRTemp ts  = newTemp(Ity_I32); /*  ESI  */
+
+   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
+   assign( td, getIReg(4, R_EDI) );
+
+   //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
+   assign( ts, getIReg(4, R_ESI) );
+
+   //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
+   assign( tdv, loadLE(ty,mkexpr(td)) );
+
+   //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
+   //assign( tsv, loadLE(ty,mkexpr(ts)) );
+
+   //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
+   //setFlagsFromUOpcode(cb, SUB);
+
+   assign( tsv, binop(mkSizedOp(ty,Iop_Sub8), loadLE(ty,mkexpr(ts)), mkexpr(tdv)) );
+   setFlags_SRC_DST1 ( Iop_Sub8, tdv, tsv, ty );
+
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
+
+   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
+   putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
+
+   //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
+   putIReg(4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
+}
+
+#if 0
+static 
+void dis_SCAS ( Int sz, IRTemp t_inc )
+{
+   IRType ty  = szToITy(sz);
+   IRTemp ta  = newTemp(Ity_I32);  /*  EAX  */
+   IRTemp td  = newTemp(Ity_I32);  /*  EDI  */
+   IRTemp tdv = newTemp(ty);       /* (EDI) */
+
+   //uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
+   assign( ta, getIReg(sz, R_EAX) );
+
+   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
+   assign( td, getIReg(4, R_EDI) );
+
+   //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
+   assign( tdv, loadLE(ty,mkexpr(td)) );
+
+   /* next uinstr kills ta, but that's ok -- don't need it again */
+   //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
+   //setFlagsFromUOpcode(cb, SUB);
+
+   assign( ta, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(ta), mkexpr(tdv)) );
+   setFlags_SRC_DST1( Iop_Sub8, tdv, ta, ty );
+
+   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
+   putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
+}
+#endif
+
+/* Wrap the appropriate string op inside a REP/REPE/REPNE.
+   We assume the insn is the last one in the basic block, and so emit a jump
+   to the next insn, rather than just falling through. */
+static 
+void dis_REP_op ( Condcode cond,
+                  void (*dis_OP)(Int, IRTemp),
+                  Int sz, Addr32 eip, Addr32 eip_next, Char* name )
+{
+   IRTemp t_inc = newTemp(Ity_I32);
+   IRTemp tc    = newTemp(Ity_I32);  /*  ECX  */
+
+   //uInstr2 (cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
+   assign( tc, getIReg(4,R_ECX) );
+
+   //uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
+   //uLiteral(cb, eip_next);
+   stmt( IRStmt_Exit( binop(Iop_CmpEQ32,mkexpr(tc),mkU32(0)),
+                      IRConst_U32(eip_next) ) );
+
+   //uInstr1 (cb, DEC,   4, TempReg, tc);
+   //uInstr2 (cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
+   putIReg(4, R_ECX, binop(Iop_Sub32, mkexpr(tc), mkU32(1)) );
+
+   dis_string_op_increment(sz, t_inc);
+   dis_OP (sz, t_inc);
+
+   if (cond == CondAlways) {
+      jmp_lit(eip);
+   } else {
+      stmt( IRStmt_Exit( calculate_condition(cond),
+	                 IRConst_U32(eip) ) );
+      jmp_lit(eip_next);
+   }
+   DIP("%s%c\n", name, nameISize(sz));
+}
+
+/*------------------------------------------------------------*/
+/*--- Arithmetic, etc.                                     ---*/
+/*------------------------------------------------------------*/
+
 //-- /* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
 //-- static
 //-- Addr dis_mul_E_G ( UCodeBlock* cb, 
@@ -3277,24 +3318,24 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
 //-- 
 //--    return eip;
 //-- }
-//-- 
-//-- 
-//-- static 
-//-- void codegen_xchg_eAX_Reg ( UCodeBlock* cb, Int sz, Int reg )
-//-- {
-//--    Int t1, t2;
-//--    vg_assert(sz == 2 || sz == 4);
-//--    t1 = newTemp(cb);
-//--    t2 = newTemp(cb);
-//--    uInstr2(cb, GET, sz, ArchReg, R_EAX, TempReg, t1);
-//--    uInstr2(cb, GET, sz, ArchReg, reg,   TempReg, t2);
-//--    uInstr2(cb, PUT, sz, TempReg, t2,    ArchReg, R_EAX);
-//--    uInstr2(cb, PUT, sz, TempReg, t1,    ArchReg, reg);
-//--    DIP("xchg%c %s, %s\n", 
-//--        nameISize(sz), nameIReg(sz, R_EAX), nameIReg(sz, reg));
-//-- }
-//-- 
-//-- 
+
+
+static 
+void codegen_xchg_eAX_Reg ( Int sz, Int reg )
+{
+   IRType ty = szToITy(sz);
+   IRTemp t1 = newTemp(ty);
+   IRTemp t2 = newTemp(ty);
+   vassert(sz == 2 || sz == 4);
+   assign( t1, getIReg(sz, R_EAX) );
+   assign( t2, getIReg(sz, reg) );
+   putIReg( sz, R_EAX, mkexpr(t2) );
+   putIReg( sz, reg, mkexpr(t1) );
+   DIP("xchg%c %s, %s\n", 
+       nameISize(sz), nameIReg(sz, R_EAX), nameIReg(sz, reg));
+}
+
+
 //-- static 
 //-- void codegen_SAHF ( UCodeBlock* cb )
 //-- {
@@ -4259,8 +4300,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    IRType  ty;
    IRTemp  addr, t1, t2;
    Int     alen;
-   UChar   opc, modrm /* , abyte*/;
-   UInt    d32 /*, pair*/;
+   UChar   opc, modrm, abyte;
+   UInt    d32;
    UChar   dis_buf[50];
    Int     am_sz, d_sz;
    //Char  loc_buf[M_VG_ERRTXT];
@@ -5814,16 +5855,16 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          DIP("cbw\n");
 //--       }
 //--       break;
-//-- 
-//--    case 0x99: /* CWD/CDQ */
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, R_EAX, TempReg, t1);
-//--       uInstr2(cb, SAR, sz, Literal, 0,     TempReg, t1);
-//--       uLiteral(cb, sz == 2 ? 15  : 31);
-//--       uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, R_EDX);
-//--       DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
-//--       break;
-//-- 
+
+   case 0x99: /* CWD/CDQ */
+      ty = szToITy(sz);
+      putIReg(sz, R_EDX,
+                  binop(mkSizedOp(ty,Iop_Sar8), 
+                        getIReg(sz, R_EAX),
+			mkU(ty,sz == 2 ? 15  : 31)) );
+      DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
+      break;
+
 //--    /* ------------------------ FPU ops -------------------- */
 //-- 
 //--    case 0x9E: /* SAHF */
@@ -6548,18 +6589,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //-- 
 //--    case 0xAE: /* SCAS, no REP prefix */
 //--    case 0xAF:
-//--       dis_string_op( cb, dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
+//--       dis_string_op( dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
 //--       break;
-//-- 
-//-- 
-//--    case 0xFC: /* CLD */
-//--       uInstr0(cb, CALLM_S, 0);
-//--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CLD));
-//--       uFlagsRWU(cb, FlagsEmpty, FlagD, FlagsEmpty);
-//--       uInstr0(cb, CALLM_E, 0);
-//--       DIP("cld\n");
-//--       break;
-//-- 
+
+
+   case 0xFC: /* CLD */
+      stmt( IRStmt_Put( NULL, OFFB_DFLAG, mkU32(1)) );
+      DIP("cld\n");
+      break;
+
 //--    case 0xFD: /* STD */
 //--       uInstr0(cb, CALLM_S, 0);
 //--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_STD));
@@ -6624,32 +6662,35 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       }
 //--       break;
 //--    }
-//-- 
-//--    /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
-//--       for the rest, it means REP) */
-//--    case 0xF3: { 
-//--       Addr eip_orig = eip - 1;
-//--       vg_assert(sorb == 0);
-//--       abyte = getUChar(eip); eip++;
-//-- 
-//--       if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
-//--       *isEnd = True;
-//-- 
-//--       switch (abyte) {
-//--       case 0xA4: sz = 1;   /* REP MOVS<sz> */
-//--       case 0xA5:
-//--          dis_REP_op ( cb, CondAlways, dis_MOVS, sz, eip_orig, eip, "rep movs" );
-//--          break;
-//-- 
-//--       case 0xA6: sz = 1;   /* REPE CMP<sz> */
+
+   /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
+      for the rest, it means REP) */
+   case 0xF3: { 
+      Addr32 eip_orig = guest_eip + delta - 1;
+      vassert(sorb == 0);
+      abyte = getIByte(delta); delta++;
+
+      if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
+      *isEnd = True;
+
+      switch (abyte) {
+      case 0xA4: sz = 1;   /* REP MOVS<sz> */
+      case 0xA5:
+         dis_REP_op ( CondAlways, dis_MOVS, sz, eip_orig, 
+                                  guest_eip+delta, "rep movs" );
+         break;
+
+      case 0xA6: sz = 1;   /* REPE CMP<sz> */
 //--       case 0xA7:
-//--          dis_REP_op ( cb, CondZ, dis_CMPS, sz, eip_orig, eip, "repe cmps" );
-//--          break;
-//-- 
-//--       case 0xAA: sz = 1;   /* REP STOS<sz> */
-//--       case 0XAB:
-//--          dis_REP_op ( cb, CondAlways, dis_STOS, sz, eip_orig, eip, "rep stos" );
-//--          break;
+         dis_REP_op ( CondZ, dis_CMPS, sz, eip_orig, 
+                             guest_eip+delta, "repe cmps" );
+         break;
+
+      case 0xAA: sz = 1;   /* REP STOS<sz> */
+      case 0xAB:
+         dis_REP_op ( CondAlways, dis_STOS, sz, eip_orig, 
+                                  guest_eip+delta, "rep stos" );
+         break;
 //-- 
 //--       case 0xAE: sz = 1;   /* REPE SCAS<sz> */
 //--       case 0xAF: 
@@ -6668,12 +6709,12 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          dis_ret(cb, 0);
 //--          DIP("rep ret\n");
 //--          break;
-//-- 
-//--       default:
-//--          goto decode_failure;
-//--       }
-//--       break;
-//--    }
+
+      default:
+         goto decode_failure;
+      }
+      break;
+   }
 
    /* ------------------------ XCHG ----------------------- */
 
@@ -6708,16 +6749,16 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0x90: /* XCHG eAX,eAX */
       DIP("nop\n");
       break;
-//--    case 0x91: /* XCHG eAX,eCX */
-//--    case 0x92: /* XCHG eAX,eDX */
-//--    case 0x93: /* XCHG eAX,eBX */
-//--    case 0x94: /* XCHG eAX,eSP */
-//--    case 0x95: /* XCHG eAX,eBP */
-//--    case 0x96: /* XCHG eAX,eSI */
-//--    case 0x97: /* XCHG eAX,eDI */
-//--       codegen_xchg_eAX_Reg ( cb, sz, opc - 0x90 );
-//--       break;
-//-- 
+   case 0x91: /* XCHG eAX,eCX */
+   case 0x92: /* XCHG eAX,eDX */
+   case 0x93: /* XCHG eAX,eBX */
+   case 0x94: /* XCHG eAX,eSP */
+   case 0x95: /* XCHG eAX,eBP */
+   case 0x96: /* XCHG eAX,eSI */
+   case 0x97: /* XCHG eAX,eDI */
+      codegen_xchg_eAX_Reg ( sz, opc - 0x90 );
+      break;
+
 //--    /* ------------------------ XLAT ----------------------- */
 //-- 
 //--    case 0xD7: /* XLAT */

@@ -115,7 +115,7 @@ extern UInt calculate_all ( void );
 /* The D flag is stored here, as either -1 or +1 */
 #define OFFB_DFLAG   (11*4)
 /* EIP */
-#define OFFB_EIF     (12*4)
+#define OFFB_EIP     (12*4)
 
 
 #define SIZEOF_X86H_STATE OFFB_EIF

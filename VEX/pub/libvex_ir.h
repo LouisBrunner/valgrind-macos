@@ -182,9 +182,11 @@ data Stmt
    = PUT    Int Int Expr      -- offset, size, value
    | TMP    Temp Expr         -- store value in Temp
    | STle   Expr Expr         -- address (32 or 64 bit), value
+   | Exit   Expr Const        -- conditional exit from middle of BB
+                              -- Const is destination guest addr
 */
 typedef 
-   enum { Ist_Put, Ist_Tmp, Ist_STle } 
+   enum { Ist_Put, Ist_Tmp, Ist_STle, Ist_Exit } 
    IRStmtTag;
 
 typedef
@@ -204,6 +206,10 @@ typedef
             IRExpr* addr;
             IRExpr* data;
          } STle;
+         struct {
+            IRExpr* cond;
+            IRConst* dst;
+         } Exit;
       } Ist;
       struct _IRStmt* link;
    }
@@ -212,6 +218,7 @@ typedef
 extern IRStmt* IRStmt_Put  ( IRExpr* guard, Int off, IRExpr* value );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
+extern IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst );
 
 extern void ppIRStmt ( IRStmt* );
 

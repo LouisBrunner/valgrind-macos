@@ -210,6 +210,20 @@ static inline int lshift(int x, int n)
     return fl;							\
 }
 
+#define ACTIONS_MUL(DATA_BITS,DATA_UTYPE,DATA_S2TYPE)			\
+{									\
+    PREAMBLE(DATA_BITS);						\
+    int cf, pf, af, zf, sf, of;						\
+    DATA_UTYPE  r  = ((DATA_UTYPE)CC_SRC)  * ((DATA_UTYPE)CC_DST);	\
+    DATA_S2TYPE rr = ((DATA_S2TYPE)CC_SRC) * ((DATA_S2TYPE)CC_DST);	\
+    cf = (r == (DATA_UTYPE)(rr >>/*signed*/ DATA_BITS));	       	\
+    pf = parity_table[(uint8_t)r];					\
+    af = 0; /* undefined */						\
+    zf = (r == 0) << 6;							\
+    sf = lshift(r, 8 - DATA_BITS) & 0x80;				\
+    of = cf << 11;							\
+    return cf | pf | af | zf | sf | of;					\
+}
 
 
 /* CALLED FROM GENERATED CODE */
@@ -240,6 +254,8 @@ static inline int lshift(int x, int n)
 
       case CC_OP_RORW:   ACTIONS_ROR(16,UShort,Short);
       case CC_OP_RORL:   ACTIONS_ROR(32,UInt,  Int);
+
+      case CC_OP_MULL:   ACTIONS_MUL(32,UInt, Long);
 
       default:
          /* shouldn't really make these calls from generated code */

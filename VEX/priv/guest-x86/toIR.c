@@ -2526,26 +2526,24 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 static
 UInt dis_Grp4 ( UChar sorb, UInt delta )
 {
-   IRTemp   t1, t2;
-   //   UInt  pair;
+  Int alen;
    UChar modrm;
-   //UChar dis_buf[50];
+   UChar dis_buf[50];
    IRType ty = Ity_I8;
-   t1 = t2 = INVALID_IRTEMP;
+   IRTemp t1 = newTemp(ty);
+   IRTemp t2 = newTemp(ty);
 
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {
-      t1 = newTemp(ty);
 //--       uInstr2(cb, GET, 1, ArchReg, eregOfRM(modrm), TempReg, t1);
       assign(t1, getIReg(1, eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
-//--          case 0: /* INC */
-//--             uInstr1(cb, INC, 1, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, INC);
-//--             uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             break;
+         case 0: /* INC */
+            assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
+            putIReg(1, eregOfRM(modrm), mkexpr(t2));
+            setFlags_INC_DEC( True, t2, ty );
+            break;
          case 1: /* DEC */
-            t2 = newTemp(ty);
             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
             putIReg(1, eregOfRM(modrm), mkexpr(t2));
             setFlags_INC_DEC( False, t2, ty );
@@ -2553,35 +2551,32 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
          default: 
             vex_printf(
                "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
-            vpanic("Grp4(x86)");
+            vpanic("Grp4(x86,R)");
       }
       delta++;
       DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)),
                       nameIReg(1, eregOfRM(modrm)));
    } else {
-      vassert(0);
-//--       pair = disAMode ( cb, sorb, eip, dis_buf );
-//--       t2   = LOW24(pair);
-//--       t1   = newTemp(cb);
-//--       uInstr2(cb, LOAD, 1, TempReg, t2, TempReg, t1);
-//--       switch (gregOfRM(modrm)) {
+      IRTemp addr = disAMode ( &alen, sorb, delta, dis_buf );
+      assign( t1, loadLE(ty, mkexpr(addr)) );
+      switch (gregOfRM(modrm)) {
 //--          case 0: /* INC */ 
 //--             uInstr1(cb, INC, 1, TempReg, t1);
 //--             setFlagsFromUOpcode(cb, INC);
 //--             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
 //--             break;
-//--          case 1: /* DEC */
-//--             uInstr1(cb, DEC, 1, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, DEC);
-//--             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-//--             break;
-//--          default: 
-//--             VG_(printf)(
-//--                "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
-//--             VG_(core_panic)("Grp4");
-//--       }
-//--       eip += HI8(pair);
-//--       DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)), dis_buf);
+         case 1: /* DEC */
+            assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
+            storeLE( mkexpr(addr), mkexpr(t2) );
+            setFlags_INC_DEC( False, t2, ty );
+            break;
+         default: 
+            vex_printf(
+               "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp4(x86,M)");
+      }
+      delta += alen;
+      DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)), dis_buf);
    }
    return delta;
 }
@@ -6361,17 +6356,20 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 #if 0
    case 0xB0: /* MOV imm,AL */
    case 0xB1: /* MOV imm,CL */
+#endif
    case 0xB2: /* MOV imm,DL */
+#if 0
    case 0xB3: /* MOV imm,BL */
    case 0xB4: /* MOV imm,AH */
    case 0xB5: /* MOV imm,CH */
    case 0xB6: /* MOV imm,DH */
    case 0xB7: /* MOV imm,BH */
+#endif
       d32 = getIByte(delta); delta += 1;
       putIReg(1, opc-0xB0, mkU8(d32));
       DIP("movb $0x%x,%s\n", d32, nameIReg(1,opc-0xB0));
       break;
-#endif
+
    case 0xB8: /* MOV imm,eAX */
    case 0xB9: /* MOV imm,eCX */
    case 0xBA: /* MOV imm,eDX */
@@ -6483,9 +6481,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_E_G ( sorb, Iop_Add8, True, sz, delta, "add" );
       break;
 
-//--    case 0x0A: /* OR Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, OR, True, 1, delta, "or" );
-//--       break;
+   case 0x0A: /* OR Eb,Gb */
+      delta = dis_op2_E_G ( sorb, Iop_Or8, True, 1, delta, "or" );
+      break;
    case 0x0B: /* OR Ev,Gv */
       delta = dis_op2_E_G ( sorb, Iop_Or8, True, sz, delta, "or" );
       break;
@@ -7356,10 +7354,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0xBE: /* MOVSXb Eb,Gv */
          delta = dis_movx_E_G ( sorb, delta, 1, 4, True );
          break;
-//--       case 0xBF: /* MOVSXw Ew,Gv */
-//--          eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, True );
-//--          break;
-//-- 
+      case 0xBF: /* MOVSXw Ew,Gv */
+         delta = dis_movx_E_G ( sorb, delta, 2, 4, True );
+         break;
+
 //--       /* =-=-=-=-=-=-=-=-=-=-= MOVNTI -=-=-=-=-=-=-=-=-= */
 //-- 
 //--       case 0xC3: /* MOVNTI Gv,Ev */

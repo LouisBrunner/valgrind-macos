@@ -32,7 +32,6 @@
 
 #include "vg_include.h"
 #include "vg_constants.h"
-#include "vg_version.h"
 
 
 /* ---------------------------------------------------------------------
@@ -1011,12 +1010,11 @@ static void process_cmd_line_options ( void )
 
    VG_(clo_logfile_fd) = eventually_logfile_fd;
 
-#  define STRINGIFY(xx)  __STRING(xx)
    if (VG_(clo_verbosity > 0))
       VG_(message)(Vg_UserMsg, 
                    "valgrind-%s, a memory error detector for x86 GNU/Linux.",
-                   STRINGIFY(VG_VERSION));
-#  undef STRINGIFY
+                   VERSION);
+
    if (VG_(clo_verbosity > 0))
       VG_(message)(Vg_UserMsg, 
                    "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");

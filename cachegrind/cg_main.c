@@ -124,10 +124,10 @@ static fileCC *CC_table[N_FILE_ENTRIES];
 
 typedef struct _instr_info instr_info;
 struct _instr_info {
-   Addr            instr_addr;
-   UChar           instr_size;
-   UChar           data_size;
-   struct _lineCC* parent;       // parent line-CC
+   Addr    instr_addr;
+   UChar   instr_size;
+   UChar   data_size;
+   lineCC* parent;       // parent line-CC
 };
 
 typedef struct _BB_info BB_info;

@@ -294,8 +294,6 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 
 
 static Int    stopAfter = 0;
-static UChar* image     = NULL;
-static Int    imageSz   = 0;
 static UChar* entry     = NULL;
 
 
@@ -304,6 +302,7 @@ static
 void failure_exit ( void )
 {
    fprintf(stdout, "VEX did failure_exit.  Bye.\n");
+   fprintf(stdout, "bb counter = %d\n\n", n_bbs_done);
    exit(1);
 }
 
@@ -377,8 +376,6 @@ static void usage ( void )
 int main ( Int argc, HChar** argv )
 {
    HChar* oname;
-   FILE* f;
-   Int n, i;
 
    struct stat buf;
 

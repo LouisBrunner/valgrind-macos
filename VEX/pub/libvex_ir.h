@@ -90,6 +90,8 @@ extern Bool eqIRArray ( IRArray*, IRArray* );
 
 /* ------------------ Temporaries ------------------ */
 
+/* The IR optimiser relies on the fact that IRTemps are 32-bit
+   ints.  Do not change them to be ints of any other size. */
 typedef UInt IRTemp;
 
 extern void ppIRTemp ( IRTemp );

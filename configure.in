@@ -76,7 +76,7 @@ case "${host_cpu}" in
 
      powerpc*)
         AC_MSG_RESULT([no (${host_cpu})])
-        VG_ARCH="powerpc"
+        VG_ARCH="ppc"
         AC_MSG_ERROR([PowerPC not supported. Sorry])
         ;;
 

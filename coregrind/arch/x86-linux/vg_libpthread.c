@@ -1,5 +1,37 @@
 
-/* This is a replacement for the standard libpthread.so.  It is loaded
+/*--------------------------------------------------------------------*/
+/*--- A replacement for the standard libpthread.so.                ---*/
+/*---                                              vg_libpthread.c ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, an x86 protected-mode emulator 
+   designed for debugging and profiling binaries on x86-Unixes.
+
+   Copyright (C) 2000-2002 Julian Seward 
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file LICENSE.
+*/
+
+/* ALL THIS CODE RUNS ON THE SIMULATED CPU.
+
+   This is a replacement for the standard libpthread.so.  It is loaded
    as part of the client's image (if required) and directs pthread
    calls through to Valgrind's request mechanism. 
 
@@ -71,7 +103,7 @@ void ensure_valgrind ( char* caller )
    char* str;
    int is_valgrind = RUNNING_ON_VALGRIND;
    if (!is_valgrind) {
-      str = "\nvalgrind-ed process: vg_libpthread.so: "
+      str = "\nvalgrind's libpthread.so: "
             "pthread call when\n";
       write(2, str, strlen(str));
       str = "not running on valgrind; aborting!  "
@@ -96,7 +128,7 @@ void barf ( char* str )
 {
    char buf[100];
    buf[0] = 0;
-   strcat(buf, "\nvg_libpthread.so: ");
+   strcat(buf, "\nvalgrind's libpthread.so: ");
    strcat(buf, str);
    strcat(buf, "\n\n");
    write(2, buf, strlen(buf));
@@ -109,7 +141,7 @@ void barf ( char* str )
 static void ignored ( char* msg )
 {
    if (get_pt_trace_level() >= 0) {
-      char* ig = "vg_libpthread.so: IGNORED call to: ";
+      char* ig = "valgrind's libpthread.so: IGNORED call to: ";
       write(2, ig, strlen(ig));
       write(2, msg, strlen(msg));
       ig = "\n";
@@ -120,7 +152,19 @@ static void ignored ( char* msg )
 static void kludged ( char* msg )
 {
    if (get_pt_trace_level() >= 0) {
-      char* ig = "vg_libpthread.so: KLUDGED call to: ";
+      char* ig = "valgrind's libpthread.so: KLUDGED call to: ";
+      write(2, ig, strlen(ig));
+      write(2, msg, strlen(msg));
+      ig = "\n";
+      write(2, ig, strlen(ig));
+   }
+}
+
+static void not_inside ( char* msg )
+{
+   if (get_pt_trace_level() >= 0) {
+      char* ig = "valgrind's libpthread.so: NOT INSIDE VALGRIND "
+                 "during call to: ";
       write(2, ig, strlen(ig));
       write(2, msg, strlen(msg));
       ig = "\n";
@@ -130,7 +174,7 @@ static void kludged ( char* msg )
 
 void vgPlain_unimp ( char* what )
 {
-   char* ig = "vg_libpthread.so: UNIMPLEMENTED FUNCTION: ";
+   char* ig = "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ";
    write(2, ig, strlen(ig));
    write(2, what, strlen(what));
    ig = "\n";
@@ -264,10 +308,10 @@ pthread_t pthread_self(void)
 {
    int tid;
    ensure_valgrind("pthread_self");
-   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
-   if (tid < 0 || tid >= VG_N_THREADS)
+   if (tid < 1 || tid >= VG_N_THREADS)
       barf("pthread_self: invalid ThreadId");
    return tid;
 }
@@ -329,53 +373,57 @@ int __pthread_mutex_init(pthread_mutex_t *mutex,
    return 0;
 }
 
+
 int __pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = N_MOANS;
-   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
-      char* str = "pthread_mutex_lock-NOT-INSIDE-VALGRIND\n";
-      write(2, str, strlen(str));
-      return 0;
-   } else {
+   if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_LOCK,
                               mutex, 0, 0, 0);
       return res;
+   } else {
+      if (moans-- > 0)
+         not_inside("pthread_mutex_lock");
+      return 0; /* success */
    }
 }
+
 
 int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = N_MOANS;
-   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
-      char* str = "pthread_mutex_trylock-NOT-INSIDE-VALGRIND\n";
-      write(2, str, strlen(str));
-      return 0;
-   } else {
+   if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
                               mutex, 0, 0, 0);
       return res;
+   } else {
+      if (moans-- > 0)
+         not_inside("pthread_mutex_trylock");
+      return 0;
    }
 }
+
 
 int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = N_MOANS;
-   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
-      char* str = "pthread_mutex_unlock-NOT-INSIDE-VALGRIND\n";
-      write(2, str, strlen(str));
-      return 0;
-   } else {
+   if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
                               mutex, 0, 0, 0);
       return res;
+   } else {
+      if (moans-- > 0)
+         not_inside("pthread_mutex_unlock");
+      return 0;
    }
 }
+
 
 int __pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
@@ -677,7 +725,7 @@ int* __errno_location ( void )
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
    /* 'cos I'm paranoid ... */
-   if (tid < 0 || tid >= VG_N_THREADS)
+   if (tid < 1 || tid >= VG_N_THREADS)
       barf("__errno_location: invalid ThreadId");
    return & thread_specific_errno[tid];
 }
@@ -690,7 +738,7 @@ int* __h_errno_location ( void )
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
    /* 'cos I'm paranoid ... */
-   if (tid < 0 || tid >= VG_N_THREADS)
+   if (tid < 1 || tid >= VG_N_THREADS)
       barf("__h_errno_location: invalid ThreadId");
    return & thread_specific_h_errno[tid];
 }
@@ -703,7 +751,7 @@ struct __res_state* __res_state ( void )
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
    /* 'cos I'm paranoid ... */
-   if (tid < 0 || tid >= VG_N_THREADS)
+   if (tid < 1 || tid >= VG_N_THREADS)
       barf("__res_state: invalid ThreadId");
    return & thread_specific_res_state[tid];
 }
@@ -771,7 +819,8 @@ libc_internal_tsd_set ( enum __libc_tsd_key_t key,
       barf("libc_internal_tsd_set: invalid key");
    if (key >= _LIBC_TSD_KEY_N && moans-- > 0)
       fprintf(stderr, 
-         "vg_libpthread.so: libc_internal_tsd_set: dubious key %d\n", key);
+         "valgrind's libpthread.so: libc_internal_tsd_set: "
+         "dubious key %d\n", key);
    init_libc_tsd_keys();
    res = pthread_setspecific(libc_specifics_keys[key], pointer);
    if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
@@ -789,7 +838,8 @@ libc_internal_tsd_get ( enum __libc_tsd_key_t key )
       barf("libc_internal_tsd_get: invalid key");
    if (key >= _LIBC_TSD_KEY_N && moans-- > 0)
       fprintf(stderr, 
-         "vg_libpthread.so: libc_internal_tsd_get: dubious key %d\n", key);
+         "valgrind's libpthread.so: libc_internal_tsd_get: "
+         "dubious key %d\n", key);
    init_libc_tsd_keys();
    v = pthread_getspecific(libc_specifics_keys[key]);
    /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
@@ -1351,7 +1401,6 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 # define weak_alias(name, aliasname) \
   extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
-#if 1
 strong_alias(__pthread_mutex_lock, pthread_mutex_lock)
 strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
 strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
@@ -1385,7 +1434,6 @@ strong_alias(send, __send)
 weak_alias(__fork, fork)
 //weak_alias(__vfork, vfork)
 
-#endif
 
 /*--------------------------------------------------*/
 
@@ -1431,10 +1479,7 @@ weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
 #undef _IO_flockfile
 void _IO_flockfile ( _IO_FILE * file )
 {
-   //char* str = "_IO_flockfile\n";
-   //write(2, str, strlen(str));
    pthread_mutex_lock(file->_lock);
-   //  barf("_IO_flockfile");
 }
 weak_alias(_IO_flockfile, flockfile);
 
@@ -1442,24 +1487,23 @@ weak_alias(_IO_flockfile, flockfile);
 #undef _IO_funlockfile
 void _IO_funlockfile ( _IO_FILE * file )
 {
-   //char* str = "_IO_funlockfile\n";
-   //write(2, str, strlen(str));
    pthread_mutex_unlock(file->_lock);
-   //  barf("_IO_funlockfile");
 }
 weak_alias(_IO_funlockfile, funlockfile);
 
 
 void _pthread_cleanup_push_defer ( void )
 {
-   //    char* str = "_pthread_cleanup_push_defer\n";
-   //    write(2, str, strlen(str));
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("_pthread_cleanup_push_defer");
 }
 
 void _pthread_cleanup_pop_restore ( void )
 {
-   //    char* str = "_pthread_cleanup_pop_restore\n";
-   //    write(2, str, strlen(str));
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("_pthread_cleanup_pop_restore");
 }
 
 
@@ -1468,3 +1512,8 @@ void _pthread_cleanup_pop_restore ( void )
 
 strong_alias(__pthread_mutexattr_settype, __pthread_mutexattr_setkind_np)
 weak_alias(__pthread_mutexattr_setkind_np, pthread_mutexattr_setkind_np)
+
+
+/*--------------------------------------------------------------------*/
+/*--- end                                          vg_libpthread.c ---*/
+/*--------------------------------------------------------------------*/

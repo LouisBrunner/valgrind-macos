@@ -1,13 +1,16 @@
 
-Unstable (cvs head) release 2.1.2 (18 July 2004)
+Developer (cvs head) release 2.1.2 (18 July 2004)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2.1.2 contains four months worth of bug fixes and refinements.
-Although officially an "unstable" release, we believe it to be stable
-enough for widespread day-to-day use.  A large number of minor
-problems with 2.1.1 have been fixed, and so if you use 2.1.1 you
-should try 2.1.2.  Users of the last stable release, 2.0.0, might also
-want to try this release.
+Although officially a developer release, we believe it to be stable
+enough for widespread day-to-day use.  2.1.2 is pretty good, so try it
+first, although there is a chance it won't work.  If so then try 2.0.0
+and tell us what went wrong."  2.1.2 fixes a lot of problems present
+in 2.0.0 and is generally a much better product.
 
+Relative to 2.1.1, a large number of minor problems with 2.1.1 have
+been fixed, and so if you use 2.1.1 you should try 2.1.2.  Users of
+the last stable release, 2.0.0, might also want to try this release.
 
 The following bugs, and probably many more, have been fixed.  These
 are listed at http://bugs.kde.org.  Reporting a bug for valgrind in
@@ -61,6 +64,9 @@ connected to any bug report numbers, AFAICS:
   be possible for client programs to allocate over 800MB of
   memory when using memcheck now.
 
+* Improved checking when laying out memory.  Should hopefully avoid
+  the random segmentation faults that 2.1.1 sometimes caused.
+
 * Support for Fedora Core 2 and SuSE 9.1.  Improvements to NPTL
   support to the extent that V now works properly on NPTL-only setups.
 
@@ -73,16 +79,9 @@ connected to any bug report numbers, AFAICS:
 * Add support for SIOCGMIIPHY, SIOCGMIIREG and SIOCSMIIREG ioctls and
   improve the checking of other interface related ioctls.
 
-* Removed all uses of nested functions as they only work with gcc and
-  cause the stack to be marked as executable in order for them to work.
-  Valgrind should be buildable with Intel Icc now.
-
 * Fix building with gcc-3.4.1.
 
 * Remove limit on number of semaphores supported.
-
-* Add support for SIOCGMIIPHY, SIOCGMIIREG and SIOCSMIIREG ioctls and
-  improve the checking of other interface related ioctls.
 
 * Add support for syscalls: set_tid_address (258), acct (51).
 
@@ -95,6 +94,8 @@ connected to any bug report numbers, AFAICS:
   returns EPERM if you try and change it.  This should stop reductions
   in the soft limit causing assertions when valgrind tries to allocate
   descriptors from the reserved area.
+  (This actually came from bug #83998 although we're still waiting
+   on confirmation that the change actually fixed the bug.)
 
 * Major overhaul of Cachegrind implementation.  Only user visible change
   is that cachegrind.out files are now typically 90% smaller than they
@@ -104,8 +105,8 @@ connected to any bug report numbers, AFAICS:
 
 
 
-Unstable (cvs head) release 2.1.1 (12 March 2004)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Developer (cvs head) release 2.1.1 (12 March 2004)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2.1.1 contains some internal structural changes needed for V's
 long-term future.  These don't affect end-users.  Most notable
 user-visible changes are:

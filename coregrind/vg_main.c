@@ -2709,7 +2709,7 @@ int main(int argc, char **argv, char **envp)
              sizeof(VexGuestArchState));
 
    // Record the instr ptr offset, for use by asm code.
-   VG_(instr_ptr_offset) = offsetof(VexGuestArchState, ARCH_INSTR_PTR);
+   VG_(instr_ptr_offset) = offsetof(VexGuestArchState, VGA_INSTR_PTR);
 
    //--------------------------------------------------------------
    // Initialise the pthread model

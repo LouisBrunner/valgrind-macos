@@ -161,12 +161,12 @@ struct elfinfo *readelf(int fd, const char *filename)
       fprintf(stderr, "valgrind: %s: bad ELF magic\n", filename);
       return NULL;
    }
-   if (e->e.e_ident[EI_CLASS] != VG_ELF_CLASS) {
+   if (e->e.e_ident[EI_CLASS] != VGA_ELF_CLASS) {
       fprintf(stderr, "valgrind: wrong executable class (eg. 32-bit instead\n"
                       "valgrind: of 64-bit)\n");
       return NULL;
    }
-   if (e->e.e_ident[EI_DATA] != VG_ELF_ENDIANNESS) {
+   if (e->e.e_ident[EI_DATA] != VGA_ELF_ENDIANNESS) {
       fprintf(stderr, "valgrind: wrong endian-ness\n");
       return NULL;
    }
@@ -175,7 +175,7 @@ struct elfinfo *readelf(int fd, const char *filename)
       return NULL;
    }
 
-   if (e->e.e_machine != VG_ELF_MACHINE) {
+   if (e->e.e_machine != VGA_ELF_MACHINE) {
       fprintf(stderr, "valgrind: wrong architecture\n");
       return NULL;
    }

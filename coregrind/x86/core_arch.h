@@ -40,9 +40,9 @@
    Basic properties
    ------------------------------------------------------------------ */
 
-#define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_386
-#define VG_ELF_CLASS          ELFCLASS32
+#define VGA_ELF_ENDIANNESS     ELFDATA2LSB
+#define VGA_ELF_MACHINE        EM_386
+#define VGA_ELF_CLASS          ELFCLASS32
 
 #define VGA_WORD_SIZE         4
 
@@ -51,13 +51,13 @@
    ------------------------------------------------------------------ */
 
 // Vex field names
-#define ARCH_INSTR_PTR        guest_EIP
-#define ARCH_STACK_PTR        guest_ESP
-#define ARCH_FRAME_PTR        guest_EBP
+#define VGA_INSTR_PTR         guest_EIP
+#define VGA_STACK_PTR         guest_ESP
+#define VGA_FRAME_PTR         guest_EBP
 
-#define ARCH_CLREQ_ARGS       guest_EAX
-#define ARCH_CLREQ_RET        guest_EDX
-#define ARCH_PTHREQ_RET       guest_EDX
+#define VGA_CLREQ_ARGS        guest_EAX
+#define VGA_CLREQ_RET         guest_EDX
+#define VGA_PTHREQ_RET        guest_EDX
 
 
 // Register numbers, for vg_symtab2.c

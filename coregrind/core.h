@@ -1649,17 +1649,17 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*, 
                                      /*OUT*/VexSubArch* );
 // Accessors for the ThreadArchState
-#define INSTR_PTR(regs)    ((regs).vex.ARCH_INSTR_PTR)
-#define STACK_PTR(regs)    ((regs).vex.ARCH_STACK_PTR)
-#define FRAME_PTR(regs)    ((regs).vex.ARCH_FRAME_PTR)
-#define CLREQ_ARGS(regs)   ((regs).vex.ARCH_CLREQ_ARGS)
-#define PTHREQ_RET(regs)   ((regs).vex.ARCH_PTHREQ_RET)
-#define CLREQ_RET(regs)    ((regs).vex.ARCH_CLREQ_RET)
+#define INSTR_PTR(regs)    ((regs).vex.VGA_INSTR_PTR)
+#define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)
+#define FRAME_PTR(regs)    ((regs).vex.VGA_FRAME_PTR)
+#define CLREQ_ARGS(regs)   ((regs).vex.VGA_CLREQ_ARGS)
+#define PTHREQ_RET(regs)   ((regs).vex.VGA_PTHREQ_RET)
+#define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
 // Offsets for the Vex state
-#define O_STACK_PTR        (offsetof(VexGuestArchState, ARCH_STACK_PTR))
-#define O_FRAME_PTR        (offsetof(VexGuestArchState, ARCH_FRAME_PTR))
-#define O_CLREQ_RET        (offsetof(VexGuestArchState, ARCH_CLREQ_RET))
-#define O_PTHREQ_RET       (offsetof(VexGuestArchState, ARCH_PTHREQ_RET))
+#define O_STACK_PTR        (offsetof(VexGuestArchState, VGA_STACK_PTR))
+#define O_FRAME_PTR        (offsetof(VexGuestArchState, VGA_FRAME_PTR))
+#define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
+#define O_PTHREQ_RET       (offsetof(VexGuestArchState, VGA_PTHREQ_RET))
 
 
 // Setting up the initial thread (1) state

@@ -578,9 +578,9 @@ void VG_(setup_code_redirect_table) ( void )
 //:: /* Called from generated code via helper */
 //:: void VG_(wrap_after)(ThreadState *tst)
 //:: {
-//::    Addr EIP = ARCH_INSTR_PTR(tst->arch);	/* instruction after call */
-//::    Addr ESP = ARCH_STACK_PTR(tst->arch);	/* pointer to args */
-//::    Word ret = ARCH_RETVAL(tst->arch);		/* return value */
+//::    Addr EIP = VGA_INSTR_PTR(tst->arch);	/* instruction after call */
+//::    Addr ESP = VGA_STACK_PTR(tst->arch);	/* pointer to args */
+//::    Word ret = VGA_RETVAL(tst->arch);		/* return value */
 //::    struct call_instance *call;
 //::    Bool mf = VG_(my_fault);
 //:: 

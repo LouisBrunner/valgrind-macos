@@ -130,7 +130,7 @@ extern void exit (int __status);
                 );						\
   }
 // XXX: make sure that the register holding the args and the register taking
-// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
+// the return value match VGA_CLREQ_ARGS and VGA_CLREQ_RET in
 // amd64/core_arch.h!
 #endif  // __amd64__
 
@@ -175,7 +175,7 @@ extern void exit (int __status);
     asm volatile("");                                                   \
   }
 // XXX: make sure that the register holding the args and the register taking
-// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
+// the return value match VGA_CLREQ_ARGS and VGA_CLREQ_RET in
 // arm/core_arch.h!
 #endif  // __arm__
 

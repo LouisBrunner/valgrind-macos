@@ -41,9 +41,9 @@
    Basic properties
    ------------------------------------------------------------------ */
 
-#define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_ARM
-#define VG_ELF_CLASS          ELFCLASS32
+#define VGA_ELF_ENDIANNESS     ELFDATA2LSB
+#define VGA_ELF_MACHINE        EM_ARM
+#define VGA_ELF_CLASS          ELFCLASS32
 
 #define VGA_WORD_SIZE         4
 
@@ -57,13 +57,13 @@
 //   r13 = stack pointer
 //   r14 = link register
 //   r15 = program counter
-#define ARCH_INSTR_PTR        guest_R15
-#define ARCH_STACK_PTR        guest_R13
-#define ARCH_FRAME_PTR        guest_R11
+#define VGA_INSTR_PTR         guest_R15
+#define VGA_STACK_PTR         guest_R13
+#define VGA_FRAME_PTR         guest_R11
 
-#define ARCH_CLREQ_ARGS       guest_R0
-#define ARCH_CLREQ_RET        guest_R0
-#define ARCH_PTHREQ_RET       guest_R0
+#define VGA_CLREQ_ARGS        guest_R0
+#define VGA_CLREQ_RET         guest_R0
+#define VGA_PTHREQ_RET        guest_R0
 
 // Register numbers, for vg_symtab2.c
 #define R_STACK_PTR           13

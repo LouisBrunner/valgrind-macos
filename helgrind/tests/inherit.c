@@ -1,5 +1,11 @@
 /* test child thread inheriting data */
 
+// ***
+//
+// Helgrind should detect an error on line 48 for this test, but it doesn't!
+//
+// ***
+
 #include <pthread.h>
 #include <unistd.h>
 
@@ -8,24 +14,18 @@ static volatile int shared[2];
 static void *t1(void *v)
 {
 	volatile int *ip = (int *)v;
-
 	*ip += 44;
 	*ip *= 2;
-
 	sleep(1);
-
 	return 0;
 }
 
 static void *t2(void *v)
 {
 	volatile int *ip = (int *)v;
-
 	*ip += 88;
 	*ip *= 3;
-
 	sleep(2);
-
 	return 0;
 }
 

@@ -14,6 +14,13 @@
    check 16/8 bit div/idiv
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
+
+   Limitations:
+   * no FP exceptions, except for handling stack over/underflow
+   * FP rounding mode observed only for float->int conversions
+   * FP sin/cos/tan/sincos: C2 flag is always cleared.  IOW the
+     simulation claims the argument is in-range (-2^63 <= arg <= 2^63)
+     even when it isn't.
 */
 
 /* Translates x86 code to IR. */
@@ -3161,13 +3168,6 @@ static IRExpr* get_ST ( Int i )
 
 static void fp_push ( void )
 {
-#if 0
-   put_ftop(
-      binop(Iop_And32,
-            binop(Iop_Sub32, get_ftop(), mkU32(1)),
-            mkU32(7))
-   );
-#endif
    put_ftop( binop(Iop_Sub32, get_ftop(), mkU32(1)) );
 }
 
@@ -3177,15 +3177,17 @@ static void fp_push ( void )
 static void fp_pop ( void )
 {
    put_ST_TAG(0, mkU8(0));
-#if 0
-   put_ftop(
-      binop(Iop_And32,
-            binop(Iop_Add32, get_ftop(), mkU32(1)),
-            mkU32(7))
-   );
-#endif
    put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
 }
+
+/* Clear the C2 bit of the FPU status register, for
+   sin/cos/tan/sincos. */
+
+static void clear_C2 ( void )
+{
+  put_C3210( binop(Iop_And32, get_C3210(), mkU32(~FC_MASK_C2)) );
+}
+
 
 /* ------------------------------------------------------- */
 /* Given all that stack-mangling junk, we can now go ahead
@@ -3535,8 +3537,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
-               /* Should we mess with C3210 here?  The fact that we
-                  don't is a hack. */
+               clear_C2(); /* HACK */
                break;
 
             case 0xF3: /* FPATAN */
@@ -3601,11 +3602,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xFE: /* FSIN */
                DIP("fsin\n");
                put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
+               clear_C2(); /* HACK */
                break;
 
             case 0xFF: /* FCOS */
                DIP("fcos\n");
                put_ST_UNCHECKED(0, unop(Iop_CosF64, get_ST(0)));
+               clear_C2(); /* HACK */
                break;
 
             default:

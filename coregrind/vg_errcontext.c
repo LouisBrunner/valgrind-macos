@@ -208,20 +208,26 @@ void VG_(gen_suppression)(Error* err)
    UChar       buf[M_VG_ERRTXT];
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
-   Char*       name    = SK_(get_error_name)(err);
-
-   if (NULL == name) {
-      VG_(message)(Vg_UserMsg, "(skin does not allow error to be suppressed)");
-      return;
-   }
 
    if (stop_at > 4) stop_at = 4;    /* At most four names */
    vg_assert(stop_at > 0);
 
    VG_(printf)("{\n");
    VG_(printf)("   <insert a suppression name here>\n");
-   VG_(printf)("   %s:%s\n", VG_(details).name, name);
-   SK_(print_extra_suppression_info)(err);
+
+   if (PThreadErr == err->ekind) {
+      VG_(printf)("   core:PThread\n");
+
+   } else {
+      Char* name = SK_(get_error_name)(err);
+      if (NULL == name) {
+         VG_(message)(Vg_UserMsg, 
+                      "(skin does not allow error to be suppressed)");
+         return;
+      }
+      VG_(printf)("   %s:%s\n", VG_(details).name, name);
+      SK_(print_extra_suppression_info)(err);
+   }
 
    /* This loop condensed from VG_(mini_stack_dump)() */
    i = 0;
@@ -388,14 +394,16 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
 
-   /* update `extra' */
-   extra_size = SK_(update_extra)(p);
+   /* update `extra', for non-core errors (core ones don't use 'extra') */
+   if (VG_(needs).skin_errors) {
+      extra_size = SK_(update_extra)(p);
 
-   /* copy `extra' if there is one */
-   if (NULL != p->extra) {
-      void* new_extra = VG_(malloc)(extra_size);
-      VG_(memcpy)(new_extra, p->extra, extra_size);
-      p->extra = new_extra;
+      /* copy `extra' if there is one */
+      if (NULL != p->extra) {
+         void* new_extra = VG_(malloc)(extra_size);
+         VG_(memcpy)(new_extra, p->extra, extra_size);
+         p->extra = new_extra;
+      }
    }
 
    p->next = vg_errors;

@@ -1205,6 +1205,12 @@ static void process_cmd_line_options ( void )
       config_error("No error-suppression files were specified.");
    }
 
+   if (VG_(clo_gen_suppressions) && 
+       !VG_(needs).core_errors && !VG_(needs).skin_errors) {
+      config_error("Can't use --gen-suppressions=yes with this skin,\n"
+                   "   as it doesn't generate errors.");
+   }
+
 }
 
 /* ---------------------------------------------------------------------

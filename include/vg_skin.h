@@ -1891,7 +1891,12 @@ extern void        SK_(fini)         ( Int exitcode );
 
 
 /* ------------------------------------------------------------------ */
-/* VG_(needs).report_errors */
+/* VG_(needs).core_errors */
+
+/* (none needed) */
+
+/* ------------------------------------------------------------------ */
+/* VG_(needs).skin_errors */
 
 /* Identify if two errors are equal, or equal enough.  `res' indicates how
    close is "close enough".  `res' should be passed on as necessary, eg. if

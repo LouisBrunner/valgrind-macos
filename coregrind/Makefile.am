@@ -1,5 +1,5 @@
 
-SUBDIRS = x86 demangle . docs
+SUBDIRS = arch x86 demangle . docs
 
 add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include -I$(srcdir)/x86
 

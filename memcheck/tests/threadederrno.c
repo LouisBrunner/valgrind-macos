@@ -8,14 +8,14 @@
 void* thr2 ( void* v )
 {
   FILE* f = fopen("bogus2", "r");
-  printf("f2 = %p, errno2 = %d (%s)\n", f, errno, strerror(errno));
+  printf("f  = %p, errno  = %d (%s)\n", f, errno, strerror(errno));
   return NULL;
 }
 
 void* thr3 ( void* v )
 {
   FILE* f = fopen("bogus3", "r");
-  printf("f3 = %p, errno3 = %d (%s)\n", f, errno, strerror(errno));
+  printf("f  = %p, errno  = %d (%s)\n", f, errno, strerror(errno));
   return NULL;
 }
 

@@ -311,7 +311,7 @@ static StabType *getStabType(StabTypeTab *tab, Int file, Int sym)
    return &sf->types[sym];
 }
 
-static Bool isdigit(Char c, Int base, Int *vp)
+static Bool isdigit_base(Char c, Int base, Int *vp)
 {
    Bool ret = False;
    Int v = 0;
@@ -382,7 +382,7 @@ static Int atoi(Char **pp, Int base)
    if (base == 0)
       base = getbase(&p);
 
-   while(isdigit(*p, base, &v)) {
+   while(isdigit_base(*p, base, &v)) {
       ret *= base;
       ret += v;
       p++;
@@ -403,7 +403,7 @@ static UInt atou(Char **pp, Int base)
    if (base == 0)
       base = getbase(&p);
 
-   while(isdigit(*p, base, &v)) {
+   while(isdigit_base(*p, base, &v)) {
       ret *= base;
       ret += v;
       p++;

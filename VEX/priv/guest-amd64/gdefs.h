@@ -45,7 +45,7 @@
 
 extern
 IRBB* bbToIR_AMD64 ( UChar*           amd64code, 
-                     Addr64           eip, 
+                     Addr64           guest_rip_start, 
                      VexGuestExtents* vge,
                      Bool             (*byte_accessible)(Addr64),
                      Bool             (*resteerOkFn)(Addr64),
@@ -78,7 +78,7 @@ extern ULong amd64g_calculate_rflags_all (
                 ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
              );
 
-extern Ulong amd64g_calculate_eflags_c ( 
+extern ULong amd64g_calculate_eflags_c ( 
                 ULong cc_op, 
                 ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
              );

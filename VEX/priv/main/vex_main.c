@@ -36,6 +36,7 @@
 #include "libvex.h"
 #include "libvex_emwarn.h"
 #include "libvex_guest_x86.h"
+#include "libvex_guest_amd64.h"
 #include "libvex_guest_arm.h"
 
 #include "main/vex_globals.h"
@@ -46,6 +47,7 @@
 #include "host-x86/hdefs.h"
 
 #include "guest-x86/gdefs.h"
+#include "guest-amd64/gdefs.h"
 #include "guest-arm/gdefs.h"
 
 
@@ -280,6 +282,16 @@ VexTranslateResult LibVEX_Translate (
                  || subarch_guest == VexSubArchX86_sse2);
          break;
 
+      case VexArchAMD64:
+         preciseMemExnsFn = guest_amd64_state_requires_precise_mem_exns;
+         bbToIR           = bbToIR_AMD64;
+         specHelper       = guest_amd64_spechelper;
+         guest_sizeB      = sizeof(VexGuestAMD64State);
+         guest_word_type  = Ity_I64;
+         guest_layout     = &amd64guest_layout;
+         vassert(subarch_guest == VexSubArch_NONE);
+         break;
+
       case VexArchARM:
          preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
          bbToIR           = bbToIR_ARM;
@@ -287,6 +299,7 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestARMState);
          guest_word_type  = Ity_I32;
          guest_layout     = &armGuest_layout;
+         vassert(subarch_guest == VexSubArchARM_v4);
          break;
 
       default:

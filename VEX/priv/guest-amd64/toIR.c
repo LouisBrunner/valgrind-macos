@@ -73,19 +73,19 @@
 //.. 
 //..    This module uses global variables and so is not MT-safe (if that
 //..    should ever become relevant).  */
-//.. 
-//.. /* Translates AMD64 code to IR. */
-//.. 
-//.. #include "libvex_basictypes.h"
-//.. #include "libvex_ir.h"
-//.. #include "libvex.h"
-//.. #include "libvex_guest_amd64.h"
-//.. 
-//.. #include "main/vex_util.h"
-//.. #include "main/vex_globals.h"
-//.. #include "guest-amd64/gdefs.h"
-//.. 
-//.. 
+
+/* Translates AMD64 code to IR. */
+
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"
+#include "libvex.h"
+#include "libvex_guest_amd64.h"
+
+#include "main/vex_util.h"
+#include "main/vex_globals.h"
+#include "guest-amd64/gdefs.h"
+
+
 //.. /*------------------------------------------------------------*/
 //.. /*--- Globals                                              ---*/
 //.. /*------------------------------------------------------------*/
@@ -220,21 +220,23 @@
 //..                      /*IN*/  VexSubArch subarch,
 //..                      /*OUT*/ UInt*      size,
 //..                      /*OUT*/ Addr64*    whereNext );
-//.. 
-//.. 
-//.. /* This is the main (only, in fact) entry point for this module. */
-//.. 
-//.. /* Disassemble a complete basic block, starting at eip, and dumping
-//..    the ucode into cb.  Returns the size, in bytes, of the basic
-//..    block. */
-//.. IRBB* bbToIR_X86 ( UChar*           x86code, 
-//..                    Addr64           guest_eip_start, 
-//..                    VexGuestExtents* vge, 
-//..                    Bool             (*byte_accessible)(Addr64),
-//..                    Bool             (*chase_into_ok)(Addr64),
-//..                    Bool             host_bigendian,
-//..                    VexSubArch       subarch_guest )
-//.. {
+
+
+/* This is the main (only, in fact) entry point for this module. */
+
+/* Disassemble a complete basic block, starting at eip, and dumping
+   the ucode into cb.  Returns the size, in bytes, of the basic
+   block. */
+IRBB* bbToIR_AMD64 ( UChar*           amd64code, 
+                     Addr64           guest_rip_start, 
+                     VexGuestExtents* vge, 
+                     Bool             (*byte_accessible)(Addr64),
+                     Bool             (*chase_into_ok)(Addr64),
+                     Bool             host_bigendian,
+                     VexSubArch       subarch_guest )
+{
+   vassert(0);
+}
 //..    UInt       delta;
 //..    Int        i, n_instrs, size, first_stmt_idx;
 //..    Addr64     guest_next;

@@ -40,7 +40,71 @@
 #include "libvex.h"
 
 #include "main/vex_util.h"
-//#include "guest-amd64/gdefs.h"    // put back in when that file is added
+#include "guest-amd64/gdefs.h"
+
+
+
+IRExpr* guest_amd64_spechelper ( Char* function_name,
+                                 IRExpr** args )
+{
+  vassert(0);
+  return NULL;
+}
+
+Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
+                                                   Int maxoff)
+{
+  vassert(0);
+  return False;
+}
+#define ALWAYSDEFD(field)                           \
+    { offsetof(VexGuestX86State, field),            \
+      (sizeof ((VexGuestX86State*)0)->field) }
+
+VexGuestLayout
+amd64guest_layout;
+#if 0
+      = {
+          /* Total size of the guest state, in bytes. */
+          .total_sizeB = sizeof(VexGuestX86State),
+
+          /* Describe the stack pointer. */
+          .offset_SP = offsetof(VexGuestX86State,guest_ESP),
+          .sizeof_SP = 4,
+
+          /* Describe the instruction pointer. */
+          .offset_IP = offsetof(VexGuestX86State,guest_EIP),
+          .sizeof_IP = 4,
+
+          /* Describe any sections to be regarded by Memcheck as
+             'always-defined'. */
+          .n_alwaysDefd = 18,
+
+          /* flags thunk: OP and NDEP are always defd, whereas DEP1
+             and DEP2 have to be tracked.  See detailed comment in
+             gdefs.h on meaning of thunk fields. */
+          .alwaysDefd
+             = { /*  0 */ ALWAYSDEFD(guest_CC_OP),
+                 /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
+                 /*  2 */ ALWAYSDEFD(guest_DFLAG),
+                 /*  3 */ ALWAYSDEFD(guest_IDFLAG),
+                 /*  4 */ ALWAYSDEFD(guest_EIP),
+                 /*  5 */ ALWAYSDEFD(guest_FTOP),
+                 /*  6 */ ALWAYSDEFD(guest_FPTAG),
+                 /*  7 */ ALWAYSDEFD(guest_FPROUND),
+                 /*  8 */ ALWAYSDEFD(guest_FC3210),
+                 /*  9 */ ALWAYSDEFD(guest_CS),
+                 /* 10 */ ALWAYSDEFD(guest_DS),
+                 /* 11 */ ALWAYSDEFD(guest_ES),
+                 /* 12 */ ALWAYSDEFD(guest_FS),
+                 /* 13 */ ALWAYSDEFD(guest_GS),
+                 /* 14 */ ALWAYSDEFD(guest_SS),
+                 /* 15 */ ALWAYSDEFD(guest_LDT),
+                 /* 16 */ ALWAYSDEFD(guest_GDT),
+                 /* 17 */ ALWAYSDEFD(guest_EMWARN)
+               }
+        };
+#endif
 
 
 /* VISIBLE TO LIBVEX CLIENT */

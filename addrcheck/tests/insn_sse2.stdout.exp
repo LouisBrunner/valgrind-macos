@@ -72,10 +72,12 @@ divpd_1 ... ok
 divpd_2 ... ok
 divsd_1 ... ok
 divsd_2 ... ok
+lfence_1 ... ok
 maxpd_1 ... ok
 maxpd_2 ... ok
 maxsd_1 ... ok
 maxsd_2 ... ok
+mfence_1 ... ok
 minpd_1 ... ok
 minpd_2 ... ok
 minsd_1 ... ok

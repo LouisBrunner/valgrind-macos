@@ -117,6 +117,7 @@ rsqrtps_1 ... ok
 rsqrtps_2 ... ok
 rsqrtss_1 ... ok
 rsqrtss_2 ... ok
+sfence_1 ... ok
 shufps_1 ... ok
 shufps_2 ... ok
 sqrtps_1 ... ok

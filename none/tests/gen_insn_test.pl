@@ -165,12 +165,17 @@ while (<>)
     my $args;
     my $results;
 
-    if (/^(\S+)\s+(?:(\S+(?:\s+\S+)*)\s+:\s+)?((?:\S+\s+)*)=>\s+(\S+(?:\s+\S+)*)$/)
+    if (/^(\S+)\s+(?:(\S+(?:\s+\S+)*)\s+:\s+)?((?:\S+\s+)*?)(?:=>\s+(\S+(?:\s+\S+)*))?$/)
     {
         $insn = $1;
         $presets = $2 || "";
-        $args = $3;
-        $results = $4;
+        $args = $3 || "";
+        $results = $4 || "";
+
+#        print STDERR "insn: $insn\n";
+#        print STDERR "presets: $presets\n";
+#        print STDERR "args: $args\n";
+#        print STDERR "results: $results\n";
     }
     else
     {
@@ -857,82 +862,90 @@ while (<>)
     print qq|      \);\n|;                          
     print qq|\n|;
     
-    print qq|      if \(|;
-    
-    $prefix = "";
-            
-    foreach my $result (@results)
+    if (@results)
     {
-        my $type = $result->{type};
-        my $subtype = $result->{subtype};
-        my $suffix = $SubTypeSuffixes{$subtype};
-        my @values = @{$result->{values}};
-
-        if ($type eq "eflags")
+        print qq|      if \(|;
+        
+        $prefix = "";
+        
+        foreach my $result (@results)
         {
-            print qq|${prefix}\($result->{name}.ud[0] & $values[0]UL\) == $values[1]UL|;
-        }
-        elsif ($type =~ /^fpu[cs]w$/)
-        {
-            print qq|${prefix}\($result->{name}.uw[0] & $values[0]\) == $values[1]|;
-        }
-        else
-        {
-            foreach my $value (0 .. $#values)
+            my $type = $result->{type};
+            my $subtype = $result->{subtype};
+            my $suffix = $SubTypeSuffixes{$subtype};
+            my @values = @{$result->{values}};
+            
+            if ($type eq "eflags")
             {
-                if ($subtype eq "ps")
+                print qq|${prefix}\($result->{name}.ud[0] & $values[0]UL\) == $values[1]UL|;
+            }
+            elsif ($type =~ /^fpu[cs]w$/)
+            {
+                print qq|${prefix}\($result->{name}.uw[0] & $values[0]\) == $values[1]|;
+            }
+            else
+            {
+                foreach my $value (0 .. $#values)
                 {
-                    print qq|${prefix}eq_float($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
+                    if ($subtype eq "ps")
+                    {
+                        print qq|${prefix}eq_float($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
+                    }
+                    elsif ($subtype eq "pd")
+                    {
+                        print qq|${prefix}eq_double($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
+                    }
+                    else
+                    {
+                        print qq|${prefix}$result->{name}.$subtype\[$value\] == $values[$value]$suffix|;
+                    }
+                    
+                    $prefix = " && ";
                 }
-                elsif ($subtype eq "pd")
+            }
+            
+            $prefix = " &&\n          ";
+        }
+        
+        print qq| \)\n|;
+        print qq|      \{\n|;
+        print qq|         printf("$test ... ok\\n");\n|;
+        print qq|      \}\n|;
+        print qq|      else\n|;
+        print qq|      \{\n|;
+        print qq|         printf("$test ... not ok\\n");\n|;
+        
+        foreach my $result (@results)
+        {
+            my $type = $result->{type};
+            my $subtype = $result->{subtype};
+            my $suffix = $SubTypeSuffixes{$subtype};
+            my @values = @{$result->{values}};
+            
+            if ($type eq "eflags")
+            {
+                print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
+            }
+            elsif ($type =~ /^fpu[cs]w$/)
+            {
+                print qq|         printf("  $type & 0x%x = 0x%x (expected 0x%x)\\n", $values[0], $result->{name}.uw\[0\] & $values[0], $values[1]);\n|;
+            }
+            else
+            {
+                foreach my $value (0 .. $#values)
                 {
-                    print qq|${prefix}eq_double($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
+                    print qq|         printf("  $result->{name}.$subtype\[$value\] = $SubTypeFormats{$subtype} (expected $SubTypeFormats{$subtype})\\n", $result->{name}.$subtype\[$value\], $values[$value]$suffix);\n|;
                 }
-                else
-                {
-                    print qq|${prefix}$result->{name}.$subtype\[$value\] == $values[$value]$suffix|;
-                }
-                
-                $prefix = " && ";
             }
         }
         
-        $prefix = " &&\n          ";
+        print qq|      \}\n|;
     }
-    
-    print qq| \)\n|;
-    print qq|      \{\n|;
-    print qq|         printf("$test ... ok\\n");\n|;
-    print qq|      \}\n|;
-    print qq|      else\n|;
-    print qq|      \{\n|;
-    print qq|         printf("$test ... not ok\\n");\n|;
-    
-    foreach my $result (@results)
+    else
     {
-        my $type = $result->{type};
-        my $subtype = $result->{subtype};
-        my $suffix = $SubTypeSuffixes{$subtype};
-        my @values = @{$result->{values}};
-
-        if ($type eq "eflags")
-        {
-            print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
-        }
-        elsif ($type =~ /^fpu[cs]w$/)
-        {
-            print qq|         printf("  $type & 0x%x = 0x%x (expected 0x%x)\\n", $values[0], $result->{name}.uw\[0\] & $values[0], $values[1]);\n|;
-        }
-        else
-        {
-            foreach my $value (0 .. $#values)
-            {
-                print qq|         printf("  $result->{name}.$subtype\[$value\] = $SubTypeFormats{$subtype} (expected $SubTypeFormats{$subtype})\\n", $result->{name}.$subtype\[$value\], $values[$value]$suffix);\n|;
-            }
-        }
+        print qq|      printf("$test ... ok\\n");\n|;
     }
-    
-    print qq|      \}\n|;
+
     print qq|   \}\n|;
     print qq|   else\n|;
     print qq|   \{\n|;

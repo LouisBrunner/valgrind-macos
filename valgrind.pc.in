@@ -8,4 +8,4 @@ Description: Program supervision framework for x86-GNU/Linux
 Version: @VERSION@
 Requires:
 Libs:
-Cflags: -I${includedir}
+Cflags: -I${includedir} -I${includedir}/@VG_ARCH@ -I${includedir}/@VG_PLATFORM@

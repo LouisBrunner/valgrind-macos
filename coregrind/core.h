@@ -283,13 +283,13 @@ extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
    Profiling stuff
    ------------------------------------------------------------------ */
 
-extern void VGP_(init_profiling) ( void );
-extern void VGP_(done_profiling) ( void );
+extern void VG_(init_profiling) ( void );
+extern void VG_(done_profiling) ( void );
 
 #undef  VGP_PUSHCC
 #undef  VGP_POPCC
-#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VGP_(pushcc)(x)
-#define VGP_POPCC(x)    if (VG_(clo_profile)) VGP_(popcc)(x)
+#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VG_(pushcc)(x)
+#define VGP_POPCC(x)    if (VG_(clo_profile)) VG_(popcc)(x)
 
 
 /* ---------------------------------------------------------------------

@@ -41,8 +41,9 @@
 /* These macros should add different prefixes so the same base
    name can safely be used across different macros. */
 #define VG_(str)    VGAPPEND(vgPlain_,str)
-#define VGP_(str)   VGAPPEND(vgProf_,str)
 #define VGA_(str)   VGAPPEND(vgArch_,str)
+#define VGO_(str)   VGAPPEND(vgOS,str)
+#define VGP_(str)   VGAPPEND(vgPlatform,str)
 
 /* Tool-specific ones.  Note that final name still starts with "vg". */
 #define TL_(str)    VGAPPEND(vgTool_,str)

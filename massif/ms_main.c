@@ -1179,16 +1179,16 @@ void TL_(pre_clo_init)()
    VG_(init_die_mem_stack_signal) ( die_mem_stack_signal );
 
    // Profiling events
-   VGP_(register_profile_event)(VgpGetXPt,         "get-XPt");
-   VGP_(register_profile_event)(VgpGetXPtSearch,   "get-XPt-search");
-   VGP_(register_profile_event)(VgpCensus,         "census");
-   VGP_(register_profile_event)(VgpCensusHeap,     "census-heap");
-   VGP_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
-   VGP_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
-   VGP_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
-   VGP_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
-   VGP_(register_profile_event)(VgpPrintHp,        "print-hp");
-   VGP_(register_profile_event)(VgpPrintXPts,      "print-XPts");
+   VG_(register_profile_event)(VgpGetXPt,         "get-XPt");
+   VG_(register_profile_event)(VgpGetXPtSearch,   "get-XPt-search");
+   VG_(register_profile_event)(VgpCensus,         "census");
+   VG_(register_profile_event)(VgpCensusHeap,     "census-heap");
+   VG_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
+   VG_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
+   VG_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
+   VG_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
+   VG_(register_profile_event)(VgpPrintHp,        "print-hp");
+   VG_(register_profile_event)(VgpPrintXPts,      "print-XPts");
 
    // HP_Chunks
    malloc_list  = VG_(HT_construct)();

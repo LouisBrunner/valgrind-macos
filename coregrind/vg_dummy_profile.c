@@ -42,26 +42,26 @@ static void vgp_die(void)
    VG_(exit)(1);
 }
 
-void VGP_(register_profile_event) ( Int n, Char* name )
+void VG_(register_profile_event) ( Int n, Char* name )
 {
 }
 
-void VGP_(init_profiling) ( void )
+void VG_(init_profiling) ( void )
 {
    vgp_die();
 }
 
-void VGP_(done_profiling) ( void )
+void VG_(done_profiling) ( void )
 {
    VG_(core_panic)("done_profiling(), but not compiled for profiling??");
 }
 
-void VGP_(pushcc) ( UInt cc )
+void VG_(pushcc) ( UInt cc )
 {
    vgp_die();
 }
 
-void VGP_(popcc) ( UInt cc )
+void VG_(popcc) ( UInt cc )
 {
    vgp_die();
 }

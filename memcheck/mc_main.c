@@ -1925,9 +1925,9 @@ void TL_(pre_clo_init)(void)
    VG_(init_post_reg_write)                   ( & mc_post_reg_write );
    VG_(init_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
 
-   VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
-   VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
-   VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
+   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
+   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    /* Additional block description for VG_(describe_addr)() */
    MAC_(describe_addr_supp) = client_perm_maybe_describe;

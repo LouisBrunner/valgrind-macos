@@ -1364,9 +1364,9 @@ void TL_(pre_clo_init)(void)
    VG_(init_pre_mem_write)        ( & ac_check_is_writable );
    VG_(init_post_mem_write)       ( & ac_post_mem_write );
 
-   VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
-   VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
-   VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
+   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
+   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    init_shadow_memory();
    MAC_(common_pre_clo_init)();

@@ -2738,7 +2738,7 @@ int main(int argc, char **argv, char **envp)
    // in pre_process_cmd_line_options() could get it earlier.
    //--------------------------------------------------------------
    if (VG_(clo_profile))
-      VGP_(init_profiling)();
+      VG_(init_profiling)();
 
    VGP_PUSHCC(VgpStartup);
 
@@ -2836,7 +2836,7 @@ void VG_(shutdown_actions)(ThreadId tid)
       print_all_stats();
 
    if (VG_(clo_profile))
-      VGP_(done_profiling)();
+      VG_(done_profiling)();
    if (VG_(clo_profile_flags) > 0)
       VG_(show_BB_profile)();
 

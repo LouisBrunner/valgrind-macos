@@ -43,8 +43,8 @@
 /* Override the empty definitions from tool.h */
 #undef  VGP_PUSHCC
 #undef  VGP_POPCC
-#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VGP_(pushcc)(x)
-#define VGP_POPCC(x)    if (VG_(clo_profile)) VGP_(popcc)(x)
+#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VG_(pushcc)(x)
+#define VGP_POPCC(x)    if (VG_(clo_profile)) VG_(popcc)(x)
 
 #define VGP_M_STACK     20
 #define VGP_MAX_CCS     50
@@ -62,7 +62,7 @@ static UInt  vgp_stack[VGP_M_STACK];
 
 /* These definitions override the panicking ones in vg_profile.c */
 
-void VGP_(register_profile_event) ( Int n, Char* name )
+void VG_(register_profile_event) ( Int n, Char* name )
 {
    /* Adjust for negative values */
    n += VgpUnc;
@@ -84,7 +84,7 @@ void VGP_(register_profile_event) ( Int n, Char* name )
    vgp_names[n] = name;
 }
 
-void VGP_(tick) ( int sigNo )
+void VG_(tick) ( int sigNo )
 {
    Int cc;
    vgp_nticks++;
@@ -93,32 +93,32 @@ void VGP_(tick) ( int sigNo )
    vgp_counts[ cc ]++;
 }
 
-void VGP_(init_profiling) ( void )
+void VG_(init_profiling) ( void )
 {
    struct itimerval value;
    Int ret;
 
    /* Register core events... tricky macro definition causes
-      VGP_(register_profile_event)() to be called once for each core event
+      VG_(register_profile_event)() to be called once for each core event
       in VGP_CORE_LIST. */
    tl_assert(VgpUnc == 0);
-#  define VGP_PAIR(n,name) VGP_(register_profile_event)(n,name)
+#  define VGP_PAIR(n,name) VG_(register_profile_event)(n,name)
    VGP_CORE_LIST;
 #  undef  VGP_PAIR
 
    vgp_sp = -1;
-   VGP_(pushcc) ( VgpUnc );
+   VG_(pushcc) ( VgpUnc );
 
    value.it_interval.tv_sec  = 0;
    value.it_interval.tv_usec = 10 * 1000;
    value.it_value = value.it_interval;
 
-   signal(SIGPROF, VGP_(tick) );
+   signal(SIGPROF, VG_(tick) );
    ret = setitimer(ITIMER_PROF, &value, NULL);
    if (ret != 0) VG_(tool_panic)("vgp_init_profiling");
 }
 
-void VGP_(done_profiling) ( void )
+void VG_(done_profiling) ( void )
 {
    Int i;
    VG_(printf)("\nProfiling done, %d ticks\n", vgp_nticks);
@@ -131,13 +131,13 @@ void VGP_(done_profiling) ( void )
             vgp_entries[i], vgp_names[i] );
 }
 
-void VGP_(pushcc) ( UInt cc )
+void VG_(pushcc) ( UInt cc )
 {
    if (vgp_sp >= VGP_M_STACK-1) { 
       VG_(printf)(
          "\nMaximum profile stack depth (%d) reached for event #%d (`%s').\n"
-         "This is probably due to a VGP_(pushcc)() without a matching\n"
-         "VGP_(popcc)().  Make sure they all match.\n"
+         "This is probably due to a VG_(pushcc)() without a matching\n"
+         "VG_(popcc)().  Make sure they all match.\n"
          "Or if you are nesting profiling events very deeply, increase\n"
          "VGP_M_STACK and recompile Valgrind.\n",
          VGP_M_STACK, cc, vgp_names[cc]);
@@ -148,12 +148,12 @@ void VGP_(pushcc) ( UInt cc )
    vgp_entries[ cc ] ++;
 }
 
-void VGP_(popcc) ( UInt cc )
+void VG_(popcc) ( UInt cc )
 {
    if (vgp_sp <= 0) {
       VG_(printf)(
-         "\nProfile stack underflow.  This is due to a VGP_(popcc)() without\n"
-         "a matching VGP_(pushcc)().  Make sure they all match.\n");
+         "\nProfile stack underflow.  This is due to a VG_(popcc)() without\n"
+         "a matching VG_(pushcc)().  Make sure they all match.\n");
       VG_(tool_panic)("Profiling stack underflow");
    }
    if (vgp_stack[vgp_sp] != cc) {

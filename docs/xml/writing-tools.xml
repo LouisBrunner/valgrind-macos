@@ -1120,6 +1120,9 @@ want to write regression tests for your tool:</para>
 <sect2 id="writing-tools.profiling" xreflabel="Profiling">
 <title>Profiling</title>
 
+<para>Nb: as of 25-Mar-2005, the profiling is broken, and has been
+for a long time...</para>
+
 <para>To do simple tick-based profiling of a tool, include the
 line:</para>
 <programlisting><![CDATA[
@@ -1131,7 +1134,7 @@ option.</para>
 
 <para>The profiler is stack-based; you can register a profiling
 event with
-<computeroutput>VGP_(register_profile_event)()</computeroutput>
+<computeroutput>VG_(register_profile_event)()</computeroutput>
 and then use the <computeroutput>VGP_PUSHCC</computeroutput> and
 <computeroutput>VGP_POPCC</computeroutput> macros to record time
 spent doing certain things.  New profiling event numbers must not

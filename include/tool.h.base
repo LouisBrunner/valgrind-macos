@@ -203,7 +203,7 @@ extern int VG_(vmessage)   ( VgMsgKind kind, const Char* format, va_list vargs )
 /*=== Profiling                                                    ===*/
 /*====================================================================*/
 
-/* Nb: VGP_(register_profile_event)() relies on VgpUnc being the first one */
+/* Nb: VG_(register_profile_event)() relies on VgpUnc being the first one */
 #define VGP_CORE_LIST \
    /* These ones depend on the core */                \
    VGP_PAIR(VgpUnc,         "unclassified"),          \
@@ -244,10 +244,10 @@ typedef enum { VGP_CORE_LIST } VgpCoreCC;
 
 /* When registering tool profiling events, ensure that the 'n' value is in
  * the range (VgpFini+1..) */
-extern void VGP_(register_profile_event) ( Int n, Char* name );
+extern void VG_(register_profile_event) ( Int n, Char* name );
 
-extern void VGP_(pushcc) ( UInt cc );
-extern void VGP_(popcc)  ( UInt cc );
+extern void VG_(pushcc) ( UInt cc );
+extern void VG_(popcc)  ( UInt cc );
 
 /* Define them only if they haven't already been defined by vg_profile.c */
 #ifndef VGP_PUSHCC

@@ -1135,9 +1135,9 @@ void TL_(post_clo_init)(void)
    cachesim_D1_initcache(D1c);
    cachesim_L2_initcache(L2c);
 
-   VGP_(register_profile_event)(VgpGetLineCC,     "get-lineCC");
-   VGP_(register_profile_event)(VgpCacheSimulate, "cache-simulate");
-   VGP_(register_profile_event)(VgpCacheResults,  "cache-results");
+   VG_(register_profile_event)(VgpGetLineCC,     "get-lineCC");
+   VG_(register_profile_event)(VgpCacheSimulate, "cache-simulate");
+   VG_(register_profile_event)(VgpCacheResults,  "cache-results");
 }
 
 VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)

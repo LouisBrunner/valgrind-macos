@@ -30,7 +30,6 @@
 */
 
 #include "core.h"
-#include <stddef.h>
 
 /* #define DEBUG_TRANSTAB */
 

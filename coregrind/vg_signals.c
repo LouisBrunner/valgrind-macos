@@ -75,7 +75,6 @@
  */
 
 #include "core.h"
-#include <stddef.h>		/* OK, no library dependencies */
 
 /* Define to give more sanity checking for signals. */
 #define DEBUG_SIGNALS

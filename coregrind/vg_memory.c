@@ -32,8 +32,6 @@
 
 #include "core.h"
 
-#include <stddef.h>
-
 /* Define to debug the memory-leak-detector. */
 /* #define VG_DEBUG_LEAKCHECK */
 

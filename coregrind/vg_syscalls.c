@@ -4026,9 +4026,6 @@ POST(mprotect)
    Bool ww = prot & VKI_PROT_WRITE;
    Bool xx = prot & VKI_PROT_EXEC;
 
-   // if removing exe permission, should check and remove from exe_seg list
-   // if adding, should check and add to exe_seg list
-   // easier to ignore both cases -- both v. unlikely?
    mash_addr_and_len(&a, &len);
    VG_(mprotect_range)(a, len, prot);
    VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );

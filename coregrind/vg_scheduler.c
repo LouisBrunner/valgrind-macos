@@ -1848,7 +1848,7 @@ void do__set_canceltype ( ThreadId tid, Int type )
       VG_(threads)[tid].cancel_ty = False;
    } else
    if (type == PTHREAD_CANCEL_DEFERRED) {
-      VG_(threads)[tid].cancel_st = True;
+      VG_(threads)[tid].cancel_ty = True;
    } else {
       VG_(panic)("do__set_canceltype");
    }

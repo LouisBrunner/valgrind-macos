@@ -135,11 +135,13 @@ dispatch_boring:
 	
 fast_lookup_failed:
 	/* %EIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
 	movl	$VG_TRC_INNER_FASTMISS, %eax
 	jmp	run_innerloop_exit
 
 counter_is_zero:
 	/* %EIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
 	movl	$VG_TRC_INNER_COUNTERZERO, %eax
 	jmp	run_innerloop_exit
 	

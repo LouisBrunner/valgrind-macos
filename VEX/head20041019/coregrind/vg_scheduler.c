@@ -352,7 +352,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
    save_thread_state ( tid );
 
-   done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 1;
+   done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
 
    vg_assert(done_this_time >= 0);
    VG_(bbs_done) += (ULong)done_this_time;
@@ -890,7 +890,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          if (trc == VG_TRC_INNER_FASTMISS) {
             Addr ip = ARCH_INSTR_PTR(VG_(threads)[tid].arch);
 
-            vg_assert(VG_(dispatch_ctr) > 0);
+            vg_assert(VG_(dispatch_ctr) > 1);
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
@@ -1068,7 +1068,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             /* Timeslice is out.  Let a new thread be scheduled,
                simply by doing nothing, causing us to arrive back at
                Phase 1. */
-            vg_assert(VG_(dispatch_ctr) == 0);
+            vg_assert(VG_(dispatch_ctr) == 1);
             break;
 
          case VG_TRC_UNRESUMABLE_SIGNAL:

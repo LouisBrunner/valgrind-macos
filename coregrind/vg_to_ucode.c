@@ -3905,6 +3905,20 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* DIVPS */
+   /* 0x66: DIVPD */
+   if (insn[0] == 0x0F && insn[1] == 0x5E) {
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "divps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "divpd",
+                                         0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
    /* 0xF2: SUBSD */
    /* 0xF3: SUBSS */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3)

@@ -4860,21 +4860,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ECX);
       uInstr2(cb, JIFZ, 4, TempReg, t1,    Literal, 0);
       uLiteral(cb, eip);
-
-      if (opc == 0xE2) {   /* LOOP */
-         uInstr1(cb, JMP,  0, Literal, 0);
-         uLiteral(cb, d32);
-         uCond(cb, CondAlways);
-      } else {             /* LOOPE/LOOPNE */
+      if (opc == 0xE0 || opc == 0xE1) {   /* LOOPE/LOOPNE */
          uInstr1(cb, JMP,  0, Literal, 0);
          uLiteral(cb, eip);
          uCond(cb, (opc == 0xE1 ? CondNZ : CondZ));
          uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-
-         uInstr1(cb, JMP,  0, Literal, 0);
-         uLiteral(cb, d32);
-         uCond(cb, CondAlways);
       }
+      uInstr1(cb, JMP,  0, Literal, 0);
+      uLiteral(cb, d32);
+      uCond(cb, CondAlways);
       *isEnd = True;
       if (dis)
          VG_(printf)("loop 0x%x\n", d32);

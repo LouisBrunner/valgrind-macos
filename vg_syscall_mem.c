@@ -422,6 +422,77 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_getpmsg) /* syscall 188 */
+      case __NR_getpmsg: 
+      {
+      /* LiS getpmsg from http://www.gcom.com/home/linux/lis/ */
+      /* int getpmsg(int fd, struct strbuf *ctrl, struct strbuf *data, 
+                             int *bandp, int *flagsp); */
+      struct strbuf {
+         int     maxlen;         /* no. of bytes in buffer */
+         int     len;            /* no. of bytes returned */
+         caddr_t buf;            /* pointer to data */
+      };
+      struct strbuf *ctrl;
+      struct strbuf *data;
+      if (VG_(clo_trace_syscalls))
+          VG_(printf)("getpmsg ( %d, %p, %p, %p, %p )\n",
+                      arg1,arg2,arg3,arg4,arg5);
+      ctrl = (struct strbuf *)arg2;
+      data = (struct strbuf *)arg3;
+      if (ctrl && ctrl->maxlen > 0)
+          must_be_writable(tst, "getpmsg(ctrl)", 
+                                (UInt)ctrl->buf, ctrl->maxlen);
+      if (data && data->maxlen > 0)
+          must_be_writable(tst, "getpmsg(data)", 
+                                 (UInt)data->buf, data->maxlen);
+      if (arg4)
+          must_be_writable(tst, "getpmsg(bandp)", 
+                                (UInt)arg4, sizeof(int));
+      if (arg5)
+          must_be_writable(tst, "getpmsg(flagsp)", 
+                                (UInt)arg5, sizeof(int));
+      KERNEL_DO_SYSCALL(tid,res);
+      if (!VG_(is_kerror)(res) && res == 0 && ctrl && ctrl->len > 0) {
+         make_readable( (UInt)ctrl->buf, ctrl->len);
+      }
+      if (!VG_(is_kerror)(res) && res == 0 && data && data->len > 0) {
+         make_readable( (UInt)data->buf, data->len);
+      }
+      }
+      break;
+#     endif
+
+
+#     if defined(__NR_putpmsg) /* syscall 189 */
+      case __NR_putpmsg: 
+      {
+      /* LiS putpmsg from http://www.gcom.com/home/linux/lis/ */
+      /* int putpmsg(int fd, struct strbuf *ctrl, struct strbuf *data, 
+                             int band, int flags); */
+      struct strbuf {
+         int     maxlen;         /* no. of bytes in buffer */
+         int     len;            /* no. of bytes returned */
+         caddr_t buf;            /* pointer to data */
+      };
+      struct strbuf *ctrl;
+      struct strbuf *data;
+      if (VG_(clo_trace_syscalls))
+         VG_(printf)("putpmsg ( %d, %p, %p, %d, %d )\n",
+                     arg1,arg2,arg3,arg4,arg5);
+      ctrl = (struct strbuf *)arg2;
+      data = (struct strbuf *)arg3;
+      if (ctrl && ctrl->len > 0)
+          must_be_readable(tst, "putpmsg(ctrl)",
+                                (UInt)ctrl->buf, ctrl->len);
+      if (data && data->len > 0)
+          must_be_readable(tst, "putpmsg(data)",
+                                (UInt)data->buf, data->len);
+      KERNEL_DO_SYSCALL(tid,res);
+      }
+      break;
+#     endif
+
       case __NR_getitimer: /* syscall 105 */
          /* int getitimer(int which, struct itimerval *value); */
          if (VG_(clo_trace_syscalls))

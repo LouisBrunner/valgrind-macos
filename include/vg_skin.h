@@ -415,6 +415,8 @@ extern void VG_(close)  ( Int fd );
 extern Int  VG_(unlink) ( Char* file_name );
 extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 
+extern Char* VG_(getcwd) ( Char* buf, Int size );
+
 
 /* ------------------------------------------------------------------ */
 /* assert.h */

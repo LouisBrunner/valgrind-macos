@@ -1131,6 +1131,7 @@ void VG_(skin_panic) ( Char* str )
    panic(VG_(details).name, VG_(details).bug_reports_to, str);
 }
 
+
 /* ---------------------------------------------------------------------
    Primitive support for reading files.
    ------------------------------------------------------------------ */
@@ -1149,9 +1150,7 @@ Int VG_(open) ( const Char* pathname, Int flags, Int mode )
       ok: */
    fd = vg_do_syscall3(__NR_open, (UInt)pathname, flags, mode);
    /* VG_(printf)("result = %d\n", fd); */
-   if (VG_(is_kerror)(fd)) {
-      fd = -1;
-   } 
+   if (VG_(is_kerror)(fd)) fd = -1;
    return fd;
 }
 
@@ -1200,7 +1199,20 @@ Int VG_(unlink) ( Char* file_name )
    return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
-/* Misc functions looking for a proper home. */
+/* Nb: we do not allow the Linux extension which malloc()s memory for the
+   buffer if buf==NULL, because we don't want Linux calling malloc() */
+Char* VG_(getcwd) ( Char* buf, Int size )
+{
+   Int res;
+   vg_assert(buf != NULL);
+   res = vg_do_syscall2(__NR_getcwd, (UInt)buf, (UInt)size);
+   return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
+}
+
+
+/* ---------------------------------------------------------------------
+   Misc functions looking for a proper home.
+   ------------------------------------------------------------------ */
 
 /* We do getenv without libc's help by snooping around in
    VG_(client_envp) as determined at startup time. */

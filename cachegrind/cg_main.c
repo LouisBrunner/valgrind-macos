@@ -79,7 +79,7 @@ typedef
 /*--- Output file related stuff                            ---*/
 /*------------------------------------------------------------*/
 
-static Char cachegrind_out_file[FILENAME_LEN];
+static Char* cachegrind_out_file;
 
 static void file_err ( void )
 {
@@ -1528,8 +1528,10 @@ static void fprint_BBCC_table_and_calc_totals(void)
    Int        i,j,k;
 
    VGP_PUSHCC(VgpCacheResults);
-   fd = VG_(open)(cachegrind_out_file, VKI_O_WRONLY|VKI_O_TRUNC, 0);
-   if (-1 == fd) { 
+
+   fd = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_WRONLY,
+                                       VKI_S_IRUSR|VKI_S_IWUSR);
+   if (-1 == fd) {
       /* If the file can't be opened for whatever reason (conflict
          between multiple cachegrinded processes?), give up now. */
       file_err(); 
@@ -1944,6 +1946,9 @@ void SK_(print_debug_usage)(void)
 
 void SK_(pre_clo_init)(void)
 {
+   UInt  buf_size = 100;
+   Char* base_dir = NULL;
+   
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("an I1/D1/L2 cache profiler");
@@ -1961,27 +1966,23 @@ void SK_(pre_clo_init)(void)
    VG_(register_compact_helper)((Addr) & log_1I_1D_cache_access);
    VG_(register_compact_helper)((Addr) & log_0I_2D_cache_access);
    VG_(register_compact_helper)((Addr) & log_1I_2D_cache_access);
+
+   /* getcwd() fails if the buffer isn't big enough -- keep doubling size
+      until it succeeds. */
+   while (NULL == base_dir) {
+      base_dir = VG_(malloc)(buf_size);
+      if (NULL == VG_(getcwd)(base_dir, buf_size))
+         buf_size *= 2;
+   }
+   /* Block is big enough for dir name + cachegrind.out.<pid> */
+   cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
+   VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
+                base_dir, VG_(getpid)());
 }
 
 void SK_(post_clo_init)(void)
 {
    cache_t I1c, D1c, L2c; 
-   Int fd;
-
-   /* Set output file name: cachegrind.<pid>.out */
-   VG_(sprintf)(cachegrind_out_file, "cachegrind.out.%d", VG_(getpid)());
-
-   /* Make sure the output file can be written. */
-   fd = VG_(open)(cachegrind_out_file, VKI_O_WRONLY|VKI_O_TRUNC, 0);
-   if (-1 == fd) { 
-      fd = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_WRONLY,
-                                          VKI_S_IRUSR|VKI_S_IWUSR);
-      if (-1 == fd) {
-         file_err(); 
-      }
-   }
-   if (-1 != fd)
-      VG_(close)(fd);
 
    initCC(&Ir_total);
    initCC(&Dr_total);

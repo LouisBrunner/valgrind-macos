@@ -1,6 +1,2 @@
 
-Emulation warning: unsupported action:
-  Selection of non-80-bit x87 FP precision
-   at 0x........: xToI (floored.c:16)
-   by 0x........: main (floored.c:9)
 

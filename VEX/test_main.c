@@ -48,8 +48,10 @@ static UChar transbuf[N_TRANSBUF];
 static Bool verbose = True;
 
 /* Forwards */
+#if 0 /* UNUSED */
 static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
 static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType );
+#endif
 
 static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
 
@@ -123,6 +125,10 @@ int main ( int argc, char** argv )
       for (i = 0; i < TEST_N_ITERS; i++)
          tres
             = LibVEX_Translate ( 
+#if 0 /* ppc32 -> ppc32 */
+                 VexArchPPC32, VexSubArchPPC32_noAV,
+                 VexArchPPC32, VexSubArchPPC32_noAV,
+#endif
 #if 0 /* ppc32 -> x86 */
                  VexArchPPC32, VexSubArchPPC32_noAV,
                  VexArchX86, VexSubArchX86_sse2,
@@ -194,6 +200,7 @@ void panic ( Char* s )
   failure_exit();
 }
 
+#if 0 /* UNUSED */
 static
 IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
@@ -330,6 +337,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
    return bb;
 }
+#endif /* UNUSED */
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -345,6 +353,21 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 #define tool_panic(zzz) panic(zzz)
 #define MC_(zzzz) MC_##zzzz
 #define TL_(zzzz) SK_##zzzz
+
+#if 1 /* stop gcc complaining */
+void MC_helperc_complain_undef ( void );
+void MC_helperc_LOADV8 ( void );
+void MC_helperc_LOADV4 ( void );
+void MC_helperc_LOADV2 ( void );
+void MC_helperc_LOADV1 ( void );
+void MC_helperc_STOREV8( void );
+void MC_helperc_STOREV4( void );
+void MC_helperc_STOREV2( void );
+void MC_helperc_STOREV1( void );
+void MC_helperc_value_check0_fail( void );
+void MC_helperc_value_check1_fail( void );
+void MC_helperc_value_check4_fail( void );
+#endif
 
 void MC_helperc_complain_undef ( void ) { }
 void MC_helperc_LOADV8 ( void ) { }
@@ -1017,6 +1040,7 @@ static Bool isAlwaysDefd ( MCEnv* mce, Int offset, Int size )
 }
 
 
+#if 0 /* UNUSED */
 /* Generate into bb suitable actions to shadow this Put.  If the state
    slice is marked 'always defined', do nothing.  Otherwise, write the
    supplied V bits to the shadow state.  We can pass in either an
@@ -1083,6 +1107,7 @@ void do_shadow_PUTI ( MCEnv* mce,
       stmt( mce->bb, IRStmt_PutI( new_descr, ix, bias, vatom ));
    }
 }
+#endif /* UNUSED */
 
 
 /* Return an expression which contains the V bits corresponding to the
@@ -1184,6 +1209,7 @@ IRAtom* mkLazyN ( MCEnv* mce,
 }
 
 
+#if 0 /* UNUSED */
 /*------------------------------------------------------------*/
 /*--- Generating expensive sequences for exact carry-chain ---*/
 /*--- propagation in add/sub and related operations.       ---*/
@@ -1240,6 +1266,7 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
       )
    );
 }
+#endif /* UNUSED */
 
 
 /*------------------------------------------------------------*/
@@ -2050,6 +2077,7 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
    }
 }
 
+#if 0 /* UNUSED */
 /*------------------------------------------------------------*/
 /*--- Generate shadow stmts from all kinds of IRStmts.     ---*/
 /*------------------------------------------------------------*/
@@ -2381,6 +2409,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    }
 
 }
+#endif /* UNUSED */
 
 
 /*------------------------------------------------------------*/
@@ -2457,6 +2486,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 #endif /* UNUSED */
 
 
+#if 0 /* UNUSED */
 IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
    Bool verboze = False; //True; 
@@ -2588,6 +2618,7 @@ IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
    return bb;
 }
+#endif /* UNUSED */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           mc_translate.c ---*/

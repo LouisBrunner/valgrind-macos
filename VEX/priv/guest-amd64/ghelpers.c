@@ -92,6 +92,7 @@ static void mullS64 ( Long u, Long v, Long* rHi, Long* rLo )
    *rLo = u * v;
 }
 
+#if 0 /* UNUSED */
 static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
 {
    ULong u0, v0, w0;
@@ -108,6 +109,7 @@ static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
    *rHi = u1 * v1 + w2 + (w1 >> 32);
    *rLo = u * v;
 }
+#endif /* UNUSED */
 
 
 static const UChar parity_table[256] = {

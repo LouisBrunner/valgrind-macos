@@ -3273,29 +3273,31 @@ ULong dis_Grp2 ( Prefix pfx,
 //.. //--                    Addr eip, UChar modrm,
 //.. //--                    Int am_sz, Int sz, UInt src_val )
 //.. //-- {
-//.. #  define MODIFY_t2_AND_SET_CARRY_FLAG                                        \
-//..       /* t2 is the value to be op'd on.  Copy to t_fetched, then        \
-//..          modify t2, if non-BT. */                                        \
-//..       uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);                \
-//..       uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);                \
-//..       uLiteral(cb, v_mask);                                                \
-//..       switch (gregOfRM(modrm)) {                                        \
-//..          case 4: /* BT */  break;                                        \
-//..          case 5: /* BTS */                                                 \
-//..             uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;        \
-//..          case 6: /* BTR */                                                \
-//..             uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;        \
-//..          case 7: /* BTC */                                                 \
-//..             uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;        \
-//..       }                                                                        \
-//..      /* Copy relevant bit from t_fetched into carry flag. */                \
-//..       uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);                \
-//..       uLiteral(cb, src_val);                                                \
-//..       uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);                \
-//..       uLiteral(cb, 1);                                                        \
-//..       uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);        \
-//..       uInstr1(cb, NEG, sz, TempReg, t_fetched);                                \
-//..       setFlagsFromUOpcode(cb, NEG);
+#if 0 /* stop gcc multi-line comment warning */
+/.. #  define MODIFY_t2_AND_SET_CARRY_FLAG                                        \
+/..       /* t2 is the value to be op'd on.  Copy to t_fetched, then        \
+/..          modify t2, if non-BT. */                                        \
+/..       uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);                \
+/..       uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);                \
+/..       uLiteral(cb, v_mask);                                                \
+/..       switch (gregOfRM(modrm)) {                                        \
+/..          case 4: /* BT */  break;                                        \
+/..          case 5: /* BTS */                                                 \
+/..             uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;        \
+/..          case 6: /* BTR */                                                \
+/..             uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;        \
+/..          case 7: /* BTC */                                                 \
+/..             uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;        \
+/..       }                                                                        \
+/..      /* Copy relevant bit from t_fetched into carry flag. */                \
+/..       uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);                \
+/..       uLiteral(cb, src_val);                                                \
+/..       uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);                \
+/..       uLiteral(cb, 1);                                                        \
+/..       uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);        \
+/..       uInstr1(cb, NEG, sz, TempReg, t_fetched);                                \
+/..       setFlagsFromUOpcode(cb, NEG);
+#endif /* stop gcc multi-line comment warning */
 //.. 
 //.. 
 //--    /* src_val denotes a d8.
@@ -6309,9 +6311,11 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pxor", False );
 //..          break; 
 //.. 
-//.. #     define SHIFT_BY_REG(_name,_op)                                 \
-//..                 delta = dis_MMX_shiftG_byE(sorb, delta, _name, _op); \
-//..                 break;
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define SHIFT_BY_REG(_name,_op)                                 \
+/..                 delta = dis_MMX_shiftG_byE(sorb, delta, _name, _op); \
+/..                 break;
+#endif /* stop gcc multi-line comment warning */
 //.. 
 //..       /* PSLLgg (src)mmxreg-or-mem, (dst)mmxreg */
 //..       case 0xF1: SHIFT_BY_REG("psllw", Iop_ShlN16x4);
@@ -6342,9 +6346,11 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..          byte2  = getUChar(delta);           /* amode / sub-opcode */
 //..          subopc = (byte2 >> 3) & 7;
 //.. 
-//.. #        define SHIFT_BY_IMM(_name,_op)                         \
-//..              do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
-//..              } while (0)
+#if 0 /* stop gcc multi-line comment warning */
+/.. #        define SHIFT_BY_IMM(_name,_op)                         \
+/..              do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
+/..              } while (0)
+#endif /* stop gcc multi-line comment warning */
 //.. 
 //..          hAddr = NULL;
 //..          hName = NULL;
@@ -8953,8 +8959,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       breakup64to16s( sV, &s3, &s2, &s1, &s0 );
 //.. 
-//.. #     define SEL(n) \
-//..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define SEL(n) \
+/..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#endif /* stop gcc multi-line comment warning */
 //..       assign(dV,
 //.. 	     mk64from16s( SEL((order>>6)&3), SEL((order>>4)&3),
 //..                           SEL((order>>2)&3), SEL((order>>0)&3) )
@@ -9303,9 +9311,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( rmode, get_sse_roundingmode() );
 //..       breakup128to32s( argV, &t3, &t2, &t1, &t0 );
 //.. 
-//.. #     define CVT(_t)  binop( Iop_F64toF32,                    \
-//..                              mkexpr(rmode),                   \
-//..                              unop(Iop_I32toF64,mkexpr(_t)))
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)  binop( Iop_F64toF32,                    \
+/..                              mkexpr(rmode),                   \
+/..                              unop(Iop_I32toF64,mkexpr(_t)))
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32F( gregOfRM(modrm), 3, CVT(t3) );
 //..       putXMMRegLane32F( gregOfRM(modrm), 2, CVT(t2) );
@@ -9346,9 +9356,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( t1, unop(Iop_ReinterpI64asF64, 
 //..                        unop(Iop_128HIto64, mkexpr(argV))) );
 //..       
-//.. #     define CVT(_t)  binop( Iop_F64toI32,                    \
-//..                              mkexpr(rmode),                   \
-//..                              mkexpr(_t) )
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)  binop( Iop_F64toI32,                    \
+/..                              mkexpr(rmode),                   \
+/..                              mkexpr(_t) )
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32( gregOfRM(modrm), 3, mkU32(0) );
 //..       putXMMRegLane32( gregOfRM(modrm), 2, mkU32(0) );
@@ -9442,9 +9454,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( t1, unop(Iop_ReinterpI64asF64, 
 //..                        unop(Iop_128HIto64, mkexpr(argV))) );
 //..       
-//.. #     define CVT(_t)  binop( Iop_F64toF32,                    \
-//..                              mkexpr(rmode),                   \
-//..                              mkexpr(_t) )
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)  binop( Iop_F64toF32,                    \
+/..                              mkexpr(rmode),                   \
+/..                              mkexpr(_t) )
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32(  gregOfRM(modrm), 3, mkU32(0) );
 //..       putXMMRegLane32(  gregOfRM(modrm), 2, mkU32(0) );
@@ -9514,11 +9528,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       /* This is less than ideal.  If it turns out to be a performance
 //.. 	 bottleneck it can be improved. */
-//.. #     define CVT(_t)                            \
-//..         binop( Iop_F64toI32,                    \
-//..                mkexpr(rmode),                   \
-//..                unop( Iop_F32toF64,              \
-//..                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)                            \
+/..         binop( Iop_F64toI32,                    \
+/..                mkexpr(rmode),                   \
+/..                unop( Iop_F32toF64,              \
+/..                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32( gregOfRM(modrm), 3, CVT(t3) );
 //..       putXMMRegLane32( gregOfRM(modrm), 2, CVT(t2) );
@@ -9750,9 +9766,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( t1, unop(Iop_ReinterpI64asF64, 
 //..                        unop(Iop_128HIto64, mkexpr(argV))) );
 //..       
-//.. #     define CVT(_t)  binop( Iop_F64toI32,                    \
-//..                              mkexpr(rmode),                   \
-//..                              mkexpr(_t) )
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)  binop( Iop_F64toI32,                    \
+/..                              mkexpr(rmode),                   \
+/..                              mkexpr(_t) )
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32( gregOfRM(modrm), 3, mkU32(0) );
 //..       putXMMRegLane32( gregOfRM(modrm), 2, mkU32(0) );
@@ -9790,11 +9808,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       /* This is less than ideal.  If it turns out to be a performance
 //.. 	 bottleneck it can be improved. */
-//.. #     define CVT(_t)                            \
-//..         binop( Iop_F64toI32,                    \
-//..                mkexpr(rmode),                   \
-//..                unop( Iop_F32toF64,              \
-//..                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define CVT(_t)                            \
+/..         binop( Iop_F64toI32,                    \
+/..                mkexpr(rmode),                   \
+/..                unop( Iop_F32toF64,              \
+/..                      unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
+#endif /* stop gcc multi-line comment warning */
 //..       
 //..       putXMMRegLane32( gregOfRM(modrm), 3, CVT(t3) );
 //..       putXMMRegLane32( gregOfRM(modrm), 2, CVT(t2) );
@@ -10764,8 +10784,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       breakup128to32s( sV, &s3, &s2, &s1, &s0 );
 //.. 
-//.. #     define SEL(n) \
-//..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define SEL(n) \
+/..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#endif /* stop gcc multi-line comment warning */
 //..       assign(dV,
 //.. 	     mk128from32s( SEL((order>>6)&3), SEL((order>>4)&3),
 //..                            SEL((order>>2)&3), SEL((order>>0)&3) )
@@ -10805,8 +10827,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( sVhi, unop(Iop_128HIto64, mkexpr(sV)) );
 //..       breakup64to16s( sVhi, &s3, &s2, &s1, &s0 );
 //.. 
-//.. #     define SEL(n) \
-//..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define SEL(n) \
+/..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#endif /* stop gcc multi-line comment warning */
 //..       assign(dVhi,
 //.. 	     mk64from16s( SEL((order>>6)&3), SEL((order>>4)&3),
 //..                           SEL((order>>2)&3), SEL((order>>0)&3) )
@@ -10849,8 +10873,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       assign( sVlo, unop(Iop_128to64, mkexpr(sV)) );
 //..       breakup64to16s( sVlo, &s3, &s2, &s1, &s0 );
 //.. 
-//.. #     define SEL(n) \
-//..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#if 0 /* stop gcc multi-line comment warning */
+/.. #     define SEL(n) \
+/..                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+#endif /* stop gcc multi-line comment warning */
 //..       assign(dVlo,
 //.. 	     mk64from16s( SEL((order>>6)&3), SEL((order>>4)&3),
 //..                           SEL((order>>2)&3), SEL((order>>0)&3) )

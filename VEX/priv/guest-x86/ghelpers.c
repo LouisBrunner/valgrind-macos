@@ -30,6 +30,11 @@
    permission.  
 */
 
+/* Set to 1 to get detailed profiling info about use of the flag
+   machinery. */
+#define PROFILE_EFLAGS 0
+
+
 typedef UChar uint8_t;
 typedef UInt  uint32_t;
 
@@ -293,9 +298,76 @@ static inline int lshift(int x, int n)
 }
 
 
+
+#define CC_SHIFT_C 0
+#define CC_SHIFT_P 2
+#define CC_SHIFT_A 4
+#define CC_SHIFT_Z 6
+#define CC_SHIFT_S 7
+#define CC_SHIFT_O 13
+
+#if PROFILE_EFLAGS
+
+static UInt tabc[CC_OP_NUMBER];
+static UInt tab[CC_OP_NUMBER][16];
+static Bool initted      = False;
+static UInt n_calc_cond = 0;
+static UInt n_calc_all  = 0;
+static UInt n_calc_c    = 0;
+
+static void showCounts ( void )
+{
+   Int op, co;
+   Char ch;
+   vex_printf("\nALL=%d   COND=%d   C=%d\n",
+              n_calc_all-n_calc_cond-n_calc_c, n_calc_cond, n_calc_c);
+   vex_printf("      CARRY    O   NO    B   NB    Z   NZ   BE  NBE"
+              "    S   NS    P   NP    L   NL   LE  NLE\n");
+   vex_printf("     ----------------------------------------------"
+              "----------------------------------------\n");
+   for (op = 0; op < CC_OP_NUMBER; op++) {
+
+      ch = ' ';
+      if (op > 0 && (op-1) % 3 == 2) 
+         ch = 'L';
+
+      vex_printf("%2d%c: ", op, ch);
+      vex_printf("%6d ", tabc[op]);
+      for (co = 0; co < 16; co++) {
+         Int n = tab[op][co];
+         if (n >= 1000) {
+            vex_printf(" %3dK", n / 1000);
+         } else 
+         if (n >= 0) {
+           vex_printf(" %3d ", n );
+         } else {
+            vex_printf("     ");
+         }
+      }
+      vex_printf("\n");
+   }
+   vex_printf("\n");
+}
+
+static void initCounts ( void )
+{
+   Int op, co;
+   initted = True;
+   for (op = 0; op < CC_OP_NUMBER; op++) {
+      tabc[op] = 0;
+      for (co = 0; co < 16; co++)
+         tab[op][co] = 0;
+   }
+}
+
+#endif /* PROFILE_EFLAGS */
+
 /* CALLED FROM GENERATED CODE */
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
+#  if PROFILE_EFLAGS
+   n_calc_all++;
+#  endif
    switch (cc_op) {
       case CC_OP_COPY:
          return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
@@ -364,7 +436,92 @@ static inline int lshift(int x, int n)
 /* CALLED FROM GENERATED CODE */
 static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
+#  if PROFILE_EFLAGS
+   if (!initted)
+      initCounts();
+   tabc[cc_op]++;
+
+   n_calc_c++;
+#  endif
+
    return calculate_eflags_all(cc_op,cc_src,cc_dst) & CC_MASK_C;
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* returns 1 or 0 */
+/*static*/ UInt calculate_condition ( UInt/*Condcode*/ cond, 
+                                      UInt cc_op, UInt cc_src, UInt cc_dst )
+{
+   UInt eflags = calculate_eflags_all(cc_op, cc_src, cc_dst);
+   UInt of,sf,zf,cf,pf;
+   UInt inv = cond & 1;
+
+#  if PROFILE_EFLAGS
+   if (!initted)
+     initCounts();
+
+   tab[cc_op][cond]++;
+   n_calc_cond++;
+
+   if (0 == ((n_calc_all+n_calc_c) & 0xFF)) showCounts();
+#  endif
+
+   switch (cond) {
+      case CondNO:
+      case CondO: /* OF == 1 */
+         of = eflags >> CC_SHIFT_O;
+         return 1 & (inv ^ of);
+
+      case CondNZ:
+      case CondZ: /* ZF == 1 */
+         zf = eflags >> CC_SHIFT_Z;
+         return 1 & (inv ^ zf);
+
+      case CondNB:
+      case CondB: /* CF == 1 */
+         cf = eflags >> CC_SHIFT_C;
+         return 1 & (inv ^ cf);
+         break;
+
+      case CondNBE:
+      case CondBE: /* (CF or ZF) == 1 */
+         cf = eflags >> CC_SHIFT_C;
+         zf = eflags >> CC_SHIFT_Z;
+         return 1 & (inv ^ (cf | zf));
+         break;
+
+      case CondNS:
+      case CondS: /* SF == 1 */
+         sf = eflags >> CC_SHIFT_S;
+         return 1 & (inv ^ sf);
+
+      case CondNP:
+      case CondP: /* PF == 1 */
+         pf = eflags >> CC_SHIFT_P;
+         return 1 & (inv ^ pf);
+
+      case CondNL:
+      case CondL: /* (SF xor OF) == 1 */
+         sf = eflags >> CC_SHIFT_S;
+         of = eflags >> CC_SHIFT_O;
+         return 1 & (inv ^ (sf ^ of));
+         break;
+
+      case CondNLE:
+      case CondLE: /* ((SF xor OF) or ZF)  == 1 */
+         sf = eflags >> CC_SHIFT_S;
+         of = eflags >> CC_SHIFT_O;
+         zf = eflags >> CC_SHIFT_Z;
+         return 1 & (inv ^ ((sf ^ of) | zf));
+         break;
+
+      default:
+         /* shouldn't really make these calls from generated code */
+         vex_printf("calculate_condition( %d, %d, 0x%x, 0x%x )\n",
+                    cond, cc_op, cc_src, cc_dst );
+         vpanic("calculate_condition");
+   }
 }
 
 
@@ -376,8 +533,157 @@ Addr64 x86guest_findhelper ( Char* function_name )
       return (Addr64)(& calculate_eflags_all);
    if (vex_streq(function_name, "calculate_eflags_c"))
       return (Addr64)(& calculate_eflags_c);
+   if (vex_streq(function_name, "calculate_condition"))
+      return (Addr64)(& calculate_condition);
    vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
    vpanic("x86guest_findhelper");
+}
+
+/* Used by the optimiser to try specialisations.  Returns an
+   equivalent expression, or NULL if none. */
+
+static Bool isU32 ( IRExpr* e, UInt n )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U32
+          && e->Iex.Const.con->Ico.U32 == n;
+}
+
+IRExpr* x86guest_spechelper ( Char* function_name,
+                              IRExpr** args )
+{
+#  define unop(_op,_a1) IRExpr_Unop((_op),(_a1))
+#  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
+#  define mkU32(_n) IRExpr_Const(IRConst_U32(_n))
+
+   Int i, arity = 0;
+   for (i = 0; args[i]; i++)
+      arity++;
+#  if 0
+   vex_printf("spec request:\n");
+   vex_printf("   %s  ", function_name);
+   for (i = 0; i < arity; i++) {
+      vex_printf("  ");
+      ppIRExpr(args[i]);
+   }
+   vex_printf("\n");
+#  endif
+
+   if (vex_streq(function_name, "calculate_eflags_c")) {
+      /* specialise calls to above "calculate_eflags_c" function */
+      IRExpr *cc_op, *cc_src, *cc_dst;
+      vassert(arity == 3);
+      cc_op = args[0];
+      cc_src = args[1];
+      cc_dst = args[2];
+
+      if (isU32(cc_op, CC_OP_LOGICL)) {
+         /* cflag after logic is zero */
+         return mkU32(0);
+      }
+      if (isU32(cc_op, CC_OP_DECL) || isU32(cc_op, CC_OP_INCL)) {
+         /* If the thunk is dec or inc, the cflag is supplied as CC_SRC. */
+         return cc_src;
+      }
+      if (isU32(cc_op, CC_OP_SUBL)) {
+         /* C after sub denotes unsigned less than */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, binop(Iop_Add32,cc_src,cc_dst), 
+                                         cc_src));
+      }
+#     if 0
+      if (cc_op->tag == Iex_Const) {
+         vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");
+      }
+#     endif
+
+      return NULL;
+   }
+
+   if (vex_streq(function_name, "calculate_condition")) {
+      /* specialise calls to above "calculate condition" function */
+      IRExpr *cond, *cc_op, *cc_src, *cc_dst;
+      vassert(arity == 4);
+      cond = args[0];
+      cc_op = args[1];
+      cc_src = args[2];
+      cc_dst = args[3];
+
+      if (isU32(cc_op, CC_OP_LOGICB) && isU32(cond, CondZ)) {
+         /* byte and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dst,mkU32(255)), 
+                                        mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondZ)) {
+         /* byte sub/cmp, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dst,mkU32(255)), 
+                                        mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
+         /* byte sub/cmp, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE32, binop(Iop_And32,cc_dst,mkU32(255)), 
+                                        mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondZ)) {
+         /* long and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
+         /* long and/or/xor, then LE
+            This is pretty subtle.  LOGIC sets SF and ZF according to the
+            result and makes OF be zero.  LE computes (SZ ^ OF) | ZF, but
+            OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
+            the result is <=signed 0.  Hence ...
+         */
+         return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dst, mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondZ)) {
+         /* long sub/cmp, then Z --> test dst==0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondL)) {
+         /* long sub/cmp, then L (signed less than) */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32S, binop(Iop_Add32,cc_src,cc_dst), 
+                                         cc_src));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondLE)) {
+         /* long sub/cmp, then LE (signed less than or equal) */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLE32S, binop(Iop_Add32,cc_src,cc_dst), 
+                                         cc_src));
+      }
+
+      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondBE)) {
+         /* long sub/cmp, then BE (unsigned less than or equal) */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLE32U, binop(Iop_Add32,cc_src,cc_dst), 
+                                         cc_src));
+      }
+
+      if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondZ)) {
+         /* dec L, then Z --> test dst == 0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+      }
+
+      return NULL;
+   }
+
+#  undef unop
+#  undef binop
+#  undef mkU32
+
+   return NULL;
 }
 
 

@@ -358,7 +358,7 @@ static IRExpr* mk_calculate_eflags_all ( void )
    return IRExpr_CCall("calculate_eflags_all", Ity_I32, args);
 }
 
-/* Build IR to calculate just the carry flags from stored
+/* Build IR to calculate just the carry flag from stored
    CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_c ( void )
 {
@@ -368,6 +368,20 @@ static IRExpr* mk_calculate_eflags_c ( void )
    args[2]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
    args[3]       = NULL;
    return IRExpr_CCall("calculate_eflags_c", Ity_I32, args);
+}
+
+/* Build IR to calculate some particular condition from stored
+   CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_Bit. */
+static IRExpr* calculate_condition ( Condcode cond )
+{
+   IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
+   args[0]       = mkU32(cond);
+   args[1]       = IRExpr_Get(OFFB_CC_OP,  Ity_I32);
+   args[2]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
+   args[3]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
+   args[4]       = NULL;
+   return unop(Iop_32to1, 
+               IRExpr_CCall("calculate_condition", Ity_I32, args));
 }
 
 
@@ -539,36 +553,6 @@ void setFlags_MUL ( IRType ty, IRTemp src1, IRTemp src2, UInt base_op )
 
 /* Condition codes, using the Intel encoding.  */
 
-typedef
-   enum {
-      CondO      = 0,  /* overflow           */
-      CondNO     = 1,  /* no overflow        */
-
-      CondB      = 2,  /* below              */
-      CondNB     = 3,  /* not below          */
-
-      CondZ      = 4,  /* zero               */
-      CondNZ     = 5,  /* not zero           */
-
-      CondBE     = 6,  /* below or equal     */
-      CondNBE    = 7,  /* not below or equal */
-
-      CondS      = 8,  /* negative           */
-      CondNS     = 9,  /* not negative       */
-
-      CondP      = 10, /* parity even        */
-      CondNP     = 11, /* not parity even    */
-
-      CondL      = 12, /* jump less          */
-      CondNL     = 13, /* not less           */
-
-      CondLE     = 14, /* less or equal      */
-      CondNLE    = 15, /* not less or equal  */
-
-      CondAlways = 16  /* HACK */
-   }
-   Condcode;
-
 static Char* name_Condcode ( Condcode cond )
 {
    switch (cond) {
@@ -607,6 +591,8 @@ static Condcode positiveIse_Condcode ( Condcode  cond,
 }
 
 
+#if 0
+/* UNUSED -- DELETE */
 /* Get some particular flag to the lowest bit in a word.  It's not
    masked, tho. */
 static IRExpr* flag_to_bit0 ( UInt ccmask, IRTemp eflags )
@@ -691,6 +677,7 @@ static IRExpr* calculate_condition ( Condcode cond )
       invert ? unop(Iop_32to1, unop(Iop_Not32, e))
              : unop(Iop_32to1, e);
 }
+#endif
 
 
 /* -------------- Helpers for ADD/SUB with carry. -------------- */

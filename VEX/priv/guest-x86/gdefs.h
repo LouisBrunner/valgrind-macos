@@ -31,6 +31,11 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 extern
 Addr64 x86guest_findhelper ( Char* function_name );
 
+/* Used by the optimiser to specialise calls to helpers. */
+extern
+IRExpr* x86guest_spechelper ( Char* function_name,
+                              IRExpr** args );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/
@@ -102,6 +107,36 @@ enum {
 
     CC_OP_NUMBER
 };
+
+typedef
+   enum {
+      CondO      = 0,  /* overflow           */
+      CondNO     = 1,  /* no overflow        */
+
+      CondB      = 2,  /* below              */
+      CondNB     = 3,  /* not below          */
+
+      CondZ      = 4,  /* zero               */
+      CondNZ     = 5,  /* not zero           */
+
+      CondBE     = 6,  /* below or equal     */
+      CondNBE    = 7,  /* not below or equal */
+
+      CondS      = 8,  /* negative           */
+      CondNS     = 9,  /* not negative       */
+
+      CondP      = 10, /* parity even        */
+      CondNP     = 11, /* not parity even    */
+
+      CondL      = 12, /* jump less          */
+      CondNL     = 13, /* not less           */
+
+      CondLE     = 14, /* less or equal      */
+      CondNLE    = 15, /* not less or equal  */
+
+      CondAlways = 16  /* HACK */
+   }
+   Condcode;
 
 
 /*---------------------------------------------------------*/

@@ -770,6 +770,8 @@ static void dead_BB ( IRBB* bb )
    /* Work backwards through the stmts */
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
+      if (!st)
+         continue;
       if (st->tag == Ist_Tmp
           && !lookupH64(set, NULL, (ULong)(st->Ist.Tmp.tmp))) {
           /* it's an IRTemp which never got used.  Delete it. */
@@ -1067,6 +1069,47 @@ static void redundant_put_removal_BB ( IRBB* bb )
 }
 
 
+/*---------------------------------------------------------------*/
+/*--- Specialisation of helper function calls, in             ---*/
+/*--- collaboration with the front end                        ---*/
+/*---------------------------------------------------------------*/
+
+static 
+void spec_helpers_BB ( IRBB* bb,
+                       IRExpr* (*specHelper) ( Char*, IRExpr**) )   
+{
+   Int i;
+   IRStmt* st;
+   IRExpr* ex;
+
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+
+      if (!st 
+          || st->tag != Ist_Tmp
+          || st->Ist.Tmp.expr->tag != Iex_CCall)
+	continue;
+
+      ex = (*specHelper)( st->Ist.Tmp.expr->Iex.CCall.name,
+                          st->Ist.Tmp.expr->Iex.CCall.args );
+      if (!ex)
+	/* the front end can't think of a suitable replacement */
+	continue;
+
+      /* We got something better.  Install it in the bb. */
+      bb->stmts[i]
+         = IRStmt_Tmp(st->Ist.Tmp.tmp, ex);
+
+      if (0) {
+         vex_printf("SPEC: ");
+         ppIRExpr(st->Ist.Tmp.expr);
+         vex_printf("  -->  ");
+         ppIRExpr(ex);
+         vex_printf("\n");
+      }
+   }
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- The tree builder                                        ---*/
@@ -1075,7 +1118,8 @@ static void redundant_put_removal_BB ( IRBB* bb )
 typedef
    struct { 
       Int     occ;          /* occurrence count for this tmp */
-      IRExpr* expr;         /* expr it is bound to, or NULL if already 'used' */
+      IRExpr* expr;         /* expr it is bound to, 
+                               or NULL if already 'used' */
       Bool    eDoesLoad;    /* True <=> expr reads mem */
       Bool    eDoesGet;     /* True <=> expr reads guest state */
       Bool    invalidateMe; /* used when dumping bindings */
@@ -1401,6 +1445,9 @@ static void treebuild_BB ( IRBB* bb )
          continue;
 
       if (!lookupH64(env, &res, (ULong)(st->Ist.Tmp.tmp))) {
+         vex_printf("\n");
+         ppIRTemp(st->Ist.Tmp.tmp);
+         vex_printf("\n");
          vpanic("treebuild_BB (phase 2): unmapped IRTemp");
       }
       ti = (TmpInfo*)res;
@@ -1515,7 +1562,8 @@ static void treebuild_BB ( IRBB* bb )
 */
 
 /* exported from this file */
-IRBB* do_iropt_BB ( IRBB* bb0 )
+IRBB* do_iropt_BB ( IRBB* bb0,
+                    IRExpr* (*specHelper) ( Char*, IRExpr**) )
 {
    Bool verbose = False;
    IRBB *flat, *cpd;
@@ -1545,18 +1593,23 @@ IRBB* do_iropt_BB ( IRBB* bb0 )
    }
 
    dead_BB ( cpd );
-   if (0||verbose) {
+   if (verbose) {
       vex_printf("\n========= DEAD\n\n" );
       ppIRBB(cpd);
    }
 
-#if 1
+   spec_helpers_BB ( cpd, specHelper );
+   dead_BB ( cpd );
+   if (verbose) {
+      vex_printf("\n========= SPECd \n\n" );
+      ppIRBB(cpd);
+   }
+
    treebuild_BB ( cpd );
-   if (0||verbose) {
+   if (verbose) {
       vex_printf("\n========= TREEd \n\n" );
       ppIRBB(cpd);
    }
-#endif
 
    return cpd;
 

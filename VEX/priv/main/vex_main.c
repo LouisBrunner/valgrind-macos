@@ -99,6 +99,7 @@ TranslateResult LibVEX_Translate (
                                          Bool(*)(Addr64), Bool );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    Addr64       (*findHelper)  ( Char* );
+   IRExpr*      (*specHelper)  ( Char*, IRExpr** );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;
@@ -120,6 +121,7 @@ TranslateResult LibVEX_Translate (
    bbToIR                 = NULL;
    emit                   = NULL;
    findHelper             = NULL;
+   specHelper             = NULL;
 
    saved_verbosity = vex_verbosity;
    if (bb_verbosity > 0)
@@ -153,6 +155,7 @@ TranslateResult LibVEX_Translate (
       case InsnSetX86:
          bbToIR     = bbToIR_X86Instr;
          findHelper = x86guest_findhelper;
+         specHelper = x86guest_spechelper;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -173,7 +176,7 @@ TranslateResult LibVEX_Translate (
    sanityCheckIRBB(irbb, Ity_I32);
 
    /* Clean it up, hopefully a lot. */
-   irbb = do_iropt_BB ( irbb );
+   irbb = do_iropt_BB ( irbb, specHelper );
    sanityCheckIRBB(irbb, Ity_I32);
 
    if (vex_verbosity > 0) {

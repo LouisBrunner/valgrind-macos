@@ -257,7 +257,7 @@ static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
-   DECLARE_PATTERN(p_32to1_then_1Uto8);     
+   DECLARE_PATTERN(p_32to1_then_1Uto8);
 
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
@@ -504,6 +504,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, X86RM_Reg(dst)));
             return dst;
          }
+         case Iop_1Uto32:
          case Iop_1Uto8: {
             HReg dst         = newVRegI(env);
             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
@@ -773,9 +774,19 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1);
    DECLARE_PATTERN(p_eq32_zero);
+   DECLARE_PATTERN(p_ne32_zero);
+   DECLARE_PATTERN(p_1Uto32_then_32to1);
 
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_Bit);
+
+   /* 32to1(1Uto32(expr1)) -- the casts are pointless, ignore them */
+   DEFINE_PATTERN(p_1Uto32_then_32to1,
+                  unop(Iop_32to1,unop(Iop_1Uto32,bind(0))));
+   if (matchIRExpr(&mi,p_1Uto32_then_32to1,e)) {
+      IRExpr* expr1 = mi.bindee[0];
+      return iselCondCode(env, expr1);
+   }
 
    /* pattern: 32to1(expr32) */
    DEFINE_PATTERN(p_32to1, 
@@ -795,6 +806,34 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
       HReg src = iselIntExpr_R(env, mi.bindee[0]);
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,X86RMI_Imm(0),src));
       return Xcc_Z;
+   }
+
+   /* pattern: CmpNE32(expr32,0) */
+   DEFINE_PATTERN(p_ne32_zero, 
+      binop( Iop_CmpNE32, bind(0), IRExpr_Const(IRConst_U32(0)) ) 
+   );
+   if (matchIRExpr(&mi,p_ne32_zero,e)) {
+      HReg src = iselIntExpr_R(env, mi.bindee[0]);
+      addInstr(env, X86Instr_Alu32R(Xalu_CMP,X86RMI_Imm(0),src));
+      return Xcc_NZ;
+   }
+
+   /* CmpLT32S(x,y) or CmpLE32S(x,y) */
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_CmpLT32S
+           || e->Iex.Binop.op == Iop_CmpLT32U
+           || e->Iex.Binop.op == Iop_CmpLE32S
+           || e->Iex.Binop.op == Iop_CmpLE32U)) {
+      HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+      addInstr(env, X86Instr_Alu32R(Xalu_CMP,rmi2,r1));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpLT32S: return Xcc_L;
+         case Iop_CmpLT32U: return Xcc_B;
+         case Iop_CmpLE32S: return Xcc_LE;
+         case Iop_CmpLE32U: return Xcc_BE;
+         default: vpanic("iselCondCode(x86): CmpXX");
+      }
    }
 
    /* var */

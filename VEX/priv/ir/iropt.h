@@ -11,7 +11,8 @@
 #include "libvex.h"
 
 
-extern IRBB* do_iropt_BB ( IRBB* );
+extern IRBB* do_iropt_BB ( IRBB* bb,
+                           IRExpr* (*specHelper) ( Char*, IRExpr**) );
 
 /*---------------------------------------------------------------*/
 /*--- end                                          ir/iropt.h ---*/

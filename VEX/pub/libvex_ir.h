@@ -96,6 +96,10 @@ typedef
       Iop_MullS8, Iop_MullS16, Iop_MullS32,
       Iop_MullU8, Iop_MullU16, Iop_MullU32,
       /* Ordering not important after here. */
+      Iop_CmpLT32S,
+      Iop_CmpLE32S,
+      Iop_CmpLT32U,
+      Iop_CmpLE32U,
       /* Division */
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
@@ -118,8 +122,9 @@ typedef
       Iop_64HIto32,   // :: I64 -> I32, high half
       Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */
-      Iop_32to1, /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
-      Iop_1Uto8, /* :: Ity_Bit -> Ity_I8, unsigned widen */
+      Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
+      Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
+      Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */
       /* FP stuff */
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
       Iop_SqrtF64,

@@ -96,6 +96,7 @@ void ppIROp ( IROp op )
       case Iop_32to8:    vex_printf("32to8");   return;
       case Iop_32to1:    vex_printf("32to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
+      case Iop_1Uto32:   vex_printf("1Uto32");  return;
 
       case Iop_MullS8:   vex_printf("MullS8");  return;
       case Iop_MullS16:  vex_printf("MullS16"); return;
@@ -103,6 +104,11 @@ void ppIROp ( IROp op )
       case Iop_MullU8:   vex_printf("MullU8");  return;
       case Iop_MullU16:  vex_printf("MullU16"); return;
       case Iop_MullU32:  vex_printf("MullU32"); return;
+
+      case Iop_CmpLT32S: vex_printf("CmpLT32S"); return;
+      case Iop_CmpLE32S: vex_printf("CmpLE32S"); return;
+      case Iop_CmpLT32U: vex_printf("CmpLT32U"); return;
+      case Iop_CmpLE32U: vex_printf("CmpLE32U"); return;
 
       case Iop_DivModU64to32: vex_printf("DivModU64to32"); return;
       case Iop_DivModS64to32: vex_printf("DivModS64to32"); return;
@@ -548,6 +554,10 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpEQ16: case Iop_CmpNE16:
          COMPARISON(Ity_I16);
       case Iop_CmpEQ32: case Iop_CmpNE32:
+      case Iop_CmpLT32S:
+      case Iop_CmpLE32S:
+      case Iop_CmpLT32U:
+      case Iop_CmpLE32U:
          COMPARISON(Ity_I32);
       case Iop_CmpEQ64: case Iop_CmpNE64:
          COMPARISON(Ity_I64);
@@ -579,6 +589,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
       case Iop_1Uto8:   UNARY(Ity_I8,Ity_Bit);
+      case Iop_1Uto32:  UNARY(Ity_I32,Ity_Bit);
       case Iop_32to1:   UNARY(Ity_Bit,Ity_I32);
       case Iop_8Uto32:  UNARY(Ity_I32,Ity_I8);
       case Iop_8Sto32:  UNARY(Ity_I32,Ity_I8);

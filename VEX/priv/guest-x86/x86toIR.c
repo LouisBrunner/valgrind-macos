@@ -7983,6 +7983,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    last_stmt         = NULL;
 
    vassert((eip >> 32) == 0);
+   vassert(vex_guest_insns_per_bb >= 1);
 
    DIP("Original x86 code to IR:\n\n");
 
@@ -7993,6 +7994,11 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    n_instrs = 0;
    while (True) {
       if (isEnd) break;
+      if (n_instrs == vex_guest_insns_per_bb) {
+         vassert(irbb->next == NULL);
+         irbb->next = mkU32(((Addr32)eip)+delta);
+         break;
+      }
       vassert(n_instrs < vex_guest_insns_per_bb);
       delta = disInstr ( delta, &isEnd );
       n_instrs++;

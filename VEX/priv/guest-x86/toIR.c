@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
 /*--- This file (guest-x86/toIR.c) is                              ---*/
-/*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved.      ---*/
+/*--- Copyright (c) OpenWorks LLP.  All rights reserved.           ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks, LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -673,9 +673,13 @@ static IRExpr* getIReg ( Int sz, UInt archreg )
 static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(irbb->tyenv, e);
-   vassert(sz == 1 || sz == 2 || sz == 4);
+   switch (sz) {
+      case 1: vassert(ty == Ity_I8); break;
+      case 2: vassert(ty == Ity_I16); break;
+      case 4: vassert(ty == Ity_I32); break;
+      default: vpanic("putIReg(x86)");
+   }
    vassert(archreg < 8);
-   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
    stmt( IRStmt_Put(integerGuestRegOffset(sz,archreg), e) );
 }
 
@@ -3436,6 +3440,21 @@ static void clear_C2 ( void )
    put_C3210( binop(Iop_And32, get_C3210(), mkU32(~X86G_FC_MASK_C2)) );
 }
 
+/* Invent a plausible-looking FPU status word value:
+      ((ftop & 7) << 11) | (c3210 & 0x4700)
+ */
+static IRExpr* get_FPU_sw ( void )
+{
+   return
+      unop(Iop_32to16,
+           binop(Iop_Or32,
+                 binop(Iop_Shl32, 
+                       binop(Iop_And32, get_ftop(), mkU32(7)), 
+                             mkU8(11)),
+                       binop(Iop_And32, get_C3210(), mkU32(0x4700))
+      ));
+}
+
 
 /* ------------------------------------------------------- */
 /* Given all that stack-mangling junk, we can now go ahead
@@ -3726,7 +3745,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
-            case 4: { /* FLDENV m108 */
+            case 4: { /* FLDENV m28 */
                /* Uses dirty helper: 
                      VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, Addr32 ) */
                IRTemp   ew = newTemp(Ity_I32);
@@ -4666,6 +4685,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
             }
 
+            case 7: { /* FNSTSW m16 */
+               IRExpr* sw = get_FPU_sw();
+               vassert(typeOfIRExpr(irbb->tyenv, sw) == Ity_I16);
+               storeLE( mkexpr(addr), sw );
+               DIP("fnstsw %s\n", dis_buf);
+               break;
+            }
+
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xDD\n");
@@ -4907,18 +4934,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE0: /* FNSTSW %ax */
                DIP("fnstsw %%ax\n");
-               /* Invent a plausible-looking FPU status word value and
-                  dump it in %AX:
-                     ((ftop & 7) << 11) | (c3210 & 0x4700)
-               */
-               putIReg(2, R_EAX,
-                  unop(Iop_32to16,
-                       binop(Iop_Or32,
-                             binop(Iop_Shl32, 
-                                   binop(Iop_And32, get_ftop(), mkU32(7)), 
-                                   mkU8(11)),
-                             binop(Iop_And32, get_C3210(), mkU32(0x4700))
-               )));
+               /* Get the FPU status word value and dump it in %AX. */
+               putIReg(2, R_EAX, get_FPU_sw());
                break;
 
             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */

@@ -118,6 +118,7 @@ typedef
 #define VKI_SIGKILL          9
 #define VKI_SIGSTOP         19
 #define VKI_SIGTERM         15
+#define VKI_SIGUSR1         10
 
 /* The following are copied from /usr/include/bits/mman.h, which in
    turn claims to have got them from the kernel headers. */

@@ -3697,6 +3697,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    do_Mov_I_E:
       modrm = getUChar(eip);
       if (epartIsReg(modrm)) {
+         eip++; /* mod/rm byte */
          d32 = getUDisp(sz,eip); eip += sz;
          t1 = newTemp(cb);
          uInstr2(cb, MOV, sz, Literal, 0,  TempReg, t1);

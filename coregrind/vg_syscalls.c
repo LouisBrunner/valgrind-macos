@@ -3290,6 +3290,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
       }
 
+#     if defined(__NR_prctl)
+      case __NR_prctl: /* syscall 172 */
+         /* int prctl(int option, unsigned long arg2, unsigned long arg3,
+                      unsigned long arg4, unsigned long arg5); */
+         MAYBE_PRINTF( "prctl ( %d, %d, %d, %d, %d )\n", arg1, arg2, arg3,
+			arg4, arg5 );
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
       /*-------------------------- SIGNALS --------------------------*/
 
       /* Normally set to 1, so that Valgrind's signal-simulation machinery

@@ -632,7 +632,7 @@ static Bool is_sane_UInstr ( UInstr* u )
                       return         SZ48   && CC0  && TR1 && TR2 && N3  && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
-         return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
+         return TL_(sane_XUInstr)(beforeRA, beforeLiveness, u);
       else {
          VG_(printf)("unhandled opcode: %u.  Perhaps " 
                      "VG_(needs).extended_UCode should be set?",
@@ -989,7 +989,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE3ag_MemRd_RegWr: return "SSE3ag_MemRd_RegWr";
       default:
          if (VG_(needs).extended_UCode)
-            return SK_(name_XUOpcode)(opc);
+            return TL_(name_XUOpcode)(opc);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
@@ -1297,7 +1297,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 
       default: 
          if (VG_(needs).extended_UCode)
-            SK_(pp_XUInstr)(u);
+            TL_(pp_XUInstr)(u);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
@@ -1441,7 +1441,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 
       default:
          if (VG_(needs).extended_UCode)
-            return SK_(get_Xreg_usage)(u, tag, regs, isWrites);
+            return TL_(get_Xreg_usage)(u, tag, regs, isWrites);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
@@ -2525,10 +2525,10 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    }
 
    /* Tool's instrumentation (Nb: must set VG_(print_codegen) in case
-      SK_(instrument) looks at it. */
+      TL_(instrument) looks at it. */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(3);
    VGP_PUSHCC(VgpInstrument);
-   cb = SK_(instrument) ( cb, orig_addr );
+   cb = TL_(instrument) ( cb, orig_addr );
    if (VG_(print_codegen))
       VG_(pp_UCodeBlock) ( cb, "Instrumented UCode:" );
    sanity_check_UCodeBlock( cb );

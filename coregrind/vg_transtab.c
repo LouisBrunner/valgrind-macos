@@ -656,7 +656,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
          continue;
 
       if (VG_(needs).basic_block_discards)
-         SK_(discard_basic_block_info)( tce->orig_addr, 
+         TL_(discard_basic_block_info)( tce->orig_addr, 
                                         tce->orig_size );
 
       vg_tt[i].orig_addr = VG_TTE_DELETED;

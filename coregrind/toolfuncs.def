@@ -53,7 +53,7 @@ void,	pp_Error,	Error* err
 
 ## Should fill in any details that could be postponed until after the
 ## decision whether to ignore the error (ie. details not affecting the
-## result of SK_(eq_Error)()).  This saves time when errors are ignored.
+## result of TL_(eq_Error)()).  This saves time when errors are ignored.
 ## Yuk.
 
 ## Return value: must be the size of the `extra' part in bytes -- used by
@@ -77,12 +77,12 @@ Bool,	error_matches_suppression,		Error* err, Supp* su
 
 ## This should return the suppression name, for --gen-suppressions, or NULL
 ## if that error type cannot be suppressed.  This is the inverse of
-## SK_(recognised_suppression)().
+## TL_(recognised_suppression)().
 Char*,	get_error_name,			Error* err
 
 ## This should print any extra info for the error, for --gen-suppressions,
 ## including the newline.  This is the inverse of
-## SK_(read_extra_suppression_info)().
+## TL_(read_extra_suppression_info)().
 void,	print_extra_suppression_info,	Error* err
 
 
@@ -154,8 +154,8 @@ void, post_syscall, ThreadId tid, UInt syscallno, void* pre_result, Int res, Boo
 ## ---------------------------------------------------------------------
 ##   VG_(needs).sanity_checks
 
-## Can be useful for ensuring a tool's correctness.  SK_(cheap_sanity_check)
-## is called very frequently;  SK_(expensive_sanity_check) is called less
+## Can be useful for ensuring a tool's correctness.  TL_(cheap_sanity_check)
+## is called very frequently;  TL_(expensive_sanity_check) is called less
 ## frequently and can be more involved.
 Bool, cheap_sanity_check
 Bool, expensive_sanity_check

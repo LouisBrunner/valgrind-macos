@@ -4427,7 +4427,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
 	       emit_put_sse_state();
 	       *sselive = False;
 	    }
-            SK_(emit_XUInstr)(u, regs_live_before);
+            TL_(emit_XUInstr)(u, regs_live_before);
          } else {
             VG_(printf)("\nError:\n"
                         "  unhandled opcode: %u.  Perhaps "

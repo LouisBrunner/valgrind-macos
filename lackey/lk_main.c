@@ -44,7 +44,7 @@ static void add_one_dlrr_call(void)
    n_dlrr_calls++;
 }
 
-/* See comment above SK_(instrument) for reason why n_machine_instrs is
+/* See comment above TL_(instrument) for reason why n_machine_instrs is
    incremented here. */
 static void add_one_BB(void)
 {
@@ -72,7 +72,7 @@ static void add_one_Jcc_untaken(void)
    n_Jccs_untaken++;
 }
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Lackey");
    VG_(details_version)         (NULL);
@@ -90,7 +90,7 @@ void SK_(pre_clo_init)(void)
    VG_(register_compact_helper)((Addr) & add_one_Jcc_untaken);
 }
 
-void SK_(post_clo_init)(void)
+void TL_(post_clo_init)(void)
 {
 }
 
@@ -136,7 +136,7 @@ void SK_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
    UCodeBlock* cb;
    Int         i;
@@ -192,7 +192,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    return cb;
 }
 
-void SK_(fini)(Int exitcode)
+void TL_(fini)(Int exitcode)
 {
     VG_(message)(Vg_UserMsg,
                  "Counted %d calls to _dl_runtime_resolve()", n_dlrr_calls);
@@ -222,7 +222,7 @@ void SK_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 
 /*--------------------------------------------------------------------*/

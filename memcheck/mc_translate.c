@@ -39,7 +39,7 @@
    vg_translate.c:is_sane_UInstr().  Everything general said there
    applies here too.
 */
-Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
+Bool TL_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 {
 // SSS: duplicating these macros really sucks
 #  define LIT0 (u->lit32 == 0)
@@ -93,7 +93,7 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
    case TAG2:   return LIT0 && SZ0 && CC0 &&  TR1 && TR2 && Ls3 && XOTHER;
    default:
       VG_(printf)("unhandled opcode: %u\n", u->opcode);
-      VG_(tool_panic)("SK_(sane_XUInstr): unhandled opcode");
+      VG_(tool_panic)("TL_(sane_XUInstr): unhandled opcode");
    }
 #  undef LIT0
 #  undef LIT1
@@ -159,7 +159,7 @@ static Char* nameOfTagOp ( TagOp h )
 }
 
 
-Char* SK_(name_XUOpcode)(Opcode opc)
+Char* TL_(name_XUOpcode)(Opcode opc)
 {
    switch (opc) {
       case GETVF:   return "GETVF";
@@ -174,7 +174,7 @@ Char* SK_(name_XUOpcode)(Opcode opc)
       case SETV:    return "SETV";
       default:      
          VG_(printf)("unhandled opcode: %u\n", opc);
-         VG_(tool_panic)("SK_(name_XUOpcode): unhandled case");
+         VG_(tool_panic)("TL_(name_XUOpcode): unhandled case");
    }
 }
 
@@ -182,7 +182,7 @@ Char* SK_(name_XUOpcode)(Opcode opc)
    Debugging stuff.
    ------------------------------------------------------------------ */
 
-void SK_(pp_XUInstr)(UInstr* u)
+void TL_(pp_XUInstr)(UInstr* u)
 {
    switch (u->opcode) {
       case TAG1:
@@ -223,12 +223,12 @@ void SK_(pp_XUInstr)(UInstr* u)
 
       default:
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(tool_panic)("SK_(pp_XUInstr): unhandled opcode");
+         VG_(tool_panic)("TL_(pp_XUInstr): unhandled opcode");
    }
 
 }
 
-Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
+Int TL_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 {
 #  define RD(ono)    VG_UINSTR_READS_REG(ono, regs, isWrites)
 #  define WR(ono)    VG_UINSTR_WRITES_REG(ono, regs, isWrites)
@@ -248,7 +248,7 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 
       default: 
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(tool_panic)("SK_(get_Xreg_usage): unhandled opcode");
+         VG_(tool_panic)("TL_(get_Xreg_usage): unhandled opcode");
    }
    return n;
 
@@ -1638,7 +1638,7 @@ static void vg_cleanup ( UCodeBlock* cb )
 
 /* Caller will print out final instrumented code if necessary;  we
    print out intermediate instrumented code here if necessary. */
-UCodeBlock* SK_(instrument) ( UCodeBlock* cb, Addr not_used )
+UCodeBlock* TL_(instrument) ( UCodeBlock* cb, Addr not_used )
 {
    cb = memcheck_instrument ( cb );
    if (MC_(clo_cleanup)) {

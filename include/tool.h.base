@@ -111,7 +111,7 @@ typedef struct _ToolInfo {
 
 /* Every tool must include this macro somewhere, exactly once. */
 #define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)		\
-   const ToolInfo SK_(tool_info) = {					\
+   const ToolInfo TL_(tool_info) = {					\
       .sizeof_ToolInfo         = sizeof(ToolInfo),			\
       .interface_major_version = VG_CORE_INTERFACE_MAJOR_VERSION,	\
       .interface_minor_version = VG_CORE_INTERFACE_MINOR_VERSION,	\
@@ -236,9 +236,9 @@ extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
    VGP_PAIR(VgpPreCloInit,  "pre-clo-init"),          \
    VGP_PAIR(VgpPostCloInit, "post-clo-init"),         \
    VGP_PAIR(VgpInstrument,  "instrument"),            \
-   VGP_PAIR(VgpSkinSysWrap, "tool-syscall-wrapper"),  \
-   VGP_PAIR(VgpSkinCheapSanity,     "tool-cheap-sanity"),     \
-   VGP_PAIR(VgpSkinExpensiveSanity, "tool-expensive-sanity"), \
+   VGP_PAIR(VgpToolSysWrap, "tool-syscall-wrapper"),  \
+   VGP_PAIR(VgpToolCheapSanity,     "tool-cheap-sanity"),     \
+   VGP_PAIR(VgpToolExpensiveSanity, "tool-expensive-sanity"), \
    VGP_PAIR(VgpFini,        "fini")
 
 #define VGP_PAIR(n,name) n
@@ -1432,7 +1432,7 @@ typedef
    struct _Supp
    Supp;
 
-/* Useful in SK_(error_matches_suppression)() */
+/* Useful in TL_(error_matches_suppression)() */
 SuppKind VG_(get_supp_kind)   ( Supp* su );
 Char*    VG_(get_supp_string) ( Supp* su );
 void*    VG_(get_supp_extra)  ( Supp* su );
@@ -1465,7 +1465,7 @@ typedef
    struct _Error
    Error;
 
-/* Useful in SK_(error_matches_suppression)(), SK_(pp_Error)(), etc */
+/* Useful in TL_(error_matches_suppression)(), TL_(pp_Error)(), etc */
 ExeContext* VG_(get_error_where)   ( Error* err );
 SuppKind    VG_(get_error_kind)    ( Error* err );
 Addr        VG_(get_error_address) ( Error* err );
@@ -1716,12 +1716,12 @@ extern void *VG_(SkipNode_Next)  (const SkipList *l, void *data);
 /* Nb: make sure the shadow_regs 'need' is set before using these! */
 
 /* This one lets you override the shadow of the return value register for a
-   syscall.  Call it from SK_(post_syscall)() (not SK_(pre_syscall)()!) to
+   syscall.  Call it from TL_(post_syscall)() (not TL_(pre_syscall)()!) to
    override the default shadow register value. */
 extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid,
                                                   UInt ret_shadow );
 
-/* This can be called from SK_(fini)() to find the shadow of the argument
+/* This can be called from TL_(fini)() to find the shadow of the argument
    to exit(), ie. the shadow of the program's return value. */
 extern UInt VG_(get_exit_status_shadow) ( void );
 
@@ -1740,11 +1740,11 @@ extern UInt VG_(get_exit_status_shadow) ( void );
 
      UInt VG_(vg_malloc_redzone_szB) = 4;
 
-   It can't be done from a function like SK_(pre_clo_init)().  So it can't,
+   It can't be done from a function like TL_(pre_clo_init)().  So it can't,
    for example, be controlled with a command line option, unfortunately. */
 extern UInt VG_(vg_malloc_redzone_szB);
 
-/* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
+/* Can be called from TL_(malloc) et al to do the actual alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
 
@@ -1854,11 +1854,11 @@ extern void VG_(needs_sanity_checks) ( void );
 extern void VG_(needs_data_syms) ( void );
 
 /* Does the tool need shadow memory allocated (if you set this, you must also statically initialize 
-   float SK_(shadow_ratio) = n./m;
+   float TL_(shadow_ratio) = n./m;
    to define how many shadow bits you need per client address space bit.
 */
 extern void VG_(needs_shadow_memory)( void );
-extern float SK_(shadow_ratio);
+extern float TL_(shadow_ratio);
 
 /* ------------------------------------------------------------------ */
 /* Core events to track */

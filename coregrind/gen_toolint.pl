@@ -36,9 +36,9 @@ my $generate;
 
 my $struct = "VG_(tool_interface)";
 
-my %pfxmap = ("track" => "SK_",
-	      "tool"  => "SK_",
-	      "malloc"=> "SK_",
+my %pfxmap = ("track" => "TL_",
+	      "tool"  => "TL_",
+	      "malloc"=> "TL_",
 	     );
 
 sub getargnames(@) {
@@ -152,7 +152,7 @@ void VG_(init_$func)($ret (*func)($args))
 		func = missing_${pfx}_$func;
 	if (VG_(defined_$func)())
 		VG_(printf)("Warning tool is redefining $func\\n");
-	if (func == SK_($func))
+	if (func == TL_($func))
 		VG_(printf)("Warning tool is defining $func recursively\\n");
 	$struct.${pfx}_$func = func;
 }
@@ -183,7 +183,7 @@ EOF
 	my $args = join ", ", getargtypes(@args);
 
 	print <<EOF;
-   ret = dlsym(dlhandle, "vgSkin_$func");
+   ret = dlsym(dlhandle, "vgTool_$func");
    if (ret != NULL)
       VG_(init_$func)(($ret (*)($args))ret);
 

@@ -46,7 +46,7 @@
 #define VGA_(str)   VGAPPEND(vgArch_,str)
 
 /* Tool-specific ones.  Note that final name still starts with "vg". */
-#define SK_(str)    VGAPPEND(vgSkin_,str)
+#define TL_(str)    VGAPPEND(vgTool_,str)
 
 /* This is specifically for stringifying VG_(x) function names.  We
    need to do two macroexpansions to get the VG_ macro expanded before

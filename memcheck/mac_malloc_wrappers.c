@@ -213,7 +213,7 @@ void* MAC_(new_block) ( Addr p, SizeT size, SizeT align, UInt rzB,
    return (void*)p;
 }
 
-void* SK_(malloc) ( SizeT n )
+void* TL_(malloc) ( SizeT n )
 {
    if (complain_about_silly_args(n, "malloc")) {
       return NULL;
@@ -224,7 +224,7 @@ void* SK_(malloc) ( SizeT n )
    }
 }
 
-void* SK_(__builtin_new) ( SizeT n )
+void* TL_(__builtin_new) ( SizeT n )
 {
    if (complain_about_silly_args(n, "__builtin_new")) {
       return NULL;
@@ -235,7 +235,7 @@ void* SK_(__builtin_new) ( SizeT n )
    }
 }
 
-void* SK_(__builtin_vec_new) ( SizeT n )
+void* TL_(__builtin_vec_new) ( SizeT n )
 {
    if (complain_about_silly_args(n, "__builtin_vec_new")) {
       return NULL;
@@ -246,7 +246,7 @@ void* SK_(__builtin_vec_new) ( SizeT n )
    }
 }
 
-void* SK_(memalign) ( SizeT align, SizeT n )
+void* TL_(memalign) ( SizeT align, SizeT n )
 {
    if (complain_about_silly_args(n, "memalign")) {
       return NULL;
@@ -257,7 +257,7 @@ void* SK_(memalign) ( SizeT align, SizeT n )
    }
 }
 
-void* SK_(calloc) ( SizeT nmemb, SizeT size1 )
+void* TL_(calloc) ( SizeT nmemb, SizeT size1 )
 {
    if (complain_about_silly_args2(nmemb, size1)) {
       return NULL;
@@ -321,22 +321,22 @@ void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind )
    VGP_POPCC(VgpCliMalloc);
 }
 
-void SK_(free) ( void* p )
+void TL_(free) ( void* p )
 {
    MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocMalloc);
 }
 
-void SK_(__builtin_delete) ( void* p )
+void TL_(__builtin_delete) ( void* p )
 {
    MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNew);
 }
 
-void SK_(__builtin_vec_delete) ( void* p )
+void TL_(__builtin_vec_delete) ( void* p )
 {
    MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNewVec);
 }
 
-void* SK_(realloc) ( void* p, SizeT new_size )
+void* TL_(realloc) ( void* p, SizeT new_size )
 {
    MAC_Chunk  *mc;
    MAC_Chunk **prev_chunks_next_ptr;

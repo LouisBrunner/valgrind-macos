@@ -30,7 +30,7 @@
 
 #include "tool.h"
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Nulgrind");
    VG_(details_version)         (NULL);
@@ -42,20 +42,20 @@ void SK_(pre_clo_init)(void)
    /* No needs, no core events to track */
 }
 
-void SK_(post_clo_init)(void)
+void TL_(post_clo_init)(void)
 {
 }
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
+UCodeBlock* TL_(instrument)(UCodeBlock* cb, Addr a)
 {
     return cb;
 }
 
-void SK_(fini)(Int exitcode)
+void TL_(fini)(Int exitcode)
 {
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

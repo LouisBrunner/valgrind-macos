@@ -383,7 +383,7 @@ static void set_address_range_perms ( Addr a, SizeT len,
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   tl_assert(SK_(cheap_sanity_check)());
+   tl_assert(TL_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -1508,13 +1508,13 @@ static void mc_detect_memory_leaks ( void )
    Sanity check machinery (permanently engaged).
    ------------------------------------------------------------------ */
 
-Bool SK_(cheap_sanity_check) ( void )
+Bool TL_(cheap_sanity_check) ( void )
 {
    /* nothing useful we can rapidly check */
    return True;
 }
 
-Bool SK_(expensive_sanity_check) ( void )
+Bool TL_(expensive_sanity_check) ( void )
 {
    Int i;
 
@@ -1637,7 +1637,7 @@ void show_bb ( Addr eip_next )
 Bool  MC_(clo_avoid_strlen_errors)    = True;
 Bool  MC_(clo_cleanup)                = True;
 
-Bool SK_(process_cmd_line_option)(Char* arg)
+Bool TL_(process_cmd_line_option)(Char* arg)
 {
         VG_BOOL_CLO("--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
    else VG_BOOL_CLO("--cleanup",             MC_(clo_cleanup))
@@ -1647,7 +1647,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void SK_(print_usage)(void)
+void TL_(print_usage)(void)
 {  
    MAC_(print_common_usage)();
    VG_(printf)(
@@ -1655,7 +1655,7 @@ void SK_(print_usage)(void)
    );
 }
 
-void SK_(print_debug_usage)(void)
+void TL_(print_debug_usage)(void)
 {  
    MAC_(print_common_debug_usage)();
    VG_(printf)(
@@ -1803,7 +1803,7 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
    return False;
 }
 
-Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
+Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
    Bool  ok;
@@ -1919,7 +1919,7 @@ Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Memcheck");
    VG_(details_version)         (NULL);
@@ -2015,11 +2015,11 @@ void SK_(pre_clo_init)(void)
    MAC_(common_pre_clo_init)();
 }
 
-void SK_(post_clo_init) ( void )
+void TL_(post_clo_init) ( void )
 {
 }
 
-void SK_(fini) ( Int exitcode )
+void TL_(fini) ( Int exitcode )
 {
    MAC_(common_fini)( mc_detect_memory_leaks );
    
@@ -2030,7 +2030,7 @@ void SK_(fini) ( Int exitcode )
    }
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 9./8)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 9./8)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                mc_main.c ---*/

@@ -214,7 +214,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
          return False;
       default: 
          if (VG_(needs).tool_errors)
-            return SK_(eq_Error)(res, e1, e2);
+            return TL_(eq_Error)(res, e1, e2);
          else {
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
@@ -239,7 +239,7 @@ static void pp_Error ( Error* err, Bool printCount )
          break;
       default: 
          if (VG_(needs).tool_errors)
-            SK_(pp_Error)( err );
+            TL_(pp_Error)( err );
          else {
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
                         "probably needs to be set?\n",
@@ -348,14 +348,14 @@ static void gen_suppression(Error* err)
       VG_(printf)("   core:PThread\n");
 
    } else {
-      Char* name = SK_(get_error_name)(err);
+      Char* name = TL_(get_error_name)(err);
       if (NULL == name) {
          VG_(message)(Vg_UserMsg, 
                       "(tool does not allow error to be suppressed)");
          return;
       }
       VG_(printf)("   %s:%s\n", VG_(details).name, name);
-      SK_(print_extra_suppression_info)(err);
+      TL_(print_extra_suppression_info)(err);
    }
 
    /* This loop condensed from VG_(mini_stack_dump)() */
@@ -515,14 +515,14 @@ void VG_(maybe_record_error) ( ThreadId tid,
       will disappear shortly, so we must copy it.  First do the main
       (non-`extra') part.
      
-      Then SK_(update_extra) can update the `extra' part.  This is for when
+      Then TL_(update_extra) can update the `extra' part.  This is for when
       there are more details to fill in which take time to work out but
       don't affect our earlier decision to include the error -- by
       postponing those details until now, we avoid the extra work in the
       case where we ignore the error.  Ugly.
 
       Then, if there is an `extra' part, copy it too, using the size that
-      SK_(update_extra) returned.  Also allow for people using the void*
+      TL_(update_extra) returned.  Also allow for people using the void*
       extra field for a scalar value like an integer.
    */
 
@@ -532,7 +532,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
 
    /* update `extra', for non-core errors (core ones don't use 'extra') */
    if (VG_(needs).tool_errors && PThreadErr != ekind) {
-      extra_size = SK_(update_extra)(p);
+      extra_size = TL_(update_extra)(p);
 
       /* copy block pointed to by `extra', if there is one */
       if (NULL != p->extra && 0 != extra_size) { 
@@ -578,10 +578,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
    /* Unless it's suppressed, we're going to show it.  Don't need to make
       a copy, because it's only temporary anyway.
 
-      Then update the `extra' part with SK_(update_extra), because that can
+      Then update the `extra' part with TL_(update_extra), because that can
       have an affect on whether it's suppressed.  Ignore the size return
-      value of SK_(update_extra), because we're not copying `extra'. */
-   (void)SK_(update_extra)(&err);
+      value of TL_(update_extra), because we're not copying `extra'. */
+   (void)TL_(update_extra)(&err);
 
    if (NULL == is_suppressible_error(&err)) {
       if (count_error)
@@ -846,7 +846,7 @@ static void load_one_suppressions_file ( Char* filename )
       else if (VG_(needs).tool_errors && 
                tool_name_present(VG_(details).name, tool_names))
       {
-         if (SK_(recognised_suppression)(supp_name, supp)) 
+         if (TL_(recognised_suppression)(supp_name, supp)) 
          {
             /* Do nothing, function fills in supp->skind */
          } else
@@ -865,7 +865,7 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       if (VG_(needs).tool_errors && 
-          !SK_(read_extra_suppression_info)(fd, buf, N_BUF, supp)) 
+          !TL_(read_extra_suppression_info)(fd, buf, N_BUF, supp)) 
          goto syntax_error;
 
       /* "i > 0" ensures at least one caller read. */
@@ -957,7 +957,7 @@ Bool supp_matches_error(Supp* su, Error* err)
          return (err->ekind == PThreadErr);
       default:
          if (VG_(needs).tool_errors) {
-            return SK_(error_matches_suppression)(err, su);
+            return TL_(error_matches_suppression)(err, su);
          } else {
             VG_(printf)(
                "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"

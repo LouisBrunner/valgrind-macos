@@ -121,7 +121,7 @@ void VG_(sanity_check_needs) ( void)
       else
 	 VG_(printf)("\nTool error: tool didn't allocate shadow memory, but apparently "
 		     "needs it.\n");
-      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match SK_(shadow_ratio)\n");
+      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match TL_(shadow_ratio)\n");
    }
 
 #undef CHECK_NOT

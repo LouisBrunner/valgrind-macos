@@ -39,7 +39,7 @@
 /*--- Comparing and printing errors                        ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pp_Error) ( Error* err )
+void TL_(pp_Error) ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -75,7 +75,7 @@ void SK_(pp_Error) ( Error* err )
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(recognised_suppression) ( Char* name, Supp* su )
+Bool TL_(recognised_suppression) ( Char* name, Supp* su )
 {
    return MAC_(shared_recognised_suppression)(name, su);
 }
@@ -350,7 +350,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   tl_assert(SK_(cheap_sanity_check)());
+   tl_assert(TL_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -949,7 +949,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
@@ -980,7 +980,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 2:  helper = (Addr)ac_helperc_LOAD2; break;
                case 1:  helper = (Addr)ac_helperc_LOAD1; break;
                default: VG_(tool_panic)
-                           ("addrcheck::SK_(instrument):LOAD");
+                           ("addrcheck::TL_(instrument):LOAD");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
             uCCall (cb, helper, 1, 1, False );
@@ -993,7 +993,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 2:  helper = (Addr)ac_helperc_STORE2; break;
                case 1:  helper = (Addr)ac_helperc_STORE1; break;
                default: VG_(tool_panic)
-                           ("addrcheck::SK_(instrument):STORE");
+                           ("addrcheck::TL_(instrument):STORE");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val2);
             uCCall (cb, helper, 1, 1, False );
@@ -1133,13 +1133,13 @@ static void ac_detect_memory_leaks ( void )
    Sanity check machinery (permanently engaged).
    ------------------------------------------------------------------ */
 
-Bool SK_(cheap_sanity_check) ( void )
+Bool TL_(cheap_sanity_check) ( void )
 {
    /* nothing useful we can rapidly check */
    return True;
 }
 
-Bool SK_(expensive_sanity_check) ( void )
+Bool TL_(expensive_sanity_check) ( void )
 {
    Int i;
 
@@ -1161,7 +1161,7 @@ Bool SK_(expensive_sanity_check) ( void )
 /*--- Client requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
+Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
 {
 #define IGNORE(what)                                                    \
    do {                                                                 \
@@ -1230,17 +1230,17 @@ Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(process_cmd_line_option)(Char* arg)
+Bool TL_(process_cmd_line_option)(Char* arg)
 {
    return MAC_(process_common_cmd_line_option)(arg);
 }
 
-void SK_(print_usage)(void)
+void TL_(print_usage)(void)
 {  
    MAC_(print_common_usage)();
 }
 
-void SK_(print_debug_usage)(void)
+void TL_(print_debug_usage)(void)
 {  
    MAC_(print_common_debug_usage)();
 }
@@ -1250,7 +1250,7 @@ void SK_(print_debug_usage)(void)
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Addrcheck");
    VG_(details_version)         (NULL);
@@ -1325,16 +1325,16 @@ void SK_(pre_clo_init)(void)
    MAC_(common_pre_clo_init)();
 }
 
-void SK_(post_clo_init) ( void )
+void TL_(post_clo_init) ( void )
 {
 }
 
-void SK_(fini) ( Int exitcode )
+void TL_(fini) ( Int exitcode )
 {
    MAC_(common_fini)( ac_detect_memory_leaks );
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 1./8)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 1./8)
 
 
 /*--------------------------------------------------------------------*/

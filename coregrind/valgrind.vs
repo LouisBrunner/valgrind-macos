@@ -1,7 +1,7 @@
 VALGRIND_2.1 {
 	global:
 		vgPlain_*;
-		vgSkin_*;
+		vgTool_*;
 		vgProf_*;
                 vgOff_*;
                 vgArch_*;

@@ -1655,7 +1655,7 @@ void set_address_range_state ( Addr a, SizeT len /* in bytes */,
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with
       __NR_setitimer. */
-   tl_assert(SK_(cheap_sanity_check)());
+   tl_assert(TL_(cheap_sanity_check)());
    VGP_POPCC(VgpSARP);
 }
 
@@ -1842,27 +1842,27 @@ void* alloc_and_new_mem ( SizeT size, SizeT alignment, Bool is_zeroed )
    return (void*)p;
 }
 
-void* SK_(malloc) ( SizeT n )
+void* TL_(malloc) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_new) ( SizeT n )
+void* TL_(__builtin_new) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_vec_new) ( SizeT n )
+void* TL_(__builtin_vec_new) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(memalign) ( SizeT align, SizeT n )
+void* TL_(memalign) ( SizeT align, SizeT n )
 {
    return alloc_and_new_mem ( n, align,              /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( SizeT nmemb, SizeT size )
+void* TL_(calloc) ( SizeT nmemb, SizeT size )
 {
    return alloc_and_new_mem ( nmemb*size, VG_(clo_alignment),
                               /*is_zeroed*/True );
@@ -1929,22 +1929,22 @@ void handle_free ( void* p )
                       hc, prev_chunks_next_ptr );
 }
 
-void SK_(free) ( void* p )
+void TL_(free) ( void* p )
 {
    handle_free(p);
 }
 
-void SK_(__builtin_delete) ( void* p )
+void TL_(__builtin_delete) ( void* p )
 {
    handle_free(p);
 }
 
-void SK_(__builtin_vec_delete) ( void* p )
+void TL_(__builtin_vec_delete) ( void* p )
 {
    handle_free(p);
 }
 
-void* SK_(realloc) ( void* p, SizeT new_size )
+void* TL_(realloc) ( void* p, SizeT new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
@@ -2002,13 +2002,13 @@ void* SK_(realloc) ( void* p, SizeT new_size )
 /*--- Machinery to support sanity checking                   ---*/
 /*--------------------------------------------------------------*/
 
-Bool SK_(cheap_sanity_check) ( void )
+Bool TL_(cheap_sanity_check) ( void )
 {
    /* nothing useful we can rapidly check */
    return True;
 }
 
-Bool SK_(expensive_sanity_check)(void)
+Bool TL_(expensive_sanity_check)(void)
 {
    Int i;
 
@@ -2030,7 +2030,7 @@ static UInt stk_ld, nonstk_ld, stk_st, nonstk_st;
 
 /* Create and return an instrumented version of cb_in.  Free cb_in
    before returning. */
-UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
+UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 {
    UCodeBlock* cb;
    Int         i;
@@ -2462,7 +2462,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 
 
 /* Updates the copy with address info if necessary. */
-UInt SK_(update_extra)(Error* err)
+UInt TL_(update_extra)(Error* err)
 {
    HelgrindError* extra;
 
@@ -2536,7 +2536,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    VG_(maybe_record_error)(tid, LockGraphErr, mutex->mutexp, "", &err_extra);
 }
 
-Bool SK_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
+Bool TL_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
 {
    Char *e1s, *e2s;
 
@@ -2645,7 +2645,7 @@ static Char *lockset_str(const Char *prefix, const LockSet *lockset)
    return buf;
 }
 
-void SK_(pp_Error) ( Error* err )
+void TL_(pp_Error) ( Error* err )
 {
    HelgrindError *extra = (HelgrindError *)VG_(get_error_extra)(err);
    Char buf[100];
@@ -2777,7 +2777,7 @@ void SK_(pp_Error) ( Error* err )
 }
 
 
-Bool SK_(recognised_suppression) ( Char* name, Supp *su )
+Bool TL_(recognised_suppression) ( Char* name, Supp *su )
 {
    if (0 == VG_(strcmp)(name, "Eraser")) {
       VG_(set_supp_kind)(su, EraserSupp);
@@ -2788,7 +2788,7 @@ Bool SK_(recognised_suppression) ( Char* name, Supp *su )
 }
 
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
+Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
       indicate nothing bad happened. */
@@ -2796,14 +2796,14 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 }
 
 
-Bool SK_(error_matches_suppression)(Error* err, Supp* su)
+Bool TL_(error_matches_suppression)(Error* err, Supp* su)
 {
    tl_assert(VG_(get_supp_kind)(su) == EraserSupp);
 
    return (VG_(get_error_kind)(err) == EraserErr);
 }
 
-extern Char* SK_(get_error_name) ( Error* err )
+extern Char* TL_(get_error_name) ( Error* err )
 {
    if (EraserErr == VG_(get_error_kind)(err)) {
       return "Eraser";
@@ -2812,7 +2812,7 @@ extern Char* SK_(get_error_name) ( Error* err )
    }
 }
 
-extern void SK_(print_extra_suppression_info) ( Error* err )
+extern void TL_(print_extra_suppression_info) ( Error* err )
 {
    /* Do nothing */
 }
@@ -3233,7 +3233,7 @@ static void bus_unlock(void)
 /*--- Client requests                                              ---*/
 /*--------------------------------------------------------------------*/
 
-Bool SK_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
+Bool TL_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 {
    if (!VG_IS_SKIN_USERREQ('H','G',args[0]))
       return False;
@@ -3261,7 +3261,7 @@ Bool SK_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    Int i;
    LockSet *empty;
@@ -3340,7 +3340,7 @@ void SK_(pre_clo_init)(void)
    hg_malloc_list = VG_(HT_construct)();
 }
 
-Bool SK_(process_cmd_line_option)(Char* arg)
+Bool TL_(process_cmd_line_option)(Char* arg)
 {
    if      (VG_CLO_STREQ(arg, "--show-last-access=no"))
       clo_execontext = EC_None;
@@ -3357,7 +3357,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void SK_(print_usage)(void)
+void TL_(print_usage)(void)
 {
    VG_(printf)(
 "    --private-stacks=yes|no   assume thread stacks are used privately [no]\n"
@@ -3367,12 +3367,12 @@ void SK_(print_usage)(void)
    VG_(replacement_malloc_print_usage)();
 }
 
-void SK_(print_debug_usage)(void)
+void TL_(print_debug_usage)(void)
 {
    VG_(replacement_malloc_print_debug_usage)();
 }
 
-void SK_(post_clo_init)(void)
+void TL_(post_clo_init)(void)
 {
    void (*stack_tracker)(Addr a, SizeT len);
    
@@ -3391,7 +3391,7 @@ void SK_(post_clo_init)(void)
 }
 
 
-void SK_(fini)(Int exitcode)
+void TL_(fini)(Int exitcode)
 {
    if (DEBUG_LOCK_TABLE) {
       pp_all_LockSets();
@@ -3399,7 +3399,7 @@ void SK_(fini)(Int exitcode)
    }
 
    if (LOCKSET_SANITY)
-      sanity_check_locksets("SK_(fini)");
+      sanity_check_locksets("TL_(fini)");
 
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
@@ -3413,7 +3413,7 @@ void SK_(fini)(Int exitcode)
 }
 
 /* Uses a 1:1 mapping */
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 1.0)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 1.0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                hg_main.c ---*/

@@ -583,7 +583,7 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
 /*--- Generate code for a single UInstr.           ---*/
 /*----------------------------------------------------*/
 
-void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
+void TL_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
 {
    switch (u->opcode) {
 

@@ -294,7 +294,7 @@ This is achieved by packaging each tool into a separate shared object which is
 then loaded ahead of the core shared object <code>valgrind.so</code>, using the
 dynamic linker's <code>LD_PRELOAD</code> variable.  Any functions defined in
 the tool that share the name with a function defined in core (such as
-the instrumentation function <code>SK_(instrument)()</code>) override the
+the instrumentation function <code>TL_(instrument)()</code>) override the
 core's definition.  Thus the core can call the necessary tool functions.<p>
 
 This magic is all done for you;  the shared object used is chosen with the
@@ -360,7 +360,7 @@ In what follows, all filenames are relative to Valgrind's top-level directory
 
   <li>Copy <code>none/nl_main.c</code> into
       <code>foobar/</code>, renaming it as <code>fb_main.c</code>.
-      Edit it by changing the lines in <code>SK_(pre_clo_init)()</code>
+      Edit it by changing the lines in <code>TL_(pre_clo_init)()</code>
       to something appropriate for the tool.  These fields are used in the
       startup message, except for <code>bug_reports_to</code> which is used
       if a tool assertion fails.
@@ -420,10 +420,10 @@ interesting stuff...
 
 A tool must define at least these four functions:
 <pre>
-    SK_(pre_clo_init)()
-    SK_(post_clo_init)()
-    SK_(instrument)()
-    SK_(fini)()
+    TL_(pre_clo_init)()
+    TL_(post_clo_init)()
+    TL_(instrument)()
+    TL_(fini)()
 </pre>
 
 Also, it must use the macro <code>VG_DETERMINE_INTERFACE_VERSION</code>
@@ -438,8 +438,8 @@ the core, it may have to define other functions.
 <a name="init"></a>
 <h3>2.7&nbsp; Initialisation</h3>
 
-Most of the initialisation should be done in <code>SK_(pre_clo_init)()</code>.
-Only use <code>SK_(post_clo_init)()</code> if a tool provides command line
+Most of the initialisation should be done in <code>TL_(pre_clo_init)()</code>.
+Only use <code>TL_(post_clo_init)()</code> if a tool provides command line
 options and must do some initialisation after option processing takes place
 (``<code>clo</code>'' stands for ``command line options'').<p>
 
@@ -483,7 +483,7 @@ found in <code>include/tool.h</code>.<p>
 <a name="instr"></a>
 <h3>2.8&nbsp; Instrumentation</h3>
 
-<code>SK_(instrument)()</code> is the interesting one.  It allows you to
+<code>TL_(instrument)()</code> is the interesting one.  It allows you to
 instrument <i>UCode</i>, which is Valgrind's RISC-like intermediate language.
 UCode is described in the <a href="mc_techdocs.html">technical docs</a> for
 Memcheck.
@@ -530,9 +530,9 @@ should hopefully be enough to get you going.  But ultimately, the tools
 distributed (Memcheck, Addrcheck, Cachegrind, Lackey, etc.) are probably the
 best documentation of all, for the moment.<p>
 
-Note that the <code>VG_</code> and <code>SK_</code> macros are used heavily.
+Note that the <code>VG_</code> and <code>TL_</code> macros are used heavily.
 These just prepend longer strings in front of names to avoid potential
-namespace clashes.  We strongly recommend using the <code>SK_</code> macro for
+namespace clashes.  We strongly recommend using the <code>TL_</code> macro for
 any global functions and variables in your tool, or writing a similar macro.<p>
 
 <a name="wordsofadvice"></a>

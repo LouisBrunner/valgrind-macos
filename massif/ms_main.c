@@ -288,7 +288,7 @@ static Bool clo_stacks      = True;
 static Bool clo_depth       = 3;
 static XFormat clo_format   = XText;
 
-Bool SK_(process_cmd_line_option)(Char* arg)
+Bool TL_(process_cmd_line_option)(Char* arg)
 {
         VG_BOOL_CLO("--heap",       clo_heap)
    else VG_BOOL_CLO("--stacks",     clo_stacks)
@@ -316,7 +316,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void SK_(print_usage)(void)
+void TL_(print_usage)(void)
 {
    VG_(printf)( 
 "    --heap=no|yes             profile heap blocks [yes]\n"
@@ -329,7 +329,7 @@ void SK_(print_usage)(void)
    VG_(replacement_malloc_print_usage)();
 }
 
-void SK_(print_debug_usage)(void)
+void TL_(print_debug_usage)(void)
 {
    VG_(replacement_malloc_print_debug_usage)();
 }
@@ -738,47 +738,47 @@ void die_block ( void* p, Bool custom_free )
 }
  
 
-void* SK_(malloc) ( SizeT n )
+void* TL_(malloc) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_new) ( SizeT n )
+void* TL_(__builtin_new) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_vec_new) ( SizeT n )
+void* TL_(__builtin_vec_new) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( SizeT m, SizeT size )
+void* TL_(calloc) ( SizeT m, SizeT size )
 {
    return new_block( NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-void *SK_(memalign)( SizeT align, SizeT n )
+void *TL_(memalign)( SizeT align, SizeT n )
 {
    return new_block( NULL, n, align, False );
 }
 
-void SK_(free) ( void* p )
+void TL_(free) ( void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void SK_(__builtin_delete) ( void* p )
+void TL_(__builtin_delete) ( void* p )
 {
    die_block( p, /*custom_free*/False);
 }
 
-void SK_(__builtin_vec_delete) ( void* p )
+void TL_(__builtin_vec_delete) ( void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void* SK_(realloc) ( void* p_old, SizeT new_size )
+void* TL_(realloc) ( void* p_old, SizeT new_size )
 {
    HP_Chunk*    hc;
    HP_Chunk**   remove_handle;
@@ -1128,7 +1128,7 @@ static void die_mem_stack_signal(Addr a, SizeT len)
 /*--- Client Requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
+Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
 {
    switch (argv[0]) {
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
@@ -1161,7 +1161,7 @@ static Char* base_dir;
 
 UInt VG_(vg_malloc_redzone_szB) = 0;
 
-void SK_(pre_clo_init)()
+void TL_(pre_clo_init)()
 { 
    VG_(details_name)            ("Massif");
    VG_(details_version)         (NULL);
@@ -1199,7 +1199,7 @@ void SK_(pre_clo_init)()
    tl_assert( VG_(getcwd_alloc)(&base_dir) );
 }
 
-void SK_(post_clo_init)(void)
+void TL_(post_clo_init)(void)
 {
    ms_interval = 1;
 
@@ -1211,7 +1211,7 @@ void SK_(post_clo_init)(void)
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
    return cb_in;
 }
@@ -1792,7 +1792,7 @@ print_summary(ULong total_ST, ULong heap_ST, ULong heap_admin_ST,
    }
 }
 
-void SK_(fini)(Int exit_status)
+void TL_(fini)(Int exit_status)
 {
    ULong total_ST      = 0;
    ULong heap_ST       = 0;
@@ -1810,7 +1810,7 @@ void SK_(fini)(Int exit_status)
    print_summary  ( total_ST, heap_ST, heap_admin_ST, stack_ST );
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                ms_main.c ---*/

@@ -76,10 +76,10 @@ Bool VG_(sk_malloc_called_by_scheduler) = False;
    scheduler, for the USERREQ__MALLOC user request used by vg_libpthread.c. 
    (Nb: it cannot call glibc's malloc().)  The lock variable ensures that the
    scheduler is the only place this can be called from;  this ensures that a
-   malloc()-replacing tool cannot forget to implement SK_(malloc)() or
-   SK_(free)().  */
+   malloc()-replacing tool cannot forget to implement TL_(malloc)() or
+   TL_(free)().  */
 __attribute__ ((weak))
-void* SK_(malloc)( SizeT size )
+void* TL_(malloc)( SizeT size )
 {
    if (VG_(sk_malloc_called_by_scheduler))
       return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);
@@ -88,9 +88,9 @@ void* SK_(malloc)( SizeT size )
 }
 
 __attribute__ ((weak))
-void  SK_(free)( void* p )
+void  TL_(free)( void* p )
 {
-   /* see comment for SK_(malloc)() above */
+   /* see comment for TL_(malloc)() above */
    if (VG_(sk_malloc_called_by_scheduler))
       VG_(cli_free)(p);
    else 

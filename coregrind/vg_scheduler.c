@@ -2933,23 +2933,23 @@ void do_client_request ( ThreadId tid, UWord* arg )
 
       /* Note:  for tools that replace malloc() et al, we want to call
          the replacement versions.  For those that don't, we want to call
-         VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
+         VG_(cli_malloc)() et al.  We do this by calling TL_(malloc)(), which
          malloc-replacing tools must replace, but have the default definition
-         of SK_(malloc)() call VG_(cli_malloc)().  */
+         of TL_(malloc)() call VG_(cli_malloc)().  */
 
       /* Note: for MALLOC and FREE, must set the appropriate "lock"... see
-         the comment in vg_defaults.c/SK_(malloc)() for why. */
+         the comment in vg_defaults.c/TL_(malloc)() for why. */
       case VG_USERREQ__MALLOC:
          VG_(sk_malloc_called_by_scheduler) = True;
          SET_PTHREQ_RETVAL(
-            tid, (Addr)SK_(malloc) ( arg[1] ) 
+            tid, (Addr)TL_(malloc) ( arg[1] ) 
          );
          VG_(sk_malloc_called_by_scheduler) = False;
          break;
 
       case VG_USERREQ__FREE:
          VG_(sk_malloc_called_by_scheduler) = True;
-         SK_(free) ( (void*)arg[1] );
+         TL_(free) ( (void*)arg[1] );
          VG_(sk_malloc_called_by_scheduler) = False;
 	 SET_PTHREQ_RETVAL(tid, 0); /* irrelevant */
          break;
@@ -3190,15 +3190,15 @@ void do_client_request ( ThreadId tid, UWord* arg )
       case VG_USERREQ__GET_MALLOCFUNCS: {
 	 struct vg_mallocfunc_info *info = (struct vg_mallocfunc_info *)arg[1];
 
-	 info->sk_malloc	= (Addr)SK_(malloc);
-	 info->sk_calloc	= (Addr)SK_(calloc);
-	 info->sk_realloc	= (Addr)SK_(realloc);
-	 info->sk_memalign	= (Addr)SK_(memalign);
-	 info->sk___builtin_new	= (Addr)SK_(__builtin_new);
-	 info->sk___builtin_vec_new	= (Addr)SK_(__builtin_vec_new);
-	 info->sk_free		= (Addr)SK_(free);
-	 info->sk___builtin_delete	= (Addr)SK_(__builtin_delete);
-	 info->sk___builtin_vec_delete	= (Addr)SK_(__builtin_vec_delete);
+	 info->sk_malloc	= (Addr)TL_(malloc);
+	 info->sk_calloc	= (Addr)TL_(calloc);
+	 info->sk_realloc	= (Addr)TL_(realloc);
+	 info->sk_memalign	= (Addr)TL_(memalign);
+	 info->sk___builtin_new	= (Addr)TL_(__builtin_new);
+	 info->sk___builtin_vec_new	= (Addr)TL_(__builtin_vec_new);
+	 info->sk_free		= (Addr)TL_(free);
+	 info->sk___builtin_delete	= (Addr)TL_(__builtin_delete);
+	 info->sk___builtin_vec_delete	= (Addr)TL_(__builtin_vec_delete);
 
 	 info->arena_payload_szB	= (Addr)VG_(arena_payload_szB);
 	 
@@ -3235,7 +3235,7 @@ void do_client_request ( ThreadId tid, UWord* arg )
                VG_(printf)("client request: code %x,  addr %p,  len %d\n",
                            arg[0], (void*)arg[1], arg[2] );
 
-	    if (SK_(handle_client_request) ( tid, arg, &ret ))
+	    if (TL_(handle_client_request) ( tid, arg, &ret ))
 		SET_CLREQ_RETVAL(tid, ret);
          } else {
 	    static Bool whined = False;

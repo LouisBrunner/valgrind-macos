@@ -38,7 +38,7 @@
 
    This file can be linked into the injected so file for any tool that
    wishes to know about calls to malloc().  It should define functions
-   SK_(malloc) et al that will be called.
+   TL_(malloc) et al that will be called.
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */

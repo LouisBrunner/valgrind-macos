@@ -35,7 +35,7 @@
 /*--- Printing errors                                      ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pp_Error) ( Error* err )
+void TL_(pp_Error) ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -125,7 +125,7 @@ void MC_(record_user_error) ( ThreadId tid, Addr a, Bool isWrite,
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(recognised_suppression) ( Char* name, Supp* su )
+Bool TL_(recognised_suppression) ( Char* name, Supp* su )
 {
    SuppKind skind;
 

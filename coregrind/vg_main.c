@@ -1265,10 +1265,10 @@ static void load_tool( const char *toolname, void** handle_out,
       goto bad_load;
    }
 
-   toolinfo = dlsym(handle, "vgSkin_tool_info");
+   toolinfo = dlsym(handle, "vgTool_tool_info");
    ok = (NULL != toolinfo);
    if (!ok) {
-      fprintf(stderr, "Tool \"%s\" doesn't define SK_(tool_info) - "
+      fprintf(stderr, "Tool \"%s\" doesn't define TL_(tool_info) - "
                       "add VG_DETERMINE_INTERFACE_VERSION?\n", toolname);
       goto bad_load;
    }
@@ -1606,7 +1606,7 @@ void usage ( Bool debug_help )
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)
-	 SK_(print_usage)();
+	 TL_(print_usage)();
       else
 	 VG_(printf)("    (none)\n");
    }
@@ -1617,7 +1617,7 @@ void usage ( Bool debug_help )
          VG_(printf)("  debugging options for %s:\n", VG_(details).name);
       
          if (VG_(needs).command_line_options)
-            SK_(print_debug_usage)();
+            TL_(print_debug_usage)();
          else
             VG_(printf)("    (none)\n");
       }
@@ -1837,7 +1837,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_trace_pthread_level) = 2;
 
       else if ( ! VG_(needs).command_line_options
-             || ! SK_(process_cmd_line_option)(arg) ) {
+             || ! TL_(process_cmd_line_option)(arg) ) {
          VG_(bad_option)(arg);
       }
    }
@@ -2428,7 +2428,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       last 16 pages of memory have become accessible [...] */
    if (VG_(needs).sanity_checks) {
       VGP_PUSHCC(VgpToolCheapSanity);
-      vg_assert(SK_(cheap_sanity_check)());
+      vg_assert(TL_(cheap_sanity_check)());
       VGP_POPCC(VgpToolCheapSanity);
    }
 
@@ -2453,7 +2453,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
       if (VG_(needs).sanity_checks) {
           VGP_PUSHCC(VgpToolExpensiveSanity);
-          vg_assert(SK_(expensive_sanity_check)());
+          vg_assert(TL_(expensive_sanity_check)());
           VGP_POPCC(VgpToolExpensiveSanity);
       }
       /* 
@@ -2726,7 +2726,7 @@ int main(int argc, char **argv)
    }
    process_cmd_line_options(client_auxv, tool);
 
-   SK_(post_clo_init)();
+   TL_(post_clo_init)();
 
    //--------------------------------------------------------------
    // Build segment map (all segments)
@@ -2881,7 +2881,7 @@ int main(int argc, char **argv)
    if (VG_(needs).core_errors || VG_(needs).tool_errors)
       VG_(show_all_errors)();
 
-   SK_(fini)( exitcode );
+   TL_(fini)( exitcode );
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 

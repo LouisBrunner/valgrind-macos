@@ -96,8 +96,8 @@ typedef struct _ThreadState ThreadState;
 
 #include "valgrind.h"
 
-#undef SK_
-#define SK_(x)	vgSkinInternal_##x
+#undef TL_
+#define TL_(x)	vgToolInternal_##x
 
 
 /* ---------------------------------------------------------------------
@@ -1649,10 +1649,10 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 // Macros used in syscall wrappers
 
 #define PRRSN \
-      SK_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
+      TL_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
                         R_SYSCALL_NUM, sizeof(UWord));
 #define PRRAn(n,s,t,a) \
-      SK_(pre_reg_read)(Vg_CoreSysCall, tid, s"("#a")", \
+      TL_(pre_reg_read)(Vg_CoreSysCall, tid, s"("#a")", \
                         R_SYSCALL_ARG##n, sizeof(t));
 #define PRE_REG_READ0(tr, s) \
    if (VG_(defined_pre_reg_read)()) { \
@@ -1772,7 +1772,7 @@ extern const Int  VG_(tramp_syscall_offset);
 #define VG_TRACK(fn, args...) 			\
    do {						\
       if (VG_(defined_##fn)())			\
-	 SK_(fn)(args);				\
+	 TL_(fn)(args);				\
    } while(0)
 
 __attribute__ ((noreturn))

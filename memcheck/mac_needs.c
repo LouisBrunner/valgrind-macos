@@ -137,7 +137,7 @@ static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 
-Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
+Bool TL_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
 {
    MAC_Error* e1_extra = VG_(get_error_extra)(e1);
    MAC_Error* e2_extra = VG_(get_error_extra)(e2);
@@ -193,7 +193,7 @@ Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
          return True;
 
       case LeakErr:
-         VG_(tool_panic)("Shouldn't get LeakErr in SK_(eq_Error),\n"
+         VG_(tool_panic)("Shouldn't get LeakErr in TL_(eq_Error),\n"
                          "since it's handled with VG_(unique_error)()!");
 
       case IllegalMempoolErr:
@@ -202,7 +202,7 @@ Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
-         VG_(tool_panic)("unknown error code in SK_(eq_Error)");
+         VG_(tool_panic)("unknown error code in TL_(eq_Error)");
    }
 }
 
@@ -297,7 +297,7 @@ void MAC_(pp_shared_Error) ( Error* err )
                                         "stated on the next line");
                break;
             default: 
-               VG_(tool_panic)("SK_(pp_shared_Error)(axskind)");
+               VG_(tool_panic)("TL_(pp_shared_Error)(axskind)");
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -522,7 +522,7 @@ void MAC_(record_overlap_error) ( Char* function, OverlapExtra* ov_extra )
 
 
 /* Updates the copy with address info if necessary (but not for all errors). */
-UInt SK_(update_extra)( Error* err )
+UInt TL_(update_extra)( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case ValueErr:
@@ -574,7 +574,7 @@ Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
    return True;
 }
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
+Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 {
    Bool eof;
 
@@ -586,7 +586,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
    return True;
 }
 
-Bool SK_(error_matches_suppression)(Error* err, Supp* su)
+Bool TL_(error_matches_suppression)(Error* err, Supp* su)
 {
    Int        su_size;
    MAC_Error* err_extra = VG_(get_error_extra)(err);
@@ -637,11 +637,11 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
                      "  unknown suppression type %d\n",
                      VG_(get_supp_kind)(su));
          VG_(tool_panic)("unknown suppression type in "
-                         "SK_(error_matches_suppression)");
+                         "TL_(error_matches_suppression)");
    }
 }
 
-Char* SK_(get_error_name) ( Error* err )
+Char* TL_(get_error_name) ( Error* err )
 {
    Char* s;
    switch (VG_(get_error_kind)(err)) {
@@ -678,7 +678,7 @@ Char* SK_(get_error_name) ( Error* err )
    VG_(printf)(s);
 }
 
-void SK_(print_extra_suppression_info) ( Error* err )
+void TL_(print_extra_suppression_info) ( Error* err )
 {
    if (ParamErr == VG_(get_error_kind)(err)) {
       VG_(printf)("   %s\n", VG_(get_error_string)(err));
@@ -941,17 +941,17 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
 /*--- Syscall wrappers                                     ---*/
 /*------------------------------------------------------------*/
 
-void* SK_(pre_syscall)  ( ThreadId tid, UInt syscallno, Bool isBlocking )
+void* TL_(pre_syscall)  ( ThreadId tid, UInt syscallno, Bool isBlocking )
 {
-   Int sane = SK_(cheap_sanity_check)();
+   Int sane = TL_(cheap_sanity_check)();
    return (void*)sane;
 }
 
-void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
+void  TL_(post_syscall) ( ThreadId tid, UInt syscallno,
                            void* pre_result, Int res, Bool isBlocking )
 {
    Int  sane_before_call = (Int)pre_result;
-   Bool sane_after_call  = SK_(cheap_sanity_check)();
+   Bool sane_after_call  = TL_(cheap_sanity_check)();
 
    if ((Int)sane_before_call && (!sane_after_call)) {
       VG_(message)(Vg_DebugMsg, "post-syscall: ");

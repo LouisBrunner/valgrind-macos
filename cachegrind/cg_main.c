@@ -491,7 +491,7 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
    uCCall(cb, helper, argc, argc, False);
 }
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
    UCodeBlock* cb;
    UInstr*     u_in;
@@ -762,7 +762,7 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 }
 
 /*------------------------------------------------------------*/
-/*--- SK_(fini)() and related function                     ---*/
+/*--- TL_(fini)() and related function                     ---*/
 /*------------------------------------------------------------*/
 
 // Total reads/writes/misses.  Calculated during CC traversal at the end.
@@ -901,7 +901,7 @@ void percentify(Int n, Int ex, Int field_width, char buf[])
    for (i = 0; i < space; i++)  buf[i] = ' ';
 }
 
-void SK_(fini)(Int exitcode)
+void TL_(fini)(Int exitcode)
 {
    static char buf1[128], buf2[128], buf3[128], fmt [128];
 
@@ -1024,7 +1024,7 @@ void SK_(fini)(Int exitcode)
 /*--------------------------------------------------------------------*/
 
 // Called when a translation is invalidated due to code unloading.
-void SK_(discard_basic_block_info) ( Addr a, SizeT size )
+void TL_(discard_basic_block_info) ( Addr a, SizeT size )
 {
    VgHashNode** prev_next_ptr;
    VgHashNode*  bb_info;
@@ -1074,7 +1074,7 @@ static void parse_cache_opt ( cache_t* cache, char* opt )
    VG_(bad_option)(opt);
 }
 
-Bool SK_(process_cmd_line_option)(Char* arg)
+Bool TL_(process_cmd_line_option)(Char* arg)
 {
    // 5 is length of "--I1="
    if      (VG_CLO_STREQN(5, arg, "--I1="))
@@ -1089,7 +1089,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void SK_(print_usage)(void)
+void TL_(print_usage)(void)
 {
    VG_(printf)(
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
@@ -1098,7 +1098,7 @@ void SK_(print_usage)(void)
    );
 }
 
-void SK_(print_debug_usage)(void)
+void TL_(print_debug_usage)(void)
 {
    VG_(printf)(
 "    (none)\n"
@@ -1109,7 +1109,7 @@ void SK_(print_debug_usage)(void)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(void)
+void TL_(pre_clo_init)(void)
 {
    Char* base_dir = NULL;
 
@@ -1141,7 +1141,7 @@ void SK_(pre_clo_init)(void)
    instr_info_table = VG_(HT_construct)();
 }
 
-void SK_(post_clo_init)(void)
+void TL_(post_clo_init)(void)
 {
    cache_t I1c, D1c, L2c; 
 
@@ -1156,7 +1156,7 @@ void SK_(post_clo_init)(void)
    VGP_(register_profile_event)(VgpCacheResults,  "cache-results");
 }
 
-VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                cg_main.c ---*/

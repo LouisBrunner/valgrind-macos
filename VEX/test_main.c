@@ -52,6 +52,7 @@ int main ( int argc, char** argv )
    Int bb_number;
    Int orig_nbytes, trans_used, orig_used;
    TranslateResult tres;
+   VexControl vcon;
 
    if (argc != 2) {
       fprintf(stderr, "usage: vex file.org\n");
@@ -63,12 +64,18 @@ int main ( int argc, char** argv )
       exit(1);
    }
 
+   /* Run with default params.  However, we can't allow bb chasing
+      since that causes the front end to get segfaults when it tries
+      to read code outside the initial BB we hand it. */
+   LibVEX_default_VexControl ( &vcon );
+   vcon.guest_chase_thresh = 0;
+
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
                  0,  /* verbosity */
-                 False, 
-		 //True, /* valgrind support */
-                 50 /*100*/ /* max insns per bb */);
+                 //False, 
+		 True, /* valgrind support */
+                 &vcon );
 
 #if 0
    {extern void test_asm86(void);
@@ -102,9 +109,9 @@ int main ( int argc, char** argv )
 	 origbuf[i] = (UChar)u;
       }
 
-            if (bb_number == 1000) break;
+            if (bb_number == 10000) break;
       {
-      for (i = 0; i < 100; i++)
+      for (i = 0; i < 1; i++)
       tres =
       LibVEX_Translate ( InsnSetX86, InsnSetX86,
 			 origbuf, (Addr64)orig_addr, &orig_used,

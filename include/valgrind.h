@@ -231,45 +231,6 @@ typedef
    })
 
 
-/* These requests are similar to those above;  they insert the current
-   ThreadState as the first argument to the called function. */
-#define VALGRIND_NON_SIMD_tstCALL0(_qyy_fn)                    \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL0,       \
-                            _qyy_fn,                           \
-                            0, 0, 0);                          \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL1(_qyy_fn, _qyy_arg1)         \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL1,       \
-                            _qyy_fn,                           \
-                            _qyy_arg1, 0, 0);                  \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL2,       \
-                            _qyy_fn,                           \
-                            _qyy_arg1, _qyy_arg2, 0);          \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
-   ({unsigned int _qyy_res;                                             \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,           \
-                            VG_USERREQ__CLIENT_tstCALL3,                \
-                            _qyy_fn,                                    \
-                            _qyy_arg1, _qyy_arg2, _qyy_arg3);           \
-    _qyy_res;                                                           \
-   })
-
-
 /* Counts the number of errors that have been recorded by a skin.  Nb:
    the skin must record the errors with VG_(maybe_record_error)() or
    VG_(unique_error)() for them to be counted. */

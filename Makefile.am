@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = 1.5
+AUTOMAKE_OPTIONS = 1.4
 
 ## coregrind must come before memcheck, addrcheck, helgrind, for
 ##   vg_replace_malloc.o.

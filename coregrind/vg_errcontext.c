@@ -987,12 +987,14 @@ Bool supp_matches_callers(Error* err, Supp* su)
       vg_assert(su->callers[i].name != NULL);
       switch (su->callers[i].ty) {
          case ObjName: 
-            (void)VG_(get_objname)(a, caller_name, M_VG_ERRTXT);
+            if (!VG_(get_objname)(a, caller_name, M_VG_ERRTXT))
+               return False;
             break; 
 
          case FunName: 
             // Nb: mangled names used in suppressions
-            (void)VG_(get_fnname_nodemangle)(a, caller_name, M_VG_ERRTXT);
+            if (!VG_(get_fnname_nodemangle)(a, caller_name, M_VG_ERRTXT))
+               return False;
             break;
          default: VG_(tool_panic)("supp_matches_callers");
       }

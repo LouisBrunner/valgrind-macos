@@ -627,8 +627,7 @@ void ac_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 }
 
 static
-void ac_set_perms (Addr a, UInt len, 
-                         Bool rr, Bool ww, Bool xx)
+void ac_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 {
    DEBUG("ac_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
                               a, len, rr, ww, xx);
@@ -669,7 +668,7 @@ static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
    return ac_ACCESS4_SLOWLY(a, isWrite);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
-   AcSecMap* sm     = primary_map[sec_no];
+   AcSecMap* sm   = primary_map[sec_no];
    UInt    a_off  = (a & 0xFFFF) >> 3;
    UChar   abits  = sm->abits[a_off];
    abits >>= (a & 4);

@@ -68,18 +68,24 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(KICKSTART_BASE)
+AC_SUBST(ARCH_CORE_AM_CFLAGS)
+AC_SUBST(ARCH_TOOL_AM_CFLAGS)
 
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="x86"
         KICKSTART_BASE="0xb0000000"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
         ;;
 
      powerpc*)
         AC_MSG_RESULT([no (${host_cpu})])
         VG_ARCH="ppc"
         KICKSTART_BASE="0x70000000"
+        ARCH_CORE_AM_CFLAGS="-DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="-fpic"
         AC_MSG_ERROR([PowerPC not supported. Sorry])
         ;;
 

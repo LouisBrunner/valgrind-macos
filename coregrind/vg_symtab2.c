@@ -968,6 +968,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       UChar*     stab         = NULL; /* .stab         (stabs)  */
       UChar*     stabstr      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line   = NULL; /* .debug_line   (dwarf2) */
+      UChar*     dwarf1d      = NULL; /* .debug        (dwarf1) */
+      UChar*     dwarf1l      = NULL; /* .line         (dwarf1) */
 
       /* Section sizes, in bytes */
       UInt       o_strtab_sz     = 0;
@@ -977,10 +979,14 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       UInt       stab_sz         = 0;
       UInt       stabstr_sz      = 0;
       UInt       debug_line_sz   = 0;
+      UInt       dwarf1d_sz      = 0;
+      UInt       dwarf1l_sz      = 0;
+
+      Bool       has_debuginfo = False;
 
       /* Find all interesting sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
-         #define FIND(sec_name, sec_data, sec_size, in_exec, type) \
+#        define FIND(sec_name, sec_data, sec_size, in_exec, type) \
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
             if (0 != sec_data) \
                VG_(core_panic)("repeated section!\n"); \
@@ -1007,11 +1013,13 @@ Bool vg_read_lib_symbols ( SegInfo* si )
          else FIND(".stab",         stab,         stab_sz,       0, UChar*)
          else FIND(".stabstr",      stabstr,      stabstr_sz,    0, UChar*)
          else FIND(".debug_line",   debug_line,   debug_line_sz, 0, UChar*)
+         else FIND(".debug",        dwarf1d,      dwarf1d_sz,    0, UChar*)
+         else FIND(".line",         dwarf1l,      dwarf1l_sz,    0, UChar*)
 
          else FIND(".got",         si->got_start, si->got_size,  1, Addr)
          else FIND(".plt",         si->plt_start, si->plt_size,  1, Addr)
 
-         #undef FIND
+#        undef FIND
          
          /* Check some sizes */
          vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
@@ -1028,12 +1036,20 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
       /* Read the stabs and/or dwarf2 debug information, if any. */
       if (stab != NULL && stabstr != NULL) {
-         VG_(read_debuginfo_stabs) ( si, stab, stab_sz, stabstr, stabstr_sz );
-
-      } else if (debug_line) {
+         has_debuginfo = True;
+         VG_(read_debuginfo_stabs) ( si, stab, stab_sz, 
+                                         stabstr, stabstr_sz );
+      }
+      if (debug_line) {
+         has_debuginfo = True;
          VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );
-
-      } else {
+      }
+      if (dwarf1d && dwarf1l) {
+         has_debuginfo = True;
+         VG_(read_debuginfo_dwarf1) ( si, dwarf1d, dwarf1d_sz, 
+                                          dwarf1l, dwarf1l_sz );
+      } 
+      if (!has_debuginfo) {
          VG_(symerr)("   object doesn't have any debug info");
          goto out;
       }

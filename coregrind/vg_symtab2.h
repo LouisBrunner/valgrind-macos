@@ -185,7 +185,16 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 /* --------------------
    DWARF2 reader
    -------------------- */
-void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz );
+void VG_(read_debuginfo_dwarf2) ( SegInfo* si, 
+                                  UChar* dwarf2, Int dwarf2_sz );
+
+/* --------------------
+   DWARF1 reader
+   -------------------- */
+void VG_(read_debuginfo_dwarf1) ( SegInfo* si, 
+                                  UChar* dwarf1d, Int dwarf1d_sz, 
+                                  UChar* dwarf1l, Int dwarf1l_sz );
+
 
 #endif /* _VG_SYMTYPE_H */
 

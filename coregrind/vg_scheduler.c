@@ -1493,6 +1493,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 static
 void cleanup_after_thread_exited ( ThreadId tid )
 {
+   Int           i;
    vki_ksigset_t irrelevant_sigmask;
    vg_assert(VG_(is_valid_or_empty_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
@@ -1505,6 +1506,13 @@ void cleanup_after_thread_exited ( ThreadId tid )
       this thread. */
    VG_(block_all_host_signals)( &irrelevant_sigmask );
    VG_(handle_SCSS_change)( False /* lazy update */ );
+
+   /* Clean up the waiting_fd table */
+   for (i = 0; i < VG_N_WAITING_FDS; i++) {
+      if (vg_waiting_fds[i].tid == tid) {
+         vg_waiting_fds[i].fd = -1; /* not in use */
+      }
+   }
 }
 
 

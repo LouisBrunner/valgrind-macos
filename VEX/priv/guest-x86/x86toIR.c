@@ -2349,12 +2349,12 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 static
 UInt dis_Grp4 ( UChar sorb, UInt delta )
 {
-   Int   t1, t2;
+   IRTemp   t1, t2;
    //   UInt  pair;
    UChar modrm;
    //UChar dis_buf[50];
-   t1 = t2 = INVALID_IRTEMP;
    IRType ty = Ity_I8;
+   t1 = t2 = INVALID_IRTEMP;
 
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {

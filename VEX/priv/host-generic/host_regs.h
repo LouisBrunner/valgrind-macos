@@ -9,6 +9,8 @@
 #ifndef __HOST_REGS_H
 #define __HOST_REGS_H
 
+#include "libjit_basictypes.h"
+
 
 /*---------------------------------------------------------*/
 /*--- Representing HOST REGISTERS                       ---*/
@@ -54,11 +56,11 @@ enum { HRcINVALID=1,   /* NOT A VALID REGISTER CLASS */
    }
    HRegClass;
 
-extern void ppHRegClass ( FILE*, HRegClass );
+extern void ppHRegClass ( HRegClass );
 
 
 /* Print an HReg in a generic (non-target-specific) way. */
-extern void ppHReg ( FILE*, HReg );
+extern void ppHReg ( HReg );
 
 /* Construct/destruct. */
 extern HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual );
@@ -94,7 +96,7 @@ typedef
    }
    HRegUsage;
 
-extern void ppHRegUsage ( FILE*, HRegUsage* );
+extern void ppHRegUsage ( HRegUsage* );
 
 extern void initHRegUsage ( HRegUsage* );
 
@@ -127,7 +129,7 @@ typedef
    }
    HRegRemap;
 
-extern void ppHRegRemap     ( FILE*, HRegRemap* );
+extern void ppHRegRemap     ( HRegRemap* );
 extern void initHRegRemap   ( HRegRemap* );
 extern void addToHRegRemap  ( HRegRemap*, HReg, HReg );
 extern HReg lookupHRegRemap ( HRegRemap*, HReg );
@@ -159,7 +161,6 @@ typedef
    HInstrArray;
 
 extern HInstrArray* newHInstrArray ( void );
-extern void         deleteHInstrArray ( HInstrArray* );
 extern void         addHInstr ( HInstrArray*, HInstr* );
 
 

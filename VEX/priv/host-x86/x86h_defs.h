@@ -16,7 +16,7 @@
    6 real float regs, and 0 real vector regs. 
 */
 
-extern void ppHRegX86 ( FILE*, HReg );
+extern void ppHRegX86 ( HReg );
 
 extern HReg hregX86_EAX ( void );
 extern HReg hregX86_EBX ( void );
@@ -55,7 +55,7 @@ typedef
 extern X86AMode* X86AMode_IR   ( UInt, HReg );
 extern X86AMode* X86AMode_IRRS ( UInt, HReg, HReg, Int );
 
-extern void ppX86AMode ( FILE*, X86AMode* );
+extern void ppX86AMode ( X86AMode* );
 
 
 /* --------- Operand, which can be reg, immediate or memory. --------- */
@@ -90,7 +90,7 @@ extern X86RMI* X86RMI_Imm ( UInt );
 extern X86RMI* X86RMI_Reg ( HReg );
 extern X86RMI* X86RMI_Mem ( X86AMode* );
 
-extern void ppX86RMI ( FILE*, X86RMI* );
+extern void ppX86RMI ( X86RMI* );
 
 
 /* --------- Operand, which can be reg or immediate only. --------- */
@@ -120,7 +120,7 @@ typedef
 extern X86RI* X86RI_Imm ( UInt );
 extern X86RI* X86RI_Reg ( HReg );
 
-extern void ppX86RI ( FILE*, X86RI* );
+extern void ppX86RI ( X86RI* );
 
 
 /* --------- Operand, which can be reg or memory only. --------- */
@@ -150,7 +150,7 @@ typedef
 extern X86RM* X86RM_Reg ( HReg );
 extern X86RM* X86RM_Mem ( X86AMode* );
 
-extern void ppX86RM ( FILE*, X86RM* );
+extern void ppX86RM ( X86RM* );
 
 
 /* --------- Instructions. --------- */
@@ -164,7 +164,7 @@ typedef
    }
    X86AluOp;
 
-extern void ppX86AluOp ( FILE*, X86AluOp );
+extern void ppX86AluOp ( X86AluOp );
 
 
 /* --------- */
@@ -175,7 +175,7 @@ typedef
    }
    X86ShiftOp;
 
-extern void ppX86ShiftOp ( FILE*, X86ShiftOp );
+extern void ppX86ShiftOp ( X86ShiftOp );
 
 
 /* --------- */
@@ -220,7 +220,7 @@ extern X86Instr* X86Instr_Alu32M ( X86AluOp, X86RI*,  X86AMode* );
 extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
 extern X86Instr* X86Instr_RET    ( void );
 
-extern void ppX86Instr ( FILE*, X86Instr* );
+extern void ppX86Instr ( X86Instr* );
 
 /* Five functions that insulate the register allocator from details
    of the underlying instruction set. */

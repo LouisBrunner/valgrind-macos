@@ -22,7 +22,7 @@ typedef
    enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
    IRType;
 
-extern void ppIRType ( FILE* f, IRType );
+extern void ppIRType ( IRType );
 
 
 /* ------------------ Constants ------------------ */
@@ -48,14 +48,14 @@ extern IRConst* IRConst_U16 ( UShort );
 extern IRConst* IRConst_U32 ( UInt );
 extern IRConst* IRConst_U64 ( ULong );
 
-extern void ppIRConst ( FILE* f, IRConst* );
+extern void ppIRConst ( IRConst* );
 
 
 /* ------------------ Temporaries ------------------ */
 
 typedef int IRTemp;
 
-extern void ppIRTemp ( FILE* f, IRTemp );
+extern void ppIRTemp ( IRTemp );
 
 
 /* ------------------ Binary and unary ops ------------------ */
@@ -76,7 +76,7 @@ typedef
    }
    IROp;
 
-extern void ppIROp ( FILE* f, IROp );
+extern void ppIROp ( IROp );
 
 
 /* ------------------ Expressions ------------------ */
@@ -131,7 +131,7 @@ extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const ( IRConst* con );
 
-extern void ppIRExpr ( FILE* f, IRExpr* );
+extern void ppIRExpr ( IRExpr* );
 
 
 /* ------------------ Statements ------------------ */
@@ -171,7 +171,7 @@ extern IRStmt* IRStmt_Put  ( Int off, Int sz, IRExpr* value );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 
-extern void ppIRStmt ( FILE* f, IRStmt* );
+extern void ppIRStmt ( IRStmt* );
 
 
 /* ------------------ Basic block enders. ------------------ */
@@ -209,7 +209,7 @@ typedef
 
 extern IRNext* IRNext_UJump ( IRConst* dst );
 
-extern void ppIRNext ( FILE* f, IRNext* );
+extern void ppIRNext ( IRNext* );
 
 
 /* ------------------ Basic Blocks ------------------ */
@@ -233,7 +233,7 @@ typedef
    }
    IRTypeEnv;
 
-extern void ppIRTypeEnv ( FILE* f, IRTypeEnv* );
+extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
 /* Basic blocks contain 3 fields:
@@ -251,7 +251,7 @@ typedef
 
 extern IRBB* mk_IRBB ( IRTypeEnv*, IRStmt*, IRNext* );
 
-extern void ppIRBB ( FILE* f, IRBB* );
+extern void ppIRBB ( IRBB* );
 
 
 /*---------------------------------------------------------------*/

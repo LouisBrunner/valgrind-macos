@@ -7,7 +7,10 @@
 /*---------------------------------------------------------------*/
 
 #include "libjit_basictypes.h"
-#include "ir_defs.h"
+#include "libjit_ir.h"
+#include "libjit.h"
+
+#include "vex_util.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
 
@@ -62,14 +65,14 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
    for (i = 0; i < env->n_vregmap; i++)
       if (env->vregmap[i].ir_name == tmp)
          return env->vregmap[i].vreg;
-   panic("lookupIRTemp");
+   vpanic("lookupIRTemp");
 }
 
 static void addInstr ( ISelEnv* env, X86Instr* instr )
 {
    addHInstr(env->code, instr);
-   ppX86Instr(stdout, instr);
-   printf("\n");
+   ppX86Instr(instr);
+   vex_printf("\n");
 }
 
 static HReg newVRegI ( ISelEnv* env )
@@ -90,8 +93,8 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e );
 
 static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
 {
-   assert(hregClass(src) == HRcInt);
-   assert(hregClass(dst) == HRcInt);
+   vassert(hregClass(src) == HRcInt);
+   vassert(hregClass(dst) == HRcInt);
    return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
 }
 
@@ -105,8 +108,8 @@ static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
 */
 static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
-   assert(e);
-   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
 
    switch (e->tag) {
 
@@ -155,8 +158,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
    } /* switch (e->tag) */
 
    /* We get here if no pattern matched. */
-   ppIRExpr(stderr, e);
-   panic("iselExprI: cannot reduce tree");
+   ppIRExpr(e);
+   vpanic("iselExprI: cannot reduce tree");
 }
 
 
@@ -170,8 +173,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 */
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 {
-   assert(e);
-   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
 
    /* Add32(expr1, Shl32(expr2, imm)) */
    if (e->tag == Iex_Binop
@@ -210,8 +213,8 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 
 static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 {
-   assert(e);
-   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
 
    /* special case: immediate */
    if (e->tag == Iex_Const 
@@ -233,8 +236,8 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 
 static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 {
-   assert(e);
-   assert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
 
    /* special case: immediate */
    if (e->tag == Iex_Const 
@@ -256,9 +259,9 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 
 void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
-   fprintf(stdout, "-- ");
-   ppIRStmt(stdout, stmt);
-   fprintf(stdout, "\n");
+   vex_printf("-- ");
+   ppIRStmt(stmt);
+   vex_printf("\n");
 
    switch (stmt->tag) {
 
@@ -291,8 +294,8 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    default: break;
    }
-   ppIRStmt(stderr, stmt);
-   panic("iselStmt");
+   ppIRStmt(stmt);
+   vpanic("iselStmt");
 }
 
 
@@ -302,13 +305,13 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
 void iselNext ( ISelEnv* env, IRNext* next )
 {
-   fprintf(stdout, "-- ");
-   ppIRNext(stdout, next);
-   fprintf(stdout, "\n");
+   vex_printf("-- ");
+   ppIRNext(next);
+   vex_printf("\n");
 
    switch (next->tag) {
    case Inx_UJump: {
-      assert(next->Inx.UJump.dst->tag == Ico_U32);
+      vassert(next->Inx.UJump.dst->tag == Ico_U32);
       addInstr(env, X86Instr_Alu32R(
                        Xalu_MOV, 
                        X86RMI_Imm(next->Inx.UJump.dst->Ico.U32),
@@ -317,8 +320,8 @@ void iselNext ( ISelEnv* env, IRNext* next )
       return;
    }
    default:
-      ppIRNext(stderr, next);
-      panic("iselNext");
+      ppIRNext(next);
+      vpanic("iselNext");
    }
 }
 
@@ -336,7 +339,7 @@ HInstrArray* iselBB_X86Instr ( IRBB* bb )
    IRStmt* stmt;
 
    /* Make up an initial environment to use. */
-   ISelEnv* env = malloc(sizeof(ISelEnv));
+   ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */
@@ -348,7 +351,7 @@ HInstrArray* iselBB_X86Instr ( IRBB* bb )
    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
       change as we go along. */
    env->n_vregmap = bb->tyenv->map_used;
-   env->vregmap   = malloc(env->n_vregmap * sizeof(VRegMaplet));
+   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(VRegMaplet));
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
@@ -356,7 +359,7 @@ HInstrArray* iselBB_X86Instr ( IRBB* bb )
       env->vregmap[i].ir_name = bb->tyenv->map[i].name;
       switch (bb->tyenv->map[i].type) {
          case Ity_I32: hreg = mkHReg(i, HRcInt, True); break;
-         default: panic("iselBB: IRTemp type");
+         default: vpanic("iselBB: IRTemp type");
       }
       env->vregmap[i].vreg = hreg;
    }

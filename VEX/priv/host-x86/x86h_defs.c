@@ -7,38 +7,41 @@
 /*---------------------------------------------------------------*/
 
 #include "libjit_basictypes.h"
+#include "libjit.h"
+
+#include "vex_util.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
 
 
 /* --------- Registers. --------- */
 
-void ppHRegX86 ( FILE* f, HReg reg ) 
+void ppHRegX86 ( HReg reg ) 
 {
    Int r;
    static Char* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(f, reg);
+      ppHReg(reg);
       return;
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt:
          r = hregNumber(reg);
-         assert(r >= 0 && r < 8);
-         fprintf(f, "%s", ireg32_names[r]);
+         vassert(r >= 0 && r < 8);
+         vex_printf("%s", ireg32_names[r]);
          return;
       case HRcFloat:
          r = hregNumber(reg);
-         assert(r >= 0 && r < 6);
-         fprintf(f, "%%fake%d", r);
+         vassert(r >= 0 && r < 6);
+         vex_printf("%%fake%d", r);
          return;
       case HRcVector:
-         panic("ppHRegX86: real vector reg");
+         vpanic("ppHRegX86: real vector reg");
      default:
-         panic("ppHRegX86");
+         vpanic("ppHRegX86");
    }
 }
 
@@ -52,7 +55,7 @@ HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt, False); }
 /* --------- X86AMode: memory address expressions. --------- */
 
 X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
-   X86AMode* am = malloc(sizeof(X86AMode));
+   X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
    am->tag = Xam_IR;
    am->Xam.IR.imm = imm32;
    am->Xam.IR.reg = reg;
@@ -60,32 +63,32 @@ X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
 }
 
 X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg index, Int shift ) {
-   X86AMode* am = malloc(sizeof(X86AMode));
+   X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
    am->tag = Xam_IRRS;
    am->Xam.IRRS.imm = imm32;
    am->Xam.IRRS.base = base;
    am->Xam.IRRS.index = index;
    am->Xam.IRRS.shift = shift;
-   assert(shift >= 0 && shift <= 3);
+   vassert(shift >= 0 && shift <= 3);
    return am;
 }
 
-void ppX86AMode ( FILE* f, X86AMode* am ) {
+void ppX86AMode ( X86AMode* am ) {
    switch (am->tag) {
       case Xam_IR: 
-         fprintf(f, "0x%x(", am->Xam.IR.imm);
-         ppHRegX86(f, am->Xam.IR.reg);
-         fprintf(f, ")");
+         vex_printf("0x%x(", am->Xam.IR.imm);
+         ppHRegX86(am->Xam.IR.reg);
+         vex_printf(")");
          return;
       case Xam_IRRS:
-         fprintf(f, "0x%x(", am->Xam.IRRS.imm);
-         ppHRegX86(f, am->Xam.IRRS.base);
-         fprintf(f, ",");
-         ppHRegX86(f, am->Xam.IRRS.index);
-         fprintf(f, ",%d)", am->Xam.IRRS.shift);
+         vex_printf("0x%x(", am->Xam.IRRS.imm);
+         ppHRegX86(am->Xam.IRRS.base);
+         vex_printf(",");
+         ppHRegX86(am->Xam.IRRS.index);
+         vex_printf(",%d)", am->Xam.IRRS.shift);
          return;
       default:
-         panic("ppX86AMode");
+         vpanic("ppX86AMode");
    }
 }
 
@@ -99,7 +102,7 @@ static void addRegUsage_X86AMode ( HRegUsage* u, X86AMode* am ) {
          addHRegUse(u, HRmRead, am->Xam.IRRS.index);
          return;
       default:
-         panic("addRegUsage_X86AMode");
+         vpanic("addRegUsage_X86AMode");
    }
 }
 
@@ -113,46 +116,46 @@ static void mapRegs_X86AMode ( HRegRemap* m, X86AMode* am ) {
          am->Xam.IRRS.index = lookupHRegRemap(m, am->Xam.IRRS.index);
          return;
       default:
-         panic("mapRegs_X86AMode");
+         vpanic("mapRegs_X86AMode");
    }
 }
 
 /* --------- Operand, which can be reg, immediate or memory. --------- */
 
 X86RMI* X86RMI_Imm ( UInt imm32 ) {
-   X86RMI* op         = malloc(sizeof(X86RMI));
+   X86RMI* op         = LibVEX_Alloc(sizeof(X86RMI));
    op->tag            = Xrmi_Imm;
    op->Xrmi.Imm.imm32 = imm32;
    return op;
 }
 
 X86RMI* X86RMI_Reg ( HReg reg ) {
-   X86RMI* op       = malloc(sizeof(X86RMI));
+   X86RMI* op       = LibVEX_Alloc(sizeof(X86RMI));
    op->tag          = Xrmi_Reg;
    op->Xrmi.Reg.reg = reg;
    return op;
 }
 
 X86RMI* X86RMI_Mem ( X86AMode* am ) {
-   X86RMI* op      = malloc(sizeof(X86RMI));
+   X86RMI* op      = LibVEX_Alloc(sizeof(X86RMI));
    op->tag         = Xrmi_Mem;
    op->Xrmi.Mem.am = am;
    return op;
 }
 
-void ppX86RMI ( FILE* f, X86RMI* op ) {
+void ppX86RMI ( X86RMI* op ) {
    switch (op->tag) {
       case Xrmi_Imm: 
-         fprintf(f, "$0x%x", op->Xrmi.Imm.imm32);
+         vex_printf("$0x%x", op->Xrmi.Imm.imm32);
          return;
       case Xrmi_Reg: 
-         ppHRegX86(f, op->Xrmi.Reg.reg);
+         ppHRegX86(op->Xrmi.Reg.reg);
          return;
       case Xrmi_Mem: 
-         ppX86AMode(f, op->Xrmi.Mem.am);
+         ppX86AMode(op->Xrmi.Mem.am);
          return;
      default: 
-         panic("ppX86RMI");
+         vpanic("ppX86RMI");
    }
 }
 
@@ -170,7 +173,7 @@ static void addRegUsage_X86RMI ( HRegUsage* u, X86RMI* op ) {
          addRegUsage_X86AMode(u, op->Xrmi.Mem.am);
          return;
       default: 
-         panic("addRegUsage_X86RMI");
+         vpanic("addRegUsage_X86RMI");
    }
 }
 
@@ -185,7 +188,7 @@ static void mapRegs_X86RMI ( HRegRemap* m, X86RMI* op ) {
          mapRegs_X86AMode(m, op->Xrmi.Mem.am);
          return;
       default: 
-         panic("mapRegs_X86RMI");
+         vpanic("mapRegs_X86RMI");
    }
 }
 
@@ -193,29 +196,29 @@ static void mapRegs_X86RMI ( HRegRemap* m, X86RMI* op ) {
 /* --------- Operand, which can be reg or immediate only. --------- */
 
 X86RI* X86RI_Imm ( UInt imm32 ) {
-   X86RI* op         = malloc(sizeof(X86RI));
+   X86RI* op         = LibVEX_Alloc(sizeof(X86RI));
    op->tag           = Xri_Imm;
    op->Xri.Imm.imm32 = imm32;
    return op;
 }
 
 X86RI* X86RI_Reg ( HReg reg ) {
-   X86RI* op       = malloc(sizeof(X86RI));
+   X86RI* op       = LibVEX_Alloc(sizeof(X86RI));
    op->tag         = Xri_Reg;
    op->Xri.Reg.reg = reg;
    return op;
 }
 
-void ppX86RI ( FILE* f, X86RI* op ) {
+void ppX86RI ( X86RI* op ) {
    switch (op->tag) {
       case Xri_Imm: 
-         fprintf(f, "$0x%x", op->Xri.Imm.imm32);
+         vex_printf("$0x%x", op->Xri.Imm.imm32);
          return;
       case Xri_Reg: 
-         ppHRegX86(f, op->Xri.Reg.reg);
+         ppHRegX86(op->Xri.Reg.reg);
          return;
      default: 
-         panic("ppX86RI");
+         vpanic("ppX86RI");
    }
 }
 
@@ -230,7 +233,7 @@ static void addRegUsage_X86RI ( HRegUsage* u, X86RI* op ) {
          addHRegUse(u, HRmRead, op->Xri.Reg.reg);
          return;
       default: 
-         panic("addRegUsage_X86RI");
+         vpanic("addRegUsage_X86RI");
    }
 }
 
@@ -242,7 +245,7 @@ static void mapRegs_X86RI ( HRegRemap* m, X86RI* op ) {
          op->Xri.Reg.reg = lookupHRegRemap(m, op->Xri.Reg.reg);
          return;
       default: 
-         panic("mapRegs_X86RI");
+         vpanic("mapRegs_X86RI");
    }
 }
 
@@ -250,29 +253,29 @@ static void mapRegs_X86RI ( HRegRemap* m, X86RI* op ) {
 /* --------- Operand, which can be reg or memory only. --------- */
 
 X86RM* X86RM_Reg ( HReg reg ) {
-   X86RM* op       = malloc(sizeof(X86RM));
+   X86RM* op       = LibVEX_Alloc(sizeof(X86RM));
    op->tag         = Xrm_Reg;
    op->Xrm.Reg.reg = reg;
    return op;
 }
 
 X86RM* X86RM_Mem ( X86AMode* am ) {
-   X86RM* op      = malloc(sizeof(X86RM));
+   X86RM* op      = LibVEX_Alloc(sizeof(X86RM));
    op->tag        = Xrm_Mem;
    op->Xrm.Mem.am = am;
    return op;
 }
 
-void ppX86RM ( FILE* f, X86RM* op ) {
+void ppX86RM ( X86RM* op ) {
    switch (op->tag) {
       case Xrm_Mem: 
-         ppX86AMode(f, op->Xrm.Mem.am);
+         ppX86AMode(op->Xrm.Mem.am);
          return;
       case Xrm_Reg: 
-         ppHRegX86(f, op->Xrm.Reg.reg);
+         ppHRegX86(op->Xrm.Reg.reg);
          return;
      default: 
-         panic("ppX86RM");
+         vpanic("ppX86RM");
    }
 }
 
@@ -292,7 +295,7 @@ static void addRegUsage_X86RM ( HRegUsage* u, X86RM* op, HRegMode mode ) {
          addHRegUse(u, mode, op->Xrm.Reg.reg);
          return;
      default: 
-         panic("addRegUsage_X86RM");
+         vpanic("addRegUsage_X86RM");
    }
 }
 
@@ -306,14 +309,14 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
          op->Xrm.Reg.reg = lookupHRegRemap(m, op->Xrm.Reg.reg);
          return;
      default: 
-         panic("mapRegs_X86RM");
+         vpanic("mapRegs_X86RM");
    }
 }
 
 
 /* --------- Instructions. --------- */
 
-void ppX86AluOp ( FILE* f, X86AluOp op ) {
+void ppX86AluOp ( X86AluOp op ) {
    Char* name;
    switch (op) {
       case Xalu_MOV: name = "mov"; break;
@@ -324,12 +327,12 @@ void ppX86AluOp ( FILE* f, X86AluOp op ) {
       case Xalu_AND: name = "and"; break;
       case Xalu_OR:  name = "or";  break;
       case Xalu_XOR: name = "xor"; break;
-      default: panic("ppX86AluOp");
+      default: vpanic("ppX86AluOp");
    }
-   fprintf(f, "%s", name);
+   vex_printf("%s", name);
 }
 
-void ppX86ShiftOp ( FILE* f, X86ShiftOp op ) {
+void ppX86ShiftOp ( X86ShiftOp op ) {
    Char* name;
    switch (op) {
       case Xsh_SHL: name = "shl"; break;
@@ -337,13 +340,13 @@ void ppX86ShiftOp ( FILE* f, X86ShiftOp op ) {
       case Xsh_SAR: name = "sar"; break;
       case Xsh_ROL: name = "rol"; break;
       case Xsh_ROR: name = "ror"; break;
-      default: panic("ppX86ShiftOp");
+      default: vpanic("ppX86ShiftOp");
    }
-   fprintf(f, "%s", name);
+   vex_printf("%s", name);
 }
 
 X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
-   X86Instr* i       = malloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_Alu32R;
    i->Xin.Alu32R.op  = op;
    i->Xin.Alu32R.src = src;
@@ -352,7 +355,7 @@ X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
 }
 
 X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
-   X86Instr* i       = malloc(sizeof(X86Instr));
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_Alu32M;
    i->Xin.Alu32M.op  = op;
    i->Xin.Alu32M.src = src;
@@ -361,7 +364,7 @@ X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
 }
 
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
-   X86Instr* i     = malloc(sizeof(X86Instr));
+   X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
    i->Xin.Sh32.op  = op;
    i->Xin.Sh32.src = src;
@@ -370,41 +373,41 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
 }
 
 X86Instr* X86Instr_RET ( void ) {
-   X86Instr* i     = malloc(sizeof(X86Instr));
+   X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_RET;
    return i;
 }
 
-void ppX86Instr ( FILE* f, X86Instr* i ) {
+void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
       case Xin_Alu32R:
-         ppX86AluOp(f, i->Xin.Alu32R.op);
-         fprintf(f, "l ");
-         ppX86RMI(f, i->Xin.Alu32R.src);
-         fprintf(f, ",");
-         ppHRegX86(f, i->Xin.Alu32R.dst);
+         ppX86AluOp(i->Xin.Alu32R.op);
+         vex_printf("l ");
+         ppX86RMI(i->Xin.Alu32R.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Alu32R.dst);
          return;
       case Xin_Alu32M:
-         ppX86AluOp(f, i->Xin.Alu32M.op);
-         fprintf(f, "l ");
-         ppX86RI(f, i->Xin.Alu32M.src);
-         fprintf(f, ",");
-         ppX86AMode(f, i->Xin.Alu32M.dst);
+         ppX86AluOp(i->Xin.Alu32M.op);
+         vex_printf("l ");
+         ppX86RI(i->Xin.Alu32M.src);
+         vex_printf(",");
+         ppX86AMode(i->Xin.Alu32M.dst);
          return;
       case Xin_Sh32:
-         ppX86ShiftOp(f, i->Xin.Sh32.op);
-         fprintf(f, "l ");
+         ppX86ShiftOp(i->Xin.Sh32.op);
+         vex_printf("l ");
          if (i->Xin.Sh32.src == 0)
-	   fprintf(f, " %%cl,"); 
+	   vex_printf(" %%cl,"); 
          else 
-            fprintf(f, " $%d,", i->Xin.Sh32.src);
-         ppX86RM(f, i->Xin.Sh32.dst);
+            vex_printf(" $%d,", i->Xin.Sh32.src);
+         ppX86RM(i->Xin.Sh32.dst);
          return;
       case Xin_RET:
-         fprintf(f, "ret");
+         vex_printf("ret");
          return;
       default:
-         panic("ppX86Instr");
+         vpanic("ppX86Instr");
    }
 }
 
@@ -438,8 +441,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, hregX86_EAX());
          return;
       default:
-         ppX86Instr(stderr, i);
-         panic("getRegUsage_X86Instr");
+         ppX86Instr(i);
+         vpanic("getRegUsage_X86Instr");
    }
 }
 
@@ -460,8 +463,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_RET:
          return;
       default:
-         ppX86Instr(stderr, i);
-         panic("mapRegs_X86Instr");
+         ppX86Instr(i);
+         vpanic("mapRegs_X86Instr");
    }
 }
 
@@ -480,7 +483,7 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
-   assert(!hregIsVirtual(rreg));
+   vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:
         return
@@ -488,14 +491,14 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 		          X86AMode_IR(offset + 0x1000, 
                                       hregX86_EBP()));
       default: 
-         ppHRegClass(stderr, hregClass(rreg));
-         panic("genSpill_X86: unimplemented regclass");
+         ppHRegClass(hregClass(rreg));
+         vpanic("genSpill_X86: unimplemented regclass");
    }
 }
 
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
-   assert(!hregIsVirtual(rreg));
+   vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:
         return
@@ -504,7 +507,11 @@ X86Instr* genReload_X86 ( HReg rreg, Int offset )
                                                  hregX86_EBP())),
                           rreg );
       default: 
-         ppHRegClass(stderr, hregClass(rreg));
-         panic("genReload_X86: unimplemented regclass");
+         ppHRegClass(hregClass(rreg));
+         vpanic("genReload_X86: unimplemented regclass");
    }
 }
+
+/*---------------------------------------------------------------*/
+/*--- end                                         x86h_defs.c ---*/
+/*---------------------------------------------------------------*/

@@ -1,27 +1,23 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libjit.h) is                                 ---*/
+/*--- This file (jit_main.c) is                               ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __LIBJIT_H
-#define __LIBJIT_H
+#include "libjit.h"
+#include "jit_globals.h"
+#include "vex_util.h"
 
 
-#include "libjit_basictypes.h"
-#include "libjit_ir.h"
+/* This file contains the top level interface to the library. */
 
+/* --------- Initialise the library. --------- */
 
-/*---------------------------------------------------------------*/
-/*--- Top-level interface to the library.                     ---*/
-/*---------------------------------------------------------------*/
+/* Exported to library client. */
 
-
-/* Initialise the translator. */
-
-extern void LibJIT_Init (
+void LibJIT_Init (
    /* failure exit function */
    void (*failure_exit) ( void ),
    /* logging output function */
@@ -34,27 +30,28 @@ extern void LibJIT_Init (
    Bool valgrind_support,
    /* Max # guest insns per bb */
    Int guest_insns_per_bb
-);
+)
+{
+   vassert(!vex_initdone);
+   vassert(failure_exit);
+   vex_failure_exit = failure_exit;
+   vassert(log_bytes);
+   vex_log_bytes = log_bytes;
+   vassert(debuglevel >= 0);
+   vex_debuglevel = debuglevel;
+   vassert(verbosity >= 0);
+   vex_verbosity = verbosity;
+   vex_valgrind_support = valgrind_support;
+   vassert(guest_insns_per_bb >= 1 && guest_insns_per_bb <= 100);
+   vex_guest_insns_per_bb = guest_insns_per_bb;
+   vex_initdone = True;
+}
 
 
-/* Storage management: clear the area, and allocate from it. */
+/* --------- Make a translation. --------- */
 
-extern void LibJIT_Clear ( Bool show_stats );
+/* Exported to library client. */
 
-extern void* LibVEX_Alloc ( Int nbytes );
-
-
-/* Translate a basic block. */
-
-typedef 
-   enum { InsnSetX86, InsnSetARM }
-   InsnSet;
-
-typedef
-   enum { TransOK, TransAccessFail, TransOutputFull }
-   TranslateResult;
-
-extern 
 TranslateResult LibJIT_Translate (
    /* The instruction sets we are translating from and to. */
    InsnSet iset_guest,
@@ -73,16 +70,15 @@ TranslateResult LibJIT_Translate (
    IRBB (*instrument) ( IRBB* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 )
-);
+)
+{
+   vassert(vex_initdone);
+   LibJIT_Clear(False);
+   return TransOK;
+}
 
 
-/* Show accumulated statistics. */
-
-extern void LibJIT_ShowStats ( void );
-
-
-#endif /* ndef __LIBJIT_H */
 
 /*---------------------------------------------------------------*/
-/*---                                                libjit.h ---*/
+/*--- end                                          jit_main.c ---*/
 /*---------------------------------------------------------------*/

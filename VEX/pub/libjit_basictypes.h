@@ -26,6 +26,11 @@ typedef  unsigned char  Bool;
 #define  False  ((Bool)0)
 
 
+/* 32/64 bit addresses. */
+typedef  UInt      Addr32;
+typedef  ULong     Addr64;
+
+
 #endif /* ndef __LIBJIT_BASICTYPES_H */
 
 

@@ -545,7 +545,7 @@ void doHelperCall ( ISelEnv* env,
    /* Finally, the call itself. */
    addInstr(env, AMD64Instr_Call( 
                     cc, 
-                    (ULong)cee->addr, 
+                    Ptr_to_ULong(cee->addr), 
                     n_args + (passBBP ? 1 : 0) 
                  )
    );

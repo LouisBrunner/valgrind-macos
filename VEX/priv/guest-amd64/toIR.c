@@ -90,31 +90,53 @@
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
 
+/* ------ CONST for entire BB ------ */
+
 /* These are set at the start of the translation of a BB, so
    that we don't have to pass them around endlessly. */
 
 /* We need to know this to do sub-register accesses correctly. */
-/* CONST */
+/* CONST for entire BB */
 static Bool host_is_bigendian;
 
 /* Pointer to the guest code area. */
-/* CONST */
+/* CONST for entire BB  */
 static UChar* guest_code;
 
 /* The guest address corresponding to guest_code[0]. */
-/* CONST */
+/* CONST for entire BB  */
 static Addr64 guest_rip_bbstart;
+
+/* The IRBB* into which we're generating code. */
+/* CONST for entire BB  */
+static IRBB* irbb;
+
+
+/* ------ CONST for each instruction ------ */
 
 /* The guest address for the instruction currently being
    translated. */
 /* CONST for any specific insn, not for the entire BB */
 static Addr64 guest_rip_curr_instr;
 
-/* The IRBB* into which we're generating code. */
-static IRBB* irbb;
-
 /* Emergency verboseness just for this insn?  DEBUG ONLY */
 static Bool  insn_verbose = False;
+
+
+/* For ensuring that %rip-relative addressing is done right.  A read
+   of %rip generates the address of the next instruction.  It may be
+   that we don't conveniently know that inside disAMode().  For sanity
+   checking, if the next insn %rip is needed, we make a guess at what
+   it is, record that guess here, and set the accompanying Bool to
+   indicate that -- after this insn's decode is finished -- that guess
+   needs to be checked.  */
+
+/* At the start of each insn decode, is set to (0, False).
+   After the decode, if _mustcheck is now True, _assumed is
+   checked. */
+
+static Addr64 guest_rip_next_assumed;
+static Bool   guest_rip_next_mustcheck;
 
 
 /*------------------------------------------------------------*/
@@ -452,6 +474,8 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
          stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_rip_curr_instr)) );
       }
 
+      guest_rip_next_assumed = 0;
+      guest_rip_next_mustcheck = False;
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, subarch_guest, &size, &guest_next );
       insn_verbose = False;
@@ -464,7 +488,15 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
             vex_printf("\n");
          }
       }
-   
+
+      /* If disInstr tried to figure out the next rip, check it got it
+	 right.  Failure of this assertion is serious and denotes a
+	 bug in disInstr. */
+      if (guest_rip_next_mustcheck 
+          && guest_rip_next_assumed != guest_rip_curr_instr+size) {
+         vpanic("bbToIR_AMD64: disInstr miscalculated next %rip");
+      }
+
       if (dres == Dis_StopHere) {
          vassert(irbb->next != NULL);
          if (vex_traceflags & VEX_TRACE_FE) {
@@ -1892,9 +1924,16 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
          { Long d = getSDisp32(delta);
            *len = 5;
            DIS(buf, "%s%lld(%%rip)", sorbTxt(pfx), d);
+           /* We need to know the next instruction's start address.
+              Try and figure out what it is, record the guess, and ask
+              the top-level driver logic (bbToIR_AMD64) to check we
+              guessed right, after the instruction is completely
+              decoded. */
+           guest_rip_next_mustcheck = True;
+           guest_rip_next_assumed = guest_rip_bbstart + delta+4;
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
-                        binop(Iop_Add64, mkU64(guest_rip_curr_instr), 
+                        binop(Iop_Add64, mkU64(guest_rip_next_assumed), 
                                          mkU64(d))));
          }
 
@@ -7485,9 +7524,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* pfx holds the summary of prefixes. */
    Prefix pfx = PFX_EMPTY;
 
-   /* If we don't set *size properly, this causes bbToIR_X86Instr to
+   /* If we don't set *size properly, this causes bbToIR_AMD64Instr to
       assert. */
    *size = 0;
+
+   vassert(guest_rip_next_assumed == 0);
+   vassert(guest_rip_next_mustcheck == False);
 
    addr = /* t0 = */ t1 = t2 = /* t3 = t4 = t5 = t6 = */ IRTemp_INVALID; 
 

@@ -80,7 +80,7 @@ fi
 if [ z"$in_place_arg" != z ]; then
    in_place_dir=`echo $in_place_arg | sed 's/--in-place=//'`
    skindir="$in_place_dir/$skin"
-   coredir="$in_place_dir/coregrind"
+   coredir="$in_place_dir/coregrind/.in_place"
    vgsupp="--suppressions=$in_place_dir/default.supp"
 fi
 

@@ -208,8 +208,8 @@ Q12. My program dies like this (often at exit):
 
 A12. One possible cause is that your program modifies its
      environment variables, possibly including zeroing them
-     all.  Valgrind relies on the LD_PRELOAD and LD_LIBRARY_PATH
-     variables, so zeroing them will break things.
+     all.  Valgrind relies on the LD_PRELOAD, LD_LIBRARY_PATH and
+     VG_ARGS variables.  Zeroing them will break things.
 
      As of 1.9.6, Valgrind only uses these variables with 
      --trace-children=yes, which should reduce the potential for

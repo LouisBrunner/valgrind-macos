@@ -1490,7 +1490,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
                if (VG_(needs).libc_freeres && VG_(clo_run_libc_freeres)) {
 
-                  if (VG_(clo_verbosity) >= 2 
+                  if (VG_(clo_verbosity) > 2 
                       || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                      VG_(message)(Vg_DebugMsg, 
                         "Caught __NR_exit; running __libc_freeres()");
@@ -1502,7 +1502,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
                } else {
                   /* We won't run __libc_freeres; just exit now. */
-                  if (VG_(clo_verbosity) >= 2 
+                  if (VG_(clo_verbosity) > 2 
                       || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                      VG_(message)(Vg_DebugMsg, 
                         "Caught __NR_exit; quitting");

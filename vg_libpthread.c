@@ -386,6 +386,21 @@ int pthread_attr_getstacksize ( const pthread_attr_t * _attr,
    return 0;
 }
 
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
+{
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)
+    return EINVAL;
+  attr->__schedpolicy = policy;
+  return 0;
+}
+
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
+{
+  *policy = attr->__schedpolicy;
+  return 0;
+}
+
+
 /* --------------------------------------------------- 
    Helper functions for running a thread 
    and for clearing up afterwards.

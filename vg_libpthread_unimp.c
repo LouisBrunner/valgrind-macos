@@ -85,13 +85,13 @@ void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
 void pthread_attr_getdetachstate ( void )  { unimp("pthread_attr_getdetachstate"); }
 void pthread_attr_getinheritsched ( void )  { unimp("pthread_attr_getinheritsched"); }
 //void pthread_attr_getschedparam ( void )  { unimp("pthread_attr_getschedparam"); }
-void pthread_attr_getschedpolicy ( void )  { unimp("pthread_attr_getschedpolicy"); }
+//void pthread_attr_getschedpolicy ( void )  { unimp("pthread_attr_getschedpolicy"); }
 //void pthread_attr_getscope ( void )  { unimp("pthread_attr_getscope"); }
 
 //void pthread_attr_setdetachstate ( void )  { unimp("pthread_attr_setdetachstate"); }
 //void pthread_attr_setinheritsched ( void )  { unimp("pthread_attr_setinheritsched"); }
 //void pthread_attr_setschedparam ( void )  { unimp("pthread_attr_setschedparam"); }
-void pthread_attr_setschedpolicy ( void )  { unimp("pthread_attr_setschedpolicy"); }
+//void pthread_attr_setschedpolicy ( void )  { unimp("pthread_attr_setschedpolicy"); }
 //void pthread_attr_setscope ( void )  { unimp("pthread_attr_setscope"); }
 void pthread_barrier_destroy ( void )  { unimp("pthread_barrier_destroy"); }
 void pthread_barrier_init ( void )  { unimp("pthread_barrier_init"); }

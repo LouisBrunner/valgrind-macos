@@ -30,8 +30,15 @@ there.
         All memory returned by malloc/new etc is now at least
         8-byte aligned.
 
+81970   vg_alloc_ThreadState: no free slots available
+        (closed because the workaround is simple: increase
+         VG_N_THREADS, rebuild and try again.)
+
 78514   Conditional jump or move depends on uninitialized value(s)
         (a slight mishanding of FP code in memcheck)
+
+77952   pThread Support (crash) (due to initialisation-ordering probs)
+        (also 85118)
 
 80942   Addrcheck wasn't doing overlap checking as it should.
 78048   return NULL on malloc/new etc failure, instead of asserting
@@ -50,7 +57,10 @@ there.
 83573   Valgrind SIGSEGV on execve
 82999   show which cmdline option was erroneous (wishlist)
 83040   make valgrind VPATH and distcheck-clean (wishlist)
-77952   pThread Support (crash) (due to initialisation-ordering probs)
+83998   Assertion `newfd > vgPlain_max_fd' failed (see below)
+82722   Unchecked mmap in as_pad leads to mysterious failures later
+78958   memcheck seg faults while running Mozilla 
+
 
 
 Additionally there are the following changes, which are not 
@@ -92,8 +102,7 @@ connected to any bug report numbers, AFAICS:
   returns EPERM if you try and change it.  This should stop reductions
   in the soft limit causing assertions when valgrind tries to allocate
   descriptors from the reserved area.
-  (This actually came from bug #83998 although we're still waiting
-   on confirmation that the change actually fixed the bug.)
+  (This actually came from bug #83998).
 
 * Major overhaul of Cachegrind implementation.  Only user visible change
   is that cachegrind.out files are now typically 90% smaller than they

@@ -489,8 +489,6 @@ static char* get_file_clo(char* dir)
 #  undef FLEN
 }
 
-#define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
-
 static Int count_args(char* s)
 {
    Int n = 0;
@@ -499,10 +497,10 @@ static Int count_args(char* s)
       while (True) {
          // We have alternating sequences: blanks, non-blanks, blanks...
          // count the non-blanks sequences.
-         while ( ISSPACE(*cp) )         cp++;
+         while ( VG_(isspace)(*cp) )    cp++;
          if    ( !*cp )                 break;
          n++;
-         while ( !ISSPACE(*cp) && *cp ) cp++;
+         while ( !VG_(isspace)(*cp) && *cp ) cp++;
       }
    }
    return n;
@@ -516,18 +514,16 @@ static char** copy_args( char* s, char** to )
       while (True) {
          // We have alternating sequences: blanks, non-blanks, blanks...
          // copy the non-blanks sequences, and add terminating '\0'
-         while ( ISSPACE(*cp) )         cp++;
+         while ( VG_(isspace)(*cp) )    cp++;
          if    ( !*cp )                 break;
          *to++ = cp;
-         while ( !ISSPACE(*cp) && *cp ) cp++;
+         while ( !VG_(isspace)(*cp) && *cp ) cp++;
          if ( *cp ) *cp++ = '\0';            // terminate if necessary
          if (VG_STREQ(to[-1], "--")) to--;   // undo any '--' arg
       }
    }
    return to;
 }
-
-#undef ISSPACE
 
 // Augment command line with arguments from environment and .valgrindrc
 // files.

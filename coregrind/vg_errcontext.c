@@ -713,9 +713,6 @@ void VG_(show_all_errors) ( void )
 /* Get a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line. Return True if EOF was hit instead. 
 */
-
-#define VG_ISSPACE(ch) (((ch)==' ') || ((ch)=='\n') || ((ch)=='\t'))
-
 Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
 {
    Char ch;
@@ -724,7 +721,7 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
       /* First, read until a non-blank char appears. */
       while (True) {
          n = VG_(read)(fd, &ch, 1);
-         if (n == 1 && !VG_ISSPACE(ch)) break;
+         if (n == 1 && !VG_(isspace)(ch)) break;
          if (n == 0) return True;
       }
 
@@ -738,7 +735,7 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
          if (i > 0 && i == nBuf-1) i--;
          buf[i++] = ch; buf[i] = 0;
       }
-      while (i > 1 && VG_ISSPACE(buf[i-1])) { 
+      while (i > 1 && VG_(isspace)(buf[i-1])) { 
          i--; buf[i] = 0; 
       };
 

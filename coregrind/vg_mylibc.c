@@ -717,7 +717,8 @@ UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 
 Bool VG_(isspace) ( Char c )
 {
-   return (c == ' ' || c == '\n' || c == '\t' || c == 0);
+   return (c == ' '  || c == '\n' || c == '\t' || 
+           c == '\f' || c == '\v' || c == '\r');
 }
 
 Bool VG_(isdigit) ( Char c )
@@ -894,13 +895,18 @@ Int VG_(strcmp) ( const Char* s1, const Char* s2 )
    }
 }
 
+static Bool isterm ( Char c )
+{
+   return ( VG_(isspace)(c) || 0 == c );
+}
+
 
 Int VG_(strcmp_ws) ( const Char* s1, const Char* s2 )
 {
    while (True) {
-      if (VG_(isspace)(*s1) && VG_(isspace)(*s2)) return 0;
-      if (VG_(isspace)(*s1)) return -1;
-      if (VG_(isspace)(*s2)) return 1;
+      if (isterm(*s1) && isterm(*s2)) return 0;
+      if (isterm(*s1)) return -1;
+      if (isterm(*s2)) return 1;
 
       if (*(UChar*)s1 < *(UChar*)s2) return -1;
       if (*(UChar*)s1 > *(UChar*)s2) return 1;
@@ -932,9 +938,9 @@ Int VG_(strncmp_ws) ( const Char* s1, const Char* s2, Int nmax )
    Int n = 0;
    while (True) {
       if (n >= nmax) return 0;
-      if (VG_(isspace)(*s1) && VG_(isspace)(*s2)) return 0;
-      if (VG_(isspace)(*s1)) return -1;
-      if (VG_(isspace)(*s2)) return 1;
+      if (isterm(*s1) && isterm(*s2)) return 0;
+      if (isterm(*s1)) return -1;
+      if (isterm(*s2)) return 1;
 
       if (*(UChar*)s1 < *(UChar*)s2) return -1;
       if (*(UChar*)s1 > *(UChar*)s2) return 1;

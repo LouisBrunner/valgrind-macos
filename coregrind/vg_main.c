@@ -108,11 +108,9 @@ Addr VG_(shadow_end);
 
 Addr VG_(valgrind_base);	 /* valgrind's address range */
 
-// VG_(valgrind_end) has a slightly different meaning to all the other
-// VG_(*_end) vars -- ie. it names the last byte, whereas the others
-// go one byte past the end.
-
-Addr VG_(valgrind_end);
+// Note that VG_(valgrind_last) names the last byte of the section, whereas
+// the VG_(*_end) vars name the byte one past the end of the section.
+Addr VG_(valgrind_last);
 
 vki_rlimit VG_(client_rlimit_data);
 
@@ -403,12 +401,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    addr_t client_size, shadow_size;
 
    VG_(valgrind_base)  = (addr_t)&kickstart_base;
-
-   // VG_(valgrind_end) has a slightly different meaning to all the other
-   // VG_(*_end) vars -- ie. it names the last byte, whereas the others
-   // go one byte past the end.
-
-   VG_(valgrind_end)   = ROUNDUP(argc_addr, 0x10000) - 1; // stack
+   VG_(valgrind_last)  = ROUNDUP(argc_addr, 0x10000) - 1; // stack
 
    // This gives the client the largest possible address space while
    // taking into account the tool's shadow needs.
@@ -434,14 +427,14 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
          "shadow_base        %8x (%dMB)\n"
          "shadow_end         %8x\n"
          "valgrind_base      %8x (%dMB)\n"
-         "valgrind_end       %8x\n",
+         "valgrind_last      %8x\n",
          VG_(client_base),       SEGSIZE(client_base,       client_mapbase),
          VG_(client_mapbase),    SEGSIZE(client_mapbase,    client_end),
          VG_(client_end),        SEGSIZE(client_end,        shadow_base),
          VG_(shadow_base),       SEGSIZE(shadow_base,       shadow_end),
          VG_(shadow_end),
-         VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_end),
-         VG_(valgrind_end)
+         VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_last),
+         VG_(valgrind_last)
       );
 
 #undef SEGSIZE
@@ -2277,7 +2270,7 @@ static void build_valgrind_map_callback
       symbols.  This is so we know where the free space is before we
       start allocating more memory (note: heap is OK, it's just mmap
       which is the problem here). */
-   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end)) {
+   if (start >= VG_(valgrind_base) && (start+size-1) <= VG_(valgrind_last)) {
       flags |= SF_VALGRIND;
       VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
    }
@@ -2310,7 +2303,7 @@ static void build_segment_map_callback
    if (filename != NULL)
       flags |= SF_FILE;
 
-   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end))
+   if (start >= VG_(valgrind_base) && (start+size-1) <= VG_(valgrind_last))
       flags |= SF_VALGRIND;
 
    VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
@@ -2438,7 +2431,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 		 | and mappings            |
                  -                         -
                  | valgrind stack ^^^^^^^^^|
-  valgrind_end   +-------------------------+
+  valgrind_last  +-------------------------+
 		 : kernel                  :
 
   Nb: Before we can do general allocations with VG_(arena_malloc)() and

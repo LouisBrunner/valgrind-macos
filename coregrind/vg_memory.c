@@ -493,7 +493,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    static const Bool debug = False || mem_debug;
    Segment *s;
    Addr ret;
-   Addr limit = (for_client ? VG_(client_end) : VG_(valgrind_end));
+   Addr limit = (for_client ? VG_(client_end)-1 : VG_(valgrind_last));
 
    if (addr == 0)
       addr = for_client ? VG_(client_mapbase) : VG_(valgrind_base);
@@ -537,7 +537,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
 	 VG_(printf)("  s == NULL\n");
    }
 
-   if ((limit - len) < ret)
+   if (((limit - len)+1) < ret)
       ret = 0;			/* no space */
    else
       ret += VKI_BYTES_PER_PAGE; /* skip leading redzone */
@@ -550,7 +550,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
 }
 
 /* Pad the entire process address space, from VG_(client_base)
-   to VG_(valgrind_end) by creating an anonymous and inaccessible
+   to VG_(valgrind_last) by creating an anonymous and inaccessible
    mapping over any part of the address space which is not covered
    by an entry in the segment list.
 
@@ -572,7 +572,7 @@ void VG_(pad_address_space)(void)
    args[4] = -1;
    args[5] = 0;
    
-   while (s && addr < VG_(valgrind_end)) {
+   while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
          args[0] = (UInt)addr;
          args[1] = s->addr - addr;
@@ -584,9 +584,9 @@ void VG_(pad_address_space)(void)
       s = VG_(SkipNode_Next)(&sk_segments, s);
    }
 
-   if (addr < VG_(valgrind_end)) {
+   if (addr <= VG_(valgrind_last)) {
       args[0] = (UInt)addr;
-      args[1] = VG_(valgrind_end) - addr;
+      args[1] = VG_(valgrind_last) - addr + 1;
 
       ret = VG_(do_syscall)(__NR_mmap, (UInt)args);
    }
@@ -602,7 +602,7 @@ void VG_(unpad_address_space)(void)
    Segment *s = VG_(SkipNode_First)(&sk_segments);
    Int ret;
 
-   while (s && addr < VG_(valgrind_end)) {
+   while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
          ret = VG_(do_syscall)(__NR_munmap, (UInt)addr, s->addr - addr);
       }
@@ -611,8 +611,8 @@ void VG_(unpad_address_space)(void)
       s = VG_(SkipNode_Next)(&sk_segments, s);
    }
 
-   if (addr < VG_(valgrind_end)) {
-      ret = VG_(do_syscall)(__NR_munmap, (UInt)addr, VG_(valgrind_end) - addr);
+   if (addr <= VG_(valgrind_last)) {
+      ret = VG_(do_syscall)(__NR_munmap, addr, (VG_(valgrind_last) - addr) + 1);
    }
 
    return;
@@ -793,7 +793,7 @@ Bool VG_(is_shadow_addr)(Addr a)
 
 Bool VG_(is_valgrind_addr)(Addr a)
 {
-   return a >= VG_(valgrind_base) && a < VG_(valgrind_end);
+   return a >= VG_(valgrind_base) && a <= VG_(valgrind_last);
 }
 
 Addr VG_(get_client_base)(void)

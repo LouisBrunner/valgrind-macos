@@ -1245,7 +1245,7 @@ extern Addr VG_(brk_limit);	/* current brk */
 extern Addr VG_(shadow_base);	/* tool's shadow memory */
 extern Addr VG_(shadow_end);
 extern Addr VG_(valgrind_base);	/* valgrind's address range */
-extern Addr VG_(valgrind_end);
+extern Addr VG_(valgrind_last); // Nb: last byte, rather than one past the end
 
 extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
 

@@ -284,7 +284,7 @@ void* VG_(mmap)( void* start, UInt length,
       if (flags & VKI_MAP_CLIENT) {
          vg_assert(VG_(client_base) <= res && res+length < VG_(client_end));
       } else {
-         vg_assert(VG_(valgrind_base) <= res && res+length < VG_(valgrind_end));
+         vg_assert(VG_(valgrind_base) <= res && res+length <= VG_(valgrind_last));
       }
 
       sf_flags |= SF_MMAP;
@@ -1092,7 +1092,7 @@ static inline ExeContext *get_real_execontext(Addr ret)
    Addr stacktop, sigstack_low, sigstack_high;
 
    asm("movl %%ebp, %0; movl %%esp, %1" : "=r" (ebp), "=r" (esp));
-   stacktop = VG_(valgrind_end);
+   stacktop = VG_(valgrind_last);
    VG_(get_sigstack_bounds)( &sigstack_low, &sigstack_high );
    if (esp >= sigstack_low && esp < sigstack_high)
       stacktop = sigstack_high;
@@ -1663,7 +1663,7 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
                  VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 0, -1, 0);
 
    if (p != ((void*)(-1))) {
-      vg_assert(p >= (void*)VG_(valgrind_base) && p < (void*)VG_(valgrind_end));
+      vg_assert(p >= (void*)VG_(valgrind_base) && p <= (void*)VG_(valgrind_last));
       tot_alloc += (UInt)nBytes;
       if (0)
          VG_(printf)(

@@ -92,6 +92,9 @@ static JumpPred static_pred(Condcode cond, Int forward)
 
 static const Char *predstr(JumpPred p)
 {
+   if (!VG_(clo_branchpred))
+      return "";
+
    switch(p) {
    default:
    case JP_NONE:	return "";

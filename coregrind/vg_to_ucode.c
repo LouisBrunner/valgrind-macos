@@ -3810,6 +3810,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op2_E_G ( cb, sorb, ADC, True, sz, eip, "adc" );
       break;
 
+   case 0x1A: /* SBB Eb,Gb */
+      eip = dis_op2_E_G ( cb, sorb, SBB, True, 1, eip, "sbb" );
+      break;
    case 0x1B: /* SBB Ev,Gv */
       eip = dis_op2_E_G ( cb, sorb, SBB, True, sz, eip, "sbb" );
       break;

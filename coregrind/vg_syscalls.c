@@ -4665,6 +4665,19 @@ PRE(setrlimit)
    }
 }
 
+PRE(settimeofday)
+{
+   /* int settimeofday(const struct timeval *tv, const struct timezone *tz); */
+   MAYBE_PRINTF("settimeofday ( %p, %p )\n",arg1,arg2);
+   SYSCALL_TRACK( pre_mem_read, tid, "settimeofday(tv)", arg1, 
+		  sizeof(struct vki_timeval) );
+   if (arg2 != 0) {
+      SYSCALL_TRACK( pre_mem_read, tid, "settimeofday(tz)", arg2, 
+		     sizeof(struct vki_timezone) );
+      /* maybe should warn if tz->tz_dsttime is non-zero? */
+   }
+}
+
 PRE(setuid)
 {
    /* int setuid(uid_t uid); */
@@ -6081,6 +6094,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(setreuid32,		0),
    SYSB_(setreuid,		0),
    SYSB_(setrlimit,		0),
+   SYSB_(settimeofday,		0),
    SYSB_(setuid32,		0),
    SYSB_(setuid,		0),
    SYSBA(socketcall,		MayBlock),

@@ -5446,11 +5446,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
     }
 
     case 0x06: /* PUSH %ES */
+    case 0x16: /* PUSH %SS */
     case 0x1E: /* PUSH %DS */
     {
        Int sreg = INVALID_TEMPREG;
        switch(opc) {
 	   case 0x06: sreg = R_ES; break;
+	   case 0x16: sreg = R_SS; break;
            case 0x1E: sreg = R_DS; break;
        }
  

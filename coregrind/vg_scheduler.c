@@ -1039,8 +1039,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          Handle non-trivial thread requests, mostly pthread stuff. */
 
       /* Ok, we've fallen out of the dispatcher for a
-         non-completely-trivial reason. First, update basic-block
-         counters. */
+         non-completely-trivial reason. */
 
       if (0 && trc != VG_TRC_INNER_FASTMISS)
          VG_(message)(Vg_DebugMsg, "thread %d:   completed %d bbs, trc %d", 

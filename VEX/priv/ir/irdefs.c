@@ -286,14 +286,16 @@ void ppIROp ( IROp op )
       case Iop_CmpLE64F0x2: vex_printf("CmpLE64F0x2"); return;
       case Iop_CmpUN64F0x2: vex_printf("CmpUN64F0x2"); return;
 
-      case Iop_64HLto128: vex_printf("64HLto128"); return;
       case Iop_128to64:   vex_printf("128to64");   return;
       case Iop_128HIto64: vex_printf("128HIto64"); return;
+      case Iop_64HLto128: vex_printf("64HLto128"); return;
+
+      case Iop_64Uto128:   vex_printf("64Uto128"); return;
+      case Iop_Set128lo64: vex_printf("Set128lo64"); return;
 
       case Iop_32Uto128:   vex_printf("32Uto128"); return;
-      case Iop_64Uto128:   vex_printf("64Uto128"); return;
+      case Iop_128to32:    vex_printf("128to32"); return;
       case Iop_Set128lo32: vex_printf("Set128lo32"); return;
-      case Iop_Set128lo64: vex_printf("Set128lo64"); return;
 
       case Iop_And128:     vex_printf("And128"); return;
       case Iop_Or128:      vex_printf("Or128");  return;
@@ -1217,6 +1219,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_128to64: case Iop_128HIto64: 
          UNARY(Ity_I64, Ity_V128);
 
+      case Iop_128to32:    UNARY(Ity_I32, Ity_V128);
       case Iop_32Uto128:   UNARY(Ity_V128, Ity_I32);
       case Iop_64Uto128:   UNARY(Ity_V128, Ity_I64);
       case Iop_Set128lo32: BINARY(Ity_V128, Ity_V128,Ity_I32);

@@ -1130,6 +1130,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
+         case Iop_128to32: {
+            HReg      dst  = newVRegI(env);
+            HReg      vec  = iselVecExpr(env, e->Iex.Unop.arg);
+            X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+            sub_from_esp(env, 16);
+            addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
+            addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(esp0), dst ));
+            add_to_esp(env, 16);
+            return dst;
+         }
+
          case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:

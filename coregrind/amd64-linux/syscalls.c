@@ -1040,11 +1040,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENXY(__NR_getgroups,         sys_getgroups),      // 115 
    GENX_(__NR_setgroups,         sys_setgroups),      // 116 
-   //   (__NR_setresuid,         sys_setresuid),      // 117 
-   //   (__NR_getresuid,         sys_getresuid),      // 118 
-   //   (__NR_setresgid,         sys_setresgid),      // 119 
+   LINX_(__NR_setresuid,         sys_setresuid),      // 117 
+   LINXY(__NR_getresuid,         sys_getresuid),      // 118 
+   LINX_(__NR_setresgid,         sys_setresgid),      // 119 
 
-   //   (__NR_getresgid,         sys_getresgid),      // 120 
+   LINXY(__NR_getresgid,         sys_getresgid),      // 120 
    //   (__NR_getpgid,           sys_getpgid),        // 121 
    //   (__NR_setfsuid,          sys_setfsuid),       // 122 
    //   (__NR_setfsgid,          sys_setfsgid),       // 123 
@@ -1070,13 +1070,13 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_getpriority,             sys_getpriority),             // 140 
    //   (__NR_setpriority,             sys_setpriority),             // 141 
-   //   (__NR_sched_setparam,          sys_sched_setparam),          // 142 
-   //   (__NR_sched_getparam,          sys_sched_getparam),          // 143 
-   //   (__NR_sched_setscheduler,      sys_sched_setscheduler),      // 144 
+   GENXY(__NR_sched_setparam,          sys_sched_setparam),          // 142 
+   GENXY(__NR_sched_getparam,          sys_sched_getparam),          // 143 
+   GENX_(__NR_sched_setscheduler,      sys_sched_setscheduler),      // 144 
 
-   //   (__NR_sched_getscheduler,      sys_sched_getscheduler),      // 145 
-   //   (__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
-   //   (__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
+   GENX_(__NR_sched_getscheduler,      sys_sched_getscheduler),      // 145 
+   GENX_(__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
+   GENX_(__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
    //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
    //   (__NR_mlock,                   sys_mlock),                   // 149 
 

@@ -147,6 +147,9 @@ static void do__cleanup_push ( ThreadId tid, CleanupEntry* cu );
 static void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu );
 static void do__set_canceltype ( ThreadId tid, Int type );
 
+static void do__testcancel ( ThreadId tid );
+
+
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
@@ -728,6 +731,10 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
       case VG_USERREQ__CLEANUP_POP:
          do__cleanup_pop ( tid, (CleanupEntry*)(arg[1]) );
  	 return True;
+
+      case VG_USERREQ__TESTCANCEL:
+         do__testcancel ( tid );
+         return True;
 
       default:
          /* Too hard; wimp out. */
@@ -2786,6 +2793,8 @@ void do__get_key_destr_and_spec ( ThreadId tid,
    }
    cu->fn = vg_thread_keys[key].destructor;
    cu->arg = VG_(threads)[tid].specifics[key];
+   if (VG_(clo_instrument))
+      VGM_(make_readable)( (Addr)cu, sizeof(CleanupEntry) );
    SET_EDX(tid, 0);
 }
 

@@ -879,14 +879,19 @@ int pthread_cancel(pthread_t thread)
    return res;
 }
 
-__inline__
-void pthread_testcancel(void)
+static __inline__
+void __my_pthread_testcancel(void)
 {
    int res;
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__TESTCANCEL,
                            0, 0, 0, 0);
    assert(res == 0);
+}
+
+void pthread_testcancel ( void )
+{
+   __my_pthread_testcancel();
 }
 
 
@@ -1266,6 +1271,7 @@ int sigaction(int signum,
               const struct sigaction *act,  
               struct  sigaction *oldact)
 {
+   __my_pthread_testcancel();
 #  ifdef GLIBC_2_1
    return __sigaction(signum, act, oldact);
 #  else
@@ -1283,6 +1289,7 @@ int  connect(int  sockfd,
              const  struct  sockaddr  *serv_addr, 
              socklen_t addrlen)
 {
+   __my_pthread_testcancel();
    return __libc_connect(sockfd, serv_addr, addrlen);
 }
 
@@ -1292,6 +1299,7 @@ int __libc_fcntl(int fd, int cmd, long arg);
 __attribute__((weak))
 int fcntl(int fd, int cmd, long arg)
 {
+   __my_pthread_testcancel();
    return __libc_fcntl(fd, cmd, arg);
 }
 
@@ -1301,6 +1309,7 @@ ssize_t __libc_write(int fd, const void *buf, size_t count);
 __attribute__((weak))
 ssize_t write(int fd, const void *buf, size_t count)
 {
+   __my_pthread_testcancel();
    return __libc_write(fd, buf, count);
 }
 
@@ -1310,6 +1319,7 @@ ssize_t __libc_read(int fd, void *buf, size_t count);
 __attribute__((weak))
 ssize_t read(int fd, void *buf, size_t count)
 {
+   __my_pthread_testcancel();
    return __libc_read(fd, buf, count);
 }
 
@@ -1319,6 +1329,7 @@ int __libc_open64(const char *pathname, int flags, mode_t mode);
 __attribute__((weak))
 int open64(const char *pathname, int flags, mode_t mode)
 {
+   __my_pthread_testcancel();
    return __libc_open64(pathname, flags, mode);
 }
 
@@ -1328,6 +1339,7 @@ int __libc_open(const char *pathname, int flags, mode_t mode);
 __attribute__((weak))
 int open(const char *pathname, int flags, mode_t mode)
 {
+   __my_pthread_testcancel();
    return __libc_open(pathname, flags, mode);
 }
 
@@ -1337,6 +1349,7 @@ int __libc_close(int fd);
 __attribute__((weak))
 int close(int fd)
 {
+   __my_pthread_testcancel();
    return __libc_close(fd);
 }
 
@@ -1346,7 +1359,9 @@ int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 __attribute__((weak))
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
+   __my_pthread_testcancel();
    wait_for_fd_to_be_readable_or_erring(s);
+   __my_pthread_testcancel();
    return __libc_accept(s, addr, addrlen);
 }
 
@@ -1355,6 +1370,7 @@ extern
 pid_t __libc_fork(void);
 pid_t __fork(void)
 {
+   __my_pthread_testcancel();
    return __libc_fork();
 }
 
@@ -1364,6 +1380,7 @@ pid_t __libc_waitpid(pid_t pid, int *status, int options);
 __attribute__((weak))
 pid_t waitpid(pid_t pid, int *status, int options)
 {
+   __my_pthread_testcancel();
    return __libc_waitpid(pid, status, options);
 }
 
@@ -1373,6 +1390,7 @@ int __libc_nanosleep(const struct timespec *req, struct timespec *rem);
 __attribute__((weak))
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
+   __my_pthread_testcancel();
    return __libc_nanosleep(req, rem);
 }
 
@@ -1382,6 +1400,7 @@ int __libc_fsync(int fd);
 __attribute__((weak))
 int fsync(int fd)
 {
+   __my_pthread_testcancel();
    return __libc_fsync(fd);
 }
 
@@ -1391,6 +1410,7 @@ off_t __libc_lseek(int fildes, off_t offset, int whence);
 __attribute__((weak))
 off_t lseek(int fildes, off_t offset, int whence)
 {
+   __my_pthread_testcancel();
    return __libc_lseek(fildes, offset, whence);
 }
 
@@ -1400,6 +1420,7 @@ __off64_t __libc_lseek64(int fildes, __off64_t offset, int whence);
 __attribute__((weak))
 __off64_t lseek64(int fildes, __off64_t offset, int whence)
 {
+   __my_pthread_testcancel();
    return __libc_lseek64(fildes, offset, whence);
 }
 
@@ -1410,6 +1431,7 @@ ssize_t __libc_pread64 (int __fd, void *__buf, size_t __nbytes,
 ssize_t __pread64 (int __fd, void *__buf, size_t __nbytes,
                    __off64_t __offset)
 {
+   __my_pthread_testcancel();
    return __libc_pread64(__fd, __buf, __nbytes, __offset);
 }
 
@@ -1420,6 +1442,7 @@ ssize_t __libc_pwrite64 (int __fd, const void *__buf, size_t __nbytes,
 ssize_t __pwrite64 (int __fd, const void *__buf, size_t __nbytes,
                    __off64_t __offset)
 {
+   __my_pthread_testcancel();
    return __libc_pwrite64(__fd, __buf, __nbytes, __offset);
 }
 
@@ -1429,6 +1452,7 @@ ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset);
 __attribute__((weak))
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
+   __my_pthread_testcancel();
    return __libc_pwrite(fd, buf, count, offset);
 }
 
@@ -1438,6 +1462,7 @@ ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset);
 __attribute__((weak))
 ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 {
+   __my_pthread_testcancel();
    return __libc_pread(fd, buf, count, offset);
 }
 
@@ -1447,6 +1472,7 @@ void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
 /* not weak: __attribute__((weak)) */
 void longjmp(jmp_buf env, int val)
 {
+   __my_pthread_testcancel();
    __libc_longjmp(env, val);
 }
 
@@ -1456,6 +1482,7 @@ int __libc_send(int s, const void *msg, size_t len, int flags);
 __attribute__((weak))
 int send(int s, const void *msg, size_t len, int flags)
 {
+   __my_pthread_testcancel();
    return __libc_send(s, msg, len, flags);
 }
 
@@ -1465,6 +1492,7 @@ int __libc_recv(int s, void *buf, size_t len, int flags);
 __attribute__((weak))
 int recv(int s, void *buf, size_t len, int flags)
 {
+   __my_pthread_testcancel();
    return __libc_recv(s, buf, len, flags);
 }
 
@@ -1474,6 +1502,7 @@ int __libc_sendmsg(int s, const struct msghdr *msg, int flags);
 __attribute__((weak))
 int sendmsg(int s, const struct msghdr *msg, int flags)
 {
+   __my_pthread_testcancel();
    return __libc_sendmsg(s, msg, flags);
 }
 
@@ -1485,6 +1514,7 @@ __attribute__((weak))
 int recvfrom(int s, void *buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen)
 {
+   __my_pthread_testcancel();
    return __libc_recvfrom(s, buf, len, flags, from, fromlen);
 }
 
@@ -1496,6 +1526,7 @@ __attribute__((weak))
 int sendto(int s, const void *msg, size_t len, int flags, 
            const struct sockaddr *to, socklen_t tolen)
 {
+   __my_pthread_testcancel();
    return __libc_sendto(s, msg, len, flags, to, tolen);
 }
 
@@ -1505,6 +1536,7 @@ int __libc_system(const char* str);
 __attribute__((weak))
 int system(const char* str)
 {
+   __my_pthread_testcancel();
    return __libc_system(str);
 }
 
@@ -1514,6 +1546,7 @@ pid_t __libc_wait(int *status);
 __attribute__((weak))
 pid_t wait(int *status)
 {
+   __my_pthread_testcancel();
    return __libc_wait(status);
 }
 
@@ -1523,6 +1556,7 @@ int __libc_msync(const void *start, size_t length, int flags);
 __attribute__((weak))
 int msync(const void *start, size_t length, int flags)
 {
+   __my_pthread_testcancel();
    return __libc_msync(start, length, flags);
 }
 
@@ -1638,6 +1672,8 @@ int select ( int n,
    struct vki_timeval  t_now;
    struct vki_timeval  zero_timeout;
    struct vki_timespec nanosleep_interval;
+
+   __my_pthread_testcancel();
 
    /* gcc's complains about ms_end being used uninitialised -- classic
       case it can't understand, where ms_end is both defined and used
@@ -1760,6 +1796,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
    int                 res, i;
    struct vki_timespec nanosleep_interval;
 
+   __my_pthread_testcancel();
    ensure_valgrind("poll");
 
    /* Detect the current time and simultaneously find out if we are

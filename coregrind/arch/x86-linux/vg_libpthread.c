@@ -2180,6 +2180,22 @@ int my_do_syscall3 ( int syscallno,
    return __res;
 }
 
+static inline
+int my_do_syscall5 ( int syscallno, 
+                     int arg1, int arg2, int arg3, int arg4, int arg5 )
+{ 
+   int __res;
+   __asm__ volatile ("int $0x80"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "b" (arg1),
+                       "c" (arg2),
+                       "d" (arg3),
+                       "S" (arg4),
+                       "D" (arg5));
+   return __res;
+}
+
 static
 int do_syscall_select( int n, 
                        vki_fd_set* readfds, 
@@ -3034,6 +3050,96 @@ pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attr, int pshared)
 
   return 0;
 }
+
+
+/* ---------------------------------------------------------------------
+   Make SYSV IPC not block everything
+   ------------------------------------------------------------------ */
+
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <asm/ipc.h>		/* for ipc_kludge */
+
+static inline int sys_ipc(unsigned call, int first, int second, int third, void *ptr)
+{
+   return my_do_syscall5(__NR_ipc, call, first, second, third, (int)ptr);
+}
+
+/* Turn a blocking msgsnd() into a polling non-blocking one, so that
+   other threads make progress */
+int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
+{
+   struct vki_timespec nanosleep_interval;
+   int err;
+
+   ensure_valgrind("msgsnd");
+
+   nanosleep_interval.tv_sec  = 0;
+   nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
+
+   if (msgflg & IPC_NOWAIT) {
+      /* If we aren't blocking anyway, just do it */
+      err = sys_ipc(11, msgid, msgsz, msgflg, (void *)msgp);
+   } else {
+      /* Otherwise poll on the queue to let other things run */
+      for(;;) {
+	 err = sys_ipc(11, msgid, msgsz, msgflg | IPC_NOWAIT, (void *)msgp);
+
+	 if (err != -EAGAIN)
+	    break;
+
+	 (void)my_do_syscall2(__NR_nanosleep, 
+			      (int)(&nanosleep_interval), (int)NULL);
+      }  
+   }
+
+   if (is_kerror(err)) {
+      *(__errno_location()) = -err;
+      return -1;
+   }
+   return 0;
+}
+
+/* Turn a blocking msgrcv() into a polling non-blocking one, so that
+   other threads make progress */
+int msgrcv( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg )
+{
+   struct vki_timespec nanosleep_interval;
+   int err;
+   struct ipc_kludge tmp;
+
+   ensure_valgrind("msgrcv");
+
+   nanosleep_interval.tv_sec  = 0;
+   nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
+
+   tmp.msgp = msgp;
+   tmp.msgtyp = msgtyp;
+
+   if (msgflg & IPC_NOWAIT) {
+      /* If we aren't blocking anyway, just do it */
+      err = sys_ipc(12, msqid, msgsz, msgflg, &tmp );
+   } else {
+      /* Otherwise poll on the queue to let other things run */
+      for(;;) {
+	 err = sys_ipc(12, msqid, msgsz, msgflg | IPC_NOWAIT, &tmp );
+
+	 if (err != -ENOMSG)
+	    break;
+
+	 (void)my_do_syscall2(__NR_nanosleep, 
+			      (int)(&nanosleep_interval), (int)NULL);
+      }  
+   }
+   
+   if (is_kerror(err)) {
+      *(__errno_location()) = -err;
+      return -1;
+   }
+
+   return 0;
+}
+
 
 
 /* ---------------------------------------------------------------------

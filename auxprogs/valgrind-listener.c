@@ -366,8 +366,9 @@ int main (int argc, char** argv)
  
             if (res == 0) {
                /* the connection has been closed. */
+               close(conn_pollfd[i].fd);
                /* this fd has been closed or otherwise gone bad; forget
-                about it. */
+                 about it. */
                for (k = 0; k < M_CONNECTIONS; k++)
                   if (conn_fd[k] == conn_pollfd[i].fd) 
                      break;

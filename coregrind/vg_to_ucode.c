@@ -6728,6 +6728,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          t2 = newTemp(cb);
          t3 = newTemp(cb);
          uInstr0(cb, CALLM_S, 0);
+         // Nb: even though these args aren't used by RDTSC_helper, need
+         // them to be defined (for Memcheck).  The TempRegs pushed must
+         // also be distinct.
          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
          uLiteral(cb, 0);
          uInstr1(cb, PUSH,  4, TempReg, t1);

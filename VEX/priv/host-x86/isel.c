@@ -333,7 +333,7 @@ void doHelperCall ( ISelEnv* env,
                     Bool passBBP, IRCallee* cee, IRExpr** args )
 {
    HReg argregs[3];
-   Int n_args, n_arg_ws, stack_limit, i, argreg;
+   Int  not_done_yet, n_args, n_arg_ws, stack_limit, i, argreg;
 
    /* Marshal args for a call, do the call, and clear the stack.
       Complexities to consider:
@@ -354,16 +354,21 @@ void doHelperCall ( ISelEnv* env,
    n_args = n_arg_ws = 0;
    while (args[n_args]) n_args++;
 
+   not_done_yet = n_args;
+   if (passBBP)
+      not_done_yet++;
+
    stack_limit = cee->regparms;
    if (cee->regparms > 0 && passBBP) stack_limit--;
 
-   /* Push the stack-passed args */
-   for (i = n_args-1; i >= stack_limit; i--)
+   /* Push (R to L) the stack-passed args, [n_args-1 .. stack_limit] */
+   for (i = n_args-1; i >= stack_limit; i--) {
       n_arg_ws += pushArg(env, args[i]);
+      not_done_yet--;
+   }
 
    /* args [stack_limit-1 .. 0] and possibly %ebp are to be passed in
       registers. */
-   vassert(stack_limit + (passBBP ? 1 : 0) == cee->regparms);
 
    if (cee->regparms > 0) {
       /* deal with regparms, not forgetting %ebp if needed. */
@@ -379,18 +384,23 @@ void doHelperCall ( ISelEnv* env,
          addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
                                        iselIntExpr_RMI(env, args[i]),
                                        argregs[argreg]));
+         not_done_yet--;
       }
       if (passBBP) {
          vassert(argreg == 1);
          addInstr(env, mk_MOVsd_RR( hregX86_EBP(), argregs[0]));
+         not_done_yet--;
       }
    } else {
       /* No regparms.  Heave %ebp on the stack if needed. */
       if (passBBP) {
          addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
          n_arg_ws++;
+         not_done_yet--;
       }
    }
+
+   vassert(not_done_yet == 0);
 
    /* call the helper, and get the args off the stack afterwards. */
    callHelperAndClearArgs( env, cee, n_arg_ws );

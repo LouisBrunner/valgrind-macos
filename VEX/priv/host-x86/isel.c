@@ -724,7 +724,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    DECLARE_PATTERN(p_32to1_then_1Uto8);
 
    IRType ty = typeOfIRExpr(env->type_env,e);
-   vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
+   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    switch (e->tag) {
 
@@ -1181,7 +1181,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- CCALL --------- */
    case Iex_CCall: {
       HReg    dst = newVRegI(env);
-      vassert(ty == Ity_I32);
+      vassert(ty == e->Iex.CCall.retty);
 
       /* be very restrictive for now.  Only 32/64-bit ints allowed
          for args, and 32 bits for return type. */

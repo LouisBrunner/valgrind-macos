@@ -3634,6 +3634,20 @@ POST(munmap)
    munmap_segment( arg1, arg2 );
 }
 
+PRE(mincore)
+{
+   /* int mincore(void *start, size_t length, unsigned char *vec); */
+   MAYBE_PRINTF("mincore ( %p, %d, %p )\n", arg1,arg2,arg3);
+   SYSCALL_TRACK(pre_mem_write, tid, "mincore(vec)",
+                 arg3, (arg2 + 4096 - 1) / 4096);
+}
+
+POST(mincore)
+{
+   if (!VG_(is_kerror)(res))
+      VG_TRACK( post_mem_write, arg3, (arg2 + 4096 - 1) / 4096 );  
+}
+
 PRE(nanosleep)
 {
          /* int nanosleep(const struct timespec *req, struct timespec *rem); */
@@ -5020,6 +5034,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(mkdir,			True),
    SYSBA(mprotect,		False),
    SYSBA(munmap,		False),
+   SYSBA(mincore,		False),
    SYSBA(nanosleep,		True),
    SYSB_(_newselect,		True),
    SYSBA(open,			True),

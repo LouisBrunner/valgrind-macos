@@ -847,7 +847,7 @@ void buf_and_len_post_check( ThreadId tid, Int res,
 static Addr do_brk(Addr newbrk)
 {
    Addr ret = VG_(brk_limit);
-   static const Bool debug = True; //False;
+   static const Bool debug = False;
    Segment *seg;
    Addr current, newaddr;
 
@@ -856,7 +856,7 @@ static Addr do_brk(Addr newbrk)
       VG_(printf)("\ndo_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
 		  VG_(brk_base), VG_(brk_limit), newbrk);
 
-   show_segments("in_brk");
+   if (0) show_segments("in_brk");
 
    if (newbrk < VG_(brk_base) || newbrk >= VG_(client_end))
       return VG_(brk_limit);

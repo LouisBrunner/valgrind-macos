@@ -35,7 +35,7 @@
 /* Define to debug the memory-leak-detector. */
 /* #define VG_DEBUG_LEAKCHECK */
 
-static const Bool mem_debug = True; //False;
+static const Bool mem_debug = False;
 
 /*--------------------------------------------------------------*/
 /*---                                                        ---*/
@@ -701,7 +701,8 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 
    if (debug)
       VG_(printf)("\nmprotect_range(%p, %d, %x)\n", a, len, prot);
-   show_segments( "mprotect_range(before)" );
+
+   if (0) show_segments( "mprotect_range(before)" );
 
    /* Everything must be page-aligned */
    vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
@@ -713,7 +714,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
    r = find_segment(a);
    vg_assert(r != -1);
    segments[r].prot = prot;
-   show_segments( "mprotect_range(after)");
+   if (0) show_segments( "mprotect_range(after)");
 
    return;
 
@@ -749,6 +750,14 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
    SizeT hole_len;
 
    Bool fixed;
+
+   if (debug) {
+      VG_(printf)("\n\n");
+      VG_(printf)("find_map_space(%p, %d, %d) ...\n",
+                  addr, len, for_client);
+   }
+
+   if (0) show_segments("find_map_space: start");
 
    if (addr == 0) {
       fixed = False;
@@ -844,7 +853,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
       ret = 0; /* not found */
 
    if (debug)
-      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n",
+      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n\n",
                   addr, len, for_client, ret);
 
    return ret;
@@ -885,7 +894,7 @@ vg_assert(0);
       ret += VKI_PAGE_SIZE; /* skip leading redzone */
 
    if (debug)
-      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n",
+      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n\n",
 		  addr, len, for_client, ret);
    
    return ret;

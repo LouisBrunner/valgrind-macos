@@ -2363,16 +2363,20 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                     */
                } 
                else if (/* size == 0 || */ dir == _IOC_NONE) {
-                  VG_(message)(Vg_UserMsg, 
-                     "Warning: noted but unhandled ioctl 0x%x"
-                     " with no size/direction hints",
-                     arg2); 
-                  VG_(message)(Vg_UserMsg, 
-                     "   This could cause spurious value errors"
-                     " to appear.");
-                  VG_(message)(Vg_UserMsg, 
-                     "   See README_MISSING_SYSCALL_OR_IOCTL for guidance on"
-                     " writing a proper wrapper." );
+                  static Int moans = 3;
+                  if (moans > 0) {
+                     moans--;
+                     VG_(message)(Vg_UserMsg, 
+                        "Warning: noted but unhandled ioctl 0x%x"
+                        " with no size/direction hints",
+                        arg2); 
+                     VG_(message)(Vg_UserMsg, 
+                        "   This could cause spurious value errors"
+                        " to appear.");
+                     VG_(message)(Vg_UserMsg, 
+                        "   See README_MISSING_SYSCALL_OR_IOCTL for "
+                        "guidance on writing a proper wrapper." );
+                  }
                } else {
                   if ((dir & _IOC_WRITE) && size > 0)
                      SYSCALL_TRACK( pre_mem_read,tst, "ioctl(generic)", 

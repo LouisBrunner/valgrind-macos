@@ -31,6 +31,18 @@
 
 #include "core.h"
 
+enum PXState
+{
+   PXS_BAD = -1,
+   PXS_WaitReq,      /* waiting for a request */
+   PXS_RunSyscall,   /* running a syscall */
+   PXS_IntReply,     /* request interrupted - need to send reply */
+   PXS_SysDone,      /* small window between syscall
+                        complete and results written out */
+   PXS_SigACK,       /* waiting for a signal ACK */
+};
+
+
 enum RequestType {
    PX_BAD = -1,
    PX_SetSigmask,		/* sched->proxy; proxy->sched */
@@ -300,7 +312,7 @@ void VG_(proxy_handlesig)(const vki_siginfo_t *siginfo, Addr ip, Int sysnum)
 
    /* First look to see if the EIP is within our interesting ranges
       near a syscall to work out what should happen. */
-   if (vga_sys_before <= ip && ip <= vga_sys_restarted) {
+   if (VGA_(sys_before) <= ip && ip <= VGA_(sys_restarted)) {
       /* We are before the syscall actually ran, or it did run and
 	 wants to be restarted.  Either way, set the return code to
 	 indicate a restart.  This is not really any different from
@@ -308,7 +320,7 @@ void VG_(proxy_handlesig)(const vki_siginfo_t *siginfo, Addr ip, Int sysnum)
 	 the proxy and machine state here. */
       vg_assert(px->state == PXS_RunSyscall);
       vg_assert(SYSCALL_RET(px->tst->arch) == -VKI_ERESTARTSYS);
-   } else if (vga_sys_after <= ip && ip <= vga_sys_done) {
+   } else if (VGA_(sys_after) <= ip && ip <= VGA_(sys_done)) {
       /* We're after the syscall.  Either it was interrupted by the
 	 signal, or the syscall completed normally.  In either case
          the usual register contains the correct syscall return value, and
@@ -336,6 +348,30 @@ static Bool recv_reply(struct PX_Reply *reply)
 
    return VG_(read)(result_recv, reply, size) == size;
 }
+
+/* Run a syscall for a particular thread, getting the arguments from
+   the thread's registers, and returning the result in the thread's
+   eax.
+
+   Assumes that the only thread state which matters is the contents of
+   %eax-%ebp and the return value in %eax.
+ */
+static void thread_syscall(Int syscallno, ThreadArchState *arch, 
+                           enum PXState *state , enum PXState poststate)
+{
+   VGA_(do_thread_syscall)(syscallno,            // syscall no.
+                           arch->vex.guest_EBX,  // arg 1
+                           arch->vex.guest_ECX,  // arg 2
+                           arch->vex.guest_EDX,  // arg 3
+                           arch->vex.guest_ESI,  // arg 4
+                           arch->vex.guest_EDI,  // arg 5
+                           arch->vex.guest_EBP,  // arg 6
+                           (UWord*)&arch->vex.guest_EAX, // result
+                           state,	   // state to update
+                           poststate);   // state when syscall has finished
+}
+
+
 
 /* Proxy LWP thread.  This is run as a separate cloned() thread, so it
    MUST NOT touch any core Valgrind data structures directly: the only
@@ -620,8 +656,7 @@ static Int proxylwp(void *v)
 
 	       /* ST:4 */
 	       
-	       VGA_(thread_syscall)(syscallno, &tst->arch,
-                                    &px->state, PXS_SysDone);
+	       thread_syscall(syscallno, &tst->arch, &px->state, PXS_SysDone);
 
 	       /* ST:5 */
 

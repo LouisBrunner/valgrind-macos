@@ -30,57 +30,20 @@
 
 #include "core.h"
 
-/* We need our own copy of VG_(do_syscall)() to handle a special
-   race-condition.  If we've got signals unblocked, and we take a
-   signal in the gap either just before or after the syscall, we may
-   end up not running the syscall at all, or running it more than
-   once.
 
-   The solution is to make the signal handler derive the proxy's
-   precise state by looking to see which eip it is executing at
-   exception time.
-
-   Ranges:
-
-   vga_sys_before ... vga_sys_restarted:
-	Setting up register arguments and running state.  If
-	interrupted, then the syscall should be considered to return
-	ERESTARTSYS.
-
-   vga_sys_restarted:
-	If interrupted and eip==vga_sys_restarted, then either the syscall
-	was about to start running, or it has run, was interrupted and
-	the kernel wants to restart it.  eax still contains the
-	syscall number.  If interrupted, then the syscall return value
-	should be ERESTARTSYS.
-
-   vga_sys_after:
-	If interrupted and eip==vga_sys_after, the syscall either just
-	finished, or it was interrupted and the kernel doesn't want to
-	restart it.  Either way, eax equals the correct return value
-	(either the actual return value, or EINTR).
-
-   vga_sys_after ... vga_sys_done:
-	System call is complete, but the state hasn't been updated,
-	nor has the result been written back.  eax contains the return
-	value.
-*/
-extern void do_thread_syscall(Int sys, 
-			      Int arg1, Int arg2, Int arg3, Int arg4,
-                              Int arg5, Int arg6,
-			      Int *result, enum PXState *statep,
-                              enum PXState poststate);
-
+// See the comment accompanying the declaration of VGA_(thread_syscall)() in
+// coregrind/core.h for an explanation of what this does, and why.
 asm(
 ".text\n"
-"	.type do_thread_syscall,@function\n"
+"	.type vgArch_do_thread_syscall,@function\n"
 
-"do_thread_syscall:\n"
+".globl  vgArch_do_thread_syscall\n"
+"vgArch_do_thread_syscall:\n"
 "	push	%esi\n"
 "	push	%edi\n"
 "	push	%ebx\n"
 "	push	%ebp\n"
-".vga_sys_before:\n"
+".vgArch_sys_before:\n"
 "	movl	16+ 4(%esp),%eax\n" /* syscall */
 "	movl	16+ 8(%esp),%ebx\n" /* arg1 */
 "	movl	16+12(%esp),%ecx\n" /* arg2 */
@@ -88,9 +51,9 @@ asm(
 "	movl	16+20(%esp),%esi\n" /* arg4 */
 "	movl	16+24(%esp),%edi\n" /* arg5 */
 "	movl	16+28(%esp),%ebp\n" /* arg6 */
-".vga_sys_restarted:\n"
+".vgArch_sys_restarted:\n"
 "	int	$0x80\n"
-".vga_sys_after:\n"
+".vgArch_sys_after:\n"
 "	movl	16+32(%esp),%ebx\n"	/* ebx = Int *res */
 "	movl	%eax, (%ebx)\n"		/* write the syscall retval */
 
@@ -101,50 +64,26 @@ asm(
 "	movl	16+40(%esp),%ecx\n"	/* write the post state (must be after retval write) */
 "	movl	%ecx,(%ebx)\n"
 
-".vga_sys_done:\n"				/* OK, all clear from here */
+".vgArch_sys_done:\n"			/* OK, all clear from here */
 "1:	popl	%ebp\n"
 "	popl	%ebx\n"
 "	popl	%edi\n"
 "	popl	%esi\n"
 "	ret\n"
-"	.size do_thread_syscall,.-do_thread_syscall\n"
+"	.size vgArch_do_thread_syscall,.-vgArch_do_thread_syscall\n"
 ".previous\n"
 
 ".section .rodata\n"
-"       .globl  vga_sys_before\n"
-"vga_sys_before:	.long	.vga_sys_before\n"
-"       .globl  vga_sys_restarted\n"
-"vga_sys_restarted:	.long	.vga_sys_restarted\n"
-"       .globl  vga_sys_after\n"
-"vga_sys_after:	.long	.vga_sys_after\n"
-"       .globl  vga_sys_done\n"
-"vga_sys_done:	.long	.vga_sys_done\n"
+"       .globl  vgArch_sys_before\n"
+"vgArch_sys_before:	.long	.vgArch_sys_before\n"
+"       .globl  vgArch_sys_restarted\n"
+"vgArch_sys_restarted:	.long	.vgArch_sys_restarted\n"
+"       .globl  vgArch_sys_after\n"
+"vgArch_sys_after:	.long	.vgArch_sys_after\n"
+"       .globl  vgArch_sys_done\n"
+"vgArch_sys_done:	.long	.vgArch_sys_done\n"
 ".previous\n"
 );
-
-/* Run a syscall for a particular thread, getting the arguments from
-   the thread's registers, and returning the result in the thread's
-   eax.
-
-   Assumes that the only thread state which matters is the contents of
-   %eax-%ebp and the return value in %eax.
- */
-void VGA_(thread_syscall)(Int syscallno, ThreadArchState *arch, 
-                          enum PXState *state , enum PXState poststate)
-{
-   do_thread_syscall(syscallno,            // syscall no.
-		     arch->vex.guest_EBX,  // arg 1
-		     arch->vex.guest_ECX,  // arg 2
-		     arch->vex.guest_EDX,  // arg 3
-		     arch->vex.guest_ESI,  // arg 4
-		     arch->vex.guest_EDI,  // arg 5
-		     arch->vex.guest_EBP,  // arg 6
-		     &arch->vex.guest_EAX, // result
-		     state,	   // state to update
-		     poststate);   // state when syscall has finished
-}
-
-
 
 // Back up to restart a system call.
 void VGA_(restart_syscall)(ThreadArchState *arch)

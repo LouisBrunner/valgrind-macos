@@ -1318,18 +1318,6 @@ extern REGPARM(2)
    Exports of vg_proxylwp.c
    ------------------------------------------------------------------ */
 
-enum PXState
-{
-   PXS_BAD = -1,
-   PXS_WaitReq,		/* waiting for a request */
-   PXS_RunSyscall,	/* running a syscall */
-   PXS_IntReply,	/* request interrupted - need to send reply */
-   PXS_SysDone,		/* small window between syscall
-			   complete and results written out */
-   PXS_SigACK,		/* waiting for a signal ACK */
-};
-
-
 /* Issue a syscall for thread tid */
 extern Int  VG_(sys_issue)(int tid);
 
@@ -1872,14 +1860,53 @@ extern const struct SyscallTableEntry VGA_(syscall_table)[];
 
 extern const UInt VGA_(syscall_table_size);
    
-
-extern const Addr vga_sys_before, vga_sys_restarted,
-                  vga_sys_after,  vga_sys_done;
-
 extern void VGA_(restart_syscall)(ThreadArchState* arch);
 
-extern void VGA_(thread_syscall)(Int syscallno, ThreadArchState* arch, 
-                                 enum PXState* state, enum PXState poststate);
+/* We need our own copy of VG_(do_syscall)() to handle a special
+   race-condition.  If we've got signals unblocked, and we take a
+   signal in the gap either just before or after the syscall, we may
+   end up not running the syscall at all, or running it more than
+   once.
+
+   The solution is to make the signal handler derive the proxy's
+   precise state by looking to see which eip it is executing at
+   exception time.
+
+   Ranges:
+
+   VGA_(sys_before) ... VGA_(sys_restarted):
+	Setting up register arguments and running state.  If
+	interrupted, then the syscall should be considered to return
+	ERESTARTSYS.
+
+   VGA_(sys_restarted):
+	If interrupted and eip==VGA_(sys_restarted), then either the syscall
+	was about to start running, or it has run, was interrupted and
+	the kernel wants to restart it.  eax still contains the
+	syscall number.  If interrupted, then the syscall return value
+	should be ERESTARTSYS.
+
+   VGA_(sys_after):
+	If interrupted and eip==VGA_(sys_after), the syscall either just
+	finished, or it was interrupted and the kernel doesn't want to
+	restart it.  Either way, eax equals the correct return value
+	(either the actual return value, or EINTR).
+
+   VGA_(sys_after) ... VGA_(sys_done):
+	System call is complete, but the state hasn't been updated,
+	nor has the result been written back.  eax contains the return
+	value.
+
+   Freakin' horrible...
+*/
+extern const Addr VGA_(sys_before), VGA_(sys_restarted),
+                  VGA_(sys_after),  VGA_(sys_done);
+
+extern void VGA_(do_thread_syscall)(UWord sys, 
+                                    UWord arg1, UWord arg2, UWord arg3,
+                                    UWord arg4, UWord arg5, UWord arg6,
+                                    UWord *result, /*enum PXState*/Int *statep,
+                                    /*enum PXState*/Int poststate);
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

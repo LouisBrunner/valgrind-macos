@@ -1416,9 +1416,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1);
-   //DECLARE_PATTERN(p_eq32_literal);
-   //DECLARE_PATTERN(p_ne32_zero);
    DECLARE_PATTERN(p_1Uto32_then_32to1);
+   DECLARE_PATTERN(p_1Sto32_then_32to1);
 
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
@@ -1443,6 +1442,14 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    DEFINE_PATTERN(p_1Uto32_then_32to1,
                   unop(Iop_32to1,unop(Iop_1Uto32,bind(0))));
    if (matchIRExpr(&mi,p_1Uto32_then_32to1,e)) {
+      IRExpr* expr1 = mi.bindee[0];
+      return iselCondCode(env, expr1);
+   }
+
+   /* 32to1(1Sto32(expr1)) -- the casts are pointless, ignore them */
+   DEFINE_PATTERN(p_1Sto32_then_32to1,
+                  unop(Iop_32to1,unop(Iop_1Sto32,bind(0))));
+   if (matchIRExpr(&mi,p_1Sto32_then_32to1,e)) {
       IRExpr* expr1 = mi.bindee[0];
       return iselCondCode(env, expr1);
    }

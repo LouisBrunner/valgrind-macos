@@ -1,4 +1,6 @@
 
+AUTOMAKE_OPTIONS = 1.5
+
 SUBDIRS = 	coregrind . docs tests include auxprogs \
 		addrcheck \
 		memcheck \

@@ -2756,9 +2756,10 @@ static Int calc_unroll_factor( IRBB* bb )
    Int n_stmts, i;
 
    n_stmts = 0;
-   for (i = 0; i < bb->stmts_used; i++)
-     if (bb->stmts[i])
-        n_stmts++;
+   for (i = 0; i < bb->stmts_used; i++) {
+      if (bb->stmts[i]->tag != Ist_NoOp)
+         n_stmts++;
+   }
 
    if (n_stmts <= vex_control.iropt_unroll_thresh/8) {
       if (vex_control.iropt_verbosity > 0)

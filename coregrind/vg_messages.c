@@ -126,6 +126,29 @@ void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes )
    }
 }
 
+int VALGRIND_INTERNAL_PRINTF(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+int VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_messages.c ---*/
 /*--------------------------------------------------------------------*/

@@ -519,33 +519,6 @@ struct vg_mallocfunc_info {
    Bool	clo_trace_malloc;
 };
 
-__attribute__((weak))
-int
-VALGRIND_INTERNAL_PRINTF(char *format, ...)
-{
-   unsigned int _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
-   va_end(vargs);
-   return _qzz_res;
-}
-
-__attribute__((weak))
-int
-VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
-{
-   unsigned int _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
-   va_end(vargs);
-   return _qzz_res;
-}
-
-
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),
    which need to go here to avoid ugly circularities.
@@ -1108,6 +1081,11 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 /* Low-level -- send bytes directly to the message sink.  Do not
    use. */
 extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
+
+// Functions for printing from code within Valgrind, but which runs on the
+// sim'd CPU.
+int VALGRIND_INTERNAL_PRINTF           ( char *format, ... );
+int VALGRIND_INTERNAL_PRINTF_BACKTRACE ( char *format, ... );
 
 
 /* ---------------------------------------------------------------------

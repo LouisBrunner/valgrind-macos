@@ -1062,10 +1062,11 @@ typedef
    Error;
 
 /* Useful in SK_(error_matches_suppression)(), SK_(pp_SkinError)(), etc */
-SuppKind VG_(get_error_kind)    ( Error* err );
-Addr     VG_(get_error_address) ( Error* err );
-Char*    VG_(get_error_string)  ( Error* err );
-void*    VG_(get_error_extra)   ( Error* err );
+ExeContext* VG_(get_error_where)   ( Error* err );
+SuppKind    VG_(get_error_kind)    ( Error* err );
+Addr        VG_(get_error_address) ( Error* err );
+Char*       VG_(get_error_string)  ( Error* err );
+void*       VG_(get_error_extra)   ( Error* err );
 
 /* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
@@ -1129,11 +1130,15 @@ extern Bool VG_(get_objname)  ( Addr a, Char* objname,  Int n_objname  );
 /* A way to get information about what segments are mapped */
 typedef struct _SegInfo SegInfo;
 
-extern const SegInfo* VG_(next_seginfo)(const SegInfo *);
-extern Addr VG_(seg_start)(const SegInfo *);
-extern UInt VG_(seg_size)(const SegInfo *);
-extern const UChar* VG_(seg_filename)(const SegInfo *);
-extern UInt VG_(seg_sym_offset)(const SegInfo *);
+/* Returns NULL if the SegInfo isn't found.  It doesn't matter if debug info
+   is present or not. */
+extern SegInfo* VG_(get_obj)  ( Addr a );
+
+extern const SegInfo* VG_(next_seginfo)  ( const SegInfo *seg );
+extern       Addr     VG_(seg_start)     ( const SegInfo *seg );
+extern       UInt     VG_(seg_size)      ( const SegInfo *seg );
+extern const UChar*   VG_(seg_filename)  ( const SegInfo *seg );
+extern       UInt     VG_(seg_sym_offset)( const SegInfo *seg );
 
 typedef
    enum {

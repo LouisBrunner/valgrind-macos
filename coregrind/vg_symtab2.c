@@ -2177,6 +2177,21 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
    return False;
 }
 
+/* Map a code address to its SegInfo.  Returns NULL if not found.  Doesn't
+   require debug info. */
+SegInfo* VG_(get_obj) ( Addr a )
+{
+   SegInfo* si;
+
+   ensure_debug_info_inited();
+   for (si = segInfo; si != NULL; si = si->next) {
+      if (si->start <= a && a < si->start+si->size) {
+         return si;
+      }
+   }
+   return False;
+}
+
 
 /* Map a code address to a filename.  Returns True if successful.  */
 Bool VG_(get_filename)( Addr a, Char* filename, Int n_filename )

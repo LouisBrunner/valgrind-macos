@@ -948,11 +948,11 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
    kernel has no choice but to put the memory where we want it. */
 void VG_(pad_address_space)(Addr start)
 {
-  vg_assert(0);
-#if 0
-   Addr addr = (start == 0) ? VG_(client_base) : start;
-   Segment *s = VG_(SkipNode_First)(&sk_segments);
-   Addr ret;
+   Addr     addr = (start == 0) ? VG_(client_base) : start;
+   Addr     ret;
+
+   Int      i = 0;
+   Segment* s = i >= segments_used ? NULL : &segments[i];
    
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
@@ -960,9 +960,9 @@ void VG_(pad_address_space)(Addr start)
                           VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                           -1, 0);
       }
-        
       addr = s->addr + s->len;
-      s = VG_(SkipNode_Next)(&sk_segments, s);
+      i++;
+      s = i >= segments_used ? NULL : &segments[i];
    }
 
    if (addr <= VG_(valgrind_last)) {
@@ -970,36 +970,31 @@ void VG_(pad_address_space)(Addr start)
                        VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                        -1, 0);
    }
-
-   return;
-#endif
 }
 
 /* Remove the address space padding added by VG_(pad_address_space)
    by removing any mappings that it created. */
 void VG_(unpad_address_space)(Addr start)
 {
-vg_assert(0);
-#if 0
-   Addr addr = (start == 0) ? VG_(client_base) : start;
-   Segment *s = VG_(SkipNode_First)(&sk_segments);
-   Int ret;
+   Addr     addr = (start == 0) ? VG_(client_base) : start;
+   Int      ret;
+
+   Int      i = 0;
+   Segment* s = i >= segments_used ? NULL : &segments[i];
 
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
          ret = VG_(do_syscall2)(__NR_munmap, addr, s->addr - addr);
       }
-         
       addr = s->addr + s->len;
-      s = VG_(SkipNode_Next)(&sk_segments, s);
+      i++;
+      s = i >= segments_used ? NULL : &segments[i];
    }
 
    if (addr <= VG_(valgrind_last)) {
-      ret = VG_(do_syscall2)(__NR_munmap, addr, (VG_(valgrind_last) - addr) + 1);
+      ret = VG_(do_syscall2)(__NR_munmap, addr, 
+                             (VG_(valgrind_last) - addr) + 1);
    }
-
-   return;
-#endif
 }
 
 /* Find the segment holding 'a', or NULL if none. */

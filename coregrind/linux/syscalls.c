@@ -519,6 +519,7 @@ PRE(sys_io_setup, Special)
    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, SF_FIXED);
    
    VG_(pad_address_space)(0);
+   SET_RESULT( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
    VG_(unpad_address_space)(0);
 
    if (RES == 0) {

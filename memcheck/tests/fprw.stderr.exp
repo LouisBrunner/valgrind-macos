@@ -1,13 +1,7 @@
-Use of uninitialised value of size 8
-   at 0x........: main (fprw.c:14)
-
-Use of uninitialised value of size 4
-   at 0x........: main (fprw.c:15)
-
-Use of uninitialised value of size 8
+Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (fprw.c:16)
 
-Use of uninitialised value of size 4
+Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (fprw.c:17)
 
 Invalid read of size 8

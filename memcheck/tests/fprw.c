@@ -1,6 +1,6 @@
 
-/* most of the nasties in this are in the same bb, so you need to run
-with --single-step=yes to get them properly distinguished. */
+
+
 
 #include <stdlib.h>
 
@@ -13,8 +13,8 @@ int main ( void )
    int* ip = (int*)0x1234567;
    d += 1.0;
    f += 10.0;
-   *dp += 2.0;
-   *fp += 20.0;
+   *dp += ( d ? 2.0 : 3.0 );
+   *fp += ( f ? 20.0 : 21.0 );
    free(dp);
    free(fp);
    *dp += 3.0;

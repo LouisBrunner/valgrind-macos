@@ -1119,11 +1119,13 @@ PREx(sys_ni_syscall, Special)
    set_result( -VKI_ENOSYS );
 }
 
-PRE(ptrace)
+// XXX: I think this is x86/linux-specific
+// XXX: Why is the memory pointed to by arg3 never checked?
+PREx(sys_ptrace, 0)
 {
-   /* long ptrace (enum __ptrace_request request, pid_t pid, 
-                   void *addr, void *data); */
-   PRINT("ptrace ( %d, %d, %p, %p )", arg1,arg2,arg3,arg4);
+   PRINT("sys_ptrace ( %d, %d, %p, %p )", arg1,arg2,arg3,arg4);
+   PRE_REG_READ4(int, "ptrace", 
+                 long, request, long, pid, long, addr, long, data);
    switch (arg1) {
    case 12:   /* PTRACE_GETREGS */
       PRE_MEM_WRITE( "ptrace(getregs)", arg4, 
@@ -1158,7 +1160,8 @@ PRE(ptrace)
    }
 }
 
-POST(ptrace)
+// XXX: I think this is x86/linux-specific
+POST(sys_ptrace)
 {
    switch (arg1) {
    case 12:  /* PTRACE_GETREGS */
@@ -1540,10 +1543,10 @@ PRE(mremap)
    set_result( mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid) );
 }
 
-PRE(nice)
+PREx(sys_nice, 0)
 {
-   /* int nice(int inc); */
-   PRINT("nice ( %d )", arg1);
+   PRINT("sys_nice ( %d )", arg1);
+   PRE_REG_READ1(long, "nice", int, inc);
 }
 
 PRE(setresgid32)
@@ -1922,17 +1925,17 @@ PREx(sys_execve, Special)
 		   "Add more stringent tests in PRE(execve), or work out how to recover.");   
 }
 
-PRE(access)
+PREx(sys_access, 0)
 {
-   /* int access(const char *pathname, int mode); */
-   PRINT("access ( %p(%s), %d )", arg1,arg1,arg2);
+   PRINT("sys_access ( %p(%s), %d )", arg1,arg1,arg2);
+   PRE_REG_READ2(long, "access", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "access(pathname)", arg1 );
 }
 
-PRE(alarm)
+PREx(sys_alarm, NBRunInLWP)
 {
-   /* unsigned int alarm(unsigned int seconds); */
-   PRINT("alarm ( %d )", arg1);
+   PRINT("sys_alarm ( %d )", arg1);
+   PRE_REG_READ1(unsigned long, "alarm", unsigned int, seconds);
 }
 
 PRE(brk)
@@ -2015,20 +2018,19 @@ POST(sys_close)
    if (VG_(clo_track_fds)) record_fd_close(tid, arg1);
 }
 
-PRE(dup)
+PREx(sys_dup, 0)
 {
-   /* int dup(int oldfd); */
-   PRINT("dup ( %d )", arg1);
+   PRINT("sys_dup ( %d )", arg1);
+   PRE_REG_READ1(long, "dup", unsigned int, oldfd);
 }
 
-POST(dup)
+POST(sys_dup)
 {
-   PRINT("%d\n", res);
    if (!fd_allowed(res, "dup", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
-      if(VG_(clo_track_fds))
+      if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(resolve_filename)(res));
    }
 }
@@ -3914,29 +3916,29 @@ POST(ioctl)
    }
 }
 
-PRE(kill)
+PREx(sys_kill, 0)
 {
    /* int kill(pid_t pid, int sig); */
-   PRINT("kill ( %d, %d )", arg1,arg2);
+   PRINT("sys_kill ( %d, %d )", arg1,arg2);
+   PRE_REG_READ2(long, "kill", int, pid, int, sig);
    if (arg2 == VKI_SIGVGINT || arg2 == VKI_SIGVGKILL)
       set_result( -VKI_EINVAL );
 }
 
-POST(kill)
+POST(sys_kill)
 {
    /* If this was a self-kill then wait for a signal to be
       delivered to any thread before claiming the kill is done. */
-   if (res >= 0 &&					/* if it was successful */
-       arg2 != 0 &&					/* if a real signal */
-       !VG_(is_sig_ign)(arg2) &&			/* that isn't ignored and */
-       !VG_(sigismember)(&tst->eff_sig_mask, arg2) &&	/*      we're not blocking it */
-       (arg1 == VG_(getpid)() ||			/* directed at us or */
-	arg1 == -1	      ||			/* directed at everyone or */
-	arg1 == 0	      ||			/* directed at whole group or */
-	-arg1 == VG_(getpgrp)())) {			/* directed at our group... */
+   if (res >= 0 &&                           // if it was successful and
+       arg2 != 0 &&                          // if a real signal and
+       !VG_(is_sig_ign)(arg2) &&             // that isn't ignored and
+       !VG_(sigismember)(&tst->eff_sig_mask, arg2) && // we're not blocking it
+       (arg1 == VG_(getpid)() ||             // directed at us or
+	arg1 == -1	      ||             // directed at everyone or
+	arg1 == 0	      ||             // directed at whole group or
+	-arg1 == VG_(getpgrp)())) {          // directed at our group...
       /* ...then wait for that signal to be delivered to someone
-	 (might be us, might be someone else who doesn't have it
-	 blocked) */
+	 (might be us, might be someone else who doesn't have it blocked) */
       VG_(proxy_waitsig)();
    }
 }
@@ -4001,10 +4003,10 @@ POST(lstat64)
    }
 }
 
-PRE(mkdir)
+PREx(sys_mkdir, MayBlock)
 {
-   /* int mkdir(const char *pathname, mode_t mode); */
-   PRINT("mkdir ( %p, %d )", arg1,arg2);
+   PRINT("sys_mkdir ( %p, %d )", arg1,arg2);
+   PRE_REG_READ2(long, "mkdir", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "mkdir(pathname)", arg1 );
 }
 
@@ -4237,18 +4239,19 @@ POST(sys_creat)
       if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
-   PRINT("%d\n",res);
 }
 
-PRE(pipe)
+// XXX: sort of x86-specific
+PREx(sys_pipe, 0)
 {
-   /* int pipe(int filedes[2]); */
-   PRINT("pipe ( %p )", arg1);
-   PRE_MEM_WRITE( "pipe(filedes)", arg1, 2*sizeof(int) );
+   PRINT("sys_pipe ( %p )", arg1);
+   PRE_REG_READ1(int, "pipe", unsigned long *, filedes);
+   PRE_MEM_WRITE( "pipe(filedes)", arg1, 2*sizeof(long) );
 }
 
-POST(pipe)
+POST(sys_pipe)
 {
+   // XXX: use of Int here -- 32-bit-specific?
    Int *p = (Int *)arg1;
 
    if (!fd_allowed(p[0], "pipe", tid, True) ||
@@ -4392,18 +4395,18 @@ POST(readv)
    }
 }
 
-PRE(rename)
+PREx(sys_rename, 0)
 {
-   /* int rename(const char *oldpath, const char *newpath); */
-   PRINT("rename ( %p, %p )", arg1, arg2 );
+   PRINT("sys_rename ( %p, %p )", arg1, arg2 );
+   PRE_REG_READ2(long, "rename", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "rename(oldpath)", arg1 );
    PRE_MEM_RASCIIZ( "rename(newpath)", arg2 );
 }
 
-PRE(rmdir)
+PREx(sys_rmdir, MayBlock)
 {
-   /* int rmdir(const char *pathname); */
-   PRINT("rmdir ( %p )", arg1);
+   PRINT("sys_rmdir ( %p )", arg1);
+   PRE_REG_READ1(long, "rmdir", const char *, pathname);
    PRE_MEM_RASCIIZ( "rmdir(pathname)", arg1 );
 }
 
@@ -5112,10 +5115,10 @@ POST(sys_newuname)
    }
 }
 
-PRE(utime)
+PREx(sys_utime, MayBlock)
 {
-   /* int utime(const char *filename, struct utimbuf *buf); */
-   PRINT("utime ( %p, %p )", arg1,arg2);
+   PRINT("sys_utime ( %p, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
    PRE_MEM_RASCIIZ( "utime(filename)", arg1 );
    if (arg2 != (UWord)NULL)
       PRE_MEM_READ( "utime(buf)", arg2, sizeof(struct vki_utimbuf) );
@@ -5570,7 +5573,6 @@ POST(mq_open)
       if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
-   PRINT("%d\n",res);
 }
 
 PRE(mq_unlink)
@@ -5849,31 +5851,31 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setuid,           sys_setuid16),     // 23 ## P
    SYSX_(__NR_getuid,           sys_getuid16),     // 24 ## P
 
-   // stime		               25 sys_stime *
-   SYSBA(ptrace,		0), // 26 sys_ptrace ()
-   SYSB_(alarm,			NBRunInLWP),    // 27 sys_alarm *
-   //   (__NR_oldfstat,         sys_fstat),     // 28 * L -- obsolete
-   SYSX_(__NR_pause,            sys_pause),     // 29 * P
+   //   (__NR_stime,            sys_stime),        // 25 * (SVr4,SVID,X/OPEN)
+   SYSXY(__NR_ptrace,		sys_ptrace),       // 26 (x86?) (L?)
+   SYSX_(__NR_alarm,            sys_alarm),        // 27 * P
+   //   (__NR_oldfstat,         sys_fstat),        // 28 * L -- obsolete
+   SYSX_(__NR_pause,            sys_pause),        // 29 * P
 
-   SYSB_(utime,			MayBlock), // 30 sys_utime *
+   SYSX_(__NR_utime,            sys_utime),        // 30 * P
    SYSX_(__NR_stty,             sys_ni_syscall),   // 31 * P -- unimplemented
    SYSX_(__NR_gtty,             sys_ni_syscall),   // 32 * P -- unimplemented
-   SYSB_(access,		0), // 33 sys_access *
-   SYSB_(nice,			0), // 34 sys_nice *
+   SYSX_(__NR_access,           sys_access),       // 33 * P
+   SYSX_(__NR_nice,             sys_nice),         // 34 * (almost P)
+
    SYSX_(__NR_ftime,            sys_ni_syscall),   // 35 * P -- unimplemented
+   SYSX_(__NR_sync,             sys_sync),         // 36 * (almost P)
+   SYSXY(__NR_kill,             sys_kill),         // 37 * P
+   SYSX_(__NR_rename,           sys_rename),       // 38 * P
+   SYSX_(__NR_mkdir,            sys_mkdir),        // 39 * P
 
-   SYSX_(__NR_sync,             sys_sync), // 36 *
-   SYSBA(kill,			0), // 37 sys_kill *
-   SYSB_(rename,		0), // 38 sys_rename *
-   SYSB_(mkdir,			MayBlock), // 39 sys_mkdir *
-
-   SYSB_(rmdir,			MayBlock), // 40 sys_rmdir *
-   SYSBA(dup,			0), // 41 sys_dup *
-   SYSBA(pipe,			0), // 42 sys_pipe
+   SYSX_(__NR_rmdir,            sys_rmdir),        // 40 * P
+   SYSXY(__NR_dup,              sys_dup),          // 41 * P
+   SYSXY(__NR_pipe,             sys_pipe),         // 42 (x86) P
    SYSBA(times,			0), // 43 sys_times *
    SYSX_(__NR_prof,             sys_ni_syscall),   // 44 * P -- unimplemented
-   SYSB_(brk,			Special), // 45  sys_brk *
 
+   SYSB_(brk,			Special), // 45  sys_brk *
    SYSB_(setgid,		0), // 46 sys_setgid16 ##
    SYSX_(__NR_getgid,           sys_getgid16),     // 47 ## P
    //   (__NR_signal,           sys_signal),       // 48 * (ANSI C?)

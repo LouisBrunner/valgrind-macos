@@ -76,12 +76,14 @@ int main(void)
    SY(__NR_chmod, s0, i0);
 
    // __NR_lchown 16
+   // (Not yet handled by Valgrind)
 
    // __NR_break 17 --> sys_ni_syscall()
    GO(__NR_break, "0e");
    SY(__NR_break);
 
    // __NR_oldstat 18
+   // (obsolete, not handled by Valgrind)
 
    // __NR_lseek 19 --> sys_lseek()
    GO(__NR_lseek, "3s 0m");
@@ -108,14 +110,26 @@ int main(void)
    SY(__NR_getuid);
 
    // __NR_stime 25
-   // __NR_ptrace 26
-   // __NR_alarm 27
+   // (Not yet handled by Valgrind)
+
+   // __NR_ptrace 26 --> arch/sys_ptrace()
+   // XXX: memory pointed to be arg3 is never checked...
+   GO(__NR_ptrace, "4s 2m");
+   SY(__NR_ptrace, i0+PTRACE_GETREGS, i0, s0, s0);
+
+   // __NR_alarm 27 --> sys_alarm()
+   GO(__NR_alarm, "1s 0m");
+   SY(__NR_alarm, i0);
+
    // __NR_oldfstat 28
+   // (obsolete, not handled by Valgrind)
 
    // __NR_pause 29 --> sys_pause()
    // XXX: will have to be tested separately
 
-   // __NR_utime 30
+   // __NR_utime 30 --> sys_utime()
+   GO(__NR_utime, "2s 2m");
+   SY(__NR_utime, s0, s0+1);
 
    // __NR_stty 31 --> sys_ni_syscall()
    GO(__NR_stty, "0e");
@@ -125,9 +139,13 @@ int main(void)
    GO(__NR_gtty, "0e");
    SY(__NR_gtty);
 
-   // __NR_access 33
+   // __NR_access 33 --> sys_access()
+   GO(__NR_access, "2s 1m");
+   SY(__NR_access, s0, i0);
 
    // __NR_nice 34
+   GO(__NR_nice, "1s 0m");
+   SY(__NR_nice, i0);
 
    // __NR_ftime 35 --> sys_ni_syscall()
    GO(__NR_ftime, "0e");
@@ -138,11 +156,29 @@ int main(void)
    SY(__NR_sync);
 
    // __NR_kill 37
+   GO(__NR_kill, "2s 0m");
+   SY(__NR_kill, i0, i0);
+
    // __NR_rename 38
+   GO(__NR_rename, "2s 2m");
+   SY(__NR_rename, s0, s0);
+
    // __NR_mkdir 39
+   GO(__NR_mkdir, "2s 1m");
+   SY(__NR_mkdir, s0, i0);
+
    // __NR_rmdir 40
+   GO(__NR_rmdir, "1s 1m");
+   SY(__NR_rmdir, s0);
+
    // __NR_dup 41
+   GO(__NR_dup, "1s 0m");
+   SY(__NR_dup, i0);
+
    // __NR_pipe 42
+   GO(__NR_pipe, "1s 1m");
+   SY(__NR_pipe, s0);
+
    // __NR_times 43
 
    // __NR_prof 44 --> sys_ni_syscall()
@@ -192,6 +228,8 @@ int main(void)
    SY(__NR_ulimit);
 
    // __NR_oldolduname 59
+   // (obsolete, not handled by Valgrind)
+
    // __NR_umask 60
    // __NR_chroot 61
    // __NR_ustat 62
@@ -226,7 +264,10 @@ int main(void)
    // __NR_setgroups 81
    // __NR_select 82
    // __NR_symlink 83
+
    // __NR_oldlstat 84
+   // (obsolete, not handled by Valgrind)
+
    // __NR_readlink 85
    // __NR_uselib 86
    // __NR_swapon 87
@@ -251,7 +292,10 @@ int main(void)
    // __NR_stat 106
    // __NR_lstat 107
    // __NR_fstat 108
+
    // __NR_olduname 109
+   // (obsolete, not handled by Valgrind)
+
    // __NR_iopl 110
 
    // __NR_vhangup 111 --> sys_vhangup()

@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
+#include <sys/ptrace.h>
 #include <sys/types.h>
 
 // Thorough syscall scalar arg checking.  Also serves as thorough checking

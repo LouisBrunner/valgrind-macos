@@ -357,6 +357,7 @@ void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
+static
 BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
 {
    Int          i, n_instrs;
@@ -391,6 +392,7 @@ BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
    return bb_info;
 }
 
+static
 void do_details( instr_info* n, Bool bb_seen_before,
                  Addr instr_addr, Int instr_size, Int data_size )
 {
@@ -410,13 +412,14 @@ void do_details( instr_info* n, Bool bb_seen_before,
    }
 }
 
-Bool is_valid_data_size(Int data_size)
+static Bool is_valid_data_size(Int data_size)
 {
    return (4 == data_size || 2  == data_size || 1 == data_size || 
            8 == data_size || 10 == data_size || MIN_LINE_SIZE == data_size);
 }
 
 // Instrumentation for the end of each x86 instruction.
+static
 void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
                       UInt instr_addr, UInt instr_size, UInt data_size,
                       Int t_read,  Int t_read_addr, 

@@ -983,15 +983,8 @@ extern void VG_(scheduler_init) ( void );
 
 extern void VG_(pp_sched_status) ( void );
 
-/* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
-extern jmp_buf VG_(scheduler_jmpbuf);
-/* This says whether scheduler_jmpbuf is actually valid.  Needed so
-   that our signal handler doesn't longjmp when the buffer isn't
-   actually valid. */
-extern Bool    VG_(scheduler_jmpbuf_valid);
-/* ... and if so, here's the signal which caused it to do so. */
-extern Int     VG_(longjmpd_on_signal);
-
+// Longjmp back to the scheduler and thus enter the sighandler immediately.
+extern void VG_(resume_scheduler) ( Int sigNo, vki_ksiginfo_t *info );
 
 /* The red-zone size which we put at the bottom (highest address) of
    thread stacks, for paranoia reasons.  This can be arbitrary, and

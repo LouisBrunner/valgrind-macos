@@ -64,8 +64,7 @@
    with shared signal state (Linux 2.5+, RedHat's 2.4), then these are
    the only signals it needs to handle.
 
-   If we get a synchronous signal, the details are placed into
-   VG_(unresumable_siginfo) and we longjmp back into the scheduler,
+   If we get a synchronous signal, we longjmp back into the scheduler,
    since we can't resume executing the client code.  The scheduler
    immediately starts signal delivery to the thread which generated
    the signal.
@@ -100,7 +99,6 @@ static void vg_sync_signalhandler  ( Int sigNo, vki_ksiginfo_t *info, struct vki
 static void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
 static void vg_babyeater	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
 static void proxy_sigvg_handler	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
-static void resume_scheduler(Int signo, vki_ksiginfo_t *info);
 
 static Bool is_correct_sigmask(void);
 static const Char *signame(Int sigNo);
@@ -1834,7 +1832,7 @@ void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
    info.si_code = 2;
    info._sifields._sigfault._addr = (void*)addr;
 
-   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
    VG_(deliver_signal)(tid, &info, False);
 }
 
@@ -1850,7 +1848,7 @@ void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
    info.si_code = 1;
    info._sifields._sigfault._addr = (void*)addr;
 
-   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
    VG_(deliver_signal)(tid, &info, False);
 }
 
@@ -1865,7 +1863,7 @@ void VG_(synth_fault)(ThreadId tid)
    info.si_code = 0x80;
    info._sifields._sigfault._addr = (void*)0;
 
-   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(resume_scheduler)(VKI_SIGSEGV, &info);
    VG_(deliver_signal)(tid, &info, False);
 }
 
@@ -2024,18 +2022,6 @@ void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_uconte
    VG_(proxy_handlesig)(info, &uc->uc_mcontext);
 }
 
-static void resume_scheduler(Int sigNo, vki_ksiginfo_t *info)
-{
-   if (VG_(scheduler_jmpbuf_valid)) {
-      /* Can't continue; must longjmp back to the scheduler and thus
-         enter the sighandler immediately. */
-      VG_(memcpy)(&VG_(unresumable_siginfo), info, sizeof(vki_ksiginfo_t));
-   
-      VG_(longjmpd_on_signal) = sigNo;
-      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
-   }
-}
-
 /* 
    Recieve a sync signal from the host. 
 
@@ -2176,7 +2162,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 
    /* Can't continue; must longjmp back to the scheduler and thus
       enter the sighandler immediately. */
-   resume_scheduler(sigNo, info);
+   VG_(resume_scheduler)(sigNo, info);
 
    if (info->si_code <= VKI_SI_USER) {
       /* 

@@ -88,13 +88,13 @@ static ThreadId vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 static ThreadId vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
-jmp_buf VG_(scheduler_jmpbuf);
+jmp_buf scheduler_jmpbuf;
 /* This says whether scheduler_jmpbuf is actually valid.  Needed so
    that our signal handler doesn't longjmp when the buffer isn't
    actually valid. */
-Bool    VG_(scheduler_jmpbuf_valid) = False;
+Bool    scheduler_jmpbuf_valid = False;
 /* ... and if so, here's the signal which caused it to do so. */
-Int     VG_(longjmpd_on_signal);
+Int     longjmpd_on_signal;
 /* If the current thread gets a syncronous unresumable signal, then
    its details are placed here by the signal handler, to be passed to
    the applications signal handler later on. */
@@ -523,6 +523,18 @@ void VG_(save_thread_state) ( ThreadId tid )
 }
 
 
+void VG_(resume_scheduler)(Int sigNo, vki_ksiginfo_t *info)
+{
+   if (scheduler_jmpbuf_valid) {
+      /* Can't continue; must longjmp back to the scheduler and thus
+         enter the sighandler immediately. */
+      VG_(memcpy)(&VG_(unresumable_siginfo), info, sizeof(vki_ksiginfo_t));
+   
+      longjmpd_on_signal = sigNo;
+      __builtin_longjmp(scheduler_jmpbuf,1);
+   }
+}
+
 /* Run the thread tid for a while, and return a VG_TRC_* value to the
    scheduler indicating what happened. */
 static
@@ -531,7 +543,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    volatile UInt trc = 0;
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-   vg_assert(!VG_(scheduler_jmpbuf_valid));
+   vg_assert(!scheduler_jmpbuf_valid);
 
    VGP_PUSHCC(VgpRun);
    VG_(load_thread_state) ( tid );
@@ -539,21 +551,21 @@ UInt run_thread_for_a_while ( ThreadId tid )
    /* there should be no undealt-with signals */
    vg_assert(VG_(unresumable_siginfo).si_signo == 0);
 
-   if (__builtin_setjmp(VG_(scheduler_jmpbuf)) == 0) {
+   if (__builtin_setjmp(scheduler_jmpbuf) == 0) {
       /* try this ... */
-      VG_(scheduler_jmpbuf_valid) = True;
+      scheduler_jmpbuf_valid = True;
       trc = VG_(run_innerloop)();
-      VG_(scheduler_jmpbuf_valid) = False;
+      scheduler_jmpbuf_valid = False;
       /* We get here if the client didn't take a fault. */
    } else {
       /* We get here if the client took a fault, which caused our
          signal handler to longjmp. */
-      VG_(scheduler_jmpbuf_valid) = False;
+      scheduler_jmpbuf_valid = False;
       vg_assert(trc == 0);
       trc = VG_TRC_UNRESUMABLE_SIGNAL;
    }
 
-   vg_assert(!VG_(scheduler_jmpbuf_valid));
+   vg_assert(!scheduler_jmpbuf_valid);
 
    VG_(save_thread_state) ( tid );
    VGP_POPCC(VgpRun);
@@ -643,7 +655,7 @@ void VG_(scheduler_init) ( void )
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
    /* Not running client code right now. */
-   VG_(scheduler_jmpbuf_valid) = False;
+   scheduler_jmpbuf_valid = False;
 
    /* Proxy for main thread */
    VG_(proxy_create)(tid_main);
@@ -1234,10 +1246,10 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 		      VG_(unresumable_siginfo).si_signo == VKI_SIGBUS  ||
 		      VG_(unresumable_siginfo).si_signo == VKI_SIGILL  ||
 		      VG_(unresumable_siginfo).si_signo == VKI_SIGFPE);
-	    vg_assert(VG_(longjmpd_on_signal) == VG_(unresumable_siginfo).si_signo);
+	    vg_assert(longjmpd_on_signal == VG_(unresumable_siginfo).si_signo);
 
 	    /* make sure we've unblocked the signals which the handler blocked */
-	    VG_(unblock_host_signal)(VG_(longjmpd_on_signal));
+	    VG_(unblock_host_signal)(longjmpd_on_signal);
 
 	    VG_(deliver_signal)(tid, &VG_(unresumable_siginfo), False);
 	    VG_(unresumable_siginfo).si_signo = 0; /* done */

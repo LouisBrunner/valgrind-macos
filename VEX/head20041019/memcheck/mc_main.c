@@ -93,12 +93,16 @@
 /*--- Function declarations.                               ---*/
 /*------------------------------------------------------------*/
 
-static UInt mc_rd_V4_SLOWLY ( Addr a );
-static UInt mc_rd_V2_SLOWLY ( Addr a );
-static UInt mc_rd_V1_SLOWLY ( Addr a );
+static ULong mc_rd_V8_SLOWLY ( Addr a );
+static UInt  mc_rd_V4_SLOWLY ( Addr a );
+static UInt  mc_rd_V2_SLOWLY ( Addr a );
+static UInt  mc_rd_V1_SLOWLY ( Addr a );
+
+static void mc_wr_V8_SLOWLY ( Addr a, ULong vbytes );
 static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes );
 static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes );
 static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes );
+
 static void mc_fpu_read_check_SLOWLY ( Addr addr, Int size );
 static void mc_fpu_write_check_SLOWLY ( Addr addr, Int size );
 
@@ -759,13 +763,90 @@ static __inline__ UInt shiftRight16 ( UInt x )
 }
 
 
-/* Read/write 1/2/4 sized V bytes, and emit an address error if
+/* Read/write 1/2/4/8 sized V bytes, and emit an address error if
    needed. */
 
-/* VG_(helperc_{LD,ST}V{1,2,4}) handle the common case fast.
+/* MC_(helperc_{LD,ST}V{1,2,4,8}) handle the common case fast.
    Under all other circumstances, it defers to the relevant _SLOWLY
    function, which can handle all situations.
 */
+
+/* ------------------------ Size = 8 ------------------------ */
+
+REGPARM(1)
+ULong MC_(helperc_LOADV8) ( Addr a )
+{
+#  ifdef VG_DEBUG_MEMORY
+   return mc_rd_V8_SLOWLY(a);
+#  else
+   if (IS_ALIGNED8_ADDR(a)) {
+      UInt    sec_no = shiftRight16(a) & 0xFFFF;
+      SecMap* sm     = primary_map[sec_no];
+      UInt    a_off  = (a & 0xFFFF) >> 3;
+      UChar   abits  = sm->abits[a_off];
+      if (abits == VGM_BYTE_VALID) {
+         /* a is 8-aligned, mapped, and addressible. */
+         UInt v_off = a & 0xFFFF;
+         /* LITTLE-ENDIAN */
+         UInt vLo   = ((UInt*)(sm->vbyte))[ (v_off >> 2) ];
+         UInt vHi   = ((UInt*)(sm->vbyte))[ (v_off >> 2) + 1 ];
+         return ( ((ULong)vHi) << 32 ) | ((ULong)vLo);
+      } else {
+         return mc_rd_V8_SLOWLY(a);
+      }
+   }
+   else
+   if (IS_ALIGNED4_ADDR(a)) {
+      /* LITTLE-ENDIAN */
+      UInt vLo =  MC_(helperc_LOADV4)(a+0);
+      UInt vHi =  MC_(helperc_LOADV4)(a+4);
+      return ( ((ULong)vHi) << 32 ) | ((ULong)vLo);
+   }
+   else
+      return mc_rd_V8_SLOWLY(a);
+#  endif
+}
+
+REGPARM(1)
+void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
+{
+#  ifdef VG_DEBUG_MEMORY
+   mc_wr_V8_SLOWLY(a, vbytes);
+#  else
+   if (IS_ALIGNED8_ADDR(a)) {
+      UInt    sec_no = shiftRight16(a) & 0xFFFF;
+      SecMap* sm     = primary_map[sec_no];
+      UInt    a_off  = (a & 0xFFFF) >> 3;
+      UChar   abits  = sm->abits[a_off];
+      if (abits == VGM_BYTE_VALID) {
+         /* a is 8-aligned, mapped, and addressible. */
+         UInt v_off = a & 0xFFFF;
+         UInt vHi = (UInt)(vbytes >> 32);
+         UInt vLo = (UInt)vbytes;
+         /* LITTLE-ENDIAN */
+         ((UInt*)(sm->vbyte))[ (v_off >> 2) ]     = vLo;
+         ((UInt*)(sm->vbyte))[ (v_off >> 2) + 1 ] = vHi;
+      } else {
+         mc_wr_V8_SLOWLY(a, vbytes);
+      }
+      return;
+   }
+   else
+   if (IS_ALIGNED4_ADDR(a)) {
+      UInt vHi = (UInt)(vbytes >> 32);
+      UInt vLo = (UInt)vbytes;
+      /* LITTLE-ENDIAN */
+      MC_(helperc_STOREV4)(a+0, vLo);
+      MC_(helperc_STOREV4)(a+4, vHi);
+      return;
+   }
+   else
+      mc_wr_V8_SLOWLY(a, vbytes);
+#  endif
+}
+
+/* ------------------------ Size = 4 ------------------------ */
+
 REGPARM(1)
 UInt MC_(helperc_LOADV4) ( Addr a )
 {
@@ -816,6 +897,8 @@ void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 #  endif
 }
 
+/* ------------------------ Size = 2 ------------------------ */
+
 REGPARM(1)
 UInt MC_(helperc_LOADV2) ( Addr a )
 {
@@ -859,6 +942,8 @@ void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
    }
 #  endif
 }
+
+/* ------------------------ Size = 1 ------------------------ */
 
 REGPARM(1)
 UInt MC_(helperc_LOADV1) ( Addr a )
@@ -907,8 +992,128 @@ void MC_(helperc_STOREV1) ( Addr a, UInt vbytes )
 
 /*------------------------------------------------------------*/
 /*--- Fallback functions to handle cases that the above    ---*/
-/*--- VG_(helperc_{LD,ST}V{1,2,4}) can't manage.           ---*/
+/*--- MC_(helperc_{LD,ST}V{1,2,4,8}) can't manage.         ---*/
 /*------------------------------------------------------------*/
+
+/* ------------------------ Size = 8 ------------------------ */
+
+static ULong mc_rd_V8_SLOWLY ( Addr a )
+{
+   Bool a0ok, a1ok, a2ok, a3ok, a4ok, a5ok, a6ok, a7ok;
+   UInt vb0,  vb1,  vb2,  vb3,  vb4,  vb5,  vb6,  vb7;
+
+   PROF_EVENT(70);
+
+   /* First establish independently the addressibility of the 4 bytes
+      involved. */
+   a0ok = get_abit(a+0) == VGM_BIT_VALID;
+   a1ok = get_abit(a+1) == VGM_BIT_VALID;
+   a2ok = get_abit(a+2) == VGM_BIT_VALID;
+   a3ok = get_abit(a+3) == VGM_BIT_VALID;
+   a4ok = get_abit(a+4) == VGM_BIT_VALID;
+   a5ok = get_abit(a+5) == VGM_BIT_VALID;
+   a6ok = get_abit(a+6) == VGM_BIT_VALID;
+   a7ok = get_abit(a+7) == VGM_BIT_VALID;
+
+   /* Also get the validity bytes for the address. */
+   vb0 = (UInt)get_vbyte(a+0);
+   vb1 = (UInt)get_vbyte(a+1);
+   vb2 = (UInt)get_vbyte(a+2);
+   vb3 = (UInt)get_vbyte(a+3);
+   vb4 = (UInt)get_vbyte(a+4);
+   vb5 = (UInt)get_vbyte(a+5);
+   vb6 = (UInt)get_vbyte(a+6);
+   vb7 = (UInt)get_vbyte(a+7);
+
+   /* Now distinguish 3 cases */
+
+   /* Case 1: the address is completely valid, so:
+      - no addressing error
+      - return V bytes as read from memory
+   */
+   if (a0ok && a1ok && a2ok && a3ok && a4ok && a5ok && a6ok && a7ok) {
+      ULong vw = VGM_WORD64_INVALID;
+      vw <<= 8; vw |= vb7;
+      vw <<= 8; vw |= vb6;
+      vw <<= 8; vw |= vb5;
+      vw <<= 8; vw |= vb4;
+      vw <<= 8; vw |= vb3;
+      vw <<= 8; vw |= vb2;
+      vw <<= 8; vw |= vb1;
+      vw <<= 8; vw |= vb0;
+      return vw;
+   }
+
+   /* Case 2: the address is completely invalid.  
+      - emit addressing error
+      - return V word indicating validity.  
+      This sounds strange, but if we make loads from invalid addresses 
+      give invalid data, we also risk producing a number of confusing
+      undefined-value errors later, which confuses the fact that the
+      error arose in the first place from an invalid address. 
+   */
+   /* VG_(printf)("%p (%d %d %d %d)\n", a, a0ok, a1ok, a2ok, a3ok); */
+   if (!MAC_(clo_partial_loads_ok) 
+       || ((a & 7) != 0)
+       || (!a0ok && !a1ok && !a2ok && !a3ok && !a4ok && !a5ok && !a6ok && !a7ok)) {
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 8, False );
+      return VGM_WORD64_VALID;
+   }
+
+   /* Case 3: the address is partially valid.  
+      - no addressing error
+      - returned V word is invalid where the address is invalid, 
+        and contains V bytes from memory otherwise. 
+      Case 3 is only allowed if MC_(clo_partial_loads_ok) is True
+      (which is the default), and the address is 4-aligned.  
+      If not, Case 2 will have applied.
+   */
+   sk_assert(MAC_(clo_partial_loads_ok));
+   {
+      ULong vw = VGM_WORD64_INVALID;
+      vw <<= 8; vw |= (a7ok ? vb7 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a6ok ? vb6 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a5ok ? vb5 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a4ok ? vb4 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a3ok ? vb3 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a2ok ? vb2 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a1ok ? vb1 : VGM_BYTE_INVALID);
+      vw <<= 8; vw |= (a0ok ? vb0 : VGM_BYTE_INVALID);
+      return vw;
+   }
+}
+
+static void mc_wr_V8_SLOWLY ( Addr a, ULong vbytes )
+{
+   /* Check the address for validity. */
+   Bool aerr = False;
+   PROF_EVENT(71);
+
+   if (get_abit(a+0) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+1) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+2) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+3) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+4) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+5) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+6) != VGM_BIT_VALID) aerr = True;
+   if (get_abit(a+7) != VGM_BIT_VALID) aerr = True;
+
+   /* Store the V bytes, remembering to do it little-endian-ly. */
+   set_vbyte( a+0, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+1, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+2, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+3, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+4, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+5, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+6, vbytes & 0x000000FF ); vbytes >>= 8;
+   set_vbyte( a+7, vbytes & 0x000000FF );
+
+   /* If an address error has happened, report it. */
+   if (aerr)
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 8, True );
+}
+
+/* ------------------------ Size = 4 ------------------------ */
 
 static UInt mc_rd_V4_SLOWLY ( Addr a )
 {
@@ -1003,6 +1208,8 @@ static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
       MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, True );
 }
 
+/* ------------------------ Size = 2 ------------------------ */
+
 static UInt mc_rd_V2_SLOWLY ( Addr a )
 {
    /* Check the address for validity. */
@@ -1043,6 +1250,8 @@ static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
    if (aerr)
       MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, True );
 }
+
+/* ------------------------ Size = 1 ------------------------ */
 
 static UInt mc_rd_V1_SLOWLY ( Addr a )
 {
@@ -1337,9 +1546,9 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
       a_here = addr+i;
       a_ok = get_abit(a_here) == VGM_BIT_VALID;
       if (a_ok) {
-	set_vbyte(a_here, VGM_BYTE_VALID);
+        set_vbyte(a_here, VGM_BYTE_VALID);
       } else {
-	set_vbyte(a_here, VGM_BYTE_INVALID);
+        set_vbyte(a_here, VGM_BYTE_INVALID);
         aerr = True;
       }
    }
@@ -1700,24 +1909,6 @@ void SK_(pre_clo_init)(void)
    VG_(init_post_reg_write_pthread_return)    ( & mc_post_reg_write );
    VG_(init_post_reg_write_clientreq_return)  ( & mc_post_reg_write );
    VG_(init_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
-
-#if 0
-   /* Three compact slots taken up by stack memory helpers */
-   VG_(register_compact_helper)((Addr) & MC_(helper_value_check4_fail));
-   VG_(register_compact_helper)((Addr) & MC_(helper_value_check0_fail));
-   VG_(register_compact_helper)((Addr) & MC_(helper_value_check2_fail));
-   VG_(register_compact_helper)((Addr) & MC_(helperc_STOREV4));
-   VG_(register_compact_helper)((Addr) & MC_(helperc_LOADV4));
-
-   /* These two made non-compact because 2-byte transactions are rare. */
-   VG_(register_noncompact_helper)((Addr) & MC_(helperc_STOREV2));
-   VG_(register_noncompact_helper)((Addr) & MC_(helperc_STOREV1));
-   VG_(register_noncompact_helper)((Addr) & MC_(helperc_LOADV2));
-   VG_(register_noncompact_helper)((Addr) & MC_(helperc_LOADV1));
-   VG_(register_noncompact_helper)((Addr) & MC_(fpu_write_check));
-   VG_(register_noncompact_helper)((Addr) & MC_(fpu_read_check));
-   VG_(register_noncompact_helper)((Addr) & MC_(helper_value_check1_fail));
-#endif
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

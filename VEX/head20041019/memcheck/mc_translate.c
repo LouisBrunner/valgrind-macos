@@ -792,8 +792,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
 
+      case Iop_AddF64:
+      case Iop_DivF64:
+      case Iop_SubF64:
       case Iop_MulF64:
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_CmpF64:
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
       /* non-FP after here */
 
@@ -906,8 +912,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    switch (op) {
 
       case Iop_F32toF64: 
-      case Iop_I32toF64: 
+      case Iop_I32toF64:
+      case Iop_I64toF64:
+      case Iop_NegF64:
          return mkPCastTo(mce, Ity_I64, vatom);
+
+      case Iop_F64toF32:
+         return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_64to32:
       case Iop_64HIto32:
@@ -958,6 +969,9 @@ IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr )
       data V bits from shadow memory. */
    ty = shadowType(ty);
    switch (ty) {
+      case Ity_I64: helper = &MC_(helperc_LOADV8);
+                    hname = "MC_(helperc_LOADV8)";
+                    break;
       case Ity_I32: helper = &MC_(helperc_LOADV4);
                     hname = "MC_(helperc_LOADV4)";
                     break;
@@ -1111,6 +1125,9 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
       data V bits into shadow memory. */
    datavbits = expr2vbits( mce, data );
    switch (ty) {
+      case Ity_I64: helper = &MC_(helperc_STOREV8);
+                    hname = "MC_(helperc_STOREV8)";
+                    break;
       case Ity_I32: helper = &MC_(helperc_STOREV4);
                     hname = "MC_(helperc_STOREV4)";
                     break;
@@ -1123,10 +1140,19 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
       default:      VG_(skin_panic)("memcheck:do_shadow_STle");
    }
 
-   di = unsafeIRDirty_0_N( 
-           2/*regparms*/, hname, helper, 
-           mkIRExprVec_2( addr,
-                          zwidenToHostWord( mce, datavbits )));
+   if (ty == Ity_I64) {
+      /* We can't do this with regparm 2 on x86, since the back end
+         isn't clever enough to handle 64-bit regparm args.  Therefore
+         be different. */
+      di = unsafeIRDirty_0_N( 
+              1/*regparms*/, hname, helper, 
+              mkIRExprVec_2( addr, datavbits ));
+   } else {
+      di = unsafeIRDirty_0_N( 
+              2/*regparms*/, hname, helper, 
+              mkIRExprVec_2( addr,
+                             zwidenToHostWord( mce, datavbits )));
+   }
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di) );
 }

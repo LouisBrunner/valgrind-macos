@@ -179,6 +179,11 @@ AC_DEFINE(HAVE_NFDS_T)
 fi
 
 # try to detect the XFree version
+# JRS 2002-06-17: this is completely bogus because it
+# detects the server version, whereas we need to know the 
+# client library version.  So what follows is hacked to
+# use all the X supp files regardless of what is detected.
+# This is really stoooopid and should be fixed properly.
 
 AC_PATH_X
 
@@ -222,15 +227,22 @@ EOF
 	   AC_MSG_RESULT([XFree 4.x family])
 	   AC_DEFINE(XFREE_4)
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+	   # haaaaaaack!
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
 	   ;;
 
 	*version=3*) 
 	   AC_MSG_RESULT([XFree 3.x family])
 	   AC_DEFINE(XFREE_3)
 	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+	   # haaaaaaack!
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
 	   ;;
 
 	*) AC_MSG_RESULT([unknown XFree86 server (${xfree})])
+	   # haaaaaaack!
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
 	   ;;
      esac
    fi

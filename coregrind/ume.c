@@ -611,6 +611,59 @@ static int load_script(char *hdr, int len, int fd, const char *name,
    return do_exec_inner(interp, info);
 }
 
+/* 
+   Emulate the normal Unix permissions checking algorithm.
+
+   If owner matches, then use the owner permissions, else
+   if group matches, then use the group permissions, else
+   use other permissions.
+
+   Note that we can't deal with SUID/SGID, so we refuse to run them
+   (otherwise the executable may misbehave if it doesn't have the
+   permissions it thinks it does).
+*/
+static int check_perms(int fd)
+{
+   struct stat st;
+
+   if (fstat(fd, &st) == -1) 
+      return errno;
+
+   if (st.st_mode & (S_ISUID | S_ISGID)) {
+      //fprintf(stderr, "Can't execute suid/sgid executable %s\n", exe);
+      return EACCES;
+   }
+
+   if (geteuid() == st.st_uid) {
+      if (!(st.st_mode & S_IXUSR))
+	 return EACCES;
+   } else {
+      int grpmatch = 0;
+
+      if (getegid() == st.st_gid)
+	 grpmatch = 1;
+      else {
+	 gid_t groups[32];
+	 int ngrp = getgroups(32, groups);
+	 int i;
+
+	 for(i = 0; i < ngrp; i++)
+	    if (groups[i] == st.st_gid) {
+	       grpmatch = 1;
+	       break;
+	    }
+      }
+
+      if (grpmatch) {
+	 if (!(st.st_mode & S_IXGRP))
+	    return EACCES;
+      } else if (!(st.st_mode & S_IXOTH))
+	 return EACCES;
+   }
+
+   return 0;
+}
+
 static int do_exec_inner(const char *exe, struct exeinfo *info)
 {
    int fd;
@@ -618,7 +671,6 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
    int bufsz;
    int i;
    int ret;
-   struct stat st;
    static const struct {
       int (*match)(const char *hdr, int len);
       int (*load) (      char *hdr, int len, int fd2, const char *name,
@@ -636,40 +688,10 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
       return errno;
    }
 
-   if (fstat(fd, &st) == -1) 
-      return errno;
-   else {
-      uid_t uid = geteuid();
-      gid_t gid = getegid();
-      gid_t groups[32];
-      int ngrp = getgroups(32, groups);
-
-      if (st.st_mode & (S_ISUID | S_ISGID)) {
-	 fprintf(stderr, "Can't execute suid/sgid executable %s\n", exe);
-	 return EACCES;
-      }
-
-      if (uid == st.st_uid) {
-	 if (!(st.st_mode & S_IXUSR))
-	    return EACCES;
-      } else {
-	 int grpmatch = 0;
-
-	 if (gid == st.st_gid)
-	    grpmatch = 1;
-	 else 
-	    for(i = 0; i < ngrp; i++)
-	       if (groups[i] == st.st_gid) {
-		  grpmatch = 1;
-		  break;
-	       }
-
-	 if (grpmatch) {
-	    if (!(st.st_mode & S_IXGRP))
-	       return EACCES;
-	 } else if (!(st.st_mode & S_IXOTH))
-	    return EACCES;
-      }
+   int err = check_perms(fd);
+   if (err != 0) {
+      close(fd);
+      return err;
    }
 
    bufsz = pread(fd, buf, sizeof(buf), 0);

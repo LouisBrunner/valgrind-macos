@@ -91,7 +91,7 @@ Bool VG_(seg_overlaps)(const Segment *s, Addr p, SizeT len)
 static void recycleseg(Segment *s)
 {
    if (s->flags & SF_CODE)
-      VG_(invalidate_translations)(s->addr, s->len);
+      VG_(discard_translations)(s->addr, s->len);
 
    if (s->filename != NULL)
       VG_(arena_free)(VG_AR_CORE, (Char *)s->filename);

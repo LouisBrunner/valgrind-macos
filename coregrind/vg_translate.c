@@ -343,14 +343,17 @@ static Bool need_to_handle_SP_assignment(void)
 }
 
 
-Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
-                      Bool debugging_translation )
+Bool VG_(translate) ( ThreadId tid, 
+                      Addr64   orig_addr,
+                      Bool     debugging_translation,
+                      Int      debugging_verbosity )
 {
-   Addr      redir, orig_addr0 = orig_addr;
-   Int       orig_size, tmpbuf_used, verbosity;
+   Addr64    redir, orig_addr0 = orig_addr;
+   Int       tmpbuf_used, verbosity;
    Bool      notrace_until_done;
    UInt      notrace_until_limit = 0;
    Segment*  seg;
+   VexGuestExtents vge;
 
    /* Make sure Vex is initialised right. */
    VexTranslateResult tres;
@@ -372,13 +375,24 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    redir = VG_(code_redirect)(orig_addr);
 
    if (redir != orig_addr && VG_(clo_verbosity) >= 2) {
+      Bool ok;
       Char name1[64] = "";
       Char name2[64] = "";
-      VG_(get_fnname_w_offset)(orig_addr, name1, 64);
-      VG_(get_fnname_w_offset)(redir, name2, 64);
-      name1[63] = name2[63] = 0;
+      name1[0] = name2[0] = 0;
+      ok = VG_(get_fnname_w_offset)(orig_addr, name1, 64);
+      if (ok) {
+         name1[63] = 0;
+      } else {
+         VG_(strcpy)(name1, "???");
+      }
+      ok = VG_(get_fnname_w_offset)(redir, name2, 64);
+      if (ok) {
+         name2[63] = 0;
+      } else {
+         VG_(strcpy)(name2, "???");
+      }
       VG_(message)(Vg_UserMsg, 
-                   "TRANSLATE: %p (%s) redirected to %p (%s)",
+                   "TRANSLATE: 0x%llx (%s) redirected to 0x%llx (%s)",
                    orig_addr, name1,
                    redir, name2 );
    }
@@ -390,7 +404,8 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       few blocks translated prior to a failure.  Set
       notrace_until_limit to be the number of translations to be made
       before --trace-codegen= style printing takes effect. */
-   notrace_until_done = VG_(get_bbs_translated)() >= notrace_until_limit;
+   notrace_until_done
+      = VG_(get_bbs_translated)() >= notrace_until_limit;
 
    seg = VG_(find_segment)(orig_addr);
 
@@ -414,11 +429,11 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       seg->flags |= SF_CODE;        /* contains cached code */
 
    /* If doing any code printing, print a basic block start marker */
-   if (VG_(clo_trace_codegen) || debugging_translation) {
+   if (VG_(clo_trace_flags) || debugging_translation) {
       Char fnname[64] = "";
       VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
       VG_(printf)(
-              "==== BB %d %s(%p) approx BBs exec'd %llu ====\n",
+              "==== BB %d %s(0x%llx) approx BBs exec'd %lld ====\n",
               VG_(get_bbs_translated)(), fnname, orig_addr, 
               VG_(bbs_done));
    }
@@ -426,21 +441,22 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
    if (debugging_translation) {
-      verbosity = 0xFE;
+      verbosity = debugging_verbosity;
    }
    else
-   if ( (VG_(clo_trace_codegen) > 0
+   if ( (VG_(clo_trace_flags) > 0
         && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) )) {
-      verbosity = VG_(clo_trace_codegen);
+      verbosity = VG_(clo_trace_flags);
    }
 
    /* Actually do the translation. */
    tres = LibVEX_Translate ( 
              VG_(vex_arch), VG_(vex_subarch),
              VG_(vex_arch), VG_(vex_subarch),
-             (Char*)orig_addr, (Addr64)orig_addr, 
+             (UChar*)orig_addr, 
+             (Addr64)orig_addr, 
              chase_into_ok,
-             &orig_size,
+             &vge,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              TL_(instrument),
              need_to_handle_SP_assignment()
@@ -458,8 +474,6 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 #undef DECIDE_IF_PRINTING_CODEGEN
 
    /* Copy data at trans_addr into the translation cache. */
-   /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
-   vg_assert(orig_size >= 0 && orig_size < 65536);
    vg_assert(tmpbuf_used > 0 && tmpbuf_used < 65536);
 
    // If debugging, don't do anything with the translated block;  we
@@ -467,8 +481,10 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    if (!debugging_translation) {
       // Note that we use orig_addr0, not orig_addr, which might have been
       // changed by the redirection
-      VG_(add_to_trans_tab)( orig_addr0, orig_size, 
-                             (Addr)(&tmpbuf[0]), tmpbuf_used );
+      VG_(add_to_trans_tab)( &vge,
+                             orig_addr0,
+                             (Addr)(&tmpbuf[0]), 
+                             tmpbuf_used );
    }
 
    VGP_POPCC(VgpTranslate);

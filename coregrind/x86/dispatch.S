@@ -37,13 +37,6 @@
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
 	
-#define TT_LOOKUP(reg, fail)				\
-	movl %eax, reg;					\
-	andl $VG_TT_FAST_MASK, reg;			\
-	movl VG_(tt_fast)(,reg,4), reg;			\
-	cmpl %eax, (reg);				\
-	jnz  fail
-	
 /* signature: UInt VG_(run_innerloop) ( void* guest_state ) */
 
 .globl VG_(run_innerloop)
@@ -99,13 +92,19 @@ dispatch_boring:
 	
 	jz	counter_is_zero
 	/* try a fast lookup in the translation cache */
-	TT_LOOKUP(%ebx, fast_lookup_failed)
+	movl %eax, %ebx
+	andl $VG_TT_FAST_MASK, %ebx
+	movl VG_(tt_fast)(,%ebx,4), %ecx
+	cmpl %eax, (%ecx)
+	jnz  fast_lookup_failed
+	movl VG_(tt_fastN)(,%ebx,4), %edx
+	incl (%edx)
 
-	/* Found a match.  Call the tce.payload field.  The magic 8
-	   value is offsetof(TCEntry,payload) on a 32-bit platform. */
+	/* Found a match.  Call tce[1], which is 8 bytes along, since
+           each tce element is a 64-bit int. */
 	
-	addl 	$8, %ebx
-	call 	*%ebx
+	addl 	$8, %ecx
+	call 	*%ecx
 	
 	/* 
 	   %eax holds destination (original) address.

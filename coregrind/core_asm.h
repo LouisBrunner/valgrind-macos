@@ -56,7 +56,7 @@
 
 
 /* Constants for the fast translation lookup cache. */
-#define VG_TT_FAST_BITS 15
+#define VG_TT_FAST_BITS 16
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
 

@@ -1483,8 +1483,8 @@ Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Bool   VG_(clo_profile)        = False;
-Bool   VG_(clo_bbprofile)      = False;
-UChar  VG_(clo_trace_codegen)  = 0; // 00000000b
+UChar  VG_(clo_trace_flags)    = 0; // 00000000b
+UChar  VG_(clo_profile_flags)  = 0; // 00000000b
 Int    VG_(clo_trace_notbelow) = 0;
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
@@ -1561,9 +1561,9 @@ void usage ( Bool debug_help )
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
-"    --bbprofile=no|yes        profile bbs? [no]\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
-"    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
+"    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
+"    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
 "    --trace-notbelow=<number>    only show BBs above <number> [0]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
@@ -1579,7 +1579,7 @@ void usage ( Bool debug_help )
 "    --vex-guest-max-insns             1 .. 100 [50]\n"
 "    --vex-guest-chase-thresh          0 .. 99  [10]\n"
 "\n"
-"    --trace-codegen values (omit the middle space):\n"
+"    --trace-flags and --profile-flags values (omit the middle space):\n"
 "       1000 0000   show conversion into IR\n"
 "       0100 0000   show after initial opt\n"
 "       0010 0000   show after instrumentation\n"
@@ -1752,7 +1752,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO("--support-elan3",    VG_(clo_support_elan3))
       else VG_BOOL_CLO("--profile",          VG_(clo_profile))
-      else VG_BOOL_CLO("--bbprofile",        VG_(clo_bbprofile))
       else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))
       else VG_BOOL_CLO("--time-stamp",       VG_(clo_time_stamp))
@@ -1834,21 +1833,42 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_n_suppressions)++;
       }
 
-      /* "vwxyz" --> 000zyxwv (binary) */
-      else if (VG_CLO_STREQN(16, arg, "--trace-codegen=")) {
+      /* "stuvwxyz" --> stuvwxyz (binary) */
+      else if (VG_CLO_STREQN(14, arg, "--trace-flags=")) {
+         Int j;
+         char* opt = & arg[14];
+   
+         if (8 != VG_(strlen)(opt)) {
+            VG_(message)(Vg_UserMsg, 
+                         "--trace-flags argument must have 8 digits");
+            VG_(bad_option)(arg);
+         }
+         for (j = 0; j < 8; j++) {
+            if      ('0' == opt[j]) { /* do nothing */ }
+            else if ('1' == opt[j]) VG_(clo_trace_flags) |= (1 << (7-j));
+            else {
+               VG_(message)(Vg_UserMsg, "--trace-flags argument can only "
+                                        "contain 0s and 1s");
+               VG_(bad_option)(arg);
+            }
+         }
+      }
+
+      /* "stuvwxyz" --> stuvwxyz (binary) */
+      else if (VG_CLO_STREQN(16, arg, "--profile-flags=")) {
          Int j;
          char* opt = & arg[16];
    
          if (8 != VG_(strlen)(opt)) {
             VG_(message)(Vg_UserMsg, 
-                         "--trace-codegen argument must have 8 digits");
+                         "--profile-flags argument must have 8 digits");
             VG_(bad_option)(arg);
          }
          for (j = 0; j < 8; j++) {
             if      ('0' == opt[j]) { /* do nothing */ }
-            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << (7-j));
+            else if ('1' == opt[j]) VG_(clo_profile_flags) |= (1 << (7-j));
             else {
-               VG_(message)(Vg_UserMsg, "--trace-codegen argument can only "
+               VG_(message)(Vg_UserMsg, "--profile-flags argument can only "
                                         "contain 0s and 1s");
                VG_(bad_option)(arg);
             }
@@ -2807,6 +2827,9 @@ int main(int argc, char **argv)
 
    if (VG_(clo_profile))
       VGP_(done_profiling)();
+
+   if (VG_(clo_profile_flags) > 0)
+      VG_(show_BB_profile)();
 
    /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
    vg_assert(src == VgSrc_FatalSig ||

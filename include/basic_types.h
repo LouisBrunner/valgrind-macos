@@ -50,6 +50,7 @@ typedef unsigned long          UWord;     // 32             64
 typedef signed long            Word;      // 32             64
 
 typedef UWord                  Addr;      // 32             64
+typedef UWord                  AddrH;     // 32             64
 
 typedef UWord                  SizeT;     // 32             64
 typedef  Word                 SSizeT;     // 32             64

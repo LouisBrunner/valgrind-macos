@@ -720,7 +720,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
    UInt     trc;
    Int      done_this_time, n_in_bounded_wait;
    Int	    n_exists, n_waiting_for_reaper;
-   Addr     trans_addr;
+   Bool     found;
 
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
@@ -880,12 +880,13 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
-            trans_addr = VG_(search_transtab)( ip );
-            if (trans_addr == (Addr)0) {
+            found = VG_(search_transtab)( NULL, 
+                                          ip, True/*upd_fast_cache*/ );
+            if (!found) {
                /* Not found; we need to request a translation. */
-               if (VG_(translate)( tid, ip, /*debug*/False )) {
-                  trans_addr = VG_(search_transtab)( ip ); 
-                  if (trans_addr == (Addr)0)
+               if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/ )) {
+                  found = VG_(search_transtab)( NULL, ip, True ); 
+                  if (!found)
                      VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
                } else {
                   // If VG_(translate)() fails, it's because it had to throw
@@ -3280,7 +3281,7 @@ void do_client_request ( ThreadId tid, UWord* arg )
                          " addr %p,  len %d\n",
                          (void*)arg[1], arg[2] );
 
-         VG_(invalidate_translations)( arg[1], arg[2] );
+         VG_(discard_translations)( arg[1], arg[2] );
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 	 break;

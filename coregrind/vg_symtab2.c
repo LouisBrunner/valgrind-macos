@@ -2352,7 +2352,7 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 		      redir->to_lib, redir->to_sym, redir->to_addr);
       }
       
-      if (VG_(search_transtab)(redir->from_addr) != 0) {
+      if (VG_(search_transtab)(NULL, redir->from_addr, False)) {
 	/* For some given (from, to) redir, the "from" function got
            called before the .so containing "to" became available.  We
            know this because there is already a translation for the
@@ -2377,7 +2377,7 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
                 "   %s (%p -> %p)",
                 redir->from_sym, redir->from_addr, redir->to_addr );
          }
-	 VG_(invalidate_translations)(redir->from_addr, 1);
+	 VG_(discard_translations)(redir->from_addr, 1);
       }
 
       VG_(SkipList_Insert)(&sk_resolved_redir, redir);

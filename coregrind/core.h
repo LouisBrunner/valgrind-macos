@@ -289,11 +289,10 @@ extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
 extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 
-/* PROFILE: collect bb profiling data?  default: NO */
-extern Bool  VG_(clo_bbprofile);
-
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
-extern Bool  VG_(clo_trace_codegen);
+extern Bool  VG_(clo_trace_flags);
+/* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
+extern Bool  VG_(clo_profile_flags);
 /* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
 extern Int   VG_(clo_trace_notbelow);
 /* DEBUG: print system calls?  default: NO */
@@ -1101,8 +1100,11 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 
-extern Bool VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
-
+extern 
+Bool VG_(translate) ( ThreadId tid, 
+                      Addr64   orig_addr,
+                      Bool     debugging_translation,
+                      Int      debugging_verbosity );
 
 /* ---------------------------------------------------------------------
    Exports of vg_execontext.c.
@@ -1711,21 +1713,32 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
    Exports of vg_transtab.c
    ------------------------------------------------------------------ */
 
-/* The fast-cache for tt-lookup. */
-extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
+/* The fast-cache for tt-lookup, and for finding counters. */
+extern ULong* VG_(tt_fast) [VG_TT_FAST_SIZE];
+extern UInt*  VG_(tt_fastN)[VG_TT_FAST_SIZE];
 
 extern void VG_(init_tt_tc)       ( void );
-extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                                    Addr trans_addr, Int trans_size );
-extern Addr VG_(search_transtab)  ( Addr original_addr );
 
-extern void VG_(invalidate_translations) ( Addr start, UInt range );
+extern
+void VG_(add_to_trans_tab)( VexGuestExtents* vge,
+                            Addr64           entry,
+                            AddrH            code,
+                            UInt             code_len );
+
+extern Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
+                                   Addr64        guest_addr, 
+                                   Bool          upd_cache );
+
+extern void VG_(discard_translations) ( Addr64 start, UInt range );
 
 extern void VG_(sanity_check_tt_tc) ( Char* caller );
 
 extern void VG_(print_tt_tc_stats) ( void );
 
-extern Int  VG_(get_bbs_translated) ( void );
+extern UInt VG_(get_bbs_translated) ( void );
+
+extern void VG_(show_BB_profile) ( void );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscall.S

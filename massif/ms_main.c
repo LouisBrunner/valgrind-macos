@@ -1177,7 +1177,7 @@ void SK_(pre_clo_init)()
    VG_(details_version)         ("0.0.3");
    VG_(details_description)     ("a space profiler");
    VG_(details_copyright_author)("Copyright (C) 2003, Nicholas Nethercote");
-   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    // Needs
    VG_(needs_libc_freeres)();

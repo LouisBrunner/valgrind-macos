@@ -182,18 +182,18 @@ void,	die_mem_munmap,	Addr a, SizeT len
 ## specialised cases are defined, the general case must be defined too.
 
 ## Nb: they must all use the REGPARM(n) attribute.
-void,	new_mem_stack_4,	Addr new_ESP
-void,	new_mem_stack_8,	Addr new_ESP
-void,	new_mem_stack_12,	Addr new_ESP
-void,	new_mem_stack_16,	Addr new_ESP
-void,	new_mem_stack_32,	Addr new_ESP
+REGPARM(1) void,	new_mem_stack_4,	Addr new_ESP
+REGPARM(1) void,	new_mem_stack_8,	Addr new_ESP
+REGPARM(1) void,	new_mem_stack_12,	Addr new_ESP
+REGPARM(1) void,	new_mem_stack_16,	Addr new_ESP
+REGPARM(1) void,	new_mem_stack_32,	Addr new_ESP
 void,	new_mem_stack,	Addr a, SizeT len
 
-void,	die_mem_stack_4,	Addr die_ESP
-void,	die_mem_stack_8,	Addr die_ESP
-void,	die_mem_stack_12,	Addr die_ESP
-void,	die_mem_stack_16,	Addr die_ESP
-void,	die_mem_stack_32,	Addr die_ESP
+REGPARM(1) void,	die_mem_stack_4,	Addr die_ESP
+REGPARM(1) void,	die_mem_stack_8,	Addr die_ESP
+REGPARM(1) void,	die_mem_stack_12,	Addr die_ESP
+REGPARM(1) void,	die_mem_stack_16,	Addr die_ESP
+REGPARM(1) void,	die_mem_stack_32,	Addr die_ESP
 void,	die_mem_stack,	Addr a, SizeT len
 
 ## Used for redzone at end of thread stacks

@@ -6174,73 +6174,40 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
    }
 }
 
-//-- /* Moves of Ew into a segment register.
-//--       mov Ew, Sw  meaning
-//--       mov reg-or-mem, reg
-//--    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//--    the address advanced completely over this instruction.
-//-- 
-//--    Ew(src) is reg-or-mem
-//--    Sw(dst) is seg reg.
-//-- 
-//--    If E is reg, -->    GETw   %Ew,  tmpv
-//--                        PUTSEG tmpv, %Sw
-//--  
-//--    If E is mem  -->    (getAddr E) -> tmpa
-//--                        LDw (tmpa), tmpb
-//--                        PUTSEG tmpb, %Sw
-//-- */
+/* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
+
 static
 UInt dis_mov_Ew_Sw ( UChar sorb, UInt delta0 )
 {
-   UChar rm  = getIByte(delta0);
-   //HChar dis_buf[50];
+   Int    len;
+   IRTemp addr;
+   UChar  rm  = getIByte(delta0);
+   HChar  dis_buf[50];
 
    if (epartIsReg(rm)) {
       putSReg( gregOfRM(rm), getIReg(2, eregOfRM(rm)) );
       DIP("movw %s,%s\n", nameIReg(2,eregOfRM(rm)), nameSReg(gregOfRM(rm)));
       return 1+delta0;
-   }
-
-   /* E refers to memory */    
-   {
-     vassert(0);
-     /*
-      UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-      Int  tmpa = LOW24(pair);
-      Int  tmpb = newTemp(cb);
-      uInstr2(cb, LOAD,   2, TempReg, tmpa, TempReg, tmpb);
-      uInstr2(cb, PUTSEG, 2, TempReg, tmpb, ArchRegS, gregOfRM(rm));
-      DIP("movw %s,%s\n", dis_buf,nameSReg(gregOfRM(rm)));
-      return HI8(pair)+eip0;
-     */
+   } else {
+      addr = disAMode ( &len, sorb, delta0, dis_buf );
+      putSReg( gregOfRM(rm), loadLE(Ity_I16, mkexpr(addr)) );
+      DIP("movw %s,%s\n", dis_buf, nameSReg(gregOfRM(rm)));
+      return len+delta0;
    }
 }
 
-//-- 
-//-- /* Moves of a segment register to Ew.
-//--       mov Sw, Ew  meaning
-//--       mov reg, reg-or-mem
-//--    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//--    the address advanced completely over this instruction.
-//-- 
-//--    Sw(src) is seg reg.
-//--    Ew(dst) is reg-or-mem
-//-- 
-//--    If E is reg, -->    GETSEG %Sw,  tmp
-//--                        PUTW tmp, %Ew
-//--  
-//--    If E is mem, -->    (getAddr E) -> tmpa
-//--                        GETSEG %Sw, tmpv
-//--                        STW tmpv, (tmpa) 
-//-- */
+/* Move 16 bits from G (a segment register) to Ew (ireg or mem).  If
+   dst is ireg and sz==4, zero out top half of it.  */
+
 static
 UInt dis_mov_Sw_Ew ( UChar sorb,
                      Int   sz,
                      UInt  delta0 )
 {
-   UChar rm = getIByte(delta0);
-   //HChar dis_buf[50];
+   Int    len;
+   IRTemp addr;
+   UChar  rm  = getIByte(delta0);
+   HChar  dis_buf[50];
 
    vassert(sz == 2 || sz == 4);
 
@@ -6252,51 +6219,44 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 
       DIP("mov %s,%s\n", nameSReg(gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
       return 1+delta0;
-   }
-
-   vassert(0);
-#if 0
-   /* E refers to memory */    
-   {
-      UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-      Int  tmpa = LOW24(pair);
-      Int  tmpv = newTemp(cb);
-      uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
-      uInstr2(cb, STORE,  2, TempReg, tmpv, TempReg, tmpa);
+   } else {
+      addr = disAMode ( &len, sorb, delta0, dis_buf );
+      storeLE( mkexpr(addr), getSReg(gregOfRM(rm)) );
       DIP("mov %s,%s\n", nameSReg(gregOfRM(rm)), dis_buf);
-      return HI8(pair)+eip0;
+      return len+delta0;
    }
-#endif
 }
 
 
-//-- static 
-//-- void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
-//-- {
-//--     Int t1 = newTemp(cb), t2 = newTemp(cb);
-//--     vg_assert(sz == 2 || sz == 4);
-//--     uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
-//--     uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
-//--     uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
-//--     uLiteral(cb, sz);
-//--     uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
-//--     uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
-//--     DIP("push %s\n", VG_(name_of_seg_reg)(sreg));
-//-- }
-//-- 
-//-- static
-//-- void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
-//-- {
-//--    Int t1 = newTemp(cb), t2 = newTemp(cb);
-//--    vg_assert(sz == 2 || sz == 4);
-//--    uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
-//--    uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
-//--    uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);
-//--    uLiteral(cb, sz);
-//--    uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg,  R_ESP);
-//--    uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
-//--    DIP("pop %s\n", VG_(name_of_seg_reg)(sreg));
-//-- }
+static 
+void dis_push_segreg ( UInt sreg, Int sz )
+{
+    IRTemp t1 = newTemp(Ity_I16);
+    IRTemp ta = newTemp(Ity_I32);
+    vassert(sz == 2 || sz == 4);
+
+    assign( t1, getSReg(sreg) );
+    assign( ta, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)) );
+    putIReg(4, R_ESP, mkexpr(ta));
+    storeLE( mkexpr(ta), mkexpr(t1) );
+
+    DIP("pushw %s\n", nameSReg(sreg));
+}
+
+static
+void dis_pop_segreg ( UInt sreg, Int sz )
+{
+    IRTemp t1 = newTemp(Ity_I16);
+    IRTemp ta = newTemp(Ity_I32);
+    vassert(sz == 2 || sz == 4);
+
+    assign( ta, getIReg(4, R_ESP) );
+    assign( t1, loadLE(Ity_I16, mkexpr(ta)) );
+
+    putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(ta), mkU32(sz)) );
+    putSReg( sreg, mkexpr(t1) );
+    DIP("pop %s\n", nameSReg(sreg));
+}
 
 static
 void dis_ret ( UInt d32 )
@@ -12249,7 +12209,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
-        vassert(0);
+        goto decode_failure;
 //--       case 0xA5: 
         //         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
         //                              guest_eip_bbstart+delta, "repne movs" );
@@ -12808,7 +12768,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          DIP("j%s-32 0x%x\n", name_X86Condcode(opc - 0x80), d32);
          break;
 
-
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0x31: /* RDTSC */
@@ -12838,6 +12797,18 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--          uInstr0(cb, CALLM_E, 0);
          DIP("rdtsc\n");
          break;
+
+      /* =-=-=-=-=-=-=-=-=- PUSH/POP Sreg =-=-=-=-=-=-=-=-=-= */
+
+      case 0xA1: /* POP %FS */
+         dis_pop_segreg( R_FS, sz ); break;
+      case 0xA9: /* POP %GS */
+         dis_pop_segreg( R_GS, sz ); break;
+
+      case 0xA0: /* PUSH %FS */
+         dis_push_segreg( R_FS, sz ); break;
+      case 0xA8: /* PUSH %GS */
+         dis_push_segreg( R_GS, sz ); break;
 
       /* =-=-=-=-=-=-=-=-=- SETcc Eb =-=-=-=-=-=-=-=-=-= */
       case 0x90:
@@ -13029,9 +13000,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
               (Int)getIByte(delta_start+2),
               (Int)getIByte(delta_start+3) );
 
-   /* Tell the dispatcher that this insn cannot be decoded,
-      and so has not been executed, and (is currently) the
-      next to be executed. */
+   /* Tell the dispatcher that this insn cannot be decoded, and so has
+      not been executed, and (is currently) the next to be executed.
+      EIP should be up-to-date since it made so at the start of each
+      insn, but nevertheless be paranoid and update it again right
+      now. */
    stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_curr_instr) ) );
    jmp_lit(Ijk_NoDecode, guest_eip_curr_instr);
    whatNext = Dis_StopHere;

@@ -241,17 +241,6 @@ extern void ppX86RM ( X86RM* );
 /* --------- */
 typedef
    enum {
-      Xss_16,
-      Xss_32
-   }
-   X86ScalarSz;
-
-extern HChar* showX86ScalarSz ( X86ScalarSz );
-
-
-/* --------- */
-typedef
-   enum {
       Xun_NEG,
       Xun_NOT
    }
@@ -350,11 +339,12 @@ typedef
    enum {
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
-      Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
-      Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
+      Xin_Sh32,      /* 32-bit shift/rotate, dst=REG */
+      Xin_Test32,    /* 32-bit test of REG against imm32 (AND, set
+                        flags, discard result) */
       Xin_Unary32,   /* 32-bit not and neg */
-      Xin_MulL,      /* widening multiply */
-      Xin_Div,       /* div and mod */
+      Xin_MulL,      /* 32 x 32 -> 64 multiply */
+      Xin_Div,       /* 64/32 -> (32,32) div and mod */
       Xin_Sh3232,    /* shldl or shrdl */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
@@ -372,7 +362,7 @@ typedef
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
       Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
       Xin_FpCMov,    /* FP fake floating point conditional move */
-      Xin_FpLdStCW,  /* fldcw / fstcw */
+      Xin_FpLdCW,    /* fldcw */
       Xin_FpStSW_AX, /* fstsw %ax */
       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
 
@@ -407,29 +397,27 @@ typedef
          } Alu32M;
          struct {
             X86ShiftOp op;
-            UInt       src;  /* shift amount, or 0 means %cl */
-            X86RM*     dst;
+            UInt  src;  /* shift amount, or 0 means %cl */
+            HReg  dst;
          } Sh32;
          struct {
-            X86RI* src;
-            X86RM* dst;
+            UInt imm32;
+            HReg dst; /* not written, only read */
          } Test32;
          /* Not and Neg */
          struct {
             X86UnaryOp op;
-            X86RM*     dst;
+            HReg       dst;
          } Unary32;
-         /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
+         /* EDX:EAX = EAX *s/u r/m32 */
          struct {
-            Bool        syned;
-            X86ScalarSz ssz;
-            X86RM*      src;
+            Bool   syned;
+            X86RM* src;
          } MulL;
          /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
          struct {
-            Bool        syned;
-            X86ScalarSz ssz;
-            X86RM*      src;
+            Bool   syned;
+            X86RM* src;
          } Div;
          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
          struct {
@@ -539,12 +527,11 @@ typedef
             HReg        src;
             HReg        dst;
          } FpCMov;
-         /* Load/store the FPU's 16-bit control word (fldcw/fstcw) */
+         /* Load the FPU's 16-bit control word (fldcw) */
          struct {
-            Bool      isLoad;
             X86AMode* addr;
          }
-         FpLdStCW;
+         FpLdCW;
          /* fstsw %ax */
          struct {
             /* no fields */
@@ -568,7 +555,7 @@ typedef
             X86AMode* addr;
          } SseLdSt;
          struct {
-            Int       sz; /* 4 or 8 only */
+            UChar     sz; /* 4 or 8 only */
             HReg      reg;
             X86AMode* addr;
          } SseLdzLO;
@@ -616,11 +603,11 @@ typedef
 
 extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
-extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
-extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, X86RM* );
-extern X86Instr* X86Instr_Test32    ( X86RI* src, X86RM* dst );
-extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
-extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
+extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, HReg dst );
+extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, HReg );
+extern X86Instr* X86Instr_Test32    ( UInt imm32, HReg dst );
+extern X86Instr* X86Instr_MulL      ( Bool syned, X86RM* );
+extern X86Instr* X86Instr_Div       ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
@@ -639,7 +626,7 @@ extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode*
 extern X86Instr* X86Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_Fp64to32  ( HReg src, HReg dst );
 extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
-extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
+extern X86Instr* X86Instr_FpLdCW    ( X86AMode* );
 extern X86Instr* X86Instr_FpStSW_AX ( void );
 extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 

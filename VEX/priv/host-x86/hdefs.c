@@ -430,14 +430,6 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
 
 /* --------- Instructions. --------- */
 
-HChar* showX86ScalarSz ( X86ScalarSz sz ) {
-   switch (sz) {
-      case Xss_16: return "w";
-      case Xss_32: return "l";
-      default: vpanic("showX86ScalarSz");
-   }
-}
-
 HChar* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
       case Xun_NOT: return "not";
@@ -587,7 +579,7 @@ X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
    vassert(op != Xalu_MUL);
    return i;
 }
-X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
+X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, HReg dst ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
    i->Xin.Sh32.op  = op;
@@ -595,34 +587,32 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    i->Xin.Sh32.dst = dst;
    return i;
 }
-X86Instr* X86Instr_Test32  ( X86RI* src, X86RM* dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag            = Xin_Test32;
-   i->Xin.Test32.src = src;
-   i->Xin.Test32.dst = dst;
+X86Instr* X86Instr_Test32 ( UInt imm32, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Test32;
+   i->Xin.Test32.imm32 = imm32;
+   i->Xin.Test32.dst   = dst;
    return i;
 }
-X86Instr* X86Instr_Unary32  ( X86UnaryOp op, X86RM* dst ) {
+X86Instr* X86Instr_Unary32 ( X86UnaryOp op, HReg dst ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_Unary32;
    i->Xin.Unary32.op  = op;
    i->Xin.Unary32.dst = dst;
    return i;
 }
-X86Instr* X86Instr_MulL ( Bool syned, X86ScalarSz ssz , X86RM* src ) {
+X86Instr* X86Instr_MulL ( Bool syned, X86RM* src ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_MulL;
    i->Xin.MulL.syned  = syned;
-   i->Xin.MulL.ssz    = ssz;
    i->Xin.MulL.src    = src;
    return i;
 }
-X86Instr* X86Instr_Div ( Bool syned, X86ScalarSz ssz, X86RM* src ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag             = Xin_Div;
-   i->Xin.Div.syned   = syned;
-   i->Xin.Div.ssz     = ssz;
-   i->Xin.Div.src     = src;
+X86Instr* X86Instr_Div ( Bool syned, X86RM* src ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_Div;
+   i->Xin.Div.syned = syned;
+   i->Xin.Div.src   = src;
    return i;
 }
 X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
@@ -767,11 +757,10 @@ X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
    vassert(cond != Xcc_ALWAYS);
    return i;
 }
-X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr ) {
-   X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag                 = Xin_FpLdStCW;
-   i->Xin.FpLdStCW.isLoad = isLoad;
-   i->Xin.FpLdStCW.addr   = addr;
+X86Instr* X86Instr_FpLdCW ( X86AMode* addr ) {
+   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag               = Xin_FpLdCW;
+   i->Xin.FpLdCW.addr   = addr;
    return i;
 }
 X86Instr* X86Instr_FpStSW_AX ( void ) {
@@ -897,28 +886,22 @@ void ppX86Instr ( X86Instr* i ) {
            vex_printf("%%cl,"); 
          else 
             vex_printf("$%d,", i->Xin.Sh32.src);
-         ppX86RM(i->Xin.Sh32.dst);
+         ppHRegX86(i->Xin.Sh32.dst);
          return;
       case Xin_Test32:
-         vex_printf("testl ");
-         ppX86RI(i->Xin.Test32.src);
-         vex_printf(",");
-         ppX86RM(i->Xin.Test32.dst);
+         vex_printf("testl $%d,", i->Xin.Test32.imm32);
+         ppHRegX86(i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
-         ppX86RM(i->Xin.Unary32.dst);
+         ppHRegX86(i->Xin.Unary32.dst);
          return;
       case Xin_MulL:
-         vex_printf("%cmul%s ",
-                    i->Xin.MulL.syned ? 's' : 'u',
-                    showX86ScalarSz(i->Xin.MulL.ssz));
+         vex_printf("%cmull ", i->Xin.MulL.syned ? 's' : 'u');
          ppX86RM(i->Xin.MulL.src);
          return;
       case Xin_Div:
-         vex_printf("%cdiv%s ",
-                    i->Xin.Div.syned ? 's' : 'u',
-                    showX86ScalarSz(i->Xin.Div.ssz));
+         vex_printf("%cdivl ", i->Xin.Div.syned ? 's' : 'u');
          ppX86RM(i->Xin.Div.src);
          return;
       case Xin_Sh3232:
@@ -1047,9 +1030,9 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.FpCMov.dst);
          return;
-      case Xin_FpLdStCW:
-         vex_printf(i->Xin.FpLdStCW.isLoad ? "fldcw " : "fstcw ");
-         ppX86AMode(i->Xin.FpLdStCW.addr);
+      case Xin_FpLdCW:
+         vex_printf("fldcw ");
+         ppX86AMode(i->Xin.FpLdCW.addr);
          return;
       case Xin_FpStSW_AX:
          vex_printf("fstsw %%ax");
@@ -1142,11 +1125,11 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_Alu32R:
          addRegUsage_X86RMI(u, i->Xin.Alu32R.src);
          if (i->Xin.Alu32R.op == Xalu_MOV) {
-            addHRegUse(u, HRmWrite,  i->Xin.Alu32R.dst);
+            addHRegUse(u, HRmWrite, i->Xin.Alu32R.dst);
             return;
          }
          if (i->Xin.Alu32R.op == Xalu_CMP) { 
-            addHRegUse(u, HRmRead,  i->Xin.Alu32R.dst);
+            addHRegUse(u, HRmRead, i->Xin.Alu32R.dst);
             return;
          }
          addHRegUse(u, HRmModify, i->Xin.Alu32R.dst);
@@ -1156,16 +1139,15 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addRegUsage_X86AMode(u, i->Xin.Alu32M.dst);
          return;
       case Xin_Sh32:
-         addRegUsage_X86RM(u, i->Xin.Sh32.dst, HRmModify);
+         addHRegUse(u, HRmModify, i->Xin.Sh32.dst);
          if (i->Xin.Sh32.src == 0)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
       case Xin_Test32:
-         addRegUsage_X86RI(u, i->Xin.Test32.src);
-         addRegUsage_X86RM(u, i->Xin.Test32.dst, HRmRead);
+         addHRegUse(u, HRmRead, i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
-         addRegUsage_X86RM(u, i->Xin.Unary32.dst, HRmModify);
+         addHRegUse(u, HRmModify, i->Xin.Unary32.dst);
          return;
       case Xin_MulL:
          addRegUsage_X86RM(u, i->Xin.MulL.src, HRmRead);
@@ -1273,8 +1255,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead,   i->Xin.FpCMov.src);
          addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
          return;
-      case Xin_FpLdStCW:
-         addRegUsage_X86AMode(u, i->Xin.FpLdStCW.addr);
+      case Xin_FpLdCW:
+         addRegUsage_X86AMode(u, i->Xin.FpLdCW.addr);
          return;
       case Xin_FpStSW_AX:
          addHRegUse(u, HRmWrite, hregX86_EAX());
@@ -1378,14 +1360,13 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapRegs_X86AMode(m, i->Xin.Alu32M.dst);
          return;
       case Xin_Sh32:
-         mapRegs_X86RM(m, i->Xin.Sh32.dst);
+         mapReg(m, &i->Xin.Sh32.dst);
          return;
       case Xin_Test32:
-         mapRegs_X86RI(m, i->Xin.Test32.src);
-         mapRegs_X86RM(m, i->Xin.Test32.dst);
+         mapReg(m, &i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
-         mapRegs_X86RM(m, i->Xin.Unary32.dst);
+         mapReg(m, &i->Xin.Unary32.dst);
          return;
       case Xin_MulL:
          mapRegs_X86RM(m, i->Xin.MulL.src);
@@ -1451,8 +1432,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.FpCMov.src);
          mapReg(m, &i->Xin.FpCMov.dst);
          return;
-      case Xin_FpLdStCW:
-         mapRegs_X86AMode(m, i->Xin.FpLdStCW.addr);
+      case Xin_FpLdCW:
+         mapRegs_X86AMode(m, i->Xin.FpLdCW.addr);
          return;
       case Xin_FpStSW_AX:
          return;
@@ -2013,95 +1994,65 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       if (i->Xin.Sh32.src == 0) {
          *p++ = opc_cl;
-         switch (i->Xin.Sh32.dst->tag) {
-            case Xrm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Xin.Sh32.dst->Xrm.Reg.reg);
-               goto done;
-            default:
-               goto bad;
-         }
+         p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
       } else {
          *p++ = opc_imm;
-         switch (i->Xin.Sh32.dst->tag) {
-            case Xrm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Xin.Sh32.dst->Xrm.Reg.reg);
-               *p++ = (UChar)(i->Xin.Sh32.src);
-               goto done;
-            default:
-               goto bad;
-         }
+         p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
+         *p++ = (UChar)(i->Xin.Sh32.src);
       }
-      break;
+      goto done;
 
    case Xin_Test32:
-      if (i->Xin.Test32.src->tag == Xri_Imm
-          && i->Xin.Test32.dst->tag == Xrm_Reg) {
-         /* testl $imm32, %reg */
-         *p++ = 0xF7;
-         p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
-         p = emit32(p, i->Xin.Test32.src->Xri.Imm.imm32);
-         goto done;
-      }
-      break;
+      /* testl $imm32, %reg */
+      *p++ = 0xF7;
+      p = doAMode_R(p, fake(0), i->Xin.Test32.dst);
+      p = emit32(p, i->Xin.Test32.imm32);
+      goto done;
 
    case Xin_Unary32:
       if (i->Xin.Unary32.op == Xun_NOT) {
          *p++ = 0xF7;
-         if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-            p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
-            goto done;
-         } else {
-            goto bad;
-         }
+         p = doAMode_R(p, fake(2), i->Xin.Unary32.dst);
+         goto done;
       }
       if (i->Xin.Unary32.op == Xun_NEG) {
          *p++ = 0xF7;
-         if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-            p = doAMode_R(p, fake(3), i->Xin.Unary32.dst->Xrm.Reg.reg);
-            goto done;
-         } else {
-            goto bad;
-         }
+         p = doAMode_R(p, fake(3), i->Xin.Unary32.dst);
+         goto done;
       }
       break;
 
    case Xin_MulL:
       subopc = i->Xin.MulL.syned ? 5 : 4;
-      if (i->Xin.MulL.ssz == Xss_32) {
-         *p++ = 0xF7;
-         switch (i->Xin.MulL.src->tag)  {
-            case Xrm_Mem:
-               p = doAMode_M(p, fake(subopc),
-                                i->Xin.MulL.src->Xrm.Mem.am);
-               goto done;
-            case Xrm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Xin.MulL.src->Xrm.Reg.reg);
-               goto done;
-            default:
-               goto bad;
-         }
+      *p++ = 0xF7;
+      switch (i->Xin.MulL.src->tag)  {
+         case Xrm_Mem:
+            p = doAMode_M(p, fake(subopc),
+                             i->Xin.MulL.src->Xrm.Mem.am);
+            goto done;
+         case Xrm_Reg:
+            p = doAMode_R(p, fake(subopc), 
+                             i->Xin.MulL.src->Xrm.Reg.reg);
+            goto done;
+         default:
+            goto bad;
       }
       break;
 
    case Xin_Div:
       subopc = i->Xin.Div.syned ? 7 : 6;
-      if (i->Xin.Div.ssz == Xss_32) {
-         *p++ = 0xF7;
-         switch (i->Xin.Div.src->tag)  {
-            case Xrm_Mem:
-               p = doAMode_M(p, fake(subopc),
-                                i->Xin.Div.src->Xrm.Mem.am);
-               goto done;
-            case Xrm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Xin.Div.src->Xrm.Reg.reg);
-               goto done;
-            default:
-               goto bad;
-         }
+      *p++ = 0xF7;
+      switch (i->Xin.Div.src->tag)  {
+         case Xrm_Mem:
+            p = doAMode_M(p, fake(subopc),
+                             i->Xin.Div.src->Xrm.Mem.am);
+            goto done;
+         case Xrm_Reg:
+            p = doAMode_R(p, fake(subopc), 
+                             i->Xin.Div.src->Xrm.Reg.reg);
+            goto done;
+         default:
+            goto bad;
       }
       break;
 
@@ -2232,7 +2183,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_CMov32:
       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
-#if 0
       /* This generates cmov, which is illegal on P54/P55. */
       *p++ = 0x0F;
       *p++ = 0x40 + i->Xin.CMov32.cond;
@@ -2244,37 +2194,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
          goto done;
       }
-#else
-      /* P5 friendly version: conditional jump over an unconditional
-         move. */
-      /* jmp fwds if !condition */
-      *p++ = 0x70 + (i->Xin.CMov32.cond ^ 1);
-      *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
-      ptmp = p;
-
-      switch (i->Xin.CMov32.src->tag) {
-         case Xrm_Reg:
-            /* Big sigh.  This is movl E -> G ... */
-            *p++ = 0x89;
-            p = doAMode_R(p, i->Xin.CMov32.src->Xrm.Reg.reg,
-                             i->Xin.CMov32.dst);
-                             
-            break;
-         case Xrm_Mem:
-            /* ... whereas this is movl G -> E.  That's why the args
-               to doAMode_R appear to be the wrong way round in the
-               Xrm_Reg case. */
-            *p++ = 0x8B;
-            p = doAMode_M(p, i->Xin.CMov32.dst, 
-                             i->Xin.CMov32.src->Xrm.Mem.am);
-            break;
-         default:
-            goto bad;
-      }
-      /* Fill in the jump offset. */
-      *(ptmp-1) = p - ptmp;
-      goto done;
-#endif
       break;
 
    case Xin_LoadEX:
@@ -2581,13 +2500,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       *(ptmp-1) = p - ptmp;
       goto done;
 
-   case Xin_FpLdStCW:
-      if (i->Xin.FpLdStCW.isLoad) {
-         *p++ = 0xD9;
-         p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdStCW.addr);
-      } else {
-         vassert(0);
-      }
+   case Xin_FpLdCW:
+      *p++ = 0xD9;
+      p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdCW.addr);
       goto done;
 
    case Xin_FpStSW_AX:

@@ -619,7 +619,7 @@ void set_FPU_rounding_default ( ISelEnv* env )
    */
    X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
    addInstr(env, X86Instr_Push(X86RMI_Imm(DEFAULT_FPUCW)));
-   addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+   addInstr(env, X86Instr_FpLdCW(zero_esp));
    add_to_esp(env, 4);
 }
 
@@ -646,10 +646,10 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    */
    addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
    addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
-   addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
+   addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, rrm2));
    addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(DEFAULT_FPUCW), rrm2));
    addInstr(env, X86Instr_Push(X86RMI_Reg(rrm2)));
-   addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+   addInstr(env, X86Instr_FpLdCW(zero_esp));
    add_to_esp(env, 4);
 }
 
@@ -766,7 +766,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst = newVRegI(env);
          HReg reg = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, mk_iMOVsd_RR(reg,dst));
-         addInstr(env, X86Instr_Unary32(Xun_NEG,X86RM_Reg(dst)));
+         addInstr(env, X86Instr_Unary32(Xun_NEG,dst));
          return dst;
       }
 
@@ -844,12 +844,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                 Xalu_AND, X86RMI_Imm(0xFFFF), dst));
                break;
             case Iop_Sar8:
-               addInstr(env, X86Instr_Sh32(Xsh_SHL, 24, X86RM_Reg(dst)));
-               addInstr(env, X86Instr_Sh32(Xsh_SAR, 24, X86RM_Reg(dst)));
+               addInstr(env, X86Instr_Sh32(Xsh_SHL, 24, dst));
+               addInstr(env, X86Instr_Sh32(Xsh_SAR, 24, dst));
                break;
             case Iop_Sar16:
-               addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, X86RM_Reg(dst)));
-               addInstr(env, X86Instr_Sh32(Xsh_SAR, 16, X86RM_Reg(dst)));
+               addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, dst));
+               addInstr(env, X86Instr_Sh32(Xsh_SAR, 16, dst));
                break;
             default: break;
          }
@@ -864,15 +864,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 	    vassert(nshift >= 0);
 	    if (nshift > 0)
                /* Can't allow nshift==0 since that means %cl */
-               addInstr(env, X86Instr_Sh32(
-                                shOp, 
-                                nshift,
-                                X86RM_Reg(dst)));
+               addInstr(env, X86Instr_Sh32( shOp, nshift, dst ));
          } else {
             /* General case; we have to force the amount into %cl. */
             HReg regR = iselIntExpr_R(env, e->Iex.Binop.arg2);
             addInstr(env, mk_iMOVsd_RR(regR,hregX86_ECX()));
-            addInstr(env, X86Instr_Sh32(shOp, 0/* %cl */, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(shOp, 0/* %cl */, dst));
          }
          return dst;
       }
@@ -885,7 +882,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg lo8s = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, mk_iMOVsd_RR(hi8s, hi8));
          addInstr(env, mk_iMOVsd_RR(lo8s, lo8));
-         addInstr(env, X86Instr_Sh32(Xsh_SHL, 8, X86RM_Reg(hi8)));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, 8, hi8));
          addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFF), lo8));
          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo8), hi8));
          return hi8;
@@ -898,7 +895,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg lo16s = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, mk_iMOVsd_RR(hi16s, hi16));
          addInstr(env, mk_iMOVsd_RR(lo16s, lo16));
-         addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, X86RM_Reg(hi16)));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, hi16));
          addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFFFF), lo16));
          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo16), hi16));
          return hi16;
@@ -919,10 +916,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          addInstr(env, mk_iMOVsd_RR(a16s, a16));
          addInstr(env, mk_iMOVsd_RR(b16s, b16));
-         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(a16)));
-         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(b16)));
-         addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(a16)));
-         addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(b16)));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, a16));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, b16));
+         addInstr(env, X86Instr_Sh32(shr_op,  shift, a16));
+         addInstr(env, X86Instr_Sh32(shr_op,  shift, b16));
          addInstr(env, X86Instr_Alu32R(Xalu_MUL, X86RMI_Reg(a16), b16));
          return b16;
       }
@@ -934,7 +931,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_FpCmp(fL,fR,dst));
          /* shift this right 8 bits so as to conform to CmpF64
             definition. */
-         addInstr(env, X86Instr_Sh32(Xsh_SHR, 8, X86RM_Reg(dst)));
+         addInstr(env, X86Instr_Sh32(Xsh_SHR, 8, dst));
          return dst;
       }
 
@@ -1050,8 +1047,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
             addInstr(env, mk_iMOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Sh32(Xsh_SHL, amt, X86RM_Reg(dst)));
-            addInstr(env, X86Instr_Sh32(Xsh_SAR, amt, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, amt, dst));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, amt, dst));
             return dst;
          }
 	 case Iop_Not8:
@@ -1060,7 +1057,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, mk_iMOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,dst));
             return dst;
          }
          case Iop_64HIto32: {
@@ -1079,7 +1076,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
             Int shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
             addInstr(env, mk_iMOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, dst));
             return dst;
          }
          case Iop_1Uto32:
@@ -1096,8 +1093,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst         = newVRegI(env);
             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Set32(cond,dst));
-            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(dst)));
-            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, dst));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, dst));
             return dst;
          }
          case Iop_Ctz32: {
@@ -1217,7 +1214,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
         HReg dst = newVRegI(env);
         addInstr(env, mk_iMOVsd_RR(rX,dst));
         r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-        addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+        addInstr(env, X86Instr_Test32(0xFF, r8));
         addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
         return dst;
       }
@@ -1357,7 +1354,11 @@ static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
                                     hregX86_EBP()));
    }
 
-   /* special case: load from memory */
+   /* special case: 32-bit load from memory */
+   if (e->tag == Iex_LDle && ty == Ity_I32) {
+      X86AMode* am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
+      return X86RMI_Mem(am);
+   }
 
    /* default case: calculate into a register and return that */
    {
@@ -1518,8 +1519,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       unop(Iop_32to1,bind(0))
    );
    if (matchIRExpr(&mi,p_32to1,e)) {
-      X86RM* rm = iselIntExpr_RM(env, mi.bindee[0]);
-      addInstr(env, X86Instr_Test32(X86RI_Imm(1),rm));
+      HReg r = iselIntExpr_R(env, mi.bindee[0]);
+      addInstr(env, X86Instr_Test32(1,r));
       return Xcc_NZ;
    }
 
@@ -1754,7 +1755,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, mk_iMOVsd_RR(eXHi, tHi));
       addInstr(env, mk_iMOVsd_RR(eXLo, tLo));
       r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-      addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+      addInstr(env, X86Instr_Test32(0xFF, r8));
       /* This assumes the first cmov32 doesn't trash the condition
          codes, so they are still available for the second cmov32 */
       addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Hi),tHi));
@@ -1779,7 +1780,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             X86RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
             HReg   rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
             addInstr(env, mk_iMOVsd_RR(rRight, hregX86_EAX()));
-            addInstr(env, X86Instr_MulL(syned, Xss_32, rmLeft));
+            addInstr(env, X86Instr_MulL(syned, rmLeft));
             /* Result is now in EDX:EAX.  Tell the caller. */
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -1801,7 +1802,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
             addInstr(env, mk_iMOVsd_RR(sHi, hregX86_EDX()));
             addInstr(env, mk_iMOVsd_RR(sLo, hregX86_EAX()));
-            addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
+            addInstr(env, X86Instr_Div(syned, rmRight));
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
             *rHi = tHi;
@@ -1891,9 +1892,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo
                and those regs are legitimately modifiable. */
             addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tLo, tHi));
-            addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
-            addInstr(env, X86Instr_Test32(X86RI_Imm(32), 
-                          X86RM_Reg(hregX86_ECX())));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, tLo));
+            addInstr(env, X86Instr_Test32(32, hregX86_ECX()));
             addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
             addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
             addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tLo));
@@ -1934,9 +1934,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo
                and those regs are legitimately modifiable. */
             addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tHi, tLo));
-            addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, X86RM_Reg(tHi)));
-            addInstr(env, X86Instr_Test32(X86RI_Imm(32), 
-                          X86RM_Reg(hregX86_ECX())));
+            addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, tHi));
+            addInstr(env, X86Instr_Test32(32, hregX86_ECX()));
             addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tHi), tLo));
             addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
             addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tHi));
@@ -2157,7 +2156,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, mk_iMOVsd_RR(src,tHi));
             addInstr(env, mk_iMOVsd_RR(src,tLo));
-            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tHi)));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, tHi));
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -2203,8 +2202,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             HReg tHi = newVRegI(env);
             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Set32(cond,tLo));
-            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(tLo)));
-            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tLo)));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, tLo));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, tLo));
             addInstr(env, mk_iMOVsd_RR(tLo, tHi));
             *rHi = tHi;
             *rLo = tLo;
@@ -2219,8 +2218,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&sHi, &sLo, env, e->Iex.Unop.arg);
             addInstr(env, mk_iMOVsd_RR(sHi, tHi));
             addInstr(env, mk_iMOVsd_RR(sLo, tLo));
-            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tHi)));
-            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tLo)));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,tHi));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,tLo));
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -2625,7 +2624,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
         HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
         HReg dst = newVRegF(env);
         addInstr(env, X86Instr_FpUnary(Xfp_MOV,rX,dst));
-        addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+        addInstr(env, X86Instr_Test32(0xFF, r8));
         addInstr(env, X86Instr_FpCMov(Xcc_Z,r0,dst));
         return dst;
       }
@@ -2759,7 +2758,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          for (i = 0; i < 4; i++) {
             am = X86AMode_IR(i*4, hregX86_ESP());
             addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(am), r32));
-            addInstr(env, X86Instr_Unary32(Xun_NEG, X86RM_Reg(r32)));
+            addInstr(env, X86Instr_Unary32(Xun_NEG, r32));
             addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(r32), r32));
             addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r32), am));
          }
@@ -3124,7 +3123,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r0  = iselVecExpr(env, e->Iex.Mux0X.expr0);
       HReg dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(rX,dst));
-      addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+      addInstr(env, X86Instr_Test32(0xFF, r8));
       addInstr(env, X86Instr_SseCMov(Xcc_Z,r0,dst));
       return dst;
    }

@@ -159,9 +159,12 @@ typedef
 
       /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
 
-      /* Simple operations */
+      /* Binary operations */
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_RemF64,
-      Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
+      Iop_AtanYXF64,
+
+      /* Unary operations */
+      Iop_NegF64, Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x85 Unordered

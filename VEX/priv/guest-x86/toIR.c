@@ -3454,6 +3454,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(r_src, mkexpr(t1));
                break;
 
+            case 0xE0: /* FCHS */
+               DIP("fchs\n");
+               put_ST_UNCHECKED(0, unop(Iop_NegF64, get_ST(0)));
+               break;
+
            case 0xE8: /* FLD1 */
                DIP("fld1");
                fp_push();
@@ -3476,6 +3481,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fldz");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
+               break;
+
+            case 0xF3: /* FPATAN */
+               DIP("fpatan\n");
+               put_ST_UNCHECKED(1, binop(Iop_AtanYXF64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
+
+            case 0xFE: /* FSIN */
+               DIP("fsin\n");
+               put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
+               break;
+
+            case 0xFF: /* FCOS */
+               DIP("fcos\n");
+               put_ST_UNCHECKED(0, unop(Iop_CosF64, get_ST(0)));
                break;
 
             default:
@@ -3610,6 +3632,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, True );
                break;
 
+            case 1: /* FMUL double-real */
+               fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
+               break;
+
+            case 4: /* FSUB double-real */
+               fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, True );
+               break;
+
+            case 6: /* FDIV double-real */
+               fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, True );
+               break;
+
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xDC\n");
@@ -3620,6 +3654,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
          delta++;
          switch (modrm) {
+
+            case 0xC8 ... 0xCF: /* FMUL %st(0),%st(?) */
+               fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
+               break;
+
+            case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
+               fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
+               break;
 
             case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */
                fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, False );
@@ -3716,8 +3758,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta++;
 	 switch (modrm) {
 
+            case 0xC0 ... 0xC7: /* FADDP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, True );
+               break;
+
             case 0xC8 ... 0xCF: /* FMULP %st(0),%st(?) */
                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
+               break;
+
+            case 0xE0 ... 0xE7: /* FSUBRP %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0,  modrm - 0xE0, True );
                break;
 
             case 0xF0 ... 0xF7: /* FDIVRP %st(0),%st(?) */
@@ -3760,6 +3810,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_push();
                put_ST(0, unop(Iop_I64toF64,
                               loadLE(Ity_I64, mkexpr(addr))));
+               break;
+
+            case 7: /* FISTP m64 */
+               DIP("fistpll %s", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
+               fp_pop();
                break;
 
             default:

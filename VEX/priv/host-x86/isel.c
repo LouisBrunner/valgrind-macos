@@ -1362,6 +1362,75 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* F64 -> I64 */
+   /* Sigh, this is an almost exact copy of the F64 -> I32/I16 case.
+      Unfortunately I see no easy way to avoid the duplication. */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_F64toI64) {
+      HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      HReg rrm2 = newVRegI(env);
+      HReg dst  = newVRegI(env);
+      HReg tLo  = newVRegI(env);
+      HReg tHi  = newVRegI(env);
+
+      /* Used several times ... */
+      /* Careful ... this sharing is only safe because
+	 zero_esp/four_esp do not hold any registers which the
+	 register allocator could attempt to swizzle later. */
+      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+      X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
+
+      /* rf now holds the value to be converted, and rrm holds the
+         rounding mode value, encoded as per the IRRoundingMode enum.
+         The first thing to do is set the FPU's rounding mode
+         accordingly. */
+
+      /* Create a space, both for the control word messing, and for
+         the actual store conversion. */
+      /* subl $8, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
+      /* movl %rrm, %rrm2
+         andl $3, %rrm2   -- shouldn't be needed; paranoia
+         shll $10, %rrm2
+         orl  $0x037F, %rrm2
+         movl %rrm2, 0(%esp)
+         fldcw 0(%esp)
+      */
+      addInstr(env, mk_MOVsd_RR(rrm, rrm2));
+      addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
+      addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
+      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
+      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
+      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+      /* gistll %rf, 0(%esp) */
+      addInstr(env, X86Instr_FpLdStI(False/*store*/, 8, rf, zero_esp));
+
+      /* movl 0(%esp), %dstLo */
+      /* movl 4(%esp), %dstHi */
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV, X86RMI_Mem(four_esp), tHi));
+
+      /* Restore default FPU control.
+            movl $0x037F, 0(%esp)
+            fldcw 0(%esp)
+      */
+      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
+      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+      /* addl $8, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(8), hregX86_ESP()));
+
+      *rHi = tHi;
+      *rLo = tLo;
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselIntExpr64");
 }
@@ -1489,10 +1558,11 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Binop.op) {
-         case Iop_AddF64: fpop = Xfp_ADD; break;
-         case Iop_SubF64: fpop = Xfp_SUB; break;
-         case Iop_MulF64: fpop = Xfp_MUL; break;
-         case Iop_DivF64: fpop = Xfp_DIV; break;
+         case Iop_AddF64:    fpop = Xfp_ADD; break;
+         case Iop_SubF64:    fpop = Xfp_SUB; break;
+         case Iop_MulF64:    fpop = Xfp_MUL; break;
+         case Iop_DivF64:    fpop = Xfp_DIV; break;
+         case Iop_AtanYXF64: fpop = Xfp_ATANYX; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {
@@ -1500,6 +1570,22 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
          HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
+         return res;
+      }
+   }
+
+   if (e->tag == Iex_Unop) {
+      X86FpOp fpop = Xfp_INVALID;
+      switch (e->Iex.Unop.op) {
+         case Iop_NegF64: fpop = Xfp_NEGATE; break;
+         case Iop_SinF64: fpop = Xfp_SIN; break;
+         case Iop_CosF64: fpop = Xfp_COS; break;
+         default: break;
+      }
+      if (fpop != Xfp_INVALID) {
+         HReg res = newVRegF(env);
+         HReg src = iselDblExpr(env, e->Iex.Unop.arg);
+         addInstr(env, X86Instr_FpUnary(fpop,src,res));
          return res;
       }
    }
@@ -1602,6 +1688,16 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (tyd == Ity_F32) {
          HReg r = iselFltExpr(env, stmt->Ist.STle.data);
          addInstr(env, X86Instr_FpLdSt(False/*store*/, 4, r, am));
+         return;
+      }
+      if (tyd == Ity_I64) {
+         HReg vHi, vLo, rA;
+         iselIntExpr64(&vHi, &vLo, env, stmt->Ist.STle.data);
+         rA = iselIntExpr_R(env, stmt->Ist.STle.addr);
+         addInstr(env, X86Instr_Alu32M(
+                          Xalu_MOV, X86RI_Reg(vLo), X86AMode_IR(0, rA)));
+         addInstr(env, X86Instr_Alu32M(
+                          Xalu_MOV, X86RI_Reg(vHi), X86AMode_IR(4, rA)));
          return;
       }
       break;

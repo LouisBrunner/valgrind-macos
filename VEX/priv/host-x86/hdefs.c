@@ -369,7 +369,7 @@ Char* showX86ScalarSz ( X86ScalarSz sz ) {
    switch (sz) {
       case Xss_16: return "w";
       case Xss_32: return "l";
-      default: vpanic("ppX86ScalarSz");
+      default: vpanic("showX86ScalarSz");
    }
 }
 
@@ -377,7 +377,7 @@ Char* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
       case Xun_Not: return "not";
       case Xun_Neg: return "neg";
-      default: vpanic("ppX86UnaryOp");
+      default: vpanic("showX86UnaryOp");
    }
 }
 
@@ -393,7 +393,7 @@ Char* showX86AluOp ( X86AluOp op ) {
       case Xalu_OR:   return "or";
       case Xalu_XOR:  return "xor";
       case Xalu_MUL:  return "mul";
-      default: vpanic("ppX86AluOp");
+      default: vpanic("showX86AluOp");
    }
 }
 
@@ -404,7 +404,7 @@ Char* showX86ShiftOp ( X86ShiftOp op ) {
       case Xsh_SAR: return "sar";
       case Xsh_ROL: return "rol";
       case Xsh_ROR: return "ror";
-      default: vpanic("ppX86ShiftOp");
+      default: vpanic("showX86ShiftOp");
    }
 }
 
@@ -417,7 +417,9 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_SQRT:   return "sqrt";
       case Xfp_NEGATE: return "chs";
       case Xfp_MOV:    return "mov";
-      default: vpanic("ppX86FpOp");
+      case Xfp_SIN:    return "sin";
+      case Xfp_COS:    return "cos";
+      default: vpanic("showX86FpOp");
    }
 }
 
@@ -984,6 +986,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.Bsfr32.src);
          mapReg(m, &i->Xin.Bsfr32.dst);
          return;
+      case Xin_FpUnary:
+         mapReg(m, &i->Xin.FpUnary.src);
+         mapReg(m, &i->Xin.FpUnary.dst);
+         return;
       case Xin_FpBinary:
          mapReg(m, &i->Xin.FpBinary.srcL);
          mapReg(m, &i->Xin.FpBinary.srcR);
@@ -1248,8 +1254,20 @@ static UChar* do_fld_st ( UChar* p, Int i )
    return p;
 }
 
+/* Emit f<op> %st(0) */
+static UChar* do_fop1_st ( UChar* p, X86FpOp op )
+{
+   switch (op) {
+      case Xfp_NEGATE: *p++ = 0xD9; *p++ = 0xE0; break;
+      case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
+      case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
+      default: vpanic("do_fop1_st: unknown op");
+   }
+   return p;
+}
+
 /* Emit f<op> %st(i), 1 <= i <= 5 */
-static UChar* do_fop_st ( UChar* p, X86FpOp op, Int i )
+static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
 {
 #  define fake(_n) mkHReg((_n), HRcInt, False)
    Int subopc;
@@ -1258,7 +1276,7 @@ static UChar* do_fop_st ( UChar* p, X86FpOp op, Int i )
       case Xfp_SUB: subopc = 4; break;
       case Xfp_MUL: subopc = 1; break;
       case Xfp_DIV: subopc = 6; break;
-      default: vpanic("do_fop_st: unknown op");
+      default: vpanic("do_fop2_st: unknown op");
    }
    *p++ = 0xD8;
    p    = doAMode_R(p, fake(subopc), fake(i));
@@ -1787,13 +1805,34 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       } /* if (i->Xin.Store.sz == 1) */
       break;
 
+   case Xin_FpUnary:
+      /* gop %src, %dst
+         --> ffree %st7 ; fld %st(src) ; fop %st(0) ; fstp %st(1+dst)
+      */
+      p = do_ffree_st7(p);
+      p = do_fld_st(p, 0+hregNumber(i->Xin.FpUnary.src));
+      p = do_fop1_st(p, i->Xin.FpUnary.op);
+      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpUnary.dst));
+      goto done;
+
    case Xin_FpBinary:
+      if (i->Xin.FpBinary.op == Xfp_ATANYX) {
+         /* Have to do this specially. */
+         /*  ffree %st7 ; fld %st(srcL) ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
+         *p++ = 0xD9; *p++ = 0xF3;
+         p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+         goto done;
+      }
+      /* General case */
       /* gop %srcL, %srcR, %dst
          --> ffree %st7 ; fld %st(srcL) ; fop %st(1+srcR) ; fstp %st(1+dst)
       */
       p = do_ffree_st7(p);
       p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
-      p = do_fop_st(p, i->Xin.FpBinary.op, 1+hregNumber(i->Xin.FpBinary.srcR));
+      p = do_fop2_st(p, i->Xin.FpBinary.op, 1+hregNumber(i->Xin.FpBinary.srcR));
       p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
       goto done;
 
@@ -1840,7 +1879,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             --> ffree %st(7) ; fld st(N) ; fistp{w/l/ll} amode
 	 */
          switch (i->Xin.FpLdStI.sz) {
-            case 8:  vassert(0); opc = 0xDF; subopc_imm = 7; break;
+            case 8:  opc = 0xDF; subopc_imm = 7; break;
             case 4:  opc = 0xDB; subopc_imm = 3; break;
             case 2:  opc = 0xDF; subopc_imm = 3; break;
             default: vpanic("emitX86Instr(Xin_FpLdStI-store)");

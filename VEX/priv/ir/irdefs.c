@@ -129,17 +129,23 @@ void ppIROp ( IROp op )
       case Iop_64to32:   vex_printf("64to32");   return;
       case Iop_32HLto64: vex_printf("32HLto64"); return;
 
-      case Iop_AddF64:   vex_printf("AddF64"); return;
-      case Iop_SubF64:   vex_printf("SubF64"); return;
-      case Iop_MulF64:   vex_printf("MulF64"); return;
-      case Iop_DivF64:   vex_printf("DivF64"); return;
-      case Iop_CmpF64:   vex_printf("CmpF64"); return;
+      case Iop_AtanYXF64: vex_printf("AtanYXF64"); return;
+      case Iop_AddF64:    vex_printf("AddF64"); return;
+      case Iop_SubF64:    vex_printf("SubF64"); return;
+      case Iop_MulF64:    vex_printf("MulF64"); return;
+      case Iop_DivF64:    vex_printf("DivF64"); return;
+      case Iop_CmpF64:    vex_printf("CmpF64"); return;
+      case Iop_NegF64:    vex_printf("NegF64"); return;
+      case Iop_SinF64:    vex_printf("SinF64"); return;
+      case Iop_CosF64:    vex_printf("CosF64"); return;
 
       case Iop_I32toF64: vex_printf("I32toF64"); return;
       case Iop_I64toF64: vex_printf("I64toF64"); return;
 
+      case Iop_F64toI64: vex_printf("F64toI64"); return;
       case Iop_F64toI32: vex_printf("F64toI32"); return;
       case Iop_F64toI16: vex_printf("F64toI16"); return;
+
       case Iop_F32toF64: vex_printf("F32toF64"); return;
       case Iop_F64toF32: vex_printf("F64toF32"); return;
 
@@ -623,15 +629,19 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32Sto64: UNARY(Ity_I64,Ity_I32);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
 
+      case Iop_AtanYXF64:
       case Iop_AddF64: case Iop_SubF64: 
       case Iop_MulF64: case Iop_DivF64:
          BINARY(Ity_F64,Ity_F64,Ity_F64);
       case Iop_CmpF64:
          BINARY(Ity_I32,Ity_F64,Ity_F64);
+      case Iop_NegF64: case Iop_SinF64: case Iop_CosF64:
+         UNARY(Ity_F64,Ity_F64);
 
       case Iop_I32toF64: UNARY(Ity_F64,Ity_I32);
       case Iop_I64toF64: UNARY(Ity_F64,Ity_I64);
 
+      case Iop_F64toI64: BINARY(Ity_I64, Ity_I32,Ity_F64);
       case Iop_F64toI32: BINARY(Ity_I32, Ity_I32,Ity_F64);
       case Iop_F64toI16: BINARY(Ity_I16, Ity_I32,Ity_F64);
 

@@ -17,7 +17,7 @@
    Set to 0 to completely disable iropt
           1 for simple optimisation
           2 for maximum optimisation (the default) */
-#define IROPT_LEVEL 0
+#define IROPT_LEVEL 2
 
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
@@ -3202,7 +3202,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    bb = cheap_transformations( bb, specHelper );
 
-   if (IROPT_LEVEL >= 1) {
+   if (IROPT_LEVEL > 1) {
       do_expensive = hasGetIorPutI(bb);
       if (do_expensive) {
          n_expensive++;

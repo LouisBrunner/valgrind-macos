@@ -1,0 +1,4 @@
+#! /bin/sh
+
+../filter_stderr
+

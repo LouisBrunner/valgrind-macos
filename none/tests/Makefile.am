@@ -1,7 +1,4 @@
-noinst_SCRIPTS = filter_cpuid  filter_none_discards filter_stderr filter_int gen_insn_test.pl
-
-CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS=insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+noinst_SCRIPTS = filter_cpuid filter_none_discards filter_stderr filter_int
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
@@ -36,9 +33,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
-	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	int.stderr.exp int.stdout.exp int.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mq.stderr.exp mq.vgtest \
@@ -71,7 +65,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask execve fcntl_setown floored fork \
-	fpu_lazy_eflags fucomip $(INSN_TESTS) \
+	fpu_lazy_eflags fucomip \
 	int munmap_exe map_unmap mq mremap rcl_assert rcrl readline1 \
 	resolv rlimit_nofile seg_override sem semlimit sha1_test \
 	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
@@ -100,20 +94,6 @@ floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
 fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
-insn_basic_SOURCES	= insn_basic.def
-insn_basic_LDADD	= -lm
-insn_fpu_SOURCES	= insn_fpu.def
-insn_fpu_LDADD		= -lm
-insn_cmov_SOURCES	= insn_cmov.def
-insn_cmov_LDADD		= -lm
-insn_mmx_SOURCES	= insn_mmx.def
-insn_mmx_LDADD		= -lm
-insn_mmxext_SOURCES	= insn_mmxext.def
-insn_mmxext_LDADD	= -lm
-insn_sse_SOURCES	= insn_sse.def
-insn_sse_LDADD		= -lm
-insn_sse2_SOURCES	= insn_sse2.def
-insn_sse2_LDADD		= -lm
 int_SOURCES		= int.c
 map_unmap_SOURCES	= map_unmap.c
 mq_SOURCES		= mq.c
@@ -163,5 +143,3 @@ gxx304_SOURCES		= gxx304.cpp
 # must be built with these flags -- bug only occurred with them
 fpu_lazy_eflags.o: CFLAGS += -O2 -mcpu=pentiumpro -march=pentiumpro
 
-.def.c: $(srcdir)/gen_insn_test.pl
-	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

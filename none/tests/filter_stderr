@@ -1,3 +1,5 @@
 #! /bin/sh
 
-../../tests/filter_stderr_basic
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic

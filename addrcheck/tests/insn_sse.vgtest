@@ -1,3 +1,0 @@
-vgopts: -q
-prog: ../../none/tests/insn_sse
-cpu_test: x86-sse

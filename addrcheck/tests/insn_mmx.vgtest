@@ -1,3 +1,0 @@
-vgopts: -q
-prog: ../../none/tests/insn_mmx
-cpu_test: x86-mmx

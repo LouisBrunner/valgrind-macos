@@ -66,6 +66,8 @@
 #include <sys/time.h>
 #endif
 
+#include <stdio.h>
+
 
 /* ---------------------------------------------------------------------
    Forwardses.
@@ -95,7 +97,7 @@ int get_pt_trace_level ( void )
 
 
 static
-void myexit ( int arg )
+void my_exit ( int arg )
 {
    int __res;
    __asm__ volatile ("movl %%ecx, %%ebx ; int $0x80"
@@ -138,7 +140,7 @@ void barf ( char* str )
    strcat(buf, str);
    strcat(buf, "\n\n");
    write(2, buf, strlen(buf));
-   myexit(1);
+   my_exit(1);
    /* We have to persuade gcc into believing this doesn't return. */
    while (1) { };
 }
@@ -183,13 +185,33 @@ void vgPlain_unimp ( char* what )
 }
 
 
+void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
+{
+   static Bool entered = False;
+   if (entered) 
+      my_exit(2);
+   entered = True;
+   fprintf(stderr, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
+                   "valgrind", file, line, fn, expr );
+   fprintf(stderr, "Please report this bug to me at: %s\n\n", 
+                   VG_EMAIL_ADDR);
+   my_exit(1);
+}
+
+#define MY__STRING(__str)  #__str
+
+#define my_assert(expr)                                               \
+  ((void) ((expr) ? 0 :						      \
+	   (my_assert_fail  (MY__STRING(expr),			      \
+			      __FILE__, __LINE__,                     \
+                              __PRETTY_FUNCTION__), 0)))
+
+
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
    ------------------------------------------------------------------ */
 
-#include <stdio.h>
 #include <errno.h>
-#include <assert.h>
 #include <sys/time.h> /* gettimeofday */
 
 
@@ -310,7 +332,7 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
                            2 /* get */, thread, 0, 0);
-   assert(detached == 0 || detached == 1);
+   my_assert(detached == 0 || detached == 1);
    if (detached)
       attr->__detachstate = PTHREAD_CREATE_DETACHED;
    return 0;
@@ -362,7 +384,7 @@ void thread_exit_wrapper ( void* ret_val )
                               VG_USERREQ__CLEANUP_POP,
                               &cu, 0, 0, 0);
       if (res == -1) break; /* stack empty */
-      assert(res == 0);
+      my_assert(res == 0);
       if (0) printf("running exit cleanup handler");
       cu.fn ( cu.arg );
    }
@@ -380,14 +402,14 @@ void thread_exit_wrapper ( void* ret_val )
                   ( cu.arg /* specific for key for this thread */ );
          continue;
       }
-      assert(res == -1);
+      my_assert(res == -1);
    }
 
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
                            2 /* get */, pthread_self(), 0, 0);
-   assert(detached == 0 || detached == 1);
+   my_assert(detached == 0 || detached == 1);
 
    if (detached) {
       /* Detached; I just quit right now. */
@@ -439,11 +461,11 @@ void thread_wrapper ( NewThreadInfo* info )
    /* Free up the arg block that pthread_create malloced. */
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__FREE, info, 0, 0, 0);
-   assert(res == 0);
+   my_assert(res == 0);
 
    /* Minimally observe the attributes supplied. */
    if (attr) {
-      assert(attr->__detachstate == PTHREAD_CREATE_DETACHED
+      my_assert(attr->__detachstate == PTHREAD_CREATE_DETACHED
              || attr->__detachstate == PTHREAD_CREATE_JOINABLE);
       if (attr->__detachstate == PTHREAD_CREATE_DETACHED)
          pthread_detach(pthread_self());
@@ -498,7 +520,7 @@ pthread_create (pthread_t *__restrict __thread,
    VALGRIND_MAGIC_SEQUENCE(info, NULL /* default */,
                            VG_USERREQ__MALLOC, 
                            sizeof(NewThreadInfo), 0, 0, 0);
-   assert(info != NULL);
+   my_assert(info != NULL);
 
    info->attr    = (pthread_attr_t*)__attr;
    info->root_fn = __start_routine;
@@ -506,7 +528,7 @@ pthread_create (pthread_t *__restrict __thread,
    VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,
                            VG_USERREQ__APPLY_IN_NEW_THREAD,
                            &thread_wrapper, info, 0, 0);
-   assert(tid_child != VG_INVALID_THREADID);
+   my_assert(tid_child != VG_INVALID_THREADID);
 
    if (__thread)
       *__thread = tid_child;
@@ -563,7 +585,7 @@ int pthread_detach(pthread_t th)
       VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
                               VG_USERREQ__SET_OR_GET_DETACH,
                               1 /* set */, th, 0, 0);
-      assert(res == 0);
+      my_assert(res == 0);
       return 0;
    }
    barf("pthread_detach");
@@ -586,7 +608,7 @@ void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__CLEANUP_PUSH,
                            &cu, 0, 0, 0);
-   assert(res == 0);
+   my_assert(res == 0);
 }
 
 
@@ -599,13 +621,13 @@ void _pthread_cleanup_push_defer (struct _pthread_cleanup_buffer *__buffer,
    int orig_ctype;
    ensure_valgrind("_pthread_cleanup_push_defer");
    /* Set to Deferred, and put the old cancellation type in res. */
-   assert(-1 != PTHREAD_CANCEL_DEFERRED);
-   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
-   assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
    VALGRIND_MAGIC_SEQUENCE(orig_ctype, (-1) /* default */,
                            VG_USERREQ__SET_CANCELTYPE,
                            PTHREAD_CANCEL_DEFERRED, 0, 0, 0);   
-   assert(orig_ctype != -1);
+   my_assert(orig_ctype != -1);
    *((int*)(__buffer)) = orig_ctype;
    /* Now push the cleanup. */
    _pthread_cleanup_push(NULL, __routine, __arg);
@@ -646,15 +668,15 @@ void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
       word of __buffer. */
    _pthread_cleanup_pop(NULL, __execute);
    orig_ctype = *((int*)(__buffer));
-   assert(orig_ctype == PTHREAD_CANCEL_DEFERRED
+   my_assert(orig_ctype == PTHREAD_CANCEL_DEFERRED
           || orig_ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
-   assert(-1 != PTHREAD_CANCEL_DEFERRED);
-   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
-   assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
    VALGRIND_MAGIC_SEQUENCE(fake_ctype, (-1) /* default */,
                            VG_USERREQ__SET_CANCELTYPE,
                            orig_ctype, 0, 0, 0); 
-   assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
+   my_assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
 }
 
 
@@ -860,9 +882,9 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
    VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
                            VG_USERREQ__READ_MILLISECOND_TIMER,
                            0, 0, 0, 0);
-   assert(ms_now != 0xFFFFFFFF);
+   my_assert(ms_now != 0xFFFFFFFF);
    res = gettimeofday(&timeval_now, NULL);
-   assert(res == 0);
+   my_assert(res == 0);
 
    ull_ms_now_after_1970 
       = 1000ULL * ((unsigned long long int)(timeval_now.tv_sec))
@@ -913,12 +935,12 @@ int pthread_setcancelstate(int state, int *oldstate)
    if (state != PTHREAD_CANCEL_ENABLE
        && state != PTHREAD_CANCEL_DISABLE) 
       return EINVAL;
-   assert(-1 != PTHREAD_CANCEL_ENABLE);
-   assert(-1 != PTHREAD_CANCEL_DISABLE);
+   my_assert(-1 != PTHREAD_CANCEL_ENABLE);
+   my_assert(-1 != PTHREAD_CANCEL_DISABLE);
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__SET_CANCELSTATE,
                            state, 0, 0, 0);
-   assert(res != -1);
+   my_assert(res != -1);
    if (oldstate) 
       *oldstate = res;
    return 0;
@@ -931,12 +953,12 @@ int pthread_setcanceltype(int type, int *oldtype)
    if (type != PTHREAD_CANCEL_DEFERRED
        && type != PTHREAD_CANCEL_ASYNCHRONOUS) 
       return EINVAL;
-   assert(-1 != PTHREAD_CANCEL_DEFERRED);
-   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__SET_CANCELTYPE,
                            type, 0, 0, 0);
-   assert(res != -1);
+   my_assert(res != -1);
    if (oldtype) 
       *oldtype = res;
    return 0;
@@ -949,7 +971,7 @@ int pthread_cancel(pthread_t thread)
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__SET_CANCELPEND,
                            thread, &thread_exit_wrapper, 0, 0);
-   assert(res != -1);
+   my_assert(res != -1);
    return res;
 }
 
@@ -960,7 +982,7 @@ void __my_pthread_testcancel(void)
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__TESTCANCEL,
                            0, 0, 0, 0);
-   assert(res == 0);
+   my_assert(res == 0);
 }
 
 void pthread_testcancel ( void )
@@ -981,7 +1003,7 @@ void __pthread_kill_other_threads_np ( void )
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__NUKE_OTHER_THREADS,
                            0, 0, 0, 0);
-   assert(res == 0);
+   my_assert(res == 0);
 }
 
 
@@ -1722,8 +1744,8 @@ int do_syscall_select( int n,
    is required to be nonblocking; this allows other threads to run.  
 
    Assumes:
-   * (checked via assert) types fd_set and vki_fd_set are identical.
-   * (checked via assert) types timeval and vki_timeval are identical.
+   * (checked via my_assert) types fd_set and vki_fd_set are identical.
+   * (checked via my_assert) types timeval and vki_timeval are identical.
    * (unchecked) libc error numbers (EINTR etc) are the negation of the
      kernel's error numbers (VKI_EINTR etc).
 */
@@ -1785,12 +1807,12 @@ int select ( int n,
       counter [wallclock] time. */
    if (timeout) {
       res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
-      assert(res == 0);
+      my_assert(res == 0);
       ms_end = ms_now;
       ms_end += (timeout->tv_usec / 1000);
       ms_end += (timeout->tv_sec * 1000);
       /* Stay sane ... */
-      assert (ms_end >= ms_now);
+      my_assert (ms_end >= ms_now);
    }
 
    /* fprintf(stderr, "MY_SELECT: before loop\n"); */
@@ -1802,7 +1824,7 @@ int select ( int n,
          VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
                                  VG_USERREQ__READ_MILLISECOND_TIMER,
                                  0, 0, 0, 0);
-         assert(ms_now != 0xFFFFFFFF);
+         my_assert(ms_now != 0xFFFFFFFF);
          if (ms_now >= ms_end) {
             /* timeout; nothing interesting happened. */
             if (rfds) FD_ZERO(rfds);
@@ -1905,14 +1927,14 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 
    /* Either timeout < 0, meaning wait indefinitely, or timeout > 0,
       in which case t_end holds the end time. */
-   assert(__timeout != 0);
+   my_assert(__timeout != 0);
 
    while (1) {
       if (__timeout > 0) {
          VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
                                  VG_USERREQ__READ_MILLISECOND_TIMER,
                                  0, 0, 0, 0);
-         assert(ms_now != 0xFFFFFFFF);
+         my_assert(ms_now != 0xFFFFFFFF);
          if (ms_now >= ms_end) {
             /* timeout; nothing interesting happened. */
             for (i = 0; i < __nfds; i++) 
@@ -1986,7 +2008,7 @@ static vg_sem_t* se_remap ( sem_t* orig )
 {
    int res, i;
    res = __pthread_mutex_lock(&se_remap_mx);
-   assert(res == 0);
+   my_assert(res == 0);
 
    for (i = 0; i < se_remap_used; i++) {
       if (se_remap_orig[i] == orig)
@@ -1995,7 +2017,7 @@ static vg_sem_t* se_remap ( sem_t* orig )
    if (i == se_remap_used) {
       if (se_remap_used == VG_N_SEMAPHORES) {
          res = pthread_mutex_unlock(&se_remap_mx);
-         assert(res == 0);
+         my_assert(res == 0);
          barf("VG_N_SEMAPHORES is too low.  Increase and recompile.");
       }
       se_remap_used++;
@@ -2003,7 +2025,7 @@ static vg_sem_t* se_remap ( sem_t* orig )
       /* printf("allocated semaphore %d\n", i); */
    }
    res = __pthread_mutex_unlock(&se_remap_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return &se_remap_new[i];
 }
 
@@ -2019,9 +2041,9 @@ int sem_init(sem_t *sem, int pshared, unsigned int value)
    }
    vg_sem = se_remap(sem);
    res = pthread_mutex_init(&vg_sem->se_mx, NULL);
-   assert(res == 0);
+   my_assert(res == 0);
    res = pthread_cond_init(&vg_sem->se_cv, NULL);
-   assert(res == 0);
+   my_assert(res == 0);
    vg_sem->count = value;
    return 0;
 }
@@ -2034,14 +2056,14 @@ int sem_wait ( sem_t* sem )
    ensure_valgrind("sem_wait");
    vg_sem = se_remap(sem);
    res = __pthread_mutex_lock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    while (vg_sem->count == 0) {
       res = pthread_cond_wait(&vg_sem->se_cv, &vg_sem->se_mx);
-      assert(res == 0);
+      my_assert(res == 0);
    }
    vg_sem->count--;
    res = __pthread_mutex_unlock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2052,16 +2074,16 @@ int sem_post ( sem_t* sem )
    ensure_valgrind("sem_post");
    vg_sem = se_remap(sem);
    res = __pthread_mutex_lock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (vg_sem->count == 0) {
       vg_sem->count++;
       res = pthread_cond_broadcast(&vg_sem->se_cv);
-      assert(res == 0);
+      my_assert(res == 0);
    } else {
       vg_sem->count++;
    }
    res = __pthread_mutex_unlock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2073,7 +2095,7 @@ int sem_trywait ( sem_t* sem )
    ensure_valgrind("sem_trywait");
    vg_sem = se_remap(sem);
    res = __pthread_mutex_lock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (vg_sem->count > 0) { 
       vg_sem->count--; 
       ret = 0; 
@@ -2082,7 +2104,7 @@ int sem_trywait ( sem_t* sem )
       errno = EAGAIN; 
    }
    res = __pthread_mutex_unlock(&vg_sem->se_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return ret;
 }
 
@@ -2144,7 +2166,7 @@ void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
    res = pthread_mutex_init(&vg_rwl->mx, NULL);
    res |= pthread_cond_init(&vg_rwl->cv_r, NULL);
    res |= pthread_cond_init(&vg_rwl->cv_w, NULL);
-   assert(res == 0);
+   my_assert(res == 0);
 }
 
 
@@ -2160,7 +2182,7 @@ static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
    int          res, i;
    vg_rwlock_t* vg_rwl;
    res = __pthread_mutex_lock(&rw_remap_mx);
-   assert(res == 0);
+   my_assert(res == 0);
 
    for (i = 0; i < rw_remap_used; i++) {
       if (rw_remap_orig[i] == orig)
@@ -2169,7 +2191,7 @@ static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
    if (i == rw_remap_used) {
       if (rw_remap_used == VG_N_RWLOCKS) {
          res = __pthread_mutex_unlock(&rw_remap_mx);
-         assert(res == 0);
+         my_assert(res == 0);
          barf("VG_N_RWLOCKS is too low.  Increase and recompile.");
       }
       rw_remap_used++;
@@ -2178,7 +2200,7 @@ static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
       if (0) printf("allocated rwlock %d\n", i);
    }
    res = __pthread_mutex_unlock(&rw_remap_mx);
-   assert(res == 0);
+   my_assert(res == 0);
    vg_rwl = &rw_remap_new[i];
 
    /* Initialise the shadow, if required. */
@@ -2225,28 +2247,28 @@ int pthread_rwlock_rdlock ( pthread_rwlock_t* orig )
    if (0) printf ("pthread_rwlock_rdlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status < 0) {
-      assert(rwl->status == -1);
+      my_assert(rwl->status == -1);
       rwl->nwait_r++;
       pthread_cleanup_push( pthread_rwlock_rdlock_CANCEL_HDLR, rwl );
       while (1) {
          if (rwl->status == 0) break;
          res = pthread_cond_wait(&rwl->cv_r, &rwl->mx);
-         assert(res == 0);
+         my_assert(res == 0);
       }
       pthread_cleanup_pop(0);
       rwl->nwait_r--;
    }
-   assert(rwl->status >= 0);
+   my_assert(rwl->status >= 0);
    rwl->status++;
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2258,23 +2280,23 @@ int pthread_rwlock_tryrdlock ( pthread_rwlock_t* orig )
    if (0) printf ("pthread_rwlock_tryrdlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status == -1) {
       /* Writer active; we have to give up. */
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EBUSY;
    }
    /* Success */
-   assert(rwl->status >= 0);
+   my_assert(rwl->status >= 0);
    rwl->status++;
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2295,10 +2317,10 @@ int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
    if (0) printf ("pthread_rwlock_wrlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status != 0) {
@@ -2307,15 +2329,15 @@ int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
       while (1) {
          if (rwl->status == 0) break;
          res = pthread_cond_wait(&rwl->cv_w, &rwl->mx);
-         assert(res == 0);
+         my_assert(res == 0);
       }
       pthread_cleanup_pop(0);
       rwl->nwait_w--;
    }
-   assert(rwl->status == 0);
+   my_assert(rwl->status == 0);
    rwl->status = -1;
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2327,23 +2349,23 @@ int pthread_rwlock_trywrlock ( pthread_rwlock_t* orig )
    if (0) printf ("pthread_wrlock_trywrlock\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status != 0) {
       /* Reader(s) or a writer active; we have to give up. */
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EBUSY;
    }
    /* Success */
-   assert(rwl->status == 0);
+   my_assert(rwl->status == 0);
    rwl->status = -1;
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 
@@ -2356,26 +2378,26 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
    rwl = rw_remap ( orig );
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status == 0) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EPERM;
    }
-   assert(rwl->status != 0);
+   my_assert(rwl->status != 0);
    if (rwl->status == -1) {
      rwl->status = 0;
    } else {
-     assert(rwl->status > 0);
+     my_assert(rwl->status > 0);
      rwl->status--;
    }
 
-   assert(rwl->status >= 0);
+   my_assert(rwl->status >= 0);
 
    if (rwl->prefer_w) {
 
@@ -2385,7 +2407,7 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
          if (rwl->status == 0) {
             /* We can let a writer in. */
             res = pthread_cond_signal(&rwl->cv_w);
-            assert(res == 0);
+            my_assert(res == 0);
          } else {
             /* There are still readers active.  Do nothing; eventually
                they will disappear, at which point a writer will be
@@ -2397,7 +2419,7 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
       if (rwl->nwait_r > 0) {
          /* Let in a waiting reader. */
          res = pthread_cond_signal(&rwl->cv_r);
-         assert(res == 0);
+         my_assert(res == 0);
       }
 
    } else {
@@ -2406,7 +2428,7 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
       if (rwl->nwait_r > 0) {
          /* Reader(s) are waiting; let one in. */
          res = pthread_cond_signal(&rwl->cv_r);
-         assert(res == 0);
+         my_assert(res == 0);
       } 
       else
       /* No waiting readers. */
@@ -2414,12 +2436,12 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
          /* We have waiting writers and no active readers; let a
             writer in. */
          res = pthread_cond_signal(&rwl->cv_w);
-         assert(res == 0);
+         my_assert(res == 0);
       }
    }
 
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;   
 }
 
@@ -2431,20 +2453,20 @@ int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
    if (0) printf ("pthread_rwlock_destroy\n");
    rwl = rw_remap ( orig );
    res = __pthread_mutex_lock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    if (!rwl->initted) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EINVAL;
    }
    if (rwl->status != 0 || rwl->nwait_r > 0 || rwl->nwait_w > 0) {
       res = __pthread_mutex_unlock(&rwl->mx);
-      assert(res == 0);
+      my_assert(res == 0);
       return EBUSY;
    }
    rwl->initted = 0;
    res = __pthread_mutex_unlock(&rwl->mx);
-   assert(res == 0);
+   my_assert(res == 0);
    return 0;
 }
 

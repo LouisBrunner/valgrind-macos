@@ -83,6 +83,8 @@ static IRBB* irbb;
       vex_sprintf(buf, format, ## args)
 
 
+
+
 /*------------------------------------------------------------*/
 /*--- Offsets of various parts of the arm guest state.     ---*/
 /*------------------------------------------------------------*/
@@ -690,7 +692,6 @@ void setFlags_DEP1 ( IROp op, IRTemp dep1 )
 static void setFlags_DEP1_DEP2_shift ( IROp    op,
                                        IRTemp  res,
                                        IRTemp  resUS,
-                                       IRType  ty,
                                        IRTemp  guard )
 {
     vassert(guard);
@@ -786,93 +787,58 @@ ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
 
 
 
-// note, i wasn't clear which Rd/Rm/Rs are supposed to be
-// IRTemps and which are Ints.
 
-// ARMG_CC_OP_LSL
-static
-IRExpr* dis_shift_lsl ( UInt theInstr )
-{
-    UChar set_flags = (theInstr >> 20) & 1;    // instr[20]
-    UChar is_reg = (theInstr >> 4) & 1;   // instr[4]
-    UChar Rm = theInstr & 0xF;   
-    IRTemp Rm_tmp = newTemp(Ity_I32);
-    IRTemp Rs_tmp = newTemp(Ity_I32);
-    IRTemp imm_tmp = newTemp(Ity_I32);
-    IRTemp res = newTemp(Ity_I32);
-    UInt imm;
-    UInt Rs_0;
-
-    assign( Rm_tmp, getIReg(Rm) );
-
-
-    if (is_reg) {  // Register Shift
-	vex_printf("dis_shift_lsl: reg\n");
-	assign( Rs_tmp, getIReg((theInstr >> 8) & 0xF) );  // instr[11:8]
-
-	Rs_0 = Rs_tmp & 0xFF;     // Rs[7:0]
-	if ( Rs_0 == 0 ) {        // op = Rm, carry = C Flag;
-	    vex_printf("dis_shift_lsl: 1\n");
-	    // No LSL: cf not changed -> don't track
-	    return getIReg(Rm);
-	}
-	else if ( Rs_0 < 32 ) {   // op = Rm LSL Rs, carry = Rm[32 - Rs]
-	    vex_printf("dis_shift_lsl: 2\n");
-	    assign( res, binop(Iop_Shl32, getIReg(Rm), mkexpr(Rs_tmp)) );
-	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
-	    return mkexpr(res);
-	}
-	else if ( Rs_0 == 32 ) {  // op = 0, carry = Rm[0];
-	    vex_printf("dis_shift_lsl: 3\n");
-	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
-	    return mkexpr(0);
-	}
-	else {                    // op = 0, carry = 0;
-	    vex_printf("dis_shift_lsl: 4\n");
-	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
-	    return mkexpr(0);
-	}
-    }
-    else {  // Immediate shift
-	vex_printf("dis_shift_lsl: imm\n");
-	imm = (theInstr >> 7) & 0x1F;     // instr[11:7]
-
-	assign( imm_tmp, mkU32(imm) );
-
-	if ( imm == 0 ) {         // op = Rm, carry = C Flag;
-	    vex_printf("dis_shift_lsl: 1\n");
-	    // No LSL: cf not changed -> don't track
-	    return getIReg(Rm);
-	}
-	else {                    // op = Rm LSL imm, carry = Rm[32 - imm];
-	    vex_printf("dis_shift_lsl: 2\n");
-	    assign( res, binop(Iop_Shl32, getIReg(Rm), mkU8(imm_tmp)) );
-	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, imm_tmp );
-	    return mkexpr(res);
-	}
-    }
 
 
 
 
 /*
-  Q. How does the flag association work?
-
-  Q. Even when not actually performing an LSL, flags still get changed, so need to register an LSL just so we can associate the flags with that instruction... ???
+  ARMG_CC_OP_LSL
+  ARM ARM A5-9,10
 */
+static
+IRExpr* dis_shift_lsl ( UInt theInstr )
+{
+    UChar set_flags = (theInstr >> 20) & 1;  // instr[20]
+    UChar is_reg_shft = (theInstr >> 4) & 1;      // instr[4]
+    UChar Rm_addr = theInstr & 0xF;
+    IRTemp Rm_tmp    = newTemp(Ity_I32);
+    IRTemp Rs_tmp    = newTemp(Ity_I32);
+    IRTemp Rs_0_tmp  = newTemp(Ity_I32);     // Rs[7:0]
+    IRTemp imm_tmp   = newTemp(Ity_I32);
+    IRTemp guard_tmp = newTemp(Ity_I32);
+    UInt imm;
+    IRExpr* expr;
 
+    assign( Rm_tmp, getIReg(Rm_addr) );
 
-    // carry dep1 = Rs, dep2 = Rm
+    if (is_reg_shft) {  // Register Shift
+	assign( Rs_tmp, getIReg((theInstr >> 8) & 0xF) );                       // instr[11:8]
+	assign( Rs_0_tmp, binop( Iop_And32, mkexpr(Rs_tmp), mkU32(0xFF) ) );    // Rs[7:0]
+	assign( guard_tmp, binop( Iop_CmpEQ32, mkexpr(Rs_tmp), mkU32(0) ) );    // Rs == 0 ? -> don't set flags
+	
+	if (set_flags)
+	    setFlags_DEP1_DEP2_shift( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp, guard_tmp );
 
+	expr = IRExpr_Mux0X( binop(Iop_CmpLT32U, mkexpr(Rs_0_tmp), mkU32(32)),       // Rs[7:0] < 32 ?
+			     mkU32(0),                                               // >=32: op = 0
+			     binop(Iop_Shl32, getIReg(Rm_addr), mkexpr(Rs_tmp)) );   //  <32: op = Rm LSL Rs
+    }
+    else {  // Immediate shift
+	imm = (theInstr >> 7) & 0x1F;    // instr[11:7]
+	assign( imm_tmp, mkU32(imm) );
+	assign( guard_tmp, binop( Iop_CmpEQ32, mkU32(imm), mkU32(0) ) );   // #imm == 0 ? -> don't set flags
 
-//	    setFlags_DEP1_DEP2( op, dep1, dep2 )
-//   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
-//    putIReg(r0, getIReg(r1));
-//    DIP("mov %i,%i\n", r0, r1);
+	if (set_flags) 
+	    setFlags_DEP1_DEP2_shift( ARMG_CC_OP_LSL, Rm_tmp, imm_tmp, guard_tmp );
 
-    
-    return 0;  /*notreached*/
+	expr = binop(Iop_Shl32, getIReg(Rm_addr), mkU8(imm));   	// Rm LSL #imm
+    }
+
+    return expr;
 }
+
+
 
 
 
@@ -882,7 +848,7 @@ IRExpr* dis_shift ( UInt theInstr )
 {
     UChar shift_op = (theInstr >> 5) & 0xF;  // second byte
 
-    vex_printf("dis_shift\n");
+//    vex_printf("dis_shift\n");
 
     // CAB TODO: Check what can do with R15... strict limits apply (ARM A5-9)
    
@@ -915,48 +881,153 @@ IRExpr* dis_shift ( UInt theInstr )
 
 
 
-/* -------------- Helper for MOV. -------------- */
-/* MOV R2, R0            ; R2 = R0
-   MOV R2, R0, LSL #2    ; shift R0 left by 2, write to R2  (R2 = R0 x 4)
-   MOV R2, R4, ROR R3    ; R2 = R4 rotated right by val of R3
 
-   <opcode>{<cond>}{S}  <Rd>, <shifter_op>
-   where <shifter_op> => #imm | <Rm> | <Rm>, LSL <Rs> | ... See ARM ARM A5-2
-   (<Rn> not used)
-*/
-/*
-  if cond_passed(cond)
-    Rd = shifter_op
-    if S bit set
-      if Rd is R15
-        => Err.  This is undefined when executed in User/System mode.
-      else
-        N flag = Rd[31]                   (post shift if shift)
-        Z flag = if Rd ==0 the 1 else 0   (post shift if shift)
-        C flag = shifter_carry_out
-	V flag = unaffected.
-
-  => Flags dep on Rd, Rm, Rs!
-  ... mind you, that's more than one IR instruction... lsl + move... ?
+/* -------------- Helper for MOV. --------------  ARM ARM A4-56
+   ARMG_CC_OP_MOV
+   Flags dep on Rd
 */
 static
-void dis_mov_reg ( UInt theInstr )
+void dis_mov ( UInt theInstr )
 {
-    UChar S = (theInstr >> 20) & 1;
-//    UChar Rn = (theInstr >> 16) & 0xF;  // Not used
-    UChar Rd = (theInstr >> 12) & 0xF;
-    UChar Rm = theInstr & 0xF;
-    UChar Rs;
-    UInt shift_imm;
-    UChar reg_shft = (theInstr >> 4) & 1;
-    IRTemp t1;
+    UChar set_flags = (theInstr >> 20) & 1;
+    UChar is_immed  = (theInstr >> 25) & 1;    // immediate shifter / register-based shifter
+    UChar Rd_addr   = (theInstr >> 12) & 0xF;
+    UInt immed_8, rot_imm;
+    UInt imm;
 
-    vex_printf("dis_move_reg\n");
+//    vex_printf("dis_move\n");
     
-    putIReg(Rd, dis_shift( theInstr ));
+    if (is_immed) {  // ARM ARM A5-2
+	immed_8 = theInstr & 0xFF;
+	rot_imm = (theInstr >> 8) & 0xF;
+	imm = immed_8 << (rot_imm << 1);
+	putIReg( Rd_addr, mkexpr(imm) );
+    } else {
+	putIReg( Rd_addr, dis_shift( theInstr ) );
+    }
+
+    if (set_flags)
+	setFlags_DEP1( ARMG_CC_OP_MOV, Rd_addr );
 
     return;
 }
+
+
+
+
+
+/* e92dd810        stmdb   sp!, {r4, fp, ip, lr, pc}
+   1110 1001 0010 1101 1101 1000 0001 0000
+   1110 100P U0W0 Rn   reg list
+
+   P=1 => Rn included in range of mem
+   U=0 => Rn lies at top of mem range
+   W=1 => Base reg updated after transfer (U=1 => incremented 4x num regs)
+   opc => 0100 1001 => 49
+*/
+// LOAD/STORE multiple, LDM|STM, ARM ARM A5-48
+static
+void dis_ldm_stm(theInstr)
+{
+    IRTemp Rn_tmp = newTemp(Ity_I32);
+    UChar Rn_addr = (theInstr >> 16) & 0xF;
+    UInt reg_list = theInstr & 0xFFFF;  // each bit addresses a register: R0 to R15
+    UChar flags = (theInstr >> 20) & 0xF;   // theInstr[24:20]
+    UChar L  = (flags >> 0) & 1;   // Load(1) | Store(0)
+    UChar W  = (flags >> 1) & 1;   // Update base reg after transfer (inc (U=1) or dec (U=0) 4x num regs)
+//  UChar S  = (flags >> 2) & 1;   // Priviledged mode flag - *** CAB: IGNORING! ***
+    UChar PU = (flags >> 3) & 1;   // Txfr control: U gives direction: upwards(1), downwards(0)
+                                   // P gives whether Rn is within(1) or outside(0) accessed mem
+    IRTemp start_addr_tmp=0, end_addr_tmp=0, addr_tmp=0; // stop compiler warnings
+    UInt n_bytes;
+    UInt tmp_reg = reg_list;
+    UInt n_bits_set = 0;
+    UInt guest_reg_idx, mem_offset;
+
+
+
+    // CAB: TODO
+    Bool cond_passed = 1;
+
+
+
+
+    while (tmp_reg > 0) {     // Count num bits in reg_list
+	if (tmp_reg & 1) { n_bits_set++; }
+	tmp_reg = tmp_reg >> 1;
+    }
+    n_bytes = n_bits_set * 4;
+
+    assign( Rn_tmp, getIReg(Rn_addr) );
+  
+
+    switch (PU) {
+    case 0x0:  // Decrement after  (DA)
+	assign( start_addr_tmp, binop( Iop_Add32, mkexpr(Rn_tmp), mkU32(n_bytes + 4) ) );
+	assign( end_addr_tmp,   mkexpr(Rn_tmp) );
+	break;
+
+    case 0x1:  // Increment after  (IA)
+	assign( start_addr_tmp, mkexpr(Rn_tmp) );
+	assign( end_addr_tmp,   binop( Iop_Add32, mkexpr(Rn_tmp), mkU32(n_bytes - 4) ) );
+	break;
+
+    case 0x2:  // Decrement before (DB)
+	assign( start_addr_tmp, binop( Iop_Sub32, mkexpr(Rn_tmp), mkU32(n_bytes) ) );
+	assign( end_addr_tmp,   binop( Iop_Sub32, mkexpr(Rn_tmp), mkU32(4) ) );
+	break;
+
+    case 0x3:  // Increment before (IB)
+	assign( start_addr_tmp, binop( Iop_Add32, mkexpr(Rn_tmp), mkU32(4) ) );
+	assign( end_addr_tmp,   binop( Iop_Add32, mkexpr(Rn_tmp), mkU32(n_bytes) ) );
+	break;
+
+    default:
+	vpanic("dis_ldm_stm(ARM)");
+	return; 
+    }
+
+    if (cond_passed && W) {
+	if (PU & 1) {     // U==1
+	    assign( Rn_tmp, binop( Iop_Add32, mkexpr(Rn_tmp), mkU32(n_bytes) ) );
+	} else {
+	    assign( Rn_tmp, binop( Iop_Sub32, mkexpr(Rn_tmp), mkU32(n_bytes) ) );
+	}
+    }
+
+    /*
+      lowest numbered reg -> lowest address
+       -> so start with lowest register...
+      guest_reg_idx gives the register address
+      mem_offset gives memory offset
+    */
+     for (guest_reg_idx=0, mem_offset=0; guest_reg_idx < 16; guest_reg_idx++) {
+	if (( reg_list >> guest_reg_idx ) & 1) {
+
+	    if ( PU & 1 ) { // U==1: increment, U==0: decrement
+		assign( addr_tmp, binop( Iop_Add32, mkexpr(start_addr_tmp), mkU32(mem_offset) ) );
+	    } else {
+		assign( addr_tmp, binop( Iop_Sub32, mkexpr(start_addr_tmp), mkU32(mem_offset) ) );
+	    }
+	    
+	    if ( L ) { // LOAD Ri, addr_tmp
+		putIReg( guest_reg_idx, IRExpr_LDle( Ity_I32, mkexpr( addr_tmp ) ) );
+	    } else {   // STORE Ri, addr_tmp
+		stmt( IRStmt_STle( mkexpr(addr_tmp), getIReg( guest_reg_idx ) ) );
+	    }
+	    mem_offset++;  // After each store/load, go to next memory offset
+	}
+    }
+
+     // CAB: Looks like no status flags need setting...
+
+    return;
+}
+
+
+
+
+
 
 
 
@@ -1006,7 +1077,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    theInstr = *(UInt*)(&guest_code[delta]);
 
-   vex_printf("START: 0x%x\n", theInstr );
+   vex_printf("START: 0x%x, %,b\n", theInstr, theInstr );
 
    DIP("\t0x%x:  ", guest_pc_bbstart+delta);
 
@@ -1018,7 +1089,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    // Essentially a v. unlikely sequence of noops that we can catch
    {
       UInt* code = (UInt*)(guest_code + delta);
-      /* Spot this:                                // CAB: easy way to rotate left?
+      /* Spot this:                                       // CAB: easy way to rotate left?
          E1A00EE0                   mov  r0, r0, ror #29
 	 E1A001E0                   mov  r0, r0, ror #3
 	 E1A00DE0                   mov  r0, r0, ror #27
@@ -1055,7 +1126,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
      Deal with condition first
     */
    cond = (theInstr >> 28) & 0xF;    /* opcode: bits 31:28 */
-   vex_printf("\ndisInstr(arm): cond: 0x%x\n", cond );
+   vex_printf("\ndisInstr(arm): cond: 0x%x, %b\n", cond, cond );
 
    switch (cond) {
    case 0xF:   // => Illegal instruction prior to v5 (see ARM ARM A3-5)
@@ -1097,7 +1168,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* As per ARM ARM v2 page A3-2, primary opcode appears to be in
       bits 27:21 of the instruction (roughly).  Hence ... */
    opc = (theInstr >> 21) & 0x7F;    /* opcode: bits 27:21 */
-   vex_printf("disInstr(arm): opcode: 0x%x\n", opc );
+   vex_printf("disInstr(arm): opcode: 0x%x, %,b\n", opc, opc );
 
    switch (opc) {
 
@@ -1156,8 +1227,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 
    case 0x0D:            // MOV (reg)
-       vex_printf("OPCODE: MOV(reg)\n");
-       dis_mov_reg(theInstr);
+       dis_mov(theInstr);
        break;
 
 
@@ -1169,29 +1239,19 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 
    case 0x1D:            // MOV (imm)
-       /*      e3a00014        mov     r0, #20 ; 0x14
-	       1110 0011 1010 0000 0000 0000 0001 0100
-	*/
-       vex_printf("OPCODE: MOV(imm)\n");
+       dis_mov(theInstr);
        goto decode_failure;
 
 
 
 
 
-
+//   case 0x40 ... 0x4F:  // LOAD/STORE multiple, Addressing Mode 4, ARM ARM A5-49
 
    case 0x49:     // STMDB: STM(1), decrement before
-	/* e92dd810        stmdb   sp!, {r4, fp, ip, lr, pc}
-	   1110 1001 0010 1101 1101 1000 0001 0000
-	   1110 100P U0W0 Rn   reg list
-	   P=1 => Rn included in range of mem
-	   U=0 => Rn lies at top of mem range
-	   W=1 => Base reg updated after transfer (U=1 => incremented 4x num regs)
-	   opc => 0100 1001 => 49
-	 */
        vex_printf("OPCODE: STM-DB\n");
-       goto decode_failure;
+       dis_ldm_stm(theInstr);
+       break;
 
 
        
@@ -1212,6 +1272,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        vex_printf("OPCODE: BL\n");
        goto decode_failure;
        
+
+
+
+
+       
+
+
 
    default:
    decode_failure:

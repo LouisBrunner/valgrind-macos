@@ -156,7 +156,7 @@ enum {
 
     ARMG_CC_OP_MOV,
 
-    ARMG_CC_OP_LSL,
+    ARMG_CC_OP_LSL,     /* DEP1 = first arg, DEP2 = second arg */
     ARMG_CC_OP_LSR,
     ARMG_CC_OP_ASR,
     ARMG_CC_OP_ROR,

@@ -225,13 +225,6 @@ void LibVEX_GuestARM_put_flags ( UInt eflags_native,
                                  /*OUT*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
-#if 0
-   // CAB: what does this do?!
-   vex_state->guest_DFLAG
-      = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
-   vex_state->guest_IDFLAG
-      = (eflags_native & (1<<21)) ? 1 : 0;
-#endif
 
    /* Mask out everything except N Z V C. */
    eflags_native
@@ -253,18 +246,6 @@ UInt LibVEX_GuestARM_get_flags ( /*IN*/VexGuestARMState* vex_state )
                     vex_state->guest_CC_DEP1,
                     vex_state->guest_CC_DEP2
                  );
-#if 0
-   // CAB: what does this do?!
-   // jrs -- it's more x86-specific flags hacks (sigh).  You can
-   // safely delete it.
-   UInt dflag = vex_state->guest_DFLAG;
-   vassert(dflag == 1 || dflag == 0xFFFFFFFF);
-   if (dflag == 0xFFFFFFFF)
-      eflags |= (1<<10);
-   if (vex_state->guest_IDFLAG == 1)
-      eflags |= (1<<21);
-#endif
-
    return eflags;
 }
 

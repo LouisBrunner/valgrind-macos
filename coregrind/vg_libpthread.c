@@ -1450,7 +1450,7 @@ int __pthread_key_create(pthread_key_t *key,
 int pthread_key_delete(pthread_key_t key)
 {
    int res;
-   ensure_valgrind("pthread_key_create");
+   ensure_valgrind("pthread_key_delete");
    if (!key_is_valid(key))
       return EINVAL;
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,

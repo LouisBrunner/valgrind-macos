@@ -857,8 +857,18 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 // SSS: put these somewhere better
 static void eraser_mem_read (Addr a, UInt data_size, ThreadState *tst);
 static void eraser_mem_write(Addr a, UInt data_size, ThreadState *tst);
-static void eraser_mem_read_notid (Addr a, UInt data_size);
-static void eraser_mem_write_notid(Addr a, UInt data_size);
+
+#define REGPARM(x)	__attribute__((regparm (x)))
+
+static void eraser_mem_help_read_1(Addr a) REGPARM(1);
+static void eraser_mem_help_read_2(Addr a) REGPARM(1);
+static void eraser_mem_help_read_4(Addr a) REGPARM(1);
+static void eraser_mem_help_read_N(Addr a, UInt size) REGPARM(2);
+
+static void eraser_mem_help_write_1(Addr a, UInt val) REGPARM(2);
+static void eraser_mem_help_write_2(Addr a, UInt val) REGPARM(2);
+static void eraser_mem_help_write_4(Addr a, UInt val) REGPARM(2);
+static void eraser_mem_help_write_N(Addr a, UInt size) REGPARM(2);
 
 static
 void eraser_pre_mem_read(CorePart part, ThreadState* tst,
@@ -988,34 +998,76 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
          case NOP: case CALLM_S: case CALLM_E:
             break;
 
-         /* For LOAD, address is in val1 */
-         case LOAD:
-            t_size = newTemp(cb);
-            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
-            uLiteral(cb, (UInt)u_in->size);
+         case LOAD: {
+	    void (*help)(Addr);
+	    sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
+	    
+	    switch(u_in->size) {
+	    case 1: help = eraser_mem_help_read_1; break;
+	    case 2: help = eraser_mem_help_read_2; break;
+	    case 4: help = eraser_mem_help_read_4; break;
+	    default:
+	       VG_(skin_panic)("bad size");
+	    }
+	    
+	    uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
+	    uCCall(cb, (Addr)help, 1, 1, False);
 
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+	 }
+
+         case FPU_R: {
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
-            // SSS: make regparms(2) eventually...
-            uCCall(cb, (Addr) & eraser_mem_read_notid, 2, 0, False);
-            VG_(copy_UInstr)(cb, u_in);
-            t_size = INVALID_TEMPREG;
-            break;
+	    
+	       t_size = newTemp(cb);
+	       uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	       uLiteral(cb, (UInt)u_in->size);
 
-         /* For others, address is in val2 */
-         case STORE:  case FPU_R:  case FPU_W:
-            t_size = newTemp(cb);
-            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
-            uLiteral(cb, (UInt)u_in->size);
+	       uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
+	       uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
 
+	       VG_(copy_UInstr)(cb, u_in);
+	       t_size = INVALID_TEMPREG;
+	       break;
+	 } 
+
+         case STORE: {
+	    void (*help)(Addr, UInt);
+            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
+	    
+	    switch(u_in->size) {
+	    case 1: help = eraser_mem_help_write_1; break;
+	    case 2: help = eraser_mem_help_write_2; break;
+	    case 4: help = eraser_mem_help_write_4; break;
+	    default:
+	       VG_(skin_panic)("bad size");
+	    }
+
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, u_in->val1);
+	    uCCall(cb, (Addr)help, 2, 2, False);
+
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+	 }
+
+         case FPU_W: {
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-            uCCall(cb, (Addr) & eraser_mem_write_notid, 2, 0, False);
-            VG_(copy_UInstr)(cb, u_in);
-            t_size = INVALID_TEMPREG;
-            break;
+
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, (UInt)u_in->size);
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
+	    uCCall(cb, (Addr) & eraser_mem_help_write_N, 2, 2, False);
+
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+	 }
 
          default:
             VG_(copy_UInstr)(cb, u_in);
@@ -1796,12 +1848,42 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 
 #undef DEBUG_STATE
 
-static void eraser_mem_read_notid(Addr a, UInt size)
+static void eraser_mem_help_read_1(Addr a)
 {
-   eraser_mem_read(a, size, NULL);
+   eraser_mem_read(a, 1, NULL);
 }
 
-static void eraser_mem_write_notid(Addr a, UInt size)
+static void eraser_mem_help_read_2(Addr a)
+{
+   eraser_mem_read(a, 2, NULL);
+}
+
+static void eraser_mem_help_read_4(Addr a)
+{
+   eraser_mem_read(a, 4, NULL);
+}
+
+static void eraser_mem_help_read_N(Addr a, UInt size)
+{
+      eraser_mem_read(a, size, NULL);
+}
+
+static void eraser_mem_help_write_1(Addr a, UInt val)
+{
+   if (*(UChar *)a != val)
+      eraser_mem_write(a, 1, NULL);
+}
+static void eraser_mem_help_write_2(Addr a, UInt val)
+{
+   if (*(UShort *)a != val)
+      eraser_mem_write(a, 2, NULL);
+}
+static void eraser_mem_help_write_4(Addr a, UInt val)
+{
+   if (*(UInt *)a != val)
+      eraser_mem_write(a, 4, NULL);
+}
+static void eraser_mem_help_write_N(Addr a, UInt size)
 {
    eraser_mem_write(a, size, NULL);
 }
@@ -1855,8 +1937,15 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    track->post_mutex_lock       = & eraser_post_mutex_lock;
    track->post_mutex_unlock     = & eraser_post_mutex_unlock;
 
-   VG_(register_compact_helper)((Addr) & eraser_mem_read_notid);
-   VG_(register_compact_helper)((Addr) & eraser_mem_write_notid);
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_1);
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_2);
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_4);
+   VG_(register_noncompact_helper)((Addr) & eraser_mem_help_read_N);
+
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_1);
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_2);
+   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_4);
+   VG_(register_noncompact_helper)((Addr) & eraser_mem_help_write_N);
 
    /* Init lock table */
    for (i = 0; i < VG_N_THREADS; i++) 

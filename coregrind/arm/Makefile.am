@@ -18,7 +18,7 @@ CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
 	dispatch.S \
-	signal.c \
+	signals.c \
 	state.c
 
 # Extract ld's default linker script and hack it to our needs

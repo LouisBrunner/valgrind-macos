@@ -22,7 +22,7 @@ libarch_a_SOURCES = \
 	cpuid.S \
 	helpers.S \
 	dispatch.S \
-	signal.c \
+	signals.c \
 	state.c
 
 # Extract ld's default linker script and hack it to our needs

@@ -1327,7 +1327,7 @@ Improved code:
 
 Once you understand the meaning of the instrumentation uinstrs,
 discussed in detail above, the instrumentation scheme is fairly
-straighforward.  Each uinstr is instrumented in isolation, and the
+straightforward.  Each uinstr is instrumented in isolation, and the
 instrumentation uinstrs are placed before the original uinstr.
 Our running example continues below.  I have placed a blank line 
 after every original ucode, to make it easier to see which
@@ -1346,7 +1346,7 @@ scheme, only checking where a failure of validity could cause the
 original program to (seg)fault.  So the use of values as memory
 addresses causes a check, as do conditional jumps (these cause a check
 on the definedness of the condition codes).  And arguments
-<code>PUSH</code>ed for helper calls are checked, hence the wierd
+<code>PUSH</code>ed for helper calls are checked, hence the weird
 restrictions on help call preambles described above.
 
 <p>

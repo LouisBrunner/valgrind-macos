@@ -449,7 +449,7 @@ Bool VG_(logging_to_filedes) = True;
    vg_startup.S.  We have to determine it early since we can't even
    correctly snapshot the startup machine state without it. */
 /* Initially True.  Safer to err on the side of SSEness and get SIGILL
-   than to not notice for some reason that we have SSE and get wierd
+   than to not notice for some reason that we have SSE and get weird
    errors later on. */
 Bool VG_(have_ssestate) = True;
 

@@ -1233,7 +1233,7 @@ Bool VG_(deliver_signals) ( void )
          client really has a handler for this thread! */
       vg_assert(vg_dcss.dcss_sigpending[sigNo]);
 
-      /* A recent addition, so as to stop seriously wierd progs dying
+      /* A recent addition, so as to stop seriously weird progs dying
          at the following assertion (which this renders redundant,
          btw). */
       if (vg_scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN

@@ -4559,7 +4559,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis) VG_(printf)("leave");
       break;
 
-   /* ---------------- Misc wierd-ass insns --------------- */
+   /* ---------------- Misc weird-ass insns --------------- */
 
    case 0x27: /* DAA */
    case 0x2F: /* DAS */

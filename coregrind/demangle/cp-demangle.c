@@ -78,7 +78,7 @@
 #define NAMESPACE_SEPARATOR (dm->style == DMGL_JAVA ? "." : "::")
 
 /* If flag_verbose is zero, some simplifications will be made to the
-   output to make it easier to read and supress details that are
+   output to make it easier to read and suppress details that are
    generally not of interest to the average C++ programmer.
    Otherwise, the demangled representation will attempt to convey as
    much information as the mangled form.  */
@@ -523,7 +523,7 @@ result_shift_caret (dm, position_offset)
 
 /* Returns non-zero if the character that comes right before the place
    where text will be added to the result is a space.  In this case,
-   the caller should supress adding another space.  */
+   the caller should suppress adding another space.  */
 
 static int
 result_previous_char_is_space (dm)
@@ -2459,7 +2459,7 @@ demangle_type (dm)
 	    RETURN_IF_ERROR 
 	      (demangle_class_enum_type (dm, &encode_return_type));
 	    /* If all that was just demangled is the two-character
-	       special substitution token, supress the addition of a
+	       special substitution token, suppress the addition of a
 	       new candidate for it.  */
 	    if (dm->next == next + 2)
 	      is_substitution_candidate = 0;
@@ -3830,7 +3830,7 @@ VG_(java_demangle_v3) (mangled)
   end = next + len;
   demangled = NULL;
 
-  /* Replace occurances of JArray<TYPE> with TYPE[]. */
+  /* Replace occurrences of JArray<TYPE> with TYPE[]. */
   while (next < end)
     {
       char *open_str = VG_(strstr) (next, "JArray<");

@@ -126,7 +126,7 @@ newer DWARF2 reader.
 <p>
 When you're ready to roll, just run your application as you would
 normally, but place <code>valgrind --skin=the-selected-skin</code> in
-front of your usual command-line invokation.  Note that you should run
+front of your usual command-line invocation.  Note that you should run
 the real (machine-code) executable here.  If your application is
 started by, for example, a shell or perl script, you'll need to modify
 it to invoke Valgrind on the real executables.  Running such scripts
@@ -1193,7 +1193,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
   <li>Valgrind's signal simulation is not as robust as it could be.
       Basic POSIX-compliant sigaction and sigprocmask functionality is
       supplied, but it's conceivable that things could go badly awry
-      if you do wierd things with signals.  Workaround: don't.
+      if you do weird things with signals.  Workaround: don't.
       Programs that do non-POSIX signal tricks are in any case
       inherently unportable, so should be avoided if
       possible.</li><br>

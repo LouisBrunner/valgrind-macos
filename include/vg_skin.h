@@ -512,7 +512,7 @@ typedef
    enum {
       NOP,         /* Null op */
 
-      LOCK,	   /* Indicate the existance of a LOCK prefix (functionally NOP) */
+      LOCK,	   /* Indicate the existence of a LOCK prefix (functionally NOP) */
 
       /* Moving values around */
       GET,  PUT,   /* simulated register <--> TempReg */

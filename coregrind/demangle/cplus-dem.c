@@ -1111,7 +1111,7 @@ ada_demangle (mangled, option)
 /* This function performs most of what cplus_demangle use to do, but
    to be able to demangle a name with a B, K or n code, we need to
    have a longer term memory of what types have been seen. The original
-   now intializes and cleans up the squangle code info, while internal
+   now initializes and cleans up the squangle code info, while internal
    calls go directly to this routine to avoid resetting that info. */
 
 static char *
@@ -2624,7 +2624,7 @@ iterate_demangle_function (work, mangled, declp, scan)
   /* Iterate over occurrences of __, allowing names and types to have a
      "__" sequence in them.  We must start with the first (not the last)
      occurrence, since "__" most often occur between independent mangled
-     parts, hence starting at the last occurence inside a signature
+     parts, hence starting at the last occurrence inside a signature
      might get us a "successful" demangling of the signature.  */
 
   while (scan[2])

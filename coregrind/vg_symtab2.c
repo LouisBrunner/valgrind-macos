@@ -1138,7 +1138,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
             understand this wrong, but I don't think so.
 
             I just had a look at the GDB DWARF2 reader...  They
-            completly ignore "is_stmt" when recording line info ;-)
+            completely ignore "is_stmt" when recording line info ;-)
             That's the reason "objdump -S" works on files from the the
             intel fortran compiler.  
          */

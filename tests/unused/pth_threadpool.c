@@ -293,7 +293,7 @@ void *tpool_thread(void *arg)
     else
       tpool->queue_head = my_workp->next;
  
-    printf("worker %d: dequeing item %d\n", pthread_self(), my_workp->next);
+    printf("worker %d: dequeuing item %d\n", pthread_self(), my_workp->next);
 
     /* Handle waiting add_work threads */
     if ((!tpool->do_not_block_when_full) &&

@@ -308,7 +308,7 @@ static inline EC_EIP getExeContext(Addr a)
  * segments are arranged to form an interference graph which indicates
  * whether two thread lifetime segments can possibly be concurrent.
  * If not, then memory with is exclusively accessed by one TLS can be
- * passed on to another TLS without an error occuring, and without
+ * passed on to another TLS without an error occurring, and without
  * moving it from Excl state.
  *
  * At present this only considers thread creation and join as

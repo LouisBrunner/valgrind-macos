@@ -162,7 +162,7 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
    seg_selector &= 0x0000FFFF;
   
    /* Sanity check the segment selector.  Ensure that TI=1 (LDT) and
-      that RPL=11b (least priviledge).  These form the bottom 3 bits
+      that RPL=11b (least privilege).  These form the bottom 3 bits
       of the selector. */
    vg_assert((seg_selector & 7) == 7);
 

@@ -1218,7 +1218,7 @@ PREx(sys_umount, 0)
 
 PREx(sys_modify_ldt, Special)
 {
-   PRINT("modify_ldt ( %d, %p, %d )", arg1,arg2,arg3);
+   PRINT("sys_modify_ldt ( %d, %p, %d )", arg1,arg2,arg3);
    PRE_REG_READ3(int, "modify_ldt", int, func, void *, ptr,
                  unsigned long, bytecount);
    
@@ -1611,7 +1611,7 @@ POSTx(sys_syslog)
 
 PREx(sys_personality, 0)
 {
-   PRINT("personality ( %llu )", (ULong)arg1);
+   PRINT("sys_personality ( %llu )", (ULong)arg1);
    PRE_REG_READ1(long, "personality", vki_u_long, persona);
 }
 
@@ -1622,10 +1622,11 @@ PREx(sys_chroot, 0)
    PRE_MEM_RASCIIZ( "chroot(path)", arg1 );
 }
 
-PRE(madvise)
+PREx(sys_madvise, MayBlock)
 {
-   /* int madvise(void *start, size_t length, int advice ); */
-   PRINT("madvise ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRINT("sys_madvise ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "madvise",
+                 unsigned long, start, vki_size_t, length, int, advice);
 }
 
 PREx(sys_mremap, Special)
@@ -1761,41 +1762,46 @@ PREx(sys_setfsuid16, 0)
    PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
 }
 
-PRE(sendfile)
+PREx(sys_sendfile, MayBlock)
 {
-   /* ssize_t sendfile(int out_fd, int in_fd, off_t *offset, 
-      size_t count) */
-   PRINT("sendfile ( %d, %d, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
+   PRINT("sys_sendfile ( %d, %d, %p, %llu )", arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(ssize_t, "sendfile",
+                 int, out_fd, int, in_fd, vki_off_t *, offset,
+                 vki_size_t, count);
    if (arg3 != (UWord)NULL)
       PRE_MEM_WRITE( "sendfile(offset)", arg3, sizeof(vki_off_t) );
 }
 
-POST(sendfile)
+POSTx(sys_sendfile)
 {
    POST_MEM_WRITE( arg3, sizeof( vki_off_t ) );
 }
 
-PRE(sendfile64)
+PREx(sys_sendfile64, MayBlock)
 {
-   /* ssize_t sendfile64(int out_df, int in_fd, loff_t *offset,
-      size_t count); */
    PRINT("sendfile64 ( %d, %d, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(ssize_t, "sendfile64",
+                 int, out_fd, int, in_fd, vki_loff_t *, offset,
+                 vki_size_t, count);
    if (arg3 != (UWord)NULL)
       PRE_MEM_WRITE( "sendfile64(offset)", arg3, sizeof(vki_loff_t) );
 }
 
-POST(sendfile64)
+POSTx(sys_sendfile64)
 {
    if (arg3 != (UWord)NULL ) {
       POST_MEM_WRITE( arg3, sizeof(vki_loff_t) );
    }
 }
 
-PRE(pwrite64)
+// XXX: only for 32-bit archs
+PREx(sys_pwrite64, MayBlock)
 {
-   // ssize_t pwrite64(int fd, const void *buf, size_t nbytes, loff_t offset);
-   PRINT("pwrite64 ( %d, %p, %llu, %lld )",
+   PRINT("sys_pwrite64 ( %d, %p, %llu, %lld )",
          arg1, arg2, (ULong)arg3, LOHI64(arg4,arg5));
+   PRE_REG_READ5(ssize_t, "pwrite64",
+                 unsigned int, fd, const char *, buf, vki_size_t, count,
+                 vki_u32, offset_low32, vki_u32, offset_high32);
    PRE_MEM_READ( "pwrite64(buf)", arg2, arg3 );
 }
 
@@ -1837,15 +1843,18 @@ PREx(sys_getsid, 0)
    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
-PRE(pread64)
+// XXX: only for 32-bit archs
+PREx(sys_pread64, MayBlock)
 {
-   /* ssize_t pread64(int fd, void *buf, size_t count, loff_t offset); */
-   PRINT("pread ( %d, %p, %llu, %lld )",
+   PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
          arg1, arg2, (ULong)arg3, LOHI64(arg4,arg5));
-   PRE_MEM_WRITE( "pread(buf)", arg2, arg3 );
+   PRE_REG_READ5(ssize_t, "pread64",
+                 unsigned int, fd, char *, buf, vki_size_t, count,
+                 vki_u32, offset_low32, vki_u32, offset_high32);
+   PRE_MEM_WRITE( "pread64(buf)", arg2, arg3 );
 }
 
-POST(pread64)
+POSTx(sys_pread64)
 {
    if (res > 0) {
       POST_MEM_WRITE( arg2, res );
@@ -1877,14 +1886,14 @@ PREx(sys_init_module, MayBlock)
 
 PREx(sys_ioperm, 0)
 {
-   PRINT("ioperm ( %d, %d, %d )", arg1, arg2, arg3 );
+   PRINT("sys_ioperm ( %d, %d, %d )", arg1, arg2, arg3 );
    PRE_REG_READ3(long, "ioperm",
                  unsigned long, from, unsigned long, num, int, turn_on);
 }
 
 PREx(sys_capget, 0)
 {
-   PRINT("capget ( %p, %p )", arg1, arg2 );
+   PRINT("sys_capget ( %p, %p )", arg1, arg2 );
    PRE_REG_READ2(long, "capget", 
                  vki_cap_user_header_t, header, vki_cap_user_data_t, data);
    PRE_MEM_READ( "capget(header)", arg1, 
@@ -2218,7 +2227,7 @@ PREx(sys_fchown, 0)
 
 PREx(sys_fchmod, 0)
 {
-   PRINT("fchmod ( %d, %d )", arg1,arg2);
+   PRINT("sys_fchmod ( %d, %d )", arg1,arg2);
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
@@ -2379,7 +2388,7 @@ POSTx(sys_getdents)
 
 PREx(sys_getdents64, MayBlock)
 {
-   PRINT("getdents64 ( %d, %p, %d )",arg1,arg2,arg3);
+   PRINT("sys_getdents64 ( %d, %p, %d )",arg1,arg2,arg3);
    PRE_REG_READ3(long, "getdents64",
                  unsigned int, fd, struct linux_dirent64 *, dirp,
                  unsigned int, count);
@@ -2408,7 +2417,7 @@ POSTx(sys_getgroups16)
 
 PREx(sys_getgroups, 0)
 {
-   PRINT("getgroups ( %d, %p )", arg1, arg2);
+   PRINT("sys_getgroups ( %d, %p )", arg1, arg2);
    PRE_REG_READ2(long, "getgroups", int, size, vki_gid_t *, list);
    if (arg1 > 0)
       PRE_MEM_WRITE( "getgroups(list)", arg2, arg1 * sizeof(vki_gid_t) );
@@ -2420,16 +2429,16 @@ POSTx(sys_getgroups)
       POST_MEM_WRITE( arg2, res * sizeof(vki_gid_t) );
 }
 
-PRE(getcwd)
+PREx(sys_getcwd, 0)
 {
-   // Note that this prototype is the kernel one, with a different return
-   // type to the glibc one!
-   /* long getcwd(char *buf, size_t size); */
-   PRINT("getcwd ( %p, %llu )",arg1,(ULong)arg2);
+   // Note that the kernel version of getcwd() behaves quite differently to
+   // the glibc one.
+   PRINT("sys_getcwd ( %p, %llu )", arg1,(ULong)arg2);
+   PRE_REG_READ2(long, "getcwd", char *, buf, unsigned long, size);
    PRE_MEM_WRITE( "getcwd(buf)", arg1, arg2 );
 }
 
-POST(getcwd)
+POSTx(sys_getcwd)
 {
    if (res != (Addr)NULL)
       POST_MEM_WRITE( arg1, res );
@@ -4438,7 +4447,7 @@ PREx(sys_lseek, 0)
 
 PREx(sys_llseek, 0)
 {
-   PRINT("llseek ( %d, 0x%x, 0x%x, %p, %d )", arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", arg1,arg2,arg3,arg4,arg5);
    PRE_REG_READ5(long, "llseek",
                  unsigned int, fd, unsigned long, offset_high,
                  unsigned long, offset_low, vki_loff_t *, result,
@@ -4469,7 +4478,7 @@ POSTx(sys_newlstat)
 
 PREx(sys_lstat64, 0)
 {
-   PRINT("lstat64 ( %p(%s), %p )",arg1,arg1,arg2);
+   PRINT("sys_lstat64 ( %p(%s), %p )",arg1,arg1,arg2);
    PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "lstat64(file_name)", arg1 );
    PRE_MEM_WRITE( "lstat64(buf)", arg2, sizeof(struct vki_stat64) );
@@ -4605,21 +4614,23 @@ POSTx(sys_munmap)
    VG_TRACK( die_mem_munmap, a, len );
 }
 
-PRE(mincore)
+PREx(sys_mincore, 0)
 {
-   /* int mincore(void *start, size_t length, unsigned char *vec); */
-   PRINT("mincore ( %p, %llu, %p )", arg1,(ULong)arg2,arg3);
+   PRINT("sys_mincore ( %p, %llu, %p )", arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "mincore",
+                 unsigned long, start, vki_size_t, length,
+                 unsigned char *, vec);
    PRE_MEM_WRITE( "mincore(vec)", arg3, (arg2 + 4096 - 1) / 4096);
 }
 
-POST(mincore)
+POSTx(sys_mincore)
 {
    POST_MEM_WRITE( arg3, (arg2 + 4096 - 1) / 4096 );  
 }
 
 PREx(sys_nanosleep, MayBlock|PostOnFail)
 {
-   PRINT("nanosleep ( %p, %p )", arg1,arg2);
+   PRINT("sys_nanosleep ( %p, %p )", arg1,arg2);
    PRE_REG_READ2(long, "nanosleep", 
                  struct timespec *, req, struct timespec *, rem);
    PRE_MEM_READ( "nanosleep(req)", arg1, sizeof(struct vki_timespec) );
@@ -5687,27 +5698,29 @@ POSTx(sys_adjtimex)
    VG_TRACK(post_mem_write, arg1, sizeof(struct vki_timex));
 }
 
-PRE(utimes)
+PREx(sys_utimes, 0)
 {
-    /* int utimes(const char *filename, struct timeval *tvp); */
-    PRINT("utimes ( %p, %p )", arg1,arg2);
-    PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
-    if (arg2 != (UWord)NULL)
-         PRE_MEM_READ( "utimes(tvp)", arg2, sizeof(struct vki_timeval) );
+   PRINT("sys_utimes ( %p, %p )", arg1,arg2);
+   PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
+   PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
+   if (arg2 != (UWord)NULL)
+      PRE_MEM_READ( "utimes(tvp)", arg2, sizeof(struct vki_timeval) );
 }
 
-PRE(futex)
+PREx(sys_futex, MayBlock)
 {
-    /* int futex(void *futex, int op, int val, const struct timespec *timeout); */
-    PRINT("futex ( %p, %d, %d, %p, %p )", arg1,arg2,arg3,arg4,arg5);
-    PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
-    if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
-       PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
-    if (arg2 == VKI_FUTEX_REQUEUE)
-       PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
+   PRINT("sys_futex ( %p, %d, %d, %p, %p )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ6(long, "futex", 
+                 vki_u32 *, futex, int, op, int, val,
+                 struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+   PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
+   if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
+      PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
+   if (arg2 == VKI_FUTEX_REQUEUE)
+      PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
 }
 
-POST(futex)
+POSTx(sys_futex)
 {
    POST_MEM_WRITE( arg1, sizeof(int) );
    if (arg2 == VKI_FUTEX_FD) {
@@ -5789,18 +5802,22 @@ PREx(sys_rt_sigsuspend, MayBlock)
    }
 }
 
-PRE(rt_sigtimedwait)
+PREx(sys_rt_sigtimedwait, MayBlock)
 {
-   /* int sigtimedwait(const  sigset_t  *set,  siginfo_t  *info,
-      const struct timespec timeout); */
-   PRINT("sigtimedwait ( %p, %p, timeout )", arg1, arg2);
+   PRINT("sys_rt_sigtimedwait ( %p, %p, %p, %lld )",
+         arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(long, "rt_sigtimedwait", 
+                 const vki_sigset_t *, set, vki_siginfo_t *, info,
+                 const struct timespec *, timeout, vki_size_t, sigsetsize);
    if (arg1 != (UWord)NULL) 
-      PRE_MEM_READ(  "sigtimedwait(set)",  arg1, sizeof(vki_sigset_t));
+      PRE_MEM_READ(  "rt_sigtimedwait(set)",  arg1, sizeof(vki_sigset_t));
    if (arg2 != (UWord)NULL)
-      PRE_MEM_WRITE( "sigtimedwait(info)", arg2, sizeof(vki_siginfo_t) );
+      PRE_MEM_WRITE( "rt_sigtimedwait(info)", arg2, sizeof(vki_siginfo_t) );
+   PRE_MEM_READ( "rt_sigtimedwait(timeout)",
+                 arg4, sizeof(struct vki_timespec) );
 }
 
-POST(rt_sigtimedwait)
+POSTx(sys_rt_sigtimedwait)
 {
    if (arg2 != (UWord)NULL)
       POST_MEM_WRITE( arg2, sizeof(vki_siginfo_t) );
@@ -6603,19 +6620,19 @@ static const struct sys_info sys_info[] = {
 
    SYSXY(__NR_rt_sigprocmask,   sys_rt_sigprocmask),  // 175 * ?
    SYSXY(__NR_rt_sigpending,    sys_rt_sigpending),   // 176 * ?
-   SYSBA(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait, MayBlock), // 177 *
+   SYSXY(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait), // 177 * ?
    SYSBA(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo, 0), // 178 *
    SYSX_(__NR_rt_sigsuspend,    sys_rt_sigsuspend),   // 179 () ()
-   SYSBA(__NR_pread64,          sys_pread64, MayBlock), // 180 *
+   SYSXY(__NR_pread64,          sys_pread64),         // 180 * (Unix98?)
 
-   SYSB_(__NR_pwrite64,         sys_pwrite64, MayBlock), // 181 *
+   SYSX_(__NR_pwrite64,         sys_pwrite64),     // 181 * (Unix98?)
    SYSX_(__NR_chown,            sys_chown16),      // 182 * P
-   SYSBA(__NR_getcwd,           sys_getcwd, 0),    // 183 *
+   SYSXY(__NR_getcwd,           sys_getcwd),       // 183 * P
    SYSXY(__NR_capget,           sys_capget),       // 184 * L?
 
    SYSX_(__NR_capset,           sys_capset),       // 185 * L?
    SYSBA(__NR_sigaltstack,      sys_sigaltstack, SIG_SIM), // 186 
-   SYSBA(__NR_sendfile,         sys_sendfile, MayBlock), // 187 *
+   SYSXY(__NR_sendfile,         sys_sendfile),     // 187 * L
    SYSBA(__NR_getpmsg,          sys_ni_syscall, MayBlock), // 188 ...
    SYSB_(__NR_putpmsg,          sys_ni_syscall, MayBlock), // 189 ...
 
@@ -6653,8 +6670,8 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setfsuid32,       sys_setfsuid),     // 215 * L
    SYSX_(__NR_setfsgid32,       sys_setfsgid),     // 216 * L
    //   (__NR_pivot_root,       sys_pivot_root),   // 217 * L
-   SYSBA(__NR_mincore,          sys_mincore, 0),   // 218 *
-   SYSB_(__NR_madvise,          sys_madvise, MayBlock), // 219 *
+   SYSXY(__NR_mincore,          sys_mincore),      // 218 * non-P?
+   SYSX_(__NR_madvise,          sys_madvise),      // 219 * P
 
    SYSXY(__NR_getdents64,       sys_getdents64),   // 220 * (SVr4,SVID?)
    // XXX: This wrapped in a "#if BITS_PER_LONG == 32" in
@@ -6681,9 +6698,9 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_lremovexattr,     sys_lremovexattr), // 236 * L?
    SYSX_(__NR_fremovexattr,     sys_fremovexattr), // 237 * L?
    //   (__NR_tkill,            sys_tkill),        // 238 * L
-   SYSBA(__NR_sendfile64,       sys_sendfile64, MayBlock), // 239 *
+   SYSXY(__NR_sendfile64,       sys_sendfile64),   // 239 * L
 
-   SYSBA(__NR_futex,            sys_futex, MayBlock), // 240 *
+   SYSXY(__NR_futex,            sys_futex),        // 240 * L
    SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity), // 241 * L?
    SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity), // 242 * L?
    SYSB_(__NR_set_thread_area,  sys_set_thread_area, Special), // 243 
@@ -6721,8 +6738,7 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_fstatfs64,        sys_fstatfs64),    // 269 * (?)
 
    //   (__NR_tgkill,           sys_tgkill),       // 270 * ()
-   SYSB_(__NR_utimes,           sys_utimes, 0),    // 271 *
-
+   SYSX_(__NR_utimes,           sys_utimes),       // 271 * (4.3BSD)
    //   (__NR_fadvise64_64,     sys_fadvise64_64), // 272 * ()
    SYSX_(__NR_vserver,          sys_ni_syscall),   // 273 * P -- unimplemented
    //   (__NR_mbind,            sys_mbind),        // 274 () ()

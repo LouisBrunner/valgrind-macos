@@ -1099,8 +1099,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       opc_cl = opc_imm = subopc = 0;
       switch (i->Xin.Sh32.op) {
          case Xsh_SHR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
-         case Xsh_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
-         case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
+         case Xsh_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
+         case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 4; break;
          default: goto bad;
       }
       if (i->Xin.Sh32.src == 0) {

@@ -545,6 +545,62 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    return ret;
 }
 
+void VG_(pad_address_space)(void)
+{
+   Addr addr = VG_(client_base);
+   Segment *s = VG_(SkipNode_First)(&sk_segments);
+   UInt args[6];
+   Addr ret;
+   
+   args[2] = 0;
+   args[3] = VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS;
+   args[4] = -1;
+   args[5] = 0;
+   
+   while (s && addr < VG_(valgrind_end)) {
+      if (addr < s->addr) {
+         args[0] = (UInt)addr;
+         args[1] = s->addr - addr;
+         
+         ret = VG_(do_syscall)(__NR_mmap, (UInt)args);
+      }
+        
+      addr = s->addr + s->len;
+      s = VG_(SkipNode_Next)(&sk_segments, s);
+   }
+
+   if (addr < VG_(valgrind_end)) {
+      args[0] = (UInt)addr;
+      args[1] = VG_(valgrind_end) - addr;
+
+      ret = VG_(do_syscall)(__NR_mmap, (UInt)args);
+   }
+
+   return;
+}
+
+void VG_(unpad_address_space)(void)
+{
+   Addr addr = VG_(client_base);
+   Segment *s = VG_(SkipNode_First)(&sk_segments);
+   Int ret;
+
+   while (s && addr < VG_(valgrind_end)) {
+      if (addr < s->addr) {
+         ret = VG_(do_syscall)(__NR_munmap, (UInt)addr, s->addr - addr);
+      }
+         
+      addr = s->addr + s->len;
+      s = VG_(SkipNode_Next)(&sk_segments, s);
+   }
+
+   if (addr < VG_(valgrind_end)) {
+      ret = VG_(do_syscall)(__NR_munmap, (UInt)addr, VG_(valgrind_end) - addr);
+   }
+
+   return;
+}
+
 Segment *VG_(find_segment)(Addr a)
 {
    return VG_(SkipList_Find)(&sk_segments, &a);

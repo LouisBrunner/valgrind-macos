@@ -5358,6 +5358,140 @@ POST(sigpending)
 PREALIAS(rt_sigpending, sigpending);
 POSTALIAS(rt_sigpending, sigpending);
 
+PRE(io_setup)
+{
+   UInt size;
+   Addr addr;
+
+   /* long io_setup (unsigned nr_events, aio_context_t *ctxp); */
+   MAYBE_PRINTF("io_setup ( %ul, %p )\n",arg1,arg2);
+   SYSCALL_TRACK( pre_mem_write, tid, "io_setup(ctxp)",
+                  arg2, sizeof(vki_aio_context_t) );
+   
+   size = PGROUNDUP(sizeof(vki_aio_ring) + arg1 * sizeof(vki_io_event));
+   addr = VG_(find_map_space)(0, size, True);
+   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
+   
+   VG_(pad_address_space)();
+   res = VG_(do_syscall)(SYSNO, arg1, arg2);
+   VG_(unpad_address_space)();
+
+   if (res == 0) {
+      vki_aio_ring *r = *(vki_aio_ring **)arg2;
+        
+      vg_assert(addr == (Addr)r);
+      vg_assert(valid_client_addr(addr, size, tid, "io_setup"));
+                
+      VG_TRACK( new_mem_mmap, addr, size, True, True, False );
+      VG_TRACK( post_mem_write, arg2, sizeof(vki_aio_context_t) );
+   }
+   else {
+      VG_(unmap_range)(addr, size);
+   }
+}
+
+PRE(io_destroy)
+{
+   Segment *s = VG_(find_segment)(arg1);
+   vki_aio_ring *r = *(vki_aio_ring **)arg1;
+   UInt size = PGROUNDUP(sizeof(vki_aio_ring) + r->nr * sizeof(vki_io_event));
+
+   /* long io_destroy (aio_context_t ctx); */
+   MAYBE_PRINTF("io_destroy ( %ul )\n",arg1);
+
+   res = VG_(do_syscall)(SYSNO, arg1);
+   
+   if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) {
+      VG_TRACK( die_mem_munmap, arg1, size );
+      VG_(unmap_range)(arg1, size);
+   }
+}
+
+PRE(io_getevents)
+{
+   /* long io_getevents (aio_context_t ctx_id, long min_nr, long nr,
+                         struct io_event *events, struct timespec *timeout); */
+   MAYBE_PRINTF("io_getevents ( %ul, %l, %l, %p, %p )\n",arg1,arg2,arg3,arg4,arg5);
+   if (arg3 > 0)
+      SYSCALL_TRACK( pre_mem_write, tid, "io_getevents(events)",
+                     arg4, sizeof(vki_io_event)*arg3 );
+   if (arg5 != (UInt)NULL)
+      SYSCALL_TRACK( pre_mem_read, tid, "io_getevents(timeout)",
+                     arg5, sizeof(struct timespec));
+}
+
+POST(io_getevents)
+{
+   int i;
+
+   if (res > 0) {
+      VG_TRACK( post_mem_write, arg4, sizeof(vki_io_event)*res );
+      for (i = 0; i < res; i++) {
+         const vki_io_event *vev = ((vki_io_event *)arg4) + i;
+         const vki_iocb *cb = (vki_iocb *)(UInt)vev->obj;
+
+         switch (cb->aio_lio_opcode) {
+         case VKI_IOCB_CMD_PREAD:
+            if (vev->result > 0)
+               VG_TRACK( post_mem_write, cb->aio_buf, vev->result );
+            break;
+            
+         case VKI_IOCB_CMD_PWRITE:
+            break;
+           
+         default:
+            VG_(message)(Vg_DebugMsg,"Warning: unhandled io_getevents opcode: %u\n",cb->aio_lio_opcode);
+            break;
+         }
+      }
+   }
+}
+
+PRE(io_submit)
+{
+   int i;
+
+   /* long io_submit (aio_context_t ctx_id, long nr, struct iocb **iocbpp); */
+   MAYBE_PRINTF("io_submit( %ul, %l, %p )\n",arg1,arg2,arg3);
+   SYSCALL_TRACK( pre_mem_read, tid, "io_submit(iocbpp)",
+                  arg3, sizeof(vki_iocb *)*arg2 );
+   for (i = 0; i < arg2; i++) {
+      vki_iocb *cb = ((vki_iocb **)arg3)[i];
+      SYSCALL_TRACK( pre_mem_read, tid, "io_submit(iocb)",
+                     (UInt)cb, sizeof(vki_iocb) );
+      switch (cb->aio_lio_opcode) {
+      case VKI_IOCB_CMD_PREAD:
+         SYSCALL_TRACK( pre_mem_write, tid, "io_submit(PREAD)",
+                        cb->aio_buf, cb->aio_nbytes );
+         break;
+
+      case VKI_IOCB_CMD_PWRITE:
+         SYSCALL_TRACK( pre_mem_read, tid, "io_submit(PWRITE)",
+                        cb->aio_buf, cb->aio_nbytes );
+         break;
+        
+      default:
+         VG_(message)(Vg_DebugMsg,"Warning: unhandled io_submit opcode: %u\n",cb->aio_lio_opcode);
+         break;
+      }
+   }
+}
+
+PRE(io_cancel)
+{
+   /* long io_cancel (aio_context_t ctx_id, struct iocb *iocb,
+                      struct io_event *result); */
+   MAYBE_PRINTF("io_cancel( %ul, %p, %p )\n",arg1,arg2,arg3);
+   SYSCALL_TRACK( pre_mem_read, tid, "io_cancel(iocb)",
+                  arg2, sizeof(vki_iocb) );
+   SYSCALL_TRACK( pre_mem_write, tid, "io_cancel(result)",
+                  arg3, sizeof(vki_io_event) );
+}
+
+POST(io_cancel)
+{
+   VG_TRACK( post_mem_write, arg3, sizeof(vki_io_event) );
+}
 
 #undef SYSNO
 #undef res
@@ -5413,6 +5547,9 @@ static const struct sys_info special_sys[] = {
    SYSB_(brk,			False),
    SYSB_(mmap,			False),
    SYSB_(mremap,		False),
+
+   SYSB_(io_setup,              False),
+   SYSB_(io_destroy,            False),
 
 #if SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),
@@ -5625,6 +5762,10 @@ static const struct sys_info sys_info[] = {
    SYSB_(alarm,			True), /* not blocking, but must run in LWP context */
    SYSBA(setitimer,		True), /* not blocking, but must run in LWP context */
    SYSBA(getitimer,		True), /* not blocking, but must run in LWP context */
+
+   SYSBA(io_getevents,          True),
+   SYSB_(io_submit,             False),
+   SYSBA(io_cancel,             False),
 
 #if !SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),

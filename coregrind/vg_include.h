@@ -1604,6 +1604,9 @@ extern Segment *VG_(next_segment)(Segment *);
 extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);
 extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
 
+extern void VG_(pad_address_space)(void);
+extern void VG_(unpad_address_space)(void);
+
 extern __attribute__((regparm(1))) 
        void VG_(unknown_esp_update) ( Addr new_ESP );
 

@@ -3,6 +3,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_ir.h				\
 		pub/libvex.h				\
 		pub/libvex_guest_x86.h			\
+		pub/libvex_guest_amd64.h		\
 		pub/libvex_guest_arm.h
 
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
@@ -10,6 +11,7 @@ PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
 		priv/guest-x86/gdefs.h			\
+		priv/guest-arm/gdefs.h			\
 		priv/ir/iropt.h
 
 LIB_OBJS = 	priv/ir/irdefs.o			\
@@ -22,7 +24,9 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/reg_alloc2.o		\
 		priv/guest-x86/ghelpers.o		\
-		priv/guest-x86/toIR.o
+		priv/guest-arm/ghelpers.o		\
+		priv/guest-x86/toIR.o			\
+		priv/guest-arm/toIR.o
 
 PUB_INCLUDES = -Ipub
 
@@ -118,3 +122,11 @@ priv/guest-x86/toIR.o: $(ALL_HEADERS) priv/guest-x86/toIR.c
 priv/guest-x86/ghelpers.o: $(ALL_HEADERS) priv/guest-x86/ghelpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/ghelpers.o \
 					 -c priv/guest-x86/ghelpers.c
+
+priv/guest-arm/ghelpers.o: $(ALL_HEADERS) priv/guest-arm/ghelpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-arm/ghelpers.o \
+					 -c priv/guest-arm/ghelpers.c
+
+priv/guest-arm/toIR.o: $(ALL_HEADERS) priv/guest-arm/toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-arm/toIR.o \
+					 -c priv/guest-arm/toIR.c

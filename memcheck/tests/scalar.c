@@ -23,8 +23,9 @@ int main(void)
 
    // All __NR_xxx numbers are taken from x86
 
-   // __NR_restart_syscall 0  XXX ???
-   // (see below)
+   // __NR_restart_syscall 0  // XXX: not yet handled, perhaps should be...
+   GO(__NR_restart_syscall, "n/a");
+ //SY(__NR_restart_syscall); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_exit 1 
    GO(__NR_exit, "below");

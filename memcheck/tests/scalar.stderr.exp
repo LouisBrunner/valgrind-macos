@@ -1,4 +1,7 @@
 -----------------------------------------------------
+  0:__NR_restart_syscall n/a
+-----------------------------------------------------
+-----------------------------------------------------
   1:           __NR_exit below
 -----------------------------------------------------
 -----------------------------------------------------
@@ -2685,14 +2688,14 @@ Syscall param sigaltstack(ss) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 12 client-defined
-   at 0x........: main (scalar.c:810)
+   at 0x........: main (scalar.c:811)
 
 Syscall param sigaltstack(oss) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 12 client-defined
-   at 0x........: main (scalar.c:810)
+   at 0x........: main (scalar.c:811)
 -----------------------------------------------------
 187:       __NR_sendfile 4s 1m
 -----------------------------------------------------

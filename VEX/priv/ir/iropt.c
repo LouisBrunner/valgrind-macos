@@ -1190,13 +1190,21 @@ static void redundant_get_removal_BB ( IRBB* bb )
                                      get->Iex.Get.ty );
          if (lookupHHW(env, &val, (HWord)key)) {
             /* found it */
-            if (DEBUG_IROPT) {
+            /* Note, we could do better here.  If the types are
+               different we don't do the substitution, since doing so
+               could lead to invalidly-typed IR.  An improvement would
+               be to stick in a reinterpret-style cast, although that
+               would make maintaining flatness more difficult. */
+            IRExpr* valE    = (IRExpr*)val;
+            Bool    typesOK = typeOfIRExpr(bb->tyenv,valE) 
+                              == st->Ist.Tmp.data->Iex.Get.ty;
+            if (typesOK && DEBUG_IROPT) {
                vex_printf("rGET: "); ppIRExpr(get);
-               vex_printf("  ->  "); ppIRExpr((IRExpr*)val);
+               vex_printf("  ->  "); ppIRExpr(valE);
                vex_printf("\n");
             }
-            bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp,
-                                      (IRExpr*)val);
+            if (typesOK)
+               bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp, valE);
          } else {
             /* Not found, but at least we know that t and the Get(...)
                are now associated.  So add a binding to reflect that

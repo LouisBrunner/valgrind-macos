@@ -1,3 +1,4 @@
+#include "../memcheck.h"
 #include "scalar.h"
 
 int main(void)
@@ -541,8 +542,10 @@ int main(void)
    SY(__NR_mprotect, x0, x0, x0);
 
    // __NR_sigprocmask 126
- //GO(__NR_sigprocmask, ".s .m");
- //SY(__NR_sigprocmask);
+   {
+      GO(__NR_sigprocmask, "3s 2m");
+      SY(__NR_sigprocmask, x0, x0+&px[1], x0+&px[1]);
+   }
 
    // __NR_create_module 127
    GO(__NR_create_module, "ni");
@@ -737,8 +740,8 @@ int main(void)
    SY(__NR_rt_sigaction, x0, x0+1, x0+1, x0);
 
    // __NR_rt_sigprocmask 175
- //GO(__NR_rt_sigprocmask, ".s .m");
- //SY(__NR_rt_sigprocmask);
+   GO(__NR_rt_sigprocmask, "4s 2m");
+   SY(__NR_rt_sigprocmask, x0, x0+1, x0+1, x0);
 
    // __NR_rt_sigpending 176
  //GO(__NR_rt_sigpending, ".s .m");

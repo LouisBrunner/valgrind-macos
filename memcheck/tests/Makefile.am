@@ -59,8 +59,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	scalar_supp.stderr.exp scalar_supp.vgtest scalar_supp.supp \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
-	signal2.stderr.exp \
-	signal2.stdout.exp signal2.vgtest \
+	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
+	sigprocmask.stderr.exp sigprocmask.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \
@@ -88,7 +88,7 @@ check_PROGRAMS = \
 	null_socket overlap \
 	realloc1 realloc2 realloc3 \
 	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork \
-	sigaltstack signal2 \
+	sigaltstack signal2 sigprocmask \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
@@ -146,6 +146,7 @@ scalar_fork_SOURCES 	= scalar_fork.c
 scalar_supp_SOURCES 	= scalar_supp.c
 scalar_vfork_SOURCES 	= scalar_vfork.c
 signal2_SOURCES 	= signal2.c
+sigprocmask_SOURCES 	= sigprocmask.c
 supp1_SOURCES 		= supp.c
 supp2_SOURCES 		= supp.c
 suppfree_SOURCES 	= suppfree.c

@@ -5911,31 +5911,68 @@ POSTx(sys_rt_sigaction)
       POST_MEM_WRITE( arg3, sizeof(struct vki_sigaction));
 }
 
-PRE(sigprocmask)
+PREx(sys_sigprocmask, SIG_SIM)
 {
-   /* int sigprocmask(int how, k_sigset_t *set, 
-      k_sigset_t *oldset); */
-   PRINT("sigprocmask ( %d, %p, %p )",arg1,arg2,arg3);
+   PRINT("sys_sigprocmask ( %d, %p, %p )",arg1,arg2,arg3);
+   PRE_REG_READ3(long, "sigprocmask", 
+                 int, how, vki_old_sigset_t *, set, vki_old_sigset_t *, oldset);
    if (arg2 != (UWord)NULL)
-      PRE_MEM_READ( "sigprocmask(set)", arg2, sizeof(vki_sigset_t));
+      PRE_MEM_READ( "sigprocmask(set)", arg2, sizeof(vki_old_sigset_t));
    if (arg3 != (UWord)NULL)
-      PRE_MEM_WRITE( "sigprocmask(oldset)", arg3, sizeof(vki_sigset_t));
+      PRE_MEM_WRITE( "sigprocmask(oldset)", arg3, sizeof(vki_old_sigset_t));
 
-   if (SIGNAL_SIMULATION)
+   if (SIGNAL_SIMULATION) {
+      // Nb: We must convert the smaller vki_old_sigset_t params into bigger
+      // vki_sigset_t params.
+      vki_old_sigset_t* set    = (vki_old_sigset_t*)arg2;
+      vki_old_sigset_t* oldset = (vki_old_sigset_t*)arg3;
+      vki_sigset_t bigger_set;
+      vki_sigset_t bigger_oldset;
+
+      VG_(memset)(&bigger_set, 0, sizeof(vki_sigset_t));
+      bigger_set.sig[0] = *(vki_old_sigset_t*)set;
+
+      VG_(do_sys_sigprocmask) ( tid, 
+				arg1 /*how*/, 
+				&bigger_set,
+				&bigger_oldset );
+
+      *oldset = bigger_oldset.sig[0];
+   }
+}
+
+POSTx(sys_sigprocmask)
+{
+   if (res == 0 && arg3 != (UWord)NULL)
+      POST_MEM_WRITE( arg3, sizeof(vki_old_sigset_t));
+}
+
+PREx(sys_rt_sigprocmask, SIG_SIM)
+{
+   PRINT("sys_rt_sigprocmask ( %d, %p, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(long, "rt_sigprocmask", 
+                 int, how, vki_sigset_t *, set, vki_sigset_t *, oldset,
+                 vki_size_t, sigsetsize);
+   if (arg2 != (UWord)NULL)
+      PRE_MEM_READ( "rt_sigprocmask(set)", arg2, sizeof(vki_sigset_t));
+   if (arg3 != (UWord)NULL)
+      PRE_MEM_WRITE( "rt_sigprocmask(oldset)", arg3, sizeof(vki_sigset_t));
+
+   // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
+   if (sizeof(vki_sigset_t) != arg4)
+      set_result( -VKI_EMFILE );
+   else if (SIGNAL_SIMULATION)
       VG_(do_sys_sigprocmask) ( tid, 
 				arg1 /*how*/, 
 				(vki_sigset_t*) arg2,
 				(vki_sigset_t*) arg3 );
 }
 
-POST(sigprocmask)
+POSTx(sys_rt_sigprocmask)
 {
    if (res == 0 && arg3 != (UWord)NULL)
       POST_MEM_WRITE( arg3, sizeof(vki_sigset_t));
 }
-
-PREALIAS(rt_sigprocmask, sigprocmask);
-POSTALIAS(rt_sigprocmask, sigprocmask);
 
 PREx(sys_sigpending, NBRunInLWP)
 {
@@ -6503,7 +6540,7 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_adjtimex,         sys_adjtimex),     // 124 * L
 
    SYSXY(__NR_mprotect,         sys_mprotect),     // 125 * P
-   SYSBA(__NR_sigprocmask,      sys_sigprocmask, SIG_SIM), // 126 *
+   SYSXY(__NR_sigprocmask,      sys_sigprocmask),  // 126 * P
    // Nb: create_module() was removed 2.4-->2.6
    SYSX_(__NR_create_module,    sys_ni_syscall),   // 127 * P -- unimplemented
    SYSX_(__NR_init_module,      sys_init_module),  // 128 * L?
@@ -6564,7 +6601,7 @@ static const struct sys_info sys_info[] = {
    //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 (x86) ()
    SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
 
-   SYSBA(__NR_rt_sigprocmask,   sys_rt_sigprocmask, SIG_SIM), // 175 *
+   SYSXY(__NR_rt_sigprocmask,   sys_rt_sigprocmask),  // 175 * ?
    SYSBA(__NR_rt_sigpending,    sys_rt_sigpending, NBRunInLWP), // 176 *
    SYSBA(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait, MayBlock), // 177 *
    SYSBA(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo, 0), // 178 *

@@ -55,6 +55,7 @@ scalar_supp
 scalar_vfork
 sigaltstack
 signal2
+sigprocmask
 str_tester
 supp1
 supp2

@@ -82,6 +82,21 @@ static inline int lshift(int x, int n)
    const UInt CC_DST = cc_dst;						 \
    const UInt CC_SRC = cc_src
 
+#define ACTIONS_ADD(DATA_BITS,DATA_TYPE,DATA_STYPE)				\
+   {										\
+      PREAMBLE(DATA_BITS);							\
+      int cf, pf, af, zf, sf, of;						\
+      int src1, src2;								\
+      src1 = CC_SRC;								\
+      src2 = CC_DST - CC_SRC;							\
+      cf = (DATA_TYPE)CC_DST < (DATA_TYPE)src1;					\
+      pf = parity_table[(uint8_t)CC_DST];					\
+      af = (CC_DST ^ src1 ^ src2) & 0x10;					\
+      zf = ((DATA_TYPE)CC_DST == 0) << 6;					\
+      sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;				\
+      of = lshift((src1 ^ src2 ^ -1) & (src1 ^ CC_DST), 12 - DATA_BITS) & CC_O;	\
+      return cf | pf | af | zf | sf | of;					\
+   }
 
 #define ACTIONS_SUB(DATA_BITS,DATA_TYPE,DATA_STYPE)			   \
    {									   \
@@ -120,8 +135,12 @@ static inline int lshift(int x, int n)
    case CC_OP_COPY:
      return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
-      case CC_OP_SUBL:   ACTIONS_SUB(32,UChar,Char);
-      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UChar,Char);
+      case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
+
+      case CC_OP_SUBB:   ACTIONS_SUB(8,UChar,Char);
+      case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
+      case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
+      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",

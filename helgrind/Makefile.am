@@ -80,9 +80,6 @@ noinst_HEADERS = \
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) 
 
-vg_libpthread.vs:
-	echo Not making vg_libpthread.vs
-
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
@@ -96,10 +93,10 @@ valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
 	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)
 
-libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS) vg_libpthread.vs
+libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS) $(srcdir)/vg_libpthread.vs
 	$(CC) -Wall -Werror -g -O -shared -fpic -o libpthread.so \
 		$(libpthread_so_OBJECTS) \
-		-Wl,-version-script vg_libpthread.vs
+		-Wl,-version-script $(srcdir)/vg_libpthread.vs
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

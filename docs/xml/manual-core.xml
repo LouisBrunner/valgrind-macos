@@ -965,28 +965,6 @@ Addrcheck), the following options apply.</para>
     </itemizedlist>
    </listitem>
 
-   <listitem>
-    <para><computeroutput>--signal-polltime=&lt;time&gt;</computeroutput>
-    [default=50]</para>
-    <para>How often to poll for signals (in milliseconds).  Only
-    applies for older kernels that need signal routing.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--lowlat-signals=no</computeroutput>
-     [default]</para>
-    <para><computeroutput>--lowlat-signals=yes</computeroutput></para>
-    <para>Improve wake-up latency when a thread receives a signal.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--lowlat-syscalls=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--lowlat-syscalls=yes</computeroutput></para>
-    <para>Improve wake-up latency when a thread's syscall
-    completes.</para>
-   </listitem>
-
   </itemizedlist>
 </sect2>
 

@@ -950,8 +950,15 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
          VG_(message)(Vg_DebugMsg,
             "delivering signal %d to thread %d: on ALT STACK", 
             sigNo, tid );
+
+      /* Signal delivery to skins */
+      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
+      
    } else {
       esp_top_of_frame = tst->m_esp;
+
+      /* Signal delivery to skins */
+      VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
    }
 
    esp = esp_top_of_frame;
@@ -1064,6 +1071,9 @@ Int vg_pop_signal_frame ( ThreadId tid )
    /* And restore the thread's status to what it was before the signal
       was delivered. */
    tst->status    = frame->status;
+
+   /* Notify skins */
+   VG_TRACK( post_deliver_signal, tid, sigNo );
 
    return sigNo;
 }

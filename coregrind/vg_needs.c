@@ -64,42 +64,46 @@ VgNeeds VG_(needs) = {
 
 VgTrackEvents VG_(track_events) = {
    /* Memory events */
-   .new_mem_startup       = NULL,
-   .new_mem_heap          = NULL,
-   .new_mem_stack         = NULL,
-   .new_mem_stack_aligned = NULL,
-   .new_mem_stack_signal  = NULL,
-   .new_mem_brk           = NULL,
-   .new_mem_mmap          = NULL,
+   .new_mem_startup              = NULL,
+   .new_mem_heap                 = NULL,
+   .new_mem_stack                = NULL,
+   .new_mem_stack_aligned        = NULL,
+   .new_mem_stack_signal         = NULL,
+   .new_mem_brk                  = NULL,
+   .new_mem_mmap                 = NULL,
 
-   .copy_mem_heap         = NULL,
-   .copy_mem_remap        = NULL,
-   .change_mem_mprotect   = NULL,
+   .copy_mem_heap                = NULL,
+   .copy_mem_remap               = NULL,
+   .change_mem_mprotect          = NULL,
 
-   .ban_mem_heap          = NULL,
-   .ban_mem_stack         = NULL,
+   .ban_mem_heap                 = NULL,
+   .ban_mem_stack                = NULL,
 
-   .die_mem_heap          = NULL,
-   .die_mem_stack         = NULL,
-   .die_mem_stack_aligned = NULL,
-   .die_mem_stack_signal  = NULL,
-   .die_mem_brk           = NULL,
-   .die_mem_munmap        = NULL,
+   .die_mem_heap                 = NULL,
+   .die_mem_stack                = NULL,
+   .die_mem_stack_aligned        = NULL,
+   .die_mem_stack_signal         = NULL,
+   .die_mem_brk                  = NULL,
+   .die_mem_munmap               = NULL,
 
-   .bad_free              = NULL,
-   .mismatched_free       = NULL,
+   .bad_free                     = NULL,
+   .mismatched_free              = NULL,
 
-   .pre_mem_read          = NULL,
-   .pre_mem_read_asciiz   = NULL,
-   .pre_mem_write         = NULL,
-   .post_mem_write        = NULL,
+   .pre_mem_read                 = NULL,
+   .pre_mem_read_asciiz          = NULL,
+   .pre_mem_write                = NULL,
+   .post_mem_write               = NULL,
 
    /* Scheduler events */
-   .thread_run            = NULL,
+   .thread_run                   = NULL,
 
    /* Mutex events */
-   .post_mutex_lock       = NULL,
-   .post_mutex_unlock     = NULL,
+   .post_mutex_lock              = NULL,
+   .post_mutex_unlock            = NULL,
+
+   /* Signal events */
+   .pre_deliver_signal           = NULL,
+   .post_deliver_signal          = NULL,
 };
 
 /* static */
@@ -216,6 +220,9 @@ TRACK(post_thread_join,   ThreadId joiner, ThreadId joinee)
 TRACK( pre_mutex_lock,   ThreadId tid, void* /*pthread_mutex_t* */ mutex)
 TRACK(post_mutex_lock,   ThreadId tid, void* /*pthread_mutex_t* */ mutex)
 TRACK(post_mutex_unlock, ThreadId tid, void* /*pthread_mutex_t* */ mutex)
+
+TRACK(pre_deliver_signal,  ThreadId tid, Int sigNum, Bool alt_stack)
+TRACK(post_deliver_signal, ThreadId tid, Int sigNum)
 
 /*--------------------------------------------------------------------*/
 /* UCodeBlocks */

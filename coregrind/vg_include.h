@@ -389,8 +389,12 @@ typedef
       void (*post_mutex_unlock) ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
 
+      /* Signal events (not exhaustive) */
+      void (*pre_deliver_signal)  ( ThreadId tid, Int sigNo, Bool alt_stack );
+      void (*post_deliver_signal) ( ThreadId tid, Int sigNo );
+
       
-      /* Others... condition variable, signal events... */
+      /* Others... condition variable... */
       /* ... */
    }
    VgTrackEvents;

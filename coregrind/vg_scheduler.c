@@ -32,42 +32,12 @@
                              VG_USERREQ__DISCARD_TRANSLATIONS, and others */
 #include "vg_include.h"
 
-/* BORKAGE/ISSUES as of 29 May 02
-
-- Currently, when a signal is run, just the ThreadStatus.status fields 
-  are saved in the signal frame, along with the CPU state.  Question: 
-  should I also save and restore:
-     ThreadStatus.joiner 
-     ThreadStatus.waited_on_mid
-     ThreadStatus.awaken_at
-     ThreadStatus.retval
-  Currently unsure, and so am not doing so.
-
-- So, what's the deal with signals and mutexes?  If a thread is
-  blocked on a mutex, or for a condition variable for that matter, can
-  signals still be delivered to it?  This has serious consequences --
-  deadlocks, etc.
-
-  TODO for valgrind-1.0:
-
-- Update assertion checking in scheduler_sanity().
-
-  TODO sometime:
-
-- Mutex scrubbing - clearup_after_thread_exit: look for threads
-  blocked on mutexes held by the exiting thread, and release them
-  appropriately. (??)
-
-*/
-
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.
    ------------------------------------------------------------------ */
 
-/* type ThreadId is defined in vg_include.h. */
-
-/* struct ThreadState is defined in vg_include.h. */
+/* ThreadId and ThreadState are defined in vg_include.h. */
 
 /* Globals.  A statically allocated array of threads.  NOTE: [0] is
    never used, to simplify the simulation of initialisers for
@@ -88,17 +58,17 @@ static ThreadId vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 static ThreadId vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
-jmp_buf scheduler_jmpbuf;
+static jmp_buf scheduler_jmpbuf;
 /* This says whether scheduler_jmpbuf is actually valid.  Needed so
    that our signal handler doesn't longjmp when the buffer isn't
    actually valid. */
-Bool    scheduler_jmpbuf_valid = False;
+static Bool    scheduler_jmpbuf_valid = False;
 /* ... and if so, here's the signal which caused it to do so. */
-Int     longjmpd_on_signal;
+static Int     longjmpd_on_signal;
 /* If the current thread gets a syncronous unresumable signal, then
    its details are placed here by the signal handler, to be passed to
    the applications signal handler later on. */
-vki_ksiginfo_t VG_(unresumable_siginfo);
+static vki_ksiginfo_t unresumable_siginfo;
 
 /* If != VG_INVALID_THREADID, this is the preferred tid to schedule */
 static ThreadId prefer_sched = VG_INVALID_THREADID;
@@ -121,13 +91,7 @@ typedef UInt ThreadKey;
 
 /* The scheduler does need to know the address of it so it can be
    called at program exit. */
-static Addr VG_(__libc_freeres_wrapper);
-
-
-UInt VG_(syscall_altered_shadow_reg);
-UInt VG_(signal_delivery_altered_shadow_reg);
-UInt VG_(pthread_op_altered_shadow_reg);
-UInt VG_(client_request_altered_shadow_reg);
+static Addr __libc_freeres_wrapper;
 
 /* Forwards */
 static void do_client_request ( ThreadId tid );
@@ -237,21 +201,17 @@ void VG_(pp_sched_status) ( void )
    VG_(printf)("\n");
 }
 
-
-
 static
 void print_sched_event ( ThreadId tid, Char* what )
 {
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s", tid, what );
 }
 
-
 static
 void print_pthread_event ( ThreadId tid, Char* what )
 {
    VG_(message)(Vg_DebugMsg, "PTHREAD[%d]: %s", tid, what );
 }
-
 
 static
 Char* name_of_sched_event ( UInt event )
@@ -288,9 +248,8 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
                    &orig_size, &trans_addr, &trans_size, jumps ); /* out */
 
    /* Copy data at trans_addr into the translation cache. */
-   /* Since the .orig_size and .trans_size fields are
-      UShort, be paranoid. */
-   vg_assert(orig_size > 0 && orig_size < 65536);
+   /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
+   vg_assert(orig_size  > 0 && orig_size  < 65536);
    vg_assert(trans_size > 0 && trans_size < 65536);
 
    VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size, jumps );
@@ -356,9 +315,13 @@ static Int extractDflag(UInt eflags)
    return ( eflags & EFlagD ? -1 : 1 );
 }
 
+/* Junk to fill up a thread's shadow regs with when shadow regs aren't
+   being used. */
+#define VG_UNUSED_SHADOW_REG_VALUE  0x27182818
+
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
-void VG_(load_thread_state) ( ThreadId tid )
+static void load_thread_state ( ThreadId tid )
 {
    Int i;
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
@@ -425,7 +388,7 @@ void VG_(load_thread_state) ( ThreadId tid )
    fail quickly if we erroneously continue to poke around inside
    VG_(baseBlock) without first doing a load_thread_state().  
 */
-void VG_(save_thread_state) ( ThreadId tid )
+static void save_thread_state ( ThreadId tid )
 {
    Int i;
    const UInt junk = 0xDEADBEEF;
@@ -539,7 +502,7 @@ void VG_(resume_scheduler)(Int sigNo, vki_ksiginfo_t *info)
    if (scheduler_jmpbuf_valid) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
-      VG_(memcpy)(&VG_(unresumable_siginfo), info, sizeof(vki_ksiginfo_t));
+      VG_(memcpy)(&unresumable_siginfo, info, sizeof(vki_ksiginfo_t));
    
       longjmpd_on_signal = sigNo;
       __builtin_longjmp(scheduler_jmpbuf,1);
@@ -557,10 +520,10 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(!scheduler_jmpbuf_valid);
 
    VGP_PUSHCC(VgpRun);
-   VG_(load_thread_state) ( tid );
+   load_thread_state ( tid );
 
    /* there should be no undealt-with signals */
-   vg_assert(VG_(unresumable_siginfo).si_signo == 0);
+   vg_assert(unresumable_siginfo.si_signo == 0);
 
    if (__builtin_setjmp(scheduler_jmpbuf) == 0) {
       /* try this ... */
@@ -578,7 +541,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
    vg_assert(!scheduler_jmpbuf_valid);
 
-   VG_(save_thread_state) ( tid );
+   save_thread_state ( tid );
    VGP_POPCC(VgpRun);
    return trc;
 }
@@ -655,7 +618,7 @@ void VG_(scheduler_init) ( void )
    vg_tid_currently_in_baseBlock = tid_main;
    vg_tid_last_in_baseBlock = tid_main;
    VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid_main].tls;
-   VG_(save_thread_state) ( tid_main );
+   save_thread_state ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
       = VG_(clstk_end) - 4;
@@ -674,11 +637,8 @@ void VG_(scheduler_init) ( void )
 
 
 
-
-
 /* vthread tid is returning from a signal handler; modify its
    stack/regs accordingly. */
-
 static
 void handle_signal_return ( ThreadId tid )
 {
@@ -712,6 +672,37 @@ void handle_signal_return ( ThreadId tid )
    /* All other cases?  Just return. */
 }
 
+
+struct timeout {
+   UInt		time;		/* time we should awaken */
+   ThreadId	tid;		/* thread which cares about this timeout */
+   struct timeout *next;
+};
+
+static struct timeout *timeouts;
+
+static void add_timeout(ThreadId tid, UInt time)
+{
+   struct timeout *t = VG_(arena_malloc)(VG_AR_CORE, sizeof(*t));
+   struct timeout **prev, *tp;
+
+   t->time = time;
+   t->tid = tid;
+
+   if (VG_(clo_trace_sched)) {
+      Char msg_buf[100];
+      VG_(sprintf)(msg_buf, "add_timeout: now=%u adding timeout at %u",
+		   VG_(read_millisecond_timer)(), time);
+      print_sched_event(tid, msg_buf);
+   }
+
+   for(tp = timeouts, prev = &timeouts; 
+       tp != NULL && tp->time < time; 
+       prev = &tp->next, tp = tp->next)
+      ;
+   t->next = tp;
+   *prev = t;
+}
 
 static
 void sched_do_syscall ( ThreadId tid )
@@ -751,7 +742,7 @@ void sched_do_syscall ( ThreadId tid )
                                t_now, t_awaken-t_now);
 	 print_sched_event(tid, msg_buf);
       }
-      VG_(add_timeout)(tid, t_awaken);
+      add_timeout(tid, t_awaken);
       /* Force the scheduler to run something else for a while. */
       return;
    }
@@ -766,37 +757,6 @@ void sched_do_syscall ( ThreadId tid )
 }
 
 
-
-struct timeout {
-   UInt		time;		/* time we should awaken */
-   ThreadId	tid;		/* thread which cares about this timeout */
-   struct timeout *next;
-};
-
-static struct timeout *timeouts;
-
-void VG_(add_timeout)(ThreadId tid, UInt time)
-{
-   struct timeout *t = VG_(arena_malloc)(VG_AR_CORE, sizeof(*t));
-   struct timeout **prev, *tp;
-
-   t->time = time;
-   t->tid = tid;
-
-   if (VG_(clo_trace_sched)) {
-      Char msg_buf[100];
-      VG_(sprintf)(msg_buf, "add_timeout: now=%u adding timeout at %u",
-		   VG_(read_millisecond_timer)(), time);
-      print_sched_event(tid, msg_buf);
-   }
-
-   for(tp = timeouts, prev = &timeouts; 
-       tp != NULL && tp->time < time; 
-       prev = &tp->next, tp = tp->next)
-      ;
-   t->next = tp;
-   *prev = t;
-}
 
 /* Sleep for a while, but be willing to be woken. */
 static
@@ -1132,7 +1092,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 
             /* Deal with calling __libc_freeres() at exit.  When the
                client does __NR_exit, it's exiting for good.  So we
-               then run VG_(__libc_freeres_wrapper).  That quits by
+               then run __libc_freeres_wrapper.  That quits by
                doing VG_USERREQ__LIBC_FREERES_DONE, and at that point
                we really exit.  To be safe we nuke all other threads
                currently running. 
@@ -1154,14 +1114,14 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 
                if (VG_(needs).libc_freeres && 
 		   VG_(clo_run_libc_freeres) &&
-		   VG_(__libc_freeres_wrapper) != 0) {
+		   __libc_freeres_wrapper != 0) {
                   if (VG_(clo_verbosity) > 2 
                       || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                      VG_(message)(Vg_DebugMsg, 
                         "Caught __NR_exit; running __libc_freeres()");
                   }
                   VG_(nuke_all_threads_except) ( tid );
-                  VG_(threads)[tid].m_eip = (UInt)VG_(__libc_freeres_wrapper);
+                  VG_(threads)[tid].m_eip = (UInt)__libc_freeres_wrapper;
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
 
@@ -1253,17 +1213,17 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
          case VG_TRC_UNRESUMABLE_SIGNAL:
             /* It got a SIGSEGV/SIGBUS/SIGILL/SIGFPE, which we need to
                deliver right away.  */
-	    vg_assert(VG_(unresumable_siginfo).si_signo == VKI_SIGSEGV ||
-		      VG_(unresumable_siginfo).si_signo == VKI_SIGBUS  ||
-		      VG_(unresumable_siginfo).si_signo == VKI_SIGILL  ||
-		      VG_(unresumable_siginfo).si_signo == VKI_SIGFPE);
-	    vg_assert(longjmpd_on_signal == VG_(unresumable_siginfo).si_signo);
+	    vg_assert(unresumable_siginfo.si_signo == VKI_SIGSEGV ||
+		      unresumable_siginfo.si_signo == VKI_SIGBUS  ||
+		      unresumable_siginfo.si_signo == VKI_SIGILL  ||
+		      unresumable_siginfo.si_signo == VKI_SIGFPE);
+	    vg_assert(longjmpd_on_signal == unresumable_siginfo.si_signo);
 
 	    /* make sure we've unblocked the signals which the handler blocked */
 	    VG_(unblock_host_signal)(longjmpd_on_signal);
 
-	    VG_(deliver_signal)(tid, &VG_(unresumable_siginfo), False);
-	    VG_(unresumable_siginfo).si_signo = 0; /* done */
+	    VG_(deliver_signal)(tid, &unresumable_siginfo, False);
+	    unresumable_siginfo.si_signo = 0; /* done */
 	    break;
 
          default: 
@@ -1428,7 +1388,15 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 
 
 /* Release resources and generally clean up once a thread has finally
-   disappeared. */
+   disappeared.
+
+  BORKAGE/ISSUES as of 29 May 02 (moved from top of file --njn 2004-Aug-02)
+
+  TODO sometime:
+   - Mutex scrubbing - clearup_after_thread_exit: look for threads
+     blocked on mutexes held by the exiting thread, and release them
+     appropriately. (??)
+*/
 static
 void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
@@ -1941,7 +1909,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
-   VG_(load_thread_state)(parent_tid);
+   load_thread_state(parent_tid);
 
    /* We inherit our parent's LDT. */
    if (VG_(threads)[parent_tid].ldt == NULL) {
@@ -1958,7 +1926,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
    VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid].tls;
 
-   VG_(save_thread_state)(tid);
+   save_thread_state(tid);
    vg_tid_last_in_baseBlock = tid;
 
    /* Consider allocating the child a stack, if the one it already has
@@ -2539,7 +2507,7 @@ void do_pthread_cond_wait ( ThreadId tid,
       VG_(threads)[tid].associated_mx = mutex;
       VG_(threads)[tid].awaken_at     = ms_end;
       if (ms_end != 0xFFFFFFFF)
-         VG_(add_timeout)(tid, ms_end);
+         add_timeout(tid, ms_end);
 
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, 
@@ -3012,7 +2980,7 @@ UInt VG_(get_exit_status_shadow) ( void )
 
 void VG_(intercept_libc_freeres_wrapper)(Addr addr)
 {
-   VG_(__libc_freeres_wrapper) = addr;
+   __libc_freeres_wrapper = addr;
 }
 
 /* ---------------------------------------------------------------------
@@ -3026,8 +2994,8 @@ void VG_(intercept_libc_freeres_wrapper)(Addr addr)
 static
 void do_client_request ( ThreadId tid )
 {
-   UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
-   UInt         req_no = arg[0];
+   UInt* arg    = (UInt*)(VG_(threads)[tid].m_eax);
+   UInt  req_no = arg[0];
 
    if (0)
       VG_(printf)("req no = 0x%x\n", req_no);

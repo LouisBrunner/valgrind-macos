@@ -462,7 +462,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__SET_FHSTACK_ENTRY       0x3027
 #define VG_USERREQ__GET_FHSTACK_ENTRY       0x3028
 
-/* Denote the finish of VG_(__libc_freeres_wrapper). */
+/* Denote the finish of __libc_freeres_wrapper(). */
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
 
 /* Allocate RT signals */
@@ -937,14 +937,6 @@ extern Bool VG_(is_running_thread)(ThreadId tid);
 /* Get the ThreadState for a particular thread */
 extern ThreadState *VG_(get_ThreadState)(ThreadId tid);
 
-/* Copy the specified thread's state into VG_(baseBlock) in
-   preparation for running it. */
-extern void VG_(load_thread_state)( ThreadId );
-
-/* Save the specified thread's state back in VG_(baseBlock), and fill
-   VG_(baseBlock) with junk, for sanity-check reasons. */
-extern void VG_(save_thread_state)( ThreadId );
-
 /* And for the currently running one, if valid. */
 extern ThreadState* VG_(get_current_thread_state) ( void );
 
@@ -959,9 +951,6 @@ extern void VG_(nuke_all_threads_except) ( ThreadId me );
    try to schedule that thread.
 */
 extern void VG_(need_resched) ( ThreadId prefer_sched );
-
-/* Add a new timeout event for a thread*/
-extern void VG_(add_timeout) ( ThreadId tid, UInt time );
 
 /* Return codes from the scheduler. */
 typedef
@@ -991,13 +980,6 @@ extern void VG_(resume_scheduler) ( Int sigNo, vki_ksiginfo_t *info );
    doesn't really need to be set at compile time. */
 #define VG_AR_CLIENT_STACKBASE_REDZONE_SZB   16
 
-/* Junk to fill up a thread's shadow regs with when shadow regs aren't
-   being used. */
-#define VG_UNUSED_SHADOW_REG_VALUE  0x27182818
-/* For sanity checking:  if this ends up in a thread's shadow regs when
-   shadow regs aren't being used, something went wrong. */
-#define   VG_USED_SHADOW_REG_VALUE  0x31415927
-
 /* Write a value to a client's thread register, and shadow (if necessary) */
 #define SET_THREAD_REG( zztid, zzval, zzreg, zzREG, zzevent, zzargs... ) \
    do { VG_(threads)[zztid].m_##zzreg = (zzval);                  \
@@ -1006,9 +988,6 @@ extern void VG_(resume_scheduler) ( Int sigNo, vki_ksiginfo_t *info );
 
 #define SET_SYSCALL_RETVAL(zztid, zzval) \
    SET_THREAD_REG(zztid, zzval, eax, EAX, post_reg_write_syscall_return)
-
-#define SET_SIGNAL_EDX(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, edx, EDX, post_reg_write_deliver_signal)
 
 #define SET_SIGNAL_ESP(zztid, zzval) \
    SET_THREAD_REG(zztid, zzval, esp, ESP, post_reg_write_deliver_signal)
@@ -1069,8 +1048,6 @@ extern void VG_(block_all_host_signals)
                   ( /* OUT */ vki_ksigset_t* saved_mask );
 extern void VG_(restore_all_host_signals) 
                   ( /* IN */ vki_ksigset_t* saved_mask );
-
-extern vki_ksiginfo_t VG_(unresumable_siginfo);
 
 extern void VG_(kill_self)(Int sigNo);
 

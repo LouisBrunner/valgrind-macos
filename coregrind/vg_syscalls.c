@@ -500,6 +500,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
          break;
 #     endif
+  
+#     if defined(__NR_setresgid)
+      case __NR_setresgid: /* syscall 170 */
+         /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
+         MAYBE_PRINTF("setresgid ( %d, %d, %d )\n", arg1, arg2, arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
 
 #     if defined(__NR_vhangup)
       case __NR_vhangup: /* syscall 111 */

@@ -441,7 +441,7 @@ void VG_(handle_SCSS_change) ( Bool force_update )
          vg_assert(ksa_old.ksa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
          vg_assert(ksa_old.ksa_restorer 
-                   == NULL);
+                   == VG_(sigreturn));
          VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGKILL );
          VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGSTOP );
          vg_assert(VG_(kisfullsigset)( &ksa_old.ksa_mask ));

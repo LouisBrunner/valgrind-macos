@@ -1233,6 +1233,7 @@ void VG_(main) ( void )
       attach GDB in another shell. */
    if (0) { 
       Int p, q;
+      VG_(printf)("pid=%d\n", VG_(getpid)());
       for (p = 0; p < 50000; p++)
          for (q = 0; q < 50000; q++) ;
    }

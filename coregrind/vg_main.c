@@ -476,7 +476,6 @@ Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_chain_bb)       = True;
-Bool   VG_(clo_fast_jcc)       = True;
 
 
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
@@ -569,7 +568,6 @@ static void usage ( void )
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (skin must be built for it) [no]\n"
 "    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
-"    --fast-jcc=no|yes         experimental fast conditional jumps [yes]\n"
 "    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
@@ -849,11 +847,6 @@ static void process_cmd_line_options ( void )
 	 VG_(clo_chain_bb) = True;
       else if (STREQ(argv[i], "--chain-bb=no"))
 	 VG_(clo_chain_bb) = False;
-
-      else if (STREQ(argv[i], "--fast-jcc=yes"))
-        VG_(clo_fast_jcc) = True;
-      else if (STREQ(argv[i], "--fast-jcc=no"))
-        VG_(clo_fast_jcc) = False;
 
       else if (STREQ(argv[i], "--single-step=yes"))
          VG_(clo_single_step) = True;

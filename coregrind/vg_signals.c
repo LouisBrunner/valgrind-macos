@@ -487,7 +487,7 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
-         "__NR_sigaltstack: tid %d, "
+         "sys_sigaltstack: tid %d, "
          "ss %p, oss %p (current SP %p)",
          tid, (void*)ss, (void*)oss, (void*)m_SP );
 
@@ -540,7 +540,7 @@ void VG_(do_sys_sigaction) ( ThreadId tid )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
-         "__NR_sigaction: tid %d, sigNo %d, "
+         "sys_sigaction: tid %d, sigNo %d, "
          "new %p, old %p, new flags 0x%llx",
          tid, signo, (UWord)new_act, (UWord)old_act,
          (ULong)(new_act ? new_act->sa_flags : 0) );

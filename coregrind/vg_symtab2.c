@@ -83,10 +83,10 @@ typedef
 
 #define LINENO_BITS     20
 #define LOC_SIZE_BITS  (32 - LINENO_BITS)
-#define MAX_LINENO     (1 << LINENO_BITS)
+#define MAX_LINENO     ((1 << LINENO_BITS) - 1)
 
 /* Unlikely to have any lines with instruction ranges > 4096 bytes */
-#define MAX_LOC_SIZE   (1 << LOC_SIZE_BITS)
+#define MAX_LOC_SIZE   ((1 << LOC_SIZE_BITS) - 1)
 
 /* Number used to detect line number overflows;  if one line is 60000-odd
  * smaller than the previous, is was probably an overflow.  

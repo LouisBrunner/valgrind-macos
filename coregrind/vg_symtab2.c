@@ -324,6 +324,11 @@ void addLineInfo ( SegInfo* si,
    loc.size      = (UShort)size;
    loc.lineno    = lineno;
    loc.fnmoff    = fnmoff;
+
+   if (0) VG_(message)(Vg_DebugMsg, 
+		       "addLoc: addr %p, size %d, line %d, file %s",
+		       this,size,lineno,&si->strtab[fnmoff]);
+
    addLoc ( si, &loc );
 }
 
@@ -913,6 +918,11 @@ enum dwarf_line_number_x_ops
 typedef struct State_Machine_Registers
 {
   Addr  address;
+  /* Holds the address of the last statement boundary.
+   * We use it to calculate statement lengths. Without it,
+   * we would need to search backwards for last statement begin
+   * each time we are emitting a statement with addLineInfo */
+  Addr  last_address;
   UInt  file;
   UInt  line;
   UInt  column;
@@ -962,6 +972,7 @@ void reset_state_machine ( Int is_stmt )
 {
   if (0) VG_(printf)("smr.a := %p (reset)\n", 0 );
   state_machine_regs.address = 0;
+  state_machine_regs.last_address = 0;
   state_machine_regs.file = 1;
   state_machine_regs.line = 1;
   state_machine_regs.column = 0;
@@ -996,6 +1007,7 @@ int process_extended_line_op( SegInfo *si, UInt** fnames,
   len += bytes_read;
   op_code = * data ++;
 
+  if (0) VG_(printf)("dwarf2: ext OPC: %d\n", op_code);
 
   switch (op_code)
     {
@@ -1005,10 +1017,13 @@ int process_extended_line_op( SegInfo *si, UInt** fnames,
       state_machine_regs.end_sequence = 1; /* JRS: added for compliance
          with spec; is pointless due to reset_state_machine below 
       */
-      addLineInfo (si, (*fnames)[state_machine_regs.file], 
-                       si->offset + (state_machine_regs.address - 1), 
-                       si->offset + (state_machine_regs.address), 
-                       0, 0);
+      if (state_machine_regs.is_stmt) {
+	  if (state_machine_regs.last_address)
+	      addLineInfo (si, (*fnames)[state_machine_regs.file], 
+                       si->offset + state_machine_regs.last_address, 
+                       si->offset + state_machine_regs.address, 
+                       state_machine_regs.line, 0);
+      }
       reset_state_machine (is_stmt);
       break;
 
@@ -1102,6 +1117,9 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       info.li_line_range      = * ((UChar *)(external->li_line_range));
       info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
 
+      if (0) VG_(printf)("dwarf2: line base: %d, range %d, opc base: %d\n",
+		  info.li_line_base, info.li_line_range, info.li_opcode_base);
+
       /* Sign extend the line base field.  */
       info.li_line_base <<= 24;
       info.li_line_base >>= 24;
@@ -1188,6 +1206,8 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 
          op_code = * data ++;
 
+	 if (0) VG_(printf)("dwarf2: OPC: %d\n", op_code);
+
          if (op_code >= info.li_opcode_base)
            {
              Int advAddr;
@@ -1200,11 +1220,15 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              adv = (op_code % info.li_line_range) + info.li_line_base;
              if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
                                 si->offset, state_machine_regs.address );
-             addLineInfo (si, fnames[state_machine_regs.file], 
-                              si->offset + (state_machine_regs.address 
-                                            - advAddr), 
-                              si->offset + (state_machine_regs.address), 
+	     if (state_machine_regs.is_stmt) {
+		 /* only add a statement if there was a previous boundary */
+		 if (state_machine_regs.last_address) 
+		     addLineInfo (si, fnames[state_machine_regs.file], 
+			      si->offset + state_machine_regs.last_address, 
+                              si->offset + state_machine_regs.address, 
                               state_machine_regs.line, 0);
+		 state_machine_regs.last_address = state_machine_regs.address;
+	     }
              state_machine_regs.line += adv;
            }
          else switch (op_code)
@@ -1218,10 +1242,15 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
            case DW_LNS_copy:
              if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
                                 si->offset, state_machine_regs.address );
-             addLineInfo (si, fnames[state_machine_regs.file], 
-                              si->offset + state_machine_regs.address, 
-                              si->offset + (state_machine_regs.address + 1),
+	     if (state_machine_regs.is_stmt) {
+		 /* only add a statement if there was a previous boundary */
+		 if (state_machine_regs.last_address) 
+		     addLineInfo (si, fnames[state_machine_regs.file], 
+                              si->offset + state_machine_regs.last_address, 
+                              si->offset + state_machine_regs.address,
                               state_machine_regs.line , 0);
+		 state_machine_regs.last_address = state_machine_regs.address;
+	     }
              state_machine_regs.basic_block = 0; /* JRS added */
              break;
 

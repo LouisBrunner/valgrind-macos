@@ -43,6 +43,14 @@
 #include "guest-amd64/gdefs.h"
 
 
+ULong amd64g_calculate_rflags_c ( 
+                ULong cc_op, 
+                ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
+             )
+{
+  vassert(0);
+  return 0;
+}
 
 IRExpr* guest_amd64_spechelper ( Char* function_name,
                                  IRExpr** args )

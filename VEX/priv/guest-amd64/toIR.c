@@ -101,14 +101,14 @@ static Bool host_is_bigendian;
 /* CONST */
 static UChar* guest_code;
 
-//.. /* The guest address corresponding to guest_code[0]. */
-//.. /* CONST */
-//.. static Addr32 guest_eip_bbstart;
+/* The guest address corresponding to guest_code[0]. */
+/* CONST */
+static Addr64 guest_rip_bbstart;
 
 /* The guest address for the instruction currently being
    translated. */
 /* CONST for any specific insn, not for the entire BB */
-static Addr64 guest_eip_curr_instr;
+static Addr64 guest_rip_curr_instr;
 
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
@@ -150,10 +150,10 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    return IRExpr_Binop(op, a1, a2);
 }
 
-//.. static IRExpr* mkexpr ( IRTemp tmp )
-//.. {
-//..    return IRExpr_Tmp(tmp);
-//.. }
+static IRExpr* mkexpr ( IRTemp tmp )
+{
+   return IRExpr_Tmp(tmp);
+}
 
 static IRExpr* mkU8 ( UInt i )
 {
@@ -255,48 +255,48 @@ static void unimplemented ( HChar* str )
 //.. #define OFFB_XMM7      offsetof(VexGuestX86State,guest_XMM7)
 //.. 
 //.. #define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Disassemble an entire basic block                    ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* The results of disassembling an instruction.  There are three
-//..    possible outcomes.  For Dis_Resteer, the disassembler _must_
-//..    continue at the specified address.  For Dis_StopHere, the
-//..    disassembler _must_ terminate the BB.  For Dis_Continue, we may at
-//..    our option either disassemble the next insn, or terminate the BB;
-//..    but in the latter case we must set the bb's ->next field to point
-//..    to the next instruction.  */
-//.. 
-//.. typedef
-//..    enum { 
-//..       Dis_StopHere, /* this insn terminates the BB; we must stop. */
-//..       Dis_Continue, /* we can optionally continue into the next insn */
-//..       Dis_Resteer   /* followed a branch; continue at the spec'd addr */
-//..    }
-//..    DisResult;
-//.. 
-//.. 
-//.. /* forward decls .. */
+
+
+/*------------------------------------------------------------*/
+/*--- Disassemble an entire basic block                    ---*/
+/*------------------------------------------------------------*/
+
+/* The results of disassembling an instruction.  There are three
+   possible outcomes.  For Dis_Resteer, the disassembler _must_
+   continue at the specified address.  For Dis_StopHere, the
+   disassembler _must_ terminate the BB.  For Dis_Continue, we may at
+   our option either disassemble the next insn, or terminate the BB;
+   but in the latter case we must set the bb's ->next field to point
+   to the next instruction.  */
+
+typedef
+   enum { 
+      Dis_StopHere, /* this insn terminates the BB; we must stop. */
+      Dis_Continue, /* we can optionally continue into the next insn */
+      Dis_Resteer   /* followed a branch; continue at the spec'd addr */
+   }
+   DisResult;
+
+
+/* forward decls .. */
 //.. static IRExpr* mkU32 ( UInt i );
 //.. static void stmt ( IRStmt* st );
 //.. 
 //.. 
-//.. /* disInstr disassembles an instruction located at &guest_code[delta],
-//..    and sets *size to its size.  If the returned value is Dis_Resteer,
-//..    the next guest address is assigned to *whereNext.  disInstr is not
-//..    permitted to return Dis_Resteer if either (1) resteerOK is False,
-//..    or (2) resteerOkFn, when applied to the address which it wishes to
-//..    resteer into, returns False.  */
-//..    
-//.. static 
-//.. DisResult disInstr ( /*IN*/  Bool       resteerOK,
-//..                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-//..                      /*IN*/  UInt       delta, 
-//..                      /*IN*/  VexSubArch subarch,
-//..                      /*OUT*/ UInt*      size,
-//..                      /*OUT*/ Addr64*    whereNext );
+/* disInstr disassembles an instruction located at &guest_code[delta],
+   and sets *size to its size.  If the returned value is Dis_Resteer,
+   the next guest address is assigned to *whereNext.  disInstr is not
+   permitted to return Dis_Resteer if either (1) resteerOK is False,
+   or (2) resteerOkFn, when applied to the address which it wishes to
+   resteer into, returns False.  */
+   
+static 
+DisResult disInstr ( /*IN*/  Bool       resteerOK,
+                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  ULong      delta, 
+                     /*IN*/  VexSubArch subarch,
+                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Addr64*    whereNext );
 
 
 /* This is the main (only, in fact) entry point for this module. */
@@ -312,134 +312,128 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
                      Bool             host_bigendian,
                      VexSubArch       subarch_guest )
 {
-   vassert(0);
+   ULong      delta;
+   Int        i, n_instrs, size, first_stmt_idx;
+   Addr64     guest_next;
+   Bool       resteerOK;
+   DisResult  dres;
+   static Int n_resteers = 0;
+   Int        d_resteers = 0;
+
+   /* check sanity .. */
+   vassert(vex_control.guest_max_insns >= 1);
+   vassert(vex_control.guest_max_insns < 500);
+   vassert(vex_control.guest_chase_thresh >= 0);
+   vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
+
+   vassert(subarch_guest == VexSubArch_NONE);
+
+   /* Start a new, empty extent. */
+   vge->n_used  = 1;
+   vge->base[0] = guest_rip_start;
+   vge->len[0]  = 0;
+
+   /* Set up globals. */
+   host_is_bigendian = host_bigendian;
+   guest_code        = amd64code;
+   guest_rip_bbstart = guest_rip_start;
+   irbb              = emptyIRBB();
+   insn_verbose      = False;
+
+   /* Delta keeps track of how far along the amd64code array we
+      have so far gone. */
+   delta             = 0;
+   n_instrs          = 0;
+
+   while (True) {
+      vassert(n_instrs < vex_control.guest_max_insns);
+
+      guest_next = 0;
+      resteerOK 
+         = n_instrs < vex_control.guest_chase_thresh
+           /* we can't afford to have a resteer once we're on the last
+              extent slot. */
+           && vge->n_used < 3;
+
+      first_stmt_idx = irbb->stmts_used;
+
+      if (n_instrs > 0) {
+         /* for the first insn, the dispatch loop will have set
+            %EIP, but for all the others we have to do it ourselves. */
+         stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_rip_bbstart + delta)) );
+      }
+
+      guest_rip_curr_instr = guest_rip_bbstart + delta;
+
+      dres = disInstr( resteerOK, chase_into_ok, 
+                       delta, subarch_guest, &size, &guest_next );
+      insn_verbose = False;
+
+      /* Print the resulting IR, if needed. */
+      if (vex_traceflags & VEX_TRACE_FE) {
+         for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
+            vex_printf("              ");
+            ppIRStmt(irbb->stmts[i]);
+            vex_printf("\n");
+         }
+      }
+   
+      if (dres == Dis_StopHere) {
+         vassert(irbb->next != NULL);
+         if (vex_traceflags & VEX_TRACE_FE) {
+            vex_printf("              ");
+            vex_printf( "goto {");
+            ppIRJumpKind(irbb->jumpkind);
+            vex_printf( "} ");
+            ppIRExpr( irbb->next );
+            vex_printf( "\n");
+         }
+      }
+
+      delta += size;
+      vge->len[vge->n_used-1] += size;
+      n_instrs++;
+      DIP("\n");
+
+      vassert(size >= 0 && size <= 18);
+      if (!resteerOK) 
+         vassert(dres != Dis_Resteer);
+      if (dres != Dis_Resteer) 
+         vassert(guest_next == 0);
+
+      switch (dres) {
+         case Dis_Continue:
+            vassert(irbb->next == NULL);
+            if (n_instrs < vex_control.guest_max_insns) {
+               /* keep going */
+            } else {
+               irbb->next = mkU64(guest_rip_start+delta);
+               return irbb;
+            }
+            break;
+         case Dis_StopHere:
+            vassert(irbb->next != NULL);
+            return irbb;
+         case Dis_Resteer:
+            vassert(irbb->next == NULL);
+            /* figure out a new delta to continue at. */
+            vassert(chase_into_ok(guest_next));
+            delta = (ULong)(guest_next - guest_rip_start);
+            /* we now have to start a new extent slot. */
+	    vge->n_used++;
+	    vassert(vge->n_used <= 3);
+            vge->base[vge->n_used-1] = guest_next;
+            vge->len[vge->n_used-1] = 0;
+            n_resteers++;
+            d_resteers++;
+            if (0 && (n_resteers & 0xFF) == 0)
+            vex_printf("resteer[%d,%d] to %p (delta = %lld)\n",
+                       n_resteers, d_resteers,
+                       (void*)(UInt)(guest_next), delta);
+            break;
+      }
+   }
 }
-//..    UInt       delta;
-//..    Int        i, n_instrs, size, first_stmt_idx;
-//..    Addr64     guest_next;
-//..    Bool       resteerOK;
-//..    DisResult  dres;
-//..    static Int n_resteers = 0;
-//..    Int        d_resteers = 0;
-//.. 
-//..    /* check sanity .. */
-//..    vassert(vex_control.guest_max_insns >= 1);
-//..    vassert(vex_control.guest_max_insns < 500);
-//..    vassert(vex_control.guest_chase_thresh >= 0);
-//..    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
-//.. 
-//..    vassert(subarch_guest == VexSubArchX86_sse0
-//..            || subarch_guest == VexSubArchX86_sse1
-//..            || subarch_guest == VexSubArchX86_sse2);
-//.. 
-//..    vassert((guest_eip_start >> 32) == 0);
-//.. 
-//..    /* Start a new, empty extent. */
-//..    vge->n_used  = 1;
-//..    vge->base[0] = guest_eip_start;
-//..    vge->len[0]  = 0;
-//.. 
-//..    /* Set up globals. */
-//..    host_is_bigendian = host_bigendian;
-//..    guest_code        = x86code;
-//..    guest_eip_bbstart = (Addr32)guest_eip_start;
-//..    irbb              = emptyIRBB();
-//..    insn_verbose      = False;
-//.. 
-//..    /* Delta keeps track of how far along the x86code array we
-//..       have so far gone. */
-//..    delta             = 0;
-//..    n_instrs          = 0;
-//.. 
-//..    while (True) {
-//..       vassert(n_instrs < vex_control.guest_max_insns);
-//.. 
-//..       guest_next = 0;
-//..       resteerOK 
-//..          = n_instrs < vex_control.guest_chase_thresh
-//..            /* we can't afford to have a resteer once we're on the last
-//..               extent slot. */
-//..            && vge->n_used < 3;
-//.. 
-//..       first_stmt_idx = irbb->stmts_used;
-//.. 
-//..       if (n_instrs > 0) {
-//..          /* for the first insn, the dispatch loop will have set
-//..             %EIP, but for all the others we have to do it ourselves. */
-//..          stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_bbstart + delta)) );
-//..       }
-//.. 
-//..       guest_eip_curr_instr = guest_eip_bbstart + delta;
-//.. 
-//..       dres = disInstr( resteerOK, chase_into_ok, 
-//..                        delta, subarch_guest, &size, &guest_next );
-//..       insn_verbose = False;
-//.. 
-//..       /* Print the resulting IR, if needed. */
-//..       if (vex_traceflags & VEX_TRACE_FE) {
-//..          for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
-//..             vex_printf("              ");
-//..             ppIRStmt(irbb->stmts[i]);
-//..             vex_printf("\n");
-//..          }
-//..       }
-//..    
-//..       if (dres == Dis_StopHere) {
-//..          vassert(irbb->next != NULL);
-//..          if (vex_traceflags & VEX_TRACE_FE) {
-//..             vex_printf("              ");
-//..             vex_printf( "goto {");
-//..             ppIRJumpKind(irbb->jumpkind);
-//..             vex_printf( "} ");
-//..             ppIRExpr( irbb->next );
-//..             vex_printf( "\n");
-//..          }
-//..       }
-//.. 
-//..       delta += size;
-//..       vge->len[vge->n_used-1] += size;
-//..       n_instrs++;
-//..       DIP("\n");
-//.. 
-//..       vassert(size >= 0 && size <= 18);
-//..       if (!resteerOK) 
-//..          vassert(dres != Dis_Resteer);
-//..       if (dres != Dis_Resteer) 
-//..          vassert(guest_next == 0);
-//.. 
-//..       switch (dres) {
-//..          case Dis_Continue:
-//..             vassert(irbb->next == NULL);
-//..             if (n_instrs < vex_control.guest_max_insns) {
-//..                /* keep going */
-//..             } else {
-//..                irbb->next = mkU32(((Addr32)guest_eip_start)+delta);
-//..                return irbb;
-//..             }
-//..             break;
-//..          case Dis_StopHere:
-//..             vassert(irbb->next != NULL);
-//..             return irbb;
-//..          case Dis_Resteer:
-//..             vassert(irbb->next == NULL);
-//..             /* figure out a new delta to continue at. */
-//..             vassert(chase_into_ok(guest_next));
-//..             delta = (UInt)(guest_next - guest_eip_start);
-//..             /* we now have to start a new extent slot. */
-//.. 	    vge->n_used++;
-//.. 	    vassert(vge->n_used <= 3);
-//..             vge->base[vge->n_used-1] = guest_next;
-//..             vge->len[vge->n_used-1] = 0;
-//..             n_resteers++;
-//..             d_resteers++;
-//..             if (0 && (n_resteers & 0xFF) == 0)
-//..             vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
-//..                        n_resteers, d_resteers,
-//..                        (void*)(UInt)(guest_next), delta);
-//..             break;
-//..       }
-//..    }
-//.. }
 
 
 /*------------------------------------------------------------*/
@@ -500,34 +494,34 @@ static UChar getIByte ( UInt delta )
    return guest_code[delta];
 }
 
-//.. /* Extract the reg field from a modRM byte. */
-//.. static Int gregOfRM ( UChar mod_reg_rm )
-//.. {
-//..    return (Int)( (mod_reg_rm >> 3) & 7 );
-//.. }
-//.. 
-//.. /* Figure out whether the mod and rm parts of a modRM byte refer to a
-//..    register or memory.  If so, the byte will have the form 11XXXYYY,
-//..    where YYY is the register number. */
-//.. static Bool epartIsReg ( UChar mod_reg_rm )
-//.. {
-//..    return (0xC0 == (mod_reg_rm & 0xC0));
-//.. }
-//.. 
-//.. /* ... and extract the register number ... */
-//.. static Int eregOfRM ( UChar mod_reg_rm )
-//.. {
-//..    return (Int)(mod_reg_rm & 0x7);
-//.. }
-//.. 
-//.. /* Get a 8/16/32-bit unsigned value out of the insn stream. */
-//.. 
-//.. static UInt getUChar ( UInt delta )
-//.. {
-//..    UInt v = guest_code[delta+0];
-//..    return v & 0xFF;
-//.. }
-//.. 
+/* Figure out whether the mod and rm parts of a modRM byte refer to a
+   register or memory.  If so, the byte will have the form 11XXXYYY,
+   where YYY is the register number. */
+static Bool epartIsReg ( UChar mod_reg_rm )
+{
+   return (0xC0 == (mod_reg_rm & 0xC0));
+}
+
+/* ... and extract the register number ... */
+static Int eregOfRM ( UChar mod_reg_rm )
+{
+   return (Int)(mod_reg_rm & 0x7);
+}
+
+/* Extract the reg field from a modRM byte. */
+static Int gregOfRM ( UChar mod_reg_rm )
+{
+   return (Int)( (mod_reg_rm >> 3) & 7 );
+}
+
+/* Get a 8/16/32-bit unsigned value out of the insn stream. */
+
+static ULong getUChar ( UInt delta )
+{
+   UInt v = guest_code[delta+0];
+   return v & 0xFF;
+}
+
 //.. static UInt getUDisp16 ( UInt delta )
 //.. {
 //..    UInt v = guest_code[delta+1]; v <<= 8;
@@ -597,6 +591,12 @@ static ULong getSDisp32 ( UInt delta )
 
    The top 16 bits of the prefix are 0x3141, just as a hacky way
    to ensure it really is a valid prefix.
+
+   Things you can safely assume about a well-formed prefix:
+   * at most one segment-override bit (CS,DS,ES,FS,GS,SS) is set.
+   * if REX is not present (_REX == 0) then REXW,REXR,REXX,REXB
+     will be zero.
+   * F2 and F3 will not both be 1.
 */
 
 typedef UInt  Prefix;
@@ -624,6 +624,14 @@ static Bool IS_VALID_PFX ( Prefix pfx ) {
 
 static Bool haveREX ( Prefix pfx ) {
    return (pfx & PFX_REX) ? True : False;
+}
+
+static Int getRexR ( Prefix pfx ) {
+   return (pfx & PFX_REXR) ? 1 : 0;
+}
+
+static Int getRexB ( Prefix pfx ) {
+   return (pfx & PFX_REXB) ? 1 : 0;
 }
 
 
@@ -789,6 +797,9 @@ HChar* nameIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
 
 static HChar* nameIRegB ( Prefix pfx, Int sz, UInt lo3bits ) {
    return nameIReg ( pfx, RegB, sz, lo3bits );
+}
+static HChar* nameIRegR ( Prefix pfx, Int sz, UInt lo3bits ) {
+   return nameIReg ( pfx, RegR, sz, lo3bits );
 }
 
 
@@ -1008,26 +1019,26 @@ static HChar* nameIReg64 ( UInt regno )
 //.. {
 //..    return IRExpr_Const(IRConst_V128(mask));
 //.. }
-//.. 
-//.. static IRExpr* loadLE ( IRType ty, IRExpr* data )
-//.. {
-//..    return IRExpr_LDle(ty,data);
-//.. }
-//.. 
-//.. static IROp mkSizedOp ( IRType ty, IROp op8 )
-//.. {
-//..    Int adj;
-//..    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-//..    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
-//..            || op8 == Iop_Mul8 
-//..            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
-//..            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
-//..            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
-//..            || op8 == Iop_Not8 );
-//..    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-//..    return adj + op8;
-//.. }
-//.. 
+
+static IRExpr* loadLE ( IRType ty, IRExpr* data )
+{
+   return IRExpr_LDle(ty,data);
+}
+
+static IROp mkSizedOp ( IRType ty, IROp op8 )
+{
+   Int adj;
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
+           || op8 == Iop_Mul8 
+           || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
+           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
+           || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
+           || op8 == Iop_Not8 );
+   adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   return adj + op8;
+}
+
 //.. static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 //.. {
 //..    if (szSmall == 1 && szBig == 4) {
@@ -1095,57 +1106,58 @@ static HChar* nameIReg64 ( UInt regno )
 //..    call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1<<4);
 //..    return unop(Iop_32to1, call);
 //.. }
-//.. 
-//.. /* Build IR to calculate just the carry flag from stored
-//..    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression :: Ity_I32. */
-//.. static IRExpr* mk_x86g_calculate_eflags_c ( void )
-//.. {
-//..    IRExpr** args
-//..       = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
-//..    IRExpr* call
-//..       = mkIRExprCCall(
-//..            Ity_I32,
-//..            0/*regparm*/, 
-//..            "x86g_calculate_eflags_c", &x86g_calculate_eflags_c,
-//..            args
-//..         );
-//..    /* Exclude OP and NDEP from definedness checking.  We're only
-//..       interested in DEP1 and DEP2. */
-//..    call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
-//..    return call;
-//.. }
-//.. 
-//.. 
-//.. /* -------------- Building the flags-thunk. -------------- */
-//.. 
-//.. /* The machinery in this section builds the flag-thunk following a
-//..    flag-setting operation.  Hence the various setFlags_* functions.
-//.. */
-//.. 
-//.. static Bool isAddSub ( IROp op8 )
-//.. {
-//..    return op8 == Iop_Add8 || op8 == Iop_Sub8;
-//.. }
-//.. 
+
+/* Build IR to calculate just the carry flag from stored
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression :: Ity_I64. */
+static IRExpr* mk_amd64g_calculate_rflags_c ( void )
+{
+   IRExpr** args
+      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I64),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I64) );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I64,
+           0/*regparm*/, 
+           "amd64g_calculate_rflags_c", &amd64g_calculate_rflags_c,
+           args
+        );
+   /* Exclude OP and NDEP from definedness checking.  We're only
+      interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
+   return call;
+}
+
+
+/* -------------- Building the flags-thunk. -------------- */
+
+/* The machinery in this section builds the flag-thunk following a
+   flag-setting operation.  Hence the various setFlags_* functions.
+*/
+
+static Bool isAddSub ( IROp op8 )
+{
+   return op8 == Iop_Add8 || op8 == Iop_Sub8;
+}
+
 //.. static Bool isLogic ( IROp op8 )
 //.. {
 //..    return op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8;
 //.. }
-//.. 
-//.. /* U-widen 8/16/32 bit int expr to 32. */
-//.. static IRExpr* widenUto32 ( IRExpr* e )
-//.. {
-//..    switch (typeOfIRExpr(irbb->tyenv,e)) {
-//..       case Ity_I32: return e;
-//..       case Ity_I16: return unop(Iop_16Uto32,e);
-//..       case Ity_I8:  return unop(Iop_8Uto32,e);
-//..       default: vpanic("widenUto32");
-//..    }
-//.. }
-//.. 
+
+/* U-widen 8/16/32/64 bit int expr to 64. */
+static IRExpr* widenUto64 ( IRExpr* e )
+{
+   switch (typeOfIRExpr(irbb->tyenv,e)) {
+      case Ity_I64: return e;
+      case Ity_I32: return unop(Iop_32Uto64, e);
+      case Ity_I16: return unop(Iop_32Uto64, unop(Iop_16Uto32,e));
+      case Ity_I8:  return unop(Iop_32Uto64, unop(Iop_8Uto32,e));
+      default: vpanic("widenUto32");
+   }
+}
+
 //.. /* S-widen 8/16/32 bit int expr to 32. */
 //.. static IRExpr* widenSto32 ( IRExpr* e )
 //.. {
@@ -1156,72 +1168,80 @@ static HChar* nameIReg64 ( UInt regno )
 //..       default: vpanic("widenSto32");
 //..    }
 //.. }
-//.. 
-//.. /* Narrow 8/16/32 bit int expr to 8/16/32.  Clearly only some
-//..    of these combinations make sense. */
-//.. static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
-//.. {
-//..    IRType src_ty = typeOfIRExpr(irbb->tyenv,e);
-//..    if (src_ty == dst_ty)
-//..       return e;
-//..    if (src_ty == Ity_I32 && dst_ty == Ity_I16)
-//..       return unop(Iop_32to16, e);
-//..    if (src_ty == Ity_I32 && dst_ty == Ity_I8)
-//..       return unop(Iop_32to8, e);
-//.. 
-//..    vex_printf("\nsrc, dst tys are: ");
-//..    ppIRType(src_ty);
-//..    vex_printf(", ");
-//..    ppIRType(dst_ty);
-//..    vex_printf("\n");
-//..    vpanic("narrowTo(x86)");
-//.. }
-//.. 
-//.. 
-//.. /* Set the flags thunk OP, DEP1 and DEP2 fields.  The supplied op is
-//..    auto-sized up to the real op. */
-//.. 
-//.. static 
-//.. void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
-//.. {
-//..    Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-//.. 
-//..    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-//.. 
-//..    switch (op8) {
-//..       case Iop_Add8: ccOp += X86G_CC_OP_ADDB;   break;
-//..       case Iop_Sub8: ccOp += X86G_CC_OP_SUBB;   break;
-//..       default:       ppIROp(op8);
-//..                      vpanic("setFlags_DEP1_DEP2(x86)");
-//..    }
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(dep2))) );
-//.. }
-//.. 
-//.. 
-//.. /* Set the OP and DEP1 fields only, and write zero to DEP2. */
-//.. 
-//.. static 
-//.. void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
-//.. {
-//..    Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-//.. 
-//..    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-//.. 
-//..    switch (op8) {
-//..       case Iop_Or8:
-//..       case Iop_And8:
-//..       case Iop_Xor8: ccOp += X86G_CC_OP_LOGICB; break;
-//..       default:       ppIROp(op8);
-//..                      vpanic("setFlags_DEP1(x86)");
-//..    }
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
-//.. }
-//.. 
-//.. 
+
+/* Narrow 8/16/32/64 bit int expr to 8/16/32/64.  Clearly only some
+   of these combinations make sense. */
+static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
+{
+   IRType src_ty = typeOfIRExpr(irbb->tyenv,e);
+   if (src_ty == dst_ty)
+      return e;
+   if (src_ty == Ity_I32 && dst_ty == Ity_I16)
+      return unop(Iop_32to16, e);
+   if (src_ty == Ity_I32 && dst_ty == Ity_I8)
+      return unop(Iop_32to8, e);
+
+   vex_printf("\nsrc, dst tys are: ");
+   ppIRType(src_ty);
+   vex_printf(", ");
+   ppIRType(dst_ty);
+   vex_printf("\n");
+   vpanic("narrowTo(amd64)");
+}
+
+
+/* Set the flags thunk OP, DEP1 and DEP2 fields.  The supplied op is
+   auto-sized up to the real op. */
+
+static 
+void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
+{
+   Int ccOp = 0;
+   switch (ty) {
+      case Ity_I8:  ccOp = 0; break;
+      case Ity_I16: ccOp = 1; break;
+      case Ity_I32: ccOp = 2; break;
+      case Ity_I64: ccOp = 3; break;
+      default: vassert(0);
+   }
+   switch (op8) {
+      case Iop_Add8: ccOp += AMD64G_CC_OP_ADDB;   break;
+      case Iop_Sub8: ccOp += AMD64G_CC_OP_SUBB;   break;
+      default:       ppIROp(op8);
+                     vpanic("setFlags_DEP1_DEP2(amd64)");
+   }
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(dep2))) );
+}
+
+
+/* Set the OP and DEP1 fields only, and write zero to DEP2. */
+
+static 
+void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
+{
+   Int ccOp = 0;
+   switch (ty) {
+      case Ity_I8:  ccOp = 0; break;
+      case Ity_I16: ccOp = 1; break;
+      case Ity_I32: ccOp = 2; break;
+      case Ity_I64: ccOp = 3; break;
+      default: vassert(0);
+   }
+   switch (op8) {
+      case Iop_Or8:
+      case Iop_And8:
+      case Iop_Xor8: ccOp += AMD64G_CC_OP_LOGICB; break;
+      default:       ppIROp(op8);
+                     vpanic("setFlags_DEP1(amd64)");
+   }
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+}
+
+
 //.. /* For shift operations, we put in the result and the undershifted
 //..    result.  Except if the shift amount is zero, the thunk is left
 //..    unchanged. */
@@ -1348,82 +1368,90 @@ static HChar* nameIReg64 ( UInt regno )
 //..       return cond;
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /* -------------- Helpers for ADD/SUB with carry. -------------- */
-//.. 
-//.. /* Given ta1, ta2 and tres, compute tres = ADC(ta1,ta2) and set flags
-//..    appropriately.
-//.. */
-//.. static void helper_ADC ( Int sz,
-//..                          IRTemp tres, IRTemp ta1, IRTemp ta2 )
-//.. {
-//..    UInt    thunkOp;
-//..    IRType  ty    = szToITy(sz);
-//..    IRTemp  oldc  = newTemp(Ity_I32);
-//..    IRTemp  oldcn = newTemp(ty);
-//..    IROp    plus  = mkSizedOp(ty, Iop_Add8);
-//..    IROp    xor   = mkSizedOp(ty, Iop_Xor8);
-//.. 
-//..    vassert(sz == 1 || sz == 2 || sz == 4);
-//..    thunkOp = sz==4 ? X86G_CC_OP_ADCL 
-//..                    : (sz==2 ? X86G_CC_OP_ADCW : X86G_CC_OP_ADCB);
-//.. 
-//..    /* oldc = old carry flag, 0 or 1 */
-//..    assign( oldc,  binop(Iop_And32,
-//..                         mk_x86g_calculate_eflags_c(),
-//..                         mkU32(1)) );
-//.. 
-//..    assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
-//.. 
-//..    assign( tres, binop(plus,
-//..                        binop(plus,mkexpr(ta1),mkexpr(ta2)),
-//..                        mkexpr(oldcn)) );
-//.. 
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-//..                                               mkexpr(oldcn)) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
-//.. }
-//.. 
-//.. 
-//.. /* Given ta1, ta2 and tres, compute tres = SBB(ta1,ta2) and set flags
-//..    appropriately.
-//.. */
-//.. static void helper_SBB ( Int sz,
-//..                          IRTemp tres, IRTemp ta1, IRTemp ta2 )
-//.. {
-//..    UInt    thunkOp;
-//..    IRType  ty    = szToITy(sz);
-//..    IRTemp  oldc  = newTemp(Ity_I32);
-//..    IRTemp  oldcn = newTemp(ty);
-//..    IROp    minus = mkSizedOp(ty, Iop_Sub8);
-//..    IROp    xor   = mkSizedOp(ty, Iop_Xor8);
-//.. 
-//..    vassert(sz == 1 || sz == 2 || sz == 4);
-//..    thunkOp = sz==4 ? X86G_CC_OP_SBBL 
-//..                    : (sz==2 ? X86G_CC_OP_SBBW : X86G_CC_OP_SBBB);
-//.. 
-//..    /* oldc = old carry flag, 0 or 1 */
-//..    assign( oldc, binop(Iop_And32,
-//..                        mk_x86g_calculate_eflags_c(),
-//..                        mkU32(1)) );
-//.. 
-//..    assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
-//.. 
-//..    assign( tres, binop(minus,
-//..                        binop(minus,mkexpr(ta1),mkexpr(ta2)),
-//..                        mkexpr(oldcn)) );
-//.. 
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-//..                                               mkexpr(oldcn)) ) );
-//..    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
-//.. }
-//.. 
-//.. 
+
+
+/* -------------- Helpers for ADD/SUB with carry. -------------- */
+
+/* Given ta1, ta2 and tres, compute tres = ADC(ta1,ta2) and set flags
+   appropriately.
+*/
+static void helper_ADC ( Int sz,
+                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
+{
+   UInt    thunkOp;
+   IRType  ty    = szToITy(sz);
+   IRTemp  oldc  = newTemp(Ity_I64);
+   IRTemp  oldcn = newTemp(ty);
+   IROp    plus  = mkSizedOp(ty, Iop_Add8);
+   IROp    xor   = mkSizedOp(ty, Iop_Xor8);
+
+   switch (sz) {
+      case 8:  thunkOp = AMD64G_CC_OP_ADCQ; break;
+      case 4:  thunkOp = AMD64G_CC_OP_ADCL; break;
+      case 2:  thunkOp = AMD64G_CC_OP_ADCW; break;
+      case 1:  thunkOp = AMD64G_CC_OP_ADCB; break;
+      default: vassert(0);
+   }
+
+   /* oldc = old carry flag, 0 or 1 */
+   assign( oldc,  binop(Iop_And64,
+                        mk_amd64g_calculate_rflags_c(),
+                        mkU64(1)) );
+
+   assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
+
+   assign( tres, binop(plus,
+                       binop(plus,mkexpr(ta1),mkexpr(ta2)),
+                       mkexpr(oldcn)) );
+
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(thunkOp) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
+                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
+}
+
+
+/* Given ta1, ta2 and tres, compute tres = SBB(ta1,ta2) and set flags
+   appropriately.
+*/
+static void helper_SBB ( Int sz,
+                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
+{
+   UInt    thunkOp;
+   IRType  ty    = szToITy(sz);
+   IRTemp  oldc  = newTemp(Ity_I64);
+   IRTemp  oldcn = newTemp(ty);
+   IROp    minus = mkSizedOp(ty, Iop_Sub8);
+   IROp    xor   = mkSizedOp(ty, Iop_Xor8);
+
+   switch (sz) {
+      case 8:  thunkOp = AMD64G_CC_OP_SBBQ; break;
+      case 4:  thunkOp = AMD64G_CC_OP_SBBL; break;
+      case 2:  thunkOp = AMD64G_CC_OP_SBBW; break;
+      case 1:  thunkOp = AMD64G_CC_OP_SBBB; break;
+      default: vassert(0);
+   }
+
+   /* oldc = old carry flag, 0 or 1 */
+   assign( oldc, binop(Iop_And64,
+                       mk_amd64g_calculate_rflags_c(),
+                       mkU64(1)) );
+
+   assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
+
+   assign( tres, binop(minus,
+                       binop(minus,mkexpr(ta1),mkexpr(ta2)),
+                       mkexpr(oldcn)) );
+
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(thunkOp) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
+                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
+}
+
+
 //.. /* -------------- Helpers for disassembly printing. -------------- */
 //.. 
 //.. static HChar* nameGrp1 ( Int opc_aux )
@@ -1506,28 +1534,29 @@ static HChar* nameIReg64 ( UInt regno )
 //..       default: vpanic("nameMMXGran(x86,guest)");
 //..    }
 //.. }
-//.. 
-//.. static Char nameISize ( Int size )
-//.. {
-//..    switch (size) {
-//..       case 4: return 'l';
-//..       case 2: return 'w';
-//..       case 1: return 'b';
-//..       default: vpanic("nameISize(x86)");
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- JMP helpers                                          ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. static void jmp_lit( IRJumpKind kind, Addr32 d32 )
-//.. {
-//..   irbb->next     = mkU32(d32);
-//..   irbb->jumpkind = kind;
-//.. }
-//.. 
+
+static Char nameISize ( Int size )
+{
+   switch (size) {
+      case 8: return 'q';
+      case 4: return 'l';
+      case 2: return 'w';
+      case 1: return 'b';
+      default: vpanic("nameISize(amd64)");
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- JMP helpers                                          ---*/
+/*------------------------------------------------------------*/
+
+static void jmp_lit( IRJumpKind kind, Addr64 d64 )
+{
+  irbb->next     = mkU64(d64);
+  irbb->jumpkind = kind;
+}
+
 //.. static void jmp_treg( IRJumpKind kind, IRTemp t )
 //.. {
 //..    irbb->next = mkexpr(t);
@@ -1732,7 +1761,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
       case 0x1C: case 0x1D: case 0x1E: case 0x1F:
          vpanic("disAMode(amode): not an addr!");
 
-      /* RIP + disp32.  This assumes that guest_eip_curr_instr is set
+      /* RIP + disp32.  This assumes that guest_rip_curr_instr is set
          correctly at the start of handling each instruction. */
       case 0x05: 
          { ULong d = getSDisp32(delta);
@@ -1740,7 +1769,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
            DIS(buf, "%s(0x%llx)", sorbTxt(pfx), d);
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
-                        binop(Iop_Add64, mkU64(guest_eip_curr_instr), 
+                        binop(Iop_Add64, mkU64(guest_rip_curr_instr), 
                                          mkU64(d))));
          }
 
@@ -1767,6 +1796,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
            vassert(rex_b <= 1);
            vassert(rex_x <= 1);
            delta++;
+           *len = 2;
 
            /* First off, compute a value for the "base" field
               reference, as per Table A-16 on page 402.  This can be
@@ -1783,6 +1813,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
               /* base = signed-widen(32-bit literal) */
               ULong d = getSDisp32(delta);
               delta += 4;
+              *len += 4;
               base = mkU64(d);
               DIS(base_txt, "%s%lld(,", sorbTxt(pfx), d);
            }
@@ -1791,6 +1822,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
               /* base = %rbp/%r13 + signed-widen(8-bit literal) */
               ULong d = getSDisp8(delta);
               delta += 1;
+              *len += 1;
               base = binop(Iop_Add64, 
                            getIReg64(rex_b==0 ? R_RBP : R_R13),
                            mkU64(d));
@@ -1802,6 +1834,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
               /* base = %rbp/%r13 + signed-widen(32-bit literal) */
               ULong d = getSDisp32(delta);
               delta += 4;
+              *len += 4;
               base = binop(Iop_Add64, 
                            getIReg64(rex_b==0 ? R_RBP : R_R13),
                            mkU64(d));
@@ -1825,7 +1858,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
                                getIReg64((rex_x << 3) | sib_index),
                                mkU8(sib_scale)));
               DIS(buf, "%s%s,%d)", base_txt, 
-                        nameIReg64((rex_x << 3) | sib_index), (UInt)sib_scale);
+                        nameIReg64((rex_x << 3) | sib_index), 1<<sib_scale);
            }
 
            /* and that's it (!) */
@@ -1896,142 +1929,148 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
 //..          return 0; /*notreached*/
 //..    }
 //.. }
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Disassembling common idioms                          ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. static
-//.. void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
-//.. {
-//..    IRType ty = szToITy(size);
-//..    /* reg := 0 */
-//..    putIReg(size, ge_reg, mkU(ty,0));
-//..    /* Flags: C,A,O=0, Z=1, S=0, P=1 */
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(X86G_CC_MASK_Z|X86G_CC_MASK_P) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..    DIP("xor%c %s, %s\n", nameISize(size),
-//..                          nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
-//.. }
-//.. 
-//.. 
-//.. /* Handle binary integer instructions of the form
-//..       op E, G  meaning
-//..       op reg-or-mem, reg
-//..    Is passed the a ptr to the modRM byte, the actual operation, and the
-//..    data size.  Returns the address advanced completely over this
-//..    instruction.
-//.. 
-//..    E(src) is reg-or-mem
-//..    G(dst) is reg.
-//.. 
-//..    If E is reg, -->    GET %G,  tmp
-//..                        OP %E,   tmp
-//..                        PUT tmp, %G
-//..  
-//..    If E is mem and OP is not reversible, 
-//..                 -->    (getAddr E) -> tmpa
-//..                        LD (tmpa), tmpa
-//..                        GET %G, tmp2
-//..                        OP tmpa, tmp2
-//..                        PUT tmp2, %G
-//.. 
-//..    If E is mem and OP is reversible
-//..                 -->    (getAddr E) -> tmpa
-//..                        LD (tmpa), tmpa
-//..                        OP %G, tmpa
-//..                        PUT tmpa, %G
-//.. */
-//.. static
-//.. UInt dis_op2_E_G ( UChar       sorb,
-//..                    Bool        addSubCarry,
-//..                    IROp        op8, 
-//..                    Bool        keep,
-//..                    Int         size, 
-//..                    UInt        delta0,
-//..                    Char*       t_x86opc )
-//.. {
-//..    HChar   dis_buf[50];
-//..    Int     len;
-//..    IRType  ty   = szToITy(size);
-//..    IRTemp  dst1 = newTemp(ty);
-//..    IRTemp  src  = newTemp(ty);
-//..    IRTemp  dst0 = newTemp(ty);
-//..    UChar   rm   = getUChar(delta0);
-//..    IRTemp  addr = IRTemp_INVALID;
-//.. 
-//..    /* addSubCarry == True indicates the intended operation is
-//..       add-with-carry or subtract-with-borrow. */
-//..    if (addSubCarry) {
-//..       vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
-//..       vassert(keep);
-//..    }
-//.. 
-//..    if (epartIsReg(rm)) {
-//..       /* Specially handle XOR reg,reg, because that doesn't really
-//..          depend on reg, and doing the obvious thing potentially
-//..          generates a spurious value check failure due to the bogus
-//..          dependency. */
-//..       if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)) {
-//..          codegen_XOR_reg_with_itself ( size, gregOfRM(rm) );
-//..          return 1+delta0;
-//..       }
-//..       assign( dst0, getIReg(size,gregOfRM(rm)) );
-//..       assign( src,  getIReg(size,eregOfRM(rm)) );
-//.. 
-//..       if (addSubCarry && op8 == Iop_Add8) {
-//..          helper_ADC( size, dst1, dst0, src );
-//..          putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       } else
-//..       if (addSubCarry && op8 == Iop_Sub8) {
-//..          helper_SBB( size, dst1, dst0, src );
-//..          putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       } else {
-//..          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-//..          if (isAddSub(op8))
-//..             setFlags_DEP1_DEP2(op8, dst0, src, ty);
-//..          else
-//..             setFlags_DEP1(op8, dst1, ty);
-//..          if (keep)
-//..             putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       }
-//.. 
-//..       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
-//..                           nameIReg(size,eregOfRM(rm)),
-//..                           nameIReg(size,gregOfRM(rm)));
-//..       return 1+delta0;
-//..    } else {
-//..       /* E refers to memory */
-//..       addr = disAMode ( &len, sorb, delta0, dis_buf);
-//..       assign( dst0, getIReg(size,gregOfRM(rm)) );
-//..       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
-//.. 
-//..       if (addSubCarry && op8 == Iop_Add8) {
-//..          helper_ADC( size, dst1, dst0, src );
-//..          putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       } else
-//..       if (addSubCarry && op8 == Iop_Sub8) {
-//..          helper_SBB( size, dst1, dst0, src );
-//..          putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       } else {
-//..          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-//..          if (isAddSub(op8))
-//..             setFlags_DEP1_DEP2(op8, dst0, src, ty);
-//..          else
-//..             setFlags_DEP1(op8, dst1, ty);
-//..          if (keep)
-//..             putIReg(size, gregOfRM(rm), mkexpr(dst1));
-//..       }
-//.. 
-//..       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
-//..                           dis_buf,nameIReg(size,gregOfRM(rm)));
-//..       return len+delta0;
-//..    }
-//.. }
-//.. 
-//.. 
-//.. 
+
+/*------------------------------------------------------------*/
+/*--- Disassembling common idioms                          ---*/
+/*------------------------------------------------------------*/
+
+static
+void codegen_XOR_reg_with_itself ( Prefix pfx, Int size, Int ge_reg )
+{
+   vassert(0);
+#if 0
+   IRType ty = szToITy(size);
+   /* reg := 0 */
+   putIReg(size, ge_reg, mkU(ty,0));
+   /* Flags: C,A,O=0, Z=1, S=0, P=1 */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(X86G_CC_MASK_Z|X86G_CC_MASK_P) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   DIP("xor%c %s, %s\n", nameISize(size),
+                         nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
+#endif
+}
+
+
+/* Handle binary integer instructions of the form
+      op E, G  meaning
+      op reg-or-mem, reg
+   Is passed the a ptr to the modRM byte, the actual operation, and the
+   data size.  Returns the address advanced completely over this
+   instruction.
+
+   E(src) is reg-or-mem
+   G(dst) is reg.
+
+   If E is reg, -->    GET %G,  tmp
+                       OP %E,   tmp
+                       PUT tmp, %G
+ 
+   If E is mem and OP is not reversible, 
+                -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmpa
+                       GET %G, tmp2
+                       OP tmpa, tmp2
+                       PUT tmp2, %G
+
+   If E is mem and OP is reversible
+                -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmpa
+                       OP %G, tmpa
+                       PUT tmpa, %G
+*/
+static
+ULong dis_op2_E_G ( Prefix      pfx,
+                    Bool        addSubCarry,
+                    IROp        op8, 
+                    Bool        keep,
+                    Int         size, 
+                    ULong       delta0,
+                    Char*       t_amd64opc )
+{
+   HChar   dis_buf[50];
+   Int     len;
+   IRType  ty   = szToITy(size);
+   IRTemp  dst1 = newTemp(ty);
+   IRTemp  src  = newTemp(ty);
+   IRTemp  dst0 = newTemp(ty);
+   UChar   rm   = getUChar(delta0);
+   IRTemp  addr = IRTemp_INVALID;
+
+   /* addSubCarry == True indicates the intended operation is
+      add-with-carry or subtract-with-borrow. */
+   if (addSubCarry) {
+      vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
+      vassert(keep);
+   }
+
+   if (epartIsReg(rm)) {
+     vassert(0);
+      /* Specially handle XOR reg,reg, because that doesn't really
+         depend on reg, and doing the obvious thing potentially
+         generates a spurious value check failure due to the bogus
+         dependency. */
+      if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)
+                          && getRexR(pfx) == getRexB(pfx)) {
+         codegen_XOR_reg_with_itself ( pfx, size, gregOfRM(rm) );
+         return 1+delta0;
+      }
+      assign( dst0, getIRegR(pfx,size,gregOfRM(rm)) );
+      assign( src,  getIRegB(pfx,size,eregOfRM(rm)) );
+
+      if (addSubCarry && op8 == Iop_Add8) {
+         helper_ADC( size, dst1, dst0, src );
+         putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         helper_SBB( size, dst1, dst0, src );
+         putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      } else {
+         assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
+         if (isAddSub(op8))
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
+         else
+            setFlags_DEP1(op8, dst1, ty);
+         if (keep)
+            putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      }
+
+      DIP("%s%c %s,%s\n", t_amd64opc, nameISize(size), 
+                          nameIRegB(pfx,size,eregOfRM(rm)),
+                          nameIRegR(pfx,size,gregOfRM(rm)));
+      return 1+delta0;
+   } else {
+      /* E refers to memory */
+      addr = disAMode ( &len, pfx, delta0, dis_buf);
+      assign( dst0, getIRegR(pfx,size,gregOfRM(rm)) );
+      assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
+
+      if (addSubCarry && op8 == Iop_Add8) {
+         helper_ADC( size, dst1, dst0, src );
+         putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         helper_SBB( size, dst1, dst0, src );
+         putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      } else {
+         assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
+         if (isAddSub(op8))
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
+         else
+            setFlags_DEP1(op8, dst1, ty);
+         if (keep)
+            putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
+      }
+
+      DIP("%s%c %s,%s\n", t_amd64opc, nameISize(size), 
+                          dis_buf,nameIRegR(pfx,size,gregOfRM(rm)));
+      vex_printf("len = %d\n", len);
+      return len+delta0;
+   }
+}
+
+
+
 //.. /* Handle binary integer instructions of the form
 //..       op G, E  meaning
 //..       op reg, reg-or-mem
@@ -7090,84 +7129,144 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
 //..              binop(Iop_16HLto32, mkexpr(t1), mkexpr(t0))
 //..    );
 //.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Disassemble a single instruction                     ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* Disassemble a single instruction into IR.  The instruction
-//..    is located in host memory at &guest_code[delta].
-//..    Set *size to be the size of the instruction.
-//..    If the returned value is Dis_Resteer,
-//..    the next guest address is assigned to *whereNext.  If resteerOK
-//..    is False, disInstr may not return Dis_Resteer. */
-//..    
-//.. static 
-//.. DisResult disInstr ( /*IN*/  Bool       resteerOK,
-//..                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-//..                      /*IN*/  UInt       delta, 
-//..                      /*IN*/  VexSubArch subarch,
-//..                      /*OUT*/ UInt*      size,
-//..                      /*OUT*/ Addr64*    whereNext )
-//.. {
-//..    IRType    ty;
-//..    IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
-//..    Int       alen;
-//..    UChar     opc, modrm, abyte;
-//..    UInt      d32;
-//..    HChar     dis_buf[50];
-//..    Int       am_sz, d_sz;
-//..    DisResult whatNext = Dis_Continue;
-//..    UChar*    insn; /* used in SSE decoders */
-//.. 
-//..    /* Holds eip at the start of the insn, so that we can print
-//..       consistent error messages for unimplemented insns. */
-//..    UInt delta_start = delta;
-//.. 
-//..    /* sz denotes the nominal data-op size of the insn; we change it to
-//..       2 if an 0x66 prefix is seen */
-//..    Int sz = 4;
-//.. 
-//..    /* sorb holds the segment-override-prefix byte, if any.  Zero if no
-//..       prefix has been seen, else one of {0x26, 0x3E, 0x64, 0x65}
-//..       indicating the prefix.  */
-//..    UChar sorb = 0;
-//.. 
-//..    /* If we don't set *size properly, this causes bbToIR_X86Instr to
-//..       assert. */
-//..    *size = 0;
-//.. 
-//..    addr = t0 = t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
-//.. 
-//..    DIP("\t0x%x:  ", guest_eip_bbstart+delta);
-//.. 
-//..    /* Spot the client-request magic sequence. */
-//..    {
-//..       UChar* code = (UChar*)(guest_code + delta);
-//..       /* Spot this:
-//..          C1C01D                roll $29, %eax
-//..          C1C003                roll $3,  %eax
-//..          C1C81B                rorl $27, %eax
-//..          C1C805                rorl $5,  %eax
-//..          C1C00D                roll $13, %eax
-//..          C1C013                roll $19, %eax      
-//..       */
-//..       if (code[ 0] == 0xC1 && code[ 1] == 0xC0 && code[ 2] == 0x1D &&
-//..           code[ 3] == 0xC1 && code[ 4] == 0xC0 && code[ 5] == 0x03 &&
-//..           code[ 6] == 0xC1 && code[ 7] == 0xC8 && code[ 8] == 0x1B &&
-//..           code[ 9] == 0xC1 && code[10] == 0xC8 && code[11] == 0x05 &&
-//..           code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
-//..           code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
-//..          ) {
-//..          DIP("%%edx = client_request ( %%eax )\n");         
-//..          delta += 18;
-//..          jmp_lit(Ijk_ClientReq, guest_eip_bbstart+delta);
-//..          whatNext = Dis_StopHere;
-//..          goto decode_success;
-//..       }
-//..    }
-//.. 
+
+
+/*------------------------------------------------------------*/
+/*--- Disassemble a single instruction                     ---*/
+/*------------------------------------------------------------*/
+
+/* Disassemble a single instruction into IR.  The instruction
+   is located in host memory at &guest_code[delta].
+   Set *size to be the size of the instruction.
+   If the returned value is Dis_Resteer,
+   the next guest address is assigned to *whereNext.  If resteerOK
+   is False, disInstr may not return Dis_Resteer. */
+   
+static 
+DisResult disInstr ( /*IN*/  Bool       resteerOK,
+                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  ULong      delta, 
+                     /*IN*/  VexSubArch subarch,
+                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Addr64*    whereNext )
+{
+   IRType    ty;
+   IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
+   Int       alen;
+   UChar     opc, modrm, abyte, pre;
+   UInt      d32;
+   HChar     dis_buf[50];
+   Int       am_sz, d_sz, n, n_prefixes;
+   DisResult whatNext = Dis_Continue;
+   UChar*    insn; /* used in SSE decoders */
+
+   /* Holds eip at the start of the insn, so that we can print
+      consistent error messages for unimplemented insns. */
+   ULong delta_start = delta;
+
+   /* sz denotes the nominal data-op size of the insn; we change it to
+      2 if an 0x66 prefix is seen and 8 if REX.W is 1.  In case of
+      conflict REX.W takes precedence. */
+   Int sz = 4;
+
+   /* pfx holds the summary of prefixes, and REX, seen. */
+   Prefix pfx = 0x31410000;
+
+   /* If we don't set *size properly, this causes bbToIR_X86Instr to
+      assert. */
+   *size = 0;
+
+   addr = t0 = t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
+
+   DIP("\t0x%llx:  ", guest_rip_bbstart+delta);
+
+   /* Spot the client-request magic sequence. */
+   {
+      UChar* code = (UChar*)(guest_code + delta);
+      /* Spot this:
+         C1C01D                roll $29, %eax
+         C1C003                roll $3,  %eax
+         C1C81B                rorl $27, %eax
+         C1C805                rorl $5,  %eax
+         C1C00D                roll $13, %eax
+         C1C013                roll $19, %eax      
+      */
+      if (code[ 0] == 0xC1 && code[ 1] == 0xC0 && code[ 2] == 0x1D &&
+          code[ 3] == 0xC1 && code[ 4] == 0xC0 && code[ 5] == 0x03 &&
+          code[ 6] == 0xC1 && code[ 7] == 0xC8 && code[ 8] == 0x1B &&
+          code[ 9] == 0xC1 && code[10] == 0xC8 && code[11] == 0x05 &&
+          code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
+          code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
+         ) {
+         DIP("%%edx = client_request ( %%eax )\n");         
+         delta += 18;
+         jmp_lit(Ijk_ClientReq, guest_rip_bbstart+delta);
+         whatNext = Dis_StopHere;
+         goto decode_success;
+      }
+   }
+
+   /* Eat prefixes, summarising the result in pfx and sz, and rejecting
+      as many invalid combinations as possible. */
+   n_prefixes = 0;
+   while (True) {
+      if (n_prefixes > 5) goto decode_failure;
+      pre = getIByte(delta);
+      switch (pre) {
+         case 0x66: pfx |= PFX_66; break;
+         case 0x67: pfx |= PFX_ASO; break;
+         case 0xF2: pfx |= PFX_F2; break;
+         case 0xF3: pfx |= PFX_F3; break;
+         case 0xF0: pfx |= PFX_LOCK; break;
+         case 0x2E: pfx |= PFX_CS; break;
+         case 0x3E: pfx |= PFX_DS; break;
+         case 0x26: pfx |= PFX_ES; break;
+         case 0x64: pfx |= PFX_FS; break;
+         case 0x65: pfx |= PFX_GS; break;
+         case 0x36: pfx |= PFX_SS; break;
+         case 0x40 ... 0x4F:
+            pfx |= PFX_REX;
+            if (pre & (1<<3)) pfx |= PFX_REXW;
+            if (pre & (1<<2)) pfx |= PFX_REXR;
+            if (pre & (1<<1)) pfx |= PFX_REXX;
+            if (pre & (1<<0)) pfx |= PFX_REXB;
+            break;
+         default: 
+            goto not_a_prefix;
+      }
+      n_prefixes++;
+      delta++;
+   }
+
+   not_a_prefix:
+   /* Dump invalid combinations */
+   if (pfx & PFX_ASO) goto decode_failure; /* don't support address-size override */
+
+   n = 0;
+   if (pfx & PFX_F2) n++;
+   if (pfx & PFX_F3) n++;
+   if (n > 1) goto decode_failure; /* can't have both */
+
+   n = 0;
+   if (pfx & PFX_CS) n++;
+   if (pfx & PFX_DS) n++;
+   if (pfx & PFX_ES) n++;
+   if (pfx & PFX_FS) n++;
+   if (pfx & PFX_GS) n++;
+   if (pfx & PFX_SS) n++;
+   if (n > 1) goto decode_failure; /* multiple seg overrides == illegal */
+
+   /* Set up sz. */
+   sz = 4;
+   if (pfx & PFX_66) sz = 2;
+   if ((pfx & PFX_REX) && (pfx & PFX_REXW)) sz = 8;
+
+   /* temp hack re LOCK */
+   if (1 && (pfx & PFX_LOCK)) {
+      vex_printf("vex amd64->IR: ignoring LOCK prefix on: ");
+      insn_verbose = True;
+   }
+
 //..    /* Skip a LOCK prefix. */
 //..    /* 2005 Jan 06: the following insns are observed to sometimes
 //..       have a LOCK prefix:
@@ -10378,24 +10477,24 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
 //.. //--       DIP("clflush %s\n", dis_buf);
 //.. //--       goto decode_success;
 //.. //--    }
-//.. 
-//.. 
-//..    /* ---------------------------------------------------- */
-//..    /* --- end of the SSE/SSE2 decoder.                 --- */
-//..    /* ---------------------------------------------------- */
-//.. 
-//..    after_sse_decoders:
-//.. 
-//..    /* Get the primary opcode. */
-//..    opc = getIByte(delta); delta++;
-//.. 
-//..    /* We get here if the current insn isn't SSE, or this CPU doesn't
-//..       support SSE. */
-//.. 
-//..    switch (opc) {
-//.. 
-//..    /* ------------------------ Control flow --------------- */
-//.. 
+
+
+   /* ---------------------------------------------------- */
+   /* --- end of the SSE/SSE2 decoder.                 --- */
+   /* ---------------------------------------------------- */
+
+   after_sse_decoders:
+
+   /* Get the primary opcode. */
+   opc = getIByte(delta); delta++;
+
+   /* We get here if the current insn isn't SSE, or this CPU doesn't
+      support SSE. */
+
+   switch (opc) {
+
+   /* ------------------------ Control flow --------------- */
+
 //..    case 0xC2: /* RET imm16 */
 //..       d32 = getUDisp16(delta); 
 //..       delta += 2;
@@ -10936,10 +11035,12 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
 //..    case 0x02: /* ADD Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Add8, True, 1, delta, "add" );
 //..       break;
-//..    case 0x03: /* ADD Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Add8, True, sz, delta, "add" );
-//..       break;
-//.. 
+   case 0x03: /* ADD Ev,Gv */
+     vex_printf("delta1 = %lld\n", delta);
+      delta = dis_op2_E_G ( pfx, False, Iop_Add8, True, sz, delta, "add" );
+     vex_printf("delta2 = %lld\n", delta);
+      break;
+
 //..    case 0x0A: /* OR Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, 1, delta, "or" );
 //..       break;
@@ -12183,42 +12284,43 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
 //..    } /* switch (opc) for the 2-byte opcodes */
 //..    goto decode_success;
 //..    } /* case 0x0F: of primary opcode */
-//.. 
-//..    /* ------------------------ ??? ------------------------ */
-//..   
-//..   default:
-//..   decode_failure:
-//..    /* All decode failures end up here. */
-//..    vex_printf("vex x86->IR: unhandled instruction bytes: "
-//..               "0x%x 0x%x 0x%x 0x%x\n",
-//..               (Int)getIByte(delta_start+0),
-//..               (Int)getIByte(delta_start+1),
-//..               (Int)getIByte(delta_start+2),
-//..               (Int)getIByte(delta_start+3) );
-//.. 
-//..    /* Tell the dispatcher that this insn cannot be decoded, and so has
-//..       not been executed, and (is currently) the next to be executed.
-//..       EIP should be up-to-date since it made so at the start of each
-//..       insn, but nevertheless be paranoid and update it again right
-//..       now. */
-//..    stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_curr_instr) ) );
-//..    jmp_lit(Ijk_NoDecode, guest_eip_curr_instr);
-//..    whatNext = Dis_StopHere;
-//..    *size = 0;
-//..    return whatNext;
-//.. 
-//..    } /* switch (opc) for the main (primary) opcode switch. */
-//.. 
-//..   decode_success:
-//..    /* All decode successes end up here. */
-//..    DIP("\n");
-//.. 
-//..    *size = delta - delta_start;
-//..    return whatNext;
-//.. }
-//.. 
-//.. #undef DIP
-//.. #undef DIS
+
+   /* ------------------------ ??? ------------------------ */
+  
+  default:
+  decode_failure:
+   /* All decode failures end up here. */
+   vex_printf("vex amd64->IR: unhandled instruction bytes: "
+              "0x%x 0x%x 0x%x 0x%x\n",
+              (Int)getIByte(delta_start+0),
+              (Int)getIByte(delta_start+1),
+              (Int)getIByte(delta_start+2),
+              (Int)getIByte(delta_start+3) );
+
+   /* Tell the dispatcher that this insn cannot be decoded, and so has
+      not been executed, and (is currently) the next to be executed.
+      RIP should be up-to-date since it made so at the start of each
+      insn, but nevertheless be paranoid and update it again right
+      now. */
+   stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_rip_curr_instr) ) );
+   jmp_lit(Ijk_NoDecode, guest_rip_curr_instr);
+   whatNext = Dis_StopHere;
+   *size = 0;
+   return whatNext;
+
+   } /* switch (opc) for the main (primary) opcode switch. */
+
+  decode_success:
+   /* All decode successes end up here. */
+   DIP("\n");
+   vex_printf("AA %lld\n", delta);
+   vex_printf("BB %lld\n", delta_start);
+   *size = delta - delta_start;
+   return whatNext;
+}
+
+#undef DIP
+#undef DIS
 
 /*--------------------------------------------------------------------*/
 /*--- end                                       guest-amd64/toIR.c ---*/

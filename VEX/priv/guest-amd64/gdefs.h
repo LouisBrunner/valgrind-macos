@@ -78,7 +78,7 @@ extern ULong amd64g_calculate_rflags_all (
                 ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
              );
 
-extern ULong amd64g_calculate_eflags_c ( 
+extern ULong amd64g_calculate_rflags_c ( 
                 ULong cc_op, 
                 ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
              );
@@ -289,60 +289,71 @@ extern UInt  amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
      both results (flags and actual value).
 */
 enum {
-    AMD64G_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
+    AMD64G_CC_OP_COPY=0,  /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
                           /* just copy DEP1 to output */
 
     AMD64G_CC_OP_ADDB,    /* 1 */
     AMD64G_CC_OP_ADDW,    /* 2 DEP1 = argL, DEP2 = argR, NDEP = unused */
     AMD64G_CC_OP_ADDL,    /* 3 */
+    AMD64G_CC_OP_ADDQ,    /* 4 */
 
-    AMD64G_CC_OP_SUBB,    /* 4 */
-    AMD64G_CC_OP_SUBW,    /* 5 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    AMD64G_CC_OP_SUBL,    /* 6 */
+    AMD64G_CC_OP_SUBB,    /* 5 */
+    AMD64G_CC_OP_SUBW,    /* 6 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    AMD64G_CC_OP_SUBL,    /* 7 */
+    AMD64G_CC_OP_SUBQ,    /* 8 */
 
-    AMD64G_CC_OP_ADCB,    /* 7 */
-    AMD64G_CC_OP_ADCW,    /* 8 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
-    AMD64G_CC_OP_ADCL,    /* 9 */
+    AMD64G_CC_OP_ADCB,    /* 9 */
+    AMD64G_CC_OP_ADCW,    /* 10 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
+    AMD64G_CC_OP_ADCL,    /* 11 */
+    AMD64G_CC_OP_ADCQ,    /* 12 */
 
-    AMD64G_CC_OP_SBBB,    /* 10 */
-    AMD64G_CC_OP_SBBW,    /* 11 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
-    AMD64G_CC_OP_SBBL,    /* 12 */
+    AMD64G_CC_OP_SBBB,    /* 13 */
+    AMD64G_CC_OP_SBBW,    /* 14 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
+    AMD64G_CC_OP_SBBL,    /* 15 */
+    AMD64G_CC_OP_SBBQ,    /* 16 */
 
-    AMD64G_CC_OP_LOGICB,  /* 13 */
-    AMD64G_CC_OP_LOGICW,  /* 14 DEP1 = result, DEP2 = 0, NDEP = unused */
-    AMD64G_CC_OP_LOGICL,  /* 15 */
+    AMD64G_CC_OP_LOGICB,  /* 17 */
+    AMD64G_CC_OP_LOGICW,  /* 18 DEP1 = result, DEP2 = 0, NDEP = unused */
+    AMD64G_CC_OP_LOGICL,  /* 19 */
+    AMD64G_CC_OP_LOGICQ,  /* 20 */
 
-    AMD64G_CC_OP_INCB,    /* 16 */
-    AMD64G_CC_OP_INCW,    /* 17 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
-    AMD64G_CC_OP_INCL,    /* 18 */
+    AMD64G_CC_OP_INCB,    /* 21 */
+    AMD64G_CC_OP_INCW,    /* 22 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
+    AMD64G_CC_OP_INCL,    /* 23 */
+    AMD64G_CC_OP_INCQ,    /* 24 */
 
-    AMD64G_CC_OP_DECB,    /* 19 */
-    AMD64G_CC_OP_DECW,    /* 20 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
-    AMD64G_CC_OP_DECL,    /* 21 */
+    AMD64G_CC_OP_DECB,    /* 25 */
+    AMD64G_CC_OP_DECW,    /* 26 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
+    AMD64G_CC_OP_DECL,    /* 27 */
+    AMD64G_CC_OP_DECQ,    /* 28 */
 
-    AMD64G_CC_OP_SHLB,    /* 22 DEP1 = res, DEP2 = res', NDEP = unused */
-    AMD64G_CC_OP_SHLW,    /* 23 where res' is like res but shifted one bit less */
-    AMD64G_CC_OP_SHLL,    /* 24 */
+    AMD64G_CC_OP_SHLB,    /* 29 DEP1 = res, DEP2 = res', NDEP = unused */
+    AMD64G_CC_OP_SHLW,    /* 30 where res' is like res but shifted one bit less */
+    AMD64G_CC_OP_SHLL,    /* 31 */
+    AMD64G_CC_OP_SHLQ,    /* 32 */
 
-    AMD64G_CC_OP_SHRB,    /* 25 DEP1 = res, DEP2 = res', NDEP = unused */
-    AMD64G_CC_OP_SHRW,    /* 26 where res' is like res but shifted one bit less */
-    AMD64G_CC_OP_SHRL,    /* 27 */
+    AMD64G_CC_OP_SHRB,    /* 33 DEP1 = res, DEP2 = res', NDEP = unused */
+    AMD64G_CC_OP_SHRW,    /* 34 where res' is like res but shifted one bit less */
+    AMD64G_CC_OP_SHRL,    /* 35 */
+    AMD64G_CC_OP_SHRQ,    /* 36 */
 
-    AMD64G_CC_OP_ROLB,    /* 28 */
-    AMD64G_CC_OP_ROLW,    /* 29 DEP1 = res, DEP2 = 0, NDEP = old flags */
-    AMD64G_CC_OP_ROLL,    /* 30 */
+    AMD64G_CC_OP_ROLB,    /* 37 */
+    AMD64G_CC_OP_ROLW,    /* 38 DEP1 = res, DEP2 = 0, NDEP = old flags */
+    AMD64G_CC_OP_ROLL,    /* 39 */
+    AMD64G_CC_OP_ROLQ,    /* 40 */
 
-    AMD64G_CC_OP_RORB,    /* 31 */
-    AMD64G_CC_OP_RORW,    /* 32 DEP1 = res, DEP2 = 0, NDEP = old flags */
-    AMD64G_CC_OP_RORL,    /* 33 */
+    AMD64G_CC_OP_RORB,    /* 41 */
+    AMD64G_CC_OP_RORW,    /* 42 DEP1 = res, DEP2 = 0, NDEP = old flags */
+    AMD64G_CC_OP_RORL,    /* 43 */
+    AMD64G_CC_OP_RORQ,    /* 44 */
 
-    AMD64G_CC_OP_UMULB,   /* 34 */
-    AMD64G_CC_OP_UMULW,   /* 35 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    AMD64G_CC_OP_UMULL,   /* 36 */
+    AMD64G_CC_OP_UMULB,   /* 45 */
+    AMD64G_CC_OP_UMULW,   /* 46 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    AMD64G_CC_OP_UMULL,   /* 47 */
 
-    AMD64G_CC_OP_SMULB,   /* 37 */
-    AMD64G_CC_OP_SMULW,   /* 38 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    AMD64G_CC_OP_SMULL,   /* 39 */
+    AMD64G_CC_OP_SMULB,   /* 48 */
+    AMD64G_CC_OP_SMULW,   /* 49 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    AMD64G_CC_OP_SMULL,   /* 50 */
 
     AMD64G_CC_OP_NUMBER
 };

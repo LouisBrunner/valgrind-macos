@@ -24,7 +24,7 @@ bzdist: dist
 
 EXTRA_DIST = $(val_DATA) \
 	PATCHES_APPLIED ACKNOWLEDGEMENTS \
-	README_KDE3_FOLKS \
+	README_KDE3_FOLKS README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO dosyms vg_libpthread.vs
 
 val_PROGRAMS = valgrind.so valgrinq.so libpthread.so

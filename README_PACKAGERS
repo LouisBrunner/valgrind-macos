@@ -1,0 +1,69 @@
+
+1 July 2002
+
+Greetings, packaging person!  This information is aimed at people
+building binary distributions of Valgrind.
+
+Thanks for taking the time and effort to make a binary distribution
+of Valgrind.  The following notes may save you some trouble.
+
+
+-- (Unfortunate but true) When you configure to build with the 
+   --prefix=/foo/bar/xyzzy option, the prefix /foo/bar/xyzzy gets
+   baked into valgrind.so.  The consequence is that you _must_ install
+   valgrind at the location specified in the prefix.  If you don't,
+   it may appear to work, but will break doing some obscure things,
+   particularly doing fork() and exec().
+
+   So you can't build a relocatable RPM / whatever from Valgrind.
+
+
+-- Don't strip the debug info off valgrind.so or libpthread.so.
+   Valgrind will still work if you do, but it will generate less
+   helpful error messages.  Here's an example:
+
+   Mismatched free() / delete / delete []
+      at 0x40043249: free (vg_clientfuncs.c:171)
+      by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
+      by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
+      by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
+      Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
+      at 0x4004318C: __builtin_vec_new (vg_clientfuncs.c:152)
+      by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
+      by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
+      by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
+
+   This tells you that some memory allocated with new[] was freed with
+   free().  If valgrind.so was stripped the message would look like
+   this:
+
+   Mismatched free() / delete / delete []
+      at 0x40043249: (inside valgrind.so)
+      by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
+      by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
+      by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
+      Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
+      at 0x4004318C: (inside valgrind.so)
+      by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
+      by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
+      by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
+
+   This isn't so helpful.  Although you can tell there is a mismatch, 
+   the names of the allocating and deallocating functions are no longer
+   visible.  The same kind of thing occurs in various other messages 
+   from valgrind.
+
+
+-- Please test the final installation works by running it on
+   something huge.  I suggest checking that it can start and
+   exit successfully both Mozilla-1.0 and OpenOffice.org 1.0.
+   I use these as test programs, and I know they fairly thoroughly
+   exercise Valgrind.  The command lines to use are:
+
+   valgrind -v --trace-children=yes --workaround-gcc296-bugs=yes mozilla
+
+   valgrind -v --trace-children=yes --workaround-gcc296-bugs=yes soffice
+
+
+If you find any more hints/tips for packaging, please let me know
+(jseward@acm.org).  Thanks.

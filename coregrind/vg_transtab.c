@@ -513,6 +513,7 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                tte->trans_addr, tte->trans_size);
    */
 
+   // paranoia
    vg_assert(offsetof(TCEntry, payload) == PAYLOAD_OFFSET);
    vg_assert(trans_size > 0);
 
@@ -647,7 +648,7 @@ void VG_(init_tt_tc) ( void )
    Int s;
 
    /* Otherwise lots of things go wrong... */
-   vg_assert(PAYLOAD_OFFSET == sizeof(TCEntry));
+   vg_assert(offsetof(TCEntry, payload) == PAYLOAD_OFFSET);
    
    /* Figure out how big each sector should be.  */
    vg_tc_sector_szB 

@@ -215,29 +215,8 @@ UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
 
 Bool VGA_(setup_pointercheck)(void)
 {
-   I_die_here;
-#if 0
-   vki_modify_ldt_t ldt = { 
-      VG_POINTERCHECK_SEGIDX,    // entry_number
-      VG_(client_base),          // base_addr
-      (VG_(client_end)-VG_(client_base)) / VKI_PAGE_SIZE, // limit
-      1,                         // seg_32bit
-      0,                         // contents: data, RW, non-expanding
-      0,                         // ! read_exec_only
-      1,                         // limit_in_pages
-      0,                         // ! seg not present
-      1,                         // useable
-   };
-   int ret = VG_(do_syscall)(__NR_modify_ldt, 1, &ldt, sizeof(ldt));
-   if (ret < 0) {
-      VG_(message)(Vg_UserMsg,
-                   "Warning: ignoring --pointercheck=yes, "
-                   "because modify_ldt failed (errno=%d)", -ret);
-      return False;
-   } else {
-      return True;
-   }
-#endif
+   VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
+   return True;
 }
 
 /*------------------------------------------------------------*/

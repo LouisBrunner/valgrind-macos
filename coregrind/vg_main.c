@@ -2698,7 +2698,6 @@ int main(int argc, char **argv)
 
    VGP_POPCC(VgpSched);
 
-
    //--------------------------------------------------------------
    // Finalisation: cleanup, messages, etc.  Order no so important, only
    // affects what order the messages come.

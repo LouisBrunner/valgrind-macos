@@ -5,7 +5,7 @@ all files are copyright OpenWorks LLP, and are licensed under the GNU
 GPL version 2 (see COPYING).
 
   test/test-i386.c           (Fabrice Bellard, GNU GPL)
-  test/test-amd64.c          (Fabrice Bellard, GNU GPL))
+  test/test-amd64.c          (Fabrice Bellard, GNU GPL)
   switchback/linker.c        (University of Glasgow, BSD-style license)
   switchback/test_emfloat.c  (BYTE magazine, public domain?)
   switchback/test_ppc_jm1.c  (Jocelyn Mayer, BSD-style license)

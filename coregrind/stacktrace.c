@@ -116,7 +116,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
    Addr ip                 = INSTR_PTR(tst->arch);
    Addr fp                 = FRAME_PTR(tst->arch);
    Addr sp                 = STACK_PTR(tst->arch);
-   Addr stack_highest_word = tst->stack_highest_word;
+   Addr stack_highest_word = tst->client_stack_highest_word;
 
 #ifdef __x86__
    /* Nasty little hack to deal with sysinfo syscalls - if libc is

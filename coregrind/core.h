@@ -596,7 +596,7 @@ struct _ThreadState {
       post-syscall function. */
    void *tool_pre_syscall_value;
 
-   /* Stacks.  When a thread slot is freed, we don't deallocate its
+   /* Client stacks.  When a thread slot is freed, we don't deallocate its
       stack; we just leave it lying around for the next use of the
       slot.  If the next use of the slot requires a larger stack,
       only then is the old one deallocated and a new one
@@ -608,18 +608,13 @@ struct _ThreadState {
 
    /* The allocated size of this thread's stack (permanently zero
       if this is ThreadId == 0, since we didn't allocate its stack) */
-   UInt stack_size;
-
-   /* Address of the lowest word in this thread's stack.  NULL means
-      not allocated yet.
-   */
-   Addr stack_base;
+   SizeT client_stack_szB;
 
    /* Address of the highest legitimate word in this stack.  This is
       used for error messages only -- not critical for execution
       correctness.  Is is set for all stacks, specifically including
       ThreadId == 0 (the main thread). */
-   Addr stack_highest_word;
+   Addr client_stack_highest_word;
 
    /* Alternate signal stack */
    vki_stack_t altstack;

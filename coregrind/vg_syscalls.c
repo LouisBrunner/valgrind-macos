@@ -5004,7 +5004,7 @@ PRE(sys_setrlimit, 0)
          SET_RESULT( -VKI_EPERM );
       }
       else {
-         VG_(threads)[tid].stack_size = ((struct vki_rlimit *)ARG2)->rlim_cur;
+         VG_(threads)[tid].client_stack_szB  = ((struct vki_rlimit *)ARG2)->rlim_cur;
          VG_(client_rlimit_stack) = *(struct vki_rlimit *)ARG2;
          SET_RESULT( 0 );
       }

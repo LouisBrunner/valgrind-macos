@@ -397,7 +397,7 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
    ThreadId tid = tst->tid;
    Segment *stackseg = NULL;
 
-   if (VG_(extend_stack)(addr, tst->stack_size)) {
+   if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
       stackseg = VG_(find_segment)(addr);
       if (0 && stackseg)
 	 VG_(printf)("frame=%p seg=%p-%p\n",

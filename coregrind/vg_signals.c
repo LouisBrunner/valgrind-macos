@@ -1842,7 +1842,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	    then extend the stack segment. 
 	 */
          Addr base = PGROUNDDN(esp - VGA_STACK_REDZONE_SIZE);
-	 if (VG_(extend_stack)(base, VG_(threads)[tid].stack_size)) {
+	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 
 			    "       -> extended stack base to %p", PGROUNDDN(fault));

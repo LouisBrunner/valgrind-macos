@@ -144,7 +144,7 @@ ThreadId VG_(first_matching_thread_stack)
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
 
       if ( p ( STACK_PTR(VG_(threads)[tid].arch),
-               VG_(threads)[tid].stack_highest_word, d ) )
+               VG_(threads)[tid].client_stack_highest_word, d ) )
          return tid;
    }
    return VG_INVALID_THREADID;
@@ -349,16 +349,6 @@ void VG_(exit_thread)(ThreadId tid)
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(is_running_thread)(tid));
    vg_assert(VG_(is_exiting)(tid));
-
-   /* It's stack is now off-limits
-
-      XXX Don't do this - the client thread implementation can touch
-      the stack after thread death... */
-   if (0 && VG_(threads)[tid].stack_base) {
-      Segment *seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
-      if (seg)
-	 VG_TRACK( die_mem_stack, seg->addr, seg->len );
-   }
 
    VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
 
@@ -627,10 +617,9 @@ void VG_(scheduler_init) ( void )
       VGA_(os_state_init)(&VG_(threads)[i]);
       mostly_clear_thread_record(i);
 
-      VG_(threads)[i].status               = VgTs_Empty;
-      VG_(threads)[i].stack_size           = 0;
-      VG_(threads)[i].stack_base           = (Addr)NULL;
-      VG_(threads)[i].stack_highest_word   = (Addr)NULL;
+      VG_(threads)[i].status                    = VgTs_Empty;
+      VG_(threads)[i].client_stack_szB          = 0;
+      VG_(threads)[i].client_stack_highest_word = (Addr)NULL;
    }
 
    tid_main = VG_(alloc_ThreadState)();
@@ -638,9 +627,9 @@ void VG_(scheduler_init) ( void )
    VG_(master_tid) = tid_main;
 
    /* Initial thread's stack is the original process stack */
-   VG_(threads)[tid_main].stack_highest_word = VG_(clstk_end) - sizeof(UInt);
-   VG_(threads)[tid_main].stack_base = VG_(clstk_base);
-   VG_(threads)[tid_main].stack_size = VG_(client_rlimit_stack).rlim_cur;
+   VG_(threads)[tid_main].client_stack_highest_word 
+                                            = VG_(clstk_end) - sizeof(UInt);
+   VG_(threads)[tid_main].client_stack_szB  = VG_(client_rlimit_stack).rlim_cur;
 
    VG_(atfork)(NULL, NULL, sched_fork_cleanup);
 }

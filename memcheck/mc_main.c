@@ -2151,7 +2151,6 @@ void TL_(pre_clo_init)(void)
    VG_(needs_shadow_regs)         ();
    VG_(needs_command_line_options)();
    VG_(needs_client_requests)     ();
-   VG_(needs_extended_UCode)      ();
    VG_(needs_sanity_checks)       ();
    VG_(needs_shadow_memory)       ();
 

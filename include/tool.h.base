@@ -1094,9 +1094,6 @@ extern void VG_(needs_command_line_options) ( void );
 /* Tool defines its own client requests? */
 extern void VG_(needs_client_requests) ( void );
 
-/* Tool defines its own UInstrs? */
-extern void VG_(needs_extended_UCode) ( void );
-
 /* Tool does stuff before and/or after system calls? */
 extern void VG_(needs_syscall_wrapper) ( void );
 

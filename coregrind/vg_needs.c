@@ -54,7 +54,7 @@ VgNeeds VG_(needs) = {
    .shadow_regs          = False,
    .command_line_options = False,
    .client_requests      = False,
-   .extended_UCode       = False,
+   .no_longer_used_0     = False,
    .syscall_wrapper      = False,
    .sanity_checks        = False,
    .data_syms	         = False,
@@ -161,7 +161,6 @@ NEEDS(basic_block_discards)
 NEEDS(shadow_regs)
 NEEDS(command_line_options)
 NEEDS(client_requests)
-NEEDS(extended_UCode)
 NEEDS(syscall_wrapper)
 NEEDS(sanity_checks)
 NEEDS(data_syms)

@@ -388,7 +388,7 @@ typedef
       Bool shadow_regs;
       Bool command_line_options;
       Bool client_requests;
-      Bool extended_UCode;
+      Bool no_longer_used_0;     // for backwards compatibility
       Bool syscall_wrapper;
       Bool sanity_checks;
       Bool data_syms;

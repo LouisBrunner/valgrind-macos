@@ -127,14 +127,14 @@ static void do_nontrivial_clientreq ( ThreadId tid );
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
 
-static
-void pp_sched_status ( void )
+/* Print the scheduler status. */
+void VG_(pp_sched_status) ( void )
 {
    Int i; 
    VG_(printf)("\nsched status:\n"); 
    for (i = 0; i < VG_N_THREADS; i++) {
       if (vg_threads[i].status == VgTs_Empty) continue;
-      VG_(printf)("tid %d:  ", i);
+      VG_(printf)("\nThread %d: status = ", i);
       switch (vg_threads[i].status) {
          case VgTs_Runnable:   VG_(printf)("Runnable\n"); break;
          case VgTs_WaitFD:     VG_(printf)("WaitFD\n"); break;
@@ -144,6 +144,9 @@ void pp_sched_status ( void )
          case VgTs_Sleeping:   VG_(printf)("Sleeping\n"); break;
          default: VG_(printf)("???"); break;
       }
+      VG_(pp_ExeContext)( 
+         VG_(get_ExeContext)( False, vg_threads[i].m_eip, 
+                                     vg_threads[i].m_ebp ));
    }
    VG_(printf)("\n");
 }
@@ -992,7 +995,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             /* No runnable threads and no prospect of any appearing
                even if we wait for an arbitrary length of time.  In
                short, we have a deadlock. */
-	    pp_sched_status();
+	    VG_(pp_sched_status)();
             return VgSrc_Deadlock;
          }
 
@@ -1098,7 +1101,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
          VG_(message)(Vg_DebugMsg, "thread %d:  %ld bbs, event %s", 
                                    tid, VG_(bbs_done),
                                    name_of_sched_event(trc) );
-
+      vg_assert(VG_(bbs_done) < 1000000);
       /* Examine the thread's return code to figure out why it
          stopped, and handle requests. */
 

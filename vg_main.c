@@ -1152,6 +1152,7 @@ extern void VG_(unimplemented) ( Char* msg )
       "Valgrind has to exit now.  Sorry.  Bye!");
    VG_(message)(Vg_UserMsg,
       "");
+   VG_(pp_sched_status)();
    VG_(exit)(1);
 }
 

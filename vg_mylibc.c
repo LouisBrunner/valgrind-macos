@@ -843,6 +843,7 @@ void VG_(assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
 {
    VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                "valgrind", file, line, fn, expr );
+   VG_(pp_sched_status)();
    VG_(printf)("Please report this bug to me at: %s\n\n", EMAIL_ADDR);
    VG_(shutdown_logging)();
    VG_(exit)(1);
@@ -852,6 +853,7 @@ void VG_(panic) ( Char* str )
 {
    VG_(printf)("\nvalgrind: the `impossible' happened:\n   %s\n", str);
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
+   VG_(pp_sched_status)();
    VG_(printf)("Please report this bug to me at: %s\n\n", EMAIL_ADDR);
    VG_(shutdown_logging)();
    VG_(exit)(1);

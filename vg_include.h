@@ -550,6 +550,7 @@ extern VgSchedReturnCode VG_(scheduler) ( void );
 
 extern void VG_(scheduler_init) ( void );
 
+extern void VG_(pp_sched_status) ( void );
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 extern jmp_buf VG_(scheduler_jmpbuf);

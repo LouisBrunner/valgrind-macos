@@ -5908,6 +5908,34 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    return syscall_done;
 }
 
+static void restart_syscall(ThreadId tid)
+{
+   ThreadState* tst;
+   tst = VG_(get_ThreadState)(tid);
+
+   vg_assert(tst != NULL);
+   vg_assert(tst->status == VgTs_WaitSys);
+   vg_assert(tst->syscallno != -1);
+
+   tst->m_eax = tst->syscallno;
+   tst->m_eip -= 2;		/* sizeof(int $0x80) */
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      int $0x80 == CD 80 
+   */
+   {
+      UChar *p = (UChar *)tst->m_eip;
+      
+      if (p[0] != 0xcd || p[1] != 0x80)
+	 VG_(message)(Vg_DebugMsg, 
+		      "?! restarting over syscall at %p %02x %02x\n",
+		      tst->m_eip, p[0], p[1]);
+
+      vg_assert(p[0] == 0xcd && p[1] == 0x80);
+   }
+}
 
 void VG_(post_syscall) ( ThreadId tid, Bool restart )
 {
@@ -5954,7 +5982,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
       if (restart) {
 	 restarted = True;
-	 VG_(restart_syscall)(tid);
+	 restart_syscall(tid);
       } else
 	 tst->m_eax = -VKI_EINTR;
    } 
@@ -5982,35 +6010,6 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
    tst->syscallno = -1;		/* no current syscall */
 
    VGP_POPCC(VgpCoreSysWrap);
-}
-
-void VG_(restart_syscall)(ThreadId tid)
-{
-   ThreadState* tst;
-   tst = VG_(get_ThreadState)(tid);
-
-   vg_assert(tst != NULL);
-   vg_assert(tst->status == VgTs_WaitSys);
-   vg_assert(tst->syscallno != -1);
-
-   tst->m_eax = tst->syscallno;
-   tst->m_eip -= 2;		/* sizeof(int $0x80) */
-
-   /* Make sure our caller is actually sane, and we're really backing
-      back over a syscall.
-
-      int $0x80 == CD 80 
-   */
-   {
-      UChar *p = (UChar *)tst->m_eip;
-      
-      if (p[0] != 0xcd || p[1] != 0x80)
-	 VG_(message)(Vg_DebugMsg, 
-		      "?! restarting over syscall at %p %02x %02x\n",
-		      tst->m_eip, p[0], p[1]);
-
-      vg_assert(p[0] == 0xcd && p[1] == 0x80);
-   }
 }
 
 /*--------------------------------------------------------------------*/

@@ -42,6 +42,12 @@
 /*--- Basics                                               ---*/
 /*------------------------------------------------------------*/
 
+#define VG_IS_FLAG_SUBSET(set1,set2) \
+   (( ((FlagSet)set1) & ((FlagSet)set2) ) == ((FlagSet)set1) )
+
+#define VG_UNION_FLAG_SETS(set1,set2) \
+   ( ((FlagSet)set1) | ((FlagSet)set2) )
+
 /* This one is called by the core */
 UCodeBlock* VG_(alloc_UCodeBlock) ( void )
 {

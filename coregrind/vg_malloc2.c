@@ -298,28 +298,6 @@ void ensure_mm_init ( void )
 }
 
 
-/* Returns True if aa is inside any segment mmap'd /dev/zero
-   by our low-level memory manager. */
-Bool VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa )
-{
-   ArenaId ar;
-   Superblock* sb;
-
-   ensure_mm_init();
-
-   for (ar = 0; ar < VG_N_ARENAS; ar++) {
-      for (sb = vg_arena[ar].sblocks; sb; sb = sb->next) {
-	 Addr sb_first_word = (Addr)sb;
-	 Addr sb_last_word  
-            = (Addr)&(sb->payload_words[sb->n_payload_words-1]);
-	 if (aa >= sb_first_word && aa <= sb_last_word)
-            return True;
-      }
-   }
-   return False;
-}
-
-
 /*------------------------------------------------------------*/
 /*--- Superblock management stuff                          ---*/
 /*------------------------------------------------------------*/

@@ -1372,12 +1372,11 @@ void VG_(proxy_sanity)(void)
 }
 
 /* Get the PID/TID of the ProxyLWP. */
-Int VG_(proxy_id)(ThreadId tid)
+__attribute__((unused))
+static Int proxy_id(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   ProxyLWP *proxy = tst->proxy;
-
-   return proxy->lwp;
+   return tst->proxy->lwp;
 }
 
 /*--------------------------------------------------------------------*/

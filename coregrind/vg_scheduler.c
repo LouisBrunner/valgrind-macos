@@ -332,6 +332,19 @@ ThreadId VG_(get_current_or_recent_tid) ( void )
    return vg_tid_last_in_baseBlock;
 }
 
+static UInt insertDflag(UInt eflags, Int d)
+{
+   vg_assert(d == 1 || d == -1);
+   eflags &= ~EFlagD;
+   if (d < 0) eflags |= EFlagD;
+   return eflags;
+}
+
+static Int extractDflag(UInt eflags)
+{
+   return ( eflags & EFlagD ? -1 : 1 );
+}
+
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
 void VG_(load_thread_state) ( ThreadId tid )
@@ -359,7 +372,7 @@ void VG_(load_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_eflags)] 
       = VG_(threads)[tid].m_eflags & ~EFlagD;
    VG_(baseBlock)[VGOFF_(m_dflag)] 
-      = VG_(extractDflag)(VG_(threads)[tid].m_eflags);
+      = extractDflag(VG_(threads)[tid].m_eflags);
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
@@ -451,8 +464,8 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
    VG_(threads)[tid].m_eflags 
-      = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
-                         VG_(baseBlock)[VGOFF_(m_dflag)]);
+      = insertDflag(VG_(baseBlock)[VGOFF_(m_eflags)],
+                    VG_(baseBlock)[VGOFF_(m_dflag)]);
    VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
@@ -1048,8 +1061,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
                = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               create_translation_for( 
-                  tid, VG_(threads)[tid].m_eip ); 
+               create_translation_for( tid, VG_(threads)[tid].m_eip ); 
                trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
                if (trans_addr == (Addr)0)
                   VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");

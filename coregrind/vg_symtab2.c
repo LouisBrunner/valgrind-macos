@@ -830,6 +830,10 @@ VG_(intercept_demangle)(const Char* symbol, Char* result, Int nbytes)
    return True;
 }
 
+// Forward declaration
+static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
+			      Addr to_addr);
+
 static
 void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
 {
@@ -843,7 +847,7 @@ void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
    while(*func != ':') func--;
    *func = '\0';
 
-   VG_(add_redirect_addr)(lib, func+1, si->offset + sym->st_value);
+   add_redirect_addr(lib, func+1, si->offset + sym->st_value);
    VG_(free)(lib);
 }
 
@@ -1595,7 +1599,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    accuracy of error messages, but we need to do it in order to
    maintain the no-overlapping invariant.
 */
-void VG_(unload_symbols) ( Addr start, UInt length )
+static void unload_symbols ( Addr start, UInt length )
 {
    SegInfo *prev, *curr;
 
@@ -1633,7 +1637,7 @@ void VG_(symtab_decref)(SegInfo *si, Addr start, UInt len)
 {
    vg_assert(si->ref >= 1);
    if (--si->ref == 0)
-      VG_(unload_symbols)(si->start, si->size);
+      unload_symbols(si->start, si->size);
 }
 
 void VG_(symtab_incref)(SegInfo *si)
@@ -2449,8 +2453,8 @@ static Bool resolve_redir_allsegs(CodeRedirect *redir)
 }
 
 /* Redirect a lib/symbol reference to a function at lib/symbol */
-void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
-			   const Char *to_lib, const Char *to_sym)
+static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
+			     const Char *to_lib, const Char *to_sym)
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
 
@@ -2475,8 +2479,8 @@ void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
 }
 
 /* Redirect a lib/symbol reference to a function at lib/symbol */
-void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
-			    Addr to_addr)
+static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
+			      Addr to_addr)
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
 
@@ -2522,30 +2526,29 @@ void VG_(setup_code_redirect_table) ( void )
    Int i;
 
    for(i = 0; i < sizeof(redirects)/sizeof(*redirects); i++) {
-      VG_(add_redirect_sym)("soname:libc.so.6",		redirects[i].from,
-			    "soname:libpthread.so.0",	redirects[i].to);
+      add_redirect_sym("soname:libc.so.6",	 redirects[i].from,
+                       "soname:libpthread.so.0", redirects[i].to);
    }
 
    /* Redirect _dl_sysinfo_int80, which is glibc's default system call
       routine, to the routine in our trampoline page so that the
       special sysinfo unwind hack in vg_execontext.c will kick in.
    */
-   VG_(add_redirect_addr)("soname:ld-linux.so.2", "_dl_sysinfo_int80",
-                          VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+   add_redirect_addr("soname:ld-linux.so.2", "_dl_sysinfo_int80",
+                     VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
    
    /* Overenthusiastic use of PLT bypassing by the glibc people also
       means we need to patch the following functions to our own
       implementations of said, in mac_replace_strmem.c.
     */
-   VG_(add_redirect_sym)("soname:libc.so.6", "stpcpy",
-			 "*vgpreload_memcheck.so*", "stpcpy");
-   VG_(add_redirect_sym)("soname:libc.so.6", "strnlen",
-			 "*vgpreload_memcheck.so*", "strnlen");
-
-   VG_(add_redirect_sym)("soname:ld-linux.so.2", "stpcpy",
-			 "*vgpreload_memcheck.so*", "stpcpy");
-   VG_(add_redirect_sym)("soname:ld-linux.so.2", "strchr",
-			 "*vgpreload_memcheck.so*", "strchr");
+   add_redirect_sym("soname:libc.so.6", "stpcpy",
+                    "*vgpreload_memcheck.so*", "stpcpy");
+   add_redirect_sym("soname:libc.so.6", "strnlen",
+                    "*vgpreload_memcheck.so*", "strnlen");
+   add_redirect_sym("soname:ld-linux.so.2", "stpcpy",
+                    "*vgpreload_memcheck.so*", "stpcpy");
+   add_redirect_sym("soname:ld-linux.so.2", "strchr",
+                    "*vgpreload_memcheck.so*", "strchr");
 }
 
 /*------------------------------------------------------------*/

@@ -125,7 +125,6 @@ void VG_(sanity_check_needs) ( void)
    }
 
 #undef CHECK_NOT
-#undef INVALID_Bool
 }
 
 /*--------------------------------------------------------------------*/

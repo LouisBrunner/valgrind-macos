@@ -2172,7 +2172,8 @@ static void emit_ret ( void )
 
 /* Predicate used in sanity checks elsewhere - returns true if any
    jump-site is an actual chained jump */
-Bool VG_(is_chained_jumpsite)(Addr a)
+__attribute__((unused))
+static Bool is_chained_jumpsite(Addr a)
 {
    UChar *cp = (UChar *)a;
 
@@ -2192,7 +2193,7 @@ Bool is_fresh_jumpsite(UChar *cp)
 
 /* Predicate used in sanity checks elsewhere - returns true if all
    jump-sites are calls to VG_(patch_me) */
-Bool VG_(is_unchained_jumpsite)(Addr a)
+static Bool is_unchained_jumpsite(Addr a)
 {
    UChar *cp = (UChar *)a;
    Int delta = ((Addr)&VG_(patch_me)) - (a + VG_PATCHME_CALLSZ);
@@ -2232,7 +2233,7 @@ void VG_(unchain_jumpsite)(Addr a)
    Int delta = ((Addr)&VG_(patch_me)) - (a + VG_PATCHME_CALLSZ);
    UChar *cp = (UChar *)a;
 
-   if (VG_(is_unchained_jumpsite)(a))
+   if (is_unchained_jumpsite(a))
       return;			/* don't write unnecessarily */
 
    if (!is_fresh_jumpsite(cp))

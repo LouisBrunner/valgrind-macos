@@ -116,11 +116,6 @@ vki_rlimit VG_(client_rlimit_data);
    SSE/fxsave/fxrestor features.  */
 Bool VG_(have_ssestate);
 
-/* Indicates presence, and holds address of client's sysinfo page, a
-   feature of some modern kernels used to provide vsyscalls, etc. */
-Bool VG_(sysinfo_page_exists) = False;
-Addr VG_(sysinfo_page_addr) = 0;
-
 /* stage1 (main) executable */
 Int  VG_(vgexecfd) = -1;
 
@@ -1675,9 +1670,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    for (auxp = client_auxv; auxp[0] != VKI_AT_NULL; auxp += 2) {
       switch(auxp[0]) {
       case VKI_AT_SYSINFO:
-	 VG_(sysinfo_page_exists) = True;
 	 auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
-	 VG_(sysinfo_page_addr) = auxp[1];
 	 break;
       }
    } 
@@ -2172,29 +2165,6 @@ UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 /* Words. */
 static Int baB_off = 0;
 
-
-UInt VG_(insertDflag)(UInt eflags, Int d)
-{
-   vg_assert(d == 1 || d == -1);
-   eflags &= ~EFlagD;
-
-   if (d < 0)
-      eflags |= EFlagD;
-
-   return eflags;
-}
-
-Int VG_(extractDflag)(UInt eflags)
-{
-   Int ret;
-
-   if (eflags & EFlagD)
-      ret = -1;
-   else
-      ret = 1;
-
-   return ret;
-}
 
 /* Returns the offset, in words. */
 static Int alloc_BaB ( Int words )
@@ -3074,8 +3044,7 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    switch (src) {
       case VgSrc_ExitSyscall: /* the normal way out */
-         vg_assert(VG_(last_run_tid) > 0 
-                   && VG_(last_run_tid) < VG_N_THREADS);
+         vg_assert(VG_(last_run_tid) > 0 && VG_(last_run_tid) < VG_N_THREADS);
 	 VG_(proxy_shutdown)();
 
          /* The thread's %EBX at the time it did __NR_exit() will hold

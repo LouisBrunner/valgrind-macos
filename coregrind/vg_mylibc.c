@@ -334,40 +334,11 @@ Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
    return VG_(is_kerror)(res) ? -1 : res;
 }
 
-/* Returns -1 on error. */
-Int VG_(select)( Int n, 
-                 vki_fd_set* readfds, 
-                 vki_fd_set* writefds, 
-                 vki_fd_set* exceptfds, 
-                 struct vki_timeval * timeout )
-{
-   Int res;
-   UInt args[5];
-   args[0] = n;
-   args[1] = (UInt)readfds;
-   args[2] = (UInt)writefds;
-   args[3] = (UInt)exceptfds;
-   args[4] = (UInt)timeout;
-   res = VG_(do_syscall)(__NR_select, (UInt)(&(args[0])) );
-   return VG_(is_kerror)(res) ? -1 : res;
-}
-
 Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 {
    Int res = VG_(do_syscall)(__NR_poll, ufds, nfds, timeout);
 
    return res;
-}
-
-/* Returns -1 on error, 0 if ok, 1 if interrupted. */
-Int VG_(nanosleep)( const struct vki_timespec *req, 
-                    struct vki_timespec *rem )
-{
-   Int res;
-   res = VG_(do_syscall)(__NR_nanosleep, (UInt)req, (UInt)rem);
-   if (res == -VKI_EINVAL) return -1;
-   if (res == -VKI_EINTR)  return 1;
-   return 0;
 }
 
 
@@ -1146,7 +1117,6 @@ static void report_and_quit ( const Char* report )
                report);
    VG_(printf)("In the bug report, send all the above text, the valgrind\n");
    VG_(printf)("version, and what Linux distro you are using.  Thanks.\n\n");
-   VG_(shutdown_logging)();
    VG_(exit)(1);
 }
 
@@ -1350,7 +1320,7 @@ Bool VG_(getcwd_alloc) ( Char** out )
    ------------------------------------------------------------------ */
 
 /* clone the environment */
-Char **VG_(env_clone) ( Char **oldenv )
+static Char **env_clone ( Char **oldenv )
 {
    Char **oldenvp;
    Char **newenvp;
@@ -1432,24 +1402,19 @@ Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
    return oldenv;
 }
 
-Char* VG_(env_getenv) ( Char **env, Char* varname )
+/* We do getenv without libc's help by snooping around in
+   VG_(client_envp) as determined at startup time. */
+Char *VG_(getenv)(Char *varname)
 {
    Int i, n;
    n = VG_(strlen)(varname);
-   for (i = 0; env[i] != NULL; i++) {
-      Char* s = env[i];
+   for (i = 0; VG_(client_envp)[i] != NULL; i++) {
+      Char* s = VG_(client_envp)[i];
       if (VG_(strncmp)(varname, s, n) == 0 && s[n] == '=') {
          return & s[n+1];
       }
    }
    return NULL;
-}
-
-/* We do getenv without libc's help by snooping around in
-   VG_(client_envp) as determined at startup time. */
-Char *VG_(getenv)(Char *varname)
-{
-   return VG_(env_getenv)(VG_(client_envp), varname);
 }
 
 /* Support for getrlimit. */
@@ -1547,7 +1512,7 @@ Int VG_(system) ( Char* cmd )
          Char* ld_library_path_str = NULL;
          Char* buf;
 
-         envp = VG_(env_clone)(VG_(client_envp));
+         envp = env_clone(VG_(client_envp));
          
          for (i = 0; envp[i] != NULL; i++) {
             if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)

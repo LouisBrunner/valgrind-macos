@@ -140,15 +140,6 @@
 
 
 /* ---------------------------------------------------------------------
-   Basic types
-   ------------------------------------------------------------------ */
-
-/* Just pray that gcc's constant folding works properly ... */
-#define BITS(bit7,bit6,bit5,bit4,bit3,bit2,bit1,bit0)               \
-   ( ((bit7) << 7) | ((bit6) << 6) | ((bit5) << 5) | ((bit4) << 4)  \
-     | ((bit3) << 3) | ((bit2) << 2) | ((bit1) << 1) | (bit0))
-
-/* ---------------------------------------------------------------------
    Command-line-settable options
    ------------------------------------------------------------------ */
 
@@ -278,12 +269,8 @@ extern Bool VG_(clo_pointercheck);
 extern void VG_(intercept_libc_freeres_wrapper)(Addr);
 
 /* ---------------------------------------------------------------------
-   Debugging and profiling stuff
+   Profiling stuff
    ------------------------------------------------------------------ */
-
-/* Create a log file into which messages can be dumped. */
-extern void VG_(startup_logging) ( void );
-extern void VG_(shutdown_logging)( void );
 
 extern void VGP_(init_profiling) ( void );
 extern void VGP_(done_profiling) ( void );
@@ -323,7 +310,6 @@ typedef
    struct {
       Bool libc_freeres;
       Bool core_errors;
-
       Bool skin_errors;
       Bool basic_block_discards;
       Bool shadow_regs;
@@ -397,11 +383,6 @@ extern void  VG_(mallocSanityCheckAll)   ( void );
 
 extern void  VG_(show_all_arena_stats) ( void );
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
-
-/* Returns True if aa is inside any block mmap'd /dev/zero
-   by our low-level memory manager. */
-extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_intercept.c
@@ -629,12 +610,9 @@ typedef struct _LDT_ENTRY {
 #define VG_LDT_ENTRY_SIZE  8
 
 /* Alloc & copy, and dealloc. */
-extern VgLdtEntry* 
-         VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt );
-extern void       
-         VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
-extern void       
-         VG_(clear_TLS_for_thread) ( VgLdtEntry* tls );
+extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
+extern void        VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
+extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
 
 /* Simulate the modify_ldt syscall. */
 extern Int VG_(sys_modify_ldt) ( ThreadId tid,
@@ -1082,18 +1060,13 @@ extern void VG_(route_signals) ( void );
 /* Fake system calls for signal handling. */
 extern void VG_(do__NR_sigaltstack)   ( ThreadId tid );
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
-extern void VG_(do__NR_sigprocmask)   ( ThreadId tid,
-                                        Int how, 
+extern void VG_(do__NR_sigprocmask)   ( ThreadId tid, Int how, 
                                         vki_ksigset_t* set,
                                         vki_ksigset_t* oldset );
-extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
-                                               Int how, 
+extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how, 
                                                vki_ksigset_t* set,
                                                vki_ksigset_t* oldset );
-extern void VG_(send_signal_to_thread) ( ThreadId thread,
-                                         Int signo );
-
-extern void VG_(do_sigpending) ( ThreadId tid, vki_ksigset_t* set );
+extern void VG_(send_signal_to_thread) ( ThreadId thread, Int signo );
 
 
 /* Modify the current thread's state once we have detected it is
@@ -1137,14 +1110,7 @@ extern void  VG_(core_panic)      ( Char* str );
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
-extern Int VG_(select)( Int n, 
-                        vki_fd_set* readfds, 
-                        vki_fd_set* writefds, 
-                        vki_fd_set* exceptfds, 
-                        struct vki_timeval * timeout );
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
-extern Int VG_(nanosleep)( const struct vki_timespec *req, 
-                           struct vki_timespec *rem );
 
 /* system/mman.h */
 extern void* VG_(mmap)( void* start, UInt length, UInt prot, UInt flags,
@@ -1162,8 +1128,6 @@ extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );
 
 /* Environment manipulations */
-extern Char **VG_(env_clone) ( Char **oldenv );
-extern Char* VG_(env_getenv) ( Char **env, Char* varname );
 extern Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val );
 extern void  VG_(env_unsetenv) ( Char **env, const Char *varname );
 
@@ -1175,17 +1139,6 @@ extern void  VG_(env_unsetenv) ( Char **env, const Char *varname );
    use. */
 extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
 
-
-/* ---------------------------------------------------------------------
-   Definitions for the JITter (vg_translate.c, vg_to_ucode.c,
-   vg_from_ucode.c).
-   ------------------------------------------------------------------ */
-
-#define VG_IS_FLAG_SUBSET(set1,set2) \
-   (( ((FlagSet)set1) & ((FlagSet)set2) ) == ((FlagSet)set1) )
-
-#define VG_UNION_FLAG_SETS(set1,set2) \
-   ( ((FlagSet)set1) | ((FlagSet)set2) )
 
 /* ---------------------------------------------------------------------
    Exports of vg_demangle.c
@@ -1204,8 +1157,6 @@ extern void   VG_(print_UInstr_histogram) ( void );
 
 extern void   VG_(unchain_jumpsite)	  ( Addr jumpsite );
 extern Addr   VG_(get_jmp_dest)           ( Addr jumpsite );
-extern Bool   VG_(is_unchained_jumpsite)  ( Addr jumpsite );
-extern Bool   VG_(is_chained_jumpsite)    ( Addr jumpsite );
 
 /* ---------------------------------------------------------------------
    Exports of vg_to_ucode.c
@@ -1376,8 +1327,8 @@ extern void VG_(read_procselfmaps) ( void );
 extern 
 void VG_(parse_procselfmaps) (
    void (*record_mapping)( Addr addr, UInt len, Char rr, Char ww, Char xx, 
-			   UInt dev, UInt ino, ULong foff, const UChar *filename )
-);
+			   UInt dev, UInt ino, ULong foff,
+                           const UChar *filename ) );
 
 
 /* ---------------------------------------------------------------------
@@ -1389,7 +1340,6 @@ typedef struct _Segment Segment;
 extern Bool VG_(is_object_file)   ( const void *hdr );
 extern void VG_(mini_stack_dump)  ( Addr eips[], UInt n_eips );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
-extern void VG_(unload_symbols)   ( Addr start, UInt length );
 extern void VG_(symtab_incref)	  ( SegInfo * );
 extern void VG_(symtab_decref)	  ( SegInfo *, Addr a, UInt len );
 
@@ -1399,11 +1349,7 @@ extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 extern void VG_(setup_code_redirect_table) ( void );
 
 /* Redirection machinery */
-extern void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
-				  const Char *to_lib, const Char *to_sym);
-extern void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
-				   Addr to_addr);
-extern Addr VG_(code_redirect)	  (Addr orig);
+extern Addr VG_(code_redirect) ( Addr orig );
 
 /* ---------------------------------------------------------------------
    Exports of vg_main.c
@@ -1463,22 +1409,8 @@ extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 extern Int    VG_(vg_argc);
 extern Char **VG_(vg_argv);
 
-/* Indicates presence, and holds address of client's sysinfo page, a
-   feature of some modern kernels used to provide vsyscalls, etc. */
-extern Bool VG_(sysinfo_page_exists);
-extern Addr VG_(sysinfo_page_addr);
-
-/* Walk through a colon separated list variable, removing entries
-   which match pattern. */
-extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
-
 /* Something of a function looking for a home ... start up debugger. */
 extern void VG_(start_debugger) ( Int tid );
-
-/* VG_(bbs_done) in include/vg_skin.h */
-
-/* 64-bit counter for the number of bbs to go before a debug exit. */
-extern ULong VG_(bbs_to_go);
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
@@ -1537,10 +1469,6 @@ extern UInt VG_(sanity_slow_count);
 extern UInt VG_(num_scheduling_events_MINOR);
 extern UInt VG_(num_scheduling_events_MAJOR);
 
-/* Insert and extract the D flag from eflags */
-UInt VG_(insertDflag)(UInt eflags, Int d);
-Int VG_(extractDflag)(UInt eflags);
-
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
    ------------------------------------------------------------------ */
@@ -1550,21 +1478,21 @@ Int VG_(extractDflag)(UInt eflags);
 
    We try to encode everything we know about a particular segment here.
 */
-#define SF_FIXED	(1 <<  0) /* client asked for MAP_FIXED			*/
-#define SF_SHARED	(1 <<  1) /* shared					*/
-#define SF_SHM		(1 <<  2) /* SYSV SHM (also SF_SHARED)			*/
-#define SF_MMAP		(1 <<  3) /* mmap memory				*/
-#define SF_FILE		(1 <<  4) /* mapping is backed by a file		*/
-#define SF_STACK	(1 <<  5) /* is a stack					*/
-#define SF_GROWDOWN	(1 <<  6) /* segment grows down				*/
-#define SF_GROWUP	(1 <<  7) /* segment grows up				*/
-#define SF_EXEC		(1 <<  8) /* segment created by exec			*/
-#define SF_DYNLIB	(1 <<  9) /* mapped from dynamic library		*/
-#define SF_NOSYMS	(1 << 10) /* don't load syms, even if present           */
-#define SF_BRK		(1 << 11) /* brk segment                                */
-#define SF_CORE		(1 << 12) /* allocated by core on behalf of the client  */
-#define SF_VALGRIND	(1 << 13) /* a valgrind-internal mapping - not in client*/
-#define SF_CODE		(1 << 14) /* segment contains cached code               */
+#define SF_FIXED    (1 <<  0) // client asked for MAP_FIXED
+#define SF_SHARED   (1 <<  1) // shared
+#define SF_SHM      (1 <<  2) // SYSV SHM (also SF_SHARED)
+#define SF_MMAP     (1 <<  3) // mmap memory
+#define SF_FILE     (1 <<  4) // mapping is backed by a file
+#define SF_STACK    (1 <<  5) // is a stack
+#define SF_GROWDOWN (1 <<  6) // segment grows down
+#define SF_GROWUP   (1 <<  7) // segment grows up
+#define SF_EXEC     (1 <<  8) // segment created by exec
+#define SF_DYNLIB   (1 <<  9) // mapped from dynamic library
+#define SF_NOSYMS   (1 << 10) // don't load syms, even if present
+#define SF_BRK      (1 << 11) // brk segment
+#define SF_CORE     (1 << 12) // allocated by core on behalf of the client
+#define SF_VALGRIND (1 << 13) // a valgrind-internal mapping - not in client
+#define SF_CODE     (1 << 14) // segment contains cached code
 
 struct _Segment {
    UInt		prot;		/* VKI_PROT_*				*/
@@ -1628,9 +1556,9 @@ extern void VG_(proxy_abort_syscall) ( ThreadId tid );
 extern void VG_(proxy_waitsig)  ( void );
 extern void VG_(proxy_wait_sys)	(ThreadId tid, Bool restart);
 
-extern void VG_(proxy_shutdown) ( void );	/* shut down the syscall workers */
-extern Int  VG_(proxy_resfd)    ( void );	/* FD something can select on to know 
-						   a syscall finished */
+extern void VG_(proxy_shutdown) ( void ); // shut down the syscall workers
+extern Int  VG_(proxy_resfd)    ( void ); // FD something can select on to know 
+                                          //  a syscall finished
 
 /* Sanity-check the whole proxy-LWP machinery */
 void VG_(proxy_sanity)(void);
@@ -1641,10 +1569,6 @@ __attribute__ ((__noreturn__))
 extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo, 
 				  const struct vki_sigcontext *sigcontext );
 
-/* Get the PID/TID of the ProxyLWP. */
-extern Int VG_(proxy_id)(ThreadId tid);
-
-
 /* ---------------------------------------------------------------------
    Exports of vg_syscalls.c
    ------------------------------------------------------------------ */
@@ -1653,7 +1577,6 @@ extern Char *VG_(resolve_filename)(Int fd);
 
 extern Bool VG_(pre_syscall) ( ThreadId tid );
 extern void VG_(post_syscall)( ThreadId tid, Bool restart );
-extern void VG_(restart_syscall) ( ThreadId tid );
 
 extern Bool VG_(is_kerror) ( Int res );
 
@@ -1665,14 +1588,16 @@ extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 extern void VG_(init_preopened_fds) ( void );
 extern void VG_(fd_stats) ( void );
 
+/* Walk through a colon separated list variable, removing entries
+   which match pattern. */
+extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
+
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c
    ------------------------------------------------------------------ */
 
 /* The fast-cache for tt-lookup. */
 extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
-
-extern void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used );
 
 extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                                     Addr trans_addr, Int trans_size,
@@ -1684,8 +1609,6 @@ extern void VG_(init_tt_tc) ( void );
 
 extern void VG_(sanity_check_tc_tt) ( void );
 extern Addr VG_(search_transtab) ( Addr original_addr );
-
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscall.S

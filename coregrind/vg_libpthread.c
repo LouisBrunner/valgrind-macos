@@ -1347,6 +1347,41 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
 }
 
 
+int __pthread_mutex_timedlock(pthread_mutex_t *mutex,
+                              const struct  timespec *abstime )
+{
+   int res;
+   unsigned int ms_now, ms_end;
+   struct  timeval timeval_now;
+   unsigned long long int ull_ms_now_after_1970;
+   unsigned long long int ull_ms_end_after_1970;
+   vg_pthread_mutex_t* vg_mutex;
+   CONVERT(mutex, mutex, vg_mutex);
+   
+   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__READ_MILLISECOND_TIMER,
+                           0, 0, 0, 0);
+   my_assert(ms_now != 0xFFFFFFFF);
+   res = gettimeofday(&timeval_now, NULL);
+   my_assert(res == 0);
+
+   ull_ms_now_after_1970 
+      = 1000ULL * ((unsigned long long int)(timeval_now.tv_sec))
+        + ((unsigned long long int)(timeval_now.tv_usec / 1000));
+   ull_ms_end_after_1970
+      = 1000ULL * ((unsigned long long int)(abstime->tv_sec))
+        + ((unsigned long long int)(abstime->tv_nsec / 1000000));
+   if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
+      ull_ms_end_after_1970 = ull_ms_now_after_1970;
+   ms_end 
+      = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_MUTEX_TIMEDLOCK,
+                           vg_mutex, ms_end, 0, 0);
+   return res;
+}
+
+
 int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
@@ -3376,6 +3411,7 @@ int __libc_allocate_rtsig (int high)
    B'stard.
    ------------------------------------------------------------------ */
 strong_alias(__pthread_mutex_lock, pthread_mutex_lock)
+strong_alias(__pthread_mutex_timedlock, pthread_mutex_timedlock)
 strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
 strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
 strong_alias(__pthread_mutexattr_init, pthread_mutexattr_init)

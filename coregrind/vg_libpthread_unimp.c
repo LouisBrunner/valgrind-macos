@@ -136,7 +136,7 @@ void pthread_getcpuclockid ( void )  { unimp("pthread_getcpuclockid"); }
 //void pthread_mutex_destroy ( void )  { unimp("pthread_mutex_destroy"); }
 //void pthread_mutex_init ( void )  { unimp("pthread_mutex_init"); }
 //void pthread_mutex_lock ( void )  { unimp("pthread_mutex_lock"); }
-void pthread_mutex_timedlock ( void )  { unimp("pthread_mutex_timedlock"); }
+//void pthread_mutex_timedlock ( void )  { unimp("pthread_mutex_timedlock"); }
 //void pthread_mutex_trylock ( void )  { unimp("pthread_mutex_trylock"); }
 //void pthread_mutex_unlock ( void )  { unimp("pthread_mutex_unlock"); }
 //void pthread_mutexattr_destroy ( void )  { unimp("pthread_mutexattr_destroy"); }

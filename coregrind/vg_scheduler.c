@@ -96,6 +96,7 @@ static Addr __libc_freeres_wrapper;
 /* Forwards */
 static void do_client_request ( ThreadId tid, UInt* args );
 static void scheduler_sanity ( void );
+static void do_pthread_mutex_timedlock_TIMEOUT ( ThreadId tid );
 static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
 static void maybe_rendezvous_joiners_and_joinees ( void );
 
@@ -667,6 +668,10 @@ void idle ( void )
 	       tst->status = VgTs_Runnable;
 	       break;
 
+	    case VgTs_WaitMX:
+	       do_pthread_mutex_timedlock_TIMEOUT(tst->tid);
+	       break;
+
 	    case VgTs_WaitCV:
 	       do_pthread_cond_timedwait_TIMEOUT(tst->tid);
 	       break;
@@ -766,7 +771,9 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             if (tid_next >= VG_N_THREADS) tid_next = 1;
             if (VG_(threads)[tid_next].status == VgTs_Sleeping
                 || VG_(threads)[tid_next].status == VgTs_WaitSys
-                || (VG_(threads)[tid_next].status == VgTs_WaitCV 
+                || (VG_(threads)[tid_next].status == VgTs_WaitMX
+                    && VG_(threads)[tid_next].awaken_at != 0xFFFFFFFF)
+                || (VG_(threads)[tid_next].status == VgTs_WaitCV
                     && VG_(threads)[tid_next].awaken_at != 0xFFFFFFFF))
                n_in_bounded_wait ++;
 	    if (VG_(threads)[tid_next].status != VgTs_Empty)
@@ -1884,6 +1891,29 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 */
 
 /* Helper fns ... */
+static 
+void do_pthread_mutex_timedlock_TIMEOUT ( ThreadId tid )
+{
+   Char             msg_buf[100];
+   vg_pthread_mutex_t* mx;
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_WaitMX
+             && VG_(threads)[tid].awaken_at != 0xFFFFFFFF);
+   mx = VG_(threads)[tid].associated_mx;
+   vg_assert(mx != NULL);
+
+   VG_(threads)[tid].status        = VgTs_Runnable;
+   SET_PTHREQ_RETVAL(tid, ETIMEDOUT);  /* pthread_mutex_lock return value */
+   VG_(threads)[tid].associated_mx = NULL;
+
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, "pthread_mutex_timedlock  mx %p: TIMEOUT", mx);
+      print_pthread_event(tid, msg_buf);
+   }
+}
+
+
 static
 void release_one_thread_waiting_on_mutex ( vg_pthread_mutex_t* mutex, 
                                            Char* caller )
@@ -1932,12 +1962,16 @@ void release_one_thread_waiting_on_mutex ( vg_pthread_mutex_t* mutex,
 static
 void do_pthread_mutex_lock( ThreadId tid, 
                             Bool is_trylock, 
-                            vg_pthread_mutex_t* mutex )
+                            vg_pthread_mutex_t* mutex,
+                            UInt ms_end )
 {
    Char  msg_buf[100];
    Char* caller
       = is_trylock ? "pthread_mutex_trylock"
                    : "pthread_mutex_lock   ";
+
+   /* If ms_end == 0xFFFFFFFF, wait forever (no timeout).  Otherwise,
+      ms_end is the ending millisecond. */
 
    if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "%s    mx %p ...", caller, mutex );
@@ -1985,7 +2019,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       }	 
 
       /* Someone has it already. */
-      if ((ThreadId)mutex->__vg_m_owner == tid) {
+      if ((ThreadId)mutex->__vg_m_owner == tid && ms_end == 0xFFFFFFFF) {
          /* It's locked -- by me! */
          if (mutex->__vg_m_kind == PTHREAD_MUTEX_RECURSIVE_NP) {
             /* return 0 (success). */
@@ -2014,6 +2048,9 @@ void do_pthread_mutex_lock( ThreadId tid,
 
             VG_(threads)[tid].status        = VgTs_WaitMX;
             VG_(threads)[tid].associated_mx = mutex;
+            VG_(threads)[tid].awaken_at     = ms_end;
+            if (ms_end != 0xFFFFFFFF)
+               add_timeout(tid, ms_end);
             SET_PTHREQ_RETVAL(tid, 0); /* pth_mx_lock success value */
             if (VG_(clo_trace_pthread_level) >= 1) {
                VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
@@ -2910,11 +2947,15 @@ void do_client_request ( ThreadId tid, UInt* arg )
       /* Some of these may make thread tid non-runnable, but the
          scheduler checks for that on return from this function. */
       case VG_USERREQ__PTHREAD_MUTEX_LOCK:
-         do_pthread_mutex_lock( tid, False, (void *)(arg[1]) );
+         do_pthread_mutex_lock( tid, False, (void *)(arg[1]), 0xFFFFFFFF );
+         break;
+
+      case VG_USERREQ__PTHREAD_MUTEX_TIMEDLOCK:
+         do_pthread_mutex_lock( tid, False, (void *)(arg[1]), arg[2] );
          break;
 
       case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
-         do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
+         do_pthread_mutex_lock( tid, True, (void *)(arg[1]), 0xFFFFFFFF );
          break;
 
       case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
@@ -3218,6 +3259,7 @@ void scheduler_sanity ( void )
       */
       vg_assert(VG_(threads)[top->tid].awaken_at != top->time ||
 		VG_(threads)[top->tid].status == VgTs_Sleeping ||
+		VG_(threads)[top->tid].status == VgTs_WaitMX ||
 		VG_(threads)[top->tid].status == VgTs_WaitCV);
 #endif
 
@@ -3242,7 +3284,8 @@ void scheduler_sanity ( void )
          /* 1 */ vg_assert(mx != NULL);
 	 /* 2 */ vg_assert(mx->__vg_m_count > 0);
          /* 3 */ vg_assert(VG_(is_valid_tid)((ThreadId)mx->__vg_m_owner));
-         /* 4 */ vg_assert((UInt)i != (ThreadId)mx->__vg_m_owner); 
+         /* 4 */ vg_assert((UInt)i != (ThreadId)mx->__vg_m_owner ||
+                           VG_(threads)[i].awaken_at != 0xFFFFFFFF); 
       } else 
       if (VG_(threads)[i].status == VgTs_WaitCV) {
          vg_assert(cv != NULL);

@@ -1002,6 +1002,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	 E1A006E0                   mov  r0, r0, ror #13
 	 E1A009E0                   mov  r0, r0, ror #19
       */
+      /* I suspect these will have to be turned the other way round to
+	 work on little-endian arm. */
       if (code[0] == 0xE1A00EE0 &&
           code[1] == 0xE1A001E0 &&
           code[2] == 0xE1A00DE0 &&

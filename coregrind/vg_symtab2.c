@@ -865,7 +865,7 @@ void handle_intercept( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
    while(*func != ':') func--;
    *func = '\0';
 
-   VG_(add_redirect_addr)(lib, func+1, si->offset + sym->st_value);
+   VG_(add_redirect_sym_to_addr)(lib, func+1, si->offset + sym->st_value);
    VG_(arena_free)(VG_AR_SYMTAB, lib);
 }
 

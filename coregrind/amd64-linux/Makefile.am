@@ -11,6 +11,7 @@ noinst_LIBRARIES = libplatform.a
 
 
 libplatform_a_SOURCES = \
+	core_platform.c \
 	ldt.c \
 	syscall.S \
 	syscalls.c

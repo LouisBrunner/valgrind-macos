@@ -915,8 +915,10 @@ extern Bool VG_(resolve_redir_allsegs)(CodeRedirect *redir);
 /* Redirection machinery */
 extern Addr VG_(code_redirect) ( Addr orig );
 
-extern void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
-				   Addr to_addr);
+extern void VG_(add_redirect_sym_to_addr)(const Char *from_lib,
+					  const Char *from_sym,
+					  Addr to_addr);
+extern void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr);
 extern void VG_(resolve_seg_redirs)(SegInfo *si);
 extern Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si);
 
@@ -1777,6 +1779,10 @@ extern void VGA_(interrupted_syscall)(ThreadId tid,
                                       struct vki_ucontext *uc,
                                       Bool restart);
 
+/*
+   Do any platform specific redirects.
+ */
+extern void VGP_(setup_redirects)(void);
 
 ///* ---------------------------------------------------------------------
 //   Thread modelling

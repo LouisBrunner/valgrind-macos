@@ -132,6 +132,76 @@ Bool VG_(is_resolved)(const CodeRedirect *redir)
    return from_resolved(redir) && to_resolved(redir);
 }
 
+static void add_resolved(CodeRedirect *redir)
+{
+   switch(redir->type) {
+   case R_REDIRECT:
+      if (VG_(clo_trace_redir)) {
+         VG_(message)(Vg_DebugMsg, "  redir resolved (%s:%s=%p -> ",
+                      redir->from_lib, redir->from_sym, redir->from_addr);
+         VG_(message)(Vg_DebugMsg, "                  %s:%s=%p)",
+                      redir->to_lib, redir->to_sym, redir->to_addr);
+      }
+
+      if (VG_(search_transtab)(NULL, (Addr64)redir->from_addr, False)) {
+         /* For some given (from, to) redir, the "from" function got
+            called before the .so containing "to" became available.  We
+            know this because there is already a translation for the
+            entry point of the original "from".  So the redirect will
+            never actually take effect unless that translation is
+            discarded.  
+
+            Note, we only really need to discard the first bb of the
+            old entry point, and so we avoid the problem of having to
+            figure out how big that bb was -- since it is at least 1
+            byte of original code, we can just pass 1 as the original
+            size to invalidate_translations() and it will indeed get
+            rid of the translation. 
+
+            Note, this is potentially expensive -- discarding
+            translations causes complete unchaining.  
+         */
+         if (VG_(clo_verbosity) > 2 && VG_(clo_trace_redir)) {
+            VG_(message)(Vg_UserMsg,   
+                         "Discarding translation due to redirect of already called function" );
+            VG_(message)(Vg_UserMsg,
+                         "   %s (%p -> %p)",
+                         redir->from_sym, redir->from_addr, redir->to_addr );
+         }
+         VG_(discard_translations)((Addr64)redir->from_addr, 1);
+      }
+
+      {
+         CodeRedirect *r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &redir->from_addr);
+
+         if (r == NULL)
+            VG_(SkipList_Insert)(&sk_resolved_redir, redir);
+         else {
+            /* XXX leak redir */
+            if (VG_(clo_trace_redir))
+               VG_(message)(Vg_DebugMsg, "  redir %s:%s:%p->%s:%s:%p duplicated\n",
+                            redir->from_lib, redir->from_sym, redir->from_addr,
+                            redir->to_lib, redir->to_sym, redir->to_addr);
+         }
+      }
+      break;
+
+   case R_WRAPPER:
+      if (VG_(clo_trace_redir)) {
+         VG_(message)(Vg_DebugMsg, "  wrapper resolved (%s:%s=%p -> wrapper)",
+                      redir->from_lib, redir->from_sym, redir->from_addr);
+      }
+
+      /* XXX redir leaked */
+      //VG_(wrap_function)(redir->from_addr, redir->wrapper);
+      break;
+
+   case R_CLIENT_WRAPPER:
+      VG_(core_panic)("not implemented");
+      break;
+   }
+}
+
 /* Resolve a redir using si if possible, and add it to the resolved
    list */
 Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si)
@@ -186,74 +256,7 @@ Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si)
 		  redir->from_lib, redir->from_sym, redir->from_addr, 
 		  redir->to_lib, redir->to_sym, redir->to_addr);
 
-   if (resolved) {
-      switch(redir->type) {
-      case R_REDIRECT:
-	 if (VG_(clo_trace_redir)) {
-	    VG_(message)(Vg_DebugMsg, "  redir resolved (%s:%s=%p -> ",
-			 redir->from_lib, redir->from_sym, redir->from_addr);
-	    VG_(message)(Vg_DebugMsg, "                  %s:%s=%p)",
-			 redir->to_lib, redir->to_sym, redir->to_addr);
-	 }
-
-	 if (VG_(search_transtab)(NULL, (Addr64)redir->from_addr, False)) {
-	    /* For some given (from, to) redir, the "from" function got
-	       called before the .so containing "to" became available.  We
-	       know this because there is already a translation for the
-	       entry point of the original "from".  So the redirect will
-	       never actually take effect unless that translation is
-	       discarded.  
-
-	       Note, we only really need to discard the first bb of the
-	       old entry point, and so we avoid the problem of having to
-	       figure out how big that bb was -- since it is at least 1
-	       byte of original code, we can just pass 1 as the original
-	       size to invalidate_translations() and it will indeed get
-	       rid of the translation. 
-
-	       Note, this is potentially expensive -- discarding
-	       translations causes complete unchaining.  
-	    */
-	    if (VG_(clo_verbosity) > 2 && VG_(clo_trace_redir)) {
-	       VG_(message)(Vg_UserMsg,   
-			    "Discarding translation due to redirect of already called function" );
-	       VG_(message)(Vg_UserMsg,
-			    "   %s (%p -> %p)",
-			    redir->from_sym, redir->from_addr, redir->to_addr );
-	    }
-	    VG_(discard_translations)((Addr64)redir->from_addr, 1);
-	 }
-
-	 {
-	    CodeRedirect *r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &redir->from_addr);
-
-	    if (r == NULL)
-	       VG_(SkipList_Insert)(&sk_resolved_redir, redir);
-	    else {
-	       /* XXX leak redir */
-	       if (VG_(clo_trace_redir))
-		  VG_(message)(Vg_DebugMsg, "  redir %s:%s:%p->%s:%s:%p duplicated\n",
-			       redir->from_lib, redir->from_sym, redir->from_addr,
-			       redir->to_lib, redir->to_sym, redir->to_addr);
-	    }
-	 }
-	 break;
-
-      case R_WRAPPER:
-	 if (VG_(clo_trace_redir)) {
-	    VG_(message)(Vg_DebugMsg, "  wrapper resolved (%s:%s=%p -> wrapper)",
-			 redir->from_lib, redir->from_sym, redir->from_addr);
-	 }
-
-	 /* XXX redir leaked */
-	 //VG_(wrap_function)(redir->from_addr, redir->wrapper);
-	 break;
-
-      case R_CLIENT_WRAPPER:
-	 VG_(core_panic)("not implemented");
-	 break;
-      }
-   }
+   if (resolved) add_resolved(redir);
 
    return resolved;
 }
@@ -285,8 +288,8 @@ void VG_(resolve_seg_redirs)(SegInfo *si)
 }
 
 /* Redirect a lib/symbol reference to a function at lib/symbol */
-static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
-			     const Char *to_lib, const Char *to_sym)
+static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
+				    const Char *to_lib, const Char *to_sym)
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
 
@@ -315,8 +318,8 @@ static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
 }
 
 /* Redirect a lib/symbol reference to a function at addr */
-void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
-			    Addr to_addr)
+void VG_(add_redirect_sym_to_addr)(const Char *from_lib, const Char *from_sym,
+				   Addr to_addr)
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
 
@@ -330,6 +333,11 @@ void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
    redir->to_sym = NULL;
    redir->to_addr = to_addr;
 
+   if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
+      VG_(message)(Vg_UserMsg, 
+                   "REDIRECT %s(%s) to %p",
+                   from_lib, from_sym, to_addr);
+
     /* Check against all existing segments to see if this redirection
        can be resolved immediately */
    if (!VG_(resolve_redir_allsegs)(redir)) {
@@ -337,6 +345,29 @@ void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
       redir->next = unresolved_redir;
       unresolved_redir = redir;
    }
+}
+
+/* Redirect a function at from_addr to a function at to_addr */
+void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr)
+{
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
+
+   redir->type = R_REDIRECT;
+
+   redir->from_lib = NULL;
+   redir->from_sym = NULL;
+   redir->from_addr = from_addr;
+
+   redir->to_lib = NULL;
+   redir->to_sym = NULL;
+   redir->to_addr = to_addr;
+
+   if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
+      VG_(message)(Vg_UserMsg, 
+                   "REDIRECT %p to %p",
+                   from_addr, to_addr);
+
+   add_resolved(redir);
 }
 
 CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
@@ -371,44 +402,11 @@ CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
    return redir;
 }
 
-/* HACK! This should be done properly (see ~/NOTES.txt) */
-#ifdef __amd64__
-/* Rerouted entry points for __NR_vgettimeofday and __NR_vtime.
-     96 == __NR_gettimeofday
-    201 == __NR_time
-*/
-static void amd64_linux_rerouted__vgettimeofday(void)
-{
-asm(
-"       movq    $96, %rax\n"
-"       syscall\n"
-);
-}
-
-static void amd64_linux_rerouted__vtime(void)
-{
-asm(
-"       movq    $201, %rax\n"
-"       syscall\n"
-);
-}
-#endif
-
 /* If address 'a' is being redirected, return the redirected-to
    address. */
 Addr VG_(code_redirect)(Addr a)
 {
    CodeRedirect* r;
-
-#ifdef __amd64__
-   /* HACK.  Reroute the amd64-linux vsyscalls.  This should be moved
-      out of here into an amd64-linux specific initialisation routine.
-   */
-   if (a == 0xFFFFFFFFFF600000ULL)
-      return (Addr)amd64_linux_rerouted__vgettimeofday;
-   if (a == 0xFFFFFFFFFF600400ULL)
-      return (Addr)amd64_linux_rerouted__vtime;
-#endif
 
    r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &a);
    if (r == NULL)
@@ -421,41 +419,34 @@ Addr VG_(code_redirect)(Addr a)
 
 void VG_(setup_code_redirect_table) ( void )
 {
-   /* Redirect _dl_sysinfo_int80, which is glibc's default system call
-      routine, to the routine in our trampoline page so that the
-      special sysinfo unwind hack in vg_execontext.c will kick in.
-   */
-   VG_(add_redirect_addr)("soname:ld-linux.so.2", "_dl_sysinfo_int80",
-			  VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
-   
    /* Overenthusiastic use of PLT bypassing by the glibc people also
       means we need to patch the following functions to our own
       implementations of said, in mac_replace_strmem.c.
     */
-   add_redirect_sym("soname:libc.so.6", "stpcpy",
-                    "*vgpreload_memcheck.so*", "stpcpy");
+   add_redirect_sym_to_sym("soname:libc.so.6", "stpcpy",
+                           "*vgpreload_memcheck.so*", "stpcpy");
 
-   add_redirect_sym("soname:libc.so.6", "strlen",
-                    "*vgpreload_memcheck.so*", "strlen");
+   add_redirect_sym_to_sym("soname:libc.so.6", "strlen",
+                           "*vgpreload_memcheck.so*", "strlen");
 
-   add_redirect_sym("soname:libc.so.6", "strnlen",
-                    "*vgpreload_memcheck.so*", "strnlen");
+   add_redirect_sym_to_sym("soname:libc.so.6", "strnlen",
+                           "*vgpreload_memcheck.so*", "strnlen");
 
-   add_redirect_sym("soname:ld-linux.so.2", "stpcpy",
-                    "*vgpreload_memcheck.so*", "stpcpy");
-   add_redirect_sym("soname:libc.so.6", "stpcpy",
-                    "*vgpreload_memcheck.so*", "stpcpy");
+   add_redirect_sym_to_sym("soname:ld-linux.so.2", "stpcpy",
+                           "*vgpreload_memcheck.so*", "stpcpy");
+   add_redirect_sym_to_sym("soname:libc.so.6", "stpcpy",
+                           "*vgpreload_memcheck.so*", "stpcpy");
 
-   add_redirect_sym("soname:libc.so.6", "strchr",
-                    "*vgpreload_memcheck.so*", "strchr");
-   add_redirect_sym("soname:ld-linux.so.2", "strchr",
-                    "*vgpreload_memcheck.so*", "strchr");
+   add_redirect_sym_to_sym("soname:libc.so.6", "strchr",
+                           "*vgpreload_memcheck.so*", "strchr");
+   add_redirect_sym_to_sym("soname:ld-linux.so.2", "strchr",
+                           "*vgpreload_memcheck.so*", "strchr");
 
-   add_redirect_sym("soname:libc.so.6", "strchrnul",
-                    "*vgpreload_memcheck.so*", "glibc232_strchrnul");
+   add_redirect_sym_to_sym("soname:libc.so.6", "strchrnul",
+                           "*vgpreload_memcheck.so*", "glibc232_strchrnul");
 
-   add_redirect_sym("soname:libc.so.6", "rawmemchr",
-                    "*vgpreload_memcheck.so*", "glibc232_rawmemchr");
+   add_redirect_sym_to_sym("soname:libc.so.6", "rawmemchr",
+                           "*vgpreload_memcheck.so*", "glibc232_rawmemchr");
 }
 
 

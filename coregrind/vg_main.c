@@ -2724,6 +2724,7 @@ int main(int argc, char **argv, char **envp)
    //   p: init_tt_tc [so it can call VG_(search_transtab) safely]
    //--------------------------------------------------------------
    VG_(setup_code_redirect_table)();
+   VGP_(setup_redirects)();
 
    //--------------------------------------------------------------
    // Verbosity message

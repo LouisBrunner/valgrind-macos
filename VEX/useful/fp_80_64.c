@@ -20,6 +20,8 @@
    targets, but the 80-bit images only ever have to exist in
    little-endian format. 
 */
+static void show_f80 ( UChar* );
+static void show_f64 ( UChar* );
 
 static inline
 UInt read_bit_array ( UChar* arr, UInt n )
@@ -382,9 +384,20 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    /* Now consider any rounding that needs to happen as a result of
       truncating the mantissa. */
    if (f80[1] & 4) /* read_bit_array(f80, 10) == 1) */ {
+
+      /* If the bottom bits of f80 are "100 0000 0000", then the
+         infinitely precise value is deemed to be mid-way between the
+         two closest representable values.  Since we're doing
+         round-to-nearest (the default mode), in that case it is the
+         bit immediately above which indicates whether we should round
+         upwards or not -- if 0, we don't.  All that is encapsulated
+         in the following simple test. */
+      if ((f80[1] & 0xF) == 4/*0100b*/ && f80[0] == 0)
+         return;
+
       do_rounding:
-      /* Round upwards.  This is a kludge.  Once in every 64k
-         roundings (statistically) the bottom two bytes are both 0xFF
+      /* Round upwards.  This is a kludge.  Once in every 2^24
+         roundings (statistically) the bottom three bytes are all 0xFF
          and so we don't round at all.  Could be improved. */
       if (f64[0] != 0xFF) { 
          f64[0]++; 
@@ -394,6 +407,13 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          f64[0] = 0;
          f64[1]++;
       }
+      else      
+      if (f64[0] == 0xFF && f64[1] == 0xFF && f64[2] != 0xFF) {
+         f64[0] = 0;
+         f64[1] = 0;
+         f64[2]++;
+      }
+
       /* else we don't round, but we should. */
    }
 }

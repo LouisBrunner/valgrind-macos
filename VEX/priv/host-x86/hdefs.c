@@ -749,7 +749,8 @@ void ppX86Instr ( X86Instr* i ) {
          break;
       case Xin_Goto:
          if (i->Xin.Goto.jk == Ijk_ClientReq 
-             || i->Xin.Goto.jk == Ijk_Syscall) {
+             || i->Xin.Goto.jk == Ijk_Syscall
+             || i->Xin.Goto.jk == Ijk_Yield) {
             vex_printf("movl $");
             ppIRJumpKind(i->Xin.Goto.jk);
             vex_printf(", %%ebp ; ");
@@ -952,7 +953,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
          addHRegUse(u, HRmWrite, hregX86_EAX());
          if (i->Xin.Goto.jk == Ijk_ClientReq 
-             || i->Xin.Goto.jk == Ijk_Syscall)
+             || i->Xin.Goto.jk == Ijk_Syscall
+             || i->Xin.Goto.jk == Ijk_Yield)
             addHRegUse(u, HRmWrite, hregX86_EBP());
          return;
       case Xin_CMov32:
@@ -1721,7 +1723,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          vg_constants.h. */
       if (i->Xin.Goto.cond == Xcc_ALWAYS
           && (i->Xin.Goto.jk == Ijk_ClientReq 
-              || i->Xin.Goto.jk == Ijk_Syscall)) {
+              || i->Xin.Goto.jk == Ijk_Syscall
+              || i->Xin.Goto.jk == Ijk_Yield)) {
          /* movl $magic_number, %ebp */
          *p++ = 0xBD;
          switch (i->Xin.Goto.jk) {
@@ -1731,6 +1734,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             case Ijk_Syscall: 
                /* 19 == VG_TRC_EBP_JMP_SYSCALL */
                p = emit32(p, 19); break;
+            case Ijk_Yield: 
+               /* 27 == VG_TRC_EBP_JMP_YIELD */
+               p = emit32(p, 27); break;
             default: 
                ppIRJumpKind(i->Xin.Goto.jk);
                vpanic("emit_X86Instr.Xin_Goto: unknown jump kind");

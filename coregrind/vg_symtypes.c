@@ -748,7 +748,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	 Bool keep = False;
 
 	 /* Add a new variable to the list */
-	 static void newvar(Char *name, SymType *ty, Addr valuep, UInt size) {
+	 void newvar(Char *name, SymType *ty, Addr valuep, UInt size) {
 	    Variable *v;
 
 	    /* have we been here before? */
@@ -968,7 +968,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	 Char expr[len*2];
 	 Char *sp = &expr[len];	/* pointer at start of string */
 	 Char *ep = sp;		/* pointer at end of string */
-	 static void genstring(Variable *v, Variable *inner) {
+	 void genstring(Variable *v, Variable *inner) {
 	    Variable *c = v->container;
 
 	    if (c != NULL)

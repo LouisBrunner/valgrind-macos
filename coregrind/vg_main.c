@@ -2789,7 +2789,7 @@ int main(int argc, char **argv)
    VG_(nuke_all_threads_except)(VG_INVALID_THREADID);
 
    /* Print Vex storage stats */
-   LibVEX_ClearTemporary( True/*show stats*/ );
+   LibVEX_ClearTemporary( False/*show stats*/ );
 
    //--------------------------------------------------------------
    // Exit, according to the scheduler's return code

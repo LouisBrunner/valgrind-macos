@@ -711,6 +711,15 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
          /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
+      if (isU32(cc_op, X86G_CC_OP_COPY)) {
+         /* cflag after COPY is stored in DEP1. */
+         return
+            binop(
+               Iop_And32,
+               binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_C)),
+               mkU32(1)
+            );
+      }
 #     if 0
       if (cc_op->tag == Iex_Const) {
          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");

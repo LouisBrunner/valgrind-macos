@@ -84,18 +84,14 @@ typedef
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
-      /* CR0: Use last result for delayed calc of CR0[0,1,2] (neg,pos,zero)
-        (bit3 is just a redundant copy of XER_SO) */
-      UInt guest_Result; // Result of last op
+      /* thunk used to calculate CR0 flags. */
+      UChar guest_CC_OP;    // boolean: 0=> dep1=result 1=> dep1=flags
+      UInt  guest_CC_DEP1;  // Result of last op | flags
+      UInt  guest_CC_DEP2;  // XER_SO
 
       // CR1: Used for FP - don't need yet.
-      // CR2:7: Used for 'compare' instructions
-      UChar guest_CR2;
-      UChar guest_CR3;
-      UChar guest_CR4;
-      UChar guest_CR5;
-      UChar guest_CR6;
-      UChar guest_CR7;
+      // CR2:7: Used for 'compare' instructions (bits 0:8 not used)
+      UInt guest_CR2_7;
 
       /* XER */
       UChar guest_XER_SO;  // Summary Overflow

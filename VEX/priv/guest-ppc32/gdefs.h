@@ -74,8 +74,18 @@ VexGuestLayout ppc32Guest_layout;
 
 /* --- CLEAN HELPERS --- */
 
-// Calculate CR0[0,1,2] (neg,pos,zero) from result
-extern UInt  ppc32g_calculate_flags_cr0 ( UInt result );
+// Calculate CR0 flags
+extern UInt ppc32g_calculate_cr0_all  ( UChar op, UInt word1, UInt word2 );
+extern UInt ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UInt word2 );
+extern UInt ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UInt word2 );
+extern UInt ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UInt word2 );
+extern UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 );
+
+// Calculate XER flags
+extern UInt ppc32g_calculate_xer_ov  ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ov );
+extern UInt ppc32g_calculate_xer_ca  ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ca );
+
+
 
 
 

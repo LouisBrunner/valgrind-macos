@@ -59,11 +59,108 @@
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-/* Calculate all the 4 flags from the supplied thunk parameters. */
-UInt ppc32g_calculate_flags_cr0 ( UInt result )
+/* Calculates CR0[LT,GT,EQ,SO] flags from the supplied
+   thunk parameters. */
+UInt ppc32g_calculate_cr0_all ( UChar op, UInt word1, UInt word2 )
 {
+    Int sword1 = (Int)word1;
+    if (op) {
+	return (word1 & 0xF0000000);
+    } else {
+	return
+	    ((word2 & 1) << 3)
+	    | (((sword1 == 0) ? 1:0) << 2)
+	    | (((sword1 >  0) ? 1:0) << 1)
+	    | (((sword1 <  0) ? 1:0) << 0);
+    }
+}
+
+UInt ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UInt word2 )
+{
+    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 0) & 1;
+}
+
+UInt ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UInt word2 )
+{
+    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 1) & 1;
+}
+
+UInt ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UInt word2 )
+{
+    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 2) & 1;
+}
+
+UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 )
+{
+    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 3) & 1;
+}
+
+
+
+
+
+
+// Calculate XER_OV
+UInt ppc32g_calculate_xer_ov ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ov )
+{
+    UChar opc1    = (theInstr >> 26) & 0x3F;    /* opcode1: theInstr[0:5]   */
+    UInt  opc2    = (theInstr >> 1) & 0x1FF;    /* opcode2: theInstr[22:30] */
+
+    switch (opc1) {
+    case 0x1F:
+       switch (opc2) {
+       case 0x10A: // addo
+	   // i.e. ((both_same_sign) & (sign_changed) & (sign_mask))
+	   return ((Ra^Rb^-1) & (Ra^Rd) & (1<<31)) ? 1:0;
+
+       case 0x00A: // addc
+	   return ((Ra^Rb^-1) & (Ra^Rd) & (1<<31)) ? 1:0;
+
+       case 0x08A: // addeo
+	   return ((Ra^Rb^-1) & (Ra^Rd) & (1<<31)) ? 1:0;
+
+       default:
+	   break;
+       }
+
+    default:
+	break;
+    }
+
     return 0;
 }
+
+// Calculate XER_CA
+UInt ppc32g_calculate_xer_ca ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ca )
+{
+    UChar opc1    = (theInstr >> 26) & 0x3F;    /* opcode1: theInstr[0:5]   */
+    UInt  opc2    = (theInstr >> 1) & 0x1FF;    /* opcode2: theInstr[22:30] */
+
+    switch (opc1) {
+    case 0x0D: // addic
+    case 0x0E: // addic.
+	return (Rd < Ra) ? 1:0;
+
+    case 0x1F:
+       switch (opc2) {
+       case 0x00A: // addc
+	   return (Rd < Ra) ? 1:0;
+
+       case 0x08A: // adde
+	   return (Rd < Ra || (ca==1 && Rd==Ra)) ? 1:0;
+
+       default:
+	   break;
+       }
+
+    default:
+	break;
+    }
+
+    return 0;
+}
+
+
 
 
 
@@ -104,10 +201,11 @@ void LibVEX_GuestPPC32_put_flags ( UInt flags_native,
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state )
 {
-   UInt flags;
-   vassert(0); // FIXME
-
-   flags = ppc32g_calculate_flags_cr0( vex_state->guest_Result );
+   UInt flags = ppc32g_calculate_cr0_all(
+       vex_state->guest_CC_OP,
+       vex_state->guest_CC_DEP1,
+       vex_state->guest_CC_DEP2
+       );
    return flags;
 }
 
@@ -148,17 +246,14 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR31 = 0;
 
    vex_state->guest_CIA  = 0;
-   vex_state->guest_LR  = 0;
-   vex_state->guest_CTR = 0;
+   vex_state->guest_LR   = 0;
+   vex_state->guest_CTR  = 0;
 
-   vex_state->guest_Result = 0;
+   vex_state->guest_CC_OP   = 0;
+   vex_state->guest_CC_DEP1 = 0;
+   vex_state->guest_CC_DEP2 = 0;
 
-   vex_state->guest_CR2 = 0;
-   vex_state->guest_CR3 = 0;
-   vex_state->guest_CR4 = 0;
-   vex_state->guest_CR5 = 0;
-   vex_state->guest_CR6 = 0;
-   vex_state->guest_CR7 = 0;
+   vex_state->guest_CR2_7 = 0;
 
    vex_state->guest_XER_SO = 0;
    vex_state->guest_XER_OV = 0;
@@ -209,7 +304,7 @@ VexGuestLayout
           /* flags thunk: only using last_result, which is always defd. */
 
           .alwaysDefd 
-             = { /*  0 */ ALWAYSDEFD(guest_Result)
+             = { /*  0 */ ALWAYSDEFD(guest_CC_OP)
                }
         };
 

@@ -48,10 +48,12 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
       case CoreMemErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
+               "%s contains unaddressable byte(s)", 
+               VG_(get_error_string)(err));
          } else {
             VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
+               "%s contains unaddressable byte(s)", 
+               VG_(get_error_string)(err));
          }
          pp_ExeContext();
          break;
@@ -406,8 +408,9 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-static void set_address_range_perms ( Addr a, UInt len, 
-                                      UInt example_a_bit )
+static __inline__ 
+void set_address_range_perms ( Addr a, UInt len, 
+                               UInt example_a_bit )
 {
    UChar     abyte8;
    UInt      sm_off;

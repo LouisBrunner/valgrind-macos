@@ -128,8 +128,7 @@
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
 
-/* Valgrind's stack sizes, in words */
-#define VG_STACK_SIZE_W       10000
+/* Valgrind's signal stack size, in words */
 #define VG_SIGSTACK_SIZE_W    10000
 
 /* Useful macros */

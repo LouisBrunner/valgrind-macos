@@ -1181,8 +1181,9 @@ static inline ExeContext *get_real_execontext(Addr ret)
 
    asm("movl %%ebp, %0; movl %%esp, %1" : "=r" (ebp), "=r" (esp));
    stacktop = VG_(valgrind_end);
-   if (esp >= (Addr)&VG_(sigstack)[0] && esp < (Addr)&VG_(sigstack)[VG_STACK_SIZE_W])
-      stacktop = (Addr)&VG_(sigstack)[VG_STACK_SIZE_W];
+   if (esp >= (Addr)&VG_(sigstack)[0] && 
+       esp < (Addr)&VG_(sigstack)[VG_SIGSTACK_SIZE_W])
+      stacktop = (Addr)&VG_(sigstack)[VG_SIGSTACK_SIZE_W];
       
    ec = VG_(get_ExeContext2)(ret, ebp, esp, stacktop);
 

@@ -56,7 +56,7 @@
 
 static
 IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout, 
-                          IRType hWordTy )
+                          IRType gWordTy, IRType hWordTy )
 {
    Int      i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
    IRDirty  *dcall, *d;

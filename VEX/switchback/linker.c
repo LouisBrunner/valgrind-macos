@@ -12,14 +12,20 @@
 
 #include "linker.h"
 
+#include "../pub/libvex_basictypes.h"
+
 #define IF_DEBUG(x,y) /* */
 static int debug_linker = 0;
 
-#define i386_TARGET_ARCH
-// #define arm_TARGET_ARCH
 
-#if !defined(i386_TARGET_ARCH) && !defined(arm_TARGET_ARCH)
-#  error "Must #define i386_TARGET_ARCH or arm_TARGET_ARCH"
+#if defined(__amd64__)
+#   define x86_64_TARGET_ARCH
+#elif defined(__i386__)
+#   define i386_TARGET_ARCH
+#elif defined (__powerpc__)
+#   define ppc32_TARGET_ARCH
+#else
+#   error "Unknown arch"
 #endif
 
 
@@ -111,7 +117,7 @@ typedef struct _ObjectCode {
  * Define a set of types which can be used for both ELF32 and ELF64
  */
 
-#ifdef ELF_64BIT
+#if VEX_HOST_WORDSIZE == 8
 #define ELFCLASS    ELFCLASS64
 #define Elf_Addr    Elf64_Addr
 #define Elf_Word    Elf64_Word
@@ -532,7 +538,7 @@ do_Elf_Rel_relocations ( ObjectCode* oc, char* ehdrC,
          default:
             fprintf(stderr,
                     "%s: unhandled ELF relocation(Rel) type %d\n\n",
-		    oc->fileName, ELF_R_TYPE(info));
+		    oc->fileName, (Int)ELF_R_TYPE(info));
             return 0;
       }
 
@@ -561,7 +567,9 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
                           target_shndx, symtab_shndx ));
 
    for (j = 0; j < nent; j++) {
-#if defined(DEBUG) || defined(sparc_TARGET_ARCH) || defined(ia64_TARGET_ARCH)
+#if defined(DEBUG) || defined(sparc_TARGET_ARCH) \
+                   || defined(ia64_TARGET_ARCH) \
+                   || defined(x86_64_TARGET_ARCH)
       /* This #ifdef only serves to avoid unused-var warnings. */
       Elf_Addr  offset = rtab[j].r_offset;
       Elf_Addr  P      = targ + offset;
@@ -573,9 +581,13 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 #     if defined(sparc_TARGET_ARCH)
       Elf_Word* pP = (Elf_Word*)P;
       Elf_Word  w1, w2;
-#     elif defined(ia64_TARGET_ARCH)
+#     endif
+#     if defined(ia64_TARGET_ARCH)
       Elf64_Xword *pP = (Elf64_Xword *)P;
       Elf_Addr addr;
+#     endif
+#     if defined(x86_64_TARGET_ARCH)
+      ULong* pP = (ULong*)P;
 #     endif
 
       IF_DEBUG(linker,belch( "Rel entry %3d is raw(%6p %6p %6p)   ",
@@ -664,7 +676,8 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
             w2 = (Elf_Word)value;
             *pP = w2;
             break;
-#        elif defined(ia64_TARGET_ARCH)
+#        endif
+#        if defined(ia64_TARGET_ARCH)
 	 case R_IA64_DIR64LSB:
 	 case R_IA64_FPTR64LSB:
 	    *pP = value;
@@ -693,10 +706,24 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 	     * convert into a move.  We don't implement relaxation. */
 	    break;
 #        endif
+#        if defined(x86_64_TARGET_ARCH)
+         case R_X86_64_64: /* 1 *//* Direct 64 bit  */
+            *((ULong*)pP) = (ULong)(S + A);
+            break;
+         case R_X86_64_PC32: /* 2 *//* PC relative 32 bit signed */
+            *((UInt*)pP) = (UInt)(S + A - P);
+            break;
+         case R_X86_64_32: /* 10 *//* Direct 32 bit zero extended */
+            *((UInt*)pP) = (UInt)(S + A);
+            break;
+         case R_X86_64_32S: /* 11 *//* Direct 32 bit sign extended */
+            *((UInt*)pP) = (UInt)(S + A);
+            break;
+#        endif
          default:
             fprintf(stderr,
                     "%s: unhandled ELF relocation(RelA) type %d\n",
-		    oc->fileName, ELF_R_TYPE(info));
+		    oc->fileName, (Int)ELF_R_TYPE(info));
             return 0;
       }
 
@@ -811,20 +838,22 @@ ocVerifyImage_ELF ( ObjectCode* oc )
    if (debug_linker)
       fprintf(stderr, "Architecture is " );
    switch (ehdr->e_machine) {
-      case EM_386:   if (debug_linker) fprintf(stderr, "x86\n" ); break;
-      case EM_SPARC: if (debug_linker) fprintf(stderr, "sparc\n" ); break;
-      case EM_ARM:   if (debug_linker) fprintf(stderr, "arm\n" ); break;
+      case EM_386:    if (debug_linker) fprintf(stderr, "x86\n" ); break;
+      case EM_SPARC:  if (debug_linker) fprintf(stderr, "sparc\n" ); break;
+      case EM_ARM:    if (debug_linker) fprintf(stderr, "arm\n" ); break;
 #ifdef EM_IA_64
-      case EM_IA_64: if (debug_linker) fprintf(stderr, "ia64\n" ); break;
+      case EM_IA_64:  if (debug_linker) fprintf(stderr, "ia64\n" ); break;
 #endif
-      default:       if (debug_linker) fprintf(stderr, "unknown\n" );
-                     fprintf(stderr,"%s: unknown architecture\n", oc->fileName);
-                     return 0;
+      case EM_X86_64: if (debug_linker) fprintf(stderr, "x86_64\n" ); break;
+      default:        if (debug_linker) fprintf(stderr, "unknown\n" );
+                      fprintf(stderr,"%s: unknown architecture\n", oc->fileName);
+                      return 0;
    }
 
    if (debug_linker>1) fprintf(stderr,
-             "\nSection header table: start %d, n_entries %d, ent_size %d\n",
-             ehdr->e_shoff, ehdr->e_shnum, ehdr->e_shentsize  );
+             "\nSection header table: start %lld, n_entries %d, ent_size %d\n",
+             (Long)ehdr->e_shoff, 
+             ehdr->e_shnum, ehdr->e_shentsize  );
 
    assert (ehdr->e_shentsize == sizeof(Elf_Shdr));
 
@@ -893,9 +922,9 @@ ocVerifyImage_ELF ( ObjectCode* oc )
       stab = (Elf_Sym*) (ehdrC + shdr[i].sh_offset);
       nent = shdr[i].sh_size / sizeof(Elf_Sym);
       if (debug_linker>1) fprintf(stderr,  
-            "   number of entries is apparently %d (%d rem)\n",
+            "   number of entries is apparently %d (%lld rem)\n",
                nent,
-               shdr[i].sh_size % sizeof(Elf_Sym)
+               (Long)(shdr[i].sh_size % sizeof(Elf_Sym))
              );
       if (0 != shdr[i].sh_size % sizeof(Elf_Sym)) {
          fprintf(stderr,"%s: non-integral number of symbol table entries\n", 

@@ -59,12 +59,37 @@ IRExpr* guest_amd64_spechelper ( Char* function_name,
   return NULL;
 }
 
+/* Figure out if any part of the guest state contained in minoff
+   .. maxoff requires precise memory exceptions.  If in doubt return
+   True (but this is generates significantly slower code).  
+
+   We enforce precise exns for guest %RSP and %RIP only.
+*/
 Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
                                                    Int maxoff)
 {
-  vassert(0);
-  return False;
+   Int rsp_min = offsetof(VexGuestAMD64State, guest_RSP);
+   Int rsp_max = rsp_min + 8 - 1;
+   Int rip_min = offsetof(VexGuestAMD64State, guest_RIP);
+   Int rip_max = rip_min + 8 - 1;
+
+   if (maxoff < rsp_min || minoff > rsp_max) {
+      /* no overlap with rsp */
+   } else {
+      return True;
+   }
+
+   if (maxoff < rip_min || minoff > rip_max) {
+      /* no overlap with eip */
+   } else {
+      return True;
+   }
+
+   return False;
 }
+
+
+
 #define ALWAYSDEFD(field)                           \
     { offsetof(VexGuestX86State, field),            \
       (sizeof ((VexGuestX86State*)0)->field) }

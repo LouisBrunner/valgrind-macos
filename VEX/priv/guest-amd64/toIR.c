@@ -648,8 +648,7 @@ typedef
 
 /* Fetches the relevant reg field extension bit from pfx.  Returns 1
    or 0. */
-static
-UInt getRX ( Prefix pfx, RegField rf ) {
+static UInt getRX ( Prefix pfx, RegField rf ) {
    switch (rf) {
       case RegR: return (pfx & PFX_REXR) ? 1 : 0;
       case RegX: return (pfx & PFX_REXX) ? 1 : 0;
@@ -657,7 +656,10 @@ UInt getRX ( Prefix pfx, RegField rf ) {
       default: vpanic("getRFExpr(amd64)");
    }
 }
-
+static UInt getRexX ( Prefix pfx )
+{
+   return haveREX(pfx) ? getRX(pfx,RegX) : 0;
+}
 
 static IRType szToITy ( UInt n )
 {
@@ -795,11 +797,14 @@ HChar* nameIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
    return NULL; /*notreached*/
 }
 
-static HChar* nameIRegB ( Prefix pfx, Int sz, UInt lo3bits ) {
-   return nameIReg ( pfx, RegB, sz, lo3bits );
-}
 static HChar* nameIRegR ( Prefix pfx, Int sz, UInt lo3bits ) {
    return nameIReg ( pfx, RegR, sz, lo3bits );
+}
+static HChar* nameIRegX ( Prefix pfx, Int sz, UInt lo3bits ) {
+   return nameIReg ( pfx, RegX, sz, lo3bits );
+}
+static HChar* nameIRegB ( Prefix pfx, Int sz, UInt lo3bits ) {
+   return nameIReg ( pfx, RegB, sz, lo3bits );
 }
 
 
@@ -861,6 +866,12 @@ static IRExpr* getIReg64 ( UInt regno )
 {
    return IRExpr_Get( integerGuestReg64Offset(regno),
                       Ity_I64 );
+}
+
+static void putIReg64 ( UInt regno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I64);
+   stmt( IRStmt_Put( integerGuestReg64Offset(regno), e ) );
 }
 
 static HChar* nameIReg64 ( UInt regno )
@@ -1557,12 +1568,12 @@ static void jmp_lit( IRJumpKind kind, Addr64 d64 )
   irbb->jumpkind = kind;
 }
 
-//.. static void jmp_treg( IRJumpKind kind, IRTemp t )
-//.. {
-//..    irbb->next = mkexpr(t);
-//..    irbb->jumpkind = kind;
-//.. }
-//.. 
+static void jmp_treg( IRJumpKind kind, IRTemp t )
+{
+   irbb->next = mkexpr(t);
+   irbb->jumpkind = kind;
+}
+
 //.. static 
 //.. void jcc_01( X86Condcode cond, Addr32 d32_false, Addr32 d32_true )
 //.. {
@@ -1723,6 +1734,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm & 7;
            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
            *len = 1;
+           vpanic("disAMode(amd64):untested amode: 1");
            return disAMode_copy2tmp(
                   handleSegOverride(pfx, getIRegB(pfx,8,rm)));
          }
@@ -1750,6 +1762,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
            ULong d  = getSDisp32(delta);
            DIS(buf, "%s0x%llx(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 5;
+           vpanic("disAMode(amd64):untested amode: 3");
            return disAMode_copy2tmp(
                   handleSegOverride(pfx,
                      binop(Iop_Add64,getIRegB(pfx,8,rm),mkU64(d))));
@@ -1767,12 +1780,171 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
          { ULong d = getSDisp32(delta);
            *len = 5;
            DIS(buf, "%s(0x%llx)", sorbTxt(pfx), d);
+           vpanic("disAMode(amd64):untested amode: 4");
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
                         binop(Iop_Add64, mkU64(guest_rip_curr_instr), 
                                          mkU64(d))));
          }
+#if 0
+      case 0x04: {
+         /* SIB, with no displacement.  Special cases:
+            -- %esp cannot act as an index value.  
+               If index_r indicates %esp, zero is used for the index.
+            -- when mod is zero and base indicates EBP, base is instead
+               a 32-bit literal.
+            It's all madness, I tell you.  Extract %index, %base and 
+            scale from the SIB byte.  The value denoted is then:
+               | %index == %ESP && %base == %EBP
+               = d32 following SIB byte
+               | %index == %ESP && %base != %EBP
+               = %base
+               | %index != %ESP && %base == %EBP
+               = d32 following SIB byte + (%index << scale)
+               | %index != %ESP && %base != %ESP
+               = %base + (%index << scale)
+         */
+         UChar sib     = getIByte(delta);
+         UChar scale   = (sib >> 6) & 3;
+         UChar index_r = (sib >> 3) & 7;
+         UChar base_r  = sib & 7;
+         delta++;
 
+         if (index_r != R_ESP && base_r != R_EBP) {
+            DIS(buf, "%s(%s,%s,%d)", sorbTxt(sorb), 
+                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
+            *len = 2;
+            vpanic("disAMode(amd64):untested amode: 5");
+            return
+               disAMode_copy2tmp( 
+               handleSegOverride(sorb,
+                  binop(Iop_Add32, 
+                        getIReg(4,base_r),
+                        binop(Iop_Shl32, getIReg(4,index_r),
+                              mkU8(scale)))));
+         }
+
+         if (index_r != R_ESP && base_r == R_EBP) {
+            UInt d = getUDisp32(delta);
+            DIS(buf, "%s0x%x(,%s,%d)", sorbTxt(sorb), d, 
+                      nameIReg(4,index_r), 1<<scale);
+            *len = 6;
+            vpanic("disAMode(amd64):untested amode: 6");
+            return
+               disAMode_copy2tmp(
+               handleSegOverride(sorb, 
+                  binop(Iop_Add32,
+                        binop(Iop_Shl32, getIReg(4,index_r), mkU8(scale)),
+                        mkU32(d))));
+         }
+
+         if (index_r == R_ESP && base_r != R_EBP) {
+            DIS(buf, "%s(%s,,)", sorbTxt(sorb), nameIReg(4,base_r));
+            *len = 2;
+            vpanic("disAMode(amd64):untested amode: 7");
+            return disAMode_copy2tmp(
+                   handleSegOverride(sorb, getIReg(4,base_r)));
+         }
+
+         if (index_r == R_ESP && base_r == R_EBP) {
+            UInt d = getUDisp32(delta);
+            DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
+            *len = 6;
+            vpanic("disAMode(x86):untested amode: 8");
+            return disAMode_copy2tmp(
+                   handleSegOverride(sorb, mkU32(d)));
+         }
+
+         vassert(0);
+      }
+#endif
+#if 0
+      /* SIB, with 8-bit displacement.  Special cases:
+         -- %esp cannot act as an index value.  
+            If index_r indicates %esp, zero is used for the index.
+         Denoted value is:
+            | %index == %ESP
+            = d8 + %base
+            | %index != %ESP
+            = d8 + %base + (%index << scale)
+      */
+      case 0x0C: {
+         UChar sib     = getIByte(delta);
+         UChar scale   = (sib >> 6) & 3;
+         UChar index_r = (sib >> 3) & 7;
+         UChar base_r  = sib & 7;
+         UInt  d       = getSDisp8(delta+1);
+
+         if (index_r == R_ESP) {
+            DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
+            *len = 3;
+            vpanic("disAMode(amd64):untested amode: 9");
+            return disAMode_copy2tmp(
+                   handleSegOverride(sorb, 
+                      binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
+         } else {
+            DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
+                     nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
+            *len = 3;
+            vpanic("disAMode(amd64):untested amode: 10");
+            return 
+                disAMode_copy2tmp(
+                handleSegOverride(sorb,
+                  binop(Iop_Add32,
+                        binop(Iop_Add32, 
+                              getIReg(4,base_r), 
+                              binop(Iop_Shl32, 
+                                    getIReg(4,index_r), mkU8(scale))),
+                        mkU32(d))));
+         }
+         vassert(0);
+      }
+#endif
+      /* SIB, with 32-bit displacement.  Special cases:
+         -- %rsp cannot act as an index value.  
+            If index_r indicates %rsp, zero is used for the index.
+         Denoted value is:
+            | %index == %RSP
+            = d32 + %base
+            | %index != %RSP
+            = d32 + %base + (%index << scale)
+      */
+      case 0x14: {
+         UChar sib     = getIByte(delta);
+         UChar scale   = (sib >> 6) & 3;
+         UChar index_r = (sib >> 3) & 7;
+         UChar base_r  = sib & 7;
+         ULong d       = getSDisp32(delta+1);
+
+         if (index_r == R_RSP && 0==getRexX(pfx)) {
+            DIS(buf, "%s%lld(%s,,)", sorbTxt(pfx), 
+                                     d, nameIRegB(pfx,8,base_r));
+            *len = 6;
+            vpanic("disAMode(amd64):untested amode: 11");
+            return disAMode_copy2tmp(
+                   handleSegOverride(pfx, 
+                      binop(Iop_Add64, getIRegB(pfx,8,base_r), mkU64(d)) ));
+         } else {
+            DIS(buf, "%s%lld(%s,%s,%d)", sorbTxt(pfx), d, 
+                      nameIRegB(pfx,8,base_r), 
+                      nameIRegX(pfx,8,index_r), 1<<scale);
+            *len = 6;
+            return 
+                disAMode_copy2tmp(
+                handleSegOverride(pfx,
+                  binop(Iop_Add64,
+                        binop(Iop_Add64, 
+                              getIRegB(pfx,8,base_r), 
+                              binop(Iop_Shl64, 
+                                    getIRegX(pfx,8,index_r), mkU8(scale))),
+                        mkU64(d))));
+         }
+         vassert(0);
+      }
+
+
+//////////////////////////////////////////////////////
+#if 0
       case 0x04: /* SIB, with no displacement. */
       case 0x0C: /* SIB, with 8-bit displacement. */
       case 0x14: /* SIB, with 32-bit displacement. */
@@ -1865,8 +2037,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
            return 
               disAMode_copy2tmp(handleSegOverride(pfx, ea));
          }
-
+#endif
       default:
+	vex_printf("mod_reg_rm = 0x%x\n", (Int)mod_reg_rm);
          vpanic("disAMode(amd64)");
          return 0; /*notreached*/
    }
@@ -6508,17 +6681,18 @@ ULong dis_op2_E_G ( Prefix      pfx,
 //..     putSReg( sreg, mkexpr(t1) );
 //..     DIP("pop %s\n", nameSReg(sreg));
 //.. }
-//.. 
-//.. static
-//.. void dis_ret ( UInt d32 )
-//.. {
-//..    IRTemp t1 = newTemp(Ity_I32), t2 = newTemp(Ity_I32);
-//..    assign(t1, getIReg(4,R_ESP));
-//..    assign(t2, loadLE(Ity_I32,mkexpr(t1)));
-//..    putIReg(4, R_ESP,binop(Iop_Add32, mkexpr(t1), mkU32(4+d32)));
-//..    jmp_treg(Ijk_Ret,t2);
-//.. }
-//.. 
+
+static
+void dis_ret ( ULong d64 )
+{
+   IRTemp t1 = newTemp(Ity_I64); 
+   IRTemp t2 = newTemp(Ity_I64);
+   assign(t1, getIReg64(R_RSP));
+   assign(t2, loadLE(Ity_I64,mkexpr(t1)));
+   putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t1), mkU64(8+d64)));
+   jmp_treg(Ijk_Ret,t2);
+}
+
 //.. /*------------------------------------------------------------*/
 //.. /*--- SSE/SSE2/SSE3 helpers                                ---*/
 //.. /*------------------------------------------------------------*/
@@ -10502,12 +10676,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       whatNext = Dis_StopHere;
 //..       DIP("ret %d\n", d32);
 //..       break;
-//..    case 0xC3: /* RET */
-//..       dis_ret(0);
-//..       whatNext = Dis_StopHere;
-//..       DIP("ret\n");
-//..       break;
-//..       
+   case 0xC3: /* RET */
+      dis_ret(0);
+      whatNext = Dis_StopHere;
+      DIP("ret\n");
+      break;
+      
 //..    case 0xE8: /* CALL J4 */
 //..       d32 = getUDisp32(delta); delta += 4;
 //..       d32 += (guest_eip_bbstart+delta); 

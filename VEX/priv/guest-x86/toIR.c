@@ -6880,11 +6880,25 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       a memory barrier, for example  lock addl $0,0(%esp)
       and emit an IR MFence construct.
    */
-   if (getIByte(delta) == 0xF0) { 
-      if (1) {
+   if (getIByte(delta) == 0xF0) {
+
+      UChar* code = (UChar*)(guest_code + delta);
+
+      /* Various bits of kernel headers use the following as a memory
+         barrier.  Hence, first emit an MFence and then let the insn
+         go through as usual. */
+      /* F08344240000:  lock addl $0, 0(%esp) */
+      if (code[0] == 0xF0 && code[1] == 0x83 && code[2] == 0x44 && 
+          code[3] == 0x24 && code[4] == 0x00 && code[5] == 0x00) {
+         stmt( IRStmt_MFence() );
+      }
+      else
+      if (0) {
          vex_printf("vex x86->IR: ignoring LOCK prefix on: ");
          insn_verbose = True;
       }
+
+      /* In any case, skip the prefix. */
       delta++;
    }
 

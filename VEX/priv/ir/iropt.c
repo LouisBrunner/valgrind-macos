@@ -2333,6 +2333,10 @@ Bool guestAccessWhichMightOverlapPutI (
    getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
    switch (s2->tag) {
 
+      case Ist_MFence:
+         /* just be paranoid ... this should be rare. */
+         return True;
+
       case Ist_Dirty:
          /* If the dirty call has any guest effects at all, give up.
             Probably could do better. */

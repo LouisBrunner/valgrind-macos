@@ -2338,7 +2338,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_MFence:
       /* see comment in hdefs.h re this insn */
-vex_printf("EMIT FENCE\n");
+      if (0) vex_printf("EMIT FENCE\n");
       switch (i->Xin.MFence.subarch) {
          case VexSubArchX86_sse0:
             vassert(0); /* awaiting test case */

@@ -104,8 +104,8 @@ void ppIRTemp ( IRTemp tmp )
 
 void ppIROp ( IROp op )
 {
-   Char* str; 
-   IROp  base;
+   HChar* str; 
+   IROp   base;
    switch (op) {
       case Iop_Add8 ... Iop_Add64:
          str = "Add"; base = Iop_Add8; break;
@@ -1553,7 +1553,8 @@ Bool isFlatIRStmt ( IRStmt* st )
       case Ist_Put:
          return isAtom(st->Ist.Put.data);
       case Ist_PutI:
-         return isAtom(st->Ist.PutI.ix) && isAtom(st->Ist.PutI.data);
+         return toBool( isAtom(st->Ist.PutI.ix) 
+                        && isAtom(st->Ist.PutI.data) );
       case Ist_Tmp:
          /* This is the only interesting case.  The RHS can be any
             expression, *but* all its subexpressions *must* be
@@ -1564,8 +1565,9 @@ Bool isFlatIRStmt ( IRStmt* st )
             case Iex_Get:    return True;
             case Iex_GetI:   return isAtom(e->Iex.GetI.ix);
             case Iex_Tmp:    return True;
-            case Iex_Binop:  return isAtom(e->Iex.Binop.arg1) 
-                                    && isAtom(e->Iex.Binop.arg2);
+            case Iex_Binop:  return toBool(
+                                    isAtom(e->Iex.Binop.arg1) 
+                                    && isAtom(e->Iex.Binop.arg2));
             case Iex_Unop:   return isAtom(e->Iex.Unop.arg);
             case Iex_LDle:   return isAtom(e->Iex.LDle.addr);
             case Iex_Const:  return True;
@@ -1573,15 +1575,17 @@ Bool isFlatIRStmt ( IRStmt* st )
                                 if (!isAtom(e->Iex.CCall.args[i])) 
                                    return False;
                              return True;
-            case Iex_Mux0X:  return isAtom(e->Iex.Mux0X.cond) 
+            case Iex_Mux0X:  return toBool (
+                                    isAtom(e->Iex.Mux0X.cond) 
                                     && isAtom(e->Iex.Mux0X.expr0) 
-                                    && isAtom(e->Iex.Mux0X.exprX);
+                                    && isAtom(e->Iex.Mux0X.exprX));
             default:         vpanic("isFlatIRStmt(e)");
          }
          /*notreached*/
          vassert(0);
       case Ist_STle:
-         return isAtom(st->Ist.STle.addr) && isAtom(st->Ist.STle.data);
+         return toBool( isAtom(st->Ist.STle.addr) 
+                        && isAtom(st->Ist.STle.data) );
       case Ist_Dirty:
          di = st->Ist.Dirty.details;
          if (!isAtom(di->guard)) 
@@ -1625,7 +1629,7 @@ static inline Int countArgs ( IRExpr** args )
 
 static
 __attribute((noreturn))
-void sanityCheckFail ( IRBB* bb, IRStmt* stmt, Char* what )
+void sanityCheckFail ( IRBB* bb, IRStmt* stmt, HChar* what )
 {
    vex_printf("\nIR SANITY CHECK FAILURE\n\n");
    ppIRBB(bb);
@@ -1663,7 +1667,7 @@ static Bool saneIRConst ( IRConst* con )
 {
    switch (con->tag) {
       case Ico_U1: 
-         return con->Ico.U1 == True || con->Ico.U1 == False;
+         return toBool( con->Ico.U1 == True || con->Ico.U1 == False );
       default: 
          /* Is there anything we can meaningfully check?  I don't
             think so. */
@@ -2050,21 +2054,21 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
       return False;
 
    switch (c1->tag) {
-      case Ico_U1:  return (1 & c1->Ico.U1) == (1 & c2->Ico.U1);
-      case Ico_U8:  return c1->Ico.U8  == c2->Ico.U8;
-      case Ico_U16: return c1->Ico.U16 == c2->Ico.U16;
-      case Ico_U32: return c1->Ico.U32 == c2->Ico.U32;
-      case Ico_U64: return c1->Ico.U64 == c2->Ico.U64;
-      case Ico_F64: return c1->Ico.F64 == c2->Ico.F64;
+      case Ico_U1:  return toBool( (1 & c1->Ico.U1) == (1 & c2->Ico.U1) );
+      case Ico_U8:  return toBool( c1->Ico.U8  == c2->Ico.U8 );
+      case Ico_U16: return toBool( c1->Ico.U16 == c2->Ico.U16 );
+      case Ico_U32: return toBool( c1->Ico.U32 == c2->Ico.U32 );
+      case Ico_U64: return toBool( c1->Ico.U64 == c2->Ico.U64 );
+      case Ico_F64: return toBool( c1->Ico.F64 == c2->Ico.F64 );
       default: vpanic("eqIRConst");
    }
 }
 
 Bool eqIRArray ( IRArray* descr1, IRArray* descr2 )
 {
-   return descr1->base == descr2->base 
-          && descr1->elemTy == descr2->elemTy
-          && descr1->nElems == descr2->nElems;
+   return toBool( descr1->base == descr2->base 
+                  && descr1->elemTy == descr2->elemTy
+                  && descr1->nElems == descr2->nElems );
 }
 
 Int sizeofIRType ( IRType ty )

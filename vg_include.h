@@ -1406,9 +1406,9 @@ extern Bool VGM_(check_writable) ( Addr a, UInt len, Addr* bad_addr );
 extern Bool VGM_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
 extern Bool VGM_(check_readable_asciiz) ( Addr a, Addr* bad_addr );
 
-/* Sanity checks which may be done at any time.  Doing them at
-   signal-delivery time turns out to be convenient. */
-extern void VG_(do_sanity_checks) ( ThreadId tid, Bool force_expensive );
+/* Sanity checks which may be done at any time.  The scheduler decides
+   when. */
+extern void VG_(do_sanity_checks) ( Bool force_expensive );
 /* Very cheap ... */
 extern Bool VG_(first_and_last_secondaries_look_plausible) ( void );
 

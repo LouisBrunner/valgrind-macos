@@ -1071,8 +1071,7 @@ void VG_(main) ( void )
    if (VG_(clo_cachesim))
       VG_(show_cachesim_results)(VG_(client_argc), VG_(client_argv));
 
-   VG_(do_sanity_checks)( 1 /* root thread */, 
-                          True /*include expensive checks*/ );
+   VG_(do_sanity_checks)( True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
       vg_show_counts();

@@ -2122,7 +2122,7 @@ Bool VG_(first_and_last_secondaries_look_plausible) ( void )
 /* A fast sanity check -- suitable for calling circa once per
    millisecond. */
 
-void VG_(do_sanity_checks) ( ThreadId tid, Bool force_expensive )
+void VG_(do_sanity_checks) ( Bool force_expensive )
 {
    Int          i;
    Bool         do_expensive_checks;
@@ -2133,9 +2133,6 @@ void VG_(do_sanity_checks) ( ThreadId tid, Bool force_expensive )
    /* --- First do all the tests that we can do quickly. ---*/
 
    VG_(sanity_fast_count)++;
-
-   tst = VG_(get_thread_state)(tid);
-   vg_assert(tst != NULL && tst->status != VgTs_Empty);
 
    /* Check that we haven't overrun our private stack. */
    for (i = 0; i < 10; i++) {

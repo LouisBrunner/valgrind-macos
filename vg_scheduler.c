@@ -1150,6 +1150,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 	 Be paranoid.  Always a good idea. */
      stage1:
       scheduler_sanity();
+      VG_(do_sanity_checks)( False );
 
       /* ======================= Phase 1 of 3 =======================
          Handle I/O completions and signals.  This may change the
@@ -1196,7 +1197,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             POSIX standard appears to require this behaviour.  */
          sigs_delivered = VG_(deliver_signals)( 1 /*HACK*/ );
 	 if (sigs_delivered)
-            VG_(do_sanity_checks)( 1 /*HACK*/, False );
+            VG_(do_sanity_checks)( False );
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;

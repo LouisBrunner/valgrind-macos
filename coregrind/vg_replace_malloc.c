@@ -275,9 +275,9 @@ int __posix_memalign ( void **memptr, UInt alignment, UInt size )
 {
     void *mem;
 
-    /* Test whether the SIZE argument is valid.  It must be a power of
+    /* Test whether the alignment argument is valid.  It must be a power of
        two multiple of sizeof (void *).  */
-    if (size % sizeof (void *) != 0 || (size & (size - 1)) != 0)
+    if (alignment % sizeof (void *) != 0 || (alignment & (alignment - 1)) != 0)
        return VKI_EINVAL /*22*/ /*EINVAL*/;
 
     mem = memalign (alignment, size);

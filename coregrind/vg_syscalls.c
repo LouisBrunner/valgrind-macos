@@ -1517,15 +1517,19 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 
       case __NR_getcwd: /* syscall 183 */
-         /* char *getcwd(char *buf, size_t size); */
+         /* char *getcwd(char *buf, size_t size);  (but see comment below) */
          MAYBE_PRINTF("getcwd ( %p, %d )\n",arg1,arg2);
          SYSCALL_TRACK( pre_mem_write, tst, "getcwd(buf)", arg1, arg2 );
          KERNEL_DO_SYSCALL(tid,res);
+
+         /* From linux/fs/dcache.c:
+          *  NOTE! The user-level library version returns a character
+          *  pointer. The kernel system call just returns the length of the
+          *  buffer filled (which includes the ending '\0' character), or a
+          *  negative error value. 
+          */
          if (!VG_(is_kerror)(res) && res != (Addr)NULL)
-            VG_TRACK( post_mem_write, arg1, arg2 );
-         /* Not really right -- really we should have the asciiz
-            string starting at arg1 readable, or up to arg2 bytes,
-            whichever finishes first. */
+            VG_TRACK( post_mem_write, arg1, res );
          break;
 
       case __NR_geteuid: /* syscall 49 */
@@ -2918,12 +2922,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                {
                Addr addr_p     = ((UInt*)arg2)[1];
                Addr addrlen_p  = ((UInt*)arg2)[2];
-               buf_and_len_pre_check ( tst, addr_p, addrlen_p,
-                                       "socketcall.accept(addr)",
-                                       "socketcall.accept(addrlen_in)" );
+               if (addr_p != (Addr)NULL) 
+                  buf_and_len_pre_check ( tst, addr_p, addrlen_p,
+                                          "socketcall.accept(addr)",
+                                          "socketcall.accept(addrlen_in)" );
                KERNEL_DO_SYSCALL(tid,res);
-               buf_and_len_post_check ( tst, res, addr_p, addrlen_p,
-                                        "socketcall.accept(addrlen_out)" );
+               if (addr_p != (Addr)NULL) 
+                  buf_and_len_post_check ( tst, res, addr_p, addrlen_p,
+                                           "socketcall.accept(addrlen_out)" );
                }
                break;
             }
@@ -2965,12 +2971,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
                SYSCALL_TRACK( pre_mem_write, tst, "socketcall.recvfrom(buf)", 
                                              buf_p, len );
-               buf_and_len_pre_check ( tst, from_p, fromlen_p, 
-                                       "socketcall.recvfrom(from)",
-                                       "socketcall.recvfrom(fromlen_in)" );
+               if (from_p != (Addr)NULL) 
+                  buf_and_len_pre_check ( tst, from_p, fromlen_p, 
+                                          "socketcall.recvfrom(from)",
+                                          "socketcall.recvfrom(fromlen_in)" );
                KERNEL_DO_SYSCALL(tid,res);
-               buf_and_len_post_check ( tst, res, from_p, fromlen_p,
-                                        "socketcall.recvfrom(fromlen_out)" );
+               if (from_p != (Addr)NULL) 
+                  buf_and_len_post_check ( tst, res, from_p, fromlen_p,
+                                           "socketcall.recvfrom(fromlen_out)" );
                if (!VG_(is_kerror)(res))
                   VG_TRACK( post_mem_write, buf_p, len );
                }
@@ -3031,12 +3039,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                Addr optval_p  = ((UInt*)arg2)[3];
                Addr optlen_p  = ((UInt*)arg2)[4];
                /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
-               buf_and_len_pre_check ( tst, optval_p, optlen_p,
-                                       "socketcall.getsockopt(optval)",
-                                       "socketcall.getsockopt(optlen)" );
+               if (optval_p != (Addr)NULL) 
+                  buf_and_len_pre_check ( tst, optval_p, optlen_p,
+                                          "socketcall.getsockopt(optval)",
+                                          "socketcall.getsockopt(optlen)" );
                KERNEL_DO_SYSCALL(tid,res);
-               buf_and_len_post_check ( tst, res, optval_p, optlen_p,
-                                        "socketcall.getsockopt(optlen_out)" );
+               if (optval_p != (Addr)NULL) 
+                  buf_and_len_post_check ( tst, res, optval_p, optlen_p,
+                                           "socketcall.getsockopt(optlen_out)" );
                }
                break;
 
@@ -3048,6 +3058,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                Addr name_p     = ((UInt*)arg2)[1];
                Addr namelen_p  = ((UInt*)arg2)[2];
 
+               /* Nb: name_p cannot be NULL */
                buf_and_len_pre_check ( tst, name_p, namelen_p,
                                        "socketcall.getsockname(name)",
                                        "socketcall.getsockname(namelen_in)" );
@@ -3064,6 +3075,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                {
                Addr name_p     = ((UInt*)arg2)[1];
                Addr namelen_p  = ((UInt*)arg2)[2];
+
+               /* Nb: name_p cannot be NULL */
                buf_and_len_pre_check ( tst, name_p, namelen_p,
                                        "socketcall.getpeername(name)",
                                        "socketcall.getpeername(namelen_in)" );

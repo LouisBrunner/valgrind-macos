@@ -7,7 +7,8 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_x86.h			\
 		pub/libvex_guest_amd64.h		\
 		pub/libvex_guest_arm.h			\
-		pub/libvex_guest_ppc32.h
+		pub/libvex_guest_ppc32.h		\
+		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-amd64/hdefs.h			\
@@ -87,7 +88,9 @@ libvex.a: $(LIB_OBJS)
 	ar clq libvex.a $(LIB_OBJS)
 
 clean:
-	rm -f $(LIB_OBJS) libvex.a vex test_main.o priv/main/vex_svnversion.h
+	rm -f $(LIB_OBJS) libvex.a vex test_main.o \
+		priv/main/vex_svnversion.h \
+		pub/libvex_guest_offsets.h
 
 version:
 	rm -f priv/main/vex_svnversion.h
@@ -107,6 +110,10 @@ minidist: version
 	@ls -l vex--minidist-2005MMDD.tar
 	@cat priv/main/vex_svnversion.h
 	@echo
+
+pub/libvex_guest_offsets.h:
+	gcc -Wall -g -o auxprogs/genoffsets auxprogs/genoffsets.c
+	./auxprogs/genoffsets > pub/libvex_guest_offsets.h
 
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)

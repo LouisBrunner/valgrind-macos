@@ -260,6 +260,15 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e );
 /*--- ISEL: Misc helpers                                ---*/
 /*---------------------------------------------------------*/
 
+/* Is this a 32-bit zero expression? */
+
+static Bool isZero32 ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U32
+          && e->Iex.Const.con->Ico.U32 == 0;
+}
+
 /* Make a int reg-reg move. */
 
 static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
@@ -537,6 +546,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Binop: {
       X86AluOp   aluOp;
       X86ShiftOp shOp;
+
+      /* Pattern: Sub32(0,x) */
+      if (e->Iex.Binop.op == Iop_Sub32 && isZero32(e->Iex.Binop.arg1)) {
+         HReg dst = newVRegI(env);
+         HReg reg = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_MOVsd_RR(reg,dst));
+         addInstr(env, X86Instr_Unary32(Xun_NEG,X86RM_Reg(dst)));
+         return dst;
+      }
 
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
@@ -833,7 +851,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, mk_MOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Unary32(Xun_Not,X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(dst)));
             return dst;
          }
          case Iop_64HIto32: {

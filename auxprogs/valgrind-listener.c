@@ -40,27 +40,62 @@
 #include <stdio.h>
 #include <unistd.h> /* close */
 #include <string.h>
-#include <assert.h>
 #include <sys/poll.h>
 #include <time.h>
 #include <fcntl.h>
 #include <stdlib.h>
 
+/* For VG_CLO_DEFAULT_LOGPORT and VG_EMAIL_ADDR. */
+#include "vg_include.h"
+
+
 /*---------------------------------------------------------------*/
 
-#define SUCCESS 0
-#define ERROR   1
+/* The maximum allowable number concurrent connections. */
+#define M_CONNECTIONS 50
 
-#define END_LINE '\n'
-#define SERVER_PORT 1500
-#define MAX_CONNS 50
+
+/*---------------------------------------------------------------*/
+
+__attribute__ ((noreturn))
+static void panic ( Char* str )
+{
+   fprintf(stderr,
+           "\nvalgrind-listener: the "
+           "`impossible' happened:\n   %s\n", str);
+   fprintf(stderr,
+           "Please report this bug to: %s\n\n", VG_EMAIL_ADDR);
+   exit(1);
+}
+
+__attribute__ ((noreturn))
+static void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
+{
+   fprintf(stderr,
+           "\nvalgrind-listener: %s:%d (%s): Assertion `%s' failed.\n",
+           file, line, fn, expr );
+   fprintf(stderr,
+           "Please report this bug to: %s\n\n", VG_EMAIL_ADDR);
+   exit(1);
+}
+
+#undef assert
+#undef VG__STRING
+
+#define VG__STRING(__str)  #__str
+#define assert(expr)                                             \
+  ((void) ((expr) ? 0 :					         \
+	   (my_assert_fail (VG__STRING(expr),	                 \
+                            __FILE__, __LINE__,                  \
+                            __PRETTY_FUNCTION__), 0)))
+
 
 /*---------------------------------------------------------------*/
 
 /* holds the fds for connections; zero if slot not in use. */
 int conn_count = 0;
-int           conn_fd[MAX_CONNS];
-struct pollfd conn_pollfd[MAX_CONNS];
+int           conn_fd[M_CONNECTIONS];
+struct pollfd conn_pollfd[M_CONNECTIONS];
 
 
 void set_nonblocking ( int sd )
@@ -70,7 +105,7 @@ void set_nonblocking ( int sd )
    res = fcntl(sd, F_SETFL, res | O_NONBLOCK);
    if (res != 0) {
       perror("fcntl failed");
-      exit(ERROR);
+      panic("set_nonblocking");
    }
 }
 
@@ -81,7 +116,7 @@ void set_blocking ( int sd )
    res = fcntl(sd, F_SETFL, res & ~O_NONBLOCK);
    if (res != 0) {
       perror("fcntl failed");
-      exit(ERROR);
+      panic("set_blocking");
    }
 }
 
@@ -90,11 +125,11 @@ void copyout ( char* buf, int nbuf )
 {
    int i;
    for (i = 0; i < nbuf; i++) {
-     if (buf[i] == '\n') {
-       fprintf(stdout, "\n(%d) ", conn_count);
-     } else {
-       fwrite(&buf[i], 1, 1, stdout);
-     }
+      if (buf[i] == '\n') {
+         fprintf(stdout, "\n(%d) ", conn_count);
+      } else {
+         fwrite(&buf[i], 1, 1, stdout);
+      }
    }
    fflush(stdout);
 }
@@ -120,145 +155,142 @@ int read_from_sd ( int sd )
 
 void snooze ( void )
 {
-  struct timespec req;
-  req.tv_sec = 0;
-  req.tv_nsec = 200 * 1000 * 1000;
-  nanosleep(&req,NULL);
+   struct timespec req;
+   req.tv_sec = 0;
+   req.tv_nsec = 200 * 1000 * 1000;
+   nanosleep(&req,NULL);
 }
 
 
-/* function readline */
-int read_line();
+int main (int argc, char** argv) 
+{
+   int i, j, k, res;
+   int main_sd, newSd, client_len;
 
-int main (int argc, char *argv[]) {
-  int i, j, k, res;
-  int main_sd, newSd, cliLen;
+   struct sockaddr_in client_addr, server_addr;
 
-  struct sockaddr_in cliAddr, servAddr;
+   conn_count = 0;
+   for (i = 0; i < M_CONNECTIONS; i++)
+      conn_fd[i] = 0;
 
-  conn_count = 0;
-  for (i = 0; i < MAX_CONNS; i++)
-     conn_fd[i] = 0;
-
-  /* create socket */
-  main_sd = socket(AF_INET, SOCK_STREAM, 0);
+   /* create socket */
+   main_sd = socket(AF_INET, SOCK_STREAM, 0);
    if (main_sd < 0) {
-    perror("cannot open socket ");
-    return ERROR;
-  }
+      perror("cannot open socket ");
+      panic("main -- create socket");
+   }
   
-  /* bind server port */
-  servAddr.sin_family = AF_INET;
-  servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servAddr.sin_port = htons(SERVER_PORT);
+   /* bind server port */
+   server_addr.sin_family      = AF_INET;
+   server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+   server_addr.sin_port        = htons(VG_CLO_DEFAULT_LOGPORT);
   
-  if(bind(main_sd, (struct sockaddr *) &servAddr, sizeof(servAddr))<0) {
-    perror("cannot bind port ");
-    return ERROR;
-  }
+   if (bind(main_sd, (struct sockaddr *) &server_addr, 
+                     sizeof(server_addr) ) < 0) {
+      perror("cannot bind port ");
+      panic("main -- bind port");
+   }
 
-  res = listen(main_sd,MAX_CONNS);
-  if (res != 0) {
-    perror("listen failed ");
-    return ERROR;
-  }
+   res = listen(main_sd,M_CONNECTIONS);
+   if (res != 0) {
+      perror("listen failed ");
+      panic("main -- listen");
+   }
   
-  while(1) {
+   while(1) {
 
-    snooze();
+      snooze();
 
-    /* enquire, using poll, whether there is any activity available on
-       the main socket descriptor.  If so, someone is trying to
-       connect; get the fd and add it to our table thereof. */
-    { struct pollfd ufd;
-      while (1) {
-         ufd.fd = main_sd;
-         ufd.events = POLLIN;
-         ufd.revents = 0;
-         res = poll(&ufd, 1, 0);
-         if (res == 0) break;
+      /* enquire, using poll, whether there is any activity available on
+         the main socket descriptor.  If so, someone is trying to
+         connect; get the fd and add it to our table thereof. */
+      { struct pollfd ufd;
+        while (1) {
+           ufd.fd = main_sd;
+           ufd.events = POLLIN;
+           ufd.revents = 0;
+           res = poll(&ufd, 1, 0);
+           if (res == 0) break;
 
-	 /* ok, we have someone waiting to connect.  Get the sd. */
-         cliLen = sizeof(cliAddr);
-         newSd = accept(main_sd, (struct sockaddr *) &cliAddr, &cliLen);
-         if(newSd<0) {
-            perror("cannot accept connection ");
-            return ERROR;
+           /* ok, we have someone waiting to connect.  Get the sd. */
+           client_len = sizeof(client_addr);
+           newSd = accept(main_sd, (struct sockaddr *) &client_addr, 
+                                                       &client_len);
+           if (newSd < 0) {
+              perror("cannot accept connection ");
+              panic("main -- accept connection");
+           }
+
+           /* find a place to put it. */
+	   assert(newSd > 0);
+           for (i = 0; i < M_CONNECTIONS; i++)
+              if (conn_fd[i] == 0) 
+                 break;
+
+           if (i >= M_CONNECTIONS) {
+              fprintf(stderr, "Too many concurrent connections.  "
+                              "Increase M_CONNECTIONS and recompile.\n");
+              panic("main -- too many concurrent connections");
+           }
+
+           conn_fd[i] = newSd;
+           conn_count++;
+	   printf("\n(%d) -------------------- CONNECT "
+                  "--------------------\n(%d)\n(%d) ", 
+                  conn_count, conn_count, conn_count);
+           fflush(stdout);
+        } /* while (1) */
+      }
+
+      /* We've processed all new connect requests.  Listen for changes
+         to the current set of fds. */
+      j = 0;
+      for (i = 0; i < M_CONNECTIONS; i++) {
+         if (conn_fd[i] == 0)
+            continue;
+         conn_pollfd[j].fd = conn_fd[i];
+         conn_pollfd[j].events = POLLIN /* | POLLHUP | POLLNVAL */;
+         conn_pollfd[j].revents = 0;
+         j++;
+      }
+
+      res = poll(conn_pollfd, j, 0 /* return immediately. */ );
+      if (res < 0) {
+         perror("poll(main) failed");
+         panic("poll(main) failed");
+      }
+    
+      /* nothing happened. go round again. */
+      if (res == 0) {
+         continue;
+      }
+
+      /* inspect the fds. */
+      for (i = 0; i < j; i++) {
+ 
+         if (conn_pollfd[i].revents & POLLIN) {
+            /* data is available on this fd */
+            res = read_from_sd(conn_pollfd[i].fd);
+ 
+            if (res == 0) {
+               /* the connection has been closed. */
+               /* this fd has been closed or otherwise gone bad; forget
+                about it. */
+               for (k = 0; k < M_CONNECTIONS; k++)
+                  if (conn_fd[k] == conn_pollfd[i].fd) 
+                     break;
+               assert(k < M_CONNECTIONS);
+               conn_fd[k] = 0;
+               conn_count--;
+               printf("\n(%d) ------------------- DISCONNECT "
+                      "-------------------\n(%d)\n(%d) ", 
+                      conn_count, conn_count, conn_count);
+               fflush(stdout);
+            }
          }
 
-	 /* find a place to put it. */
-	 assert(newSd > 0);
-	 for (i = 0; i < MAX_CONNS; i++)
-            if (conn_fd[i] == 0) 
-               break;
-
-         if (i >= MAX_CONNS) {
-	   printf("too many concurrent connections\n");
-	   return ERROR;
-	 }
-         conn_fd[i] = newSd;
-	 conn_count++;
-	 printf("\n(%d) -------------------- CONNECT "
-                "--------------------\n(%d)\n(%d) ", 
-                conn_count, conn_count, conn_count);
-         fflush(stdout);
-      }
-    }
-
-
-    /* We've processed all new connect requests.  Listen for changes
-       to the current set of fds. */
-    j = 0;
-    for (i = 0; i < MAX_CONNS; i++) {
-      if (conn_fd[i] == 0)
-	continue;
-      conn_pollfd[j].fd = conn_fd[i];
-      conn_pollfd[j].events = POLLIN | POLLHUP | POLLNVAL;
-      conn_pollfd[j].revents = 0;
-      j++;
-    }
-
-    res = poll(conn_pollfd, j, 0 /* return immediately. */ );
-
-    if (res < 0) {
-      perror("poll(main) failed");
-      return ERROR;
-    }
-    
-    /* nothing happened. go round again. */
-    if (res == 0) {
-       continue;
-    }
-
-    /* inspect the fds. */
-    for (i = 0; i < j; i++) {
-
-      if ((conn_pollfd[i].revents & POLLHUP) 
-          || (conn_pollfd[i].revents & POLLNVAL)) {
-	/* this fd has been closed or otherwise gone bad; forget about
-           it. */
-      closed:
-	for (k = 0; k < MAX_CONNS; k++)
-	  if (conn_fd[k] == conn_pollfd[i].fd) break;
-	assert(k < MAX_CONNS);
-	conn_fd[k] = 0;
-	 conn_count--;
-	printf("\n(%d) ------------------- DISCONNECT "
-               "-------------------\n(%d)\n(%d) ", 
-               conn_count, conn_count, conn_count);
-         fflush(stdout);
-      }
-      else 
-      if (conn_pollfd[i].revents & POLLIN) {
-	/* data is available on this fd */
-	res = read_from_sd(conn_pollfd[i].fd);
-	if (res == 0) goto closed;
-      }
-
-    } /* for (i = 0; i < j; i++) */
-
-
-    
+      } /* for (i = 0; i < j; i++) */
+  
   } /* while (1) */
 
 }

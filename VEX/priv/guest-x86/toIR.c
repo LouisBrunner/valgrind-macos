@@ -1642,6 +1642,8 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
    UChar mod_reg_rm = getIByte(delta);
    delta++;
 
+   buf[0] = (UChar)0;
+
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
       jump table seems a bit excessive. 
    */
@@ -8947,6 +8949,22 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* else fall through */
    }
 
+   /* 66 0F D6 = MOVQ -- move 64 bits from E (mem or lo half xmm) to G
+      (lo half xmm). */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD6) {
+      modrm = getIByte(delta+2);
+      if (epartIsReg(modrm)) {
+         /* fall through, awaiting test case */
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRM(modrm), 0 ));
+         DIP("movq %s,%s\n", nameXMMReg(gregOfRM(modrm)), dis_buf );
+         delta += 2+alen;
+         goto decode_success;
+      }
+   }
+
    /* F3 0F D6 = MOVQ2DQ -- move from E (mmx) to G (lo half xmm, zero
       hi half). */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xD6) {
@@ -9733,6 +9751,31 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 66 0F D2 = PSRLD by E */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD2) {
       delta = dis_SSE_shiftG_byE( sorb, delta+2, "psrld", Iop_ShrN32x4 );
+      goto decode_success;
+   }
+
+   /* 66 0F 73 /3 ib = PSRLDQ by immediate */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
+       && epartIsReg(insn[2])
+       && gregOfRM(insn[2]) == 3
+       /* hack; only deal with specific shift amounts */
+       && (insn[3] == 4 || insn[3] == 8)) {
+      Int    imm = (Int)insn[3];
+      Int    reg = eregOfRM(insn[2]);
+      IRTemp sV  = newTemp(Ity_V128);
+      IRTemp dV  = newTemp(Ity_V128);
+      delta += 4;
+      t5 = newTemp(Ity_I32);
+      assign( t5, mkU32(0) );
+      assign( sV, getXMMReg(reg) );
+      breakup128to32s( sV, &t3, &t2, &t1, &t0 );
+      switch (imm) {
+         case 8:  assign( dV, mk128from32s(t5,t5,t3,t2) ); break;
+         case 4:  assign( dV, mk128from32s(t5,t3,t2,t1) ); break;
+         default: vassert(0); /* can't get here */
+      } 
+      putXMMReg(reg, mkexpr(dV));
+      DIP("psrldq $%d,%s\n", imm, nameXMMReg(reg));
       goto decode_success;
    }
 
@@ -11353,7 +11396,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       putIReg(sz, R_EDX,
                   binop(mkSizedOp(ty,Iop_Sar8), 
                         getIReg(sz, R_EAX),
-                        mkU8(sz == 2 ? 15  : 31)) );
+                        mkU8(sz == 2 ? 15 : 31)) );
       DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
       break;
 

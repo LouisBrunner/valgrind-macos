@@ -1539,6 +1539,8 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
          return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
       case HRcFlt64:
          return X86Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+      case HRcVec128:
+         return X86Instr_SseLdSt ( False/*store*/, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genSpill_X86: unimplemented regclass");
@@ -1556,6 +1558,8 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
          return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
       case HRcFlt64:
          return X86Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+      case HRcVec128:
+         return X86Instr_SseLdSt ( True/*load*/, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_X86: unimplemented regclass");

@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (ir/iropt.h) is                               ---*/
+/*--- This file (ir/irmatch.h) is                             ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -33,41 +33,58 @@
    USA.
 */
 
-#ifndef __LIBVEX_IROPT_H
-#define __LIBVEX_IROPT_H
+/* Provides a facility for doing IR tree matching. */
+
+#ifndef __LIBVEX_IRMATCH_H
+#define __LIBVEX_IRMATCH_H
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
-#include "libvex.h"
 
-/* Top level optimiser entry point.  Returns a new BB.  Operates
-   under the control of the global "vex_control" struct. */
-extern 
-IRBB* do_iropt_BB ( IRBB* bb,
-                    IRExpr* (*specHelper) ( Char*, IRExpr**),
-                    Bool (*preciseMemExnsFn)(Int,Int),
-                    Addr64 guest_addr );
 
-/* Do a constant folding/propagation pass. */
+/* Patterns are simply IRExpr* trees, with IRExpr_Binder nodes at the
+   leaves, indicating binding points.  Use these magic macros to
+   declare and define patterns. */
+
+#define DECLARE_PATTERN(_patt) \
+   static IRExpr* _patt = NULL
+
+#define DEFINE_PATTERN(_patt,_expr)                            \
+   do {                                                        \
+      if (!(_patt)) {                                          \
+         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
+         LibVEX_SetAllocMode(AllocModePERMANENT);              \
+         _patt = (_expr);                                      \
+         LibVEX_SetAllocMode(AllocModeTEMPORARY);              \
+         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
+      }                                                        \
+   } while (0)
+
+
+/* This type returns the result of a match -- it records what
+   the binders got instantiated to. */
+
+#define N_IRMATCH_BINDERS 4
+
+typedef
+   struct {
+      IRExpr* bindee[N_IRMATCH_BINDERS];
+   }
+   MatchInfo;
+
+
+/* The matching function.  p is expected to have zero or more
+   IRExpr_Binds in it, numbered 0, 1, 2 ... Returns True if a match
+   succeeded. */
+
 extern
-IRBB* cprop_BB ( IRBB* );
+Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ );
 
-/* Do a dead-code removal pass, which is generally needed to avoid
-   crashing the tree-builder. bb is destructively modified. */
-extern
-void do_deadcode_BB ( IRBB* bb );
 
-/* Do a CSE pass.  bb is destructively modified. */
-extern
-void do_cse_BB ( IRBB* bb );
+#endif /* ndef __LIBVEX_IRMATCH_H */
 
-/* The tree-builder.  Make maximal safe trees.  bb is destructively
-   modified. */
-extern
-void do_treebuild_BB ( IRBB* bb );
 
-#endif /* ndef __LIBVEX_IROPT_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                          ir/iropt.h ---*/
+/*--- end                                        ir/irmatch.h ---*/
 /*---------------------------------------------------------------*/

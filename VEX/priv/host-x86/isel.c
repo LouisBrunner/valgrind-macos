@@ -37,6 +37,7 @@
 #include "libvex_ir.h"
 #include "libvex.h"
 
+#include "ir/irmatch.h"
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "host-generic/h_generic_regs.h"
@@ -44,96 +45,10 @@
 
 
 /*---------------------------------------------------------*/
-/*--- Stuff for pattern matching on IR.  This isn't     ---*/
-/*--- x86 specific, and should be moved elsewhere.      ---*/
+/*--- misc helpers                                      ---*/
 /*---------------------------------------------------------*/
 
-#define DECLARE_PATTERN(_patt) \
-   static IRExpr* _patt = NULL
-
-#define DEFINE_PATTERN(_patt,_expr)                            \
-   do {                                                        \
-      if (!(_patt)) {                                          \
-         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
-         LibVEX_SetAllocMode(AllocModePERMANENT);              \
-         _patt = (_expr);                                      \
-         LibVEX_SetAllocMode(AllocModeTEMPORARY);              \
-         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
-      }                                                        \
-   } while (0)
-
-
-#define N_MATCH_BINDERS 4
-typedef
-   struct {
-      IRExpr* bindee[N_MATCH_BINDERS];
-   }
-   MatchInfo;
-
-
-static void setBindee ( MatchInfo* mi, Int n, IRExpr* bindee )
-{
-   if (n < 0 || n >= N_MATCH_BINDERS)
-      vpanic("setBindee: out of range index");
-   if (mi->bindee[n] != NULL)
-      vpanic("setBindee: bindee already set");
-   mi->bindee[n] = bindee;
-}
-
-static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
-{
-   switch (p->tag) {
-      case Iex_Binder: /* aha, what we were looking for. */
-         setBindee(mi, p->Iex.Binder.binder, e);
-         return True;
-#if 0
-      case Iex_GetI:
-         if (e->tag != Iex_GetI) return False;
-         if (p->Iex.GetI.ty != e->Iex.GetI.ty) return False;
-         /* we ignore the offset limit hints .. */
-         if (!matchWrk(mi, p->Iex.GetI.offset, e->Iex.GetI.offset))
-            return False;
-         return True;
-#endif
-      case Iex_Unop:
-         if (e->tag != Iex_Unop) return False;
-         if (p->Iex.Unop.op != e->Iex.Unop.op) return False;
-         if (!matchWrk(mi, p->Iex.Unop.arg, e->Iex.Unop.arg))
-            return False;
-         return True;
-      case Iex_Binop:
-         if (e->tag != Iex_Binop) return False;
-         if (p->Iex.Binop.op != e->Iex.Binop.op) return False;
-	 if (!matchWrk(mi, p->Iex.Binop.arg1, e->Iex.Binop.arg1))
-            return False;
-	 if (!matchWrk(mi, p->Iex.Binop.arg2, e->Iex.Binop.arg2))
-            return False;
-         return True;
-      case Iex_LDle:
-         if (e->tag != Iex_LDle) return False;
-         if (p->Iex.LDle.ty != e->Iex.LDle.ty) return False;
-         if (!matchWrk(mi, p->Iex.LDle.addr, e->Iex.LDle.addr))
-            return False;
-         return True;
-      case Iex_Const:
-         if (e->tag != Iex_Const) return False;
-         return eqIRConst(p->Iex.Const.con, e->Iex.Const.con);
-      default: 
-         ppIRExpr(p);
-         vpanic("match");
-   }
-}
-
-static Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
-{
-   Int i;
-   for (i = 0; i < N_MATCH_BINDERS; i++)
-      mi->bindee[i] = NULL;
-   return matchWrk(mi, p, e);
-}
-
-/*-----*/
-/* These are duplicated in x86toIR.c */
+/* These are duplicated in guest-x86/toIR.c */
 static IRExpr* unop ( IROp op, IRExpr* a )
 {
    return IRExpr_Unop(op, a);
@@ -158,7 +73,6 @@ static IRExpr* bind ( Int binder )
 {
    return IRExpr_Binder(binder);
 }
-
 
 
 

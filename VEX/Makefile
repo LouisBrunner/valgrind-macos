@@ -15,9 +15,11 @@ PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/main/vex_util.h			\
 		priv/guest-x86/gdefs.h			\
 		priv/guest-arm/gdefs.h			\
+		priv/ir/irmatch.h			\
 		priv/ir/iropt.h
 
 LIB_OBJS = 	priv/ir/irdefs.o			\
+		priv/ir/irmatch.o			\
 		priv/ir/iropt.o				\
 		priv/main/vex_main.o			\
 		priv/main/vex_globals.o			\
@@ -88,6 +90,10 @@ test_main.o: $(PUB_HEADERS) test_main.c test_main.h
 priv/ir/irdefs.o: $(ALL_HEADERS) priv/ir/irdefs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/irdefs.o \
 					 -c priv/ir/irdefs.c
+
+priv/ir/irmatch.o: $(ALL_HEADERS) priv/ir/irmatch.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/irmatch.o \
+					 -c priv/ir/irmatch.c
 
 priv/ir/iropt.o: $(ALL_HEADERS) priv/ir/iropt.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/iropt.o \

@@ -117,8 +117,7 @@ typedef
                                (read+write two different addrs)      */
    } CC_type;
 
-/* Instruction-level cost-centres.  The typedefs for these structs are in
- * vg_include.c 
+/* Instruction-level cost-centres.  
  *
  * WARNING:  the 'tag' field *must* be the first byte of both CC types.
  *

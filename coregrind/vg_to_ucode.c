@@ -2952,9 +2952,9 @@ void codegen_LAHF ( UCodeBlock* cb )
 
    /* Pushed arg is ignored, it just provides somewhere to put the
       return value. */
-   uInstr0(cb, CALLM_S, 0);
    uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t);
    uLiteral(cb, 0);
+   uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, PUSH,  4, TempReg, t);
    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
    uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);

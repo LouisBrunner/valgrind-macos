@@ -357,7 +357,7 @@ UInt VG_(stack)[10000];
 UInt VG_(sigstack)[10000];
 
 /* Saving stuff across system calls. */
-UInt VG_(real_fpu_state_saved_over_syscall)[VG_SIZE_OF_FPUSTATE_W];
+UInt VG_(real_fpu_state_saved_over_syscall)[108/4];
 Addr VG_(esp_saved_over_syscall);
 
 /* Counts downwards in vg_run_innerloop. */

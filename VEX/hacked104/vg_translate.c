@@ -3121,7 +3121,7 @@ void VG_(translate) ( ThreadState* tst,
    UChar* final;
    Bool debugging_translation;
 
-   static Int v0thresh = 940;
+   static Int v0thresh = 94000;
    static Int v2thresh = 940000;
 
    TranslateResult tres;

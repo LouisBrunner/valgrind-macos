@@ -1265,6 +1265,24 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    real or virtual; in any case it must not be changed by subsequent
    code emitted by the caller.  */
 
+/* IEEE 754 formats.  From http://www.freesoft.org/CIE/RFC/1832/32.htm:
+
+    Type                  S (1 bit)   E (11 bits)   F (52 bits)
+    ----                  ---------   -----------   -----------
+    signalling NaN        u           2047 (max)    .0uuuuu---u
+                                                    (with at least
+                                                     one 1 bit)
+    quiet NaN             u           2047 (max)    .1uuuuu---u
+
+    negative infinity     1           2047 (max)    .000000---0
+
+    positive infinity     0           2047 (max)    .000000---0
+
+    negative zero         1           0             .000000---0
+
+    positive zero         0           0             .000000---0
+*/
+
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 {
    //   MatchInfo mi;
@@ -1282,8 +1300,23 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       vassert(sizeof(u) == 8);
       vassert(sizeof(u.i64) == 8);
       vassert(sizeof(u.f64) == 8);
-      vassert(e->Iex.Const.con->tag == Ico_F64);
-      u.f64 = e->Iex.Const.con->Ico.F64;
+
+      if (e->Iex.Const.con->tag == Ico_F64) {
+         u.f64 = e->Iex.Const.con->Ico.F64;
+      } 
+      else if (e->Iex.Const.con->tag == Ico_NaN64) {
+         /* QNaN is 0 2047 1 0(51times) 
+            == 0b 11111111111b 1 0(51times)
+            == 0x7FF8 0000 0000 0000
+         */
+         /* Since we're running on a little-endian target, and
+            generating code for one: */
+         u.i64[1] = 0x7FF80000;
+         u.i64[0] = 0x00000000;
+      }
+      else
+         vpanic("iselDblExpr(x86): const");
+
       addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[1])));
       addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[0])));
       addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, freg, 
@@ -1349,7 +1382,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
         HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
         HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
         HReg dst = newVRegF(env);
-        addInstr(env, X86Instr_FpCMov(Xcc_ALWAYS,rX,dst));
+        addInstr(env, X86Instr_FpUnary(Xfp_MOV,rX,dst));
         addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
         addInstr(env, X86Instr_FpCMov(Xcc_Z,r0,dst));
         return dst;
@@ -1442,6 +1475,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, 
             X86Instr_FpLdSt( False/*store*/, 8, val,
                              X86AMode_IRRS(0, hregX86_EBP(), idx, 0)) );
+         return;
+      }
+      if (ty == Ity_I8) {
+         HReg r = iselIntExpr_R(env, stmt->Ist.Put.expr);
+         addInstr(env, X86Instr_Store(
+                          1,
+                          r,
+                          X86AMode_IRRS(0, hregX86_EBP(), idx, 0)) );
          return;
       }
       break;

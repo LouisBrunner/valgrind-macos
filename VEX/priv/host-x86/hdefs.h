@@ -278,7 +278,7 @@ typedef
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
       Xin_FpI64,     /* FP fake to/from 64-bit signed int */
-      Xin_FpCMov     /* FP fake floating point conditional move */
+      Xin_FpCMov     /* FP fake floating point (un)conditional move */
    }
    X86InstrTag;
 

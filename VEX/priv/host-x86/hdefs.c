@@ -852,6 +852,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
             addHRegUse(u, HRmRead, i->Xin.FpI64.iregLo);
          }
          return;
+      case Xin_FpCMov:
+         addHRegUse(u, HRmRead, i->Xin.FpCMov.src);
+         addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -933,6 +937,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.FpI64.iregHi);
          mapReg(m, &i->Xin.FpI64.iregLo);
          return;
+      case Xin_FpCMov:
+         mapReg(m, &i->Xin.FpCMov.src);
+         mapReg(m, &i->Xin.FpCMov.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("mapRegs_X86Instr");
@@ -968,7 +976,7 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 
 
 /* x86 spill/reload using the hacked104 testbed.  Spill slots
-   start at word 51, and there are 24 in total. 
+   start at word 53, and there are 100 in total. 
 */
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
@@ -1751,6 +1759,21 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
         p = do_fstp_st(p, 1+fregNo(i->Xin.FpI64.freg));
         goto done;
      }
+
+   case Xin_FpCMov:
+      /* jmp fwds if !condition */
+      *p++ = 0x70 + (i->Xin.FpCMov.cond ^ 1);
+      *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
+      ptmp = p;
+
+      /* ffree %st7 ; fld %st(src) ; fstp %st(1+dst) */
+      p = do_ffree_st7(p);
+      p = do_fld_st(p, 0+hregNumber(i->Xin.FpCMov.src));
+      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpCMov.dst));
+
+      /* Fill in the jump offset. */
+      *(ptmp-1) = p - ptmp;
+      goto done;
 
    default: 
       goto bad;

@@ -988,7 +988,6 @@ extern void VG_(sigstartup_actions) ( void );
 
 extern void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *, Bool async );
 extern void VG_(unblock_host_signal) ( Int sigNo );
-extern void VG_(handle_SCSS_change) ( Bool force_update );
 
 extern Bool VG_(is_sig_ign) ( Int sigNo );
 

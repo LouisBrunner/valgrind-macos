@@ -379,7 +379,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
    After a possible SCSS change, update SKSS and the kernel itself.
    ------------------------------------------------------------------ */
 
-void VG_(handle_SCSS_change) ( Bool force_update )
+static void handle_SCSS_change ( Bool force_update )
 {
    Int            res, sig;
    SKSS           skss_old;
@@ -583,7 +583,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
 
    /* All happy bunnies ... */
    if (new_act) {
-      VG_(handle_SCSS_change)( False /* lazy update */ );
+      handle_SCSS_change( False /* lazy update */ );
    }
    SET_SYSCALL_RETVAL(tid, 0);
    return;
@@ -1914,7 +1914,7 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 	 /* Do the ONESHOT thing. */
 	 handler->scss_handler = VKI_SIG_DFL;
 
-	 VG_(handle_SCSS_change)( False /* lazy update */ );
+	 handle_SCSS_change( False /* lazy update */ );
       }
    
       switch(tst->status) {
@@ -2377,7 +2377,7 @@ void VG_(sigstartup_actions) ( void )
 
    /* Calculate SKSS and apply it.  This also sets the initial kernel
       mask we need to run with. */
-   VG_(handle_SCSS_change)( True /* forced update */ );
+   handle_SCSS_change( True /* forced update */ );
 
 }
 

@@ -3057,6 +3057,9 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
 
       stmt( IRStmt_Put(OFFB_TILEN, mkU32(assumed_line_size) ) );
 
+      /* be paranoid ... */
+      stmt( IRStmt_MFence() );
+
       irbb->jumpkind = Ijk_TInval;
       irbb->next     = mkU32(guest_cia_curr_instr + 4);
       *whatNext      = Dis_StopHere;

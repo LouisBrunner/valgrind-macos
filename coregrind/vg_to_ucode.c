@@ -3769,6 +3769,19 @@ void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
    DIP("pop %s\n", VG_(name_of_seg_reg)(sreg));
 }
 
+static
+void dis_ret ( UCodeBlock* cb, UInt d32 )
+{
+   Int t1 = newTemp(cb), t2 = newTemp(cb);
+   uInstr2(cb, GET,  4, ArchReg, R_ESP, TempReg, t1);
+   uInstr2(cb, LOAD, 4, TempReg, t1,    TempReg, t2);
+   uInstr2(cb, ADD,  4, Literal, 0,     TempReg, t1);
+   uLiteral(cb, 4+d32);
+   uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ESP);
+   jmp_treg(cb, t2);
+   LAST_UINSTR(cb).jmpkind = JmpRet;
+}
+
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
 /*------------------------------------------------------------*/
@@ -5187,24 +5200,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0xC2: /* RET imm16 */
       d32 = getUDisp16(eip); eip += 2;
-      goto do_Ret;
-   case 0xC3: /* RET */
-      d32 = 0;
-      goto do_Ret;
-   do_Ret:
-      t1 = newTemp(cb); t2 = newTemp(cb);
-      uInstr2(cb, GET,  4, ArchReg, R_ESP, TempReg, t1);
-      uInstr2(cb, LOAD, 4, TempReg, t1,    TempReg, t2);
-      uInstr2(cb, ADD,  4, Literal, 0,     TempReg, t1);
-      uLiteral(cb, 4+d32);
-      uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ESP);
-      jmp_treg(cb, t2);
-      LAST_UINSTR(cb).jmpkind = JmpRet;
-
+      dis_ret(cb, d32);
       *isEnd = True;
-      if (d32 == 0) { DIP("ret\n"); }
-      else          { DIP("ret %d\n", d32); }
-
+      DIP("ret %d\n", d32);
+      break;
+   case 0xC3: /* RET */
+      dis_ret(cb, 0);
+      *isEnd = True;
+      DIP("ret\n");
       break;
       
    case 0xE8: /* CALL J4 */
@@ -6216,7 +6219,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          jmp_lit(cb, eip);
          LAST_UINSTR(cb).jmpkind = JmpYield;
          *isEnd = True;
-      } 
+      }
+      else
+      if (abyte == 0xC3) { /* REP RET */
+         /* AMD K7/K8-specific optimisation; faster than vanilla RET */
+         dis_ret(cb, 0);
+         *isEnd = True;
+         DIP("rep ret\n");
+      }
       else {
          goto decode_failure;
       }

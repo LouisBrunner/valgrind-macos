@@ -3462,10 +3462,10 @@ Addr dis_SSE3_load_store_or_mov ( UCodeBlock* cb,
       if (dis && is_store)
          VG_(printf)("%s %s, %s\n", name,
                      nameXMMReg(gregOfRM(modrm)),
-                     nameXMMReg(eregOfRM(modrm)) );
+                     nameIReg(4,eregOfRM(modrm)) );
       if (dis && !is_store)
          VG_(printf)("%s %s, %s\n", name,
-                      nameXMMReg(eregOfRM(modrm)), 
+                      nameIReg(4,eregOfRM(modrm)), 
                       nameXMMReg(gregOfRM(modrm)) );
    } else {
       pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
@@ -3513,10 +3513,10 @@ Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb,
       if (dis && is_store)
          VG_(printf)("%s %s, %s\n", name,
                      nameXMMReg(gregOfRM(modrm)),
-                     nameXMMReg(eregOfRM(modrm)) );
+                     nameIReg(4,eregOfRM(modrm)) );
       if (dis && !is_store)
          VG_(printf)("%s %s, %s\n", name,
-                      nameXMMReg(eregOfRM(modrm)), 
+                      nameIReg(4,eregOfRM(modrm)), 
                       nameXMMReg(gregOfRM(modrm)) );
    } else {
       pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
@@ -3672,6 +3672,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip += 4;
 	 t1 = newTemp(cb);
          /* sz is 4 for both CVTTSD2SI and CVTTSS2SI. */
+         vg_assert(epartIsReg(modrm));
          uInstr3(cb, SSE3g_RegWr, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
@@ -3715,28 +3716,28 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       t1 = newTemp(cb);
       if (epartIsReg(modrm)) { 
          uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
+         vg_assert(epartIsReg(modrm));
          uInstr3(cb, SSE3g_RegRd, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
+                     Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
                      TempReg, t1 );
          eip += 4;
 	 if (dis)
             VG_(printf)("cvtsi2s%s %s, %s\n", s_or_d,
-                                              nameIReg(4,eregOfRM(modrm)), 
-                                              nameXMMReg(gregOfRM(modrm)));
+                        nameIReg(4,eregOfRM(modrm)), 
+                        nameXMMReg(gregOfRM(modrm)));
       } else {
          pair = disAMode ( cb, sorb, eip+3, dis?dis_buf:NULL );
          t2   = LOW24(pair);
          eip += 3+HI8(pair);
-	 uInstr2(cb, LOAD, 4, TempReg, t2, TempReg, t1);
-         uInstr3(cb, SSE3g_RegRd, 4,
+	 uInstr3(cb, SSE3a_MemRd, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
-                     TempReg, t1 );
+                     Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
+                     TempReg, t2 );
 	 if (dis)
             VG_(printf)("cvtsi2s%s %s, %s\n", s_or_d,
-                                              dis_buf,
-                                              nameXMMReg(gregOfRM(modrm)));
+                        dis_buf,
+                        nameXMMReg(gregOfRM(modrm)));
       }
       goto decode_success;
    }
@@ -3905,13 +3906,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVQ -- move 8 bytes of XMM reg to/from XMM reg or mem.  How
+   /* MOVQ -- move 8 bytes of XMM reg to XMM reg or mem.  How
       does this differ from MOVSD ?? */
    if (sz == 2
        && insn[0] == 0x0F
        && insn[1] == 0xD6) {
       eip = dis_SSE3_load_store_or_mov 
-               ( cb, sorb, eip+2, 8, False /*load*/, "movq",
+               ( cb, sorb, eip+2, 8, True /*store*/, "movq",
                      0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -3971,14 +3972,31 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVD -- 4-byte load/store. */
+   /* MOVD -- 4-byte move between xmmregs and (ireg or memory). */
    if (sz == 2 
        && insn[0] == 0x0F 
        && (insn[1] == 0x6E || insn[1] == 0x7E)) {
       Bool is_store = insn[1]==0x7E;
-      eip = dis_SSE3_load_store_or_mov
-               (cb, sorb, eip+2, 4, is_store, "movd", 
-                    0x66, insn[0], insn[1] );
+      modrm = insn[2];
+      if (epartIsReg(modrm) && is_store) {
+	 VG_(core_panic)("MOVD reg - store (to ireg)");
+      } else
+      if (epartIsReg(modrm) && !is_store) {
+         t1 = newTemp(cb);
+	 uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
+         uInstr3(cb, SSE3g_RegRd, 4,
+                     Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                     Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                     TempReg, t1 );
+	 if (dis)
+	    VG_(printf)("movd %s, %s\n", 
+		        nameIReg(4,eregOfRM(modrm)),
+		        nameXMMReg(gregOfRM(modrm)));
+      } else {
+         eip = dis_SSE3_load_store_or_mov
+                  (cb, sorb, eip+2, 4, is_store, "movd", 
+                       0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -4008,6 +4026,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       modrm = insn[2];
       if (epartIsReg(modrm)) {
          uInstr2(cb, GET, 2, ArchReg, eregOfRM(modrm), TempReg, t1);
+         vg_assert(epartIsReg(modrm));
          uInstr3(cb, SSE3g1_RegRd, 2,
                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,

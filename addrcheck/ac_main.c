@@ -983,7 +983,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case SSE2a_MemRd:
          case SSE2a_MemWr:
 	 case SSE3a_MemWr:
-	    sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+	    sk_assert(u_in->size == 4 || u_in->size == 8 
+                      || u_in->size == 16);
 	    goto do_Access_ARG3;
          do_Access_ARG3:
             sk_assert(u_in->tag3 == TempReg);
@@ -996,18 +997,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case SSE2a1_MemRd:
-         case SSE2a1_MemWr:
+	    //         case SSE2a1_MemRd:
+	    //         case SSE2a1_MemWr:
          case SSE3g1_RegWr:
          case SSE3g1_RegRd:
-         case SSE3ag_MemRd_RegWr:
-         case SSE5:
-         case SSE3a1_MemRd:
-         case SSE3a1_MemWr:
+	   //         case SSE3ag_MemRd_RegWr:
+	   //         case SSE3a1_MemRd:
+	   //         case SSE3a1_MemWr:
 	    VG_(pp_UInstr)(0,u_in);
 	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
 	    break;
 
+         case SSE5:
          case SSE3g_RegWr:
          case SSE3g_RegRd:
          case SSE4:

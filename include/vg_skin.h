@@ -618,6 +618,7 @@ typedef
       SSE3a_MemRd,
       SSE3a_MemWr,
 
+#if 0
       /* 4 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
          Held in val1[15:0] and val2[15:0], and mod and rm are to be
@@ -626,7 +627,7 @@ typedef
          Transfer is always at size 16.  */
       SSE2a1_MemRd,
       SSE2a1_MemWr,
-
+#endif
       /* 4 bytes, writes an integer register.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg xmmreg.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced
@@ -661,6 +662,7 @@ typedef
       */
       SSE3g_RegRd,
 
+#if 0
       /* 4 bytes, reads memory, writes an integer register, but is
          nevertheless an SSE insn.  The insn is of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:mod ireg rm where mod indicates
@@ -676,11 +678,11 @@ typedef
          and so this is what the sz field holds.
       */
       SSE3ag_MemRd_RegWr,
-
+#endif
       /* 5 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0], val2[15:0] and val3[7:0]. */
       SSE5,
- 
+#if 0
       /* 5 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
          Held in val1[15:0], val2[15:0], lit32[7:0].  
@@ -689,7 +691,7 @@ typedef
          Temp/Real Reg.  Transfer is always at size 16.  */
       SSE3a1_MemRd,
       SSE3a1_MemWr,
-
+#endif
       /* ------------------------ */
 
       /* Not strictly needed, but improve address calculation translations. */

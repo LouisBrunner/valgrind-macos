@@ -2,7 +2,6 @@ noinst_HEADERS = \
 	ume_archdefs.h
 
 EXTRA_DIST =		\
-	Make.inc	\
 	ume_archdefs.c	\
 	ume_archdefs.h	\
 	ume_entry.S	\

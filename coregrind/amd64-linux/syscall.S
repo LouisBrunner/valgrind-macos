@@ -101,11 +101,11 @@ VG_(clone):
         // CHILD - call thread function
         pop     %rax                    // pop fn
         pop     %rdi                    // pop fn arg1: arg
-        call    *%eax                   // call fn
+        call    *%rax                   // call fn
 
         // exit with result
         movq    %rax, %rdi              // arg1: return value from fn
-        movl    $__NR_exit, %eax
+        movq    $__NR_exit, %rax
 
         syscall
 

@@ -12041,45 +12041,29 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       DIP("popf%c\n", nameISize(sz));
       break;
 
-//--    case 0x61: /* POPA */
-//--     { Int reg;
-//--       /* Just to keep things sane, we assert for a size 4.  It's
-//--          probably OK for size 2 as well, but I'd like to find a test
-//--          case; ie, have the assertion fail, before committing to it.
-//--          If it fails for you, uncomment the sz == 2 bit, try again,
-//--          and let me know whether or not it works.  (jseward@acm.org).  */
-//--       vg_assert(sz == 4 /* || sz == 2 */);
-//-- 
-//--       /* Eight values are popped, one per register, but the value of
-//--          %esp on the stack is ignored and instead incremented (in one
-//--          hit at the end) for each of the values. */
-//--       t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
-//--       uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t2);
-//--       uInstr2(cb, MOV,    4, TempReg, t2,    TempReg, t3);
-//-- 
-//--       /* Do %edi, %esi, %ebp */
-//--       for (reg = 7; reg >= 5; reg--) {
-//--           uInstr2(cb, LOAD,  sz, TempReg, t2, TempReg, t1);
-//--           uInstr2(cb, ADD,    4, Literal, 0,  TempReg, t2);
-//--           uLiteral(cb, sz);
-//--           uInstr2(cb, PUT,   sz, TempReg, t1, ArchReg, reg);
-//--       }
-//--       /* Ignore (skip) value of %esp on stack. */
-//--       uInstr2(cb, ADD,    4, Literal, 0,  TempReg, t2);
-//--       uLiteral(cb, sz);
-//--       /* Do %ebx, %edx, %ecx, %eax */
-//--       for (reg = 3; reg >= 0; reg--) {
-//--           uInstr2(cb, LOAD,  sz, TempReg, t2, TempReg, t1);
-//--           uInstr2(cb, ADD,    4, Literal, 0,  TempReg, t2);
-//--           uLiteral(cb, sz);
-//--           uInstr2(cb, PUT,   sz, TempReg, t1, ArchReg, reg);
-//--       }
-//--       uInstr2(cb, ADD,    4, Literal, 0,  TempReg, t3);
-//--       uLiteral(cb, sz * 8);             /* One 'sz' per register */
-//--       uInstr2(cb, PUT,    4, TempReg, t3, ArchReg, R_ESP);
-//--       DIP("popa%c\n", nameISize(sz));
-//--       break;
-//--     }
+   case 0x61: /* POPA */
+      /* This is almost certainly wrong for sz==2.  So ... */
+      if (sz != 4) goto decode_failure;
+
+      /* t5 is the old %ESP value. */
+      t5 = newTemp(Ity_I32);
+      assign( t5, getIReg(4, R_ESP) );
+
+      /* Reload all the registers, except %esp. */
+      putIReg(4,R_EAX, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32(28)) ));
+      putIReg(4,R_ECX, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32(24)) ));
+      putIReg(4,R_EDX, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32(20)) ));
+      putIReg(4,R_EBX, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32(16)) ));
+      /* ignore saved %ESP */
+      putIReg(4,R_EBP, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32( 8)) ));
+      putIReg(4,R_ESI, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32( 4)) ));
+      putIReg(4,R_EDI, loadLE(Ity_I32, binop(Iop_Add32,mkexpr(t5),mkU32( 0)) ));
+
+      /* and move %ESP back up */
+      putIReg( 4, R_ESP, binop(Iop_Add32, mkexpr(t5), mkU32(8*4)) );
+
+      DIP("pusha%c\n", nameISize(sz));
+      break;
 
    case 0x8F: /* POPL/POPW m32 */
      { Int len;
@@ -12201,49 +12185,39 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       break;
    }
 
-//--    case 0x60: /* PUSHA */
-//--     { Int reg;
-//--       /* Just to keep things sane, we assert for a size 4.  It's
-//--          probably OK for size 2 as well, but I'd like to find a test
-//--          case; ie, have the assertion fail, before committing to it.
-//--          If it fails for you, uncomment the sz == 2 bit, try again,
-//--          and let me know whether or not it works.  (jseward@acm.org).  */
-//--       vg_assert(sz == 4 /* || sz == 2 */);
-//-- 
-//--       /* This is the Right Way, in that the value to be pushed is
-//--          established before %esp is changed, so that pusha
-//--          correctly pushes the old %esp value.  New value of %esp is
-//--          pushed at start. */
-//--       t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
-//--       t4 = newTemp(cb);
-//--       uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t3);
-//--       uInstr2(cb, MOV,    4, TempReg, t3,    TempReg, t2);
-//--       uInstr2(cb, MOV,    4, TempReg, t3,    TempReg, t4);
-//--       uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t4);
-//--       uLiteral(cb, sz * 8);             /* One 'sz' per register. */
-//--       uInstr2(cb, PUT,    4, TempReg, t4,  ArchReg, R_ESP);
-//--       /* Do %eax, %ecx, %edx, %ebx */
-//--       for (reg = 0; reg <= 3; reg++) {
-//--          uInstr2(cb, GET,   sz, ArchReg, reg, TempReg, t1);
-//--          uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
-//--          uLiteral(cb, sz);
-//--          uInstr2(cb, STORE, sz, TempReg,  t1, TempReg, t2);
-//--       }
-//--       /* Push old value of %esp */
-//--       uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, STORE, sz, TempReg,  t3, TempReg, t2);
-//--       /* Do %ebp, %esi, %edi */
-//--       for (reg = 5; reg <= 7; reg++) {
-//--          uInstr2(cb, GET,   sz, ArchReg, reg, TempReg, t1);
-//--          uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
-//--          uLiteral(cb, sz);
-//--          uInstr2(cb, STORE, sz, TempReg,  t1, TempReg, t2);
-//--       }
-//--       DIP("pusha%c\n", nameISize(sz));
-//--       break;
-//--    }
-//-- 
+   case 0x60: /* PUSHA */
+      /* This is almost certainly wrong for sz==2.  So ... */
+      if (sz != 4) goto decode_failure;
+
+      /* This is the Right Way, in that the value to be pushed is
+         established before %esp is changed, so that pusha
+         correctly pushes the old %esp value.  New value of %esp is
+         pushed at start. */
+      /* t0 is the %ESP value we're going to push. */
+      t0 = newTemp(Ity_I32);
+      assign( t0, getIReg(4, R_ESP) );
+
+      /* t5 will be the new %ESP value. */
+      t5 = newTemp(Ity_I32);
+      assign( t5, binop(Iop_Sub32, mkexpr(t0), mkU32(8*4)) );
+
+      /* Update guest state before prodding memory. */
+      putIReg(4, R_ESP, mkexpr(t5));
+
+      /* Dump all the registers. */
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32(28)), getIReg(4,R_EAX) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32(24)), getIReg(4,R_ECX) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32(20)), getIReg(4,R_EDX) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32(16)), getIReg(4,R_EBX) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32(12)), mkexpr(t0) /*esp*/);
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32( 8)), getIReg(4,R_EBP) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32( 4)), getIReg(4,R_ESI) );
+      storeLE( binop(Iop_Add32,mkexpr(t5),mkU32( 0)), getIReg(4,R_EDI) );
+
+      DIP("pusha%c\n", nameISize(sz));
+      break;
+
+
 //--    case 0x0E: /* PUSH %CS */
 //--       dis_push_segreg( cb, R_CS, sz ); break;
 //--    case 0x1E: /* PUSH %DS */

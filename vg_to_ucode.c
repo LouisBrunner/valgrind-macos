@@ -4554,7 +4554,7 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
          /* Split up giant basic blocks into pieces, so the
             translations fall within 64k. */
          if (eip - eip0 > 2000 && !isEnd) {
-            if (VG_(clo_verbosity) > 0)
+            if (VG_(clo_verbosity) > 2)
                VG_(message)(Vg_DebugMsg,
                   "Warning: splitting giant basic block into pieces");
             uInstr1(cb, JMP, 0, Literal, 0);

@@ -1858,7 +1858,17 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
    }
 
-   // Check various option values
+   /* Make VEX control parameters sane */
+
+   if (VG_(clo_vex_control).guest_chase_thresh
+       >= VG_(clo_vex_control).guest_max_insns)
+      VG_(clo_vex_control).guest_chase_thresh
+         = VG_(clo_vex_control).guest_max_insns - 1;
+
+   if (VG_(clo_vex_control).guest_chase_thresh < 0)
+      VG_(clo_vex_control).guest_chase_thresh = 0;
+
+   /* Check various option values */
 
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;

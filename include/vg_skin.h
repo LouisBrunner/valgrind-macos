@@ -1498,10 +1498,9 @@ extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
 extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
                                     /*OUT*/VgHashNode*** next_ptr );
 
-/* Allocates a sorted array of pointers to all the shadow chunks of malloc'd
-   blocks. */
-extern VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable t,
-                                              /*OUT*/ UInt* n_shadows );
+/* Allocates an array of pointers to all the shadow chunks of malloc'd
+   blocks.  Must be freed with VG_(free)(). */
+extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_shadows );
 
 /* Returns first node that matches predicate `p', or NULL if none do.
    Extra arguments can be implicitly passed to `p' using nested functions;

@@ -361,6 +361,13 @@ Int MAC_(bytes_dubious)    = 0;
 Int MAC_(bytes_reachable)  = 0;
 Int MAC_(bytes_suppressed) = 0;
 
+static Int lc_compar(void* n1, void* n2)
+{
+   MAC_Chunk* mc1 = *(MAC_Chunk**)n1;
+   MAC_Chunk* mc2 = *(MAC_Chunk**)n2;
+   return (mc1->data < mc2->data ? -1 : 1);
+}
+
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
    vg_scan_all_valid_memory above).  All this is to avoid duplication
@@ -387,9 +394,17 @@ void MAC_(do_detect_memory_leaks) (
    LossRecord* errlist;
    LossRecord* p;
 
-   /* VG_(HashTable_to_array) allocates storage for shadows */
-   lc_shadows = (MAC_Chunk**)VG_(HT_to_sorted_array)( MAC_(malloc_list),
-                                                        &lc_n_shadows );
+   /* VG_(HT_to_array) allocates storage for shadows */
+   lc_shadows = (MAC_Chunk**)VG_(HT_to_array)( MAC_(malloc_list),
+                                               &lc_n_shadows );
+
+   /* Sort the array. */
+   VG_(ssort)((void*)lc_shadows, lc_n_shadows, sizeof(VgHashNode*), lc_compar);
+
+   /* Sanity check; assert that the blocks are now in order */
+   for (i = 0; i < lc_n_shadows-1; i++) {
+      sk_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
+   }
 
    /* Sanity check -- make sure they don't overlap */
    for (i = 0; i < lc_n_shadows-1; i++) {

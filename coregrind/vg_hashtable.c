@@ -100,45 +100,11 @@ VgHashNode* VG_(HT_get_node) ( VgHashTable table, UInt key,
    return curr;
 }
 
-static
-void sort_hash_array ( VgHashNode** shadows, UInt n_shadows )
-{
-   Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
-                      9841, 29524, 88573, 265720,
-                      797161, 2391484 };
-   Int          lo = 0;
-   Int          hi = n_shadows-1;
-   Int          i, j, h, bigN, hp;
-   VgHashNode* v;
-
-   bigN = hi - lo + 1; if (bigN < 2) return;
-   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
-   vg_assert(0 <= hp && hp < 14);
-
-   for (; hp >= 0; hp--) {
-      h = incs[hp];
-      i = lo + h;
-      while (1) {
-         if (i > hi) break;
-         v = shadows[i];
-         j = i;
-         while (shadows[j-h]->key > v->key) {
-            shadows[j] = shadows[j-h];
-            j = j - h;
-            if (j <= (lo + h - 1)) break;
-         }
-         shadows[j] = v;
-         i++;
-      }
-   }
-}
-
 /* Allocates a suitably-sized array, copies all the malloc'd block
-   shadows into it, sorts it by the `key' field, then returns both the array
-   and the size of it.  This is used by the memory-leak detector.
+   shadows into it, then returns both the array and the size of it.  This is
+   used by the memory-leak detector.
 */
-VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable table, 
-                                       /*OUT*/ UInt* n_shadows )
+VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_shadows )
 {
    UInt       i, j;
    VgHashNode** arr;
@@ -162,13 +128,6 @@ VgHashNode** VG_(HT_to_sorted_array) ( VgHashTable table,
       }
    }
    vg_assert(j == *n_shadows);
-
-   sort_hash_array(arr, *n_shadows);
-
-   /* Sanity check; assert that the blocks are now in order */
-   for (i = 0; i < *n_shadows-1; i++) {
-      vg_assert( arr[i]->key < arr[i+1]->key );
-   }
 
    return arr;
 }

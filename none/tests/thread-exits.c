@@ -92,12 +92,12 @@ int main()
 	pthread_t pth;
 	sigset_t mask;
 	int status;
+	struct sigaction sa;
 
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGCHLD);
 	sigprocmask(SIG_BLOCK, &mask, NULL);
 
-	struct sigaction sa;
 	sa.sa_handler = handler;
 	sa.sa_flags = 0;
 	sigfillset(&sa.sa_mask);

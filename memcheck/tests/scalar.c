@@ -14,6 +14,10 @@
 // PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck and Addrcheck will
 // always issue an error message immediately before these seg faults occur).
 
+#include <asm/ipc.h>
+#include <sched.h>
+#include <signal.h>
+
 int main(void)
 {
    // uninitialised, but we know px[0] is 0x0
@@ -522,7 +526,6 @@ int main(void)
    // XXX: This is simplistic -- need to do all the sub-cases properly.
    // XXX: Also, should be 6 scalar errors, except glibc's syscall() doesn't
    //      use the 6th one!
-   #include <asm/ipc.h>
    GO(__NR_ipc, "5s 0m");
    SY(__NR_ipc, x0+4, x0, x0, x0, x0, x0); FAIL;
 
@@ -535,8 +538,6 @@ int main(void)
  //SY(__NR_sigreturn); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_clone 120
-   #include <sched.h>
-   #include <signal.h>
 #ifndef CLONE_PARENT_SETTID
 #define CLONE_PARENT_SETTID	0x00100000
 #endif

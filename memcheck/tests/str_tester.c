@@ -175,10 +175,11 @@ test_strcpy (void)
   SIMPLE_COPY(strcpy, 16, "6666666666666666", 57);
 
   /* Simple test using implicitly coerced `void *' arguments.  */
-  const void *src = "frobozz";
-  void *dst = one;
-  check (strcpy (dst, src) == dst, 1);
-  equal (dst, "frobozz", 2);
+  { const void *src = "frobozz";
+    void *dst = one;
+    check (strcpy (dst, src) == dst, 1);
+    equal (dst, "frobozz", 2);
+  }
 }
 
 static void

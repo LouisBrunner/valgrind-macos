@@ -40,9 +40,7 @@ typedef struct {
     int line_size;  /* bytes */ 
 } cache_t;
 
-#include "cg_sim_L2.c"
-#include "cg_sim_I1.c"
-#include "cg_sim_D1.c"
+#include "cg_sim.c"
 
 /*------------------------------------------------------------*/
 /*--- Constants                                            ---*/

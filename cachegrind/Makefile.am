@@ -10,11 +10,7 @@ inplacedir = $(top_srcdir)/.in_place
 
 bin_SCRIPTS = cg_annotate
 
-EXTRA_DIST = \
-	cg_sim_I1.c \
-	cg_sim_D1.c \
-	cg_sim_L2.c \
-	cg_sim_gen.c 
+EXTRA_DIST = cg_sim.c 
 
 val_PROGRAMS = vgskin_cachegrind.so
 

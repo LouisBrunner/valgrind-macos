@@ -1509,6 +1509,13 @@ extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
 extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
 extern UInt* VGA_(reg_addr_from_tst) ( Int reg, arch_thread_t* );
 
+// Signal stuff
+extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
+                                      const vki_ksiginfo_t *siginfo,
+                                      void *handler, UInt flags,
+                                      const vki_ksigset_t *mask);
+extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
+
 // Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
 

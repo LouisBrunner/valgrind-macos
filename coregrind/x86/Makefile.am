@@ -18,6 +18,7 @@ BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
+	signal.c \
 	state.c
 
 # Extract ld's default linker script and hack it to our needs

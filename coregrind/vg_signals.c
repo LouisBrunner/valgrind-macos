@@ -824,128 +824,7 @@ static void set_main_sigmask(void)
    Linux kernel does.
    ------------------------------------------------------------------ */
 
-/* A structure in which to save the application's registers
-   during the execution of signal handlers. */
 
-typedef
-   struct {
-      /* There are two different stack frame formats, depending on
-	 whether the client set the SA_SIGINFO flag for the handler.
-	 This structure is put onto the client's stack as part of
-	 signal delivery, and therefore appears as the signal
-	 handler's arguments.
-
-	 The first two words are common for both frame formats -
-	 they're the return address and the signal number. */
-
-      /* Sig handler's (bogus) return address */
-      Addr retaddr;
-      /* The arg to the sig handler.  We need to inspect this after
-         the handler returns, but it's unreasonable to assume that the
-         handler won't change it.  So we keep a second copy of it in
-         sigNo_private. */
-      Int  sigNo;
-
-      /* This is where the two frames start differing. */
-      union {
-	 struct {		/* set SA_SIGINFO */
-	    /* ptr to siginfo_t. */
-	    Addr psigInfo;
-
-	    /* ptr to ucontext */
-	    Addr puContext;
-	 } sigInfo;
-	 struct vki_sigcontext sigContext; /* did not set SA_SIGINFO */
-      } handlerArgs;
-
-      /* The rest are private fields which the handler is unaware of. */
-
-      /* Sanity check word. */
-      UInt magicPI;
-      /* pointed to by psigInfo */
-      vki_ksiginfo_t sigInfo;
-      /* pointed to by puContext */
-      struct vki_ucontext uContext;
-
-      /* Safely-saved version of sigNo, as described above. */
-      Int  sigNo_private;
-      /* Saved processor state. */
-      UInt m_sse[VG_SIZE_OF_SSESTATE_W];
-
-      UInt m_eax;
-      UInt m_ecx;
-      UInt m_edx;
-      UInt m_ebx;
-      UInt m_ebp;
-      UInt m_esp;
-      UInt m_esi;
-      UInt m_edi;
-      UInt m_eflags;
-      Addr m_eip;
-
-      UInt sh_eax;
-      UInt sh_ebx;
-      UInt sh_ecx;
-      UInt sh_edx;
-      UInt sh_esi;
-      UInt sh_edi;
-      UInt sh_ebp;
-      UInt sh_esp;
-      UInt sh_eflags;
-
-      /* saved signal mask to be restored when handler returns */
-      vki_ksigset_t	mask;
-
-      /* Scheduler-private stuff: what was the thread's status prior to
-         delivering this signal? */
-      ThreadStatus status;
-      /* Sanity check word.  Is the highest-addressed word; do not
-         move!*/
-      UInt magicE;
-   }
-   VgSigFrame;
-
-
-/* Make up a plausible-looking thread state from the thread's current state */
-static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si, 
-			   const vki_ksigset_t *set, struct vki_ucontext *uc)
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   struct vki_sigcontext *sc = &uc->uc_mcontext;
-
-   VG_(memset)(uc, 0, sizeof(*uc));
-
-   uc->uc_flags = 0;
-   uc->uc_link = 0;
-   uc->uc_sigmask = *set;
-   uc->uc_stack = tst->altstack;
-
-#define SC(reg)	sc->reg = tst->arch.m_##reg
-   SC(gs);
-   SC(fs);
-   SC(es);
-   SC(ds);
-
-   SC(edi);
-   SC(esi);
-   SC(ebp);
-   SC(esp);
-   SC(ebx);
-   SC(edx);
-   SC(ecx);
-   SC(eax);
-
-   SC(eip);
-   SC(cs);
-   SC(eflags);
-   SC(ss);
-   /* XXX esp_at_signal */
-   /* XXX trapno */
-   /* XXX err */
-#undef SC
-
-   sc->cr2 = (UInt)si->_sifields._sigfault._addr;
-}
 
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler.  This includes the signal number and a bogus return
@@ -953,9 +832,7 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
 static
 void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
 {
-   Int          i;
-   Addr         esp, esp_top_of_frame;
-   VgSigFrame*  frame;
+   Addr         esp_top_of_frame;
    ThreadState* tst;
    Int		sigNo = siginfo->si_signo;
 
@@ -990,117 +867,10 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
    }
-
-   esp = esp_top_of_frame;
-   esp -= sizeof(VgSigFrame);
-   frame = (VgSigFrame*)esp;
-
-   /* For tracking memory events, indicate the entire frame has been
-    * allocated, but pretend that only the first four words are written */
-   VG_TRACK( new_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
-
-   /* Assert that the frame is placed correctly. */
-   vg_assert( (sizeof(VgSigFrame) & 0x3) == 0 );
-   vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
-              == ((Char*)(esp_top_of_frame)) );
-
-   /* retaddr, sigNo, psigInfo, puContext fields are to be written */
-   VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame", 
-                            (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
-   frame->retaddr    = (UInt)VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
-   frame->sigNo      = sigNo;
-   frame->sigNo_private = sigNo;
-   VG_TRACK( post_mem_write, (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
-
-   if (vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_SIGINFO) {
-      /* if the client asked for a siginfo delivery, then build the stack that way */
-      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
-		(Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigInfo) );
-      frame->handlerArgs.sigInfo.psigInfo   = (Addr)&frame->sigInfo;
-      frame->handlerArgs.sigInfo.puContext = (Addr)&frame->uContext;
-      VG_TRACK( post_mem_write, (Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigInfo) );
-
-      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
-		(Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
-      VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_ksiginfo_t));
-      if (sigNo == VKI_SIGFPE) {
-         frame->sigInfo._sifields._sigfault._addr = (void *)tst->arch.m_eip;
-      }
-      VG_TRACK( post_mem_write, (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
-
-      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
-		(Addr)&frame->uContext, sizeof(frame->uContext) );
-      synth_ucontext(tid, siginfo, &vg_scss.scss_per_sig[sigNo].scss_mask, &frame->uContext);
-      VG_TRACK( post_mem_write, (Addr)&frame->uContext, sizeof(frame->uContext) );
-   } else {
-      struct vki_ucontext uc;
-
-      /* otherwise just put the sigcontext there */
-
-      synth_ucontext(tid, siginfo, &vg_scss.scss_per_sig[sigNo].scss_mask, &uc);
-
-      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (sigcontext)", 
-		(Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigContext) );
-      VG_(memcpy)(&frame->handlerArgs.sigContext, &uc.uc_mcontext, 
-		  sizeof(struct vki_sigcontext));
-      VG_TRACK( post_mem_write, (Addr)&frame->handlerArgs, 
-		sizeof(frame->handlerArgs.sigContext) );
-      
-      frame->handlerArgs.sigContext.oldmask = tst->sig_mask.ws[0];
-   }
-
-   frame->magicPI    = 0x31415927;
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      frame->m_sse[i] = tst->arch.m_sse[i];
-
-   frame->m_eax      = tst->arch.m_eax;
-   frame->m_ecx      = tst->arch.m_ecx;
-   frame->m_edx      = tst->arch.m_edx;
-   frame->m_ebx      = tst->arch.m_ebx;
-   frame->m_ebp      = tst->arch.m_ebp;
-   frame->m_esp      = tst->arch.m_esp;
-   frame->m_esi      = tst->arch.m_esi;
-   frame->m_edi      = tst->arch.m_edi;
-   frame->m_eflags   = tst->arch.m_eflags;
-   frame->m_eip      = tst->arch.m_eip;
-
-   if (VG_(needs).shadow_regs) {
-      frame->sh_eax     = tst->arch.sh_eax;
-      frame->sh_ecx     = tst->arch.sh_ecx;
-      frame->sh_edx     = tst->arch.sh_edx;
-      frame->sh_ebx     = tst->arch.sh_ebx;
-      frame->sh_ebp     = tst->arch.sh_ebp;
-      frame->sh_esp     = tst->arch.sh_esp;
-      frame->sh_esi     = tst->arch.sh_esi;
-      frame->sh_edi     = tst->arch.sh_edi;
-      frame->sh_eflags  = tst->arch.sh_eflags;
-   }
-
-   frame->mask = tst->sig_mask;
-
-   /* If the thread is currently blocked in a syscall, we want it to
-      resume as runnable. */
-   if (tst->status == VgTs_WaitSys)
-      frame->status = VgTs_Runnable;
-   else
-      frame->status = tst->status;
-
-   frame->magicE     = 0x27182818;
-
-   /* Ensure 'tid' and 'tst' correspond */
-   vg_assert(& VG_(threads)[tid] == tst);
-   /* Set the thread so it will next run the handler. */
-   /* tst->arch.m_esp  = esp; */
-   SET_SIGNAL_ESP(tid, esp);
-
-   tst->arch.m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
-   /* This thread needs to be marked runnable, but we leave that the
-      caller to do. */
-
-   if (0)
-      VG_(printf)("pushed signal frame; %%ESP now = %p, next %%EBP = %p, status=%d\n", 
-		  esp, tst->arch.m_eip, tst->status);
+   VGA_(push_signal_frame)(tid, esp_top_of_frame, siginfo,
+                           vg_scss.scss_per_sig[sigNo].scss_handler,
+                           vg_scss.scss_per_sig[sigNo].scss_flags,
+                          &vg_scss.scss_per_sig[sigNo].scss_mask);
 }
 
 /* Clear the signal frame created by vg_push_signal_frame, restore the
@@ -1109,65 +879,8 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
 static
 Int vg_pop_signal_frame ( ThreadId tid )
 {
-   Addr          esp;
-   Int           sigNo, i;
-   VgSigFrame*   frame;
-   ThreadState*  tst;
+   Int sigNo = VGA_(pop_signal_frame)(tid);
 
-   vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
-   /* Correctly reestablish the frame base address. */
-   esp   = tst->arch.m_esp;
-   frame = (VgSigFrame*)
-              (esp -4 /* because the handler's RET pops the RA */
-                  +20 /* because signalreturn_bogusRA pushes 5 words */);
-
-   vg_assert(frame->magicPI == 0x31415927);
-   vg_assert(frame->magicE  == 0x27182818);
-   if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, 
-         "vg_pop_signal_frame (thread %d): valid magic; EIP=%p", tid, frame->m_eip);
-
-   /* Mark the frame structure as nonaccessible. */
-   VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
-
-   /* restore machine state */
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      tst->arch.m_sse[i] = frame->m_sse[i];
-
-   tst->arch.m_eax     = frame->m_eax;
-   tst->arch.m_ecx     = frame->m_ecx;
-   tst->arch.m_edx     = frame->m_edx;
-   tst->arch.m_ebx     = frame->m_ebx;
-   tst->arch.m_ebp     = frame->m_ebp; 
-   tst->arch.m_esp     = frame->m_esp;
-   tst->arch.m_esi     = frame->m_esi;
-   tst->arch.m_edi     = frame->m_edi;
-   tst->arch.m_eflags  = frame->m_eflags;
-   tst->arch.m_eip     = frame->m_eip;
-
-   if (VG_(needs).shadow_regs) {
-      tst->arch.sh_eax     = frame->sh_eax;
-      tst->arch.sh_ecx     = frame->sh_ecx;
-      tst->arch.sh_edx     = frame->sh_edx;
-      tst->arch.sh_ebx     = frame->sh_ebx;
-      tst->arch.sh_ebp     = frame->sh_ebp; 
-      tst->arch.sh_esp     = frame->sh_esp;
-      tst->arch.sh_esi     = frame->sh_esi;
-      tst->arch.sh_edi     = frame->sh_edi;
-      tst->arch.sh_eflags  = frame->sh_eflags;
-   }
-   
-   /* don't use the copy exposed to the handler; it might have changed
-      it. */
-   sigNo          = frame->sigNo_private; 
-
-   /* And restore the thread's status to what it was before the signal
-      was delivered. */
-   tst->status    = frame->status;
-
-   tst->sig_mask  = frame->mask;
    VG_(proxy_setsigmask)(tid);
 
    /* Notify tools */

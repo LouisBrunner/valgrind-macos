@@ -136,21 +136,15 @@ A7. We are not completely sure about this, but one possibility
 
 -----------------------------------------------------------------
 
-Q8. My program dies (exactly) like this:
+Q8. My program dies, printing a message like this along the way: 
 
-      REPE then 0xF
-      valgrind: the `impossible' happened:
-         Unhandled REPE case
+      disInstr: unhandled instruction bytes: 0x66 0xF 0x2E 0x5
 
-A8. Yeah ... that I believe is a SSE or SSE2 instruction.  Are you
-    building your app with -march=pentium4 or -march=athlon or
-    something like that?  If you can somehow dissuade gcc from 
-    producing SSE/SSE2 instructions, you may be able to avoid this.
-    Some folks have reported that removing the flag -march=...
-    works around this.
-
-    I'd be interested to hear if you can get rid of it by changing
-    your application build flags.
+A8. Valgrind doesn't support the full x86 instruction set, although
+    it now supports many SSE and SSE2 instructions.  If you know
+    the failing instruction is an SSE/SSE2 instruction, you might
+    be able to recompile your progrma without it by using the flag
+    -march to gcc.  Either way, let us know and we'll try to fix it.
 
 -----------------------------------------------------------------
 

@@ -56,6 +56,7 @@ extern Bool MC_(clo_avoid_strlen_errors);
 /* Functions defined in mc_main.c */
 extern REGPARM(1) void MC_(helperc_complain_undef) ( HWord );
 extern void MC_(helperc_value_check4_fail) ( void );
+extern void MC_(helperc_value_check2_fail) ( void );
 extern void MC_(helperc_value_check1_fail) ( void );
 extern void MC_(helperc_value_check0_fail) ( void );
 

@@ -64,6 +64,10 @@
    which the entire 64k is not in use at all point at this
    distinguished map.
 
+   There are actually 4 distinguished secondaries.  These are used to
+   represent a memory range which is either not addressable (validity
+   doesn't matter), addressable+not valid, addressable+valid.
+
    [...] lots of stuff deleted due to out of date-ness
 
    As a final optimisation, the alignment and address checks for
@@ -88,7 +92,6 @@
    misaligned address.  
 */
 
-#if 0
 /*------------------------------------------------------------*/
 /*--- Function declarations.                               ---*/
 /*------------------------------------------------------------*/
@@ -109,31 +112,66 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes );
 
 typedef 
    struct {
-      UChar abits[8192];
-      UChar vbyte[65536];
+      UChar abits[SECONDARY_SIZE/8];
+      UChar vbyte[SECONDARY_SIZE];
    }
    SecMap;
 
-static SecMap* primary_map[ /*65536*/ 262144 ];
-static SecMap  distinguished_secondary_map;
+
+static SecMap* primary_map[ /*PRIMARY_SIZE*/ PRIMARY_SIZE*4 ];
+
+#define DSM_IDX(a, v)	((((a)&1) << 1) + ((v)&1))
+
+/* 4 secondary maps, but one is redundant (because the !addressable &&
+   valid state is meaningless) */
+static const SecMap  distinguished_secondary_maps[4] = {
+#define INIT(a, v)							\
+   [ DSM_IDX(a, v) ] = { { [0 ... (SECONDARY_SIZE/8)-1] = BIT_EXPAND(a) }, \
+			 { [0 ... SECONDARY_SIZE-1]     = BIT_EXPAND(a|v) } }
+   INIT(VGM_BIT_VALID,   VGM_BIT_VALID),
+   INIT(VGM_BIT_VALID,   VGM_BIT_INVALID),
+   INIT(VGM_BIT_INVALID, VGM_BIT_VALID),
+   INIT(VGM_BIT_INVALID, VGM_BIT_INVALID),
+#undef INIT
+};
+#define N_SECONDARY_MAPS	(sizeof(distinguished_secondary_maps)/sizeof(*distinguished_secondary_maps))
+
+#define DSM(a,v)		((SecMap *)&distinguished_secondary_maps[DSM_IDX(a, v)])
+
+#define DSM_NOTADDR		DSM(VGM_BIT_INVALID, VGM_BIT_INVALID)
+#define DSM_ADDR_NOTVALID	DSM(VGM_BIT_VALID, VGM_BIT_INVALID)
+#define DSM_ADDR_VALID		DSM(VGM_BIT_VALID, VGM_BIT_VALID)
 
 static void init_shadow_memory ( void )
 {
-   Int i;
+   Int i, a, v;
 
-   for (i = 0; i < 8192; i++)             /* Invalid address */
-      distinguished_secondary_map.abits[i] = VGM_BYTE_INVALID; 
-   for (i = 0; i < 65536; i++)            /* Invalid Value */
-      distinguished_secondary_map.vbyte[i] = VGM_BYTE_INVALID; 
+   /* check construction of the 4 distinguished secondaries */
+   tl_assert(VGM_BIT_INVALID == 1);
+   tl_assert(VGM_BIT_VALID == 0);
 
+   for (a = 0; a <= 1; a++) {
+      for (v = 0; v <= 1; v++) {
+	 if (DSM(a,v)->abits[0] != BIT_EXPAND(a))
+	    VG_(printf)("DSM(%d,%d)[%d]->abits[0] == %x not %x\n",
+			a,v,DSM_IDX(a,v),DSM(a,v)->abits[0], BIT_EXPAND(a));
+	 if (DSM(a,v)->vbyte[0] != BIT_EXPAND(a|v))
+	    VG_(printf)("DSM(%d,%d)[%d]->vbyte[0] == %x not %x\n",
+			a,v,DSM_IDX(a,v),DSM(a,v)->vbyte[0], BIT_EXPAND(a|v));
+
+	 tl_assert(DSM(a,v)->abits[0] == BIT_EXPAND(a));
+	 tl_assert(DSM(a,v)->vbyte[0] == BIT_EXPAND(v|a));
+      }
+   }
+ 
    /* These entries gradually get overwritten as the used address
       space expands. */
-   for (i = 0; i < 65536; i++)
-      primary_map[i] = &distinguished_secondary_map;
+   for (i = 0; i < PRIMARY_SIZE; i++)
+      primary_map[i] = DSM_NOTADDR;
 
    /* These ones should never change; it's a bug in Valgrind if they do. */
-   for (i = 65536; i < 262144; i++)
-      primary_map[i] = &distinguished_secondary_map;
+   for (i = PRIMARY_SIZE; i < PRIMARY_SIZE*4; i++)
+      primary_map[i] = DSM_NOTADDR;
 }
 
 /*------------------------------------------------------------*/
@@ -143,19 +181,15 @@ static void init_shadow_memory ( void )
 /* Allocate and initialise a secondary map. */
 
 static SecMap* alloc_secondary_map ( __attribute__ ((unused)) 
-                                     Char* caller )
+                                     Char* caller,
+  				     const SecMap *prototype)
 {
    SecMap* map;
-   UInt  i;
    PROF_EVENT(10);
 
-   /* Mark all bytes as invalid access and invalid value. */
    map = (SecMap *)VG_(shadow_alloc)(sizeof(SecMap));
 
-   for (i = 0; i < 8192; i++)
-      map->abits[i] = VGM_BYTE_INVALID; /* Invalid address */
-   for (i = 0; i < 65536; i++)
-      map->vbyte[i] = VGM_BYTE_INVALID; /* Invalid Value */
+   VG_(memcpy)(map, prototype, sizeof(*map));
 
    /* VG_(printf)("ALLOC_2MAP(%s)\n", caller ); */
    return map;
@@ -166,8 +200,8 @@ static SecMap* alloc_secondary_map ( __attribute__ ((unused))
 
 static __inline__ UChar get_abit ( Addr a )
 {
-   SecMap* sm     = primary_map[a >> 16];
-   UInt    sm_off = a & 0xFFFF;
+   SecMap* sm     = primary_map[PM_IDX(a)];
+   UInt    sm_off = SM_OFF(a);
    PROF_EVENT(20);
 #  if 0
       if (IS_DISTINGUISHED_SM(sm))
@@ -180,8 +214,8 @@ static __inline__ UChar get_abit ( Addr a )
 
 static __inline__ UChar get_vbyte ( Addr a )
 {
-   SecMap* sm     = primary_map[a >> 16];
-   UInt    sm_off = a & 0xFFFF;
+   SecMap* sm     = primary_map[PM_IDX(a)];
+   UInt    sm_off = SM_OFF(a);
    PROF_EVENT(21);
 #  if 0
       if (IS_DISTINGUISHED_SM(sm))
@@ -197,8 +231,8 @@ static /* __inline__ */ void set_abit ( Addr a, UChar abit )
    UInt    sm_off;
    PROF_EVENT(22);
    ENSURE_MAPPABLE(a, "set_abit");
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    if (abit) 
       BITARR_SET(sm->abits, sm_off);
    else
@@ -211,8 +245,8 @@ static __inline__ void set_vbyte ( Addr a, UChar vbyte )
    UInt    sm_off;
    PROF_EVENT(23);
    ENSURE_MAPPABLE(a, "set_vbyte");
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    sm->vbyte[sm_off] = vbyte;
 }
 
@@ -228,8 +262,8 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 #  ifdef VG_DEBUG_MEMORY
    tl_assert(IS_4_ALIGNED(a));
 #  endif
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    abits8 = sm->abits[sm_off >> 3];
    abits8 >>= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
    abits8 &= 0x0F;
@@ -238,8 +272,8 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 
 static UInt __inline__ get_vbytes4_ALIGNED ( Addr a )
 {
-   SecMap* sm     = primary_map[a >> 16];
-   UInt    sm_off = a & 0xFFFF;
+   SecMap* sm     = primary_map[PM_IDX(a)];
+   UInt    sm_off = SM_OFF(a);
    PROF_EVENT(25);
 #  ifdef VG_DEBUG_MEMORY
    tl_assert(IS_4_ALIGNED(a));
@@ -253,8 +287,8 @@ static void __inline__ set_vbytes4_ALIGNED ( Addr a, UInt vbytes )
    SecMap* sm;
    UInt    sm_off;
    ENSURE_MAPPABLE(a, "set_vbytes4_ALIGNED");
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    PROF_EVENT(23);
 #  ifdef VG_DEBUG_MEMORY
    tl_assert(IS_4_ALIGNED(a));
@@ -311,14 +345,7 @@ static void set_address_range_perms ( Addr a, SizeT len,
 
    /* In order that we can charge through the address space at 8
       bytes/main-loop iteration, make up some perms. */
-   abyte8 = (example_a_bit << 7)
-            | (example_a_bit << 6)
-            | (example_a_bit << 5)
-            | (example_a_bit << 4)
-            | (example_a_bit << 3)
-            | (example_a_bit << 2)
-            | (example_a_bit << 1)
-            | (example_a_bit << 0);
+   abyte8 = BIT_EXPAND(example_a_bit);
    vword4 = (vbyte << 24) | (vbyte << 16) | (vbyte << 8) | vbyte;
 
 #  ifdef VG_DEBUG_MEMORY
@@ -350,25 +377,58 @@ static void set_address_range_perms ( Addr a, SizeT len,
    }
    tl_assert((a % 8) == 0 && len > 0);
 
-   /* Once aligned, go fast. */
-   while (True) {
+   /* Now align to the next primary_map entry */
+   for (; (a & SECONDARY_MASK) && len >= 8; a += 8, len -= 8) {
+
       PROF_EVENT(32);
-      if (len < 8) break;
+      /* If the primary is already pointing to a distinguished map
+         with the same properties as we're trying to set, then leave
+         it that way. */
+      if (primary_map[PM_IDX(a)] == DSM(example_a_bit, example_v_bit))
+         continue;
+
       ENSURE_MAPPABLE(a, "set_address_range_perms(fast)");
-      sm = primary_map[a >> 16];
-      sm_off = a & 0xFFFF;
+      sm = primary_map[PM_IDX(a)];
+      sm_off = SM_OFF(a);
       sm->abits[sm_off >> 3] = abyte8;
       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = vword4;
       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = vword4;
-      a += 8;
-      len -= 8;
    }
 
-   if (len == 0) {
-      VGP_POPCC(VgpSetMem);
-      return;
+   /* Now set whole secondary maps to the right distinguished value.
+
+      Note that if the primary already points to a non-distinguished
+      secondary, then don't replace the reference.  That would just
+      leak memory.
+    */
+   for(; len >= SECONDARY_SIZE; a += SECONDARY_SIZE, len -= SECONDARY_SIZE) {
+      sm = primary_map[PM_IDX(a)];
+
+      if (IS_DISTINGUISHED_SM(sm))
+         primary_map[PM_IDX(a)] = DSM(example_a_bit, example_v_bit);
+      else {
+         VG_(memset)(sm->abits, abyte8, sizeof(sm->abits));
+         VG_(memset)(sm->vbyte, vbyte, sizeof(sm->vbyte));
+      }
    }
-   tl_assert((a % 8) == 0 && len > 0 && len < 8);
+
+   /* Now finish off any remains */
+   for (; len >= 8; a += 8, len -= 8) {
+      PROF_EVENT(32);
+
+      /* If the primary is already pointing to a distinguished map
+         with the same properties as we're trying to set, then leave
+         it that way. */
+      if (primary_map[PM_IDX(a)] == DSM(example_a_bit, example_v_bit))
+         continue;
+
+      ENSURE_MAPPABLE(a, "set_address_range_perms(fast)");
+      sm = primary_map[PM_IDX(a)];
+      sm_off = SM_OFF(a);
+      sm->abits[sm_off >> 3] = abyte8;
+      ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = vword4;
+      ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = vword4;
+   }
 
    /* Finish the upper fragment. */
    while (True) {
@@ -420,8 +480,8 @@ void make_aligned_word_writable(Addr a)
 
    VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_word_writable");
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
    mask = 0x0F;
    mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
@@ -439,8 +499,8 @@ void make_aligned_word_noaccess(Addr a)
 
    VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_word_noaccess");
-   sm     = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm     = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
    mask = 0x0F;
    mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
@@ -458,8 +518,8 @@ void make_aligned_doubleword_writable(Addr a)
 
    VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_doubleword_writable");
-   sm = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    sm->abits[sm_off >> 3] = VGM_BYTE_VALID;
    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
@@ -474,8 +534,8 @@ void make_aligned_doubleword_noaccess(Addr a)
 
    VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_doubleword_noaccess");
-   sm = primary_map[a >> 16];
-   sm_off = a & 0xFFFF;
+   sm = primary_map[PM_IDX(a)];
+   sm_off = SM_OFF(a);
    sm->abits[sm_off >> 3] = VGM_BYTE_INVALID;
    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
@@ -695,7 +755,7 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    MC_ReadResult res;
-   Addr bad_addr;
+   Addr bad_addr = 0;   // initialise to shut gcc up
    /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
    VGP_PUSHCC(VgpCheckMem);
@@ -731,13 +791,9 @@ void mc_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 }
 
 static
-void mc_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
+void mc_new_mem_mmap ( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
-   DEBUG("mc_set_perms(%p, %llu, rr=%u ww=%u, xx=%u)\n",
-         a, (ULong)len, rr, ww, xx);
-   if      (rr) mc_make_readable(a, len);
-   else if (ww) mc_make_writable(a, len);
-   else         mc_make_noaccess(a, len);
+   mc_make_readable(a, len);
 }
 
 static
@@ -773,7 +829,7 @@ static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, OffT offset,
    
    // XXX: the only one at the moment
    tl_assert(Vg_CoreSysCall == part);
-
+   
    switch (size) {
    case 4:  mask = 0xffffffff; break;
    case 2:  mask = 0xffff;     break;
@@ -822,11 +878,11 @@ ULong MC_(helperc_LOADV8) ( Addr a )
    if (IS_4_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
-      UInt    a_off  = (a & 0xFFFF) >> 3;
+      UInt    a_off  = (SM_OFF(a)) >> 3;
       UChar   abits  = sm->abits[a_off];
       if (abits == VGM_BYTE_VALID) {
          /* a is 8-aligned, mapped, and addressible. */
-         UInt v_off = a & 0xFFFF;
+         UInt v_off = SM_OFF(a);
          /* LITTLE-ENDIAN */
          UInt vLo   = ((UInt*)(sm->vbyte))[ (v_off >> 2) ];
          UInt vHi   = ((UInt*)(sm->vbyte))[ (v_off >> 2) + 1 ];
@@ -856,11 +912,11 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
    if (IS_4_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
-      UInt    a_off  = (a & 0xFFFF) >> 3;
+      UInt    a_off  = (SM_OFF(a)) >> 3;
       UChar   abits  = sm->abits[a_off];
       if (abits == VGM_BYTE_VALID) {
          /* a is 8-aligned, mapped, and addressible. */
-         UInt v_off = a & 0xFFFF;
+         UInt v_off = SM_OFF(a);
          UInt vHi = (UInt)(vbytes >> 32);
          UInt vLo = (UInt)vbytes;
          /* LITTLE-ENDIAN */
@@ -895,7 +951,7 @@ UInt MC_(helperc_LOADV4) ( Addr a )
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    UChar   abits  = sm->abits[a_off];
    abits >>= (a & 4);
    abits &= 15;
@@ -903,7 +959,7 @@ UInt MC_(helperc_LOADV4) ( Addr a )
    if (abits == VGM_NIBBLE_VALID) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       return ((UInt*)(sm->vbyte))[ v_off >> 2 ];
    } else {
       /* Slow but general case. */
@@ -920,15 +976,15 @@ void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    UChar   abits  = sm->abits[a_off];
    abits >>= (a & 4);
    abits &= 15;
    PROF_EVENT(61);
-   if (abits == VGM_NIBBLE_VALID) {
+   if (!IS_DISTINGUISHED_SM(sm) && abits == VGM_NIBBLE_VALID) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       ((UInt*)(sm->vbyte))[ v_off >> 2 ] = vbytes;
    } else {
       /* Slow but general case. */
@@ -947,11 +1003,11 @@ UInt MC_(helperc_LOADV2) ( Addr a )
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(62);
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       return 0xFFFF0000 
              |  
              (UInt)( ((UShort*)(sm->vbyte))[ v_off >> 1 ] );
@@ -970,11 +1026,11 @@ void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(63);
-   if (sm->abits[a_off] == VGM_BYTE_VALID) {
+   if (!IS_DISTINGUISHED_SM(sm) && sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       ((UShort*)(sm->vbyte))[ v_off >> 1 ] = vbytes & 0x0000FFFF;
    } else {
       /* Slow but general case. */
@@ -993,11 +1049,11 @@ UInt MC_(helperc_LOADV1) ( Addr a )
 #  else
    UInt    sec_no = shiftRight16(a);
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(64);
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       return 0xFFFFFF00
              |
              (UInt)( ((UChar*)(sm->vbyte))[ v_off ] );
@@ -1016,11 +1072,11 @@ void MC_(helperc_STOREV1) ( Addr a, UInt vbytes )
 #  else
    UInt    sec_no = shiftRight16(a);
    SecMap* sm     = primary_map[sec_no];
-   UInt    a_off  = (a & 0xFFFF) >> 3;
+   UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(65);
-   if (sm->abits[a_off] == VGM_BYTE_VALID) {
+   if (!IS_DISTINGUISHED_SM(sm) && sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
-      UInt v_off = a & 0xFFFF;
+      UInt v_off = SM_OFF(a);
       ((UChar*)(sm->vbyte))[ v_off ] = vbytes & 0x000000FF;
    } else {
       /* Slow but general case. */
@@ -1096,7 +1152,7 @@ static ULong mc_rd_V8_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 7) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok && !a4ok && !a5ok && !a6ok && !a7ok)) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 8, False );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 8, False );
       return VGM_WORD64_VALID;
    }
 
@@ -1150,7 +1206,7 @@ static void mc_wr_V8_SLOWLY ( Addr a, ULong vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 8, True );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 8, True );
 }
 
 /* ------------------------ Size = 4 ------------------------ */
@@ -1202,7 +1258,7 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, False );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 4, False );
       return (VGM_BYTE_VALID << 24) | (VGM_BYTE_VALID << 16) 
              | (VGM_BYTE_VALID << 8) | VGM_BYTE_VALID;
    }
@@ -1245,7 +1301,7 @@ static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, True );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 4, True );
 }
 
 /* ------------------------ Size = 2 ------------------------ */
@@ -1266,7 +1322,7 @@ static UInt mc_rd_V2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, False );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 2, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_VALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1288,7 +1344,7 @@ static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, True );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 2, True );
 }
 
 /* ------------------------ Size = 1 ------------------------ */
@@ -1307,7 +1363,7 @@ static UInt mc_rd_V1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, False );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 1, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_INVALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1326,7 +1382,7 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, True );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 1, True );
 }
 
 
@@ -1337,27 +1393,27 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
 void MC_(helperc_value_check0_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_current_tid)(), 0 );
+   MC_(record_value_error) ( VG_(get_running_tid)(), 0 );
 }
 
 void MC_(helperc_value_check1_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_current_tid)(), 1 );
+   MC_(record_value_error) ( VG_(get_running_tid)(), 1 );
 }
 
 void MC_(helperc_value_check2_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_current_tid)(), 2 );
+   MC_(record_value_error) ( VG_(get_running_tid)(), 2 );
 }
 
 void MC_(helperc_value_check4_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_current_tid)(), 4 );
+   MC_(record_value_error) ( VG_(get_running_tid)(), 4 );
 }
 
 REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 {
-   MC_(record_value_error) ( VG_(get_current_tid)(), (Int)sz );
+   MC_(record_value_error) ( VG_(get_running_tid)(), (Int)sz );
 }
 
 
@@ -1445,8 +1501,8 @@ static Int mc_get_or_set_vbits_for_client (
 static
 Bool mc_is_valid_64k_chunk ( UInt chunk_number )
 {
-   tl_assert(chunk_number >= 0 && chunk_number < 65536);
-   if (IS_DISTINGUISHED_SM(primary_map[chunk_number])) {
+   tl_assert(chunk_number >= 0 && chunk_number < PRIMARY_SIZE);
+   if (primary_map[chunk_number] == DSM_NOTADDR) {
       /* Definitely not in use. */
       return False;
    } else {
@@ -1476,10 +1532,10 @@ Bool mc_is_valid_address ( Addr a )
 /* Leak detector for this tool.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
    tool. */
-static void mc_detect_memory_leaks ( ThreadId tid )
+static void mc_detect_memory_leaks ( ThreadId tid, LeakCheckMode mode )
 {
    MAC_(do_detect_memory_leaks) ( 
-      tid, mc_is_valid_64k_chunk, mc_is_valid_address );
+      tid, mode, mc_is_valid_64k_chunk, mc_is_valid_address );
 }
 
 
@@ -1497,7 +1553,10 @@ Bool TL_(expensive_sanity_check) ( void )
 {
    Int i;
 
-   /* Make sure nobody changed the distinguished secondary. */
+   /* Make sure nobody changed the distinguished secondary.
+      They're in read-only memory, so that would be hard.
+    */
+#if 0
    for (i = 0; i < 8192; i++)
       if (distinguished_secondary_map.abits[i] != VGM_BYTE_INVALID)
          return False;
@@ -1505,11 +1564,12 @@ Bool TL_(expensive_sanity_check) ( void )
    for (i = 0; i < 65536; i++)
       if (distinguished_secondary_map.vbyte[i] != VGM_BYTE_INVALID)
          return False;
+#endif
 
    /* Make sure that the upper 3/4 of the primary map hasn't
       been messed with. */
-   for (i = 65536; i < 262144; i++)
-      if (primary_map[i] != & distinguished_secondary_map)
+   for (i = PRIMARY_SIZE; i < PRIMARY_SIZE*4; i++)
+      if (primary_map[i] != DSM_NOTADDR)
          return False;
 
    return True;
@@ -1724,7 +1784,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case VG_USERREQ__DO_LEAK_CHECK:
-         mc_detect_memory_leaks(tid);
+         mc_detect_memory_leaks(tid, arg[1] ? LC_Summary : LC_Full);
 	 *ret = 0; /* return value is meaningless */
 	 break;
 
@@ -1829,10 +1889,10 @@ void TL_(pre_clo_init)(void)
    VG_(init_new_mem_startup)      ( & mc_new_mem_startup );
    VG_(init_new_mem_stack_signal) ( & mc_make_writable );
    VG_(init_new_mem_brk)          ( & mc_make_writable );
-   VG_(init_new_mem_mmap)         ( & mc_set_perms );
+   VG_(init_new_mem_mmap)         ( & mc_new_mem_mmap );
    
    VG_(init_copy_mem_remap)       ( & mc_copy_address_range_state );
-   VG_(init_change_mem_mprotect)  ( & mc_set_perms );
+   //VG_(init_change_mem_mprotect)  ( & mc_set_perms );
       
    VG_(init_die_mem_stack_signal) ( & mc_make_noaccess ); 
    VG_(init_die_mem_brk)          ( & mc_make_noaccess );
@@ -1891,7 +1951,6 @@ void TL_(fini) ( Int exitcode )
 }
 
 VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 9./8)
-#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                mc_main.c ---*/

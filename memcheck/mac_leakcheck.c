@@ -400,7 +400,7 @@ static Int    blocks_dubious;
 static Int    blocks_reachable;
 static Int    blocks_suppressed;
 
-static void full_report()
+static void full_report(ThreadId tid)
 {
    Int i;
    Int    n_lossrecords;
@@ -491,7 +491,7 @@ static void full_report()
       print_record = ( MAC_(clo_show_reachable) || 
 		       Unreached == p_min->loss_mode || Interior == p_min->loss_mode );
       is_suppressed = 
-         VG_(unique_error) ( VG_(get_running_tid)(), LeakErr, (UInt)i+1,
+         VG_(unique_error) ( tid, LeakErr, (UInt)i+1,
                              (Char*)n_lossrecords, (void*) p_min,
                              p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );
@@ -565,12 +565,12 @@ static void make_summary()
    reachable blocks should be shown.
 */
 void MAC_(do_detect_memory_leaks) (
-   LeakCheckMode mode,
+   ThreadId tid, LeakCheckMode mode,
    Bool (*is_valid_64k_chunk) ( UInt ),
    Bool (*is_valid_address)   ( Addr )
 )
 {
-   Int    i;
+   Int i;
    
    tl_assert(mode != LC_Off);
 
@@ -642,7 +642,7 @@ void MAC_(do_detect_memory_leaks) (
    blocks_suppressed = MAC_(bytes_suppressed) = 0;
 
    if (mode == LC_Full)
-      full_report();
+      full_report(tid);
    else
       make_summary();
 

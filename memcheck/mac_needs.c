@@ -839,7 +839,7 @@ void MAC_(common_pre_clo_init)(void)
    init_prof_mem();
 }
 
-void MAC_(common_fini)(void (*leak_check)(LeakCheckMode mode))
+void MAC_(common_fini)(void (*leak_check)(ThreadId tid, LeakCheckMode mode))
 {
    MAC_(print_malloc_stats)();
 
@@ -852,7 +852,7 @@ void MAC_(common_fini)(void (*leak_check)(LeakCheckMode mode))
                    "For counts of detected errors, rerun with: -v");
    }
    if (MAC_(clo_leak_check) != LC_Off)
-      (*leak_check)(MAC_(clo_leak_check));
+      leak_check(1/*bogus ThreadId*/, MAC_(clo_leak_check));
 
    done_prof_mem();
 }

@@ -365,7 +365,8 @@ extern void MAC_(pp_shared_Error)          ( Error* err);
 extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*, void*), void* d );
 
 extern void MAC_(common_pre_clo_init) ( void );
-extern void MAC_(common_fini)         ( void (*leak_check)(LeakCheckMode mode) );
+extern void MAC_(common_fini)         ( void (*leak_check)(ThreadId tid,
+                                                           LeakCheckMode mode) );
 
 extern Bool MAC_(handle_common_client_requests) ( ThreadId tid, 
                                                   UWord* arg_block, UWord* ret );
@@ -377,7 +378,7 @@ extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record,
 extern void MAC_(print_malloc_stats) ( void );
 
 extern void MAC_(do_detect_memory_leaks) (
-          LeakCheckMode mode,
+          ThreadId tid, LeakCheckMode mode,
           Bool (*is_valid_64k_chunk) ( UInt ),
           Bool (*is_valid_address)   ( Addr )
        );

@@ -132,6 +132,11 @@ static void init_idCC(CC_type X_CC, idCC* cc, Addr instr_addr,
    initCC(&cc->D);
 }
 
+#define ADD_CC_TO(CC_type, cc, total)           \
+   total.a  += ((CC_type*)BBCC_ptr)->cc.a;      \
+   total.m1 += ((CC_type*)BBCC_ptr)->cc.m1;     \
+   total.m2 += ((CC_type*)BBCC_ptr)->cc.m2;
+          
 /* If 1, address of each instruction is printed as a comment after its counts
  * in cachegrind.out */
 #define PRINT_INSTR_ADDRS 0
@@ -222,6 +227,10 @@ static Int  fn_name_debug_BBs   = 0;
 static Int  no_debug_BBs        = 0;
 
 static Int  BB_retranslations   = 0;
+
+static CC Ir_discards;
+static CC Dr_discards;
+static CC Dw_discards;
 
 static void init_BBCC_table()
 {
@@ -315,11 +324,11 @@ static UInt hash(Char *s, UInt table_size)
  * cost centre.  Also sets BB_seen_before by reference. 
  */ 
 static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
-                                 Bool *BB_seen_before)
+                                 Bool remove, Bool *BB_seen_before)
 {
    file_node *curr_file_node;
    fn_node   *curr_fn_node;
-   BBCC      *curr_BBCC;
+   BBCC     **prev_BBCC_next_ptr, *curr_BBCC;
    Char       filename[FILENAME_LEN], fn_name[FN_NAME_LEN];
    UInt       filename_hash, fnname_hash, BBCC_hash;
    Int        dummy_line_num;
@@ -352,11 +361,16 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    }
 
    BBCC_hash = bb_orig_addr % N_BBCC_ENTRIES;
+   prev_BBCC_next_ptr = &(curr_fn_node->BBCCs[BBCC_hash]);
    curr_BBCC = curr_fn_node->BBCCs[BBCC_hash];
    while (NULL != curr_BBCC && bb_orig_addr != curr_BBCC->orig_addr) {
+      prev_BBCC_next_ptr = &(curr_BBCC->next);
       curr_BBCC = curr_BBCC->next;
    }
    if (curr_BBCC == NULL) {
+
+      vg_assert(False == remove);
+
       curr_fn_node->BBCCs[BBCC_hash] = curr_BBCC = 
          new_BBCC(bb_orig_addr, cb, curr_fn_node->BBCCs[BBCC_hash]);
       *BB_seen_before = False;
@@ -369,7 +383,15 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
             "BB retranslation, retrieving from BBCC table");
       }
       *BB_seen_before = True;
-      BB_retranslations++;
+
+      if (True == remove) {
+          // Remove curr_BBCC from chain;  it will be used and free'd by the
+          // caller.
+          *prev_BBCC_next_ptr = curr_BBCC->next;
+
+      } else {
+          BB_retranslations++;
+      }
    }
    VGP_POPCC;
    return curr_BBCC;
@@ -471,7 +493,7 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
    /* Get BBCC (creating if necessary -- requires a counting pass over the BB
     * if it's the first time it's been seen), and point to start of the 
     * BBCC array.  */
-   BBCC_node = get_BBCC(orig_addr, cb_in, &BB_seen_before);
+   BBCC_node = get_BBCC(orig_addr, cb_in, False, &BB_seen_before);
    BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
 
    cb = VG_(allocCodeBlock)();
@@ -708,6 +730,10 @@ void VG_(init_cachesim)(void)
    initCC(&Dr_total);
    initCC(&Dw_total);
    
+   initCC(&Ir_discards);
+   initCC(&Dr_discards);
+   initCC(&Dw_discards);
+
    cachesim_I1_initcache();
    cachesim_D1_initcache();
    cachesim_L2_initcache();
@@ -768,11 +794,6 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
       Addr instr_addr;
       switch ( ((iCC*)BBCC_ptr)->tag ) {
 
-#define ADD_CC_TO(CC_type, cc, total)           \
-   total.a  += ((CC_type*)BBCC_ptr)->cc.a;      \
-   total.m1 += ((CC_type*)BBCC_ptr)->cc.m1;     \
-   total.m2 += ((CC_type*)BBCC_ptr)->cc.m2;
-          
          case INSTR_CC:
             instr_addr = ((iCC*)BBCC_ptr)->instr_addr;
             sprint_iCC(buf, (iCC*)BBCC_ptr);
@@ -796,8 +817,6 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
             ADD_CC_TO(idCC, D, Dw_total);
             BBCC_ptr += sizeof(idCC);
             break;
-
-#undef ADD_CC_TO
 
          default:
             VG_(panic)("Unknown CC type in fprint_BBCC()\n");
@@ -905,6 +924,32 @@ static void fprint_BBCC_table_and_calc_totals(Int client_argc,
          }
          curr_file_node = curr_file_node->next;
       }
+   }
+
+   /* Print stats from any discarded basic blocks */
+   if (0 != Ir_discards.a) {
+
+      VG_(sprintf)(buf, "fl=(discarded)\n");
+      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+      VG_(sprintf)(buf, "fn=(discarded)\n");
+      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+
+      /* Use 0 as line number */
+      VG_(sprintf)(buf, "0 %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                   Ir_discards.a, Ir_discards.m1, Ir_discards.m2, 
+                   Dr_discards.a, Dr_discards.m1, Dr_discards.m2, 
+                   Dw_discards.a, Dw_discards.m1, Dw_discards.m2);
+      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+
+      Ir_total.a  += Ir_discards.a;
+      Ir_total.m1 += Ir_discards.m1;
+      Ir_total.m2 += Ir_discards.m2;
+      Dr_total.a  += Dr_discards.a;
+      Dr_total.m1 += Dr_discards.m1;
+      Dr_total.m2 += Dr_discards.m2;
+      Dw_total.a  += Dw_discards.a;
+      Dw_total.m1 += Dw_discards.m1;
+      Dw_total.m2 += Dw_discards.m2;
    }
 
    /* Summary stats must come after rest of table, since we calculate them
@@ -1091,10 +1136,60 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
 }
 
 
+/* Called when a translation is invalidated due to self-modifying code or
+ * unloaded of a shared object.
+ *
+ * Finds the BBCC in the table, removes it, adds the counts to the discard
+ * counters, and then frees the BBCC. */
 void VG_(cachesim_notify_discard) ( TTEntry* tte )
 {
-  VG_(printf)( "cachesim_notify_discard: %p for %d\n", 
-               tte->orig_addr, (Int)tte->orig_size);
+   BBCC *BBCC_node;
+   Addr BBCC_ptr0, BBCC_ptr;
+   Bool BB_seen_before;
+    
+   VG_(printf)( "cachesim_notify_discard: %p for %d\n", 
+                tte->orig_addr, (Int)tte->orig_size);
+
+   /* 2nd arg won't be used since BB should have been seen before (assertions
+    * ensure this). */
+   BBCC_node = get_BBCC(tte->orig_addr, NULL, True, &BB_seen_before);
+   BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
+
+   vg_assert(True == BB_seen_before);
+
+   while (BBCC_ptr - BBCC_ptr0 < BBCC_node->array_size) {
+
+      /* We pretend the CC is an iCC for getting the tag.  This is ok
+       * because both CC types have tag as their first byte.  Once we know
+       * the type, we can cast and act appropriately. */
+
+      switch ( ((iCC*)BBCC_ptr)->tag ) {
+
+         case INSTR_CC:
+            ADD_CC_TO(iCC, I, Ir_discards);
+            BBCC_ptr += sizeof(iCC);
+            break;
+
+         case READ_CC:
+         case  MOD_CC:
+            ADD_CC_TO(idCC, I, Ir_discards);
+            ADD_CC_TO(idCC, D, Dr_discards);
+            BBCC_ptr += sizeof(idCC);
+            break;
+
+         case WRITE_CC:
+            ADD_CC_TO(idCC, I, Ir_discards);
+            ADD_CC_TO(idCC, D, Dw_discards);
+            BBCC_ptr += sizeof(idCC);
+            break;
+
+         default:
+            VG_(panic)("Unknown CC type in VG_(cachesim_notify_discard)()\n");
+            break;
+      }
+   }
+
+   VG_(free)(VG_AR_PRIVATE, BBCC_node);
 }
 
 /*--------------------------------------------------------------------*/

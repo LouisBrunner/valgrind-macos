@@ -1197,8 +1197,7 @@ A brief description of the available macros:
     fresh memory, and just call this occasionally to discard large
     chunks of old code all at once.
     <p>
-    Warning: minimally tested.  Also, doesn't interact well with the
-    cache simulator.
+    Warning: minimally tested, especially for the cache simulator.
 </ul>
 <p>
 
@@ -2313,7 +2312,9 @@ contains no instructions that write to memory). The name
 <code>???</code> is used if the the file name and/or function name
 could not be determined from debugging information. If most of the
 entries have the form <code>???:???</code> the program probably wasn't
-compiled with <code>-g</code>.  <p>
+compiled with <code>-g</code>.  If any code was invalidated (either due to
+self-modifying code or unloading of shared objects) its counts are aggregated
+into a single cost centre written as <code>(discarded):(discarded)</code>.<p>
 
 It is worth noting that functions will come from three types of source files:
 <ol>

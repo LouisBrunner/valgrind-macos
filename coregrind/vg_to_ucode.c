@@ -2952,8 +2952,7 @@ void codegen_LAHF ( UCodeBlock* cb )
 
    /* Pushed arg is ignored, it just provides somewhere to put the
       return value. */
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t);
-   uLiteral(cb, 0);
+   uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t);
    uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, PUSH,  4, TempReg, t);
    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
@@ -2961,7 +2960,9 @@ void codegen_LAHF ( UCodeBlock* cb )
    uInstr1(cb, POP,   4, TempReg, t);
    uInstr0(cb, CALLM_E, 0);
 
-   uInstr2(cb, PUT,   1,  TempReg, t,   ArchReg, R_AH);
+   /* At this point, the %ah sub-register in %eax has been updated,
+      the rest is the same, so do a PUT of the whole thing. */
+   uInstr2(cb, PUT,   4,  TempReg, t,   ArchReg, R_EAX);
 }
 
 

@@ -3926,6 +3926,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* SHUFPD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC6) {
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "shufpd",
+                                           0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* SHUFPS */
    if (insn[0] == 0x0F && insn[1] == 0xC6) {
       vg_assert(sz == 4);

@@ -1469,10 +1469,16 @@ POSTx(sys_lookup_dcookie)
       POST_MEM_WRITE( arg3, res);
 }
 
-PRE(fdatasync)
+PREx(sys_fsync, MayBlock)
 {
-   /* int fdatasync(int fd); */
-   PRINT("fdatasync ( %d )", arg1);
+   PRINT("sys_fsync ( %d )", arg1);
+   PRE_REG_READ1(long, "fsync", unsigned int, fd);
+}
+
+PREx(sys_fdatasync, MayBlock)
+{
+   PRINT("sys_fdatasync ( %d )", arg1);
+   PRE_REG_READ1(long, "fdatasync", unsigned int, fd);
 }
 
 PREx(sys_msync, MayBlock)
@@ -1558,20 +1564,20 @@ POST(getitimer)
    }
 }
 
-PRE(syslog)
+PREx(sys_syslog, MayBlock)
 {
-   /* int syslog(int type, char *bufp, int len); */
-   PRINT("syslog (%d, %p, %d)",arg1,arg2,arg3);
-   switch(arg1) {
+   PRINT("sys_syslog (%d, %p, %d)", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
+   switch (arg1) {
    case 2: case 3: case 4:
-      PRE_MEM_WRITE( "syslog(buf)", arg2, arg3);
+      PRE_MEM_WRITE( "syslog(bufp)", arg2, arg3);
       break;
    default: 
       break;
    }
 }
 
-POST(syslog)
+POSTx(sys_syslog)
 {
    switch (arg1) {
    case 2: case 3: case 4:
@@ -1691,16 +1697,16 @@ PRE(sched_get_priority_min)
    PRINT("sched_get_priority_min ( %d )", arg1);
 }
 
-PRE(setpriority)
+PREx(sys_setpriority, 0)
 {
-   /* int setpriority(int which, int who, int prio); */
-   PRINT("setpriority ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setpriority ( %d, %d, %d )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "setpriority", int, which, int, who, int, prio);
 }
 
-PRE(getpriority)
+PREx(sys_getpriority, 0)
 {
-   /* int getpriority(int which, int who); */
-   PRINT("getpriority ( %d, %d )", arg1, arg2);
+   PRINT("sys_getpriority ( %d, %d )", arg1, arg2);
+   PRE_REG_READ2(long, "getpriority", int, which, int, who);
 }
 
 PREx(sys_setfsgid16, 0)
@@ -1779,26 +1785,28 @@ PREx(sys_sync, MayBlock)
    PRE_REG_READ0(long, "sync");
 }
 
-PRE(fstatfs)
+PREx(sys_fstatfs, 0)
 {
-   /* int fstatfs(int fd, struct statfs *buf); */
-   PRINT("fstatfs ( %d, %p )",arg1,arg2);
-   PRE_MEM_WRITE( "stat(buf)", arg2, sizeof(struct vki_statfs) );
+   PRINT("sys_fstatfs ( %d, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "fstatfs",
+                 unsigned int, fd, struct statfs *, buf);
+   PRE_MEM_WRITE( "fstatfs(buf)", arg2, sizeof(struct vki_statfs) );
 }
 
-POST(fstatfs)
+POSTx(sys_fstatfs)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_statfs) );
 }
 
-PRE(fstatfs64)
+PREx(sys_fstatfs64, 0)
 {
-   /* int fstatfs64(int fd, size_t sz, struct statfs *buf); */
-   PRINT("fstatfs64 ( %d, %llu, %p )",arg1,(ULong)arg2,arg3);
-   PRE_MEM_WRITE( "stat(buf)", arg3, arg2 );
+   PRINT("sys_fstatfs64 ( %d, %llu, %p )",arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "fstatfs64",
+                 unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
+   PRE_MEM_WRITE( "fstatfs64(buf)", arg3, arg2 );
 }
 
-POST(fstatfs64)
+POSTx(sys_fstatfs64)
 {
    POST_MEM_WRITE( arg3, arg2 );
 }
@@ -1846,10 +1854,11 @@ PRE(init_module)
    PRE_MEM_READ( "init_module(image)", arg2, VKI_SIZEOF_STRUCT_MODULE );
 }
 
-PRE(ioperm)
+PREx(sys_ioperm, 0)
 {
-   /* int ioperm(unsigned long from, unsigned long num, int turn_on); */
    PRINT("ioperm ( %d, %d, %d )", arg1, arg2, arg3 );
+   PRE_REG_READ3(long, "ioperm",
+                 unsigned long, from, unsigned long, num, int, turn_on);
 }
 
 PRE(capget)
@@ -2181,10 +2190,10 @@ PREx(sys_fchown, 0)
                  unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
 }
 
-PRE(fchmod)
+PREx(sys_fchmod, 0)
 {
-   /* int fchmod(int fildes, mode_t mode); */
    PRINT("fchmod ( %d, %d )", arg1,arg2);
+   PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
 // XXX: wrapper only suitable for 32-bit systems
@@ -2285,12 +2294,6 @@ PRE(clone)
           "libpthread.so, though.  Re-run with -v and ensure that\n   "
           "you are picking up Valgrind's implementation of libpthread.so.");
    }
-}
-
-PRE(fsync)
-{
-   /* int fsync(int fd); */
-   PRINT("fsync ( %d )", arg1);
 }
 
 PREx(sys_ftruncate, MayBlock)
@@ -5049,10 +5052,11 @@ PREx(sys_setuid, 0)
    PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
 }
 
-PRE(socketcall)
+PREx(sys_socketcall, MayBlock)
 {
-   /* int socketcall(int call, unsigned long *args); */
-   PRINT("socketcall ( %d, %p )",arg1,arg2);
+   PRINT("sys_socketcall ( %d, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
+
    switch (arg1 /* request */) {
 
    case VKI_SYS_SOCKETPAIR:
@@ -5249,11 +5253,8 @@ PRE(socketcall)
    }
 }
 
-POST(socketcall)
+POSTx(sys_socketcall)
 {
-   /* int socketcall(int call, unsigned long *args); */
-   PRINT("socketcall ( %d, %p )",arg1,arg2);
-
    switch (arg1 /* request */) {
 
    case VKI_SYS_SOCKETPAIR: {
@@ -5413,28 +5414,29 @@ POSTx(sys_newstat)
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat) );
 }
 
-PRE(statfs)
+PREx(sys_statfs, 0)
 {
-   /* int statfs(const char *path, struct statfs *buf); */
-   PRINT("statfs ( %p, %p )",arg1,arg2);
+   PRINT("sys_statfs ( %p, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
    PRE_MEM_RASCIIZ( "statfs(path)", arg1 );
    PRE_MEM_WRITE( "statfs(buf)", arg2, sizeof(struct vki_statfs) );
 }
 
-POST(statfs)
+POSTx(sys_statfs)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_statfs) );
 }
 
-PRE(statfs64)
+PREx(sys_statfs64, 0)
 {
-   /* int statfs64(const char *path, size_t sz, struct statfs64 *buf); */
-   PRINT("statfs64 ( %p, %llu, %p )",arg1,(ULong)arg2,arg3);
+   PRINT("sys_statfs64 ( %p, %llu, %p )",arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "statfs64",
+                 const char *, path, vki_size_t, size, struct statfs64 *, buf);
    PRE_MEM_RASCIIZ( "statfs64(path)", arg1 );
    PRE_MEM_WRITE( "statfs64(buf)", arg3, arg2 );
 }
 
-POST(statfs64)
+POSTx(sys_statfs64)
 {
    POST_MEM_WRITE( arg3, arg2 );
 }
@@ -5472,14 +5474,14 @@ POSTx(sys_fstat64)
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat64) );
 }
 
-PRE(sysinfo)
+PREx(sys_sysinfo, 0)
 {
-   /* int sysinfo(struct sysinfo *info); */
-   PRINT("sysinfo ( %p )",arg1);
+   PRINT("sys_sysinfo ( %p )",arg1);
+   PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
    PRE_MEM_WRITE( "sysinfo(info)", arg1, sizeof(struct vki_sysinfo) );
 }
 
-POST(sysinfo)
+POSTx(sys_sysinfo)
 {
    POST_MEM_WRITE( arg1, sizeof(struct vki_sysinfo) );
 }
@@ -5614,11 +5616,11 @@ PRE(prctl)
    PRINT( "prctl ( %d, %d, %d, %d, %d )", arg1, arg2, arg3, arg4, arg5 );
 }
 
-PRE(adjtimex)
+PREx(sys_adjtimex, 0)
 {
    struct vki_timex *tx = (struct vki_timex *)arg1;
-   PRINT("adjtimex ( %p )", arg1);
-
+   PRINT("sys_adjtimex ( %p )", arg1);
+   PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
    PRE_MEM_READ( "adjtimex(timex->modes)", arg1, sizeof(tx->modes));
 
 #define ADJX(bit,field) 				\
@@ -5636,7 +5638,7 @@ PRE(adjtimex)
    PRE_MEM_WRITE( "adjtimex(timex)", arg1, sizeof(struct vki_timex));
 }
 
-POST(adjtimex)
+POSTx(sys_adjtimex)
 {
    VG_TRACK(post_mem_write, arg1, sizeof(struct vki_timex));
 }
@@ -6391,18 +6393,18 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_munmap,           sys_munmap),       // 91 * P
    SYSX_(__NR_truncate,         sys_truncate),     // 92 * P
    SYSX_(__NR_ftruncate,        sys_ftruncate),    // 93 * P
-   SYSB_(__NR_fchmod,           sys_fchmod, 0),    // 94 *
+   SYSX_(__NR_fchmod,           sys_fchmod),       // 94 * P
 
    SYSX_(__NR_fchown,           sys_fchown16),     // 95 ## (SVr4,BSD4.3)
-   SYSB_(__NR_getpriority,      sys_getpriority, 0), // 96 *
-   SYSB_(__NR_setpriority,      sys_setpriority, 0), // 97 *
+   SYSX_(__NR_getpriority,      sys_getpriority),  // 96 * (SVr4,4.4BSD)
+   SYSX_(__NR_setpriority,      sys_setpriority),  // 97 * (SVr4,4.4BSD)
    //   (__NR_profil,           sys_ni_syscall),   // 98 * P -- unimplemented
-   SYSBA(__NR_statfs,           sys_statfs, 0),    // 99 *
+   SYSXY(__NR_statfs,           sys_statfs),       // 99 * (P-ish)
 
-   SYSBA(__NR_fstatfs,          sys_fstatfs, 0),   // 100 *
-   SYSB_(__NR_ioperm,           sys_ioperm, 0),    // 101 *
-   SYSBA(__NR_socketcall,       sys_socketcall, MayBlock), // 102 *
-   SYSBA(__NR_syslog,           sys_syslog, MayBlock), // 103 *
+   SYSXY(__NR_fstatfs,          sys_fstatfs),      // 100 * (P-ish)
+   SYSX_(__NR_ioperm,           sys_ioperm),       // 101 * L
+   SYSXY(__NR_socketcall,       sys_socketcall),   // 102 * L
+   SYSXY(__NR_syslog,           sys_syslog),       // 103 * L
    SYSBA(__NR_setitimer,        sys_setitimer, NBRunInLWP), // 104 *
 
    SYSBA(__NR_getitimer,        sys_getitimer, NBRunInLWP), // 105 *
@@ -6418,16 +6420,16 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_wait4,            sys_wait4, MayBlock), // 114 *
 
    //   (__NR_swapoff,          sys_swapoff),      // 115 * L 
-   SYSBA(__NR_sysinfo,          sys_sysinfo, 0),   // 116 *
+   SYSXY(__NR_sysinfo,          sys_sysinfo),      // 116 * L
    SYSBA(__NR_ipc,              sys_ipc, 0),       // 117 
-   SYSB_(__NR_fsync,            sys_fsync, MayBlock), // 118 *
+   SYSX_(__NR_fsync,            sys_fsync),        // 118 * L
    //   (__NR_sigreturn,        sys_sigreturn),    // 119 () L
 
    SYSB_(__NR_clone,            sys_clone, Special), // 120 (very non-gen) L
    //   (__NR_setdomainname,    sys_setdomainname),// 121 * (non-P?)
    SYSXY(__NR_uname,            sys_newuname),     // 122 * P
    SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 (x86,amd64) L
-   SYSBA(__NR_adjtimex,         sys_adjtimex, 0),  // 124 *
+   SYSXY(__NR_adjtimex,         sys_adjtimex),     // 124 * L
 
    SYSXY(__NR_mprotect,         sys_mprotect),     // 125 * P
    SYSBA(__NR_sigprocmask,      sys_sigprocmask, SIG_SIM), // 126 *
@@ -6458,7 +6460,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_readv,            sys_readv, MayBlock), // 145 *
    SYSB_(__NR_writev,           sys_writev, MayBlock), // 146 *
    SYSB_(__NR_getsid,           sys_getsid, 0),    // 147 *
-   SYSB_(__NR_fdatasync,        sys_fdatasync, MayBlock),   // 148 *
+   SYSX_(__NR_fdatasync,        sys_fdatasync),    // 148 * P
    SYSBA(__NR__sysctl,          sys_sysctl, 0),    // 149 *
 
    SYSX_(__NR_mlock,            sys_mlock),        // 150 * P
@@ -6607,8 +6609,8 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_clock_getres,     sys_clock_getres, 0), // (timer_create+7) *
    //   (__NR_clock_nanosleep,  sys_clock_nanosleep), // (timer_create+8) * P?
 
-   SYSBA(__NR_statfs64,         sys_statfs64, 0),  // 268 *
-   SYSBA(__NR_fstatfs64,        sys_fstatfs64, 0), // 269 *
+   SYSXY(__NR_statfs64,         sys_statfs64),     // 268 * (?)
+   SYSXY(__NR_fstatfs64,        sys_fstatfs64),    // 269 * (?)
 
    //   (__NR_tgkill,           sys_tgkill),       // 270 * ()
    SYSB_(__NR_utimes,           sys_utimes, 0),    // 271 *

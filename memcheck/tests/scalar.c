@@ -378,45 +378,46 @@ int main(void)
    GO(__NR_ftruncate, "2s 0m");
    SY(__NR_ftruncate, x0, x0);
 
-   // __NR_fchmod 94
- //GO(__NR_fchmod, ".s .m");
- //SY(__NR_fchmod);
+   // __NR_fchmod 94 --> sys_fchmod()
+   GO(__NR_fchmod, "2s 0m");
+   SY(__NR_fchmod, x0-1, x0);
 
    // __NR_fchown 95 --> sys_fchown16
    GO(__NR_fchown, "3s 0m");
    SY(__NR_fchown, x0, x0, x0);
 
-   // __NR_getpriority 96
- //GO(__NR_getpriority, ".s .m");
- //SY(__NR_getpriority);
+   // __NR_getpriority 96 --> sys_getpriority()
+   GO(__NR_getpriority, "2s 0m");
+   SY(__NR_getpriority, x0, x0);
 
-   // __NR_setpriority 97
- //GO(__NR_setpriority, ".s .m");
- //SY(__NR_setpriority);
+   // __NR_setpriority 97 --> sys_setpriority()
+   GO(__NR_setpriority, "3s 0m");
+   SY(__NR_setpriority, x0, x0, x0);
 
    // __NR_profil 98
  //GO(__NR_profil, ".s .m");
  //SY(__NR_profil);
 
-   // __NR_statfs 99
- //GO(__NR_statfs, ".s .m");
- //SY(__NR_statfs);
+   // __NR_statfs 99 --> sys_statfs()
+   GO(__NR_statfs, "2s 2m");
+   SY(__NR_statfs, x0, x0);
 
-   // __NR_fstatfs 100
- //GO(__NR_fstatfs, ".s .m");
- //SY(__NR_fstatfs);
+   // __NR_fstatfs 100 --> sys_fstatfs()
+   GO(__NR_fstatfs, "2s 1m");
+   SY(__NR_fstatfs, x0, x0);
 
-   // __NR_ioperm 101
- //GO(__NR_ioperm, ".s .m");
- //SY(__NR_ioperm);
+   // __NR_ioperm 101 --> sys_ioperm()
+   GO(__NR_ioperm, "3s 0m");
+   SY(__NR_ioperm, x0, x0, x0);
 
-   // __NR_socketcall 102
- //GO(__NR_socketcall, ".s .m");
- //SY(__NR_socketcall);
+   // __NR_socketcall 102 --> sys_socketcall()
+   // XXX: need to do properly
+// GO(__NR_socketcall, "2s 1m");
+// SY(__NR_socketcall, x0+SYS_SOCKETPAIR, x0);
 
-   // __NR_syslog 103
- //GO(__NR_syslog, ".s .m");
- //SY(__NR_syslog);
+   // __NR_syslog 103 --> sys_syslog()
+   GO(__NR_syslog, "3s 1m");
+   SY(__NR_syslog, x0+2, x0, x0+1);
 
    // __NR_setitimer 104
  //GO(__NR_setitimer, ".s .m");
@@ -465,17 +466,17 @@ int main(void)
  //GO(__NR_swapoff, ".s .m");
  //SY(__NR_swapoff);
 
-   // __NR_sysinfo 116
- //GO(__NR_sysinfo, ".s .m");
- //SY(__NR_sysinfo);
+   // __NR_sysinfo 116 --> sys_sysinfo()
+   GO(__NR_sysinfo, "1s 1m");
+   SY(__NR_sysinfo, x0);
 
    // __NR_ipc 117
  //GO(__NR_ipc, ".s .m");
  //SY(__NR_ipc);
 
-   // __NR_fsync 118
- //GO(__NR_fsync, ".s .m");
- //SY(__NR_fsync);
+   // __NR_fsync 118 --> sys_fsync()
+   GO(__NR_fsync, "1s 0m");
+   SY(__NR_fsync, x0-1);
 
    // __NR_sigreturn 119
  //GO(__NR_sigreturn, ".s .m");
@@ -497,9 +498,10 @@ int main(void)
  //GO(__NR_modify_ldt, ".s .m");
  //SY(__NR_modify_ldt);
 
-   // __NR_adjtimex 124
- //GO(__NR_adjtimex, ".s .m");
- //SY(__NR_adjtimex);
+   // __NR_adjtimex 124 --> sys_adjtimex()
+   // XXX: need to do properly, but deref'ing NULL...
+//   GO(__NR_adjtimex, "1s 1m");
+//   SY(__NR_adjtimex, x0);
 
    // __NR_mprotect 125 --> sys_mprotect()
    GO(__NR_mprotect, "3s 0m");
@@ -593,9 +595,9 @@ int main(void)
  //GO(__NR_getsid, ".s .m");
  //SY(__NR_getsid);
 
-   // __NR_fdatasync 148
- //GO(__NR_fdatasync, ".s .m");
- //SY(__NR_fdatasync);
+   // __NR_fdatasync 148 --> sys_fdatasync()
+   GO(__NR_fdatasync, "1s 0m");
+   SY(__NR_fdatasync, x0-1);
 
    // __NR__sysctl 149
  //GO(__NR__sysctl, ".s .m");
@@ -1072,13 +1074,13 @@ int main(void)
  //GO(__NR_clock_nanosleep, ".s .m");
  //SY(__NR_clock_nanosleep);
 
-   // __NR_statfs64 268
- //GO(__NR_statfs64, ".s .m");
- //SY(__NR_statfs64);
+   // __NR_statfs64 268 --> sys_statfs64()
+   GO(__NR_statfs64, "3s 2m");
+   SY(__NR_statfs64, x0, x0+1, x0);
 
-   // __NR_fstatfs64 269
- //GO(__NR_fstatfs64, ".s .m");
- //SY(__NR_fstatfs64);
+   // __NR_fstatfs64 269 --> sys_fstatfs64()
+   GO(__NR_fstatfs64, "3s 1m");
+   SY(__NR_fstatfs64, x0, x0+1, x0);
 
    // __NR_tgkill 270
  //GO(__NR_tgkill, ".s .m");

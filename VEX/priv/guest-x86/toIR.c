@@ -34,7 +34,7 @@
 */
 
 /* TODO:
-   SBB reg with itself
+   SBB reg with itself (copy from amd64 front end)
 
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
@@ -64,7 +64,7 @@
      zeroes all the FP registers.  It should leave the registers
      unchanged.
 
-   RDTSC returns zero, always.
+   RDTSC returns one, always.
 
    SAHF should cause eflags[1] == 1, and in fact it produces 0.  As
    per Intel docs this bit has no meaning anyway.  Since PUSHF is the
@@ -78,6 +78,21 @@
    this module may not work right if run on a 64-bit host.  That should
    be fixed properly, really -- if anyone ever wants to use Vex to
    translate x86 code for execution on a 64-bit host.
+*/
+
+/* Performance holes:
+
+   - fcom ; fstsw %ax ; sahf
+     sahf does not update the O flag (sigh) and so O needs to
+     be computed.  This is done expensively; it would be better
+     to have a calculate_eflags_o helper.
+
+   - emwarns; some FP codes can generate huge numbers of these
+     if the fpucw is changed in an inner loop.  It would be
+     better for the guest state to have an emwarn-enable reg
+     which can be set zero or nonzero.  If it is zero, emwarns
+     are not flagged, and instead control just flows all the
+     way through bbs as usual.
 */
 
 /* Translates x86 code to IR. */

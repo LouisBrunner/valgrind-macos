@@ -671,6 +671,14 @@ ssize_t read(int fd, void *buf, size_t count)
    return __libc_read(fd, buf, count);
 }
 
+ 
+extern
+int __libc_open64(const char *pathname, int flags, ...);
+int open64(const char *pathname, int flags, ...)
+{
+   return __libc_open64(pathname, flags);
+}
+
 
 extern
 int __libc_open(const char *pathname, int flags);
@@ -719,12 +727,14 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
    return __libc_nanosleep(req, rem);
 }
 
+
 extern
 int __libc_fsync(int fd);
 int fsync(int fd)
 {
    return __libc_fsync(fd);
 }
+
 
 extern
 off_t __libc_lseek(int fildes, off_t offset, int whence);
@@ -733,12 +743,22 @@ off_t lseek(int fildes, off_t offset, int whence)
    return __libc_lseek(fildes, offset, whence);
 }
 
+
+extern
+__off64_t __libc_lseek64(int fildes, __off64_t offset, int whence);
+__off64_t lseek64(int fildes, __off64_t offset, int whence)
+{
+   return __libc_lseek64(fildes, offset, whence);
+}
+
+
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
 void longjmp(jmp_buf env, int val)
 {
    __libc_longjmp(env, val);
 }
+
 
 extern
 int __libc_send(int s, const void *msg, size_t len, int flags);
@@ -747,12 +767,14 @@ int send(int s, const void *msg, size_t len, int flags)
    return __libc_send(s, msg, len, flags);
 }
 
+
 extern
 int __libc_recv(int s, void *buf, size_t len, int flags);
 int recv(int s, void *buf, size_t len, int flags)
 {
    return __libc_recv(s, buf, len, flags);
 }
+
 
 extern
 int __libc_sendto(int s, const void *msg, size_t len, int flags, 
@@ -763,12 +785,14 @@ int sendto(int s, const void *msg, size_t len, int flags,
    return __libc_sendto(s, msg, len, flags, to, tolen);
 }
 
+
 extern 
 int __libc_system(const char* str);
 int system(const char* str)
 {
    return __libc_system(str);
 }
+
 
 extern
 pid_t __libc_wait(int *status);

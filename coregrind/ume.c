@@ -646,18 +646,27 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
 	 return EACCES;
       }
 
-      if (uid == st.st_uid && !(st.st_mode & S_IXUSR))
-	 return EACCES;
-
-      if (gid == st.st_gid && !(st.st_mode & S_IXGRP))
-	 return EACCES;
-
-      for(i = 0; i < ngrp; i++)
-	 if (groups[i] == st.st_gid && !(st.st_mode & S_IXGRP))
+      if (uid == st.st_uid) {
+	 if (!(st.st_mode & S_IXUSR))
 	    return EACCES;
+      } else {
+	 int grpmatch = 0;
 
-      if (!(st.st_mode & S_IXOTH))
-	 return EACCES;
+	 if (gid == st.st_gid)
+	    grpmatch = 1;
+	 else 
+	    for(i = 0; i < ngrp; i++)
+	       if (groups[i] == st.st_gid) {
+		  grpmatch = 1;
+		  break;
+	       }
+
+	 if (grpmatch) {
+	    if (!(st.st_mode & S_IXGRP))
+	       return EACCES;
+	 } else if (!(st.st_mode & S_IXOTH))
+	    return EACCES;
+      }
    }
 
    bufsz = pread(fd, buf, sizeof(buf), 0);

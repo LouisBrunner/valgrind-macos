@@ -565,6 +565,11 @@ struct vki_timespec {
         long    tv_nsec;        /* nanoseconds */
 };
 
+/* POSIX.1b structure for timer start values and intervals.  */
+struct vki_itimerspec {
+	struct vki_timespec it_interval;
+	struct vki_timespec it_value;
+};
 
 /* STAT stuff 
    from /usr/src/linux-2.4.9-31/include/asm-i386/stat.h */

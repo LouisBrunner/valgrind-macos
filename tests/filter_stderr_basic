@@ -1,7 +1,7 @@
 #! /bin/sh
 
-# This filter should be applied to *every* stderr results.  It removes Valgrind
-# startup stuff and pid numbers.
+# This filter should be applied to *every* stderr result.  It removes
+# Valgrind startup stuff and pid numbers.
 
 # Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
 sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"             |
@@ -10,9 +10,12 @@ sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"             |
 # copyright notice line.  Tools have to filter their own line themselves.
 sed "/^Using valgrind-.*, a dynamic binary instrumentation framework/ , /./ d" |
 
+# ... and also remove the "Using LibVEX..." line and the one after it.
+sed "/^Using LibVEX-.*, a library for dynamic binary translation/ , /./ d" |
+
 # Remove other introductory lines
 sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |
-sed "/For more details, rerun with: -v/d"                              |
+sed "/For more details, rerun with: -v/d"                             |
 
 # Anonymise line numbers in vg_replace_malloc.c
 sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |

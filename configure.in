@@ -1,0 +1,138 @@
+# Process this file with autoconf to produce a configure script.
+AC_INIT(vg_clientmalloc.c)
+AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE(valgrind, 20020317)
+
+# Checks for programs.
+AC_PROG_LN_S
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_RANLIB
+
+CFLAGS="-Winline -Wall -Wshadow -O -fomit-frame-pointer -g"
+AC_SUBST(CFLAGS)
+
+# Checks for the platform
+AC_CANONICAL_HOST
+
+AC_MSG_CHECKING([for a supported CPU])
+
+case ${host_cpu} in
+     i?86) 
+	AC_MSG_RESULT([ok (${host_cpu})])
+        ;;
+
+     *) 
+	AC_MSG_RESULT([no (${host_cpu})])
+	AC_MSG_ERROR([Valgrind is ix86 specific. Sorry])
+	;;
+esac
+
+AC_MSG_CHECKING([for a supported OS])
+
+case ${host_os} in
+     *linux*) 
+	AC_MSG_RESULT([ok (${host_os})])
+        ;;
+
+     *) 
+	AC_MSG_RESULT([no (${host_os})])
+	AC_MSG_ERROR([Valgrind is Linux specific. Sorry])
+	;;
+esac
+
+
+# Ok, this is linux. Check the kernel version
+AC_MSG_CHECKING([for the kernel version])
+
+kernel=`uname -r`
+
+case ${kernel} in
+     2.4.*) 
+	    AC_MSG_RESULT([2.4 family (${kernel})])
+	    AC_DEFINE(KERNEL_2_4)
+	    DEFAULT_SUPP="linux24.supp"
+	    ;;
+
+     2.2.*) 
+	    AC_MSG_RESULT([2.2 family (${kernel})])
+	    AC_DEFINE(KERNEL_2_2)
+	    DEFAULT_SUPP="linux22.supp"
+	    ;;
+
+     *) 
+	    AC_MSG_RESULT([unsupported (${kernel})])
+	    AC_MSG_ERROR([Valgrind works on kernels 2.2 and 2.4])
+	    ;;
+esac
+
+AC_SUBST(DEFAULT_SUPP)
+
+
+# Ok, this is linux. Check the kernel version
+AC_MSG_CHECKING([the glibc version])
+
+glibc=""
+
+AC_EGREP_CPP([GLIBC_21], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 1)
+  GLIBC_21
+ #endif
+#endif
+],
+glibc="2.1")
+
+AC_EGREP_CPP([GLIBC_22], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2)
+  GLIBC_22
+ #endif
+#endif
+],
+glibc="2.2")
+
+case ${glibc} in
+     2.1)
+	AC_MSG_RESULT(2.1 family)
+	AC_DEFINE(GLIBC_2_1)
+	;;
+
+     2.2)
+	AC_MSG_RESULT(2.2 family)
+	AC_DEFINE(GLIBC_2_2)
+	;;
+
+     *)
+	AC_MSG_RESULT(unsupported version)
+	AC_MSG_ERROR([Valgrind requires the glibc version 2.1 or 2.2])
+	;;
+esac
+
+# try to detect the XFree version
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([fcntl.h malloc.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h termios.h unistd.h utime.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_UID_T
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+
+# Checks for library functions.
+AC_FUNC_MEMCMP
+AC_FUNC_MMAP
+AC_TYPE_SIGNAL
+
+AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
+
+AC_OUTPUT(valgrind 
+   Makefile 
+   docs/Makefile 
+   tests/Makefile 
+   demangle/Makefile)

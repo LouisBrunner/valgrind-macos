@@ -1,0 +1,167 @@
+#!/bin/sh
+
+# Should point to the installation directory
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+VALGRIND="@libdir@/valgrind"
+
+
+# Other stuff ...
+version="@VERSION@"
+emailto="jseward@acm.org"
+
+# The default name of the suppressions file
+vgsupp="--suppressions=$VALGRIND/default.supp"
+
+# name we were invoked with
+vgname=`echo $0 | sed 's,^.*/,,'`
+
+# Valgrind options
+vgopts=
+
+# Prog and arg to run
+argopts=
+
+# Show usage info?
+dousage=0
+
+# show version info?
+doversion=0
+
+# Collect up args for Valgrind
+for arg
+do
+  case "$arg" in
+#   options for the user
+    --help)                 dousage=1; break;;
+    --version)              doversion=1; break;;
+    --logfile-fd=*)         vgopts="$vgopts $arg"; shift;;
+    -v)                     vgopts="$vgopts $arg"; shift;;
+    --verbose)              vgopts="$vgopts -v"; shift;;
+    -q)                     vgopts="$vgopts $arg"; shift;;
+    --quiet)                vgopts="$vgopts $arg"; shift;;
+    --gdb-attach=no)        vgopts="$vgopts $arg"; shift;;
+    --gdb-attach=yes)       vgopts="$vgopts $arg"; shift;;
+    --demangle=no)          vgopts="$vgopts $arg"; shift;;
+    --demangle=yes)         vgopts="$vgopts $arg"; shift;;
+    --num-callers=*)        vgopts="$vgopts $arg"; shift;;
+    --partial-loads-ok=no)  vgopts="$vgopts $arg"; shift;;
+    --partial-loads-ok=yes) vgopts="$vgopts $arg"; shift;;
+    --leak-check=no)        vgopts="$vgopts $arg"; shift;;
+    --leak-check=yes)       vgopts="$vgopts $arg"; shift;;
+    --show-reachable=no)    vgopts="$vgopts $arg"; shift;;
+    --show-reachable=yes)   vgopts="$vgopts $arg"; shift;;
+    --leak-resolution=low)  vgopts="$vgopts $arg"; shift;;
+    --leak-resolution=med)  vgopts="$vgopts $arg"; shift;;
+    --leak-resolution=high) vgopts="$vgopts $arg"; shift;;
+    --sloppy-malloc=no)     vgopts="$vgopts $arg"; shift;;
+    --sloppy-malloc=yes)    vgopts="$vgopts $arg"; shift;;
+    --trace-children=no)    vgopts="$vgopts $arg"; shift;;
+    --trace-children=yes)   vgopts="$vgopts $arg"; shift;;
+    --workaround-gcc296-bugs=no)    vgopts="$vgopts $arg"; shift;;
+    --workaround-gcc296-bugs=yes)   vgopts="$vgopts $arg"; shift;;
+    --freelist-vol=*)       vgopts="$vgopts $arg"; shift;;
+    --suppressions=*)       vgopts="$vgopts $arg"; shift;;
+#   options for debugging Valgrind
+    --sanity-level=*)       vgopts="$vgopts $arg"; shift;;
+    --single-step=yes)      vgopts="$vgopts $arg"; shift;;
+    --single-step=no)       vgopts="$vgopts $arg"; shift;;
+    --optimise=yes)         vgopts="$vgopts $arg"; shift;;
+    --optimise=no)          vgopts="$vgopts $arg"; shift;;
+    --instrument=yes)       vgopts="$vgopts $arg"; shift;;
+    --instrument=no)        vgopts="$vgopts $arg"; shift;;
+    --cleanup=yes)          vgopts="$vgopts $arg"; shift;;
+    --cleanup=no)           vgopts="$vgopts $arg"; shift;;
+    --client-perms=yes)     vgopts="$vgopts $arg"; shift;;
+    --client-perms=no)      vgopts="$vgopts $arg"; shift;;
+    --smc-check=none)       vgopts="$vgopts $arg"; shift;;
+    --smc-check=some)       vgopts="$vgopts $arg"; shift;;
+    --smc-check=all)        vgopts="$vgopts $arg"; shift;;
+    --trace-syscalls=yes)   vgopts="$vgopts $arg"; shift;;
+    --trace-syscalls=no)    vgopts="$vgopts $arg"; shift;;
+    --trace-signals=yes)    vgopts="$vgopts $arg"; shift;;
+    --trace-signals=no)     vgopts="$vgopts $arg"; shift;;
+    --trace-symtab=yes)     vgopts="$vgopts $arg"; shift;;
+    --trace-symtab=no)      vgopts="$vgopts $arg"; shift;;
+    --trace-malloc=yes)     vgopts="$vgopts $arg"; shift;;
+    --trace-malloc=no)      vgopts="$vgopts $arg"; shift;;
+    --stop-after=*)         vgopts="$vgopts $arg"; shift;;
+    --dump-error=*)         vgopts="$vgopts $arg"; shift;;
+    -*)                     dousage=1; break;;
+    *)                      break;;
+  esac
+done
+
+# Collect up the prog and args to run
+for arg
+do
+  case "$arg" in
+   *)     argopts="$argopts $arg"; shift;;
+  esac
+done
+
+if [ z"$doversion" = z1 ]; then
+   echo "valgrind-$version"
+   exit 1
+fi
+
+if [ z"$argopts" = z   -o   z"$dousage" = z1 ]; then
+   echo
+   echo "usage: $vgname [options] prog-and-args"
+   echo
+   echo "  options for the user, with defaults in [ ], are:"
+   echo "    --help                    show this message"
+   echo "    --version                 show version"
+   echo "    -q --quiet                run silently; only print error msgs"
+   echo "    -v --verbose              be more verbose, incl counts of errors"
+   echo "    --gdb-attach=no|yes       start GDB when errors detected? [no]"
+   echo "    --demangle=no|yes         automatically demangle C++ names? [yes]"
+   echo "    --num-callers=<number>    show <num> callers in stack traces [4]"
+   echo "    --partial-loads-ok=no|yes too hard to explain here; see manual [yes]"
+   echo "    --leak-check=no|yes       search for memory leaks at exit? [no]"
+   echo "    --leak-resolution=low|med|high"
+   echo "                              amount of bt merging in leak check [low]"
+   echo "    --show-reachable=no|yes   show reachable blocks in leak check? [no]"
+   echo "    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]"
+   echo "    --trace-children=no|yes   Valgrind-ise child processes? [no]"
+   echo "    --logfile-fd=<number>     file descriptor for messages [2=stderr]"
+   echo "    --freelist-vol=<number>   volume of freed blocks queue [1000000]"
+   echo "    --workaround-gcc296-bugs=no|yes  self explanatory [no]"
+   echo "    --suppressions=<filename> suppress errors described in"
+   echo "                              suppressions file <filename>"
+   echo "    --client-perms=no|yes     handle client VG_MAKE_* requests? [no]"
+   echo
+   echo "  options for debugging Valgrind itself are:"
+   echo "    --sanity-level=<number>   level of sanity checking to do [1]"
+   echo "    --single-step=no|yes      translate each instr separately? [no]"
+   echo "    --optimise=no|yes         improve intermediate code? [yes]"
+   echo "    --instrument=no|yes       actually do memory checks? [yes]"
+   echo "    --cleanup=no|yes          improve after instrumentation? [yes]"
+   echo "    --smc-check=none|some|all check writes for s-m-c? [some]"
+   echo "    --trace-syscalls=no|yes   show all system calls? [no]"
+   echo "    --trace-signals=no|yes    show signal handling details? [no]"
+   echo "    --trace-symtab=no|yes     show symbol table details? [no]"
+   echo "    --trace-malloc=no|yes     show client malloc details? [no]"
+   echo "    --stop-after=<number>     switch to real CPU after executing"
+   echo "                              <number> basic blocks [infinity]"
+   echo "    --dump-error=<number>     show translation for basic block"
+   echo "                              associated with <number>'th"
+   echo "                              error context [0=don't show any]"
+   echo
+   echo "  Extra options are read from env variable \$VALGRIND_OPTS"
+   echo
+   echo "  Valgrind is Copyright (C) 2000-2002 Julian Seward"
+   echo "  and licensed under the GNU General Public License, version 2."
+   echo "  Bug reports, feedback, admiration, abuse, etc, to: $emailto."
+   echo
+   exit 1
+fi
+
+
+VG_ARGS="$VALGRIND_OPTS $vgsupp $vgopts"
+export VG_ARGS
+LD_PRELOAD=$VALGRIND/valgrind.so:$LD_PRELOAD
+export LD_PRELOAD
+exec $argopts
+
+

@@ -1,0 +1,101 @@
+
+4 February 2002
+
+Greetings, KDE developer.  Some of you may have noticed, in recent
+days, that I have posted some bug reports to kde-core-devel@kde.org,
+containing traces like the following:
+
+  Use of uninitialised CPU condition code
+     at 0x471A4196: KateBuffer::parseBlock(KateBufBlock *) (katebuffer.cpp:446)
+     by 0x471A3B58: KateBuffer::line(unsigned int) (katebuffer.cpp:343)
+     by 0x471C684B: KateDocument::updateLines(int, int) 
+                       (../../kdecore/ksharedptr.h:126)
+     by 0x471C1C3E: KateDocument::makeAttribs() (katedocument.cpp:2302)
+
+These errors were detected using this tool, Valgrind.
+
+The purpose of this small doc is to guide you in using Valgrind to
+find and fix memory management bugs in KDE3.
+
+           ---------------------------------------------------
+
+Here's a getting-started-quickly checklist.  It might sound daunting,
+but once set up things work fairly well.
+
+
+* You need an x86 box running a Linux 2.4 kernel, with glibc-2.2.X and
+  XFree86 4.1.0.  In practice this means practically any recent,
+  mainstream Linux distro.  Valgrind is developed on a vanilla Red Hat
+  7.2 installation, so at least works ok there.  I imagine Mandrake 8
+  and SuSE 7.X would be ok too.  It has been known to work (and still
+  should) on Red Hat 7.1 and 6.2 too.
+
+
+* You need a reasonably fast machine, since programs run 25-100 x
+  slower on Valgrind.  I work with a 400 MHz AMD K6-III with 256 M of
+  memory.  Interactive programs like kate, konqueror, etc, are just
+  about usable, but a faster machine would be better.
+
+
+* You need at least 256M of memory for reasonable behaviour.  Valgrind
+  inflates the memory use of KDE apps approximately 4-5 x, so (eg) 
+  konqueror needs ~ 140M of memory to get started.  This is very bad;
+  I hope to improve it (the current memory manager has a design problem).
+
+
+* You need to compile the KDE to be debugged, using a decent gcc/g++:
+
+  - gcc 2.96-*, which comes with Red Hat 7.2, is buggy.  It sometimes
+    generates code with reads below %esp, even for simple functions.
+    This means you will be flooded with errors which are nothing to
+    do with your program.  As of 18 Feb 02, you can use the
+    --workaround-gcc296-bugs=yes flag to ignore them.  See the 
+    manual for details; this is not really a good solution.
+
+  - I recommend you use gcc/g++ 2.95.3.  It seems to compile
+    KDE without problems, and does not suffer from the above bug.  It's
+    what I have been using.
+
+  - gcc-3.0.X -- I have not really tried gcc 3.0.X very much with
+    Valgrind, but others seem to think it works ok.
+
+  It's ok to build Valgrind with the default gcc on Red Hat 7.2.
+
+
+* So: build valgrind -- see the README file.  (it's easy).
+
+* Build as much of KDE+Qt as you can with -g and without -O, for 
+  the usual reasons.
+
+* Use it!
+     /path/to/valgrind $KDEDIR/bin/kate 
+  (or whatever).
+
+* If you are debugging KDE apps, be prepared for the fact that
+  Valgrind finds bugs in the underlying Qt (qt-copy from CVS) too.
+
+* Please read the Valgrind manual, docs/index.html.  It contains 
+  considerable details about how to use it, what's really going on, 
+  etc.
+
+* The source locations in error messages can be way wrong sometimes;
+  please treat them with suspicion.  In particular, it will sometimes
+  say that a source location is in a header file (.h) when really it
+  is in some totally unrelated source (.cpp) file.  I'm working on it ...
+
+* There are some significant limitations:
+  - No threads!  You can run programs linked with libpthread.so,
+    but only until the point where they do clone(); at that point
+    Valgrind will abort.
+  - No MMX, SSE, SSE2 insns.  Basically a 486 instruction set only.
+  - Various other minor limitations listed in the manual.
+
+* Valgrind is still under active development.  If you have trouble
+  with it, please let me know (jseward@acm.org) and I'll see if I
+  can help you out.
+
+
+Have fun!  If you find Valgrind useful in finding and fixing bugs,
+I shall consider my efforts to have been worthwhile.
+
+Julian Seward (jseward@acm.org)

@@ -1,0 +1,106 @@
+
+Release notes for Valgrind, snapshot 20020217
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+KDE3 developers: please read also README_KDE3_FOLKS for guidance
+about how to debug KDE3 applications with Valgrind.
+
+For instructions on how to build/install, see the end of this file.
+
+
+Executive Summary
+~~~~~~~~~~~~~~~~~
+Valgrind is a tool to help you find memory-management problems in your
+programs. When a program is run under Valgrind's supervision, all
+reads and writes of memory are checked, and calls to
+malloc/new/free/delete are intercepted. As a result, Valgrind can
+detect problems such as:
+
+   Use of uninitialised memory 
+   Reading/writing memory after it has been free'd 
+   Reading/writing off the end of malloc'd blocks 
+   Reading/writing inappropriate areas on the stack 
+   Memory leaks -- where pointers to malloc'd blocks are lost forever
+   Passing of uninitialised and/or unaddressible memory to system calls
+   Mismatched use of malloc/new/new [] vs free/delete/delete [] 
+
+Problems like these can be difficult to find by other means, often
+lying undetected for long periods, then causing occasional,
+difficult-to-diagnose crashes.
+
+When Valgrind detects such a problem, it can, if you like, attach GDB
+to your program, so you can poke around and see what's going on.
+
+Valgrind is closely tied to details of the CPU, operating system and
+to a less extent, compiler and basic C libraries. This makes it
+difficult to make it portable, so I have chosen at the outset to
+concentrate on what I believe to be a widely used platform: Red Hat
+Linux 7.2, on x86s. I believe that it will work without significant
+difficulty on other x86 GNU/Linux systems which use the 2.4 kernel and
+GNU libc 2.2.X, for example SuSE 7.1 and Mandrake 8.0.  Red Hat 6.2 is
+also supported.  It has worked in the past, and probably still does,
+on RedHat 7.1 and 6.2.  Note that I haven't compiled it on RedHat 7.1
+and 6.2 for a while, so they may no longer work now.
+
+Valgrind is licensed under the GNU General Public License, version 2. 
+Read the file LICENSE in the source distribution for details.
+
+
+Documentation
+~~~~~~~~~~~~~
+A comprehensive user guide is supplied.  Point your browser at
+docs/index.html.  If your browser doesn't like frames, point it
+instead at docs/manual.html.
+
+
+Building and installing it
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+At the moment, very rudimentary. 
+
+This tarball is set up for a standard Red Hat 7.2 machine.  No
+configure script, no autoconf, no nothing.  Do the following:
+
+0.  Unpack the sources and cd into the source directory.
+
+1.  Do "make"
+
+2.  See if it works.  Try "./valgrind ls -l".  Either this works,
+    or it bombs out complaining it can't find argc/argv/envp.
+    If this happens, you'll have to futz around with 
+    vg_main.c:710 to vg_main.c:790 to try and find suitable offsets.
+    It's not hard; many have been successful here.
+
+Once step 2 is successful, you can now use valgrind.  Documentation
+is in docs/manual.html.  The following auxiliary steps may enhance
+your valgrinding experience, though.
+
+3.  Add enough suppressions to the default suppression file
+    (linux24.supp) so that
+       ./valgrind xedit
+    runs without generating any errors.  This means you've more
+    or less suppressed all the scummy errors from the X11 base
+    libraries and from glibc, which will make it easier to spot
+    genuine errors in your own code.
+
+    If you are using a machine with a 2.2 kernel (RedHat 6.2,
+    or Debian) you probably will want to edit the "valgrind"
+    shell script, to select the linux22.supp suppression file
+    (uncomment line 13; comment out line 14)
+
+If any kind soul would like to contribute a basic autoconf-style
+configuration/install mechanism (the usual autoconf ; ./configure ;
+make ; make install deal), that would be very much appreciated.  I
+will get round to it eventually, but there are only 24 hours in each
+day.
+
+If you want to install it somewhere other than the build directory:
+the files needed for installation are: valgrind.so, valgrinq.so,
+valgrind, VERSION, linux24.supp. You can copy these to any directory
+you like.
+
+I find it simplest to symlink <build_dir>/valgrind to somewhere
+else in my path, so I can use it in-place.  No need to "install"
+really.
+
+Julian Seward (jseward@acm.org)
+15 Feb 2002

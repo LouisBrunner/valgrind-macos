@@ -1,0 +1,270 @@
+
+##----------------------------------------------------------------------##
+
+# Errors to suppress by default on a RedHat 6.2 system
+# (glibc 2.1.3, XFree86 3.3.6)
+
+# Format of this file is:
+# {
+#     name_of_suppression
+#     kind: one of Param Value1 Value2 Value4 Value8
+#                   Free Addr1 Addr2 Addr4 Addr8
+#     (if Param: name of system call param, if Free: name of free-ing fn)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+
+##----------------------------------------------------------------------##
+
+{
+   socketcall.connect(serv_addr)/__libc_connect/*(Param)
+   Param
+   socketcall.connect(serv_addr)
+   fun:__libc_connect
+   fun:*
+}
+
+{
+   strrchr/_dl_map_object_from_fd/_dl_map_object(Addr4)
+   Addr4
+   fun:strrchr
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+}
+
+{
+   strrchr/_dl_map_object_from_fd/_dl_map_object(Value1)
+   Value1
+   fun:strrchr
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+}
+
+{
+   llseek(result)/__libc_lseek64/_IO_file_seek(Param)
+   Param
+   llseek(result)
+   fun:__libc_lseek64
+   fun:_IO_file_seek
+}
+
+{
+   __rawmemchr/_nl_*/*locale(Addr4)
+   Addr4
+   fun:__rawmemchr
+   fun:_nl_*
+   fun:*locale
+}
+
+# new ones for RH62 ls -l 
+{
+   __strchrnul/__nss_database_lookup(Value0)
+   Value0
+   fun:__strchrnul
+   fun:__nss_database_lookup
+}
+{
+   __strchrnul/__gethostbyname_r(Value0)
+   Value0
+   fun:__strchrnul
+   fun:__gethostbyname_r
+}
+
+{
+   strrchr/_dl_map*/_dl_map*(Value0)
+   Value0
+   fun:strrchr
+   fun:_dl_map*
+   fun:_dl_map*
+}
+
+{
+   strchr/dl_open_worker/_dl_catch_error(Value0)
+   Value0
+   fun:strchr
+   fun:dl_open_worker
+   fun:_dl_catch_error
+}
+
+{
+   __rawmemchr/???/__getgrgid_r(Value0)
+   Value0
+   fun:__rawmemchr
+   fun:*
+   fun:__getgrgid_r
+}
+
+{
+   __rawmemchr/_nl_*/*locale*(Value0)
+   Value0
+   fun:__rawmemchr
+   fun:_nl_*
+   fun:*locale*
+}
+
+##----------------------------------------------------------------------##
+## from a Debian machine running kernel 2.2.19 I believe
+## I guess most of these are the same as above really, but
+## Debian stripped their libc-2.1.3
+
+{
+   libc-2.1.3.so/libc-2.1.3.so/libc-2.1.3.so(Value0)
+   Value0
+   obj:*libc-2.1.3.so
+   obj:*libc-2.1.3.so
+   obj:*libc-2.1.3.so
+}
+
+{
+   strchr/libc-2.1.3.so(Value0)
+   Value0
+   fun:*strchr*
+   obj:*libc-2.1.3.so
+}
+
+{
+   libc-2.1.3.so/libXt.so(Value0)
+   Value0
+   obj:*libc-2.1.3.so
+   obj:*libXt.so*
+}
+
+{
+   socketcall.connect(serv_addr)/__libc_connect/*(Param)
+   Param
+   socketcall.connect(serv_addr)
+   obj:*libc-2.1.3.so
+   obj:*libX11.so*
+}
+
+
+##----------------------------------------------------------------------##
+
+{
+   X11-Value0-0
+   Value0
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+}
+{
+   X11-Value0-1
+   Value0
+   fun:__rawmemchr
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+}
+
+
+# Suppressions for XFree86-3.3.X
+
+{
+   X11-Addr4-1
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+}
+
+{
+   X11-Addr4-2
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-3
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-4
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-5
+   Addr4
+   fun:__rawmemchr
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-6
+   Addr4
+   obj:/usr/X11R6/lib/libXmu.so.6.0
+   obj:/usr/X11R6/lib/libXmu.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-7
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
+}
+
+{
+   X11-Param-1
+   Param
+   write(buf)
+   fun:__libc_write
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+}
+
+{
+   X11-Addr4-8
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+}
+
+{
+   X11-Addr4-8
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-9
+   Addr4
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-10
+   Addr4
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-11
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+}
+
+
+
+##----------------------------------------------------------------------##

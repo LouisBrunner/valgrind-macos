@@ -1,0 +1,1 @@
+#define VG_VERSION 20020317

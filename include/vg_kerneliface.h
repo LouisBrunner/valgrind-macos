@@ -769,6 +769,14 @@ struct vki_statfs64 {
 #define VKI_FUTEX_FD      2
 #define VKI_FUTEX_REQUEUE 3
 
+/*
+ * linux/ipc.h
+ */
+
+#define VKI_IPC_CREAT  00001000   /* create if key is nonexistent */
+#define VKI_IPC_EXCL   00002000   /* fail if key exists */
+#define VKI_IPC_NOWAIT 00004000   /* return error on wait */
+
 /* 
  * linux/elfcore.h
  */

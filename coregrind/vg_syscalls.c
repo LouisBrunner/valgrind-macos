@@ -2553,6 +2553,7 @@ PRE(ipc)
    case 1: /* IPCOP_semop */
       SYSCALL_TRACK( pre_mem_read, tid, "semop(sops)", arg5, 
 		     arg3 * sizeof(struct sembuf) );
+      tst->sys_flags |= MayBlock;
       break;
    case 2: /* IPCOP_semget */
    case 3: /* IPCOP_semctl */
@@ -2563,6 +2564,7 @@ PRE(ipc)
       if (arg6 != (UInt)NULL)
          SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(timeout)", arg5, 
                         sizeof(struct timespec) );
+      tst->sys_flags |= MayBlock;
       break;
    case 11: /* IPCOP_msgsnd */
    {
@@ -2573,6 +2575,9 @@ PRE(ipc)
 		     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
       SYSCALL_TRACK( pre_mem_read, tid, "msgsnd(msgp->mtext)", 
 		     (UInt)msgp->mtext, msgsz );
+
+      if ((arg4 & VKI_IPC_NOWAIT) == 0)
+         tst->sys_flags |= MayBlock;
       break;
    }
    case 12: /* IPCOP_msgrcv */
@@ -2588,6 +2593,9 @@ PRE(ipc)
 		     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
       SYSCALL_TRACK( pre_mem_write, tid, "msgrcv(msgp->mtext)", 
 		     (UInt)msgp->mtext, msgsz );
+
+      if ((arg4 & VKI_IPC_NOWAIT) == 0)
+         tst->sys_flags |= MayBlock;
       break;
    }
    case 13: /* IPCOP_msgget */
@@ -5684,7 +5692,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(gettimeofday,		0),
    SYSB_(getuid,		0),
    SYSB_(getuid32,		0),
-   SYSBA(ipc,			MayBlock),
+   SYSBA(ipc,			0),
    SYSBA(ioctl,			MayBlock),
    SYSBA(kill,			0),
    SYSB_(link,			MayBlock),

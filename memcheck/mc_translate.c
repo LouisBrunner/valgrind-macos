@@ -1056,6 +1056,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          /* Emit a check on the address used.  The value loaded into the 
             FPU is checked by the call to fpu_{read/write}_check().  */
+         case MMX2_MemRd: case MMX2_MemWr:
          case FPU_R: case FPU_W: {
             Int t_size = INVALID_TEMPREG;
 
@@ -1077,15 +1078,25 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          }
 
          /* For FPU insns not referencing memory, just copy thru. */
+         case MMX1: case MMX2: case MMX3:
          case FPU: 
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case MMX1: case MMX2: case MMX3:
-         case MMX2_MemRd: case MMX2_MemWr:
-         case MMX2_RegRd: case MMX2_RegWr:
+         /* Since we don't track definedness of values inside the
+            MMX state, we'd better check that the (int) reg being
+            read here is defined. */
+         case MMX2_RegRd: 
+            sk_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->size == 4);
+            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
+            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case MMX2_RegWr:
             VG_(skin_panic)(
-               "I don't know how to instrument MMXish stuff (yet)");
+               "I don't know how to instrument MMX2_RegWr (yet)");
             break;
 
          default:

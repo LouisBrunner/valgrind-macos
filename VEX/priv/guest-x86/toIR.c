@@ -4112,6 +4112,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_SinF64, mkexpr(a1)));
                fp_push();
                put_ST(0, unop(Iop_CosF64, mkexpr(a1)));
+               clear_C2(); /* HACK */
                break;
             }
 

@@ -1,10 +1,6 @@
 
-Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (new_override.cpp:25)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
 
-ERROR SUMMARY: 2 errors from 1 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: ... bytes in ... blocks.
 malloc/free: ... allocs, ... frees, ... bytes allocated.
 For a detailed leak analysis,  rerun with: --leak-check=yes

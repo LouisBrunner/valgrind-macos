@@ -158,7 +158,6 @@ HInstrArray* doRegisterAllocation (
 
    /* Incoming virtual-registerised code. */ 
    HInstrArray* instrs_in,
-   Int          n_vregs,
 
    /* An array listing all the real registers the allocator may use,
       in no particular order. */
@@ -192,6 +191,7 @@ HInstrArray* doRegisterAllocation (
    RRegInfo* rreg_info;
    Int       rreg_info_size;
    Int       rreg_info_used;
+   Int       n_vregs;
 
    /* Used when constructing vreg_info (for allocating stack
       slots). */
@@ -239,6 +239,7 @@ HInstrArray* doRegisterAllocation (
       .. n_vregs-1, so we can just dump the results in a pre-allocated
       array. */
 
+   n_vregs = instrs_in->n_vregs;
    vreg_info = NULL;
    if (n_vregs > 0)
       vreg_info = malloc(sizeof(VRegInfo) * n_vregs);

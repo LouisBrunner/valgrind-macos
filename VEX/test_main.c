@@ -22,40 +22,7 @@
 /* HACK */
 extern
 HInstrArray* /* not really, but for the time being ... */
-             iselBB ( IRBB* bb );
-
-/* HACK */
-X86Instr* genSpill_X86 ( HReg rreg, Int offset )
-{
-   assert(!hregIsVirtual(rreg));
-   switch (hregClass(rreg)) {
-      case HRcInt:
-        return
-	X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
-		          X86AMode_IR(offset + 0x1000, 
-                                      hregX86_EBP()));
-      default: 
-         ppHRegClass(stderr, hregClass(rreg));
-         panic("genSpill_X86: unimplemented regclass");
-   }
-}
-
-/* HACK */
-X86Instr* genReload_X86 ( HReg rreg, Int offset )
-{
-   assert(!hregIsVirtual(rreg));
-   switch (hregClass(rreg)) {
-      case HRcInt:
-        return
-	X86Instr_Alu32R ( Xalu_MOV, 
-		          X86RMI_Mem(X86AMode_IR(offset + 0x1000, 
-                                                 hregX86_EBP())),
-                          rreg );
-      default: 
-         ppHRegClass(stderr, hregClass(rreg));
-         panic("genReload_X86: unimplemented regclass");
-   }
-}
+             iselBB_X86Instr ( IRBB* bb );
 
 
 int main ( void )
@@ -103,7 +70,7 @@ int main ( void )
    printf("\n");
 
    if (1)
-   vcode = iselBB(bb);
+   vcode = iselBB_X86Instr(bb);
    else
    {
      Int i;
@@ -162,7 +129,7 @@ int main ( void )
      rregs_to_use[3] = hregX86_EDX();
 
      rcode =
-     doRegisterAllocation(vcode, 5, /* vregs */
+     doRegisterAllocation(vcode,
                           rregs_to_use, 4, /* rregs */
 			  isMove_X86Instr,
 			  getRegUsage_X86Instr,

@@ -143,14 +143,17 @@ extern HReg lookupHRegRemap ( HRegRemap*, HReg );
 typedef  void  HInstr;
 
 
-/* An expandable array of HInstr*'s.  Handy for insn 
-   selection and register allocation. */
-
+/* An expandable array of HInstr*'s.  Handy for insn selection and
+   register allocation.  n_vregs indicates the number of virtual
+   registers mentioned in the code, something that reg-alloc needs to
+   know.  These are required to be numbered 0 .. n_vregs-1. 
+*/
 typedef
    struct {
       HInstr** arr;
       Int      arr_size;
       Int      arr_used;
+      Int      n_vregs;
    }
    HInstrArray;
 
@@ -171,7 +174,6 @@ HInstrArray* doRegisterAllocation (
 
    /* Incoming virtual-registerised code. */ 
    HInstrArray* instrs_in,
-   Int          n_vregs,
 
    /* An array listing all the real registers the allocator may use,
       in no particular order. */

@@ -411,6 +411,8 @@ void ppX86Instr ( FILE* f, X86Instr* i ) {
    }
 }
 
+/* --------- Helpers for register allocation. --------- */
+
 void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
 {
    initHRegUsage(u);
@@ -434,7 +436,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_RET:
          /* Using our calling conventions, %eax is live into a ret,
             because we know the dispatcher -- to which we're returning
-            -- uses that value as the next guest address. */
+            -- uses that value as the next guest address.  Hmm.  What
+            if we're simulating a 64-bit guest on an x86 host? */
          addHRegUse(u, HRmRead, hregX86_EAX());
          return;
       default:
@@ -476,4 +479,35 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
    *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
    *dst = i->Xin.Alu32R.dst;
    return True;
+}
+
+X86Instr* genSpill_X86 ( HReg rreg, Int offset )
+{
+   assert(!hregIsVirtual(rreg));
+   switch (hregClass(rreg)) {
+      case HRcInt:
+        return
+	X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
+		          X86AMode_IR(offset + 0x1000, 
+                                      hregX86_EBP()));
+      default: 
+         ppHRegClass(stderr, hregClass(rreg));
+         panic("genSpill_X86: unimplemented regclass");
+   }
+}
+
+X86Instr* genReload_X86 ( HReg rreg, Int offset )
+{
+   assert(!hregIsVirtual(rreg));
+   switch (hregClass(rreg)) {
+      case HRcInt:
+        return
+	X86Instr_Alu32R ( Xalu_MOV, 
+		          X86RMI_Mem(X86AMode_IR(offset + 0x1000, 
+                                                 hregX86_EBP())),
+                          rreg );
+      default: 
+         ppHRegClass(stderr, hregClass(rreg));
+         panic("genReload_X86: unimplemented regclass");
+   }
 }

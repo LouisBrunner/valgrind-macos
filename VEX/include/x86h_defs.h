@@ -222,11 +222,13 @@ extern X86Instr* X86Instr_RET    ( void );
 
 extern void ppX86Instr ( FILE*, X86Instr* );
 
-extern void getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
-
-extern void mapRegs_X86Instr ( HRegRemap*, X86Instr* );
-
-extern Bool isMove_X86Instr ( X86Instr*, HReg*, HReg* );
+/* Five functions that insulate the register allocator from details
+   of the underlying instruction set. */
+extern void      getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
+extern void      mapRegs_X86Instr     ( HRegRemap*, X86Instr* );
+extern Bool      isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
+extern X86Instr* genSpill_X86         ( HReg rreg, Int offset );
+extern X86Instr* genReload_X86        ( HReg rreg, Int offset );
 
 
 #endif /* ndef __X86H_DEFS_H */

@@ -192,7 +192,8 @@ HInstrArray* newHInstrArray ( void )
    HInstrArray* ha = malloc(sizeof(HInstrArray));
    ha->arr_size = 4;
    ha->arr_used = 0;
-   ha->arr = malloc(ha->arr_size * sizeof(HInstr*));
+   ha->arr      = malloc(ha->arr_size * sizeof(HInstr*));
+   ha->n_vregs  = 0;
    return ha;
 }
 

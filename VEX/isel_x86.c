@@ -47,14 +47,14 @@ typedef
 
 typedef
    struct {
-      IRTypeEnv* type_env;
+      IRTypeEnv*   type_env;
 
-      VRegMaplet* vregmap;
-      Int         n_vregmap;
+      VRegMaplet*  vregmap;
+      Int          n_vregmap;
 
       HInstrArray* code;
 
-      Int ctr;
+      Int          vreg_ctr;
    }
    ISelEnv;
 
@@ -77,8 +77,8 @@ static void addInstr ( ISelEnv* env, X86Instr* instr )
 
 static HReg newVRegI ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->ctr, HRcInt, True/*virtual reg*/);
-   env->ctr++;
+   HReg reg = mkHReg(env->vreg_ctr, HRcInt, True/*virtual reg*/);
+   env->vreg_ctr++;
    return reg;
 }
 
@@ -330,7 +330,9 @@ void iselNext ( ISelEnv* env, IRNext* next )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-HInstrArray* iselBB ( IRBB* bb )
+/* Translate an entire BB to x86 code. */
+
+HInstrArray* iselBB_X86Instr ( IRBB* bb )
 {
    Int     i;
    HReg    hreg;
@@ -338,7 +340,7 @@ HInstrArray* iselBB ( IRBB* bb )
 
    /* Make up an initial environment to use. */
    ISelEnv* env = malloc(sizeof(ISelEnv));
-   env->ctr = 0;
+   env->vreg_ctr = 0;
 
    /* Set up output code array. */
    env->code = newHInstrArray();
@@ -361,7 +363,7 @@ HInstrArray* iselBB ( IRBB* bb )
       }
       env->vregmap[i].vreg = hreg;
    }
-   env->ctr = env->n_vregmap;
+   env->vreg_ctr = env->n_vregmap;
 
    /* Ok, finally we can iterate over the statements. */
    for (stmt = bb->stmts; stmt; stmt=stmt->link)
@@ -369,5 +371,7 @@ HInstrArray* iselBB ( IRBB* bb )
 
    iselNext(env,bb->next);
 
+   /* record the number of vregs we used. */
+   env->code->n_vregs = env->vreg_ctr;
    return env->code;
 }

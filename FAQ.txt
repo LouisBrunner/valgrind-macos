@@ -88,8 +88,9 @@ Q5. I try running "valgrind my_program", but my_program runs normally,
     and Valgrind doesn't emit any output at all.
 
 A5. Is my_program statically linked?  Valgrind doesn't work with
-    statically linked binaries.  It must rely on at least one shared
-    object.  To determine if a my_program is statically linked, run:
+    statically linked binaries.  my_program must rely on at least one 
+    shared object.  To determine if a my_program is statically linked, 
+    run:
 
       ldd my_program
 
@@ -97,7 +98,7 @@ A5. Is my_program statically linked?  Valgrind doesn't work with
 
       not a dynamic executable
 
-    it my_program is statically linked.
+    if my_program is statically linked.
 
 -----------------------------------------------------------------
 

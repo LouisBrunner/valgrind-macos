@@ -1041,7 +1041,6 @@ void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
    // Then replace with any info we can get from CPUID.
    res = get_caches_from_CPUID(I1c, D1c, L2c);
-   res = -1;
 
    // Then replace with any defined on the command line.
    if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; n_clos++; }

@@ -2437,7 +2437,7 @@ static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
    redir->to_sym = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
    redir->to_addr = 0;
 
-   if (VG_(clo_verbosity) >= 2)
+   if (0||VG_(clo_verbosity) >= 2)
       VG_(message)(Vg_UserMsg, 
                    "REDIRECT %s(%s) to %s(%s)",
                    from_lib, from_sym, to_lib, to_sym);
@@ -2462,6 +2462,11 @@ static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
    redir->to_lib = NULL;
    redir->to_sym = NULL;
    redir->to_addr = to_addr;
+
+   if (0||VG_(clo_verbosity) >= 2)
+      VG_(message)(Vg_UserMsg, 
+                   "REDIRECT %s(%s) to %p",
+                   from_lib, from_sym, to_addr);
 
    if (!resolve_redir_allsegs(redir)) {
       /* can't resolve immediately; add to list */

@@ -1718,7 +1718,44 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                if(!VG_(is_kerror) && res == 0)
                    make_readable(arg3, sizeof(unsigned long));
                break;
-          
+
+            /* CD ROM stuff (??)  */
+            case CDROMSUBCHNL:
+                must_be_readable(tst, "ioctl(CDROMSUBCHNL (cdsc_format, char))",
+                   (int) &(((struct cdrom_subchnl *) arg3)->cdsc_format), 
+                   sizeof(((struct cdrom_subchnl *) arg3)->cdsc_format));
+                must_be_writable(tst, "ioctl(CDROMSUBCHNL)", arg3, 
+                   sizeof(struct cdrom_subchnl));
+                KERNEL_DO_SYSCALL(tid,res);
+                if (!VG_(is_kerror)(res) && res == 0)
+                   make_readable (arg3, sizeof(struct cdrom_subchnl));
+                break;
+            case CDROMREADTOCHDR:
+                must_be_writable(tst, "ioctl(CDROMREADTOCHDR)", arg3, 
+                   sizeof(struct cdrom_tochdr));
+                KERNEL_DO_SYSCALL(tid,res);
+                if (!VG_(is_kerror)(res) && res == 0)
+                   make_readable (arg3, sizeof(struct cdrom_tochdr));
+                break;
+            case CDROMREADTOCENTRY:
+                 must_be_readable(tst, "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
+                    (int) &(((struct cdrom_tocentry *) arg3)->cdte_format), 
+                    sizeof(((struct cdrom_tocentry *) arg3)->cdte_format));
+                 must_be_readable(tst, "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
+                    (int) &(((struct cdrom_tocentry *) arg3)->cdte_track), 
+                    sizeof(((struct cdrom_tocentry *) arg3)->cdte_track));
+                 must_be_writable(tst, "ioctl(CDROMREADTOCENTRY)", arg3, 
+                    sizeof(struct cdrom_tocentry));
+                 KERNEL_DO_SYSCALL(tid,res);
+                 if (!VG_(is_kerror)(res) && res == 0)
+                    make_readable (arg3, sizeof(struct cdrom_tochdr));
+                 break;
+            case CDROMPLAYMSF:
+                 must_be_readable(tst, "ioctl(CDROMPLAYMSF)", arg3, 
+                    sizeof(struct cdrom_msf));
+                 KERNEL_DO_SYSCALL(tid,res);
+                 break;
+
             /* We don't have any specific information on it, so
                try to do something reasonable based on direction and
                size bits.  The encoding scheme is described in

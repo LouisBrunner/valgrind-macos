@@ -54,7 +54,7 @@
 #include <scsi/sg.h>      /* for the SG_* ioctls */
 #include <sched.h>        /* for struct sched_param */
 #include <linux/sysctl.h> /* for struct __sysctl_args */
-
+#include <linux/cdrom.h>  /* for cd-rom ioctls */
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

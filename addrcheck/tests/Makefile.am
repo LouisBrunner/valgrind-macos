@@ -8,4 +8,5 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS))
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	overlap.stderr.exp overlap.stdout.exp overlap.vgtest

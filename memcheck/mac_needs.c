@@ -873,6 +873,10 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
       return True;
    }
 
+   case _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP:
+      *ret = (Addr)MAC_(record_overlap_error);
+      return True;
+
    default:
       return False;
    }

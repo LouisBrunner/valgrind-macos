@@ -17,12 +17,15 @@ vgskin_addrcheck_so_LDFLAGS = -shared
 vgskin_addrcheck_so_LDADD = \
 	../memcheck/mac_leakcheck.o \
 	../memcheck/mac_malloc_wrappers.o \
-	../memcheck/mac_needs.o \
-	../memcheck/mac_replace_strmem.o
+	../memcheck/mac_needs.o
 
 vgpreload_addrcheck_so_SOURCES = 
-vgpreload_addrcheck_so_LDADD = $(top_builddir)/coregrind/vg_replace_malloc.o
-vgpreload_addrcheck_so_DEPENDENCIES = $(top_builddir)/coregrind/vg_replace_malloc.o
+vgpreload_addrcheck_so_LDADD = \
+	$(top_builddir)/coregrind/vg_replace_malloc.o \
+	../memcheck/mac_replace_strmem.o
+vgpreload_addrcheck_so_DEPENDENCIES = \
+	$(top_builddir)/coregrind/vg_replace_malloc.o \
+	../memcheck/mac_replace_strmem.o
 vgpreload_addrcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst
 
 all-local:

@@ -232,10 +232,6 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
                    ( tid, arg[1], arg[2], arg[3], True /* set them */ );
          break;
 
-      case _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP:
-	 *ret = (Addr)MAC_(record_overlap_error);
-	 break;
-
       default:
          if (MAC_(handle_common_client_requests)(tid, arg, ret )) {
             return True;

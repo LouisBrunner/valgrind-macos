@@ -590,8 +590,11 @@ static int load_script(char *hdr, int len, int fd, const char *name, struct exei
    }
    
    info->argv0 = strdup(interp);
-   if (arg != NULL && *arg != '\0')
+   assert(NULL != info->argv0);
+   if (arg != NULL && *arg != '\0') {
       info->argv1 = strdup(arg);
+      assert(NULL != info->argv1);
+   }
 
    if (info->argv && info->argv[0] != NULL)
       info->argv[0] = (char *)name;

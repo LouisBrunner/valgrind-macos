@@ -153,6 +153,67 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
    return ret;
 }
 
+/* Walk through a colon-separated environment variable, and remove the
+   entries which matches file_pattern.  It slides everything down over
+   the removed entries, and pads the remaining space with '\0'.  It
+   modifies the entries in place (in the client address space), but it
+   shouldn't matter too much, since we only do this just before an
+   execve().
+
+   This is also careful to mop up any excess ':'s, since empty strings
+   delimited by ':' are considered to be '.' in a path.
+*/
+static void mash_colon_env(Char *varp, const Char *remove_pattern)
+{
+   Char *const start = varp;
+   Char *entry_start = varp;
+   Char *output = varp;
+
+   if (varp == NULL)
+      return;
+
+   while(*varp) {
+      if (*varp == ':') {
+	 Char prev;
+	 Bool match;
+
+	 /* This is a bit subtle: we want to match against the entry
+	    we just copied, because it may have overlapped with
+	    itself, junking the original. */
+
+	 prev = *output;
+	 *output = '\0';
+
+	 match = VG_(string_match)(remove_pattern, entry_start);
+
+	 *output = prev;
+	 
+	 if (match) {
+	    output = entry_start;
+	    varp++;			/* skip ':' after removed entry */
+	 } else
+	    entry_start = output+1;	/* entry starts after ':' */
+      }
+
+      *output++ = *varp++;
+   }
+
+   /* match against the last entry */
+   if (VG_(string_match)(remove_pattern, entry_start)) {
+      output = entry_start;
+      if (output > start) {
+	 /* remove trailing ':' */
+	 output--;
+	 vg_assert(*output == ':');
+      }
+   }	 
+
+   /* pad out the left-overs with '\0' */
+   while(output < varp)
+      *output++ = '\0';
+}
+
+
 /* ---------------------------------------------------------------------
    Doing mmap, munmap, mremap, mprotect
    ------------------------------------------------------------------ */
@@ -1808,13 +1869,13 @@ PRE(execve)
 	 buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
 
 	 VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
-	 VG_(mash_colon_env)(ld_preload_str, buf);
+	 mash_colon_env(ld_preload_str, buf);
 
 	 VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
-	 VG_(mash_colon_env)(ld_preload_str, buf);
+	 mash_colon_env(ld_preload_str, buf);
 
 	 VG_(sprintf)(buf, "%s*", VG_(libdir));
-	 VG_(mash_colon_env)(ld_library_path_str, buf);
+	 mash_colon_env(ld_library_path_str, buf);
 
 	 VG_(env_unsetenv)(envp, VALGRINDCLO);
 

@@ -475,11 +475,6 @@ You invoke Valgrind like this:
   valgrind --tool=<i>tool_name</i> [options-for-Valgrind] your-prog [options for your-prog]
 </pre>
 
-<p>Note that Valgrind also reads options from the environment variable
-<code>$VALGRIND_OPTS</code>, and processes them before the command-line
-options.  Options for the Valgrind core may be freely mixed with those
-for the selected tool.
-
 <p>Valgrind's default settings succeed in giving reasonable behaviour
 in most cases.  We group the available options by rough categories.
 
@@ -711,10 +706,7 @@ and Addrcheck), the following options apply.
       etc, return 4-byte aligned addresses.  These are suitable for
       any accesses on x86 processors. 
       Some programs might however assume that <code>malloc</code> et
-      al return 8- or more aligned memory.
-      These programs are broken and should be fixed, but
-      if this is impossible for whatever reason the alignment can be
-      increased using this parameter.  The supplied value must be
+      al return 8- or more aligned memory.  The supplied value must be
       between 4 and 4096 inclusive, and must be a power of two.</li><br><p>
 
   <li><code>--sloppy-malloc=no</code> [default]<br>
@@ -940,6 +932,33 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       <p>
 </ul>
 
+<h4>Setting default options</h4>
+
+<p>Note that Valgrind also reads options from three places:
+<ul>
+<li>The file <code>~/.valgrindrc</code>
+<li>The environment variable <code>$VALGRIND_OPTS</code>
+<li>The file <code>./.valgrindrc</code>
+</ul>
+These are processed in the given order, before the command-line options.
+Options processed later override those processed earlier;  for example,
+options in <code>./.valgrindrc</code> will take precedence over those in
+<code>~/.valgrindrc</code>.  The first two are particularly useful for
+setting the default tool to use.
+<p>
+Any tool-specific options put in <code>$VALGRIND_OPTS</code> or the
+<code>.valgrindrc</code> files should be prefixed with the tool name and
+a colon.  For example, if you want Memcheck to always do leak checking,
+you can put the following entry in <code>~/.valgrindrc</code>:
+
+<pre>
+    --memcheck:leak-check=yes
+</pre>
+
+This will be ignored if any tool other than Memcheck is run.
+Without the <code>memcheck:</code> part, this will cause problems if you
+select other tools that don't understand <code>--leak-check=yes</code>.
+
 
 <a name="clientreq"></a>
 <h3>2.7&nbsp; The Client Request mechanism</h3>
@@ -1151,7 +1170,7 @@ it.
 
 <p>The translator/instrumentor has a lot of assertions in it.  They
 are permanently enabled, and I have no plans to disable them.  If one
-of these breaks, please mail me!
+of these breaks, please mail us!
 
 <p>If you get an assertion failure on the expression
 <code>chunkSane(ch)</code> in <code>vg_free()</code> in

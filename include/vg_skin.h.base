@@ -224,6 +224,7 @@ extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
 #define VGP_CORE_LIST \
    /* These ones depend on the core */                \
    VGP_PAIR(VgpUnc,         "unclassified"),          \
+   VGP_PAIR(VgpStartup,     "startup"),               \
    VGP_PAIR(VgpRun,         "running"),               \
    VGP_PAIR(VgpSched,       "scheduler"),             \
    VGP_PAIR(VgpMalloc,      "low-lev malloc/free"),   \
@@ -237,7 +238,6 @@ extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
    VGP_PAIR(VgpLiveness,    "liveness-analysis"),     \
    VGP_PAIR(VgpDoLRU,       "do-lru"),                \
    VGP_PAIR(VgpSlowFindT,   "slow-search-transtab"),  \
-   VGP_PAIR(VgpInitMem,     "init-memory"),           \
    VGP_PAIR(VgpExeContext,  "exe-context"),           \
    VGP_PAIR(VgpReadSyms,    "read-syms"),             \
    VGP_PAIR(VgpSearchSyms,  "search-syms"),           \
@@ -287,12 +287,6 @@ extern ULong VG_(bbs_done);
 
 /* Get the simulated %esp */
 extern Addr VG_(get_stack_pointer) ( void );
-
-/* Detect if an address is within Valgrind's stack, Valgrind's
-   m_state_static, or the VG_(threads) array.  This is useful for
-   memory leak detectors to rule out spurious pointers to a block. */
-extern Bool VG_(within_stack)(Addr a);
-extern Bool VG_(within_m_state_static_OR_threads)(Addr a);
 
 /* Check if an address is 4-byte aligned */
 #define IS_ALIGNED4_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 3))

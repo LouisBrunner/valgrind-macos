@@ -109,8 +109,8 @@ dispatch_main:
 	
 	   If %ebp has any other value, we panic.
 	*/
-	cmpl	$VG_(baseBlock), %ebp
-	jnz	dispatch_exceptional
+	/*cmpl	$VG_(baseBlock), %ebp*/
+	/*jnz	dispatch_exceptional*/
 	/* fall into main loop */
 
 

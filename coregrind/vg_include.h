@@ -1369,44 +1369,6 @@ extern Addr VG_(code_redirect)	  (Addr orig);
    Exports of vg_main.c
    ------------------------------------------------------------------ */
 
-/* structure used for transporting values from stage2 into Valgrind
-   proper */
-typedef struct {
-   Addr	client_esp;		/* initial client ESP			*/
-   Addr client_eip;		/* initial client EIP			*/
-   Char **client_envp;		/* client envp				*/
-   UInt	*client_auxv;		/* client auxv				*/
-   Addr client_brkbase;		/* initial value of brk			*/
-
-   Int	argc;			/* Valgrind's argc/argv			*/
-   Char **argv;
-   const Char *libdir;		/* library directory                    */
-
-   Int  vgexecfd;		/* fd of our own (stage1) executable    */
-   Int  clexecfd;		/* fd of the client executable          */
-
-   Addr client_base;		/* start of client address space	*/
-   Addr	client_end;		/* end of client address space		*/
-   Addr client_mapbase;		/* base address of !MAP_FIXED mappings  */
-   Addr	clstk_base;		/* lowest address of client stack	*/
-   Addr	clstk_end;		/* highest address of client stack	*/
-   Addr cl_tramp_code;		/* syscall+signal trampoline code       */
-
-   Addr	shadow_base;		/* start of skin's shadow memory	*/
-   Addr shadow_end;		/* end of skin's shadow memory		*/
-
-   Addr	vg_base;		/* start of Valgrind's memory		*/
-   Addr vg_mmap_end;		/* end of Valgrind's mmap area		*/
-   Addr	vg_end;			/* end of Valgrind's memory		*/
-} KickstartParams;
-
-/* Entrypoint for kickstart */
-typedef void (kickstart_main_t)(const KickstartParams *kp, 
-				void (*tool_init)(void), void *tool_dlhandle);
-extern kickstart_main_t VG_(main);
-
-extern void VG_(usage)(void);
-
 /* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
    the SSE state all over the place.  This is set up very early, in
    vg_startup.S.  We have to determine it early since we can't even
@@ -1446,13 +1408,15 @@ extern Int  VG_(clexecfd);
 extern const Char *VG_(libdir);
 
 /* A structure used as an intermediary when passing the simulated
-   CPU's state to some assembly fragments, particularly system calls.
-   Stuff is copied from baseBlock to here, the assembly magic runs,
-   and then the inverse copy is done.  Alignment: the SSE state must
-   be 16-byte aligned.  We ask for the whole struct to be 16-byte
-   aligned, and the SSE state starts at the 6+8+1+1th == 16th word,
-   so it too must be 16-byte aligned.  Consequence: change this struct
-   only _very carefully_ !  See also above comment re masking MXCSR. 
+   CPU's state to VG_(switch_to_real_CPU)(), for --stop-after=yes.
+   Stuff is copied from baseBlock to here, because it's much easier
+   to copy the state into the real registers from this structure than
+   the baseBlock, because it's layout is simpler.
+   Alignment: the SSE state must be 16-byte aligned.  We ask for the whole
+   struct to be 16-byte aligned, and the SSE state starts at the 6+8+1+1th
+   == 16th word, so it too must be 16-byte aligned.  Consequence: change
+   this struct only _very carefully_ !  See also above comment re masking
+   MXCSR. 
 */
 __attribute__ ((aligned (16)))
 extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
@@ -1461,10 +1425,6 @@ extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
                                  + 1 /* %eip */
                                  + VG_SIZE_OF_SSESTATE_W /* SSE state */
                                 ];
-
-/* Handy fns for doing the copy back and forth. */
-extern void VG_(copy_baseBlock_to_m_state_static) ( void );
-extern void VG_(copy_m_state_static_to_baseBlock) ( void );
 
 /* Determine if %esp adjustment must be noted */
 extern Bool VG_(need_to_handle_esp_assignment) ( void );
@@ -1484,18 +1444,10 @@ extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 extern Int    VG_(vg_argc);
 extern Char **VG_(vg_argv);
 
-/* Holds client's %esp at the point we gained control.  From this the
-   client's argc, argv and envp are deduced. */
-extern Addr   VG_(esp_at_startup);
-
 /* Indicates presence, and holds address of client's sysinfo page, a
    feature of some modern kernels used to provide vsyscalls, etc. */
 extern Bool VG_(sysinfo_page_exists);
 extern Addr VG_(sysinfo_page_addr);
-
-/* Walk through a colon separated list variable, removing entries
-   which match pattern. */
-extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
 
 /* Something of a function looking for a home ... start up GDB. */
 extern void VG_(start_GDB) ( Int tid );
@@ -1632,8 +1584,6 @@ extern Segment *VG_(next_segment)(Segment *);
 
 extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);
 extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
-
-extern void VG_(init_memory)        ( void );
 
 extern __attribute__((regparm(1))) 
        void VG_(unknown_esp_update) ( Addr new_ESP );

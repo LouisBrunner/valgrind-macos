@@ -397,12 +397,13 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
 	  (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)	&&
 	  len >= VKI_BYTES_PER_PAGE							&&
 	  s->symtab == NULL								&&
-	  VG_(is_object_file)((void *)addr)) {
+	  VG_(is_object_file)((void *)addr)) 
+      {
+         s->symtab = VG_(read_seg_symbols)(s);
 
-      s->symtab = VG_(read_seg_symbols)(s);
-
-      if (s->symtab != NULL)
-	 s->flags |= SF_DYNLIB;
+         if (s->symtab != NULL) {
+            s->flags |= SF_DYNLIB;
+         }
       } else if (flags & SF_MMAP) {
 	 const SegInfo *info;
 
@@ -410,7 +411,8 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
 	 for(info = VG_(next_seginfo)(NULL);
 	     info != NULL;
 	     info = VG_(next_seginfo)(info)) {
-	    if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info))) {
+	    if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info)))
+            {
 	       s->symtab = (SegInfo *)info;
 	       VG_(symtab_incref)((SegInfo *)info);
 	    }
@@ -552,121 +554,6 @@ Segment *VG_(find_segment)(Addr a)
 Segment *VG_(next_segment)(Segment *s)
 {
    return VG_(SkipNode_Next)(&sk_segments, s);
-}
-
-/*--------------------------------------------------------------*/
-/*--- Initialise program data/text etc on program startup.   ---*/
-/*--------------------------------------------------------------*/
-
-static
-void build_valgrind_map_callback ( Addr start, UInt size, 
-				   Char rr, Char ww, Char xx, UInt dev, UInt ino,
-				   ULong foffset, const UChar* filename )
-{
-   UInt prot = 0;
-   UInt flags;
-   Bool is_stack_segment;
-   Bool verbose = False || mem_debug; /* set to True for debugging */
-
-   is_stack_segment = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
-
-   prot = 0;
-   flags = SF_MMAP|SF_NOSYMS;
-
-   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end))
-      flags |= SF_VALGRIND;
-
-   /* Only record valgrind mappings for now, without loading any
-      symbols.  This is so we know where the free space is before we
-      start allocating more memory (note: heap is OK, it's just mmap
-      which is the problem here). */
-   if (flags & SF_VALGRIND) {
-      if (verbose)
-	 VG_(printf)("adding segment %08p-%08p prot=%x flags=%4x filename=%s\n",
-		     start, start+size, prot, flags, filename);
-
-      VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
-   }
-}
-
-static
-void build_segment_map_callback ( Addr start, UInt size, 
-				  Char rr, Char ww, Char xx, UInt dev, UInt ino,
-				  ULong foffset, const UChar* filename )
-{
-   UInt prot = 0;
-   UInt flags;
-   Bool is_stack_segment;
-   Bool verbose = False || mem_debug; /* set to True for debugging */
-   Addr r_esp;
-
-   is_stack_segment = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
-
-   if (rr == 'r')
-      prot |= VKI_PROT_READ;
-   if (ww == 'w')
-      prot |= VKI_PROT_WRITE;
-   if (xx == 'x')
-      prot |= VKI_PROT_EXEC;
-
-      
-   if (is_stack_segment)
-      flags = SF_STACK | SF_GROWDOWN;
-   else
-      flags = SF_EXEC|SF_MMAP;
-
-   if (filename != NULL)
-      flags |= SF_FILE;
-
-   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end))
-      flags |= SF_VALGRIND;
-
-   if (verbose)
-      VG_(printf)("adding segment %08p-%08p prot=%x flags=%4x filename=%s\n",
-		  start, start+size, prot, flags, filename);
-
-   VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
-
-   if (VG_(is_client_addr)(start) && VG_(is_client_addr)(start+size-1))
-      VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
-
-   /* If this is the stack segment mark all below %esp as noaccess. */
-   r_esp = VG_(m_state_static)[40/4];
-   if (is_stack_segment) {
-      if (0)
-         VG_(message)(Vg_DebugMsg, "invalidating stack area: %x .. %x",
-                      start,r_esp);
-      VG_TRACK( die_mem_stack, start, r_esp-start );
-   }
-}
-
-
-/* 1. Records startup segments from /proc/pid/maps.  Takes special note
-      of the executable ones, because if they're munmap()ed we need to
-      discard translations.  Also checks there's no exe segment overlaps.
-
-      Note that `read_from_file' is false;  we read /proc/self/maps into a
-      buffer at the start of VG_(main) so that any superblocks mmap'd by
-      calls to VG_(malloc)() by SK_({pre,post}_clo_init) aren't erroneously
-      thought of as being owned by the client.
- */
-void VG_(init_memory) ( void )
-{
-   /* 1 */
-   /* reserve Valgrind's kickstart, heap and stack */
-   VG_(map_segment)(VG_(valgrind_mmap_end), VG_(valgrind_end)-VG_(valgrind_mmap_end),
-		    VKI_PROT_NONE, SF_VALGRIND|SF_FIXED);
-
-   /* work out what's mapped where, and read interesting symtabs */
-   VG_(parse_procselfmaps) ( build_valgrind_map_callback );	/* just Valgrind mappings */
-   VG_(parse_procselfmaps) ( build_segment_map_callback );	/* everything */
-
-   /* initialize our trampoline page (which is also sysinfo stuff) */
-   VG_(memcpy)((void *)VG_(client_trampoline_code), 
-	       &VG_(trampoline_code_start),
-	       VG_(trampoline_code_length));
-   VG_(mprotect)((void *)VG_(client_trampoline_code), VG_(trampoline_code_length), 
-		 VKI_PROT_READ|VKI_PROT_EXEC);
 }
 
 /*------------------------------------------------------------*/

@@ -581,8 +581,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 
 /* Initialise the scheduler.  Create a single "main" thread ready to
    run, with special ThreadId of one.  This is called at startup; the
-   caller takes care to park the client's state is parked in
-   VG_(baseBlock).  
+   caller takes care to park the client's state in VG_(baseBlock).  
 */
 void VG_(scheduler_init) ( void )
 {

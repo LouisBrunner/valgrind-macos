@@ -39,7 +39,6 @@ valgrind_LDFLAGS=-static -g -Wl,-e,_ume_entry
 valgrind_LDADD=
 
 stage2_SOURCES = \
-	stage2.c \
 	ume.c \
 	x86/ume_entry.S \
 	x86/ume_go.c \

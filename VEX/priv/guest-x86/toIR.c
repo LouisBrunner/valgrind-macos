@@ -5499,21 +5499,15 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
       case 0x72: 
       case 0x73: {
          /* (sz==4): PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
-         UChar byte1, byte2, subopc;
-         void* hAddr;
-         Char* hName;
+         UChar byte2, subopc;
          if (sz != 4) 
             goto mmx_decode_failure;
-         byte1  = opc;                       /* 0x71/72/73 */
          byte2  = getIByte(delta);           /* amode / sub-opcode */
          subopc = (byte2 >> 3) & 7;
 
 #        define SHIFT_BY_IMM(_name,_op)                         \
              do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
              } while (0)
-
-         hAddr = NULL;
-         hName = NULL;
 
               if (subopc == 2 /*SRL*/ && opc == 0x71) 
                  SHIFT_BY_IMM("psrlw", Iop_ShrN16x4);
@@ -6195,7 +6189,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
    IRTemp tmpt1 = newTemp(ty);
 
    if (epartIsReg(rm)) {
-     vassert(0);
+      unimplemented("x86 xadd instruction with register operand");
 #if 0
       uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
       uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);

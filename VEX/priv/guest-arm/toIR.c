@@ -914,7 +914,7 @@ static HChar* name_ARMDataProcOp ( UChar opc )
   ARM ARM A5-48
 */
 static
-Bool dis_loadstore_mult ( theInstr )
+Bool dis_loadstore_mult ( UInt theInstr )
 {
     UChar flags   = (theInstr >> 20) & 0x1F;   // theInstr[24:20]
     UChar Rn_addr = (theInstr >> 16) & 0xF;

@@ -828,7 +828,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    /* --------- Call to DIRTY helper --------- */
    /* call complex ("dirty") helper function */
    case Ist_Dirty: {
-       IRType   retty;
+     //IRType   retty;
        IRDirty* d = stmt->Ist.Dirty.details;
        Bool     passBBP = False;
 
@@ -844,7 +844,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 	  /* No return value.  Nothing to do. */
 	  return;
       
-      retty = typeOfIRTemp(env->type_env, d->tmp);
+      //retty = typeOfIRTemp(env->type_env, d->tmp);
 
 // CAB: ?     if (retty == Ity_I64) {
 

@@ -3503,7 +3503,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    static UInt n_total     = 0;
    static UInt n_expensive = 0;
 
-   Bool show_res = False;
    Bool do_expensive;
    IRBB *bb, *bb2;
 
@@ -3534,7 +3533,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       do_expensive = hasGetIorPutI(bb);
       if (do_expensive) {
          n_expensive++;
-         //show_res = True;
          if (DEBUG_IROPT)
             vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
          bb = expensive_transformations( bb );
@@ -3546,7 +3544,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
       bb2 = maybe_loop_unroll_BB( bb, guest_addr );
       if (bb2) {
-         show_res = False; //True;
          bb = cheap_transformations( bb2, specHelper, preciseMemExnsFn );
          if (do_expensive) {
             bb = expensive_transformations( bb );

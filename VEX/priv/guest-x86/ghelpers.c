@@ -733,13 +733,12 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
 
    if (vex_streq(function_name, "x86g_calculate_condition")) {
       /* specialise calls to above "calculate condition" function */
-      IRExpr *cond, *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      IRExpr *cond, *cc_op, *cc_dep1, *cc_dep2;
       vassert(arity == 5);
       cond    = args[0];
       cc_op   = args[1];
       cc_dep1 = args[2];
       cc_dep2 = args[3];
-      cc_ndep = args[4];
 
       /*---------------- ADDL ----------------*/
 
@@ -987,7 +986,6 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
    Bool   mantissaIsZero;
    Int    bexp;
    UChar  sign;
-   UInt   c1;
    UChar* f64;
 
    vassert(host_is_little_endian());
@@ -1006,8 +1004,6 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
 
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
    bexp &= 0x7FF;
-
-   c1 = ((UInt)sign) << 9;
 
    mantissaIsZero
       = (f64[6] & 0x0F) == 0 

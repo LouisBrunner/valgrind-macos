@@ -354,11 +354,6 @@ static inline UChar min8U ( UChar xx, UChar yy )
    return (xx < yy) ? xx : yy;
 }
 
-static inline UChar abdU8 ( UChar xx, UChar yy )
-{
-   return xx>yy ? xx-yy : yy-xx;
-}
-
 /* ----------------------------------------------------- */
 /* Start of the externally visible functions.  These simply
    implement the corresponding IR primops. */

@@ -154,6 +154,6 @@ all-local:
 	for i in $(val_PROGRAMS); do \
 		to=$(inplacedir)/$$(echo $$i | sed 's,libpthread.so,libpthread.so.0,'); \
 		rm -f $$$to; \
-		ln -sf $(top_builddir)/$(subdir)/$$i $$to; \
+		ln -sf ../$(subdir)/$$i $$to; \
 	done
 

@@ -787,7 +787,7 @@ static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
    Int   fd, i;
-   Bool  eof;
+   Bool  eof, too_many_contexts = False;
    Char  buf[N_BUF+1];
    Char* tool_names;
    Char* supp_name;
@@ -883,9 +883,13 @@ static void load_one_suppressions_file ( Char* filename )
       /* make sure to grab the '}' if the num callers is >=
          VG_N_SUPP_CALLERS */
       if (!VG_STREQ(buf, "}")) {
-         do {
-           eof = VG_(get_line) ( fd, buf, N_BUF );
-        } while (!eof && !VG_STREQ(buf, "}"));
+         // Don't just ignore extra lines -- abort.  (Someone complained
+         // about silent ignoring of lines in bug #77922.)
+         //do {
+         //   eof = VG_(get_line) ( fd, buf, N_BUF );
+         //} while (!eof && !VG_STREQ(buf, "}"));
+         too_many_contexts = True;
+         goto syntax_error;
       }
 
       supp->next = vg_suppressions;
@@ -899,6 +903,13 @@ static void load_one_suppressions_file ( Char* filename )
       VG_(message)(Vg_UserMsg, 
                    "FATAL: in suppressions file `%s': unexpected EOF", 
                    filename );
+   } else if (too_many_contexts) {
+      VG_(message)(Vg_UserMsg, 
+                   "FATAL: in suppressions file: `%s': at %s:", 
+                   filename, buf );
+      VG_(message)(Vg_UserMsg, 
+                   "too many lines (limit of %d contexts in suppressions)",
+                   VG_N_SUPP_CALLERS);
    } else {
       VG_(message)(Vg_UserMsg, 
                    "FATAL: in suppressions file: `%s': syntax error on: %s", 
@@ -906,7 +917,7 @@ static void load_one_suppressions_file ( Char* filename )
    }
    VG_(close)(fd);
    VG_(message)(Vg_UserMsg, "exiting now.");
-    VG_(exit)(1);
+   VG_(exit)(1);
 
 #  undef N_BUF   
 }

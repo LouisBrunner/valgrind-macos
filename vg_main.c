@@ -511,15 +511,14 @@ static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
    while (VG_(isdigit)(opt[i])) i++;
    if ('\0' != opt[i]) goto bad;
 
-   VG_(free)(VG_AR_PRIVATE, opt);
-
    cache->size      = (Int)VG_(atoll)(opt + i1);
    cache->assoc     = (Int)VG_(atoll)(opt + i2);
    cache->line_size = (Int)VG_(atoll)(opt + i3);
 
+   VG_(free)(VG_AR_PRIVATE, opt);
    return;
 
-bad:    
+  bad:    
    bad_option(orig_opt);
 }
 

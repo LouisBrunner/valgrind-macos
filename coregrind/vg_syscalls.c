@@ -2601,6 +2601,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          MAYBE_PRINTF("%d\n",res);
          break;
 
+      case __NR_creat: /* syscall 8 */
+         /* int creat(const char *pathname, mode_t mode); */
+         MAYBE_PRINTF("creat ( %p(%s), %d ) --> ",arg1,arg1,arg2);
+         SYSCALL_TRACK( pre_mem_read_asciiz, tst, "creat(pathname)", arg1 );
+         KERNEL_DO_SYSCALL(tid,res);
+         MAYBE_PRINTF("%d\n",res);
+         break;
+
       case __NR_pipe: /* syscall 42 */
          /* int pipe(int filedes[2]); */
          MAYBE_PRINTF("pipe ( %p ) ...\n", arg1);

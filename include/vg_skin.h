@@ -635,6 +635,24 @@ typedef
       */
       SSE3g_RegWr,
 
+      /* 5 bytes, writes an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb: 11 ireg bbb :bbbbbbbb. Held in
+         val1[15:0] and val2[15:0] and lit32[7:0], and ireg is to be
+         replaced at codegen time by a reference to the relevant
+         RealReg.  Transfer is always at size 4.  Arg3 holds this
+         Temp/Real Reg.
+      */
+      SSE3g1_RegWr,
+
+      /* 5 bytes, reads an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb: 11 bbb ireg :bbbbbbbb. Held in
+         val1[15:0] and val2[15:0] and lit32[7:0], and ireg is to be
+         replaced at codegen time by a reference to the relevant
+         RealReg.  Transfer is always at size 4.  Arg3 holds this
+         Temp/Real Reg.
+      */
+      SSE3g1_RegRd,
+
       /* 4 bytes, reads an integer register.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb:11 xmmreg ireg.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced

@@ -402,6 +402,7 @@ Int VG_(realreg_to_rank) ( Int realReg )
 Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 {
 #  define LIT0 (u->lit32 == 0)
+#  define LIT8 (((u->lit32) & 0xFFFFFF00) == 0)
 #  define LIT1 (!(LIT0))
 #  define LITm (u->tag1 == Literal ? True : LIT0 )
 #  define SZ8  (u->size == 8)
@@ -564,6 +565,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE3a_MemRd:  return LIT0 && SZsse && CCf  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    default: 
@@ -578,6 +581,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    }
 #  undef LIT0
 #  undef LIT1
+#  undef LIT8
 #  undef LITm
 #  undef SZ8
 #  undef SZ4
@@ -881,6 +885,8 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE2a_MemRd: return "SSE2a_MRd";
       case SSE3g_RegRd: return "SSE3g_RRd";
       case SSE3g_RegWr: return "SSE3g_RWr";
+      case SSE3g1_RegWr: return "SSE3g1_RWr";
+      case SSE3g1_RegRd: return "SSE3g1_RRd";
       case SSE3:        return "SSE3";
       case SSE4:        return "SSE4";
       case SSE3a_MemWr: return "SSE3a_MWr";
@@ -1058,6 +1064,15 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(pp_UOperand)(u, 3, 4, True);
          break;
 
+      case SSE3g1_RegWr:
+      case SSE3g1_RegRd:
+         VG_(printf)("0x%x:0x%x:0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
+                     (u->val2 >> 8) & 0xFF, u->val2 & 0xFF,
+                     u->lit32 );
+         VG_(pp_UOperand)(u, 3, 4, True);
+         break;
+
       case SSE3:
          VG_(printf)("0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
@@ -1219,8 +1234,10 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case SSE3a_MemWr:
       case SSE3a_MemRd:
       case SSE2a_MemWr: 
+      case SSE3g1_RegRd:
       case SSE2a_MemRd: RD(3); break;
 
+      case SSE3g1_RegWr:
       case SSE3g_RegWr: WR(3); break;
 
       case MMX2_RegRd: RD(2); break;
@@ -1380,7 +1397,8 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX2_RegRd: case MMX2_RegWr:
       case SSE2a_MemWr: case SSE2a_MemRd:
       case SSE3a_MemWr: case SSE3a_MemRd:
-      case SSE3g_RegRd: case SSE3g_RegWr:
+      case SSE3g_RegRd: case SSE3g_RegWr: 
+      case SSE3g1_RegWr: case SSE3g1_RegRd:
       case SSE4: case SSE3:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
@@ -2249,7 +2267,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
-   Int         notrace_until_limit = 15000;
+   Int         notrace_until_limit = 23500;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation

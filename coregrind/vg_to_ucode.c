@@ -3754,6 +3754,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+#if 0
+   /* SUBSD */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5C) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "subsd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+#endif
+
    /* ADDSD */
    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x58) {
       vg_assert(sz == 4);
@@ -3877,6 +3887,49 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+2, 4, is_store, "movd", 
                     0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PEXTRW from SSE register; writes ireg */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC5) {
+      t1 = newTemp(cb);
+      modrm = insn[2];
+      vg_assert(epartIsReg(modrm));
+      vg_assert((modrm & 0xC0) == 0xC0);
+      uInstr3(cb, SSE3g1_RegWr, 4,
+                  Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                  Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                  TempReg, t1 );
+      uLiteral(cb, insn[3]);
+      uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      if (dis)
+         VG_(printf)("pextrw %s, %d, %s\n",
+                     nameXMMReg(eregOfRM(modrm)), (Int)insn[3], 
+                                nameIReg(4, gregOfRM(modrm)));
+      eip += 4;
+      goto decode_success;
+   }
+
+   /* PINSRW to SSE register; reads mem or ireg */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC4) {
+      t1 = newTemp(cb);
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         uInstr2(cb, GET, 2, ArchReg, eregOfRM(modrm), TempReg, t1);
+         uInstr3(cb, SSE3g1_RegRd, 2,
+                     Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                     Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                     TempReg, t1 );
+         uLiteral(cb, insn[3]);
+         if (dis)
+            VG_(printf)("pinsrw %s, %d, %s\n",
+                        nameIReg(2, eregOfRM(modrm)),
+                        (Int)insn[3], 
+                        nameXMMReg(gregOfRM(modrm)));
+         eip += 4;
+      } else {
+	 VG_(core_panic)("PINSRW mem");
+      }
       goto decode_success;
    }
 

@@ -968,8 +968,6 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
 
     IRTemp oldFlagC = newTemp(Ity_I32);
 
-    vassert(((theInstr >> 26) & 0x3) == 0x1);
-
     if (Rn_addr == 15) {
 	if (P==1 && W==0) { // offset addressing
 	    // CAB: This right?
@@ -1031,12 +1029,16 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
 
 		// CAB: These right?
 
-		assign(oldFlagC, mk_armg_calculate_flags_c());
+		// X86G_CC_MASK_C ARMG_CC_SHIFT_C
+
+		assign( oldFlagC, binop(Iop_Shr32,
+					mk_armg_calculate_flags_c(),
+				       mkU8(ARMG_CC_SHIFT_C)) );
 	
 		if (shift_imm == 0) { // RRX (ARM ARM A5-17)
 		    // 33 bit ROR using carry flag as the 33rd bit
 		    // op = Rm >> 1, carry flag replacing vacated bit position.  
-		    // scaled_index = (c_flag lsl 31) OR (Rm LSR 1)
+		    // scaled_index = (c_flag << 31) | (Rm >> 1)
 		    assign( scaled_index, binop(Iop_Or32,
 					binop(Iop_Shl32, mkexpr(oldFlagC), mkU32(31)),
 					binop(Iop_Shr32, mkexpr(Rm),  mkU8(1))) );
@@ -1241,9 +1243,9 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
     IRExpr* expr;
     IROp op;
 
-    assign(oldFlagC, mk_armg_calculate_flags_c());
-    // binop(Iop_Shr32, mkexpr(oldFlagC), mkU32(ARMG_CC_SHIFT_C))
-    // CAB: What to do?
+    assign( oldFlagC, binop(Iop_Shr32,
+			    mk_armg_calculate_flags_c(),
+			    mkU8(ARMG_CC_SHIFT_C)) );
 
     switch (shift_op) {
     case 0x0: case 0x8: case 0x1: op = Iop_Shl32; break;
@@ -1381,12 +1383,12 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
     IRTemp Rm       = newTemp(Ity_I32);
     IRTemp Rs       = newTemp(Ity_I32);
     IRTemp rot_amt  = newTemp(Ity_I8);      // Rs[7:0]
-    IRTemp tmp_8    = newTemp(Ity_I8);
-    IRTemp tmp_32   = newTemp(Ity_I32);
     IRTemp oldFlagC = newTemp(Ity_I32);
     IRExpr* expr=0;
 
-    assign(oldFlagC, mk_armg_calculate_flags_c());
+    assign( oldFlagC, binop(Iop_Shr32,
+			    mk_armg_calculate_flags_c(),
+			    mkU8(ARMG_CC_SHIFT_C)) );
 
     if (by_reg) {  // Register rotate
 	vex_printf("rotate: reg\n");
@@ -1407,12 +1409,11 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 
 	// CAB: This right?
 	// Rs[7:0] == 0 ? oldFlagC : (Rs[4:0] == 0 ? Rm >> 31 : Rm >> rot-1 )
-	assign( tmp_32, mkexpr(oldFlagC) );
 	assign( *carry_out,
 		IRExpr_Mux0X(
 		    binop(Iop_CmpNE32, mkU32(0),
 			  binop(Iop_And32, mkexpr(Rs), mkU32(0xFF))),
-		    mkexpr(tmp_32),
+		    mkexpr(oldFlagC),
 		    IRExpr_Mux0X(
 			binop(Iop_CmpEQ8, mkexpr(rot_amt), mkU8(0)),
 			binop(Iop_Shr32, mkexpr(Rm),
@@ -1422,10 +1423,10 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 	
 
 	/* expr = (dst0 >> rot_amt) | (dst0 << (wordsize-rot_amt)) */
-	assign( tmp_8, binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt)) );
-	expr = binop( Iop_Or32,
-		      binop( Iop_Shr32, mkexpr(Rm), mkexpr(rot_amt) ),
-		      binop(Iop_Shl32, mkexpr(Rm), mkexpr(tmp_8)) );
+	expr = binop(Iop_Or32,
+		     binop(Iop_Shr32, mkexpr(Rm), mkexpr(rot_amt)),
+		     binop(Iop_Shl32, mkexpr(Rm),
+			   binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt))));
     }
     else {  // Immediate rotate
 	vex_printf("rotate: imm\n");
@@ -1447,15 +1448,14 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 	    // op = Rm >> 1, carry flag replacing vacated bit position.  
 
 	    // CAB: This right?
-	    assign( tmp_32, mkexpr(oldFlagC) );
 	    expr = binop(Iop_Or32,
-			 binop( Iop_Shl32, mkexpr(tmp_32), mkU8(31) ),
-			 binop( Iop_Shr32, mkexpr(Rm), mkU8(1) ) );
+			 binop(Iop_Shl32, mkexpr(oldFlagC), mkU8(31)),
+			 binop(Iop_Shr32, mkexpr(Rm), mkU8(1)));
 	} else {
-	    assign( tmp_8, binop(Iop_Sub8, mkU8(32), mkU8(rot_imm)) );
 	    expr = binop(Iop_Or32,
-			 binop( Iop_Shr32, mkexpr(Rm), mkU8(rot_imm) ),
-			 binop( Iop_Shl32, mkexpr(Rm), mkexpr(tmp_8) ) );
+			 binop(Iop_Shr32, mkexpr(Rm), mkU8(rot_imm)),
+			 binop(Iop_Shl32, mkexpr(Rm),
+			       binop(Iop_Sub8, mkU8(32), mkU8(rot_imm))));
 	}
     }
     return expr;
@@ -1496,8 +1496,9 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out)
 	vex_printf("imm: %,b\n", imm);
 
 	if (rot_imm == 0) {
-	    assign(oldFlagC, mk_armg_calculate_flags_c());
-
+	    assign( oldFlagC, binop(Iop_Shr32,
+				    mk_armg_calculate_flags_c(),
+				    mkU8(ARMG_CC_SHIFT_C)) );
 	    assign( *carry_out, mkexpr(oldFlagC) );
 	} else {
 	    assign( *carry_out, binop(Iop_Shr32, mkU32(imm), mkU8(31)) );

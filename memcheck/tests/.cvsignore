@@ -53,7 +53,7 @@ tronical
 vgtest_ume
 weirdioctl
 *.stdout.diff
-*.stderr.diff
+*.stderr.diff*
 *.stdout.out
 *.stderr.out
 badrw

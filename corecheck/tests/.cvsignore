@@ -13,7 +13,7 @@ pth_once
 res_search
 .ktemp
 *.stdout.diff
-*.stderr.diff
+*.stderr.diff*
 *.stdout.out
 *.stderr.out
 fdleak_cmsg

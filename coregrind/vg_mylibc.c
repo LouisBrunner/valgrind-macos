@@ -1531,7 +1531,7 @@ Int VG_(system) ( Char* cmd )
 
 UInt VG_(read_millisecond_timer) ( void )
 {
-   ULong base;
+   static ULong base = 0;
    struct vki_timeval tv_now;
    ULong now;
    Int res;

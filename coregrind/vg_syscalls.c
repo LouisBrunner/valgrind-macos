@@ -668,6 +668,22 @@ UInt get_shm_size ( Int shmid )
  
    return buf.shm_segsz;
 }
+
+static
+UInt get_sem_count( Int semid )
+{
+  struct semid_ds buf;
+  union semun arg;
+  long res;
+
+  arg.buf = &buf;
+  
+  res = VG_(do_syscall)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0, IPC_STAT, &arg);
+  if ( VG_(is_kerror)(res) )
+    return 0;
+
+  return buf.sem_nsems;
+}
  
 static
 Char *strdupcat ( const Char *s1, const Char *s2, ArenaId aid )
@@ -2415,13 +2431,113 @@ PRE(ipc)
       tst->sys_flags |= MayBlock;
       break;
    case 2: /* IPCOP_semget */
-   case 3: /* IPCOP_semctl */
       break;
+   case 3: /* IPCOP_semctl */
+   {
+      union semun *arg = (union semun *)arg5;
+      switch (arg4 /* cmd */) {
+      case IPC_INFO:
+      case SEM_INFO:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(IPC_INFO, arg)" );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_INFO, arg->buf)", buf, 
+			sizeof(struct seminfo) );
+	 break;
+      }
+      case IPC_STAT:
+      case SEM_STAT:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_STAT, arg)" );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_STAT, arg->buf)", buf, 
+			sizeof(struct semid_ds) );
+	 break;
+      }
+      case IPC_SET:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_SET, arg)" );
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SET, arg->buf)", buf, 
+			sizeof(struct semid_ds) );
+	 break;
+      }
+      case GETALL:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_GETALL, arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_GETALL, arg->array)", array, 
+			sizeof(short) * nsems );
+	 break;
+      }
+      case SETALL:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_SETALL, arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SETALL, arg->array)", array, 
+			sizeof(short) * nsems );
+	 break;
+      }
+      case SETVAL:
+      {
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SETVAL, arg->array)",
+                        (Addr)&arg->val, sizeof(arg->val) );
+	 break;
+      }
+#                    if defined(IPC_64)
+      case IPC_INFO|IPC_64:
+      case SEM_INFO|IPC_64:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(IPC_INFO, arg)" );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_INFO, arg->buf)", buf, 
+			sizeof(struct seminfo) );
+	 break;
+      }
+      case IPC_STAT|IPC_64:
+      case SEM_STAT|IPC_64:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_STAT, arg)" );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_STAT, arg->buf)", buf, 
+			sizeof(struct semid64_ds) );
+	 break;
+      }
+      case IPC_SET|IPC_64:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_SET, arg)" );
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SET, arg->buf)", buf, 
+			sizeof(struct semid64_ds) );
+	 break;
+      }
+      case GETALL|IPC_64:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_GETALL, arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 SYSCALL_TRACK( pre_mem_write, tid, "semctl(IPC_GETALL, arg->array)", array, 
+			sizeof(short) * nsems );
+	 break;
+      }
+      case SETALL|IPC_64:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_SETALL, arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SETALL, arg->array)", array, 
+			sizeof(short) * nsems );
+	 break;
+      }
+      case SETVAL|IPC_64:
+      {
+	 SYSCALL_TRACK( pre_mem_read, tid, "semctl(IPC_SETVAL, arg->array)",
+                        (Addr)&arg->val, sizeof(arg->val) );
+	 break;
+      }
+#                    endif
+      default:
+	 break;
+      }
+      break;
+   }
    case 4: /* IPCOP_semtimedop */
       SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(sops)", arg5, 
 		     arg3 * sizeof(struct sembuf) );
       if (arg6 != (UInt)NULL)
-         SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(timeout)", arg5, 
+         SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(timeout)", arg6, 
                         sizeof(struct timespec) );
       tst->sys_flags |= MayBlock;
       break;
@@ -2462,23 +2578,33 @@ PRE(ipc)
    case 14: /* IPCOP_msgctl */
    {
       switch (arg3 /* cmd */) {
+      case IPC_INFO:
+      case MSG_INFO:
+	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(IPC_INFO, buf)", arg5, 
+			sizeof(struct msginfo) );
+	 break;
       case IPC_STAT:
-	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(buf)", arg5, 
+      case MSG_STAT:
+	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(IPC_STAT, buf)", arg5, 
 			sizeof(struct msqid_ds) );
 	 break;
       case IPC_SET:
-	 SYSCALL_TRACK( pre_mem_read, tid, "msgctl(buf)", arg5, 
+	 SYSCALL_TRACK( pre_mem_read, tid, "msgctl(IPC_SET, buf)", arg5, 
 			sizeof(struct msqid_ds) );
 	 break;
 #                    if defined(IPC_64)
+      case IPC_INFO|IPC_64:
+      case MSG_INFO|IPC_64:
+	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(IPC_INFO, buf)", arg5, 
+			sizeof(struct msginfo) );
+	 break;
       case IPC_STAT|IPC_64:
-	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(buf)", arg5, 
+      case MSG_STAT|IPC_64:
+	 SYSCALL_TRACK( pre_mem_write, tid, "msgctl(IPC_STAT, buf)", arg5, 
 			sizeof(struct msqid64_ds) );
 	 break;
-#                    endif
-#                    if defined(IPC_64)
       case IPC_SET|IPC_64:
-	 SYSCALL_TRACK( pre_mem_read, tid, "msgctl(buf)", arg5, 
+	 SYSCALL_TRACK( pre_mem_read, tid, "msgctl(IPC_SET, buf)", arg5, 
 			sizeof(struct msqid64_ds) );
 	 break;
 #                    endif
@@ -2507,44 +2633,49 @@ PRE(ipc)
    case 23: /* IPCOP_shmget */
       break;
    case 24: /* IPCOP_shmctl */
-      /* Subject: shmctl: The True Story
-	 Date: Thu, 9 May 2002 18:07:23 +0100 (BST)
-	 From: Reuben Thomas <rrt@mupsych.org>
-	 To: Julian Seward <jseward@acm.org>
-
-	 1. As you suggested, the syscall subop is in arg1.
-
-	 2. There are a couple more twists, so the arg order
-	 is actually:
-
-	 arg1 syscall subop
-	 arg2 file desc
-	 arg3 shm operation code (can have IPC_64 set)
-	 arg4 0 ??? is arg3-arg4 a 64-bit quantity when IPC_64
-	 is defined?
-	 arg5 pointer to buffer
-
-	 3. With this in mind, I've amended the case as below:
-      */
    {
-      UInt cmd = arg3;
-      Bool out_arg = False;
-      if ( arg5 ) {
+      switch (arg3 /* cmd */) {
+      case IPC_INFO:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(IPC_INFO, buf)", arg5, 
+			sizeof(struct shminfo) );
+	 break;
+      case SHM_INFO:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(SHM_INFO, buf)", arg5, 
+			sizeof(struct shm_info) );
+	 break;
+      case IPC_STAT:
+      case SHM_STAT:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(IPC_STAT, buf)", arg5, 
+			sizeof(struct shmid_ds) );
+	 break;
+      case IPC_SET:
+	 SYSCALL_TRACK( pre_mem_read, tid, "shmctl(IPC_SET, buf)", arg5, 
+			sizeof(struct shmid_ds) );
+	 break;
 #                    if defined(IPC_64)
-	 cmd = cmd & (~IPC_64);
+      case IPC_INFO|IPC_64:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(IPC_INFO, buf)", arg5, 
+			sizeof(struct shminfo64) );
+	 break;
+      case SHM_INFO|IPC_64:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(SHM_INFO, buf)", arg5, 
+			sizeof(struct shm_info) );
+	 break;
+      case IPC_STAT|IPC_64:
+      case SHM_STAT|IPC_64:
+	 SYSCALL_TRACK( pre_mem_write, tid, "shmctl(IPC_STAT, buf)", arg5, 
+			sizeof(struct shmid64_ds) );
+	 break;
+      case IPC_SET|IPC_64:
+	 SYSCALL_TRACK( pre_mem_read, tid, "shmctl(IPC_SET, buf)", arg5, 
+			sizeof(struct shmid_ds) );
+	 break;
 #                    endif
-	 out_arg = cmd == SHM_STAT || cmd == IPC_STAT;
-	 if ( out_arg )
-	    SYSCALL_TRACK( pre_mem_write, tid, 
-                           "shmctl(SHM_STAT or IPC_STAT,buf)", 
-                           arg5, sizeof(struct shmid_ds) );
-	 else
-	    SYSCALL_TRACK( pre_mem_read, tid, 
-                           "shmctl(SHM_XXXX,buf)", 
-                           arg5, sizeof(struct shmid_ds) );
+      default:
+	 break;
       }
+      break;
    }
-   break;
    default:
       VG_(message)(Vg_DebugMsg,
 		   "FATAL: unhandled syscall(ipc) %d",
@@ -2559,7 +2690,60 @@ POST(ipc)
    switch (arg1 /* call */) {
    case 1: /* IPCOP_semop */
    case 2: /* IPCOP_semget */
+      break;
    case 3: /* IPCOP_semctl */
+   {
+      union semun *arg = (union semun *)arg5;
+      switch (arg4 /* cmd */) {
+      case IPC_INFO:
+      case SEM_INFO:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(arg)" );
+	 VG_TRACK( post_mem_write, buf, sizeof(struct seminfo) );
+	 break;
+      }
+      case IPC_STAT:
+      case SEM_STAT:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(arg)" );
+	 VG_TRACK( post_mem_write, buf, sizeof(struct semid_ds) );
+	 break;
+      }
+      case GETALL:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 VG_TRACK( post_mem_write, array, sizeof(short) * nsems );
+	 break;
+      }
+#                    if defined(IPC_64)
+      case IPC_INFO|IPC_64:
+      case SEM_INFO|IPC_64:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(arg)" );
+	 VG_TRACK( post_mem_write, buf, sizeof(struct seminfo) );
+	 break;
+      }
+      case IPC_STAT|IPC_64:
+      case SEM_STAT|IPC_64:
+      {
+         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(arg)" );
+	 VG_TRACK( post_mem_write, buf, sizeof(struct semid64_ds) );
+	 break;
+      }
+      case GETALL|IPC_64:
+      {
+         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(arg)" );
+         UInt nsems = get_sem_count( arg2 );
+	 VG_TRACK( post_mem_write, array, sizeof(short) * nsems );
+	 break;
+      }
+#                    endif
+      default:
+	 break;
+      }
+      break;
+   }
    case 4: /* IPCOP_semtimedop */
       break;
    case 11: /* IPCOP_msgsnd */
@@ -2583,23 +2767,25 @@ POST(ipc)
    case 14: /* IPCOP_msgctl */
    {
       switch (arg3 /* cmd */) {
+      case IPC_INFO:
+      case MSG_INFO:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct msginfo) );
+	 break;
       case IPC_STAT:
-	 if ( res > 0 ) {
-	    VG_TRACK( post_mem_write, arg5, 
-		      sizeof(struct msqid_ds) );
-	 }
+      case MSG_STAT:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct msqid_ds) );
 	 break;
       case IPC_SET:
 	 break;
 #                    if defined(IPC_64)
-      case IPC_STAT|IPC_64:
-	 if ( res > 0 ) {
-	    VG_TRACK( post_mem_write, arg5, 
-		      sizeof(struct msqid64_ds) );
-	 }
+      case IPC_INFO|IPC_64:
+      case MSG_INFO|IPC_64:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct msginfo) );
 	 break;
-#                    endif
-#                    if defined(IPC_64)
+      case IPC_STAT|IPC_64:
+      case MSG_STAT|IPC_64:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct msqid64_ds) );
+	 break;
       case IPC_SET|IPC_64:
 	 break;
 #                    endif
@@ -2648,39 +2834,35 @@ POST(ipc)
    case 23: /* IPCOP_shmget */
       break;
    case 24: /* IPCOP_shmctl */
-      /* Subject: shmctl: The True Story
-	 Date: Thu, 9 May 2002 18:07:23 +0100 (BST)
-	 From: Reuben Thomas <rrt@mupsych.org>
-	 To: Julian Seward <jseward@acm.org>
-
-	 1. As you suggested, the syscall subop is in arg1.
-
-	 2. There are a couple more twists, so the arg order
-	 is actually:
-
-	 arg1 syscall subop
-	 arg2 file desc
-	 arg3 shm operation code (can have IPC_64 set)
-	 arg4 0 ??? is arg3-arg4 a 64-bit quantity when IPC_64
-	 is defined?
-	 arg5 pointer to buffer
-
-	 3. With this in mind, I've amended the case as below:
-      */
    {
-      UInt cmd = arg3;
-      Bool out_arg = False;
-      if ( arg5 ) {
+      switch (arg3 /* cmd */) {
+      case IPC_INFO:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shminfo) );
+	 break;
+      case SHM_INFO:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shm_info) );
+	 break;
+      case IPC_STAT:
+      case SHM_STAT:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shmid_ds) );
+	 break;
 #                    if defined(IPC_64)
-	 cmd = cmd & (~IPC_64);
+      case IPC_INFO|IPC_64:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shminfo64) );
+	 break;
+      case SHM_INFO|IPC_64:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shm_info) );
+	 break;
+      case IPC_STAT|IPC_64:
+      case SHM_STAT|IPC_64:
+	 VG_TRACK( post_mem_write, arg5, sizeof(struct shmid64_ds) );
+	 break;
 #                    endif
-	 out_arg = cmd == SHM_STAT || cmd == IPC_STAT;
+      default:
+	 break;
       }
-      if ( arg5 && res == 0 && out_arg )
-	 VG_TRACK( post_mem_write, arg5, 
-		   sizeof(struct shmid_ds) );
+      break;
    }
-   break;
    default:
       VG_(message)(Vg_DebugMsg,
 		   "FATAL: unhandled syscall(ipc) %d",

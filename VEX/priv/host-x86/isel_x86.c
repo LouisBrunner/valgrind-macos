@@ -460,8 +460,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 	HReg dst = newVRegI(env);
 	addInstr(env, mk_MOVsd_RR(rX,dst));
 	HReg r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-	addInstr(env, X86Instr_Alu32R(Xalu_TEST,
-				      X86RMI_Imm(0xFF), r8));
+	addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
 	addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
 	return dst;
       }
@@ -766,7 +765,7 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          those regs are legitimately modifiable. */
       addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tHi, tLo));
       addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
-      addInstr(env, X86Instr_Alu32R(Xalu_TEST, X86RMI_Imm(32), hregX86_ECX()));
+      addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
       addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
       addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
       addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tLo));

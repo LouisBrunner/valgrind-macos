@@ -221,7 +221,6 @@ typedef
       Xalu_INVALID,
       Xalu_MOV,
       Xalu_CMP,
-      Xalu_TEST,
       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
       Xalu_AND, Xalu_OR, Xalu_XOR,
       Xalu_MUL
@@ -248,10 +247,11 @@ typedef
    enum {
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
+      Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
+      Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
       Xin_Unary32,   /* 32-bit not and neg */
       Xin_MulL,      /* widening multiply */
       Xin_Div,       /* div and mod */
-      Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
       Xin_Sh3232,    /* shldl or shrdl */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
@@ -278,10 +278,19 @@ typedef
             X86RI*    src;
             X86AMode* dst;
          } Alu32M;
+         struct {
+            X86ShiftOp op;
+            UInt       src;  /* shift amount, or 0 means %cl */
+            X86RM*     dst;
+         } Sh32;
+         struct {
+            X86RI* src;
+            X86RM* dst;
+         } Test32;
          /* Not and Neg */
          struct {
             X86UnaryOp op;
-            X86RM*    dst;
+            X86RM*     dst;
          } Unary32;
          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
@@ -295,17 +304,12 @@ typedef
             X86ScalarSz ssz;
             X86RM*      src;
          } Div;
-         struct {
-            X86ShiftOp op;
-            UInt       src;  /* shift amount, or 0 means %cl */
-            X86RM*     dst;
-         } Sh32;
          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
          struct {
             X86ShiftOp op;
-            UInt amt;   /* shift amount, or 0 means %cl */
-            HReg rHi;
-            HReg rLo;
+            UInt       amt;   /* shift amount, or 0 means %cl */
+            HReg       rHi;
+            HReg       rLo;
          } Sh3232;
          struct {
             X86RMI* src;
@@ -323,8 +327,8 @@ typedef
             be the bogus Xcc_ALWAYS. */
          struct {
             X86CondCode cond;
-            X86RM* src;
-            HReg   dst;
+            X86RM*      src;
+            HReg        dst;
          } CMov32;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
@@ -336,8 +340,8 @@ typedef
          /* 16/8 bit stores, which are troublesome (particularly
             8-bit) */
          struct {
-            UChar sz; /* only 1 or 2 */
-            HReg src;
+            UChar     sz; /* only 1 or 2 */
+            HReg      src;
             X86AMode* dst;
          } Store;
       } Xin;
@@ -347,9 +351,10 @@ typedef
 extern X86Instr* X86Instr_Alu32R  ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M  ( X86AluOp, X86RI*,  X86AMode* );
 extern X86Instr* X86Instr_Unary32 ( X86UnaryOp op, X86RM* dst );
+extern X86Instr* X86Instr_Sh32    ( X86ShiftOp, UInt, X86RM* );
+extern X86Instr* X86Instr_Test32  ( X86RI* src, X86RM* dst );
 extern X86Instr* X86Instr_MulL    ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Div     ( Bool syned, X86ScalarSz, X86RM* );
-extern X86Instr* X86Instr_Sh32    ( X86ShiftOp, UInt, X86RM* );
 extern X86Instr* X86Instr_Sh3232  ( X86ShiftOp, UInt amt, HReg rHi, HReg rLo );
 extern X86Instr* X86Instr_Push    ( X86RMI* );
 extern X86Instr* X86Instr_Call    ( HReg );

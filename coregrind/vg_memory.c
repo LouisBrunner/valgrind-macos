@@ -527,6 +527,8 @@ Bool VG_(seg_overlaps)(const Segment *s, Addr p, SizeT len)
    return (p < se && pe > s->addr);
 }
 
+#if 0
+/* 20050228: apparently unused */
 /* Prepare a Segment structure for recycling by freeing everything
    hanging off it. */
 static void recycleseg(Segment *s)
@@ -552,46 +554,22 @@ static void freeseg(Segment *s)
 
    VG_(SkipNode_Free)(&sk_segments, s);
 }
+#endif
 
-/* Split a segment at address a, returning the new segment */
-Segment *VG_(split_segment)(Addr a)
+
+/* Get rid of any translations arising from s. */
+/* Note, this is not really the job of the low level memory manager.
+   When it comes time to rewrite this subsystem, clean this up. */
+static void dump_translations_from ( Segment* s )
 {
-   Segment *s = VG_(SkipList_Find)(&sk_segments, &a);
-   Segment *ns;
-   Int delta;
-vg_assert(0);
-   vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
-
-   /* missed */
-   if (s == NULL)
-      return NULL;
-
-   /* a at or beyond endpoint */
-   if (s->addr == a || a >= (s->addr+s->len))
-      return NULL;
-
-   vg_assert(a > s->addr && a < (s->addr+s->len));
-
-   ns = VG_(SkipNode_Alloc)(&sk_segments);
-
-   *ns = *s;
-
-   delta = a - s->addr;
-   ns->addr += delta;
-   ns->offset += delta;
-   ns->len -= delta;
-   s->len = delta;
-
-   if (s->filename != NULL)
-      ns->filename = VG_(arena_strdup)(VG_AR_CORE, s->filename);
-
-   if (ns->symtab != NULL)
-      VG_(symtab_incref)(ns->symtab);
-
-   VG_(SkipList_Insert)(&sk_segments, ns);
-
-   return ns;
+   if (s->flags & SF_CODE) {
+      VG_(discard_translations)(s->addr, s->len);
+      if (0)
+         VG_(printf)("dumping translations in %p .. %p\n",
+                     s->addr, s->addr+s->len);
+   }
 }
+
 
 /* This unmaps all the segments in the range [addr, addr+len); any
    partial mappings at the ends are truncated. */
@@ -637,6 +615,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 /* this segment's tail is truncated by [addr, addr+len)
 	    -> truncate tail
 	 */
+         dump_translations_from(s);
 	 s->len = addr - s->addr;
 
 	 if (debug)
@@ -651,6 +630,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	    VG_(printf)("  case 2: s->addr=%p s->len=%d delta=%d\n", 
                         s->addr, s->len, delta);
 
+         dump_translations_from(s);
 	 s->addr += delta;
 	 s->offset += delta;
 	 s->len -= delta;
@@ -660,6 +640,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 /* this segment is completely contained within [addr, addr+len)
 	    -> delete segment
 	 */
+         dump_translations_from(s);
          delete_segment_at(i);
 
 	 if (debug)
@@ -668,10 +649,11 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 /* [addr, addr+len) is contained within a single segment
 	    -> split segment into 3, delete middle portion
 	  */
-         Int i_middle = split_segment(addr);
+         Int i_middle;
+         dump_translations_from(s);
+         i_middle = split_segment(addr);
 	 vg_assert(i_middle != -1);
 	 (void)split_segment(addr+len);
-
 	 vg_assert(segments[i_middle].addr == addr);
 	 delete_segment_at(i_middle);
 
@@ -682,41 +664,6 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    }
    preen_segments();
    if (0) show_segments("unmap_range(AFTER)");
-}
-
-/* If possible, merge segment with its neighbours - some segments,
-   including s, may be destroyed in the process */
-static void merge_segments(Addr a, SizeT len)
-{
-   Segment *s;
-   Segment *next;
-
-   vg_assert((a   & (VKI_PAGE_SIZE-1)) == 0);
-   vg_assert((len & (VKI_PAGE_SIZE-1)) == 0);
-
-   a   -= VKI_PAGE_SIZE;
-   len += VKI_PAGE_SIZE;
-
-   for(s = VG_(SkipList_Find)(&sk_segments, &a);
-       s != NULL && s->addr < (a+len);) {
-      next = VG_(SkipNode_Next)(&sk_segments, s);
-
-      if (next && segments_are_mergeable(s, next)) {
-	 Segment *rs;
-
-	 if (0)
-	    VG_(printf)("merge %p-%p with %p-%p\n",
-			s->addr, s->addr+s->len,
-			next->addr, next->addr+next->len);
-	 s->len += next->len;
-	 s = VG_(SkipNode_Next)(&sk_segments, next);
-
-	 rs = VG_(SkipList_Remove)(&sk_segments, &next->addr);
-	 vg_assert(next == rs);
-	 freeseg(next);
-      } else
-	 s = next;
-   }
 }
 
 
@@ -1091,19 +1038,6 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
   return &segments[r];
 }
 
-
-
-Segment *VG_(first_segment)(void)
-{
-vg_assert(0);
-   return VG_(SkipNode_First)(&sk_segments);
-}
-
-Segment *VG_(next_segment)(Segment *s)
-{
-vg_assert(0);
-   return VG_(SkipNode_Next)(&sk_segments, s);
-}
 
 /*------------------------------------------------------------*/
 /*--- Tracking permissions around %esp changes.            ---*/

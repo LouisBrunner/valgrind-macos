@@ -240,7 +240,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
    if (seg == NULL || !VG_(seg_contains)(seg, old_addr, old_size))
       return -VKI_EINVAL;
 
-   next = VG_(next_segment)(seg);
+   next = VG_(find_segment_above_mapped)(old_addr);
 
    if (0)
       VG_(printf)("mremap: old_addr+new_size=%p next->addr=%p flags=%d\n",

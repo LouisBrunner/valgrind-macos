@@ -1313,11 +1313,8 @@ extern Segment *VG_(find_segment_above_unmapped)(Addr a);
    next segment along. */
 extern Segment *VG_(find_segment_above_mapped)(Addr a);
 
-extern Segment *VG_(first_segment)(void);
-extern Segment *VG_(next_segment)(Segment *);
-
-extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, SizeT size);
-extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, SizeT size);
+extern Bool VG_(seg_contains)(const Segment *s, Addr ptr, SizeT size);
+extern Bool VG_(seg_overlaps)(const Segment *s, Addr ptr, SizeT size);
 
 extern void VG_(pad_address_space)  (void);
 extern void VG_(unpad_address_space)(void);

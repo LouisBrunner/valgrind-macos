@@ -3159,6 +3159,14 @@ PRE(ioctl)
 #           endif /* BLKGETSIZE */
 
       /* CD ROM stuff (??)  */
+   case CDROM_GET_MCN:
+      SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROM_GET_MCN)", arg3,
+                    sizeof(struct cdrom_mcn) );
+      break;
+   case CDROM_SEND_PACKET:
+      SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROM_SEND_PACKET)", arg3,
+                    sizeof(struct cdrom_generic_command));
+      break;
    case CDROMSUBCHNL:
       SYSCALL_TRACK( pre_mem_read,tid, 
 		     "ioctl(CDROMSUBCHNL (cdsc_format, char))",
@@ -3167,6 +3175,10 @@ PRE(ioctl)
       SYSCALL_TRACK( pre_mem_write,tid, 
 		     "ioctl(CDROMSUBCHNL)", arg3, 
 		     sizeof(struct cdrom_subchnl));
+      break;
+   case CDROMREADMODE2:
+      SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROMREADMODE2)", arg3,
+                     CD_FRAMESIZE_RAW0 );
       break;
    case CDROMREADTOCHDR:
       SYSCALL_TRACK( pre_mem_write,tid, 

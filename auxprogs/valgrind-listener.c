@@ -210,6 +210,7 @@ void banner ( char* str )
    time_t t;
    t = time(NULL);
    printf("valgrind-listener %s at %s", str, ctime(&t));
+   fflush(stdout);
 }
 
 
@@ -370,6 +371,7 @@ int main (int argc, char** argv)
                fflush(stdout);
                if (conn_count == 0 && exit_when_zero) {
                   printf("\n");
+                  fflush(stdout);
                   exit_routine();
 	       }
             }

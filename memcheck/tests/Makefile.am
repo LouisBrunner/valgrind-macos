@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	buflen_check.stderr.exp buflen_check.vgtest \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
+	custom_alloc.stderr.exp custom_alloc.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
@@ -63,6 +64,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check clientperm \
+	custom_alloc \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak null_socket \
@@ -82,6 +84,7 @@ badjump_SOURCES 	= badjump.c
 badloop_SOURCES 	= badloop.c
 buflen_check_SOURCES	= buflen_check.c
 clientperm_SOURCES 	= clientperm.c
+custom_alloc_SOURCES 	= custom_alloc.c
 doublefree_SOURCES 	= doublefree.c
 error_counts_SOURCES 	= error_counts.c
 errs1_SOURCES 		= errs1.c

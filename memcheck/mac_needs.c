@@ -277,7 +277,7 @@ void MAC_(pp_shared_SkinError) ( Error* err )
 
    switch (VG_(get_error_kind)(err)) {
       case FreeErr:
-         VG_(message)(Vg_UserMsg,"Invalid free() / delete / delete[]");
+         VG_(message)(Vg_UserMsg, "Invalid free() / delete / delete[]");
          /* fall through */
       case FreeMismatchErr:
          if (VG_(get_error_kind)(err) == FreeMismatchErr)
@@ -773,17 +773,34 @@ void MAC_(common_fini)(void (*leak_check)(void))
 Bool MAC_(handle_common_client_requests)(ThreadState* tst, UInt* arg,
                                          UInt* ret )
 {
-   UInt** argp = (UInt**)arg;
+   UInt* argv = (UInt*)arg;
    
    switch (arg[0]) {
-   case VG_USERREQ__COUNT_LEAKS: /* count leaked bytes */
+   case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
+      UInt** argp = (UInt**)arg;
       *argp[1] = MAC_(total_bytes_leaked);
       *argp[2] = MAC_(total_bytes_dubious);
       *argp[3] = MAC_(total_bytes_reachable);
       *argp[4] = MAC_(total_bytes_suppressed);
       *ret = 0;
       return True;
+   }
+   case VG_USERREQ__MALLOCLIKE_BLOCK: {
+      Addr p         = (Addr)argv[1];
+      UInt sizeB     =       argv[2];
+      UInt rzB       =       argv[3];
+      Bool is_zeroed = (Bool)argv[4];
 
+      MAC_(new_block) ( tst, p, sizeB, rzB, is_zeroed, MAC_AllocCustom );
+      return True;
+   }
+   case VG_USERREQ__FREELIKE_BLOCK: {
+      Addr p         = (Addr)argv[1];
+      UInt rzB       =       argv[2];
+
+      MAC_(handle_free) ( tst, p, rzB, MAC_AllocCustom );
+      return True;
+   }
    default:
       return False;
    }

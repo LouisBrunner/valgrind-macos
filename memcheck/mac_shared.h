@@ -128,7 +128,8 @@ typedef
    enum {
       MAC_AllocMalloc = 0,
       MAC_AllocNew    = 1,
-      MAC_AllocNewVec = 2
+      MAC_AllocNewVec = 2,
+      MAC_AllocCustom = 3
    }
    MAC_AllocKind;
    
@@ -284,6 +285,12 @@ extern void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai );
 extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
+
+extern void MAC_(new_block) ( ThreadState* tst, Addr p, UInt size,
+                              UInt rzB, Bool is_zeroed,
+                              MAC_AllocKind kind );
+extern void MAC_(handle_free) ( ThreadState* tst, Addr p, UInt rzB,
+                                MAC_AllocKind kind );
 
 extern void MAC_(record_address_error)     ( Addr a, Int size, Bool isWrite );
 extern void MAC_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,

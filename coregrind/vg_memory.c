@@ -335,7 +335,6 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
    s = VG_(SkipList_Find)(&sk_segments, &addr);
 
    if (s != NULL && s->addr == addr && s->len == len) {
-      /* This probably means we're just updating the flags */
       recycled = True;
       recycleseg(s);
 

@@ -257,7 +257,7 @@ extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
 typedef 
    enum {
       Palu_INVALID,
-      Palu_ADD, Palu_SUB,
+      Palu_ADD,
 //      Palu_ADC, Palu_SBB,
       Palu_AND, Palu_OR, Palu_XOR
    }
@@ -309,8 +309,9 @@ extern HChar* showPPC32CmpOp ( PPC32CmpOp );
 typedef
    enum {
       Pin_Alu32,     /* 32-bit mov/arith/logical */
+      Pin_Sub32,     /* 32-bit mov/arith/logical */
       Pin_Sh32,      /* 32-bit shift/rotate */
-      Pin_Cmp32,     /* 32-bit compare (SUB, set flags, discard result) */
+      Pin_Cmp32,     /* 32-bit compare */
       Pin_Unary32,   /* 32-bit not, neg, clz */
       Pin_MulL,      /* widening multiply */
       Pin_Div,       /* div */
@@ -351,6 +352,11 @@ typedef
             HReg       src1;
             PPC32RI*   src2;
          } Alu32;
+         struct {
+            HReg       dst;    // for a PPC32 sub:
+            PPC32RI*   src1;   // - argL is an RI
+            HReg       src2;   // - argR is a reg
+         } Sub32;
          struct {
             PPC32ShiftOp op;
             HReg         dst;
@@ -518,6 +524,7 @@ typedef
 
 
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Sub32     ( HReg, PPC32RI*, HReg );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );

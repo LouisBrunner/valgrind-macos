@@ -398,7 +398,6 @@ HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
 HChar* showPPC32AluOp ( PPC32AluOp op ) {
    switch (op) {
    case Palu_ADD:  return "add";
-   case Palu_SUB:  return "subf";
 //   case Palu_ADC:  return "adc";
 //   case Palu_SBB:  return "sbb";
    case Palu_AND:  return "and";
@@ -460,6 +459,16 @@ PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst, HReg src1, PPC32RI* src2
    i->Pin.Alu32.dst  = dst;
    i->Pin.Alu32.src1 = src1;
    i->Pin.Alu32.src2 = src2;
+   return i;
+}
+PPC32Instr* PPC32Instr_Sub32 ( HReg dst, PPC32RI* src1, HReg src2 ) {
+   if (src1->tag == Pri_Imm)
+      vassert(src1->Pri.Imm.imm32 < 0x10000);
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_Sub32;
+   i->Pin.Sub32.dst  = dst;
+   i->Pin.Sub32.src1 = src1;
+   i->Pin.Sub32.src2 = src2;
    return i;
 }
 PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft ) {
@@ -719,6 +728,14 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppPPC32RI(i->Pin.Alu32.src2);
       return;
+   case Pin_Sub32:
+      vex_printf("subf%s ", i->Pin.Sub32.src1->tag == Pri_Imm ? "ic" : "" );
+      ppHRegPPC32(i->Pin.Sub32.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.Sub32.src2); // yes, order is right :-)
+      vex_printf(",");
+      ppPPC32RI(i->Pin.Sub32.src1);
+      return;
    case Pin_Sh32:
       vex_printf("%s%s ", showPPC32ShiftOp(i->Pin.Sh32.op),
                  i->Pin.Sh32.shft->tag == Pri_Imm ? "i" : "" );
@@ -732,9 +749,9 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf("cmp%s %%crf%d,",
                  i->Pin.Cmp32.src2->tag == Pri_Imm ? "i" : "",
                  (7 - i->Pin.Cmp32.crfD));
-      ppHRegPPC32(i->Pin.Alu32.src1);
+      ppHRegPPC32(i->Pin.Cmp32.src1);
       vex_printf(",");
-      ppPPC32RI(i->Pin.Alu32.src2);
+      ppPPC32RI(i->Pin.Cmp32.src2);
       return;
    case Pin_Unary32:
       vex_printf("%s ", showPPC32UnaryOp(i->Pin.Unary32.op));
@@ -1074,6 +1091,12 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmWrite, i->Pin.Alu32.dst);
       return;
 
+   case Pin_Sub32:
+      addRegUsage_PPC32RI(u, i->Pin.Sub32.src1);
+      addHRegUse(u, HRmRead, i->Pin.Sub32.src2);
+      addHRegUse(u, HRmWrite, i->Pin.Sub32.dst);
+      return;
+
    case Pin_Sh32:
       addHRegUse(u, HRmWrite, i->Pin.Sh32.dst);
       addHRegUse(u, HRmRead, i->Pin.Sh32.src);
@@ -1309,6 +1332,11 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.Alu32.dst);
       mapReg(m, &i->Pin.Alu32.src1);
       mapRegs_PPC32RI(m, i->Pin.Alu32.src2);
+      return;
+   case Pin_Sub32:
+      mapReg(m, &i->Pin.Sub32.dst);
+      mapRegs_PPC32RI(m, i->Pin.Sub32.src1);
+      mapReg(m, &i->Pin.Sub32.src2);
       return;
    case Pin_Sh32:
       mapReg(m, &i->Pin.Sh32.dst);
@@ -1977,17 +2005,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    switch (i->tag) {
 
    case Pin_Alu32: {
-      UInt op1 = 31, op2, rB, imm;
-      UInt r_dst  = iregNo(i->Pin.Alu32.dst);
-      UInt r_src1 = iregNo(i->Pin.Alu32.src1);
+      UInt op1, op2, rR, immR;
+      UInt rD  = iregNo(i->Pin.Alu32.dst);
+      UInt rL = iregNo(i->Pin.Alu32.src1);
 
-      /* ADD/SUB/ADC/SBB/AND/OR/XOR */
+      /* ADD/ADC/SBB/AND/OR/XOR */
       if (i->Pin.Alu32.src2->tag == Pri_Reg) {
          op1 = 31;
-         rB = iregNo(i->Pin.Alu32.src2->Pri.Reg.reg);
+         rR = iregNo(i->Pin.Alu32.src2->Pri.Reg.reg);
          switch (i->Pin.Alu32.op) {
          case Palu_ADD: op2 = 266; break;
-         case Palu_SUB: op2 = 266; break;
          case Palu_AND: op2 =  28; break;
          case Palu_XOR: op2 = 316; break;
          case Palu_OR:  op2 = 444; break;
@@ -1998,11 +2025,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          }
 
          switch (i->Pin.Alu32.op) {
-         case Palu_ADD: case Palu_SUB:
-            p = mkFormXO(p, op1, r_dst, r_src1, rB, 0, op2, 0); // rD = rA...
+         case Palu_ADD:
+            p = mkFormXO(p, op1, rD, rL, rR, 0, op2, 0);
             break;
          case Palu_AND: case Palu_XOR: case Palu_OR:
-            p = mkFormX(p, op1, r_src1, r_dst, rB, op2, 0); // rA = rS...
+            p = mkFormX(p, op1, rL, rD, rR, op2, 0);
             break;
 //         case Palu_ADC:
 //         case Palu_SBB:
@@ -2010,10 +2037,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
             goto bad;
          }
       } else { // Pri_Imm:
-         imm = i->Pin.Alu32.src2->Pri.Imm.imm32;
+         immR = i->Pin.Alu32.src2->Pri.Imm.imm32;
          switch (i->Pin.Alu32.op) {
          case Palu_ADD: op1 = 14; break;
-         case Palu_SUB: op1 =  8; break;
          case Palu_AND: op1 = 28; break;
          case Palu_XOR: op1 = 26; break;
          case Palu_OR:  op1 = 24; break;
@@ -2024,17 +2050,40 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          }
 
          switch (i->Pin.Alu32.op) {
-         case Palu_ADD: case Palu_SUB:
-            p = mkFormD(p, op1, r_dst, r_src1, imm); // rD = rA...
+         case Palu_ADD:
+            p = mkFormD(p, op1, rD, rL, immR); // rD = rA...
             break;
          case Palu_AND: case Palu_XOR: case Palu_OR:
-            p = mkFormD(p, op1, r_src1, r_dst, imm); // rA = rS...
+            p = mkFormD(p, op1, rL, rD, immR); // rA = rS...
             break;
 //         case Palu_ADC:
 //         case Palu_SBB:
          default:
             goto bad;
          }
+      }
+      goto done;
+   }
+
+   case Pin_Sub32: {
+      UInt rD = iregNo(i->Pin.Sub32.dst);
+      UInt rR = iregNo(i->Pin.Sub32.src2);
+      UInt rL, immL;
+
+      // Note argument swap: PPC32 only has sub-from instrs
+      switch (i->Pin.Sub32.src1->tag) {
+      case Pri_Reg:
+         rL = iregNo(i->Pin.Sub32.src1->Pri.Reg.reg);
+         // subf rD, rR, rL
+         p = mkFormXO(p, 31, rD, rR, rL, 0, 40, 0);
+         break;
+      case Pri_Imm:
+         immL = i->Pin.Sub32.src1->Pri.Imm.imm32;
+         // subf rD, rR, immL
+         p = mkFormD(p, 8, rD, rR, immL);
+         break;
+      default:
+         goto bad;
       }
       goto done;
    }

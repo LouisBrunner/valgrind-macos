@@ -841,8 +841,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
       case Iop_Add8:  case Iop_Add16: case Iop_Add32:
          aluOp = Palu_ADD; break;
-      case Iop_Sub8:  case Iop_Sub16: case Iop_Sub32: 
-         aluOp = Palu_SUB; break;
       case Iop_And8:  case Iop_And16: case Iop_And32: 
          aluOp = Palu_AND; break;
       case Iop_Or8:   case Iop_Or16:  case Iop_Or32:  
@@ -878,6 +876,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             xorl %vr110,%vr104
 //..             movl %vr104,%vr70
 //..       */
+
+      /* Sub ? */
+      if (e->Iex.Binop.op == Iop_Sub8  ||
+          e->Iex.Binop.op == Iop_Sub16 ||
+          e->Iex.Binop.op == Iop_Sub32) {
+         HReg dst     = newVRegI(env);
+         PPC32RI* riL = mk_FitRI16(env, iselIntExpr_RI(env, e->Iex.Binop.arg1));
+         HReg     rR  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Sub32(dst, riL, rR));
+         return dst;
+      }
 
       /* How about a div? */
       if (e->Iex.Binop.op == Iop_DivU32) {

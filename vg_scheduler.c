@@ -54,7 +54,8 @@ suitable for use by anyone at all!
   specified and they are interrupted by a signal.  nanosleep just
   pretends signals don't exist -- should be fixed.
 
-- when a thread is done mark its stack as noaccess 
+- Read/write syscall starts: don't crap out when the initial
+  nonblocking read/write returns an error.
 
 - 0xDEADBEEF syscall errors ... fix.
 
@@ -140,6 +141,7 @@ void pp_sched_status ( void )
          case VgTs_WaitJoiner: VG_(printf)("WaitJoiner(%d)\n", 
                                            vg_threads[i].joiner); break;
          case VgTs_WaitJoinee: VG_(printf)("WaitJoinee\n"); break;
+         case VgTs_Sleeping:   VG_(printf)("Sleeping\n"); break;
          default: VG_(printf)("???"); break;
       }
    }
@@ -1260,6 +1262,9 @@ void handle_pthread_return ( ThreadId tid, void* retval )
       vg_threads[jnr].m_edx = 0; /* success */
       vg_threads[jnr].status = VgTs_Runnable;
       vg_threads[tid].status = VgTs_Empty; /* bye! */
+      if (VG_(clo_instrument) && tid != 0)
+         VGM_(make_noaccess)( vg_threads[tid].stack_base,
+                              vg_threads[tid].stack_size );
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "root fn returns, to find a waiting pthread_join(%d)", tid);
@@ -1319,6 +1324,9 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
          *thread_return = vg_threads[jee].retval;
       vg_threads[tid].status = VgTs_Runnable;
       vg_threads[jee].status = VgTs_Empty; /* bye! */
+      if (VG_(clo_instrument) && jee != 0)
+         VGM_(make_noaccess)( vg_threads[jee].stack_base,
+                              vg_threads[jee].stack_size );
       if (VG_(clo_trace_sched)) {
 	 VG_(sprintf)(msg_buf,
 		      "someone called pthread_join() on me; bye!");

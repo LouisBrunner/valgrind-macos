@@ -472,11 +472,21 @@ void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
 // This one not passed a ThreadId, so it grabs it itself.
 void MAC_(record_overlap_error) ( Char* function )
 {
+   static Int n_strdups = 0;
    MAC_Error err_extra;
+ 
+   /* Potential space leak; this strdup'd space is never
+      reclaimed.  Hence hacky sanity check. */
+   if (n_strdups < 1000) {
+      n_strdups++;
+      function = VG_(strdup) ( function );
+   } else {
+      function = NULL;
+   }
 
    MAC_(clear_MAC_Error)( &err_extra );
    VG_(maybe_record_error)( VG_(get_current_or_recent_tid)(), 
-                            OverlapErr, /*addr*/0, function, &err_extra );
+                            OverlapErr, /*addr*/0, /*s*/function, &err_extra );
 }
 
 

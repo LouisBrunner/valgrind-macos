@@ -1141,6 +1141,26 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 }
 
 
+/*---------------------------------------------------------------*/
+/*--- Supporting functions for x87 FPU activities.            ---*/
+/*---------------------------------------------------------------*/
+
+// MAYBE NOT TRUE: /* CALLED FROM GENERATED CODE */
+// MAYBE NOT TRUE: /* DIRTY HELPER (writes guest state) */
+/* Initialise the x87 FPU state as per 'finit'. */
+static
+void amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* gst )
+{
+   Int i;
+   gst->guest_FTOP = 0;
+   for (i = 0; i < 8; i++) {
+      gst->guest_FPTAG[i] = 0; /* empty */
+      gst->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
+   }
+   gst->guest_FPROUND = (ULong)Irrm_NEAREST;
+   gst->guest_FC3210  = 0;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
@@ -1262,6 +1282,9 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    vex_state->guest_RIP = 0;
 
+   /* Initialise the simulated FPU */
+   amd64g_dirtyhelper_FINIT( vex_state );
+
    /* Initialise the SSE state. */
 #  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
 
@@ -1339,7 +1362,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 7,
+          .n_alwaysDefd = 11,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -1351,10 +1374,10 @@ VexGuestLayout
                  /*  3 */ ALWAYSDEFD(guest_IDFLAG),
                  /*  4 */ ALWAYSDEFD(guest_RIP),
                  /*  5 */ ALWAYSDEFD(guest_FS_ZERO),
-                 // /* */ ALWAYSDEFD(guest_FTOP),
-                 // /* */ ALWAYSDEFD(guest_FPTAG),
-                 // /* */ ALWAYSDEFD(guest_FPROUND),
-                 // /* */ ALWAYSDEFD(guest_FC3210),
+                 /*  6 */ ALWAYSDEFD(guest_FTOP),
+                 /*  7 */ ALWAYSDEFD(guest_FPTAG),
+                 /*  8 */ ALWAYSDEFD(guest_FPROUND),
+                 /*  9 */ ALWAYSDEFD(guest_FC3210),
                  // /* */ ALWAYSDEFD(guest_CS),
                  // /* */ ALWAYSDEFD(guest_DS),
                  // /* */ ALWAYSDEFD(guest_ES),

@@ -45,11 +45,8 @@
 /*---------------------------------------------------------------*/
 
 /* See detailed comments at the top of libvex_guest_x86.h for
-   further info.  This representation pretty closely mimics the
+   further info.  This representation closely follows the
    x86 representation.
-
-   SSEROUND[1:0] is the SSE unit's notional rounding mode, encoded as
-   per the IRRoundingMode type.
 */
 
 
@@ -113,6 +110,16 @@ typedef
       U128  guest_XMM13;
       U128  guest_XMM14;
       U128  guest_XMM15;
+
+      /* FPU */
+      /* Note.  Setting guest_FTOP to be ULong messes up the
+         delicately-balanced PutI/GetI optimisation machinery.
+         Therefore best to leave it as a UInt. */
+      UInt  guest_FTOP;
+      ULong guest_FPREG[8];
+      UChar guest_FPTAG[8];
+      ULong guest_FPROUND;
+      ULong guest_FC3210;
 
       /* Emulation warnings */
       UInt   guest_EMWARN;

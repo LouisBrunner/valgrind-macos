@@ -79,7 +79,7 @@ typedef
       VG_USERREQ__DISCARD,
       VG_USERREQ__CHECK_WRITABLE,
       VG_USERREQ__CHECK_READABLE,
-      VG_USERREQ__DO_LEAK_CHECK, /* untested */
+      VG_USERREQ__DO_LEAK_CHECK /* untested */
    } Vg_MemCheckClientRequest;
 
 
@@ -90,32 +90,32 @@ typedef
    _qzz_len bytes.  Returns an int handle pertaining to the block
    descriptions Valgrind will use in subsequent error messages. */
 #define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
-   ({unsigned int _qzz_res;                                      \
+   (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
                             VG_USERREQ__MAKE_NOACCESS,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
-   }) 
+   }))
       
 /* Similarly, mark memory at _qzz_addr as addressible but undefined
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_WRITABLE(_qzz_addr,_qzz_len)               \
-   ({unsigned int _qzz_res;                                      \
+   (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
                             VG_USERREQ__MAKE_WRITABLE,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
-   })
+   }))
 
 /* Similarly, mark memory at _qzz_addr as addressible and defined
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_READABLE(_qzz_addr,_qzz_len)               \
-   ({unsigned int _qzz_res;                                      \
+   (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
                             VG_USERREQ__MAKE_READABLE,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
-   })
+   }))
 
 /* Discard a block-description-handle obtained from the above three
    macros.  After this, Valgrind will no longer be able to relate
@@ -124,12 +124,12 @@ typedef
    in place.  Returns 1 for an invalid handle, 0 for a valid
    handle. */
 #define VALGRIND_DISCARD(_qzz_blkindex)                          \
-   ({unsigned int _qzz_res;                                      \
+   (__extension__ ({unsigned int _qzz_res;                       \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
                             VG_USERREQ__DISCARD,                 \
                             0, _qzz_blkindex, 0, 0);             \
     _qzz_res;                                                    \
-   })
+   }))
 
 
 /* Client-code macros to check the state of memory. */
@@ -139,24 +139,24 @@ typedef
    error message and returns the address of the first offending byte.
    Otherwise it returns zero. */
 #define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)                \
-   ({unsigned int _qzz_res;                                        \
+   (__extension__({unsigned int _qzz_res;                          \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__CHECK_WRITABLE,            \
                             _qzz_addr, _qzz_len, 0, 0);            \
     _qzz_res;                                                      \
-   })
+   }))
 
 /* Check that memory at _qzz_addr is addressible and defined for
    _qzz_len bytes.  If suitable addressibility and definedness are not
    established, Valgrind prints an error message and returns the
    address of the first offending byte.  Otherwise it returns zero. */
 #define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)                \
-   ({unsigned int _qzz_res;                                        \
+   (__extension__({unsigned int _qzz_res;                          \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__CHECK_READABLE,            \
                             _qzz_addr, _qzz_len, 0, 0);            \
     _qzz_res;                                                      \
-   })
+   }))
 
 /* Use this macro to force the definedness and addressibility of a
    value to be checked.  If suitable addressibility and definedness

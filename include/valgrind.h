@@ -61,13 +61,13 @@
 
 
 #ifndef __VALGRIND_SOMESKIN_H
-#warning  For valgrind versions 1.9.0 and after, 
-#warning  you should not include valgrind.h directly.
-#warning  Instead include the .h relevant to the skin 
-#warning  you want to use.  For most people this means 
-#warning  you need to include memcheck.h instead of
-#warning  valgrind.h.
-#error    Compilation of your source will now abort.
+  #warning  For valgrind versions 1.9.0 and after, 
+  #warning  you should not include valgrind.h directly.
+  #warning  Instead include the .h relevant to the skin 
+  #warning  you want to use.  For most people this means 
+  #warning  you need to include memcheck.h instead of
+  #warning  valgrind.h.
+  #error    Compilation of your source will now abort.
 #endif
 
 
@@ -151,7 +151,7 @@
 typedef
    enum { VG_USERREQ__RUNNING_ON_VALGRIND = 0x1001,
           VG_USERREQ__DISCARD_TRANSLATIONS,
-          VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST,
+          VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST
    } Vg_ClientRequest;
 
 

@@ -94,8 +94,48 @@ typedef  unsigned long HWord;
 #define offsetof(type,memb) ((Int)&((type*)0)->memb)
 
 
-#endif /* ndef __LIBVEX_BASICTYPES_H */
+/* We need to know the host word size in order to write Ptr_to_ULong
+   and ULong_to_Ptr in a way that doesn't cause compilers to complain.
+   These functions allow us to case pointers to and from 64-bit
+   integers without complaints from compilers, regardless of the host
+   word size. */
 
+#undef VEX_HOST_WORDSIZE
+
+#if defined(__amd64__)
+#   define VEX_HOST_WORDSIZE 8
+#elif defined(__i386__)
+#   define VEX_HOST_WORDSIZE 4
+#elif defined (__powerpc__)
+    /* need to distinguish ppc32 from ppc64 */
+#   define VEX_HOST_WORDSIZE 4
+#else
+#   error "Vex: Fatal: Can't establish the host architecture"
+#endif
+
+
+#if VEX_HOST_WORDSIZE == 8
+   static inline ULong Ptr_to_ULong ( void* p ) {
+      return (ULong)p;
+   }
+   static inline void* ULong_to_Ptr ( ULong n ) {
+      return (void*)n;
+   }
+#elif VEX_HOST_WORDSIZE == 4
+   static inline ULong Ptr_to_ULong ( void* p ) {
+      UInt w = (UInt)p;
+      return (ULong)w;
+   }
+   static inline void* ULong_to_Ptr ( ULong n ) {
+      UInt w = (UInt)n;
+      return (void*)w;
+   }
+#else
+#   error "Vex: Fatal: Can't define  Ptr_to_ULong / ULong_to_Ptr"
+#endif
+
+
+#endif /* ndef __LIBVEX_BASICTYPES_H */
 
 /*---------------------------------------------------------------*/
 /*---                                     libvex_basictypes.h ---*/

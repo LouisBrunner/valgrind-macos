@@ -150,6 +150,9 @@ void LibVEX_Init (
    vassert(sizeof(void*) == sizeof(int*));
    vassert(sizeof(void*) == sizeof(HWord));
 
+   vassert(VEX_HOST_WORDSIZE == sizeof(void*));
+   vassert(VEX_HOST_WORDSIZE == sizeof(HWord));
+
    /* Really start up .. */
    vex_debuglevel         = debuglevel;
    vex_valgrind_support   = valgrind_support;

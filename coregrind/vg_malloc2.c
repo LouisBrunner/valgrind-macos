@@ -1301,7 +1301,7 @@ void* VG_(cli_malloc) ( UInt align, Int nbytes )
    if (4 == align)                                                            
       return VG_(arena_malloc)         ( VG_AR_CLIENT, nbytes ); 
    else                                                                       
-      return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );                            
+      return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );
 }                                                                             
 
 void VG_(cli_free) ( void* p )                                   

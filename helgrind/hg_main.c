@@ -576,8 +576,15 @@ static __inline__
 void init_nonvirgin_sword(Addr a)
 {
    shadow_word sword;
-   ThreadId tid = VG_(get_current_or_recent_tid)();
+   ThreadId tid;
    ThreadLifeSeg *tls;
+
+   // The tid must be passed in here now;  this requires more events to be
+   // given the tid in the first place.
+   //
+   //tid = VG_(get_current_or_recent_tid)();
+   VG_(message)(Vg_DebugMsg, "tid needs to be passed in here");
+   VG_(exit)(1);
 
    tl_assert(tid != VG_INVALID_THREADID);
    tls = thread_seg[tid];
@@ -1825,7 +1832,8 @@ static void add_HG_Chunk ( ThreadId tid, Addr p, SizeT size )
 
 /* Allocate memory and note change in memory available */
 static __inline__
-void* alloc_and_new_mem ( SizeT size, SizeT alignment, Bool is_zeroed )
+void* alloc_and_new_mem ( ThreadId tid, SizeT size, SizeT alignment,
+                          Bool is_zeroed )
 {
    Addr p;
 
@@ -1836,35 +1844,35 @@ void* alloc_and_new_mem ( SizeT size, SizeT alignment, Bool is_zeroed )
       return NULL;
    }
    if (is_zeroed) VG_(memset)((void*)p, 0, size);
-   add_HG_Chunk ( VG_(get_current_or_recent_tid)(), p, size );
+   add_HG_Chunk ( tid, p, size );
    eraser_new_mem_heap( p, size, is_zeroed );
 
    return (void*)p;
 }
 
-void* TL_(malloc) ( SizeT n )
+void* TL_(malloc) ( ThreadId tid, SizeT n )
 {
-   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_new) ( SizeT n )
+void* TL_(__builtin_new) ( ThreadId tid, SizeT n )
 {
-   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_vec_new) ( SizeT n )
+void* TL_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 {
-   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(memalign) ( SizeT align, SizeT n )
+void* TL_(memalign) ( ThreadId tid, SizeT align, SizeT n )
 {
-   return alloc_and_new_mem ( n, align,              /*is_zeroed*/False );
+   return alloc_and_new_mem ( tid, n, align,              /*is_zeroed*/False );
 }
 
-void* TL_(calloc) ( SizeT nmemb, SizeT size )
+void* TL_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size )
 {
-   return alloc_and_new_mem ( nmemb*size, VG_(clo_alignment),
+   return alloc_and_new_mem ( tid, nmemb*size, VG_(clo_alignment),
                               /*is_zeroed*/True );
 }
 
@@ -1915,7 +1923,7 @@ void die_and_free_mem ( ThreadId tid, HG_Chunk* hc,
 
 
 static __inline__
-void handle_free ( void* p )
+void handle_free ( ThreadId tid, void* p )
 {
    HG_Chunk*  hc;
    HG_Chunk** prev_chunks_next_ptr;
@@ -1925,31 +1933,29 @@ void handle_free ( void* p )
    if (hc == NULL) {
       return;
    }
-   die_and_free_mem ( VG_(get_current_or_recent_tid)(),
-                      hc, prev_chunks_next_ptr );
+   die_and_free_mem ( tid, hc, prev_chunks_next_ptr );
 }
 
-void TL_(free) ( void* p )
+void TL_(free) ( ThreadId tid, void* p )
 {
-   handle_free(p);
+   handle_free(tid, p);
 }
 
-void TL_(__builtin_delete) ( void* p )
+void TL_(__builtin_delete) ( ThreadId tid, void* p )
 {
-   handle_free(p);
+   handle_free(tid, p);
 }
 
-void TL_(__builtin_vec_delete) ( void* p )
+void TL_(__builtin_vec_delete) ( ThreadId tid, void* p )
 {
-   handle_free(p);
+   handle_free(tid, p);
 }
 
-void* TL_(realloc) ( void* p, SizeT new_size )
+void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
    Int        i;
-   ThreadId   tid = VG_(get_current_or_recent_tid)();
 
    /* First try and find the block. */
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
@@ -2028,6 +2034,7 @@ Bool TL_(expensive_sanity_check)(void)
 
 static UInt stk_ld, nonstk_ld, stk_st, nonstk_st;
 
+#if 0
 /* Create and return an instrumented version of cb_in.  Free cb_in
    before returning. */
 UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
@@ -2267,7 +2274,12 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
-
+#endif
+IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+{
+   VG_(message)(Vg_DebugMsg, "Helgrind is not yet ready to handle Vex IR");
+   VG_(exit)(1);
+}
 
 /*--------------------------------------------------------------------*/
 /*--- Error and suppression handling                               ---*/
@@ -3309,20 +3321,7 @@ void TL_(pre_clo_init)(void)
    VG_(init_post_mutex_lock)      (& eraser_post_mutex_lock);
    VG_(init_post_mutex_unlock)    (& eraser_post_mutex_unlock);
 
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_1);
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_2);
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_read_4);
-   VG_(register_noncompact_helper)((Addr) & eraser_mem_help_read_N);
-
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_1);
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_2);
-   VG_(register_compact_helper)((Addr) & eraser_mem_help_write_4);
-   VG_(register_noncompact_helper)((Addr) & eraser_mem_help_write_N);
-
-   VG_(register_noncompact_helper)((Addr) & bus_lock);
-   VG_(register_noncompact_helper)((Addr) & bus_unlock);
-
-   for(i = 0; i < LOCKSET_HASH_SZ; i++)
+   for (i = 0; i < LOCKSET_HASH_SZ; i++)
       lockset_hash[i] = NULL;
 
    empty = alloc_LockSet(0);

@@ -350,6 +350,7 @@ void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
+#if 0
 static
 BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
 {
@@ -384,6 +385,7 @@ BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
    }
    return bb_info;
 }
+#endif
 
 static
 void do_details( instr_info* n, Bool bb_seen_before,
@@ -411,6 +413,7 @@ static Bool is_valid_data_size(Int data_size)
            8 == data_size || 10 == data_size || MIN_LINE_SIZE == data_size);
 }
 
+#if 0
 // Instrumentation for the end of each x86 instruction.
 static
 void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
@@ -490,7 +493,9 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
 
    uCCall(cb, helper, argc, argc, False);
 }
+#endif
 
+#if 0
 UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
    UCodeBlock* cb;
@@ -653,6 +658,13 @@ UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    return cb;
 
 #undef INVALID_DATA_SIZE
+}
+#endif
+
+IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+{
+   VG_(message)(Vg_DebugMsg, "Cachegrind is not yet ready to handle Vex IR");
+   VG_(exit)(1);
 }
 
 /*------------------------------------------------------------*/
@@ -1123,11 +1135,6 @@ void TL_(pre_clo_init)(void)
 
    VG_(needs_basic_block_discards)();
    VG_(needs_command_line_options)();
-
-   VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access);
-   VG_(register_compact_helper)((Addr) & log_1I_1Dr_cache_access);
-   VG_(register_compact_helper)((Addr) & log_1I_1Dw_cache_access);
-   VG_(register_compact_helper)((Addr) & log_1I_2D_cache_access);
 
    /* Get working directory */
    tl_assert( VG_(getcwd_alloc)(&base_dir) );

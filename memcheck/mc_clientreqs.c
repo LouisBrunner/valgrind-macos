@@ -214,6 +214,22 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
 	 *ret = 0;
 	 break;
 
+      case VG_USERREQ__GET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = MC_(get_or_set_vbits_for_client)
+                   ( arg[1], arg[2], arg[3], False /* get them */ );
+         break;
+
+      case VG_USERREQ__SET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = MC_(get_or_set_vbits_for_client)
+                   ( arg[1], arg[2], arg[3], True /* set them */ );
+         break;
+
       default:
          if (MAC_(handle_common_client_requests)(tst, arg, ret )) {
             return True;

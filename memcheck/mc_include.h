@@ -143,6 +143,12 @@ extern Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
 
 extern void MC_(detect_memory_leaks) ( void );
 
+extern Int  MC_(get_or_set_vbits_for_client) ( 
+               Addr dataV, 
+               Addr vbitsV, 
+               UInt size, 
+               Bool setting /* True <=> set vbits,  False <=> get vbits */ 
+            );
 
 /* Functions defined in vg_memcheck_clientreqs.c */
 extern Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );

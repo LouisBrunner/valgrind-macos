@@ -83,6 +83,8 @@ typedef
       VG_USERREQ__COUNT_LEAKS,
       VG_USERREQ__MALLOCLIKE_BLOCK,
       VG_USERREQ__FREELIKE_BLOCK,
+      VG_USERREQ__GET_VBITS,
+      VG_USERREQ__SET_VBITS
    } Vg_MemCheckClientRequest;
 
 
@@ -228,3 +230,44 @@ typedef
    }
 
 #endif
+
+
+/* Get in zzvbits the validity data for the zznbytes starting at
+   zzsrc.  Return values:
+      0   if not running on valgrind
+      1   success
+      2   if zzsrc/zzvbits arrays are not aligned 0 % 4, or
+          zznbytes is not 0 % 4.
+      3   if any parts of zzsrc/zzvbits are not addressible.
+   The metadata is not copied in cases 0, 2 or 3 so it should be
+   impossible to segfault your system by using this call.
+*/
+#define VALGRIND_GET_VBITS(zzsrc,zzvbits,zznbytes)               \
+   (__extension__({unsigned int _qzz_res;                        \
+    char* czzsrc   = (char*)zzsrc;                               \
+    char* czzvbits = (char*)zzvbits;                             \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                         \
+                            VG_USERREQ__GET_VBITS,               \
+                            czzsrc, czzvbits, zznbytes,0 );      \
+    _qzz_res;                                                    \
+   }))
+
+/* Apply the validity data in zzvbits to the zznbytes starting at
+   zzdst.  Return values:
+      0   if not running on valgrind
+      1   success
+      2   if zzdst/zzvbits arrays are not aligned 0 % 4, or
+          zznbytes is not 0 % 4.
+      3   if any parts of zzdst/zzvbits are not addressible.
+   The metadata is not copied in cases 0, 2 or 3 so it should be
+   impossible to segfault your system by using this call.
+*/
+#define VALGRIND_SET_VBITS(zzdst,zzvbits,zznbytes)               \
+   (__extension__({unsigned int _qzz_res;                        \
+    char* czzdst   = (char*)zzdst;                               \
+    char* czzvbits = (char*)zzvbits;                             \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                         \
+                            VG_USERREQ__SET_VBITS,               \
+                            czzdst, czzvbits, zznbytes,0 );      \
+    _qzz_res;                                                    \
+   }))

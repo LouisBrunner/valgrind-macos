@@ -255,6 +255,21 @@ static UInt __inline__ get_vbytes4_ALIGNED ( Addr a )
 }
 
 
+static void __inline__ set_vbytes4_ALIGNED ( Addr a, UInt vbytes )
+{
+   SecMap* sm;
+   UInt    sm_off;
+   ENSURE_MAPPABLE(a, "set_vbytes4_ALIGNED");
+   sm     = primary_map[a >> 16];
+   sm_off = a & 0xFFFF;
+   PROF_EVENT(23);
+#  ifdef VG_DEBUG_MEMORY
+   sk_assert(IS_ALIGNED4_ADDR(a));
+#  endif
+   ((UInt*)(sm->vbyte))[sm_off >> 2] = vbytes;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
@@ -1307,6 +1322,76 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
    if (aerr) {
       MAC_(record_address_error)( addr, size, True );
    }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Metadata get/set functions, for client requests.     ---*/
+/*------------------------------------------------------------*/
+
+/* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
+   error, 3 == addressing error. */
+Int MC_(get_or_set_vbits_for_client) ( 
+   Addr dataV, 
+   Addr vbitsV, 
+   UInt size, 
+   Bool setting /* True <=> set vbits,  False <=> get vbits */ 
+)
+{
+   Bool addressibleD = True;
+   Bool addressibleV = True;
+   UInt* data  = (UInt*)dataV;
+   UInt* vbits = (UInt*)vbitsV;
+   UInt  szW   = size / 4; /* sigh */
+   UInt  i;
+
+   /* Check alignment of args. */
+   if (!(IS_ALIGNED4_ADDR(data) && IS_ALIGNED4_ADDR(vbits)))
+      return 2;
+   if ((size & 3) != 0)
+      return 2;
+  
+   /* Check that arrays are addressible. */
+   for (i = 0; i < szW; i++) {
+      UInt* dataP  = &data[i];
+      UInt* vbitsP = &vbits[i];
+      if (get_abits4_ALIGNED((Addr)dataP) != VGM_NIBBLE_VALID) {
+         addressibleD = False;
+         break;
+      }
+      if (get_abits4_ALIGNED((Addr)vbitsP) != VGM_NIBBLE_VALID) {
+         addressibleV = False;
+         break;
+      }
+   }
+   if (!addressibleD) {
+      MAC_(record_address_error)( dataV, size, 
+                                  setting ? True : False );
+      return 3;
+   }
+   if (!addressibleV) {
+      MAC_(record_address_error)( vbitsV, size, 
+                                  setting ? False : True );
+      return 3;
+   }
+ 
+   /* Do the copy */
+   if (setting) {
+      /* setting */
+      for (i = 0; i < szW; i++) {
+         if (get_vbytes4_ALIGNED( (Addr)&vbits[i] ) != VGM_WORD_VALID)
+            MC_(record_value_error)(4);
+         set_vbytes4_ALIGNED( (Addr)&data[i], vbits[i] );
+      }
+   } else {
+      /* getting */
+      for (i = 0; i < szW; i++) {
+         vbits[i] = get_vbytes4_ALIGNED( (Addr)&data[i] );
+         set_vbytes4_ALIGNED( (Addr)&vbits[i], VGM_WORD_VALID );
+      }
+   }
+
+   return 1;
 }
 
 

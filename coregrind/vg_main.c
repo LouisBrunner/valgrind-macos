@@ -2122,13 +2122,17 @@ Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 #define  MAX_COMPACT_HELPERS     8
 #define  MAX_NONCOMPACT_HELPERS  50 
 
-UInt VG_(n_compact_helpers)    = 0;
-UInt VG_(n_noncompact_helpers) = 0;
-
-Addr VG_(compact_helper_addrs)  [MAX_COMPACT_HELPERS];
-Int  VG_(compact_helper_offsets)[MAX_COMPACT_HELPERS];
-Addr VG_(noncompact_helper_addrs)  [MAX_NONCOMPACT_HELPERS];
-Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
+/* For storing tool-specific helpers, determined at runtime.  The addr 
+ * and offset arrays together form a (addr, offset) map that allows a 
+ * helper's baseBlock offset to be computed from its address.  It's done 
+ * like this so CCALLs can use the function address rather than having to
+ * muck around with offsets. */
+static UInt VG_(n_compact_helpers)    = 0;
+static UInt VG_(n_noncompact_helpers) = 0;
+static Addr VG_(compact_helper_addrs)  [MAX_COMPACT_HELPERS];
+static Int  VG_(compact_helper_offsets)[MAX_COMPACT_HELPERS];
+static Addr VG_(noncompact_helper_addrs)  [MAX_NONCOMPACT_HELPERS];
+static Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
 
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
@@ -2407,6 +2411,39 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
                                VG_(noncompact_helper_offsets), 
                                VG_(noncompact_helper_addrs));
+}
+
+// Finds the baseBlock offset of a tool-specified helper.
+// Searches through compacts first, then non-compacts.
+Int VG_(helper_offset)(Addr a)
+{
+   UInt i;
+   Char buf[100];
+
+   for (i = 0; i < VG_(n_compact_helpers); i++)
+      if (VG_(compact_helper_addrs)[i] == a)
+         return VG_(compact_helper_offsets)[i];
+   for (i = 0; i < VG_(n_noncompact_helpers); i++)
+      if (VG_(noncompact_helper_addrs)[i] == a)
+         return VG_(noncompact_helper_offsets)[i];
+
+   /* Shouldn't get here */
+   VG_(get_fnname)   ( a, buf, 100 );
+
+   VG_(printf)(
+      "\nCouldn't find offset of helper from its address (%p: %s).\n"
+      "A helper function probably used hasn't been registered?\n\n", a, buf);
+
+   VG_(printf)("      compact helpers: ");
+   for (i = 0; i < VG_(n_compact_helpers); i++)
+      VG_(printf)("%p ", VG_(compact_helper_addrs)[i]);
+
+   VG_(printf)("\n  non-compact helpers: ");
+   for (i = 0; i < VG_(n_noncompact_helpers); i++)
+      VG_(printf)("%p ", VG_(noncompact_helper_addrs)[i]);
+
+   VG_(printf)("\n");
+   VG_(skin_panic)("Unfound helper");
 }
 
 

@@ -2339,43 +2339,6 @@ void VG_(emit_AMD_prefetch_reg) ( Int reg )
 }
 
 /*----------------------------------------------------*/
-/*--- Helper offset -> addr translation            ---*/
-/*----------------------------------------------------*/
-
-/* Finds the baseBlock offset of a tool-specified helper.
- * Searches through compacts first, then non-compacts. */
-Int VG_(helper_offset)(Addr a)
-{
-   UInt i;
-   Char buf[100];
-
-   for (i = 0; i < VG_(n_compact_helpers); i++)
-      if (VG_(compact_helper_addrs)[i] == a)
-         return VG_(compact_helper_offsets)[i];
-   for (i = 0; i < VG_(n_noncompact_helpers); i++)
-      if (VG_(noncompact_helper_addrs)[i] == a)
-         return VG_(noncompact_helper_offsets)[i];
-
-   /* Shouldn't get here */
-   VG_(get_fnname)   ( a, buf, 100 );
-
-   VG_(printf)(
-      "\nCouldn't find offset of helper from its address (%p: %s).\n"
-      "A helper function probably used hasn't been registered?\n\n", a, buf);
-
-   VG_(printf)("      compact helpers: ");
-   for (i = 0; i < VG_(n_compact_helpers); i++)
-      VG_(printf)("%p ", VG_(compact_helper_addrs)[i]);
-
-   VG_(printf)("\n  non-compact helpers: ");
-   for (i = 0; i < VG_(n_noncompact_helpers); i++)
-      VG_(printf)("%p ", VG_(noncompact_helper_addrs)[i]);
-
-   VG_(printf)("\n");
-   VG_(skin_panic)("Unfound helper");
-}
-
-/*----------------------------------------------------*/
 /*--- Instruction synthesisers                     ---*/
 /*----------------------------------------------------*/
 
@@ -2609,7 +2572,8 @@ void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
    }
    
    /* Call the function - may trash all flags */
-   VG_(synth_call) ( False, VG_(helper_offset) ( fn ), False, FlagsEmpty, FlagsOSZACP );
+   VG_(synth_call) ( False, VG_(helper_offset) ( fn ), False,
+                     FlagsEmpty, FlagsOSZACP );
 
    /* Clear any args from stack */
    if (0 != stack_used) {

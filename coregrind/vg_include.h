@@ -1595,7 +1595,6 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 
 extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
-
 /* -----------------------------------------------------
    Read-write parts of baseBlock.
    -------------------------------------------------- */
@@ -1649,20 +1648,6 @@ extern Int VGOFF_(tls);
 /* Nb: Most helper offsets are in include/vg_skin.h, for use by tools */
 
 extern Int VGOFF_(helper_undefined_instruction);
-
-/* For storing extension-specific helpers, determined at runtime.  The addr 
- * and offset arrays together form a (addr, offset) map that allows a 
- * helper's baseBlock offset to be computed from its address.  It's done 
- * like this so CCALL_M_Ns and other helper calls can use the function 
- * address rather than having to much around with offsets. */
-extern UInt VG_(n_compact_helpers);
-extern UInt VG_(n_noncompact_helpers);
-
-extern Addr VG_(compact_helper_addrs)  [];
-extern Int  VG_(compact_helper_offsets)[];
-
-extern Addr VG_(noncompact_helper_addrs)  [];
-extern Int  VG_(noncompact_helper_offsets)[];
 
 #endif /* ndef __VG_INCLUDE_H */
 

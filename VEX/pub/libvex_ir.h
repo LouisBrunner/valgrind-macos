@@ -19,7 +19,8 @@
 /* ------------------ Types ------------------ */
 
 typedef 
-   enum { Ity_Bit=0x11000, 
+   enum { Ity_INVALID=0x10FFF,
+          Ity_Bit=0x11000, 
           Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
    IRType;
 
@@ -308,7 +309,8 @@ extern IRTemp     newIRTemp       ( IRTypeEnv*, IRType );
 extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 
 /* What is the type of this expression? */
-extern IRType typeOfIRExpr ( IRTypeEnv*, IRExpr* );
+extern IRType typeOfIRConst ( IRConst* );
+extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 
 /* Sanity check a BB of IR */
 extern void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size );

@@ -19,11 +19,12 @@
 void ppIRType ( IRType ty )
 {
   switch (ty) {
-    case Ity_Bit: vex_printf( "Bit"); break;
-    case Ity_I8:  vex_printf( "I8");  break;
-    case Ity_I16: vex_printf( "I16"); break;
-    case Ity_I32: vex_printf( "I32"); break;
-    case Ity_I64: vex_printf( "I64"); break;
+    case Ity_INVALID: vex_printf("Ity_INVALID"); break;
+    case Ity_Bit:     vex_printf( "Bit"); break;
+    case Ity_I8:      vex_printf( "I8");  break;
+    case Ity_I16:     vex_printf( "I16"); break;
+    case Ity_I32:     vex_printf( "I32"); break;
+    case Ity_I64:     vex_printf( "I64"); break;
     default: vpanic("ppIRType");
   }
 }
@@ -391,6 +392,77 @@ IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts,
 
 
 /*---------------------------------------------------------------*/
+/*--- Primop types                                            ---*/
+/*---------------------------------------------------------------*/
+
+static
+void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
+{
+#  define UNARY(_td,_ta1)         \
+      *t_dst = (_td); *t_arg1 = (_ta1); break
+#  define BINARY(_td,_ta1,_ta2)   \
+     *t_dst = (_td); *t_arg1 = (_ta1); *t_arg2 = (_ta2); break
+#  define COMPARISON(_ta)         \
+     *t_dst = Ity_Bit; *t_arg1 = *t_arg2 = (_ta); break;
+
+   *t_dst  = Ity_INVALID;
+   *t_arg1 = Ity_INVALID;
+   *t_arg2 = Ity_INVALID;
+   switch (op) {
+      case Iop_Add8: case Iop_Sub8: case Iop_Adc8: case Iop_Sbb8:
+      case Iop_Mul8: case Iop_Or8:  case Iop_And8: case Iop_Xor8:
+         BINARY(Ity_I8,Ity_I8,Ity_I8);
+
+      case Iop_Add16: case Iop_Sub16: case Iop_Adc16: case Iop_Sbb16:
+      case Iop_Mul16: case Iop_Or16:  case Iop_And16: case Iop_Xor16:
+         BINARY(Ity_I16,Ity_I16,Ity_I16);
+
+      case Iop_Add32: case Iop_Sub32: case Iop_Adc32: case Iop_Sbb32:
+      case Iop_Mul32: case Iop_Or32:  case Iop_And32: case Iop_Xor32:
+         BINARY(Ity_I32,Ity_I32,Ity_I32);
+
+      case Iop_Add64: case Iop_Sub64: case Iop_Adc64: case Iop_Sbb64:
+      case Iop_Mul64: case Iop_Or64:  case Iop_And64: case Iop_Xor64:
+         BINARY(Ity_I64,Ity_I64,Ity_I64);
+
+      case Iop_Shl8: case Iop_Shr8: case Iop_Sar8:
+         BINARY(Ity_I8,Ity_I8,Ity_I8);
+      case Iop_Shl16: case Iop_Shr16: case Iop_Sar16:
+         BINARY(Ity_I16,Ity_I16,Ity_I8);
+      case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
+         BINARY(Ity_I32,Ity_I32,Ity_I8);
+      case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
+         BINARY(Ity_I64,Ity_I64,Ity_I8);
+
+      case Iop_Not8: case Iop_Neg8:
+         UNARY(Ity_I8,Ity_I8);
+      case Iop_Not16: case Iop_Neg16:
+         UNARY(Ity_I16,Ity_I16);
+      case Iop_Not32: case Iop_Neg32:
+         UNARY(Ity_I32,Ity_I32);
+      case Iop_Not64: case Iop_Neg64:
+         UNARY(Ity_I64,Ity_I64);
+
+      case Iop_CmpEQ8: case Iop_CmpNE8:
+         COMPARISON(Ity_I8);
+      case Iop_CmpEQ16: case Iop_CmpNE16:
+         COMPARISON(Ity_I16);
+      case Iop_CmpEQ32: case Iop_CmpNE32:
+         COMPARISON(Ity_I32);
+      case Iop_CmpEQ64: case Iop_CmpNE64:
+         COMPARISON(Ity_I64);
+
+      default:
+         ppIROp(op);
+         vpanic("typeOfPrimop");
+   }
+#  undef UNARY
+#  undef BINARY
+#  undef COMPARISON
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- Helper functions for the IR                             ---*/
 /*---------------------------------------------------------------*/
 
@@ -435,8 +507,20 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 }
 
 
+IRType typeOfIRConst ( IRConst* con )
+{
+   switch (con->tag) {
+      case Ico_U8:  return Ity_I8;
+      case Ico_U16: return Ity_I16;
+      case Ico_U32: return Ity_I32;
+      case Ico_U64: return Ity_I64;
+      default: vpanic("typeOfIRConst");
+   }
+}
+
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
+   IRType t_dst, t_arg1, t_arg2;
    switch (e->tag) {
       case Iex_LDle:
          return e->Iex.LDle.ty;
@@ -445,29 +529,21 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_Tmp:
          return lookupIRTypeEnv(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
-         switch (e->Iex.Const.con->tag) {
-            case Ico_U8:  return Ity_I8;
-            case Ico_U16: return Ity_I16;
-            case Ico_U32: return Ity_I32;
-            case Ico_U64: return Ity_I64;
-            default: vpanic("typeOfIRExpr:Iex_Const");
-         }
-         break;
+	 return typeOfIRConst(e->Iex.Const.con);
       case Iex_Binop:
-         switch (e->Iex.Binop.op) {
-            case Iop_Add32: case Iop_Sub32: case Iop_Mul32: 
-            case Iop_Or32:  case Iop_And32: case Iop_Xor32:
-            case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
-               return Ity_I32;
-            default: break;
-         }
-         break;
+         typeOfPrimop(e->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
+         return t_dst;
+      case Iex_Unop:
+         typeOfPrimop(e->Iex.Unop.op, &t_dst, &t_arg1, &t_arg2);
+         return t_dst;
+      case Iex_CCall:
+         return e->Iex.CCall.retty;
       default:
-         break;
+         ppIRExpr(e);
+         vpanic("typeOfIRExpr");
    }
-   ppIRExpr(e);
-   vpanic("typeOfIRExpr");
 }
+
 
 /*---------------------------------------------------------------*/
 /*--- Sanity checking                                         ---*/
@@ -557,6 +633,97 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
    }
 }
 
+static
+void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
+{
+   Int        i;
+   IRType     t_dst, t_arg1, t_arg2;
+   IRTypeEnv* tyenv = bb->tyenv;
+   switch (expr->tag) {
+      case Iex_Get:
+      case Iex_Tmp:
+         break;
+      case Iex_Binop:
+         tcExpr(bb,stmt, expr->Iex.Binop.arg1, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Binop.arg2, gWordTy );
+         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
+         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID)
+            sanityCheckFail(bb,stmt,"Iex.Binop: wrong arity op");
+         if (t_arg1 != typeOfIRExpr(tyenv, expr->Iex.Binop.arg1)
+             || t_arg2 != typeOfIRExpr(tyenv, expr->Iex.Binop.arg1))
+         sanityCheckFail(bb,stmt,"Iex.Binop: arg tys don't match op tys");
+         break;
+      case Iex_Unop:
+         tcExpr(bb,stmt, expr->Iex.Unop.arg, gWordTy );
+         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
+         if (t_arg1 == Ity_INVALID || t_arg2 != Ity_INVALID)
+            sanityCheckFail(bb,stmt,"Iex.Unop: wrong arity op");
+         if (t_arg1 != typeOfIRExpr(tyenv, expr->Iex.Unop.arg))
+            sanityCheckFail(bb,stmt,"Iex.Unop: arg ty doesn't match op ty");
+         break;
+      case Iex_LDle:
+         tcExpr(bb,stmt, expr->Iex.LDle.addr, gWordTy);
+         if (typeOfIRExpr(tyenv, expr->Iex.LDle.addr) != gWordTy)
+            sanityCheckFail(bb,stmt,"Iex.LDle.addr: not :: guest word type");
+         break;
+      case Iex_CCall:
+         for (i = 0; expr->Iex.CCall.args[i]; i++)
+            tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
+         if (expr->Iex.CCall.retty == Ity_Bit)
+            sanityCheckFail(bb,stmt,"Iex.CCall.retty: cannot return :: Ity_Bit");
+         for (i = 0; expr->Iex.CCall.args[i]; i++)
+            if (typeOfIRExpr(tyenv, expr->Iex.CCall.args[i]) == Ity_Bit)
+               sanityCheckFail(bb,stmt,"Iex.CCall.arg: arg :: Ity_Bit");
+         break;
+      case Iex_Const:
+         break;
+      default: 
+         vpanic("tcExpr");
+   }
+}
+
+
+static
+void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
+{
+   IRTypeEnv* tyenv = bb->tyenv;
+   switch (stmt->tag) {
+      case Ist_Put:
+         if (stmt->Ist.Put.guard) {
+            tcExpr( bb, stmt, stmt->Ist.Put.guard, gWordTy );
+            if (typeOfIRExpr(tyenv,stmt->Ist.Put.guard) != Ity_Bit)
+               sanityCheckFail(bb,stmt,"IRStmt.Put.guard: not :: Ity_Bit");
+          }
+          tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
+          if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
+             sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");
+          break;
+      case Ist_Tmp:
+         tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );
+         if (lookupIRTypeEnv(tyenv, stmt->Ist.Tmp.tmp)
+             != typeOfIRExpr(tyenv, stmt->Ist.Tmp.expr))
+            sanityCheckFail(bb,stmt,"IRStmt.Put.TMp: tmp and expr do not match");
+         break;
+      case Ist_STle:
+         tcExpr( bb, stmt, stmt->Ist.STle.addr, gWordTy );
+         tcExpr( bb, stmt, stmt->Ist.STle.data, gWordTy );
+         if (typeOfIRExpr(tyenv, stmt->Ist.STle.addr) != gWordTy)
+            sanityCheckFail(bb,stmt,"IRStmt.STle.addr: not :: guest word type");
+         if (typeOfIRExpr(tyenv, stmt->Ist.STle.data) == Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.STle.data: cannot STle :: Ity_Bit");
+         break;
+      case Ist_Exit:
+         tcExpr( bb, stmt, stmt->Ist.Exit.cond, gWordTy );
+         if (typeOfIRExpr(tyenv,stmt->Ist.Exit.cond) != Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.cond: not :: Ity_Bit");
+         if (typeOfIRConst(stmt->Ist.Exit.dst) != gWordTy)
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: not :: guest word type");
+         break;
+      default:
+         vpanic("tcStmt");
+   }
+}
+
 
 void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
 {
@@ -584,11 +751,13 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
       }
    }
 
-   for (i = 0; i < n_temps; i++)
-     vex_printf("%d ", def_counts[i]);
-   vex_printf("\n");
-
+   /* Typecheck everything. */
+   for (stmt = bb->stmts; stmt; stmt=stmt->link)
+      tcStmt( bb, stmt, guest_word_size );
+   if (typeOfIRExpr(bb->tyenv,bb->next) != guest_word_size)
+      sanityCheckFail(bb, NULL, "bb->next field has wrong type");
 }
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                           ir_defs.c ---*/

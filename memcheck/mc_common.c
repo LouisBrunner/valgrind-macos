@@ -410,6 +410,9 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
       case FreeSupp:
          return (ekind == FreeErr || ekind == FreeMismatchErr);
 
+      case LeakSupp:
+         return False; /* Doesn't match any normal error */
+
       default:
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",

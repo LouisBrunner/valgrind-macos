@@ -7056,7 +7056,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             if ((op1 >= 0x70 && op1 <= 0x7F)
                 || (op1 == 0xE3)
                 || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
-               vex_printf("vex x86->IR: ignoring branch hint\n");
+               if (0) vex_printf("vex x86->IR: ignoring branch hint\n");
                sorb = getIByte(delta); delta++;
                break;
             }

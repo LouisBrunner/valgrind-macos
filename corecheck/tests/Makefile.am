@@ -15,7 +15,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
-	sigkill.stderr.exp sigkill.vgtest
+	sigkill.stderr.exp sigkill.vgtest \
+	res_search.stderr.exp res_search.stdout.exp res_search.vgtest
 
 check_PROGRAMS = \
 	erringfds sigkill res_search \

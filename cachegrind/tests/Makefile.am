@@ -1,7 +1,7 @@
-noinst_SCRIPTS = filter_stderr
+noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	chdir.vgtest chdir.stderr.exp
+	chdir.vgtest chdir.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	fpu-28-108.vgtest fpu-28-108.stderr.exp
 

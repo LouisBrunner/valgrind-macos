@@ -1,5 +1,5 @@
 -----------------------------------------------------
-  3:           __NR_read 1+3s 0m
+  3:           __NR_read 1+3s 1m
 -----------------------------------------------------
 Syscall param (syscallno) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -20,6 +20,12 @@ Syscall param read(count) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
+
+Syscall param read(buf) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
   4:          __NR_write 3s 1m
 -----------------------------------------------------
@@ -312,6 +318,9 @@ Syscall param umount(path) contains uninitialised byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
+More than 50 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+
 Syscall param umount(path) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -320,9 +329,6 @@ Syscall param umount(path) points to unaddressable byte(s)
 -----------------------------------------------------
  23:         __NR_setuid 1s 0m
 -----------------------------------------------------
-
-More than 50 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 
 Syscall param setuid16(uid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -456,6 +462,35 @@ Syscall param setuid(uid) contains uninitialised byte(s)
 -----------------------------------------------------
 251:                 251 0e
 -----------------------------------------------------
+-----------------------------------------------------
+253: __NR_lookup_dcookie 4s 1m
+-----------------------------------------------------
+
+Syscall param lookup_dcookie(cookie_low32) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lookup_dcookie(cookie_high32) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lookup_dcookie(buf) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lookup_dcookie(len) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lookup_dcookie(buf) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
 9999:                9999 1e
 -----------------------------------------------------

@@ -50,6 +50,8 @@ typedef unsigned long long __vki_u64;
 
 typedef unsigned short vki_u16;
 
+typedef unsigned int vki_u32;
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/page.h
 //----------------------------------------------------------------------

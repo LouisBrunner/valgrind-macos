@@ -1375,13 +1375,17 @@ PRE(quotactl)
    PRE_MEM_RASCIIZ( "quotactl(special)", arg2 );
 }
 
-PRE(lookup_dcookie)
+// XXX: this is only suitable for 32-bit platforms
+PREx(sys_lookup_dcookie, 0)
 {
-   PRINT("lookup_dcookie (0x%llx, %p, %d)", LOHI64(arg1,arg2), arg3, arg4);
+   PRINT("sys_lookup_dcookie (0x%llx, %p, %d)", LOHI64(arg1,arg2), arg3, arg4);
+   PRE_REG_READ4(long, "lookup_dcookie",
+                 vki_u32, cookie_low32, vki_u32, cookie_high32,
+                 char *, buf, vki_size_t, len);
    PRE_MEM_WRITE( "lookup_dcookie(buf)", arg3, arg4);
 }
 
-POST(lookup_dcookie)
+POST(sys_lookup_dcookie)
 {
    if (arg3 != (Addr)NULL)
       POST_MEM_WRITE( arg3, res);
@@ -6125,9 +6129,9 @@ static const struct sys_info sys_info[] = {
 
    // fadvise64		               250 sys_fadvise64 *
    // Nb: 251 is unused
-   SYSX_(251,                   sys_ni_syscall), // 251 * P
-   SYSX_(__NR_exit_group,       sys_exit_group), // 252 *
-   SYSBA(lookup_dcookie,	0), // 253 sys_lookup_dcookie *
+   SYSX_(251,                   sys_ni_syscall),      // 251 * P
+   SYSX_(__NR_exit_group,       sys_exit_group),      // 252 *
+   SYSXY(__NR_lookup_dcookie,   sys_lookup_dcookie),  // 253 (*/32/64) L
    SYSBA(epoll_create,          0), // 254 sys_epoll_create *
 
    SYSB_(epoll_ctl,             0), // 255 sys_epoll_ctl *

@@ -19,8 +19,8 @@ int main(void)
 
    // __NR_read 3 --> sys_read()
    // Nb: here we are also getting an error from the syscall arg itself.
-   GO(__NR_read, "1+3s 0m");
-   SY(__NR_read+i0, i0, s0, i0);
+   GO(__NR_read, "1+3s 1m");
+   SY(__NR_read+i0, i0, s0, i0+1);
 
    // __NR_write 4 --> sys_write()
    GO(__NR_write, "3s 1m");
@@ -407,6 +407,8 @@ int main(void)
    // __NR_getdents64 220
    // __NR_fcntl64 221
 
+   // XXX: from here on in, not present in early 2.4 kernels
+
    // 222 --> sys_ni_syscall()
    GO(222, "0e");
    SY(222);
@@ -448,7 +450,11 @@ int main(void)
    SY(251);
 
    // __NR_exit_group 252
-   // __NR_lookup_dcookie 253
+
+   // __NR_lookup_dcookie 253 --> sys_lookup_dcookie()
+   GO(__NR_lookup_dcookie, "4s 1m");
+   SY(__NR_lookup_dcookie, i0, i0, s0, i0+1);
+
    // __NR_epoll_create 254
    // __NR_epoll_ctl 255
    // __NR_epoll_wait 256

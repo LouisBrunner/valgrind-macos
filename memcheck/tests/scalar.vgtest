@@ -1,3 +1,4 @@
 prog: scalar
 vgopts: -q
+args: < scalar.c
 delete: tmp_write_file_foo

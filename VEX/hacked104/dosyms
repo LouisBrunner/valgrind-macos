@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# A simple script to help me ensure that my libpthread.so looks
+# from the outside, to the linker, identical to the original.
+
+nm /lib/libpthread.so.0 | grep " T " | cut -c 10- > orig-T
+nm /lib/libpthread.so.0 | grep " D " | cut -c 10- > orig-D
+nm /lib/libpthread.so.0 | grep " W " | cut -c 10- > orig-W
+
+nm ./libpthread.so | grep " T " | cut -c 10- > mine-T
+nm ./libpthread.so | grep " D " | cut -c 10- > mine-D
+nm ./libpthread.so | grep " W " | cut -c 10- > mine-W
+
+echo ========================== TEXT orig vs mine =========================
+sdiff -w 80 orig-T mine-T
+echo
+
+echo ========================== WEAK orig vs mine =========================
+sdiff -w 80 orig-W mine-W
+echo
+
+echo ========================== DATA orig vs mine =========================
+sdiff -w 80 orig-D mine-D
+echo

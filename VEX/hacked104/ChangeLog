@@ -1,0 +1,85 @@
+2002-04-15  Dirk Mueller  <dmuell@gmx.net>
+
+	* Makefile.am: use $(EXEEXT) to shut up newer automake versions.
+	Of course this is ugly and unportable, but it works for valgrind..
+	($(EXEEXT) is always empty on unix platforms)
+
+	* configure.in: Use AM_PROG_AS (required with automake 1.6,
+	works with automake 1.5 and newer) instead of selfhacking.
+
+2002-04-04  Frédéric Gobry  <frederic.gobry@smartdata.ch>
+
+	* configure.in, glibc-*.supp, xfree-*.supp: now, configure
+	creates a default.supp by picking from the different specific
+	suppression files.
+
+2002-03-29  Julian Seward  <sewardj@localhost.localdomain>
+
+	* vg_signals.c (VG_(do__NR_sigaction)): Don't allow setting of
+	handlers for SIGKILL or SIGSTOP.  This fixes
+	valgrind: vg_signals.c:723 (vgPlain_do__NR_sigaction): 
+	Assertion `our_old_handler == ((void *)0)' failed.
+	
+2002-03-29  Alexandre Duret-Lutz  <duret_g@epita.fr>
+
+	* vg_syscall_mem.c: wrappers for ioctl TIOCGPGRP and TIOCSCTTY,
+	and for syscall __NR_nice.
+
+2002-03-29  Tom Hughes <thh@cyberscience.com>
+
+	* vg_syscall_mem.c: Significantly improved SYSV IPC call
+	handling.  Unfortunately some of this stuff doesn't use
+	safe_dereference when it should.
+
+2002-03-27  Frederic Gobry  <gobry@puck.ch>
+
+	* configure.in: added support for maintainer mode. Now, to
+	developp on valgrind, it is suggested to run configure with the
+	--enable-maintainer-mode.
+
+2002-03-26  Simon Hausmann <hausmann@kde.org>
+
+	* configure.in: Substitute AS and ASFLAGS.
+	* demangle/Makefile.am: Don't use INCLUDES += when it's the first
+	assignment to it.
+	* Makefile.am: Don't use INCLUDES += when it's the first assignment to
+	it. Use $(EXEEXT) for the explicit valgrin[d,q].so targets.
+
+2002-03-24  Frederic Gobry  <gobry@puck.ch>
+
+	* Makefile.am: added a bzdist target that creates a bzip2 archive
+	of the project.
+
+2002-03-24  Julian Seward  <sewardj@localhost.localdomain>
+
+	* vg_to_ucode.c (disInstr): Implement DAA as well as DAS.
+         Byrial Jensen <byrial@image.dk>
+
+	 (dis_fpu_no_mem): Detect FPU instructions which set %EFLAGS and
+	 mark the resulting UInstrs accordingly.
+
+	* vg_errcontext.c (pp_ErrContext): Change message "Use of
+	uninitialized CPU condition code" to "Conditional jump or move
+	depends on uninitialised value(s)", since that will be more
+	meaningful to most programmers.  Also change the suppression-kind
+	to Cond in .supp files.  The old Value0 descriptor means the same
+	and is still accepted.  Suggested by Joe Buck
+	<Joe.Buck@synopsys.com>.
+
+	* vg_syscall_mem.c: Add syscall setresgid32, from "Arkadi
+	E. Shishlov" <arkadi@it.lv>
+
+2002-03-22  Frédéric Gobry  <frederic.gobry@smartdata.ch>
+
+	* Makefile.am, demangle/Makefile.am: added base dependencies for
+	the explicit compilation rules (not doing so could lead to a
+	situation where the automatic dependency mechanism fails)
+
+	* configure.in: additional checks for xfree and gcc
+	
+	* Makefile.in, configure, ...: removed generated files, as they
+	don't belong to the CVS repository. Use autogen.sh to recreate
+	them. (they are in the tarballs however).
+
+	* README: updated the installation procedure
+

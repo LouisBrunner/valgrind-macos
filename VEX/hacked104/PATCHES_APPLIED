@@ -1,0 +1,425 @@
+
+(Started this file at 14 Feb 02, 18:18 GMT)
+
+I decided it would be clearest for everybody (including me!) if I make
+a record of patches that I apply.  The starting point for all these is
+valgrind-20020214; patches applied to it before that snapshot was
+released are not recorded anywhere.
+
+
+------------------------------ 14 Feb 02 ------------------------------
+
+Michael Matz <matz@kde.org>:
+   this fixes the leak (32bytes/demangled symbol)in cplus-dem.c.  It also
+   again localizes the changes to libiberty's cp-demangle.c at the top with
+   some #defines.  (It also has some unrelated changes like header guarding
+   and making symbol sets disjoint, these are minor and were needed for the
+   demangle_test program, and are local to the demangler)
+
+   JRS: applied it, but it still seems to leak, running a g++2.96 compiled
+   program, at least (/usr/bin/kedit as installed with RH72).
+   (reenable VG_(show_all_arena_stats)() at vg_demangle.c:63 to see this)
+
+
+Michael Matz <matz@kde.org>
+   here the patch for changing order of restorage of %esp to not trash
+   simulees stack
+
+
+Simon Hausmann <hausmann@kde.org>
+   I attached a patch for the latest vg snapshot to implement better
+   support for shmat. Vg now correct marks the region returned by shmat
+   as read or read-writable (we have to do that blindly as there is no
+   way to figure out if another process initialized the data or not) .
+   Also the patch adds a paranoia check for the buffer passed with
+   shmctl. What's left todo is to make shmdt correctly mark the shm
+   segment as invalid again, but I see no easy way to figure out the
+   shm segment size just from the base address. Anyone? :)
+   Otherwise it'll probably require keeping a copy of the allocated
+   mappings inside vg -- shouldn't be expensive though. 
+   [...]
+   Oops, my previous shm patch contained a little bug in that it called
+   must_be_readable/writable for shmctl even when the address was 0
+   (which for example is the case when using IPC_RMID to remove a
+   shared memory segment, which is perfectly valid) . Attached the
+   updated patch that makes valgrinding Qt/Embedded apps possible :)
+
+
+me:
+   Check for accessibility changes for first and last 64k of address
+   space after every system call, so as to catch syscall wrapper
+   bugs as soon as they happen
+
+
+Simon Hausmann <hausmann@kde.org>
+   The socketpair handler checks that the two fds passed must be
+   readable, but I think the check should use must_be_writable instead
+   as the kernel does not read those values but fills them in.
+
+
+Simon Hausmann <hausmann@kde.org>
+   Here's a patch that implements checking of arguments for
+   sendmsg/recvmsg, as part of the socket syscall.
+   [...]
+   Oops, I just realized that the recvmsg wrapper should mark the
+   fields of the received message as readable, as the kernel hopefully
+   initialized them :)
+   [...]
+   Corrected patch attached.
+
+
+Nick Nethercote <njn25@cam.ac.uk>
+   [Implemented pushaw/pushal/popaw/popal]
+
+   They're kind of ugly due to the special treatment of %esp, but there
+   didn't seem to be any elegant way around it.  You may object to my
+   heinous magic number use with the registers.
+   
+   It seems to work ok, but I'd check it carefully if I were you.  In
+   particular, I've only tried it with POPAD. (I think;  gcc only accepts
+   'popa' in assembler files, and according to the Intel docs will probably
+   choose between POPA and POPAD by looking at the D flag of the current
+   code segment's descriptor.  I'm guessing this is 32-bits for my little 
+   test program.)
+
+
+Dirk Mueller <mueller@kde.org>
+   below a patch for checking if allocations are done correctly in C++ 
+   applications. it checks if new is free'ed by delete, new [] by delete [],
+   and malloc, calloc, realloc by free(). 
+
+   It works for me <tm>, not intensively tested yet. 
+
+
+Michael Matz <matzmich@cs.tu-berlin.de>
+   [allow specification of length of backtrace, default 8]
+   > > another small patch. it just increases the stacktrace 
+   > > length to 8 by default
+   > > (16 with --long-stacktraces=yes). a backtrace of 4 is
+   > > really short for KHTML, which often deeply nests calls.
+   >
+   > Wouldn't it be more usefull, to recognize a --bt-length=<number> 
+   > option, instead of only two sizes?
+
+   I.e. I would find the attached patch more usefull, which introduces an
+   --bt-size=<num> option (with docu ;-) ) but removes that long=yes/no
+   option.
+
+   JRS: the final name for the option is --num-callers
+
+
+------------------------------ 15 Feb 02 ------------------------------
+
+me:
+   fix assertion failure in VG_(malloc_aligned) (duh. duh. duh.)
+
+
+Michael Matz <matzmich@cs.tu-berlin.de>
+   [finally fix the last space leak in the demangler]
+   this should now fix the rest of the leaks.  The old c++ demangler is
+   really crappy code, therefor it took longer to find the leaks.  ;)
+
+
+Simon Hausmann <hausmann@kde.org>
+   Here are two micro patches for vg :)
+
+   The first one fixes what I think is a bug: I think the result param
+   of llseek before the actual syscall should be checked for
+   writability instead of readability.
+
+   The second one is a quick workaround for an assertion in the
+   demangler that I hit quite sometimes (I'm surprised noone else has
+   hit it before, maybe it's gcc3 specific though :) . I'm too lazy to 
+   write a full strtol replacement for now ;) , so just returning an
+   error will keep the program running and output the mangled symbol
+   instead.
+
+
+------------------------------ 17 Feb 02 ------------------------------
+
+me:
+   Implement cleverer semantics for 4-byte integer loads from partially
+   valid addresses, following complains from Coolo re spurious warnings
+   from gcc-inlined strlen()s.  As part of this, hardwire the default
+   behaviour of --bad-addr-value and get rid of this flag entirely.
+   New flag --partial-loads-ok=no|yes [default yes] controls use of
+   new semantics.  Also as a result, stop recommending people use
+   --sloppy-malloc=yes by default.
+
+me:
+   Options are now read from env var VALGRIND_OPTS.
+   Also remove need to edit hardware install dir in shell script.
+
+
+Michael Matz <matzmich@cs.tu-berlin.de>
+Simon Hausmann <hausmann@kde.org>
+   this fixes some leaks in the v3 demangler found by Simon (Julian: i.e.
+   those we couldn't possibly run into, as we use v2 demangling).
+
+
+------------------------------ 18 Feb 02 ------------------------------
+
+me:
+   Tighten up the conditions for which --partial-loads-ok=yes is allowed
+
+me:
+   Error management: slow down collecting errors after the 50th
+   and stop altogether after the 500th
+
+me:
+   Implement --workaround-gcc296-bugs, so RH 7.X and Mandrake users
+   can use their default compilers.
+
+
+------------------------------ 20 Feb 02 ------------------------------
+
+me:
+   Massive overhaul of the signal machinery so that signals can be
+   delivered to the client even when it is blocked in a system call.
+   This fixes the kmail-deadlocks-on-valgrind problem.
+
+------------------------------ 21 Feb 02 ------------------------------
+
+me:
+   Implement GDB attachment to the program.  
+
+Stephan Kulow <coolo@kde.org>
+   Implement a few more syscall wrappers
+
+------------------------------ 24 Feb 02 ------------------------------
+
+me:
+   Cleanup of the signal machinery.  Now we deal with signals purely
+   at the kernel interface, rather than muddying glibc's and the kernel's
+   conflicting concepts of some of the calls and structures.
+
+Kevin Dwyer <kevin@pheared.net>
+   Implement bazillions of syscall wrappers for ioctls
+
+me:
+   minor cleanups in vg_memory.c
+
+------------------------------ 4 Mar 02 -------------------------------
+
+This file is falling significantly behind reality.
+
+Me: get rid of this pointless and incorrect assert:
+   vg_memory.c:441 (set_address_range_perms): Assertion `len < 30000000' failed.
+
+Me: remove incorrect assert:
+   vg_assert(u_in->flags_w != FlagsEmpty);
+   do to with instrumentation of RCL/RCR
+   tracked down by Kevin Ryde <user42@zip.com.au>
+
+Malcolm Studd <mestudd@uwaterloo.ca>
+Sanjay Ghemawat <sanjay@google.com>
+   Implement pread (180)
+
+Byrial Jensen <byrial@image.dk>
+   Implement getsid (147)
+   Implement TCFLSH
+
+Me
+   Implement pause (29) 
+
+------------------------------ 6 Mar 02 -------------------------------
+
+Martin Nicolay <martin@osm-gmbh.de>
+   Implement fstatfs (100)
+   Implement ioctl FIOASYNC
+   Implement ioctl SIOCSPGRP (was previously noted-but-unhandled)
+
+Sanjay Ghemawat <sanjay@google.com>
+   Implement sync (36)
+   Make mallopt() into a no-op, rather than panic
+
+------------------------------ 7 Mar 02 -------------------------------
+
+Me
+   Write a great deal of technical docs about Valgrind internals
+   See docs/techdocs.html
+
+Me
+   Complete renaming of the kernel interface (vg_kerneliface.h)
+   definitions.
+
+"Byrial Jensen" <byrial@image.dk>
+   Use kernel rather than glibc sizes for struct termios
+
+Martin Jones <mjones@trolltech.com>
+   Implement ioctl MIXER_WRITE(0)
+
+Jon Trowbridge <trow@ximian.com>
+   Implement syscall pwrite (181)
+
+Me
+   Revamp the leak detector; fix various segfaults and bus errors in
+   it, and add the --show-reachable=no|yes flag, which makes it more
+   useful.
+
+------------------------------ 8 Mar 02 -------------------------------
+
+Me
+   Split up huge basic blocks into pieces, to avoid this:
+   vg_main.c:495 (vgPlain_create_translation_for): Assertion
+      `trans_size > 0 && trans_size < 65536' failed
+
+Crispin Flowerday <cflowerday@zeus.com>
+   Implement syscall sendfile (187)
+   Allow accept to have NULL 3rd argument
+
+Me
+   Write some more tech docs on the instrumentation and JITter
+
+----------------------------- 10 Mar 02 -------------------------------
+
+Crispin Flowerday <cflowerday@zeus.com>
+   SYS_SOCKETPAIR: on success, mark file descriptors as readable
+
+Ulrich Drepper <drepper@redhat.com>
+   Be cleverer on SYS_CONNECT
+
+Me
+   Fix strange parse error at vg_symtab2.c:1017
+   Complete tech docs to do with the instrumenting JITter
+   Write tech docs re future ideas
+
+----------------------------- 11 Mar 02 -------------------------------
+
+Me
+   Fix some compile problems on Debian Potato, and add some supps
+
+Julian Brown <brown@cs.bris.ac.uk>
+   Handle ioctl 0x40045431
+
+----------------------------- 12 Mar 02 -------------------------------
+
+Martin Burchell <martin.burchell@antlimited.com>
+   Some ioctls. 
+
+Crispin Flowerday <cflowerday@zeus.com>
+   Improved handling of SIOCGIFCONF.
+
+Frank Zago <fzago@greshamstorage.com>
+   Various ioctls for the SCSI generic (sg) driver.  Currently #if 0'd.
+
+Me
+   Fix obscure simulated CPU bug causing this:
+   -1: CMOVW     t34, t36  (-rOSZACP)
+   valgrind: vg_to_ucode.c:4197 (disInstr): Assertion `sane' failed.
+   (Spotted by Thorsten Schnebeck <thorsten.schnebeck@gmx.net>)
+
+Me
+   Add yet more suppressions to linux24.supp
+
+Me [subrev b only]
+   In the leak checker, use __builtin_{setjmp,longjmp} instead of the
+   glibc (pthread) versions.  This avoids a subtle memory corruption
+   problem caused by pthread_longjmp (or whatever it is called), which
+   finally manifests itself in this assertion failure:
+      vgPlain_primary_map[i] == & vg_distinguished_secondary_map
+   Many thanks to Michael Matz for coming up with an easy solution
+   which saved me hours of pissing around.
+
+----------------------------- 15 Mar 02 -------------------------------
+
+Stephan Kulow <coolo@kde.org>
+   Ioctls TIOCGPTN and TIOCSPTLCK
+
+Frank Zago <fzago@greshamstorage.com>
+   Various ioctls for the SCSI generic (sg) driver; these are now engaged.
+
+Harri Porten <porten@trolltech.com>
+   Fix "tiny omission" in debug outputs in vg_clientmalloc.c.
+
+Wolfram Gloger <wg@malloc.de>
+   mallopt returns 1 on success, not 0.
+   Implement __posix_memalign.
+
+Alasdair G Kergon <agk@arachsys.com>
+   Syscalls 
+   setfsgid (139), setregid(71), setresuid(164), setfsuid(138).
+   (argc,argv,envp) hack: reject candidate alignments giving argc==0.
+
+Malte Starostik <malte@kde.org>
+   Various ioctls, including some ISDN ones.
+
+Richard Moore <rich@xmelegance.org>
+   Syscalls mlockall (152), munlockall (153), sched_get_priority_max (159),
+   sched_getscheduler (156), NR_sched_setscheduler (157).
+   Ioctl SG_IO.
+   Print ioctl numbers in hex.
+
+Me
+   Syscall _sysctl (149).
+
+Aaron M. Ucko <amu@alum.mit.edu>
+   Use the size/dir info encoded in the top 16 bits of an ioctl number,
+   where appropriate.
+
+Dirk Mueller <dirk@kde.org>
+   Syscall setfsuid32 (215), and bazillions of ioctls, mostly linux
+   soundcard ones.
+
+Me
+   (following request from Dirk Mueller)
+   Rehash of context management system.  Now --num-callers= accepts 
+   values from 2 to 50.  Also --leak-resolution=low|med|high adjusts
+   how the leak detector presents results.  RTFM ...
+
+----------------------------- 15 Mar 02 second snapshot (0315b) -------
+
+Me
+   Allow suppression of invalid free  and  mismatching free errors.
+
+   Resurrect the internal profiling stuff (VG_PROFILE) and then fail
+   to find anything obvious that I could speed up :-(
+
+   Start playing with using AMD cache prefetch insns as described
+   in docs/techdocs.html.
+
+   Wrap ioctl SNDCTL_DSP_GETSPDIF in #ifdef; apparently undefined in
+   RH 7.2.
+
+----------------------------- 17 Mar 02 -------------------------------
+
+Me
+   New flag -q --quiet, so it just prints error messages and nothing
+   else
+
+   Experimental feature: allow clients to set/check memory range
+   permissions.  Read documentation pertaining to the --client-perms
+   flag.
+
+----------------------------- 19 Mar 02 -------------------------------
+
+Harri Porten <porten@trolltech.com>
+   Syscalls fchown (95), fchown32 (207)
+
+Ulrich Drepper <drepper@redhat.com>
+   Syscall ftruncate64 (194)
+
+<hansen> (?? on irc; can't remember)
+   Syscall chown32 (212)
+
+Me
+   Modify implementation of "sahf" insn, so that the instrumenter
+   creates code which checks the definedness of just %AH rather than 
+   all of %EAX.  Fixes a spurious warning reported by Daniel
+   Veillard <veillard@redhat.com>.
+
+----------------------------- 20 Mar 02 -------------------------------
+
+Me
+   Allow suppressions with a single top-stack-frame spec, to help folks
+   who have to suppress errors in libraries compiled with
+   -fomit-frame-pointer.
+
+   Implement x86 "das" insn.  Stranger than strange.
+
+Adam Gundy <arg@cyberscience.com>
+   ioctls TCSETA, TCGETA.
+
+----------------------------- 24 Mar 02 -------------------------------
+
+Move to putting stuff in ChangeLog.  This file finishes here.

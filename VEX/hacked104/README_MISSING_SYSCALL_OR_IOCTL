@@ -1,0 +1,152 @@
+
+Dealing with missing system call or ioctl wrappers in Valgrind
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You're probably reading this because Valgrind bombed out whilst
+running your program, and advised you to read this file.  The good
+news is that, in general, it's easy to write the missing syscall or
+ioctl wrappers you need, so that you can continue your debugging.  If
+you send the resulting patches to me, then you'll be doing a favour to
+all future Valgrind users too.
+
+Note that an "ioctl" is just a special kind of system call, really; so
+there's not a lot of need to distinguish them (at least conceptually)
+in the discussion that follows.
+
+All this machinery is in vg_syscall_mem.c.
+
+
+What are syscall/ioctl wrappers?  What do they do?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Valgrind does what it does, in part, by keeping track of the status of
+all bytes of memory accessible by your program.  When a system call
+happens, for example a request to read part of a file, control passes
+to the Linux kernel, which fulfills the request, and returns control
+to your program.  The problem is that the kernel will often change the
+status of some part of your program's memory as a result.
+
+The job of syscall and ioctl wrappers is to spot such system calls,
+and update Valgrind's memory status maps accordingly.  This is
+essential, because not doing so would cause you to be flooded with
+errors later on, and, in general, because it's important that
+Valgrind's idea of accessible memory corresponds to that of the Linux
+kernel's.  And for other reasons too.
+
+In addition, Valgrind takes the opportunity to perform some sanity
+checks on the parameters you are presenting to system calls.  This
+isn't essential for the correct operation of Valgrind, but it does
+allow it to warn you about various kinds of misuses which would
+otherwise mean your program just dies without warning, usually with a
+segmentation fault.
+
+So, let's look at an example of a wrapper for a system call which
+should be familiar to many Unix programmers.
+
+
+The syscall wrapper for read()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Removing the debug printing clutter, it looks like this:
+
+   case __NR_read: /* syscall 3 */
+      /* size_t read(int fd, void *buf, size_t count); */
+      must_be_writable( tst, "read(buf)", arg2, arg3 );
+      KERNEL_DO_SYSCALL(tid,res);
+      if (!VG_(is_kerror)(res) && res > 0) {
+         make_readable( arg2, res );
+      }
+      break;
+
+The first thing we do is check that the buffer, which you planned to
+have the result written to, really is addressible ("writable", here).
+Hence:
+
+      must_be_writable( tst, "read(buf)", arg2, arg3 );
+
+which causes Valgrind to issue a warning if the address range 
+[arg2 .. arg2 + arg3 - 1] is not writable.  This is one of those
+nice-to-have-but-not-essential checks mentioned above.  Note that
+the syscall args are always called arg1, arg2, arg3, etc.  Here,
+arg1 corresponds to "fd" in the prototype, arg2 to "buf", and arg3 
+to "count".
+
+Now Valgrind asks the kernel to do the system call, depositing the
+return code in "res":
+
+      KERNEL_DO_SYSCALL(tid,res);
+
+Finally, the really important bit.  If, and only if, the system call
+was successful, mark the buffer as readable (ie, as having valid
+data), for as many bytes as were actually read:
+
+      if (!VG_(is_kerror)(res) && res > 0) {
+         make_readable( arg2, res );
+      }
+
+The function VG_(is_kerror) tells you whether or not its argument
+represents a Linux kernel return error code.  Hence the test.
+
+
+Writing your own syscall wrappers (see below for ioctl wrappers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If Valgrind tells you that system call NNN is unimplemented, do the 
+following:
+
+1.  Find out the name of the system call:
+
+       grep NNN /usr/include/asm/unistd.h
+
+    This should tell you something like  __NR_mysyscallname.
+
+
+2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
+    does.
+
+
+3.  Add a case to the already-huge collection of wrappers in 
+    vg_syscall_mem.c.  For each in-memory parameter which is read
+    by the syscall, do a must_be_readable or must_be_readable_asciiz
+    on that parameter.  Then do the syscall.  Then, if the syscall
+    succeeds, issue suitable make_readable/writable/noaccess calls
+    afterwards, so as to update Valgrind's memory maps to reflect
+    the state change caused by the call.
+
+    If you find this difficult, read the wrappers for other syscalls
+    for ideas.  A good tip is to look for the wrapper for a syscall
+    which has a similar behaviour to yours, and use it as a 
+    starting point.
+
+    If you have to #include headers for structure definitions,
+    put your #includes into vg_unsafe.h.
+
+    Test it.
+
+    Note that a common error is to call make_readable or make_writable 
+    with 0 (NULL) as the first (address) argument.  This usually means your
+    logic is slightly inadequate.  It's a sufficiently common bug that
+    there's a built-in check for it, and you'll get a "probable sanity 
+    check failure" for the syscall wrapper you just made, if this is
+    the case.
+
+    Note that many syscalls are bracketed by #if defined(__NR_mysyscall)
+    ... #endif, because they exist only in the 2.4 kernel and not
+    the 2.2 kernel.  This enables the same piece of code to serve both
+    kernels.  Please try and stick to this convention.
+
+
+4.  Once happy, send me the patch.  Pretty please.
+
+
+
+
+Writing your own ioctl wrappers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Is pretty much the same as writing syscall wrappers.
+
+If you can't be bothered, do a cheap hack: add it (the ioctl number
+emitted in Valgrind's panic-message) to the long list of IOCTLs which
+are noted but not fully handled by Valgrind (search for the text
+"noted but unhandled ioctl" in vg_syscall_mem.c).  This will get you
+going immediately, at the risk of giving you spurious value errors.
+
+As above, please do send me the resulting patch.
+
+

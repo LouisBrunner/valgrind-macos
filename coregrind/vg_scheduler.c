@@ -389,6 +389,12 @@ ThreadId VG_(get_current_tid_1_if_root) ( void )
    return vg_tid_currently_in_baseBlock;
 }
 
+ThreadId VG_(get_tid_from_ThreadState) (ThreadState* tst)
+{
+   vg_assert(tst >= &VG_(threads)[1] && tst < &VG_(threads)[VG_N_THREADS]);
+   return tst->tid;
+}
+
 
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */

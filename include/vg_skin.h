@@ -253,7 +253,9 @@ typedef
    struct _ThreadState
    ThreadState;
 
+extern ThreadId     VG_(get_current_tid)           ( void );
 extern ThreadId     VG_(get_current_tid_1_if_root) ( void );
+extern ThreadId     VG_(get_tid_from_ThreadState)  ( ThreadState* );
 extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
 
 
@@ -338,6 +340,8 @@ extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, Int nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strdup)         ( const Char* s);
+extern void* VG_(memcpy)         ( void *d, const void *s, Int sz );
+extern void* VG_(memset)         ( void *s, Int c, Int sz );
 
 /* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );

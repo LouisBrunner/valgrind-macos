@@ -748,28 +748,30 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 }
 
 // SSS: put these somewhere better
-static void eraser_mem_read (Addr a, UInt data_size);
-static void eraser_mem_write(Addr a, UInt data_size);
+static void eraser_mem_read (Addr a, UInt data_size, ThreadId tid);
+static void eraser_mem_write(Addr a, UInt data_size, ThreadId tid);
+static void eraser_mem_read_notid (Addr a, UInt data_size);
+static void eraser_mem_write_notid(Addr a, UInt data_size);
 
 static
 void eraser_pre_mem_read(CorePart part, ThreadState* tst,
                          Char* s, UInt base, UInt size )
 {
-   eraser_mem_read(base, size);
+   eraser_mem_read(base, size, VG_(get_tid_from_ThreadState)(tst));
 }
 
 static
 void eraser_pre_mem_read_asciiz(CorePart part, ThreadState* tst,
                                 Char* s, UInt base )
 {
-   eraser_mem_read(base, VG_(strlen)((Char*)base));
+   eraser_mem_read(base, VG_(strlen)((Char*)base), VG_(get_tid_from_ThreadState)(tst));
 }
 
 static
 void eraser_pre_mem_write(CorePart part, ThreadState* tst,
                           Char* s, UInt base, UInt size )
 {
-   eraser_mem_write(base, size);
+   eraser_mem_write(base, size, VG_(get_tid_from_ThreadState)(tst));
 }
 
 
@@ -889,7 +891,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
                       8 == u_in->size || 10 == u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
             // SSS: make regparms(2) eventually...
-            uCCall(cb, (Addr) & eraser_mem_read, 2, 0, False);
+            uCCall(cb, (Addr) & eraser_mem_read_notid, 2, 0, False);
             VG_(copy_UInstr)(cb, u_in);
             t_size = INVALID_TEMPREG;
             break;
@@ -903,7 +905,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-            uCCall(cb, (Addr) & eraser_mem_write, 2, 0, False);
+            uCCall(cb, (Addr) & eraser_mem_write_notid, 2, 0, False);
             VG_(copy_UInstr)(cb, u_in);
             t_size = INVALID_TEMPREG;
             break;
@@ -1194,10 +1196,9 @@ Int compute_num_words_accessed(Addr a, UInt size)
 #endif
 
 
-static void eraser_mem_read(Addr a, UInt size)
+static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
 {
    shadow_word* sword;
-   ThreadId tid = VG_(get_current_tid_1_if_root)();
    Addr     end = a + 4*compute_num_words_accessed(a, size);
 
    for ( ; a < end; a += 4) {
@@ -1262,10 +1263,9 @@ static void eraser_mem_read(Addr a, UInt size)
 }
 
 
-static void eraser_mem_write(Addr a, UInt size)
+static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
 {
    shadow_word* sword;
-   ThreadId tid = VG_(get_current_tid_1_if_root)();
    Addr     end = a + 4*compute_num_words_accessed(a, size);
 
    for ( ; a < end; a += 4) {
@@ -1325,6 +1325,15 @@ static void eraser_mem_write(Addr a, UInt size)
 
 #undef DEBUG_STATE
 
+static void eraser_mem_read_notid(Addr a, UInt size)
+{
+   eraser_mem_read(a, size, VG_(get_current_tid)());
+}
+
+static void eraser_mem_write_notid(Addr a, UInt size)
+{
+   eraser_mem_write(a, size, VG_(get_current_tid)());
+}
 
 /*--------------------------------------------------------------------*/
 /*--- Setup                                                        ---*/
@@ -1373,8 +1382,8 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    track->post_mutex_lock       = & eraser_post_mutex_lock;
    track->post_mutex_unlock     = & eraser_post_mutex_unlock;
 
-   VG_(register_compact_helper)((Addr) & eraser_mem_read);
-   VG_(register_compact_helper)((Addr) & eraser_mem_write);
+   VG_(register_compact_helper)((Addr) & eraser_mem_read_notid);
+   VG_(register_compact_helper)((Addr) & eraser_mem_write_notid);
 
    /* Init lock table */
    for (i = 0; i < VG_N_THREADS; i++) 

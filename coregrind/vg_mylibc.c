@@ -895,6 +895,31 @@ Char* VG_(strchr) ( const Char* s, Char c )
 }
 
 
+void* VG_(memcpy) ( void *dest, const void *src, Int sz )
+{
+   const Char *s = (const Char *)src;
+   Char *d = (Char *)dest;
+   vg_assert(sz >= 0);
+
+   while (sz--)
+      *d++ = *s++;
+
+   return dest;
+}
+
+
+void* VG_(memset) ( void *dest, Int c, Int sz )
+{
+   Char *d = (Char *)dest;
+   vg_assert(sz >= 0);
+
+   while (sz--)
+      *d++ = c;
+
+   return dest;
+}
+
+
 Char VG_(toupper) ( Char c )
 {
    if (c >= 'a' && c <= 'z')

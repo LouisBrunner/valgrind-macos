@@ -35,8 +35,8 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define nameIReg  VG_(nameOfIntReg)
-#define nameISize VG_(nameOfIntSize)
+#define nameIReg  VG_(name_of_int_reg)
+#define nameISize VG_(name_of_int_size)
 
 #define dis       VG_(print_codegen)
 
@@ -54,7 +54,7 @@
 
 static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -70,7 +70,7 @@ static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
 
 static void emit_testv_lit_offregmem ( Int sz, UInt lit, Int off, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -174,19 +174,19 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
       switch (sz) {
          case 4: 
             emit_testv_lit_offregmem ( 
-               4, 0xFFFFFFFF, VG_(shadowRegOffset)(val), R_EBP );
+               4, 0xFFFFFFFF, VG_(shadow_reg_offset)(val), R_EBP );
             break;
          case 2: 
             emit_testv_lit_offregmem ( 
-               4, 0x0000FFFF, VG_(shadowRegOffset)(val), R_EBP );
+               4, 0x0000FFFF, VG_(shadow_reg_offset)(val), R_EBP );
             break;
          case 1:
             if (val < 4) {
                emit_testv_lit_offregmem ( 
-                  4, 0x000000FF, VG_(shadowRegOffset)(val), R_EBP );
+                  4, 0x000000FF, VG_(shadow_reg_offset)(val), R_EBP );
             } else {
                emit_testv_lit_offregmem ( 
-                  4, 0x0000FF00, VG_(shadowRegOffset)(val-4), R_EBP );
+                  4, 0x0000FF00, VG_(shadow_reg_offset)(val-4), R_EBP );
             }
             break;
          case 0: 
@@ -237,20 +237,20 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
    /* VG_(printf)("synth_GETV %d of Arch %s\n", sz, nameIReg(sz, arch)); */
    switch (sz) {
       case 4: 
-         VG_(emit_movv_offregmem_reg) ( 4, VG_(shadowRegOffset)(arch),
+         VG_(emit_movv_offregmem_reg) ( 4, VG_(shadow_reg_offset)(arch),
                                         R_EBP, reg );
          break;
       case 2: 
-         VG_(emit_movzwl_offregmem_reg) ( VG_(shadowRegOffset)(arch),
+         VG_(emit_movzwl_offregmem_reg) ( VG_(shadow_reg_offset)(arch),
                                           R_EBP, reg );
          VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFF0000, reg );
          break;
       case 1: 
          if (arch < 4) {
-            VG_(emit_movzbl_offregmem_reg) ( VG_(shadowRegOffset)(arch),
+            VG_(emit_movzbl_offregmem_reg) ( VG_(shadow_reg_offset)(arch),
                                              R_EBP, reg );
          } else {
-            VG_(emit_movzbl_offregmem_reg) ( VG_(shadowRegOffset)(arch-4)+1,
+            VG_(emit_movzbl_offregmem_reg) ( VG_(shadow_reg_offset)(arch-4)+1,
                                              R_EBP, reg );
          }
          VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFFFF00, reg );
@@ -271,21 +271,21 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
          case 4:
             vg_assert(lit == 0x00000000);
             VG_(emit_movv_lit_offregmem) ( 4, 0x00000000, 
-                                      VG_(shadowRegOffset)(arch), R_EBP );
+                                      VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 2:
             vg_assert(lit == 0xFFFF0000);
             VG_(emit_movv_lit_offregmem) ( 2, 0x0000, 
-                                      VG_(shadowRegOffset)(arch), R_EBP );
+                                      VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 1:
             vg_assert(lit == 0xFFFFFF00);
             if (arch < 4) {
                VG_(emit_movb_lit_offregmem) ( 0x00, 
-                                         VG_(shadowRegOffset)(arch), R_EBP );
+                                         VG_(shadow_reg_offset)(arch), R_EBP );
             } else {
                VG_(emit_movb_lit_offregmem) ( 0x00, 
-                                              VG_(shadowRegOffset)(arch-4)+1,
+                                              VG_(shadow_reg_offset)(arch-4)+1,
                                               R_EBP );
             }
             break;
@@ -310,19 +310,19 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
       switch (sz) {
          case 4:
             VG_(emit_movv_reg_offregmem) ( 4, reg,
-                                      VG_(shadowRegOffset)(arch), R_EBP );
+                                      VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 2:
             VG_(emit_movv_reg_offregmem) ( 2, reg,
-                                      VG_(shadowRegOffset)(arch), R_EBP );
+                                      VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 1:
             if (arch < 4) {
                VG_(emit_movb_reg_offregmem) ( reg,
-                                         VG_(shadowRegOffset)(arch), R_EBP );
+                                      VG_(shadow_reg_offset)(arch), R_EBP );
 	    } else {
                VG_(emit_movb_reg_offregmem) ( reg,
-                                        VG_(shadowRegOffset)(arch-4)+1, R_EBP );
+                                      VG_(shadow_reg_offset)(arch-4)+1, R_EBP );
             }
             break;
          default: 
@@ -338,7 +338,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
 
 static void synth_GETVF ( Int reg )
 {
-   VG_(emit_movv_offregmem_reg) ( 4, VG_(shadowFlagsOffset)(), R_EBP, reg );
+   VG_(emit_movv_offregmem_reg) ( 4, VG_(shadow_flags_offset)(), R_EBP, reg );
    /* paranoia only; should be unnecessary ... */
    /* VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFFFFFE, reg ); */
 }
@@ -346,7 +346,7 @@ static void synth_GETVF ( Int reg )
 
 static void synth_PUTVF ( UInt reg )
 {
-   VG_(emit_movv_reg_offregmem) ( 4, reg, VG_(shadowFlagsOffset)(), R_EBP );
+   VG_(emit_movv_reg_offregmem) ( 4, reg, VG_(shadow_flags_offset)(), R_EBP );
 }
 
 
@@ -444,7 +444,7 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
 
          for (i = 0; i < VG_MAX_REALREGS; i++) {
             if (! IS_RREG_LIVE(i, regs_live_after)) {
-               reg_of_i = VG_(rankToRealRegNum)(i);
+               reg_of_i = VG_(rank_to_realreg)(i);
                if (reg != reg_of_i) {
                   dead_reg = reg_of_i;
                   break;
@@ -564,7 +564,7 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
 /*--- Generate code for a single UInstr.           ---*/
 /*----------------------------------------------------*/
 
-void SK_(emitExtUInstr) ( UInstr* u, RRegSet regs_live_before )
+void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
 {
    switch (u->opcode) {
 
@@ -631,9 +631,9 @@ void SK_(emitExtUInstr) ( UInstr* u, RRegSet regs_live_before )
          break;
 
       default: 
-         VG_(printf)("emitExtUInstr: unhandled extension insn:\n");
-         VG_(ppUInstr)(0,u);
-         VG_(panic)("emitExtUInstr: unhandled extension opcode");
+         VG_(printf)("emit_XUInstr: unhandled extension insn:\n");
+         VG_(pp_UInstr)(0,u);
+         VG_(panic)("emit_XUInstr: unhandled extension opcode");
    }
 }
 

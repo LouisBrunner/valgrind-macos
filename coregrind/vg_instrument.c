@@ -38,21 +38,21 @@
    couldn't otherwise do. */
 #include "vg_skin.h"
 
-#define uInstr0   VG_(newUInstr0)
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uLiteral  VG_(setLiteralField)
-#define uCCall    VG_(setCCallFields)
-#define newTemp   VG_(getNewTemp)
+#define uInstr0   VG_(new_UInstr0)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
 
 
-void VG_(callHelper_0_0)(UCodeBlock* cb, Addr f)
+void VG_(call_helper_0_0)(UCodeBlock* cb, Addr f)
 {
    uInstr0(cb, CCALL, 0);
    uCCall(cb, f, 0, 0, 0);
 }
 
-void VG_(callHelper_1_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt regparms_n)
+void VG_(call_helper_1_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt regparms_n)
 {
    UInt t1 = newTemp(cb);
 
@@ -63,7 +63,7 @@ void VG_(callHelper_1_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt regparms_n)
    uCCall(cb, f, 1, regparms_n, 0);
 }
 
-void VG_(callHelper_2_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
+void VG_(call_helper_2_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
                          UInt regparms_n)
 {
    UInt t1 = newTemp(cb);

@@ -459,7 +459,7 @@ void VG_(show_all_errors) ( void )
 
 #define VG_ISSPACE(ch) (((ch)==' ') || ((ch)=='\n') || ((ch)=='\t'))
 
-Bool VG_(getLine) ( Int fd, Char* buf, Int nBuf )
+Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
 {
    Char ch;
    Int  n, i;
@@ -546,16 +546,16 @@ static void load_one_suppressions_file ( Char* filename )
       for (i = 0; i < VG_N_SUPP_CALLERS; i++) supp->caller[i] = NULL;
       supp->skin_supp.string = supp->skin_supp.extra = NULL;
 
-      eof = VG_(getLine) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, buf, N_BUF );
       if (eof) break;
 
       if (!STREQ(buf, "{")) goto syntax_error;
       
-      eof = VG_(getLine) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, buf, N_BUF );
       if (eof || STREQ(buf, "}")) goto syntax_error;
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, buf);
 
-      eof = VG_(getLine) ( fd, buf, N_BUF );
+      eof = VG_(get_line) ( fd, buf, N_BUF );
 
       if (eof) goto syntax_error;
 
@@ -583,7 +583,7 @@ static void load_one_suppressions_file ( Char* filename )
             VG_(add_to_msg)(", '%s'", buf);
          }
          while (True) {
-            eof = VG_(getLine) ( fd, buf, N_BUF );
+            eof = VG_(get_line) ( fd, buf, N_BUF );
             if (eof) goto syntax_error;
             if (STREQ(buf, "}"))
                break;
@@ -597,7 +597,7 @@ static void load_one_suppressions_file ( Char* filename )
 
       /* "i > 0" ensures at least one caller read. */
       for (i = 0; i < VG_N_SUPP_CALLERS; i++) {
-         eof = VG_(getLine) ( fd, buf, N_BUF );
+         eof = VG_(get_line) ( fd, buf, N_BUF );
          if (eof) goto syntax_error;
          if (i > 0 && STREQ(buf, "}")) 
             break;
@@ -689,11 +689,11 @@ Bool supp_matches_callers(CoreSupp* su, Char caller_obj[][M_VG_ERRTXT],
 
    for (i = 0; su->caller[i] != NULL; i++) {
       switch (su->caller_ty[i]) {
-         case ObjName: if (VG_(stringMatch)(su->caller[i],
-                                            caller_obj[i])) break;
+         case ObjName: if (VG_(string_match)(su->caller[i],
+                                             caller_obj[i])) break;
                        return False;
-         case FunName: if (VG_(stringMatch)(su->caller[i], 
-                                            caller_fun[i])) break;
+         case FunName: if (VG_(string_match)(su->caller[i], 
+                                             caller_fun[i])) break;
                        return False;
          default: VG_(panic)("is_suppressible_error");
       }

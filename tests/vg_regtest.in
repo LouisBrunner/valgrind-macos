@@ -35,6 +35,11 @@
 #   --all:      run tests in all subdirs
 #   --valgrind: valgrind to use.  Default is one built from this source tree.
 #
+# The easiest way is to run all tests in valgrind/ with (assuming you installed
+# in $PREFIX):
+#
+#   $PREFIX/bin/vg_regtest --all
+#
 # You can specify individual files to test, or whole directories, or both.
 # The stable-branch/dev-branch distinction allows slight differences in stderr
 # results.

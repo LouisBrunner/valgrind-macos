@@ -932,7 +932,7 @@ Char* VG_(strdup) ( const Char* s )
 /* Keep track of recursion depth. */
 static Int recDepth;
 
-static Bool stringMatch_wrk ( Char* pat, Char* str )
+static Bool string_match_wrk ( Char* pat, Char* str )
 {
    vg_assert(recDepth >= 0 && recDepth < 250);
    recDepth++;
@@ -940,7 +940,7 @@ static Bool stringMatch_wrk ( Char* pat, Char* str )
       switch (*pat) {
          case '\0' : return (*str=='\0');
          case '*'  : do {
-                        if (stringMatch_wrk(pat+1,str)) {
+                        if (string_match_wrk(pat+1,str)) {
                            recDepth--;
                            return True;
                         }
@@ -967,11 +967,11 @@ static Bool stringMatch_wrk ( Char* pat, Char* str )
    }
 }
 
-Bool VG_(stringMatch) ( Char* pat, Char* str )
+Bool VG_(string_match) ( Char* pat, Char* str )
 {
    Bool b;
    recDepth = 0;
-   b = stringMatch_wrk ( pat, str );
+   b = string_match_wrk ( pat, str );
    /*
    VG_(printf)("%s   %s   %s\n",
 	       b?"TRUE ":"FALSE", pat, str);

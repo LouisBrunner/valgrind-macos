@@ -484,12 +484,12 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
 /*------------------------------------------------------------*/
 
 // SSS: do something about all these...
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uInstr3   VG_(newUInstr3)
-#define uLiteral  VG_(setLiteralField)
-#define uCCall    VG_(setCCallFields)
-#define newTemp   VG_(getNewTemp)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uInstr3   VG_(new_UInstr3)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
 
 static Int compute_BBCC_array_size(UCodeBlock* cb)
 {
@@ -701,7 +701,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    BBCC_node = get_BBCC(orig_addr, cb_in, /*remove=*/False, &BB_seen_before);
    BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
 
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    t_CC_addr = t_read_addr = t_write_addr = t_data_addr1 = t_data_addr2 =
@@ -748,7 +748,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
             data_size = u_in->size;
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case FPU_R:
@@ -758,7 +758,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             data_size = ( u_in->size <= MIN_LINE_SIZE
                         ? u_in->size
                         : MIN_LINE_SIZE);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Note that we must set t_write_addr even for mod instructions;
@@ -777,7 +777,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             data_size = ( u_in->size <= MIN_LINE_SIZE
                         ? u_in->size
                         : MIN_LINE_SIZE);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
 
@@ -795,7 +795,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             /* Call helper */
             uInstr1(cb, CCALL, 0, TempReg, t_CC_addr);
             uCCall(cb, (Addr) & log_1I_0D_cache_access_JIFZ, 1, 1, False);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
 
@@ -809,7 +809,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             if (instrumented_Jcond) {
                vg_assert(CondAlways == u_in->cond);
                vg_assert(i+1 == cb_in->used);
-               VG_(copyUInstr)(cb, u_in);
+               VG_(copy_UInstr)(cb, u_in);
                instrumented_Jcond = False;    /* reset */
                break;
             }
@@ -953,7 +953,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             }
 
             /* Copy original UInstr (INCEIP or JMP) */
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
 
             /* Update BBCC_ptr, EIP, de-init read/write temps for next instr */
             BBCC_ptr       += CC_size; 
@@ -965,7 +965,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          default:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
       }
    }
@@ -973,7 +973,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    /* Just check everything looks ok */
    vg_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
 
-   VG_(freeCodeBlock)(cb_in);
+   VG_(free_UCodeBlock)(cb_in);
    return cb;
 
 #undef INVALID_DATA_SIZE

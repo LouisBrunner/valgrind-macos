@@ -35,9 +35,9 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr2   VG_(newUInstr2)
-#define nameIReg  VG_(nameOfIntReg)
-#define nameISize VG_(nameOfIntSize)
+#define uInstr2   VG_(new_UInstr2)
+#define nameIReg  VG_(name_of_int_reg)
+#define nameISize VG_(name_of_int_size)
 
 #define dis       VG_(print_codegen)
 
@@ -45,7 +45,7 @@
 /*--- Basics                                               ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* VG_(allocCodeBlock) ( void )
+UCodeBlock* VG_(alloc_UCodeBlock) ( void )
 {
    UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
    cb->used = cb->size = cb->nextTemp = 0;
@@ -54,7 +54,7 @@ UCodeBlock* VG_(allocCodeBlock) ( void )
 }
 
 
-void VG_(freeCodeBlock) ( UCodeBlock* cb )
+void VG_(free_UCodeBlock) ( UCodeBlock* cb )
 {
    if (cb->instrs) VG_(arena_free)(VG_AR_CORE, cb->instrs);
    VG_(arena_free)(VG_AR_CORE, cb);
@@ -88,7 +88,7 @@ void ensureUInstr ( UCodeBlock* cb )
 
 
 __inline__ 
-void VG_(newNOP) ( UInstr* u )
+void VG_(new_NOP) ( UInstr* u )
 {
    u->val1 = u->val2 = u->val3 = 0;
    u->tag1 = u->tag2 = u->tag3 = NoValue;
@@ -108,7 +108,7 @@ void VG_(newNOP) ( UInstr* u )
 /* Add an instruction to a ucode block, and return the index of the
    instruction. */
 __inline__
-void VG_(newUInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
+void VG_(new_UInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
                        Tag tag1, UInt val1,
                        Tag tag2, UInt val2,
                        Tag tag3, UInt val3 )
@@ -117,7 +117,7 @@ void VG_(newUInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
    ensureUInstr(cb);
    ui = & cb->instrs[cb->used];
    cb->used++;
-   VG_(newNOP)(ui);
+   VG_(new_NOP)(ui);
    ui->val1   = val1;
    ui->val2   = val2;
    ui->val3   = val3;
@@ -133,7 +133,7 @@ void VG_(newUInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
 
 
 __inline__
-void VG_(newUInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
+void VG_(new_UInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
                        Tag tag1, UInt val1,
                        Tag tag2, UInt val2 )
 {
@@ -141,7 +141,7 @@ void VG_(newUInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
    ensureUInstr(cb);
    ui = & cb->instrs[cb->used];
    cb->used++;
-   VG_(newNOP)(ui);
+   VG_(new_NOP)(ui);
    ui->val1   = val1;
    ui->val2   = val2;
    ui->opcode = opcode;
@@ -154,14 +154,14 @@ void VG_(newUInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
 
 
 __inline__
-void VG_(newUInstr1) ( UCodeBlock* cb, Opcode opcode, Int sz,
+void VG_(new_UInstr1) ( UCodeBlock* cb, Opcode opcode, Int sz,
                        Tag tag1, UInt val1 )
 {
    UInstr* ui;
    ensureUInstr(cb);
    ui = & cb->instrs[cb->used];
    cb->used++;
-   VG_(newNOP)(ui);
+   VG_(new_NOP)(ui);
    ui->val1   = val1;
    ui->opcode = opcode;
    ui->tag1   = tag1;
@@ -171,20 +171,20 @@ void VG_(newUInstr1) ( UCodeBlock* cb, Opcode opcode, Int sz,
 
 
 __inline__
-void VG_(newUInstr0) ( UCodeBlock* cb, Opcode opcode, Int sz )
+void VG_(new_UInstr0) ( UCodeBlock* cb, Opcode opcode, Int sz )
 {
    UInstr* ui;
    ensureUInstr(cb);
    ui = & cb->instrs[cb->used];
    cb->used++;
-   VG_(newNOP)(ui);
+   VG_(new_NOP)(ui);
    ui->opcode = opcode;
    ui->size   = sz;
 }
 
 /* Copy an instruction into the given codeblock. */
 __inline__ 
-void VG_(copyUInstr) ( UCodeBlock* cb, UInstr* instr )
+void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr )
 {
    ensureUInstr(cb);
    cb->instrs[cb->used] = *instr;
@@ -209,9 +209,9 @@ void copyAuxInfoFromTo ( UInstr* src, UInstr* dst )
 
 
 /* Set the flag R/W sets on a uinstr. */
-void VG_(setFlagRW) ( UInstr* u, FlagSet fr, FlagSet fw )
+void VG_(set_flag_RW) ( UInstr* u, FlagSet fr, FlagSet fw )
 {
-   /* VG_(ppUInstr)(-1,u); */
+   /* VG_(pp_UInstr)(-1,u); */
    vg_assert(fr == (fr & FlagsALL));
    vg_assert(fw == (fw & FlagsALL));
    u->flags_r = fr;
@@ -220,15 +220,15 @@ void VG_(setFlagRW) ( UInstr* u, FlagSet fr, FlagSet fw )
 
 
 /* Set the lit32 field of the most recent uinsn. */
-void VG_(setLiteralField) ( UCodeBlock* cb, UInt lit32 )
+void VG_(set_lit_field) ( UCodeBlock* cb, UInt lit32 )
 {
    LAST_UINSTR(cb).lit32 = lit32;
 }
 
 
 /* Set the C call info fields of the most recent uinsn. */
-void  VG_(setCCallFields) ( UCodeBlock* cb, Addr fn, UChar argc, UChar
-                            regparms_n, Bool has_ret_val )
+void  VG_(set_ccall_fields) ( UCodeBlock* cb, Addr fn, UChar argc, UChar
+                              regparms_n, Bool has_ret_val )
 {
    vg_assert(argc       <  4);
    vg_assert(regparms_n <= argc);
@@ -238,7 +238,7 @@ void  VG_(setCCallFields) ( UCodeBlock* cb, Addr fn, UChar argc, UChar
    LAST_UINSTR(cb).has_ret_val = has_ret_val;
 }
 
-Bool VG_(anyFlagUse) ( UInstr* u )
+Bool VG_(any_flag_use) ( UInstr* u )
 {
    return (u->flags_r != FlagsEmpty 
            || u->flags_w != FlagsEmpty);
@@ -258,7 +258,7 @@ Bool VG_(anyFlagUse) ( UInstr* u )
    a problem, except the generated code will obviously be worse).
 */
 __inline__ 
-Int VG_(rankToRealRegNum) ( Int rank )
+Int VG_(rank_to_realreg) ( Int rank )
 {
    switch (rank) {
 #     ifdef BEST_ALLOC_ORDER
@@ -278,15 +278,15 @@ Int VG_(rankToRealRegNum) ( Int rank )
       case 1: return R_ESI;
       case 0: return R_EDI;
 #     endif
-      default: VG_(panic)("VG_(rankToRealRegNum)");
+      default: VG_(panic)("VG_(rank_to_realreg)");
    }
 }
 
 /* Convert an Intel register number into a rank in the range 0 ..
-   VG_MAX_REALREGS-1.  See related comments for rankToRealRegNum()
+   VG_MAX_REALREGS-1.  See related comments for rank_to_realreg()
    above.  */
 __inline__
-Int VG_(realRegNumToRank) ( Int realReg )
+Int VG_(realreg_to_rank) ( Int realReg )
 {
    switch (realReg) {
 #     ifdef BEST_ALLOC_ORDER
@@ -304,7 +304,7 @@ Int VG_(realRegNumToRank) ( Int realReg )
       case R_ESI: return 1;
       case R_EDI: return 0;
 #     endif
-      default: VG_(panic)("VG_(realRegNumToRank)");
+      default: VG_(panic)("VG_(realreg_to_rank)");
    }
 }
 
@@ -523,7 +523,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                        u->regparms_n <= u->argc && XCCALL;
    default: 
       if (VG_(needs).extended_UCode)
-         return SK_(saneExtUInstr)(beforeRA, beforeLiveness, u);
+         return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
       else {
          VG_(printf)("unhandled opcode: %u.  Perhaps " 
                      "VG_(needs).extended_UCode should be set?",
@@ -592,7 +592,7 @@ void VG_(saneUCodeBlock) ( UCodeBlock* cb )
       Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[i]);
       if (!sane) {
          VG_(printf)("Instruction failed sanity check:\n");
-         VG_(upUInstr)(i, &cb->instrs[i]);
+         VG_(up_UInstr)(i, &cb->instrs[i]);
       }
       vg_assert(sane);
    }
@@ -735,14 +735,14 @@ static void ppTempReg ( Int tt )
 }
 
 
-void VG_(ppUOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
+void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
 {
    UInt tag, val;
    switch (operandNo) {
       case 1: tag = u->tag1; val = u->val1; break;
       case 2: tag = u->tag2; val = u->val2; break;
       case 3: tag = u->tag3; val = u->val3; break;
-      default: VG_(panic)("VG_(ppUOperand)(1)");
+      default: VG_(panic)("VG_(pp_UOperand)(1)");
    }
    if (tag == Literal) val = u->lit32;
 
@@ -755,13 +755,13 @@ void VG_(ppUOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
       case NoValue: VG_(printf)("NoValue"); break;
       case ArchReg: VG_(printf)("%S",nameIReg(sz,val)); break;
       case SpillNo: VG_(printf)("spill%d", val); break;
-      default: VG_(panic)("VG_(ppUOperand)(2)");
+      default: VG_(panic)("VG_(pp_UOperand)(2)");
    }
    if (parens) VG_(printf)(")");
 }
 
 
-Char* VG_(nameUOpcode) ( Bool upper, Opcode opc )
+Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
 {
    switch (opc) {
       case ADD:   return (upper ? "ADD" : "add");
@@ -785,7 +785,7 @@ Char* VG_(nameUOpcode) ( Bool upper, Opcode opc )
       case BSWAP: return (upper ? "BSWAP" : "bswap");
       default:    break;
    }
-   if (!upper) VG_(panic)("vg_nameUOpcode: invalid !upper");
+   if (!upper) VG_(panic)("vg_name_UOpcode: invalid !upper");
    switch (opc) {
       case CALLM_S: return "CALLM_S";
       case CALLM_E: return "CALLM_E";
@@ -815,20 +815,20 @@ Char* VG_(nameUOpcode) ( Bool upper, Opcode opc )
       case FPU:     return "FPU"  ;
       default:
          if (VG_(needs).extended_UCode)
-            return SK_(nameExtUOpcode)(opc);
+            return SK_(name_XUOpcode)(opc);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         opc);
-            VG_(panic)("nameUOpcode: unhandled opcode");
+            VG_(panic)("name_UOpcode: unhandled opcode");
          }
    }
 }
 
-void ppRealRegsLiveness ( UInstr* u )
+void pp_realregs_liveness ( UInstr* u )
 {
 #  define PRINT_RREG_LIVENESS(realReg,s) \
-     VG_(printf)( IS_RREG_LIVE(VG_(realRegNumToRank)(realReg), \
+     VG_(printf)( IS_RREG_LIVE(VG_(realreg_to_rank)(realReg), \
                                u->regs_live_after)             \
                      ? s : "-");
 
@@ -845,9 +845,9 @@ void ppRealRegsLiveness ( UInstr* u )
 }
 
 /* Ugly-print UInstr :) */
-void VG_(upUInstr) ( Int i, UInstr* u )
+void VG_(up_UInstr) ( Int i, UInstr* u )
 {
-   VG_(ppUInstrWithRegs)(i, u);
+   VG_(pp_UInstr_regs)(i, u);
    
    VG_(printf)("opcode:          %d\n", u->opcode);
    VG_(printf)("lit32:           %x\n", u->lit32);
@@ -863,14 +863,14 @@ void VG_(upUInstr) ( Int i, UInstr* u )
    VG_(printf)("argc,regparms_n: %d, %d\n", u->argc, u->regparms_n);
    VG_(printf)("has_ret_val:     %d\n", u->has_ret_val);
    VG_(printf)("regs_live_after: ");
-   ppRealRegsLiveness(u);
+   pp_realregs_liveness(u);
    VG_(printf)("\n");
 }
 
-void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
+void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 {
    VG_(printf)("\t%4d: %s", instrNo, 
-                            VG_(nameUOpcode)(True, u->opcode));
+                            VG_(name_UOpcode)(True, u->opcode));
    if (u->opcode == JMP || u->opcode == CC2VAL)
       VG_(printf)("%s", VG_(nameCondcode(u->cond)));
 
@@ -894,18 +894,18 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 
       case LEA2:
          VG_(printf)("\t%d(" , u->lit32);
-         VG_(ppUOperand)(u, 1, 4, False);
+         VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(",");
-         VG_(ppUOperand)(u, 2, 4, False);
+         VG_(pp_UOperand)(u, 2, 4, False);
          VG_(printf)(",%d), ", (Int)u->extra4b);
-         VG_(ppUOperand)(u, 3, 4, False);
+         VG_(pp_UOperand)(u, 3, 4, False);
          break;
 
       case LEA1:
          VG_(printf)("\t%d" , u->lit32);
-         VG_(ppUOperand)(u, 1, 4, True);
+         VG_(pp_UOperand)(u, 1, 4, True);
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, 4, False);
+         VG_(pp_UOperand)(u, 2, 4, False);
          break;
 
       case NOP:
@@ -914,12 +914,12 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case FPU_W:
          VG_(printf)("\t0x%x:0x%x, ",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
-         VG_(ppUOperand)(u, 2, 4, True);
+         VG_(pp_UOperand)(u, 2, 4, True);
          break;
 
       case FPU_R:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 2, 4, True);
+         VG_(pp_UOperand)(u, 2, 4, True);
          VG_(printf)(", 0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          break;
@@ -931,9 +931,9 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 
       case GET: case PUT: case MOV: case LOAD: case STORE: case CMOV:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, u->opcode==LOAD); 
+         VG_(pp_UOperand)(u, 1, u->size, u->opcode==LOAD); 
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, u->size, u->opcode==STORE);
+         VG_(pp_UOperand)(u, 2, u->size, u->opcode==STORE);
          break;
 
       case JMP:
@@ -945,7 +945,7 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
             default: break;
          }
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, False);
+         VG_(pp_UOperand)(u, 1, u->size, False);
          if (CondAlways == u->cond) {
             /* Print x86 instruction size if filled in */
             if (0 != u->extra4b)
@@ -957,31 +957,31 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case CC2VAL: case PUSH: case POP: case CLEAR: case CALLM:
       case NOT: case NEG: case INC: case DEC: case BSWAP:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, False);
+         VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 
       /* Print a "(s)" after args passed on stack */
       case CCALL:
          VG_(printf)("\t");
          if (u->has_ret_val) {
-            VG_(ppUOperand)(u, 3, 0, False);
+            VG_(pp_UOperand)(u, 3, 0, False);
             VG_(printf)(" = ");
          }
          VG_(printf)("%p(", u->lit32);
          if (u->argc > 0) {
-            VG_(ppUOperand)(u, 1, 0, False);
+            VG_(pp_UOperand)(u, 1, 0, False);
             if (u->regparms_n < 1)
                VG_(printf)("(s)");
          }
          if (u->argc > 1) {
             VG_(printf)(", ");
-            VG_(ppUOperand)(u, 2, 0, False);
+            VG_(pp_UOperand)(u, 2, 0, False);
             if (u->regparms_n < 2)
                VG_(printf)("(s)");
          }
          if (u->argc > 2) {
             VG_(printf)(", ");
-            VG_(ppUOperand)(u, 3, 0, False);
+            VG_(pp_UOperand)(u, 3, 0, False);
             if (u->regparms_n < 3)
                VG_(printf)("(s)");
          }
@@ -994,26 +994,26 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case SHL: case SHR: case SAR: 
       case ROL: case ROR: case RCL: case RCR:   
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, False); 
+         VG_(pp_UOperand)(u, 1, u->size, False); 
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, u->size, False);
+         VG_(pp_UOperand)(u, 2, u->size, False);
          break;
 
       case WIDEN:
          VG_(printf)("_%c%c", VG_(toupper)(nameISize(u->extra4b)),
                               u->signed_widen?'s':'z');
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, False);
+         VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 
       default: 
          if (VG_(needs).extended_UCode)
-            SK_(ppExtUInstr)(u);
+            SK_(pp_XUInstr)(u);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         u->opcode);
-            VG_(panic)("ppUInstr: unhandled opcode");
+            VG_(panic)("pp_UInstr: unhandled opcode");
          }
    }
    if (u->flags_r != FlagsEmpty || u->flags_w != FlagsEmpty) {
@@ -1027,29 +1027,29 @@ void ppUInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 
    if (ppRegsLiveness) {
       VG_(printf)("\t\t");
-      ppRealRegsLiveness ( u );
+      pp_realregs_liveness ( u );
    }
 
    VG_(printf)("\n");
 }
 
-void VG_(ppUInstr) ( Int instrNo, UInstr* u )
+void VG_(pp_UInstr) ( Int instrNo, UInstr* u )
 {
-   ppUInstrWorker ( instrNo, u, /*ppRegsLiveness*/False );
+   pp_UInstrWorker ( instrNo, u, /*ppRegsLiveness*/False );
 }
 
-void VG_(ppUInstrWithRegs) ( Int instrNo, UInstr* u )
+void VG_(pp_UInstr_regs) ( Int instrNo, UInstr* u )
 {
-   ppUInstrWorker ( instrNo, u, /*ppRegsLiveness*/True );
+   pp_UInstrWorker ( instrNo, u, /*ppRegsLiveness*/True );
 }
 
-void VG_(ppUCodeBlock) ( UCodeBlock* cb, Char* title )
+void VG_(pp_UCodeBlock) ( UCodeBlock* cb, Char* title )
 {
    Int i;
    VG_(printf)("%s\n", title);
    for (i = 0; i < cb->used; i++)
       if (cb->instrs[i].opcode != NOP)
-         VG_(ppUInstr) ( i, &cb->instrs[i] );
+         VG_(pp_UInstr) ( i, &cb->instrs[i] );
    VG_(printf)("\n");
 }
 
@@ -1068,7 +1068,7 @@ void VG_(ppUCodeBlock) ( UCodeBlock* cb, Char* title )
    TempRegs or RealRegs.
 */
 __inline__
-Int VG_(getRegUsage) ( UInstr* u, Tag tag, RegUse* arr )
+Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
 {
 #  define RD(ono)    VG_UINSTR_READS_REG(ono)
 #  define WR(ono)    VG_UINSTR_WRITES_REG(ono)
@@ -1123,12 +1123,12 @@ Int VG_(getRegUsage) ( UInstr* u, Tag tag, RegUse* arr )
 
       default:
          if (VG_(needs).extended_UCode)
-            return SK_(getExtRegUsage)(u, tag, arr);
+            return SK_(get_Xreg_usage)(u, tag, arr);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         u->opcode);
-            VG_(panic)("VG_(getRegUsage): unhandled opcode");
+            VG_(panic)("VG_(get_reg_usage): unhandled opcode");
          }
    }
    return n;
@@ -1223,7 +1223,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
          return -1;
 
       default: 
-         VG_(ppUInstr)(0,u);
+         VG_(pp_UInstr)(0,u);
          VG_(panic)("maybe_uinstrReadsArchReg: unhandled opcode");
    }
 }
@@ -1233,7 +1233,7 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 {
    Int i, k;
    RegUse tempUse[3];
-   k = VG_(getRegUsage) ( u, TempReg, &tempUse[0] );
+   k = VG_(get_reg_usage) ( u, TempReg, &tempUse[0] );
    for (i = 0; i < k; i++)
       if (tempUse[i].num == tempreg)
          return True;
@@ -1284,7 +1284,7 @@ static void vg_improve ( UCodeBlock* cb )
    for (i = cb->used-1; i >= 0; i--) {
       u = &cb->instrs[i];
 
-      k = VG_(getRegUsage)(u, TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
 
       /* For each temp usage ... bwds in program order. */
       for (j = k-1; j >= 0; j--) {
@@ -1325,7 +1325,7 @@ static void vg_improve ( UCodeBlock* cb )
                out here.  Annul this GET, rename tr to told for the
                rest of the block, and extend told's live range to that
                of tr.  */
-            VG_(newNOP)(u);
+            VG_(new_NOP)(u);
             n = last_live_before[tr] + 1;
             if (n > cb->used) n = cb->used;
             last_live_before[told] = last_live_before[tr];
@@ -1390,7 +1390,7 @@ static void vg_improve ( UCodeBlock* cb )
          }
 
          /* boring insn; invalidate any mappings to temps it writes */
-         k = VG_(getRegUsage)(u, TempReg, &tempUse[0]);
+         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
 
          for (j = 0; j < k; j++) {
             wr  = tempUse[j].isWrite;
@@ -1422,7 +1422,7 @@ static void vg_improve ( UCodeBlock* cb )
          actual_areg = containingArchRegOf ( 4, u->val2 );
          if (annul_put[actual_areg]) {
             vg_assert(actual_areg != R_ESP);
-            VG_(newNOP)(u);
+            VG_(new_NOP)(u);
             if (dis) 
                VG_(printf)("   at %2d: delete PUT\n", i );
          } else {
@@ -1453,7 +1453,7 @@ static void vg_improve ( UCodeBlock* cb )
       Further modifies the last_live_before map. */
 
 #  if 0
-   VG_(ppUCodeBlock)(cb, "Before MOV elimination" );
+   VG_(pp_UCodeBlock)(cb, "Before MOV elimination" );
    for (i = 0; i < cb->nextTemp; i++)
      VG_(printf)("llb[t%d]=%d   ", i, last_live_before[i]);
    VG_(printf)("\n");
@@ -1480,7 +1480,7 @@ static void vg_improve ( UCodeBlock* cb )
          }
          last_live_before[u->val1] = last_live_before[u->val2];
          last_live_before[u->val2] = i-1;
-         VG_(newNOP)(u);
+         VG_(new_NOP)(u);
       }
    }
 
@@ -1541,7 +1541,7 @@ static void vg_improve ( UCodeBlock* cb )
 
    if (dis) {
       VG_(printf)("\n");
-      VG_(ppUCodeBlock) ( cb, "Improved UCode:" );
+      VG_(pp_UCodeBlock) ( cb, "Improved UCode:" );
    }
 }
 
@@ -1623,7 +1623,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    /* Scan fwds to establish live ranges. */
 
    for (i = 0; i < c1->used; i++) {
-      k = VG_(getRegUsage)(&c1->instrs[i], TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0]);
       vg_assert(k >= 0 && k <= 3);
 
       /* For each temp usage ... fwds in program order */
@@ -1717,7 +1717,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
    /* Resulting code goes here.  We generate it all in a forwards
       pass. */
-   c2 = VG_(allocCodeBlock)();
+   c2 = VG_(alloc_UCodeBlock)();
 
    /* At the start, no TempRegs are assigned to any real register.
       Correspondingly, all temps claim to be currently resident in
@@ -1752,13 +1752,13 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 #     endif
 
       if (dis)
-         VG_(ppUInstr)(i, &c1->instrs[i]);
+         VG_(pp_UInstr)(i, &c1->instrs[i]);
 
       /* First, free up enough real regs for this insn.  This may
          generate spill stores since we may have to evict some TempRegs
          currently in real regs.  Also generates spill loads. */
 
-      k = VG_(getRegUsage)(&c1->instrs[i], TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0]);
       vg_assert(k >= 0 && k <= 3);
 
       /* For each ***different*** temp mentioned in the insn .... */
@@ -1864,12 +1864,12 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          temp_info[real_to_temp[r]].real_no = VG_NOTHING;
          if (temp_info[real_to_temp[r]].dead_before > i) {
             uInstr2(c2, PUT, 4, 
-                        RealReg, VG_(rankToRealRegNum)(r), 
+                        RealReg, VG_(rank_to_realreg)(r), 
                         SpillNo, temp_info[real_to_temp[r]].spill_no);
             VG_(uinstrs_spill)++;
             spill_reqd = True;
             if (dis)
-               VG_(ppUInstr)(c2->used-1, &LAST_UINSTR(c2));
+               VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
          }
 
          /* Decide if tno is read. */
@@ -1882,11 +1882,11 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          if (isRead) {
             uInstr2(c2, GET, 4, 
                         SpillNo, temp_info[tno].spill_no, 
-                        RealReg, VG_(rankToRealRegNum)(r) );
+                        RealReg, VG_(rank_to_realreg)(r) );
             VG_(uinstrs_spill)++;
             spill_reqd = True;
             if (dis)
-               VG_(ppUInstr)(c2->used-1, &LAST_UINSTR(c2));
+               VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
          }
 
          /* Update the forwards and backwards maps. */
@@ -1899,12 +1899,12 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          and use patchUInstr to convert its rTempRegs into
          realregs. */
       for (j = 0; j < k; j++)
-         realUse[j] = VG_(rankToRealRegNum)(temp_info[tempUse[j].num].real_no);
-      VG_(copyUInstr)(c2, &c1->instrs[i]);
+         realUse[j] = VG_(rank_to_realreg)(temp_info[tempUse[j].num].real_no);
+      VG_(copy_UInstr)(c2, &c1->instrs[i]);
       patchUInstr(&LAST_UINSTR(c2), &tempUse[0], &realUse[0], k);
 
       if (dis) {
-         VG_(ppUInstr)(c2->used-1, &LAST_UINSTR(c2));
+         VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
          VG_(printf)("\n");
       }
    }
@@ -1912,7 +1912,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    if (temp_info != NULL)
       VG_(arena_free)(VG_AR_JITTER, temp_info);
 
-   VG_(freeCodeBlock)(c1);
+   VG_(free_UCodeBlock)(c1);
 
    if (spill_reqd) 
       VG_(translations_needing_spill)++;
@@ -1939,14 +1939,14 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 
       u->regs_live_after = rregs_live;
 
-      k = VG_(getRegUsage)(u, RealReg, regUse);
+      k = VG_(get_reg_usage)(u, RealReg, regUse);
 
       /* For each reg usage ... bwds in program order.  Variable is live
          before this UInstr if it is read by this UInstr.
          Note that regUse[j].num holds the Intel reg number, so we must
          convert it to our rank number.  */
       for (j = k-1; j >= 0; j--) {
-         SET_RREG_LIVENESS ( VG_(realRegNumToRank)(regUse[j].num),
+         SET_RREG_LIVENESS ( VG_(realreg_to_rank)(regUse[j].num),
                              rregs_live,
                              !regUse[j].isWrite );
       }
@@ -1985,7 +1985,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tst, "", orig_addr, 1 );
 
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_codegen)) {
@@ -2022,7 +2022,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    VGP_PUSHCC(VgpInstrument);
    cb = SK_(instrument) ( cb, orig_addr );
    if (VG_(print_codegen))
-      VG_(ppUCodeBlock) ( cb, "Instrumented UCode:" );
+      VG_(pp_UCodeBlock) ( cb, "Instrumented UCode:" );
    VG_(saneUCodeBlock)( cb );
    VGP_POPCC(VgpInstrument);
 
@@ -2044,7 +2044,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    VGP_PUSHCC(VgpFromUcode);
    final_code = VG_(emit_code)(cb, &final_code_size );
    VGP_POPCC(VgpFromUcode);
-   VG_(freeCodeBlock)(cb);
+   VG_(free_UCodeBlock)(cb);
 
 #undef DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE
 

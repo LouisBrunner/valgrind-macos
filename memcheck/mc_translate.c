@@ -38,7 +38,7 @@
    vg_translate.c:VG_(saneUInstr)().  Everything general said there applies
    here too.
 */
-Bool SK_(saneExtUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
+Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 {
 // SSS: duplicating these macros really sucks
 #  define LIT0 (u->lit32 == 0)
@@ -93,7 +93,7 @@ Bool SK_(saneExtUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
    case TAG2:   return LIT0 && SZ0 && CC0 &&  TR1 && TR2 && Ls3 && XOTHER;
    default:
       VG_(printf)("unhandled opcode: %u\n", u->opcode);
-      VG_(panic)("SK_(saneExtUInstr): unhandled opcode");
+      VG_(panic)("SK_(sane_XUInstr): unhandled opcode");
    }
 #  undef LIT0
 #  undef LIT1
@@ -160,7 +160,7 @@ static Char* nameOfTagOp ( TagOp h )
 }
 
 
-Char* SK_(nameExtUOpcode)(Opcode opc)
+Char* SK_(name_XUOpcode)(Opcode opc)
 {
    switch (opc) {
       case GETVF:   return "GETVF";
@@ -175,7 +175,7 @@ Char* SK_(nameExtUOpcode)(Opcode opc)
       case SETV:    return "SETV";
       default:      
          VG_(printf)("unhandled opcode: %u\n", opc);
-         VG_(panic)("SK_(nameExtUOpcode): unhandled case");
+         VG_(panic)("SK_(name_XUOpcode): unhandled case");
    }
 }
 
@@ -183,60 +183,60 @@ Char* SK_(nameExtUOpcode)(Opcode opc)
    Debugging stuff.
    ------------------------------------------------------------------ */
 
-void SK_(ppExtUInstr)(UInstr* u)
+void SK_(pp_XUInstr)(UInstr* u)
 {
    switch (u->opcode) {
 
       case TAG1:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, 4, False);
+         VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(" = %s ( ", nameOfTagOp( u->val3 ));
-         VG_(ppUOperand)(u, 1, 4, False);
+         VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(" )");
          break;
 
       case TAG2:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 2, 4, False);
+         VG_(pp_UOperand)(u, 2, 4, False);
          VG_(printf)(" = %s ( ", nameOfTagOp( u->val3 ));
-         VG_(ppUOperand)(u, 1, 4, False);
+         VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, 4, False);
+         VG_(pp_UOperand)(u, 2, 4, False);
          VG_(printf)(" )");
          break;
 
       case STOREV: case LOADV:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, u->opcode==LOADV);
+         VG_(pp_UOperand)(u, 1, u->size, u->opcode==LOADV);
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, u->size, u->opcode==STOREV);
+         VG_(pp_UOperand)(u, 2, u->size, u->opcode==STOREV);
          break;
 
       case PUTVF: case GETVF:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, 0, False);
+         VG_(pp_UOperand)(u, 1, 0, False);
          break;
 
       case GETV: case PUTV:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->opcode==PUTV ? 4 : u->size, False);
+         VG_(pp_UOperand)(u, 1, u->opcode==PUTV ? 4 : u->size, False);
          VG_(printf)(", ");
-         VG_(ppUOperand)(u, 2, u->opcode==GETV ? 4 : u->size, False);
+         VG_(pp_UOperand)(u, 2, u->opcode==GETV ? 4 : u->size, False);
          break;
 
       case TESTV: case SETV:
          VG_(printf)("\t");
-         VG_(ppUOperand)(u, 1, u->size, False);
+         VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 
       default:
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(panic)("SK_(ppExtUInstr): unhandled opcode");
+         VG_(panic)("SK_(pp_XUInstr): unhandled opcode");
    }
 
 }
 
-Int SK_(getExtRegUsage)(UInstr* u, Tag tag, RegUse* arr)
+Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
 {
 #  define RD(ono)    VG_UINSTR_READS_REG(ono)
 #  define WR(ono)    VG_UINSTR_WRITES_REG(ono)
@@ -263,7 +263,7 @@ Int SK_(getExtRegUsage)(UInstr* u, Tag tag, RegUse* arr)
 
       default: 
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(panic)("SK_(getExtRegUsage): unhandled opcode");
+         VG_(panic)("SK_(get_Xreg_usage): unhandled opcode");
    }
    return n;
 
@@ -275,13 +275,13 @@ Int SK_(getExtRegUsage)(UInstr* u, Tag tag, RegUse* arr)
 /*--- New instrumentation machinery.                       ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uInstr3   VG_(newUInstr3)
-#define uLiteral  VG_(setLiteralField)
-#define uCCall    VG_(setCCallFields)
-#define newTemp   VG_(getNewTemp)
-#define newShadow VG_(getNewShadow)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uInstr3   VG_(new_UInstr3)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
+#define newShadow VG_(get_new_shadow)
 
 static
 TagOp get_Tag_ImproveOR_TQ ( Int sz )
@@ -511,7 +511,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
    Int         i, j;
    UInstr*     u_in;
    Int         qs, qd, qt, qtt;
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    for (i = 0; i < cb_in->used; i++) {
@@ -524,7 +524,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
 
          case INCEIP:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Loads and stores.  Test the V bits for the address.  24
@@ -545,7 +545,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, LOADV, u_in->size, 
                         TempReg, u_in->val1,
                         TempReg, SHADOW(u_in->val2));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case STORE:
@@ -556,7 +556,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, STOREV, u_in->size,
                         TempReg, SHADOW(u_in->val1), 
                         TempReg, u_in->val2);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Moving stuff around.  Make the V bits follow accordingly,
@@ -566,26 +566,26 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, GETV, u_in->size,
                         ArchReg, u_in->val1,
                         TempReg, SHADOW(u_in->val2));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case PUT:
             uInstr2(cb, PUTV, u_in->size, 
                         TempReg, SHADOW(u_in->val1),
                         ArchReg, u_in->val2);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case GETF:
             /* This is not the smartest way to do it, but should work. */
             qd = create_GETVF(cb, u_in->size);
             uInstr2(cb, MOV, 4, TempReg, qd, TempReg, SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case PUTF:
             create_PUTVF(cb, u_in->size, SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case MOV:
@@ -602,7 +602,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                default: 
                   VG_(panic)("memcheck_instrument: MOV");
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Special case of add, where one of the operands is a literal.
@@ -610,12 +610,12 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             Therefore: lea1#(qa) = left(qa) 
          */
          case LEA1:
-            vg_assert(u_in->size == 4 && !VG_(anyFlagUse)(u_in));
+            vg_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
             qs = SHADOW(u_in->val1);
             qd = SHADOW(u_in->val2);
             uInstr2(cb, MOV, 4, TempReg, qs, TempReg, qd);
             create_Left(cb, u_in->size, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Another form of add.  
@@ -628,7 +628,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          */
          case LEA2: {
             Int shift;
-            vg_assert(u_in->size == 4 && !VG_(anyFlagUse)(u_in));
+            vg_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
             switch (u_in->extra4b) {
                case 1: shift = 0; break;
                case 2: shift = 1; break;
@@ -646,7 +646,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             }
             create_UifU(cb, 4, qs, qd);
             create_Left(cb, u_in->size, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
          }
 
@@ -656,7 +656,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             create_Left(cb, u_in->size, qd);
             if (u_in->flags_w != FlagsEmpty)
                create_PUTVF(cb, u_in->size, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* This is a HACK (approximation :-) */
@@ -691,7 +691,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             create_UifU(cb, 0, qs, qd);
             create_PUTVF(cb, 0, qd);
             create_PCast(cb, 0, u_in->size, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* for OP in shl shr sar rol ror
@@ -741,7 +741,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, MOV, 4, TempReg, qs, TempReg, qt);
             create_PCast(cb, 1, u_in->size, qt);
             create_UifU(cb, u_in->size, qt, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
          }
 
@@ -750,20 +750,20 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->tag1 == TempReg);
             create_Widen(cb, u_in->signed_widen, u_in->extra4b, u_in->size, 
                              SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* not#(x) = x (since bitwise independent) */
          case NOT:
             vg_assert(u_in->tag1 == TempReg);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* neg#(x) = left(x) (derivable from case for SUB) */
          case NEG:
             vg_assert(u_in->tag1 == TempReg);
             create_Left(cb, u_in->size, SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* bswap#(x) = bswap(x) */
@@ -772,7 +772,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->size == 4);
             qd = SHADOW(u_in->val1);
             uInstr1(cb, BSWAP, 4, TempReg, qd);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* cc2val#(qd) = pcast-0-to-size(eflags#) */
@@ -781,7 +781,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->flags_r != FlagsEmpty);
             qt = create_GETVF(cb, u_in->size);
             uInstr2(cb, MOV, 4, TempReg, qt, TempReg, SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* cmov#(qs,qd) = cmov(qs,qd)
@@ -807,7 +807,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             LAST_UINSTR(cb).cond    = u_in->cond;
             LAST_UINSTR(cb).flags_r = u_in->flags_r;
 
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* add#/sub#(qs,qd) 
@@ -833,7 +833,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* xor#(qs,qd) = qs `UifU` qd */
@@ -844,7 +844,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* and#/or#(qs,qd) 
@@ -888,7 +888,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Machinery to do with supporting CALLM.  Copy the start and
@@ -896,7 +896,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             (debug); they generate no code and have no effect. 
          */
          case CALLM_S: case CALLM_E:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Copy PUSH and POP verbatim.  Arg/result absval
@@ -905,7 +905,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             needs to be copied.  
          */
          case PUSH: case POP: case CLEAR:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* In short:
@@ -974,7 +974,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                   ... */
                uInstr1(cb, SETV, 0, TempReg, qt);
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
          }
          /* Whew ... */
@@ -994,13 +994,13 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                   ... */
                uInstr1(cb, SETV, 0, TempReg, qt);
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case JIFZ:
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* Emit a check on the address used.  The value loaded into the 
@@ -1021,24 +1021,24 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                                        : (Addr) & SK_(fpu_write_check),
                    2, 2, False);
 
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
          }
 
          /* For FPU insns not referencing memory, just copy thru. */
          case FPU: 
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          default:
-            VG_(ppUInstr)(0, u_in);
+            VG_(pp_UInstr)(0, u_in);
             VG_(panic)( "memcheck_instrument: unhandled case");
 
       } /* end of switch (u_in->opcode) */
 
    } /* end of for loop */
 
-   VG_(freeCodeBlock)(cb_in);
+   VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
 
@@ -1056,10 +1056,10 @@ Bool VG_(clo_memcheck_codegen) = False;
 #define VGC_VALUE ((UChar)101)
 
 #define NOP_no_msg(uu)                                            \
-   do { VG_(newNOP)(uu); } while (False)
+   do { VG_(new_NOP)(uu); } while (False)
 
 #define NOP_tag1_op(uu)                                           \
-   do { VG_(newNOP)(uu);                                          \
+   do { VG_(new_NOP)(uu);                                         \
         if (dis)                                                  \
            VG_(printf)("   at %2d: delete %s due to defd arg\n",  \
                        i, nameOfTagOp(u->val3));                  \
@@ -1106,7 +1106,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
       if (u->opcode == GETV && VGC_IS_SHADOW(u->val2) 
                             && next_is_write[u->val2]
                             && !SK_(clo_check_addrVs)) {
-         VG_(newNOP)(u);
+         VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete GETV\n", i);
       } else
@@ -1114,7 +1114,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
       if (u->opcode == TAG1 && VGC_IS_SHADOW(u->val1) 
                             && next_is_write[u->val1]
                             && !SK_(clo_check_addrVs)) {
-         VG_(newNOP)(u);
+         VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG1\n", i);
       } else
@@ -1122,7 +1122,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
       if (u->opcode == TAG2 && VGC_IS_SHADOW(u->val2) 
                             && next_is_write[u->val2]
                             && !SK_(clo_check_addrVs)) {
-         VG_(newNOP)(u);
+         VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG2\n", i);
       } else
@@ -1134,7 +1134,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
                            && next_is_write[u->val2]) {
          /* This MOV is pointless because the target is dead at this
             point.  Delete it. */
-         VG_(newNOP)(u);
+         VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete MOV\n", i);
       } else
@@ -1144,7 +1144,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
             vg_assert(VGC_IS_SHADOW(u->val1));
             if (next_is_write[u->val1]) {
                /* This write is pointless, so annul it. */
-               VG_(newNOP)(u);
+               VG_(new_NOP)(u);
                if (dis) 
                   VG_(printf)("   at %2d: delete SETV\n", i);
             } else {
@@ -1157,7 +1157,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       } else {
          /* Find out what this insn does to the temps. */
-         k = VG_(getRegUsage)(u, TempReg, &tempUse[0]);
+         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
          vg_assert(k <= 3);
          for (j = k-1; j >= 0; j--) {
             next_is_write[ tempUse[j].num ]
@@ -1172,7 +1172,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
    property.  This removes a lot of redundant tag-munging code.
    Unfortunately it requires intimate knowledge of how each uinstr and
    tagop modifies its arguments.  This duplicates knowledge of uinstr
-   tempreg uses embodied in VG_(getRegUsage)(), which is unfortunate. 
+   tempreg uses embodied in VG_(get_reg_usage)(), which is unfortunate. 
    The supplied UCodeBlock* is modified in-place.
 
    For each value temp, def[] should hold VGC_VALUE.
@@ -1415,7 +1415,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
          unhandled:
             /* We don't know how to handle this uinstr.  Be safe, and 
                set to VGC_VALUE or VGC_UNDEF all temps written by it. */
-            k = VG_(getRegUsage)(u, TempReg, &tempUse[0]);
+            k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
             vg_assert(k <= 3);
             for (j = 0; j < k; j++) {
                t = tempUse[j].num;
@@ -1425,7 +1425,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                   if (0&& VGC_IS_SHADOW(t) && def[t] <= 4)
                      VG_(printf)("ignoring def %d at %s %s\n", 
                                  def[t], 
-                                 VG_(nameUOpcode)(True, u->opcode),
+                                 VG_(name_UOpcode)(True, u->opcode),
                                  (u->opcode == TAG1 || u->opcode == TAG2)
                                     ? nameOfTagOp(u->val3) 
                                     : (Char*)"");
@@ -1454,7 +1454,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb, Addr not_used )
    cb = memcheck_instrument ( cb );
    if (SK_(clo_cleanup)) {
       if (dis) {
-         VG_(ppUCodeBlock) ( cb, "Unimproved instrumented UCode:" );
+         VG_(pp_UCodeBlock) ( cb, "Unimproved instrumented UCode:" );
          VG_(printf)("Instrumentation improvements:\n");
       }
       vg_cleanup(cb);

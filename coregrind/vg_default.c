@@ -172,29 +172,29 @@ UInt SK_(handle_client_request)(ThreadState* tst, UInt* arg_block)
    UCode extension
    ------------------------------------------------------------------ */
 
-void SK_(emitExtUInstr)(UInstr* u, RRegSet regs_live_before)
+void SK_(emit_XUInstr)(UInstr* u, RRegSet regs_live_before)
 {
-   non_fund_panic("SK_(emitExtUInstr)");
+   non_fund_panic("SK_(emit_XUInstr)");
 }
 
-Bool SK_(saneExtUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
+Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 {
-   non_fund_panic("SK_(saneExtUInstr)");
+   non_fund_panic("SK_(sane_XUInstr)");
 }
 
-Char* SK_(nameExtUOpcode)(Opcode opc)
+Char* SK_(name_XUOpcode)(Opcode opc)
 {
-   non_fund_panic("SK_(nameExtUOpcode)");
+   non_fund_panic("SK_(name_XUOpcode)");
 }
 
-void SK_(ppExtUInstr)(UInstr* u)
+void SK_(pp_XUInstr)(UInstr* u)
 {
-   non_fund_panic("SK_(ppExtUInstr)");
+   non_fund_panic("SK_(pp_XUInstr)");
 }
 
-Int SK_(getExtRegUsage)(UInstr* u, Tag tag, RegUse* arr)
+Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
 {
-   non_fund_panic("SK_(getExtTempUsage)");
+   non_fund_panic("SK_(get_Xreg_usage)");
 }
 
 /* ---------------------------------------------------------------------

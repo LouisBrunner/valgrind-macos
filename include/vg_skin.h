@@ -60,8 +60,8 @@
    them except %esp, %ebp.  %ebp permanently points at VG_(baseBlock).
    
    If you change this you'll have to also change at least these:
-     - VG_(rankToRealRegNum)()
-     - VG_(realRegNumToRank)()
+     - VG_(rank_to_realreg)()
+     - VG_(realreg_to_rank)()
      - ppRegsLiveness()
      - the RegsLive type (maybe -- RegsLive type must have more than
                           VG_MAX_REALREGS bits)
@@ -339,7 +339,7 @@ extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
 
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
  * meta-symbols '*' and '?'.  '\' escapes meta-symbols. */
-extern Bool  VG_(stringMatch)    ( Char* pat, Char* str );
+extern Bool  VG_(string_match)   ( Char* pat, Char* str );
 
 
 /* ------------------------------------------------------------------ */
@@ -639,8 +639,8 @@ typedef
          analysis done.  This info is a little bit arch-specific --
          VG_MAX_REALREGS can vary on different architectures.  Note that
          to use this information requires converting between register ranks
-         and the Intel register numbers, using VG_(realRegNumToRank)()
-         and/or VG_(rankToRealRegNum)() */
+         and the Intel register numbers, using VG_(realreg_to_rank)()
+         and/or VG_(rank_to_realreg)() */
       RRegSet regs_live_after:VG_MAX_REALREGS; 
    }
    UInstr;
@@ -672,7 +672,7 @@ typedef
 /* Find what this instruction does to its regs.  Tag indicates whether we're
  * considering TempRegs (pre-reg-alloc) or RealRegs (post-reg-alloc).
  * Useful for analysis/optimisation passes. */
-extern Int  VG_(getRegUsage) ( UInstr* u, Tag tag, RegUse* arr );
+extern Int  VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr );
 
 
 /* ------------------------------------------------------------------ */
@@ -688,10 +688,10 @@ extern void VG_(register_noncompact_helper) ( Addr a );
 /* Virtual register allocation */
 
 /* Get a new virtual register */
-extern Int   VG_(getNewTemp)     ( UCodeBlock* cb );
+extern Int VG_(get_new_temp)   ( UCodeBlock* cb );
 
 /* Get a new virtual shadow register */
-extern Int   VG_(getNewShadow)   ( UCodeBlock* cb );
+extern Int VG_(get_new_shadow) ( UCodeBlock* cb );
 
 /* Get a virtual register's corresponding virtual shadow register */
 #define SHADOW(tempreg)  ((tempreg)+1)
@@ -699,26 +699,26 @@ extern Int   VG_(getNewShadow)   ( UCodeBlock* cb );
 
 /* ------------------------------------------------------------------ */
 /* Low-level UInstr builders */
-extern void VG_(newNOP)     ( UInstr* u );
-extern void VG_(newUInstr0) ( UCodeBlock* cb, Opcode opcode, Int sz );
-extern void VG_(newUInstr1) ( UCodeBlock* cb, Opcode opcode, Int sz,
+extern void VG_(new_NOP)     ( UInstr* u );
+extern void VG_(new_UInstr0) ( UCodeBlock* cb, Opcode opcode, Int sz );
+extern void VG_(new_UInstr1) ( UCodeBlock* cb, Opcode opcode, Int sz,
                                Tag tag1, UInt val1 );
-extern void VG_(newUInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
+extern void VG_(new_UInstr2) ( UCodeBlock* cb, Opcode opcode, Int sz,
                               Tag tag1, UInt val1,
                               Tag tag2, UInt val2 );
-extern void VG_(newUInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
+extern void VG_(new_UInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
                               Tag tag1, UInt val1,
                               Tag tag2, UInt val2,
                               Tag tag3, UInt val3 );
-extern void VG_(setFlagRW)  ( UInstr* u, 
-                               FlagSet fr, FlagSet fw );
-extern void VG_(setLiteralField) ( UCodeBlock* cb, UInt lit32 );
-extern void VG_(setCCallFields)  ( UCodeBlock* cb, Addr fn, UChar argc,
-                                   UChar regparms_n, Bool has_ret_val );
 
-extern void VG_(copyUInstr) ( UCodeBlock* cb, UInstr* instr );
+extern void VG_(set_flag_RW)      ( UInstr* u, FlagSet fr, FlagSet fw );
+extern void VG_(set_lit_field)    ( UCodeBlock* cb, UInt lit32 );
+extern void VG_(set_ccall_fields) ( UCodeBlock* cb, Addr fn, UChar argc,
+                                    UChar regparms_n, Bool has_ret_val );
 
-extern Bool VG_(anyFlagUse) ( UInstr* u );
+extern void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr );
+
+extern Bool VG_(any_flag_use)( UInstr* u );
 
 /* Refer to `the last instruction stuffed in' (can be lvalue). */
 #define LAST_UINSTR(cb) (cb)->instrs[(cb)->used-1]
@@ -726,20 +726,20 @@ extern Bool VG_(anyFlagUse) ( UInstr* u );
 
 /* ------------------------------------------------------------------ */
 /* Higher-level UInstr sequence builders */
-extern void VG_(callHelper_0_0) ( UCodeBlock* cb, Addr f);
-extern void VG_(callHelper_1_0) ( UCodeBlock* cb, Addr f, UInt arg1,
-                                  UInt regparms_n);
-extern void VG_(callHelper_2_0) ( UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
-                                  UInt regparms_n);
+extern void VG_(call_helper_0_0) ( UCodeBlock* cb, Addr f);
+extern void VG_(call_helper_1_0) ( UCodeBlock* cb, Addr f, UInt arg1,
+                                   UInt regparms_n);
+extern void VG_(call_helper_2_0) ( UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
+                                   UInt regparms_n);
 
 /* One way around the 3-arg C function limit is to pass args via global
  * variables... ugly, but it works. */
-void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
+extern void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
 
 /* ------------------------------------------------------------------ */
 /* Allocating/freeing basic blocks of UCode */
-extern UCodeBlock* VG_(allocCodeBlock) ( void );
-extern void        VG_(freeCodeBlock)  ( UCodeBlock* cb );
+extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
+extern void        VG_(free_UCodeBlock)  ( UCodeBlock* cb );
 
 /* ------------------------------------------------------------------ */
 /* UCode pretty/ugly printing.  Probably only useful to call from a skin 
@@ -748,13 +748,14 @@ extern void        VG_(freeCodeBlock)  ( UCodeBlock* cb );
 /* When True, all generated code is/should be printed. */
 extern Bool  VG_(print_codegen);
 
-extern void  VG_(ppUCodeBlock)     ( UCodeBlock* cb, Char* title );
-extern void  VG_(ppUInstr)         ( Int instrNo, UInstr* u );
-extern void  VG_(ppUInstrWithRegs) ( Int instrNo, UInstr* u );
-extern void  VG_(upUInstr)         ( Int instrNo, UInstr* u );
-extern Char* VG_(nameUOpcode)      ( Bool upper, Opcode opc );
-extern void  VG_(ppUOperand)       ( UInstr* u, Int operandNo, 
-                                     Int sz, Bool parens );
+/* Pretty/ugly printing functions */
+extern void  VG_(pp_UCodeBlock)  ( UCodeBlock* cb, Char* title );
+extern void  VG_(pp_UInstr)      ( Int instrNo, UInstr* u );
+extern void  VG_(pp_UInstr_regs) ( Int instrNo, UInstr* u );
+extern void  VG_(up_UInstr)      ( Int instrNo, UInstr* u );
+extern Char* VG_(name_UOpcode)   ( Bool upper, Opcode opc );
+extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo, 
+                                   Int sz, Bool parens );
 
 
 /*====================================================================*/
@@ -783,30 +784,30 @@ extern void  VG_(ppUOperand)       ( UInstr* u, Int operandNo,
 #define R_BH (4+R_EBX)
 
 /* For pretty printing x86 code */
-extern Char* VG_(nameOfIntReg)   ( Int size, Int reg );
-extern Char  VG_(nameOfIntSize)  ( Int size );
+extern Char* VG_(name_of_int_reg)  ( Int size, Int reg );
+extern Char  VG_(name_of_int_size) ( Int size );
 
 /* Randomly useful things */
 extern UInt  VG_(extend_s_8to32) ( UInt x );
 
 /* Code emitters */
-extern void VG_(emitB)  ( UInt b );
-extern void VG_(emitW)  ( UInt w );
-extern void VG_(emitL)  ( UInt l );
-extern void VG_(newEmit)( void );
+extern void VG_(emitB)    ( UInt b );
+extern void VG_(emitW)    ( UInt w );
+extern void VG_(emitL)    ( UInt l );
+extern void VG_(new_emit) ( void );
 
 /* Finding offsets */
-extern Int  VG_(helper_offset)     ( Addr a );
-extern Int  VG_(shadowRegOffset)   ( Int arch );
-extern Int  VG_(shadowFlagsOffset) ( void );
+extern Int  VG_(helper_offset)       ( Addr a );
+extern Int  VG_(shadow_reg_offset)   ( Int arch );
+extern Int  VG_(shadow_flags_offset) ( void );
 
 /* Convert reg ranks <-> Intel register ordering, for using register
    liveness information. */
-extern Int VG_(realRegNumToRank) ( Int realReg );
-extern Int VG_(rankToRealRegNum) ( Int rank    );
+extern Int VG_(realreg_to_rank) ( Int realreg );
+extern Int VG_(rank_to_realreg) ( Int rank    );
 
 /* Call a subroutine.  Does no argument passing, stack manipulations, etc. */
-void VG_(synth_call) ( Bool ensure_shortform, Int word_offset );
+extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset );
 
 /* For calling C functions -- saves caller save regs, pushes args, calls,
    clears the stack, restores caller save regs.  `fn' must be registered in
@@ -816,49 +817,54 @@ void VG_(synth_call) ( Bool ensure_shortform, Int word_offset );
    WARNING:  a UInstr should *not* be translated with synth_ccall() followed
    by some other x86 assembly code;  this will invalidate the results of
    vg_realreg_liveness_analysis() and everything will fall over.  */
-void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
-                        Tag tagv[], Int ret_reg, 
-                        RRegSet regs_live_before, RRegSet regs_live_after );
+extern void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
+                               Tag tagv[], Int ret_reg, 
+                               RRegSet regs_live_before,
+                               RRegSet regs_live_after );
 
 /* Addressing modes */
-void VG_(emit_amode_offregmem_reg) ( Int off, Int regmem, Int reg );
-void VG_(emit_amode_ereg_greg)     ( Int e_reg, Int g_reg );
+extern void VG_(emit_amode_offregmem_reg)( Int off, Int regmem, Int reg );
+extern void VG_(emit_amode_ereg_greg)    ( Int e_reg, Int g_reg );
 
 /* v-size (4, or 2 with OSO) insn emitters */
-void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg );
-void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg );
-void VG_(emit_movv_reg_reg)       ( Int sz, Int reg1, Int reg2 );
-void VG_(emit_nonshiftopv_lit_reg)( Int sz, Opcode opc, UInt lit, Int reg );
-void VG_(emit_shiftopv_lit_reg)   ( Int sz, Opcode opc, UInt lit, Int reg );
-void VG_(emit_nonshiftopv_reg_reg)( Int sz, Opcode opc, Int reg1, Int reg2 );
-void VG_(emit_movv_lit_reg)       ( Int sz, UInt lit, Int reg );
-void VG_(emit_unaryopv_reg)       ( Int sz, Opcode opc, Int reg );
-void VG_(emit_pushv_reg)          ( Int sz, Int reg );
-void VG_(emit_popv_reg)           ( Int sz, Int reg );
+extern void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg );
+extern void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg );
+extern void VG_(emit_movv_reg_reg)       ( Int sz, Int reg1, Int reg2 );
+extern void VG_(emit_nonshiftopv_lit_reg)( Int sz, Opcode opc, UInt lit,
+                                           Int reg );
+extern void VG_(emit_shiftopv_lit_reg)   ( Int sz, Opcode opc, UInt lit,
+                                           Int reg );
+extern void VG_(emit_nonshiftopv_reg_reg)( Int sz, Opcode opc,
+                                           Int reg1, Int reg2 );
+extern void VG_(emit_movv_lit_reg)       ( Int sz, UInt lit, Int reg );
+extern void VG_(emit_unaryopv_reg)       ( Int sz, Opcode opc, Int reg );
+extern void VG_(emit_pushv_reg)          ( Int sz, Int reg );
+extern void VG_(emit_popv_reg)           ( Int sz, Int reg );
 
-void VG_(emit_pushl_lit32)        ( UInt int32 );
-void VG_(emit_pushl_lit8)         ( Int lit8 );
-void VG_(emit_cmpl_zero_reg)      ( Int reg );
-void VG_(emit_swapl_reg_EAX)      ( Int reg );
-void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off, Int memreg );
+extern void VG_(emit_pushl_lit32)        ( UInt int32 );
+extern void VG_(emit_pushl_lit8)         ( Int lit8 );
+extern void VG_(emit_cmpl_zero_reg)      ( Int reg );
+extern void VG_(emit_swapl_reg_EAX)      ( Int reg );
+extern void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off,
+                                           Int memreg );
 
 /* b-size (1 byte) instruction emitters */
-void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg );
-void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg );
-void VG_(emit_unaryopb_reg)       ( Opcode opc, Int reg );
-void VG_(emit_testb_lit_reg)      ( UInt lit, Int reg );
+extern void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg );
+extern void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg );
+extern void VG_(emit_unaryopb_reg)       ( Opcode opc, Int reg );
+extern void VG_(emit_testb_lit_reg)      ( UInt lit, Int reg );
 
 /* zero-extended load emitters */
-void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg );
-void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
+extern void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg );
+extern void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
 
 /* misc instruction emitters */
-void VG_(emit_call_reg)         ( Int reg );
-void VG_(emit_add_lit_to_esp)   ( Int lit );
-void VG_(emit_jcondshort_delta) ( Condcode cond, Int delta );
-void VG_(emit_pushal)           ( void );
-void VG_(emit_popal)            ( void );
-void VG_(emit_AMD_prefetch_reg) ( Int reg );
+extern void VG_(emit_call_reg)         ( Int reg );
+extern void VG_(emit_add_lit_to_esp)   ( Int lit );
+extern void VG_(emit_jcondshort_delta) ( Condcode cond, Int delta );
+extern void VG_(emit_pushal)           ( void );
+extern void VG_(emit_popal)            ( void );
+extern void VG_(emit_AMD_prefetch_reg) ( Int reg );
 
 
 /*====================================================================*/
@@ -983,7 +989,7 @@ extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind,
    Skips leading spaces on the line.  Returns True if EOF was hit instead. 
    Useful for reading in extra skin-specific suppression lines.
 */
-extern Bool VG_(getLine) ( Int fd, Char* buf, Int nBuf );
+extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 
 
 /*====================================================================*/
@@ -1045,7 +1051,7 @@ typedef
 
 /* Use this to free blocks if VG_(needs).alternative_free == True. 
    It frees the ShadowChunk and the malloc'd block it points to. */
-extern void VG_(freeShadowChunk) ( ShadowChunk* sc );
+extern void VG_(free_ShadowChunk) ( ShadowChunk* sc );
 
 /* Makes an array of pointers to all the shadow chunks of malloc'd blocks */
 extern ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows );
@@ -1336,7 +1342,7 @@ extern UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block );
 /* ------------------------------------------------------------------ */
 /* VG_(needs).extends_UCode */
 
-/* Used in VG_(getExtRegUsage)() */
+/* Useful to use in VG_(get_Xreg_usage)() */
 #define VG_UINSTR_READS_REG(ono)                \
    { if (mycat(u->tag,ono) == tag)              \
         { arr[n].num     = mycat(u->val,ono);   \
@@ -1352,12 +1358,13 @@ extern UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block );
         }                                       \
    }
 
-extern Int   SK_(getExtRegUsage) ( UInstr* u, Tag tag, RegUse* arr );
-extern void  SK_(emitExtUInstr)  ( UInstr* u, RRegSet regs_live_before );
-extern Bool  SK_(saneExtUInstr)  ( Bool beforeRA, Bool beforeLiveness,
+/* 'X' prefix indicates eXtended UCode. */
+extern Int   SK_(get_Xreg_usage) ( UInstr* u, Tag tag, RegUse* arr );
+extern void  SK_(emit_XUInstr)   ( UInstr* u, RRegSet regs_live_before );
+extern Bool  SK_(sane_XUInstr)   ( Bool beforeRA, Bool beforeLiveness,
                                    UInstr* u );
-extern Char* SK_(nameExtUOpcode) ( Opcode opc );
-extern void  SK_(ppExtUInstr)    ( UInstr* u );
+extern Char* SK_(name_XUOpcode)  ( Opcode opc );
+extern void  SK_(pp_XUInstr)     ( UInstr* u );
 
 
 /* ------------------------------------------------------------------ */

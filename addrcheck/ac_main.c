@@ -510,7 +510,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
    Bool eof;
 
    if (s->skind == ParamSupp) {
-      eof = VG_(getLine) ( fd, buf, nBuf );
+      eof = VG_(get_line) ( fd, buf, nBuf );
       if (eof) return False;
       s->string = VG_(strdup)(buf);
    }
@@ -1699,7 +1699,7 @@ static void add_to_freed_queue ( ShadowChunk* sc )
          vg_freed_list_start = sc1->next;
       }
       sc1->next = NULL; /* just paranoia */
-      VG_(freeShadowChunk) ( sc1 );
+      VG_(free_ShadowChunk) ( sc1 );
    }
 }
 
@@ -1732,10 +1732,11 @@ void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uLiteral  VG_(setLiteralField)
-#define newTemp   VG_(getNewTemp)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
 
 UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 {
@@ -1747,7 +1748,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    UInstr*     u_in;
    Int         t_addr, t_size;
 
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    for (i = 0; i < cb_in->used; i++) {
@@ -1770,19 +1771,16 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
            do_LOAD_or_STORE:
             uInstr1(cb, CCALL, 0, TempReg, t_addr);
             switch (u_in->size) {
-               case 4: VG_(setCCallFields)(cb, (Addr)&SK_(helperc_ACCESS4), 
-                                               1, 1, False );
+               case 4: uCCall(cb, (Addr)&SK_(helperc_ACCESS4), 1, 1, False );
                   break;
-               case 2: VG_(setCCallFields)(cb, (Addr)&SK_(helperc_ACCESS2), 
-                                               1, 1, False );
+               case 2: uCCall(cb, (Addr)&SK_(helperc_ACCESS2), 1, 1, False );
                   break;
-               case 1: VG_(setCCallFields)(cb, (Addr)&SK_(helperc_ACCESS1), 
-                                               1, 1, False );
+               case 1: uCCall(cb, (Addr)&SK_(helperc_ACCESS1), 1, 1, False );
                   break;
                default: 
                   VG_(panic)("addrcheck::SK_(instrument):LOAD/STORE");
             }
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          case FPU_R:
@@ -1792,18 +1790,17 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
 	    uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            VG_(setCCallFields)(cb, (Addr)&SK_(fpu_ACCESS_check), 
-                                               2, 2, False );
-            VG_(copyUInstr)(cb, u_in);
+            uCCall(cb, (Addr)&SK_(fpu_ACCESS_check), 2, 2, False );
+            VG_(copy_UInstr)(cb, u_in);
             break;
 
          default:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
       }
    }
 
-   VG_(freeCodeBlock)(cb_in);
+   VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
 

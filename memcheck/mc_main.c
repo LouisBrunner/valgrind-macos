@@ -1601,7 +1601,7 @@ static void add_to_freed_queue ( ShadowChunk* sc )
          vg_freed_list_start = sc1->next;
       }
       sc1->next = NULL; /* just paranoia */
-      VG_(freeShadowChunk) ( sc1 );
+      VG_(free_ShadowChunk) ( sc1 );
    }
 }
 

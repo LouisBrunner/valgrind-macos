@@ -558,7 +558,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
    Bool eof;
 
    if (s->skind == ParamSupp) {
-      eof = VG_(getLine) ( fd, buf, nBuf );
+      eof = VG_(get_line) ( fd, buf, nBuf );
       if (eof) return False;
       s->string = VG_(strdup)(buf);
    }

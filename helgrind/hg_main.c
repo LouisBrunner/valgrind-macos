@@ -861,11 +861,11 @@ Bool SK_(expensive_sanity_check)(void)
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uLiteral  VG_(setLiteralField)
-#define uCCall    VG_(setCCallFields)
-#define newTemp   VG_(getNewTemp)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uLiteral  VG_(set_lit_field)
+#define uCCall    VG_(set_ccall_fields)
+#define newTemp   VG_(get_new_temp)
 
 /* Create and return an instrumented version of cb_in.  Free cb_in
    before returning. */
@@ -876,13 +876,12 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    UInstr*     u_in;
    Int         t_size = INVALID_TEMPREG;
 
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    for (i = 0; i < cb_in->used; i++) {
       u_in = &cb_in->instrs[i];
 
-      /* VG_(ppUInstr)(0, u_in); */
       switch (u_in->opcode) {
 
          case NOP: case CALLM_S: case CALLM_E:
@@ -899,7 +898,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
             uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
             // SSS: make regparms(2) eventually...
             uCCall(cb, (Addr) & eraser_mem_read, 2, 0, False);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             t_size = INVALID_TEMPREG;
             break;
 
@@ -913,17 +912,17 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
                       8 == u_in->size || 10 == u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
             uCCall(cb, (Addr) & eraser_mem_write, 2, 0, False);
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             t_size = INVALID_TEMPREG;
             break;
 
          default:
-            VG_(copyUInstr)(cb, u_in);
+            VG_(copy_UInstr)(cb, u_in);
             break;
       }
    }
 
-   VG_(freeCodeBlock)(cb_in);
+   VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
 

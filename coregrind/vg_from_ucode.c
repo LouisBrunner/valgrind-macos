@@ -35,8 +35,8 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define nameIReg  VG_(nameOfIntReg)
-#define nameISize VG_(nameOfIntSize)
+#define nameIReg  VG_(name_of_int_reg)
+#define nameISize VG_(name_of_int_size)
 
 #define dis       VG_(print_codegen)
 
@@ -140,7 +140,7 @@ void VG_(print_UInstr_histogram)(void)
             (UInt)(histogram[i].size / (double)histogram[i].counts + 0.5);
 
          VG_(printf)("%-7s:%8u (%2u%%), avg %2dB (%2u%%) |", 
-                     VG_(nameUOpcode)(True, i), 
+                     VG_(name_UOpcode)(True, i), 
                      histogram[i].counts, count_pc, 
                      avg_size, size_pc);
 
@@ -194,7 +194,7 @@ __inline__ void VG_(emitL) ( UInt l )
    VG_(emitB) ( (l >> 24) & 0x000000FF );
 }
 
-__inline__ void VG_(newEmit) ( void )
+__inline__ void VG_(new_emit) ( void )
 {
    if (dis)
       VG_(printf)("\t       %4d: ", emitted_code_used );
@@ -369,7 +369,7 @@ static __inline__ UChar mkPrimaryOpcode ( Opcode opc )
 
 void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x8B ); /* MOV Ev, Gv */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -380,7 +380,7 @@ void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg )
 
 void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -391,7 +391,7 @@ void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 
 static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x8B ); /* MOV Ev, Gv */
    emit_amode_regmem_reg ( reg1, reg2 );
@@ -402,7 +402,7 @@ static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 
 static void emit_movv_reg_regmem ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    emit_amode_regmem_reg ( reg2, reg1 );
@@ -413,7 +413,7 @@ static void emit_movv_reg_regmem ( Int sz, Int reg1, Int reg2 )
 
 void VG_(emit_movv_reg_reg) ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    VG_(emit_amode_ereg_greg) ( reg2, reg1 );
@@ -424,7 +424,7 @@ void VG_(emit_movv_reg_reg) ( Int sz, Int reg1, Int reg2 )
 
 void VG_(emit_nonshiftopv_lit_reg) ( Int sz, Opcode opc, UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    if (lit == VG_(extend_s_8to32)(lit & 0x000000FF)) {
       /* short form OK */
@@ -438,26 +438,26 @@ void VG_(emit_nonshiftopv_lit_reg) ( Int sz, Opcode opc, UInt lit, Int reg )
    }
    if (dis)
       VG_(printf)( "\n\t\t%s%c\t$0x%x, %s\n", 
-                   VG_(nameUOpcode)(False,opc), nameISize(sz), 
+                   VG_(name_UOpcode)(False,opc), nameISize(sz), 
                    lit, nameIReg(sz,reg));
 }
 
 void VG_(emit_shiftopv_lit_reg) ( Int sz, Opcode opc, UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xC1 ); /* Grp2 Ib,Ev */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp2opcode(opc) );
    VG_(emitB) ( lit );
    if (dis)
       VG_(printf)( "\n\t\t%s%c\t$%d, %s\n", 
-                   VG_(nameUOpcode)(False,opc), nameISize(sz), 
+                   VG_(name_UOpcode)(False,opc), nameISize(sz), 
                    lit, nameIReg(sz,reg));
 }
 
 static void emit_shiftopv_cl_stack0 ( Int sz, Opcode opc )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xD3 ); /* Grp2 CL,Ev */
    VG_(emitB) ( mkModRegRM ( 1, mkGrp2opcode(opc), 4 ) );
@@ -465,38 +465,38 @@ static void emit_shiftopv_cl_stack0 ( Int sz, Opcode opc )
    VG_(emitB) ( 0x00 ); /* the d8 displacement */
    if (dis)
       VG_(printf)("\n\t\t%s%c %%cl, 0(%%esp)\n",
-                  VG_(nameUOpcode)(False,opc), nameISize(sz) );
+                  VG_(name_UOpcode)(False,opc), nameISize(sz) );
 }
 
 static void emit_shiftopb_cl_stack0 ( Opcode opc )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xD2 ); /* Grp2 CL,Eb */
    VG_(emitB) ( mkModRegRM ( 1, mkGrp2opcode(opc), 4 ) );
    VG_(emitB) ( 0x24 ); /* a SIB, I think `d8(%esp)' */
    VG_(emitB) ( 0x00 ); /* the d8 displacement */
    if (dis)
       VG_(printf)("\n\t\t%s%c %%cl, 0(%%esp)\n",
-                  VG_(nameUOpcode)(False,opc), nameISize(1) );
+                  VG_(name_UOpcode)(False,opc), nameISize(1) );
 }
 
 static void emit_nonshiftopv_offregmem_reg ( Int sz, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 3 + mkPrimaryOpcode(opc) ); /* op Ev, Gv */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
       VG_(printf)( "\n\t\t%s%c\t0x%x(%s), %s\n", 
-                   VG_(nameUOpcode)(False,opc), nameISize(sz),
+                   VG_(name_UOpcode)(False,opc), nameISize(sz),
                    off, nameIReg(4,areg), nameIReg(sz,reg));
 }
 
 void VG_(emit_nonshiftopv_reg_reg) ( Int sz, Opcode opc, 
                                        Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
 #  if 0
    /* Perfectly correct, but the GNU assembler uses the other form.
@@ -509,7 +509,7 @@ void VG_(emit_nonshiftopv_reg_reg) ( Int sz, Opcode opc,
 #  endif
    if (dis)
       VG_(printf)( "\n\t\t%s%c\t%s, %s\n", 
-                   VG_(nameUOpcode)(False,opc), nameISize(sz), 
+                   VG_(name_UOpcode)(False,opc), nameISize(sz), 
                    nameIReg(sz,reg1), nameIReg(sz,reg2));
 }
 
@@ -519,7 +519,7 @@ void VG_(emit_movv_lit_reg) ( Int sz, UInt lit, Int reg )
       VG_(emit_nonshiftopv_reg_reg) ( sz, XOR, reg, reg );
       return;
    }
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xB8+reg ); /* MOV imm, Gv */
    if (sz == 2) VG_(emitW) ( lit ); else VG_(emitL) ( lit );
@@ -530,7 +530,7 @@ void VG_(emit_movv_lit_reg) ( Int sz, UInt lit, Int reg )
 
 void VG_(emit_unaryopv_reg) ( Int sz, Opcode opc, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) VG_(emitB) ( 0x66 );
    switch (opc) {
       case NEG:
@@ -566,7 +566,7 @@ void VG_(emit_unaryopv_reg) ( Int sz, Opcode opc, Int reg )
 
 void VG_(emit_pushv_reg) ( Int sz, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) {
       VG_(emitB) ( 0x66 ); 
    } else {
@@ -579,7 +579,7 @@ void VG_(emit_pushv_reg) ( Int sz, Int reg )
 
 void VG_(emit_popv_reg) ( Int sz, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) {
       VG_(emitB) ( 0x66 ); 
    } else {
@@ -592,7 +592,7 @@ void VG_(emit_popv_reg) ( Int sz, Int reg )
 
 void VG_(emit_pushl_lit32) ( UInt int32 )
 {  
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x68 );
    VG_(emitL) ( int32 );
    if (dis)
@@ -602,7 +602,7 @@ void VG_(emit_pushl_lit32) ( UInt int32 )
 void VG_(emit_pushl_lit8) ( Int lit8 )
 {
    vg_assert(lit8 >= -128 && lit8 < 128);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x6A );
    VG_(emitB) ( (UChar)((UInt)lit8) );
    if (dis)
@@ -611,7 +611,7 @@ void VG_(emit_pushl_lit8) ( Int lit8 )
 
 void VG_(emit_cmpl_zero_reg) ( Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x83 );
    VG_(emit_amode_ereg_greg) ( reg, 7 /* Grp 3 opcode for CMP */ );
    VG_(emitB) ( 0x00 );
@@ -621,7 +621,7 @@ void VG_(emit_cmpl_zero_reg) ( Int reg )
 
 static void emit_swapl_reg_ECX ( Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x87 ); /* XCHG Gv,Ev */
    VG_(emit_amode_ereg_greg) ( reg, R_ECX );
    if (dis) 
@@ -630,7 +630,7 @@ static void emit_swapl_reg_ECX ( Int reg )
 
 void VG_(emit_swapl_reg_EAX) ( Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x90 + reg ); /* XCHG Gv,eAX */
    if (dis) 
       VG_(printf)("\n\t\txchgl %%eax, %s\n", nameIReg(4,reg));
@@ -638,7 +638,7 @@ void VG_(emit_swapl_reg_EAX) ( Int reg )
 
 static void emit_swapl_reg_reg ( Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x87 ); /* XCHG Gv,Ev */
    VG_(emit_amode_ereg_greg) ( reg1, reg2 );
    if (dis) 
@@ -648,7 +648,7 @@ static void emit_swapl_reg_reg ( Int reg1, Int reg2 )
 
 static void emit_bswapl_reg ( Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F );
    VG_(emitB) ( 0xC8 + reg ); /* BSWAP r32 */
    if (dis) 
@@ -657,7 +657,7 @@ static void emit_bswapl_reg ( Int reg )
 
 static void emit_movl_reg_reg ( Int regs, Int regd )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x89 ); /* MOV Gv,Ev */
    VG_(emit_amode_ereg_greg) ( regd, regs );
    if (dis) 
@@ -666,7 +666,7 @@ static void emit_movl_reg_reg ( Int regs, Int regd )
 
 void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off, Int memreg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -689,7 +689,7 @@ void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off, Int memreg )
    486 insn set.  ToDo: investigate. */
 void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg )
 {                                     
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xC6 ); /* Grp11 Eb */
    VG_(emit_amode_offregmem_reg) ( off, memreg, 0 /* Grp11 subopcode for MOV */ );
    VG_(emitB) ( lit ); 
@@ -701,19 +701,19 @@ void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg )
 static void emit_nonshiftopb_offregmem_reg ( Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 2 + mkPrimaryOpcode(opc) ); /* op Eb, Gb */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
       VG_(printf)( "\n\t\t%sb\t0x%x(%s), %s\n", 
-                   VG_(nameUOpcode)(False,opc), off, nameIReg(4,areg), 
+                   VG_(name_UOpcode)(False,opc), off, nameIReg(4,areg), 
                    nameIReg(1,reg));
 }
 
 void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg )
 {
    /* Could do better when reg == %al. */
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x88 ); /* MOV G1, E1 */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -723,18 +723,18 @@ void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg )
 
 static void emit_nonshiftopb_reg_reg ( Opcode opc, Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 2 + mkPrimaryOpcode(opc) ); /* op Eb, Gb */
    VG_(emit_amode_ereg_greg) ( reg1, reg2 );
    if (dis)
       VG_(printf)( "\n\t\t%sb\t%s, %s\n", 
-                   VG_(nameUOpcode)(False,opc),
+                   VG_(name_UOpcode)(False,opc),
                    nameIReg(1,reg1), nameIReg(1,reg2));
 }
 
 static void emit_movb_reg_regmem ( Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x88 ); /* MOV G1, E1 */
    emit_amode_regmem_reg ( reg2, reg1 );
    if (dis)
@@ -744,30 +744,30 @@ static void emit_movb_reg_regmem ( Int reg1, Int reg2 )
 
 static void emit_nonshiftopb_lit_reg ( Opcode opc, UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x80 ); /* Grp1 Ib,Eb */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp1opcode(opc) );
    VG_(emitB) ( lit & 0x000000FF );
    if (dis)
-      VG_(printf)( "\n\t\t%sb\t$0x%x, %s\n", VG_(nameUOpcode)(False,opc),
+      VG_(printf)( "\n\t\t%sb\t$0x%x, %s\n", VG_(name_UOpcode)(False,opc),
                                              lit, nameIReg(1,reg));
 }
 
 static void emit_shiftopb_lit_reg ( Opcode opc, UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xC0 ); /* Grp2 Ib,Eb */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp2opcode(opc) );
    VG_(emitB) ( lit );
    if (dis)
       VG_(printf)( "\n\t\t%sb\t$%d, %s\n", 
-                   VG_(nameUOpcode)(False,opc),
+                   VG_(name_UOpcode)(False,opc),
                    lit, nameIReg(1,reg));
 }
 
 void VG_(emit_unaryopb_reg) ( Opcode opc, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    switch (opc) {
       case INC:
          VG_(emitB) ( 0xFE );
@@ -800,7 +800,7 @@ void VG_(emit_unaryopb_reg) ( Opcode opc, Int reg )
 
 void VG_(emit_testb_lit_reg) ( UInt lit, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xF6 ); /* Grp3 Eb */
    VG_(emit_amode_ereg_greg) ( reg, 0 /* Grp3 subopcode for TEST */ );
    VG_(emitB) ( lit );
@@ -814,7 +814,7 @@ void VG_(emit_testb_lit_reg) ( UInt lit, Int reg )
 
 void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    VG_(emit_amode_offregmem_reg) ( off, regmem, reg );
    if (dis)
@@ -824,7 +824,7 @@ void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
 
 static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -834,7 +834,7 @@ static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
 
 void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -844,7 +844,7 @@ void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
 
 static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -859,7 +859,7 @@ static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 static void emit_get_fpu_state ( void )
 {
    Int off = 4 * VGOFF_(m_fpustate);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xA5 ); /* frstor d32(%ebp) */
    VG_(emitL) ( off );
    if (dis)
@@ -869,7 +869,7 @@ static void emit_get_fpu_state ( void )
 static void emit_put_fpu_state ( void )
 {
    Int off = 4 * VGOFF_(m_fpustate);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xB5 ); /* fnsave d32(%ebp) */
    VG_(emitL) ( off );
    if (dis)
@@ -879,7 +879,7 @@ static void emit_put_fpu_state ( void )
 static void emit_fpu_no_mem ( UChar first_byte, 
                               UChar second_byte )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    if (dis)
@@ -891,7 +891,7 @@ static void emit_fpu_regmem ( UChar first_byte,
                               UChar second_byte_masked, 
                               Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( first_byte );
    emit_amode_regmem_reg ( reg, second_byte_masked >> 3 );
    if (dis)
@@ -907,7 +907,7 @@ static void emit_fpu_regmem ( UChar first_byte,
 
 void VG_(emit_call_reg) ( Int reg )
 {           
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xFF ); /* Grp5 */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp5opcode(CALLM) );
    if (dis) 
@@ -916,7 +916,7 @@ void VG_(emit_call_reg) ( Int reg )
          
 static void emit_call_star_EBP_off ( Int byte_off )
 {
-  VG_(newEmit)();
+  VG_(new_emit)();
   if (byte_off < -128 || byte_off > 127) {
      VG_(emitB) ( 0xFF );
      VG_(emitB) ( 0x95 );
@@ -934,7 +934,7 @@ static void emit_call_star_EBP_off ( Int byte_off )
 static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
 {
    vg_assert(lit8 >= -128 && lit8 < 128);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x83 ); /* Grp1 Ib,Ev */
    VG_(emit_amode_offregmem_reg) ( off, regmem, 
                               0 /* Grp1 subopcode for ADD */ );
@@ -948,7 +948,7 @@ static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
 void VG_(emit_add_lit_to_esp) ( Int lit )
 {
    if (lit < -128 || lit > 127) VG_(panic)("VG_(emit_add_lit_to_esp)");
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x83 );
    VG_(emitB) ( 0xC4 );
    VG_(emitB) ( lit & 0xFF );
@@ -961,7 +961,7 @@ static void emit_movb_AL_zeroESPmem ( void )
 {
    /* movb %al, 0(%esp) */
    /* 88442400              movb    %al, 0(%esp) */
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x88 );
    VG_(emitB) ( 0x44 );
    VG_(emitB) ( 0x24 );
@@ -974,7 +974,7 @@ static void emit_movb_zeroESPmem_AL ( void )
 {
    /* movb 0(%esp), %al */
    /* 8A442400              movb    0(%esp), %al */
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x8A );
    VG_(emitB) ( 0x44 );
    VG_(emitB) ( 0x24 );
@@ -990,7 +990,7 @@ static void emit_movb_zeroESPmem_AL ( void )
 void VG_(emit_jcondshort_delta) ( Condcode cond, Int delta )
 {
    vg_assert(delta >= -128 && delta <= 127);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emitB) ( (UChar)delta );
    if (dis)
@@ -1002,7 +1002,7 @@ static void emit_get_eflags ( void )
 {
    Int off = 4 * VGOFF_(m_eflags);
    vg_assert(off >= 0 && off < 128);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xFF ); /* PUSHL off(%ebp) */
    VG_(emitB) ( 0x75 );
    VG_(emitB) ( off );
@@ -1015,7 +1015,7 @@ static void emit_put_eflags ( void )
 {
    Int off = 4 * VGOFF_(m_eflags);
    vg_assert(off >= 0 && off < 128);
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x9C ); /* PUSHFL */
    VG_(emitB) ( 0x8F ); /* POPL vg_m_state.m_eflags */
    VG_(emitB) ( 0x45 );
@@ -1026,7 +1026,7 @@ static void emit_put_eflags ( void )
 
 static void emit_setb_reg ( Int reg, Condcode cond )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0x90 + (UChar)cond );
    VG_(emit_amode_ereg_greg) ( reg, 0 );
    if (dis)
@@ -1036,7 +1036,7 @@ static void emit_setb_reg ( Int reg, Condcode cond )
 
 static void emit_ret ( void )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0xC3 ); /* RET */
    if (dis)
       VG_(printf)("\n\t\tret\n");
@@ -1044,7 +1044,7 @@ static void emit_ret ( void )
 
 void VG_(emit_pushal) ( void )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x60 ); /* PUSHAL */
    if (dis)
       VG_(printf)("\n\t\tpushal\n");
@@ -1052,7 +1052,7 @@ void VG_(emit_pushal) ( void )
 
 void VG_(emit_popal) ( void )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x61 ); /* POPAL */
    if (dis)
       VG_(printf)("\n\t\tpopal\n");
@@ -1060,7 +1060,7 @@ void VG_(emit_popal) ( void )
 
 static void emit_lea_litreg_reg ( UInt lit, Int regmem, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x8D ); /* LEA M,Gv */
    VG_(emit_amode_offregmem_reg) ( (Int)lit, regmem, reg );
    if (dis)
@@ -1071,7 +1071,7 @@ static void emit_lea_litreg_reg ( UInt lit, Int regmem, Int reg )
 static void emit_lea_sib_reg ( UInt lit, Int scale,
 			       Int regbase, Int regindex, Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x8D ); /* LEA M,Gv */
    emit_amode_sib_reg ( (Int)lit, scale, regbase, regindex, reg );
    if (dis)
@@ -1083,7 +1083,7 @@ static void emit_lea_sib_reg ( UInt lit, Int scale,
 
 void VG_(emit_AMD_prefetch_reg) ( Int reg )
 {
-   VG_(newEmit)();
+   VG_(new_emit)();
    VG_(emitB) ( 0x0F );
    VG_(emitB) ( 0x0D );
    emit_amode_regmem_reg ( reg, 1 /* 0 is prefetch; 1 is prefetchw */ );
@@ -1286,8 +1286,8 @@ void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
       ranges, but you miss this if you don't consider what happens during
       the UInstr.) */
 #  define PRESERVE_REG(realReg)   \
-   (IS_RREG_LIVE(VG_(realRegNumToRank)(realReg), regs_live_before) &&   \
-    IS_RREG_LIVE(VG_(realRegNumToRank)(realReg), regs_live_after)  &&   \
+   (IS_RREG_LIVE(VG_(realreg_to_rank)(realReg), regs_live_before) &&   \
+    IS_RREG_LIVE(VG_(realreg_to_rank)(realReg), regs_live_after)  &&   \
     ret_reg != realReg)
 
    preserve_eax = PRESERVE_REG(R_EAX);
@@ -1880,7 +1880,7 @@ static Int eflagsOffset ( void )
 
 /* Return the byte offset from %ebp (ie, into baseBlock)
    for the specified shadow register */
-Int VG_(shadowRegOffset) ( Int arch )
+Int VG_(shadow_reg_offset) ( Int arch )
 {
    switch (arch) {
       case R_EAX: return 4 * VGOFF_(sh_eax);
@@ -1895,7 +1895,7 @@ Int VG_(shadowRegOffset) ( Int arch )
    }
 }
 
-Int VG_(shadowFlagsOffset) ( void )
+Int VG_(shadow_flags_offset) ( void )
 {
    return 4 * VGOFF_(sh_eflags);
 }
@@ -1953,7 +1953,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
    UInstr* u = &cb->instrs[i];
 
    if (dis)
-      VG_(ppUInstrWithRegs)(i, u);
+      VG_(pp_UInstr_regs)(i, u);
 
 #  if 0
    if (0&& VG_(translations_done) >= 600) {
@@ -2225,7 +2225,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
       case BSWAP:
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->size == 4);
-	 vg_assert(!VG_(anyFlagUse)(u));
+	 vg_assert(!VG_(any_flag_use)(u));
          emit_bswapl_reg ( u->val1 );
          break;
 
@@ -2327,7 +2327,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
       case CC2VAL:
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == NoValue);
-         vg_assert(VG_(anyFlagUse)(u));
+         vg_assert(VG_(any_flag_use)(u));
          synth_setb_reg ( u->val1, u->cond );
          break;
 
@@ -2353,13 +2353,13 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
 
       default: 
          if (VG_(needs).extended_UCode)
-            SK_(emitExtUInstr)(u, regs_live_before);
+            SK_(emit_XUInstr)(u, regs_live_before);
          else {
             VG_(printf)("\nError:\n"
                         "  unhandled opcode: %u.  Perhaps "
                         " VG_(needs).extended_UCode should be set?\n",
                         u->opcode);
-            VG_(ppUInstr)(0,u);
+            VG_(pp_UInstr)(0,u);
             VG_(panic)("emitUInstr: unimplemented opcode");
          }
    }
@@ -2392,7 +2392,7 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes )
          Bool sane = VG_(saneUInstr)( False, False, u );
          if (!sane) {
             VG_(printf)("\ninsane instruction\n");
-            VG_(upUInstr)( i, u );
+            VG_(up_UInstr)( i, u );
 	 }
          vg_assert(sane);
          emitUInstr( cb, i, regs_live_before );

@@ -36,14 +36,14 @@
 /*--- Renamings of frequently-used global functions.       ---*/
 /*------------------------------------------------------------*/
 
-#define uInstr0   VG_(newUInstr0)
-#define uInstr1   VG_(newUInstr1)
-#define uInstr2   VG_(newUInstr2)
-#define uInstr3   VG_(newUInstr3)
-#define nameIReg  VG_(nameOfIntReg)
-#define nameISize VG_(nameOfIntSize)
-#define newTemp   VG_(getNewTemp)
-#define uLiteral  VG_(setLiteralField)
+#define uInstr0   VG_(new_UInstr0)
+#define uInstr1   VG_(new_UInstr1)
+#define uInstr2   VG_(new_UInstr2)
+#define uInstr3   VG_(new_UInstr3)
+#define nameIReg  VG_(name_of_int_reg)
+#define nameISize VG_(name_of_int_size)
+#define newTemp   VG_(get_new_temp)
+#define uLiteral  VG_(set_lit_field)
 
 #define dis       VG_(print_codegen)
 
@@ -52,14 +52,14 @@
 /*------------------------------------------------------------*/
 
 /* Allocate a new temp reg number. */
-__inline__ Int VG_(getNewTemp) ( UCodeBlock* cb )
+__inline__ Int VG_(get_new_temp) ( UCodeBlock* cb )
 {
    Int t = cb->nextTemp;
    cb->nextTemp += 2;
    return t;
 }
 
-Int VG_(getNewShadow) ( UCodeBlock* cb )
+Int VG_(get_new_shadow) ( UCodeBlock* cb )
 {
    Int t = cb->nextTemp;
    cb->nextTemp += 2;
@@ -112,7 +112,7 @@ static Char* nameGrp8 ( Int opc_aux )
    return grp8_names[opc_aux];
 }
 
-Char* VG_(nameOfIntReg) ( Int size, Int reg )
+Char* VG_(name_of_int_reg) ( Int size, Int reg )
 {
    static Char* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", 
@@ -128,17 +128,17 @@ Char* VG_(nameOfIntReg) ( Int size, Int reg )
       case 1: return ireg8_names[reg];
    }
   bad:
-   VG_(panic)("nameOfIntReg");
+   VG_(panic)("name_of_int_reg");
    return NULL; /*notreached*/
 }
 
-Char VG_(nameOfIntSize) ( Int size )
+Char VG_(name_of_int_size) ( Int size )
 {
    switch (size) {
       case 4: return 'l';
       case 2: return 'w';
       case 1: return 'b';
-      default: VG_(panic)("nameOfIntSize");
+      default: VG_(panic)("name_of_int_size");
    }
 }
 
@@ -238,7 +238,7 @@ __inline__ static UInt getSDisp ( Int size, Addr eip )
 static __inline__ void uFlagsRWU ( UCodeBlock* cb,
                                    FlagSet rr, FlagSet ww, FlagSet uu )
 {
-   VG_(setFlagRW)(
+   VG_(set_flag_RW)(
       &LAST_UINSTR(cb), rr, VG_UNION_FLAG_SETS(ww,uu)
    );
 }
@@ -265,7 +265,7 @@ static void setFlagsFromUOpcode ( UCodeBlock* cb, Int uopc )
          uFlagsRWU(cb, FlagsEmpty, FlagsEmpty,  FlagsEmpty); break;
       default: 
          VG_(printf)("unhandled case is %s\n", 
-                     VG_(nameUOpcode)(True, uopc));
+                     VG_(name_UOpcode)(True, uopc));
          VG_(panic)("setFlagsFromUOpcode: unhandled case");
    }
 }
@@ -4473,9 +4473,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    for (; first_uinstr < cb->used; first_uinstr++) {
       Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
       if (dis) 
-         VG_(ppUInstr)(first_uinstr, &cb->instrs[first_uinstr]);
+         VG_(pp_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
       else if (!sane)
-         VG_(upUInstr)(-1, &cb->instrs[first_uinstr]);
+         VG_(up_UInstr)(-1, &cb->instrs[first_uinstr]);
       vg_assert(sane);
    }
 
@@ -4514,7 +4514,7 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
          uLiteral(cb, eip);
          uCond(cb, CondAlways);
          /* Print added JMP */
-         if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+         if (dis) VG_(pp_UInstr)(cb->used-1, &cb->instrs[cb->used-1]);
       }
       if (dis) VG_(printf)("\n");
       delta = eip - eip0;
@@ -4535,13 +4535,13 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
             uLiteral(cb, eip);
             uCond(cb, CondAlways);
             /* Print added JMP */
-            if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+            if (dis) VG_(pp_UInstr)(cb->used-1, &cb->instrs[cb->used-1]);
             isEnd = True;
 
          } else if (!isEnd) {
             uInstr1(cb, INCEIP, 0, Lit16, delta);
             /* Print added INCEIP */
-            if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+            if (dis) VG_(pp_UInstr)(cb->used-1, &cb->instrs[cb->used-1]);
          }
          if (dis) VG_(printf)("\n");
       }
@@ -4552,7 +4552,7 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
 
    block_sane = VG_(saneUCodeBlockCalls)(cb);
    if (!block_sane) {
-      VG_(ppUCodeBlock)(cb, "block failing sanity check");
+      VG_(pp_UCodeBlock)(cb, "block failing sanity check");
       vg_assert(block_sane);
    }
 

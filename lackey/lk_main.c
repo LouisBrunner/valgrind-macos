@@ -30,8 +30,8 @@
 
 #include "vg_skin.h"
 
-//#define uInstr0   VG_(newUInstr0)
-//#define uLiteral  VG_(setLiteralField)
+//#define uInstr0   VG_(new_UInstr0)
+//#define uLiteral  VG_(set_lit_field)
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;
@@ -140,18 +140,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    UInstr*     u;
    Char        fnname[100];
 
-   cb = VG_(allocCodeBlock)();
+   cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    /* Count call to dlrr(), if this BB is dlrr()'s entry point */
    if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
        0 == VG_(strcmp)(fnname, "_dl_runtime_resolve")) 
    {
-      VG_(callHelper_0_0)(cb, (Addr) & add_one_dlrr_call);
+      VG_(call_helper_0_0)(cb, (Addr) & add_one_dlrr_call);
    }
 
    /* Count basic block */
-   VG_(callHelper_0_0)(cb, (Addr) & add_one_BB);
+   VG_(call_helper_0_0)(cb, (Addr) & add_one_BB);
 
    for (i = 0; i < cb_in->used; i++) {
       u = &cb_in->instrs[i];
@@ -162,31 +162,31 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    
          case INCEIP:
             /* Count x86 instr */
-            VG_(callHelper_0_0)(cb, (Addr) & add_one_x86_instr);
-            VG_(copyUInstr)(cb, u);
+            VG_(call_helper_0_0)(cb, (Addr) & add_one_x86_instr);
+            VG_(copy_UInstr)(cb, u);
             break;
 
          case JMP:
             if (u->cond != CondAlways) {
                /* Count Jcc */
-               VG_(callHelper_0_0)(cb, (Addr) & add_one_Jcc);
-               VG_(copyUInstr)(cb, u);
+               VG_(call_helper_0_0)(cb, (Addr) & add_one_Jcc);
+               VG_(copy_UInstr)(cb, u);
                /* Count non-taken Jcc */
-               VG_(callHelper_0_0)(cb, (Addr) & add_one_Jcc_untaken);
+               VG_(call_helper_0_0)(cb, (Addr) & add_one_Jcc_untaken);
             } else {
-               VG_(copyUInstr)(cb, u);
+               VG_(copy_UInstr)(cb, u);
             }
             break;
             
          default:
             /* Count UInstr */
-            VG_(callHelper_0_0)(cb, (Addr) & add_one_UInstr);
-            VG_(copyUInstr)(cb, u);
+            VG_(call_helper_0_0)(cb, (Addr) & add_one_UInstr);
+            VG_(copy_UInstr)(cb, u);
             break;
       }
    }
 
-   VG_(freeCodeBlock)(cb_in);
+   VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
 

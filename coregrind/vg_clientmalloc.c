@@ -147,7 +147,7 @@ static ShadowChunk* getShadowChunk ( Addr a, /*OUT*/ShadowChunk*** next_ptr )
    return curr;
 }
 
-void VG_(freeShadowChunk) ( ShadowChunk* sc )
+void VG_(free_ShadowChunk) ( ShadowChunk* sc )
 {
    VG_(arena_free) ( VG_AR_CLIENT, (void*)sc->data );
    VG_(arena_free) ( VG_AR_CORE,   sc );
@@ -310,7 +310,7 @@ void die_and_free_mem ( ThreadState* tst, ShadowChunk* sc,
    if (VG_(needs).alternative_free)
       SK_(alt_free) ( sc, tst );
    else
-      VG_(freeShadowChunk) ( sc );
+      VG_(free_ShadowChunk) ( sc );
 }
 
 

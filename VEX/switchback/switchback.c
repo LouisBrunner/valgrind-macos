@@ -573,7 +573,8 @@ static void run_simulator ( void )
          }
 #        elif defined(__powerpc__)
          {
-            gst.guest_GPR3 = serviceFn( gst.guest_GPR4, gst.guest_GPR5 );
+// CAB: ?  Need to send gpr3 as arg1, but what about return param?
+            gst.guest_GPR3 = serviceFn( gst.guest_GPR3, gst.guest_GPR4 );
             gst.guest_CIA  = gst.guest_LR;
             next_guest     = gst.guest_CIA;
          }

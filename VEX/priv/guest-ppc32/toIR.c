@@ -1550,8 +1550,8 @@ static Bool dis_int_logic ( UInt theInstr )
    IRTemp Rb = newTemp(Ity_I32);
    IRTemp Sign = newTemp(Ity_I32);
    
-   assign( Rs, getIReg(Ra_addr) );
-   assign( Rb, getIReg(Ra_addr) );
+   assign( Rs, getIReg(Rs_addr) );
+   assign( Rb, getIReg(Rb_addr) );
    
    switch (opc1) {
    case 0x1C: // andi. (AND Immediate, p388)
@@ -2489,7 +2489,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
             vex_printf("dis_int_branch(PPC32)(bcctr,BO)\n");
             return False;
          }
-         DIP("bcctr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
+         DIP("bcctr%s 0x%x, 0x%x\n", flag_LK ? "l" : "", BO, BI);
          
          assign( cond_ok, branch_cond_ok( BO, BI ) );
          
@@ -2511,7 +2511,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
          break;
          
       case 0x010: // bclr (Branch Cond. to Link Register, p395) 
-         DIP("bclr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
+         DIP("bclr%s 0x%x, 0x%x\n", flag_LK ? "l" : "", BO, BI);
 
          if (!(BO & 0x4)) {
             stmt( IRStmt_Put(OFFB_CTR, binop(Iop_Sub32,

@@ -198,17 +198,17 @@ void vgPlain_unimp ( char* what )
 
 int pthread_attr_init(pthread_attr_t *attr)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_attr_init");
+   /* Just initialise the fields which we might look at. */
+   attr->__detachstate = PTHREAD_CREATE_JOINABLE;
    return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_attr_setdetachstate");
+   if (detachstate != PTHREAD_CREATE_JOINABLE 
+       && detachstate != PTHREAD_CREATE_DETACHED)
+      return EINVAL;
+   attr->__detachstate = detachstate;
    return 0;
 }
 
@@ -286,7 +286,7 @@ void thread_exit_wrapper ( void* ret_val )
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
-                           2 /* get */, 0, 0, 0);
+                           2 /* get */, pthread_self(), 0, 0);
    assert(detached == 0 || detached == 1);
 
    if (detached) {
@@ -336,13 +336,18 @@ void thread_wrapper ( NewThreadInfo* info )
    root_fn = info->root_fn;
    arg     = info->arg;
 
-   if (attr)
-      kludged("pthread_create -- ignoring attributes");
-
    /* Free up the arg block that pthread_create malloced. */
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__FREE, info, 0, 0, 0);
    assert(res == 0);
+
+   /* Minimally observe the attributes supplied. */
+   if (attr) {
+      assert(attr->__detachstate == PTHREAD_CREATE_DETACHED
+             || attr->__detachstate == PTHREAD_CREATE_JOINABLE);
+      if (attr->__detachstate == PTHREAD_CREATE_DETACHED)
+         pthread_detach(pthread_self());
+   }
 
    /* The root function might not return.  But if it does we simply
       move along to thread_exit_wrapper.  All other ways out for the
@@ -446,11 +451,22 @@ int pthread_detach(pthread_t th)
 {
    int res;
    ensure_valgrind("pthread_detach");
-   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+   /* First we enquire as to the current detach state. */
+   VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH,
-                           1 /* set */, 0, 0, 0);
-   assert(res == 0);
-   return 0;
+                           2 /* get */, th, 0, 0);
+   if (res == -1) /* not found */ 
+      return ESRCH;
+   if (res == 1) /* already detached */
+      return EINVAL;
+   if (res == 0) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
+                              VG_USERREQ__SET_OR_GET_DETACH,
+                              1 /* set */, th, 0, 0);
+      assert(res == 0);
+      return 0;
+   }
+   barf("pthread_detach");
 }
 
 

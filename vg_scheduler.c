@@ -1672,7 +1672,6 @@ void do_pthread_yield ( ThreadId tid )
 {
    Char msg_buf[100];
    vg_assert(VG_(is_valid_tid)(tid));
-
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "yield");
       print_sched_event(tid, msg_buf);
@@ -1684,7 +1683,12 @@ void do_pthread_yield ( ThreadId tid )
 static
 void do__testcancel ( ThreadId tid )
 {
+   Char msg_buf[100];
    vg_assert(VG_(is_valid_tid)(tid));
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "testcancel");
+      print_sched_event(tid, msg_buf);
+   }
    if (/* is there a cancellation pending on this thread? */
        VG_(threads)[tid].cancel_pend != NULL
        && /* is this thread accepting cancellations? */
@@ -1702,7 +1706,15 @@ static
 void do__set_cancelstate ( ThreadId tid, Int state )
 {
    Bool old_st;
+   Char msg_buf[100];
    vg_assert(VG_(is_valid_tid)(tid));
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "set_cancelstate to %d (%s)", state, 
+         state==PTHREAD_CANCEL_ENABLE 
+            ? "ENABLE" 
+            : (state==PTHREAD_CANCEL_DISABLE ? "DISABLE" : "???"));
+      print_sched_event(tid, msg_buf);
+   }
    old_st = VG_(threads)[tid].cancel_st;
    if (state == PTHREAD_CANCEL_ENABLE) {
       VG_(threads)[tid].cancel_st = True;
@@ -1721,7 +1733,15 @@ static
 void do__set_canceltype ( ThreadId tid, Int type )
 {
    Bool old_ty;
+   Char msg_buf[100];
    vg_assert(VG_(is_valid_tid)(tid));
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "set_canceltype to %d (%s)", type, 
+         type==PTHREAD_CANCEL_ASYNCHRONOUS 
+            ? "ASYNCHRONOUS" 
+            : (type==PTHREAD_CANCEL_DEFERRED ? "DEFERRED" : "???"));
+      print_sched_event(tid, msg_buf);
+   }
    old_ty = VG_(threads)[tid].cancel_ty;
    if (type == PTHREAD_CANCEL_ASYNCHRONOUS) {
       VG_(threads)[tid].cancel_ty = False;
@@ -1736,20 +1756,54 @@ void do__set_canceltype ( ThreadId tid, Int type )
 }
 
 
+/* Set or get the detach state for thread det. */
 static
-void do__set_or_get_detach ( ThreadId tid, Int what )
+void do__set_or_get_detach ( ThreadId tid, 
+                             Int what, ThreadId det )
 {
+   ThreadId i;
+   Char     msg_buf[100];
+   /* VG_(printf)("do__set_or_get_detach tid %d what %d det %d\n", 
+      tid, what, det); */
    vg_assert(VG_(is_valid_tid)(tid));
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "set_or_get_detach %d (%s) for tid %d", what,
+         what==0 ? "not-detached" : (
+         what==1 ? "detached" : (
+         what==2 ? "fetch old value" : "???")), 
+         det );
+      print_sched_event(tid, msg_buf);
+   }
+
+   if (!VG_(is_valid_tid)(det)) {
+      SET_EDX(tid, -1);
+      return;
+   }
+
    switch (what) {
       case 2: /* get */
-         SET_EDX(tid, VG_(threads)[tid].detached ? 1 : 0);
+         SET_EDX(tid, VG_(threads)[det].detached ? 1 : 0);
          return;
-      case 1: /* set detached */
-         VG_(threads)[tid].detached = True;
+      case 1: /* set detached.  If someone is in a join-wait for det,
+                 do not detach. */
+         for (i = 1; i < VG_N_THREADS; i++) {
+            if (VG_(threads)[i].status == VgTs_WaitJoinee
+                && VG_(threads)[i].joiner_jee_tid == det) {
+               SET_EDX(tid, 0);
+               if (VG_(clo_trace_sched)) {
+                  VG_(sprintf)(msg_buf,
+                     "tid %d not detached because %d in join-wait for it %d",
+                     det, i);
+                  print_sched_event(tid, msg_buf);
+               }
+               return;
+            }
+         }
+         VG_(threads)[det].detached = True;
          SET_EDX(tid, 0); 
          return;
       case 0: /* set not detached */
-         VG_(threads)[tid].detached = False;
+         VG_(threads)[det].detached = False;
          SET_EDX(tid, 0);
          return;
       default:
@@ -1768,13 +1822,21 @@ void do__set_cancelpend ( ThreadId tid,
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   vg_assert(VG_(is_valid_tid)(cee));
+   if (!VG_(is_valid_tid)(cee)) {
+      if (VG_(clo_trace_sched)) {
+         VG_(sprintf)(msg_buf, 
+            "set_cancelpend for invalid tid %d", cee);
+         print_sched_event(tid, msg_buf);
+      }
+      SET_EDX(tid, -VKI_ESRCH);
+      return;
+   }
 
    VG_(threads)[cee].cancel_pend = cancelpend_hdlr;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, 
-         "set cancel pending (hdlr = %p, canceller tid = %d)", 
+         "set_cancelpend (hdlr = %p, set by tid %d)", 
          cancelpend_hdlr, tid);
       print_sched_event(cee, msg_buf);
    }
@@ -1861,7 +1923,7 @@ void do__wait_joiner ( ThreadId tid, void* retval )
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, 
-         "WAIT_JOINER(%p) (non-detached thread exit)", retval);
+         "do__wait_joiner(retval = %p) (non-detached thread exit)", retval);
       print_sched_event(tid, msg_buf);
    }
    VG_(threads)[tid].status = VgTs_WaitJoiner;
@@ -1880,9 +1942,8 @@ void do__quit ( ThreadId tid )
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    VG_(threads)[tid].status = VgTs_Empty; /* bye! */
    cleanup_after_thread_exited ( tid );
-
    if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, "QUIT (detached thread exit)");
+      VG_(sprintf)(msg_buf, "do__quit (detached thread exit)");
       print_sched_event(tid, msg_buf);
    }
    /* Return value is irrelevant; this thread will not get
@@ -2820,6 +2881,35 @@ void do_nontrivial_clientreq ( ThreadId tid )
             request, the scheduler should now select a new thread to
             run. */
 	 break;
+
+      case VG_USERREQ__SET_CANCELSTATE:
+         do__set_cancelstate ( tid, arg[1] );
+         break;
+
+      case VG_USERREQ__SET_CANCELTYPE:
+         do__set_canceltype ( tid, arg[1] );
+         break;
+
+      case VG_USERREQ__SET_OR_GET_DETACH:
+         do__set_or_get_detach ( tid, arg[1], arg[2] );
+         break;
+
+      case VG_USERREQ__SET_CANCELPEND:
+         do__set_cancelpend ( tid, arg[1], (void(*)(void*))arg[2] );
+         break;
+
+      case VG_USERREQ__WAIT_JOINER:
+         do__wait_joiner ( tid, (void*)arg[1] );
+         break;
+
+      case VG_USERREQ__QUIT:
+         do__quit ( tid );
+         break;
+
+      case VG_USERREQ__APPLY_IN_NEW_THREAD:
+         do__apply_in_new_thread ( tid, (void*(*)(void*))arg[1], 
+                                        (void*)arg[2] );
+         break;
 
       case VG_USERREQ__MAKE_NOACCESS:
       case VG_USERREQ__MAKE_WRITABLE:

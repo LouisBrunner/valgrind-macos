@@ -405,6 +405,7 @@ AC_OUTPUT(
    memcheck/tests/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
+   cachegrind/x86/Makefile
    cachegrind/tests/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate

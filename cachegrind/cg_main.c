@@ -32,13 +32,7 @@
 #include "tool.h"
 //#include "vg_profile.c"
 
-/* For cache simulation */
-typedef struct {
-    int size;       /* bytes */ 
-    int assoc;
-    int line_size;  /* bytes */ 
-} cache_t;
-
+#include "cg_arch.h"
 #include "cg_sim.c"
 
 /*------------------------------------------------------------*/
@@ -662,7 +656,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 }
 
 /*------------------------------------------------------------*/
-/*--- Automagic cache initialisation stuff                 ---*/
+/*--- Cache configuration                                  ---*/
 /*------------------------------------------------------------*/
 
 #define UNDEFINED_CACHE     ((cache_t) { -1, -1, -1 }) 
@@ -670,303 +664,6 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 static cache_t clo_I1_cache = UNDEFINED_CACHE;
 static cache_t clo_D1_cache = UNDEFINED_CACHE;
 static cache_t clo_L2_cache = UNDEFINED_CACHE;
-
-// All CPUID info taken from sandpile.org/a32/cpuid.htm */
-// Probably only works for Intel and AMD chips, and probably only for some of
-// them. 
-
-static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
-{
-    VG_(message)(Vg_DebugMsg, 
-       "warning: Pentium with %d K micro-op instruction trace cache", 
-       actual_size);
-    VG_(message)(Vg_DebugMsg, 
-       "         Simulating a %d KB cache with %d B lines", 
-       used_size, line_size);
-}
-
-/* Intel method is truly wretched.  We have to do an insane indexing into an
- * array of pre-defined configurations for various parts of the memory
- * hierarchy. 
- */
-static
-Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
-{
-   UChar info[16];
-   Int   i, trials;
-   Bool  L2_found = False;
-
-   if (level < 2) {
-      VG_(message)(Vg_DebugMsg, 
-         "warning: CPUID level < 2 for Intel processor (%d)", 
-         level);
-      return -1;
-   }
-
-   VG_(cpuid)(2, (Int*)&info[0], (Int*)&info[4], 
-                 (Int*)&info[8], (Int*)&info[12]);
-   trials  = info[0] - 1;   /* AL register - bits 0..7 of %eax */
-   info[0] = 0x0;           /* reset AL */
-
-   if (0 != trials) {
-      VG_(message)(Vg_DebugMsg, 
-         "warning: non-zero CPUID trials for Intel processor (%d)",
-         trials);
-      return -1;
-   }
-
-   for (i = 0; i < 16; i++) {
-
-      switch (info[i]) {
-
-      case 0x0:       /* ignore zeros */
-          break;
-          
-      /* TLB info, ignore */
-      case 0x01: case 0x02: case 0x03: case 0x04:
-      case 0x50: case 0x51: case 0x52: case 0x5b: case 0x5c: case 0x5d:
-      case 0xb0: case 0xb3:
-          break;      
-
-      case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
-      case 0x08: *I1c = (cache_t) { 16, 4, 32 }; break;
-      case 0x30: *I1c = (cache_t) { 32, 8, 64 }; break;
-
-      case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
-      case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
-      case 0x2c: *D1c = (cache_t) { 32, 8, 64 }; break;
-
-      /* IA-64 info -- panic! */
-      case 0x10: case 0x15: case 0x1a: 
-      case 0x88: case 0x89: case 0x8a: case 0x8d:
-      case 0x90: case 0x96: case 0x9b:
-         VG_(skin_panic)("IA-64 cache detected?!");
-
-      case 0x22: case 0x23: case 0x25: case 0x29: 
-          VG_(message)(Vg_DebugMsg, 
-             "warning: L3 cache detected but ignored\n");
-          break;
-
-      /* These are sectored, whatever that means */
-      case 0x39: *L2c = (cache_t) {  128, 4, 64 }; L2_found = True; break;
-      case 0x3c: *L2c = (cache_t) {  256, 4, 64 }; L2_found = True; break;
-
-      /* If a P6 core, this means "no L2 cache".  
-         If a P4 core, this means "no L3 cache".
-         We don't know what core it is, so don't issue a warning.  To detect
-         a missing L2 cache, we use 'L2_found'. */
-      case 0x40:
-          break;
-
-      case 0x41: *L2c = (cache_t) {  128, 4, 32 }; L2_found = True; break;
-      case 0x42: *L2c = (cache_t) {  256, 4, 32 }; L2_found = True; break;
-      case 0x43: *L2c = (cache_t) {  512, 4, 32 }; L2_found = True; break;
-      case 0x44: *L2c = (cache_t) { 1024, 4, 32 }; L2_found = True; break;
-      case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
-
-      /* These are sectored, whatever that means */
-      case 0x66: *D1c = (cache_t) {  8, 4, 64 };  break;      /* sectored */
-      case 0x67: *D1c = (cache_t) { 16, 4, 64 };  break;      /* sectored */
-      case 0x68: *D1c = (cache_t) { 32, 4, 64 };  break;      /* sectored */
-
-      /* HACK ALERT: Instruction trace cache -- capacity is micro-ops based.
-       * conversion to byte size is a total guess;  treat the 12K and 16K
-       * cases the same since the cache byte size must be a power of two for
-       * everything to work!.  Also guessing 32 bytes for the line size... 
-       */
-      case 0x70:    /* 12K micro-ops, 8-way */
-         *I1c = (cache_t) { 16, 8, 32 };  
-         micro_ops_warn(12, 16, 32);
-         break;  
-      case 0x71:    /* 16K micro-ops, 8-way */
-         *I1c = (cache_t) { 16, 8, 32 };  
-         micro_ops_warn(16, 16, 32); 
-         break;  
-      case 0x72:    /* 32K micro-ops, 8-way */
-         *I1c = (cache_t) { 32, 8, 32 };  
-         micro_ops_warn(32, 32, 32); 
-         break;  
-
-      /* These are sectored, whatever that means */
-      case 0x79: *L2c = (cache_t) {  128, 8,  64 }; L2_found = True;  break;
-      case 0x7a: *L2c = (cache_t) {  256, 8,  64 }; L2_found = True;  break;
-      case 0x7b: *L2c = (cache_t) {  512, 8,  64 }; L2_found = True;  break;
-      case 0x7c: *L2c = (cache_t) { 1024, 8,  64 }; L2_found = True;  break;
-      case 0x7e: *L2c = (cache_t) {  256, 8, 128 }; L2_found = True;  break;
-
-      case 0x81: *L2c = (cache_t) {  128, 8, 32 };  L2_found = True;  break;
-      case 0x82: *L2c = (cache_t) {  256, 8, 32 };  L2_found = True;  break;
-      case 0x83: *L2c = (cache_t) {  512, 8, 32 };  L2_found = True;  break;
-      case 0x84: *L2c = (cache_t) { 1024, 8, 32 };  L2_found = True;  break;
-      case 0x85: *L2c = (cache_t) { 2048, 8, 32 };  L2_found = True;  break;
-      case 0x86: *L2c = (cache_t) {  512, 4, 64 };  L2_found = True;  break;
-      case 0x87: *L2c = (cache_t) { 1024, 8, 64 };  L2_found = True;  break;
-
-      default:
-          VG_(message)(Vg_DebugMsg, 
-             "warning: Unknown Intel cache config value "
-             "(0x%x), ignoring", info[i]);
-          break;
-      }
-   }
-
-   if (!L2_found)
-      VG_(message)(Vg_DebugMsg, 
-         "warning: L2 cache not installed, ignore L2 results.");
-
-   return 0;
-}
-
-/* AMD method is straightforward, just extract appropriate bits from the
- * result registers.
- *
- * Bits, for D1 and I1:
- *  31..24  data L1 cache size in KBs    
- *  23..16  data L1 cache associativity (FFh=full)    
- *  15.. 8  data L1 cache lines per tag    
- *   7.. 0  data L1 cache line size in bytes
- *
- * Bits, for L2:
- *  31..16  unified L2 cache size in KBs
- *  15..12  unified L2 cache associativity (0=off, FFh=full)
- *  11.. 8  unified L2 cache lines per tag    
- *   7.. 0  unified L2 cache line size in bytes
- *
- * #3  The AMD K7 processor's L2 cache must be configured prior to relying 
- *     upon this information. (Whatever that means -- njn)
- *
- * Also, according to Cyrille Chepelov, Duron stepping A0 processors (model
- * 0x630) have a bug and misreport their L2 size as 1KB (it's really 64KB),
- * so we detect that.
- * 
- * Returns 0 on success, non-zero on failure.
- */
-static
-Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
-{
-   UInt ext_level;
-   UInt dummy, model;
-   UInt I1i, D1i, L2i;
-   
-   VG_(cpuid)(0x80000000, &ext_level, &dummy, &dummy, &dummy);
-
-   if (0 == (ext_level & 0x80000000) || ext_level < 0x80000006) {
-      VG_(message)(Vg_UserMsg, 
-         "warning: ext_level < 0x80000006 for AMD processor (0x%x)", 
-         ext_level);
-      return -1;
-   }
-
-   VG_(cpuid)(0x80000005, &dummy, &dummy, &D1i, &I1i);
-   VG_(cpuid)(0x80000006, &dummy, &dummy, &L2i, &dummy);
-
-   VG_(cpuid)(0x1, &model, &dummy, &dummy, &dummy);
-
-   /* Check for Duron bug */
-   if (model == 0x630) {
-      VG_(message)(Vg_UserMsg,
-         "Buggy Duron stepping A0. Assuming L2 size=65536 bytes");
-      L2i = (64 << 16) | (L2i & 0xffff);
-   }
-
-   D1c->size      = (D1i >> 24) & 0xff;
-   D1c->assoc     = (D1i >> 16) & 0xff;
-   D1c->line_size = (D1i >>  0) & 0xff;
-
-   I1c->size      = (I1i >> 24) & 0xff;
-   I1c->assoc     = (I1i >> 16) & 0xff;
-   I1c->line_size = (I1i >>  0) & 0xff;
-
-   L2c->size      = (L2i >> 16) & 0xffff; /* Nb: different bits used for L2 */
-   L2c->assoc     = (L2i >> 12) & 0xf;
-   L2c->line_size = (L2i >>  0) & 0xff;
-
-   return 0;
-}
-
-static jmp_buf cpuid_jmpbuf;
-
-static
-void cpuid_SIGILL_handler(int signum)
-{
-   __builtin_longjmp(cpuid_jmpbuf, 1);
-}
-
-static 
-Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
-{
-   Int  level, res, ret;
-   Char vendor_id[13];
-   vki_ksigaction sigill_new, sigill_saved;
-
-   /* Install own SIGILL handler */
-   sigill_new.ksa_handler  = cpuid_SIGILL_handler;
-   sigill_new.ksa_flags    = 0;
-   sigill_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigill_new.ksa_mask );
-   sk_assert(res == 0);
-
-   res = VG_(ksigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
-   sk_assert(res == 0);
-
-   /* Trap for illegal instruction, in case it's a really old processor that
-    * doesn't support CPUID. */
-   if (__builtin_setjmp(cpuid_jmpbuf) == 0) {
-      VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
-                            (int*)&vendor_id[8], (int*)&vendor_id[4]);    
-      vendor_id[12] = '\0';
-
-      /* Restore old SIGILL handler */
-      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      sk_assert(res == 0);
-
-   } else  {
-      VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
-
-      /* Restore old SIGILL handler */
-      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      sk_assert(res == 0);
-      return -1;
-   }
-
-   if (0 == level) {
-      VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?\n");
-      return -1;
-   }
-
-   /* Only handling Intel and AMD chips... no Cyrix, Transmeta, etc */
-   if (0 == VG_(strcmp)(vendor_id, "GenuineIntel")) {
-      ret = Intel_cache_info(level, I1c, D1c, L2c);
-
-   } else if (0 == VG_(strcmp)(vendor_id, "AuthenticAMD")) {
-      ret = AMD_cache_info(I1c, D1c, L2c);
-
-   } else if (0 == VG_(strcmp)(vendor_id, "CentaurHauls")) {
-      /* Total kludge.  Pretend to be a VIA Nehemiah. */
-      D1c->size      = 64;
-      D1c->assoc     = 16;
-      D1c->line_size = 16;
-      I1c->size      = 64;
-      I1c->assoc     = 4;
-      I1c->line_size = 16;
-      L2c->size      = 64;
-      L2c->assoc     = 16;
-      L2c->line_size = 16;
-      ret = 0;
-
-   } else {
-      VG_(message)(Vg_DebugMsg, "CPU vendor ID not recognised (%s)",
-                   vendor_id);
-      return -1;
-   }
-
-   /* Successful!  Convert sizes from KB to bytes */
-   I1c->size *= 1024;
-   D1c->size *= 1024;
-   L2c->size *= 1024;
-      
-   return ret;
-}
 
 /* Checks cache config is ok;  makes it so if not. */
 static 
@@ -1025,36 +722,27 @@ void check_cache(cache_t* cache, cache_t* dflt, Char *name)
 }
 
 static 
-void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
+void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
 #define DEFINED(L)   (-1 != L.size  || -1 != L.assoc || -1 != L.line_size)
 
-   Int res, n_clos = 0;
+   Int n_clos = 0;
+   cache_t I1_dflt, D1_dflt, L2_dflt;
 
-   // Defaults are for a model 3 or 4 Athlon
-   cache_t I1_dflt = (cache_t) {  65536, 2, 64 };
-   cache_t D1_dflt = (cache_t) {  65536, 2, 64 };
-   cache_t L2_dflt = (cache_t) { 262144, 8, 64 };
+   // Count how many were defined on the command line.
+   if (DEFINED(clo_I1_cache)) { n_clos++; }
+   if (DEFINED(clo_D1_cache)) { n_clos++; }
+   if (DEFINED(clo_L2_cache)) { n_clos++; }
 
-   // Set caches to default.
-   *I1c = I1_dflt;
-   *D1c = D1_dflt;
-   *L2c = L2_dflt;
-
-   // Then replace with any info we can get from CPUID.
-   res = get_caches_from_CPUID(I1c, D1c, L2c);
+   // Set the default cache config (using auto-detection, if supported by
+   // current arch)
+   VGA_(configure_caches)( I1c, D1c, L2c, &I1_dflt, &D1_dflt, &L2_dflt,
+                           (3 == n_clos) );
 
    // Then replace with any defined on the command line.
-   if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; n_clos++; }
-   if (DEFINED(clo_D1_cache)) { *D1c = clo_D1_cache; n_clos++; }
-   if (DEFINED(clo_L2_cache)) { *L2c = clo_L2_cache; n_clos++; }
-
-   // Warn if CPUID failed and config not completely specified from cmd line.
-   if (res != 0 && n_clos < 3) {
-      VG_(message)(Vg_DebugMsg, 
-                   "Warning: Couldn't detect cache config, using one "
-                   "or more defaults ");
-   }
+   if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; }
+   if (DEFINED(clo_D1_cache)) { *D1c = clo_D1_cache; }
+   if (DEFINED(clo_L2_cache)) { *L2c = clo_L2_cache; }
 
    // Then check values and fix if not acceptable.
    check_cache(I1c, &I1_dflt, "I1");
@@ -1457,7 +1145,7 @@ void SK_(post_clo_init)(void)
 {
    cache_t I1c, D1c, L2c; 
 
-   get_caches(&I1c, &D1c, &L2c);
+   configure_caches(&I1c, &D1c, &L2c);
 
    cachesim_I1_initcache(I1c);
    cachesim_D1_initcache(D1c);

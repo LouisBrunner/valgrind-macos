@@ -2524,7 +2524,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       VGP_POPCC(VgpImprove);
    }
 
-   /* Skin's instrumentation (Nb: must set VG_(print_codegen) in case
+   /* Tool's instrumentation (Nb: must set VG_(print_codegen) in case
       SK_(instrument) looks at it. */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(3);
    VGP_PUSHCC(VgpInstrument);

@@ -200,7 +200,7 @@ typedef
       VgpPrintHp,
       VgpPrintXPts,
    }
-   VgpSkinCC;
+   VgpToolCC;
 
 /*------------------------------------------------------------*/
 /*--- Statistics                                           ---*/

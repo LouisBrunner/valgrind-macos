@@ -5793,9 +5793,9 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
-      VGP_PUSHCC(VgpSkinSysWrap);
+      VGP_PUSHCC(VgpToolSysWrap);
       tst->sys_pre_res = SK_(pre_syscall)(tid, syscallno, mayBlock);
-      VGP_POPCC(VgpSkinSysWrap);
+      VGP_POPCC(VgpToolSysWrap);
    }
 
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
@@ -5926,9 +5926,9 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 	 pre's than post's)
        */
       if (VG_(needs).syscall_wrapper) {
-	 VGP_PUSHCC(VgpSkinSysWrap);
+	 VGP_PUSHCC(VgpToolSysWrap);
 	 SK_(post_syscall)(tid, syscallno, pre_res, res, /*isBlocking*/True); // did block
-	 VGP_POPCC(VgpSkinSysWrap);
+	 VGP_POPCC(VgpToolSysWrap);
       }
    }
 

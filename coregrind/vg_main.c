@@ -2427,9 +2427,9 @@ void VG_(sanity_check_general) ( Bool force_expensive )
    /* Check that nobody has spuriously claimed that the first or
       last 16 pages of memory have become accessible [...] */
    if (VG_(needs).sanity_checks) {
-      VGP_PUSHCC(VgpSkinCheapSanity);
+      VGP_PUSHCC(VgpToolCheapSanity);
       vg_assert(SK_(cheap_sanity_check)());
-      VGP_POPCC(VgpSkinCheapSanity);
+      VGP_POPCC(VgpToolCheapSanity);
    }
 
    /* --- Now some more expensive checks. ---*/
@@ -2452,9 +2452,9 @@ void VG_(sanity_check_general) ( Bool force_expensive )
          VG_(sanity_check_tt_tc)();
 
       if (VG_(needs).sanity_checks) {
-          VGP_PUSHCC(VgpSkinExpensiveSanity);
+          VGP_PUSHCC(VgpToolExpensiveSanity);
           vg_assert(SK_(expensive_sanity_check)());
-          VGP_POPCC(VgpSkinExpensiveSanity);
+          VGP_POPCC(VgpToolExpensiveSanity);
       }
       /* 
       if ((sanity_fast_count % 500) == 0) VG_(mallocSanityCheckAll)(); 

@@ -259,6 +259,7 @@ static void main2(void)
    int *esp;
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
 
+   info.exe_end  = PGROUNDDN(init_sp);
 #ifdef HAVE_PIE
    info.exe_base = ROUNDDN(info.exe_end - 0x02000000, 0x10000000);
    assert(info.exe_base >= PGROUNDUP(&_end));
@@ -270,7 +271,6 @@ static void main2(void)
    info.exe_base = PGROUNDUP(&_end);
    info.map_base = KICKSTART_BASE + 0x01000000;
 #endif
-   info.exe_end  = PGROUNDDN(init_sp);
 
    info.argv = NULL;
 

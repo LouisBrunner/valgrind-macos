@@ -585,12 +585,12 @@ static ULong getSDisp ( Int size, ULong delta )
   }
 }
 
-static ULong mkSzMask ( Int sz )
+static ULong mkSizeMask ( Int sz )
 {
    switch (sz) {
-      case 1: return 0xFFULL;
-      case 2: return 0xFFFFULL;
-      case 4: return 0xFFFFFFFFULL;
+      case 1: return 0x00000000000000FFULL;
+      case 2: return 0x000000000000FFFFULL;
+      case 4: return 0x00000000FFFFFFFFULL;
       case 8: return 0xFFFFFFFFFFFFFFFFULL;
       default: vpanic("mkSzMask(amd64)");
    }
@@ -665,6 +665,13 @@ static Bool haveF2orF3 ( Prefix pfx ) {
    pfx &= 0x0000FFFF;
    return (pfx & (PFX_F2|PFX_F3)) > 0;
 }
+
+/* Clear all the segment-override bits in a prefix. */
+static Prefix clearSegBits ( Prefix p )
+{
+   return p & ~(PFX_CS | PFX_DS | PFX_ES | PFX_FS | PFX_GS | PFX_SS);
+}
+
 
 /*------------------------------------------------------------*/
 /*--- For dealing with integer registers.                  ---*/
@@ -1398,19 +1405,19 @@ static HChar* name_AMD64Condcode ( AMD64Condcode cond )
    }
 }
 
-//.. static 
-//.. X86Condcode positiveIse_X86Condcode ( X86Condcode  cond,
-//..                                       Bool*     needInvert )
-//.. {
-//..    vassert(cond >= X86CondO && cond <= X86CondNLE);
-//..    if (cond & 1) {
-//..       *needInvert = True;
-//..       return cond-1;
-//..    } else {
-//..       *needInvert = False;
-//..       return cond;
-//..    }
-//.. }
+static 
+AMD64Condcode positiveIse_AMD64Condcode ( AMD64Condcode  cond,
+                                          /*OUT*/Bool*   needInvert )
+{
+   vassert(cond >= AMD64CondO && cond <= AMD64CondNLE);
+   if (cond & 1) {
+      *needInvert = True;
+      return cond-1;
+   } else {
+      *needInvert = False;
+      return cond;
+   }
+}
 
 
 /* -------------- Helpers for ADD/SUB with carry. -------------- */
@@ -1606,26 +1613,26 @@ static void jmp_treg( IRJumpKind kind, IRTemp t )
    irbb->jumpkind = kind;
 }
 
-//.. static 
-//.. void jcc_01( X86Condcode cond, Addr32 d32_false, Addr32 d32_true )
-//.. {
-//..    Bool        invert;
-//..    X86Condcode condPos;
-//..    condPos = positiveIse_X86Condcode ( cond, &invert );
-//..    if (invert) {
-//..       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
-//..                          Ijk_Boring,
-//..                          IRConst_U32(d32_false) ) );
-//..       irbb->next     = mkU32(d32_true);
-//..       irbb->jumpkind = Ijk_Boring;
-//..    } else {
-//..       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
-//..                          Ijk_Boring,
-//..                          IRConst_U32(d32_true) ) );
-//..       irbb->next     = mkU32(d32_false);
-//..       irbb->jumpkind = Ijk_Boring;
-//..    }
-//.. }
+static 
+void jcc_01 ( AMD64Condcode cond, Addr64 d64_false, Addr64 d64_true )
+{
+   Bool          invert;
+   AMD64Condcode condPos;
+   condPos = positiveIse_AMD64Condcode ( cond, &invert );
+   if (invert) {
+      stmt( IRStmt_Exit( mk_amd64g_calculate_condition(condPos),
+                         Ijk_Boring,
+                         IRConst_U64(d64_false) ) );
+      irbb->next     = mkU64(d64_true);
+      irbb->jumpkind = Ijk_Boring;
+   } else {
+      stmt( IRStmt_Exit( mk_amd64g_calculate_condition(condPos),
+                         Ijk_Boring,
+                         IRConst_U64(d64_true) ) );
+      irbb->next     = mkU64(d64_false);
+      irbb->jumpkind = Ijk_Boring;
+   }
+}
 
 
 /*------------------------------------------------------------*/
@@ -1861,7 +1868,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
             DIS(buf, "%s0x%llx(,%s,%d)", sorbTxt(pfx), d, 
                       nameIRegX(pfx,8,index_r), 1<<scale);
             *len = 6;
-            vpanic("disAMode(amd64):untested amode: 6");
             return
                disAMode_copy2tmp(
                handleSegOverride(pfx, 
@@ -1951,7 +1957,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
             DIS(buf, "%s%lld(%s,,)", sorbTxt(pfx), 
                                      d, nameIRegB(pfx,8,base_r));
             *len = 6;
-            vpanic("disAMode(amd64):untested amode: 11");
             return disAMode_copy2tmp(
                    handleSegOverride(pfx, 
                       binop(Iop_Add64, getIRegB(pfx,8,base_r), mkU64(d)) ));
@@ -2376,92 +2381,95 @@ ULong dis_op2_G_E ( Prefix      pfx,
 }
 
 
-//.. /* Handle move instructions of the form
-//..       mov E, G  meaning
-//..       mov reg-or-mem, reg
-//..    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//..    the address advanced completely over this instruction.
-//.. 
-//..    E(src) is reg-or-mem
-//..    G(dst) is reg.
-//.. 
-//..    If E is reg, -->    GET %E,  tmpv
-//..                        PUT tmpv, %G
-//..  
-//..    If E is mem  -->    (getAddr E) -> tmpa
-//..                        LD (tmpa), tmpb
-//..                        PUT tmpb, %G
-//.. */
-//.. static
-//.. UInt dis_mov_E_G ( UChar       sorb,
-//..                    Int         size, 
-//..                    UInt        delta0 )
-//.. {
-//..    Int len;
-//..    UChar rm = getUChar(delta0);
-//..    HChar dis_buf[50];
-//.. 
-//..    if (epartIsReg(rm)) {
-//..       putIReg(size, gregOfRM(rm), getIReg(size, eregOfRM(rm)));
-//..       DIP("mov%c %s,%s\n", nameISize(size), 
-//..                            nameIReg(size,eregOfRM(rm)),
-//..                            nameIReg(size,gregOfRM(rm)));
-//..       return 1+delta0;
-//..    }
-//.. 
-//..    /* E refers to memory */    
-//..    {
-//..       IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf );
-//..       putIReg(size, gregOfRM(rm), loadLE(szToITy(size), mkexpr(addr)));
-//..       DIP("mov%c %s,%s\n", nameISize(size), 
-//..                            dis_buf,nameIReg(size,gregOfRM(rm)));
-//..       return delta0+len;
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* Handle move instructions of the form
-//..       mov G, E  meaning
-//..       mov reg, reg-or-mem
-//..    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//..    the address advanced completely over this instruction.
-//.. 
-//..    G(src) is reg.
-//..    E(dst) is reg-or-mem
-//.. 
-//..    If E is reg, -->    GET %G,  tmp
-//..                        PUT tmp, %E
-//..  
-//..    If E is mem, -->    (getAddr E) -> tmpa
-//..                        GET %G, tmpv
-//..                        ST tmpv, (tmpa) 
-//.. */
-//.. static
-//.. UInt dis_mov_G_E ( UChar       sorb,
-//..                    Int         size, 
-//..                    UInt        delta0 )
-//.. {
-//..    Int len;
-//..    UChar rm = getUChar(delta0);
-//..    HChar dis_buf[50];
-//.. 
-//..    if (epartIsReg(rm)) {
-//..       putIReg(size, eregOfRM(rm), getIReg(size, gregOfRM(rm)));
-//..       DIP("mov%c %s,%s\n", nameISize(size), 
-//..                            nameIReg(size,gregOfRM(rm)),
-//..                            nameIReg(size,eregOfRM(rm)));
-//..       return 1+delta0;
-//..    }
-//.. 
-//..    /* E refers to memory */    
-//..    {
-//..       IRTemp addr = disAMode ( &len, sorb, delta0, dis_buf);
-//..       storeLE( mkexpr(addr), getIReg(size, gregOfRM(rm)) );
-//..       DIP("mov%c %s,%s\n", nameISize(size), 
-//..                            nameIReg(size,gregOfRM(rm)), dis_buf);
-//..       return len+delta0;
-//..    }
-//.. }
+/* Handle move instructions of the form
+      mov E, G  meaning
+      mov reg-or-mem, reg
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   E(src) is reg-or-mem
+   G(dst) is reg.
+
+   If E is reg, -->    GET %E,  tmpv
+                       PUT tmpv, %G
+ 
+   If E is mem  -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmpb
+                       PUT tmpb, %G
+*/
+static
+ULong dis_mov_E_G ( Prefix      pfx,
+                    Int         size, 
+                    ULong       delta0 )
+{
+   Int len;
+   UChar rm = getUChar(delta0);
+   HChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      putIRegR(pfx, size, gregOfRM(rm), 
+                          getIRegB(pfx, size, eregOfRM(rm)));
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           nameIRegB(pfx,size,eregOfRM(rm)),
+                           nameIRegR(pfx,size,gregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */    
+   {
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf );
+      putIRegR(pfx, size, gregOfRM(rm), 
+                          loadLE(szToITy(size), mkexpr(addr)));
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           dis_buf,nameIRegR(pfx,size,gregOfRM(rm)));
+      return delta0+len;
+   }
+}
+
+
+/* Handle move instructions of the form
+      mov G, E  meaning
+      mov reg, reg-or-mem
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   G(src) is reg.
+   E(dst) is reg-or-mem
+
+   If E is reg, -->    GET %G,  tmp
+                       PUT tmp, %E
+ 
+   If E is mem, -->    (getAddr E) -> tmpa
+                       GET %G, tmpv
+                       ST tmpv, (tmpa) 
+*/
+static
+ULong dis_mov_G_E ( Prefix      pfx,
+                    Int         size, 
+                    ULong       delta0 )
+{
+   Int len;
+   UChar rm = getUChar(delta0);
+   HChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      putIRegB(pfx, size, eregOfRM(rm), 
+                          getIRegR(pfx, size, gregOfRM(rm)));
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           nameIRegR(pfx,size,gregOfRM(rm)),
+                           nameIRegB(pfx,size,eregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */    
+   {
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf);
+      storeLE( mkexpr(addr), getIRegR(pfx, size, gregOfRM(rm)) );
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           nameIRegR(pfx,size,gregOfRM(rm)), dis_buf);
+      return len+delta0;
+   }
+}
 
 
 /* op $immediate, AL/AX/EAX/RAX. */
@@ -2479,7 +2487,7 @@ ULong dis_op_imm_A ( Int    size,
    IRTemp dst1  = newTemp(ty);
    Long  lit    = getSDisp(size4,delta);
    assign(dst0, getIRegR(PFX_EMPTY,size,R_RAX));
-   assign(src,  mkU(ty,lit & mkSzMask(size)));
+   assign(src,  mkU(ty,lit & mkSizeMask(size)));
    assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
    if (isAddSub(op8))
       setFlags_DEP1_DEP2(op8, dst0, src, ty);
@@ -2591,7 +2599,7 @@ ULong dis_Grp1 ( Prefix pfx,
    IRTemp  dst0 = newTemp(ty);
    IRTemp  addr = IRTemp_INVALID;
    IROp    op8  = Iop_INVALID;
-   ULong   mask = mkSzMask(sz);
+   ULong   mask = mkSizeMask(sz);
 
    switch (gregOfRM(modrm)) {
       case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
@@ -3642,10 +3650,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
    d64 = getSDisp(imin(4,litsize),delta);
    delta += imin(4,litsize);
 
-   if (size == 1) d64 &= 0xFF;
-   if (size == 2) d64 &= 0xFFFF;
-   if (size == 4) d64 &= 0xFFFFFFFF;
-
+   d64 &= mkSizeMask(size);
    assign(tl, mkU(ty,d64));
 
    assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tl) ));
@@ -10993,21 +10998,21 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       DIP("jmp-8 0x%x\n", d32);
 //..       break;
-//.. 
-//..    case 0xE9: /* Jv (jump, 16/32 offset) */
-//..       vassert(sz == 4); /* JRS added 2004 July 11 */
-//..       d32 = (((Addr32)guest_eip_bbstart)+delta+sz) + getSDisp(sz,delta); 
-//..       delta += sz;
-//..       if (resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
-//..          whatNext   = Dis_Resteer;
-//..          *whereNext = d32;
-//..       } else {
-//..          jmp_lit(Ijk_Boring,d32);
-//..          whatNext = Dis_StopHere;
-//..       }
-//..       DIP("jmp 0x%x\n", d32);
-//..       break;
-//.. 
+
+   case 0xE9: /* Jv (jump, 16/32 offset) */
+      if (sz != 4) goto decode_failure; /* JRS added 2004 July 11 */
+      d64 = (guest_rip_bbstart+delta+sz) + getSDisp(sz,delta); 
+      delta += sz;
+      if (resteerOK && resteerOkFn(d64)) {
+         whatNext   = Dis_Resteer;
+         *whereNext = d64;
+      } else {
+         jmp_lit(Ijk_Boring,d64);
+         whatNext = Dis_StopHere;
+      }
+      DIP("jmp 0x%llx\n", d64);
+      break;
+
 //..    case 0x70:
 //..    case 0x71:
 //..    case 0x72: /* JBb/JNAEb (jump below) */
@@ -11079,40 +11084,48 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x6B: /* IMUL Ib, Ev, Gv */
 //..       delta = dis_imul_I_E_G ( sorb, sz, delta, 1 );
 //..       break;
-//.. 
-//..    /* ------------------------ MOV ------------------------ */
-//.. 
-//..    case 0x88: /* MOV Gb,Eb */
-//..       delta = dis_mov_G_E(sorb, 1, delta);
-//..       break;
-//.. 
-//..    case 0x89: /* MOV Gv,Ev */
-//..       delta = dis_mov_G_E(sorb, sz, delta);
-//..       break;
-//.. 
+
+   /* ------------------------ MOV ------------------------ */
+
+   case 0x88: /* MOV Gb,Eb */
+      delta = dis_mov_G_E(pfx, 1, delta);
+      break;
+
+   case 0x89: /* MOV Gv,Ev */
+      delta = dis_mov_G_E(pfx, sz, delta);
+      break;
+
 //..    case 0x8A: /* MOV Eb,Gb */
 //..       delta = dis_mov_E_G(sorb, 1, delta);
 //..       break;
 //..  
-//..    case 0x8B: /* MOV Ev,Gv */
-//..       delta = dis_mov_E_G(sorb, sz, delta);
-//..       break;
-//..  
-//..    case 0x8D: /* LEA M,Gv */
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta);
-//..       if (epartIsReg(modrm)) 
-//..          vpanic("LEA M,Gv: modRM refers to register (x86)");
-//..       /* NOTE!  this is the one place where a segment override prefix
-//..          has no effect on the address calculation.  Therefore we pass
-//..          zero instead of sorb here. */
-//..       addr = disAMode ( &alen, /*sorb*/ 0, delta, dis_buf );
-//..       delta += alen;
-//..       putIReg(sz, gregOfRM(modrm), mkexpr(addr));
-//..       DIP("lea%c %s, %s\n", nameISize(sz), dis_buf, 
-//..                             nameIReg(sz,gregOfRM(modrm)));
-//..       break;
-//.. 
+   case 0x8B: /* MOV Ev,Gv */
+      delta = dis_mov_E_G(pfx, sz, delta);
+      break;
+ 
+   case 0x8D: /* LEA M,Gv */
+      if (sz != 4 && sz != 8)
+         goto decode_failure;
+      modrm = getUChar(delta);
+      if (epartIsReg(modrm)) 
+         goto decode_failure;
+      /* NOTE!  this is the one place where a segment override prefix
+         has no effect on the address calculation.  Therefore we clear
+         any segment override bits in pfx. */
+      addr = disAMode ( &alen, clearSegBits(pfx), delta, dis_buf );
+      delta += alen;
+      /* This is a hack.  But it isn't clear that really doing the
+         calculation at 32 bits is really worth it.  Hence for leal,
+         do the full 64-bit calculation and then truncate it. */
+      putIRegR( pfx, sz, gregOfRM(modrm), 
+                         sz == 4
+                            ? unop(Iop_64to32, mkexpr(addr))
+                            : mkexpr(addr)
+              );
+      DIP("lea%c %s, %s\n", nameISize(sz), dis_buf, 
+                            nameIRegR(pfx,sz,gregOfRM(modrm)));
+      break;
+
 //..    case 0x8C: /* MOV Sw,Ew -- MOV from a SEGMENT REGISTER */
 //..       delta = dis_mov_Sw_Ew(sorb, sz, delta);
 //..       break;
@@ -11159,44 +11172,47 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       putIReg(1, opc-0xB0, mkU8(d32));
 //..       DIP("movb $0x%x,%s\n", d32, nameIReg(1,opc-0xB0));
 //..       break;
-//.. 
-//..    case 0xB8: /* MOV imm,eAX */
-//..    case 0xB9: /* MOV imm,eCX */
-//..    case 0xBA: /* MOV imm,eDX */
-//..    case 0xBB: /* MOV imm,eBX */
-//..    case 0xBC: /* MOV imm,eSP */
-//..    case 0xBD: /* MOV imm,eBP */
-//..    case 0xBE: /* MOV imm,eSI */
-//..    case 0xBF: /* MOV imm,eDI */
-//..       d32 = getUDisp(sz,delta); delta += sz;
-//..       putIReg(sz, opc-0xB8, mkU(szToITy(sz), d32));
-//..       DIP("mov%c $0x%x,%s\n", nameISize(sz), d32, nameIReg(sz,opc-0xB8));
-//..       break;
-//.. 
-//..    case 0xC6: /* MOV Ib,Eb */
-//..       sz = 1;
-//..       goto do_Mov_I_E;
-//..    case 0xC7: /* MOV Iv,Ev */
-//..       goto do_Mov_I_E;
-//.. 
-//..    do_Mov_I_E:
-//..       modrm = getUChar(delta);
-//..       if (epartIsReg(modrm)) {
-//..          delta++; /* mod/rm byte */
-//..          d32 = getUDisp(sz,delta); delta += sz;
-//..          putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
-//..          DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, 
-//..                                   nameIReg(sz,eregOfRM(modrm)));
-//..          vassert(0);
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          delta += alen;
-//..          d32 = getUDisp(sz,delta); delta += sz;
-//..          storeLE(mkexpr(addr), mkU(szToITy(sz), d32));
-//..          DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
-//..       }
-//..       break;
-//.. 
+
+   case 0xB8: /* MOV imm,eAX */
+   case 0xB9: /* MOV imm,eCX */
+   case 0xBA: /* MOV imm,eDX */
+   case 0xBB: /* MOV imm,eBX */
+   case 0xBC: /* MOV imm,eSP */
+   case 0xBD: /* MOV imm,eBP */
+   case 0xBE: /* MOV imm,eSI */
+   case 0xBF: /* MOV imm,eDI */
+      d64 = getSDisp(imin(4,sz),delta) & mkSizeMask(sz);
+      delta += imin(4,sz);
+      putIRegB(pfx, sz, opc-0xB8, mkU(szToITy(sz), d64));
+      DIP("mov%c $0x%llx,%s\n", nameISize(sz), d64, nameIRegB(pfx,sz,opc-0xB8));
+      break;
+
+   case 0xC6: /* MOV Ib,Eb */
+      sz = 1;
+      goto do_Mov_I_E;
+   case 0xC7: /* MOV Iv,Ev */
+      goto do_Mov_I_E;
+
+   do_Mov_I_E:
+      modrm = getUChar(delta);
+      if (epartIsReg(modrm)) {
+         vassert(0);
+         delta++; /* mod/rm byte */
+         d64 = getSDisp(imin(4,sz),delta); 
+         delta += imin(4,sz);
+         putIRegB(pfx, sz, eregOfRM(modrm), mkU(szToITy(sz), d64));
+         DIP("mov%c $0x%llx, %s\n", nameISize(sz), d64, 
+                                    nameIRegB(pfx,sz,eregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta, dis_buf );
+         delta += alen;
+         d64 = getSDisp(imin(4,sz),delta) & mkSizeMask(sz);
+         delta += imin(4,sz);
+         storeLE(mkexpr(addr), mkU(szToITy(sz), d64));
+         DIP("mov%c $0x%llx, %s\n", nameISize(sz), d64, dis_buf);
+      }
+      break;
+
 //..    /* ------------------------ opl imm, A ----------------- */
 //.. 
 //..    case 0x04: /* ADD Ib, AL */
@@ -12276,32 +12292,32 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta = dis_mul_E_G ( pfx, sz, delta );
          break;
 
-//..       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
-//..       case 0x80:
-//..       case 0x81:
-//..       case 0x82: /* JBb/JNAEb (jump below) */
-//..       case 0x83: /* JNBb/JAEb (jump not below) */
-//..       case 0x84: /* JZb/JEb (jump zero) */
-//..       case 0x85: /* JNZb/JNEb (jump not zero) */
-//..       case 0x86: /* JBEb/JNAb (jump below or equal) */
-//..       case 0x87: /* JNBEb/JAb (jump not below or equal) */
-//..       case 0x88: /* JSb (jump negative) */
-//..       case 0x89: /* JSb (jump not negative) */
-//..       case 0x8A: /* JP (jump parity even) */
-//..       case 0x8B: /* JNP/JPO (jump parity odd) */
-//..       case 0x8C: /* JLb/JNGEb (jump less) */
-//..       case 0x8D: /* JGEb/JNLb (jump greater or equal) */
-//..       case 0x8E: /* JLEb/JNGb (jump less or equal) */
-//..       case 0x8F: /* JGb/JNLEb (jump greater) */
-//..          d32 = (((Addr32)guest_eip_bbstart)+delta+4) + getUDisp32(delta); 
-//..          delta += 4;
-//..          jcc_01( (X86Condcode)(opc - 0x80), 
-//..                  (Addr32)(guest_eip_bbstart+delta), 
-//..                  d32 );
-//..          whatNext = Dis_StopHere;
-//..          DIP("j%s-32 0x%x\n", name_X86Condcode(opc - 0x80), d32);
-//..          break;
-//.. 
+      /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
+      case 0x80:
+      case 0x81:
+      case 0x82: /* JBb/JNAEb (jump below) */
+      case 0x83: /* JNBb/JAEb (jump not below) */
+      case 0x84: /* JZb/JEb (jump zero) */
+      case 0x85: /* JNZb/JNEb (jump not zero) */
+      case 0x86: /* JBEb/JNAb (jump below or equal) */
+      case 0x87: /* JNBEb/JAb (jump not below or equal) */
+      case 0x88: /* JSb (jump negative) */
+      case 0x89: /* JSb (jump not negative) */
+      case 0x8A: /* JP (jump parity even) */
+      case 0x8B: /* JNP/JPO (jump parity odd) */
+      case 0x8C: /* JLb/JNGEb (jump less) */
+      case 0x8D: /* JGEb/JNLb (jump greater or equal) */
+      case 0x8E: /* JLEb/JNGb (jump less or equal) */
+      case 0x8F: /* JGb/JNLEb (jump greater) */
+         d64 = (guest_rip_bbstart+delta+4) + getSDisp32(delta); 
+         delta += 4;
+         jcc_01( (AMD64Condcode)(opc - 0x80), 
+                 guest_rip_bbstart+delta, 
+                 d64 );
+         whatNext = Dis_StopHere;
+         DIP("j%s-32 0x%llx\n", name_AMD64Condcode(opc - 0x80), d64);
+         break;
+
 //..       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
 //.. 
 //..       case 0x31: /* RDTSC */

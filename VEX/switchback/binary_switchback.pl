@@ -170,6 +170,13 @@ sub SwitchBack {
 	}
     }
     if ($ret != 0) { # Err: maybe seg fault
+	open(INFILE, "$TMPFILE");
+	my @results = <INFILE>;
+	close(INFILE);
+
+	while (!((shift @results) =~ /^---START---/)) {}
+	print @results;
+
 	if (! DEBUG) {
 	    unlink($TMPFILE);
 	}

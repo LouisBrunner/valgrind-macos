@@ -1354,6 +1354,10 @@ int* __h_errno_location ( void )
    return & thread_specific_h_errno[tid];
 }
 
+
+#undef _res
+extern struct __res_state _res;
+
 struct __res_state* __res_state ( void )
 {
    int tid;
@@ -1364,6 +1368,8 @@ struct __res_state* __res_state ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__res_state: invalid ThreadId");
+   if (tid == 1)
+      return & _res;
    return & thread_specific_res_state[tid];
 }
 

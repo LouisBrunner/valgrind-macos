@@ -675,6 +675,12 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 type = NULL;
 	 break;
       }
+      /* Different versions of gcc seem to disagree about whether a
+         negative type is followed by a semicolon or not, and the stabs
+         spec (susch as it is) is not clear either so we will skip a
+         semicolon if there is one. */
+      if (*p == ';')
+         p++;
       break;
    }
 

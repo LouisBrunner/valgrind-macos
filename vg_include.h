@@ -77,7 +77,7 @@
 #define M_VG_MSGBUF 10000
 
 /* Size of a smallish table used to read /proc/self/map entries. */
-#define M_PROCMAP_BUF 20000
+#define M_PROCMAP_BUF 50000
 
 /* Max length of pathname to a .so/executable file. */
 #define M_VG_LIBNAMESTR 100
@@ -126,7 +126,7 @@
    scheduler algorithms is surely O(N) in the number of threads, since
    that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 30
+#define VG_N_THREADS 50
 
 /* Maximum number of pthread keys available.  Again, we start low until
    the need for a higher number presents itself. */
@@ -607,7 +607,7 @@ extern Int     VG_(longjmpd_on_signal);
 /* We check that the initial stack, which we can't move, is allocated
    here.  VG_(scheduler_init) checks this.  
 */
-#define VG_STARTUP_STACK_MASK  (Addr)0xBFFF8000
+#define VG_STARTUP_STACK_MASK  (Addr)0xBFF80000
 
 
 /* The red-zone size which we put at the bottom (highest address) of

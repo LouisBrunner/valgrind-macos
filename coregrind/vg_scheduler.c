@@ -35,15 +35,24 @@
 #include "valgrind.h" /* for VG_USERREQ__MAKE_NOACCESS and
                          VG_USERREQ__DO_LEAK_CHECK */
 
-/* BORKAGE as of 11 Apr 02
+/* BORKAGE/ISSUES as of 14 Apr 02
 
-Note!  This implementation is so poor as to not be suitable for use by
-anyone at all!
+Note!  This pthreads implementation is so poor as to not be
+suitable for use by anyone at all!
 
-- properly save scheduler private state in signal delivery frames.
+- Currently, when a signal is run, just the ThreadStatus.status fields 
+  are saved in the signal frame, along with the CPU state.  Question: 
+  should I also save and restore:
+     ThreadStatus.joiner 
+     ThreadStatus.waited_on_mid
+     ThreadStatus.awaken_at
+     ThreadStatus.retval
+  Currently unsure, and so am not doing so.
 
-- signals interrupting read/write and nanosleep, and take notice
-  of SA_RESTART or not
+- Signals interrupting read/write and nanosleep: SA_RESTART settings.
+  Read/write correctly return with EINTR when SA_RESTART isn't
+  specified and they are interrupted by a signal.  nanosleep just
+  pretends signals don't exist -- should be fixed.
 
 - when a thread is done mark its stack as noaccess 
 
@@ -1657,6 +1666,44 @@ static void do_pthread_mutex_destroy ( ThreadId tid,
 }
 
 
+/* vthread tid is returning from a signal handler; modify its
+   stack/regs accordingly. */
+static
+void handle_signal_return ( ThreadId tid )
+{
+   Char msg_buf[100];
+   Bool restart_blocked_syscalls = VG_(signal_returns)(tid);
+
+   if (restart_blocked_syscalls)
+      /* Easy; we don't have to do anything. */
+      return;
+
+   if (vg_threads[tid].status == VgTs_WaitFD) {
+      vg_assert(vg_threads[tid].m_eax == __NR_read 
+                || vg_threads[tid].m_eax == __NR_write);
+      /* read() or write() interrupted.  Force a return with EINTR. */
+      vg_threads[tid].m_eax = -VKI_EINTR;
+      vg_threads[tid].status = VgTs_Runnable;
+      if (VG_(clo_trace_sched)) {
+         VG_(sprintf)(msg_buf, 
+            "read() / write() interrupted by signal; return EINTR" );
+         print_sched_event(tid, msg_buf);
+      }
+      return;
+   }
+
+   if (vg_threads[tid].status == VgTs_WaitFD) {
+      vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
+      /* We interrupted a nanosleep().  The right thing to do is to
+         write the unused time to nanosleep's second param and return
+         EINTR, but I'm too lazy for that. */
+      return;
+   }
+
+   /* All other cases?  Just return. */
+}
+
+
 /* ---------------------------------------------------------------------
    Handle non-trivial client requests.
    ------------------------------------------------------------------ */
@@ -1725,11 +1772,9 @@ void do_nontrivial_clientreq ( ThreadId tid )
          vg_threads[tid].m_edx = VG_(handle_client_request) ( arg );
 	 break;
 
-      case VG_USERREQ__SIGNAL_RETURNS:
-         /* vthread tid is returning from a signal handler;
-            modify its stack/regs accordingly. */
-         VG_(signal_returns)(tid);
-         break;
+      case VG_USERREQ__SIGNAL_RETURNS: 
+         handle_signal_return(tid);
+	 break;
 
       default:
          VG_(printf)("panic'd on private request = 0x%x\n", arg[0] );

@@ -134,6 +134,7 @@ typedef
 
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */
 
+#define VKI_EINTR            4      /* Interrupted system call */
 #define VKI_EINVAL          22      /* Invalid argument */
 #define VKI_ENOMEM          12      /* Out of memory */
 

@@ -45,6 +45,7 @@
    receive a signal for which the corresponding handler is NULL. */
 void* VG_(sighandler)[VKI_KNSIG];
 
+
 /* For each signal, either:
    -- VG_SIGIDLE if not pending and not running
    -- Handler address if pending
@@ -56,6 +57,15 @@ void* VG_(sighandler)[VKI_KNSIG];
 #define VG_SIGRUNNING ((void*)1)
 
 void* VG_(sigpending)[VKI_KNSIG];
+
+
+/* For each signal that we have a handler for (ie, for those for which
+   the VG_(sighandler) entry is non-NULL), record whether or not the
+   client asked for syscalls to be restartable (SA_RESTART) if
+   interrupted by this signal.  We need to consult this when a signal
+   returns, if it should happen that the signal which we delivered has
+   interrupted a system call. */
+Bool vg_sig_sarestart[VKI_KNSIG];
 
 
 /* ---------------------------------------------------------------------
@@ -248,9 +258,10 @@ Int vg_pop_signal_frame ( ThreadId tid )
 
 /* A handler is returning.  Restore the machine state from the stacked
    VgSigContext and continue with whatever was going on before the
-   handler ran.  */
+   handler ran.  Returns the SA_RESTART syscall-restartability-status
+   of the delivered signal. */
 
-void VG_(signal_returns) ( ThreadId tid )
+Bool VG_(signal_returns) ( ThreadId tid )
 {
    Int            sigNo;
    vki_ksigset_t  saved_procmask;
@@ -286,7 +297,10 @@ void VG_(signal_returns) ( ThreadId tid )
    /* Unlock and return. */
    VG_(restore_host_signals)( &saved_procmask );
 
-   /* Scheduler now can resume this thread, or perhaps some other. */
+   /* Scheduler now can resume this thread, or perhaps some other.
+      Tell the scheduler whether or not any syscall interrupted by
+      this signal should be restarted, if possible, or no. */
+   return vg_sig_sarestart[sigNo];
 }
 
 
@@ -508,8 +522,11 @@ void VG_(sigstartup_actions) ( void )
    }
 
    /* Set initial state for the signal simulation. */
-   for (i = 1; i < VKI_KNSIG; i++)
-      VG_(sighandler[i]) = VG_(sigpending[i]) = NULL;
+   for (i = 1; i < VKI_KNSIG; i++) {
+      VG_(sighandler)[i] = NULL;
+      VG_(sigpending)[i] = NULL;
+      vg_sig_sarestart[i] = True; /* An easy default */
+   }
 
    for (i = 1; i < VKI_KNSIG; i++) {
 
@@ -526,8 +543,14 @@ void VG_(sigstartup_actions) ( void )
          if ((sa.ksa_flags & VKI_SA_ONSTACK) != 0)
             VG_(unimplemented)
                ("signals on an alternative stack (SA_ONSTACK)");
-         VG_(sighandler[i]) = sa.ksa_handler;
+
+         VG_(sighandler)[i] = sa.ksa_handler;
          sa.ksa_handler = &VG_(oursignalhandler);
+	 /* Save the restart status, then set it to restartable. */
+	 vg_sig_sarestart[i] 
+            = (sa.ksa_flags & VKI_SA_RESTART) ? True : False;
+         sa.ksa_flags |= VKI_SA_RESTART;
+
          ret = VG_(ksigaction)(i, &sa, NULL);
          vg_assert(ret == 0);
       }
@@ -561,6 +584,8 @@ void VG_(sigshutdown_actions) ( void )
    VG_(block_all_host_signals)( &saved_procmask );
 
    /* copy the sim signal actions to the real ones. */
+   /* Hmm, this isn't accurate.  Doesn't properly restore the
+      SA_RESTART flag nor SA_ONSTACK. */
    for (i = 1; i < VKI_KNSIG; i++) {
       if (i == VKI_SIGKILL || i == VKI_SIGSTOP) continue;
       if (VG_(sighandler)[i] == NULL) continue;
@@ -630,6 +655,9 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
                ("signals on an alternative stack (SA_ONSTACK)");
          new_action->ksa_flags |= VKI_SA_ONSTACK;
          VG_(sighandler)[param1] = new_action->ksa_handler;
+	 vg_sig_sarestart[param1] 
+            = (new_action->ksa_flags & VKI_SA_RESTART) ? True : False;
+         new_action->ksa_flags |= VKI_SA_RESTART;
          new_action->ksa_handler = &VG_(oursignalhandler);
       }
    }
@@ -655,6 +683,11 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
             sig stack, unset the bit for anything we pass back to
             it. */
          old_action->ksa_flags &= ~VKI_SA_ONSTACK;
+	 /* Restore the SA_RESTART flag to whatever we snaffled. */
+	 if (vg_sig_sarestart[param1])
+            old_action->ksa_flags |= VKI_SA_RESTART;
+         else 
+            old_action->ksa_flags &= ~VKI_SA_RESTART;
       }
    }
 

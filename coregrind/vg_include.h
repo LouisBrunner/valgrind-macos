@@ -588,7 +588,7 @@ extern void VG_(do__NR_sigprocmask)   ( Int how, vki_ksigset_t* set );
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
-extern void VG_(signal_returns) ( ThreadId );
+extern Bool VG_(signal_returns) ( ThreadId );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 

@@ -1,3 +1,4 @@
 Calling foreach_map()
+Calling find_auxv()
 Calling do_exec("hello")
 Hello, world!

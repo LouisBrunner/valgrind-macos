@@ -39,6 +39,36 @@ static void test__foreach_map(void)
 }
 
 //-------------------------------------------------------------------
+// Test find_auxv()
+//-------------------------------------------------------------------
+
+static void test__find_auxv(void)
+{
+   struct ume_auxv *auxv;
+
+   assert(ume_exec_esp != NULL);
+   
+   fprintf(stderr, "Calling find_auxv()\n");
+   auxv = find_auxv((int*)ume_exec_esp);
+
+   // Check the auxv value looks sane
+   assert((void*)auxv > (void*)ume_exec_esp);
+   assert((unsigned int)auxv - (unsigned int)ume_exec_esp < 0x10000);
+
+   // Scan the auxv, check it looks sane
+   for (; auxv->a_type != AT_NULL; auxv++) {
+      switch(auxv->a_type) {
+      // Check a_type value looks like a plausible small constant
+      case 1 ... 64:
+         break;
+   
+      default:
+         assert(0);
+      }
+   }
+}
+
+//-------------------------------------------------------------------
 // Test do_exec()
 //-------------------------------------------------------------------
 
@@ -109,6 +139,7 @@ static void test__do_exec(void)
 int main(void)
 {
    test__foreach_map();
+   test__find_auxv();
    test__do_exec();
    
    return 0;

@@ -152,7 +152,6 @@ weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
-vgtest_ume_SOURCES	= vgtest_ume.c
 writev_SOURCES		= writev.c
 zeropage_SOURCES	= zeropage.c
 
@@ -165,6 +164,8 @@ new_override_SOURCES 	= new_override.cpp
 hello_SOURCES		= hello.c
 hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
 			  -Wl,-T,../../coregrind/${VG_ARCH}/stage2.lds
+vgtest_ume_SOURCES	= vgtest_ume.c
+vgtest_ume_LDFLAGS	= -Wl,-e,_ume_entry
 vgtest_ume_LDADD	= ../../coregrind/ume.o \
 			  ../../coregrind/ume_entry.o \
 			  ../../coregrind/jmp_with_stack.o

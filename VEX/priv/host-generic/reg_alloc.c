@@ -16,14 +16,23 @@
 #define DEBUG_REGALLOC 0
 
 
-/* TODO (critical)
-   - Need a way to statically establish the vreg classes,
-     else we can't allocate spill slots properly.
-   - Better consistency checking from what isMove tells us.
-   - We can possibly do V-V coalescing even when the src is spilled,
-     providing we can arrange for the dst to have the same spill
-     slot.
-*/
+/* TODO 27 Oct 04:
+
+   (Critical): Need a way to statically establish the vreg classes,
+   else we can't allocate spill slots properly.
+
+   Better consistency checking from what isMove tells us.
+
+   We can possibly do V-V coalescing even when the src is spilled,
+   providing we can arrange for the dst to have the same spill slot.
+
+   Note that state[].hreg is the same as the available real regs.
+
+   Check whether rreg preferencing has any beneficial effect.
+
+   Remove preferencing fields in VRegInfo, if not used.
+
+   Generally rationalise data structures.  */
 
 
 /* Records information on virtual register live ranges.  Computed once
@@ -65,8 +74,12 @@ typedef
    allocator processes instructions. */
 typedef
    struct {
+      /* FIELDS WHICH DO NOT CHANGE */
       /* Which rreg is this for? */
       HReg rreg;
+      /* Is this involved in any HLRs?  (only an optimisation hint) */
+      Bool has_hlrs;
+      /* FIELDS WHICH DO CHANGE */
       /* What's it's current disposition? */
       enum { Free,     /* available for use */
              Unavail,  /* in a real-reg live range */
@@ -211,7 +224,7 @@ HInstrArray* doRegisterAllocation (
 #  define N_SPILL64S  (LibVEX_N_SPILL_BYTES / 8)
 
    /* Iterators and temporaries. */
-   Int       ii, j, k, m, spillee;
+   Int       ii, j, k, m, spillee, k_suboptimal;
    HReg      rreg, vreg, vregS, vregD;
    HRegUsage reg_usage;
 
@@ -279,6 +292,18 @@ HInstrArray* doRegisterAllocation (
    /* --------- Stage 0: set up output array. --------- */
    instrs_out = newHInstrArray();
 
+   /* ... and initialise running state. */
+   /* n_state is no more than a short name for n_available_real_regs. */
+   n_state = n_available_real_regs;
+   state = LibVEX_Alloc(n_available_real_regs * sizeof(RRegState));
+
+   for (j = 0; j < n_state; j++) {
+      state[j].rreg          = available_real_regs[j];
+      state[j].has_hlrs      = False;
+      state[j].disp          = Free;
+      state[j].vreg          = INVALID_HREG;
+      state[j].is_spill_cand = False;
+   }
 
    /* --------- Stage 1: compute vreg live ranges. --------- */
    /* --------- Stage 2: compute rreg live ranges. --------- */
@@ -500,6 +525,34 @@ HInstrArray* doRegisterAllocation (
       rreg_info_used++;
    }
 
+   /* Compute summary hints for choosing real regs.  If a real reg is
+      involved in a hard live range, record that fact in the fixed
+      part of the running state.  Later, when offered a choice between
+      rregs, it's better to choose one which is not marked as having
+      any HLRs, since ones with HLRs may need to be spilled around
+      their HLRs.  Correctness of final assignment is unaffected by
+      this mechanism -- it is an optimisation only. */
+
+   for (j = 0; j < rreg_info_used; j++) {
+      rreg = rreg_info[j].rreg;
+      vassert(!hregIsVirtual(rreg));
+      /* rreg is involved in a HLR.  Record this info in the array, if
+	 there is space. */
+      for (k = 0; k < n_state; k++)
+         if (state[k].rreg == rreg)
+            break;
+      vassert(k < n_state); /* else rreg was not found in state?! */
+      state[k].has_hlrs = True;
+   }
+   if (0) {
+      for (j = 0; j < n_state; j++) {
+         if (!state[j].has_hlrs)
+            continue;
+         ppReg(state[j].rreg);
+         vex_printf(" hinted\n");
+      }
+   }
+
    /* ------ end of FINALISE RREG LIVE RANGES ------ */
 
 #  if DEBUG_REGALLOC
@@ -589,17 +642,6 @@ HInstrArray* doRegisterAllocation (
    /* This is the main loop of the allocator.  First, we need to
       correctly set up our running state, which tracks the status of
       each real register. */
-
-   /* n_state is no more than a short name for n_available_real_regs. */
-   n_state = n_available_real_regs;
-   state = LibVEX_Alloc(n_available_real_regs * sizeof(RRegState));
-
-   for (j = 0; j < n_state; j++) {
-      state[j].rreg          = available_real_regs[j];
-      state[j].disp          = Free;
-      state[j].vreg          = INVALID_HREG;
-      state[j].is_spill_cand = False;
-   }
 
    /* ------ BEGIN: Process each insn in turn. ------ */
 
@@ -857,20 +899,33 @@ HInstrArray* doRegisterAllocation (
 
          /* There are no free rregs, but perhaps we can find one which
             is bound to a vreg which is now dead.  If so, use that.
-            NOTE, we could improve this by selecting an rreg for which
-            the next live-range event is as far ahead as possible. */
+            Optimisation: prefer a rreg which is not marked as having
+            any HLRs.  */
+         k_suboptimal = -1;
          for (k = 0; k < n_state; k++) {
-            if (state[k].disp == Bound
-                && hregClass(state[k].rreg) == hregClass(vreg)) {
-               m = hregNumber(state[k].vreg);
-               vassert(m >= 0 && m < n_vregs);
-               if (vreg_info[m].dead_before <= ii) {
-                  /* Ok, it's gone dead before the previous insn.  We
-                     can use it. */
-                  break;
-               }
+            if (state[k].disp != Bound
+                || hregClass(state[k].rreg) != hregClass(vreg))
+               continue;
+            m = hregNumber(state[k].vreg);
+            vassert(m >= 0 && m < n_vregs);
+            if (!(vreg_info[m].dead_before <= ii)) 
+               continue;
+            /* Ok, it's gone dead before the current insn.  We can use
+               it.  If it's not marked as involved in any HLRs, use it
+               with no further ado. */
+            if (state[k].has_hlrs) {
+               /* Well, at least we can use k_suboptimal if we really
+                  have to.  Keep on looking for a better candidate. */
+               k_suboptimal = k;
+            } else {
+               /* Found a preferable reg.  Use it. */
+               k_suboptimal = -1;
+               break;
             }
          }
+         if (k_suboptimal >= 0)
+            k = k_suboptimal;
+
          if (k < n_state) {
             vassert(state[k].disp == Bound);
             state[k].vreg = vreg;
@@ -1022,6 +1077,10 @@ HInstrArray* doRegisterAllocation (
    /* free(state); */
    /* free(rreg_info); */
    /* if (vreg_info) free(vreg_info); */
+
+   /* Paranoia */
+   for (j = 0; j < n_state; j++)
+      vassert(state[j].rreg == available_real_regs[j]);
 
    return instrs_out;
 

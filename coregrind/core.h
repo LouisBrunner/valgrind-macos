@@ -1532,6 +1532,28 @@ extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
                                       const vki_ksigset_t *mask);
 extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 
+// libpthread stuff
+typedef struct arch_thread_aux arch_thread_aux_t;
+
+void VGA_(thread_create) ( arch_thread_aux_t *aux );
+void VGA_(thread_wrapper)( arch_thread_aux_t *aux );
+void VGA_(thread_exit)   ( void );
+
+Bool VGA_(has_tls)       ( void );
+
+#define MY__STRING(__str)  #__str
+
+// Assertion to use in code running on the simulated CPU.
+#define my_assert(expr)                                               \
+  ((void) ((expr) ? 0 :						      \
+	   (VG_(user_assert_fail) (MY__STRING(expr),		      \
+			      __FILE__, __LINE__,                     \
+                              __PRETTY_FUNCTION__), 0)))
+
+extern void VG_(user_assert_fail) ( const Char* expr, const Char* file,
+                                    Int line, const Char* fn );
+
+
 // ---------------------------------------------------------------------
 // Platform-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------

@@ -310,8 +310,7 @@ void vgPlain_unimp ( char* fn )
 }
 
 
-static
-void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
+void VG_(user_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
    char buf[1000];
    static Bool entered = False;
@@ -325,14 +324,6 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
    cat_n_send ( "", buf, "" );
    _exit(1);
 }
-
-#define MY__STRING(__str)  #__str
-
-#define my_assert(expr)                                               \
-  ((void) ((expr) ? 0 :						      \
-	   (my_assert_fail  (MY__STRING(expr),			      \
-			      __FILE__, __LINE__,                     \
-                              __PRETTY_FUNCTION__), 0)))
 
 static
 void my_free ( void* ptr )
@@ -657,44 +648,6 @@ int pthread_getconcurrency(void)
 }
 
 
-
-/* --------------------------------------------------- 
-   Helper functions for running a thread 
-   and for clearing up afterwards.
-   ------------------------------------------------ */
-
-typedef void *(*__attribute__ ((stdcall)) REGPARM(3) allocate_tls_t) (void *result);
-typedef void (*__attribute__ ((stdcall)) REGPARM(3) deallocate_tls_t) (void *tcb, int dealloc_tcb);
-
-static allocate_tls_t allocate_tls = NULL;
-static deallocate_tls_t deallocate_tls = NULL;
-
-static
-int get_gs()
-{
-   int gs;
-
-   asm volatile ("movw %%gs, %w0" : "=q" (gs));
-
-   return gs & 0xffff;
-}
-
-static
-void set_gs( int gs )
-{
-   asm volatile ("movw %w0, %%gs" :: "q" (gs));
-}
-
-static
-void *get_tcb()
-{
-   void *tcb;
-
-   asm volatile ("movl %%gs:0, %0" : "=r" (tcb));
-
-   return tcb;
-}
-
 /* All exiting threads eventually pass through here, bearing the
    return value, or PTHREAD_CANCELED, in ret_val. */
 static
@@ -732,11 +685,7 @@ void thread_exit_wrapper ( void* ret_val )
    if (specifics_ptr != NULL)
       my_free(specifics_ptr);
    
-   /* Free up any TLS data */
-   if ((get_gs() & 7) == 3 && pthread_self() > 1) {
-      my_assert(deallocate_tls != NULL);
-      deallocate_tls(get_tcb(), 1);
-   }
+   VGA_(thread_exit)();
    
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
@@ -769,12 +718,10 @@ void thread_exit_wrapper ( void* ret_val )
 typedef
    struct {
       int           attr__detachstate;
-      void*         tls_data;
-      int           tls_segment;
-      unsigned long sysinfo;
       void*         (*root_fn) ( void* );
       void*         arg;
       sigset_t	    sigmask;
+      arch_thread_aux_t aux;
    }
    NewThreadInfo;
 
@@ -797,49 +744,16 @@ __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
    int                    attr__detachstate;
-   void*                  tls_data;
-   int                    tls_segment;
-   unsigned long          sysinfo;
    void*                  (*root_fn) ( void* );
    void*                  arg;
    void*                  ret_val;
    __pthread_unwind_buf_t ub;
 
    attr__detachstate = info->attr__detachstate;
-   tls_data          = info->tls_data;
-   tls_segment       = info->tls_segment;
-   sysinfo           = info->sysinfo;
    root_fn           = info->root_fn;
    arg               = info->arg;
 
-   if (tls_data) {
-      tcbhead_t *tcb = tls_data;
-      struct vki_modify_ldt_ldt_s ldt_info;
-
-      /* Fill in the TCB header */
-      tcb->tcb = tcb;
-      tcb->self = tcb;
-      tcb->multiple_threads = 1;
-      tcb->sysinfo = sysinfo;
-      
-      /* Fill in an LDT descriptor */
-      ldt_info.entry_number = tls_segment;
-      ldt_info.base_addr = (unsigned long)tls_data;
-      ldt_info.limit = 0xfffff;
-      ldt_info.seg_32bit = 1;
-      ldt_info.contents = 0;
-      ldt_info.read_exec_only = 0;
-      ldt_info.limit_in_pages = 1;
-      ldt_info.seg_not_present = 0;
-      ldt_info.useable = 1;
-      ldt_info.reserved = 0;
-      
-      /* Install the thread area */
-      VG_(do_syscall)(__NR_set_thread_area, &ldt_info);
-      
-      /* Setup the GS segment register */
-      set_gs(ldt_info.entry_number * 8 + 3);
-   }
+   VGA_(thread_wrapper)(&info->aux);
 
    /* Minimally observe the attributes supplied. */
    if (attr__detachstate != PTHREAD_CREATE_DETACHED
@@ -1127,7 +1041,6 @@ pthread_create (pthread_t *__restrict __thredd,
 {
    int            tid_child;
    NewThreadInfo* info;
-   int            gs;
    StackInfo      si;
    vg_pthread_attr_t* __vg_attr;
    CONVERT(attr, __attr, __vg_attr);
@@ -1149,28 +1062,7 @@ pthread_create (pthread_t *__restrict __thredd,
    else 
       info->attr__detachstate = PTHREAD_CREATE_JOINABLE;
 
-   gs = get_gs();
-
-   if ((gs & 7) == 3) {
-      tcbhead_t *tcb = get_tcb();
-
-      if (allocate_tls == NULL || deallocate_tls == NULL) {
-         allocate_tls = (allocate_tls_t)dlsym(RTLD_DEFAULT, "_dl_allocate_tls");
-         deallocate_tls = (deallocate_tls_t)dlsym(RTLD_DEFAULT, "_dl_deallocate_tls");
-      }
-
-      my_assert(allocate_tls != NULL);
-      
-      info->tls_data = allocate_tls(NULL);
-      info->tls_segment = gs >> 3;
-      info->sysinfo = tcb->sysinfo;
-
-      tcb->multiple_threads = 1;
-   } else {
-      info->tls_data = NULL;
-      info->tls_segment = -1;
-      info->sysinfo = 0;
-   }
+   VGA_(thread_create)(&info->aux);
 
    info->root_fn = __start_routine;
    info->arg     = __arg;
@@ -2199,7 +2091,7 @@ int* __errno_location ( void )
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__errno_location: invalid ThreadId");
    if (thread_specific_state[tid].errno_ptr == NULL) {
-      if ((get_gs() & 7) == 3)
+      if (VGA_(has_tls)())
          thread_specific_state[tid].errno_ptr = dlsym(RTLD_DEFAULT, "errno");
       else if (tid == 1)
          thread_specific_state[tid].errno_ptr = dlvsym(RTLD_DEFAULT, "errno", "GLIBC_2.0");
@@ -2220,7 +2112,7 @@ int* __h_errno_location ( void )
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__h_errno_location: invalid ThreadId");
    if (thread_specific_state[tid].h_errno_ptr == NULL) {
-      if ((get_gs() & 7) == 3)
+      if (VGA_(has_tls)())
          thread_specific_state[tid].h_errno_ptr = dlsym(RTLD_DEFAULT, "h_errno");
       else if (tid == 1)
          thread_specific_state[tid].h_errno_ptr = dlvsym(RTLD_DEFAULT, "h_errno", "GLIBC_2.0");
@@ -2241,7 +2133,7 @@ struct __res_state* __res_state ( void )
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__res_state: invalid ThreadId");
    if (thread_specific_state[tid].res_state_ptr == NULL) {
-      if ((get_gs() & 7) == 3) {
+      if (VGA_(has_tls)()) {
          struct __res_state **resp = dlsym(RTLD_DEFAULT, "__resp");
          
          thread_specific_state[tid].res_state_ptr = *resp;

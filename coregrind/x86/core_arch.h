@@ -305,6 +305,15 @@ typedef struct {
 } 
 arch_thread_t;
 
+/* ---------------------------------------------------------------------
+   libpthread stuff
+   ------------------------------------------------------------------ */
+
+struct arch_thread_aux {
+   void*         tls_data;
+   int           tls_segment;
+   unsigned long sysinfo;
+};
 
 /* ---------------------------------------------------------------------
    Miscellaneous constants

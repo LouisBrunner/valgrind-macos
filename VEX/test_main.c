@@ -37,7 +37,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 }
 
 #define N_LINEBUF 10000
-static Char linebuf[N_LINEBUF];
+static HChar linebuf[N_LINEBUF];
 
 #define N_ORIGBUF 1000
 #define N_TRANSBUF 5000
@@ -173,7 +173,8 @@ int main ( int argc, char** argv )
       sum = 0;
       for (i = 0; i < trans_used; i++)
          sum += (UInt)transbuf[i];
-      printf ( " %6.2f ... %d\n", (double)trans_used / (double)vge.len[0], sum );
+      printf ( " %6.2f ... %u\n", 
+               (double)trans_used / (double)vge.len[0], sum );
    }
 
    fclose(f);
@@ -194,7 +195,7 @@ int main ( int argc, char** argv )
 
 static
 __attribute((noreturn))
-void panic ( Char* s )
+void panic ( HChar* s )
 {
   printf("\npanic: %s\n", s);
   failure_exit();
@@ -354,33 +355,32 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 #define MC_(zzzz) MC_##zzzz
 #define TL_(zzzz) SK_##zzzz
 
-#if 1 /* stop gcc complaining */
-void MC_helperc_complain_undef ( void );
-void MC_helperc_LOADV8 ( void );
-void MC_helperc_LOADV4 ( void );
-void MC_helperc_LOADV2 ( void );
-void MC_helperc_LOADV1 ( void );
-void MC_helperc_STOREV8( void );
-void MC_helperc_STOREV4( void );
-void MC_helperc_STOREV2( void );
-void MC_helperc_STOREV1( void );
-void MC_helperc_value_check0_fail( void );
-void MC_helperc_value_check1_fail( void );
-void MC_helperc_value_check4_fail( void );
-#endif
 
-void MC_helperc_complain_undef ( void ) { }
-void MC_helperc_LOADV8 ( void ) { }
-void MC_helperc_LOADV4 ( void ) { }
-void MC_helperc_LOADV2 ( void ) { }
-void MC_helperc_LOADV1 ( void ) { }
-void MC_helperc_STOREV8( void ) { }
-void MC_helperc_STOREV4( void ) { }
-void MC_helperc_STOREV2( void ) { }
-void MC_helperc_STOREV1( void ) { }
-void MC_helperc_value_check0_fail( void ) { }
-void MC_helperc_value_check1_fail( void ) { }
-void MC_helperc_value_check4_fail( void ) { }
+static void MC_helperc_complain_undef ( void );
+static void MC_helperc_LOADV8 ( void );
+static void MC_helperc_LOADV4 ( void );
+static void MC_helperc_LOADV2 ( void );
+static void MC_helperc_LOADV1 ( void );
+//static void MC_helperc_STOREV8( void );
+//static void MC_helperc_STOREV4( void );
+//static void MC_helperc_STOREV2( void );
+//static void MC_helperc_STOREV1( void );
+static void MC_helperc_value_check0_fail( void );
+static void MC_helperc_value_check1_fail( void );
+static void MC_helperc_value_check4_fail( void );
+
+static void MC_helperc_complain_undef ( void ) { }
+static void MC_helperc_LOADV8 ( void ) { }
+static void MC_helperc_LOADV4 ( void ) { }
+static void MC_helperc_LOADV2 ( void ) { }
+static void MC_helperc_LOADV1 ( void ) { }
+//static void MC_helperc_STOREV8( void ) { }
+//static void MC_helperc_STOREV4( void ) { }
+//static void MC_helperc_STOREV2( void ) { }
+//static void MC_helperc_STOREV1( void ) { }
+static void MC_helperc_value_check0_fail( void ) { }
+static void MC_helperc_value_check1_fail( void ) { }
+static void MC_helperc_value_check4_fail( void ) { }
 
 
 /*--------------------------------------------------------------------*/
@@ -1922,7 +1922,7 @@ static
 IRAtom* expr2vbits_LDle_WRK ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
 {
    void*    helper;
-   Char*    hname;
+   HChar*   hname;
    IRDirty* di;
    IRTemp   datavbits;
    IRAtom*  addrAct;

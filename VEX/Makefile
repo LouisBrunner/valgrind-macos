@@ -26,7 +26,7 @@ APP_OBJS =	test_main.o
 
 
 CC = gcc341
-CCFLAGS = -g -Wall -Wshadow -O
+CCFLAGS = -g -Wall -Wshadow
 
 all: libvex.a $(APP_OBJS)
 	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libvex.a

@@ -1028,8 +1028,18 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       VG_(printf)("initSym(si=%p, tab=%p, sym=%p, kind=%d, name=%p \"%s\", val=%d)\n",
 		  si, si->stab_typetab, sym, kind, name, name, val);
 
+   /* First first ':' */
    ty = VG_(strchr)(name, ':');
-   while (ty && ty[1] == ':') ty = VG_(strchr)(ty + 2, ':');
+                                                                               
+   /* Skip '::' */                                                             
+   while (ty && ty[1] == ':')                                                  
+      ty = VG_(strchr)(ty + 2, ':');                                           
+                                                                               
+   if (ty == NULL) {                                                           
+      /* there was no ':' */                                                   
+      *namep += VG_(strlen)(name);                                             
+      return True;              /* skip */                                     
+   }                                        
 
    len = ty - name;
 

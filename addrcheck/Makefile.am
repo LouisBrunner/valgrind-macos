@@ -24,7 +24,7 @@ EXTRA_DIST = $(val_DATA) \
 	README_KDE3_FOLKS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO
 
-val_PROGRAMS = valgrind.so valgrinq.so
+val_PROGRAMS = valgrind.so valgrinq.so libpthread.so.0
 
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 
@@ -72,12 +72,16 @@ noinst_HEADERS = \
         vg_unsafe.h
 
 
-vg_memory.o: vg_memory.c $(noinst_HEADERS)
+MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
+
+vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_clientmalloc.o: vg_clientmalloc.c $(noinst_HEADERS)
+vg_clientmalloc.o: vg_clientmalloc.c $(MANUAL_DEPS)
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
+libpthread.so.0: vg_libpthread.c $(MANUAL_DEPS)
+	$(CC) -Wall -g -O -shared -fpic -o $@ $<
 
 valgrind.so: $(valgrind_so_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \

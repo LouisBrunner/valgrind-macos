@@ -4219,6 +4219,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
                break;
 
+            case 0xFB: { /* FSINCOS */
+               IRTemp a1 = newTemp(Ity_F64);
+               assign( a1, get_ST(0) );
+               DIP("fsincos\n");
+               put_ST_UNCHECKED(0, unop(Iop_SinF64, mkexpr(a1)));
+               fp_push();
+               put_ST(0, unop(Iop_CosF64, mkexpr(a1)));
+               break;
+            }
+
             case 0xFC: /* FRNDINT */
                DIP("frndint\n");
                put_ST_UNCHECKED(0,
@@ -4319,6 +4329,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta++;
          switch (modrm) {
 
+            case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fcmovb %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondB)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
                DIP("fcmovz %%st(%d), %%st(0)", r_src);
@@ -4326,6 +4346,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
                                          mk_x86g_calculate_condition(X86CondZ)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
+            case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD0;
+               DIP("fcmovbe %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondBE)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -4445,6 +4475,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta++;
          switch (modrm) {
 
+            case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fcmovnb %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondNB)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
                DIP("fcmovnz %%st(%d), %%st(0)", r_src);
@@ -4452,6 +4492,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
                                          mk_x86g_calculate_condition(X86CondNZ)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
+            case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD0;
+               DIP("fcmovnbe %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondNBE)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 
@@ -7131,7 +7181,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4);
 
       modrm = getIByte(delta+3);
-      do_MMX_preamble();
       if (epartIsReg(modrm)) {
          assign( arg32, getIReg(4, eregOfRM(modrm)) );
          delta += 3+1;
@@ -7496,7 +7545,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    if (insn[0] == 0x0F && insn[1] == 0xE7) {
       modrm = getIByte(delta+2);
       if (sz == 4 && !epartIsReg(modrm)) {
-         do_MMX_preamble();
+         /* do_MMX_preamble(); Intel docs don't specify this */
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
          storeLE( mkexpr(addr), getMMXReg(gregOfRM(modrm)) );
          DIP("movntq %s,%s\n", dis_buf,
@@ -7540,8 +7589,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
          storeLE( mkexpr(addr),
-                  getXMMRegLane32(eregOfRM(modrm), 0) );
-         DIP("movss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                  getXMMRegLane32(gregOfRM(modrm), 0) );
+         DIP("movss %s,%s\n", nameXMMReg(gregOfRM(modrm)),
                               dis_buf);
          delta += 3+alen;
          goto decode_success;
@@ -8456,7 +8505,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4);
 
       modrm = getIByte(delta+3);
-      do_MMX_preamble();
       if (epartIsReg(modrm)) {
          assign( arg32, getIReg(4, eregOfRM(modrm)) );
          delta += 3+1;
@@ -8976,8 +9024,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
          storeLE( mkexpr(addr),
-                  getXMMRegLane64(eregOfRM(modrm), 0) );
-         DIP("movsd %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                  getXMMRegLane64(gregOfRM(modrm), 0) );
+         DIP("movsd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
                               dis_buf);
          delta += 3+alen;
          goto decode_success;

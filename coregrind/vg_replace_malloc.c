@@ -160,11 +160,18 @@ void* fff ( Int n ) \
    MALLOC_TRACE(" = %p\n", v ); \
    return v; \
 }
-ALLOC( malloc,            SK_(malloc)            );
-ALLOC( __builtin_new,     SK_(__builtin_new)     );
-ALLOC( _Znwj,             SK_(__builtin_new)     );
-ALLOC( __builtin_vec_new, SK_(__builtin_vec_new) );
-ALLOC( _Znaj,             SK_(__builtin_vec_new) );
+ALLOC( malloc,              SK_(malloc)            );
+ALLOC( __builtin_new,       SK_(__builtin_new)     );
+ALLOC( _Znwj,               SK_(__builtin_new)     );
+
+// operator new(unsigned, std::nothrow_t const&)
+ALLOC( _ZnwjRKSt9nothrow_t, SK_(__builtin_new)     );
+
+ALLOC( __builtin_vec_new,   SK_(__builtin_vec_new) );
+ALLOC( _Znaj,               SK_(__builtin_vec_new) );
+
+// operator new[](unsigned, std::nothrow_t const&
+ALLOC( _ZnajRKSt9nothrow_t, SK_(__builtin_vec_new) );
 
 #define FREE(fff, vgfff) \
 void fff ( void* p ) \

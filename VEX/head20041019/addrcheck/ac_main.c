@@ -650,11 +650,11 @@ static __inline__ UInt shiftRight16 ( UInt x )
 /* Read/write 1/2/4 sized V bytes, and emit an address error if
    needed. */
 
-/* ac_helperc_ACCESS{1,2,4} handle the common case fast.
+/* ach_ACCESS{1,2,4} handle the common case fast.
    Under all other circumstances, it defers to the relevant _SLOWLY
    function, which can handle all situations.
 */
-static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
+static __inline__ void ach_ACCESS4 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
    return ac_ACCESS4_SLOWLY(a, isWrite);
@@ -677,7 +677,7 @@ static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
 #  endif
 }
 
-static __inline__ void ac_helperc_ACCESS2 ( Addr a, Bool isWrite )
+static __inline__ void ach_ACCESS2 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
    return ac_ACCESS2_SLOWLY(a, isWrite);
@@ -696,7 +696,7 @@ static __inline__ void ac_helperc_ACCESS2 ( Addr a, Bool isWrite )
 #  endif
 }
 
-static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
+static __inline__ void ach_ACCESS1 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
    return ac_ACCESS1_SLOWLY(a, isWrite);
@@ -716,42 +716,42 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 }
 
 REGPARM(1)
-static void ac_helperc_LOAD4 ( Addr a )
+static void ach_LOAD4 ( Addr a )
 {
-   ac_helperc_ACCESS4 ( a, /*isWrite*/False );
+   ach_ACCESS4 ( a, /*isWrite*/False );
 }
 REGPARM(1)
-static void ac_helperc_STORE4 ( Addr a )
+static void ach_STORE4 ( Addr a )
 {
-   ac_helperc_ACCESS4 ( a, /*isWrite*/True );
-}
-
-REGPARM(1)
-static void ac_helperc_LOAD2 ( Addr a )
-{
-   ac_helperc_ACCESS2 ( a, /*isWrite*/False );
-}
-REGPARM(1)
-static void ac_helperc_STORE2 ( Addr a )
-{
-   ac_helperc_ACCESS2 ( a, /*isWrite*/True );
+   ach_ACCESS4 ( a, /*isWrite*/True );
 }
 
 REGPARM(1)
-static void ac_helperc_LOAD1 ( Addr a )
+static void ach_LOAD2 ( Addr a )
 {
-   ac_helperc_ACCESS1 ( a, /*isWrite*/False );
+   ach_ACCESS2 ( a, /*isWrite*/False );
 }
 REGPARM(1)
-static void ac_helperc_STORE1 ( Addr a )
+static void ach_STORE2 ( Addr a )
 {
-   ac_helperc_ACCESS1 ( a, /*isWrite*/True );
+   ach_ACCESS2 ( a, /*isWrite*/True );
+}
+
+REGPARM(1)
+static void ach_LOAD1 ( Addr a )
+{
+   ach_ACCESS1 ( a, /*isWrite*/False );
+}
+REGPARM(1)
+static void ach_STORE1 ( Addr a )
+{
+   ach_ACCESS1 ( a, /*isWrite*/True );
 }
 
 
 /*------------------------------------------------------------*/
 /*--- Fallback functions to handle cases that the above    ---*/
-/*--- ac_helperc_ACCESS{1,2,4} can't manage.               ---*/
+/*--- ach_ACCESS{1,2,4} can't manage.                      ---*/
 /*------------------------------------------------------------*/
 
 static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite )
@@ -913,13 +913,13 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 }
 
 REGPARM(2)
-static void ac_helperc_LOADN ( Addr addr, Int size )
+static void ach_LOADN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
 REGPARM(2)
-static void ac_helperc_STOREN ( Addr addr, Int size )
+static void ach_STOREN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
 }
@@ -955,13 +955,13 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout)
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
 
-   Int         i, sz, regparms;
-   Char*       hname;
-   void*       haddr;   
+   Int         i, hsz;
    IRStmt*     st;
    IRExpr*     data;
-   IRExpr*     addr;
-   Bool        needSz;
+   IRExpr*     aexpr;
+   IRExpr*     guard;
+   IRDirty*    di;
+   Bool        isLoad;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -976,89 +976,32 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout)
       st = bb_in->stmts[i];
       if (!st) continue;
 
+      /* Examine each stmt in turn to figure out if it needs to be
+         preceded by a memory access check.  If so, collect up the
+         relevant pieces of information. */
+      hsz    = 0;
+      aexpr  = NULL;
+      guard  = NULL;
+      isLoad = True;
+
       switch (st->tag) {
 
          case Ist_Tmp:
             data = st->Ist.Tmp.data;
             if (data->tag == Iex_LDle) {
-               addr = data->Iex.LDle.addr;
-               sz = sizeofIRType(data->Iex.LDle.ty);
-               needSz = False;
-               regparms = 1;
-               switch (sz) {
-                  case 4:  hname = "ac_helperc_LOAD4", 
-                           haddr = &ac_helperc_LOAD4; 
-                           break;
-                  case 2:  hname = "ac_helperc_LOAD2";
-                           haddr = &ac_helperc_LOAD2; 
-                           break;
-                  case 1:  hname = "ac_helperc_LOAD1";
-                           haddr = &ac_helperc_LOAD1; 
-                           break;
-                  default: hname = "ac_helperc_LOADN";
-                           haddr = &ac_helperc_LOADN;
-                           regparms = 2;
-                           needSz = True;
-                           break;
-               }
-               if (needSz) {
-                  addStmtToIRBB( 
-                     bb,
-                     IRStmt_Dirty(
-                        unsafeIRDirty_0_N( regparms, hname, haddr, 
-                                           mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
-                  ));
-               } else {
-                  addStmtToIRBB( 
-                     bb,
-                     IRStmt_Dirty(
-                        unsafeIRDirty_0_N( regparms, hname, haddr,
-                                           mkIRExprVec_1(addr) )
-                  ));
-               }
-            }
-            break;
+               aexpr  = data->Iex.LDle.addr;
+               hsz    = sizeofIRType(data->Iex.LDle.ty);
+               isLoad = True;
+	    }
+	    break;
 
          case Ist_STle:
-            data = st->Ist.STle.data;
-            addr = st->Ist.STle.addr;
+            data  = st->Ist.STle.data;
+            aexpr = st->Ist.STle.addr;
             sk_assert(isAtom(data));
-            sk_assert(isAtom(addr));
-            sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
-            needSz = False;
-            regparms = 1;
-            switch (sz) {
-               case 4:  hname = "ac_helperc_STORE4", 
-                        haddr = &ac_helperc_STORE4; 
-                        break;
-               case 2:  hname = "ac_helperc_STORE2";
-                        haddr = &ac_helperc_STORE2; 
-                        break;
-               case 1:  hname = "ac_helperc_STORE1";
-                        haddr = &ac_helperc_STORE1; 
-                        break;
-               default: hname = "ac_helperc_STOREN";
-                        haddr = &ac_helperc_STOREN;
-                        regparms = 2;
-                        needSz = True;
-                        break;
-            }
-            if (needSz) {
-               addStmtToIRBB( 
-                  bb,
-                  IRStmt_Dirty(
-                     unsafeIRDirty_0_N( regparms, hname, haddr, 
-                                        mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
-               ));
-            } else {
-               addStmtToIRBB( 
-                  bb,
-                  IRStmt_Dirty(
-                     unsafeIRDirty_0_N( regparms, hname, haddr, 
-                                        mkIRExprVec_1(addr) )
-               ));
-            }
-            break;
+            sk_assert(isAtom(aexpr));
+            hsz    = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
+	    isLoad = False;
 
          case Ist_Put:
             sk_assert(isAtom(st->Ist.Put.data));
@@ -1074,20 +1017,75 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout)
             break;
 
          case Ist_Dirty:
-            /* If the call doesn't interact with memory, we ain't
-               interested. */
-            if (st->Ist.Dirty.details->mFx == Ifx_None)
-               break;
-            goto unhandled;
+            if (st->Ist.Dirty.details->mFx != Ifx_None) {
+               /* We classify Ifx_Modify as a load. */
+               isLoad = st->Ist.Dirty.details->mFx != Ifx_Write;
+               hsz    = st->Ist.Dirty.details->mSize;
+               aexpr  = st->Ist.Dirty.details->mAddr;
+               guard  = st->Ist.Dirty.details->guard;
+               sk_assert(isAtom(aexpr));
+             }
+             break;
 
          default:
-         unhandled:
             VG_(printf)("\n");
             ppIRStmt(st);
             VG_(printf)("\n");
             VG_(skin_panic)("addrcheck: unhandled IRStmt");
       }
 
+      /* If needed, add a helper call. */
+      if (aexpr) {
+         sk_assert(hsz > 0);
+         switch (hsz) {
+            case 4:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD4", &ach_LOAD4,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE4", &ach_STORE4,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            case 2:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD2", &ach_LOAD2,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE2", &ach_STORE2,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            case 1:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD1", &ach_LOAD1,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE1", &ach_STORE1,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            default:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 
+                          2, "ach_LOADN", &ach_LOADN,
+                          mkIRExprVec_2(aexpr,mkIRExpr_HWord(hsz)));
+               else
+                  di = unsafeIRDirty_0_N( 
+                          2, "ach_STOREN", &ach_STOREN,
+                          mkIRExprVec_2(aexpr,mkIRExpr_HWord(hsz)));
+               break;
+	 }
+
+	 /* If the call has arisen as a result of a dirty helper which
+            references memory, we need to inherit the guard from the
+            dirty helper. */
+         if (guard)
+            di->guard = dopyIRExpr(guard);
+
+         /* emit the helper call */
+         addStmtToIRBB( bb, IRStmt_Dirty(di) );
+
+      }
+
+      /* And finally, copy the expr itself to the output. */
       addStmtToIRBB( bb, dopyIRStmt(st));
    }
 
@@ -1322,12 +1320,12 @@ void SK_(pre_clo_init)(void)
    VG_(init_post_mem_write)       ( & ac_make_accessible );
 
 #if 0
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD4);
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD2);
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD1);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE4);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE2);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE1);
+   VG_(register_compact_helper)((Addr) & ach_LOAD4);
+   VG_(register_compact_helper)((Addr) & ach_LOAD2);
+   VG_(register_compact_helper)((Addr) & ach_LOAD1);
+   VG_(register_compact_helper)((Addr) & ach_STORE4);
+   VG_(register_compact_helper)((Addr) & ach_STORE2);
+   VG_(register_compact_helper)((Addr) & ach_STORE1);
    VG_(register_noncompact_helper)((Addr) & ac_fpu_READ_check);
    VG_(register_noncompact_helper)((Addr) & ac_fpu_WRITE_check);
 #endif

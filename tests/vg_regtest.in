@@ -274,7 +274,7 @@ sub test_one_dir($$)
     $dir =~ s/\/$//;    # trim a trailing '/'
 
     # ignore dirs into which we should not recurse
-    if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; } 
+    if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
 
     chdir($dir) or die "Could not change into $dir\n";
 
@@ -288,8 +288,6 @@ sub test_one_dir($$)
 
     if ($found_tests) {
         print "-- Running  tests in $full_dir $dashes\n";
-    } else {
-        print "-- Found no tests in $full_dir $dashes\n";
     }
     foreach my $f (@fs) {
         if (-d $f) {

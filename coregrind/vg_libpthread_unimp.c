@@ -158,7 +158,7 @@ void sem_open ( void )  { unimp("sem_open"); }
 void sem_timedwait ( void )  { unimp("sem_timedwait"); }
 void sem_unlink ( void )  { unimp("sem_unlink"); }
 //void sigaction ( void )  { unimp("sigaction"); }
-void siglongjmp ( void )  { unimp("siglongjmp"); }
+//void siglongjmp ( void )  { unimp("siglongjmp"); }
 //void sigwait ( void )  { unimp("sigwait"); }
 
 void __pthread_clock_gettime ( void ) { unimp("__pthread_clock_gettime"); }

@@ -1622,8 +1622,16 @@ void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
 /* not weak: __attribute__((weak)) */
 void longjmp(jmp_buf env, int val)
 {
-   __my_pthread_testcancel();
    __libc_longjmp(env, val);
+}
+
+
+extern void __libc_siglongjmp (sigjmp_buf env, int val)
+                               __attribute__ ((noreturn));
+void siglongjmp(sigjmp_buf env, int val)
+{
+   kludged("siglongjmp (cleanup handlers are ignored)");
+   __libc_siglongjmp(env, val);
 }
 
 

@@ -2,8 +2,9 @@
 SUBDIRS = $(VG_ARCH) .
 
 EXTRA_DIST = \
-	vg_profile.c \
-	tool.h.base
+	tool.h.base \
+	valgrind.h.in \
+	vg_profile.c
 
 incincdir = $(includedir)/valgrind
 
@@ -14,8 +15,8 @@ incinc_HEADERS = \
 	vg_kerneliface.h \
 	vg_skin.h
 
-BUILT_SOURCES = tool.h
-CLEANFILES = tool.h
+BUILT_SOURCES = tool.h valgrind.h
+CLEANFILES = tool.h valgrind.h
 
 tool.h: $(srcdir)/tool.h.base \
 	 $(top_srcdir)/coregrind/gen_toolint.pl $(top_srcdir)/coregrind/toolfuncs.def

@@ -61,6 +61,7 @@
 
 #include <stdarg.h>
 
+#define __@VG_ARCH@__   // Architecture we're installed on
 
 /* This file is for inclusion into client (your!) code.
 
@@ -70,15 +71,27 @@
    The resulting executables will still run without Valgrind, just a
    little bit more slowly than they otherwise would, but otherwise
    unchanged.  When not running on valgrind, each client request
-   consumes about 9 x86 instructions, so the resulting performance
+   consumes very few (eg. < 10) instructions, so the resulting performance
    loss is negligible unless you plan to execute client requests
    millions of times per second.  Nevertheless, if that is still a
    problem, you can compile with the NVALGRIND symbol defined (gcc
    -DNVALGRIND) so that client requests are not even compiled in.  */
 
-
-
 #ifndef NVALGRIND
+
+/* The following defines the magic code sequence which the JITter spots and
+   handles magically.  Don't look too closely at this; it will rot
+   your brain.  We must ensure that the default value gets put in the return
+   slot, so that everything works when this is executed not under Valgrind.
+   Args are passed in a memory block, and so there's no intrinsic limit to
+   the number that could be passed, but it's currently four.
+   
+   Nb: we put the assembly code sequences for all architectures in this one
+   file.  This is because this file must be stand-alone, so we can't rely on
+   eg. x86/ subdirectories like we do within the rest of Valgrind.
+*/
+
+#ifdef __x86__
 /* This defines the magic code sequence which the JITter spots and
    handles magically.  Don't look too closely at this; it will rot
    your brain.  Valgrind dumps the result value in %EDX, so we first
@@ -114,6 +127,10 @@
                  : "eax", "edx", "cc", "memory"                         \
                 );                                                      \
   }
+#endif   // __x86__
+
+// Insert assembly code for other architectures here...
+
 #else  /* NVALGRIND */
 /* Define NVALGRIND to completely remove the Valgrind magic sequence
    from the compiled code (analogous to NDEBUG's effects on

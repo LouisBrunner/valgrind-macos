@@ -396,6 +396,7 @@ AC_OUTPUT(
    tests/Makefile 
    tests/vg_regtest 
    tests/unused/Makefile 
+   include/valgrind.h 
    include/Makefile 
    include/x86/Makefile 
    auxprogs/Makefile

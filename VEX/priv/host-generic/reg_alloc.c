@@ -920,10 +920,16 @@ HInstrArray* doRegisterAllocation (
 
          /* So here's the spill store.  Assert that we're spilling a
             live vreg. */
-         vassert(vreg_info[m].dead_before > ii);
-         vassert(vreg_info[m].reg_class != HRcINVALID);
-         EMIT_INSTR( (*genSpill)( state[spillee].rreg,
-                                  vreg_info[m].spill_offset ) );
+	 if (vreg_info[m].live_after + 1 == vreg_info[m].dead_before) {
+            /* In this situation, m looks like it is the subject of a
+               dead store -- going live and then instantly dead.  So
+               in fact there's no point in spilling it. */
+	 } else {
+            vassert(vreg_info[m].dead_before > ii);
+            vassert(vreg_info[m].reg_class != HRcINVALID);
+            EMIT_INSTR( (*genSpill)( state[spillee].rreg,
+                                     vreg_info[m].spill_offset ) );
+	 }
 
          /* Update the state to reflect the new assignment for this
             rreg. */

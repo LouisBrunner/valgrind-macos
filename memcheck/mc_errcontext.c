@@ -197,13 +197,17 @@ static void mc_describe_addr ( Addr a, AddrInfo* ai )
    necessary, and returns the copy. */
 void* SK_(dup_extra_and_update)( Error* err )
 {
-   MemCheckError* new_extra;
+   MemCheckError* extra;
+   MemCheckError* new_extra = NULL;
 
-   new_extra  = VG_(malloc)(sizeof(MemCheckError));
-   *new_extra = *((MemCheckError*)VG_(get_error_extra)(err));
-
-   if (new_extra->addrinfo.akind == Undescribed)
-      mc_describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
+   extra = ((MemCheckError*)VG_(get_error_extra)(err));
+   if (extra != NULL) {
+      new_extra  = VG_(malloc)(sizeof(MemCheckError));
+      *new_extra = *extra;
+      if (new_extra->addrinfo.akind == Undescribed)
+         mc_describe_addr ( VG_(get_error_address)(err),
+                            &(new_extra->addrinfo) );
+   }
 
    return new_extra;
 }

@@ -12,6 +12,8 @@
 #include "vex_util.h"
 #include "host_regs.h"
 
+/* Set to 1 for lots of debugging output. */
+#define DEBUG_REGALLOC 0
 
 /* How many 64-bit sized spill slots do we have? */
 #define N_SPILL64S  16
@@ -245,12 +247,29 @@ HInstrArray* doRegisterAllocation (
 #  define EMIT_INSTR(_instr)                  \
       do {                                    \
         HInstr* _tmp = (_instr);              \
-        if (0) {                              \
+        if (DEBUG_REGALLOC) {                 \
            vex_printf("**  ");                \
            (*ppInstr)(_tmp);                  \
-           vex_printf("\n");                  \
+           vex_printf("\n\n");                \
         }                                     \
         addHInstr ( instrs_out, _tmp );       \
+      } while (0)
+
+#   define PRINT_STATE						\
+      do {							\
+         Int z;							\
+         for (z = 0; z < n_state; z++) {			\
+            vex_printf("   ");					\
+            (*ppReg)(state[z].rreg);				\
+            vex_printf("\t  ");					\
+            switch (state[z].disp) {				\
+               case Free:    vex_printf("Free\n"); break;	\
+               case Unavail: vex_printf("Unavail\n"); break;	\
+               case Bound:   vex_printf("BoundTo "); 		\
+                             (*ppReg)(state[z].vreg);		\
+                             vex_printf("\n"); break;		\
+            }							\
+         }							\
       } while (0)
 
 
@@ -341,7 +360,7 @@ HInstrArray* doRegisterAllocation (
 
    } /* iterate over insns */
 
-#  if 0
+#  if DEBUG_REGALLOC
    for (j = 0; j < n_vregs; j++) {
       vex_printf("vreg %d:  la = %d,  db = %d\n", 
                  j, vreg_info[j].live_after, vreg_info[j].dead_before );
@@ -469,7 +488,7 @@ HInstrArray* doRegisterAllocation (
    /* free(rreg_live_after); */
    /* free(rreg_dead_before); */
 
-#  if 0
+#  if DEBUG_REGALLOC
    for (j = 0; j < rreg_info_used; j++) {
       (*ppReg)(rreg_info[j].rreg);
       vex_printf("      la = %d,  db = %d\n",
@@ -560,21 +579,12 @@ HInstrArray* doRegisterAllocation (
 
    for (ii = 0; ii < instrs_in->arr_used; ii++) {
 
-#     if 0
-      vex_printf("\n-----------\n%d   ", ii);
+#     if DEBUG_REGALLOC
+      vex_printf("\n====----====---- Insn %d ----====----====\n", ii);
+      vex_printf("---- ");
       (*ppInstr)(instrs_in->arr[ii]);
-      vex_printf("\n");
-      for (j = 0; j < n_state; j++) {
-         (*ppReg)(state[j].rreg);
-         vex_printf("\t  ");
-         switch (state[j].disp) {
-            case Free:    vex_printf("Free\n"); break;
-            case Unavail: vex_printf("Unavail\n"); break;
-            case Bound:   vex_printf("BoundTo "); 
-                          (*ppReg)(state[j].vreg);
-                          vex_printf("\n"); break;
-         }
-      }
+      vex_printf("\n\nInitial state:\n");
+      PRINT_STATE;
       vex_printf("\n");
 #     endif
 
@@ -619,9 +629,9 @@ HInstrArray* doRegisterAllocation (
          for (k = 0; k < rreg_info_used; k++) 
             if (rreg_info[k].rreg == state[j].rreg
                 && rreg_info[k].live_after < ii 
-                && ii < rreg_info[k].dead_before) 
+                && ii <= rreg_info[k].dead_before) 
                break;
-         /* If this vassertion fails, we couldn't find a correspond
+         /* If this vassertion fails, we couldn't find a corresponding
             HLR. */
          vassert(k < rreg_info_used);
       }
@@ -666,12 +676,12 @@ HInstrArray* doRegisterAllocation (
          vassert(m >= 0 && m < n_vregs);
          if (vreg_info[k].dead_before != ii) goto cannot_coalesce;
          if (vreg_info[m].live_after != ii) goto cannot_coalesce;
-#        if 0
+#        if DEBUG_REGALLOC
          vex_printf("COALESCE ");
          (*ppReg)(vregS);
          vex_printf(" -> ");
          (*ppReg)(vregD);
-         vex_printf("\n");
+         vex_printf("\n\n");
 #        endif
          /* Find the state entry for vregS. */
          for (m = 0; m < n_state; m++)
@@ -686,9 +696,10 @@ HInstrArray* doRegisterAllocation (
          /* Finally, we can do the coalescing.  It's trivial -- merely
             claim vregS's register for vregD. */
          state[m].vreg = vregD;
-         /* Don't bother to copy this insn, just move on to the next
-            insn. */
-         continue;
+         /* Don't bother to copy this insn, just move on to the post-
+            insn actions to do with fixed regs.  IOW, skip the main
+            part of the insn processing entirely. */
+         goto post_insn_actions;
       }
      cannot_coalesce:
 
@@ -722,10 +733,10 @@ HInstrArray* doRegisterAllocation (
                question to ask is whether rreg_info[j].live_after ==
                ii, that is, whether the reg becomes live after this
                insn -- rather than before it. */
-#           if 0
+#           if DEBUG_REGALLOC
             vex_printf("need to free up rreg: ");
             (*ppReg)(rreg_info[j].rreg);
-            vex_printf("\n");
+            vex_printf("\n\n");
 #           endif
             for (k = 0; k < n_state; k++)
                if (state[k].rreg == rreg_info[j].rreg)
@@ -748,6 +759,13 @@ HInstrArray* doRegisterAllocation (
             state[k].vreg = INVALID_HREG;
          }
       }
+
+#     if DEBUG_REGALLOC
+      vex_printf("After pre-insn actions for fixed regs:\n");
+      PRINT_STATE;
+      vex_printf("\n");
+#     endif
+
 
       /* ------ Deal with the current instruction. ------ */
 
@@ -938,13 +956,19 @@ HInstrArray* doRegisterAllocation (
       (*mapRegs)( &remap, instrs_in->arr[ii] );
       EMIT_INSTR( instrs_in->arr[ii] );
 
+#     if DEBUG_REGALLOC
+      vex_printf("After dealing with current insn:\n");
+      PRINT_STATE;
+      vex_printf("\n");
+#     endif
+
       /* ------ Post-instruction actions for fixed rreg uses ------ */
 
       /* Now we need to check for rregs exiting fixed live ranges
          after this instruction, and if so mark them as free. */
-
+     post_insn_actions:
       for (j = 0; j < rreg_info_used; j++) {
-         if (rreg_info[j].dead_before == ii+1) {
+         if (rreg_info[j].dead_before == ii+0) {
             /* rreg_info[j].rreg is exiting a hard live range.  Mark
                it as such in the main state array. */
             for (k = 0; k < n_state; k++)
@@ -959,6 +983,12 @@ HInstrArray* doRegisterAllocation (
          }
       }
 
+#     if DEBUG_REGALLOC
+      vex_printf("After post-insn actions for fixed regs:\n");
+      PRINT_STATE;
+      vex_printf("\n");
+#     endif
+
    } /* iterate over insns */
 
    /* ------ END: Process each insn in turn. ------ */
@@ -971,6 +1001,7 @@ HInstrArray* doRegisterAllocation (
 
 #  undef INVALID_INSTRNO
 #  undef EMIT_INSTR
+#  undef PRINT_STATE
 }
 
 

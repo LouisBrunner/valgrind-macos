@@ -1066,7 +1066,7 @@ static void process_cmd_line_options ( void )
 
 #  undef ISSPACE
 
-   if (VG_(clo_verbosity < 0))
+   if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
 
    if (VG_(clo_GDB_attach) && VG_(clo_trace_children)) {

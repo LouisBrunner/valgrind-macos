@@ -875,7 +875,7 @@ ULong MC_(helperc_LOADV8) ( Addr a )
 #  ifdef VG_DEBUG_MEMORY
    return mc_rd_V8_SLOWLY(a);
 #  else
-   if (IS_4_ALIGNED(a)) {
+   if (IS_8_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
       UInt    a_off  = (SM_OFF(a)) >> 3;
@@ -909,12 +909,11 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
 #  ifdef VG_DEBUG_MEMORY
    mc_wr_V8_SLOWLY(a, vbytes);
 #  else
-   if (IS_4_ALIGNED(a)) {
+   if (IS_8_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
       UInt    a_off  = (SM_OFF(a)) >> 3;
-      UChar   abits  = sm->abits[a_off];
-      if (abits == VGM_BYTE_VALID) {
+      if (!IS_DISTINGUISHED_SM(sm) && sm->abits[a_off] == VGM_BYTE_VALID) {
          /* a is 8-aligned, mapped, and addressible. */
          UInt v_off = SM_OFF(a);
          UInt vHi = (UInt)(vbytes >> 32);

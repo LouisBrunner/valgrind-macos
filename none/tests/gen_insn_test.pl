@@ -561,7 +561,7 @@ while (<>)
 
     foreach my $result (@results)
     {
-        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|flags|fpusw)$/)
+        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpusw)$/)
         {
             $result->{argnum} = $argnum++;
         }

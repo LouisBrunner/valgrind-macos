@@ -1905,6 +1905,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP */
       opc = opc_rr = subopc_imm = opc_imma = 0;
       switch (i->Xin.Alu32R.op) {
+         case Xalu_ADC: opc = 0x13; opc_rr = 0x11; 
+                        subopc_imm = 2; opc_imma = 0x15; break;
          case Xalu_ADD: opc = 0x03; opc_rr = 0x01; 
                         subopc_imm = 0; opc_imma = 0x05; break;
          case Xalu_SUB: opc = 0x2B; opc_rr = 0x29; 
@@ -1928,7 +1930,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                *p++ = opc_imma;
                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
             } else
-               if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
+            if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
                *p++ = 0x83; 
                p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
                *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;

@@ -1794,7 +1794,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
-         /* Iop_Or64/And64/Xor64 */
+         /* Or64/And64/Xor64 */
          case Iop_Or64:
          case Iop_And64:
          case Iop_Xor64: {
@@ -1810,6 +1810,28 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
             addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yHi), tHi));
             addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yLo), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* Add64/Sub64 */
+         case Iop_Add64:
+         case Iop_Sub64: {
+            HReg xLo, xHi, yLo, yHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(xHi, tHi));
+            addInstr(env, mk_iMOVsd_RR(xLo, tLo));
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
+            if (e->Iex.Binop.op==Iop_Add64) {
+               addInstr(env, X86Instr_Alu32R(Xalu_ADD, X86RMI_Reg(yLo), tLo));
+               addInstr(env, X86Instr_Alu32R(Xalu_ADC, X86RMI_Reg(yHi), tHi));
+            } else {
+               addInstr(env, X86Instr_Alu32R(Xalu_SUB, X86RMI_Reg(yLo), tLo));
+               addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(yHi), tHi));
+            }
             *rHi = tHi;
             *rLo = tLo;
             return;

@@ -1019,6 +1019,8 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
 #define arg5	PLATFORM_SYSCALL_ARG5(tst->arch)
 #define arg6	PLATFORM_SYSCALL_ARG6(tst->arch)
 
+#define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
+
 PRE(exit_group)
 {
    VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
@@ -1140,7 +1142,7 @@ PRE(set_thread_area)
 		  sizeof(struct vki_modify_ldt_ldt_s) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   res = VG_(sys_set_thread_area)( tid, (void *)arg1 );
+   set_result( VG_(sys_set_thread_area)( tid, (void *)arg1 ) );
 }
 
 PRE(get_thread_area)
@@ -1151,7 +1153,7 @@ PRE(get_thread_area)
 		  sizeof(struct vki_modify_ldt_ldt_s) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   res = VG_(sys_get_thread_area)( tid, (void *)arg1 );
+   set_result( VG_(sys_get_thread_area)( tid, (void *)arg1 ) );
 
    if (!VG_(is_kerror)(res)) {
       VG_TRACK( post_mem_write, arg1, sizeof(struct vki_modify_ldt_ldt_s) );
@@ -1454,7 +1456,7 @@ PRE(mremap)
    MAYBE_PRINTF("mremap ( %p, %d, %d, 0x%x, %p )\n", 
 		arg1, arg2, arg3, arg4, arg5);
 
-   res = mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid);
+   set_result( mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid) );
 }
 
 PRE(nice)
@@ -1761,14 +1763,14 @@ PRE(execve)
       Int ret = VG_(stat)((Char *)arg1, &st);
 
       if (ret < 0) {
-	 res = ret;
+	 set_result( ret );
 	 return;
       }
       /* just look for regular file with any X bit set
 	 XXX do proper permissions check?
        */
       if ((st.st_mode & 0100111) == 0100000) {
-	 res = -VKI_EACCES;
+	 set_result( -VKI_EACCES );
 	 return;
       }
    }
@@ -1837,7 +1839,7 @@ PRE(execve)
    /* restore the DATA rlimit for the child */
    VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
-   res = VG_(do_syscall)(__NR_execve, arg1, arg2, arg3);
+   set_result( VG_(do_syscall)(__NR_execve, arg1, arg2, arg3) );
 
    /* If we got here, then the execve failed.  We've already made too much of a mess
       of ourselves to continue, so we have to abort. */
@@ -1881,7 +1883,7 @@ PRE(brk)
    */
    MAYBE_PRINTF("brk ( %p ) --> ",arg1);
 
-   res = do_brk(arg1);
+   set_result( do_brk(arg1) );
 
    MAYBE_PRINTF("0x%x\n", res);
 
@@ -1933,7 +1935,7 @@ PRE(close)
    MAYBE_PRINTF("close ( %d )\n",arg1);
    /* Detect and negate attempts by the client to close Valgrind's log fd */
    if (!fd_allowed(arg1, "close", tid, False))
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
 }
 
 POST(close)
@@ -1952,7 +1954,7 @@ POST(dup)
    MAYBE_PRINTF("%d\n", res);
    if (!fd_allowed(res, "dup", tid, True)) {
       VG_(close)(res);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       if(VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(resolve_filename)(res));
@@ -1964,7 +1966,7 @@ PRE(dup2)
    /* int dup2(int oldfd, int newfd); */
    MAYBE_PRINTF("dup2 ( %d, %d ) ...\n", arg1,arg2);
    if (!fd_allowed(arg2, "dup2", tid, True))
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
 }
 
 POST(dup2)
@@ -1989,7 +1991,7 @@ POST(fcntl)
    if (arg2 == VKI_F_DUPFD) {
       if (!fd_allowed(res, "fcntl(DUPFD)", tid, True)) {
          VG_(close)(res);
-         res = -VKI_EMFILE;
+         set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
             record_fd_open(tid, res, VG_(resolve_filename)(res));
@@ -2030,7 +2032,7 @@ POST(fcntl64)
    if (arg2 == VKI_F_DUPFD) {
       if (!fd_allowed(res, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(res);
-         res = -VKI_EMFILE;
+         set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
             record_fd_open(tid, res, VG_(resolve_filename)(res));
@@ -2102,7 +2104,7 @@ PRE(clone)
      || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
       before_fork(tid, tst);
-      res = VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5);
+      set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
       after_fork(tid, tst);
    } else {
       VG_(unimplemented)
@@ -2617,12 +2619,12 @@ PRE(ipc)
       if (arg5 == 0)
 	 arg5 = VG_(find_map_space)(0, segmentSize, True);
       else if (!valid_client_addr(arg5, segmentSize, tid, "shmat"))
-	 res = -VKI_EINVAL;
+	 set_result( -VKI_EINVAL );
       break;
    }
    case 22: /* IPCOP_shmdt */
       if (!valid_client_addr(arg5, 1, tid, "shmdt"))
-	 res = -VKI_EINVAL;
+	 set_result( -VKI_EINVAL );
       break;
    case 23: /* IPCOP_shmget */
       break;
@@ -4055,7 +4057,7 @@ PRE(kill)
    /* int kill(pid_t pid, int sig); */
    MAYBE_PRINTF("kill ( %d, %d )\n", arg1,arg2);
    if (arg2 == VKI_SIGVGINT || arg2 == VKI_SIGVGKILL)
-      res = -VKI_EINVAL;
+      set_result( -VKI_EINVAL );
 }
 
 POST(kill)
@@ -4161,11 +4163,11 @@ PRE(mmap2)
 
    if (arg4 & VKI_MAP_FIXED) {
       if (!valid_client_addr(arg1, arg2, tid, "mmap2"))
-	 res = -VKI_ENOMEM;
+	 set_result( -VKI_ENOMEM );
    } else {
       arg1 = VG_(find_map_space)(arg1, arg2, True);
       if (arg1 == 0)
-	 res = -VKI_ENOMEM;
+	 set_result( -VKI_ENOMEM );
       else 
          arg4 |= VKI_MAP_FIXED;
    }
@@ -4194,12 +4196,12 @@ PRE(mmap)
    if (a4 & VKI_MAP_FIXED) {
       if (!valid_client_addr(a1, a2, tid, "mmap")) {
 	 MAYBE_PRINTF("mmap failing: %p-%p\n", a1, a1+a2);
-	 res = -VKI_ENOMEM;
+	 set_result( -VKI_ENOMEM );
       }
    } else {
       a1 = VG_(find_map_space)(a1, a2, True);
       if (a1 == 0)
-	 res = -VKI_ENOMEM;
+	 set_result( -VKI_ENOMEM );
       else
 	 a4 |= VKI_MAP_FIXED;
    }
@@ -4221,7 +4223,7 @@ PRE(mprotect)
    MAYBE_PRINTF("mprotect ( %p, %d, %d )\n", arg1,arg2,arg3);
 
    if (!valid_client_addr(arg1, arg2, tid, "mprotect"))
-      res = -VKI_ENOMEM;
+      set_result( -VKI_ENOMEM );
 }
 
 POST(mprotect)
@@ -4245,7 +4247,7 @@ PRE(munmap)
    MAYBE_PRINTF("munmap ( %p, %d )\n", arg1,arg2);
 
    if (!valid_client_addr(arg1, arg2, tid, "munmap"))
-      res = -VKI_EINVAL;
+      set_result( -VKI_EINVAL );
 }
 
 POST(munmap)
@@ -4327,7 +4329,7 @@ POST(open)
 {
    if (!fd_allowed(res, "open", tid, True)) {
       VG_(close)(res);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
@@ -4341,7 +4343,7 @@ PRE(read)
    MAYBE_PRINTF("read ( %d, %p, %d )\n", arg1, arg2, arg3);
 
    if (!fd_allowed(arg1, "read", tid, False))
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    else
       SYSCALL_TRACK( pre_mem_write, tid, "read(buf)", arg2, arg3 );
 }
@@ -4356,7 +4358,7 @@ PRE(write)
    /* size_t write(int fd, const void *buf, size_t count); */
    MAYBE_PRINTF("write ( %d, %p, %d )\n", arg1, arg2, arg3);
    if (!fd_allowed(arg1, "write", tid, False))
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    else
       SYSCALL_TRACK( pre_mem_read, tid, "write(buf)", arg2, arg3 );
 }
@@ -4372,7 +4374,7 @@ POST(creat)
 {
    if (!fd_allowed(res, "creat", tid, True)) {
       VG_(close)(res);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
@@ -4396,7 +4398,7 @@ POST(pipe)
        !fd_allowed(p[1], "pipe", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       VG_TRACK( post_mem_write, arg1, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
@@ -4448,7 +4450,7 @@ POST(epoll_create)
 {
    if (!fd_allowed(res, "open", tid, True)) {
       VG_(close)(res);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          record_fd_open (tid, res, NULL);
@@ -4504,7 +4506,7 @@ PRE(readv)
    struct iovec * vec;
    MAYBE_PRINTF("readv ( %d, %p, %d )\n",arg1,arg2,arg3);
    if (!fd_allowed(arg1, "readv", tid, False)) {
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    } else {
       SYSCALL_TRACK( pre_mem_read, tid, "readv(vector)", 
 		     arg2, arg3 * sizeof(struct iovec) );
@@ -4711,32 +4713,32 @@ PRE(setrlimit)
    if (arg1 == VKI_RLIMIT_NOFILE) {
       if (((vki_rlimit *)arg2)->rlim_cur > VG_(fd_hard_limit) ||
           ((vki_rlimit *)arg2)->rlim_max != VG_(fd_hard_limit)) {
-         res = -VKI_EPERM;
+         set_result( -VKI_EPERM );
       }
       else {
          VG_(fd_soft_limit) = ((vki_rlimit *)arg2)->rlim_cur;
-         res = 0;
+         set_result( 0 );
       }
    }
    else if (arg1 == VKI_RLIMIT_DATA) {
       if (((vki_rlimit *)arg2)->rlim_cur > ((vki_rlimit *)arg2)->rlim_max ||
           ((vki_rlimit *)arg2)->rlim_max > ((vki_rlimit *)arg2)->rlim_max) {
-         res = -VKI_EPERM;
+         set_result( -VKI_EPERM );
       }
       else {
          VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
-         res = 0;
+         set_result( 0 );
       }
    }
    else if (arg1 == VKI_RLIMIT_STACK && tid == 1) {
       if (((vki_rlimit *)arg2)->rlim_cur > ((vki_rlimit *)arg2)->rlim_max ||
           ((vki_rlimit *)arg2)->rlim_max > ((vki_rlimit *)arg2)->rlim_max) {
-         res = -VKI_EPERM;
+         set_result( -VKI_EPERM );
       }
       else {
          VG_(threads)[tid].stack_size = ((vki_rlimit *)arg2)->rlim_cur;
          VG_(client_rlimit_stack) = *(vki_rlimit *)arg2;
-         res = 0;
+         set_result( 0 );
       }
    }
 }
@@ -4963,7 +4965,7 @@ PRE(socketcall)
 
    default:
       VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",arg1);
-      res = -VKI_EINVAL;
+      set_result( -VKI_EINVAL );
       break;
    }
 }
@@ -4983,7 +4985,7 @@ POST(socketcall)
           !fd_allowed(fd2, "socketcall.socketpair", tid, True)) {
          VG_(close)(fd1);
          VG_(close)(fd2);
-         res = -VKI_EMFILE;
+         set_result( -VKI_EMFILE );
       } else {
          VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
          if (VG_(clo_track_fds)) {
@@ -4997,7 +4999,7 @@ POST(socketcall)
    case SYS_SOCKET:
       if (!fd_allowed(res, "socket", tid, True)) {
 	 VG_(close)(res);
-	 res = -VKI_EMFILE;
+	 set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
             record_fd_open(tid, res, NULL);
@@ -5017,7 +5019,7 @@ POST(socketcall)
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
       if (!fd_allowed(res, "accept", tid, True)) {
 	 VG_(close)(res);
-	 res = -VKI_EMFILE;
+	 set_result( -VKI_EMFILE );
       } else {
 	 Addr addr_p     = ((UInt*)arg2)[1];
 	 Addr addrlen_p  = ((UInt*)arg2)[2];
@@ -5332,7 +5334,7 @@ PRE(writev)
    struct iovec * vec;
    MAYBE_PRINTF("writev ( %d, %p, %d )\n",arg1,arg2,arg3);
    if (!fd_allowed(arg1, "writev", tid, False)) {
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    } else {
       SYSCALL_TRACK( pre_mem_read, tid, "writev(vector)", 
 		     arg2, arg3 * sizeof(struct iovec) );
@@ -5408,7 +5410,7 @@ POST(futex)
    if (arg2 == VKI_FUTEX_FD) {
       if (!fd_allowed(res, "futex", tid, True)) {
          VG_(close)(res);
-         res = -VKI_EMFILE;
+         set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
             record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
@@ -5609,7 +5611,7 @@ PRE(io_setup)
    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
    
    VG_(pad_address_space)();
-   res = VG_(do_syscall)(SYSNO, arg1, arg2);
+   set_result( VG_(do_syscall)(SYSNO, arg1, arg2) );
    VG_(unpad_address_space)();
 
    if (res == 0) {
@@ -5635,7 +5637,7 @@ PRE(io_destroy)
    /* long io_destroy (aio_context_t ctx); */
    MAYBE_PRINTF("io_destroy ( %ul )\n",arg1);
 
-   res = VG_(do_syscall)(SYSNO, arg1);
+   set_result( VG_(do_syscall)(SYSNO, arg1) );
    
    if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) {
       VG_TRACK( die_mem_munmap, arg1, size );
@@ -5747,7 +5749,7 @@ POST(mq_open)
 {
    if (!fd_allowed(res, "mq_open", tid, True)) {
       VG_(close)(res);
-      res = -VKI_EMFILE;
+      set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
@@ -5769,7 +5771,7 @@ PRE(mq_timedsend)
    MAYBE_PRINTF("mq_timedsend ( %d, %p, %d, %d, %p )\n",
                 arg1,arg2,arg3,arg4,arg5);
    if (!fd_allowed(arg1, "mq_timedsend", tid, False)) {
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    } else {
       SYSCALL_TRACK( pre_mem_read, tid, "mq_timedsend(msg_ptr)", arg2, arg3 );
       if (arg5 != 0)
@@ -5786,7 +5788,7 @@ PRE(mq_timedreceive)
    MAYBE_PRINTF("mq_timedreceive( %d, %p, %d, %p, %p )\n",
                 arg1,arg2,arg3,arg4,arg5);
    if (!fd_allowed(arg1, "mq_timedreceive", tid, False)) {
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    } else {
       SYSCALL_TRACK( pre_mem_write, tid, "mq_timedreceive(msg_ptr)", arg2, arg3 );
       if (arg4 != 0)
@@ -5810,7 +5812,7 @@ PRE(mq_notify)
    /* int mq_notify(mqd_t mqdes, const struct sigevent *notification); */
    MAYBE_PRINTF("mq_notify( %d, %p )\n", arg1,arg2 );
    if (!fd_allowed(arg1, "mq_notify", tid, False))
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    else if (arg2 != 0)
       SYSCALL_TRACK( pre_mem_read, tid, "mq_notify", arg2,
                      sizeof(struct sigevent) );
@@ -5822,7 +5824,7 @@ PRE(mq_getsetattr)
                         struct mq_attr *restrict omqstat); */
    MAYBE_PRINTF("mq_getsetattr( %d, %p, %p )\n", arg1,arg2,arg3 );
    if (!fd_allowed(arg1, "mq_getsetattr", tid, False)) {
-      res = -VKI_EBADF;
+      set_result( -VKI_EBADF );
    } else {
       if (arg2 != 0) {
          const struct vki_mq_attr *attr = (struct vki_mq_attr *)arg2;
@@ -5957,7 +5959,7 @@ static void bad_before(ThreadId tid, ThreadState *tst)
    VG_(message)
       (Vg_DebugMsg,"Read the file README_MISSING_SYSCALL_OR_IOCTL.");
 
-   res = -VKI_ENOSYS;
+   set_result( -VKI_ENOSYS );
 }
 
 static void bad_after(ThreadId tid, ThreadState *tst)

@@ -49,7 +49,7 @@
 #define PLATFORM_SYSCALL_ARG5(regs)    ((regs).m_edi)
 #define PLATFORM_SYSCALL_ARG6(regs)    ((regs).m_ebp)
 
-#define PLATFORM_PRE_SYSCALL_RESULT(regs, val)     ((regs).m_eax = (val))
+#define PLATFORM_SET_SYSCALL_RESULT(regs, val)     ((regs).m_eax = (val))
 
 // Interesting register numbers
 #define R_SYSCALL_NUM                  R_EAX

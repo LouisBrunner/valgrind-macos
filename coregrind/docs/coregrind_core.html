@@ -722,8 +722,18 @@ program can tell Valgrind about changes in memory range permissions
 that Valgrind would not otherwise know about, and so allows clients to
 get Valgrind to do arbitrary custom checks.
 <p>
-Clients need to include the header file <code>valgrind.h</code> to
-make this work.  The macros therein have the magical property that
+Clients need to include a skin-specific header file to make
+this work.  For most people this will be <code>memcheck.h</code>,
+which should be installed in the <code>include</code> directory 
+when you did <code>make install</code>.
+<code>memcheck.h</code> is the correct file to use with both
+the Memcheck (default) and Addrcheck skins.
+<p>
+Note for those migrating from 1.0.X, that the old header file
+<code>valgrind.h</code> no longer works, and will cause a compilation
+failure (deliberately) if included.
+<p>
+The macros in <code>memcheck.h</code> have the magical property that
 they generate code in-line which Valgrind can spot.  However, the code
 does nothing when not run on Valgrind, so you are not forced to run
 your program on Valgrind just because you use the macros in this file.

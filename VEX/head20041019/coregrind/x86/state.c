@@ -107,10 +107,21 @@ Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
    size of translations. */
 void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 {
+   Int shadow_off;
    /* Those with offsets under 128 are carefully chosen. */
 
    /* WORD offsets in this column */
-   VGOFF_(m_vex) = VG_(alloc_BaB)( (3 + sizeof(VexGuestX86State)) / 4 );
+   vg_assert(0 == sizeof(VexGuestX86State) % 8);
+
+   /* First the guest state. */
+   VGOFF_(m_vex) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
+
+   /* Then equal sized shadow state. */
+   shadow_off = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
+
+   /* Finally the spill area. */
+   VGOFF_(spillslots) = VG_(alloc_BaB)( LibVEX_N_SPILL_BYTES/4 );
+   if (0) VG_(printf)("SPILL SLOTS start at %d\n", VGOFF_(spillslots));
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -120,16 +131,20 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
    BASEBLOCK_VEX->guest_ESP = esp_at_startup;
    BASEBLOCK_VEX->guest_EIP = client_eip;
 
+   /* The dispatch loop needs to be able to find %EIP. */
+   VGOFF_(m_eip) 
+      = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
+
    if (VG_(needs).shadow_regs) {
-      /* 9   */ VGOFF_(sh_eax)    = VG_(alloc_BaB_1_set)(0);
-      /* 10  */ VGOFF_(sh_ecx)    = VG_(alloc_BaB_1_set)(0);
-      /* 11  */ VGOFF_(sh_edx)    = VG_(alloc_BaB_1_set)(0);
-      /* 12  */ VGOFF_(sh_ebx)    = VG_(alloc_BaB_1_set)(0);
-      /* 13  */ VGOFF_(sh_esp)    = VG_(alloc_BaB_1_set)(0);
-      /* 14  */ VGOFF_(sh_ebp)    = VG_(alloc_BaB_1_set)(0);
-      /* 15  */ VGOFF_(sh_esi)    = VG_(alloc_BaB_1_set)(0);
-      /* 16  */ VGOFF_(sh_edi)    = VG_(alloc_BaB_1_set)(0);
-      /* 17  */ VGOFF_(sh_eflags) = VG_(alloc_BaB_1_set)(0);
+      /* 9   */ VGOFF_(sh_eax)    = shadow_off+0;
+      /* 10  */ VGOFF_(sh_ecx)    = shadow_off+1;
+      /* 11  */ VGOFF_(sh_edx)    = shadow_off+2;
+      /* 12  */ VGOFF_(sh_ebx)    = shadow_off+3;
+      /* 13  */ VGOFF_(sh_esp)    = shadow_off+4;
+      /* 14  */ VGOFF_(sh_ebp)    = shadow_off+5;
+      /* 15  */ VGOFF_(sh_esi)    = shadow_off+6;
+      /* 16  */ VGOFF_(sh_edi)    = shadow_off+7;
+      /* 17  */ VGOFF_(sh_eflags) = shadow_off+8;
       VG_TRACK( post_regs_write_init );
    }
 
@@ -148,17 +163,11 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 
 void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
 {
-   /* (9/10 or 18/19) + n_compact_helpers */
-   VGOFF_(m_eip) 
-      = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
-   VG_(baseBlock)[VGOFF_(m_eip)] = client_eip;
-
    /* There are currently 24 spill slots */
    /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
     * boundary at >= 32 words, but most spills are to low numbered spill
     * slots, so the ones above the boundary don't see much action. */
-   VGOFF_(spillslots) = VG_(alloc_BaB)(VG_MAX_SPILLSLOTS);
-  VG_(printf)("SPILL SLOTS start at %d\n", VGOFF_(spillslots));
+
    /* I gave up counting at this point.  Since they're above the
       short-amode-boundary, there's no point. */
 

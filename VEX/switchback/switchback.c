@@ -38,6 +38,12 @@ static Int n_bbs_done = 0;
 #  define VexArch                   VexArchAMD64
 #  define VexSubArch                VexSubArch_NONE
 #  define GuestPC                   guest_RIP
+#elif defined(__powerpc__)
+#  define VexGuestState             VexGuestPPC32State
+#  define LibVEX_Guest_initialise   LibVEX_GuestPPC32_initialise
+#  define VexArch                   VexArchPPC32
+#  define VexSubArch                VexSubArchPPC32_noAV
+#  define GuestPC                   guest_CIA
 #else
 #   error "Unknown arch"
 #endif
@@ -162,6 +168,94 @@ void switchback ( void )
    switchback_asm(); // never returns
 }
 
+#elif defined(__powerpc__)
+
+asm(
+"switchback_asm:\n"
+// SP
+"   lis  %r2,sb_helper1\n"     // load hi-wd of guest_state_ptr to r2
+"   addi %r2,%r2,sb_helper1\n" // load lo-wd of guest_state_ptr to r2
+
+// LR
+//"   mtlr %r2\n"                // move continuation_addr to LR
+"   lwz %r4, 412(%r2)\n"       // guest_LR
+"   mtlr r4\n";                // move to LR
+
+// CR
+"   lis  %r4,sb_helper2\n"     // load hi-wd of flags to r4
+"   addi %r4,%r4,sb_helper2\n" // load lo-wd of flags to r4
+"   mtcr %r4\n"                // move r4 to CR
+"   lwz  %r4, 404(%r2)\n"      // guest_CR0to6
+"   mtcrf 0x3F,%r4\n";         // set remaining fields of CR
+
+// CTR
+//"   lwz %r4,392(%r2)\n"        // guest_CTR
+//"   mtctr %r4\n"               // move r4 to CTR
+"   mtctr %r2\n"                // move continuation_addr to CTR
+
+// XER
+"   lhz %r4, 412(%r2)\n"       // guest_XER_SO
+"   rlwimi $r5,%r4,31,0,0\n"   // rotate and insert to XER[31]
+"   lhz %r4, 412(%r2)\n"       // guest_XER_OV
+"   rlwimi $r5,%r4,30,1,1\n"   // rotate and insert to XER[30]
+"   lhz %r4, 412(%r2)\n"       // guest_XER_CA
+"   rlwimi $r5,%r4,29,2,2\n"   // rotate and insert to XER[30]
+"   lhz %r4, 412(%r2)\n"       // guest_XER_BC
+"   rlwimi $r5,%r4,0,25,31\n"  // rotate and insert to XER[0:6]
+"   mtxer %r5\n"               // move r5 to XER
+
+// GPR's
+"   lwz %r0,    0(%r2)\n"
+"   lwz %r1,    8(%r2)\n"      // switch stacks (r1 = SP)
+// r2 not used by vex
+"   lwz %r3,   12(%r2)\n"
+"   lwz %r4,   16(%r2)\n"
+"   lwz %r5,   20(%r2)\n"
+"   lwz %r6,   24(%r2)\n"
+"   lwz %r7,   28(%r2)\n"
+"   lwz %r8,   32(%r2)\n"
+"   lwz %r9,   36(%r2)\n"
+"   lwz %r10,  40(%r2)\n"
+"   lwz %r11,  44(%r2)\n"
+"   lwz %r12,  48(%r2)\n"
+"   lwz %r13,  52(%r2)\n"
+"   lwz %r14,  56(%r2)\n"
+"   lwz %r15,  60(%r2)\n"
+"   lwz %r16,  64(%r2)\n"
+"   lwz %r17,  68(%r2)\n"
+"   lwz %r18,  72(%r2)\n"
+"   lwz %r19,  76(%r2)\n"
+"   lwz %r20,  80(%r2)\n"
+"   lwz %r21,  84(%r2)\n"
+"   lwz %r22,  88(%r2)\n"
+"   lwz %r23,  92(%r2)\n"
+"   lwz %r24,  96(%r2)\n"
+"   lwz %r25, 100(%r2)\n"
+"   lwz %r26, 104(%r2)\n"
+"   lwz %r27, 108(%r2)\n"
+"   lwz %r28, 112(%r2)\n"
+"   lwz %r29, 116(%r2)\n"
+"   lwz %r30, 120(%r2)\n"
+"   lwz %r31, 124(%r2)\n"
+
+// Cache Sync - which instr?
+/*
+dcbst (update memory)
+sync (wait for update) 
+icbi (invalidate copy in instruction cache) 
+isync (perform context synchronization)
+eieio ...
+*/
+
+"   bctr\n"   // branch to count register
+);
+void switchback ( void )
+{
+   sb_helper1 = (HWord)&gst;
+   sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
+   switchback_asm(); // never returns
+}
+
 #else
 #   error "Unknown arch (switchback)"
 #endif
@@ -225,6 +319,22 @@ asm(
 
 "   ret\n"
 );
+
+#elif defined(__powerpc__)
+asm(
+"run_translation_asm:\n"
+
+// CAB: todo
+
+// store registers to stack
+// load new stack pointer
+// call translation address
+// save return value
+// reload registers from stack
+
+"   ret\n"
+);
+
 #else
 
 #   error "Unknown arch"
@@ -356,6 +466,17 @@ static void run_simulator ( void )
             gst.guest_RSP = esp+8;
             next_guest = gst.guest_RIP;
          }
+#        elif defined(__powerpc__)
+         {
+            HWord esp      = gst.guest_GPR1;
+            gst.guest_CIA  = *(UInt*)(esp+0);
+
+// CAB: ?
+            gst.guest_GPR2 = serviceFn( *(UInt*)(esp+4), *(UInt*)(esp+8) );
+
+            gst.guest_GPR1 = esp+4;
+            next_guest     = gst.guest_CIA;
+         }
 #        else
 #        error "Unknown arch"
 #        endif
@@ -422,6 +543,12 @@ int main ( Int argc, HChar** argv )
    gst.guest_RSP = (ULong)&gstack[25000];
    gst.guest_RDI = (ULong)serviceFn;
    *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
+#  elif defined(__powerpc__)
+// CAB: ?
+   gst.guest_CIA  = (UInt)entry;
+   gst.guest_GPR1 = (UInt)&gstack[25000];
+   gst.guest_GPR2 = (UInt)serviceFn;
+   gst.guest_GPR1 = 0x12345678;
 #  else
 #  error "Unknown arch"
 #  endif

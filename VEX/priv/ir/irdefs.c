@@ -1317,6 +1317,17 @@ static Bool saneIRCallee ( IRCallee* cee )
    return True;
 }
 
+static Bool saneIRConst ( IRConst* con )
+{
+   switch (con->tag) {
+      case Ico_U1: 
+         return con->Ico.U1 == True || con->Ico.U1 == False;
+      default: 
+         /* Is there anything we can meaningfully check?  I don't
+            think so. */
+         return True;
+   }
+}
 
 /* Traverse a Stmt/Expr, inspecting IRTemp uses.  Report any out of
    range ones.  Report any which are read and for which the current
@@ -1488,6 +1499,8 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
                sanityCheckFail(bb,stmt,"Iex.CCall.arg: arg :: Ity_I1");
          break;
       case Iex_Const:
+         if (!saneIRConst(expr->Iex.Const.con))
+            sanityCheckFail(bb,stmt,"Iex.Const.con: invalid const");
          break;
       case Iex_Mux0X:
          tcExpr(bb,stmt, expr->Iex.Mux0X.cond, gWordTy);
@@ -1567,6 +1580,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          }
          /* check types, minimally */
          if (d->guard == NULL) goto bad_dirty;
+         tcExpr( bb, stmt, d->guard, gWordTy );
          if (typeOfIRExpr(tyenv, d->guard) != Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_I1");
          if (d->tmp != IRTemp_INVALID
@@ -1586,6 +1600,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          tcExpr( bb, stmt, stmt->Ist.Exit.guard, gWordTy );
          if (typeOfIRExpr(tyenv,stmt->Ist.Exit.guard) != Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Exit.guard: not :: Ity_I1");
+         if (!saneIRConst(stmt->Ist.Exit.dst))
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: bad dst");
          if (typeOfIRConst(stmt->Ist.Exit.dst) != gWordTy)
             sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: not :: guest word type");
          break;

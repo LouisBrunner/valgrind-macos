@@ -171,6 +171,23 @@ void switchback ( void )
 
 #elif defined(__powerpc__)
 
+static void flush_cache(void *ptr, int nbytes)
+{
+   unsigned long startaddr = (unsigned long) ptr;
+   unsigned long endaddr = startaddr + nbytes;
+   unsigned long addr;
+   unsigned long cls = VG_(cache_line_size);
+
+   startaddr &= ~(cls - 1);
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("dcbst 0,%0" : : "r" (addr));
+   asm volatile("sync");
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("icbi 0,%0" : : "r" (addr));
+   asm volatile("sync; isync");
+}
+
+
 asm(
 "switchback_asm:\n"
 // SP
@@ -260,15 +277,32 @@ extern void nop_start_point;
 void switchback ( void )
 {
    UInt* p = &nop_start_point;
+
+   Addr32 addr_of_nop = p;
+   Addr32 where_to_go = gst->guest_CIA;
+   Int    diff = ((Int)addr_of_nop) - ((Int)where_to_go);
+
+   if (diff < -0x2000000 || diff >= 0x2000000) {
+     // we're hosed.  Give up
+   }
+
    sb_helper1 = (HWord)&gst;
    sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
 
    /* stay sane ... */
    assert(p[0] == 0 /* whatever the encoding for nop is */);
+
+   p[0] = (0<<31) // no link
+     | (0 << 30) // AA=0
+     | ((diff >> 2) & 0xFFFFFF)
+     | (bits 0 through 5)
+
    /*
 p[0] = "goto ..."
 p[1] = gst->guest_CIA
     */
+
+   flush_cache( &p[0], sizeof(UInt) );
 
    switchback_asm(); // never returns
 }

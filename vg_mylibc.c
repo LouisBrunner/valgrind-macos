@@ -1241,7 +1241,7 @@ void VG_(end_rdtsc_calibration) ( void )
    Primitive support for bagging memory via mmap.
    ------------------------------------------------------------------ */
 
-void* VG_(get_memory_from_mmap) ( Int nBytes )
+void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
 {
    static UInt tot_alloc = 0;
    void* p = VG_(mmap)( 0, nBytes,
@@ -1250,8 +1250,9 @@ void* VG_(get_memory_from_mmap) ( Int nBytes )
    if (p != ((void*)(-1))) {
       tot_alloc += (UInt)nBytes;
       if (0)
-         VG_(printf)("get_memory_from_mmap: %d tot, %d req\n",
-                     tot_alloc, nBytes);
+         VG_(printf)(
+            "get_memory_from_mmap: %d tot, %d req = %p .. %p, caller %s\n",
+            tot_alloc, nBytes, p, ((char*)p) + nBytes - 1, who );
       return p;
    }
    VG_(printf)("vg_get_memory_from_mmap failed on request of %d\n", 

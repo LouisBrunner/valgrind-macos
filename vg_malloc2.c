@@ -233,7 +233,8 @@ Superblock* newSuperblock ( Arena* a, Int cszW )
    cszW += 2; /* Take into account sb->next and sb->n_words fields */
    if (cszW < a->min_sblockW) cszW = a->min_sblockW;
    while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
-   sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word) );
+   sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
+                                    "newSuperblock" );
    sb->n_payload_words = cszW - 2;
    a->bytes_mmaped += cszW * sizeof(Word);
    if (0)

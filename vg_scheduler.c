@@ -2116,7 +2116,8 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
          assigning it for the first time. */
       vg_assert(VG_(threads)[tid].stack_size == 0);
       vg_assert(VG_(threads)[tid].stack_base == (Addr)NULL);
-      new_stack = (Addr)VG_(get_memory_from_mmap)( new_stk_szb );
+      new_stack = (Addr)VG_(get_memory_from_mmap)( new_stk_szb, 
+                                                   "new thread stack" );
       VG_(threads)[tid].stack_base = new_stack;
       VG_(threads)[tid].stack_size = new_stk_szb;
       VG_(threads)[tid].stack_highest_word

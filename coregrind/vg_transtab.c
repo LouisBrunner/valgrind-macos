@@ -508,11 +508,13 @@ void VG_(init_tt_tc) ( void )
 
    /* Allocate the translation table and translation cache. */
    vg_assert(vg_tc == NULL);
-   vg_tc = VG_(get_memory_from_mmap) ( VG_TC_SIZE * sizeof(UChar) );
+   vg_tc = VG_(get_memory_from_mmap) ( VG_TC_SIZE * sizeof(UChar), 
+                                       "trans-cache" );
    vg_assert(vg_tc != NULL);
 
    vg_assert(vg_tt == NULL);
-   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry) );
+   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry),
+                                       "trans-table" );
    vg_assert(vg_tt != NULL);
 
    /* The main translation table is empty. */

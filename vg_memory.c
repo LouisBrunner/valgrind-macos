@@ -332,7 +332,7 @@ static SecMap* alloc_secondary_map ( __attribute__ ((unused))
       although this isn't important, so the following assert is
       spurious. */
    vg_assert(0 == (sizeof(SecMap) % VKI_BYTES_PER_PAGE));
-   map = VG_(get_memory_from_mmap)( sizeof(SecMap) );
+   map = VG_(get_memory_from_mmap)( sizeof(SecMap), caller );
 
    for (i = 0; i < 8192; i++)
       map->abits[i] = VGM_BYTE_INVALID; /* Invalid address */
@@ -1963,8 +1963,40 @@ static Addr          vglc_max_mallocd_addr;
 static 
 void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
 {
-   Int sh_no;
-   Addr ptr = (Addr)word_at_a;
+   Int  sh_no;
+   Addr ptr;
+
+   /* Rule out some known causes of bogus pointers.  Mostly these do
+      not cause much trouble because only a few false pointers can
+      ever lurk in these places.  This mainly stops it reporting that
+      blocks are still reachable in stupid test programs like this
+
+         int main (void) { char* a = malloc(100); return 0; }
+
+      which people seem inordinately fond of writing, for some reason.  
+
+      Note that this is a complete kludge.  It would be better to
+      ignore any addresses corresponding to valgrind.so's .bss and
+      .data segments, but I cannot think of a reliable way to identify
+      where the .bss segment has been put.  If you can, drop me a
+      line.  
+   */
+   if (a >= ((Addr)(&VG_(stack)))
+       && a <= ((Addr)(&VG_(stack))) + sizeof(VG_(stack))) {
+      return;
+   }
+   if (a >= ((Addr)(&VG_(m_state_static)))
+       && a <= ((Addr)(&VG_(m_state_static))) + sizeof(VG_(m_state_static))) {
+      return;
+   }
+   if (a == (Addr)(&vglc_min_mallocd_addr))
+      return;
+   if (a == (Addr)(&vglc_max_mallocd_addr))
+      return;
+
+   /* OK, let's get on and do something Useful for a change. */
+
+   ptr = (Addr)word_at_a;
    if (ptr >= vglc_min_mallocd_addr && ptr <= vglc_max_mallocd_addr) {
       /* Might be legitimate; we'll have to investigate further. */
       sh_no = find_shadow_for ( ptr, vglc_shadows, vglc_n_shadows );
@@ -1975,6 +2007,7 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
                          + vglc_shadows[sh_no]->size);
          /* Decide whether Proper-ly or Interior-ly reached. */
          if (ptr == vglc_shadows[sh_no]->data) {
+            if (0) VG_(printf)("pointer at %p to %p\n", a, word_at_a );
             vglc_reachedness[sh_no] = Proper;
          } else {
             if (vglc_reachedness[sh_no] == Unreached)
@@ -2147,10 +2180,10 @@ void VG_(detect_memory_leaks) ( void )
 
    VG_(message)(Vg_UserMsg, "");
    VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
-   VG_(message)(Vg_UserMsg, "   possibly lost:   %d bytes in %d blocks.", 
-                            bytes_dubious, blocks_dubious );
    VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 
                             bytes_leaked, blocks_leaked );
+   VG_(message)(Vg_UserMsg, "   possibly lost:   %d bytes in %d blocks.", 
+                            bytes_dubious, blocks_dubious );
    VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
                             bytes_reachable, blocks_reachable );
    if (!VG_(clo_show_reachable)) {

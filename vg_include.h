@@ -915,7 +915,7 @@ extern void VG_(panic) ( Char* str )
             __attribute__ ((__noreturn__));
 
 /* Get memory by anonymous mmap. */
-extern void* VG_(get_memory_from_mmap) ( Int nBytes );
+extern void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who );
 
 /* Crude stand-in for the glibc system() call. */
 extern Int VG_(system) ( Char* cmd );

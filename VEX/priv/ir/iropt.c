@@ -559,7 +559,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
                are now associated.  So add a binding to reflect that
                fact. */
             addToHHW( env, (HWord)key, 
-                           (HWord)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
+                           (HWord)(void*)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
          }
       }
 

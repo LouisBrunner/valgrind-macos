@@ -203,8 +203,8 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       if (ph->p_type != PT_LOAD)
 	 continue;
 
-      addr = ph->p_vaddr+base;
-      memsz = ph->p_memsz;
+      addr    = ph->p_vaddr+base;
+      memsz   = ph->p_memsz;
       brkaddr = addr+memsz;
 
       if (brkaddr > elfbrk)
@@ -223,20 +223,16 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       if (ph->p_type != PT_LOAD)
 	 continue;
 
-      if (ph->p_flags & PF_X)
-	 prot |= PROT_EXEC;
-      if (ph->p_flags & PF_W)
-	 prot |= PROT_WRITE;
-      if (ph->p_flags & PF_R)
-	 prot |= PROT_READ;
+      if (ph->p_flags & PF_X) prot |= PROT_EXEC;
+      if (ph->p_flags & PF_W) prot |= PROT_WRITE;
+      if (ph->p_flags & PF_R) prot |= PROT_READ;
 
-      align = ph->p_align;
-
-      addr = ph->p_vaddr+base;
-      off =  ph->p_offset;
-      filesz = ph->p_filesz;
-      bss = addr+filesz;
-      memsz = ph->p_memsz;
+      align   = ph->p_align;
+      addr    = ph->p_vaddr+base;
+      off     = ph->p_offset;
+      filesz  = ph->p_filesz;
+      bss     = addr+filesz;
+      memsz   = ph->p_memsz;
       brkaddr = addr+memsz;
 
       res = mmap((char *)ROUNDDN(addr, align),

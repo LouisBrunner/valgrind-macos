@@ -20,7 +20,7 @@ many memory management and threading bugs, avoiding hours of frustrating
 bug-hunting, making your programs more stable. You can also perform
 detailed profiling to help speed up your programs.
 
-The Valgrind distribution includes four tools: two memory error
+The Valgrind distribution includes five tools: two memory error
 detectors, a thread error detector, a cache profiler and a heap profiler.
 Several other tools have been built with Valgrind.
 
@@ -86,8 +86,8 @@ To install from a tar.bz2 distribution:
      require that.
 
   6. See if it works.  Try "valgrind ls -l".  Either this works,
-     or it bombs out complaining it can't find argc/argv/envp.
-     In that case, mail me a bug report.
+     or it bombs out with some complaint.  In that case, please let
+     us know (see valgrind.kde.org/bugs.html).
 
 Important!  Do not move the valgrind installation into a place
 different from that specified by --prefix at build time.  This will

@@ -3231,6 +3231,7 @@ PRE(ioctl)
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
       
+#ifdef HAVE_LINUX_FB_H
    case FBIOGET_VSCREENINFO: /* 0x4600 */
       SYSCALL_TRACK( pre_mem_write,tid,
                      "ioctl(FBIOGET_VSCREENINFO)", arg3,
@@ -3241,6 +3242,7 @@ PRE(ioctl)
                      "ioctl(FBIOGET_FSCREENINFO)", arg3,
                      sizeof(struct fb_fix_screeninfo));
       break;
+#endif
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
@@ -3595,6 +3597,7 @@ POST(ioctl)
    case CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
 
+#ifdef HAVE_LINUX_FB_H
    case FBIOGET_VSCREENINFO: //0x4600
       if (res == 0)
          VG_TRACK( post_mem_write,arg3, sizeof(struct fb_var_screeninfo));
@@ -3603,6 +3606,7 @@ POST(ioctl)
       if (res == 0)
          VG_TRACK( post_mem_write,arg3, sizeof(struct fb_fix_screeninfo));
       break;
+#endif
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and

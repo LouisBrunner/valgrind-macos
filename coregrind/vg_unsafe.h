@@ -63,7 +63,9 @@
 #include <linux/cdrom.h>  /* for cd-rom ioctls */
 #include <signal.h>       /* for siginfo_t */
 #include <linux/timex.h>  /* for adjtimex */
+#ifdef HAVE_LINUX_FB_H
 #include <linux/fb.h>     /* for fb_* structs */
+#endif
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

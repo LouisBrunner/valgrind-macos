@@ -3325,6 +3325,12 @@ PRE(ioctl)
       break;
 #           endif /* BLKGETSIZE */
 
+      /* Hard disks */
+   case HDIO_GET_IDENTITY: /* 0x030d */
+      SYSCALL_TRACK( pre_mem_write,tid, "ioctl(HDIO_GET_IDENTITY)", arg3,
+                     sizeof(struct hd_driveid) );
+      break;
+
       /* CD ROM stuff (??)  */
    case CDROM_GET_MCN:
       SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROM_GET_MCN)", arg3,
@@ -3779,6 +3785,12 @@ POST(ioctl)
 	 VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
       break;
 #           endif /* BLKGETSIZE */
+
+      /* Hard disks */
+   case HDIO_GET_IDENTITY: /* 0x030d */
+      if (res == 0)
+	 VG_TRACK( post_mem_write,arg3, sizeof(struct hd_driveid));
+      break;
 
       /* CD ROM stuff (??)  */
    case CDROMSUBCHNL:

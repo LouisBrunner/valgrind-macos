@@ -1191,6 +1191,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                            sizeof(struct msqid_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         break;
+#                    if defined(IPC_64)
                      case IPC_STAT|IPC_64:
                         must_be_writable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid64_ds) );
@@ -1199,11 +1200,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                            make_readable ( arg5, sizeof(struct msqid64_ds) );
                         }
                         break;
+#                    endif
+#                    if defined(IPC_64)
                      case IPC_SET|IPC_64:
                         must_be_readable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid64_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         break;
+#                    endif
                      default:
                         KERNEL_DO_SYSCALL(tid,res);
                         break;

@@ -6,7 +6,7 @@ add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include
 AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(libdir)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -fpic
-AM_CCASFLAGS = $(add_includes)
+AM_CCASFLAGS = $(add_includes) -I..
 
 valdir = $(libdir)/valgrind
 

@@ -30,7 +30,7 @@
 */
 
 #include "vg_constants.h"
-#include "../config.h"
+#include "config.h"
 
 
 #---------------------------------------------------------------------

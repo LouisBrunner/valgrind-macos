@@ -37,7 +37,7 @@ check_PROGRAMS = \
 	pth_exit pth_mutexspeed pth_once \
 	vgprintf
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0 -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # C ones

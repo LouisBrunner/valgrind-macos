@@ -205,6 +205,8 @@ pshuflw_2 ... ok
 pslld_1 ... ok
 pslld_2 ... ok
 pslld_3 ... ok
+pslldq_1 ... ok
+pslldq_2 ... ok
 psllq_1 ... ok
 psllq_2 ... ok
 psllq_3 ... ok

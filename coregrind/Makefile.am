@@ -82,7 +82,9 @@ noinst_HEADERS = \
         vg_constants.h          \
 	vg_unsafe.h
 
-MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) libpthread.so.0
+#### JRS 17 May 03, see comment below
+####MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) libpthread.so.0
+MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
@@ -90,5 +92,8 @@ vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 
 ## Must have a libpthread.so.0 symlink
-libpthread.so.0:
-	ln -s libpthread.so libpthread.so.0
+#### JRS 17 May 03, this messes up the build system on many
+#### modern distros, since most build tools (make etc) are
+#### linked with libpthread.
+####libpthread.so.0:
+####	ln -s libpthread.so libpthread.so.0

@@ -594,11 +594,6 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
             vg_assert(instr_size >= 1 && instr_size <= MAX_x86_INSTR_SIZE);
             vg_assert(0 != instr_addr);
 
-            /* Save the caller-save registers before we push our args */
-            uInstr1(cb, PUSH, 4, RealReg, R_EAX);
-            uInstr1(cb, PUSH, 4, RealReg, R_ECX);
-            uInstr1(cb, PUSH, 4, RealReg, R_EDX);
-
             if (!IS_(read) && !IS_(write)) {
                iCC* CC_ptr = (iCC*)(BBCC_ptr);
                vg_assert(INVALID_DATA_SIZE == data_size);
@@ -608,7 +603,13 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
                if (!BB_seen_before)
                    init_iCC(CC_ptr, instr_addr, instr_size);
 
-               helper = VGOFF_(cachesim_log_non_mem_instr);
+               /* 1st arg: CC addr */
+               t_CC_addr = newTemp(cb);
+               uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
+               uLiteral(cb, BBCC_ptr);
+
+               uInstr1(cb, CCALL_1_0, 0, TempReg, t_CC_addr);
+               uLiteral(cb, VGOFF_(cachesim_log_non_mem_instr));
 
             } else { 
                CC_type X_CC;
@@ -639,31 +640,19 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
                             INVALID_TEMPREG != t_write_addr);
                   t_data_addr = t_read_addr;
                }
-
+#undef IS_
                if (!BB_seen_before)
                   init_idCC(X_CC, CC_ptr, instr_addr, instr_size, data_size);
 
-               /* 2nd arg: data addr */
-               uInstr1(cb, PUSH,  4, TempReg, t_data_addr);
-               stack_used += 4;
+               /* 1st arg: CC addr */
+               t_CC_addr = newTemp(cb);
+               uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
+               uLiteral(cb, BBCC_ptr);
+
+               uInstr2(cb, CCALL_2_0, 0, TempReg, t_CC_addr, 
+                                         TempReg, t_data_addr);
+               uLiteral(cb, VGOFF_(cachesim_log_mem_instr));
             }
-#undef IS_
-
-            /* 1st arg: CC addr */
-            t_CC_addr = newTemp(cb);
-            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
-            uLiteral(cb, BBCC_ptr);
-            uInstr1(cb, PUSH,  4, TempReg, t_CC_addr);
-            stack_used += 4;
-
-            /* Call function and return. */
-            uInstr1(cb, CALLM, 0, Lit16,   helper);
-            uInstr1(cb, CLEAR, 0, Lit16,   stack_used);
-
-            /* Restore the caller-save registers now the call is done */
-            uInstr1(cb, POP, 4, RealReg, R_EDX);
-            uInstr1(cb, POP, 4, RealReg, R_ECX);
-            uInstr1(cb, POP, 4, RealReg, R_EAX);
 
             VG_(copyUInstr)(cb, u_in);
 

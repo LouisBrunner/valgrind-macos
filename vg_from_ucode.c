@@ -1067,6 +1067,43 @@ static void synth_call_baseBlock_method ( Bool ensure_shortform,
    emit_call_star_EBP_off ( 4 * word_offset );
 }
 
+static void synth_ccall_saveRegs ( void )
+{
+   emit_pushv_reg ( 4, R_EAX ); 
+   emit_pushv_reg ( 4, R_ECX ); 
+   emit_pushv_reg ( 4, R_EDX ); 
+}
+   
+static void synth_ccall_pushOneArg ( Int r1 )
+{
+   emit_pushv_reg ( 4, r1 );
+}
+
+static void synth_ccall_pushTwoArgs ( Int r1, Int r2 )
+{
+   /* must push in reverse order */
+   emit_pushv_reg ( 4, r2 );
+   emit_pushv_reg ( 4, r1 );
+}
+
+/* Synthesise a call to *baseBlock[offset], ie,
+   call * (4 x offset)(%ebp) with arguments
+*/
+static void synth_ccall_call_clearStack_restoreRegs ( Int word_offset, 
+                                                      UInt n_args_bytes )
+{
+   vg_assert(word_offset >= 0);
+   vg_assert(word_offset < VG_BASEBLOCK_WORDS);
+   vg_assert(n_args_bytes <= 12);           /* Max 3 word-sized args */
+   vg_assert(0 == (n_args_bytes & 0x3));    /* Divisible by four */
+
+   emit_call_star_EBP_off ( 4 * word_offset );
+   if ( 0 != n_args_bytes )
+      emit_add_lit_to_esp ( n_args_bytes );
+   emit_popv_reg ( 4, R_EDX ); 
+   emit_popv_reg ( 4, R_ECX ); 
+   emit_popv_reg ( 4, R_EAX ); 
+}
 
 static void load_ebp_from_JmpKind ( JmpKind jmpkind )
 {
@@ -2522,6 +2559,26 @@ static void emitUInstr ( Int i, UInstr* u )
          synth_call_baseBlock_method ( False, u->val1 );
          if (u->flags_w != FlagsEmpty) 
             emit_put_eflags();
+         break;
+
+      case CCALL_1_0:
+         vg_assert(u->tag1 == RealReg);
+         vg_assert(u->tag2 == NoValue);
+         vg_assert(u->size == 0);
+
+         synth_ccall_saveRegs();
+         synth_ccall_pushOneArg ( u->val1 );
+         synth_ccall_call_clearStack_restoreRegs ( u->lit32, 4 );
+         break;
+
+      case CCALL_2_0:
+         vg_assert(u->tag1 == RealReg);
+         vg_assert(u->tag2 == RealReg);
+         vg_assert(u->size == 0);
+
+         synth_ccall_saveRegs();
+         synth_ccall_pushTwoArgs ( u->val1, u->val2 );
+         synth_ccall_call_clearStack_restoreRegs ( u->lit32, 8 );
          break;
 
       case CLEAR:

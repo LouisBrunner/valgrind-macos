@@ -1066,6 +1066,10 @@ typedef
       PUSH, POP, CLEAR, /* Add/remove/zap args for helpers. */
       CALLM,  /* call to a machine-code helper */
 
+      /* for calling C functions -- CCALL_M_N passes M arguments and returns N
+       * (0 or 1) return values */
+      CCALL_1_0, CCALL_2_0,
+
       /* Hack for translating string (REP-) insns.  Jump to literal if
          TempReg/RealReg is zero. */
       JIFZ,

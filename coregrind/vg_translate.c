@@ -411,6 +411,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define SZ0  (u->size == 0)
 #  define SZ42 (u->size == 4 || u->size == 2)
 #  define SZ48 (u->size == 4 || u->size == 8)
+#  define SZ416 (u->size == 4 || u->size == 16)
 #  define SZi  (u->size == 4 || u->size == 2 || u->size == 1)
 #  define SZf  (  u->size ==  4 || u->size ==  8 || u->size ==   2     \
                || u->size == 10 || u->size == 28 || u->size == 108)
@@ -454,6 +455,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define L1  (u->tag1 == Literal && u->val1 == 0)
 #  define L2  (u->tag2 == Literal && u->val2 == 0)
 #  define Ls1 (u->tag1 == Lit16)
+#  define Ls2 (u->tag2 == Lit16)
 #  define Ls3 (u->tag3 == Lit16)
 #  define TRL1 (TR1 || L1)
 #  define TRAL1 (TR1 || A1 || L1)
@@ -548,11 +550,19 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    /* Fields checked:     lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case MMX1:
    case MMX2:       return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
-   case MMX3:       return LIT0 && SZ0  && CC0 &&  Ls1 && Ls1 &&  N3 && XOTHER;
+   case MMX3:       return LIT0 && SZ0  && CC0 &&  Ls1 && Ls2 &&  N3 && XOTHER;
    case MMX2_MemRd: return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_MemWr: return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_RegRd: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case MMX2_RegWr: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+
+   /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
+   case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
          return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
@@ -573,6 +583,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef SZ0
 #  undef SZ42
 #  undef SZ48
+#  undef SZ416
 #  undef SZi
 #  undef SZf
 #  undef SZ4m
@@ -600,6 +611,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef L1
 #  undef L2
 #  undef Ls1
+#  undef Ls2
 #  undef Ls3
 #  undef TRL1
 #  undef TRAL1
@@ -861,6 +873,12 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case MMX2_MemWr: return "MMX2_MWr" ;
       case MMX2_RegRd: return "MMX2_RRd" ;
       case MMX2_RegWr: return "MMX2_RWr" ;
+      case SSE2a_MemWr: return "SSE2a_MWr";
+      case SSE2a_MemRd: return "SSE2a_MRd";
+      case SSE3g_RegRd: return "SSE3g_RRd";
+      case SSE4:        return "SSE4";
+      case SSE3a_MemWr: return "SSE3a_MWr";
+      case SSE3a_MemRd: return "SSE3a_MRd";
       default:
          if (VG_(needs).extended_UCode)
             return SK_(name_XUOpcode)(opc);
@@ -930,8 +948,11 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case 2:  VG_(printf)("W"); break;
       case 4:  VG_(printf)("L"); break;
       case 8:  VG_(printf)("Q"); break;
+      case 16: VG_(printf)("QQ"); break;
       default: VG_(printf)("%d", (Int)u->size); break;
    }
+
+   VG_(printf)("       \t");
 
    switch (u->opcode) {
 
@@ -939,11 +960,11 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case INCEIP:
-         VG_(printf)("\t$%d", u->val1);
+         VG_(printf)("$%d", u->val1);
          break;
 
       case LEA2:
-         VG_(printf)("\t%d(" , u->lit32);
+         VG_(printf)("%d(" , u->lit32);
          VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(",");
          VG_(pp_UOperand)(u, 2, 4, False);
@@ -952,7 +973,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case LEA1:
-         VG_(printf)("\t%d" , u->lit32);
+         VG_(printf)("%d" , u->lit32);
          VG_(pp_UOperand)(u, 1, 4, True);
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, 4, False);
@@ -962,55 +983,82 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case FPU_W:
-         VG_(printf)("\t0x%x:0x%x, ",
+         VG_(printf)("0x%x:0x%x, ",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          VG_(pp_UOperand)(u, 2, 4, True);
          break;
 
       case FPU_R:
-         VG_(printf)("\t");
+         VG_(printf)("");
          VG_(pp_UOperand)(u, 2, 4, True);
          VG_(printf)(", 0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          break;
 
       case FPU:
-         VG_(printf)("\t0x%x:0x%x",
+         VG_(printf)("0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          break;
 
       case MMX1:
-         VG_(printf)("\t0x%x",
+         VG_(printf)("0x%x",
                      u->val1 & 0xFF );
          break;
 
       case MMX2:
-         VG_(printf)("\t0x%x:0x%x",
+         VG_(printf)("0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          break;
 
       case MMX3:
-         VG_(printf)("\t0x%x:0x%x:0x%x",
+         VG_(printf)("0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, u->val2 & 0xFF );
          break;
 
       case MMX2_RegWr:
       case MMX2_RegRd:
-         VG_(printf)("\t0x%x:0x%x, ",
+         VG_(printf)("0x%x:0x%x, ",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          VG_(pp_UOperand)(u, 2, 4, False);
          break;
  
       case MMX2_MemWr:
       case MMX2_MemRd:
-          VG_(printf)("\t0x%x:0x%x",
+          VG_(printf)("0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          VG_(pp_UOperand)(u, 2, 4, True);
          break;
 
+      case SSE2a_MemWr:
+      case SSE2a_MemRd:
+         VG_(printf)("0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, u->val2 & 0xFF );
+         VG_(pp_UOperand)(u, 3, 4, True);
+         break;
+
+      case SSE3a_MemWr:
+      case SSE3a_MemRd:
+         VG_(printf)("0x%x:0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
+                     (u->val1 >> 8) & 0xFF, u->val2 & 0xFF );
+         VG_(pp_UOperand)(u, 3, 4, True);
+         break;
+
+      case SSE3g_RegRd:
+         VG_(printf)("0x%x:0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
+                     (u->val2 >> 8) & 0xFF, u->val2 & 0xFF );
+         VG_(pp_UOperand)(u, 3, 4, True);
+         break;
+
+      case SSE4:
+         VG_(printf)("0x%x:0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
+                     (u->val2 >> 8) & 0xFF, u->val2 & 0xFF );
+         break;
+
       case GET: case PUT: case MOV: case LOAD: case STORE: case CMOV:
       case GETSEG: case PUTSEG:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, u->opcode==LOAD); 
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, u->size, u->opcode==STORE);
@@ -1024,7 +1072,6 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
             case JmpClientReq: VG_(printf)("-cli"); break;
             default: break;
          }
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, False);
          if (CondAlways == u->cond) {
             /* Print x86 instruction size if filled in */
@@ -1036,13 +1083,11 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case GETF: case PUTF:
       case CC2VAL: case PUSH: case POP: case CLEAR: case CALLM:
       case NOT: case NEG: case INC: case DEC: case BSWAP:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 
       /* Print a "(s)" after args passed on stack */
       case CCALL:
-         VG_(printf)("\t");
          if (u->has_ret_val) {
             VG_(pp_UOperand)(u, 3, 0, False);
             VG_(printf)(" = ");
@@ -1074,7 +1119,6 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case XOR: case SUB: case SBB:   
       case SHL: case SHR: case SAR: 
       case ROL: case ROR: case RCL: case RCR:   
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, False); 
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, u->size, False);
@@ -1083,7 +1127,6 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case WIDEN:
          VG_(printf)("_%c%c", VG_(toupper)(nameISize(u->extra4b)),
                               u->signed_widen?'s':'z');
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 
@@ -1159,9 +1202,16 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case LEA1: RD(1); WR(2); break;
       case LEA2: RD(1); RD(2); WR(3); break;
 
+      case SSE3g_RegRd:
+      case SSE3a_MemWr:
+      case SSE3a_MemRd:
+      case SSE2a_MemWr: 
+      case SSE2a_MemRd: RD(3);
+
       case MMX2_RegRd: RD(2); break;
       case MMX2_RegWr: WR(2); break;
 
+      case SSE4:
       case MMX1: case MMX2: case MMX3:
       case NOP:   case FPU:   case INCEIP: case CALLM_S: case CALLM_E:
       case CLEAR: case CALLM: case LOCK: break;
@@ -1313,6 +1363,10 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX1: case MMX2: case MMX3:
       case MMX2_MemRd: case MMX2_MemWr:
       case MMX2_RegRd: case MMX2_RegWr:
+      case SSE2a_MemWr: case SSE2a_MemRd:
+      case SSE3a_MemWr: case SSE3a_MemRd:
+      case SSE3g_RegRd:
+      case SSE4:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
       case GETSEG: case PUTSEG: 
@@ -1441,6 +1495,9 @@ static void vg_improve ( UCodeBlock* cb )
                if (cb->instrs[m].tag2 == TempReg 
                    && cb->instrs[m].val2 == tr) 
                  cb->instrs[m].val2 = told;
+               if (cb->instrs[m].tag3 == TempReg 
+                   && cb->instrs[m].val3 == tr) 
+                 cb->instrs[m].val3 = told;
             }
             BIND_ARCH_TO_TEMP(ar,told);
          }
@@ -1577,6 +1634,9 @@ static void vg_improve ( UCodeBlock* cb )
             if (cb->instrs[j].tag2 == TempReg 
                 && cb->instrs[j].val2 == u->val2)
                cb->instrs[j].val2 = u->val1;
+            if (cb->instrs[j].tag3 == TempReg 
+                && cb->instrs[j].val3 == u->val2)
+               cb->instrs[j].val3 = u->val1;
          }
          last_live_before[u->val1] = last_live_before[u->val2];
          last_live_before[u->val2] = i-1;

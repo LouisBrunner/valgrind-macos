@@ -572,8 +572,8 @@ typedef
       /* ------------ SSE/SSE2 ops ------------ */
       /* In the following:
 
-         a digit N indicates the next N bytes are to be copied exactly to the
-         output.
+         a digit N indicates the next N bytes are to be copied exactly
+         to the output.
 
          'a' indicates a mod-xmmreg-rm byte, where the mod-rm part is
          to be replaced at codegen time to a Temp/RealReg holding the
@@ -596,7 +596,7 @@ typedef
          Held in val1[15:0] and val2[7:0], and mod and rm are to be
          replaced at codegen time by a reference to the Temp/RealReg
          holding the address.  Arg3 holds this Temp/Real Reg.
-         Transfer is always at size 16.  */
+         Transfer is usually, but not always, at size 16.  */
       SSE2a_MemRd,
       SSE2a_MemWr,
 
@@ -631,12 +631,12 @@ typedef
       SSE3g_RegWr,
 
       /* 4 bytes, reads an integer register.  Insns of the form
-         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg xmmreg.
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 xmmreg ireg.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced
          at codegen time by a reference to the relevant RealReg.
          Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
       */
-      SSE3h_RegRd,
+      SSE3g_RegRd,
 
       /* 5 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0], val2[15:0] and val3[7:0]. */
@@ -1082,6 +1082,7 @@ extern Char  VG_(name_of_int_size) ( Int size );
 #define nameSReg    VG_(name_of_seg_reg)
 #define nameMMXReg  VG_(name_of_mmx_reg)
 #define nameMMXGran VG_(name_of_mmx_gran)
+#define nameXMMReg  VG_(name_of_xmm_reg)
 
 /* Randomly useful things */
 extern UInt  VG_(extend_s_8to32) ( UInt x );

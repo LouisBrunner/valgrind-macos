@@ -146,6 +146,14 @@ Char* VG_(name_of_mmx_reg) ( Int mmxreg )
    return mmx_names[mmxreg];
 }
 
+Char* VG_(name_of_xmm_reg) ( Int xmmreg )
+{
+   static Char* xmm_names[8] 
+     = { "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7" };
+   if (xmmreg < 0 || xmmreg > 7) VG_(core_panic)("name_of_xmm_reg");
+   return xmm_names[xmmreg];
+}
+
 Char* VG_(name_of_mmx_gran) ( UChar gran )
 {
    switch (gran) {
@@ -3247,11 +3255,48 @@ Addr dis_MMXop_regmem_to_reg ( UCodeBlock* cb,
 }
 
 
+
+/* Simple SSE operations, either 
+       op   (src)xmmreg, (dst)xmmreg
+   or
+       op   (src)address, (dst)xmmreg
+   It is assumed that there are 3 opcode bytes preceding the start
+   of the address mode.  eip points to the first opcode byte.
+*/
+static
+Addr dis_SSE3_reg_or_mem ( UCodeBlock* cb, 
+                           UChar sorb, 
+                           Char* name, 
+                           Int sz, 
+                           Addr eip )
+{
+   UChar opc1 = getUChar(eip); 
+   UChar opc2 = getUChar(eip+1);
+   UChar opc3 = getUChar(eip+2);
+   UChar modrm = getUChar(eip+3);
+   eip += 3;
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      uInstr2(cb, SSE4, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (((UShort)opc3) << 8) | (UShort)modrm );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameXMMReg(eregOfRM(modrm)), nameXMMReg(gregOfRM(modrm)) );
+         eip++;
+   } else {
+      VG_(core_panic)("dis_SSE3_reg_or_mem: mem");
+   }
+   return eip;
+}
+
+
+
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
 /*------------------------------------------------------------*/
 
-/* Disassemble a single instruction into ucode, returning the update
+/* Disassemble a single instruction into ucode, returning the updated
    eip, and setting *isEnd to True if this is the last insn in a basic
    block.  Also do debug printing if (dis). */
 
@@ -3339,8 +3384,106 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          break;
    }
 
+   /* ---------------------------------------------------- */
+   /* --- The SSE/SSE2 decoder.                        --- */
+   /* ---------------------------------------------------- */
 
+   /* If it looks like this CPU might support SSE, try decoding SSE
+      insns.  */
+   if (VG_(have_ssestate)) {
+   UChar* insn = (UChar*)eip;
+
+   /* STMXCSR/LDMXCSR m32 */
+   if (insn[0] == 0x0F && insn[1] == 0xAE 
+       && (gregOfRM(insn[2]) == 3 || gregOfRM(insn[2]) == 2) ) {
+      Bool store = gregOfRM(insn[2]) == 3;
+      pair = disAMode ( cb, sorb, eip+2, dis?dis_buf:NULL );
+      t1   = LOW24(pair);
+      eip += 2+HI8(pair);
+      uInstr3(cb, store ? SSE2a_MemWr : SSE2a_MemRd, 4,
+                  Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                  Lit16, (UShort)insn[2],
+                  TempReg, t1 );
+      if (dis)
+         VG_(printf)("%smxcsr %s\n", store ? "st" : "ld", dis_buf );
+      goto sse_done;
+   }
+
+   /* CVTSI2SS */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x2A) {
+      modrm = insn[3];
+      t1 = newTemp(cb);
+      if (epartIsReg(modrm)) { 
+         uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
+         uInstr3(cb, SSE3g_RegRd, 4,
+                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
+                     TempReg, t1 );
+         eip += 4;
+	 if (dis)
+            VG_(printf)("cvtsi2ss %s, %s\n", nameIReg(4,eregOfRM(modrm)), 
+                                             nameXMMReg(gregOfRM(modrm)));
+      } else {
+         pair = disAMode ( cb, sorb, eip+3, dis?dis_buf:NULL );
+         t2   = LOW24(pair);
+         eip += 3+HI8(pair);
+	 uInstr2(cb, LOAD, 4, TempReg, t2, TempReg, t1);
+         uInstr3(cb, SSE3g_RegRd, 4,
+                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
+                     TempReg, t1 );
+	 if (dis)
+            VG_(printf)("cvtsi2ss %s, %s\n", dis_buf,
+                                             nameXMMReg(gregOfRM(modrm)));
+      }
+      goto sse_done;
+   }
+
+   /* DIVSS */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, "divss", 4, eip );
+      goto sse_done;
+   }
+
+   /* MOVSS */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x11) {
+      if (epartIsReg(insn[3])) {
+         /* MOVSS xmm, xmm */
+         VG_(core_panic)("MOVSS reg");
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, "movss", 4, eip );
+      } else {
+         Bool store = insn[2] == 0x11;
+         pair = disAMode ( cb, sorb, eip+3, dis?dis_buf:NULL );
+         t1   = LOW24(pair);
+         eip += 3+HI8(pair);
+         uInstr3(cb, store ? SSE3a_MemWr : SSE3a_MemRd, 4,
+                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                     Lit16, (((UShort)insn[2]) << 8) | (UShort)insn[3],
+                     TempReg, t1 );
+         if (dis && store)
+            VG_(printf)("movss %s, %s\n", 
+                        nameXMMReg(gregOfRM(insn[3])), dis_buf );
+         if (dis && !store)
+            VG_(printf)("movss %s, %s\n", 
+                        dis_buf, nameXMMReg(gregOfRM(insn[3])) );
+      }
+      goto sse_done;
+   }
+
+   /* Fall through into the non-SSE decoder. */
+
+   } /* if (VG_(have_ssestate)) */
+
+
+   /* ---------------------------------------------------- */
+   /* --- end of the SSE/SSE2 decoder.                 --- */
+   /* ---------------------------------------------------- */
+
+   /* Get the primary opcode. */
    opc = getUChar(eip); eip++;
+
+   /* We get here if the current insn isn't SSE, or this CPU doesn't
+      support SSE. */
 
    switch (opc) {
 
@@ -3705,7 +3848,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       handleSegOverride(cb, sorb, t2);
       uInstr2(cb, LOAD, sz, TempReg, t2,  TempReg, t1);
       uInstr2(cb, PUT,  sz, TempReg, t1,  ArchReg, R_EAX);
-      if (dis) VG_(printf)("mov%c %s0x%x,%s\n", nameISize(sz), 
+      if (dis) VG_(printf)("mov%c %s0x%x, %s\n", nameISize(sz), 
                            sorbTxt(sorb),
                            d32, nameIReg(sz,R_EAX));
       break;
@@ -3721,9 +3864,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uLiteral(cb, d32);
       handleSegOverride(cb, sorb, t2);
       uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t2);
-      if (dis) VG_(printf)("mov%c %s,%s0x%x\n", nameISize(sz), 
-                           sorbTxt(sorb),
-                           nameIReg(sz,R_EAX), d32);
+      if (dis) VG_(printf)("mov%c %s, %s0x%x\n", nameISize(sz), 
+                           nameIReg(sz,R_EAX),
+                           sorbTxt(sorb), d32);
       break;
 
    case 0xB0: /* MOV imm,AL */
@@ -4316,7 +4459,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          if (dis) VG_(printf)("repe nop (P4 pause)\n");
          /* do nothing; apparently a hint to the P4 re spin-wait loop */
       } else {
-         VG_(printf)("REPE then 0x%x\n", (UInt)abyte);
+         VG_(printf)("Insn bytes: 0xF3 0x%x 0x%x\n", 
+                     (UInt)abyte, (UInt)getUChar(eip));
          VG_(core_panic)("Unhandled REPE case");
       }
       break;
@@ -5105,6 +5249,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       VG_(core_panic)("unhandled x86 opcode");
    }
 
+  sse_done:
    if (dis)
       VG_(printf)("\n");
    for (; first_uinstr < cb->used; first_uinstr++) {

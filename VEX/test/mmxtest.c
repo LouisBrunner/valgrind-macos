@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HAVE_SSE2 1
 
 /* DO NOT COMPILE WITH -O/-O2/-O3 !  GENERATES INVALID ASSEMBLY. */
 
@@ -458,6 +459,17 @@ mmx_ok(void)
 #define   punpckhbw(vars, vard)   mmx_m2m(punpckhbw, vars, vard)
 
 
+/* 1x64 add/sub -- this is in sse2, not in mmx. */
+#define   paddq_m2r(var, reg)     mmx_m2r(paddq, var, reg)
+#define   paddq_r2r(regs, regd)   mmx_r2r(paddq, regs, regd)
+#define   paddq(vars, vard)       mmx_m2m(paddq, vars, vard)
+
+#define   psubq_m2r(var, reg)     mmx_m2r(psubq, var, reg)
+#define   psubq_r2r(regs, regd)   mmx_r2r(psubq, regs, regd)
+#define   psubq(vars, vard)       mmx_m2m(psubq, vars, vard)
+
+
+
 /*   Empty MMx State
    (used to clean-up when going from mmx to float use
     of the registers that are shared by both; note that
@@ -579,6 +591,11 @@ int main( void )
 
      do_test("psrad", psrad(ma,mb));
      do_test("psraw", psraw(ma,mb));
+
+#if HAVE_SSE2
+     do_test("paddq", paddq(ma,mb));
+     do_test("psubq", psubq(ma,mb));
+#endif
 
      emms();
    }

@@ -436,7 +436,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                (u->flags_w==FlagsOSZACP || emptyW))
 #  define CCd ((u->flags_r==FlagC   || emptyR) && \
                (u->flags_w==FlagsOC || emptyW))
-#  define CCf (CC0 || (emptyR && u->flags_w==FlagsZCP))
+#  define CCf (CC0 || (emptyR && u->flags_w==FlagsZCP) \
+                   || (u->flags_r==FlagsZCP && emptyW))
 #  define CCg ((u->flags_r==FlagsOSZACP || emptyR) && emptyW)
 #  define CCj (u->cond==CondAlways ? CC0 : CCg)
 

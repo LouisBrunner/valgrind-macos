@@ -112,17 +112,18 @@ VG_(helper_RDTSC):
 	dummy, replaced by %EDX value
 	RA   <- %esp
 
-   As emulating a real CPUID is kinda hard, as it
-   has to return different values depending on EAX, 
-   we just pretend to not support CPUID at all until
-   it becomes a problem. This will for sure disable
-   all MMX / 3dnow checks so they don't bother us
-   with code we don't understand. (Dirk <dirk@kde.org>)
-   
+   For simulating the cpuid instruction, we will
+   issue a "real" cpuid instruction and then mask out
+   the bits of the features we do not support currently (3dnow mostly).
+
+   Dirk Mueller <mueller@kde.org>
+
    http://www.sandpile.org/ia32/cpuid.htm
 
-   (Later: we instead pretend to be like Werner's P54C P133, that is
-    an original pre-MMX Pentium).
+   references: 
+
+   pre-MMX pentium:
+
    <werner> cpuid words (0): 0x1 0x756e6547 0x6c65746e 0x49656e69
    <werner> cpuid words (1): 0x52b 0x0 0x0 0x1bf
 */
@@ -134,33 +135,23 @@ VG_(helper_CPUID):
 	pushl	%edx
 	movl	32(%esp), %eax
 
-	cpuid
+        cmpl	$0x80000001, %eax
+        je	cpuid_no3dnow
 
-/*
-        xor     %eax,%eax
-        xor     %ebx,%ebx
-        xor     %ecx,%ecx
-        xor     %edx,%edx
-*/
-/*
-	cmpl	$0, %eax
-	jz	cpuid__0
-	movl	$0x52b, %eax
-	movl	$0x0,   %ebx
-	movl	$0x0,   %ecx
-	movl	$0x008001bf, %edx
+	cpuid
 	jmp	cpuid__99
-cpuid__0:
-	movl	$0x1,        %eax
-	movl	$0x756e6547, %ebx
-	movl	$0x6c65746e, %ecx
-	movl	$0x49656e69, %edx
+
+cpuid_no3dnow:
+	cpuid
+	
+	andl	$0x3fffffff, %edx
+
 cpuid__99:
-*/	
 	movl	%edx, 20(%esp)
 	movl	%ecx, 24(%esp)
 	movl	%ebx, 28(%esp)
 	movl	%eax, 32(%esp)
+
 	popl	%edx
 	popl	%ecx
 	popl	%ebx

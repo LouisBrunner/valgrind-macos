@@ -12,6 +12,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-amd64/hdefs.h			\
 		priv/host-arm/hdefs.h			\
+		priv/host-ppc32/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\
 		priv/host-generic/h_generic_simd64.h	\
 		priv/main/vex_globals.h			\
@@ -32,9 +33,11 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-x86/hdefs.o			\
 		priv/host-amd64/hdefs.o			\
 		priv/host-arm/hdefs.o			\
+		priv/host-ppc32/hdefs.o			\
 		priv/host-x86/isel.o			\
 		priv/host-amd64/isel.o			\
 		priv/host-arm/isel.o			\
+		priv/host-ppc32/isel.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/h_generic_simd64.o	\
 		priv/host-generic/reg_alloc2.o		\
@@ -148,6 +151,10 @@ priv/host-arm/hdefs.o: $(ALL_HEADERS) priv/host-arm/hdefs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/hdefs.o \
 					 -c priv/host-arm/hdefs.c
 
+priv/host-ppc32/hdefs.o: $(ALL_HEADERS) priv/host-ppc32/hdefs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-ppc32/hdefs.o \
+					 -c priv/host-ppc32/hdefs.c
+
 priv/host-x86/isel.o: $(ALL_HEADERS) priv/host-x86/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel.o \
 					 -c priv/host-x86/isel.c
@@ -159,6 +166,10 @@ priv/host-amd64/isel.o: $(ALL_HEADERS) priv/host-amd64/isel.c
 priv/host-arm/isel.o: $(ALL_HEADERS) priv/host-arm/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/isel.o \
 					 -c priv/host-arm/isel.c
+
+priv/host-ppc32/isel.o: $(ALL_HEADERS) priv/host-ppc32/isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-ppc32/isel.o \
+					 -c priv/host-ppc32/isel.c
 
 priv/host-generic/h_generic_regs.o: $(ALL_HEADERS) priv/host-generic/h_generic_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/h_generic_regs.o \

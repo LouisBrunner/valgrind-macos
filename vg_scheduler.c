@@ -88,6 +88,11 @@
    LinuxThreads. */
 ThreadState VG_(threads)[VG_N_THREADS];
 
+/* The process' fork-handler stack. */
+static Int              vg_fhstack_used = 0;
+static ForkHandlerEntry vg_fhstack[VG_N_FORKHANDLERSTACK];
+
+
 /* The tid of the thread currently in VG_(baseBlock). */
 static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 
@@ -573,6 +578,8 @@ void VG_(scheduler_init) ( void )
       vg_thread_keys[i].inuse      = False;
       vg_thread_keys[i].destructor = NULL;
    }
+
+   vg_fhstack_used = 0;
 
    /* Assert this is thread zero, which has certain magic
       properties. */
@@ -2848,6 +2855,118 @@ void do_pthread_kill ( ThreadId tid, /* me */
 }
 
 
+/* -----------------------------------------------------------
+   FORK HANDLERS.
+   -------------------------------------------------------- */
+
+static 
+void do__set_fhstack_used ( ThreadId tid, Int n )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "set_fhstack_used to %d", n );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+
+   if (n >= 0 && n < VG_N_FORKHANDLERSTACK) {
+      vg_fhstack_used = n;
+      SET_EDX(tid, 0);
+   } else {
+      SET_EDX(tid, -1);
+   }
+}
+
+
+static
+void do__get_fhstack_used ( ThreadId tid )
+{
+   Int  n;
+   Char msg_buf[100];
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "get_fhstack_used" );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+
+   n = vg_fhstack_used;
+   vg_assert(n >= 0 && n < VG_N_FORKHANDLERSTACK);
+   SET_EDX(tid, n);
+}
+
+static
+void do__set_fhstack_entry ( ThreadId tid, Int n, ForkHandlerEntry* fh )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "set_fhstack_entry %d to %p", n, fh );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+
+   if (VG_(clo_instrument)) {
+      /* check fh is addressible/defined */
+      if (!VGM_(check_readable)( (Addr)fh,
+                                 sizeof(ForkHandlerEntry), NULL)) {
+         VG_(record_pthread_err)( tid, 
+            "pthread_atfork: prepare/parent/child contains "
+            "unaddressible or undefined bytes");
+      }
+   }
+
+   if (n < 0 && n >= VG_N_FORKHANDLERSTACK) {
+      SET_EDX(tid, -1);
+      return;
+   } 
+
+   vg_fhstack[n] = *fh;
+   SET_EDX(tid, 0);
+}
+
+
+static
+void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
+                                                  ForkHandlerEntry* fh )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "get_fhstack_entry %d", n );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+
+   if (VG_(clo_instrument)) {
+      /* check fh is addressible/defined */
+      if (!VGM_(check_writable)( (Addr)fh,
+                                 sizeof(ForkHandlerEntry), NULL)) {
+         VG_(record_pthread_err)( tid, 
+            "fork: prepare/parent/child contains "
+            "unaddressible bytes");
+      }
+   }
+
+   if (n < 0 && n >= VG_N_FORKHANDLERSTACK) {
+      SET_EDX(tid, -1);
+      return;
+   } 
+
+   *fh = vg_fhstack[n];
+   SET_EDX(tid, 0);
+
+   if (VG_(clo_instrument)) {
+      VGM_(make_readable)( (Addr)fh, sizeof(ForkHandlerEntry) );
+   }
+}
+
+
 /* ---------------------------------------------------------------------
    Handle client requests.
    ------------------------------------------------------------------ */
@@ -3088,6 +3207,24 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__PTHREAD_ERROR:
          VG_(record_pthread_err)( tid, (Char*)(arg[1]) );
          SET_EDX(tid, 0);
+         break;
+
+      case VG_USERREQ__SET_FHSTACK_USED:
+         do__set_fhstack_used( tid, (Int)(arg[1]) );
+         break;
+
+      case VG_USERREQ__GET_FHSTACK_USED:
+         do__get_fhstack_used( tid );
+         break;
+
+      case VG_USERREQ__SET_FHSTACK_ENTRY:
+         do__set_fhstack_entry( tid, (Int)(arg[1]),
+                                     (ForkHandlerEntry*)(arg[2]) );
+         break;
+
+      case VG_USERREQ__GET_FHSTACK_ENTRY:
+         do__get_fhstack_entry( tid, (Int)(arg[1]),
+                                     (ForkHandlerEntry*)(arg[2]) );
          break;
 
       case VG_USERREQ__MAKE_NOACCESS:

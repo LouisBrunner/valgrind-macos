@@ -162,6 +162,9 @@
 /* Number of entries in each thread's cleanup stack. */
 #define VG_N_CLEANUPSTACK 8
 
+/* Number of entries in each thread's fork-handler stack. */
+#define VG_N_FORKHANDLERSTACK 2
+
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -510,8 +513,11 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
    thread. */
 #define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024
 
-
-
+/* Get/set entries for a thread's pthread_atfork stack. */
+#define VG_USERREQ__SET_FHSTACK_USED        0x3025
+#define VG_USERREQ__GET_FHSTACK_USED        0x3026
+#define VG_USERREQ__SET_FHSTACK_ENTRY       0x3027
+#define VG_USERREQ__GET_FHSTACK_ENTRY       0x3028
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -570,7 +576,17 @@ typedef
       void* arg;
    }
    CleanupEntry;
- 
+
+/* An entry in a thread's fork-handler stack. */
+typedef
+   struct {
+      void (*prepare)(void);
+      void (*parent)(void);
+      void (*child)(void);
+   }
+   ForkHandlerEntry;
+
+
 typedef
    struct {
       /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.

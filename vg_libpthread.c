@@ -1269,13 +1269,45 @@ int __pthread_once ( pthread_once_t *once_control,
    MISC
    ------------------------------------------------ */
 
+static pthread_mutex_t pthread_atfork_lock 
+   = PTHREAD_MUTEX_INITIALIZER;
+
 int __pthread_atfork ( void (*prepare)(void),
                        void (*parent)(void),
                        void (*child)(void) )
 {
-   /* We have to do this properly or not at all; faking it isn't an
-      option. */
-   vgPlain_unimp("__pthread_atfork");
+   int n, res;
+   ForkHandlerEntry entry;
+
+   ensure_valgrind("pthread_atfork");
+   __pthread_mutex_lock(&pthread_atfork_lock);
+
+   /* Fetch old counter */
+   VALGRIND_MAGIC_SEQUENCE(n, -2 /* default */,
+                           VG_USERREQ__GET_FHSTACK_USED,
+                           0, 0, 0, 0);
+   my_assert(n >= 0 && n < VG_N_FORKHANDLERSTACK);
+   if (n == VG_N_FORKHANDLERSTACK-1)
+      barf("pthread_atfork: VG_N_FORKHANDLERSTACK is too low; "
+           "increase and recompile");
+
+   /* Add entry */
+   entry.prepare = *prepare;
+   entry.parent  = *parent;
+   entry.child   = *child;   
+   VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                           VG_USERREQ__SET_FHSTACK_ENTRY,
+                           n, &entry, 0, 0);
+   my_assert(res == 0);
+
+   /* Bump counter */
+   VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                           VG_USERREQ__SET_FHSTACK_USED,
+                           n+1, 0, 0, 0);
+   my_assert(res == 0);
+
+   __pthread_mutex_unlock(&pthread_atfork_lock);
+   return 0;
 }
 
 
@@ -1560,15 +1592,6 @@ int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 
 extern
-pid_t __libc_fork(void);
-pid_t __fork(void)
-{
-   __my_pthread_testcancel();
-   return __libc_fork();
-}
-
-
-extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
 __attribute__((weak))
 pid_t waitpid(pid_t pid, int *status, int options)
@@ -1774,6 +1797,80 @@ int msync(const void *start, size_t length, int flags)
    __my_pthread_testcancel();
    return __libc_msync(start, length, flags);
 }
+
+
+/*--- fork and its helper ---*/
+
+static
+void run_fork_handlers ( int what )
+{
+   ForkHandlerEntry entry;
+   int n_h, n_handlers, i, res;
+
+   my_assert(what == 0 || what == 1 || what == 2);
+
+   /* Fetch old counter */
+   VALGRIND_MAGIC_SEQUENCE(n_handlers, -2 /* default */,
+                           VG_USERREQ__GET_FHSTACK_USED,
+                           0, 0, 0, 0);
+   my_assert(n_handlers >= 0 && n_handlers < VG_N_FORKHANDLERSTACK);
+
+   /* Prepare handlers (what == 0) are called in opposite order of
+      calls to pthread_atfork.  Parent and child handlers are called
+      in the same order as calls to pthread_atfork. */
+   if (what == 0)
+      n_h = n_handlers - 1;
+   else
+      n_h = 0;
+
+   for (i = 0; i < n_handlers; i++) {
+      VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                              VG_USERREQ__GET_FHSTACK_ENTRY,
+                              n_h, &entry, 0, 0);
+      my_assert(res == 0);
+      switch (what) {
+         case 0:  if (entry.prepare) entry.prepare(); 
+                  n_h--; break;
+         case 1:  if (entry.parent) entry.parent(); 
+                  n_h++; break;
+         case 2:  if (entry.child) entry.child(); 
+                  n_h++; break;
+         default: barf("run_fork_handlers: invalid what");
+      }
+   }
+
+   if (what != 0 /* prepare */) {
+      /* Empty out the stack. */
+      VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                              VG_USERREQ__SET_FHSTACK_USED,
+                              0, 0, 0, 0);
+      my_assert(res == 0);
+   }
+}
+
+extern
+pid_t __libc_fork(void);
+pid_t __fork(void)
+{
+   pid_t pid;
+   __my_pthread_testcancel();
+   __pthread_mutex_lock(&pthread_atfork_lock);
+
+   run_fork_handlers(0 /* prepare */);
+   pid = __libc_fork();
+   if (pid == 0) {
+      /* I am the child */
+      run_fork_handlers(2 /* child */);
+      __pthread_mutex_init(&pthread_atfork_lock, NULL);
+   } else {
+      /* I am the parent */
+      run_fork_handlers(1 /* parent */);
+      __pthread_mutex_unlock(&pthread_atfork_lock);
+   }
+   return pid;
+}
+
+
 
 
 /* ---------------------------------------------------------------------

@@ -4891,6 +4891,11 @@ POST(sys_rt_sigaction)
 #ifndef __amd64__
 PRE(sys_sigprocmask, Special)
 {
+   vki_old_sigset_t* set;
+   vki_old_sigset_t* oldset;
+   vki_sigset_t bigger_set;
+   vki_sigset_t bigger_oldset;
+
    PRINT("sys_sigprocmask ( %d, %p, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sigprocmask", 
                  int, how, vki_old_sigset_t *, set, vki_old_sigset_t *, oldset);
@@ -4901,10 +4906,8 @@ PRE(sys_sigprocmask, Special)
 
    // Nb: We must convert the smaller vki_old_sigset_t params into bigger
    // vki_sigset_t params.
-   vki_old_sigset_t* set    = (vki_old_sigset_t*)ARG2;
-   vki_old_sigset_t* oldset = (vki_old_sigset_t*)ARG3;
-   vki_sigset_t bigger_set;
-   vki_sigset_t bigger_oldset;
+   set    = (vki_old_sigset_t*)ARG2;
+   oldset = (vki_old_sigset_t*)ARG3;
 
    VG_(memset)(&bigger_set,    0, sizeof(vki_sigset_t));
    VG_(memset)(&bigger_oldset, 0, sizeof(vki_sigset_t));

@@ -26,6 +26,7 @@ fdleak_open
 fdleak_pipe
 fdleak_socketpair
 pth_exit
+pth_exit2
 vgprintf
 as_shm
 as_mmap

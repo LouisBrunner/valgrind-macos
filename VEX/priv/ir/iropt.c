@@ -359,6 +359,9 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
    IRExpr  *e1, *e2;
    IRDirty *d,  *d2;
    switch (st->tag) {
+      case Ist_IMark:
+         addStmtToIRBB(bb, st);
+         break;
       case Ist_Put:
          if (isAtom(st->Ist.Put.data)) {
             /* optimisation to reduce the amount of heap wasted
@@ -690,6 +693,9 @@ static void handle_gets_Stmt (
       case Ist_PutI:
          vassert(isAtom(st->Ist.PutI.ix));
          vassert(isAtom(st->Ist.PutI.data));
+         break;
+
+      case Ist_IMark:
          break;
 
       default:
@@ -1440,6 +1446,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          return IRStmt_Dirty(d2);
       }
 
+      case Ist_IMark:
+         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+
       case Ist_MFence:
          return IRStmt_MFence();
 
@@ -1628,6 +1637,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          for (i = 0; d->args[i] != NULL; i++)
             addUses_Expr(set, d->args[i]);
          return;
+      case Ist_IMark:
       case Ist_MFence:
          return;
       case Ist_Exit:
@@ -2453,6 +2463,9 @@ Bool guestAccessWhichMightOverlapPutI (
    getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
    switch (s2->tag) {
 
+      case Ist_IMark:
+         return False;
+
       case Ist_MFence:
          /* just be paranoid ... this should be rare. */
          return True;
@@ -2682,6 +2695,8 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    Int      i;
    IRDirty* d;
    switch (st->tag) {
+      case Ist_IMark:
+         break;
       case Ist_Put:
          deltaIRExpr(st->Ist.Put.data, delta);
          break;
@@ -3067,6 +3082,7 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
          for (i = 0; d->args[i]; i++)
             occCount_Expr(env, d->args[i]);
          return;
+      case Ist_IMark:
       case Ist_MFence:
          return;
       case Ist_Exit:
@@ -3199,6 +3215,8 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
                    st->Ist.Exit.jk,
                    st->Ist.Exit.dst
                 );
+      case Ist_IMark:
+         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
       case Ist_MFence:
          return IRStmt_MFence();
       case Ist_Dirty:
@@ -3590,6 +3608,7 @@ static Bool hasGetIorPutI ( IRBB* bb )
             if (d->mFx != Ifx_None)
                vassert(isAtom(d->mAddr));
             break;
+         case Ist_IMark:
          case Ist_MFence:
             break;
          case Ist_Exit:

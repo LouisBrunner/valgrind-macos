@@ -837,6 +837,8 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 /* The possible kinds of statements are as follows: */
 typedef 
    enum { 
+      Ist_IMark,  /* instruction mark: describe addr/len of guest insn
+                     whose IR follows */
       Ist_Put,    /* write guest state, fixed offset */
       Ist_PutI,   /* write guest state, run-time offset */
       Ist_Tmp,    /* assign value to temporary */
@@ -851,6 +853,10 @@ typedef
    struct _IRStmt {
       IRStmtTag tag;
       union {
+         struct {
+            Addr64 addr;
+            Int    len;
+         } IMark;
          struct {
             Int     offset;
             IRExpr* data;
@@ -883,6 +889,7 @@ typedef
    }
    IRStmt;
 
+extern IRStmt* IRStmt_IMark  ( Addr64 addr, Int len );
 extern IRStmt* IRStmt_Put    ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI   ( IRArray* descr, IRExpr* ix, Int bias, 
                                IRExpr* data );

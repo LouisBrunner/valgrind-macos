@@ -577,6 +577,10 @@ void ppIRJumpKind ( IRJumpKind kind )
 void ppIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
+      case Ist_IMark:
+         vex_printf("IMark(0x%llx, %d)", s->Ist.IMark.addr, 
+                                         s->Ist.IMark.len);
+         break;
       case Ist_Put:
          vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
          ppIRExpr(s->Ist.Put.data);
@@ -900,6 +904,13 @@ IRDirty* emptyIRDirty ( void ) {
 
 /* Constructors -- IRStmt */
 
+IRStmt* IRStmt_IMark ( Addr64 addr, Int len ) {
+   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag            = Ist_IMark;
+   s->Ist.IMark.addr = addr;
+   s->Ist.IMark.len  = len;
+   return s;
+}
 IRStmt* IRStmt_Put ( Int off, IRExpr* data ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
@@ -1102,6 +1113,8 @@ IRDirty* dopyIRDirty ( IRDirty* d )
 IRStmt* dopyIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
+      case Ist_IMark:
+         return IRStmt_IMark(s->Ist.IMark.addr, s->Ist.IMark.len);
       case Ist_Put: 
          return IRStmt_Put(s->Ist.Put.offset, 
                            dopyIRExpr(s->Ist.Put.data));
@@ -1612,6 +1625,7 @@ Bool isFlatIRStmt ( IRStmt* st )
          if (di->mAddr && !isAtom(di->mAddr)) 
             return False;
          return True;
+      case Ist_IMark:
       case Ist_MFence:
          return True;
       case Ist_Exit:
@@ -1749,6 +1763,8 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
    Int      i;
    IRDirty* d;
    switch (stmt->tag) {
+      case Ist_IMark:
+         break;
       case Ist_Put:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.data,def_counts);
          break;
@@ -1889,6 +1905,12 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    IRDirty*   d;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
+      case Ist_IMark:
+         /* Somewhat heuristic, but rule out totally implausible
+            instruction sizes. */
+         if (stmt->Ist.IMark.len < 0 || stmt->Ist.IMark.len > 20)
+            sanityCheckFail(bb,stmt,"IRStmt.IMark.len: implausible");
+         break;
       case Ist_Put:
          tcExpr( bb, stmt, stmt->Ist.Put.data, gWordTy );
          if (typeOfIRExpr(tyenv,stmt->Ist.Put.data) == Ity_I1)

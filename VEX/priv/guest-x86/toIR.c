@@ -246,6 +246,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
    Addr64     guest_next;
    Bool       resteerOK;
    DisResult  dres;
+   IRStmt*    imark;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
 
@@ -290,19 +291,40 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
               && vge->n_used < 3
            );
 
+      /* This is the %EIP of the instruction we're just about to deal
+         with. */
+      guest_eip_curr_instr = guest_eip_bbstart + delta;
+
+      /* This is the irbb statement array index of the first stmt in
+         this insn.  That will always be the instruction-mark
+         descriptor. */
       first_stmt_idx = irbb->stmts_used;
+
+      /* Add an instruction-mark statement.  We won't know until after
+         disInstr how long the instruction is, so just put in a zero
+         length and we'll fix it up later. */
+      stmt( IRStmt_IMark( (Addr64)guest_eip_curr_instr, 0 ));
 
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
             %EIP, but for all the others we have to do it ourselves. */
-         stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_bbstart + delta)) );
+         stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_curr_instr)) );
       }
 
-      guest_eip_curr_instr = guest_eip_bbstart + delta;
-
+      /* Do the instruction.  This may set insn_verbose to True, which
+         needs to be annulled. */
+      size = 0; /* just in case disInstr doesn't set it */
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, subarch_guest, &size, &guest_next );
       insn_verbose = False;
+
+      /* Fill in the insn-mark length field. */
+      vassert(first_stmt_idx >= 0 && first_stmt_idx < irbb->stmts_used);
+      imark = irbb->stmts[first_stmt_idx];
+      vassert(imark);
+      vassert(imark->tag == Ist_IMark);
+      vassert(imark->Ist.IMark.len == 0);
+      imark->Ist.IMark.len = size;
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {

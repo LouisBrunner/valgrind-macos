@@ -3372,6 +3372,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       addInstr(env, X86Instr_MFence(env->subarch));
       return;
 
+   /* --------- INSTR MARK --------- */
+   /* Doesn't generate any executable code ... */
+   case Ist_IMark:
+       return;
+
    /* --------- EXIT --------- */
    case Ist_Exit: {
       X86RI*      dst;

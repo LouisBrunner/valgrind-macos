@@ -2758,7 +2758,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
 static
 Addr dis_bs_E_G ( UCodeBlock* cb, Int sz, Addr eip, Bool fwds )
 {
-   Int   t, ta, helper;
+   Int   t, t1, ta, helper;
    UInt  pair;
    UChar dis_buf[50];
    UChar modrm;
@@ -2768,7 +2768,12 @@ Addr dis_bs_E_G ( UCodeBlock* cb, Int sz, Addr eip, Bool fwds )
 
    helper = fwds ? VGOFF_(helper_bsf) : VGOFF_(helper_bsr);
    modrm  = getUChar(eip);
+   t1     = newTemp(cb);
    t      = newTemp(cb);
+
+   uInstr0(cb, CALLM_S, 0);
+   uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t1);
+   uInstr1(cb, PUSH, sz, TempReg, t1);
 
    if (epartIsReg(modrm)) {
       eip++;
@@ -2790,10 +2795,10 @@ Addr dis_bs_E_G ( UCodeBlock* cb, Int sz, Addr eip, Bool fwds )
                      nameIReg(sz, gregOfRM(modrm)));
    }
 
-   uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, PUSH,  sz,  TempReg, t);
    uInstr1(cb, CALLM, 0,   Lit16, helper);
    uFlagsRWU(cb, FlagsEmpty, FlagZ, FlagsOSACP);
+   uInstr1(cb, POP,   sz,  TempReg, t);
    uInstr1(cb, POP,   sz,  TempReg, t);
    uInstr2(cb, PUT,   sz,  TempReg, t, ArchReg, gregOfRM(modrm));
    uInstr0(cb, CALLM_E, 0);

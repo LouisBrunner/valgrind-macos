@@ -343,16 +343,18 @@ VG_(helper_DAA):
 .global VG_(helper_bsr)
 VG_(helper_bsr):
 	pushl	%eax
+	movl	12(%esp), %eax
 	bsrl	8(%esp), %eax
-	movl	%eax, 8(%esp)
+	movl	%eax, 12(%esp)
 	popl	%eax
 	ret
 
 .global VG_(helper_bsf)
 VG_(helper_bsf):
 	pushl	%eax
+	movl	12(%esp), %eax
 	bsfl	8(%esp), %eax
-	movl	%eax, 8(%esp)
+	movl	%eax, 12(%esp)
 	popl	%eax
 	ret
 

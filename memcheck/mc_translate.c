@@ -201,11 +201,12 @@ static IRType shadowType ( IRType ty )
    supplied shadow types (Bit/I8/I16/I32/UI64). */
 static IRExpr* definedOfType ( IRType ty ) {
    switch (ty) {
-      case Ity_I1:  return IRExpr_Const(IRConst_U1(False));
-      case Ity_I8:  return IRExpr_Const(IRConst_U8(0));
-      case Ity_I16: return IRExpr_Const(IRConst_U16(0));
-      case Ity_I32: return IRExpr_Const(IRConst_U32(0));
-      case Ity_I64: return IRExpr_Const(IRConst_U64(0));
+      case Ity_I1:   return IRExpr_Const(IRConst_U1(False));
+      case Ity_I8:   return IRExpr_Const(IRConst_U8(0));
+      case Ity_I16:  return IRExpr_Const(IRConst_U16(0));
+      case Ity_I32:  return IRExpr_Const(IRConst_U32(0));
+      case Ity_I64:  return IRExpr_Const(IRConst_U64(0));
+      case Ity_V128: return IRExpr_Const(IRConst_V128(0x0000));
       default:      VG_(tool_panic)("memcheck:definedOfType");
    }
 }
@@ -230,6 +231,7 @@ static IRExpr* definedOfType ( IRType ty ) {
 #define mkU16(_n)                IRExpr_Const(IRConst_U16(_n))
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
+#define mkV128(_n)               IRExpr_Const(IRConst_V128(_n))
 #define mkexpr(_tmp)             IRExpr_Tmp((_tmp))
 
 /* bind the given expression to a new temporary, and return the
@@ -239,6 +241,15 @@ static IRAtom* assignNew ( MCEnv* mce, IRType ty, IRExpr* e ) {
    IRTemp t = newIRTemp(mce->bb->tyenv, ty);
    assign(mce->bb, t, e);
    return mkexpr(t);
+}
+
+/* Perhaps we should invent Iop_Not128. */
+static IRAtom* mkNot128 ( MCEnv* mce, IRAtom* e )
+{
+   IRAtom* at;
+   at = assignNew(mce, Ity_V128, mkV128(0xFFFF));
+   at = assignNew(mce, Ity_V128, binop(Iop_Xor128, e, at));
+   return at;
 }
 
 
@@ -270,6 +281,12 @@ static IRAtom* mkDifD64 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    tl_assert(isShadowAtom(mce,a1));
    tl_assert(isShadowAtom(mce,a2));
    return assignNew(mce, Ity_I64, binop(Iop_And64, a1, a2));
+}
+
+static IRAtom* mkDifD128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   tl_assert(isShadowAtom(mce,a1));
+   tl_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_V128, binop(Iop_And128, a1, a2));
 }
 
 /* --------- Undefined-if-either-undefined --------- */
@@ -384,6 +401,14 @@ static IRAtom* mkImproveAND64 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
    return assignNew(mce, Ity_I64, binop(Iop_Or64, data, vbits));
 }
 
+static IRAtom* mkImproveAND128 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   tl_assert(isOriginalAtom(mce, data));
+   tl_assert(isShadowAtom(mce, vbits));
+   tl_assert(sameKindedAtoms(data, vbits));
+   return assignNew(mce, Ity_V128, binop(Iop_Or128, data, vbits));
+}
+
 /* ImproveOR(data, vbits) = ~data OR vbits.  Defined (0) data 1s give
    defined (0); all other -> undefined (1).
 */
@@ -432,6 +457,18 @@ static IRAtom* mkImproveOR64 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
              mce, Ity_I64, 
              binop(Iop_Or64, 
                    assignNew(mce, Ity_I64, unop(Iop_Not64, data)), 
+                   vbits) );
+}
+
+static IRAtom* mkImproveOR128 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   tl_assert(isOriginalAtom(mce, data));
+   tl_assert(isShadowAtom(mce, vbits));
+   tl_assert(sameKindedAtoms(data, vbits));
+   return assignNew(
+             mce, Ity_V128, 
+             binop(Iop_Or128, 
+                   assignNew(mce, Ity_V128, mkNot128(mce, data)), 
                    vbits) );
 }
 
@@ -960,8 +997,33 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       /* 128-bit SIMD */
 
+      case Iop_Sub32Fx4:
+      case Iop_Mul32Fx4:
+      case Iop_Min32Fx4:
+      case Iop_Max32Fx4:
+      case Iop_Div32Fx4:
+      case Iop_CmpLT32Fx4:
+      case Iop_CmpLE32Fx4:
+      case Iop_CmpEQ32Fx4:
       case Iop_Add32Fx4:
          return binary32Fx4(mce, vatom1, vatom2);      
+
+      case Iop_Sub32F0x4:
+      case Iop_Mul32F0x4:
+      case Iop_Min32F0x4:
+      case Iop_Max32F0x4:
+      case Iop_Div32F0x4:
+      case Iop_CmpLT32F0x4:
+      case Iop_CmpLE32F0x4:
+      case Iop_CmpEQ32F0x4:
+      case Iop_Add32F0x4:
+         return binary32F0x4(mce, vatom1, vatom2);      
+
+      case Iop_Set128lo32:
+         return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
+
+      case Iop_64HLto128:
+         return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
 
       /* Scalar floating point */
 
@@ -1004,11 +1066,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_16HLto32:
-         return assignNew(mce, Ity_I32,
-                          binop(Iop_16HLto32, vatom1, vatom2));
+         return assignNew(mce, Ity_I32, binop(op, vatom1, vatom2));
       case Iop_32HLto64:
-         return assignNew(mce, Ity_I64,
-                          binop(Iop_32HLto64, vatom1, vatom2));
+         return assignNew(mce, Ity_I64, binop(op, vatom1, vatom2));
 
       case Iop_MullS32:
       case Iop_MullU32: {
@@ -1080,6 +1140,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
 
+      case Iop_And128:
+         uifu = mkUifU128; difd = mkDifD128; 
+         and_or_ty = Ity_V128; improve = mkImproveAND128; goto do_And_Or;
       case Iop_And64:
          uifu = mkUifU64; difd = mkDifD64; 
          and_or_ty = Ity_I64; improve = mkImproveAND64; goto do_And_Or;
@@ -1093,6 +1156,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          uifu = mkUifU8; difd = mkDifD8; 
          and_or_ty = Ity_I8; improve = mkImproveAND8; goto do_And_Or;
 
+      case Iop_Or128:
+         uifu = mkUifU128; difd = mkDifD128; 
+         and_or_ty = Ity_V128; improve = mkImproveOR128; goto do_And_Or;
       case Iop_Or64:
          uifu = mkUifU64; difd = mkDifD64; 
          and_or_ty = Ity_I64; improve = mkImproveOR64; goto do_And_Or;
@@ -1123,6 +1189,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkUifU32(mce, vatom1, vatom2);
       case Iop_Xor64:
          return mkUifU64(mce, vatom1, vatom2);
+      case Iop_Xor128:
+         return mkUifU128(mce, vatom1, vatom2);
 
       default:
          ppIROp(op);
@@ -1137,6 +1205,19 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
    IRAtom* vatom = expr2vbits( mce, atom );
    tl_assert(isOriginalAtom(mce,atom));
    switch (op) {
+
+      case Iop_Sqrt32Fx4:
+      case Iop_RSqrt32Fx4:
+      case Iop_Recip32Fx4:
+         return unary32Fx4(mce, vatom);
+
+      case Iop_Sqrt32F0x4:
+      case Iop_RSqrt32F0x4:
+      case Iop_Recip32F0x4:
+         return unary32F0x4(mce, vatom);
+
+      case Iop_32Uto128:
+         return assignNew(mce, Ity_V128, unop(op, vatom));
 
       case Iop_F32toF64: 
       case Iop_I32toF64:
@@ -1155,6 +1236,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_32Sto64:
       case Iop_32Uto64:
+      case Iop_128to64:
+      case Iop_128HIto64:
          return assignNew(mce, Ity_I64, unop(op, vatom));
 
       case Iop_64to32:
@@ -1196,8 +1279,9 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 }
 
 
+/* Worker function; do not call directly. */
 static
-IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
+IRAtom* expr2vbits_LDle_WRK ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
 {
    void*    helper;
    Char*    hname;
@@ -1254,6 +1338,28 @@ IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
    stmt( mce->bb, IRStmt_Dirty(di) );
 
    return mkexpr(datavbits);
+}
+
+
+static
+IRAtom* expr2vbits_LDle ( MCEnv* mce, IRType ty, IRAtom* addr, UInt bias )
+{
+   IRAtom *v64hi, *v64lo;
+   switch (shadowType(ty)) {
+      case Ity_I8: 
+      case Ity_I16: 
+      case Ity_I32: 
+      case Ity_I64:
+         return expr2vbits_LDle_WRK(mce, ty, addr, bias);
+      case Ity_V128:
+         v64lo = expr2vbits_LDle_WRK(mce, Ity_I64, addr, bias);
+         v64hi = expr2vbits_LDle_WRK(mce, Ity_I64, addr, bias+8);
+         return assignNew( mce, 
+                           Ity_V128, 
+                           binop(Iop_64HLto128, v64hi, v64lo));
+      default:
+         VG_(tool_panic)("expr2vbits_LDle");
+   }
 }
 
 
@@ -1375,11 +1481,23 @@ void do_shadow_STle ( MCEnv* mce,
                       IRAtom* addr, UInt bias,
                       IRAtom* data, IRAtom* vdata )
 {
-   IRType   ty;
-   IRDirty* di;
+   IROp     mkAdd;
+   IRType   ty, tyAddr;
+   IRDirty  *di, *diLo64, *diHi64;
+   IRAtom   *addrAct, *addrLo64, *addrHi64;
+   IRAtom   *vdataLo64, *vdataHi64;
+   IRAtom   *eBias, *eBias0, *eBias8;
    void*    helper = NULL;
    Char*    hname = NULL;
-   IRAtom*  addrAct;
+
+   tyAddr = mce->hWordTy;
+   mkAdd  = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
+   tl_assert( tyAddr == Ity_I32 || tyAddr == Ity_I64 );
+
+   di = diLo64 = diHi64 = NULL;
+   eBias = eBias0 = eBias8 = NULL;
+   addrAct = addrLo64 = addrHi64 = NULL;
+   vdataLo64 = vdataHi64 = NULL;
 
    if (data) {
       tl_assert(!vdata);
@@ -1399,9 +1517,10 @@ void do_shadow_STle ( MCEnv* mce,
       the address (shadow) to 'defined' following the test. */
    complainIfUndefined( mce, addr );
 
-   /* Now cook up a call to the relevant helper function, to write the
-      data V bits into shadow memory. */
+   /* Now decide which helper function to call to write the data V
+      bits into shadow memory. */
    switch (ty) {
+      case Ity_V128: /* we'll use the helper twice */
       case Ity_I64: helper = &MC_(helperc_STOREV8);
                     hname = "MC_(helperc_STOREV8)";
                     break;
@@ -1417,34 +1536,57 @@ void do_shadow_STle ( MCEnv* mce,
       default:      VG_(tool_panic)("memcheck:do_shadow_STle");
    }
 
-   /* Generate the actual address into addrAct. */
-   if (bias == 0) {
-      addrAct = addr;
+   if (ty == Ity_V128) {
+
+      /* 128-bit case */
+      /* See comment in next clause re 64-bit regparms */
+      eBias0    = tyAddr==Ity_I32 ? mkU32(bias)   : mkU64(bias);
+      addrLo64  = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias0) );
+      vdataLo64 = assignNew(mce, Ity_I64, unop(Iop_128to64, vdata));
+      diLo64    = unsafeIRDirty_0_N( 
+                     1/*regparms*/, hname, helper, 
+                     mkIRExprVec_2( addrLo64, vdataLo64 ));
+
+      eBias8    = tyAddr==Ity_I32 ? mkU32(bias+8) : mkU64(bias+8);
+      addrHi64  = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias8) );
+      vdataHi64 = assignNew(mce, Ity_I64, unop(Iop_128HIto64, vdata));
+      diHi64    = unsafeIRDirty_0_N( 
+                     1/*regparms*/, hname, helper, 
+                     mkIRExprVec_2( addrHi64, vdataHi64 ));
+
+      setHelperAnns( mce, diLo64 );
+      setHelperAnns( mce, diHi64 );
+      stmt( mce->bb, IRStmt_Dirty(diLo64) );
+      stmt( mce->bb, IRStmt_Dirty(diHi64) );
+
    } else {
-      IROp    mkAdd;
-      IRAtom* eBias;
-      IRType  tyAddr  = mce->hWordTy;
-      tl_assert( tyAddr == Ity_I32 || tyAddr == Ity_I64 );
-      mkAdd   = tyAddr==Ity_I32 ? Iop_Add32 : Iop_Add64;
-      eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
-      addrAct = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias) );
+
+      /* 8/16/32/64-bit cases */
+      /* Generate the actual address into addrAct. */
+      if (bias == 0) {
+         addrAct = addr;
+      } else {
+         eBias   = tyAddr==Ity_I32 ? mkU32(bias) : mkU64(bias);
+         addrAct = assignNew(mce, tyAddr, binop(mkAdd, addr, eBias) );
+      }
+
+      if (ty == Ity_I64) {
+         /* We can't do this with regparm 2 on 32-bit platforms, since
+            the back ends aren't clever enough to handle 64-bit
+            regparm args.  Therefore be different. */
+         di = unsafeIRDirty_0_N( 
+                 1/*regparms*/, hname, helper, 
+                 mkIRExprVec_2( addrAct, vdata ));
+      } else {
+         di = unsafeIRDirty_0_N( 
+                 2/*regparms*/, hname, helper, 
+                 mkIRExprVec_2( addrAct,
+                                zwidenToHostWord( mce, vdata )));
+      }
+      setHelperAnns( mce, di );
+      stmt( mce->bb, IRStmt_Dirty(di) );
    }
 
-   if (ty == Ity_I64) {
-      /* We can't do this with regparm 2 on 32-bit platforms, since
-         the back ends aren't clever enough to handle 64-bit regparm
-         args.  Therefore be different. */
-      di = unsafeIRDirty_0_N( 
-              1/*regparms*/, hname, helper, 
-              mkIRExprVec_2( addrAct, vdata ));
-   } else {
-      di = unsafeIRDirty_0_N( 
-              2/*regparms*/, hname, helper, 
-              mkIRExprVec_2( addrAct,
-                             zwidenToHostWord( mce, vdata )));
-   }
-   setHelperAnns( mce, di );
-   stmt( mce->bb, IRStmt_Dirty(di) );
 }
 
 

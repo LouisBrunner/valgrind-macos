@@ -1656,7 +1656,7 @@ int main(int argc, char **argv)
     //test_bcd();
     test_xchg();
     test_string();
-    //test_misc(); // REINSTATE
+    test_misc(); // REINSTATE
     test_lea();
     //    test_segs();
     //test_code16();

@@ -1,5 +1,5 @@
 
-SUBDIRS = demangle .
+SUBDIRS = demangle . docs
 
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g

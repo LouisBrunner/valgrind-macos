@@ -1,4 +1,6 @@
 
+SUBDIRS = . unused
+
 noinst_SCRIPTS = \
 	filter_addresses \
 	filter_discards \

@@ -11305,14 +11305,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       case 0x90:           /* REP NOP (PAUSE) */
          /* a hint to the P4 re spin-wait loop */
          DIP("rep nop (P4 pause)\n");
-#        if 0
-         /* "observe" the hint.  Can cause very long delays, though. */
+         /* "observe" the hint.  The Vex client needs to be careful not
+            to cause very long delays as a result, though. */
          jmp_lit(Ijk_Yield, ((Addr32)guest_eip_bbstart)+delta);
          whatNext = Dis_StopHere;
-#        else
-         /* act like it's a no-op */
-         whatNext = Dis_Continue;
-#        endif
          break;
 
 //--       case 0xC3:           /* REP RET */

@@ -1915,7 +1915,7 @@ POST(close)
 PRE(dup)
 {
    /* int dup(int oldfd); */
-   PRINT("dup ( %d ) --> ", arg1);
+   PRINT("dup ( %d )", arg1);
 }
 
 POST(dup)
@@ -4113,7 +4113,7 @@ PRE(write)
 PRE(creat)
 {
    /* int creat(const char *pathname, mode_t mode); */
-   PRINT("creat ( %p(%s), %d ) --> ",arg1,arg1,arg2);
+   PRINT("creat ( %p(%s), %d )",arg1,arg1,arg2);
    PRE_MEM_RASCIIZ( "creat(pathname)", arg1 );
 }
 

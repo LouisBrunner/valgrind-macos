@@ -483,16 +483,16 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 (gen)
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
-   GENX_(__NR_setresuid,         sys_setresuid16),    // 164
+   LINX_(__NR_setresuid,         sys_setresuid16),    // 164
 
-   GENXY(__NR_getresuid,         sys_getresuid16),    // 165
+   LINXY(__NR_getresuid,         sys_getresuid16),    // 165
    //   (__NR_vm86,              sys_vm86),           // 166 x86/Linux-only
    GENX_(__NR_query_module,      sys_ni_syscall),     // 167 -- unimplemented
    GENXY(__NR_poll,              sys_poll),           // 168 * (XPG4-UNIX)
    //   (__NR_nfsservctl,        sys_nfsservctl),     // 169 * L
 
-   GENX_(__NR_setresgid,         sys_setresgid16),    // 170
-   GENXY(__NR_getresgid,         sys_getresgid16),    // 171
+   LINX_(__NR_setresgid,         sys_setresgid16),    // 170
+   LINXY(__NR_getresgid,         sys_getresgid16),    // 171
    LINX_(__NR_prctl,             sys_prctl),          // 172
    //   (__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 (x86) ()
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174 (x86) ()
@@ -537,11 +537,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_getgroups32,       sys_getgroups),      // 205 * P
    GENX_(__NR_setgroups32,       sys_setgroups),      // 206 * almost-P
    GENX_(__NR_fchown32,          sys_fchown),         // 207 * (SVr4,BSD4.3)
-   GENX_(__NR_setresuid32,       sys_setresuid),      // 208
-   GENXY(__NR_getresuid32,       sys_getresuid),      // 209
+   LINX_(__NR_setresuid32,       sys_setresuid),      // 208
+   LINXY(__NR_getresuid32,       sys_getresuid),      // 209
 
-   GENX_(__NR_setresgid32,       sys_setresgid),      // 210
-   GENXY(__NR_getresgid32,       sys_getresgid),      // 211
+   LINX_(__NR_setresgid32,       sys_setresgid),      // 210
+   LINXY(__NR_getresgid32,       sys_getresgid),      // 211
    GENX_(__NR_chown32,           sys_chown),          // 212 * P
    GENX_(__NR_setuid32,          sys_setuid),         // 213 *
    GENX_(__NR_setgid32,          sys_setgid),         // 214 * (SVr4,SVID)

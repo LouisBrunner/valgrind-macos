@@ -1135,20 +1135,6 @@ PRE(sys_set_tid_address, Special)
    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }
 
-PRE(sys_setresgid16, 0)
-{
-   PRINT("sys_setresgid16 ( %d, %d, %d )", arg1, arg2, arg3);
-   PRE_REG_READ3(long, "setresgid16",
-                 vki_old_gid_t, rgid, vki_old_gid_t, egid, vki_old_gid_t, sgid);
-}
-
-PRE(sys_setresgid, 0)
-{
-   PRINT("sys_setresgid ( %d, %d, %d )", arg1, arg2, arg3);
-   PRE_REG_READ3(long, "setresgid",
-                 vki_gid_t, rgid, vki_gid_t, egid, vki_gid_t, sgid);
-}
-
 PRE(sys_iopl, 0)
 {
    PRINT("sys_iopl ( %d )", arg1);
@@ -1548,20 +1534,6 @@ PRE(sys_setregid16, 0)
 {
    PRINT("sys_setregid16 ( %d, %d )", arg1, arg2);
    PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
-}
-
-PRE(sys_setresuid16, 0)
-{
-   PRINT("sys_setresuid16 ( %d, %d, %d )", arg1, arg2, arg3);
-   PRE_REG_READ3(long, "setresuid16",
-                 vki_old_uid_t, ruid, vki_old_uid_t, euid, vki_old_uid_t, suid);
-}
-
-PRE(sys_setresuid, 0)
-{
-   PRINT("sys_setresuid ( %d, %d, %d )", arg1, arg2, arg3);
-   PRE_REG_READ3(long, "setresuid",
-                 vki_uid_t, ruid, vki_uid_t, euid, vki_uid_t, suid);
 }
 
 PRE(sys_sendfile, MayBlock)
@@ -2297,84 +2269,6 @@ PRE(sys_getppid, 0)
 {
    PRINT("sys_getppid ()");
    PRE_REG_READ0(long, "getppid");
-}
-
-PRE(sys_getresgid16, 0)
-{
-   PRINT("sys_getresgid16 ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "getresgid16",
-                 vki_old_gid_t *, rgid, vki_old_gid_t *, egid,
-                 vki_old_gid_t *, sgid);
-   PRE_MEM_WRITE( "getresgid16(rgid)", arg1, sizeof(vki_old_gid_t) );
-   PRE_MEM_WRITE( "getresgid16(egid)", arg2, sizeof(vki_old_gid_t) );
-   PRE_MEM_WRITE( "getresgid16(sgid)", arg3, sizeof(vki_old_gid_t) );
-}
-
-POST(sys_getresgid16)
-{
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_old_gid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_old_gid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_old_gid_t) );
-   }
-}
-
-PRE(sys_getresgid, 0)
-{
-   PRINT("sys_getresgid ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "getresgid", 
-                 vki_gid_t *, rgid, vki_gid_t *, egid, vki_gid_t *, sgid);
-   PRE_MEM_WRITE( "getresgid(rgid)", arg1, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid(egid)", arg2, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid(sgid)", arg3, sizeof(vki_gid_t) );
-}
-
-POST(sys_getresgid)
-{
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_gid_t) );
-   }
-}
-
-PRE(sys_getresuid16, 0)
-{
-   PRINT("sys_getresuid16 ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "getresuid16",
-                 vki_old_uid_t *, ruid, vki_old_uid_t *, euid,
-                 vki_old_uid_t *, suid);
-   PRE_MEM_WRITE( "getresuid16(ruid)", arg1, sizeof(vki_old_uid_t) );
-   PRE_MEM_WRITE( "getresuid16(euid)", arg2, sizeof(vki_old_uid_t) );
-   PRE_MEM_WRITE( "getresuid16(suid)", arg3, sizeof(vki_old_uid_t) );
-}
-
-POST(sys_getresuid16)
-{
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_old_uid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_old_uid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_old_uid_t) );
-   }
-}
-
-PRE(sys_getresuid, 0)
-{
-   PRINT("sys_getresuid ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "getresuid", 
-                 vki_uid_t *, ruid, vki_uid_t *, euid, vki_uid_t *, suid);
-   PRE_MEM_WRITE( "getresuid(ruid)", arg1, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid(euid)", arg2, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid(suid)", arg3, sizeof(vki_uid_t) );
-}
-
-POST(sys_getresuid)
-{
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_uid_t) );
-   }
 }
 
 static void common_post_getrlimit(UWord a1, UWord a2)

@@ -1534,15 +1534,6 @@ GEN_SYSCALL_WRAPPER(sys_setgroups16);           // ## SVr4, SVID, X/OPEN, 4.3BSD
 GEN_SYSCALL_WRAPPER(sys_fchown16);              // ## SVr4,BSD4.3
 GEN_SYSCALL_WRAPPER(sys_chown16);               // ## P
 
-GEN_SYSCALL_WRAPPER(sys_setresuid16);           // ## (non-standard)
-GEN_SYSCALL_WRAPPER(sys_getresuid16);           // ## L
-GEN_SYSCALL_WRAPPER(sys_setresgid16);           // ## (non-standard)
-GEN_SYSCALL_WRAPPER(sys_getresgid16);           // ## L
-GEN_SYSCALL_WRAPPER(sys_setresuid);             // * (non-standard)
-GEN_SYSCALL_WRAPPER(sys_getresuid);             // * L
-GEN_SYSCALL_WRAPPER(sys_setresgid);             // * (non-standard)
-GEN_SYSCALL_WRAPPER(sys_getresgid);             // * L
-
 GEN_SYSCALL_WRAPPER(sys_ptrace);                // (x86?) (almost-P)
 
 

@@ -1686,7 +1686,7 @@ extern void VGA_(os_state_clear)(ThreadState *);
 extern void VGA_(os_state_init)(ThreadState *);
 
 // Run a thread from beginning to end.  Does not return if tid == VG_(master_tid).
-void VGA_(thread_wrapper)(ThreadId tid);
+void VGA_(thread_wrapper)(Word /*ThreadId*/ tid);
 
 // Like VGA_(thread_wrapper), but it allocates a stack before calling
 // to VGA_(thread_wrapper) on that stack, as if it had been set up by

@@ -15,10 +15,11 @@ void VGA_(os_state_init)(ThreadState *tst)
 }
 
 /* Run a thread from beginning to end. Does not return. */
-void VGA_(thread_wrapper)(ThreadId tid)
+void VGA_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
    VgSchedReturnCode ret;
-   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadId     tid = (ThreadId)tidW;
+   ThreadState* tst = VG_(get_ThreadState)(tid);
 
    vg_assert(tst->status == VgTs_Init);
 

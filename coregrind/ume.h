@@ -54,6 +54,27 @@ extern
 __attribute__((noreturn))
 void jmp_with_stack(void (*eip)(void), Addr sp);
 
+
+/* Call f(), but first switch stacks, using 'stack' as the new stack,
+   and use 'retaddr' as f's return-to address.  Also, clear all the
+   integer registers before entering f. */
+extern
+__attribute__((noreturn))
+void call_on_new_stack_0_0 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(void) );
+
+/* Call f(arg1), but first switch stacks, using 'stack' as the new
+   stack, and use 'retaddr' as f's return-to address.  Also, clear all
+   the integer registers before entering f.*/
+extern
+__attribute__((noreturn))
+void call_on_new_stack_0_1 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(Word),
+                             Word arg1 );
+
+
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/
 /*------------------------------------------------------------*/

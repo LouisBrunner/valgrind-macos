@@ -53,3 +53,77 @@ void jmp_with_stack(void(*rip)(void), Addr rsp)
    for(;;)
       asm volatile("ud2");
 } 
+
+
+
+#define ZERO_ALL_INT_REGS \
+   "   movq $0, %rax\n"  \
+   "   movq $0, %rbx\n"  \
+   "   movq $0, %rcx\n"  \
+   "   movq $0, %rdx\n"  \
+   "   movq $0, %rsi\n"  \
+   "   movq $0, %rdi\n"  \
+   "   movq $0, %rbp\n"  \
+   "   movq $0, %r8\n"   \
+   "   movq $0, %r9\n"   \
+   "   movq $0, %r10\n"  \
+   "   movq $0, %r11\n"  \
+   "   movq $0, %r12\n"  \
+   "   movq $0, %r13\n"  \
+   "   movq $0, %r14\n"  \
+   "   movq $0, %r15\n"
+
+/* Call f(), but first switch stacks, using 'stack' as the new stack,
+   and use 'retaddr' as f's return-to address.  Also, clear all the
+   integer registers before entering f. */
+/*
+__attribute__((noreturn))
+void call_on_new_stack_0_0 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(void) );
+  %rdi == stack
+  %rsi == retaddr
+  %rdx == f
+*/
+asm(
+".global call_on_new_stack_0_0\n"
+"call_on_new_stack_0_0:\n"
+"   movq   %rdi, %rsp\n"  /* set stack */
+"   pushq  %rsi\n"        /* retaddr to stack */
+"   pushq  %rdx\n"        /* f to stack*/
+    ZERO_ALL_INT_REGS
+"   ret\n"                /* jump to f */
+"   ud2\n"                /* should never get here */
+);
+
+
+
+/* Call f(arg1), but first switch stacks, using 'stack' as the new
+   stack, and use 'retaddr' as f's return-to address.  Also, clear all
+   the integer registers before entering f.*/
+/*
+__attribute__((noreturn))
+void call_on_new_stack_0_1 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(Word),
+                             Word arg1 );
+   %rdi == stack
+   %rsi == retaddr
+   %rdx == f
+   %rcx == arg1
+*/
+asm(
+".global call_on_new_stack_0_1\n"
+"call_on_new_stack_0_1:\n"
+"   movq   %rdi, %rsp\n"  /* set stack */
+"   pushq  %rsi\n"        /* retaddr to stack */
+"   pushq  %rdx\n"        /* f to stack*/
+"   pushq  %rcx\n"        /* arg1 to stack*/
+    ZERO_ALL_INT_REGS
+"   popq   %rdi\n"        /* arg1 to correct arg reg */
+"   ret\n"                /* jump to f */
+"   ud2\n"                /* should never get here */
+);
+
+
+#undef ZERO_ALL_INT_REGS

@@ -247,11 +247,18 @@ void VGA_(main_thread_wrapper)(ThreadId tid)
 {
    ULong *rsp = allocstack(tid);
 
+   VG_(printf)("m-t-r: %d\n", (int)tid);
    vg_assert(tid == VG_(master_tid));
 
-   VG_(threads)[tid].arch.vex.guest_RDI = (ULong)tid; /* set arg */
-   *--rsp = 0;			/* bogus return address */
-   jmp_with_stack((void (*)(void))VGA_(thread_wrapper), (Addr)rsp);
+   call_on_new_stack_0_1( 
+      (Addr)rsp,             /* stack */
+      0,                     /*bogus return address*/
+      VGA_(thread_wrapper),  /* fn to call */
+      (Word)tid              /* arg to give it */
+   );
+
+   /*NOTREACHED*/
+   vg_assert(0);
 }
 
 

@@ -75,11 +75,15 @@ static void add_one_Jcc_untaken(void)
    n_Jccs_untaken++;
 }
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used)
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
+                       VgTrackEvents* not_used2)
 {
-   needs->name           = "lackey";
-   needs->description    = "an example Valgrind skin";
-   needs->bug_reports_to = "njn25@cam.ac.uk";
+   details->name             = "lackey";
+   details->version          = NULL;
+   details->description      = "an example Valgrind skin";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
+   details->bug_reports_to   = "njn25@cam.ac.uk";
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);

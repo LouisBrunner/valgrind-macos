@@ -71,7 +71,7 @@ void non_fund_panic ( Char* fn )
    ------------------------------------------------------------------ */
 
 __attribute__ ((weak))
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
    fund_panic("SK_(pre_clo_init)");
 }

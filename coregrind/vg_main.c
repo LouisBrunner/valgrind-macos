@@ -438,25 +438,27 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
    ------------------------------------------------------------------ */
 
 /* Init with default values. */
+VgDetails VG_(details) = {
+   .name             = NULL,
+   .version          = NULL,
+   .description      = NULL,
+   .copyright_author = NULL,
+   .bug_reports_to   = NULL,
+};
+
 VgNeeds VG_(needs) = {
-   .name                    = NULL,
-   .description             = NULL,
-   .bug_reports_to          = NULL,
-
-   .core_errors             = False,
-   .skin_errors             = False,
-   .run_libc_freeres        = False,
-
-   .sizeof_shadow_block     = 0,
-
-   .basic_block_discards    = False,
-   .shadow_regs             = False,
-   .command_line_options    = False,
-   .client_requests         = False,
-   .extended_UCode          = False,
-   .syscall_wrapper         = False,
-   .alternative_free        = False,
-   .sanity_checks           = False,
+   .core_errors          = False,
+   .skin_errors          = False,
+   .libc_freeres         = False,
+   .sizeof_shadow_block  = 0,
+   .basic_block_discards = False,
+   .shadow_regs          = False,
+   .command_line_options = False,
+   .client_requests      = False,
+   .extended_UCode       = False,
+   .syscall_wrapper      = False,
+   .alternative_free     = False,
+   .sanity_checks        = False,
 };
 
 VgTrackEvents VG_(track_events) = {
@@ -470,6 +472,7 @@ VgTrackEvents VG_(track_events) = {
    .new_mem_mmap          = NULL,
 
    .copy_mem_heap         = NULL,
+   .copy_mem_remap        = NULL,
    .change_mem_mprotect   = NULL,
 
    .ban_mem_heap          = NULL,
@@ -490,6 +493,9 @@ VgTrackEvents VG_(track_events) = {
    .pre_mem_write         = NULL,
    .post_mem_write        = NULL,
 
+   /* Scheduler events */
+   .thread_run            = NULL,
+
    /* Mutex events */
    .post_mutex_lock       = NULL,
    .post_mutex_unlock     = NULL,
@@ -504,9 +510,11 @@ static void sanity_check_needs ( void )
       VG_(skin_panic)("Uninitialised needs field\n");       \
    }
    
-   CHECK_NOT(VG_(needs).name,           NULL);
-   CHECK_NOT(VG_(needs).description,    NULL);
-   CHECK_NOT(VG_(needs).bug_reports_to, NULL);
+   CHECK_NOT(VG_(details).name,             NULL);
+   /* Nb: .version can be NULL */
+   CHECK_NOT(VG_(details).description,      NULL);
+   CHECK_NOT(VG_(details).copyright_author, NULL);
+   CHECK_NOT(VG_(details).bug_reports_to,   NULL);
 
 #undef CHECK_NOT
 #undef INVALID_Bool
@@ -644,9 +652,12 @@ static void usage ( void )
 "  Valgrind is Copyright (C) 2000-2002 Julian Seward\n"
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
+"\n"
+"  Skins are copyright and licensed by their authors.  See each\n"
+"  skin's start-up message for more information.\n"
 "\n";
 
-   VG_(printf)(usage1, VG_(needs).name);
+   VG_(printf)(usage1, VG_(details).name);
    /* Don't print skin string directly for security, ha! */
    if (VG_(needs).command_line_options)
       VG_(printf)("%s", SK_(usage)());
@@ -998,13 +1009,23 @@ static void process_cmd_line_options ( void )
    VG_(clo_logfile_fd) = eventually_logfile_fd;
 
    if (VG_(clo_verbosity > 0)) {
-      VG_(message)(Vg_UserMsg, "%s-%s, %s for x86 GNU/Linux.",
-         VG_(needs).name, VERSION, VG_(needs).description);
-   }
+      /* Skin details */
+      VG_(message)(Vg_UserMsg, "%s%s%s, %s for x86-linux.",
+                   VG_(details).name, 
+                   NULL == VG_(details).version ?        "" : "-",
+                   NULL == VG_(details).version 
+                      ? (Char*)"" : VG_(details).version,
+                   VG_(details).description);
+      VG_(message)(Vg_UserMsg, "%s", VG_(details).copyright_author);
 
-   if (VG_(clo_verbosity > 0))
+      /* Core details */
+      VG_(message)(Vg_UserMsg,
+                   "Built with valgrind-%s, a program execution monitor.",
+                   VERSION);
       VG_(message)(Vg_UserMsg, 
                    "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
+   }
+
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
       for (i = 0; i < argc; i++) {
@@ -1181,7 +1202,7 @@ void VG_(main) ( void )
         and turn on/off 'command_line_options' need
       - init_memory() (to setup memory event trackers).
     */
-   SK_(pre_clo_init) ( & VG_(needs), & VG_(track_events) );
+   SK_(pre_clo_init) ( & VG_(details), & VG_(needs), & VG_(track_events) );
    sanity_check_needs();
 
    /* Set up baseBlock offsets and copy the saved machine's state into it. */

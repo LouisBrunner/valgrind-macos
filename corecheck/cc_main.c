@@ -32,13 +32,16 @@
 #include "vg_skin.h"
 
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   needs->name           = "coregrind";
-   needs->description    = "a rudimentary error detector";
-   needs->bug_reports_to = "njn25@cam.ac.uk";
+   details->name             = "coregrind";
+   details->version          = NULL;
+   details->description      = "a rudimentary error detector";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
+   details->bug_reports_to   = "njn25@cam.ac.uk";
 
-   needs->core_errors    = True;
+   needs->core_errors = True;
 
    /* No core events to track */
 }

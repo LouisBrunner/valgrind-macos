@@ -2515,33 +2515,28 @@ Char* SK_(usage)(void)
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   needs->name                    = "addrcheck";
-   needs->description             = "a fine-grained address checker";
-   needs->bug_reports_to          = "jseward@acm.org";
+   details->name             = "addrcheck";
+   details->version          = NULL;
+   details->description      = "a fine-grained address checker";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.";
+   details->bug_reports_to   = "jseward@acm.org";
 
-   needs->core_errors             = True;
-   needs->skin_errors             = True;
-   needs->run_libc_freeres        = True;
+   needs->core_errors          = True;
+   needs->skin_errors          = True;
+   needs->libc_freeres         = True;
+   needs->sizeof_shadow_block  = 1;
+   needs->basic_block_discards = False;
+   needs->shadow_regs          = False;
+   needs->command_line_options = True;
+   needs->client_requests      = True;
+   needs->extended_UCode       = False;
+   needs->syscall_wrapper      = True;
+   needs->alternative_free     = True;
+   needs->sanity_checks        = True;
 
-   needs->sizeof_shadow_block     = 1;
-
-   needs->basic_block_discards    = False;
-   needs->shadow_regs             = False;
-   needs->command_line_options    = True;
-   needs->client_requests         = True;
-   needs->extended_UCode          = False;
-   needs->syscall_wrapper         = True;
-   needs->alternative_free        = True;
-   needs->sanity_checks           = True;
-
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS2));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS1));
-   VG_(register_compact_helper)((Addr) & SK_(fpu_ACCESS_check));
-
-   /* Events to track */
    track->new_mem_startup       = & addrcheck_new_mem_startup;
    track->new_mem_heap          = & addrcheck_new_mem_heap;
    track->new_mem_stack         = & SK_(make_accessible);
@@ -2572,12 +2567,16 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
    track->pre_mem_write         = & check_is_writable;
    track->post_mem_write        = & SK_(make_accessible);
 
-   init_shadow_memory();
-
-   init_prof_mem();
+   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS4));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS2));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS1));
+   VG_(register_compact_helper)((Addr) & SK_(fpu_ACCESS_check));
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+
+   init_shadow_memory();
+   init_prof_mem();
 }
 
 /*--------------------------------------------------------------------*/

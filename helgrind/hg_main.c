@@ -1338,21 +1338,20 @@ static void eraser_mem_write(Addr a, UInt size)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
    Int i;
 
-   needs->name                    = "helgrind";
-   needs->description             = "a data race detector";
-   needs->description             = "njn25@cam.ac.uk";
+   details->name             = "helgrind";
+   details->version          = NULL;
+   details->description      = "a data race detector";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
+   details->bug_reports_to   = "njn25@cam.ac.uk";
 
-   needs->core_errors             = True;
-   needs->skin_errors             = True;
+   needs->core_errors = True;
+   needs->skin_errors = True;
 
-   VG_(register_compact_helper)((Addr) & eraser_mem_read);
-   VG_(register_compact_helper)((Addr) & eraser_mem_write);
-
-   /* Events to track */
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;
    track->new_mem_stack         = & make_writable;
@@ -1381,6 +1380,9 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 
    track->post_mutex_lock       = & eraser_post_mutex_lock;
    track->post_mutex_unlock     = & eraser_post_mutex_unlock;
+
+   VG_(register_compact_helper)((Addr) & eraser_mem_read);
+   VG_(register_compact_helper)((Addr) & eraser_mem_write);
 
    /* Init lock table */
    for (i = 0; i < VG_N_THREADS; i++) 

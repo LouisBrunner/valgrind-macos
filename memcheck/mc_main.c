@@ -2349,43 +2349,28 @@ Char* SK_(usage)(void)
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   needs->name                    = "memcheck";
-   needs->description             = "a memory error detector";
-   needs->bug_reports_to          = "jseward@acm.org";
+   details->name             = "memcheck";
+   details->version          = NULL;
+   details->description      = "a memory error detector";
+   details->copyright_author =
+      "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.";
+   details->bug_reports_to   = "jseward@acm.org";
 
-   needs->core_errors             = True;
-   needs->skin_errors             = True;
-   needs->run_libc_freeres        = True;
+   needs->core_errors          = True;
+   needs->skin_errors          = True;
+   needs->libc_freeres         = True;
+   needs->sizeof_shadow_block  = 1;
+   needs->basic_block_discards = False;
+   needs->shadow_regs          = True;
+   needs->command_line_options = True;
+   needs->client_requests      = True;
+   needs->extended_UCode       = True;
+   needs->syscall_wrapper      = True;
+   needs->alternative_free     = True;
+   needs->sanity_checks        = True;
 
-   needs->sizeof_shadow_block     = 1;
-
-   needs->basic_block_discards    = False;
-   needs->shadow_regs             = True;
-   needs->command_line_options    = True;
-   needs->client_requests         = True;
-   needs->extended_UCode          = True;
-   needs->syscall_wrapper         = True;
-   needs->alternative_free        = True;
-   needs->sanity_checks           = True;
-
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check4_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check0_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helper_value_check2_fail));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV1));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV4));
-   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV1));
-
-   /* These two made non-compact because 2-byte transactions are rare. */
-   VG_(register_noncompact_helper)((Addr) & SK_(helperc_STOREV2));
-   VG_(register_noncompact_helper)((Addr) & SK_(helperc_LOADV2));
-   VG_(register_noncompact_helper)((Addr) & SK_(fpu_write_check));
-   VG_(register_noncompact_helper)((Addr) & SK_(fpu_read_check));
-   VG_(register_noncompact_helper)((Addr) & SK_(helper_value_check1_fail));
-
-   /* Events to track */
    track->new_mem_startup       = & memcheck_new_mem_startup;
    track->new_mem_heap          = & memcheck_new_mem_heap;
    track->new_mem_stack         = & SK_(make_writable);
@@ -2416,12 +2401,26 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
    track->pre_mem_write         = & check_is_writable;
    track->post_mem_write        = & SK_(make_readable);
 
-   init_shadow_memory();
+   VG_(register_compact_helper)((Addr) & SK_(helper_value_check4_fail));
+   VG_(register_compact_helper)((Addr) & SK_(helper_value_check0_fail));
+   VG_(register_compact_helper)((Addr) & SK_(helper_value_check2_fail));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV4));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_STOREV1));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV4));
+   VG_(register_compact_helper)((Addr) & SK_(helperc_LOADV1));
 
-   init_prof_mem();
+   /* These two made non-compact because 2-byte transactions are rare. */
+   VG_(register_noncompact_helper)((Addr) & SK_(helperc_STOREV2));
+   VG_(register_noncompact_helper)((Addr) & SK_(helperc_LOADV2));
+   VG_(register_noncompact_helper)((Addr) & SK_(fpu_write_check));
+   VG_(register_noncompact_helper)((Addr) & SK_(fpu_read_check));
+   VG_(register_noncompact_helper)((Addr) & SK_(helper_value_check1_fail));
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+
+   init_shadow_memory();
+   init_prof_mem();
 }
 
 /*--------------------------------------------------------------------*/

@@ -583,7 +583,7 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       /* Is it a skin suppression?  (<skin_name>:<supp_name>") */
-      else if (VG_(needs).skin_errors && STREQ(skin_name, VG_(needs).name))
+      else if (VG_(needs).skin_errors && STREQ(skin_name, VG_(details).name))
       {
          if (SK_(recognised_suppression)(supp_name, & supp->skin_supp.skind)) 
          {

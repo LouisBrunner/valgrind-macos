@@ -5,11 +5,16 @@
 
 #include "vg_skin.h"
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   needs->name           = "example";
-   needs->description    = "an example Valgrind skin";
-   needs->report_bugs_to = "santa.claus@northpole.org";
+   details->name             = "example";
+   details->version          = "0.0.1";
+   details->description      = "an example Valgrind skin";
+   details->copyright_author =
+      "Copyright (C) 2002, and put in the public domain, by Santa Claus.";
+   details->bug_reports_to   = "santa.claus@northpole.org";
+
+   /* No needs, no core events to track */
 }
 
 void SK_(post_clo_init)(void)

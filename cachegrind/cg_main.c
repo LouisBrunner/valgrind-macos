@@ -1922,14 +1922,18 @@ Char* SK_(usage)(void)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used) 
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs,
+                       VgTrackEvents* not_used)
 {
-   needs->name                    = "cachegrind";
-   needs->description             = "an I1/D1/L2 cache profiler";
-   needs->bug_reports_to          = "njn25@cam.ac.uk";
+   details->name             = "cachegrind";
+   details->version          = NULL;
+   details->description      = "an I1/D1/L2 cache profiler";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
+   details->bug_reports_to   = "njn25@cam.ac.uk";
 
-   needs->basic_block_discards    = True;
-   needs->command_line_options    = True;
+   needs->basic_block_discards = True;
+   needs->command_line_options = True;
 
    VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access);
    VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access_JIFZ);

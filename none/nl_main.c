@@ -31,11 +31,15 @@
 #include "vg_skin.h"
 
 
-void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
+void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
+                       VgTrackEvents* not_used2) 
 {
-   needs->name           = "nulgrind";
-   needs->description    = "a binary JIT-compiler";
-   needs->bug_reports_to = "njn25@cam.ac.uk";
+   details->name             = "nulgrind";
+   details->version          = NULL;
+   details->description      = "a binary JIT-compiler";
+   details->copyright_author =
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
+   details->bug_reports_to   = "njn25@cam.ac.uk";
 
    /* No needs, no core events to track */
 }

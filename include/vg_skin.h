@@ -1100,9 +1100,34 @@ extern ThreadId VG_(any_matching_thread_stack)
 /*=== Skin-specific stuff                                          ===*/
 /*====================================================================*/
 
-/* Skin-specific settings.
- *
- * If new fields are added to this type, update:
+/* ------------------------------------------------------------------ */
+/* Details */
+typedef
+   struct {
+      /* Information used in the startup message. `name' also determines the
+         string used for identifying suppressions in a suppression file as
+         belonging to this skin.  `version' can be NULL, in which case (not
+         surprisingly) no version info is printed; this mechanism is
+         designed for skins distributed with Valgrind that share a version
+         number with Valgrind.  Other skins not distributed as part of
+         Valgrind should probably have their own version number. */
+      Char* name;
+      Char* version;
+      Char* description;
+      Char* copyright_author;
+
+      /* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
+         is called.  Should probably be an email address. */
+      Char* bug_reports_to;
+   }
+   VgDetails;
+
+extern VgDetails VG_(details);
+
+/* ------------------------------------------------------------------ */
+/* Needs */
+
+/* If new fields are added to this type, update:
  *  - vg_main.c:initialisation of VG_(needs)
  *  - vg_main.c:sanity_check_needs()
  *
@@ -1111,20 +1136,11 @@ extern ThreadId VG_(any_matching_thread_stack)
  */
 typedef
    struct {
-      /* Name and description used in the startup message. `name' also
-         determines the string used for identifying suppressions in a
-         suppression file as belonging to this skin.  `bug_reports_to' 
-         (should be an email address) is printed if an `sk_assert' assertion
-         fails or VG_(skin_panic) is called. */
-      Char* name;
-      Char* description;
-      Char* bug_reports_to;
-
       /* Booleans that decide core behaviour, but don't require extra
          operations to be defined if `True' */
 
       /* Should __libc_freeres() be run?  Bugs in it can crash the skin. */
-      Bool run_libc_freeres;
+      Bool libc_freeres;
 
       /* Want to have errors detected by Valgrind's core reported?  Includes:
          - pthread API errors (many;  eg. unlocking a non-locked mutex)
@@ -1269,16 +1285,17 @@ extern VgTrackEvents VG_(track_events);
 /* Fundamental template functions */
 
 /* Initialise skin.   Must do the following:
-     - initialise the 'needs' struct
+     - initialise the `details' struct
      - register any helpers called by generated code
   
    May do the following:
-     - indicate events to track by initialising part or all of the 'track'
-       struct
+     - initialise the `needs' struct to indicate certain requirements
+     - initialise the `track' struct to indicate core events of interest
      - register any skin-specific profiling events
      - any other skin-specific initialisation
 */
-extern void        SK_(pre_clo_init) ( VgNeeds* needs, VgTrackEvents* track );
+extern void        SK_(pre_clo_init) ( VgDetails* details, VgNeeds* needs,
+                                       VgTrackEvents* track );
 
 /* Do initialisation that can only be done after command line processing. */
 extern void        SK_(post_clo_init)( void );

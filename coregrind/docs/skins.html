@@ -285,12 +285,10 @@ In what follows, all filenames are relative to Valgrind's top-level directory
 
   <li>Copy <code>example/ex_main.c</code> into
       <code>foobar/</code>, renaming it as <code>fb_main.c</code>.
-      Edit it by changing the two lines in <code>SK_(pre_clo_init)()</code> to:
-      <pre>
-    needs->name        = "foobar";
-    needs->description = "a foobarring tool";</pre>
-
-      (setting <code>needs->description</code> appropriately).
+      Edit it by changing the five lines in <code>SK_(pre_clo_init)()</code>
+      to something appropriate for the skin.  These fields are used in the
+      startup message, except for <code>bug_reports_to</code> which is used
+      if a skin assertion fails.
   </li><p>
 
   <li>Edit <code>Makefile.am</code>, adding the new directory
@@ -320,7 +318,9 @@ In what follows, all filenames are relative to Valgrind's top-level directory
       (almost any program should work; <code>date</code> is just an example).  
       The output should be something like this:
       <pre>
-==738== foobar-1.1.0, a foobarring tool for x86 GNU/Linux.
+==738== foobar-0.0.1, a foobarring tool for x86-linux.
+==738== Copyright (C) 2002, and GNU GPL'd, by J. Random Hacker.
+==738== Built with valgrind-1.1.0, a program execution monitor.
 ==738== Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.
 ==738== Estimated CPU clock rate is 1400 MHz
 ==738== For more details, rerun with: -v

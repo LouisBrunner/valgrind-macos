@@ -1484,7 +1484,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
 
             if (VG_(threads)[tid].m_eax == __NR_exit 
-                && ! VG_(needs).run_libc_freeres) {
+                && ! VG_(needs).libc_freeres) {
                if (VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
                      "Caught __NR_exit; quitting");
@@ -1493,7 +1493,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 
             if (VG_(threads)[tid].m_eax == __NR_exit) {
-               vg_assert(VG_(needs).run_libc_freeres);
+               vg_assert(VG_(needs).libc_freeres);
                if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
                      "Caught __NR_exit; running __libc_freeres()");

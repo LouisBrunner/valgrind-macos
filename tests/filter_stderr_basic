@@ -4,12 +4,14 @@
 # startup stuff and pid numbers.
 
 # Remove ==pid== and --pid-- and ++pid++ strings 
-sed "s/\(==\|--\|++\)[0-9]\{3,5\}\1 //"                                 |
+sed "s/\(==\|--\|++\)[0-9]\{3,5\}\1 //"                                |
 
-# Remove "<name>, a <description> for x86 GNU/Linux." line
-sed "/^.*, .* for x86 GNU\/Linux\./d"                                  | 
+# Remove "<name>, a <description> for x86-linux." line and the following
+# copyright notice line
+sed "/^.*, .* for x86-linux\./ , /./ d"                                | 
 
 # Remove other introductory lines
+sed "/Built with valgrind-.*, a program execution monitor./d"          |
 sed "/Copyright (C) 2000-2..., and GNU GPL'd, by Julian Seward\./d"    |
 sed "/Estimated CPU clock rate is [0-9]\+ MHz/d"                       |
 sed "/For more details, rerun with: -v/d"

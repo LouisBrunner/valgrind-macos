@@ -1008,7 +1008,7 @@ static void assert_fail ( Char* expr, Char* name, Char* report,
 
 void VG_(skin_assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
 {
-   assert_fail(expr, VG_(needs).name, VG_(needs).bug_reports_to, 
+   assert_fail(expr, VG_(details).name, VG_(details).bug_reports_to, 
                file, line, fn);
 }
 
@@ -1032,7 +1032,7 @@ void VG_(core_panic) ( Char* str )
 
 void VG_(skin_panic) ( Char* str )
 {
-   panic(VG_(needs).name, VG_(needs).bug_reports_to, str);
+   panic(VG_(details).name, VG_(details).bug_reports_to, str);
 }
 
 /* ---------------------------------------------------------------------

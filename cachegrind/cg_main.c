@@ -829,7 +829,7 @@ static void fprint_CC_table_and_calc_totals(void)
    VG_(strcpy)(buf, "cmd:");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    for (i = 0; i < VG_(client_argc); i++) {
-       VG_(write)(fd, "", 1);
+       VG_(write)(fd, " ", 1);
        VG_(write)(fd, VG_(client_argv)[i], VG_(strlen)(VG_(client_argv)[i]));
    }
    // "events:" line

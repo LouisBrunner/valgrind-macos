@@ -1684,7 +1684,11 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
                temp_info[tno].dead_before = i + 1;
          } else {
             /* First use of a tmp should be a write. */
-            vg_assert(temp_info[tno].live_after != VG_NOTHING);
+            if (temp_info[tno].live_after == VG_NOTHING) {
+               VG_(printf)("At instr %d...\n", i);
+               VG_(core_panic)("First use of tmp not a write,"
+                               " probably a skin instrumentation error");
+            }
             /* Reads only hold it live until before this insn. */
             if (temp_info[tno].dead_before < i)
                temp_info[tno].dead_before = i;

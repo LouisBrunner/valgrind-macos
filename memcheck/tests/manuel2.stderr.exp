@@ -1,2 +1,2 @@
 Use of uninitialised value of size 4
-   at 0x........: main (manuel2.c:8)
+   at 0x........: main (manuel2.c:10)

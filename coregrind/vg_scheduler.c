@@ -512,7 +512,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(my_fault));
    VG_(my_fault) = False;
 
-   SCHEDSETJMP(tid, jumped, trc = VG_(run_innerloop)(&tst->arch.vex));
+   SCHEDSETJMP(tid, jumped, trc = VG_(run_innerloop)( (void*)&tst->arch.vex ));
 
    //nextEIP = tst->arch.m_eip;
    //if (nextEIP >= VG_(client_end))

@@ -1371,7 +1371,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg dst = newVRegI(env);
          addInstr(env, AMD64Instr_LoadEX(
-                          toBool(ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4)),
+                          toUChar(ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4)),
                           False,
                           AMD64AMode_IR(e->Iex.Get.offset,hregAMD64_RBP()),
                           dst));

@@ -1621,6 +1621,23 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   /* CmpNE64(x, 0) */
+   {
+      DECLARE_PATTERN(p_CmpNE64_x_zero);
+      DEFINE_PATTERN(
+         p_CmpNE64_x_zero,
+         binop(Iop_CmpNE64, bind(0), mkU64(0)) );
+      if (matchIRExpr(&mi, p_CmpNE64_x_zero, e)) {
+         HReg hi, lo;
+         IRExpr* x   = mi.bindee[0];
+         HReg    tmp = newVRegI(env);
+         iselInt64Expr( &hi, &lo, env, x );
+         addInstr(env, mk_iMOVsd_RR(hi, tmp));
+         addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(lo), tmp));
+         return Xcc_NZ;
+      }
+   }
+
    /* CmpNE64 */
    if (e->tag == Iex_Binop 
        && e->Iex.Binop.op == Iop_CmpNE64) {

@@ -636,34 +636,16 @@ static void usage ( void )
    Char* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
-"  core user options, with defaults in [ ], are:\n"
+"  common user options for all Valgrind tools, with defaults in [ ]:\n"
 "    --tool=<name>             Use the Valgrind tool named <name> [memcheck]\n"
-
 "    --help                    show this message\n"
 "    --version                 show version\n"
-
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
-
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
-
-"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
-"    --logfile=<file>          log messages to <file>.pid<pid>\n"
-"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
-
-"    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
-"    --num-callers=<number>    show <num> callers in stack traces [4]\n"
-"    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
-"    --show-below-main=no|yes  continue stack traces below main() [no]\n"
-"    --suppressions=<filename> suppress errors described in <filename>\n"
-"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
-
 "    --track-fds=no|yes        Track open file descriptors? [no]\n"
-
-"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
-"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
-"    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
-
+"\n"
+"  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --weird-hacks=hack1,hack2,...  [none]\n"
 "         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls\n"
@@ -675,12 +657,26 @@ static void usage ( void )
 "    --lowlat-syscalls=no|yes  improve wake-up latency when a thread's\n"
 "			       syscall completes [no]\n"
 "\n"
-"  %s tool user options:\n";
+"  user options for Valgrind tools that report errors:\n"
+"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
+"    --logfile=<file>          log messages to <file>.pid<pid>\n"
+"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
+"    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
+"    --num-callers=<number>    show <num> callers in stack traces [4]\n"
+"    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
+"    --show-below-main=no|yes  continue stack traces below main() [no]\n"
+"    --suppressions=<filename> suppress errors described in <filename>\n"
+"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
 
+"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
+"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
+"    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
+"\n"
+"  user options for %s:\n";
 
    Char* usage2 = 
 "\n"
-"  core options for debugging Valgrind itself are:\n"
+"  debugging options for all Valgrind tools:\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
@@ -694,12 +690,13 @@ static void usage ( void )
 "    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --stop-after=<number>     switch to real CPU after executing\n"
 "                              <number> basic blocks [infinity]\n"
-"    --dump-error=<number>     show translation for basic block\n"
-"                              associated with <number>'th\n"
-"                              error context [0=don't show any]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
-"  %s tool debugging options:\n";
+"  debugging options for Valgrind tools that report errors\n"
+"    --dump-error=<number>     show translation for basic block associated\n"
+"                              with <number>'th error context [0=show none]\n"
+"\n"
+"  debugging options for %s:\n";
 
    Char* usage3 =
 "\n"

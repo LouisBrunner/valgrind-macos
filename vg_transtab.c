@@ -63,7 +63,7 @@
 
 /* The number of age steps we track.  0 means the current epoch,
    N_EPOCHS-1 means used the epoch N_EPOCHS-1 or more ago.  */
-#define VG_N_EPOCHS /*2000*/ 4000
+#define VG_N_EPOCHS /*2000*/ /*4000*/ 20000
 
 /* This TT entry is empty. */
 #define VG_TTE_EMPTY   ((Addr)1)

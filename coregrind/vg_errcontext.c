@@ -238,7 +238,7 @@ static void gen_suppression(Error* err)
          VG_(printf)("   obj:%s\n", buf);
       } else {
          VG_(printf)("   ???:???       "
-                     "# unknown, suppression will not work, sorry)\n");
+                     "# unknown, suppression will not work, sorry\n");
       }
       i++;
    } while (i < stop_at && ec->eips[i] != 0);

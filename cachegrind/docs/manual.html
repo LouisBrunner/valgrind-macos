@@ -1970,7 +1970,7 @@ very useful for improving the performance of your program.<p>
 
 Also, since one instruction cache read is performed per instruction executed,
 you can find out how many instructions are executed per line, which can be
-useful for optimisation and test coverage.<p>
+useful for traditional profiling and test coverage.<p>
 
 Please note that this is an experimental feature.  Any feedback, bug-fixes,
 suggestions, etc, welcome.
@@ -2009,7 +2009,7 @@ The two steps are:
 The steps are described in detail in the following sections.<p>
 
 
-<h3>7.3&nbsp; Cache simulation specifics</h3>
+<h3>7.2&nbsp; Cache simulation specifics</h3>
 
 Cachegrind uses a simulation for a machine with a split L1 cache and a unified
 L2 cache.  This configuration is used for all (modern) x86-based machines we
@@ -2074,7 +2074,7 @@ existing ones in <code>vg_cachesim_I1.c</code>, <code>vg_cachesim_D1.c</code>,
 interested to hear from anyone who does.
 
 <a name="profile"></a>
-<h3>7.4&nbsp; Profiling programs</h3>
+<h3>7.3&nbsp; Profiling programs</h3>
 
 Cache profiling is enabled by using the <code>--cachesim=yes</code>
 option to the <code>valgrind</code> shell script.  Alternatively, it
@@ -2121,7 +2121,7 @@ to the row's total).<p>
 Combined instruction and data figures for the L2 cache follow that.<p>
 
 
-<h3>7.5&nbsp; Output file</h3>
+<h3>7.4&nbsp; Output file</h3>
 
 As well as printing summary information, Cachegrind also writes
 line-by-line cache profiling information to a file named
@@ -2142,32 +2142,31 @@ Things to note about the <code>cachegrind.out</code> file:
 </ul>
 
 <a name="profile"></a>
-<h3>7.6&nbsp; Cachegrind options</h3>
+<h3>7.5&nbsp; Cachegrind options</h3>
 Cachegrind accepts all the options that Valgrind does, although some of them
 (ones related to memory checking) don't do anything when cache profiling.<p>
 
 The interesting cache-simulation specific options are:
 
-  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p>
-      <code>--D1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 
+  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br>
+      <code>--D1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br> 
       <code>--L2=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 
-      [default: uses CPUID for cache configuration]<p>
+      [default: uses CPUID for automagic cache configuration]<p>
 
       Manually specifies the I1/D1/L2 cache configuration, where
       <code>size</code> and <code>line_size</code> are measured in bytes.  The
-      three items must be comma-separated, but with no space, eg:
+      three items must be comma-separated, but with no spaces, eg:
 
       <blockquote><code>cachegrind --I1=65535,2,64</code></blockquote>
 
-      You can specify one, two or three of the caches.  Any level not manually
-      specified will be simulated using the configuration found in the normal
-      way (via the CPUID instruction, or failing that, via defaults).
+      You can specify one, two or three of the I1/D1/L2 caches.  Any level not
+      manually specified will be simulated using the configuration found in the
+      normal way (via the CPUID instruction, or failing that, via defaults).
 </ul>
+
   
-
-
 <a name="annotate"></a>
-<h3>7.7&nbsp; Annotating C/C++ programs</h3>
+<h3>7.6&nbsp; Annotating C/C++ programs</h3>
 
 Before using <code>vg_annotate</code>, it is worth widening your
 window to be at least 120-characters wide if possible, as the output
@@ -2400,7 +2399,7 @@ Beware that vg_annotate can take some time to digest large
 auto-annotation can produce a lot of output if your program is large!
 
 
-<h3>7.8&nbsp; Annotating assembler programs</h3>
+<h3>7.7&nbsp; Annotating assembler programs</h3>
 
 Valgrind can annotate assembler programs too, or annotate the
 assembler generated for your C program.  Sometimes this is useful for
@@ -2418,7 +2417,7 @@ You can then profile and annotate source files in the same way as for C/C++
 programs.
 
 
-<h3>7.9&nbsp; <code>vg_annotate</code> options</h3>
+<h3>7.8&nbsp; <code>vg_annotate</code> options</h3>
 <ul>
   <li><code>-h, --help</code></li><p>
   <li><code>-v, --version</code><p>
@@ -2471,7 +2470,7 @@ programs.
 </ul>
   
 
-<h3>7.10&nbsp; Warnings</h3>
+<h3>7.9&nbsp; Warnings</h3>
 There are a couple of situations in which vg_annotate issues warnings.
 
 <ul>
@@ -2489,7 +2488,7 @@ There are a couple of situations in which vg_annotate issues warnings.
 </ul>
 
 
-<h3>7.11&nbsp; Things to watch out for</h3>
+<h3>7.10&nbsp; Things to watch out for</h3>
 Some odd things that can occur during annotation:
 
 <ul>
@@ -2506,7 +2505,7 @@ Some odd things that can occur during annotation:
 
       How can the third instruction be executed twice when the others are
       executed only once?  As it turns out, it isn't.  Here's a dump of the
-      executable, from objdump:
+      executable, using <code>objdump -d</code>:
 
       <pre>
       8048f25:       8d 45 f4                lea    0xfffffff4(%ebp),%eax
@@ -2552,7 +2551,7 @@ Some odd things that can occur during annotation:
   <li>Files with more than 65,535 lines cause difficulties for the stabs debug
       info reader.  This is because the line number in the <code>struct
       nlist</code> defined in <code>a.out.h</code> under Linux is only a 16-bit
-      number.  Valgrind can handle some files with more than 65,535 lines
+      value.  Valgrind can handle some files with more than 65,535 lines
       correctly by making some guesses to identify line number overflows.  But
       some cases are beyond it, in which case you'll get a warning message
       explaining that annotations for the file might be incorrect.<p>
@@ -2572,7 +2571,7 @@ annotations that look like might be caused by a bug in the stabs reader,
 please let us know.<p>
 
 
-<h3>7.12&nbsp; Accuracy</h3>
+<h3>7.11&nbsp; Accuracy</h3>
 Valgrind's cache profiling has a number of shortcomings:
 
 <ul>
@@ -2591,6 +2590,11 @@ Valgrind's cache profiling has a number of shortcomings:
 
   <li>Valgrind's custom <code>malloc()</code> will allocate memory in different
       ways to the standard <code>malloc()</code>, which could warp the results.
+      </li><p>
+
+  <li>Valgrind's custom threads implementation will schedule threads
+      differently to the standard one.  This too could warp the results for
+      threaded programs.
       </li><p>
 
   <li>The instructions <code>bts</code>, <code>btr</code> and <code>btc</code>
@@ -2612,7 +2616,7 @@ While these factors mean you shouldn't trust the results to be super-accurate,
 hopefully they should be close enough to be useful.<p>
 
 
-<h3>7.13&nbsp; Todo</h3>
+<h3>7.12&nbsp; Todo</h3>
 <ul>
   <li>Program start-up/shut-down calls a lot of functions that aren't
       interesting and just complicate the output.  Would be nice to exclude

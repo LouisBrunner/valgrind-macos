@@ -112,7 +112,7 @@ static inline Int get_height(void)
 {
    UInt ret = 0;
 
-   while((ret < SK_MAXHEIGHT) && (random() & 1))
+   while((ret < SK_MAXHEIGHT - 1) && (random() & 1))
       ret++;
 
    return ret;

@@ -356,7 +356,8 @@ static Bool recv_reply(struct PX_Reply *reply)
    Assumes that the only thread state which matters is the contents of
    %eax-%ebp and the return value in %eax.
  */
-static void thread_syscall(Int syscallno, ThreadArchState *arch, 
+static void thread_syscall(Int syscallno, 
+                           ThreadArchState *arch, 
                            enum PXState *state , enum PXState poststate)
 {
    VGA_(do_thread_syscall)(syscallno,
@@ -366,7 +367,7 @@ static void thread_syscall(Int syscallno, ThreadArchState *arch,
                            arch->vex.PLATFORM_SYSCALL_ARG4,
                            arch->vex.PLATFORM_SYSCALL_ARG5,
                            arch->vex.PLATFORM_SYSCALL_ARG6,
-                           (UWord*)&arch->vex.PLATFORM_SYSCALL_RET, // result
+                           (HWord*)&arch->vex.PLATFORM_SYSCALL_RET, // result
                            state,	 // state to update
                            poststate);   // state when syscall has finished
 }

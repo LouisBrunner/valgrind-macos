@@ -1972,11 +1972,14 @@ extern void VGA_(restart_syscall)(ThreadArchState* arch);
 extern const Addr VGA_(sys_before), VGA_(sys_restarted),
                   VGA_(sys_after),  VGA_(sys_done);
 
-extern void VGA_(do_thread_syscall)(UWord sys, 
-                                    UWord arg1, UWord arg2, UWord arg3,
-                                    UWord arg4, UWord arg5, UWord arg6,
-                                    UWord *result, /*enum PXState*/Int *statep,
-                                    /*enum PXState*/Int poststate);
+extern void VGA_(do_thread_syscall)
+               ( UWord sys, 
+                 UWord arg1, UWord arg2, UWord arg3,
+                 UWord arg4, UWord arg5, UWord arg6,
+                 /*OUT*/HWord *resultP, 
+                 /*enum PXState*/Int *stateP,
+                 /*enum PXState*/Int poststate
+               );
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

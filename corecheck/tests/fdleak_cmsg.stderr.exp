@@ -23,7 +23,7 @@ Open file descriptor .: .
 Open file descriptor .: .
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor .: /dev/null
    <inherited from parent>
 
 
@@ -48,7 +48,7 @@ Open file descriptor .: .
 Open file descriptor .: .
    <inherited from parent>
 
-Open file descriptor .: .
+Open file descriptor .: /dev/null
    <inherited from parent>
 
 

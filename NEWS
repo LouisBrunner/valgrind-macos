@@ -13,6 +13,7 @@ Snapshot 2003XXXX (XX XXXX 2003)
     - enter
     - mov imm32, %esp
     - all "in" and "out" opcodes
+    - inc/dec %esp
 
 - Memcheck: Implemented handling of more SSE(2) constructs
 

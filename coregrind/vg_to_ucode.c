@@ -4722,6 +4722,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x41: /* INC eCX */
    case 0x42: /* INC eDX */
    case 0x43: /* INC eBX */
+   case 0x44: /* INC eSP */
    case 0x45: /* INC eBP */
    case 0x46: /* INC eSI */
    case 0x47: /* INC eDI */
@@ -4740,6 +4741,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x49: /* DEC eCX */
    case 0x4A: /* DEC eDX */
    case 0x4B: /* DEC eBX */
+   case 0x4C: /* DEC eSP */
    case 0x4D: /* DEC eBP */
    case 0x4E: /* DEC eSI */
    case 0x4F: /* DEC eDI */

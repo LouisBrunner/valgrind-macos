@@ -172,10 +172,7 @@ case "${glibc}" in
      2.3)
 	AC_MSG_RESULT(2.3 family)
 	AC_DEFINE([GLIBC_2_3], 1, [Define to 1 if you're using glibc 2.3.x])
-	## Use the same suppression for as for 2.2.
-	## This is a horrible hack that should be gotten
-	## rid of.  JRS, 20021007.
-	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
+	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.3.supp"
 	;;
 
      *)

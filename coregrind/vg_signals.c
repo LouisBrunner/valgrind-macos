@@ -1595,6 +1595,12 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 	 break;
       }
 
+      /* Clear the associated mx/cv information as we are no longer
+         waiting on anything. The original details will be restored
+         when the signal frame is popped. */
+      tst->associated_mx = NULL;
+      tst->associated_cv = NULL;
+
       /* handler gets the union of the signal's mask and the thread's
 	 mask */
       handlermask = handler->scss_mask;

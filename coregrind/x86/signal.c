@@ -109,6 +109,9 @@ typedef
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
       ThreadStatus status;
+      void* /*pthread_mutex_t* */ associated_mx;
+      void* /*pthread_cond_t* */ associated_cv;
+
       /* Sanity check word.  Is the highest-addressed word; do not
          move!*/
       UInt magicE;
@@ -268,6 +271,9 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
       frame->status = VgTs_Runnable;
    else
       frame->status = tst->status;
+ 
+   frame->associated_mx = tst->associated_mx;
+   frame->associated_cv = tst->associated_cv;
 
    frame->magicE     = 0x27182818;
 
@@ -341,6 +347,9 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
    /* And restore the thread's status to what it was before the signal
       was delivered. */
    tst->status    = frame->status;
+
+   tst->associated_mx = frame->associated_mx;
+   tst->associated_cv = frame->associated_cv;
 
    tst->sig_mask  = frame->mask;
 

@@ -3236,10 +3236,8 @@ void scheduler_sanity ( void )
          vg_assert(cv != NULL);
          vg_assert(mx != NULL);
       } else {
-         /* Unfortunately these don't hold true when a sighandler is
-            running.  To be fixed. */
-         /* vg_assert(cv == NULL); */
-         /* vg_assert(mx == NULL); */
+         vg_assert(cv == NULL);
+         vg_assert(mx == NULL);
       }
 
       if (VG_(threads)[i].status != VgTs_Empty) {

@@ -1717,6 +1717,107 @@ struct vki_fb_var_screeninfo {
 	__vki_u32 reserved[5];		/* Reserved for future compatibility */
 };
 
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/linux/kb.h
+//----------------------------------------------------------------------
+
+#define VKI_GIO_FONT       0x4B60  /* gets font in expanded form */
+#define VKI_PIO_FONT       0x4B61  /* use font in expanded form */
+
+#define VKI_GIO_FONTX      0x4B6B  /* get font using struct consolefontdesc */
+#define VKI_PIO_FONTX      0x4B6C  /* set font using struct consolefontdesc */
+struct vki_consolefontdesc {
+	unsigned short charcount;	/* characters in font (256 or 512) */
+	unsigned short charheight;	/* scan lines per character (1-32) */
+	char __user *chardata;		/* font data in expanded form */
+};
+
+#define VKI_PIO_FONTRESET  0x4B6D  /* reset to default font */
+
+#define VKI_GIO_CMAP       0x4B70  /* gets colour palette on VGA+ */
+#define VKI_PIO_CMAP       0x4B71  /* sets colour palette on VGA+ */
+
+#define VKI_KIOCSOUND      0x4B2F  /* start sound generation (0 for off) */
+#define VKI_KDMKTONE       0x4B30  /* generate tone */
+
+#define VKI_KDGETLED       0x4B31  /* return current led state */
+#define VKI_KDSETLED       0x4B32  /* set led state [lights, not flags] */
+
+#define VKI_KDGKBTYPE      0x4B33  /* get keyboard type */
+
+#define VKI_KDADDIO        0x4B34  /* add i/o port as valid */
+#define VKI_KDDELIO        0x4B35  /* del i/o port as valid */
+#define VKI_KDENABIO       0x4B36  /* enable i/o to video board */
+#define VKI_KDDISABIO      0x4B37  /* disable i/o to video board */
+
+#define VKI_KDSETMODE      0x4B3A  /* set text/graphics mode */
+#define VKI_KDGETMODE      0x4B3B  /* get current mode */
+
+#define VKI_KDMAPDISP      0x4B3C  /* map display into address space */
+#define VKI_KDUNMAPDISP    0x4B3D  /* unmap display from address space */
+
+#define		VKI_E_TABSZ		256
+#define VKI_GIO_SCRNMAP    0x4B40  /* get screen mapping from kernel */
+#define VKI_PIO_SCRNMAP	   0x4B41  /* put screen mapping table in kernel */
+#define VKI_GIO_UNISCRNMAP 0x4B69  /* get full Unicode screen mapping */
+#define VKI_PIO_UNISCRNMAP 0x4B6A  /* set full Unicode screen mapping */
+
+#define VKI_GIO_UNIMAP     0x4B66  /* get unicode-to-font mapping from kernel */
+#define VKI_PIO_UNIMAP     0x4B67  /* put unicode-to-font mapping in kernel */
+#define VKI_PIO_UNIMAPCLR  0x4B68  /* clear table, possibly advise hash algorithm */
+
+#define VKI_KDGKBMODE      0x4B44  /* gets current keyboard mode */
+#define VKI_KDSKBMODE      0x4B45  /* sets current keyboard mode */
+
+#define VKI_KDGKBMETA      0x4B62  /* gets meta key handling mode */
+#define VKI_KDSKBMETA      0x4B63  /* sets meta key handling mode */
+
+#define VKI_KDGKBLED       0x4B64  /* get led flags (not lights) */
+#define VKI_KDSKBLED       0x4B65  /* set led flags (not lights) */
+
+struct vki_kbentry {
+	unsigned char kb_table;
+	unsigned char kb_index;
+	unsigned short kb_value;
+};
+#define VKI_KDGKBENT       0x4B46  /* gets one entry in translation table */
+#define VKI_KDSKBENT       0x4B47  /* sets one entry in translation table */
+
+struct vki_kbsentry {
+	unsigned char kb_func;
+	unsigned char kb_string[512];
+};
+#define VKI_KDGKBSENT      0x4B48  /* gets one function key string entry */
+#define VKI_KDSKBSENT      0x4B49  /* sets one function key string entry */
+
+struct vki_kbdiacr {
+        unsigned char diacr, base, result;
+};
+struct vki_kbdiacrs {
+        unsigned int kb_cnt;    /* number of entries in following array */
+	struct vki_kbdiacr kbdiacr[256];    /* MAX_DIACR from keyboard.h */
+};
+#define VKI_KDGKBDIACR     0x4B4A  /* read kernel accent table */
+#define VKI_KDSKBDIACR     0x4B4B  /* write kernel accent table */
+
+struct vki_kbkeycode {
+	unsigned int scancode, keycode;
+};
+#define VKI_KDGETKEYCODE   0x4B4C  /* read kernel keycode table entry */
+#define VKI_KDSETKEYCODE   0x4B4D  /* write kernel keycode table entry */
+
+#define VKI_KDSIGACCEPT    0x4B4E  /* accept kbd generated signals */
+
+struct vki_kbd_repeat {
+	int delay;	/* in msec; <= 0: don't change */
+	int period;	/* in msec; <= 0: don't change */
+			/* earlier this field was misnamed "rate" */
+};
+#define VKI_KDKBDREP       0x4B52  /* set keyboard delay/repeat rate;
+                                    * actually used values are returned */
+
+#define VKI_KDFONTOP       0x4B72  /* font operations */
+
 #endif // __LINUX_VKI_H
 
 /*--------------------------------------------------------------------*/

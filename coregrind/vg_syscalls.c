@@ -3486,6 +3486,175 @@ PREx(sys_ioctl, MayBlock)
       PRE_MEM_WRITE( "ioctl(PPGETTIME)",  arg3, sizeof(struct vki_timeval) );
       break;
 
+   case VKI_GIO_FONT:
+      PRE_MEM_WRITE( "ioctl(GIO_FONT)", arg3, 32 * 256 );
+      break;
+   case VKI_PIO_FONT:
+      PRE_MEM_READ( "ioctl(PIO_FONT)", arg3, 32 * 256 );
+      break;
+
+   case VKI_GIO_FONTX:
+      PRE_MEM_READ( "ioctl(GIO_FONTX)", arg3, sizeof(struct vki_consolefontdesc) );
+      if ( arg3 ) {
+         /* ToDo: don't do any of the following if the structure is invalid */
+         struct vki_consolefontdesc *cfd = (struct vki_consolefontdesc *)arg3;
+         PRE_MEM_WRITE( "ioctl(GIO_FONTX).chardata", (Addr)cfd->chardata,
+                        32 * cfd->charcount );
+      }
+      break;
+   case VKI_PIO_FONTX:
+      PRE_MEM_READ( "ioctl(PIO_FONTX)", arg3, sizeof(struct vki_consolefontdesc) );
+      if ( arg3 ) {
+         /* ToDo: don't do any of the following if the structure is invalid */
+         struct vki_consolefontdesc *cfd = (struct vki_consolefontdesc *)arg3;
+         PRE_MEM_READ( "ioctl(PIO_FONTX).chardata", (Addr)cfd->chardata,
+                       32 * cfd->charcount );
+      }
+      break;
+
+   case VKI_PIO_FONTRESET:
+      break;
+
+   case VKI_GIO_CMAP:
+      PRE_MEM_WRITE( "ioctl(GIO_CMAP)", arg3, 16 * 3 );
+      break;
+   case VKI_PIO_CMAP:
+      PRE_MEM_READ( "ioctl(PIO_CMAP)", arg3, 16 * 3 );
+      break;
+
+   case VKI_KIOCSOUND:
+   case VKI_KDMKTONE:
+      break;
+
+   case VKI_KDGETLED:
+      PRE_MEM_WRITE( "ioctl(KDGETLED)", arg3, sizeof(char) );
+      break;
+   case VKI_KDSETLED:
+      break;
+
+   case VKI_KDGKBTYPE:
+      PRE_MEM_WRITE( "ioctl(KDGKBTYPE)", arg3, sizeof(char) );
+      break;
+
+   case VKI_KDADDIO:
+   case VKI_KDDELIO:
+   case VKI_KDENABIO:
+   case VKI_KDDISABIO:
+      break;
+
+   case VKI_KDSETMODE:
+      break;
+   case VKI_KDGETMODE:
+      PRE_MEM_WRITE( "ioctl(KDGETMODE)", arg3, sizeof(int) );
+      break;
+
+   case VKI_KDMAPDISP:
+   case VKI_KDUNMAPDISP:
+      break;
+
+   case VKI_GIO_SCRNMAP:
+      PRE_MEM_WRITE( "ioctl(GIO_SCRNMAP)", arg3, VKI_E_TABSZ );
+      break;
+   case VKI_PIO_SCRNMAP:
+      PRE_MEM_READ( "ioctl(PIO_SCRNMAP)", arg3, VKI_E_TABSZ  );
+      break;
+   case VKI_GIO_UNISCRNMAP:
+      PRE_MEM_WRITE( "ioctl(GIO_UNISCRNMAP)", arg3,
+                     VKI_E_TABSZ * sizeof(unsigned short) );
+      break;
+   case VKI_PIO_UNISCRNMAP:
+      PRE_MEM_READ( "ioctl(PIO_UNISCRNMAP)", arg3,
+                    VKI_E_TABSZ * sizeof(unsigned short) );
+      break;
+
+   case VKI_KDGKBMODE:
+      PRE_MEM_WRITE( "ioctl(KDGKBMODE)", arg3, sizeof(int) );
+      break;
+   case VKI_KDSKBMODE:
+      break;
+      
+   case VKI_KDGKBMETA:
+      PRE_MEM_WRITE( "ioctl(KDGKBMETA)", arg3, sizeof(int) );
+      break;
+   case VKI_KDSKBMETA:
+      break;
+      
+   case VKI_KDGKBLED:
+      PRE_MEM_WRITE( "ioctl(KDGKBLED)", arg3, sizeof(char) );
+      break;
+   case VKI_KDSKBLED:
+      break;
+      
+   case VKI_KDGKBENT:
+      PRE_MEM_READ( "ioctl(KDGKBENT).kb_table",
+                    (Addr)&((struct vki_kbentry *)arg3)->kb_table,
+                    sizeof(((struct vki_kbentry *)arg3)->kb_table) );
+      PRE_MEM_READ( "ioctl(KDGKBENT).kb_index",
+                    (Addr)&((struct vki_kbentry *)arg3)->kb_index,
+                    sizeof(((struct vki_kbentry *)arg3)->kb_index) );
+      PRE_MEM_WRITE( "ioctl(KDGKBENT).kb_value",
+		     (Addr)&((struct vki_kbentry *)arg3)->kb_value,
+		     sizeof(((struct vki_kbentry *)arg3)->kb_value) );
+      break;
+   case VKI_KDSKBENT:
+      PRE_MEM_READ( "ioctl(KDSKBENT).kb_table",
+                    (Addr)&((struct vki_kbentry *)arg3)->kb_table,
+                    sizeof(((struct vki_kbentry *)arg3)->kb_table) );
+      PRE_MEM_READ( "ioctl(KDSKBENT).kb_index",
+                    (Addr)&((struct vki_kbentry *)arg3)->kb_index,
+                    sizeof(((struct vki_kbentry *)arg3)->kb_index) );
+      PRE_MEM_READ( "ioctl(KDSKBENT).kb_value",
+                    (Addr)&((struct vki_kbentry *)arg3)->kb_value,
+                    sizeof(((struct vki_kbentry *)arg3)->kb_value) );
+      break;
+      
+   case VKI_KDGKBSENT:
+      PRE_MEM_READ( "ioctl(KDGKBSENT).kb_func",
+                    (Addr)&((struct vki_kbsentry *)arg3)->kb_func,
+                    sizeof(((struct vki_kbsentry *)arg3)->kb_func) );
+      PRE_MEM_WRITE( "ioctl(KDGKSENT).kb_string",
+		     (Addr)((struct vki_kbsentry *)arg3)->kb_string,
+		     sizeof(((struct vki_kbsentry *)arg3)->kb_string) );
+      break;
+   case VKI_KDSKBSENT:
+      PRE_MEM_READ( "ioctl(KDSKBSENT).kb_func",
+                    (Addr)&((struct vki_kbsentry *)arg3)->kb_func,
+                    sizeof(((struct vki_kbsentry *)arg3)->kb_func) );
+      PRE_MEM_RASCIIZ( "ioctl(KDSKBSENT).kb_string",
+                       (Addr)((struct vki_kbsentry *)arg3)->kb_string );
+      break;
+      
+   case VKI_KDGKBDIACR:
+      PRE_MEM_WRITE( "ioctl(KDGKBDIACR)", arg3, sizeof(struct vki_kbdiacrs) );
+      break;
+   case VKI_KDSKBDIACR:
+      PRE_MEM_READ( "ioctl(KDSKBDIACR)", arg3, sizeof(struct vki_kbdiacrs) );
+      break;
+      
+   case VKI_KDGETKEYCODE:
+      PRE_MEM_READ( "ioctl(KDGETKEYCODE).scancode",
+                    (Addr)&((struct vki_kbkeycode *)arg3)->scancode,
+                    sizeof(((struct vki_kbkeycode *)arg3)->scancode) );
+      PRE_MEM_WRITE( "ioctl(KDGETKEYCODE).keycode",
+		     (Addr)((struct vki_kbkeycode *)arg3)->keycode,
+		     sizeof(((struct vki_kbkeycode *)arg3)->keycode) );
+      break;
+   case VKI_KDSETKEYCODE:
+      PRE_MEM_READ( "ioctl(KDSETKEYCODE).scancode",
+                    (Addr)&((struct vki_kbkeycode *)arg3)->scancode,
+                    sizeof(((struct vki_kbkeycode *)arg3)->scancode) );
+      PRE_MEM_READ( "ioctl(KDSETKEYCODE).keycode",
+                    (Addr)((struct vki_kbkeycode *)arg3)->keycode,
+                    sizeof(((struct vki_kbkeycode *)arg3)->keycode) );
+      break;
+      
+   case VKI_KDSIGACCEPT:
+      break;
+
+   case VKI_KDKBDREP:
+      PRE_MEM_READ( "ioctl(KBKBDREP)", arg3, sizeof(struct vki_kbd_repeat) );
+      break;
+      
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
 	 size bits.  The encoding scheme is described in

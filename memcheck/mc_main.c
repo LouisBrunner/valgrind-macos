@@ -57,6 +57,8 @@ Bool  SK_(clo_show_reachable)         = False;
 Bool  SK_(clo_workaround_gcc296_bugs) = False;
 Bool  SK_(clo_check_addrVs)           = True;
 Bool  SK_(clo_cleanup)                = True;
+Bool  SK_(clo_avoid_strlen_errors)    = True;
+
 
 /*------------------------------------------------------------*/
 /*--- Profiling events                                     ---*/
@@ -2318,6 +2320,11 @@ Bool SK_(process_cmd_line_option)(Char* arg)
    else if (STREQ(arg, "--cleanup=no"))
       SK_(clo_cleanup) = False;
 
+   else if (STREQ(arg, "--avoid-strlen-errors=yes"))
+      SK_(clo_avoid_strlen_errors) = True;
+   else if (STREQ(arg, "--avoid-strlen-errors=no"))
+      SK_(clo_avoid_strlen_errors) = False;
+
    else
       return False;
 
@@ -2340,7 +2347,8 @@ Char* SK_(usage)(void)
 "    --check-addrVs=no|yes     experimental lighterweight checking? [yes]\n"
 "                              yes == Valgrind's original behaviour\n"
 "\n"
-"    --cleanup=no|yes          improve after instrumentation? [yes]\n";
+"    --cleanup=no|yes          improve after instrumentation? [yes]\n"
+"    --avoid-strlen-errors=no|yes  suppress errs from inlined strlen [yes]\n";
 }
 
 

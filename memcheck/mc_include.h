@@ -145,6 +145,10 @@ extern Bool SK_(clo_check_addrVs);
 /* DEBUG: clean up instrumented code?  default: YES */
 extern Bool SK_(clo_cleanup);
 
+/* When instrumenting, omit some checks if tell-tale literals for
+   inlined strlen() are visible in the basic block.  default: YES */
+extern Bool SK_(clo_avoid_strlen_errors);
+
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/

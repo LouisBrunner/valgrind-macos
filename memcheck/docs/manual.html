@@ -583,6 +583,20 @@ follows:
       in g++-3.0.4.
       </li><br><p>
 
+  <li><code>--avoid-strlen-errors=yes</code> [default]<br>
+      <code>--avoid-strlen-errors=no</code> <p>When enabled, valgrind
+      inspects each basic block it instruments for some tell-tale
+      literals (0xFEFEFEFF, 0x80808080, 0x00008080) which suggest
+      that this block is part of an inlined strlen() function.  In
+      many cases such functions cause spurious uninitialised-value
+      errors to be reported -- their code is too clever for the
+      instrumentation scheme.  This horrible hack works around the
+      problem, at the expense of hiding any genuine
+      uninitialised-value errors which might appear ine such blocks.
+      It is enabled by default because it is needed to get sensible
+      behaviour on code compiled by gcc-3.1 and above.
+      </li><br><p>
+
   <li><code>--error-limit=yes</code> [default]<br>
       <code>--error-limit=no</code> <p>When enabled, valgrind stops
       reporting errors after 30000 in total, or 300 different ones,

@@ -498,8 +498,42 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
    Int         i, j;
    UInstr*     u_in;
    Int         qs, qd, qt, qtt;
+   Bool        bogusLiterals;
    cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
+
+   /* Scan the block to look for bogus literals.  These are magic
+      numbers which particularly appear in hand-optimised / inlined
+      implementations of strlen() et al which cause so much trouble
+      (spurious reports of uninit-var uses).  Purpose of this horrible
+      hack is to disable some checks any such literals are present in
+      this basic block. */
+   bogusLiterals = False;
+
+   if (SK_(clo_avoid_strlen_errors)) {
+      for (i = 0; i < cb_in->used; i++) {
+         u_in = &cb_in->instrs[i];
+         switch (u_in->opcode) {
+            case ADD: case SUB: case MOV: 
+               if (u_in->size == 4 && u_in->tag1 == Literal)
+                  goto literal;
+               break;
+            case LEA1: 
+               sk_assert(u_in->size == 4);
+               goto literal;
+            default: 
+               break;
+         }     
+         continue;
+        literal:
+         if (u_in->lit32 == 0xFEFEFEFF ||
+             u_in->lit32 == 0x80808080 ||
+             u_in->lit32 == 0x00008080) {
+            bogusLiterals = True;
+            break;
+         }
+      }
+   }
 
    for (i = 0; i < cb_in->used; i++) {
       qs = qd = qt = qtt = INVALID_TEMPREG;
@@ -1003,7 +1037,12 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             if (u_in->cond != CondAlways) {
                sk_assert(u_in->flags_r != FlagsEmpty);
                qt = create_GETVF(cb, 0);
-               uInstr1(cb, TESTV, 0, TempReg, qt);
+               if (/* HACK */ bogusLiterals) {
+                  if (0) 
+                     VG_(printf)("ignore TESTV due to bogus literal\n");
+               } else {
+                  uInstr1(cb, TESTV, 0, TempReg, qt);
+               }
                /* qt should never be referred to again.  Nevertheless
                   ... */
                uInstr1(cb, SETV, 0, TempReg, qt);

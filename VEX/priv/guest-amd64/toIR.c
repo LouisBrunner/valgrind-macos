@@ -4304,30 +4304,30 @@ static void fp_pop ( void )
 //..          ));
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /* ST(0) = mem64/32(addr) `op` ST(0)
-//..    Need to check ST(0)'s tag on read, but not on write.
-//.. */
-//.. static
-//.. void fp_do_oprev_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
-//..                             IROp op, Bool dbl )
-//.. {
-//..    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
-//..    if (dbl) {
-//..       put_ST_UNCHECKED(0, 
-//..          binop( op, 
-//..                 loadLE(Ity_F64,mkexpr(addr)),
-//..                 get_ST(0)
-//..          ));
-//..    } else {
-//..       put_ST_UNCHECKED(0, 
-//..          binop( op, 
-//..                 unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr))),
-//..                 get_ST(0)
-//..          ));
-//..    }
-//.. }
+
+
+/* ST(0) = mem64/32(addr) `op` ST(0)
+   Need to check ST(0)'s tag on read, but not on write.
+*/
+static
+void fp_do_oprev_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf, 
+                            IROp op, Bool dbl )
+{
+   DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
+   if (dbl) {
+      put_ST_UNCHECKED(0, 
+         binop( op, 
+                loadLE(Ity_F64,mkexpr(addr)),
+                get_ST(0)
+         ));
+   } else {
+      put_ST_UNCHECKED(0, 
+         binop( op, 
+                unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr))),
+                get_ST(0)
+         ));
+   }
+}
 
 
 /* ST(dst) = ST(dst) `op` ST(src).
@@ -4407,8 +4407,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
            specifies an address. */
-         //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
-         //delta += len;
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
 
          switch (gregLO3ofRM(modrm)) {
 
@@ -4454,11 +4454,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..             case 4: /* FSUB single-real */
 //..                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );
 //..                break;
-//.. 
-//..             case 5: /* FSUBR single-real */
-//..                fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, False );
-//..                break;
-//.. 
+
+            case 5: /* FSUBR single-real */
+               fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, False );
+               break;
+
 //..             case 6: /* FDIV single-real */
 //..                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
 //..                break;
@@ -5341,10 +5341,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, False );
                break;
 
-//..             case 0xC8 ... 0xCF: /* FMUL %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
-//..                break;
-//.. 
+            case 0xC8 ... 0xCF: /* FMUL %st(0),%st(?) */
+               fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
+               break;
+
 //..             case 0xE0 ... 0xE7: /* FSUBR %st(0),%st(?) */
 //..                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0, modrm - 0xE0, False );
 //..                break;
@@ -11438,9 +11438,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          break;
       }
       if (sz == 2) {
-         vassert(sz == 2);
          putIRegRAX( 2, unop(Iop_8Sto16, getIRegRAX(1)) );
          DIP("cbw\n");
+         break;
       }
       goto decode_failure;
 

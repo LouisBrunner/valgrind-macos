@@ -590,7 +590,7 @@ void VG_(pad_address_space)(void)
    return;
 }
 
-/* Removed the address space padding added by VG_(pad_address_space)
+/* Remove the address space padding added by VG_(pad_address_space)
    by removing any mappings that it created. */
 void VG_(unpad_address_space)(void)
 {

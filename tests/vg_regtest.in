@@ -54,12 +54,12 @@
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
 #
-# Expected stdout (filtered) is kept in <test>.stdout.exp.  It can be missing
-# if it would be empty.  Expected stderr (filtered) is kept in
-# <test>.stderr.exp. 
+# Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]? (can be more
+# than one expected output).  It can be missing if it would be empty.  Expected
+# stderr (filtered) is kept in <test>.stderr.exp[0-9]?. 
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
-# and the diff between expected and actual in <test>.std<strm>.diff.
+# and the diff between expected and actual in <test>.std<strm>.diff[0-9]?.
 #
 # Notes on adding regression tests for a new tool are in
 # coregrind/docs/coregrind_tools.html.
@@ -217,6 +217,39 @@ sub determine_tool()
     return $1;
 }
 
+# Compare output against expected output;  it should match at least one of
+# them.
+sub do_diffs($$$$)
+{
+    my ($fullname, $name, $mid, $f_exps) = @_;
+    
+    for my $f_exp (@$f_exps) {
+        (-r $f_exp) or die "Could not read `$f_exp'\n";
+
+        my $n = "";
+        if ($f_exp =~ /.*\.exp(\d?)/) {
+            $n = $1;
+        } else {
+            $n = "";
+            ($f_exp eq "/dev/null") or die "Unexpected .exp file: $f_exp\n";
+        }
+
+        #print("diff -C0 $f_exp $name.$mid.out > $name.$mid.diff$n\n");
+        mysystem("diff -C0 $f_exp $name.$mid.out > $name.$mid.diff$n");
+
+        if (not -s "$name.$mid.diff$n") {
+            # A match;  remove .out and any previously created .diff files.
+            unlink("$name.$mid.out");
+            unlink(<$name.$mid.diff*>);
+            return;
+        }
+    }
+    # If we reach here, none of the .exp files matched.
+    print "*** $name failed ($mid) ***\n";
+    push(@failures, sprintf("%-40s ($mid)", "$fullname"));
+    $num_failures{$mid}++;
+}
+
 sub do_one_test($$) 
 {
     my ($dir, $vgtest) = @_;
@@ -245,27 +278,17 @@ sub do_one_test($$)
     mysystem("$stderr_filter < $name.stderr.out > $tmp");
     rename($tmp, "$name.stderr.out");
 
-    # If stdout expected empty, .exp file might be missing so diff with 
-    # /dev/null
-    my $stdout_exp = ( -r "$name.stdout.exp" 
-                     ? "$name.stdout.exp" 
-                     : "/dev/null" );
 
-    my $stderr_exp = "$name.stderr.exp";
-    (-r $stderr_exp) or die "Could not read `$stderr_exp'\n";
+    # Find all the .stdout.exp files.  If none, use /dev/null.
+    my @stdout_exps = <$name.stdout.exp*>;
+    @stdout_exps = ( "/dev/null" ) if (0 == scalar @stdout_exps);
 
-    mysystem("diff -C0 $stdout_exp $name.stdout.out > $name.stdout.diff");
-    mysystem("diff -C0 $stderr_exp $name.stderr.out > $name.stderr.diff");
-
-    for my $ext ("stdout", "stderr") {
-        if (-s "$name.$ext.diff") {
-            print "*** $name failed ($ext) ***\n";
-            push(@failures, sprintf("%-40s ($ext)", "$fullname"));
-            $num_failures{$ext}++;
-        } else {
-            unlink("$name.$ext.out", "$name.$ext.diff");
-        }
-    }
+    # Find all the .stderr.exp files.  $name.stderr.exp must exist.
+    my @stderr_exps = <$name.stderr.exp*>;
+    (-r "$name.stderr.exp") or die "Could not read `$name.stderr.exp'\n";
+    
+    do_diffs($fullname, $name, "stdout", \@stdout_exps); 
+    do_diffs($fullname, $name, "stderr", \@stderr_exps); 
     $num_tests_done++;
 }
 

@@ -1,12 +1,18 @@
+// XXX: x86-specific, so these should be in x86/, or something
+#include "../../coregrind/x86-linux/vki_unistd.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
+
+// Since we use vki_unistd.h, we can't include <unistd.h>.  So we have to
+// declare this ourselves.
+extern long int syscall (long int __sysno, ...) __THROW;
 
 // Thorough syscall scalar arg checking.  Also serves as thorough checking
 // for (very) basic syscall use.  Generally not trying to do anything

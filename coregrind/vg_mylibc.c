@@ -1939,7 +1939,7 @@ static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
    Int res;
-   UInt args[3];
+   UWord args[3];
    args[0] = domain;
    args[1] = type;
    args[2] = protocol;
@@ -1954,9 +1954,9 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
                  Int addrlen )
 {
    Int res;
-   UInt args[3];
+   UWord args[3];
    args[0] = sockfd;
-   args[1] = (UInt)serv_addr;
+   args[1] = (UWord)serv_addr;
    args[2] = addrlen;
    res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_CONNECT, (UWord)&args);
    if (VG_(is_kerror)(res)) 
@@ -1974,9 +1974,9 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    Int flags = VKI_MSG_NOSIGNAL;
 
    Int res;
-   UInt args[4];
+   UWord args[4];
    args[0] = sd;
-   args[1] = (UInt)msg;
+   args[1] = (UWord)msg;
    args[2] = count;
    args[3] = flags;
    res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SEND, (UWord)&args);
@@ -1988,10 +1988,10 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    Int res;
-   UInt args[3];
+   UWord args[3];
    args[0] = sd;
-   args[1] = (UInt)name;
-   args[2] = (UInt)namelen;
+   args[1] = (UWord)name;
+   args[2] = (UWord)namelen;
    res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;
@@ -2001,10 +2001,10 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    Int res;
-   UInt args[3];
+   UWord args[3];
    args[0] = sd;
-   args[1] = (UInt)name;
-   args[2] = (UInt)namelen;
+   args[1] = (UWord)name;
+   args[2] = (UWord)namelen;
    res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;
@@ -2015,12 +2015,12 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
    Int res;
-   UInt args[5];
+   UWord args[5];
    args[0] = sd;
-   args[1] = (UInt)level;
-   args[2] = (UInt)optname;
-   args[3] = (UInt)optval;
-   args[4] = (UInt)optlen;
+   args[1] = level;
+   args[2] = optname;
+   args[3] = (UWord)optval;
+   args[4] = (UWord)optlen;
    res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UWord)&args);
    if(VG_(is_kerror)(res))
       res = -1;

@@ -354,6 +354,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_madvise)
+      case __NR_madvise: /* syscall 219 */
+         /* int madvise(void *start, size_t length, int advice ); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("madvise ( %p, %d, %d )\n", arg1,arg2,arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_mremap)
       /* Is this really right?  Perhaps it should copy the permissions
          from the old area into the new.  Unclear from the Linux man

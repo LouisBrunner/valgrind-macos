@@ -76,6 +76,9 @@ VexGuestLayout armGuest_layout;
 extern UInt  armg_calculate_flags_all ( 
                 UInt cc_op, UInt cc_dep1, UInt cc_dep2 
              );
+extern UInt  armg_calculate_flags_c ( 
+                UInt cc_op, UInt cc_dep1, UInt cc_dep2 
+             );
 
 extern UInt  armg_calculate_condition ( 
                 UInt/*ARMCondcode*/ cond, 
@@ -126,40 +129,29 @@ extern UInt  armg_calculate_condition (
    Operation          DEP1               DEP2               NDEP
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   add/sub/mul        first arg          second arg         unused
+   and/or/xor         result             shift_carry_out
+   tst/teq/bic        result             shift_carry_out
+   mov/mvn            result             shift_carry_out
 
-   adc/sbb            first arg          (second arg)
-                                         XOR old_carry      old_carry
+   add/cmn            first arg          second arg
+   sub/cmp            first arg          second arg
 
-   and/or/xor         result             zero               unused
-
-   inc/dec            result             zero               old_carry
-
-   shl/shr/sar        result             subshifted-        unused
-                                         result
-
-   rol/ror            result             zero               old_flags
-
-   copy               old_flags          zero               unused.
+   ...
 
 
    Therefore Memcheck will believe the following:
 
-   * add/sub/mul -- definedness of result flags depends on definedness
-     of both args.
+   * ...
 
-     etc etc
 */
 enum {
     ARMG_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0 */
                         /* just copy DEP1 to output */
 
-    ARMG_CC_OP_MOV,
+    ARMG_CC_OP_LOGIC,   /* DEP1 = result, DEP2 = shifter_carry_out */
 
-    ARMG_CC_OP_LSL,     /* DEP1 = first arg, DEP2 = second arg */
-    ARMG_CC_OP_LSR,
-    ARMG_CC_OP_ASR,
-    ARMG_CC_OP_ROR,
+    ARMG_CC_OP_SUB,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
+    ARMG_CC_OP_ADD,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
 
 
     ARMG_CC_OP_NUMBER

@@ -55,57 +55,127 @@
 */
 
 
-#if 0
-#define PREAMBLE(__data_bits)					\
-   /* const */ UInt DATA_MASK 					\
-      = __data_bits==8 ? 0xFF 					\
-                       : (__data_bits==16 ? 0xFFFF 		\
-                                          : 0xFFFFFFFF); 	\
-   /* const */ UInt SIGN_MASK = 1 << (__data_bits - 1);		\
-   /* const */ UInt CC_DEP1 = cc_dep1_formal;			\
-   /* const */ UInt CC_DEP2 = cc_dep2_formal;			\
-   /* const */ UInt CC_NDEP = cc_ndep_formal;			\
-   /* Four bogus assignments, which hopefully gcc can     */	\
-   /* optimise away, and which stop it complaining about  */	\
-   /* unused variables.                                   */	\
-   SIGN_MASK = SIGN_MASK;					\
-   DATA_MASK = DATA_MASK;					\
-   CC_DEP2 = CC_DEP2;						\
-   CC_NDEP = CC_NDEP;
-#endif
+
+
+
+
+
+#define BORROWFROM() \
+{ \
+}
+#define OVERFLOWFROM() \
+{ \
+}
+
 
 /*-------------------------------------------------------------*/
-
-#define ACTIONS_MOV()                           		\
+/*
+  LOGIC: EOR, AND, TST, TEQ, MOV, ORR, MVN, BIC
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: shifter_carry_out
+  v: unaffected
+*/
+#define ACTIONS_LOGIC()                           		\
 {								\
-   { Int nf, zf, cf;            				\
-     Int argL, argR, res;					\
-     nf=nf; zf=zf; cf=cf; argL=argL; argR=argR; res=res;	\
+   { Int nf, zf, cf, vf;					\
+     Int oldV=0;    /* CAB: vf unaffected: what todo? */	\
+     nf = cc_dep1_formal & ARMG_CC_MASK_N;			\
+     zf = cc_dep1_formal == 0 ? 1 : 0;				\
+     cf = (cc_dep2_formal << ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;	\
+     vf = oldV & ARMG_CC_MASK_V;				\
+     return nf | zf | cf | vf;					\
    }								\
 }
-/*
-  Need to calc the shift op...
-  
-*/
 
+/*-------------------------------------------------------------*/
 /*
+  ADD: ADD, CMN
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: CarryFrom(Rn + shifter_op)
+  v: OverflowFrom(Rn + shifter_op)
+*/
 #define ACTIONS_ADD()                           		\
 {								\
-   PREAMBLE(32);						\
-   { Int cf, pf, af, zf, sf, of;				\
+   { Int nf, zf, cf, vf;            				\
      Int argL, argR, res;					\
-     argL = CC_DEP1;						\
-     argR = CC_DEP2;						\
+     argL = cc_dep1_formal;					\
+     argR = cc_dep2_formal;					\
      res  = argL + argR;					\
-     cf = (UInt)res < (UInt)argL;       			\
-     pf = parity_table[(UChar)res];				\
-     af = (res ^ argL ^ argR) & 0x10;				\
-     zf = ((UInt)res == 0) << 6;				\
-     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
-     of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
-                 12 - DATA_BITS) & X86G_CC_MASK_O;		\
-     return cf | pf | af | zf | sf | of;			\
+     nf = res & ARMG_CC_MASK_N;					\
+     zf = (res == 0) << ARMG_CC_SHIFT_Z;		 	\
+     cf = ((UInt)argL < (UInt)argR) << ARMG_CC_SHIFT_C;		\
+     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>		\
+	   (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;		\
+     return nf | zf | cf | vf;					\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+/*
+  SUB: SUB, CMP, RSB
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: NOT BorrowFrom(Rn - shifter_op)
+  v: OverflowFrom(Rn - shifter_op)
 */
+// CAB: cf right? ARM ARM A4-99
+#define ACTIONS_SUB()                           		\
+{								\
+   { Int nf, zf, cf, vf;            				\
+     Int argL, argR, res;					\
+     argL = cc_dep1_formal;					\
+     argR = cc_dep2_formal;					\
+     res  = argL - argR;					\
+     nf = res & ARMG_CC_MASK_N;					\
+     zf = (res == 0) << ARMG_CC_SHIFT_Z;			\
+     cf = (~((UInt)argL < (UInt)argR) <<			\
+	   ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;			\
+     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>		\
+	   (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;		\
+     return nf | zf | cf | vf;					\
+   }								\
+}
+
+
+/*-------------------------------------------------------------*/
+/*
+  ADC
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: CarryFrom(Rn + shifter_op + C Flag)
+  v: OverflowFrom(Rn + shifter_op + C Flag)
+*/
+
+/*-------------------------------------------------------------*/
+/*
+  RSC
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: NOT BorrowFrom(shifter_op - Rn - NOT(C Flag))
+  v: OverflowFrom(shifter_op - Rn - NOT(C Flag))
+*/
+
+/*-------------------------------------------------------------*/
+/*
+  SBC
+  ----------------
+  n: Rd[31]
+  z: Rd==0 ? 1:0
+  c: NOT BorrowFrom(Rn - shifter_op - NOT(C Flag))
+  v: OverflowFrom(Rn - shifter_op - NOT(C Flag))
+*/
+
+
+
+
+
 
 
 
@@ -118,18 +188,36 @@ UInt armg_calculate_flags_all ( UInt cc_op,
 {
    switch (cc_op) {
 
-       /* CAB: ... all amd ops... */
+       case ARMG_CC_OP_LOGIC:  ACTIONS_LOGIC();
+	   
+       case ARMG_CC_OP_ADD:  ACTIONS_ADD();
 
-       case ARMG_CC_OP_MOV:  ACTIONS_MOV();
+       case ARMG_CC_OP_SUB:  ACTIONS_SUB();
 
 
-      default:
-         /* shouldn't really make these calls from generated code */
-         vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
-                    cc_op, cc_dep1_formal, cc_dep2_formal );
-         vpanic("armg_calculate_flags_all(ARM)");
+       default:
+	   /* shouldn't really make these calls from generated code */
+	   vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
+		      cc_op, cc_dep1_formal, cc_dep2_formal );
+	   vpanic("armg_calculate_flags_all(ARM)");
    }
 }
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* Calculate just the carry flag from the supplied thunk parameters. */
+UInt armg_calculate_flags_c ( UInt cc_op, 
+			      UInt cc_dep1, 
+			      UInt cc_dep2 )
+{
+   /* Fast-case some common ones. */
+   switch (cc_op) {
+      default: 
+         break;
+   }
+
+   return armg_calculate_flags_all(cc_op,cc_dep1,cc_dep2) & ARMG_CC_MASK_C;
+}
+
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -221,17 +309,17 @@ IRExpr* guest_arm_spechelper ( Char* function_name,
 
 /* VISIBLE TO LIBVEX CLIENT */
 #if 0
-void LibVEX_GuestARM_put_flags ( UInt eflags_native,
+void LibVEX_GuestARM_put_flags ( UInt flags_native,
                                  /*OUT*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
 
    /* Mask out everything except N Z V C. */
-   eflags_native
+   flags_native
       &= (ARMG_CC_MASK_N | ARMG_CC_MASK_Z | ARMG_CC_MASK_V | ARMG_CC_MASK_C);
 
    vex_state->guest_CC_OP   = ARMG_CC_OP_COPY;
-   vex_state->guest_CC_DEP1 = eflags_native;
+   vex_state->guest_CC_DEP1 = flags_native;
    vex_state->guest_CC_DEP2 = 0;
 }
 #endif
@@ -241,12 +329,12 @@ UInt LibVEX_GuestARM_get_flags ( /*IN*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
 
-   UInt eflags = armg_calculate_flags_all(
+   UInt flags = armg_calculate_flags_all(
                     vex_state->guest_CC_OP,
                     vex_state->guest_CC_DEP1,
                     vex_state->guest_CC_DEP2
                  );
-   return eflags;
+   return flags;
 }
 
 /* VISIBLE TO LIBVEX CLIENT */

@@ -1373,12 +1373,53 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 /*------------------------------------------------------------*/
 
 /*------------------------------------------------------------*/
-/*--- %ESP-update pass                                     ---*/
+/*--- %SP-update pass                                      ---*/
 /*------------------------------------------------------------*/
 
-/*------------------------------------------------------------*/
-/*--- The new register allocator.                          ---*/
-/*------------------------------------------------------------*/
+static
+IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
+{
+   Int      i, szP, offP;
+   IRDirty* dcall;
+   IRStmt*  st;
+
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+      st = bb_in->stmts[i];
+      if (!st)
+         continue;
+      if (st->tag != Ist_Put) 
+         goto boring;
+      offP = st->Ist.Put.offset;
+      if (offP != layout->offset_SP) 
+         goto boring;
+      szP = sizeofIRType(typeOfIRExpr(bb_in->tyenv, st->Ist.Put.data));
+      if (szP != layout->sizeof_SP)
+         goto boring;
+      vg_assert(isAtom(st->Ist.Put.data));
+
+      /* I don't know if it's really necessary to say that the call reads
+	 the stack pointer.  But anyway, we do. */      
+      dcall = unsafeIRDirty_0_N( "VG_(unknown_esp_update)", 
+                                 mkIRExprVec_1(st->Ist.Put.data) );
+      dcall->nFxState = 1;
+      dcall->fxState[0].fx     = Ifx_Read;
+      dcall->fxState[0].offset = layout->offset_SP;
+      dcall->fxState[0].size   = layout->sizeof_SP;
+
+      addStmtToIRBB( bb, IRStmt_Dirty(dcall) );
+
+     boring:
+      addStmtToIRBB( bb, st );
+   }
+
+   return bb;
+}
 
 /*------------------------------------------------------------*/
 /*--- Main entry point for the JITter.                     ---*/
@@ -1418,6 +1459,16 @@ void log_bytes ( Char* bytes, Int nbytes )
 
    'tid' is the identity of the thread needing this block.
 */
+
+/* HACK HACK HACK */
+static HWord hacky_findhelper ( Char* function_name )
+{
+   if (0 == VG_(strcmp)(function_name, "VG_(unknown_esp_update)"))
+      return (HWord) & VG_(unknown_esp_update);
+   return SK_(tool_findhelper)( function_name );
+}
+
+
 Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
 {
@@ -1514,7 +1565,10 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              (Char*)orig_addr, (Addr64)orig_addr, &orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              SK_(instrument),
-             SK_(tool_findhelper),
+             VG_(need_to_handle_esp_assignment)()
+                ? vg_SP_update_pass
+                : NULL,
+             hacky_findhelper, /* SK_(tool_findhelper), */
              NULL,
              0+ DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
           );

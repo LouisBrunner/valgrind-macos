@@ -35,14 +35,16 @@
 #   --all:      run tests in all subdirs
 #   --valgrind: valgrind to use.  Default is one built from this source tree.
 #
+# The stable-branch/dev-branch distinction allows slight differences in stderr
+# results.
+#
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
 #
 #   $PREFIX/bin/vg_regtest --all
 #
 # You can specify individual files to test, or whole directories, or both.
-# The stable-branch/dev-branch distinction allows slight differences in stderr
-# results.
+# Directories are traversed recursively, except for ones name CVS/ or docs/.
 #
 # Each test is defined in a file <test>.vgtest, containing one or more of the
 # following lines, in any order:
@@ -233,7 +235,7 @@ sub do_one_test($$)
 
     read_vgtest_file($vgtest);
 
-    printf("%-30s valgrind $vgopts $prog $args\n", "$fullname:");
+    printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 
     # If --dev, pass the appropriate --skin option for the directory (can be
     # overridden by an "args:" or "args.dev:" line, though)
@@ -272,8 +274,8 @@ sub do_one_test($$)
 
     for my $ext ("stdout", "stderr") {
         if (-s "$name.$ext.diff") {
-            print "*** $fullname failed ($ext) ***\n";
-            push(@failures, sprintf("%-30s $ext", "$fullname"));
+            print "*** $name failed ($ext) ***\n";
+            push(@failures, sprintf("%-40s $ext", "$fullname"));
         } else {
             unlink("$name.$ext.out", "$name.$ext.diff");
         }
@@ -283,30 +285,40 @@ sub do_one_test($$)
 #----------------------------------------------------------------------------
 # Test one directory (and any subdirs)
 #----------------------------------------------------------------------------
-sub test_one_dir($);    # forward declaration
+sub test_one_dir($$);    # forward declaration
 
-sub test_one_dir($) 
+sub test_one_dir($$) 
 {
-    my ($dir) = @_;
+    my ($dir, $prev_dirs) = @_;
     $dir =~ s/\/$//;    # trim a trailing '/'
 
     if ($dir =~ /^(CVS|docs)$/) { return; }    # ignore CVS/ and docs/ dirs
 
-    print "-- Running tests in $dir ----------------------------------\n";
     chdir($dir) or die "Could not change into $dir\n";
 
-#    my @vgtests = glob "*\.vgtest";
-    my @fs = glob "*";
+    my $full_dir = "$prev_dirs/$dir";
+    my $dashes = "-" x (50 - length $full_dir);
 
+    my @fs = glob "*";
+    my @vgtests = grep { $_ =~ /\.vgtest$/ } @fs;
+    my $found_tests = (0 != (grep { $_ =~ /\.vgtest$/ } @fs));
+
+    if ($found_tests) {
+        print "-- Running  tests in $full_dir $dashes\n";
+    } else {
+        print "-- Found no tests in $full_dir $dashes\n";
+    }
     foreach my $f (@fs) {
         if (-d $f) {
-            test_one_dir($f);
+            test_one_dir($f, $full_dir);
         } elsif ($f =~ /\.vgtest$/) {
-            do_one_test($dir, $f);
+            do_one_test($full_dir, $f);
         }
     }
-    
-    print "-- Finished tests in $dir ----------------------------------\n";
+    if ($found_tests) {
+        print "-- Finished tests in $full_dir $dashes\n";
+    }
+
     chdir("..");
 }
 
@@ -337,7 +349,7 @@ if ( exists $ENV{VALGRIND_OPTS} ) {
 my @fs = process_command_line();
 foreach my $f (@fs) {
     if (-d $f) {
-        test_one_dir($f);
+        test_one_dir($f, ".");
     } else { 
         # Allow the .vgtest suffix to be given or omitted
         if ($f =~ /.vgtest$/ && -r $f) {

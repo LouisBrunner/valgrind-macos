@@ -4771,7 +4771,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          }
          break;
 
-      case 0x73: /* PSLL/PSRA/PSRL mmxreg by imm8 */
+      case 0x71: case 0x72: case 0x73: 
+         /* PSLL/PSRA/PSRL mmxreg by imm8 */
          {
          UChar byte1, byte2, byte3, subopc, mmxreg;
          vg_assert(sz == 4);
@@ -4780,8 +4781,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          byte3 = getUChar(eip); eip++;
          mmxreg = byte2 & 7;
          subopc = (byte2 >> 3) & 7;
-         if (subopc == 2 || subopc == 6) {  
-            /* 2 == 010 == SRL, 6 == 110 == SLL */
+         if (subopc == 2 || subopc == 6 || subopc == 4) {  
+            /* 2 == 010 == SRL, 6 == 110 == SLL, 4 == 100 == SRA */
             /* ok */
          } else {
             eip -= 2;
@@ -4792,7 +4793,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                      Lit16, ((UShort)byte3) );
          if (dis)
             VG_(printf)("ps%s%s $%d, %s\n",
-                        (subopc == 2 ? "rl" : subopc == 6 ? "ll" : "??"),
+                        (subopc == 2 ? "rl" 
+                         : subopc == 6 ? "ll" 
+                         : subopc == 4 ? "ra"
+                         : "??"),
                         nameMMXGran(opc & 3),
                         (Int)byte3,
                         nameMMXReg(mmxreg) );

@@ -419,16 +419,17 @@ int strncmp ( const char* s1, const char* s2, unsigned int nmax )
 
 int strcmp ( const char* s1, const char* s2 )
 {
+   register char c1, c2;
    while (True) {
-      if (*s1 == 0 && *s2 == 0) return 0;
-      if (*s1 == 0) return -1;
-      if (*s2 == 0) return 1;
-
-      if (*(char*)s1 < *(char*)s2) return -1;
-      if (*(char*)s1 > *(char*)s2) return 1;
-
+      c1 = *s1;
+      c2 = *s2;
+      if (c1 != c2) break;
+      if (c1 == 0) break;
       s1++; s2++;
    }
+   if (c1 < c2) return -1;
+   if (c1 > c2) return 1;
+   return 0;
 }
 
 void* memchr(const void *s, int c, unsigned int n)
@@ -448,13 +449,29 @@ void* memcpy( void *dst, const void *src, unsigned int len )
     if ( dst > src ) {
         d = (char *)dst + len - 1;
         s = (char *)src + len - 1;
-        while ( len-- )
+        while ( len >= 4 ) {
             *d-- = *s--;
+            *d-- = *s--;
+            *d-- = *s--;
+            *d-- = *s--;
+            len -= 4;
+	}
+        while ( len-- ) {
+            *d-- = *s--;
+        }
     } else if ( dst < src ) {
         d = (char *)dst;
         s = (char *)src;
-        while ( len-- )
+	while ( len >= 4 ) {
             *d++ = *s++;
+            *d++ = *s++;
+            *d++ = *s++;
+            *d++ = *s++;
+            len -= 4;
+	}
+        while ( len-- ) {
+            *d++ = *s++;
+	}
     }
     return dst;
 }

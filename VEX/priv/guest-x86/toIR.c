@@ -2546,7 +2546,7 @@ UInt dis_Grp8_Imm ( UChar       sorb,
       32-bits wide regardless of sz. */
    if (epartIsReg(modrm)) {
       vassert(am_sz == 1);
-      assign( t2, getIReg(sz, eregOfRM(modrm)) );
+      assign( t2, widenUto32(getIReg(sz, eregOfRM(modrm))) );
       delta += (am_sz + 1);
       DIP("%s%c $0x%x, %s\n", nameGrp8(gregOfRM(modrm)), nameISize(sz),
                               src_val, nameIReg(sz,eregOfRM(modrm)));

@@ -250,11 +250,13 @@ typedef
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
       Xin_Unary32,   /* 32-bit not and neg */
       Xin_MulL,      /* widening multiply */
+      Xin_Div,       /* div and mod */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
+      Xin_Sh3232,    /* shldl or shrdl */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
       Xin_Goto,      /* conditional/unconditional jmp to dst */
-      Xin_CMovZ,     /* conditional move when Z flag set */
+      Xin_CMov32,    /* conditional move */
       Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
       Xin_Store      /* store 16/8 bit value in memory */
    }
@@ -287,11 +289,24 @@ typedef
             X86ScalarSz ssz;
             X86RM*      src;
          } MulL;
+         /* x86 div/idiv instruction */
+         struct {
+            Bool        syned;
+            X86ScalarSz ssz;
+            X86RM*      src;
+         } Div;
          struct {
             X86ShiftOp op;
             UInt       src;  /* shift amount, or 0 means %cl */
             X86RM*     dst;
          } Sh32;
+         /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
+         struct {
+            X86ShiftOp op;
+            UInt amt;   /* shift amount, or 0 means %cl */
+            HReg rHi;
+            HReg rLo;
+         } Sh3232;
          struct {
             X86RMI* src;
          } Push;
@@ -304,12 +319,13 @@ typedef
             X86CondCode cond;
             X86RI*      dst;
          } Goto;
-         /* Mov src to dst (both 32-bit regs?) when the Z flag is
-            set. */
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Xcc_ALWAYS. */
          struct {
+            X86CondCode cond;
             X86RM* src;
             HReg   dst;
-         } CMovZ;
+         } CMov32;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
             UChar     szSmall;
@@ -332,11 +348,13 @@ extern X86Instr* X86Instr_Alu32R  ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M  ( X86AluOp, X86RI*,  X86AMode* );
 extern X86Instr* X86Instr_Unary32 ( X86UnaryOp op, X86RM* dst );
 extern X86Instr* X86Instr_MulL    ( Bool syned, X86ScalarSz, X86RM* );
+extern X86Instr* X86Instr_Div     ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Sh32    ( X86ShiftOp, UInt, X86RM* );
+extern X86Instr* X86Instr_Sh3232  ( X86ShiftOp, UInt amt, HReg rHi, HReg rLo );
 extern X86Instr* X86Instr_Push    ( X86RMI* );
 extern X86Instr* X86Instr_Call    ( HReg );
 extern X86Instr* X86Instr_Goto    ( X86CondCode cond, X86RI* dst );
-extern X86Instr* X86Instr_CMovZ   ( X86RM* src, HReg dst );
+extern X86Instr* X86Instr_CMov32  ( X86CondCode, X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX  ( UChar szSmall, Bool syned,
                                     X86AMode* src, HReg dst );
 extern X86Instr* X86Instr_Store   ( UChar sz, HReg src, X86AMode* dst );

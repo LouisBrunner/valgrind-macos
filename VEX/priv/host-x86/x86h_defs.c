@@ -428,12 +428,30 @@ X86Instr* X86Instr_MulL ( Bool syned, X86ScalarSz ssz , X86RM* src ) {
    i->Xin.MulL.src    = src;
    return i;
 }
+X86Instr* X86Instr_Div ( Bool syned, X86ScalarSz ssz, X86RM* src ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_Div;
+   i->Xin.Div.syned   = syned;
+   i->Xin.Div.ssz     = ssz;
+   i->Xin.Div.src     = src;
+   return i;
+}
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
    i->Xin.Sh32.op  = op;
    i->Xin.Sh32.src = src;
    i->Xin.Sh32.dst = dst;
+   return i;
+}
+X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg rHi, HReg rLo ) {
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag            = Xin_Sh3232;
+   i->Xin.Sh3232.op  = op;
+   i->Xin.Sh3232.amt = amt;
+   i->Xin.Sh3232.rHi = rHi;
+   i->Xin.Sh3232.rLo = rLo;
+   vassert(op == Xsh_SHL || op == Xsh_SHR);
    return i;
 }
 X86Instr* X86Instr_Push( X86RMI* src ) {
@@ -455,11 +473,13 @@ X86Instr* X86Instr_Goto ( X86CondCode cond, X86RI* dst ) {
    i->Xin.Goto.dst  = dst;
    return i;
 }
-X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag           = Xin_CMovZ;
-   i->Xin.CMovZ.src = src;
-   i->Xin.CMovZ.dst = dst;
+X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_CMov32;
+   i->Xin.CMov32.cond = cond;
+   i->Xin.CMov32.src  = src;
+   i->Xin.CMov32.dst  = dst;
+   vassert(cond != Xcc_ALWAYS);
    return i;
 }
 X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
@@ -508,6 +528,12 @@ void ppX86Instr ( X86Instr* i ) {
                     showX86ScalarSz(i->Xin.MulL.ssz));
          ppX86RM(i->Xin.MulL.src);
          return;
+      case Xin_Div:
+         vex_printf("%cdiv%s ",
+                    i->Xin.Div.syned ? 's' : 'u',
+                    showX86ScalarSz(i->Xin.Div.ssz));
+         ppX86RM(i->Xin.Div.src);
+         return;
       case Xin_Sh32:
          vex_printf("%sl ", showX86ShiftOp(i->Xin.Sh32.op));
          if (i->Xin.Sh32.src == 0)
@@ -515,6 +541,16 @@ void ppX86Instr ( X86Instr* i ) {
          else 
             vex_printf(" $%d,", i->Xin.Sh32.src);
          ppX86RM(i->Xin.Sh32.dst);
+         return;
+      case Xin_Sh3232:
+         vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
+         if (i->Xin.Sh3232.amt == 0)
+	   vex_printf(" %%cl,"); 
+         else 
+            vex_printf(" $%d,", i->Xin.Sh3232.amt);
+         ppHRegX86(i->Xin.Sh3232.rLo);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sh3232.rHi);
          return;
       case Xin_Push:
          vex_printf("pushl ");
@@ -536,11 +572,11 @@ void ppX86Instr ( X86Instr* i ) {
             vex_printf(",%%eax ; ret }");
          }
          return;
-      case Xin_CMovZ:
-         vex_printf("cmovz ");
-         ppX86RM(i->Xin.CMovZ.src);
+      case Xin_CMov32:
+         vex_printf("cmovl%s ", showX86CondCode(i->Xin.CMov32.cond));
+         ppX86RM(i->Xin.CMov32.src);
          vex_printf(",");
-         ppHRegX86(i->Xin.CMovZ.dst);
+         ppHRegX86(i->Xin.CMov32.dst);
          return;
       case Xin_LoadEX:
          vex_printf("mov%c%cl ",

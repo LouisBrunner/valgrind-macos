@@ -282,8 +282,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
             aluOp = Xalu_SUB; break;
 
-         case Iop_And8:
-         case Iop_And32: aluOp = Xalu_AND; break;
+         case Iop_And8: case Iop_And16: case Iop_And32: 
+            aluOp = Xalu_AND; break;
          case Iop_Or8: case Iop_Or32:  
             aluOp = Xalu_OR; break;
 
@@ -305,7 +305,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       /* Perhaps a shift op? */
       switch (e->Iex.Binop.op) {
          case Iop_Shl32: shOp = Xsh_SHL; break;
-         case Iop_Shr32: shOp = Xsh_SHR; break;
+         case Iop_Shr8: case Iop_Shr32: 
+            shOp = Xsh_SHR; break;
          case Iop_Sar32: shOp = Xsh_SAR; break;
          default:        shOp = Xsh_INVALID; break;
       }
@@ -315,6 +316,19 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          HReg regR   = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, mk_MOVsd_RR(regL,dst));
          addInstr(env, mk_MOVsd_RR(regR,hregX86_ECX()));
+         /* Do any necessary widening for 16/8 bit operands */
+         switch (e->Iex.Binop.op) {
+            case Iop_Shr8:
+               addInstr(env, X86Instr_Alu32R(
+                                Xalu_AND, X86RMI_Imm(0xFF), dst));
+               break;
+            case Iop_Shr16:
+               addInstr(env, X86Instr_Alu32R(
+                                Xalu_AND, X86RMI_Imm(0xFFFF), dst));
+               break;
+            case Iop_Sar8: case Iop_Sar16: vassert(0); // fill this in!
+            default: break;
+         }
          addInstr(env, X86Instr_Sh32(shOp, 0/* %cl */, X86RM_Reg(dst)));
          return dst;
       }
@@ -445,7 +459,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 	HReg r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
 	addInstr(env, X86Instr_Alu32R(Xalu_TEST,
 				      X86RMI_Imm(0xFF), r8));
-	addInstr(env, X86Instr_CMovZ(r0,dst));
+	addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
 	return dst;
       }
       break;
@@ -685,6 +699,76 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       /* Result is now in EDX:EAX.  Tell the caller. */
       *rHi = hregX86_EDX();
       *rLo = hregX86_EAX();
+      return;
+   }
+
+   /* 64 x 32 -> (32(rem),32(div)) division */
+   if (e->tag == Iex_Binop
+      && (e->Iex.Binop.op == Iop_DivModU64to32
+          || e->Iex.Binop.op == Iop_DivModS64to32)) {
+      /* Get the 64-bit operand into edx:eax, and the other
+         into any old R/M. */
+      HReg sHi, sLo;
+      Bool   syned   = e->Iex.Binop.op == Iop_MullS32;
+      X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
+      iselIntExpr64(&sHi,&sLo, env, e->Iex.Binop.arg1);
+      addInstr(env, mk_MOVsd_RR(sHi, hregX86_EDX()));
+      addInstr(env, mk_MOVsd_RR(sLo, hregX86_EAX()));
+      addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
+      *rHi = hregX86_EDX();
+      *rLo = hregX86_EAX();
+      return;
+   }
+
+   /* 32HLto64(e1,e2) */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_32HLto64) {
+      *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+      return;
+   }
+
+   /* 64-bit shifts */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_Shl64) {
+      /* We use the same ingenious scheme as gcc.  Put the value
+         to be shifted into %hi:%lo, and the shift amount into %cl.
+         Then (dsts on right, a la ATT syntax):
+ 
+            shldl %cl, %lo, %hi   -- make %hi be right for the shift amt
+                                  -- %cl % 32
+            shll  %cl, %lo        -- make %lo be right for the shift amt
+                                  -- %cl % 32
+
+         Now, if (shift amount % 64) is in the range 32 .. 63, we have 
+         to do a fixup, which puts the result low half into the result
+         high half, and zeroes the low half:
+
+            testl $32, %ecx
+
+            cmovnz %lo, %hi
+            movl $0, %tmp         -- sigh; need yet another reg
+            cmovnz %tmp, %lo
+      */
+      HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
+      tLo = newVRegI(env);
+      tHi = newVRegI(env);
+      tTemp = newVRegI(env);
+      rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
+      iselIntExpr64(&sHi,&sLo, env, e->Iex.Binop.arg1);
+      addInstr(env, mk_MOVsd_RR(rAmt, hregX86_ECX()));
+      addInstr(env, mk_MOVsd_RR(sHi, tHi));
+      addInstr(env, mk_MOVsd_RR(sLo, tLo));
+      /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
+         those regs are legitimately modifiable. */
+      addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tHi, tLo));
+      addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
+      addInstr(env, X86Instr_Alu32R(Xalu_TEST, X86RMI_Imm(32), hregX86_ECX()));
+      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
+      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
       return;
    }
 

@@ -621,8 +621,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 /*--- Exported fns                                         ---*/
 /*------------------------------------------------------------*/
 
-/* These are called not from generated code but from the scheduler */
-
+/* This is called not from generated code but from the scheduler */
 void VG_(show_all_errors) ( void )
 {
    Int    i, n_min;

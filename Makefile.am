@@ -31,7 +31,7 @@ default.supp: $(SUPP_FILES)
 bzdist: dist
 	gunzip -c $(PACKAGE)-$(VERSION).tar.gz | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 
-regtest:
+regtest: check
 	$(prefix)/bin/vg_regtest --all
 
 EXTRA_DIST = $(val_DATA) \

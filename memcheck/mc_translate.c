@@ -841,12 +841,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_RoundF64:
       case Iop_F64toI64:
-         /* First arg is I32 (rounding mode), second is F64 (data). */
+      case Iop_I64toF64:
+         /* First arg is I32 (rounding mode), second is F64 or I64
+            (data). */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
          /* Takes two F64 args. */
       case Iop_F64toI32:
+      case Iop_F64toF32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
 
@@ -1003,7 +1006,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_F32toF64: 
       case Iop_I32toF64:
-      case Iop_I64toF64:
       case Iop_NegF64:
       case Iop_SinF64:
       case Iop_CosF64:
@@ -1013,7 +1015,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_2xm1F64:
          return mkPCastTo(mce, Ity_I64, vatom);
 
-      case Iop_F64toF32:
       case Iop_Clz32:
       case Iop_Ctz32:
          return mkPCastTo(mce, Ity_I32, vatom);
@@ -1329,7 +1330,7 @@ static IRType szToITy ( Int n )
 static
 void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 {
-   Int     i, offset, toDo;
+   Int     i, n, offset, toDo, gSz, gOff;
    IRAtom  *src, *here, *curr;
    IRType  tyAddr, tySrc, tyDst;
    IRTemp  dst;
@@ -1358,18 +1359,32 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
       /* Ignore any sections marked as 'always defined'. */
       if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size )) {
+         if (0)
          VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
                      d->fxState[i].offset, d->fxState[i].size );
          continue;
       }
 
       /* This state element is read or modified.  So we need to
-         consider it. */
-      tySrc = szToITy( d->fxState[i].size );
-      src   = assignNew( mce, tySrc, 
-                         shadow_GET(mce, d->fxState[i].offset, tySrc ) );
-      here = mkPCastTo( mce, Ity_I32, src );
-      curr = mkUifU32(mce, here, curr);
+         consider it.  If larger than 8 bytes, deal with it in 8-byte
+         chunks. */
+      gSz  = d->fxState[i].size;
+      gOff = d->fxState[i].offset;
+      tl_assert(gSz > 0);
+      while (True) {
+         if (gSz == 0) break;
+         n = gSz <= 8 ? gSz : 8;
+         /* update 'curr' with UifU of the state slice 
+            gOff .. gOff+n-1 */
+         tySrc = szToITy( n );
+         src   = assignNew( mce, tySrc, 
+                            shadow_GET(mce, gOff, tySrc ) );
+         here = mkPCastTo( mce, Ity_I32, src );
+         curr = mkUifU32(mce, here, curr);
+         gSz -= n;
+         gOff += n;
+      }
+
    }
 
    /* Inputs: memory.  First set up some info needed regardless of
@@ -1435,12 +1450,24 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       /* Ignore any sections marked as 'always defined'. */
       if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size ))
          continue;
-      /* this state element is written or modified.  So we need to
-         consider it. */
-      tyDst = szToITy( d->fxState[i].size );
-      do_shadow_PUT( mce, d->fxState[i].offset,
-                          NULL, /* original atom */
-                          mkPCastTo( mce, tyDst, curr ) );
+      /* This state element is written or modified.  So we need to
+         consider it.  If larger than 8 bytes, deal with it in 8-byte
+         chunks. */
+      gSz  = d->fxState[i].size;
+      gOff = d->fxState[i].offset;
+      tl_assert(gSz > 0);
+      while (True) {
+         if (gSz == 0) break;
+         n = gSz <= 8 ? gSz : 8;
+         /* Write suitably-casted 'curr' to the state slice 
+            gOff .. gOff+n-1 */
+         tyDst = szToITy( n );
+         do_shadow_PUT( mce, gOff,
+                             NULL, /* original atom */
+                             mkPCastTo( mce, tyDst, curr ) );
+         gSz -= n;
+         gOff += n;
+      }
    }
 
    /* Outputs: memory that we write or modify. */

@@ -87,35 +87,8 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
             return False;
          return True;
       case Iex_Const:
-	if (e->tag != Iex_Const) return False;
-	switch (p->Iex.Const.con->tag) {
-           case Ico_Bit: return e->Iex.Const.con->tag==Ico_Bit 
-                                   ? (p->Iex.Const.con->Ico.Bit 
-                                      == e->Iex.Const.con->Ico.Bit) 
-                                   : False;
-           case Ico_U8:  return e->Iex.Const.con->tag==Ico_U8 
-                                   ? (p->Iex.Const.con->Ico.U8 
-                                      == e->Iex.Const.con->Ico.U8) 
-                                   : False;
-           case Ico_U16: return e->Iex.Const.con->tag==Ico_U16 
-                                   ? (p->Iex.Const.con->Ico.U16 
-                                      == e->Iex.Const.con->Ico.U16) 
-                                   : False;
-           case Ico_U32: return e->Iex.Const.con->tag==Ico_U32 
-                                   ? (p->Iex.Const.con->Ico.U32 
-                                      == e->Iex.Const.con->Ico.U32) 
-                                   : False;
-           case Ico_U64: return e->Iex.Const.con->tag==Ico_U64 
-                                   ? (p->Iex.Const.con->Ico.U64 
-                                      == e->Iex.Const.con->Ico.U64) 
-                                   : False;
-           case Ico_F64: return e->Iex.Const.con->tag==Ico_F64 
-                                   ? (p->Iex.Const.con->Ico.F64 
-                                      == e->Iex.Const.con->Ico.F64) 
-                                   : False;
-	}
-        vpanic("matchIRExpr.Iex_Const");
-        /*NOTREACHED*/
+         if (e->tag != Iex_Const) return False;
+         return eqIRConst(p->Iex.Const.con, e->Iex.Const.con);
       default: 
          ppIRExpr(p);
          vpanic("match");

@@ -329,7 +329,8 @@ static IRBB* flatten_BB ( IRBB* in )
    out = emptyIRBB();
    out->tyenv = copyIRTypeEnv( in->tyenv );
    for (i = 0; i < in->stmts_used; i++)
-      flatten_Stmt( out, in->stmts[i] );
+      if (in->stmts[i])
+         flatten_Stmt( out, in->stmts[i] );
    out->next     = flatten_Expr( out, in->next );
    out->jumpkind = in->jumpkind;
    return out;
@@ -375,6 +376,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
             break;
+         case Iop_32to8:
+            e2 = IRExpr_Const(IRConst_U8(
+                    0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
+            break;
          case Iop_Not32:
             e2 = IRExpr_Const(IRConst_U32(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
@@ -399,6 +404,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                e2 = IRExpr_Const(IRConst_U8(0xFF & 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+               break;
+            case Iop_Add8:
+               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
                break;
             case Iop_Sub8:
                e2 = IRExpr_Const(IRConst_U8(0xFF & 
@@ -1753,8 +1763,224 @@ static void treebuild_BB ( IRBB* bb )
 
 
 /*---------------------------------------------------------------*/
+/*--- Common Subexpression Elimination                        ---*/
+/*---------------------------------------------------------------*/
+
+/* Expensive in time and space. */
+
+/* Uses two environments: 
+   a IRTemp -> IRTemp mapping 
+   a mapping from AvailExpr* to IRTemp 
+*/
+
+typedef
+   struct {
+      enum { Ut, Btt, Btc } tag;
+      union {
+         /* unop(tmp) */
+         struct {
+            IROp op;
+            IRTemp arg;
+         } Ut;
+         struct {
+            IROp op;
+            IRTemp arg1;
+            IRTemp arg2;
+         } Btt;
+         struct {
+            IROp op;
+            IRTemp arg1;
+            IRConst con2;
+         } Btc;
+      } u;
+   }
+   AvailExpr;
+
+static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
+{
+   if (a1->tag != a2->tag)
+      return False;
+   switch (a1->tag) {
+      case Ut: return a1->u.Ut.op == a2->u.Ut.op 
+                      && a1->u.Ut.arg == a2->u.Ut.arg;
+      case Btt: return a1->u.Btt.op == a2->u.Btt.op
+                       && a1->u.Btt.arg1 == a2->u.Btt.arg1
+                       && a1->u.Btt.arg2 == a2->u.Btt.arg2;
+      case Btc: return a1->u.Btc.op == a2->u.Btc.op
+                       && a1->u.Btc.arg1 == a2->u.Btc.arg1
+                       && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
+      default: vpanic("eq_AvailExpr");
+   }
+}
+
+static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae ) 
+{
+   IRConst* con;
+   switch (ae->tag) {
+      case Ut:
+         return IRExpr_Unop( ae->u.Ut.op, IRExpr_Tmp(ae->u.Ut.arg) );
+      case Btt:
+         return IRExpr_Binop( ae->u.Btt.op,
+                              IRExpr_Tmp(ae->u.Btt.arg1),
+                              IRExpr_Tmp(ae->u.Btt.arg2) );
+      case Btc:
+         con = LibVEX_Alloc(sizeof(IRConst));
+         *con = ae->u.Btc.con2;
+         return IRExpr_Binop( ae->u.Btc.op,
+                              IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
+      default:
+         vpanic("availExpr_to_IRExpr");
+   }
+}
+
+inline
+static IRTemp subst_AvailExpr_Temp ( Hash64* env, IRTemp tmp )
+{
+   ULong res;
+   /* env :: IRTemp -> IRTemp */
+   if (lookupH64( env, &res, (ULong)tmp ))
+      return (IRTemp)res;
+   else
+      return tmp;
+}
+
+static void subst_AvailExpr ( Hash64* env, AvailExpr* ae )
+{
+   /* env :: IRTemp -> IRTemp */
+   switch (ae->tag) {
+      case Ut:
+         ae->u.Ut.arg = subst_AvailExpr_Temp( env, ae->u.Ut.arg );
+         break;
+      case Btt:
+         ae->u.Btt.arg1 = subst_AvailExpr_Temp( env, ae->u.Btt.arg1 );
+         ae->u.Btt.arg2 = subst_AvailExpr_Temp( env, ae->u.Btt.arg2 );
+         break;
+      case Btc:
+         ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
+         break;
+      default: 
+         vpanic("subst_AvailExpr");
+   }
+}
+
+static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
+{
+   AvailExpr* ae;
+
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.arg->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag      = Ut;
+      ae->u.Ut.op  = e->Iex.Unop.op;
+      ae->u.Ut.arg = e->Iex.Unop.arg->Iex.Tmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.arg1->tag == Iex_Tmp
+       && e->Iex.Binop.arg2->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Btt;
+      ae->u.Btt.op   = e->Iex.Binop.op;
+      ae->u.Btt.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+      ae->u.Btt.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_Binop
+      && e->Iex.Binop.arg1->tag == Iex_Tmp
+      && e->Iex.Binop.arg2->tag == Iex_Const) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Btc;
+      ae->u.Btc.op   = e->Iex.Binop.op;
+      ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
+      ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
+      return ae;
+   }
+
+   return NULL;
+}
+
+
+/* The BB is modified in-place. */
+
+static void cse_BB ( IRBB* bb )
+{
+   Int        i, j;
+   IRTemp     t, q;
+   IRStmt*    st;
+   AvailExpr* eprime;
+
+   Hash64* tenv = newH64(); /* :: IRTemp -> IRTemp */
+   Hash64* aenv = newH64(); /* :: AvailExpr -> IRTemp */
+
+   //ppIRBB(bb);
+   //vex_printf("\n\n");
+
+   /* Iterate forwards over the stmts.  
+      On seeing "t = E", where E is one of the 3 AvailExpr forms:
+         let E' = apply tenv substitution to E
+         search aenv for E'
+            if a mapping E' -> q is found, 
+               replace this stmt by "t = q"
+               and add binding t -> q to tenv
+            else
+               add binding E' -> t to aenv
+               replace this stmt by "t = E'"
+      Ignore any other kind of stmt.
+   */
+   for (i = 0; i < bb->stmts_used; i++) {
+      st = bb->stmts[i];
+
+      /* ignore not-interestings */
+      if ((!st) || st->tag != Ist_Tmp)
+         continue;
+
+      t = st->Ist.Tmp.tmp;
+      eprime = irExpr_to_AvailExpr(st->Ist.Tmp.expr);
+      /* ignore if not of AvailExpr form */
+      if (!eprime)
+         continue;
+
+      //vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n");
+
+      /* apply tenv */
+      subst_AvailExpr( tenv, eprime );
+
+      /* search aenv for eprime, unfortunately the hard way */
+      for (j = 0; j < aenv->used; j++)
+         if (aenv->inuse[j] && eq_AvailExpr(eprime, (AvailExpr*)aenv->key[j]))
+            break;
+
+      if (j < aenv->used) {
+         /* A binding E' -> q was found.  Replace stmt by "t = q" and
+            note the t->q binding in tenv. */
+         /* (this is the core of the CSE action) */
+         q = (IRTemp)aenv->val[j];
+         bb->stmts[i] = IRStmt_Tmp( t, IRExpr_Tmp(q) );
+         addToH64( tenv, (ULong)t, (ULong)q );
+      } else {
+         /* No binding was found, so instead we add E' -> t to our
+            collection of available expressions, replace this stmt
+            with "t = E'", and move on. */
+         bb->stmts[i] = IRStmt_Tmp( t, availExpr_to_IRExpr(eprime) );
+         addToH64( aenv, (ULong)eprime, (ULong)t );
+      }
+   }
+
+   //ppIRBB(bb);
+   //sanityCheckIRBB(bb, Ity_I32);
+   //vex_printf("\n\n");
+      
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
+
+static Bool iropt_verbose = False;
+
 
 /* Rules of the game:
 
@@ -1763,58 +1989,165 @@ static void treebuild_BB ( IRBB* bb )
      instead construct and return a new one if needed.
 */
 
+/* Do a simple cleanup pass on bb.  This is: redundant Get removal,
+   redundant Put removal, constant propagation, dead code removal,
+   clean helper specialisation, and dead code removal (again).
+*/
+
+static 
+IRBB* baseline_cleanup ( IRBB* bb,
+                         IRExpr* (*specHelper) ( Char*, IRExpr**) )
+{
+   redundant_get_removal_BB ( bb );
+   if (iropt_verbose) {
+      vex_printf("\n========= REDUNDANT GET\n\n" );
+      ppIRBB(bb);
+   }
+
+   redundant_put_removal_BB ( bb );
+   if (iropt_verbose) {
+      vex_printf("\n========= REDUNDANT PUT\n\n" );
+      ppIRBB(bb);
+   }
+
+   bb = cprop_BB ( bb );
+   if (iropt_verbose) {
+      vex_printf("\n========= CPROPD\n\n" );
+      ppIRBB(bb);
+   }
+
+   dead_BB ( bb );
+   if (iropt_verbose) {
+      vex_printf("\n========= DEAD\n\n" );
+      ppIRBB(bb);
+   }
+
+   spec_helpers_BB ( bb, specHelper );
+   dead_BB ( bb );
+   if (iropt_verbose) {
+      vex_printf("\n========= SPECd \n\n" );
+      ppIRBB(bb);
+   }
+
+   return bb;
+}
+
+/* Scan a flattened BB to see if it has any GetI or PutIs in it.  Used
+   as a heuristic hack to see if iropt needs to do expensive
+   optimisations (CSE, PutI -> GetI forwarding) to improve code with
+   those in. 
+*/
+static Bool hasGetIorPutI ( IRBB* bb )
+{
+   Int i, j;
+   IRStmt* st;
+   IRDirty* d;
+
+   for (i = 0; i < bb->stmts_used; i++) {
+      st = bb->stmts[i];
+      if (!st)
+         continue;
+
+      switch (st->tag) {
+         case Ist_PutI: 
+            return True;
+         case Ist_Tmp:  
+            if (st->Ist.Tmp.expr->tag == Iex_GetI)
+               return True;
+            break;
+         case Ist_Put:
+            vassert(isAtom(st->Ist.Put.expr));
+            break;
+         case Ist_STle:
+            vassert(isAtom(st->Ist.STle.addr));
+            vassert(isAtom(st->Ist.STle.data));
+            break;
+         case Ist_Exit:
+            vassert(isAtom(st->Ist.Exit.cond));
+            break;
+         case Ist_Dirty:
+            d = st->Ist.Dirty.details;
+            for (j = 0; d->args[j]; j++)
+               vassert(isAtom(d->args[j]));
+            if (d->mFx != Ifx_None)
+               vassert(isAtom(d->mAddr));
+            break;
+         default: 
+            ppIRStmt(st);
+            vpanic("hasGetIorPutI");
+      }
+
+   }
+   return False;
+
+}
+
+
 /* exported from this file */
+/* The main iropt entry point. */
+
 IRBB* do_iropt_BB ( IRBB* bb0,
                     IRExpr* (*specHelper) ( Char*, IRExpr**) )
 {
-   Bool verbose = False;
-   IRBB *flat, *cpd;
+   static UInt n_total     = 0;
+   static UInt n_expensive = 0;
 
-   flat = flatten_BB ( bb0 );
-   if (verbose) {
-      vex_printf("\n************************ FLAT\n\n" );
-      ppIRBB(flat);
+   Bool show_res = False;
+
+   IRBB *bb;
+ 
+   n_total++;
+
+   /* First flatten the block out, since all other
+      phases assume flat code. */
+
+   bb = flatten_BB ( bb0 );
+
+   if (iropt_verbose) {
+      vex_printf("\n========= FLAT\n\n" );
+      ppIRBB(bb);
    }
 
-   redundant_get_removal_BB ( flat );
-   if (verbose) {
-      vex_printf("\n========= REDUNDANT GET\n\n" );
-      ppIRBB(flat);
+   /* Now do a preliminary cleanup pass. */
+
+   bb = baseline_cleanup( bb, specHelper );
+
+   /* If there are GetI/PutI in this block, do some expensive
+      transformations:
+
+    - CSE 
+    - re-run of the baseline cleanup
+
+   */
+
+   if (hasGetIorPutI(bb)) {
+      n_expensive++;
+      vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
+      //ppIRBB(bb); vex_printf("\n\n");
+      cse_BB( bb );
+      /*
+      ppIRBB(bb); vex_printf("\n\n");
+      dead_BB( bb );
+      bb = cprop_BB ( bb );
+      dead_BB(bb);
+      */
+      //ppIRBB(bb); vex_printf("\n\nQQQQ\n");
+      bb = baseline_cleanup( flatten_BB(bb), specHelper );
+      //vassert(0);
+      //      vex_printf("expensive done\n");
+      //show_res = True;
    }
 
-   redundant_put_removal_BB ( flat );
-   if (verbose) {
-      vex_printf("\n========= REDUNDANT PUT\n\n" );
-      ppIRBB(flat);
-   }
+   /* Finally, rebuild trees, for the benefit of instruction
+      selection. */
 
-   cpd = cprop_BB ( flat );
-   if (verbose) {
-      vex_printf("\n========= CPROPD\n\n" );
-      ppIRBB(cpd);
-   }
-
-   dead_BB ( cpd );
-   if (verbose) {
-      vex_printf("\n========= DEAD\n\n" );
-      ppIRBB(cpd);
-   }
-
-   spec_helpers_BB ( cpd, specHelper );
-   dead_BB ( cpd );
-   if (verbose) {
-      vex_printf("\n========= SPECd \n\n" );
-      ppIRBB(cpd);
-   }
-
-   treebuild_BB ( cpd );
-   if (verbose) {
+   treebuild_BB ( bb );
+   if (show_res || iropt_verbose) {
       vex_printf("\n========= TREEd \n\n" );
-      ppIRBB(cpd);
+      ppIRBB(bb);
    }
 
-   return cpd;
-
+   return bb;
 }
 
 

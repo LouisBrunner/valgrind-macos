@@ -64,6 +64,7 @@ extern IRConst* IRConst_F64  ( Double );
 extern IRConst* IRConst_F64i ( ULong );
 
 extern void ppIRConst ( IRConst* );
+extern Bool eqIRConst ( IRConst*, IRConst* );
 
 
 /* ------------------ Temporaries ------------------ */

@@ -1227,6 +1227,26 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
       sanityCheckFail(bb, NULL, "bb->next field has wrong type");
 }
 
+/*---------------------------------------------------------------*/
+/*--- Misc helper functions                                   ---*/
+/*---------------------------------------------------------------*/
+
+Bool eqIRConst ( IRConst* c1, IRConst* c2 )
+{
+   if (c1->tag != c2->tag)
+      return False;
+
+   switch (c1->tag) {
+      case Ico_Bit: return (1 & c1->Ico.Bit) == (1 & c2->Ico.Bit);
+      case Ico_U8:  return c1->Ico.U8  == c2->Ico.U8;
+      case Ico_U16: return c1->Ico.U16 == c2->Ico.U16;
+      case Ico_U32: return c1->Ico.U32 == c2->Ico.U32;
+      case Ico_U64: return c1->Ico.U64 == c2->Ico.U64;
+      case Ico_F64: return c1->Ico.F64 == c2->Ico.F64;
+      default: vpanic("eqIRConst");
+   }
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                         ir/irdefs.c ---*/

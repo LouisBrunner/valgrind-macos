@@ -7,4 +7,4 @@ incinc_HEADERS = \
 	valgrind.h \
 	vg_constants_skin.h \
 	vg_skin.h \
-	../coregrind/vg_kerneliface.h
+	vg_kerneliface.h

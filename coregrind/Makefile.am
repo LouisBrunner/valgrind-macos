@@ -77,7 +77,6 @@ noinst_LIBRARIES = lib_replace_malloc.a
 lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
 
 noinst_HEADERS = \
-        vg_kerneliface.h        \
         vg_include.h            \
         vg_constants.h          \
 	vg_unsafe.h

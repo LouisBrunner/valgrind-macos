@@ -105,7 +105,7 @@ typedef unsigned char          Bool;
    definitions.
    ------------------------------------------------------------------ */
 
-#include "../coregrind/vg_kerneliface.h"
+#include "vg_kerneliface.h"
 
 
 /*====================================================================*/

@@ -3577,9 +3577,9 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
             break;
-//..          case 4: /* MUL */
-//..             codegen_mulL_A_D ( sz, False, t1, dis_buf );
-//..             break;
+         case 4: /* MUL (unsigned widening) */
+            codegen_mulL_A_D ( sz, False, t1, dis_buf );
+            break;
 //..          case 5: /* IMUL */
 //..             codegen_mulL_A_D ( sz, True, t1, dis_buf );
 //..             break;
@@ -11748,7 +11748,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xB4: /* MOV imm,AH */
 //..    case 0xB5: /* MOV imm,CH */
 //..    case 0xB6: /* MOV imm,DH */
-//..    case 0xB7: /* MOV imm,BH */
+   case 0xB7: /* MOV imm,BH */
       if (haveF2orF3(pfx)) goto decode_failure;
       d64 = getUChar(delta); 
       delta += 1;

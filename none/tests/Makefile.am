@@ -5,6 +5,7 @@ INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
+	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bt_everything.stderr.exp \
 	bt_everything.stdout.exp bt_everything.vgtest \
@@ -55,7 +56,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	args bitfield1 bt_everything bt_literal closeall coolo_strlen \
+	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
 	fucomip $(INSN_TESTS) \
 	int munmap_exe map_unmap mremap rcl_assert \
@@ -69,6 +70,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 args_SOURCES 		= args.c
+badseg_SOURCES		= badseg.c
 bitfield1_SOURCES 	= bitfield1.c
 bt_everything_SOURCES 	= bt_everything.c
 bt_literal_SOURCES 	= bt_literal.c

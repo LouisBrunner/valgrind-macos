@@ -70,8 +70,8 @@ print-docs:
 # the time.
 install-data-hook:
 	if test -r html ; then \
-		mkdir -p $(datadir)/doc/ z; \
-		cp -r html $(datadir)/doc/; \
+		mkdir -p $(datadir)/doc/valgrind/; \
+		cp -r html $(datadir)/doc/valgrind/; \
 	fi
 
 dist-hook: html-docs

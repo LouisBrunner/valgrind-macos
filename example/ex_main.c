@@ -9,12 +9,12 @@ VG_DETERMINE_INTERFACE_VERSION
 
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   details->name             = "Example";
-   details->version          = "0.0.1";
-   details->description      = "an example Valgrind skin";
-   details->copyright_author =
-      "Copyright (C) 2002, and put in the public domain, by Santa Claus.";
-   details->bug_reports_to   = "santa.claus@northpole.org";
+   VG_(details_name)            ("Example");
+   VG_(details_version)         ("0.0.1");
+   VG_(details_description)     ("an example Valgrind skin");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and put in the public domain, by Santa Claus.");
+   VG_(details_bug_reports_to)  ("santa.claus@northpole.org");
 
    /* No needs, no core events to track */
 }

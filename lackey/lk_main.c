@@ -74,15 +74,14 @@ static void add_one_Jcc_untaken(void)
    n_Jccs_untaken++;
 }
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
-                       VgTrackEvents* not_used2)
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Lackey";
-   details->version          = NULL;
-   details->description      = "an example Valgrind skin";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
-   details->bug_reports_to   = "njn25@cam.ac.uk";
+   VG_(details_name)            ("Lackey");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("an example Valgrind skin");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);
@@ -145,8 +144,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    UInstr*     u;
    Char        fnname[100];
 
-   cb = VG_(alloc_UCodeBlock)();
-   cb->nextTemp = cb_in->nextTemp;
+   cb = VG_(setup_UCodeBlock)(cb_in);
 
    /* Count call to dlrr(), if this BB is dlrr()'s entry point */
    if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
@@ -158,8 +156,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    /* Count basic block */
    VG_(call_helper_0_0)(cb, (Addr) & add_one_BB);
 
-   for (i = 0; i < cb_in->used; i++) {
-      u = &cb_in->instrs[i];
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u = VG_(get_instr)(cb_in, i);
 
       switch (u->opcode) {
          case NOP: case LOCK: case CALLM_S: case CALLM_E:

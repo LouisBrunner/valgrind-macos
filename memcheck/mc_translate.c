@@ -237,14 +237,13 @@ void SK_(pp_XUInstr)(UInstr* u)
 
 }
 
-Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
+Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 {
-#  define RD(ono)    VG_UINSTR_READS_REG(ono)
-#  define WR(ono)    VG_UINSTR_WRITES_REG(ono)
+#  define RD(ono)    VG_UINSTR_READS_REG(ono, regs, isWrites)
+#  define WR(ono)    VG_UINSTR_WRITES_REG(ono, regs, isWrites)
 
    Int n = 0;
    switch (u->opcode) {        
-
       case TAG1:    RD(1); WR(1);        break;
       case TAG2:    RD(1); RD(2); WR(2); break;
       case LOADV:   RD(1); WR(2);        break;
@@ -499,8 +498,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
    UInstr*     u_in;
    Int         qs, qd, qt, qtt;
    Bool        bogusLiterals;
-   cb = VG_(alloc_UCodeBlock)();
-   cb->nextTemp = cb_in->nextTemp;
+
+   cb = VG_(setup_UCodeBlock)(cb_in);
 
    /* Scan the block to look for bogus literals.  These are magic
       numbers which particularly appear in hand-optimised / inlined
@@ -511,8 +510,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
    bogusLiterals = False;
 
    if (SK_(clo_avoid_strlen_errors)) {
-      for (i = 0; i < cb_in->used; i++) {
-         u_in = &cb_in->instrs[i];
+      for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+         u_in = VG_(get_instr)(cb_in, i);
          switch (u_in->opcode) {
             case ADD: case SUB: case MOV: 
                if (u_in->size == 4 && u_in->tag1 == Literal)
@@ -535,9 +534,9 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
       }
    }
 
-   for (i = 0; i < cb_in->used; i++) {
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u_in = VG_(get_instr)(cb_in, i);
       qs = qd = qt = qtt = INVALID_TEMPREG;
-      u_in = &cb_in->instrs[i];
 
       switch (u_in->opcode) {
 
@@ -853,8 +852,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             uInstr1(cb, SETV, 0, TempReg, qt);
 
             uInstr2(cb, CMOV, 4, TempReg, qs, TempReg, qd);
-            LAST_UINSTR(cb).cond    = u_in->cond;
-            LAST_UINSTR(cb).flags_r = u_in->flags_r;
+            uCond(cb, u_in->cond);         
+            uFlagsRWU(cb, u_in->flags_r, u_in->flags_w, FlagsEmpty);
 
             VG_(copy_UInstr)(cb, u_in);
             break;
@@ -977,8 +976,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             qt  = newShadow(cb);
             qtt = newShadow(cb);
             uInstr1(cb, SETV, 0, TempReg, qt);
-            for (j = i-1; cb_in->instrs[j].opcode != CALLM_S; j--) {
-               uu = & cb_in->instrs[j];
+            for (j = i-1; VG_(get_instr)(cb_in, j)->opcode != CALLM_S; j--) {
+               uu = VG_(get_instr)(cb_in, j);
                if (uu->opcode != PUSH) continue;
                /* cast via a temporary */
                uInstr2(cb, MOV, 4, TempReg, SHADOW(uu->val1),
@@ -1003,8 +1002,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                a dummy tempreg. 
             */
             res_used = False;
-            for (j = i+1; cb_in->instrs[j].opcode != CALLM_E; j++) {
-               uu = & cb_in->instrs[j];
+            for (j = i+1; VG_(get_instr)(cb_in, j)->opcode != CALLM_E; j++) {
+               uu = VG_(get_instr)(cb_in, j);
                if (uu->opcode != POP) continue;
                /* Cast via a temp. */
                uInstr2(cb, MOV, 4, TempReg, qt, TempReg, qtt);
@@ -1139,10 +1138,11 @@ Bool VG_(clo_memcheck_codegen) = False;
 static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 {
    Int     i, j, k;
-   Int     n_temps = cb->nextTemp;
+   Int     n_temps = VG_(get_num_temps)(cb);
    Bool*   next_is_write;
    UInstr* u;
-   RegUse  tempUse[3];
+   Int     tempUse[3];
+   Bool    isWrites[3];
 
    if (n_temps == 0) return;
 
@@ -1150,8 +1150,8 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
    for (i = 0; i < n_temps; i++) next_is_write[i] = True;
 
-   for (i = cb->used-1; i >= 0; i--) {
-      u = &cb->instrs[i];
+   for (i = VG_(get_num_instrs)(cb) - 1; i >= 0; i--) {
+      u = VG_(get_instr)(cb, i);
 
       /* If we're not checking address V bits, there will be a lot of
          GETVs, TAG1s and TAG2s calculating values which are never
@@ -1211,11 +1211,10 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       } else {
          /* Find out what this insn does to the temps. */
-         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
+         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
          sk_assert(k <= 3);
          for (j = k-1; j >= 0; j--) {
-            next_is_write[ tempUse[j].num ]
-                         = tempUse[j].isWrite;
+            next_is_write[ tempUse[j] ] = isWrites[j];
          }
       }
    }
@@ -1239,10 +1238,11 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 static void vg_propagate_definedness ( UCodeBlock* cb )
 {
    Int     i, j, k, t;
-   Int     n_temps = cb->nextTemp;
+   Int     n_temps = VG_(get_num_temps)(cb);
    UChar*  def;
    UInstr* u;
-   RegUse  tempUse[3];
+   Int     tempUse[3];
+   Bool    isWrites[3];
 
    if (n_temps == 0) return;
 
@@ -1253,8 +1253,8 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
 
    /* Run forwards, detecting and using the all-defined property. */
 
-   for (i = 0; i < cb->used; i++) {
-      u = &cb->instrs[i];
+   for (i = 0; i < VG_(get_num_instrs)(cb); i++) {
+      u = VG_(get_instr)(cb, i);
       switch (u->opcode) {
 
       /* Tag-handling uinstrs. */
@@ -1470,12 +1470,12 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
          unhandled:
             /* We don't know how to handle this uinstr.  Be safe, and 
                set to VGC_VALUE or VGC_UNDEF all temps written by it. */
-            k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
+            k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
             sk_assert(k <= 3);
             for (j = 0; j < k; j++) {
-               t = tempUse[j].num;
+               t = tempUse[j];
                sk_assert(t >= 0 && t < n_temps);
-               if (!tempUse[j].isWrite) {
+               if (!isWrites[j]) {
                   /* t is read; ignore it. */
                   if (0&& VGC_IS_SHADOW(t) && def[t] <= 4)
                      VG_(printf)("ignoring def %d at %s %s\n", 

@@ -42,6 +42,7 @@
 /*--- Basics                                               ---*/
 /*------------------------------------------------------------*/
 
+/* This one is called by the core */
 UCodeBlock* VG_(alloc_UCodeBlock) ( void )
 {
    UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
@@ -50,6 +51,15 @@ UCodeBlock* VG_(alloc_UCodeBlock) ( void )
    return cb;
 }
 
+/* This one is called by skins */
+UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb_in )
+{
+   UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
+   cb->used = cb->size = 0;
+   cb->nextTemp = cb_in->nextTemp;
+   cb->instrs = NULL;
+   return cb;
+}
 
 void VG_(free_UCodeBlock) ( UCodeBlock* cb )
 {
@@ -205,17 +215,6 @@ void copyAuxInfoFromTo ( UInstr* src, UInstr* dst )
 }
 
 
-/* Set the flag R/W sets on a uinstr. */
-void VG_(set_flag_RW) ( UInstr* u, FlagSet fr, FlagSet fw )
-{
-   /* VG_(pp_UInstr)(-1,u); */
-   vg_assert(fr == (fr & FlagsALL));
-   vg_assert(fw == (fw & FlagsALL));
-   u->flags_r = fr;
-   u->flags_w = fw;
-}
-
-
 /* Set the lit32 field of the most recent uinsn. */
 void VG_(set_lit_field) ( UCodeBlock* cb, UInt lit32 )
 {
@@ -234,6 +233,23 @@ void  VG_(set_ccall_fields) ( UCodeBlock* cb, Addr fn, UChar argc, UChar
    LAST_UINSTR(cb).regparms_n  = regparms_n;
    LAST_UINSTR(cb).has_ret_val = has_ret_val;
 }
+
+/* For the last uinsn inserted into cb, set the read, written and
+   undefined flags.  Undefined flags are counted as written, but it
+   seems worthwhile to distinguish them. 
+*/
+__inline__
+void VG_(set_flag_fields) ( UCodeBlock* cb,
+                             FlagSet rr, FlagSet ww, FlagSet uu )
+{
+   FlagSet uw = VG_UNION_FLAG_SETS(ww,uu);
+   
+   vg_assert(rr == (rr & FlagsALL));
+   vg_assert(uw == (uw & FlagsALL));
+   LAST_UINSTR(cb).flags_r = rr;
+   LAST_UINSTR(cb).flags_w = uw;
+}
+
 
 Bool VG_(any_flag_use) ( UInstr* u )
 {
@@ -1075,18 +1091,18 @@ void VG_(pp_UCodeBlock) ( UCodeBlock* cb, Char* title )
 /*------------------------------------------------------------*/
 
 /* Get the temp/reg use of a uinstr, parking them in an array supplied by
-   the caller, which is assumed to be big enough.  Return the number
-   of entries.  Insns which read _and_ write a register wind up
-   mentioning it twice.  Entries are placed in the array in program
-   order, so that if a reg is read-modified-written, it appears first
-   as a read and then as a write.  'tag' indicates whether we are looking at
-   TempRegs or RealRegs.
+   the caller (regs), which is assumed to be big enough.  Return the number
+   of entries.  Written regs are indicated in parallel array isWrites.
+   Insns which read _and_ write a register wind up mentioning it twice.
+   Entries are placed in the array in program order, so that if a reg is
+   read-modified-written, it appears first as a read and then as a write.
+   'tag' indicates whether we are looking at TempRegs or RealRegs.
 */
 __inline__
-Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
+Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 {
-#  define RD(ono)    VG_UINSTR_READS_REG(ono)
-#  define WR(ono)    VG_UINSTR_WRITES_REG(ono)
+#  define RD(ono)    VG_UINSTR_READS_REG(ono, regs, isWrites)
+#  define WR(ono)    VG_UINSTR_WRITES_REG(ono, regs, isWrites)
 
    Int n = 0;
    switch (u->opcode) {
@@ -1142,7 +1158,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
 
       default:
          if (VG_(needs).extended_UCode)
-            return SK_(get_Xreg_usage)(u, tag, arr);
+            return SK_(get_Xreg_usage)(u, tag, regs, isWrites);
          else {
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
@@ -1160,26 +1176,26 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
 /* Change temp regs in u into real regs, as directed by the
  * temps[i]-->reals[i] mapping. */
 static __inline__
-void patchUInstr ( UInstr* u, RegUse temps[], UInt reals[], Int n_tmap )
+void patchUInstr ( UInstr* u, Int temps[], UInt reals[], Int n_tmap )
 {
    Int i;
    if (u->tag1 == TempReg) {
       for (i = 0; i < n_tmap; i++)
-         if (temps[i].num == u->val1) break;
+         if (temps[i] == u->val1) break;
       if (i == n_tmap) VG_(core_panic)("patchUInstr(1)");
       u->tag1 = RealReg;
       u->val1 = reals[i];
    }
    if (u->tag2 == TempReg) {
       for (i = 0; i < n_tmap; i++)
-         if (temps[i].num == u->val2) break;
+         if (temps[i] == u->val2) break;
       if (i == n_tmap) VG_(core_panic)("patchUInstr(2)");
       u->tag2 = RealReg;
       u->val2 = reals[i];
    }
    if (u->tag3 == TempReg) {
       for (i = 0; i < n_tmap; i++)
-         if (temps[i].num == u->val3) break;
+         if (temps[i] == u->val3) break;
       if (i == n_tmap) VG_(core_panic)("patchUInstr(3)");
       u->tag3 = RealReg;
       u->val3 = reals[i];
@@ -1255,10 +1271,12 @@ static __inline__
 Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 {
    Int i, k;
-   RegUse tempUse[3];
-   k = VG_(get_reg_usage) ( u, TempReg, &tempUse[0] );
+   Int tempUse[3];
+   Bool notUsed[3];
+
+   k = VG_(get_reg_usage) ( u, TempReg, &tempUse[0], &notUsed[0] );
    for (i = 0; i < k; i++)
-      if (tempUse[i].num == tempreg)
+      if (tempUse[i] == tempreg)
          return True;
    return False;
 }
@@ -1280,7 +1298,8 @@ static void vg_improve ( UCodeBlock* cb )
    Int     i, j, k, m, n, ar, tr, told, actual_areg;
    Int     areg_map[8];
    Bool    annul_put[8];
-   RegUse  tempUse[3];
+   Int     tempUse[3];
+   Bool    isWrites[3];
    UInstr* u;
    Bool    wr;
    Int*    last_live_before;
@@ -1307,12 +1326,12 @@ static void vg_improve ( UCodeBlock* cb )
    for (i = cb->used-1; i >= 0; i--) {
       u = &cb->instrs[i];
 
-      k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
 
       /* For each temp usage ... bwds in program order. */
       for (j = k-1; j >= 0; j--) {
-         tr = tempUse[j].num;
-         wr = tempUse[j].isWrite;
+         tr = tempUse[j];
+         wr = isWrites[j];
          if (last_live_before[tr] == -1) {
             vg_assert(tr >= 0 && tr < cb->nextTemp);
             last_live_before[tr] = wr ? (i+1) : i;
@@ -1413,12 +1432,12 @@ static void vg_improve ( UCodeBlock* cb )
          }
 
          /* boring insn; invalidate any mappings to temps it writes */
-         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
+         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
 
          for (j = 0; j < k; j++) {
-            wr  = tempUse[j].isWrite;
+            wr  = isWrites[j];
             if (!wr) continue;
-            tr = tempUse[j].num;
+            tr = tempUse[j];
             for (m = 0; m < 8; m++)
                if (areg_map[m] == tr) areg_map[m] = -1;
          }
@@ -1621,7 +1640,8 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    Int          i, j, k, m, r, tno, max_ss_no;
    Bool         wr, defer, isRead, spill_reqd;
    UInt         realUse[3];
-   RegUse       tempUse[3];
+   Int          tempUse[3];
+   Bool         isWrites[3];
    UCodeBlock*  c2;
 
    /* Used to denote ... well, "no value" in this fn. */
@@ -1646,13 +1666,14 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    /* Scan fwds to establish live ranges. */
 
    for (i = 0; i < c1->used; i++) {
-      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
+                             &isWrites[0]);
       vg_assert(k >= 0 && k <= 3);
 
       /* For each temp usage ... fwds in program order */
       for (j = 0; j < k; j++) {
-         tno = tempUse[j].num;
-         wr  = tempUse[j].isWrite;
+         tno = tempUse[j];
+         wr  = isWrites[j];
          if (wr) {
             /* Writes hold a reg live until after this insn. */
             if (temp_info[tno].live_after == VG_NOTHING)
@@ -1781,7 +1802,8 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          generate spill stores since we may have to evict some TempRegs
          currently in real regs.  Also generates spill loads. */
 
-      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0]);
+      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
+                             &isWrites[0]);
       vg_assert(k >= 0 && k <= 3);
 
       /* For each ***different*** temp mentioned in the insn .... */
@@ -1792,14 +1814,14 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
             used by the insn once, even if it is mentioned more than
             once. */
          defer = False;
-         tno = tempUse[j].num;
+         tno = tempUse[j];
          for (m = j+1; m < k; m++)
-            if (tempUse[m].num == tno) 
+            if (tempUse[m] == tno) 
                defer = True;
          if (defer) 
             continue;
 
-         /* Now we're trying to find a register for tempUse[j].num.
+         /* Now we're trying to find a register for tempUse[j].
             First of all, if it already has a register assigned, we
             don't need to do anything more. */
          if (temp_info[tno].real_no != VG_NOTHING)
@@ -1825,7 +1847,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
             Select r in 0 .. VG_MAX_REALREGS-1 such that
             real_to_temp[r] is not mentioned in 
-            tempUse[0 .. k-1].num, since it would be just plain 
+            tempUse[0 .. k-1], since it would be just plain 
             wrong to eject some other TempReg which we need to use in 
             this insn.
 
@@ -1836,7 +1858,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          for (r = 0; r < VG_MAX_REALREGS; r++) {
             is_spill_cand[r] = True;
             for (m = 0; m < k; m++) {
-               if (real_to_temp[r] == tempUse[m].num) {
+               if (real_to_temp[r] == tempUse[m]) {
                   is_spill_cand[r] = False;
                   break;
                }
@@ -1898,7 +1920,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          /* Decide if tno is read. */
          isRead = False;
          for (m = 0; m < k; m++)
-            if (tempUse[m].num == tno && !tempUse[m].isWrite) 
+            if (tempUse[m] == tno && !isWrites[m]) 
                isRead = True;
 
          /* If so, generate a spill load. */
@@ -1922,7 +1944,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          and use patchUInstr to convert its rTempRegs into
          realregs. */
       for (j = 0; j < k; j++)
-         realUse[j] = VG_(rank_to_realreg)(temp_info[tempUse[j].num].real_no);
+         realUse[j] = VG_(rank_to_realreg)(temp_info[tempUse[j]].real_no);
       VG_(copy_UInstr)(c2, &c1->instrs[i]);
       patchUInstr(&LAST_UINSTR(c2), &tempUse[0], &realUse[0], k);
 
@@ -1951,7 +1973,8 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 {        
    Int      i, j, k;
    RRegSet  rregs_live;
-   RegUse   regUse[3];
+   Int      regUse[3];
+   Bool     isWrites[3];
    UInstr*  u;
 
    /* All regs are dead at the end of the block */
@@ -1962,16 +1985,16 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 
       u->regs_live_after = rregs_live;
 
-      k = VG_(get_reg_usage)(u, RealReg, regUse);
+      k = VG_(get_reg_usage)(u, RealReg, &regUse[0], &isWrites[0]);
 
       /* For each reg usage ... bwds in program order.  Variable is live
          before this UInstr if it is read by this UInstr.
-         Note that regUse[j].num holds the Intel reg number, so we must
+         Note that regUse[j] holds the Intel reg number, so we must
          convert it to our rank number.  */
       for (j = k-1; j >= 0; j--) {
-         SET_RREG_LIVENESS ( VG_(realreg_to_rank)(regUse[j].num),
+         SET_RREG_LIVENESS ( VG_(realreg_to_rank)(regUse[j]),
                              rregs_live,
-                             !regUse[j].isWrite );
+                             !isWrites[j] );
       }
    }
 }

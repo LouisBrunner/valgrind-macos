@@ -32,15 +32,14 @@
 
 VG_DETERMINE_INTERFACE_VERSION
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
-                       VgTrackEvents* not_used2) 
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Nulgrind";
-   details->version          = NULL;
-   details->description      = "a binary JIT-compiler";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
-   details->bug_reports_to   = "njn25@cam.ac.uk";
+   VG_(details_name)            ("Nulgrind");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a binary JIT-compiler");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
 
    /* No needs, no core events to track */
 }

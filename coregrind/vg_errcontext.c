@@ -36,11 +36,11 @@
 
 /* The list of error contexts found, both suppressed and unsuppressed.
    Initially empty, and grows as errors are detected. */
-static CoreError* vg_errors = NULL;
+static Error* vg_errors = NULL;
 
 /* The list of suppression directives, as read from the specified
    suppressions file. */
-static CoreSupp* vg_suppressions = NULL;
+static Supp* vg_suppressions = NULL;
 
 /* Running count of unsuppressed errors detected. */
 static UInt vg_n_errs_found = 0;
@@ -49,7 +49,7 @@ static UInt vg_n_errs_found = 0;
 static UInt vg_n_errs_suppressed = 0;
 
 /* forwards ... */
-static CoreSupp* is_suppressible_error ( CoreError* err );
+static Supp* is_suppressible_error ( Error* err );
 
 
 /*------------------------------------------------------------*/
@@ -59,34 +59,34 @@ static CoreSupp* is_suppressible_error ( CoreError* err );
 /* Compare error contexts, to detect duplicates.  Note that if they
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
-static Bool eq_CoreError ( VgRes res, CoreError* e1, CoreError* e2 )
+static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 {
-   if (e1->skin_err.ekind != e2->skin_err.ekind) 
+   if (e1->ekind != e2->ekind) 
       return False;
    if (!VG_(eq_ExeContext)(res, e1->where, e2->where))
       return False;
 
-   switch (e1->skin_err.ekind) {
+   switch (e1->ekind) {
       case PThreadErr:
          vg_assert(VG_(needs).core_errors);
-         if (e1->skin_err.string == e2->skin_err.string) 
+         if (e1->string == e2->string) 
             return True;
-         if (0 == VG_(strcmp)(e1->skin_err.string, e2->skin_err.string))
+         if (0 == VG_(strcmp)(e1->string, e2->string))
             return True;
          return False;
       default: 
          if (VG_(needs).skin_errors)
-            return SK_(eq_SkinError)(res, &e1->skin_err, &e2->skin_err);
+            return SK_(eq_SkinError)(res, e1, e2);
          else {
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).skin_errors\n"
                         "probably needs to be set.\n",
-                        e1->skin_err.ekind);
+                        e1->ekind);
             VG_(skin_panic)("unhandled error type");
          }
    }
 }
 
-static void pp_CoreError ( CoreError* err, Bool printCount )
+static void pp_Error ( Error* err, Bool printCount )
 {
    /* Closure for printing where the error occurred.  Abstracts details
       about the `where' field away from the skin. */
@@ -100,19 +100,19 @@ static void pp_CoreError ( CoreError* err, Bool printCount )
    if (err->tid > 1)
       VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
 
-   switch (err->skin_err.ekind) {
+   switch (err->ekind) {
       case PThreadErr:
          vg_assert(VG_(needs).core_errors);
-         VG_(message)(Vg_UserMsg, "%s", err->skin_err.string );
+         VG_(message)(Vg_UserMsg, "%s", err->string );
          VG_(pp_ExeContext)(err->where);
          break;
       default: 
          if (VG_(needs).skin_errors)
-            SK_(pp_SkinError)( &err->skin_err, &pp_ExeContextClosure );
+            SK_(pp_SkinError)( err, &pp_ExeContextClosure );
          else {
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).skin_errors\n"
                         "probably needs to be set?\n",
-                        err->skin_err.ekind);
+                        err->ekind);
             VG_(skin_panic)("unhandled error type");
          }
    }
@@ -175,10 +175,10 @@ Bool vg_is_GDB_attach_requested ( void )
      stored thread state, not from VG_(baseBlock).  
 */
 static __inline__
-void construct_error ( CoreError* err, ThreadState* tst, 
+void construct_error ( Error* err, ThreadState* tst, 
                        ErrorKind ekind, Addr a, Char* s, void* extra )
 {
-   /* CoreError parts */
+   /* Core-only parts */
    err->next     = NULL;
    err->supp     = NULL;
    err->count    = 1;
@@ -200,11 +200,11 @@ void construct_error ( CoreError* err, ThreadState* tst,
       err->m_ebp = tst->m_ebp;
    }
 
-   /* SkinError parts */
-   err->skin_err.ekind  = ekind;
-   err->skin_err.addr   = a;
-   err->skin_err.string = s;
-   err->skin_err.extra  = extra;
+   /* Skin-relevant parts */
+   err->ekind  = ekind;
+   err->addr   = a;
+   err->string = s;
+   err->extra  = extra;
 
    /* sanity... */
    vg_assert(err->tid >= 0 && err->tid < VG_N_THREADS);
@@ -216,14 +216,14 @@ void construct_error ( CoreError* err, ThreadState* tst,
 void VG_(maybe_record_error) ( ThreadState* tst, 
                                ErrorKind ekind, Addr a, Char* s, void* extra )
 {
-   CoreError   err;
-   CoreError*  p;
-   CoreError*  p_prev;
-   VgRes       exe_res                = Vg_MedRes;
-   static Bool is_first_shown_context = True;
-   static Bool stopping_message       = False;
-   static Bool slowdown_message       = False;
-   static Int  vg_n_errs_shown        = 0;
+          Error  err;
+          Error* p;
+          Error* p_prev;
+          VgRes  exe_res                = Vg_MedRes;
+   static Bool   is_first_shown_context = True;
+   static Bool   stopping_message       = False;
+   static Bool   slowdown_message       = False;
+   static Int    vg_n_errs_shown        = 0;
 
    /* After M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
       been found, or M_VG_COLLECT_NO_ERRORS_AFTER_FOUND total errors
@@ -286,7 +286,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    p      = vg_errors;
    p_prev = NULL;
    while (p != NULL) {
-      if (eq_CoreError(exe_res, p, &err)) {
+      if (eq_Error(exe_res, p, &err)) {
          /* Found it. */
          p->count++;
 	 if (p->supp != NULL) {
@@ -316,19 +316,19 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    /* OK, we're really going to collect it.  First make a copy,
       because the error context is on the stack and will disappear shortly.
       We can duplicate the main part ourselves, but use
-      SK_(dup_extra_and_update) to duplicate the 'extra' part (unless it's
+      SK_(dup_extra_and_update) to duplicate the `extra' part (unless it's
       NULL).
      
-      SK_(dup_extra_and_update) can also update the SkinError.  This is
+      SK_(dup_extra_and_update) can also update the `extra' part.  This is
       for when there are more details to fill in which take time to work out
       but don't affect our earlier decision to include the error -- by
       postponing those details until now, we avoid the extra work in the
-      case where we ignore the error.
+      case where we ignore the error.  Ugly.
     */
-   p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(CoreError));
+   p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
-   if (NULL != err.skin_err.extra)
-      SK_(dup_extra_and_update)(&p->skin_err);
+   if (NULL != err.extra)
+      p->extra = SK_(dup_extra_and_update)(p);
 
    p->next = vg_errors;
    p->supp = is_suppressible_error(&err);
@@ -337,7 +337,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
       vg_n_errs_found++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
-      pp_CoreError(p, False);      
+      pp_Error(p, False);      
       is_first_shown_context = False;
       vg_n_errs_shown++;
       /* Perhaps we want a GDB attach at this point? */
@@ -369,11 +369,11 @@ void VG_(record_pthread_error) ( ThreadId tid, Char* msg )
 
 void VG_(show_all_errors) ( void )
 {
-   Int        i, n_min;
-   Int        n_err_contexts, n_supp_contexts;
-   CoreError *p, *p_min;
-   CoreSupp   *su;
-   Bool       any_supp;
+   Int    i, n_min;
+   Int    n_err_contexts, n_supp_contexts;
+   Error *p, *p_min;
+   Supp  *su;
+   Bool   any_supp;
 
    if (VG_(clo_verbosity) == 0)
       return;
@@ -416,7 +416,7 @@ void VG_(show_all_errors) ( void )
       VG_(message)(Vg_UserMsg, "%d errors in context %d of %d:",
                    p_min->count,
                    i+1, n_err_contexts);
-      pp_CoreError( p_min, False );
+      pp_Error( p_min, False );
 
       if ((i+1 == VG_(clo_dump_error))) {
 	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to below NULLs */,
@@ -558,11 +558,11 @@ static void load_one_suppressions_file ( Char* filename )
 
    while (True) {
       /* Assign and initialise the two suppression halves (core and skin) */
-      CoreSupp* supp;
-      supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(CoreSupp));
+      Supp* supp;
+      supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(Supp));
       supp->count = 0;
       for (i = 0; i < VG_N_SUPP_CALLERS; i++) supp->caller[i] = NULL;
-      supp->skin_supp.string = supp->skin_supp.extra = NULL;
+      supp->string = supp->extra = NULL;
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
       if (eof) break;
@@ -593,7 +593,7 @@ static void load_one_suppressions_file ( Char* filename )
       if (VG_(needs).core_errors && skin_name_present("core", skin_names))
       {
          if (STREQ(supp_name, "PThread"))
-            supp->skin_supp.skind = PThreadSupp;
+            supp->skind = PThreadSupp;
          else
             goto syntax_error;
       }
@@ -602,9 +602,9 @@ static void load_one_suppressions_file ( Char* filename )
       else if (VG_(needs).skin_errors && 
                skin_name_present(VG_(details).name, skin_names))
       {
-         if (SK_(recognised_suppression)(supp_name, & supp->skin_supp.skind)) 
+         if (SK_(recognised_suppression)(supp_name, supp)) 
          {
-            /* Do nothing, function fills in supp->skin_supp.skind */
+            /* Do nothing, function fills in supp->skind */
          } else
             goto syntax_error;
       }
@@ -621,7 +621,7 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       if (VG_(needs).skin_errors && 
-          !SK_(read_extra_suppression_info)(fd, buf, N_BUF, &supp->skin_supp)) 
+          !SK_(read_extra_suppression_info)(fd, buf, N_BUF, supp)) 
          goto syntax_error;
 
       /* "i > 0" ensures at least one caller read. */
@@ -687,28 +687,27 @@ void get_objname_fnname ( Addr a,
 }     
 
 static __inline__
-Bool supp_matches_error(CoreSupp* su, CoreError* err)
+Bool supp_matches_error(Supp* su, Error* err)
 {
-   switch (su->skin_supp.skind) {
+   switch (su->skind) {
       case PThreadSupp:
-         return (err->skin_err.ekind == PThreadErr);
+         return (err->ekind == PThreadErr);
       default:
          if (VG_(needs).skin_errors) {
-            return (SK_(error_matches_suppression)(&err->skin_err, 
-                                                    &su->skin_supp));
+            return SK_(error_matches_suppression)(err, su);
          } else {
             VG_(printf)(
                "\nUnhandled suppression type: %u.  VG_(needs).skin_errors\n"
                "probably needs to be set.\n",
-               err->skin_err.ekind);
+               err->ekind);
             VG_(skin_panic)("unhandled suppression type");
          }
    }
 }
 
 static __inline__
-Bool supp_matches_callers(CoreSupp* su, Char caller_obj[][M_VG_ERRTXT], 
-                                        Char caller_fun[][M_VG_ERRTXT])
+Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT], 
+                                    Char caller_fun[][M_VG_ERRTXT])
 {
    Int i;
 
@@ -728,19 +727,18 @@ Bool supp_matches_callers(CoreSupp* su, Char caller_obj[][M_VG_ERRTXT],
    return True;
 }
 
-/* Does an error context match a suppression?  ie is this a
-   suppressible error?  If so, return a pointer to the CoreSupp
-   record, otherwise NULL.
+/* Does an error context match a suppression?  ie is this a suppressible
+   error?  If so, return a pointer to the Supp record, otherwise NULL.
    Tries to minimise the number of symbol searches since they are expensive.  
 */
-static CoreSupp* is_suppressible_error ( CoreError* err )
+static Supp* is_suppressible_error ( Error* err )
 {
    Int i;
 
    Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
    Char caller_fun[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
 
-   CoreSupp* su;
+   Supp* su;
 
    /* get_objname_fnname() writes the function name and object name if
       it finds them in the debug info.  so the strings in the suppression

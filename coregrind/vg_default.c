@@ -71,7 +71,7 @@ void non_fund_panic ( Char* fn )
    ------------------------------------------------------------------ */
 
 __attribute__ ((weak))
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)( void )
 {
    fund_panic("SK_(pre_clo_init)");
 }
@@ -99,38 +99,37 @@ void SK_(fini)(void)
    ------------------------------------------------------------------ */
 
 __attribute__ ((weak))
-Bool SK_(eq_SkinError)(VgRes res, SkinError* e1, SkinError* e2)
+Bool SK_(eq_SkinError)(VgRes res, Error* e1, Error* e2)
 {
    non_fund_panic("SK_(eq_SkinError)");
 }
 
 __attribute__ ((weak))
-void SK_(pp_SkinError)(SkinError* ec, void (*pp_ExeContext)(void))
+void SK_(pp_SkinError)(Error* err, void (*pp_ExeContext)(void))
 {
    non_fund_panic("SK_(pp_SkinError)");
 }
 
 __attribute__ ((weak))
-void SK_(dup_extra_and_update)(SkinError* ec)
+void* SK_(dup_extra_and_update)(Error* err)
 {
    non_fund_panic("SK_(dup_extra_and_update)");
 }
 
 __attribute__ ((weak))
-Bool SK_(recognised_suppression)(Char* name, SuppKind* skind)
+Bool SK_(recognised_suppression)(Char* name, Supp* su)
 {
    non_fund_panic("SK_(recognised_suppression)");
 }
 
 __attribute__ ((weak))
-Bool SK_(read_extra_suppression_info)(Int fd, Char* buf, 
-                                       Int nBuf, SkinSupp *s)
+Bool SK_(read_extra_suppression_info)(Int fd, Char* buf, Int nBuf, Supp* su)
 {
    non_fund_panic("SK_(read_extra_suppression_info)");
 }
 
 __attribute__ ((weak))
-Bool SK_(error_matches_suppression)(SkinError* ec, SkinSupp* su)
+Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
    non_fund_panic("SK_(error_matches_suppression)");
 }
@@ -213,7 +212,7 @@ void SK_(pp_XUInstr)(UInstr* u)
 }
 
 __attribute__ ((weak))
-Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
+Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 {
    non_fund_panic("SK_(get_Xreg_usage)");
 }

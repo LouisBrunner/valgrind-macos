@@ -236,19 +236,6 @@ __inline__ static UInt getSDisp ( Int size, Addr eip )
 /*--- Flag-related helpers.                                ---*/
 /*------------------------------------------------------------*/
 
-/* For the last uinsn inserted into cb, set the read, written and
-   undefined flags.  Undefined flags are counted as written, but it
-   seems worthwhile to distinguish them. 
-*/
-static __inline__ void uFlagsRWU ( UCodeBlock* cb,
-                                   FlagSet rr, FlagSet ww, FlagSet uu )
-{
-   VG_(set_flag_RW)(
-      &LAST_UINSTR(cb), rr, VG_UNION_FLAG_SETS(ww,uu)
-   );
-}
-
-
 static void setFlagsFromUOpcode ( UCodeBlock* cb, Int uopc )
 {
    switch (uopc) {
@@ -275,7 +262,8 @@ static void setFlagsFromUOpcode ( UCodeBlock* cb, Int uopc )
    }
 }
 
-static __inline__ void uCond ( UCodeBlock* cb, Condcode cond )
+__inline__
+void VG_(set_cond_field) ( UCodeBlock* cb, Condcode cond )
 {
    LAST_UINSTR(cb).cond = cond;
 }

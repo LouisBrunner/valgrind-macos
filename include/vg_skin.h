@@ -702,36 +702,31 @@ typedef
    UInstr;
 
 
-/* Expandable arrays of uinstrs. */
 typedef 
-   struct { 
-      Int     used; 
-      Int     size; 
-      UInstr* instrs;
-      Int     nextTemp;
-   }
+   struct _UCodeBlock
    UCodeBlock;
 
+extern Int     VG_(get_num_instrs) (UCodeBlock* cb);
+extern Int     VG_(get_num_temps)  (UCodeBlock* cb);
 
+extern UInstr* VG_(get_instr)      (UCodeBlock* cb, Int i);
+extern UInstr* VG_(get_last_instr) (UCodeBlock* cb);
+   
 /*====================================================================*/
 /*=== Instrumenting UCode                                          ===*/
 /*====================================================================*/
 
-/* A structure for communicating TempReg and RealReg uses of UInstrs. */
-typedef
-   struct {
-      Int   num;
-      Bool  isWrite;
-   }
-   RegUse;
+/* Find what this instruction does to its regs.  `tag' indicates whether we're
+   considering TempRegs (pre-reg-alloc) or RealRegs (post-reg-alloc).
+   `regs' is filled with the affected register numbers, `isWrites' parallels
+   it and indicates if the reg is read or written.  If a reg is read and
+   written, it will appear twice in `regs'.  `regs' and `isWrites' must be
+   able to fit 3 elements.
 
-/* Find what this instruction does to its regs.  Tag indicates whether we're
- * considering TempRegs (pre-reg-alloc) or RealRegs (post-reg-alloc).
- * Useful for analysis/optimisation passes. */
-extern Int  VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr );
+   Useful for analysis/optimisation passes. */
+extern Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites );
 
 
-/* ------------------------------------------------------------------ */
 /* Used to register helper functions to be called from generated code.  A
    limited number of compact helpers can be registered;  the code generated
    to call them is slightly shorter -- so register the mostly frequently
@@ -767,10 +762,14 @@ extern void VG_(new_UInstr3) ( UCodeBlock* cb, Opcode opcode, Int sz,
                               Tag tag2, UInt val2,
                               Tag tag3, UInt val3 );
 
-extern void VG_(set_flag_RW)      ( UInstr* u, FlagSet fr, FlagSet fw );
+/* Set read/write/undefined flags.  Undefined flags are treaten as written, 
+   but it's worth keeping them logically distinct. */
+extern void VG_(set_flag_fields)  ( UCodeBlock* cb, FlagSet fr, FlagSet fw,
+                                    FlagSet fu);
 extern void VG_(set_lit_field)    ( UCodeBlock* cb, UInt lit32 );
 extern void VG_(set_ccall_fields) ( UCodeBlock* cb, Addr fn, UChar argc,
                                     UChar regparms_n, Bool has_ret_val );
+extern void VG_(set_cond_field)   ( UCodeBlock* cb, Condcode code );
 
 extern void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr );
 
@@ -783,6 +782,8 @@ extern Bool VG_(any_flag_use)( UInstr* u );
 #define uInstr3   VG_(new_UInstr3)
 #define uLiteral  VG_(set_lit_field)
 #define uCCall    VG_(set_ccall_fields)
+#define uCond     VG_(set_cond_field)
+#define uFlagsRWU VG_(set_flag_fields)
 #define newTemp   VG_(get_new_temp)
 #define newShadow VG_(get_new_shadow)
 
@@ -804,7 +805,7 @@ extern void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
 
 /* ------------------------------------------------------------------ */
 /* Allocating/freeing basic blocks of UCode */
-extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
+extern UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb );
 extern void        VG_(free_UCodeBlock)  ( UCodeBlock* cb );
 
 /* ------------------------------------------------------------------ */
@@ -996,26 +997,25 @@ typedef
    Int         /* Do not make this unsigned! */
    SuppKind;
 
-/* An extensible (via the 'extra' field) suppression record.  This holds
-   the suppression details of interest to a skin.  Skins can use a normal
-   enum (with element values in the normal range (0..)) for `skind'. 
-
-   If VG_(needs).report_errors==True, for each suppression read in by core
-   SKN_(recognised_suppression)() and SKN_(read_extra_suppression_info) will
-   be called.  The `skind' field is filled in by the value returned in the
-   argument of the first function;  the second function can fill in the
-   `string' and `extra' fields if it wants. 
+/* The skin-relevant parts of a suppression are:
+     kind:   what kind of suppression; must be in the range (0..)
+     string: use is optional.  NULL by default.
+     extra:  use is optional.  NULL by default.  void* so it's extensible.
 */
 typedef
-   struct {
-      /* What kind of suppression.  Must use the range (0..) */
-      SuppKind skind;
-      /* String -- use is optional.  NULL by default. */
-      Char* string;
-      /* Anything else -- use is optional.  NULL by default. */
-      void* extra;
-   }
-   SkinSupp;
+   struct _Supp
+   Supp;
+
+/* Useful in SK_(error_matches_suppression)() */
+SuppKind VG_(get_supp_kind)   ( Supp* su );
+Char*    VG_(get_supp_string) ( Supp* su );
+void*    VG_(get_supp_extra)  ( Supp* su );
+
+/* Must be used in VG_(recognised_suppression)() */
+void VG_(set_supp_kind)   ( Supp* su, SuppKind suppkind );
+/* May be used in VG_(read_extra_suppression_info)() */
+void VG_(set_supp_string) ( Supp* su, Char* string );
+void VG_(set_supp_extra)  ( Supp* su, void* extra );
 
 
 /* ------------------------------------------------------------------ */
@@ -1029,29 +1029,22 @@ typedef
    Int         /* Do not make this unsigned! */
    ErrorKind;
 
-/* An extensible (via the 'extra' field) error record.  This holds
-   the error details of interest to a skin.  Skins can use a normal
-   enum (with element values in the normal range (0..)) for `ekind'. 
-
-   When errors are found and recorded with VG_(maybe_record_error)(), all
-   the skin must do is pass in the four parameters;  core will
-   allocate/initialise the error record.
+/* The skin-relevant parts of an Error are:
+     kind:   what kind of error; must be in the range (0..)
+     addr:   use is optional.  0 by default.
+     string: use is optional.  NULL by default.
+     extra:  use is optional.  NULL by default.  void* so it's extensible.
 */
 typedef
-   struct {
-      /* Used by ALL.  Must be in the range (0..) */
-      Int ekind;
-      /* Used frequently */
-      Addr addr;
-      /* Used frequently */
-      Char* string;
-      /* For any skin-specific extras */
-      void* extra;
-   }
-   SkinError;
+   struct _Error
+   Error;
 
+/* Useful in SK_(error_matches_suppression)(), SK_(pp_SkinError)(), etc */
+SuppKind VG_(get_error_kind)    ( Error* err );
+Addr     VG_(get_error_address) ( Error* err );
+Char*    VG_(get_error_string)  ( Error* err );
+void*    VG_(get_error_extra)   ( Error* err );
 
-/* ------------------------------------------------------------------ */
 /* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
    incremented.  
@@ -1134,25 +1127,28 @@ extern VgSectKind VG_(seg_sect_kind)(Addr);
 /*=== Shadow chunks and block-finding                              ===*/
 /*====================================================================*/
 
+/* The skin-relevant parts of a ShadowChunk are:
+     size:   size of the block in bytes
+     addr:   addr of the block
+     extra:  anything extra kept by the skin;  size is determined by
+             VG_(needs).sizeof_shadow_chunk
+*/
 typedef
-   enum { 
-      Vg_AllocMalloc = 0,
-      Vg_AllocNew    = 1,
-      Vg_AllocNewVec = 2 
-   }
-   VgAllocKind;
-
-/* Description of a malloc'd chunk.  skin_extra[] part can be used by
-   the skin;  size of array is given by VG_(needs).sizeof_shadow_chunk. */
-typedef 
-   struct _ShadowChunk {
-      struct _ShadowChunk* next;
-      UInt          size : 30;      /* size requested                   */
-      VgAllocKind   allockind : 2;  /* which wrapper did the allocation */
-      Addr          data;           /* ptr to actual block              */
-      UInt          skin_extra[0];  /* extra skin-specific info         */
-   } 
+   struct _ShadowChunk
    ShadowChunk;
+
+extern UInt         VG_(get_sc_size)  ( ShadowChunk* sc );
+extern Addr         VG_(get_sc_data)  ( ShadowChunk* sc );
+/* Gets the ith word of the `extra' field. */
+extern UInt         VG_(get_sc_extra) ( ShadowChunk* sc, UInt i );
+/* Sets the ith word of the `extra' field to `word'. */
+extern void         VG_(set_sc_extra) ( ShadowChunk* sc, UInt i, UInt word );
+
+/* These two should only be used if the `alternative_free' need is set, once
+   we reach the point where the block would have been free'd. */
+extern ShadowChunk* VG_(get_sc_next)  ( ShadowChunk* sc );
+extern void         VG_(set_sc_next)  ( ShadowChunk* sc, ShadowChunk* next );
+
 
 /* Use this to free blocks if VG_(needs).alternative_free == True. 
    It frees the ShadowChunk and the malloc'd block it points to. */
@@ -1192,101 +1188,85 @@ extern void VG_(generic_detect_memory_leaks) (
 
 /* ------------------------------------------------------------------ */
 /* Details */
-typedef
-   struct {
-      /* Information used in the startup message. `name' also determines the
-         string used for identifying suppressions in a suppression file as
-         belonging to this skin.  `version' can be NULL, in which case (not
-         surprisingly) no version info is printed; this mechanism is
-         designed for skins distributed with Valgrind that share a version
-         number with Valgrind.  Other skins not distributed as part of
-         Valgrind should probably have their own version number. */
-      Char* name;
-      Char* version;
-      Char* description;
-      Char* copyright_author;
 
-      /* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
-         is called.  Should probably be an email address. */
-      Char* bug_reports_to;
-   }
-   VgDetails;
+/* Information used in the startup message.  `name' also determines the
+   string used for identifying suppressions in a suppression file as
+   belonging to this skin.  `version' can be NULL, in which case (not
+   surprisingly) no version info is printed; this mechanism is designed for
+   skins distributed with Valgrind that share a version number with
+   Valgrind.  Other skins not distributed as part of Valgrind should
+   probably have their own version number. */
+extern void VG_(details_name)             ( Char* name );
+extern void VG_(details_version)          ( Char* version );
+extern void VG_(details_description)      ( Char* description );
+extern void VG_(details_copyright_author) ( Char* copyright_author );
 
-extern VgDetails VG_(details);
+/* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
+   is called.  Should probably be an email address. */
+extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
 
 /* ------------------------------------------------------------------ */
 /* Needs */
 
-/* If new fields are added to this type, update:
- *  - vg_main.c:initialisation of VG_(needs)
- *  - vg_main.c:sanity_check_needs()
- *
- * If the name of this type or any of its fields change, update:
- *  - dependent comments (just search for "VG_(needs)"). 
- */
-typedef
-   struct {
-      /* Booleans that decide core behaviour, but don't require extra
-         operations to be defined if `True' */
+/* Booleans that decide core behaviour, but don't require extra
+   operations to be defined if `True' */
 
-      /* Should __libc_freeres() be run?  Bugs in it can crash the skin. */
-      Bool libc_freeres;
+/* Should __libc_freeres() be run?  Bugs in it can crash the skin. */
+extern void VG_(needs_libc_freeres) ( void );
 
-      /* Want to have errors detected by Valgrind's core reported?  Includes:
-         - pthread API errors (many;  eg. unlocking a non-locked mutex)
-         - silly arguments to malloc() et al (eg. negative size)
-         - invalid file descriptors to blocking syscalls read() and write()
-         - bad signal numbers passed to sigaction()
-         - attempt to install signal handler for SIGKILL or SIGSTOP */  
-      Bool core_errors;
+/* Want to have errors detected by Valgrind's core reported?  Includes:
+   - pthread API errors (many;  eg. unlocking a non-locked mutex)
+   - silly arguments to malloc() et al (eg. negative size)
+   - invalid file descriptors to blocking syscalls read() and write()
+   - bad signal numbers passed to sigaction()
+   - attempt to install signal handler for SIGKILL or SIGSTOP */  
+extern void VG_(needs_core_errors) ( void );
 
-      /* Booleans that indicate extra operations are defined;  if these are
-         True, the corresponding template functions (given below) must be
-         defined.  A lot like being a member of a type class. */
+/* Booleans that indicate extra operations are defined;  if these are True,
+   the corresponding template functions (given below) must be defined.  A
+   lot like being a member of a type class. */
 
-      /* Want to report errors from the skin?  This implies use of
-         suppressions, too. */
-      Bool skin_errors;
+/* Want to report errors from skin?  This implies use of suppressions, too. */
+extern void VG_(needs_skin_errors) ( void );
 
-      /* Is information kept about specific individual basic blocks?  (Eg. for
-         cachegrind there are cost-centres for every instruction, stored at a
-         basic block level.)  If so, it sometimes has to be discarded, because
-         .so mmap/munmap-ping or self-modifying code (informed by the
-         DISCARD_TRANSLATIONS user request) can cause one instruction address
-         to be used for more than one instruction in one program run...  */
-      Bool basic_block_discards;
+/* Is information kept about specific individual basic blocks?  (Eg. for
+   cachegrind there are cost-centres for every instruction, stored at a
+   basic block level.)  If so, it sometimes has to be discarded, because
+   .so mmap/munmap-ping or self-modifying code (informed by the
+   DISCARD_TRANSLATIONS user request) can cause one instruction address
+   to be used for more than one instruction in one program run...  */
+extern void VG_(needs_basic_block_discards) ( void );
 
-      /* Skin maintains information about each register? */
-      Bool shadow_regs;
+/* Skin maintains information about each register? */
+extern void VG_(needs_shadow_regs) ( void );
 
-      /* Skin defines its own command line options? */
-      Bool command_line_options;
-      /* Skin defines its own client requests? */
-      Bool client_requests;
+/* Skin defines its own command line options? */
+extern void VG_(needs_command_line_options) ( void );
 
-      /* Skin defines its own UInstrs? */
-      Bool extended_UCode;
+/* Skin defines its own client requests? */
+extern void VG_(needs_client_requests) ( void );
 
-      /* Skin does stuff before and/or after system calls? */
-      Bool syscall_wrapper;
+/* Skin defines its own UInstrs? */
+extern void VG_(needs_extended_UCode) ( void );
 
-      /* Size, in words, of extra info about malloc'd blocks recorded by
-         skin.  Be careful to get this right or you'll get seg faults! */
-      UInt sizeof_shadow_block;
+/* Skin does stuff before and/or after system calls? */
+extern void VG_(needs_syscall_wrapper) ( void );
 
-      /* Skin does free()s itself? */
-      Bool alternative_free;
+/* Size, in words, of extra info about malloc'd blocks recorded by
+   skin.  Be careful to get this right or you'll get seg faults! */
+extern void VG_(needs_sizeof_shadow_block) ( Int size );
 
-      /* Are skin-state sanity checks performed? */
-      Bool sanity_checks;
+/* Skin does free()s itself?  Useful if a skin needs to keep track of
+   blocks in some way after they're free'd.  
+   WARNING: don't forget to call VG_(free_ShadowChunk)() for each block 
+   eventually! */
+extern void VG_(needs_alternative_free) ( void );
 
-      /* Do we need to see data symbols? */
-      Bool data_syms;
-   } 
-   VgNeeds;
+/* Are skin-state sanity checks performed? */
+extern void VG_(needs_sanity_checks) ( void );
 
-extern VgNeeds VG_(needs);
-
+/* Do we need to see data symbols? */
+extern void VG_(needs_data_syms) ( void );
 
 /* ------------------------------------------------------------------ */
 /* Core events to track */
@@ -1297,87 +1277,89 @@ typedef
    enum { Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall, Vg_CoreTranslate }
    CorePart;
 
-/* Events happening in core to track.  To be notified, assign a function
-   to the function pointer.  To ignore an event, don't do anything
-   (default assignment is to NULL in which case the call is skipped). */
-typedef
-   struct {
-      /* Memory events */
-      void (*new_mem_startup)( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
-      void (*new_mem_heap)   ( Addr a, UInt len, Bool is_inited );
-      void (*new_mem_stack)  ( Addr a, UInt len );
-      void (*new_mem_stack_aligned) ( Addr a, UInt len );
-      void (*new_mem_stack_signal)  ( Addr a, UInt len );
-      void (*new_mem_brk)    ( Addr a, UInt len );
-      void (*new_mem_mmap)   ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+#define EV  extern void
 
-      void (*copy_mem_heap)  ( Addr from, Addr to, UInt len );
-      void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
-      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+/* Events happening in core to track.  To be notified, pass a callback
+   function to the appropriate function.  To ignore an event, don't do
+   anything (default is for events to be ignored). */
+
+/* Memory events */
+
+EV VG_(track_new_mem_startup) ( void (*f)(Addr a, UInt len, 
+                                          Bool rr, Bool ww, Bool xx) );
+EV VG_(track_new_mem_heap)    ( void (*f)(Addr a, UInt len, Bool is_inited) );
+EV VG_(track_new_mem_stack)   ( void (*f)(Addr a, UInt len) );
+EV VG_(track_new_mem_stack_aligned) ( void (*f)(Addr a, UInt len) );
+EV VG_(track_new_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
+EV VG_(track_new_mem_brk)     ( void (*f)(Addr a, UInt len) );
+EV VG_(track_new_mem_mmap)    ( void (*f)(Addr a, UInt len,
+                                          Bool rr, Bool ww, Bool xx) );
+
+EV VG_(track_copy_mem_heap)   ( void (*f)(Addr from, Addr to, UInt len) );
+EV VG_(track_copy_mem_remap)  ( void (*f)(Addr from, Addr to, UInt len) );
+EV VG_(track_change_mem_mprotect) ( void (*f)(Addr a, UInt len,
+                                              Bool rr, Bool ww, Bool xx) );
       
-      /* Used on redzones around malloc'd blocks and at end of stack */
-      void (*ban_mem_heap)   ( Addr a, UInt len );
-      void (*ban_mem_stack)  ( Addr a, UInt len );
+/* Used on redzones around malloc'd blocks and at end of stack */
+EV VG_(track_ban_mem_heap)    ( void (*f)(Addr a, UInt len) );
+EV VG_(track_ban_mem_stack)   ( void (*f)(Addr a, UInt len) );
 
-      void (*die_mem_heap)   ( Addr a, UInt len );
-      void (*die_mem_stack)  ( Addr a, UInt len );
-      void (*die_mem_stack_aligned) ( Addr a, UInt len );
-      void (*die_mem_stack_signal)  ( Addr a, UInt len );
-      void (*die_mem_brk)    ( Addr a, UInt len );
-      void (*die_mem_munmap) ( Addr a, UInt len );
+EV VG_(track_die_mem_heap)    ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_stack)   ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_stack_aligned) ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_brk)     ( void (*f)(Addr a, UInt len) );
+EV VG_(track_die_mem_munmap)  ( void (*f)(Addr a, UInt len) );
 
-      void (*bad_free)        ( ThreadState* tst, Addr a );
-      void (*mismatched_free) ( ThreadState* tst, Addr a );
+EV VG_(track_bad_free)        ( void (*f)(ThreadState* tst, Addr a) );
+EV VG_(track_mismatched_free) ( void (*f)(ThreadState* tst, Addr a) );
 
-      void (*pre_mem_read)   ( CorePart part, ThreadState* tst,
-                               Char* s, Addr a, UInt size );
-      void (*pre_mem_read_asciiz) ( CorePart part, ThreadState* tst,
-                                    Char* s, Addr a );
-      void (*pre_mem_write)  ( CorePart part, ThreadState* tst,
-                               Char* s, Addr a, UInt size );
-      /* Not implemented yet -- have to add in lots of places, which is a
-         pain.  Won't bother unless/until there's a need. */
-      /* void (*post_mem_read)  ( ThreadState* tst, Char* s, 
-                                  Addr a, UInt size ); */
-      void (*post_mem_write) ( Addr a, UInt size );
-
-
-      /* Scheduler events (not exhaustive) */
-      void (*thread_run) ( ThreadId tid );
+EV VG_(track_pre_mem_read)    ( void (*f)(CorePart part, ThreadState* tst,
+                                          Char* s, Addr a, UInt size) );
+EV VG_(track_pre_mem_read_asciiz) ( void (*f)(CorePart part, ThreadState* tst,
+                                              Char* s, Addr a) );
+EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadState* tst,
+                                          Char* s, Addr a, UInt size) );
+/* Not implemented yet -- have to add in lots of places, which is a
+   pain.  Won't bother unless/until there's a need. */
+/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadState* tst, Char* s, 
+                                            Addr a, UInt size) ); */
+EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
 
 
-      /* Mutex events (not exhaustive) */
+/* Scheduler events (not exhaustive) */
 
-      /* Called before a thread can block while waiting for a mutex
-	 (called regardless of whether the thread will block or
-	 not) */
-      void (*pre_mutex_lock)    ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
-      /* Called once the thread actually holds the mutex (always
-	 paired with pre_mutex_lock) */
-      void (*post_mutex_lock)   ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
-      /* Called after a thread has released a mutex (no need for a
-	 corresponding pre_mutex_unlock, because unlocking can't
-	 block) */
-      void (*post_mutex_unlock) ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
+EV VG_(track_thread_run) ( void (*f)(ThreadId tid) );
 
-      /* Called during thread create, before the new thread has run
-	 any instructions (or touched any memory). */
-      void (*post_thread_create)( ThreadId tid, ThreadId child );
-      /* Called once the joinee thread is terminated and the joining
-	 thread is about to resume. */
-      void (*post_thread_join)  ( ThreadId joiner, ThreadId joinee );
+/* Thread events (not exhaustive) */
+
+/* Called during thread create, before the new thread has run any
+   instructions (or touched any memory). */
+EV VG_(track_post_thread_create)( void (*f)(ThreadId tid, ThreadId child) );
+/* Called once the joinee thread is terminated and the joining thread is
+   about to resume. */
+EV VG_(track_post_thread_join)  ( void (*f)(ThreadId joiner, ThreadId joinee) );
+
       
-      /* Others... thread, condition variable, signal events... */
-      /* ... */
-   }
-   VgTrackEvents;
+/* Mutex events (not exhaustive) */
 
-/* Declare the struct instance */
-extern VgTrackEvents VG_(track_events);
+/* Called before a thread can block while waiting for a mutex (called
+   regardless of whether the thread will block or not). */
+EV VG_(track_pre_mutex_lock)    ( void (*f)(ThreadId tid, 
+                                          void* /*pthread_mutex_t* */ mutex) );
+/* Called once the thread actually holds the mutex (always paired with
+   pre_mutex_lock). */
+EV VG_(track_post_mutex_lock)   ( void (*f)(ThreadId tid, 
+                                          void* /*pthread_mutex_t* */ mutex) );
+/* Called after a thread has released a mutex (no need for a corresponding
+   pre_mutex_unlock, because unlocking can't block). */
+EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid, 
+                                          void* /*pthread_mutex_t* */ mutex) );
 
+/* Others... condition variable, signal events... */
+/* ... */
+
+#undef EV
 
 /* ------------------------------------------------------------------ */
 /* Template functions */
@@ -1393,17 +1375,18 @@ extern VgTrackEvents VG_(track_events);
 /* Fundamental template functions */
 
 /* Initialise skin.   Must do the following:
-     - initialise the `details' struct
+     - initialise the `details' struct, via the VG_(details_*)() functions
      - register any helpers called by generated code
   
    May do the following:
-     - initialise the `needs' struct to indicate certain requirements
-     - initialise the `track' struct to indicate core events of interest
+     - initialise the `needs' struct to indicate certain requirements, via
+       the VG_(needs_*)() functions
+     - initialise the `track' struct to indicate core events of interest, via
+       the VG_(track_*)() functions
      - register any skin-specific profiling events
      - any other skin-specific initialisation
 */
-extern void        SK_(pre_clo_init) ( VgDetails* details, VgNeeds* needs,
-                                       VgTrackEvents* track );
+extern void        SK_(pre_clo_init) ( void );
 
 /* Do initialisation that can only be done after command line processing. */
 extern void        SK_(post_clo_init)( void );
@@ -1423,40 +1406,44 @@ extern void        SK_(fini)         ( void );
 
 /* Identify if two errors are equal, or equal enough.  `res' indicates how
    close is "close enough".  `res' should be passed on as necessary, eg. if
-   the SkinError's extra field contains an ExeContext, `res' should be
+   the Error's `extra' part contains an ExeContext, `res' should be
    passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
    than that, probably don't worry about it unless you have lots of very
    similar errors occurring.
  */
-extern Bool SK_(eq_SkinError) ( VgRes res,
-                                SkinError* e1, SkinError* e2 );
+extern Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 );
 
 /* Print error context.  The passed function pp_ExeContext() can be (and
    probably should be) used to print the location of the error. */
-extern void SK_(pp_SkinError) ( SkinError* ec, void (*pp_ExeContext)(void) );
+extern void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) );
 
-/* Copy the ec->extra part and replace ec->extra with the new copy.  This is
-   necessary to move from a temporary stack copy to a permanent heap one.
+/* Should copy the `extra' part which the core uses to override the old
+   version.  This is necessary to move from a temporary stack copy to a
+   permanent heap one.
   
-   Then fill in any details that could be postponed until after the decision
-   whether to ignore the error (ie. details not affecting the result of
-   SK_(eq_SkinError)()).  This saves time when errors are ignored.
+   Then should fill in any details that could be postponed until after the
+   decision whether to ignore the error (ie. details not affecting the
+   result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
   
    Yuk.
 */
-extern void SK_(dup_extra_and_update)(SkinError* ec);
+extern void* SK_(dup_extra_and_update) ( Error* err );
 
-/* Return value indicates recognition.  If recognised, type goes in `skind'. */
-extern Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind );
+/* Return value indicates recognition.  If recognised, must set skind using
+   VG_(set_supp_kind)(). */
+extern Bool SK_(recognised_suppression) ( Char* name, Supp* su );
 
-/* Read any extra info for this suppression kind.  For filling up the
-   `string' and `extra' fields in a `SkinSupp' struct if necessary. */
-extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, 
-                                               Int nBuf, SkinSupp *s );
+/* Read any extra info for this suppression kind.  Most likely for filling
+   in the `extra' and `string' parts (with VG_(set_supp_{extra,string})())
+   of a suppression if necessary.  Should return False if a syntax error 
+   occurred, True otherwise. */
+extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
+                                               Supp* su );
 
 /* This should just check the kinds match and maybe some stuff in the
-   'extra' field if appropriate */
-extern Bool SK_(error_matches_suppression)(SkinError* ec, SkinSupp* su);
+   `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
+   get the relevant suppression parts). */
+extern Bool SK_(error_matches_suppression)(Error* err, Supp* su);
 
 
 /* ------------------------------------------------------------------ */
@@ -1496,23 +1483,24 @@ extern Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt
 /* VG_(needs).extends_UCode */
 
 /* Useful to use in VG_(get_Xreg_usage)() */
-#define VG_UINSTR_READS_REG(ono)                \
+#define VG_UINSTR_READS_REG(ono,regs,isWrites)  \
    { if (mycat(u->tag,ono) == tag)              \
-        { arr[n].num     = mycat(u->val,ono);   \
-          arr[n].isWrite = False;               \
+        { regs[n]     = mycat(u->val,ono);      \
+          isWrites[n] = False;                  \
           n++;                                  \
         }                                       \
    }
-#define VG_UINSTR_WRITES_REG(ono)               \
+#define VG_UINSTR_WRITES_REG(ono,regs,isWrites) \
    { if (mycat(u->tag,ono) == tag)              \
-        { arr[n].num     = mycat(u->val,ono);   \
-          arr[n].isWrite = True;                \
+        { regs[n]     = mycat(u->val,ono);      \
+          isWrites[n] = True;                   \
           n++;                                  \
         }                                       \
    }
 
 /* 'X' prefix indicates eXtended UCode. */
-extern Int   SK_(get_Xreg_usage) ( UInstr* u, Tag tag, RegUse* arr );
+extern Int   SK_(get_Xreg_usage) ( UInstr* u, Tag tag, Int* regs,
+                                   Bool* isWrites );
 extern void  SK_(emit_XUInstr)   ( UInstr* u, RRegSet regs_live_before );
 extern Bool  SK_(sane_XUInstr)   ( Bool beforeRA, Bool beforeLiveness,
                                    UInstr* u );
@@ -1536,12 +1524,16 @@ extern void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
 /* ------------------------------------------------------------------ */
 /* VG_(needs).sizeof_shadow_chunk (if > 0) */
 
+/* Must fill in the `extra' part, using VG_(set_sc_extra)(). */
 extern void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst );
 
 
 /* ------------------------------------------------------------------ */
 /* VG_(needs).alternative_free */
 
+/* If this need is set, when a dynamic block would normally be free'd, this
+   is called instead.  The block is contained inside the ShadowChunk;  use
+   the VG_(get_sc_*)() functions to access it. */
 extern void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst );
 
 

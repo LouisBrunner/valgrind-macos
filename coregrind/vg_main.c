@@ -444,94 +444,6 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
 
 
 /* ---------------------------------------------------------------------
-   Skin data structure initialisation
-   ------------------------------------------------------------------ */
-
-/* Init with default values. */
-VgDetails VG_(details) = {
-   .name             = NULL,
-   .version          = NULL,
-   .description      = NULL,
-   .copyright_author = NULL,
-   .bug_reports_to   = NULL,
-};
-
-VgNeeds VG_(needs) = {
-   .core_errors          = False,
-   .skin_errors          = False,
-   .libc_freeres         = False,
-   .sizeof_shadow_block  = 0,
-   .basic_block_discards = False,
-   .shadow_regs          = False,
-   .command_line_options = False,
-   .client_requests      = False,
-   .extended_UCode       = False,
-   .syscall_wrapper      = False,
-   .alternative_free     = False,
-   .sanity_checks        = False,
-   .data_syms	         = False,
-};
-
-VgTrackEvents VG_(track_events) = {
-   /* Memory events */
-   .new_mem_startup       = NULL,
-   .new_mem_heap          = NULL,
-   .new_mem_stack         = NULL,
-   .new_mem_stack_aligned = NULL,
-   .new_mem_stack_signal  = NULL,
-   .new_mem_brk           = NULL,
-   .new_mem_mmap          = NULL,
-
-   .copy_mem_heap         = NULL,
-   .copy_mem_remap        = NULL,
-   .change_mem_mprotect   = NULL,
-
-   .ban_mem_heap          = NULL,
-   .ban_mem_stack         = NULL,
-
-   .die_mem_heap          = NULL,
-   .die_mem_stack         = NULL,
-   .die_mem_stack_aligned = NULL,
-   .die_mem_stack_signal  = NULL,
-   .die_mem_brk           = NULL,
-   .die_mem_munmap        = NULL,
-
-   .bad_free              = NULL,
-   .mismatched_free       = NULL,
-
-   .pre_mem_read          = NULL,
-   .pre_mem_read_asciiz   = NULL,
-   .pre_mem_write         = NULL,
-   .post_mem_write        = NULL,
-
-   /* Scheduler events */
-   .thread_run            = NULL,
-
-   /* Mutex events */
-   .post_mutex_lock       = NULL,
-   .post_mutex_unlock     = NULL,
-};
-
-static void sanity_check_needs ( void )
-{
-#define CHECK_NOT(var, value)                               \
-   if ((var)==(value)) {                                    \
-      VG_(printf)("\nSkin error: `%s' not initialised\n",   \
-                  VG__STRING(var));                         \
-      VG_(skin_panic)("Uninitialised needs field\n");       \
-   }
-   
-   CHECK_NOT(VG_(details).name,             NULL);
-   /* Nb: .version can be NULL */
-   CHECK_NOT(VG_(details).description,      NULL);
-   CHECK_NOT(VG_(details).copyright_author, NULL);
-   CHECK_NOT(VG_(details).bug_reports_to,   NULL);
-
-#undef CHECK_NOT
-#undef INVALID_Bool
-}
-
-/* ---------------------------------------------------------------------
    Values derived from command-line options.
    ------------------------------------------------------------------ */
 
@@ -1350,8 +1262,8 @@ void VG_(main) ( void )
         and turn on/off 'command_line_options' need
       - init_memory() (to setup memory event trackers).
     */
-   SK_(pre_clo_init) ( & VG_(details), & VG_(needs), & VG_(track_events) );
-   sanity_check_needs();
+   SK_(pre_clo_init)();
+   VG_(sanity_check_needs)();
 
    /* Process Valgrind's command-line opts (from env var VG_ARGS). */
    process_cmd_line_options();

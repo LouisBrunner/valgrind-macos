@@ -279,6 +279,129 @@ extern void VGP_(done_profiling) ( void );
 
 
 /* ---------------------------------------------------------------------
+   Skin-related types
+   ------------------------------------------------------------------ */
+/* These structs are not exposed to skins to mitigate possibility of
+   binary-incompatibilities when the core/skin interface changes.  Instead,
+   set functions are provided (see include/vg_skin.h). */
+typedef
+   struct {
+      Char* name;
+      Char* version;
+      Char* description;
+      Char* copyright_author;
+      Char* bug_reports_to;
+   }
+   VgDetails;
+
+extern VgDetails VG_(details);
+
+/* If new fields are added to this type, update:
+ *  - vg_main.c:initialisation of VG_(needs)
+ *  - vg_main.c:sanity_check_needs()
+ *
+ * If the name of this type or any of its fields change, update:
+ *  - dependent comments (just search for "VG_(needs)"). 
+ */
+typedef
+   struct {
+      Bool libc_freeres;
+      Bool core_errors;
+
+      Bool skin_errors;
+      Bool basic_block_discards;
+      Bool shadow_regs;
+      Bool command_line_options;
+      Bool client_requests;
+      Bool extended_UCode;
+      Bool syscall_wrapper;
+      UInt sizeof_shadow_block;
+      Bool alternative_free;
+      Bool sanity_checks;
+      Bool data_syms;
+   } 
+   VgNeeds;
+
+extern VgNeeds VG_(needs);
+
+/* Events happening in core to track.  To be notified, assign a function
+   to the function pointer.  To ignore an event, don't do anything
+   (default assignment is to NULL in which case the call is skipped). */
+typedef
+   struct {
+      /* Memory events */
+      void (*new_mem_startup)( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+      void (*new_mem_heap)   ( Addr a, UInt len, Bool is_inited );
+      void (*new_mem_stack)  ( Addr a, UInt len );
+      void (*new_mem_stack_aligned) ( Addr a, UInt len );
+      void (*new_mem_stack_signal)  ( Addr a, UInt len );
+      void (*new_mem_brk)    ( Addr a, UInt len );
+      void (*new_mem_mmap)   ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+
+      void (*copy_mem_heap)  ( Addr from, Addr to, UInt len );
+      void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
+      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+      
+      /* Used on redzones around malloc'd blocks and at end of stack */
+      void (*ban_mem_heap)   ( Addr a, UInt len );
+      void (*ban_mem_stack)  ( Addr a, UInt len );
+
+      void (*die_mem_heap)   ( Addr a, UInt len );
+      void (*die_mem_stack)  ( Addr a, UInt len );
+      void (*die_mem_stack_aligned) ( Addr a, UInt len );
+      void (*die_mem_stack_signal)  ( Addr a, UInt len );
+      void (*die_mem_brk)    ( Addr a, UInt len );
+      void (*die_mem_munmap) ( Addr a, UInt len );
+
+      void (*bad_free)        ( ThreadState* tst, Addr a );
+      void (*mismatched_free) ( ThreadState* tst, Addr a );
+
+      void (*pre_mem_read)   ( CorePart part, ThreadState* tst,
+                               Char* s, Addr a, UInt size );
+      void (*pre_mem_read_asciiz) ( CorePart part, ThreadState* tst,
+                                    Char* s, Addr a );
+      void (*pre_mem_write)  ( CorePart part, ThreadState* tst,
+                               Char* s, Addr a, UInt size );
+      /* Not implemented yet -- have to add in lots of places, which is a
+         pain.  Won't bother unless/until there's a need. */
+      /* void (*post_mem_read)  ( ThreadState* tst, Char* s, 
+                                  Addr a, UInt size ); */
+      void (*post_mem_write) ( Addr a, UInt size );
+
+
+      /* Scheduler events (not exhaustive) */
+      void (*thread_run) ( ThreadId tid );
+
+
+      /* Thread events (not exhaustive) */
+      void (*post_thread_create) ( ThreadId tid, ThreadId child );
+      void (*post_thread_join)   ( ThreadId joiner, ThreadId joinee );
+
+
+      /* Mutex events (not exhaustive) */
+      void (*pre_mutex_lock)    ( ThreadId tid, 
+                                  void* /*pthread_mutex_t* */ mutex );
+      void (*post_mutex_lock)   ( ThreadId tid, 
+                                  void* /*pthread_mutex_t* */ mutex );
+      void (*post_mutex_unlock) ( ThreadId tid, 
+                                  void* /*pthread_mutex_t* */ mutex );
+
+      
+      /* Others... condition variable, signal events... */
+      /* ... */
+   }
+   VgTrackEvents;
+
+extern VgTrackEvents VG_(track_events);
+
+
+/* ---------------------------------------------------------------------
+   Exports of vg_needs.c
+   ------------------------------------------------------------------ */
+
+void VG_(sanity_check_needs)(void);
+
+/* ---------------------------------------------------------------------
    Exports of vg_malloc2.c
    ------------------------------------------------------------------ */
 
@@ -936,6 +1059,16 @@ extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr eip0 );
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 
+/* Expandable arrays of uinstrs. */
+struct _UCodeBlock { 
+   Int     used; 
+   Int     size; 
+   UInstr* instrs;
+   Int     nextTemp;
+};
+
+extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
+
 extern void  VG_(translate)  ( ThreadState* tst,
                                Addr  orig_addr,
                                UInt* orig_size,
@@ -998,23 +1131,29 @@ typedef
    }
    SuppLocTy;
 
-/* Suppressions.  Skin part `SkinSupp' (which is all skins have to deal
-   with) is in vg_skin.h */
-typedef
-   struct _CoreSupp {
-      struct _CoreSupp* next;
-      /* The number of times this error has been suppressed. */
-      Int count;
-      /* The name by which the suppression is referred to. */
-      Char* sname;
-      /* First two (name of fn where err occurs, and immediate caller)
-       * are mandatory;  extra two are optional. */
-      SuppLocTy caller_ty[VG_N_SUPP_CALLERS];
-      Char*     caller   [VG_N_SUPP_CALLERS];
-      /* The skin-specific part */
-      SkinSupp  skin_supp;
-   } 
-   CoreSupp;
+/* Suppressions.  Skins can get/set skin-relevant parts with functions
+   declared in include/vg_skin.h.  Extensible via the 'extra' field. 
+   Skins can use a normal enum (with element values in the normal range
+   (0..)) for `skind'. */
+struct _Supp {
+   struct _Supp* next;
+   /* The number of times this error has been suppressed. */
+   Int count;
+   /* The name by which the suppression is referred to. */
+   Char* sname;
+   /* First two (name of fn where err occurs, and immediate caller)
+    * are mandatory;  extra two are optional. */
+   SuppLocTy caller_ty[VG_N_SUPP_CALLERS];
+   Char*     caller   [VG_N_SUPP_CALLERS];
+
+   /* The skin-specific part */
+   /* What kind of suppression.  Must use the range (0..) */
+   SuppKind skind;
+   /* String -- use is optional.  NULL by default. */
+   Char* string;
+   /* Anything else -- use is optional.  NULL by default. */
+   void* extra;
+};
 
 /* Note: it is imperative this doesn't overlap with (0..) at all, as skins
  * effectively extend it by defining their own enums in the (0..) range. */
@@ -1024,27 +1163,40 @@ typedef
    }
    CoreErrorKind;
 
-/* Errors.  Skin part `SkinError' (which is all skins have to deal
-   with) is in vg_skin.h */
-typedef
-   struct _CoreErrContext {
-      struct _CoreErrContext* next;
-      /* NULL if unsuppressed; or ptr to suppression record. */
-      CoreSupp* supp;
-      Int count;
-      ExeContext* where;
-      ThreadId tid;
-      /* These record %EIP, %ESP and %EBP at the error point.  They
-         are only used to make GDB-attaching convenient; there is no
-         other purpose; specifically they are not used to do
-         comparisons between errors. */
-      UInt m_eip;
-      UInt m_esp;
-      UInt m_ebp;
-      /* The skin-specific part */
-      SkinError skin_err;
-   } 
-   CoreError;
+/* Errors.  Extensible (via the 'extra' field).  Skins can use a normal
+   enum (with element values in the normal range (0..)) for `ekind'. 
+   Functions for getting/setting the skin-relevant fields are in
+   include/vg_skin.h.
+
+   When errors are found and recorded with VG_(maybe_record_error)(), all
+   the skin must do is pass in the four parameters;  core will
+   allocate/initialise the error record.
+*/
+struct _Error {
+   struct _Error* next;
+   /* NULL if unsuppressed; or ptr to suppression record. */
+   Supp* supp;
+   Int count;
+   ExeContext* where;
+   ThreadId tid;
+   /* These record %EIP, %ESP and %EBP at the error point.  They
+      are only used to make GDB-attaching convenient; there is no
+      other purpose; specifically they are not used to do
+      comparisons between errors. */
+   UInt m_eip;
+   UInt m_esp;
+   UInt m_ebp;
+
+   /* The skin-specific part */
+   /* Used by ALL.  Must be in the range (0..) */
+   Int ekind;
+   /* Used frequently */
+   Addr addr;
+   /* Used frequently */
+   Char* string;
+   /* For any skin-specific extras */
+   void* extra;
+};
 
 
 extern void VG_(load_suppressions)    ( void );
@@ -1086,6 +1238,26 @@ extern void VG_(mini_stack_dump)      ( ExeContext* ec );
 /* ---------------------------------------------------------------------
    Exports of vg_clientmalloc.c
    ------------------------------------------------------------------ */
+
+typedef
+   enum { 
+      Vg_AllocMalloc = 0,
+      Vg_AllocNew    = 1,
+      Vg_AllocNewVec = 2 
+   }
+   VgAllocKind;
+
+/* Description of a malloc'd chunk.  Functions for extracting skin-relevant
+   parts are in include/vg_skin.h Size of skin_extra array is given by
+   VG_(needs).sizeof_shadow_chunk. */
+struct _ShadowChunk {
+   struct _ShadowChunk* next;
+   UInt          size : 30;      /* size requested                   */
+   VgAllocKind   allockind : 2;  /* which wrapper did the allocation */
+   Addr          data;           /* ptr to actual block              */
+   UInt          extra[0];       /* extra skin-specific info         */
+};
+
 
 extern void  VG_(client_malloc_init)();
 

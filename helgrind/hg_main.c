@@ -1292,33 +1292,33 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
 #define SHADOW_EXTRA	2
 
 static __inline__
-void set_sc_where( ShadowChunk* sc, ExeContext* ec )
-{
-   sc->skin_extra[0] = (UInt)ec;
-}
-
-static __inline__
 ExeContext *get_sc_where( ShadowChunk* sc )
 {
-   return (ExeContext*)sc->skin_extra[0];
-}
-
-static __inline__
-void set_sc_tid(ShadowChunk *sc, ThreadId tid)
-{
-   sc->skin_extra[1] = (UInt)tid;
+   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
 }
 
 static __inline__
 ThreadId get_sc_tid(ShadowChunk *sc)
 {
-   return (ThreadId)sc->skin_extra[1];
+   return (ThreadId)VG_(get_sc_extra)(sc, 1);
+}
+
+static __inline__
+void set_sc_where( ShadowChunk* sc, ExeContext* ec )
+{
+   VG_(set_sc_extra)(sc, 0, (UInt)ec);
+}
+
+static __inline__
+void set_sc_tid( ShadowChunk* sc, ThreadId tid )
+{
+   VG_(set_sc_extra)(sc, 1, (UInt)tid);
 }
 
 void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
 {
-   set_sc_where( sc, VG_(get_ExeContext) ( tst ) );
-   set_sc_tid(sc, VG_(get_tid_from_ThreadState(tst)));
+   set_sc_where ( sc, VG_(get_ExeContext)(tst) );
+   set_sc_tid   ( sc, VG_(get_tid_from_ThreadState)(tst) );
 }
 
 /*------------------------------------------------------------*/
@@ -1439,8 +1439,8 @@ static ShadowChunk *freechunks[N_FREED_CHUNKS];
 void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
 {
    ThreadId tid = VG_(get_tid_from_ThreadState)(tst);
-   Addr start = sc->data;
-   Addr end = start + sc->size;
+   Addr start = VG_(get_sc_data)(sc);
+   Addr end = start + VG_(get_sc_size)(sc);
 
    Bool deadmx(Mutex *mx) {
       if (mx->state != MxDead)
@@ -1913,19 +1913,18 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    Bool	       *stackref = NULL;
    Bool        locked = False;	/* lock prefix */
 
-   cb = VG_(alloc_UCodeBlock)();
-   cb->nextTemp = cb_in->nextTemp;
+   cb = VG_(setup_UCodeBlock)(cb_in);
 
    /* stackref[] is used for super-simple value tracking to keep note
       of which tempregs currently hold a value which is derived from
       ESP or EBP, and is therefore likely stack-relative if used as
       the address for LOAD or STORE. */
-   ntemps = cb->nextTemp;
+   ntemps = VG_(get_num_temps)(cb);
    stackref = VG_(malloc)(sizeof(*stackref) * ntemps);
    VG_(memset)(stackref, 0, sizeof(*stackref) * ntemps);
 
-   for (i = 0; i < cb_in->used; i++) {
-      u_in = &cb_in->instrs[i];
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u_in = VG_(get_instr)(cb_in, i);
 
       switch (u_in->opcode) {
 
@@ -2200,7 +2199,8 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    /* Closure for searching malloc'd and free'd lists */
    Bool addr_is_in_block(ShadowChunk *sh_ch)
    {
-      return VG_(addr_is_in_block) ( a, sh_ch->data, sh_ch->size );
+      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
+                                        VG_(get_sc_size)(sh_ch) );
    }
 
    /* Search for it in segments */
@@ -2240,8 +2240,8 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Mallocd;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
       ai->lastchange = get_sc_where(sc);
       ai->lasttid    = get_sc_tid(sc);
       return;
@@ -2249,14 +2249,17 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 
    /* Look in recently freed memory */
    for(i = 0; i < N_FREED_CHUNKS; i++) {
+      Addr sc_data = VG_(get_sc_data)(sc);
+      UInt sc_size = VG_(get_sc_size)(sc);
+      
       sc = freechunks[i];
       if (sc == NULL)
 	 continue;
 
-      if (a >= sc->data && a < sc->data+sc->size) {
+      if (a >= sc_data && a <  sc_data + sc_size) {
 	 ai->akind      = Freed;
-	 ai->blksize    = sc->size;
-	 ai->rwoffset   = a - sc->data;
+	 ai->blksize    = sc_size;
+	 ai->rwoffset   = a - sc_data;
 	 ai->lastchange = get_sc_where(sc);
 	 ai->lasttid    = get_sc_tid(sc);
 	 return;
@@ -2269,19 +2272,19 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 }
 
 
-/* Creates a copy of the err_extra, updates the copy with address info if
-   necessary, sticks the copy into the SkinError. */
-void SK_(dup_extra_and_update)(SkinError* err)
+/* Creates a copy of the `extra' part, updates the copy with address info if
+   necessary, and returns the copy. */
+void* SK_(dup_extra_and_update)(Error* err)
 {
-   HelgrindError* err_extra;
+   HelgrindError* new_extra;
 
-   err_extra  = VG_(malloc)(sizeof(HelgrindError));
-   *err_extra = *((HelgrindError*)err->extra);
+   new_extra  = VG_(malloc)(sizeof(HelgrindError));
+   *new_extra = *((HelgrindError*)VG_(get_error_extra)(err));
 
-   if (err_extra->addrinfo.akind == Undescribed)
-      describe_addr ( err->addr, &(err_extra->addrinfo) );
+   if (new_extra->addrinfo.akind == Undescribed)
+      describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
 
-   err->extra = err_extra;
+   return new_extra;
 }
 
 static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
@@ -2346,21 +2349,24 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
 			   mutex->mutexp, "", &err_extra);
 }
 
-Bool SK_(eq_SkinError) ( VgRes not_used,
-                          SkinError* e1, SkinError* e2 )
+Bool SK_(eq_SkinError) ( VgRes not_used, Error* e1, Error* e2 )
 {
-   sk_assert(e1->ekind == e2->ekind);
+   Char *e1s, *e2s;
 
-   switch(e1->ekind) {
+   sk_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
+
+   switch (VG_(get_error_kind)(e1)) {
    case EraserErr:
-      return e1->addr == e2->addr;
+      return VG_(get_error_address)(e1) == VG_(get_error_address)(e2);
 
    case MutexErr:
-      return e1->addr == e2->addr;
+      return VG_(get_error_address)(e1) == VG_(get_error_address)(e2);
    }
 
-   if (e1->string != e2->string) return False;
-   if (0 != VG_(strcmp)(e1->string, e2->string)) return False;
+   e1s = VG_(get_error_string)(e1);
+   e2s = VG_(get_error_string)(e2);
+   if (e1s != e2s) return False;
+   if (0 != VG_(strcmp)(e1s, e2s)) return False;
    return True;
 }
 
@@ -2443,21 +2449,23 @@ static Char *lockset_str(const Char *prefix, const LockSet *lockset)
    return buf;
 }
 
-void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
+void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 {
-   HelgrindError *extra = (HelgrindError *)err->extra;
+   HelgrindError *extra = (HelgrindError *)VG_(get_error_extra)(err);
    Char buf[100];
    Char *msg = buf;
    const LockSet *ls;
 
    *msg = '\0';
 
-   switch(err->ekind) {
-   case EraserErr:
+   switch(VG_(get_error_kind)(err)) {
+   case EraserErr: {
+      Addr err_addr = VG_(get_error_address)(err);
+                      
       VG_(message)(Vg_UserMsg, "Possible data race %s variable at %p %(y",
-		   err->string, err->addr, err->addr );
+		   VG_(get_error_string)(err), err_addr, err_addr);
       pp_ExeContext();
-      pp_AddrInfo(err->addr, &extra->addrinfo);
+      pp_AddrInfo(err_addr, &extra->addrinfo);
 
       switch(extra->prevstate.state) {
       case Vge_Virgin:
@@ -2499,7 +2507,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 Addr eip = extra->lasttouched.eip;
 	 
 	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s by thread %u",
-		      err->addr,
+		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
 	 
@@ -2514,33 +2522,36 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 }
       } else if (clo_execontext == EC_All && extra->lasttouched.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s in tid %u",
-		      err->addr,
+		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
 	 VG_(pp_ExeContext)(extra->lasttouched.ec);
       }
-
       break;
+   }
 
    case MutexErr:
       VG_(message)(Vg_UserMsg, "Mutex problem at %p%(y trying to %s",
-		   err->addr, err->addr, err->string );
+		   VG_(get_error_address)(err),
+		   VG_(get_error_address)(err),
+		   VG_(get_error_string)(err));
       pp_ExeContext();
       if (extra->lasttouched.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, "  last touched by thread %d", extra->lasttid);
 	 VG_(pp_ExeContext)(extra->lasttouched.ec);
       }
-      pp_AddrInfo(err->addr, &extra->addrinfo);
+      pp_AddrInfo(VG_(get_error_address)(err), &extra->addrinfo);
       break;
 
    case LockGraphErr: {
       const LockSet *heldset = extra->held_lockset;
+      Addr err_addr = VG_(get_error_address)(err);
       Int i;
 
       msg = lockset_str(NULL, heldset);
 
       VG_(message)(Vg_UserMsg, "Mutex %p%(y locked in inconsistent order",
-		   err->addr, err->addr);
+		   err_addr, err_addr);
       pp_ExeContext();
       VG_(message)(Vg_UserMsg, " while holding locks %s", msg);
 
@@ -2568,10 +2579,10 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 }
 
 
-Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind )
+Bool SK_(recognised_suppression) ( Char* name, Supp *su )
 {
    if (0 == VG_(strcmp)(name, "Eraser")) {
-      *skind = EraserSupp;
+      VG_(set_supp_kind)(su, EraserSupp);
       return True;
    } else {
       return False;
@@ -2579,8 +2590,7 @@ Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind )
 }
 
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, 
-                                        Int nBuf, SkinSupp* s )
+Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
       indicate nothing bad happened. */
@@ -2588,10 +2598,10 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf,
 }
 
 
-Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
+Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
-   sk_assert( su->skind == EraserSupp);
-   sk_assert(err->ekind == EraserErr);
+   sk_assert(VG_(get_supp_kind) (su)  == EraserSupp);
+   sk_assert(VG_(get_error_kind)(err) == EraserErr);
    return True;
 }
 
@@ -3053,58 +3063,58 @@ Bool SK_(handle_client_request)(ThreadState *tst, UInt *args, UInt *ret)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(void)
 {
    Int i;
    LockSet *empty;
 
-   details->name             = "Helgrind";
-   details->version          = NULL;
-   details->description      = "a data race detector";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
-   details->bug_reports_to   = "njn25@cam.ac.uk";
+   VG_(details_name)            ("Helgrind");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a data race detector");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
 
-   needs->core_errors           = True;
-   needs->skin_errors           = True;
-   needs->data_syms             = True;
-   needs->sizeof_shadow_block	= SHADOW_EXTRA;
-   needs->alternative_free      = True;
-   needs->client_requests       = True;
-   needs->command_line_options  = True;
+   VG_(needs_core_errors)();
+   VG_(needs_skin_errors)();
+   VG_(needs_data_syms)();
+   VG_(needs_sizeof_shadow_block)(SHADOW_EXTRA);
+   VG_(needs_alternative_free)();
+   VG_(needs_client_requests)();
+   VG_(needs_command_line_options)();
 
-   track->new_mem_startup       = & eraser_new_mem_startup;
-   track->new_mem_heap          = & eraser_new_mem_heap;
-   track->new_mem_stack         = & eraser_new_mem_stack_private;
-   track->new_mem_stack_aligned = & eraser_new_mem_stack_private;
-   track->new_mem_stack_signal  = & eraser_new_mem_stack_private;
-   track->new_mem_brk           = & make_writable;
-   track->new_mem_mmap          = & eraser_new_mem_startup;
+   VG_(track_new_mem_startup)      (& eraser_new_mem_startup);
+   VG_(track_new_mem_heap)         (& eraser_new_mem_heap);
 
-   track->copy_mem_heap         = & copy_address_range_state;
-   track->change_mem_mprotect   = & eraser_set_perms;
+   /* stack ones not decided until VG_(post_clo_init)() */
 
-   track->ban_mem_heap          = NULL;
-   track->ban_mem_stack         = NULL;
+   VG_(track_new_mem_brk)          (& make_writable);
+   VG_(track_new_mem_mmap)         (& eraser_new_mem_startup);
 
-   track->die_mem_heap          = NULL;
-   track->die_mem_stack         = NULL;
-   track->die_mem_stack_aligned = NULL;
-   track->die_mem_stack_signal  = NULL;
-   track->die_mem_brk           = NULL;
-   track->die_mem_munmap        = NULL;
+   VG_(track_copy_mem_heap)        (& copy_address_range_state);
+   VG_(track_change_mem_mprotect)  (& eraser_set_perms);
 
-   track->pre_mem_read          = & eraser_pre_mem_read;
-   track->pre_mem_read_asciiz   = & eraser_pre_mem_read_asciiz;
-   track->pre_mem_write         = & eraser_pre_mem_write;
-   track->post_mem_write        = NULL;
+   VG_(track_ban_mem_heap)         (NULL);
+   VG_(track_ban_mem_stack)        (NULL);
 
-   track->pre_mutex_lock        = & eraser_pre_mutex_lock;
-   track->post_mutex_lock       = & eraser_post_mutex_lock;
-   track->post_mutex_unlock     = & eraser_post_mutex_unlock;
+   VG_(track_die_mem_heap)         (NULL);
+   VG_(track_die_mem_stack)        (NULL);
+   VG_(track_die_mem_stack_aligned)(NULL);
+   VG_(track_die_mem_stack_signal) (NULL);
+   VG_(track_die_mem_brk)          (NULL);
+   VG_(track_die_mem_munmap)       (NULL);
 
-   track->post_thread_create    = & hg_thread_create;
-   track->post_thread_join      = & hg_thread_join;
+   VG_(track_pre_mem_read)         (& eraser_pre_mem_read);
+   VG_(track_pre_mem_read_asciiz)  (& eraser_pre_mem_read_asciiz);
+   VG_(track_pre_mem_write)        (& eraser_pre_mem_write);
+   VG_(track_post_mem_write)       (NULL);
+
+   VG_(track_post_thread_create)   (& hg_thread_create);
+   VG_(track_post_thread_join)     (& hg_thread_join);
+
+   VG_(track_post_mutex_lock)      (& eraser_pre_mutex_lock);
+   VG_(track_post_mutex_lock)      (& eraser_post_mutex_lock);
+   VG_(track_post_mutex_unlock)    (& eraser_post_mutex_unlock);
 
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_1);
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_2);
@@ -3204,18 +3214,21 @@ Char *SK_(usage)(void)
 
 void SK_(post_clo_init)(void)
 {
+   void (*stack_tracker)(Addr a, UInt len);
+   
    if (clo_execontext) {
       execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);
       VG_(memset)(execontext_map, 0, sizeof(ExeContextMap *) * 65536);
    }
 
-   if (!clo_priv_stacks) {
-      VgTrackEvents *track = &VG_(track_events);
+   if (clo_priv_stacks)
+      stack_tracker = & eraser_new_mem_stack_private;
+   else
+      stack_tracker = & eraser_new_mem_stack;
 
-      track->new_mem_stack         = & eraser_new_mem_stack;
-      track->new_mem_stack_aligned = & eraser_new_mem_stack;
-      track->new_mem_stack_signal  = & eraser_new_mem_stack;
-   }
+   VG_(track_new_mem_stack)        (stack_tracker);
+   VG_(track_new_mem_stack_aligned)(stack_tracker);
+   VG_(track_new_mem_stack_signal) (stack_tracker);
 }
 
 

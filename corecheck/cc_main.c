@@ -33,16 +33,16 @@
 
 VG_DETERMINE_INTERFACE_VERSION
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Coregrind";
-   details->version          = NULL;
-   details->description      = "a rudimentary error detector";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
-   details->bug_reports_to   = "njn25@cam.ac.uk";
+   VG_(details_name)            ("Coregrind");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a rudimentary error detector");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
 
-   needs->core_errors = True;
+   VG_(needs_core_errors)();
 
    /* No core events to track */
 }

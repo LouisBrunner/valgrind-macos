@@ -128,27 +128,29 @@ static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 
-Bool SK_(eq_SkinError) ( VgRes res,
-                          SkinError* e1, SkinError* e2 )
+Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
 {
-   MemCheckError* e1_extra = e1->extra;
-   MemCheckError* e2_extra = e2->extra;
+   MemCheckError* e1_extra = VG_(get_error_extra)(e1);
+   MemCheckError* e2_extra = VG_(get_error_extra)(e2);
    
-   switch (e1->ekind) {
-      case CoreMemErr:
+   switch (VG_(get_error_kind)(e1)) {
+      case CoreMemErr: {
+         Char *e1s, *e2s;
          if (e1_extra->isWrite != e2_extra->isWrite)   return False;
-         if (e2->ekind != CoreMemErr)                  return False; 
-         if (e1->string == e2->string)                 return True;
-         if (0 == VG_(strcmp)(e1->string, e2->string)) return True;
+         if (VG_(get_error_kind)(e2) != CoreMemErr)    return False; 
+         e1s = VG_(get_error_string)(e1);
+         e2s = VG_(get_error_string)(e2);
+         if (e1s == e2s)                               return True;
+         if (0 == VG_(strcmp)(e1s, e2s))               return True;
          return False;
+      }
 
       case UserErr:
       case ParamErr:
-         if (e1_extra->isWrite != e2_extra->isWrite)
-            return False;
-         if (e1->ekind == ParamErr 
-             && 0 != VG_(strcmp)(e1->string, e2->string))
-            return False;
+         if (e1_extra->isWrite != e2_extra->isWrite)           return False;
+         if (VG_(get_error_kind)(e1) == ParamErr 
+             && 0 != VG_(strcmp)(VG_(get_error_string)(e1),
+                                 VG_(get_error_string)(e2)))   return False;
          return True;
 
       case FreeErr:
@@ -177,7 +179,8 @@ Bool SK_(eq_SkinError) ( VgRes res,
          return True;
 
       default: 
-         VG_(printf)("Error:\n  unknown MemCheck error code %d\n", e1->ekind);
+         VG_(printf)("Error:\n  unknown MemCheck error code %d\n",
+                     VG_(get_error_kind)(e1));
          VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
    }
 }
@@ -237,19 +240,19 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
    }
 }
 
-void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
+void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 {
-   MemCheckError* err_extra = err->extra;
+   MemCheckError* err_extra = VG_(get_error_extra)(err);
 
-   switch (err->ekind) {
+   switch (VG_(get_error_kind)(err)) {
       case CoreMemErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", err->string );
+               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
          } else {
             VG_(message)(Vg_UserMsg, 
                 "%s contains uninitialised or unaddressable byte(s)",
-                err->string);
+                VG_(get_error_string)(err));
          }
          pp_ExeContext();
          break;
@@ -285,33 +288,33 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                VG_(skin_panic)("pp_SkinError(axskind)");
          }
          pp_ExeContext();
-         pp_AddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case FreeErr:
          VG_(message)(Vg_UserMsg,"Invalid free() / delete / delete[]");
          /* fall through */
       case FreeMismatchErr:
-         if (err->ekind == FreeMismatchErr)
+         if (VG_(get_error_kind)(err) == FreeMismatchErr)
             VG_(message)(Vg_UserMsg, 
                          "Mismatched free() / delete / delete []");
          pp_ExeContext();
-         pp_AddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case ParamErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 
                "Syscall param %s contains unaddressable byte(s)",
-                err->string );
+                VG_(get_error_string)(err));
          } else {
             VG_(message)(Vg_UserMsg, 
                 "Syscall param %s contains uninitialised or "
                 "unaddressable byte(s)",
-            err->string);
+                VG_(get_error_string)(err));
          }
          pp_ExeContext();
-         pp_AddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case UserErr:
@@ -324,11 +327,12 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                "unaddressable byte(s) found during client check request");
          }
          pp_ExeContext();
-         pp_AddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       default: 
-         VG_(printf)("Error:\n  unknown MemCheck error code %d\n", err->ekind);
+         VG_(printf)("Error:\n  unknown MemCheck error code %d\n",
+                     VG_(get_error_kind)(err));
          VG_(skin_panic)("unknown error code in SK_(pp_SkinError)");
    }
 }
@@ -356,7 +360,8 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    /* Closure for searching malloc'd and free'd lists */
    Bool addr_is_in_block(ShadowChunk *sh_ch)
    {
-      return VG_(addr_is_in_block) ( a, sh_ch->data, sh_ch->size );
+      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
+                                        VG_(get_sc_size)(sh_ch) );
    }
 
    /* Perhaps it's a user-def'd block ? */
@@ -374,18 +379,18 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    sc = SK_(any_matching_freed_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Freed;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-      ai->lastchange = (ExeContext*)sc->skin_extra[0];
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
+      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
       return;
    }
    /* Search for a currently malloc'd block which might bracket it. */
    sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Mallocd;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-      ai->lastchange = (ExeContext*)sc->skin_extra[0];
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
+      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
       return;
    } 
    /* Clueless ... */
@@ -394,19 +399,19 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 }
 
 
-/* Creates a copy of the err_extra, updates the copy with address info if
-   necessary, sticks the copy into the SkinError. */
-void SK_(dup_extra_and_update)(SkinError* err)
+/* Creates a copy of the `extra' part, updates the copy with address info if
+   necessary, and returns the copy. */
+void* SK_(dup_extra_and_update)( Error* err )
 {
-   MemCheckError* err_extra;
+   MemCheckError* new_extra;
 
-   err_extra  = VG_(malloc)(sizeof(MemCheckError));
-   *err_extra = *((MemCheckError*)err->extra);
+   new_extra  = VG_(malloc)(sizeof(MemCheckError));
+   *new_extra = *((MemCheckError*)VG_(get_error_extra)(err));
 
-   if (err_extra->addrinfo.akind == Undescribed)
-      describe_addr ( err->addr, &(err_extra->addrinfo) );
+   if (new_extra->addrinfo.akind == Undescribed)
+      describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
 
-   err->extra = err_extra;
+   return new_extra;
 }
 
 /* These two are called from generated code. */
@@ -530,51 +535,56 @@ void SK_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 #define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
                       && VG_(strcmp)((s1),(s2))==0)
 
-Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind )
+Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 {
-   if      (STREQ(name, "Param"))   *skind = ParamSupp;
-   else if (STREQ(name, "CoreMem")) *skind = CoreMemSupp;
-   else if (STREQ(name, "Value0"))  *skind = Value0Supp; /* backwards compat */ 
-   else if (STREQ(name, "Cond"))    *skind = Value0Supp;
-   else if (STREQ(name, "Value1"))  *skind = Value1Supp;
-   else if (STREQ(name, "Value2"))  *skind = Value2Supp;
-   else if (STREQ(name, "Value4"))  *skind = Value4Supp;
-   else if (STREQ(name, "Value8"))  *skind = Value8Supp;
-   else if (STREQ(name, "Addr1"))   *skind = Addr1Supp;
-   else if (STREQ(name, "Addr2"))   *skind = Addr2Supp;
-   else if (STREQ(name, "Addr4"))   *skind = Addr4Supp;
-   else if (STREQ(name, "Addr8"))   *skind = Addr8Supp;
-   else if (STREQ(name, "Free"))    *skind = FreeSupp;
+   SuppKind skind;
+   
+   if      (STREQ(name, "Param"))   skind = ParamSupp;
+   else if (STREQ(name, "CoreMem")) skind = CoreMemSupp;
+   else if (STREQ(name, "Value0"))  skind = Value0Supp; /* backwards compat */ 
+   else if (STREQ(name, "Cond"))    skind = Value0Supp;
+   else if (STREQ(name, "Value1"))  skind = Value1Supp;
+   else if (STREQ(name, "Value2"))  skind = Value2Supp;
+   else if (STREQ(name, "Value4"))  skind = Value4Supp;
+   else if (STREQ(name, "Value8"))  skind = Value8Supp;
+   else if (STREQ(name, "Addr1"))   skind = Addr1Supp;
+   else if (STREQ(name, "Addr2"))   skind = Addr2Supp;
+   else if (STREQ(name, "Addr4"))   skind = Addr4Supp;
+   else if (STREQ(name, "Addr8"))   skind = Addr8Supp;
+   else if (STREQ(name, "Free"))    skind = FreeSupp;
    else 
       return False;
 
+   VG_(set_supp_kind)(su, skind);
    return True;
 }
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, 
-                                         SkinSupp *s )
+Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 {
    Bool eof;
 
-   if (s->skind == ParamSupp) {
+   if (VG_(get_supp_kind)(su) == ParamSupp) {
       eof = VG_(get_line) ( fd, buf, nBuf );
       if (eof) return False;
-      s->string = VG_(strdup)(buf);
+      VG_(set_supp_string)(su, VG_(strdup)(buf));
    }
    return True;
 }
 
-extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
+extern Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
    UInt su_size;
-   MemCheckError* err_extra = err->extra;
+   MemCheckError* err_extra = VG_(get_error_extra)(err);
+   ErrorKind      ekind     = VG_(get_error_kind )(err);
 
-   switch (su->skind) {
+   switch (VG_(get_supp_kind)(su)) {
       case ParamSupp:
-         return (err->ekind == ParamErr && STREQ(su->string, err->string));
+         return (ekind == ParamErr 
+              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
 
       case CoreMemSupp:
-         return (err->ekind == CoreMemErr && STREQ(su->string, err->string));
+         return (ekind == CoreMemErr
+              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
 
       case Value0Supp: su_size = 0; goto value_case;
       case Value1Supp: su_size = 1; goto value_case;
@@ -582,21 +592,22 @@ extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
       case Value4Supp: su_size = 4; goto value_case;
       case Value8Supp: su_size = 8; goto value_case;
       value_case:
-         return (err->ekind == ValueErr && err_extra->size == su_size);
+         return (ekind == ValueErr && err_extra->size == su_size);
 
       case Addr1Supp: su_size = 1; goto addr_case;
       case Addr2Supp: su_size = 2; goto addr_case;
       case Addr4Supp: su_size = 4; goto addr_case;
       case Addr8Supp: su_size = 8; goto addr_case;
       addr_case:
-         return (err->ekind == AddrErr && err_extra->size == su_size);
+         return (ekind == AddrErr && err_extra->size == su_size);
 
       case FreeSupp:
-         return (err->ekind == FreeErr || err->ekind == FreeMismatchErr);
+         return (ekind == FreeErr || ekind == FreeMismatchErr);
 
       default:
          VG_(printf)("Error:\n"
-                     "  unknown MemCheck suppression type %d\n", su->skind);
+                     "  unknown MemCheck suppression type %d\n",
+                     VG_(get_supp_kind)(su));
          VG_(skin_panic)("unknown suppression type in "
                          "SK_(error_matches_suppression)");
    }

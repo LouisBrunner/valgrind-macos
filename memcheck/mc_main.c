@@ -1519,18 +1519,18 @@ void fpu_write_check_SLOWLY ( Addr addr, Int size )
 static __inline__
 void set_where( ShadowChunk* sc, ExeContext* ec )
 {
-   sc->skin_extra[0] = (UInt)ec;
+   VG_(set_sc_extra)( sc, 0, (UInt)ec );
 }
 
 static __inline__
 ExeContext *get_where( ShadowChunk* sc )
 {
-   return (ExeContext*)sc->skin_extra[0];
+   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
 }
 
 void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
 {
-   set_where( sc, VG_(get_ExeContext) ( tst ) );
+   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
 }
 
 /*------------------------------------------------------------*/
@@ -1547,7 +1547,7 @@ static __attribute__ ((unused))
 {
    ShadowChunk* sc;
    Int n = 0;
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
       n++;
    return n;
 }
@@ -1558,8 +1558,8 @@ static __attribute__ ((unused))
    ShadowChunk* sc;
    Int n = 0;
    /* VG_(printf)("freelist sanity\n"); */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
-      n += sc->size;
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
+      n += VG_(get_sc_size)(sc);
    sk_assert(n == vg_freed_list_volume);
 }
 
@@ -1573,14 +1573,14 @@ static void add_to_freed_queue ( ShadowChunk* sc )
    if (vg_freed_list_end == NULL) {
       sk_assert(vg_freed_list_start == NULL);
       vg_freed_list_end = vg_freed_list_start = sc;
-      vg_freed_list_volume = sc->size;
+      vg_freed_list_volume = VG_(get_sc_size)(sc);
    } else {    
-      sk_assert(vg_freed_list_end->next == NULL);
-      vg_freed_list_end->next = sc;
+      sk_assert(VG_(get_sc_next)(vg_freed_list_end) == NULL);
+      VG_(set_sc_next)(vg_freed_list_end, sc);
       vg_freed_list_end = sc;
-      vg_freed_list_volume += sc->size;
+      vg_freed_list_volume += VG_(get_sc_size)(sc);
    }
-   sc->next = NULL;
+   VG_(set_sc_next)(sc, NULL);
 
    /* Release enough of the oldest blocks to bring the free queue
       volume below vg_clo_freelist_vol. */
@@ -1591,16 +1591,16 @@ static void add_to_freed_queue ( ShadowChunk* sc )
       sk_assert(vg_freed_list_end != NULL);
 
       sc1 = vg_freed_list_start;
-      vg_freed_list_volume -= sc1->size;
+      vg_freed_list_volume -= VG_(get_sc_size)(sc1);
       /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
       sk_assert(vg_freed_list_volume >= 0);
 
       if (vg_freed_list_start == vg_freed_list_end) {
          vg_freed_list_start = vg_freed_list_end = NULL;
       } else {
-         vg_freed_list_start = sc1->next;
+         vg_freed_list_start = VG_(get_sc_next)(sc1);
       }
-      sc1->next = NULL; /* just paranoia */
+      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
       VG_(free_ShadowChunk) ( sc1 );
    }
 }
@@ -1613,7 +1613,7 @@ ShadowChunk* SK_(any_matching_freed_ShadowChunks)
 
    /* No point looking through freed blocks if we're not keeping
       them around for a while... */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
       if (p(sc))
          return sc;
 
@@ -1937,57 +1937,56 @@ Char* SK_(usage)(void)
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Memcheck";
-   details->version          = NULL;
-   details->description      = "a.k.a. Valgrind, a memory error detector";
-   details->copyright_author =
-      "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.";
-   details->bug_reports_to   = "jseward@acm.org";
+   VG_(details_name)            ("Memcheck");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a.k.a. Valgrind, a memory error detector");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.");
+   VG_(details_bug_reports_to)  ("jseward@acm.org");
 
-   needs->core_errors          = True;
-   needs->skin_errors          = True;
-   needs->libc_freeres         = True;
-   needs->sizeof_shadow_block  = 1;
-   needs->basic_block_discards = False;
-   needs->shadow_regs          = True;
-   needs->command_line_options = True;
-   needs->client_requests      = True;
-   needs->extended_UCode       = True;
-   needs->syscall_wrapper      = True;
-   needs->alternative_free     = True;
-   needs->sanity_checks        = True;
+   VG_(needs_core_errors)         ();
+   VG_(needs_skin_errors)         ();
+   VG_(needs_libc_freeres)        ();
+   VG_(needs_sizeof_shadow_block) ( 1 );
+   VG_(needs_shadow_regs)         ();
+   VG_(needs_command_line_options)();
+   VG_(needs_client_requests)     ();
+   VG_(needs_extended_UCode)      ();
+   VG_(needs_syscall_wrapper)     ();
+   VG_(needs_alternative_free)    ();
+   VG_(needs_sanity_checks)       ();
 
-   track->new_mem_startup       = & memcheck_new_mem_startup;
-   track->new_mem_heap          = & memcheck_new_mem_heap;
-   track->new_mem_stack         = & SK_(make_writable);
-   track->new_mem_stack_aligned = & make_writable_aligned;
-   track->new_mem_stack_signal  = & SK_(make_writable);
-   track->new_mem_brk           = & SK_(make_writable);
-   track->new_mem_mmap          = & memcheck_set_perms;
+   VG_(track_new_mem_startup)      ( & memcheck_new_mem_startup );
+   VG_(track_new_mem_heap)         ( & memcheck_new_mem_heap );
+   VG_(track_new_mem_stack)        ( & SK_(make_writable) );
+   VG_(track_new_mem_stack_aligned)( & make_writable_aligned );
+   VG_(track_new_mem_stack_signal) ( & SK_(make_writable) );
+   VG_(track_new_mem_brk)          ( & SK_(make_writable) );
+   VG_(track_new_mem_mmap)         ( & memcheck_set_perms );
    
-   track->copy_mem_heap         = & copy_address_range_state;
-   track->copy_mem_remap        = & copy_address_range_state;
-   track->change_mem_mprotect   = & memcheck_set_perms;
+   VG_(track_copy_mem_heap)        ( & copy_address_range_state );
+   VG_(track_copy_mem_remap)       ( & copy_address_range_state );
+   VG_(track_change_mem_mprotect)  ( & memcheck_set_perms );
       
-   track->ban_mem_heap          = & SK_(make_noaccess);
-   track->ban_mem_stack         = & SK_(make_noaccess);
+   VG_(track_ban_mem_heap)         ( & SK_(make_noaccess) );
+   VG_(track_ban_mem_stack)        ( & SK_(make_noaccess) );
 
-   track->die_mem_heap          = & SK_(make_noaccess);
-   track->die_mem_stack         = & SK_(make_noaccess);
-   track->die_mem_stack_aligned = & make_noaccess_aligned; 
-   track->die_mem_stack_signal  = & SK_(make_noaccess); 
-   track->die_mem_brk           = & SK_(make_noaccess);
-   track->die_mem_munmap        = & SK_(make_noaccess); 
+   VG_(track_die_mem_heap)         ( & SK_(make_noaccess) );
+   VG_(track_die_mem_stack)        ( & SK_(make_noaccess) );
+   VG_(track_die_mem_stack_aligned)( & make_noaccess_aligned ); 
+   VG_(track_die_mem_stack_signal) ( & SK_(make_noaccess) ); 
+   VG_(track_die_mem_brk)          ( & SK_(make_noaccess) );
+   VG_(track_die_mem_munmap)       ( & SK_(make_noaccess) ); 
 
-   track->bad_free              = & SK_(record_free_error);
-   track->mismatched_free       = & SK_(record_freemismatch_error);
+   VG_(track_bad_free)             ( & SK_(record_free_error) );
+   VG_(track_mismatched_free)      ( & SK_(record_freemismatch_error) );
 
-   track->pre_mem_read          = & check_is_readable;
-   track->pre_mem_read_asciiz   = & check_is_readable_asciiz;
-   track->pre_mem_write         = & check_is_writable;
-   track->post_mem_write        = & SK_(make_readable);
+   VG_(track_pre_mem_read)         ( & check_is_readable );
+   VG_(track_pre_mem_read_asciiz)  ( & check_is_readable_asciiz );
+   VG_(track_pre_mem_write)        ( & check_is_writable );
+   VG_(track_post_mem_write)       ( & SK_(make_readable) );
 
    VG_(register_compact_helper)((Addr) & SK_(helper_value_check4_fail));
    VG_(register_compact_helper)((Addr) & SK_(helper_value_check0_fail));

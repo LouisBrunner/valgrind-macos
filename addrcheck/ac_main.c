@@ -129,27 +129,29 @@ static Bool eq_AcAddrInfo ( VgRes res, AcAddrInfo* ai1, AcAddrInfo* ai2 )
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 
-Bool SK_(eq_SkinError) ( VgRes res,
-                         SkinError* e1, SkinError* e2 )
+Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
 {
-   AddrCheckError* e1_extra = e1->extra;
-   AddrCheckError* e2_extra = e2->extra;
+   AddrCheckError* e1_extra = VG_(get_error_extra)(e1);
+   AddrCheckError* e2_extra = VG_(get_error_extra)(e2);
    
-   switch (e1->ekind) {
-      case CoreMemErr:
+   switch (VG_(get_error_kind)(e1)) {
+      case CoreMemErr: {
+         Char *e1s, *e2s;
          if (e1_extra->isWrite != e2_extra->isWrite)   return False;
-         if (e2->ekind != CoreMemErr)                  return False; 
-         if (e1->string == e2->string)                 return True;
-         if (0 == VG_(strcmp)(e1->string, e2->string)) return True;
+         if (VG_(get_error_kind)(e2) != CoreMemErr)    return False; 
+         e1s = VG_(get_error_string)(e1);
+         e2s = VG_(get_error_string)(e2);
+         if (e1s == e2s)                               return True;
+         if (0 == VG_(strcmp)(e1s, e2s))               return True;
          return False;
+      }
 
       case UserErr:
       case ParamErr:
-         if (e1_extra->isWrite != e2_extra->isWrite)
-            return False;
-         if (e1->ekind == ParamErr 
-             && 0 != VG_(strcmp)(e1->string, e2->string))
-            return False;
+         if (e1_extra->isWrite != e2_extra->isWrite)           return False;
+         if (VG_(get_error_kind)(e1) == ParamErr 
+             && 0 != VG_(strcmp)(VG_(get_error_string)(e1),
+                                 VG_(get_error_string)(e2)))   return False;
          return True;
 
       case FreeErr:
@@ -174,7 +176,8 @@ Bool SK_(eq_SkinError) ( VgRes res,
          return True;
 
       default: 
-         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n", e1->ekind);
+         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n",
+                     VG_(get_error_kind)(e1));
          VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
    }
 }
@@ -229,18 +232,18 @@ static void pp_AcAddrInfo ( Addr a, AcAddrInfo* ai )
    }
 }
 
-void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
+void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 {
-   AddrCheckError* err_extra = err->extra;
+   AddrCheckError* err_extra = VG_(get_error_extra)(err);
 
-   switch (err->ekind) {
+   switch (VG_(get_error_kind)(err)) {
       case CoreMemErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", err->string );
+               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
          } else {
             VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", err->string );
+               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
          }
          pp_ExeContext();
          break;
@@ -261,33 +264,33 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                VG_(skin_panic)("pp_SkinError(axskind)");
          }
          pp_ExeContext();
-         pp_AcAddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case FreeErr:
          VG_(message)(Vg_UserMsg,"Invalid free() / delete / delete[]");
          /* fall through */
       case FreeMismatchErr:
-         if (err->ekind == FreeMismatchErr)
+         if (VG_(get_error_kind)(err) == FreeMismatchErr)
             VG_(message)(Vg_UserMsg, 
                          "Mismatched free() / delete / delete []");
          pp_ExeContext();
-         pp_AcAddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case ParamErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 
-               "Syscall param %s contains unaddressable byte(s)",
-                err->string );
+                         "Syscall param %s contains unaddressable byte(s)",
+                         VG_(get_error_string)(err) );
          } else {
             VG_(message)(Vg_UserMsg, 
                 "Syscall param %s contains uninitialised or "
                 "unaddressable byte(s)",
-            err->string);
+                VG_(get_error_string)(err));
          }
          pp_ExeContext();
-         pp_AcAddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case UserErr:
@@ -300,11 +303,12 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                "unaddressable byte(s) found during client check request");
          }
          pp_ExeContext();
-         pp_AcAddrInfo(err->addr, &err_extra->addrinfo);
+         pp_AcAddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       default: 
-         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n", err->ekind);
+         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n",
+                     VG_(get_error_kind)(err));
          VG_(skin_panic)("unknown error code in SK_(pp_SkinError)");
    }
 }
@@ -331,7 +335,8 @@ static void describe_addr ( Addr a, AcAddrInfo* ai )
    /* Closure for searching malloc'd and free'd lists */
    Bool addr_is_in_block(ShadowChunk *sh_ch)
    {
-      return VG_(addr_is_in_block) ( a, sh_ch->data, sh_ch->size );
+      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
+                                        VG_(get_sc_size)(sh_ch) );
    }
    /* Perhaps it's on a thread's stack? */
    tid = VG_(any_matching_thread_stack)(addr_is_in_bounds);
@@ -344,18 +349,18 @@ static void describe_addr ( Addr a, AcAddrInfo* ai )
    sc = SK_(any_matching_freed_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Freed;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-      ai->lastchange = (ExeContext*)sc->skin_extra[0];
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
+      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
       return;
    }
    /* Search for a currently malloc'd block which might bracket it. */
    sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Mallocd;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-      ai->lastchange = (ExeContext*)sc->skin_extra[0];
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
+      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
       return;
    } 
    /* Clueless ... */
@@ -364,19 +369,19 @@ static void describe_addr ( Addr a, AcAddrInfo* ai )
 }
 
 
-/* Creates a copy of the err_extra, updates the copy with address info if
-   necessary, sticks the copy into the SkinError. */
-void SK_(dup_extra_and_update)(SkinError* err)
+/* Creates a copy of the `extra' part, updates the copy with address info if
+   necessary, and returns the copy. */
+void* SK_(dup_extra_and_update)(Error* err)
 {
-   AddrCheckError* err_extra;
+   AddrCheckError* new_extra;
 
-   err_extra  = VG_(malloc)(sizeof(AddrCheckError));
-   *err_extra = *((AddrCheckError*)err->extra);
+   new_extra  = VG_(malloc)(sizeof(AddrCheckError));
+   *new_extra = *((AddrCheckError*)VG_(get_error_extra)(err));
 
-   if (err_extra->addrinfo.akind == Undescribed)
-      describe_addr ( err->addr, &(err_extra->addrinfo) );
+   if (new_extra->addrinfo.akind == Undescribed)
+      describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
 
-   err->extra = err_extra;
+   return new_extra;
 }
 
 /* Is this address within some small distance below %ESP?  Used only
@@ -491,59 +496,65 @@ void SK_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 #define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
                       && VG_(strcmp)((s1),(s2))==0)
 
-Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind )
+Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 {
-   if      (STREQ(name, "Param"))   *skind = ParamSupp;
-   else if (STREQ(name, "CoreMem")) *skind = CoreMemSupp;
-   else if (STREQ(name, "Addr1"))   *skind = Addr1Supp;
-   else if (STREQ(name, "Addr2"))   *skind = Addr2Supp;
-   else if (STREQ(name, "Addr4"))   *skind = Addr4Supp;
-   else if (STREQ(name, "Addr8"))   *skind = Addr8Supp;
-   else if (STREQ(name, "Free"))    *skind = FreeSupp;
+   SuppKind skind;
+   
+   if      (STREQ(name, "Param"))   skind = ParamSupp;
+   else if (STREQ(name, "CoreMem")) skind = CoreMemSupp;
+   else if (STREQ(name, "Addr1"))   skind = Addr1Supp;
+   else if (STREQ(name, "Addr2"))   skind = Addr2Supp;
+   else if (STREQ(name, "Addr4"))   skind = Addr4Supp;
+   else if (STREQ(name, "Addr8"))   skind = Addr8Supp;
+   else if (STREQ(name, "Free"))    skind = FreeSupp;
    else 
       return False;
 
+   VG_(set_supp_kind)(su, skind);
    return True;
 }
 
-Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, 
-                                         SkinSupp *s )
+Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 {
    Bool eof;
 
-   if (s->skind == ParamSupp) {
+   if (VG_(get_supp_kind)(su) == ParamSupp) {
       eof = VG_(get_line) ( fd, buf, nBuf );
       if (eof) return False;
-      s->string = VG_(strdup)(buf);
+      VG_(set_supp_string)(su, VG_(strdup)(buf));
    }
    return True;
 }
 
-extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
+extern Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
    UInt su_size;
-   AddrCheckError* err_extra = err->extra;
+   AddrCheckError* err_extra = VG_(get_error_extra)(err);
+   ErrorKind ekind = VG_(get_error_kind)(err);
 
-   switch (su->skind) {
+   switch (VG_(get_supp_kind)(su)) {
       case ParamSupp:
-         return (err->ekind == ParamErr && STREQ(su->string, err->string));
+         return (ekind == ParamErr
+              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
 
       case CoreMemSupp:
-         return (err->ekind == CoreMemErr && STREQ(su->string, err->string));
+         return (ekind == CoreMemErr
+              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
 
       case Addr1Supp: su_size = 1; goto addr_case;
       case Addr2Supp: su_size = 2; goto addr_case;
       case Addr4Supp: su_size = 4; goto addr_case;
       case Addr8Supp: su_size = 8; goto addr_case;
       addr_case:
-         return (err->ekind == AddrErr && err_extra->size == su_size);
+         return (ekind == AddrErr && err_extra->size == su_size);
 
       case FreeSupp:
-         return (err->ekind == FreeErr || err->ekind == FreeMismatchErr);
+         return (ekind == FreeErr || ekind == FreeMismatchErr);
 
       default:
          VG_(printf)("Error:\n"
-                     "  unknown AddrCheck suppression type %d\n", su->skind);
+                     "  unknown AddrCheck suppression type %d\n",
+                     VG_(get_supp_kind)(su));
          VG_(skin_panic)("unknown suppression type in "
                          "SK_(error_matches_suppression)");
    }
@@ -1618,19 +1629,20 @@ void fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
 static __inline__
 void set_where( ShadowChunk* sc, ExeContext* ec )
 {
-   sc->skin_extra[0] = (UInt)ec;
+   VG_(set_sc_extra)( sc, 0, (UInt)ec );
 }
 
 static __inline__
 ExeContext *get_where( ShadowChunk* sc )
 {
-   return (ExeContext*)sc->skin_extra[0];
+   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
 }
 
 void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
 {
-   set_where( sc, VG_(get_ExeContext) ( tst ) );
+   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Postponing free()ing                                 ---*/
@@ -1646,7 +1658,7 @@ static __attribute__ ((unused))
 {
    ShadowChunk* sc;
    Int n = 0;
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
       n++;
    return n;
 }
@@ -1657,8 +1669,8 @@ static __attribute__ ((unused))
    ShadowChunk* sc;
    Int n = 0;
    /* VG_(printf)("freelist sanity\n"); */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
-      n += sc->size;
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
+      n += VG_(get_sc_size)(sc);
    sk_assert(n == vg_freed_list_volume);
 }
 
@@ -1672,14 +1684,14 @@ static void add_to_freed_queue ( ShadowChunk* sc )
    if (vg_freed_list_end == NULL) {
       sk_assert(vg_freed_list_start == NULL);
       vg_freed_list_end = vg_freed_list_start = sc;
-      vg_freed_list_volume = sc->size;
+      vg_freed_list_volume = VG_(get_sc_size)(sc);
    } else {    
-      sk_assert(vg_freed_list_end->next == NULL);
-      vg_freed_list_end->next = sc;
+      sk_assert(VG_(get_sc_next)(vg_freed_list_end) == NULL);
+      VG_(set_sc_next)(vg_freed_list_end, sc);
       vg_freed_list_end = sc;
-      vg_freed_list_volume += sc->size;
+      vg_freed_list_volume += VG_(get_sc_size)(sc);
    }
-   sc->next = NULL;
+   VG_(set_sc_next)(sc, NULL);
 
    /* Release enough of the oldest blocks to bring the free queue
       volume below vg_clo_freelist_vol. */
@@ -1690,16 +1702,16 @@ static void add_to_freed_queue ( ShadowChunk* sc )
       sk_assert(vg_freed_list_end != NULL);
 
       sc1 = vg_freed_list_start;
-      vg_freed_list_volume -= sc1->size;
+      vg_freed_list_volume -= VG_(get_sc_size)(sc1);
       /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
       sk_assert(vg_freed_list_volume >= 0);
 
       if (vg_freed_list_start == vg_freed_list_end) {
          vg_freed_list_start = vg_freed_list_end = NULL;
       } else {
-         vg_freed_list_start = sc1->next;
+         vg_freed_list_start = VG_(get_sc_next)(sc1);
       }
-      sc1->next = NULL; /* just paranoia */
+      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
       VG_(free_ShadowChunk) ( sc1 );
    }
 }
@@ -1712,7 +1724,7 @@ ShadowChunk* SK_(any_matching_freed_ShadowChunks)
 
    /* No point looking through freed blocks if we're not keeping
       them around for a while... */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
+   for (sc = vg_freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
       if (p(sc))
          return sc;
 
@@ -1743,13 +1755,12 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    UInstr*     u_in;
    Int         t_addr, t_size;
 
-   cb = VG_(alloc_UCodeBlock)();
-   cb->nextTemp = cb_in->nextTemp;
+   cb = VG_(setup_UCodeBlock)(cb_in);
 
-   for (i = 0; i < cb_in->used; i++) {
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
 
       t_addr = t_size = INVALID_TEMPREG;
-      u_in = &cb_in->instrs[i];
+      u_in = VG_(get_instr)(cb_in, i);
 
       switch (u_in->opcode) {
          case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
@@ -2090,57 +2101,54 @@ Char* SK_(usage)(void)
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Addrcheck";
-   details->version          = NULL;
-   details->description      = "a fine-grained address checker";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.";
-   details->bug_reports_to   = "jseward@acm.org";
+   VG_(details_name)            ("Addrcheck");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a fine-grained address checker");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.");
+   VG_(details_bug_reports_to)  ("jseward@acm.org");
 
-   needs->core_errors          = True;
-   needs->skin_errors          = True;
-   needs->libc_freeres         = True;
-   needs->sizeof_shadow_block  = 1;
-   needs->basic_block_discards = False;
-   needs->shadow_regs          = False;
-   needs->command_line_options = True;
-   needs->client_requests      = True;
-   needs->extended_UCode       = False;
-   needs->syscall_wrapper      = True;
-   needs->alternative_free     = True;
-   needs->sanity_checks        = True;
+   VG_(needs_core_errors)         ();
+   VG_(needs_skin_errors)         ();
+   VG_(needs_libc_freeres)        ();
+   VG_(needs_sizeof_shadow_block) ( 1 );
+   VG_(needs_command_line_options)();
+   VG_(needs_client_requests)     ();
+   VG_(needs_syscall_wrapper)     ();
+   VG_(needs_alternative_free)    ();
+   VG_(needs_sanity_checks)       ();
 
-   track->new_mem_startup       = & addrcheck_new_mem_startup;
-   track->new_mem_heap          = & addrcheck_new_mem_heap;
-   track->new_mem_stack         = & SK_(make_accessible);
-   track->new_mem_stack_aligned = & make_writable_aligned;
-   track->new_mem_stack_signal  = & SK_(make_accessible);
-   track->new_mem_brk           = & SK_(make_accessible);
-   track->new_mem_mmap          = & addrcheck_set_perms;
+   VG_(track_new_mem_startup)      ( & addrcheck_new_mem_startup );
+   VG_(track_new_mem_heap)         ( & addrcheck_new_mem_heap );
+   VG_(track_new_mem_stack)        ( & SK_(make_accessible) );
+   VG_(track_new_mem_stack_aligned)( & make_writable_aligned );
+   VG_(track_new_mem_stack_signal) ( & SK_(make_accessible) );
+   VG_(track_new_mem_brk)          ( & SK_(make_accessible) );
+   VG_(track_new_mem_mmap)         ( & addrcheck_set_perms );
    
-   track->copy_mem_heap         = & copy_address_range_state;
-   track->copy_mem_remap        = & copy_address_range_state;
-   track->change_mem_mprotect   = & addrcheck_set_perms;
+   VG_(track_copy_mem_heap)        ( & copy_address_range_state );
+   VG_(track_copy_mem_remap)       ( & copy_address_range_state );
+   VG_(track_change_mem_mprotect)  ( & addrcheck_set_perms );
       
-   track->ban_mem_heap          = & SK_(make_noaccess);
-   track->ban_mem_stack         = & SK_(make_noaccess);
+   VG_(track_ban_mem_heap)         ( & SK_(make_noaccess) );
+   VG_(track_ban_mem_stack)        ( & SK_(make_noaccess) );
 
-   track->die_mem_heap          = & SK_(make_noaccess);
-   track->die_mem_stack         = & SK_(make_noaccess);
-   track->die_mem_stack_aligned = & make_noaccess_aligned; 
-   track->die_mem_stack_signal  = & SK_(make_noaccess); 
-   track->die_mem_brk           = & SK_(make_noaccess);
-   track->die_mem_munmap        = & SK_(make_noaccess); 
+   VG_(track_die_mem_heap)         ( & SK_(make_noaccess) );
+   VG_(track_die_mem_stack)        ( & SK_(make_noaccess) );
+   VG_(track_die_mem_stack_aligned)( & make_noaccess_aligned ); 
+   VG_(track_die_mem_stack_signal) ( & SK_(make_noaccess) ); 
+   VG_(track_die_mem_brk)          ( & SK_(make_noaccess) );
+   VG_(track_die_mem_munmap)       ( & SK_(make_noaccess) ); 
 
-   track->bad_free              = & SK_(record_free_error);
-   track->mismatched_free       = & SK_(record_freemismatch_error);
+   VG_(track_bad_free)             ( & SK_(record_free_error) );
+   VG_(track_mismatched_free)      ( & SK_(record_freemismatch_error) );
 
-   track->pre_mem_read          = & check_is_readable;
-   track->pre_mem_read_asciiz   = & check_is_readable_asciiz;
-   track->pre_mem_write         = & check_is_writable;
-   track->post_mem_write        = & SK_(make_accessible);
+   VG_(track_pre_mem_read)         ( & check_is_readable );
+   VG_(track_pre_mem_read_asciiz)  ( & check_is_readable_asciiz );
+   VG_(track_pre_mem_write)        ( & check_is_writable );
+   VG_(track_post_mem_write)       ( & SK_(make_accessible) );
 
    VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS4));
    VG_(register_compact_helper)((Addr) & SK_(helperc_ACCESS2));

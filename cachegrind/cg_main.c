@@ -495,8 +495,8 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
    is_LOAD = is_STORE = is_FPU_R = is_FPU_W = False;
    t_read = t_write = INVALID_TEMPREG;
 
-   for (i = 0; i < cb->used; i++) {
-      u_in = &cb->instrs[i];
+   for (i = 0; i < VG_(get_num_instrs)(cb); i++) {
+      u_in = VG_(get_instr)(cb, i);
       switch(u_in->opcode) {
 
          case INCEIP: 
@@ -695,14 +695,13 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    BBCC_node = get_BBCC(orig_addr, cb_in, /*remove=*/False, &BB_seen_before);
    BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
 
-   cb = VG_(alloc_UCodeBlock)();
-   cb->nextTemp = cb_in->nextTemp;
+   cb = VG_(setup_UCodeBlock)(cb_in);
 
    t_CC_addr = t_read_addr = t_write_addr = t_data_addr1 = t_data_addr2 =
                t_read = t_write = INVALID_TEMPREG;
 
-   for (i = 0; i < cb_in->used; i++) {
-      u_in = &cb_in->instrs[i];
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u_in = VG_(get_instr)(cb_in, i);
 
       /* What this is all about:  we want to instrument each x86 instruction 
        * translation.  The end of these are marked in three ways.  The three
@@ -802,21 +801,22 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case JMP:
             if (instrumented_Jcond) {
                sk_assert(CondAlways == u_in->cond);
-               sk_assert(i+1 == cb_in->used);
+               sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
                VG_(copy_UInstr)(cb, u_in);
                instrumented_Jcond = False;    /* reset */
                break;
             }
             /* The first JMP... instrument. */
             if (CondAlways != u_in->cond) {
-               sk_assert(i+2 == cb_in->used);
+               sk_assert(i+2 == VG_(get_num_instrs)(cb_in));
                instrumented_Jcond = True;
             } else {
-               sk_assert(i+1 == cb_in->used);
+               sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
             }
 
             /* Get x86 instr size from final JMP. */
-            x86_instr_size = LAST_UINSTR(cb_in).extra4b;
+            x86_instr_size = VG_(get_last_instr)(cb_in)->extra4b;
+
             goto instrument_x86_instr;
 
 
@@ -1916,18 +1916,17 @@ Char* SK_(usage)(void)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs,
-                       VgTrackEvents* not_used)
+void SK_(pre_clo_init)(void)
 {
-   details->name             = "Cachegrind";
-   details->version          = NULL;
-   details->description      = "an I1/D1/L2 cache profiler";
-   details->copyright_author =
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
-   details->bug_reports_to   = "njn25@cam.ac.uk";
+   VG_(details_name)            ("Cachegrind");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("an I1/D1/L2 cache profiler");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
 
-   needs->basic_block_discards = True;
-   needs->command_line_options = True;
+   VG_(needs_basic_block_discards)();
+   VG_(needs_command_line_options)();
 
    VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access);
    VG_(register_compact_helper)((Addr) & log_1I_0D_cache_access_JIFZ);

@@ -51,6 +51,7 @@ valgrind_so_SOURCES = \
 	vg_memory.c \
 	vg_messages.c \
 	vg_mylibc.c \
+	vg_needs.c \
 	vg_procselfmaps.c \
 	vg_dummy_profile.c \
 	vg_signals.c \

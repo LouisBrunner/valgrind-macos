@@ -369,18 +369,18 @@ Only use <code>SK_(post_clo_init)()</code> if a skin provides command line
 options and must do some initialisation after option processing takes place
 (``<code>clo</code>'' stands for ``command line options'').<p>
 
-The first argument to <code>SK_(pre_clo_init)()</code> must be initialised with
-various ``details'' for a skin.  These are all compulsory except for
+First of all, various ``details'' need to be set for a skin, using the
+functions <code>VG_(details_*)()</code>.  These are all compulsory except for
 <code>version</code>.  They are used when constructing the startup message,
 except for <code></code> which is used if <code>VG_(skin_panic)()</code> is
 ever called, or a skin assertion fails.<p>
 
-The second argument to <code>SK_(pre_clo_init)()</code> must be initialised with
-the ``needs'' for a skin.  They are mostly booleans, and can be left untouched
-(they default to <code>False</code>).  They determine whether a skin can do
-various things such as:  record, report and suppress errors; process command
-line options;  wrap system calls;  record extra information about malloc'd
-blocks, etc.<p>
+Second, various ``needs'' can be set for a skin, using the functions
+<code>VG_(needs_*)()</code>.  They are mostly booleans, and can be left
+untouched (they default to <code>False</code>).  They determine whether a skin
+can do various things such as:  record, report and suppress errors; process
+command line options;  wrap system calls;  record extra information about
+malloc'd blocks, etc.<p>
 
 For example, if a skin wants the core's help in recording and reporting errors,
 it must set the <code>skin_errors</code> need to <code>True</code>, and then
@@ -391,18 +391,20 @@ scratch because the core is doing most of the work.  See the type
 <code>VgNeeds</code> in <code>include/vg_skin.h</code> for full details of all
 the needs.<p>
 
-The third argument to <code>SK_(pre_clo_init)()</code> must be initialised to
-indicate which events in core the skin wants to be notified about.  These
-include things such as blocks of memory being malloc'd, the stack pointer
-changing, a mutex being locked, etc.  If a skin wants to know about this,
-it should set the relevant pointer in the structure to point to a function,
-which will be called when that event happens.<p>
+Third, the skin can indicate which events in core it wants to be notified
+about, using the functions <code>VG_(track_*)()</code>.  These include things
+such as blocks of memory being malloc'd, the stack pointer changing, a mutex
+being locked, etc.  If a skin wants to know about this, it should set the
+relevant pointer in the structure to point to a function, which will be called
+when that event happens.<p>
 
 For example, if the skin want to be notified when a new block of memory is
-malloc'd, it should set the <code>new_mem_heap</code> function pointer, and the
-assigned function will be called each time this happens.  See the type
-<code>VgTrackEvents</code> in <code>include/vg_skin.h</code> for full details
-of all the trackable events.<p>
+malloc'd, it should call <code>VG_(track_new_mem_heap)()</code> with an
+appropriate function pointer, and the assigned function will be called each
+time this happens.<p>
+
+More information about ``details'', ``needs'' and ``trackable events'' can be
+found in <code>include/vg_skin.h</code>.<p>
 
 <a name="instr"></a>
 <h3>2.7&nbsp; Instrumentation</h3>
@@ -675,9 +677,8 @@ it:
   <li>If you write a skin</li><p>
   <li>If you have suggestions for new features, needs, trackable events,
       functions</li><p>
-  <li>If you have suggestions for making skins easier to write
-  </li><p>
-  <li>If you have suggestions for improving this documentation  </li><p>
+  <li>If you have suggestions for making skins easier to write</li><p>
+  <li>If you have suggestions for improving this documentation</li><p>
   <li>If you don't understand something</li><p>
 </ul>
 

@@ -40,6 +40,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
+	new_nothrow.stderr.exp new_nothrow.vgtest \
 	new_override.stderr.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
@@ -67,7 +68,7 @@ check_PROGRAMS = \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
-	memalign_test memcmptest mmaptest nanoleak null_socket \
+	memalign_test memcmptest mmaptest nanoleak new_nothrow null_socket \
 	overlap pushfpopf \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
@@ -126,5 +127,6 @@ writev_SOURCES		= writev.c
 
 # C++ ones
 mismatches_SOURCES	= mismatches.cpp
+new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 

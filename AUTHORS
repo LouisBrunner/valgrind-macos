@@ -12,7 +12,7 @@ syscall/signal simulation stuff, including a complete redesign of how
 syscalls and signals are handled.  Also code generation improvements.
 
 Tom Hughes, thh@cyberscience.com, did a vast number of bug fixes, and
-helped out with support for more recent Linux/glibc versions".
+helped out with support for more recent Linux/glibc versions.
 
 Robert Walsh, rjwalsh@durables.org, added file descriptor leakage
 checking, new library interception machinery, support for client

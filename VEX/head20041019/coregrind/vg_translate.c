@@ -1397,7 +1397,7 @@ void failure_exit ( void )
 {
    LibVEX_ClearTemporary(True);
    VG_(printf)("VEX did failure_exit.  Bye.\n");
-   VG_(exit)(1);
+   vg_assert(0); //VG_(exit)(1);
 }
 
 static
@@ -1516,7 +1516,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              (Char*)orig_addr, (Addr64)orig_addr, &orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              NULL, NULL,
-             DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
+             0+ DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
           );
 
    vg_assert(tres == TransOK);

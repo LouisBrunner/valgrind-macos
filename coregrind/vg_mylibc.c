@@ -1691,7 +1691,7 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
    }
 
    VG_(printf)("\n");
-   VG_(printf)("VG_(get_memory_from_mmap): %s's request for %d bytes failed.\n", 
+   VG_(printf)("VG_(get_memory_from_mmap): %s's request for %d bytes failed.\n",
                who, nBytes);
    VG_(printf)("VG_(get_memory_from_mmap): %d bytes already allocated.\n", 
                tot_alloc);

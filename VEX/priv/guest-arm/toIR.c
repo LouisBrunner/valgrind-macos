@@ -804,30 +804,28 @@ void setFlags_MUL ( IRTemp arg1, IRTemp arg2, UInt op )
 
 /* Condition codes, using the ARM encoding.  */
 
-#if 0
 static HChar* name_ARMCondcode ( ARMCondcode cond )
 {
    switch (cond) {
-       case ARMCondEQ:    return "eq";
-       case ARMCondNE:    return "ne";
-       case ARMCondHS:    return "hs";
-       case ARMCondLO:    return "no";
-       case ARMCondMI:    return "mi";
-       case ARMCondPL:    return "pl";
-       case ARMCondVS:    return "vs";
-       case ARMCondVC:    return "vc";
-       case ARMCondHI:    return "hi";
-       case ARMCondLS:    return "ls";
-       case ARMCondGE:    return "ge";
-       case ARMCondLT:    return "lt";
-       case ARMCondGT:    return "gt";
-       case ARMCondLE:    return "le";
-       case ARMCondAL:    return "al";
-       case ARMCondNV:    return "nv";
+       case ARMCondEQ:    return "{eq}";
+       case ARMCondNE:    return "{ne}";
+       case ARMCondHS:    return "{hs}";  // or 'cs'
+       case ARMCondLO:    return "{lo}";  // or 'cc'
+       case ARMCondMI:    return "{mi}";
+       case ARMCondPL:    return "{pl}";
+       case ARMCondVS:    return "{vs}";
+       case ARMCondVC:    return "{vc}";
+       case ARMCondHI:    return "{hi}";
+       case ARMCondLS:    return "{ls}";
+       case ARMCondGE:    return "{ge}";
+       case ARMCondLT:    return "{lt}";
+       case ARMCondGT:    return "{gt}";
+       case ARMCondLE:    return "{le}";
+       case ARMCondAL:    return "";      // {al}: default, doesn't need specifying
+       case ARMCondNV:    return "{nv}";
        default: vpanic("name_ARMCondcode");
    }
 }
-#endif
 
 #if 0
 static 
@@ -846,6 +844,59 @@ ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
 #endif
 
 
+/* Addressing Mode 1 - DP ops
+   Addressing Mode 2 - Load/Store word/ubyte (scaled)
+ */
+static HChar* name_ARMShiftOp ( UChar shift_op, UChar imm_val )
+{
+   switch (shift_op) {
+       case 0x0: case 0x1: case 0x8: return "lsl";
+       case 0x2: case 0x3: case 0xA: return "lsr";
+       case 0x4: case 0x5: case 0xC: return "asr";
+       case 0x6:                     return (imm_val==0) ? "rrx" : "ror";
+       case 0x7: case 0xE:           return "ror";
+       default: vpanic("name_ARMShiftcode");
+   }
+}
+
+
+/* Addressing Mode 4 - Load/Store Multiple */
+static HChar* name_ARMAddrMode4 ( UChar mode )
+{
+    /* See ARM ARM A5-55 for alternative names for stack operations
+       ldmfa (full ascending), etc. */
+   switch (mode) {
+       case 0x0: return "da"; // Decrement after
+       case 0x1: return "ia"; // Increment after
+       case 0x2: return "db"; // Decrement before
+       case 0x3: return "ib"; // Increment before
+       default: vpanic("name_ARMAddrMode4");
+   }
+}
+
+/* Data Processing ops */
+static HChar* name_ARMDataProcOp ( UChar opc )
+{
+    switch (opc) {
+	case 0x0: return "and";
+	case 0x1: return "eor";
+	case 0x2: return "sub";
+	case 0x3: return "rsb";
+	case 0x4: return "add";
+	case 0x5: return "adc";
+	case 0x6: return "sbc";
+	case 0x7: return "rsc";
+	case 0x8: return "tst";
+	case 0x9: return "teq";
+	case 0xA: return "cmp";
+	case 0xB: return "cmn";
+	case 0xC: return "orr";
+	case 0xD: return "mov";
+	case 0xE: return "bic";
+	case 0xF: return "mvn";
+	default: vpanic("name_ARMDataProcOp");
+    }
+}
 
 
 
@@ -864,7 +915,7 @@ Bool dis_loadstore_mult ( theInstr )
 
     UChar L  = (flags >> 0) & 1;  // Load(1) | Store(0)
     UChar W  = (flags >> 1) & 1;  // (W)riteback Rn (incr(U=1) | decr(U=0) by n_bytes)
-//  UChar S  = (flags >> 2) & 1;  // Priviledged mode flag - *** CAB TODO ***
+    UChar S  = (flags >> 2) & 1;  // Priviledged mode flag - *** CAB TODO ***
     UChar U  = (flags >> 3) & 1;  // Txfr ctl: Direction = upwards(1) | downwards(0)
     UChar PU = (flags >> 3) & 3;  // Txfr ctl: Rn within(P=1) | outside(P=0) accessed mem
 
@@ -875,6 +926,10 @@ Bool dis_loadstore_mult ( theInstr )
     UInt tmp_reg = reg_list;
     UInt reg_idx, offset;
     Bool decode_ok = True;
+
+    HChar* cond_name = name_ARMCondcode( (theInstr >> 28) & 0xF );
+    HChar reg_names[70];
+    UInt buf_offset;
 
     while (tmp_reg > 0) {     // Count num bits in reg_list => num_bytes
 	if (tmp_reg & 1) { n_bytes += 4; }
@@ -925,6 +980,8 @@ Bool dis_loadstore_mult ( theInstr )
       reg_idx: guest register address
       offset : current mem offset from start_addr
     */
+    reg_names[0] = '\0';
+    buf_offset=0;
     offset=0;
     for (reg_idx=0; reg_idx < 16; reg_idx++) {
 	if (( reg_list >> reg_idx ) & 1) {  // reg_list[i] == 1?
@@ -961,8 +1018,25 @@ Bool dis_loadstore_mult ( theInstr )
 		}
 	    }
 	    offset += 4;
+
+	    reg_names[buf_offset++] = 'R';
+	    if (reg_idx > 9) {
+		reg_names[buf_offset++] = '1';
+		reg_names[buf_offset++] = 38 + reg_idx;
+	    } else {
+		reg_names[buf_offset++] = 48 + reg_idx;
+	    }
+	    reg_names[buf_offset++] = ',';
+	    // CAB: Eugh!  Where's strcpy?!
 	}
     }
+    if (buf_offset > 0) {
+	reg_names[buf_offset-1] = '\0';
+    }
+    DIP("%s%s%s R%d%s, {%s}%s\n", (L==1) ? "ldm":"stm", cond_name,
+	name_ARMAddrMode4( PU ), Rn_addr, (W==1) ? "!" : "",
+	reg_names, (S==1) ? "^" : "");
+
     // CAB TODO:
     // IR assert( end_addr == (start_addr + offset) - 8 )
 
@@ -979,7 +1053,7 @@ Bool dis_loadstore_mult ( theInstr )
 
 
 static
-Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
+Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address, HChar* buf )
 {
     UChar is_reg   = (theInstr >> 25) & 0x1;   // immediate | register offset/index
     UInt flags     = (theInstr >> 20) & 0x3F;  // theInstr[25:20]
@@ -1006,6 +1080,10 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
     IRTemp reg_offset = newTemp(Ity_I32);
 
     IRTemp oldFlagC = newTemp(Ity_I32);
+
+    HChar buf2[30];
+    HChar buf3[20];
+    buf3[0] = '\0';
 
     if (Rn_addr == 15) {
 	if (P==1 && W==0) { // offset addressing
@@ -1065,14 +1143,9 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
 		break;
 
 	    case 0x3: // ROR|RRX
-
-		// CAB: These right?
-
-		// X86G_CC_MASK_C ARMG_CC_SHIFT_C
-
 		assign( oldFlagC, binop(Iop_Shr32,
 					mk_armg_calculate_flags_c(),
-				       mkU8(ARMG_CC_SHIFT_C)) );
+					mkU8(ARMG_CC_SHIFT_C)) );
 	
 		if (shift_imm == 0) { // RRX (ARM ARM A5-17)
 		    // 33 bit ROR using carry flag as the 33rd bit
@@ -1098,11 +1171,23 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address )
 		return False; 
 	    }
 	    assign( reg_offset, mkexpr(scaled_index) );
+
+	    if (shift == 0x3 && shift_imm == 0) {
+		DIS(buf3, ", %s", name_ARMShiftOp(shift_op * 2, shift_imm));
+	    } else {
+		DIS(buf3, ", %s #%d", name_ARMShiftOp(shift_op * 2, shift_imm), shift_imm);
+	    }
 	}
+	DIS(buf2, "%cR%d%s", (U==1) ? '+' : '-', Rm_addr, buf3);
     } else { // immediate
 	assign( reg_offset, mkU32(offset_12) );
+
+	DIS(buf2, "#%c%d", (U==1) ? '+' : '-', offset_12);
     }
-			
+    DIS(buf, "[R%d%s, %s%s", Rn_addr,
+	(P==0) ? "]" : "", buf2,
+	(P==1) ? ((W==1) ? "]!" : "]") : "");
+
     /*
       Depending on P,U,W, write to Rn and set address to load/store
     */
@@ -1151,13 +1236,17 @@ Bool dis_loadstore_w_ub ( UInt theInstr )
     IRTemp data_ror16 = newTemp(Ity_I32);
     IRTemp data_ror24 = newTemp(Ity_I32);
     IRExpr* expr_addr_10;
+    HChar* cond_name = name_ARMCondcode( (theInstr >> 28) & 0xF );
+    HChar dis_buf[50];
 
 
     vassert(((theInstr >> 26) & 0x3) == 0x1);
 
     // Get the address to load/store
-    if (!dis_loadstore_w_ub_address(theInstr, &address)) { return False; }
+    if (!dis_loadstore_w_ub_address(theInstr, &address, dis_buf)) { return False; }
 
+    DIP("%s%s%s R%d, %s\n", (L==1) ? "ldr" : "str", cond_name,
+	(B==1) ? "b" : "", Rd_addr, dis_buf);
 
     if (Rd_addr == Rn_addr && W==1) {  // Unpredictable - ARM ARM A4-39,41,89,91
 	vex_printf("dis_loadstore_w_ub(arm): Unpredictable - Rd_addr==Rn_addr\n");
@@ -1264,7 +1353,7 @@ Bool dis_loadstore_w_ub ( UInt theInstr )
   carry = carry_out[0]
 */
 static
-IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
+IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
     UChar Rn_addr   = (theInstr >> 16) & 0xF;
     UChar Rd_addr   = (theInstr >> 12) & 0xF;
@@ -1298,8 +1387,6 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 
 
     if (by_reg) {  // Register Shift
-	vex_printf("shift: reg\n");
-
 	assign( Rm, getIReg(Rm_addr) );
 
 	if (Rd_addr == 15 || Rm_addr == 15 ||
@@ -1355,10 +1442,11 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 		    binop(Iop_CmpEQ8, mkexpr(shift_amt), mkU8(0)),
 		    binop(Iop_Shr32, mkexpr(Rm), mkexpr(carry_shift)),
 		    mkexpr(oldFlagC) ) );
+
+	DIS(buf, "R%d, %s R%d", Rm_addr, name_ARMShiftOp(shift_op, 0), Rs_addr);
     }
     else {  // Immediate shift
-	vex_printf("shift: imm\n");
-	
+
 	// CAB: This right?
 	// "the value used is the address of the current intruction plus 8"
 	if (Rm_addr == 15 || Rn_addr == 15) {        // ARM ARM A5-9
@@ -1394,10 +1482,13 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 		    *decode_ok = False;
 		    return mkU32(0);
 	    }
+	    DIS(buf, "R%d", Rm_addr);
 	} else {
 	    expr = binop(op, mkexpr(Rm), mkU8(shift_imm));
 	    assign( *carry_out, binop(op, mkexpr(Rm),
 				      binop(Iop_Sub32, mkU32(shift_imm), mkU32(1)) ) );
+
+	    DIS(buf, "R%d, %s #%d", Rm_addr, name_ARMShiftOp(shift_op, 0), shift_imm);
 	}
     }
     return expr;
@@ -1411,7 +1502,7 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
   ARM ARM A5-15,16,17
 */
 static
-IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
+IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
     UChar Rn_addr  = (theInstr >> 16) & 0xF;
     UChar Rd_addr  = (theInstr >> 12) & 0xF;
@@ -1430,8 +1521,6 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 			    mkU8(ARMG_CC_SHIFT_C)) );
 
     if (by_reg) {  // Register rotate
-	vex_printf("rotate: reg\n");
-
 	assign( Rm, getIReg(Rm_addr) );
 
 	if (Rd_addr == 15 || Rm_addr == 15 ||
@@ -1466,9 +1555,10 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 		     binop(Iop_Shr32, mkexpr(Rm), mkexpr(rot_amt)),
 		     binop(Iop_Shl32, mkexpr(Rm),
 			   binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt))));
+
+	DIS(buf, "R%d, ror R%d", Rm_addr, Rs_addr);
     }
     else {  // Immediate rotate
-	vex_printf("rotate: imm\n");
 
 	// CAB: This right?
 	// "the value used is the address of the current intruction plus 8"
@@ -1490,11 +1580,14 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
 	    expr = binop(Iop_Or32,
 			 binop(Iop_Shl32, mkexpr(oldFlagC), mkU8(31)),
 			 binop(Iop_Shr32, mkexpr(Rm), mkU8(1)));
+	    DIS(buf, "R%d, rrx", Rm_addr);
 	} else {
 	    expr = binop(Iop_Or32,
 			 binop(Iop_Shr32, mkexpr(Rm), mkU8(rot_imm)),
 			 binop(Iop_Shl32, mkexpr(Rm),
 			       binop(Iop_Sub8, mkU8(32), mkU8(rot_imm))));
+
+	    DIS(buf, "R%d, ror #%d", Rm_addr, rot_imm);
 	}
     }
     return expr;
@@ -1518,7 +1611,7 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out )
    Returns <shifter_operand> expression
 */
 static
-IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out)
+IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
     UChar is_immed  = (theInstr >> 25) & 1;    // immediate / register shift
     UChar shift_op = (theInstr >> 4) & 0xF;    // second byte
@@ -1527,12 +1620,9 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out)
     IRTemp oldFlagC = newTemp(Ity_I32);
 
     if (is_immed) {  // ARM ARM A5-2
-	vex_printf("shifter_op: imm\n");
-
 	immed_8 = theInstr & 0xFF;
 	rot_imm = (theInstr >> 8) & 0xF;
 	imm = immed_8 << (rot_imm << 1);
-	vex_printf("imm: %,b\n", imm);
 
 	if (rot_imm == 0) {
 	    assign( oldFlagC, binop(Iop_Shr32,
@@ -1542,19 +1632,19 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out)
 	} else {
 	    assign( *carry_out, binop(Iop_Shr32, mkU32(imm), mkU8(31)) );
 	}
+	DIS(buf, "#%d", imm);
 	return mkU32(imm);
     } else {
-	vex_printf("shifter_op: shift\n");
 
 	// We shouldn't have any 'op' with bits 4=1 and 7=1 : 1xx1
 	switch (shift_op) {
 	case 0x0: case 0x8: case 0x1:
 	case 0x2: case 0xA: case 0x3: 
 	case 0x4: case 0xC: case 0x5:
-	    return dis_shift( decode_ok, theInstr, carry_out );
+	    return dis_shift( decode_ok, theInstr, carry_out, buf );
 
 	case 0x6: case 0xE: case 0x7:
-	    return dis_rotate( decode_ok, theInstr, carry_out );
+	    return dis_rotate( decode_ok, theInstr, carry_out, buf );
 
 	default: // Error: Any other value shouldn't be here.
 	    *decode_ok = False;
@@ -1582,96 +1672,109 @@ Bool dis_dataproc ( UInt theInstr )
     IRTemp alu_out = newTemp(Ity_I32);
     IRTemp shifter_op = newTemp(Ity_I32);
     IRTemp carry_out = newTemp(Ity_I32);
-    IROp op = ARMG_CC_OP_LOGIC;
+    IROp op_set_flags = ARMG_CC_OP_LOGIC;
     Bool testing_instr = False;
     Bool decode_ok = True;
+    HChar* cond_name = name_ARMCondcode( (theInstr >> 28) & 0xF );
+    HChar* ch_set_flags = (set_flags == 1) ? "S" : "";
+    HChar dis_buf[50];
 
-    assign( shifter_op, dis_shifter_op( &decode_ok, theInstr, &carry_out ) );
+    assign( shifter_op, dis_shifter_op( &decode_ok, theInstr, &carry_out, dis_buf ) );
     if (!decode_ok) return False;
 
     assign( Rd, getIReg(Rd_addr) );
     assign( Rn, getIReg(Rn_addr) );
 
+
+    switch (opc) {
+	case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
+	case 0xC: case 0xE:
+	    DIP("%s%s%s R%d, R%d, %s\n", name_ARMDataProcOp(opc),
+		cond_name, ch_set_flags, Rd_addr, Rn_addr, dis_buf);
+	    break;
+	case 0x5: case 0x6: case 0x7:
+	    // CAB: Unimplemented
+	    break;
+	case 0x8: case 0x9: case 0xA: case 0xB:
+	    DIP("%s%s R%d, %s\n", name_ARMDataProcOp(opc),
+		cond_name, Rn_addr, dis_buf);
+	    break;
+	case 0xD: case 0xF:
+	    DIP("%s%s%s R%d, %s\n", name_ARMDataProcOp(opc),
+		cond_name, ch_set_flags, Rd_addr, dis_buf);
+	    break;
+	default:break;
+    }
+
+
     switch (opc) {
     case 0x0: // AND
-	vex_printf("OPCODE: AND\n");
 	assign( alu_out, binop(Iop_And32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0x1: // EOR
-	vex_printf("OPCODE: EOR\n");
 	assign( alu_out, binop(Iop_Xor32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0x2: // SUB
-	vex_printf("OPCODE: SUB\n");
 	assign( alu_out, binop( Iop_Sub32, getIReg(Rn_addr), mkexpr(shifter_op) ) );
-	op = ARMG_CC_OP_SUB;
+	op_set_flags = ARMG_CC_OP_SUB;
 	break;
 
     case 0x3:  // RSB
-	vex_printf("OPCODE: RSB\n");
 	assign( alu_out, binop( Iop_Sub32, mkexpr(shifter_op), getIReg(Rn_addr) ) );
-	op = ARMG_CC_OP_SUB;
+	op_set_flags = ARMG_CC_OP_SUB;
+	/* set_flags(), below, switches the args for this case */
 	break;
 
     case 0x4: // ADD
-	vex_printf("OPCODE: ADD\n");
 	assign( alu_out, binop( Iop_Add32, getIReg(Rn_addr), mkexpr(shifter_op) ) );
-	op = ARMG_CC_OP_ADD;
+	op_set_flags = ARMG_CC_OP_ADD;
 	break;
 
-    case 0x5:  // ADC - Unimplemented
-    case 0x6:  // SBC - Unimplemented
-    case 0x7:  // RSC - Unimplemented
+    case 0x5:  // ADC  // CAB: Unimplemented
+    case 0x6:  // SBC  // CAB: Unimplemented
+    case 0x7:  // RSC  // CAB: Unimplemented
 	goto decode_failure;
 
     case 0x8: // TST
-	vex_printf("OPCODE: TST\n");
 	vassert(set_flags==1);
 	assign( alu_out, binop(Iop_And32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	testing_instr = True;
 	break;
 
     case 0x9: // TEQ
-	vex_printf("OPCODE: TEQ\n");
 	vassert(set_flags==1);
 	assign( alu_out, binop(Iop_Xor32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	testing_instr = True;
 	break;
 
     case 0xA: // CMP
-	vex_printf("OPCODE: CMP\n");
 	vassert(set_flags==1);
-	op = ARMG_CC_OP_SUB;
+	op_set_flags = ARMG_CC_OP_SUB;
 	testing_instr = True;
 	break;
 
     case 0xB: // CMN
-	vex_printf("OPCODE: CMN\n");
 	vassert(set_flags==1);
-	op = ARMG_CC_OP_ADD;
+	op_set_flags = ARMG_CC_OP_ADD;
 	testing_instr = True;
 	break;
 
     case 0xC: // ORR
-	vex_printf("OPCODE: ORR\n");
 	assign( alu_out, binop(Iop_Or32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0xD: // MOV
-	vex_printf("OPCODE: MOV\n");
 	assign( alu_out, mkexpr(shifter_op) );
 	break;
 
     case 0xE: // BIC
-	vex_printf("OPCODE: BIC\n");
 	assign( alu_out, binop(Iop_And32, getIReg(Rn_addr),
 			       unop( Iop_Not32, mkexpr(shifter_op))) );
 	break;
 
     case 0xF: // MVN
-	vex_printf("OPCODE: MVN\n");
 	assign( alu_out, unop(Iop_Not32, mkexpr(shifter_op)) );
 	break;
 
@@ -1692,10 +1795,14 @@ Bool dis_dataproc ( UInt theInstr )
     }
 
     if (set_flags) {
-	if (op == ARMG_CC_OP_LOGIC) {
-	    setFlags_DEP1_DEP2( op, alu_out, carry_out );
+	if (op_set_flags == ARMG_CC_OP_LOGIC) {
+	    setFlags_DEP1_DEP2( op_set_flags, alu_out, carry_out );
 	} else {
-	    setFlags_DEP1_DEP2( op, Rn, shifter_op );
+	    if (opc == 0x3) {
+		setFlags_DEP1_DEP2( op_set_flags, shifter_op, Rn );
+	    } else {
+		setFlags_DEP1_DEP2( op_set_flags, Rn, shifter_op );
+	    }
 	}
     }
     return decode_ok;
@@ -1713,6 +1820,10 @@ void dis_branch ( UInt theInstr )
     UInt signed_immed_24 = theInstr & 0xFFFFFF;
     UInt branch_offset;
     IRTemp addr = newTemp(Ity_I32);
+
+    DIP("b%c%s 0x%x\n", link ? 'l' : ' ',
+	name_ARMCondcode( (theInstr >> 28) & 0xF ),
+	signed_immed_24);
 
     if (link) { // LR (R14) = addr of instr after branch instr
 	assign( addr, binop(Iop_Add32, getIReg(15), mkU32(4)) );
@@ -1782,7 +1893,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    theInstr = *(UInt*)(&guest_code[delta]);
 
-   vex_printf("START: 0x%x, %,b\n", theInstr, theInstr );
+//   vex_printf("START: 0x%x, %,b\n", theInstr, theInstr );
 
    DIP("\t0x%x:  ", guest_pc_bbstart+delta);
 
@@ -1835,7 +1946,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
      Deal with condition first
     */
    cond = (theInstr >> 28) & 0xF;    /* opcode: bits 31:28 */
-   vex_printf("\ndisInstr(arm): cond: 0x%x, %b\n", cond, cond );
+//   vex_printf("\ndisInstr(arm): cond: 0x%x, %b\n", cond, cond );
 
    switch (cond) {
    case 0xF:   // => Illegal instruction prior to v5 (see ARM ARM A3-5)
@@ -1860,8 +1971,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       secondary opcode is bits 4:0 */
    opc1 = (theInstr >> 20) & 0xFF;    /* opcode1: bits 27:20 */
    opc2 = (theInstr >> 4 ) & 0xF;     /* opcode2: bits 7:4   */
-   vex_printf("disInstr(arm): opcode1: 0x%2x, %,09b\n", opc1, opc1 );
-   vex_printf("disInstr(arm): opcode2: 0x%02x, %,04b\n", opc2, opc2 );
+//   vex_printf("disInstr(arm): opcode1: 0x%2x, %,09b\n", opc1, opc1 );
+//   vex_printf("disInstr(arm): opcode2: 0x%02x, %,04b\n", opc2, opc2 );
 
    switch (opc1 >> 4) { // instr[27:24]
    case 0x0:
@@ -1969,7 +2080,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	 Data Processing Instructions
 	 (if we get here, it's a dpi)
        */
-       vex_printf("OPCODE: DPI\n");
        if (!dis_dataproc( theInstr )) { goto decode_failure; }
        break;
 
@@ -1988,7 +2098,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	  Load/Store multiple 
 	*/
    case 0x8: case 0x9:
-       vex_printf("OPCODE: LOAD/STORE mult\n");
        if (!dis_loadstore_mult(theInstr)) { goto decode_failure; }
        break;
        
@@ -1998,7 +2107,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        */
    case 0xA: case 0xB:  // B, BL
        // B(L): L=1 => return address stored in link register (R14)
-       vex_printf("OPCODE: B(L)\n");
        dis_branch(theInstr);
        whatNext = Dis_StopHere;
        break;
@@ -2035,7 +2143,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
   decode_success:
    /* All decode successes end up here. */
-   vex_printf("disInstr(arm): success");
+//   vex_printf("disInstr(arm): success");
    DIP("\n");
 
    *size = 4;

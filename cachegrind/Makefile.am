@@ -15,7 +15,8 @@ EXTRA_DIST = \
 	cg_sim_I1.c \
 	cg_sim_D1.c \
 	cg_sim_L2.c \
-	cg_sim_gen.c
+	cg_sim_gen.c \
+	tests
 
 val_PROGRAMS = vgskin_cachegrind.so
 

@@ -9,6 +9,49 @@
 ##     strict EIP updating
 ##---------------------------------------------------------------------------
 
+noinst_SCRIPTS = filter_leak_check_size filter_stderr
+
+EXTRA_DIST = \
+	$(noinst_SCRIPTS) \
+	badaddrvalue.stderr.exp badaddrvalue.stderr.exp.hd \
+	badaddrvalue.stdout.exp badaddrvalue.vgtest \
+	badfree-2trace.stderr.exp badfree-2trace.vgtest \
+	badfree.stderr.exp badfree.vgtest \
+	badjump.stderr.exp badjump.vgtest \
+	badloop.stderr.exp badloop.vgtest \
+	buflen_check.stderr.exp buflen_check.stderr.exp.hd buflen_check.vgtest \
+	doublefree.stderr.exp doublefree.vgtest \
+	errs1.stderr.exp errs1.vgtest \
+	exitprog.stderr.exp exitprog.vgtest \
+	fprw.stderr.exp fprw.vgtest \
+	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
+	inits.stderr.exp inits.vgtest \
+	inline.stderr.exp inline.stdout.exp inline.vgtest \
+	malloc1.stderr.exp malloc1.vgtest \
+	malloc2.stderr.exp malloc2.vgtest \
+	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
+	manuel2.stderr.exp manuel2.stdout.exp manuel2.vgtest \
+	manuel3.stderr.exp manuel3.vgtest \
+	memalign_test.stderr.exp memalign_test.vgtest \
+	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
+	mismatches.stderr.exp mismatches.vgtest \
+	mmaptest.stderr.exp mmaptest.vgtest \
+	nanoleak.stderr.exp nanoleak.vgtest \
+	new_override.stderr.exp new_override.vgtest \
+	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
+	realloc1.stderr.exp realloc1.vgtest \
+	realloc2.stderr.exp realloc2.vgtest \
+	sigaltstack.stderr.exp sigaltstack.vgtest \
+	signal2.stderr.exp signal2.stderr.exp.hd \
+	signal2.stdout.exp signal2.vgtest \
+	supp1.stderr.exp supp1.vgtest \
+	supp2.stderr.exp supp2.vgtest \
+	supp.supp \
+	suppfree.stderr.exp suppfree.vgtest \
+	trivialleak.stderr.exp trivialleak.vgtest \
+	tronical.stderr.exp tronical.vgtest \
+	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest
+
 noinst_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check \
 	doublefree errs1 exitprog fprw fwrite inits inline \

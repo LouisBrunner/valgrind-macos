@@ -293,11 +293,13 @@ AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
 AC_OUTPUT(
    Makefile 
    valgrind.spec
+   docs/Makefile 
+   tests/Makefile 
+   include/Makefile 
    core/Makefile 
    core/demangle/Makefile 
    core/docs/Makefile
    core/valgrind
-   docs/Makefile 
    addrcheck/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile

@@ -23,7 +23,7 @@ noinst_HEADERS = \
 	mc_include.h	\
 	memcheck.h
 
-MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) 
+MANUAL_DEPS = $(noinst_HEADERS)
 
 ##vgskin_memcheck.so$(EXEEXT): $(vgskin_memcheck_so_OBJECTS)
 ##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_memcheck.so \

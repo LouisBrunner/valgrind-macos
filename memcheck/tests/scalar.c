@@ -729,7 +729,7 @@ int main(void)
 
    // __NR_prctl 172
    GO(__NR_prctl, "5s 0m");
-   SY(__NR_prctl);
+   SY(__NR_prctl, x0, x0, x0, x0, x0);
 
    // __NR_rt_sigreturn 173
    GO(__NR_rt_sigreturn, "n/a");

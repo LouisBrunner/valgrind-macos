@@ -1,5 +1,6 @@
 Makefile.in
 Makefile
+args
 bitfield1
 bt_everything
 bt_literal

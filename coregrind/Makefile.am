@@ -1,14 +1,15 @@
 
 SUBDIRS = demangle . docs
 
-CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer \
-		@PREFERRED_STACK_BOUNDARY@ -g \
-		$(INCLUDES)
+		@PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
 
 INCLUDES = -I$(srcdir)/demangle -I$(top_srcdir)/include
+
+AM_CCASFLAGS = $(INCLUDES)
 
 bin_SCRIPTS = valgrind
 
@@ -81,7 +82,7 @@ MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
 
-vg_intercept.o vg_libpthread.o vg_clientfuncs.o: CFLAGS += -fno-omit-frame-pointer
+vg_intercept.o vg_libpthread.o vg_clientfuncs.o: AM_CFLAGS += -fno-omit-frame-pointer
 
 ##valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 ##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \

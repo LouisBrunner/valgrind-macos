@@ -1,7 +1,7 @@
 
 INCLUDES = -I$(top_srcdir)/coregrind -I$(top_srcdir)/include
 
-CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
 
 noinst_HEADERS = \
 	ansidecl.h     \

@@ -3,7 +3,7 @@ SUBDIRS = . tests docs
 
 INCLUDES = -I$(top_srcdir)/include
 
-CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
@@ -14,8 +14,7 @@ EXTRA_DIST = \
 	cg_sim_I1.c \
 	cg_sim_D1.c \
 	cg_sim_L2.c \
-	cg_sim_gen.c \
-	tests
+	cg_sim_gen.c 
 
 val_PROGRAMS = vgskin_cachegrind.so
 

@@ -8,7 +8,7 @@ SUBDIRS = 	coregrind . docs tests include auxprogs \
 		lackey \
 		none
 
-CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
@@ -18,6 +18,8 @@ SUPP_FILES = glibc-2.1.supp glibc-2.2.supp xfree-3.supp xfree-4.supp
 val_DATA = $(SUPP_FILES) default.supp
 
 BUILT_SOURCES = default.supp
+
+CLEANFILES = default.supp
 
 default.supp: $(SUPP_FILES)
 

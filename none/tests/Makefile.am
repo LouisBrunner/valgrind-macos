@@ -49,8 +49,8 @@ noinst_PROGRAMS = \
 	pth_blockedsig \
 	coolo_sigaction gxx304
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 args_SOURCES 		= args.c

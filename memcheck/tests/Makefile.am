@@ -63,8 +63,8 @@ noinst_PROGRAMS = \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
-CXXFLAGS = $(CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
+AM_CXXFLAGS = $(AM_CFLAGS)
 INCLUDES = -I$(top_srcdir)/include
 
 # C ones

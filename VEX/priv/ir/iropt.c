@@ -142,6 +142,12 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
 /*--- Flattening out a BB into pure SSA form                  ---*/
 /*---------------------------------------------------------------*/
 
+static Bool isAtom ( IRExpr* e )
+{
+   return e->tag == Iex_Tmp || e->tag == Iex_Const;
+}
+
+
 /* Clone the NULL-terminated vector of IRExpr*s attached to a
    CCall. */
 
@@ -158,6 +164,19 @@ static IRExpr** copyIRExprCallArgs ( IRExpr** vec )
    return newvec;
 }
 
+
+/* Non-critical helper, heuristic for reducing the number of tmp-tmp
+   copies made by flattening.  If in doubt return False. */
+
+static Bool isFlat ( IRExpr* e )
+{
+   if (e->tag == Iex_Get) return True;
+   if (e->tag == Iex_Binop)
+      return isAtom(e->Iex.Binop.arg1) && isAtom(e->Iex.Binop.arg2);
+   if (e->tag == Iex_LDle)
+      return isAtom(e->Iex.LDle.addr);
+   return False;
+}
 
 /* Flatten out 'ex' so it is atomic, returning a new expression with
    the same value, after having appended extra IRTemp assignments to
@@ -261,8 +280,15 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
                                        st->Ist.PutI.maxoff));
          break;
       case Ist_Tmp:
-         e1 = flatten_Expr(bb, st->Ist.Tmp.expr);
-         addStmtToIRBB(bb, IRStmt_Tmp(st->Ist.Tmp.tmp, e1));
+         if (isFlat(st->Ist.Tmp.expr)) {
+            /* optimisation, to reduce the number of tmp-tmp
+               copies generated */
+            addStmtToIRBB(bb, st);
+         } else {
+            /* general case, always correct */
+            e1 = flatten_Expr(bb, st->Ist.Tmp.expr);
+            addStmtToIRBB(bb, IRStmt_Tmp(st->Ist.Tmp.tmp, e1));
+         }
          break;
       case Ist_STle:
          e1 = flatten_Expr(bb, st->Ist.STle.addr);
@@ -505,12 +531,6 @@ static IRExpr* fold_Expr ( IRExpr* e )
    vex_printf("\n");
    return e2;
 #  endif
-}
-
-
-static Bool isAtom ( IRExpr* e )
-{
-   return e->tag == Iex_Tmp || e->tag == Iex_Const;
 }
 
 
@@ -1662,7 +1682,7 @@ static void treebuild_BB ( IRBB* bb )
          continue;
      
       if (st->tag == Ist_Tmp) {
-        /* vex_printf("acquire binding\n"); */
+         /* vex_printf("acquire binding\n"); */
          if (!lookupH64(env, &res, (ULong)(st->Ist.Tmp.tmp))) {
             vpanic("treebuild_BB (phase 2): unmapped IRTemp");
          }

@@ -119,29 +119,26 @@ typedef
       /* 392 */ UInt guest_CTR;    // Count Register
 
       /* CR[7]: thunk used to calculate these flags. */
-      /* 396 */ UChar guest_CC_OP;
-      /* 400 */ UInt  guest_CC_DEP1;
-      /* 404 */ UChar guest_CC_DEP2;
+      /* 396 */ UInt guest_CC_OP;
+      /* 400 */ UInt guest_CC_DEP1;
+      /* 404 */ UInt guest_CC_DEP2;
 
       // CR[0:6]: Used for 'compare' ops
       /* 408 */ UInt guest_CR0to6;
 
-      /* 412 */ UInt guest_FPSCR;   // FP Status & Control Reg
+      /* 412 */ UInt guest_FPSCR;  // FP Status & Control Reg
 
       /* XER */
-      /* 416 */ UChar guest_XER_SO;  // Summary Overflow
-      /* 417 */ UChar guest_XER_OV;  // Overflow
-      /* 418 */ UChar guest_XER_CA;  // Carry
-      /* 419 */ UChar guest_XER_BC;  // Byte Count
+      /* 416 */ UInt guest_XER_SO; // Summary Overflow
+      /* 420 */ UInt guest_XER_OV; // Overflow
+      /* 424 */ UInt guest_XER_CA; // Carry
+      /* 428 */ UInt guest_XER_BC; // Byte Count
 
       /* Emulation warnings */
-      /* 420 */ UInt guest_EMWARN;
+      /* 432 */ UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
-//      UChar padding_1b1;
-//      UChar padding_1b2;
-//      UChar padding_1b3;
-//      UInt  padding_4b;
+      UInt  padding;
    }
    VexGuestPPC32State;
 

@@ -3204,6 +3204,14 @@ PRE(mkdir)
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "mkdir(pathname)", arg1 );
 }
 
+void check_mmap_start(ThreadState* tst, Addr start, Int flags)
+{
+   /* Refuse to mmap the first 64KB of memory, so that the cheap sanity test 
+      for tools using shadow memory works. */
+   if (start < 65536 && (flags & VKI_MAP_FIXED))
+      tst->m_eax = -VKI_EINVAL;
+}
+
 PRE(mmap2)
 {
    /* My impression is that this is exactly like __NR_mmap 
@@ -3214,6 +3222,8 @@ PRE(mmap2)
    */
    MAYBE_PRINTF("mmap2 ( %p, %d, %d, %d, %d, %d )\n",
 		arg1, arg2, arg3, arg4, arg5, arg6 );
+
+   check_mmap_start(tst, arg1, arg4);
 }
 
 POST(mmap2)
@@ -3240,6 +3250,8 @@ PRE(mmap)
    a6 = arg_block[5];
    MAYBE_PRINTF("mmap ( %p, %d, %d, %d, %d, %d )\n",
 		a1, a2, a3, a4, a5, a6 );
+
+   check_mmap_start(tst, a1, a4);
 }
 
 POST(mmap)

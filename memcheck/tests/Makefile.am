@@ -62,7 +62,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
-	writev.stderr.exp writev.vgtest
+	writev.stderr.exp writev.vgtest \
+	zeropage.stderr.exp zeropage.vgtest
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop badrw brk buflen_check \
@@ -73,7 +74,7 @@ check_PROGRAMS = \
 	overlap pushfpopf \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
-	mismatches new_override metadata threadederrno writev
+	mismatches new_override metadata threadederrno writev zeropage
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
@@ -125,6 +126,7 @@ metadata_SOURCES	= metadata.c
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
 writev_SOURCES		= writev.c
+zeropage_SOURCES	= zeropage.c
 
 # C++ ones
 mismatches_SOURCES	= mismatches.cpp

@@ -2230,6 +2230,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
          return isBogusAtom(st->Ist.Exit.guard);
+      case Ist_MFence:
+         return False;
       default: 
       unhandled:
          ppIRStmt(st);
@@ -2317,6 +2319,9 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
          case Ist_Exit:
             complainIfUndefined( &mce, st->Ist.Exit.guard );
+            break;
+
+         case Ist_MFence:
             break;
 
          case Ist_Dirty:

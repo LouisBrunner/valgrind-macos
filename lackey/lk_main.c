@@ -184,7 +184,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          default:
-            addStmtToIRBB( bb, dopyIRStmt(st));
+            addStmtToIRBB( bb, st );
       }
    }
 

@@ -1030,6 +1030,9 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
              }
              break;
 
+         case Ist_MFence:
+            break;
+
          default:
             VG_(printf)("\n");
             ppIRStmt(st);
@@ -1089,7 +1092,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
       }
 
       /* And finally, copy the expr itself to the output. */
-      addStmtToIRBB( bb, dopyIRStmt(st));
+      addStmtToIRBB( bb, st );
    }
 
    return bb;

@@ -9278,7 +9278,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += 3+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-         putXMMReg( gregOfRM(modrm), mkV128(0) );
+         putXMMRegLane64( gregOfRM(modrm), 1, mkU64(0) );
          putXMMRegLane64( gregOfRM(modrm), 0,
                           loadLE(Ity_I64, mkexpr(addr)) );
          DIP("movsd %s,%s\n", dis_buf,

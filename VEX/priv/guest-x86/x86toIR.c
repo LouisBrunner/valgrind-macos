@@ -472,6 +472,34 @@ static void setFlags_INC_DEC ( Bool inc, IRTemp dst, IRType ty )
 }
 
 
+/* For multiplies, just remember the two operands and a 
+   description of what kind of multiply. */
+
+static
+void setFlags_MUL ( IRType ty, IRTemp src1, IRTemp src2, UInt base_op )
+{
+   switch (ty) {
+   case Ity_I8:
+      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+0) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, unop(Iop_8Uto32,mkexpr(src1)) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_DST, unop(Iop_8Uto32,mkexpr(src2)) ) );
+      break;
+   case Ity_I16:
+      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+1) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, unop(Iop_16Uto32,mkexpr(src1)) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_DST, unop(Iop_16Uto32,mkexpr(src2)) ) );
+      break;
+   case Ity_I32:
+      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+2) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, mkexpr(src1) ) );
+      stmt( IRStmt_Put( NULL, OFFB_CC_DST, mkexpr(src2) ) );
+      break;
+   default:
+      vpanic("setFlags_MUL(x86)");
+   }
+}
+
+
 /* Condition codes, using the Intel encoding.  */
 
 typedef
@@ -2081,15 +2109,18 @@ UInt dis_Grp2 ( UChar  sorb,
 //-- 
 //-- #  undef MODIFY_t2_AND_SET_CARRY_FLAG
 //-- }
-//-- 
-//-- 
-//-- 
-//-- /* Generate ucode to multiply the value in EAX/AX/AL by the register
-//--    specified by the ereg of modrm, and park the result in
-//--    EDX:EAX/DX:AX/AX. */
-//-- static void codegen_mul_A_D_Reg ( UCodeBlock* cb, Int sz, 
-//--                                   UChar modrm, Bool signed_multiply )
-//-- {
+
+
+
+/* Generate ucode to multiply the value in EAX/AX/AL by the register
+   specified by the ereg of modrm, and park the result in
+   EDX:EAX/DX:AX/AX. 
+
+   Viz, signed/unsigned widening multiply.
+*/
+static void codegen_mul_A_D_Reg ( Int sz, 
+                                  UChar modrm, Bool signed_multiply )
+{
 //--    Int helper = signed_multiply 
 //--                 ?
 //--                    (sz==1 ? VGOFF_(helper_imul_8_16) 
@@ -2099,10 +2130,35 @@ UInt dis_Grp2 ( UChar  sorb,
 //--                    (sz==1 ? VGOFF_(helper_mul_8_16)
 //--                           : (sz==2 ? VGOFF_(helper_mul_16_32) 
 //--                                    : VGOFF_(helper_mul_32_64)));
-//--    Int t1 = newTemp(cb);
-//--    Int ta = newTemp(cb);
+   IRType ty = szToITy(sz);
+   IRTemp t1 = newTemp(ty);
+   IRTemp t2 = newTemp(ty);
+   IRTemp tr = newTemp(ty);
+
 //--    uInstr0(cb, CALLM_S, 0);
 //--    uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, t1);
+   assign( t1, getIReg(sz, eregOfRM(modrm)) );
+   assign( t2, getIReg(sz, R_EAX) );
+
+   switch (ty) {
+   case Ity_I32: {
+      IROp   hiOp   = signed_multiply ? Iop_MullS32_hi32 : Iop_MullU32_hi32;
+      IRTemp trHi32 = newTemp(Ity_I32);
+      setFlags_MUL ( Ity_I32, t1, t2, 
+                     signed_multiply ? CC_OP_MULLSB : CC_OP_MULLUB );
+      assign( tr,     binop(Iop_Mul32, mkexpr(t1), mkexpr(t2) ) );
+      assign( trHi32, binop(hiOp,  mkexpr(t1), mkexpr(t2) ) );
+      putIReg(4, R_EAX, mkexpr(tr));
+      putIReg(4, R_EDX, mkexpr(trHi32));
+      break;
+   }
+   default:
+      vpanic("codegen_mul_A_D_Reg(x86)");
+   }
+   DIP("%s%c %s\n", signed_multiply ? "imul" : "mul",
+                    nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
+}
+
 //--    uInstr1(cb, PUSH,  sz, TempReg, t1);
 //--    uInstr2(cb, GET,   sz, ArchReg, R_EAX,  TempReg, ta);
 //--    uInstr1(cb, PUSH,  sz, TempReg, ta);
@@ -2119,8 +2175,6 @@ UInt dis_Grp2 ( UChar  sorb,
 //--       uInstr2(cb, PUT,   2, TempReg, t1, ArchReg, R_EAX);
 //--    }
 //--    uInstr0(cb, CALLM_E, 0);
-//--    DIP("%s%c %s\n", signed_multiply ? "imul" : "mul",
-//--                     nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
 //-- 
 //-- }
 //-- 
@@ -2209,10 +2263,10 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
             break;
-//--          case 4: /* MUL */
-//--             eip++;
-//--             codegen_mul_A_D_Reg ( cb, sz, modrm, False );
-//--             break;
+         case 4: /* MUL (unsigned widening) */
+            delta++;
+            codegen_mul_A_D_Reg ( sz, modrm, False );
+            break;
 //--          case 5: /* IMUL */
 //--             eip++;
 //--             codegen_mul_A_D_Reg ( cb, sz, modrm, True );
@@ -2655,51 +2709,84 @@ void dis_REP_op ( Condcode cond,
 /*--- Arithmetic, etc.                                     ---*/
 /*------------------------------------------------------------*/
 
-//-- /* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
-//-- static
-//-- Addr dis_mul_E_G ( UCodeBlock* cb, 
-//--                    UChar       sorb,
-//--                    Int         size, 
-//--                    Addr        eip0,
-//--                    Bool        signed_multiply )
-//-- {
-//--    Int ta, tg, te;
-//--    UChar dis_buf[50];
-//--    UChar rm = getIByte(delta0);
-//--    ta = INVALID_TEMPREG;
-//--    te = newTemp(cb);
-//--    tg = newTemp(cb);
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       vg_assert(signed_multiply);
-//--       uInstr2(cb, GET,  size, ArchReg, gregOfRM(rm), TempReg, tg);
-//--       uInstr2(cb, MUL,	size, ArchReg, eregOfRM(rm), TempReg, tg);
-//--       setFlagsFromUOpcode(cb, MUL);
-//--       uInstr2(cb, PUT,  size, TempReg, tg, ArchReg, gregOfRM(rm));
-//--       DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
-//--                               nameISize(size), 
-//--                               nameIReg(size,eregOfRM(rm)),
-//--                               nameIReg(size,gregOfRM(rm)));
-//--       return 1+eip0;
-//--    } else {
-//--       UInt pair;
-//--       vg_assert(signed_multiply);
-//--       pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       ta = LOW24(pair);
-//--       uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
-//--       uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tg);
-//--       uInstr2(cb, MUL,	size, TempReg, te, TempReg, tg);
-//--       setFlagsFromUOpcode(cb, MUL);
-//--       uInstr2(cb, PUT,  size, TempReg, tg,    ArchReg, gregOfRM(rm));
-//-- 
-//--       DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
-//--                               nameISize(size), 
-//--                               dis_buf, nameIReg(size,gregOfRM(rm)));
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
+#if 0
+static
+void do_mul_and_setFlags ( IRType ty, 
+                           IRTemp dst, IRTemp src1, IRTemp src2 )
+{
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   setFlags_MUL( ty, src1, src2, CC_OP_MULB );
+   assign( dst, binop( mkSizedOp(ty,Iop_Mul8), 
+                       mkexpr(src1),
+                       mkexpr(src2)) );
+}
+
+static
+void do_mull_and_setFlags ( IRType ty, 
+                            Bool   sign,
+                            IRTemp dst, IRTemp src1, IRTemp src2 )
+{
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   setFlags_MUL( ty, src1, src2, 
+                 sign ? CC_OP_MULLSB : CC_OP_MULLUB );
+   assign( dst, 
+           binop( mkSizedOp(ty, sign ? Iop_MullS8 : Iop_MullU8), 
+                  mkexpr(src1), 
+                  mkexpr(src2)) );
+}
+#endif
+
+/* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
+static
+UInt dis_mul_E_G ( UChar       sorb,
+                   Int         size, 
+                   UInt        delta0,
+                   Bool        signed_multiply )
+{
+   
+  //   UChar dis_buf[50];
+   UChar  rm = getIByte(delta0);
+   IRType ty = szToITy(size);
+   //IRTemp ta = INVALID_IRTEMP;
+   IRTemp te = newTemp(size);
+   IRTemp tg = newTemp(size);
+
+   if (epartIsReg(rm)) {
+      vassert(signed_multiply);
+      assign( tg, getIReg(size, gregOfRM(rm)) );
+      assign( te, getIReg(size, eregOfRM(rm)) );
+      setFlags_MUL ( ty, te, tg, CC_OP_MULB );
+      putIReg(size, gregOfRM(rm), 
+	      binop(mkSizedOp(ty,Iop_Mul8),
+		    mkexpr(te), mkexpr(tg)));
+
+      DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
+                              nameISize(size), 
+                              nameIReg(size,eregOfRM(rm)),
+                              nameIReg(size,gregOfRM(rm)));
+      return 1+delta0;
+   } else {
+     vassert(0+0==0);
+#if 0
+      UInt pair;
+      vg_assert(signed_multiply);
+      pair = disAMode ( cb, sorb, eip0, dis_buf );
+      ta = LOW24(pair);
+      uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
+      uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tg);
+      uInstr2(cb, MUL,	size, TempReg, te, TempReg, tg);
+      setFlagsFromUOpcode(cb, MUL);
+      uInstr2(cb, PUT,  size, TempReg, tg,    ArchReg, gregOfRM(rm));
+
+      DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
+                              nameISize(size), 
+                              dis_buf, nameIReg(size,gregOfRM(rm)));
+      return HI8(pair)+eip0;
+#endif
+   }
+}
+
+
 //-- /* IMUL I * E -> G.  Supplied eip points to the modR/M byte. */
 //-- static
 //-- Addr dis_imul_I_E_G ( UCodeBlock* cb, 
@@ -7107,12 +7194,12 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          uInstr2(cb, STORE, 4, TempReg, t1, TempReg, t2);
 //--          DIP("movnti %s,%s\n", nameIReg(4,gregOfRM(modrm)), dis_buf);
 //--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xAF: /* IMUL Ev, Gv */
-//--          eip = dis_mul_E_G ( cb, sorb, sz, eip, True );
-//--          break;
+
+      /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
+
+      case 0xAF: /* IMUL Ev, Gv */
+         delta = dis_mul_E_G ( sorb, sz, delta, True );
+         break;
 
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
       case 0x80:

@@ -89,7 +89,10 @@ typedef
       /* Conversions */
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
-      /* Specials */
+      /* Widening multiplies */
+      Iop_MullS8, Iop_MullS16, Iop_MullS32_hi32,
+      Iop_MullU8, Iop_MullU16, Iop_MullU32_hi32,
+      /* 1-bit stuff */
       Iop_32to1, /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8  /* :: Ity_Bit -> Ity_I8, unsigned widen */
    }

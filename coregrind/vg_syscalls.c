@@ -4131,7 +4131,7 @@ PRE(select)
 			a1/8 /* __FD_SETSIZE/8 */ );
       if (a3 != (Addr)NULL)
 	 SYSCALL_TRACK( pre_mem_read, tid, "select(writefds)", a3, 
-			arg1/8 /* __FD_SETSIZE/8 */ );
+			a1/8 /* __FD_SETSIZE/8 */ );
       if (a4 != (Addr)NULL)
 	 SYSCALL_TRACK( pre_mem_read, tid, "select(exceptfds)", a4, 
 			a1/8 /* __FD_SETSIZE/8 */ );

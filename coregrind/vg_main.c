@@ -197,22 +197,6 @@ UInt VG_(bb_dechain_count) = 0;
 /* Number of unchained jumps performed. */
 UInt VG_(unchained_jumps_done) = 0;
 
-
-/* Counts pertaining to the register allocator. */
-
-/* total number of uinstrs input to reg-alloc */
-UInt VG_(uinstrs_prealloc) = 0;
-
-/* total number of uinstrs added due to spill code */
-UInt VG_(uinstrs_spill) = 0;
-
-/* number of bbs requiring spill code */
-UInt VG_(translations_needing_spill) = 0;
-
-/* total of register ranks over all translations */
-UInt VG_(total_reg_rank) = 0;
-
-
 /* Counts pertaining to internal sanity checking. */
 static UInt sanity_fast_count = 0;
 static UInt sanity_slow_count = 0;

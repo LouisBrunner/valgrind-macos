@@ -73,27 +73,43 @@ typedef
 
 
 
-/* A target-independent register allocator for Valgrind.  Requires
-   various functions which to deal abstractly with instructions and
-   registers (of which it cannot have any target-specific knowledge).  
+/* Does this instruction mention a particular reg? */
+static Bool instrMentionsReg ( 
+   void (*getRegUsage) (HInstr*, HRegUsage*),
+   HInstr* instr, 
+   HReg r 
+)
+{
+   Int       i;
+   HRegUsage reg_usage;
+   (*getRegUsage)(instr, &reg_usage);
+   for (i = 0; i < reg_usage.n_used; i++)
+      if (reg_usage.hreg[i] == r)
+         return True;
+   return False;
+}
 
-   Returns a new list of instructions, which (depending on
-   the behaviour of mapRegs) may be in-place modifications of
-   the original instructions.
+
+/* A target-independent register allocator for Valgrind.  Requires
+   various functions which it uses to deal abstractly with
+   instructions and registers, since it cannot have any
+   target-specific knowledge.
+
+   Returns a new list of instructions, which, as a result of the
+   behaviour of mapRegs, will be in-place modifications of the
+   original instructions.
 
    Requires that the incoming code has been generated using
    vreg numbers 0, 1 .. n_vregs-1.  Appearance of a vreg outside
    that range is a checked run-time error.
+
+   Takes a NULL-terminated array of pointers to unallocated insns.
+   Returns a NULL-terminated array of pointers to allocated insns.
 */
-extern void emitInstr ( HInstr* );
-extern Bool instrMentionsVReg ( HInstr*, HReg );
-
-
 HInstr** doRegisterAllocation (
 
-   /* Incoming virtual-registerised code */ 
+   /* Incoming virtual-registerised code, NULL terminated */ 
    HInstr** instrs,
-   Int      n_instrs,
    Int      n_vregs,
 
    /* An array listing all the real registers the allocator may use,
@@ -117,25 +133,61 @@ HInstr** doRegisterAllocation (
    HInstr* (*genReload) ( HReg, Int )
 )
 {
-   Int ii, j, k, m;
-
-   Int furthest, furthest_k;
-
-   VRegInfo* vreg_info;
+   /* Iterators and temporaries. */
+   Int       ii, j, k, m, furthest, furthest_k;
+   HReg      rreg, vreg;
    HRegUsage reg_usage;
-   RRegInfo* rreg_info;
-   Int* rreg_live_after;
-   Int* rreg_dead_before;
-   Int rreg_info_size;
-   Int rreg_info_used;
-   RRegState* state;
-   Int n_state;
-   HRegRemap remap;
 
-   HReg rreg, vreg;
+   /* Info on vregs and rregs.  Computed once and remains
+      unchanged. */
+   VRegInfo* vreg_info;
+   RRegInfo* rreg_info;
+   Int       rreg_info_size;
+   Int       rreg_info_used;
+
+   /* Used when constructing vreg_info (for allocating stack
+      slots). */
    Int ss_busy_until_before[N_SPILL64S];
 
+   /* Used when constructing rreg_info. */
+   Int* rreg_live_after;
+   Int* rreg_dead_before;
+
+   /* Running state of the core allocation algorithm. */
+   RRegState* state;
+   Int        n_state;
+
+   /* The vreg -> rreg map constructed and then applied to each
+      instr. */
+   HRegRemap remap;
+
+   /* The output array of instructions. */
+   HInstr** instrs_out;
+   Int      instrs_out_size;
+   Int      instrs_out_used;
+
+   /* Number of incoming instructions. */
+   Int n_instrs;
+
+
 #  define INVALID_INSTRNO (-2)
+
+   /* --------- Stage 0: set up output array. --------- */
+   n_instrs = 0;
+   while (instrs[n_instrs] != NULL)
+      n_instrs ++;
+
+   instrs_out_size = 2 * n_instrs;
+   instrs_out_used = 0;
+   instrs_out      = malloc(instrs_out_size * sizeof(HInstr*));
+
+#  define EMIT_INSTR(_instr)                                         \
+      do {                                                           \
+         if (instrs_out_used >= instrs_out_used)                     \
+            panic("doRegisterAllocation: instrs_out is too small");  \
+         instrs_out[instrs_out_used] = (_instr);                     \
+         instrs_out_used++;                                          \
+      } while (0)
 
 
    /* --------- Stage 1: compute vreg live ranges. --------- */
@@ -227,8 +279,10 @@ HInstr** doRegisterAllocation (
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
 
+        /* Dummy initialisations of flush_la and flush_db to avoid
+	   possible bogus uninit-var warnings from gcc. */
+         Int  flush_la = INVALID_INSTRNO, flush_db = INVALID_INSTRNO;
          Bool flush;
-         Int flush_la, flush_db;
 
          rreg = reg_usage.hreg[j];
 
@@ -313,7 +367,7 @@ HInstr** doRegisterAllocation (
       put as few values as possible in spill slows, but nevertheless
       need to have a spill slot available for all vregs, just in case.
    */
-   //   max_ss_no = -1;
+   /* max_ss_no = -1; */
 
    for (j = 0; j < N_SPILL64S; j++)
       ss_busy_until_before[j] = 0;
@@ -335,8 +389,8 @@ HInstr** doRegisterAllocation (
       }
       ss_busy_until_before[k] = vreg_info[j].dead_before;
       vreg_info[j].spill_offset = k * 8;
-      //      if (j > max_ss_no)
-      //   max_ss_no = j;
+      /* if (j > max_ss_no) */
+      /*    max_ss_no = j; */
    }
 
 
@@ -473,8 +527,8 @@ HInstr** doRegisterAllocation (
                /* Yes, there is an associated vreg.  Spill it. */
                m = hregNumber(state[k].vreg);
                assert(m >= 0 && m < n_vregs);
-               emitInstr((*genSpill)( vreg_info[m].spill_offset, 
-                                      state[k].rreg ));
+               EMIT_INSTR( (*genSpill)( vreg_info[m].spill_offset, 
+                                        state[k].rreg ) );
                state[k].disp = Free;
                state[k].vreg = INVALID_HREG;
             }
@@ -537,17 +591,18 @@ HInstr** doRegisterAllocation (
             candidates, due to holding a vreg mentioned by this
             instruction.  Or being of the wrong class. */
          for (k = 0; k < n_state; k++) {
-           state[k].is_spill_cand = False;
-           if (state[k].disp != Bound)
-             continue;
-           if (hregClass(state[k].rreg) != hregClass(vreg))
-             continue;
-           state[k].is_spill_cand = True;
-           for (m = 0; m < reg_usage.n_used; m++)
-             if (state[k].vreg == reg_usage.hreg[m]) {
-               state[k].is_spill_cand = False;
-               break;
-             }
+            state[k].is_spill_cand = False;
+            if (state[k].disp != Bound)
+               continue;
+            if (hregClass(state[k].rreg) != hregClass(vreg))
+               continue;
+            state[k].is_spill_cand = True;
+            for (m = 0; m < reg_usage.n_used; m++) {
+               if (state[k].vreg == reg_usage.hreg[m]) {
+                  state[k].is_spill_cand = False;
+                  break;
+               }
+            }
          }
 
          /* We can choose any rreg satisfying state[r].is_spill_cand
@@ -563,7 +618,8 @@ HInstr** doRegisterAllocation (
                continue;
             assert(state[k].disp == Bound);
             for (m = ii+1; m < n_instrs; m++)
-               if (instrMentionsVReg(instrs[m], state[k].vreg))
+               if (instrMentionsReg(getRegUsage, 
+                                    instrs[m], state[k].vreg))
                   break;
             if (m > furthest) {
                furthest = m;
@@ -594,8 +650,8 @@ HInstr** doRegisterAllocation (
          assert(vreg_info[m].dead_before > ii);
 
          /* So here's the spill store. */
-         emitInstr((*genSpill)( vreg_info[m].spill_offset, 
-                                state[furthest_k].rreg ));
+         EMIT_INSTR( (*genSpill)( vreg_info[m].spill_offset, 
+                                  state[furthest_k].rreg ) );
 
          /* Update the state to reflect the new assignment for this
             rreg. */
@@ -606,8 +662,8 @@ HInstr** doRegisterAllocation (
          if (reg_usage.mode[j] != HRmWrite) {
             m = hregNumber(vreg);
             assert(m >= 0 && m < n_vregs);
-            emitInstr((*genReload)( vreg_info[m].spill_offset,
-                                    state[furthest_k].rreg ));
+            EMIT_INSTR( (*genReload)( vreg_info[m].spill_offset,
+                                      state[furthest_k].rreg ) );
          }
 
          /* So after much twisting and turning, we have vreg mapped to
@@ -629,16 +685,20 @@ HInstr** doRegisterAllocation (
 
       /* NOTE, DESTRUCTIVELY MODIFIES instrs[ii]. */
       (*mapRegs)( &remap, instrs[ii] );
-      emitInstr( instrs[ii] );
+      EMIT_INSTR( instrs[ii] );
 
    } /* iterate over insns */
+
+   EMIT_INSTR(NULL);
 
    free(state);
    free(rreg_info);
    if (vreg_info) free(vreg_info);
 
-#  undef INVALID_INSTRNO
+   return instrs_out;
 
+#  undef INVALID_INSTRNO
+#  undef EMIT_INSTR
 }
 
 

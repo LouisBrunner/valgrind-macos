@@ -40,6 +40,17 @@ UInt hregNumber ( HReg r )
    return ((UInt)r) & 0x00FFFFFF;
 }
 
+void ppHRegClass ( FILE* f, HRegClass hrc )
+{
+   switch (hrc) {
+      case HRcInt:       fprintf(f, "HRcInt32"); break;
+      case HRcInt64:     fprintf(f, "HRcInt64"); break;
+      case HRcFloat:     fprintf(f, "HRcFloat"); break;
+      case HRcVector:    fprintf(f, "HRcVector64"); break;
+      case HRcVector128: fprintf(f, "HRcVector128"); break;
+      default: panic("ppHRegClass");
+   }
+}
 
 /* Generic printing for registers. */
 void ppHReg ( FILE* f, HReg r ) 

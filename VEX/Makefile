@@ -5,7 +5,7 @@ INCLUDES = include/arena.h				\
 
 ##OBJS = basictypes.o ir_defs.o arena.o linker.o dispatch.o
 OBJS = basictypes.o ir_defs.o host_regs.o \
-	x86h_defs.o isel_x86.o test_main.o
+	x86h_defs.o isel_x86.o reg_alloc.o test_main.o
 
 CC_OPTS = -g -Wall -Iinclude
 
@@ -25,6 +25,8 @@ x86h_defs.o: x86h_defs.c $(INCLUDES)
 	gcc $(CC_OPTS) -c x86h_defs.c
 isel_x86.o: isel_x86.c $(INCLUDES)
 	gcc $(CC_OPTS) -c isel_x86.c
+reg_alloc.o: reg_alloc.c $(INCLUDES)
+	gcc $(CC_OPTS) -c reg_alloc.c
 arena.o: arena.c $(INCLUDES)
 	gcc $(CC_OPTS) -c arena.c
 linker.o: linker.c $(INCLUDES)

@@ -45,7 +45,12 @@ typedef UInt HReg;
 
 /* When extending this, do not use any value > 14 or < 0. */
 typedef
-   enum { HRcInt=4, HRcFloat=5, HRcVector=6 }
+enum { HRcInt=4,       /* 32-bit int */
+       HRcInt64=5,     /* 64-bit int */
+       HRcFloat=6,     /* 64-bit float */
+       HRcVector=7,    /* 64-bit SIMD */
+       HRcVector128=8  /* 128-bit SIMD */
+   }
    HRegClass;
 
 extern void ppHRegClass ( FILE*, HRegClass );

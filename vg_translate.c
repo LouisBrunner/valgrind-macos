@@ -402,6 +402,8 @@ __inline__ Int VG_(rankToRealRegNo) ( Int rank )
          CALLM      L       N       N
          CALLM_S    N       N       N
          CALLM_E    N       N       N
+         CCALL_1_0  T       N       N
+         CCALL_2_0  T       T       N
          PUSH,POP   T       N       N
          CLEAR      L       N       N
 
@@ -3180,6 +3182,7 @@ void VG_(translate) ( ThreadState* tst,
       VG_(jitfree)(final_code);
    } else {
       /* Doing it for real -- return values to caller. */
+      //VG_(printf)("%d %d\n", n_disassembled_bytes, final_code_size);
       *orig_size = n_disassembled_bytes;
       *trans_addr = (Addr)final_code;
       *trans_size = final_code_size;

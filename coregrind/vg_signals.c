@@ -39,6 +39,25 @@
 #define DEBUG_SIGNALS
 
 
+/* KNOWN BUGS 24 May 02:
+
+   - A signal is not masked in its own handler.  Neither are the
+     signals in the signal's blocking mask.
+
+   - There is only one pending set for the entire process, whereas
+     POSIX seems to require each thread have its own pending set.
+     This means that a signal can only be pending for one thread at
+     a time.
+
+   - The following causes an infinite loop: start Hugs, Feb 2001 
+     version, and do Control-C at the prompt.  There is an infinite
+     series of sigints delivered (to the client); but also seemingly
+     to valgrind, which is very strange.  I don't know why.
+
+   Probably a lot more bugs which I haven't discovered yet.
+*/
+
+
 /* ---------------------------------------------------------------------
    Forwards decls.
    ------------------------------------------------------------------ */

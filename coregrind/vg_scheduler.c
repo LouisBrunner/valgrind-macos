@@ -3553,7 +3553,7 @@ void do_client_request ( ThreadId tid )
                          " addr %p,  len %d\n",
                          (void*)arg[1], arg[2] );
 
-         VG_(invalidate_translations)( arg[1], arg[2] );
+         VG_(invalidate_translations)( arg[1], arg[2], True );
 
          SET_EDX( tid, 0 );     /* return value is meaningless */
 	 break;

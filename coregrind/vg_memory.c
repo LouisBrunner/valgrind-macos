@@ -140,7 +140,7 @@ void VG_(new_exe_segment) ( Addr a, UInt len )
 void VG_(remove_if_exe_segment) ( Addr a, UInt len )
 {
    if (remove_if_exe_segment_from_list( a, len )) {
-      VG_(invalidate_translations) ( a, len );
+      VG_(invalidate_translations) ( a, len, False );
       VG_(maybe_unload_symbols)    ( a, len );
    }
 }

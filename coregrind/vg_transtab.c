@@ -562,13 +562,15 @@ Addr VG_(search_transtab) ( Addr original_addr )
 
 
 /* Invalidate translations of original code [start .. start + range - 1].
-   This is slow, so you *really* don't want to call it very often. 
+   This is slow, so you *really* don't want to call it very often.
+   Set 'unchain_blocks' if the translation being invalidated may be chained
+   to by other local blocks (which are NOT being discarded).
 */
-void VG_(invalidate_translations) ( Addr start, UInt range )
+void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks )
 {
    Addr     i_start, i_end, o_start, o_end;
    UInt     out_count, out_osize, out_tsize;
-   Int      i;
+   Int      i, j;
    TCEntry* tce;
 #  ifdef DEBUG_TRANSTAB
    VG_(sanity_check_tc_tt)();
@@ -592,6 +594,15 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 
       vg_tt[i].orig_addr = VG_TTE_DELETED;
       tce->orig_addr = VG_TTE_DELETED;
+
+      if (unchain_blocks) {
+         /* make sure no other blocks chain to the one we just discarded */
+         for(j = 0; j < VG_TC_N_SECTORS; j++) {
+            if (vg_tc[j] != NULL)
+               unchain_sector(j, tce->payload, tce->trans_size);
+         }
+      }
+
       VG_(overall_out_count) ++;
       VG_(overall_out_osize) += tce->orig_size;
       VG_(overall_out_tsize) += tce->trans_size;

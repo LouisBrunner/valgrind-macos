@@ -1462,7 +1462,7 @@ extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                                     Addr trans_addr, Int trans_size,
 				    UShort jumps[VG_MAX_JUMPS]);
 
-extern void VG_(invalidate_translations) ( Addr start, UInt range );
+extern void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks );
 
 extern void VG_(init_tt_tc) ( void );
 

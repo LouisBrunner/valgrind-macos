@@ -109,6 +109,13 @@ extern void addHRegUse ( HRegUsage*, HRegMode, HReg );
 /*--- Indicating register remappings (for reg-alloc)    ---*/
 /*---------------------------------------------------------*/
 
+/* Note that such maps can only map virtual regs to real regs.
+   addToHRegRenap will barf if given a pair not of that form.  As a
+   result, no valid HRegRemap will bind a real reg to anything, and so
+   if lookupHRegMap is given a real reg, it returns it unchanged.
+   This is precisely the behaviour that the register allocator needs
+   to impose its decisions on the instructions it processes.  */
+
 #define N_HREG_REMAP 4
 
 typedef

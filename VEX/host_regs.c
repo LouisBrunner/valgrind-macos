@@ -160,6 +160,11 @@ void addToHRegRemap ( HRegRemap* map, HReg orig, HReg replacement )
    for (i = 0; i < map->n_used; i++)
       if (map->orig[i] == orig)
          panic("addToHRegMap: duplicate entry");
+   if (!hregIsVirtual(orig))
+      panic("addToHRegMap: orig is not a vreg");
+   if (hregIsVirtual(replacement))
+      panic("addToHRegMap: replacement is not a vreg");
+
    assert(map->n_used+1 < N_HREG_REMAP);
    map->orig[map->n_used]        = orig;
    map->replacement[map->n_used] = replacement;
@@ -170,6 +175,8 @@ void addToHRegRemap ( HRegRemap* map, HReg orig, HReg replacement )
 HReg lookupHRegRemap ( HRegRemap* map, HReg orig )
 {
    Int i;
+   if (!hregIsVirtual(orig))
+      return orig;
    for (i = 0; i < map->n_used; i++)
       if (map->orig[i] == orig)
          return map->replacement[i];

@@ -431,7 +431,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          if (i->Xin.Sh32.src == 0)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
+      case Xin_RET:
+         return;
       default:
+         ppX86Instr(stderr, i);
          panic("getRegUsage_X86Instr");
    }
 }
@@ -450,7 +453,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Sh32:
          mapRegs_X86RM(m, i->Xin.Sh32.dst);
          return;
+      case Xin_RET:
+         return;
       default:
+         ppX86Instr(stderr, i);
          panic("mapRegs_X86Instr");
    }
 }

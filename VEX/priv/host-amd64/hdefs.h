@@ -315,7 +315,7 @@ typedef
       Asse_MOV,
       /* Floating point binary */
       Asse_ADDF, Asse_SUBF, Asse_MULF, Asse_DIVF,
-//..       Xsse_MAXF, Xsse_MINF,
+      Asse_MAXF, Asse_MINF,
 //..       Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF,
       /* Floating point unary */
       Asse_RCPF, Asse_RSQRTF, Asse_SQRTF, 
@@ -379,10 +379,12 @@ typedef
 //..       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
 //..       Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
 //..       Xin_FpCMov,    /* FP fake floating point conditional move */
-//..       Xin_FpLdStCW,  /* fldcw / fstcw */
+      Ain_LdMXCSR,   /* load %mxcsr */
 //..       Xin_FpStSW_AX, /* fstsw %ax */
       Ain_SseUComIS, /* ucomisd/ucomiss, then get %rflags into int
                         register */
+      Ain_SseSI2SF,  /* scalar 32/64 int to 32/64 float conversion */
+      Ain_SseSF2SI,  /* scalar 32/64 float to 32/64 int conversion */
 //.. 
 //..       Xin_SseConst,  /* Generate restricted SSE literal */
       Ain_SseLdSt,   /* SSE load/store 32/64/128 bits, no alignment
@@ -553,12 +555,11 @@ typedef
 //..             HReg        src;
 //..             HReg        dst;
 //..          } FpCMov;
-//..          /* Load/store the FPU's 16-bit control word (fldcw/fstcw) */
-//..          struct {
-//..             Bool      isLoad;
-//..             X86AMode* addr;
-//..          }
-//..          FpLdStCW;
+         /* Load 32 bits into %mxcsr. */
+         struct {
+            AMD64AMode* addr;
+         }
+         LdMXCSR;
 //..          /* fstsw %ax */
 //..          struct {
 //..             /* no fields */
@@ -571,6 +572,20 @@ typedef
             HReg    srcR; /* xmm */
             HReg    dst;  /* int */
          } SseUComIS;
+         /* scalar 32/64 int to 32/64 float conversion */
+         struct {
+            UChar szS; /* 4 or 8 */
+            UChar szD; /* 4 or 8 */
+            HReg  src; /* i class */
+            HReg  dst; /* v class */
+         } SseSI2SF;
+         /* scalar 32/64 float to 32/64 int conversion */
+         struct {
+            UChar szS; /* 4 or 8 */
+            UChar szD; /* 4 or 8 */
+            HReg  src; /* v class */
+            HReg  dst; /* i class */
+         } SseSF2SI;
 //.. 
 //..          /* Simplistic SSE[123] */
 //..          struct {
@@ -657,9 +672,11 @@ extern AMD64Instr* AMD64Instr_MFence    ( void );
 //.. extern AMD64Instr* AMD64Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Fp64to32  ( HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_FpCMov    ( AMD64CondCode, HReg src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_FpLdStCW  ( Bool isLoad, AMD64AMode* );
+extern AMD64Instr* AMD64Instr_LdMXCSR   ( AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_FpStSW_AX ( void );
 extern AMD64Instr* AMD64Instr_SseUComIS ( Int sz, HReg srcL, HReg srcR, HReg dst );
+extern AMD64Instr* AMD64Instr_SseSI2SF  ( Int szS, Int szD, HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_SseSF2SI  ( Int szS, Int szD, HReg src, HReg dst );
 //.. 
 //.. extern AMD64Instr* AMD64Instr_SseConst  ( UShort con, HReg dst );
 extern AMD64Instr* AMD64Instr_SseLdSt   ( Bool isLoad, Int sz, HReg, AMD64AMode* );

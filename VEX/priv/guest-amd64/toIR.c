@@ -1224,12 +1224,12 @@ static void putXMMRegLane64 ( UInt xmmreg, Int laneno, IRExpr* e )
    stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
 }
 
-//.. static void putXMMRegLane64F ( UInt xmmreg, Int laneno, IRExpr* e )
-//.. {
-//..    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F64);
-//..    stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
-//.. }
-//.. 
+static void putXMMRegLane64F ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F64);
+   stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
+}
+
 //.. static void putXMMRegLane32F ( UInt xmmreg, Int laneno, IRExpr* e )
 //.. {
 //..    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F32);
@@ -7484,17 +7484,19 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 //..    putXMMReg( eregOfRM(rm), mkexpr(e1) );
 //..    return delta;
 //.. }
-//.. 
-//.. 
-//.. /* Get the current SSE rounding mode. */
-//.. 
-//.. static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
-//.. {
-//..    return binop( Iop_And32, 
-//..                  IRExpr_Get( OFFB_SSEROUND, Ity_I32 ), 
-//..                  mkU32(3) );
-//.. }
-//.. 
+
+
+/* Get the current SSE rounding mode. */
+
+static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
+{
+   return 
+      unop( Iop_64to32, 
+            binop( Iop_And64, 
+                   IRExpr_Get( OFFB_SSEROUND, Ity_I64 ), 
+                   mkU64(3) ));
+}
+
 //.. static void put_sse_roundingmode ( IRExpr* sseround )
 //.. {
 //..    vassert(typeOfIRExpr(irbb->tyenv, sseround) == Ity_I32);
@@ -8913,13 +8915,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnpd", Iop_And128 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F 54 = ANDPD -- G = G and E */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x54) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "andpd", Iop_And128 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 66 0F 54 = ANDPD -- G = G and E */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x54) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "andpd", Iop_AndV128 );
+      goto decode_success;
+   }
+
 //..    /* 66 0F C2 = CMPPD -- 64Fx2 comparison from R/M to R */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC2) {
 //..       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmppd", True, 8 );
@@ -9287,43 +9290,54 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* F2 0F 2D = CVTSD2SI -- convert F64 in mem/low half xmm to
 //..       I32 in ireg, according to prevailing SSE rounding mode */
-//..    /* F2 0F 2C = CVTTSD2SI -- convert F64 in mem/low half xmm to
-//..       I32 in ireg, according to prevailing SSE rounding mode */
-//..    if (insn[0] == 0xF2 && insn[1] == 0x0F 
-//..        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
-//..       IRTemp rmode = newTemp(Ity_I32);
-//..       IRTemp f64lo = newTemp(Ity_F64);
-//..       Bool   r2zero = insn[2] == 0x2C;
-//..       vassert(sz == 4);
-//.. 
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 3+1;
-//.. 	 assign(f64lo, getXMMRegLane64F(eregOfRM(modrm), 0));
-//..          DIP("cvt%ssd2si %s,%s\n", r2zero ? "t" : "",
-//..                                    nameXMMReg(eregOfRM(modrm)),
-//..                                    nameIReg(4, gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//.. 	 assign(f64lo, loadLE(Ity_F64, mkexpr(addr)));
-//..          delta += 3+alen;
-//..          DIP("cvt%ssd2si %s,%s\n", r2zero ? "t" : "",
-//..                                    dis_buf,
-//..                                    nameIReg(4, gregOfRM(modrm)));
-//..       }
-//.. 
-//..       if (r2zero) {
-//..          assign( rmode, mkU32((UInt)Irrm_ZERO) );
-//..       } else {
-//..          assign( rmode, get_sse_roundingmode() );
-//..       }
-//.. 
-//..       putIReg(4, gregOfRM(modrm),
-//..                  binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64lo)) );
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
+   /* F2 0F 2C = CVTTSD2SI 
+      when sz==4 -- convert F64 in mem/low half xmm to I32 in ireg, 
+                    truncating towards zero
+      when sz==8 -- convert F64 in mem/low half xmm to I64 in ireg, 
+                    truncating towards zero 
+   */
+   if (haveF2no66noF3(pfx) 
+       && insn[0] == 0x0F 
+       && ( /* insn[1] == 0x2D || */ insn[1] == 0x2C)) {
+      IRTemp rmode  = newTemp(Ity_I32);
+      IRTemp f64lo  = newTemp(Ity_F64);
+      Bool   r2zero = insn[1] == 0x2C;
+      vassert(sz == 4 || sz == 8);
+
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         assign(f64lo, getXMMRegLane64F(eregOfRexRM(pfx,modrm), 0));
+         DIP("cvt%ssd2si %s,%s\n", r2zero ? "t" : "",
+                                   nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                   nameIRegR(pfx, 4, gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign(f64lo, loadLE(Ity_F64, mkexpr(addr)));
+         delta += 2+alen;
+         DIP("cvt%ssd2si %s,%s\n", r2zero ? "t" : "",
+                                   dis_buf,
+                                   nameIRegR(pfx, 4, gregOfRM(modrm)));
+      }
+
+      if (r2zero) {
+         assign( rmode, mkU32((UInt)Irrm_ZERO) );
+      } else {
+         assign( rmode, get_sse_roundingmode() );
+      }
+
+      if (sz == 4) {
+         putIRegR( pfx, 4, gregOfRM(modrm),
+                   binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64lo)) );
+      } else {
+         goto decode_failure; /* awaiting test case */
+         putIRegR( pfx, 8, gregOfRM(modrm),
+                   binop( Iop_F64toI64, mkexpr(rmode), mkexpr(f64lo)) );
+      }
+
+      goto decode_success;
+   }
+
 //..    /* F2 0F 5A = CVTSD2SS -- convert F64 in mem/low half xmm to F32 in
 //..       low 1/4 xmm(G), according to prevailing SSE rounding mode */
 //..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5A) {
@@ -9334,12 +9348,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
-//.. 	 assign(f64lo, getXMMRegLane64F(eregOfRM(modrm), 0));
+//..          assign(f64lo, getXMMRegLane64F(eregOfRM(modrm), 0));
 //..          DIP("cvtsd2ss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
 //..                                  nameXMMReg(gregOfRM(modrm)));
 //..       } else {
 //..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//.. 	 assign(f64lo, loadLE(Ity_F64, mkexpr(addr)));
+//..          assign(f64lo, loadLE(Ity_F64, mkexpr(addr)));
 //..          delta += 3+alen;
 //..          DIP("cvtsd2ss %s,%s\n", dis_buf,
 //..                                  nameXMMReg(gregOfRM(modrm)));
@@ -9353,34 +9367,61 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F2 0F 2A = CVTSI2SD -- convert I32 in mem/ireg to F64 in low
-//..       half xmm */
-//..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x2A) {
-//..       IRTemp arg32 = newTemp(Ity_I32);
-//..       vassert(sz == 4);
-//.. 
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          assign( arg32, getIReg(4, eregOfRM(modrm)) );
-//..          delta += 3+1;
-//..          DIP("cvtsi2sd %s,%s\n", nameIReg(4, eregOfRM(modrm)),
-//..                                  nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//.. 	 assign( arg32, loadLE(Ity_I32, mkexpr(addr)) );
-//..          delta += 3+alen;
-//..          DIP("cvtsi2sd %s,%s\n", dis_buf,
-//..                                  nameXMMReg(gregOfRM(modrm)) );
-//..       }
-//.. 
-//..       putXMMRegLane64F( 
-//..          gregOfRM(modrm), 0,
-//..          unop(Iop_I32toF64, mkexpr(arg32)) );
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* F2 0F 2A = CVTSI2SD 
+      when sz==4 -- convert I32 in mem/ireg to F64 in low half xmm
+      when sz==8 -- convert I64 in mem/ireg to F64 in low half xmm
+   */
+   if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x2A) {
+      vassert(sz == 4 || sz == 8);
+      modrm = getUChar(delta+2);
+
+      if (sz == 4) {
+         IRTemp arg32 = newTemp(Ity_I32);
+         if (epartIsReg(modrm)) {
+            assign( arg32, getIRegB(pfx, 4, eregOfRM(modrm)) );
+            delta += 2+1;
+            DIP("cvtsi2sd %s,%s\n", nameIRegB(pfx, 4, eregOfRM(modrm)),
+                                    nameXMMReg(gregOfRexRM(pfx,modrm)));
+         } else {
+            addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+            assign( arg32, loadLE(Ity_I32, mkexpr(addr)) );
+            delta += 2+alen;
+            DIP("cvtsi2sd %s,%s\n", dis_buf,
+                                    nameXMMReg(gregOfRexRM(pfx,modrm)) );
+         }
+         putXMMRegLane64F( gregOfRexRM(pfx,modrm), 0,
+                           unop(Iop_I32toF64, mkexpr(arg32)) 
+         );
+      } else {
+         /* sz == 8 */
+         IRTemp arg64 = newTemp(Ity_I64);
+         if (epartIsReg(modrm)) {
+            assign( arg64, getIRegB(pfx, 8, eregOfRM(modrm)) );
+            delta += 2+1;
+            DIP("cvtsi2sd %s,%s\n", nameIRegB(pfx, 8, eregOfRM(modrm)),
+                                    nameXMMReg(gregOfRexRM(pfx,modrm)));
+         } else {
+            addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+            assign( arg64, loadLE(Ity_I64, mkexpr(addr)) );
+            delta += 2+alen;
+            DIP("cvtsi2sd %s,%s\n", dis_buf,
+                                    nameXMMReg(gregOfRexRM(pfx,modrm)) );
+         }
+         putXMMRegLane64F( 
+            gregOfRexRM(pfx,modrm), 
+            0,
+            binop( Iop_I64toF64,
+                   get_sse_roundingmode(),
+                   mkexpr(arg64)
+            ) 
+         );
+
+      }
+
+      goto decode_success;
+   }
+
 //..    /* F3 0F 5A = CVTSS2SD -- convert F32 in mem/low 1/4 xmm to F64 in
 //..       low half xmm(G) */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5A) {
@@ -9390,12 +9431,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
-//.. 	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
+//..          assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
 //..          DIP("cvtss2sd %s,%s\n", nameXMMReg(eregOfRM(modrm)),
 //..                                  nameXMMReg(gregOfRM(modrm)));
 //..       } else {
 //..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//.. 	 assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+//..          assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
 //..          delta += 3+alen;
 //..          DIP("cvtss2sd %s,%s\n", dis_buf,
 //..                                  nameXMMReg(gregOfRM(modrm)));
@@ -9421,7 +9462,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                                   nameXMMReg(gregOfRM(modrm)));
 //..       } else {
 //..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//.. 	 assign( argV, loadLE(Ity_V128, mkexpr(addr)) );
+//..          assign( argV, loadLE(Ity_V128, mkexpr(addr)) );
 //..          delta += 2+alen;
 //..          DIP("cvttpd2dq %s,%s\n", dis_buf,
 //..                                   nameXMMReg(gregOfRM(modrm)) );
@@ -9524,14 +9565,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "maxpd", Iop_Max64Fx2 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F2 0F 5F = MAXSD -- max 64F0x2 from R/M to R */
-//..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5F) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSE_E_to_G_lo64( sorb, delta+3, "maxsd", Iop_Max64F0x2 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* F2 0F 5F = MAXSD -- max 64F0x2 from R/M to R */
+   if (haveF2no66noF3(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5F) {
+      delta = dis_SSE_E_to_G_lo64( pfx, delta+2, "maxsd", Iop_Max64F0x2 );
+      goto decode_success;
+   }
+
 //..    /* 66 0F 5D = MINPD -- min 64Fx2 from R/M to R */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x5D) {
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "minpd", Iop_Min64Fx2 );
@@ -10007,51 +10048,53 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F 15 = UNPCKHPD -- unpack and interleave high part F64s */
-//..    /* 66 0F 14 = UNPCKLPD -- unpack and interleave low part F64s */
-//..    /* These just appear to be special cases of SHUFPS */
-//..    if (sz == 2 && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
-//..       IRTemp s1 = newTemp(Ity_I64);
-//..       IRTemp s0 = newTemp(Ity_I64);
-//..       IRTemp d1 = newTemp(Ity_I64);
-//..       IRTemp d0 = newTemp(Ity_I64);
-//..       IRTemp sV = newTemp(Ity_V128);
-//..       IRTemp dV = newTemp(Ity_V128);
-//..       Bool   hi = insn[1] == 0x15;
-//.. 
-//..       modrm = insn[2];
-//..       assign( dV, getXMMReg(gregOfRM(modrm)) );
-//.. 
-//..       if (epartIsReg(modrm)) {
-//..          assign( sV, getXMMReg(eregOfRM(modrm)) );
-//..          delta += 2+1;
-//..          DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
-//..                                   nameXMMReg(eregOfRM(modrm)),
-//..                                   nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
-//..          delta += 2+alen;
-//..          DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
-//..                                   dis_buf,
-//..                                   nameXMMReg(gregOfRM(modrm)));
-//..       }
-//.. 
-//..       assign( d1, unop(Iop_128HIto64, mkexpr(dV)) );
-//..       assign( d0, unop(Iop_128to64,   mkexpr(dV)) );
-//..       assign( s1, unop(Iop_128HIto64, mkexpr(sV)) );
-//..       assign( s0, unop(Iop_128to64,   mkexpr(sV)) );
-//.. 
-//..       if (hi) {
-//..          putXMMReg( gregOfRM(modrm), 
-//..                     binop(Iop_64HLto128, mkexpr(s1), mkexpr(d1)) );
-//..       } else {
-//..          putXMMReg( gregOfRM(modrm), 
-//..                     binop(Iop_64HLto128, mkexpr(s0), mkexpr(d0)) );
-//..       }
-//.. 
-//..       goto decode_success;
-//..    }
+   /* 66 0F 15 = UNPCKHPD -- unpack and interleave high part F64s */
+   /* 66 0F 14 = UNPCKLPD -- unpack and interleave low part F64s */
+   /* These just appear to be special cases of SHUFPS */
+   if (have66noF2noF3(pfx) 
+       && sz == 2 /* could be 8 if rex also present */
+       && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
+      IRTemp s1 = newTemp(Ity_I64);
+      IRTemp s0 = newTemp(Ity_I64);
+      IRTemp d1 = newTemp(Ity_I64);
+      IRTemp d0 = newTemp(Ity_I64);
+      IRTemp sV = newTemp(Ity_V128);
+      IRTemp dV = newTemp(Ity_V128);
+      Bool   hi = insn[1] == 0x15;
+
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRexRM(pfx,modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRexRM(pfx,modrm)) );
+         delta += 2+1;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                  nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  dis_buf,
+                                  nameXMMReg(gregOfRexRM(pfx,modrm)));
+      }
+
+      assign( d1, unop(Iop_V128HIto64, mkexpr(dV)) );
+      assign( d0, unop(Iop_V128to64,   mkexpr(dV)) );
+      assign( s1, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( s0, unop(Iop_V128to64,   mkexpr(sV)) );
+
+      if (hi) {
+         putXMMReg( gregOfRexRM(pfx,modrm), 
+                    binop(Iop_64HLtoV128, mkexpr(s1), mkexpr(d1)) );
+      } else {
+         putXMMReg( gregOfRexRM(pfx,modrm), 
+                    binop(Iop_64HLtoV128, mkexpr(s0), mkexpr(d0)) );
+      }
+
+      goto decode_success;
+   }
 
    /* 66 0F 57 = XORPD -- G = G xor E */
    if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x57) {

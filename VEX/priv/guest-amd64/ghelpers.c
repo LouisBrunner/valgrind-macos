@@ -72,6 +72,44 @@
 /*--- %rflags run-time helpers.                               ---*/
 /*---------------------------------------------------------------*/
 
+/* Do 64x64 -> 128 signed/unsigned multiplies, for computing flags
+   after imulq/mulq. */
+
+static void mullS64 ( Long u, Long v, Long* rHi, Long* rLo )
+{
+   ULong u0, v0, w0;
+    Long u1, v1, w1, w2, t;
+   u0   = u & 0xFFFFFFFF; 
+   u1   = u >> 32;
+   v0   = v & 0xFFFFFFFF;
+   v1   = v >> 32;
+   w0   = u0 * v0;
+   t    = u1 * v0 + (w0 >> 32);
+   w1   = t & 0xFFFFFFFF;
+   w2   = t >> 32;
+   w1   = u0 * v1 + w1;
+   *rHi = u1 * v1 + w2 + (w1 >> 32);
+   *rLo = u * v;
+}
+
+static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
+{
+   ULong u0, v0, w0;
+   ULong u1, v1, w1,w2,t;
+   u0   = u & 0xFFFFFFFF;
+   u1   = u >> 32;
+   v0   = v & 0xFFFFFFFF;
+   v1   = v >> 32;
+   w0   = u0 * v0;
+   t    = u1 * v0 + (w0 >> 32);
+   w1   = t & 0xFFFFFFFF;
+   w2   = t >> 32;
+   w1   = u0 * v1 + w1;
+   *rHi = u1 * v1 + w2 + (w1 >> 32);
+   *rLo = u * v;
+}
+
+
 static const UChar parity_table[256] = {
     AMD64G_CC_MASK_P, 0, 0, AMD64G_CC_MASK_P, 0, AMD64G_CC_MASK_P, AMD64G_CC_MASK_P, 0,
     0, AMD64G_CC_MASK_P, AMD64G_CC_MASK_P, 0, AMD64G_CC_MASK_P, 0, 0, AMD64G_CC_MASK_P,
@@ -402,6 +440,42 @@ inline static Long lshift ( Long x, Int n )
    }								\
 }
 
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_UMULQ                                           \
+{                                                               \
+   PREAMBLE(64);                                                \
+   { Long cf, pf, af, zf, sf, of;                               \
+     ULong lo, hi;                                              \
+     mullU64( (ULong)CC_DEP1, (ULong)CC_DEP2, &hi, &lo );       \
+     cf = (hi != 0);                                            \
+     pf = parity_table[(UChar)lo];                              \
+     af = 0; /* undefined */                                    \
+     zf = (lo == 0) << 6;                                       \
+     sf = lshift(lo, 8 - 64) & 0x80;                            \
+     of = cf << 11;                                             \
+     return cf | pf | af | zf | sf | of;                        \
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_SMULQ                                           \
+{                                                               \
+   PREAMBLE(64);                                                \
+   { Long cf, pf, af, zf, sf, of;                               \
+     Long lo, hi;                                               \
+     mullS64( (Long)CC_DEP1, (Long)CC_DEP2, &hi, &lo );         \
+     cf = (hi != (lo >>/*s*/ (64-1)));                          \
+     pf = parity_table[(UChar)lo];                              \
+     af = 0; /* undefined */                                    \
+     zf = (lo == 0) << 6;                                       \
+     sf = lshift(lo, 8 - 64) & 0x80;                            \
+     of = cf << 11;                                             \
+     return cf | pf | af | zf | sf | of;                        \
+   }								\
+}
+
 
 #if PROFILE_EFLAGS
 
@@ -552,6 +626,7 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   Short );
       case AMD64G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  Int   );
       case AMD64G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    Long  );
+      case AMD64G_CC_OP_SMULQ:  ACTIONS_SMULQ;
 
       default:
          /* shouldn't really make these calls from generated code */

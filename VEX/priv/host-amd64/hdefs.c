@@ -572,8 +572,8 @@ HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_SUBF:     return "sub";
       case Asse_MULF:     return "mul";
       case Asse_DIVF:     return "div";
-//..       case Xsse_MAXF:     return "max";
-//..       case Xsse_MINF:     return "min";
+      case Asse_MAXF:     return "max";
+      case Asse_MINF:     return "min";
 //..       case Xsse_CMPEQF:   return "cmpFeq";
 //..       case Xsse_CMPLTF:   return "cmpFlt";
 //..       case Xsse_CMPLEF:   return "cmpFle";
@@ -848,13 +848,12 @@ AMD64Instr* AMD64Instr_MFence ( void )
 //..    vassert(cond != Xcc_ALWAYS);
 //..    return i;
 //.. }
-//.. AMD64Instr* AMD64Instr_FpLdStCW ( Bool isLoad, AMD64AMode* addr ) {
-//..    AMD64Instr* i            = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag                 = Xin_FpLdStCW;
-//..    i->Xin.FpLdStCW.isLoad = isLoad;
-//..    i->Xin.FpLdStCW.addr   = addr;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_LdMXCSR ( AMD64AMode* addr ) {
+   AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag                = Ain_LdMXCSR;
+   i->Ain.LdMXCSR.addr   = addr;
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_FpStSW_AX ( void ) {
 //..    AMD64Instr* i = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag      = Xin_FpStSW_AX;
@@ -870,7 +869,28 @@ AMD64Instr* AMD64Instr_SseUComIS ( Int sz, HReg srcL, HReg srcR, HReg dst ) {
    vassert(sz == 4 || sz == 8);
    return i;
 }
-
+AMD64Instr* AMD64Instr_SseSI2SF ( Int szS, Int szD, HReg src, HReg dst ) {
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_SseSI2SF;
+   i->Ain.SseSI2SF.szS = szS;
+   i->Ain.SseSI2SF.szD = szD;
+   i->Ain.SseSI2SF.src = src;
+   i->Ain.SseSI2SF.dst = dst;
+   vassert(szS == 4 || szS == 8);
+   vassert(szD == 4 || szD == 8);
+   return i;
+}
+AMD64Instr* AMD64Instr_SseSF2SI ( Int szS, Int szD, HReg src, HReg dst ) {
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_SseSF2SI;
+   i->Ain.SseSF2SI.szS = szS;
+   i->Ain.SseSF2SI.szD = szD;
+   i->Ain.SseSF2SI.src = src;
+   i->Ain.SseSF2SI.dst = dst;
+   vassert(szS == 4 || szS == 8);
+   vassert(szD == 4 || szD == 8);
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_SseConst ( UShort con, HReg dst ) {
 //..    AMD64Instr* i            = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag                 = Xin_SseConst;
@@ -1160,6 +1180,10 @@ void ppAMD64Instr ( AMD64Instr* i )
 //..       case Xin_FpStSW_AX:
 //..          vex_printf("fstsw %%ax");
 //..          return;
+      case Ain_LdMXCSR:
+         vex_printf("ldmxcsr ");
+         ppAMD64AMode(i->Ain.LdMXCSR.addr);
+         break;
       case Ain_SseUComIS:
          vex_printf("ucomis%s ", i->Ain.SseUComIS.sz==4 ? "s" : "d");
          ppHRegAMD64(i->Ain.SseUComIS.srcL);
@@ -1167,6 +1191,20 @@ void ppAMD64Instr ( AMD64Instr* i )
          ppHRegAMD64(i->Ain.SseUComIS.srcR);
          vex_printf(" ; pushfq ; popq ");
          ppHRegAMD64(i->Ain.SseUComIS.dst);
+         break;
+      case Ain_SseSI2SF:
+         vex_printf("cvtsi2s%s ", i->Ain.SseSI2SF.szD==4 ? "s" : "d");
+         (i->Ain.SseSI2SF.szS==4 ? ppHRegAMD64_lo32 : ppHRegAMD64)
+            (i->Ain.SseSI2SF.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.SseSI2SF.dst);
+         break;
+      case Ain_SseSF2SI:
+         vex_printf("cvts%s2si ", i->Ain.SseSF2SI.szS==4 ? "s" : "d");
+         ppHRegAMD64(i->Ain.SseSF2SI.src);
+         vex_printf(",");
+         (i->Ain.SseSF2SI.szD==4 ? ppHRegAMD64_lo32 : ppHRegAMD64)
+            (i->Ain.SseSF2SI.dst);
          break;
 //..       case Xin_SseConst:
 //..          vex_printf("const $0x%04x,", (Int)i->Xin.SseConst.con);
@@ -1412,9 +1450,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 //..          addHRegUse(u, HRmRead,   i->Xin.FpCMov.src);
 //..          addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
 //..          return;
-//..       case Xin_FpLdStCW:
-//..          addRegUsage_AMD64AMode(u, i->Xin.FpLdStCW.addr);
-//..          return;
+      case Ain_LdMXCSR:
+         addRegUsage_AMD64AMode(u, i->Ain.LdMXCSR.addr);
+         return;
 //..       case Xin_FpStSW_AX:
 //..          addHRegUse(u, HRmWrite, hregAMD64_EAX());
 //..          return;
@@ -1422,6 +1460,14 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addHRegUse(u, HRmRead,  i->Ain.SseUComIS.srcL);
          addHRegUse(u, HRmRead,  i->Ain.SseUComIS.srcR);
          addHRegUse(u, HRmWrite, i->Ain.SseUComIS.dst);
+         return;
+      case Ain_SseSI2SF:
+         addHRegUse(u, HRmRead,  i->Ain.SseSI2SF.src);
+         addHRegUse(u, HRmWrite, i->Ain.SseSI2SF.dst);
+         return;
+      case Ain_SseSF2SI:
+         addHRegUse(u, HRmRead,  i->Ain.SseSF2SI.src);
+         addHRegUse(u, HRmWrite, i->Ain.SseSF2SI.dst);
          return;
       case Ain_SseLdSt:
          addRegUsage_AMD64AMode(u, i->Ain.SseLdSt.addr);
@@ -1596,15 +1642,23 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 //..          mapReg(m, &i->Xin.FpCMov.src);
 //..          mapReg(m, &i->Xin.FpCMov.dst);
 //..          return;
-//..       case Xin_FpLdStCW:
-//..          mapRegs_AMD64AMode(m, i->Xin.FpLdStCW.addr);
-//..          return;
+      case Ain_LdMXCSR:
+         mapRegs_AMD64AMode(m, i->Ain.LdMXCSR.addr);
+         return;
 //..       case Xin_FpStSW_AX:
 //..          return;
       case Ain_SseUComIS:
          mapReg(m, &i->Ain.SseUComIS.srcL);
          mapReg(m, &i->Ain.SseUComIS.srcR);
          mapReg(m, &i->Ain.SseUComIS.dst);
+         return;
+      case Ain_SseSI2SF:
+         mapReg(m, &i->Ain.SseSI2SF.src);
+         mapReg(m, &i->Ain.SseSI2SF.dst);
+         return;
+      case Ain_SseSF2SI:
+         mapReg(m, &i->Ain.SseSF2SI.src);
+         mapReg(m, &i->Ain.SseSF2SI.dst);
          return;
 //..       case Xin_SseConst:
 //..          mapReg(m, &i->Xin.SseConst.dst);
@@ -2423,13 +2477,14 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
             *p++ = 0xFF;
             p = doAMode_M(p, fake(6), i->Ain.Push.src->Armi.Mem.am);
             goto done;
-//..          case Xrmi_Imm:
-//..             *p++ = 0x68;
-//..             p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
-//..             goto done;
-//..          case Xrmi_Reg:
-//..             *p++ = 0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg);
-//..             goto done;
+         case Armi_Imm:
+            *p++ = 0x68;
+            p = emit32(p, i->Ain.Push.src->Armi.Imm.imm32);
+            goto done;
+         case Armi_Reg:
+            *p++ = 0x40 + (1 & iregBit3(i->Ain.Push.src->Armi.Reg.reg));
+            *p++ = 0x50 + iregNo(i->Ain.Push.src->Armi.Reg.reg);
+            goto done;
         default: 
             goto bad;
       }
@@ -2818,16 +2873,14 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 //..       /* Fill in the jump offset. */
 //..       *(ptmp-1) = p - ptmp;
 //..       goto done;
-//.. 
-//..    case Xin_FpLdStCW:
-//..       if (i->Xin.FpLdStCW.isLoad) {
-//..          *p++ = 0xD9;
-//..          p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdStCW.addr);
-//..       } else {
-//..          vassert(0);
-//..       }
-//..       goto done;
-//.. 
+
+   case Ain_LdMXCSR:
+      *p++ = clearWBit(rexAMode_M( fake(0), i->Ain.LdMXCSR.addr));
+      *p++ = 0x0F;
+      *p++ = 0xAE;
+      p = doAMode_M(p, fake(2)/*subopcode*/, i->Ain.LdMXCSR.addr);
+      goto done;
+
 //..    case Xin_FpStSW_AX:
 //..       /* note, this emits fnstsw %ax, not fstsw %ax */
 //..       *p++ = 0xDF;
@@ -2855,6 +2908,30 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       /* popq %dst */
       *p++ = 0x40 + (1 & iregBit3(i->Ain.SseUComIS.dst));
       *p++ = 0x58 + iregNo(i->Ain.SseUComIS.dst);
+      goto done;
+
+   case Ain_SseSI2SF:
+      /* cvssi2s[sd] %src, %dst */
+      rex = rexAMode_R( vreg2ireg(i->Ain.SseSI2SF.dst),
+                        i->Ain.SseSI2SF.src );
+      *p++ = i->Ain.SseSI2SF.szD==4 ? 0xF3 : 0xF2;
+      *p++ = i->Ain.SseSI2SF.szS==4 ? clearWBit(rex) : rex;
+      *p++ = 0x0F;
+      *p++ = 0x2A;
+      p = doAMode_R( p, vreg2ireg(i->Ain.SseSI2SF.dst),
+                        i->Ain.SseSI2SF.src );
+      goto done;
+
+   case Ain_SseSF2SI:
+      /* cvss[sd]2si %src, %dst */
+      rex = rexAMode_R( i->Ain.SseSF2SI.dst,
+                        vreg2ireg(i->Ain.SseSF2SI.src) );
+      *p++ = i->Ain.SseSF2SI.szS==4 ? 0xF3 : 0xF2;
+      *p++ = i->Ain.SseSF2SI.szD==4 ? clearWBit(rex) : rex;
+      *p++ = 0x0F;
+      *p++ = 0x2D;
+      p = doAMode_R( p, i->Ain.SseSF2SI.dst,
+                        vreg2ireg(i->Ain.SseSF2SI.src) );
       goto done;
 
 //.. 
@@ -3011,7 +3088,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       switch (i->Ain.Sse64FLo.op) {
          case Asse_ADDF:   *p++ = 0x58; break;
          case Asse_DIVF:   *p++ = 0x5E; break;
-//..          case Xsse_MAXF:   *p++ = 0x5F; break;
+         case Asse_MAXF:   *p++ = 0x5F; break;
 //..          case Xsse_MINF:   *p++ = 0x5D; break;
          case Asse_MULF:   *p++ = 0x59; break;
 //..          case Xsse_RCPF:   *p++ = 0x53; break;
@@ -3040,7 +3117,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_MOV:     /*movups*/ XX(rex); XX(0x0F); XX(0x10); break;
 //..          case Xsse_OR:                 XX(rex); XX(0x0F); XX(0x56); break;
          case Asse_XOR:                XX(rex); XX(0x0F); XX(0x57); break;
-//..          case Xsse_AND:                XX(rex); XX(0x0F); XX(0x54); break;
+         case Asse_AND:                XX(rex); XX(0x0F); XX(0x54); break;
 //..          case Xsse_PACKSSD:  XX(0x66); XX(rex); XX(0x0F); XX(0x6B); break;
 //..          case Xsse_PACKSSW:  XX(0x66); XX(rex); XX(0x0F); XX(0x63); break;
 //..          case Xsse_PACKUSW:  XX(0x66); XX(rex); XX(0x0F); XX(0x67); break;

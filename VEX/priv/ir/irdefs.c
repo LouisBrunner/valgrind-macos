@@ -46,19 +46,19 @@
 
 void ppIRType ( IRType ty )
 {
-  switch (ty) {
-    case Ity_INVALID: vex_printf("Ity_INVALID"); break;
-    case Ity_I1:      vex_printf( "I1");  break;
-    case Ity_I8:      vex_printf( "I8");  break;
-    case Ity_I16:     vex_printf( "I16"); break;
-    case Ity_I32:     vex_printf( "I32"); break;
-    case Ity_I64:     vex_printf( "I64"); break;
-    case Ity_F32:     vex_printf( "F32"); break;
-    case Ity_F64:     vex_printf( "F64"); break;
-    case Ity_V128:    vex_printf( "V128"); break;
-    default: vex_printf("ty = 0x%x\n", (Int)ty);
-             vpanic("ppIRType");
-  }
+   switch (ty) {
+      case Ity_INVALID: vex_printf("Ity_INVALID"); break;
+      case Ity_I1:      vex_printf( "I1");  break;
+      case Ity_I8:      vex_printf( "I8");  break;
+      case Ity_I16:     vex_printf( "I16"); break;
+      case Ity_I32:     vex_printf( "I32"); break;
+      case Ity_I64:     vex_printf( "I64"); break;
+      case Ity_F32:     vex_printf( "F32"); break;
+      case Ity_F64:     vex_printf( "F64"); break;
+      case Ity_V128:    vex_printf( "V128"); break;
+      default: vex_printf("ty = 0x%x\n", (Int)ty);
+               vpanic("ppIRType");
+   }
 }
 
 void ppIRConst ( IRConst* con )
@@ -539,6 +539,9 @@ void ppIRStmt ( IRStmt* s )
       case Ist_Dirty:
          ppIRDirty(s->Ist.Dirty.details);
          break;
+      case Ist_MFence:
+         vex_printf("IRMemoryFence");
+         break;
       case Ist_Exit:
          vex_printf( "if (" );
          ppIRExpr(s->Ist.Exit.guard);
@@ -869,6 +872,12 @@ IRStmt* IRStmt_Dirty ( IRDirty* d )
    IRStmt* s            = LibVEX_Alloc(sizeof(IRStmt));
    s->tag               = Ist_Dirty;
    s->Ist.Dirty.details = d;
+   return s;
+}
+IRStmt* IRStmt_MFence ( void )
+{
+   IRStmt* s = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag    = Ist_MFence;
    return s;
 }
 IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst ) {
@@ -1495,6 +1504,8 @@ Bool isFlatIRStmt ( IRStmt* st )
          if (di->mAddr && !isAtom(di->mAddr)) 
             return False;
          return True;
+      case Ist_MFence:
+         return True;
       case Ist_Exit:
          return isAtom(st->Ist.Exit.guard);
       default: 
@@ -1650,6 +1661,8 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
             useBeforeDef_Expr(bb,stmt,d->args[i],def_counts);
          if (d->mFx != Ifx_None)
             useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
+         break;
+      case Ist_MFence:
          break;
       case Ist_Exit:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.guard,def_counts);
@@ -1838,7 +1851,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          break;
          bad_dirty:
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
-
+      case Ist_MFence:
+         break;
       case Ist_Exit:
          tcExpr( bb, stmt, stmt->Ist.Exit.guard, gWordTy );
          if (typeOfIRExpr(tyenv,stmt->Ist.Exit.guard) != Ity_I1)

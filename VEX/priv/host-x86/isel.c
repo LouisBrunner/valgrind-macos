@@ -3098,6 +3098,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
+   /* --------- MEM FENCE --------- */
+   case Ist_MFence:
+      addInstr(env, X86Instr_MFence(env->subarch));
+      return;
+
    /* --------- EXIT --------- */
    case Ist_Exit: {
       X86RI*      dst;

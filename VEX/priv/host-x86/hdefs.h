@@ -365,6 +365,7 @@ typedef
       Xin_Store,     /* store 16/8 bit value in memory */
       Xin_Set32,     /* convert condition code to 32-bit value */
       Xin_Bsfr32,    /* 32-bit bsf/bsr */
+      Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
 
       Xin_FpUnary,   /* FP fake unary op */
       Xin_FpBinary,  /* FP fake binary op */
@@ -490,6 +491,16 @@ typedef
             HReg src;
             HReg dst;
          } Bsfr32;
+         /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
+            an insn which flushes all preceding loads and stores as
+            much as possible before continuing.  On SSE2 we emit a
+            real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
+            on SSE0 "lock addl $0,0(%esp)".  This insn therefore
+            carries the subarch so the assembler knows what to
+            emit. */
+         struct {
+            VexSubArch subarch;
+         } MFence;
 
          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
          struct {
@@ -624,6 +635,7 @@ extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
 extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
 extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
 extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
+extern X86Instr* X86Instr_MFence    ( VexSubArch );
 
 extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );

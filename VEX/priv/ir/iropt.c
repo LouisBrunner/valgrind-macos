@@ -408,6 +408,9 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
             d2->args[i] = flatten_Expr(bb, d2->args[i]);
          addStmtToIRBB(bb, IRStmt_Dirty(d2));
          break;
+      case Ist_MFence:
+         addStmtToIRBB(bb, st);
+         break;
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
          addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
@@ -664,6 +667,9 @@ static void handle_gets_Stmt (
          state requiring precise exceptions needs to be flushed.  The
          crude solution is just to flush everything; we could easily
          enough do a lot better if needed. */
+      /* Probably also overly-conservative, but also dump everything
+         if we hit a memory fence. */
+      case Ist_MFence:
       case Ist_Dirty:
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
@@ -1320,6 +1326,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          return IRStmt_Dirty(d2);
       }
 
+      case Ist_MFence:
+         return IRStmt_MFence();
+
       case Ist_Exit: {
          IRExpr* fcond;
          vassert(isAtom(st->Ist.Exit.guard));
@@ -1504,6 +1513,8 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          addUses_Expr(set, d->guard);
          for (i = 0; d->args[i] != NULL; i++)
             addUses_Expr(set, d->args[i]);
+         return;
+      case Ist_MFence:
          return;
       case Ist_Exit:
          addUses_Expr(set, st->Ist.Exit.guard);
@@ -2932,6 +2943,8 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
          for (i = 0; d->args[i]; i++)
             occCount_Expr(env, d->args[i]);
          return;
+      case Ist_MFence:
+         return;
       case Ist_Exit:
          occCount_Expr(env, st->Ist.Exit.guard);
          return;
@@ -3062,6 +3075,8 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
                    st->Ist.Exit.jk,
                    st->Ist.Exit.dst
                 );
+      case Ist_MFence:
+         return IRStmt_MFence();
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
          d2 = emptyIRDirty();
@@ -3282,8 +3297,11 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
          appeared.  (Stupid algorithm): first, mark all bindings which
          need to be dumped.  Then, dump them in the order in which
          they were defined. */
+
       invPut = st->tag == Ist_Put 
-               || st->tag == Ist_PutI || st->tag == Ist_Dirty;
+               || st->tag == Ist_PutI 
+               || st->tag == Ist_Dirty;
+
       invStore = st->tag == Ist_STle
                  || st->tag == Ist_Dirty;
 
@@ -3294,7 +3312,8 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
          if (!ti->expr)
             continue;
 
-         /* We have to invalidate this binding. */
+         /* Do we have to invalidate this binding? */
+
          ti->invalidateMe 
             = /* a store invalidates loaded data */
               (ti->eDoesLoad && invStore)
@@ -3305,11 +3324,16 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
                  invalidate trees containing loads if the Put in
                  question is marked as requiring precise
                  exceptions. */
-              || (ti->eDoesLoad && invPut);
+              || (ti->eDoesLoad && invPut)
+              /* probably overly conservative: a memory fence
+                 invalidates absolutely everything, so that all
+                 computation prior to it is forced to complete before
+                 proceeding with the fence. */
+              || st->tag == Ist_MFence;
          /*
          if (ti->invalidateMe)
-           vex_printf("SET INVAL\n");
-           */
+            vex_printf("SET INVAL\n");
+         */
       }
 
       dumpInvalidated ( env, bb, &j );
@@ -3432,9 +3456,6 @@ static Bool hasGetIorPutI ( IRBB* bb )
             vassert(isAtom(st->Ist.STle.addr));
             vassert(isAtom(st->Ist.STle.data));
             break;
-         case Ist_Exit:
-            vassert(isAtom(st->Ist.Exit.guard));
-            break;
          case Ist_Dirty:
             d = st->Ist.Dirty.details;
             vassert(isAtom(d->guard));
@@ -3442,6 +3463,11 @@ static Bool hasGetIorPutI ( IRBB* bb )
                vassert(isAtom(d->args[j]));
             if (d->mFx != Ifx_None)
                vassert(isAtom(d->mAddr));
+            break;
+         case Ist_MFence:
+            break;
+         case Ist_Exit:
+            vassert(isAtom(st->Ist.Exit.guard));
             break;
          default: 
             ppIRStmt(st);

@@ -771,6 +771,7 @@ typedef
       Ist_Tmp,    /* assign value to temporary */
       Ist_STle,   /* little-endian write to memory */
       Ist_Dirty,  /* call complex ("dirty") helper function */
+      Ist_MFence, /* memory fence */
       Ist_Exit    /* conditional exit from BB */
    } 
    IRStmtTag;
@@ -801,6 +802,8 @@ typedef
             IRDirty* details;
          } Dirty;
          struct {
+         } MFence;
+         struct {
             IRExpr*    guard;
             IRJumpKind jk;
             IRConst*   dst;
@@ -809,13 +812,14 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put   ( Int off, IRExpr* data );
-extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* ix, Int bias, 
-                              IRExpr* data );
-extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* data );
-extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
-extern IRStmt* IRStmt_Dirty ( IRDirty* details );
-extern IRStmt* IRStmt_Exit  ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
+extern IRStmt* IRStmt_Put    ( Int off, IRExpr* data );
+extern IRStmt* IRStmt_PutI   ( IRArray* descr, IRExpr* ix, Int bias, 
+                               IRExpr* data );
+extern IRStmt* IRStmt_Tmp    ( IRTemp tmp, IRExpr* data );
+extern IRStmt* IRStmt_STle   ( IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_Dirty  ( IRDirty* details );
+extern IRStmt* IRStmt_MFence ( void );
+extern IRStmt* IRStmt_Exit   ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
 extern IRStmt* dopyIRStmt ( IRStmt* );
 

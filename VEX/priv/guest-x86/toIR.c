@@ -7842,7 +7842,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && epartIsReg(insn[2]) && gregOfRM(insn[2]) == 7) {
       vassert(sz == 4);
       delta += 3;
-      /* nothing to do */
+      /* Insert a memory fence.  It's sometimes important that these
+         are carried through to the generated code. */
+      stmt( IRStmt_MFence() );
       DIP("sfence\n");
       goto decode_success;
    }
@@ -8618,7 +8620,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && (gregOfRM(insn[2]) == 5 || gregOfRM(insn[2]) == 6)) {
       vassert(sz == 4);
       delta += 3;
-      /* nothing to do */
+      /* Insert a memory fence.  It's sometimes important that these
+         are carried through to the generated code. */
+      stmt( IRStmt_MFence() );
       DIP("%sfence\n", gregOfRM(insn[2])==5 ? "l" : "m");
       goto decode_success;
    }

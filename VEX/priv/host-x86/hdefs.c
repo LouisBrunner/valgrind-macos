@@ -704,6 +704,17 @@ X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
    i->Xin.Bsfr32.dst    = dst;
    return i;
 }
+X86Instr* X86Instr_MFence ( VexSubArch subarch )
+{
+   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                = Xin_MFence;
+   i->Xin.MFence.subarch = subarch;
+   vassert(subarch == VexSubArchX86_sse0
+           || subarch == VexSubArchX86_sse1
+           || subarch == VexSubArchX86_sse2);
+   return i;
+}
+
 X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_FpUnary;
@@ -980,6 +991,10 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.Bsfr32.dst);
          return;
+      case Xin_MFence:
+         vex_printf("mfence(%s)",
+                    LibVEX_ppVexSubArch(i->Xin.MFence.subarch));
+         return;
       case Xin_FpUnary:
          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
          ppHRegX86(i->Xin.FpUnary.src);
@@ -1230,6 +1245,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
          return;
+      case Xin_MFence:
+         return;
       case Xin_FpUnary:
          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1407,6 +1424,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Bsfr32:
          mapReg(m, &i->Xin.Bsfr32.src);
          mapReg(m, &i->Xin.Bsfr32.dst);
+         return;
+      case Xin_MFence:
          return;
       case Xin_FpUnary:
          mapReg(m, &i->Xin.FpUnary.src);
@@ -2316,6 +2335,33 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
       goto done;
+
+   case Xin_MFence:
+      /* see comment in hdefs.h re this insn */
+vex_printf("EMIT FENCE\n");
+      switch (i->Xin.MFence.subarch) {
+         case VexSubArchX86_sse0:
+            vassert(0); /* awaiting test case */
+            /* lock addl $0,0(%esp) */
+            *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
+            *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
+            goto done;
+         case VexSubArchX86_sse1:
+            /* sfence */
+            *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
+            /* lock addl $0,0(%esp) */
+            *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
+            *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
+            goto done;
+         case VexSubArchX86_sse2:
+            vassert(0); /* awaiting test case */
+            /* mfence */
+            *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+            goto done;
+         default: 
+            vpanic("emit_X86Instr:mfence:subarch");
+      }
+      break;
 
    case Xin_Store:
       if (i->Xin.Store.sz == 2) {

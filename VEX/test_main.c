@@ -82,6 +82,7 @@ int main ( int argc, char** argv )
       returns False. */
    LibVEX_default_VexControl ( &vcon );
    vcon.iropt_level = 2;
+   vcon.guest_max_insns = 55;
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
@@ -109,9 +110,9 @@ int main ( int argc, char** argv )
 
       /* second line is:   . byte byte byte etc */
       if (verbose)
-         printf("============ Basic Block %d, "
+         printf("============ Basic Block %d, Done %d, "
                 "Start %x, nbytes %2d ============", 
-                n_bbs_done-1, orig_addr, orig_nbytes);
+                bb_number, n_bbs_done-1, orig_addr, orig_nbytes);
 
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
@@ -122,8 +123,15 @@ int main ( int argc, char** argv )
       for (i = 0; i < TEST_N_ITERS; i++)
          tres
             = LibVEX_Translate ( 
-                 VexArchX86, VexSubArchX86_sse2, 
+#if 0 /* ppc32 -> x86 */
+                 VexArchPPC32, VexSubArchPPC32_noAV,
                  VexArchX86, VexSubArchX86_sse2,
+#endif
+#if 1 /* amd64 -> amd64 */
+                 VexArchAMD64, VexSubArch_NONE, 
+                 VexArchAMD64, VexSubArch_NONE, 
+#endif
+
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,
                  &vge,
                  transbuf, N_TRANSBUF, &trans_used,

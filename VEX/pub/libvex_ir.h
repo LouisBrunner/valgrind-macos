@@ -80,6 +80,9 @@ typedef
       Iop_Shl8,  Iop_Shl16,  Iop_Shl32,  Iop_Shl64,
       Iop_Shr8,  Iop_Shr16,  Iop_Shr32,  Iop_Shr64,
       Iop_Sar8,  Iop_Sar16,  Iop_Sar32,  Iop_Sar64,
+      /* Integer comparisons. */
+      Iop_CmpEQ8,  Iop_CmpEQ16,  Iop_CmpEQ32,  Iop_CmpEQ64,
+      Iop_CmpNE8,  Iop_CmpNE16,  Iop_CmpNE32,  Iop_CmpNE64,
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
       Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
@@ -185,6 +188,7 @@ typedef
       IRStmtTag tag;
       union {
          struct {
+            IRExpr* guard;
             Int     offset;
             IRExpr* expr;
          } Put;
@@ -201,12 +205,18 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put  ( Int off, IRExpr* value );
+extern IRStmt* IRStmt_Put  ( IRExpr* guard, Int off, IRExpr* value );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 
 extern void ppIRStmt ( IRStmt* );
 
+/* Guards in Put: if NULL, the Put is always done.
+   If non-NULL, the expr must denote a value of Ity_Bit, and
+   the Put is only done if this evaluates to 1.  The expression
+   to be stored (expr) will be evaluated regardless of what
+   the guard is.
+*/
 
 /* ------------------ Basic block enders. ------------------ */
 /*

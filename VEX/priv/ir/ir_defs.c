@@ -70,6 +70,10 @@ void ppIROp ( IROp op )
          str = "Shr"; base = Iop_Shr8; break;
       case Iop_Sar8 ... Iop_Sar64:
          str = "Sar"; base = Iop_Sar8; break;
+      case Iop_CmpEQ8 ... Iop_CmpEQ64:
+         str = "CmpEQ"; base = Iop_CmpEQ8; break;
+      case Iop_CmpNE8 ... Iop_CmpNE64:
+         str = "CmpNE"; base = Iop_CmpNE8; break;
       case Iop_Neg8 ... Iop_Neg64:
          str = "Neg"; base = Iop_Neg8; break;
       case Iop_Not8 ... Iop_Not64:
@@ -143,8 +147,15 @@ void ppIRStmt ( IRStmt* s )
 {
   switch (s->tag) {
     case Ist_Put:
-      vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
-      ppIRExpr(s->Ist.Put.expr);
+      if (s->Ist.Put.guard) {
+         vex_printf("if (");
+         ppIRExpr(s->Ist.Put.guard);
+         vex_printf( ") PUT(%d) = ", s->Ist.Put.offset);
+         ppIRExpr(s->Ist.Put.expr);
+      } else {
+         vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
+         ppIRExpr(s->Ist.Put.expr);
+      }
       break;
     case Ist_Tmp:
       ppIRTemp(s->Ist.Tmp.tmp);
@@ -311,10 +322,11 @@ IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args ) {
 
 /* Constructors -- IRStmt */
 
-IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
+IRStmt* IRStmt_Put ( IRExpr* guard, Int off, IRExpr* value ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
    s->link           = NULL;
+   s->Ist.Put.guard  = guard;
    s->Ist.Put.offset = off;
    s->Ist.Put.expr   = value;
    return s;

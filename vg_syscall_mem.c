@@ -652,6 +652,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#     if defined(__NR_mlock)
+      case __NR_mlock:
+         /* int mlock(const void * addr, size_t len) */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("mlock ( %p, %d )\n", arg1, arg2);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_mlockall)
       case __NR_mlockall:
          /* int mlockall(int flags); */

@@ -651,12 +651,12 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       case -9:	type = VG_(st_mkint)(def, 4, False); break;
       case -10:	type = VG_(st_mkint)(def, 4, False); break;
       case -11:	type = VG_(st_mkvoid)(def); break;
-      case -12:	type = VG_(st_mkfloat)(def, 32); break;
-      case -13:	type = VG_(st_mkfloat)(def, 64); break;
+      case -12:	type = VG_(st_mkfloat)(def, 4); break;
+      case -13:	type = VG_(st_mkfloat)(def, 8); break;
       case -15:	type = VG_(st_mkint)(def, 4, True); break;
       case -16:	type = VG_(st_mkbool)(def, 4); break;
-      case -17:	type = VG_(st_mkfloat)(def, 32); break;
-      case -18:	type = VG_(st_mkfloat)(def, 64); break;
+      case -17:	type = VG_(st_mkfloat)(def, 4); break;
+      case -18:	type = VG_(st_mkfloat)(def, 8); break;
       case -20:	type = VG_(st_mkint)(def, 1, False); break;
       case -21:	type = VG_(st_mkint)(def, 1, False); break;
       case -22:	type = VG_(st_mkint)(def, 2, False); break;
@@ -694,7 +694,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       atoi(&p, 0);
       EXPECT(';', "FP-TYPE extra");
       
-      type = VG_(st_mkfloat)(def, bytes * 8);
+      type = VG_(st_mkfloat)(def, bytes);
       break;
    }
 

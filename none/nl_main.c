@@ -30,22 +30,7 @@
 
 #include "vg_skin.h"
 
-//float SK_(shadow_ratio) = 9. / 8.;
-
-static void post_clo_init(void)
-{
-}
-
-static UCodeBlock* instrument(UCodeBlock* cb, Addr a)
-{
-    return cb;
-}
-
-static void fini(Int exitcode)
-{
-}
-
-static void pre_clo_init(void)
+void SK_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Nulgrind");
    VG_(details_version)         (NULL);
@@ -55,15 +40,23 @@ static void pre_clo_init(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    /* No needs, no core events to track */
-
-   /* entrypoints */
-   VG_(init_post_clo_init)(post_clo_init);
-   VG_(init_instrument)(instrument);
-   VG_(init_fini)(fini);
 }
 
-VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, 0)
+void SK_(post_clo_init)(void)
+{
+}
+
+UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
+{
+    return cb;
+}
+
+void SK_(fini)(Int exitcode)
+{
+}
+
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                nl_main.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

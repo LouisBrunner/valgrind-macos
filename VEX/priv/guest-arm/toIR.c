@@ -403,7 +403,8 @@ static Int integerGuestRegOffset ( UInt archreg )
    vassert(archreg < 16);
 
    vassert(!host_is_bigendian);   //TODO: is this necessary?
-
+   // jrs: probably not; only matters if we reference sub-parts
+   // of the arm registers, but that isn't the case
    switch (archreg) {
       case  0: return offsetof(VexGuestARMState, guest_R0);
       case  1: return offsetof(VexGuestARMState, guest_R1);
@@ -571,6 +572,7 @@ static IRExpr* mk_armg_calculate_flags_all ( void )
 
 /* Build IR to calculate some particular condition from stored
    CC_OP/CC_DEP1/CC_DEP2.  Returns an expression
+   of type Ity_I1.
 */
 static IRExpr* mk_armg_calculate_condition ( ARMCondcode cond )
 {
@@ -593,33 +595,6 @@ static IRExpr* mk_armg_calculate_condition ( ARMCondcode cond )
    return unop(Iop_32to1, call);
 }
 
-
-
-#if 0
-/* CAB: This needed?
-   j removed armg_calculate_eflags_c() from ghelpers.c ?
-*/
-/* Build IR to calculate just the carry flag from stored
-   CC_OP/CC_DEP1/CC_DEP2.  Returns an expression :: Ity_I32. */
-static IRExpr* mk_armg_calculate_eflags_c ( void )
-{
-   IRExpr** args
-      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
-                       IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32) );
-   IRExpr* call
-      = mkIRExprCCall(
-           Ity_I32,
-           0/*regparm*/, 
-           "armg_calculate_eflags_c", &armg_calculate_eflags_c,
-           args
-        );
-   /* Exclude OP from definedness checking.  We're only
-      interested in DEP1 and DEP2. */
-   call->Iex.CCall.cee->mcx_mask = 1;
-   return call;
-}
-#endif
 
 
 
@@ -739,26 +714,6 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op,
 
 
 
-/* For the inc/dec case, we store in DEP1 the result value and in NDEP
-   the former value of the carry flag, which unfortunately we have to
-   compute. */
-#if 0
-static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
-{
-   Int ccOp = inc ? ARMG_CC_OP_INC : ARMG_CC_OP_DEC;
-//   Int ccOp = inc ? X86G_CC_OP_INCB : X86G_CC_OP_DECB;
-   
-   ccOp += ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-
-   /* This has to come first, because calculating the C flag 
-      may require reading all four thunk fields. */
-//   stmt( IRStmt_Put( OFFB_CC_NDEP, mk_armg_calculate_eflags_c()) );
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(res)) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
-}
-#endif
 
 
 
@@ -787,7 +742,8 @@ void setFlags_MUL ( IRTemp arg1, IRTemp arg2, UInt op )
 /* Condition codes, using the ARM encoding.  */
 
 // CAB: Just used for debugging printouts ?
-static Char* name_ARMCondcode ( ARMCondcode cond )
+// yes, only for debugging
+static HChar* name_ARMCondcode ( ARMCondcode cond )
 {
    switch (cond) {
        case ARMCondEQ:    return "eq";
@@ -831,7 +787,14 @@ ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
 
 
 
-
+// JRS: it's probably easiest to change the return type of this
+// to IRExpr*  since IRTemp is a bit restrictive.
+// then you can return arbitrary expression trees:
+//     mkexpr(Rm)
+// or
+//     binop(Iop_Shl32, mkexpr(Rm), mkU8(Rs))
+// note, i wasn't clear which Rd/Rm/Rs are supposed to be
+// IRTemps and which are Ints.
 static
 IRTemp dis_shift_lsl ( UInt theInstr )
 {
@@ -863,7 +826,7 @@ IRTemp dis_shift_lsl ( UInt theInstr )
 	else if ( Rs_0 < 32 ) {   // op = Rm LSL Rs, carry = Rm[32 - Rs]
 
 	    // CAB: How to express LSL?
-
+	  // jrs: see comment at start of fn
 	    return 0;
 	}
 	else if ( Rs_0 == 32 ) {  // op = 0, carry = Rm[0];
@@ -995,6 +958,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    IRTemp    addr, t1, t2;
    Int       alen;
    UChar     opc, modrm, abyte;
+   /* jrs: careful -- we can get from here to use of 'opc'
+      at 'decode_failure:' without defining opc at all :-( */
    ARMCondcode cond;
    UInt      d32;
    UChar     dis_buf[50];
@@ -1028,7 +993,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* Spot the client-request magic sequence. */
    // Essentially a v. unlikely sequence of noops that we can catch
    {
-      UChar* code = (UChar*)(guest_code + delta);
+      UInt* code = (UInt*)(guest_code + delta);
       /* Spot this:                                // CAB: easy way to rotate left?
          E1A00EE0                   mov  r0, r0, ror #29
 	 E1A001E0                   mov  r0, r0, ror #3
@@ -1037,19 +1002,22 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	 E1A006E0                   mov  r0, r0, ror #13
 	 E1A009E0                   mov  r0, r0, ror #19
       */
-      if (code[ 0] == 0xE1 && code[ 1] == 0xA0 && code[ 2] == 0x0E && code[ 3] == 0xE0 &&
-          code[ 4] == 0xE1 && code[ 5] == 0xA0 && code[ 6] == 0x01 && code[ 7] == 0xE0 &&
-          code[ 8] == 0xE1 && code[ 9] == 0xA0 && code[10] == 0x0D && code[11] == 0xE0 &&
-          code[12] == 0xE1 && code[13] == 0xA0 && code[14] == 0x02 && code[15] == 0xE0 &&
-          code[16] == 0xE1 && code[17] == 0xA0 && code[18] == 0x06 && code[19] == 0xE0 &&
-          code[20] == 0xE1 && code[21] == 0xA0 && code[22] == 0x09 && code[23] == 0xE0
-         ) {
+      if (code[0] == 0xE1A00EE0 &&
+          code[1] == 0xE1A001E0 &&
+          code[2] == 0xE1A00DE0 &&
+          code[3] == 0xE1A002E0 &&
+          code[4] == 0xE1A006E0 &&
+	  code[5] == 0xE1A009E0) {
+
+         // uh ... I'll figure this out later.  possibly r0 = client_request(r0) */
          DIP("?CAB? = client_request ( ?CAB? )\n");
 
+	 *size = 24;
          delta += 24;  // CAB: this right?  we're adding 24 UInts, rather than UChars...
+	 // JRS: yes -- delta is an index into an array of UChar.  It's not a pointer.
 
 	 // CAB: This right?
-//         jmp_lit(Ijk_ClientReq, guest_pc_bbstart+delta);
+	 // JRS; yes I think so.
 	 irbb->next     = mkU32(guest_pc_bbstart+delta);
 	 irbb->jumpkind = Ijk_ClientReq;
 

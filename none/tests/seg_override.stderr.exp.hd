@@ -1,0 +1,24 @@
+
+The following failure _might_ be caused by linking to NVidia's
+   libGL.so, so avoiding it, if you can, _might_ help you.  For example,
+   re-build any Qt libraries you are using without OpenGL support.
+
+Valgrind detected that your program requires
+the following unimplemented functionality:
+   modify_ldt(): I (JRS) haven't investigated this yet; sorry.
+This may be because the functionality is hard to implement,
+or because no reasonable program would behave this way,
+or because nobody has yet needed it.  In any case, let me know
+(jseward@acm.org) and/or try to work around the problem, if you can.
+
+Valgrind has to exit now.  Sorry.  Bye!
+
+
+sched status:
+
+Thread 1: status = Runnable, associated_mx = 0x0, associated_cv = 0x0
+   at 0x4032F974: __modify_ldt (in /lib/i686/libc-2.2.2.so)
+   by 0x804865F: main (seg_override.c:128)
+   by 0x40265177: __libc_start_main (../sysdeps/generic/libc-start.c:129)
+   by 0x80483F1: memset@@GLIBC_2.0 (in /local/scratch-2/njn25/local/src/grind/head/none/tests/a.out)
+

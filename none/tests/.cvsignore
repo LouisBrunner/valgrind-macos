@@ -18,6 +18,7 @@ rcl_assert
 rcrl
 readline1
 resolv
+seg_override
 sha1_test
 shortpush
 shorts

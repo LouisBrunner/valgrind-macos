@@ -32,6 +32,8 @@ EXTRA_DIST = \
 	readline1.stderr.exp readline1.stderr.exp.hd readline1.stdout.exp \
 	readline1.vgtest \
 	resolv.stderr.exp resolv.stderr.exp.hd resolv.stdout.exp resolv.vgtest \
+	seg_override.stderr.exp seg_override.stderr.exp.hd \
+	seg_override.stdout.exp seg_override.vgtest \
 	sha1_test.stderr.exp sha1_test.stderr.exp.hd sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.stderr.exp.hd shortpush.vgtest \
 	shorts.stderr.exp shorts.stderr.exp.hd shorts.vgtest \
@@ -40,7 +42,7 @@ EXTRA_DIST = \
 noinst_PROGRAMS = \
 	bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest floored fork fucomip munmap_exe rcl_assert \
-	rcrl readline1 resolv sha1_test shortpush shorts smc1 \
+	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
 	coolo_sigaction gxx304
 
@@ -63,6 +65,7 @@ rcl_assert_SOURCES 	= rcl_assert.S
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
 resolv_SOURCES 		= resolv.c
+seg_override_SOURCES 	= seg_override.c
 smc1_SOURCES 		= smc1.c
 sha1_test_SOURCES 	= sha1_test.c
 shortpush_SOURCES 	= shortpush.c

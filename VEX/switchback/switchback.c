@@ -22,9 +22,11 @@ Test file may not reference any other symbols.
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex_guest_ppc32.h"
 #include "../pub/libvex.h"
+#include "../pub/libvex_trc_values.h"
 #include "linker.h"
 
 static Int n_bbs_done = 0;
+static Int n_translations_made = 0;
 
 
 #if defined(__i386__)
@@ -94,7 +96,7 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
          printf("serviceFn:EXIT\n");
 	 printf("%d bbs simulated\n", n_bbs_done);
 	 printf("%d translations made, %d tt bytes\n", 
-                trans_table_used, 8*trans_cache_used);
+                n_translations_made, 8*trans_cache_used);
          exit(0);
       case 1: /* PUTC */
          putchar(arg2);
@@ -433,6 +435,10 @@ asm(
 "   lis %r5,res@ha\n"
 "   stw %r3,res@l(%r5)\n"
 
+// save possibly modified guest state ptr (r31) in "gp"
+"   lis %r5,gp@ha\n"
+"   stw %r31,gp@l(%r5)\n"
+
 // reload registers from stack
 "   lwz %r13,  8(%r1)\n"
 "   lwz %r14, 12(%r1)\n"
@@ -470,7 +476,10 @@ asm(
 #   error "Unknown arch"
 #endif
 
-void run_translation ( HWord translation )
+/* Run a translation at host address 'translation'.  Return
+   True if Vex asked for an translation cache flush as a result.
+*/
+Bool run_translation ( HWord translation )
 {
    if (DEBUG_TRACE_FLAGS) {
       printf(" run translation %p\n", (void*)translation );
@@ -481,6 +490,7 @@ void run_translation ( HWord translation )
    run_translation_asm();
    gst.GuestPC = res;
    n_bbs_done ++;
+   return gp==VEX_TRC_JMP_TINVAL;
 }
 
 HWord find_translation ( Addr64 guest_addr )
@@ -541,6 +551,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    ws_needed = (trans_used+7) / 8;
    assert(ws_needed > 0);
    assert(trans_cache_used + ws_needed < N_TRANS_CACHE);
+   n_translations_made++;
 
    for (i = 0; i < trans_used; i++) {
       HChar* dst = ((HChar*)(&trans_cache[trans_cache_used])) + i;
@@ -585,6 +596,7 @@ static void run_simulator ( void )
    static Addr64 last_guest = 0;
    Addr64 next_guest;
    HWord next_host;
+   Bool need_inval;
    while (1) {
       next_guest = gst.GuestPC;
 
@@ -648,7 +660,14 @@ static void run_simulator ( void )
       }
 
       last_guest = next_guest;
-      run_translation(next_host);
+      need_inval = run_translation(next_host);
+      if (need_inval) {
+         if (0)
+         printf("switchback: dumping translation cache (%d entries)\n",
+                trans_table_used);
+         trans_cache_used = 0;
+         trans_table_used = 0;
+      }
    }
 }
 

@@ -242,7 +242,7 @@ HChar* showPPC32CondCode ( PPC32CondCode cond )
 /* --------- PPCAMode: memory address expressions. --------- */
 
 PPC32AMode* PPC32AMode_IR ( UInt idx, HReg base ) {
-   // CAB: Rem assert immediate
+   vassert(idx < 0x10000);
    PPC32AMode* am = LibVEX_Alloc(sizeof(PPC32AMode));
    am->tag = Pam_IR;
    am->Pam.IR.base = base;
@@ -319,7 +319,6 @@ static void mapRegs_PPC32AMode ( HRegRemap* m, PPC32AMode* am ) {
 /* --------- Operand, which can be reg or immediate only. --------- */
 
 PPC32RI* PPC32RI_Imm ( UInt imm32 ) {
-   // CAB: Rem assert immediate
    PPC32RI* op       = LibVEX_Alloc(sizeof(PPC32RI));
    op->tag           = Pri_Imm;
    op->Pri.Imm.imm32 = imm32;
@@ -665,7 +664,8 @@ void ppPPC32Instr ( PPC32Instr* i )
 	     return;
 	 }
 	 if (i->Pin.Alu32.op == Palu_ADD &&     // add Rd,R0,Rs == li Rd,Rs
-	     i->Pin.Alu32.src1 == hregPPC32_GPR0()) {
+	     i->Pin.Alu32.src1 == hregPPC32_GPR0() &&
+	     i->Pin.Alu32.src2->tag == Pri_Imm) {
 	     vex_printf("li ");
 	     ppHRegPPC32(i->Pin.Alu32.dst);
 	     vex_printf(",");

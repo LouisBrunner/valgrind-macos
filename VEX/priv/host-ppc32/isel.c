@@ -288,15 +288,24 @@ static PPC32Instr* mk_iMOVds_RR ( HReg dst, HReg src )
    return PPC32Instr_Alu32(Palu_OR, dst, src, PPC32RI_Reg(src));
 }
 
+/* Load an RI to a reg */
 
-/* Make an int reg<-ri move. */
-
-static PPC32Instr* mk_iMOVds_RRI ( HReg dst, PPC32RI* src )
+static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
 {
    vassert(hregClass(dst) == HRcInt32);
-// CAB: assert src...
-   HReg tmp = hregPPC32_GPR0();    // Gives value 0 in this context
-   return PPC32Instr_Alu32(Palu_ADD, dst, tmp, src);
+   // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
+   HReg zero = hregPPC32_GPR0();
+
+   if (src->tag == Pri_Imm &&
+       src->Pri.Imm.imm32 > 0xFFFF) {
+      UInt imm = src->Pri.Imm.imm32;
+      // CAB: addis (aka lis) would be good...
+      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm>>16)));
+      addInstr(env, PPC32Instr_Sh32(Psh_SHL, dst, dst, PPC32RI_Imm(16)));
+      return PPC32Instr_Alu32(Palu_ADD, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
+   } else {
+      return PPC32Instr_Alu32(Palu_ADD, dst, zero, src);
+   }
 }
 
 
@@ -733,7 +742,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
 
-   vex_printf("@iselIntExpr_R_wrk: tag=%d\n", e->tag);
+//   vex_printf("@iselIntExpr_R_wrk: tag=%d\n", e->tag);
 
    switch (e->tag) {
 
@@ -1184,9 +1193,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- LITERAL --------- */
    /* 32/16/8-bit literals */
    case Iex_Const: {
-      PPC32RI* ri = iselIntExpr_RI ( env, e );
       HReg dst    = newVRegI(env);
-      addInstr(env, mk_iMOVds_RRI(dst, ri));
+      PPC32RI* ri = iselIntExpr_RI ( env, e );
+      addInstr(env, mk_iMOVds_RRI(env, dst, ri));
       return dst;
    }
 
@@ -1235,7 +1244,8 @@ static Bool sane_AMode ( PPC32AMode* am )
    switch (am->tag) {
       case Pam_IR:
          return (hregClass(am->Pam.IR.base) == HRcInt32
-		 && hregIsVirtual(am->Pam.IR.base));
+		 && hregIsVirtual(am->Pam.IR.base)
+		 && (am->Pam.IR.index < 0x10000));      // CAB: This ok here?
       case Pam_RR:
          return (hregClass(am->Pam.RR.base) == HRcInt32
 		 && hregIsVirtual(am->Pam.IR.base)
@@ -1259,21 +1269,24 @@ static PPC32AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
 
-   vex_printf("@iselIntExpr_AMode_wrk@\n");
+//   vex_printf("@iselIntExpr_AMode_wrk\n");
 
-   // CAB:
-   // Can only make IR variant if
-   // e->Iex.Binop.arg2->Iex.Const.con->Ico.U32
-   // is small enough...
-   // else an RR...
-
-   /* Add32(expr,i) */
+   /* Add32(expr,i), where i<0x10000 */
    if (e->tag == Iex_Binop 
        && e->Iex.Binop.op == Iop_Add32
        && e->Iex.Binop.arg2->tag == Iex_Const
-       && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
-      HReg r1 = iselIntExpr_R(env,  e->Iex.Binop.arg1);
-      return PPC32AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32, r1);
+       && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32
+       && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 < 0x10000) {
+      return PPC32AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32,
+			   iselIntExpr_R(env,  e->Iex.Binop.arg1));
+   }
+
+   /* Add32(expr,expr) */
+   if (e->tag == Iex_Binop 
+       && e->Iex.Binop.op == Iop_Add32) {
+      HReg r_base = iselIntExpr_R(env,  e->Iex.Binop.arg1);
+      HReg r_idx  = iselIntExpr_R(env,  e->Iex.Binop.arg2);
+      return PPC32AMode_RR(r_idx, r_base);
    }
 
    /* Doesn't match anything in particular.  Generate it into
@@ -1312,7 +1325,7 @@ static PPC32RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
-   vex_printf("@iselIntExpr_RI_wrk@\n");
+//   vex_printf("@iselIntExpr_RI_wrk\n");
 
    /* special case: immediate */
    if (e->tag == Iex_Const) {
@@ -1357,7 +1370,7 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
 
-   vex_printf("@iselCondCode_wrk\n");
+//   vex_printf("@iselCondCode_wrk\n");
 
 //..    /* Constant 1:Bit */
 //..    if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
@@ -3032,7 +3045,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       vex_printf("\n");
    }
    
-   vex_printf("@iselStmt: tag=%d\n", stmt->tag);
+//   vex_printf("@iselStmt: tag=%d\n", stmt->tag);
 
    switch (stmt->tag) {
 

@@ -1304,12 +1304,10 @@ typedef
    Add the use-occurrences of temps in this expression 
    to the environment. 
 */
-static void occCount_Temp ( Hash64* env, IRTemp tmp )
+static void occCount_Temp ( TmpInfo** env, IRTemp tmp )
 {
-   ULong    res;
-   TmpInfo* ti;
-   if (lookupH64(env, &res, (ULong)tmp)) {
-      ti = (TmpInfo*)res;
+   TmpInfo* ti = env[(Int)tmp];
+   if (ti) {
       ti->occ++;
    } else {
       ti               = LibVEX_Alloc(sizeof(TmpInfo));
@@ -1319,11 +1317,11 @@ static void occCount_Temp ( Hash64* env, IRTemp tmp )
       ti->eDoesGet     = False;
       ti->invalidateMe = False;
       ti->origPos      = -1; /* filed in properly later */
-      addToH64(env, (ULong)tmp, (ULong)ti );
+      env[(Int)tmp] = ti;
    }
 }
 
-static void occCount_Expr ( Hash64* env, IRExpr* e )
+static void occCount_Expr ( TmpInfo** env, IRExpr* e )
 {
    Int i;
 
@@ -1376,7 +1374,7 @@ static void occCount_Expr ( Hash64* env, IRExpr* e )
    Add the use-occurrences of temps in this expression 
    to the environment. 
 */
-static void occCount_Stmt ( Hash64* env, IRStmt* st )
+static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
 {
    Int      i;
    IRDirty* d;
@@ -1415,14 +1413,13 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
    expression, and set the env's binding to NULL so it is marked as
    used.  If not found, return NULL. */
 
-static IRExpr* tbSubst_Temp ( Hash64* env, IRTemp tmp )
+static IRExpr* tbSubst_Temp ( TmpInfo** env, IRTemp tmp )
 {
    TmpInfo* ti;
-   ULong    res;
    IRExpr*  e;
-   if (lookupH64(env, &res, (ULong)tmp)) {
-      ti = (TmpInfo*)res;
-      e  = ti->expr;
+   ti = env[(Int)tmp];
+   if (ti){
+      e = ti->expr;
       if (e) {
          ti->expr = NULL;
          return e;
@@ -1440,7 +1437,7 @@ static IRExpr* tbSubst_Temp ( Hash64* env, IRTemp tmp )
    'single-shot', so once a binding is used, it is marked as no longer
    available, by setting its .expr field to NULL. */
 
-static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
+static IRExpr* tbSubst_Expr ( TmpInfo** env, IRExpr* e )
 {
    IRExpr*  e2;
    IRExpr** args2;
@@ -1498,7 +1495,7 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
 
 /* Same deal as tbSubst_Expr, except for stmts. */
 
-static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
+static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
 {
    Int      i;
    IRDirty* d;
@@ -1573,14 +1570,14 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          setHints_Expr(doesLoad, doesGet, e->Iex.Unop.arg);
          return;
       case Iex_LDle:
-         *doesLoad |= True;
+         *doesLoad = True;
          setHints_Expr(doesLoad, doesGet, e->Iex.LDle.addr);
          return;
       case Iex_Get:
-         *doesGet |= True;
+         *doesGet = True;
          return;
       case Iex_GetI:
-         *doesGet |= True;
+         *doesGet = True;
          setHints_Expr(doesLoad, doesGet, e->Iex.GetI.off);
          return;
       case Iex_Tmp:
@@ -1593,7 +1590,7 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
 }
 
 
-static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
+static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 {
    Int k, oldest_op, oldest_k;
    TmpInfo* ti;
@@ -1604,10 +1601,10 @@ static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
       /* find the oldest bind marked 'invalidateMe'. */
       oldest_op = 1<<30;
       oldest_k =  1<<30;
-      for (k = 0;  k < env->used; k++) {
-         if (!env->inuse[k])
+      for (k = 0; k < bb->tyenv->types_used; k++) {
+         ti = env[k];
+         if (!ti)
             continue;
-         ti = (TmpInfo*)(env->val[k]);
          if (!ti->expr)
             continue;
          if (!ti->invalidateMe)
@@ -1625,11 +1622,11 @@ static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
 
       /* the oldest bind to invalidate has been identified */
       vassert(oldest_op != 1<<31 && oldest_k != 1<<31);
-      ti = (TmpInfo*)(env->val[oldest_k]);
+      ti = env[oldest_k];
       vassert(ti->expr && ti->invalidateMe);
 
       /* and invalidate it ... */
-      bb->stmts[*j] = IRStmt_Tmp( (IRTemp)(env->key[oldest_k]), ti->expr);
+      bb->stmts[*j] = IRStmt_Tmp( (IRTemp)oldest_k, ti->expr );
       /*  vex_printf("**1  "); ppIRStmt(bb->stmts[*j]); vex_printf("\n"); */
       (*j)++;
       ti->invalidateMe = False;
@@ -1643,7 +1640,6 @@ static void dumpInvalidated ( Hash64* env, IRBB* bb, /*INOUT*/Int* j )
 static void treebuild_BB ( IRBB* bb )
 {
    Int      i, j, k;
-   ULong    res;
    Bool     invPut, invStore;
    IRStmt*  st;
    IRStmt*  st2;
@@ -1651,7 +1647,11 @@ static void treebuild_BB ( IRBB* bb )
    IRExpr*  next2;
 
    /* Mapping from IRTemp to TmpInfo*. */
-   Hash64* env = newH64();
+   Int       n_tmps = bb->tyenv->types_used;
+   TmpInfo** env    = LibVEX_Alloc(n_tmps * sizeof(TmpInfo*));
+
+   for (i = 0; i < n_tmps; i++)
+      env[i] = NULL;
 
    /* Phase 1.  Scan forwards in bb, counting use occurrences of each
       temp.  Also count occurrences in the bb->next field. */
@@ -1664,14 +1664,14 @@ static void treebuild_BB ( IRBB* bb )
    }
    occCount_Expr(env, bb->next );
 
-#if 0
+#  if 0
    for (i = 0; i < env->used; i++) {
       if (!env->inuse[i])
         continue;
       ppIRTemp( (IRTemp)(env->key[i]) );
       vex_printf("  used %d\n", ((TmpInfo*)env->val[i])->occ );
    }
-#endif
+#  endif
 
    /* Phase 2.  Fill in the origPos fields. */
 
@@ -1682,13 +1682,13 @@ static void treebuild_BB ( IRBB* bb )
       if (st->tag != Ist_Tmp)
          continue;
 
-      if (!lookupH64(env, &res, (ULong)(st->Ist.Tmp.tmp))) {
+      ti = env[(Int)st->Ist.Tmp.tmp];
+      if (!ti) {
          vex_printf("\n");
          ppIRTemp(st->Ist.Tmp.tmp);
          vex_printf("\n");
          vpanic("treebuild_BB (phase 2): unmapped IRTemp");
       }
-      ti = (TmpInfo*)res;
       ti->origPos = i;
    }
 
@@ -1722,10 +1722,10 @@ static void treebuild_BB ( IRBB* bb )
      
       if (st->tag == Ist_Tmp) {
          /* vex_printf("acquire binding\n"); */
-         if (!lookupH64(env, &res, (ULong)(st->Ist.Tmp.tmp))) {
+         ti = env[st->Ist.Tmp.tmp];
+         if (!ti) {
             vpanic("treebuild_BB (phase 2): unmapped IRTemp");
          }
-         ti = (TmpInfo*)res;
          if (ti->occ == 1) {
             /* ok, we have 't = E', occ(t)==1.  Do the abovementioned actions. */
             IRExpr* e = st->Ist.Tmp.data;
@@ -1753,10 +1753,10 @@ static void treebuild_BB ( IRBB* bb )
       invStore = st->tag == Ist_STle
                || st->tag == Ist_Dirty;
 
-      for (k = 0; k < env->used; k++) {
-         if (!env->inuse[k])
+      for (k = 0; k < n_tmps; k++) {
+         ti = env[k];
+         if (!ti)
             continue;
-         ti = (TmpInfo*)(env->val[k]);
          if (!ti->expr)
             continue;
 

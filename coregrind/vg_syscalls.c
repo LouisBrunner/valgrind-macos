@@ -1764,10 +1764,10 @@ PRE(execve)
 	 res = ret;
 	 return;
       }
-      /* just look for any X bit set
+      /* just look for regular file with any X bit set
 	 XXX do proper permissions check?
        */
-      if ((st.st_mode & 0111) == 0) {
+      if ((st.st_mode & 0100111) == 0100000) {
 	 res = -VKI_EACCES;
 	 return;
       }

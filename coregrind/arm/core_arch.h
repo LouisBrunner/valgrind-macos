@@ -41,15 +41,15 @@
    Interesting registers
    ------------------------------------------------------------------ */
 // Vex field names
-// Not sure, but I think:
+// XXX: Not sure, but I think:
 //   r11 = frame pointer
-//   r12 = ip (??)
+//   r12 = "implicit parameter" (neither caller-save, nor callee-save)
 //   r13 = stack pointer
 //   r14 = link register
 //   r15 = program counter
 #define ARCH_INSTR_PTR        guest_R15
-#define ARCH_STACK_PTR        guest_R13   // XXX ???
-#define ARCH_FRAME_PTR        guest_R0    // XXX ???
+#define ARCH_STACK_PTR        guest_R13
+#define ARCH_FRAME_PTR        guest_R11
 
 #define ARCH_CLREQ_ARGS       guest_R0
 #define ARCH_CLREQ_RET        guest_R0
@@ -57,7 +57,7 @@
 
 // Register numbers, for vg_symtab2.c
 #define R_STACK_PTR           13
-#define R_FRAME_PTR           0           // XXX ???
+#define R_FRAME_PTR           11
 
 // Stack frame layout and linkage
 // XXX ToDo: ???

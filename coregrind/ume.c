@@ -55,6 +55,16 @@ static struct stat padstat;
 
 extern int kickstart_base;	/* linker created */
 
+void check_mmap(void* res, void* base, int len)
+{
+   if ((void*)-1 == res) {
+      fprintf(stderr, "valgrind: mmap(%p, %d) failed during startup.\n"  
+                      "valgrind: is there a hard virtual memory limit set?\n",
+                      base, len);
+      exit(1);
+   }
+}
+
 void foreach_map(int (*fn)(void *start, void *end,
 			   const char *perm, off_t offset,
 			   int maj, int min, int ino))
@@ -110,9 +120,11 @@ static int fillgap(void *segstart, void *segend, const char *perm, off_t off,
    if ((char *)segstart >= fillgap_end)
       return 0;
 
-   if ((char *)segstart > fillgap_addr)
-      mmap(fillgap_addr, (char *)segstart-fillgap_addr, PROT_NONE,
-           MAP_FIXED|MAP_PRIVATE, padfile, 0);
+   if ((char *)segstart > fillgap_addr) {
+      void* res = mmap(fillgap_addr, (char *)segstart-fillgap_addr, PROT_NONE,
+                       MAP_FIXED|MAP_PRIVATE, padfile, 0);
+      check_mmap(res, fillgap_addr, (char*)segstart - fillgap_addr);
+   }
    fillgap_addr = segend;
    
    return 1;
@@ -141,17 +153,21 @@ void as_pad(void *start, void *end)
 
    foreach_map(fillgap);
 	
-   if (fillgap_addr < fillgap_end)
-      mmap(fillgap_addr, fillgap_end-fillgap_addr, PROT_NONE,
-           MAP_FIXED|MAP_PRIVATE, padfile, 0);
+   if (fillgap_addr < fillgap_end) {
+      void* res = mmap(fillgap_addr, fillgap_end-fillgap_addr, PROT_NONE,
+                       MAP_FIXED|MAP_PRIVATE, padfile, 0);
+      check_mmap(res, fillgap_addr, fillgap_end - fillgap_addr);
+   }
 }
 
 static void *killpad_start;
 static void *killpad_end;
 
 static int killpad(void *segstart, void *segend, const char *perm, off_t off, 
-                   int maj, int min, int ino) {
+                   int maj, int min, int ino)
+{
    void *b, *e;
+   int res;
 
    if (padstat.st_dev != makedev(maj, min) || padstat.st_ino != ino)
       return 1;
@@ -169,7 +185,8 @@ static int killpad(void *segstart, void *segend, const char *perm, off_t off,
    else
       e = segend;
    
-   munmap(b, (char *)e-(char *)b);
+   res = munmap(b, (char *)e-(char *)b);
+   assert(0 == res);
    
    return 1;
 }
@@ -280,6 +297,7 @@ struct elfinfo *readelf(int fd, const char *filename)
 ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
 {
    int i;
+   void* res;
    ESZ(Addr) elfbrk = 0;
 
    for(i = 0; i < e->e.e_phnum; i++) {
@@ -326,17 +344,22 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       memsz = ph->p_memsz;
       brkaddr = addr+memsz;
 
-      mmap((char *)ROUNDDN(addr, align), ROUNDUP(bss, align)-ROUNDDN(addr, align),
-	   prot, MAP_FIXED|MAP_PRIVATE, e->fd, ROUNDDN(off, align));
+      res = mmap((char *)ROUNDDN(addr, align),
+                 ROUNDUP(bss, align)-ROUNDDN(addr, align),
+                 prot, MAP_FIXED|MAP_PRIVATE, e->fd, ROUNDDN(off, align));
+      check_mmap(res, (char*)ROUNDDN(addr,align),
+                 ROUNDUP(bss, align)-ROUNDDN(addr, align));
 
       /* if memsz > filesz, then we need to fill the remainder with zeroed pages */
       if (memsz > filesz) {
 	 UInt bytes;
 
 	 bytes = ROUNDUP(brkaddr, align)-ROUNDUP(bss, align);
-	 if (bytes > 0)
-	    mmap((char *)ROUNDUP(bss, align), bytes,
-		 prot, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+	 if (bytes > 0) {
+	    res = mmap((char *)ROUNDUP(bss, align), bytes,
+		       prot, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+            check_mmap(res, (char*)ROUNDUP(bss,align), bytes);
+         }
 
 	 bytes = bss & (VKI_BYTES_PER_PAGE - 1);
 	 if (bytes > 0) {
@@ -456,8 +479,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
 
    if (interp != NULL) {
       /* reserve a chunk of address space for interpreter */
-      char *base = (char *)info->exe_base;
-      char *baseoff;
+      void* res;
+      char* base = (char *)info->exe_base;
+      char* baseoff;
       int flags = MAP_PRIVATE|MAP_ANONYMOUS;
 
       if (info->map_base != 0) {
@@ -465,7 +489,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
 	 flags |= MAP_FIXED;
       }
 
-      base = mmap(base, interp_size, PROT_NONE, flags, -1, 0);
+      res = mmap(base, interp_size, PROT_NONE, flags, -1, 0);
+      check_mmap(res, base, interp_size);
+      base = res;
 
       baseoff = base - interp_addr;
 

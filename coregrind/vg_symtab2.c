@@ -633,13 +633,15 @@ void read_debuginfo_stabs ( SegInfo* si,
 {
    Int    i;
    Int    curr_filenmoff;
-   Addr   curr_fnbaseaddr;
+   Addr   curr_fn_stabs_addr = (Addr)NULL;
+   Addr   curr_fnbaseaddr    = (Addr)NULL;
    Char  *curr_file_name, *curr_fn_name;
    Int    n_stab_entries;
-   Int    prev_lineno, lineno;
-   Int    lineno_overflows;
-   Bool   same_file;
+   Int    prev_lineno = 0, lineno = 0;
+   Int    lineno_overflows = 0;
+   Bool   same_file = True;
    struct nlist* stab = (struct nlist*)stabC;
+
    /* Ok.  It all looks plausible.  Go on and read debug data. 
          stab kinds: 100   N_SO     a source file name
                       68   N_SLINE  a source line number
@@ -653,12 +655,8 @@ void read_debuginfo_stabs ( SegInfo* si,
       Finding the instruction address range covered by an N_SLINE is
       complicated;  see the N_SLINE case below.
    */
-   curr_filenmoff  = addStr(si,"???");
-   curr_fnbaseaddr = (Addr)NULL;
-   curr_file_name = curr_fn_name = (Char*)NULL;
-   lineno = prev_lineno = 0;
-   lineno_overflows = 0;
-   same_file = True;
+   curr_filenmoff     = addStr(si,"???");
+   curr_file_name     = curr_fn_name = (Char*)NULL;
 
    n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
@@ -728,16 +726,17 @@ void read_debuginfo_stabs ( SegInfo* si,
                      i++;
                      goto LOOP;
                      
-                  /* Should be an end of fun entry, use its address */
+                  /* If end-of-this-fun entry, use its address.
+                   * If start-of-next-fun entry, find difference between start
+                   *   of current function and start of next function to work
+                   *   it out.
+                   */
                   case N_FUN: 
                      if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
                         next_addr = (UInt)stab[i+1].n_value;
                      } else {
-                        VG_(message)(Vg_DebugMsg, 
-                                     "warning: function %s missing closing "
-                                     "N_FUN stab at entry %d",
-                                     curr_fn_name, i );
-                        next_addr = this_addr;  /* assume zero-size loc */
+                        next_addr = 
+                            (UInt)stab[i+1].n_value - curr_fn_stabs_addr;
                      }
                      break;
 
@@ -771,7 +770,8 @@ void read_debuginfo_stabs ( SegInfo* si,
          case N_FUN: {
             if ('\0' != (stabstr + stab[i].n_un.n_strx)[0] ) {
                /* N_FUN with a name -- indicates the start of a fn.  */
-               curr_fnbaseaddr = si->offset + (Addr)stab[i].n_value;
+               curr_fn_stabs_addr = (Addr)stab[i].n_value;
+               curr_fnbaseaddr = si->offset + curr_fn_stabs_addr;
                curr_fn_name = stabstr + stab[i].n_un.n_strx;
             } else {
                curr_fn_name = no_fn_name;

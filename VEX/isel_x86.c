@@ -270,6 +270,19 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
        return;
      }
 
+   case Ist_Tmp: {
+     IRTemp tmp = stmt->Ist.Tmp.tmp;
+     IRType ty = lookupIRTypeEnv(env->type_env, tmp);
+     if (ty == Ity_I32) {
+       X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
+       HReg dst = lookupIRTemp(env, tmp);
+       addInstr(env, 
+		X86Instr_Alu32R(Xalu_MOV,rmi,dst));
+       return;
+   }
+
+  }
+
    default: break;
    }
    ppIRStmt(stderr, stmt);
@@ -339,7 +352,7 @@ HInstrArray* iselBB ( IRBB* bb )
       }
       env->vregmap[i].vreg = hreg;
    }
-   env->ctr = 100;  //env->n_vregmap;
+   env->ctr = env->n_vregmap;
 
    /* Ok, finally we can iterate over the statements. */
    for (stmt = bb->stmts; stmt; stmt=stmt->link)

@@ -249,8 +249,14 @@ IRExpr* doScalarWidening ( Int szSmall, Int szBig, Bool signd, IRExpr* src )
    if (szSmall == 1 && szBig == 8 && !signd) {
       return unop(Iop_32Uto64, unop(Iop_8Uto32, src));
    }
+   if (szSmall == 1 && szBig == 8 && signd) {
+      return unop(Iop_32Sto64, unop(Iop_8Sto32, src));
+   }
    if (szSmall == 2 && szBig == 8 && !signd) {
       return unop(Iop_32Uto64, unop(Iop_16Uto32, src));
+   }
+   if (szSmall == 2 && szBig == 8 && signd) {
+      return unop(Iop_32Sto64, unop(Iop_16Sto32, src));
    }
    vpanic("doScalarWidening(amd64)");
 }
@@ -644,6 +650,21 @@ static ULong getSDisp32 ( ULong delta )
    v |= guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
    return extend_s_32to64( v );
+}
+
+/* Get a 64-bit value out of the insn stream. */
+static ULong getDisp64 ( ULong delta )
+{
+   UInt v = 0;
+   v |= guest_code[delta+7]; v <<= 8;
+   v |= guest_code[delta+6]; v <<= 8;
+   v |= guest_code[delta+5]; v <<= 8;
+   v |= guest_code[delta+4]; v <<= 8;
+   v |= guest_code[delta+3]; v <<= 8;
+   v |= guest_code[delta+2]; v <<= 8;
+   v |= guest_code[delta+1]; v <<= 8;
+   v |= guest_code[delta+0];
+   return v;
 }
 
 /* Note: because AMD64 doesn't allow 64-bit literals, it is an error
@@ -1266,6 +1287,8 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
       return unop(Iop_64to32, e);
    if (src_ty == Ity_I64 && dst_ty == Ity_I16)
       return unop(Iop_32to16, unop(Iop_64to32, e));
+   if (src_ty == Ity_I64 && dst_ty == Ity_I8)
+      return unop(Iop_32to8, unop(Iop_64to32, e));
 
    vex_printf("\nsrc, dst tys are: ");
    ppIRType(src_ty);
@@ -1570,13 +1593,13 @@ static HChar* nameGrp2 ( Int opc_aux )
    return grp2_names[opc_aux];
 }
 
-//.. static HChar* nameGrp4 ( Int opc_aux )
-//.. {
-//..    static HChar* grp4_names[8] 
-//..      = { "inc", "dec", "???", "???", "???", "???", "???", "???" };
-//..    if (opc_aux < 0 || opc_aux > 1) vpanic("nameGrp4(x86)");
-//..    return grp4_names[opc_aux];
-//.. }
+static HChar* nameGrp4 ( Int opc_aux )
+{
+   static HChar* grp4_names[8] 
+     = { "inc", "dec", "???", "???", "???", "???", "???", "???" };
+   if (opc_aux < 0 || opc_aux > 1) vpanic("nameGrp4(amd64)");
+   return grp4_names[opc_aux];
+}
 
 static HChar* nameGrp5 ( Int opc_aux )
 {
@@ -1945,7 +1968,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
             ULong d = getSDisp32(delta);
             DIS(buf, "%s0x%llx()", sorbTxt(pfx), d);
             *len = 6;
-            vpanic("disAMode(x86):untested amode: 8");
             return disAMode_copy2tmp(
                    handleSegOverride(pfx, mkU64(d)));
          }
@@ -2102,7 +2124,6 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
 
       /* RIP + disp32. */
       case 0x05: 
-         vassert(0);
          return 5;
 
       case 0x04: {
@@ -2142,18 +2163,22 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
 static
 void codegen_XOR_reg_with_itself ( Prefix pfx, Int size, Int ge_reg )
 {
-   vassert(0);
-#if 0
+   /* ge_reg is both the G and E reg (they are the same).  Hence we can
+      use either the R or E extension bits to show the name as they
+      should be identical. Hmm, let's stay sane ... */
+
    IRType ty = szToITy(size);
+   /* stay sane */
+   vassert(getRexR(pfx) == getRexB(pfx));
    /* reg := 0 */
-   putIReg(size, ge_reg, mkU(ty,0));
+   putIRegR(pfx, size, ge_reg, mkU(ty,0));
    /* Flags: C,A,O=0, Z=1, S=0, P=1 */
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(X86G_CC_MASK_Z|X86G_CC_MASK_P) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-   DIP("xor%c %s, %s\n", nameISize(size),
-                         nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
-#endif
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkU64(AMD64G_CC_MASK_Z|AMD64G_CC_MASK_P) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   DIP("xorZ%c %s, %s\n", nameISize(size),
+                          nameIRegR(pfx,size,ge_reg), 
+                          nameIRegR(pfx,size,ge_reg) );
 }
 
 
@@ -2342,7 +2367,6 @@ ULong dis_op2_G_E ( Prefix      pfx,
          putIRegB(pfx, size, eregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         vassert(0); /* awaiting test case */
          helper_SBB( size, dst1, dst0, src );
          putIRegB(pfx, size, eregOfRM(rm), mkexpr(dst1));
       } else {
@@ -2558,23 +2582,37 @@ ULong dis_movx_E_G ( Prefix pfx,
 }
 
 
-/* Generate code to divide ArchRegs RDX:RAX / EDX:EAX / DX:AX / AX by the 32 /
-   16 / 8 bit quantity in the given IRTemp.  */
+/* Generate code to divide ArchRegs RDX:RAX / EDX:EAX / DX:AX / AX by
+   the 64 / 32 / 16 / 8 bit quantity in the given IRTemp.  */
 static
 void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 {
-   IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
-   IRTemp src64 = newTemp(Ity_I64);
-   IRTemp dst64 = newTemp(Ity_I64);
-   switch (sz) {
-      case 4:
-         assign( src64, binop(Iop_32HLto64, 
-                              getIRegR(PFX_EMPTY,4,R_RDX), 
-                              getIRegR(PFX_EMPTY,4,R_RAX)) );
-         assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
-         putIRegR( PFX_EMPTY, 4, R_RAX, unop(Iop_64to32,mkexpr(dst64)) );
-         putIRegR( PFX_EMPTY, 4, R_RDX, unop(Iop_64HIto32,mkexpr(dst64)) );
-         break;
+   /* special-case the 64-bit case */
+   if (sz == 8) {
+      IROp   op     = signed_divide ? Iop_DivModS128to64 
+                                    : Iop_DivModU128to64;
+      IRTemp src128 = newTemp(Ity_V128);
+      IRTemp dst128 = newTemp(Ity_V128);
+      assign( src128, binop(Iop_64HLto128, 
+                            getIRegR(PFX_EMPTY,8,R_RDX), 
+                            getIRegR(PFX_EMPTY,8,R_RAX)) );
+      assign( dst128, binop(op, mkexpr(src128), mkexpr(t)) );
+      putIRegR( PFX_EMPTY, 8, R_RAX, unop(Iop_128to64,mkexpr(dst128)) );
+      putIRegR( PFX_EMPTY, 8, R_RDX, unop(Iop_128HIto64,mkexpr(dst128)) );
+   } else {
+      IROp   op    = signed_divide ? Iop_DivModS64to32 
+                                   : Iop_DivModU64to32;
+      IRTemp src64 = newTemp(Ity_I64);
+      IRTemp dst64 = newTemp(Ity_I64);
+      switch (sz) {
+         case 4:
+            assign( src64, binop(Iop_32HLto64, 
+                                 getIRegR(PFX_EMPTY,4,R_RDX), 
+                                 getIRegR(PFX_EMPTY,4,R_RAX)) );
+            assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
+            putIRegR( PFX_EMPTY, 4, R_RAX, unop(Iop_64to32,mkexpr(dst64)) );
+            putIRegR( PFX_EMPTY, 4, R_RDX, unop(Iop_64HIto32,mkexpr(dst64)) );
+            break;
 //..       case 2: {
 //..          IROp widen3264 = signed_divide ? Iop_32Sto64 : Iop_32Uto64;
 //..          IROp widen1632 = signed_divide ? Iop_16Sto32 : Iop_16Uto32;
@@ -2600,7 +2638,8 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 //..                            unop(Iop_64HIto32,mkexpr(dst64)))) );
 //..          break;
 //..       }
-      default: vpanic("codegen_div(amd64)");
+         default: vpanic("codegen_div(amd64)");
+      }
    }
 }
 
@@ -3113,7 +3152,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             dst1 = newTemp(ty);
             assign(dst1, binop(mkSizedOp(ty,Iop_And8),
                                getIRegB(pfx,sz,eregOfRM(modrm)),
-                               mkU(ty,d64)));
+                               mkU(ty, d64 & mkSizeMask(sz))));
             setFlags_DEP1( Iop_And8, dst1, ty );
             DIP("test%c $0x%llx, %s\n", 
                 nameISize(sz), d64, 
@@ -3153,12 +3192,13 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..             assign(src, getIReg(sz,eregOfRM(modrm)));
 //..             codegen_mulL_A_D ( sz, True, src, nameIReg(sz,eregOfRM(modrm)) );
 //..             break;
-//..          case 6: /* DIV */
-//..             delta++;
-//..             assign( t1, getIReg(sz, eregOfRM(modrm)) );
-//..             codegen_div ( sz, t1, False );
-//..             DIP("div%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//..             break;
+         case 6: /* DIV */
+            delta++;
+            assign( t1, getIRegB(pfx, sz, eregOfRM(modrm)) );
+            codegen_div ( sz, t1, False );
+            DIP("div%c %s\n", nameISize(sz), 
+                              nameIRegB(pfx, sz, eregOfRM(modrm)));
+            break;
          case 7: /* IDIV */
             delta++;
             assign( t1, getIRegB(pfx, sz, eregOfRM(modrm)) );
@@ -3177,15 +3217,17 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
       delta += len;
       assign(t1, loadLE(ty,mkexpr(addr)));
       switch (gregOfRM(modrm)) {
-//..          case 0: { /* TEST */
-//..             d32 = getUDisp(sz, delta); delta += sz;
-//..             dst1 = newTemp(ty);
-//..             assign(dst1, binop(mkSizedOp(ty,Iop_And8),
-//..                                mkexpr(t1), mkU(ty,d32)));
-//..             setFlags_DEP1( Iop_And8, dst1, ty );
-//..             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
-//..             break;
-//..          }
+         case 0: { /* TEST */
+            d64 = getSDisp(imin(4,sz), delta); 
+            delta += imin(4,sz);
+            dst1 = newTemp(ty);
+            assign(dst1, binop(mkSizedOp(ty,Iop_And8),
+                               mkexpr(t1), 
+                               mkU(ty, d64 & mkSizeMask(sz))));
+            setFlags_DEP1( Iop_And8, dst1, ty );
+            DIP("test%c $%lld, %s\n", nameISize(sz), d64, dis_buf);
+            break;
+         }
 //..          /* probably OK, but awaiting test case */
 //..          case 2: /* NOT */
 //..             storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
@@ -3226,43 +3268,43 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 }
 
 
-//.. /* Group 4 extended opcodes. */
-//.. static
-//.. UInt dis_Grp4 ( UChar sorb, UInt delta )
-//.. {
-//..    Int   alen;
-//..    UChar modrm;
-//..    HChar dis_buf[50];
-//..    IRType ty = Ity_I8;
-//..    IRTemp t1 = newTemp(ty);
-//..    IRTemp t2 = newTemp(ty);
-//.. 
-//..    modrm = getUChar(delta);
-//..    if (epartIsReg(modrm)) {
-//..       assign(t1, getIReg(1, eregOfRM(modrm)));
-//..       switch (gregOfRM(modrm)) {
+/* Group 4 extended opcodes. */
+static
+ULong dis_Grp4 ( Prefix pfx, ULong delta )
+{
+   Int   alen;
+   UChar modrm;
+   HChar dis_buf[50];
+   IRType ty = Ity_I8;
+   IRTemp t1 = newTemp(ty);
+   IRTemp t2 = newTemp(ty);
+
+   modrm = getUChar(delta);
+   if (epartIsReg(modrm)) {
+      assign(t1, getIRegB(pfx, 1, eregOfRM(modrm)));
+      switch (gregOfRM(modrm)) {
 //..          case 0: /* INC */
 //..             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
 //..             putIReg(1, eregOfRM(modrm), mkexpr(t2));
 //..             setFlags_INC_DEC( True, t2, ty );
 //..             break;
-//..          case 1: /* DEC */
-//..             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
-//..             putIReg(1, eregOfRM(modrm), mkexpr(t2));
-//..             setFlags_INC_DEC( False, t2, ty );
-//..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp4(x86,R)");
-//..       }
-//..       delta++;
-//..       DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)),
-//..                       nameIReg(1, eregOfRM(modrm)));
-//..    } else {
-//..       IRTemp addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..       assign( t1, loadLE(ty, mkexpr(addr)) );
-//..       switch (gregOfRM(modrm)) {
+         case 1: /* DEC */
+            assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
+            putIRegB(pfx, 1, eregOfRM(modrm), mkexpr(t2));
+            setFlags_INC_DEC( False, t2, ty );
+            break;
+         default: 
+            vex_printf(
+               "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp4(amd64,R)");
+      }
+      delta++;
+      DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)),
+                      nameIRegB(pfx, 1, eregOfRM(modrm)));
+   } else {
+      IRTemp addr = disAMode ( &alen, pfx, delta, dis_buf );
+      assign( t1, loadLE(ty, mkexpr(addr)) );
+      switch (gregOfRM(modrm)) {
 //..          case 0: /* INC */
 //..             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
 //..             storeLE( mkexpr(addr), mkexpr(t2) );
@@ -3273,16 +3315,16 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..             storeLE( mkexpr(addr), mkexpr(t2) );
 //..             setFlags_INC_DEC( False, t2, ty );
 //..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp4(x86,M)");
-//..       }
-//..       delta += alen;
-//..       DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)), dis_buf);
-//..    }
-//..    return delta;
-//.. }
+         default: 
+            vex_printf(
+               "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp4(amd64,M)");
+      }
+      delta += alen;
+      DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)), dis_buf);
+   }
+   return delta;
+}
 
 
 /* Group 5 extended opcodes. */
@@ -3296,6 +3338,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
    IRTemp  t2 = IRTemp_INVALID;
+   IRTemp  t3 = IRTemp_INVALID;
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
@@ -3316,25 +3359,27 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             putIRegB(pfx,sz,eregOfRM(modrm), mkexpr(t2));
             break;
          case 2: /* call Ev */
-vassert(0);
-#if 0
+            /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
-            t2 = newTemp(Ity_I32);
-            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
-            putIReg(4, R_ESP, mkexpr(t2));
-            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
-            jmp_treg(Ijk_Call,t1);
+            sz = 8;
+            t3 = newTemp(Ity_I64);
+            assign(t3, getIRegB(pfx,sz,eregOfRM(modrm)));
+            t2 = newTemp(Ity_I64);
+            assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
+            putIReg64(R_RSP, mkexpr(t2));
+            storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+1));
+            jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
             break;
-#endif
          case 4: /* jmp Ev */
-vassert(0);
-#if 0
+            /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
-            jmp_treg(Ijk_Boring,t1);
+            sz = 8;
+            t3 = newTemp(Ity_I64);
+            assign(t3, getIRegB(pfx,sz,eregOfRM(modrm)));
+            jmp_treg(Ijk_Boring,t3);
             *whatNext = Dis_StopHere;
             break;
-#endif
          default: 
             vex_printf(
                "unhandled Grp5(R) case %d\n", (Int)gregOfRM(modrm));
@@ -3346,7 +3391,8 @@ vassert(0);
                        nameIRegB(pfx, sz, eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf );
-      assign(t1, loadLE(ty,mkexpr(addr)));
+      if (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 4)
+         assign(t1, loadLE(ty,mkexpr(addr)));
       switch (gregOfRM(modrm)) {
          case 0: /* INC */ 
             t2 = newTemp(ty);
@@ -3363,25 +3409,25 @@ vassert(0);
             storeLE(mkexpr(addr),mkexpr(t2));
             break;
          case 2: /* call Ev */
-vassert(0);
-#if 0
+            /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
-            t2 = newTemp(Ity_I32);
-            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
-            putIReg(4, R_ESP, mkexpr(t2));
-            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
-            jmp_treg(Ijk_Call,t1);
+            t3 = newTemp(Ity_I64);
+            assign(t3, loadLE(Ity_I64,mkexpr(addr)));
+            t2 = newTemp(Ity_I64);
+            assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
+            putIReg64(R_RSP, mkexpr(t2));
+            storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+len));
+            jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
             break;
-#endif
          case 4: /* JMP Ev */
-vassert(0);
-#if 0
+            /* Ignore any sz value and operate as if sz==8. */
             vassert(sz == 4);
-            jmp_treg(Ijk_Boring,t1);
+            t3 = newTemp(Ity_I64);
+            assign(t3, loadLE(Ity_I64,mkexpr(addr)));
+            jmp_treg(Ijk_Boring,t3);
             *whatNext = Dis_StopHere;
             break;
-#endif
          case 6: /* PUSH Ev */
 vassert(0);
 #if 0
@@ -6621,7 +6667,6 @@ ULong dis_cmov_E_G ( Prefix        pfx,
    /* E refers to memory */    
    {
       IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf );
-      vassert(0); /* awaiting test case */
       assign( tmps, loadLE(ty, mkexpr(addr)) );
       assign( tmpd, getIRegR(pfx, sz, gregOfRM(rm)) );
 
@@ -11209,11 +11254,23 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    case 0xBD: /* MOV imm,eBP */
    case 0xBE: /* MOV imm,eSI */
    case 0xBF: /* MOV imm,eDI */
-      d64 = getSDisp(imin(4,sz),delta);
-      delta += imin(4,sz);
-      putIRegB(pfx, sz, opc-0xB8, 
-                    mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-      DIP("mov%c $%lld,%s\n", nameISize(sz), d64, nameIRegB(pfx,sz,opc-0xB8));
+      /* This is the one-and-only place where 64-bit literals are
+         allowed in the instruction stream. */
+      if (sz == 8) {
+         d64 = getDisp64(delta);
+         delta += sz;
+         putIRegB(pfx, sz, opc-0xB8, 
+                       mkU(szToITy(sz), d64));
+         DIP("movabsq $%lld,%s\n", d64, 
+                                   nameIRegB(pfx,sz,opc-0xB8));
+      } else {
+         d64 = getSDisp(imin(4,sz),delta);
+         delta += imin(4,sz);
+         putIRegB(pfx, sz, opc-0xB8, 
+                       mkU(szToITy(sz), d64 & mkSizeMask(sz)));
+         DIP("mov%c $%lld,%s\n", nameISize(sz), d64, 
+                                 nameIRegB(pfx,sz,opc-0xB8));
+      }
       break;
 
    case 0xC6: /* MOV Ib,Eb */
@@ -11225,7 +11282,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    do_Mov_I_E:
       modrm = getUChar(delta);
       if (epartIsReg(modrm)) {
-         vassert(0);
          delta++; /* mod/rm byte */
          d64 = getSDisp(imin(4,sz),delta); 
          delta += imin(4,sz);
@@ -11279,17 +11335,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x04: /* ADD Ib, AL */
 //..       delta = dis_op_imm_A( 1, Iop_Add8, True, delta, "add" );
 //..       break;
-//..    case 0x05: /* ADD Iv, eAX */
-//..       delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
-//..       break;
-//.. 
+   case 0x05: /* ADD Iv, eAX */
+      delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
+      break;
+
 //..    case 0x0C: /* OR Ib, AL */
 //..       delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
 //..       break;
-//..    case 0x0D: /* OR Iv, eAX */
-//..       delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
-//..       break;
-//.. 
+   case 0x0D: /* OR Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
+      break;
+
 //.. //--    case 0x14: /* ADC Ib, AL */
 //.. //--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
 //.. //--       break;
@@ -11315,49 +11371,53 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x2C: /* SUB Ib, AL */
 //..       delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
 //..       break;
-//..    case 0x2D: /* SUB Iv, eAX */
-//..       delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
-//..       break;
-//.. 
+   case 0x2D: /* SUB Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
+      break;
+
 //..    case 0x34: /* XOR Ib, AL */
 //..       delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
 //..       break;
 //..    case 0x35: /* XOR Iv, eAX */
 //..       delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );
 //..       break;
-//.. 
-//..    case 0x3C: /* CMP Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
-//..       break;
+
+   case 0x3C: /* CMP Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
+      break;
    case 0x3D: /* CMP Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
       break;
 
    case 0xA8: /* TEST Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
       break;
    case 0xA9: /* TEST Iv, eAX */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
       break;
 
    /* ------------------------ opl Ev, Gv ----------------- */
  
-//..    case 0x02: /* ADD Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Add8, True, 1, delta, "add" );
-//..       break;
+   case 0x02: /* ADD Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Add8, True, 1, delta, "add" );
+      break;
    case 0x03: /* ADD Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_Add8, True, sz, delta, "add" );
       break;
 
-//..    case 0x0A: /* OR Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, 1, delta, "or" );
-//..       break;
-//..    case 0x0B: /* OR Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, sz, delta, "or" );
-//..       break;
-//.. //-- 
+   case 0x0A: /* OR Eb,Gb */
+      delta = dis_op2_E_G ( pfx, False, Iop_Or8, True, 1, delta, "or" );
+      break;
+   case 0x0B: /* OR Ev,Gv */
+      delta = dis_op2_E_G ( pfx, False, Iop_Or8, True, sz, delta, "or" );
+      break;
+//-- 
 //.. //--    case 0x12: /* ADC Eb,Gb */
 //.. //--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
 //.. //--       break;
@@ -11371,28 +11431,34 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x1B: /* SBB Ev,Gv */
 //..       delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
 //..       break;
-//.. 
-//..    case 0x22: /* AND Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_And8, True, 1, delta, "and" );
-//..       break;
-//..    case 0x23: /* AND Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_And8, True, sz, delta, "and" );
-//..       break;
-//.. 
-//..    case 0x2A: /* SUB Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
-//..       break;
+
+   case 0x22: /* AND Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_And8, True, 1, delta, "and" );
+      break;
+   case 0x23: /* AND Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_And8, True, sz, delta, "and" );
+      break;
+
+   case 0x2A: /* SUB Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Sub8, True, 1, delta, "sub" );
+      break;
    case 0x2B: /* SUB Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
 
-//..    case 0x32: /* XOR Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
-//..       break;
-//..    case 0x33: /* XOR Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
-//..       break;
-//.. 
+   case 0x32: /* XOR Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Xor8, True, 1, delta, "xor" );
+      break;
+   case 0x33: /* XOR Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Xor8, True, sz, delta, "xor" );
+      break;
+
 //..    case 0x3A: /* CMP Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
 //..       break;
@@ -11402,9 +11468,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       break;
 
    case 0x84: /* TEST Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_And8, False, 1, delta, "test" );
       break;
    case 0x85: /* TEST Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_And8, False, sz, delta, "test" );
       break;
 
@@ -11418,9 +11486,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op2_G_E ( pfx, False, Iop_Add8, True, sz, delta, "add" );
       break;
 
-//..    case 0x08: /* OR Gb,Eb */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, 1, delta, "or" );
-//..       break;
+   case 0x08: /* OR Gb,Eb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Or8, True, 1, delta, "or" );
+      break;
    case 0x09: /* OR Gv,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_Or8, True, sz, delta, "or" );
@@ -11436,10 +11505,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x18: /* SBB Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, 1, delta, "sbb" );
 //..       break;
-//..    case 0x19: /* SBB Gv,Ev */
-//..       delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
-//..       break;
-//.. 
+   case 0x19: /* SBB Gv,Ev */
+      delta = dis_op2_G_E ( pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
+      break;
+
 //..    case 0x20: /* AND Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_And8, True, 1, delta, "and" );
 //..       break;
@@ -11447,11 +11516,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_And8, True, sz, delta, "and" );
       break;
-//.. 
-//..    case 0x28: /* SUB Gb,Eb */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
-//..       break;
+
+   case 0x28: /* SUB Gb,Eb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Sub8, True, 1, delta, "sub" );
+      break;
    case 0x29: /* SUB Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
 
@@ -11459,6 +11530,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
 //..       break;
    case 0x31: /* XOR Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_Xor8, True, sz, delta, "xor" );
       break;
 
@@ -11481,6 +11553,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    case 0x5E: /* POP eSI */
    case 0x5F: /* POP eDI */
    case 0x5C: /* POP eSP */
+      if (haveF2orF3(pfx)) goto decode_failure;
       vassert(sz == 2 || sz == 4 || sz == 8);
       if (sz == 4)
          sz = 8; /* there is no encoding for 32-bit pop in 64-bit mode */
@@ -11619,6 +11692,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       /* This is the Right Way, in that the value to be pushed is
          established before %rsp is changed, so that pushq %rsp
          correctly pushes the old value. */
+      if (haveF2orF3(pfx)) goto decode_failure;
       vassert(sz == 2 || sz == 4 || sz == 8);
       if (sz == 4)
          sz = 8; /* there is no encoding for 32-bit push in 64-bit mode */
@@ -12048,7 +12122,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       break;
 
    /* ------------------------ (Grp2 extensions) ---------- */
-#if 0
+
    case 0xC0: /* Grp2 Ib,Eb */
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
@@ -12058,7 +12132,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
                          mkU8(d64 & 0xFF), NULL );
       break;
-#endif
+
    case 0xC1: /* Grp2 Ib,Ev */
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
@@ -12068,15 +12142,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                          mkU8(d64 & 0xFF), NULL );
       break;
 
-//..    case 0xD0: /* Grp2 1,Eb */
-//..       modrm = getUChar(delta);
-//..       am_sz = lengthAMode(delta);
-//..       d_sz  = 0;
-//..       d32   = 1;
-//..       sz    = 1;
-//..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-//..                          mkU8(d32), NULL );
-//..       break;
+   case 0xD0: /* Grp2 1,Eb */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(pfx,delta);
+      d_sz  = 0;
+      d64   = 1;
+      sz    = 1;
+      delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d64), NULL );
+      break;
 
    case 0xD1: /* Grp2 1,Ev */
       modrm = getUChar(delta);
@@ -12113,11 +12187,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_Grp3 ( pfx, sz, delta );
       break;
 
-//..    /* ------------------------ (Grp4 extensions) ---------- */
-//.. 
-//..    case 0xFE: /* Grp4 Eb */
-//..       delta = dis_Grp4 ( sorb, delta );
-//..       break;
+   /* ------------------------ (Grp4 extensions) ---------- */
+
+   case 0xFE: /* Grp4 Eb */
+      delta = dis_Grp4 ( pfx, delta );
+      break;
 
    /* ------------------------ (Grp5 extensions) ---------- */
 
@@ -12340,13 +12414,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta = dis_movx_E_G ( pfx, delta, 2, sz, False );
          break;
 
-//..       case 0xBE: /* MOVSXb Eb,Gv */
-//..          delta = dis_movx_E_G ( sorb, delta, 1, 4, True );
-//..          break;
-//..       case 0xBF: /* MOVSXw Ew,Gv */
-//..          delta = dis_movx_E_G ( sorb, delta, 2, 4, True );
-//..          break;
-//.. 
+      case 0xBE: /* MOVSXb Eb,Gv */
+         if (sz != 4 && sz != 8)
+            goto decode_failure;
+         delta = dis_movx_E_G ( pfx, delta, 1, sz, True );
+         break;
+      case 0xBF: /* MOVSXw Ew,Gv */
+         if (sz != 4 && sz != 8)
+            goto decode_failure;
+         delta = dis_movx_E_G ( pfx, delta, 2, sz, True );
+         break;
+
 //.. //--       /* =-=-=-=-=-=-=-=-=-=-= MOVNTI -=-=-=-=-=-=-=-=-= */
 //.. //-- 
 //.. //--       case 0xC3: /* MOVNTI Gv,Ev */

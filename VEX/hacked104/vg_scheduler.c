@@ -399,7 +399,10 @@ void VG_(load_thread_state) ( ThreadId tid )
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = VG_(threads)[tid].m_f5;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = VG_(threads)[tid].m_f6;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = VG_(threads)[tid].m_f7;
-   VG_(baseBlock)[VGOFF_(m_ftop)] = VG_(threads)[tid].m_ftop;
+   VG_(baseBlock)[VGOFF_(m_ftop)]    = VG_(threads)[tid].m_ftop;
+   VG_(baseBlock)[VGOFF_(m_fpucw)]   = VG_(threads)[tid].m_fpucw;
+   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = VG_(threads)[tid].m_ftag30;
+   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = VG_(threads)[tid].m_ftag74;
 
    VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
    VG_(baseBlock)[VGOFF_(sh_ebx)] = VG_(threads)[tid].sh_ebx;
@@ -450,10 +453,13 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].m_f2   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]);
    VG_(threads)[tid].m_f3   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]);
    VG_(threads)[tid].m_f4   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]);
-   VG_(threads)[tid].m_f5   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]);
-   VG_(threads)[tid].m_f6   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]);
-   VG_(threads)[tid].m_f7   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]);
-   VG_(threads)[tid].m_ftop = VG_(baseBlock)[VGOFF_(m_ftop)];
+   VG_(threads)[tid].m_f5     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]);
+   VG_(threads)[tid].m_f6     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]);
+   VG_(threads)[tid].m_f7     = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]);
+   VG_(threads)[tid].m_ftop   = VG_(baseBlock)[VGOFF_(m_ftop)];
+   VG_(threads)[tid].m_fpucw  = VG_(baseBlock)[VGOFF_(m_fpucw)];
+   VG_(threads)[tid].m_ftag30 = VG_(baseBlock)[VGOFF_(m_ftag0)+0];
+   VG_(threads)[tid].m_ftag74 = VG_(baseBlock)[VGOFF_(m_ftag0)+1];
 
    VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
    VG_(threads)[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
@@ -488,7 +494,10 @@ void VG_(save_thread_state) ( ThreadId tid )
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = junk64;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = junk64;
    *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = junk64;
-   VG_(baseBlock)[VGOFF_(m_ftop)] = junk;
+   VG_(baseBlock)[VGOFF_(m_ftop)]    = junk;
+   VG_(baseBlock)[VGOFF_(m_fpucw)]   = junk;
+   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = junk;
+   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = junk;
 
    vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }

@@ -1113,6 +1113,7 @@ void x87_to_vex ( /*IN*/UChar* x87_state, /*OUT*/UChar* vex_state )
    Fpu_State* x87     = (Fpu_State*)x87_state;
    UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
    UInt       tagw    = x87->env[FP_ENV_TAG];
+   UInt       fpucw   = x87->env[FP_ENV_CTRL];
 
    /* Copy registers and tags */
    for (r = 0; r < 8; r++) {
@@ -1131,11 +1132,10 @@ void x87_to_vex ( /*IN*/UChar* x87_state, /*OUT*/UChar* vex_state )
    /* stack pointer */
    *(UInt*)(vex_state + OFFB_FTOP) = ftop;
 
-   /* TODO: Check the CW is 037F.  Or at least, bottom 6 bits are 1
-      (all exceptions masked), and 11:10, which is rounding control,
-      is set to ..?
-   */
+   /* control word */
+   *(UInt*)(vex_state + OFFB_FPUCW) = fpucw;
 }
+
 
 /* VISIBLE TO LIBVEX CLIENT */
 void vex_to_x87 ( /*IN*/UChar* vex_state, /*OUT*/UChar* x87_state )
@@ -1151,7 +1151,7 @@ void vex_to_x87 ( /*IN*/UChar* vex_state, /*OUT*/UChar* x87_state )
       x87->env[i] = 0;
 
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
-   x87->env[FP_ENV_CTRL] = 0x037F;
+   x87->env[FP_ENV_CTRL] = (UShort)( *(UInt*)(vex_state + OFFB_FPUCW) );
    x87->env[FP_ENV_STAT] = (ftop & 7) << 11;
 
    tagw = 0;

@@ -741,6 +741,9 @@ typedef
 
       ULong m_f0, m_f1, m_f2, m_f3, m_f4, m_f5, m_f6, m_f7;
       UInt  m_ftop;
+      UInt  m_fpucw;
+      UInt  m_ftag74;
+      UInt  m_ftag30;
 
       UInt sh_eax;
       UInt sh_ebx;
@@ -1984,6 +1987,7 @@ extern Int VGOFF_(m_f5);
 extern Int VGOFF_(m_f6);
 extern Int VGOFF_(m_f7);
 extern Int VGOFF_(m_ftag0);
+extern Int VGOFF_(m_fpucw);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);

@@ -204,6 +204,8 @@ typedef
    * fst from st(0) to st(i) does not take an overflow fault even if the
      destination is already full.
 
+   FPUCW[15:0] is the FPU's control word.  FPUCW[31:16] is unused.
+
 */
 #define OFFB_FTOP    (13*4)
 #define OFFB_F0      (14*4)
@@ -215,9 +217,10 @@ typedef
 #define OFFB_F6      (26*4)
 #define OFFB_F7      (28*4)
 #define OFFB_FTAG0   (30*4) // up to 30*4 + 7
+#define OFFB_FPUCW   (32*4)
 
 /* Don't forget to keep this up to date. */
-#define SIZEOF_X86H_STATE  (OFFB_FTAG0 + 8)
+#define SIZEOF_X86H_STATE  (OFFB_FPUCW + 4)
 
 
 

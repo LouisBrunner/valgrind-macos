@@ -68,6 +68,7 @@ Int VGOFF_(m_f5) = INVALID_OFFSET;
 Int VGOFF_(m_f6) = INVALID_OFFSET;
 Int VGOFF_(m_f7) = INVALID_OFFSET;
 Int VGOFF_(m_ftag0) = INVALID_OFFSET;
+Int VGOFF_(m_fpucw) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
@@ -194,61 +195,62 @@ static void vg_init_baseBlock ( void )
    /* 26 */ VGOFF_(m_f6)    = alloc_BaB(2);
    /* 28 */ VGOFF_(m_f7)    = alloc_BaB(2);
    /* 30 */ VGOFF_(m_ftag0) = alloc_BaB(2);
+   /* 32 */ VGOFF_(m_fpucw) = alloc_BaB(1);
 
-   /* 32  */ VGOFF_(sh_eax)    = alloc_BaB(1);
-   /* 33  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
-   /* 34  */ VGOFF_(sh_edx)    = alloc_BaB(1);
-   /* 35  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
-   /* 36  */ VGOFF_(sh_esp)    = alloc_BaB(1);
-   /* 37  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
-   /* 38  */ VGOFF_(sh_esi)    = alloc_BaB(1);
-   /* 39  */ VGOFF_(sh_edi)    = alloc_BaB(1);
-   /* 40  */ VGOFF_(sh_eflags) = alloc_BaB(1);
+   /* 33  */ VGOFF_(sh_eax)    = alloc_BaB(1);
+   /* 34  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
+   /* 35  */ VGOFF_(sh_edx)    = alloc_BaB(1);
+   /* 36  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
+   /* 37  */ VGOFF_(sh_esp)    = alloc_BaB(1);
+   /* 38  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
+   /* 39  */ VGOFF_(sh_esi)    = alloc_BaB(1);
+   /* 40  */ VGOFF_(sh_edi)    = alloc_BaB(1);
+   /* 41  */ VGOFF_(sh_eflags) = alloc_BaB(1);
 
    /* stated offsets are wrong after here */
-   /* 41 */ 
+   /* 42 */ 
    VGOFF_(log_1I_0D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_0D_cache_access) );
-   /* 42 */ 
+   /* 43 */ 
    VGOFF_(log_0I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_1D_cache_access) );
-   /* 43 */ 
+   /* 44 */ 
    VGOFF_(log_1I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_1D_cache_access) );
-   /* 44 */ 
+   /* 45 */ 
    VGOFF_(log_0I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_2D_cache_access) );
-   /* 45 */ 
+   /* 46 */ 
    VGOFF_(log_1I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_2D_cache_access) );
 
-   /* 46  */ 
+   /* 47  */ 
    VGOFF_(helper_value_check4_fail) 
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check4_fail) );
-   /* 47 */
+   /* 48 */
    VGOFF_(helper_value_check0_fail)
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check0_fail) );
 
-   /* 48  */
+   /* 49  */
    VGOFF_(helperc_STOREV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV4) );
-   /* 49  */
+   /* 50  */
    VGOFF_(helperc_STOREV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV1) );
 
-   /* 50 */
+   /* 51 */
    VGOFF_(helperc_LOADV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV4) );
-   /* 51 */
+   /* 52 */
    VGOFF_(helperc_LOADV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV1) );
 
-   /* 52 */
+   /* 53 */
    VGOFF_(handle_esp_assignment)
       = alloc_BaB_1_set( (Addr) & VGM_(handle_esp_assignment) );
 
-   /* There are currently 24 spill slots */
-   /* 53 .. 49  This overlaps the magic boundary at >= 32 words, but
+   /* There are currently 100 spill slots */
+   /* 54 .. 154  This overlaps the magic boundary at >= 32 words, but
       most spills are to low numbered spill slots, so the ones above
       the boundary don't see much action. */
    VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);

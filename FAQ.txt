@@ -357,4 +357,18 @@ A16.  It's probably a bug in 'make'.  Some, but not all, instances of
 
 -----------------------------------------------------------------
 
+Q17.  I tried writing a suppression but it didn't work.  Can you 
+      write my suppression for me?
+
+A17.  Yes!  Use the --gen-suppressions=yes feature to spit out
+      suppressions automatically for you.  You can then edit them
+      if you like, eg. combining similar automatically generated
+      suppressions using wildcards like '*'.
+
+      If you really want to write suppressions by hand, read the 
+      manual carefully.  Note particularly that C++ function names
+      must be _mangled_.
+
+-----------------------------------------------------------------
+
 (this is the end of the FAQ.)

@@ -967,13 +967,13 @@ void* VG_(memset) ( void *dest, Int c, Int sz )
 Int VG_(memcmp) ( const void* s1, const void* s2, Int n )
 {
    Int res;
-   Char a0;
-   Char b0;
+   UChar a0;
+   UChar b0;
    vg_assert(n >= 0);
 
    while (n != 0) {
-      a0 = ((Char *) s1)[0];
-      b0 = ((Char *) s2)[0];
+      a0 = ((UChar *) s1)[0];
+      b0 = ((UChar *) s2)[0];
       s1 += 1;
       s2 += 1;
       res = a0 - b0;

@@ -7826,8 +7826,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       if (epartIsReg(modrm)) {
          assign(t4, getIReg(2, eregOfRM(modrm)));
-         delta += 2+2;
-         lane = insn[2+2-1];
+         delta += 3+1;
+         lane = insn[3+1-1];
          DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
                                    nameIReg(2,eregOfRM(modrm)),
                                    nameMMXReg(gregOfRM(modrm)));
@@ -9551,14 +9551,19 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       if (epartIsReg(modrm)) {
          assign(t4, getIReg(2, eregOfRM(modrm)));
-         lane = insn[3];
-         delta += 2+2;
+         delta += 3+1;
+         lane = insn[3+1-1];
          DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
                                    nameIReg(2,eregOfRM(modrm)),
                                    nameXMMReg(gregOfRM(modrm)));
       } else {
-         /* awaiting test case */
-         goto decode_failure;
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         delta += 3+alen;
+         lane = insn[3+alen-1];
+         assign(t4, loadLE(Ity_I16, mkexpr(addr)));
+         DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
+                                   dis_buf,
+                                   nameXMMReg(gregOfRM(modrm)));
       }
 
       putXMMRegLane16( gregOfRM(modrm), lane & 7, mkexpr(t4) );

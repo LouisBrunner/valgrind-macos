@@ -412,9 +412,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 const UInt VGA_(syscall_table_size) = 
             sizeof(VGA_(syscall_table)) / sizeof(VGA_(syscall_table)[0]);
 
-void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls )
-{
-}
+//void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls )
+//{
+//}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

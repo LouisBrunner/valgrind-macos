@@ -35,13 +35,6 @@
 /*------------------------------------------------------------*/
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
-
-#define TT_LOOKUP(reg, fail)                            \
-        movq %rax, reg;                                 \
-        andq $VG_TT_FAST_MASK, reg;                     \
-        movq VG_(tt_fast)(,reg,8), reg;                 \
-        cmpq %rax, (reg);                               \
-        jnz  fail
 	
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
@@ -71,7 +64,24 @@ VG_(run_innerloop):
 	/* fetch %RIP into %rax */
 	movq	VG_(instr_ptr_offset), %rsi
 	movq	(%rbp, %rsi, 1), %rax
+
+	/* set host FPU control word to the default mode expected 
+           by VEX-generated code.  See comments in libvex.h for
+           more info. */
+	finit
+	pushq	$0x027F
+	fldcw	(%rsp)
+	addq	$8, %rsp
 	
+	/* set host SSE control word to the default mode expected 
+	   by VEX-generated code. */
+	pushq	$0x1F80
+	ldmxcsr	(%rsp)
+	addq	$8, %rsp
+
+	/* set dir flag to known value */
+	cld
+
 	/* fall into main loop */
 
 	/* Here, %rax is the only live (real) register.  The entire
@@ -84,16 +94,23 @@ dispatch_boring:
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
-	
 	jz	counter_is_zero
-	/* try a fast lookup in the translation cache */
-	TT_LOOKUP(%rbx, fast_lookup_failed)
 
-	/* Found a match.  Call the tce.payload field.  The magic 12
-	   value is offsetof(TCEntry,payload) on a 64-bit platform. */
-	addq	$12, %rbx
-	call 	*%rbx
-	
+	/* try a fast lookup in the translation cache */
+	movq %rax, %rbx
+	andq $VG_TT_FAST_MASK, %rbx
+	movq VG_(tt_fast)(,%rbx,8), %rcx
+	cmpq %rax, (%rcx)
+	jnz  fast_lookup_failed
+	/* increment bb profile counter */
+	movq VG_(tt_fastN)(,%rbx,8), %rdx
+	incl (%rdx)
+
+	/* Found a match.  Call tce[1], which is 8 bytes along, since
+           each tce element is a 64-bit int. */
+	addq 	$8, %rcx
+	call 	*%rcx
+
 	/* 
 	   %rax holds destination (original) address.
 	   %rbp indicates further details of the control transfer
@@ -110,20 +127,34 @@ dispatch_boring:
 
 	jmp	dispatch_exceptional
 
-	
-fast_lookup_failed:
-	/* %RIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
-	movq	$VG_TRC_INNER_FASTMISS, %rax
-	jmp	run_innerloop_exit
 
-counter_is_zero:
-	/* %RIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
-	movq	$VG_TRC_INNER_COUNTERZERO, %rax
-	jmp	run_innerloop_exit
-	
-run_innerloop_exit:
+
+/* All exits from the dispatcher go through here.  %rax holds
+   the return value. 
+*/
+run_innerloop_exit: 
+	/* We're leaving.  Check that nobody messed with
+           %mxcsr or %fpucw.  We can't mess with %rax here as it
+	   holds the tentative return value, but any other is OK. */
+	pushq	$0
+	fstcw	(%rsp)
+	cmpl	$0x027F, (%rsp)
+	popq	%r11 /* get rid of the word without trashing %eflags */
+	jnz	invariant_violation
+	pushq	$0
+	stmxcsr	(%rsp)
+	andl	$0xFFFFFFC0, (%rsp)  /* mask out status flags */
+	cmpl	$0x1F80, (%rsp)
+	popq	%r11
+	jnz	invariant_violation
+	/* otherwise we're OK */
+	jmp	run_innerloop_exit_REALLY
+
+invariant_violation:
+	movq	$VG_TRC_INVARIANT_FAILED, %rax
+	jmp	run_innerloop_exit_REALLY
+
+run_innerloop_exit_REALLY:
 	popq	%rdi
 	popq	%r15
 	popq	%r14
@@ -140,8 +171,8 @@ run_innerloop_exit:
 	popq	%rbx
 	ret	
 
-
-
+	
+	
 /* Other ways of getting out of the inner loop.  Placed out-of-line to
    make it look cleaner. 
 */
@@ -150,12 +181,25 @@ dispatch_exceptional:
 	cmpq	$VG_TRC_INNER_COUNTERZERO, %rbp
 	jz	counter_is_zero
 
-	/* save %rax in %RIP and defer to sched */
+	/* save %eax in %EIP and defer to sched */
 	movq	VG_(instr_ptr_offset), %rsi
 	movq	0(%rsp), %rdi
 	movq	%rax, (%rdi, %rsi, 1)
 	movq	%rbp, %rax
 	jmp	run_innerloop_exit
+
+fast_lookup_failed:
+	/* %RIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
+	movq	$VG_TRC_INNER_FASTMISS, %rax
+	jmp	run_innerloop_exit
+
+counter_is_zero:
+	/* %RIP is up to date here since dispatch_boring dominates */
+	addl	$1, VG_(dispatch_ctr)
+	movq	$VG_TRC_INNER_COUNTERZERO, %rax
+	jmp	run_innerloop_exit
+
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

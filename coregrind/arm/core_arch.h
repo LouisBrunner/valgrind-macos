@@ -45,8 +45,6 @@
 #define VG_ELF_MACHINE        EM_ARM
 #define VG_ELF_CLASS          ELFCLASS32
 
-#define InsnSetArch           InsnSetARM
-
 #define VGA_WORD_SIZE         4
 
 /* ---------------------------------------------------------------------

@@ -36,15 +36,9 @@
 #include "tool_arch.h"           // arch-specific tool stuff
 
 /* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
+   Exports of state.c that are not core-visible
    ------------------------------------------------------------------ */
 
-#if 0
-/* Alloc & copy, and dealloc. */
-extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
-extern void        VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
-#endif
-extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
 
 #endif   // __AMD64_PRIVATE_H
 

@@ -129,7 +129,6 @@ void VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt )
    if (ldt != NULL)
       VG_(arena_free)(VG_AR_CORE, ldt);
 }
-#endif
 
 
 /* Clear a TLS array. */
@@ -149,7 +148,6 @@ void VG_(clear_TLS_for_thread) ( VgLdtEntry* tls )
 }
 
 
-#if 0
 /* Fish the base field out of an VgLdtEntry.  This is the only part we
    are particularly interested in. */
 

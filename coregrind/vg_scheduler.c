@@ -208,6 +208,7 @@ Char* name_of_sched_event ( UInt event )
       case VEX_TRC_JMP_SYSCALL:       return "SYSCALL";
       case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
       case VEX_TRC_JMP_YIELD:         return "YIELD";
+      case VEX_TRC_JMP_NODECODE:      return "NODECODE";
       case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
       case VG_TRC_INNER_FASTMISS:     return "FASTMISS";
       case VG_TRC_UNRESUMABLE_SIGNAL: return "FATALSIGNAL";
@@ -316,6 +317,10 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 2 * sz_vex == a_spill);
+
+   vg_assert(VG_(instr_ptr_offset) >= 0);
+   vg_assert(VG_(instr_ptr_offset) <= 10000); /* let's say */
+   vg_assert(sizeof VG_(instr_ptr_offset) == sizeof(HWord));
 
    VGP_PUSHCC(VgpRun);
 
@@ -1075,7 +1080,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          VG_(message)(Vg_DebugMsg, "thread %d:   completed %d bbs, trc %d", 
                                    tid, done_this_time, (Int)trc );
 
-      if (0 && trc != VG_TRC_INNER_FASTMISS)
+      if (1 && trc != VG_TRC_INNER_FASTMISS)
          VG_(message)(Vg_DebugMsg, "thread %d:  %llu bbs, event %s", 
                                    tid, VG_(bbs_done),
                                    name_of_sched_event(trc) );
@@ -1312,23 +1317,24 @@ static
 void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
    Segment *seg;
-
+VG_(printf)("OINK 40\n");
    vg_assert(is_valid_or_empty_tid(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
-
+VG_(printf)("OINK 41\n");
    /* Its stack is now off-limits */
    if (VG_(threads)[tid].stack_base) {
       seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
       VG_TRACK( die_mem_stack, seg->addr, seg->len );
    }
-
+VG_(printf)("OINK 42\n");
    VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
-
+VG_(printf)("OINK 43\n");
    /* Not interested in the timeout anymore */
    VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
-
+VG_(printf)("OINK 44\n");
    /* Delete proxy LWP */
    VG_(proxy_delete)(tid, forcekill);
+VG_(printf)("OINK 45\n");
 }
 
 
@@ -1404,21 +1410,27 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 void VG_(nuke_all_threads_except) ( ThreadId me )
 {
    ThreadId tid;
+   VG_(printf)("HACK HACK HACK: nuke_all_threads_except\n"); return;
+
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (tid == me
           || VG_(threads)[tid].status == VgTs_Empty)
          continue;
-      if (0)
+      if (1)
          VG_(printf)(
             "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
+VG_(printf)("OINK 49\n");
       VG_(proxy_delete)(tid, True);
+VG_(printf)("OINK 49a\n");
       VG_(threads)[tid].status = VgTs_Empty;
       VG_(threads)[tid].associated_mx = NULL;
       VG_(threads)[tid].associated_cv = NULL;
       VG_(threads)[tid].stack_base = (Addr)NULL;
       VG_(threads)[tid].stack_size = 0;
       cleanup_after_thread_exited( tid, True );
+VG_(printf)("OINK 4\n");
    }
+VG_(printf)("OINK 5\n");
 }
 
 

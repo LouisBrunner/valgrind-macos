@@ -1129,7 +1129,7 @@ static Addr setup_client_stack(void* init_sp,
 
    /* We know the initial ESP is pointing at argc/argv */
    VG_(client_argc) = *(Int*)cl_esp;
-   VG_(client_argv) = (Char**)(cl_esp + sizeof(Int));
+   VG_(client_argv) = (Char**)(cl_esp + sizeof(HWord));
 
    return cl_esp;
 }

@@ -89,20 +89,20 @@ dispatch_boring:
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
-	
 	jz	counter_is_zero
+
 	/* try a fast lookup in the translation cache */
 	movl %eax, %ebx
 	andl $VG_TT_FAST_MASK, %ebx
 	movl VG_(tt_fast)(,%ebx,4), %ecx
 	cmpl %eax, (%ecx)
 	jnz  fast_lookup_failed
+	/* increment bb profile counter */
 	movl VG_(tt_fastN)(,%ebx,4), %edx
 	incl (%edx)
 
 	/* Found a match.  Call tce[1], which is 8 bytes along, since
            each tce element is a 64-bit int. */
-	
 	addl 	$8, %ecx
 	call 	*%ecx
 	

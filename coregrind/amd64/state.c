@@ -98,24 +98,11 @@ void VGA_(init_thread1state) ( Addr client_rip,
 /*--- Thread stuff                                         ---*/
 /*------------------------------------------------------------*/
 
-void VGA_(clear_thread)( ThreadArchState *arch )
-{
-   arch->ldt = NULL;
-   VG_(clear_TLS_for_thread)(arch->tls);
-}  
-
 void VGA_(cleanup_thread) ( ThreadArchState *arch )
 {  
-   I_die_here;
-#if 0
-   /* Deallocate its LDT, if it ever had one. */
-   VG_(deallocate_LDT_for_thread)( arch->ldt ); 
-   arch->ldt = NULL;
-   
-   /* Clear its TLS array. */
-   VG_(clear_TLS_for_thread)( arch->tls );
-#endif
+   /* TODO: deallocate the thread's LDT / GDT ? */
 }  
+
 
 void VGA_(setup_child) ( ThreadArchState *arch, ThreadArchState *parent_arch )
 {  

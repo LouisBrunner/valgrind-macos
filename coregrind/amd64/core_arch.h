@@ -44,8 +44,6 @@
 #define VG_ELF_MACHINE        EM_X86_64
 #define VG_ELF_CLASS          ELFCLASS64
 
-#define InsnSetArch           InsnSetAMD64
-
 #define VGA_WORD_SIZE         8
 
 /* ---------------------------------------------------------------------
@@ -71,46 +69,13 @@
 #define STACK_FRAME_NEXT(rbp)          (((UWord*)rbp)[0])
 
 // Get stack pointer and frame pointer
-#define ARCH_GET_REAL_STACK_PTR(esp) do {   \
-   I_die_here; \
+#define ARCH_GET_REAL_STACK_PTR(lval) do {   \
+   asm("movq %%rsp, %0" : "=r" (lval));      \
 } while (0)
 
-#define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
-   I_die_here; \
+#define ARCH_GET_REAL_FRAME_PTR(lval) do {   \
+   asm("movq %%rbp, %0" : "=r" (lval));      \
 } while (0)
-
-/* ---------------------------------------------------------------------
-   LDT type             
-   ------------------------------------------------------------------ */
-
-// XXX: eventually this will be x86-private, not seen by the core(?)
-
-/* This is the hardware-format for a segment descriptor, ie what the
-   x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
-
-typedef struct _LDT_ENTRY {
-    union {
-       struct {
-          UShort      LimitLow;
-          UShort      BaseLow;
-          unsigned    BaseMid         : 8;
-          unsigned    Type            : 5;
-          unsigned    Dpl             : 2;
-          unsigned    Pres            : 1;
-          unsigned    LimitHi         : 4;
-          unsigned    Sys             : 1;
-          unsigned    Reserved_0      : 1;
-          unsigned    Default_Big     : 1;
-          unsigned    Granularity     : 1;
-          unsigned    BaseHi          : 8;
-       } Bits;
-       struct {
-          UInt word1;
-          UInt word2;
-       } Words;
-    } 
-    LdtEnt;
-} VgLdtEntry;
 
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
@@ -118,22 +83,9 @@ typedef struct _LDT_ENTRY {
 
 // Architecture-specific part of a ThreadState
 // XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core...  then VgLdtEntry can be made non-visible to the core
-//      also.
+//      to the core...
 typedef 
    struct {
-      /* Pointer to this thread's Local (Segment) Descriptor Table.
-         Starts out as NULL, indicating there is no table, and we hope
-         to keep it that way.  If the thread does __NR_modify_ldt to
-         create entries, we allocate a 8192-entry table at that point.
-         This is a straight copy of the Linux kernel's scheme.  Don't
-         forget to deallocate this at thread exit. */
-      VgLdtEntry* ldt;
-
-      /* TLS table. This consists of a small number (currently 3) of
-         entries from the Global Descriptor Table. */
-      VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
-
       /* --- BEGIN vex-mandated guest state --- */
 
       /* Saved machine context. */

@@ -164,6 +164,25 @@ typedef struct
    vg_x = (vg_pthread_##foo##_t*)x; \
    x = 0;  // ensure we don't accidentally use x again!
 
+
+/* ---------------------------------------------------------------------
+   Our own definition of types that only exist in NPTL.
+   ------------------------------------------------------------------ */
+
+#ifndef HAVE___PTHREAD_UNWIND_BUF_T
+
+typedef struct
+{
+   struct
+   {
+      jmp_buf __cancel_jmp_buf;
+      int __mask_was_saved;
+   } __cancel_jmp_buf[1];
+   void *__pad[4];
+} __pthread_unwind_buf_t __attribute__ ((__aligned__));
+
+#endif
+
 /* ---------------------------------------------------------------------
    Forwardses.
    ------------------------------------------------------------------ */
@@ -770,14 +789,14 @@ static
 __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
-   int             attr__detachstate;
-   void*           tls_data;
-   int             tls_segment;
-   unsigned long   sysinfo;
-   void*           (*root_fn) ( void* );
-   void*           arg;
-   void*           ret_val;
-   ThreadUnwindBuf ub;
+   int                    attr__detachstate;
+   void*                  tls_data;
+   int                    tls_segment;
+   unsigned long          sysinfo;
+   void*                  (*root_fn) ( void* );
+   void*                  arg;
+   void*                  ret_val;
+   __pthread_unwind_buf_t ub;
 
    attr__detachstate = info->attr__detachstate;
    tls_data          = info->tls_data;
@@ -833,7 +852,7 @@ void thread_wrapper ( NewThreadInfo* info )
    my_free(info);
 
 
-   if (setjmp(ub.jb) == 0) {
+   if (setjmp(ub.__cancel_jmp_buf[0].__cancel_jmp_buf) == 0) {
       CleanupEntry cu;
       int          res;
       
@@ -949,13 +968,13 @@ void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
 
 
 __attribute ((regparm (1)))
-void __pthread_register_cancel (ThreadUnwindBuf *ub)
+void __pthread_register_cancel (__pthread_unwind_buf_t *__buf)
 {
    int          res;
    CleanupEntry cu;
    ensure_valgrind("__pthread_register_cancel");
    cu.type = VgCt_Longjmp;
-   cu.data.longjmp.ub = ub;
+   cu.data.longjmp.ub = __buf;
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__CLEANUP_PUSH,
                            &cu, 0, 0, 0);
@@ -964,7 +983,7 @@ void __pthread_register_cancel (ThreadUnwindBuf *ub)
 
 
 __attribute ((regparm (1)))
-void __pthread_register_cancel_defer (ThreadUnwindBuf *ub)
+void __pthread_register_cancel_defer (__pthread_unwind_buf_t *__buf)
 {
    /* As __pthread_register cancel, but save the thread's original
       cancellation type and set it to Deferred. */
@@ -972,7 +991,7 @@ void __pthread_register_cancel_defer (ThreadUnwindBuf *ub)
    CleanupEntry cu;
    ensure_valgrind("__pthread_register_cancel_defer");
    cu.type = VgCt_Longjmp;
-   cu.data.longjmp.ub = ub;
+   cu.data.longjmp.ub = __buf;
    /* Set to Deferred, and save the old cancellation type. */
    my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
    my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
@@ -990,7 +1009,7 @@ void __pthread_register_cancel_defer (ThreadUnwindBuf *ub)
 
 
 __attribute ((regparm (1)))
-void __pthread_unregister_cancel (ThreadUnwindBuf *ub)
+void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
 {
    int          res;
    CleanupEntry cu;
@@ -1000,13 +1019,13 @@ void __pthread_unregister_cancel (ThreadUnwindBuf *ub)
                            VG_USERREQ__CLEANUP_POP,
                            &cu, 0, 0, 0);
    my_assert(cu.type == VgCt_Longjmp);
-   my_assert(cu.data.longjmp.ub == ub);
+   my_assert(cu.data.longjmp.ub == __buf);
    return;
 }
 
 
 __attribute ((regparm (1)))
-void __pthread_unregister_restore (ThreadUnwindBuf *ub)
+void __pthread_unregister_restore (__pthread_unwind_buf_t *__buf)
 {
    int          res;
    CleanupEntry cu;
@@ -1019,7 +1038,7 @@ void __pthread_unregister_restore (ThreadUnwindBuf *ub)
                            VG_USERREQ__CLEANUP_POP,
                            &cu, 0, 0, 0);
    my_assert(cu.type == VgCt_Longjmp);
-   my_assert(cu.data.longjmp.ub == ub);
+   my_assert(cu.data.longjmp.ub == __buf);
    /* Restore the original cancellation type. */
    my_assert(cu.data.longjmp.ctype == PTHREAD_CANCEL_DEFERRED
           || cu.data.longjmp.ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
@@ -1034,7 +1053,7 @@ void __pthread_unregister_restore (ThreadUnwindBuf *ub)
 
 __attribute ((regparm (1)))
 __attribute ((__noreturn__))
-void __pthread_unwind (ThreadUnwindBuf *ub)
+void __pthread_unwind (__pthread_unwind_buf_t *__buf)
 {
    int           res;
    CleanupEntry  cu;
@@ -1049,15 +1068,16 @@ void __pthread_unwind (ThreadUnwindBuf *ub)
       cu.data.function.fn ( cu.data.function.arg );
    }
    my_assert(cu.type == VgCt_Longjmp);
-   my_assert(ub == NULL || ub == cu.data.longjmp.ub);
-   longjmp(cu.data.longjmp.ub->jb, 1);
+   my_assert(__buf == NULL || __buf == cu.data.longjmp.ub);
+   __buf = cu.data.longjmp.ub;
+   longjmp(__buf->__cancel_jmp_buf[0].__cancel_jmp_buf, 1);
    /* NOTREACHED */
 }
 
 
 __attribute ((regparm (1)))
 __attribute ((__noreturn__))
-void __pthread_unwind_next (ThreadUnwindBuf *ub)
+void __pthread_unwind_next (__pthread_unwind_buf_t *__buf)
 {
    __pthread_unwind(NULL);
    /* NOTREACHED */

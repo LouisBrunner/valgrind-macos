@@ -713,12 +713,6 @@ typedef
    }
    CleanupType;
 
-/* A thread unwind buffer */
-typedef
-   struct {
-      jmp_buf jb;
-   } ThreadUnwindBuf;
-
 /* An entry in a threads's cleanup stack. */
 typedef
    struct {
@@ -729,7 +723,7 @@ typedef
             void* arg;
          } function;
          struct {
-            ThreadUnwindBuf *ub;
+            void *ub;
             int ctype;
          } longjmp;
       } data;

@@ -39,7 +39,7 @@ PRIV_INCLUDES = -Ipriv
 
 
 CC = gcc
-CCFLAGS = -g -O -Wall -Wshadow -Winline $(EXTRA_CFLAGS)
+CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline $(EXTRA_CFLAGS)
 
 #CC = icc
 #CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \

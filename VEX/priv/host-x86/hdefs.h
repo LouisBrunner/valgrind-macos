@@ -54,6 +54,13 @@ extern HReg hregX86_EBP ( void );
 extern HReg hregX86_ESI ( void );
 extern HReg hregX86_EDI ( void );
 
+extern HReg hregX86_FAKE0 ( void );
+extern HReg hregX86_FAKE1 ( void );
+extern HReg hregX86_FAKE2 ( void );
+extern HReg hregX86_FAKE3 ( void );
+extern HReg hregX86_FAKE4 ( void );
+extern HReg hregX86_FAKE5 ( void );
+
 
 /* --------- Condition codes, Intel encoding. --------- */
 

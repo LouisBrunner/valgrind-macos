@@ -62,7 +62,7 @@
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculates CR0[LT,GT,EQ,SO] flags from the supplied
    thunk parameters. */
-UChar ppc32g_calculate_cr0_all ( UChar op, UInt word1, UChar xer_so )
+UChar ppc32g_calculate_cr0_all ( UInt op, UInt word1, UInt xer_so )
 {
     Int sword1 = (Int)word1;
     if (op) {
@@ -76,22 +76,22 @@ UChar ppc32g_calculate_cr0_all ( UChar op, UInt word1, UChar xer_so )
     }
 }
 
-UChar ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UChar xer_so )
+UChar ppc32g_calculate_cr0_bit0 ( UInt op, UInt word1, UInt xer_so )
 {
     return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 0) & 1;
 }
 
-UChar ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UChar xer_so )
+UChar ppc32g_calculate_cr0_bit1 ( UInt op, UInt word1, UInt xer_so )
 {
     return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 1) & 1;
 }
 
-UChar ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UChar xer_so )
+UChar ppc32g_calculate_cr0_bit2 ( UInt op, UInt word1, UInt xer_so )
 {
     return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 2) & 1;
 }
 
-UChar ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UChar xer_so )
+UChar ppc32g_calculate_cr0_bit3 ( UInt op, UInt word1, UInt xer_so )
 {
     return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 3) & 1;
 }
@@ -103,7 +103,7 @@ UChar ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UChar xer_so )
 
 // Calculate XER_OV
 UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
-				UInt arg1, UInt arg2, UChar ov )
+				UInt arg1, UInt arg2, UInt ov )
 {
     ULong ul_tmp=0;
 
@@ -155,7 +155,7 @@ UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
 
 // Calculate XER_CA
 UChar ppc32g_calculate_xer_ca ( UInt op, UInt res,
-				UInt arg1, UInt arg2, UChar ca )
+				UInt arg1, UInt arg2, UInt ca )
 {
     switch (op) {
     case PPC32G_FLAG_OP_ADD:     // addc, addco, addic
@@ -276,7 +276,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR31 = 0;
 
    vex_state->guest_CIA  = 0;
-   vex_state->guest_NIA  = 0;
+//   vex_state->guest_NIA  = 0;
    vex_state->guest_LR   = 0;
    vex_state->guest_CTR  = 0;
 

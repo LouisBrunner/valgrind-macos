@@ -80,15 +80,15 @@ typedef
       UInt guest_GPR30;
       UInt guest_GPR31;
 
-      UInt guest_CIA;    // Current Instruction Address (no architecturally visible register)
-      UInt guest_NIA;    // Next Instruction Address (no architecturally visible register)
+      UInt guest_CIA;    // Current Instruction Address (no arch visible register)
+//      UInt guest_NIA;    // Next Instruction Address (no arch visible register)
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
       /* thunk used to calculate CR0 flags. */
       UChar guest_CC_OP;    // boolean: 0=> dep1=result 1=> dep1=flags
       UInt  guest_CC_DEP1;  // Result of last op | flags
-      UInt  guest_CC_DEP2;  // XER_SO
+      UChar guest_CC_DEP2;  // XER_SO
 
       // CR1:7: Used for 'compare' ops (bits 0:4 not used - thunk used for this)
       UInt guest_CR1to7;
@@ -103,9 +103,9 @@ typedef
       UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
-      UChar padding_1b1;
-      UChar padding_1b2;
-      UChar padding_1b3;
+//      UChar padding_1b1;
+//      UChar padding_1b2;
+//      UChar padding_1b3;
 //      UInt  padding_4b;
    }
    VexGuestPPC32State;

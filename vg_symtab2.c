@@ -272,22 +272,16 @@ void addLineInfo ( SegInfo* si,
    }
 
    if (size > MAX_LOC_SIZE) {
+       if (0)
        VG_(message)(Vg_DebugMsg, 
                     "warning: line info address range too large "
                     "at entry %d: %d", entry, size);
        size = 1;
    }
 
-
-#if 0
-   if (this >= 0 && this < 1000) {
-      this += si->start;
-      next += si->start;
-   }
-#endif
-
    /* vg_assert(this < si->start + si->size && next-1 >= si->start); */
    if (this >= si->start + si->size || next-1 < si->start) {
+       if (0)
        VG_(message)(Vg_DebugMsg, 
                     "warning: ignoring line info entry falling "
                     "outside current SegInfo: %p %p %p %p",
@@ -857,6 +851,7 @@ typedef struct
   UChar li_opcode_base     [1];
 }
 DWARF2_External_LineInfo;
+
 typedef struct
 {
   UInt   li_length;
@@ -869,6 +864,7 @@ typedef struct
   UChar  li_opcode_base;
 }
 DWARF2_Internal_LineInfo;
+
 /* Line number opcodes.  */
 enum dwarf_line_number_ops
   {
@@ -988,6 +984,9 @@ int process_extended_line_op( SegInfo *si, UInt** fnames,
     case DW_LNE_end_sequence:
       if (0) VG_(printf)("1001: si->o %p, smr.a %p\n", 
                          si->offset, state_machine_regs.address );
+      state_machine_regs.end_sequence = 1; /* JRS: added for compliance
+         with spec; is pointless due to reset_state_machine below 
+      */
       addLineInfo (si, (*fnames)[state_machine_regs.file], 
                        si->offset + (state_machine_regs.address - 1), 
                        si->offset + (state_machine_regs.address), 
@@ -1041,6 +1040,10 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
   UChar *            end_of_sequence;
   UInt  *            fnames = NULL;
 
+  /* Fails due to gcc padding ...
+  vg_assert(sizeof(DWARF2_External_LineInfo)
+            == sizeof(DWARF2_Internal_LineInfo));
+  */
 
   while (data < end)
     {
@@ -1071,12 +1074,15 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
          return;
        }
 
-      info.li_prologue_length = *((UInt *)(external->li_prologue_length));
-      info.li_min_insn_length = *((UChar *) (external->li_min_insn_length));
-      info.li_default_is_stmt = *((UChar *) (external->li_default_is_stmt));
-      info.li_line_base       = *((Int *) (external->li_line_base));
-      info.li_line_range      = *((UChar *) (external->li_line_range));
-      info.li_opcode_base     = *((UChar *) (external->li_opcode_base)); 
+      info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
+      info.li_min_insn_length = * ((UChar *)(external->li_min_insn_length));
+      info.li_default_is_stmt = * ((UChar *)(external->li_default_is_stmt));
+
+      /* JRS: changed (UInt*) to (UChar*) */
+      info.li_line_base       = * ((UChar *)(external->li_line_base));
+
+      info.li_line_range      = * ((UChar *)(external->li_line_range));
+      info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
 
       /* Sign extend the line base field.  */
       info.li_line_base <<= 24;
@@ -1107,6 +1113,10 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
        }
 
       /* Skip the NUL at the end of the table.  */
+      if (*data != 0) {
+         vg_symerr("can't find NUL at end of DWARF2 directory table");
+         return;
+      }
       data ++;
 
       /* Read the contents of the File Name table.  */
@@ -1144,6 +1154,10 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
        }
 
       /* Skip the NUL at the end of the table.  */
+      if (*data != 0) {
+         vg_symerr("can't find NUL at end of DWARF2 file name table");
+         return;
+      }
       data ++;
 
       /* Now display the statements.  */
@@ -1190,6 +1204,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
                               si->offset + state_machine_regs.address, 
                               si->offset + (state_machine_regs.address + 1),
                               state_machine_regs.line , 0);
+             state_machine_regs.basic_block = 0; /* JRS added */
              break;
 
            case DW_LNS_advance_pc:

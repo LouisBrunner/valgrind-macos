@@ -251,17 +251,22 @@ implement.
       <blockquote>
       Debugging via Run-Time Type Checking<br>
       Alexey Loginov, Suan Hsi Yong, Susan Horwitz and Thomas Reps<br>
-      Proceedings of Proceedings of Fundamental Approaches to Software 
-      Engineering<br>
+      Proceedings of Fundamental Approaches to Software Engineering<br>
       April 2001.
       </blockquote>
 
-      This approach can find quite a range of bugs in C and C++ programs.<p>
+      Similar is the tool described in this paper:
 
-      This could be implemented quite nicely as a Valgrind skin.  One
-      complication is that the described tool works directly on C code, and
-      Valgrind skins work on UCode, but the approach can hopefully still be
-      used with only minor modifications.<p>
+      <blockquote>
+      Run-Time Type Checking for Binary Programs<br>
+      Michael Burrows, Stephen N. Freund, Janet L. Wiener<br>
+      Proceedings of the 12th International Conference on Compiler Construction
+      (CC 2003)<br>
+      April 2003.
+      </blockquote>
+
+      These approach can find quite a range of bugs, particularly in C and C++
+      programs, and could be implemented quite nicely as a Valgrind skin.<p>
 
       Ways to speed up this run-time type checking are described in this paper:
 
@@ -483,7 +488,8 @@ found in <code>include/vg_skin.h</code>.<p>
 
 <code>SK_(instrument)()</code> is the interesting one.  It allows you to
 instrument <i>UCode</i>, which is Valgrind's RISC-like intermediate language.
-UCode is described in the <a href="techdocs.html">technical docs</a>.
+UCode is described in the <a href="mc_techdocs.html">technical docs</a> for
+the Memcheck skin.
 
 The easiest way to instrument UCode is to insert calls to C functions when
 interesting things happen.  See the skin ``lackey''
@@ -505,8 +511,8 @@ information collected.  Any log files should be written out at this point.
 <a name="otherimportantinfo"></a>
 <h3>2.10&nbsp; Other important information</h3>
 
-Please note that the core/skin split infrastructure is all very new, and not
-very well documented.  Here are some important points, but there are
+Please note that the core/skin split infrastructure is quite complex and
+not brilliantly documented.  Here are some important points, but there are
 undoubtedly many others that I should note but haven't thought of.<p>
 
 The file <code>include/vg_skin.h</code> contains all the types,
@@ -529,8 +535,8 @@ best documentation of all, for the moment.<p>
 
 Note that the <code>VG_</code> and <code>SK_</code> macros are used heavily.
 These just prepend longer strings in front of names to avoid potential
-namespace clashes.  We strongly recommend using the <code>SK_</code> macro
-for any global functions and variables in your skin.<p>
+namespace clashes.  We strongly recommend using the <code>SK_</code> macro for
+any global functions and variables in your skin, or writing a similar macro.<p>
 
 <a name="wordsofadvice"></a>
 <h3>2.11&nbsp; Words of Advice</h3>
@@ -603,6 +609,10 @@ add suppressions to the suppression files.  The relevant files are
 <code>valgrind/*.supp</code>;  the final suppression file is aggregated from
 these files by combining the relevant <code>.supp</code> files depending on the
 versions of linux, X and glibc on a system.
+<p>
+Suppression types have the form <code>skin_name:suppression_name</code>.  The
+<code>skin_name</code> here is the name you specify for the skin during
+initialisation with <code>VG_(details_name)()</code>.
 
 <a name="documentation"></a>
 <h3>3.2&nbsp; Documentation</h3>
@@ -625,15 +635,9 @@ name again):
 
   <li>Write <code>foobar/docs/Makefile.am</code>.  Use
       <code>memcheck/docs/Makefile.am</code> as an example.
-  </li>
-
-  <li>Write the documentation;  the top-level file should be called
-      <code>foobar/docs/index.html</code>.
   </li><p>
 
-  <li>(optional) Add a link in the main documentation index
-      <code>docs/index.html</code> to
-      <code>foobar/docs/index.html</code>
+  <li>Write the documentation, putting it in <code>foobar/docs/</code>.
   </li><p>
 </ol>
 
@@ -728,18 +732,17 @@ structs in the interface.
 <a name="finalwords"></a>
 <h2>4&nbsp; Final Words</h2>
 
-This whole core/skin business is very new and experimental, and under active
-development.<p>
+This whole core/skin business is still experimental, and under active
+development, although it's slowly maturing.<p>
 
-The first consequence of this is that the core/skin interface is quite
-immature.  It will almost certainly change in the future;  we have no intention
-of freezing it and then regretting the inevitable stupidities.  Hopefully most
-of the future changes will be to add new features, hooks, functions, etc,
-rather than to change old ones, which should cause a minimum of trouble for
-existing skins, and we've put some effort into future-proofing the interface
-to avoid binary incompatibility.  But we can't guarantee anything.  The
-versioning system should catch any incompatibilities.  Just something to be
-aware of.<p>
+The first consequence of this is that the core/skin interface will continue
+to change in the future;  we have no intention of freezing it and then
+regretting the inevitable stupidities.  Hopefully most of the future changes
+will be to add new features, hooks, functions, etc, rather than to change old
+ones, which should cause a minimum of trouble for existing skins, and we've put
+some effort into future-proofing the interface to avoid binary incompatibility.
+But we can't guarantee anything.  The versioning system should catch any
+incompatibilities.  Just something to be aware of.<p>
 
 The second consequence of this is that we'd love to hear your feedback about
 it:

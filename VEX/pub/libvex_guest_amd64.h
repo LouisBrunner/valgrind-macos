@@ -37,6 +37,8 @@
 #define __LIBVEX_PUB_GUEST_AMD64_H
 
 #include "libvex_basictypes.h"
+#include "libvex_emwarn.h"
+
 
 /*---------------------------------------------------------------*/
 /*--- Vex's representation of the AMD64 CPU state.            ---*/

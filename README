@@ -85,7 +85,7 @@ To install from a tar.bz2 distribution:
   5. Do "make install", possibly as root if the destination permissions
      require that.
 
-  6. See if it works.  Try "valgrind --tool-memcheck ls -l".  Either
+  6. See if it works.  Try "valgrind --tool=memcheck ls -l".  Either
      this works, or it bombs out with some complaint.  In that case,
      please let us know (see valgrind.kde.org/bugs.html).
 

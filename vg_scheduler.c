@@ -2672,7 +2672,8 @@ void do_pthread_key_create ( ThreadId tid,
                  " increase and recompile");
    }
 
-   vg_thread_keys[i].inuse = True;
+   vg_thread_keys[i].inuse      = True;
+   vg_thread_keys[i].destructor = destructor;
 
    /* TODO: check key for addressibility */
    *key = i;
@@ -2758,6 +2759,33 @@ void do_pthread_setspecific ( ThreadId tid,
    }
 
    VG_(threads)[tid].specifics[key] = pointer;
+   SET_EDX(tid, 0);
+}
+
+
+/* Helper for calling destructors at thread exit.  If key is valid,
+   copy the thread's specific value into cu->arg and put the *key*'s
+   destructor fn address in cu->fn.  Then return 0 to the caller.
+   Otherwise return non-zero to the caller. */
+static
+void do__get_key_destr_and_spec ( ThreadId tid, 
+                                  pthread_key_t key,
+                                  CleanupEntry* cu )
+{
+   Char msg_buf[100];
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, 
+         "get_key_destr_and_arg (key = %d)", key );
+      print_pthread_event(tid, msg_buf);
+   }
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(key >= 0 && key < VG_N_THREAD_KEYS);
+   if (!vg_thread_keys[key].inuse) {
+      SET_EDX(tid, -1);
+      return;
+   }
+   cu->fn = vg_thread_keys[key].destructor;
+   cu->arg = VG_(threads)[tid].specifics[key];
    SET_EDX(tid, 0);
 }
 
@@ -2969,6 +2997,12 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__APPLY_IN_NEW_THREAD:
          do__apply_in_new_thread ( tid, (void*(*)(void*))arg[1], 
                                         (void*)arg[2] );
+         break;
+
+      case VG_USERREQ__GET_KEY_D_AND_S:
+         do__get_key_destr_and_spec ( tid, 
+                                      (pthread_key_t)arg[1],
+                                      (CleanupEntry*)arg[2] );
          break;
 
       case VG_USERREQ__MAKE_NOACCESS:

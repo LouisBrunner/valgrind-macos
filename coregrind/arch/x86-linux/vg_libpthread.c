@@ -279,8 +279,10 @@ static
 __attribute__((noreturn))
 void thread_exit_wrapper ( void* ret_val )
 {
-   int          detached, res;
-   CleanupEntry cu;
+   int           detached, res;
+   CleanupEntry  cu;
+   pthread_key_t key;
+
    /* Run this thread's cleanup handlers. */
    while (1) {
       VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
@@ -292,7 +294,21 @@ void thread_exit_wrapper ( void* ret_val )
       cu.fn ( cu.arg );
    }
 
-   /* Run this thread's key finalizers. */
+   /* Run this thread's key finalizers.  Really this should be run
+      PTHREAD_DESTRUCTOR_ITERATIONS times. */
+   for (key = 0; key < VG_N_THREAD_KEYS; key++) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
+                              VG_USERREQ__GET_KEY_D_AND_S,
+                              key, &cu, 0, 0 );
+      if (res == 0) {
+         /* valid key */
+         if (cu.fn && cu.arg)
+            cu.fn /* destructor for key */ 
+                  ( cu.arg /* specific for key for this thread */ );
+         continue;
+      }
+      assert(res == -1);
+   }
 
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,

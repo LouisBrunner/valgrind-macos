@@ -476,6 +476,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 #define VG_USERREQ__CLEANUP_PUSH            0x3020
 #define VG_USERREQ__CLEANUP_POP             0x3021
+#define VG_USERREQ__GET_KEY_D_AND_S         0x3022
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101

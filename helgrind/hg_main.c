@@ -2547,7 +2547,8 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
       for(i = 0; i < heldset->setsize; i++) {
 	 const Mutex *lsmx = heldset->mutex[i];
 
-	 if (!ismember(lsmx->lockdep, extra->mutex))
+	 /* needs to be a recursive search+display */
+	 if (0 && !ismember(lsmx->lockdep, extra->mutex))
 	    continue;
       
 	 VG_(message)(Vg_UserMsg, "  %p%(y last locked at", 

@@ -1136,39 +1136,6 @@ extern Bool   VG_(is_chained_jumpsite)    ( Addr jumpsite );
    Exports of vg_to_ucode.c
    ------------------------------------------------------------------ */
 
-#define VG_X86_FEAT_FPU		(0*32 + 0)
-#define VG_X86_FEAT_VME		(0*32 + 1)
-#define VG_X86_FEAT_DE		(0*32 + 2)
-#define VG_X86_FEAT_PSE		(0*32 + 3)
-#define VG_X86_FEAT_TSC		(0*32 + 4)
-#define VG_X86_FEAT_MSR		(0*32 + 5)
-#define VG_X86_FEAT_PAE		(0*32 + 6)
-#define VG_X86_FEAT_MCE		(0*32 + 7)
-#define VG_X86_FEAT_CX8		(0*32 + 8)
-#define VG_X86_FEAT_APIC	(0*32 + 9)
-#define VG_X86_FEAT_SEP		(0*32 + 11)
-#define VG_X86_FEAT_MTRR	(0*32 + 12)
-#define VG_X86_FEAT_PGE		(0*32 + 13)
-#define VG_X86_FEAT_MCA		(0*32 + 14)
-#define VG_X86_FEAT_CMOV	(0*32 + 15)
-#define VG_X86_FEAT_PAT		(0*32 + 16)
-#define VG_X86_FEAT_PSE36	(0*32 + 17)
-#define VG_X86_FEAT_CLFSH	(0*32 + 19)
-#define VG_X86_FEAT_DS		(0*32 + 21)
-#define VG_X86_FEAT_ACPI	(0*32 + 22)
-#define VG_X86_FEAT_MMX		(0*32 + 23)
-#define VG_X86_FEAT_FXSR	(0*32 + 24)
-#define VG_X86_FEAT_SSE		(0*32 + 25)
-#define VG_X86_FEAT_SSE2	(0*32 + 26)
-#define VG_X86_FEAT_SS		(0*32 + 27)
-#define VG_X86_FEAT_HT		(0*32 + 28)
-#define VG_X86_FEAT_TM		(0*32 + 29)
-#define VG_X86_FEAT_PBE		(0*32 + 31)
-
-#define VG_X86_FEAT_EST		(1*32 + 7)
-#define VG_X86_FEAT_TM2		(1*32 + 8)
-#define VG_X86_FEAT_CNXTID	(1*32 + 10)
-
 Bool VG_(cpu_has_feature)(UInt feat);
 
 extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr eip0 );

@@ -94,6 +94,53 @@
 /* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 
+/* CPU features */
+#define VG_X86_FEAT_FPU		(0*32 + 0)
+#define VG_X86_FEAT_VME		(0*32 + 1)
+#define VG_X86_FEAT_DE		(0*32 + 2)
+#define VG_X86_FEAT_PSE		(0*32 + 3)
+#define VG_X86_FEAT_TSC		(0*32 + 4)
+#define VG_X86_FEAT_MSR		(0*32 + 5)
+#define VG_X86_FEAT_PAE		(0*32 + 6)
+#define VG_X86_FEAT_MCE		(0*32 + 7)
+#define VG_X86_FEAT_CX8		(0*32 + 8)
+#define VG_X86_FEAT_APIC	(0*32 + 9)
+#define VG_X86_FEAT_SEP		(0*32 + 11)
+#define VG_X86_FEAT_MTRR	(0*32 + 12)
+#define VG_X86_FEAT_PGE		(0*32 + 13)
+#define VG_X86_FEAT_MCA		(0*32 + 14)
+#define VG_X86_FEAT_CMOV	(0*32 + 15)
+#define VG_X86_FEAT_PAT		(0*32 + 16)
+#define VG_X86_FEAT_PSE36	(0*32 + 17)
+#define VG_X86_FEAT_CLFSH	(0*32 + 19)
+#define VG_X86_FEAT_DS		(0*32 + 21)
+#define VG_X86_FEAT_ACPI	(0*32 + 22)
+#define VG_X86_FEAT_MMX		(0*32 + 23)
+#define VG_X86_FEAT_FXSR	(0*32 + 24)
+#define VG_X86_FEAT_SSE		(0*32 + 25)
+#define VG_X86_FEAT_SSE2	(0*32 + 26)
+#define VG_X86_FEAT_SS		(0*32 + 27)
+#define VG_X86_FEAT_HT		(0*32 + 28)
+#define VG_X86_FEAT_TM		(0*32 + 29)
+#define VG_X86_FEAT_PBE		(0*32 + 31)
+
+#define VG_X86_FEAT_EST		(1*32 + 7)
+#define VG_X86_FEAT_TM2		(1*32 + 8)
+#define VG_X86_FEAT_CNXTID	(1*32 + 10)
+
+/* Used internally to mark whether CPUID is even implemented */
+#define VG_X86_FEAT_CPUID	(2*32 + 0)
+
+/* The set of features we're willing to support for the client */
+#define VG_SUPPORTED_FEATURES			\
+	((1 << VG_X86_FEAT_FPU)  |		\
+	 (1 << VG_X86_FEAT_TSC)  |		\
+	 (1 << VG_X86_FEAT_CMOV) |		\
+	 (1 << VG_X86_FEAT_MMX)  |		\
+	 (1 << VG_X86_FEAT_FXSR) |		\
+	 (1 << VG_X86_FEAT_SSE)  |		\
+	 (1 << VG_X86_FEAT_SSE2))
+ 
 /* Various environment variables we pay attention to */
 
 /* The directory we look for all our auxillary files in */

@@ -193,7 +193,8 @@ out_done:
    For simulating the cpuid instruction, we will
    issue a "real" cpuid instruction and then mask out
    the bits of the features we do not support currently (3dnow mostly).
-
+   We also claim to not support most CPUID operations.
+	
    Dirk Mueller <mueller@kde.org>
 
    http://www.sandpile.org/ia32/cpuid.htm
@@ -213,19 +214,39 @@ VG_(helper_CPUID):
 	pushl	%edx
 	movl	32(%esp), %eax
 
-        cmpl	$0x80000001, %eax
-        je	cpuid_no3dnow
+	/* eax==0 - max valid request+processor vendor */
+	cmpl	$0, %eax
+	jne	1f
 
-	cpuid
-	jmp	cpuid__99
+	movl	$1, %eax	/* only support request 1 */
+	movl	valgrind_brand+0, %ebx
+	movl	valgrind_brand+4, %edx
+	movl	valgrind_brand+8, %ecx
+	jmp	99f
 
-cpuid_no3dnow:
-	cpuid
+	/* eax==1 - CPU features and model ID */
+1:	cmpl	$1, %eax
+	jne	2f
+
+	cpuid	/* get host CPU's capabilities */
+
+	movl	$0111, %eax
+	movl	$0, %ebx			/* clear APIC id, CLFLUSH size, Brand ID */
+	movl	$0, %ecx			/* clear extended feature bits */
+	andl	$VG_SUPPORTED_FEATURES, %edx	/* mask off feature bits we don't support */
+	jmp	99f
+
+	/* eax=0x80000000 - extended cpuid functions */
+2:	cmpl	$0x80000000, %eax
+	jne	99f
+
+	/* leave eax==0x80000000 - we don't support any other extended operations */
+	movl	valgrind_brand+0, %ebx	/* AMD load the brand string again - */
+	movl	valgrind_brand+4, %edx	/* Intel leaves them "reserved" */
+	movl	valgrind_brand+8, %ecx
 	
-	andl	$0x3fffffff, %edx
-
-cpuid__99:
-	movl	%edx, 20(%esp)
+	
+99:	movl	%edx, 20(%esp)
 	movl	%ecx, 24(%esp)
 	movl	%ebx, 28(%esp)
 	movl	%eax, 32(%esp)
@@ -235,7 +256,10 @@ cpuid__99:
 	popl	%ebx
 	popl	%eax
 	ret
-
+.data
+valgrind_brand:
+	.ascii "ValgrindVCPU"
+.text
 
 /* Fetch the FPU status register.
    On entry:

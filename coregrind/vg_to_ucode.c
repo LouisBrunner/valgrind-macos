@@ -45,7 +45,7 @@
 /*--- for now.                                             ---*/
 /*------------------------------------------------------------*/
 
-#define VG_N_FEATURE_WORDS	2
+#define VG_N_FEATURE_WORDS	3
 
 static Int cpuid_level = -2;	/* -2 -> not initialized */
 static UInt cpu_features[VG_N_FEATURE_WORDS];
@@ -107,6 +107,8 @@ static void get_cpu_features(void)
       cpuid_level = -1;
       return;
    }
+
+   cpu_features[2] |= (1 << (VG_X86_FEAT_CPUID%32));
 
    cpuid_level = cpuid_eax(0);
 
@@ -6503,6 +6505,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0xA2: /* CPUID */
+	 if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
+	    goto decode_failure;
+
          t1 = newTemp(cb);
          t2 = newTemp(cb);
          t3 = newTemp(cb);

@@ -1582,7 +1582,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             UInt d = getUDisp32(delta);
             DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
             *len = 6;
-            vpanic("amode 8");
+            vpanic("disAMode(x86):untest amode: 8");
             return disAMode_copy2tmp(
                    handleSegOverride(sorb, mkU32(d)));
          }

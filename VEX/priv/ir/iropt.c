@@ -24,6 +24,9 @@
 #define UNROLL_TARGET 120
 //#define UNROLL_TARGET 0
 
+/* Set to 1 to get details of loop unrolling. */
+#define UNROLL_VERBOSE 0
+
 
 /* Implementation notes, 12 Oct 04.
    
@@ -384,6 +387,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
          case Iop_16Uto32:
             e2 = IRExpr_Const(IRConst_U32(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
+            break;
+         case Iop_32to16:
+            e2 = IRExpr_Const(IRConst_U16(
+                    0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
             break;
          case Iop_32to8:
             e2 = IRExpr_Const(IRConst_U8(
@@ -2733,23 +2740,28 @@ static Int calc_unroll_factor( IRBB* bb )
         n_stmts++;
 
    if (n_stmts <= UNROLL_TARGET/8) {
-      vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
-                 n_stmts, 8* n_stmts);
+      if (UNROLL_VERBOSE)
+         vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 8* n_stmts);
       return 8;
    }
    if (n_stmts <= UNROLL_TARGET/4) {
-      vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
-                 n_stmts, 4* n_stmts);
+      if (UNROLL_VERBOSE)
+         vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 4* n_stmts);
       return 4;
    }
 
    if (n_stmts <= UNROLL_TARGET/2) {
-      vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
-                 n_stmts, 2* n_stmts);
+      if (UNROLL_VERBOSE)
+         vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
+                    n_stmts, 2* n_stmts);
       return 2;
    }
 
-   vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
+   if (UNROLL_VERBOSE)
+      vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
+
    return 1;
 }
 

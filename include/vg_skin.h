@@ -534,6 +534,9 @@ typedef
       FPU_R, FPU_W,  /* Reads/writes memory  */
 
       /* ------------ MMX ops ------------ */
+      /* In this and the SSE encoding, bytes at higher addresses are
+	 held in bits [7:0] in these 16-bit words.  I guess this means
+	 it is a big-endian encoding. */
 
       /* 1 byte, no memrefs, no iregdefs, copy exactly to the
 	 output.  Held in val1[7:0]. */
@@ -566,13 +569,96 @@ typedef
       MMX2_RegRd,
       MMX2_RegWr,
 
+      /* ------------ SSE/SSE2 ops ------------ */
+      /* In the following:
+
+         a digit N indicates the next N bytes are to be copied exactly to the
+         output.
+
+         'a' indicates a mod-xmmreg-rm byte, where the mod-rm part is
+         to be replaced at codegen time to a Temp/RealReg holding the
+         address.
+
+         'g' indicates a byte of the form '11 xmmreg ireg', where ireg
+         is written, and is to be replaced at codegen time by a
+         reference to the relevant RealReg.
+
+         'h' indicates a byte of the form '11 ireg xmmreg', where ireg
+         is read, and is to be replaced at codegen time by a reference
+         to the relevant RealReg.  */
+
+      /* 3 bytes, no memrefs, no iregdefs, copy exactly to the
+         output.  Held in val1[15:0] and val2[7:0]. */
+      SSE3,
+
+      /* 3 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:bbbbbbbb:mod mmxreg r/m.
+         Held in val1[15:0] and val2[7:0], and mod and rm are to be
+         replaced at codegen time by a reference to the Temp/RealReg
+         holding the address.  Arg3 holds this Temp/Real Reg.
+         Transfer is always at size 16.  */
+      SSE2a_MemRd,
+      SSE2a_MemWr,
+
+      /* 4 bytes, no memrefs, no iregdefs, copy exactly to the
+         output.  Held in val1[15:0] and val2[15:0]. */
+      SSE4,
+
+      /* 4 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:mod mmxreg r/m.
+         Held in val1[15:0] and val2[15:0], and mod and rm are to be
+         replaced at codegen time by a reference to the Temp/RealReg
+         holding the address.  Arg3 holds this Temp/Real Reg.
+         Transfer is always at size 16.  */
+      SSE3a_MemRd,
+      SSE3a_MemWr,
+
+      /* 4 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
+         Held in val1[15:0] and val2[15:0], and mod and rm are to be
+         replaced at codegen time by a reference to the Temp/RealReg
+         holding the address.  Arg3 holds this Temp/Real Reg.
+         Transfer is always at size 16.  */
+      SSE2a1_MemRd,
+      SSE2a1_MemWr,
+
+      /* 4 bytes, writes an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 xmmreg ireg.
+         Held in val1[15:0] and val2[15:0], and ireg is to be replaced
+         at codegen time by a reference to the relevant RealReg.
+         Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
+      */
+      SSE3g_RegWr,
+
+      /* 4 bytes, reads an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg xmmreg.
+         Held in val1[15:0] and val2[15:0], and ireg is to be replaced
+         at codegen time by a reference to the relevant RealReg.
+         Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
+      */
+      SSE3h_RegRd,
+
+      /* 5 bytes, no memrefs, no iregdefs, copy exactly to the
+         output.  Held in val1[15:0], val2[15:0] and val3[7:0]. */
+      SSE5,
+ 
+      /* 5 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
+         Held in val1[15:0], val2[15:0], lit32[7:0].  
+         mod and rm are to be replaced at codegen time by a reference 
+         to the Temp/RealReg holding the address.  Arg3 holds this 
+         Temp/Real Reg.  Transfer is always at size 16.  */
+      SSE3a1_MemRd,
+      SSE3a1_MemWr,
+
       /* ------------------------ */
 
       /* Not strictly needed, but improve address calculation translations. */
       LEA1,  /* reg2 := const + reg1 */
       LEA2,  /* reg3 := const + reg1 + reg2 * 1,2,4 or 8 */
 
-      /* Hack for x86 REP insns.  Jump to literal if TempReg/RealReg is zero. */
+      /* Hack for x86 REP insns.  Jump to literal if TempReg/RealReg
+         is zero. */
       JIFZ,
 
       /* Advance the simulated %eip by some small (< 128) number. */

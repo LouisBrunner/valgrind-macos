@@ -678,8 +678,6 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       EXPECT(';', "FP-TYPE");
       bytes = atoi(&p, 0);
       EXPECT(';', "FP-TYPE bytes");
-      atoi(&p, 0);
-      EXPECT(';', "FP-TYPE extra");
       
       type = VG_(st_mkfloat)(def, bytes);
       break;

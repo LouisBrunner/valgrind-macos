@@ -248,14 +248,30 @@ int get_pt_trace_level ( void )
 }
 
 /* Don't do anything if we're not under Valgrind */
+/* Optimisation (?) 28 Nov 04: assume that once we establish
+   yes/no, the situation does not change, and so only one 
+   client request is ever needed.
+*/
 static __inline__
 void ensure_valgrind ( char* caller )
 {
-   if (!RUNNING_ON_VALGRIND) {
-      const char msg[] = "Warning: this libpthread.so should only be run with Valgrind\n";
+   /* 0: unknown   1: running on V   2: not running on V */
+   static Int status = 0; 
+
+  again:
+   /* common case */
+   if (status == 1) 
+      return;
+
+   if (status == 2) {
+      const char msg[] = "Error: this libpthread.so should "
+                         "only be run with Valgrind\n";
       VG_(do_syscall)(__NR_write, 2, msg, sizeof(msg)-1);
       VG_(do_syscall)(__NR_exit, 1);
    }
+   
+   status = (RUNNING_ON_VALGRIND) ? 1 : 2;
+   goto again;
 }
 
 /* While we're at it ... hook our own startup function into this

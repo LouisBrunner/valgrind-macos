@@ -1605,8 +1605,11 @@ void do__set_cancelpend ( ThreadId tid,
 
    VG_(threads)[cee].cancel_pend = cancelpend_hdlr;
 
-   /* interrupt a pending syscall */
-   VG_(proxy_abort_syscall)(cee);
+   /* interrupt a pending syscall if asynchronous cancellation
+      is enabled for the target thread */
+   if (VG_(threads)[cee].cancel_st && !VG_(threads)[cee].cancel_ty) {
+      VG_(proxy_abort_syscall)(cee);
+   }
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, 

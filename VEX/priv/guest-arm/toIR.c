@@ -664,9 +664,8 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    auto-sized up to the real op. */
 
 static 
-void setFlags_DEP1_DEP2 ( IROp op, IRTemp dep1, IRTemp dep2, IRType ty )
+void setFlags_DEP1_DEP2 ( IROp op, IRTemp dep1, IRTemp dep2 )
 {
-
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(op)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(dep2))) );
@@ -676,7 +675,7 @@ void setFlags_DEP1_DEP2 ( IROp op, IRTemp dep1, IRTemp dep2, IRType ty )
 /* Set the OP and DEP1 fields only, and write zero to DEP2. */
 
 static 
-void setFlags_DEP1 ( IROp op, IRTemp dep1, IRType ty )
+void setFlags_DEP1 ( IROp op, IRTemp dep1 )
 {
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(op)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
@@ -787,55 +786,84 @@ ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
 
 
 
-// JRS: it's probably easiest to change the return type of this
-// to IRExpr*  since IRTemp is a bit restrictive.
-// then you can return arbitrary expression trees:
-//     mkexpr(Rm)
-// or
-//     binop(Iop_Shl32, mkexpr(Rm), mkU8(Rs))
 // note, i wasn't clear which Rd/Rm/Rs are supposed to be
 // IRTemps and which are Ints.
-static
-IRTemp dis_shift_lsl ( UInt theInstr )
-{
-    IRTemp tmp = newTemp(Ity_I32);
-    UChar set_flags = (theInstr >> 20) & 1;
-    UChar is_imm_shft = (theInstr >> 4) & 1;
-    IRTemp Rm = newTemp(Ity_I32);
-    IRTemp Rs = newTemp(Ity_I32);
-    UInt Rs_0;
-    UInt imm;
 
-    assign(Rm, getIReg(theInstr & 0xF));
-    
-    if (is_imm_shft) {  // Immediate shift
-	imm = (theInstr >> 7) & 0x1F;
-	if ( imm == 0 ) {  // op = Rm, carry = C Flag;
-	    return Rm;
-	}
-	else {             // op = Rm << imm, carry = Rm[32 - imm];
-	    return Rm;
-	}
-    }
-    else {  // Register Shift
-	assign(Rs, getIReg((theInstr >> 8) & 0xF));
-	Rs_0 = Rs & 0xFF;   // Rs[7:0]
+// ARMG_CC_OP_LSL
+static
+IRExpr* dis_shift_lsl ( UInt theInstr )
+{
+    UChar set_flags = (theInstr >> 20) & 1;    // instr[20]
+    UChar is_reg = (theInstr >> 4) & 1;   // instr[4]
+    UChar Rm = theInstr & 0xF;   
+    IRTemp Rm_tmp = newTemp(Ity_I32);
+    IRTemp Rs_tmp = newTemp(Ity_I32);
+    IRTemp imm_tmp = newTemp(Ity_I32);
+    IRTemp res = newTemp(Ity_I32);
+    UInt imm;
+    UInt Rs_0;
+
+    assign( Rm_tmp, getIReg(Rm) );
+
+
+    if (is_reg) {  // Register Shift
+	vex_printf("dis_shift_lsl: reg\n");
+	assign( Rs_tmp, getIReg((theInstr >> 8) & 0xF) );  // instr[11:8]
+
+	Rs_0 = Rs_tmp & 0xFF;     // Rs[7:0]
 	if ( Rs_0 == 0 ) {        // op = Rm, carry = C Flag;
-	    return Rm;
+	    vex_printf("dis_shift_lsl: 1\n");
+	    // No LSL: cf not changed -> don't track
+	    return getIReg(Rm);
 	}
 	else if ( Rs_0 < 32 ) {   // op = Rm LSL Rs, carry = Rm[32 - Rs]
-
-	    // CAB: How to express LSL?
-	  // jrs: see comment at start of fn
-	    return 0;
+	    vex_printf("dis_shift_lsl: 2\n");
+	    assign( res, binop(Iop_Shl32, getIReg(Rm), mkexpr(Rs_tmp)) );
+	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
+	    return mkexpr(res);
 	}
 	else if ( Rs_0 == 32 ) {  // op = 0, carry = Rm[0];
-	    return 0;
+	    vex_printf("dis_shift_lsl: 3\n");
+	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
+	    return mkexpr(0);
 	}
 	else {                    // op = 0, carry = 0;
-	    return 0;
+	    vex_printf("dis_shift_lsl: 4\n");
+	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, Rs_tmp );
+	    return mkexpr(0);
 	}
     }
+    else {  // Immediate shift
+	vex_printf("dis_shift_lsl: imm\n");
+	imm = (theInstr >> 7) & 0x1F;     // instr[11:7]
+
+	assign( imm_tmp, mkU32(imm) );
+
+	if ( imm == 0 ) {         // op = Rm, carry = C Flag;
+	    vex_printf("dis_shift_lsl: 1\n");
+	    // No LSL: cf not changed -> don't track
+	    return getIReg(Rm);
+	}
+	else {                    // op = Rm LSL imm, carry = Rm[32 - imm];
+	    vex_printf("dis_shift_lsl: 2\n");
+	    assign( res, binop(Iop_Shl32, getIReg(Rm), mkU8(imm_tmp)) );
+	    setFlags_DEP1_DEP2( ARMG_CC_OP_LSL, Rm_tmp, imm_tmp );
+	    return mkexpr(res);
+	}
+    }
+
+
+
+
+/*
+  Q. How does the flag association work?
+
+  Q. Even when not actually performing an LSL, flags still get changed, so need to register an LSL just so we can associate the flags with that instruction... ???
+*/
+
+
+    // carry dep1 = Rs, dep2 = Rm
+
 
 //	    setFlags_DEP1_DEP2( op, dep1, dep2 )
 //   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
@@ -850,9 +878,11 @@ IRTemp dis_shift_lsl ( UInt theInstr )
 
 /* Returns shifted result to a temp */
 static
-IRTemp dis_shift ( UInt theInstr )
+IRExpr* dis_shift ( UInt theInstr )
 {
     UChar shift_op = (theInstr >> 5) & 0xF;  // second byte
+
+    vex_printf("dis_shift\n");
 
     // CAB TODO: Check what can do with R15... strict limits apply (ARM A5-9)
    
@@ -877,7 +907,7 @@ IRTemp dis_shift ( UInt theInstr )
     default:
 	// Error: Any other value shouldn't be here.
 	vpanic("dis_shift(ARM)");
-	return 0; 
+	return mkexpr(0); 
     }
 }
 
@@ -921,9 +951,9 @@ void dis_mov_reg ( UInt theInstr )
     UChar reg_shft = (theInstr >> 4) & 1;
     IRTemp t1;
 
-//    vex_printf("dis_move_reg\n");
+    vex_printf("dis_move_reg\n");
     
-    putIReg(Rd, mkexpr(dis_shift( theInstr )));
+    putIReg(Rd, dis_shift( theInstr ));
 
     return;
 }
@@ -958,18 +988,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    IRTemp    addr, t1, t2;
    Int       alen;
    UChar     opc, modrm, abyte;
-   /* jrs: careful -- we can get from here to use of 'opc'
-      at 'decode_failure:' without defining opc at all :-( */
    ARMCondcode cond;
    UInt      d32;
    UChar     dis_buf[50];
    Int       am_sz, d_sz;
    DisResult whatNext = Dis_Continue;
    UInt      theInstr;
-
-   /* Holds pc at the start of the insn, so that we can print
-      consistent error messages for unimplemented insns. */
-   UInt delta_start = delta;
 
    /* At least this is simple on ARM: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
@@ -1015,11 +1039,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          DIP("?CAB? = client_request ( ?CAB? )\n");
 
 	 *size = 24;
-         delta += 24;  // CAB: this right?  we're adding 24 UInts, rather than UChars...
-	 // JRS: yes -- delta is an index into an array of UChar.  It's not a pointer.
 
-	 // CAB: This right?
-	 // JRS; yes I think so.
 	 irbb->next     = mkU32(guest_pc_bbstart+delta);
 	 irbb->jumpkind = Ijk_ClientReq;
 
@@ -1035,6 +1055,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
      Deal with condition first
     */
    cond = (theInstr >> 28) & 0xF;    /* opcode: bits 31:28 */
+   vex_printf("\ndisInstr(arm): cond: 0x%x\n", cond );
+
    switch (cond) {
    case 0xF:   // => Illegal instruction prior to v5 (see ARM ARM A3-5)
        vex_printf("disInstr(arm): illegal condition\n");
@@ -1075,6 +1097,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* As per ARM ARM v2 page A3-2, primary opcode appears to be in
       bits 27:21 of the instruction (roughly).  Hence ... */
    opc = (theInstr >> 21) & 0x7F;    /* opcode: bits 27:21 */
+   vex_printf("disInstr(arm): opcode: 0x%x\n", opc );
 
    switch (opc) {
 
@@ -1135,7 +1158,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x0D:            // MOV (reg)
        vex_printf("OPCODE: MOV(reg)\n");
        dis_mov_reg(theInstr);
-       delta++;
        break;
 
 
@@ -1195,7 +1217,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    decode_failure:
    /* All decode failures end up here. */
    vex_printf("disInstr(arm): unhandled instruction: "
-              "0x%x (opcode: 0x%x)\n", theInstr, opc );
+              "0x%x\n", theInstr);
    vpanic("armToIR: unimplemented insn");
 
    } /* switch (opc) for the main (primary) opcode switch. */

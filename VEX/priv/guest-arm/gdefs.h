@@ -156,6 +156,10 @@ enum {
 
     ARMG_CC_OP_MOV,
 
+    ARMG_CC_OP_LSL,
+    ARMG_CC_OP_LSR,
+    ARMG_CC_OP_ASR,
+    ARMG_CC_OP_ROR,
 
 
     ARMG_CC_OP_NUMBER

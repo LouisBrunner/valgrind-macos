@@ -213,9 +213,10 @@ void VG_(pp_sched_status) ( void )
       switch (VG_(threads)[i].status) {
          case VgTs_Runnable:   VG_(printf)("Runnable"); break;
          case VgTs_WaitFD:     VG_(printf)("WaitFD"); break;
-         case VgTs_WaitJoiner: VG_(printf)("WaitJoiner(%d)", 
-                                           VG_(threads)[i].joiner); break;
-         case VgTs_WaitJoinee: VG_(printf)("WaitJoinee"); break;
+         case VgTs_WaitJoinee: VG_(printf)("WaitJoinee(%d)", 
+                                           VG_(threads)[i].joiner_jee_tid);
+                               break;
+         case VgTs_WaitJoiner: VG_(printf)("WaitJoiner"); break;
          case VgTs_Sleeping:   VG_(printf)("Sleeping"); break;
          case VgTs_WaitMX:     VG_(printf)("WaitMX"); break;
          case VgTs_WaitCV:     VG_(printf)("WaitCV"); break;
@@ -506,6 +507,30 @@ void increment_epoch ( void )
 }
 
 
+static 
+void mostly_clear_thread_record ( ThreadId tid )
+{
+   Int j;
+   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   VG_(threads)[tid].tid                  = tid;
+   VG_(threads)[tid].status               = VgTs_Empty;
+   VG_(threads)[tid].associated_mx        = NULL;
+   VG_(threads)[tid].associated_cv        = NULL;
+   VG_(threads)[tid].awaken_at            = 0;
+   VG_(threads)[tid].joinee_retval        = NULL;
+   VG_(threads)[tid].joiner_thread_return = NULL;
+   VG_(threads)[tid].joiner_jee_tid       = VG_INVALID_THREADID;
+   VG_(threads)[tid].cancel_st   = True; /* PTHREAD_CANCEL_ENABLE */
+   VG_(threads)[tid].cancel_ty   = True; /* PTHREAD_CANCEL_DEFERRED */
+   VG_(threads)[tid].cancel_pend = NULL; /* not pending */
+   VG_(threads)[tid].detached             = False;
+   VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
+   VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
+   for (j = 0; j < VG_N_THREAD_KEYS; j++)
+      VG_(threads)[tid].specifics[j] = NULL;
+}
+
+
 /* Initialise the scheduler.  Create a single "main" thread ready to
    run, with special ThreadId of one.  This is called at startup; the
    caller takes care to park the client's state is parked in
@@ -531,12 +556,10 @@ void VG_(scheduler_init) ( void )
    }
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
-      VG_(threads)[i].status     = VgTs_Empty;
-      VG_(threads)[i].stack_size = 0;
-      VG_(threads)[i].stack_base = (Addr)NULL;
-      VG_(threads)[i].tid        = i;
-      VG_(ksigemptyset)(&VG_(threads)[i].sig_mask);
-      VG_(ksigemptyset)(&VG_(threads)[i].sigs_waited_for);
+      mostly_clear_thread_record(i);
+      VG_(threads)[i].stack_size           = 0;
+      VG_(threads)[i].stack_base           = (Addr)NULL;
+      VG_(threads)[i].stack_highest_word   = (Addr)NULL;
    }
 
    for (i = 0; i < VG_N_WAITING_FDS; i++)
@@ -551,14 +574,7 @@ void VG_(scheduler_init) ( void )
       properties. */
    tid_main = vg_alloc_ThreadState();
    vg_assert(tid_main == 1); 
-
-   VG_(threads)[tid_main].status        = VgTs_Runnable;
-   VG_(threads)[tid_main].joiner        = VG_INVALID_THREADID;
-   VG_(threads)[tid_main].associated_mx = NULL;
-   VG_(threads)[tid_main].associated_cv = NULL;
-   VG_(threads)[tid_main].retval        = NULL; /* not important */
-   for (i = 0; i < VG_N_THREAD_KEYS; i++)
-      VG_(threads)[tid_main].specifics[i] = NULL;
+   VG_(threads)[tid_main].status = VgTs_Runnable;
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
@@ -1544,8 +1560,37 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
 
 /* -----------------------------------------------------------
-   Thread CREATION, JOINAGE and CANCELLATION.
+   Thread CREATION, JOINAGE and CANCELLATION: HELPER FNS
    -------------------------------------------------------- */
+
+/* We've decided to action a cancellation on tid.  Make it jump to
+   thread_exit_wrapper() in vg_libpthread.c, passing PTHREAD_CANCELED
+   as the arg. */
+static
+void make_thread_jump_to_cancelhdlr ( ThreadId tid )
+{
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+   /* Push PTHREAD_CANCELED on the stack and jump to the cancellation
+      handler -- which is really thread_exit_wrapper() in
+      vg_libpthread.c. */
+   vg_assert(VG_(threads)[tid].cancel_pend != NULL);
+   VG_(threads)[tid].m_esp -= 4;
+   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
+   VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
+   VG_(threads)[tid].status = VgTs_Runnable;
+   /* Make sure we aren't cancelled again whilst handling this
+      cancellation. */
+   VG_(threads)[tid].cancel_st = False;
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, 
+         "jump to cancellation handler (hdlr = %p)", 
+         VG_(threads)[tid].cancel_pend);
+      print_sched_event(tid, msg_buf);
+   }
+}
+
+
 
 /* Release resources and generally clean up once a thread has finally
    disappeared. */
@@ -1567,6 +1612,61 @@ void cleanup_after_thread_exited ( ThreadId tid )
 }
 
 
+/* Look for matching pairs of threads waiting for joiners and threads
+   waiting for joinees.  For each such pair copy the return value of
+   the joinee into the joiner, let the joiner resume and discard the
+   joinee. */
+static
+void maybe_rendezvous_joiners_and_joinees ( void )
+{
+   Char     msg_buf[100];
+   void**   thread_return;
+   ThreadId jnr, jee;
+
+   for (jnr = 1; jnr < VG_N_THREADS; jnr++) {
+      if (VG_(threads)[jnr].status != VgTs_WaitJoinee)
+         continue;
+      jee = VG_(threads)[jnr].joiner_jee_tid;
+      if (jee == VG_INVALID_THREADID) 
+         continue;
+      vg_assert(VG_(is_valid_tid)(jee));
+      if (VG_(threads)[jee].status != VgTs_WaitJoiner)
+         continue;
+      /* ok!  jnr is waiting to join with jee, and jee is waiting to be
+         joined by ... well, any thread.  So let's do it! */
+
+      /* Copy return value to where joiner wants it. */
+      thread_return = VG_(threads)[jnr].joiner_thread_return;
+      if (thread_return != NULL) {
+         /* CHECK thread_return writable */
+         *thread_return = VG_(threads)[jee].joinee_retval;
+         /* Not really right, since it makes the thread's return value
+            appear to be defined even if it isn't. */
+         if (VG_(clo_instrument))
+            VGM_(make_readable)( (Addr)thread_return, sizeof(void*) );
+      }
+
+      /* Joinee is discarded */
+      VG_(threads)[jee].status = VgTs_Empty; /* bye! */
+      cleanup_after_thread_exited ( jee );
+         if (VG_(clo_trace_sched)) {
+            VG_(sprintf)(msg_buf,
+               "rendezvous with joinee %d.  %d resumes, %d exits.",
+               jee, jnr, jee );
+         print_sched_event(jnr, msg_buf);
+      }
+
+      /* joiner returns with success */
+      VG_(threads)[jnr].status = VgTs_Runnable;
+      SET_EDX(jnr, 0);
+   }
+}
+
+
+/* -----------------------------------------------------------
+   Thread CREATION, JOINAGE and CANCELLATION: REQUESTS
+   -------------------------------------------------------- */
+
 static
 void do_pthread_yield ( ThreadId tid )
 {
@@ -1582,122 +1682,117 @@ void do_pthread_yield ( ThreadId tid )
 
 
 static
-void do_pthread_cancel ( ThreadId  tid,
-                         pthread_t tid_cancellee )
+void do__testcancel ( ThreadId tid )
 {
-   Char msg_buf[100];
-
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
-
-   if (!VG_(is_valid_tid)(tid_cancellee)
-       || VG_(threads)[tid_cancellee].status == VgTs_Empty) {
-      SET_EDX(tid, ESRCH);
-      return;
-   }
-
-   /* We want make is appear that this thread has returned to
-      do_pthread_create_bogusRA with PTHREAD_CANCELED as the
-      return value.  So: simple: put PTHREAD_CANCELED into %EAX
-      and &do_pthread_create_bogusRA into %EIP and keep going! */
-   if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, "cancelled by %d", tid);
-      print_sched_event(tid_cancellee, msg_buf);
-   }
-   VG_(threads)[tid_cancellee].m_eax  = (UInt)PTHREAD_CANCELED;
-   VG_(threads)[tid_cancellee].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
-   VG_(threads)[tid_cancellee].status = VgTs_Runnable;
-
-   /* We return with success (0). */
-   SET_EDX(tid, 0);
-}
-
-
-static
-void do_pthread_exit ( ThreadId tid, void* retval )
-{
-   Char msg_buf[100];
-   /* We want make is appear that this thread has returned to
-      do_pthread_create_bogusRA with retval as the
-      return value.  So: simple: put retval into %EAX
-      and &do_pthread_create_bogusRA into %EIP and keep going! */
-   if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, "exiting with %p", retval);
-      print_sched_event(tid, msg_buf);
-   }
-   VG_(threads)[tid].m_eax  = (UInt)retval;
-   VG_(threads)[tid].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
-   VG_(threads)[tid].status = VgTs_Runnable;
-}
-
-
-/* Thread tid is exiting, by returning from the function it was
-   created with.  Or possibly due to pthread_exit or cancellation.
-   The main complication here is to resume any thread waiting to join
-   with this one. */
-static 
-void handle_pthread_return ( ThreadId tid, void* retval )
-{
-   ThreadId jnr; /* joiner, the thread calling pthread_join. */
-   UInt*    jnr_args;
-   void**   jnr_thread_return;
-   Char     msg_buf[100];
-
-   /* Mark it as not in use.  Leave the stack in place so the next
-      user of this slot doesn't reallocate it. */
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
-
-   VG_(threads)[tid].retval = retval;
-
-   if (VG_(threads)[tid].joiner == VG_INVALID_THREADID) {
-      /* No one has yet done a join on me */
-      VG_(threads)[tid].status = VgTs_WaitJoiner;
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf, 
-            "root fn returns, waiting for a call pthread_join(%d)", 
-            tid);
-         print_sched_event(tid, msg_buf);
-      }
+   if (/* is there a cancellation pending on this thread? */
+       VG_(threads)[tid].cancel_pend != NULL
+       && /* is this thread accepting cancellations? */
+          VG_(threads)[tid].cancel_st) {
+     /* Ok, let's do the cancellation. */
+     make_thread_jump_to_cancelhdlr ( tid );
    } else {
-      /* Some is waiting; make their join call return with success,
-         putting my exit code in the place specified by the caller's
-         thread_return param.  This is all very horrible, since we
-         need to consult the joiner's arg block -- pointed to by its
-         %EAX -- in order to extract the 2nd param of its pthread_join
-         call.  TODO: free properly the slot (also below). 
-      */
-      jnr = VG_(threads)[tid].joiner;
-      vg_assert(VG_(is_valid_tid)(jnr));
-      vg_assert(VG_(threads)[jnr].status == VgTs_WaitJoinee);
-      jnr_args = (UInt*)VG_(threads)[jnr].m_eax;
-      jnr_thread_return = (void**)(jnr_args[2]);
-      if (jnr_thread_return != NULL)
-         *jnr_thread_return = VG_(threads)[tid].retval;
-      SET_EDX(jnr, 0); /* success */
-      VG_(threads)[jnr].status = VgTs_Runnable;
-      VG_(threads)[tid].status = VgTs_Empty; /* bye! */
-      cleanup_after_thread_exited ( tid );
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf, 
-            "root fn returns, to find a waiting pthread_join(%d)", tid);
-         print_sched_event(tid, msg_buf);
-         VG_(sprintf)(msg_buf, 
-            "my pthread_join(%d) returned; resuming", tid);
-         print_sched_event(jnr, msg_buf);
-      }
+      /* No, we keep going. */
+      SET_EDX(tid, 0);
    }
-
-   /* Return value is irrelevant; this thread will not get
-      rescheduled. */
 }
 
 
 static
-void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
+void do__set_cancelstate ( ThreadId tid, Int state )
+{
+   Bool old_st;
+   vg_assert(VG_(is_valid_tid)(tid));
+   old_st = VG_(threads)[tid].cancel_st;
+   if (state == PTHREAD_CANCEL_ENABLE) {
+      VG_(threads)[tid].cancel_st = True;
+   } else
+   if (state == PTHREAD_CANCEL_DISABLE) {
+      VG_(threads)[tid].cancel_st = False;
+   } else {
+      VG_(panic)("do__set_cancelstate");
+   }
+   SET_EDX(tid, old_st ? PTHREAD_CANCEL_ENABLE 
+                       : PTHREAD_CANCEL_DISABLE);
+}
+
+
+static
+void do__set_canceltype ( ThreadId tid, Int type )
+{
+   Bool old_ty;
+   vg_assert(VG_(is_valid_tid)(tid));
+   old_ty = VG_(threads)[tid].cancel_ty;
+   if (type == PTHREAD_CANCEL_ASYNCHRONOUS) {
+      VG_(threads)[tid].cancel_ty = False;
+   } else
+   if (type == PTHREAD_CANCEL_DEFERRED) {
+      VG_(threads)[tid].cancel_st = True;
+   } else {
+      VG_(panic)("do__set_canceltype");
+   }
+   SET_EDX(tid, old_ty ? PTHREAD_CANCEL_DEFERRED 
+                       : PTHREAD_CANCEL_ASYNCHRONOUS);
+}
+
+
+static
+void do__set_or_get_detach ( ThreadId tid, Int what )
+{
+   vg_assert(VG_(is_valid_tid)(tid));
+   switch (what) {
+      case 2: /* get */
+         SET_EDX(tid, VG_(threads)[tid].detached ? 1 : 0);
+         return;
+      case 1: /* set detached */
+         VG_(threads)[tid].detached = True;
+         SET_EDX(tid, 0); 
+         return;
+      case 0: /* set not detached */
+         VG_(threads)[tid].detached = False;
+         SET_EDX(tid, 0);
+         return;
+      default:
+         VG_(panic)("do__set_or_get_detach");
+   }
+}
+
+
+static
+void do__set_cancelpend ( ThreadId tid, 
+                          ThreadId cee,
+			  void (*cancelpend_hdlr)(void*) )
 {
    Char msg_buf[100];
 
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   vg_assert(VG_(is_valid_tid)(cee));
+
+   VG_(threads)[cee].cancel_pend = cancelpend_hdlr;
+
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, 
+         "set cancel pending (hdlr = %p, canceller tid = %d)", 
+         cancelpend_hdlr, tid);
+      print_sched_event(cee, msg_buf);
+   }
+
+   /* Thread doing the cancelling returns with success. */
+   SET_EDX(tid, 0);
+
+   /* Perhaps we can nuke the cancellee right now? */
+   do__testcancel(cee);
+}
+
+
+static
+void do_pthread_join ( ThreadId tid, 
+                       ThreadId jee, void** thread_return )
+{
+   Char     msg_buf[100];
+   ThreadId i;
    /* jee, the joinee, is the thread specified as an arg in thread
       tid's call to pthread_join.  So tid is the join-er. */
    vg_assert(VG_(is_valid_tid)(tid));
@@ -1709,6 +1804,11 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
       return;
    }
 
+   /* Flush any completed pairs, so as to make sure what we're looking
+      at is up-to-date. */
+   maybe_rendezvous_joiners_and_joinees();
+
+   /* Is this a sane request? */
    if (jee < 0 
        || jee >= VG_N_THREADS
        || VG_(threads)[jee].status == VgTs_Empty) {
@@ -1718,63 +1818,94 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
       return;
    }
 
-   if (VG_(threads)[jee].joiner != VG_INVALID_THREADID) {
-      /* Someone already did join on this thread */
-      SET_EDX(tid, EINVAL);
-      VG_(threads)[tid].status = VgTs_Runnable;
-      return;
+   /* Is anyone else already in a join-wait for jee? */
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (i == tid) continue;
+      if (VG_(threads)[i].status == VgTs_WaitJoinee
+          && VG_(threads)[i].joiner_jee_tid == jee) {
+         /* Someone already did join on this thread */
+         SET_EDX(tid, EINVAL);
+         VG_(threads)[tid].status = VgTs_Runnable;
+         return;
+      }
    }
 
-   /* if (VG_(threads)[jee].detached) ... */
-
-   /* Perhaps the joinee has already finished?  If so return
-      immediately with its return code, and free up the slot. TODO:
-      free it properly (also above). */
-   if (VG_(threads)[jee].status == VgTs_WaitJoiner) {
-      vg_assert(VG_(threads)[jee].joiner == VG_INVALID_THREADID);
-      SET_EDX(tid, 0); /* success */
-      if (thread_return != NULL) {
-         *thread_return = VG_(threads)[jee].retval;
-	 /* Not really right, since it makes the thread's return value
-            appear to be defined even if it isn't. */
-         if (VG_(clo_instrument))
-            VGM_(make_readable)( (Addr)thread_return, sizeof(void*) );
-      }
-      VG_(threads)[tid].status = VgTs_Runnable;
-      VG_(threads)[jee].status = VgTs_Empty; /* bye! */
-      cleanup_after_thread_exited ( jee );
-      if (VG_(clo_trace_sched)) {
-	 VG_(sprintf)(msg_buf,
-		      "someone called pthread_join() on me; bye!");
-         print_sched_event(jee, msg_buf);
-	 VG_(sprintf)(msg_buf,
-            "my pthread_join(%d) returned immediately", 
-            jee );
-         print_sched_event(tid, msg_buf);
-      }
-      return;
-   }
-
-   /* Ok, so we'll have to wait on jee. */
-   VG_(threads)[jee].joiner = tid;
+   /* Mark this thread as waiting for the joinee. */
    VG_(threads)[tid].status = VgTs_WaitJoinee;
+   VG_(threads)[tid].joiner_thread_return = thread_return;
+   VG_(threads)[tid].joiner_jee_tid = jee;
+
+   /* Look for matching joiners and joinees and do the right thing. */
+   maybe_rendezvous_joiners_and_joinees();
+
+   /* Return value is irrelevant since this this thread becomes
+      non-runnable.  maybe_resume_joiner() will cause it to return the
+      right value when it resumes. */
+
    if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf,
-         "blocking on call of pthread_join(%d)", jee );
+      VG_(sprintf)(msg_buf, 
+         "wait for joinee %d (may already be ready)", jee);
       print_sched_event(tid, msg_buf);
    }
-   /* So tid's join call does not return just now. */
 }
 
 
+/* ( void* ): calling thread waits for joiner and returns the void* to
+   it.  This is one of two ways in which a thread can finally exit --
+   the other is do__quit. */
 static
-void do_pthread_create ( ThreadId parent_tid,
-                         pthread_t* thread, 
-                         pthread_attr_t* attr, 
-                         void* (*start_routine)(void *), 
-                         void* arg )
+void do__wait_joiner ( ThreadId tid, void* retval )
 {
-   Int      i;
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, 
+         "WAIT_JOINER(%p) (non-detached thread exit)", retval);
+      print_sched_event(tid, msg_buf);
+   }
+   VG_(threads)[tid].status = VgTs_WaitJoiner;
+   VG_(threads)[tid].joinee_retval = retval;
+   maybe_rendezvous_joiners_and_joinees();
+}
+
+
+/* ( no-args ): calling thread disappears from the system forever.
+   Reclaim resources. */
+static
+void do__quit ( ThreadId tid )
+{
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+   VG_(threads)[tid].status = VgTs_Empty; /* bye! */
+   cleanup_after_thread_exited ( tid );
+
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "QUIT (detached thread exit)");
+      print_sched_event(tid, msg_buf);
+   }
+   /* Return value is irrelevant; this thread will not get
+      rescheduled. */
+}
+
+
+/* Should never be entered.  If it is, will be on the simulated
+   CPU. */
+static 
+void do__apply_in_new_thread_bogusRA ( void )
+{
+   VG_(panic)("do__apply_in_new_thread_bogusRA");
+}
+
+/* (Fn, Arg): Create a new thread and run Fn applied to Arg in it.  Fn
+   MUST NOT return -- ever.  Eventually it will do either __QUIT or
+   __WAIT_JOINER.  Return the child tid to the parent. */
+static
+void do__apply_in_new_thread ( ThreadId parent_tid,
+                               void* (*fn)(void *), 
+                               void* arg )
+{
    Addr     new_stack;
    UInt     new_stk_szb;
    ThreadId tid;
@@ -1829,15 +1960,16 @@ void do_pthread_create ( ThreadId parent_tid,
    VG_(threads)[tid].m_esp -= 4;
    * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)arg;
 
-   /* push (magical) return address */
+   /* push (bogus) return address */
    VG_(threads)[tid].m_esp -= 4;
-   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)VG_(pthreadreturn_bogusRA);
+   * (UInt*)(VG_(threads)[tid].m_esp) 
+      = (UInt)&do__apply_in_new_thread_bogusRA;
 
    if (VG_(clo_instrument))
       VGM_(make_readable)( VG_(threads)[tid].m_esp, 2 * 4 );
 
    /* this is where we start */
-   VG_(threads)[tid].m_eip = (UInt)start_routine;
+   VG_(threads)[tid].m_eip = (UInt)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
@@ -1845,27 +1977,18 @@ void do_pthread_create ( ThreadId parent_tid,
       print_sched_event(tid, msg_buf);
    }
 
-   /* store the thread id in *thread. */
-   //   if (VG_(clo_instrument))
-   // ***** CHECK *thread is writable
-   *thread = (pthread_t)tid;
-   if (VG_(clo_instrument))
-      VGM_(make_readable)( (Addr)thread, sizeof(pthread_t) );
-
-   VG_(threads)[tid].associated_mx = NULL;
-   VG_(threads)[tid].associated_cv = NULL;
-   VG_(threads)[tid].joiner        = VG_INVALID_THREADID;
-   VG_(threads)[tid].status        = VgTs_Runnable;
-
-   for (i = 0; i < VG_N_THREAD_KEYS; i++)
-      VG_(threads)[tid].specifics[i] = NULL;
+   /* Create new thread with default attrs:
+      deferred cancellation, not detached 
+   */
+   mostly_clear_thread_record(tid);
+   VG_(threads)[tid].status = VgTs_Runnable;
 
    /* We inherit our parent's signal mask. */
    VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
-   VG_(ksigemptyset)(&VG_(threads)[i].sigs_waited_for);
+   VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
 
-   /* return zero */
-   SET_EDX(parent_tid, 0); /* success */
+   /* return child's tid to parent */
+   SET_EDX(parent_tid, tid); /* success */
 }
 
 
@@ -2625,28 +2748,8 @@ void do_nontrivial_clientreq ( ThreadId tid )
    UInt  req_no = arg[0];
    switch (req_no) {
 
-      case VG_USERREQ__PTHREAD_CREATE:
-         do_pthread_create( tid, 
-                            (pthread_t*)arg[1], 
-                            (pthread_attr_t*)arg[2], 
-                            (void*(*)(void*))arg[3], 
-                            (void*)arg[4] );
-         break;
-
-      case VG_USERREQ__PTHREAD_RETURNS:
-         handle_pthread_return( tid, (void*)arg[1] );
-         break;
-
       case VG_USERREQ__PTHREAD_JOIN:
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_CANCEL:
-         do_pthread_cancel( tid, (pthread_t)(arg[1]) );
-         break;
-
-      case VG_USERREQ__PTHREAD_EXIT:
-         do_pthread_exit( tid, (void*)(arg[1]) );
          break;
 
       case VG_USERREQ__PTHREAD_COND_WAIT:

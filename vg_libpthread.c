@@ -268,6 +268,92 @@ int pthread_attr_destroy(pthread_attr_t *attr)
    return 0;
 }
 
+/* --------------------------------------------------- 
+   Helper functions for running a thread 
+   and for clearing up afterwards.
+   ------------------------------------------------ */
+
+/* All exiting threads eventually pass through here, bearing the
+   return value, or PTHREAD_CANCELED, in ret_val. */
+static
+__attribute__((noreturn))
+void thread_exit_wrapper ( void* ret_val )
+{
+   int detached, res;
+   /* Run this thread's cleanup handlers. */
+   /* Run this thread's key finalizers. */
+
+   /* Decide on my final disposition. */
+   VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
+                           VG_USERREQ__SET_OR_GET_DETACH, 
+                           2 /* get */, 0, 0, 0);
+   assert(detached == 0 || detached == 1);
+
+   if (detached) {
+      /* Detached; I just quit right now. */
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__QUIT, 0, 0, 0, 0);
+   } else {
+      /* Not detached; so I wait for a joiner. */
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__WAIT_JOINER, ret_val, 0, 0, 0);
+   }
+   /* NOTREACHED */
+   barf("thread_exit_wrapper: still alive?!");
+}
+
+
+/* This function is a wrapper function for running a thread.  It runs
+   the root function specified in pthread_create, and then, should the
+   root function return a value, it arranges to run the thread's
+   cleanup handlers and exit correctly. */
+
+/* Struct used to convey info from pthread_create to
+   thread_wrapper. */
+typedef
+   struct {
+      pthread_attr_t* attr;
+      void* (*root_fn) ( void* );
+      void* arg;
+   }
+   NewThreadInfo;
+
+
+/* This is passed to the VG_USERREQ__APPLY_IN_NEW_THREAD and so must
+   not return.  Note that this runs in the new thread, not the
+   parent. */
+static
+__attribute__((noreturn))
+void thread_wrapper ( NewThreadInfo* info )
+{
+   int res;
+   pthread_attr_t* attr;
+   void* (*root_fn) ( void* );
+   void* arg;
+   void* ret_val;
+
+   attr    = info->attr;
+   root_fn = info->root_fn;
+   arg     = info->arg;
+
+   if (attr)
+      kludged("pthread_create -- ignoring attributes");
+
+   /* Free up the arg block that pthread_create malloced. */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__FREE, info, 0, 0, 0);
+   assert(res == 0);
+
+   /* The root function might not return.  But if it does we simply
+      move along to thread_exit_wrapper.  All other ways out for the
+      thread (cancellation, or calling pthread_exit) lead there
+      too. */
+   ret_val = root_fn(arg);
+   thread_exit_wrapper(ret_val);
+   /* NOTREACHED */
+}
+
+
 /* ---------------------------------------------------
    THREADs
    ------------------------------------------------ */
@@ -289,20 +375,38 @@ int pthread_equal(pthread_t thread1, pthread_t thread2)
 }
 
 
+/* Bundle up the args into a malloc'd block and create a new thread
+   consisting of thread_wrapper() applied to said malloc'd block. */
 int
 pthread_create (pthread_t *__restrict __thread,
                 __const pthread_attr_t *__restrict __attr,
                 void *(*__start_routine) (void *),
                 void *__restrict __arg)
 {
-   int res;
-   ensure_valgrind("pthread_create");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_CREATE,
-                           __thread, __attr, __start_routine, __arg);
-   return res;
-}
+   int            tid_child;
+   NewThreadInfo* info;
 
+   ensure_valgrind("pthread_create");
+
+   /* Allocate space for the arg block.  thread_wrapper will free
+      it. */
+   VALGRIND_MAGIC_SEQUENCE(info, NULL /* default */,
+                           VG_USERREQ__MALLOC, 
+                           sizeof(NewThreadInfo), 0, 0, 0);
+   assert(info != NULL);
+
+   info->attr    = (pthread_attr_t*)__attr;
+   info->root_fn = __start_routine;
+   info->arg     = __arg;
+   VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,
+                           VG_USERREQ__APPLY_IN_NEW_THREAD,
+                           &thread_wrapper, info, 0, 0);
+   assert(tid_child != VG_INVALID_THREADID);
+
+   if (__thread)
+      *__thread = tid_child;
+   return 0; /* success */
+}
 
 
 int 
@@ -319,14 +423,9 @@ pthread_join (pthread_t __th, void **__thread_return)
 
 void pthread_exit(void *retval)
 {
-   int res;
    ensure_valgrind("pthread_exit");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_EXIT,
-                           retval, 0, 0, 0);
-   /* Doesn't return! */
-   /* However, we have to fool gcc into knowing that. */
-   barf("pthread_exit: still alive after request?!");
+   /* Simple! */
+   thread_exit_wrapper(retval);
 }
 
 
@@ -345,9 +444,12 @@ pthread_t pthread_self(void)
 
 int pthread_detach(pthread_t th)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_detach");
+   int res;
+   ensure_valgrind("pthread_detach");
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_OR_GET_DETACH,
+                           1 /* set */, 0, 0, 0);
+   assert(res == 0);
    return 0;
 }
 
@@ -601,17 +703,37 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
 
 int pthread_setcancelstate(int state, int *oldstate)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_setcancelstate");
+   int res;
+   ensure_valgrind("pthread_setcancelstate");
+   if (state != PTHREAD_CANCEL_ENABLE
+       && state != PTHREAD_CANCEL_DISABLE) 
+      return EINVAL;
+   assert(-1 != PTHREAD_CANCEL_ENABLE);
+   assert(-1 != PTHREAD_CANCEL_DISABLE);
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELSTATE,
+                           state, 0, 0, 0);
+   assert(res != -1);
+   if (oldstate) 
+      *oldstate = res;
    return 0;
 }
 
 int pthread_setcanceltype(int type, int *oldtype)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_setcanceltype");
+   int res;
+   ensure_valgrind("pthread_setcanceltype");
+   if (type != PTHREAD_CANCEL_DEFERRED
+       && type != PTHREAD_CANCEL_ASYNCHRONOUS) 
+      return EINVAL;
+   assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           type, 0, 0, 0);
+   assert(res != -1);
+   if (oldtype) 
+      *oldtype = res;
    return 0;
 }
 
@@ -619,15 +741,23 @@ int pthread_cancel(pthread_t thread)
 {
    int res;
    ensure_valgrind("pthread_cancel");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_CANCEL,
-                           thread, 0, 0, 0);
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELPEND,
+                           thread, &thread_exit_wrapper, 0, 0);
+   assert(res != -1);
    return res;
 }
 
+__inline__
 void pthread_testcancel(void)
 {
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__TESTCANCEL,
+                           0, 0, 0, 0);
+   assert(res == 0);
 }
+
 
 /*-------------------*/
 static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
@@ -1598,7 +1728,6 @@ static void wait_for_fd_to_be_readable_or_erring ( int fd )
 
 /* This is a terrible way to do the remapping.  Plan is to import an
    AVL tree at some point. */
-#define VG_N_SEMAPHORES 50
 
 typedef
    struct {
@@ -1771,8 +1900,6 @@ Errata from 7th printing:
  * The rwl_init() and rwl_destroy() functions, respectively, allow you to
  * initialize/create and destroy/free the reader/writer lock.
  */
-
-#define VG_N_RWLOCKS 50
 
 /*
  * Structure describing a read-write lock.

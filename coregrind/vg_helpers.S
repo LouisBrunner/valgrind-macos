@@ -32,7 +32,7 @@
 #include "vg_constants.h"
 
 /* ------------------ SIMULATED CPU HELPERS ------------------ */
-/* A couple of stubs for returns which we want to catch: signal
+/* A stubs for a return which we want to catch: a signal return.
    returns and pthread returns.  In the latter case, the thread's
    return value is in %EAX, so we pass this as the first argument
    to the request.  In both cases we use the user request mechanism.
@@ -66,36 +66,6 @@ signalreturn_bogusRA_panic_msg:
 .byte	0
 .text	
 	
-
-
-.global VG_(pthreadreturn_bogusRA)
-VG_(pthreadreturn_bogusRA):
-	subl	$20, %esp	# allocate arg block
-	movl	%esp, %edx	# %edx == &_zzq_args[0]
-	movl	$VG_USERREQ__PTHREAD_RETURNS, 0(%edx)	# request
-	movl	%eax, 4(%edx)	# arg1 == thread return value
-	movl	$0, 8(%edx)	# arg2
-	movl	$0, 12(%edx)	# arg3
-	movl	$0, 16(%edx)	# arg4
-	movl	%edx, %eax
-	# and now the magic sequence itself:
-	roll $29, %eax
-	roll $3, %eax
-	rorl $27, %eax
-	rorl $5, %eax
-	roll $13, %eax
-	roll $19, %eax
-	# should never get here
-	pushl	$pthreadreturn_bogusRA_panic_msg
-	call	VG_(panic)
-	
-.data
-pthreadreturn_bogusRA_panic_msg:
-.ascii	"vg_pthreadreturn_bogusRA: VG_USERREQ__PTHREAD_RETURNS was missed"
-.byte	0
-.text	
-	
-
 
 
 	

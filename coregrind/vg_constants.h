@@ -90,9 +90,8 @@
 /* Constants for the fast original-code-write check cache. */
 
 
-/* Assembly code stubs make these requests ... */
+/* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
-#define VG_USERREQ__PTHREAD_RETURNS         0x4002
 
 #endif /* ndef __VG_INCLUDE_H */
 

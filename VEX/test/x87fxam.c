@@ -5,11 +5,11 @@
 double d;
 int i;
 
-extern void do_tst ( void );
+extern void do_fxam ( void );
 
 asm(
 "\n"
-"do_tst:\n"
+"do_fxam:\n"
 "\txorl %eax,%eax\n"
 "\tfld d\n"
 "\tfxam\n"
@@ -19,10 +19,26 @@ asm(
 "\tret\n"
 );
 
+
+double inf ( void ) { return 1.0 / 0.0; }
+double nAn ( void ) { return 0.0 / 0.0; }
+double den ( void ) { return 9.1e-220 / 1e100; }
+
+/* Try positive and negative variants of: zero, infinity,
+   nAn, and denorm */
+
 int main ( void )
 {
-   d = -1.23; do_tst(); printf("%f -> 0x%x\n", d, i );
-   d = 0.0;   do_tst(); printf("%f -> 0x%x\n", d, i );
-   d = 9.87;  do_tst(); printf("%f -> 0x%x\n", d, i );
+   d =  0.0;   do_fxam(); printf("0x%4x: %f\n", i, d );
+   d = -0.0;   do_fxam(); printf("0x%4x: %f\n", i, d );
+
+   d =  inf(); do_fxam(); printf("0x%4x: %f\n", i, d );
+   d = -inf(); do_fxam(); printf("0x%4x: %f\n", i, d );
+
+   d =  nAn(); do_fxam(); printf("0x%4x: %f\n", i, d );
+   d = -nAn(); do_fxam(); printf("0x%4x: %f\n", i, d );
+
+   d =  den(); do_fxam(); printf("0x%4x: %f\n", i, d );
+   d = -den(); do_fxam(); printf("0x%4x: %f\n", i, d );
    return 0;
 }

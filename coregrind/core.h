@@ -164,9 +164,6 @@
    beyond it. */
 #define VG_PTHREAD_STACK_SIZE (1 << 20)
 
-/* Number of entries in the rwlock-remapping table. */
-#define VG_N_RWLOCKS 500
-
 /* Number of entries in each thread's cleanup stack. */
 #define VG_N_CLEANUPSTACK 16
 

@@ -10,6 +10,7 @@ pth_cvsimple
 pth_empty
 pth_mutexspeed
 pth_once
+pth_rwlock
 res_search
 .ktemp
 *.stdout.diff

@@ -2943,7 +2943,6 @@ int sem_timedwait(sem_t* sem, const struct timespec *abstime)
 
 typedef 
    struct {
-      int             initted;  /* != 0 --> in use; sanity check only */
       int             prefer_w; /* != 0 --> prefer writer */
       int             nwait_r;  /* # of waiting readers */
       int             nwait_w;  /* # of waiting writers */
@@ -2957,18 +2956,14 @@ typedef
    vg_rwlock_t;
 
 
-static pthread_mutex_t rw_remap_mx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t rw_new_mx = PTHREAD_MUTEX_INITIALIZER;
 
-static int                 rw_remap_used = 0;
-static pthread_rwlock_t*   rw_remap_orig[VG_N_RWLOCKS];
-static vg_rwlock_t         rw_remap_new[VG_N_RWLOCKS];
+#define RWLOCK_CHECK_MAGIC 0xb5d17027
 
 
-static 
-void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
+static void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
 {
    int res = 0;
-   vg_rwl->initted = 1;
    vg_rwl->prefer_w = 1;
    vg_rwl->nwait_r = 0;
    vg_rwl->nwait_w = 0;
@@ -2979,54 +2974,71 @@ void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
    my_assert(res == 0);
 }
 
-
-/* Take the address of a LinuxThreads rwlock_t and return the shadow
-   address of our version.  Further, if the LinuxThreads version
-   appears to have been statically initialised, do the same to the one
-   we allocate here.  The vg_pthread_rwlock_t.__vg_rw_readers field is set
-   to zero by PTHREAD_RWLOCK_INITIALIZER (as are several other fields), so
-   we take zero as meaning uninitialised and non-zero meaning initialised. 
-*/
-static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
+static vg_rwlock_t* rw_new ( pthread_rwlock_t* orig )
 {
-   int          res, i;
-   vg_rwlock_t* vg_rwl;
+   int res;
+   vg_rwlock_t* rwl;
    vg_pthread_rwlock_t* vg_orig;
-   
-   res = __pthread_mutex_lock(&rw_remap_mx);
-   my_assert(res == 0);
-
-   for (i = 0; i < rw_remap_used; i++) {
-      if (rw_remap_orig[i] == orig)
-         break;
-   }
-   if (i == rw_remap_used) {
-      if (rw_remap_used == VG_N_RWLOCKS) {
-         res = __pthread_mutex_unlock(&rw_remap_mx);
-         my_assert(res == 0);
-         barf("VG_N_RWLOCKS is too low.  Increase and recompile.");
-      }
-      rw_remap_used++;
-      rw_remap_orig[i] = orig;
-      rw_remap_new[i].initted = 0;
-      if (0) printf("allocated rwlock %d\n", i);
-   }
-   res = __pthread_mutex_unlock(&rw_remap_mx);
-   my_assert(res == 0);
-   vg_rwl = &rw_remap_new[i];
-
-   /* Initialise the shadow, if required. */
    CONVERT(rwlock, orig, vg_orig);
-   if (vg_orig->__vg_rw_readers == 0) {
-      vg_orig->__vg_rw_readers = 1;
-      init_vg_rwlock(vg_rwl);
-      if (vg_orig->__vg_rw_kind == PTHREAD_RWLOCK_PREFER_READER_NP)
-         vg_rwl->prefer_w = 0;
-   }
 
-   return vg_rwl;
+   res = __pthread_mutex_lock(&rw_new_mx);
+   my_assert(res == 0);
+
+   rwl = my_malloc(sizeof(vg_rwlock_t));
+
+   vg_orig->__vg_rw_writer = rwl;
+   vg_orig->__vg_rw_read_waiting = (void *)((Addr)rwl ^ RWLOCK_CHECK_MAGIC);
+
+   init_vg_rwlock(rwl);
+   if (vg_orig->__vg_rw_kind == PTHREAD_RWLOCK_PREFER_READER_NP)
+      rwl->prefer_w = 0;
+
+   res = __pthread_mutex_unlock(&rw_new_mx);
+   my_assert(res == 0);
+  
+   return rwl;
 }
 
+static vg_rwlock_t* rw_lookup ( pthread_rwlock_t* orig )
+{
+   vg_rwlock_t* rwl;
+   vg_pthread_rwlock_t* vg_orig;
+   CONVERT(rwlock, orig, vg_orig);
+
+   if (vg_orig->__vg_rw_writer == NULL)
+      rwl = rw_new (orig);
+   else if (((Addr)vg_orig->__vg_rw_writer ^ RWLOCK_CHECK_MAGIC) == (Addr)vg_orig->__vg_rw_read_waiting)
+      rwl = vg_orig->__vg_rw_writer;
+   else
+      rwl = NULL;
+
+   return rwl;
+}
+
+static void rw_free ( pthread_rwlock_t* orig )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   vg_pthread_rwlock_t* vg_orig;
+   CONVERT(rwlock, orig, vg_orig);
+
+   rwl = vg_orig->__vg_rw_writer;
+
+   vg_orig->__vg_rw_writer = NULL;
+   vg_orig->__vg_rw_read_waiting = NULL;
+
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+
+   res = pthread_cond_destroy(&rwl->cv_w);
+   res |= pthread_cond_destroy(&rwl->cv_r);
+   res |= pthread_mutex_destroy(&rwl->mx);
+   my_assert(res == 0);
+
+   my_free(rwl);
+
+   return;
+}
 
 int pthread_rwlock_init ( pthread_rwlock_t* orig,
                           const pthread_rwlockattr_t* attr )
@@ -3038,13 +3050,13 @@ int pthread_rwlock_init ( pthread_rwlock_t* orig,
    CONVERT(rwlockattr, attr, vg_attr);
 
    if (0) printf ("pthread_rwlock_init\n");
-   /* Force the remapper to initialise the shadow. */
-   vg_orig->__vg_rw_readers = 0;
    /* Install the lock preference; the remapper needs to know it. */
-   vg_orig->__vg_rw_kind = PTHREAD_RWLOCK_DEFAULT_NP;
    if (vg_attr)
       vg_orig->__vg_rw_kind = vg_attr->__vg_lockkind;
-   rwl = rw_remap ( (pthread_rwlock_t*)vg_orig );
+   else
+      vg_orig->__vg_rw_kind = PTHREAD_RWLOCK_DEFAULT_NP;
+   /* Allocate the shadow */
+   rwl = rw_new ((pthread_rwlock_t *)vg_orig);
    return 0;
 }
 
@@ -3064,14 +3076,13 @@ int pthread_rwlock_rdlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
 
    if (0) printf ("pthread_rwlock_rdlock\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_rdlock: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status < 0) {
       my_assert(rwl->status == -1);
       rwl->nwait_r++;
@@ -3098,14 +3109,13 @@ int pthread_rwlock_tryrdlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
 
    if (0) printf ("pthread_rwlock_tryrdlock\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_tryrdlock: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status == -1) {
       /* Writer active; we have to give up. */
       res = __pthread_mutex_unlock(&rwl->mx);
@@ -3136,14 +3146,13 @@ int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
 
    if (0) printf ("pthread_rwlock_wrlock\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_wrlock: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status != 0) {
       rwl->nwait_w++;
       pthread_cleanup_push( pthread_rwlock_wrlock_CANCEL_HDLR, rwl );
@@ -3168,14 +3177,13 @@ int pthread_rwlock_trywrlock ( pthread_rwlock_t* orig )
    int res;
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_wrlock_trywrlock\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_trywrlock: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status != 0) {
       /* Reader(s) or a writer active; we have to give up. */
       res = __pthread_mutex_unlock(&rwl->mx);
@@ -3196,14 +3204,13 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
    int res;
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_unlock\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_unlock: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status == 0) {
       res = __pthread_mutex_unlock(&rwl->mx);
       my_assert(res == 0);
@@ -3271,22 +3278,19 @@ int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
    int res;
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_destroy\n");
-   rwl = rw_remap ( orig );
-   res = __pthread_mutex_lock(&rwl->mx);
-   my_assert(res == 0);
-   if (!rwl->initted) {
-      res = __pthread_mutex_unlock(&rwl->mx);
-      my_assert(res == 0);
+   rwl = rw_lookup (orig);
+   if(!rwl) {
+      pthread_error("pthread_rwlock_destroy: lock overwritten or not initialized");
       return EINVAL;
    }
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
    if (rwl->status != 0 || rwl->nwait_r > 0 || rwl->nwait_w > 0) {
       res = __pthread_mutex_unlock(&rwl->mx);
       my_assert(res == 0);
       return EBUSY;
    }
-   rwl->initted = 0;
-   res = __pthread_mutex_unlock(&rwl->mx);
-   my_assert(res == 0);
+   rw_free (orig);
    return 0;
 }
 

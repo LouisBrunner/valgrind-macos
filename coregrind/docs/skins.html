@@ -363,12 +363,17 @@ options and must do some initialisation after option processing takes place
 (``<code>clo</code>'' stands for ``command line options'').<p>
 
 The first argument to <code>SK_(pre_clo_init)()</code> must be initialised with
-the ``needs'' for a skin.  Of these, <code>name</code> and
-<code>description</code> are compulsory.  The rest are mostly booleans, and can
-be left untouched (they default to <code>False</code>).  They determine whether
-a skin can do various things such as:  record, report and suppress errors;
-process command line options;  wrap system calls;  record extra information
-about malloc'd blocks, etc.<p>
+various ``details'' for a skin.  These are all compulsory except for
+<code>version</code>.  They are used when constructing the startup message,
+except for <code></code> which is used if <code>VG_(skin_panic)()</code> is
+ever called, or a skin assertion fails.<p>
+
+The second argument to <code>SK_(pre_clo_init)()</code> must be initialised with
+the ``needs'' for a skin.  They are mostly booleans, and can be left untouched
+(they default to <code>False</code>).  They determine whether a skin can do
+various things such as:  record, report and suppress errors; process command
+line options;  wrap system calls;  record extra information about malloc'd
+blocks, etc.<p>
 
 For example, if a skin wants the core's help in recording and reporting errors,
 it must set the <code>skin_errors</code> need to <code>True</code>, and then
@@ -379,7 +384,7 @@ scratch because the core is doing most of the work.  See the type
 <code>VgNeeds</code> in <code>include/vg_skin.h</code> for full details of all
 the needs.<p>
 
-The second argument to <code>SK_(pre_clo_init)()</code> must be initialised to
+The third argument to <code>SK_(pre_clo_init)()</code> must be initialised to
 indicate which events in core the skin wants to be notified about.  These
 include things such as blocks of memory being malloc'd, the stack pointer
 changing, a mutex being locked, etc.  If a skin wants to know about this,

@@ -292,6 +292,7 @@ static IRTemp newTemp ( IRType ty )
    return newIRTemp( irbb->tyenv, ty );
 }
 
+#if 0
 /* Bomb out if we can't handle something. */
 __attribute__ ((noreturn))
 static void unimplemented ( Char* str )
@@ -299,9 +300,11 @@ static void unimplemented ( Char* str )
    vex_printf("armToIR: unimplemented feature\n");
    vpanic(str);
 }
+#endif
 
 /* Various simple conversions */
 
+#if 0
 static UInt extend_s_8to32( UInt x )
 {
    return (UInt)((((Int)x) << 24) >> 24);
@@ -311,33 +314,41 @@ static UInt extend_s_16to32 ( UInt x )
 {
    return (UInt)((((Int)x) << 16) >> 16);
 }
+#endif
 
 static UInt extend_s_24to32 ( UInt x )
 {
    return (UInt)((((Int)x) << 8) >> 8);
 }
 
+#if 0
 /* Fetch a byte from the guest insn stream. */
 static UChar getIByte ( UInt delta )
 {
    return guest_code[delta];
 }
+#endif
 
 /* Get a 8/16/32-bit unsigned value out of the insn stream. */
 
+#if 0
 static UInt getUChar ( UInt delta )
 {
    UInt v = guest_code[delta+0];
    return v & 0xFF;
 }
+#endif
 
+#if 0
 static UInt getUDisp16 ( UInt delta )
 {
    UInt v = guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
    return v & 0xFFFF;
 }
+#endif
 
+#if 0
 static UInt getUDisp32 ( UInt delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
@@ -346,7 +357,9 @@ static UInt getUDisp32 ( UInt delta )
    v |= guest_code[delta+0];
    return v;
 }
+#endif
 
+#if 0
 static UInt getUDisp ( Int size, UInt delta )
 {
    switch (size) {
@@ -357,15 +370,18 @@ static UInt getUDisp ( Int size, UInt delta )
    }
    return 0; /*notreached*/
 }
+#endif
 
-
+#if 0
 /* Get a byte value out of the insn stream and sign-extend to 32
    bits. */
 static UInt getSDisp8 ( UInt delta )
 {
    return extend_s_8to32( (UInt) (guest_code[delta]) );
 }
+#endif
 
+#if 0
 static UInt getSDisp16 ( UInt delta0 )
 {
    UChar* eip = (UChar*)(&guest_code[delta0]);
@@ -373,7 +389,9 @@ static UInt getSDisp16 ( UInt delta0 )
    d |= ((*eip++) << 8);
    return extend_s_16to32(d);
 }
+#endif
 
+#if 0
 static UInt getSDisp ( Int size, UInt delta )
 {
    switch (size) {
@@ -384,6 +402,7 @@ static UInt getSDisp ( Int size, UInt delta )
   }
   return 0; /*notreached*/
 }
+#endif
 
 
 /*------------------------------------------------------------*/
@@ -395,6 +414,7 @@ static UInt getSDisp ( Int size, UInt delta )
    account.  Supplied value is 0 .. 7 and in the Intel instruction
    encoding. */
 
+#if 0
 static IRType szToITy ( Int n )
 {
    switch (n) {
@@ -404,6 +424,7 @@ static IRType szToITy ( Int n )
       default: vpanic("szToITy(ARM)");
    }
 }
+#endif
 
 static Int integerGuestRegOffset ( UInt archreg )
 {
@@ -478,17 +499,20 @@ static IRExpr* mkU8 ( UInt i )
    return IRExpr_Const(IRConst_U8(i));
 }
 
+#if 0
 static IRExpr* mkU16 ( UInt i )
 {
    vassert(i < 65536);
    return IRExpr_Const(IRConst_U16(i));
 }
+#endif
 
 static IRExpr* mkU32 ( UInt i )
 {
    return IRExpr_Const(IRConst_U32(i));
 }
 
+#if 0
 static IRExpr* mkU ( IRType ty, UInt i )
 {
    if (ty == Ity_I8)  return mkU8(i);
@@ -498,12 +522,14 @@ static IRExpr* mkU ( IRType ty, UInt i )
       value as the IRType, rather than a real IRType. */
    vpanic("mkU(ARM)");
 }
+#endif
 
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
 {
    return IRExpr_LDle(ty,data);
 }
 
+#if 0
 static IROp mkSizedOp ( IRType ty, IROp op8 )
 {
    Int adj;
@@ -517,7 +543,9 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
 }
+#endif
 
+#if 0
 static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 {
    if (szSmall == 1 && szBig == 4) {
@@ -531,7 +559,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    }
    vpanic("mkWidenOp(ARM,guest)");
 }
-
+#endif
 
 
 
@@ -552,6 +580,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 
 /* -------------- Evaluating the flags-thunk. -------------- */
 
+#if 0
 /* Build IR to calculate all the flags from stored
    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.
    Returns an expression :: Ity_I32. */
@@ -574,7 +603,7 @@ static IRExpr* mk_armg_calculate_flags_all ( void )
    call->Iex.CCall.cee->mcx_mask = 1;
    return call;
 }
-
+#endif
 
 /* Build IR to calculate just the carry flag from stored
    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression :: Ity_I32. */
@@ -635,15 +664,19 @@ static IRExpr* mk_armg_calculate_condition ( ARMCondcode cond )
    flag-setting operation.  Hence the various setFlags_* functions.
 */
 
+#if 0
 static Bool isAddSub ( IROp op8 )
 {
    return op8 == Iop_Add8 || op8 == Iop_Sub8;
 }
+#endif
 
+#if 0
 static Bool isLogic ( IROp op8 )
 {
    return op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8;
 }
+#endif
 
 /* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUto32 ( IRExpr* e )
@@ -656,6 +689,7 @@ static IRExpr* widenUto32 ( IRExpr* e )
    }
 }
 
+#if 0
 /* S-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenSto32 ( IRExpr* e )
 {
@@ -666,6 +700,7 @@ static IRExpr* widenSto32 ( IRExpr* e )
       default: vpanic("widenSto32");
    }
 }
+#endif
 
 /* Narrow 8/16/32 bit int expr to 8/16/32.  Clearly only some
    of these combinations make sense. */
@@ -702,6 +737,7 @@ void setFlags_DEP1_DEP2 ( IROp op, IRTemp dep1, IRTemp dep2 )
 
 /* Set the OP and DEP1 fields only, and write zero to DEP2. */
 
+#if 0
 static 
 void setFlags_DEP1 ( IROp op, IRTemp dep1 )
 {
@@ -709,8 +745,9 @@ void setFlags_DEP1 ( IROp op, IRTemp dep1 )
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
 }
+#endif
 
-
+#if 0
 /* For shift operations, we put in the result and the undershifted
    result.  Except if the shift amount is zero, the thunk is left
    unchanged. */
@@ -736,13 +773,13 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op,
                                    IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
                                    widenUto32(mkexpr(resUS)))) );
 }
+#endif
 
 
 
 
 
-
-
+#if 0
 /* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
    two arguments. */
 
@@ -753,7 +790,7 @@ void setFlags_MUL ( IRTemp arg1, IRTemp arg2, UInt op )
     stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
     stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
 }
-
+#endif
 
 
 
@@ -767,6 +804,7 @@ void setFlags_MUL ( IRTemp arg1, IRTemp arg2, UInt op )
 
 /* Condition codes, using the ARM encoding.  */
 
+#if 0
 static HChar* name_ARMCondcode ( ARMCondcode cond )
 {
    switch (cond) {
@@ -789,8 +827,9 @@ static HChar* name_ARMCondcode ( ARMCondcode cond )
        default: vpanic("name_ARMCondcode");
    }
 }
+#endif
 
-
+#if 0
 static 
 ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
                                       Bool*     needInvert )
@@ -804,7 +843,7 @@ ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
       return cond;
    }
 }
-
+#endif
 
 
 

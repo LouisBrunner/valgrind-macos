@@ -362,6 +362,26 @@ int __posix_memalign ( void **memptr, UInt alignment, UInt size )
     return VKI_ENOMEM /*12*/ /*ENOMEM*/;
 }
 
+Int malloc_usable_size ( void* p )
+{ 
+   Int pszB;
+   
+   MALLOC_TRACE("malloc_usable_size[simd=%d](%p)", 
+                (UInt)VG_(is_running_on_simd_CPU)(), p );
+   if (NULL == p)
+      return 0;
+
+   if (VG_(is_running_on_simd_CPU)()) {
+      pszB = (Int)VALGRIND_NON_SIMD_CALL2( VG_(arena_payload_szB), 
+                                           VG_AR_CLIENT, p );
+   } else {
+      pszB = VG_(arena_payload_szB)(VG_AR_CLIENT, p);
+   }
+   MALLOC_TRACE(" = %d\n", pszB );
+
+   return pszB;
+}
+
 
 /* Bomb out if we get any of these. */
 /* HACK: We shouldn't call VG_(core_panic) or VG_(message) on the simulated
@@ -372,8 +392,7 @@ void pvalloc ( void )
 { VG_(core_panic)("call to pvalloc\n"); }
 void malloc_stats ( void )
 { VG_(core_panic)("call to malloc_stats\n"); }
-void malloc_usable_size ( void )
-{ VG_(core_panic)("call to malloc_usable_size\n"); }
+
 void malloc_trim ( void )
 { VG_(core_panic)("call to malloc_trim\n"); }
 void malloc_get_state ( void )

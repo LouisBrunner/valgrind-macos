@@ -325,7 +325,7 @@ Word* first_to_payload ( Arena* a, WordF* fw )
    return & fw[3 + a->rz_szW];
 }
 
-/* Given the addr of the first word of a the payload of a block,
+/* Given the addr of the first word of the payload of a block,
    return the addr of the first word of the block. */
 static __inline__
 Word* payload_to_first ( Arena* a, WordF* payload )
@@ -430,7 +430,7 @@ Int overhead_szW ( Arena* a )
 }
 
 
-/* Convert pointer size in words to block size in words, and back. */
+/* Convert payload size in words to block size in words, and back. */
 static __inline__
 Int pszW_to_bszW ( Arena* a, Int pszW )
 {
@@ -444,6 +444,15 @@ Int bszW_to_pszW ( Arena* a, Int bszW )
    vg_assert(pszW >= 0);
    return pszW;
 }
+
+Int VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
+{
+   Arena* a = arenaId_to_ArenaP(aid);
+   Word* fw = payload_to_first(a, (WordF*)ptr);
+   Int pszW = bszW_to_pszW(a, get_bszW_lo(fw));
+   return VKI_BYTES_PER_WORD * pszW;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Functions for working with freelists.                ---*/

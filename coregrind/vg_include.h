@@ -427,6 +427,8 @@ extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, Int alignment,
 extern void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, 
                                                 Int req_pszB );
 
+extern Int   VG_(arena_payload_szB) ( ArenaId aid, void* payload );
+
 extern void  VG_(mallocSanityCheckAll)   ( void );
 
 extern void  VG_(show_all_arena_stats) ( void );

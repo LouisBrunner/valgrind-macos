@@ -91,10 +91,11 @@ TranslateResult LibVEX_Translate (
    HInstr*      (*genReload)   ( HReg, Int );
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB* );
+   HInstrArray* (*iselBB)      ( IRBB*, Addr64(*)(Char*) );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
                                          Bool(*)(Addr64), Bool );
    Int          (*emit)        ( UChar*, Int, HInstr* );
+   Addr64       (*findHelper)  ( Char* );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;
@@ -102,6 +103,20 @@ TranslateResult LibVEX_Translate (
    HInstrArray* rcode;
    Int          i, j, k, out_used;
    UChar        insn_bytes[32];
+
+   available_real_regs    = NULL;
+   n_available_real_regs  = 0;
+   isMove                 = NULL;
+   getRegUsage            = NULL;
+   mapRegs                = NULL;
+   genSpill               = NULL;
+   genReload              = NULL;
+   ppInstr                = NULL;
+   ppReg                  = NULL;
+   iselBB                 = NULL;
+   bbToIR                 = NULL;
+   emit                   = NULL;
+   findHelper             = NULL;
 
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
@@ -129,7 +144,8 @@ TranslateResult LibVEX_Translate (
 
    switch (iset_guest) {
       case InsnSetX86:
-         bbToIR = bbToIR_X86Instr;
+         bbToIR     = bbToIR_X86Instr;
+         findHelper = x86guest_findhelper;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -153,7 +169,7 @@ TranslateResult LibVEX_Translate (
       irbb = (*instrument)(irbb);
 
    /* Turn it into virtual-registerised code. */
-   vcode = iselBB ( irbb );
+   vcode = iselBB ( irbb, findHelper );
 
    if (vex_verbosity > 0) {
       vex_printf("\n-------- Virtual registerised code --------\n");

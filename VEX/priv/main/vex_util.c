@@ -168,6 +168,17 @@ static Int vex_strlen ( const Char* str )
    return i;
 }
 
+Bool vex_streq ( const Char* s1, const Char* s2 )
+{
+   while (True) {
+      if (*s1 == 0 && *s2 == 0)
+         return True;
+      if (*s1 != *s2)
+         return False;
+      s1++;
+      s2++;
+   }
+}
 
 /* Some flags.  */
 #define VG_MSG_SIGNED    1 /* The value is signed. */

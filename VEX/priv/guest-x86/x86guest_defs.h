@@ -26,6 +26,11 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
                         Bool   (*byte_accessible)(Addr64),
                         Bool   host_bigendian );
 
+/* Used by the back end to look up addresses of helper
+   function calls inserted by bbToIR_X86Instr. */
+extern
+Addr64 x86guest_findhelper ( Char* function_name );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

@@ -17,6 +17,7 @@ LIB_OBJS = 	priv/ir/ir_defs.o			\
 		priv/host-x86/isel_x86.o		\
 		priv/host-generic/host_regs.o		\
 		priv/host-generic/reg_alloc.o		\
+		priv/guest-x86/x86helpers.o		\
 		priv/guest-x86/x86toIR.o
 
 PUB_INCLUDES = -Ipub
@@ -98,3 +99,7 @@ priv/host-generic/reg_alloc.o: $(ALL_HEADERS) priv/host-generic/reg_alloc.c
 priv/guest-x86/x86toIR.o: $(ALL_HEADERS) priv/guest-x86/x86toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/x86toIR.o \
 					 -c priv/guest-x86/x86toIR.c
+
+priv/guest-x86/x86helpers.o: $(ALL_HEADERS) priv/guest-x86/x86helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/x86helpers.o \
+					 -c priv/guest-x86/x86helpers.c

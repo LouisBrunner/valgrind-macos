@@ -670,7 +670,7 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_Call:
          addHRegUse(u, HRmRead, i->Xin.Call.target);
          /* claim it trashes all the callee-saved regs */
-         /* except I have no idea what they are */
+         /* which I believe to be %eax,%ecx,%edx. */
          addHRegUse(u, HRmWrite, hregX86_EAX());
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());
@@ -1341,6 +1341,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 }
 
 
+#if 0
 /* Self-contained test; can be called directly from
    main. */
 void test_asm86 ( void )
@@ -1427,7 +1428,7 @@ T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
 
 #undef T
 }
-
+#endif
 
 
 /*---------------------------------------------------------------*/

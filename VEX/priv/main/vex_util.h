@@ -42,6 +42,12 @@ extern UInt vex_printf ( const Char *format, ... );
 __attribute__ ((format (printf, 2, 3)))
 extern UInt vex_sprintf ( Char* buf, const Char *format, ... );
 
+
+/* String ops */
+
+extern Bool vex_streq ( const Char* s1, const Char* s2 );
+
+
 #endif /* ndef __VEX_UTIL_H */
 
 /*---------------------------------------------------------------*/

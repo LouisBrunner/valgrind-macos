@@ -135,6 +135,8 @@ static IRExpr* bind ( Int binder )
 
 /* This carries around:
 
+   - A function for looking up the address of helper functions.
+
    - A mapping from IRTemp to IRType, giving the type of any IRTemp we
      might encounter.  This is computed before insn selection starts,
      and does not change.
@@ -159,6 +161,8 @@ static IRExpr* bind ( Int binder )
 
 typedef
    struct {
+      Addr64       (*find_helper)(Char*);
+
       IRTypeEnv*   type_env;
 
       HReg*        vregmap;
@@ -411,8 +415,9 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
-      Int i, nargs;
-      UInt target;
+      Addr64 helper;
+      Int    i, nargs;
+      UInt   target;
       IRExpr* arg;
       vassert(ty == Ity_I32);
       /* be very restrictive for now.  Only 32-bit ints allowed
@@ -428,7 +433,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             goto irreducible;
          addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
       }
-      target = 0x12345678; //FIND_HELPER(e->Iex.CCall.name);
+      /* Find the function to call.  Since the host -- for which we
+         are generating code -- is a 32-bit machine (x86) -- the upper
+         32 bit of the helper address should be zero. */
+      helper = env->find_helper(e->Iex.CCall.name);
+      vassert((helper & 0xFFFFFFFF00000000LL) == 0);
+      target = helper & 0xFFFFFFFF;
       addInstr(env, X86Instr_Alu32R(
                        Xalu_MOV,
                        X86RMI_Imm(target),
@@ -905,7 +915,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb )
+HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
 {
    Int     i, j;
    HReg    hreg, hregHI;
@@ -914,6 +924,9 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
    /* Make up an initial environment to use. */
    ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
+
+   /* Register helper-function-finder. */
+   env->find_helper = find_helper;
 
    /* Set up output code array. */
    env->code = newHInstrArray();

@@ -31,7 +31,7 @@ PUB_INCLUDES = -Ipub
 PRIV_INCLUDES = -Ipriv
 
 
-CC = gcc341
+CC = gcc
 CCFLAGS = -g -O -Wall -Wshadow -Winline $(EXTRA_CFLAGS)
 
 #CC = icc

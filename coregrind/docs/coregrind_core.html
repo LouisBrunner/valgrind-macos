@@ -1187,7 +1187,8 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
 
 <ul>
   <li>No support for 3DNow instructions.  If the translator encounters
-      these, Valgrind will simply give up.</li>
+      these, Valgrind will generate a SIGILL when the instruction is
+      executed.</li>
       <p>
 
   <li>Pthreads support is improving, but there are still significant

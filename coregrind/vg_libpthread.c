@@ -1026,7 +1026,7 @@ int select ( int n,
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 100 * 1000 * 1000; /* 100 milliseconds */
+      nanosleep_interval.tv_nsec = 50 * 1000 * 1000; /* 50 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 
@@ -1116,7 +1116,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 99 * 1000 * 1000; /* 99 milliseconds */
+      nanosleep_interval.tv_nsec = 51 * 1000 * 1000; /* 51 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

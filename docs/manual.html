@@ -24,9 +24,9 @@
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, snapshot 20020516</h1>
+<h1 align=center>Valgrind, snapshot 20020522</h1>
 <center>This manual was majorly updated on 20020501</center>
-<center>This manual was minorly updated on 20020518</center>
+<center>This manual was minorly updated on 20020522</center>
 <p>
 
 <center>
@@ -1703,11 +1703,6 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       Programs that do non-POSIX signal tricks are in any case
       inherently unportable, so should be avoided if
       possible.</li><br>
-      <p>
-
-  <li>Programs which try to handle signals on
-      an alternate stack (sigaltstack) are not supported, although
-      they could be, with a bit of effort.</li><br>
       <p>
 
   <li>Programs which switch stacks are not well handled.  Valgrind

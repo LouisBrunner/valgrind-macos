@@ -6268,7 +6268,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                (Int)eip_start[3] );
 
    /* Print address of failing instruction. */
-   VG_(describe_eip)(eip, loc_buf, M_VG_ERRTXT);
+   VG_(describe_eip)((Addr)eip_start, loc_buf, M_VG_ERRTXT);
    VG_(printf)("          at %s\n", loc_buf);
 
    uInstr0(cb, CALLM_S, 0);

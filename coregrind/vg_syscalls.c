@@ -117,7 +117,7 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
    if (size == 0)
       return True;
 
-   if (cl_base < 0x10000)
+   if (0 && cl_base < 0x10000)
       cl_base = 0x10000;
 
    ret =

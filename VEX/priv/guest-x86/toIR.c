@@ -2113,6 +2113,7 @@ UInt dis_mov_G_E ( UChar       sorb,
 /* op $immediate, AL/AX/EAX. */
 static
 UInt dis_op_imm_A ( Int    size,
+                    Bool   carrying,
                     IROp   op8,
                     Bool   keep,
                     UInt   delta,
@@ -2125,12 +2126,21 @@ UInt dis_op_imm_A ( Int    size,
    UInt lit    = getUDisp(size,delta);
    assign(dst0, getIReg(size,R_EAX));
    assign(src,  mkU(ty,lit));
-   assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-   if (isAddSub(op8))
+
+   if (isAddSub(op8) && !carrying) {
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
       setFlags_DEP1_DEP2(op8, dst0, src, ty);
+   } 
    else
-   if (isLogic(op8))
+   if (isLogic(op8)) {
+      vassert(!carrying);
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
       setFlags_DEP1(op8, dst1, ty);
+   } 
+   else
+   if (op8 == Iop_Add8 && carrying) {
+      helper_ADC( size, dst1, dst0, src );
+   }
    else
       vpanic("dis_op_imm_A(x86,guest)");
 
@@ -10799,26 +10809,26 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* ------------------------ opl imm, A ----------------- */
 
    case 0x04: /* ADD Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_Add8, True, delta, "add" );
+      delta = dis_op_imm_A(  1, False, Iop_Add8, True, delta, "add" );
       break;
    case 0x05: /* ADD Iv, eAX */
-      delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
+      delta = dis_op_imm_A( sz, False, Iop_Add8, True, delta, "add" );
       break;
 
    case 0x0C: /* OR Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
+      delta = dis_op_imm_A(  1, False, Iop_Or8, True, delta, "or" );
       break;
    case 0x0D: /* OR Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
+      delta = dis_op_imm_A( sz, False, Iop_Or8, True, delta, "or" );
       break;
 
 //--    case 0x14: /* ADC Ib, AL */
 //--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
 //--       break;
-//--    case 0x15: /* ADC Iv, eAX */
-//--       delta = dis_op_imm_A( sz, ADC, True, delta, "adc" );
-//--       break;
-//-- 
+   case 0x15: /* ADC Iv, eAX */
+      delta = dis_op_imm_A( sz, True,  Iop_Add8, True, delta, "adc" );
+      break;
+
 //--    case 0x1C: /* SBB Ib, AL */
 //--       delta = dis_op_imm_A( 1, SBB, True, delta, "sbb" );
 //--       break;
@@ -10827,38 +10837,38 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //--       break;
 //-- 
    case 0x24: /* AND Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_And8, True, delta, "and" );
+      delta = dis_op_imm_A(  1, False, Iop_And8, True, delta, "and" );
       break;
    case 0x25: /* AND Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_And8, True, delta, "and" );
+      delta = dis_op_imm_A( sz, False, Iop_And8, True, delta, "and" );
       break;
 
    case 0x2C: /* SUB Ib, AL */
-      delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
+      delta = dis_op_imm_A(  1, False, Iop_Sub8, True, delta, "sub" );
       break;
    case 0x2D: /* SUB Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
+      delta = dis_op_imm_A( sz, False, Iop_Sub8, True, delta, "sub" );
       break;
 
    case 0x34: /* XOR Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
+      delta = dis_op_imm_A(  1, False, Iop_Xor8, True, delta, "xor" );
       break;
    case 0x35: /* XOR Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );
+      delta = dis_op_imm_A( sz, False, Iop_Xor8, True, delta, "xor" );
       break;
 
    case 0x3C: /* CMP Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A(  1, False, Iop_Sub8, False, delta, "cmp" );
       break;
    case 0x3D: /* CMP Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A( sz, False, Iop_Sub8, False, delta, "cmp" );
       break;
 
    case 0xA8: /* TEST Ib, AL */
-      delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
+      delta = dis_op_imm_A(  1, False, Iop_And8, False, delta, "test" );
       break;
    case 0xA9: /* TEST Iv, eAX */
-      delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
+      delta = dis_op_imm_A( sz, False, Iop_And8, False, delta, "test" );
       break;
 
    /* ------------------------ opl Ev, Gv ----------------- */

@@ -1,6 +1,42 @@
 
 Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.2.0 brings nine months worth of improvements and bug fixes.  We
+believe it to be a worthy successor to 2.0.0.  There are literally
+hundreds of bug fixes and minor improvements.  There are also some
+fairly major user-visible changes:
+
+* A complete overhaul of handling of system calls and signals, and 
+  their interaction with threads.  In general, the accuracy of the 
+  system call, thread and signal simulations is much improved:
+
+  - Blocking system calls behave exactly as they do when running
+    natively (not on valgrind).  That is, if a syscall blocks only the
+    calling thread when running natively, than it behaves the same on
+    valgrind.  No more mysterious hangs because V doesn't know that some
+    syscall or other, should block only the calling thread.
+
+  - Interrupted syscalls should now give more faithful results.
+
+  - Signal contexts in signal handlers are supported.
+
+* Improvements to NPTL support to the extent that V now works 
+  properly on NPTL-only setups.
+
+* Greater isolation between Valgrind and the program being run, so
+  the program is less likely to inadvertently kill Valgrind by
+  doing wild writes.
+
+* Massif: a new space profiling tool.  Try it!  It's cool, and it'll
+  tell you in detail where and when your C/C++ code is allocating heap.
+  Draws pretty .ps pictures of memory use against time.  A potentially
+  powerful tool for making sense of your program's space use.
+
+* File descriptor leakage checks.  When enabled, Valgrind will print out
+  a list of open file descriptors on exit.
+
+* Improved SSE2/SSE3 support.
+
 
 
 Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.1.2

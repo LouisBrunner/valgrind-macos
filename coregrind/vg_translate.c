@@ -454,7 +454,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
-   vg_assert(orig_size > 0 && orig_size < 65536);
+   vg_assert(orig_size >= 0 && orig_size < 65536);
    vg_assert(tmpbuf_used > 0 && tmpbuf_used < 65536);
 
    // If debugging, don't do anything with the translated block;  we

@@ -2242,12 +2242,13 @@ void ** (*__libc_internal_tsd_address)
    to the corresponding thread-unaware (?) libc routine.
    ------------------------------------------------------------------ */
 
-#define FORWARD(name, args...) \
+#define FORWARD(name, altname, args...) \
   ({ \
     static name##_t name##_ptr = NULL; \
     if (name##_ptr == NULL) { \
-      name##_ptr = (name##_t)dlsym(RTLD_NEXT, #name); \
-      my_assert(name##_ptr != NULL); \
+      if ((name##_ptr = (name##_t)dlsym(RTLD_NEXT, #name)) == NULL) \
+        name##_ptr = (name##_t)dlsym(RTLD_DEFAULT, #altname); \
+      my_assert(name##_ptr != NULL && name##_ptr != name); \
     } \
     name##_ptr(args); \
   })
@@ -2262,7 +2263,11 @@ int sigaction(int signum,
               struct  sigaction *oldact)
 {
    __my_pthread_testcancel();
-   return FORWARD(sigaction, signum, act, oldact);
+#ifdef GLIBC_2_1
+   return FORWARD(sigaction, __sigaction, signum, act, oldact);
+#else
+   return FORWARD(sigaction, __libc_sigaction, signum, act, oldact);
+#endif
 }
 
 typedef 
@@ -2272,7 +2277,7 @@ WEAK
 int accept(int fd, struct sockaddr *addr, socklen_t *len)
 {
    __my_pthread_testcancel();
-   return FORWARD(accept, fd, addr, len);
+   return FORWARD(accept, __libc_accept, fd, addr, len);
 }
 
 typedef
@@ -2285,7 +2290,7 @@ int connect(int sockfd,
             socklen_t addrlen)
 {
    __my_pthread_testcancel();
-   return FORWARD(connect, sockfd, serv_addr, addrlen);
+   return FORWARD(connect, __libc_connect, sockfd, serv_addr, addrlen);
 }
 
 
@@ -2295,7 +2300,7 @@ WEAK
 int fcntl(int fd, int cmd, long arg)
 {
    __my_pthread_testcancel();
-   return FORWARD(fcntl, fd, cmd, arg);
+   return FORWARD(fcntl, __libc_fcntl, fd, cmd, arg);
 }
 
 
@@ -2305,7 +2310,7 @@ WEAK
 ssize_t write(int fd, const void *buf, size_t count)
 {
    __my_pthread_testcancel();
-   return FORWARD(write, fd, buf, count);
+   return FORWARD(write, __libc_write, fd, buf, count);
 }
 
 
@@ -2315,7 +2320,7 @@ WEAK
 ssize_t read(int fd, void *buf, size_t count)
 {
    __my_pthread_testcancel();
-   return FORWARD(read, fd, buf, count);
+   return FORWARD(read, __libc_read, fd, buf, count);
 }
 
 typedef
@@ -2323,7 +2328,7 @@ int (*open64_t)(const char *pathname, int flags, mode_t mode);
 /* WEAK */
 int open64(const char *pathname, int flags, mode_t mode)
 {
-   return FORWARD(open64, pathname, flags, mode);
+   return FORWARD(open64, __libc_open64, pathname, flags, mode);
 }
 
 typedef
@@ -2331,7 +2336,7 @@ int (*open_t)(const char *pathname, int flags, mode_t mode);
 /* WEAK */
 int open(const char *pathname, int flags, mode_t mode)
 {
-   return FORWARD(open, pathname, flags, mode);
+   return FORWARD(open, __libc_open, pathname, flags, mode);
 }
 
 typedef
@@ -2340,7 +2345,7 @@ WEAK
 int close(int fd)
 {
    __my_pthread_testcancel();
-   return FORWARD(close, fd);
+   return FORWARD(close, __libc_close, fd);
 }
 
 
@@ -2350,36 +2355,36 @@ WEAK
 pid_t waitpid(pid_t pid, int *status, int options)
 {
    __my_pthread_testcancel();
-   return FORWARD(waitpid, pid, status, options);
+   return FORWARD(waitpid, __libc_waitpid, pid, status, options);
 }
 
 
 typedef
-int (*nanosleep_t)(const struct timespec *req, struct timespec *rem);
+int (*__nanosleep_t)(const struct timespec *req, struct timespec *rem);
 WEAK
 int __nanosleep(const struct timespec *req, struct timespec *rem)
 {
    __my_pthread_testcancel();
-   return FORWARD(nanosleep, req, rem);
+   return FORWARD(__nanosleep, __libc_nanosleep, req, rem);
 }
 
 typedef
 int (*pause_t)(void);
 WEAK
-int __pause(void)
+int pause(void)
 {
    __my_pthread_testcancel();
-   return FORWARD(pause);
+   return FORWARD(pause, __libc_pause);
 }
 
 
 typedef
-int (*tcdrain_t)(int fd);
+int (*__tcdrain_t)(int fd);
 WEAK
 int __tcdrain(int fd)
 {
    __my_pthread_testcancel();
-   return FORWARD(tcdrain, fd);
+   return FORWARD(__tcdrain, __libc_tcdrain, fd);
 }
 
 
@@ -2389,7 +2394,7 @@ WEAK
 int fsync(int fd)
 {
    __my_pthread_testcancel();
-   return FORWARD(fsync, fd);
+   return FORWARD(fsync, __libc_fsync, fd);
 }
 
 
@@ -2399,7 +2404,7 @@ WEAK
 off_t lseek(int fildes, off_t offset, int whence)
 {
    __my_pthread_testcancel();
-   return FORWARD(lseek, fildes, offset, whence);
+   return FORWARD(lseek, __libc_lseek, fildes, offset, whence);
 }
 
 
@@ -2409,7 +2414,7 @@ WEAK
 __off64_t lseek64(int fildes, __off64_t offset, int whence)
 {
    __my_pthread_testcancel();
-   return FORWARD(lseek64, fildes, offset, whence);
+   return FORWARD(lseek64, __libc_lseek64, fildes, offset, whence);
 }
 
 
@@ -2420,7 +2425,7 @@ ssize_t __pread64 (int __fd, void *__buf, size_t __nbytes,
                    __off64_t __offset)
 {
    __my_pthread_testcancel();
-   return FORWARD(__pread64, __fd, __buf, __nbytes, __offset);
+   return FORWARD(__pread64, __libc_pread64, __fd, __buf, __nbytes, __offset);
 }
 
 
@@ -2431,7 +2436,7 @@ ssize_t __pwrite64 (int __fd, const void *__buf, size_t __nbytes,
                    __off64_t __offset)
 {
    __my_pthread_testcancel();
-   return FORWARD(__pwrite64, __fd, __buf, __nbytes, __offset);
+   return FORWARD(__pwrite64, __libc_pwrite64, __fd, __buf, __nbytes, __offset);
 }
 
 
@@ -2441,7 +2446,7 @@ WEAK
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
    __my_pthread_testcancel();
-   return FORWARD(pwrite, fd, buf, count, offset);
+   return FORWARD(pwrite, __libc_pwrite, fd, buf, count, offset);
 }
 
 
@@ -2451,7 +2456,7 @@ WEAK
 ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 {
    __my_pthread_testcancel();
-   return FORWARD(pread, fd, buf, count, offset);
+   return FORWARD(pread, __libc_pread, fd, buf, count, offset);
 }
 
 typedef
@@ -2460,7 +2465,7 @@ WEAK
 int recv(int s, void *msg, size_t len, int flags)
 {
    __my_pthread_testcancel();
-   return FORWARD(recv, s, msg, len, flags);
+   return FORWARD(recv, __libc_recv, s, msg, len, flags);
 }
 
 typedef
@@ -2469,7 +2474,7 @@ WEAK
 int send(int s, const void *msg, size_t len, int flags)
 {
    __my_pthread_testcancel();
-   return FORWARD(send, s, msg, len, flags);
+   return FORWARD(send, __libc_send, s, msg, len, flags);
 }
 
 
@@ -2479,7 +2484,7 @@ WEAK
 int sendmsg(int s, const struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
-   return FORWARD(sendmsg, s, msg, flags);
+   return FORWARD(sendmsg, __libc_sendmsg, s, msg, flags);
 }
 
 
@@ -2489,7 +2494,7 @@ WEAK
 int recvmsg(int s, struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
-   return FORWARD(recvmsg, s, msg, flags);
+   return FORWARD(recvmsg, __libc_recvmsg, s, msg, flags);
 }
 
 
@@ -2501,7 +2506,7 @@ int recvfrom(int s, void *buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen)
 {
    __my_pthread_testcancel();
-   return FORWARD(recvfrom, s, buf, len, flags, from, fromlen);
+   return FORWARD(recvfrom, __libc_recfrom, s, buf, len, flags, from, fromlen);
 }
 
 
@@ -2513,7 +2518,7 @@ int sendto(int s, const void *msg, size_t len, int flags,
            const struct sockaddr *to, socklen_t tolen)
 {
    __my_pthread_testcancel();
-   return FORWARD(sendto, s, msg, len, flags, to, tolen);
+   return FORWARD(sendto, __libc_sendto, s, msg, len, flags, to, tolen);
 }
 
 
@@ -2523,7 +2528,7 @@ WEAK
 int system(const char* str)
 {
    __my_pthread_testcancel();
-   return FORWARD(system, str);
+   return FORWARD(system, __libc_system, str);
 }
 
 
@@ -2533,7 +2538,7 @@ WEAK
 pid_t wait(int *status)
 {
    __my_pthread_testcancel();
-   return FORWARD(wait, status);
+   return FORWARD(wait, __libc_wait, status);
 }
 
 
@@ -2543,7 +2548,7 @@ WEAK
 int msync(const void *start, size_t length, int flags)
 {
    __my_pthread_testcancel();
-   return FORWARD(msync, start, length, flags);
+   return FORWARD(msync, __libc_msync, start, length, flags);
 }
 
 strong_alias(close, __close)
@@ -2556,11 +2561,11 @@ strong_alias(wait, __wait)
 strong_alias(write, __write)
 strong_alias(connect, __connect)
 strong_alias(send, __send)
+strong_alias(pause, __pause)
 
 weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 weak_alias(__nanosleep, nanosleep)
-weak_alias(__pause, pause)
 weak_alias(__tcdrain, tcdrain)
 
 
@@ -2569,7 +2574,7 @@ void (*longjmp_t)(jmp_buf env, int val) __attribute((noreturn));
 /* not weak: WEAK */
 void longjmp(jmp_buf env, int val)
 {
-   FORWARD(longjmp, env, val);
+   FORWARD(longjmp, __libc_longjmp, env, val);
 }
 
 
@@ -2578,7 +2583,7 @@ typedef void (*siglongjmp_t) (sigjmp_buf env, int val)
 void siglongjmp(sigjmp_buf env, int val)
 {
    kludged("siglongjmp", "(it ignores cleanup handlers)");
-   FORWARD(siglongjmp, env, val);
+   FORWARD(siglongjmp, __libc_siglongjmp, env, val);
 }
 
 
@@ -2640,7 +2645,7 @@ pid_t __fork(void)
    __pthread_mutex_lock(&pthread_atfork_lock);
 
    run_fork_handlers(0 /* prepare */);
-   pid = FORWARD(__fork);
+   pid = FORWARD(__fork, __libc_fork);
    if (pid == 0) {
       /* I am the child */
       run_fork_handlers(2 /* child */);

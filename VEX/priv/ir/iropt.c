@@ -529,7 +529,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
    for (i = 0; i < bb->stmts_used; i++) {
       IRStmt* st = bb->stmts[i];
 
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
 
       /* Deal with Gets */
@@ -759,7 +759,8 @@ static void redundant_put_removal_BB (
    HashHW* env = newHHW();
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
-      if (!st)
+
+      if (st->tag == Ist_NoOp)
          continue;
 
       /* Deal with conditional exits. */
@@ -1520,12 +1521,12 @@ IRBB* cprop_BB ( IRBB* in )
       st2 = in->stmts[i];
 
       /* perhaps st2 is already a no-op? */
-      if (!st2) continue;
+      if (st2->tag == Ist_NoOp) continue;
 
       st2 = subst_and_fold_Stmt( env, st2 );
 
       /* If the statement has been folded into a no-op, forget it. */
-      if (!st2) continue;
+      if (st2->tag == Ist_NoOp) continue;
 
       /* Now consider what the stmt looks like.  If it's of the form
          't = const' or 't1 = t2', add it to the running environment
@@ -1687,7 +1688,7 @@ static Bool isZeroU1 ( IRExpr* e )
    /* Work backwards through the stmts */
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
       if (st->tag == Ist_Tmp
           && set[(Int)(st->Ist.Tmp.tmp)] == False) {
@@ -1731,10 +1732,9 @@ IRBB* spec_helpers_BB ( IRBB* bb,
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
 
-      if (!st 
-          || st->tag != Ist_Tmp
+      if (st->tag != Ist_Tmp
           || st->Ist.Tmp.data->tag != Iex_CCall)
-        continue;
+         continue;
 
       ex = (*specHelper)( st->Ist.Tmp.data->Iex.CCall.cee->name,
                           st->Ist.Tmp.data->Iex.CCall.args );
@@ -1991,7 +1991,7 @@ void do_cse_BB ( IRBB* bb )
       st = bb->stmts[i];
 
       /* ignore not-interestings */
-      if ((!st) || st->tag != Ist_Tmp)
+      if (st->tag != Ist_Tmp)
          continue;
 
       t = st->Ist.Tmp.tmp;
@@ -2083,7 +2083,7 @@ static Bool collapseChain ( IRBB* bb, Int startHere,
      +/- a constant. */
    for (j = startHere; j >= 0; j--) {
       st = bb->stmts[j];
-      if (!st || st->tag != Ist_Tmp) 
+      if (st->tag != Ist_Tmp) 
          continue;
       if (st->Ist.Tmp.tmp != var)
          continue;
@@ -2117,7 +2117,7 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
 
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
 
       /* Try to collapse 't1 = Add32/Sub32(t2, con)'. */
@@ -2347,7 +2347,8 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
 
    for (j = startHere; j >= 0; j--) {
       st = bb->stmts[j];
-      if (!st) continue;
+      if (st->tag == Ist_NoOp) 
+         continue;
 
       if (st->tag == Ist_Put) {
          /* Non-indexed Put.  This can't give a binding, but we do
@@ -2544,7 +2545,7 @@ void do_redundant_GetI_elimination ( IRBB* bb )
 
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
 
       if (st->tag == Ist_Tmp
@@ -2585,7 +2586,7 @@ void do_redundant_PutI_elimination ( IRBB* bb )
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (!st || st->tag != Ist_PutI)
+      if (st->tag != Ist_PutI)
          continue;
       /* Ok, search forwards from here to see if we can find another
          PutI which makes this one redundant, and dodging various 
@@ -2603,7 +2604,7 @@ void do_redundant_PutI_elimination ( IRBB* bb )
       delete = False;
       for (j = i+1; j < bb->stmts_used; j++) {
          stj = bb->stmts[j];
-         if (!stj) 
+         if (stj->tag == Ist_NoOp) 
             continue;
          if (identicalPutIs(st, stj)) {
             /* success! */
@@ -2932,8 +2933,6 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
          (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
 
       for (i = 0; i < bb2->stmts_used; i++) {
-         if (bb2->stmts[i] == NULL)
-            continue;
          /* deltaIRStmt destructively modifies the stmt, but 
             that's OK since bb2 is a complete fresh copy of bb1. */
          deltaIRStmt(bb2->stmts[i], n_vars);
@@ -3305,7 +3304,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 
       /* No more binds to invalidate. */
       if (oldest_op == 1<<30)
-        return;
+         return;
 
       /* the oldest bind to invalidate has been identified */
       vassert(oldest_op != 1<<31 && oldest_k != 1<<31);
@@ -3345,7 +3344,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
       occCount_Stmt( env, st );
    }
@@ -3364,8 +3363,6 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (!st)
-         continue;
       if (st->tag != Ist_Tmp)
          continue;
 
@@ -3404,7 +3401,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
    j = 0;
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (!st)
+      if (st->tag == Ist_NoOp)
          continue;
      
       if (st->tag == Ist_Tmp) {
@@ -3579,9 +3576,6 @@ static Bool hasGetIorPutI ( IRBB* bb )
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (!st)
-         continue;
-
       switch (st->tag) {
          case Ist_PutI: 
             return True;

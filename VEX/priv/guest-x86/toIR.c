@@ -34,6 +34,9 @@
 #include "guest-x86/gdefs.h"
 
 
+#define RESTEER_THRESH 10
+
+
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
@@ -127,7 +130,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    DisResult  dres;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
-   Int        resteerBelow = 10;  /* the threshold value */
+   Int        resteerBelow = RESTEER_THRESH;  /* the threshold value */
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
@@ -8740,9 +8743,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0xC8: /* BSWAP %eax */
       case 0xC9:
       case 0xCA:
-//--       case 0xCB:
-//--       case 0xCC:
-//--       case 0xCD:
+      case 0xCB:
+      case 0xCC:
+      case 0xCD:
       case 0xCE:
       case 0xCF: /* BSWAP %edi */
          /* AFAICS from the Intel docs, this only exists at size 4. */
@@ -8766,10 +8769,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          );
 
          putIReg(4, opc-0xC8, mkexpr(t2));
-//--          t1 = newTemp(cb);
-//--          uInstr2(cb, GET,   4, ArchReg, opc-0xC8, TempReg, t1);
-//--          uInstr1(cb, BSWAP, 4, TempReg, t1);
-//--          uInstr2(cb, PUT,   4, TempReg, t1, ArchReg, opc-0xC8);
          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
          break;
 

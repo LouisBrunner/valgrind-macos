@@ -1581,6 +1581,20 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_FPROUND = (UInt)Irrm_NEAREST;
    vex_state->guest_FC3210  = 0;
 
+#  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
+
+   vex_state->guest_SSEROUND = (UInt)Irrm_NEAREST;
+   SSEZERO(vex_state->guest_XMM0);
+   SSEZERO(vex_state->guest_XMM1);
+   SSEZERO(vex_state->guest_XMM2);
+   SSEZERO(vex_state->guest_XMM3);
+   SSEZERO(vex_state->guest_XMM4);
+   SSEZERO(vex_state->guest_XMM5);
+   SSEZERO(vex_state->guest_XMM6);
+   SSEZERO(vex_state->guest_XMM7);
+
+#  undef SSEZERO
+
    vex_state->guest_CS = 0;
    vex_state->guest_DS = 0;
    vex_state->guest_ES = 0;

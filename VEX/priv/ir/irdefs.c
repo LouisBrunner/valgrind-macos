@@ -55,6 +55,7 @@ void ppIRType ( IRType ty )
     case Ity_I64:     vex_printf( "I64"); break;
     case Ity_F32:     vex_printf( "F32"); break;
     case Ity_F64:     vex_printf( "F64"); break;
+    case Ity_V128:    vex_printf( "V128"); break;
     default: vex_printf("ty = 0x%x\n", (Int)ty);
              vpanic("ppIRType");
   }
@@ -217,7 +218,13 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF64asI64: vex_printf("ReinterpF64asI64"); return;
       case Iop_ReinterpI64asF64: vex_printf("ReinterpI64asF64"); return;
 
-      default:           vpanic("ppIROp(1)");
+      case Iop_Add32Fx4: vex_printf("Add32Fx4"); return;
+
+      case Iop_64HLto128: vex_printf("64HLto128"); return;
+      case Iop_128to64:   vex_printf("128to64");   return;
+      case Iop_128HIto64: vex_printf("128HIto64"); return;
+
+      default: vpanic("ppIROp(1)");
    }
   
    switch (op - base) {
@@ -237,9 +244,9 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("BIND-%d", e->Iex.Binder.binder);
       break;
     case Iex_Get:
-      vex_printf( "GET(%d,", e->Iex.Get.offset);
+      vex_printf( "GET:" );
       ppIRType(e->Iex.Get.ty);
-      vex_printf(")");
+      vex_printf("(%d)", e->Iex.Get.offset);
       break;
     case Iex_GetI:
       vex_printf( "GETI" );
@@ -1059,6 +1066,13 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_F32toF64: UNARY(Ity_F64,Ity_F32);
       case Iop_F64toF32: UNARY(Ity_F32,Ity_F64);
 
+      case Iop_64HLto128: BINARY(Ity_V128, Ity_I64,Ity_I64);
+      case Iop_128to64: case Iop_128HIto64: 
+         UNARY(Ity_I64, Ity_V128);
+
+      case Iop_Add32Fx4:
+         BINARY(Ity_V128, Ity_V128,Ity_V128);
+
       default:
          ppIROp(op);
          vpanic("typeOfPrimop");
@@ -1187,6 +1201,7 @@ Bool isPlausibleType ( IRType ty )
       case Ity_INVALID: case Ity_I1:
       case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64: 
       case Ity_F32: case Ity_F64:
+      case Ity_V128:
          return True;
       default: 
          return False;
@@ -1713,12 +1728,13 @@ Bool eqIRArray ( IRArray* descr1, IRArray* descr2 )
 Int sizeofIRType ( IRType ty )
 {
    switch (ty) {
-      case Ity_I8:  return 1;
-      case Ity_I16: return 2;
-      case Ity_I32: return 4;
-      case Ity_I64: return 8;
-      case Ity_F32: return 4;
-      case Ity_F64: return 8;
+      case Ity_I8:   return 1;
+      case Ity_I16:  return 2;
+      case Ity_I32:  return 4;
+      case Ity_I64:  return 8;
+      case Ity_F32:  return 4;
+      case Ity_F64:  return 8;
+      case Ity_V128: return 16;
       default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
                vpanic("sizeofIRType");
    }

@@ -59,6 +59,9 @@ typedef    signed int    Int;
 typedef  unsigned long long int   ULong;
 typedef    signed long long int   Long;
 
+/* Always 128 bits. */
+typedef  UInt  U128[4];
+
 
 typedef  float   Float;    /* IEEE754 single-precision (32-bit) value */
 typedef  double  Double;   /* IEEE754 double-precision (64-bit) value */

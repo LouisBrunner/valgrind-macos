@@ -46,10 +46,16 @@
 /* ------------------ Types ------------------ */
 
 typedef 
-   enum { Ity_INVALID=0x10FFF,
-          Ity_I1=0x11000, 
-          Ity_I8, Ity_I16, Ity_I32, Ity_I64,
-          Ity_F32, Ity_F64
+   enum { 
+      Ity_INVALID=0x10FFF,
+      Ity_I1=0x11000, 
+      Ity_I8, 
+      Ity_I16, 
+      Ity_I32, 
+      Ity_I64,
+      Ity_F32,   /* IEEE 754 float */
+      Ity_F64,   /* IEEE 754 double */
+      Ity_V128   /* 128-bit SIMD */
    }
    IRType;
 
@@ -60,11 +66,15 @@ extern Int  sizeofIRType ( IRType );
 /* ------------------ Constants ------------------ */
 
 typedef
-   enum { Ico_U1=0x12000,
-          Ico_U8, Ico_U16, Ico_U32, Ico_U64,
-          Ico_F64, /* 64-bit IEEE754 floating */
-          Ico_F64i /* 64-bit unsigned int to be interpreted literally
-                      as a IEEE754 double value. */
+   enum { 
+      Ico_U1=0x12000,
+      Ico_U8, 
+      Ico_U16, 
+      Ico_U32, 
+      Ico_U64,
+      Ico_F64, /* 64-bit IEEE754 floating */
+      Ico_F64i /* 64-bit unsigned int to be interpreted literally
+                  as a IEEE754 double value. */
    }
    IRConstTag;
 
@@ -303,7 +313,50 @@ typedef
 
       /* Reinterpretation.  Take an F64 and produce an I64 with 
          the same bit pattern, or vice versa. */
-      Iop_ReinterpF64asI64, Iop_ReinterpI64asF64
+      Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
+
+      /* ------------------ 128-bit SIMD. ------------------ */
+
+      /* 128-bit ops */
+      Iop_And128, Iop_Or128, Iop_Xor128, Iop_Andn128,
+
+      /* --- 32x4 vector FP --- */
+
+      /* binary */
+      Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
+      Iop_Max32Fx4, Iop_Min32Fx4,
+
+      /* unary */
+      Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
+      Iop_ItoF32x4, /* first arg is IRRoundingMode (Ity_I32) */
+      Iop_FtoI32x4, /* first arg is IRRoundingMode (Ity_I32) */
+
+      /* --- 32x4 lowest-lane-only scalar FP --- */
+
+      /* In binary cases, upper 3/4 is copied from first operand.  In
+	 unary cases, upper 3/4 is copied from the operand. */
+
+      /* binary */
+      Iop_Add32F0x4, Iop_Sub32F0x4, Iop_Mul32F0x4, Iop_Div32F0x4, 
+      Iop_Max32F0x4, Iop_Min32F0x4,
+
+      /* unary */
+      Iop_Recip32F0x4, Iop_Sqrt32F0x4, Iop_RSqrt32F0x4,
+      Iop_ItoF320x4, /* first arg is IRRoundingMode (Ity_I32) */
+      Iop_FtoI320x4, /* first arg is IRRoundingMode (Ity_I32) */
+
+      /* --- pack / unpack --- */
+
+      /* 64 <-> 128 bit pack/unpack */
+      Iop_128to64,     // :: V128 -> I64, low half
+      Iop_128HIto64,   // :: V128 -> I64, high half
+      Iop_64HLto128,   // :: (I64,I64) -> V128
+
+      /* 128 -> 32 bit unpack */
+      Iop_128W3to32,   // :: V128 -> I32, bits 127-96
+      Iop_128W2to32,   // :: V128 -> I32, bits 95-64
+      Iop_128W1to32,   // :: V128 -> I32, bits 63-32
+      Iop_128W0to32    // :: V128 -> I32, bits 31-0
    }
    IROp;
 

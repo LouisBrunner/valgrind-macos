@@ -103,26 +103,48 @@ static IRBB* irbb;
 /*--- Offsets of various parts of the x86 guest state.     ---*/
 /*------------------------------------------------------------*/
 
-#define OFFB_FPREGS   offsetof(VexGuestX86State,guest_FPREG[0])
-#define OFFB_FPTAGS   offsetof(VexGuestX86State,guest_FPTAG[0])
-#define OFFB_EAX      offsetof(VexGuestX86State,guest_EAX)
-#define OFFB_EBX      offsetof(VexGuestX86State,guest_EBX)
-#define OFFB_ECX      offsetof(VexGuestX86State,guest_ECX)
-#define OFFB_EDX      offsetof(VexGuestX86State,guest_EDX)
-#define OFFB_EIP      offsetof(VexGuestX86State,guest_EIP)
+#define OFFB_EAX       offsetof(VexGuestX86State,guest_EAX)
+#define OFFB_EBX       offsetof(VexGuestX86State,guest_EBX)
+#define OFFB_ECX       offsetof(VexGuestX86State,guest_ECX)
+#define OFFB_EDX       offsetof(VexGuestX86State,guest_EDX)
+#define OFFB_ESP       offsetof(VexGuestX86State,guest_ESP)
+#define OFFB_EBP       offsetof(VexGuestX86State,guest_EBP)
+#define OFFB_ESI       offsetof(VexGuestX86State,guest_ESI)
+#define OFFB_EDI       offsetof(VexGuestX86State,guest_EDI)
 
-#define OFFB_CC_OP    offsetof(VexGuestX86State,guest_CC_OP)
-#define OFFB_CC_DEP1  offsetof(VexGuestX86State,guest_CC_DEP1)
-#define OFFB_CC_DEP2  offsetof(VexGuestX86State,guest_CC_DEP2)
-#define OFFB_CC_NDEP  offsetof(VexGuestX86State,guest_CC_NDEP)
+#define OFFB_EIP       offsetof(VexGuestX86State,guest_EIP)
 
-#define OFFB_DFLAG    offsetof(VexGuestX86State,guest_DFLAG)
-#define OFFB_IDFLAG   offsetof(VexGuestX86State,guest_IDFLAG)
-#define OFFB_FTOP     offsetof(VexGuestX86State,guest_FTOP)
-#define OFFB_FC3210   offsetof(VexGuestX86State,guest_FC3210)
-#define OFFB_FPROUND  offsetof(VexGuestX86State,guest_FPROUND)
+#define OFFB_CC_OP     offsetof(VexGuestX86State,guest_CC_OP)
+#define OFFB_CC_DEP1   offsetof(VexGuestX86State,guest_CC_DEP1)
+#define OFFB_CC_DEP2   offsetof(VexGuestX86State,guest_CC_DEP2)
+#define OFFB_CC_NDEP   offsetof(VexGuestX86State,guest_CC_NDEP)
 
-#define OFFB_EMWARN   offsetof(VexGuestX86State,guest_EMWARN)
+#define OFFB_FPREGS    offsetof(VexGuestX86State,guest_FPREG[0])
+#define OFFB_FPTAGS    offsetof(VexGuestX86State,guest_FPTAG[0])
+#define OFFB_DFLAG     offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_IDFLAG    offsetof(VexGuestX86State,guest_IDFLAG)
+#define OFFB_FTOP      offsetof(VexGuestX86State,guest_FTOP)
+#define OFFB_FC3210    offsetof(VexGuestX86State,guest_FC3210)
+#define OFFB_FPROUND   offsetof(VexGuestX86State,guest_FPROUND)
+
+#define OFFB_CS        offsetof(VexGuestX86State,guest_CS)
+#define OFFB_DS        offsetof(VexGuestX86State,guest_DS)
+#define OFFB_ES        offsetof(VexGuestX86State,guest_ES)
+#define OFFB_FS        offsetof(VexGuestX86State,guest_FS)
+#define OFFB_GS        offsetof(VexGuestX86State,guest_GS)
+#define OFFB_SS        offsetof(VexGuestX86State,guest_SS)
+
+#define OFFB_SSEROUND  offsetof(VexGuestX86State,guest_SSEROUND)
+#define OFFB_XMM0      offsetof(VexGuestX86State,guest_XMM0)
+#define OFFB_XMM1      offsetof(VexGuestX86State,guest_XMM1)
+#define OFFB_XMM2      offsetof(VexGuestX86State,guest_XMM2)
+#define OFFB_XMM3      offsetof(VexGuestX86State,guest_XMM3)
+#define OFFB_XMM4      offsetof(VexGuestX86State,guest_XMM4)
+#define OFFB_XMM5      offsetof(VexGuestX86State,guest_XMM5)
+#define OFFB_XMM6      offsetof(VexGuestX86State,guest_XMM6)
+#define OFFB_XMM7      offsetof(VexGuestX86State,guest_XMM7)
+
+#define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
 
 
 /*------------------------------------------------------------*/
@@ -461,24 +483,24 @@ static Int integerGuestRegOffset ( Int sz, UInt archreg )
 
    if (sz == 4 || sz == 2 || (sz == 1 && archreg < 4)) {
       switch (archreg) {
-         case R_EAX: return offsetof(VexGuestX86State,guest_EAX);
-         case R_EBX: return offsetof(VexGuestX86State,guest_EBX);
-         case R_ECX: return offsetof(VexGuestX86State,guest_ECX);
-         case R_EDX: return offsetof(VexGuestX86State,guest_EDX);
-         case R_ESI: return offsetof(VexGuestX86State,guest_ESI);
-         case R_EDI: return offsetof(VexGuestX86State,guest_EDI);
-         case R_ESP: return offsetof(VexGuestX86State,guest_ESP);
-         case R_EBP: return offsetof(VexGuestX86State,guest_EBP);
+         case R_EAX: return OFFB_EAX;
+         case R_EBX: return OFFB_EBX;
+         case R_ECX: return OFFB_ECX;
+         case R_EDX: return OFFB_EDX;
+         case R_ESI: return OFFB_ESI;
+         case R_EDI: return OFFB_EDI;
+         case R_ESP: return OFFB_ESP;
+         case R_EBP: return OFFB_EBP;
          default: vpanic("integerGuestRegOffset(x86,le)(4,2)");
       }
    }
 
    vassert(archreg >= 4 && archreg < 8 && sz == 1);
    switch (archreg-4) {
-      case R_EAX: return 1+ offsetof(VexGuestX86State,guest_EAX);
-      case R_EBX: return 1+ offsetof(VexGuestX86State,guest_EBX);
-      case R_ECX: return 1+ offsetof(VexGuestX86State,guest_ECX);
-      case R_EDX: return 1+ offsetof(VexGuestX86State,guest_EDX);
+      case R_EAX: return 1+ OFFB_EAX;
+      case R_EBX: return 1+ OFFB_EBX;
+      case R_ECX: return 1+ OFFB_ECX;
+      case R_EDX: return 1+ OFFB_EDX;
       default: vpanic("integerGuestRegOffset(x86,le)(1h)");
    }
 
@@ -489,13 +511,28 @@ static Int integerGuestRegOffset ( Int sz, UInt archreg )
 static Int segmentGuestRegOffset ( UInt sreg )
 {
    switch (sreg) {
-      case R_ES: return offsetof(VexGuestX86State,guest_ES);
-      case R_CS: return offsetof(VexGuestX86State,guest_CS);
-      case R_SS: return offsetof(VexGuestX86State,guest_SS);
-      case R_DS: return offsetof(VexGuestX86State,guest_DS);
-      case R_FS: return offsetof(VexGuestX86State,guest_FS);
-      case R_GS: return offsetof(VexGuestX86State,guest_GS);
+      case R_ES: return OFFB_ES;
+      case R_CS: return OFFB_CS;
+      case R_SS: return OFFB_SS;
+      case R_DS: return OFFB_DS;
+      case R_FS: return OFFB_FS;
+      case R_GS: return OFFB_GS;
       default: vpanic("segmentGuestRegOffset(x86)");
+   }
+}
+
+static Int xmmGuestRegOffset ( UInt xmmreg )
+{
+   switch (xmmreg) {
+      case 0: return OFFB_XMM0;
+      case 1: return OFFB_XMM1;
+      case 2: return OFFB_XMM2;
+      case 3: return OFFB_XMM3;
+      case 4: return OFFB_XMM4;
+      case 5: return OFFB_XMM5;
+      case 6: return OFFB_XMM6;
+      case 7: return OFFB_XMM7;
+      default: vpanic("xmmGuestRegOffset");
    }
 }
 
@@ -510,8 +547,10 @@ static IRExpr* getIReg ( Int sz, UInt archreg )
 /* Ditto, but write to a reg instead. */
 static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
+   IRType ty = typeOfIRExpr(irbb->tyenv, e);
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
+   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
    stmt( IRStmt_Put(integerGuestRegOffset(sz,archreg), e) );
 }
 
@@ -527,6 +566,17 @@ static void putSReg ( UInt sreg, IRExpr* e )
    stmt( IRStmt_Put( segmentGuestRegOffset(sreg), e ) );
 }
 #endif
+
+static IRExpr* getXMMReg ( UInt xmmreg )
+{
+   return IRExpr_Get( xmmGuestRegOffset(xmmreg), Ity_V128 );
+}
+
+static void putXMMReg ( UInt xmmreg, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_V128);
+   stmt( IRStmt_Put( xmmGuestRegOffset(xmmreg), e ) );
+}
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
@@ -1258,33 +1308,33 @@ static void helper_SBB ( Int sz,
 
 
 
-static Char* nameGrp1 ( Int opc_aux )
+static HChar* nameGrp1 ( Int opc_aux )
 {
-   static Char* grp1_names[8] 
+   static HChar* grp1_names[8] 
      = { "add", "or", "adc", "sbb", "and", "sub", "xor", "cmp" };
    if (opc_aux < 0 || opc_aux > 7) vpanic("nameGrp1(x86)");
    return grp1_names[opc_aux];
 }
 
-static Char* nameGrp2 ( Int opc_aux )
+static HChar* nameGrp2 ( Int opc_aux )
 {
-   static Char* grp2_names[8] 
+   static HChar* grp2_names[8] 
      = { "rol", "ror", "rcl", "rcr", "shl", "shr", "shl", "sar" };
    if (opc_aux < 0 || opc_aux > 7) vpanic("nameGrp2(x86)");
    return grp2_names[opc_aux];
 }
 
-static Char* nameGrp4 ( Int opc_aux )
+static HChar* nameGrp4 ( Int opc_aux )
 {
-   static Char* grp4_names[8] 
+   static HChar* grp4_names[8] 
      = { "inc", "dec", "???", "???", "???", "???", "???", "???" };
    if (opc_aux < 0 || opc_aux > 1) vpanic("nameGrp4(x86)");
    return grp4_names[opc_aux];
 }
 
-static Char* nameGrp5 ( Int opc_aux )
+static HChar* nameGrp5 ( Int opc_aux )
 {
-   static Char* grp5_names[8] 
+   static HChar* grp5_names[8] 
      = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
    if (opc_aux < 0 || opc_aux > 6) vpanic("nameGrp5(x86)");
    return grp5_names[opc_aux];
@@ -1298,14 +1348,14 @@ static Char* nameGrp5 ( Int opc_aux )
 //--    return grp8_names[opc_aux];
 //-- }
 
-static Char* nameIReg ( Int size, Int reg )
+static HChar* nameIReg ( Int size, Int reg )
 {
-   static Char* ireg32_names[8] 
+   static HChar* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", 
          "%esp", "%ebp", "%esi", "%edi" };
-   static Char* ireg16_names[8] 
+   static HChar* ireg16_names[8] 
      = { "%ax", "%cx", "%dx", "%bx", "%sp", "%bp", "%si", "%di" };
-   static Char* ireg8_names[8] 
+   static HChar* ireg8_names[8] 
      = { "%al", "%cl", "%dl", "%bl", 
          "%ah{sp}", "%ch{bp}", "%dh{si}", "%bh{di}" };
    if (reg < 0 || reg > 7) goto bad;
@@ -1319,7 +1369,7 @@ static Char* nameIReg ( Int size, Int reg )
    return NULL; /*notreached*/
 }
 
-static Char* nameSReg ( UInt sreg )
+static HChar* nameSReg ( UInt sreg )
 {
    switch (sreg) {
       case R_ES: return "%es";
@@ -1332,21 +1382,22 @@ static Char* nameSReg ( UInt sreg )
    }
 }
 
-static Char* nameMMXReg ( Int mmxreg )
+static HChar* nameMMXReg ( Int mmxreg )
 {
-   static Char* mmx_names[8] 
+   static HChar* mmx_names[8] 
      = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
    if (mmxreg < 0 || mmxreg > 7) vpanic("nameMMXReg(x86,guest)");
    return mmx_names[mmxreg];
 }
 
-//-- const Char* VG_(name_of_xmm_reg) ( Int xmmreg )
-//-- {
-//--    static const Char* xmm_names[8] 
-//--      = { "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7" };
-//--    if (xmmreg < 0 || xmmreg > 7) VG_(core_panic)("name_of_xmm_reg");
-//--    return xmm_names[xmmreg];
-//-- }
+static HChar* nameXMMReg ( Int xmmreg )
+{
+   static HChar* xmm_names[8] 
+     = { "%xmm0", "%xmm1", "%xmm2", "%xmm3", 
+         "%xmm4", "%xmm5", "%xmm6", "%xmm7" };
+   if (xmmreg < 0 || xmmreg > 7) vpanic("name_of_xmm_reg");
+   return xmm_names[xmmreg];
+}
  
 static Char* nameMMXGran ( UChar gran )
 {
@@ -1855,7 +1906,7 @@ UInt dis_op2_E_G ( UChar       sorb,
                    UInt        delta0,
                    Char*       t_x86opc )
 {
-   UChar   dis_buf[50];
+   HChar   dis_buf[50];
    Int     len;
    IRType  ty   = szToITy(size);
    IRTemp  dst1 = newTemp(ty);
@@ -1964,7 +2015,7 @@ UInt dis_op2_G_E ( UChar       sorb,
                    UInt        delta0,
                    Char*       t_x86opc )
 {
-   UChar   dis_buf[50];
+   HChar   dis_buf[50];
    Int     len;
    IRType  ty   = szToITy(size);
    IRTemp  dst1 = newTemp(ty);
@@ -2068,7 +2119,7 @@ UInt dis_mov_E_G ( UChar       sorb,
 {
    Int len;
    UChar rm = getIByte(delta0);
-   UChar dis_buf[50];
+   HChar dis_buf[50];
 
    if (epartIsReg(rm)) {
       putIReg(size, gregOfRM(rm), getIReg(size, eregOfRM(rm)));
@@ -2112,7 +2163,7 @@ UInt dis_mov_G_E ( UChar       sorb,
 {
    Int len;
    UChar rm = getIByte(delta0);
-   UChar dis_buf[50];
+   HChar dis_buf[50];
 
    if (epartIsReg(rm)) {
       putIReg(size, eregOfRM(rm), getIReg(size, gregOfRM(rm)));
@@ -2186,7 +2237,7 @@ UInt dis_movx_E_G ( UChar       sorb,
    /* E refers to memory */    
    {
       Int    len;
-      UChar  dis_buf[50];
+      HChar  dis_buf[50];
       IRTemp addr = disAMode ( &len, sorb, delta, dis_buf );
 
       putIReg(szd, gregOfRM(rm),
@@ -2299,7 +2350,7 @@ UInt dis_Grp1 ( UChar sorb,
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
    Int     len;
-   UChar   dis_buf[50];
+   HChar   dis_buf[50];
    IRType  ty   = szToITy(sz);
    IRTemp  dst1 = newTemp(ty);
    IRTemp  src  = newTemp(ty);
@@ -2382,7 +2433,7 @@ UInt dis_Grp2 ( UChar  sorb,
                 Char* shift_expr_txt )
 {
    /* delta on entry points at the modrm byte. */
-   UChar  dis_buf[50];
+   HChar  dis_buf[50];
    Int    len;
    Bool   isShift, isRotate, isRotateRC;
    IRType ty    = szToITy(sz);
@@ -2635,7 +2686,7 @@ UInt dis_Grp2 ( UChar  sorb,
 //--       And eip on entry points at the modrm byte. */
 //--    Int   t1, t2, t_fetched, t_mask;
 //--    UInt  pair;
-//--    Char  dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UInt  v_mask;
 //-- 
 //--    /* There is no 1-byte form of this instruction, AFAICS. */
@@ -2776,10 +2827,10 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 static 
 UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 {
-   UInt  d32;
-   UChar modrm;
-   UChar dis_buf[50];
-   Int len;
+   UInt    d32;
+   UChar   modrm;
+   HChar   dis_buf[50];
+   Int     len;
    IRTemp  addr;
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
@@ -2906,9 +2957,9 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 static
 UInt dis_Grp4 ( UChar sorb, UInt delta )
 {
-  Int alen;
+   Int   alen;
    UChar modrm;
-   UChar dis_buf[50];
+   HChar dis_buf[50];
    IRType ty = Ity_I8;
    IRTemp t1 = newTemp(ty);
    IRTemp t2 = newTemp(ty);
@@ -2967,7 +3018,7 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
 {
    Int     len;
    UChar   modrm;
-   UChar   dis_buf[50];
+   HChar   dis_buf[50];
    IRTemp  addr = IRTemp_INVALID;
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
@@ -3267,7 +3318,7 @@ UInt dis_mul_E_G ( UChar       sorb,
                    UInt        delta0 )
 {
    Int    alen;
-   UChar  dis_buf[50];
+   HChar  dis_buf[50];
    UChar  rm = getIByte(delta0);
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
@@ -3309,7 +3360,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
                       Int         litsize )
 {
    Int    d32, alen;
-   Char   dis_buf[50];
+   HChar  dis_buf[50];
    UChar  rm = getIByte(delta);
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
@@ -3638,7 +3689,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 {
    Int    len;
    UInt   r_src, r_dst;
-   UChar  dis_buf[50];
+   HChar  dis_buf[50];
    IRTemp t1, t2;
 
    /* On entry, delta points at the second byte of the insn (the modrm
@@ -4452,23 +4503,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->nFxState = 5;
 
                d->fxState[0].fx     = Ifx_Write;
-               d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
+               d->fxState[0].offset = OFFB_FTOP;
                d->fxState[0].size   = sizeof(UInt);
 
                d->fxState[1].fx     = Ifx_Write;
-               d->fxState[1].offset = offsetof(VexGuestX86State,guest_FPREG);
+               d->fxState[1].offset = OFFB_FPREGS;
                d->fxState[1].size   = 8 * sizeof(ULong);
 
                d->fxState[2].fx     = Ifx_Write;
-               d->fxState[2].offset = offsetof(VexGuestX86State,guest_FPTAG);
+               d->fxState[2].offset = OFFB_FPTAGS;
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Write;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPROUND);
+               d->fxState[3].offset = OFFB_FPROUND;
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Write;
-               d->fxState[4].offset = offsetof(VexGuestX86State,guest_FC3210);
+               d->fxState[4].offset = OFFB_FC3210;
                d->fxState[4].size   = sizeof(UInt);
 
                stmt( IRStmt_Dirty(d) );
@@ -4509,23 +4560,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->nFxState = 5;
 
                d->fxState[0].fx     = Ifx_Read;
-               d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
+               d->fxState[0].offset = OFFB_FTOP;
                d->fxState[0].size   = sizeof(UInt);
 
                d->fxState[1].fx     = Ifx_Read;
-               d->fxState[1].offset = offsetof(VexGuestX86State,guest_FPREG);
+               d->fxState[1].offset = OFFB_FPREGS;
                d->fxState[1].size   = 8 * sizeof(ULong);
 
                d->fxState[2].fx     = Ifx_Read;
-               d->fxState[2].offset = offsetof(VexGuestX86State,guest_FPTAG);
+               d->fxState[2].offset = OFFB_FPTAGS;
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Read;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPROUND);
+               d->fxState[3].offset = OFFB_FPROUND;
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Read;
-               d->fxState[4].offset = offsetof(VexGuestX86State,guest_FC3210);
+               d->fxState[4].offset = OFFB_FC3210;
                d->fxState[4].size   = sizeof(UInt);
 
                stmt( IRStmt_Dirty(d) );
@@ -4879,7 +4930,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
                                Char* name,
                                Bool  show_granularity )
 {
-   Char    dis_buf[50];
+   HChar   dis_buf[50];
    UChar   modrm = getIByte(delta);
    Bool    isReg = epartIsReg(modrm);
    IRExpr* argL  = NULL;
@@ -5014,7 +5065,7 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
 {
    Int   len;
    UChar modrm;
-   UChar dis_buf[50];
+   HChar dis_buf[50];
    UChar opc = getIByte(delta);
    delta++;
 
@@ -5337,7 +5388,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used
       for printing it.   And eip on entry points at the modrm byte. */
    Int len;
-   UChar dis_buf[50];
+   HChar dis_buf[50];
 
    IRType ty       = szToITy(sz);
    IRTemp gsrc     = newTemp(ty);
@@ -5463,7 +5514,7 @@ static Char* nameBtOp ( BtOp op )
 static
 UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
 {
-   Char   dis_buf[50];
+   HChar  dis_buf[50];
    UChar  modrm;
    Int    len;
    IRTemp t_fetched, t_bitno0, t_bitno1, t_bitno2, t_addr0, 
@@ -5594,7 +5645,7 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
 {
    Bool   isReg;
    UChar  modrm;
-   Char   dis_buf[50];
+   HChar  dis_buf[50];
    
    IRType ty  = szToITy(sz);
    IRTemp src = newTemp(ty);
@@ -5760,7 +5811,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
                        Int         size, 
                        UInt        delta0 )
 {
-   UChar dis_buf[50];
+   HChar dis_buf[50];
    Int   len;
 
    IRType ty    = szToITy(size);
@@ -5813,7 +5864,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
 //--                      Addr        eip0 )
 //-- {
 //--    Int   tal, tah, junkl, junkh, destl, desth, srcl, srch, accl, acch;
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar rm;
 //--    UInt  pair;
 //-- 
@@ -5899,7 +5950,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
                     UInt        delta0 )
 {
    UChar rm  = getIByte(delta0);
-   UChar dis_buf[50];
+   HChar dis_buf[50];
    Int   len;
 
    IRType ty   = szToITy(sz);
@@ -5950,7 +6001,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 {
    Int   len;
    UChar rm = getIByte(delta0);
-   UChar dis_buf[50];
+   HChar dis_buf[50];
 
    //   Int tmpd = newTemp(cb);
    //Int tmpt = newTemp(cb);
@@ -6009,7 +6060,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 //--                      Addr        eip0 )
 //-- {
 //--    UChar rm  = getUChar(eip0);
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //-- 
 //--    if (epartIsReg(rm)) {
 //--       Int tmpv = newTemp(cb);
@@ -6054,7 +6105,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
                      UInt  delta0 )
 {
    UChar rm = getIByte(delta0);
-   //UChar dis_buf[50];
+   //HChar dis_buf[50];
 
    vassert(sz == 2 || sz == 4);
 
@@ -6099,7 +6150,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                Char* name,
 //--                                Bool show_granularity )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    Bool  isReg = epartIsReg(modrm);
 //-- 
@@ -6141,7 +6192,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                     Char* name,
 //--                                     Bool show_granularity )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    UChar imm8;
 //--    Bool  isReg = epartIsReg(modrm);
@@ -6196,7 +6247,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                            UChar opc2, 
 //--                            UChar opc3 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    Bool  isReg = epartIsReg(modrm);
 //-- 
@@ -6241,7 +6292,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                            UChar opc1, 
 //--                            UChar opc2 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    Bool  isReg = epartIsReg(modrm);
 //-- 
@@ -6285,7 +6336,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                 UChar opc1, 
 //--                                 UChar opc2 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    UChar imm8;
 //--    Bool  isReg = epartIsReg(modrm);
@@ -6333,7 +6384,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                 UChar opc2,
 //--                                 UChar opc3 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    UChar imm8;
 //--    Bool  isReg = epartIsReg(modrm);
@@ -6381,7 +6432,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                   UChar insn1, 
 //--                                   UChar insn2 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    Bool  isReg = epartIsReg(modrm);
 //--    UInt  pair;
@@ -6431,7 +6482,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                   UChar insn0, 
 //--                                   UChar insn1 )
 //-- {
-//--     Char dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    Bool  isReg = epartIsReg(modrm);
 //--    UInt  pair;
@@ -6484,7 +6535,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                        UChar opc1, 
 //--                        UChar opc2 )
 //-- {
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    if (epartIsReg(modrm)) {
 //--       /* Completely internal SSE insn. */
@@ -6524,7 +6575,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                          UChar opc1, 
 //--                          UChar opc2 )
 //-- {
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    if (epartIsReg(modrm)) {
 //--       /* Completely internal SSE insn. */
@@ -6565,7 +6616,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                        UChar opc2, 
 //--                        UChar opc3 )
 //-- {
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    if (epartIsReg(modrm)) {
 //--       /* Completely internal SSE insn. */
@@ -6606,7 +6657,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                          UChar opc2, 
 //--                          UChar opc3 )
 //-- {
-//--    UChar dis_buf[50];
+//--    HChar dis_buf[50];
 //--    UChar modrm = getUChar(eip);
 //--    if (epartIsReg(modrm)) {
 //--       /* Completely internal SSE insn. */
@@ -6668,6 +6719,47 @@ void dis_ret ( UInt d32 )
    jmp_treg(Ijk_Ret,t2);
 }
 
+/* ------ SSE/SSE2/SSE3 helpers ----- */
+
+static void putXMMRegLO64( Int xmmreg, IRExpr* e64 )
+{
+   putXMMReg( 
+      xmmreg,
+      binop(Iop_64HLto128,
+            unop(Iop_128HIto64, getXMMReg(xmmreg)),
+            e64 ) 
+   );
+}
+
+static void putXMMRegHI64( Int xmmreg, IRExpr* e64 )
+{
+   putXMMReg( 
+      xmmreg,
+      binop(Iop_64HLto128,
+            e64, 
+            unop(Iop_128to64, getXMMReg(xmmreg)))
+   );
+}
+
+static UInt dis_SSE_E_to_G ( UChar sorb, UInt delta, 
+                             HChar* opname, IROp op )
+{
+   HChar dis_buf[50];
+   Int   alen;
+   UChar rm = getIByte(delta);
+   if (epartIsReg(rm)) {
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, getXMMReg(gregOfRM(rm)),
+                 getXMMReg(eregOfRM(rm))) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+1;
+   } else {
+      vassert(0);
+   }
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
@@ -6691,9 +6783,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    Int       alen;
    UChar     opc, modrm, abyte;
    UInt      d32;
-   UChar     dis_buf[50];
+   HChar     dis_buf[50];
    Int       am_sz, d_sz;
    DisResult whatNext = Dis_Continue;
+   UChar*    insn; /* used in SSE decoders */
 
    //Char  loc_buf[M_VG_ERRTXT];
 
@@ -6787,14 +6880,87 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          break;
    }
 
-//--    /* ---------------------------------------------------- */
-//--    /* --- The SSE/SSE2 decoder.                        --- */
-//--    /* ---------------------------------------------------- */
-//-- 
-//--    /* If it looks like this CPU might support SSE, try decoding SSE
-//--       insns.  */
-//--    if (VG_(have_ssestate)) {
-//--    UChar* insn = (UChar*)eip;
+   /* ---------------------------------------------------- */
+   /* --- The SSE decoder.                             --- */
+   /* ---------------------------------------------------- */
+
+   /* Note, this doesn't handle SSE2 or SSE3. */
+
+   insn = (UChar*)&guest_code[delta];
+
+   /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
+   if (insn[0] == 0x0F && insn[1] == 0x12) {
+      delta += 2;
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      delta += alen;
+
+      putXMMRegLO64( gregOfRM(insn[2]),  
+                     loadLE(Ity_I64, mkexpr(addr)) );
+
+      DIP("movlps %s, %s\n", 
+          dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
+
+      goto decode_success;
+   }
+
+   /* 0F 13 = MOVLPS -- move from low half of XMM to mem. */
+   if (insn[0] == 0x0F && insn[1] == 0x13) {
+      delta += 2;
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      delta += alen;
+
+      storeLE( mkexpr(addr), 
+               unop(Iop_128to64, getXMMReg( gregOfRM(insn[2]) )) );
+
+      DIP("movlps %s, %s\n", 
+          nameXMMReg( gregOfRM(insn[2]) ),
+          dis_buf);
+
+      goto decode_success;
+   }
+
+   /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
+   if (insn[0] == 0x0F && insn[1] == 0x16) {
+      vassert(sz == 4);
+      delta += 2;
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      delta += alen;
+
+      putXMMRegHI64( gregOfRM(insn[2]),  
+                     loadLE(Ity_I64, mkexpr(addr)) );
+
+      DIP("movhps %s, %s\n", 
+          dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
+
+      goto decode_success;
+   }
+
+   /* 0F 17 = MOVHPS -- move from high half of XMM to mem. */
+   if (insn[0] == 0x0F && insn[1] == 0x17) {
+      vassert(sz == 4);
+      delta += 2;
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      delta += alen;
+
+      storeLE( mkexpr(addr), 
+               unop(Iop_128HIto64, getXMMReg( gregOfRM(insn[2]) )) );
+
+      DIP("movhps %s, %s\n", 
+          nameXMMReg( gregOfRM(insn[2]) ),
+          dis_buf);
+
+      goto decode_success;
+   }
+
+   /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x58) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "addps", Iop_Add32Fx4 );
+      goto decode_success;
+   }
+
+
+
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
 //--    if (insn[0] == 0x0F && insn[1] == 0xAE 

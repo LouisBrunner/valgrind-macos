@@ -130,6 +130,16 @@ typedef
       UChar guest_FPTAG[8];
       UInt  guest_FPROUND;
       UInt  guest_FC3210;
+      /* SSE */
+      UInt  guest_SSEROUND;
+      U128  guest_XMM0;
+      U128  guest_XMM1;
+      U128  guest_XMM2;
+      U128  guest_XMM3;
+      U128  guest_XMM4;
+      U128  guest_XMM5;
+      U128  guest_XMM6;
+      U128  guest_XMM7;
       /* Segment registers. */
       UShort guest_CS;
       UShort guest_DS;
@@ -140,7 +150,7 @@ typedef
       /* Emulation warnings */
       UInt   guest_EMWARN;
       /* Padding to make it have an 8-aligned size */
-      /* UInt   padding; */
+      UInt   padding;
    }
    VexGuestX86State;
 

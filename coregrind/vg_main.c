@@ -1364,9 +1364,8 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
 
    if (need_help) {
       VG_(clexecfd) = -1;
-      // Set the minimal number of entries in 'info' to continue.
-      info->interp_name = NULL;
-      info->interp_args = NULL;
+      // Totally zero 'info' before continuing.
+      VG_(memset)(info, 0, sizeof(*info));
    } else {
       Int ret;
       VG_(clexecfd) = VG_(open)(exec, VKI_O_RDONLY, VKI_S_IRUSR);

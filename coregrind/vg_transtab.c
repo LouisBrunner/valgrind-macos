@@ -451,6 +451,7 @@ void VG_(sanity_check_tt_tc) ( Char* who )
       if (tte->orig_addr == VG_TTE_EMPTY) continue;
       /* all others should agree with the TC entry. */
       tce = tte->tcentry;
+      // XXX: 64-bit cleanness: should this be IS_WORD_ALIGNED_ADDR?
       vg_assert(IS_ALIGNED4_ADDR(tce));
       /* does this point into a valid TC sector? */
       for (s = 0; s < VG_TC_N_SECTORS; s++)

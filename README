@@ -92,7 +92,7 @@ your valgrinding experience, though.
     genuine errors in your own code. The default.supp file
     should contains a good starting point. Do *not* edit this file
     however, as it will be overwritten at the next installation of
-    valgrind.
+    valgrind, but create your own local.supp file.
 
 
 Julian Seward (jseward@acm.org)

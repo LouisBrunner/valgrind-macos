@@ -39,7 +39,7 @@
    Interesting registers
    ------------------------------------------------------------------ */
 
-// Accessors for the arch_thread_t
+// Accessors for the ThreadArchState
 #define PLATFORM_SYSCALL_NUM(regs)     ((regs).vex.guest_EAX)
 #define PLATFORM_SYSCALL_RET(regs)     ((regs).vex.guest_EAX)
 #define PLATFORM_SYSCALL_ARG1(regs)    ((regs).vex.guest_EBX)

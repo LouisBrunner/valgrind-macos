@@ -41,7 +41,7 @@
    Interesting registers
    ------------------------------------------------------------------ */
 
-// Accessors for the arch_thread_t
+// Accessors for the ThreadArchState
 #define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
 #define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
 #define ARCH_FRAME_PTR(regs)           ((regs).vex.guest_EBP)

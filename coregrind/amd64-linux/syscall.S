@@ -116,12 +116,10 @@ VG_(clone):
         ret
 
 
-
-# XXX: must reinstate comments also -- see x86-linux/syscall.S
-
 .globl VG_(sigreturn)
 VG_(sigreturn):
-	ud2
+        movq    $__NR_rt_sigreturn, %rax
+        syscall
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

@@ -46,10 +46,10 @@ VexGuestLayout x86guest_layout;
 /*---------------------------------------------------------*/
 
 /* --- CLEAN HELPERS --- */
-extern UInt  calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
-extern UInt  calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
+extern UInt  calculate_eflags_all ( UInt cc_op, UInt cc_res, UInt cc_aux );
+extern UInt  calculate_eflags_c   ( UInt cc_op, UInt cc_res, UInt cc_aux );
 extern UInt  calculate_condition  ( UInt/*Condcode*/ cond, 
-                                    UInt cc_op, UInt cc_src, UInt cc_dst );
+                                    UInt cc_op, UInt cc_res, UInt cc_aux );
 extern UInt  calculate_FXAM ( UInt tag, ULong dbl );
 extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
@@ -84,61 +84,85 @@ extern void  dirtyhelper_CPUID ( VexGuestX86State* );
 #define FC_MASK_C1   (1 << 9)
 #define FC_MASK_C0   (1 << 8)
 
-/* eflags thunk descriptors. */
+/* %EFLAGS thunk descriptors.  This encoding is slightly non-obvious,
+   for the benefit of Memcheck.  The intention is to make RES be the
+   actual operation result -- or, in the case of multiply longs, at
+   least have a complete data dependency on the real result.  That
+   means that the AUX field needs to carry -- in the case of {S,U}MULL
+   -- a value which allows the real result to be recovered from the
+   RES field.
+
+   Note, for cases in which some or all of the old flags are also an
+   input (INC, DEC, ROL, ROR) we could have chosen to xor in the old
+   flags into the RES field.  The effect would be that Memcheck then
+   considers the result of the operation to also be dependent on the
+   definedness of the old flags.  This seems a step too far -- if the
+   compiler creates conditional jumps/moves partially dependent on
+   flags it is unsure of the definedness of -- then it is generating
+   buggy code.  So we don't do this.
+
+   In short, we need to roll into the RES field all inputs to the
+   computation that we want Memcheck to think have a bearing on the
+   definedness of the result.  We then tell Memcheck that only the RES
+   field needs to have its definedness tracked, and the AUX and OP
+   fields can be ignored.  The upshot is that we need to put in the
+   AUX field whatever info is needed to actually compute the flags
+   given the potentially strange mixture of stuff in the RES field.  
+*/
 enum {
-    CC_OP_COPY, /* nothing to do -- ccs are in CC_SRC and up to date */
+    CC_OP_COPY,    /* RES = current flags, AUX = 0, do nothing */
 
-    CC_OP_ADDB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
+    CC_OP_ADDB,    /* RES = argL+argR, AUX = argR */
     CC_OP_ADDW,
-    CC_OP_ADDL, /* 3 */
+    CC_OP_ADDL,    /* 3 */
 
-    CC_OP_ADCB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
+    CC_OP_ADCB,    /* RES = argL+argR, AUX = argR */
     CC_OP_ADCW,
-    CC_OP_ADCL, /* 6 */
+    CC_OP_ADCL,    /* 6 */
 
-    CC_OP_SUBB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
+    CC_OP_SUBB,    /* RES = argL-argR, AUX = argR */
     CC_OP_SUBW,
-    CC_OP_SUBL, /* 9 */
+    CC_OP_SUBL,    /* 9 */
 
-    CC_OP_SBBB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
+    CC_OP_SBBB,    /* RES = argL-argR, AUX = argR */
     CC_OP_SBBW,
-    CC_OP_SBBL, /* 12 */
+    CC_OP_SBBL,    /* 12 */
 
-    CC_OP_LOGICB, /* modify all flags, CC_DST = res, CC_SRC not used */
+    CC_OP_LOGICB,  /* RES = and/or/xor(argL,argR), AUX = 0 */
     CC_OP_LOGICW,
-    CC_OP_LOGICL, /* 15 */
+    CC_OP_LOGICL,  /* 15 */
 
-    CC_OP_INCB, /* modify all flags except C, CC_DST = res, CC_SRC = old C */
+    CC_OP_INCB,    /* RES = arg+1, AUX = old C flag (0 or 1) */
     CC_OP_INCW,
-    CC_OP_INCL, /* 18 */
+    CC_OP_INCL,    /* 18 */
 
-    CC_OP_DECB, /* modify all flags except C, CC_DST = res, CC_SRC = old C  */
+    CC_OP_DECB,    /* RES = arg-1, AUX = old C flag (0 or 1) */
     CC_OP_DECW,
-    CC_OP_DECL, /* 21 */
+    CC_OP_DECL,    /* 21 */
 
-    CC_OP_SHLB, /* modify all flags, CC_DST = res, CC_SRC = res' */
-    CC_OP_SHLW, /* where res' is like res but shifted one bit less */
-    CC_OP_SHLL, /* 24 */
+    CC_OP_SHLB,    /* RES = res, AUX = res' */
+    CC_OP_SHLW,    /* where res' is like res but shifted one bit less */
+    CC_OP_SHLL,    /* 24 */
 
-    CC_OP_SARB, /* modify all flags, CC_DST = res, CC_SRC = res' */
-    CC_OP_SARW, /* where res' is like res but shifted one bit less */
-    CC_OP_SARL, /* 27 */
+    CC_OP_SARB,    /* RES = res, AUX = res' */
+    CC_OP_SARW,    /* where res' is like res but shifted one bit less */
+    CC_OP_SARL,    /* 27 */
 
-    CC_OP_ROLB, /* modify C and O only.  CC_DST = res, CC_SRC = old flags */
+    CC_OP_ROLB,    /* RES = res, AUX = old flags */
     CC_OP_ROLW,
-    CC_OP_ROLL, /* 30 */
+    CC_OP_ROLL,    /* 30 */
 
-    CC_OP_RORB, /* modify C and O only.  CC_DST = res, CC_SRC = old flags */
+    CC_OP_RORB,    /* RES = res, AUX = old flags */
     CC_OP_RORW,
-    CC_OP_RORL, /* 33 */
+    CC_OP_RORL,    /* 33 */
 
-    CC_OP_UMULB, /* modify all flags, CC_DST = one arg */
-    CC_OP_UMULW, /* CC_SRC = the other arg */
-    CC_OP_UMULL, /* 36 */
+    CC_OP_UMULB,   /* RES = hiHalf(result) ^ loHalf(result) */
+    CC_OP_UMULW,   /* AUX = loHalf(result) */
+    CC_OP_UMULL,   /* 36 */
 
-    CC_OP_SMULB, /* modify all flags, CC_DST = one arg */
-    CC_OP_SMULW, /* CC_SRC = the other arg */
-    CC_OP_SMULL, /* 39 */
+    CC_OP_SMULB,   /* RES = hiHalf(result) ^ loHalf(result) */
+    CC_OP_SMULW,   /* AUX = loHalf(result) */
+    CC_OP_SMULL,   /* 39 */
 
     CC_OP_NUMBER
 };

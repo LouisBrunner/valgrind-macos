@@ -83,8 +83,8 @@ typedef
       UInt  guest_EDI;
       /* 3-word thunk used to calculate O S Z A C P flags. */
       UInt  guest_CC_OP;
-      UInt  guest_CC_SRC;
-      UInt  guest_CC_DST;
+      UInt  guest_CC_RES;
+      UInt  guest_CC_AUX;
       /* The D flag is stored here, as either -1 or +1 */
       UInt  guest_DFLAG;
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */

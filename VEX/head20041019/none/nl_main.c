@@ -47,7 +47,7 @@ void SK_(post_clo_init)(void)
 {
 }
 
-IRBB* SK_(instrument)(IRBB* bb, VexGuestLayout* layout)
+IRBB* SK_(instrument)(IRBB* bb, VexGuestLayout* layout, IRType hWordTy)
 {
     return bb;
 }

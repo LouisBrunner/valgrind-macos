@@ -7055,9 +7055,9 @@ static ULong dis_SSE_E_to_G_lo32 ( Prefix pfx, ULong delta,
    Int     alen;
    IRTemp  addr;
    UChar   rm = getUChar(delta);
-   IRExpr* gpart = getXMMReg(gregOfRM(rm));
+   IRExpr* gpart = getXMMReg(gregOfRexRM(pfx,rm));
    if (epartIsReg(rm)) {
-      putXMMReg( gregOfRM(rm), 
+      putXMMReg( gregOfRexRM(pfx,rm), 
                  binop(op, gpart,
                            getXMMReg(eregOfRexRM(pfx,rm))) );
       DIP("%s %s,%s\n", opname,
@@ -7359,7 +7359,7 @@ static ULong dis_SSEcmp_E_to_G ( Prefix pfx, ULong delta,
    }
 
    if (needNot && all_lanes) {
-      putXMMReg( gregOfRM(rm), 
+      putXMMReg( gregOfRexRM(pfx,rm), 
                  unop(Iop_NotV128, mkexpr(plain)) );
    }
    else

@@ -21,8 +21,8 @@ bug-hunting, making your programs more stable. You can also perform
 detailed profiling to help speed up your programs.
 
 The Valgrind distribution includes four tools: two memory error
-detectors, a thread error detector, and a cache profiler.  Several other
-tools have been built with Valgrind.
+detectors, a thread error detector, a cache profiler and a heap profiler.
+Several other tools have been built with Valgrind.
 
 To give you an idea of what Valgrind tools do, when a program is run
 under the supervision of the first memory error detector tool, all reads

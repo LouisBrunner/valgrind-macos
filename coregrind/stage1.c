@@ -180,7 +180,7 @@ static void hoops(void)
       - it could have a special PHDR (v. ELF specific)
       - something else?
     */
-   info.map_base = 0xb1000000;
+   info.map_base = KICKSTART_BASE + 0x01000000;
    info.argv = NULL;
 
    snprintf(buf, sizeof(buf), "%s/%s", valgrind_lib, stage2);

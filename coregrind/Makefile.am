@@ -7,7 +7,8 @@ add_includes = -I$(srcdir)/demangle -I$(top_builddir)/include \
 valdir = $(libdir)/valgrind
 inplacedir = $(top_builddir)/.in_place
 
-AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(valdir)"\"
+AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(valdir)"\" \
+		-DKICKSTART_BASE=$(KICKSTART_BASE)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32
 AM_CCASFLAGS = $(add_includes) -I..
@@ -39,6 +40,12 @@ valgrind_SOURCES = \
 valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g -Wl,-e,_ume_entry
 valgrind_LDADD=
+
+# Where stage2 will be put.
+# Nb: Hard-wiring this sucks.  A configure-time test would be better.  A
+#     load-time test would be even better, but would require building stage2 in
+#     a position-independent way...
+KICKSTART_BASE=0xb0000000
 
 stage2_SOURCES = \
 	ume.c \
@@ -80,7 +87,7 @@ stage2_SOURCES = \
 	vg_cpuid.S
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs x86/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
-	-Wl,-defsym,kickstart_base=0xb0000000 \
+	-Wl,-defsym,kickstart_base=$(KICKSTART_BASE) \
 	-Wl,-T,x86/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 
 stage2_LDADD= \

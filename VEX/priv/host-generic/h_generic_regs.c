@@ -43,11 +43,11 @@
 void ppHRegClass ( HRegClass hrc )
 {
    switch (hrc) {
-      case HRcInt:       vex_printf("HRcInt32"); break;
-      case HRcInt64:     vex_printf("HRcInt64"); break;
-      case HRcFloat:     vex_printf("HRcFloat"); break;
-      case HRcVector:    vex_printf("HRcVector64"); break;
-      case HRcVector128: vex_printf("HRcVector128"); break;
+      case HRcInt32:   vex_printf("HRcInt32"); break;
+      case HRcInt64:   vex_printf("HRcInt64"); break;
+      case HRcFlt64:   vex_printf("HRcFlt64"); break;
+      case HRcVec64:   vex_printf("HRcVec64"); break;
+      case HRcVec128:  vex_printf("HRcVec128"); break;
       default: vpanic("ppHRegClass");
    }
 }
@@ -58,11 +58,11 @@ void ppHReg ( HReg r )
    Char* maybe_v = hregIsVirtual(r) ? "v" : "";
    Int   regNo   = hregNumber(r);
    switch (hregClass(r)) {
-      case HRcInt:       vex_printf("%%%sr%d", maybe_v, regNo); return;
-      case HRcInt64:     vex_printf("%%%sR%d", maybe_v, regNo); return;
-      case HRcFloat:     vex_printf("%%%sf%d", maybe_v, regNo); return;
-      case HRcVector:    vex_printf("%%%sv%d", maybe_v, regNo); return;
-      case HRcVector128: vex_printf("%%%sV%d", maybe_v, regNo); return;
+      case HRcInt32:   vex_printf("%%%sr%d", maybe_v, regNo); return;
+      case HRcInt64:   vex_printf("%%%sR%d", maybe_v, regNo); return;
+      case HRcFlt64:   vex_printf("%%%sF%d", maybe_v, regNo); return;
+      case HRcVec64:   vex_printf("%%%sv%d", maybe_v, regNo); return;
+      case HRcVec128:  vex_printf("%%%sV%d", maybe_v, regNo); return;
       default: vpanic("ppHReg");
    }
 }

@@ -73,13 +73,19 @@
 typedef UInt HReg;
 
 /* When extending this, do not use any value > 14 or < 0. */
+/* HRegClass describes host register classes which the instruction
+   selectors can speak about.  We would not expect all of them to be
+   available on any specific host.  For example on x86, the available
+   classes are: Int32, Flt64, Vec128 only.
+*/
 typedef
-enum { HRcINVALID=1,   /* NOT A VALID REGISTER CLASS */
-       HRcInt=4,       /* 32-bit int */
-       HRcInt64=5,     /* 64-bit int */
-       HRcFloat=6,     /* 64-bit float */
-       HRcVector=7,    /* 64-bit SIMD */
-       HRcVector128=8  /* 128-bit SIMD */
+   enum { 
+      HRcINVALID=1,   /* NOT A VALID REGISTER CLASS */
+      HRcInt32=4,     /* 32-bit int */
+      HRcInt64=5,     /* 64-bit int */
+      HRcFlt64=6,     /* 64-bit float */
+      HRcVec64=7,     /* 64-bit SIMD */
+      HRcVec128=8     /* 128-bit SIMD */
    }
    HRegClass;
 
@@ -102,7 +108,7 @@ static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
 static inline HRegClass hregClass ( HReg r ) {
    UInt rc = r;
    rc = (rc >> 28) & 0x0F;
-   vassert(rc >= HRcInt || rc <= HRcVector128);
+   vassert(rc >= HRcInt32 || rc <= HRcVec128);
    return (HRegClass)rc;
 }
 

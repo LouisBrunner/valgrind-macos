@@ -56,38 +56,38 @@ void ppHRegX86 ( HReg reg )
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
-      case HRcInt:
+      case HRcInt32:
          r = hregNumber(reg);
          vassert(r >= 0 && r < 8);
          vex_printf("%s", ireg32_names[r]);
          return;
-      case HRcFloat:
+      case HRcFlt64:
          r = hregNumber(reg);
          vassert(r >= 0 && r < 6);
          vex_printf("%%fake%d", r);
          return;
-      case HRcVector:
+      case HRcVec128:
          vpanic("ppHRegX86: real vector reg");
      default:
          vpanic("ppHRegX86");
    }
 }
 
-HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt, False); }
-HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt, False); }
-HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt, False); }
-HReg hregX86_EBX ( void ) { return mkHReg(3, HRcInt, False); }
-HReg hregX86_ESP ( void ) { return mkHReg(4, HRcInt, False); }
-HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt, False); }
-HReg hregX86_ESI ( void ) { return mkHReg(6, HRcInt, False); }
-HReg hregX86_EDI ( void ) { return mkHReg(7, HRcInt, False); }
+HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt32, False); }
+HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt32, False); }
+HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt32, False); }
+HReg hregX86_EBX ( void ) { return mkHReg(3, HRcInt32, False); }
+HReg hregX86_ESP ( void ) { return mkHReg(4, HRcInt32, False); }
+HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt32, False); }
+HReg hregX86_ESI ( void ) { return mkHReg(6, HRcInt32, False); }
+HReg hregX86_EDI ( void ) { return mkHReg(7, HRcInt32, False); }
 
-HReg hregX86_FAKE0 ( void ) { return mkHReg(0, HRcFloat, False); }
-HReg hregX86_FAKE1 ( void ) { return mkHReg(1, HRcFloat, False); }
-HReg hregX86_FAKE2 ( void ) { return mkHReg(2, HRcFloat, False); }
-HReg hregX86_FAKE3 ( void ) { return mkHReg(3, HRcFloat, False); }
-HReg hregX86_FAKE4 ( void ) { return mkHReg(4, HRcFloat, False); }
-HReg hregX86_FAKE5 ( void ) { return mkHReg(5, HRcFloat, False); }
+HReg hregX86_FAKE0 ( void ) { return mkHReg(0, HRcFlt64, False); }
+HReg hregX86_FAKE1 ( void ) { return mkHReg(1, HRcFlt64, False); }
+HReg hregX86_FAKE2 ( void ) { return mkHReg(2, HRcFlt64, False); }
+HReg hregX86_FAKE3 ( void ) { return mkHReg(3, HRcFlt64, False); }
+HReg hregX86_FAKE4 ( void ) { return mkHReg(4, HRcFlt64, False); }
+HReg hregX86_FAKE5 ( void ) { return mkHReg(5, HRcFlt64, False); }
 
 void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 {
@@ -1153,9 +1153,9 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
    am = X86AMode_IR(offsetB, hregX86_EBP());
 
    switch (hregClass(rreg)) {
-      case HRcInt:
+      case HRcInt32:
          return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
-      case HRcFloat:
+      case HRcFlt64:
          return X86Instr_FpLdSt ( False/*store*/, 8, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
@@ -1170,9 +1170,9 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
    vassert(!hregIsVirtual(rreg));
    am = X86AMode_IR(offsetB, hregX86_EBP());
    switch (hregClass(rreg)) {
-      case HRcInt:
+      case HRcInt32:
          return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
-      case HRcFloat:
+      case HRcFlt64:
          return X86Instr_FpLdSt ( True/*load*/, 8, rreg, am );
       default: 
          ppHRegClass(hregClass(rreg));
@@ -1186,7 +1186,7 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
 static UInt iregNo ( HReg r )
 {
    UInt n;
-   vassert(hregClass(r) == HRcInt);
+   vassert(hregClass(r) == HRcInt32);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 7);
@@ -1196,7 +1196,7 @@ static UInt iregNo ( HReg r )
 static UInt fregNo ( HReg r )
 {
    UInt n;
-   vassert(hregClass(r) == HRcFloat);
+   vassert(hregClass(r) == HRcFlt64);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 5);
@@ -1368,7 +1368,7 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
 /* Emit f<op> %st(i), 1 <= i <= 5 */
 static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
 {
-#  define fake(_n) mkHReg((_n), HRcInt, False)
+#  define fake(_n) mkHReg((_n), HRcInt32, False)
    Int subopc;
    switch (op) {
       case Xfp_ADD: subopc = 0; break;
@@ -1398,7 +1398,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    /* Wrap an integer as a int register, for use assembling
       GrpN insns, in which the greg field is used as a sub-opcode
       and does not really contain a register. */
-#  define fake(_n) mkHReg((_n), HRcInt, False)
+#  define fake(_n) mkHReg((_n), HRcInt32, False)
 
    /* vex_printf("asm  ");ppX86Instr(i); vex_printf("\n"); */
 

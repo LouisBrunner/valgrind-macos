@@ -626,7 +626,7 @@ HInstrArray* doRegisterAllocation (
       }
 
       /* Need to allocate two 64-bit spill slots for this. */
-      if (vreg_info[j].reg_class == HRcVector128)
+      if (vreg_info[j].reg_class == HRcVec128)
          vpanic("can't deal with spilling 128-bit values (yet)");
 
       /* Find the lowest-numbered spill slot which is available at the

@@ -232,14 +232,14 @@ static void addInstr ( ISelEnv* env, X86Instr* instr )
 
 static HReg newVRegI ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcInt, True/*virtual reg*/);
+   HReg reg = mkHReg(env->vreg_ctr, HRcInt32, True/*virtual reg*/);
    env->vreg_ctr++;
    return reg;
 }
 
 static HReg newVRegF ( ISelEnv* env )
 {
-   HReg reg = mkHReg(env->vreg_ctr, HRcFloat, True/*virtual reg*/);
+   HReg reg = mkHReg(env->vreg_ctr, HRcFlt64, True/*virtual reg*/);
    env->vreg_ctr++;
    return reg;
 }
@@ -298,8 +298,8 @@ static Bool isZero32 ( IRExpr* e )
 
 static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 {
-   vassert(hregClass(src) == HRcInt);
-   vassert(hregClass(dst) == HRcInt);
+   vassert(hregClass(src) == HRcInt32);
+   vassert(hregClass(dst) == HRcInt32);
    return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
 }
 
@@ -639,7 +639,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 #  if 0
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
 #  endif
-   vassert(hregClass(r) == HRcInt);
+   vassert(hregClass(r) == HRcInt32);
    vassert(hregIsVirtual(r));
    return r;
 }
@@ -1181,13 +1181,13 @@ static Bool sane_AMode ( X86AMode* am )
 {
    switch (am->tag) {
       case Xam_IR:
-         return hregClass(am->Xam.IR.reg) == HRcInt
+         return hregClass(am->Xam.IR.reg) == HRcInt32
                 && (hregIsVirtual(am->Xam.IR.reg)
                     || am->Xam.IR.reg == hregX86_EBP());
       case Xam_IRRS:
-         return hregClass(am->Xam.IRRS.base) == HRcInt
+         return hregClass(am->Xam.IRRS.base) == HRcInt32
                 && hregIsVirtual(am->Xam.IRRS.base)
-                && hregClass(am->Xam.IRRS.index) == HRcInt
+                && hregClass(am->Xam.IRRS.index) == HRcInt32
                 && hregIsVirtual(am->Xam.IRRS.index);
       default:
         vpanic("sane_AMode: unknown x86 amode tag");
@@ -1253,7 +1253,7 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
       case Xrmi_Imm:
          return rmi;
       case Xrmi_Reg:
-         vassert(hregClass(rmi->Xrmi.Reg.reg) == HRcInt);
+         vassert(hregClass(rmi->Xrmi.Reg.reg) == HRcInt32);
          vassert(hregIsVirtual(rmi->Xrmi.Reg.reg));
          return rmi;
       case Xrmi_Mem:
@@ -1311,7 +1311,7 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
       case Xri_Imm:
          return ri;
       case Xrmi_Reg:
-         vassert(hregClass(ri->Xri.Reg.reg) == HRcInt);
+         vassert(hregClass(ri->Xri.Reg.reg) == HRcInt32);
          vassert(hregIsVirtual(ri->Xri.Reg.reg));
          return ri;
       default:
@@ -1356,7 +1356,7 @@ static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
    /* sanity checks ... */
    switch (rm->tag) {
       case Xrm_Reg:
-         vassert(hregClass(rm->Xrm.Reg.reg) == HRcInt);
+         vassert(hregClass(rm->Xrm.Reg.reg) == HRcInt32);
          vassert(hregIsVirtual(rm->Xrm.Reg.reg));
          return rm;
       case Xrm_Mem:
@@ -1573,9 +1573,9 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 #  if 0
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
 #  endif
-   vassert(hregClass(*rHi) == HRcInt);
+   vassert(hregClass(*rHi) == HRcInt32);
    vassert(hregIsVirtual(*rHi));
-   vassert(hregClass(*rLo) == HRcInt);
+   vassert(hregClass(*rLo) == HRcInt32);
    vassert(hregIsVirtual(*rLo));
 }
 
@@ -2621,11 +2621,11 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
          case Ity_I1:
          case Ity_I8:
          case Ity_I16:
-         case Ity_I32: hreg   = mkHReg(j++, HRcInt, True); break;
-         case Ity_I64: hreg   = mkHReg(j++, HRcInt, True);
-                       hregHI = mkHReg(j++, HRcInt, True); break;
+         case Ity_I32: hreg   = mkHReg(j++, HRcInt32, True); break;
+         case Ity_I64: hreg   = mkHReg(j++, HRcInt32, True);
+                       hregHI = mkHReg(j++, HRcInt32, True); break;
          case Ity_F32:
-         case Ity_F64: hreg   = mkHReg(j++, HRcFloat, True); break;
+         case Ity_F64: hreg   = mkHReg(j++, HRcFlt64, True); break;
          default: ppIRType(bb->tyenv->types[i]);
                   vpanic("iselBB: IRTemp type");
       }

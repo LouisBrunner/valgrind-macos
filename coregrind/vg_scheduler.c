@@ -900,6 +900,20 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             continue; /* with this thread */
          }
 
+         if (trc == VEX_TRC_JMP_EMWARN) {
+            VexEmWarn ew
+               = (VexEmWarn)VG_(threads)[tid].arch.vex.guest_EMWARN;
+            HChar* what
+               = (ew < 0 || ew >= EmWarn_NUMBER)
+                    ? "unknown (?!)"
+                    : LibVEX_EmWarn_string(ew);
+            VG_(message)( Vg_UserMsg, 
+                          "Emulation warning: unsupported action:");
+            VG_(message)( Vg_UserMsg, "  %s", what);
+	    VG_(pp_ExeContext) (  VG_(get_ExeContext) ( tid ) );
+            continue; /* with this thread */
+	 }
+
          if (trc == VEX_TRC_JMP_CLIENTREQ) {
             UWord* args = (UWord*)(CLREQ_ARGS(VG_(threads)[tid].arch));
             UWord reqno = args[0];
@@ -908,7 +922,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             /* Are we really absolutely totally quitting? */
             if (reqno == VG_USERREQ__LIBC_FREERES_DONE) {
                if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
-                  VG_(message)(Vg_DebugMsg, 
+                  VG_(message)(Vg_DebugMsg,
                      "__libc_freeres() done; really quitting!");
                }
                return VgSrc_ExitSyscall;
@@ -923,7 +937,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                continue; /* with this thread */
             else
                goto stage1;
-	 }
+         }
 
          if (trc == VEX_TRC_JMP_SYSCALL) {
             /* Do a syscall for the vthread tid.  This could cause it

@@ -37,18 +37,22 @@
 /* This file is included in all Valgrind source files, including
    assembly ones. */
 
+
 /* Magic values that the guest state might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
    start of the thread's VEX guest state.  These also are return values from
    VG_(run_innerloop) to the scheduler.
 */
-/* Defines values for JMP_SYSCALL, JMP_CLIENTREQ and JMP_YIELD */
+/* Defines values for JMP_EMWARN, JMP_SYSCALL, JMP_CLIENTREQ and
+   JMP_YIELD */
 #include "libvex_trc_values.h"
 
-/* and some more of our own ... */
+/* And some more of our own.  These must not have the same values as
+   those from libvex_trc_values.h. */
 #define VG_TRC_INNER_FASTMISS     31 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
+
 
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 15

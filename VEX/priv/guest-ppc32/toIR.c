@@ -502,6 +502,12 @@ static IRExpr* mkexpr ( IRTemp tmp )
    return IRExpr_Tmp(tmp);
 }
 
+static IRExpr* mkU1 ( UInt i )
+{
+   vassert(i < 2);
+   return IRExpr_Const(IRConst_U1(i));
+}
+
 static IRExpr* mkU8 ( UInt i )
 {
    vassert(i < 256);
@@ -1004,7 +1010,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x0EA: // addme      (Add to Minus One Extended, p384)
 	   if (Rb_addr != 0) {
-	       vex_printf("dis_int_arith(PPC32)(addme,Rb_addr)");
+	       vex_printf("dis_int_arith(PPC32)(addme,Rb_addr)\n");
 	       return False;
 	   }
 	   DIP("addme%s%s %d,%d,%d\n",
@@ -1024,7 +1030,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x0CA: // addze      (Add to Zero Extended, p385)
 	   if (Rb_addr != 0) {
-	       vex_printf("dis_int_arith(PPC32)(addze,Rb_addr)");
+	       vex_printf("dis_int_arith(PPC32)(addze,Rb_addr)\n");
 	       return False;
 	   }
 	   DIP("addze%s%s %d,%d,%d\n",
@@ -1050,11 +1056,10 @@ static Bool dis_int_arith ( UInt theInstr )
 	   if (flag_OE) {
 	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVW, Rd, Ra, Rb );
 	   }
-	   // CAB: How to represent the following, if at all ?
-	   // If (0x8000_0000 / -1) or (x / 0)
-	   //  => Rd=undef, if(flag_Rc) => CR0=undef
-
-	   // CAB: No exception raised for x/0 ?
+	   /* Note:
+	      if (0x8000_0000 / -1) or (x / 0)
+	      => Rd=undef, if(flag_Rc) CR0=undef, if(flag_OE) XER_OV=1
+	      => But _no_ exception raised. */
 	   break;
 
        case 0x1CB: // divwu      (Divide Word Unsigned, p422)
@@ -1067,16 +1072,12 @@ static Bool dis_int_arith ( UInt theInstr )
 	   if (flag_OE) {
 	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVWU, Rd, Ra, Rb );
 	   }
-	   // CAB: How to represent the following, if at all ?
-	   // If (x / 0)
-	   //  => Rd=undef, if(flag_Rc) => CR0=undef
-
-	   // CAB: No exception raised for x/0 ?
+	   /* Note: ditto comment divw, for (x / 0) */
 	   break;
 
        case 0x04B: // mulhw      (Multiply High Word, p541)
 	   if (flag_OE != 0) {
-	       vex_printf("dis_int_arith(PPC32)(mulhw,flag_OE)");
+	       vex_printf("dis_int_arith(PPC32)(mulhw,flag_OE)\n");
 	       return False;
 	   }
 	   DIP("mulhw%s %d,%d,%d\n", flag_Rc ? "." : "",
@@ -1088,7 +1089,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x00B: // mulhwu     (Multiply High Word Unsigned, p542)
 	   if (flag_OE != 0) {
-	       vex_printf("dis_int_arith(PPC32)(mulhwu,flag_OE)");
+	       vex_printf("dis_int_arith(PPC32)(mulhwu,flag_OE)\n");
 	       return False;
 	   }
 	   DIP("mulhwu%s %d,%d,%d\n", flag_Rc ? "." : "",
@@ -1112,7 +1113,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x068: // neg        (Negate, p547)
 	   if (Rb_addr != 0) {
-	       vex_printf("dis_int_arith(PPC32)(neg,Rb_addr)");
+	       vex_printf("dis_int_arith(PPC32)(neg,Rb_addr)\n");
 	       return False;
 	   }
 	   DIP("neg%s%s %d,%d\n",
@@ -1174,7 +1175,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x0E8: // subfme     (Subtract from Minus One Extended, p614)
 	   if (Rb_addr != 0) {
-	       vex_printf("dis_int_arith(PPC32)(subfme,Rb_addr)");
+	       vex_printf("dis_int_arith(PPC32)(subfme,Rb_addr)\n");
 	       return False;
 	   }
 	   DIP("subfme%s%s %d,%d\n",
@@ -1194,7 +1195,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
        case 0x0C8: // subfze     (Subtract from Zero Extended, p615)
 	   if (Rb_addr != 0) {
-	       vex_printf("dis_int_arith(PPC32)(subfze,Rb_addr)");
+	       vex_printf("dis_int_arith(PPC32)(subfze,Rb_addr)\n");
 	       return False;
 	   }
 	   DIP("subfze%s%s %d,%d\n",
@@ -1211,12 +1212,12 @@ static Bool dis_int_arith ( UInt theInstr )
 	   break;
 
        default:
-	   vex_printf("dis_int_arith(PPC32)(opc2)");
+	   vex_printf("dis_int_arith(PPC32)(opc2)\n");
 	   return False;
        }
        break;
     default:
-	vex_printf("dis_int_arith(PPC32)(opc1)");
+	vex_printf("dis_int_arith(PPC32)(opc1)\n");
 	return False;
     }
 
@@ -1256,12 +1257,12 @@ static Bool dis_int_cmp ( UInt theInstr )
     assign( xer_so, unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_SO, Ity_I8)) );
 
     if (flag_L==1) {  // L==1 invalid for 32 bit.
-	vex_printf("dis_int_cmp(PPC32)(flag_L)");
+	vex_printf("dis_int_cmp(PPC32)(flag_L)\n");
 	return False;
     }
 
     if (b9 != 0) {
- 	vex_printf("dis_int_cmp(PPC32)(b9)");
+ 	vex_printf("dis_int_cmp(PPC32)(b9)\n");
 	return False;
     }
 
@@ -1283,7 +1284,7 @@ static Bool dis_int_cmp ( UInt theInstr )
     /* X Form */
     case 0x1F:
 	if (b0 != 0) {
-	    vex_printf("dis_int_cmp(PPC32)(0x1F,b0)");
+	    vex_printf("dis_int_cmp(PPC32)(0x1F,b0)\n");
 	    return False;
 	}
 
@@ -1303,13 +1304,13 @@ static Bool dis_int_cmp ( UInt theInstr )
 	    break;
 
 	default:
-	    vex_printf("dis_int_cmp(PPC32)(opc2)");
+	    vex_printf("dis_int_cmp(PPC32)(opc2)\n");
 	    return False;
 	}
 	break;
 
     default:
-	vex_printf("dis_int_cmp(PPC32)(opc1)");
+	vex_printf("dis_int_cmp(PPC32)(opc1)\n");
 	return False;
     }
 
@@ -1405,7 +1406,7 @@ static Bool dis_int_logic ( UInt theInstr )
 
 	case 0x01A: // cntlzw (Count Leading Zeros Word, p402)
 	    if (Rb_addr!=0) {
-		vex_printf("dis_int_logic(PPC32)(cntlzw,Rb_addr)");
+		vex_printf("dis_int_logic(PPC32)(cntlzw,Rb_addr)\n");
 		return False;
 	    }
 	    DIP("cntlzw%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
@@ -1426,7 +1427,7 @@ static Bool dis_int_logic ( UInt theInstr )
 
 	case 0x3BA: // extsb (Extend Sign Byte, p428)
 	    if (Rb_addr!=0) {
-		vex_printf("dis_int_logic(PPC32)(extsb,Rb_addr)");
+		vex_printf("dis_int_logic(PPC32)(extsb,Rb_addr)\n");
 		return False;
 	    }
 	    DIP("extsb%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
@@ -1440,7 +1441,7 @@ static Bool dis_int_logic ( UInt theInstr )
 
 	case 0x39A: // extsh (Extend Sign Half Word, p429)
 	    if (Rb_addr!=0) {
-		vex_printf("dis_int_logic(PPC32)(extsh,Rb_addr)");
+		vex_printf("dis_int_logic(PPC32)(extsh,Rb_addr)\n");
 		return False;
 	    }
 	    DIP("extsh%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
@@ -1486,7 +1487,7 @@ static Bool dis_int_logic ( UInt theInstr )
 	    break;
 
 	default:
-	    vex_printf("dis_int_logic(PPC32)(opc2)");
+	    vex_printf("dis_int_logic(PPC32)(opc2)\n");
 	    return False;
 	}
 
@@ -1495,7 +1496,7 @@ static Bool dis_int_logic ( UInt theInstr )
 	break;
 
     default:
-	vex_printf("dis_int_logic(PPC32)(opc1)");
+	vex_printf("dis_int_logic(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -1555,7 +1556,7 @@ static Bool dis_int_rot ( UInt theInstr )
 	break;
 
     default:
-	vex_printf("dis_int_rot(PPC32)(opc1)");
+	vex_printf("dis_int_rot(PPC32)(opc1)\n");
 	return False;
     }
     putIReg( Ra_addr, mkexpr(Ra) );
@@ -1606,7 +1607,7 @@ static Bool dis_int_load ( UInt theInstr )
 
     case 0x23: // lbzu (Load B & Zero with Update, p469)
 	if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-	    vex_printf("dis_int_load(PPC32)(lbzu,Ra_addr|Rd_addr)");
+	    vex_printf("dis_int_load(PPC32)(lbzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
 	DIP("lbzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
@@ -1623,7 +1624,7 @@ static Bool dis_int_load ( UInt theInstr )
 
     case 0x2B: // lhau (Load HW Algebraic with Update, p486)
 	if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-	    vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)");
+	    vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
 	DIP("lhau %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
@@ -1640,7 +1641,7 @@ static Bool dis_int_load ( UInt theInstr )
 
     case 0x29: // lhzu (Load HW & and Zero with Update, p491)
 	if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-	    vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)");
+	    vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
 	DIP("lhzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
@@ -1655,7 +1656,7 @@ static Bool dis_int_load ( UInt theInstr )
 
     case 0x21: // lwzu (Load W & Zero with Update, p505))
 	if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-	    vex_printf("dis_int_load(PPC32)(lwzu,Ra_addr|Rd_addr)");
+	    vex_printf("dis_int_load(PPC32)(lwzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
 	DIP("lwzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
@@ -1666,7 +1667,7 @@ static Bool dis_int_load ( UInt theInstr )
     /* X Form */
     case 0x1F:
 	if (b0 != 0) {
-	    vex_printf("dis_int_load(PPC32)(Ox1F,b0)");
+	    vex_printf("dis_int_load(PPC32)(Ox1F,b0)\n");
 	    return False;
 	}
 	assign( EA_reg, binop(Iop_And32, mkexpr(Ra_or_0), mkexpr(Rb)) );
@@ -1675,7 +1676,7 @@ static Bool dis_int_load ( UInt theInstr )
         case 0x077: // lbzux (Load B & Zero with Update Indexed, p470)
 	    DIP("lbzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
 	    if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-		vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)");
+		vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)\n");
 		return False;
 	    }
 	    putIReg( Rd_addr, unop(Iop_8Uto32,
@@ -1691,7 +1692,7 @@ static Bool dis_int_load ( UInt theInstr )
 
         case 0x177: // lhaux (Load HW Algebraic with Update Indexed, p487)
 	    if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-		vex_printf("dis_int_load(PPC32)(lhaux,Ra_addr|Rd_addr)");
+		vex_printf("dis_int_load(PPC32)(lhaux,Ra_addr|Rd_addr)\n");
 		return False;
 	    }
 	    DIP("lhaux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -1708,7 +1709,7 @@ static Bool dis_int_load ( UInt theInstr )
 
         case 0x137: // lhzux (Load HW & Zero with Update Indexed, p492)
 	    if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-		vex_printf("dis_int_load(PPC32)(lhzux,Ra_addr|Rd_addr)");
+		vex_printf("dis_int_load(PPC32)(lhzux,Ra_addr|Rd_addr)\n");
 		return False;
 	    }
 	    DIP("lhzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -1725,7 +1726,7 @@ static Bool dis_int_load ( UInt theInstr )
 
         case 0x037: // lwzux (Load W & Zero with Update Indexed, p506)
 	    if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-		vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)");
+		vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)\n");
 		return False;
 	    }
 	    DIP("lwzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -1739,12 +1740,12 @@ static Bool dis_int_load ( UInt theInstr )
 	    break;
 
 	default:
-	    vex_printf("dis_int_load(PPC32)(opc2)");
+	    vex_printf("dis_int_load(PPC32)(opc2)\n");
 	    return False;
 	}
 	break;
     default:
-	vex_printf("dis_int_load(PPC32)(opc1)");
+	vex_printf("dis_int_load(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -1798,7 +1799,7 @@ static Bool dis_int_store ( UInt theInstr )
 
     case 0x27: // stbu (Store B with Update, p577)
 	if (Ra_addr == 0 ) {
-	    vex_printf("dis_int_store(PPC32)(stbu,Ra_addr)");
+	    vex_printf("dis_int_store(PPC32)(stbu,Ra_addr)\n");
 	    return False;
 	}
 	DIP("stbu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
@@ -1813,7 +1814,7 @@ static Bool dis_int_store ( UInt theInstr )
 
     case 0x2D: // sthu (Store HW with Update, p597)
 	if (Ra_addr == 0) {
-	    vex_printf("dis_int_store(PPC32)(sthu,Ra_addr)");
+	    vex_printf("dis_int_store(PPC32)(sthu,Ra_addr)\n");
 	    return False;
 	}
 	DIP("sthu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
@@ -1829,7 +1830,7 @@ static Bool dis_int_store ( UInt theInstr )
 
     case 0x25: // stwu (Store W with Update, p607)
 	if (Ra_addr == 0) {
-	    vex_printf("dis_int_store(PPC32)(stwu,Ra_addr)");
+	    vex_printf("dis_int_store(PPC32)(stwu,Ra_addr)\n");
 	    return False;
 	}
 	DIP("stwu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
@@ -1840,7 +1841,7 @@ static Bool dis_int_store ( UInt theInstr )
     /* X Form */
     case 0x1F:
 	if (b0 != 0) {
-	    vex_printf("dis_int_store(PPC32)(0x1F,b0)");
+	    vex_printf("dis_int_store(PPC32)(0x1F,b0)\n");
 	    return False;
 	}
 	assign( EA_reg, binop(Iop_And32, mkexpr(Ra_or_0), mkexpr(Rb)) );
@@ -1848,7 +1849,7 @@ static Bool dis_int_store ( UInt theInstr )
 	switch (opc2) {
 	case 0x0F7: // stbux (Store B with Update Indexed, p578)
 	    if (Ra_addr == 0) {
-		vex_printf("dis_int_store(PPC32)(stbux,Ra_addr)");
+		vex_printf("dis_int_store(PPC32)(stbux,Ra_addr)\n");
 		return False;
 	    }
 	    DIP("stbux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -1863,7 +1864,7 @@ static Bool dis_int_store ( UInt theInstr )
 
 	case 0x1B7: // sthux (Store HW with Update Indexed, p598)
 	    if (Ra_addr == 0) {
-		vex_printf("dis_int_store(PPC32)(sthux,Ra_addr)");
+		vex_printf("dis_int_store(PPC32)(sthux,Ra_addr)\n");
 		return False;
 	    }
 	    DIP("sthux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -1878,7 +1879,7 @@ static Bool dis_int_store ( UInt theInstr )
 
 	case 0x0B7: // stwux (Store W with Update Indexed, p608)
 	    if (Ra_addr == 0) {
-		vex_printf("dis_int_store(PPC32)(stwux,Ra_addr)");
+		vex_printf("dis_int_store(PPC32)(stwux,Ra_addr)\n");
 		return False;
 	    }
 	    DIP("stwux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -1892,12 +1893,12 @@ static Bool dis_int_store ( UInt theInstr )
 	    break;
 
 	default:
-	    vex_printf("dis_int_store(PPC32)(opc2)");
+	    vex_printf("dis_int_store(PPC32)(opc2)\n");
 	    return False;
 	}
 	break;
     default:
-	vex_printf("dis_int_store(PPC32)(opc1)");
+	vex_printf("dis_int_store(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -1931,7 +1932,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
     switch (opc1) {
     case 0x2E: // lmw (Load Multiple Word, p494)
 	if (Ra_addr >= reg_idx) {
-	    vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)");
+	    vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
 	    return False;
 	}
 	// CAB: EA must be a multiple of four - can we test this?
@@ -1955,7 +1956,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 	break;
 
     default:
-	vex_printf("dis_int_ldst_mult(PPC32)(opc1)");
+	vex_printf("dis_int_ldst_mult(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -1994,7 +1995,7 @@ static Bool dis_int_ldst_str ( UInt theInstr )
     }    
 
     if (opc1 != 0x1F || b0 != 0) {
-	vex_printf("dis_int_ldst_str(PPC32)(opc1)");
+	vex_printf("dis_int_ldst_str(PPC32)(opc1)\n");
 	return False;
     }
 
@@ -2006,12 +2007,12 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 
 	if (reg_last < reg_first) {
 	    if (Ra_addr >= reg_first || Ra_addr <= reg_last) {
-		vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,1)");
+		vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,1)\n");
 		return False;
 	    }
 	} else {
 	    if (Ra_addr >= reg_first && Ra_addr <= reg_last) {
-		vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,2)");
+		vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,2)\n");
 		return False;
 	    }
 	}
@@ -2111,10 +2112,64 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 #endif
 
     default:
-	vex_printf("dis_int_ldst_str(PPC32)(opc2)");
+	vex_printf("dis_int_ldst_str(PPC32)(opc2)\n");
 	return False;
     }
     return True;
+}
+
+
+
+/*
+  Branch helper function
+  ok = BO[2] | ((CTR[0] != 0) ^ BO[1])
+*/
+static IRExpr* branch_ctr_ok( UInt BO )
+{
+    IRTemp ok = newTemp(Ity_I1);
+    IRTemp ctr_0 = newTemp(Ity_I1);
+
+    if ((BO >> 2) & 1) {
+	assign( ok, mkU1(1) );
+    } else {
+	assign( ctr_0, unop(Iop_32to1, IRExpr_Get(OFFB_CTR, Ity_I32)) );
+	if ((BO >> 1) & 1) {
+	    assign( ok, unop(Iop_Not1, mkexpr(ctr_0)) );
+	} else {
+	    assign( ok, mkexpr(ctr_0) );
+	}
+    }
+    return mkexpr(ok);
+}
+
+/*
+  Branch helper function
+  cond_ok = BO[4] | (CR[BI] == BO[3])
+*/
+static IRExpr* branch_cond_ok( UInt BO, UInt BI )
+{
+    IRTemp ok = newTemp(Ity_I1);
+    IRTemp tmp = newTemp(Ity_I1);
+    IRTemp cr = newTemp(Ity_I32);
+    
+    if (BO >> 4) {
+	assign( ok, mkU1(1) );
+    } else {
+	// ok = (CR[BI] == BO[3])
+	if (BI < 4) {   // Get from guest_CC_OP etc.
+	    assign( cr, mk_ppc32g_calculate_cr0_all() );
+	} else {        // Get from guest_CR1to7
+	    assign( cr, IRExpr_Get(OFFB_CR1to7, Ity_I32) );
+	}
+	assign( tmp, binop(Iop_CmpNE32, mkU32(0),
+			    binop(Iop_And32, mkexpr(cr), mkU32(1<<(31-BI)))) );
+	if ((BO >> 3) & 1) {
+	    assign( ok, mkexpr(tmp) );
+	} else {
+	    assign( ok, unop(Iop_Not1, mkexpr(tmp)) );
+	}
+    }
+    return mkexpr(ok);
 }
 
 
@@ -2138,17 +2193,28 @@ static Bool dis_branch ( theInstr )
     IRTemp ctr = newTemp(Ity_I32);
     IRTemp lr = newTemp(Ity_I32);
     IRTemp ir_nia = newTemp(Ity_I32);
-    IRTemp ctr_ok  = newTemp(Ity_I32);
-    IRTemp cond_ok = newTemp(Ity_I32);
+    IRTemp ctr_ok  = newTemp(Ity_I1);
+    IRTemp cond_ok = newTemp(Ity_I1);
     IRTemp do_branch = newTemp(Ity_I32);
-    IRTemp cr = newTemp(Ity_I32);
-    IROp tmp_op;
+
+    assign( ctr, IRExpr_Get(OFFB_CTR, Ity_I32) );
 
 //    vex_printf("disInstr(ppc32): In: 0x%8x, %,031b\n", theInstr, theInstr );
 //    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24);
 //    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24 << 2);
 //    vex_printf("disInstr(ppc32): LI: %,031b\n", extend_s_24to32(LI_24 << 2));
 
+#if 1
+    /* Hack to pass through code that just wants to read the PC */
+    if (theInstr == 0x429F0005) {
+	DIP("bcl 0x%x, 0x%x,\n", BO, BI);
+	stmt( IRStmt_Put( OFFB_LR, mkU32(guest_cia_curr_instr + 4)) );
+	irbb->jumpkind = Ijk_Boring;
+	irbb->next     = mkU32(guest_cia_curr_instr + 4);
+	return True;
+    }
+#endif
+    
     switch (opc1) {
     case 0x12: // b     (Branch, p390)
 	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
@@ -2170,40 +2236,18 @@ static Bool dis_branch ( theInstr )
 
 	if (!(BO & 0x4)) {
 	    stmt( IRStmt_Put(OFFB_CTR, binop(Iop_Sub32,
-					     IRExpr_Get(OFFB_CTR, Ity_I32),
-					     mkU32(1))) );
+					     mkexpr(ctr), mkU32(1))) );
 	}
-	assign( ctr, IRExpr_Get(OFFB_CTR, Ity_I32) );
+	assign( ctr_ok, branch_ctr_ok( BO ) );
+	assign( cond_ok, branch_cond_ok( BO, BI ) );
 
-	// ctr_ok = BO[2] | ((CTR[0] != 0) ^ BO[1])
-	// BO[1] == 1:  ctr_ok = BO[2] | (CTR[0] == 0)
-	// BO[1] == 0:  ctr_ok = BO[2] | (CTR[0] != 0)
-	tmp_op = ((BO & 0x2) != 0) ? Iop_CmpEQ32 : Iop_CmpNE32;
-	assign( ctr_ok, binop(Iop_Or32, mkU32((BO >> 2)&1),
-			      unop(Iop_1Uto32,
-				   binop(tmp_op, mkU32(0),
-					 binop(Iop_And32, mkU32(1),
-					       mkexpr(ctr))))) );
-
-	// cond_ok = BO[4] | (CR[BI] == BO[3])
-	if (BI < 4) { // Get from guest_CC_OP etc.
-	    assign( cr, mk_ppc32g_calculate_cr0_all() );
-	} else {      // Get from guest_CR1to7
-	    assign( cr, IRExpr_Get(OFFB_CR1to7, Ity_I32) );
-	}
-	tmp_op = ((BO & 0x8) != 0) ? Iop_CmpNE32 : Iop_CmpEQ32;
-	assign( cond_ok, binop(Iop_Or32, mkU32(BO >> 4),
- 			       unop(Iop_1Uto32,
-				    binop(tmp_op, mkU32(0),
-					  binop(Iop_And32, mkU32(1<<BI),
-						mkexpr(cr))))) );
-	assign( do_branch,
-		binop(Iop_And32, mkexpr(ctr_ok), mkexpr(cond_ok)) );
-
+	assign( do_branch, binop(Iop_And32,
+				 unop(Iop_1Uto32, mkexpr(ctr_ok)),
+				 unop(Iop_1Uto32, mkexpr(cond_ok))) );
 	nia = exts_BD;
 	if (!flag_AA) {
 	    nia += guest_cia_curr_instr;
-	}	
+	}
 
 	if (flag_LK) {
 	    assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
@@ -2222,42 +2266,35 @@ static Bool dis_branch ( theInstr )
 
     case 0x13:
 	if (b11to15!=0) {
-	    vex_printf("dis_int_branch(PPC32)(0x13,b11to15)");
+	    vex_printf("dis_int_branch(PPC32)(0x13,b11to15)\n");
 	    return False;
 	}
 
 	switch (opc2) {
         case 0x210: // bcctr (Branch Cond. to Count Register, p393) 
+	    if ((BO & 0x4) == 0) { // "decrement and test CTR" option invalid
+		vex_printf("dis_int_branch(PPC32)(bcctr,BO)\n");
+		return False;
+	    }
 	    DIP("bcctr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
 
-	    // cond_ok = BO[4] | (CR[BI] == BO[3])
-	    if (BI < 4) { // Get from guest_CC_OP etc.
-		assign( cr, mk_ppc32g_calculate_cr0_all() );
-	    } else {      // Get from guest_CR1to7
-		assign( cr, IRExpr_Get(OFFB_CR1to7, Ity_I32) );
-	    }
-	    tmp_op = ((BO & 0x8) != 0) ? Iop_CmpNE32 : Iop_CmpEQ32;
-	    assign( cond_ok, binop(Iop_Or32, mkU32(BO >> 4),
-				   unop(Iop_1Uto32,
-					binop(tmp_op, mkU32(0),
-					      binop(Iop_And32, mkU32(1<<BI),
-						    mkexpr(cr))))) );
-	    assign( ir_nia, binop(Iop_And32,
-			       IRExpr_Get(OFFB_CTR, Ity_I32),
-			       mkU32(-1 << 2)) );
+	    assign( cond_ok, branch_cond_ok( BO, BI ) );
+
+	    assign( ir_nia, binop(Iop_And32, mkU32(-1 << 2), mkexpr(ctr)) );
+
 	    if (flag_LK) {
-		assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(cond_ok)),
+		assign( lr, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(cond_ok)),
 					  IRExpr_Get(OFFB_LR, Ity_I32),
 					  mkU32(guest_cia_curr_instr + 4)));
 		stmt( IRStmt_Put( OFFB_LR, mkexpr(lr) ));
 	    }
 
-	    stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(cond_ok))),
+	    stmt( IRStmt_Exit( unop(Iop_Not1, mkexpr(cond_ok)),
 			       Ijk_Boring,
 			       IRConst_U32(guest_cia_curr_instr + 4) ));
 
 	    irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-	    irbb->next     = mkU32(nia);
+	    irbb->next     = mkexpr(ir_nia);
 	    break;
 
         case 0x010: // bclr (Branch Cond. to Link Register, p395) 
@@ -2265,39 +2302,19 @@ static Bool dis_branch ( theInstr )
 
 	    if (!(BO & 0x4)) {
 		stmt( IRStmt_Put(OFFB_CTR, binop(Iop_Sub32,
-						 IRExpr_Get(OFFB_CTR, Ity_I32),
-						 mkU32(1))) );
+						 mkexpr(ctr), mkU32(1))) );
 	    }
-	    assign( ctr, IRExpr_Get(OFFB_CTR, Ity_I32) );
 
-	    // ctr_ok = BO[2] | ((CTR[0] != 0) ^ BO[1])
-	    // BO[1] == 1:  ctr_ok = BO[2] | (CTR[0] == 0)
-	    // BO[1] == 0:  ctr_ok = BO[2] | (CTR[0] != 0)
-	    tmp_op = ((BO & 0x2) != 0) ? Iop_CmpEQ32 : Iop_CmpNE32;
-	    assign( ctr_ok, binop(Iop_Or32, mkU32((BO >> 2)&1),
-				  unop(Iop_1Uto32,
-				       binop(tmp_op, mkU32(0),
-					     binop(Iop_And32, mkU32(1),
-						   mkexpr(ctr))))) );
-	    
-	    // cond_ok = BO[4] | (CR[BI] == BO[3])
-	    if (BI < 4) { // Get from guest_CC_OP etc.
-		assign( cr, mk_ppc32g_calculate_cr0_all() );
-	    } else {      // Get from guest_CR1to7
-		assign( cr, IRExpr_Get(OFFB_CR1to7, Ity_I32) );
-	    }
-	    tmp_op = ((BO & 0x8) != 0) ? Iop_CmpNE32 : Iop_CmpEQ32;
-	    assign( cond_ok, binop(Iop_Or32, mkU32(BO >> 4),
-				   unop(Iop_1Uto32,
-					binop(tmp_op, mkU32(0),
-					      binop(Iop_And32, mkU32(1<<BI),
-						    mkexpr(cr))))) );
-	    assign( do_branch,
-		    binop(Iop_And32, mkexpr(ctr_ok), mkexpr(cond_ok)) );
+	    assign( ctr_ok, branch_ctr_ok(BO) );
+	    assign( cond_ok, branch_cond_ok(BO, BI) );
+
+	    assign( do_branch, binop(Iop_And32,
+				     unop(Iop_1Uto32, mkexpr(ctr_ok)),
+				     unop(Iop_1Uto32, mkexpr(cond_ok))) );
 
 	    assign( ir_nia, binop(Iop_And32,
-			       IRExpr_Get(OFFB_LR, Ity_I32),
-			       mkU32(-1 << 2)) );
+				  IRExpr_Get(OFFB_LR, Ity_I32),
+				  mkU32(-1 << 2)) );
 	    if (flag_LK) {
 		assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
 					  IRExpr_Get(OFFB_LR, Ity_I32),
@@ -2314,12 +2331,12 @@ static Bool dis_branch ( theInstr )
 	    break;
 
         default:
-	    vex_printf("dis_int_branch(PPC32)(opc2)");
+	    vex_printf("dis_int_branch(PPC32)(opc2)\n");
 	    return False;
 	}
 	break;
     default:
-	vex_printf("dis_int_branch(PPC32)(opc1)");
+	vex_printf("dis_int_branch(PPC32)(opc1)\n");
 	return False;
     }
     
@@ -2336,7 +2353,7 @@ static Bool dis_syslink ( UInt theInstr )
 
     // sc  (System Call, p565)
     if (theInstr != 0x44000002) {
-	vex_printf("dis_int_syslink(PPC32)(theInstr)");
+	vex_printf("dis_int_syslink(PPC32)(theInstr)\n");
 	return False;
     }
     DIP("sc\n");
@@ -2377,11 +2394,11 @@ static Bool dis_memsync ( UInt theInstr )
     /* XL-Form */
     case 0x13:	// isync (Instruction Synchronize, p467)
 	if (opc2 != 0x096) {
-	    vex_printf("dis_int_memsync(PPC32)(0x13,opc2)");
+	    vex_printf("dis_int_memsync(PPC32)(0x13,opc2)\n");
 	    return False;
 	}
 	if (b11to25 != 0 || b0 != 0) {
-	    vex_printf("dis_int_memsync(PPC32)(0x13,b11to25|b0)");
+	    vex_printf("dis_int_memsync(PPC32)(0x13,b11to25|b0)\n");
 	    return False;
 	}
 	DIP("isync\n");
@@ -2394,7 +2411,7 @@ static Bool dis_memsync ( UInt theInstr )
 	switch (opc2) {
         case 0x356: // eieio (Enforce In-Order Execution of I/O, p425)
 	    if (b11to25 != 0 || b0 != 0) {
-		vex_printf("dis_int_memsync(PPC32)(eiei0,b11to25|b0)");
+		vex_printf("dis_int_memsync(PPC32)(eiei0,b11to25|b0)\n");
 		return False;
 	    }
 	    DIP("eieio\n");
@@ -2402,7 +2419,7 @@ static Bool dis_memsync ( UInt theInstr )
 
         case 0x014: // lwarx (Load Word and Reserve Indexed, p500)
 	    if (b0 != 0) {
-		vex_printf("dis_int_memsync(PPC32)(lwarx,b0)");
+		vex_printf("dis_int_memsync(PPC32)(lwarx,b0)\n");
 		return False;
 	    }
 	    DIP("lwarx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -2410,7 +2427,7 @@ static Bool dis_memsync ( UInt theInstr )
 
         case 0x096: // stwcx. (Store Word Conditional Indexed, p605)
 	    if (b0 != 1) {
-		vex_printf("dis_int_memsync(PPC32)(stwcx.,b0)");
+		vex_printf("dis_int_memsync(PPC32)(stwcx.,b0)\n");
 		return False;
 	    }
 	    DIP("stwcx. %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -2418,7 +2435,7 @@ static Bool dis_memsync ( UInt theInstr )
 
         case 0x256: // sync (Synchronize, p616)
 	    if (b11to25 != 0 || b0 != 0) {
-		vex_printf("dis_int_memsync(PPC32)(sync,b11to25|b0)");
+		vex_printf("dis_int_memsync(PPC32)(sync,b11to25|b0)\n");
 		return False;
 	    }
 	    DIP("sync\n");
@@ -2428,13 +2445,13 @@ static Bool dis_memsync ( UInt theInstr )
 	    break;
 
         default:
-	    vex_printf("dis_int_memsync(PPC32)(opc2)");
+	    vex_printf("dis_int_memsync(PPC32)(opc2)\n");
 	    return False;
 	}
 	break;
 
     default:
-	vex_printf("dis_int_memsync(PPC32)(opc1)");
+	vex_printf("dis_int_memsync(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -2568,11 +2585,11 @@ static Bool dis_int_shift ( UInt theInstr )
 	    break;
 
         default:
-	    vex_printf("dis_int_shift(PPC32)(opc2)");
+	    vex_printf("dis_int_shift(PPC32)(opc2)\n");
 	    return False;
 	}
     } else {
-	vex_printf("dis_int_shift(PPC32)(opc1)");
+	vex_printf("dis_int_shift(PPC32)(opc1)\n");
 	return False;
     }
     return True;
@@ -2602,7 +2619,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
     IRTemp tmp32 = newTemp(Ity_I32);
 
     if (opc1 != 0x1F || b0 != 0) {
-	vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)");
+	vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)\n");
 	return False;
     }
 
@@ -2673,7 +2690,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 	break;
 
     default:
-	vex_printf("dis_int_ldst_rev(PPC32)(opc2)");
+	vex_printf("dis_int_ldst_rev(PPC32)(opc2)\n");
 	return False;
     }
     return True;
@@ -2701,6 +2718,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
     UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
     UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
+    UInt SPR_flipped = ((SPR & 0x1F) << 5) | ((SPR >> 5) & 0x1F);
     UChar bit_idx = (7-crfD) * 4;
     UInt mask;
     UChar i;
@@ -2719,7 +2737,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
     assign( Rs, getIReg(Rs_addr) );
 
     if (opc1 != 0x1F || b0 != 0) {
-	vex_printf("dis_proc_ctl(PPC32)(opc1|b0)");
+	vex_printf("dis_proc_ctl(PPC32)(opc1|b0)\n");
 	return False;
     }
 
@@ -2727,7 +2745,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
     /* X-Form */
     case 0x200: // mcrxr (Move to Condition Register from XER, p510)
 	if (b21to22 != 0 || b11to20 != 0) {
-	    vex_printf("dis_proc_ctl(PPC32)(mcrxr,b21to22|b11to20)");
+	    vex_printf("dis_proc_ctl(PPC32)(mcrxr,b21to22|b11to20)\n");
 	    return False;
 	}
 	DIP("mcrxr %d\n", crfD);
@@ -2759,7 +2777,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
     case 0x013: // mfcr (Move from Condition Register, p511)
 	if (b11to20 != 0) {
-	    vex_printf("dis_proc_ctl(PPC32)(mfcr,b11to20)");
+	    vex_printf("dis_proc_ctl(PPC32)(mfcr,b11to20)\n");
 	    return False;
 	}
 	DIP("mfcr %d\n", Rd_addr);
@@ -2772,14 +2790,10 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
     /* XFX-Form */
     case 0x153: // mfspr (Move from Special-Purpose Register, p514)
-	if ((SPR & 0x1F) != 0) {
-	    vex_printf("dis_proc_ctl(PPC32)(mfspr,SPR,1)");
-	    return False;
-	}
-	DIP("mfspr %d,%d\n", Rd_addr, SPR);
+	DIP("mfspr %d,%d\n", Rd_addr, SPR_flipped);
 
-	switch (SPR>>5) {  // Choose a register...
-	case 1:            // XER
+	switch (SPR_flipped) {  // Choose a register...
+	case 0x1:            // XER
 	    assign( xer_so, binop(Iop_Shl32,
 				  IRExpr_Get(OFFB_XER_SO, Ity_I8),
 				  mkU8(31)) );
@@ -2789,9 +2803,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	    assign( xer_ca, binop(Iop_Shl32,
 				  IRExpr_Get(OFFB_XER_CA, Ity_I8),
 				  mkU8(29)) );
-	    assign( xer_bc, binop(Iop_Shl32,
-				  IRExpr_Get(OFFB_XER_BC, Ity_I8),
-				  mkU8(0)) );
+	    assign( xer_bc, unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_BC, Ity_I8)) );
 	    assign( xer, binop(Iop_Or32,
 			       binop(Iop_Or32,
 				     mkexpr(xer_so), mkexpr(xer_ov)),
@@ -2799,14 +2811,28 @@ static Bool dis_proc_ctl ( UInt theInstr )
 				     mkexpr(xer_ca), mkexpr(xer_bc))) );
 	    putIReg( Rd_addr, mkexpr(xer) );
 	    break;
-	case 8:            // LR
+	case 0x8:            // LR
 	    putIReg( Rd_addr, IRExpr_Get(OFFB_LR, Ity_I32) );
 	    break;
-	case 9:            // CTR
+	case 0x9:            // CTR
 	    putIReg( Rd_addr, IRExpr_Get(OFFB_CTR, Ity_I32) );
 	    break;
+	    
+	case 0x012: case 0x013: case 0x016:
+	case 0x019: case 0x01A: case 0x01B:
+	case 0x110: case 0x111:	case 0x112: case 0x113:
+//      case 0x118: // 64bit only
+	case 0x11A: case 0x11F:
+	case 0x210: case 0x211: case 0x212: case 0x213:
+	case 0x214: case 0x215: case 0x216: case 0x217:
+	case 0x218: case 0x219: case 0x21A: case 0x21B:
+	case 0x21C: case 0x21D: case 0x21E: case 0x21F:
+	case 0x3F5:
+	    vex_printf("dis_proc_ctl(PPC32)(mfspr) - supervisor level op\n");
+	    return False;
+
 	default:
-	    vex_printf("dis_proc_ctl(PPC32)(mfspr,SPR,2)");
+	    vex_printf("dis_proc_ctl(PPC32)(mfspr,SPR)\n");
 	    return False;
 	}
 	break;
@@ -2817,7 +2843,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
     case 0x090: // mtcrf (Move to Condition Register Fields, p523)
 	if (b11 != 0 || b20 != 0) {
-	    vex_printf("dis_proc_ctl(PPC32)(mtcrf,b11|b20)");
+	    vex_printf("dis_proc_ctl(PPC32)(mtcrf,b11|b20)\n");
 	    return False;
 	}
 	DIP("mtcrf %d,%d\n", CRM, Rs_addr);
@@ -2843,14 +2869,10 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	break;
 
     case 0x1D3: // mtspr (Move to Special-Purpose Register, p530)
-	if ((SPR & 0x1F) != 0) {
-	    vex_printf("dis_proc_ctl(PPC32)(mtspr,SPR,1)");
-	    return False;
-	}
-	DIP("mtspr %d,%d\n", SPR, Rs_addr);
+	DIP("mtspr %d,%d\n", SPR_flipped, Rs_addr);
 
-	switch (SPR>>5) {  // Choose a register...
-	case 1:            // XER
+	switch (SPR_flipped) {  // Choose a register...
+	case 0x1:            // XER
 	    assign( xer, mkexpr(Rs) );
 	    assign( xer_so, binop(Iop_Shr32,
 				  binop(Iop_And32, mkexpr(xer), mkU32(0x80000000)),
@@ -2868,20 +2890,34 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	    stmt( IRStmt_Put( OFFB_XER_CA, mkexpr(xer_ca)) );
 	    stmt( IRStmt_Put( OFFB_XER_BC, mkexpr(xer_bc)) );
 	    break;
-	case 8:            // LR
+	case 0x8:            // LR
 	    stmt( IRStmt_Put( OFFB_LR, mkexpr(Rs)) );
 	    break;
-	case 9:            // CTR
+	case 0x9:            // CTR
 	    stmt( IRStmt_Put( OFFB_CTR, mkexpr(Rs)) );
 	    break;
+
+	case 0x012: case 0x013: case 0x016:
+	case 0x019: case 0x01A: case 0x01B:
+	case 0x110: case 0x111: case 0x112: case 0x113:
+//	case 0x118: // 64bit only
+	case 0x11A: case 0x11C: case 0x11D:
+	case 0x210: case 0x211: case 0x212: case 0x213:
+	case 0x214: case 0x215: case 0x216: case 0x217:
+	case 0x218: case 0x219: case 0x21A: case 0x21B:
+	case 0x21C: case 0x21D: case 0x21E: case 0x21F:
+	case 0x3F5:
+	    vex_printf("dis_proc_ctl(PPC32)(mtspr) - supervisor level op\n");
+	    return False;
+
 	default:
-	    vex_printf("dis_proc_ctl(PPC32)(mtspr,SPR,2)");
+	    vex_printf("dis_proc_ctl(PPC32)(mtspr,SPR)\n");
 	    return False;
 	}
 	break;
 
     default:
-	vex_printf("dis_proc_ctl(PPC32)(opc2)");
+	vex_printf("dis_proc_ctl(PPC32)(opc2)\n");
 	return False;
     }
     return True;
@@ -2899,7 +2935,7 @@ static Bool dis_cache_manage ( UInt theInstr )
     UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
     if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
-	vex_printf("dis_cache_manage(PPC32)(opc1|b21to25|b0)");
+	vex_printf("dis_cache_manage(PPC32)(opc1|b21to25|b0)\n");
 	return False;
     }
 
@@ -2940,7 +2976,7 @@ static Bool dis_cache_manage ( UInt theInstr )
 	break;
 
     default:
-	vex_printf("dis_cache_manage(PPC32)(opc2)");
+	vex_printf("dis_cache_manage(PPC32)(opc2)\n");
 	return False;
     }
     return True;
@@ -2996,7 +3032,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    DIP("\t0x%x:  ", guest_pc_bbstart+delta);
 
 
-
    // TODO: fix the client-request stuff, else nothing will work
 
    /* Spot the client-request magic sequence. */
@@ -3036,9 +3071,24 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    opc1 = (theInstr >> 26) & 0x3F;     /* theInstr[26:31] */
    opc2 = (theInstr >> 1 ) & 0x3FF;    /* theInstr[1:10]  */
 
-   if (theInstr == 0x7C0042A6) { // VEC_TRL
+#if 0
+   vex_printf("\ndisInstr(ppc32): instr:   0x%x\n", theInstr);
+   vex_printf("disInstr(ppc32): instr:   ");
+   vex_printf_binary( theInstr, 32, True );
+   vex_printf("\n");
+
+   vex_printf("disInstr(ppc32): opcode1: ");
+   vex_printf_binary( opc1, 6, False );
+   vex_printf("\n");
+
+   vex_printf("disInstr(ppc32): opcode2: ");
+   vex_printf_binary( opc2, 10, False );
+   vex_printf("\n\n");
+#endif
+
+   if (theInstr == 0x7C0042A6) {
        // CAB: what's this?
-       DIP("VEC_TRL => strange!\n");
+       DIP("Invalid instruction! Would be 'mfspr 0,256'.  Passing through for now...\n");
        goto decode_success;
    }
 
@@ -3193,6 +3243,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	       whatNext = Dis_StopHere;
 	       break;
 	   }
+	   goto decode_failure;
 
        /*
 	 Memory Synchronization Instructions
@@ -3389,9 +3440,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	   break;
 //	   goto decode_failure;
 
+       /*
+	 AltiVec instructions
+       */
        case 0x0E7: // stvx
-	   // CAB: what's this?
-	   DIP("stvx => strange!\n");
+	   DIP("Altivec op (stvx) => not implemented\n");
 	   goto decode_success;
 
        default:
@@ -3405,6 +3458,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    vex_printf("disInstr(ppc32): unhandled instruction: "
               "0x%x\n", theInstr);
 
+#if 1
    vex_printf("disInstr(ppc32): instr:   ");
    vex_printf_binary( theInstr, 32, True );
    vex_printf("\n");
@@ -3415,8 +3469,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    vex_printf("disInstr(ppc32): opcode2: ");
    vex_printf_binary( opc2, 10, False );
-   vex_printf("\n");
-   vex_printf("\n");
+   vex_printf("\n\n");
+#endif
 
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has

@@ -379,6 +379,18 @@ void* lookup_magic_hacks ( char* sym )
 
 #ifdef arm_TARGET_ARCH
 static
+void arm_notify_new_code ( char* start, int length )
+{
+  __asm __volatile ("mov r1, %0\n\t"
+                    "mov r2, %1\n\t"
+                    "mov r3, %2\n\t"
+                    "swi 0x9f0002\n\t"
+                    : 
+                    : "ir" (start), "ir" (length), "ir" (0) );
+}
+
+
+static
 void gen_armle_goto ( char* fixup, char* dstP )
 {
   Elf_Word w = (Elf_Word)dstP;
@@ -393,13 +405,7 @@ void gen_armle_goto ( char* fixup, char* dstP )
   fixup[5] = w & 0xFF; w >>= 8;
   fixup[6] = w & 0xFF; w >>= 8;
   fixup[7] = w & 0xFF; w >>= 8;
-
-  __asm __volatile ("mov r1, %0\n\t"
-                    "mov r2, %1\n\t"
-                    "mov r3, %2\n\t"
-                    "swi 0x9f0002\n\t"
-                    : 
-                    : "ir" (fixup), "ir" (8), "ir" (0) );
+  arm_notify_new_code(fixup, 8);
 }
 #endif /* arm_TARGET_ARCH */
 
@@ -1136,7 +1142,7 @@ ocGetNames_ELF ( ObjectCode* oc )
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 //
-// TOP-LEVEL CONTROL
+// TOP-LEVEL CONTROL OF THE LINKER
 
 
 /* ---------------------------------------------------------------------
@@ -1345,3 +1351,180 @@ int main ( int argc, char** argv )
    return 0;
 }
 #endif
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+//
+// VIRTUAL MACHINE ...
+
+/* --------------------------------------------------------- */
+/* TRANSLATION TABLE/CACHE                                   */
+/* --------------------------------------------------------- */
+
+
+#define N_TT_ENTRIES 1000
+
+typedef
+   struct {
+      char* orig;
+      int   orig_size;
+      char* trans;
+      int   trans_size;
+   }
+   TTEntry;
+
+int n_transtab_used = 0;
+TTEntry transtab[N_TT_ENTRIES];
+
+
+/* Called by Haskell to add a translation to the trans cache.
+   Supplied translation is in mallocville.  add_translation should
+   copy it out as the caller will free it on return.  */
+
+/* EXPORTED */
+void add_translation ( char* orig, int orig_size, char* trans, int trans_size )
+{
+   int i;
+   assert(n_transtab_used < N_TT_ENTRIES);
+   transtab[n_transtab_used].orig       = orig;
+   transtab[n_transtab_used].orig_size  = orig_size;
+   transtab[n_transtab_used].trans_size = trans_size;
+
+   transtab[n_transtab_used].trans = malloc(trans_size);
+   assert(transtab[n_transtab_used].trans != NULL);
+   for (i = 0; i < trans_size; i++)
+      transtab[n_transtab_used].trans[i] = trans[i];
+
+   arm_notify_new_code(transtab[n_transtab_used].trans, trans_size);
+
+   n_transtab_used++;
+}
+
+static
+char* find_translation ( char* orig )
+{
+   int i;
+   for (i = 0; i < n_transtab_used; i++)
+      if (transtab[i].orig == orig)
+         return transtab[i].trans;
+   return NULL;
+}
+
+/* --------------------------------------------------------- */
+/* SIMULATED STATE                                           */
+/* --------------------------------------------------------- */
+
+typedef unsigned int Word;
+
+/* Stack for the simulation */
+Word* sim_stack;
+
+/* Stop when we get a jump to here. */
+char* stop_at;
+
+
+/* ARM state */
+/* r0 .. r15, flags */
+Word regs_arm[16+1];
+
+#define REG_PC 15
+#define REG_SP 14
+
+
+//---------------------------------------------
+
+/* Calling convention: enter the translation with r0 pointing at
+   regs_arm.  Translation may trash r1 .. r12 inclusive.  Translation
+   should update all regs in regs_arm, and put the next pc value
+   in regs_arm[REG_PC]. */
+
+static
+void run_translation ( char* trans, char* baseblock )
+{
+  /* r0 holds trans */
+  __asm __volatile
+     ("stmfd   sp!, {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13}\n\t"
+      "mov     r12, %0\n\t"
+      "mov     r0, %1\n\t"
+      "bl      r12\n\t"
+      "ldmea   sp!, {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13}\n\t"
+      :
+      : "ir" (trans), "ir" (baseblock) );
+}
+
+
+
+
+/* Called by Haskell to initialise the simulated machine.  The
+   supplied address is the entry point of some procedure to call.  */
+
+/* EXPORTED */
+void initialise_machine ( char* first_pc )
+{
+   static char start[12];
+   Word w = (Word)first_pc;
+
+   n_transtab_used = 0;
+
+   sim_stack = malloc(10000 * sizeof(Word));
+   regs_arm[REG_SP] = (Word)(&sim_stack[9999]);
+
+   regs_arm[REG_PC] = (Word)first_pc;
+
+   /* Generate this.  Note, we'll be returning directly to the
+      data, so the JIT must stop at this point! */
+   /*
+   3 0000 00C09FE5              ldr     ip, value
+   4 0004 FEFFFFEB              bl      ip
+   5                    value:
+   6 0008 44332211              .word   0x11223344
+   */
+   start[0] = 0x00; start[1] = 0xC0; start[2] = 0x9F; start[3] = 0xE5;
+   start[4] = 0xFE; start[5] = 0xFF; start[6] = 0xFF; start[7] = 0xEB;
+   start[8]  = w & 0xFF; w >>= 8;
+   start[9]  = w & 0xFF; w >>= 8;
+   start[10] = w & 0xFF; w >>= 8;
+   start[11] = w & 0xFF; w >>= 8;
+
+   stop_at = &start[8];
+   arm_notify_new_code(stop_at, 12);
+}
+
+/* Run the simulated machine for a while.  Returns when a new BB needs
+   to be translated, and returns its address.  Returns NULL when we
+   want to stop. */
+
+/* EXPORTED */
+char* run_machine ( void )
+{
+   char* nextpc_orig;
+   char* nextpc_trans;
+   while (1) {
+      nextpc_orig = (char*)(regs_arm[REG_PC]);
+      if (nextpc_orig == stop_at)
+         return NULL;
+      nextpc_trans = find_translation(nextpc_orig);
+      if (nextpc_trans == NULL)
+         return nextpc_orig;
+      run_translation(nextpc_trans, (char*) &regs_arm[0] );
+   }
+}
+
+
+/* HOW TO USE:
+ 
+   for a main fn :: void main ( void )
+
+   * load .o's, link, etc
+
+   * call initialise_machine with & main
+
+   * call run_machine repeatedly.  If it returns NULL, stop.  Else
+     make a translation of the returned address, pass it to
+     add_translation, and resume running by calling run_machine.
+
+*/

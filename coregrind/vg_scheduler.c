@@ -601,6 +601,13 @@ Bool fd_is_blockful ( Int fd )
    return (res & VKI_O_NONBLOCK) ? False : True;
 }
 
+static
+Bool fd_is_valid ( Int fd )
+{
+   Int res = VG_(fcntl)( fd, VKI_F_GETFL, 0 );
+   return VG_(is_kerror)(res) ? False : True;
+}
+
 
 
 /* Possibly do a for tid.  Return values are:
@@ -826,6 +833,22 @@ void sched_do_syscall ( ThreadId tid )
       We later poll for I/O completion using select().  */
 
    fd = VG_(threads)[tid].m_ebx /* arg1 */;
+
+   /* Deal with error case immediately. */
+   if (!fd_is_valid(fd)) {
+      VG_(message)(Vg_UserMsg, 
+         "Warning: invalid file descriptor %d in syscall %s",
+         fd, syscall_no == __NR_read ? "read()" : "write()" );
+      VG_(check_known_blocking_syscall)(tid, syscall_no, NULL /* PRE */);
+      KERNEL_DO_SYSCALL(tid, res);
+      VG_(check_known_blocking_syscall)(tid, syscall_no, &res /* POST */);
+      /* We're still runnable. */
+      vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+      return;
+   }
+
+   /* From here onwards we know that fd is valid. */
+
    orig_fd_blockness = fd_is_blockful(fd);
    set_fd_nonblocking(fd);
    vg_assert(!fd_is_blockful(fd));

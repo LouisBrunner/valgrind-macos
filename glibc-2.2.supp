@@ -1,7 +1,7 @@
 
 ##----------------------------------------------------------------------##
 
-# Errors to suppress by default with glibc 2.2.4
+# Errors to suppress by default with glibc 2.2.4 / 2.2.5
 
 # Format of this file is:
 # {
@@ -21,16 +21,16 @@
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)
    Cond
-   obj:*libc-2.2.4.so
-   obj:*libc-2.2.4.so
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
 }
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Value4)
    Value4
-   obj:*libc-2.2.4.so
-   obj:*libc-2.2.4.so
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
 }
 
 ##### glibc 2.2.5 stuff perhaps?
@@ -154,7 +154,7 @@
    _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)
    Cond
    fun:_dl_relocate_object
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
    fun:_dl_catch_error
 }
 
@@ -178,8 +178,8 @@
    socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
    Param
    socketcall.connect(serv_addr)
-   obj:*libc-2.2.4.so
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
 }
 
 #----------------------
@@ -195,7 +195,7 @@
    write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
    Param
    write(buf)
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
 }
@@ -228,7 +228,7 @@
 {
    libc-2.2.4.so/libXt.so.6.0/libXt.so.6.0
    Cond
-   obj:*libc-2.2.4.so
+   obj:*libc-2.2.?.so
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
 }

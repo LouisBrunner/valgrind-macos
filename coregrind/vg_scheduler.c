@@ -1292,9 +1292,12 @@ void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 
    vg_assert(is_valid_or_empty_tid(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
+
    /* Its stack is now off-limits */
-   seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
-   VG_TRACK( die_mem_stack, seg->addr, seg->len );
+   if (VG_(threads)[tid].stack_base) {
+      seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
+      VG_TRACK( die_mem_stack, seg->addr, seg->len );
+   }
 
    VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
 
@@ -1388,6 +1391,8 @@ void VG_(nuke_all_threads_except) ( ThreadId me )
       VG_(threads)[tid].status = VgTs_Empty;
       VG_(threads)[tid].associated_mx = NULL;
       VG_(threads)[tid].associated_cv = NULL;
+      VG_(threads)[tid].stack_base = NULL;
+      VG_(threads)[tid].stack_size = 0;
       cleanup_after_thread_exited( tid, True );
    }
 }

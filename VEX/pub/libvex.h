@@ -235,6 +235,37 @@ extern void LibVEX_ShowStats ( void );
 #define LibVEX_N_SPILL_BYTES 768
 
 
+
+/* Code generation conventions that need to be recorded somewhere.
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   x86
+   ~~~
+   Generated code should be entered using a CALL instruction.  On
+   entry, %ebp should point to the guest state, and %esp should be a
+   valid stack pointer.  The generated code may change %eax, %ebx,
+   %ecx, %edx, %esi, %edi, all the FP registers and control state, and
+   all the XMM registers.
+
+   On entry, the FPU control word shouldbe set to 0x027F, and the SSE
+   control word (%mxcsr) should be set to 0x1F80.  On exit, they
+   should still have those values (after masking off the lowest 6 bits
+   of %mxcsr).  If they don't, there is a bug in VEX-generated code.
+
+   Generated code returns to the scheduler using a RET instruction.
+   %eax (or %eax:%edx, if simulating a 64-bit target) will contain the
+   guest address of the next block to execute.
+
+   CRITICAL ISSUES in x86 code generation.  The only known critical
+   issue is that the host FPU and SSE state is not properly saved
+   across calls to helper functions.  If any helper references any
+   such state, it is likely (1) to misbehave itself, since the FP
+   stack tags will not be as expected, and (2) after returning to
+   generated code, the generated code is likely to go wrong.  This
+   really should be fixed.
+*/
+
+
 #endif /* ndef __LIBVEX_H */
 
 /*---------------------------------------------------------------*/

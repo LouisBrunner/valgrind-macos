@@ -282,7 +282,8 @@ typedef
       Iop_CmpF64,
 
       /* int -> double */
-      Iop_I32toF64, Iop_I64toF64,
+      Iop_I32toF64,  /* no rounding needed because result can always be
+                        represented exactly */
 
       /* double -> int.  These take a first argument :: Ity_I32 
          (an IRRoundingMode) which is an indication of the rounding mode,
@@ -307,6 +308,11 @@ typedef
          of the argument.
       */
       Iop_F64toI64, Iop_F64toI32, Iop_F64toI16,
+
+      /* these also take an I32 first argument encoding the
+         rounding mode. */
+      Iop_I64toF64,
+      Iop_I32toF32,
 
       /* F64 -> F64, also takes an I32 first argument encoding the
          rounding mode. */

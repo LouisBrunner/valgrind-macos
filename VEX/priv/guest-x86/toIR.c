@@ -617,9 +617,9 @@ static void putXMMRegLane64 ( UInt xmmreg, Int laneno, IRExpr* e )
    stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
 }
 
-static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
+static void putXMMRegLane32F ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I32);
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F32);
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
@@ -4240,6 +4240,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                vex_printf("first_opcode == 0xDA\n");
                goto decode_fail;
          }
+
       } else {
 
          delta++;
@@ -4851,8 +4852,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 5: /* FILD m64 */
                DIP("fildll %s\n", dis_buf);
                fp_push();
-               put_ST(0, unop(Iop_I64toF64,
-                              loadLE(Ity_I64, mkexpr(addr))));
+               put_ST(0, binop(Iop_I64toF64,
+                               get_roundingmode(),
+                               loadLE(Ity_I64, mkexpr(addr))));
                break;
 
             case 7: /* FISTP m64 */
@@ -4935,7 +4937,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    * FP stack pointer set to zero
 */
 
-static void do_MMX_boilerplate ( void )
+static void do_MMX_preamble ( void )
 {
    Int      i;
    IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
@@ -4946,7 +4948,7 @@ static void do_MMX_boilerplate ( void )
       stmt( IRStmt_PutI( descr, zero, i, tag1 ) );
 }
 
-static void do_EMMS_boilerplate ( void )
+static void do_EMMS_preamble ( void )
 {
    Int      i;
    IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
@@ -5119,10 +5121,8 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
    UChar opc = getIByte(delta);
    delta++;
 
-   if (0) {
-   } else {
-      do_MMX_boilerplate();
-   }
+   /* dis_MMX handles all insns except emms. */
+   do_MMX_preamble();
 
    switch (opc) {
 
@@ -6769,7 +6769,9 @@ void dis_ret ( UInt d32 )
    jmp_treg(Ijk_Ret,t2);
 }
 
-/* ------ SSE/SSE2/SSE3 helpers ----- */
+/*------------------------------------------------------------*/
+/*--- SSE/SSE2/SSE3 helpers                                ---*/
+/*------------------------------------------------------------*/
 
 static UInt dis_SSE_E_to_G_wrk ( 
                UChar sorb, UInt delta, 
@@ -6899,6 +6901,14 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
 }
 
 
+static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
+{
+   return binop( Iop_And32, 
+                 IRExpr_Get( OFFB_SSEROUND, Ity_I32 ), 
+                 mkU32(3) );
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -7021,6 +7031,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* ---------------------------------------------------- */
    /* --- The SSE decoder.                             --- */
    /* ---------------------------------------------------- */
+
+   /* What did I do to deserve SSE ?  Perhaps I was really bad in a
+      previous life? */
 
    /* Note, this doesn't handle SSE2 or SSE3. */
 
@@ -7167,6 +7180,177 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       goto decode_success;
    }
+
+   /* 0F 2A = CVTPI2PS -- convert 2 x I32 in mem/mmx to 2 x F32 in low
+      half xmm */
+   if (insn[0] == 0x0F && insn[1] == 0x2A) {
+      IRTemp arg64 = newTemp(Ity_I64);
+      IRTemp rmode = newTemp(Ity_I32);
+      vassert(sz == 4);
+
+      modrm = getIByte(delta+2);
+      do_MMX_preamble();
+      if (epartIsReg(modrm)) {
+         assign( arg64, getMMXReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("cvtpi2ps %s,%s\n", nameMMXReg(eregOfRM(modrm)),
+                                 nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+	 assign( arg64, loadLE(Ity_I64, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("cvtpi2ps %s,%s\n", dis_buf,
+                                 nameXMMReg(gregOfRM(modrm)) );
+      }
+
+      assign( rmode, get_sse_roundingmode() );
+
+      putXMMRegLane32F( 
+         gregOfRM(modrm), 0, 
+         binop(Iop_I32toF32, 
+               mkexpr(rmode),
+               unop(Iop_64to32, mkexpr(arg64)) ) );
+
+      putXMMRegLane32F(
+         gregOfRM(modrm), 1, 
+         binop(Iop_I32toF32,
+               mkexpr(rmode),
+               unop(Iop_64HIto32, mkexpr(arg64)) ) );
+
+      goto decode_success;
+   }
+
+   /* F3 0F 2A = CVTSI2SS -- convert I32 in mem/ireg to F32 in low
+      quarter xmm */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x2A) {
+      IRTemp arg32 = newTemp(Ity_I32);
+      IRTemp rmode = newTemp(Ity_I32);
+      vassert(sz == 4);
+
+      modrm = getIByte(delta+3);
+      do_MMX_preamble();
+      if (epartIsReg(modrm)) {
+         assign( arg32, getIReg(4, eregOfRM(modrm)) );
+         delta += 3+1;
+         DIP("cvtsi2ss %s,%s\n", nameIReg(4, eregOfRM(modrm)),
+                                 nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+	 assign( arg32, loadLE(Ity_I32, mkexpr(addr)) );
+         delta += 3+alen;
+         DIP("cvtsi2ss %s,%s\n", dis_buf,
+                                 nameXMMReg(gregOfRM(modrm)) );
+      }
+
+      assign( rmode, get_sse_roundingmode() );
+
+      putXMMRegLane32F( 
+         gregOfRM(modrm), 0, 
+         binop(Iop_I32toF32, mkexpr(rmode), mkexpr(arg32)) );
+
+      goto decode_success;
+   }
+
+   /* 0F 2D = CVTPS2PI -- convert 2 x F32 in mem/low half xmm to 2 x
+      I32 in mmx, according to prevailing SSE rounding mode */
+   /* 0F 2C = CVTTPS2PI -- convert 2 x F32 in mem/low half xmm to 2 x
+      I32 in mmx, rounding towards zero */
+   if (insn[0] == 0x0F && (insn[1] == 0x2D || insn[1] == 0x2C)) {
+      IRTemp dst64  = newTemp(Ity_I64);
+      IRTemp rmode  = newTemp(Ity_I32);
+      IRTemp f32lo  = newTemp(Ity_F32);
+      IRTemp f32hi  = newTemp(Ity_F32);
+      Bool   r2zero = insn[1] == 0x2C;
+      vassert(sz == 4);
+
+      do_MMX_preamble();
+      modrm = getIByte(delta+2);
+
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
+	 assign(f32hi, getXMMRegLane32F(eregOfRM(modrm), 1));
+         DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
+                                   nameXMMReg(eregOfRM(modrm)),
+                                   nameMMXReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+	 assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+	 assign(f32hi, loadLE(Ity_F32, binop( Iop_Add32, 
+                                              mkexpr(addr), 
+                                              mkU32(4) )));
+         delta += 2+alen;
+         DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
+                                   dis_buf,
+                                   nameMMXReg(gregOfRM(modrm)));
+      }
+
+      if (r2zero) {
+         assign(rmode, mkU32((UInt)Irrm_ZERO) );
+      } else {
+         assign( rmode, get_sse_roundingmode() );
+      }
+
+      assign( 
+         dst64,
+         binop( Iop_32HLto64,
+                binop( Iop_F64toI32, 
+                       mkexpr(rmode), 
+                       unop( Iop_F32toF64, mkexpr(f32hi) ) ),
+                binop( Iop_F64toI32, 
+                       mkexpr(rmode), 
+                       unop( Iop_F32toF64, mkexpr(f32lo) ) )
+              )
+      );
+
+      putMMXReg(gregOfRM(modrm), mkexpr(dst64));
+      goto decode_success;
+   }
+
+   /* F3 0F 2D = CVTSS2SI -- convert F32 in mem/low quarter xmm to
+      I32 in ireg, according to prevailing SSE rounding mode */
+   /* F3 0F 2C = CVTTSS2SI -- convert F32 in mem/low quarter xmm to
+      I32 in ireg, according to prevailing SSE rounding mode */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F 
+       && (insn[2] == 0x2D || insn[2] == 0x2C)) {
+      IRTemp rmode = newTemp(Ity_I32);
+      IRTemp f32lo = newTemp(Ity_F32);
+      Bool   r2zero = insn[2] == 0x2C;
+      vassert(sz == 4);
+
+      do_MMX_preamble();
+      modrm = getIByte(delta+3);
+
+      if (epartIsReg(modrm)) {
+         delta += 3+1;
+	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
+         DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
+                                   nameXMMReg(eregOfRM(modrm)),
+                                   nameIReg(4, gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+	 assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+         delta += 3+alen;
+         DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
+                                   dis_buf,
+                                   nameIReg(4, gregOfRM(modrm)));
+      }
+
+      if (r2zero) {
+         assign(rmode, mkU32((UInt)Irrm_ZERO) );
+      } else {
+         assign( rmode, get_sse_roundingmode() );
+      }
+
+      putIReg(4, gregOfRM(modrm),
+                 binop( Iop_F64toI32, 
+                        mkexpr(rmode), 
+                        unop( Iop_F32toF64, mkexpr(f32lo) ) )
+      );
+
+      goto decode_success;
+   }
+
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
@@ -10368,7 +10552,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       case 0x77: /* EMMS */
          vassert(sz == 4);
-         do_EMMS_boilerplate();
+         do_EMMS_preamble();
          DIP("emms\n");
          break;
 

@@ -638,6 +638,54 @@ X86AMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
 }
 
 
+/* Mess with the FPU's rounding mode: set to the default rounding mode
+   (0x037F). */
+static 
+void set_FPU_rounding_default ( ISelEnv* env )
+{
+   /* pushl $0x037F
+      fldcw 0(%esp)
+      addl $4, %esp 
+   */
+   X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+   addInstr(env, X86Instr_Push(X86RMI_Imm(0x037F)));
+   addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+   addInstr(env, 
+            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+}
+
+
+/* Mess with the FPU's rounding mode: 'mode' is an I32-typed
+   expression denoting a value in the range 0 .. 3, indicating a round
+   mode encoded as per type IRRoundingMode.  Set the x87 FPU to have
+   the same rounding.
+*/
+static
+void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
+{
+   HReg rrm  = iselIntExpr_R(env, mode);
+   HReg rrm2 = newVRegI(env);
+   X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+
+   /* movl  %rrm, %rrm2
+      andl  $3, %rrm2   -- shouldn't be needed; paranoia
+      shll  $10, %rrm2
+      orl   $0x037F, %rrm2
+      pushl %rrm2
+      fldcw 0(%esp)
+      addl  $4, %esp
+   */
+   addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
+   addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
+   addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
+   addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
+   addInstr(env, X86Instr_Push(X86RMI_Reg(rrm2)));
+   addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+   addInstr(env, 
+            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+}
+
+
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
 /*---------------------------------------------------------*/
@@ -887,11 +935,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       if (e->Iex.Binop.op == Iop_F64toI32 || e->Iex.Binop.op == Iop_F64toI16) {
-         Int  sz   = e->Iex.Binop.op == Iop_F64toI16 ? 2 : 4;
-         HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
-         HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg rrm2 = newVRegI(env);
-         HReg dst  = newVRegI(env);
+         Int  sz  = e->Iex.Binop.op == Iop_F64toI16 ? 2 : 4;
+         HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegI(env);
 
          /* Used several times ... */
          X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
@@ -901,24 +947,13 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 	    enum.  The first thing to do is set the FPU's rounding
 	    mode accordingly. */
 
-         /* Create a space, both for the control word messing, and for
-	    the actual store conversion. */
+         /* Create a space for the format conversion. */
          /* subl $4, %esp */
          addInstr(env, 
                   X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
-	 /* movl %rrm, %rrm2
-            andl $3, %rrm2   -- shouldn't be needed; paranoia
-            shll $10, %rrm2
-            orl  $0x037F, %rrm2
-            movl %rrm2, 0(%esp)
-            fldcw 0(%esp)
-	 */
-         addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
-	 addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
-	 addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
-	 addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
-	 addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
-	 addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+	 /* Set host rounding mode */
+	 set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          /* gistw/l %rf, 0(%esp) */
          addInstr(env, X86Instr_FpLdStI(False/*store*/, sz, rf, zero_esp));
@@ -933,12 +968,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                              Xalu_MOV, X86RMI_Mem(zero_esp), dst));
          }
 
-	 /* Restore default FPU control.
-            movl $0x037F, 0(%esp)
-            fldcw 0(%esp)
-	 */
-         addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
-	 addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+	 /* Restore default FPU rounding. */
+         set_FPU_rounding_default( env );
 
          /* addl $4, %esp */
          addInstr(env, 
@@ -1969,11 +2000,9 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       Unfortunately I see no easy way to avoid the duplication. */
    if (e->tag == Iex_Binop
        && e->Iex.Binop.op == Iop_F64toI64) {
-      HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
-      HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      HReg rrm2 = newVRegI(env);
-      HReg tLo  = newVRegI(env);
-      HReg tHi  = newVRegI(env);
+      HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
 
       /* Used several times ... */
       /* Careful ... this sharing is only safe because
@@ -1987,24 +2016,13 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          The first thing to do is set the FPU's rounding mode
          accordingly. */
 
-      /* Create a space, both for the control word messing, and for
-         the actual store conversion. */
+      /* Create a space for the format conversion. */
       /* subl $8, %esp */
       addInstr(env, 
                X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
-      /* movl %rrm, %rrm2
-         andl $3, %rrm2   -- shouldn't be needed; paranoia
-         shll $10, %rrm2
-         orl  $0x037F, %rrm2
-         movl %rrm2, 0(%esp)
-         fldcw 0(%esp)
-      */
-      addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
-      addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
-      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
-      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
-      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+      /* Set host rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
       /* gistll %rf, 0(%esp) */
       addInstr(env, X86Instr_FpLdStI(False/*store*/, 8, rf, zero_esp));
@@ -2016,12 +2034,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(
                        Xalu_MOV, X86RMI_Mem(four_esp), tHi));
 
-      /* Restore default FPU control.
-            movl $0x037F, 0(%esp)
-            fldcw 0(%esp)
-      */
-      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
-      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+      /* Restore default FPU rounding. */
+      set_FPU_rounding_default( env );
 
       /* addl $8, %esp */
       addInstr(env, 
@@ -2101,6 +2115,37 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg res = newVRegF(env);
       addInstr(env, X86Instr_FpLdSt( True/*load*/, 4, res, am ));
       return res;
+   }
+
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I32toF32) {
+      HReg dst = newVRegF(env);
+      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+      X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+
+      /* int value -> stack */
+      addInstr(env, X86Instr_Push(rmi));
+
+      /* Set host rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+      /* get it back from the stack, into F80 form.  Rounding mode has
+         no effect as this can be done exactly. */
+      addInstr(env, X86Instr_FpLdStI(True/*load*/, 4, dst, zero_esp));
+
+      /* write it back to the stack, as a 32-bit float.  Rounding mode
+	 effects this. */
+      addInstr(env, X86Instr_FpLdSt(False/*store*/, 4, dst, zero_esp));
+
+      /* and finally ... fetch it back again.  (sigh) */
+      addInstr(env, X86Instr_FpLdSt(True/*load*/, 4, dst, zero_esp));
+
+      /* Restore default FPU rounding. */
+      set_FPU_rounding_default( env );
+
+      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                       X86RMI_Imm(4),
+                                       hregX86_ESP()));
+      return dst;
    }
 
    ppIRExpr(e);
@@ -2228,52 +2273,44 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
-      HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
-      HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      HReg rrm2 = newVRegI(env);
-      HReg dst  = newVRegF(env);
+      HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg dst = newVRegF(env);
 
-      /* Used several times ... */
-      /* Careful ... this sharing is only safe because
-	 zero_esp does not hold any registers which the
-	 register allocator could attempt to swizzle later. */
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+      /* rf now holds the value to be rounded.  The first thing to do
+         is set the FPU's rounding mode accordingly. */
 
-      /* rf now holds the value to be rounded, and rrm holds the
-         rounding mode value, encoded as per the IRRoundingMode enum.
-         The first thing to do is set the FPU's rounding mode
-         accordingly. */
-
-      /* subl $4, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
-      /* movl %rrm, %rrm2
-         andl $3, %rrm2   -- shouldn't be needed; paranoia
-         shll $10, %rrm2
-         orl  $0x037F, %rrm2
-         movl %rrm2, 0(%esp)
-         fldcw 0(%esp)
-      */
-      addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
-      addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
-      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
-      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
-      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+      /* Set host rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
       /* grndint %rf, %dst */
       addInstr(env, X86Instr_FpUnary(Xfp_ROUND, rf, dst));
 
-      /* Restore default FPU control.
-            movl $0x037F, 0(%esp)
-            fldcw 0(%esp)
-      */
-      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
-      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+      /* Restore default FPU rounding. */
+      set_FPU_rounding_default( env );
 
-      /* addl $4, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+      return dst;
+   }
+
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64toF64) {
+      HReg dst = newVRegF(env);
+      HReg rHi,rLo;
+      iselInt64Expr( &rHi, &rLo, env, e->Iex.Binop.arg2);
+      addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+      addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+
+      /* Set host rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+      addInstr(env, X86Instr_FpLdStI(
+                       True/*load*/, 8, dst, 
+                       X86AMode_IR(0, hregX86_ESP())));
+
+      /* Restore default FPU rounding. */
+      set_FPU_rounding_default( env );
+
+      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                       X86RMI_Imm(8),
+                                       hregX86_ESP()));
       return dst;
    }
 
@@ -2303,25 +2340,12 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegF(env);
             HReg ri  = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(ri)));
+            set_FPU_rounding_default(env);
             addInstr(env, X86Instr_FpLdStI(
                              True/*load*/, 4, dst, 
                              X86AMode_IR(0, hregX86_ESP())));
 	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
                                           X86RMI_Imm(4),
-                                          hregX86_ESP()));
-            return dst;
-         }
-         case Iop_I64toF64: {
-            HReg dst = newVRegF(env);
-            HReg rHi,rLo;
-	    iselInt64Expr( &rHi, &rLo, env, e->Iex.Unop.arg);
-            addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
-            addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
-            addInstr(env, X86Instr_FpLdStI(
-                             True/*load*/, 8, dst, 
-                             X86AMode_IR(0, hregX86_ESP())));
-	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                          X86RMI_Imm(8),
                                           hregX86_ESP()));
             return dst;
          }
@@ -2333,6 +2357,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 	    iselInt64Expr( &rHi, &rLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+            set_FPU_rounding_default(env);
             addInstr(env, X86Instr_FpLdSt(
                              True/*load*/, 8, dst, 
                              X86AMode_IR(0, hregX86_ESP())));
@@ -2590,6 +2615,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg      vec = iselVecExpr(env, stmt->Ist.Put.data);
          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
          addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, am));
+         return;
+      }
+      if (ty == Ity_F32) {
+         HReg f32 = iselFltExpr(env, stmt->Ist.Put.data);
+         X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
+         set_FPU_rounding_default(env); /* paranoia */
+         addInstr(env, X86Instr_FpLdSt( False/*store*/, 4, f32, am ));
          return;
       }
       break;

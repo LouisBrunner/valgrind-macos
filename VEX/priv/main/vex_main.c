@@ -7,6 +7,7 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex.h"
+#include "libvex_guest_x86.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"
@@ -72,6 +73,9 @@ void LibVEX_Init (
    vassert(vcon->guest_max_insns <= 100);
    vassert(vcon->guest_chase_thresh >= 0);
    vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
+
+   /* All the guest state structs must have an 8-aligned size. */
+   vassert(0 == sizeof(VexGuestX86State) % 8);
 
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is
@@ -157,7 +161,7 @@ TranslateResult LibVEX_Translate (
    IRBB*        irbb;
    HInstrArray* vcode;
    HInstrArray* rcode;
-   Int          i, j, k, out_used, saved_verbosity;
+   Int          i, j, k, out_used, saved_verbosity, guest_sizeB;
    UChar        insn_bytes[32];
 
    available_real_regs    = NULL;
@@ -210,6 +214,7 @@ TranslateResult LibVEX_Translate (
          bbToIR           = bbToIR_X86Instr;
          findHelper       = x86guest_findhelper;
          specHelper       = x86guest_spechelper;
+         guest_sizeB      = sizeof(VexGuestX86State);
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -273,7 +278,7 @@ TranslateResult LibVEX_Translate (
    rcode = doRegisterAllocation ( vcode, available_real_regs,
                   	       	  n_available_real_regs,
 			          isMove, getRegUsage, mapRegs, 
-			          genSpill, genReload,
+			          genSpill, genReload, guest_sizeB,
 				  ppInstr, ppReg );
 
    if (vex_verbosity > 0) {

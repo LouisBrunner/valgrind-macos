@@ -15,9 +15,6 @@
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_REGALLOC 0
 
-/* How many 64-bit sized spill slots do we have? */
-#define N_SPILL64S  50
-
 
 /* TODO (critical)
    - Need a way to statically establish the vreg classes,
@@ -201,15 +198,18 @@ HInstrArray* doRegisterAllocation (
    void (*mapRegs) (HRegRemap*, HInstr*),
 
    /* Return an insn to spill/restore a real reg to a spill slot
-      offset. */
+      byte offset. */
    HInstr* (*genSpill) ( HReg, Int ),
    HInstr* (*genReload) ( HReg, Int ),
+   Int     guest_sizeB,
 
    /* For debug printing only. */
    void (*ppInstr) ( HInstr* ),
    void (*ppReg) ( HReg )
 )
 {
+#  define N_SPILL64S  (LibVEX_N_SPILL_BYTES / 8)
+
    /* Iterators and temporaries. */
    Int       ii, j, k, m, spillee;
    HReg      rreg, vreg, vregS, vregD;
@@ -242,6 +242,8 @@ HInstrArray* doRegisterAllocation (
    /* The output array of instructions. */
    HInstrArray* instrs_out;
 
+   vassert(0 == LibVEX_N_SPILL_BYTES % 16);
+   vassert(0 == guest_sizeB % 8);
 
 #  define INVALID_INSTRNO (-2)
 
@@ -550,10 +552,15 @@ HInstrArray* doRegisterAllocation (
          if (ss_busy_until_before[k] <= vreg_info[j].live_after)
             break;
       if (k == N_SPILL64S) {
-         vpanic("N_SPILL64S is too low");
+         vpanic("LibVEX_N_SPILL_BYTES is too low.  Increase and recompile.");
       }
       ss_busy_until_before[k] = vreg_info[j].dead_before;
-      vreg_info[j].spill_offset = k * 8;
+
+      /* This reflects LibVEX's hard-wired knowledge of the baseBlock
+         layout: the guest state, then an equal sized area following
+         it for shadow state, and then the spill area. */
+      vreg_info[j].spill_offset = guest_sizeB * 2 + k * 8;
+
       /* if (j > max_ss_no) */
       /*    max_ss_no = j; */
    }

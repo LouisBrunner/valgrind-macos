@@ -1073,18 +1073,15 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 }
 
 
-/* x86 spill/reload using the hacked104 testbed.  Spill slots
-   start at word 55, and there are 100 in total. 
-*/
+/* Generate x86 spill/reload instructions under the direction of the
+   register allocator.  */
 
-X86Instr* genSpill_X86 ( HReg rreg, Int offset )
+X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
 {
    X86AMode* am;
-   Int base = 4 * 37;
-   vassert(offset >= 0);
-   vassert(offset <= 4*(100-1));
+   vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
-   am = X86AMode_IR(offset + base, hregX86_EBP());
+   am = X86AMode_IR(offsetB, hregX86_EBP());
 
    switch (hregClass(rreg)) {
       case HRcInt:
@@ -1097,14 +1094,12 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
    }
 }
 
-X86Instr* genReload_X86 ( HReg rreg, Int offset )
+X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
 {
    X86AMode* am;
-   Int base = 4 * 37;
-   vassert(offset >= 0);
-   vassert(offset <= 4*(100-1));
+   vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
-   am = X86AMode_IR(offset + base, hregX86_EBP());
+   am = X86AMode_IR(offsetB, hregX86_EBP());
    switch (hregClass(rreg)) {
       case HRcInt:
          return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );

@@ -130,6 +130,23 @@ TranslateResult LibVEX_Translate (
 extern void LibVEX_ShowStats ( void );
 
 
+
+/* A note about baseblock layout.
+
+   LibVEX defines the layout for the guest state, in the file
+   pub/libvex_guest_<arch>.h.  The struct will have an 8-aligned size.
+   Each translated bb is assumed to be entered with a specified
+   register pointing at such a struct.  Beyond that is a shadow
+   state area with the same size as the struct.  Beyond that is
+   a spill area that LibVEX may spill into.  It must have size
+   LibVEX_N_SPILL_BYTES, and this will be a 16-aligned number.
+
+   On entry, the baseblock pointer register must be 8-aligned.
+*/
+
+#define LibVEX_N_SPILL_BYTES 256
+
+
 #endif /* ndef __LIBVEX_H */
 
 /*---------------------------------------------------------------*/

@@ -102,6 +102,8 @@ typedef
       UShort guest_FS;
       UShort guest_GS;
       UShort guest_SS;
+      /* Padding to make it have an 8-aligned size */
+      UInt   padding;
    }
    VexGuestX86State;
 

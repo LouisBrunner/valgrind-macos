@@ -218,6 +218,7 @@ HInstrArray* doRegisterAllocation (
       offset. */
    HInstr* (*genSpill) ( HReg, Int ),
    HInstr* (*genReload) ( HReg, Int ),
+   Int     guest_sizeB,
 
    /* For debug printing only. */
    void (*ppInstr) ( HInstr* ),

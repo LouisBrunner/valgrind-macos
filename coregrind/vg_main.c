@@ -102,6 +102,7 @@ Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
+Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
 Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
@@ -422,6 +423,8 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_IN));
    VGOFF_(helper_OUT)
       = alloc_BaB_1_set( (Addr) & VG_(helper_OUT));
+   VGOFF_(helper_cmpxchg8b)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_cmpxchg8b));
 
    VGOFF_(helper_undefined_instruction)
       = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction));

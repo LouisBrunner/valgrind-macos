@@ -2754,7 +2754,7 @@ Addr dis_cmpxchg_G_E ( UCodeBlock* cb,
 
    uInstr2(cb, GET, size, ArchReg, gregOfRM(rm), TempReg, src);
    uInstr2(cb, GET, size, ArchReg, R_EAX,        TempReg, acc);
-   uInstr2(cb, MOV, size, TempReg, acc,          TempReg, junk);
+   uInstr2(cb, MOV, 4,    TempReg, acc,          TempReg, junk);
    uInstr2(cb, SUB, size, TempReg, dest,         TempReg, junk);
    setFlagsFromUOpcode(cb, SUB);
 
@@ -2772,6 +2772,74 @@ Addr dis_cmpxchg_G_E ( UCodeBlock* cb,
      uInstr2(cb, STORE, size, TempReg, dest, TempReg, ta);
    }
 
+   return eip0;
+}
+
+
+static
+Addr dis_cmpxchg8b ( UCodeBlock* cb, 
+                     UChar       sorb,
+                     Addr        eip0 )
+{
+   Int   tal, tah, junkl, junkh, destl, desth, srcl, srch, accl, acch;
+   UChar dis_buf[50];
+   UChar rm;
+   UInt  pair;
+
+   rm    = getUChar(eip0);
+   accl  = newTemp(cb);
+   acch  = newTemp(cb);
+   srcl  = newTemp(cb);
+   srch  = newTemp(cb);
+   destl = newTemp(cb);
+   desth = newTemp(cb);
+   junkl = newTemp(cb);
+   junkh = newTemp(cb);
+
+   vg_assert(!epartIsReg(rm));
+
+   pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL );
+   tal = LOW24(pair);
+   tah = newTemp(cb);
+   uInstr2(cb, MOV, 4, TempReg, tal, TempReg, tah);
+   uInstr2(cb, ADD, 4, Literal, 0, TempReg, tah);
+   uLiteral(cb, 4);
+   eip0 += HI8(pair);
+   if (dis) VG_(printf)("cmpxchg8b %s\n", dis_buf);
+   
+   uInstr0(cb, CALLM_S, 0);
+
+   uInstr2(cb, LOAD,  4, TempReg, tah, TempReg, desth);
+   uInstr1(cb, PUSH,  4, TempReg, desth);
+   uInstr2(cb, LOAD,  4, TempReg, tal, TempReg, destl);
+   uInstr1(cb, PUSH,  4, TempReg, destl);
+   uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, srch);
+   uInstr1(cb, PUSH,  4, TempReg, srch);
+   uInstr2(cb, GET,   4, ArchReg, R_EBX, TempReg, srcl);
+   uInstr1(cb, PUSH,  4, TempReg, srcl);
+   uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, acch);
+   uInstr1(cb, PUSH,  4, TempReg, acch);
+   uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, accl);
+   uInstr1(cb, PUSH,  4, TempReg, accl);
+   
+   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_cmpxchg8b));
+   uFlagsRWU(cb, FlagsEmpty, FlagZ, FlagsEmpty);
+   
+   uInstr1(cb, POP,   4, TempReg, accl);
+   uInstr2(cb, PUT,   4, TempReg, accl, ArchReg, R_EAX);
+   uInstr1(cb, POP,   4, TempReg, acch);
+   uInstr2(cb, PUT,   4, TempReg, acch, ArchReg, R_EDX);
+   uInstr1(cb, POP,   4, TempReg, srcl);
+   uInstr2(cb, PUT,   4, TempReg, srcl, ArchReg, R_EBX);
+   uInstr1(cb, POP,   4, TempReg, srch);
+   uInstr2(cb, PUT,   4, TempReg, srch, ArchReg, R_ECX);
+   uInstr1(cb, POP,   4, TempReg, destl);
+   uInstr2(cb, STORE, 4, TempReg, destl, TempReg, tal);
+   uInstr1(cb, POP,   4, TempReg, desth);
+   uInstr2(cb, STORE, 4, TempReg, desth, TempReg, tah);
+
+   uInstr0(cb, CALLM_E, 0);
+   
    return eip0;
 }
 
@@ -5886,8 +5954,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
+      case 0xB0: /* CMPXCHG Gv,Ev */
+         eip = dis_cmpxchg_G_E ( cb, sorb, 1, eip );
+         break;
       case 0xB1: /* CMPXCHG Gv,Ev */
          eip = dis_cmpxchg_G_E ( cb, sorb, sz, eip );
+         break;
+      case 0xC7: /* CMPXCHG8B Gv */
+         eip = dis_cmpxchg8b ( cb, sorb, eip );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */

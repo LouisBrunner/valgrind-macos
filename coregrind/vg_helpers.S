@@ -94,6 +94,7 @@ VG_(tramp_syscall_offset):
 	* integer multiplication
         * setting and getting obscure eflags
 	* double-length shifts
+        * eight byte compare and exchange
 	
    All routines use a standard calling convention designed for
    calling from translations, in which the incoming args are
@@ -628,6 +629,29 @@ VG_(helper_idiv_16_8):
 	movb	%al,8(%esp)
 	popl	%eax
 	ret
+
+
+/* Eight byte compare and exchange. */
+.globl VG_(helper_cmpxchg8b)
+VG_(helper_cmpxchg8b):
+        pushl %eax
+        pushl %ebx
+        pushl %ecx
+        pushl %edx
+        movl 20(%esp), %eax
+        movl 24(%esp), %edx
+        movl 28(%esp), %ebx
+        movl 32(%esp), %ecx
+        cmpxchg8b 36(%esp)
+        movl %eax, 20(%esp)
+        movl %edx, 24(%esp)
+        movl %ebx, 28(%esp)
+        movl %ecx, 32(%esp)
+        popl %edx
+        popl %ecx
+        popl %ebx
+        popl %eax
+        ret
 
 
 /* Undefined instruction (generates SIGILL) */

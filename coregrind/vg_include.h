@@ -1745,6 +1745,8 @@ extern void VG_(helper_LAHF);
 extern void VG_(helper_DAS);
 extern void VG_(helper_DAA);
 
+extern void VG_(helper_cmpxchg8b);
+
 extern void VG_(helper_undefined_instruction);
 
 /* Information about trampoline code (for signal return and syscalls) */

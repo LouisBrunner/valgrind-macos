@@ -1183,6 +1183,8 @@ extern Int VGOFF_(helper_LAHF);
 extern Int VGOFF_(helper_DAS);
 extern Int VGOFF_(helper_DAA);
 
+extern Int VGOFF_(helper_cmpxchg8b);
+
 
 /*====================================================================*/
 /*=== Generating x86 code from UCode                               ===*/

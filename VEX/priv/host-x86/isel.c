@@ -849,6 +849,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_Set32(cond,dst));
             return dst;
          }
+         case Iop_1Sto32: {
+            /* could do better than this, but for now ... */
+            HReg dst         = newVRegI(env);
+            X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Set32(cond,dst));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(dst)));
+            return dst;
+         }
          case Iop_Ctz32: {
             /* Count trailing zeroes, implemented by x86 'bsfl' */
             HReg dst = newVRegI(env);
@@ -2209,7 +2218,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_MOVsd_RR(hregX86_EAX(),dstLo) );
          return;
       }
-      if (retty == Ity_I32 || retty == Ity_I16) {
+      if (retty == Ity_I32 || retty == Ity_I16 || retty == Ity_I8) {
          /* The returned value is in %eax.  Park it in the register
             associated with tmp. */
          HReg dst = lookupIRTemp(env, d->tmp);

@@ -760,12 +760,12 @@ static void mc_post_regs_write_init ( void )
 
 static void mc_post_reg_write(ThreadId tid, UInt reg)
 {
-   VG_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
+   VGA_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
 }
 
 static void mc_post_reg_write_clientcall(ThreadId tid, UInt reg, Addr f )
 {
-   VG_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
+   VGA_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
 }
 
 static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
@@ -783,7 +783,7 @@ static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
    default: VG_(tool_panic)("Unhandled size in mc_pre_reg_read");
    }
 
-   if (VGM_WORD_VALID != (mask & VG_(get_thread_shadow_archreg)( tid, reg )) )
+   if (VGM_WORD_VALID != (mask & VGA_(get_thread_shadow_archreg)( tid, reg )) )
       MAC_(record_param_error) ( tid, 0, /*isReg*/True, /*isUnaddr*/False, s );
 }
 

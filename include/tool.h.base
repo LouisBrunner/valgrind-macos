@@ -579,17 +579,17 @@ extern void VG_(cpuid) ( UInt eax,
 /* ------------------------------------------------------------------ */
 /* Accessing archregs and their shadows */
 /* ToDo: is this still needed ? */
-extern UInt VG_(get_archreg)            ( UInt archreg );
-extern UInt VG_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
+extern UInt VGA_(get_archreg)            ( UInt archreg );
+extern UInt VGA_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
 
-extern UInt VG_(get_shadow_archreg)     ( UInt archreg );
-extern void VG_(set_shadow_archreg)     ( UInt archreg, UInt val );
-extern void VG_(set_shadow_eflags)      ( UInt val );
-extern Addr VG_(shadow_archreg_address) ( UInt archreg );
+extern UInt VGA_(get_shadow_archreg)     ( UInt archreg );
+extern void VGA_(set_shadow_archreg)     ( UInt archreg, UInt val );
 
-extern UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
-extern void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,
-                                             UInt val );
+extern Addr VGA_(shadow_archreg_address) ( UInt archreg );
+
+extern UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
+extern void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,
+                                              UInt val );
 
 /* ToDo: FIX */
 /* This is the Intel register encoding -- integer regs. */

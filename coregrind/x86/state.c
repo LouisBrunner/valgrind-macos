@@ -251,6 +251,7 @@ UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
 
+   if (0)
    VG_(printf)("get_thread_shadow_archreg(%d, %d)\n",
                tid, archreg);
 
@@ -270,6 +271,7 @@ UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
 /* Return the baseBlock index for the specified shadow register */
 static Int shadow_reg_index ( Int arch )
 {
+   if (0)
    VG_(printf)("shadow_reg_index(%d)\n",
                arch);
    switch (arch) {

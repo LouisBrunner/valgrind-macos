@@ -287,13 +287,21 @@ void MAC_(pp_shared_SkinError) ( Error* err )
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
-      case OverlapErr:
-         VG_(message)(Vg_UserMsg, 
-                      "Source and destination overlap in %s",
-                      VG_(get_error_string)(err));
+      case OverlapErr: {
+         OverlapExtra* ov_extra = (OverlapExtra*)VG_(get_error_extra)(err);
+         if (ov_extra->len == -1)
+            VG_(message)(Vg_UserMsg,
+                         "Source and destination overlap in %s(%p, %p)",
+                         VG_(get_error_string)(err),
+                         ov_extra->dst, ov_extra->src);
+         else
+            VG_(message)(Vg_UserMsg,
+                         "Source and destination overlap in %s(%p, %p, %d)",
+                         VG_(get_error_string)(err),
+                         ov_extra->dst, ov_extra->src, ov_extra->len);
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
-
+      }
       case LeakErr: {
          /* Totally abusing the types of these spare fields... oh well. */
          UInt n_this_record   = (UInt)VG_(get_error_address)(err);
@@ -470,43 +478,36 @@ void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
 
 
 // This one not passed a ThreadId, so it grabs it itself.
-void MAC_(record_overlap_error) ( Char* function )
+void MAC_(record_overlap_error) ( Char* function, OverlapExtra* ov_extra )
 {
-   static Int n_strdups = 0;
-   MAC_Error err_extra;
- 
-   /* Potential space leak; this strdup'd space is never
-      reclaimed.  Hence hacky sanity check. */
-   if (n_strdups < 1000) {
-      n_strdups++;
-      function = VG_(strdup) ( function );
-   } else {
-      function = NULL;
-   }
-
-   MAC_(clear_MAC_Error)( &err_extra );
    VG_(maybe_record_error)( VG_(get_current_or_recent_tid)(), 
-                            OverlapErr, /*addr*/0, /*s*/function, &err_extra );
+                            OverlapErr, /*addr*/0, /*s*/function, ov_extra );
 }
 
 
-/* Updates the copy with address info if necessary (but not for LeakErrs). */
+/* Updates the copy with address info if necessary (but not for all errors). */
 UInt SK_(update_extra)( Error* err )
 {
-   MAC_Error* extra;
-
+   switch (VG_(get_error_kind)(err)) {
+   case ValueErr:
+   case CoreMemErr:
+   case AddrErr: 
+   case ParamErr:
+   case UserErr:
+   case FreeErr:
+   case FreeMismatchErr: {
+      MAC_Error* extra = (MAC_Error*)VG_(get_error_extra)(err);
+      if (extra != NULL && Undescribed == extra->addrinfo.akind) {
+         describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+      }
+      return sizeof(MAC_Error);
+   }
    /* Don't need to return the correct size -- LeakErrs are always shown with
       VG_(unique_error)() so they're not copied anyway. */
-   if (LeakErr == VG_(get_error_kind)(err))
-      return 0;
-
-   extra = (MAC_Error*)VG_(get_error_extra)(err);
-
-   if (extra != NULL && Undescribed == extra->addrinfo.akind) {
-      describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+   case LeakErr:     return 0;
+   case OverlapErr:  return sizeof(OverlapExtra);
+   default: VG_(skin_panic)("update_extra: bad errkind");
    }
-
-   return sizeof(MAC_Error);
 }
 
 

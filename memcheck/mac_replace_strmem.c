@@ -35,9 +35,6 @@
 #define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
 
-/* For snprintf(), ok because on simd CPU */
-#include <stdio.h>
-
 /* ---------------------------------------------------------------------
    The normal versions of these functions are hyper-optimised, which fools
    Memcheck and cause spurious value warnings.  So we replace them with
@@ -82,17 +79,20 @@ Bool is_overlap ( void* dst, const void* src, UInt dstlen, UInt srclen )
 static __inline__
 void complain2 ( Char* s, char* dst, const char* src )
 {
-   Char buf[256];
-   snprintf(buf, 100, "%s(%p, %p)", s, dst, src );
-   VALGRIND_NON_SIMD_CALL1( MAC_(record_overlap_error), buf );
+   OverlapExtra extra = {
+      .src = (Addr)src, .dst = (Addr)dst, .len = -1,
+   };
+   VALGRIND_NON_SIMD_CALL2( MAC_(record_overlap_error), s, &extra );
 }
 
 static __inline__
 void complain3 ( Char* s, void* dst, const void* src, int n )
 {
-   Char buf[256];
-   snprintf(buf, 100, "%s(%p, %p, %d)", s, dst, src, n );
-   VALGRIND_NON_SIMD_CALL1( MAC_(record_overlap_error), buf );
+   /* Must wrap it up here, because we cannot pass 4 args to core */
+   OverlapExtra extra = {
+      .src = (Addr)src, .dst = (Addr)dst, .len = n,
+   };
+   VALGRIND_NON_SIMD_CALL2( MAC_(record_overlap_error), s, &extra );
 }
 
 char* strrchr ( const char* s, int c )

@@ -123,6 +123,15 @@ typedef
    }
    MAC_Error;
 
+/* Extra info for overlap errors */
+typedef
+   struct {
+      Addr src;
+      Addr dst;
+      Int  len;   // -1 if unused
+   }
+   OverlapExtra;
+
 /* For malloc()/new/new[] vs. free()/delete/delete[] mismatch checking. */
 typedef
    enum {
@@ -302,7 +311,7 @@ extern void MAC_(record_param_error)       ( ThreadId tid, Addr a,
 extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
-extern void MAC_(record_overlap_error)     ( Char* function );
+extern void MAC_(record_overlap_error)     ( Char* function, OverlapExtra* oe );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 

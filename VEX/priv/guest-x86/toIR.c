@@ -582,13 +582,11 @@ static IRExpr* getSReg ( UInt sreg )
    return IRExpr_Get( segmentGuestRegOffset(sreg), Ity_I16 );
 }
 
-#if 0
 static void putSReg ( UInt sreg, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
    stmt( IRStmt_Put( segmentGuestRegOffset(sreg), e ) );
 }
-#endif
 
 static IRExpr* getXMMReg ( UInt xmmreg )
 {
@@ -1574,39 +1572,43 @@ UChar* sorbTxt ( UChar sorb )
       case 0x26: return "%es:";
       case 0x64: return "%fs:";
       case 0x65: return "%gs:";
-      default: vpanic("sorbTxt(x86)");
+      default: vpanic("sorbTxt(x86,guest)");
    }
 }
 
 
-/* Tmp is a TempReg holding a virtual address.  Convert it to a linear
-   address by adding any required segment override as indicated by
-   sorb. */
+/* 'virtual' is an IRExpr* holding a virtual address.  Convert it to a
+   linear address by adding any required segment override as indicated
+   by sorb. */
 static
 IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
 {
-   //Int sreg, tsreg;
+  //IRTemp tsreg; //Int sreg, tsreg;
 
    if (sorb == 0)
       /* the common case - no override */
       return virtual;
 
-   unimplemented("segment overrides in new x86->IR phase");
+   unimplemented("vex x86->IR: segment override prefix");
 #if 0
    switch (sorb) {
       case 0x3E: sreg = R_DS; break;
       case 0x26: sreg = R_ES; break;
       case 0x64: sreg = R_FS; break;
       case 0x65: sreg = R_GS; break;
-      default: VG_(core_panic)("handleSegOverride");
+      default: vpanic("handleSegOverride(x86,guest)");
    }
 
-   tsreg = newTemp(cb);
+   tsreg = newTemp(Ity_I32);
 
-   /* sreg -> tsreg */
-   uInstr2(cb, GETSEG, 2, ArchRegS, sreg, TempReg, tsreg );
+   /* tsreg becomes the relevant LDT descriptor */
+   assign( tsreg, unop(Iop_16Uto32, getSReg(sreg)) );
 
-   /* tmp += segment_base(ldt[tsreg]); also do limit check */
+   /* virtual += segment_base(ldt[tsreg]); also do limit check */
+return 
+  binop(Iop_Add32, mkexpr(virtual),
+
+
    uInstr2(cb, USESEG, 0, TempReg, tsreg, TempReg, tmp );
 #endif
 }
@@ -1996,7 +1998,6 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( src,  getIReg(size,eregOfRM(rm)) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         vassert(0);
          helper_ADC( size, dst1, dst0, src );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else
@@ -3927,6 +3928,65 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
+            case 4: { /* FLDENV m108 */
+               /* Uses dirty helper: 
+                     VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, Addr32 ) */
+               IRTemp   ew = newTemp(Ity_I32);
+               IRDirty* d  = unsafeIRDirty_0_N ( 
+                                0/*regparms*/, 
+                                "x86g_dirtyhelper_FLDENV", 
+                                &x86g_dirtyhelper_FLDENV,
+                                mkIRExprVec_1( mkexpr(addr) )
+                             );
+               d->needsBBP = True;
+               d->tmp      = ew;
+               /* declare we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 28;
+
+               /* declare we're writing guest state */
+               d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Write;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Write;
+               d->fxState[1].offset = OFFB_FPREGS;
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Write;
+               d->fxState[2].offset = OFFB_FPTAGS;
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Write;
+               d->fxState[3].offset = OFFB_FPROUND;
+               d->fxState[3].size   = sizeof(UInt);
+
+               d->fxState[4].fx     = Ifx_Write;
+               d->fxState[4].offset = OFFB_FC3210;
+               d->fxState[4].size   = sizeof(UInt);
+
+               stmt( IRStmt_Dirty(d) );
+
+               /* ew contains any emulation warning we may need to
+                  issue.  If needed, side-exit to the next insn,
+                  reporting the warning, so that Valgrind's dispatcher
+                  sees the warning. */
+               put_emwarn( mkexpr(ew) );
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
+                  )
+               );
+
+               DIP("fldenv %s", dis_buf);
+               break;
+            }
+
             case 5: {/* FLDCW */
                /* The only thing we observe in the control word is the
                   rounding mode.  Therefore, pass the 16-bit value
@@ -3964,6 +4024,46 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                      IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
                   )
                );
+               break;
+            }
+
+            case 6: { /* FNSTENV m28 */
+               /* Uses dirty helper: 
+                     void x86g_do_FSTENV ( VexGuestX86State*, UInt ) */
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               0/*regparms*/, 
+                               "x86g_dirtyhelper_FSTENV", 
+                               &x86g_dirtyhelper_FSTENV,
+                               mkIRExprVec_1( mkexpr(addr) )
+                            );
+               d->needsBBP = True;
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 28;
+
+               /* declare we're reading guest state */
+               d->nFxState = 4;
+
+               d->fxState[0].fx     = Ifx_Read;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Read;
+               d->fxState[1].offset = OFFB_FPTAGS;
+               d->fxState[1].size   = 8 * sizeof(UChar);
+
+               d->fxState[2].fx     = Ifx_Read;
+               d->fxState[2].offset = OFFB_FPROUND;
+               d->fxState[2].size   = sizeof(UInt);
+
+               d->fxState[3].fx     = Ifx_Read;
+               d->fxState[3].offset = OFFB_FC3210;
+               d->fxState[3].size   = sizeof(UInt);
+
+               stmt( IRStmt_Dirty(d) );
+
+               DIP("fnstenv %s", dis_buf);
                break;
             }
 
@@ -4393,6 +4493,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                                     unop(Iop_1Uto8,
                                          mk_x86g_calculate_condition(X86CondNZ)), 
                                     get_ST(0), get_ST(r_src)) );
+               break;
+
+            case 0xE2:
+               DIP("fnclex\n");
                break;
 
             case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
@@ -6128,34 +6232,33 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 //--                        LDw (tmpa), tmpb
 //--                        PUTSEG tmpb, %Sw
 //-- */
-//-- static
-//-- Addr dis_mov_Ew_Sw ( UCodeBlock* cb, 
-//--                      UChar       sorb,
-//--                      Addr        eip0 )
-//-- {
-//--    UChar rm  = getUChar(eip0);
-//--    HChar dis_buf[50];
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       Int tmpv = newTemp(cb);
-//--       uInstr2(cb, GET,    2, ArchReg, eregOfRM(rm), TempReg, tmpv);
-//--       uInstr2(cb, PUTSEG, 2, TempReg, tmpv, ArchRegS, gregOfRM(rm));
-//--       DIP("movw %s,%s\n", nameIReg(2,eregOfRM(rm)), nameSReg(gregOfRM(rm)));
-//--       return 1+eip0;
-//--    }
-//-- 
-//--    /* E refers to memory */    
-//--    {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       Int  tmpa = LOW24(pair);
-//--       Int  tmpb = newTemp(cb);
-//--       uInstr2(cb, LOAD,   2, TempReg, tmpa, TempReg, tmpb);
-//--       uInstr2(cb, PUTSEG, 2, TempReg, tmpb, ArchRegS, gregOfRM(rm));
-//--       DIP("movw %s,%s\n", dis_buf,nameSReg(gregOfRM(rm)));
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
+static
+UInt dis_mov_Ew_Sw ( UChar sorb, UInt delta0 )
+{
+   UChar rm  = getIByte(delta0);
+   //HChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      putSReg( gregOfRM(rm), getIReg(2, eregOfRM(rm)) );
+      DIP("movw %s,%s\n", nameIReg(2,eregOfRM(rm)), nameSReg(gregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */    
+   {
+     vassert(0);
+     /*
+      UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
+      Int  tmpa = LOW24(pair);
+      Int  tmpb = newTemp(cb);
+      uInstr2(cb, LOAD,   2, TempReg, tmpa, TempReg, tmpb);
+      uInstr2(cb, PUTSEG, 2, TempReg, tmpb, ArchRegS, gregOfRM(rm));
+      DIP("movw %s,%s\n", dis_buf,nameSReg(gregOfRM(rm)));
+      return HI8(pair)+eip0;
+     */
+   }
+}
+
 //-- 
 //-- /* Moves of a segment register to Ew.
 //--       mov Sw, Ew  meaning
@@ -7459,7 +7562,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       }
 
       if (r2zero) {
-         assign(rmode, mkU32((UInt)Irrm_ZERO) );
+         assign( rmode, mkU32((UInt)Irrm_ZERO) );
       } else {
          assign( rmode, get_sse_roundingmode() );
       }
@@ -7484,6 +7587,53 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "divss", Iop_Div32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F AE /2 = LDMXCSR m32 -- load %mxcsr */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 2) {
+
+      IRTemp t64 = newTemp(Ity_I64);
+      IRTemp ew = newTemp(Ity_I32);
+
+      modrm = getIByte(delta+2);
+      vassert(!epartIsReg(modrm));
+      vassert(sz == 4);
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+      DIP("ldmxcsr %s", dis_buf);
+
+      /* The only thing we observe in %mxcsr is the rounding mode.
+         Therefore, pass the 32-bit value (SSE native-format control
+         word) to a clean helper, getting back a 64-bit value, the
+         lower half of which is the SSEROUND value to store, and the
+         upper half of which is the emulation-warning token which may
+         be generated.  
+      */
+      /* ULong x86h_check_ldmxcsr ( UInt ); */
+      assign( t64, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/, 
+                      "x86h_check_ldmxcsr",
+                      &x86h_check_ldmxcsr, 
+                      mkIRExprVec_1( loadLE(Ity_I32, mkexpr(addr)) )
+                   )
+            );
+
+      //put_sseround( unop(Iop_64to32, mkexpr(t64)) );
+      assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
+      put_emwarn( mkexpr(ew) );
+      /* Finally, if an emulation warning was reported, side-exit to
+         the next insn, reporting the warning, so that Valgrind's
+         dispatcher sees the warning. */
+      stmt( 
+         IRStmt_Exit(
+            binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+            Ijk_EmWarn,
+            IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
+         )
+      );
       goto decode_success;
    }
 
@@ -7957,6 +8107,33 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 0F 18 /0 = PREFETCHNTA -- prefetch into caches, */
+   /* 0F 18 /1 = PREFETCH0   -- with various different hints */
+   /* 0F 18 /2 = PREFETCH1 */
+   /* 0F 18 /3 = PREFETCH2 */
+   if (insn[0] == 0x0F && insn[1] == 0x18
+       && !epartIsReg(insn[2]) 
+       && gregOfRM(insn[2]) >= 0 && gregOfRM(insn[2]) <= 3) {
+      HChar* hintstr = "??";
+
+      modrm = getIByte(delta+2);
+      vassert(!epartIsReg(modrm));
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+
+      switch (gregOfRM(modrm)) {
+         case 0: hintstr = "nta"; break;
+         case 1: hintstr = "t0"; break;
+         case 2: hintstr = "t1"; break;
+         case 3: hintstr = "t2"; break;
+         default: vassert(0);
+      }
+
+      DIP("prefetch%s %s\n", hintstr, dis_buf);
+      goto decode_success;
+   }
+
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F F6 = PSADBW -- sum of 8Ux8 absolute differences */
    if (insn[0] == 0x0F && insn[1] == 0xF6) {
@@ -8119,6 +8296,31 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
                                          "sqrtss", Iop_Sqrt32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F AE /3 = STMXCSR m32 -- load %mxcsr */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 3) {
+      modrm = getIByte(delta+2);
+      vassert(sz == 4);
+      vassert(!epartIsReg(modrm));
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+
+      /* Fake up a native SSE mxcsr word.  The only thing it depends
+         on is SSEROUND[1:0], so call a clean helper to cook it up. 
+      */
+      /* UInt x86h_create_mxcsr ( UInt sseround ) */
+      DIP("stmxcsr %s", dis_buf);
+      storeLE( mkexpr(addr), 
+               mkIRExprCCall(
+                  Ity_I32, 0/*regp*/,
+                  "x86h_create_mxcsr", &x86h_create_mxcsr, 
+                  mkIRExprVec_1( get_fpround() ) 
+               ) 
+             );
       goto decode_success;
    }
 
@@ -9867,10 +10069,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       delta = dis_mov_Sw_Ew(sorb, sz, delta);
       break;
 
-//--    case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */
-//--       eip = dis_mov_Ew_Sw(cb, sorb, eip);
-//--       break;
-//-- 
+   case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */
+      delta = dis_mov_Ew_Sw(sorb, delta);
+      break;
+ 
    case 0xA0: /* MOV Ob,AL */
       sz = 1;
       /* Fall through ... */

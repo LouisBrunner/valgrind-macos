@@ -456,6 +456,8 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
         return "Selection of non-80-bit x87 FP precision";
      case EmWarn_X86_sseExns:
         return "Unmasking SSE FP exceptionss";
+     case EmWarn_X86_fz_daz:
+        return "Setting MXCSR.FZ or MXCSR.DAZ";
      default: 
         vpanic("LibVEX_EmWarn_string: unknown warning");
    }

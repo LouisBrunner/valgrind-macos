@@ -1387,11 +1387,11 @@ typedef
 #define FP_REG(ii)    (10*(7-(ii)))
 
 
+/* CLEAN HELPER */
 /* native_fpucw[15:0] contains a x87 native format FPU control word.
    Extract from it the required FPROUND value and any resulting
    emulation warning, and return (warn << 32) | fpround value. 
 */
-/* CLEAN HELPER */
 ULong x86h_check_fldcw ( UInt fpucw )
 {
    /* Decide on a rounding mode.  fpucw[11:10] holds it. */
@@ -1415,8 +1415,8 @@ ULong x86h_check_fldcw ( UInt fpucw )
 }
 
 /* CLEAN HELPER */
-/* Given fprtz as 1 or 0, create a suitable x87 native format
-   FPU control word. */
+/* Given fpround as an IRRoundingMode value, create a suitable x87
+   native format FPU control word. */
 UInt x86h_create_fpucw ( UInt fpround )
 {
    fpround &= 3;
@@ -1424,9 +1424,51 @@ UInt x86h_create_fpucw ( UInt fpround )
 }
 
 
-/* VISIBLE TO LIBVEX CLIENT */
-VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
-                                    /*OUT*/VexGuestX86State* vex_state )
+/* CLEAN HELPER */
+/* native_fpucw[15:0] contains a SSE native format MXCSR value.
+   Extract from it the required SSEROUND value and any resulting
+   emulation warning, and return (warn << 32) | sseround value.
+*/
+ULong x86h_check_ldmxcsr ( UInt mxcsr )
+{
+   /* Decide on a rounding mode.  mxcsr[14:13] holds it. */
+   /* NOTE, encoded exactly as per enum IRRoundingMode. */
+   UInt rmode = (mxcsr >> 13) & 3;
+
+   /* Detect any required emulation warnings. */
+   VexEmWarn ew = EmWarn_NONE;
+
+   if ((mxcsr & 0x1F80) != 0x1F80) {
+      /* unmasked exceptions! */
+      ew = EmWarn_X86_sseExns;
+   }
+   else 
+   if ((mxcsr & (1<<6)) || (mxcsr & (1<<15))) {
+      /* FZ or DAZ is set */
+      ew = EmWarn_X86_fz_daz;
+   }
+
+   return (((ULong)ew) << 32) | ((ULong)rmode);
+}
+
+
+/* CLEAN HELPER */
+/* Given sseround as an IRRoundingMode value, create a suitable SSE
+   native format MXCSR value. */
+UInt x86h_create_mxcsr ( UInt sseround )
+{
+   sseround &= 3;
+   return 0x1F80 | (sseround << 13);
+}
+
+
+/* This is used to implement both 'frstor' and 'fldenv'.  The latter
+   appears to differ from the former only in that the 8 FP registers
+   themselves are not transferred into the guest state. */
+static
+VexEmWarn put_x87 ( Bool moveRegs,
+                    /*IN*/UChar* x87_state,
+                    /*OUT*/VexGuestX86State* vex_state )
 {
    Int        r;
    UInt       tag;
@@ -1450,7 +1492,9 @@ VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
          vexTags[r] = 0;
       } else {
          /* register is non-empty */
-         convert_f80le_to_f64le( &x87->reg[FP_REG(r)], (UChar*)&vexRegs[r] );
+         if (moveRegs)
+            convert_f80le_to_f64le( &x87->reg[FP_REG(r)], 
+                                    (UChar*)&vexRegs[r] );
          vexTags[r] = 1;
       }
    }
@@ -1471,6 +1515,14 @@ VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
 
    /* emulation warnings --> caller */
    return ew;
+}
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
+                                    /*OUT*/VexGuestX86State* vex_state )
+{
+   return put_x87(True, x87_state, vex_state);
 }
 
 
@@ -1503,7 +1555,7 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
       } else {
          /* register is full. */
          tagw |= (0 << (2*r));
-         convert_f64le_to_f80le( (UChar*)&vexRegs[r],  &x87->reg[FP_REG(r)] );
+         convert_f64le_to_f80le( (UChar*)&vexRegs[r], &x87->reg[FP_REG(r)] );
       }
    }
    x87->env[FP_ENV_TAG] = tagw;
@@ -1693,9 +1745,29 @@ void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-void x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
+VexEmWarn x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
 {
-   LibVEX_GuestX86_put_x87( (UChar*)addr, gst );
+   return LibVEX_GuestX86_put_x87( (UChar*)addr, gst );
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+void x86g_dirtyhelper_FSTENV ( VexGuestX86State* gst, HWord addr )
+{
+   /* Somewhat roundabout, but at least it's simple. */
+   Int       i;
+   UShort*   addrP = (UShort*)addr;
+   Fpu_State tmp;
+   LibVEX_GuestX86_get_x87( gst, (UChar*)&tmp );
+   for (i = 0; i < 14; i++)
+      addrP[i] = tmp.env[i];
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+VexEmWarn x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
+{
+   return put_x87(False, (UChar*)addr, gst);
 }
 
 

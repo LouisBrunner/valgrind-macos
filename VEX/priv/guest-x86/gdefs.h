@@ -97,7 +97,11 @@ extern ULong x86g_calculate_RCR  (
 
 extern ULong x86h_check_fldcw ( UInt fpucw );
 
-extern UInt x86h_create_fpucw ( UInt fptrz );
+extern UInt x86h_create_fpucw ( UInt fpround );
+
+extern ULong x86h_check_ldmxcsr ( UInt mxcsr );
+
+extern UInt x86h_create_mxcsr ( UInt sseround );
 
 /* --- Clean helpers for MMX --- */
 
@@ -179,7 +183,13 @@ extern void  x86g_dirtyhelper_CPUID ( VexGuestX86State* );
 
 extern void  x86g_dirtyhelper_FSAVE ( VexGuestX86State*, HWord );
 
-extern void x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
+extern VexEmWarn
+            x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
+
+extern void x86g_dirtyhelper_FSTENV ( VexGuestX86State*, HWord );
+
+extern VexEmWarn 
+            x86g_dirtyhelper_FLDENV ( VexGuestX86State*, HWord );
 
 
 /*---------------------------------------------------------*/

@@ -124,7 +124,7 @@ void* LibVEX_Alloc ( Int nbytes )
 
 void LibVEX_ClearTemporary ( Bool verb )
 {
-   vassert(vex_initdone);
+   /* vassert(vex_initdone); */ /* causes infinite assert loops */
    temporary_bytes_allocd_TOT += (ULong)temporary_bytes_allocd;
    temporary_count_allocs_TOT += (ULong)temporary_count_allocs;
    if (verb) {

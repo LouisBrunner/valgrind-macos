@@ -67,6 +67,9 @@ typedef
       /* unmasking SSE FP exceptions is not supported */
       EmWarn_X86_sseExns,
       
+      /* setting mxcsr.fz or mxcsr.daz is not supported */
+      EmWarn_X86_fz_daz,
+      
       EmWarn_NUMBER
    }
    VexEmWarn;

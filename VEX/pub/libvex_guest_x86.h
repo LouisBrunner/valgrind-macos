@@ -94,14 +94,33 @@
    FPROUND[1:0] is the FPU's notional rounding mode, encoded as per
    the IRRoundingMode type (see libvex_ir.h).  This just happens to be
    the Intel encoding.  Note carefully, the rounding mode is only
-   observed on float-to-int conversions, and not for float-to-float
-   operations.
+   observed on float-to-int conversions, and on float-to-float
+   rounding, but not for general float-to-float operations, which are
+   always rounded-to-nearest.
+
+   Loads/stores of the FPU control word are faked accordingly -- on
+   loads, everything except the rounding mode is ignored, and on
+   stores, you get a vanilla control world (0x037F) with the rounding
+   mode patched in.  Hence the only values you can get are 0x037F,
+   0x077F, 0x0B7F or 0x0F7F.  Vex will emit an emulation warning if
+   you try and load a control word which either (1) unmasks FP
+   exceptions, or (2) changes the default (80-bit) precision.
 
    FC3210 contains the C3, C2, C1 and C0 bits in the same place they
    are in the FPU's status word.  (bits 14, 10, 9, 8 respectively).
    All other bits should be zero.  The relevant mask to select just
    those bits is 0x4700.  To select C3, C2 and C0 only, the mask is
-   0x4500.  */
+   0x4500.  
+
+   SSEROUND[1:0] is the SSE unit's notional rounding mode, encoded as
+   per the IRRoundingMode type.  As with the FPU control word, the
+   rounding mode is the only part of %MXCSR that Vex observes.  On
+   storing %MXCSR, you will get a vanilla word (0x1F80) with the
+   rounding mode patched in.  Hence the only values you will get are
+   0x1F80, 0x3F80, 0x5F80 or 0x7F80.  Vex will emit an emulation
+   warning if you try and load a control word which either (1) unmasks
+   any exceptions, (2) sets FZ (flush-to-zero) to 1, or (3) sets DAZ
+   (denormals-are-zeroes) to 1. */
 
 typedef
    struct {

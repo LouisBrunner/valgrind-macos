@@ -4081,6 +4081,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    else
    vpanic("dis_FPU(x86): invalid primary opcode");
 
+   *decode_ok = True;
+   return delta;
+
   decode_fail:
    *decode_ok = False;
    return delta;

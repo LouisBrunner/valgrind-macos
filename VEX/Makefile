@@ -105,7 +105,8 @@ priv/ir/iropt.o: $(ALL_HEADERS) priv/ir/iropt.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/iropt.o \
 					 -c priv/ir/iropt.c
 
-priv/main/vex_main.o: $(ALL_HEADERS) priv/main/vex_main.c
+priv/main/vex_main.o: $(ALL_HEADERS) priv/main/vex_main.c \
+					priv/main/vex_svnversion.h
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/vex_main.o \
 					 -c priv/main/vex_main.c
 

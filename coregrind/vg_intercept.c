@@ -789,6 +789,37 @@ int sigsuspend ( /* const sigset_t * */ void* mask)
 }
 
 
+/* ================================ waitpid ============================ */
+
+#undef WNOHANG
+#define WNOHANG         0x00000001
+
+extern pid_t __libc_waitpid(pid_t pid, int *status, int options);
+
+pid_t waitpid(pid_t pid, int *status, int options)
+{
+   pid_t res;
+   struct vki_timespec nanosleep_interval;
+
+   if (options & WNOHANG)
+      return __libc_waitpid(pid,status,options);
+
+   options |= WNOHANG;
+   while (1) {
+      res = __libc_waitpid(pid,status,options);
+      if (res != 0)
+         return res;
+
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 54 * 1000 * 1000; /* 54 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      VG_(nanosleep)( &nanosleep_interval, NULL);
+   }
+}
+
+#undef WNOHANG
+
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.
    ------------------------------------------------------------------ */

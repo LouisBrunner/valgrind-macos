@@ -499,7 +499,7 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
    if (cc_op == CC_OP_DECL)
       return cc_src;
    if (cc_op == CC_OP_SUBL)
-      return ( ((UInt)cc_src) < ((UInt)cc_dst) ) & CC_MASK_C;
+      return ( ((UInt)cc_src) > ((UInt)cc_dst) ) ? CC_MASK_C : 0;
 
 #  if PROFILE_EFLAGS
    if (!initted)

@@ -671,7 +671,7 @@ REGPARM(1)
 void VG_(unknown_SP_update)(Addr new_SP)
 {
    Addr old_SP = VG_(get_archreg)(R_STACK_PTR);
-   Int  delta  = (Int)new_SP - (Int)old_SP;
+   Word delta  = (Word)new_SP - (Word)old_SP;
 
    if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {
       /* %esp has changed by more than HUGE_DELTA.  We take this to mean

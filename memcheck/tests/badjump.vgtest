@@ -1,2 +1,2 @@
 prog: badjump
-cleanup: rm vgcore.pid*
+cleanup: rm -f vgcore.pid*

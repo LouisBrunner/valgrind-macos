@@ -1,2 +1,2 @@
 prog: int
-cleanup: rm vgcore.pid*
+cleanup: rm -f vgcore.pid*

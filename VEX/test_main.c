@@ -70,6 +70,11 @@ int main ( int argc, char** argv )
 		 True, 
                  100 );
 
+   {extern void test_asm86(void);
+   test_asm86();
+   return 0;
+   }
+
    while (!feof(f)) {
       fgets(linebuf, N_LINEBUF,f);
       //printf("%s", linebuf);

@@ -117,7 +117,10 @@ X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg index, Int shift ) {
 void ppX86AMode ( X86AMode* am ) {
    switch (am->tag) {
       case Xam_IR: 
-         vex_printf("0x%x(", am->Xam.IR.imm);
+         if (am->Xam.IR.imm == 0)
+            vex_printf("(");
+         else
+            vex_printf("0x%x(", am->Xam.IR.imm);
          ppHRegX86(am->Xam.IR.reg);
          vex_printf(")");
          return;
@@ -126,7 +129,7 @@ void ppX86AMode ( X86AMode* am ) {
          ppHRegX86(am->Xam.IRRS.base);
          vex_printf(",");
          ppHRegX86(am->Xam.IRRS.index);
-         vex_printf(",%d)", am->Xam.IRRS.shift);
+         vex_printf(",%d)", 1 << am->Xam.IRRS.shift);
          return;
       default:
          vpanic("ppX86AMode");
@@ -537,7 +540,7 @@ void ppX86Instr ( X86Instr* i ) {
       case Xin_Sh32:
          vex_printf("%sl ", showX86ShiftOp(i->Xin.Sh32.op));
          if (i->Xin.Sh32.src == 0)
-	   vex_printf(" %%cl,"); 
+           vex_printf(" %%cl,"); 
          else 
             vex_printf(" $%d,", i->Xin.Sh32.src);
          ppX86RM(i->Xin.Sh32.dst);
@@ -545,7 +548,7 @@ void ppX86Instr ( X86Instr* i ) {
       case Xin_Sh3232:
          vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
          if (i->Xin.Sh3232.amt == 0)
-	   vex_printf(" %%cl,"); 
+           vex_printf(" %%cl,"); 
          else 
             vex_printf(" $%d,", i->Xin.Sh3232.amt);
          ppHRegX86(i->Xin.Sh3232.rLo);
@@ -629,7 +632,7 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, hregX86_EDX());
          return;
       case Xin_Div:
-	 addRegUsage_X86RM(u, i->Xin.Div.src, HRmRead);
+         addRegUsage_X86RM(u, i->Xin.Div.src, HRmRead);
          addHRegUse(u, HRmModify, hregX86_EAX());
          addHRegUse(u, HRmModify, hregX86_EDX());
          return;
@@ -702,7 +705,7 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapRegs_X86RM(m, i->Xin.MulL.src);
          return;
       case Xin_Div:
-	 mapRegs_X86RM(m, i->Xin.Div.src);
+         mapRegs_X86RM(m, i->Xin.Div.src);
          return;
       case Xin_Sh32:
          mapRegs_X86RM(m, i->Xin.Sh32.dst);
@@ -757,8 +760,8 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
    switch (hregClass(rreg)) {
       case HRcInt:
         return
-	X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
-		          X86AMode_IR(offset + 0x1000, 
+        X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
+                          X86AMode_IR(offset + 0x1000, 
                                       hregX86_EBP()));
       default: 
          ppHRegClass(hregClass(rreg));
@@ -772,8 +775,8 @@ X86Instr* genReload_X86 ( HReg rreg, Int offset )
    switch (hregClass(rreg)) {
       case HRcInt:
         return
-	X86Instr_Alu32R ( Xalu_MOV, 
-		          X86RMI_Mem(X86AMode_IR(offset + 0x1000, 
+        X86Instr_Alu32R ( Xalu_MOV, 
+                          X86RMI_Mem(X86AMode_IR(offset + 0x1000, 
                                                  hregX86_EBP())),
                           rreg );
       default: 
@@ -814,10 +817,12 @@ static UChar* emit32 ( UChar* p, UInt w32 )
    return p;
 }
 
+/* Does a sign-extend of the lowest 8 bits give 
+   the original number? */
 static Bool fits8bits ( UInt w32 )
 {
-   w32 &= 0xFFFFFF00;
-   return (w32 == 0 || w32 == 0xFFFFFF00);
+   Int i32 = (Int)w32;
+   return i32 == ((i32 << 24) >> 24);
 }
 
 
@@ -906,58 +911,224 @@ static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg )
 
 Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 {
+  UInt opc, opc_rr, subopc_imm, opc_imma;
+
    UChar* p = &buf[0];
    vassert(nbuf >= 32);
+
+   /* Wrap an integer as a int register, for use assembling
+      GrpN insns, in which the greg field is used as a sub-opcode
+      and does not really contain a register. */
+#  define fake(_n) mkHReg((_n), HRcInt, False)
 
    switch (i->tag) {
 
    case Xin_Alu32R:
+      /* Deal specially with MOV */
       if (i->Xin.Alu32R.op == Xalu_MOV) {
          switch (i->Xin.Alu32R.src->tag) {
-         //       case Xrmi_Imm:
-         //*p++ = 0xB8 + iregNo(i->Xin.Alu32.dst);
-         //p = emit32(i->Xin.Alu32.src->Xrmi.Imm.imm32);
-         //return p;
-         //case Xrmi_Reg:
+            case Xrmi_Imm:
+               *p++ = 0xB8 + iregNo(i->Xin.Alu32R.dst);
+               p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
+               goto done;
+            case Xrmi_Reg:
+              *p++ = 0x89;
+              p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
+                            i->Xin.Alu32R.dst);
+              goto done;
+            case Xrmi_Mem:
+               *p++ = 0x8B;
+               p = doAMode_M(p, i->Xin.Alu32R.dst, 
+                                i->Xin.Alu32R.src->Xrmi.Mem.am);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      /* ADD/SUB/ADC/SBB/AND/OR/XOR/TEST/CMP */
+      opc = opc_rr = subopc_imm = opc_imma = 0;
+      switch (i->Xin.Alu32R.op) {
+         case Xalu_ADD: opc = 0x03; opc_rr = 0x01; 
+                        subopc_imm = 0; opc_imma = 0x05; break;
+         case Xalu_SUB: opc = 0x2B; opc_rr = 0x29; 
+                        subopc_imm = 5; opc_imma = 0x2D; break;
+         default: goto bad;
+      }
+      switch (i->Xin.Alu32R.src->tag) {
+         case Xrmi_Imm:
+            if (i->Xin.Alu32R.dst == hregX86_EAX()
+                && !fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
+               *p++ = opc_imma;
+               p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
+            } else
+               if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
+               *p++ = 0x83; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
+               *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
+            } else {
+               *p++ = 0x81; 
+               p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
+               p    = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
+            }
+            goto done;
+         case Xrmi_Reg:
+            *p++ = opc_rr;
+            p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
+                             i->Xin.Alu32R.dst);
+            goto done;
          case Xrmi_Mem:
-            *p++ = 0x8B;
-            p = doAMode_M(p, i->Xin.Alu32R.dst, 
+            *p++ = opc;
+            p = doAMode_M(p, i->Xin.Alu32R.dst,
                              i->Xin.Alu32R.src->Xrmi.Mem.am);
             goto done;
-         default:
+         default: 
             goto bad;
-         }
-      } else {
-         goto bad;
       }
       break;
 
    case Xin_Alu32M:
+      /* Deal specially with MOV */
       if (i->Xin.Alu32M.op == Xalu_MOV) {
-	if (i->Xin.Alu32M.src->tag == Xri_Reg) {
-	  *p++ = 0x89;
-	  p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
-                           i->Xin.Alu32M.dst);
-	  goto done;
-	} else {
-	  goto bad;
-	}
-      } else {
-         goto bad;
+         switch (i->Xin.Alu32M.src->tag) {
+            case Xri_Reg:
+               *p++ = 0x89;
+               p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
+                                i->Xin.Alu32M.dst);
+               goto done;
+            case Xri_Imm:
+               *p++ = 0xC7;
+               p = doAMode_M(p, fake(0), i->Xin.Alu32M.dst);
+               p = emit32(p, i->Xin.Alu32M.src->Xri.Imm.imm32);
+               goto done;
+            default: 
+               goto bad;
+         }
+      }
+      /* ADD/SUB/ADC/SBB/AND/OR/XOR/TEST/CMP */
+      opc = subopc_imm = opc_imma = 0;
+      switch (i->Xin.Alu32M.op) {
+         case Xalu_ADD: opc = 0x01; subopc_imm = 0; break;
+         default: goto bad;
+      }
+      switch (i->Xin.Alu32M.src->tag) {
+         case Xri_Reg:
+            *p++ = opc;
+            p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
+                             i->Xin.Alu32M.dst);
+            goto done;
+         case Xri_Imm:
+            if (fits8bits(i->Xin.Alu32M.src->Xri.Imm.imm32)) {
+               *p++ = 0x83;
+               p    = doAMode_M(p, fake(subopc_imm), i->Xin.Alu32M.dst);
+               *p++ = 0xFF & i->Xin.Alu32M.src->Xri.Imm.imm32;
+               goto done;
+            } else {
+               *p++ = 0x81;
+               p    = doAMode_M(p, fake(subopc_imm), i->Xin.Alu32M.dst);
+               p    = emit32(p, i->Xin.Alu32M.src->Xri.Imm.imm32);
+               goto done;
+            }
+         default: 
+            goto bad;
       }
       break;
 
-
-    bad:
-     default: 
-        ppX86Instr(i);
-        vpanic("emit_X86Instr");
-	/*NOTREACHED*/
+   default: 
+      goto bad;
    }
+
+  bad:
+   ppX86Instr(i);
+   vpanic("emit_X86Instr");
+   /*NOTREACHED*/
+   
   done:
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
+
+#   undef fake
 }
+
+
+/* Self-contained test; can be called directly from
+   main. */
+void test_asm86 ( void )
+{
+  UChar buf[32];
+  Int i, n;
+  HReg edi = hregX86_EDI();
+  HReg esi = hregX86_ESI();
+  HReg ecx = hregX86_ECX();
+  HReg ebp = hregX86_EBP();
+  HReg eax = hregX86_EAX();
+  HReg esp = hregX86_ESP();
+
+#define T(_iii)                                        \
+  do { X86Instr* iii = _iii;                        \
+       vex_printf("\n   ");                        \
+       ppX86Instr(iii);                                \
+       vex_printf("\n   ");                        \
+       n = emit_X86Instr( buf, 32, iii );        \
+       for (i = 0; i < n; i++) {                \
+           if (buf[i] < 0x10)                   \
+              vex_printf("0%x ", (Int)buf[i]);  \
+           else                                 \
+              vex_printf("%x ", (Int)buf[i]);        \
+       }                                        \
+       vex_printf("\n");                        \
+  } while (0)
+
+#if 0
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(esi), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0x12345678), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(0,esi)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(0,ebp)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(1,ebp)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(127,esi)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IR(256,esi)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(1,esi,ecx,0)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(1,esi,ecx,3)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(127,esi,ecx,3)), edi) );
+T( X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(X86AMode_IRRS(256,esi,ecx,3)), edi) );
+#endif
+
+#if 0
+T( X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(9), X86AMode_IR(0,esi)) );
+T( X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(edi), X86AMode_IR(0,esi)) );
+T( X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(999), X86AMode_IRRS(256,esi,ecx,3)) );
+T( X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(ebp), X86AMode_IRRS(256,esi,ecx,3)) );
+#endif
+
+#if 0
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x42), eax) );
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x41424344), eax) );
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x42), esp) );
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(0x41424344), esp) );
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Reg(esi), edi) );
+T( X86Instr_Alu32R(Xalu_ADD, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
+#endif
+
+#if 0
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x42), eax) );
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x41424344), eax) );
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x42), esp) );
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(0x41424344), esp) );
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Reg(esi), edi) );
+T( X86Instr_Alu32R(Xalu_SUB, X86RMI_Mem(X86AMode_IR(1,esi)), edi) );
+#endif
+
+#if 0
+T( X86Instr_Alu32M(Xalu_ADD, X86RI_Imm(0x42), X86AMode_IR(0x99,esi)) );
+T( X86Instr_Alu32M(Xalu_ADD, X86RI_Imm(0x4243), X86AMode_IR(0x99,esi)) );
+T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x99,ebp)) );
+T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x80,ebp)) );
+T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
+#endif
+
+#undef T
+}
+
 
 
 /*---------------------------------------------------------------*/

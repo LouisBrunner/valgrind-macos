@@ -28,7 +28,7 @@ APP_OBJS =	test_main.o
 
 
 CC = gcc341
-CCFLAGS = -g -Wall -Wshadow -O
+CCFLAGS = -g -Wall -Wshadow
 
 #CC = icc
 #CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \

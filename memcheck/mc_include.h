@@ -129,17 +129,17 @@ extern REGPARM(1) UInt MC_(helperc_LOADV1)  ( Addr );
 extern REGPARM(1) UInt MC_(helperc_LOADV2)  ( Addr );
 extern REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
 
-extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, Int size );
-extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, Int size );
+extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, SizeT size );
+extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, SizeT size );
 
 
 /* For client requests */
-extern void MC_(make_noaccess) ( Addr a, UInt len );
-extern void MC_(make_readable) ( Addr a, UInt len );
-extern void MC_(make_writable) ( Addr a, UInt len );
+extern void MC_(make_noaccess) ( Addr a, SizeT len );
+extern void MC_(make_readable) ( Addr a, SizeT len );
+extern void MC_(make_writable) ( Addr a, SizeT len );
 
-extern Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr );
-extern Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
+extern Bool MC_(check_writable) ( Addr a, SizeT len, Addr* bad_addr );
+extern Bool MC_(check_readable) ( Addr a, SizeT len, Addr* bad_addr );
 
 extern void MC_(detect_memory_leaks) ( void );
 
@@ -147,7 +147,7 @@ extern Int  MC_(get_or_set_vbits_for_client) (
                ThreadId tid,
                Addr dataV, 
                Addr vbitsV, 
-               UInt size, 
+               SizeT size, 
                Bool setting /* True <=> set vbits,  False <=> get vbits */ 
             );
 

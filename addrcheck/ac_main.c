@@ -250,8 +250,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 /*------------------------------------------------------------*/
 
 static /* __inline__ */
-void set_address_range_perms ( Addr a, UInt len, 
-                               UInt example_a_bit )
+void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 {
    UChar     abyte8;
    UInt      sm_off;
@@ -357,14 +356,14 @@ void set_address_range_perms ( Addr a, UInt len,
 
 /* Set permissions for address ranges ... */
 
-static void ac_make_noaccess ( Addr a, UInt len )
+static void ac_make_noaccess ( Addr a, SizeT len )
 {
    PROF_EVENT(35);
    DEBUG("ac_make_noaccess(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID );
 }
 
-static void ac_make_accessible ( Addr a, UInt len )
+static void ac_make_accessible ( Addr a, SizeT len )
 {
    PROF_EVENT(38);
    DEBUG("ac_make_accessible(%p, %x)\n", a, len);
@@ -449,7 +448,7 @@ ESP_UPDATE_HANDLERS ( make_aligned_word_accessible,
 
 /* Block-copy permissions (needed for implementing realloc()). */
 
-static void ac_copy_address_range_state ( Addr src, Addr dst, UInt len )
+static void ac_copy_address_range_state ( Addr src, Addr dst, SizeT len )
 {
    UInt i;
 
@@ -469,7 +468,7 @@ static void ac_copy_address_range_state ( Addr src, Addr dst, UInt len )
    know what it is. */
 
 static __inline__
-Bool ac_check_accessible ( Addr a, UInt len, Addr* bad_addr )
+Bool ac_check_accessible ( Addr a, SizeT len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
@@ -488,7 +487,7 @@ Bool ac_check_accessible ( Addr a, UInt len, Addr* bad_addr )
 
 /* The opposite; check that an address range is inaccessible. */
 static
-Bool ac_check_noaccess ( Addr a, UInt len, Addr* bad_addr )
+Bool ac_check_noaccess ( Addr a, SizeT len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
@@ -535,7 +534,7 @@ Bool ac_check_readable_asciiz ( Addr a, Addr* bad_addr )
 
 static __inline__
 void ac_check_is_accessible ( CorePart part, ThreadId tid,
-                              Char* s, Addr base, UInt size, Bool isWrite )
+                              Char* s, Addr base, SizeT size, Bool isWrite )
 {
    Bool ok;
    Addr bad_addr;
@@ -573,14 +572,14 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
 
 static
 void ac_check_is_writable ( CorePart part, ThreadId tid,
-                            Char* s, Addr base, UInt size )
+                            Char* s, Addr base, SizeT size )
 {
    ac_check_is_accessible ( part, tid, s, base, size, /*isWrite*/True );
 }
 
 static
 void ac_check_is_readable ( CorePart part, ThreadId tid,
-                            Char* s, Addr base, UInt size )
+                            Char* s, Addr base, SizeT size )
 {     
    ac_check_is_accessible ( part, tid, s, base, size, /*isWrite*/False );
 }
@@ -605,7 +604,7 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 }
 
 static
-void ac_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
+void ac_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
    DEBUG("new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
@@ -613,13 +612,13 @@ void ac_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 }
 
 static
-void ac_new_mem_heap ( Addr a, UInt len, Bool is_inited )
+void ac_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 {
    ac_make_accessible(a, len);
 }
 
 static
-void ac_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
+void ac_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
 {
    DEBUG("ac_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
                               a, len, rr, ww, xx);

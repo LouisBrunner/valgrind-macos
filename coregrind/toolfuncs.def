@@ -179,16 +179,16 @@ Bool, expensive_sanity_check
 ## malloc() et al.  See above how to do this.)
 
 ## These ones occur at startup, upon some signals, and upon some syscalls
-void,	new_mem_startup,	Addr a, UInt len, Bool rr, Bool ww, Bool xx
-void,	new_mem_stack_signal,	Addr a, UInt len
-void,	new_mem_brk,	Addr a, UInt len
-void,	new_mem_mmap,	Addr a, UInt len, Bool rr, Bool ww, Bool xx
+void,	new_mem_startup,	Addr a, SizeT len, Bool rr, Bool ww, Bool xx
+void,	new_mem_stack_signal,	Addr a, SizeT len
+void,	new_mem_brk,	Addr a, SizeT len
+void,	new_mem_mmap,	Addr a, SizeT len, Bool rr, Bool ww, Bool xx
 
-void,	copy_mem_remap,	Addr from, Addr to, UInt len
-void,	change_mem_mprotect,	Addr a, UInt len, Bool rr, Bool ww, Bool xx
-void,	die_mem_stack_signal,	Addr a, UInt len
-void,	die_mem_brk,	Addr a, UInt len
-void,	die_mem_munmap,	Addr a, UInt len
+void,	copy_mem_remap,	Addr from, Addr to, SizeT len
+void,	change_mem_mprotect,	Addr a, SizeT len, Bool rr, Bool ww, Bool xx
+void,	die_mem_stack_signal,	Addr a, SizeT len
+void,	die_mem_brk,	Addr a, SizeT len
+void,	die_mem_munmap,	Addr a, SizeT len
 
 ## These ones are called when %esp changes.  A tool could track these itself
 ## (except for ban_mem_stack) but it's much easier to use the core's help.
@@ -204,26 +204,26 @@ void,	new_mem_stack_8,	Addr new_ESP
 void,	new_mem_stack_12,	Addr new_ESP
 void,	new_mem_stack_16,	Addr new_ESP
 void,	new_mem_stack_32,	Addr new_ESP
-void,	new_mem_stack,	Addr a, UInt len
+void,	new_mem_stack,	Addr a, SizeT len
 
 void,	die_mem_stack_4,	Addr die_ESP
 void,	die_mem_stack_8,	Addr die_ESP
 void,	die_mem_stack_12,	Addr die_ESP
 void,	die_mem_stack_16,	Addr die_ESP
 void,	die_mem_stack_32,	Addr die_ESP
-void,	die_mem_stack,	Addr a, UInt len
+void,	die_mem_stack,	Addr a, SizeT len
 
 ## Used for redzone at end of thread stacks
-void,	ban_mem_stack,	Addr a, UInt len
+void,	ban_mem_stack,	Addr a, SizeT len
 
 ## These ones occur around syscalls, signal handling, etc
-void,	pre_mem_read,	CorePart part, ThreadId tid, Char* s, Addr a, UInt size
+void,	pre_mem_read,	CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
 void,	pre_mem_read_asciiz,	CorePart part, ThreadId tid, Char* s, Addr a
-void,	pre_mem_write,	CorePart part, ThreadId tid, Char* s, Addr a, UInt size
+void,	pre_mem_write,	CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
 ## Not implemented yet -- have to add in lots of places, which is a
 ## pain.  Won't bother unless/until there's a need.
-## void (*post_mem_read)  ( ThreadState* tst, Char* s, Addr a, UInt size );
-void,	post_mem_write,	Addr a, UInt size
+## void (*post_mem_read)  ( ThreadState* tst, Char* s, Addr a, SizeT size );
+void,	post_mem_write,	Addr a, SizeT size
 
 
 ## Register events -- if `shadow_regs' need is set, all should probably be

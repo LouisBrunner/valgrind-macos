@@ -45,13 +45,13 @@ static SizeT cmalloc_bs_mallocd = 0;
 UInt VG_(vg_malloc_redzone_szB) = 16;
 
 /* Function pointers for the two tools to track interesting events. */
-void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited )  = NULL;
-void (*MAC_(ban_mem_heap)) ( Addr a, UInt len )                  = NULL;
-void (*MAC_(die_mem_heap)) ( Addr a, UInt len )                  = NULL;
-void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len )      = NULL;
+void (*MAC_(new_mem_heap)) ( Addr a, SizeT len, Bool is_inited )  = NULL;
+void (*MAC_(ban_mem_heap)) ( Addr a, SizeT len )                  = NULL;
+void (*MAC_(die_mem_heap)) ( Addr a, SizeT len )                  = NULL;
+void (*MAC_(copy_mem_heap))( Addr from, Addr to, SizeT len )      = NULL;
 
 /* Function pointers for internal sanity checking. */
-Bool (*MAC_(check_noaccess))( Addr a, UInt len, Addr* bad_addr ) = NULL;
+Bool (*MAC_(check_noaccess))( Addr a, SizeT len, Addr* bad_addr ) = NULL;
 
 
 /*------------------------------------------------------------*/

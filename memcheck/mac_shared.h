@@ -277,13 +277,13 @@ extern VgHashTable MAC_(malloc_list);
 extern VgHashTable MAC_(mempool_list);
 
 /* Function pointers for the two tools to track interesting events. */
-extern void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
-extern void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
-extern void (*MAC_(die_mem_heap)) ( Addr a, UInt len );
-extern void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
+extern void (*MAC_(new_mem_heap)) ( Addr a, SizeT len, Bool is_inited );
+extern void (*MAC_(ban_mem_heap)) ( Addr a, SizeT len );
+extern void (*MAC_(die_mem_heap)) ( Addr a, SizeT len );
+extern void (*MAC_(copy_mem_heap))( Addr from, Addr to, SizeT len );
 
 /* Function pointers for internal sanity checking. */
-extern Bool (*MAC_(check_noaccess))( Addr a, UInt len, Addr* bad_addr );
+extern Bool (*MAC_(check_noaccess))( Addr a, SizeT len, Addr* bad_addr );
 
 /* Used in describe_addr() */
 extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
@@ -357,8 +357,8 @@ extern REGPARM(1) void MAC_(new_mem_stack_16) ( Addr old_ESP );
 extern REGPARM(1) void MAC_(die_mem_stack_16) ( Addr old_ESP );
 extern REGPARM(1) void MAC_(new_mem_stack_32) ( Addr old_ESP );
 extern REGPARM(1) void MAC_(die_mem_stack_32) ( Addr old_ESP );
-extern            void MAC_(die_mem_stack) ( Addr a, UInt len);
-extern            void MAC_(new_mem_stack) ( Addr a, UInt len);
+extern            void MAC_(die_mem_stack) ( Addr a, SizeT len);
+extern            void MAC_(new_mem_stack) ( Addr a, SizeT len);
 
 
 /*------------------------------------------------------------*/
@@ -520,13 +520,13 @@ void REGPARM(1) MAC_(die_mem_stack_32)(Addr new_ESP)                          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void MAC_(new_mem_stack) ( Addr a, UInt len )                                 \
+void MAC_(new_mem_stack) ( Addr a, SizeT len )                                \
 {                                                                             \
    PROF_EVENT(115);                                                           \
    UNALIGNED_NEW ( a, len );                                                  \
 }                                                                             \
                                                                               \
-void MAC_(die_mem_stack) ( Addr a, UInt len )                                 \
+void MAC_(die_mem_stack) ( Addr a, SizeT len )                                \
 {                                                                             \
    PROF_EVENT(125);                                                           \
    UNALIGNED_DIE ( a, len );                                                  \

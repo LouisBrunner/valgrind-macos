@@ -99,8 +99,8 @@ static UInt mc_rd_V1_SLOWLY ( Addr a );
 static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes );
 static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes );
 static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes );
-static void mc_fpu_read_check_SLOWLY ( Addr addr, Int size );
-static void mc_fpu_write_check_SLOWLY ( Addr addr, Int size );
+static void mc_fpu_read_check_SLOWLY  ( Addr addr, SizeT size );
+static void mc_fpu_write_check_SLOWLY ( Addr addr, SizeT size );
 
 /*------------------------------------------------------------*/
 /*--- Data defns.                                          ---*/
@@ -266,7 +266,7 @@ static void __inline__ set_vbytes4_ALIGNED ( Addr a, UInt vbytes )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-static void set_address_range_perms ( Addr a, UInt len, 
+static void set_address_range_perms ( Addr a, SizeT len, 
                                       UInt example_a_bit,
                                       UInt example_v_bit )
 {
@@ -389,24 +389,24 @@ static void set_address_range_perms ( Addr a, UInt len,
 
 /* Set permissions for address ranges ... */
 
-void MC_(make_noaccess) ( Addr a, UInt len )
+void MC_(make_noaccess) ( Addr a, SizeT len )
 {
    PROF_EVENT(35);
-   DEBUG("MC_(make_noaccess)(%p, %x)\n", a, len);
+   DEBUG("MC_(make_noaccess)(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID, VGM_BIT_INVALID );
 }
 
-void MC_(make_writable) ( Addr a, UInt len )
+void MC_(make_writable) ( Addr a, SizeT len )
 {
    PROF_EVENT(36);
-   DEBUG("MC_(make_writable)(%p, %x)\n", a, len);
+   DEBUG("MC_(make_writable)(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_INVALID );
 }
 
-void MC_(make_readable) ( Addr a, UInt len )
+void MC_(make_readable) ( Addr a, SizeT len )
 {
    PROF_EVENT(37);
-   DEBUG("MC_(make_readable)(%p, 0x%x)\n", a, len);
+   DEBUG("MC_(make_readable)(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
@@ -491,9 +491,9 @@ ESP_UPDATE_HANDLERS ( make_aligned_word_writable,
                     );
 
 /* Block-copy permissions (needed for implementing realloc()). */
-static void mc_copy_address_range_state ( Addr src, Addr dst, UInt len )
+static void mc_copy_address_range_state ( Addr src, Addr dst, SizeT len )
 {
-   UInt i;
+   SizeT i;
 
    DEBUG("mc_copy_address_range_state\n");
 
@@ -516,9 +516,9 @@ static void mc_copy_address_range_state ( Addr src, Addr dst, UInt len )
    returns False, and if bad_addr is non-NULL, sets *bad_addr to
    indicate the lowest failing address.  Functions below are
    similar. */
-Bool MC_(check_noaccess) ( Addr a, UInt len, Addr* bad_addr )
+Bool MC_(check_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
 {
-   UInt  i;
+   SizeT i;
    UChar abit;
    PROF_EVENT(42);
    for (i = 0; i < len; i++) {
@@ -533,9 +533,9 @@ Bool MC_(check_noaccess) ( Addr a, UInt len, Addr* bad_addr )
    return True;
 }
 
-Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
+Bool MC_(check_writable) ( Addr a, SizeT len, Addr* bad_addr )
 {
-   UInt  i;
+   SizeT i;
    UChar abit;
    PROF_EVENT(42);
    for (i = 0; i < len; i++) {
@@ -550,9 +550,9 @@ Bool MC_(check_writable) ( Addr a, UInt len, Addr* bad_addr )
    return True;
 }
 
-Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
+Bool MC_(check_readable) ( Addr a, SizeT len, Addr* bad_addr )
 {
-   UInt  i;
+   SizeT i;
    UChar abit;
    UChar vbyte;
 
@@ -603,7 +603,7 @@ static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 
 static
 void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
-                            Addr base, UInt size )
+                            Addr base, SizeT size )
 {
    Bool ok;
    Addr bad_addr;
@@ -634,7 +634,7 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
 
 static
 void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
-                            Addr base, UInt size )
+                            Addr base, SizeT size )
 {     
    Bool ok;
    Addr bad_addr;
@@ -688,15 +688,16 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 
 
 static
-void mc_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
+void mc_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
-   DEBUG("mc_new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
+   DEBUG("mc_new_mem_startup(%p, %llu, rr=%u, ww=%u, xx=%u)\n",
+         a,(ULong)len,rr,ww,xx);
    MC_(make_readable)(a, len);
 }
 
 static
-void mc_new_mem_heap ( Addr a, UInt len, Bool is_inited )
+void mc_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 {
    if (is_inited) {
       MC_(make_readable)(a, len);
@@ -706,9 +707,10 @@ void mc_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 }
 
 static
-void mc_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
+void mc_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
 {
-   DEBUG("mc_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n", a, len, rr, ww, xx);
+   DEBUG("mc_set_perms(%p, %llu, rr=%u ww=%u, xx=%u)\n",
+         a, (ULong)len, rr, ww, xx);
    if      (rr) MC_(make_readable)(a, len);
    else if (ww) MC_(make_writable)(a, len);
    else         MC_(make_noaccess)(a, len);
@@ -1108,7 +1110,7 @@ void MC_(helperc_value_check4_fail) ( void )
    ------------------------------------------------------------------ */
 
 REGPARM(2)
-void MC_(fpu_read_check) ( Addr addr, Int size )
+void MC_(fpu_read_check) ( Addr addr, SizeT size )
 {
    /* Ensure the read area is both addressible and valid (ie,
       readable).  If there's an address error, don't report a value
@@ -1200,7 +1202,7 @@ void MC_(fpu_read_check) ( Addr addr, Int size )
 
 
 REGPARM(2)
-void MC_(fpu_write_check) ( Addr addr, Int size )
+void MC_(fpu_write_check) ( Addr addr, SizeT size )
 {
    /* Ensure the written area is addressible, and moan if otherwise.
       If it is addressible, make it valid, otherwise invalid. 
@@ -1290,7 +1292,7 @@ void MC_(fpu_write_check) ( Addr addr, Int size )
    there's an addr error, don't report a value error even if it
    exists. */
 
-void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
+void mc_fpu_read_check_SLOWLY ( Addr addr, SizeT size )
 {
    Int  i;
    Bool aerr = False;
@@ -1316,7 +1318,7 @@ void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
 /* Generic version.  Test for addr errors.  Valid addresses are
    given valid values, and invalid addresses invalid values. */
 
-void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
+void mc_fpu_write_check_SLOWLY ( Addr addr, SizeT size )
 {
    Int  i;
    Addr a_here;
@@ -1350,7 +1352,7 @@ Int MC_(get_or_set_vbits_for_client) (
    ThreadId tid,
    Addr dataV, 
    Addr vbitsV, 
-   UInt size, 
+   SizeT size, 
    Bool setting /* True <=> set vbits,  False <=> get vbits */ 
 )
 {
@@ -1358,8 +1360,8 @@ Int MC_(get_or_set_vbits_for_client) (
    Bool addressibleV = True;
    UInt* data  = (UInt*)dataV;
    UInt* vbits = (UInt*)vbitsV;
-   UInt  szW   = size / 4; /* sigh */
-   UInt  i;
+   SizeT szW   = size / 4; /* sigh */
+   SizeT i;
    UInt* dataP  = NULL; /* bogus init to keep gcc happy */
    UInt* vbitsP = NULL; /* ditto */
 

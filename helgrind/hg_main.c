@@ -1585,7 +1585,7 @@ Bool cleanmx(Mutex *mx) {
 }
 
 static
-void set_address_range_state ( Addr a, UInt len /* in bytes */, 
+void set_address_range_state ( Addr a, SizeT len /* in bytes */, 
                                VgeInitStatus status )
 {
    Addr end;
@@ -1660,19 +1660,19 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
 }
 
 
-static void make_segment_readable ( Addr a, UInt len )
+static void make_segment_readable ( Addr a, SizeT len )
 {
    //PROF_EVENT(??);    PPP
    set_address_range_state ( a, len, Vge_SegmentInit );
 }
 
-static void make_writable ( Addr a, UInt len )
+static void make_writable ( Addr a, SizeT len )
 {
    //PROF_EVENT(36);  PPP
    set_address_range_state( a, len, Vge_VirginInit );
 }
 
-static void make_readable ( Addr a, UInt len )
+static void make_readable ( Addr a, SizeT len )
 {
    //PROF_EVENT(37);  PPP
    set_address_range_state( a, len, Vge_VirginInit );
@@ -1680,7 +1680,7 @@ static void make_readable ( Addr a, UInt len )
 
 
 /* Block-copy states (needed for implementing realloc()). */
-static void copy_address_range_state(Addr src, Addr dst, UInt len)
+static void copy_address_range_state(Addr src, Addr dst, SizeT len)
 {
    UInt i;
 
@@ -1693,25 +1693,25 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 }
 
 // SSS: put these somewhere better
-static void eraser_mem_read (Addr a, UInt data_size, ThreadId tid);
-static void eraser_mem_write(Addr a, UInt data_size, ThreadId tid);
+static void eraser_mem_read (Addr a, SizeT data_size, ThreadId tid);
+static void eraser_mem_write(Addr a, SizeT data_size, ThreadId tid);
 
 static void eraser_mem_help_read_1(Addr a) REGPARM(1);
 static void eraser_mem_help_read_2(Addr a) REGPARM(1);
 static void eraser_mem_help_read_4(Addr a) REGPARM(1);
-static void eraser_mem_help_read_N(Addr a, UInt size) REGPARM(2);
+static void eraser_mem_help_read_N(Addr a, SizeT size) REGPARM(2);
 
 static void eraser_mem_help_write_1(Addr a, UInt val) REGPARM(2);
 static void eraser_mem_help_write_2(Addr a, UInt val) REGPARM(2);
 static void eraser_mem_help_write_4(Addr a, UInt val) REGPARM(2);
-static void eraser_mem_help_write_N(Addr a, UInt size) REGPARM(2);
+static void eraser_mem_help_write_N(Addr a, SizeT size) REGPARM(2);
 
 static void bus_lock(void);
 static void bus_unlock(void);
 
 static
 void eraser_pre_mem_read(CorePart part, ThreadId tid,
-                         Char* s, Addr base, UInt size )
+                         Char* s, Addr base, SizeT size )
 {
    if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(skin_panic)("a");}
    eraser_mem_read(base, size, tid);
@@ -1726,7 +1726,7 @@ void eraser_pre_mem_read_asciiz(CorePart part, ThreadId tid,
 
 static
 void eraser_pre_mem_write(CorePart part, ThreadId tid,
-                          Char* s, Addr base, UInt size )
+                          Char* s, Addr base, SizeT size )
 {
    eraser_mem_write(base, size, tid);
 }
@@ -1734,7 +1734,7 @@ void eraser_pre_mem_write(CorePart part, ThreadId tid,
 
 
 static
-void eraser_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
+void eraser_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
    make_segment_readable(a, len);
@@ -1742,7 +1742,7 @@ void eraser_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 
 
 static
-void eraser_new_mem_heap ( Addr a, UInt len, Bool is_inited )
+void eraser_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 {
    if (is_inited) {
       make_readable(a, len);
@@ -1752,7 +1752,7 @@ void eraser_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 }
 
 static
-void eraser_set_perms (Addr a, UInt len,
+void eraser_set_perms (Addr a, SizeT len,
                        Bool rr, Bool ww, Bool xx)
 {
    if      (rr) make_readable(a, len);
@@ -1761,13 +1761,13 @@ void eraser_set_perms (Addr a, UInt len,
 }
 
 static
-void eraser_new_mem_stack_private(Addr a, UInt len)
+void eraser_new_mem_stack_private(Addr a, SizeT len)
 {
    set_address_range_state(a, len, Vge_NonVirginInit);
 }
 
 static
-void eraser_new_mem_stack(Addr a, UInt len)
+void eraser_new_mem_stack(Addr a, SizeT len)
 {
    set_address_range_state(a, len, Vge_VirginInit);
 }
@@ -3034,7 +3034,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
    }
 }
 
-static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
+static void eraser_mem_read(Addr a, SizeT size, ThreadId tid)
 {
    Addr end;
 
@@ -3139,7 +3139,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
    }
 }
 
-static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
+static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
 {
    Addr     end;
 
@@ -3167,7 +3167,7 @@ REGPARM(1) static void eraser_mem_help_read_4(Addr a)
    eraser_mem_read(a, 4, VG_(get_current_tid)());
 }
 
-REGPARM(2) static void eraser_mem_help_read_N(Addr a, UInt size)
+REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
 {
    eraser_mem_read(a, size, VG_(get_current_tid)());
 }
@@ -3187,7 +3187,7 @@ REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
    if (*(UInt *)a != val)
       eraser_mem_write(a, 4, VG_(get_current_tid)());
 }
-REGPARM(2) static void eraser_mem_help_write_N(Addr a, UInt size)
+REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
 {
    eraser_mem_write(a, size, VG_(get_current_tid)());
 }
@@ -3374,7 +3374,7 @@ void SK_(print_debug_usage)(void)
 
 void SK_(post_clo_init)(void)
 {
-   void (*stack_tracker)(Addr a, UInt len);
+   void (*stack_tracker)(Addr a, SizeT len);
    
    if (clo_execontext) {
       execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);

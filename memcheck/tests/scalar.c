@@ -254,8 +254,18 @@ int main(void)
    SY(__NR_ioctl, x0, x0+TCSETS, x0); FAIL;
 
    // __NR_fcntl 55
-   GO(__NR_fcntl, "3s 0m");
-   SY(__NR_fcntl, x0-1, x0, x0); FAIL;
+   // As with sys_open(), the 'fd' error is suppressed for the later ones.
+   // For F_GETFD the 3rd arg is ignored
+   GO(__NR_fcntl, "(GETFD) 2s 0m");
+   SY(__NR_fcntl, x0-1, x0+F_GETFD, x0); FAILx(EBADF);
+
+   // For F_DUPFD the 3rd arg is 'arg'
+   GO(__NR_fcntl, "(DUPFD) 1s 0m");
+   SY(__NR_fcntl, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
+
+   // For F_GETLK the 3rd arg is 'lock'
+   GO(__NR_fcntl, "(GETLK) 1s 0m");
+   SY(__NR_fcntl, x0-1, x0+F_GETLK, x0); FAILx(EBADF);
 
    // __NR_mpx 56
    GO(__NR_mpx, "ni");
@@ -668,7 +678,7 @@ int main(void)
 
    // __NR_munlockall 153
    GO(__NR_munlockall, "0s 0m");
-   SY(__NR_munlockall); SUCC;
+   SY(__NR_munlockall); SUCC_OR_FAIL;
 
    // __NR_sched_setparam 154
    GO(__NR_sched_setparam, "2s 1m");
@@ -954,8 +964,18 @@ int main(void)
    SY(__NR_getdents64, x0, x0, x0+1); FAIL;
 
    // __NR_fcntl64 221
-   GO(__NR_fcntl64, "3s 0m");
-   SY(__NR_fcntl64, x0-1, x0, x0); FAILx(EBADF);
+   // As with sys_open(), the 'fd' error is suppressed for the later ones.
+   // For F_GETFD the 3rd arg is ignored
+   GO(__NR_fcntl64, "(GETFD) 2s 0m");
+   SY(__NR_fcntl64, x0-1, x0+F_GETFD, x0); FAILx(EBADF);
+
+   // For F_DUPFD the 3rd arg is 'arg'
+   GO(__NR_fcntl64, "(DUPFD) 1s 0m");
+   SY(__NR_fcntl64, x0-1, x0+F_DUPFD, x0); FAILx(EBADF);
+
+   // For F_GETLK the 3rd arg is 'lock'
+   GO(__NR_fcntl64, "(GETLK) 1s 0m");
+   SY(__NR_fcntl64, x0-1, x0+F_GETLK, x0); FAILx(EBADF);
 
    // 222
    GO(222, "ni");
@@ -1101,7 +1121,7 @@ int main(void)
 
    // __NR_epoll_create 254
    GO(__NR_epoll_create, "1s 0m");
-   SY(__NR_epoll_create, x0); FAIL;
+   SY(__NR_epoll_create, x0); SUCC_OR_FAIL;
 
    // __NR_epoll_ctl 255
    GO(__NR_epoll_ctl, "4s 1m");

@@ -1923,28 +1923,6 @@ POST(sys_dup2)
       VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
 }
 
-PRE(sys_fcntl, 0)
-{
-   PRINT("sys_fcntl ( %d, %d, %d )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "fcntl",
-                 unsigned int, fd, unsigned int, cmd, unsigned long, arg);
-   if (arg2 == VKI_F_SETLKW)
-      tst->sys_flags |= MayBlock;
-}
-
-POST(sys_fcntl)
-{
-   if (arg2 == VKI_F_DUPFD) {
-      if (!VG_(fd_allowed)(res, "fcntl(DUPFD)", tid, True)) {
-         VG_(close)(res);
-         set_result( -VKI_EMFILE );
-      } else {
-         if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
-      }
-   }
-}
-
 PRE(sys_fchdir, 0)
 {
    PRINT("sys_fchdir ( %d )", arg1);
@@ -1971,12 +1949,91 @@ PRE(sys_fchmod, 0)
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
+void common_pre_fcntl(Bool is64, ThreadId tid, ThreadState* tst)
+{
+   switch (arg2) {
+   // These ones ignore arg3.
+   case VKI_F_GETFD:
+   case VKI_F_GETFL:
+   case VKI_F_GETOWN:
+   case VKI_F_SETOWN:
+   case VKI_F_GETSIG:
+   case VKI_F_SETSIG:
+   case VKI_F_GETLEASE:
+      if (is64) {
+         PRINT("sys_fcntl64 ( %d, %d )", arg1,arg2);
+         PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
+      } else {
+         PRINT("sys_fcntl ( %d, %d )", arg1,arg2);
+         PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
+      }
+      break;
+
+   // These ones use arg3 as "arg".
+   case VKI_F_DUPFD:
+   case VKI_F_SETFD:
+   case VKI_F_SETFL:
+   case VKI_F_SETLEASE:
+   case VKI_F_NOTIFY:
+      if (is64) {
+         PRINT("sys_fcntl64[arg3=='arg'] ( %d, %d, %d )", arg1,arg2,arg3);
+         PRE_REG_READ3(long, "fcntl64",
+                       unsigned int, fd, unsigned int, cmd, unsigned long, arg);
+      } else {
+         PRINT("sys_fcntl[arg3=='arg'] ( %d, %d, %d )", arg1,arg2,arg3);
+         PRE_REG_READ3(long, "fcntl",
+                       unsigned int, fd, unsigned int, cmd, unsigned long, arg);
+      }
+      break;
+
+   // These ones use arg3 as "lock".
+   case VKI_F_GETLK:
+   case VKI_F_SETLK:
+   case VKI_F_SETLKW:
+   case VKI_F_GETLK64:
+   case VKI_F_SETLK64:
+   case VKI_F_SETLKW64:
+      if (is64) {
+         PRINT("sys_fcntl64[arg3=='lock'] ( %d, %d, %p )", arg1,arg2,arg3);
+         PRE_REG_READ3(long, "fcntl64",
+                       unsigned int, fd, unsigned int, cmd,
+                       struct flock64 *, lock);
+      } else {
+         PRINT("sys_fcntl[arg3=='lock'] ( %d, %d, %p )", arg1,arg2,arg3);
+         PRE_REG_READ3(long, "fcntl",
+                       unsigned int, fd, unsigned int, cmd,
+                       struct flock64 *, lock);
+      }
+      break;
+   }
+}
+
+PRE(sys_fcntl, 0)
+{
+   common_pre_fcntl(/*is64*/False, tid, tst);
+
+   if (arg2 == VKI_F_SETLKW)
+      tst->sys_flags |= MayBlock;
+}
+
+POST(sys_fcntl)
+{
+   if (arg2 == VKI_F_DUPFD) {
+      if (!VG_(fd_allowed)(res, "fcntl(DUPFD)", tid, True)) {
+         VG_(close)(res);
+         set_result( -VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
+      }
+   }
+}
+
 // XXX: wrapper only suitable for 32-bit systems
 PRE(sys_fcntl64, 0)
 {
-   PRINT("sys_fcntl64 ( %d, %d, %d )", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "fcntl64",
-                 unsigned int, fd, unsigned int, cmd, unsigned long, arg);
+   common_pre_fcntl(/*is64*/True, tid, tst);
+   
    if (arg2 == VKI_F_SETLKW || arg2 == VKI_F_SETLKW64)
       tst->sys_flags |= MayBlock;
 }

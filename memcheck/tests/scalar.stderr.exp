@@ -685,7 +685,7 @@ Syscall param ioctl(TCSET{S,SW,SF}) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 55:          __NR_fcntl 3s 0m
+ 55:          __NR_fcntl (GETFD) 2s 0m
 -----------------------------------------------------
 
 Syscall param fcntl(fd) contains uninitialised byte(s)
@@ -697,8 +697,19 @@ Syscall param fcntl(cmd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
+-----------------------------------------------------
+ 55:          __NR_fcntl (DUPFD) 1s 0m
+-----------------------------------------------------
 
 Syscall param fcntl(arg) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+ 55:          __NR_fcntl (GETLK) 1s 0m
+-----------------------------------------------------
+
+Syscall param fcntl(lock) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
@@ -2688,14 +2699,14 @@ Syscall param sigaltstack(ss) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 12 client-defined
-   at 0x........: main (scalar.c:811)
+   at 0x........: main (scalar.c:821)
 
 Syscall param sigaltstack(oss) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 12 client-defined
-   at 0x........: main (scalar.c:811)
+   at 0x........: main (scalar.c:821)
 -----------------------------------------------------
 187:       __NR_sendfile 4s 1m
 -----------------------------------------------------
@@ -3294,7 +3305,7 @@ Syscall param getdents64(dirp) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-221:        __NR_fcntl64 3s 0m
+221:        __NR_fcntl64 (GETFD) 2s 0m
 -----------------------------------------------------
 
 Syscall param fcntl64(fd) contains uninitialised byte(s)
@@ -3306,8 +3317,19 @@ Syscall param fcntl64(cmd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
+-----------------------------------------------------
+221:        __NR_fcntl64 (DUPFD) 1s 0m
+-----------------------------------------------------
 
 Syscall param fcntl64(arg) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+221:        __NR_fcntl64 (GETLK) 1s 0m
+-----------------------------------------------------
+
+Syscall param fcntl64(lock) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...

@@ -845,7 +845,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          show = (ew < 0 || ew >= EmWarn_NUMBER)
                    ? True
                    : counts[ew]++ < 3;
-         if (show) {
+         if (show && VG_(clo_show_emwarns)) {
             VG_(message)( Vg_UserMsg,
                           "Emulation warning: unsupported action:");
             VG_(message)( Vg_UserMsg, "  %s", what);

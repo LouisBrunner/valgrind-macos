@@ -1454,6 +1454,7 @@ Bool   VG_(clo_pointercheck)   = True;
 Bool   VG_(clo_support_elan3)  = False;
 Bool   VG_(clo_branchpred)     = False;
 Bool   VG_(clo_model_pthreads) = False;
+Bool   VG_(clo_show_emwarns)   = False;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
@@ -1479,6 +1480,7 @@ static void usage ( Bool debug_help )
 "    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls,ioctl-mmap [none]\n"
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]\n"
+"    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -1685,6 +1687,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO("--support-elan3",    VG_(clo_support_elan3))
+      else VG_BOOL_CLO("--show-emwarns",     VG_(clo_show_emwarns))
       else VG_BOOL_CLO("--profile",          VG_(clo_profile))
       else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))

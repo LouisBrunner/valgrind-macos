@@ -184,8 +184,15 @@ void startup_segment_callback ( Addr start, UInt size,
                    size, filename?filename:(UChar*)"NULL");
 
    if (rr != 'r' && xx != 'x' && ww != 'w') {
-      VG_(printf)("No permissions on the segment named %s\n", filename);
-      VG_(core_panic)("Non-readable, writable, executable segment at startup");
+      /* Implausible as it seems, R H 6.2 generates such segments:
+      40067000-400ac000 r-xp 00000000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
+      400ac000-400ad000 ---p 00045000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
+      400ad000-400b0000 rw-p 00045000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
+      when running xedit. So just ignore them. */
+      if (0)
+         VG_(printf)("No permissions on a segment mapped from %s\n", 
+                     filename?filename:(UChar*)"NULL");
+      return;
    }
 
    /* This parallels what happens when we mmap some new memory */

@@ -626,11 +626,7 @@ struct _ThreadState {
    /* Per-thread jmp_buf to resume scheduler after a signal */
    Bool    sched_jmpbuf_valid;
    jmp_buf sched_jmpbuf;
-
-   /* Info about the signal we just got */
-   vki_siginfo_t	siginfo;
 };
-//ThreadState;
 
 /* The thread table. */
 extern ThreadState VG_(threads)[VG_N_THREADS];

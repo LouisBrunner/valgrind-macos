@@ -2521,6 +2521,10 @@ void VG_(setup_code_redirect_table) ( void )
                     "*vgpreload_memcheck.so*", "stpcpy");
    add_redirect_sym("soname:ld-linux.so.2", "strchr",
                     "*vgpreload_memcheck.so*", "strchr");
+   add_redirect_sym("soname:libc.so.6", "strchrnul",
+                    "*vgpreload_memcheck.so*", "glibc232_strchrnul");
+   add_redirect_sym("soname:libc.so.6", "rawmemchr",
+                    "*vgpreload_memcheck.so*", "glibc232_rawmemchr");
 }
 
 /*------------------------------------------------------------*/

@@ -1,4 +1,9 @@
 
+/* Anyone know what this is supposed to test?  I don't
+   (JRS 2003-07-07) -- which ain't good considering I
+   probably created it :)
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 

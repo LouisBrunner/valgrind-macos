@@ -1,2 +1,2 @@
-vgopts: --single-step=yes
+vgopts: --single-step=yes -q
 prog:   fprw

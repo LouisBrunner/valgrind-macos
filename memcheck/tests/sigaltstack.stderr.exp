@@ -1,4 +1,3 @@
-
 calling sigaltstack, stack base is 0x........
 setting sigaction
 Syscall param sigaction(act) contains uninitialised or unaddressable byte(s)
@@ -8,9 +7,3 @@ res = 0
 raising the signal
 caught signal, local var is on 0x........
 done
-
-ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 8192 bytes in 1 blocks.
-malloc/free: 1 allocs, 0 frees, 8192 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

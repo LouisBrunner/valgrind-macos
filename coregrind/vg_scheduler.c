@@ -1632,8 +1632,20 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
       handler -- which is really thread_exit_wrapper() in
       vg_libpthread.c. */
    vg_assert(VG_(threads)[tid].cancel_pend != NULL);
+
+   /* Push a suitable arg, and mark it as readable. */
    VG_(threads)[tid].m_esp -= 4;
    * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
+   VG_TRACK( post_mem_write, VG_(threads)[tid].m_esp, sizeof(void*) );
+
+   /* Push a bogus return address.  It will not return, but we still
+      need to have it so that the arg is at the correct stack offset.
+      Don't mark as readable; any attempt to read this is and internal
+      valgrind bug since thread_exit_wrapper should not return. */
+   VG_(threads)[tid].m_esp -= 4;
+   * (UInt*)(VG_(threads)[tid].m_esp) = 0xBEADDEEF;
+
+   /* .cancel_pend will hold &thread_exit_wrapper */
    VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
 
    /* Clear out the waited-for-signals set, if needed, so as not to

@@ -780,6 +780,62 @@ void VG_(send_signal_to_thread) ( ThreadId thread, Int sig )
 }
 
 
+/* Store in set the signals which could be delivered to this thread
+   right now (since they are pending) but cannot be, because the
+   thread has masked them out. */
+void VG_(do_sigpending) ( ThreadId tid, vki_ksigset_t* set )
+{
+   Int           sig, res;
+   Bool          maybe_pend;
+   vki_ksigset_t process_pending;
+
+   /* Get the set of signals which are pending for the process as a
+      whole. */
+   res = VG_(sigpending)( &process_pending );
+   vg_assert(res == 0);
+
+   VG_(ksigemptyset)(set);
+   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+
+      /* Figure out if the signal could be pending for this thread.
+         There are two cases. */
+      maybe_pend = False;
+
+      /* Case 1: perhaps the signal is pending for the process as a
+         whole -- that is, is blocked even valgrind's signal
+         handler. */
+      if (VG_(ksigismember)( &process_pending, sig ))
+         maybe_pend = True;
+
+      /* Case 2: the signal has been collected by our handler and is
+         now awaiting disposition inside valgrind. */
+      if (/* is it pending at all? */
+          vg_dcss.dcss_sigpending[sig]
+          && 
+	  /* check it is not specifically directed to some other thread */
+          (vg_dcss.dcss_destthread[sig] == VG_INVALID_THREADID
+           || vg_dcss.dcss_destthread[sig] == tid)
+         )
+         maybe_pend = True;
+
+      if (!maybe_pend)
+         continue; /* this signal just ain't pending! */
+
+      /* Check other necessary conditions now ... */
+
+      if (VG_(ksigismember)( &VG_(threads)[tid].sigs_waited_for, sig ))
+         continue; /* tid is sigwaiting for sig, so will never be
+                      offered to a handler */
+      if (! VG_(ksigismember)( &VG_(threads)[tid].sig_mask, sig ))
+         continue; /* not blocked in this thread */
+
+      /* Ok, sig could be delivered to this thread if only it wasn't
+         masked out.  So we add it to set. */
+      VG_(ksigaddset)( set, sig );
+   }
+}
+
+
 /* ---------------------------------------------------------------------
    LOW LEVEL STUFF TO DO WITH SIGNALS: IMPLEMENTATION
    ------------------------------------------------------------------ */

@@ -505,7 +505,12 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__GET_KEY_D_AND_S         0x3022
 
 #define VG_USERREQ__NUKE_OTHER_THREADS      0x3023
+
+/* Ask how many signal handler returns have happened to this
+   thread. */
 #define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024
+
+
 
 
 /* Cosmetic ... */
@@ -824,6 +829,9 @@ extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
 extern void VG_(send_signal_to_thread) ( ThreadId thread,
                                          Int signo );
 
+extern void VG_(do_sigpending) ( ThreadId tid, vki_ksigset_t* set );
+
+
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
 extern Bool VG_(signal_returns) ( ThreadId );
@@ -981,6 +989,7 @@ extern Int VG_(ksignal)(Int signum, void (*sighandler)(Int));
 extern Int VG_(ksigaltstack)( const vki_kstack_t* ss, vki_kstack_t* oss );
 
 extern Int VG_(kill)( Int pid, Int signo );
+extern Int VG_(sigpending) ( vki_ksigset_t* set );
 
 
 /* ---------------------------------------------------------------------

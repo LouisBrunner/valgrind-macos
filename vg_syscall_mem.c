@@ -3096,6 +3096,26 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             make_readable( arg3, sizeof(vki_ksigset_t));
          break;
 
+      case __NR_sigpending: /* syscall 73 */
+#     if defined(__NR_rt_sigpending)
+      case __NR_rt_sigpending: /* syscall 176 */
+#     endif
+         /* int sigpending( sigset_t *set ) ; */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)( "sigpending ( %p )\n", arg1 );
+         must_be_writable( tst, "sigpending(set)", 
+                           arg1, sizeof(vki_ksigset_t));
+#        if SIGNAL_SIMULATION
+         VG_(do_sigpending)( tid, (vki_ksigset_t*)arg1 );
+         res = 0;
+	 SET_EAX(tid, res);
+#        else
+         KERNEL_DO_SYSCALL(tid, res);
+#        endif
+         if ( !VG_( is_kerror )( res ) && res == 0 )
+            make_readable( arg1, sizeof( vki_ksigset_t ) ) ;
+         break ;
+
       default:
          VG_(message)
             (Vg_DebugMsg,"FATAL: unhandled syscall: %d",syscallno);

@@ -287,6 +287,13 @@ Int VG_(kill)( Int pid, Int signo )
 }
 
 
+Int VG_(sigpending) ( vki_ksigset_t* set )
+{
+   Int res = vg_do_syscall1(__NR_sigpending, (UInt)set);
+   return VG_(is_kerror)(res) ? -1 : 0;
+}
+
+
 /* ---------------------------------------------------------------------
    mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */

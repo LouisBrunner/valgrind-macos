@@ -13,8 +13,9 @@ TOOLS =		memcheck \
 		lackey \
 		none
 
-SUBDIRS = 	include coregrind . docs tests auxprogs $(TOOLS)
-DIST_SUBDIRS =	$(SUBDIRS) helgrind
+# Temporary: we want to compile Helgrind, but not regtest it.
+SUBDIRS = 	include coregrind . docs tests auxprogs $(TOOLS) helgrind
+##DIST_SUBDIRS =	$(SUBDIRS) helgrind
 
 SUPP_FILES = \
 	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \

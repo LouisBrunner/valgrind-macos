@@ -2269,7 +2269,8 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    return cb;
 }
 #endif
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
+                        IRType gWordTy, IRType hWordTy )
 {
    VG_(message)(Vg_DebugMsg, "Helgrind is not yet ready to handle Vex IR");
    VG_(exit)(1);
@@ -3160,42 +3161,42 @@ static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
 
 VGA_REGPARM(1) static void eraser_mem_help_read_1(Addr a)
 {
-   eraser_mem_read(a, 1, VG_(get_VCPU_tid)());
+   eraser_mem_read(a, 1, VG_(get_running_tid)());
 }
 
 VGA_REGPARM(1) static void eraser_mem_help_read_2(Addr a)
 {
-   eraser_mem_read(a, 2, VG_(get_VCPU_tid)());
+   eraser_mem_read(a, 2, VG_(get_running_tid)());
 }
 
 VGA_REGPARM(1) static void eraser_mem_help_read_4(Addr a)
 {
-   eraser_mem_read(a, 4, VG_(get_VCPU_tid)());
+   eraser_mem_read(a, 4, VG_(get_running_tid)());
 }
 
 VGA_REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
 {
-   eraser_mem_read(a, size, VG_(get_VCPU_tid)());
+   eraser_mem_read(a, size, VG_(get_running_tid)());
 }
 
 VGA_REGPARM(2) static void eraser_mem_help_write_1(Addr a, UInt val)
 {
    if (*(UChar *)a != val)
-      eraser_mem_write(a, 1, VG_(get_VCPU_tid)());
+      eraser_mem_write(a, 1, VG_(get_running_tid)());
 }
 VGA_REGPARM(2) static void eraser_mem_help_write_2(Addr a, UInt val)
 {
    if (*(UShort *)a != val)
-      eraser_mem_write(a, 2, VG_(get_VCPU_tid)());
+      eraser_mem_write(a, 2, VG_(get_running_tid)());
 }
 VGA_REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
 {
    if (*(UInt *)a != val)
-      eraser_mem_write(a, 4, VG_(get_VCPU_tid)());
+      eraser_mem_write(a, 4, VG_(get_running_tid)());
 }
 VGA_REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
 {
-   eraser_mem_write(a, size, VG_(get_VCPU_tid)());
+   eraser_mem_write(a, size, VG_(get_running_tid)());
 }
 
 static void hg_thread_create(ThreadId parent, ThreadId child)
@@ -3224,14 +3225,14 @@ static Int __BUS_HARDWARE_LOCK__;
 
 static void bus_lock(void)
 {
-   ThreadId tid = VG_(get_VCPU_tid)();
+   ThreadId tid = VG_(get_running_tid)();
    eraser_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
    eraser_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
 }
 
 static void bus_unlock(void)
 {
-   ThreadId tid = VG_(get_VCPU_tid)();
+   ThreadId tid = VG_(get_running_tid)();
    eraser_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
 }
 
@@ -3342,7 +3343,7 @@ Bool TL_(process_cmd_line_option)(Char* arg)
    else if (VG_CLO_STREQ(arg, "--show-last-access=all"))
       clo_execontext = EC_All;
 
-   else VG_BOOL_CLO("--private-stacks", clo_priv_stacks)
+   else VG_BOOL_CLO(arg, "--private-stacks", clo_priv_stacks)
 
    else 
       return VG_(replacement_malloc_process_cmd_line_option)(arg);

@@ -821,7 +821,7 @@ static void load_one_suppressions_file ( Char* filename )
 
       if (eof) goto syntax_error;
 
-      /* Check it has the "skin1,skin2,...:supp" form (look for ':') */
+      /* Check it has the "tool1,tool2,...:supp" form (look for ':') */
       i = 0;
       while (True) {
          if (buf[i] == ':')  break;

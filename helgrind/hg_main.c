@@ -53,9 +53,9 @@ static UInt n_lockorder_warnings = 0;
 #define DEBUG_VIRGIN_READS  0   /* Dump around address on VIRGIN reads */
 
 #if SLOW_ASSERTS
-#define SK_ASSERT(x)	tl_assert(x)
+#define TL_ASSERT(x)	tl_assert(x)
 #else
-#define SK_ASSERT(x)
+#define TL_ASSERT(x)
 #endif
 
 /* heavyweight LockSet sanity checking:
@@ -240,7 +240,7 @@ typedef struct EC_IP {
 
 static inline UInt packEC(ExeContext *ec)
 {
-   SK_ASSERT(((UWord)ec & ((1 << STATE_BITS)-1)) == 0);
+   TL_ASSERT(((UWord)ec & ((1 << STATE_BITS)-1)) == 0);
    return ((UWord)ec) >> STATE_BITS;
 }
 
@@ -445,7 +445,7 @@ static Bool tlsIsDisjoint(const ThreadLifeSeg *tls,
 
 static inline UInt packTLS(ThreadLifeSeg *tls)
 {
-   SK_ASSERT(((UWord)tls & ((1 << STATE_BITS)-1)) == 0);
+   TL_ASSERT(((UWord)tls & ((1 << STATE_BITS)-1)) == 0);
    return ((UWord)tls) >> STATE_BITS;
 }
 
@@ -656,7 +656,7 @@ static inline UInt packLockSet(const LockSet *p)
 {
    UInt id;
 
-   SK_ASSERT(((UWord)p & ((1 << STATE_BITS)-1)) == 0);
+   TL_ASSERT(((UWord)p & ((1 << STATE_BITS)-1)) == 0);
    id = ((UWord)p) >> STATE_BITS;
 
    return id;

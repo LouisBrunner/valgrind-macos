@@ -353,7 +353,7 @@ In what follows, all filenames are relative to Valgrind's top-level directory
       occurrence of the string ``<code>nl_</code>'' with ``<code>fb_</code>''.
       It might be worth trying to understand this file, at least a little;  you
       might have to do more complicated things with it later on.  In
-      particular, the name of the <code>vgskin_foobar_so_SOURCES</code> variable
+      particular, the name of the <code>vgtool_foobar_so_SOURCES</code> variable
       determines the name of the tool's shared object, which determines what
       name must be passed to the <code>--tool</code> option to use the tool.
   </li><p>
@@ -381,7 +381,7 @@ In what follows, all filenames are relative to Valgrind's top-level directory
     make install</pre>
 
       It should automake, configure and compile without errors, putting copies
-      of the tool's shared object <code>vgskin_foobar.so</code> in
+      of the tool's shared object <code>vgtool_foobar.so</code> in
       <code>foobar/</code> and
       <code>inst/lib/valgrind/</code>.
   </li><p>
@@ -428,9 +428,8 @@ A tool must define at least these four functions:
 
 Also, it must use the macro <code>VG_DETERMINE_INTERFACE_VERSION</code>
 exactly once in its source code.  If it doesn't, you will get a link error
-involving <code>VG_(skin_interface_major_version)</code>.  This macro is
-used to ensure the core/tool interface used by the core and a plugged-in
-tool are binary compatible.
+explaining the problem.  This macro is used to ensure the core/tool interface
+used by the core and a plugged-in tool are binary compatible.
 
 In addition, if a tool wants to use some of the optional services provided by
 the core, it may have to define other functions.

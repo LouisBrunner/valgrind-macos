@@ -168,7 +168,7 @@ extern Bool  VG_(clo_profile);
 
 /* Call this if a recognised option was bad for some reason.
    Note: don't use it just because an option was unrecognised -- return 'False'
-   from SKN_(process_cmd_line_option) to indicate that. */
+   from TL_(process_cmd_line_option) to indicate that. */
 extern void VG_(bad_option) ( Char* opt );
 
 /* Client args */
@@ -480,12 +480,12 @@ extern Bool VG_(getcwd_alloc) ( Char** cwd );
 
 #define tl_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \
-	   (VG_(skin_assert_fail) (VG__STRING(expr),	              \
+	   (VG_(tool_assert_fail) (VG__STRING(expr),	              \
 			           __FILE__, __LINE__,                \
                                    __PRETTY_FUNCTION__), 0)))
 
 __attribute__ ((__noreturn__))
-extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file,
+extern void VG_(tool_assert_fail) ( const Char* expr, const Char* file,
                                     Int line, const Char* fn );
 
 

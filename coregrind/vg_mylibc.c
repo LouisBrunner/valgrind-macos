@@ -1153,7 +1153,7 @@ static void assert_fail ( const Char* expr, const Char* name, const Char* report
    report_and_quit(report, NULL);
 }
 
-void VG_(skin_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
+void VG_(tool_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
    assert_fail(expr, VG_(details).name, VG_(details).bug_reports_to, 
                file, line, fn);

@@ -60,9 +60,10 @@ int main ( int argc, char** argv )
    UInt u, sum;
    Addr32 orig_addr;
    Int bb_number, n_bbs_done = 0;
-   Int orig_nbytes, trans_used, orig_used;
+   Int orig_nbytes, trans_used;
    VexTranslateResult tres;
    VexControl vcon;
+   VexGuestExtents vge;
 
    if (argc != 2) {
       fprintf(stderr, "usage: vex file.org\n");
@@ -124,7 +125,7 @@ int main ( int argc, char** argv )
                  VexArchX86, VexSubArchX86_sse2, 
                  VexArchX86, VexSubArchX86_sse2,
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,
-                 &orig_used,
+                 &vge,
                  transbuf, N_TRANSBUF, &trans_used,
 #if 1 /* no instrumentation */
                  NULL,          /* instrument1 */
@@ -148,12 +149,13 @@ int main ( int argc, char** argv )
       if (tres != VexTransOK)
          printf("\ntres = %d\n", (Int)tres);
       assert(tres == VexTransOK);
-      assert(orig_used == orig_nbytes);
+      assert(vge.n_used == 1);
+      assert((UInt)(vge.len[0]) == orig_nbytes);
 
       sum = 0;
       for (i = 0; i < trans_used; i++)
          sum += (UInt)transbuf[i];
-      printf ( " %6.2f ... %d\n", (double)trans_used / (double)orig_used, sum );
+      printf ( " %6.2f ... %d\n", (double)trans_used / (double)vge.len[0], sum );
    }
 
    fclose(f);

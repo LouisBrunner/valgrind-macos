@@ -47,13 +47,13 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_X86 ( UChar*     x86code, 
-                   Addr64     eip, 
-                   Int*       guest_bytes_read, 
-                   Bool       (*byte_accessible)(Addr64),
-                   Bool       (*resteerOkFn)(Addr64),
-                   Bool       host_bigendian,
-                   VexSubArch subarch_guest );
+IRBB* bbToIR_X86 ( UChar*           x86code, 
+                   Addr64           eip, 
+                   VexGuestExtents* vge,
+                   Bool             (*byte_accessible)(Addr64),
+                   Bool             (*resteerOkFn)(Addr64),
+                   Bool             host_bigendian,
+                   VexSubArch       subarch_guest );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern

@@ -214,6 +214,7 @@ extern void LibVEX_Init (
 /*--- Make a translation                              ---*/
 /*-------------------------------------------------------*/
 
+/* Describes the outcome of a translation attempt. */
 typedef
    enum { 
       VexTransOK, 
@@ -221,6 +222,24 @@ typedef
       VexTransOutputFull 
    }
    VexTranslateResult;
+
+
+/* Describes precisely the pieces of guest code that a translation
+   covers.  Now that Vex can chase across BB boundaries, the old
+   scheme of describing a chunk of guest code merely by its start
+   address and length is inadequate.
+
+   Hopefully this struct is only 32 bytes long.  Space is important as
+   clients will have to store one of these for each translation made.
+*/
+typedef
+   struct {
+      Addr64 base[3];
+      UShort len[3];
+      UShort n_used;
+   }
+   VexGuestExtents;
+
 
 extern 
 VexTranslateResult LibVEX_Translate (
@@ -233,8 +252,8 @@ VexTranslateResult LibVEX_Translate (
    UChar*  guest_bytes,
    Addr64  guest_bytes_addr,
    Bool    (*chase_into_ok) ( Addr64 ),
-   /* OUT: the number of bytes actually read */
-   Int*    guest_bytes_read,
+   /* OUT: which bits of guest code actually got translated */
+   VexGuestExtents* guest_extents,
    /* IN: a place to put the resulting code, and its size */
    UChar*  host_bytes,
    Int     host_bytes_size,

@@ -164,8 +164,8 @@ VexTranslateResult LibVEX_Translate (
    UChar*  guest_bytes,
    Addr64  guest_bytes_addr,
    Bool    (*chase_into_ok) ( Addr64 ),
-   /* OUT: the number of bytes actually read */
-   Int*    guest_bytes_read,
+   /* OUT: which bits of guest code actually got translated */
+   VexGuestExtents* guest_extents,
    /* IN: a place to put the resulting code, and its size */
    UChar*  host_bytes,
    Int     host_bytes_size,
@@ -194,9 +194,11 @@ VexTranslateResult LibVEX_Translate (
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
    HInstrArray* (*iselBB)      ( IRBB*, VexSubArch );
-   IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
+   IRBB*        (*bbToIR)      ( UChar*, Addr64, 
+                                 VexGuestExtents*, 
                                  Bool(*)(Addr64), 
-                                 Bool(*)(Addr64), Bool, VexSubArch );
+                                 Bool(*)(Addr64), 
+                                 Bool, VexSubArch );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -252,7 +254,7 @@ VexTranslateResult LibVEX_Translate (
          ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
-	 host_is_bigendian = False;
+         host_is_bigendian = False;
          host_word_type    = Ity_I32;
          vassert(subarch_host == VexSubArchX86_sse0
                  || subarch_host == VexSubArchX86_sse1
@@ -305,11 +307,11 @@ VexTranslateResult LibVEX_Translate (
                    "------------------------\n\n");
 
    irbb = bbToIR ( guest_bytes, 
-		   guest_bytes_addr,
-		   guest_bytes_read,
-		   byte_accessible,
+                   guest_bytes_addr,
+                   guest_extents,
+                   byte_accessible,
                    chase_into_ok,
-		   host_is_bigendian,
+                   host_is_bigendian,
                    subarch_guest );
 
    if (irbb == NULL) {
@@ -319,13 +321,25 @@ VexTranslateResult LibVEX_Translate (
       return VexTransAccessFail;
    }
 
+   vassert(guest_extents->n_used >= 1 && guest_extents->n_used <= 3);
+   vassert(guest_extents->base[0] == guest_bytes_addr);
+   for (i = 0; i < guest_extents->n_used; i++) {
+      vassert(guest_extents->len[i] < 10000); /* sanity */
+   }
+
    /* If debugging, show the raw guest bytes for this bb. */
    if (0 || (vex_traceflags & VEX_TRACE_FE)) {
-      UChar* p = guest_bytes;
-      vex_printf(". 0 %llx %d\n.", guest_bytes_addr, *guest_bytes_read );
-      for (i = 0; i < *guest_bytes_read; i++)
+      if (guest_extents->n_used > 1) {
+         vex_printf("can't show code due to extents > 1\n");
+      } else {
+         /* HACK */
+         UChar* p = (UChar*)guest_bytes;
+         UInt   guest_bytes_read = (UInt)guest_extents->len[0];
+         vex_printf(". 0 %llx %d\n.", guest_bytes_addr, guest_bytes_read );
+         for (i = 0; i < guest_bytes_read; i++)
          vex_printf(" %02x", (Int)p[i] );
-      vex_printf("\n\n");
+         vex_printf("\n\n");
+      }
    }
 
    /* Sanity check the initial IR. */
@@ -414,10 +428,10 @@ VexTranslateResult LibVEX_Translate (
 
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,
-                  	       	  n_available_real_regs,
-			          isMove, getRegUsage, mapRegs, 
-			          genSpill, genReload, guest_sizeB,
-				  ppInstr, ppReg );
+                                           n_available_real_regs,
+                                  isMove, getRegUsage, mapRegs, 
+                                  genSpill, genReload, guest_sizeB,
+                                  ppInstr, ppReg );
 
    if (vex_traceflags & VEX_TRACE_RCODE) {
       vex_printf("\n------------------------" 
@@ -447,7 +461,7 @@ VexTranslateResult LibVEX_Translate (
       j = (*emit)( insn_bytes, 32, rcode->arr[i] );
       if (vex_traceflags & VEX_TRACE_ASM) {
          for (k = 0; k < j; k++)
-	    if (insn_bytes[k] < 16)
+            if (insn_bytes[k] < 16)
                vex_printf("0%x ",  (UInt)insn_bytes[k]);
             else
                vex_printf("%x ", (UInt)insn_bytes[k]);

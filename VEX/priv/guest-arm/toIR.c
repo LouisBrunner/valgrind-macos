@@ -161,13 +161,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    dumping the IR into global irbb.  Returns the size, in bytes, of
    the basic block.  
 */
-IRBB* bbToIR_ARM ( UChar*     armCode, 
-                   Addr64     guest_pc_start, 
-                   Int*       guest_bytes_read, 
-                   Bool       (*byte_accessible)(Addr64),
-                   Bool       (*chase_into_ok)(Addr64),
-                   Bool       host_bigendian,
-                   VexSubArch subarch_guest )
+IRBB* bbToIR_ARM ( UChar*           armCode, 
+                   Addr64           guest_pc_start, 
+                   VexGuestExtents* vge,
+                   Bool             (*byte_accessible)(Addr64),
+                   Bool             (*chase_into_ok)(Addr64),
+                   Bool             host_bigendian,
+                   VexSubArch       subarch_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -179,11 +179,16 @@ IRBB* bbToIR_ARM ( UChar*     armCode,
 
    /* check sanity .. */
    vassert(vex_control.guest_max_insns >= 1);
-   vassert(vex_control.guest_max_insns < 1000);
+   vassert(vex_control.guest_max_insns < 500);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
    vassert(subarch_guest == VexSubArchARM_v4);
+
+   /* Start a new, empty extent. */
+   vge->n_used  = 1;
+   vge->base[0] = guest_pc_start;
+   vge->len[0]  = 0;
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
@@ -197,7 +202,6 @@ IRBB* bbToIR_ARM ( UChar*     armCode,
       have so far gone. */
    delta             = 0;
    n_instrs          = 0;
-   *guest_bytes_read = 0;
 
    while (True) {
       vassert(n_instrs < vex_control.guest_max_insns);
@@ -237,7 +241,7 @@ IRBB* bbToIR_ARM ( UChar*     armCode,
       }
 
       delta += size;
-      *guest_bytes_read += size;
+      vge->len[vge->n_used-1] += size;
       n_instrs++;
       DIP("\n");
 
@@ -261,6 +265,8 @@ IRBB* bbToIR_ARM ( UChar*     armCode,
             vassert(irbb->next != NULL);
             return irbb;
          case Dis_Resteer:
+            vpanic("bbToIR_ARM: Dis_Resteer: fixme");
+	    /* need to add code here to start a new extent ... */
             vassert(irbb->next == NULL);
             /* figure out a new delta to continue at. */
             vassert(chase_into_ok(guest_next));
@@ -279,7 +285,7 @@ IRBB* bbToIR_ARM ( UChar*     armCode,
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
-/*--- x86 insn stream.                                     ---*/
+/*--- ARM insn stream.                                     ---*/
 /*------------------------------------------------------------*/
 
 /* Add a statement to the list held by "irbb". */

@@ -227,13 +227,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 /* Disassemble a complete basic block, starting at eip, and dumping
    the ucode into cb.  Returns the size, in bytes, of the basic
    block. */
-IRBB* bbToIR_X86 ( UChar*     x86code, 
-                   Addr64     guest_eip_start, 
-                   Int*       guest_bytes_read, 
-                   Bool       (*byte_accessible)(Addr64),
-                   Bool       (*chase_into_ok)(Addr64),
-                   Bool       host_bigendian,
-                   VexSubArch subarch_guest )
+IRBB* bbToIR_X86 ( UChar*           x86code, 
+                   Addr64           guest_eip_start, 
+                   VexGuestExtents* vge, 
+                   Bool             (*byte_accessible)(Addr64),
+                   Bool             (*chase_into_ok)(Addr64),
+                   Bool             host_bigendian,
+                   VexSubArch       subarch_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -245,7 +245,7 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
 
    /* check sanity .. */
    vassert(vex_control.guest_max_insns >= 1);
-   vassert(vex_control.guest_max_insns < 1000);
+   vassert(vex_control.guest_max_insns < 500);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
@@ -254,6 +254,11 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
            || subarch_guest == VexSubArchX86_sse2);
 
    vassert((guest_eip_start >> 32) == 0);
+
+   /* Start a new, empty extent. */
+   vge->n_used  = 1;
+   vge->base[0] = guest_eip_start;
+   vge->len[0]  = 0;
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
@@ -266,13 +271,17 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
       have so far gone. */
    delta             = 0;
    n_instrs          = 0;
-   *guest_bytes_read = 0;
 
    while (True) {
       vassert(n_instrs < vex_control.guest_max_insns);
 
       guest_next = 0;
-      resteerOK = n_instrs < vex_control.guest_chase_thresh;
+      resteerOK 
+         = n_instrs < vex_control.guest_chase_thresh
+           /* we can't afford to have a resteer once we're on the last
+              extent slot. */
+           && vge->n_used < 3;
+
       first_stmt_idx = irbb->stmts_used;
 
       if (n_instrs > 0) {
@@ -309,7 +318,7 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
       }
 
       delta += size;
-      *guest_bytes_read += size;
+      vge->len[vge->n_used-1] += size;
       n_instrs++;
       DIP("\n");
 
@@ -337,6 +346,11 @@ IRBB* bbToIR_X86 ( UChar*     x86code,
             /* figure out a new delta to continue at. */
             vassert(chase_into_ok(guest_next));
             delta = (UInt)(guest_next - guest_eip_start);
+            /* we now have to start a new extent slot. */
+	    vge->n_used++;
+	    vassert(vge->n_used <= 3);
+            vge->base[vge->n_used-1] = guest_next;
+            vge->len[vge->n_used-1] = 0;
             n_resteers++;
             d_resteers++;
             if (0 && (n_resteers & 0xFF) == 0)

@@ -390,6 +390,8 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
                         IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
                         UInt* dataSize)
 {
+   tl_assert(isFlatIRStmt(st));
+
    switch (st->tag) {
    case Ist_NoOp:
       break;
@@ -436,10 +438,29 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       break;
    }
    
+   case Ist_Dirty: {
+      IRDirty* d = st->Ist.Dirty.details;
+      if (d->mFx != Ifx_None) {
+         /* This dirty helper accesses memory.  Collect the
+            details. */
+         tl_assert(d->mAddr != NULL);
+         tl_assert(d->mSize != 0);
+         *dataSize = d->mSize;
+         if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+            *loadAddrExpr = d->mAddr;
+         if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+            *storeAddrExpr = d->mAddr;
+      } else {
+         tl_assert(d->mAddr == NULL);
+         tl_assert(d->mSize == 0);
+      }
+      addStmtToIRBB( bbOut, st );
+      break;
+   }
+
    case Ist_Put:
    case Ist_PutI:
    case Ist_Exit:
-   case Ist_Dirty:
    case Ist_MFence:
       addStmtToIRBB( bbOut, st );
       break;

@@ -1,0 +1,63 @@
+
+Cleanup notes.  JRS, started 2 March 05.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following cleanups need to be done.
+
+AMD64 vsyscalls
+~~~~~~~~~~~~~~~
+The redirect mechanism should (could) be used to support vsyscalls on
+both amd64 and x86, by redirecting jumps to the vsyscall entry
+point(s) to appropriate helper stubs instead.  There is no point in
+using the current x86 scheme of copying the trampoline code around the
+place and making the AT_SYSINFO entry point at it, as that mechanism
+does not work on amd64.
+
+On x86-linux, the vsyscall address is whatever the AT_SYSINFO entry
+says it is.  Reroute all jumps to that to a suitable stub.
+
+On amd64, there are multiple vsyscall entry points at -10M +
+1024*vsyscall_no (currently there are only two). These each need to be
+redirected to suitable stubs which do normal syscalls instead.
+
+These redirects should be set up as part of platform-specific
+initialisation sequences.  They should not be set up as at present in
+vg_symtab2.c.  All this stuff should be within platform-specific
+startup code, and should not be visible in generic core service code.
+
+
+Redirection mechanism
+~~~~~~~~~~~~~~~~~~~~~
+Uses the skiplist mechanism.  How it works is opaque and undocumented.
+This code should be ripped out and replaced with something
+maintainable.  The list of unresolved redirections should be a
+seperate data structure from the currently active (addr, addr)
+mapping.
+
+There's a whole big #ifdef TEST section in vg_symtab2.c which has
+no apparent purpose.
+
+
+System call handlers
+~~~~~~~~~~~~~~~~~~~~
+The pre/post functions should be factored into: marshallers, which get
+the syscall args from wherever they live, and handlers proper, which
+do whatever pre/post checks/hanldling is needed.  The handlers are
+more or less platform independent.  The marshallers insulate the
+handlers from details of knowing how to get hold of syscall arg/result
+values given that different platforms use different and sometimes
+strange calling conventions.
+
+The syscall handlers assume that the result register (RES) does not
+overlap with any argument register (ARGn).  They assume this by
+blithely referring to ARGn in the post-handlers.  This should be fixed
+properly -- before the call, a copy of the args should be saved so
+they can be safely inspected after the call.
+
+The mechanisms by which a pre-handler can complete a syscall itself
+without handing it off to the kernel need to be cleaned up.  The
+"Special" syscall designation no longer really makes sense (it never
+did) and should be removed.
+
+
+

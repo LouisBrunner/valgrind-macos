@@ -1495,10 +1495,10 @@ void VG_(sigshutdown_actions) ( void )
          VG_(printf)("restoring handler 0x%x for signal %d\n", 
                      (Addr)(sa.ksa_handler), i );
 
-      /* Get the old host action */
+      /* Set the old host action */
       ret = VG_(ksigaction)(i, &sa, NULL);
-      vg_assert(ret == 0);
-
+      if (i != VKI_SIGKILL && i != VKI_SIGSTOP) 
+         vg_assert(ret == 0);
    }
 
    /* Restore the sig alt stack. */

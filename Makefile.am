@@ -18,7 +18,7 @@ AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 
 valdir = $(libdir)/valgrind
 
-SUPP_FILES = glibc-2.1.supp glibc-2.2.supp xfree-3.supp xfree-4.supp
+SUPP_FILES = glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp xfree-3.supp xfree-4.supp
 
 val_DATA = $(SUPP_FILES) default.supp
 

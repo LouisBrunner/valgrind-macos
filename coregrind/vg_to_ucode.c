@@ -54,19 +54,6 @@
 #define VG_CPU_VENDOR_INTEL	1
 #define VG_CPU_VENDOR_AMD	2
 
-static Int cpu_vendor = VG_CPU_VENDOR_GENERIC;
-
-static const struct cpu_vendor {
-	const Char *vendorstr;
-	Int	    vendorid;
-} cpu_vendors[] = {
-	{ "GenuineIntel", VG_CPU_VENDOR_INTEL },
-	{ "AuthenticAMD", VG_CPU_VENDOR_AMD },
-};
-
-static Int cpuid_level = -2;	/* -2 -> not initialized */
-static UInt cpu_features[VG_N_FEATURE_WORDS];
-
 /* Standard macro to see if a specific flag is changeable */
 static inline Bool flag_is_changeable(UInt flag)
 {
@@ -95,52 +82,67 @@ static Bool has_cpuid(void)
    return flag_is_changeable(EFlagID);
 }
 
-static void get_cpu_features(void)
+// Returns the CPU features, and also the vendorid.  Only ever calls CPUID
+// once, and caches the necessary info in static variables for later reuse.
+static UInt* get_cpu_features(Int* cpu_vendorid_ptr)
 {
    Char vendorstr[13];
-   Int i;
+   Int  i, cpuid_level;
+   static Bool done_before = False;
+   static Int  cpu_vendorid = VG_CPU_VENDOR_GENERIC;
+   static UInt cpu_features[VG_N_FEATURE_WORDS];
+   static const struct {
+      const Char *vendorstr;
+      Int   vendorid;
+   } cpu_vendors[] = {
+      { "GenuineIntel", VG_CPU_VENDOR_INTEL },
+      { "AuthenticAMD", VG_CPU_VENDOR_AMD },
+   };
 
-   if (!has_cpuid()) {
-      cpuid_level = -1;
-      return;
-   }
+   // If we haven't already worked this stuff out...
+   if (!done_before && has_cpuid()) {
 
-   cpu_features[VG_INT_FEAT] |= (1 << (VG_X86_FEAT_CPUID%32));
+      cpu_features[VG_INT_FEAT] |= (1 << (VG_X86_FEAT_CPUID%32));
 
-   VG_(cpuid)(0, &cpuid_level, (UInt *)&vendorstr[0], (UInt *)&vendorstr[8], (UInt *)&vendorstr[4]);
-   vendorstr[12] = '\0';
+      // Get vendor string, eg. "GenuineIntel".  Note characteristically
+      // stupid word order chosen by Intel.
+      VG_(cpuid)(0, &cpuid_level, (UInt *)&vendorstr[0],
+                                  (UInt *)&vendorstr[8],
+                                  (UInt *)&vendorstr[4]);
+      vendorstr[12] = '\0';
 
-   for(i = 0; i < sizeof(cpu_vendors)/sizeof(*cpu_vendors); i++)
-      if (VG_(memcmp)(vendorstr, cpu_vendors[i].vendorstr, 12) == 0) {
-	 cpu_vendor = cpu_vendors[i].vendorid;
-	 break;
+      // Determine vendor ID
+      for (i = 0; i < sizeof(cpu_vendors)/sizeof(*cpu_vendors); i++)
+         if (VG_(memcmp)(vendorstr, cpu_vendors[i].vendorstr, 12) == 0) {
+            cpu_vendorid = cpu_vendors[i].vendorid;
+            break;
+         }
+
+      // Determine CPU features
+      if (cpuid_level >= 1)
+         VG_(cpuid)(1, NULL, NULL, &cpu_features[VG_EXT_FEAT],
+                                   &cpu_features[VG_X86_FEAT]);
+
+      if (VG_CPU_VENDOR_AMD == cpu_vendorid) {
+         /* get AMD-specific flags */
+         VG_(cpuid)(0x80000001, NULL, NULL, NULL, &cpu_features[VG_AMD_FEAT]);
       }
-
-   if (cpuid_level >= 1)
-      VG_(cpuid)(1, NULL, NULL, &cpu_features[VG_EXT_FEAT], &cpu_features[VG_X86_FEAT]);
-
-   switch(cpu_vendor) {
-   case VG_CPU_VENDOR_AMD:
-      /* get AMD-specific flags */
-      VG_(cpuid)(0x80000001, NULL, NULL, NULL, &cpu_features[VG_AMD_FEAT]);
-      break;
-
-   default:
-      break;
    }
+   if (NULL != cpu_vendorid_ptr) *cpu_vendorid_ptr = cpu_vendorid;
+   return cpu_features;
 }
 
 Bool VG_(cpu_has_feature)(UInt feature)
 {
-   UInt word = feature / 32;
-   UInt bit  = feature % 32;
-
-   if (cpuid_level == -2)
-      get_cpu_features();
+   UInt  word = feature / 32;
+   UInt  bit  = feature % 32;
+   UInt* cpu_features;
 
    vg_assert(word >= 0 && word < VG_N_FEATURE_WORDS);
 
-   return !!(cpu_features[word] & (1 << bit));
+   cpu_features = get_cpu_features(NULL);
+
+   return !!( cpu_features[word] & (1 << bit) );
 }
 
 /* The set of features we're willing to support for the client
@@ -229,12 +231,17 @@ Bool VG_(cpu_has_feature)(UInt feature)
    Updated to be more extensible about future vendor extensions and
    vendor-specific parts of CPUID.
 */
-void VG_(helperc_CPUID)(UInt op, UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
+void VG_(helperc_CPUID)(UInt op, UInt *eax_ret, UInt *ebx_ret,
+                                 UInt *ecx_ret, UInt *edx_ret)
 {
    UInt eax, ebx, ecx, edx;
+   Int  cpu_vendorid;
 
-   if (cpuid_level == -2)
-      get_cpu_features();	/* for cpu_vendor */
+   // This function should not be called unless the CPU has CPUID.
+   vg_assert( VG_(cpu_has_feature)(VG_X86_FEAT_CPUID) );
+
+   // Get vendor ID.
+   get_cpu_features( &cpu_vendorid );
 
    VG_(cpuid)(op, &eax, &ebx, &ecx, &edx);
 
@@ -257,7 +264,7 @@ void VG_(helperc_CPUID)(UInt op, UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UI
    }
 
    /* Vendor-specific mangling of the results */
-   switch(cpu_vendor) {
+   switch (cpu_vendorid) {
    case VG_CPU_VENDOR_INTEL:
       switch(op) {
       case 1:

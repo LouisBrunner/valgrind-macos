@@ -361,6 +361,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
                     ? 1 : 0));
             break;
+         case Iop_1Sto32:
+            e2 = IRExpr_Const(IRConst_U32(
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    ? 0xFFFFFFFF : 0));
+            break;
          case Iop_8Sto32: {
             /* signed */ Int s32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
             s32 <<= 24;
@@ -393,6 +398,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
+         case Iop_Not8:
+            e2 = IRExpr_Const(IRConst_U8(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U8)));
+            break;
          default: 
             goto unhandled;
       }
@@ -404,6 +413,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
           && e->Iex.Binop.arg2->tag == Iex_Const) {
          /* cases where both args are consts */
          switch (e->Iex.Binop.op) {
+            case Iop_Or8:
+               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+               break;
             case Iop_Xor8:
                e2 = IRExpr_Const(IRConst_U8(0xFF & 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -497,6 +511,12 @@ static IRExpr* fold_Expr ( IRExpr* e )
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
 
+            case Iop_CmpNE8:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
+                        != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+
             case Iop_CmpLE32U:
                e2 = IRExpr_Const(IRConst_Bit(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
@@ -533,11 +553,18 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg1;
          } else
 
-         /* Add32(x,0) ==> x */
-         if (e->Iex.Binop.op == Iop_Add32
+         /* Or32/Add32(x,0) ==> x */
+         if ((e->Iex.Binop.op == Iop_Add32 || e->Iex.Binop.op == Iop_Or32)
              && e->Iex.Binop.arg2->tag == Iex_Const
              && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
             e2 = e->Iex.Binop.arg1;
+         } else
+
+         /* Or32(0,x) ==> x */
+         if (e->Iex.Binop.op == Iop_Or32
+             && e->Iex.Binop.arg1->tag == Iex_Const
+             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
+            e2 = e->Iex.Binop.arg2;
          } else
 
          /* And8/16/32(t,t) ==> t, for some IRTemp t */
@@ -762,7 +789,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 }
 
 
-static IRBB* cprop_BB ( IRBB* in )
+IRBB* cprop_BB ( IRBB* in )
 {
    Int      i;
    IRBB*    out;
@@ -924,6 +951,14 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
 }
 
 
+/* Is this literally IRExpr_Const(IRConst_Bit(False)) ? */
+static Bool isZeroBit ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_Bit
+          && e->Iex.Const.con->Ico.Bit == False;
+}
+
 
 /* Note, this destructively modifies the given IRBB. */
 
@@ -959,7 +994,15 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
             vex_printf("\n");
          }
          bb->stmts[i] = NULL;
-      } else {
+      }
+      else
+      if (st->tag == Ist_Dirty
+          && st->Ist.Dirty.details->guard
+          && isZeroBit(st->Ist.Dirty.details->guard)) {
+         /* This is a dirty helper which will never get called.  Delete it. */
+         bb->stmts[i] = NULL;
+       }
+       else {
          /* Note any IRTemp uses made by the current statement. */
          addUses_Stmt(set, st);
       }

@@ -426,6 +426,9 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
 #define VG_USERREQ__PTHREAD_ERROR           0x3102
+/* Write a string to the logging sink. */
+#define VG_USERREQ__LOGMESSAGE              0x3103
+
 
 /* 
 In vg_constants.h:

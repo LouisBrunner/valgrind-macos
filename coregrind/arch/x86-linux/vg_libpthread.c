@@ -159,39 +159,43 @@ static
 __attribute__((noreturn))
 void barf ( char* str )
 {
-   char buf[100];
+   int res;
+   char buf[1000];
    buf[0] = 0;
    strcat(buf, "\nvalgrind's libpthread.so: ");
    strcat(buf, str);
    strcat(buf, "\n\n");
-   my_write(2, buf, strlen(buf));
+   VALGRIND_MAGIC_SEQUENCE(res, 0, /* irrelevant default */
+                           VG_USERREQ__LOGMESSAGE, buf, 0, 0, 0);
    my_exit(1);
    /* We have to persuade gcc into believing this doesn't return. */
    while (1) { };
 }
 
 
-static void ignored ( char* msg )
+static void cat_n_send ( char* pre, char* msg )
 {
+   char  buf[1000];
+   int   res;
    if (get_pt_trace_level() >= 0) {
-      char* ig = "valgrind's libpthread.so: IGNORED call to: ";
-      my_write(2, ig, strlen(ig));
-      my_write(2, msg, strlen(msg));
-      ig = "\n";
-      my_write(2, ig, strlen(ig));
+      snprintf(buf, sizeof(buf), "%s%s", pre, msg );
+      buf[sizeof(buf)-1] = '\0';
+      VALGRIND_MAGIC_SEQUENCE(res, 0, /* irrelevant default */
+                              VG_USERREQ__LOGMESSAGE, buf, 0, 0, 0);
    }
 }
 
+static void ignored ( char* msg )
+{
+   cat_n_send ( "valgrind's libpthread.so: IGNORED call to: ", msg );
+}
+
+
 static void kludged ( char* msg )
 {
-   if (get_pt_trace_level() >= 0) {
-      char* ig = "valgrind's libpthread.so: KLUDGED call to: ";
-      my_write(2, ig, strlen(ig));
-      my_write(2, msg, strlen(msg));
-      ig = "\n";
-      my_write(2, ig, strlen(ig));
-   }
+   cat_n_send ( "valgrind's libpthread.so: KLUDGED call to: ", msg );
 }
+
 
 static void not_inside ( char* msg )
 {
@@ -201,11 +205,8 @@ static void not_inside ( char* msg )
 __attribute__((noreturn))
 void vgPlain_unimp ( char* what )
 {
-   char* ig = "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ";
-   my_write(2, ig, strlen(ig));
-   my_write(2, what, strlen(what));
-   ig = "\n";
-   my_write(2, ig, strlen(ig));
+   cat_n_send ( 
+      "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ", what );
    barf("Please report this bug to me at: jseward@acm.org");
 }
 
@@ -213,14 +214,17 @@ void vgPlain_unimp ( char* what )
 static
 void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
 {
+   char buf[1000];
    static Bool entered = False;
    if (entered) 
       my_exit(2);
    entered = True;
-   fprintf(stderr, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
-                   "valgrind", file, line, fn, expr );
-   fprintf(stderr, "Please report this bug to me at: %s\n\n", 
-                   VG_EMAIL_ADDR);
+   sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
+                "valgrind", file, line, fn, expr );
+   cat_n_send ( "", buf );
+   sprintf(buf, "Please report this bug to me at: %s\n\n", 
+                 VG_EMAIL_ADDR);
+   cat_n_send ( "", buf );
    my_exit(1);
 }
 

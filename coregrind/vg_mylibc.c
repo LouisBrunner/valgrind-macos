@@ -641,6 +641,10 @@ Bool VG_(isspace) ( Char c )
    return (c == ' ' || c == '\n' || c == '\t' || c == 0);
 }
 
+Bool VG_(isdigit) ( Char c )
+{
+   return (c >= '0' && c <= '9');
+}
 
 Int VG_(strlen) ( const Char* str )
 {

@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------*/
 /*--- The cache simulation framework: instrumentation, recording   ---*/
 /*--- and results printing.                                        ---*/
@@ -30,6 +29,8 @@
    The GNU General Public License is contained in the file LICENSE.
 */
 
+#include <signal.h>
+
 #include "vg_include.h"
 
 #include "vg_cachesim_L2.c"
@@ -38,15 +39,30 @@
 
 
 /* According to IA-32 Intel Architecture Software Developer's Manual: Vol 2 */
-#define MAX_x86_INSTR_SIZE  16
+#define MAX_x86_INSTR_SIZE              16
 
 /* Size of various buffers used for storing strings */
-#define FILENAME_LEN                      256
-#define FN_NAME_LEN                       256
-#define BUF_LEN                           512
-#define COMMIFY_BUF_LEN                   128
-#define RESULTS_BUF_LEN                   128
-#define LINE_BUF_LEN                       64
+#define FILENAME_LEN                    256
+#define FN_NAME_LEN                     256
+#define BUF_LEN                         512
+#define COMMIFY_BUF_LEN                 128
+#define RESULTS_BUF_LEN                 128
+#define LINE_BUF_LEN                     64
+
+/*------------------------------------------------------------*/
+/*--- Generic utility stuff                                ---*/
+/*------------------------------------------------------------*/
+
+int log2(int x) 
+{
+   int i;
+   
+   /* Any more than 32 and we overflow anyway... */
+   for (i = 0; i < 32; i++) {
+      if (1 << i == x) return i;
+   }
+   return -1;
+}
 
 /*------------------------------------------------------------*/
 /*--- Output file related stuff                            ---*/
@@ -57,7 +73,7 @@
 static void file_err()
 {
    VG_(message)(Vg_UserMsg,
-                "FATAL: can't open cache simulation output file `%s'",
+                "error: can't open cache simulation output file `%s'",
                 OUT_FILE );
    VG_(exit)(1);
 }
@@ -78,7 +94,6 @@ static __inline__ void initCC(CC* cc) {
     cc->m1 = 0;
     cc->m2 = 0;
 }
-
 
 typedef enum { INSTR_CC, READ_CC, WRITE_CC, MOD_CC } CC_type;
 
@@ -709,13 +724,382 @@ UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr)
 /*--- Cache simulation stuff                               ---*/
 /*------------------------------------------------------------*/
 
+#define MIN_LINE_SIZE   16
+
 /* Total reads/writes/misses.  Calculated during CC traversal at the end. */
 static CC Ir_total;
 static CC Dr_total;
 static CC Dw_total;
 
+/* All CPUID info taken from sandpile.org/a32/cpuid.htm */
+/* Probably only works for Intel and AMD chips, and probably only for some of
+ * them. 
+ */
+
+static __inline__ void cpuid(int n, int *a, int *b, int *c, int *d)
+{
+   __asm__ __volatile__ (
+    "cpuid"
+    : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)      /* output */
+    : "0" (n)         /* input */
+    );
+}
+
+static void micro_ops_warn(int actual_size, int used_size, int line_size)
+{
+    VG_(message)(Vg_DebugMsg, 
+                 "warning: Pentium with %d K micro_op instruction trace cache", 
+                 actual_size);
+    VG_(message)(Vg_DebugMsg, 
+                 "         Simulating a %d KB cache with %d B lines", 
+                 used_size, line_size);
+}
+
+/* Intel method is truly wretched.  We have to do an insane indexing into an
+ * array of pre-defined configurations for various parts of the memory
+ * hierarchy. 
+ */
+static
+int Intel_cache_info(int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
+{
+   unsigned char info[16];
+   int i;
+   int trials;
+
+   if (level < 2) {
+      VG_(message)(Vg_DebugMsg, 
+                   "warning: CPUID level < 2 for Intel processor (%d)", 
+                   level);
+      return -1;
+   }
+
+   cpuid(2, (int*)&info[0], (int*)&info[4], (int*)&info[8], (int*)&info[12]);
+   trials  = info[0] - 1;   /* AL register - bits 0..7 of %eax */
+   info[0] = 0x0;           /* reset AL */
+
+   if (0 != trials) {
+      VG_(message)(Vg_DebugMsg, 
+                   "warning: non-zero CPUID trials for Intel processor (%d)",
+                   trials);
+      return -1;
+   }
+
+   for (i = 0; i < 16; i++) {
+
+      switch (info[i]) {
+
+      case 0x0:       /* ignore zeros */
+          break;
+          
+      case 0x01: case 0x02: case 0x03: case 0x04:     /* TLB info, ignore */
+      case 0x90: case 0x96: case 0x9b:
+          break;      
+
+      case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
+      case 0x08: *I1c = (cache_t) { 16, 4, 32 }; break;
+
+      case 0x0a: *D1c = (cache_t) {  8, 2, 32 }; break;
+      case 0x0c: *D1c = (cache_t) { 16, 4, 32 }; break;
+
+      case 0x22: case 0x23: case 0x25: case 0x29: 
+      case 0x88: case 0x89: case 0x8a:
+          VG_(message)(Vg_DebugMsg, "warning: L3 cache detected but ignored\n");
+          break;
+
+      case 0x40: 
+          VG_(message)(Vg_DebugMsg, 
+                       "warning: L2 cache not installed, ignore L2 results.");
+          break;
+
+      case 0x41: *L2c = (cache_t) {  128, 4, 32 };    break;
+      case 0x42: *L2c = (cache_t) {  256, 4, 32 };    break;
+      case 0x43: *L2c = (cache_t) {  512, 4, 32 };    break;
+      case 0x44: *L2c = (cache_t) { 1024, 4, 32 };    break;
+      case 0x45: *L2c = (cache_t) { 2048, 4, 32 };    break;
+
+      /* These are sectored, whatever that means */
+      case 0x66: *D1c = (cache_t) {  8, 4, 64 };  break;      /* sectored */
+      case 0x67: *D1c = (cache_t) { 16, 4, 64 };  break;      /* sectored */
+      case 0x68: *D1c = (cache_t) { 32, 4, 64 };  break;      /* sectored */
+
+      /* HACK ALERT: Instruction trace cache -- capacity is micro-ops based.
+       * conversion to byte size is a total guess;  treat the 12K and 16K
+       * cases the same since the cache byte size must be a power of two for
+       * everything to work!.  Also guessing 32 bytes for the line size... 
+       */
+      case 0x70:    /* 12K micro-ops, 8-way */
+         *I1c = (cache_t) { 16, 8, 32 };  
+         micro_ops_warn(12, 16, 32);
+         break;  
+      case 0x71:    /* 16K micro-ops, 8-way */
+         *I1c = (cache_t) { 16, 8, 32 };  
+         micro_ops_warn(16, 16, 32); 
+         break;  
+      case 0x72:    /* 32K micro-ops, 8-way */
+         *I1c = (cache_t) { 32, 8, 32 };  
+         micro_ops_warn(32, 32, 32); 
+         break;  
+
+      case 0x79: *L2c = (cache_t) {  128, 8, 64 };    break;  /* sectored */
+      case 0x7a: *L2c = (cache_t) {  256, 8, 64 };    break;  /* sectored */
+      case 0x7b: *L2c = (cache_t) {  512, 8, 64 };    break;  /* sectored */
+      case 0x7c: *L2c = (cache_t) { 1024, 8, 64 };    break;  /* sectored */
+
+      case 0x81: *L2c = (cache_t) {  128, 8, 32 };    break;
+      case 0x82: *L2c = (cache_t) {  256, 8, 32 };    break;
+      case 0x83: *L2c = (cache_t) {  512, 8, 32 };    break;
+      case 0x84: *L2c = (cache_t) { 1024, 8, 32 };    break;
+      case 0x85: *L2c = (cache_t) { 2048, 8, 32 };    break;
+
+      default:
+          VG_(message)(Vg_DebugMsg, 
+                       "warning: Unknown Intel cache config value "
+                       "(0x%x), ignoring\n", info[i]);
+          break;
+      }
+   }
+   return 0;
+}
+
+/* AMD method is straightforward, just extract appropriate bits from the
+ * result registers.
+ *
+ * Bits, for D1 and I1:
+ *  31..24  data L1 cache size in KBs    
+ *  23..16  data L1 cache associativity (FFh=full)    
+ *  15.. 8  data L1 cache lines per tag    
+ *   7.. 0  data L1 cache line size in bytes
+ *
+ * Bits, for L2:
+ *  31..16  unified L2 cache size in KBs
+ *  15..12  unified L2 cache associativity (0=off, FFh=full)
+ *  11.. 8  unified L2 cache lines per tag    
+ *   7.. 0  unified L2 cache line size in bytes
+ *
+ * #3  The AMD K7 processor's L2 cache must be configured prior to relying 
+ *     upon this information. (Whatever that means -- njn)
+ *
+ * Returns 0 on success, non-zero on failure.
+ */
+static int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
+{
+   int dummy;
+   int ext_level;
+   int I1i, D1i, L2i;
+   
+   cpuid(0x80000000, &ext_level, &dummy, &dummy, &dummy);
+
+   if (0 == (ext_level & 0x80000000) || ext_level < 0x80000006) {
+      VG_(message)(Vg_UserMsg, 
+                   "warning: ext_level < 0x80000006 for AMD processor (0x%x)", 
+                   ext_level);
+      return -1;
+   }
+
+   cpuid(0x80000005, &dummy, &dummy, &D1i, &I1i);
+   cpuid(0x80000006, &dummy, &dummy, &L2i, &dummy);
+
+   D1c->size      = (D1i >> 24) & 0xff;
+   D1c->assoc     = (D1i >> 16) & 0xff;
+   D1c->line_size = (D1i >>  0) & 0xff;
+
+   I1c->size      = (I1i >> 24) & 0xff;
+   I1c->assoc     = (I1i >> 16) & 0xff;
+   I1c->line_size = (I1i >>  0) & 0xff;
+
+   L2c->size      = (L2i >> 16) & 0xffff; /* Nb: different bits used for L2 */
+   L2c->assoc     = (L2i >> 12) & 0xf;
+   L2c->line_size = (L2i >>  0) & 0xff;
+
+   return 0;
+}
+
+static jmp_buf cpuid_jmpbuf;
+
+static
+void cpuid_SIGILL_handler(int signum)
+{
+   __builtin_longjmp(cpuid_jmpbuf, 1);
+}
+
+static 
+int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
+{
+   int level;
+   char vendor_id[13];
+   vki_ksigaction sigill_new, sigill_saved;
+   int res, ret;
+
+   /* Install own SIGILL handler */
+   sigill_new.ksa_handler  = cpuid_SIGILL_handler;
+   sigill_new.ksa_flags    = 0;
+   sigill_new.ksa_restorer = NULL;
+   res = VG_(ksigemptyset)( &sigill_new.ksa_mask );
+   vg_assert(res == 0);
+
+   res = VG_(ksigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
+   vg_assert(res == 0);
+
+   /* Trap for illegal instruction, in case it's a really old processor that
+    * doesn't support CPUID. */
+   if (__builtin_setjmp(cpuid_jmpbuf) == 0) {
+      cpuid(0, &level, (int*)&vendor_id[0], 
+                       (int*)&vendor_id[8], (int*)&vendor_id[4]);    
+      vendor_id[12] = '\0';
+
+      /* Restore old SIGILL handler */
+      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
+      vg_assert(res == 0);
+
+   } else  {
+      VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
+
+      /* Restore old SIGILL handler */
+      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
+      vg_assert(res == 0);
+      return -1;
+   }
+
+   if (0 == level) {
+      VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?\n");
+      return -1;
+   }
+
+   /* Only handling Intel and AMD chips... no Cyrix, Transmeta, etc */
+   if (0 == VG_(strcmp)(vendor_id, "GenuineIntel")) {
+      ret = Intel_cache_info(level, I1c, D1c, L2c);
+
+   } else if (0 == VG_(strcmp)(vendor_id, "AuthenticAMD")) {
+      ret = AMD_cache_info(I1c, D1c, L2c);
+
+   } else {
+      VG_(message)(Vg_DebugMsg, "CPU vendor ID not recognised (%s)",
+                   vendor_id);
+      return -1;
+   }
+
+   /* Successful!  Convert sizes from KB to bytes */
+   I1c->size *= 1024;
+   D1c->size *= 1024;
+   L2c->size *= 1024;
+      
+   return ret;
+}
+
+/* Checks cache config is ok;  makes it so if not. */
+static void check_cache(cache_t* cache, cache_t* dflt, char *name)
+{
+   /* First check they're all powers of two */
+   if (-1 == log2(cache->size)) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s size of %dB not a power of two; "
+                   "defaulting to %dB", name, cache->size, dflt->size);
+      cache->size = dflt->size;
+   }
+
+   if (-1 == log2(cache->assoc)) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s associativity of %d not a power of two; "
+                   "defaulting to %d-way", name, cache->assoc, dflt->assoc);
+      cache->assoc = dflt->assoc;
+   }
+
+   if (-1 == log2(cache->line_size)) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s line size of %dB not a power of two; "
+                   "defaulting to %dB", 
+                   name, cache->line_size, dflt->line_size);
+      cache->line_size = dflt->line_size;
+   }
+
+   /* Then check line size >= 16 -- any smaller and a single instruction could
+    * straddle three cache lines, which breaks a simulation assertion and is
+    * stupid anyway. */
+   if (cache->line_size < MIN_LINE_SIZE) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s line size of %dB too small; "
+                   "increasing to %dB", name, cache->line_size, MIN_LINE_SIZE);
+      cache->line_size = MIN_LINE_SIZE;
+   }
+
+   /* Then check cache size > line size (causes seg faults if not). */
+   if (cache->size <= cache->line_size) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s cache size of %dB <= line size of %dB; "
+                   "increasing to %dB", name, cache->size, cache->line_size,
+                                        cache->line_size * 2);
+      cache->size = cache->line_size * 2;
+   }
+
+   /* Then check assoc <= (size / line size) (seg faults otherwise). */
+   if (cache->assoc > (cache->size / cache->line_size)) {
+      VG_(message)(Vg_UserMsg,
+                   "warning: %s associativity > (size / line size); "
+                   "increasing size to %dB", 
+                   name, cache->assoc * cache->line_size);
+      cache->size = cache->assoc * cache->line_size;
+   }
+}
+
+/* On entry, args are undefined.  Fill them with any info from the
+ * command-line, then fill in any remaining with CPUID instruction if possible,
+ * otherwise use defaults.  Then check them and fix if not ok. */
+static void get_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
+{
+   /* Defaults are for a model 3 or 4 Athlon */
+   cache_t I1_dflt = (cache_t) {  65536, 2, 64 };
+   cache_t D1_dflt = (cache_t) {  65536, 2, 64 };
+   cache_t L2_dflt = (cache_t) { 262144, 8, 64 };
+
+#define CMD_LINE_DEFINED(L)                 \
+   (-1 != VG_(clo_##L##_cache).size  ||     \
+    -1 != VG_(clo_##L##_cache).assoc ||     \
+    -1 != VG_(clo_##L##_cache).line_size)
+
+   /* If any undefined on command-line, try CPUID */
+   if (! CMD_LINE_DEFINED(I1) ||
+       ! CMD_LINE_DEFINED(D1) ||
+       ! CMD_LINE_DEFINED(L2)) { 
+
+      /* Overwrite CPUID result for any cache defined on command-line */
+      if (0 == get_caches_from_CPUID(I1c, D1c, L2c)) {
+   
+         if (CMD_LINE_DEFINED(I1)) *I1c = VG_(clo_I1_cache);
+         if (CMD_LINE_DEFINED(D1)) *D1c = VG_(clo_D1_cache);
+         if (CMD_LINE_DEFINED(L2)) *L2c = VG_(clo_L2_cache);
+
+      /* CPUID failed, use defaults for each undefined by command-line */
+      } else {
+         VG_(message)(Vg_DebugMsg, 
+                      "Couldn't detect cache configuration, using one "
+                      "or more defaults ");
+
+         *I1c = (CMD_LINE_DEFINED(I1) ? VG_(clo_I1_cache) : I1_dflt);
+         *D1c = (CMD_LINE_DEFINED(D1) ? VG_(clo_D1_cache) : D1_dflt);
+         *L2c = (CMD_LINE_DEFINED(L2) ? VG_(clo_L2_cache) : L2_dflt);
+      }
+   }
+#undef CMD_LINE_DEFINED
+
+   check_cache(I1c, &I1_dflt, "I1");
+   check_cache(D1c, &D1_dflt, "D1");
+   check_cache(L2c, &L2_dflt, "L2");
+
+   if (VG_(clo_verbosity) > 1) {
+      VG_(message)(Vg_UserMsg, "Cache configuration used:");
+      VG_(message)(Vg_UserMsg, "  I1: %dB, %d-way, %dB lines",
+                               I1c->size, I1c->assoc, I1c->line_size);
+      VG_(message)(Vg_UserMsg, "  D1: %dB, %d-way, %dB lines",
+                               D1c->size, D1c->assoc, D1c->line_size);
+      VG_(message)(Vg_UserMsg, "  L2: %dB, %d-way, %dB lines",
+                               L2c->size, L2c->assoc, L2c->line_size);
+   }
+}
+
 void VG_(init_cachesim)(void)
 {
+   cache_t I1c, D1c, L2c; 
+
    /* Make sure the output file can be written. */
    Int fd = VG_(open_write)(OUT_FILE);
    if (-1 == fd) { 
@@ -734,9 +1118,14 @@ void VG_(init_cachesim)(void)
    initCC(&Dr_discards);
    initCC(&Dw_discards);
 
-   cachesim_I1_initcache();
-   cachesim_D1_initcache();
-   cachesim_L2_initcache();
+   get_caches(&I1c, &D1c, &L2c);
+
+   cachesim_I1_initcache(I1c);
+   //cachesim_I1_initcache();
+   cachesim_D1_initcache(D1c);
+   //cachesim_D1_initcache();
+   cachesim_L2_initcache(L2c);
+   //cachesim_L2_initcache();
 
    init_BBCC_table();
 }
@@ -879,9 +1268,12 @@ static void fprint_BBCC_table_and_calc_totals(Int client_argc,
    if (-1 == fd) { file_err(); }
 
    /* "desc:" lines (giving I1/D1/L2 cache configuration) */
-   VG_(write)(fd, (void*)I1_desc_line, VG_(strlen)(I1_desc_line));
-   VG_(write)(fd, (void*)D1_desc_line, VG_(strlen)(D1_desc_line));
-   VG_(write)(fd, (void*)L2_desc_line, VG_(strlen)(L2_desc_line));
+   VG_(sprintf)(buf, "desc: I1 cache:         %s\n", I1.desc_line);
+   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+   VG_(sprintf)(buf, "desc: D1 cache:         %s\n", D1.desc_line);
+   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+   VG_(sprintf)(buf, "desc: L2 cache:         %s\n", L2.desc_line);
+   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
    /* "cmd:" line */
    VG_(strcpy)(buf, "cmd:");
@@ -1012,7 +1404,7 @@ void percentify(Int n, Int pow, Int field_width, char buf[])
    for (i = 0; i < space; i++)  buf[i] = ' ';
 }
 
-void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
+void VG_(do_cachesim_results)(Int client_argc, Char** client_argv)
 {
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
@@ -1024,6 +1416,9 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    Int p;
 
    fprint_BBCC_table_and_calc_totals(client_argc, client_argv);
+
+   if (VG_(clo_verbosity) == 0) 
+      return;
 
    /* I cache results.  Use the I_refs value to determine the first column
     * width. */

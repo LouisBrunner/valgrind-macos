@@ -42,6 +42,9 @@ do
     --trace-children=no)    vgopts="$vgopts $arg"; shift;;
     --trace-children=yes)   vgopts="$vgopts $arg"; shift;;
     --suppressions=*)       vgopts="$vgopts $arg"; shift;;
+    --I1=*,*,*)             vgopts="$vgopts $arg"; shift;;
+    --D1=*,*,*)             vgopts="$vgopts $arg"; shift;;
+    --L2=*,*,*)             vgopts="$vgopts $arg"; shift;;
 #   options for debugging Cachegrind
     --sanity-level=*)       vgopts="$vgopts $arg"; shift;;
     --single-step=yes)      vgopts="$vgopts $arg"; shift;;
@@ -93,6 +96,9 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo "    --trace-children=no|yes   Cachegrind-ise child processes? [no]"
    echo "    --logfile-fd=<number>     file descriptor for messages [2=stderr]"
    echo "    --suppressions=<filename> is ignored"
+   echo "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually"
+   echo "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually"
+   echo "    --L2=<size>,<assoc>,<line_size>  set L2 cache manually"
    echo
    echo "  options for debugging Cachegrind itself are:"
    echo "    --sanity-level=<number>   level of sanity checking to do [1]"

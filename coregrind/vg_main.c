@@ -420,6 +420,9 @@ Bool   VG_(clo_optimise);
 Bool   VG_(clo_instrument);
 Bool   VG_(clo_cleanup);
 Bool   VG_(clo_cachesim);
+cache_t VG_(clo_I1_cache);
+cache_t VG_(clo_D1_cache);
+cache_t VG_(clo_L2_cache);
 Int    VG_(clo_smc_check);
 Bool   VG_(clo_trace_syscalls);
 Bool   VG_(clo_trace_signals);
@@ -482,6 +485,39 @@ static void args_grok_error ( Char* msg )
    config_error("couldn't find client's argc/argc/envp");
 }   
 
+static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
+{
+   int   i1, i2, i3;
+   int   i;
+   char *opt = VG_(strdup)(VG_AR_PRIVATE, orig_opt);
+
+   i = i1 = opt_len;
+
+   /* Option looks like "--I1=65536,2,64".
+    * Find commas, replace with NULs to make three independent 
+    * strings, then extract numbers.  Yuck. */
+   while (VG_(isdigit)(opt[i])) i++;
+   if (',' == opt[i]) {
+      opt[i++] = '\0';
+      i2 = i;
+   } else goto bad;
+   while (VG_(isdigit)(opt[i])) i++;
+   if (',' == opt[i]) {
+      opt[i++] = '\0';
+      i3 = i;
+   } else goto bad;
+   while (VG_(isdigit)(opt[i])) i++;
+   if ('\0' != opt[i]) goto bad;
+
+   cache->size      = (Int)VG_(atoll)(opt + i1);
+   cache->assoc     = (Int)VG_(atoll)(opt + i2);
+   cache->line_size = (Int)VG_(atoll)(opt + i3);
+
+   return;
+
+bad:    
+   bad_option(orig_opt);
+}
 
 static void process_cmd_line_options ( void )
 {
@@ -514,6 +550,10 @@ static void process_cmd_line_options ( void )
    VG_(clo_single_step)      = False;
    VG_(clo_optimise)         = True;
    VG_(clo_instrument)       = True;
+   VG_(clo_cachesim)         = False;
+   VG_(clo_I1_cache)         = UNDEFINED_CACHE;
+   VG_(clo_D1_cache)         = UNDEFINED_CACHE;
+   VG_(clo_L2_cache)         = UNDEFINED_CACHE;
    VG_(clo_cleanup)          = True;
    VG_(clo_smc_check)        = /* VG_CLO_SMC_SOME */ VG_CLO_SMC_NONE;
    VG_(clo_trace_syscalls)   = False;
@@ -541,7 +581,7 @@ static void process_cmd_line_options ( void )
 
    /* (Suggested by Fabrice Bellard ... )
       We look for the Linux ELF table and go down until we find the
-      envc & envp. It is not full proof, but these structures should
+      envc & envp. It is not fool-proof, but these structures should
       change less often than the libc ones. */
    {
        UInt* sp = 0; /* bogus init to keep gcc -O happy */
@@ -765,6 +805,14 @@ static void process_cmd_line_options ( void )
          VG_(clo_cachesim) = True;     
       else if (STREQ(argv[i], "--cachesim=no"))
          VG_(clo_cachesim) = False;
+
+      /* 5 is length of "--I1=" */
+      else if (0 == VG_(strncmp)(argv[i], "--I1=",    5))
+         parse_cache_opt(&VG_(clo_I1_cache), argv[i], 5);
+      else if (0 == VG_(strncmp)(argv[i], "--D1=",    5))
+         parse_cache_opt(&VG_(clo_D1_cache), argv[i], 5);
+      else if (0 == VG_(strncmp)(argv[i], "--L2=",    5))
+         parse_cache_opt(&VG_(clo_L2_cache), argv[i], 5);
 
       else if (STREQ(argv[i], "--smc-check=none"))
          VG_(clo_smc_check) = VG_CLO_SMC_NONE;
@@ -1087,7 +1135,7 @@ void VG_(main) ( void )
    VG_(running_on_simd_CPU) = False;
 
    if (VG_(clo_cachesim))
-      VG_(show_cachesim_results)(VG_(client_argc), VG_(client_argv));
+      VG_(do_cachesim_results)(VG_(client_argc), VG_(client_argv));
 
    VG_(do_sanity_checks)( True /*include expensive checks*/ );
 

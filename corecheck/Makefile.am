@@ -9,7 +9,7 @@ LDFLAGS = -Wl,-z -Wl,initfirst
 
 INCLUDES = -I$(srcdir)/demangle
 
-bin_SCRIPTS = valgrind cachegrind vg_annotate vg_cachegen
+bin_SCRIPTS = valgrind cachegrind vg_annotate
 
 SUPP_FILES = glibc-2.1.supp glibc-2.2.supp xfree-3.supp xfree-4.supp
 
@@ -71,6 +71,7 @@ valgrind_so_LDADD = \
 include_HEADERS = valgrind.h
 
 noinst_HEADERS = \
+        vg_cachesim_gen.c       \
         vg_cachesim_I1.c        \
         vg_cachesim_D1.c        \
         vg_cachesim_L2.c        \

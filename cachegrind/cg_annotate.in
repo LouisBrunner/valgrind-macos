@@ -883,3 +883,8 @@ print_options();
 my $threshold_files = print_summary_and_fn_totals();
 annotate_ann_files($threshold_files);
 
+##--------------------------------------------------------------------##
+##--- end                                           vg_annotate.in ---##
+##--------------------------------------------------------------------##
+
+

@@ -191,6 +191,14 @@ typedef unsigned char Bool;
    ( ((bit7) << 7) | ((bit6) << 6) | ((bit5) << 5) | ((bit4) << 4)  \
      | ((bit3) << 3) | ((bit2) << 2) | ((bit1) << 1) | (bit0))
 
+/* For cache simulation */
+typedef struct { 
+    int size;       /* bytes */
+    int assoc;
+    int line_size;  /* bytes */
+} cache_t;
+
+#define UNDEFINED_CACHE     ((cache_t) { -1, -1, -1 })
 
 /* ---------------------------------------------------------------------
    Now the basic types are set up, we can haul in the kernel-interface
@@ -256,6 +264,12 @@ extern Bool  VG_(clo_instrument);
 extern Bool  VG_(clo_cleanup);
 /* Cache simulation instrumentation?  default: NO */
 extern Bool  VG_(clo_cachesim);
+/* I1 cache configuration.  default: undefined */
+extern cache_t VG_(clo_I1_cache);
+/* D1 cache configuration.  default: undefined */
+extern cache_t VG_(clo_D1_cache);
+/* L2 cache configuration.  default: undefined */
+extern cache_t VG_(clo_L2_cache);
 /* SMC write checks?  default: SOME (1,2,4 byte movs to mem) */
 extern Int   VG_(clo_smc_check);
 /* DEBUG: print system calls?  default: NO */
@@ -829,6 +843,7 @@ extern void VG_(vprintf) ( void(*send)(Char),
                           const Char *format, va_list vargs );
 
 extern Bool VG_(isspace) ( Char c );
+extern Bool VG_(isdigit) ( Char c );
 
 extern Int VG_(strlen) ( const Char* str );
 
@@ -1788,13 +1803,15 @@ extern void VG_(signalreturn_bogusRA)( void );
    Exports of vg_cachesim.c
    ------------------------------------------------------------------ */
 
+extern int log2( int x );
+
 extern UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr);
 
 typedef struct  _iCC  iCC;
 typedef struct _idCC idCC;
 
-extern void VG_(init_cachesim)        ( void );
-extern void VG_(show_cachesim_results)( Int client_argc, Char** client_argv );
+extern void VG_(init_cachesim)      ( void );
+extern void VG_(do_cachesim_results)( Int client_argc, Char** client_argv );
 
 extern void VG_(cachesim_log_non_mem_instr)(  iCC* cc );
 extern void VG_(cachesim_log_mem_instr)    ( idCC* cc, Addr data_addr );

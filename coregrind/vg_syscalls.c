@@ -5761,273 +5761,411 @@ static void bad_after(ThreadId tid, ThreadState *tst)
 
 static const struct sys_info bad_sys = { False, bad_before, bad_after };
 
+
+
+// XXX: temporary: I've started labelled each entry with the target of its
+// __NR_foo-->sys_foo() mapping, and the __NR_foo number (for x86), and
+// marked those that are generic (ie.  present in
+// linux-2.6.8.1/include/linux/syscalls.h) with a '*', and non-generic ones
+// with an indication of which architecture they are specific to.
+// Those with "##" are generic, but within a "#ifdef CONFIG_UID16".
+// Those with "%%" are generic, but within a "#if BITS_PER_LONG == 32"
+
+// XXX: this does duplicate the vki_unistd.h file somewhat -- could make
+// this table replace that somehow...
+
 static const struct sys_info special_sys[] = {
    /* special */
-   SYSB_(exit_group,		0),
-   SYSB_(exit,			0),
-   SYSB_(clone,			0),
+   SYSB_(exit,			0), // 1   sys_exit *
+   SYSB_(execve,		0), // 11  sys_execve
+   SYSB_(brk,			0), // 45  sys_brk *
+   SYSB_(mmap,			0), // 90  old_mmap
+   SYSB_(clone,			0), // 120 sys_clone (very non-gen)
 
-   SYSB_(modify_ldt,		0),
-   SYSB_(set_thread_area,	0),
-   SYSB_(get_thread_area,	0),
-   SYSB_(set_tid_address,	0),
+   SYSB_(modify_ldt,		0), // 123 sys_modify_ldt (x86,amd64)
+   SYSB_(mremap,		0), // 163  sys_mremap *
+   SYSB_(set_thread_area,	0), // 243 sys_set_thread_area
+   SYSB_(get_thread_area,	0), // 244  sys_get_thread_area
+   SYSB_(io_setup,              0), // 245  sys_io_setup *
 
-   SYSB_(execve,		0),
-   SYSB_(brk,			0),
-   SYSB_(mmap,			0),
-   SYSB_(mremap,		0),
-
-   SYSB_(io_setup,              0),
-   SYSB_(io_destroy,            0),
+   SYSB_(io_destroy,            0), // 246 sys_io_destroy *
+   SYSB_(exit_group,		0), // 252 sys_exit_group *
+   SYSB_(set_tid_address,	0), // 258 sys_set_tid_address *
 
 #if SIGNAL_SIMULATION
-   SYSBA(sigaltstack,		0),
-   SYSBA(rt_sigaction,		0),
-   SYSBA(sigaction,		0),
-   SYSBA(rt_sigprocmask,	0),
-   SYSBA(sigprocmask,		0),
+   SYSBA(sigaction,		0), // 67 sys_sigaction
+   SYSBA(sigprocmask,		0), // 126 sys_sigprocmask *
+   SYSBA(rt_sigaction,		0), // 174 sys_rt_sigaction
+   SYSBA(rt_sigprocmask,	0), // 175 sys_rt_sigprocmask *
+   SYSBA(sigaltstack,		0), // 186 sys_sigaltstack
 #endif /* SIGNAL_SIMULATION */
 };
 #define MAX_SPECIAL_SYS		(sizeof(special_sys)/sizeof(special_sys[0]))
 
+// This table maps from __NR_xxx syscall numbers to the appropriate
+// PRE/POST sys_foo() wrappers on x86.
 static const struct sys_info sys_info[] = {
-   SYSBA(ptrace,		0),
-   SYSX_(__NR_mount,            sys_mount,      MayBlock),
-   SYSB_(umount,		0),
+   // 0 is restart_syscall
+   // 1 exit special
+   SYSBA(fork,			0), // 2 sys_fork
+   SYSXY(__NR_read,             sys_read,       MayBlock), // 3 *
+   SYSX_(__NR_write,            sys_write,      MayBlock), // 4 *
 
-   SYSB_(setresgid,		0),
-   SYSB_(vhangup,		0),
-   SYSB_(iopl,			0),
+   SYSXY(__NR_open,             sys_open,       MayBlock), // 5 *
+   SYSBA(close,			0), // 6 sys_close *
+   SYSBA(waitpid,		MayBlock), // 7 sys_waitpid *
+   SYSBA(creat,			MayBlock), // 8 sys_creat *
+   SYSB_(link,			MayBlock), // 9 sys_link *
 
-   SYSB_(setxattr,		MayBlock),
-   SYSB_(lsetxattr,		MayBlock),
-   SYSB_(fsetxattr,		MayBlock),
-   SYSBA(getxattr,		MayBlock),
-   SYSBA(lgetxattr,		MayBlock),
-   SYSBA(fgetxattr,		MayBlock),
-   SYSBA(listxattr,		MayBlock),
-   SYSBA(llistxattr,		MayBlock),
-   SYSBA(flistxattr,		MayBlock),
-   SYSB_(removexattr,		MayBlock),
-   SYSB_(lremovexattr,		MayBlock),
-   SYSB_(fremovexattr,		MayBlock),
+   SYSB_(unlink,		MayBlock), // 10 sys_unlink *
+   // 11 execve special
+   SYSB_(chdir,			0), // 12 sys_chdir *
+   SYSBA(time,			0), // 13 sys_time *
+   SYSB_(mknod,			0), // 14 sys_mknod *
 
-   SYSB_(quotactl,		0),
-   SYSBA(lookup_dcookie,	0),
+   SYSB_(chmod,			0), // 15 sys_chmod *
+   // lchown		               16 sys_lchown16 ##
+   // break		               17 sys_ni_syscall
+   // oldstat		               18 sys_stat *
+   SYSB_(lseek,			0), // 19 sys_lseek *
 
-   SYSB_(truncate64,		MayBlock),
-   SYSB_(fdatasync,		MayBlock),
-   SYSB_(msync,			MayBlock),
+   SYSX_(__NR_getpid,           sys_getpid,     0), // 20 sys_getpid *
+   SYSX_(__NR_mount,            sys_mount,      MayBlock), // 21 sys_mount *
+   SYSB_(umount,		0), // 22 sys_oldumount *
+   SYSB_(setuid,		0), // 23 sys_setuid16 ##
+   SYSB_(getuid,		0), // 24 sys_getuid16 ##
 
-   SYSBA(getpmsg,		MayBlock),
-   SYSB_(putpmsg,		MayBlock),
+   // stime		               25 sys_stime *
+   SYSBA(ptrace,		0), // 26 sys_ptrace
+   SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */ // 27 sys_alarm *
+   // oldfstat		               28 sys_fstat *
+   SYSB_(pause,			MayBlock), // 29 sys_pause *
 
-   SYSBA(syslog,		MayBlock),
-   SYSB_(personality,		0),
-   SYSB_(chroot,		0),
-   SYSB_(madvise,		MayBlock),
-   SYSB_(nice,			0),
-   SYSB_(setresgid32,		0),
-   SYSB_(setfsuid32,		0),
-   SYSBA(_sysctl,		0),
+   SYSB_(utime,			MayBlock), // 30 sys_utime *
+   // stty		               31 sys_ni_syscall
+   // gtty		               32 sys_ni_syscall
+   SYSB_(access,		0), // 33 sys_access *
+   SYSB_(nice,			0), // 34 sys_nice *
+   // ftime		               35 sys_ni_syscall
 
-   SYSB_(sched_getscheduler,	0),	/* ??? */
-   SYSB_(sched_setscheduler,	0),	/* ??? */
+   SYSB_(sync,			MayBlock), // 36 sys_sync *
+   SYSBA(kill,			0), // 37 sys_kill *
+   SYSB_(rename,		0), // 38 sys_rename *
+   SYSB_(mkdir,			MayBlock), // 39 sys_mkdir *
 
-   SYSB_(mlock,			MayBlock),
-   SYSB_(munlock,		MayBlock),
-   SYSB_(mlockall,		MayBlock),
-   SYSB_(munlockall,		MayBlock),
+   SYSB_(rmdir,			MayBlock), // 40 sys_rmdir *
+   SYSBA(dup,			0), // 41 sys_dup *
+   SYSBA(pipe,			0), // 42 sys_pipe
+   SYSBA(times,			0), // 43 sys_times *
+   // prof		               44  sys_ni_syscall
+   // 45 brk special
 
-   SYSB_(sched_get_priority_max,	0),	/* ??? */
-   SYSB_(sched_get_priority_min,	0),	/* ??? */
+   SYSB_(setgid,		0), // 46 sys_setgid16 ##
+   SYSB_(getgid,		0), // 47 sys_getgid16 ##
+   // signal		               48   sys_signal *
+   SYSB_(geteuid,		0), // 49 sys_geteuid16 ##
 
-   SYSB_(setpriority,		0),
-   SYSB_(getpriority,		0),
+   SYSB_(getegid,		0), // 50 sys_getegid16 ##
+   SYSB_(acct,                  0), // 51 sys_acct *
+   // umount2		               52 sys_umount
+   // lock		               53 sys_ni_syscall
+   SYSBA(ioctl,			MayBlock), // 54 sys_ioctl *
 
-   SYSB_(setfsgid,		0),
-   SYSB_(setregid,		0),
-   SYSB_(setresuid,		0),
-   SYSB_(setfsuid,		0),
+   SYSBA(fcntl,			0), // 55 sys_fcntl *
+   // mpx		               56  sys_ni_syscall
+   SYSBA(setpgid,		0), // 57 sys_setpgid *
+   // ulimit		               58   // sys_ni_syscall
+   // oldolduname	               59 sys_olduname
 
-   SYSBA(sendfile,		MayBlock),
-   SYSBA(sendfile64,		MayBlock),
-   SYSB_(pwrite64,		MayBlock),
-   SYSB_(sync,			MayBlock),
-   SYSBA(fstatfs,		0),
-   SYSBA(fstatfs64,		0),
-   SYSB_(getsid,		0),
-   SYSBA(pread64,		MayBlock),
-   SYSB_(mknod,			0),
-   SYSB_(flock,			MayBlock),
-   SYSB_(init_module,		MayBlock),
-   SYSB_(ioperm,		0),
-   SYSBA(capget,		0),
-   SYSB_(capset,		0),
-   SYSB_(access,		0),
-   SYSB_(chdir,			0),
-   SYSB_(chmod,			0),
-   SYSB_(chown32,		0),
-   SYSB_(lchown32,		0),
-   SYSB_(chown,			0),
-   SYSBA(close,			0),
-   SYSBA(dup,			0),
-   SYSBA(dup2,			0),
-   SYSBA(fcntl,			0),
-   SYSB_(fchdir,		0),
-   SYSB_(fchown32,		0),
-   SYSB_(fchown,		0),
-   SYSB_(fchmod,		0),
-   SYSBA(fcntl64,		0),
-   SYSBA(fstat,			0),
-   SYSBA(fork,			0),
-   SYSB_(fsync,			MayBlock),
-   SYSB_(ftruncate,		MayBlock),
-   SYSB_(ftruncate64,		MayBlock),
-   SYSBA(getdents,		MayBlock),
-   SYSBA(getdents64,		MayBlock),
-   SYSBA(getgroups32,		0),
-   SYSBA(getgroups,		0),
-   SYSBA(getcwd,		0),
-   SYSB_(geteuid,		0),
-   SYSB_(geteuid32,		0),
-   SYSB_(getegid,		0),
-   SYSB_(getegid32,		0),
-   SYSB_(getgid,		0),
-   SYSB_(getgid32,		0),
-   SYSX_(__NR_getpid,           sys_getpid,     0),
-   SYSB_(getpgid,		0),
-   SYSB_(getpgrp,		0),
-   SYSX_(__NR_getppid,		sys_getppid,    0),
-   SYSBA(getresgid,		0),
-   SYSBA(getresgid32,		0),
-   SYSBA(getresuid,		0),
-   SYSBA(getresuid32,		0),
-   SYSBA(ugetrlimit,		0),
-   SYSBA(getrlimit,		0),
-   SYSBA(getrusage,		0),
-   SYSBA(gettimeofday,		0),
-   SYSB_(getuid,		0),
-   SYSB_(getuid32,		0),
-   SYSBA(ipc,			0),
-   SYSBA(ioctl,			MayBlock),
-   SYSBA(kill,			0),
-   SYSB_(link,			MayBlock),
-   SYSB_(lseek,			0),
-   SYSBA(_llseek,		0),
-   SYSBA(lstat,			0),
-   SYSBA(lstat64,		0),
-   SYSB_(mkdir,			MayBlock),
-   SYSBA(mprotect,		0),
-   SYSBA(munmap,		0),
-   SYSBA(mincore,		0),
-   SYSBA(nanosleep,		MayBlock|PostOnFail),
-   SYSB_(_newselect,		MayBlock),
-   SYSXY(__NR_open,             sys_open,       MayBlock),
-   SYSXY(__NR_read,             sys_read,       MayBlock),
-   SYSX_(__NR_write,            sys_write,      MayBlock),
-   SYSBA(creat,			MayBlock),
-   SYSBA(pipe,			0),
-   SYSBA(poll,			MayBlock),
-   SYSBA(epoll_create,          0),
-   SYSB_(epoll_ctl,             0),
-   SYSBA(epoll_wait,		MayBlock),
-   SYSBA(readlink,		0),
-   SYSBA(readv,			MayBlock),
-   SYSB_(rename,		0),
-   SYSB_(rmdir,			MayBlock),
-   SYSBA(sched_setparam,	0),	/* ??? */
-   SYSBA(sched_getparam,	0),	/* ??? */
-   SYSB_(sched_yield,		0),	/* ??? */
-   SYSB_(select,		MayBlock),
-   SYSB_(setfsgid32,		0),
-   SYSB_(setgid32,		0),
-   SYSB_(setgid,		0),
-   SYSB_(setsid,		0),
-   SYSB_(setgroups32,		0),
-   SYSB_(setgroups,		0),
-   SYSBA(setpgid,		0),
-   SYSB_(setregid32,		0),
-   SYSB_(setresuid32,		0),
-   SYSB_(setreuid32,		0),
-   SYSB_(setreuid,		0),
-   SYSB_(setrlimit,		0),
-   SYSB_(settimeofday,		0),
-   SYSB_(setuid32,		0),
-   SYSB_(setuid,		0),
-   SYSBA(socketcall,		MayBlock),
-   SYSBA(stat,			0),
-   SYSBA(statfs,		0),
-   SYSBA(statfs64,		0),
-   SYSB_(symlink,		MayBlock),
-   SYSBA(stat64,		0),
-   SYSBA(fstat64,		0),
-   SYSBA(sysinfo,		0),
-   SYSBA(time,			0),
-   SYSBA(times,			0),
-   SYSB_(truncate,		MayBlock),
-   SYSB_(umask,			0),
-   SYSB_(unlink,		MayBlock),
-   SYSBA(uname,			0),
-   SYSB_(utime,			MayBlock),
-   SYSB_(utimes,                0),
-   SYSBA(waitpid,		MayBlock),
-   SYSBA(wait4,			MayBlock),
-   SYSB_(writev,		MayBlock),
-   SYSB_(prctl,			MayBlock),
-   SYSBA(adjtimex,		0),
-   SYSBA(mmap2,			0),
-   SYSBA(futex,                 MayBlock),
-   SYSB_(sched_setaffinity,     0),
-   SYSBA(sched_getaffinity,     0),
-   SYSB_(acct,                  0),
+   SYSB_(umask,			0), // 60 sys_umask *
+   SYSB_(chroot,		0), // 61 sys_chroot *
+   // ustat		               62 sys_ustat *
+   SYSBA(dup2,			0), // 63 sys_dup2 *
+   SYSX_(__NR_getppid,		sys_getppid,    0), // 64 sys_getppid *
 
-   /* new signal handling makes these normal blocking syscalls */
-   SYSB_(pause,			MayBlock),
-   SYSB_(sigsuspend,		MayBlock),
-   SYSB_(rt_sigsuspend,		MayBlock),
-   SYSBA(rt_sigtimedwait,	MayBlock),
-   SYSBA(rt_sigqueueinfo,	0),
+   SYSB_(getpgrp,		0), // 65 sys_getpgrp *
+   SYSB_(setsid,		0), // 66 sys_setsid *
+   // 67 sigaction SIG
+   // sgetmask		               68 sys_sgetmask *
+   // ssetmask		               69 sys_ssetmask *
 
-   SYSBA(sigpending,		MayBlock), /* not blocking, but must run in LWP context */
-   SYSBA(rt_sigpending,		MayBlock), /* not blocking, but must run in LWP context */
-   SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */
-   SYSBA(setitimer,		MayBlock), /* not blocking, but must run in LWP context */
-   SYSBA(getitimer,		MayBlock), /* not blocking, but must run in LWP context */
+   SYSB_(setreuid,		0), // 70 sys_setreuid16 ##
+   SYSB_(setregid,		0), // 71 sys_setregid16 ##
+   SYSB_(sigsuspend,		MayBlock), // 72 sys_sigsuspend
+   SYSBA(sigpending,		MayBlock), /* not blocking, but must run in LWP context */ // 73 sys_sigpending *
+   // sethostname	               74 sys_sethostname *
 
-   SYSBA(io_getevents,          MayBlock),
-   SYSB_(io_submit,             0),
-   SYSBA(io_cancel,             0),
+   SYSB_(setrlimit,		0), // 75 sys_setrlimit *
+   SYSBA(getrlimit,		0), // 76 sys_old_getrlimit *
+   SYSBA(getrusage,		0), // 77 sys_getrusage *
+   SYSBA(gettimeofday,		0), // 78 sys_gettimeofday *
+   SYSB_(settimeofday,		0), // 79 sys_settimeofday *
 
-   SYSBA(mq_open,               0),
-   SYSB_(mq_unlink,             0),
-   SYSB_(mq_timedsend,          MayBlock),
-   SYSBA(mq_timedreceive,       MayBlock),
-   SYSB_(mq_notify,             0),
-   SYSBA(mq_getsetattr,         0),
+   SYSBA(getgroups,		0), // 80 sys_getgroups16 ##
+   SYSB_(setgroups,		0), // 81 sys_setgroups16 ##
+   SYSB_(select,		MayBlock), // 82 old_select
+   SYSB_(symlink,		MayBlock), // 83 sys_symlink *
+   // oldlstat		               84   sys_lstat *
 
-   SYSBA(timer_create,		0),
-   SYSBA(timer_settime,		0),
-   SYSBA(timer_gettime,		0),
-   SYSB_(timer_getoverrun,	0),
-   SYSB_(timer_delete,		0),
+   SYSBA(readlink,		0), // 85 sys_readlink *
+   // uselib		               86 sys_uselib *
+   // swapon		               87 sys_swapon *
+   // reboot		               88 sys_reboot *
+   // readdir		               89 old_readdir
 
-   SYSB_(clock_settime,         0),
-   SYSBA(clock_gettime,         0),
-   SYSBA(clock_getres,          0),
+   // mmap 90 special
+   SYSBA(munmap,		0), // 91 sys_munmap *
+   SYSB_(truncate,		MayBlock), // 92 sys_truncate *
+   SYSB_(ftruncate,		MayBlock), // 93 sys_ftruncate *
+   SYSB_(fchmod,		0), // 94 sys_fchmod *
+
+   SYSB_(fchown,		0), // 95 sys_fchown16 ##
+   SYSB_(getpriority,		0), // 96 sys_getpriority *
+   SYSB_(setpriority,		0), // 97 sys_setpriority *
+   // profil		               98
+   SYSBA(statfs,		0), // 99 sys_statfs *
+
+   SYSBA(fstatfs,		0), // 100 sys_fstatfs *
+   SYSB_(ioperm,		0), // 101 sys_ioperm *
+   SYSBA(socketcall,		MayBlock), // 102 sys_socketcall *
+   SYSBA(syslog,		MayBlock), // 103 sys_syslog *
+   SYSBA(setitimer,		MayBlock), /* not blocking, but must run in LWP context */ // 104 sys_setitimer *
+
+   SYSBA(getitimer,		MayBlock), /* not blocking, but must run in LWP context */ // 105 sys_getitimer *
+   SYSBA(stat,			0), // 106 sys_newstat *
+   SYSBA(lstat,			0), // 107 sys_newlstat *
+   SYSBA(fstat,			0), // 108 sys_newfstat *
+   // olduname		               109 sys_uname
+
+   SYSB_(iopl,			0), // 110 sys_iopl
+   SYSB_(vhangup,		0), // 111 sys_vhangup *
+   // idle		               112 sys_ni_syscall
+   // vm86old		               113 sys_vm86old
+   SYSBA(wait4,			MayBlock), // 114 sys_wait4 *
+
+   // swapoff		               115 sys_swapoff *
+   SYSBA(sysinfo,		0), // 116 sys_sysinfo *
+   SYSBA(ipc,			0), // 117 sys_ipc
+   SYSB_(fsync,			MayBlock), // 118 sys_fsync *
+   // sigreturn		               119 sys_sigreturn
+
+   // 120 clone special
+   // setdomainname                    121 sys_setdomainname *
+   SYSBA(uname,			0), // 122 sys_newuname *
+   // 123 modify_ldt special
+   SYSBA(adjtimex,		0), // 124 sys_adjtimex *
+   SYSBA(mprotect,		0), // 125 sys_mprotect *
+
+   // 126 sigprocmask SIG
+   // XXX: create_module was removed 2.4-->2.6
+   // create_module	               127 sys_ni_syscall
+   SYSB_(init_module,		MayBlock), // 128 sys_init_module *
+   // delete_module	               129 sys_delete_module *
+   // XXX: get_kernel_syms was removed 2.4-->2.6
+   // get_kernel_syms	               130 sys_ni_syscall
+
+   SYSB_(quotactl,		0), // 131 sys_quotactl *
+   SYSB_(getpgid,		0), // 132 sys_getpgid *
+   SYSB_(fchdir,		0), // 133 sys_fchdir *
+   // bdflush		               134 sys_bdflush *
+   // sysfs		               135 sys_sysfs *
+   SYSB_(personality,		0), // 136 sys_personality *
+
+   // afs_syscall	               137 sys_ni_syscall
+   SYSB_(setfsuid,		0), // 138 sys_setfsuid16 ##
+   SYSB_(setfsgid,		0), // 139 sys_setfsgid16 ##
+
+   SYSBA(_llseek,		0), // 140 sys_llseek *
+   SYSBA(getdents,		MayBlock), // 141 sys_getdents *
+   SYSB_(_newselect,		MayBlock), // 142 sys_select *
+   SYSB_(flock,			MayBlock), // 143 sys_flock *
+   SYSB_(msync,			MayBlock),   // 144 sys_msync *
+
+   SYSBA(readv,			MayBlock), // 145 sys_readv *
+   SYSB_(writev,		MayBlock), // 146 sys_writev *
+   SYSB_(getsid,		0), // 147 sys_getsid *
+   SYSB_(fdatasync,		MayBlock),   // 148 sys_fdatasync *
+   SYSBA(_sysctl,		0), // 149 sys_sysctl *
+
+   SYSB_(mlock,			MayBlock), // 150 sys_mlock *
+   SYSB_(munlock,		MayBlock), // 151 sys_unlock *
+   SYSB_(mlockall,		MayBlock), // 152 sys_mlockall *
+   SYSB_(munlockall,		MayBlock), // 153 sys_munlockall *
+   SYSBA(sched_setparam,	0),	/* ??? */ // 154 sys_sched_setparam *
+
+   SYSBA(sched_getparam,	0),	/* ??? */ // 155 sys_sched_getparam *
+   SYSB_(sched_setscheduler,	0),	/* ??? */ // 156 sys_sched_setscheduler *
+   SYSB_(sched_getscheduler,	0),	/* ??? */ // 157 sys_sched_getscheduler *
+   SYSB_(sched_yield,		0),	/* ??? */ // 158 sys_sched_yield *
+   SYSB_(sched_get_priority_max,	0),	/* ??? */ // 159 sys_sched_get_priority_max *
+
+   SYSB_(sched_get_priority_min,	0),	/* ??? */ // 160 sys_sched_get_priority_min *
+   // sched_rr_get_interval	       161 sys_sched_rr_get_interval *
+   SYSBA(nanosleep,		MayBlock|PostOnFail), // 162 sys_nanosleep *
+   // 163 mremap special
+   SYSB_(setresuid,		0), // 164 sys_setresuid16 ##
+
+   SYSBA(getresuid,		0), // 165 sys_getresuid16 ##
+   // vm86		               166 sys_vm86
+   // query_module	               167 sys_ni_syscall
+   SYSBA(poll,			MayBlock), // 168 sys_poll *
+   // nfsservctl		       169 sys_nfsservctl *
+
+   SYSB_(setresgid,		0), // 170 sys_setresgid16 ##
+   SYSBA(getresgid,		0), // 171 sys_getresgid16 ##
+   SYSB_(prctl,			MayBlock), // 172 sys_prctl *
+   // rt_sigreturn	               173 sys_rt_sigreturn
+   // 174 SIG
+
+   // 175 SIG
+   SYSBA(rt_sigpending,		MayBlock), /* not blocking, but must run in LWP context */ // 176 sys_rt_sigpending *
+   SYSBA(rt_sigtimedwait,	MayBlock), // 177 sys_rt_sigtimedwait *
+   SYSBA(rt_sigqueueinfo,	0), // 178 sys_rt_sigqueueinfo *
+   SYSB_(rt_sigsuspend,		MayBlock), // 179 sys_sigsuspend
+   SYSBA(pread64,		MayBlock), // 180 sys_pread64 *
+
+   SYSB_(pwrite64,		MayBlock), // 181 sys_pwrite64 *
+   SYSB_(chown,			0), // 182 sys_chown16
+   SYSBA(getcwd,		0), // 183 sys_getcwd *
+   SYSBA(capget,		0), // 184 sys_capget *
+
+   SYSB_(capset,		0), // 185 sys_capset *
+   // 186 SIG
+   SYSBA(sendfile,		MayBlock), // 187 sys_sendfile *
+   SYSBA(getpmsg,		MayBlock), // 188 sys_ni_syscall ...
+   SYSB_(putpmsg,		MayBlock), // 189 sys_ni_syscall ...
+
+   // vfork		               190 sys_vfork
+   SYSBA(ugetrlimit,		0), // 191 sys_getrlimit *
+   SYSBA(mmap2,			0), // 192 sys_mmap2
+   SYSB_(truncate64,		MayBlock),   // 193 sys_truncate64 %%
+   SYSB_(ftruncate64,		MayBlock), // 194 sys_ftruncate64 %%
+   
+   SYSBA(stat64,		0), // 195 sys_stat64 %%
+   SYSBA(lstat64,		0), // 196 sys_lstat64 %%
+   SYSBA(fstat64,		0), // 197 sys_fstat64 %%
+   SYSB_(lchown32,		0), // 198 sys_lchown *
+   SYSB_(getuid32,		0), // 199 sys_getuid *
+
+   SYSB_(getgid32,		0), // 200 sys_getgid *
+   SYSB_(geteuid32,		0), // 201 sys_geteuid *
+   SYSB_(getegid32,		0), // 202 sys_getegid *
+   SYSB_(setreuid32,		0), // 203 sys_setreuid *
+   SYSB_(setregid32,		0), // 204 sys_setregid *
+
+   SYSBA(getgroups32,		0), // 205 sys_getgroups *
+   SYSB_(setgroups32,		0), // 206 sys_setgroups *
+   SYSB_(fchown32,		0), // 207 sys_fchown *
+   SYSB_(setresuid32,		0), // 208 sys_setresuid *
+   SYSBA(getresuid32,		0), // 209 sys_getresuid *
+
+   SYSB_(setresgid32,		0), // 210 sys_setresgid *
+   SYSBA(getresgid32,		0), // 211 sys_getresgid *
+   SYSB_(chown32,		0), // 212 sys_chown *
+   SYSB_(setuid32,		0), // 213 sys_setuid *
+   SYSB_(setgid32,		0), // 214 sys_setgid *
+
+   SYSB_(setfsuid32,		0), // 215 sys_setfsuid *
+   SYSB_(setfsgid32,		0), // 216 sys_setfsgid *
+   // pivot_root		       217 sys_pivot_root *
+   SYSBA(mincore,		0), // 218 sys_mincore *
+   SYSB_(madvise,		MayBlock), // 219 /* Also called __NR_madvise1 */ sys_madvise *
+
+   SYSBA(getdents64,		MayBlock), // 220 sys_getdents64 *
+
+   // XXX: This wrapped in a "#if BITS_PER_LONG == 32" in
+   // include/linux/syscalls.h...
+   SYSBA(fcntl64,		0), // 221 sys_fcntl64 *
+
+   // 222 reserved for TUX sys_ni_syscall
+   /* 223 is unused */ // sys_ni_syscall
+   // gettid		               224 sys_gettid *
+
+   // readahead		               225 sys_readahead *
+   SYSB_(setxattr,		MayBlock), // 226 sys_setxattr *
+   SYSB_(lsetxattr,		MayBlock), // 227 sys_lsetxattr *
+   SYSB_(fsetxattr,		MayBlock), // 228 sys_fsetxattr *
+   SYSBA(getxattr,		MayBlock), // 229 sys_getxattr *
+
+   SYSBA(lgetxattr,		MayBlock), // 230  sys_lgetxattr *
+   SYSBA(fgetxattr,		MayBlock), // 231 sys_fgetxattr *
+   SYSBA(listxattr,		MayBlock), // 232 sys_listxattr *
+   SYSBA(llistxattr,		MayBlock), // 233 sys_llistxattr *
+   SYSBA(flistxattr,		MayBlock), // 234 sys_flistxattr *
+
+   SYSB_(removexattr,		MayBlock), // 235 sys_removexattr *
+   SYSB_(lremovexattr,		MayBlock), // 236 sys_lremovexattr *
+   SYSB_(fremovexattr,		MayBlock), // 237 sys_fremovexattr *
+   // tkill		                      238 sys_tkill *
+   SYSBA(sendfile64,		MayBlock), // 239 sys_sendfile64 *
+
+   SYSBA(futex,                 MayBlock), // 240 sys_futex *
+   SYSB_(sched_setaffinity,     0), // 241 sys_sched_setaffinity *
+   SYSBA(sched_getaffinity,     0), // 242 sys_sched_getaffinity *
+   // 243, 244 special
+
+   // 245, 246 special
+   SYSBA(io_getevents,          MayBlock), // 247 sys_io_getevents *
+   SYSB_(io_submit,             0), // 248 sys_io_submit *
+   SYSBA(io_cancel,             0), // 249 sys_io_cancel *
+
+   // fadvise64		               250 sys_fadvise64 *
+   // 251 is empty...   // sys_ni_syscall
+   // 252 exit_group special
+   SYSBA(lookup_dcookie,	0), // 253 sys_lookup_dcookie *
+   SYSBA(epoll_create,          0), // 254 sys_epoll_create *
+
+   SYSB_(epoll_ctl,             0), // 255 sys_epoll_ctl *
+   SYSBA(epoll_wait,		MayBlock), // 256 sys_epoll_wait *
+   // remap_file_pages	               257 sys_remap_file_pages *
+   // 258 set_tid_address special
+   SYSBA(timer_create,		0), // 259 sys_timer_create
+
+   SYSBA(timer_settime,		0), // (timer_create+1) sys_timer_settime *
+   SYSBA(timer_gettime,		0), // (timer_create+2) sys_timer_gettime *
+   SYSB_(timer_getoverrun,	0), // (timer_create+3) sys_timer_getoverrun *
+   SYSB_(timer_delete,		0), // (timer_create+4) sys_timer_delete *
+   SYSB_(clock_settime,         0), // (timer_create+5) sys_clock_settime *
+
+   SYSBA(clock_gettime,         0), // (timer_create+6) sys_clock_gettime *
+   SYSBA(clock_getres,          0), // (timer_create+7) sys_clock_getres *
+   // clock_nanosleep	               (timer_create+8) sys_clock_nanosleep *
+   SYSBA(statfs64,		0), // 268 sys_statfs64 *
+   SYSBA(fstatfs64,		0), // 269 sys_fstatfs64 *
+
+   // tgkill		               270 sys_tgkill *
+   SYSB_(utimes,                0), // 271 sys_utimes *
+
+   // fadvise64_64	               272 sys_fadvise64_64 *
+   // vserver		               273 sys_ni_syscall
+   // mbind		               274 sys_mbind
+
+   // get_mempolicy	               275 sys_get_mempolicy
+   // set_mempolicy	               276 sys_set_mempolicy
+   SYSBA(mq_open,               0), // 277 sys_mq_open *
+   SYSB_(mq_unlink,             0), // (mq_open+1) sys_mq_unlink *
+   SYSB_(mq_timedsend,          MayBlock), // (mq_open+2) sys_mq_timedsend *
+
+   SYSBA(mq_timedreceive,       MayBlock), // (mq_open+3) sys_mq_timedreceive *
+   SYSB_(mq_notify,             0), // (mq_open+4) sys_mq_notify *
+   SYSBA(mq_getsetattr,         0), // (mq_open+5) sys_mq_getsetarr *
+   // sys_kexec_load	               283 sys_ni_syscall *
 
 #if !SIGNAL_SIMULATION
-   SYSBA(sigaltstack,		0),
-   SYSBA(rt_sigaction,		0),
-   SYSBA(sigaction,		0),
-   SYSBA(rt_sigprocmask,	0),
-   SYSBA(sigprocmask,		0),
+   SYSBA(sigaction,		0), // 67
+   SYSBA(sigprocmask,		0), // 126
+   SYSBA(rt_sigaction,		0), // 174
+   SYSBA(rt_sigprocmask,	0), // 175
+   SYSBA(sigaltstack,		0), // 186
 #endif /* !SIGNAL_SIMULATION */
 };
 #define MAX_SYS_INFO		(sizeof(sys_info)/sizeof(sys_info[0]))
 
 #undef SYSB_
 #undef SYSBA
+
+#undef SYSX_
+#undef SYSXY
 
 
 /* ---------------------------------------------------------------------

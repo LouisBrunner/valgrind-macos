@@ -93,5 +93,7 @@ vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-po
 	mkdir -p .in_place
 	-rm -f .in_place/libpthread.so.0
 	-rm -f .in_place/valgrind.so
+	-rm -f .in_place/valgrinq.so
 	ln -f -s ../libpthread.so .in_place/libpthread.so.0
 	ln -f -s ../valgrind.so .in_place/valgrind.so
+	ln -f -s ../valgrinq.so .in_place/valgrinq.so

@@ -1,0 +1,2 @@
+prog: ../../corecheck/tests/pth_once
+vgopts: -q

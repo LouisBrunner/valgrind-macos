@@ -44,6 +44,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \

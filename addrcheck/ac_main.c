@@ -1160,7 +1160,7 @@ Bool SK_(expensive_sanity_check) ( void )
 /*--- Client requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
+Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
 {
 #define IGNORE(what)                                                    \
    do {                                                                 \
@@ -1172,7 +1172,6 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
       }                                                                 \
    } while (0)
 
-   UInt* arg = arg_block;
    static Int moans = 3;
 
    /* Overload memcheck client reqs */
@@ -1212,12 +1211,12 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
          return False;
 
       default:
-         if (MAC_(handle_common_client_requests)(tid, arg_block, ret )) {
+         if (MAC_(handle_common_client_requests)(tid, arg, ret )) {
             return True;
          } else {
             VG_(message)(Vg_UserMsg, 
-                         "Warning: unknown addrcheck client request code %d",
-                         arg[0]);
+                         "Warning: unknown addrcheck client request code %llx",
+                         (ULong)arg[0]);
             return False;
          }
    }

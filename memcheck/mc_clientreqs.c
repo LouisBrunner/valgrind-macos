@@ -54,7 +54,7 @@ typedef
 typedef
    struct {
       Addr          start;
-      UInt          size;
+      SizeT         size;
       ExeContext*   where;
       CGenBlockKind kind;
    } 
@@ -177,7 +177,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
    return False;
 }
 
-Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
+Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
    Bool  ok;
@@ -274,8 +274,8 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
             return True;
          } else {
             VG_(message)(Vg_UserMsg, 
-                         "Warning: unknown memcheck client request code %d",
-                         arg[0]);
+                         "Warning: unknown memcheck client request code %llx",
+                         (ULong)arg[0]);
             return False;
          }
    }

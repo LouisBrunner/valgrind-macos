@@ -94,7 +94,7 @@ typedef UInt ThreadKey;
 static Addr __libc_freeres_wrapper;
 
 /* Forwards */
-static void do_client_request ( ThreadId tid, UInt* args );
+static void do_client_request ( ThreadId tid, UWord* args );
 static void scheduler_sanity ( void );
 static void do_pthread_mutex_timedlock_TIMEOUT ( ThreadId tid );
 static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
@@ -911,8 +911,8 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            UInt* args = (UInt*)(ARCH_CLREQ_ARGS(VG_(threads)[tid].arch));
-            UInt reqno = args[0];
+            UWord* args = (UWord*)(ARCH_CLREQ_ARGS(VG_(threads)[tid].arch));
+            UWord reqno = args[0];
             /* VG_(printf)("request 0x%x\n", reqno); */
 
             /* Are we really absolutely totally quitting? */
@@ -2874,16 +2874,16 @@ void VG_(intercept_libc_freeres_wrapper)(Addr addr)
    choose a new thread to run.  
 */
 static
-void do_client_request ( ThreadId tid, UInt* arg )
+void do_client_request ( ThreadId tid, UWord* arg )
 {
-   UInt req_no = arg[0];
+   UWord req_no = arg[0];
 
    if (0)
-      VG_(printf)("req no = 0x%x, arg = %p\n", req_no, arg);
+      VG_(printf)("req no = 0x%llx, arg = %p\n", (ULong)req_no, arg);
    switch (req_no) {
 
       case VG_USERREQ__CLIENT_CALL0: {
-         UInt (*f)(void) = (void*)arg[1];
+         UWord (*f)(void) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL0: func=%p\n", f);
 	 else
@@ -2891,7 +2891,7 @@ void do_client_request ( ThreadId tid, UInt* arg )
          break;
       }
       case VG_USERREQ__CLIENT_CALL1: {
-         UInt (*f)(UInt) = (void*)arg[1];
+         UWord (*f)(UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL1: func=%p\n", f);
 	 else
@@ -2899,7 +2899,7 @@ void do_client_request ( ThreadId tid, UInt* arg )
          break;
       }
       case VG_USERREQ__CLIENT_CALL2: {
-         UInt (*f)(UInt, UInt) = (void*)arg[1];
+         UWord (*f)(UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL2: func=%p\n", f);
 	 else
@@ -2907,7 +2907,7 @@ void do_client_request ( ThreadId tid, UInt* arg )
          break;
       }
       case VG_USERREQ__CLIENT_CALL3: {
-         UInt (*f)(UInt, UInt, UInt) = (void*)arg[1];
+         UWord (*f)(UWord, UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL3: func=%p\n", f);
 	 else
@@ -3213,7 +3213,7 @@ void do_client_request ( ThreadId tid, UInt* arg )
 
       default:
          if (VG_(needs).client_requests) {
-	    UInt ret;
+	    UWord ret;
 
             if (VG_(clo_verbosity) > 2)
                VG_(printf)("client request: code %x,  addr %p,  len %d\n",

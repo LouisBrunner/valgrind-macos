@@ -843,7 +843,7 @@ void MAC_(common_fini)(void (*leak_check)(void))
 /*--- Common client request handling                       ---*/
 /*------------------------------------------------------------*/
 
-Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
+Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
 {
    Char* err  = 
          "The client requests VALGRIND_MALLOCLIKE_BLOCK and\n"
@@ -859,7 +859,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
    
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
-      UInt** argp = (UInt**)arg;
+      UWord** argp = (UWord**)arg;
       // MAC_(bytes_leaked) et al were set by the last leak check (or zero
       // if no prior leak checks performed).
       *argp[1] = MAC_(bytes_leaked);

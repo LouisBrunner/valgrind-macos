@@ -127,7 +127,7 @@ void,	print_debug_usage
 ## not recognised.  arg_block[0] holds the request number, any further args
 ## from the request are in arg_block[1..].  'ret' is for the return value...
 ## it should probably be filled, if only with 0.
-Bool, handle_client_request, ThreadId tid, UInt* arg_block, UInt* ret
+Bool, handle_client_request, ThreadId tid, UWord* arg_block, UWord* ret
 
 
 ## ------------------------------------------------------------------

@@ -1128,13 +1128,13 @@ static void die_mem_stack_signal(Addr a, SizeT len)
 /*--- Client Requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(handle_client_request) ( ThreadId tid, UInt* argv, UInt* ret )
+Bool SK_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
 {
    switch (argv[0]) {
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
       void* res;
       void* p         = (void*)argv[1];
-      UInt  sizeB     =        argv[2];
+      SizeT sizeB     =        argv[2];
       *ret            = 0;
       res = new_block( p, sizeB, /*align -- ignored*/0, /*is_zeroed*/False );
       sk_assert(res == p);

@@ -334,7 +334,7 @@ extern void MAC_(common_pre_clo_init) ( void );
 extern void MAC_(common_fini)         ( void (*leak_check)(void) );
 
 extern Bool MAC_(handle_common_client_requests) ( ThreadId tid, 
-                                                  UInt* arg_block, UInt* ret );
+                                                  UWord* arg_block, UWord* ret );
 
 extern void MAC_(print_malloc_stats) ( void );
 

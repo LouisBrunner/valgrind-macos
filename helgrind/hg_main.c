@@ -3233,7 +3233,7 @@ static void bus_unlock(void)
 /*--- Client requests                                              ---*/
 /*--------------------------------------------------------------------*/
 
-Bool SK_(handle_client_request)(ThreadId tid, UInt *args, UInt *ret)
+Bool SK_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 {
    if (!VG_IS_SKIN_USERREQ('H','G',args[0]))
       return False;

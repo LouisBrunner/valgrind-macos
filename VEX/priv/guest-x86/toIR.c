@@ -9706,15 +9706,69 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-#if 0
    /* 66 0F 73 /7 ib = PSLLDQ by immediate */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
        && epartIsReg(insn[2])
        && gregOfRM(insn[2]) == 7) {
-      delta = dis_SSE_shiftE_imm( sorb, delta+2, "pslldq", Iop_ShlN64x2 );
+      IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
+      Int    imm = (Int)insn[3];
+      Int    reg = eregOfRM(insn[2]);
+      DIP("pslldq $%d,%s\n", imm, nameXMMReg(reg));
+      vassert(imm >= 0 && imm <= 255);
+      delta += 4;
+
+      sV    = newTemp(Ity_V128);
+      dV    = newTemp(Ity_V128);
+      hi64  = newTemp(Ity_I64);
+      lo64  = newTemp(Ity_I64);
+      hi64r = newTemp(Ity_I64);
+      lo64r = newTemp(Ity_I64);
+
+      if (imm >= 16) {
+         vassert(0); /* awaiting test case */
+         putXMMReg(reg, mkV128(0x0000));
+         goto decode_success;
+      }
+
+      assign( sV, getXMMReg(reg) );
+      assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
+
+      if (imm == 8) {
+         assign( lo64r, mkU64(0) );
+         assign( hi64r, mkexpr(lo64) );
+      }
+      else {
+         vex_printf("pslldq $%d,%s\n", imm, nameXMMReg(reg));
+         goto decode_failure;
+      }
+#if 0
+      /* I think this is correct, but check carefully before enabling. */
+      else 
+      if (imm > 8) {
+         vassert(0); /* awaiting test case */
+         assign( lo64r, mkU64(0) );
+         assign( hi64r, binop( Iop_Shl64, 
+                               mkexpr(lo64),
+                               mkU8( 8*(imm-8) ) ));
+      } else {
+         assign( lo64r, binop( Iop_Shl64, 
+                               mkexpr(lo64),
+                               mkU8(8 * imm) ));
+         assign( hi64r, 
+                 binop( Iop_Or64,
+                        binop(Iop_Shl64, mkexpr(hi64), 
+                                         mkU8(8 * imm)),
+                        binop(Iop_Shr64, mkexpr(lo64),
+                                         mkU8(8 * (8 - imm)) )
+                      )
+               );
+      }
+#endif
+      assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
+      putXMMReg(reg, mkexpr(dV));
       goto decode_success;
    }
-#endif
 
    /* 66 0F 73 /6 ib = PSLLQ by immediate */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73

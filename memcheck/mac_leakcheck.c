@@ -52,7 +52,7 @@ jmp_buf memscan_jmpbuf;
 
 
 static
-void vg_scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
+void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
 {
    if (0)
       VG_(printf)("OUCH! sig=%d addr=%p\n", sigNo, addr);
@@ -330,7 +330,7 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
    if (VG_DEBUG_LEAKCHECK)
       VG_(printf)("scan %p-%p\n", start, len);
    VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
-   VG_(set_fault_catcher)(vg_scan_all_valid_memory_catcher);
+   VG_(set_fault_catcher)(scan_all_valid_memory_catcher);
 
    lc_scanned += end-ptr;
 
@@ -557,7 +557,7 @@ static void make_summary()
 
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
-   vg_scan_all_valid_memory above).  All this is to avoid duplication
+   scan_all_valid_memory above).  All this is to avoid duplication
    of the leak-detection code for Memcheck and Addrcheck.
    Also pass in a tool-specific function to extract the .where field
    for allocated blocks, an indication of the resolution wanted for

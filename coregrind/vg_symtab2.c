@@ -1198,7 +1198,7 @@ Addr find_debug_file( Char* objpath, Char* debugname, UInt crc, UInt* size )
 /* Read the symbols from the object/exe specified by the SegInfo into
    the tables within the supplied SegInfo.  */
 static
-Bool vg_read_lib_symbols ( SegInfo* si )
+Bool read_lib_symbols ( SegInfo* si )
 {
    Bool          res;
    ElfXX_Ehdr*   ehdr;       /* The ELF header                          */
@@ -1607,7 +1607,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si->bss_start  = si->bss_size  = 0;
 
    /* And actually fill it up. */
-   if (!vg_read_lib_symbols ( si ) && 0) {
+   if (!read_lib_symbols ( si ) && 0) {
       /* XXX this interacts badly with the prevN optimization in
          addStr().  Since this frees the si, the si pointer value can
          be recycled, which confuses the curr_si == si test.  For now,
@@ -1879,8 +1879,8 @@ static void search_all_scopetabs ( Addr ptr,
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
    Caller supplies buf and nbuf.  If demangle is False, don't do
-   demangling, regardless of vg_clo_demangle -- probably because the
-   call has come from vg_what_fn_or_object_is_this. */
+   demangling, regardless of VG_(clo_demangle) -- probably because the
+   call has come from VG_(get_fnname_nodemangle)(). */
 static
 Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
                   Bool match_anywhere_in_fun, Bool show_offset)

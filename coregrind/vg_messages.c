@@ -38,14 +38,14 @@
 /* Size of a buffer used for creating messages. */
 #define M_MSGBUF 10000
 
-static char vg_mbuf[M_MSGBUF];
-static int vg_n_mbuf;
+static char mbuf[M_MSGBUF];
+static int n_mbuf;
 
 static void add_to_buf ( Char c, void *p )
 {
-  if (vg_n_mbuf >= (M_MSGBUF-1)) return;
-  vg_mbuf[vg_n_mbuf++] = c;
-  vg_mbuf[vg_n_mbuf]   = 0;
+  if (n_mbuf >= (M_MSGBUF-1)) return;
+  mbuf[n_mbuf++] = c;
+  mbuf[n_mbuf]   = 0;
 }
 
 static void add_timestamp ( Char *buf )
@@ -81,8 +81,8 @@ static int start_msg ( VgMsgKind kind )
    Char ts[32];
    Char c;
    static const Char pfx[] = ">>>>>>>>>>>>>>>>";
-   vg_n_mbuf = 0;
-   vg_mbuf[vg_n_mbuf] = 0;
+   n_mbuf = 0;
+   mbuf[n_mbuf] = 0;
 
    if (VG_(clo_time_stamp))
      add_timestamp(ts);
@@ -109,7 +109,7 @@ int end_msg ( void )
    int count = 0;
    if (VG_(clo_log_fd) >= 0) {
       add_to_buf('\n',0);
-      VG_(send_bytes_to_logging_sink) ( vg_mbuf, VG_(strlen)(vg_mbuf) );
+      VG_(send_bytes_to_logging_sink) ( mbuf, VG_(strlen)(mbuf) );
       count = 1;
    }
    return count;

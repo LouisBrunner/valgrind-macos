@@ -1631,54 +1631,54 @@ typedef
    CGenBlock;
 
 /* This subsystem is self-initialising. */
-static UInt       vg_cgb_size = 0;
-static UInt       vg_cgb_used = 0;
-static CGenBlock* vg_cgbs     = NULL;
+static UInt       cgb_size = 0;
+static UInt       cgb_used = 0;
+static CGenBlock* cgbs     = NULL;
 
 /* Stats for this subsystem. */
-static UInt vg_cgb_used_MAX = 0;   /* Max in use. */
-static UInt vg_cgb_allocs   = 0;   /* Number of allocs. */
-static UInt vg_cgb_discards = 0;   /* Number of discards. */
-static UInt vg_cgb_search   = 0;   /* Number of searches. */
+static UInt cgb_used_MAX = 0;   /* Max in use. */
+static UInt cgb_allocs   = 0;   /* Number of allocs. */
+static UInt cgb_discards = 0;   /* Number of discards. */
+static UInt cgb_search   = 0;   /* Number of searches. */
 
 
 static
-Int vg_alloc_client_block ( void )
+Int alloc_client_block ( void )
 {
    UInt       i, sz_new;
    CGenBlock* cgbs_new;
 
-   vg_cgb_allocs++;
+   cgb_allocs++;
 
-   for (i = 0; i < vg_cgb_used; i++) {
-      vg_cgb_search++;
-      if (vg_cgbs[i].start == 0 && vg_cgbs[i].size == 0)
+   for (i = 0; i < cgb_used; i++) {
+      cgb_search++;
+      if (cgbs[i].start == 0 && cgbs[i].size == 0)
          return i;
    }
 
    /* Not found.  Try to allocate one at the end. */
-   if (vg_cgb_used < vg_cgb_size) {
-      vg_cgb_used++;
-      return vg_cgb_used-1;
+   if (cgb_used < cgb_size) {
+      cgb_used++;
+      return cgb_used-1;
    }
 
    /* Ok, we have to allocate a new one. */
-   tl_assert(vg_cgb_used == vg_cgb_size);
-   sz_new = (vg_cgbs == NULL) ? 10 : (2 * vg_cgb_size);
+   tl_assert(cgb_used == cgb_size);
+   sz_new = (cgbs == NULL) ? 10 : (2 * cgb_size);
 
    cgbs_new = VG_(malloc)( sz_new * sizeof(CGenBlock) );
-   for (i = 0; i < vg_cgb_used; i++) 
-      cgbs_new[i] = vg_cgbs[i];
+   for (i = 0; i < cgb_used; i++) 
+      cgbs_new[i] = cgbs[i];
 
-   if (vg_cgbs != NULL)
-      VG_(free)( vg_cgbs );
-   vg_cgbs = cgbs_new;
+   if (cgbs != NULL)
+      VG_(free)( cgbs );
+   cgbs = cgbs_new;
 
-   vg_cgb_size = sz_new;
-   vg_cgb_used++;
-   if (vg_cgb_used > vg_cgb_used_MAX)
-      vg_cgb_used_MAX = vg_cgb_used;
-   return vg_cgb_used-1;
+   cgb_size = sz_new;
+   cgb_used++;
+   if (cgb_used > cgb_used_MAX)
+      cgb_used_MAX = cgb_used;
+   return cgb_used-1;
 }
 
 
@@ -1686,7 +1686,7 @@ static void show_client_block_stats ( void )
 {
    VG_(message)(Vg_DebugMsg, 
       "general CBs: %d allocs, %d discards, %d maxinuse, %d search",
-      vg_cgb_allocs, vg_cgb_discards, vg_cgb_used_MAX, vg_cgb_search 
+      cgb_allocs, cgb_discards, cgb_used_MAX, cgb_search 
    );
 }
 
@@ -1704,15 +1704,15 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
    /* VG_(printf)("try to identify %d\n", a); */
 
    /* Perhaps it's a general block ? */
-   for (i = 0; i < vg_cgb_used; i++) {
-      if (vg_cgbs[i].start == 0 && vg_cgbs[i].size == 0) 
+   for (i = 0; i < cgb_used; i++) {
+      if (cgbs[i].start == 0 && cgbs[i].size == 0) 
          continue;
-      if (VG_(addr_is_in_block)(a, vg_cgbs[i].start, vg_cgbs[i].size)) {
+      if (VG_(addr_is_in_block)(a, cgbs[i].start, cgbs[i].size)) {
          MAC_Mempool **d, *mp;
 
          /* OK - maybe it's a mempool, too? */
          mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list),
-                                             (UWord)vg_cgbs[i].start,
+                                             (UWord)cgbs[i].start,
                                              (void*)&d);
          if(mp != NULL) {
             if(mp->chunks != NULL) {
@@ -1728,16 +1728,16 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
                }
             }
             ai->akind = Mempool;
-            ai->blksize = vg_cgbs[i].size;
-            ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
-            ai->lastchange = vg_cgbs[i].where;
+            ai->blksize = cgbs[i].size;
+            ai->rwoffset  = (Int)(a) - (Int)(cgbs[i].start);
+            ai->lastchange = cgbs[i].where;
             return True;
          }
          ai->akind = UserG;
-         ai->blksize = vg_cgbs[i].size;
-         ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
-         ai->lastchange = vg_cgbs[i].where;
-	 ai->desc = vg_cgbs[i].desc;
+         ai->blksize = cgbs[i].size;
+         ai->rwoffset  = (Int)(a) - (Int)(cgbs[i].start);
+         ai->lastchange = cgbs[i].where;
+	 ai->desc = cgbs[i].desc;
          return True;
       }
    }
@@ -1803,12 +1803,12 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 
       case VG_USERREQ__CREATE_BLOCK: /* describe a block */
 	 if (arg[1] != 0 && arg[2] != 0) {
-	    i = vg_alloc_client_block();
-	    /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
-	    vg_cgbs[i].start = arg[1];
-	    vg_cgbs[i].size  = arg[2];
-	    vg_cgbs[i].desc  = VG_(strdup)((Char *)arg[3]);
-	    vg_cgbs[i].where = VG_(record_ExeContext) ( tid );
+	    i = alloc_client_block();
+	    /* VG_(printf)("allocated %d %p\n", i, cgbs); */
+	    cgbs[i].start = arg[1];
+	    cgbs[i].size  = arg[2];
+	    cgbs[i].desc  = VG_(strdup)((Char *)arg[3]);
+	    cgbs[i].where = VG_(record_ExeContext) ( tid );
 
 	    *ret = i;
 	 } else
@@ -1816,15 +1816,15 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 	 break;
 
       case VG_USERREQ__DISCARD: /* discard */
-         if (vg_cgbs == NULL 
-             || arg[2] >= vg_cgb_used ||
-	     (vg_cgbs[arg[2]].start == 0 && vg_cgbs[arg[2]].size == 0)) {
+         if (cgbs == NULL 
+             || arg[2] >= cgb_used ||
+	     (cgbs[arg[2]].start == 0 && cgbs[arg[2]].size == 0)) {
             *ret = 1;
 	 } else {
-	    tl_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
-	    vg_cgbs[arg[2]].start = vg_cgbs[arg[2]].size = 0;
-	    VG_(free)(vg_cgbs[arg[2]].desc);
-	    vg_cgb_discards++;
+	    tl_assert(arg[2] >= 0 && arg[2] < cgb_used);
+	    cgbs[arg[2]].start = cgbs[arg[2]].size = 0;
+	    VG_(free)(cgbs[arg[2]].desc);
+	    cgb_discards++;
 	    *ret = 0;
 	 }
 	 break;

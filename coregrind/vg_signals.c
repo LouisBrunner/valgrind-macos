@@ -89,8 +89,8 @@
    Forwards decls.
    ------------------------------------------------------------------ */
 
-static void vg_sync_signalhandler  ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
-static void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void sync_signalhandler  ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
 static void sigvgkill_handler	   ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
 
 static const Char *signame(Int sigNo);
@@ -152,7 +152,7 @@ typedef
       } 
       SCSS;
 
-static SCSS vg_scss;
+static SCSS scss;
 
 
 /* -----------------------------------------------------
@@ -191,13 +191,13 @@ typedef
    } 
    SKSS;
 
-static SKSS vg_skss;
+static SKSS skss;
 
 Bool VG_(is_sig_ign)(Int sigNo)
 {
    vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
-   return vg_scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN;
+   return scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN;
 }
 
 /* ---------------------------------------------------------------------
@@ -211,8 +211,8 @@ void pp_SKSS ( void )
    VG_(printf)("\n\nSKSS:\n");
    for (sig = 1; sig <= _VKI_NSIG; sig++) {
       VG_(printf)("sig %d:  handler 0x%x,  flags 0x%x\n", sig,
-                  vg_skss.skss_per_sig[sig].skss_handler,
-                  vg_skss.skss_per_sig[sig].skss_flags );
+                  skss.skss_per_sig[sig].skss_handler,
+                  skss.skss_per_sig[sig].skss_flags );
 
    }
 }
@@ -236,8 +236,8 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       void *skss_handler;
       void *scss_handler;
       
-      scss_handler = vg_scss.scss_per_sig[sig].scss_handler;
-      scss_flags   = vg_scss.scss_per_sig[sig].scss_flags;
+      scss_handler = scss.scss_per_sig[sig].scss_handler;
+      scss_flags   = scss.scss_per_sig[sig].scss_flags;
 
       switch(sig) {
       case VKI_SIGSEGV:
@@ -247,7 +247,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       case VKI_SIGTRAP:
 	 /* For these, we always want to catch them and report, even
 	    if the client code doesn't. */
-	 skss_handler = vg_sync_signalhandler;
+	 skss_handler = sync_signalhandler;
 	 break;
 
       case VKI_SIGCONT:
@@ -260,12 +260,12 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
             only set a handler if the client has set a signal handler.         
             Otherwise the kernel will interrupt a syscall which                
             wouldn't have otherwise been interrupted. */                 
-	 if (vg_scss.scss_per_sig[sig].scss_handler == VKI_SIG_DFL)
+	 if (scss.scss_per_sig[sig].scss_handler == VKI_SIG_DFL)
 	    skss_handler = VKI_SIG_DFL;
-	 else if (vg_scss.scss_per_sig[sig].scss_handler == VKI_SIG_IGN)
+	 else if (scss.scss_per_sig[sig].scss_handler == VKI_SIG_IGN)
 	    skss_handler = VKI_SIG_IGN;
 	 else
-	    skss_handler = vg_async_signalhandler;
+	    skss_handler = async_signalhandler;
 	 break;
 
       default:
@@ -279,7 +279,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 	    if (scss_handler == VKI_SIG_IGN)
 	       skss_handler = VKI_SIG_IGN;
 	    else 
-	       skss_handler = vg_async_signalhandler;
+	       skss_handler = async_signalhandler;
 	 }
 	 break;
       }
@@ -339,8 +339,8 @@ static void handle_SCSS_change ( Bool force_update )
    struct vki_sigaction ksa, ksa_old;
 
    /* Remember old SKSS and calculate new one. */
-   skss_old = vg_skss;
-   calculate_SKSS_from_SCSS ( &vg_skss );
+   skss_old = skss;
+   calculate_SKSS_from_SCSS ( &skss );
 
    /* Compare the new SKSS entries vs the old ones, and update kernel
       where they differ. */
@@ -353,15 +353,15 @@ static void handle_SCSS_change ( Bool force_update )
 
       if (!force_update) {
          if ((skss_old.skss_per_sig[sig].skss_handler
-              == vg_skss.skss_per_sig[sig].skss_handler)
+              == skss.skss_per_sig[sig].skss_handler)
              && (skss_old.skss_per_sig[sig].skss_flags
-                 == vg_skss.skss_per_sig[sig].skss_flags))
+                 == skss.skss_per_sig[sig].skss_flags))
             /* no difference */
             continue;
       }
 
-      ksa.ksa_handler = vg_skss.skss_per_sig[sig].skss_handler;
-      ksa.sa_flags    = vg_skss.skss_per_sig[sig].skss_flags;
+      ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
+      ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
       ksa.sa_restorer = VG_(sigreturn);
 
       /* block all signals in handler */
@@ -508,21 +508,21 @@ Int VG_(do_sys_sigaction) ( Int signo,
    /* If the client supplied non-NULL old_act, copy the relevant SCSS
       entry into it. */
    if (old_act) {
-      old_act->ksa_handler = vg_scss.scss_per_sig[signo].scss_handler;
-      old_act->sa_flags    = vg_scss.scss_per_sig[signo].scss_flags;
-      old_act->sa_mask     = vg_scss.scss_per_sig[signo].scss_mask;
-      old_act->sa_restorer = vg_scss.scss_per_sig[signo].scss_restorer;
+      old_act->ksa_handler = scss.scss_per_sig[signo].scss_handler;
+      old_act->sa_flags    = scss.scss_per_sig[signo].scss_flags;
+      old_act->sa_mask     = scss.scss_per_sig[signo].scss_mask;
+      old_act->sa_restorer = scss.scss_per_sig[signo].scss_restorer;
    }
 
    /* And now copy new SCSS entry from new_act. */
    if (new_act) {
-      vg_scss.scss_per_sig[signo].scss_handler  = new_act->ksa_handler;
-      vg_scss.scss_per_sig[signo].scss_flags    = new_act->sa_flags;
-      vg_scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
-      vg_scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
+      scss.scss_per_sig[signo].scss_handler  = new_act->ksa_handler;
+      scss.scss_per_sig[signo].scss_flags    = new_act->sa_flags;
+      scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
+      scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
 
-      VG_(sigdelset)(&vg_scss.scss_per_sig[signo].scss_mask, VKI_SIGKILL);
-      VG_(sigdelset)(&vg_scss.scss_per_sig[signo].scss_mask, VKI_SIGSTOP);
+      VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGKILL);
+      VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGSTOP);
    }
 
    /* All happy bunnies ... */
@@ -765,7 +765,7 @@ Bool VG_(client_signal_OK)(Int sigNo)
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler. */
 static
-void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
+void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
 {
    Addr         esp_top_of_frame;
    ThreadState* tst;
@@ -777,10 +777,10 @@ void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, 
-         "vg_push_signal_frame (thread %d): signal %d", tid, sigNo);
+         "push_signal_frame (thread %d): signal %d", tid, sigNo);
 
    if (/* this signal asked to run on an alt stack */
-       (vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_ONSTACK )
+       (scss.scss_per_sig[sigNo].scss_flags & VKI_SA_ONSTACK )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
@@ -806,17 +806,17 @@ void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
    }
 
-   vg_assert(vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN);
-   vg_assert(vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL);
+   vg_assert(scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN);
+   vg_assert(scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL);
 
    /* This may fail if the client stack is busted; if that happens,
       the whole process will exit rather than simply calling the
       signal handler. */
    VGA_(push_signal_frame)(tid, esp_top_of_frame, siginfo,
-                           vg_scss.scss_per_sig[sigNo].scss_handler,
-                           vg_scss.scss_per_sig[sigNo].scss_flags,
+                           scss.scss_per_sig[sigNo].scss_handler,
+                           scss.scss_per_sig[sigNo].scss_flags,
 			  &tst->sig_mask,
-			   vg_scss.scss_per_sig[sigNo].scss_restorer);
+			   scss.scss_per_sig[sigNo].scss_restorer);
 }
 
 
@@ -1235,7 +1235,7 @@ static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    If we're not being quiet, then print out some more detail about
    fatal signals (esp. core dumping signals).
  */
-static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
+static void default_action(const vki_siginfo_t *info, ThreadId tid)
 {
    Int  sigNo     = info->si_signo;
    Bool terminate = False;	/* kills process         */
@@ -1414,7 +1414,7 @@ static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
 static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
 {
    Int			sigNo = info->si_signo;
-   SCSS_Per_Signal	*handler = &vg_scss.scss_per_sig[sigNo];
+   SCSS_Per_Signal	*handler = &scss.scss_per_sig[sigNo];
    void			*handler_fn;
    ThreadState		*tst = VG_(get_ThreadState)(tid);
 
@@ -1444,7 +1444,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
    vg_assert(handler_fn != VKI_SIG_IGN);
 
    if (handler_fn == VKI_SIG_DFL) {
-      vg_default_action(info, tid);
+      default_action(info, tid);
    } else {
       /* Create a signal delivery frame, and set the client's %ESP and
 	 %EIP so that when execution continues, we will enter the
@@ -1458,7 +1458,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
       */
       vg_assert(VG_(is_valid_tid)(tid));
 
-      vg_push_signal_frame ( tid, info );
+      push_signal_frame ( tid, info );
 
       if (handler->scss_flags & VKI_SA_ONESHOT) {
 	 /* Do the ONESHOT thing. */
@@ -1628,7 +1628,7 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
    since that's the only time this set of signals is unblocked.
 */
 static 
-void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -1644,7 +1644,7 @@ void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontex
 
    /* Update thread state properly */
    VGA_(interrupted_syscall)(tid, uc, 
-			     !!(vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
+			     !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
 
    /* Set up the thread's state to deliver a signal */
    if (!VG_(is_sig_ign)(info->si_signo))
@@ -1654,7 +1654,7 @@ void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontex
       handler. */
    VG_(resume_scheduler)(tid);
 
-   VG_(core_panic)("vg_async_signalhandler: got unexpected signal while outside of scheduler");
+   VG_(core_panic)("async_signalhandler: got unexpected signal while outside of scheduler");
 }
 
 /* Extend the stack to cover addr.  maxsize is the limit the stack can grow to.
@@ -1729,7 +1729,7 @@ void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
    Receive a sync signal from the host. 
 */
 static
-void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
+void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
 
@@ -1758,8 +1758,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 	    client's signal mask was applied, so we can't get here
 	    unless the client wants this signal right now.  This means
 	    we can simply use the async_signalhandler. */
-	 vg_async_signalhandler(sigNo, info, uc);
-	 VG_(core_panic)("vg_async_signalhandler returned!?\n");
+	 async_signalhandler(sigNo, info, uc);
+	 VG_(core_panic)("async_signalhandler returned!?\n");
       }
 
       if (info->_sifields._kill._pid == 0) {
@@ -1971,12 +1971,12 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext 
 }
 
 static __attribute((unused))
-void pp_vg_ksigaction ( struct vki_sigaction* sa )
+void pp_ksigaction ( struct vki_sigaction* sa )
 {
    Int i;
-   VG_(printf)("vg_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
+   VG_(printf)("pp_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
                sa->ksa_handler, (UInt)sa->sa_flags, sa->sa_restorer);
-   VG_(printf)("vg_ksigaction: { ");
+   VG_(printf)("pp_ksigaction: { ");
    for (i = 1; i <= VG_(max_signal); i++)
       if (VG_(sigismember(&(sa->sa_mask),i)))
          VG_(printf)("%d ", i);
@@ -2105,7 +2105,7 @@ void VG_(sigstartup_actions) ( void )
       if (i >= VKI_SIGRTMIN) {
 	 struct vki_sigaction tsa;
 
-	 tsa.ksa_handler = (void *)vg_sync_signalhandler;
+	 tsa.ksa_handler = (void *)sync_signalhandler;
 	 tsa.sa_flags = VKI_SA_SIGINFO;
 	 tsa.sa_restorer = 0;
 	 VG_(sigfillset)(&tsa.sa_mask);
@@ -2126,23 +2126,23 @@ void VG_(sigstartup_actions) ( void )
          VG_(printf)("snaffling handler 0x%x for signal %d\n", 
                      (Addr)(sa.ksa_handler), i );
 
-      vg_scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
-      vg_scss.scss_per_sig[i].scss_flags    = sa.sa_flags;
-      vg_scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
-      vg_scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
+      scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
+      scss.scss_per_sig[i].scss_flags    = sa.sa_flags;
+      scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
+      scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
    }
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "Max kernel-supported signal is %d", VG_(max_signal));
 
    /* Our private internal signals are treated as ignored */
-   vg_scss.scss_per_sig[VKI_SIGVGCHLD].scss_handler = VKI_SIG_IGN;
-   vg_scss.scss_per_sig[VKI_SIGVGCHLD].scss_flags   = VKI_SA_SIGINFO;
-   VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGCHLD].scss_mask);
+   scss.scss_per_sig[VKI_SIGVGCHLD].scss_handler = VKI_SIG_IGN;
+   scss.scss_per_sig[VKI_SIGVGCHLD].scss_flags   = VKI_SA_SIGINFO;
+   VG_(sigfillset)(&scss.scss_per_sig[VKI_SIGVGCHLD].scss_mask);
 
-   vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
-   vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
-   VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
+   scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
+   scss.scss_per_sig[VKI_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
+   VG_(sigfillset)(&scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
    /* Copy the process' signal mask into the root thread. */
    vg_assert(VG_(threads)[VG_(master_tid)].status == VgTs_Init);

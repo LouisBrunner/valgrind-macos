@@ -50,11 +50,11 @@
 
 /* The list of error contexts found, both suppressed and unsuppressed.
    Initially empty, and grows as errors are detected. */
-static Error* vg_errors = NULL;
+static Error* errors = NULL;
 
 /* The list of suppression directives, as read from the specified
    suppressions file. */
-static Supp* vg_suppressions = NULL;
+static Supp* suppressions = NULL;
 
 /* Running count of unsuppressed errors detected. */
 static UInt n_errs_found = 0;
@@ -425,10 +425,10 @@ void VG_(maybe_record_error) ( ThreadId tid,
           Error* p;
           Error* p_prev;
           UInt   extra_size;
-          VgRes  exe_res                = Vg_MedRes;
-   static Bool   stopping_message       = False;
-   static Bool   slowdown_message       = False;
-   static Int    vg_n_errs_shown        = 0;
+          VgRes  exe_res          = Vg_MedRes;
+   static Bool   stopping_message = False;
+   static Bool   slowdown_message = False;
+   static Int    n_errs_shown     = 0;
 
    /* After M_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
       been found, or M_COLLECT_NO_ERRORS_AFTER_FOUND total errors
@@ -437,12 +437,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
       extremely buggy programs, although it does make it pretty
       pointless to continue the Valgrind run after this point. */
    if (VG_(clo_error_limit) 
-       && (vg_n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN
+       && (n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN
            || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
 
-	 if (vg_n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN) {
+	 if (n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN) {
             VG_(message)(Vg_UserMsg, 
                "More than %d different errors detected.  "
                "I'm not reporting any more.",
@@ -471,7 +471,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    /* After M_COLLECT_ERRORS_SLOWLY_AFTER different errors have
       been found, be much more conservative about collecting new
       ones. */
-   if (vg_n_errs_shown >= M_COLLECT_ERRORS_SLOWLY_AFTER) {
+   if (n_errs_shown >= M_COLLECT_ERRORS_SLOWLY_AFTER) {
       exe_res = Vg_LowRes;
       if (!slowdown_message) {
          VG_(message)(Vg_UserMsg, "");
@@ -488,7 +488,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    construct_error ( &err, tid, ekind, a, s, extra, NULL );
 
    /* First, see if we've got an error record matching this one. */
-   p      = vg_errors;
+   p      = errors;
    p_prev = NULL;
    while (p != NULL) {
       if (eq_Error(exe_res, p, &err)) {
@@ -506,9 +506,9 @@ void VG_(maybe_record_error) ( ThreadId tid,
             for it are faster. */
          if (p_prev != NULL) {
             vg_assert(p_prev->next == p);
-            p_prev->next    = p->next;
-            p->next         = vg_errors;
-            vg_errors = p;
+            p_prev->next = p->next;
+            p->next      = errors;
+            errors       = p;
 	 }
 
          return;
@@ -558,16 +558,16 @@ void VG_(maybe_record_error) ( ThreadId tid,
       p->extra = new_extra;
    }
 
-   p->next = vg_errors;
+   p->next = errors;
    p->supp = is_suppressible_error(&err);
-   vg_errors = p;
+   errors  = p;
    if (p->supp == NULL) {
       n_errs_found++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
       pp_Error(p, False);
       is_first_shown_context = False;
-      vg_n_errs_shown++;
+      n_errs_shown++;
       do_actions_on_error(p, /*allow_db_attach*/True);
    } else {
       n_errs_suppressed++;
@@ -637,13 +637,13 @@ void VG_(show_all_errors) ( void )
       return;
 
    n_err_contexts = 0;
-   for (p = vg_errors; p != NULL; p = p->next) {
+   for (p = errors; p != NULL; p = p->next) {
       if (p->supp == NULL)
          n_err_contexts++;
    }
 
    n_supp_contexts = 0;
-   for (su = vg_suppressions; su != NULL; su = su->next) {
+   for (su = suppressions; su != NULL; su = su->next) {
       if (su->count > 0)
          n_supp_contexts++;
    }
@@ -660,7 +660,7 @@ void VG_(show_all_errors) ( void )
    for (i = 0; i < n_err_contexts; i++) {
       n_min = (1 << 30) - 1;
       p_min = NULL;
-      for (p = vg_errors; p != NULL; p = p->next) {
+      for (p = errors; p != NULL; p = p->next) {
          if (p->supp != NULL) continue;
          if (p->count < n_min) {
             n_min = p->count;
@@ -687,7 +687,7 @@ void VG_(show_all_errors) ( void )
    if (n_supp_contexts > 0) 
       VG_(message)(Vg_DebugMsg, "");
    any_supp = False;
-   for (su = vg_suppressions; su != NULL; su = su->next) {
+   for (su = suppressions; su != NULL; su = su->next) {
       if (su->count > 0) {
          any_supp = True;
          VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);
@@ -787,7 +787,7 @@ Bool tool_name_present(Char *name, Char *names)
    return found;
 }
 
-/* Read suppressions from the file specified in vg_clo_suppressions
+/* Read suppressions from the file specified in VG_(clo_suppressions)
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
@@ -924,8 +924,8 @@ static void load_one_suppressions_file ( Char* filename )
          supp->callers[i] = tmp_callers[i];
       }
 
-      supp->next = vg_suppressions;
-      vg_suppressions = supp;
+      supp->next = suppressions;
+      suppressions = supp;
    }
    VG_(close)(fd);
    return;
@@ -946,7 +946,7 @@ static void load_one_suppressions_file ( Char* filename )
 void VG_(load_suppressions) ( void )
 {
    Int i;
-   vg_suppressions = NULL;
+   suppressions = NULL;
    for (i = 0; i < VG_(clo_n_suppressions); i++) {
       if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, "Reading suppressions file: %s", 
@@ -1015,7 +1015,7 @@ static Supp* is_suppressible_error ( Error* err )
    Supp* su;
 
    /* See if the error context matches any suppression. */
-   for (su = vg_suppressions; su != NULL; su = su->next) {
+   for (su = suppressions; su != NULL; su = su->next) {
       if (supp_matches_error(su, err) &&
           supp_matches_callers(err, su))
       {

@@ -601,7 +601,7 @@ void VGA_(signal_return)(ThreadId tid, Bool isRT)
    if (VG_(clo_trace_signals))
       VG_(message)(
          Vg_DebugMsg, 
-         "vg_pop_signal_frame (thread %d): isRT=%d valid magic; RIP=%p", 
+         "VGA_(signal_return) (thread %d): isRT=%d valid magic; RIP=%p", 
          tid, isRT, tst->arch.vex.guest_RIP);
 
    /* tell the tools */

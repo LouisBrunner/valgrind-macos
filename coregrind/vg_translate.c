@@ -562,6 +562,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case SSE3a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemRd:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3g_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    case SSE4:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && N3  && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
@@ -876,6 +877,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case SSE2a_MemWr: return "SSE2a_MWr";
       case SSE2a_MemRd: return "SSE2a_MRd";
       case SSE3g_RegRd: return "SSE3g_RRd";
+      case SSE3:        return "SSE3";
       case SSE4:        return "SSE4";
       case SSE3a_MemWr: return "SSE3a_MWr";
       case SSE3a_MemRd: return "SSE3a_MRd";
@@ -1051,6 +1053,12 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(pp_UOperand)(u, 3, 4, True);
          break;
 
+      case SSE3:
+         VG_(printf)("0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
+                     u->val2 & 0xFF );
+         break;
+
       case SSE4:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, 
@@ -1211,7 +1219,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case MMX2_RegRd: RD(2); break;
       case MMX2_RegWr: WR(2); break;
 
-      case SSE4:
+      case SSE4: case SSE3:
       case MMX1: case MMX2: case MMX3:
       case NOP:   case FPU:   case INCEIP: case CALLM_S: case CALLM_E:
       case CLEAR: case CALLM: case LOCK: break;
@@ -1366,7 +1374,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case SSE2a_MemWr: case SSE2a_MemRd:
       case SSE3a_MemWr: case SSE3a_MemRd:
       case SSE3g_RegRd:
-      case SSE4:
+      case SSE4: case SSE3:
       case WIDEN:
       /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
       case GETSEG: case PUTSEG: 
@@ -2233,10 +2241,21 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    Bool        debugging_translation;
    UChar*      final_code;
    UCodeBlock* cb;
+   Bool        notrace_until_done;
+   Int         notrace_until_limit = 0;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation
       = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
+
+   /* If codegen tracing, don't start tracing until
+      notrace_until_limit blocks have gone by.  This avoids printing
+      huge amounts of useless junk when all we want to see is the last
+      few blocks translated prior to a failure.  Set
+      notrace_until_limit to be the number of translations to be made
+      before --trace-codegen= style printing takes effect. */
+   notrace_until_done
+      = VG_(overall_in_count) > notrace_until_limit;
 
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tst, "", orig_addr, 1 );
@@ -2245,7 +2264,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    cb->orig_eip = orig_addr;
 
    /* If doing any code printing, print a basic block start marker */
-   if (VG_(clo_trace_codegen)) {
+   if (VG_(clo_trace_codegen) && notrace_until_done) {
       Char fnname[64] = "";
       VG_(get_fnname_if_entry)(orig_addr, fnname, 64);
       VG_(printf)(
@@ -2256,8 +2275,10 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
-#  define DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(n) \
-      ( debugging_translation || (VG_(clo_trace_codegen) & (1 << (n-1))) )
+#  define DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(n)               \
+      ( debugging_translation                                   \
+        || (notrace_until_done                                  \
+            && (VG_(clo_trace_codegen) & (1 << (n-1))) ))
 
    /* Disassemble this basic block into cb. */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(1);

@@ -1336,6 +1336,14 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       tl_assert(d->fxState[i].fx != Ifx_None);
       if (d->fxState[i].fx == Ifx_Write)
          continue;
+
+      /* Ignore any sections marked as 'always defined'. */
+      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size )) {
+         VG_(printf)("memcheck: Dirty gst: ignored off %d, sz %d\n",
+                     d->fxState[i].offset, d->fxState[i].size );
+         continue;
+      }
+
       /* This state element is read or modified.  So we need to
          consider it. */
       tySrc = szToITy( d->fxState[i].size );
@@ -1404,6 +1412,9 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    for (i = 0; i < d->nFxState; i++) {
       tl_assert(d->fxState[i].fx != Ifx_None);
       if (d->fxState[i].fx == Ifx_Read)
+         continue;
+      /* Ignore any sections marked as 'always defined'. */
+      if (isAlwaysDefd(mce, d->fxState[i].offset, d->fxState[i].size ))
          continue;
       /* this state element is written or modified.  So we need to
          consider it. */

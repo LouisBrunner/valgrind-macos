@@ -3423,6 +3423,88 @@ PRE(ioctl)
       break;
 #endif
 
+   case PPCLAIM:
+   case PPEXCL:
+   case PPYIELD:
+   case PPRELEASE:
+      break;
+   case PPSETMODE:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETMODE)", arg3,
+                     sizeof(int) );
+      break;
+   case PPGETMODE:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETMODE)", arg3,
+                     sizeof(int) );
+      break;
+   case PPSETPHASE:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETPHASE)", arg3,
+                     sizeof(int) );
+      break;
+   case PPGETPHASE:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETPHASE)", arg3,
+                     sizeof(int) );
+      break;
+   case PPGETMODES:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETMODES)", arg3,
+                     sizeof(unsigned int) );
+      break;
+   case PPSETFLAGS:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETFLAGS)", arg3,
+                     sizeof(int) );
+      break;
+   case PPGETFLAGS:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETFLAGS)", arg3,
+                     sizeof(int) );
+      break;
+   case PPRSTATUS:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPRSTATUS)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPRDATA:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPRDATA)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPRCONTROL:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPRCONTROL)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPWDATA:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPWDATA)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPWCONTROL:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPWCONTROL)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPFCONTROL:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPFCONTROL)", arg3,
+                     2 * sizeof(unsigned char) );
+      break;
+   case PPDATADIR:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPDATADIR)", arg3,
+                     sizeof(int) );
+      break;
+   case PPNEGOT:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPNEGOT)", arg3,
+                     sizeof(int) );
+      break;
+   case PPWCTLONIRQ:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPWCTLONIRQ)", arg3,
+                     sizeof(unsigned char) );
+      break;
+   case PPCLRIRQ:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPCLRIRQ)", arg3,
+                     sizeof(int) );
+      break;
+   case PPSETTIME:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETTIME)", arg3,
+                     sizeof(struct timeval) );
+      break;
+   case PPGETTIME:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETTIME)", arg3,
+                     sizeof(struct timeval) );
+      break;
+
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
 	 size bits.  The encoding scheme is described in
@@ -3861,6 +3943,49 @@ POST(ioctl)
          VG_TRACK( post_mem_write,arg3, sizeof(struct fb_fix_screeninfo));
       break;
 #endif
+
+   case PPCLAIM:
+   case PPEXCL:
+   case PPYIELD:
+   case PPRELEASE:
+   case PPSETMODE:
+   case PPSETPHASE:
+   case PPSETFLAGS:
+   case PPWDATA:
+   case PPWCONTROL:
+   case PPFCONTROL:
+   case PPDATADIR:
+   case PPNEGOT:
+   case PPWCTLONIRQ:
+   case PPSETTIME:
+      break;
+   case PPGETMODE:
+      VG_TRACK( post_mem_write, arg3, sizeof(int) );
+      break;
+   case PPGETPHASE:
+      VG_TRACK( post_mem_write, arg3, sizeof(int) );
+      break;
+   case PPGETMODES:
+      VG_TRACK( post_mem_write, arg3, sizeof(unsigned int) );
+      break;
+   case PPGETFLAGS:
+      VG_TRACK( post_mem_write, arg3, sizeof(int) );
+      break;
+   case PPRSTATUS:
+      VG_TRACK( post_mem_write, arg3, sizeof(unsigned char) );
+      break;
+   case PPRDATA:
+      VG_TRACK( post_mem_write, arg3, sizeof(unsigned char) );
+      break;
+   case PPRCONTROL:
+      VG_TRACK( post_mem_write, arg3, sizeof(unsigned char) );
+      break;
+   case PPCLRIRQ:
+      VG_TRACK( post_mem_write, arg3, sizeof(int) );
+      break;
+   case PPGETTIME:
+      VG_TRACK( post_mem_write, arg3, sizeof(struct timeval) );
+      break;
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and

@@ -75,6 +75,7 @@ typedef unsigned short u16;
 #endif
 #include <linux/mii.h>    /* for mii_* structs */
 #endif
+#include <linux/ppdev.h>  /* for PP* ioctls */
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

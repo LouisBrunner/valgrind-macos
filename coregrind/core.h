@@ -1339,6 +1339,18 @@ extern REGPARM(1)
    Exports of vg_proxylwp.c
    ------------------------------------------------------------------ */
 
+enum PXState
+{
+   PXS_BAD = -1,
+   PXS_WaitReq,		/* waiting for a request */
+   PXS_RunSyscall,	/* running a syscall */
+   PXS_IntReply,	/* request interrupted - need to send reply */
+   PXS_SysDone,		/* small window between syscall
+			   complete and results written out */
+   PXS_SigACK,		/* waiting for a signal ACK */
+};
+
+
 /* Issue a syscall for thread tid */
 extern Int  VG_(sys_issue)(int tid);
 
@@ -1524,7 +1536,13 @@ extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 // Platform-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
 
-void VGA_(restart_syscall)(arch_thread_t *tst);
+extern const Addr vga_sys_before, vga_sys_restarted,
+                  vga_sys_after, vga_sys_done;
+
+extern void VGA_(restart_syscall)(arch_thread_t* tst);
+
+extern void VGA_(thread_syscall)(Int syscallno, ThreadState* tst, 
+                                 enum PXState* state, enum PXState poststate);
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

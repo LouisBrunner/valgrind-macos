@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Simulation of Local Descriptor Tables               vg_ldt.c ---*/
+/*--- Simulation of Local Descriptor Tables        x86-linux/ldt.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*

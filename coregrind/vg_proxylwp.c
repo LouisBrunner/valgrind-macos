@@ -31,53 +31,6 @@
 
 #include "core.h"
 
-/* We need our own copy of VG_(do_syscall)() to handle a special
-   race-condition.  If we've got signals unblocked, and we take a
-   signal in the gap either just before or after the syscall, we may
-   end up not running the syscall at all, or running it more than
-   once.
-
-   The solution is to make the signal handler derive the proxy's
-   precise state by looking to see which eip it is executing at
-   exception time.
-
-   Ranges:
-
-   sys_before ... sys_restarted:
-	Setting up register arguments and running state.  If
-	interrupted, then the syscall should be considered to return
-	ERESTARTSYS.
-
-   sys_restarted:
-	If interrupted and eip==sys_restarted, then either the syscall
-	was about to start running, or it has run, was interrupted and
-	the kernel wants to restart it.  eax still contains the
-	syscall number.  If interrupted, then the syscall return value
-	should be ERESTARTSYS.
-
-   sys_after:
-	If interrupted and eip==sys_after, the syscall either just
-	finished, or it was interrupted and the kernel doesn't want to
-	restart it.  Either way, eax equals the correct return value
-	(either the actual return value, or EINTR).
-
-   sys_after ... sys_done:
-	System call is complete, but the state hasn't been updated,
-	nor has the result been written back.  eax contains the return
-	value.
-*/
-
-enum PXState
-{
-   PXS_BAD = -1,
-   PXS_WaitReq,		/* waiting for a request */
-   PXS_RunSyscall,	/* running a syscall */
-   PXS_IntReply,	/* request interrupted - need to send reply */
-   PXS_SysDone,		/* small window between syscall
-			   complete and results written out */
-   PXS_SigACK,		/* waiting for a signal ACK */
-};
-
 enum RequestType {
    PX_BAD = -1,
    PX_SetSigmask,		/* sched->proxy; proxy->sched */
@@ -88,79 +41,6 @@ enum RequestType {
    PX_Exiting,			/* reply sent by proxy for exit sync */
 };
 
-extern void do_thread_syscall(Int sys, 
-			      Int arg1, Int arg2, Int arg3, Int arg4, Int arg5, Int arg6,
-			      Int *result, enum PXState *statep, enum PXState poststate);
-
-asm(
-".text\n"
-"	.type do_thread_syscall,@function\n"
-
-"do_thread_syscall:\n"
-"	push	%esi\n"
-"	push	%edi\n"
-"	push	%ebx\n"
-"	push	%ebp\n"
-".sys_before:\n"
-"	movl	16+ 4(%esp),%eax\n" /* syscall */
-"	movl	16+ 8(%esp),%ebx\n" /* arg1 */
-"	movl	16+12(%esp),%ecx\n" /* arg2 */
-"	movl	16+16(%esp),%edx\n" /* arg3 */
-"	movl	16+20(%esp),%esi\n" /* arg4 */
-"	movl	16+24(%esp),%edi\n" /* arg5 */
-"	movl	16+28(%esp),%ebp\n" /* arg6 */
-".sys_restarted:\n"
-"	int	$0x80\n"
-".sys_after:\n"
-"	movl	16+32(%esp),%ebx\n"	/* ebx = Int *res */
-"	movl	%eax, (%ebx)\n"		/* write the syscall retval */
-
-"	movl	16+36(%esp),%ebx\n"	/* ebx = enum PXState * */
-"	testl	%ebx, %ebx\n"
-"	jz	1f\n"
-
-"	movl	16+40(%esp),%ecx\n"	/* write the post state (must be after retval write) */
-"	movl	%ecx,(%ebx)\n"
-
-".sys_done:\n"				/* OK, all clear from here */
-"1:	popl	%ebp\n"
-"	popl	%ebx\n"
-"	popl	%edi\n"
-"	popl	%esi\n"
-"	ret\n"
-"	.size do_thread_syscall,.-do_thread_syscall\n"
-".previous\n"
-
-".section .rodata\n"
-"sys_before:	.long	.sys_before\n"
-"sys_restarted:	.long	.sys_restarted\n"
-"sys_after:	.long	.sys_after\n"
-"sys_done:	.long	.sys_done\n"
-".previous\n"
-);
-extern const Addr sys_before, sys_restarted, sys_after, sys_done;
-
-/* Run a syscall for a particular thread, getting the arguments from
-   the thread's registers, and returning the result in the thread's
-   eax.
-
-   Assumes that the only thread state which matters is the contents of
-   %eax-%ebp and the return value in %eax.
- */
-static void thread_syscall(Int syscallno, ThreadState *tst, 
-			   enum PXState *state , enum PXState poststate)
-{
-   do_thread_syscall(syscallno,   /* syscall no. */
-		     tst->arch.m_ebx,  /* arg 1 */
-		     tst->arch.m_ecx,  /* arg 2 */
-		     tst->arch.m_edx,  /* arg 3 */
-		     tst->arch.m_esi,  /* arg 4 */
-		     tst->arch.m_edi,  /* arg 5 */
-		     tst->arch.m_ebp,  /* arg 6 */
-		     &tst->arch.m_eax, /* result */
-		     state,	  /* state to update */
-		     poststate);  /* state when syscall has finished */
-}
 
 #define VG_PROXY_MAGIC	0xef83b192
 struct ProxyLWP {
@@ -420,7 +300,7 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo, Addr ip, Int sysnum)
 
    /* First look to see if the EIP is within our interesting ranges
       near a syscall to work out what should happen. */
-   if (sys_before <= ip && ip <= sys_restarted) {
+   if (vga_sys_before <= ip && ip <= vga_sys_restarted) {
       /* We are before the syscall actually ran, or it did run and
 	 wants to be restarted.  Either way, set the return code to
 	 indicate a restart.  This is not really any different from
@@ -428,7 +308,7 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo, Addr ip, Int sysnum)
 	 the proxy and machine state here. */
       vg_assert(px->state == PXS_RunSyscall);
       vg_assert(PLATFORM_SYSCALL_RET(px->tst->arch) == -VKI_ERESTARTSYS);
-   } else if (sys_after <= ip && ip <= sys_done) {
+   } else if (vga_sys_after <= ip && ip <= vga_sys_done) {
       /* We're after the syscall.  Either it was interrupted by the
 	 signal, or the syscall completed normally.  In either case
          the usual register contains the correct syscall return value, and
@@ -740,7 +620,7 @@ static Int proxylwp(void *v)
 
 	       /* ST:4 */
 	       
-	       thread_syscall(syscallno, tst, &px->state, PXS_SysDone);
+	       VGA_(thread_syscall)(syscallno, tst, &px->state, PXS_SysDone);
 
 	       /* ST:5 */
 

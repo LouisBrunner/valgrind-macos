@@ -14,7 +14,33 @@
 #     caller1 name, or ditto
 #     (optionally: caller2 name)
 #     (optionally: caller3 name)
-#  }
+# }
+
+
+#-------- Threading bugs?
+
+{
+   pthread_error/__pthread_mutex_destroy/__closedir
+   PThread
+   fun:pthread_error
+   fun:__pthread_mutex_destroy
+   fun:__closedir
+}
+
+{
+   pthread_error/__pthread_mutex_destroy/_IO_default_finish
+   PThread
+   fun:pthread_error
+   fun:__pthread_mutex_destroy
+   fun:_IO_default_finish
+}
+
+{
+   __pthread_mutex_unlock/_IO_funlockfile
+   PThread
+   fun:__pthread_mutex_unlock
+   fun:_IO_funlockfile
+}
 
 {
    __pthread_mutex_unlock/__register_frame_info

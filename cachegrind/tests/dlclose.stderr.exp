@@ -1,5 +1,4 @@
 
-discard ... (... -> ...) translations in range 0x........ .. 0x........
 discard syms in /.../tests/myprint.so due to munmap()
 
 I   refs:

@@ -71,6 +71,7 @@
 #include <sys/poll.h>
 #include <stdio.h>
 #include <errno.h>
+#include <signal.h>
 
 #include <stdlib.h>
 
@@ -752,6 +753,7 @@ typedef
       unsigned long sysinfo;
       void*         (*root_fn) ( void* );
       void*         arg;
+      sigset_t	    sigmask;
    }
    NewThreadInfo;
 
@@ -817,9 +819,6 @@ void thread_wrapper ( NewThreadInfo* info )
       set_gs(ldt_info.entry_number * 8 + 3);
    }
 
-   /* Free up the arg block that pthread_create malloced. */
-   my_free(info);
-
    /* Minimally observe the attributes supplied. */
    if (attr__detachstate != PTHREAD_CREATE_DETACHED
        && attr__detachstate != PTHREAD_CREATE_JOINABLE)
@@ -829,6 +828,13 @@ void thread_wrapper ( NewThreadInfo* info )
 
    /* Initialise thread specific state */
    init_thread_specific_state();
+
+   /* Now that everything is set up, restore our signal mask (we're
+      ready to accept signals) */
+   sigprocmask(SIG_SETMASK, &info->sigmask, NULL);
+
+   /* Free up the arg block that pthread_create malloced. */
+   my_free(info);
 
    /* The root function might not return.  But if it does we simply
       move along to thread_exit_wrapper.  All other ways out for the
@@ -922,6 +928,8 @@ pthread_create (pthread_t *__restrict __thredd,
 
    info->root_fn = __start_routine;
    info->arg     = __arg;
+   sigprocmask(SIG_SETMASK, NULL, &info->sigmask);
+
    VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,
                            VG_USERREQ__APPLY_IN_NEW_THREAD,
                            &thread_wrapper, info, 0, 0);
@@ -929,6 +937,7 @@ pthread_create (pthread_t *__restrict __thredd,
 
    if (__thredd)
       *__thredd = tid_child;
+
    return 0; /* success */
 }
 

@@ -1918,8 +1918,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       print_sched_event(tid, msg_buf);
    }
 
-   /* We inherit our parent's signal mask. */
-   VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
+   /* Start the thread with all signals blocked; it's up to the client
+      code to set the right signal mask when it's ready. */
+   VG_(ksigfillset)(&VG_(threads)[tid].sig_mask);
 
    /* Now that the signal mask is set up, create a proxy LWP for this thread */
    VG_(proxy_create)(tid);

@@ -462,6 +462,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
    switch (syscallno) {
 
+#     if defined(__NR_exit_group)
+      case __NR_exit_group:
+         VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
+         break;
+#     endif
+
       case __NR_exit:
          VG_(core_panic)("syscall exit() not caught by the scheduler?!");
          break;

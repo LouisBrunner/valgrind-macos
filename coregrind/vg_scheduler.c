@@ -1433,7 +1433,11 @@ VgSchedReturnCode VG_(scheduler) ( void )
                __libc_freeres does some invalid frees which crash
                the unprotected malloc/free system. */
 
-            if (VG_(threads)[tid].m_eax == __NR_exit) {
+            if (VG_(threads)[tid].m_eax == __NR_exit
+#               if defined(__NR_exit_group)
+                || VG_(threads)[tid].m_eax == __NR_exit_group
+#               endif
+               ) {
 
                /* If __NR_exit, remember the supplied argument. */
                VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
@@ -1467,7 +1471,14 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 
             /* We've dealt with __NR_exit at this point. */
-            vg_assert(VG_(threads)[tid].m_eax != __NR_exit);
+            { Bool b
+                  = VG_(threads)[tid].m_eax != __NR_exit
+#                   if defined(__NR_exit_group)
+                    && VG_(threads)[tid].m_eax != __NR_exit_group
+#                   endif
+                    ;
+              vg_assert(b);
+            }
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an

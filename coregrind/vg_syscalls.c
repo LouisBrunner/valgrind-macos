@@ -4182,13 +4182,14 @@ PRE(read)
    MAYBE_PRINTF("read ( %d, %p, %d )\n", arg1, arg2, arg3);
 
    if (!fd_allowed(arg1, "read", tid, False))
-      res = -VKI_EBADF;   
+      res = -VKI_EBADF;
+   else
+      SYSCALL_TRACK( pre_mem_write, tid, "read(buf)", arg2, arg3 );
 }
 
 POST(read)
 {
-   if (res > 0)
-      VG_TRACK(post_mem_write, arg2, res);
+   VG_TRACK( post_mem_write, arg2, res );
 }
 
 PRE(write)

@@ -92,7 +92,7 @@ void* LibVEX_Alloc ( Int nbytes )
    vassert(vex_initdone);
    vassert(nbytes >= 0);
    if (vex_valgrind_support) {
-      /* ugly hack */
+      /* ugly hack -- do not remove */
       extern void* malloc ( int );
       return malloc(nbytes);
    } else {
@@ -144,8 +144,8 @@ void LibVEX_ShowAllocStats ( void )
 /*---------------------------------------------------------*/
 
 __attribute__ ((noreturn))
-void vex_assert_fail ( const Char* expr,
-                       const Char* file, Int line, const Char* fn )
+void vex_assert_fail ( const HChar* expr,
+                       const HChar* file, Int line, const HChar* fn )
 {
    vex_printf( "\nvex: %s:%d (%s): Assertion `%s' failed.\n",
                file, line, fn, expr );
@@ -180,22 +180,22 @@ void vpanic ( HChar* str )
    (Checker itself was GPL'd.)
    ------------------------------------------------------------------ */
 
-static Char vex_toupper ( Char c )
+static HChar vex_toupper ( HChar c )
 {
    if (c >= 'a' && c <= 'z')
-      return c + ('A' - 'a');
+      return toHChar(c + ('A' - 'a'));
    else
       return c;
 }
 
-static Int vex_strlen ( const Char* str )
+static Int vex_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-Bool vex_streq ( const Char* s1, const Char* s2 )
+Bool vex_streq ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       if (*s1 == 0 && *s2 == 0)
@@ -216,10 +216,10 @@ Bool vex_streq ( const Char* s1, const Char* s2 )
 
 /* Copy a string into the buffer. */
 static UInt
-myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str, 
+myvprintf_str ( void(*send)(HChar), Int flags, Int width, HChar* str, 
                 Bool capitalise )
 {
-#  define MAYBE_TOUPPER(ch) (capitalise ? vex_toupper(ch) : (ch))
+#  define MAYBE_TOUPPER(ch) toHChar(capitalise ? vex_toupper(ch) : (ch))
    UInt ret = 0;
    Int i, extra;
    Int len = vex_strlen(str);
@@ -265,14 +265,14 @@ myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str,
  *  WIDTH is the width of the field.
  */
 static UInt
-myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
+myvprintf_int64 ( void(*send)(HChar), Int flags, Int base, Int width, ULong p)
 {
-   Char buf[40];
-   Int  ind = 0;
-   Int  i, nc = 0;
-   Bool neg = False;
-   Char *digits = "0123456789ABCDEF";
-   UInt ret = 0;
+   HChar buf[40];
+   Int   ind = 0;
+   Int   i, nc = 0;
+   Bool  neg = False;
+   HChar *digits = "0123456789ABCDEF";
+   UInt  ret = 0;
 
    if (base < 2 || base > 16)
       return ret;
@@ -303,7 +303,7 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
    if (width > 0 && !(flags & VG_MSG_LJUSTIFY)) {
       for(; ind < width; ind++) {
          vassert(ind < 39);
-         buf[ind] = (flags & VG_MSG_ZJUSTIFY) ? '0': ' ';
+         buf[ind] = toHChar((flags & VG_MSG_ZJUSTIFY) ? '0': ' ');
       }
    }
 
@@ -324,7 +324,7 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
 
 /* A simple vprintf().  */
 static 
-UInt vprintf_wrk ( void(*send)(Char), const Char *format, va_list vargs )
+UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
 {
    UInt ret = 0;
    int i;
@@ -420,12 +420,13 @@ UInt vprintf_wrk ( void(*send)(Char), const Char *format, va_list vargs )
             break;
          case 'c': /* %c */
 	    ret++;
-            send(va_arg (vargs, int));
+            send(toHChar(va_arg (vargs, int)));
             break;
          case 's': case 'S': { /* %s */
             char *str = va_arg (vargs, char *);
             if (str == (char*) 0) str = "(null)";
-            ret += myvprintf_str(send, flags, width, str, format[i]=='S');
+            ret += myvprintf_str(send, flags, width, str, 
+                                 toBool(format[i]=='S'));
             break;
 	 }
 #        if 0
@@ -459,10 +460,10 @@ UInt vprintf_wrk ( void(*send)(Char), const Char *format, va_list vargs )
    debugging info should be sent via here.  The official route is to
    to use vg_message().  This interface is deprecated.
 */
-static Char myprintf_buf[1000];
-static Int  n_myprintf_buf;
+static HChar myprintf_buf[1000];
+static Int   n_myprintf_buf;
 
-static void add_to_myprintf_buf ( Char c )
+static void add_to_myprintf_buf ( HChar c )
 {
    if (c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/ ) {
       (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
@@ -495,9 +496,9 @@ UInt vex_printf ( const char *format, ... )
 
 /* A general replacement for sprintf(). */
 
-static Char *vg_sprintf_ptr;
+static HChar *vg_sprintf_ptr;
 
-static void add_to_vg_sprintf_buf ( Char c )
+static void add_to_vg_sprintf_buf ( HChar c )
 {
    *vg_sprintf_ptr++ = c;
 }

@@ -57,7 +57,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_x86_spechelper ( Char* function_name,
+IRExpr* guest_x86_spechelper ( HChar* function_name,
                                IRExpr** args );
 
 /* Describes to the optimser which part of the guest state require

@@ -122,7 +122,7 @@ static inline UInt hregNumber ( HReg r ) {
 }
 
 static inline Bool hregIsVirtual ( HReg r ) {
-   return (((UInt)r) & (1<<24)) ? True : False;
+   return toBool(((UInt)r) & (1<<24));
 }
 
 

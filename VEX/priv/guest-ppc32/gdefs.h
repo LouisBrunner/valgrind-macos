@@ -55,8 +55,8 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_ppc32_spechelper ( Char* function_name,
-                               IRExpr** args );
+IRExpr* guest_ppc32_spechelper ( HChar* function_name,
+                                 IRExpr** args );
 
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest

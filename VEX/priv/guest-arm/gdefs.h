@@ -55,7 +55,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_arm_spechelper ( Char* function_name,
+IRExpr* guest_arm_spechelper ( HChar* function_name,
                                IRExpr** args );
 
 /* Describes to the optimser which part of the guest state require

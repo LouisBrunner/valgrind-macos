@@ -73,7 +73,7 @@ ULong amd64g_calculate_condition (
 }
 
 
-IRExpr* guest_amd64_spechelper ( Char* function_name,
+IRExpr* guest_amd64_spechelper ( HChar* function_name,
                                  IRExpr** args )
 {
   return NULL;

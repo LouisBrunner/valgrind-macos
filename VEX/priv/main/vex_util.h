@@ -55,8 +55,8 @@
                              __PRETTY_FUNCTION__), 0)))
 
 __attribute__ ((__noreturn__))
-extern void vex_assert_fail ( const Char* expr, const Char* file,
-                              Int line, const Char* fn );
+extern void vex_assert_fail ( const HChar* expr, const HChar* file,
+                              Int line, const HChar* fn );
 __attribute__ ((__noreturn__))
 extern void vpanic ( HChar* str );
 
@@ -72,7 +72,7 @@ extern UInt vex_sprintf ( HChar* buf, const HChar *format, ... );
 
 /* String ops */
 
-extern Bool vex_streq ( const Char* s1, const Char* s2 );
+extern Bool vex_streq ( const HChar* s1, const HChar* s2 );
 
 
 /* Storage management: clear the area, and allocate from it. */

@@ -82,6 +82,10 @@ static inline UChar toUChar ( Int x ) {
    x &= 0xFF;
    return (UChar)x;
 }
+static inline HChar toHChar ( Int x ) {
+   x &= 0xFF;
+   return (HChar)x;
+}
 static inline UShort toUShort ( Int x ) {
    x &= 0xFFFF;
    return (UShort)x;

@@ -31,7 +31,7 @@ void failure_exit ( void )
 }
 
 static
-void log_bytes ( Char* bytes, Int nbytes )
+void log_bytes ( HChar* bytes, Int nbytes )
 {
    fwrite ( bytes, 1, nbytes, stdout );
 }

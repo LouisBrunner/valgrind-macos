@@ -51,7 +51,7 @@ __attribute__ ((noreturn))
 extern void (*vex_failure_exit) ( void );
 
 /* logging output function */
-extern void (*vex_log_bytes) ( Char*, Int nbytes );
+extern void (*vex_log_bytes) ( HChar*, Int nbytes );
 
 /* debug paranoia level */
 extern Int vex_debuglevel;

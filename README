@@ -82,13 +82,16 @@ Once step 5 is successful, you can now use valgrind.  Documentation
 is in docs/manual.html.  The following auxiliary steps may enhance
 your valgrinding experience, though.
 
-3.  Add enough suppressions to the suppression file for your kernel
-    (linux24.supp for instance) so that
+6.  Create a file containing  enough suppressions so that
        ./valgrind xedit
     runs without generating any errors.  This means you've more
     or less suppressed all the scummy errors from the X11 base
     libraries and from glibc, which will make it easier to spot
-    genuine errors in your own code.
+    genuine errors in your own code. The default.supp file
+    should contains a good starting point. Do *not* edit this file
+    however, as it will be overwritten at the next installation of
+    valgrind.
+
 
 Julian Seward (jseward@acm.org)
 15 Feb 2002

@@ -360,13 +360,14 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_COND_BROADCAST  0x3012
 #define VG_USERREQ__PTHREAD_KEY_CREATE      0x3013
 #define VG_USERREQ__PTHREAD_KEY_DELETE      0x3014
-#define VG_USERREQ__PTHREAD_SETSPECIFIC     0x3015
-#define VG_USERREQ__PTHREAD_GETSPECIFIC     0x3016
+#define VG_USERREQ__PTHREAD_SETSPECIFIC_PTR 0x3015
+#define VG_USERREQ__PTHREAD_GETSPECIFIC_PTR 0x3016
 #define VG_USERREQ__READ_MILLISECOND_TIMER  0x3017
 #define VG_USERREQ__PTHREAD_SIGMASK         0x3018
 #define VG_USERREQ__SIGWAIT                 0x3019
 #define VG_USERREQ__PTHREAD_KILL            0x301A
 #define VG_USERREQ__PTHREAD_YIELD           0x301B
+#define VG_USERREQ__PTHREAD_KEY_VALIDATE    0x301C
 
 #define VG_USERREQ__CLEANUP_PUSH            0x3020
 #define VG_USERREQ__CLEANUP_POP             0x3021
@@ -562,8 +563,13 @@ struct _ThreadState {
    Int          custack_used;
    CleanupEntry custack[VG_N_CLEANUPSTACK];
 
-   /* thread-specific data */
-   void* specifics[VG_N_THREAD_KEYS];
+   /* A pointer to the thread's-specific-data.  This is handled almost
+      entirely from vg_libpthread.c.  We just provide hooks to get and
+      set this ptr.  This is either NULL, indicating the thread has
+      read/written none of its specifics so far, OR points to a
+      void*[VG_N_THREAD_KEYS], allocated and deallocated in
+      vg_libpthread.c. */
+   void** specifics_ptr;
 
    /* This thread's blocked-signals mask.  Semantics is that for a
       signal to be delivered to this thread, the signal must not be

@@ -99,6 +99,9 @@ int my_do_syscall3 ( int syscallno,
    extern __locale_t __uselocale ( __locale_t );
 #endif
 
+static
+void init_libc_tsd_keys ( void );
+
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -229,6 +232,27 @@ void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
 			      __FILE__, __LINE__,                     \
                               __PRETTY_FUNCTION__), 0)))
 
+static
+void my_free ( void* ptr )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__FREE, ptr, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+static
+void* my_malloc ( int nbytes )
+{
+   void* res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__MALLOC, nbytes, 0, 0, 0);
+   my_assert(res != (void*)0);
+   return res;
+}
+
+
 
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
@@ -249,6 +273,24 @@ void pthread_error ( const char* msg )
    VALGRIND_MAGIC_SEQUENCE(res, 0,
                            VG_USERREQ__PTHREAD_ERROR, 
                            msg, 0, 0, 0);
+}
+
+
+/* ---------------------------------------------------
+   Here so it can be inlined without complaint.
+   ------------------------------------------------ */
+
+__inline__
+pthread_t pthread_self(void)
+{
+   int tid;
+   ensure_valgrind("pthread_self");
+   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   if (tid < 1 || tid >= VG_N_THREADS)
+      barf("pthread_self: invalid ThreadId");
+   return tid;
 }
 
 
@@ -443,6 +485,7 @@ void thread_exit_wrapper ( void* ret_val )
    int           detached, res;
    CleanupEntry  cu;
    pthread_key_t key;
+   void**        specifics_ptr;
 
    /* Run this thread's cleanup handlers. */
    while (1) {
@@ -470,6 +513,15 @@ void thread_exit_wrapper ( void* ret_val )
       }
       my_assert(res == -1);
    }
+
+   /* Free up my specifics space, if any. */
+   VALGRIND_MAGIC_SEQUENCE(specifics_ptr, 3 /* default */,
+                           VG_USERREQ__PTHREAD_GETSPECIFIC_PTR,
+                           pthread_self(), 0, 0, 0);
+   my_assert(specifics_ptr != (void**)3);
+   my_assert(specifics_ptr != (void**)1); /* 1 means invalid thread */
+   if (specifics_ptr != NULL)
+      my_free(specifics_ptr);
 
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
@@ -515,7 +567,6 @@ static
 __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
-   int   res;
    int   attr__detachstate;
    void* (*root_fn) ( void* );
    void* arg;
@@ -526,9 +577,7 @@ void thread_wrapper ( NewThreadInfo* info )
    arg               = info->arg;
 
    /* Free up the arg block that pthread_create malloced. */
-   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
-                           VG_USERREQ__FREE, info, 0, 0, 0);
-   my_assert(res == 0);
+   my_free(info);
 
    /* Minimally observe the attributes supplied. */
    if (attr__detachstate != PTHREAD_CREATE_DETACHED
@@ -536,6 +585,15 @@ void thread_wrapper ( NewThreadInfo* info )
       pthread_error("thread_wrapper: invalid attr->__detachstate");
    if (attr__detachstate == PTHREAD_CREATE_DETACHED)
       pthread_detach(pthread_self());
+
+#  ifdef GLIBC_2_3
+   /* Set this thread's locale to the global (default) locale.  A hack
+      in support of glibc-2.3.  This does the biz for the all new
+      threads; the root thread is done with a horrible hack in
+      init_libc_tsd_keys() below.
+   */
+   __uselocale(LC_GLOBAL_LOCALE);
+#  endif
 
    /* The root function might not return.  But if it does we simply
       move along to thread_exit_wrapper.  All other ways out for the
@@ -581,11 +639,13 @@ pthread_create (pthread_t *__restrict __thredd,
 
    ensure_valgrind("pthread_create");
 
+   /* make sure the tsd keys, and hence locale info, are initialised
+      before we get into complications making new threads. */
+   init_libc_tsd_keys();
+
    /* Allocate space for the arg block.  thread_wrapper will free
       it. */
-   VALGRIND_MAGIC_SEQUENCE(info, NULL /* default */,
-                           VG_USERREQ__MALLOC, 
-                           sizeof(NewThreadInfo), 0, 0, 0);
+   info = my_malloc(sizeof(NewThreadInfo));
    my_assert(info != NULL);
 
    if (__attr)
@@ -623,19 +683,6 @@ void pthread_exit(void *retval)
    ensure_valgrind("pthread_exit");
    /* Simple! */
    thread_exit_wrapper(retval);
-}
-
-
-pthread_t pthread_self(void)
-{
-   int tid;
-   ensure_valgrind("pthread_self");
-   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
-                           VG_USERREQ__PTHREAD_GET_THREADID,
-                           0, 0, 0, 0);
-   if (tid < 1 || tid >= VG_N_THREADS)
-      barf("pthread_self: invalid ThreadId");
-   return tid;
 }
 
 
@@ -1219,43 +1266,140 @@ int pause ( void )
    THREAD-SPECIFICs
    ------------------------------------------------ */
 
+static
+int key_is_valid (pthread_key_t key)
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 2 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_VALIDATE,
+                           key, 0, 0, 0);
+   my_assert(res != 2);
+   return res;
+}
+
+
+/* Returns NULL if thread is invalid.  Otherwise, if the thread
+   already has a specifics area, return that.  Otherwise allocate it
+   one. */
+static
+void** get_or_allocate_specifics_ptr ( pthread_t thread )
+{
+   int    res, i;
+   void** specifics_ptr;
+   ensure_valgrind("get_or_allocate_specifics_ptr");
+
+   /* Returns zero if the thread has no specific_ptr.  One if thread
+      is invalid.  Otherwise, the specific_ptr value.  This is
+      allocated with my_malloc and so is aligned and cannot be
+      confused with 1 or 3. */
+   VALGRIND_MAGIC_SEQUENCE(specifics_ptr, 3 /* default */,
+                           VG_USERREQ__PTHREAD_GETSPECIFIC_PTR,
+                           thread, 0, 0, 0);
+   my_assert(specifics_ptr != (void**)3);
+
+   if (specifics_ptr == (void**)1) 
+      return NULL; /* invalid thread */
+
+   if (specifics_ptr != NULL)
+      return specifics_ptr; /* already has a specifics ptr. */
+
+   /* None yet ... allocate a new one.  Should never fail. */
+   specifics_ptr = my_malloc( VG_N_THREAD_KEYS * sizeof(void*) );
+   my_assert(specifics_ptr != NULL);
+
+   VALGRIND_MAGIC_SEQUENCE(res, -1 /* default */,
+                           VG_USERREQ__PTHREAD_SETSPECIFIC_PTR,
+                           specifics_ptr, 0, 0, 0);
+   my_assert(res == 0);
+
+   /* POSIX sez: "Upon thread creation, the value NULL shall be
+      associated with all defined keys in the new thread."  This
+      allocation is in effect a delayed allocation of the specific
+      data for a thread, at its first-use.  Hence we initialise it
+      here. */
+   for (i = 0; i < VG_N_THREAD_KEYS; i++) {
+      specifics_ptr[i] = NULL;
+   }
+
+   return specifics_ptr;   
+}
+
+
 int __pthread_key_create(pthread_key_t *key,  
                          void  (*destr_function)  (void *))
 {
-   int res;
+   void** specifics_ptr;
+   int    res, i;
    ensure_valgrind("pthread_key_create");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+
+   /* This writes *key if successful.  It should never fail. */
+   VALGRIND_MAGIC_SEQUENCE(res, 1 /* default */,
                            VG_USERREQ__PTHREAD_KEY_CREATE,
                            key, destr_function, 0, 0);
+   my_assert(res == 0);
+
+   /* POSIX sez: "Upon key creation, the value NULL shall be
+      associated with the new key in all active threads." */
+   for (i = 0; i < VG_N_THREADS; i++) {
+      specifics_ptr = get_or_allocate_specifics_ptr(i);
+      /* we get NULL if i is an invalid thread. */
+      if (specifics_ptr != NULL)
+         specifics_ptr[*key] = NULL;
+   }
+
    return res;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_key_delete");
+   int res;
+   ensure_valgrind("pthread_key_create");
+   if (!key_is_valid(key))
+      return EINVAL;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_DELETE,
+                           key, 0, 0, 0);
+   my_assert(res == 0);
    return 0;
 }
 
 int __pthread_setspecific(pthread_key_t key, const void *pointer)
 {
-   int res;
+   void** specifics_ptr;
    ensure_valgrind("pthread_setspecific");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_SETSPECIFIC,
-                           key, pointer, 0, 0);
-   return res;
+   
+   if (!key_is_valid(key))
+      return EINVAL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   specifics_ptr[key] = (void*)pointer;
+   return 0;
 }
 
 void * __pthread_getspecific(pthread_key_t key)
 {
-   int res;
+   void** specifics_ptr;
    ensure_valgrind("pthread_getspecific");
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__PTHREAD_GETSPECIFIC,
-                           key, 0 , 0, 0);
-   return (void*)res;
+
+   if (!key_is_valid(key))
+      return NULL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   return specifics_ptr[key];
+}
+
+
+static
+void ** __pthread_getspecific_addr(pthread_key_t key)
+{
+   void** specifics_ptr;
+   ensure_valgrind("pthread_getspecific_addr");
+
+   if (!key_is_valid(key))
+      return NULL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   return &(specifics_ptr[key]);
 }
 
 
@@ -1424,8 +1568,10 @@ enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
 static int             libc_specifics_inited    = 0;
 static pthread_mutex_t libc_specifics_inited_mx = PTHREAD_MUTEX_INITIALIZER;
 
+
 /* These are the keys we must initialise the first time. */
 static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N];
+
 
 /* Initialise the keys, if they are not already initialised. */
 static
@@ -1440,12 +1586,12 @@ void init_libc_tsd_keys ( void )
       return;
 
    /* Take the lock. */
-   res = pthread_mutex_lock(&libc_specifics_inited_mx);
+   res = __pthread_mutex_lock(&libc_specifics_inited_mx);
    if (res != 0) barf("init_libc_tsd_keys: lock");
 
    /* Now test again, to be sure there is no mistake. */
    if (libc_specifics_inited != 0) {
-      res = pthread_mutex_unlock(&libc_specifics_inited_mx);
+      res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
       if (res != 0) barf("init_libc_tsd_keys: unlock(1)");
       return;
    }
@@ -1453,7 +1599,7 @@ void init_libc_tsd_keys ( void )
    /* Actually do the initialisation. */
    /* printf("INIT libc specifics\n"); */
    for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
-      res = pthread_key_create(&k, NULL);
+      res = __pthread_key_create(&k, NULL);
       if (res != 0) barf("init_libc_tsd_keys: create");
       libc_specifics_keys[i] = k;
    }
@@ -1463,12 +1609,19 @@ void init_libc_tsd_keys ( void )
 
 #  ifdef GLIBC_2_3
    /* Set the initialising thread's locale to the global (default)
-      locale.  A hack in support of glibc-2.3. */
+      locale.  A hack in support of glibc-2.3.  This does the biz for
+      the root thread.  For all other threads we run this in
+      thread_wrapper(), which does the real work of
+      pthread_create(). */
+   /* assert that we are the root thread.  I don't know if this is
+      really a valid assertion to make; if it breaks I'll reconsider
+      it. */
+   my_assert(pthread_self() == 1);
    __uselocale(LC_GLOBAL_LOCALE);
 #  endif
 
    /* Unlock and return. */
-   res = pthread_mutex_unlock(&libc_specifics_inited_mx);
+   res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
    if (res != 0) barf("init_libc_tsd_keys: unlock");
 }
 
@@ -1482,7 +1635,7 @@ libc_internal_tsd_set ( enum __libc_tsd_key_t key,
    if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_set: invalid key");
    init_libc_tsd_keys();
-   res = pthread_setspecific(libc_specifics_keys[key], pointer);
+   res = __pthread_setspecific(libc_specifics_keys[key], pointer);
    if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
    return 0;
 }
@@ -1495,11 +1648,10 @@ libc_internal_tsd_get ( enum __libc_tsd_key_t key )
    if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_get: invalid key");
    init_libc_tsd_keys();
-   v = pthread_getspecific(libc_specifics_keys[key]);
+   v = __pthread_getspecific(libc_specifics_keys[key]);
    /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
    return v;
 }
-
 
 
 int (*__libc_internal_tsd_set)
@@ -1509,6 +1661,26 @@ int (*__libc_internal_tsd_set)
 void* (*__libc_internal_tsd_get)
       (enum __libc_tsd_key_t key)
    = libc_internal_tsd_get;
+
+
+#ifdef GLIBC_2_3
+/* This one was first spotted be me in the glibc-2.2.93 sources. */
+static void**
+libc_internal_tsd_address ( enum __libc_tsd_key_t key )
+{
+   void** v;
+   /* printf("ADDR ADDR ADDR key %d\n", key); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_address: invalid key");
+   init_libc_tsd_keys();
+   v = __pthread_getspecific_addr(libc_specifics_keys[key]);
+   return v;
+}
+
+void ** (*__libc_internal_tsd_address) 
+        (enum __libc_tsd_key_t key)
+   = libc_internal_tsd_address;
+#endif
 
 
 /* ---------------------------------------------------------------------

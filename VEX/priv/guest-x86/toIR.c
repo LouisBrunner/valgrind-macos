@@ -3556,6 +3556,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
                break;
 
+#if 0
+            /* Dunno if this is right */
+            case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
+               r_dst = (UInt)modrm - 0xD8;
+               DIP("fcomp %%st(0),%%st(%d)\n", r_dst);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               break;
+#endif
             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
                break;
@@ -8088,7 +8104,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign(t2, getIReg(4, R_ESP));
       assign(t1, widenUto32(loadLE(szToITy(sz),mkexpr(t2))));
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
-      /* t1 is the flag word.  Mask out everything OSZACP and 
+      /* t1 is the flag word.  Mask out everything except OSZACP and 
 	 set the flags thunk to CC_OP_COPY. */
       stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
       stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));

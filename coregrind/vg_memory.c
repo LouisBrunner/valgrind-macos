@@ -539,7 +539,7 @@ static void set_address_range_perms ( Addr a, UInt len,
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with
       __NR_setitimer. */
-   vg_assert(VG_(first_and_last_secondaries_look_plausible));
+   vg_assert(VG_(first_and_last_secondaries_look_plausible)());
    VGP_POPCC;
 }
 
@@ -2219,7 +2219,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
       /* Check that nobody has spuriously claimed that the first or
          last 16 pages of memory have become accessible [...] */
-      vg_assert(VG_(first_and_last_secondaries_look_plausible));
+      vg_assert(VG_(first_and_last_secondaries_look_plausible)());
    }
 
    /* --- Now some more expensive checks. ---*/

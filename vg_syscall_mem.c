@@ -365,7 +365,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
    /* Since buggy syscall wrappers sometimes break this, we may as well 
       check ourselves. */
-   if (! VG_(first_and_last_secondaries_look_plausible))
+   if (! VG_(first_and_last_secondaries_look_plausible)())
       sane_before_call = False;
 
    /* the syscall no is in %eax.  For syscalls with <= 5 args,
@@ -2861,7 +2861,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
    /* { void zzzmemscan(void); zzzmemscan(); } */
 
-   if (! VG_(first_and_last_secondaries_look_plausible))
+   if (! VG_(first_and_last_secondaries_look_plausible)())
       sane_before_call = False;
 
    if (sane_before_call && (!sane_after_call)) {
@@ -2908,7 +2908,7 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
    VGP_PUSHCC(VgpSyscall);
 
    if (res != NULL
-       && ! VG_(first_and_last_secondaries_look_plausible))
+       && ! VG_(first_and_last_secondaries_look_plausible)())
       sane_before_post = False;
 
    switch (syscallno) {
@@ -2965,7 +2965,7 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
    }
 
    if (res != NULL) { /* only check after syscall */
-      if (! VG_(first_and_last_secondaries_look_plausible))
+      if (! VG_(first_and_last_secondaries_look_plausible)())
          sane_after_post = False;
 
       if (sane_before_post && (!sane_after_post)) {

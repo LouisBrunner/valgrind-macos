@@ -42,17 +42,17 @@
    of code retranslation.  */
 
 /* Size of the translation cache, in bytes. */
-#define VG_TC_SIZE /*16000000*/ /*32000000*/ 40000000
+#define VG_TC_SIZE /*16000000*/ 32000000 /*40000000*/
 
 /* Do a LRU pass when the translation cache becomes this full. */
-#define VG_TC_LIMIT_PERCENT 95
+#define VG_TC_LIMIT_PERCENT 98
 
 /* When doing an LRU pass, reduce TC fullness to this level. */
 #define VG_TC_TARGET_PERCENT 85
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
-#define VG_TT_SIZE /*100129*/ /*200191*/ 250829
+#define VG_TT_SIZE /*100129*/ 200191 /*250829*/
 
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80

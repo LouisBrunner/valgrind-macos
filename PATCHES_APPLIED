@@ -353,7 +353,7 @@ Richard Moore <rich@xmelegance.org>
 Me
    Syscall _sysctl (149).
 
-Aaron M. Ucko <amu@monk.mit.edu>
+Aaron M. Ucko <amu@alum.mit.edu>
    Use the size/dir info encoded in the top 16 bits of an ioctl number,
    where appropriate.
 

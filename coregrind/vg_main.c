@@ -565,6 +565,9 @@ static Bool   VG_(clo_wait_for_gdb)   = False;
    default. */
 Int    VG_(clo_signal_polltime) = 50;
 
+/* If true, assume we're running on a plain 2.4 kernel */
+Bool   VG_(clo_assume_24) = False;
+
 /* These flags reduce thread wakeup latency on syscall completion and
    signal delivery, respectively.  The downside is possible unfairness. */
 Bool   VG_(clo_lowlat_syscalls) = False; /* low-latency syscalls */
@@ -661,6 +664,7 @@ static void usage ( void )
 "			       a signal [no]\n"
 "    --lowlat-syscalls=no|yes  improve wake-up latency when a thread's\n"
 "			       syscall completes [no]\n"
+"    --assume-2.4=no|yes       assume we're running on a 2.4 kernel [no]\n"
 "\n"
 "  %s skin user options:\n";
 
@@ -1097,6 +1101,11 @@ static void process_cmd_line_options ( void )
 	 VG_(clo_lowlat_syscalls) = True;
       else if (VG_CLO_STREQ(argv[i], "--lowlat-syscalls=no"))
 	 VG_(clo_lowlat_syscalls) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--assume-2.4=yes"))
+	 VG_(clo_assume_24) = True;
+      else if (VG_CLO_STREQ(argv[i], "--assume-2.4=no"))
+	 VG_(clo_assume_24) = False;
 
       else if (VG_CLO_STREQN(13, argv[i], "--stop-after="))
          VG_(clo_stop_after) = VG_(atoll)(&argv[i][13]);

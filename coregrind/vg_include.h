@@ -249,6 +249,8 @@ extern Char* VG_(clo_weird_hacks);
 /* How often we should poll for signals, assuming we need to poll for
    signals. */
 extern Int   VG_(clo_signal_polltime);
+/* Assume we're running on a plain 2.4 kernel */
+extern Bool  VG_(clo_assume_24);
 
 /* Low latency syscalls and signals */
 extern Bool  VG_(clo_lowlat_syscalls);

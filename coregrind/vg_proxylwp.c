@@ -257,7 +257,7 @@ static const Char *px_name(enum RequestType r)
 }
 
 #define PROXYLWP_OFFSET	(VKI_BYTES_PER_PAGE - sizeof(ProxyLWP))
-#define ROUNDDN(p)	((UChar *)((UInt)(p) & ~(VKI_BYTES_PER_PAGE-1)))
+#define ROUNDDN(p)	((UChar *)((Addr)(p) & ~(VKI_BYTES_PER_PAGE-1)))
 
 /* 
    Allocate a page for the ProxyLWP and its stack.
@@ -478,7 +478,7 @@ static Int proxylwp(void *v)
    ThreadState *tst = px->tst;
    vki_ksigset_t allsig;
    vki_ksigset_t appsigmask;	/* signal mask the client has asked for */
-   Int ret = 0;
+   Int ret = 1000;
    static const vki_kstack_t ss = { .ss_flags = VKI_SS_DISABLE };
 
    /* Block everything until we're told otherwise (LWP should have
@@ -655,8 +655,10 @@ static Int proxylwp(void *v)
 	 /* process message with signals blocked */
 	 VG_(ksigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
 
-	 if (res == 0)
+	 if (res == 0) {
+	    ret = 0;
 	    goto out;		/* EOF - we're quitting */
+	 }
 	 
 	 if (res < 0) {
 	    px_printf("read(frommain) failed %d\n", res);
@@ -714,7 +716,7 @@ static Int proxylwp(void *v)
 	 case PX_RunSyscall:
 	    /* Run a syscall for our thread; results will be poked
 	       back into tst */
-	    reply.syscallno = tst->m_eax;
+	    reply.syscallno = tst->syscallno;
 
 	    vg_assert(px->state == PXS_WaitReq || 
 		      px->state == PXS_SigACK);
@@ -728,7 +730,7 @@ static Int proxylwp(void *v)
 			 reply.syscallno);
 	       tst->m_eax = -VKI_ERESTARTSYS;
 	    } else {
-	       Int syscallno = tst->m_eax;
+	       Int syscallno = tst->syscallno;
 	       
 	       px->state = PXS_RunSyscall;
 	       /* If we're interrupted before we get to the syscall
@@ -895,6 +897,9 @@ static Int have_futex = -1;	/* -1 -> unknown */
 static Int proxy_clone(ProxyLWP *proxy)
 {
    Int ret;
+
+   if (VG_(clo_assume_24))
+      have_futex = 0;
 
    if (have_futex == -1)
       have_futex = do_futex(NULL, VKI_FUTEX_WAKE, 0, NULL, NULL) != -VKI_ENOSYS;
@@ -1263,7 +1268,10 @@ Int VG_(sys_issue)(int tid)
    vg_assert(proxy->tid == tid);
 
    req.request = PX_RunSyscall;
-   
+
+   tst->syscallno = tst->m_eax;
+   tst->m_eax = -VKI_ERESTARTSYS;
+
    /* clear the results pipe before we try to write to a proxy to
       prevent a deadlock */
    VG_(proxy_results)();
@@ -1293,7 +1301,7 @@ void VG_(proxy_sanity)(void)
 	 continue;
 
       if (tst->proxy == NULL) {
-	 VG_(printf)("TID %d: NULL proxy");
+	 VG_(message)(Vg_DebugMsg, "TID %d: NULL proxy");
 	 sane = False;
 	 continue;
       }
@@ -1301,14 +1309,16 @@ void VG_(proxy_sanity)(void)
       px = tst->proxy;
 
       if (px->tid != tid) {
-	 VG_(printf)("TID %d: proxy LWP %d doesn't have right tid (%d)\n",
-		     tid, px->lwp, px->tid);
+	 VG_(message)(Vg_DebugMsg, 
+		      "TID %d: proxy LWP %d doesn't have right tid (%d)\n",
+		      tid, px->lwp, px->tid);
 	 sane = False;
       }
 
       if (proxy_wait(px, False, &status)) {
-	 VG_(printf)("TID %d: proxy LWP %d exited with status %d\n",
-		     tid, px->lwp, status);
+	 VG_(message)(Vg_DebugMsg,
+		      "TID %d: proxy LWP %d exited with status %d\n",
+		      tid, px->lwp, status);
 	 sane = False;
 	 continue;
       }
@@ -1318,8 +1328,9 @@ void VG_(proxy_sanity)(void)
       if (tst->status != VgTs_WaitSys) {
 	 ret = VG_(write)(px->topx, &req, sizeof(req));
 	 if (ret != sizeof(req)) {
-	    VG_(printf)("TID %d: failed to write PX_Ping to lwp %d: %d\n",
-			tid, px->lwp, ret);
+	    VG_(message)(Vg_DebugMsg,
+			 "TID %d: failed to write PX_Ping to lwp %d: %d\n",
+			 tid, px->lwp, ret);
 	    sane = False;
 	 }
 	 sys_wait_results(True, tid, PX_Ping);

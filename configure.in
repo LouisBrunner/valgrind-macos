@@ -281,43 +281,6 @@ EOF
 fi
 
 
-AC_MSG_CHECKING([if this is an NPTL-based system])
-safe_LIBS="$LIBS"
-LIBS="$LIBS -lpthread"
-AC_TRY_RUN([
-#include <pthread.h>
-#include <stdio.h>
-int main (int argc, char * argv [])
-{
-   int ret;
-   pthread_mutexattr_t mutexattr;
-   ret = pthread_mutexattr_init (&mutexattr);
-   if (ret == 0) {
-      ret = pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED);
-     if (ret == 0) /* nptl */
-         return 0;
-     else          /* not nptl */
-         return 1;
-   }
-   return 1;
-}
-],
-[
-  NPTL_THREADING="yes"
-  AC_MSG_RESULT([yes])
-],
-[
-  NPTL_THREADING="no"
-  AC_MSG_RESULT([no])
-],
-[
-  AC_MSG_RESULT([couldn't run test program])
-  NPTL_THREADING="no"
-])
-LIBS=$safe_LIBS
-
-AC_SUBST(NPTL_THREADING)
-
 # check if the GNU as supports CFI directives
 AC_MSG_CHECKING([if gas accepts .cfi])
 AC_TRY_COMPILE(, [

@@ -10,6 +10,9 @@ $dir/../../tests/filter_addresses |
 # Anonymise paths like "section of /foo/bar/helgrind/tests/baz)"
 sed "s/section of \/.*helgrind\/tests.*$/section of \/...helgrind\/tests.../" |
 
+# Anonymise line numbers in vg_scheduler.c
+sed "s/vg_scheduler.c:[0-9]\+/vg_scheduler.c:.../" |
+
 # Output looks like...
 #
 # ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

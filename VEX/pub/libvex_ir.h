@@ -19,7 +19,8 @@
 /* ------------------ Types ------------------ */
 
 typedef 
-   enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
+   enum { Ity_Bit=0x11000, 
+          Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
    IRType;
 
 extern void ppIRType ( IRType );
@@ -66,7 +67,8 @@ typedef
    enum { 
       /* Do not change this ordering.  The IR generators
          rely on (eg) Iop_Add64 == IopAdd8 + 3. */
-      Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
+      Iop_Add8=0x12000,  
+                 Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
       Iop_Adc8,  Iop_Adc16,  Iop_Adc32,  Iop_Adc64,
       Iop_Sbb8,  Iop_Sbb16,  Iop_Sbb32,  Iop_Sbb64,
@@ -215,6 +217,7 @@ typedef
    IRNext;
 
 extern IRNext* IRNext_UJump ( IRConst* dst );
+extern IRNext* IRNext_IJump ( IRExpr* dst );
 
 extern void ppIRNext ( IRNext* );
 

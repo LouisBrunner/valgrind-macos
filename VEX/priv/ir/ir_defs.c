@@ -114,9 +114,9 @@ void ppIRExpr ( IRExpr* e )
       vex_printf( ")" );
       break;
     case Iex_LDle:
-      vex_printf( "LDle<" );
+      vex_printf( "LDle:" );
       ppIRType(e->Iex.LDle.ty);
-      vex_printf( ">(" );
+      vex_printf( "(" );
       ppIRExpr(e->Iex.LDle.addr);
       vex_printf( ")" );
       break;
@@ -326,6 +326,12 @@ IRNext* IRNext_UJump ( IRConst* dst ) {
    nx->Inx.UJump.dst = dst;
    return nx;
 }
+IRNext* IRNext_IJump ( IRExpr* dst ) {
+   IRNext* nx        = LibVEX_Alloc(sizeof(IRNext));
+   nx->tag           = Inx_IJump;
+   nx->Inx.IJump.dst = dst;
+   return nx;
+}
 
 
 /* Constructors -- IRBB */
@@ -390,6 +396,8 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
    switch (e->tag) {
+      case Iex_LDle:
+         return e->Iex.LDle.ty;
       case Iex_Get:
          return e->Iex.Get.ty;
       case Iex_Tmp:

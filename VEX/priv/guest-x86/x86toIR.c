@@ -6,6 +6,10 @@
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
 
+/* TODO
+   fix jmpkind fields 
+*/
+
 /* Translates x86 code to IR. */
 
 #include "libvex_basictypes.h"
@@ -108,19 +112,19 @@ static void unimplemented ( Char* str )
 #define R_EDI 7
 
 
-static __inline__ UInt extend_s_8to32( UInt x )
+static UInt extend_s_8to32( UInt x )
 {
    return (UInt)((((Int)x) << 24) >> 24);
 }
 
 /* Fetch a byte from the guest insn stream. */
-static __inline__ UChar getIByte ( UInt delta )
+static UChar getIByte ( UInt delta )
 {
    return guest_code[delta];
 }
 
 /* Extract the reg field from a modRM byte. */
-static __inline__ Int gregOfRM ( UChar mod_reg_rm )
+static Int gregOfRM ( UChar mod_reg_rm )
 {
    return (Int)( (mod_reg_rm >> 3) & 7 );
 }
@@ -128,19 +132,33 @@ static __inline__ Int gregOfRM ( UChar mod_reg_rm )
 /* Figure out whether the mod and rm parts of a modRM byte refer to a
    register or memory.  If so, the byte will have the form 11XXXYYY,
    where YYY is the register number. */
-static __inline__ Bool epartIsReg ( UChar mod_reg_rm )
+static Bool epartIsReg ( UChar mod_reg_rm )
 {
    return (0xC0 == (mod_reg_rm & 0xC0));
 }
 
 /* ... and extract the register number ... */
-static __inline__ Int eregOfRM ( UChar mod_reg_rm )
+static Int eregOfRM ( UChar mod_reg_rm )
 {
    return (Int)(mod_reg_rm & 0x7);
 }
 
-/* Get a 32-bit value out of the insn stream. */
-static __inline__ UInt getUDisp32 ( UInt delta )
+/* Get a 8/16/32-bit unsigned value out of the insn stream. */
+
+static UInt getUChar ( UInt delta )
+{
+   UInt v = guest_code[delta+0];
+   return v & 0xFF;
+}
+
+static UInt getUDisp16 ( UInt delta )
+{
+   UInt v = guest_code[delta+1]; v <<= 8;
+   v |= guest_code[delta+0];
+   return v & 0xFFFF;
+}
+
+static UInt getUDisp32 ( UInt delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
    v |= guest_code[delta+2]; v <<= 8;
@@ -149,9 +167,21 @@ static __inline__ UInt getUDisp32 ( UInt delta )
    return v;
 }
 
+static UInt getUDisp ( Int size, UInt delta )
+{
+   switch (size) {
+      case 4: return getUDisp32(delta);
+      case 2: return getUDisp16(delta);
+      case 1: return getUChar(delta);
+      default: vpanic("getUDisp(x86)");
+   }
+   return 0; /*notreached*/
+}
+
+
 /* Get a byte value out of the insn stream and sign-extend to 32
    bits. */
-__inline__ static UInt getSDisp8 ( UInt delta )
+static UInt getSDisp8 ( UInt delta )
 {
    return extend_s_8to32( (UInt) (guest_code[delta]) );
 }
@@ -166,6 +196,7 @@ __inline__ static UInt getSDisp8 ( UInt delta )
    register references, we need to take the host endianness into
    account.  Supplied value is 0 .. 7 and in the Intel instruction
    encoding. */
+
 static IRExpr* getIReg ( Int sz, UInt archreg )
 {
    vassert(sz == 1 || sz == 2 || sz == 4);
@@ -195,11 +226,6 @@ static void assign ( IRTemp dst, IRExpr* e )
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
    stmt( IRStmt_STle(addr,data) );
-}
-
-static void copyToFrom ( IRTemp dst, IRTemp src )
-{
-   stmt( IRStmt_Tmp(dst, IRExpr_Tmp(src)) );
 }
 
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
@@ -232,6 +258,7 @@ static IRExpr* loadLE ( IRType ty, IRExpr* data )
 
 static IROp mkSizedOp ( IRType ty, IROp op8 )
 {
+   Int adj;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
            || op8 == Iop_Adc8 || op8 == Iop_Sbb8 
@@ -239,18 +266,17 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_Not8 || op8 == Iop_Neg8 );
-   return (IROp)(
-             ((Int)op8) + (ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2))
-          );
+   adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   return adj + op8;
 }
 
-static IRType szToTy ( Int n )
+static IRType szToITy ( Int n )
 {
    switch (n) {
       case 1: return Ity_I8;
       case 2: return Ity_I16;
       case 4: return Ity_I32;
-      default: vpanic("szToTy(x86)");
+      default: vpanic("szToITy(x86)");
    }
 }
 
@@ -260,16 +286,30 @@ static IRType szToTy ( Int n )
 /*------------------------------------------------------------*/
 
 static void setFlagsARITH ( IRTemp dstAfter,
-                            IRTemp src,
                             IRTemp dstBefore,
+                            IRTemp src,
                             IRType ty,
                             IROp   op8 )
 {
+   Int ccOp;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-   switch (op8) {
-      case Iop_Sub8:
-         /* CC_SRC = %s, CC_DST = %d afterwards */
 
+   ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   switch (op8) {
+      case Iop_Add8:
+         ccOp += CC_OP_ADDB;
+         /* CC_SRC = %s, CC_DST = %d afterwards */
+         stmt( IRStmt_Put(OFFB_CC_SRC, mkexpr(src)) );
+         stmt( IRStmt_Put(OFFB_CC_DST, mkexpr(dstAfter)) );
+	 stmt( IRStmt_Put(OFFB_CC_OP,  mkU32(ccOp)) );
+         break;
+      case Iop_Sub8:
+         ccOp += CC_OP_SUBB;
+         /* CC_SRC = %s, CC_DST = %d afterwards */
+         stmt( IRStmt_Put(OFFB_CC_SRC, mkexpr(src)) );
+         stmt( IRStmt_Put(OFFB_CC_DST, mkexpr(dstAfter)) );
+	 stmt( IRStmt_Put(OFFB_CC_OP,  mkU32(ccOp)) );
+         break;
       default: 
          ppIROp(op8);
          vpanic("setFlagsARITH(x86)");
@@ -665,20 +705,6 @@ static Char nameISize ( Int size )
 //--    d |= ((*eip++) << 8);
 //--    return extend_s_16to32(d);
 //-- }
-//-- __inline__ static UInt getUDisp16 ( Addr eip0 )
-//-- {
-//--    UChar* eip = (UChar*)eip0;
-//--    UInt v = eip[1]; v <<= 8;
-//--    v |= eip[0];
-//--    return v;
-//-- }
-//-- 
-//-- __inline__ static UChar getUChar ( Addr eip0 )
-//-- {
-//--    UChar* eip = (UChar*)eip0;
-//--    return eip[0];
-//-- }
-//-- 
 //-- __inline__ static UInt LOW24 ( UInt x )
 //-- {
 //--    return x & 0x00FFFFFF;
@@ -687,17 +713,6 @@ static Char nameISize ( Int size )
 //-- __inline__ static UInt HI8 ( UInt x )
 //-- {
 //--    return x >> 24;
-//-- }
-//-- 
-//-- __inline__ static UInt getUDisp ( Int size, Addr eip )
-//-- {
-//--    switch (size) {
-//--       case 4: return getUDisp32(eip);
-//--       case 2: return getUDisp16(eip);
-//--       case 1: return getUChar(eip);
-//--       default: VG_(core_panic)("getUDisp");
-//--   }
-//--   return 0; /*notreached*/
 //-- }
 //-- 
 //-- __inline__ static UInt getSDisp ( Int size, Addr eip )
@@ -747,18 +762,15 @@ static Char nameISize ( Int size )
 /*--- JMP helpers                                          ---*/
 /*------------------------------------------------------------*/
 
-static __inline__
 void jmp_lit( Addr32 d32 )
 {
    irbb->next = IRNext_UJump( IRConst_U32(d32) );
 }
 
-//-- static __inline__
-//-- void jmp_treg( UCodeBlock* cb, Int t )
-//-- {
-//--    uInstr1 (cb, JMP,   0, TempReg, t);
-//--    uCond   (cb, CondAlways);
-//-- }
+void jmp_treg( IRTemp t )
+{
+   irbb->next = IRNext_IJump( mkexpr(t) );
+}
 //-- 
 //-- static __inline__
 //-- void jcc_lit( UCodeBlock* cb, Addr d32, Condcode cond )
@@ -850,7 +862,6 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm;
            DIS(buf, "%s(%s)", sorbTxt(sorb), nameIReg(4,rm));
            *len = 1;
-	   vpanic("amode 1");
 	   return handleSegOverride(sorb, getIReg(4,rm));
          }
 
@@ -863,7 +874,6 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
            UInt  d  = getSDisp8(delta);
            DIS(buf, "%s%d(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
 	   *len = 2;
-	   vpanic("amode 2");
 	   return handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d)));
          }
@@ -877,7 +887,6 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
            UInt  d  = getUDisp32(delta);
            DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
 	   *len = 5;
-	   vpanic("amode 3");
 	   return handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d)));
          }
@@ -953,7 +962,6 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          if (index_r == R_ESP && base_r != R_EBP) {
             DIS(buf, "%s(%s,,)", sorbTxt(sorb), nameIReg(4,base_r));
 	    *len = 2;
-	    vpanic("amode 7");
 	    return handleSegOverride(sorb, getIReg(4,base_r));
          }
 
@@ -1231,169 +1239,172 @@ static UInt lengthAMode ( UInt delta )
 //--       return HI8(pair)+eip0;
 //--    }
 //-- }
-//-- 
-//-- 
-//-- 
-//-- /* Handle binary integer instructions of the form
-//--       op G, E  meaning
-//--       op reg, reg-or-mem
-//--    Is passed the a ptr to the modRM byte, the actual operation, and the
-//--    data size.  Returns the address advanced completely over this
-//--    instruction.
-//-- 
-//--    G(src) is reg.
-//--    E(dst) is reg-or-mem
-//-- 
-//--    If E is reg, -->    GET %E,  tmp
-//--                        OP %G,   tmp
-//--                        PUT tmp, %E
-//--  
-//--    If E is mem, -->    (getAddr E) -> tmpa
-//--                        LD (tmpa), tmpv
-//--                        OP %G, tmpv
-//--                        ST tmpv, (tmpa)
-//-- */
-//-- static
-//-- Addr dis_op2_G_E ( UCodeBlock* cb, 
-//--                    UChar       sorb,
-//--                    Opcode      opc, 
-//--                    Bool        keep,
-//--                    Int         size, 
-//--                    Addr        eip0,
-//--                    Char*       t_x86opc )
-//-- {
-//--    UChar rm = getUChar(eip0);
-//--    UChar dis_buf[50];
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       Int tmp = newTemp(cb);
-//-- 
-//--       /* Specially handle XOR reg,reg, because that doesn't really
-//--          depend on reg, and doing the obvious thing potentially
-//--          generates a spurious value check failure due to the bogus
-//--          dependency. */
-//--       if (opc == XOR && gregOfRM(rm) == eregOfRM(rm)) {
-//--          codegen_XOR_reg_with_itself ( cb, size, gregOfRM(rm), tmp );
-//--          return 1+eip0;
-//--       }
-//-- 
-//--       uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, tmp);
-//-- 
-//--       if (opc == AND || opc == OR) {
-//--          Int tao = newTemp(cb);
-//--          uInstr2(cb, GET, size, ArchReg, gregOfRM(rm), TempReg, tao); 
-//--          uInstr2(cb, opc, size, TempReg, tao, TempReg, tmp);
-//--          setFlagsFromUOpcode(cb, opc);
-//--       } else {
-//--          uInstr2(cb, opc, size, ArchReg, gregOfRM(rm), TempReg, tmp);
-//--          setFlagsFromUOpcode(cb, opc);
-//--       }
-//--       if (keep)
-//--          uInstr2(cb, PUT, size, TempReg, tmp, ArchReg, eregOfRM(rm));
-//--       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
-//--                           nameIReg(size,gregOfRM(rm)),
-//--                           nameIReg(size,eregOfRM(rm)));
-//--       return 1+eip0;
-//--    }
-//-- 
-//--    /* E refers to memory */    
-//--    {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf);
-//--       Int  tmpa = LOW24(pair);
-//--       Int  tmpv = newTemp(cb);
-//--       uInstr2(cb, LOAD,  size, TempReg, tmpa, TempReg, tmpv);
-//-- 
-//--       if (opc == AND || opc == OR) {
-//--          Int tao = newTemp(cb);
-//--          uInstr2(cb, GET, size, ArchReg, gregOfRM(rm), TempReg, tao); 
-//--          uInstr2(cb, opc, size, TempReg, tao, TempReg, tmpv);
-//--          setFlagsFromUOpcode(cb, opc);
-//--       } else {
-//--          uInstr2(cb, opc, size, ArchReg, gregOfRM(rm), TempReg, tmpv);
-//--          setFlagsFromUOpcode(cb, opc);
-//--       }
-//--       if (keep) {
-//--          uInstr2(cb, STORE, size, TempReg, tmpv, TempReg, tmpa);
-//--       }
-//--       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
-//--                           nameIReg(size,gregOfRM(rm)), dis_buf);
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
-//-- /* Handle move instructions of the form
-//--       mov E, G  meaning
-//--       mov reg-or-mem, reg
-//--    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//--    the address advanced completely over this instruction.
-//-- 
-//--    E(src) is reg-or-mem
-//--    G(dst) is reg.
-//-- 
-//--    If E is reg, -->    GET %E,  tmpv
-//--                        PUT tmpv, %G
-//--  
-//--    If E is mem  -->    (getAddr E) -> tmpa
-//--                        LD (tmpa), tmpb
-//--                        PUT tmpb, %G
-//-- */
-//-- static
-//-- Addr dis_mov_E_G ( UCodeBlock* cb, 
-//--                    UChar       sorb,
-//--                    Int         size, 
-//--                    Addr        eip0 )
-//-- {
-//--    UChar rm  = getUChar(eip0);
-//--    UChar dis_buf[50];
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       Int tmpv = newTemp(cb);
-//--       uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, tmpv);
-//--       uInstr2(cb, PUT, size, TempReg, tmpv, ArchReg, gregOfRM(rm));
-//--       DIP("mov%c %s,%s\n", nameISize(size), 
-//--                            nameIReg(size,eregOfRM(rm)),
-//--                            nameIReg(size,gregOfRM(rm)));
-//--       return 1+eip0;
-//--    }
-//-- 
-//--    /* E refers to memory */    
-//--    {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf);
-//--       Int  tmpa = LOW24(pair);
-//--       Int  tmpb = newTemp(cb);
-//--       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmpb);
-//--       uInstr2(cb, PUT,  size, TempReg, tmpb, ArchReg, gregOfRM(rm));
-//--       DIP("mov%c %s,%s\n", nameISize(size), 
-//--                            dis_buf,nameIReg(size,gregOfRM(rm)));
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
-//-- /* Handle move instructions of the form
-//--       mov G, E  meaning
-//--       mov reg, reg-or-mem
-//--    Is passed the a ptr to the modRM byte, and the data size.  Returns
-//--    the address advanced completely over this instruction.
-//-- 
-//--    G(src) is reg.
-//--    E(dst) is reg-or-mem
-//-- 
-//--    If E is reg, -->    GET %G,  tmp
-//--                        PUT tmp, %E
-//--  
-//--    If E is mem, -->    (getAddr E) -> tmpa
-//--                        GET %G, tmpv
-//--                        ST tmpv, (tmpa) 
-//-- */
+
+
+
+/* Handle binary integer instructions of the form
+      op G, E  meaning
+      op reg, reg-or-mem
+   Is passed the a ptr to the modRM byte, the actual operation, and the
+   data size.  Returns the address advanced completely over this
+   instruction.
+
+   G(src) is reg.
+   E(dst) is reg-or-mem
+
+   If E is reg, -->    GET %E,  tmp
+                       OP %G,   tmp
+                       PUT tmp, %E
+ 
+   If E is mem, -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmpv
+                       OP %G, tmpv
+                       ST tmpv, (tmpa)
+*/
+static
+UInt dis_op2_G_E ( UChar       sorb,
+                   IROp        op8, 
+                   Bool        keep,
+                   Int         size, 
+                   UInt        delta0,
+                   Char*       t_x86opc )
+{
+   IRType  ty   = szToITy(size);
+   IRTemp  dst1 = newTemp(ty);
+   IRTemp  src  = newTemp(ty);
+   IRTemp  dst0 = newTemp(ty);
+   UChar   rm   = getIByte(delta0);
+   //UChar   dis_buf[50];
+
+   if (epartIsReg(rm)) {
+#if 0
+      /* Specially handle XOR reg,reg, because that doesn't really
+         depend on reg, and doing the obvious thing potentially
+         generates a spurious value check failure due to the bogus
+         dependency. */
+      if (opc == XOR && gregOfRM(rm) == eregOfRM(rm)) {
+         codegen_XOR_reg_with_itself ( cb, size, gregOfRM(rm), tmp );
+         return 1+eip0;
+      }
+#endif
+
+      assign(dst0, getIReg(size,eregOfRM(rm)));
+      assign(src,  getIReg(size,gregOfRM(rm)));
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+
+      setFlagsARITH(dst1, dst0, src, ty, op8);
+
+      if (keep)
+         putIReg(size, eregOfRM(rm), mkexpr(dst1));
+
+      DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
+                          nameIReg(size,gregOfRM(rm)),
+                          nameIReg(size,eregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   /* E refers to memory */    
+   {
+      vassert(0);
+#if 0
+      UInt pair = disAMode ( cb, sorb, eip0, dis_buf);
+      Int  tmpa = LOW24(pair);
+      Int  tmpv = newTemp(cb);
+      uInstr2(cb, LOAD,  size, TempReg, tmpa, TempReg, tmpv);
+
+      if (opc == AND || opc == OR) {
+         Int tao = newTemp(cb);
+         uInstr2(cb, GET, size, ArchReg, gregOfRM(rm), TempReg, tao); 
+         uInstr2(cb, opc, size, TempReg, tao, TempReg, tmpv);
+         setFlagsFromUOpcode(cb, opc);
+      } else {
+         uInstr2(cb, opc, size, ArchReg, gregOfRM(rm), TempReg, tmpv);
+         setFlagsFromUOpcode(cb, opc);
+      }
+      if (keep) {
+         uInstr2(cb, STORE, size, TempReg, tmpv, TempReg, tmpa);
+      }
+      DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
+                          nameIReg(size,gregOfRM(rm)), dis_buf);
+      return HI8(pair)+eip0;
+#endif
+   }
+}
+
+
+/* Handle move instructions of the form
+      mov E, G  meaning
+      mov reg-or-mem, reg
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   E(src) is reg-or-mem
+   G(dst) is reg.
+
+   If E is reg, -->    GET %E,  tmpv
+                       PUT tmpv, %G
+ 
+   If E is mem  -->    (getAddr E) -> tmpa
+                       LD (tmpa), tmpb
+                       PUT tmpb, %G
+*/
+static
+UInt dis_mov_E_G ( UChar       sorb,
+                   Int         size, 
+                   UInt        delta0 )
+{
+   Int len;
+   UChar rm = getIByte(delta0);
+   UChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+#if 0
+      Int tmpv = newTemp(cb);
+      uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, tmpv);
+      uInstr2(cb, PUT, size, TempReg, tmpv, ArchReg, gregOfRM(rm));
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           nameIReg(size,eregOfRM(rm)),
+                           nameIReg(size,gregOfRM(rm)));
+      return 1+eip0;
+#endif
+      vassert(121221==0);
+   }
+
+   /* E refers to memory */    
+   {
+      IRExpr* addr = disAMode ( &len, sorb, delta0, dis_buf );
+      putIReg(size, gregOfRM(rm), loadLE(szToITy(size), addr));
+      DIP("mov%c %s,%s\n", nameISize(size), 
+                           dis_buf,nameIReg(size,gregOfRM(rm)));
+      return delta0+len;
+   }
+}
+
+
+/* Handle move instructions of the form
+      mov G, E  meaning
+      mov reg, reg-or-mem
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   G(src) is reg.
+   E(dst) is reg-or-mem
+
+   If E is reg, -->    GET %G,  tmp
+                       PUT tmp, %E
+ 
+   If E is mem, -->    (getAddr E) -> tmpa
+                       GET %G, tmpv
+                       ST tmpv, (tmpa) 
+*/
 static
 UInt dis_mov_G_E ( UChar       sorb,
                    Int         size, 
                    UInt        delta0 )
 {
+   Int len;
    UChar rm = getIByte(delta0);
-   //   UChar dis_buf[50];
+   UChar dis_buf[50];
 
    if (epartIsReg(rm)) {
       putIReg(size, eregOfRM(rm), getIReg(size, gregOfRM(rm)));
@@ -1403,20 +1414,14 @@ UInt dis_mov_G_E ( UChar       sorb,
       return 1+delta0;
    }
 
-   vassert(0 ==0+0); return 0;
-#if 0
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, sorb, eip0, dis_buf);
-      Int  tmpa = LOW24(pair);
-      Int  tmpv = newTemp(cb);
-      uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tmpv);
-      uInstr2(cb, STORE, size, TempReg, tmpv, TempReg, tmpa);
+      IRExpr* addr = disAMode ( &len, sorb, delta0, dis_buf);
+      storeLE( addr, getIReg(size, gregOfRM(rm)) );
       DIP("mov%c %s,%s\n", nameISize(size), 
                            nameIReg(size,gregOfRM(rm)), dis_buf);
-      return HI8(pair)+eip0;
+      return len+delta0;
    }
-#endif
 }
 
 
@@ -1548,38 +1553,33 @@ UInt dis_Grp1 ( UChar       sorb,
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
    IRExpr* addr;
-   IRTemp  dst1, src, dst0;
-   IRType  ty;
-   IROp    uopc;
+   IROp    op8;
    Int     len;
    UChar   dis_buf[50];
-
-   ty = szToTy(sz);
+   IRType  ty   = szToITy(sz);
+   IRTemp  dst1 = newTemp(ty);
+   IRTemp  src  = newTemp(ty);
+   IRTemp  dst0 = newTemp(ty);
 
    switch (gregOfRM(modrm)) {
-      case 0: uopc = Iop_Add8; break;  case 1: uopc = Iop_Or8;  break;
-      case 2: uopc = Iop_Adc8; break;  case 3: uopc = Iop_Sbb8; break;
-      case 4: uopc = Iop_And8; break;  case 5: uopc = Iop_Sub8; break;
-      case 6: uopc = Iop_Xor8; break;  case 7: uopc = Iop_Sub8; break;
+      case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
+      case 2: op8 = Iop_Adc8; break;  case 3: op8 = Iop_Sbb8; break;
+      case 4: op8 = Iop_And8; break;  case 5: op8 = Iop_Sub8; break;
+      case 6: op8 = Iop_Xor8; break;  case 7: op8 = Iop_Sub8; break;
       default: vpanic("dis_Grp1: unhandled case");
    }
-   vassert(uopc != Iop_Adc8 && uopc != Iop_Sbb8);
-
-   dst0 = newTemp(ty);
-   dst1 = newTemp(ty);
-   src  = newTemp(ty);
 
    if (epartIsReg(modrm)) {
       vassert(am_sz == 1);
 
       assign(dst0, getIReg(sz,eregOfRM(modrm)));
       assign(src,  mkU(ty,d32));
-      assign(dst1, binop(mkSizedOp(ty,uopc), mkexpr(dst0), mkexpr(src)));
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
-      setFlagsARITH(dst1, dst0, src, ty, uopc);
+      setFlagsARITH(dst1, dst0, src, ty, op8);
 
       if (gregOfRM(modrm) < 7)
-         putIReg(ty, eregOfRM(modrm), mkexpr(dst1));
+         putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
 
       delta += (am_sz + d_sz);
       DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz), d32, 
@@ -1590,9 +1590,9 @@ UInt dis_Grp1 ( UChar       sorb,
 
       assign(dst0, loadLE(ty,addr));
       assign(src, mkU(ty,d32));
-      assign(dst1, binop(mkSizedOp(ty,uopc), mkexpr(dst0), mkexpr(src)));
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
-      setFlagsARITH(dst1, dst0, src, ty, uopc);
+      setFlagsARITH(dst1, dst0, src, ty, op8);
 
       if (gregOfRM(modrm) < 7)
           storeLE(addr, mkexpr(dst1));
@@ -3958,19 +3958,18 @@ UInt dis_Grp1 ( UChar       sorb,
 //--    uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
 //--    DIP("pop %s\n", VG_(name_of_seg_reg)(sreg));
 //-- }
-//-- 
-//-- static
-//-- void dis_ret ( UCodeBlock* cb, UInt d32 )
-//-- {
-//--    Int t1 = newTemp(cb), t2 = newTemp(cb);
-//--    uInstr2(cb, GET,  4, ArchReg, R_ESP, TempReg, t1);
-//--    uInstr2(cb, LOAD, 4, TempReg, t1,    TempReg, t2);
-//--    uInstr2(cb, ADD,  4, Literal, 0,     TempReg, t1);
-//--    uLiteral(cb, 4+d32);
-//--    uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ESP);
-//--    jmp_treg(cb, t2);
-//--    LAST_UINSTR(cb).jmpkind = JmpRet;
-//-- }
+
+static
+void dis_ret ( UInt d32 )
+{
+   IRTemp t1 = newTemp(Ity_I32), t2 = newTemp(Ity_I32);
+   assign(t1, getIReg(4,R_ESP));
+   assign(t2, loadLE(Ity_I32,mkexpr(t1)));
+   putIReg(4, R_ESP,binop(Iop_Add32, mkexpr(t1), mkU32(4+d32)));
+   jmp_treg(t2);
+   // LAST_UINSTR(cb).jmpkind = JmpRet;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
@@ -3984,7 +3983,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 {
    UChar  opc, modrm /* , abyte*/;
    UInt   d32 /*, pair*/;
-   //   UChar  dis_buf[50];
+   UChar  dis_buf[50];
    Int    am_sz, d_sz;
    IRTemp t1, t2; //, t3, t4;
    IRType ty;
@@ -5389,11 +5388,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       *isEnd = True;
 //--       DIP("ret %d\n", d32);
 //--       break;
-//--    case 0xC3: /* RET */
-//--       dis_ret(cb, 0);
-//--       *isEnd = True;
-//--       DIP("ret\n");
-//--       break;
+   case 0xC3: /* RET */
+      dis_ret(0);
+      *isEnd = True;
+      DIP("ret\n");
+      break;
       
    case 0xE8: /* CALL J4 */
       d32 = getUDisp32(delta); delta += 4;
@@ -5736,26 +5735,29 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x8A: /* MOV Eb,Gb */
 //--       eip = dis_mov_E_G(cb, sorb, 1, eip);
 //--       break;
-//--  
-//--    case 0x8B: /* MOV Ev,Gv */
-//--       eip = dis_mov_E_G(cb, sorb, sz, eip);
-//--       break;
-//--  
-//--    case 0x8D: /* LEA M,Gv */
-//--       modrm = getIByte(delta);
-//--       if (epartIsReg(modrm)) 
-//--          VG_(core_panic)("LEA M,Gv: modRM refers to register");
-//--       /* NOTE!  this is the one place where a segment override prefix
-//--          has no effect on the address calculation.  Therefore we pass
-//--          zero instead of sorb here. */
-//--       pair = disAMode ( cb, /*sorb*/ 0, eip, dis_buf );
-//--       eip  += HI8(pair);
-//--       t1   = LOW24(pair);
-//--       uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--       DIP("lea%c %s, %s\n", nameISize(sz), dis_buf, 
-//--                             nameIReg(sz,gregOfRM(modrm)));
-//--       break;
-//-- 
+ 
+   case 0x8B: /* MOV Ev,Gv */
+      delta = dis_mov_E_G(sorb, sz, delta);
+      break;
+ 
+   case 0x8D: /* LEA M,Gv */ {
+      Int     len;
+      IRExpr* addr;
+      vassert(sz == 4);
+      modrm = getIByte(delta);
+      if (epartIsReg(modrm)) 
+         vpanic("LEA M,Gv: modRM refers to register (x86)");
+      /* NOTE!  this is the one place where a segment override prefix
+         has no effect on the address calculation.  Therefore we pass
+         zero instead of sorb here. */
+      addr = disAMode ( &len, /*sorb*/ 0, delta, dis_buf );
+      delta += len;
+      putIReg(sz, gregOfRM(modrm), addr);
+      DIP("lea%c %s, %s\n", nameISize(sz), dis_buf, 
+                            nameIReg(sz,gregOfRM(modrm)));
+      break;
+   }
+
 //--    case 0x8C: /* MOV Sw,Ew -- MOV from a SEGMENT REGISTER */
 //--       eip = dis_mov_Sw_Ew(cb, sorb, eip);
 //--       break;
@@ -5982,19 +5984,19 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x84: /* TEST Eb,Gb */
 //--       eip = dis_op2_E_G ( cb, sorb, AND, False, 1, eip, "test" );
 //--       break;
-//--    case 0x85: /* TEST Ev,Gv */
-//--       eip = dis_op2_E_G ( cb, sorb, AND, False, sz, eip, "test" );
-//--       break;
-//-- 
+   case 0x85: /* TEST Ev,Gv */
+      delta = dis_op2_E_G ( sorb, Iop_And8, False, delta, eip, "test" );
+      break;
+
 //--    /* ------------------------ opl Gv, Ev ----------------- */
 //-- 
 //--    case 0x00: /* ADD Gb,Eb */
 //--       eip = dis_op2_G_E ( cb, sorb, ADD, True, 1, eip, "add" );
 //--       break;
-//--    case 0x01: /* ADD Gv,Ev */
-//--       eip = dis_op2_G_E ( cb, sorb, ADD, True, sz, eip, "add" );
-//--       break;
-//-- 
+   case 0x01: /* ADD Gv,Ev */
+      delta = dis_op2_G_E ( sorb, Iop_Add8, True, sz, delta, "add" );
+      break;
+
 //--    case 0x08: /* OR Gb,Eb */
 //--       eip = dis_op2_G_E ( cb, sorb, OR, True, 1, eip, "or" );
 //--       break;
@@ -6026,10 +6028,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x28: /* SUB Gb,Eb */
 //--       eip = dis_op2_G_E ( cb, sorb, SUB, True, 1, eip, "sub" );
 //--       break;
-//--    case 0x29: /* SUB Gv,Ev */
-//--       eip = dis_op2_G_E ( cb, sorb, SUB, True, sz, eip, "sub" );
-//--       break;
-//-- 
+   case 0x29: /* SUB Gv,Ev */
+      delta = dis_op2_G_E ( sorb, Iop_Sub8, True, sz, delta, "sub" );
+      break;
+
 //--    case 0x30: /* XOR Gb,Eb */
 //--       eip = dis_op2_G_E ( cb, sorb, XOR, True, 1, eip, "xor" );
 //--       break;
@@ -6567,14 +6569,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       d32   = getSDisp8(eip + am_sz);
 //--       eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
 //--       break;
-//-- 
-//--    case 0x81: /* Grp1 Iv,Ev */
-//--       modrm = getUChar(eip);
-//--       am_sz = lengthAMode(eip);
-//--       d_sz  = sz;
-//--       d32   = getUDisp(d_sz, eip + am_sz);
-//--       eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
-//--       break;
+
+   case 0x81: /* Grp1 Iv,Ev */
+      modrm = getIByte(delta);
+      am_sz = lengthAMode(delta);
+      d_sz  = sz;
+      d32   = getUDisp(d_sz, delta + am_sz);
+      delta = dis_Grp1 ( sorb, delta, modrm, am_sz, d_sz, sz, d32 );
+      break;
 
    case 0x83: /* Grp1 Ib,Ev */
       modrm = getIByte(delta);

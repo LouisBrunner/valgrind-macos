@@ -2150,7 +2150,7 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
 
 /* The BB is modified in-place. */
 
-static void cse_BB ( IRBB* bb )
+void do_cse_BB ( IRBB* bb )
 {
    Int        i, j;
    IRTemp     t, q;
@@ -3193,7 +3193,7 @@ IRBB* cheap_transformations (
 static
 IRBB* expensive_transformations( IRBB* bb )
 {
-   cse_BB( bb );
+   do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
    do_PutI_GetI_forwarding_BB( bb );
    do_redundant_PutI_elimination( bb );
@@ -3323,7 +3323,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
             bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
          } else {
             /* at least do CSE and dead code removal */
-            cse_BB( bb );
+            do_cse_BB( bb );
             do_deadcode_BB( bb );
          }
          if (0) vex_printf("vex iropt: unrolled a loop\n");

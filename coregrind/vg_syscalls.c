@@ -5882,7 +5882,7 @@ struct sys_info {
 static void bad_before(ThreadId tid, ThreadState *tst)
 {
    VG_(message)
-      (Vg_DebugMsg,"WARNING: unhandled syscall: %d", SYSNO);
+      (Vg_DebugMsg,"WARNING: unhandled syscall: %u", (UInt)SYSNO);
    if (VG_(clo_verbosity) > 1) {
       ExeContext *ec = VG_(get_ExeContext)(tid);
       VG_(pp_ExeContext)(ec);
@@ -6185,7 +6185,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    if (SYSNO == __NR_vfork)
       SYSNO = __NR_fork;
 
-   syscallno = SYSNO;
+   syscallno = (UInt)SYSNO;
 
    if (tst->syscallno != -1)
       VG_(printf)("tid %d has syscall %d\n", tst->tid, tst->syscallno);
@@ -6253,7 +6253,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    } else {
       (sys->before)(tst->tid, tst);
 
-      if ((Int)res <= 0) {
+      if ((Word)res <= 0) {
 	 /* "before" decided the syscall wasn't viable, so don't do
 	    anything - just pretend the syscall happened. */
 	 syscall_done = True;

@@ -53,8 +53,8 @@
 
 // Stack frame layout and linkage
 #define FIRST_STACK_FRAME(ebp)         (ebp)
-#define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
-#define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
+#define STACK_FRAME_RET(ebp)           (((UWord*)ebp)[1])
+#define STACK_FRAME_NEXT(ebp)          (((UWord*)ebp)[0])
 
 // Offsets of interesting registers
 #define VGOFF_INSTR_PTR                VGOFF_(m_eip)

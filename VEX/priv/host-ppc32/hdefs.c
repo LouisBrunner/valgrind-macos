@@ -1896,7 +1896,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       and does not really contain a register. */
 //.. #  define fake(_n) mkHReg((_n), HRcInt32, False)
 
-   vex_printf("asm  ");ppPPC32Instr(i); vex_printf("\n");
+//   vex_printf("asm  ");ppPPC32Instr(i); vex_printf("\n");
 
    switch (i->tag) {
 

@@ -488,7 +488,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
            NULL, /* access checker */
-           verbose ? TEST_FLAGS : (1<<7)|(1<<3|(1<<2)|(1<<1)|(1<<0)) //0
+           verbose ? TEST_FLAGS : 0 //(1<<7)|(1<<3)|(1<<2)|(1<<1)|(1<<0) //0
         );
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;

@@ -783,7 +783,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
    HReg r = iselIntExpr_R_wrk(env, e);
    /* sanity checks ... */
-#  if 1
+#  if 0
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
 #  endif
    vassert(hregClass(r) == HRcInt32);

@@ -876,7 +876,7 @@ void idle ( void )
    * One thread asks to shutdown Valgrind
    * The specified number of basic blocks has gone by.
 */
-VgSchedReturnCode VG_(scheduler) ( void )
+VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 {
    ThreadId tid, tid_next;
    UInt     trc;
@@ -956,7 +956,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
 	 /* All threads have exited - pretend someone called exit() */
 	 if (n_waiting_for_reaper == n_exists) {
-	    VG_(exitcode) = 0;	/* ? */
+	    *exitcode = 0;	/* ? */
 	    return VgSrc_ExitSyscall;
 	 }
 
@@ -1108,7 +1108,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                ) {
 
                /* If __NR_exit, remember the supplied argument. */
-               VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
+               *exitcode = VG_(threads)[tid].m_ebx; /* syscall arg1 */
 
                /* Only run __libc_freeres if the tool says it's ok and
                   it hasn't been overridden with --run-libc-freeres=no

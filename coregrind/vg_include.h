@@ -980,7 +980,7 @@ typedef
 
 
 /* The scheduler. */
-extern VgSchedReturnCode VG_(scheduler) ( void );
+extern VgSchedReturnCode VG_(scheduler) ( Int* exit_code );
 
 extern void VG_(scheduler_init) ( void );
 
@@ -1473,11 +1473,6 @@ extern UInt VG_(dispatch_ctr);
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 extern ThreadId VG_(last_run_tid);
-
-/* This is the argument to __NR_exit() supplied by the first thread to
-   call that syscall.  We eventually pass that to __NR_exit() for
-   real. */
-extern Int VG_(exitcode);
 
 /* If we're doing the default action of a fatal signal */
 extern jmp_buf VG_(fatal_signal_jmpbuf);

@@ -179,11 +179,6 @@ ThreadId VG_(last_run_tid) = 0;
    descriptor or a socket descriptor. */
 Bool VG_(logging_to_filedes) = True;
 
-/* This is the argument to __NR_exit() supplied by the first thread to
-   call that syscall.  We eventually pass that to __NR_exit() for
-   real. */
-Int VG_(exitcode) = 0;
-
 
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
@@ -2633,6 +2628,7 @@ int main(int argc, char **argv)
    Addr esp_at_startup;    /* client's %esp at the point we gained control. */
    UInt * client_auxv;
    VgSchedReturnCode src;
+   Int exitcode = 0;
    vki_rlimit zero = { 0, 0 };
 
    //============================================================
@@ -2976,7 +2972,7 @@ int main(int argc, char **argv)
 
    if (__builtin_setjmp(&VG_(fatal_signal_jmpbuf)) == 0) {
       VG_(fatal_signal_set) = True;
-      src = VG_(scheduler)();
+      src = VG_(scheduler)( &exitcode );
    } else
       src = VgSrc_FatalSig;
 
@@ -3003,7 +2999,7 @@ int main(int argc, char **argv)
    if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(show_all_errors)();
 
-   SK_(fini)( VG_(exitcode) );
+   SK_(fini)( exitcode );
 
    VG_(do_sanity_checks)( True /*include expensive checks*/ );
 
@@ -3045,7 +3041,7 @@ int main(int argc, char **argv)
          /* The thread's %EBX at the time it did __NR_exit() will hold
             the arg to __NR_exit(), so we just do __NR_exit() with
             that arg. */
-         VG_(exit)( VG_(exitcode) );
+         VG_(exit)( exitcode );
          /* NOT ALIVE HERE! */
          VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
          break; /* what the hell :) */

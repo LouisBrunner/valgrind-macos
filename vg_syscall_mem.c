@@ -340,7 +340,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_clone:
          VG_(unimplemented)
-            ("clone(): Valgrind doesn't support threads; sorry.");
+            ("clone(): not supported by Valgrind.\n   "
+             "We do now support programs linked against\n   "
+             "libpthread.so, though.  Re-run with -v and ensure that\n   "
+             "you are picking up Valgrind's implementation of libpthread.so.");
          break;
 
 #     if defined(__NR_modify_ldt)

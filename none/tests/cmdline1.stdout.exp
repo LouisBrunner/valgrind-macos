@@ -18,17 +18,19 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --lowlat-signals=no|yes   improve thread signal wake-up latency [no]
     --lowlat-syscalls=no|yes  improve thread syscall wake-up latency [no]
     --pointercheck=no|yes     enforce client address space limits [yes]
+    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]
 
   user options for Valgrind tools that report errors:
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>.pid<pid>
+    --log-file-exactly=<file> log messages to <file>
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <num> callers in stack traces [4]
     --error-limit=no|yes      stop showing new errors if too many? [yes]
     --show-below-main=no|yes  continue stack traces below main() [no]
     --suppressions=<filename> suppress errors described in <filename>
-    --gen-suppressions=no|yes print suppressions for errors detected [no]
+    --gen-suppressions=no|yes|all    print suppressions for errors? [no]
     --db-attach=no|yes        start debugger when errors detected? [no]
     --db-command=<command>    command to start debugger [gdb -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]

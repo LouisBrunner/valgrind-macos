@@ -191,87 +191,74 @@ static void flush_cache(void *ptr, int nbytes)
 asm(
 "switchback_asm:\n"
 // SP
-"   lis  %r2,sb_helper1\n"     // load hi-wd of guest_state_ptr to r2
-"   addi %r2,%r2,sb_helper1\n" // load lo-wd of guest_state_ptr to r2
+"   lis  %r31,sb_helper1@ha\n"      // get hi-wd of guest_state_ptr addr
+"   lwz  %r31,sb_helper1@l(%r31)\n" // load word of guest_state_ptr to r31
 
 // LR
-//"   mtlr %r2\n"                // move continuation_addr to LR
-"   lwz %r4, 412(%r2)\n"       // guest_LR
-"   mtlr r4\n"                // move to LR
+"   lwz  %r3,412(%r31)\n"           // guest_LR
+"   mtlr %r3\n"                     // move to LR
 
 // CR
-"   lis  %r4,sb_helper2\n"     // load hi-wd of flags to r4
-"   addi %r4,%r4,sb_helper2\n" // load lo-wd of flags to r4
-"   mtcr %r4\n"                // move r4 to CR
-"   lwz  %r4, 404(%r2)\n"      // guest_CR0to6
-"   mtcrf 0x3F,%r4\n"         // set remaining fields of CR
+"   lis  %r3,sb_helper2@ha\n"       // get hi-wd of flags addr
+"   lwz  %r3,sb_helper2@l(%r3)\n"   // load flags word to r3
+"   mtcr %r3\n"                     // move r3 to CR
+"   lwz  %r3,404(%r31)\n"           // guest_CR0to6
+"   mtcrf 0x3F,%r3\n"               // set remaining fields of CR
 
 // CTR
-//"   lwz %r4,392(%r2)\n"        // guest_CTR
-//"   mtctr %r4\n"               // move r4 to CTR
-"   mtctr %r2\n"                // move continuation_addr to CTR
+"   lwz %r3,392(%r31)\n"       // guest_CTR
+"   mtctr %r3\n"               // move r3 to CTR
 
 // XER
-"   lhz %r4, 412(%r2)\n"       // guest_XER_SO
-"   rlwimi $r5,%r4,31,0,0\n"   // rotate and insert to XER[31]
-"   lhz %r4, 412(%r2)\n"       // guest_XER_OV
-"   rlwimi $r5,%r4,30,1,1\n"   // rotate and insert to XER[30]
-"   lhz %r4, 412(%r2)\n"       // guest_XER_CA
-"   rlwimi $r5,%r4,29,2,2\n"   // rotate and insert to XER[30]
-"   lhz %r4, 412(%r2)\n"       // guest_XER_BC
-"   rlwimi $r5,%r4,0,25,31\n"  // rotate and insert to XER[0:6]
-"   mtxer %r5\n"               // move r5 to XER
+"   lhz    %r3,412(%r31)\n"    // guest_XER_SO
+"   rlwimi %r4,%r3,31,0,0\n"   // rotate and insert to XER[31]
+"   lhz    %r3,412(%r31)\n"    // guest_XER_OV
+"   rlwimi %r4,%r3,30,1,1\n"   // rotate and insert to XER[30]
+"   lhz    %r3,412(%r31)\n"    // guest_XER_CA
+"   rlwimi %r4,%r3,29,2,2\n"   // rotate and insert to XER[30]
+"   lhz    %r3,412(%r31)\n"    // guest_XER_BC
+"   rlwimi %r4,%r3,0,25,31\n"  // rotate and insert to XER[0:6]
+"   mtxer  %r4\n"              // move r4 to XER
 
 // GPR's
-"   lwz %r0,    0(%r2)\n"
-"   lwz %r1,    8(%r2)\n"      // switch stacks (r1 = SP)
-// r2 not used by vex
-"   lwz %r3,   12(%r2)\n"
-"   lwz %r4,   16(%r2)\n"
-"   lwz %r5,   20(%r2)\n"
-"   lwz %r6,   24(%r2)\n"
-"   lwz %r7,   28(%r2)\n"
-"   lwz %r8,   32(%r2)\n"
-"   lwz %r9,   36(%r2)\n"
-"   lwz %r10,  40(%r2)\n"
-"   lwz %r11,  44(%r2)\n"
-"   lwz %r12,  48(%r2)\n"
-"   lwz %r13,  52(%r2)\n"
-"   lwz %r14,  56(%r2)\n"
-"   lwz %r15,  60(%r2)\n"
-"   lwz %r16,  64(%r2)\n"
-"   lwz %r17,  68(%r2)\n"
-"   lwz %r18,  72(%r2)\n"
-"   lwz %r19,  76(%r2)\n"
-"   lwz %r20,  80(%r2)\n"
-"   lwz %r21,  84(%r2)\n"
-"   lwz %r22,  88(%r2)\n"
-"   lwz %r23,  92(%r2)\n"
-"   lwz %r24,  96(%r2)\n"
-"   lwz %r25, 100(%r2)\n"
-"   lwz %r26, 104(%r2)\n"
-"   lwz %r27, 108(%r2)\n"
-"   lwz %r28, 112(%r2)\n"
-"   lwz %r29, 116(%r2)\n"
-"   lwz %r30, 120(%r2)\n"
-"   lwz %r31, 124(%r2)\n"
+"   lwz %r0,    0(%r31)\n"
+"   lwz %r1,    4(%r31)\n"     // switch stacks (r1 = SP)
+"   lwz %r2,    8(%r31)\n"
+"   lwz %r3,   12(%r31)\n"
+"   lwz %r4,   16(%r31)\n"
+"   lwz %r5,   20(%r31)\n"
+"   lwz %r6,   24(%r31)\n"
+"   lwz %r7,   28(%r31)\n"
+"   lwz %r8,   32(%r31)\n"
+"   lwz %r9,   36(%r31)\n"
+"   lwz %r10,  40(%r31)\n"
+"   lwz %r11,  44(%r31)\n"
+"   lwz %r12,  48(%r31)\n"
+"   lwz %r13,  52(%r31)\n"
+"   lwz %r14,  56(%r31)\n"
+"   lwz %r15,  60(%r31)\n"
+"   lwz %r16,  64(%r31)\n"
+"   lwz %r17,  68(%r31)\n"
+"   lwz %r18,  72(%r31)\n"
+"   lwz %r19,  76(%r31)\n"
+"   lwz %r20,  80(%r31)\n"
+"   lwz %r21,  84(%r31)\n"
+"   lwz %r22,  88(%r31)\n"
+"   lwz %r23,  92(%r31)\n"
+"   lwz %r24,  96(%r31)\n"
+"   lwz %r25, 100(%r31)\n"
+"   lwz %r26, 104(%r31)\n"
+"   lwz %r27, 108(%r31)\n"
+"   lwz %r28, 112(%r31)\n"
+"   lwz %r29, 116(%r31)\n"
+"   lwz %r30, 120(%r31)\n"
+"   lwz %r31, 124(%r31)\n"
 "nop_start_point:\n"
 "   nop\n"
 "   nop\n"
 "   nop\n"
 "   nop\n"
 "   nop\n"
-
-// Cache Sync - which instr?
-/*
-dcbst (update memory)
-sync (wait for update) 
-icbi (invalidate copy in instruction cache) 
-isync (perform context synchronization)
-eieio ...
-*/
-
-"   bctr\n"   // branch to count register
 );
 extern void nop_start_point;
 void switchback ( void )
@@ -292,17 +279,8 @@ void switchback ( void )
    /* stay sane ... */
    assert(p[0] == 0 /* whatever the encoding for nop is */);
 
-   /*
-   p[0] = (0<<31) // no link
-     | (0 << 30) // AA=0
-     | ((diff >> 2) & 0xFFFFFF)
-     | (bits 0 through 5)
-   */
-
-   /*
-p[0] = "goto ..."
-p[1] = gst->guest_CIA
-    */
+   /* branch to diff */
+   p[0] = ((18<<26) | ((diff >> 2) & 0xFFFFFF) | (0<<1) | (0<<0));
 
    flush_cache( &p[0], sizeof(UInt) );
 

@@ -547,6 +547,36 @@ void * pthread_getspecific(pthread_key_t key)
 
 
 /* ---------------------------------------------------
+   ONCEry
+   ------------------------------------------------ */
+
+static pthread_mutex_t once_masterlock = PTHREAD_MUTEX_INITIALIZER;
+
+
+int pthread_once ( pthread_once_t *once_control, 
+                   void (*init_routine) (void) )
+{
+   int res;
+   ensure_valgrind("pthread_once");
+
+   res = pthread_mutex_lock(&once_masterlock);
+
+   if (res != 0)
+      barf("pthread_once: Looks like your program's "
+           "init routine calls back to pthread_once() ?!");
+
+   if (*once_control == 0) {
+      *once_control = 1;
+      init_routine();
+   }
+
+   pthread_mutex_unlock(&once_masterlock);
+
+   return 0;
+}
+
+
+/* ---------------------------------------------------
    MISC
    ------------------------------------------------ */
 

@@ -192,12 +192,11 @@ int is_kerror ( int res )
    extern __locale_t __uselocale ( __locale_t );
 #endif
 
-static
-void init_thread_specific_state ( void );
+static void
+init_global_thread_specific_state ( void );
 
-static
-void init_libc_tsd_keys ( void );
-
+static void
+init_thread_specific_state ( void );
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -831,15 +830,6 @@ void thread_wrapper ( NewThreadInfo* info )
    /* Initialise thread specific state */
    init_thread_specific_state();
 
-#  ifdef GLIBC_2_3
-   /* Set this thread's locale to the global (default) locale.  A hack
-      in support of glibc-2.3.  This does the biz for the all new
-      threads; the root thread is done with a horrible hack in
-      init_libc_tsd_keys() below.
-   */
-   __uselocale(LC_GLOBAL_LOCALE);
-#  endif
-
    /* The root function might not return.  But if it does we simply
       move along to thread_exit_wrapper.  All other ways out for the
       thread (cancellation, or calling pthread_exit) lead there
@@ -892,9 +882,10 @@ pthread_create (pthread_t *__restrict __thredd,
 
    ensure_valgrind("pthread_create");
 
-   /* make sure the tsd keys, and hence locale info, are initialised
-      before we get into complications making new threads. */
-   init_libc_tsd_keys();
+   /* make sure the tsd keys, and hence locale info, for the root
+      thread are initialised before we get into complications making
+      new threads. */
+   init_global_thread_specific_state();
 
    /* Allocate space for the arg block.  thread_wrapper will free
       it. */
@@ -1869,6 +1860,16 @@ void __pthread_initialize ( void )
 
 #include <resolv.h>
 
+/* The allowable libc TSD keys (indices) from glibc source. */
+enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
+                        _LIBC_TSD_KEY_DL_ERROR,
+                        _LIBC_TSD_KEY_RPC_VARS,
+                        _LIBC_TSD_KEY_LOCALE,
+                        _LIBC_TSD_KEY_CTYPE_B,
+                        _LIBC_TSD_KEY_CTYPE_TOLOWER,
+                        _LIBC_TSD_KEY_CTYPE_TOUPPER,
+                        _LIBC_TSD_KEY_N };
+
 typedef
    struct {
      int                *errno_ptr;
@@ -1877,19 +1878,74 @@ typedef
      int                errno_data;
      int                h_errno_data;
      struct __res_state res_state_data;
+     void               *libc_specifics[_LIBC_TSD_KEY_N];
    }
    ThreadSpecificState;
 
 static ThreadSpecificState thread_specific_state[VG_N_THREADS];
 
-static
-void init_thread_specific_state ( void )
+/* Auto-initialising subsystem.  global_init_done is set 
+   after initialisation.  global_init_done_mx guards it. */
+static int             global_init_done    = 0;
+static pthread_mutex_t global_init_done_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+init_global_thread_specific_state ( void )
 {
-  int tid = pthread_self();
-  
+   int res;
+
+   /* Don't fall into deadlock if we get called again whilst we still
+      hold the lock, via the __uselocale() call herein. */
+   if (global_init_done != 0)
+      return;
+
+   /* Take the lock. */
+   res = __pthread_mutex_lock(&global_init_done_mx);
+   if (res != 0) barf("init_global_thread_specific_state: lock");
+
+   /* Now test again, to be sure there is no mistake. */
+   if (global_init_done != 0) {
+      res = __pthread_mutex_unlock(&global_init_done_mx);
+      if (res != 0) barf("init_global_thread_specific_state: unlock(1)");
+      return;
+   }
+   
+   /* assert that we are the root thread. */
+   my_assert(pthread_self() == 1);
+
+   /* Initialise thread specific data for the root thread. */
+   init_thread_specific_state();
+
+   /* Signify init done. */
+   global_init_done = 1;
+
+   /* Unlock and return. */
+   res = __pthread_mutex_unlock(&global_init_done_mx);
+   if (res != 0) barf("init_global_thread_specific_state: unlock");
+}
+
+static void
+init_thread_specific_state ( void )
+{
+   int tid = pthread_self();
+   int i;
+
+   /* Initialise the errno and resolver state pointers. */
    thread_specific_state[tid].errno_ptr = NULL;
    thread_specific_state[tid].h_errno_ptr = NULL;
    thread_specific_state[tid].res_state_ptr = NULL;
+
+   /* Initialise the per-thread libc data. */
+   for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
+      thread_specific_state[tid].libc_specifics[i] = NULL;
+   }
+
+#  ifdef GLIBC_2_3
+   /* Set this thread's locale to the global (default) locale.  A hack
+      in support of glibc-2.3.
+   */
+   __uselocale(LC_GLOBAL_LOCALE);
+#  endif
 }
 
 int* __errno_location ( void )
@@ -1964,110 +2020,28 @@ struct __res_state* __res_state ( void )
    LIBC-PRIVATE SPECIFIC DATA
    ------------------------------------------------ */
 
-/* Relies on assumption that initial private data is NULL.  This
-   should be fixed somehow. */
-
-/* The allowable keys (indices) (all 3 of them). 
-   From sysdeps/pthread/bits/libc-tsd.h
-*/
-/* as per glibc anoncvs HEAD of 20021001. */
-enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
-                        _LIBC_TSD_KEY_DL_ERROR,
-                        _LIBC_TSD_KEY_RPC_VARS,
-                        _LIBC_TSD_KEY_LOCALE,
-                        _LIBC_TSD_KEY_CTYPE_B,
-                        _LIBC_TSD_KEY_CTYPE_TOLOWER,
-                        _LIBC_TSD_KEY_CTYPE_TOUPPER,
-                        _LIBC_TSD_KEY_N };
-
-/* Auto-initialising subsystem.  libc_specifics_inited is set 
-   after initialisation.  libc_specifics_inited_mx guards it. */
-static int             libc_specifics_inited    = 0;
-static pthread_mutex_t libc_specifics_inited_mx = PTHREAD_MUTEX_INITIALIZER;
-
-
-/* These are the keys we must initialise the first time. */
-static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N];
-
-
-/* Initialise the keys, if they are not already initialised. */
-static
-void init_libc_tsd_keys ( void )
-{
-   int res, i;
-   pthread_key_t k;
-
-   /* Don't fall into deadlock if we get called again whilst we still
-      hold the lock, via the __uselocale() call herein. */
-   if (libc_specifics_inited != 0)
-      return;
-
-   /* Take the lock. */
-   res = __pthread_mutex_lock(&libc_specifics_inited_mx);
-   if (res != 0) barf("init_libc_tsd_keys: lock");
-
-   /* Now test again, to be sure there is no mistake. */
-   if (libc_specifics_inited != 0) {
-      res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
-      if (res != 0) barf("init_libc_tsd_keys: unlock(1)");
-      return;
-   }
-
-   /* Actually do the initialisation. */
-   /* printf("INIT libc specifics\n"); */
-   for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
-      res = __pthread_key_create(&k, NULL);
-      if (res != 0) barf("init_libc_tsd_keys: create");
-      libc_specifics_keys[i] = k;
-   }
-
-   /* Signify init done. */
-   libc_specifics_inited = 1;
-
-#  ifdef GLIBC_2_3
-   /* Set the initialising thread's locale to the global (default)
-      locale.  A hack in support of glibc-2.3.  This does the biz for
-      the root thread.  For all other threads we run this in
-      thread_wrapper(), which does the real work of
-      pthread_create(). */
-   /* assert that we are the root thread.  I don't know if this is
-      really a valid assertion to make; if it breaks I'll reconsider
-      it. */
-   my_assert(pthread_self() == 1);
-   __uselocale(LC_GLOBAL_LOCALE);
-#  endif
-
-   /* Unlock and return. */
-   res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
-   if (res != 0) barf("init_libc_tsd_keys: unlock");
-}
-
-
 static int
 libc_internal_tsd_set ( enum __libc_tsd_key_t key, 
                         const void * pointer )
 {
-   int res;
+   int tid = pthread_self();
    /* printf("SET SET SET key %d ptr %p\n", key, pointer); */
    if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_set: invalid key");
-   init_libc_tsd_keys();
-   res = __pthread_setspecific(libc_specifics_keys[key], pointer);
-   if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
+   init_global_thread_specific_state();
+   thread_specific_state[tid].libc_specifics[key] = (void *)pointer;
    return 0;
 }
 
 static void *
 libc_internal_tsd_get ( enum __libc_tsd_key_t key )
 {
-   void* v;
+   int tid = pthread_self();
    /* printf("GET GET GET key %d\n", key); */
    if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_get: invalid key");
-   init_libc_tsd_keys();
-   v = __pthread_getspecific(libc_specifics_keys[key]);
-   /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
-   return v;
+   init_global_thread_specific_state();
+   return thread_specific_state[tid].libc_specifics[key];
 }
 
 
@@ -2085,13 +2059,12 @@ void* (*__libc_internal_tsd_get)
 static void**
 libc_internal_tsd_address ( enum __libc_tsd_key_t key )
 {
-   void** v;
+   int tid = pthread_self();
    /* printf("ADDR ADDR ADDR key %d\n", key); */
    if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_address: invalid key");
-   init_libc_tsd_keys();
-   v = __pthread_getspecific_addr(libc_specifics_keys[key]);
-   return v;
+   init_global_thread_specific_state();
+   return &thread_specific_state[tid].libc_specifics[key];
 }
 
 void ** (*__libc_internal_tsd_address) 

@@ -1524,6 +1524,28 @@ void _pthread_cleanup_pop_restore ( void )
       ignored("_pthread_cleanup_pop_restore");
 }
 
+/*--------*/
+void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
+                            void (*__routine) (void *),
+                            void *__arg)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("_pthread_cleanup_push");
+}
+
+void _pthread_cleanup_pop (struct _pthread_cleanup_buffer *__buffer,
+                           int __execute)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) {
+      if (__execute)
+         ignored("_pthread_cleanup_pop-EXECUTE");
+      else 
+         ignored("_pthread_cleanup_pop-NO-EXECUTE");
+   }
+}
+
 
 /* This doesn't seem to be needed to simulate libpthread.so's external
    interface, but many people complain about its absence. */

@@ -75,9 +75,9 @@ void __pwrite64 ( void )  { unimp("__pwrite64"); }
 void __vfork ( void )  { unimp("__vfork"); }
 //void __wait ( void )  { unimp("__wait"); }
 //void __write ( void )  { unimp("__write"); }
-void _pthread_cleanup_pop ( void )  { unimp("_pthread_cleanup_pop"); }
+//void _pthread_cleanup_pop ( void )  { unimp("_pthread_cleanup_pop"); }
 //void _pthread_cleanup_pop_restore ( void )  { unimp("_pthread_cleanup_pop_restore"); }
-void _pthread_cleanup_push ( void )  { unimp("_pthread_cleanup_push"); }
+//void _pthread_cleanup_push ( void )  { unimp("_pthread_cleanup_push"); }
 //void _pthread_cleanup_push_defer ( void )  { unimp("_pthread_cleanup_push_defer"); }
 //void longjmp ( void )  { unimp("longjmp"); }
 //void pthread_atfork ( void )  { unimp("pthread_atfork"); }

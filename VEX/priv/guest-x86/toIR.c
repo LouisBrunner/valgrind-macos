@@ -1105,7 +1105,7 @@ static Char* name_X86Condcode ( X86Condcode cond )
 
 static 
 X86Condcode positiveIse_X86Condcode ( X86Condcode  cond,
-                                      Bool*     needInvert )
+                                      Bool*        needInvert )
 {
    vassert(cond >= X86CondO && cond <= X86CondNLE);
    if (cond & 1) {
@@ -10524,8 +10524,22 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    case 0x7F: /* JGb/JNLEb (jump greater) */
       d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
-      jcc_01((X86Condcode)(opc - 0x70), (Addr32)(guest_eip_bbstart+delta), d32);
-      whatNext = Dis_StopHere;
+      if (0 && resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
+         /* Assume the branch is taken.  So we need to emit a
+            side-exit to the insn following this one, on the negation
+            of the condition, and continue at the branch target
+            address (d32). */
+         if (0) vex_printf("resteer\n");
+         stmt( IRStmt_Exit( 
+                  mk_x86g_calculate_condition((X86Condcode)(1 ^ (opc - 0x70))),
+                  Ijk_Boring,
+                  IRConst_U32(guest_eip_bbstart+delta) ) );
+         whatNext   = Dis_Resteer;
+         *whereNext = d32;
+      } else {
+         jcc_01((X86Condcode)(opc - 0x70), (Addr32)(guest_eip_bbstart+delta), d32);
+         whatNext = Dis_StopHere;
+      }
       DIP("j%s-8 0x%x\n", name_X86Condcode(opc - 0x70), d32);
       break;
 

@@ -499,6 +499,59 @@ void* memcpy( void *dst, const void *src, unsigned int len )
     return dst;
 }
 
+
+/* ---------------------------------------------------------------------
+   Horrible hack to make sigsuspend() sort-of work OK.  Same trick as
+   for pause() in vg_libpthread.so.
+   ------------------------------------------------------------------ */
+
+/* Horrible because
+
+   -- uses VG_(ksigprocmask), VG_(nanosleep) and vg_assert, which are 
+      valgrind-native (not intended for client use).
+
+   -- This is here so single-threaded progs (not linking libpthread.so)
+      can see it.  But pause() should also be here.  ???
+*/
+
+/* Either libc supplies this (weak) or our libpthread.so supplies it
+   (strong) in a threaded setting. 
+*/
+extern int* __errno_location ( void );
+
+
+int sigsuspend ( /* const sigset_t * */ void* mask)
+{
+   unsigned int n_orig, n_now;
+   struct vki_timespec nanosleep_interval;
+
+   VALGRIND_MAGIC_SEQUENCE(n_orig, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__GET_N_SIGS_RETURNED, 
+                           0, 0, 0, 0);
+   vg_assert(n_orig != 0xFFFFFFFF);
+
+   VG_(ksigprocmask)(VKI_SIG_SETMASK, mask, NULL);
+
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(n_now, 0xFFFFFFFF /* default */,
+                              VG_USERREQ__GET_N_SIGS_RETURNED, 
+                              0, 0, 0, 0);
+      vg_assert(n_now != 0xFFFFFFFF);
+      vg_assert(n_now >= n_orig);
+      if (n_now != n_orig) break;
+
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 53 * 1000 * 1000; /* 53 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      VG_(nanosleep)( &nanosleep_interval, NULL);
+   }
+
+   /* Maybe this is OK both in single and multithreaded setting. */
+   * (__errno_location()) = -VKI_EINTR; /* == EINTR; */ 
+   return -1;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                         vg_clientfuncs.c ---*/
 /*--------------------------------------------------------------------*/

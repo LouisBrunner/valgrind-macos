@@ -723,13 +723,13 @@ void canonicaliseLoctab ( SegInfo* si )
       vg_assert(si->loctab[i].size < 10000);
       if (si->loctab[i].addr + si->loctab[i].size > si->loctab[i+1].addr) {
          /* Do this in signed int32 because the actual .size fields
-            are unsigned 16s. */
+            are only 12 bits. */
          Int new_size = si->loctab[i+1].addr - si->loctab[i].addr;
          if (new_size < 0) {
             si->loctab[i].size = 0;
          } else
-         if (new_size >= 65536) {
-           si->loctab[i].size = 65535;
+         if (new_size > MAX_LOC_SIZE) {
+           si->loctab[i].size = MAX_LOC_SIZE;
          } else {
            si->loctab[i].size = (UShort)new_size;
          }

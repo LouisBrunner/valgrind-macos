@@ -1182,8 +1182,12 @@ static void ac_detect_memory_leaks ( void )
 
 Bool SK_(cheap_sanity_check) ( void )
 {
-   if (IS_DISTINGUISHED_SM(primary_map[0]) && 
-       IS_DISTINGUISHED_SM(primary_map[65535]))
+   if (IS_DISTINGUISHED_SM(primary_map[0])
+       /* kludge: kernel drops a page up at top of address range for
+          magic "optimized syscalls", so we can no longer check the
+          highest page */
+       /* && IS_DISTINGUISHED_SM(primary_map[65535]) */
+      )
       return True;
    else
       return False;

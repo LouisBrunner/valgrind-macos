@@ -496,6 +496,11 @@ Bool VG_(running_on_simd_CPU) = False;
 /* Holds client's %esp at the point we gained control. */
 Addr VG_(esp_at_startup);
 
+/* Indicates presence, and holds address of client's sysinfo page, a
+   feature of some modern kernels used to provide vsyscalls, etc. */
+Bool VG_(sysinfo_page_exists) = False;
+Addr VG_(sysinfo_page_addr) = 0;
+
 /* As deduced from VG_(esp_at_startup), the client's argc, argv[] and
    envp[] as extracted from the client's stack at startup-time. */
 Int    VG_(client_argc);
@@ -721,6 +726,18 @@ static void process_cmd_line_options ( void )
           if (0)
              VG_(printf)("Looks like you've got a 2.4.X kernel here.\n");
           sp -= 2;
+       } else
+       if (sp[2] == VKI_AT_CLKTCK
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_HWCAP
+           && sp[-4] == VKI_AT_SYSINFO
+           && sp[-4-1] == 0) {
+          if (0)
+             VG_(printf)("Looks like you've got a 2.4.X kernel with "
+                         "a sysinfo page at %x here.\n", sp[-3]);
+	  VG_(sysinfo_page_exists) = True;
+	  VG_(sysinfo_page_addr) = sp[-3];
+          sp -= 4;
        } else
        if (sp[2] == VKI_AT_CLKTCK
            && sp[0] == VKI_AT_PAGESZ

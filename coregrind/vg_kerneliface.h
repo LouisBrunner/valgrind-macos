@@ -353,6 +353,7 @@ struct vki_stat {
    Logic from     /usr/src/linux-2.4.9-31/fs/binfmt_elf.c
                   and its counterpart in the 2.2.14 kernel sources 
                   in Red Hat 6.2.  */
+#define VKI_AT_SYSINFO 32   /* address of system info page */
 #define VKI_AT_CLKTCK 17    /* frequency at which times() increments */
 #define VKI_AT_HWCAP  16    /* arch dependent hints at CPU capabilities */
 #define VKI_AT_BASE   7     /* base address of interpreter */

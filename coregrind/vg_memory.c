@@ -211,6 +211,15 @@ void VG_(init_memory) ( void )
 
    /* 4 */
    VG_(init_dataseg_end_for_brk)();
+
+   /* kludge: some newer kernels place a "sysinfo" page up high, with
+      vsyscalls in it, and possibly some other stuff in the future. */
+   if (VG_(sysinfo_page_exists)) {
+      VG_(new_exe_segment)( VG_(sysinfo_page_addr), 4096 );
+      VG_TRACK( new_mem_startup, VG_(sysinfo_page_addr), 4096, 
+                True, True, True );
+     }
+
 }
 
 

@@ -1320,6 +1320,11 @@ extern UInt VG_(sigstack)[10000];
    client's argc, argv and envp are deduced. */
 extern Addr   VG_(esp_at_startup);
 
+/* Indicates presence, and holds address of client's sysinfo page, a
+   feature of some modern kernels used to provide vsyscalls, etc. */
+extern Bool VG_(sysinfo_page_exists);
+extern Addr VG_(sysinfo_page_addr);
+
 /* Remove valgrind.so and skin's .so from a LD_PRELOAD=... string so child
    processes don't get traced into.  Also mess up $libdir/valgrind so that
    our libpthread.so disappears from view. */

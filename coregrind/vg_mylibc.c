@@ -286,9 +286,7 @@ void* VG_(mmap)( void* start, UInt length,
       } else {
          vg_assert(VG_(valgrind_base) <= res && res+length < VG_(valgrind_end));
       }
-   }
 
-   if (!VG_(is_kerror)(res)) {
       sf_flags |= SF_MMAP;
       if (  flags & VKI_MAP_FIXED)      sf_flags |= SF_FIXED;
       if (  flags & VKI_MAP_SHARED)     sf_flags |= SF_SHARED;

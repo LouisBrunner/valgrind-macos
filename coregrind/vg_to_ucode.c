@@ -6207,18 +6207,34 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       DIP("cmc\n");
       break;
 
-   case 0xF2: { /* REPNE prefix insn */
+   /* REPNE prefix insn */
+   case 0xF2: { 
       Addr eip_orig = eip - 1;
       vg_assert(sorb == 0);
       abyte = getUChar(eip); eip++;
-      if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
 
-      if (abyte == 0xAE || abyte == 0xAF) { /* REPNE SCAS<sz> */
-         if (abyte == 0xAE) sz = 1;
+      if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
+      *isEnd = True;         
+
+      switch (abyte) {
+      /* According to the Intel manual, "repne movs" should never occur, but
+       * in practice it has happened, so allow for it here... */
+      case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
+      case 0xA5: 
+         dis_REP_op ( cb, CondNZ, dis_MOVS, sz, eip_orig, eip, "repne movs" );
+         break;
+
+      case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
+      case 0xA7:
+         dis_REP_op ( cb, CondNZ, dis_CMPS, sz, eip_orig, eip, "repne cmps" );
+         break;
+
+      case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
+      case 0xAF:
          dis_REP_op ( cb, CondNZ, dis_SCAS, sz, eip_orig, eip, "repne scas" );
-         *isEnd = True;         
-      }
-      else {
+         break;
+
+      default:
          goto decode_failure;
       }
       break;
@@ -6232,46 +6248,43 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       abyte = getUChar(eip); eip++;
 
       if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
+      *isEnd = True;
 
-      if (abyte == 0xA4 || abyte == 0xA5) { /* REP MOV<sz> */
-         if (abyte == 0xA4) sz = 1;
+      switch (abyte) {
+      case 0xA4: sz = 1;   /* REP MOVS<sz> */
+      case 0xA5:
          dis_REP_op ( cb, CondAlways, dis_MOVS, sz, eip_orig, eip, "rep movs" );
-         *isEnd = True;
-      }
-      else 
-      if (abyte == 0xA6 || abyte == 0xA7) { /* REPE CMP<sz> */
-         if (abyte == 0xA6) sz = 1;
+         break;
+
+      case 0xA6: sz = 1;   /* REPE CMP<sz> */
+      case 0xA7:
          dis_REP_op ( cb, CondZ, dis_CMPS, sz, eip_orig, eip, "repe cmps" );
-         *isEnd = True;
-      } 
-      else
-      if (abyte == 0xAA || abyte == 0xAB) { /* REP STOS<sz> */
-         if (abyte == 0xAA) sz = 1;
+         break;
+
+      case 0xAA: sz = 1;   /* REP STOS<sz> */
+      case 0XAB:
          dis_REP_op ( cb, CondAlways, dis_STOS, sz, eip_orig, eip, "rep stos" );
-         *isEnd = True;
-      }
-      else
-      if (abyte == 0xAE || abyte == 0xAF) { /* REPE SCAS<sz> */
-         if (abyte == 0xAE) sz = 1;
+         break;
+
+      case 0xAE: sz = 1;   /* REPE SCAS<sz> */
+      case 0xAF: 
          dis_REP_op ( cb, CondZ, dis_SCAS, sz, eip_orig, eip, "repe scas" );
-         *isEnd = True;         
-      }
-      else
-      if (abyte == 0x90) { /* REP NOP (PAUSE) */
+         break;
+      
+      case 0x90:           /* REP NOP (PAUSE) */
          /* a hint to the P4 re spin-wait loop */
          DIP("rep nop (P4 pause)\n");
          jmp_lit(cb, eip);
          LAST_UINSTR(cb).jmpkind = JmpYield;
-         *isEnd = True;
-      }
-      else
-      if (abyte == 0xC3) { /* REP RET */
+         break;
+
+      case 0xC3:           /* REP RET */
          /* AMD K7/K8-specific optimisation; faster than vanilla RET */
          dis_ret(cb, 0);
-         *isEnd = True;
          DIP("rep ret\n");
-      }
-      else {
+         break;
+
+      default:
          goto decode_failure;
       }
       break;

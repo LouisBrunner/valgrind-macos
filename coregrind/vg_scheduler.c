@@ -354,7 +354,7 @@ static
 void mostly_clear_thread_record ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   VGA_(clear_thread)(&VG_(threads)[tid].arch);
+   VGA_(cleanup_thread)(&VG_(threads)[tid].arch);
    VG_(threads)[tid].tid                  = tid;
    VG_(threads)[tid].status               = VgTs_Empty;
    VG_(threads)[tid].associated_mx        = NULL;

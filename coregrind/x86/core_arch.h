@@ -87,7 +87,7 @@
 
 /* This is the hardware-format for a segment descriptor, ie what the
    x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
-
+#if 0
 typedef struct _LDT_ENTRY {
     union {
        struct {
@@ -111,7 +111,7 @@ typedef struct _LDT_ENTRY {
     } 
     LdtEnt;
 } VgLdtEntry;
-
+#endif
 
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
@@ -123,18 +123,6 @@ typedef struct _LDT_ENTRY {
 //      also.
 typedef 
    struct {
-      /* Pointer to this thread's Local (Segment) Descriptor Table.
-         Starts out as NULL, indicating there is no table, and we hope
-         to keep it that way.  If the thread does __NR_modify_ldt to
-         create entries, we allocate a 8192-entry table at that point.
-         This is a straight copy of the Linux kernel's scheme.  Don't
-         forget to deallocate this at thread exit. */
-      VgLdtEntry* ldt;
-
-      /* TLS table. This consists of a small number (currently 3) of
-         entries from the Global Descriptor Table. */
-      VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
-
       /* --- BEGIN vex-mandated guest state --- */
 
       /* Saved machine context. */

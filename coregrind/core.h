@@ -1810,7 +1810,6 @@ extern void
                                  /*MOD*/ ThreadArchState* arch );
 
 // Thread stuff
-extern void VGA_(clear_thread)   ( ThreadArchState* );
 extern void VGA_(cleanup_thread) ( ThreadArchState* );
 extern void VGA_(setup_child)    ( ThreadArchState*, ThreadArchState* );
 

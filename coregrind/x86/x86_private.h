@@ -35,6 +35,8 @@
 #include "x86_private_asm.h"  // private arch-specific asm stuff
 #include "tool_arch.h"        // arch-specific tool stuff
 
+#include "libvex_guest_x86.h" // for VexGuestX86SegDescr
+
 /* ---------------------------------------------------------------------
    Exports of state.c that are not core-visible
    ------------------------------------------------------------------ */
@@ -49,9 +51,12 @@ extern Bool VG_(have_ssestate);
    ------------------------------------------------------------------ */
 
 /* Alloc & copy, and dealloc. */
-extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
-extern void        VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
-extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
+extern VexGuestX86SegDescr* 
+       VG_(allocate_LDT_for_thread)   ( VexGuestX86SegDescr* parent_ldt );
+extern void
+       VG_(deallocate_LDT_for_thread) ( VexGuestX86SegDescr* ldt );
+extern void
+       VG_(clear_TLS_for_thread)      ( VexGuestX86SegDescr* tls );
 
 
 #endif   // __X86_PRIVATE_H

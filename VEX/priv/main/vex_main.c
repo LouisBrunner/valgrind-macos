@@ -184,8 +184,10 @@ VexTranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int*    host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
+                            IRType gWordTy, IRType hWordTy ),
+   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
+                            IRType gWordTy, IRType hWordTy ),
    Bool    cleanup_after_instrumentation,
    /* IN: optionally, an access check function for guest code. */
    Bool    (*byte_accessible) ( Addr64 ),
@@ -431,9 +433,11 @@ VexTranslateResult LibVEX_Translate (
 
    /* Get the thing instrumented. */
    if (instrument1)
-      irbb = (*instrument1)(irbb, guest_layout, host_word_type);
+      irbb = (*instrument1)(irbb, guest_layout, 
+                                  guest_word_type, host_word_type);
    if (instrument2)
-      irbb = (*instrument2)(irbb, guest_layout, host_word_type);
+      irbb = (*instrument2)(irbb, guest_layout,
+                                  guest_word_type, host_word_type);
       
    if (vex_traceflags & VEX_TRACE_INST) {
       vex_printf("\n------------------------" 

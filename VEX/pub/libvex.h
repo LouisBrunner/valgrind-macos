@@ -263,8 +263,10 @@ VexTranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int*    host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
+                            IRType gWordTy, IRType hWordTy ),
+   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
+                            IRType gWordTy, IRType hWordTy ),
    Bool    cleanup_after_instrumentation,
    /* IN: optionally, an access check function for guest code. */
    Bool    (*byte_accessible) ( Addr64 ),

@@ -2956,6 +2956,12 @@ POST(sys_getppid)
       RES = 1;
 }
 
+PRE(sys_gettid, 0)
+{
+   PRINT("sys_gettid ()");
+   PRE_REG_READ0(long, "gettid");
+}
+
 static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
 {
    POST_MEM_WRITE( a2, sizeof(struct vki_rlimit) );

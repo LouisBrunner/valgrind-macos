@@ -1,2 +1,2 @@
 prog: insn_fpu
-cpu_test: x86-fpu
+prereq: ../../../tests/cputest x86-fpu

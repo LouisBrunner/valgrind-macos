@@ -1,2 +1,2 @@
 prog: insn_sse2
-cpu_test: x86-sse2
+prereq: ../../../tests/cputest x86-sse2

@@ -49,7 +49,7 @@
 #   - vgopts: <Valgrind options>                    (default: none)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
-#   - cpu_test: <cpu feature required for test>     (default: none)
+#   - prereq: <prerequisite command>                (default: none)
 #   - cleanup: <post-test cleanup cmd to run>       (default: none)
 #
 # Note that filters are necessary for stderr results to filter out things that
@@ -58,6 +58,9 @@
 # Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]? (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
 # stderr (filtered) is kept in <test>.stderr.exp[0-9]?. 
+#
+# The prerequisite command, if present, must return 0 otherwise the test is
+# skipped.
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff[0-9]?.
@@ -82,7 +85,7 @@ my $prog;               # test prog
 my $args;               # test prog args
 my $stdout_filter;      # filter program to run stdout results file through
 my $stderr_filter;      # filter program to run stderr results file through
-my $cpu_test;           # cpu feature to check for before running test
+my $prereq;             # prerequisite test to satisfy before running test
 my $cleanup;            # cleanup command to run
 
 my @failures;           # List of failed tests
@@ -169,7 +172,7 @@ sub read_vgtest_file($)
     my ($f) = @_;
 
     # Defaults.
-    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter, $cpu_test, $cleanup)
+    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter, $prereq, $cleanup)
       = ("", undef, "", undef, undef, undef, undef);
 
     # Every test directory must have a "filter_stderr"
@@ -188,8 +191,8 @@ sub read_vgtest_file($)
             $stdout_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
             $stderr_filter = validate_program(".", $1, 1, 1);
-        } elsif ($line =~ /^\s*cpu_test:\s*(.*)$/) {
-            $cpu_test = $1;
+        } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {
+            $prereq = $1;
         } elsif ($line =~ /^\s*cleanup:\s*(.*)$/) {
             $cleanup = $1;
         } else {
@@ -263,9 +266,9 @@ sub do_one_test($$)
 
     read_vgtest_file($vgtest);
 
-    if (defined $cpu_test) {
-        if (system("$tests_dir/tests/cputest $cpu_test") != 0) {
-            printf("%-16s (cpu_test failed, skipping)\n", "$name:");
+    if (defined $prereq) {
+        if (system("$prereq") != 0) {
+            printf("%-16s (skipping, prereq failed: $prereq)\n", "$name:");
             return;
         }
     }

@@ -1,4 +1,4 @@
 vgopts: -q
 prog: ../../../none/tests/x86/insn_cmov
-cpu_test: x86-cmov
+prereq: ../../../tests/cputest x86-cmov
 cleanup: rm cachegrind.out.*

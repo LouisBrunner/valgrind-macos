@@ -21,8 +21,7 @@ static int go(char* cpu)
    unsigned int level = 0, mask = 0, a, b, c, d;
 
    if ( strcmp( cpu, "x86" ) == 0 ) {
-     level = 1;
-     mask = 1 << 0;
+     return 0;
    } else if ( strcmp( cpu, "x86-fpu" ) == 0 ) {
      level = 1;
      mask = 1 << 0;

@@ -342,6 +342,13 @@ static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
           && e1->Iex.Tmp.tmp == e2->Iex.Tmp.tmp;
 }
 
+static Bool notBool ( Bool b )
+{
+   if (b == True) return False;
+   if (b == False) return True;
+   vpanic("notBool");
+}
+
 static IRExpr* fold_Expr ( IRExpr* e )
 {
    Int     shift;
@@ -413,6 +420,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
          case Iop_Not8:
             e2 = IRExpr_Const(IRConst_U8(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U8)));
+            break;
+
+         case Iop_Not1:
+            e2 = IRExpr_Const(IRConst_Bit(
+                    notBool(e->Iex.Unop.arg->Iex.Const.con->Ico.Bit)));
             break;
 
          default: 
@@ -555,10 +567,16 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
+
             case Iop_CmpLT32S:
                e2 = IRExpr_Const(IRConst_Bit(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+               break;
+            case Iop_CmpLT32U:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
+                        < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
 
             case Iop_32HLto64:

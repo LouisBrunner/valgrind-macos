@@ -2,4 +2,8 @@
 
 dir=`dirname $0`
 
-$dir/../../tests/filter_stderr_basic
+$dir/../../tests/filter_stderr_basic |
+
+# Remove "Corecheck, ..." line and the following copyright line.
+sed "/^Corecheck, a rudimentary error detector./ , /./ d"
+

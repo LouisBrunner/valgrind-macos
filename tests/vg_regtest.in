@@ -3,8 +3,8 @@
 ##--- Valgrind regression testing script                vg_regtest ---##
 ##--------------------------------------------------------------------##
 
-#  This file is part of Valgrind, an extensible x86 protected-mode
-#  emulator for monitoring program execution on x86-Unixes.
+#  This file is part of Valgrind, a dynamic binary instrumentation
+#  framework.
 #
 #  Copyright (C) 2003 Nicholas Nethercote
 #     njn25@cam.ac.uk

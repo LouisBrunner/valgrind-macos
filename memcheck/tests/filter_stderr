@@ -7,6 +7,9 @@ $dir/../../tests/filter_stderr_basic                    |
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |
 
+# Remove "Memcheck, ..." line and the following copyright line.
+sed "/^Memcheck, a memory error detector/ , /./ d" |
+
 # Anonymise line numbers in mac_replace_strmem.c
 sed "s/mac_replace_strmem.c:[0-9]*/mac_replace_strmem.c:.../"  |
 

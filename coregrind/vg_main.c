@@ -4,8 +4,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an extensible x86 protected-mode
-   emulator for monitoring program execution on x86-Unixes.
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
 
    Copyright (C) 2000-2004 Julian Seward 
       jseward@acm.org
@@ -1975,18 +1975,17 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
    if (VG_(clo_verbosity > 0)) {
       /* Tool details */
-      VG_(message)(Vg_UserMsg, "%s%s%s, %s for %s.",
+      VG_(message)(Vg_UserMsg, "%s%s%s, %s.",
                    VG_(details).name, 
-                   NULL == VG_(details).version ?        "" : "-",
+                   NULL == VG_(details).version ? "" : "-",
                    NULL == VG_(details).version 
                       ? (Char*)"" : VG_(details).version,
-                   VG_(details).description,
-                   VG_PLATFORM);
+                   VG_(details).description);
       VG_(message)(Vg_UserMsg, "%s", VG_(details).copyright_author);
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
-         "Using valgrind-%s, a program supervision framework for %s.",
+         "Using valgrind-%s, a dynamic binary instrumentation framework.",
          VERSION, VG_PLATFORM);
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");

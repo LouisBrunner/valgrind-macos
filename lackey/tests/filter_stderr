@@ -4,6 +4,9 @@ dir=`dirname $0`
 
 $dir/../../tests/filter_stderr_basic    |
 
+# Remove "Lackey, ..." line and the following copyright line.
+sed "/^Lackey, an example Valgrind tool./ , /./ d" |
+
 # Output looks like this...
 #
 # Counted 53 calls to _dl_runtime_resolve()

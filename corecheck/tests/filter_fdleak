@@ -2,7 +2,7 @@
 
 dir=`dirname $0`
 
-$dir/../../tests/filter_stderr_basic                    |
+./filter_stderr                    |
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses                       |

@@ -7,7 +7,7 @@ os=@VG_OS@
 platform=@VG_PLATFORM@
 
 Name: Valgrind
-Description: Program supervision framework for x86-GNU/Linux
+Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
 Libs:

@@ -4,5 +4,9 @@
 
 dir=`dirname $0`
 
-$dir/../../memcheck/tests/filter_stderr
+$dir/../../memcheck/tests/filter_stderr |
+
+# Remove "Lackey, ..." line and the following copyright line.
+sed "/^Addrcheck, a fine-grained address checker./ , /./ d"
+
 

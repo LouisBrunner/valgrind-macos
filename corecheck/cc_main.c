@@ -33,7 +33,7 @@
 
 void TL_(pre_clo_init)(void)
 {
-   VG_(details_name)            ("Coregrind");
+   VG_(details_name)            ("Corecheck");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a rudimentary error detector");
    VG_(details_copyright_author)(

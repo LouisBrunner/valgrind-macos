@@ -7299,10 +7299,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    DIP("\n");
    for (; first_uinstr < cb->used; first_uinstr++) {
       Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
-      if (VG_(print_codegen)) 
+      if (!sane)
+         VG_(up_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
+      else if (VG_(print_codegen)) 
          VG_(pp_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
-      else if (!sane)
-         VG_(up_UInstr)(-1, &cb->instrs[first_uinstr]);
       vg_assert(sane);
    }
    return eip;

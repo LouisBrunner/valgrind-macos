@@ -261,7 +261,7 @@ void _ZdaPv ( void* p )
   __builtin_vec_delete(p);
 }
 
-void* calloc ( Int nmemb, Int size )
+void* calloc ( UInt nmemb, UInt size )
 {
    void* v;
 

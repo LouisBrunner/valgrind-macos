@@ -400,7 +400,6 @@ ThreadId VG_(get_tid_from_ThreadState) (ThreadState* tst)
 
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
-__inline__
 void VG_(load_thread_state) ( ThreadId tid )
 {
    Int i;
@@ -467,7 +466,6 @@ void VG_(load_thread_state) ( ThreadId tid )
    fail quickly if we erroneously continue to poke around inside
    VG_(baseBlock) without first doing a load_thread_state().  
 */
-__inline__
 void VG_(save_thread_state) ( ThreadId tid )
 {
    Int i;

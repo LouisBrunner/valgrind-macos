@@ -766,10 +766,8 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
       unop(Iop_32to1,bind(0))
    );
    if (matchIRExpr(&mi,p_32to1,e)) {
-      HReg src = iselIntExpr_R(env, mi.bindee[0]);
-      HReg dst = newVRegI(env);
-      addInstr(env, mk_MOVsd_RR(src,dst));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
+      X86RM* rm = iselIntExpr_RM(env, mi.bindee[0]);
+      addInstr(env, X86Instr_Test32(X86RI_Imm(1),rm));
       return Xcc_NZ;
    }
 

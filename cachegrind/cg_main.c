@@ -538,12 +538,18 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             is_STORE = True;
             break;
 
+         case MMX2_MemRd:
+            sk_assert(u_in->size == 8);
+            /* fall through */
          case FPU_R:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_read = u_in->val2;
             is_FPU_R = True;
             break;
 
+         case MMX2_MemWr:
+            sk_assert(u_in->size == 8);
+            /* fall through */
          case FPU_W:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_write = u_in->val2;
@@ -745,6 +751,9 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case MMX2_MemRd:
+            sk_assert(u_in->size == 8);
+            /* fall through */
          case FPU_R:
             t_read      = u_in->val2;
             t_read_addr = newTemp(cb);
@@ -760,6 +769,9 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
           * Without it, it would think a mod instruction is a read.
           * As for the MOV, if it's a mod instruction it's redundant, but it's
           * not expensive and mod instructions are rare anyway. */
+         case MMX2_MemWr:
+            sk_assert(u_in->size == 8);
+            /* fall through */
          case STORE:
          case FPU_W:
             t_write      = u_in->val2;
@@ -957,13 +969,6 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                         t_data_addr2 = t_read = t_write = INVALID_TEMPREG;
             data_size = INVALID_DATA_SIZE;
             has_rep_prefix = False; 
-            break;
-
-         case MMX1: case MMX2: case MMX3:
-         case MMX2_MemRd: case MMX2_MemWr: 
-         case MMX2_RegRd: case MMX2_RegWr:
-            VG_(skin_panic)(
-               "I don't know how to instrument MMXish stuff (yet)");
             break;
 
          default:

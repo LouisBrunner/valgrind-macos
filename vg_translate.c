@@ -1458,6 +1458,15 @@ static void vg_improve ( UCodeBlock* cb )
          continue;
       } 
 
+      /* PUTF modifies the %EFLAGS in essentially unpredictable ways.
+         For example people try to mess with bit 21 to see if CPUID
+         works.  The setting may or may not actually take hold.  So we
+         play safe here. */
+      if (u->opcode == PUTF) {
+         future_dead_flags = FlagsEmpty;
+         continue;
+      } 
+
       /* We can annul the flags written by this insn if it writes a
          subset (or eq) of the set of flags known to be dead after
          this insn.  If not, just record the flags also written by

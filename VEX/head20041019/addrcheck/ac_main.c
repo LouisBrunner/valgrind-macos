@@ -715,34 +715,34 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 #  endif
 }
 
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_LOAD4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/False );
 }
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_STORE4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/True );
 }
 
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_LOAD2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/False );
 }
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_STORE2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/True );
 }
 
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_LOAD1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/False );
 }
-REGPARM(1)
+//REGPARM(1)
 static void ac_helperc_STORE1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/True );
@@ -912,14 +912,14 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 #  endif
 }
 
-REGPARM(2)
-static void ac_fpu_READ_check ( Addr addr, Int size )
+//REGPARM(2)
+static void ac_helperc_LOADN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
-REGPARM(2)
-static void ac_fpu_WRITE_check ( Addr addr, Int size )
+//REGPARM(2)
+static void ac_helperc_STOREN ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
 }
@@ -949,17 +949,156 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+HWord SK_(tool_findhelper) ( Char* function_name )
+{
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD4"))
+      return (HWord) & ac_helperc_LOAD4;
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE4"))
+      return (HWord) & ac_helperc_STORE4;
+
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD1"))
+      return (HWord) & ac_helperc_LOAD1;
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE1"))
+      return (HWord) & ac_helperc_STORE1;
+
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD2"))
+      return (HWord) & ac_helperc_LOAD2;
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE2"))
+      return (HWord) & ac_helperc_STORE2;
+
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOADN"))
+      return (HWord) & ac_helperc_LOADN;
+   if (0 == VG_(strcmp)(function_name, "ac_helperc_STOREN"))
+      return (HWord) & ac_helperc_STOREN;
+
+   return 0; /* not found */
+}
+
+
+IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 {
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
 
-   UCodeBlock* cb;
    Int         i;
-   UInstr*     u_in;
-   Int         t_addr, t_size;
-   Addr        helper;
+   Int         sz;
+   Char*       helper;
+   IRStmt* st;
+   IRExpr* data;
+   IRExpr* addr;
+   Bool needSz;
 
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+   /* No loads to consider in ->next. */
+   sk_assert(isAtom(bb_in->next));
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+      st = bb_in->stmts[i];
+      if (!st) continue;
+
+      switch (st->tag) {
+
+         case Ist_Tmp:
+            data = st->Ist.Tmp.data;
+            if (data->tag == Iex_LDle) {
+               addr = data->Iex.LDle.addr;
+               sz = sizeofIRType(data->Iex.LDle.ty);
+               needSz = False;
+               switch (sz) {
+                  case 4: helper = "ac_helperc_LOAD4"; break;
+                  case 2: helper = "ac_helperc_LOAD2"; break;
+                  case 1: helper = "ac_helperc_LOAD1"; break;
+                  default: helper = "ac_helperc_LOADN"; needSz = True; break;
+               }
+               if (needSz) {
+                  addStmtToIRBB( 
+                     bb,
+                     IRStmt_Dirty(
+                        unsafeIRDirty_0_N( helper, 
+                                           mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
+                  ));
+               } else {
+                  addStmtToIRBB( 
+                     bb,
+                     IRStmt_Dirty(
+                        unsafeIRDirty_0_N( helper, 
+                                           mkIRExprVec_1(addr) )
+                  ));
+               }
+            }
+            break;
+
+         case Ist_STle:
+            data = st->Ist.STle.data;
+            addr = st->Ist.STle.addr;
+            sk_assert(isAtom(data));
+            sk_assert(isAtom(addr));
+            sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
+            needSz = False;
+            switch (sz) {
+               case 4: helper = "ac_helperc_STORE4"; break;
+               case 2: helper = "ac_helperc_STORE2"; break;
+               case 1: helper = "ac_helperc_STORE1"; break;
+               default: helper = "ac_helperc_STOREN"; needSz = True; break;
+            }
+            if (needSz) {
+               addStmtToIRBB( 
+                  bb,
+                  IRStmt_Dirty(
+                     unsafeIRDirty_0_N( helper, 
+                                        mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
+               ));
+            } else {
+               addStmtToIRBB( 
+                  bb,
+                  IRStmt_Dirty(
+                     unsafeIRDirty_0_N( helper, 
+                                        mkIRExprVec_1(addr) )
+               ));
+            }
+            break;
+
+         case Ist_Put:
+            sk_assert(isAtom(st->Ist.Put.data));
+            break;
+
+         case Ist_PutI:
+            sk_assert(isAtom(st->Ist.PutI.off));
+            sk_assert(isAtom(st->Ist.PutI.data));
+            break;
+
+         case Ist_Exit:
+            sk_assert(isAtom(st->Ist.Exit.cond));
+            break;
+
+         case Ist_Dirty:
+            /* If the call doesn't interact with memory, we ain't
+               interested. */
+            if (st->Ist.Dirty.details->mFx == Ifx_None)
+               break;
+            goto unhandled;
+
+         default:
+         unhandled:
+            VG_(printf)("\n");
+            ppIRStmt(st);
+            VG_(printf)("\n");
+            VG_(skin_panic)("addrcheck: unhandled IRStmt");
+      }
+
+      addStmtToIRBB( bb, dopyIRStmt(st));
+   }
+
+   return bb;
+}
+
+#if 0
+-------------------
    cb = VG_(setup_UCodeBlock)(cb_in);
 
    for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
@@ -1000,10 +1139,10 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-	 case SSE3ag_MemRd_RegWr:
+         case SSE3ag_MemRd_RegWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
             helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG1;
+            goto do_Access_ARG1;
          do_Access_ARG1:
 	    sk_assert(u_in->tag1 == TempReg);
             t_addr = u_in->val1;
@@ -1081,6 +1220,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
+#endif
 
 
 /*------------------------------------------------------------*/
@@ -1309,6 +1449,7 @@ void SK_(pre_clo_init)(void)
    VG_(init_pre_mem_write)        ( & ac_check_is_writable );
    VG_(init_post_mem_write)       ( & ac_make_accessible );
 
+#if 0
    VG_(register_compact_helper)((Addr) & ac_helperc_LOAD4);
    VG_(register_compact_helper)((Addr) & ac_helperc_LOAD2);
    VG_(register_compact_helper)((Addr) & ac_helperc_LOAD1);
@@ -1317,6 +1458,7 @@ void SK_(pre_clo_init)(void)
    VG_(register_compact_helper)((Addr) & ac_helperc_STORE1);
    VG_(register_noncompact_helper)((Addr) & ac_fpu_READ_check);
    VG_(register_noncompact_helper)((Addr) & ac_fpu_WRITE_check);
+#endif
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

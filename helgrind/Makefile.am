@@ -1,6 +1,6 @@
 SUBDIRS = demangle . docs tests
 
-CFLAGS = -Winline -Wall -Werror -Wshadow -O -fomit-frame-pointer -g
+CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
 
 valdir = $(libdir)/valgrind
 

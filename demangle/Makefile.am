@@ -1,5 +1,7 @@
 INCLUDES = -I$(top_srcdir)
 
+CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+
 noinst_HEADERS = \
 	ansidecl.h     \
 	dyn-string.h   \

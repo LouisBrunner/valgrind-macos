@@ -2415,6 +2415,8 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
                return dis_fpu_mem(cb, 4, wr, eip, first_byte); 
             case 5: /* FLDCW */
                return dis_fpu_mem(cb, 2, rd, eip, first_byte); 
+            case 6: /* FNSTENV */
+               return dis_fpu_mem(cb, 28, wr, eip, first_byte);
             case 7: /* FSTCW */
                /* HACK!  FSTCW actually writes 2 bytes, not 4.  glibc
                   gets lots of moaning in __floor() if we do the right

@@ -539,30 +539,37 @@ POST(sys_socketcall)
 
 PRE(sys_setsockopt, 0)
 {
-   /* int setsockopt(int s, int level, int optname, 
-                     const void *optval, int optlen); */
+   PRINT("sys_setsockopt ( %d, %d, %d, %p, %d ",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int, "setsockopt",
+                 int, s, int, level, int, optname,
+                 const void *, optval, int, optlen);
    VG_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_connect, MayBlock)
 {
-   /* int connect(int sockfd, 
-                  struct sockaddr *serv_addr, int addrlen ); */
+   PRINT("sys_connect ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "connect",
+                 int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
    VG_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
 }
 
 PRE(sys_sendto, MayBlock)
 {
-   /* int sendto(int s, const void *msg, int len, 
-                 unsigned int flags, 
-                 const struct sockaddr *to, int tolen); */
+   PRINT("sys_sendto ( %d, %s, %d, %u, %p, %d )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(int, "sendto",
+                 int, s, const void *, msg, int, len, 
+                 unsigned int, flags, 
+                 const struct sockaddr *, to, int, tolen);
    VG_(generic_PRE_sys_sendto)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 
 PRE(sys_recvfrom, MayBlock)
 {
-   /* int recvfrom(int s, void *buf, int len, unsigned int flags,
-                   struct sockaddr *from, int *fromlen); */
+   PRINT("sys_recvfrom ( %d, %p, %d, %u, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(int, "recvfrom",
+                 int, s, void *, buf, int, len, unsigned int, flags,
+                 struct sockaddr *, from, int *, fromlen);
    VG_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 POST(sys_recvfrom)
@@ -572,13 +579,16 @@ POST(sys_recvfrom)
 
 PRE(sys_sendmsg, MayBlock)
 {
-   /* int sendmsg(int s, const struct msghdr *msg, int flags); */
+   PRINT("sys_sendmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "sendmsg",
+                 int, s, const struct msghdr *, msg, int, flags);
    VG_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
 }
 
 PRE(sys_recvmsg, MayBlock)
 {
-   /* int recvmsg(int s, struct msghdr *msg, int flags); */
+   PRINT("sys_recvmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "recvmsg", int, s, struct msghdr *, msg, int, flags);
    VG_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
 }
 POST(sys_recvmsg)
@@ -588,11 +598,15 @@ POST(sys_recvmsg)
 
 PRE(sys_shutdown, MayBlock)
 {
-   /* int shutdown(int s, int how); */
+   PRINT("sys_shutdown ( %d, %d )",ARG1,ARG2);
+   PRE_REG_READ2(int, "shutdown", int, s, int, how);
 }
 
 PRE(sys_getsockname, MayBlock)
 {
+   PRINT("sys_getsockname ( %d, %p, %p )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "getsockname",
+                 int, s, struct sockaddr *, name, int *, namelen);
    VG_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_getsockname)
@@ -602,11 +616,179 @@ POST(sys_getsockname)
 
 PRE(sys_getpeername, MayBlock)
 {
+   PRINT("sys_getpeername ( %d, %p, %p )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "getpeername",
+                 int, s, struct sockaddr *, name, int *, namelen);
    VG_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_getpeername)
 {
    VG_(generic_POST_sys_getpeername)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(sys_socketpair, MayBlock)
+{
+   PRINT("sys_socketpair ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "socketpair",
+                 int, d, int, type, int, protocol, int [2], sv);
+   VG_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+POST(sys_socketpair)
+{
+   VG_(generic_POST_sys_socketpair)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+}
+
+PRE(sys_semget, 0)
+{
+   PRINT("sys_semget ( %d, %d, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "semget", key_t, key, int, nsems, int, semflg);
+}
+
+PRE(sys_semop, MayBlock)
+{
+   PRINT("sys_semop ( %d, %p, %u )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "semop",
+                 int, semid, struct sembuf *, sops, unsigned, nsoops);
+   VG_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_semtimedop, MayBlock)
+{
+   PRINT("sys_semtimedop ( %d, %p, %u, %p )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "semtimedop",
+                 int, semid, struct sembuf *, sops, unsigned, nsoops,
+                 struct timespec *, timeout);
+   VG_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+
+PRE(sys_semctl, 0)
+{
+   switch (ARG3 & ~VKI_IPC_64) {
+   case VKI_IPC_INFO:
+   case VKI_SEM_INFO:
+      PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(int, "semctl",
+                    int, semid, int, semnum, int, cmd, struct seminfo *, arg);
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SEM_STAT:
+   case VKI_IPC_SET:
+      PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(int, "semctl",
+                    int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
+      break;
+   case VKI_GETALL:
+   case VKI_SETALL:
+      PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(int, "semctl",
+                    int, semid, int, semnum, int, cmd, unsigned short *, arg);
+      break;
+   default:
+      PRINT("sys_semctl ( %d, %d, %d )",ARG1,ARG2,ARG3);
+      PRE_REG_READ3(int, "semctl",
+                    int, semid, int, semnum, int, cmd);
+      break;
+   }
+   VG_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+
+POST(sys_semctl)
+{
+   VG_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+}
+
+PRE(sys_msgget, 0)
+{
+   PRINT("sys_msgget ( %d, %d )",ARG1,ARG2);
+   PRE_REG_READ2(int, "msgget", key_t, key, int, msgflg);
+}
+
+PRE(sys_msgsnd, 0)
+{
+   PRINT("sys_msgsnd ( %d, %p, %d, %d )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "msgsnd",
+                 int, msqid, struct msgbuf *, msgp, size_t, msgsz, int, msgflg);
+   VG_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
+      /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+            tst->sys_flags |= MayBlock;
+      */
+}
+
+PRE(sys_msgrcv, 0)
+{
+   PRINT("sys_msgrcv ( %d, %p, %d, %d, %d )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(ssize_t, "msgrcv",
+                 int, msqid, struct msgbuf *, msgp, size_t, msgsz,
+                 long, msgytp, int, msgflg);
+   VG_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+      /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+            tst->sys_flags |= MayBlock;
+      */
+}
+
+POST(sys_msgrcv)
+{
+   VG_(generic_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+PRE(sys_msgctl, 0)
+{
+   PRINT("sys_msgctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "msgctl",
+                 int, msqid, int, cmd, struct msqid_ds *, buf);
+   VG_(generic_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
+}
+
+POST(sys_msgctl)
+{
+   VG_(generic_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(sys_shmget, 0)
+{
+   PRINT("sys_shmget ( %d, %d, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "shmget", key_t, key, size_t, size, int, shmflg);
+}
+
+PRE(wrap_sys_shmat, 0)
+{
+   PRINT("wrap_sys_shmat ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(void *, "shmat",
+                 int, shmid, const void *, shmaddr, int, shmflg);
+   ARG2 = VG_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
+   if (ARG2 == 0)
+      SET_RESULT( -VKI_EINVAL );
+}
+
+POST(wrap_sys_shmat)
+{
+   VG_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(sys_shmdt, 0)
+{
+   PRINT("sys_shmdt ( %p )",ARG1);
+   PRE_REG_READ1(int, "shmdt", const void *, shmaddr);
+   if (!VG_(generic_PRE_sys_shmdt)(tid, ARG1))
+      SET_RESULT( -VKI_EINVAL );
+}
+
+POST(sys_shmdt)
+{
+   VG_(generic_POST_sys_shmdt)(tid, RES,ARG1);
+}
+
+PRE(sys_shmctl, 0)
+{
+   PRINT("sys_shmctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "shmctl",
+                 int, shmid, int, cmd, struct shmid_ds *, buf);
+   VG_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
+}
+
+POST(sys_shmctl)
+{
+   VG_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 #undef PRE
@@ -664,12 +846,12 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_msync,             sys_msync),          // 26 
    //   (__NR_mincore,           sys_mincore),        // 27 
    GENX_(__NR_madvise,           sys_madvise),        // 28 
-   //   (__NR_shmget,            sys_shmget),         // 29 
+   PLAX_(__NR_shmget,            sys_shmget),         // 29 
 
-   //   (__NR_shmat,             wrap_sys_shmat),     // 30 
-   //   (__NR_shmctl,            sys_shmctl),         // 31 
-   //   (__NR_dup,               sys_dup),            // 32 
-   //   (__NR_dup2,              sys_dup2),           // 33 
+   PLAXY(__NR_shmat,             wrap_sys_shmat),     // 30 
+   PLAXY(__NR_shmctl,            sys_shmctl),         // 31 
+   GENXY(__NR_dup,               sys_dup),            // 32 
+   GENXY(__NR_dup2,              sys_dup2),           // 33 
    //   (__NR_pause,             sys_pause),          // 34 
 
    //   (__NR_nanosleep,         sys_nanosleep),      // 35 
@@ -693,36 +875,36 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_listen,            sys_listen),         // 50 
    PLAXY(__NR_getsockname,       sys_getsockname),    // 51 
    PLAXY(__NR_getpeername,       sys_getpeername),    // 52 
-   //   (__NR_socketpair,        sys_socketpair),     // 53 
+   PLAXY(__NR_socketpair,        sys_socketpair),     // 53 
    PLAX_(__NR_setsockopt,        sys_setsockopt),     // 54
 
    //   (__NR_getsockopt,        sys_getsockopt),     // 55 
    //   (__NR_clone,             stub_clone),         // 56 
    //   (__NR_fork,              stub_fork),          // 57 
    //   (__NR_vfork,             stub_vfork),         // 58 
-   //   (__NR_execve,            stub_execve),        // 59 
+   GENX_(__NR_execve,            sys_execve),         // 59 
 
    GENX_(__NR_exit,              sys_exit),           // 60
-   //   (__NR_wait4,             sys_wait4),          // 61 
+   GENXY(__NR_wait4,             sys_wait4),          // 61 
    GENXY(__NR_kill,              sys_kill),           // 62 
    GENXY(__NR_uname,             sys_newuname),       // 63 
-   //   (__NR_semget,            sys_semget),         // 64 
+   PLAX_(__NR_semget,            sys_semget),         // 64 
 
-   //   (__NR_semop,             sys_semop),          // 65 
-   //   (__NR_semctl,            sys_semctl),         // 66 
-   //   (__NR_shmdt,             sys_shmdt),          // 67 
-   //   (__NR_msgget,            sys_msgget),         // 68 
-   //   (__NR_msgsnd,            sys_msgsnd),         // 69 
+   PLAX_(__NR_semop,             sys_semop),          // 65 
+   PLAXY(__NR_semctl,            sys_semctl),         // 66 
+   PLAXY(__NR_shmdt,             sys_shmdt),          // 67 
+   PLAX_(__NR_msgget,            sys_msgget),         // 68 
+   PLAX_(__NR_msgsnd,            sys_msgsnd),         // 69 
 
-   //   (__NR_msgrcv,            sys_msgrcv),         // 70 
-   //   (__NR_msgctl,            sys_msgctl),         // 71 
+   PLAXY(__NR_msgrcv,            sys_msgrcv),         // 70 
+   PLAXY(__NR_msgctl,            sys_msgctl),         // 71 
    GENXY(__NR_fcntl,             sys_fcntl),          // 72 
    //   (__NR_flock,             sys_flock),          // 73 
    //   (__NR_fsync,             sys_fsync),          // 74 
 
    //   (__NR_fdatasync,         sys_fdatasync),      // 75 
    //   (__NR_truncate,          sys_truncate),       // 76 
-   //   (__NR_ftruncate,         sys_ftruncate),      // 77 
+   GENX_(__NR_ftruncate,         sys_ftruncate),      // 77 
    GENXY(__NR_getdents,          sys_getdents),       // 78 
    GENXY(__NR_getcwd,            sys_getcwd),         // 79 
 
@@ -750,7 +932,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_getrusage,         sys_getrusage),      // 98 
    //   (__NR_sysinfo,           sys_sysinfo),        // 99 
 
-   //   (__NR_times,             sys_times),          // 100 
+   GENXY(__NR_times,             sys_times),          // 100 
    //   (__NR_ptrace,            sys_ptrace),         // 101 
    GENX_(__NR_getuid,            sys_getuid),         // 102 
    //   (__NR_syslog,            sys_syslog),         // 103 
@@ -822,7 +1004,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    PLAX_(__NR_arch_prctl,	 sys_arch_prctl),     // 158 
    //   (__NR_adjtimex,          sys_adjtimex),       // 159 
 
-   //   (__NR_setrlimit,         sys_setrlimit),      // 160 
+   GENX_(__NR_setrlimit,         sys_setrlimit),      // 160 
    //   (__NR_chroot,            sys_chroot),         // 161 
    //   (__NR_sync,              sys_sync),           // 162 
    //   (__NR_acct,              sys_acct),           // 163 
@@ -894,7 +1076,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_set_tid_address,   sys_set_tid_address),// 218 
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 
 
-   //   (__NR_semtimedop,        sys_semtimedop),     // 220 
+   PLAX_(__NR_semtimedop,        sys_semtimedop),     // 220 
    //   (__NR_fadvise64,         sys_fadvise64),      // 221 
    //   (__NR_timer_create,      sys_timer_create),   // 222 
    //   (__NR_timer_settime,     sys_timer_settime),  // 223 
@@ -919,13 +1101,13 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_set_mempolicy,     sys_set_mempolicy),  // 238 
 
    //   (__NR_get_mempolicy,     sys_get_mempolicy),  // 239 
-   //   (__NR_mq_open,           sys_mq_open),        // 240 
-   //   (__NR_mq_unlink,         sys_mq_unlink),      // 241 
-   //   (__NR_mq_timedsend,      sys_mq_timedsend),   // 242 
-   //   (__NR_mq_timedreceive,   sys_mq_timedreceive),// 243 
+   GENXY(__NR_mq_open,           sys_mq_open),        // 240 
+   GENX_(__NR_mq_unlink,         sys_mq_unlink),      // 241 
+   GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // 242 
+   GENX_(__NR_mq_timedreceive,   sys_mq_timedreceive),// 243 
 
-   //   (__NR_mq_notify,         sys_mq_notify),      // 244 
-   //   (__NR_mq_getsetattr,     sys_mq_getsetattr),  // 245 
+   GENX_(__NR_mq_notify,         sys_mq_notify),      // 244 
+   GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // 245 
    //   (__NR_kexec_load,        sys_ni_syscall),     // 246 
    //   (__NR_waitid,            sys_waitid),         // 247 
 };

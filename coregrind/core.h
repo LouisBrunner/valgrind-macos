@@ -1543,6 +1543,22 @@ extern void  VG_(generic_PRE_sys_sendmsg)      ( TId, UW, UW );
 extern void  VG_(generic_PRE_sys_recvmsg)      ( TId, UW, UW );
 extern void  VG_(generic_POST_sys_recvmsg)     ( TId, UW, UW, UW );
 
+extern void  VG_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_semctl)       ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_POST_sys_semctl)      ( TId, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_msgsnd)       ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_msgrcv)       ( TId, UW, UW, UW, UW, UW );
+extern void  VG_(generic_POST_sys_msgrcv)      ( TId, UW, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_msgctl)       ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_msgctl)      ( TId, UW, UW, UW, UW );
+extern UWord VG_(generic_PRE_sys_shmat)        ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_shmat)       ( TId, UW, UW, UW, UW );
+extern Bool  VG_(generic_PRE_sys_shmdt)        ( TId, UW );
+extern void  VG_(generic_POST_sys_shmdt)       ( TId, UW, UW );
+extern void  VG_(generic_PRE_sys_shmctl)       ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_shmctl)      ( TId, UW, UW, UW, UW );
+
 #undef TID
 #undef UW
 

@@ -1317,6 +1317,373 @@ VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
 
 
 /* ---------------------------------------------------------------------
+   Deal with a bunch of IPC related syscalls
+   ------------------------------------------------------------------ */
+
+/* ------ */
+
+void
+VG_(generic_PRE_sys_semop) ( ThreadId tid,
+                             UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int semop(int semid, struct sembuf *sops, unsigned nsops); */
+   PRE_MEM_READ( "semop(sops)", arg1, arg2 * sizeof(struct vki_sembuf) );
+}
+
+/* ------ */
+
+void
+VG_(generic_PRE_sys_semtimedop) ( ThreadId tid,
+                                  UWord arg0, UWord arg1,
+                                  UWord arg2, UWord arg3 )
+{
+   /* int semtimedop(int semid, struct sembuf *sops, unsigned nsops,
+                     struct timespec *timeout); */
+   PRE_MEM_READ( "semtimedop(sops)", arg1, arg2 * sizeof(struct vki_sembuf) );
+   if (arg3 != 0)
+      PRE_MEM_READ( "semtimedop(timeout)", arg3, sizeof(struct vki_timespec) );
+}
+
+/* ------ */
+
+static
+UInt get_sem_count( Int semid )
+{
+  struct vki_semid_ds buf;
+  union vki_semun arg;
+  long res;
+
+  arg.buf = &buf;
+
+#ifdef __NR_semctl
+  res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
+#else
+  res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
+                         VKI_IPC_STAT, (UWord)&arg);
+#endif
+  if ( VG_(is_kerror)(res) )
+    return 0;
+
+  return buf.sem_nsems;
+}
+
+void
+VG_(generic_PRE_sys_semctl) ( ThreadId tid,
+                              UWord arg0, UWord arg1,
+                              UWord arg2, UWord arg3 )
+{
+   /* int semctl(int semid, int semnum, int cmd, ...); */
+   union vki_semun arg = *(union vki_semun *)&arg3;
+   UInt nsems;
+   switch (arg2 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_SEM_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_SEM_INFO|VKI_IPC_64:
+      PRE_MEM_WRITE( "semctl(IPC_INFO, arg.buf)",
+                     (Addr)arg.buf, sizeof(struct vki_seminfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SEM_STAT:
+      PRE_MEM_WRITE( "semctl(IPC_STAT, arg.buf)",
+                     (Addr)arg.buf, sizeof(struct vki_semid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_SEM_STAT|VKI_IPC_64:
+      PRE_MEM_WRITE( "semctl(IPC_STAT, arg.buf)",
+                     (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
+      break;
+   case VKI_IPC_SET:
+      PRE_MEM_READ( "semctl(IPC_SET, arg.buf)",
+                    (Addr)arg.buf, sizeof(struct vki_semid_ds) );
+      break;
+   case VKI_IPC_SET|VKI_IPC_64:
+      PRE_MEM_READ( "semctl(IPC_SET, arg.buf)",
+                    (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
+      break;
+   case VKI_GETALL:
+   case VKI_GETALL|VKI_IPC_64:
+      nsems = get_sem_count( arg0 );
+      PRE_MEM_WRITE( "semctl(IPC_GETALL, arg.array)",
+                     (Addr)arg.array, sizeof(unsigned short) * nsems );
+      break;
+   case VKI_SETALL:
+   case VKI_SETALL|VKI_IPC_64:
+      nsems = get_sem_count( arg0 );
+      PRE_MEM_READ( "semctl(IPC_SETALL, arg.array)",
+                    (Addr)arg.array, sizeof(unsigned short) * nsems );
+      break;
+   }
+}
+
+void
+VG_(generic_POST_sys_semctl) ( ThreadId tid,
+                               UWord res,
+                               UWord arg0, UWord arg1,
+                               UWord arg2, UWord arg3 )
+{
+   union vki_semun arg = *(union vki_semun *)&arg3;
+   UInt nsems;
+   switch (arg2 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_SEM_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_SEM_INFO|VKI_IPC_64:
+      POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_seminfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SEM_STAT:
+      POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_semid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_SEM_STAT|VKI_IPC_64:
+      POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_semid64_ds) );
+      break;
+   case VKI_GETALL:
+   case VKI_GETALL|VKI_IPC_64:
+      nsems = get_sem_count( arg0 );
+      POST_MEM_WRITE( (Addr)arg.array, sizeof(unsigned short) * nsems );
+      break;
+   }
+}
+
+/* ------ */
+
+void
+VG_(generic_PRE_sys_msgsnd) ( ThreadId tid,
+                              UWord arg0, UWord arg1,
+                              UWord arg2, UWord arg3 )
+{
+   /* int msgsnd(int msqid, struct msgbuf *msgp, size_t msgsz, int msgflg); */
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   PRE_MEM_READ( "msgsnd(msgp->mtype)", (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   PRE_MEM_READ( "msgsnd(msgp->mtext)", (Addr)&msgp->mtext, arg2 );
+}
+
+/* ------ */
+
+void
+VG_(generic_PRE_sys_msgrcv) ( ThreadId tid,
+                              UWord arg0, UWord arg1, UWord arg2,
+                              UWord arg3, UWord arg4 )
+{
+   /* ssize_t msgrcv(int msqid, struct msgbuf *msgp, size_t msgsz,
+                     long msgtyp, int msgflg); */
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   PRE_MEM_WRITE( "msgrcv(msgp->mtype)", (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   PRE_MEM_WRITE( "msgrcv(msgp->mtext)", (Addr)&msgp->mtext, arg2 );
+}
+
+void
+VG_(generic_POST_sys_msgrcv) ( ThreadId tid,
+                               UWord res,
+                               UWord arg0, UWord arg1, UWord arg2,
+                               UWord arg3, UWord arg4 )
+{
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   POST_MEM_WRITE( (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   POST_MEM_WRITE( (Addr)&msgp->mtext, res );
+}
+
+/* ------ */
+
+void
+VG_(generic_PRE_sys_msgctl) ( ThreadId tid,
+                              UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int msgctl(int msqid, int cmd, struct msqid_ds *buf); */
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_MSG_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_MSG_INFO|VKI_IPC_64:
+      PRE_MEM_WRITE( "msgctl(IPC_INFO, buf)",
+                     arg2, sizeof(struct vki_msginfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_MSG_STAT:
+      PRE_MEM_WRITE( "msgctl(IPC_STAT, buf)",
+                     arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_MSG_STAT|VKI_IPC_64:
+      PRE_MEM_WRITE( "msgctl(IPC_STAT, arg.buf)",
+                     arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   case VKI_IPC_SET:
+      PRE_MEM_READ( "msgctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_SET|VKI_IPC_64:
+      PRE_MEM_READ( "msgctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   }
+}
+
+void
+VG_(generic_POST_sys_msgctl) ( ThreadId tid,
+                               UWord res,
+                               UWord arg0, UWord arg1, UWord arg2 )
+{
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_MSG_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_MSG_INFO|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msginfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_MSG_STAT:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_MSG_STAT|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   }
+}
+
+/* ------ */
+
+static
+UInt get_shm_size ( Int shmid )
+{
+#ifdef __NR_shmctl
+   struct vki_shmid64_ds buf;
+   long __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
+#else
+   struct vki_shmid_ds buf;
+   long __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
+                                 VKI_IPC_STAT, 0, (UWord)&buf);
+#endif
+   if ( VG_(is_kerror) ( __res ) )
+      return 0;
+ 
+   return buf.shm_segsz;
+}
+
+UWord
+VG_(generic_PRE_sys_shmat) ( ThreadId tid,
+                             UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* void *shmat(int shmid, const void *shmaddr, int shmflg); */
+   UInt segmentSize = get_shm_size ( arg0 );
+   if (arg1 == 0)
+      arg1 = VG_(find_map_space)(0, segmentSize, True);
+   else if (!VG_(valid_client_addr)(arg1, segmentSize, tid, "shmat"))
+      arg1 = 0;
+   return arg1;
+}
+
+void
+VG_(generic_POST_sys_shmat) ( ThreadId tid,
+                              UWord res,
+                              UWord arg0, UWord arg1, UWord arg2 )
+{
+   UInt segmentSize = get_shm_size ( arg0 );
+   if ( segmentSize > 0 ) {
+      UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
+      /* we don't distinguish whether it's read-only or
+       * read-write -- it doesn't matter really. */
+      VG_TRACK( new_mem_mmap, res, segmentSize, True, True, False );
+
+      if (!(arg2 & 010000)) /* = SHM_RDONLY */
+         prot &= ~VKI_PROT_WRITE;
+      VG_(map_segment)(res, segmentSize, prot, SF_SHARED|SF_SHM);
+   }
+}
+
+/* ------ */
+
+Bool
+VG_(generic_PRE_sys_shmdt) ( ThreadId tid, UWord arg0 )
+{
+   /* int shmdt(const void *shmaddr); */
+   return VG_(valid_client_addr)(arg0, 1, tid, "shmdt");
+}
+
+void
+VG_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
+{
+   Segment *s = VG_(find_segment)(arg0);
+
+   if (s != NULL && (s->flags & SF_SHM) && VG_(seg_contains)(s, arg0, 1)) {
+      VG_TRACK( die_mem_munmap, s->addr, s->len );
+      VG_(unmap_range)(s->addr, s->len);
+   }
+}
+/* ------ */
+
+void
+VG_(generic_PRE_sys_shmctl) ( ThreadId tid,
+                              UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int shmctl(int shmid, int cmd, struct shmid_ds *buf); */
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+      PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)",
+                     arg2, sizeof(struct vki_shminfo) );
+      break;
+   case VKI_IPC_INFO|VKI_IPC_64:
+      PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)",
+                     arg2, sizeof(struct vki_shminfo64) );
+      break;
+   case VKI_SHM_INFO:
+   case VKI_SHM_INFO|VKI_IPC_64:
+      PRE_MEM_WRITE( "shmctl(SHM_INFO, buf)",
+                     arg2, sizeof(struct vki_shm_info) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SHM_STAT:
+      PRE_MEM_WRITE( "shmctl(IPC_STAT, buf)",
+                     arg2, sizeof(struct vki_shmid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_SHM_STAT|VKI_IPC_64:
+      PRE_MEM_WRITE( "shmctl(IPC_STAT, arg.buf)",
+                     arg2, sizeof(struct vki_shmid64_ds) );
+      break;
+   case VKI_IPC_SET:
+      PRE_MEM_READ( "shmctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_shmid_ds) );
+      break;
+   case VKI_IPC_SET|VKI_IPC_64:
+      PRE_MEM_READ( "shmctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_shmid64_ds) );
+      break;
+   }
+}
+
+void
+VG_(generic_POST_sys_shmctl) ( ThreadId tid,
+                               UWord res,
+                               UWord arg0, UWord arg1, UWord arg2 )
+{
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shminfo) );
+      break;
+   case VKI_IPC_INFO|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shminfo64) );
+      break;
+   case VKI_SHM_INFO:
+   case VKI_SHM_INFO|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shm_info) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SHM_STAT:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shmid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_SHM_STAT|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shmid64_ds) );
+      break;
+   }
+}
+
+
+/* ---------------------------------------------------------------------
    The Main Entertainment ... syscall wrappers
    ------------------------------------------------------------------ */
 

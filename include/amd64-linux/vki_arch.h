@@ -520,6 +520,87 @@ typedef struct vki_user_desc vki_modify_ldt_t;
 typedef void vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
+// From linux-2.6.11.2/include/asm-x86_64/ipcbuf.h
+//----------------------------------------------------------------------
+
+struct vki_ipc64_perm
+{
+	__vki_kernel_key_t	key;
+	__vki_kernel_uid32_t	uid;
+	__vki_kernel_gid32_t	gid;
+	__vki_kernel_uid32_t	cuid;
+	__vki_kernel_gid32_t	cgid;
+	__vki_kernel_mode_t	mode;
+	unsigned short		__pad1;
+	unsigned short		seq;
+	unsigned short		__pad2;
+	unsigned long		__unused1;
+	unsigned long		__unused2;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.11.2/include/asm-x86_64/sembuf.h
+//----------------------------------------------------------------------
+
+struct vki_semid64_ds {
+	struct vki_ipc64_perm sem_perm;		/* permissions .. see ipc.h */
+	__vki_kernel_time_t	sem_otime;		/* last semop time */
+	unsigned long	__unused1;
+	__vki_kernel_time_t	sem_ctime;		/* last change time */
+	unsigned long	__unused2;
+	unsigned long	sem_nsems;		/* no. of semaphores in array */
+	unsigned long	__unused3;
+	unsigned long	__unused4;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.11.2/include/asm-x86_64/msgbuf.h
+//----------------------------------------------------------------------
+
+struct vki_msqid64_ds {
+	struct vki_ipc64_perm msg_perm;
+	__vki_kernel_time_t msg_stime;	/* last msgsnd time */
+	__vki_kernel_time_t msg_rtime;	/* last msgrcv time */
+	__vki_kernel_time_t msg_ctime;	/* last change time */
+	unsigned long  msg_cbytes;	/* current number of bytes on queue */
+	unsigned long  msg_qnum;	/* number of messages in queue */
+	unsigned long  msg_qbytes;	/* max number of bytes on queue */
+	__vki_kernel_pid_t msg_lspid;	/* pid of last msgsnd */
+	__vki_kernel_pid_t msg_lrpid;	/* last receive pid */
+	unsigned long  __unused4;
+	unsigned long  __unused5;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.11.2/include/asm-x86_64/shmbuf.h
+//----------------------------------------------------------------------
+
+struct vki_shmid64_ds {
+	struct vki_ipc64_perm	shm_perm;	/* operation perms */
+	vki_size_t		shm_segsz;	/* size of segment (bytes) */
+	__vki_kernel_time_t	shm_atime;	/* last attach time */
+	__vki_kernel_time_t	shm_dtime;	/* last detach time */
+	__vki_kernel_time_t	shm_ctime;	/* last change time */
+	__vki_kernel_pid_t	shm_cpid;	/* pid of creator */
+	__vki_kernel_pid_t	shm_lpid;	/* pid of last operator */
+	unsigned long		shm_nattch;	/* no. of current attaches */
+	unsigned long		__unused4;
+	unsigned long		__unused5;
+};
+
+struct vki_shminfo64 {
+	unsigned long	shmmax;
+	unsigned long	shmmin;
+	unsigned long	shmmni;
+	unsigned long	shmseg;
+	unsigned long	shmall;
+	unsigned long	__unused1;
+	unsigned long	__unused2;
+	unsigned long	__unused3;
+	unsigned long	__unused4;
+};
+
+//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
 

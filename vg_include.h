@@ -1061,8 +1061,8 @@ extern Bool VG_(eq_ExeContext_all) ( ExeContext* e1, ExeContext* e2 );
 extern void VG_(load_suppressions)    ( void );
 extern void VG_(show_all_errors)      ( void );
 extern void VG_(record_value_error)   ( Int size );
-extern void VG_(record_free_error)    ( Addr a );
-extern void VG_(record_freemismatch_error)    ( Addr a );
+extern void VG_(record_free_error)    ( ThreadState* tst, Addr a );
+extern void VG_(record_freemismatch_error)    ( ThreadState* tst, Addr a );
 extern void VG_(record_address_error) ( Addr a, Int size, 
                                         Bool isWrite );
 

@@ -334,14 +334,14 @@ void VG_(client_free) ( ThreadState* tst, void* ptrV, VgAllocKind kind )
    }
 
    if (sc == NULL) {
-      VG_(record_free_error) ( (Addr)ptrV );
+      VG_(record_free_error) ( tst, (Addr)ptrV );
       VGP_POPCC;
       return;
    }
 
    /* check if its a matching free() / delete / delete [] */
    if (kind != sc->allockind)
-      VG_(record_freemismatch_error) ( (Addr) ptrV );
+      VG_(record_freemismatch_error) ( tst, (Addr) ptrV );
 
    /* Remove the shadow chunk from the mallocd list. */
    remove_from_malloclist ( ml_no, sc );
@@ -440,7 +440,7 @@ void* VG_(client_realloc) ( ThreadState* tst, void* ptrV, UInt size_new )
    }
   
    if (sc == NULL) {
-      VG_(record_free_error) ( (Addr)ptrV );
+      VG_(record_free_error) ( tst, (Addr)ptrV );
       /* Perhaps we should keep going regardless. */
       VGP_POPCC;
       return NULL;
@@ -448,7 +448,7 @@ void* VG_(client_realloc) ( ThreadState* tst, void* ptrV, UInt size_new )
 
    if (sc->allockind != Vg_AllocMalloc) {
       /* can not realloc a range that was allocated with new or new [] */
-      VG_(record_freemismatch_error) ( (Addr)ptrV );
+      VG_(record_freemismatch_error) ( tst, (Addr)ptrV );
       /* but keep going anyway */
    }
 

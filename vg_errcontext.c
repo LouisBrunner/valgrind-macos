@@ -546,7 +546,7 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
 /*--- Exported fns                                         ---*/
 /*------------------------------------------------------------*/
 
-/* These are all called from generated code, so that the %EIP/%EBP
+/* These two are called from generated code, so that the %EIP/%EBP
    values that we need in order to create proper error messages are
    picked up out of VG_(baseBlock) rather than from the thread table
    (vg_threads in vg_scheduler.c). */
@@ -589,40 +589,38 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    VG_(maybe_add_context) ( &ec );
 }
 
-void VG_(record_free_error) ( Addr a )
-{
-   ErrContext ec;
-   clear_ErrContext( &ec );
-   ec.count   = 1;
-   ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True, VG_(baseBlock)[VGOFF_(m_eip)], 
-                                           VG_(baseBlock)[VGOFF_(m_ebp)] );
-   ec.ekind   = FreeErr;
-   ec.addr    = a;
-   ec.tid     = VG_(get_current_tid)();
-   VG_(describe_addr) ( a, &ec.addrinfo );
-   VG_(maybe_add_context) ( &ec );
-}
 
-void VG_(record_freemismatch_error) ( Addr a )
-{
-   ErrContext ec;
-   clear_ErrContext( &ec );
-   ec.count   = 1;
-   ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True, VG_(baseBlock)[VGOFF_(m_eip)], 
-                                           VG_(baseBlock)[VGOFF_(m_ebp)] );
-   ec.ekind   = FreeMismatchErr;
-   ec.addr    = a;
-   ec.tid     = VG_(get_current_tid)();
-   VG_(describe_addr) ( a, &ec.addrinfo );
-   VG_(maybe_add_context) ( &ec );
-}
-
-
-/* These three are called not from generated code but in response to
+/* These five are called not from generated code but in response to
    requests passed back to the scheduler.  So we pick up %EIP/%EBP
    values from the stored thread state, not from VG_(baseBlock).  */
+
+void VG_(record_free_error) ( ThreadState* tst, Addr a )
+{
+   ErrContext ec;
+   clear_ErrContext( &ec );
+   ec.count   = 1;
+   ec.next    = NULL;
+   ec.where   = VG_(get_ExeContext)( True, tst->m_eip, tst->m_ebp );
+   ec.ekind   = FreeErr;
+   ec.addr    = a;
+   ec.tid     = tst->tid;
+   VG_(describe_addr) ( a, &ec.addrinfo );
+   VG_(maybe_add_context) ( &ec );
+}
+
+void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
+{
+   ErrContext ec;
+   clear_ErrContext( &ec );
+   ec.count   = 1;
+   ec.next    = NULL;
+   ec.where   = VG_(get_ExeContext)( True, tst->m_eip, tst->m_ebp );
+   ec.ekind   = FreeMismatchErr;
+   ec.addr    = a;
+   ec.tid     = tst->tid;
+   VG_(describe_addr) ( a, &ec.addrinfo );
+   VG_(maybe_add_context) ( &ec );
+}
 
 void VG_(record_jump_error) ( ThreadState* tst, Addr a )
 {

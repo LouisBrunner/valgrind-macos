@@ -795,8 +795,10 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 	 char save = *cp;
 
 	 *cp = '\0';
-	 if ((*func)(entry))
+	 if ((*func)(entry)) {
+            *cp = save;
 	    return True;
+         }
 	 *cp = save;
 	 entry = cp+1;
       }

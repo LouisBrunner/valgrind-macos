@@ -1936,12 +1936,6 @@ PRE(getpid)
    MAYBE_PRINTF("getpid ()\n");
 }
 
-PRE(gettid)
-{
-   /* pid_t gettid(void); */
-   MAYBE_PRINTF("gettid ()\n");
-}
-
 PRE(getpgid)
 {
    /* pid_t getpgid(pid_t pid); */
@@ -4641,7 +4635,6 @@ static const struct sys_info sys_info[] = {
    SYSB_(getgid,		False),
    SYSB_(getgid32,		False),
    SYSB_(getpid,		False),
-   SYSB_(gettid, 		False),
    SYSB_(getpgid,		False),
    SYSB_(getpgrp,		False),
    SYSB_(getppid,		False),

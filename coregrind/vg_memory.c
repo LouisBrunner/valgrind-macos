@@ -1063,32 +1063,38 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    addresses below %esp are not live; those at and above it are.  
 */
 
-/* Kludgey ... how much does %esp have to change before we reckon that
-   the application is switching stacks ? */
-#define VG_PLAUSIBLE_STACK_SIZE  8000000
-#define VG_HUGE_DELTA            (VG_PLAUSIBLE_STACK_SIZE / 4)
-
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
 VGA_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
+   static Int moans = 3;
    Word delta  = (Word)new_SP - (Word)old_SP;
 
-   if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {
-      /* %esp has changed by more than HUGE_DELTA.  We take this to mean
-         that the application is switching to a new stack, for whatever
-         reason. 
+   if (delta < -VG_(clo_max_stackframe) || VG_(clo_max_stackframe) < delta) {
+      /* SP has changed by more than some threshold amount (by
+         default, 2MB).  We take this to mean that the application is
+         switching to a new stack, for whatever reason.
        
          JRS 20021001: following discussions with John Regehr, if a stack
          switch happens, it seems best not to mess at all with memory
          permissions.  Seems to work well with Netscape 4.X.  Really the
          only remaining difficulty is knowing exactly when a stack switch is
          happening. */
-      if (VG_(clo_verbosity) > 1)
-           VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
-                                    "%%esp: %p --> %p", old_SP, new_SP);
+      if (VG_(clo_verbosity) > 0 && moans > 0) {
+         moans--;
+         VG_(message)(Vg_UserMsg,
+            "Warning: client switching stacks?  "
+            "SP change: %p --> %p", old_SP, new_SP);
+         VG_(message)(Vg_UserMsg,
+            "         to suppress, use: --max-stackframe=%d or greater",
+            (delta < 0 ? -delta : delta));
+         if (moans == 0)
+            VG_(message)(Vg_UserMsg,
+                "         further instances of this message "
+                "will not be shown.");
+      }
    } else if (delta < 0) {
       VG_TRACK( new_mem_stack, new_SP, -delta );
 

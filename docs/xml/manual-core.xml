@@ -784,6 +784,38 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
    </listitem>
 
    <listitem>
+    <para><computeroutput>--max-stackframe=&lt;number&gt;</computeroutput>
+                          [default=2000000]
+    </para>
+    <para>You may need to use this option if your program has large
+    stack-allocated arrays.  Valgrind keeps track of your program's
+    stack pointer.  If it changes by more than the threshold amount,
+    Valgrind assumes your program is switching to a different stack,
+    and Memcheck behaves differently than it would for a stack pointer
+    change smaller than the threshold.  Usually this heuristic works
+    well.  However, if your program allocates large structures on the
+    stack, this heuristic will be fooled, and Memcheck will
+    subsequently report large numbers of invalid stack accesses.  This
+    option allows you to change the threshold to a different value.
+    </para>
+    <para>
+    You should only consider use of this flag if Valgrind's debug output
+    directs you to do so.  In that case it will tell you the new
+    threshold you should specify.
+    </para>
+    <para>
+    In general, allocating large structures on the stack is a bad
+    idea, because (1) you can easily run out of stack space,
+    especially on systems with limited memory or which expect to
+    support large numbers of threads each with a small stack, and (2)
+    because the error checking performed by Memcheck is more effective
+    for heap-allocated data than for stack-allocated data.  If you
+    have to use this flag, you may wish to consider rewriting your
+    code to allocate on the heap rather than on the stack.
+   </para>
+   </listitem>
+
+   <listitem>
     <para><computeroutput>--db-attach=no</computeroutput> [default]</para>
     <para><computeroutput>--db-attach=yes</computeroutput></para>
     <para>When enabled, Valgrind will pause after every error

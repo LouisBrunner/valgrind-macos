@@ -270,6 +270,10 @@ extern Bool VG_(clo_support_elan3);
 /* Should we show VEX emulation warnings?  Default: NO */
 extern Bool VG_(clo_show_emwarns);
 
+/* How much does the stack pointer have to change before tools
+   consider a stack switch to have happened?  Default: 2000000 bytes */
+extern Int VG_(clo_max_stackframe);
+
 /* Set up the libc freeres wrapper */
 extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
 

@@ -1446,6 +1446,7 @@ Bool   VG_(clo_support_elan3)  = False;
 Bool   VG_(clo_branchpred)     = False;
 Bool   VG_(clo_model_pthreads) = False;
 Bool   VG_(clo_show_emwarns)   = False;
+Int    VG_(clo_max_stackframe) = 2000000;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
@@ -1487,6 +1488,8 @@ static void usage ( Bool debug_help )
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
 "    --db-command=<command>    command to start debugger [gdb -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
+"    --max-stackframe=<number> assume stack switch for SP changes larger\n"
+"                              than <number> bytes [2000000]\n"
 "\n";
 
    Char* usage2 = 
@@ -1675,6 +1678,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO(arg, "--support-elan3",    VG_(clo_support_elan3))
       else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
+      else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
       else VG_BOOL_CLO(arg, "--profile",          VG_(clo_profile))
       else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main))

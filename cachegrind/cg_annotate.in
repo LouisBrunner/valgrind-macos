@@ -299,12 +299,7 @@ sub read_input_file()
 
     # Read "desc:" lines.
     my $line;
-    # This gives a "uninitialized value in substitution (s///)" warning; hmm...
-    #while ($line = <INPUTFILE> && $line =~ s/desc:\s+//) {
-    #    $desc .= "$line\n";
-    #}
-    while (1) {
-        $line = <INPUTFILE>;
+    while ($line = <INPUTFILE>) {
         if ($line =~ s/desc:\s+//) {
             $desc .= $line;
         } else {
@@ -320,7 +315,8 @@ sub read_input_file()
     # Read "events:" line.  We make a temporary hash in which the Nth event's
     # value is N, which is useful for handling --show/--sort options below.
     $line = <INPUTFILE>;
-    ($line =~ s/events:\s+//) or die("Line $.: missing events line\n");
+    (defined $line && $line =~ s/events:\s+//) 
+        or die("Line $.: missing events line\n");
     @events = split(/\s+/, $line);
     my %events;
     my $n = 0;
@@ -445,7 +441,7 @@ sub read_input_file()
 
     # Check if summary line was present
     if (not defined $summary_CC) {
-        warn("WARNING: missing final summary line, no summary will be printed\n");
+        die("missing final summary line, aborting\n");
     }
 
     close(INPUTFILE);

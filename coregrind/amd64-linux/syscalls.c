@@ -616,11 +616,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_munmap,            sys_munmap),         // 11 
    GENX_(__NR_brk,               sys_brk),            // 12 
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
-   //   (__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
+   GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
    //   (__NR_rt_sigreturn,      stub_rt_sigreturn),  // 15 
    GENXY(__NR_ioctl,             sys_ioctl),          // 16 
-   //   (__NR_pread64,           sys_pread64),        // 17 
+   GENXY(__NR_pread64,           sys_pread64),        // 17 
    //   (__NR_pwrite64,          sys_pwrite64),       // 18 
    GENXY(__NR_readv,             sys_readv),          // 19 
 
@@ -787,7 +787,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_modify_ldt,        sys_modify_ldt),     // 154 
 
    //   (__NR_pivot_root,        sys_pivot_root),     // 155 
-   //   (__NR__sysctl,           sys_sysctl),         // 156 
+   LINXY(__NR__sysctl,           sys_sysctl),         // 156 
    //   (__NR_prctl,             sys_prctl),          // 157 
    PLAX_(__NR_arch_prctl,	 sys_arch_prctl),     // 158 
    //   (__NR_adjtimex,          sys_adjtimex),       // 159 
@@ -829,7 +829,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_lsetxattr,         sys_lsetxattr),      // 189 
 
    //   (__NR_fsetxattr,         sys_fsetxattr),      // 190 
-   //   (__NR_getxattr,          sys_getxattr),       // 191 
+   GENXY(__NR_getxattr,          sys_getxattr),       // 191 
    //   (__NR_lgetxattr,         sys_lgetxattr),      // 192 
    //   (__NR_fgetxattr,         sys_fgetxattr),      // 193 
    //   (__NR_listxattr,         sys_listxattr),      // 194 
@@ -842,7 +842,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_tkill,             sys_tkill),             // 200 
    GENXY(__NR_time,              sys_time), /*was sys_time64*/ // 201 
-   //   (__NR_futex,             sys_futex),             // 202 
+   LINXY(__NR_futex,             sys_futex),             // 202 
    //   (__NR_sched_setaffinity, sys_sched_setaffinity), // 203 
    //   (__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
@@ -861,7 +861,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_epoll_wait_old,    sys_ni_syscall),     // 215 
    //   (__NR_remap_file_pages,  sys_remap_file_pages)// 216 
    //   (__NR_getdents64,        sys_getdents64),     // 217 
-   //   (__NR_set_tid_address,   sys_set_tid_address),// 218 
+   GENX_(__NR_set_tid_address,   sys_set_tid_address),// 218 
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 
 
    //   (__NR_semtimedop,        sys_semtimedop),     // 220 
@@ -873,11 +873,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_timer_getoverrun,  sys_timer_getoverrun)// 225 
    //   (__NR_timer_delete,      sys_timer_delete),   // 226 
    //   (__NR_clock_settime,     sys_clock_settime),  // 227 
-   //   (__NR_clock_gettime,     sys_clock_gettime),  // 228 
+   GENXY(__NR_clock_gettime,     sys_clock_gettime),  // 228 
    //   (__NR_clock_getres,      sys_clock_getres),   // 229 
 
    //   (__NR_clock_nanosleep,   sys_clock_nanosleep),// 230 
-   //   (__NR_exit_group,        sys_exit_group),     // 231 
+   LINX_(__NR_exit_group,        sys_exit_group),     // 231 
    //   (__NR_epoll_wait,        sys_epoll_wait),     // 232 
    //   (__NR_epoll_ctl,         sys_epoll_ctl),      // 233 
    //   (__NR_tgkill,            sys_tgkill),         // 234 

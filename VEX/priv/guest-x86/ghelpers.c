@@ -779,14 +779,14 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
-#if 0
+
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondB)) {
          /* long sub/cmp, then B (unsigned less than)
             --> test dst <u src */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpLT32U, cc_dst, cc_src));
+                     binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
       }
-#endif
+
       /*---------------- SUBW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_SUBW) && isU32(cond, X86CondZ)) {

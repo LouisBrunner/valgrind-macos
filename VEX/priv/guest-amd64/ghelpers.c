@@ -79,13 +79,13 @@ static void mullS64 ( Long u, Long v, Long* rHi, Long* rLo )
 {
    ULong u0, v0, w0;
     Long u1, v1, w1, w2, t;
-   u0   = u & 0xFFFFFFFF; 
+   u0   = u & 0xFFFFFFFFULL; 
    u1   = u >> 32;
-   v0   = v & 0xFFFFFFFF;
+   v0   = v & 0xFFFFFFFFULL;
    v1   = v >> 32;
    w0   = u0 * v0;
    t    = u1 * v0 + (w0 >> 32);
-   w1   = t & 0xFFFFFFFF;
+   w1   = t & 0xFFFFFFFFULL;
    w2   = t >> 32;
    w1   = u0 * v1 + w1;
    *rHi = u1 * v1 + w2 + (w1 >> 32);
@@ -97,13 +97,13 @@ static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
 {
    ULong u0, v0, w0;
    ULong u1, v1, w1,w2,t;
-   u0   = u & 0xFFFFFFFF;
+   u0   = u & 0xFFFFFFFFULL;
    u1   = u >> 32;
-   v0   = v & 0xFFFFFFFF;
+   v0   = v & 0xFFFFFFFFULL;
    v1   = v >> 32;
    w0   = u0 * v0;
    t    = u1 * v0 + (w0 >> 32);
-   w1   = t & 0xFFFFFFFF;
+   w1   = t & 0xFFFFFFFFULL;
    w2   = t >> 32;
    w1   = u0 * v1 + w1;
    *rHi = u1 * v1 + w2 + (w1 >> 32);

@@ -74,7 +74,7 @@ static Int    emitted_code_size;
 static UShort jumps[VG_MAX_JUMPS];
 static Int    jumpidx;
 
-static enum eflags_state {
+static enum _eflags_state {
 	UPD_Simd,		/* baseblock copy is up to date */
 	UPD_Real,		/* CPU copy is up to date */
 	UPD_Both,		/* both are current */
@@ -266,17 +266,215 @@ static void maybe_emit_get_eflags( void )
 }
 #endif
 
+
+#if 0
+/* begin UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED */
+/* An alternative implementation of new_emit in which the
+   state space is explicitly enumerated. */
+__inline__ 
+void VG_(new_emit) ( Bool upds_simd_flags, 
+                     FlagSet use_flags, FlagSet set_flags )
+{
+  Bool simd = upds_simd_flags;
+  enum _eflags_state where = eflags_state;
+
+  enum { WNone, WSome, WAll } ww;
+  Bool rr;
+
+#define DIS_HEADER  \
+   if (dis)         \
+      VG_(printf)("\t       %4d: ", emitted_code_used );
+
+  if (use_flags == FlagsEmpty) {
+     rr = False;
+  } else {
+     rr = True;
+  }
+
+  if (set_flags == FlagsEmpty) {
+     ww = WNone;
+  } else
+  if (set_flags == FlagsOSZACP) {
+     ww = WAll;
+  } else {
+     ww = WSome;
+  }
+
+  /* If we're not wanting to interact with simd flags, and the simd
+     flags are not in the real flags, then do nothing. */
+  if (simd == False && where == UPD_Simd)
+     goto noaction;
+
+  if (simd == True && where == UPD_Simd && rr == False && ww == WAll) {
+     /* We're going to generate a complete new simd flag state without
+        consulting the old one first, so just deem this insn to create
+        the state in the real flags. */
+     eflags_state = UPD_Real;
+     DIS_HEADER;
+     return;
+  }
+
+  if (simd == True && where == UPD_Simd && rr == False && ww == WSome) {
+     /* Want to partially update the flags state, but is in simd.  So
+        fetch it first, then declare that the real state is the most
+        recent. */
+     emit_get_eflags();
+     eflags_state = UPD_Real;
+     DIS_HEADER;
+     return;
+  }
+
+  if (simd == True && where == UPD_Simd && rr == True && ww == WNone) {
+     /* want to read simd flags, but not in real -> copy to real. */
+     emit_get_eflags();
+     eflags_state = UPD_Both;
+     DIS_HEADER;
+     return;
+  }
+
+  if (simd == True && where == UPD_Simd && rr == True && ww == WAll) {
+     /* want to read and write simd flags, but not in real -> copy to
+	real.  State is then Real since they get updated. */
+     emit_get_eflags();
+     eflags_state = UPD_Real;
+     DIS_HEADER;
+     return;
+  }
+
+  if (simd == True && where == UPD_Simd && rr == False && ww == WNone) {
+     /* Doesn't really make sense.  Want to interact with simd flags,
+        but insn doesn't modify them.  So don't do anything. ??? */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Real && rr == False && ww == WNone) {
+     /* Doesn't really make sense.  Want to interact with simd flags,
+        but insn doesn't modify them.  So don't do anything. ??? */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Real && rr == True && ww == WNone) {
+     /* simd is in real.  Insn reads real but does not change. --> do
+        nothing. */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Real && rr == True && ww == WAll) {
+     /* simd is in real.  we want to capture changes made by it.  -->
+        do nothing */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Real && rr == False && ww == WAll) {
+     /* simd is in real.  Insn creates new simd state.  --> leave in
+        real */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Both && rr == False && ww == WAll) {
+     /* simd is in both.  Insn creates new simd state.  --> change
+        state to Real. */
+    narrow_Both_to_Real:
+     eflags_state = UPD_Real;
+     DIS_HEADER;
+     return;    
+  }
+
+  if (simd == True && where == UPD_Both && rr == False && ww == WSome) {
+     /* simd is in both.  Insn creates partial new simd state.  -->
+        change state to Real.  No need to get, since Both holds. */
+     goto narrow_Both_to_Real;
+  }
+
+  if (simd == True && where == UPD_Real && rr == False && ww == WSome) {
+     /* simd is in real.  Insn creates new simd state.  --> leave in
+        real */
+     goto noaction;
+  }
+
+  if (simd == True && where == UPD_Both && rr == True && ww == WNone)
+     /* want to read the simd flags, but already have a copy in real,
+        and not planning to modify it --> do nothing. */
+     goto noaction;
+
+  ////////////////
+
+  if (simd == False && where == UPD_Real && rr == False && ww == WNone)
+     /* simd state is in real, but insn doesn't touch it --> do nothing */
+     goto noaction;
+
+  if (simd == False && where == UPD_Both && rr == False && ww == WNone)
+     /* simd state is in both, insn doesn't touch it --> do nothing */
+     goto noaction;
+
+  if (simd == False && where == UPD_Both && rr == False && ww == WAll) {
+     /* simd state is in both.  insn trashes real, therefore declare
+        simd state only in simd. */
+    narrow_Both_to_Simd:
+     eflags_state = UPD_Simd;
+     DIS_HEADER;
+     return;    
+  }
+
+  if (simd == False && where == UPD_Both && rr == False && ww == WSome) {
+     /* simd state is in both.  insn trashes real, therefore declare
+        simd state only in simd. */
+     goto narrow_Both_to_Simd;
+  }
+
+  if (simd == False && where == UPD_Real && rr == False && ww == WAll) {
+     /* simd state is in real; we don't want simd state changed, but
+        insn writes the flags.  Therefore have to copy back first. */
+    put_flags_and_continue:
+     emit_put_eflags();
+     eflags_state = UPD_Simd;
+     DIS_HEADER;
+     return;
+  }
+
+  if (simd == False && where == UPD_Real && rr == False && ww == WSome) {
+     /* simd state is in real; we don't want simd state changed, but
+        insn writes the flags.  Therefore have to copy back first. */
+     goto put_flags_and_continue;
+  }
+
+  goto unhandled;
+
+ noaction:
+   DIS_HEADER;
+   return;
+
+  //  if (simd == False && where == UPD_Simd && FL_NONE(rrr) && FL_SOME(www)) {
+  //   return;
+  //}
+
+ unhandled:
+  VG_(printf)("simd %s,  where %s,  read %s,  write %s\n",
+	      simd ? "True " : "False",
+	      (eflags_state == UPD_Simd ? "Simd" : (eflags_state == UPD_Real 
+                                                      ? "Real" : "Both")),
+	      rr ? "True " : "False",
+              ww == WNone ? "None" : ww == WSome ? "Some" : "All "
+	     );
+
+  VG_(core_panic)("new_emit");
+}
+/* end UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED */
+#endif
+
+
 /* Call this before emitting each instruction.
 
    Arguments are:
-   upds_simd_flags: 
-      if true, this instruction updates the simulated %EFLAGS state,
-      otherwise it doesn't
+   interacts_with_simd_flags: 
+      if true, this instruction wants to interact (read and/or write)
+         the simulated %EFLAGS state,
+      otherwise it doesn't want to.
    use_flags: set of (real) flags the instruction uses
    set_flags: set of (real) flags the instruction sets
- */
+*/
 __inline__ 
-void VG_(new_emit) ( Bool upds_simd_flags, 
+void VG_(new_emit) ( Bool interacts_with_simd_flags, 
                      FlagSet use_flags, FlagSet set_flags )
 {
    Bool use, set;
@@ -287,10 +485,11 @@ void VG_(new_emit) ( Bool upds_simd_flags,
 
    if (0)
       VG_(printf)(
-         "new_emit: state=%d upds_simd_flags=%d use_flags=%x set_flags=%x\n",
-         eflags_state, upds_simd_flags, use_flags, set_flags);
+         "new_emit: state=%d interacts_with_simd_flags=%d "
+         "use_flags=%x set_flags=%x\n",
+         eflags_state, interacts_with_simd_flags, use_flags, set_flags);
 
-   if (upds_simd_flags) {
+   if (interacts_with_simd_flags) {
       if (use && eflags_state == UPD_Simd) {
 	 /* we need the CPU flags set, but they're not already */
 	 eflags_state = UPD_Both;
@@ -560,7 +759,7 @@ static __inline__ UChar mkPrimaryOpcode ( Opcode opc )
 
 void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x8B ); /* MOV Ev, Gv */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -571,7 +770,7 @@ void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg )
 
 void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -582,7 +781,7 @@ void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 
 static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x8B ); /* MOV Ev, Gv */
    emit_amode_regmem_reg ( reg1, reg2 );
@@ -593,7 +792,7 @@ static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 
 static void emit_movv_reg_regmem ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    emit_amode_regmem_reg ( reg2, reg1 );
@@ -604,7 +803,7 @@ static void emit_movv_reg_regmem ( Int sz, Int reg1, Int reg2 )
 
 void VG_(emit_movv_reg_reg) ( Int sz, Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    VG_(emit_amode_ereg_greg) ( reg2, reg1 );
@@ -613,9 +812,11 @@ void VG_(emit_movv_reg_reg) ( Int sz, Int reg1, Int reg2 )
                    nameISize(sz), nameIReg(sz,reg1), nameIReg(sz,reg2));
 }
 
-void VG_(emit_nonshiftopv_lit_reg) ( Bool upd_cc, Int sz, Opcode opc, UInt lit, Int reg )
+void VG_(emit_nonshiftopv_lit_reg) ( Bool simd_flags, 
+                                     Int sz, Opcode opc, 
+                                     UInt lit, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
 
    if (sz == 2) VG_(emitB) ( 0x66 );
    if (lit == VG_(extend_s_8to32)(lit & 0x000000FF)) {
@@ -634,10 +835,11 @@ void VG_(emit_nonshiftopv_lit_reg) ( Bool upd_cc, Int sz, Opcode opc, UInt lit, 
                    lit, nameIReg(sz,reg));
 }
 
-void VG_(emit_nonshiftopv_lit_offregmem) ( Bool upd_cc, Int sz, Opcode opc, UInt lit, 
+void VG_(emit_nonshiftopv_lit_offregmem) ( Bool simd_flags, Int sz, 
+                                           Opcode opc, UInt lit, 
 					   Int off, Int regmem )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    if (sz == 2) VG_(emitB) ( 0x66 );
    if (lit == VG_(extend_s_8to32)(lit & 0x000000FF)) {
       /* short form OK */
@@ -655,9 +857,11 @@ void VG_(emit_nonshiftopv_lit_offregmem) ( Bool upd_cc, Int sz, Opcode opc, UInt
                    lit, off, nameIReg(sz,regmem));
 }
 
-void VG_(emit_shiftopv_lit_reg) ( Bool upd_cc, Int sz, Opcode opc, UInt lit, Int reg )
+void VG_(emit_shiftopv_lit_reg) ( Bool simd_flags, 
+                                  Int sz, Opcode opc, 
+                                  UInt lit, Int reg )
 {
-   VG_(new_emit)(upd_cc, shiftop_use(opc), shiftop_set(opc));
+   VG_(new_emit)(simd_flags, shiftop_use(opc), shiftop_set(opc));
 
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xC1 ); /* Grp2 Ib,Ev */
@@ -669,9 +873,9 @@ void VG_(emit_shiftopv_lit_reg) ( Bool upd_cc, Int sz, Opcode opc, UInt lit, Int
                    lit, nameIReg(sz,reg));
 }
 
-static void emit_shiftopv_cl_stack0 ( Bool upd_cc, Int sz, Opcode opc )
+static void emit_shiftopv_cl_stack0 ( Bool simd_flags, Int sz, Opcode opc )
 {
-   VG_(new_emit)(upd_cc, shiftop_use(opc), shiftop_set(opc));
+   VG_(new_emit)(simd_flags, shiftop_use(opc), shiftop_set(opc));
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xD3 ); /* Grp2 CL,Ev */
    VG_(emitB) ( mkModRegRM ( 1, mkGrp2opcode(opc), 4 ) );
@@ -682,9 +886,9 @@ static void emit_shiftopv_cl_stack0 ( Bool upd_cc, Int sz, Opcode opc )
                   VG_(name_UOpcode)(False,opc), nameISize(sz) );
 }
 
-static void emit_shiftopb_cl_stack0 ( Bool upd_cc, Opcode opc )
+static void emit_shiftopb_cl_stack0 ( Bool simd_flags, Opcode opc )
 {
-   VG_(new_emit)(upd_cc, shiftop_use(opc), shiftop_set(opc));
+   VG_(new_emit)(simd_flags, shiftop_use(opc), shiftop_set(opc));
    VG_(emitB) ( 0xD2 ); /* Grp2 CL,Eb */
    VG_(emitB) ( mkModRegRM ( 1, mkGrp2opcode(opc), 4 ) );
    VG_(emitB) ( 0x24 ); /* a SIB, I think `d8(%esp)' */
@@ -694,10 +898,11 @@ static void emit_shiftopb_cl_stack0 ( Bool upd_cc, Opcode opc )
                   VG_(name_UOpcode)(False,opc), nameISize(1) );
 }
 
-static void emit_nonshiftopv_offregmem_reg ( Bool upd_cc, Int sz, Opcode opc, 
+static void emit_nonshiftopv_offregmem_reg ( Bool simd_flags, Int sz, 
+                                             Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 3 + mkPrimaryOpcode(opc) ); /* op Ev, Gv */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -709,10 +914,10 @@ static void emit_nonshiftopv_offregmem_reg ( Bool upd_cc, Int sz, Opcode opc,
 
 #if 0
 /* evidently unused */
-static void emit_nonshiftopv_reg_offregmem ( Bool upd_cc, Int sz, Opcode opc, 
+static void emit_nonshiftopv_reg_offregmem ( Bool simd_flags, Int sz, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 1 + mkPrimaryOpcode(opc) ); /* op Gv, Ev */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -723,10 +928,10 @@ static void emit_nonshiftopv_reg_offregmem ( Bool upd_cc, Int sz, Opcode opc,
 }
 #endif
 
-void VG_(emit_nonshiftopv_reg_reg) ( Bool upd_cc, Int sz, Opcode opc, 
+void VG_(emit_nonshiftopv_reg_reg) ( Bool simd_flags, Int sz, Opcode opc, 
 				     Int reg1, Int reg2 )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    if (sz == 2) VG_(emitB) ( 0x66 );
 #  if 0
    /* Perfectly correct, but the GNU assembler uses the other form.
@@ -745,12 +950,14 @@ void VG_(emit_nonshiftopv_reg_reg) ( Bool upd_cc, Int sz, Opcode opc,
 
 void VG_(emit_movv_lit_reg) ( Int sz, UInt lit, Int reg )
 {
+#if 0
    if (lit == 0 && eflags_state != UPD_Real) {
       /* Only emit this for zeroing if it won't stomp flags */
       VG_(emit_nonshiftopv_reg_reg) ( False, sz, XOR, reg, reg );
       return;
    }
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+#endif
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0xB8+reg ); /* MOV imm, Gv */
    if (sz == 2) VG_(emitW) ( lit ); else VG_(emitL) ( lit );
@@ -759,11 +966,11 @@ void VG_(emit_movv_lit_reg) ( Int sz, UInt lit, Int reg )
                    nameISize(sz), lit, nameIReg(sz,reg));
 }
 
-void VG_(emit_unaryopv_reg) ( Bool upd_cc, Int sz, Opcode opc, Int reg )
+void VG_(emit_unaryopv_reg) ( Bool simd_flags, Int sz, Opcode opc, Int reg )
 {
    switch (opc) {
       case NEG:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZACP);
 	 if (sz == 2) VG_(emitB) ( 0x66 );
          VG_(emitB) ( 0xF7 );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp3opcode(NEG) );
@@ -772,7 +979,7 @@ void VG_(emit_unaryopv_reg) ( Bool upd_cc, Int sz, Opcode opc, Int reg )
                          nameISize(sz), nameIReg(sz,reg));
          break;
       case NOT:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsEmpty);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsEmpty);
 	 if (sz == 2) VG_(emitB) ( 0x66 );
          VG_(emitB) ( 0xF7 );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp3opcode(NOT) );
@@ -781,7 +988,7 @@ void VG_(emit_unaryopv_reg) ( Bool upd_cc, Int sz, Opcode opc, Int reg )
                          nameISize(sz), nameIReg(sz,reg));
          break;
       case DEC:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZAP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZAP);
 	 if (sz == 2) VG_(emitB) ( 0x66 );
          VG_(emitB) ( 0x48 + reg );
          if (dis)
@@ -789,7 +996,7 @@ void VG_(emit_unaryopv_reg) ( Bool upd_cc, Int sz, Opcode opc, Int reg )
                          nameISize(sz), nameIReg(sz,reg));
          break;
       case INC:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZAP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZAP);
 	 if (sz == 2) VG_(emitB) ( 0x66 );
          VG_(emitB) ( 0x40 + reg );
          if (dis)
@@ -803,7 +1010,7 @@ void VG_(emit_unaryopv_reg) ( Bool upd_cc, Int sz, Opcode opc, Int reg )
 
 void VG_(emit_pushv_reg) ( Int sz, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) {
       VG_(emitB) ( 0x66 ); 
    } else {
@@ -816,7 +1023,7 @@ void VG_(emit_pushv_reg) ( Int sz, Int reg )
 
 void VG_(emit_popv_reg) ( Int sz, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) {
       VG_(emitB) ( 0x66 ); 
    } else {
@@ -829,7 +1036,7 @@ void VG_(emit_popv_reg) ( Int sz, Int reg )
 
 void VG_(emit_pushl_lit32) ( UInt int32 )
 {  
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x68 );
    VG_(emitL) ( int32 );
    if (dis)
@@ -839,16 +1046,16 @@ void VG_(emit_pushl_lit32) ( UInt int32 )
 void VG_(emit_pushl_lit8) ( Int lit8 )
 {
    vg_assert(lit8 >= -128 && lit8 < 128);
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x6A );
    VG_(emitB) ( (UChar)((UInt)lit8) );
    if (dis)
       VG_(printf)("\n\t\tpushl $%d\n", lit8 );
 }
 
-void VG_(emit_cmpl_zero_reg) ( Bool upd_cc, Int reg )
+void VG_(emit_cmpl_zero_reg) ( Bool simd_flags, Int reg )
 {
-   VG_(new_emit)(upd_cc, False, FlagsOSZACP);
+   VG_(new_emit)(simd_flags, False, FlagsOSZACP);
    VG_(emitB) ( 0x83 );
    VG_(emit_amode_ereg_greg) ( reg, 7 /* Grp 3 opcode for CMP */ );
    VG_(emitB) ( 0x00 );
@@ -858,7 +1065,7 @@ void VG_(emit_cmpl_zero_reg) ( Bool upd_cc, Int reg )
 
 static void emit_swapl_reg_ECX ( Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x87 ); /* XCHG Gv,Ev */
    VG_(emit_amode_ereg_greg) ( reg, R_ECX );
    if (dis) 
@@ -867,7 +1074,7 @@ static void emit_swapl_reg_ECX ( Int reg )
 
 void VG_(emit_swapl_reg_EAX) ( Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x90 + reg ); /* XCHG Gv,eAX */
    if (dis) 
       VG_(printf)("\n\t\txchgl %%eax, %s\n", nameIReg(4,reg));
@@ -875,7 +1082,7 @@ void VG_(emit_swapl_reg_EAX) ( Int reg )
 
 static void emit_swapl_reg_reg ( Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x87 ); /* XCHG Gv,Ev */
    VG_(emit_amode_ereg_greg) ( reg1, reg2 );
    if (dis) 
@@ -885,7 +1092,7 @@ static void emit_swapl_reg_reg ( Int reg1, Int reg2 )
 
 static void emit_bswapl_reg ( Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F );
    VG_(emitB) ( 0xC8 + reg ); /* BSWAP r32 */
    if (dis) 
@@ -894,7 +1101,7 @@ static void emit_bswapl_reg ( Int reg )
 
 static void emit_movl_reg_reg ( Int regs, Int regd )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x89 ); /* MOV Gv,Ev */
    VG_(emit_amode_ereg_greg) ( regd, regs );
    if (dis) 
@@ -903,7 +1110,7 @@ static void emit_movl_reg_reg ( Int regs, Int regd )
 
 void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off, Int memreg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -926,7 +1133,7 @@ void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off, Int memreg )
    486 insn set.  ToDo: investigate. */
 void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg )
 {                                     
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0xC6 ); /* Grp11 Eb */
    VG_(emit_amode_offregmem_reg) ( off, memreg, 0 /* Grp11 subopcode for MOV */ );
    VG_(emitB) ( lit ); 
@@ -935,10 +1142,10 @@ void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg )
                    lit, off, nameIReg(4,memreg) );
 }              
               
-static void emit_nonshiftopb_offregmem_reg ( Bool upd_cc, Opcode opc, 
+static void emit_nonshiftopb_offregmem_reg ( Bool simd_flags, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 2 + mkPrimaryOpcode(opc) ); /* op Eb, Gb */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -947,10 +1154,10 @@ static void emit_nonshiftopb_offregmem_reg ( Bool upd_cc, Opcode opc,
                    nameIReg(1,reg));
 }
 
-static void emit_nonshiftopb_lit_offregmem ( Bool upd_cc, Opcode opc, 
+static void emit_nonshiftopb_lit_offregmem ( Bool simd_flags, Opcode opc, 
                                              UInt lit, Int off, Int areg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 0x80 );
    VG_(emit_amode_offregmem_reg) ( off, areg, mkGrp1opcode(opc) );
    VG_(emitB) ( lit );
@@ -961,10 +1168,10 @@ static void emit_nonshiftopb_lit_offregmem ( Bool upd_cc, Opcode opc,
 
 #if 0
 /* evidently unused */
-static void emit_nonshiftopb_reg_offregmem ( Bool upd_cc, Opcode opc, 
+static void emit_nonshiftopb_reg_offregmem ( Bool simd_flags, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 0 + mkPrimaryOpcode(opc) ); /* op Gb, Eb */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -978,7 +1185,7 @@ static void emit_nonshiftopb_reg_offregmem ( Bool upd_cc, Opcode opc,
 void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg )
 {
    /* Could do better when reg == %al. */
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x88 ); /* MOV G1, E1 */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -986,9 +1193,10 @@ void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg )
                    nameIReg(1,reg), off, nameIReg(4,areg));
 }
 
-static void emit_nonshiftopb_reg_reg ( Bool upd_cc, Opcode opc, Int reg1, Int reg2 )
+static void emit_nonshiftopb_reg_reg ( Bool simd_flags, Opcode opc, 
+                                       Int reg1, Int reg2 )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 2 + mkPrimaryOpcode(opc) ); /* op Eb, Gb */
    VG_(emit_amode_ereg_greg) ( reg1, reg2 );
    if (dis)
@@ -999,7 +1207,7 @@ static void emit_nonshiftopb_reg_reg ( Bool upd_cc, Opcode opc, Int reg1, Int re
 
 static void emit_movb_reg_regmem ( Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x88 ); /* MOV G1, E1 */
    emit_amode_regmem_reg ( reg2, reg1 );
    if (dis)
@@ -1007,9 +1215,10 @@ static void emit_movb_reg_regmem ( Int reg1, Int reg2 )
                                              nameIReg(4,reg2));
 }
 
-static void emit_nonshiftopb_lit_reg ( Bool upd_cc, Opcode opc, UInt lit, Int reg )
+static void emit_nonshiftopb_lit_reg ( Bool simd_flags, Opcode opc, 
+                                       UInt lit, Int reg )
 {
-   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
+   VG_(new_emit)(simd_flags, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 0x80 ); /* Grp1 Ib,Eb */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp1opcode(opc) );
    VG_(emitB) ( lit & 0x000000FF );
@@ -1018,9 +1227,10 @@ static void emit_nonshiftopb_lit_reg ( Bool upd_cc, Opcode opc, UInt lit, Int re
                                              lit, nameIReg(1,reg));
 }
 
-static void emit_shiftopb_lit_reg ( Bool upd_cc, Opcode opc, UInt lit, Int reg )
+static void emit_shiftopb_lit_reg ( Bool simd_flags, Opcode opc, 
+                                    UInt lit, Int reg )
 {
-   VG_(new_emit)(upd_cc, shiftop_use(opc), shiftop_set(opc));
+   VG_(new_emit)(simd_flags, shiftop_use(opc), shiftop_set(opc));
    VG_(emitB) ( 0xC0 ); /* Grp2 Ib,Eb */
    VG_(emit_amode_ereg_greg) ( reg, mkGrp2opcode(opc) );
    VG_(emitB) ( lit );
@@ -1030,32 +1240,32 @@ static void emit_shiftopb_lit_reg ( Bool upd_cc, Opcode opc, UInt lit, Int reg )
                    lit, nameIReg(1,reg));
 }
 
-void VG_(emit_unaryopb_reg) ( Bool upd_cc, Opcode opc, Int reg )
+void VG_(emit_unaryopb_reg) ( Bool simd_flags, Opcode opc, Int reg )
 {
    switch (opc) {
       case INC:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZAP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZAP);
          VG_(emitB) ( 0xFE );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp4opcode(INC) );
          if (dis)
             VG_(printf)( "\n\t\tincb\t%s\n", nameIReg(1,reg));
          break;
       case DEC:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZAP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZAP);
          VG_(emitB) ( 0xFE );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp4opcode(DEC) );
          if (dis)
             VG_(printf)( "\n\t\tdecb\t%s\n", nameIReg(1,reg));
          break;
       case NOT:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsEmpty);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsEmpty);
          VG_(emitB) ( 0xF6 );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp3opcode(NOT) );
          if (dis)
             VG_(printf)( "\n\t\tnotb\t%s\n", nameIReg(1,reg));
          break;
       case NEG:
-	 VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+	 VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZACP);
          VG_(emitB) ( 0xF6 );
          VG_(emit_amode_ereg_greg) ( reg, mkGrp3opcode(NEG) );
          if (dis)
@@ -1066,9 +1276,9 @@ void VG_(emit_unaryopb_reg) ( Bool upd_cc, Opcode opc, Int reg )
    }
 }
 
-void VG_(emit_testb_lit_reg) ( Bool upd_cc, UInt lit, Int reg )
+void VG_(emit_testb_lit_reg) ( Bool simd_flags, UInt lit, Int reg )
 {
-   VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+   VG_(new_emit)(simd_flags, FlagsEmpty, FlagsOSZACP);
    VG_(emitB) ( 0xF6 ); /* Grp3 Eb */
    VG_(emit_amode_ereg_greg) ( reg, 0 /* Grp3 subopcode for TEST */ );
    VG_(emitB) ( lit );
@@ -1082,7 +1292,7 @@ void VG_(emit_testb_lit_reg) ( Bool upd_cc, UInt lit, Int reg )
 
 void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    VG_(emit_amode_offregmem_reg) ( off, regmem, reg );
    if (dis)
@@ -1092,7 +1302,7 @@ void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
 
 static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -1102,7 +1312,7 @@ static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
 
 void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -1112,7 +1322,7 @@ void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
 
 static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -1127,7 +1337,7 @@ static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 static void emit_get_fpu_state ( void )
 {
    Int off = 4 * VGOFF_(m_fpustate);
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xA5 ); /* frstor d32(%ebp) */
    VG_(emitL) ( off );
    if (dis)
@@ -1137,18 +1347,19 @@ static void emit_get_fpu_state ( void )
 static void emit_put_fpu_state ( void )
 {
    Int off = 4 * VGOFF_(m_fpustate);
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xB5 ); /* fnsave d32(%ebp) */
    VG_(emitL) ( off );
    if (dis)
       VG_(printf)("\n\t\tfnsave\t%d(%%ebp)\n", off );
 }
 
-static void emit_fpu_no_mem ( FlagSet uses_flags, FlagSet sets_flags,
+static void emit_fpu_no_mem ( FlagSet uses_sflags, 
+                              FlagSet sets_sflags,
 			      UChar first_byte, 
                               UChar second_byte )
 {
-   VG_(new_emit)(True, uses_flags, sets_flags);
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    if (dis)
@@ -1156,12 +1367,13 @@ static void emit_fpu_no_mem ( FlagSet uses_flags, FlagSet sets_flags,
                   (UInt)first_byte, (UInt)second_byte );
 }
 
-static void emit_fpu_regmem ( FlagSet uses_flags, FlagSet sets_flags,
+static void emit_fpu_regmem ( FlagSet uses_sflags, 
+                              FlagSet sets_sflags,
 			      UChar first_byte, 
                               UChar second_byte_masked, 
                               Int reg )
 {
-   VG_(new_emit)(True, uses_flags, sets_flags);
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
    emit_amode_regmem_reg ( reg, second_byte_masked >> 3 );
    if (dis)
@@ -1184,10 +1396,12 @@ void VG_(emit_call_reg) ( Int reg )
       VG_(printf)( "\n\t\tcall\t*%s\n", nameIReg(4,reg) );
 }              
          
-static void emit_call_star_EBP_off ( Bool upd_cc, Int byte_off, FlagSet use_flag, FlagSet set_flag )
+static 
+void emit_call_star_EBP_off ( Bool simd_flags, Int byte_off, 
+                              FlagSet use_flag, FlagSet set_flag )
 {
    /* Used for helpers which expect to see Simd flags in Real flags */
-   VG_(new_emit)(upd_cc, use_flag, set_flag);
+   VG_(new_emit)(simd_flags, use_flag, set_flag);
 
    if (byte_off < -128 || byte_off > 127) {
       VG_(emitB) ( 0xFF );
@@ -1235,7 +1449,7 @@ static void emit_movb_AL_zeroESPmem ( void )
 {
    /* movb %al, 0(%esp) */
    /* 88442400              movb    %al, 0(%esp) */
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x88 );
    VG_(emitB) ( 0x44 );
    VG_(emitB) ( 0x24 );
@@ -1248,7 +1462,7 @@ static void emit_movb_zeroESPmem_AL ( void )
 {
    /* movb 0(%esp), %al */
    /* 8A442400              movb    0(%esp), %al */
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x8A );
    VG_(emitB) ( 0x44 );
    VG_(emitB) ( 0x24 );
@@ -1334,10 +1548,10 @@ void VG_(emit_target_delta) ( Int *tgt )
 /* Emit a jump short with an 8-bit signed offset.  Note that the
    offset is that which should be added to %eip once %eip has been
    advanced over this insn.  */
-void VG_(emit_jcondshort_delta) ( Bool simd, Condcode cond, Int delta )
+void VG_(emit_jcondshort_delta) ( Bool simd_flags, Condcode cond, Int delta )
 {
    vg_assert(delta >= -128 && delta <= 127);
-   VG_(new_emit)(simd, FlagsOSZCP, FlagsEmpty);
+   VG_(new_emit)(simd_flags, FlagsOSZCP, FlagsEmpty);
    VG_(emitB) ( 0x70 + (UInt)cond );
    VG_(emitB) ( (UChar)delta );
    if (dis)
@@ -1358,9 +1572,9 @@ void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
 
 
 
-static void emit_setb_reg ( Int reg, Condcode cond )
+static void emit_setb_reg ( Bool simd, Int reg, Condcode cond )
 {
-   VG_(new_emit)(True, FlagsOSZCP, FlagsEmpty);
+   VG_(new_emit)(simd, FlagsOSZCP, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0x90 + (UChar)cond );
    VG_(emit_amode_ereg_greg) ( reg, 0 );
    if (dis)
@@ -1497,7 +1711,7 @@ static void emit_call_patchme( void )
 
 void VG_(emit_pushal) ( void )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x60 ); /* PUSHAL */
    if (dis)
       VG_(printf)("\n\t\tpushal\n");
@@ -1505,7 +1719,7 @@ void VG_(emit_pushal) ( void )
 
 void VG_(emit_popal) ( void )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x61 ); /* POPAL */
    if (dis)
       VG_(printf)("\n\t\tpopal\n");
@@ -1513,7 +1727,7 @@ void VG_(emit_popal) ( void )
 
 static void emit_lea_litreg_reg ( UInt lit, Int regmem, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x8D ); /* LEA M,Gv */
    VG_(emit_amode_offregmem_reg) ( (Int)lit, regmem, reg );
    if (dis)
@@ -1524,7 +1738,7 @@ static void emit_lea_litreg_reg ( UInt lit, Int regmem, Int reg )
 static void emit_lea_sib_reg ( UInt lit, Int scale,
 			       Int regbase, Int regindex, Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x8D ); /* LEA M,Gv */
    emit_amode_sib_reg ( (Int)lit, scale, regbase, regindex, reg );
    if (dis)
@@ -1536,7 +1750,7 @@ static void emit_lea_sib_reg ( UInt lit, Int scale,
 
 void VG_(emit_AMD_prefetch_reg) ( Int reg )
 {
-   VG_(new_emit)(True, FlagsEmpty, FlagsEmpty);
+   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F );
    VG_(emitB) ( 0x0D );
    emit_amode_regmem_reg ( reg, 1 /* 0 is prefetch; 1 is prefetchw */ );
@@ -1592,14 +1806,14 @@ static Condcode invertCondition ( Condcode cond )
    call * (4 x offset)(%ebp).
 */
 void VG_(synth_call) ( Bool ensure_shortform, Int word_offset, 
-		       Bool upd_cc, FlagSet use_flags, FlagSet set_flags )
+		       Bool simd_flags, FlagSet use_flags, FlagSet set_flags )
 {
    vg_assert(word_offset >= 0);
    vg_assert(word_offset < VG_BASEBLOCK_WORDS);
    if (ensure_shortform) {
       vg_assert(word_offset < 32);
    }
-   emit_call_star_EBP_off ( upd_cc, 4 * word_offset, use_flags, set_flags );
+   emit_call_star_EBP_off ( simd_flags, 4 * word_offset, use_flags, set_flags );
 }
 
 static void maybe_emit_movl_reg_reg ( UInt src, UInt dst )
@@ -1888,7 +2102,7 @@ static void synth_jmp_lit ( Addr addr, JmpKind jmpkind )
 
 
 static void synth_mov_offregmem_reg ( Int size, Int off, Int areg, Int reg );
-static void synth_nonshiftop_lit_reg ( Bool upd_cc,
+static void synth_nonshiftop_lit_reg ( Bool simd_flags,
                                        Opcode opcode, Int size, 
                                        UInt lit, Int reg );
 
@@ -2128,21 +2342,21 @@ static void synth_mov_reg_memreg ( Int size, Int reg1, Int reg2 )
 }
 
 
-static void synth_unaryop_reg ( Bool upd_cc,
+static void synth_unaryop_reg ( Bool simd_flags,
                                 Opcode opcode, Int size,
                                 Int reg )
 {
    /* NB! opcode is a uinstr opcode, not an x86 one! */
    switch (size) {
-      case 4: VG_(emit_unaryopv_reg) ( upd_cc, 4, opcode, reg );
+      case 4: VG_(emit_unaryopv_reg) ( simd_flags, 4, opcode, reg );
               break;
-      case 2: VG_(emit_unaryopv_reg) ( upd_cc, 2, opcode, reg );
+      case 2: VG_(emit_unaryopv_reg) ( simd_flags, 2, opcode, reg );
               break;
       case 1: if (reg < 4) {
-                 VG_(emit_unaryopb_reg) ( upd_cc, opcode, reg );
+                 VG_(emit_unaryopb_reg) ( simd_flags, opcode, reg );
               } else {
                  VG_(emit_swapl_reg_EAX) ( reg );
-                 VG_(emit_unaryopb_reg) ( upd_cc, opcode, R_AL );
+                 VG_(emit_unaryopb_reg) ( simd_flags, opcode, R_AL );
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
@@ -2152,15 +2366,15 @@ static void synth_unaryop_reg ( Bool upd_cc,
 
 
 
-static void synth_nonshiftop_reg_reg ( Bool upd_cc, 
+static void synth_nonshiftop_reg_reg ( Bool simd_flags, 
                                        Opcode opcode, Int size, 
                                        Int reg1, Int reg2 )
 {
    /* NB! opcode is a uinstr opcode, not an x86 one! */
    switch (size) {
-      case 4: VG_(emit_nonshiftopv_reg_reg) ( upd_cc, 4, opcode, reg1, reg2 );
+      case 4: VG_(emit_nonshiftopv_reg_reg) ( simd_flags, 4, opcode, reg1, reg2 );
               break;
-      case 2: VG_(emit_nonshiftopv_reg_reg) ( upd_cc, 2, opcode, reg1, reg2 );
+      case 2: VG_(emit_nonshiftopv_reg_reg) ( simd_flags, 2, opcode, reg1, reg2 );
               break;
       case 1: { /* Horrible ... */
          Int s1, s2;
@@ -2169,34 +2383,34 @@ static void synth_nonshiftop_reg_reg ( Bool upd_cc,
             sure s1 != s2 and that neither of them equal either reg1 or
             reg2. Then use them as temporaries to make things work. */
          if (reg1 < 4 && reg2 < 4) {
-            emit_nonshiftopb_reg_reg(upd_cc, opcode, reg1, reg2); 
+            emit_nonshiftopb_reg_reg(simd_flags, opcode, reg1, reg2); 
             break;
          }
          for (s1 = 0; s1 == reg1 || s1 == reg2; s1++) ;
          if (reg1 >= 4 && reg2 < 4) {
             emit_swapl_reg_reg ( reg1, s1 );
-            emit_nonshiftopb_reg_reg(upd_cc, opcode, s1, reg2);
+            emit_nonshiftopb_reg_reg(simd_flags, opcode, s1, reg2);
             emit_swapl_reg_reg ( reg1, s1 );
             break;
          }
          for (s2 = 0; s2 == reg1 || s2 == reg2 || s2 == s1; s2++) ;
          if (reg1 < 4 && reg2 >= 4) {
             emit_swapl_reg_reg ( reg2, s2 );
-            emit_nonshiftopb_reg_reg(upd_cc, opcode, reg1, s2);
+            emit_nonshiftopb_reg_reg(simd_flags, opcode, reg1, s2);
             emit_swapl_reg_reg ( reg2, s2 );
             break;
          }
          if (reg1 >= 4 && reg2 >= 4 && reg1 != reg2) {
             emit_swapl_reg_reg ( reg1, s1 );
             emit_swapl_reg_reg ( reg2, s2 );
-            emit_nonshiftopb_reg_reg(upd_cc, opcode, s1, s2);
+            emit_nonshiftopb_reg_reg(simd_flags, opcode, s1, s2);
             emit_swapl_reg_reg ( reg1, s1 );
             emit_swapl_reg_reg ( reg2, s2 );
             break;
          }
          if (reg1 >= 4 && reg2 >= 4 && reg1 == reg2) {
             emit_swapl_reg_reg ( reg1, s1 );
-            emit_nonshiftopb_reg_reg(upd_cc, opcode, s1, s1);
+            emit_nonshiftopb_reg_reg(simd_flags, opcode, s1, s1);
             emit_swapl_reg_reg ( reg1, s1 );
             break;
          }
@@ -2209,23 +2423,23 @@ static void synth_nonshiftop_reg_reg ( Bool upd_cc,
 #if 0
 /* evidently unused */
 static void synth_nonshiftop_reg_offregmem (
-   Bool upd_cc,
+   Bool simd_flags,
    Opcode opcode, Int size, 
    Int off, Int areg, Int reg )
 {
    switch (size) {
       case 4: 
-         emit_nonshiftopv_reg_offregmem ( upd_cc, 4, opcode, off, areg, reg ); 
+         emit_nonshiftopv_reg_offregmem ( simd_flags, 4, opcode, off, areg, reg ); 
          break;
       case 2: 
-         emit_nonshiftopv_reg_offregmem ( upd_cc, 2, opcode, off, areg, reg ); 
+         emit_nonshiftopv_reg_offregmem ( simd_flags, 2, opcode, off, areg, reg ); 
          break;
       case 1: 
          if (reg < 4) {
-            emit_nonshiftopb_reg_offregmem ( upd_cc, opcode, off, areg, reg );
+            emit_nonshiftopb_reg_offregmem ( simd_flags, opcode, off, areg, reg );
          } else {
             VG_(emit_swapl_reg_EAX) ( reg );
-            emit_nonshiftopb_reg_offregmem ( upd_cc, opcode, off, areg, R_AL );
+            emit_nonshiftopb_reg_offregmem ( simd_flags, opcode, off, areg, R_AL );
             VG_(emit_swapl_reg_EAX) ( reg );
          }
          break;
@@ -2236,23 +2450,23 @@ static void synth_nonshiftop_reg_offregmem (
 #endif
 
 static void synth_nonshiftop_offregmem_reg ( 
-   Bool upd_cc,
+   Bool simd_flags,
    Opcode opcode, Int size, 
    Int off, Int areg, Int reg )
 {
    switch (size) {
       case 4: 
-         emit_nonshiftopv_offregmem_reg ( upd_cc, 4, opcode, off, areg, reg ); 
+         emit_nonshiftopv_offregmem_reg ( simd_flags, 4, opcode, off, areg, reg ); 
          break;
       case 2: 
-         emit_nonshiftopv_offregmem_reg ( upd_cc, 2, opcode, off, areg, reg ); 
+         emit_nonshiftopv_offregmem_reg ( simd_flags, 2, opcode, off, areg, reg ); 
          break;
       case 1: 
          if (reg < 4) {
-            emit_nonshiftopb_offregmem_reg ( upd_cc, opcode, off, areg, reg );
+            emit_nonshiftopb_offregmem_reg ( simd_flags, opcode, off, areg, reg );
          } else {
             VG_(emit_swapl_reg_EAX) ( reg );
-            emit_nonshiftopb_offregmem_reg ( upd_cc, opcode, off, areg, R_AL );
+            emit_nonshiftopb_offregmem_reg ( simd_flags, opcode, off, areg, R_AL );
             VG_(emit_swapl_reg_EAX) ( reg );
          }
          break;
@@ -2262,20 +2476,20 @@ static void synth_nonshiftop_offregmem_reg (
 }
 
 
-static void synth_nonshiftop_lit_reg ( Bool upd_cc,
+static void synth_nonshiftop_lit_reg ( Bool simd_flags,
                                        Opcode opcode, Int size, 
                                        UInt lit, Int reg )
 {
    switch (size) {
-      case 4: VG_(emit_nonshiftopv_lit_reg) ( upd_cc, 4, opcode, lit, reg );
+      case 4: VG_(emit_nonshiftopv_lit_reg) ( simd_flags, 4, opcode, lit, reg );
               break;
-      case 2: VG_(emit_nonshiftopv_lit_reg) ( upd_cc, 2, opcode, lit, reg );
+      case 2: VG_(emit_nonshiftopv_lit_reg) ( simd_flags, 2, opcode, lit, reg );
               break;
       case 1: if (reg < 4) {
-                 emit_nonshiftopb_lit_reg ( upd_cc, opcode, lit, reg );
+                 emit_nonshiftopb_lit_reg ( simd_flags, opcode, lit, reg );
               } else {
                  VG_(emit_swapl_reg_EAX) ( reg );
-                 emit_nonshiftopb_lit_reg ( upd_cc, opcode, lit, R_AL );
+                 emit_nonshiftopb_lit_reg ( simd_flags, opcode, lit, R_AL );
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
@@ -2283,16 +2497,16 @@ static void synth_nonshiftop_lit_reg ( Bool upd_cc,
    }
 }
 
-static void synth_nonshiftop_lit_offregmem ( Bool upd_cc,
+static void synth_nonshiftop_lit_offregmem ( Bool simd_flags,
 					     Opcode opcode, Int size, 
 					     UInt lit, Int off, Int regmem )
 {
    switch (size) {
-      case 4: VG_(emit_nonshiftopv_lit_offregmem) ( upd_cc, 4, opcode, lit, off, regmem );
+      case 4: VG_(emit_nonshiftopv_lit_offregmem) ( simd_flags, 4, opcode, lit, off, regmem );
               break;
-      case 2: VG_(emit_nonshiftopv_lit_offregmem) ( upd_cc, 2, opcode, lit, off, regmem );
+      case 2: VG_(emit_nonshiftopv_lit_offregmem) ( simd_flags, 2, opcode, lit, off, regmem );
               break;
-      case 1: emit_nonshiftopb_lit_offregmem ( upd_cc, opcode, lit, off, regmem );
+      case 1: emit_nonshiftopb_lit_offregmem ( simd_flags, opcode, lit, off, regmem );
               break;
       default: VG_(core_panic)("synth_nonshiftop_lit_offregmem");
    }
@@ -2345,16 +2559,16 @@ static void synth_pop_reg ( Int size, Int reg )
 }
 
 
-static void synth_shiftop_reg_reg ( Bool upd_cc,
+static void synth_shiftop_reg_reg ( Bool simd_flags,
                                     Opcode opcode, Int size, 
                                     Int regs, Int regd )
 {
    synth_push_reg ( size, regd );
    if (regs != R_ECX) emit_swapl_reg_ECX ( regs );
    switch (size) {
-      case 4: emit_shiftopv_cl_stack0 ( upd_cc, 4, opcode ); break;
-      case 2: emit_shiftopv_cl_stack0 ( upd_cc, 2, opcode ); break;
-      case 1: emit_shiftopb_cl_stack0 ( upd_cc, opcode ); break;
+      case 4: emit_shiftopv_cl_stack0 ( simd_flags, 4, opcode ); break;
+      case 2: emit_shiftopv_cl_stack0 ( simd_flags, 2, opcode ); break;
+      case 1: emit_shiftopb_cl_stack0 ( simd_flags, opcode ); break;
       default: VG_(core_panic)("synth_shiftop_reg_reg");
    }
    if (regs != R_ECX) emit_swapl_reg_ECX ( regs );
@@ -2362,20 +2576,20 @@ static void synth_shiftop_reg_reg ( Bool upd_cc,
 }
 
 
-static void synth_shiftop_lit_reg ( Bool upd_cc,
+static void synth_shiftop_lit_reg ( Bool simd_flags,
                                     Opcode opcode, Int size, 
                                     UInt lit, Int reg )
 {
    switch (size) {
-      case 4: VG_(emit_shiftopv_lit_reg) ( upd_cc, 4, opcode, lit, reg );
+      case 4: VG_(emit_shiftopv_lit_reg) ( simd_flags, 4, opcode, lit, reg );
               break;
-      case 2: VG_(emit_shiftopv_lit_reg) ( upd_cc, 2, opcode, lit, reg );
+      case 2: VG_(emit_shiftopv_lit_reg) ( simd_flags, 2, opcode, lit, reg );
               break;
       case 1: if (reg < 4) {
-                 emit_shiftopb_lit_reg ( upd_cc, opcode, lit, reg );
+                 emit_shiftopb_lit_reg ( simd_flags, opcode, lit, reg );
               } else {
                  VG_(emit_swapl_reg_EAX) ( reg );
-                 emit_shiftopb_lit_reg ( upd_cc, opcode, lit, R_AL );
+                 emit_shiftopb_lit_reg ( simd_flags, opcode, lit, R_AL );
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
@@ -2384,13 +2598,13 @@ static void synth_shiftop_lit_reg ( Bool upd_cc,
 }
 
 
-static void synth_setb_reg ( Int reg, Condcode cond )
+static void synth_setb_reg ( Bool simd, Int reg, Condcode cond )
 {
    if (reg < 4) {
-      emit_setb_reg ( reg, cond );
+      emit_setb_reg ( simd, reg, cond );
    } else {
       VG_(emit_swapl_reg_EAX) ( reg );
-      emit_setb_reg ( R_AL, cond );
+      emit_setb_reg ( simd, R_AL, cond );
       VG_(emit_swapl_reg_EAX) ( reg );
    }
 }
@@ -3011,7 +3225,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == NoValue);
          vg_assert(VG_(any_flag_use)(u));
-         synth_setb_reg ( u->val1, u->cond );
+         synth_setb_reg ( True, u->val1, u->cond );
          break;
 
       case FPU_R: 

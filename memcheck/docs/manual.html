@@ -2374,6 +2374,14 @@ Valgrind's cache profiling has a number of shortcomings:
 
   <li>It doesn't account for cache misses not visible at the instruction level,
       eg. those arising from TLB misses, or speculative execution.</li><p>
+
+  <li>The instructions <code>bts</code>, <code>btr</code> and <code>btc</code>
+      will incorrectly be counted as doing a data read if both the arguments
+      are registers, eg:
+
+      <blockquote><code>btsl %eax, %edx</code></blockquote>
+
+      This should only happen rarely.
 </ul>
 
 Another thing worth nothing is that results are very sensitive.  Changing the
@@ -2394,6 +2402,7 @@ hopefully they should be close enough to be useful.<p>
   <li>Program start-up/shut-down calls a lot of functions that aren't
       interesting and just complicate the output.  Would be nice to exclude
       these somehow.</li><p>
+  <li>Handle files with &gt;65535 lines</li><p>
 </ul> 
 <hr width="100%">
 </body>

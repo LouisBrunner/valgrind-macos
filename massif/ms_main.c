@@ -253,12 +253,14 @@ static UInt n_heap_blocks = 0;
 
 #define MAX_ALLOC_FNS      32      // includes the builtin ones
 
-// First six filled in, rest should be zeroed.  argc/argv-style vector.
-static UInt  n_alloc_fns = 9;
+// First few filled in, rest should be zeroed.  Zero-terminated vector.
+static UInt  n_alloc_fns = 11;
 static Char* alloc_fns[MAX_ALLOC_FNS] = { 
    "malloc",
    "operator new(unsigned)",
    "operator new[](unsigned)",
+   "operator new(unsigned, std::nothrow_t const&)"
+   "operator new[](unsigned, std::nothrow_t const&)"
    "__builtin_new",
    "__builtin_vec_new",
    "calloc",

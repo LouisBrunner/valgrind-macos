@@ -3093,7 +3093,9 @@ void log_bytes ( Char* bytes, Int nbytes )
 {
   //fwrite ( bytes, 1, nbytes, stdout );
   Int i;
-  for (i = 0; i < nbytes; i++) 
+  for (i = 0; i < nbytes-3; i += 4)
+     VG_(printf)("%c%c%c%c", bytes[i], bytes[i+1], bytes[i+2], bytes[i+3]);
+  for (; i < nbytes; i++) 
      VG_(printf)("%c", bytes[i]);
 }
 

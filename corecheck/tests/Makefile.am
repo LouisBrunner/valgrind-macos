@@ -4,7 +4,7 @@
 ## blocking syscalls, etc.
 ##---------------------------------------------------------------------------
 
-noinst_SCRIPTS = filter_stderr filter_fdleak
+noinst_SCRIPTS = filter_stderr filter_as_mmap filter_fdleak
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	as_mmap.stderr.exp as_mmap.stderr.exp2 as_mmap.vgtest \

@@ -153,12 +153,14 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
 {
    MemCheckError* e1_extra = VG_(get_error_extra)(e1);
    MemCheckError* e2_extra = VG_(get_error_extra)(e2);
+
+   /* Guaranteed by calling function */
+   sk_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
    
    switch (VG_(get_error_kind)(e1)) {
       case CoreMemErr: {
          Char *e1s, *e2s;
          if (e1_extra->isWrite != e2_extra->isWrite)   return False;
-         if (VG_(get_error_kind)(e2) != CoreMemErr)    return False; 
          e1s = VG_(get_error_string)(e1);
          e2s = VG_(get_error_string)(e2);
          if (e1s == e2s)                               return True;

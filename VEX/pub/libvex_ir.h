@@ -337,12 +337,9 @@ typedef
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
       Iop_Max32Fx4, Iop_Min32Fx4,
       Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4, 
-      Iop_CmpEQ32F0x4, Iop_CmpLT32F0x4, Iop_CmpLE32F0x4, Iop_CmpUN32F0x4, 
 
       /* unary */
       Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
-      //Iop_ItoF32x4, /* first arg is IRRoundingMode (Ity_I32) */
-      //Iop_FtoI32x4, /* first arg is IRRoundingMode (Ity_I32) */
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
 
@@ -352,11 +349,33 @@ typedef
       /* binary */
       Iop_Add32F0x4, Iop_Sub32F0x4, Iop_Mul32F0x4, Iop_Div32F0x4, 
       Iop_Max32F0x4, Iop_Min32F0x4,
+      Iop_CmpEQ32F0x4, Iop_CmpLT32F0x4, Iop_CmpLE32F0x4, Iop_CmpUN32F0x4, 
 
       /* unary */
       Iop_Recip32F0x4, Iop_Sqrt32F0x4, Iop_RSqrt32F0x4,
-      //Iop_ItoF320x4, /* first arg is IRRoundingMode (Ity_I32) */
-      //Iop_FtoI320x4, /* first arg is IRRoundingMode (Ity_I32) */
+
+      /* --- 64x2 vector FP --- */
+
+      /* binary */
+      Iop_Add64Fx2, Iop_Sub64Fx2, Iop_Mul64Fx2, Iop_Div64Fx2, 
+      Iop_Max64Fx2, Iop_Min64Fx2,
+      Iop_CmpEQ64Fx2, Iop_CmpLT64Fx2, Iop_CmpLE64Fx2, Iop_CmpUN64Fx2, 
+
+      /* unary */
+      Iop_Recip64Fx2, Iop_Sqrt64Fx2, Iop_RSqrt64Fx2,
+
+      /* --- 64x2 lowest-lane-only scalar FP --- */
+
+      /* In binary cases, upper half is copied from first operand.  In
+	 unary cases, upper half is copied from the operand. */
+
+      /* binary */
+      Iop_Add64F0x2, Iop_Sub64F0x2, Iop_Mul64F0x2, Iop_Div64F0x2, 
+      Iop_Max64F0x2, Iop_Min64F0x2,
+      Iop_CmpEQ64F0x2, Iop_CmpLT64F0x2, Iop_CmpLE64F0x2, Iop_CmpUN64F0x2, 
+
+      /* unary */
+      Iop_Recip64F0x2, Iop_Sqrt64F0x2, Iop_RSqrt64F0x2,
 
       /* --- pack / unpack --- */
 
@@ -366,6 +385,7 @@ typedef
       Iop_64HLto128,   // :: (I64,I64) -> V128
 
       Iop_32Uto128,
+      Iop_64Uto128,
       Iop_Set128lo32,
       /* 128 -> 32 bit unpack */
       //Iop_128W3to32,   // :: V128 -> I32, bits 127-96

@@ -765,7 +765,7 @@ X86Instr* X86Instr_Sse128 ( X86SseOp op, HReg src, HReg dst ) {
            || op == Xsse_AND || op == Xsse_OR || op == Xsse_XOR);
    return i;
 }
-X86Instr* X86Instr_Sse32Fx4  ( X86SseOp op, HReg src, HReg dst ) {
+X86Instr* X86Instr_Sse32Fx4 ( X86SseOp op, HReg src, HReg dst ) {
    X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
    i->tag              = Xin_Sse32Fx4;
    i->Xin.Sse32Fx4.op  = op;
@@ -773,12 +773,28 @@ X86Instr* X86Instr_Sse32Fx4  ( X86SseOp op, HReg src, HReg dst ) {
    i->Xin.Sse32Fx4.dst = dst;
    return i;
 }
-X86Instr* X86Instr_Sse32FLo  ( X86SseOp op, HReg src, HReg dst ) {
+X86Instr* X86Instr_Sse32FLo ( X86SseOp op, HReg src, HReg dst ) {
    X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
    i->tag              = Xin_Sse32FLo;
    i->Xin.Sse32FLo.op  = op;
    i->Xin.Sse32FLo.src = src;
    i->Xin.Sse32FLo.dst = dst;
+   return i;
+}
+X86Instr* X86Instr_Sse64Fx2 ( X86SseOp op, HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Sse64Fx2;
+   i->Xin.Sse64Fx2.op  = op;
+   i->Xin.Sse64Fx2.src = src;
+   i->Xin.Sse64Fx2.dst = dst;
+   return i;
+}
+X86Instr* X86Instr_Sse64FLo ( X86SseOp op, HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Sse64FLo;
+   i->Xin.Sse64FLo.op  = op;
+   i->Xin.Sse64FLo.src = src;
+   i->Xin.Sse64FLo.dst = dst;
    return i;
 }
 
@@ -1007,6 +1023,18 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.Sse32FLo.dst);
          return;
+      case Xin_Sse64Fx2:
+         vex_printf("%spd ", showX86SseOp(i->Xin.Sse64Fx2.op));
+         ppHRegX86(i->Xin.Sse64Fx2.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sse64Fx2.dst);
+         return;
+      case Xin_Sse64FLo:
+         vex_printf("%ssd ", showX86SseOp(i->Xin.Sse64FLo.op));
+         ppHRegX86(i->Xin.Sse64FLo.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sse64FLo.dst);
+         return;
 
       default:
          vpanic("ppX86Instr");
@@ -1198,6 +1226,24 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Xin.Sse32FLo.dst);
          return;
+      case Xin_Sse64Fx2:
+         vassert(i->Xin.Sse64Fx2.op != Xsse_MOV);
+         unary = i->Xin.Sse64Fx2.op == Xsse_RCPF
+                 || i->Xin.Sse64Fx2.op == Xsse_RSQRTF
+                 || i->Xin.Sse64Fx2.op == Xsse_SQRTF;
+         addHRegUse(u, HRmRead, i->Xin.Sse64Fx2.src);
+         addHRegUse(u, unary ? HRmWrite : HRmModify, 
+                       i->Xin.Sse64Fx2.dst);
+         return;
+      case Xin_Sse64FLo:
+         vassert(i->Xin.Sse64FLo.op != Xsse_MOV);
+         unary = i->Xin.Sse64FLo.op == Xsse_RCPF
+                 || i->Xin.Sse64FLo.op == Xsse_RSQRTF
+                 || i->Xin.Sse64FLo.op == Xsse_SQRTF;
+         addHRegUse(u, HRmRead, i->Xin.Sse64FLo.src);
+         addHRegUse(u, unary ? HRmWrite : HRmModify, 
+                       i->Xin.Sse64FLo.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -1325,6 +1371,14 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Sse32FLo:
          mapReg(m, &i->Xin.Sse32FLo.src);
          mapReg(m, &i->Xin.Sse32FLo.dst);
+         return;
+      case Xin_Sse64Fx2:
+         mapReg(m, &i->Xin.Sse64Fx2.src);
+         mapReg(m, &i->Xin.Sse64Fx2.dst);
+         return;
+      case Xin_Sse64FLo:
+         mapReg(m, &i->Xin.Sse64FLo.src);
+         mapReg(m, &i->Xin.Sse64FLo.dst);
          return;
       default:
          ppX86Instr(i);
@@ -2427,16 +2481,14 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_SseLdzLO:
-      if (i->Xin.SseLdzLO.sz == 4) {
-         /* movss amode, %xmm-dst */
-         *p++ = 0xF3; 
-         *p++ = 0x0F; 
-         *p++ = 0x10; 
-         p = doAMode_M(p, fake(vregNo(i->Xin.SseLdzLO.reg)), 
-                          i->Xin.SseLdzLO.addr);
-         goto done;
-      }
-      break;
+      vassert(i->Xin.SseLdzLO.sz == 4 || i->Xin.SseLdzLO.sz == 8);
+      /* movs[sd] amode, %xmm-dst */
+      *p++ = i->Xin.SseLdzLO.sz==4 ? 0xF3 : 0xF2;
+      *p++ = 0x0F; 
+      *p++ = 0x10; 
+      p = doAMode_M(p, fake(vregNo(i->Xin.SseLdzLO.reg)), 
+                       i->Xin.SseLdzLO.addr);
+      goto done;
 
    case Xin_Sse128:
       *p++ = 0x0F;
@@ -2475,6 +2527,31 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          *p++ = (UChar)(xtra & 0xFF);
       goto done;
 
+   case Xin_Sse64Fx2:
+      xtra = 0;
+      *p++ = 0x66;
+      *p++ = 0x0F;
+      switch (i->Xin.Sse64Fx2.op) {
+         case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_DIVF:   *p++ = 0x5E; break;
+         case Xsse_MAXF:   *p++ = 0x5F; break;
+         case Xsse_MINF:   *p++ = 0x5D; break;
+         case Xsse_MULF:   *p++ = 0x59; break;
+         case Xsse_RCPF:   *p++ = 0x53; break;
+         case Xsse_RSQRTF: *p++ = 0x52; break;
+         case Xsse_SQRTF:  *p++ = 0x51; break;
+         case Xsse_SUBF:   *p++ = 0x5C; break;
+         case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
+         case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
+         case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         default: goto bad;
+      }
+      p = doAMode_R(p, fake(vregNo(i->Xin.Sse64Fx2.dst)),
+                       fake(vregNo(i->Xin.Sse64Fx2.src)) );
+      if (xtra & 0x100)
+         *p++ = (UChar)(xtra & 0xFF);
+      goto done;
+
    case Xin_Sse32FLo:
       xtra = 0;
       *p++ = 0xF3;
@@ -2496,6 +2573,31 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32FLo.dst)),
                        fake(vregNo(i->Xin.Sse32FLo.src)) );
+      if (xtra & 0x100)
+         *p++ = (UChar)(xtra & 0xFF);
+      goto done;
+
+   case Xin_Sse64FLo:
+      xtra = 0;
+      *p++ = 0xF2;
+      *p++ = 0x0F;
+      switch (i->Xin.Sse64FLo.op) {
+         case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_DIVF:   *p++ = 0x5E; break;
+         case Xsse_MAXF:   *p++ = 0x5F; break;
+         case Xsse_MINF:   *p++ = 0x5D; break;
+         case Xsse_MULF:   *p++ = 0x59; break;
+         case Xsse_RCPF:   *p++ = 0x53; break;
+         case Xsse_RSQRTF: *p++ = 0x52; break;
+         case Xsse_SQRTF:  *p++ = 0x51; break;
+         case Xsse_SUBF:   *p++ = 0x5C; break;
+         case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
+         case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
+         case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         default: goto bad;
+      }
+      p = doAMode_R(p, fake(vregNo(i->Xin.Sse64FLo.dst)),
+                       fake(vregNo(i->Xin.Sse64FLo.src)) );
       if (xtra & 0x100)
          *p++ = (UChar)(xtra & 0xFF);
       goto done;

@@ -2437,6 +2437,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_Recip64Fx2: op = Xsse_RCPF;   goto do_64Fx2_unary;
+      case Iop_RSqrt64Fx2: op = Xsse_RSQRTF; goto do_64Fx2_unary;
+      case Iop_Sqrt64Fx2:  op = Xsse_SQRTF;  goto do_64Fx2_unary;
+      do_64Fx2_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, X86Instr_Sse64Fx2(op, arg, dst));
+         return dst;
+      }
+
       case Iop_Recip32F0x4: op = Xsse_RCPF;   goto do_32F0x4_unary;
       case Iop_RSqrt32F0x4: op = Xsse_RSQRTF; goto do_32F0x4_unary;
       case Iop_Sqrt32F0x4:  op = Xsse_SQRTF;  goto do_32F0x4_unary;
@@ -2455,6 +2466,24 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_Recip64F0x2: op = Xsse_RCPF;   goto do_64F0x2_unary;
+      case Iop_RSqrt64F0x2: op = Xsse_RSQRTF; goto do_64F0x2_unary;
+      case Iop_Sqrt64F0x2:  op = Xsse_SQRTF;  goto do_64F0x2_unary;
+      do_64F0x2_unary:
+      {
+         /* A bit subtle.  We have to copy the arg to the result
+            register first, because actually doing the SSE scalar insn
+            leaves the upper half of the destination register
+            unchanged.  Whereas the required semantics of these
+            primops is that the upper half is simply copied in from the
+            argument. */
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(arg, dst));
+         addInstr(env, X86Instr_Sse64FLo(op, arg, dst));
+         return dst;
+      }
+
       case Iop_32Uto128: {
          HReg      dst  = newVRegV(env);
          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
@@ -2462,6 +2491,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Push(rmi));
 	 addInstr(env, X86Instr_SseLdzLO(4, dst, esp0));
          add_to_esp(env, 4);
+         return dst;
+      }
+
+      case Iop_64Uto128: {
+         HReg      rHi, rLo;
+         HReg      dst  = newVRegV(env);
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         iselInt64Expr(&rHi, &rLo, env, e->Iex.Unop.arg);
+         addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+         addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+	 addInstr(env, X86Instr_SseLdzLO(8, dst, esp0));
+         add_to_esp(env, 8);
          return dst;
       }
 
@@ -2541,6 +2582,25 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
+      case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
+      case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
+      case Iop_Add64Fx2:   op = Xsse_ADDF;   goto do_64Fx2;
+      case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
+      case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
+      case Iop_Min64Fx2:   op = Xsse_MINF;   goto do_64Fx2;
+      case Iop_Mul64Fx2:   op = Xsse_MULF;   goto do_64Fx2;
+      case Iop_Sub64Fx2:   op = Xsse_SUBF;   goto do_64Fx2;
+      do_64Fx2:
+      {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, X86Instr_Sse64Fx2(op, argR, dst));
+         return dst;
+      }
+
       case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
       case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
@@ -2556,6 +2616,24 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst = newVRegV(env);
          addInstr(env, mk_vMOVsd_RR(argL, dst));
          addInstr(env, X86Instr_Sse32FLo(op, argR, dst));
+         return dst;
+      }
+
+      case Iop_CmpEQ64F0x2: op = Xsse_CMPEQF; goto do_64F0x2;
+      case Iop_CmpLT64F0x2: op = Xsse_CMPLTF; goto do_64F0x2;
+      case Iop_CmpLE64F0x2: op = Xsse_CMPLEF; goto do_64F0x2;
+      case Iop_Add64F0x2:   op = Xsse_ADDF;   goto do_64F0x2;
+      case Iop_Div64F0x2:   op = Xsse_DIVF;   goto do_64F0x2;
+      case Iop_Max64F0x2:   op = Xsse_MAXF;   goto do_64F0x2;
+      case Iop_Min64F0x2:   op = Xsse_MINF;   goto do_64F0x2;
+      case Iop_Mul64F0x2:   op = Xsse_MULF;   goto do_64F0x2;
+      case Iop_Sub64F0x2:   op = Xsse_SUBF;   goto do_64F0x2;
+      do_64F0x2: {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, X86Instr_Sse64FLo(op, argR, dst));
          return dst;
       }
 

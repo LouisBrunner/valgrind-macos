@@ -6991,6 +6991,40 @@ static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta,
    }
 }
 
+/* Lower 64-bit lane only SSE binary operation, G = G `op` E. */
+
+static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, UInt delta, 
+                                  HChar* opname, IROp op )
+{
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRExpr* gpart = getXMMReg(gregOfRM(rm));
+   if (epartIsReg(rm)) {
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, gpart,
+                           getXMMReg(eregOfRM(rm))) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+1;
+   } else {
+      /* We can only do a 64-bit memory read, so the upper half of the
+         E operand needs to be made simply of zeroes. */
+      IRTemp epart = newTemp(Ity_V128);
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      assign( epart, unop( Iop_64Uto128,
+                           loadLE(Ity_I64, mkexpr(addr))) );
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, gpart, mkexpr(epart)) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+alen;
+   }
+}
+
 /* All lanes unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_all ( 
@@ -7153,6 +7187,12 @@ static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
    return binop( Iop_And32, 
                  IRExpr_Get( OFFB_SSEROUND, Ity_I32 ), 
                  mkU32(3) );
+}
+
+static void put_sse_roundingmode ( IRExpr* sseround )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, sseround) == Ity_I32);
+   stmt( IRStmt_Put( OFFB_SSEROUND, sseround ) );
 }
 
 /* Break a 128-bit value up into four 32-bit ints. */
@@ -7326,8 +7366,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    insn = (UChar*)&guest_code[delta];
 
    /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
-   if (insn[0] == 0x0F && insn[1] == 0x58) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x58) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "addps", Iop_Add32Fx4 );
       goto decode_success;
    }
@@ -7340,22 +7379,19 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 55 = ANDNPS -- G = (not G) and E */
-   if (insn[0] == 0x0F && insn[1] == 0x55) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x55) {
       delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_And128 );
       goto decode_success;
    }
 
    /* 0F 54 = ANDPS -- G = G and E */
-   if (insn[0] == 0x0F && insn[1] == 0x54) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x54) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "andps", Iop_And128 );
       goto decode_success;
    }
 
    /* 0F C2 = CMPPS -- 32Fx4 comparison from R/M to R */
-   if (insn[0] == 0x0F && insn[1] == 0xC2) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC2) {
       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmpps", True, 4 );
       goto decode_success;
    }
@@ -7621,7 +7657,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                    )
             );
 
-      //put_sseround( unop(Iop_64to32, mkexpr(t64)) );
+      put_sse_roundingmode( unop(Iop_64to32, mkexpr(t64)) );
       assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
       put_emwarn( mkexpr(ew) );
       /* Finally, if an emulation warning was reported, side-exit to
@@ -8385,6 +8421,42 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorps", Iop_Xor128 );
       goto decode_success;
    }
+
+   /* ---------------------------------------------------- */
+   /* --- end of the SSE decoder.                      --- */
+   /* ---------------------------------------------------- */
+
+   /* ---------------------------------------------------- */
+   /* --- start of the SSE2 decoder.                   --- */
+   /* ---------------------------------------------------- */
+
+   insn = (UChar*)&guest_code[delta];
+
+   /* 66 0F 58 = ADDPD -- add 32Fx4 from R/M to R */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x58) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "addpd", Iop_Add64Fx2 );
+      goto decode_success;
+   }
+ 
+   /* F2 0F 58 = ADDSD -- add 64F0x2 from R/M to R */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x58) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_lo64( sorb, delta+3, "addsd", Iop_Add64F0x2 );
+      goto decode_success;
+   }
+
+   /* 66 0F 55 = ANDNPD -- G = (not G) and E */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x55) {
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnpd", Iop_And128 );
+      goto decode_success;
+   }
+
+   /* 66 0F 54 = ANDPD -- G = G and E */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x54) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andpd", Iop_And128 );
+      goto decode_success;
+   }
+
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

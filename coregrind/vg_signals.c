@@ -417,6 +417,7 @@ Bool VG_(deliver_signals) ( void )
 	 tst->m_edx = 0;
          tst->sh_edx = VGM_WORD_VALID;
          tst->status = VgTs_Runnable;
+         VG_(ksigemptyset)(&tst->sigs_waited_for);
          VG_(update_sigstate_following_WaitSIG_change)();
          vg_sigpending[sigNo] = VG_SP_SIGIDLE;
          continue; /* for (sigNo = 1; ...) loop */

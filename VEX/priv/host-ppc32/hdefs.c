@@ -464,7 +464,7 @@ PPC32Instr* PPC32Instr_Test32  ( HReg dst, PPC32RI* src ) {
    i->Pin.Test32.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, PPC32RI* dst ) {
+PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_Unary32;
    i->Pin.Unary32.op  = op;
@@ -520,15 +520,15 @@ PPC32Instr* PPC32Instr_Goto ( IRJumpKind jk, PPC32CondCode cond, PPC32RI* dst ) 
    i->Pin.Goto.jk   = jk;
    return i;
 }
-//.. X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
-//..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag             = Xin_CMov32;
-//..    i->Xin.CMov32.cond = cond;
-//..    i->Xin.CMov32.src  = src;
-//..    i->Xin.CMov32.dst  = dst;
-//..    vassert(cond != Xcc_ALWAYS);
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_CMov32  ( PPC32CondCode cond, HReg dst, PPC32RI* src ) {
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_CMov32;
+   i->Pin.CMov32.cond = cond;
+   i->Pin.CMov32.src  = src;
+   i->Pin.CMov32.dst  = dst;
+   vassert(cond != Pcc_ALWAYS);
+   return i;
+}
 PPC32Instr* PPC32Instr_LoadEX ( UChar sz, Bool syned,
 				HReg dst, PPC32AMode* src ) {
    PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
@@ -549,13 +549,13 @@ PPC32Instr* PPC32Instr_Store ( UChar sz, PPC32AMode* dst, HReg src ) {
    vassert(sz == 1 || sz == 2 || sz == 4);
    return i;
 }
-//.. X86Instr* X86Instr_Set32 ( X86CondCode cond, HReg dst ) {
-//..    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag            = Xin_Set32;
-//..    i->Xin.Set32.cond = cond;
-//..    i->Xin.Set32.dst  = dst;
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_Set32 ( PPC32CondCode cond, HReg dst ) {
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_Set32;
+   i->Pin.Set32.cond = cond;
+   i->Pin.Set32.dst  = dst;
+   return i;
+}
 //.. X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
 //..    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
 //..    i->tag               = Xin_Bsfr32;
@@ -693,10 +693,10 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf(",");
          ppPPC32RI(i->Pin.Test32.src);
          return;
-//..       case Xin_Unary32:
-//..          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
-//..          ppX86RM(i->Xin.Unary32.dst);
-//..          return;
+      case Pin_Unary32:
+         vex_printf("%sl ", showPPC32UnaryOp(i->Pin.Unary32.op));
+         ppHRegPPC32(i->Pin.Unary32.dst);
+         return;
 //..       case Xin_MulL:
 //..          vex_printf("%cmul%s ",
 //..                     i->Xin.MulL.syned ? 's' : 'u',
@@ -732,30 +732,30 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf("0x%x", i->Pin.Call.target);
          break;
       case Pin_Goto:
+// CAB: what instead of movl ?
          if (i->Pin.Goto.cond != Pcc_ALWAYS) {
             vex_printf("if (%%eflags.%s) { ", 
                        showPPC32CondCode(i->Pin.Goto.cond));
 	 }
          if (i->Pin.Goto.jk != Ijk_Boring) {
-            vex_printf("movl $");
+            vex_printf("movl %%r31, $");
             ppIRJumpKind(i->Pin.Goto.jk);
-            vex_printf(",%%r31 ; ");
+            vex_printf(" ; ");
          }
-// CAB: what instead of movl ?
          vex_printf("movl ");
+         vex_printf("%%r4, ");
          ppPPC32RI(i->Pin.Goto.dst);
-// CAB: eax?
-         vex_printf(",%%eax ; ret");
+         vex_printf(" ; ret");
          if (i->Pin.Goto.cond != Pcc_ALWAYS) {
             vex_printf(" }");
 	 }
          return;
-//..       case Xin_CMov32:
-//..          vex_printf("cmov%s ", showX86CondCode(i->Xin.CMov32.cond));
-//..          ppX86RM(i->Xin.CMov32.src);
-//..          vex_printf(",");
-//..          ppHRegX86(i->Xin.CMov32.dst);
-//..          return;
+      case Pin_CMov32:
+         vex_printf("cmov%s ", showPPC32CondCode(i->Pin.CMov32.cond));
+         ppHRegPPC32(i->Pin.CMov32.dst);
+         vex_printf(",");
+         ppPPC32RI(i->Pin.CMov32.src);
+         return;
        case Pin_LoadEX: {
 	 UChar sz = i->Pin.LoadEX.sz;
 	 Bool syned = i->Pin.LoadEX.syned;
@@ -786,10 +786,11 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppPPC32AMode(i->Pin.Store.dst);
          return;
        }
-//..       case Xin_Set32:
-//..          vex_printf("setl%s ", showX86CondCode(i->Xin.Set32.cond));
-//..          ppHRegX86(i->Xin.Set32.dst);
-//..          return;
+      case Pin_Set32:
+// CAB: find 'setl' equivalent...
+         vex_printf("setl%s ", showPPC32CondCode(i->Pin.Set32.cond));
+         ppHRegPPC32(i->Pin.Set32.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
 //..          ppHRegX86(i->Xin.Bsfr32.src);
@@ -935,7 +936,8 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          return;
 
       default:
-         vpanic("ppPPC32Instr");
+         vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", i->tag);
+         vpanic("ppPPC32Instr(ppc32)");
    }
 }
 
@@ -968,9 +970,9 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
 	 addHRegUse(u, HRmRead, i->Pin.Test32.dst);
          addRegUsage_PPC32RI(u, i->Pin.Test32.src);
          return;
-//..       case Xin_Unary32:
-//..          addRegUsage_X86RM(u, i->Xin.Unary32.dst, HRmModify);
-//..          return;
+      case Pin_Unary32:
+	 addHRegUse(u, HRmModify, i->Pin.Unary32.dst);
+         return;
 //..       case Xin_MulL:
 //..          addRegUsage_X86RM(u, i->Xin.MulL.src, HRmRead);
 //..          addHRegUse(u, HRmModify, hregX86_EAX());
@@ -1027,7 +1029,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
             register because the literal target address has to be
             loaded into a register.  Fortunately, ?CAB? is stated in the
             ABI as a scratch register, and so seems a suitable victim.  */
-         addHRegUse(u, HRmWrite, hregPPC32_GPR3());
+         addHRegUse(u, HRmWrite, hregPPC32_GPR12());
          /* Upshot of this is that the assembler really must use ?CAB?,
             and no other, as a destination temporary. */
          return;
@@ -1037,10 +1039,10 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
          if (i->Pin.Goto.jk != Ijk_Boring)
             addHRegUse(u, HRmWrite, GuestStatePtr);
          return;
-//..       case Xin_CMov32:
-//..          addRegUsage_X86RM(u, i->Xin.CMov32.src, HRmRead);
-//..          addHRegUse(u, HRmModify, i->Xin.CMov32.dst);
-//..          return;
+      case Pin_CMov32:
+         addRegUsage_PPC32RI(u, i->Pin.CMov32.src);
+         addHRegUse(u, HRmModify, i->Pin.CMov32.dst);
+         return;
       case Pin_LoadEX:
          addRegUsage_PPC32AMode(u, i->Pin.LoadEX.src);
          addHRegUse(u, HRmWrite, i->Pin.LoadEX.dst);
@@ -1049,9 +1051,9 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
          addHRegUse(u, HRmRead, i->Pin.Store.src);
          addRegUsage_PPC32AMode(u, i->Pin.Store.dst);
          return;
-//..       case Xin_Set32:
-//..          addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
-//..          return;
+      case Pin_Set32:
+         addHRegUse(u, HRmWrite, i->Pin.Set32.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
@@ -1195,9 +1197,9 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
          mapReg(m, &i->Pin.Test32.dst);
          mapRegs_PPC32RI(m, i->Pin.Test32.src);
          return;
-//..       case Xin_Unary32:
-//..          mapRegs_X86RM(m, i->Xin.Unary32.dst);
-//..          return;
+      case Pin_Unary32:
+         mapReg(m, &i->Pin.Unary32.dst);
+         return;
 //..       case Xin_MulL:
 //..          mapRegs_X86RM(m, i->Xin.MulL.src);
 //..          return;
@@ -1216,10 +1218,10 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       case Pin_Goto:
          mapRegs_PPC32RI(m, i->Pin.Goto.dst);
          return;
-//..       case Xin_CMov32:
-//..          mapRegs_X86RM(m, i->Xin.CMov32.src);
-//..          mapReg(m, &i->Xin.CMov32.dst);
-//..          return;
+      case Pin_CMov32:
+         mapRegs_PPC32RI(m, i->Pin.CMov32.src);
+         mapReg(m, &i->Pin.CMov32.dst);
+         return;
       case Pin_LoadEX:
          mapRegs_PPC32AMode(m, i->Pin.LoadEX.src);
          mapReg(m, &i->Pin.LoadEX.dst);
@@ -1228,9 +1230,9 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
          mapReg(m, &i->Pin.Store.src);
          mapRegs_PPC32AMode(m, i->Pin.Store.dst);
          return;
-//..       case Xin_Set32:
-//..          mapReg(m, &i->Xin.Set32.dst);
-//..          return;
+      case Pin_Set32:
+         mapReg(m, &i->Pin.Set32.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          mapReg(m, &i->Xin.Bsfr32.src);
 //..          mapReg(m, &i->Xin.Bsfr32.dst);
@@ -1879,7 +1881,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          }
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_MulL:
 //..       subopc = i->Xin.MulL.syned ? 5 : 4;
 //..       if (i->Xin.MulL.ssz == Xss_32) {
@@ -2042,7 +2044,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          *ptmp = (UChar)(delta-1);
 //..       }
 //..       goto done;
-//.. 
+
 //..    case Xin_CMov32:
 //..       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
 //.. #if 0
@@ -2089,7 +2091,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       goto done;
 //.. #endif
 //..       break;
-//.. 
+
 //..    case Xin_LoadEX:
 //..       if (i->Xin.LoadEX.szSmall == 1 && !i->Xin.LoadEX.syned) {
 //..          /* movzbl */
@@ -2106,7 +2108,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          goto done;
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Set32:
 //..       /* Make the destination register be 1 or 0, depending on whether
 //..          the relevant condition holds.  We have to dodge and weave
@@ -2139,7 +2141,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
 //..       }
 //..       goto done;
-//.. 
+
 //..    case Xin_Bsfr32:
 //..       *p++ = 0x0F;
 //..       if (i->Xin.Bsfr32.isFwds) {
@@ -2149,7 +2151,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       }
 //..       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
 //..       goto done;
-//.. 
+
 //..    case Xin_MFence:
 //..       /* see comment in hdefs.h re this insn */
 //..       if (0) vex_printf("EMIT FENCE\n");
@@ -2175,7 +2177,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..             vpanic("emit_X86Instr:mfence:subarch");
 //..       }
 //..       break;
-//.. 
+
 //..    case Xin_Store:
 //..       if (i->Xin.Store.sz == 2) {
 //..          /* This case, at least, is simple, given that we can
@@ -2234,7 +2236,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..          }
 //..       } /* if (i->Xin.Store.sz == 1) */
 //..       break;
-//.. 
+
 //..    case Xin_FpUnary:
 //..       /* gop %src, %dst
 //..          --> ffree %st7 ; fld %st(src) ; fop %st(0) ; fstp %st(1+dst)

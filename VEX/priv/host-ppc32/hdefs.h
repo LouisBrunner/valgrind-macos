@@ -296,10 +296,10 @@ typedef
 //..       Xin_Push,      /* push (32-bit?) value on stack */
       Pin_Call,      /* call to address in register */
       Pin_Goto,      /* conditional/unconditional jmp to dst */
-//..       Xin_CMov32,    /* conditional move */
+      Pin_CMov32,    /* conditional move */
       Pin_LoadEX,    /* load a 8|16|32 bit value from mem */
       Pin_Store,     /* store a 8|16|32 bit value to mem */
-//..       Xin_Set32,     /* convert condition code to 32-bit value */
+      Pin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
 //..       Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
 
@@ -341,7 +341,7 @@ typedef
          /* Not and Neg */
          struct {
             PPC32UnaryOp op;
-            PPC32RI*     dst;
+            HReg         dst;
          } Unary32;
 //..          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
 //..          struct {
@@ -382,13 +382,13 @@ typedef
             PPC32CondCode cond;
             PPC32RI*      dst;
          } Goto;
-//..          /* Mov src to dst on the given condition, which may not
-//..             be the bogus Xcc_ALWAYS. */
-//..          struct {
-//..             X86CondCode cond;
-//..             X86RM*      src;
-//..             HReg        dst;
-//..          } CMov32;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Pcc_ALWAYS. */
+         struct {
+            PPC32CondCode cond;
+            HReg          dst;
+            PPC32RI*      src;
+         } CMov32;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
             UChar       sz; /* 1|2|4 */
@@ -402,11 +402,11 @@ typedef
             PPC32AMode* dst;
             HReg        src;
          } Store;
-//..          /* Convert a x86 condition code to a 32-bit value (0 or 1). */
-//..          struct {
-//..             X86CondCode cond;
-//..             HReg        dst;
-//..          } Set32;
+         /* Convert a ppc32 condition code to a 32-bit value (0 or 1). */
+         struct {
+            PPC32CondCode cond;
+            HReg          dst;
+         } Set32;
 //..          /* 32-bit bsf or bsr. */
 //..          struct {
 //..             Bool isFwds;
@@ -491,18 +491,18 @@ typedef
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
-extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, PPC32RI* dst );
+extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst );
 //.. extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );
 extern PPC32Instr* PPC32Instr_Goto      ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
-//.. extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
+extern PPC32Instr* PPC32Instr_CMov32    ( PPC32CondCode, HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
 					  HReg dst, PPC32AMode* src );
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
-//.. extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
+extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );
 //.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_MFence    ( VexSubArch );
 //.. 

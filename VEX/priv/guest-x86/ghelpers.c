@@ -230,14 +230,14 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
-/* ROL: cf' = msb(result).  of' = msb(result) ^ lsb(result). */
+/* ROL: cf' = lsb(result).  of' = msb(result) ^ lsb(result). */
 /* DST = result, SRC = old flags */
 #define ACTIONS_ROL(DATA_BITS,DATA_TYPE)		\
 {								\
     PREAMBLE(DATA_BITS);					\
     int fl 							\
        = (CC_SRC & ~(CC_O | CC_C))				\
-         | (CC_C & (CC_DST >> (DATA_BITS-1)))			\
+         | (CC_C & CC_DST)			\
          | (CC_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 		\
                     ^ lshift(CC_DST, 11)));	\
     return fl;							\

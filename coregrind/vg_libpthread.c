@@ -131,11 +131,13 @@ void my_exit ( int arg )
    /*NOTREACHED*/
 }
 
+/* Apparently unused. 
 static
 void my_write ( int fd, const void *buf, int count )
 {
    my_do_syscall3(__NR_write, fd, (int)buf, count );
 }
+*/
 
 /* We need this guy -- it's in valgrind.so. */
 extern void VG_(startup) ( void );

@@ -149,12 +149,6 @@ Char** VG_(client_envp);
    Running stuff                            
    ------------------------------------------------------------------ */
 
-/* jmp_buf for fatal signals;  VG_(fatal_signal_jmpbuf_ptr) is NULL until
-   the time is right that it can be used. */
-       Int      VG_(fatal_sigNo) = -1;
-       jmp_buf* VG_(fatal_signal_jmpbuf_ptr) = NULL;
-static jmp_buf  fatal_signal_jmpbuf;
-
 /* Counts downwards in VG_(run_innerloop). */
 UInt VG_(dispatch_ctr);
 
@@ -2747,6 +2741,7 @@ int main(int argc, char **argv)
    UInt * client_auxv;
    VgSchedReturnCode src;
    Int exitcode = 0;
+   Int fatal_sigNo = -1;
    vki_rlimit zero = { 0, 0 };
    Int padfile;
    ThreadId last_run_tid = 0;    // Last thread the scheduler ran.
@@ -3043,14 +3038,9 @@ int main(int argc, char **argv)
    VGP_POPCC(VgpStartup);
    VGP_PUSHCC(VgpSched);
 
-   VG_(fatal_signal_jmpbuf_ptr) = &fatal_signal_jmpbuf;
-   if (__builtin_setjmp(VG_(fatal_signal_jmpbuf_ptr)) == 0) {
-      src = VG_(scheduler)( &exitcode, &last_run_tid );
-   } else {
-      src = VgSrc_FatalSig;
-   }
-   VGP_POPCC(VgpSched);
+   src = VG_(scheduler)( &exitcode, &last_run_tid, &fatal_sigNo );
 
+   VGP_POPCC(VgpSched);
 
 
    //--------------------------------------------------------------
@@ -3113,8 +3103,8 @@ int main(int argc, char **argv)
 
       case VgSrc_FatalSig:
 	 /* We were killed by a fatal signal, so replicate the effect */
-	 vg_assert(VG_(fatal_sigNo) != -1);
-	 VG_(kill_self)(VG_(fatal_sigNo));
+	 vg_assert(fatal_sigNo != -1);
+	 VG_(kill_self)(fatal_sigNo);
 	 VG_(core_panic)("main(): signal was supposed to be fatal");
 	 break;
 

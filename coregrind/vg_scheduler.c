@@ -839,12 +839,19 @@ void idle ( void )
    The scheduler proper.
    ------------------------------------------------------------------ */
 
+// For handling of the default action of a fatal signal.
+// jmp_buf for fatal signals;  VG_(fatal_signal_jmpbuf_ptr) is NULL until
+// the time is right that it can be used.
+static jmp_buf  fatal_signal_jmpbuf;
+static jmp_buf* fatal_signal_jmpbuf_ptr;
+static Int      fatal_sigNo;              // the fatal signal, if it happens
+
 /* Run user-space threads until either
    * Deadlock occurs
    * One thread asks to shutdown Valgrind
    * The specified number of basic blocks has gone by.
 */
-VgSchedReturnCode VG_(scheduler) ( Int* exitcode, ThreadId* last_run_tid )
+VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 {
    ThreadId tid, tid_next;
    UInt     trc;
@@ -1214,6 +1221,21 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode, ThreadId* last_run_tid )
    /* NOTREACHED */
 }
 
+VgSchedReturnCode VG_(scheduler) ( Int* exitcode, ThreadId* last_run_tid,
+                                   Int* fatal_sigNo_ptr )
+{
+   VgSchedReturnCode src;
+
+   fatal_signal_jmpbuf_ptr = &fatal_signal_jmpbuf;
+   if (__builtin_setjmp( fatal_signal_jmpbuf_ptr ) == 0) {
+      src = do_scheduler( exitcode, last_run_tid );
+   } else {
+      src = VgSrc_FatalSig;
+      *fatal_sigNo_ptr = fatal_sigNo;
+   }
+   return src;
+}
+
 void VG_(need_resched) ( ThreadId prefer )
 {
    /* Tell the scheduler now might be a good time to find a new
@@ -1249,6 +1271,13 @@ void VG_(need_resched) ( ThreadId prefer )
    prefer_sched = prefer;
 }
 
+void VG_(scheduler_handle_fatal_signal) ( Int sigNo )
+{
+   if (NULL != fatal_signal_jmpbuf_ptr) {
+      fatal_sigNo = sigNo;
+      __builtin_longjmp(*fatal_signal_jmpbuf_ptr, 1);
+   }
+}
 
 /* ---------------------------------------------------------------------
    The pthread implementation.

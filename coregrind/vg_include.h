@@ -930,9 +930,9 @@ typedef
    VgSchedReturnCode;
 
 
-/* The scheduler. */
-extern VgSchedReturnCode VG_(scheduler) ( Int* exit_code,
-                                          ThreadId* last_run_thread );
+// The scheduler.  'fatal_sigNo' is only set if VgSrc_FatalSig is returned.
+extern VgSchedReturnCode VG_(scheduler) 
+            ( Int* exit_code, ThreadId* last_run_thread, Int* fatal_sigNo );
 
 extern void VG_(scheduler_init) ( void );
 
@@ -940,6 +940,9 @@ extern void VG_(pp_sched_status) ( void );
 
 // Longjmp back to the scheduler and thus enter the sighandler immediately.
 extern void VG_(resume_scheduler) ( Int sigNo, vki_ksiginfo_t *info );
+
+// Longjmp, ending the scheduler, when a fatal signal occurs in the client.
+extern void VG_(scheduler_handle_fatal_signal)( Int sigNo );
 
 /* The red-zone size which we put at the bottom (highest address) of
    thread stacks, for paranoia reasons.  This can be arbitrary, and
@@ -1284,10 +1287,6 @@ extern void VG_(start_debugger) ( Int tid );
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
-
-/* If we're doing the default action of a fatal signal */
-extern jmp_buf* VG_(fatal_signal_jmpbuf_ptr);
-extern Int      VG_(fatal_sigNo);		/* the fatal signal */
 
 /* --- Counters, for informational purposes only. --- */
 

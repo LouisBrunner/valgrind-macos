@@ -25,28 +25,6 @@ Test file may not reference any other symbols.
 
 static Int n_bbs_done = 0;
 
-/* For providing services. */
-static HWord serviceFn ( HWord arg1, HWord arg2 )
-{
-   switch (arg1) {
-      case 0: /* EXIT */
-         printf("---STOP---\n");
-         printf("serviceFn:EXIT\n");
-	 printf("%d bbs simulated\n", n_bbs_done);
-         exit(0);
-      case 1: /* PUTC */
-         putchar(arg2);
-         return 0;
-      case 2: /* MALLOC */
-         return (HWord)malloc(arg2);
-      case 3: /* FREE */
-         free((void*)arg2);
-         return 0;
-      default:
-         assert(0);
-   }
-}
-
 
 #if defined(__i386__)
 #  define VexGuestState             VexGuestX86State
@@ -64,7 +42,7 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
 #   error "Unknown arch"
 #endif
 
-#define TEST_FLAGS (1<<7) //|(1<<0)
+#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1) //|(1<<0)
 
 
 /* guest state */
@@ -90,6 +68,31 @@ Int trans_cache_used = 0;
 Int trans_table_used = 0;
 
 static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
+
+/* For providing services. */
+static HWord serviceFn ( HWord arg1, HWord arg2 )
+{
+   switch (arg1) {
+      case 0: /* EXIT */
+         printf("---STOP---\n");
+         printf("serviceFn:EXIT\n");
+	 printf("%d bbs simulated\n", n_bbs_done);
+	 printf("%d translations made, %d tt bytes\n", 
+                trans_table_used, 8*trans_cache_used);
+         exit(0);
+      case 1: /* PUTC */
+         putchar(arg2);
+         return 0;
+      case 2: /* MALLOC */
+         return (HWord)malloc(arg2);
+      case 3: /* FREE */
+         free((void*)arg2);
+         return 0;
+      default:
+         assert(0);
+   }
+}
+
 
 /* -------------------- */
 /* continue execution on the real CPU (never returns) */
@@ -277,7 +280,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
            NULL, /* access checker */
-           verbose ? TEST_FLAGS : 0
+           verbose ? TEST_FLAGS : 0//(1<<3)|(1<<2) //0
         );
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;
@@ -401,8 +404,9 @@ int main ( Int argc, HChar** argv )
    }
 
    LibVEX_default_VexControl(&vcon);
-   vcon.guest_max_insns=1;
+   vcon.guest_max_insns=50;
    vcon.guest_chase_thresh=0;
+
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
    LibVEX_Guest_initialise(&gst);
 
@@ -424,7 +428,12 @@ int main ( Int argc, HChar** argv )
 
    printf("\n---START---\n");
 
+#if 1
    run_simulator();
+#else
+   ( (void(*)(HWord(*)(HWord,HWord))) entry ) (serviceFn);
+#endif
+
 
    return 0;
 }

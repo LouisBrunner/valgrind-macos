@@ -120,7 +120,7 @@ void pthread_getcpuclockid ( void )  { unimp("pthread_getcpuclockid"); }
 //void pthread_join ( void )  { unimp("pthread_join"); }
 //void pthread_key_create ( void )  { unimp("pthread_key_create"); }
 //void pthread_key_delete ( void )  { unimp("pthread_key_delete"); }
-void pthread_kill ( void )  { unimp("pthread_kill"); }
+//void pthread_kill ( void )  { unimp("pthread_kill"); }
 //void pthread_mutex_destroy ( void )  { unimp("pthread_mutex_destroy"); }
 //void pthread_mutex_init ( void )  { unimp("pthread_mutex_init"); }
 //void pthread_mutex_lock ( void )  { unimp("pthread_mutex_lock"); }

@@ -348,20 +348,24 @@ Addr VGM_(curr_dataseg_end);
 
 void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 {
-   Bool         sane_before_call = True;
-   Bool         sane_after_call  = True;
-   ThreadState* tst              = VG_(get_thread_state)( tid );
-   UInt         syscallno        = tst->m_eax;
-   UInt         arg1             = tst->m_ebx;
-   UInt         arg2             = tst->m_ecx;
-   UInt         arg3             = tst->m_edx;
-   UInt         arg4             = tst->m_esi;
-   UInt         arg5             = tst->m_edi;
-
+   ThreadState* tst;
+   Bool         sane_before_call, sane_after_call;
+   UInt         syscallno, arg1, arg2, arg3, arg4, arg5;
    /* Do not make this unsigned! */
    Int res;
 
    VGP_PUSHCC(VgpSyscall);
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   sane_before_call = True;
+   sane_after_call  = True;
+   tst              = & VG_(threads)[tid];
+   syscallno        = tst->m_eax;
+   arg1             = tst->m_ebx;
+   arg2             = tst->m_ecx;
+   arg3             = tst->m_edx;
+   arg4             = tst->m_esi;
+   arg5             = tst->m_edi;
 
    /* Since buggy syscall wrappers sometimes break this, we may as well 
       check ourselves. */
@@ -2898,15 +2902,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (arg3 != (UInt)NULL)
             must_be_writable( tst, "sigprocmask(oldset)", 
                               arg3, sizeof(vki_ksigset_t));
+#        if SIGNAL_SIMULATION
+         VG_(do__NR_sigprocmask) ( tid, 
+                                   arg1 /*how*/, 
+                                   (vki_ksigset_t*) arg2,
+                                   (vki_ksigset_t*) arg3 );
+         res = tst->m_eax;
+#        else
          KERNEL_DO_SYSCALL(tid,res);
+#        endif
          if (!VG_(is_kerror)(res) && res == 0 && arg3 != (UInt)NULL)
             make_readable( arg3, sizeof(vki_ksigset_t));
-#        if SIGNAL_SIMULATION
-         /* For the reason why both the kernel and Valgrind process
-            sigprocmask, see the detailed comment at
-            vg_do__NR_sigprocmask(). */
-         VG_(do__NR_sigprocmask) ( arg1 /*how*/, (vki_ksigset_t*) arg2 );
-#        endif
          break;
 
       default:
@@ -2957,17 +2963,23 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
                                          Int syscallno,
                                          Int* /*IN*/ res )
 {
-   Bool         sane_before_post = True;
-   Bool         sane_after_post  = True;
-   ThreadState* tst              = VG_(get_thread_state)( tid );
-   UInt         arg1             = tst->m_ebx;
-   UInt         arg2             = tst->m_ecx;
-   UInt         arg3             = tst->m_edx;
-   /*
-   UInt         arg4             = tst->m_esi;
-   UInt         arg5             = tst->m_edi;
-   */
+   ThreadState* tst;
+   Bool         sane_before_post, sane_after_post;
+   UInt         arg1, arg2, arg3;
+
    VGP_PUSHCC(VgpSyscall);
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   sane_before_post = True;
+   sane_after_post  = True;
+   tst              = & VG_(threads)[tid];
+   arg1             = tst->m_ebx;
+   arg2             = tst->m_ecx;
+   arg3             = tst->m_edx;
+   /*
+   arg4             = tst->m_esi;
+   arg5             = tst->m_edi;
+   */
 
    if (res != NULL
        && ! VG_(first_and_last_secondaries_look_plausible)())

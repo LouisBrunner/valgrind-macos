@@ -78,10 +78,10 @@ suitable for use by anyone at all!
 
 /* struct ThreadState is defined in vg_include.h. */
 
-/* Private globals.  A statically allocated array of threads.  NOTE:
-   [0] is never used, to simplify the simulation of initialisers for
+/* Globals.  A statically allocated array of threads.  NOTE: [0] is
+   never used, to simplify the simulation of initialisers for
    LinuxThreads. */
-static ThreadState vg_threads[VG_N_THREADS];
+ThreadState VG_(threads)[VG_N_THREADS];
 
 /* The tid of the thread currently in VG_(baseBlock). */
 static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
@@ -161,6 +161,17 @@ Bool VG_(is_valid_tid) ( ThreadId tid )
    /* tid is unsigned, hence no < 0 test. */
    if (tid == 0) return False;
    if (tid >= VG_N_THREADS) return False;
+   if (VG_(threads)[tid].status == VgTs_Empty) return False;
+   return True;
+}
+
+
+__inline__
+Bool VG_(is_valid_or_empty_tid) ( ThreadId tid )
+{
+   /* tid is unsigned, hence no < 0 test. */
+   if (tid == 0) return False;
+   if (tid >= VG_N_THREADS) return False;
    return True;
 }
 
@@ -181,17 +192,17 @@ ThreadId VG_(identify_stack_addr)( Addr a )
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
       if (VG_(baseBlock)[VGOFF_(m_esp)] <= a
-          && a <= vg_threads[tid].stack_highest_word) 
+          && a <= VG_(threads)[tid].stack_highest_word) 
          return tid;
       else
          tid_to_skip = tid;
    }
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
-      if (vg_threads[tid].status == VgTs_Empty) continue;
+      if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
-      if (vg_threads[tid].m_esp <= a 
-          && a <= vg_threads[tid].stack_highest_word)
+      if (VG_(threads)[tid].m_esp <= a 
+          && a <= VG_(threads)[tid].stack_highest_word)
          return tid;
    }
    return VG_INVALID_THREADID;
@@ -204,13 +215,13 @@ void VG_(pp_sched_status) ( void )
    Int i; 
    VG_(printf)("\nsched status:\n"); 
    for (i = 1; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status == VgTs_Empty) continue;
+      if (VG_(threads)[i].status == VgTs_Empty) continue;
       VG_(printf)("\nThread %d: status = ", i);
-      switch (vg_threads[i].status) {
+      switch (VG_(threads)[i].status) {
          case VgTs_Runnable:   VG_(printf)("Runnable"); break;
          case VgTs_WaitFD:     VG_(printf)("WaitFD"); break;
          case VgTs_WaitJoiner: VG_(printf)("WaitJoiner(%d)", 
-                                           vg_threads[i].joiner); break;
+                                           VG_(threads)[i].joiner); break;
          case VgTs_WaitJoinee: VG_(printf)("WaitJoinee"); break;
          case VgTs_Sleeping:   VG_(printf)("Sleeping"); break;
          case VgTs_WaitMX:     VG_(printf)("WaitMX"); break;
@@ -219,11 +230,11 @@ void VG_(pp_sched_status) ( void )
          default: VG_(printf)("???"); break;
       }
       VG_(printf)(", associated_mx = %p, associated_cv = %p\n", 
-                  vg_threads[i].associated_mx,
-                  vg_threads[i].associated_cv );
+                  VG_(threads)[i].associated_mx,
+                  VG_(threads)[i].associated_cv );
       VG_(pp_ExeContext)( 
-         VG_(get_ExeContext)( False, vg_threads[i].m_eip, 
-                                     vg_threads[i].m_ebp ));
+         VG_(get_ExeContext)( False, VG_(threads)[i].m_eip, 
+                                     VG_(threads)[i].m_ebp ));
    }
    VG_(printf)("\n");
 }
@@ -293,7 +304,7 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
    Int orig_size, trans_size;
    /* Ensure there is space to hold a translation. */
    VG_(maybe_do_lru_pass)();
-   VG_(translate)( &vg_threads[tid],
+   VG_(translate)( &VG_(threads)[tid],
                    orig_addr, &orig_size, &trans_addr, &trans_size );
    /* Copy data at trans_addr into the translation cache.
       Returned pointer is to the code, not to the 4-byte
@@ -330,7 +341,7 @@ ThreadId vg_alloc_ThreadState ( void )
 {
    Int i;
    for (i = 1; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status == VgTs_Empty)
+      if (VG_(threads)[i].status == VgTs_Empty)
          return i;
    }
    VG_(printf)("vg_alloc_ThreadState: no free slots available\n");
@@ -340,31 +351,16 @@ ThreadId vg_alloc_ThreadState ( void )
 }
 
 
-ThreadState* VG_(get_thread_state_UNCHECKED) ( ThreadId tid )
-{
-   vg_assert(VG_(is_valid_tid)(tid));
-   return & vg_threads[tid];
-}
-
-
-ThreadState* VG_(get_thread_state) ( ThreadId tid )
-{
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status != VgTs_Empty);
-   return & vg_threads[tid];
-}
-
-
 ThreadState* VG_(get_current_thread_state) ( void )
 {
-   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
-   return VG_(get_thread_state) ( vg_tid_currently_in_baseBlock );
+   vg_assert(VG_(is_valid_tid)(vg_tid_currently_in_baseBlock));
+   return & VG_(threads)[vg_tid_currently_in_baseBlock];
 }
 
 
 ThreadId VG_(get_current_tid) ( void )
 {
-   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
+   vg_assert(VG_(is_valid_tid)(vg_tid_currently_in_baseBlock));
    return vg_tid_currently_in_baseBlock;
 }
 
@@ -377,29 +373,29 @@ void VG_(load_thread_state) ( ThreadId tid )
    Int i;
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
-   VG_(baseBlock)[VGOFF_(m_eax)] = vg_threads[tid].m_eax;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = vg_threads[tid].m_ebx;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = vg_threads[tid].m_ecx;
-   VG_(baseBlock)[VGOFF_(m_edx)] = vg_threads[tid].m_edx;
-   VG_(baseBlock)[VGOFF_(m_esi)] = vg_threads[tid].m_esi;
-   VG_(baseBlock)[VGOFF_(m_edi)] = vg_threads[tid].m_edi;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = vg_threads[tid].m_ebp;
-   VG_(baseBlock)[VGOFF_(m_esp)] = vg_threads[tid].m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = vg_threads[tid].m_eflags;
-   VG_(baseBlock)[VGOFF_(m_eip)] = vg_threads[tid].m_eip;
+   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(threads)[tid].m_eax;
+   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(threads)[tid].m_ebx;
+   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(threads)[tid].m_ecx;
+   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(threads)[tid].m_edx;
+   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(threads)[tid].m_esi;
+   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
+   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
+   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
+   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(threads)[tid].m_eflags;
+   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = vg_threads[tid].m_fpu[i];
+      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = VG_(threads)[tid].m_fpu[i];
 
-   VG_(baseBlock)[VGOFF_(sh_eax)] = vg_threads[tid].sh_eax;
-   VG_(baseBlock)[VGOFF_(sh_ebx)] = vg_threads[tid].sh_ebx;
-   VG_(baseBlock)[VGOFF_(sh_ecx)] = vg_threads[tid].sh_ecx;
-   VG_(baseBlock)[VGOFF_(sh_edx)] = vg_threads[tid].sh_edx;
-   VG_(baseBlock)[VGOFF_(sh_esi)] = vg_threads[tid].sh_esi;
-   VG_(baseBlock)[VGOFF_(sh_edi)] = vg_threads[tid].sh_edi;
-   VG_(baseBlock)[VGOFF_(sh_ebp)] = vg_threads[tid].sh_ebp;
-   VG_(baseBlock)[VGOFF_(sh_esp)] = vg_threads[tid].sh_esp;
-   VG_(baseBlock)[VGOFF_(sh_eflags)] = vg_threads[tid].sh_eflags;
+   VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
+   VG_(baseBlock)[VGOFF_(sh_ebx)] = VG_(threads)[tid].sh_ebx;
+   VG_(baseBlock)[VGOFF_(sh_ecx)] = VG_(threads)[tid].sh_ecx;
+   VG_(baseBlock)[VGOFF_(sh_edx)] = VG_(threads)[tid].sh_edx;
+   VG_(baseBlock)[VGOFF_(sh_esi)] = VG_(threads)[tid].sh_esi;
+   VG_(baseBlock)[VGOFF_(sh_edi)] = VG_(threads)[tid].sh_edi;
+   VG_(baseBlock)[VGOFF_(sh_ebp)] = VG_(threads)[tid].sh_ebp;
+   VG_(baseBlock)[VGOFF_(sh_esp)] = VG_(threads)[tid].sh_esp;
+   VG_(baseBlock)[VGOFF_(sh_eflags)] = VG_(threads)[tid].sh_eflags;
 
    vg_tid_currently_in_baseBlock = tid;
 }
@@ -419,29 +415,29 @@ void VG_(save_thread_state) ( ThreadId tid )
 
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
 
-   vg_threads[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
-   vg_threads[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-   vg_threads[tid].m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-   vg_threads[tid].m_edx = VG_(baseBlock)[VGOFF_(m_edx)];
-   vg_threads[tid].m_esi = VG_(baseBlock)[VGOFF_(m_esi)];
-   vg_threads[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
-   vg_threads[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   vg_threads[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   vg_threads[tid].m_eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
-   vg_threads[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
+   VG_(threads)[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
+   VG_(threads)[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
+   VG_(threads)[tid].m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
+   VG_(threads)[tid].m_edx = VG_(baseBlock)[VGOFF_(m_edx)];
+   VG_(threads)[tid].m_esi = VG_(baseBlock)[VGOFF_(m_esi)];
+   VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
+   VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+   VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   VG_(threads)[tid].m_eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+   VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      vg_threads[tid].m_fpu[i] = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+      VG_(threads)[tid].m_fpu[i] = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
 
-   vg_threads[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
-   vg_threads[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
-   vg_threads[tid].sh_ecx = VG_(baseBlock)[VGOFF_(sh_ecx)];
-   vg_threads[tid].sh_edx = VG_(baseBlock)[VGOFF_(sh_edx)];
-   vg_threads[tid].sh_esi = VG_(baseBlock)[VGOFF_(sh_esi)];
-   vg_threads[tid].sh_edi = VG_(baseBlock)[VGOFF_(sh_edi)];
-   vg_threads[tid].sh_ebp = VG_(baseBlock)[VGOFF_(sh_ebp)];
-   vg_threads[tid].sh_esp = VG_(baseBlock)[VGOFF_(sh_esp)];
-   vg_threads[tid].sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
+   VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
+   VG_(threads)[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
+   VG_(threads)[tid].sh_ecx = VG_(baseBlock)[VGOFF_(sh_ecx)];
+   VG_(threads)[tid].sh_edx = VG_(baseBlock)[VGOFF_(sh_edx)];
+   VG_(threads)[tid].sh_esi = VG_(baseBlock)[VGOFF_(sh_esi)];
+   VG_(threads)[tid].sh_edi = VG_(baseBlock)[VGOFF_(sh_edi)];
+   VG_(threads)[tid].sh_ebp = VG_(baseBlock)[VGOFF_(sh_ebp)];
+   VG_(threads)[tid].sh_esp = VG_(baseBlock)[VGOFF_(sh_esp)];
+   VG_(threads)[tid].sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
 
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(m_eax)] = junk;
@@ -469,7 +465,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
 {
    volatile UInt trc = 0;
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(VG_(bbs_to_go) > 0);
 
    VGP_PUSHCC(VgpRun);
@@ -544,12 +540,12 @@ void VG_(scheduler_init) ( void )
    }
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
-      vg_threads[i].status     = VgTs_Empty;
-      vg_threads[i].stack_size = 0;
-      vg_threads[i].stack_base = (Addr)NULL;
-      vg_threads[i].tid        = i;
-      VG_(ksigemptyset)(&vg_threads[i].sig_mask);
-      VG_(ksigemptyset)(&vg_threads[i].sigs_waited_for);
+      VG_(threads)[i].status     = VgTs_Empty;
+      VG_(threads)[i].stack_size = 0;
+      VG_(threads)[i].stack_base = (Addr)NULL;
+      VG_(threads)[i].tid        = i;
+      VG_(ksigemptyset)(&VG_(threads)[i].sig_mask);
+      VG_(ksigemptyset)(&VG_(threads)[i].sigs_waited_for);
    }
 
    for (i = 0; i < VG_N_WAITING_FDS; i++)
@@ -565,20 +561,20 @@ void VG_(scheduler_init) ( void )
    tid_main = vg_alloc_ThreadState();
    vg_assert(tid_main == 1); 
 
-   vg_threads[tid_main].status        = VgTs_Runnable;
-   vg_threads[tid_main].joiner        = VG_INVALID_THREADID;
-   vg_threads[tid_main].associated_mx = NULL;
-   vg_threads[tid_main].associated_cv = NULL;
-   vg_threads[tid_main].retval        = NULL; /* not important */
+   VG_(threads)[tid_main].status        = VgTs_Runnable;
+   VG_(threads)[tid_main].joiner        = VG_INVALID_THREADID;
+   VG_(threads)[tid_main].associated_mx = NULL;
+   VG_(threads)[tid_main].associated_cv = NULL;
+   VG_(threads)[tid_main].retval        = NULL; /* not important */
    for (i = 0; i < VG_N_THREAD_KEYS; i++)
-      vg_threads[tid_main].specifics[i] = NULL;
+      VG_(threads)[tid_main].specifics[i] = NULL;
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    VG_(save_thread_state) ( tid_main );
 
-   vg_threads[tid_main].stack_highest_word 
-      = vg_threads[tid_main].m_esp /* -4  ??? */;
+   VG_(threads)[tid_main].stack_highest_word 
+      = VG_(threads)[tid_main].m_esp /* -4  ??? */;
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
@@ -634,7 +630,7 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          return True;                             \
        }
 
-   ThreadState* tst    = &vg_threads[tid];
+   ThreadState* tst    = &VG_(threads)[tid];
    UInt*        arg    = (UInt*)(tst->m_eax);
    UInt         req_no = arg[0];
 
@@ -724,9 +720,9 @@ void cleanup_waiting_fd_table ( ThreadId tid )
    Int  i, waiters;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status == VgTs_WaitFD);
-   vg_assert(vg_threads[tid].m_eax == __NR_read 
-             || vg_threads[tid].m_eax == __NR_write);
+   vg_assert(VG_(threads)[tid].status == VgTs_WaitFD);
+   vg_assert(VG_(threads)[tid].m_eax == __NR_read 
+             || VG_(threads)[tid].m_eax == __NR_write);
 
    /* Excessively paranoidly ... find the fd this op was waiting
       for, and mark it as not being waited on. */
@@ -734,7 +730,7 @@ void cleanup_waiting_fd_table ( ThreadId tid )
    for (i = 0; i < VG_N_WAITING_FDS; i++) {
       if (vg_waiting_fds[i].tid == tid) {
          waiters++;
-         vg_assert(vg_waiting_fds[i].syscall_no == vg_threads[tid].m_eax);
+         vg_assert(vg_waiting_fds[i].syscall_no == VG_(threads)[tid].m_eax);
       }
    }
    vg_assert(waiters == 1);
@@ -761,13 +757,13 @@ void handle_signal_return ( ThreadId tid )
       /* Easy; we don't have to do anything. */
       return;
 
-   if (vg_threads[tid].status == VgTs_WaitFD
-       && (vg_threads[tid].m_eax == __NR_read 
-           || vg_threads[tid].m_eax == __NR_write)) {
+   if (VG_(threads)[tid].status == VgTs_WaitFD
+       && (VG_(threads)[tid].m_eax == __NR_read 
+           || VG_(threads)[tid].m_eax == __NR_write)) {
       /* read() or write() interrupted.  Force a return with EINTR. */
       cleanup_waiting_fd_table(tid);
-      vg_threads[tid].m_eax = -VKI_EINTR;
-      vg_threads[tid].status = VgTs_Runnable;
+      VG_(threads)[tid].m_eax = -VKI_EINTR;
+      VG_(threads)[tid].status = VgTs_Runnable;
 
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
@@ -777,15 +773,15 @@ void handle_signal_return ( ThreadId tid )
       return;
    }
 
-   if (vg_threads[tid].status == VgTs_WaitFD
-       && vg_threads[tid].m_eax == __NR_nanosleep) {
+   if (VG_(threads)[tid].status == VgTs_WaitFD
+       && VG_(threads)[tid].m_eax == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param and return
          EINTR, but I'm too lazy for that. */
       return;
    }
 
-   if (vg_threads[tid].status == VgTs_WaitFD) {
+   if (VG_(threads)[tid].status == VgTs_WaitFD) {
       VG_(panic)("handle_signal_return: unknown interrupted syscall");
    }
 
@@ -803,21 +799,21 @@ void sched_do_syscall ( ThreadId tid )
    Char msg_buf[100];
 
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   syscall_no = vg_threads[tid].m_eax; /* syscall number */
+   syscall_no = VG_(threads)[tid].m_eax; /* syscall number */
 
    if (syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
-      req = (struct vki_timespec*)vg_threads[tid].m_ebx; /* arg1 */
+      req = (struct vki_timespec*)VG_(threads)[tid].m_ebx; /* arg1 */
       t_now = VG_(read_millisecond_timer)();     
       t_awaken 
          = t_now
            + (UInt)1000ULL * (UInt)(req->tv_sec) 
            + (UInt)(req->tv_nsec) / 1000000;
-      vg_threads[tid].status    = VgTs_Sleeping;
-      vg_threads[tid].awaken_at = t_awaken;
+      VG_(threads)[tid].status    = VgTs_Sleeping;
+      VG_(threads)[tid].awaken_at = t_awaken;
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, "at %d: nanosleep for %d", 
                                t_now, t_awaken-t_now);
@@ -838,14 +834,14 @@ void sched_do_syscall ( ThreadId tid )
       immediately, in order to lodge a request with the Linux kernel.
       We later poll for I/O completion using select().  */
 
-   fd = vg_threads[tid].m_ebx /* arg1 */;
+   fd = VG_(threads)[tid].m_ebx /* arg1 */;
    orig_fd_blockness = fd_is_blockful(fd);
    set_fd_nonblocking(fd);
    vg_assert(!fd_is_blockful(fd));
    VG_(check_known_blocking_syscall)(tid, syscall_no, NULL /* PRE */);
 
    /* This trashes the thread's %eax; we have to preserve it. */
-   saved_eax = vg_threads[tid].m_eax;
+   saved_eax = VG_(threads)[tid].m_eax;
    KERNEL_DO_SYSCALL(tid,res);
 
    /* Restore original blockfulness of the fd. */
@@ -865,7 +861,7 @@ void sched_do_syscall ( ThreadId tid )
       */
       VG_(check_known_blocking_syscall)(tid, syscall_no, &res /* POST */);
       /* We're still runnable. */
-      vg_assert(vg_threads[tid].status == VgTs_Runnable);
+      vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
    } else {
 
@@ -873,13 +869,13 @@ void sched_do_syscall ( ThreadId tid )
 
       /* It would have blocked.  First, restore %EAX to what it was
          before our speculative call. */
-      vg_threads[tid].m_eax = saved_eax;
+      VG_(threads)[tid].m_eax = saved_eax;
       /* Put this fd in a table of fds on which we are waiting for
          completion. The arguments for select() later are constructed
          from this table.  */
       add_waiting_fd(tid, fd, saved_eax /* which holds the syscall # */);
       /* Deschedule thread until an I/O completion happens. */
-      vg_threads[tid].status = VgTs_WaitFD;
+      VG_(threads)[tid].status = VgTs_WaitFD;
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf,"block until I/O ready on fd %d", fd);
 	 print_sched_event(tid, msg_buf);
@@ -926,29 +922,29 @@ void poll_for_ready_fds ( void )
 
    /* Awaken any sleeping threads whose sleep has expired. */
    for (tid = 1; tid < VG_N_THREADS; tid++)
-      if (vg_threads[tid].status == VgTs_Sleeping)
+      if (VG_(threads)[tid].status == VgTs_Sleeping)
          break;
 
    /* Avoid pointless calls to VG_(read_millisecond_timer). */
    if (tid < VG_N_THREADS) {
       t_now = VG_(read_millisecond_timer)();
       for (tid = 1; tid < VG_N_THREADS; tid++) {
-         if (vg_threads[tid].status != VgTs_Sleeping)
+         if (VG_(threads)[tid].status != VgTs_Sleeping)
             continue;
-         if (t_now >= vg_threads[tid].awaken_at) {
+         if (t_now >= VG_(threads)[tid].awaken_at) {
             /* Resume this thread.  Set to zero the remaining-time
                (second) arg of nanosleep, since it's used up all its
                time. */
-            vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
-            rem = (struct vki_timespec *)vg_threads[tid].m_ecx; /* arg2 */
+            vg_assert(VG_(threads)[tid].m_eax == __NR_nanosleep);
+            rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
             if (rem != NULL) {
 	       rem->tv_sec = 0;
                rem->tv_nsec = 0;
             }
             /* Make the syscall return 0 (success). */
-            vg_threads[tid].m_eax = 0;
+            VG_(threads)[tid].m_eax = 0;
 	    /* Reschedule this thread. */
-            vg_threads[tid].status = VgTs_Runnable;
+            VG_(threads)[tid].status = VgTs_Runnable;
             if (VG_(clo_trace_sched)) {
                VG_(sprintf)(msg_buf, "at %d: nanosleep done", 
                                      t_now);
@@ -1017,7 +1013,7 @@ void poll_for_ready_fds ( void )
    }
    
    /* UNBLOCK ALL SIGNALS */
-   VG_(restore_host_signals)( &saved_procmask );
+   VG_(restore_all_host_signals)( &saved_procmask );
 
    /* VG_(printf)("poll_for_io_completions: %d fs ready\n", n_ready); */
 
@@ -1088,7 +1084,7 @@ void complete_blocked_syscalls ( void )
 
       /* The thread actually has to be waiting for the I/O event it
          requested before we can deliver the result! */
-      if (vg_threads[tid].status != VgTs_WaitFD)
+      if (VG_(threads)[tid].status != VgTs_WaitFD)
          continue;
 
       /* Ok, actually do it!  We can safely use %EAX as the syscall
@@ -1097,12 +1093,12 @@ void complete_blocked_syscalls ( void )
          call would have blocked. */
 
       syscall_no = vg_waiting_fds[i].syscall_no;
-      vg_assert(syscall_no == vg_threads[tid].m_eax);
+      vg_assert(syscall_no == VG_(threads)[tid].m_eax);
       KERNEL_DO_SYSCALL(tid,res);
       VG_(check_known_blocking_syscall)(tid, syscall_no, &res /* POST */);
 
       /* Reschedule. */
-      vg_threads[tid].status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Runnable;
       /* Mark slot as no longer in use. */
       vg_waiting_fds[i].fd = -1;
       /* pp_sched_status(); */
@@ -1119,12 +1115,12 @@ void check_for_pthread_cond_timedwait ( void )
 {
    Int i, now;
    for (i = 1; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status != VgTs_WaitCV)
+      if (VG_(threads)[i].status != VgTs_WaitCV)
          continue;
-      if (vg_threads[i].awaken_at == 0xFFFFFFFF /* no timeout */)
+      if (VG_(threads)[i].awaken_at == 0xFFFFFFFF /* no timeout */)
          continue;
       now = VG_(read_millisecond_timer)();
-      if (now >= vg_threads[i].awaken_at) {
+      if (now >= VG_(threads)[i].awaken_at) {
          do_pthread_cond_timedwait_TIMEOUT(i);
       }
    }
@@ -1233,20 +1229,20 @@ VgSchedReturnCode VG_(scheduler) ( void )
          while (True) {
             tid_next++;
             if (tid_next >= VG_N_THREADS) tid_next = 1;
-            if (vg_threads[tid_next].status == VgTs_WaitFD
-                || vg_threads[tid_next].status == VgTs_Sleeping
-                || vg_threads[tid_next].status == VgTs_WaitSIG
-                || (vg_threads[tid_next].status == VgTs_WaitCV 
-                    && vg_threads[tid_next].awaken_at != 0xFFFFFFFF))
+            if (VG_(threads)[tid_next].status == VgTs_WaitFD
+                || VG_(threads)[tid_next].status == VgTs_Sleeping
+                || VG_(threads)[tid_next].status == VgTs_WaitSIG
+                || (VG_(threads)[tid_next].status == VgTs_WaitCV 
+                    && VG_(threads)[tid_next].awaken_at != 0xFFFFFFFF))
                n_in_bounded_wait ++;
-            if (vg_threads[tid_next].status == VgTs_Runnable) 
+            if (VG_(threads)[tid_next].status == VgTs_Runnable) 
                break; /* We can run this one. */
             if (tid_next == tid) 
                break; /* been all the way round */
          }
          tid = tid_next;
        
-         if (vg_threads[tid].status == VgTs_Runnable) {
+         if (VG_(threads)[tid].status == VgTs_Runnable) {
             /* Found a suitable candidate.  Fall out of this loop, so
                we can advance to stage 2 of the scheduler: actually
                running the thread. */
@@ -1297,7 +1293,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
       dispatch_ctr_SAVED = VG_(dispatch_ctr);
 
       /* paranoia ... */
-      vg_assert(vg_threads[tid].tid == tid);
+      vg_assert(VG_(threads)[tid].tid == tid);
 
       /* Actually run thread tid. */
       while (True) {
@@ -1313,18 +1309,18 @@ VgSchedReturnCode VG_(scheduler) ( void )
 #        if 0
          if (VG_(bbs_done) > 31700000 + 0) {
             dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
-            VG_(translate)(&vg_threads[tid], vg_threads[tid].m_eip,
+            VG_(translate)(&VG_(threads)[tid], VG_(threads)[tid].m_eip,
                            NULL,NULL,NULL);
          }
-         vg_assert(vg_threads[tid].m_eip != 0);
+         vg_assert(VG_(threads)[tid].m_eip != 0);
 #        endif
 
          trc = run_thread_for_a_while ( tid );
 
 #        if 0
-         if (0 == vg_threads[tid].m_eip) {
+         if (0 == VG_(threads)[tid].m_eip) {
             VG_(printf)("tid = %d,  dc = %llu\n", tid, VG_(bbs_done));
-            vg_assert(0 != vg_threads[tid].m_eip);
+            vg_assert(0 != VG_(threads)[tid].m_eip);
          }
 #        endif
 
@@ -1337,11 +1333,11 @@ VgSchedReturnCode VG_(scheduler) ( void )
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
             trans_addr 
-               = VG_(search_transtab) ( vg_threads[tid].m_eip );
+               = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               create_translation_for( tid, vg_threads[tid].m_eip ); 
-               trans_addr = VG_(search_transtab) ( vg_threads[tid].m_eip ); 
+               create_translation_for( tid, VG_(threads)[tid].m_eip ); 
+               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
                if (trans_addr == (Addr)0)
                   VG_(panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
             }
@@ -1351,13 +1347,13 @@ VgSchedReturnCode VG_(scheduler) ( void )
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
             Bool done; 
             /* VG_(printf)("request 0x%x\n", 
-                           *(UInt*)(vg_threads[tid].m_eax)); */
+                           *(UInt*)(VG_(threads)[tid].m_eax)); */
             done = maybe_do_trivial_clientreq(tid);
             if (done) {
                /* The request is done.  We try and continue with the
                   same thread if still runnable.  If not, go back to
                   Stage 1 to select a new thread to run. */
-               if (vg_threads[tid].status == VgTs_Runnable)
+               if (VG_(threads)[tid].status == VgTs_Runnable)
                   continue; /* with this thread */
                else
                   goto stage1;
@@ -1371,28 +1367,28 @@ VgSchedReturnCode VG_(scheduler) ( void )
                to exit. */
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)vg_threads[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].m_esp;
               VG_(printf)("\nBEFORE\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
             }
 #           endif
 
-            if (vg_threads[tid].m_eax == __NR_exit)
+            if (VG_(threads)[tid].m_eax == __NR_exit)
                return VgSrc_ExitSyscall;
 
             sched_do_syscall(tid);
 
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)vg_threads[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].m_esp;
               VG_(printf)("AFTER\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
             }
 #           endif
 
-            if (vg_threads[tid].status == VgTs_Runnable)
+            if (VG_(threads)[tid].status == VgTs_Runnable)
                continue; /* with this thread */
             else
                goto stage1;          
@@ -1458,7 +1454,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
             */
             /* The thread's %EAX points at an arg block, the first
                word of which is the request code. */
-            request_code = ((UInt*)(vg_threads[tid].m_eax))[0];
+            request_code = ((UInt*)(VG_(threads)[tid].m_eax))[0];
             if (0) {
                VG_(sprintf)(msg_buf, "request 0x%x", request_code );
                print_sched_event(tid, msg_buf);
@@ -1499,7 +1495,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
       throwing away the result. */
    VG_(printf)(
       "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
-   VG_(translate)( &vg_threads[tid], vg_threads[tid].m_eip, NULL, NULL, NULL );
+   VG_(translate)( &VG_(threads)[tid], 
+                   VG_(threads)[tid].m_eip, NULL, NULL, NULL );
    VG_(printf)("\n");
    VG_(printf)(
       "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
@@ -1522,13 +1519,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
     typedef unsigned long int pthread_t;
 */
 
-/* Write a value to the client's %EDX (request return value register)
-   and set the shadow to indicate it is defined. */
-#define SET_EDX(zztid, zzval)                          \
-   do { vg_threads[zztid].m_edx = (zzval);             \
-        vg_threads[zztid].sh_edx = VGM_WORD_VALID;     \
-   } while (0)
-
 
 /* -----------------------------------------------------------
    Thread CREATION, JOINAGE and CANCELLATION.
@@ -1539,19 +1529,16 @@ VgSchedReturnCode VG_(scheduler) ( void )
 static
 void cleanup_after_thread_exited ( ThreadId tid )
 {
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status == VgTs_Empty);
+   vg_assert(VG_(is_valid_or_empty_tid)(tid));
+   vg_assert(VG_(threads)[tid].status == VgTs_Empty);
    /* Mark its stack no-access */
    if (VG_(clo_instrument) && tid != 1)
-      VGM_(make_noaccess)( vg_threads[tid].stack_base,
-                           vg_threads[tid].stack_size );
+      VGM_(make_noaccess)( VG_(threads)[tid].stack_base,
+                           VG_(threads)[tid].stack_size );
    /* Forget about any pending signals directed specifically at this
-      thread. */
-   VG_(notify_signal_machinery_of_thread_exit)( tid );
-
-   /* Get rid of signal handlers specifically arranged for this
-      thread. */
-   VG_(update_sigstate_following_WaitSIG_change)();
+      thread, and get rid of signal handlers specifically arranged for
+      this thread. */
+   VG_(handle_SCSS_change)( False /* lazy update */ );
 }
 
 
@@ -1562,10 +1549,10 @@ void do_pthread_cancel ( ThreadId  tid,
    Char msg_buf[100];
 
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status != VgTs_Empty);
+   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
 
    if (!VG_(is_valid_tid)(tid_cancellee)
-       || vg_threads[tid_cancellee].status == VgTs_Empty) {
+       || VG_(threads)[tid_cancellee].status == VgTs_Empty) {
       SET_EDX(tid, ESRCH);
       return;
    }
@@ -1578,9 +1565,9 @@ void do_pthread_cancel ( ThreadId  tid,
       VG_(sprintf)(msg_buf, "cancelled by %d", tid);
       print_sched_event(tid_cancellee, msg_buf);
    }
-   vg_threads[tid_cancellee].m_eax  = (UInt)PTHREAD_CANCELED;
-   vg_threads[tid_cancellee].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
-   vg_threads[tid_cancellee].status = VgTs_Runnable;
+   VG_(threads)[tid_cancellee].m_eax  = (UInt)PTHREAD_CANCELED;
+   VG_(threads)[tid_cancellee].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
+   VG_(threads)[tid_cancellee].status = VgTs_Runnable;
 
    /* We return with success (0). */
    SET_EDX(tid, 0);
@@ -1599,9 +1586,9 @@ void do_pthread_exit ( ThreadId tid, void* retval )
       VG_(sprintf)(msg_buf, "exiting with %p", retval);
       print_sched_event(tid, msg_buf);
    }
-   vg_threads[tid].m_eax  = (UInt)retval;
-   vg_threads[tid].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
-   vg_threads[tid].status = VgTs_Runnable;
+   VG_(threads)[tid].m_eax  = (UInt)retval;
+   VG_(threads)[tid].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
+   VG_(threads)[tid].status = VgTs_Runnable;
 }
 
 
@@ -1620,13 +1607,13 @@ void handle_pthread_return ( ThreadId tid, void* retval )
    /* Mark it as not in use.  Leave the stack in place so the next
       user of this slot doesn't reallocate it. */
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status != VgTs_Empty);
+   vg_assert(VG_(threads)[tid].status != VgTs_Empty);
 
-   vg_threads[tid].retval = retval;
+   VG_(threads)[tid].retval = retval;
 
-   if (vg_threads[tid].joiner == VG_INVALID_THREADID) {
+   if (VG_(threads)[tid].joiner == VG_INVALID_THREADID) {
       /* No one has yet done a join on me */
-      vg_threads[tid].status = VgTs_WaitJoiner;
+      VG_(threads)[tid].status = VgTs_WaitJoiner;
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "root fn returns, waiting for a call pthread_join(%d)", 
@@ -1641,16 +1628,16 @@ void handle_pthread_return ( ThreadId tid, void* retval )
          %EAX -- in order to extract the 2nd param of its pthread_join
          call.  TODO: free properly the slot (also below). 
       */
-      jnr = vg_threads[tid].joiner;
+      jnr = VG_(threads)[tid].joiner;
       vg_assert(VG_(is_valid_tid)(jnr));
-      vg_assert(vg_threads[jnr].status == VgTs_WaitJoinee);
-      jnr_args = (UInt*)vg_threads[jnr].m_eax;
+      vg_assert(VG_(threads)[jnr].status == VgTs_WaitJoinee);
+      jnr_args = (UInt*)VG_(threads)[jnr].m_eax;
       jnr_thread_return = (void**)(jnr_args[2]);
       if (jnr_thread_return != NULL)
-         *jnr_thread_return = vg_threads[tid].retval;
+         *jnr_thread_return = VG_(threads)[tid].retval;
       SET_EDX(jnr, 0); /* success */
-      vg_threads[jnr].status = VgTs_Runnable;
-      vg_threads[tid].status = VgTs_Empty; /* bye! */
+      VG_(threads)[jnr].status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Empty; /* bye! */
       cleanup_after_thread_exited ( tid );
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
@@ -1675,47 +1662,47 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
    /* jee, the joinee, is the thread specified as an arg in thread
       tid's call to pthread_join.  So tid is the join-er. */
    vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(vg_threads[tid].status == VgTs_Runnable);
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
    if (jee == tid) {
       SET_EDX(tid, EDEADLK); /* libc constant, not a kernel one */
-      vg_threads[tid].status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
 
    if (jee < 0 
        || jee >= VG_N_THREADS
-       || vg_threads[jee].status == VgTs_Empty) {
+       || VG_(threads)[jee].status == VgTs_Empty) {
       /* Invalid thread to join to. */
       SET_EDX(tid, EINVAL);
-      vg_threads[tid].status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
 
-   if (vg_threads[jee].joiner != VG_INVALID_THREADID) {
+   if (VG_(threads)[jee].joiner != VG_INVALID_THREADID) {
       /* Someone already did join on this thread */
       SET_EDX(tid, EINVAL);
-      vg_threads[tid].status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
 
-   /* if (vg_threads[jee].detached) ... */
+   /* if (VG_(threads)[jee].detached) ... */
 
    /* Perhaps the joinee has already finished?  If so return
       immediately with its return code, and free up the slot. TODO:
       free it properly (also above). */
-   if (vg_threads[jee].status == VgTs_WaitJoiner) {
-      vg_assert(vg_threads[jee].joiner == VG_INVALID_THREADID);
+   if (VG_(threads)[jee].status == VgTs_WaitJoiner) {
+      vg_assert(VG_(threads)[jee].joiner == VG_INVALID_THREADID);
       SET_EDX(tid, 0); /* success */
       if (thread_return != NULL) {
-         *thread_return = vg_threads[jee].retval;
+         *thread_return = VG_(threads)[jee].retval;
 	 /* Not really right, since it makes the thread's return value
             appear to be defined even if it isn't. */
          if (VG_(clo_instrument))
             VGM_(make_readable)( (Addr)thread_return, sizeof(void*) );
       }
-      vg_threads[tid].status = VgTs_Runnable;
-      vg_threads[jee].status = VgTs_Empty; /* bye! */
+      VG_(threads)[tid].status = VgTs_Runnable;
+      VG_(threads)[jee].status = VgTs_Empty; /* bye! */
       cleanup_after_thread_exited ( jee );
       if (VG_(clo_trace_sched)) {
 	 VG_(sprintf)(msg_buf,
@@ -1730,8 +1717,8 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
    }
 
    /* Ok, so we'll have to wait on jee. */
-   vg_threads[jee].joiner = tid;
-   vg_threads[tid].status = VgTs_WaitJoinee;
+   VG_(threads)[jee].joiner = tid;
+   VG_(threads)[tid].status = VgTs_WaitJoinee;
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
          "blocking on call of pthread_join(%d)", jee );
@@ -1757,13 +1744,13 @@ void do_pthread_create ( ThreadId parent_tid,
    /* Paranoia ... */
    vg_assert(sizeof(pthread_t) == sizeof(UInt));
 
-   vg_assert(vg_threads[parent_tid].status != VgTs_Empty);
+   vg_assert(VG_(threads)[parent_tid].status != VgTs_Empty);
 
    tid = vg_alloc_ThreadState();
 
    /* If we've created the main thread's tid, we're in deep trouble :) */
    vg_assert(tid != 1);
-   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(VG_(is_valid_or_empty_tid)(tid));
 
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
@@ -1774,44 +1761,44 @@ void do_pthread_create ( ThreadId parent_tid,
       is inadequate. */
    new_stk_szb = VG_PTHREAD_STACK_MIN;
 
-   if (new_stk_szb > vg_threads[tid].stack_size) {
+   if (new_stk_szb > VG_(threads)[tid].stack_size) {
       /* Again, for good measure :) We definitely don't want to be
          allocating a stack for the main thread. */
       vg_assert(tid != 1);
       /* for now, we don't handle the case of anything other than
          assigning it for the first time. */
-      vg_assert(vg_threads[tid].stack_size == 0);
-      vg_assert(vg_threads[tid].stack_base == (Addr)NULL);
+      vg_assert(VG_(threads)[tid].stack_size == 0);
+      vg_assert(VG_(threads)[tid].stack_base == (Addr)NULL);
       new_stack = (Addr)VG_(get_memory_from_mmap)( new_stk_szb );
-      vg_threads[tid].stack_base = new_stack;
-      vg_threads[tid].stack_size = new_stk_szb;
-      vg_threads[tid].stack_highest_word
+      VG_(threads)[tid].stack_base = new_stack;
+      VG_(threads)[tid].stack_size = new_stk_szb;
+      VG_(threads)[tid].stack_highest_word
          = new_stack + new_stk_szb 
                      - VG_AR_CLIENT_STACKBASE_REDZONE_SZB; /* -4  ??? */;
    }
 
-   vg_threads[tid].m_esp 
-      = vg_threads[tid].stack_base 
-        + vg_threads[tid].stack_size
+   VG_(threads)[tid].m_esp 
+      = VG_(threads)[tid].stack_base 
+        + VG_(threads)[tid].stack_size
         - VG_AR_CLIENT_STACKBASE_REDZONE_SZB;
 
    if (VG_(clo_instrument))
-      VGM_(make_noaccess)( vg_threads[tid].m_esp, 
+      VGM_(make_noaccess)( VG_(threads)[tid].m_esp, 
                            VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
    /* push arg */
-   vg_threads[tid].m_esp -= 4;
-   * (UInt*)(vg_threads[tid].m_esp) = (UInt)arg;
+   VG_(threads)[tid].m_esp -= 4;
+   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)arg;
 
    /* push (magical) return address */
-   vg_threads[tid].m_esp -= 4;
-   * (UInt*)(vg_threads[tid].m_esp) = (UInt)VG_(pthreadreturn_bogusRA);
+   VG_(threads)[tid].m_esp -= 4;
+   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)VG_(pthreadreturn_bogusRA);
 
    if (VG_(clo_instrument))
-      VGM_(make_readable)( vg_threads[tid].m_esp, 2 * 4 );
+      VGM_(make_readable)( VG_(threads)[tid].m_esp, 2 * 4 );
 
    /* this is where we start */
-   vg_threads[tid].m_eip = (UInt)start_routine;
+   VG_(threads)[tid].m_eip = (UInt)start_routine;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf,
@@ -1826,17 +1813,17 @@ void do_pthread_create ( ThreadId parent_tid,
    if (VG_(clo_instrument))
       VGM_(make_readable)( (Addr)thread, sizeof(pthread_t) );
 
-   vg_threads[tid].associated_mx = NULL;
-   vg_threads[tid].associated_cv = NULL;
-   vg_threads[tid].joiner        = VG_INVALID_THREADID;
-   vg_threads[tid].status        = VgTs_Runnable;
+   VG_(threads)[tid].associated_mx = NULL;
+   VG_(threads)[tid].associated_cv = NULL;
+   VG_(threads)[tid].joiner        = VG_INVALID_THREADID;
+   VG_(threads)[tid].status        = VgTs_Runnable;
 
    for (i = 0; i < VG_N_THREAD_KEYS; i++)
-      vg_threads[tid].specifics[i] = NULL;
+      VG_(threads)[tid].specifics[i] = NULL;
 
-   /* We inherit our parent's signal mask. (?!) */
-   vg_threads[tid].sig_mask = vg_threads[parent_tid].sig_mask;
-   VG_(ksigemptyset)(&vg_threads[i].sigs_waited_for);
+   /* We inherit our parent's signal mask. */
+   VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
+   VG_(ksigemptyset)(&VG_(threads)[i].sigs_waited_for);
 
    /* return zero */
    SET_EDX(parent_tid, 0); /* success */
@@ -1902,10 +1889,10 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
    /* Find some arbitrary thread waiting on this mutex, and make it
       runnable.  If none are waiting, mark the mutex as not held. */
    for (i = 1; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status == VgTs_Empty) 
+      if (VG_(threads)[i].status == VgTs_Empty) 
          continue;
-      if (vg_threads[i].status == VgTs_WaitMX 
-          && vg_threads[i].associated_mx == mutex)
+      if (VG_(threads)[i].status == VgTs_WaitMX 
+          && VG_(threads)[i].associated_mx == mutex)
          break;
    }
 
@@ -1918,10 +1905,10 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
       /* Notionally transfer the hold to thread i, whose
          pthread_mutex_lock() call now returns with 0 (success). */
       /* The .count is already == 1. */
-      vg_assert(vg_threads[i].associated_mx == mutex);
+      vg_assert(VG_(threads)[i].associated_mx == mutex);
       mutex->__m_owner = (_pthread_descr)i;
-      vg_threads[i].status        = VgTs_Runnable;
-      vg_threads[i].associated_mx = NULL;
+      VG_(threads)[i].status        = VgTs_Runnable;
+      VG_(threads)[i].associated_mx = NULL;
       /* m_edx already holds pth_mx_lock() success (0) */
 
       if (VG_(clo_trace_pthread_level) >= 1) {
@@ -1952,7 +1939,7 @@ void do_pthread_mutex_lock( ThreadId tid,
 
    /* Paranoia ... */
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    /* POSIX doesn't mandate this, but for sanity ... */
    if (mutex == NULL) {
@@ -2010,8 +1997,8 @@ void do_pthread_mutex_lock( ThreadId tid,
             /* caller is polling; so return immediately. */
             SET_EDX(tid, EBUSY);
          } else {
-            vg_threads[tid].status        = VgTs_WaitMX;
-            vg_threads[tid].associated_mx = mutex;
+            VG_(threads)[tid].status        = VgTs_WaitMX;
+            VG_(threads)[tid].associated_mx = mutex;
             SET_EDX(tid, 0); /* pth_mx_lock success value */
             if (VG_(clo_trace_pthread_level) >= 1) {
                VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
@@ -2028,7 +2015,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       /* We get it! [for the first time]. */
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
-      vg_assert(vg_threads[tid].associated_mx == NULL);
+      vg_assert(VG_(threads)[tid].associated_mx == NULL);
       /* return 0 (success). */
       SET_EDX(tid, 0);
    }
@@ -2050,7 +2037,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
 
    /* Paranoia ... */
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (mutex == NULL) {
       SET_EDX(tid, EINVAL);
@@ -2141,20 +2128,20 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
    pthread_cond_t*  cv;
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_WaitCV
-             && vg_threads[tid].awaken_at != 0xFFFFFFFF);
-   mx = vg_threads[tid].associated_mx;
+             && VG_(threads)[tid].status == VgTs_WaitCV
+             && VG_(threads)[tid].awaken_at != 0xFFFFFFFF);
+   mx = VG_(threads)[tid].associated_mx;
    vg_assert(mx != NULL);
-   cv = vg_threads[tid].associated_cv;
+   cv = VG_(threads)[tid].associated_cv;
    vg_assert(cv != NULL);
 
    if (mx->__m_owner == VG_INVALID_THREADID) {
       /* Currently unheld; hand it out to thread tid. */
       vg_assert(mx->__m_count == 0);
-      vg_threads[tid].status        = VgTs_Runnable;
+      VG_(threads)[tid].status        = VgTs_Runnable;
       SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
-      vg_threads[tid].associated_cv = NULL;
-      vg_threads[tid].associated_mx = NULL;
+      VG_(threads)[tid].associated_cv = NULL;
+      VG_(threads)[tid].associated_mx = NULL;
       mx->__m_owner = (_pthread_descr)tid;
       mx->__m_count = 1;
 
@@ -2167,10 +2154,10 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
    } else {
       /* Currently held.  Make thread tid be blocked on it. */
       vg_assert(mx->__m_count > 0);
-      vg_threads[tid].status        = VgTs_WaitMX;
+      VG_(threads)[tid].status        = VgTs_WaitMX;
       SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
-      vg_threads[tid].associated_cv = NULL;
-      vg_threads[tid].associated_mx = mx;
+      VG_(threads)[tid].associated_cv = NULL;
+      VG_(threads)[tid].associated_mx = mx;
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, 
             "pthread_cond_timedwai cv %p: TIMEOUT -> BLOCK for mx %p", 
@@ -2197,10 +2184,10 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 
       /* Find a thread waiting on this CV. */
       for (i = 1; i < VG_N_THREADS; i++) {
-         if (vg_threads[i].status == VgTs_Empty) 
+         if (VG_(threads)[i].status == VgTs_Empty) 
             continue;
-         if (vg_threads[i].status == VgTs_WaitCV 
-             && vg_threads[i].associated_cv == cond)
+         if (VG_(threads)[i].status == VgTs_WaitCV 
+             && VG_(threads)[i].associated_cv == cond)
             break;
       }
       vg_assert(i <= VG_N_THREADS);
@@ -2210,15 +2197,15 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          return;
       }
 
-      mx = vg_threads[i].associated_mx;
+      mx = VG_(threads)[i].associated_mx;
       vg_assert(mx != NULL);
 
       if (mx->__m_owner == VG_INVALID_THREADID) {
          /* Currently unheld; hand it out to thread i. */
          vg_assert(mx->__m_count == 0);
-         vg_threads[i].status        = VgTs_Runnable;
-         vg_threads[i].associated_cv = NULL;
-         vg_threads[i].associated_mx = NULL;
+         VG_(threads)[i].status        = VgTs_Runnable;
+         VG_(threads)[i].associated_cv = NULL;
+         VG_(threads)[i].associated_mx = NULL;
          mx->__m_owner = (_pthread_descr)i;
          mx->__m_count = 1;
          /* .m_edx already holds pth_cond_wait success value (0) */
@@ -2232,9 +2219,9 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
       } else {
          /* Currently held.  Make thread i be blocked on it. */
          vg_assert(mx->__m_count > 0);
-         vg_threads[i].status        = VgTs_WaitMX;
-         vg_threads[i].associated_cv = NULL;
-         vg_threads[i].associated_mx = mx;
+         VG_(threads)[i].status        = VgTs_WaitMX;
+         VG_(threads)[i].associated_cv = NULL;
+         VG_(threads)[i].associated_mx = mx;
          SET_EDX(i, 0); /* pth_cond_wait success value */
 
          if (VG_(clo_trace_pthread_level) >= 1) {
@@ -2270,7 +2257,7 @@ void do_pthread_cond_wait ( ThreadId tid,
 
    /* Paranoia ... */
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (mutex == NULL || cond == NULL) {
       SET_EDX(tid, EINVAL);
@@ -2303,10 +2290,10 @@ void do_pthread_cond_wait ( ThreadId tid,
    }
 
    /* Queue ourselves on the condition. */
-   vg_threads[tid].status        = VgTs_WaitCV;
-   vg_threads[tid].associated_cv = cond;
-   vg_threads[tid].associated_mx = mutex;
-   vg_threads[tid].awaken_at     = ms_end;
+   VG_(threads)[tid].status        = VgTs_WaitCV;
+   VG_(threads)[tid].associated_cv = cond;
+   VG_(threads)[tid].associated_mx = mutex;
+   VG_(threads)[tid].awaken_at     = ms_end;
 
    if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, 
@@ -2338,7 +2325,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
 
    /* Paranoia ... */
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (cond == NULL) {
       SET_EDX(tid, EINVAL);
@@ -2384,7 +2371,7 @@ void do_pthread_key_create ( ThreadId tid,
 
    vg_assert(sizeof(pthread_key_t) == sizeof(ThreadKey));
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    for (i = 0; i < VG_N_THREAD_KEYS; i++)
       if (!vg_thread_keys[i].inuse)   
@@ -2420,7 +2407,7 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
    }
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
    
    if (!is_valid_key(key)) {
       SET_EDX(tid, EINVAL);
@@ -2434,8 +2421,8 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
       functions correctly.  */
 #  if 1
    for (tid = 1; tid < VG_N_THREADS; tid++) {
-      if (vg_threads[tid].status != VgTs_Empty)
-         vg_threads[tid].specifics[key] = NULL;
+      if (VG_(threads)[tid].status != VgTs_Empty)
+         VG_(threads)[tid].specifics[key] = NULL;
    }
 #  endif
 }
@@ -2452,14 +2439,14 @@ void do_pthread_getspecific ( ThreadId tid, pthread_key_t key )
    }
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (!is_valid_key(key)) {
       SET_EDX(tid, (UInt)NULL);
       return;
    }
 
-   SET_EDX(tid, (UInt)vg_threads[tid].specifics[key]);
+   SET_EDX(tid, (UInt)VG_(threads)[tid].specifics[key]);
 }
 
 
@@ -2476,14 +2463,14 @@ void do_pthread_setspecific ( ThreadId tid,
    }
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (!is_valid_key(key)) {
       SET_EDX(tid, EINVAL);
       return;
    }
 
-   vg_threads[tid].specifics[key] = pointer;
+   VG_(threads)[tid].specifics[key] = pointer;
    SET_EDX(tid, 0);
 }
 
@@ -2493,54 +2480,34 @@ void do_pthread_setspecific ( ThreadId tid,
    ------------------------------------------------ */
 
 /* See comment in vg_libthread.c:pthread_sigmask() regarding
-   deliberate confusion of types sigset_t and vki_sigset_t.  Also re
-   meaning of the mashed_how value.  Return 0 for OK and 1 for some
-   kind of addressing error, which the vg_libpthread.c routine turns
-   into return values 0 and EFAULT respectively. */
+   deliberate confusion of types sigset_t and vki_sigset_t.  Return 0
+   for OK and 1 for some kind of addressing error, which the
+   vg_libpthread.c routine turns into return values 0 and EFAULT
+   respectively. */
 static
 void do_pthread_sigmask ( ThreadId tid,
-                          Int mashed_how,
+                          Int vki_how,
                           vki_ksigset_t* newmask, 
                           vki_ksigset_t* oldmask )
 {
    Char msg_buf[100];
    if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, 
-         "pthread_sigmask          m_how %d, newmask %p, oldmask %p",
-         mashed_how, newmask, oldmask );
+         "pthread_sigmask          vki_how %d, newmask %p, oldmask %p",
+         vki_how, newmask, oldmask );
       print_pthread_event(tid, msg_buf);
    }
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (VG_(clo_instrument)) {
       /* TODO check newmask/oldmask are addressible/defined */
    }
 
-   if (oldmask != NULL) {
-      *oldmask = vg_threads[tid].sig_mask;
-      if (VG_(clo_instrument)) {
-         VGM_(make_readable)( (Addr)oldmask, sizeof(vki_ksigset_t) );
-      }
-   }
+   VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
 
-   switch (mashed_how) {
-      case 1: /* SIG_SETMASK */
-         vg_threads[tid].sig_mask = *newmask;
-         break;
-      case 2: /* SIG_BLOCK */
-         VG_(ksigaddset_from_set)( & vg_threads[tid].sig_mask, newmask);
-         break;
-      case 3: /* SIG_UNBLOCK */
-         VG_(ksigdelset_from_set)( & vg_threads[tid].sig_mask, newmask);
-         break;
-      default: 
-        VG_(panic)("do_pthread_sigmask: invalid mashed_how");
-        /*NOTREACHED*/
-        break;
-   }
-
+   /* Success. */
    SET_EDX(tid, 0);
 }
 
@@ -2550,7 +2517,9 @@ void do_sigwait ( ThreadId tid,
                   vki_ksigset_t* set, 
                   Int* sig )
 {
-   Char msg_buf[100];
+   vki_ksigset_t irrelevant_sigmask;
+   Char          msg_buf[100];
+
    if (VG_(clo_trace_signals) || VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, 
          "suspend due to sigwait(): set %p, sig %p",
@@ -2559,11 +2528,46 @@ void do_sigwait ( ThreadId tid,
    }
 
    vg_assert(VG_(is_valid_tid)(tid) 
-             && vg_threads[tid].status == VgTs_Runnable);
+             && VG_(threads)[tid].status == VgTs_Runnable);
 
-   vg_threads[tid].sigs_waited_for = *set;
-   vg_threads[tid].status = VgTs_WaitSIG;
-   VG_(update_sigstate_following_WaitSIG_change)();
+   /* Change SCSS */
+   VG_(threads)[tid].sigs_waited_for = *set;
+   VG_(threads)[tid].status = VgTs_WaitSIG;
+
+   VG_(block_all_host_signals)( &irrelevant_sigmask );
+   VG_(handle_SCSS_change)( False /* lazy update */ );
+}
+
+
+static
+void do_pthread_kill ( ThreadId tid, /* me */
+                       ThreadId thread, /* thread to signal */
+                       Int sig )
+{
+   Char msg_buf[100];
+
+   if (VG_(clo_trace_signals) || VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, 
+         "pthread_kill            thread %d, signo %d",
+         thread, sig );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+
+   if (!VG_(is_valid_tid)(tid)) {
+      SET_EDX(tid, -VKI_ESRCH);
+      return;
+   }
+
+   if (sig < 1 || sig > VKI_KNSIG) {
+      SET_EDX(tid, -VKI_EINVAL);
+      return;
+   }
+
+   VG_(send_signal_to_thread)( thread, sig );
+   SET_EDX(tid, 0);
 }
 
 
@@ -2574,7 +2578,7 @@ void do_sigwait ( ThreadId tid,
 static
 void do_nontrivial_clientreq ( ThreadId tid )
 {
-   UInt* arg    = (UInt*)(vg_threads[tid].m_eax);
+   UInt* arg    = (UInt*)(VG_(threads)[tid].m_eax);
    UInt  req_no = arg[0];
    switch (req_no) {
 
@@ -2660,6 +2664,11 @@ void do_nontrivial_clientreq ( ThreadId tid )
                       (Int*)(arg[2]) );
 	 break;
 
+      case VG_USERREQ__PTHREAD_KILL:
+         do_pthread_kill ( tid, arg[1], arg[2] );
+	 break;
+
+
       case VG_USERREQ__MAKE_NOACCESS:
       case VG_USERREQ__MAKE_WRITABLE:
       case VG_USERREQ__MAKE_READABLE:
@@ -2671,7 +2680,7 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__DO_LEAK_CHECK:
          SET_EDX(
             tid, 
-            VG_(handle_client_request) ( &vg_threads[tid], arg )
+            VG_(handle_client_request) ( &VG_(threads)[tid], arg )
          );
 	 break;
 
@@ -2703,9 +2712,9 @@ void scheduler_sanity ( void )
 
    /* VG_(printf)("scheduler_sanity\n"); */
    for (i = 1; i < VG_N_THREADS; i++) {
-      mx = vg_threads[i].associated_mx;
-      cv = vg_threads[i].associated_cv;
-      if (vg_threads[i].status == VgTs_WaitMX) {
+      mx = VG_(threads)[i].associated_mx;
+      cv = VG_(threads)[i].associated_cv;
+      if (VG_(threads)[i].status == VgTs_WaitMX) {
 	 /* If we're waiting on a MX: (1) the mx is not null, (2, 3)
             it's actually held by someone, since otherwise this thread
             is deadlocked, (4) the mutex's owner is not us, since
@@ -2721,7 +2730,7 @@ void scheduler_sanity ( void )
          /* 3 */ vg_assert(VG_(is_valid_tid)((ThreadId)mx->__m_owner));
          /* 4 */ vg_assert(i != (ThreadId)mx->__m_owner); 
       } else 
-      if (vg_threads[i].status == VgTs_WaitCV) {
+      if (VG_(threads)[i].status == VgTs_WaitCV) {
          vg_assert(cv != NULL);
          vg_assert(mx != NULL);
       } else {
@@ -2731,10 +2740,10 @@ void scheduler_sanity ( void )
          /* vg_assert(mx == NULL); */
       }
 
-      if (vg_threads[i].status != VgTs_Empty) {
+      if (VG_(threads)[i].status != VgTs_Empty) {
          Int
-         stack_used = (Addr)vg_threads[i].stack_highest_word 
-                      - (Addr)vg_threads[i].m_esp;
+         stack_used = (Addr)VG_(threads)[i].stack_highest_word 
+                      - (Addr)VG_(threads)[i].m_esp;
          if (i > 1 /* not the root thread */ 
              && stack_used 
                 >= (VG_PTHREAD_STACK_MIN - 1000 /* paranoia */)) {
@@ -2750,12 +2759,12 @@ void scheduler_sanity ( void )
             VG_(exit)(1);
 	 }
 
-         if (vg_threads[i].status == VgTs_WaitSIG) {
+         if (VG_(threads)[i].status == VgTs_WaitSIG) {
             vg_assert( ! VG_(kisemptysigset)(
-                            & vg_threads[i].sigs_waited_for) );
+                            & VG_(threads)[i].sigs_waited_for) );
 	 } else {
             vg_assert( VG_(kisemptysigset)(
-                          & vg_threads[i].sigs_waited_for) );
+                          & VG_(threads)[i].sigs_waited_for) );
 	 }
 
       }

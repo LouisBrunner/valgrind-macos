@@ -634,14 +634,15 @@ int pthread_sigmask(int how, const sigset_t *newmask,
       unmodified.  Haaaack! 
 
       Also mash the how value so that the SIG_ constants from glibc
-      do not have to be included into vg_scheduler.c. */
+      constants to VKI_ constants, so that the former do not have to
+      be included into vg_scheduler.c. */
 
    ensure_valgrind("pthread_sigmask");
 
    switch (how) {
-      case SIG_SETMASK: how = 1; break;
-      case SIG_BLOCK:   how = 2; break;
-      case SIG_UNBLOCK: how = 3; break;
+      case SIG_SETMASK: how = VKI_SIG_SETMASK; break;
+      case SIG_BLOCK:   how = VKI_SIG_BLOCK; break;
+      case SIG_UNBLOCK: how = VKI_SIG_UNBLOCK; break;
       default:          return EINVAL;
    }
 
@@ -667,6 +668,17 @@ int sigwait ( const sigset_t* set, int* sig )
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__SIGWAIT,
                            set, sig, 0, 0);
+   return res;
+}
+
+
+int pthread_kill(pthread_t thread, int signo)
+{
+   int res;
+   ensure_valgrind("pthread_kill");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_KILL, 
+                           thread, signo, 0, 0);
    return res;
 }
 

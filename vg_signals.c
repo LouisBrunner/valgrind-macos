@@ -35,9 +35,25 @@
 #include "vg_unsafe.h"
 #include "valgrind.h"  /* for VALGRIND_MAGIC_SEQUENCE */
 
+/* Define to give more sanity checking for signals. */
+#define DEBUG_SIGNALS
+
+
+/* ---------------------------------------------------------------------
+   Forwards decls.
+   ------------------------------------------------------------------ */
+
+static void vg_oursignalhandler ( Int sigNo );
+
+
+/* ---------------------------------------------------------------------
+   HIGH LEVEL STUFF TO DO WITH SIGNALS: POLICY (MOSTLY)
+   ------------------------------------------------------------------ */
+
 /* ---------------------------------------------------------------------
    Signal state for this process.
    ------------------------------------------------------------------ */
+
 
 /* Base-ment of these arrays[VKI_KNSIG].
 
@@ -47,76 +63,627 @@
    and entry [0] is not used. 
  */
 
-/* For each signal, the current action.  Either:
 
-   -- VG_SH_NOHANDLER if the client hasn't asked to handle the signal, 
-      and we havent surreptitiously installed any handler ourselves.
+/* -----------------------------------------------------
+   Static client signal state (SCSS).  This is the state
+   that the client thinks it has the kernel in.  
+   SCSS records verbatim the client's settings.  These 
+   are mashed around only when SKSS is calculated from it.
+   -------------------------------------------------- */
 
-   -- VG_SH_FAKEHANDLER if the client hasn't asked to handle the signal
-      directly, but has so indirectly via a sigwait() request.  In this
-      case we may need to install our own handler to catch signals which
-      the sigwait-mask for some thread will accept, but for which the
-      client hasn't actually installed a handler.  These "fake" handlers
-      are invisible to the client, so we need to be able to distinguish
-      this case so that we can fake a suitable response if the client
-      should enquire about the state of this signal using sigaction.
+typedef 
+   struct {
+      void* scss_handler;  /* VKI_SIG_DFL or VKI_SIG_IGN or ptr to
+                              client's handler */
+      UInt  scss_flags;
+      vki_ksigset_t scss_mask;
+      void* scss_restorer; /* god knows; we ignore it. */
+   }
+   SCSS_Per_Signal;
 
-   -- Otherwise, the client has installed a signal handler, and this
-      is the pointer to it.
+typedef 
+   struct {
+      SCSS_Per_Signal scss_per_sig[1+VKI_KNSIG];
+      /* Additional elements to SCSS not stored here:
+         - for each thread, the thread's blocking mask
+         - for each thread in WaitSIG, the set of waited-on sigs
+      */
+      } 
+      SCSS;
 
-   Invariant: we never expect to receive a signal for which the 
-   vg_sighandler[] entry is VG_SH_NOHANDLER.  If it is VG_SH_FAKEHANDLER
-   we know that we should look for a thread in VgTs_WaitSIG state to
-   release.  Otherwise, we find a thread capable of handling this
-   signal and run the specified handler on it.
+static SCSS vg_scss;
+
+
+/* -----------------------------------------------------
+   Static kernel signal state (SKSS).  This is the state
+   that we have the kernel in.  It is computed from SCSS.
+   -------------------------------------------------- */
+
+/* Let's do: 
+     sigprocmask assigns to all thread masks
+     so that at least everything is always consistent
+   Flags:
+     SA_NOCLDSTOP -- passed to kernel
+     SA_ONESHOT or SA_RESETHAND -- required; abort if not set
+     SA_RESTART -- we observe this but set our handlers always to restart
+     SA_NOMASK or SA_NODEFER -- required to not be set; abort if set
+     SA_ONSTACK -- currently not supported; abort if set.
 */
-#define VG_SH_NOHANDLER    ((void*)0)
-#define VG_SH_FAKEHANDLER  ((void*)1)
-
-void* vg_sighandler[1+VKI_KNSIG];
 
 
-/* For each signal, either:
-   -- VG_SP_SIGIDLE if not pending and not running
-   -- Handler address if pending AND real handler
-   -- VG_SH_FAKEHANDLER if pending for sigwait
-   -- VG_SP_SIGRUNNING if the handler is running and hasn't (returned or 
-      unblocked the signal using sigprocmask following a longjmp out 
-      of the handler).
- */
-#define VG_SP_SIGIDLE    ((void*)0)
-#define VG_SP_SIGRUNNING ((void*)2)
+typedef 
+   struct {
+      void* skss_handler;  /* VKI_SIG_DFL or VKI_SIG_IGN 
+                              or ptr to our handler */
+      UInt skss_flags;
+      /* There is no skss_mask, since we know that we will always ask
+         for all signals to be blocked in our one-and-only
+         sighandler. */
+      /* Also there is no skss_restorer. */
+   }
+   SKSS_Per_Signal;
 
-static
-void* vg_sigpending[1+VKI_KNSIG];
+typedef 
+   struct {
+      SKSS_Per_Signal skss_per_sig[1+VKI_KNSIG];
+      vki_ksigset_t skss_sigmask; /* process' blocked signal mask */   
+   } 
+   SKSS;
 
-
-/* For each signal, the thread id to which the signal should be
-   delivered.  This is only meaningful if the corresponding
-   vg_sigpending entry actually points to a handler, ie, the signal
-   is pending.
-
-   In this case, the value VG_INVALID_THREADID indicates the signal is
-   not directed at a specific thread and so should be delivered to any
-   thread whose signal mask (ThreadState.sig_mask) field allows it.
-
-   Any other value indicates that the signal should be delivered only
-   to that specific thread, as some point in time when the thread has
-   not blocked the signal.  It remains pending until then. */
-static
-ThreadId vg_sig_threadid[1+VKI_KNSIG];
+static SKSS vg_skss;
 
 
-/* For each signal that the client installed a handler for (ie, for
-   those for which the vg_sighandler entry is non-VG_SH_NOHANDLER and
-   non-VG_SH_FAKEHANDLER), record whether or not the client asked for
-   syscalls to be restartable (SA_RESTART) if interrupted by this
-   signal.  We need to consult this when a signal returns, if it
-   should happen that the signal which we delivered has interrupted a
-   system call. */
+/* -----------------------------------------------------
+   Dynamic client signal state (DCSS).  This holds transient
+   information about state of client signals.
+   -------------------------------------------------- */
+
+typedef 
+   struct {
+      /* True iff a signal has been received but not yet passed to
+         client. */
+      Bool dcss_sigpending[1+VKI_KNSIG];
+      /* If sigpending[] is True, has meaning: 
+         VG_INVALID_THREADID -- to be passed to any suitable thread 
+         other -- to be passed only to the specified thread. */
+      ThreadId dcss_destthread[1+VKI_KNSIG];
+   } 
+   DCSS;
+
+static DCSS vg_dcss;
+
+
+/* ---------------------------------------------------------------------
+   Compute the SKSS required by the current SCSS.
+   ------------------------------------------------------------------ */
+
 static 
-Bool vg_sig_sarestart[1+VKI_KNSIG];
+void pp_SKSS ( void )
+{
+   Int sig;
+   VG_(printf)("\n\nSKSS:\n");
+   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+      VG_(printf)("sig %d:  handler 0x%x,  flags 0x%x\n", sig,
+                  vg_skss.skss_per_sig[sig].skss_handler,
+                  vg_skss.skss_per_sig[sig].skss_flags );
 
+   }
+   VG_(printf)("Global sigmask (63 .. 0) = 0x%x 0x%x\n",
+	       vg_skss.skss_sigmask.ws[1],
+	       vg_skss.skss_sigmask.ws[0] );
+}
+
+static __inline__
+Bool is_WaitSIGd_by_any_thread ( Int sig )
+{
+   ThreadId tid;
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (VG_(threads)[tid].status != VgTs_WaitSIG) 
+         continue;
+      if (VG_(ksigismember)( &VG_(threads)[tid].sigs_waited_for, sig ))
+         return True;
+   }
+   return False;
+}
+
+static __inline__
+Bool is_blocked_by_all_threads ( Int sig )
+{
+   ThreadId tid;
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (VG_(threads)[tid].status == VgTs_Empty) 
+         continue;
+      if (! VG_(ksigismember)( &VG_(threads)[tid].sig_mask, sig ))
+         return False;
+   }
+   return True;
+}
+
+
+/* This is the core, clever bit.  Computation is as follows:
+
+   For each signal
+      handler = if client has a handler, then our handler
+                else if is WaitSIG'd by any thread, then our handler
+                else if client is DFL, then DFL
+                else (client must be IGN) IGN
+
+      blocked = if is blocked by all threads and not WaitSIG'd by
+                   any thread
+                then BLOCKED 
+                else UNBLOCKED
+*/
+static
+void calculate_SKSS_from_SCSS ( SKSS* dst )
+{
+   Int   sig;
+   void* skss_handler;
+   void* scss_handler;
+   Bool  iz_WaitSIGd_by_any_thread;
+   Bool  iz_blocked_by_all_threads;
+   Bool  skss_blocked;
+   UInt  scss_flags;
+   UInt  skss_flags;
+
+   VG_(ksigemptyset)( &dst->skss_sigmask );
+
+   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+
+      /* Calculate kernel handler and blockedness for sig, as per rules
+         in above comment. */
+
+      iz_WaitSIGd_by_any_thread = is_WaitSIGd_by_any_thread(sig);
+      iz_blocked_by_all_threads = is_blocked_by_all_threads(sig);
+  
+      scss_handler = vg_scss.scss_per_sig[sig].scss_handler;
+      scss_flags   = vg_scss.scss_per_sig[sig].scss_flags;
+
+      /* Restorer */
+      /* 
+      Doesn't seem like we can spin this one.
+      if (vg_scss.scss_per_sig[sig].scss_restorer != NULL)
+         VG_(unimplemented)
+            ("sigactions with non-NULL .sa_restorer field");
+      */
+
+      /* Handler */
+
+      if (scss_handler != VKI_SIG_DFL && scss_handler != VKI_SIG_IGN) {
+         skss_handler = &vg_oursignalhandler;
+      } else
+      if (iz_WaitSIGd_by_any_thread) {
+         skss_handler = &vg_oursignalhandler;
+      } else
+      if (scss_handler == VKI_SIG_DFL) {
+         skss_handler = VKI_SIG_DFL;
+      }
+      else {
+         vg_assert(scss_handler == VKI_SIG_IGN);
+         skss_handler = VKI_SIG_IGN;
+      }
+
+      /* Blockfulness */
+
+      skss_blocked
+         = iz_blocked_by_all_threads && !iz_WaitSIGd_by_any_thread;
+
+      /* Flags */
+
+      skss_flags = 0;
+      /* SA_NOCLDSTOP: pass to kernel */
+      if (scss_flags & VKI_SA_NOCLDSTOP)
+         skss_flags |= VKI_SA_NOCLDSTOP;
+      /* SA_ONESHOT: ignore client setting */
+      /*
+      if (!(scss_flags & VKI_SA_ONESHOT))
+         VG_(unimplemented)
+            ("sigactions without SA_ONESHOT");
+      vg_assert(scss_flags & VKI_SA_ONESHOT);
+      skss_flags |= VKI_SA_ONESHOT;
+      */
+      /* SA_RESTART: ignore client setting and set for us */
+      skss_flags |= VKI_SA_RESTART;
+      /* SA_NOMASK: not allowed */
+      /*
+      .. well, ignore it. 
+      if (scss_flags & VKI_SA_NOMASK)
+         VG_(unimplemented)
+            ("sigactions with SA_NOMASK");
+      vg_assert(!(scss_flags & VKI_SA_NOMASK));
+      */
+      /* SA_ONSTACK: not allowed */
+      if (scss_flags & VKI_SA_ONSTACK)
+         VG_(unimplemented)
+            ("signals on an alternative stack (SA_ONSTACK)");
+      vg_assert(!(scss_flags & VKI_SA_ONSTACK));
+      /* ... but WE ask for on-stack ourselves ... */
+      skss_flags |= VKI_SA_ONSTACK;
+
+      /* Create SKSS entry for this signal. */
+
+      if (skss_blocked
+          && sig != VKI_SIGKILL && sig != VKI_SIGSTOP)
+         VG_(ksigaddset)( &dst->skss_sigmask, sig );
+
+      dst->skss_per_sig[sig].skss_handler = skss_handler;
+      dst->skss_per_sig[sig].skss_flags   = skss_flags;
+   }
+
+   /* Sanity checks. */
+   vg_assert(dst->skss_per_sig[VKI_SIGKILL].skss_handler 
+             == VKI_SIG_DFL);
+   vg_assert(dst->skss_per_sig[VKI_SIGSTOP].skss_handler 
+             == VKI_SIG_DFL);
+   vg_assert(!VG_(ksigismember)( &dst->skss_sigmask, VKI_SIGKILL ));
+   vg_assert(!VG_(ksigismember)( &dst->skss_sigmask, VKI_SIGSTOP ));
+
+   if (0)
+      pp_SKSS();
+}
+
+
+/* ---------------------------------------------------------------------
+   After a possible SCSS change, update SKSS and the kernel itself.
+   ------------------------------------------------------------------ */
+
+/* IMPORTANT NOTE: to avoid race conditions, we must always enter here
+   with ALL KERNEL SIGNALS BLOCKED ! 
+*/
+void VG_(handle_SCSS_change) ( Bool force_update )
+{
+   Int            res, sig;
+   SKSS           skss_old;
+   vki_ksigaction ksa, ksa_old;
+
+#  ifdef DEBUG_SIGNALS
+   vki_ksigset_t  test_sigmask;
+   res = VG_(ksigprocmask)( VKI_SIG_SETMASK /*irrelevant*/, 
+                            NULL, &test_sigmask );
+   vg_assert(res == 0);
+   /* The kernel never says that SIGKILL or SIGSTOP are masked. It is
+      correct! So we fake it here for the purposes only of
+      assertion. */
+   VG_(ksigaddset)( &test_sigmask, VKI_SIGKILL );
+   VG_(ksigaddset)( &test_sigmask, VKI_SIGSTOP );
+   vg_assert(VG_(kisfullsigset)( &test_sigmask ));
+#  endif
+
+   /* Remember old SKSS and calculate new one. */
+   skss_old = vg_skss;
+   calculate_SKSS_from_SCSS ( &vg_skss );
+
+   /* Compare the new SKSS entries vs the old ones, and update kernel
+      where they differ. */
+   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+
+      /* Trying to do anything with SIGKILL is pointless; just ignore
+         it. */
+      if (sig == VKI_SIGKILL || sig == VKI_SIGSTOP)
+         continue;
+
+      /* Aside: take the opportunity to clean up DCSS: forget about any
+         pending signals directed at dead threads. */
+      if (vg_dcss.dcss_sigpending[sig] 
+          && vg_dcss.dcss_destthread[sig] != VG_INVALID_THREADID) {
+         ThreadId tid = vg_dcss.dcss_destthread[sig];
+         vg_assert(VG_(is_valid_or_empty_tid)(tid));
+         if (VG_(threads)[tid].status == VgTs_Empty) {
+            vg_dcss.dcss_sigpending[sig] = False;
+            vg_dcss.dcss_destthread[sig] = VG_INVALID_THREADID;
+            if (VG_(clo_trace_signals)) 
+               VG_(message)(Vg_DebugMsg, 
+                   "discarding pending signal %d due to thread %d exiting",
+                   sig, tid );
+         }
+      }
+
+      /* End of the Aside.  Now the Main Business. */
+
+      if (!force_update) {
+         if ((skss_old.skss_per_sig[sig].skss_handler
+              == vg_skss.skss_per_sig[sig].skss_handler)
+             && (skss_old.skss_per_sig[sig].skss_flags
+                 == vg_skss.skss_per_sig[sig].skss_flags))
+            /* no difference */
+            continue;
+      }
+
+      ksa.ksa_handler = vg_skss.skss_per_sig[sig].skss_handler;
+      ksa.ksa_flags   = vg_skss.skss_per_sig[sig].skss_flags;
+      vg_assert(ksa.ksa_flags & VKI_SA_ONSTACK);
+      VG_(ksigfillset)( &ksa.ksa_mask );
+      VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGKILL );
+      VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGSTOP );
+      ksa.ksa_restorer = NULL;
+
+      if (VG_(clo_trace_signals)) 
+         VG_(message)(Vg_DebugMsg, 
+            "setting ksig %d to: hdlr 0x%x, flags 0x%x, "
+            "mask(63..0) 0x%x 0x%x",
+            sig, ksa.ksa_handler,
+            ksa.ksa_flags,
+            ksa.ksa_mask.ws[1], 
+            ksa.ksa_mask.ws[0] 
+         );
+
+      res = VG_(ksigaction)( sig, &ksa, &ksa_old );
+      vg_assert(res == 0);
+
+      /* Since we got the old sigaction more or less for free, might
+         as well extract the maximum sanity-check value from it. */
+      if (!force_update) {
+         vg_assert(ksa_old.ksa_handler 
+                   == skss_old.skss_per_sig[sig].skss_handler);
+         vg_assert(ksa_old.ksa_flags 
+                   == skss_old.skss_per_sig[sig].skss_flags);
+         vg_assert(ksa_old.ksa_restorer 
+                   == NULL);
+         VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGKILL );
+         VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGSTOP );
+         vg_assert(VG_(kisfullsigset)( &ksa_old.ksa_mask ));
+      }
+   }
+
+   /* Just set the new sigmask, even if it's no different from the
+      old, since we have to do this anyway, to unblock the host
+      signals. */
+   if (VG_(clo_trace_signals)) 
+      VG_(message)(Vg_DebugMsg, 
+         "setting kmask(63..0) to 0x%x 0x%x",
+         vg_skss.skss_sigmask.ws[1], 
+         vg_skss.skss_sigmask.ws[0] 
+      );
+
+   VG_(restore_all_host_signals)( &vg_skss.skss_sigmask );
+}
+
+
+/* ---------------------------------------------------------------------
+   Update/query SCSS in accordance with client requests.
+   ------------------------------------------------------------------ */
+
+void VG_(do__NR_sigaction) ( ThreadId tid )
+{
+   Int              signo;
+   vki_ksigaction*  new_act;
+   vki_ksigaction*  old_act;
+   vki_ksigset_t    irrelevant_sigmask;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   signo     = VG_(threads)[tid].m_ebx; /* int sigNo */
+   new_act   = (vki_ksigaction*)(VG_(threads)[tid].m_ecx);
+   old_act   = (vki_ksigaction*)(VG_(threads)[tid].m_edx);
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugExtraMsg, 
+         "__NR_sigaction: tid %d, sigNo %d, "
+         "new 0x%x, old 0x%x, new flags 0x%x",
+         tid, signo, (UInt)new_act, (UInt)old_act,
+         (UInt)(new_act ? new_act->ksa_flags : 0) );
+
+   /* Rule out various error conditions.  The aim is to ensure that if
+      when the call is passed to the kernel it will definitely
+      succeed. */
+
+   /* Reject out-of-range signal numbers. */
+   if (signo < 1 || signo > VKI_KNSIG) goto bad_signo;
+
+   /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
+   if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP)
+       && new_act
+       && new_act->ksa_handler != VKI_SIG_DFL)
+      goto bad_sigkill_or_sigstop;
+
+   /* If the client supplied non-NULL old_act, copy the relevant SCSS
+      entry into it. */
+   if (old_act) {
+      old_act->ksa_handler  = vg_scss.scss_per_sig[signo].scss_handler;
+      old_act->ksa_flags    = vg_scss.scss_per_sig[signo].scss_flags;
+      old_act->ksa_mask     = vg_scss.scss_per_sig[signo].scss_mask;
+      old_act->ksa_restorer = vg_scss.scss_per_sig[signo].scss_restorer;
+   }
+
+   /* And now copy new SCSS entry from new_act. */
+   if (new_act) {
+      vg_scss.scss_per_sig[signo].scss_handler  = new_act->ksa_handler;
+      vg_scss.scss_per_sig[signo].scss_flags    = new_act->ksa_flags;
+      vg_scss.scss_per_sig[signo].scss_mask     = new_act->ksa_mask;
+      vg_scss.scss_per_sig[signo].scss_restorer = new_act->ksa_restorer;
+   }
+
+   /* All happy bunnies ... */
+   if (new_act) {
+      VG_(block_all_host_signals)( &irrelevant_sigmask );
+      VG_(handle_SCSS_change)( False /* lazy update */ );
+   }
+   SET_EAX(tid, 0);
+   return;
+
+  bad_signo:
+   VG_(message)(Vg_UserMsg,
+                "Warning: bad signal number %d in __NR_sigaction.", 
+                signo);
+   SET_EAX(tid, -VKI_EINVAL);
+   return;
+
+  bad_sigkill_or_sigstop:
+   VG_(message)(Vg_UserMsg,
+      "Warning: attempt to set %s handler in __NR_sigaction.", 
+      signo == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
+
+   SET_EAX(tid, -VKI_EINVAL);
+   return;
+}
+
+
+static
+void do_sigprocmask_bitops ( Int vki_how, 
+			     vki_ksigset_t* orig_set,
+			     vki_ksigset_t* modifier )
+{
+   switch (vki_how) {
+      case VKI_SIG_BLOCK: 
+         VG_(ksigaddset_from_set)( orig_set, modifier );
+         break;
+      case VKI_SIG_UNBLOCK:
+         VG_(ksigdelset_from_set)( orig_set, modifier );
+         break;
+      case VKI_SIG_SETMASK:
+         *orig_set = *modifier;
+         break;
+      default:
+         VG_(panic)("do_sigprocmask_bitops");
+	 break;
+   }
+}
+
+/* Handle blocking mask set/get uniformly for threads and process as a
+   whole.  If tid==VG_INVALID_THREADID, this is really
+   __NR_sigprocmask, in which case we set the masks for all threads to
+   the "set" and return in "oldset" that from the root thread (1).
+   Otherwise, tid will denote a valid thread, in which case we just
+   set/get its mask.
+
+   Note that the thread signal masks are an implicit part of SCSS,
+   which is why this routine is allowed to mess with them.  
+*/
+static
+void do_setmask ( ThreadId tid,
+                  Int how,
+                  vki_ksigset_t* newset,
+		  vki_ksigset_t* oldset )
+{
+   vki_ksigset_t irrelevant_sigmask;
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, 
+         "do_setmask: tid = %d (0 means ALL), how = %d (%s), set = %p", 
+         tid,
+         how,
+         how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
+            how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
+            how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
+         newset
+      );
+
+   if (tid == VG_INVALID_THREADID) {
+      /* Behave as if __NR_sigprocmask. */
+      if (oldset) {
+         /* A bit fragile.  Should do better here really. */
+         vg_assert(VG_(threads)[1].status != VgTs_Empty);
+         *oldset = VG_(threads)[1].sig_mask;
+      }
+      if (newset) {
+        ThreadId tidd;
+        for (tidd = 1; tidd < VG_N_THREADS; tidd++) {
+            if (VG_(threads)[tidd].status == VgTs_Empty) 
+               continue;
+            do_sigprocmask_bitops ( 
+               how, &VG_(threads)[tidd].sig_mask, newset );
+         }
+      }
+   } else {
+      /* Just do this thread. */
+      vg_assert(VG_(is_valid_tid)(tid));
+      if (oldset)
+         *oldset = VG_(threads)[tid].sig_mask;
+      if (newset)
+         do_sigprocmask_bitops ( 
+            how, &VG_(threads)[tid].sig_mask, newset );
+   }
+
+   if (newset) {
+      VG_(block_all_host_signals)( &irrelevant_sigmask );
+      VG_(handle_SCSS_change)( False /* lazy update */ );
+   }
+}
+
+
+void VG_(do__NR_sigprocmask) ( ThreadId tid,
+                               Int how, 
+                               vki_ksigset_t* set,
+                               vki_ksigset_t* oldset )
+{
+   if (how == VKI_SIG_BLOCK || how == VKI_SIG_UNBLOCK 
+                            || how == VKI_SIG_SETMASK) {
+      vg_assert(VG_(is_valid_tid)(tid));
+      do_setmask ( VG_INVALID_THREADID, how, set, oldset );
+      /* Syscall returns 0 (success) to its thread. */
+      SET_EAX(tid, 0);
+   } else {
+      VG_(message)(Vg_DebugMsg, 
+                  "sigprocmask: unknown `how' field %d", how);
+      SET_EAX(tid, -VKI_EINVAL);
+   }
+}
+
+
+void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
+                                        Int how, 
+                                        vki_ksigset_t* set,
+                                        vki_ksigset_t* oldset )
+{
+   /* Assume that how has been validated by caller. */
+   vg_assert(how == VKI_SIG_BLOCK || how == VKI_SIG_UNBLOCK 
+                                  || how == VKI_SIG_SETMASK);
+   vg_assert(VG_(is_valid_tid)(tid));
+   do_setmask ( tid, how, set, oldset );
+   /* The request return code is set in do_pthread_sigmask */
+}
+
+
+void VG_(send_signal_to_thread) ( ThreadId thread, Int sig )
+{
+   Int res;
+   vg_assert(VG_(is_valid_tid)(thread));
+   vg_assert(sig >= 1 && sig <= VKI_KNSIG);
+   
+   switch ((UInt)(vg_scss.scss_per_sig[sig].scss_handler)) {
+
+      case VKI_SIG_IGN:
+         if (VG_(clo_trace_signals)) 
+            VG_(message)(Vg_DebugMsg, 
+               "send_signal %d to_thread %d: IGN, ignored", sig, thread );
+         break;
+
+      case VKI_SIG_DFL:
+         /* This is the tricky case.  Since we don't handle default
+            actions, the simple thing is to send someone round to the
+            front door and signal there.  Then the kernel will do
+            whatever it does with the default action. */
+         res = VG_(kill)( VG_(getpid)(), sig );
+         vg_assert(res == 0);
+         break;
+
+      default:
+         if (!vg_dcss.dcss_sigpending[sig]) {
+            vg_dcss.dcss_sigpending[sig] = True;
+            vg_dcss.dcss_destthread[sig] = thread;
+            if (VG_(clo_trace_signals)) 
+               VG_(message)(Vg_DebugMsg, 
+                  "send_signal %d to_thread %d: now pending", sig, thread );
+         } else {
+            if (vg_dcss.dcss_destthread[sig] == thread) {
+               if (VG_(clo_trace_signals)) 
+                  VG_(message)(Vg_DebugMsg, 
+                     "send_signal %d to_thread %d: already pending ... "
+                     "discarded", sig, thread );
+            } else {
+               if (VG_(clo_trace_signals)) 
+                  VG_(message)(Vg_DebugMsg, 
+                     "send_signal %d to_thread %d: was pending for %d, "
+                     "now pending for %d",
+                     sig, thread, vg_dcss.dcss_destthread[sig], thread );
+               vg_dcss.dcss_destthread[sig] = thread;
+            }
+         }
+   }    
+}
+
+
+/* ---------------------------------------------------------------------
+   LOW LEVEL STUFF TO DO WITH SIGNALS: IMPLEMENTATION
+   ------------------------------------------------------------------ */
 
 /* ---------------------------------------------------------------------
    Handy utilities to block/restore all host signals.
@@ -134,7 +701,7 @@ void VG_(block_all_host_signals) ( /* OUT */ vki_ksigset_t* saved_mask )
 }
 
 /* Restore the blocking mask using the supplied saved one. */
-void VG_(restore_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
+void VG_(restore_all_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
 {
    Int ret;
    ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, saved_mask, NULL);
@@ -193,7 +760,8 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    VgSigFrame*  frame;
    ThreadState* tst;
 
-   tst = VG_(get_thread_state)(tid);
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
    esp = tst->m_esp;
 
    esp -= sizeof(VgSigFrame);
@@ -229,7 +797,7 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
 
    /* Set the thread so it will next run the handler. */
    tst->m_esp  = esp;
-   tst->m_eip  = (Addr)vg_sigpending[sigNo];
+   tst->m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
@@ -257,7 +825,8 @@ Int vg_pop_signal_frame ( ThreadId tid )
    VgSigFrame*   frame;
    ThreadState*  tst;
 
-   tst = VG_(get_thread_state)(tid);
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
 
    /* Correctly reestablish the frame base address. */
    esp   = tst->m_esp;
@@ -324,34 +893,18 @@ Bool VG_(signal_returns) ( ThreadId tid )
       before the signal was delivered. */
    sigNo = vg_pop_signal_frame(tid);
 
-   /* You would have thought that the following assertion made sense
-      here:
-
-         vg_assert(vg_sigpending[sigNo] == VG_SP_SIGRUNNING);
-
-      Alas, you would be wrong.  If a sigprocmask has been intercepted
-      and it unblocks this signal, then vg_sigpending[sigNo] will
-      either be VG_SIGIDLE, or (worse) another instance of it will
-      already have arrived, so that the stored value is that of the
-      handler.
-
-      Note that these anomalies can only occur when a signal handler
-      unblocks its own signal inside itself AND THEN RETURNS anyway
-      (which seems a bizarre thing to do).
-
-      Ho Hum.  This seems like a race condition which surely isn't
-      handled correctly.  */
-
    vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
-   vg_sigpending[sigNo] = VG_SP_SIGIDLE;
 
    /* Unlock and return. */
-   VG_(restore_host_signals)( &saved_procmask );
+   VG_(restore_all_host_signals)( &saved_procmask );
 
    /* Scheduler now can resume this thread, or perhaps some other.
       Tell the scheduler whether or not any syscall interrupted by
       this signal should be restarted, if possible, or no. */
-   return vg_sig_sarestart[sigNo];
+   return 
+      (vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART)
+         ? True 
+         : False;
 }
 
 
@@ -361,20 +914,18 @@ Bool VG_(deliver_signals) ( void )
 {
    vki_ksigset_t  saved_procmask;
    Int            sigNo;
-   Bool           found;
+   Bool           found, scss_changed;
    ThreadState*   tst;
    ThreadId       tid;
 
-   /* A cheap check.  We don't need to have exclusive access
-      to the queue, because in the worst case, vg_oursignalhandler
-      will add signals, causing us to return, thinking there
-      are no signals to deliver, when in fact there are some.
-      A subsequent call here will handle the signal(s) we missed.
-   */
+   /* A cheap check.  We don't need to have exclusive access to the
+      pending array, because in the worst case, vg_oursignalhandler
+      will add signals, causing us to return, thinking there are no
+      signals to deliver, when in fact there are some.  A subsequent
+      call here will handle the signal(s) we missed.  */
    found = False;
    for (sigNo = 1; sigNo <= VKI_KNSIG; sigNo++)
-      if (vg_sigpending[sigNo] != VG_SP_SIGIDLE 
-          && vg_sigpending[sigNo] != VG_SP_SIGRUNNING) 
+      if (vg_dcss.dcss_sigpending[sigNo])
          found = True;
 
    if (!found) return False;
@@ -383,19 +934,21 @@ Bool VG_(deliver_signals) ( void )
       blocking all the host's signals.  That means vg_oursignalhandler
       can't run whilst we are messing with stuff.
    */
+   scss_changed = False;
    VG_(block_all_host_signals)( &saved_procmask );
 
    /* Look for signals to deliver ... */
    for (sigNo = 1; sigNo <= VKI_KNSIG; sigNo++) {
-      if (vg_sigpending[sigNo] == VG_SP_SIGIDLE
-          || vg_sigpending[sigNo] == VG_SP_SIGRUNNING) continue;
+
+      if (!vg_dcss.dcss_sigpending[sigNo])
+         continue;
+
       /* sigNo is pending.  Try to find a suitable thread to deliver
          it to. */
-
       /* First off, are any threads in sigwait() for the signal? 
          If so just give to one of them and have done. */
       for (tid = 1; tid < VG_N_THREADS; tid++) {
-         tst = VG_(get_thread_state_UNCHECKED)(tid);
+         tst = & VG_(threads)[tid];
          if (tst->status != VgTs_WaitSIG)
             continue;
          if (VG_(ksigismember)(&(tst->sigs_waited_for), sigNo))
@@ -403,7 +956,7 @@ Bool VG_(deliver_signals) ( void )
       }
       if (tid < VG_N_THREADS) {
          UInt* sigwait_args;
-         tst = VG_(get_thread_state)(tid);
+         tst = & VG_(threads)[tid];
          if (VG_(clo_trace_signals) || VG_(clo_trace_sched))
             VG_(message)(Vg_DebugMsg,
                "releasing thread %d from sigwait() due to signal %d",
@@ -412,46 +965,49 @@ Bool VG_(deliver_signals) ( void )
          if (NULL != (UInt*)(sigwait_args[2])) {
             *(Int*)(sigwait_args[2]) = sigNo;
             if (VG_(clo_instrument))
-               VGM_(make_readable)( (Addr)(sigwait_args[2]), sizeof(UInt));
+               VGM_(make_readable)( (Addr)(sigwait_args[2]), 
+                                    sizeof(UInt));
          }
-	 tst->m_edx = 0;
-         tst->sh_edx = VGM_WORD_VALID;
+	 SET_EDX(tid, 0);
          tst->status = VgTs_Runnable;
          VG_(ksigemptyset)(&tst->sigs_waited_for);
-         VG_(update_sigstate_following_WaitSIG_change)();
-         vg_sigpending[sigNo] = VG_SP_SIGIDLE;
+         scss_changed = True;
+         vg_dcss.dcss_sigpending[sigNo] = False;
+         vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID; 
+                                          /*paranoia*/
          continue; /* for (sigNo = 1; ...) loop */
       }
 
       /* Well, nobody appears to be sigwaiting for it.  So we really
-         are delivering the signal in the usual way, and so the
-         handler better be valid. */
-      vg_assert(vg_sigpending[sigNo] != VG_SP_SIGIDLE);
-      vg_assert(vg_sigpending[sigNo] != VG_SH_FAKEHANDLER);
-      vg_assert(vg_sigpending[sigNo] != VG_SP_SIGRUNNING);
+         are delivering the signal in the usual way.  And that the
+         client really has a handler for this thread! */
+      vg_assert(vg_dcss.dcss_sigpending[sigNo]);
+      vg_assert(vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN
+                && vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL);
 
-      tid = vg_sig_threadid[sigNo];
+      tid = vg_dcss.dcss_destthread[sigNo];
       vg_assert(tid == VG_INVALID_THREADID 
                 || VG_(is_valid_tid)(tid));
 
       if (tid != VG_INVALID_THREADID) {
          /* directed to a specific thread; ensure it actually still
             exists ... */
-         tst = VG_(get_thread_state_UNCHECKED)(tid);
+         tst = & VG_(threads)[tid];
          if (tst->status == VgTs_Empty) {
             /* dead, for whatever reason; ignore this signal */
             if (VG_(clo_trace_signals))
                VG_(message)(Vg_DebugMsg,
                   "discarding signal %d for nonexistent thread %d",
                   sigNo, tid );
-            vg_sigpending[sigNo] = VG_SP_SIGIDLE;
+            vg_dcss.dcss_sigpending[sigNo] = False;
+            vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
             continue; /* for (sigNo = 1; ...) loop */
 	 }
       } else {
          /* not directed to a specific thread, so search for a
             suitable candidate */
          for (tid = 1; tid < VG_N_THREADS; tid++) {
-            tst = VG_(get_thread_state_UNCHECKED)(tid);
+            tst = & VG_(threads)[tid];
             if (tst->status != VgTs_Empty
                 && !VG_(ksigismember)(&(tst->sig_mask), sigNo))
                break;
@@ -473,40 +1029,32 @@ Bool VG_(deliver_signals) ( void )
          signal handler with the frame on top of the client's stack,
          as it expects. */
       vg_assert(VG_(is_valid_tid)(tid));
-      vg_assert(VG_(get_thread_state)(tid)->status != VgTs_Empty);
       vg_push_signal_frame ( tid, sigNo );
-      VG_(get_thread_state)(tid)->status = VgTs_Runnable;
+      VG_(threads)[tid].status = VgTs_Runnable;
       
       /* Signify that the signal has been delivered. */
-      vg_sigpending[sigNo] = VG_SP_SIGRUNNING;
+      vg_dcss.dcss_sigpending[sigNo] = False;
+      vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
+
+      if (vg_scss.scss_per_sig[sigNo].scss_flags & VKI_SA_ONESHOT) {
+         /* Do the ONESHOT thing. */
+         vg_scss.scss_per_sig[sigNo].scss_handler = VKI_SIG_DFL;
+         scss_changed = True;
+      }
    }
 
    /* Unlock and return. */
-   VG_(restore_host_signals)( &saved_procmask );
-   return True;
-}
-
-
-/* A thread is about to exit.  Forget about any signals which are
-   still pending for it. */
-void VG_(notify_signal_machinery_of_thread_exit) ( ThreadId tid )
-{
-   Int sigNo;
-   for (sigNo = 1; sigNo <= VKI_KNSIG; sigNo++) {
-      if (vg_sigpending[sigNo] == VG_SP_SIGIDLE
-          || vg_sigpending[sigNo] == VG_SP_SIGRUNNING)
-         continue;
-      if (vg_sig_threadid[sigNo] == tid) {
-         /* sigNo is pending for tid, which is just about to disappear.
-            So forget about the pending signal. */
-         vg_sig_threadid[sigNo] = VG_INVALID_THREADID;
-         vg_sigpending[sigNo] = VG_SP_SIGIDLE;
-         if (VG_(clo_trace_signals)) 
-            VG_(message)(Vg_DebugMsg, 
-                "discarding pending signal %d due to thread %d exiting",
-                sigNo, tid );
-      }   
+   if (scss_changed) {
+      /* handle_SCSS_change computes a new kernel blocking mask and
+         applies that. */
+      VG_(handle_SCSS_change)( False /* lazy update */ );
+   } else {
+      /* No SCSS change, so just restore the existing blocking
+         mask. */
+      VG_(restore_all_host_signals)( &saved_procmask );
    }
+
+   return True;
 }
 
 
@@ -516,9 +1064,11 @@ void VG_(notify_signal_machinery_of_thread_exit) ( ThreadId tid )
    to have mutual exclusion when adding stuff to the queue. */
 
 static 
-void VG_(oursignalhandler) ( Int sigNo )
+void vg_oursignalhandler ( Int sigNo )
 {
+   ThreadId      tid;
    Int           dummy_local;
+   Bool          sane;
    vki_ksigset_t saved_procmask;
 
    /*
@@ -562,7 +1112,22 @@ void VG_(oursignalhandler) ( Int sigNo )
 
    VG_(block_all_host_signals)( &saved_procmask );
 
-   if (vg_sighandler[sigNo] == VG_SH_NOHANDLER) {
+   /* This is a sanity check.  Either a signal has arrived because the
+      client set a handler for it, or because some thread sigwaited on
+      it.  Establish that at least one of these is the case. */
+   sane = False;
+   if (vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL
+       && vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN) {
+      sane = True;
+   } else {
+      for (tid = 1; tid < VG_N_THREADS; tid++) {
+         if (VG_(threads)[tid].status != VgTs_WaitSIG) 
+            continue;
+         if (VG_(ksigismember)(&VG_(threads)[tid].sigs_waited_for, sigNo))
+            sane = True;
+      }
+   }
+   if (!sane) {
       if (VG_(clo_trace_signals)) {
          VG_(add_to_msg)("unexpected!");
          VG_(end_msg)();
@@ -571,31 +1136,20 @@ void VG_(oursignalhandler) ( Int sigNo )
          that matters. */
       VG_(panic)("vg_oursignalhandler: unexpected signal");
    }
+   /* End of the sanity check. */
 
    /* Decide what to do with it. */
-   if (vg_sigpending[sigNo] == VG_SP_SIGRUNNING) {
-       /* Already running; ignore it. */
-      if (VG_(clo_trace_signals)) {
-         VG_(add_to_msg)("already running; discarded" );
-         VG_(end_msg)();
-      }
-   }
-   else
-   if (vg_sigpending[sigNo] != VG_SP_SIGRUNNING 
-       && vg_sigpending[sigNo] != VG_SP_SIGIDLE) {
-      /* Not running and not idle == pending; ignore it. */
+   if (vg_dcss.dcss_sigpending[sigNo]) {
+      /* pending; ignore it. */
       if (VG_(clo_trace_signals)) {
          VG_(add_to_msg)("already pending; discarded" );
          VG_(end_msg)();
       }
-   } 
-   else {
+   } else {
       /* Ok, we'd better deliver it to the client. */
-      vg_assert(vg_sigpending[sigNo] == VG_SP_SIGIDLE);
       /* Queue it up for delivery at some point in the future. */
-      vg_assert(vg_sighandler[sigNo] != VG_SH_NOHANDLER);
-      vg_sigpending[sigNo] = vg_sighandler[sigNo];
-      vg_sig_threadid[sigNo] = VG_INVALID_THREADID;
+      vg_dcss.dcss_sigpending[sigNo] = True;
+      vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
       if (VG_(clo_trace_signals)) {
          VG_(add_to_msg)("queued" );
          VG_(end_msg)();
@@ -604,10 +1158,10 @@ void VG_(oursignalhandler) ( Int sigNo )
 
    /* We've finished messing with the queue, so re-enable host
       signals. */
-   VG_(restore_host_signals)( &saved_procmask );
+   VG_(restore_all_host_signals)( &saved_procmask );
 
-   if ((sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
-       || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL)) {
+   if (sigNo == VKI_SIGSEGV || sigNo == VKI_SIGBUS 
+       || sigNo == VKI_SIGFPE || sigNo == VKI_SIGILL) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
       VG_(longjmpd_on_signal) = sigNo;
@@ -645,8 +1199,9 @@ void pp_vg_ksigaction ( vki_ksigaction* sa )
 }
 
 
-/* Copy the process' real signal state to the sim state.  Whilst
-   doing this, block all real signals.
+/* At startup, copy the process' real signal state to the SCSS.
+   Whilst doing this, block all real signals.  Then calculate SKSS and
+   set the kernel to that.  Also initialise DCSS. 
 */
 void VG_(sigstartup_actions) ( void )
 {
@@ -660,6 +1215,33 @@ void VG_(sigstartup_actions) ( void )
    /* Block all signals.  
       saved_procmask remembers the previous mask. */
    VG_(block_all_host_signals)( &saved_procmask );
+
+   /* Copy per-signal settings to SCSS. */
+   for (i = 1; i <= VKI_KNSIG; i++) {
+
+      /* Get the old host action */
+      ret = VG_(ksigaction)(i, NULL, &sa);
+      vg_assert(ret == 0);
+
+      if (VG_(clo_trace_signals))
+         VG_(printf)("snaffling handler 0x%x for signal %d\n", 
+                     (Addr)(sa.ksa_handler), i );
+
+      vg_scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
+      vg_scss.scss_per_sig[i].scss_flags    = sa.ksa_flags;
+      vg_scss.scss_per_sig[i].scss_mask     = sa.ksa_mask;
+      vg_scss.scss_per_sig[i].scss_restorer = sa.ksa_restorer;
+   }
+
+   /* Copy the process' signal mask into the root thread. */
+   vg_assert(VG_(threads)[1].status == VgTs_Runnable);
+   VG_(threads)[1].sig_mask = saved_procmask;
+
+   /* Initialise DCSS. */
+   for (i = 1; i <= VKI_KNSIG; i++) {
+      vg_dcss.dcss_sigpending[i] = False;
+      vg_dcss.dcss_destthread[i] = VG_INVALID_THREADID;
+   }
 
    /* Register an alternative stack for our own signal handler to run
       on. */
@@ -676,48 +1258,12 @@ void VG_(sigstartup_actions) ( void )
          "vg_sigstartup_actions: sigstack installed ok");
    }
 
-   /* Set initial state for the signal simulation. */
-   for (i = 1; i <= VKI_KNSIG; i++) {
-      vg_sighandler[i] = VG_SH_NOHANDLER;
-      vg_sigpending[i] = VG_SP_SIGIDLE;
-      vg_sig_sarestart[i] = True; /* An easy default */
-      vg_sig_threadid[i] = VG_INVALID_THREADID;
-   }
-
-   for (i = 1; i <= VKI_KNSIG; i++) {
-
-      /* Get the old host action */
-      ret = VG_(ksigaction)(i, NULL, &sa);
-      vg_assert(ret == 0);
-
-      /* If there's already a handler set, record it, then route the
-         signal through to our handler. */
-      if (sa.ksa_handler != VKI_SIG_IGN 
-          && sa.ksa_handler != VKI_SIG_DFL) {
-         if (VG_(clo_trace_signals))
-            VG_(printf)("snaffling handler 0x%x for signal %d\n", 
-                        (Addr)(sa.ksa_handler), i );
-         if ((sa.ksa_flags & VKI_SA_ONSTACK) != 0)
-            VG_(unimplemented)
-               ("signals on an alternative stack (SA_ONSTACK)");
-
-         vg_sighandler[i] = sa.ksa_handler;
-         sa.ksa_handler = &VG_(oursignalhandler);
-	 /* Save the restart status, then set it to restartable. */
-	 vg_sig_sarestart[i] 
-            = (sa.ksa_flags & VKI_SA_RESTART) ? True : False;
-         sa.ksa_flags |= VKI_SA_RESTART;
-
-         ret = VG_(ksigaction)(i, &sa, NULL);
-         vg_assert(ret == 0);
-      }
-   }
-
    /* DEBUGGING HACK */
    /* VG_(ksignal)(VKI_SIGUSR1, &VG_(oursignalhandler)); */
 
-   /* Finally, restore the blocking mask. */
-   VG_(restore_host_signals)( &saved_procmask );
+   /* Calculate SKSS and apply it.  This also sets the initial kernel
+      mask we need to run with. */
+   VG_(handle_SCSS_change)( True /* forced update */ );
 }
 
 
@@ -741,292 +1287,29 @@ void VG_(sigshutdown_actions) ( void )
 
    VG_(block_all_host_signals)( &saved_procmask );
 
-   /* copy the sim signal actions to the real ones. */
-   /* Hmm, this isn't accurate.  Doesn't properly restore the
-      SA_RESTART flag nor SA_ONSTACK. */
+   /* Copy per-signal settings from SCSS. */
    for (i = 1; i <= VKI_KNSIG; i++) {
-      if (i == VKI_SIGKILL || i == VKI_SIGSTOP) continue;
-      if (vg_sighandler[i] == VG_SH_NOHANDLER 
-          || vg_sighandler[i] == VG_SH_FAKEHANDLER) continue;
-      ret = VG_(ksigaction)(i, NULL, &sa);
+
+      sa.ksa_handler  = vg_scss.scss_per_sig[i].scss_handler;
+      sa.ksa_flags    = vg_scss.scss_per_sig[i].scss_flags;
+      sa.ksa_mask     = vg_scss.scss_per_sig[i].scss_mask;
+      sa.ksa_restorer = vg_scss.scss_per_sig[i].scss_restorer;
+
+      if (VG_(clo_trace_signals))
+         VG_(printf)("restoring handler 0x%x for signal %d\n", 
+                     (Addr)(sa.ksa_handler), i );
+
+      /* Get the old host action */
+      ret = VG_(ksigaction)(i, &sa, NULL);
       vg_assert(ret == 0);
-      sa.ksa_handler = vg_sighandler[i];
-      ret = VG_(ksigaction)(i, &sa, NULL);      
+
    }
 
-   VG_(restore_host_signals)( &saved_procmask );
+   /* A bit of a kludge -- set the sigmask to that of the root
+      thread. */
+   vg_assert(VG_(threads)[1].status != VgTs_Empty);
+   VG_(restore_all_host_signals)( &VG_(threads)[1].sig_mask );
 }
-
-
-void VG_(update_sigstate_following_WaitSIG_change) ( void )
-{
-   ThreadId      tid;
-   Int           sig;
-   vki_ksigset_t global_waitsigs;
-   ThreadState*  tst;
-
-   VG_(ksigemptyset)( &global_waitsigs );
-
-   /* Calculate the new set of signals which are being sigwait()d for
-      by at least one thread. */
-   for (tid = 1; tid < VG_N_THREADS; tid++) {
-      tst = VG_(get_thread_state_UNCHECKED)(tid);
-      if (tst->status != VgTs_WaitSIG)
-         continue;
-      vg_assert(! VG_(kisemptysigset)(
-                     & tst->sigs_waited_for ));
-      VG_(ksigaddset_from_set)( & global_waitsigs, 
-                                & tst->sigs_waited_for );
-   }
-
-   /* Now adjust vg_sighandler accordingly.
-
-      For each signal s: (lapses into pseudo-Haskell ...)
-
-      if s `elem` global_waitsigs[s]
-       -- at least one thread is sigwait()ing for s.  That means that at 
-          least _some_ kind of handler is needed.
-       case vg_sighandler[s] of
-          VG_SH_NOHANDLER -> install our own handler and set waitsigs[s] 
-             to VG_SH_FAKEHANDLER 
-          VG_SH_FAKEHANDLER -> there's already a handler.  Do nothing.
-          real_handler -> the client had a handler here anyway, so
-             just leave it alone, ie, do nothing.
-
-      if s `notElem` global_waitsigs[s]
-       -- we're not sigwait()ing for s (any longer).  
-       case vg_sighandler[s] of
-          VG_SH_FAKEHANDLER -> there is a handler installed, but ONLY for 
-             the purposes of handling sigwait().  So set it back to 
-             VG_SH_NOHANDLER and tell the kernel that we want to do the 
-             default action for s from now on, ie, we wish to deregister 
-             OUR handle.
-          VG_SH_NOHANDLER -> there was no handler anyway.  Do nothing.
-          real_handler -> the client had a handler here anyway, so
-             just leave it alone, ie, do nothing.
- 
-   */
-
-   for (sig = 1; sig <= VKI_KNSIG; sig++) {
-      if (VG_(ksigismember)( & global_waitsigs, sig )) {
-         if (vg_sighandler[sig] == VG_SH_NOHANDLER
-             /* && existing kernel handler is SIG_DFL */) {
-            /* add handler */
-            /* We really only ought to do this if the existing kernel
-               handler is SIG_DFL.  That's because when queried by the
-               client's sigaction, that's what we claim it is if a fake
-               handler has been installed.  Or (perhaps better) 
-               remember the kernel's setting. 
-            */
-            VG_(ksignal)( sig, &VG_(oursignalhandler) );
-            vg_sighandler[sig] = VG_SH_FAKEHANDLER;
-            if (VG_(clo_trace_signals)) {
-               VG_(message)(Vg_DebugMsg,
-                  "adding fake handler for signal %d "
-                  "following WaitSIG change", sig );
-            }
-         }
-      } else {
-         if (vg_sighandler[sig] == VG_SH_FAKEHANDLER) {
-            /* remove handler */
-            VG_(ksignal)( sig, VKI_SIG_DFL);
-            vg_sighandler[sig] = VG_SH_NOHANDLER;
-            if (VG_(clo_trace_signals)) {
-               VG_(message)(Vg_DebugMsg,
-                  "removing fake handler for signal %d "
-                  "following WaitSIG change", sig );
-            }
-         }
-      }
-   }
-}
-
-/* ---------------------------------------------------------------------
-   Handle signal-related syscalls from the simulatee.
-   ------------------------------------------------------------------ */
-
-/* Do more error checking? */
-void VG_(do__NR_sigaction) ( ThreadId tid )
-{
-   UInt res;
-   void* our_old_handler;
-   vki_ksigaction* new_action;
-   vki_ksigaction* old_action;
-   ThreadState* tst = VG_(get_thread_state)( tid );
-   UInt param1 = tst->m_ebx; /* int sigNo */
-   UInt param2 = tst->m_ecx; /* k_sigaction* new_action */
-   UInt param3 = tst->m_edx; /* k_sigaction* old_action */
-   new_action  = (vki_ksigaction*)param2;
-   old_action  = (vki_ksigaction*)param3;
-
-   if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugExtraMsg, 
-         "__NR_sigaction: sigNo %d, "
-         "new 0x%x, old 0x%x, new flags 0x%x",
-         param1,(UInt)new_action,(UInt)old_action,
-         (UInt)(new_action ? new_action->ksa_flags : 0) );
-   /* VG_(ppSigProcMask)(); */
-
-   /* Rule out various error conditions.  The aim is to ensure that if
-      the call is passed to the kernel it will definitely succeed. */
-
-   /* Reject out-of-range signal numbers. */
-   if (param1 < 1 || param1 > VKI_KNSIG) goto bad_signo;
-
-   /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
-   if ( (param1 == VKI_SIGKILL || param1 == VKI_SIGSTOP)
-       && new_action
-       && new_action->ksa_handler != VKI_SIG_DFL)
-      goto bad_sigkill_or_sigstop;
-
-   our_old_handler = vg_sighandler[param1];
-   /* VG_(printf)("old handler = 0x%x\n", our_old_handler); */
-   /* If a new handler has been specified, mess with its handler. */
-   if (new_action) {
-      if (new_action->ksa_handler == VKI_SIG_IGN ||
-          new_action->ksa_handler == VKI_SIG_DFL) {
-         vg_sighandler[param1] = VG_SH_NOHANDLER;
-         vg_sigpending[param1] = VG_SP_SIGIDLE;
-         /* Dangerous!  Could lose signals like this. */
-      } else {
-         /* VG_(printf)("new handler = 0x%x\n", new_action->ksa_handler); */
-         /* The client isn't allowed to use an alternative signal
-            stack.  We, however, must. */
-         if ((new_action->ksa_flags & VKI_SA_ONSTACK) != 0)
-            VG_(unimplemented)
-               ("signals on an alternative stack (SA_ONSTACK)");
-         new_action->ksa_flags |= VKI_SA_ONSTACK;
-         vg_sighandler[param1] = new_action->ksa_handler;
-	 vg_sig_sarestart[param1] 
-            = (new_action->ksa_flags & VKI_SA_RESTART) ? True : False;
-         new_action->ksa_flags |= VKI_SA_RESTART;
-         new_action->ksa_handler = &VG_(oursignalhandler);
-      }
-   }
-
-   KERNEL_DO_SYSCALL(tid,res);
-   /* VG_(printf)("RES = %d\n", res); */
-
-   /* If the client asks for the old handler, maintain our fiction
-      by stuffing in the handler it thought it asked for ... */
-   if (old_action) {
-      if (old_action->ksa_handler == VKI_SIG_IGN ||
-          old_action->ksa_handler == VKI_SIG_DFL) {
-         /* No old action; we should have a NULL handler. */
-         vg_assert(our_old_handler == VG_SH_NOHANDLER);
-      } else {
-         /* There's a handler. */
-         if (param1 != VKI_SIGKILL && param1 != VKI_SIGSTOP) {
-            vg_assert(old_action->ksa_handler == &VG_(oursignalhandler));
-	    vg_assert((old_action->ksa_flags & VKI_SA_ONSTACK) != 0);
-         }
-	 /* Is the handler a fake one which the client doesn't know
-            about? */
-         if (vg_sighandler[param1] == VG_SH_FAKEHANDLER) {
-            /* Yes.  Pretend it was in a SIG_DFL state before. */
-            old_action->ksa_handler = VKI_SIG_DFL;
-         } else {
-            old_action->ksa_handler = our_old_handler;
-         }
-         /* Since the client is not allowed to ask for an alternative
-            sig stack, unset the bit for anything we pass back to
-            it. */
-         old_action->ksa_flags &= ~VKI_SA_ONSTACK;
-	 /* Restore the SA_RESTART flag to whatever we snaffled. */
-	 if (vg_sig_sarestart[param1])
-            old_action->ksa_flags |= VKI_SA_RESTART;
-         else 
-            old_action->ksa_flags &= ~VKI_SA_RESTART;
-      }
-   }
-   goto good;
-
-  good:
-   tst->m_eax = (UInt)0;
-   return;
-
-  bad_signo:
-   VG_(message)(Vg_UserMsg,
-                "Warning: bad signal number %d in __NR_sigaction.", 
-                param1);
-   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
-   return;
-
-  bad_sigkill_or_sigstop:
-   VG_(message)(Vg_UserMsg,
-      "Warning: attempt to set %s handler in __NR_sigaction.", 
-      param1 == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
-
-   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
-   return;
-}
-
-
-/* The kernel handles sigprocmask in the usual way, but we also need
-   to inspect it, so as to spot requests to unblock signals.  We then
-   inspect vg_sigpending, which records the current state of signal
-   delivery to the client.  The problematic case is when a signal is
-   delivered to the client, in which case the relevant vg_sigpending
-   slot is set to VG_SIGRUNNING.  This inhibits further signal
-   deliveries.  This mechanism implements the POSIX requirement that a
-   signal is blocked in its own handler.
-
-   If the handler returns normally, the slot is changed back to
-   VG_SIGIDLE, so that further instances of the signal can be
-   delivered.  The problem occurs when the handler never returns, but
-   longjmps.  POSIX mandates that you then have to do an explicit
-   setprocmask to re-enable the signal.  That is what we try and spot
-   here.  Although the call is passed to the kernel, we also need to
-   spot unblocked signals whose state is VG_SIGRUNNING, and change it
-   back to VG_SIGIDLE.  
-*/
-void VG_(do__NR_sigprocmask) ( Int how, vki_ksigset_t* set )
-{
-   Int i;
-   if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, 
-                   "vg_do__NR_sigprocmask: how = %d (%s), set = %p", 
-                   how,
-                   how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
-                      how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
-                      how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
-                   set
-                  );
-
-   /* Sometimes this happens.  I don't know what it signifies. */
-   if (set == NULL) 
-      return;
-
-   /* Not interested in blocking of signals. */
-   if (how == VKI_SIG_BLOCK) 
-      return;
-
-   /* Detect and ignore unknown action. */
-   if (how != VKI_SIG_UNBLOCK && how != VKI_SIG_SETMASK) {
-      VG_(message)(Vg_DebugMsg, 
-                  "sigprocmask: unknown `how' field %d", how);
-      return;
-   }
-
-   for (i = 1; i <= VKI_KNSIG; i++) {
-      Bool unblock_me = False;
-      if (how == VKI_SIG_SETMASK) {
-         if (!VG_(ksigismember)(set,i))
-            unblock_me = True;
-      } else { /* how == SIG_UNBLOCK */
-         if (VG_(ksigismember)(set,i))
-            unblock_me = True;
-      }
-      if (unblock_me && vg_sigpending[i] == VG_SP_SIGRUNNING) {
-         vg_sigpending[i] = VG_SP_SIGIDLE;
-	 if (VG_(clo_verbosity) > 1)
-            VG_(message)(Vg_UserMsg, 
-                         "Warning: unblocking signal %d "
-                         "due to sigprocmask", i );
-      }
-   }
-}
-
 
 
 /*--------------------------------------------------------------------*/

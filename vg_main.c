@@ -995,9 +995,16 @@ void VG_(main) ( void )
    /* Process Valgrind's command-line opts (from env var VG_OPTS). */
    process_cmd_line_options();
 
-   /* Initialise the signal handling subsystem. */
+   /* Initialise the scheduler, and copy the client's state from
+      baseBlock into VG_(threads)[1].  This has to come before signal
+      initialisations. */
+   VG_(scheduler_init)();
+
+   /* Initialise the signal handling subsystem, temporarily parking
+      the saved blocking-mask in saved_sigmask. */
    VG_(sigstartup_actions)();
 
+   /* Perhaps we're profiling Valgrind? */
 #  ifdef VG_PROFILE
    VGP_(init_profiling)();
 #  endif
@@ -1051,8 +1058,8 @@ void VG_(main) ( void )
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
 
+   /* Run! */
    VGP_PUSHCC(VgpSched);
-   VG_(scheduler_init)();
    src = VG_(scheduler)();
    VGP_POPCC;
 
@@ -1118,7 +1125,7 @@ void VG_(main) ( void )
       case VgSrc_ExitSyscall: /* the normal way out */
          vg_assert(VG_(last_run_tid) > 0 
                    && VG_(last_run_tid) < VG_N_THREADS);
-         tst = VG_(get_thread_state)(VG_(last_run_tid));
+         tst = & VG_(threads)[VG_(last_run_tid)];
          vg_assert(tst->status == VgTs_Runnable);
          /* The thread's %EBX will hold the arg to exit(), so we just
             do exit with that arg. */

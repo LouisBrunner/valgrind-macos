@@ -163,6 +163,16 @@ Bool VG_(kisemptysigset)( vki_ksigset_t* set )
    return True;
 }
 
+Bool VG_(kisfullsigset)( vki_ksigset_t* set )
+{
+   Int i;
+   vg_assert(set != NULL);
+   for (i = 0; i < VKI_KNSIG_WORDS; i++)
+      if (set->ws[i] != ~0x0) return False;
+   return True;
+}
+
+
 Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
@@ -171,6 +181,17 @@ Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
       return -1;
    signum--;
    set->ws[signum / VKI_KNSIG_BPW] |= (1 << (signum % VKI_KNSIG_BPW));
+   return 0;
+}
+
+Int VG_(ksigdelset)( vki_ksigset_t* set, Int signum )
+{
+   if (set == NULL)
+      return -1;
+   if (signum < 1 && signum > VKI_KNSIG)
+      return -1;
+   signum--;
+   set->ws[signum / VKI_KNSIG_BPW] &= ~(1 << (signum % VKI_KNSIG_BPW));
    return 0;
 }
 
@@ -230,6 +251,7 @@ Int VG_(ksigaction) ( Int signum,
      = vg_do_syscall4(__NR_rt_sigaction,
                       signum, (UInt)act, (UInt)oldact, 
                       VKI_KNSIG_WORDS * VKI_BYTES_PER_WORD);
+   /* VG_(printf)("res = %d\n",res); */
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -254,6 +276,13 @@ Int VG_(ksignal)(Int signum, void (*sighandler)(Int))
    res = vg_do_syscall4(__NR_rt_sigaction,
                         signum, (UInt)(&sa), (UInt)NULL,
                         VKI_KNSIG_WORDS * VKI_BYTES_PER_WORD);
+   return VG_(is_kerror)(res) ? -1 : 0;
+}
+
+
+Int VG_(kill)( Int pid, Int signo )
+{
+   Int res = vg_do_syscall2(__NR_kill, pid, signo);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -879,6 +908,10 @@ Bool VG_(stringMatch) ( Char* pat, Char* str )
 
 void VG_(assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
 {
+   static Bool entered = False;
+   if (entered) 
+     VG_(exit)(2);
+   entered = True;
    VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                "valgrind", file, line, fn, expr );
    VG_(pp_sched_status)();

@@ -435,6 +435,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__READ_MILLISECOND_TIMER  0x3011
 #define VG_USERREQ__PTHREAD_SIGMASK         0x3012
 #define VG_USERREQ__SIGWAIT                 0x3013
+#define VG_USERREQ__PTHREAD_KILL            0x3014
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -597,8 +598,14 @@ typedef
    ThreadState;
 
 
-/* Trivial range check on tid. */
+/* The thread table. */
+extern ThreadState VG_(threads)[VG_N_THREADS];
+
+/* Check that tid is in range and denotes a non-Empty thread. */
 extern Bool VG_(is_valid_tid) ( ThreadId tid );
+
+/* Check that tid is in range. */
+extern Bool VG_(is_valid_or_empty_tid) ( ThreadId tid );
 
 /* Copy the specified thread's state into VG_(baseBlock) in
    preparation for running it. */
@@ -607,10 +614,6 @@ extern void VG_(load_thread_state)( ThreadId );
 /* Save the specified thread's state back in VG_(baseBlock), and fill
    VG_(baseBlock) with junk, for sanity-check reasons. */
 extern void VG_(save_thread_state)( ThreadId );
-
-/* Get the thread state block for the specified thread. */
-extern ThreadState* VG_(get_thread_state)( ThreadId );
-extern ThreadState* VG_(get_thread_state_UNCHECKED)( ThreadId );
 
 /* And for the currently running one, if valid. */
 extern ThreadState* VG_(get_current_thread_state) ( void );
@@ -676,6 +679,18 @@ extern Int     VG_(longjmpd_on_signal);
    (VG_AR_CLIENT_STACKBASE_REDZONE_SZW * VKI_BYTES_PER_WORD)
 
 
+/* Write a value to the client's %EDX (request return value register)
+   and set the shadow to indicate it is defined. */
+#define SET_EDX(zztid, zzval)                          \
+   do { VG_(threads)[zztid].m_edx = (zzval);             \
+        VG_(threads)[zztid].sh_edx = VGM_WORD_VALID;     \
+   } while (0)
+
+#define SET_EAX(zztid, zzval)                          \
+   do { VG_(threads)[zztid].m_eax = (zzval);             \
+        VG_(threads)[zztid].sh_eax = VGM_WORD_VALID;     \
+   } while (0)
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_signals.c
@@ -685,12 +700,21 @@ extern void VG_(sigstartup_actions) ( void );
 
 extern Bool VG_(deliver_signals) ( void );
 extern void VG_(unblock_host_signal) ( Int sigNo );
-extern void VG_(notify_signal_machinery_of_thread_exit) ( ThreadId tid );
-extern void VG_(update_sigstate_following_WaitSIG_change) ( void );
+extern void VG_(handle_SCSS_change) ( Bool force_update );
+
 
 /* Fake system calls for signal handling. */
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
-extern void VG_(do__NR_sigprocmask)   ( Int how, vki_ksigset_t* set );
+extern void VG_(do__NR_sigprocmask)   ( ThreadId tid,
+                                        Int how, 
+                                        vki_ksigset_t* set,
+                                        vki_ksigset_t* oldset );
+extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
+                                               Int how, 
+                                               vki_ksigset_t* set,
+                                               vki_ksigset_t* oldset );
+extern void VG_(send_signal_to_thread) ( ThreadId thread,
+                                         Int signo );
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
@@ -699,7 +723,7 @@ extern Bool VG_(signal_returns) ( ThreadId );
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 
                   ( /* OUT */ vki_ksigset_t* saved_mask );
-extern void VG_(restore_host_signals) 
+extern void VG_(restore_all_host_signals) 
                   ( /* IN */ vki_ksigset_t* saved_mask );
 
 /* ---------------------------------------------------------------------
@@ -818,27 +842,35 @@ extern Int VG_(system) ( Char* cmd );
    definitions, which are different in places from those that glibc
    defines.  Since we're operating right at the kernel interface,
    glibc's view of the world is entirely irrelevant. */
+
+/* --- Signal set ops --- */
 extern Int  VG_(ksigfillset)( vki_ksigset_t* set );
 extern Int  VG_(ksigemptyset)( vki_ksigset_t* set );
-extern Bool VG_(kisemptysigset)( vki_ksigset_t* set );
-extern Int  VG_(ksigaddset)( vki_ksigset_t* set, Int signum );
 
-extern Int VG_(ksigprocmask)( Int how, const vki_ksigset_t* set, 
-                                       vki_ksigset_t* oldset );
-extern Int VG_(ksigaction) ( Int signum,  
-                             const vki_ksigaction* act,  
-                             vki_ksigaction* oldact );
-extern Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum );
+extern Bool VG_(kisfullsigset)( vki_ksigset_t* set );
+extern Bool VG_(kisemptysigset)( vki_ksigset_t* set );
+
+extern Int  VG_(ksigaddset)( vki_ksigset_t* set, Int signum );
+extern Int  VG_(ksigdelset)( vki_ksigset_t* set, Int signum );
+extern Int  VG_(ksigismember) ( vki_ksigset_t* set, Int signum );
+
 extern void VG_(ksigaddset_from_set)( vki_ksigset_t* dst, 
                                       vki_ksigset_t* src );
 extern void VG_(ksigdelset_from_set)( vki_ksigset_t* dst, 
                                       vki_ksigset_t* src );
 
+/* --- Mess with the kernel's sig state --- */
+extern Int VG_(ksigprocmask)( Int how, const vki_ksigset_t* set, 
+                                       vki_ksigset_t* oldset );
+extern Int VG_(ksigaction) ( Int signum,  
+                             const vki_ksigaction* act,  
+                             vki_ksigaction* oldact );
 
 extern Int VG_(ksignal)(Int signum, void (*sighandler)(Int));
 
 extern Int VG_(ksigaltstack)( const vki_kstack_t* ss, vki_kstack_t* oss );
 
+extern Int VG_(kill)( Int pid, Int signo );
 
 
 /* ---------------------------------------------------------------------
@@ -1525,13 +1557,14 @@ extern void VG_(check_known_blocking_syscall) ( ThreadId tid,
 
 extern Bool VG_(is_kerror) ( Int res );
 
-#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)      \
-         VG_(load_thread_state)(thread_id);              \
-         VG_(copy_baseBlock_to_m_state_static)();        \
-         VG_(do_syscall)();                              \
-         VG_(copy_m_state_static_to_baseBlock)();        \
-         VG_(save_thread_state)(thread_id);              \
-         result_lvalue = VG_(get_thread_state)(thread_id)->m_eax;
+#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)        \
+         VG_(load_thread_state)(thread_id);                \
+         VG_(copy_baseBlock_to_m_state_static)();          \
+         VG_(do_syscall)();                                \
+         VG_(copy_m_state_static_to_baseBlock)();          \
+         VG_(save_thread_state)(thread_id);                \
+         VG_(threads)[thread_id].sh_eax = VGM_WORD_VALID;  \
+         result_lvalue = VG_(threads)[thread_id].m_eax;
 
 
 /* ---------------------------------------------------------------------

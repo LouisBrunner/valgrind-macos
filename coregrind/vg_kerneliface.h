@@ -102,14 +102,14 @@ typedef
 
 #define VKI_SA_ONSTACK      0x08000000
 #define VKI_SA_RESTART      0x10000000
-#if 0
 #define VKI_SA_NOCLDSTOP    0x00000001
+#define VKI_SA_RESETHAND    0x80000000
+#define VKI_SA_ONESHOT      VKI_SA_RESETHAND
+#define VKI_SA_NODEFER      0x40000000
+#define VKI_SA_NOMASK       VKI_SA_NODEFER
+#if 0
 #define VKI_SA_NOCLDWAIT    0x00000002 /* not supported yet */
 #define VKI_SA_SIGINFO      0x00000004
-#define VKI_SA_NODEFER      0x40000000
-#define VKI_SA_RESETHAND    0x80000000
-#define VKI_SA_NOMASK       SA_NODEFER
-#define VKI_SA_ONESHOT      SA_RESETHAND
 #define VKI_SA_INTERRUPT    0x20000000 /* dummy -- ignored */
 #define VKI_SA_RESTORER     0x04000000
 #endif
@@ -138,6 +138,8 @@ typedef
 #define VKI_EINTR            4      /* Interrupted system call */
 #define VKI_EINVAL          22      /* Invalid argument */
 #define VKI_ENOMEM          12      /* Out of memory */
+#define	VKI_EFAULT          14      /* Bad address */
+#define VKI_ESRCH            3      /* No such process */
 
 #define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
 #define VKI_EAGAIN          11      /* Try again */

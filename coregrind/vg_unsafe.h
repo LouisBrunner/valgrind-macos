@@ -57,6 +57,7 @@
 #include <linux/cdrom.h>  /* for cd-rom ioctls */
 #include <sys/user.h>     /* for struct user_regs_struct et al */
 #include <signal.h>       /* for siginfo_t */
+#include <sys/timex.h>    /* for struct timex */
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

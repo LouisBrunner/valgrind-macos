@@ -5319,7 +5319,10 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    } else {
       (sys->before)(tst->tid, tst);
 
-      if ((Word)RES <= 0) {
+      /* JRS 2005 Feb 10: checking RES <= 0 causes sys_read to appear
+         to fail on amd64, because RES and the syscall number (0) live
+         in the same guest register -- %RAX.  Bad. */
+      if ((Word)RES < 0) {
 	 /* "before" decided the syscall wasn't viable, so don't do
 	    anything - just pretend the syscall happened. */
          PRINT(" ==> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);

@@ -683,6 +683,21 @@ int pthread_kill(pthread_t thread, int signo)
 }
 
 
+/* Copied verbatim from Linuxthreads */
+/* Redefine raise() to send signal to calling thread only,
+   as per POSIX 1003.1c */
+int raise (int sig)
+{
+  int retcode = pthread_kill(pthread_self(), sig);
+  if (retcode == 0)
+    return 0;
+  else {
+    errno = retcode;
+    return -1;
+  }
+}
+
+
 /* ---------------------------------------------------
    THREAD-SPECIFICs
    ------------------------------------------------ */
@@ -1120,6 +1135,15 @@ __attribute__((weak))
 int recv(int s, void *buf, size_t len, int flags)
 {
    return __libc_recv(s, buf, len, flags);
+}
+
+
+extern 
+int __libc_sendmsg(int s, const struct msghdr *msg, int flags);
+__attribute__((weak))
+int sendmsg(int s, const struct msghdr *msg, int flags)
+{
+   return __libc_sendmsg(s, msg, flags);
 }
 
 

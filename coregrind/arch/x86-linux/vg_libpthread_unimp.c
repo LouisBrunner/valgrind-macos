@@ -152,7 +152,7 @@ void pthread_rwlockattr_setpshared ( void )  { unimp("pthread_rwlockattr_setpsha
 //void pthread_setspecific ( void )  { unimp("pthread_setspecific"); }
 //void pthread_sigmask ( void )  { unimp("pthread_sigmask"); }
 //void pthread_testcancel ( void )  { unimp("pthread_testcancel"); }
-void raise ( void )  { unimp("raise"); }
+//void raise ( void )  { unimp("raise"); }
 void sem_close ( void )  { unimp("sem_close"); }
 void sem_open ( void )  { unimp("sem_open"); }
 void sem_timedwait ( void )  { unimp("sem_timedwait"); }
@@ -209,7 +209,7 @@ __attribute__((weak)) void msync ( void ) { vgPlain_unimp("msync"); }
 __attribute__((weak)) void pause ( void ) { vgPlain_unimp("pause"); }
 __attribute__((weak)) void recvfrom ( void ) { vgPlain_unimp("recvfrom"); }
 __attribute__((weak)) void recvmsg ( void ) { vgPlain_unimp("recvmsg"); }
-__attribute__((weak)) void sendmsg ( void ) { vgPlain_unimp("sendmsg"); }
+//__attribute__((weak)) void sendmsg ( void ) { vgPlain_unimp("sendmsg"); }
 __attribute__((weak)) void tcdrain ( void ) { vgPlain_unimp("tcdrain"); }
 __attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }
 

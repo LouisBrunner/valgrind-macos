@@ -215,7 +215,7 @@ void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
 
 
 /* ---------------------------------------------------------------------
-   Doing mmap, munmap, mremap, mprotect
+   Doing mmap, mremap
    ------------------------------------------------------------------ */
 
 // Nb: this isn't done as precisely as possible, but it seems that programs
@@ -264,43 +264,6 @@ void mmap_segment ( Addr a, UInt len, UInt prot, UInt mm_flags, Int fd, ULong of
    xx = prot & VKI_PROT_EXEC;
 
    VG_TRACK( new_mem_mmap, a, len, rr, ww, xx );
-}
-
-static
-void munmap_segment ( Addr a, UInt len )
-{
-   /* Addr orig_a   = a;
-      Addr orig_len = len; */
-
-   mash_addr_and_len(&a, &len);
-
-   VG_(unmap_range)(a, len);
-
-   /*
-   VG_(printf)("MUNMAP: correct (%p for %d) to (%p for %d) %s\n", 
-      orig_a, orig_len, a, len, (orig_a!=start || orig_len!=length) 
-                                    ? "CHANGE" : "");
-   */
-
-   VG_TRACK( die_mem_munmap, a, len );
-}
-
-static 
-void mprotect_segment ( Addr a, UInt len, Int prot )
-{
-   Bool rr, ww, xx;
-
-   VG_(mprotect_range)(a, len, prot);
-
-   rr = prot & VKI_PROT_READ;
-   ww = prot & VKI_PROT_WRITE;
-   xx = prot & VKI_PROT_EXEC;
-
-   // if removing exe permission, should check and remove from exe_seg list
-   // if adding, should check and add to exe_seg list
-   // easier to ignore both cases -- both v. unlikely?
-   mash_addr_and_len(&a, &len);
-   VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
 }
 
 static 
@@ -1036,7 +999,6 @@ static Addr do_brk(Addr newbrk)
 
 	 if (newaddr != current) {
 	    VG_(munmap)((void *)newaddr, current - newaddr);
-	    VG_(unmap_range)(newaddr, current-newaddr);
 	 }
 	 ret = newbrk;
       }
@@ -1555,11 +1517,13 @@ PRE(madvise)
 
 PRE(mremap)
 {
+   // Nb: this is different to the glibc version described in the man pages,
+   // which lacks the fifth 'new_address' argument.
    /* void* mremap(void * old_address, size_t old_size, 
       size_t new_size, unsigned long flags, void * new_address); */
    MAYBE_PRINTF("mremap ( %p, %d, %d, 0x%x, %p )\n", 
 		arg1, arg2, arg3, arg4, arg5);
-   
+
    res = mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid);
 }
 
@@ -2784,17 +2748,15 @@ POST(ipc)
       if ( addr > 0 ) { 
 	 UInt segmentSize = get_shm_size ( shmid );
 	 if ( segmentSize > 0 ) {
-	    UInt prot;
+	    UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
 	    /* we don't distinguish whether it's read-only or
 	     * read-write -- it doesn't matter really. */
 	    VG_TRACK( new_mem_mmap, addr, segmentSize, 
 		      True, True, False );
 
-	    prot = VKI_PROT_READ|VKI_PROT_WRITE;
 	    if (!(shmflag & 010000)) /* = SHM_RDONLY */
 	       prot &= ~VKI_PROT_WRITE;
-	    VG_(map_segment)(addr, segmentSize, prot,
-			     SF_SHARED | SF_SHM);
+	    VG_(map_segment)(addr, segmentSize, prot, SF_SHARED|SF_SHM);
 	 }
       }
       break;
@@ -3963,14 +3925,10 @@ PRE(mkdir)
 
 PRE(mmap2)
 {
-   /* My impression is that this is exactly like __NR_mmap 
-      except that all 6 args are passed in regs, rather than in 
-      a memory-block.
-      
-      Almost.  The big difference is that the file offset is specified
-      in pagesize units rather than bytes, so that it can be used for
-      files bigger than 2^32 bytes. - JSGF
-   */
+   // Exactly like __NR_mmap except:
+   //  - all 6 args are passed in regs, rather than in a memory-block.
+   //  - the file offset is specified in pagesize units rather than bytes,
+   //    so that it can be used for files bigger than 2^32 bytes.
    /* void* mmap(void *start, size_t length, int prot, 
       int flags, int fd, off_t offset); 
    */
@@ -3982,9 +3940,10 @@ PRE(mmap2)
 	 res = -VKI_ENOMEM;
    } else {
       arg1 = VG_(find_map_space)(arg1, arg2, True);
-      arg4 |= VKI_MAP_FIXED;
       if (arg1 == 0)
 	 res = -VKI_ENOMEM;
+      else 
+         arg4 |= VKI_MAP_FIXED;
    }
 }
 
@@ -4060,7 +4019,19 @@ PRE(mprotect)
 
 POST(mprotect)
 {
-   mprotect_segment( arg1, arg2, arg3 );
+   Addr a    = arg1;
+   UInt len  = arg2;
+   Int  prot = arg3;
+   Bool rr = prot & VKI_PROT_READ;
+   Bool ww = prot & VKI_PROT_WRITE;
+   Bool xx = prot & VKI_PROT_EXEC;
+
+   // if removing exe permission, should check and remove from exe_seg list
+   // if adding, should check and add to exe_seg list
+   // easier to ignore both cases -- both v. unlikely?
+   mash_addr_and_len(&a, &len);
+   VG_(mprotect_range)(a, len, prot);
+   VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
 }
 
 PRE(munmap)
@@ -4075,7 +4046,12 @@ PRE(munmap)
 
 POST(munmap)
 {
-   munmap_segment( arg1, arg2 );
+   Addr a   = arg1;
+   UInt len = arg2;
+
+   mash_addr_and_len(&a, &len);
+   VG_(unmap_range)(a, len);
+   VG_TRACK( die_mem_munmap, a, len );
 }
 
 PRE(mincore)

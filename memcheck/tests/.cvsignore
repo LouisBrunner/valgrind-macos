@@ -55,5 +55,6 @@ metadata
 new_nothrow
 realloc3
 threadederrno
+vgcore.pid*
 writev
 zeropage

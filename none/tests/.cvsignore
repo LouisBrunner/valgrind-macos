@@ -64,4 +64,5 @@ pushpopseg
 *.stdout.out
 *.stderr.out
 tls
+vgcore.pid*
 yield

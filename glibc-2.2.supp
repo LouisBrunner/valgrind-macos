@@ -24,6 +24,16 @@
 #     if Param: name of system call param
 #     if Free: name of free-ing fn)
 
+#-------- For R H 7.3 on i686
+{
+   _dl_relocate_object*/*libc-2.2.?.so/_dl_catch_error*(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object*
+   obj:*libc-2.2.?.so
+   fun:_dl_catch_error*
+}
+
+
 #-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
 {
    __stpcpy/*

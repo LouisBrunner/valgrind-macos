@@ -797,6 +797,13 @@ IRExpr* x86guest_spechelper ( Char* function_name,
                      binop(Iop_CmpLE32U, cc_dst, cc_src));
       }
 
+      if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondB)) {
+         /* long sub/cmp, then B (unsigned less than)
+            --> test dst <u src */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, cc_dst, cc_src));
+      }
+
       if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondZ)) {
          /* dec L, then Z --> test dst == 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));

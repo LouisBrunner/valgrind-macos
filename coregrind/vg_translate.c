@@ -980,8 +980,9 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
    if (u->opcode == CC2VAL || u->opcode == CMOV)
       VG_(printf)("%s", VG_(name_UCondcode)(u->cond));
 
-   // Append jmpkind
-   if (u->opcode == JMP) {
+   // Append extra bits
+   switch (u->opcode) {
+   case JMP:
       switch (u->jmpkind) {
          case JmpCall:      VG_(printf)("-c"); break;
          case JmpRet:       VG_(printf)("-r"); break;
@@ -990,7 +991,12 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          case JmpYield:     VG_(printf)("-yld"); break;
          default: break;
       }
-   }
+      break;
+
+   case WIDEN:
+      VG_(printf)("_%c%c", VG_(toupper)(nameISize(u->extra4b)),
+                           u->signed_widen?'s':'z');
+   } 
    VG_(printf)("       \t");
 
    switch (u->opcode) {
@@ -1201,8 +1207,6 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case WIDEN:
-         VG_(printf)("_%c%c", VG_(toupper)(nameISize(u->extra4b)),
-                              u->signed_widen?'s':'z');
          VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 

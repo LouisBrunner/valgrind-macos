@@ -118,7 +118,7 @@
    ({unsigned int _qzz_res;                                      \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
                             VG_USERREQ__MAKE_WRITABLE,           \
-                            _qzz_addr,_ qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
    })
 

@@ -1459,7 +1459,7 @@ static Bool dis_int_logic ( UInt theInstr )
 			 binop(Iop_And32, mkU32(0x0000FFFF), mkexpr(Rs)) ));
 	    break;
 
-	case 0x1DA: // nand (NAND, p546)
+	case 0x1DC: // nand (NAND, p546)
 	    DIP("nand%s %d,%d,%d\n",
 		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    assign( Ra, unop(Iop_Not32,
@@ -2226,7 +2226,6 @@ static Bool dis_branch ( theInstr )
 	irbb->jumpkind = Ijk_Boring;
 	irbb->next     = mkU32(guest_cia_curr_instr + 4);
 	break;
-
 
     case 0x13:
 	if (b11to15!=0) {
@@ -3049,6 +3048,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    opc1 = (theInstr >> 26) & 0x3F;     /* theInstr[26:31] */
    opc2 = (theInstr >> 1 ) & 0x3FF;    /* theInstr[1:10]  */
 
+   if (theInstr == 0x7C0042A6) { // VEC_TRL
+       // CAB: what's this?
+       DIP("VEC_TRL => strange!\n");
+       goto decode_success;
+   }
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {
@@ -3266,7 +3270,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x11C: // eqv
        case 0x3BA: // extsb
        case 0x39A: // extsh
-       case 0x1DA: // nand
+       case 0x1DC: // nand
        case 0x07C: // nor
        case 0x1BC: // or
        case 0x19C: // orc
@@ -3396,6 +3400,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	   DIP("Floating Point Op => not implemented\n");
 	   break;
 //	   goto decode_failure;
+
+       case 0x0E7: // stvx
+	   // CAB: what's this?
+	   DIP("stvx => strange!\n");
+	   goto decode_success;
 
        default:
 	   goto decode_failure;

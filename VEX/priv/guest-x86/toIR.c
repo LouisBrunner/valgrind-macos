@@ -6395,7 +6395,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* Skip a LOCK prefix. */
    if (getIByte(delta) == 0xF0) { 
-      vex_printf("vex x86->IR: ignoring LOCK prefix\n");
+      if (0) vex_printf("vex x86->IR: ignoring LOCK prefix\n");
       delta++;
    }
 

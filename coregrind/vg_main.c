@@ -2879,7 +2879,6 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    // Set up the ProxyLWP machinery
    //   p: VG_(scheduler_init)()?  [XXX: subtle dependency?]
-   // - subs: VG_(sigstartup_actions)()?
    //--------------------------------------------------------------
    VG_(proxy_init)();
 

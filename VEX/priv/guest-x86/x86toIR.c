@@ -6666,9 +6666,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0x68: /* PUSH Iv */
       d32 = getUDisp(sz,delta); delta += sz;
       goto do_push_I;
-//--    case 0x6A: /* PUSH Ib, sign-extended to sz */
-//--       d32 = getSDisp8(eip); eip += 1;
-//--       goto do_push_I;
+   case 0x6A: /* PUSH Ib, sign-extended to sz */
+      d32 = getSDisp8(delta); delta += 1;
+      goto do_push_I;
    do_push_I:
       ty = szToITy(sz);
       t1 = newTemp(Ity_I32); t2 = newTemp(ty);

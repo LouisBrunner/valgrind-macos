@@ -26,9 +26,11 @@
 */
 
 typedef UChar uint8_t;
+typedef UInt  uint32_t;
 
 #define CC_O CC_MASK_O
 #define CC_P CC_MASK_P
+#define CC_C CC_MASK_C
 
 
 static const uint8_t parity_table[256] = {
@@ -79,6 +81,7 @@ static inline int lshift(int x, int n)
 #define PREAMBLE(__data_bits)						 \
    const UInt DATA_MASK 						 \
       = __data_bits==8 ? 0xFF : (__data_bits==16 ? 0xFFFF : 0xFFFFFFFF); \
+   const UInt SIGN_MASK = 1 << (__data_bits - 1);                        \
    const UInt CC_DST = cc_dst;						 \
    const UInt CC_SRC = cc_src
 
@@ -157,23 +160,44 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
+#define ACTIONS_DEC(DATA_BITS,DATA_TYPE,DATA_STYPE)			\
+{									\
+  PREAMBLE(DATA_BITS);							\
+  int cf, pf, af, zf, sf, of;						\
+  int src1, src2;							\
+  src1 = CC_DST + 1;							\
+  src2 = 1;								\
+  cf = CC_SRC;								\
+  pf = parity_table[(uint8_t)CC_DST];					\
+  af = (CC_DST ^ src1 ^ src2) & 0x10;					\
+  zf = ((DATA_TYPE)CC_DST == 0) << 6;					\
+  sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;				\
+  of = ((CC_DST & DATA_MASK) == ((uint32_t)SIGN_MASK - 1)) << 11;	\
+  return cf | pf | af | zf | sf | of;					\
+}
+
+
 
 /* CALLED FROM GENERATED CODE */
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    switch (cc_op) {
    case CC_OP_COPY:
-     return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z | CC_MASK_A | CC_MASK_C | CC_MASK_O);
+      return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
+                       | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
       case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
 
       case CC_OP_SUBB:   ACTIONS_SUB(8,UChar,Char);
       case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
+
       case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
       case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
 
-   case CC_OP_SHLL: ACTIONS_SHL(32,UInt,Int);
-   case CC_OP_SARL: ACTIONS_SAR(32,UInt,Int);
+      case CC_OP_DECL: ACTIONS_DEC(32,UInt,Int);
+
+      case CC_OP_SHLL: ACTIONS_SHL(32,UInt,Int);
+      case CC_OP_SARL: ACTIONS_SAR(32,UInt,Int);
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",

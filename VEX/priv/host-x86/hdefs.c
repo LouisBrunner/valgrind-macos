@@ -797,7 +797,7 @@ X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg reg, X86AMode* addr )
 {
    X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
    i->tag                = Xin_SseLdzLO;
-   i->Xin.SseLdzLO.sz    = sz;
+   i->Xin.SseLdzLO.sz    = toUChar(sz);
    i->Xin.SseLdzLO.reg   = reg;
    i->Xin.SseLdzLO.addr  = addr;
    vassert(sz == 4 || sz == 8);
@@ -885,11 +885,11 @@ void ppX86Instr ( X86Instr* i ) {
          if (i->Xin.Sh32.src == 0)
            vex_printf("%%cl,"); 
          else 
-            vex_printf("$%d,", i->Xin.Sh32.src);
+            vex_printf("$%d,", (Int)i->Xin.Sh32.src);
          ppHRegX86(i->Xin.Sh32.dst);
          return;
       case Xin_Test32:
-         vex_printf("testl $%d,", i->Xin.Test32.imm32);
+         vex_printf("testl $%d,", (Int)i->Xin.Test32.imm32);
          ppHRegX86(i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
@@ -909,7 +909,7 @@ void ppX86Instr ( X86Instr* i ) {
          if (i->Xin.Sh3232.amt == 0)
            vex_printf(" %%cl,"); 
          else 
-            vex_printf(" $%d,", i->Xin.Sh3232.amt);
+            vex_printf(" $%d,", (Int)i->Xin.Sh3232.amt);
          ppHRegX86(i->Xin.Sh3232.src);
          vex_printf(",");
          ppHRegX86(i->Xin.Sh3232.dst);
@@ -1281,36 +1281,36 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          return;
       case Xin_Sse32Fx4:
          vassert(i->Xin.Sse32Fx4.op != Xsse_MOV);
-         unary = i->Xin.Sse32Fx4.op == Xsse_RCPF
-                 || i->Xin.Sse32Fx4.op == Xsse_RSQRTF
-                 || i->Xin.Sse32Fx4.op == Xsse_SQRTF;
+         unary = toBool( i->Xin.Sse32Fx4.op == Xsse_RCPF
+                         || i->Xin.Sse32Fx4.op == Xsse_RSQRTF
+                         || i->Xin.Sse32Fx4.op == Xsse_SQRTF );
          addHRegUse(u, HRmRead, i->Xin.Sse32Fx4.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Xin.Sse32Fx4.dst);
          return;
       case Xin_Sse32FLo:
          vassert(i->Xin.Sse32FLo.op != Xsse_MOV);
-         unary = i->Xin.Sse32FLo.op == Xsse_RCPF
-                 || i->Xin.Sse32FLo.op == Xsse_RSQRTF
-                 || i->Xin.Sse32FLo.op == Xsse_SQRTF;
+         unary = toBool( i->Xin.Sse32FLo.op == Xsse_RCPF
+                         || i->Xin.Sse32FLo.op == Xsse_RSQRTF
+                         || i->Xin.Sse32FLo.op == Xsse_SQRTF );
          addHRegUse(u, HRmRead, i->Xin.Sse32FLo.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Xin.Sse32FLo.dst);
          return;
       case Xin_Sse64Fx2:
          vassert(i->Xin.Sse64Fx2.op != Xsse_MOV);
-         unary = i->Xin.Sse64Fx2.op == Xsse_RCPF
-                 || i->Xin.Sse64Fx2.op == Xsse_RSQRTF
-                 || i->Xin.Sse64Fx2.op == Xsse_SQRTF;
+         unary = toBool( i->Xin.Sse64Fx2.op == Xsse_RCPF
+                         || i->Xin.Sse64Fx2.op == Xsse_RSQRTF
+                         || i->Xin.Sse64Fx2.op == Xsse_SQRTF );
          addHRegUse(u, HRmRead, i->Xin.Sse64Fx2.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Xin.Sse64Fx2.dst);
          return;
       case Xin_Sse64FLo:
          vassert(i->Xin.Sse64FLo.op != Xsse_MOV);
-         unary = i->Xin.Sse64FLo.op == Xsse_RCPF
-                 || i->Xin.Sse64FLo.op == Xsse_RSQRTF
-                 || i->Xin.Sse64FLo.op == Xsse_SQRTF;
+         unary = toBool( i->Xin.Sse64FLo.op == Xsse_RCPF
+                         || i->Xin.Sse64FLo.op == Xsse_RSQRTF
+                         || i->Xin.Sse64FLo.op == Xsse_SQRTF );
          addHRegUse(u, HRmRead, i->Xin.Sse64FLo.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Xin.Sse64FLo.dst);
@@ -1568,14 +1568,14 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
 
 /* --------- The x86 assembler (bleh.) --------- */
 
-static UInt iregNo ( HReg r )
+static UChar iregNo ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcInt32);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 7);
-   return n;
+   return toUChar(n);
 }
 
 static UInt fregNo ( HReg r )
@@ -1600,20 +1600,24 @@ static UInt vregNo ( HReg r )
 
 static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
 {
-   return ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7);
+   return toUChar( ((mod & 3) << 6) 
+                   | ((reg & 7) << 3) 
+                   | (regmem & 7) );
 }
 
 static UChar mkSIB ( Int shift, Int regindex, Int regbase )
 {
-   return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
+   return toUChar( ((shift & 3) << 6) 
+                   | ((regindex & 7) << 3) 
+                   | (regbase & 7) );
 }
 
 static UChar* emit32 ( UChar* p, UInt w32 )
 {
-   *p++ = (w32)       & 0x000000FF;
-   *p++ = (w32 >>  8) & 0x000000FF;
-   *p++ = (w32 >> 16) & 0x000000FF;
-   *p++ = (w32 >> 24) & 0x000000FF;
+   *p++ = toUChar( w32        & 0x000000FF);
+   *p++ = toUChar((w32 >>  8) & 0x000000FF);
+   *p++ = toUChar((w32 >> 16) & 0x000000FF);
+   *p++ = toUChar((w32 >> 24) & 0x000000FF);
    return p;
 }
 
@@ -1622,7 +1626,7 @@ static UChar* emit32 ( UChar* p, UInt w32 )
 static Bool fits8bits ( UInt w32 )
 {
    Int i32 = (Int)w32;
-   return i32 == ((i32 << 24) >> 24);
+   return toBool(i32 == ((i32 << 24) >> 24));
 }
 
 
@@ -1661,7 +1665,7 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
       if (fits8bits(am->Xam.IR.imm)
           && am->Xam.IR.reg != hregX86_ESP()) {
          *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Xam.IR.reg));
-         *p++ = am->Xam.IR.imm & 0xFF;
+         *p++ = toUChar(am->Xam.IR.imm & 0xFF);
          return p;
       }
       if (am->Xam.IR.reg != hregX86_ESP()) {
@@ -1673,7 +1677,7 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
           && fits8bits(am->Xam.IR.imm)) {
  	 *p++ = mkModRegRM(1, iregNo(greg), 4);
          *p++ = 0x24;
-         *p++ = am->Xam.IR.imm & 0xFF;
+         *p++ = toUChar(am->Xam.IR.imm & 0xFF);
          return p;
       }
       ppX86AMode(am);
@@ -1686,7 +1690,7 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
          *p++ = mkModRegRM(1, iregNo(greg), 4);
          *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index, 
                                           am->Xam.IRRS.base);
-         *p++ = am->Xam.IRRS.imm & 0xFF;
+         *p++ = toUChar(am->Xam.IRRS.imm & 0xFF);
          return p;
       }
       if (am->Xam.IRRS.index != hregX86_ESP()) {
@@ -1726,7 +1730,7 @@ static UChar* do_fstp_st ( UChar* p, Int i )
 {
    vassert(1 <= i && i <= 7);
    *p++ = 0xDD;
-   *p++ = 0xD8+i;
+   *p++ = toUChar(0xD8+i);
    return p;
 }
 
@@ -1735,7 +1739,7 @@ static UChar* do_fld_st ( UChar* p, Int i )
 {
    vassert(0 <= i && i <= 6);
    *p++ = 0xD9;
-   *p++ = 0xC0+i;
+   *p++ = toUChar(0xC0+i);
    return p;
 }
 
@@ -1835,7 +1839,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       if (i->Xin.Alu32R.op == Xalu_MOV) {
          switch (i->Xin.Alu32R.src->tag) {
             case Xrmi_Imm:
-               *p++ = 0xB8 + iregNo(i->Xin.Alu32R.dst);
+               *p++ = toUChar(0xB8 + iregNo(i->Xin.Alu32R.dst));
                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
                goto done;
             case Xrmi_Reg:
@@ -1871,7 +1875,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
                   *p++ = 0x6B;
                   p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
-                  *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
+                  *p++ = toUChar(0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32);
                } else {
                   *p++ = 0x69;
                   p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
@@ -1907,13 +1911,13 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xrmi_Imm:
             if (i->Xin.Alu32R.dst == hregX86_EAX()
                 && !fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
-               *p++ = opc_imma;
+               *p++ = toUChar(opc_imma);
                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
             } else
             if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
                *p++ = 0x83; 
                p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
-               *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
+               *p++ = toUChar(0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32);
             } else {
                *p++ = 0x81; 
                p    = doAMode_R(p, fake(subopc_imm), i->Xin.Alu32R.dst);
@@ -1921,12 +1925,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             }
             goto done;
          case Xrmi_Reg:
-            *p++ = opc_rr;
+            *p++ = toUChar(opc_rr);
             p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
                              i->Xin.Alu32R.dst);
             goto done;
          case Xrmi_Mem:
-            *p++ = opc;
+            *p++ = toUChar(opc);
             p = doAMode_M(p, i->Xin.Alu32R.dst,
                              i->Xin.Alu32R.src->Xrmi.Mem.am);
             goto done;
@@ -1963,7 +1967,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       switch (i->Xin.Alu32M.src->tag) {
          case Xri_Reg:
-            *p++ = opc;
+            *p++ = toUChar(opc);
             p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
                              i->Xin.Alu32M.dst);
             goto done;
@@ -1971,7 +1975,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             if (fits8bits(i->Xin.Alu32M.src->Xri.Imm.imm32)) {
                *p++ = 0x83;
                p    = doAMode_M(p, fake(subopc_imm), i->Xin.Alu32M.dst);
-               *p++ = 0xFF & i->Xin.Alu32M.src->Xri.Imm.imm32;
+               *p++ = toUChar(0xFF & i->Xin.Alu32M.src->Xri.Imm.imm32);
                goto done;
             } else {
                *p++ = 0x81;
@@ -1993,10 +1997,10 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          default: goto bad;
       }
       if (i->Xin.Sh32.src == 0) {
-         *p++ = opc_cl;
+         *p++ = toUChar(opc_cl);
          p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
       } else {
-         *p++ = opc_imm;
+         *p++ = toUChar(opc_imm);
          p = doAMode_R(p, fake(subopc), i->Xin.Sh32.dst);
          *p++ = (UChar)(i->Xin.Sh32.src);
       }
@@ -2082,7 +2086,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
             goto done;
          case Xrmi_Reg:
-            *p++ = 0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg);
+            *p++ = toUChar(0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg));
             goto done;
         default: 
             goto bad;
@@ -2101,15 +2105,15 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       /* jump over the following two insns if the condition does not
          hold */
       if (i->Xin.Call.cond != Xcc_ALWAYS) {
-         *p++ = 0x70 + (0xF & (i->Xin.Call.cond ^ 1));
+         *p++ = toUChar(0x70 + (0xF & (i->Xin.Call.cond ^ 1)));
          *p++ = 0x07; /* 7 bytes in the next two insns */
       }
       /* movl $target, %tmp */
-      *p++ = 0xB8 + irno; 
+      *p++ = toUChar(0xB8 + irno);
       p = emit32(p, i->Xin.Call.target);
       /* call *%tmp */
       *p++ = 0xFF;
-      *p++ = 0xD0 + irno;
+      *p++ = toUChar(0xD0 + irno);
       goto done;
 
    case Xin_Goto:
@@ -2120,7 +2124,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 	 jump over the rest of it. */
       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
          /* jmp fwds if !condition */
-         *p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
+         *p++ = toUChar(0x70 + (0xF & (i->Xin.Goto.cond ^ 1)));
          ptmp = p; /* fill in this bit later */
          *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
       }
@@ -2177,7 +2181,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
          Int delta = p - ptmp;
 	 vassert(delta > 0 && delta < 20);
-         *ptmp = (UChar)(delta-1);
+         *ptmp = toUChar(delta-1);
       }
       goto done;
 
@@ -2185,7 +2189,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
       /* This generates cmov, which is illegal on P54/P55. */
       *p++ = 0x0F;
-      *p++ = 0x40 + i->Xin.CMov32.cond;
+      *p++ = toUChar(0x40 + (0xF & i->Xin.CMov32.cond));
       if (i->Xin.CMov32.src->tag == Xrm_Reg) {
          p = doAMode_R(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Reg.reg);
          goto done;
@@ -2225,23 +2229,23 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       /* Do we need to swap in %eax? */
       if (iregNo(i->Xin.Set32.dst) >= 4) {
          /* xchg %eax, %dst */
-         *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
+         *p++ = toUChar(0x90 + iregNo(i->Xin.Set32.dst));
          /* movl $0, %eax */
-         *p++ = 0xB8 + iregNo(hregX86_EAX());
+         *p++ =toUChar(0xB8 + iregNo(hregX86_EAX()));
          p = emit32(p, 0);
          /* setb lo8(%eax) */
          *p++ = 0x0F; 
-         *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
+         *p++ = toUChar(0x90 + (0xF & i->Xin.Set32.cond));
          p = doAMode_R(p, fake(0), hregX86_EAX());
          /* xchg %eax, %dst */
-         *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
+         *p++ = toUChar(0x90 + iregNo(i->Xin.Set32.dst));
       } else {
          /* movl $0, %dst */
-         *p++ = 0xB8 + iregNo(i->Xin.Set32.dst);
+         *p++ = toUChar(0xB8 + iregNo(i->Xin.Set32.dst));
          p = emit32(p, 0);
          /* setb lo8(%dst) */
          *p++ = 0x0F; 
-         *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
+         *p++ = toUChar(0x90 + (0xF & i->Xin.Set32.cond));
          p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
       }
       goto done;
@@ -2362,7 +2366,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          p = do_ffree_st7(p);
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
          *p++ = 0xD9; 
-         *p++ = i->Xin.FpBinary.op==Xfp_YL2X ? 0xF1 : 0xF9;
+         *p++ = toUChar(i->Xin.FpBinary.op==Xfp_YL2X ? 0xF1 : 0xF9);
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
          goto done;
       }
@@ -2419,7 +2423,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             --> ffree %st(7) ; fld{s/l} amode ; fstp st(N+1) 
          */
          p = do_ffree_st7(p);
-         *p++ = i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD;
+         *p++ = toUChar(i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD);
 	 p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdSt.reg));
          goto done;
@@ -2429,7 +2433,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 	 */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdSt.reg));
-         *p++ = i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD;
+         *p++ = toUChar(i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD);
          p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
          goto done;
       }
@@ -2447,7 +2451,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             default: vpanic("emitX86Instr(Xin_FpLdStI-load)");
          }
          p = do_ffree_st7(p);
-         *p++ = opc;
+         *p++ = toUChar(opc);
          p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdStI.reg));
          goto done;
@@ -2463,7 +2467,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          }
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdStI.reg));
-         *p++ = opc;
+         *p++ = toUChar(opc);
          p = doAMode_M(p, fake(subopc_imm)/*subopcode*/, i->Xin.FpLdStI.addr);
          goto done;
       }
@@ -2487,7 +2491,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_FpCMov:
       /* jmp fwds if !condition */
-      *p++ = 0x70 + (i->Xin.FpCMov.cond ^ 1);
+      *p++ = toUChar(0x70 + (i->Xin.FpCMov.cond ^ 1));
       *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
       ptmp = p;
 
@@ -2497,7 +2501,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = do_fstp_st(p, 1+fregNo(i->Xin.FpCMov.dst));
 
       /* Fill in the jump offset. */
-      *(ptmp-1) = p - ptmp;
+      *(ptmp-1) = toUChar(p - ptmp);
       goto done;
 
    case Xin_FpLdCW:
@@ -2522,7 +2526,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = do_fld_st(p, 0+fregNo(i->Xin.FpCmp.srcL));
       /* fucomp %(fR+1) */
       *p++ = 0xDD;
-      *p++ = 0xE8 + (7 & (1+fregNo(i->Xin.FpCmp.srcR)));
+      *p++ = toUChar(0xE8 + (7 & (1+fregNo(i->Xin.FpCmp.srcR))));
       /* fnstsw %ax */
       *p++ = 0xDF;
       *p++ = 0xE0;
@@ -2533,14 +2537,14 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_SseConst: {
       UShort con = i->Xin.SseConst.con;
-      p = push_word_from_tags(p, (con >> 12) & 0xF);
-      p = push_word_from_tags(p, (con >> 8) & 0xF);
-      p = push_word_from_tags(p, (con >> 4) & 0xF);
-      p = push_word_from_tags(p, con & 0xF);
+      p = push_word_from_tags(p, toUShort((con >> 12) & 0xF));
+      p = push_word_from_tags(p, toUShort((con >> 8) & 0xF));
+      p = push_word_from_tags(p, toUShort((con >> 4) & 0xF));
+      p = push_word_from_tags(p, toUShort(con & 0xF));
       /* movl (%esp), %xmm-dst */
       *p++ = 0x0F;
       *p++ = 0x10;
-      *p++ = 0x04 + 8 * (7 & vregNo(i->Xin.SseConst.dst));
+      *p++ = toUChar(0x04 + 8 * (7 & vregNo(i->Xin.SseConst.dst)));
       *p++ = 0x24;
       /* addl $16, %esp */
       *p++ = 0x83;
@@ -2551,14 +2555,14 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_SseLdSt:
       *p++ = 0x0F; 
-      *p++ = i->Xin.SseLdSt.isLoad ? 0x10 : 0x11;
+      *p++ = toUChar(i->Xin.SseLdSt.isLoad ? 0x10 : 0x11);
       p = doAMode_M(p, fake(vregNo(i->Xin.SseLdSt.reg)), i->Xin.SseLdSt.addr);
       goto done;
 
    case Xin_SseLdzLO:
       vassert(i->Xin.SseLdzLO.sz == 4 || i->Xin.SseLdzLO.sz == 8);
       /* movs[sd] amode, %xmm-dst */
-      *p++ = i->Xin.SseLdzLO.sz==4 ? 0xF3 : 0xF2;
+      *p++ = toUChar(i->Xin.SseLdzLO.sz==4 ? 0xF3 : 0xF2);
       *p++ = 0x0F; 
       *p++ = 0x10; 
       p = doAMode_M(p, fake(vregNo(i->Xin.SseLdzLO.reg)), 
@@ -2586,7 +2590,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32Fx4.dst)),
                        fake(vregNo(i->Xin.Sse32Fx4.src)) );
       if (xtra & 0x100)
-         *p++ = (UChar)(xtra & 0xFF);
+         *p++ = toUChar(xtra & 0xFF);
       goto done;
 
    case Xin_Sse64Fx2:
@@ -2611,7 +2615,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse64Fx2.dst)),
                        fake(vregNo(i->Xin.Sse64Fx2.src)) );
       if (xtra & 0x100)
-         *p++ = (UChar)(xtra & 0xFF);
+         *p++ = toUChar(xtra & 0xFF);
       goto done;
 
    case Xin_Sse32FLo:
@@ -2636,7 +2640,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32FLo.dst)),
                        fake(vregNo(i->Xin.Sse32FLo.src)) );
       if (xtra & 0x100)
-         *p++ = (UChar)(xtra & 0xFF);
+         *p++ = toUChar(xtra & 0xFF);
       goto done;
 
    case Xin_Sse64FLo:
@@ -2661,7 +2665,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse64FLo.dst)),
                        fake(vregNo(i->Xin.Sse64FLo.src)) );
       if (xtra & 0x100)
-         *p++ = (UChar)(xtra & 0xFF);
+         *p++ = toUChar(xtra & 0xFF);
       goto done;
 
    case Xin_SseReRg:
@@ -2730,7 +2734,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_SseCMov:
       /* jmp fwds if !condition */
-      *p++ = 0x70 + (i->Xin.SseCMov.cond ^ 1);
+      *p++ = toUChar(0x70 + (i->Xin.SseCMov.cond ^ 1));
       *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
       ptmp = p;
 
@@ -2741,7 +2745,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                        fake(vregNo(i->Xin.SseCMov.src)) );
 
       /* Fill in the jump offset. */
-      *(ptmp-1) = p - ptmp;
+      *(ptmp-1) = toUChar(p - ptmp);
       goto done;
 
    case Xin_SseShuf:

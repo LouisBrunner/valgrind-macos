@@ -1851,7 +1851,6 @@ static void synth_jcond_lit ( Condcode cond,
       simd = True;
       cond = invertCondition(cond);
    } else {
-      Bool parity = False;	/* test Z or P */
 
       /* The simd state contains the most recent version, so we emit a
          sequence to calculate the relevant condition directly out of
@@ -1894,9 +1893,24 @@ static void synth_jcond_lit ( Condcode cond,
 
          case CondL: 
          case CondNL:
-            parity = True; 
-            mask = EFlagO | EFlagS;    /* O != S     */
-            goto simple;
+            vg_assert(eax_trashable);
+
+            VG_(emit_movv_offregmem_reg)
+               ( 4, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
+            /* eax == %EFLAGS */
+
+            VG_(emit_shiftopv_lit_reg)( False, 4, SHR, 11-7, R_EAX );
+            /* eax has OF in SF's place */
+
+            emit_nonshiftopv_offregmem_reg 
+               ( False, 4, XOR, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
+            /* eax has (OF xor SF) in SF's place */
+
+            VG_(emit_nonshiftopv_lit_reg)( False, 4, AND, 1 << 7, R_EAX );
+            /* Z is now set iff (OF xor SF) == 1 */
+
+            if (cond == CondL) cond = CondZ; else cond = CondNZ;
+            break;
 
          case CondB: 
          case CondNB: 
@@ -1951,7 +1965,10 @@ static void synth_jcond_lit ( Condcode cond,
                               mask, VGOFF_(m_eflags) * 4);
             }
 
-            cond = (parity ? CondP : CondZ) | (cond & 1);
+            if (cond & 1)
+               cond = CondNZ;
+            else
+               cond = CondZ;
             break;
       }
    }

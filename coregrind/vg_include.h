@@ -244,9 +244,10 @@ extern Char* VG_(clo_weird_hacks);
    is ignored.  Ie if a skin says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
-/* Use the basic-block chaining optimisation */
+/* Use the basic-block chaining optimisation?  Default: YES */
 extern Bool VG_(clo_chain_bb);
-/* Generate code for fast conditional jumps (not using pushf/popf) */
+/* Generate code for fast conditional jumps (not using pushf/popf)?
+   Default: YES */
 extern Bool VG_(clo_fast_jcc);
 
 
@@ -1092,6 +1093,7 @@ extern Bool  VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
                                         UInstr* u );
 extern void  VG_(saneUCodeBlock)      ( UCodeBlock* cb );
 extern Bool  VG_(saneUCodeBlockCalls) ( UCodeBlock* cb );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_execontext.c.

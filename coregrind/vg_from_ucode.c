@@ -2159,7 +2159,7 @@ Bool anyFlagUse ( UInstr* u )
 }
 
 
-/* fplive==True indicates that the simulated machine's FPU state is in
+/* *fplive==True indicates that the simulated machine's FPU state is in
    the real FPU.  If so we need to be very careful not to trash it.
    If FPU state is live and we deem it necessary to copy it back to
    the simulated machine's FPU state, we do so.  The final state of
@@ -2167,8 +2167,12 @@ Bool anyFlagUse ( UInstr* u )
    there is any chance at all that the code generated for a UInstr
    will change the real FPU state.  
 */
-static Bool emitUInstr ( UCodeBlock* cb, Int i, 
-                         RRegSet regs_live_before, Bool fplive )
+static void emitUInstr ( UCodeBlock* cb, Int i, 
+                         RRegSet regs_live_before, 
+			 /* Running state, which we update. */
+                         Bool* fplive,   /* True<==>FPU state in real FPU */
+                         Addr* orig_eip, /* previous curr_eip, or zero */
+                         Addr* curr_eip ) /* current eip */
 {
    Int     old_emitted_code_used;
    UInstr* u = &cb->instrs[i];
@@ -2181,76 +2185,23 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
    switch (u->opcode) {
       case NOP: case LOCK: case CALLM_S: case CALLM_E: break;
 
-      case INCEIP: {
-        /* Note: Redundant INCEIP merging.  A potentially useful
-           performance enhancementa, but currently disabled.  Reason
-           is that it needs a surefire way to know if a UInstr might
-           give rise to a stack snapshot being taken.  The logic below
-           is correct (hopefully ...) for the core UInstrs, but is
-           incorrect if a skin has its own UInstrs, since the logic
-           currently assumes that none of them can cause a stack
-           trace, and that's just wrong.  Note this isn't
-           mission-critical -- the system still functions -- but will
-           cause incorrect source locations in some situations,
-           specifically for the memcheck skin.  This is known to
-           confuse programmers, understandable.  */
-#        if 0
-         Bool    can_skip;
-         Int     j;
+      case INCEIP:
+         /* Advance %EIP some small amount. */
+         *curr_eip += (UInt)(u->val1);
 
-         /* Scan forwards to see if this INCEIP dominates (in the
-            technical sense) a later one, AND there are no CCALLs in
-            between.  If so, skip this one and instead add its count
-            with the later one. */
-         can_skip = True;
-	 j = i+1;
-         while (True) {
-            if (cb->instrs[j].opcode == CCALL 
-                || cb->instrs[j].opcode == CALLM) {
-               /* CCALL -- we can't skip this INCEIP. */
-               can_skip = False; 
-               break;
-            }
-            if (cb->instrs[j].opcode == INCEIP) {
-               /* Another INCEIP.  Check that the sum will fit. */
-               if (cb->instrs[i].val1 + cb->instrs[j].val1 > 127)
-                  can_skip = False;
-               break;
-            }
-            if (cb->instrs[j].opcode == JMP || cb->instrs[j].opcode == JIFZ) {
-               /* Execution is not guaranteed to get beyond this
-                  point.  Give up. */
-               can_skip = False; 
-               break;
-            }
-            j++;
-            /* Assertion should hold because all blocks should end in an
-               unconditional JMP, so the above test should get us out of
-               the loop at the end of a block. */
-            vg_assert(j < cb->used);
+         if (*orig_eip == 0 /* we don't know what the old value was */
+             || ((*orig_eip & ~0xFF) != (*curr_eip & ~0xFF))) {
+            /* We have to update all 32 bits of the value. */
+            VG_(emit_movv_lit_offregmem)(
+               4, *curr_eip, 4*VGOFF_(m_eip), R_EBP);
+         } else {
+            /* Cool! we only need to update lowest 8 bits */
+            VG_(emit_movb_lit_offregmem)(
+               *curr_eip & 0xFF, 4*VGOFF_(m_eip)+0, R_EBP);
          }
-         if (can_skip) {
-            /* yay!  Accumulate the delta into the next INCEIP. */
-            // VG_(printf)("skip INCEIP %d\n", cb->instrs[i].val1);
-            vg_assert(j > i);
-            vg_assert(j < cb->used);
-            vg_assert(cb->instrs[j].opcode == INCEIP);
-            vg_assert(cb->instrs[i].opcode == INCEIP);
-            vg_assert(cb->instrs[j].tag1 == Lit16);
-            vg_assert(cb->instrs[i].tag1 == Lit16);
-            cb->instrs[j].val1 += cb->instrs[i].val1;
-            /* do nothing now */
-         } else 
-#        endif
 
-         {
-            /* no, we really have to do this, alas */
-            // VG_(printf)("  do INCEIP %d\n", cb->instrs[i].val1);
-            vg_assert(u->tag1 == Lit16);
-            emit_addlit8_offregmem ( u->val1, R_EBP, 4 * VGOFF_(m_eip) );
-         }
+         *orig_eip = *curr_eip;
          break;
-      }
 
       case LEA1: {
          vg_assert(u->tag1 == RealReg);
@@ -2406,9 +2357,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->size == 0);
 
-	 if (fplive) {
+	 if (*fplive) {
 	    emit_put_fpu_state();
-	    fplive = False;
+	    *fplive = False;
 	 }
 
          VG_(synth_ccall) ( (Addr) & VG_(do_useseg), 
@@ -2497,9 +2448,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
       case JMP: {
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
-	 if (fplive) {
+	 if (*fplive) {
 	    emit_put_fpu_state();
-	    fplive = False;
+	    *fplive = False;
 	 }
          if (u->cond == CondAlways) {
             switch (u->tag1) {
@@ -2534,9 +2485,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == Literal);
          vg_assert(u->size == 4);
-	 if (fplive) {
+	 if (*fplive) {
 	    emit_put_fpu_state();
-	    fplive = False;
+	    *fplive = False;
 	 }
          synth_jmp_ifzero_reg_lit ( u->val1, u->lit32 );
          break;
@@ -2557,9 +2508,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->size == 0);
-	 if (fplive) {
+	 if (*fplive) {
 	    emit_put_fpu_state();
-	    fplive = False;
+	    *fplive = False;
 	 }
          if (anyFlagUse ( u )) 
             emit_get_eflags();
@@ -2585,9 +2536,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          else                                vg_assert(u->tag3 == NoValue);
          vg_assert(u->size == 0);
 
-	 if (fplive) {
+	 if (*fplive) {
 	    emit_put_fpu_state();
-	    fplive = False;
+	    *fplive = False;
 	 }
          VG_(synth_ccall) ( u->lit32, u->argc, u->regparms_n, argv, tagv,
                             ret_reg, regs_live_before, u->regs_live_after );
@@ -2611,9 +2562,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
       case FPU_W:         
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == RealReg);
-	 if (!fplive) {
+	 if (!(*fplive)) {
 	    emit_get_fpu_state();
-	    fplive = True;
+	    *fplive = True;
 	 }
          synth_fpu_regmem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF,
@@ -2625,9 +2576,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == NoValue);
          if (anyFlagUse ( u )) 
             emit_get_eflags();
-	 if (!fplive) {
+	 if (!(*fplive)) {
 	    emit_get_fpu_state();
-	    fplive = True;
+	    *fplive = True;
 	 }
          synth_fpu_no_mem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF );
@@ -2637,9 +2588,9 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
 
       default: 
          if (VG_(needs).extended_UCode) {
-	    if (fplive) {
+	    if (*fplive) {
 	       emit_put_fpu_state();
-	       fplive = False;
+	       *fplive = False;
 	    }
             SK_(emit_XUInstr)(u, regs_live_before);
          } else {
@@ -2652,28 +2603,30 @@ static Bool emitUInstr ( UCodeBlock* cb, Int i,
          }
    }
 
-   if (0 && fplive) {
+   if (0 && (*fplive)) {
       emit_put_fpu_state();
-      fplive = False;
+      *fplive = False;
    }
 
    /* Update UInstr histogram */
    vg_assert(u->opcode < 100);
    histogram[u->opcode].counts++;
    histogram[u->opcode].size += (emitted_code_used - old_emitted_code_used);
-
-   return fplive;
 }
 
 
 /* Emit x86 for the ucode in cb, returning the address of the
    generated code and setting *nbytes to its size. */
-UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort j[VG_MAX_JUMPS] )
+UChar* VG_(emit_code) ( UCodeBlock* cb, 
+                        Int*        nbytes, 
+                        UShort      j[VG_MAX_JUMPS] )
 {
    Int i;
    UChar regs_live_before = 0;   /* No regs live at BB start */
+ 
    Bool fplive;
-   
+   Addr orig_eip, curr_eip;
+  
    emitted_code_used = 0;
    emitted_code_size = 500; /* reasonable initial size */
    emitted_code = VG_(arena_malloc)(VG_AR_JITTER, emitted_code_size);
@@ -2693,7 +2646,14 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort j[VG_MAX_JUMPS] )
    VG_(emit_movv_lit_reg) ( 4, VG_TRC_INNER_COUNTERZERO, R_EBP );
    emit_ret();
 
-   fplive = False;
+   /* Set up running state. */
+   fplive   = False;
+   orig_eip = 0;
+   curr_eip = cb->orig_eip;
+   vg_assert(curr_eip != 0); /* otherwise the incremental updating
+                                algorithm gets messed up. */
+
+   /* for each uinstr ... */
    for (i = 0; i < cb->used; i++) {
       UInstr* u = &cb->instrs[i];
       if (cb->instrs[i].opcode != NOP) {
@@ -2705,7 +2665,8 @@ UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort j[VG_MAX_JUMPS] )
             VG_(up_UInstr)( i, u );
 	 }
          vg_assert(sane);
-         fplive = emitUInstr( cb, i, regs_live_before, fplive );
+         emitUInstr( cb, i, regs_live_before, 
+                         &fplive, &orig_eip, &curr_eip );
       }
       regs_live_before = u->regs_live_after;
    }

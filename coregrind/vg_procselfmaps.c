@@ -162,7 +162,7 @@ void VG_(parse_procselfmaps) (
    while (True) {
       if (i >= buf_n_tot) break;
 
-      /* Read (without fscanf :) the pattern %8x-%8x %c%c%c%c %8x %2x:%2x %d */
+      /* Read (without fscanf :) the pattern %16x-%16x %c%c%c%c %16x %2x:%2x %d */
       j = readhex(&procmap_buf[i], &start);
       if (j > 0) i += j; else goto syntaxerror;
       j = readchar(&procmap_buf[i], &ch);

@@ -3091,7 +3091,8 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    if (do_expensive) {
       n_expensive++;
       //show_res = True;
-      vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
+      if (DEBUG_IROPT)
+         vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
       bb = expensive_transformations( bb );
       bb = cheap_transformations( bb, specHelper );
    }

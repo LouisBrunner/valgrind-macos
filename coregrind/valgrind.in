@@ -88,8 +88,10 @@ export VG_ARGS
 # tell the dynamic loader to disable this interface using
 # an environment variable.
 
-LD_ASSUME_KERNEL=2.2.5
-export LD_ASSUME_KERNEL 
+###this needs to be conditionalised so it only happens on
+###NPTL-based platforms.  Commented out 2002-Apr-06.  JRS
+###LD_ASSUME_KERNEL=2.2.5
+###export LD_ASSUME_KERNEL 
 
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
 # and not depend on LD_LIBRARY_PATH.  This is so that we can

@@ -383,55 +383,11 @@ void safeCopy ( UChar* dst, UInt maxlen, UChar* src )
 /*--- Canonicalisers                                       ---*/
 /*------------------------------------------------------------*/
 
-static void shellsort(void *base, UInt nmemb, UInt sz, Int (*compare)(void *a, void *b))
-{
-   /* Magic numbers due to Janet Incerpi and Robert Sedgewick. */
-   static const Int incs[16] = { 1, 3, 7, 21, 48, 112, 336, 861, 1968,
-				 4592, 13776, 33936, 86961, 198768, 
-				 463792, 1391376 };
-   Int lo = 0;
-   Int hi = nmemb-1;
-   Int bigN;
-   Int hp;
-   Char *cp = (Char *)base;
-   Char tmp[sz];
-
-   bigN = hi - lo + 1;
-   if (bigN < 2)
-      return;
-   hp = 0;
-   while (hp < 16 && incs[hp] < bigN)
-      hp++;
-   hp--;
-   vg_assert(0 <= hp && hp < 16);
-
-   for (; hp >= 0; hp--) {
-      Int i, h;
-      
-      h = incs[hp];
-      i = lo + h;
-      for (i = lo+h; i <= hi; i++) {
-	 Int j;
-	 VG_(memcpy)(&tmp, &cp[i * sz], sz);
-
-         j = i;
-         while ((*compare)((void *)&cp[(j-h) * sz], (void *)&tmp) > 0) {
-	    VG_(memcpy)(&cp[j * sz], &cp[(j-h) * sz], sz);
-            j = j - h;
-            if (j <= (lo + h - 1))
-	       break;
-         }
-	 VG_(memcpy)(&cp[j * sz], &tmp, sz);
-      }
-   }
-}
-
 /* Sort the symtab by starting address, and emit warnings if any
-   symbols have overlapping address ranges.  We use that old chestnut,
-   shellsort.  Mash the table around so as to establish the property
-   that addresses are in order and the ranges to not overlap.  This
-   facilitates using binary search to map addresses to symbols when we
-   come to query the table.
+   symbols have overlapping address ranges.  Mash the table around so as to
+   establish the property that addresses are in order and the ranges to not
+   overlap.  This facilitates using binary search to map addresses to
+   symbols when we come to query the table.
 */
 static Int compare_RiSym(void *va, void *vb) {
    RiSym *a = (RiSym *)va;
@@ -452,7 +408,7 @@ void canonicaliseSymtab ( SegInfo* si )
    if (si->symtab_used == 0)
       return;
 
-   shellsort(si->symtab, si->symtab_used, sizeof(*si->symtab), compare_RiSym);
+   VG_(ssort)(si->symtab, si->symtab_used, sizeof(*si->symtab), compare_RiSym);
 
   cleanup_more:
  
@@ -580,8 +536,8 @@ void canonicaliseScopetab ( SegInfo* si )
       return;
 
    /* Sort by start address. */
-   shellsort(si->scopetab, si->scopetab_used, sizeof(*si->scopetab), 
-	     compare_ScopeRange);
+   VG_(ssort)(si->scopetab, si->scopetab_used, sizeof(*si->scopetab), 
+	      compare_ScopeRange);
 
    /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < si->scopetab_used-1; i++) {
@@ -652,7 +608,7 @@ void canonicaliseLoctab ( SegInfo* si )
       return;
 
    /* Sort by start address. */
-   shellsort(si->loctab, si->loctab_used, sizeof(*si->loctab), compare_RiLoc);
+   VG_(ssort)(si->loctab, si->loctab_used, sizeof(*si->loctab), compare_RiLoc);
 
    /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < ((Int)si->loctab_used)-1; i++) {

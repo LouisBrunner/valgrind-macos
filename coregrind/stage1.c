@@ -38,6 +38,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/resource.h>
 
 #include "vg_include.h"
 
@@ -196,6 +197,7 @@ static void hoops(void)
 
 int main(int argc, char **argv)
 {
+   struct rlimit rlim;
    const char *cp = getenv(VALGRINDLIB);
 
    if (cp != NULL)
@@ -204,6 +206,12 @@ int main(int argc, char **argv)
    assert(ume_exec_esp != NULL);
 
    our_argc = argc;
+
+   /* Set the address space limit as high as it will go, since we make
+      a lot of very large mappings. */
+   getrlimit(RLIMIT_AS, &rlim);
+   rlim.rlim_cur = rlim.rlim_max;
+   setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
    ume_go((addr_t)hoops, (addr_t)stack + sizeof(stack));

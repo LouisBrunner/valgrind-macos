@@ -3714,7 +3714,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
     { Int   n_pops;
       Addr  eipS, eipE;
       UChar ch;
-      if (sz != 4) goto normal_pop_case;
+      if (sz != 4)           goto normal_pop_case;
+      if (VG_(clo_cachesim)) goto normal_pop_case;
       /* eip points at first pop insn + 1.  Make eipS and eipE
          bracket the sequence. */
       eipE = eipS = eip - 1;
@@ -3823,7 +3824,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
     { Int   n_pushes;
       Addr  eipS, eipE;
       UChar ch;
-      if (sz != 4) goto normal_push_case;
+      if (sz != 4)           goto normal_push_case;
+      if (VG_(clo_cachesim)) goto normal_push_case;
       /* eip points at first push insn + 1.  Make eipS and eipE
          bracket the sequence. */
       eipE = eipS = eip - 1;

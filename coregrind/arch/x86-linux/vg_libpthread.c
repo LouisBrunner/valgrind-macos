@@ -2671,7 +2671,7 @@ int VGL_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       res = my_do_syscall2(__NR_nanosleep, 
                            (int)(&nanosleep_interval), (int)NULL);
       if (res == -VKI_EINTR) {
-         /* The poll was interrupted by a signal.  So we do the
+         /* The nanosleep was interrupted by a signal.  So we do the
             same. */
          * (__errno_location()) = EINTR;
          return -1;

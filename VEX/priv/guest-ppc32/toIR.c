@@ -722,8 +722,8 @@ static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRTemp res,
     IRExpr** args =
 	mkIRExprVec_5(
 	    mkU32(op), mkexpr(res), mkexpr(arg1), mkexpr(arg2),
-	    IRExpr_Get(OFFB_XER_CA, Ity_I8) );
-
+            unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_CA, Ity_I8))
+        );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,

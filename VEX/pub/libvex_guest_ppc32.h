@@ -106,7 +106,7 @@ typedef
 //      UChar padding_1b1;
 //      UChar padding_1b2;
 //      UChar padding_1b3;
-//      UInt  padding_4b;
+      UInt  padding_4b;
    }
    VexGuestPPC32State;
 

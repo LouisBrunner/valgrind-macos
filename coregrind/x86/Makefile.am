@@ -3,7 +3,6 @@ noinst_HEADERS = \
 
 EXTRA_DIST =		\
 	ume_archdefs.c	\
-	ume_archdefs.h	\
 	ume_entry.S	\
 	ume_go.c
 

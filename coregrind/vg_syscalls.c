@@ -1838,7 +1838,8 @@ PRE(execve)
 
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "execve(filename)", arg1 );
    pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
-   pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
+   if (arg3 != (UInt)NULL)
+      pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
 
    /* Erk.  If the exec fails, then the following will have made a
       mess of things which makes it hard for us to continue.  The

@@ -27,6 +27,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
+	execve.vgtext execve.stdout.exp execve.stderr.exp \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
@@ -66,8 +67,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
-	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
-	fucomip $(INSN_TESTS) \
+	cpuid dastest discard exec-sigmask execve floored fork \
+	fpu_lazy_eflags fucomip $(INSN_TESTS) \
 	int munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sem semlimit sha1_test \
 	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
@@ -89,6 +90,7 @@ coolo_strlen_SOURCES 	= coolo_strlen.c
 dastest_SOURCES 	= dastest_c.c dastest_s.s
 discard_SOURCES 	= discard.c
 exec_sigmask_SOURCES	= exec-sigmask.c
+execve			= execve.c
 fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm

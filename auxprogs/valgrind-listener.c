@@ -32,18 +32,18 @@
 
 /*---------------------------------------------------------------*/
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <unistd.h> /* close */
+#include <unistd.h>
 #include <string.h>
-#include <sys/poll.h>
 #include <time.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 
 /* For VG_CLO_DEFAULT_LOGPORT and VG_EMAIL_ADDR. */
 #include "vg_include.h"
@@ -136,20 +136,20 @@ void copyout ( char* buf, int nbuf )
 
 int read_from_sd ( int sd )
 {
-  char buf[100];
-  int n;
+   char buf[100];
+   int n;
 
-  set_blocking(sd);
-  n = read(sd, buf, 99);
-  if (n <= 0) return 0; /* closed */
-  copyout(buf, n);
+   set_blocking(sd);
+   n = read(sd, buf, 99);
+   if (n <= 0) return 0; /* closed */
+   copyout(buf, n);
 
-  set_nonblocking(sd);
-  while (1) {
-     n = read(sd, buf, 100);
-     if (n <= 0) return 1; /* not closed */
-     copyout(buf, n);
-  }
+   set_nonblocking(sd);
+   while (1) {
+      n = read(sd, buf, 100);
+      if (n <= 0) return 1; /* not closed */
+      copyout(buf, n);
+   }
 }
 
 
@@ -162,12 +162,94 @@ void snooze ( void )
 }
 
 
+/* returns 0 if invalid, else port # */
+int atoi_portno ( char* str )
+{
+   int n = 0;
+   while (1) {
+      if (*str == 0) 
+         break;
+      if (*str < '0' || *str > '9')
+         return 0;
+      n = 10*n + (int)(*str - '0');
+      str++;
+      if (n >= 65536) 
+         return 0;
+   }
+   if (n < 1024)
+      return 0;
+   return n;
+}
+
+
+void usage ( void )
+{
+   fprintf(stderr, 
+      "\n"
+      "usage is:\n"
+      "\n"
+      "   valgrind-listener [--exit-when-zero|-e] [port-number]\n"
+      "\n"
+      "   where   --exit-when-zero or -e causes the listener to exit\n"
+      "           when the number of connections falls back to zero\n"
+      "           (the default is to keep listening forever)\n"
+      "\n"
+      "           port-number is the default port on which to listen for\n"
+      "           connections.  It must be between 1024 and 65535.\n"
+      "           Current default is %d.\n"
+      "\n"
+      ,
+      VG_CLO_DEFAULT_LOGPORT
+   );
+   exit(1);
+}
+
+
+void banner ( char* str )
+{
+   time_t t;
+   t = time(NULL);
+   printf("valgrind-listener %s at %s", str, ctime(&t));
+}
+
+
+void exit_routine ( void )
+{
+   banner("exited");
+   exit(0);
+}
+
+
+void sigint_handler ( int signo )
+{
+   exit_routine();
+}
+
+
 int main (int argc, char** argv) 
 {
-   int i, j, k, res;
-   int main_sd, newSd, client_len;
-
+   int    i, j, k, res;
+   int    main_sd, new_sd, client_len;
    struct sockaddr_in client_addr, server_addr;
+
+   char /*bool*/ exit_when_zero = 0;
+   int           port = VG_CLO_DEFAULT_LOGPORT;
+
+   for (i = 1; i < argc; i++) {
+      if (0==strcmp(argv[i], "--exit-when-zero")
+          || 0==strcmp(argv[i], "-e")) {
+         exit_when_zero = 1;
+      }
+      else
+      if (atoi_portno(argv[i]) > 0) {
+         port = atoi_portno(argv[i]);
+      }
+      else
+      usage();
+   }
+
+   banner("started");
+   signal(SIGINT, sigint_handler);
 
    conn_count = 0;
    for (i = 0; i < M_CONNECTIONS; i++)
@@ -183,7 +265,7 @@ int main (int argc, char** argv)
    /* bind server port */
    server_addr.sin_family      = AF_INET;
    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-   server_addr.sin_port        = htons(VG_CLO_DEFAULT_LOGPORT);
+   server_addr.sin_port        = htons(port);
   
    if (bind(main_sd, (struct sockaddr *) &server_addr, 
                      sizeof(server_addr) ) < 0) {
@@ -197,7 +279,7 @@ int main (int argc, char** argv)
       panic("main -- listen");
    }
   
-   while(1) {
+   while (1) {
 
       snooze();
 
@@ -214,15 +296,15 @@ int main (int argc, char** argv)
 
            /* ok, we have someone waiting to connect.  Get the sd. */
            client_len = sizeof(client_addr);
-           newSd = accept(main_sd, (struct sockaddr *) &client_addr, 
+           new_sd = accept(main_sd, (struct sockaddr *) &client_addr, 
                                                        &client_len);
-           if (newSd < 0) {
+           if (new_sd < 0) {
               perror("cannot accept connection ");
               panic("main -- accept connection");
            }
 
            /* find a place to put it. */
-	   assert(newSd > 0);
+	   assert(new_sd > 0);
            for (i = 0; i < M_CONNECTIONS; i++)
               if (conn_fd[i] == 0) 
                  break;
@@ -233,7 +315,7 @@ int main (int argc, char** argv)
               panic("main -- too many concurrent connections");
            }
 
-           conn_fd[i] = newSd;
+           conn_fd[i] = new_sd;
            conn_count++;
 	   printf("\n(%d) -------------------- CONNECT "
                   "--------------------\n(%d)\n(%d) ", 
@@ -286,13 +368,18 @@ int main (int argc, char** argv)
                       "-------------------\n(%d)\n(%d) ", 
                       conn_count, conn_count, conn_count);
                fflush(stdout);
+               if (conn_count == 0 && exit_when_zero) {
+                  printf("\n");
+                  exit_routine();
+	       }
             }
          }
 
       } /* for (i = 0; i < j; i++) */
   
-  } /* while (1) */
+   } /* while (1) */
 
+   /* NOTREACHED */
 }
 
 

@@ -1090,6 +1090,7 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       }
 
      out:
+      if (isStruct && isTypedef) isStruct = False;
       sym->type = stabtype_parser(si, NULL, &ty);
       base = VG_(st_basetype)(sym->type, False);
 

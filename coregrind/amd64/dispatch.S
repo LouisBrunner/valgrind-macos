@@ -31,13 +31,15 @@
 
 #include "core_asm.h"
 #include "amd64_private_asm.h"
-#include "libvex_guest_offsets.h"
+#include "libvex_guest_offsets.h"	/* for OFFSET_amd64_RIP */
 
 
 /*------------------------------------------------------------*/
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
-	
+
+/* signature: UWord VG_(run_innerloop) ( void* guest_state ) */
+
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
 	/* %rdi holds guest_state */

@@ -1174,10 +1174,9 @@ static Bool dis_int_arith ( UInt theInstr )
       // lis rD,val == addis rD,0,val
       DIP("addis r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
       if ( Ra_addr == 0 ) {
-         assign( Rd, mkU32(EXTS_SIMM << 16) );
+         assign( Rd, mkU32(SIMM_16 << 16) );
       } else {
-         assign( Rd, binop(Iop_Add32, mkexpr(Ra),
-                           mkU32(EXTS_SIMM << 16)) );
+         assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkU32(SIMM_16 << 16)) );
       }
       break;
 
@@ -1883,7 +1882,7 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(Ox1F,b0)\n");
          return False;
       }
-      assign( EA_reg, binop(Iop_And32, mkexpr(Ra_or_0), mkexpr(Rb)) );
+      assign( EA_reg, binop(Iop_Add32, mkexpr(Ra_or_0), mkexpr(Rb)) );
 
       switch (opc2) {
       case 0x077: // lbzux (Load B & Zero with Update Indexed, p470)
@@ -2057,7 +2056,7 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(0x1F,b0)\n");
          return False;
       }
-      assign( EA_reg, binop(Iop_And32, mkexpr(Ra_or_0), mkexpr(Rb)) );
+      assign( EA_reg, binop(Iop_Add32, mkexpr(Ra_or_0), mkexpr(Rb)) );
 
       switch (opc2) {
       case 0x0F7: // stbux (Store B with Update Indexed, p578)
@@ -3230,6 +3229,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    vex_printf_binary( theInstr, 32, True );
    vex_printf("\n");
 
+#if 0
    vex_printf("disInstr(ppc32): opcode1: ");
    vex_printf_binary( opc1, 6, False );
    vex_printf("\n");
@@ -3237,6 +3237,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    vex_printf("disInstr(ppc32): opcode2: ");
    vex_printf_binary( opc2, 10, False );
    vex_printf("\n\n");
+#endif
 #endif
 
    if (theInstr == 0x7C0042A6) {

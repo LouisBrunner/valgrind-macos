@@ -381,7 +381,7 @@ typedef
    struct {
       Bool libc_freeres;
       Bool core_errors;
-      Bool skin_errors;
+      Bool tool_errors;
       Bool basic_block_discards;
       Bool shadow_regs;
       Bool command_line_options;

@@ -1822,7 +1822,7 @@ extern void VG_(needs_core_errors) ( void );
    lot like being a member of a type class. */
 
 /* Want to report errors from tool?  This implies use of suppressions, too. */
-extern void VG_(needs_skin_errors) ( void );
+extern void VG_(needs_tool_errors) ( void );
 
 /* Is information kept about specific individual basic blocks?  (Eg. for
    cachegrind there are cost-centres for every instruction, stored at a

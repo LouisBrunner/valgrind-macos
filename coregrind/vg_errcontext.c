@@ -213,10 +213,10 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
             return True;
          return False;
       default: 
-         if (VG_(needs).skin_errors)
+         if (VG_(needs).tool_errors)
             return SK_(eq_SkinError)(res, e1, e2);
          else {
-            VG_(printf)("\nUnhandled error type: %u. VG_(needs).skin_errors\n"
+            VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
                         e1->ekind);
             VG_(skin_panic)("unhandled error type");
@@ -238,10 +238,10 @@ static void pp_Error ( Error* err, Bool printCount )
          VG_(pp_ExeContext)(err->where);
          break;
       default: 
-         if (VG_(needs).skin_errors)
+         if (VG_(needs).tool_errors)
             SK_(pp_SkinError)( err );
          else {
-            VG_(printf)("\nUnhandled error type: %u.  VG_(needs).skin_errors\n"
+            VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
                         "probably needs to be set?\n",
                         err->ekind);
             VG_(skin_panic)("unhandled error type");
@@ -531,7 +531,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    *p = err;
 
    /* update `extra', for non-core errors (core ones don't use 'extra') */
-   if (VG_(needs).skin_errors && PThreadErr != ekind) {
+   if (VG_(needs).tool_errors && PThreadErr != ekind) {
       extra_size = SK_(update_extra)(p);
 
       /* copy block pointed to by `extra', if there is one */
@@ -843,7 +843,7 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       /* Is it a tool suppression? */
-      else if (VG_(needs).skin_errors && 
+      else if (VG_(needs).tool_errors && 
                tool_name_present(VG_(details).name, tool_names))
       {
          if (SK_(recognised_suppression)(supp_name, supp)) 
@@ -864,7 +864,7 @@ static void load_one_suppressions_file ( Char* filename )
          continue;
       }
 
-      if (VG_(needs).skin_errors && 
+      if (VG_(needs).tool_errors && 
           !SK_(read_extra_suppression_info)(fd, buf, N_BUF, supp)) 
          goto syntax_error;
 
@@ -956,11 +956,11 @@ Bool supp_matches_error(Supp* su, Error* err)
       case PThreadSupp:
          return (err->ekind == PThreadErr);
       default:
-         if (VG_(needs).skin_errors) {
+         if (VG_(needs).tool_errors) {
             return SK_(error_matches_suppression)(err, su);
          } else {
             VG_(printf)(
-               "\nUnhandled suppression type: %u.  VG_(needs).skin_errors\n"
+               "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
                "probably needs to be set.\n",
                err->ekind);
             VG_(skin_panic)("unhandled suppression type");

@@ -48,7 +48,7 @@ VgDetails VG_(details) = {
 
 VgNeeds VG_(needs) = {
    .core_errors          = False,
-   .skin_errors          = False,
+   .tool_errors          = False,
    .libc_freeres         = False,
    .basic_block_discards = False,
    .shadow_regs          = False,
@@ -156,7 +156,7 @@ DETAILS(UInt,  avg_translation_sizeB)
 
 NEEDS(libc_freeres)
 NEEDS(core_errors)
-NEEDS(skin_errors)
+NEEDS(tool_errors)
 NEEDS(basic_block_discards)
 NEEDS(shadow_regs)
 NEEDS(command_line_options)

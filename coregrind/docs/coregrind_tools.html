@@ -457,7 +457,7 @@ command line options;  wrap system calls;  record extra information about
 malloc'd blocks, etc.<p>
 
 For example, if a tool wants the core's help in recording and reporting errors,
-it must set the <code>skin_errors</code> need to <code>True</code>, and then
+it must set the <code>tool_errors</code> need to <code>True</code>, and then
 provide definitions of six functions for comparing errors, printing out errors,
 reading suppressions from a suppressions file, etc.  While writing these
 functions requires some work, it's much less than doing error handling from

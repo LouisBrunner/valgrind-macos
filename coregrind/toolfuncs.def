@@ -38,7 +38,7 @@ void,	fini,	Int exitcode
 ## (none needed)
 
 ## ------------------------------------------------------------------
-## VG_(needs).skin_errors
+## VG_(needs).tool_errors
 
 ## Identify if two errors are equal, or equal enough.  `res' indicates how
 ## close is "close enough".  `res' should be passed on as necessary, eg. if

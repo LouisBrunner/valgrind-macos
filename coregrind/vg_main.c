@@ -2020,7 +2020,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    }
 
    if (VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES-1 &&
-       (VG_(needs).core_errors || VG_(needs).skin_errors)) {
+       (VG_(needs).core_errors || VG_(needs).tool_errors)) {
       /* If there are no suppression files specified and the tool
 	 needs one, load the default */
       static const Char default_supp[] = "default.supp";
@@ -2032,7 +2032,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    }
 
    if (VG_(clo_gen_suppressions) && 
-       !VG_(needs).core_errors && !VG_(needs).skin_errors) {
+       !VG_(needs).core_errors && !VG_(needs).tool_errors) {
       VG_(message)(Vg_UserMsg, 
                    "Can't use --gen-suppressions=yes with this tool,");
       VG_(message)(Vg_UserMsg, 
@@ -2817,7 +2817,7 @@ int main(int argc, char **argv)
    // Read suppression file
    //   p: process_cmd_line_options()  [for VG_(clo_suppressions)]
    //--------------------------------------------------------------
-   if (VG_(needs).core_errors || VG_(needs).skin_errors)
+   if (VG_(needs).core_errors || VG_(needs).tool_errors)
       VG_(load_suppressions)();
 
    //--------------------------------------------------------------
@@ -2878,7 +2878,7 @@ int main(int argc, char **argv)
    if (VG_(clo_track_fds))
       VG_(show_open_fds)();
 
-   if (VG_(needs).core_errors || VG_(needs).skin_errors)
+   if (VG_(needs).core_errors || VG_(needs).tool_errors)
       VG_(show_all_errors)();
 
    SK_(fini)( exitcode );

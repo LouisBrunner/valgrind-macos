@@ -7,7 +7,7 @@ AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 
 # Where is VEX ? ToDo: --with-vex=
-VEX_DIR=/home/sewardj/Vex/vex/trunk
+VEX_DIR=/home/njn/vex/trunk
 AC_SUBST(VEX_DIR)
 
 # Checks for programs.

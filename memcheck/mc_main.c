@@ -1930,7 +1930,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_avg_translation_sizeB) ( 228 );
 
    VG_(needs_core_errors)         ();
-   VG_(needs_skin_errors)         ();
+   VG_(needs_tool_errors)         ();
    VG_(needs_libc_freeres)        ();
    VG_(needs_shadow_regs)         ();
    VG_(needs_command_line_options)();

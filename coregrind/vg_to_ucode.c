@@ -4622,6 +4622,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* SQRTSS: square root of scalar float. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x51) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4,
+                                      "sqrtss",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* MOVLPS -- 8-byte load/store.  How is this different from MOVLPS
       ? */
    if (insn[0] == 0x0F 

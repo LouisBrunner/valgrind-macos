@@ -684,7 +684,7 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
    if (matchIRExpr(&mi,p_eq32_zero,e)) {
       HReg src = iselIntExpr_R(env, mi.bindee[0]);
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,X86RMI_Imm(0),src));
-      return Xcc_NZ;
+      return Xcc_Z;
    }
 
    ppIRExpr(e);

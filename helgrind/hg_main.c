@@ -34,7 +34,7 @@
 VG_DETERMINE_INTERFACE_VERSION
 
 static UInt n_eraser_warnings = 0;
-
+static UInt n_lockorder_warnings = 0;
 
 /*------------------------------------------------------------*/
 /*--- Debug guff                                           ---*/
@@ -417,6 +417,16 @@ void free_LockSet(LockSet *p)
    }
 }
 
+static Bool ismember(UInt set, hg_mutex_t *mx)
+{
+   LockSet *ls;
+
+   for(ls = lockset_table[set]; ls != NULL; ls = ls->next)
+      if (ls->mutex == mx)
+	 return True;
+
+   return False;
+}
 
 static 
 Bool structural_eq_LockSet(LockSet* a, LockSet* b)
@@ -803,6 +813,8 @@ static UInt graph_mark;		/* current mark we're using for graph traversal */
 
 static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
 			       Char *str, ExeContext *ec);
+static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
+				   UInt lockset_holding, UInt lockset_prev);
 
 static hg_mutex_t *mutex_hash[M_MUTEX_HASHSZ];
 
@@ -850,36 +862,36 @@ static const char *pp_MutexState(MutexState st)
 #define MARK_LOOP	(graph_mark+0)
 #define MARK_DONE	(graph_mark+1)
 
-static Bool check_cycle_inner(hg_mutex_t *mutex, LockSet *ls)
-{
-   static const Bool debug = False;
-
-   if (mutex->mark == MARK_LOOP)
-      return True;		/* found cycle */
-   if (mutex->mark == MARK_DONE)
-      return False;		/* been here before, its OK */
-
-   mutex->mark = MARK_LOOP;
-
-   if (debug)
-      VG_(printf)("mark=%d visiting %p%(y mutex->lockset=%d\n",
-		  graph_mark, mutex->mutexp, mutex->mutexp, mutex->lockdep);
-   for(; ls != NULL; ls = ls->next) {
-      if (debug)
-	 VG_(printf)("   %y ls=%p (ls->mutex=%p%(y)\n", 
-		     mutex->mutexp, ls,
-		     ls->mutex ? ls->mutex->mutexp : 0,
-		     ls->mutex ? ls->mutex->mutexp : 0);
-      if (check_cycle_inner(ls->mutex, lockset_table[ls->mutex->lockdep]))
-	 return True;
-   }
-   mutex->mark = MARK_DONE;
-
-   return False;
-}
-
 static Bool check_cycle(hg_mutex_t *start, UInt lockset)
 {
+   Bool check_cycle_inner(hg_mutex_t *mutex, LockSet *ls)
+   {
+      static const Bool debug = False;
+
+      if (mutex->mark == MARK_LOOP)
+	 return True;		/* found cycle */
+      if (mutex->mark == MARK_DONE)
+	 return False;		/* been here before, its OK */
+
+      mutex->mark = MARK_LOOP;
+	 
+      if (debug)
+	 VG_(printf)("mark=%d visiting %p%(y mutex->lockset=%d\n",
+		     graph_mark, mutex->mutexp, mutex->mutexp, mutex->lockdep);
+      for(; ls != NULL; ls = ls->next) {
+	 if (debug)
+	    VG_(printf)("   %y ls=%p (ls->mutex=%p%(y)\n", 
+			mutex->mutexp, ls,
+			ls->mutex ? ls->mutex->mutexp : 0,
+			ls->mutex ? ls->mutex->mutexp : 0);
+	 if (check_cycle_inner(ls->mutex, lockset_table[ls->mutex->lockdep]))
+	    return True;
+      }
+      mutex->mark = MARK_DONE;
+	 
+      return False;
+   }
+
    graph_mark += 2;		/* clear all marks */
 
    return check_cycle_inner(start, lockset_table[lockset]);
@@ -915,7 +927,7 @@ static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
 	 print_LockSet("thread holding", lockset_table[thread_locks[tid]]);
 
       if (check_cycle(mutex, thread_locks[tid]))
-	 record_mutex_error(tid, mutex, "take lock before dependent locks", NULL);
+	 record_lockgraph_error(tid, mutex, thread_locks[tid], mutex->lockdep);
       else {
 	 mutex->lockdep = ls_union(mutex->lockdep, thread_locks[tid]);
 
@@ -1331,6 +1343,7 @@ typedef
    enum { 
       EraserErr,		/* data-race */
       MutexErr,			/* mutex operations */
+      LockGraphErr,		/* mutex order error */
    }
    EraserErrorKind;
 
@@ -1378,10 +1391,13 @@ typedef
       AddrInfo addrinfo;
       Bool isWrite;
       shadow_word prevstate;
-      /* MutexErr */
+      /* MutexErr, LockGraphErr */
       hg_mutex_t *mutex;
       ExeContext *lasttouched;
       ThreadId    lasttid;
+      /* LockGraphErr */
+      UInt         held_lockset;
+      UInt         prev_lockset;
    }
    HelgrindError;
 
@@ -1407,6 +1423,8 @@ void clear_HelgrindError ( HelgrindError* err_extra )
    err_extra->mutex      = NULL;
    err_extra->lasttouched= NULL;
    err_extra->lasttid    = VG_INVALID_THREADID;
+   err_extra->prev_lockset = 0;
+   err_extra->held_lockset = 0;
    err_extra->prevstate.state  = Vge_Virgin;
    err_extra->prevstate.other  = 0;
    clear_AddrInfo ( &err_extra->addrinfo );
@@ -1505,6 +1523,8 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
    HelgrindError err_extra;
    static const shadow_word err_sw = { TID_INDICATING_ALL, Vge_Excl };
 
+   n_eraser_warnings++;
+
    clear_HelgrindError(&err_extra);
    err_extra.isWrite = is_write;
    err_extra.addrinfo.akind = Undescribed;
@@ -1530,6 +1550,25 @@ static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex,
 
    VG_(maybe_record_error)(VG_(get_ThreadState)(tid), MutexErr, 
 			   (Addr)mutex->mutexp, str, &err_extra);
+}
+
+static void record_lockgraph_error(ThreadId tid, hg_mutex_t *mutex,
+				   UInt lockset_holding, UInt lockset_prev)
+{
+   HelgrindError err_extra;
+
+   n_lockorder_warnings++;
+
+   clear_HelgrindError(&err_extra);
+   err_extra.addrinfo.akind = Undescribed;
+   err_extra.mutex = mutex;
+   
+   err_extra.lasttouched = mutex->location;
+   err_extra.held_lockset = lockset_holding;
+   err_extra.prev_lockset = lockset_prev;
+   
+   VG_(maybe_record_error)(VG_(get_ThreadState)(tid), LockGraphErr, 
+			   (Addr)mutex->mutexp, "", &err_extra);
 }
 
 Bool SK_(eq_SkinError) ( VgRes not_used,
@@ -1602,6 +1641,31 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
    }
 }
 
+static Char *lockset_str(const Char *prefix, LockSet *lockset)
+{
+   UInt count;
+   LockSet *ls;
+   Char *buf, *cp;
+
+   for(ls = lockset, count = 0; ls != NULL; ls = ls->next)
+      count++;
+
+   buf = VG_(malloc)((prefix == NULL ? 0 : VG_(strlen)(prefix)) + count * 120 + 1);
+
+   cp = buf;
+   if (prefix)
+      cp += VG_(sprintf)(cp, "%s", prefix);
+
+   for(ls = lockset; ls != NULL; ls = ls->next)
+      cp += VG_(sprintf)(cp, "%p%(y, ", ls->mutex->mutexp, ls->mutex->mutexp);
+
+   if (count)
+      cp[-2] = '\0';
+   else
+      *cp = '\0';
+
+   return buf;
+}
 
 void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 {
@@ -1629,35 +1693,23 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 break;
 
       case Vge_Shar:
-      case Vge_SharMod: {
-	 LockSet *ls;
-	 UInt count;
-	 Char *cp;
-
+      case Vge_SharMod:
 	 if (lockset_table[extra->prevstate.other] == NULL) {
 	    VG_(sprintf)(buf, "shared %s, no locks", 
 			 extra->prevstate.state == Vge_Shar ? "RO" : "RW");
 	    break;
 	 }
 
-	 for(count = 0, ls = lockset_table[extra->prevstate.other]; ls != NULL; ls = ls->next)
-	    count++;
-	 msg = VG_(malloc)(25 + (120 * count));
+	 msg = lockset_str(extra->prevstate.state == Vge_Shar ?
+			   "shared RO, locked by:" :
+			   "shared RW, locked by:",
+			   lockset_table[extra->prevstate.other]);
 
-	 cp = msg;
-	 cp += VG_(sprintf)(cp, "shared %s, locked by: ", 
-			    extra->prevstate.state == Vge_Shar ? "RO" : "RW");
-	 for(ls = lockset_table[extra->prevstate.other]; ls != NULL; ls = ls->next)
-	    cp += VG_(sprintf)(cp, "%p%(y, ", ls->mutex->mutexp, ls->mutex->mutexp);
-	 cp[-2] = '\0';
 	 break;
-      }
       }
 
       if (*msg) {
 	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
-	 if (msg != buf)
-	    VG_(free)(msg);
       }
       pp_AddrInfo(err->addr, &extra->addrinfo);
       break;
@@ -1672,7 +1724,38 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
       }
       pp_AddrInfo(err->addr, &extra->addrinfo);
       break;
+
+   case LockGraphErr: {
+      LockSet *heldset = lockset_table[extra->held_lockset];
+      LockSet *ls;
+
+      msg = lockset_str(NULL, heldset);
+
+      VG_(message)(Vg_UserMsg, "Mutex %p%(y locked in inconsistent order",
+		   err->addr, err->addr);
+      pp_ExeContext();
+      VG_(message)(Vg_UserMsg, " while holding locks %s", msg);
+
+      for(ls = heldset; ls != NULL; ls = ls->next) {
+	 hg_mutex_t *lsmx = ls->mutex;
+
+	 if (!ismember(lsmx->lockdep, extra->mutex))
+	    continue;
+      
+	 VG_(message)(Vg_UserMsg, "  %p%(y last locked at", 
+		      lsmx->mutexp, lsmx->mutexp);
+	 VG_(pp_ExeContext)(lsmx->location);
+	 VG_(free)(msg);
+	 msg = lockset_str(NULL, lockset_table[lsmx->lockdep]);
+	 VG_(message)(Vg_UserMsg, "  while depending on locks %s", msg);
+      }
+      
+      break;
    }
+   }
+
+   if (msg != buf)
+      VG_(free)(msg);
 }
 
 
@@ -1966,7 +2049,6 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 
          if (lockset_table[sword->other] == NULL) {
             record_eraser_error(tst, a, False /* !is_write */, prevstate);
-            n_eraser_warnings++;
          }
          break;
 
@@ -2035,7 +2117,6 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
          SHARED_MODIFIED:
          if (lockset_table[sword->other] == NULL) {
             record_eraser_error(tst, a, True /* is_write */, prevstate);
-            n_eraser_warnings++;
          }
          break;
 
@@ -2171,7 +2252,8 @@ void SK_(fini)(void)
 #  if LOCKSET_SANITY 
    sanity_check_locksets("SK_(fini)");
 #  endif
-   VG_(message)(Vg_UserMsg, "%u possible data races found", n_eraser_warnings);
+   VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
+		n_eraser_warnings, n_lockorder_warnings);
 }
 
 /*--------------------------------------------------------------------*/

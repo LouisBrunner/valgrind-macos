@@ -270,6 +270,19 @@ static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 }
 
 
+/* Given an amode, return one which references 4 bytes further
+   along. */
+
+static X86AMode* advance4 ( X86AMode* am )
+{
+   X86AMode* am4 = dopyX86AMode(am);
+   /* Could also advance the _IR form, but no need yet. */
+   vassert(am4->tag == Xam_IRRS);
+   am4->Xam.IRRS.imm += 4;
+   return am4;
+}
+
+
 /* Push an arg onto the host stack, in preparation for a call to a
    helper function of some kind.  Returns the number of 32-bit words
    pushed. */
@@ -849,6 +862,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_Set32(cond,dst));
             return dst;
          }
+         case Iop_1Sto16:
          case Iop_1Sto32: {
             /* could do better than this, but for now ... */
             HReg dst         = newVRegI(env);
@@ -916,34 +930,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    case Iex_GetI: {
-#if 0
-      /* special-case: GetI( Add32(y,const:I32) ):I8 */
-      { DECLARE_PATTERN(p_Get_FP_tag);
-        DEFINE_PATTERN(p_Get_FP_tag,
-           IRExpr_GetI(
-              binop(Iop_Add32, bind(0), bind(1)),
-              Ity_I8,120,127
-           )
-        );
-        if (matchIRExpr(&mi, p_Get_FP_tag, e)) {
-           /* partial match, but we have to ensure bind(1) is a 32-bit
-	      literal. */
-           IRExpr* y = mi.bindee[0];
-           IRExpr* c = mi.bindee[1];
-           if (c->tag == Iex_Const && c->Iex.Const.con->tag == Ico_U32) {
-              UInt c32 = c->Iex.Const.con->Ico.U32;
-              HReg dst = newVRegI(env);
-              HReg ry = iselIntExpr_R(env, y);
-              addInstr(env, 
-                 X86Instr_LoadEX( 
-                    1, False,
-                    X86AMode_IRRS(c32, hregX86_EBP(), ry, 0),
-                    dst ));
-              return dst;
-           }
-        }
-      }
-#endif
       X86AMode* am 
          = genGuestArrayOffset(
               env, e->Iex.GetI.descr, 
@@ -1429,9 +1415,11 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
    /* 64-bit load */
    if (e->tag == Iex_LDle) {
+      /* It would be better to generate the address into an amode and
+         then do advance4 to get the hi-half address. */
       vassert(e->Iex.LDle.ty == Ity_I64);
-      HReg  tLo = newVRegI(env);
-      HReg  tHi = newVRegI(env);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
       HReg rA = iselIntExpr_R(env, e->Iex.LDle.addr);
       addInstr(env, X86Instr_Alu32R(
                         Xalu_MOV,
@@ -1439,6 +1427,41 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(
                         Xalu_MOV,
                         X86RMI_Mem(X86AMode_IR(4, rA)), tHi));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
+   /* 64-bit GETI */
+   if (e->tag == Iex_GetI) {
+      X86AMode* am 
+         = genGuestArrayOffset( env, e->Iex.GetI.descr, 
+                                     e->Iex.GetI.ix, e->Iex.GetI.bias );
+      X86AMode* am4 = advance4(am);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am), tLo ));
+      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am4), tHi ));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
+   /* 64-bit Mux0X */
+   if (e->tag == Iex_Mux0X) {
+      HReg e0Lo, e0Hi, eXLo, eXHi, r8;
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      iselIntExpr64(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
+      iselIntExpr64(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
+      addInstr(env, mk_MOVsd_RR(eXHi, tHi));
+      addInstr(env, mk_MOVsd_RR(eXLo, tLo));
+      r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+      addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+      /* This assumes the first cmov32 doesn't trash the condition
+         codes, so they are still available for the second cmov32 */
+      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Hi),tHi));
+      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Lo),tLo));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -1482,6 +1505,23 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
       addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
+   /* Iop_Or64 */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_Or64)) {
+      HReg xLo, xHi, yLo, yHi;
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      iselIntExpr64(&xHi, &xLo, env, e->Iex.Binop.arg1);
+      addInstr(env, mk_MOVsd_RR(xHi, tHi));
+      addInstr(env, mk_MOVsd_RR(xLo, tLo));
+      iselIntExpr64(&yHi, &yLo, env, e->Iex.Binop.arg2);
+      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(yHi), tHi));
+      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(yLo), tLo));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -2181,6 +2221,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_I8) {
          HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
          addInstr(env, X86Instr_Store( 1, r, am ));
+         return;
+      }
+      if (ty == Ity_I64) {
+         HReg rHi, rLo;
+         X86AMode* am4 = advance4(am);
+         iselIntExpr64(&rHi, &rLo, env, stmt->Ist.PutI.data);
+         addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rLo), am ));
+         addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rHi), am4 ));
          return;
       }
       break;

@@ -93,6 +93,8 @@ typedef
 extern X86AMode* X86AMode_IR   ( UInt, HReg );
 extern X86AMode* X86AMode_IRRS ( UInt, HReg, HReg, Int );
 
+extern X86AMode* dopyX86AMode ( X86AMode* );
+
 extern void ppX86AMode ( X86AMode* );
 
 

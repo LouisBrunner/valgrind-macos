@@ -127,6 +127,18 @@ X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg indEx, Int shift ) {
    return am;
 }
 
+X86AMode* dopyX86AMode ( X86AMode* am ) {
+   switch (am->tag) {
+      case Xam_IR: 
+         return X86AMode_IR( am->Xam.IR.imm, am->Xam.IR.reg );
+      case Xam_IRRS: 
+         return X86AMode_IRRS( am->Xam.IRRS.imm, am->Xam.IRRS.base, 
+                               am->Xam.IRRS.index, am->Xam.IRRS.shift );
+      default:
+         vpanic("dopyX86AMode");
+   }
+}
+
 void ppX86AMode ( X86AMode* am ) {
    switch (am->tag) {
       case Xam_IR: 

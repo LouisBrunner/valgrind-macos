@@ -1080,7 +1080,7 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
    X86AMode* am;
-   Int base = 4 * 34;
+   Int base = 4 * 37;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
@@ -1100,7 +1100,7 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
    X86AMode* am;
-   Int base = 4 * 34;
+   Int base = 4 * 37;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));

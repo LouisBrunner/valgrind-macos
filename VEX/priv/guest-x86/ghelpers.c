@@ -210,6 +210,7 @@ static inline int lshift(int x, int n)
       case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
 
       case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
+      case CC_OP_LOGICW: ACTIONS_LOGIC(16,UShort,Short);
       case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
 
       case CC_OP_INCL: ACTIONS_INC(32,UInt,Int);

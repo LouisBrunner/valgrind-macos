@@ -3923,6 +3923,24 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_AbsF64, get_ST(0)));
                break;
 
+            case 0xE4: /* FTST */
+               DIP("ftst\n");
+               /* This forces C1 to zero, which isn't right. */
+               /* Well, in fact the Intel docs say (bizarrely): "C1 is
+                  set to 0 if stack underflow occurred; otherwise, set
+                  to 0" which is pretty nonsensical.  I guess it's a
+                   typo. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      IRExpr_Const(IRConst_F64i(0x0ULL))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;
+
             case 0xE5: { /* FXAM */
                /* This is an interesting one.  It examines %st(0),
                   regardless of whether the tag says it's empty or not.
@@ -8872,15 +8890,18 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
-   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x29) {
+   /* 66 0F 11 = MOVUPD -- move from G (xmm) to E (mem or xmm). */
+   if (sz == 2 && insn[0] == 0x0F 
+       && (insn[1] == 0x29 || insn[1] == 0x11)) {
+      HChar* wot = insn[1]==0x29 ? "apd" : "upd";
       modrm = getIByte(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-         DIP("movapd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
-                               dis_buf );
+         DIP("mov%s %s,%s\n", wot, nameXMMReg(gregOfRM(modrm)),
+                                   dis_buf );
          delta += 2+alen;
          goto decode_success;
       }

@@ -319,10 +319,15 @@ static void vg_init_baseBlock ( void )
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
                                VG_(noncompact_helper_offsets), 
                                VG_(noncompact_helper_addrs));
-}
 
-static void vg_init_shadow_regs ( void )
-{
+
+   /* Initialise slots that require it */
+   VG_(copy_m_state_static_to_baseBlock)();
+
+   /* Pretend the root thread has a completely empty LDT to start with. */
+   VG_(baseBlock)[VGOFF_(ldt)] = (UInt)NULL;
+
+   /* Initialise shadow regs */
    if (VG_(needs).shadow_regs) {
       UInt eflags;
    
@@ -337,8 +342,9 @@ static void vg_init_shadow_regs ( void )
       VG_(baseBlock)[VGOFF_(sh_edi)]    = VG_(written_shadow_reg);
       VG_(baseBlock)[VGOFF_(sh_eflags)] = eflags;
 
-   } else
+   } else {
       VG_(written_shadow_reg) = VG_UNUSED_SHADOW_REG_VALUE;
+   }
 }
 
 
@@ -1212,16 +1218,15 @@ void VG_(main) ( void )
    SK_(pre_clo_init) ( & VG_(details), & VG_(needs), & VG_(track_events) );
    sanity_check_needs();
 
-   /* Set up baseBlock offsets and copy the saved machine's state into it. */
-   vg_init_baseBlock();
-   VG_(copy_m_state_static_to_baseBlock)();
-   /* Pretend that the root thread has a completely empty LDT to start
-      with. */
-   VG_(baseBlock)[VGOFF_(ldt)] = (UInt)NULL;
-   vg_init_shadow_regs();
-
-   /* Process Valgrind's command-line opts (from env var VG_OPTS). */
+   /* Process Valgrind's command-line opts (from env var VG_ARGS). */
    process_cmd_line_options();
+
+   /* Do post command-line processing initialisation */
+   SK_(post_clo_init)();
+
+   /* Set up baseBlock offsets and copy the saved machine's state into it. 
+      Comes after SK_(post_clo_init) in case it registers helpers. */
+   vg_init_baseBlock();
 
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
@@ -1246,9 +1251,6 @@ void VG_(main) ( void )
 
    /* Start calibration of our RDTSC-based clock. */
    VG_(start_rdtsc_calibration)();
-
-   /* Do this here just to give rdtsc calibration more time */
-   SK_(post_clo_init)();
 
    /* Must come after SK_(init) so memory handler accompaniments (eg.
     * shadow memory) can be setup ok */

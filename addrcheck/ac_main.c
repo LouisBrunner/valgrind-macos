@@ -55,9 +55,11 @@ void SK_(pp_SkinError) ( Error* err )
       case AddrErr:
          switch (err_extra->axskind) {
             case ReadAxs:
+               VG_(message)(Vg_UserMsg, "Invalid read of size %d", 
+                                        err_extra->size ); 
+               break;
             case WriteAxs:
-               /* These two aren't actually differentiated ever. */
-               VG_(message)(Vg_UserMsg, "Invalid memory access of size %d", 
+               VG_(message)(Vg_UserMsg, "Invalid write of size %d", 
                                         err_extra->size ); 
                break;
             case ExecAxs:
@@ -156,10 +158,10 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 /*--- Function declarations.                               ---*/
 /*------------------------------------------------------------*/
 
-static void ac_ACCESS4_SLOWLY ( Addr a );
-static void ac_ACCESS2_SLOWLY ( Addr a );
-static void ac_ACCESS1_SLOWLY ( Addr a );
-static void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size );
+static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite );
+static void ac_ACCESS2_SLOWLY ( Addr a, Bool isWrite );
+static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite );
+static void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite );
 
 /*------------------------------------------------------------*/
 /*--- Data defns.                                          ---*/
@@ -682,11 +684,10 @@ static __inline__ UInt shiftRight16 ( UInt x )
    Under all other circumstances, it defers to the relevant _SLOWLY
    function, which can handle all situations.
 */
-__attribute__ ((regparm(1)))
-static void ac_helperc_ACCESS4 ( Addr a )
+static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return ac_ACCESS4_SLOWLY(a);
+   return ac_ACCESS4_SLOWLY(a, isWrite);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x3FFFF;
    AcSecMap* sm     = primary_map[sec_no];
@@ -701,16 +702,15 @@ static void ac_helperc_ACCESS4 ( Addr a )
       return;
    } else {
       /* Slow but general case. */
-      ac_ACCESS4_SLOWLY(a);
+      ac_ACCESS4_SLOWLY(a, isWrite);
    }
 #  endif
 }
 
-__attribute__ ((regparm(1)))
-static void ac_helperc_ACCESS2 ( Addr a )
+static __inline__ void ac_helperc_ACCESS2 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return ac_ACCESS2_SLOWLY(a);
+   return ac_ACCESS2_SLOWLY(a, isWrite);
 #  else
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    AcSecMap* sm     = primary_map[sec_no];
@@ -721,16 +721,15 @@ static void ac_helperc_ACCESS2 ( Addr a )
       return;
    } else {
       /* Slow but general case. */
-      ac_ACCESS2_SLOWLY(a);
+      ac_ACCESS2_SLOWLY(a, isWrite);
    }
 #  endif
 }
 
-__attribute__ ((regparm(1)))
-static void ac_helperc_ACCESS1 ( Addr a )
+static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 {
 #  ifdef VG_DEBUG_MEMORY
-   return ac_ACCESS1_SLOWLY(a);
+   return ac_ACCESS1_SLOWLY(a, isWrite);
 #  else
    UInt    sec_no = shiftRight16(a);
    AcSecMap* sm   = primary_map[sec_no];
@@ -741,18 +740,51 @@ static void ac_helperc_ACCESS1 ( Addr a )
       return;
    } else {
       /* Slow but general case. */
-      ac_ACCESS1_SLOWLY(a);
+      ac_ACCESS1_SLOWLY(a, isWrite);
    }
 #  endif
+}
+
+__attribute__ ((regparm(1)))
+static void ac_helperc_LOAD4 ( Addr a )
+{
+   ac_helperc_ACCESS4 ( a, /*isWrite*/False );
+}
+__attribute__ ((regparm(1)))
+static void ac_helperc_STORE4 ( Addr a )
+{
+   ac_helperc_ACCESS4 ( a, /*isWrite*/True );
+}
+
+__attribute__ ((regparm(1)))
+static void ac_helperc_LOAD2 ( Addr a )
+{
+   ac_helperc_ACCESS2 ( a, /*isWrite*/False );
+}
+__attribute__ ((regparm(1)))
+static void ac_helperc_STORE2 ( Addr a )
+{
+   ac_helperc_ACCESS2 ( a, /*isWrite*/True );
+}
+
+__attribute__ ((regparm(1)))
+static void ac_helperc_LOAD1 ( Addr a )
+{
+   ac_helperc_ACCESS1 ( a, /*isWrite*/False );
+}
+__attribute__ ((regparm(1)))
+static void ac_helperc_STORE1 ( Addr a )
+{
+   ac_helperc_ACCESS1 ( a, /*isWrite*/True );
 }
 
 
 /*------------------------------------------------------------*/
 /*--- Fallback functions to handle cases that the above    ---*/
-/*--- VG_(helperc_ACCESS{1,2,4}) can't manage.             ---*/
+/*--- ac_helperc_ACCESS{1,2,4} can't manage.               ---*/
 /*------------------------------------------------------------*/
 
-static void ac_ACCESS4_SLOWLY ( Addr a )
+static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite )
 {
    Bool a0ok, a1ok, a2ok, a3ok;
 
@@ -781,7 +813,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, isWrite );
       return;
    }
 
@@ -797,7 +829,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a )
    }
 }
 
-static void ac_ACCESS2_SLOWLY ( Addr a )
+static void ac_ACCESS2_SLOWLY ( Addr a, Bool isWrite )
 {
    /* Check the address for validity. */
    Bool aerr = False;
@@ -808,11 +840,11 @@ static void ac_ACCESS2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, isWrite );
    }
 }
 
-static void ac_ACCESS1_SLOWLY ( Addr a )
+static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite)
 {
    /* Check the address for validity. */
    Bool aerr = False;
@@ -822,7 +854,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, isWrite );
    }
 }
 
@@ -831,8 +863,8 @@ static void ac_ACCESS1_SLOWLY ( Addr a )
    FPU load and store checks, called from generated code.
    ------------------------------------------------------------------ */
 
-__attribute__ ((regparm(2)))
-static void ac_fpu_ACCESS_check ( Addr addr, Int size )
+static __inline__ 
+void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 {
    /* Ensure the read area is both addressible and valid (ie,
       readable).  If there's an address error, don't report a value
@@ -849,7 +881,7 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
    PROF_EVENT(90);
 
 #  ifdef VG_DEBUG_MEMORY
-   ac_fpu_ACCESS_check_SLOWLY ( addr, size );
+   ac_fpu_ACCESS_check_SLOWLY ( addr, size, isWrite );
 #  else
 
    if (size == 4) {
@@ -863,7 +895,7 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
       /* Properly aligned and addressible. */
       return;
      slow4:
-      ac_fpu_ACCESS_check_SLOWLY ( addr, 4 );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 4, isWrite );
       return;
    }
 
@@ -887,7 +919,7 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
       /* Both halves properly aligned and addressible. */
       return;
      slow8:
-      ac_fpu_ACCESS_check_SLOWLY ( addr, 8 );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 8, isWrite );
       return;
    }
 
@@ -895,13 +927,13 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
       cases go quickly.  */
    if (size == 2) {
       PROF_EVENT(93);
-      ac_fpu_ACCESS_check_SLOWLY ( addr, 2 );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, 2, isWrite );
       return;
    }
 
    if (size == 16 || size == 10 || size == 28 || size == 108) {
       PROF_EVENT(94);
-      ac_fpu_ACCESS_check_SLOWLY ( addr, size );
+      ac_fpu_ACCESS_check_SLOWLY ( addr, size, isWrite );
       return;
    }
 
@@ -910,12 +942,23 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
 #  endif
 }
 
+__attribute__ ((regparm(2)))
+static void ac_fpu_READ_check ( Addr addr, Int size )
+{
+   ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
+}
+
+__attribute__ ((regparm(2)))
+static void ac_fpu_WRITE_check ( Addr addr, Int size )
+{
+   ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
+}
 
 /* ---------------------------------------------------------------------
    Slow, general cases for FPU access checks.
    ------------------------------------------------------------------ */
 
-void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
+void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite )
 {
    Int  i;
    Bool aerr = False;
@@ -927,7 +970,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_current_tid)(), addr, size, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), addr, size, isWrite );
    }
 }
 
@@ -945,6 +988,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    Int         i;
    UInstr*     u_in;
    Int         t_addr, t_size;
+   Addr        helper;
 
    cb = VG_(setup_UCodeBlock)(cb_in);
 
@@ -960,28 +1004,33 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          /* For memory-ref instrs, copy the data_addr into a temporary to be
           * passed to the helper at the end of the instruction.
           */
-         case LOAD: 
-            t_addr = u_in->val1; 
-            goto do_LOAD_or_STORE;
-         case STORE: t_addr = u_in->val2;
-            goto do_LOAD_or_STORE;
-           do_LOAD_or_STORE:
-            uInstr1(cb, CCALL, 0, TempReg, t_addr);
+         case LOAD:
             switch (u_in->size) {
-               case 4: uCCall(cb, (Addr) & ac_helperc_ACCESS4, 1, 1, False );
-                  break;
-               case 2: uCCall(cb, (Addr) & ac_helperc_ACCESS2, 1, 1, False );
-                  break;
-               case 1: uCCall(cb, (Addr) & ac_helperc_ACCESS1, 1, 1, False );
-                  break;
-               default: 
-                  VG_(skin_panic)("addrcheck::SK_(instrument):LOAD/STORE");
+               case 4:  helper = (Addr)ac_helperc_LOAD4; break;
+               case 2:  helper = (Addr)ac_helperc_LOAD2; break;
+               case 1:  helper = (Addr)ac_helperc_LOAD1; break;
+               default: VG_(skin_panic)("addrcheck::SK_(instrument):LOAD");
             }
+            uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
+            uCCall (cb, helper, 1, 1, False );
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case STORE:
+            switch (u_in->size) {
+               case 4:  helper = (Addr)ac_helperc_STORE4; break;
+               case 2:  helper = (Addr)ac_helperc_STORE2; break;
+               case 1:  helper = (Addr)ac_helperc_STORE1; break;
+               default: VG_(skin_panic)("addrcheck::SK_(instrument):STORE");
+            }
+            uInstr1(cb, CCALL, 0, TempReg, u_in->val2);
+            uCCall (cb, helper, 1, 1, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
 
 	 case SSE3ag_MemRd_RegWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
+            helper = (Addr)ac_fpu_READ_check;
 	    goto do_Access_ARG1;
          do_Access_ARG1:
 	    sk_assert(u_in->tag1 == TempReg);
@@ -990,16 +1039,23 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
 	    uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
+            uCCall(cb, helper, 2, 2, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          case MMX2_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+            helper = (Addr)ac_fpu_READ_check;
+	    goto do_Access_ARG2;
          case MMX2_MemWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
+            helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG2;
          case FPU_R:
+            helper = (Addr)ac_fpu_READ_check;
+            goto do_Access_ARG2;
          case FPU_W:
+            helper = (Addr)ac_fpu_WRITE_check;
             goto do_Access_ARG2;
          do_Access_ARG2:
 	    sk_assert(u_in->tag2 == TempReg);
@@ -1008,25 +1064,27 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
 	    uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
+            uCCall(cb, helper, 2, 2, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          case SSE3a_MemRd: // this one causes trouble
          case SSE2a_MemRd:
+            helper = (Addr)ac_fpu_READ_check;
+	    goto do_Access_ARG3;
          case SSE2a_MemWr:
 	 case SSE3a_MemWr:
-	    sk_assert(u_in->size == 4 || u_in->size == 8 
-                      || u_in->size == 16);
+            helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG3;
          do_Access_ARG3:
+	    sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
             sk_assert(u_in->tag3 == TempReg);
             t_addr = u_in->val3;
             t_size = newTemp(cb);
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
 	    uLiteral(cb, u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
+            uCCall(cb, helper, 2, 2, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
 
@@ -1288,10 +1346,14 @@ void SK_(pre_clo_init)(void)
    VG_(track_pre_mem_write)        ( & ac_check_is_writable );
    VG_(track_post_mem_write)       ( & ac_make_accessible );
 
-   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS4);
-   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS2);
-   VG_(register_compact_helper)((Addr) & ac_helperc_ACCESS1);
-   VG_(register_compact_helper)((Addr) & ac_fpu_ACCESS_check);
+   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD4);
+   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD2);
+   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD1);
+   VG_(register_compact_helper)((Addr) & ac_helperc_STORE4);
+   VG_(register_compact_helper)((Addr) & ac_helperc_STORE2);
+   VG_(register_compact_helper)((Addr) & ac_helperc_STORE1);
+   VG_(register_noncompact_helper)((Addr) & ac_fpu_READ_check);
+   VG_(register_noncompact_helper)((Addr) & ac_fpu_WRITE_check);
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

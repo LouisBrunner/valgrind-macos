@@ -14,6 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badfree.stderr.exp badfree.vgtest \
 	badjump.stderr.exp badjump.vgtest \
 	badloop.stderr.exp badloop.vgtest \
+	badrw.stderr.exp badrw.vgtest \
 	brk.stderr.exp brk.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest \
 	clientperm.stderr.exp \
@@ -62,7 +63,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	writev.stderr.exp writev.vgtest
 
 check_PROGRAMS = \
-	badaddrvalue badfree badjump badloop brk buflen_check \
+	badaddrvalue badfree badjump badloop badrw brk buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
@@ -81,6 +82,7 @@ badaddrvalue_SOURCES 	= badaddrvalue.c
 badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
 badloop_SOURCES 	= badloop.c
+badrw_SOURCES		= badrw.c
 brk_SOURCES 		= brk.c
 buflen_check_SOURCES	= buflen_check.c
 clientperm_SOURCES 	= clientperm.c

@@ -1989,7 +1989,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          "Copyright (C) 2004, and GNU GPL'd, by OpenWorks LLP.");
       VG_(message)(Vg_UserMsg,
          "Using valgrind-%s, a dynamic binary instrumentation framework.",
-         /*VERSION*/ "SVN >= 3207");
+         VERSION);
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.");
    }

@@ -1576,7 +1576,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 static void wait_for_fd_to_be_readable_or_erring ( int fd )
 {
    struct pollfd pfd;
-   fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd);
+   /* fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd); */
    pfd.fd = fd;
    pfd.events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
    /* ... but not POLLOUT, you may notice. */

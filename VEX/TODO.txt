@@ -4,10 +4,6 @@ Last updated 15 Nov 04
 
 Critical (correctness)
 ~~~~~~~~~~~~~~~~~~~~~~
-x86 isel for regparm'd args.  Is incorrect.  Better: consider if any
-regparm'd arg might need a fixed reg to compute.  If yes, compute all
-into vregs and move.  If no, compute directly into the destinations.
-
 x86 isel: should free up all fp reg tags when calling a helper.
 Also check re saving of FP registers across calls (all caller-save),
 and also FPU control word.

@@ -360,6 +360,23 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
 }
 
 
+/* Used only in doHelperCall.  See big comment in doHelperCall re
+   handling of regparm args.  This function figures out whether
+   evaluation of an expression might require use of a fixed register.
+   If in doubt return True (safe but suboptimal).  
+*/
+static
+Bool mightRequireFixedRegs ( IRExpr* e )
+{
+   switch (e->tag) {
+      case Iex_Tmp: case Iex_Const: case Iex_Get: 
+         return False;
+      default:
+         return True;
+   }
+}
+
+
 /* Do a complete function call.  guard is a Ity_Bit expression
    indicating whether or not the call happens.  If guard==NULL, the
    call is unconditional. */
@@ -370,8 +387,11 @@ void doHelperCall ( ISelEnv* env,
                     IRExpr* guard, IRCallee* cee, IRExpr** args )
 {
    X86CondCode cc;
-   HReg argregs[3];
-   Int  not_done_yet, n_args, n_arg_ws, stack_limit, i, argreg;
+   HReg        argregs[3];
+   HReg        tmpregs[3];
+   Bool        danger;
+   Int         not_done_yet, n_args, n_arg_ws, stack_limit, 
+               i, argreg, argregX;
 
    /* Marshal args for a call, do the call, and clear the stack.
       Complexities to consider:
@@ -387,6 +407,38 @@ void doHelperCall ( ISelEnv* env,
         trying to pass any other types as regparms.  
    */
 
+   /* 16 Nov 2004: the regparm handling is complicated by the
+      following problem.
+
+      Consider a call two a function with two regparm parameters:
+      f(e1,e2).  We need to compute e1 into %eax and e2 into %edx.
+      Suppose code is first generated to compute e1 into %eax.  Then,
+      code is generated to compute e2 into %edx.  Unfortunately, if
+      the latter code sequence uses %eax, it will trash the value of
+      e1 computed by the former sequence.  This could happen if (for
+      example) e2 itself involved a function call.  In the code below,
+      args are evaluated right-to-left, not left-to-right, but the
+      principle and the problem are the same.
+
+      One solution is to compute all regparm-bound args into vregs
+      first, and once they are all done, move them to the relevant
+      real regs.  This always gives correct code, but it also gives
+      a bunch of vreg-to-rreg moves which are usually redundant but 
+      are hard for the register allocator to get rid of.
+
+      A compromise is to first examine all regparm'd argument 
+      expressions.  If they are all so simple that it is clear 
+      they will be evaluated without use of any fixed registers,
+      use the old compute-directly-to-fixed-target scheme.  If not,
+      be safe and use the via-vregs scheme.
+
+      Note this requires being able to examine an expression and
+      determine whether or not evaluation of it might use a fixed
+      register.  That requires knowledge of how the rest of this
+      insn selector works.  Currently just the following 3 are 
+      regarded as safe -- hopefully they cover the majority of
+      arguments in practice: IRExpr_Tmp IRExpr_Const IRExpr_Get.
+   */
    vassert(cee->regparms >= 0 && cee->regparms <= 3);
 
    n_args = n_arg_ws = 0;
@@ -399,6 +451,8 @@ void doHelperCall ( ISelEnv* env,
    stack_limit = cee->regparms;
    if (cee->regparms > 0 && passBBP) stack_limit--;
 
+   /* ------ BEGIN marshall all arguments ------ */
+
    /* Push (R to L) the stack-passed args, [n_args-1 .. stack_limit] */
    for (i = n_args-1; i >= stack_limit; i--) {
       n_arg_ws += pushArg(env, args[i]);
@@ -409,36 +463,89 @@ void doHelperCall ( ISelEnv* env,
       registers. */
 
    if (cee->regparms > 0) {
+
+      /* ------ BEGIN deal with regparms ------ */
+
       /* deal with regparms, not forgetting %ebp if needed. */
       argregs[0] = hregX86_EAX();
       argregs[1] = hregX86_EDX();
       argregs[2] = hregX86_ECX();
+      tmpregs[0] = tmpregs[1] = tmpregs[2] = INVALID_HREG;
+
       argreg = cee->regparms;
 
+      /* In keeping with big comment above, detect potential danger
+         and use the via-vregs scheme if needed. */
+      danger = False;
       for (i = stack_limit-1; i >= 0; i--) {
-         argreg--;
-         vassert(argreg >= 0);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
-         addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
-                                       iselIntExpr_RMI(env, args[i]),
-                                       argregs[argreg]));
-         not_done_yet--;
+         if (mightRequireFixedRegs(args[i])) {
+            danger = True;
+            break;
+         }
       }
+
+      if (danger) {
+
+         /* Move via temporaries */
+         argregX = argreg;
+         for (i = stack_limit-1; i >= 0; i--) {
+
+            if (0) {
+               vex_printf("x86 host: register param is complex: ");
+               ppIRExpr(args[i]);
+               vex_printf("\n");
+            }
+
+            argreg--;
+            vassert(argreg >= 0);
+            vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
+            tmpregs[argreg] = iselIntExpr_R(env, args[i]);
+            not_done_yet--;
+         }
+         for (i = stack_limit-1; i >= 0; i--) {
+            argregX--;
+            vassert(argregX >= 0);
+            addInstr( env, mk_MOVsd_RR( tmpregs[argregX], argregs[argregX] ) );
+         }
+
+      } else {
+         /* It's safe to compute all regparm args directly into their
+            target registers. */
+         for (i = stack_limit-1; i >= 0; i--) {
+            argreg--;
+            vassert(argreg >= 0);
+            vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
+                                          iselIntExpr_RMI(env, args[i]),
+                                          argregs[argreg]));
+            not_done_yet--;
+         }
+
+      }
+
+      /* Not forgetting %ebp if needed. */
       if (passBBP) {
          vassert(argreg == 1);
          addInstr(env, mk_MOVsd_RR( hregX86_EBP(), argregs[0]));
          not_done_yet--;
       }
+
+      /* ------ END deal with regparms ------ */
+
    } else {
+
       /* No regparms.  Heave %ebp on the stack if needed. */
       if (passBBP) {
          addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
          n_arg_ws++;
          not_done_yet--;
       }
+
    }
 
    vassert(not_done_yet == 0);
+
+   /* ------ END marshall all arguments ------ */
 
    /* Now we can compute the condition.  We can't do it earlier
       because the argument computations could trash the condition

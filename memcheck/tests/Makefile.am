@@ -29,6 +29,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
+	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
+	insn_mmxext.vgtest insn_sse.vgtest insn_sse2.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \

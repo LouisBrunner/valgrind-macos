@@ -4,6 +4,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	allok.stderr.exp allok.vgtest		\
 	deadlock.stderr.exp deadlock.vgtest	\
 	inherit.stderr.exp inherit.vgtest	\
+	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
+	insn_mmxext.vgtest insn_sse.vgtest insn_sse2.vgtest \
 	race.stderr.exp race.vgtest		\
 	race2.stderr.exp race2.vgtest		\
 	readshared.stderr.exp readshared.vgtest

@@ -491,7 +491,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       if (minaddr >= maxaddr ||
 	  (minaddr < info->exe_base ||
 	   maxaddr > info->exe_end)) {
-	 fprintf(stderr, "Executable is mapped outside of range %p-%p\n",
+	 fprintf(stderr, "Executable range %p-%p is outside the\n"
+                         "acceptable range %p-%p\n",
+		 (void *)minaddr,        (void *)maxaddr,
 		 (void *)info->exe_base, (void *)info->exe_end);
 	 return ENOMEM;
       }

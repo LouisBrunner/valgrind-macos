@@ -149,7 +149,7 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
    /* If we didn't see all the entries we need to fix up, then we
       can't make the new executable viable. */
    if (seen != 0xf) {
-      fprintf(stderr, "fix_auxv: we didn't see enough auxv entries (seen=%x)\n", seen);
+      fprintf(stderr, "valgrind: we didn't see enough auxv entries (seen=%x)\n", seen);
       exit(1);
    }
 
@@ -188,7 +188,7 @@ static void hoops(void)
    err = do_exec(buf, &info);
 
    if (err != 0) {
-      fprintf(stderr, "failed to load %s: %s\n",
+      fprintf(stderr, "valgrind: failed to load %s: %s\n",
 	      buf, strerror(err));
       exit(1);
    }

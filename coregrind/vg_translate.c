@@ -285,8 +285,7 @@ static
 void failure_exit ( void )
 {
    LibVEX_ClearTemporary(True);
-   VG_(printf)("VEX did failure_exit.  Bye.\n");
-   vg_assert(0); //VG_(exit)(1);
+   VG_(core_panic)("LibVEX called failure_exit().");
 }
 
 static

@@ -402,11 +402,41 @@ static UInt atou(Char **pp, Int base)
    return ret;
 }
 
+static Bool isoperator(Char op)
+{
+   switch(op) {
+   case 'a'...'z':
+   case 'A'...'Z':
+   case '0'...'9':
+   case '_':
+   case ':':
+   case '\'':
+   case '"':
+   case '$':
+      return False;
+      
+   default:
+      return True;
+   }
+}
+
 /* Skip a ':'-delimited name which may have ::, 'char' or other things in
    <> brackets */
 static Char *templ_name(Char *p)
 {
    Int brac = 0;
+
+   /* Special case: if the name is "operatorX", where X is not an
+      otherwise valid operator name, then just skip to the terminating
+      ':' and ignore the '<>' bracketing stuff.  That's because names
+      like "operator<" and "operator<=" can appear here, and it can be
+      terminated by ::. */
+   if (VG_(strncmp)(p, "operator", 8) == 0 && isoperator(p[8])) {
+      p += 8;
+      while(*p != ':')
+	 p++;
+      return p;
+   }
 
    for(;;) {
       if (*p == '<')
@@ -423,8 +453,11 @@ static Char *templ_name(Char *p)
        */
       if (brac && p[0] == '\'' && p[2] == '\'')
 	 p += 3;
+
+      /* If we're within <>, then treat :: as part of the name (a single
+	 : still terminates) */
       if (*p == ':') {
-	 if (brac && p[1] == ':')
+	 if (brac && p[1] == ':' && p[-1] != '<')
 	    p++;
 	 else
 	    break;

@@ -651,9 +651,11 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
             fprintf(stderr, "`%s' resolves to %p\n", symbol, (void*)S );
       }
 
-      if (0)
+#if 0
          fprintf ( stderr, "Reloc: offset = %p   P = %p   S = %p   A = %p\n",
                            (void*)offset, (void*)P, (void*)S, (void*)A );
+#endif
+
       /* checkProddableBlock ( oc, (void*)P ); */
 
       value = S + A;

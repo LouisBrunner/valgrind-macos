@@ -1098,22 +1098,6 @@ typedef
           Vg_CoreTranslate, Vg_CoreClientReq }
    CorePart;
 
-/* Useful to use in VG_(get_Xreg_usage)() */
-#define VG_UINSTR_READS_REG(ono,regs,isWrites)  \
-   { if (mycat(u->tag,ono) == tag)              \
-        { regs[n]     = mycat(u->val,ono);      \
-          isWrites[n] = False;                  \
-          n++;                                  \
-        }                                       \
-   }
-#define VG_UINSTR_WRITES_REG(ono,regs,isWrites) \
-   { if (mycat(u->tag,ono) == tag)              \
-        { regs[n]     = mycat(u->val,ono);      \
-          isWrites[n] = True;                   \
-          n++;                                  \
-        }                                       \
-   }
-
 #endif   /* NDEF __TOOL_H */
 
 /* gen_toolint.pl will put the VG_(init_*)() functions here: */

@@ -213,6 +213,10 @@ void translate_to_hw_format ( /* IN  */ struct vki_modify_ldt_ldt_s* inn,
 {
    UInt entry_1, entry_2;
 
+   if (0)
+      VG_(printf)("translate_to_hw_format: base %p, limit %d\n", 
+                  inn->base_addr, inn->limit );
+
    /* Allow LDTs to be cleared by the user. */
    if (inn->base_addr == 0 && inn->limit == 0) {
       if (oldmode ||

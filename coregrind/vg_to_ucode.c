@@ -3652,9 +3652,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       t1 = newTemp(cb); t2 = newTemp(cb);
       uInstr2(cb, MOV,   4, Literal, 0,   TempReg, t2);
       uLiteral(cb, d32);
+      handleSegOverride(cb, sorb, t2);
       uInstr2(cb, LOAD, sz, TempReg, t2,  TempReg, t1);
       uInstr2(cb, PUT,  sz, TempReg, t1,  ArchReg, R_EAX);
-      if (dis) VG_(printf)("mov%c 0x%x,%s\n", nameISize(sz), 
+      if (dis) VG_(printf)("mov%c %s0x%x,%s\n", nameISize(sz), 
+                           sorbTxt(sorb),
                            d32, nameIReg(sz,R_EAX));
       break;
 
@@ -3667,8 +3669,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, t1);
       uInstr2(cb, MOV,    4, Literal, 0,     TempReg, t2);
       uLiteral(cb, d32);
+      handleSegOverride(cb, sorb, t2);
       uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t2);
-      if (dis) VG_(printf)("mov%c %s,0x%x\n", nameISize(sz), 
+      if (dis) VG_(printf)("mov%c %s,%s0x%x\n", nameISize(sz), 
+                           sorbTxt(sorb),
                            nameIReg(sz,R_EAX), d32);
       break;
 

@@ -27,6 +27,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve.stderr.exp execve.vgtest \
+	fpeflags.stderr.exp fpeflags.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
@@ -75,7 +76,7 @@ check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop badrw brk buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog execve \
-	fprw fwrite inits inline \
+	fpeflags fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak new_nothrow null_socket \
 	overlap pushfpopf \
@@ -102,6 +103,7 @@ error_counts_SOURCES 	= error_counts.c
 errs1_SOURCES 		= errs1.c
 execve_SOURCES 		= execve.c
 exitprog_SOURCES 	= exitprog.c
+fpeflags_SOURCES	= fpeflags.c
 fprw_SOURCES 		= fprw.c
 fwrite_SOURCES 		= fwrite.c
 inits_SOURCES		= inits.c
@@ -141,3 +143,5 @@ mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 
+# must be built with these flags -- bug only occurred with them
+fpeflags.o: CFLAGS += -march=i686

@@ -16,6 +16,7 @@ execve
 exitprog
 filter_leak_check_size
 filter_stderr
+fpeflags
 fprw
 fwrite
 inits

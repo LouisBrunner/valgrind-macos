@@ -1177,12 +1177,26 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             VG_(copy_UInstr)(cb, u_in);
 	    break;
          }
-
-         /* For FPU, MMX and SSE insns not referencing memory, just
-            copy thru. */
+         
+         /* For MMX and SSE insns not referencing memory, just
+            make sure the eflags are defined if the instruction
+            read them, and make them defined it it writes them. */
          case SSE5: case SSE4: case SSE3:
          case MMX1: case MMX2: case MMX3:
-         case FPU: 
+         case FPU:
+            if (u_in->flags_r != FlagsEmpty) {
+               qt = create_GETVF(cb, 0);
+               uInstr1(cb, TESTV, 0, TempReg, qt);
+               /* qt should never be referred to again.  Nevertheless
+                  ... */
+               uInstr1(cb, SETV, 0, TempReg, qt);
+            }
+            if (u_in->flags_w != FlagsEmpty) {
+               qd = newTemp(cb);
+               uInstr2(cb, MOV, 4, Literal, 0, TempReg, qd);
+               uLiteral(cb, qd);
+               create_PUTVF(cb, 0, qd);
+            }
             VG_(copy_UInstr)(cb, u_in);
             break;
 

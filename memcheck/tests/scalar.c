@@ -315,9 +315,8 @@ int main(void)
  //SY(__NR_getrusage);
 
    // __NR_gettimeofday 78 --> sys_gettimeofday()
-   // XXX: it succeeds when I give it two NULL pointers... kernel bug?
-// GO(__NR_gettimeofday, "2s 2m");
-// SY(__NR_gettimeofday, x0, x0);
+   GO(__NR_gettimeofday, "2s 2m");
+   SY(__NR_gettimeofday, x0, x0+1);
 
    // __NR_settimeofday 79 --> sys_settimeofday()
    GO(__NR_settimeofday, "2s 2m");

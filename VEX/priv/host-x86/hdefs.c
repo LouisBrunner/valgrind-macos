@@ -420,6 +420,7 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_MOV:    return "mov";
       case Xfp_SIN:    return "sin";
       case Xfp_COS:    return "cos";
+      case Xfp_2XM1:   return "2xm1";
       default: vpanic("showX86FpOp");
    }
 }
@@ -1279,6 +1280,7 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
       case Xfp_ROUND:  *p++ = 0xD9; *p++ = 0xFC; break;
       case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
+      case Xfp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
       default: vpanic("do_fop1_st: unknown op");
    }
    return p;
@@ -1834,15 +1836,17 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_FpBinary:
-      if (i->Xin.FpBinary.op == Xfp_YL2X) {
+      if (i->Xin.FpBinary.op == Xfp_YL2X
+          || i->Xin.FpBinary.op == Xfp_YL2XP1) {
          /* Have to do this specially. */
          /* ffree %st7 ; fld %st(srcL) ; 
-            ffree %st7 ; fld %st(srcR+1) ; fyl2x ; fstp(1+dst) */
+            ffree %st7 ; fld %st(srcR+1) ; fyl2x{p1} ; fstp(1+dst) */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
          p = do_ffree_st7(p);
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
-         *p++ = 0xD9; *p++ = 0xF1;
+         *p++ = 0xD9; 
+         *p++ = i->Xin.FpBinary.op==Xfp_YL2X ? 0xF1 : 0xF9;
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
          goto done;
       }
@@ -1858,16 +1862,18 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
          goto done;
       }
-      if (i->Xin.FpBinary.op == Xfp_PREM) {
+      if (i->Xin.FpBinary.op == Xfp_PREM
+          || i->Xin.FpBinary.op == Xfp_SCALE) {
          /* Have to do this specially. */
          /* ffree %st7 ; fld %st(srcR) ; 
-            ffree %st7 ; fld %st(srcL+1) ; fprem ; fstp(2+dst) ; 
+            ffree %st7 ; fld %st(srcL+1) ; fprem/fscale ; fstp(2+dst) ; 
             fincstp ; ffree %st7 */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcR));
          p = do_ffree_st7(p);
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcL));
-         *p++ = 0xD9; *p++ = 0xF8;
+         *p++ = 0xD9; 
+         *p++ = i->Xin.FpBinary.op==Xfp_PREM ? 0xF8 : 0xFD;
          p = do_fstp_st(p, 2+hregNumber(i->Xin.FpBinary.dst));
          *p++ = 0xD9; *p++ = 0xF7;
          p = do_ffree_st7(p);

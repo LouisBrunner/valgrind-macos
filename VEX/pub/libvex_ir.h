@@ -168,6 +168,7 @@ typedef
       Iop_Yl2xp1F64,    /* FYL2XP1, arg1 * log2(arg2+1.0)   */
       Iop_PRemF64,      /* FPREM,   remainder(arg1/arg2)    */
       Iop_PRemC3210F64, /* C3210 flags resulting from FPREM, :: I32 */
+      Iop_ScaleF64,     /* FSCALE,  arg1 * (2^RoundTowardsZero(arg2)) */
 
       /* Unary operations mandated by IEEE754. */
       Iop_NegF64, Iop_SqrtF64, 
@@ -176,6 +177,7 @@ typedef
       Iop_AbsF64,    /* FABS */
       Iop_SinF64,    /* FSIN */
       Iop_CosF64,    /* FCOS */
+      Iop_2xm1F64,   /* (2^arg - 1.0) */
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered

@@ -3610,6 +3610,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
                break;
 
+            case 0xF0: /* F2XM1 */
+               DIP("f2xm1\n");
+               put_ST_UNCHECKED(0, unop(Iop_2xm1F64, get_ST(0)));
+               break;
+
             case 0xF1: /* FYL2X */
                DIP("fyl2x\n");
                put_ST_UNCHECKED(1, binop(Iop_Yl2xF64,
@@ -3654,6 +3659,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("frndint\n");
                put_ST_UNCHECKED(0,
                   binop(Iop_RoundF64, get_roundingmode(), get_ST(0)) );
+               break;
+
+            case 0xFD: /* FSCALE */
+               DIP("fscale\n");
+               put_ST_UNCHECKED(0, binop(Iop_ScaleF64,
+                                         get_ST(0), get_ST(1)));
                break;
 
             case 0xFE: /* FSIN */
@@ -3947,6 +3958,15 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       } else {
          delta++;
          switch (modrm) {
+
+            case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
+               r_dst = (UInt)modrm - 0xD0;
+               DIP("fst %%st(0),%%st(%d)\n", r_dst);
+	       /* P4 manual says: "If the destination operand is a
+                  non-empty register, the invalid-operation exception
+                  is not generated.  Hence put_ST_UNCHECKED. */
+               put_ST_UNCHECKED(r_dst, get_ST(0));
+               break;
 
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;

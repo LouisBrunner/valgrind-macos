@@ -135,6 +135,7 @@ void ppIROp ( IROp op )
       case Iop_MulF64:    vex_printf("MulF64"); return;
       case Iop_DivF64:    vex_printf("DivF64"); return;
 
+      case Iop_ScaleF64:     vex_printf("ScaleF64"); return;
       case Iop_AtanF64:      vex_printf("AtanF64"); return;
       case Iop_Yl2xF64:      vex_printf("Yl2xF64"); return;
       case Iop_Yl2xp1F64:    vex_printf("Yl2xp1F64"); return;
@@ -146,6 +147,7 @@ void ppIROp ( IROp op )
       case Iop_AbsF64:    vex_printf("AbsF64"); return;
       case Iop_SinF64:    vex_printf("SinF64"); return;
       case Iop_CosF64:    vex_printf("CosF64"); return;
+      case Iop_2xm1F64:   vex_printf("2xm1F64"); return;
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
@@ -641,6 +643,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32Uto64: UNARY(Ity_I64,Ity_I32);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
 
+      case Iop_ScaleF64:
       case Iop_PRemF64:
       case Iop_AtanF64:
       case Iop_Yl2xF64:
@@ -652,7 +655,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpF64:
          BINARY(Ity_I32,Ity_F64,Ity_F64);
       case Iop_NegF64: case Iop_AbsF64: case Iop_SqrtF64:
-      case Iop_SinF64: case Iop_CosF64:
+      case Iop_SinF64: case Iop_CosF64: case Iop_2xm1F64:
          UNARY(Ity_F64,Ity_F64);
 
       case Iop_I32toF64: UNARY(Ity_F64,Ity_I32);

@@ -1626,13 +1626,15 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Binop.op) {
-         case Iop_AddF64:  fpop = Xfp_ADD; break;
-         case Iop_SubF64:  fpop = Xfp_SUB; break;
-         case Iop_MulF64:  fpop = Xfp_MUL; break;
-         case Iop_DivF64:  fpop = Xfp_DIV; break;
-         case Iop_AtanF64: fpop = Xfp_ATAN; break;
-         case Iop_Yl2xF64: fpop = Xfp_YL2X; break;
-         case Iop_PRemF64: fpop = Xfp_PREM; break;
+         case Iop_AddF64:    fpop = Xfp_ADD; break;
+         case Iop_SubF64:    fpop = Xfp_SUB; break;
+         case Iop_MulF64:    fpop = Xfp_MUL; break;
+         case Iop_DivF64:    fpop = Xfp_DIV; break;
+         case Iop_ScaleF64:  fpop = Xfp_SCALE; break;
+         case Iop_AtanF64:   fpop = Xfp_ATAN; break;
+         case Iop_Yl2xF64:   fpop = Xfp_YL2X; break;
+         case Iop_Yl2xp1F64: fpop = Xfp_YL2XP1; break;
+         case Iop_PRemF64:   fpop = Xfp_PREM; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {
@@ -1703,6 +1705,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          case Iop_SqrtF64: fpop = Xfp_SQRT; break;
          case Iop_SinF64:  fpop = Xfp_SIN; break;
          case Iop_CosF64:  fpop = Xfp_COS; break;
+         case Iop_2xm1F64: fpop = Xfp_2XM1; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {

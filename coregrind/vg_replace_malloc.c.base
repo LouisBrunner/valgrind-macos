@@ -57,12 +57,6 @@
    ret VG_INTERCEPT(soname:libc.so.6, __##name) args \
       __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
                      visibility("protected"))); \
-   ret VG_INTERCEPT(soname:libstdc++*, __##name##_internal) args \
-      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
-                     visibility("protected"))); \
-   ret VG_INTERCEPT(soname:libc.so.6, __##name##_internal) args \
-      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
-                     visibility("protected"))); \
    ret VG_INTERCEPT(soname:libstdc++*, ##name) args \
       __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
                      visibility("protected"))); \

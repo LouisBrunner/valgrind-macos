@@ -1,4 +1,4 @@
-Syscall param ioctl(TCSET{A,AW,AF}) contains uninitialised or unaddressable byte(s)
+Syscall param ioctl(TCSET{A,AW,AF}) points to uninitialised byte(s)
    at 0x........: ioctl (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...

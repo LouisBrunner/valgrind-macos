@@ -1,0 +1,9 @@
+Syscall param write(fd) contains uninitialised byte(s)
+   at 0x........: write (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param write(count) contains uninitialised byte(s)
+   at 0x........: write (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...

@@ -964,8 +964,21 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                 || PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group
                ) {
 
-               /* If __NR_exit, remember the supplied argument. */
+               /* Remember the supplied argument. */
                *exitcode = PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+
+               // Inform tool about regs read by syscall
+               VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, "(syscallno)",
+                         R_SYSCALL_NUM, sizeof(UWord) );
+
+               if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit)
+                  VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid,
+                            "exit(error_code)", R_SYSCALL_ARG1, sizeof(int) );
+
+               if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group)
+                  VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid,
+                            "exit_group(error_code)", R_SYSCALL_ARG1,
+                            sizeof(int) );
 
                /* Only run __libc_freeres if the tool says it's ok and
                   it hasn't been overridden with --run-libc-freeres=no

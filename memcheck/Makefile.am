@@ -18,7 +18,6 @@ vgskin_memcheck_so_SOURCES = \
 	mac_malloc_wrappers.c \
 	mac_needs.c \
 	mc_main.c \
-	mc_clientreqs.c \
 	mc_errcontext.c \
 	mc_from_ucode.c \
 	mc_translate.c \

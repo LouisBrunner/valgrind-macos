@@ -389,24 +389,24 @@ static void set_address_range_perms ( Addr a, SizeT len,
 
 /* Set permissions for address ranges ... */
 
-void MC_(make_noaccess) ( Addr a, SizeT len )
+static void mc_make_noaccess ( Addr a, SizeT len )
 {
    PROF_EVENT(35);
-   DEBUG("MC_(make_noaccess)(%p, %llu)\n", a, (ULong)len);
+   DEBUG("mc_make_noaccess(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID, VGM_BIT_INVALID );
 }
 
-void MC_(make_writable) ( Addr a, SizeT len )
+static void mc_make_writable ( Addr a, SizeT len )
 {
    PROF_EVENT(36);
-   DEBUG("MC_(make_writable)(%p, %llu)\n", a, (ULong)len);
+   DEBUG("mc_make_writable(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_INVALID );
 }
 
-void MC_(make_readable) ( Addr a, SizeT len )
+static void mc_make_readable ( Addr a, SizeT len )
 {
    PROF_EVENT(37);
-   DEBUG("MC_(make_readable)(%p, %llu)\n", a, (ULong)len);
+   DEBUG("mc_make_readable(%p, %llu)\n", a, (ULong)len);
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
@@ -486,8 +486,8 @@ ESP_UPDATE_HANDLERS ( make_aligned_word_writable,
                       make_aligned_word_noaccess,
                       make_aligned_doubleword_writable,
                       make_aligned_doubleword_noaccess,
-                      MC_(make_writable),
-                      MC_(make_noaccess) 
+                      mc_make_writable,
+                      mc_make_noaccess 
                     );
 
 /* Block-copy permissions (needed for implementing realloc()). */
@@ -507,6 +507,9 @@ static void mc_copy_address_range_state ( Addr src, Addr dst, SizeT len )
    }
 }
 
+/*------------------------------------------------------------*/
+/*--- Checking memory                                      ---*/
+/*------------------------------------------------------------*/
 
 /* Check permissions for address range.  If inadequate permissions
    exist, *bad_addr is set to the offending address, so the caller can
@@ -516,7 +519,7 @@ static void mc_copy_address_range_state ( Addr src, Addr dst, SizeT len )
    returns False, and if bad_addr is non-NULL, sets *bad_addr to
    indicate the lowest failing address.  Functions below are
    similar. */
-Bool MC_(check_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
+static Bool mc_check_noaccess ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UChar abit;
@@ -533,7 +536,7 @@ Bool MC_(check_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
    return True;
 }
 
-Bool MC_(check_writable) ( Addr a, SizeT len, Addr* bad_addr )
+static Bool mc_check_writable ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UChar abit;
@@ -550,25 +553,35 @@ Bool MC_(check_writable) ( Addr a, SizeT len, Addr* bad_addr )
    return True;
 }
 
-Bool MC_(check_readable) ( Addr a, SizeT len, Addr* bad_addr )
+typedef enum {
+   MC_Ok = 5, MC_AddrErr = 6, MC_ValueErr = 7
+} MC_ReadResult;
+
+static MC_ReadResult mc_check_readable ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UChar abit;
    UChar vbyte;
 
    PROF_EVENT(44);
-   DEBUG("MC_(check_readable)\n");
+   DEBUG("mc_check_readable\n");
    for (i = 0; i < len; i++) {
       abit  = get_abit(a);
       vbyte = get_vbyte(a);
       PROF_EVENT(45);
-      if (abit != VGM_BIT_VALID || vbyte != VGM_BYTE_VALID) {
+      // Report addressability errors in preference to definedness errors
+      // by checking the A bits first.
+      if (abit != VGM_BIT_VALID) {
          if (bad_addr != NULL) *bad_addr = a;
-         return False;
+         return MC_AddrErr;
+      }
+      if (vbyte != VGM_BYTE_VALID) {
+         if (bad_addr != NULL) *bad_addr = a;
+         return MC_ValueErr;
       }
       a++;
    }
-   return True;
+   return MC_Ok;
 }
 
 
@@ -586,12 +599,17 @@ static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
       PROF_EVENT(47);
       abit  = get_abit(a);
       vbyte = get_vbyte(a);
-      if (abit != VGM_BIT_VALID || vbyte != VGM_BYTE_VALID) {
+      // As in mc_check_readable(), check A bits first
+      if (abit != VGM_BIT_VALID) {
          if (bad_addr != NULL) *bad_addr = a;
-         return False;
+         return MC_AddrErr;
+      }
+      if (vbyte != VGM_BYTE_VALID) {
+         if (bad_addr != NULL) *bad_addr = a;
+         return MC_ValueErr;
       }
       /* Ok, a is safe to read. */
-      if (* ((UChar*)a) == 0) return True;
+      if (* ((UChar*)a) == 0) return MC_Ok;
       a++;
    }
 }
@@ -612,16 +630,17 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
 
    /* VG_(message)(Vg_DebugMsg,"check is writable: %x .. %x",
                                base,base+size-1); */
-   ok = MC_(check_writable) ( base, size, &bad_addr );
+   ok = mc_check_writable ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tid, bad_addr, /*isWrite =*/True, s );
+         MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False,
+                                    /*isUnaddr*/True, s );
          break;
 
       case Vg_CorePThread:
       case Vg_CoreSignal:
-         MAC_(record_core_mem_error)( tid, /*isWrite=*/True, s );
+         MAC_(record_core_mem_error)( tid, /*isUnaddr*/True, s );
          break;
 
       default:
@@ -636,22 +655,25 @@ static
 void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
                             Addr base, SizeT size )
 {     
-   Bool ok;
    Addr bad_addr;
+   MC_ReadResult res;
 
    VGP_PUSHCC(VgpCheckMem);
    
    /* VG_(message)(Vg_DebugMsg,"check is readable: %x .. %x",
                                base,base+size-1); */
-   ok = MC_(check_readable) ( base, size, &bad_addr );
-   if (!ok) {
+   res = mc_check_readable ( base, size, &bad_addr );
+   if (MC_Ok != res) {
+      Bool isUnaddr = ( MC_AddrErr == res ? True : False );
+      
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tid, bad_addr, /*isWrite =*/False, s );
+         MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False,
+                                    isUnaddr, s );
          break;
       
       case Vg_CorePThread:
-         MAC_(record_core_mem_error)( tid, /*isWrite=*/False, s );
+         MAC_(record_core_mem_error)( tid, isUnaddr, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
@@ -671,16 +693,17 @@ static
 void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
-   Bool ok = True;
+   MC_ReadResult res;
    Addr bad_addr;
    /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
    VGP_PUSHCC(VgpCheckMem);
 
    sk_assert(part == Vg_CoreSysCall);
-   ok = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
-   if (!ok) {
-      MAC_(record_param_error) ( tid, bad_addr, /*is_writable =*/False, s );
+   res = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
+   if (MC_Ok != res) {
+      Bool isUnaddr = ( MC_AddrErr == res ? True : False );
+      MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False, isUnaddr, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -693,16 +716,16 @@ void mc_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
    /* Ignore the permissions, just make it readable.  Seems to work... */
    DEBUG("mc_new_mem_startup(%p, %llu, rr=%u, ww=%u, xx=%u)\n",
          a,(ULong)len,rr,ww,xx);
-   MC_(make_readable)(a, len);
+   mc_make_readable(a, len);
 }
 
 static
 void mc_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 {
    if (is_inited) {
-      MC_(make_readable)(a, len);
+      mc_make_readable(a, len);
    } else {
-      MC_(make_writable)(a, len);
+      mc_make_writable(a, len);
    }
 }
 
@@ -711,9 +734,9 @@ void mc_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
 {
    DEBUG("mc_set_perms(%p, %llu, rr=%u ww=%u, xx=%u)\n",
          a, (ULong)len, rr, ww, xx);
-   if      (rr) MC_(make_readable)(a, len);
-   else if (ww) MC_(make_writable)(a, len);
-   else         MC_(make_noaccess)(a, len);
+   if      (rr) mc_make_readable(a, len);
+   else if (ww) mc_make_writable(a, len);
+   else         mc_make_noaccess(a, len);
 }
 
 
@@ -739,6 +762,24 @@ static void mc_post_reg_write_clientcall(ThreadId tid, UInt reg, Addr f )
    VG_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
 }
 
+static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
+                            SizeT size)
+{
+   UWord mask;
+   
+   // XXX: the only one at the moment
+   sk_assert(Vg_CoreSysCall == part);
+
+   switch (size) {
+   case 4:  mask = 0xffffffff; break;
+   case 2:  mask = 0xffff;     break;
+   case 1:  mask = 0xff;       break;
+   default: VG_(skin_panic)("Unhandled size in mc_pre_reg_read");
+   }
+
+   if (VGM_WORD_VALID != (mask & VG_(get_thread_shadow_archreg)( tid, reg )) )
+      MAC_(record_param_error) ( tid, 0, /*isReg*/True, /*isUnaddr*/False, s );
+}
 
 /*------------------------------------------------------------*/
 /*--- Functions called directly from generated code.       ---*/
@@ -1348,7 +1389,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, SizeT size )
 
 /* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
    error, 3 == addressing error. */
-Int MC_(get_or_set_vbits_for_client) ( 
+static Int mc_get_or_set_vbits_for_client ( 
    ThreadId tid,
    Addr dataV, 
    Addr vbitsV, 
@@ -1457,7 +1498,7 @@ Bool mc_is_valid_address ( Addr a )
 /* Leak detector for this tool.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
    tool. */
-void MC_(detect_memory_leaks) ( void )
+static void mc_detect_memory_leaks ( void )
 {
    MAC_(do_detect_memory_leaks) ( mc_is_valid_64k_chunk, mc_is_valid_address );
 }
@@ -1622,6 +1663,257 @@ void SK_(print_debug_usage)(void)
    );
 }
 
+/*------------------------------------------------------------*/
+/*--- Client requests                                      ---*/
+/*------------------------------------------------------------*/
+
+/* Client block management:
+  
+   This is managed as an expanding array of client block descriptors.
+   Indices of live descriptors are issued to the client, so it can ask
+   to free them later.  Therefore we cannot slide live entries down
+   over dead ones.  Instead we must use free/inuse flags and scan for
+   an empty slot at allocation time.  This in turn means allocation is
+   relatively expensive, so we hope this does not happen too often. 
+*/
+
+typedef
+   enum { CG_NotInUse, CG_NoAccess, CG_Writable, CG_Readable }
+   CGenBlockKind;
+
+typedef
+   struct {
+      Addr          start;
+      SizeT         size;
+      ExeContext*   where;
+      CGenBlockKind kind;
+   } 
+   CGenBlock;
+
+/* This subsystem is self-initialising. */
+static UInt       vg_cgb_size = 0;
+static UInt       vg_cgb_used = 0;
+static CGenBlock* vg_cgbs     = NULL;
+
+/* Stats for this subsystem. */
+static UInt vg_cgb_used_MAX = 0;   /* Max in use. */
+static UInt vg_cgb_allocs   = 0;   /* Number of allocs. */
+static UInt vg_cgb_discards = 0;   /* Number of discards. */
+static UInt vg_cgb_search   = 0;   /* Number of searches. */
+
+
+static
+Int vg_alloc_client_block ( void )
+{
+   UInt       i, sz_new;
+   CGenBlock* cgbs_new;
+
+   vg_cgb_allocs++;
+
+   for (i = 0; i < vg_cgb_used; i++) {
+      vg_cgb_search++;
+      if (vg_cgbs[i].kind == CG_NotInUse)
+         return i;
+   }
+
+   /* Not found.  Try to allocate one at the end. */
+   if (vg_cgb_used < vg_cgb_size) {
+      vg_cgb_used++;
+      return vg_cgb_used-1;
+   }
+
+   /* Ok, we have to allocate a new one. */
+   sk_assert(vg_cgb_used == vg_cgb_size);
+   sz_new = (vg_cgbs == NULL) ? 10 : (2 * vg_cgb_size);
+
+   cgbs_new = VG_(malloc)( sz_new * sizeof(CGenBlock) );
+   for (i = 0; i < vg_cgb_used; i++) 
+      cgbs_new[i] = vg_cgbs[i];
+
+   if (vg_cgbs != NULL)
+      VG_(free)( vg_cgbs );
+   vg_cgbs = cgbs_new;
+
+   vg_cgb_size = sz_new;
+   vg_cgb_used++;
+   if (vg_cgb_used > vg_cgb_used_MAX)
+      vg_cgb_used_MAX = vg_cgb_used;
+   return vg_cgb_used-1;
+}
+
+
+static void show_client_block_stats ( void )
+{
+   VG_(message)(Vg_DebugMsg, 
+      "general CBs: %d allocs, %d discards, %d maxinuse, %d search",
+      vg_cgb_allocs, vg_cgb_discards, vg_cgb_used_MAX, vg_cgb_search 
+   );
+}
+
+static Bool find_addr(VgHashNode* sh_ch, void* ap)
+{
+  MAC_Chunk *m = (MAC_Chunk*)sh_ch;
+  Addr a = *(Addr*)ap;
+
+  return VG_(addr_is_in_block)(a, m->data, m->size);
+}
+
+static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
+{
+   UInt i;
+   /* VG_(printf)("try to identify %d\n", a); */
+
+   /* Perhaps it's a general block ? */
+   for (i = 0; i < vg_cgb_used; i++) {
+      if (vg_cgbs[i].kind == CG_NotInUse) 
+         continue;
+      if (VG_(addr_is_in_block)(a, vg_cgbs[i].start, vg_cgbs[i].size)) {
+         MAC_Mempool **d, *mp;
+
+         /* OK - maybe it's a mempool, too? */
+         mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list),
+                                             (UWord)vg_cgbs[i].start,
+                                             (void*)&d);
+         if(mp != NULL) {
+            if(mp->chunks != NULL) {
+               MAC_Chunk *mc;
+
+               mc = (MAC_Chunk*)VG_(HT_first_match)(mp->chunks, find_addr, &a);
+               if(mc != NULL) {
+                  ai->akind = UserG;
+                  ai->blksize = mc->size;
+                  ai->rwoffset = (Int)(a) - (Int)mc->data;
+                  ai->lastchange = mc->where;
+                  return True;
+               }
+            }
+            ai->akind = Mempool;
+            ai->blksize = vg_cgbs[i].size;
+            ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
+            ai->lastchange = vg_cgbs[i].where;
+            return True;
+         }
+         ai->akind = UserG;
+         ai->blksize = vg_cgbs[i].size;
+         ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
+         ai->lastchange = vg_cgbs[i].where;
+         return True;
+      }
+   }
+   return False;
+}
+
+Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
+{
+   Int   i;
+   Bool  ok;
+   Addr  bad_addr;
+
+   if (!VG_IS_SKIN_USERREQ('M','C',arg[0])
+    && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
+    && VG_USERREQ__FREELIKE_BLOCK   != arg[0]
+    && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
+    && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
+    && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
+    && VG_USERREQ__MEMPOOL_FREE     != arg[0])
+      return False;
+
+   switch (arg[0]) {
+      case VG_USERREQ__CHECK_WRITABLE: /* check writable */
+         ok = mc_check_writable ( arg[1], arg[2], &bad_addr );
+         if (!ok)
+            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/True,
+                                     /*isUnaddr*/True );
+         *ret = ok ? (UWord)NULL : bad_addr;
+	 break;
+
+      case VG_USERREQ__CHECK_READABLE: { /* check readable */
+         MC_ReadResult res;
+         res = mc_check_readable ( arg[1], arg[2], &bad_addr );
+         if (MC_AddrErr == res)
+            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/False,
+                                     /*isUnaddr*/True );
+         else if (MC_ValueErr == res)
+            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/False,
+                                     /*isUnaddr*/False );
+         *ret = ( res==MC_Ok ? (UWord)NULL : bad_addr );
+	 break;
+      }
+
+      case VG_USERREQ__DO_LEAK_CHECK:
+         mc_detect_memory_leaks();
+	 *ret = 0; /* return value is meaningless */
+	 break;
+
+      case VG_USERREQ__MAKE_NOACCESS: /* make no access */
+         i = vg_alloc_client_block();
+         /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
+         vg_cgbs[i].kind  = CG_NoAccess;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
+         mc_make_noaccess ( arg[1], arg[2] );
+	 *ret = i;
+	 break;
+
+      case VG_USERREQ__MAKE_WRITABLE: /* make writable */
+         i = vg_alloc_client_block();
+         vg_cgbs[i].kind  = CG_Writable;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
+         mc_make_writable ( arg[1], arg[2] );
+         *ret = i;
+	 break;
+
+      case VG_USERREQ__MAKE_READABLE: /* make readable */
+         i = vg_alloc_client_block();
+         vg_cgbs[i].kind  = CG_Readable;
+         vg_cgbs[i].start = arg[1];
+         vg_cgbs[i].size  = arg[2];
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
+         mc_make_readable ( arg[1], arg[2] );
+	 *ret = i;
+         break;
+
+      case VG_USERREQ__DISCARD: /* discard */
+         if (vg_cgbs == NULL 
+             || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
+            return 1;
+         sk_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
+         vg_cgbs[arg[2]].kind = CG_NotInUse;
+         vg_cgb_discards++;
+	 *ret = 0;
+	 break;
+
+      case VG_USERREQ__GET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = mc_get_or_set_vbits_for_client
+                   ( tid, arg[1], arg[2], arg[3], False /* get them */ );
+         break;
+
+      case VG_USERREQ__SET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = mc_get_or_set_vbits_for_client
+                   ( tid, arg[1], arg[2], arg[3], True /* set them */ );
+         break;
+
+      default:
+         if (MAC_(handle_common_client_requests)(tid, arg, ret )) {
+            return True;
+         } else {
+            VG_(message)(Vg_UserMsg, 
+                         "Warning: unknown memcheck client request code %llx",
+                         (ULong)arg[0]);
+            return False;
+         }
+   }
+   return True;
+}
 
 /*------------------------------------------------------------*/
 /*--- Setup                                                ---*/
@@ -1649,22 +1941,22 @@ void SK_(pre_clo_init)(void)
    VG_(needs_shadow_memory)       ();
 
    MAC_( new_mem_heap)             = & mc_new_mem_heap;
-   MAC_( ban_mem_heap)             = & MC_(make_noaccess);
+   MAC_( ban_mem_heap)             = & mc_make_noaccess;
    MAC_(copy_mem_heap)             = & mc_copy_address_range_state;
-   MAC_( die_mem_heap)             = & MC_(make_noaccess);
-   MAC_(check_noaccess)            = & MC_(check_noaccess);
+   MAC_( die_mem_heap)             = & mc_make_noaccess;
+   MAC_(check_noaccess)            = & mc_check_noaccess;
 
    VG_(init_new_mem_startup)      ( & mc_new_mem_startup );
-   VG_(init_new_mem_stack_signal) ( & MC_(make_writable) );
-   VG_(init_new_mem_brk)          ( & MC_(make_writable) );
+   VG_(init_new_mem_stack_signal) ( & mc_make_writable );
+   VG_(init_new_mem_brk)          ( & mc_make_writable );
    VG_(init_new_mem_mmap)         ( & mc_set_perms );
    
    VG_(init_copy_mem_remap)       ( & mc_copy_address_range_state );
    VG_(init_change_mem_mprotect)  ( & mc_set_perms );
       
-   VG_(init_die_mem_stack_signal) ( & MC_(make_noaccess) ); 
-   VG_(init_die_mem_brk)          ( & MC_(make_noaccess) );
-   VG_(init_die_mem_munmap)       ( & MC_(make_noaccess) ); 
+   VG_(init_die_mem_stack_signal) ( & mc_make_noaccess ); 
+   VG_(init_die_mem_brk)          ( & mc_make_noaccess );
+   VG_(init_die_mem_munmap)       ( & mc_make_noaccess ); 
 
    VG_(init_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
    VG_(init_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
@@ -1680,12 +1972,14 @@ void SK_(pre_clo_init)(void)
    VG_(init_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
    VG_(init_die_mem_stack)        ( & MAC_(die_mem_stack)    );
    
-   VG_(init_ban_mem_stack)        ( & MC_(make_noaccess) );
+   VG_(init_ban_mem_stack)        ( & mc_make_noaccess );
 
    VG_(init_pre_mem_read)         ( & mc_check_is_readable );
    VG_(init_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
    VG_(init_pre_mem_write)        ( & mc_check_is_writable );
-   VG_(init_post_mem_write)       ( & MC_(make_readable) );
+   VG_(init_post_mem_write)       ( & mc_make_readable );
+
+   VG_(init_pre_reg_read)         ( & mc_pre_reg_read );
 
    VG_(init_post_regs_write_init)             ( & mc_post_regs_write_init );
    VG_(init_post_reg_write_syscall_return)    ( & mc_post_reg_write );
@@ -1715,7 +2009,7 @@ void SK_(pre_clo_init)(void)
    VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    /* Additional block description for VG_(describe_addr)() */
-   MAC_(describe_addr_supp) = MC_(client_perm_maybe_describe);
+   MAC_(describe_addr_supp) = client_perm_maybe_describe;
 
    init_shadow_memory();
    MAC_(common_pre_clo_init)();
@@ -1727,12 +2021,12 @@ void SK_(post_clo_init) ( void )
 
 void SK_(fini) ( Int exitcode )
 {
-   MAC_(common_fini)( MC_(detect_memory_leaks) );
+   MAC_(common_fini)( mc_detect_memory_leaks );
    
    if (0) {
       VG_(message)(Vg_DebugMsg, 
         "------ Valgrind's client block stats follow ---------------" );
-      MC_(show_client_block_stats)();
+      show_client_block_stats();
    }
 }
 

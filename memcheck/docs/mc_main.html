@@ -312,43 +312,52 @@ runtime-support libraries?] are robust to mismatch in
 <h4>3.3.5&nbsp; Passing system call parameters with inadequate
 read/write permissions</h4>
 
-Memcheck checks all parameters to system calls.  If a system call
-needs to read from a buffer provided by your program, Memcheck checks
-that the entire buffer is addressible and has valid data, ie, it is
-readable.  And if the system call needs to write to a user-supplied
-buffer, Memcheck checks that the buffer is addressible.  After the
-system call, Memcheck updates its administrative information to
-precisely reflect any changes in memory permissions caused by the
-system call.
+Memcheck checks all parameters to system calls, i.e:
+<ul>
+<li>It checks all the direct parameters themselves.
+<li>Also, if a system call needs to read from a buffer provided by your
+    program, Memcheck checks that the entire buffer is addressible and has
+    valid data, ie, it is readable.  
+<li>Also, if the system call needs to write to a user-supplied buffer, Memcheck
+    checks that the buffer is addressible.  
+</ul>
 
-<p>Here's an example of a system call with an invalid parameter:
+After the system call, Memcheck updates its administrative information to
+precisely reflect any changes in memory permissions caused by the system call.
+
+<p>Here's an example of two system calls with invalid parameters:
 <pre>
   #include &lt;stdlib.h>
   #include &lt;unistd.h>
   int main( void )
   {
-    char* arr = malloc(10);
-    (void) write( 1 /* stdout */, arr, 10 );
-    return 0;
+    char* arr  = malloc(10);
+    int*  arr2 = malloc(sizeof(int));
+    write( 1 /* stdout */, arr, 10 );
+    exit(arr2[0]);
   }
 </pre>
 
-<p>You get this complaint ...
+<p>You get these complaints ...
 <pre>
-  Syscall param write(buf) contains uninitialised or unaddressable byte(s)
-     at 0x4035E072: __libc_write
-     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-     by 0x80483B1: (within tests/badwrite)
-     by &lt;bogus frame pointer> ???
-     Address 0x3807E6D0 is 0 bytes inside a block of size 10 alloc'd
-     at 0x4004FEE6: malloc (ut_clientmalloc.c:539)
-     by 0x80484A0: main (tests/badwrite.c:6)
-     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-     by 0x80483B1: (within tests/badwrite)
+  Syscall param write(buf) points to uninitialised byte(s)
+     at 0x25A48723: __write_nocancel (in /lib/tls/libc-2.3.3.so)
+     by 0x259AFAD3: __libc_start_main (in /lib/tls/libc-2.3.3.so)
+     by 0x8048348: (within /auto/homes/njn25/grind/head4/a.out)
+   Address 0x25AB8028 is 0 bytes inside a block of size 10 alloc'd
+     at 0x259852B0: malloc (vg_replace_malloc.c:130)
+     by 0x80483F1: main (a.c:5)
+  
+  Syscall param exit(error_code) contains uninitialised byte(s)
+     at 0x25A21B44: __GI__exit (in /lib/tls/libc-2.3.3.so)
+     by 0x8048426: main (a.c:8)
 </pre>
 
-<p>... because the program has tried to write uninitialised junk from
-the malloc'd block to the standard output.
+<p>... because the program has (a) tried to write uninitialised junk from
+the malloc'd block to the standard output, and (b) passed an uninitialised
+value to <code>exit</code>.  Note that the first error refers to the memory
+pointed to by <code>buf</code> (not <code>buf</code> itself), but the second
+error refers to the argument <code>error_code</code> itself.
 
 <h4>3.3.6&nbsp; Overlapping source and destination blocks</h4>
 The following C library functions copy some data from one memory block

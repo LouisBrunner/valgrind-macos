@@ -1,0 +1,2 @@
+prog: scalar
+vgopts: -q --suppressions=scalar.supp

@@ -47,12 +47,13 @@
 /* The classification of a faulting address. */
 typedef 
    enum { 
-      Undescribed,  /* as-yet unclassified */
+      Undescribed,   // as-yet unclassified
       Stack, 
-      Unknown,      /* classification yielded nothing useful */
+      Unknown,       // classification yielded nothing useful
       Freed, Mallocd, 
-      UserG,        /* in a user-defined block; Addrcheck & Memcheck only */
-      Mempool,      /* in a mempool; Addrcheck & Memcheck only */
+      UserG,         // in a user-defined block
+      Mempool,       // in a mempool
+      Register,      // in a register;  for Param errors only
    }
    AddrKind;
 
@@ -61,7 +62,7 @@ typedef
    struct {                   // Used by:
       AddrKind akind;         //   ALL
       SizeT blksize;          //   Freed, Mallocd
-      SSizeT rwoffset;        //   Freed, Mallocd
+      OffT rwoffset;          //   Freed, Mallocd
       ExeContext* lastchange; //   Freed, Mallocd
       ThreadId stack_tid;     //   Stack
       Bool maybe_gcc;         // True if just below %esp -- could be a gcc bug.
@@ -110,7 +111,7 @@ typedef
       AxsKind axskind;     //   AddrErr
       Int size;            //   AddrErr, ValueErr
       AddrInfo addrinfo;   //   {Addr,Free,FreeMismatch,Param,User}Err
-      Bool isWrite;        //   ParamErr, UserErr, CoreMemErr
+      Bool isUnaddr;       //   {CoreMem,Param,User}Err
    }
    MAC_Error;
 
@@ -316,10 +317,10 @@ extern void MAC_(mempool_free)(Addr pool, Addr addr);
 
 extern void MAC_(record_address_error)     ( ThreadId tid, Addr a,
                                              Int size, Bool isWrite );
-extern void MAC_(record_core_mem_error)    ( ThreadId tid, Bool isWrite,
+extern void MAC_(record_core_mem_error)    ( ThreadId tid, Bool isUnaddr,
                                              Char* s );
-extern void MAC_(record_param_error)       ( ThreadId tid, Addr a,   
-                                             Bool isWriteLack, Char* msg );
+extern void MAC_(record_param_error)       ( ThreadId tid, Addr a, Bool isReg,
+                                             Bool isUnaddr, Char* msg );
 extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );

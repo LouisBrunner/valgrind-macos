@@ -1,0 +1,9 @@
+# This suppression suppresses both of the buf errors.
+{
+   foo2
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:__libc_start_main
+}
+

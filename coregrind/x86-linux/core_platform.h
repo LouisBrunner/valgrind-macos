@@ -54,6 +54,11 @@
 // Interesting register numbers
 #define R_SYSCALL_NUM                  R_EAX
 #define R_SYSCALL_ARG1                 R_EBX
+#define R_SYSCALL_ARG2                 R_ECX
+#define R_SYSCALL_ARG3                 R_EDX
+#define R_SYSCALL_ARG4                 R_ESI
+#define R_SYSCALL_ARG5                 R_EDI
+#define R_SYSCALL_ARG6                 R_EBP
 #define R_SYSCALL_RET                  R_EAX
 
 // Setting thread regs and shadow regs from within the core

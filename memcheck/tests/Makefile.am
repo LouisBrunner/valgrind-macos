@@ -51,6 +51,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
+	scalar.stderr.exp scalar.vgtest \
+	scalar_supp.stderr.exp scalar_supp.vgtest scalar.supp \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
@@ -79,7 +81,7 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
-	realloc1 realloc2 realloc3 sigaltstack signal2 \
+	realloc1 realloc2 realloc3 scalar sigaltstack signal2 \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
@@ -131,6 +133,7 @@ overlap_SOURCES 	= overlap.c
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
+scalar_SOURCES 		= scalar.c
 signal2_SOURCES 	= signal2.c
 supp1_SOURCES 		= supp.c
 supp2_SOURCES 		= supp.c

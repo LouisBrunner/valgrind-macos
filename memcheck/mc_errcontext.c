@@ -40,22 +40,18 @@ void SK_(pp_SkinError) ( Error* err )
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
    switch (VG_(get_error_kind)(err)) {
-      case CoreMemErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", VG_(get_error_string)(err));
-         } else {
-            VG_(message)(Vg_UserMsg, 
-                "%s contains uninitialised or unaddressable byte(s)",
-                VG_(get_error_string)(err));
-         }
+      case CoreMemErr: {
+         Char* s = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
+         VG_(message)(Vg_UserMsg, "%s contains %s byte(s)", 
+                      VG_(get_error_string)(err), s);
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
       
+      } 
+      
       case ValueErr:
          if (err_extra->size == 0) {
-             VG_(message)(
-                Vg_UserMsg,
+             VG_(message)(Vg_UserMsg,
                 "Conditional jump or move depends on uninitialised value(s)");
          } else {
              VG_(message)(Vg_UserMsg,
@@ -65,34 +61,29 @@ void SK_(pp_SkinError) ( Error* err )
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
 
-      case ParamErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-               "Syscall param %s contains unaddressable byte(s)",
-                VG_(get_error_string)(err));
-         } else {
-            VG_(message)(Vg_UserMsg, 
-                "Syscall param %s contains uninitialised or "
-                "unaddressable byte(s)",
-                VG_(get_error_string)(err));
-         }
+      case ParamErr: {
+         Bool isReg = ( Register == err_extra->addrinfo.akind );
+         Char* s1 = ( isReg ? "contains" : "points to" );
+         Char* s2 = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
+         if (isReg) sk_assert(!err_extra->isUnaddr);
+
+         VG_(message)(Vg_UserMsg, "Syscall param %s %s %s byte(s)",
+                      VG_(get_error_string)(err), s1, s2);
+
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
+      }
+      case UserErr: {
+         Char* s = ( err_extra->isUnaddr ? "Unaddressable" : "Uninitialised" );
 
-      case UserErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-               "Unaddressable byte(s) found during client check request");
-         } else {
-            VG_(message)(Vg_UserMsg, 
-               "Uninitialised or "
-               "unaddressable byte(s) found during client check request");
-         }
+         VG_(message)(Vg_UserMsg, 
+            "%s byte(s) found during client check request", s);
+
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
-
+      }
       default: 
          MAC_(pp_shared_SkinError)(err);
          break;
@@ -111,20 +102,22 @@ void MC_(record_value_error) ( ThreadId tid, Int size )
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
-   err_extra.size = size;
+   err_extra.size     = size;
+   err_extra.isUnaddr = False;
    VG_(maybe_record_error)( tid, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
 }
 
 /* This called from non-generated code */
 
-void MC_(record_user_error) ( ThreadId tid, Addr a, Bool isWrite )
+void MC_(record_user_error) ( ThreadId tid, Addr a, Bool isWrite,
+                              Bool isUnaddr )
 {
    MAC_Error err_extra;
 
    sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
-   err_extra.isWrite        = isWrite;
+   err_extra.isUnaddr       = isUnaddr;
    VG_(maybe_record_error)( tid, UserErr, a, /*s*/NULL, &err_extra );
 }
 

@@ -119,7 +119,6 @@ extern void MC_(helper_value_check2_fail) ( void );
 extern void MC_(helper_value_check1_fail) ( void );
 extern void MC_(helper_value_check0_fail) ( void );
 
-
 /* Functions defined in mc_main.c */
 extern REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UInt );
 extern REGPARM(2) void MC_(helperc_STOREV2) ( Addr, UInt );
@@ -132,38 +131,15 @@ extern REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
 extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, SizeT size );
 extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, SizeT size );
 
-
-/* For client requests */
-extern void MC_(make_noaccess) ( Addr a, SizeT len );
-extern void MC_(make_readable) ( Addr a, SizeT len );
-extern void MC_(make_writable) ( Addr a, SizeT len );
-
-extern Bool MC_(check_writable) ( Addr a, SizeT len, Addr* bad_addr );
-extern Bool MC_(check_readable) ( Addr a, SizeT len, Addr* bad_addr );
-
-extern void MC_(detect_memory_leaks) ( void );
-
-extern Int  MC_(get_or_set_vbits_for_client) ( 
-               ThreadId tid,
-               Addr dataV, 
-               Addr vbitsV, 
-               SizeT size, 
-               Bool setting /* True <=> set vbits,  False <=> get vbits */ 
-            );
-
-/* Functions defined in mc_clientreqs.c */
-extern Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
-extern void MC_(show_client_block_stats) ( void );
-
-
 /* Functions defined in mc_errcontext.c */
 extern void MC_(record_value_error)  ( ThreadId tid, Int size );
-extern void MC_(record_user_error)   ( ThreadId tid, Addr a, Bool isWrite );
+extern void MC_(record_user_error)   ( ThreadId tid, Addr a, Bool isWrite,
+                                       Bool isUnaddr );
 
 
 #endif
 
 /*--------------------------------------------------------------------*/
-/*--- end                                             mc_include.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 

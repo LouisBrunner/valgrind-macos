@@ -545,14 +545,15 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tid, bad_addr, isWrite, s );
+         MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False,
+                                    /*isUnaddr*/True, s );
          break;
 
       case Vg_CoreSignal:
          sk_assert(isWrite);     /* Should only happen with isWrite case */
          /* fall through */
       case Vg_CorePThread:
-         MAC_(record_core_mem_error)( tid, isWrite, s );
+         MAC_(record_core_mem_error)( tid, /*isUnaddr*/True, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
@@ -590,14 +591,14 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 {
    Bool ok = True;
    Addr bad_addr;
-   /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
    VGP_PUSHCC(VgpCheckMem);
 
    sk_assert(part == Vg_CoreSysCall);
    ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      MAC_(record_param_error) ( tid, bad_addr, /*is_writable =*/False, s );
+      MAC_(record_param_error) ( tid, bad_addr, /*IsReg*/False,
+                                 /*IsUnaddr*/True, s );
    }
 
    VGP_POPCC(VgpCheckMem);

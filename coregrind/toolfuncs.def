@@ -230,6 +230,8 @@ void,	post_mem_write,	Addr a, SizeT size
 ## used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
 ## changed register.
 
+void,	pre_reg_read,	CorePart part, ThreadId tid, Char* s, UInt reg, SizeT size
+
 ## Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
 ## and use VG_(set_shadow_eflags)() to set eflags.
 void,	post_regs_write_init,	void

@@ -114,7 +114,7 @@ void MAC_(clear_MAC_Error) ( MAC_Error* err_extra )
    err_extra->axskind   = ReadAxs;
    err_extra->size      = 0;
    clear_AddrInfo ( &err_extra->addrinfo );
-   err_extra->isWrite   = False;
+   err_extra->isUnaddr  = True;
 }
 
 __attribute__ ((unused))
@@ -148,7 +148,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
    switch (VG_(get_error_kind)(e1)) {
       case CoreMemErr: {
          Char *e1s, *e2s;
-         if (e1_extra->isWrite != e2_extra->isWrite)   return False;
+         if (e1_extra->isUnaddr != e2_extra->isUnaddr) return False;
          e1s = VG_(get_error_string)(e1);
          e2s = VG_(get_error_string)(e2);
          if (e1s == e2s)                               return True;
@@ -158,7 +158,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
 
       case UserErr:
       case ParamErr:
-         if (e1_extra->isWrite != e2_extra->isWrite)           return False;
+         if (e1_extra->isUnaddr != e2_extra->isUnaddr)         return False;
          if (VG_(get_error_kind)(e1) == ParamErr 
              && 0 != VG_(strcmp)(VG_(get_error_string)(e1),
                                  VG_(get_error_string)(e2)))   return False;
@@ -255,6 +255,10 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
          VG_(pp_ExeContext)(ai->lastchange);
          break;
       }
+      case Register:
+         // print nothing
+         sk_assert(0 == a);
+         break;
       default:
          VG_(skin_panic)("MAC_(pp_AddrInfo)");
    }
@@ -293,7 +297,7 @@ void MAC_(pp_shared_SkinError) ( Error* err )
                                         "stated on the next line");
                break;
             default: 
-               VG_(skin_panic)("SK_(pp_SkinError)(axskind)");
+               VG_(skin_panic)("SK_(pp_shared_SkinError)(axskind)");
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -445,24 +449,24 @@ void MAC_(record_address_error) ( ThreadId tid, Addr a, Int size,
 
 /* This is for memory errors in pthread functions, as opposed to pthread API
    errors which are found by the core. */
-void MAC_(record_core_mem_error) ( ThreadId tid, Bool isWrite, Char* msg )
+void MAC_(record_core_mem_error) ( ThreadId tid, Bool isUnaddr, Char* msg )
 {
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
-   err_extra.isWrite = isWrite;
+   err_extra.isUnaddr = isUnaddr;
    VG_(maybe_record_error)( tid, CoreMemErr, /*addr*/0, msg, &err_extra );
 }
 
-void MAC_(record_param_error) ( ThreadId tid, Addr a, Bool isWrite, 
-                               Char* msg )
+void MAC_(record_param_error) ( ThreadId tid, Addr a, Bool isReg,
+                                Bool isUnaddr, Char* msg )
 {
    MAC_Error err_extra;
 
    sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   err_extra.isWrite = isWrite;
+   err_extra.addrinfo.akind = ( isReg ? Register : Undescribed );
+   err_extra.isUnaddr = isUnaddr;
    VG_(maybe_record_error)( tid, ParamErr, a, msg, &err_extra );
 }
 
@@ -529,7 +533,7 @@ UInt SK_(update_extra)( Error* err )
    case FreeErr:
    case IllegalMempoolErr:
    case FreeMismatchErr: {
-      MAC_Error* extra = (MAC_Error*)VG_(get_error_extra)(err);
+      MAC_Error* extra = VG_(get_error_extra)(err);
       if (extra != NULL && Undescribed == extra->addrinfo.akind) {
          describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
       }

@@ -1,10 +1,10 @@
-Syscall param socketcall.getsockname(name) contains unaddressable byte(s)
+Syscall param socketcall.getsockname(name) points to unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param socketcall.getsockname(namelen_in) contains uninitialised or unaddressable byte(s)
+Syscall param socketcall.getsockname(namelen_in) points to unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...

@@ -1,7 +1,10 @@
 
 /* A program which sets a readable fd to have a timeout, and therefore
    needs --weird-hacks=ioctl-VTIME in order to run without
-   blocking. */
+   blocking. 
+
+   [Nb: no longer true, since the ioctl-VTIME weird hack no longer exists]
+*/
 
 #include <stdio.h>
 #include <sys/ioctl.h>

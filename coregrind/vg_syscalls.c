@@ -42,7 +42,23 @@
    having the simulator retain control.
 */
 
-#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3)  /*nothing, so far*/
+#define X(syscallname, argname)  syscallname"("#argname")"
+
+#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
+   do { \
+   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, "(syscallno)", R_SYSCALL_NUM, sizeof(t1)); \
+   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a1), R_SYSCALL_ARG1, sizeof(t1)); \
+   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a2), R_SYSCALL_ARG2, sizeof(t2)); \
+   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a3), R_SYSCALL_ARG3, sizeof(t3)); \
+   } while (0);
+
+#if 0
+   do {						\
+      if (VG_(defined_)()) {		\
+	 SK_(pre_reg_read)(args);				\
+      }                                         \
+   } while(0)
+#endif
 
 #define PRE_MEM_READ(zzname, zzaddr, zzlen) \
    VG_TRACK( pre_mem_read, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
@@ -1001,6 +1017,12 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    names like sys_write();  a few have names like old_mmap().  See the
    comment for sys_info[] and related arrays for important info about the
    __NR_foo constants and their relationship to the sys_foo() functions.
+
+   Note that for the PRE_REG_READ tests, we pass a somewhat generic name
+   for the syscall (eg. "write")... this should be good enough for the
+   average user to understand what is happening, without confusing them 
+   with names like "sys_write".  However, for the --trace-syscalls=yes
+   output, we use the sys_foo() name to avoid ambiguity.
 
    XXX: some of these are arch-specific, and should be factored out.
 */
@@ -4097,8 +4119,8 @@ POST(open)
 
 PRE(sys_read)
 {
-   PRINT("read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
-   PRE_REG_READ3(ssize_t, sys_read,
+   PRINT("sys_read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, "read",
                  unsigned int, fd, char __user *, buf, size_t, count);
 
    if (!fd_allowed(arg1, "read", tid, False))
@@ -4114,8 +4136,8 @@ POST(sys_read)
 
 PRE(sys_write)
 {
-   PRINT("write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
-   PRE_REG_READ3(ssize_t, sys_write,
+   PRINT("sys_write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, "write",
                  unsigned int, fd, const char __user *, buf, size_t, count);
    if (!fd_allowed(arg1, "write", tid, False))
       set_result( -VKI_EBADF );

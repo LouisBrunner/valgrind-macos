@@ -9,45 +9,62 @@
 #ifndef __IR_DEFS_H
 #define __IR_DEFS_H
 
-#include "storage.h"
+//#include "storage.h"
 #include <stdio.h>
 
 
 /*---------------------------------------------------------------*/
-/*--- Storage tags for the IR                                 ---*/
+/*--- Type definitions for the IR                             ---*/
 /*---------------------------------------------------------------*/
 
-// Temporaries
+/* Constants */
 
-#define IR_TMP    80    /* :: Int32# */
+typedef
+   enum { Ico_u8, Ico_u16, Ico_u32, Ico_u64 }
+   IRConstTag;
 
-
-// Tags for types
-
-#define TY_Bit   100
-#define TY_I8    101
-#define TY_I16   102
-#define TY_I32   103
-#define TY_I64   104
-
-
-// Tags for binary ops
-
-#define OP_Add32  120
-#define OP_Sub32  121
-#define OP_Mul32  122
-#define OP_Or32   123
-#define OP_And32  124
-#define OP_Xor32  125
-#define OP_Shl32  126
-#define OP_Shr32  127
-#define OP_Sar32  128
+typedef
+   struct {
+      IRConstTag tag;
+      union {
+         UChar  u8;
+         UShort u16;
+         UInt   u32;
+         ULong  u64;
+      } Ico;
+   }
+   IRConst;
 
 
-// Tags for unary ops
+/* Temporaries */
 
-#define OP_Not32  150
-#define OP_Neg32  151
+typedef int IRTemp;
+
+
+/* Types */
+
+typedef 
+   enum { Ity_Bit, Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
+   IRType;
+
+
+/* Binary and unary ops */
+
+typedef
+   enum { Iop_Add32, 
+          Iop_Sub32, 
+          Iop_Mul32, 
+          Iop_Or32, 
+          Iop_And32,
+          Iop_Xor32,
+          Iop_Shl32,
+          Iop_Shr32,
+          Iop_Sar32,
+          // Tags for unary ops
+          Iop_Not32,
+          Iop_Neg32
+   }
+   IROp;
 
 
 /* Statements:
@@ -57,23 +74,64 @@ data Stmt
    | TMP    Temp Expr         -- store value in Temp
    | STle   Expr Expr         -- address (32 or 64 bit), value
 */
-#define ST_Put     160
-#define ST_Tmp     161
-#define ST_STle    162
+typedef 
+   enum { Ist_Put, Ist_Tmp, Ist_STle } 
+   IRStmtTag;
+
+typedef
+   struct _IRStmt {
+      IRStmtTag tag;
+      union {
+         struct {
+            Int     offset;
+            Int     size;
+            struct _IRExpr* expr;
+         } Put;
+         struct {
+            IRTemp  tmp;
+            struct _IRExpr* expr;
+         } Tmp;
+         struct {
+            struct _IRExpr* addr;
+            struct _IRExpr* data;
+         } STle;
+      } Ist;
+      struct _IRStmt* link;
+   }
+   IRStmt;
 
 
 /* Basic block enders.
-   HAddr is intended to represent a guest address, which is either a
+   IRConst represents a guest address, which is either a
    32 or 64 bit integer, depending on the architecture we're simulating.
 
 data Next
-   = UJump    HAddr              -- unconditional jump
-   | CJump01  Expr HAddr HAddr   -- conditional jump, Expr::TY_Bit
+   = UJump    Const              -- unconditional jump
+   | CJump01  Expr  Const Const  -- conditional jump, Expr::TY_Bit
    | IJump    Expr               -- jump to unknown address
 */
-#define NX_UJump   170
-#define NX_CJump01 171
-#define NX_IJump   172
+typedef
+   enum { Inx_UJump, Inx_CJump01, Inx_IJump } 
+   IRNextTag;
+
+typedef
+   struct _IRNext {
+      IRNextTag tag;
+      union {
+         struct {
+            IRConst dst;
+         } UJump;
+         struct {
+            struct _IRExpr* cond;
+            IRConst dst0;
+            IRConst dst1;
+         } CJump01;
+         struct {
+            struct _IRExpr* dst;
+         } IJump;
+      } Inx;
+   }
+   IRNext;
 
 
 /* Expressions
@@ -84,14 +142,42 @@ data Expr
    | BINOP Op Expr Expr    -- binary op
    | UNOP  Op Expr         -- unary op
    | LDle  Type Expr       -- load of the given type, Expr:: 32 or 64
-   | ATOMI Atom            -- 8/16/32/64-bit int constant
+   | CONST Const           -- 8/16/32/64-bit int constant
 */
-#define EX_Get     180
-#define EX_Tmp     181
-#define EX_Binop   182
-#define EX_Unop    183
-#define EX_LDle    184
-#define EX_AtomI   185
+typedef
+   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, Iex_Const }
+   IRExprTag;
+
+typedef 
+   struct _IRExpr {
+      IRExprTag tag;
+      union {
+         struct {
+            Int offset;
+            Int size;
+         } Get;
+         struct {
+            IRTemp tmp;
+         } Tmp;
+         struct {
+            IROp op;
+            struct _IRExpr* arg1;
+            struct _IRExpr* arg2;
+         } Binop;
+         struct {
+            IROp op;
+            struct _IrExpr* arg;
+         } Unop;
+         struct {
+            IRType ty;
+            struct _IRExpr* addr;
+         } LDle;
+         struct {
+            IRConst con;
+         } Const;
+      } Iex;
+   }
+   IRExpr;
 
 
 /* Basic blocks contain 3 fields:
@@ -101,58 +187,46 @@ data Expr
 */
 #define IR_BB      190    /* arity = 3 */
 
-
-/*---------------------------------------------------------------*/
-/*--- Types for the IR                                        ---*/
-/*---------------------------------------------------------------*/
-
-typedef  Cell  IRBB;
-typedef  Cell  IRStmt;
-typedef  Cell  IRExpr;
-typedef  Cell  IRNext;
-typedef  Cell  IRTemp;
-typedef  Cell  IRType;
-typedef  Cell  IROp;
-typedef  Cell  IRAtomI;
-typedef  Cell  GuestAddr;  /* Word32 or Word64 */
+typedef
+   struct _IRBB {
+      struct _IRStmt* stmts;
+      struct _IRNext* next;
+   }
+   IRBB;
 
 
 /*---------------------------------------------------------------*/
 /*--- Basic functions for the IR                              ---*/
 /*---------------------------------------------------------------*/
 
-/* Call this before using any of the IR tags or constructors. */
-extern void register_IR_tags ( void );
-
 /* Printers ... */
-extern void ppIRBB      ( FILE* f, IRBB      );
-extern void ppIRNext    ( FILE* f, IRNext    );
-extern void ppIRStmt    ( FILE* f, IRStmt    );
-extern void ppIRExpr    ( FILE* f, IRExpr    );
-extern void ppIRTemp    ( FILE* f, IRTemp    );
-extern void ppIRType    ( FILE* f, IRType    );
-extern void ppIRAtomI   ( FILE* f, IRAtomI   );
-extern void ppIROp      ( FILE* f, IROp      );
-extern void ppGuestAddr ( FILE* f, GuestAddr );
+extern void ppIRBB      ( FILE* f, IRBB*      );
+extern void ppIRNext    ( FILE* f, IRNext*    );
+extern void ppIRStmt    ( FILE* f, IRStmt*    );
+extern void ppIRExpr    ( FILE* f, IRExpr*    );
+extern void ppIRTemp    ( FILE* f, IRTemp*    );
+extern void ppIRType    ( FILE* f, IRType*    );
+extern void ppIRConst   ( FILE* f, IRConst*   );
+extern void ppIROp      ( FILE* f, IROp       );
 
 /* Constructors -- IRBB */
-extern IRBB mkBB ( AList tys, List stmts, IRNext next );
+extern IRBB* mkBB ( IRStmt* stmts, IRNext* next );
 
 /* Constructors -- IRNext */
-extern IRNext mkUJump  ( GuestAddr dst );
+extern IRNext* mkUJump ( IRConst* dst );
 
 /* Constructors -- IRStmt */
-extern IRStmt mkSTPut  ( Int off, Int sz, IRExpr value );
-extern IRStmt mkSTTmp  ( IRTemp tmp, IRExpr expr );
-extern IRStmt mkSTSTle ( IRExpr addr, IRExpr value );
+extern IRStmt* mkStPut  ( Int off, Int sz, IRExpr* value );
+extern IRStmt* mkStTmp  ( IRTemp tmp, IRExpr* expr );
+extern IRStmt* mkStSTle ( IRExpr* addr, IRExpr* value );
 
 /* Constructors -- IRExpr */
-extern IRExpr mkEXGet   ( Int off, Int sz );
-extern IRExpr mkEXTmp   ( IRTemp tmp );
-extern IRExpr mkEXBinop ( IROp op, IRExpr arg1, IRExpr arg2 );
-extern IRExpr mkEXUnop  ( IROp op, IRExpr arg );
-extern IRExpr mkEXLDle  ( IRType ty, IRExpr addr );
-extern IRExpr mkEXAtomI ( IRAtomI atom );
+extern IRExpr mkExGet   ( Int off, Int sz );
+extern IRExpr mkExTmp   ( IRTemp tmp );
+extern IRExpr mkExBinop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
+extern IRExpr mkExUnop  ( IROp op, IRExpr* arg );
+extern IRExpr mkExLDle  ( IRType ty, IRExpr* addr );
+extern IRExpr mkExConst ( IRConst* con );
 
 /* Constructors -- IRTemp */
 extern IRTemp mkIRTemp  ( Int n );

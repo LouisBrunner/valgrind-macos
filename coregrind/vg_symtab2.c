@@ -159,15 +159,16 @@ Int addStr ( SegInfo* si, Char* str )
     * extra time taken is too small to measure.  --NJN 2002-Aug-30 */
    if (curr_si == si) {
       for (i = NN-1; i >= 0; i--) {
-         if (EMPTY != prevN[i] &&
-             (0 == VG_(strcmp)(str, &si->strtab[prevN[i]]))) {
+         if (EMPTY != prevN[i] 
+             && NULL != si->strtab
+             && 0 == VG_(strcmp)(str, &si->strtab[prevN[i]])) {
             return prevN[i];
          }
       }
    } else {
       /* New segment */
       curr_si = si;
-      for (i = 0; i < 5; i++) prevN[i] = EMPTY;
+      for (i = 0; i < NN; i++) prevN[i] = EMPTY;
    }
    /* Shuffle prevous ones along, put new one in. */
    for (i = NN-1; i > 0; i--) prevN[i] = prevN[i-1];

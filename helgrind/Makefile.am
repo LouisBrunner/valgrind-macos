@@ -95,7 +95,8 @@ valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
 
 libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS)
 	$(CC) -Wall -Werror -g -O -shared -fpic -o libpthread.so \
-		$(libpthread_so_OBJECTS)
+		$(libpthread_so_OBJECTS) \
+		-Wl,-version-script vg_libpthread.vs
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

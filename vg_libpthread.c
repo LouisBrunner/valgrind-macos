@@ -269,6 +269,25 @@ int pthread_attr_destroy(pthread_attr_t *attr)
    return 0;
 }
 
+/* These are no-ops, as with LinuxThreads. */
+int pthread_attr_setscope ( pthread_attr_t *attr, int scope )
+{
+   ensure_valgrind("pthread_attr_setscope");
+   if (scope == PTHREAD_SCOPE_SYSTEM)
+      return 0;
+   if (scope == PTHREAD_SCOPE_PROCESS)
+      return ENOTSUP;
+   return EINVAL;
+}
+
+int pthread_attr_getscope ( const pthread_attr_t *attr, int *scope )
+{
+   ensure_valgrind("pthread_attr_setscope");
+   if (scope)
+      *scope = PTHREAD_SCOPE_SYSTEM;
+   return 0;
+}
+
 /* --------------------------------------------------- 
    Helper functions for running a thread 
    and for clearing up afterwards.

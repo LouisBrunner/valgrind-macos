@@ -24,8 +24,9 @@ static UInt  calculate_FXAM ( UInt tag, ULong dbl );
 static ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
 /* --- DIRTY HELPERS --- */
-static ULong loadF80le ( UInt );
-static void  storeF80le ( UInt, ULong );
+static ULong loadF80le  ( VexGuestX86State*, UInt );
+static void  storeF80le ( VexGuestX86State*, UInt, ULong );
+static void  dirtyhelper_CPUID ( VexGuestX86State* st );
 
 
 /* This file contains helper functions for x86 guest code.
@@ -617,6 +618,8 @@ Addr64 x86guest_findhelper ( Char* function_name )
       return (Addr64)(Addr32)(& loadF80le);
    if (vex_streq(function_name, "calculate_RCR"))
       return (Addr64)(Addr32)(& calculate_RCR);
+   if (vex_streq(function_name, "dirtyhelper_CPUID"))
+      return (Addr64)(Addr32)(& dirtyhelper_CPUID);
    vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
    vpanic("x86guest_findhelper");
 }
@@ -1195,7 +1198,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */
-static ULong loadF80le ( UInt addrU )
+static ULong loadF80le ( VexGuestX86State* st, UInt addrU )
 {
    ULong f64;
    convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
@@ -1204,7 +1207,7 @@ static ULong loadF80le ( UInt addrU )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest memory) */
-static void storeF80le ( UInt addrU, ULong f64 )
+static void storeF80le ( VexGuestX86State* st, UInt addrU, ULong f64 )
 {
    convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }
@@ -1417,7 +1420,25 @@ static ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
    return (((ULong)eflags_in) << 32) | ((ULong)arg);
 }
 
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (modifies guest state) */
+/* Claim to be a P54C P133 (pre-MMX Pentium) */
+static void dirtyhelper_CPUID ( VexGuestX86State* st )
+{
+   if (st->guest_EAX == 0) {
+      st->guest_EAX = 0x1;
+      st->guest_EBX = 0x756e6547;
+      st->guest_ECX = 0x6c65746e;
+      st->guest_EDX = 0x49656e69;
+   } else {
+      st->guest_EAX = 0x52b;
+      st->guest_EBX = 0x0;
+      st->guest_ECX = 0x0;
+      st->guest_EDX = 0x1bf;
+   }
+}
+
 /*---------------------------------------------------------------*/
 /*--- end                                guest-x86/ghelpers.c ---*/
 /*---------------------------------------------------------------*/
-

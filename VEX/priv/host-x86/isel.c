@@ -2134,6 +2134,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       for (i = n_args-1; i >= 0; i--)
          n_arg_ws += pushArg(env, d->args[i]);
 
+      /* and finally the leftmost argument, the guest state pointer,
+         which is in %ebp. */
+      addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
+      n_arg_ws++;
+
       /* call the helper, and get the args off the stack afterwards. */
       callHelperAndClearArgs( env, d->name, n_arg_ws );
 

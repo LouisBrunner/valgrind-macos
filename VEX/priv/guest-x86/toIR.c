@@ -211,6 +211,9 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 #define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
 #define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
 #define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)
+#define OFFB_EBX     offsetof(VexGuestX86State,guest_EBX)
+#define OFFB_ECX     offsetof(VexGuestX86State,guest_ECX)
+#define OFFB_EDX     offsetof(VexGuestX86State,guest_EDX)
 #define OFFB_CC_OP   offsetof(VexGuestX86State,guest_CC_OP)
 #define OFFB_CC_SRC  offsetof(VexGuestX86State,guest_CC_SRC)
 #define OFFB_CC_DST  offsetof(VexGuestX86State,guest_CC_DST)
@@ -3981,8 +3984,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 5: { /* FLD extended-real */
-               /* Uses dirty helper: ULong loadF80le ( UInt ) */
-               /* addr holds the address.  First, do a dirty call to
+               /* Uses dirty helper: 
+                     ULong loadF80le ( VexGuestX86State*, UInt )
+                  addr holds the address.  First, do a dirty call to
                   get hold of the data. */
                /* give details of args, and where to call */
                IRDirty* d;
@@ -8858,13 +8862,41 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //-- 
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
 
-      case 0xA2: /* CPUID */
-         vex_printf("vex x86->IR: hacked CPUID\n");
-         putIReg(4, R_EAX, mkU32(0));
-         putIReg(4, R_EBX, mkU32(0x756e6547));
-         putIReg(4, R_ECX, mkU32(0x49656e69));
-         putIReg(4, R_EDX, mkU32(0x6c65746e));
+      case 0xA2: { /* CPUID */
+         /* Uses dirty helper: 
+               void dirtyhelper_CPUID ( VexGuestX86State* )
+            declared to mod eax, wr ebx, ecx, edx
+         */
+         /* give details of args, and where to call */
+         IRDirty* d;
+         d          = emptyIRDirty();
+         d->name    = "dirtyhelper_CPUID";
+         d->args    = LibVEX_Alloc(1 * sizeof(IRTemp));
+         d->args[0] = NULL;
+         d->tmp     = INVALID_IRTEMP;
+         /* declare that we're not accessing memory */
+         d->mFx   = Ifx_None;
+         d->mAddr = NULL;
+         d->mSize = 0;
+         /* declare guest state effects */
+         d->nFxState = 4;
+         d->fxState[0].fx     = Ifx_Modify;
+         d->fxState[0].offset = OFFB_EAX;
+         d->fxState[0].size   = 4;
+         d->fxState[1].fx     = Ifx_Write;
+         d->fxState[1].offset = OFFB_EBX;
+         d->fxState[1].size   = 4;
+         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].offset = OFFB_ECX;
+         d->fxState[2].size   = 4;
+         d->fxState[3].fx     = Ifx_Write;
+         d->fxState[3].offset = OFFB_EDX;
+         d->fxState[3].size   = 4;
+         /* execute the dirty call, side-effecting guest state */
+         stmt( IRStmt_Dirty(d) );
          break;
+      }
+
 //-- 	 if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
 //-- 	    goto decode_failure;
 //-- 

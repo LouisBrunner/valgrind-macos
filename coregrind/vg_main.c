@@ -1456,7 +1456,7 @@ Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_db_attach)      = False;
 Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
 Bool   VG_(clo_gen_suppressions) = False;
-Int    VG_(sanity_level)       = 1;
+Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
@@ -1707,63 +1707,46 @@ static void process_cmd_line_options
 
       if (     VG_CLO_STREQ(arg, "--"))
 	 continue;
+
       else if (VG_CLO_STREQ(arg, "-v") ||
                VG_CLO_STREQ(arg, "--verbose"))
          VG_(clo_verbosity)++;
+
       else if (VG_CLO_STREQ(arg, "-q") ||
                VG_CLO_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
 
-      else if (VG_CLO_STREQ(arg, "--error-limit=yes"))
-         VG_(clo_error_limit) = True;
-      else if (VG_CLO_STREQ(arg, "--error-limit=no"))
-         VG_(clo_error_limit) = False;
+      else VG_BOOL_CLO("--branchpred",       VG_(clo_branchpred))
+      else VG_BOOL_CLO("--chain-bb",         VG_(clo_chain_bb))
+      else VG_BOOL_CLO("--db-attach",        VG_(clo_db_attach))
+      else VG_BOOL_CLO("--demangle",         VG_(clo_demangle))
+      else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
+      else VG_BOOL_CLO("--gen-suppressions", VG_(clo_gen_suppressions))
+      else VG_BOOL_CLO("--lowlat-signals",   VG_(clo_lowlat_signals))
+      else VG_BOOL_CLO("--lowlat-syscalls",  VG_(clo_lowlat_syscalls))
+      else VG_BOOL_CLO("--optimise",         VG_(clo_optimise))
+      else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
+      else VG_BOOL_CLO("--profile",          VG_(clo_profile))
+      else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
+      else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))
+      else VG_BOOL_CLO("--single-step",      VG_(clo_single_step))
+      else VG_BOOL_CLO("--track-fds",        VG_(clo_track_fds))
+      else VG_BOOL_CLO("--trace-children",   VG_(clo_trace_children))
+      else VG_BOOL_CLO("--trace-sched",      VG_(clo_trace_sched))
+      else VG_BOOL_CLO("--trace-signals",    VG_(clo_trace_signals))
+      else VG_BOOL_CLO("--trace-symtab",     VG_(clo_trace_symtab))
+      else VG_BOOL_CLO("--trace-syscalls",   VG_(clo_trace_syscalls))
+      else VG_BOOL_CLO("--wait-for-gdb",     VG_(clo_wait_for_gdb))
 
-      else if (VG_CLO_STREQ(arg, "--db-attach=yes"))
-         VG_(clo_db_attach) = True;
-      else if (VG_CLO_STREQ(arg, "--db-attach=no"))
-         VG_(clo_db_attach) = False;
+      else VG_STR_CLO ("--db-command",        VG_(clo_db_command))
+      else VG_STR_CLO ("--weird-hacks",       VG_(clo_weird_hacks))
 
-      else if (VG_CLO_STREQN(13,arg, "--db-command="))
-         VG_(clo_db_command) = &arg[13];
-
-      else if (VG_CLO_STREQ(arg, "--gen-suppressions=yes"))
-         VG_(clo_gen_suppressions) = True;
-      else if (VG_CLO_STREQ(arg, "--gen-suppressions=no"))
-         VG_(clo_gen_suppressions) = False;
-
-      else if (VG_CLO_STREQ(arg, "--show-below-main=yes"))
-         VG_(clo_show_below_main) = True;
-      else if (VG_CLO_STREQ(arg, "--show-below-main=no"))
-         VG_(clo_show_below_main) = False;
-
-      else if (VG_CLO_STREQ(arg, "--pointercheck=yes"))
-         VG_(clo_pointercheck) = True;
-      else if (VG_CLO_STREQ(arg, "--pointercheck=no"))
-         VG_(clo_pointercheck) = False;
-
-      else if (VG_CLO_STREQ(arg, "--demangle=yes"))
-         VG_(clo_demangle) = True;
-      else if (VG_CLO_STREQ(arg, "--demangle=no"))
-         VG_(clo_demangle) = False;
-
-      else if (VG_CLO_STREQ(arg, "--trace-children=yes"))
-         VG_(clo_trace_children) = True;
-      else if (VG_CLO_STREQ(arg, "--trace-children=no"))
-         VG_(clo_trace_children) = False;
-
-      else if (VG_CLO_STREQ(arg, "--run-libc-freeres=yes"))
-         VG_(clo_run_libc_freeres) = True;
-      else if (VG_CLO_STREQ(arg, "--run-libc-freeres=no"))
-         VG_(clo_run_libc_freeres) = False;
-
-      else if (VG_CLO_STREQ(arg, "--track-fds=yes"))
-         VG_(clo_track_fds) = True;
-      else if (VG_CLO_STREQ(arg, "--track-fds=no"))
-         VG_(clo_track_fds) = False;
-
-      else if (VG_CLO_STREQN(15, arg, "--sanity-level="))
-         VG_(sanity_level) = (Int)VG_(atoll)(&arg[15]);
+      else VG_NUM_CLO ("--dump-error",        VG_(clo_dump_error))
+      else VG_NUM_CLO ("--input-fd",          VG_(clo_input_fd))
+      else VG_NUM_CLO ("--sanity-level",      VG_(clo_sanity_level))
+      else VG_NUM_CLO ("--signal­polltime",   VG_(clo_signal_polltime))
+      else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
+                                                VG_DEEPEST_BACKTRACE)
 
       else if (VG_CLO_STREQN(13, arg, "--logfile-fd=")) {
          VG_(clo_log_to)       = VgLogTo_Fd;
@@ -1781,9 +1764,6 @@ static void process_cmd_line_options
          VG_(clo_logfile_name) = &arg[12];
       }
 
-      else if (VG_CLO_STREQN(11, arg, "--input-fd="))
-         VG_(clo_input_fd)     = (Int)VG_(atoll)(&arg[11]);
-
       else if (VG_CLO_STREQN(15, arg, "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
             VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
@@ -1794,30 +1774,6 @@ static void process_cmd_line_options
          VG_(clo_suppressions)[VG_(clo_n_suppressions)] = &arg[15];
          VG_(clo_n_suppressions)++;
       }
-      else if (VG_CLO_STREQ(arg, "--profile=yes"))
-         VG_(clo_profile) = True;
-      else if (VG_CLO_STREQ(arg, "--profile=no"))
-         VG_(clo_profile) = False;
-
-      else if (VG_CLO_STREQ(arg, "--chain-bb=yes"))
-	 VG_(clo_chain_bb) = True;
-      else if (VG_CLO_STREQ(arg, "--chain-bb=no"))
-	 VG_(clo_chain_bb) = False;
-
-      else if (VG_CLO_STREQ(arg, "--branchpred=yes"))
-	 VG_(clo_branchpred) = True;
-      else if (VG_CLO_STREQ(arg, "--branchpred=no"))
-	 VG_(clo_branchpred) = False;
-
-      else if (VG_CLO_STREQ(arg, "--single-step=yes"))
-         VG_(clo_single_step) = True;
-      else if (VG_CLO_STREQ(arg, "--single-step=no"))
-         VG_(clo_single_step) = False;
-
-      else if (VG_CLO_STREQ(arg, "--optimise=yes"))
-         VG_(clo_optimise) = True;
-      else if (VG_CLO_STREQ(arg, "--optimise=no"))
-         VG_(clo_optimise) = False;
 
       /* "vwxyz" --> 000zyxwv (binary) */
       else if (VG_CLO_STREQN(16, arg, "--trace-codegen=")) {
@@ -1840,26 +1796,6 @@ static void process_cmd_line_options
          }
       }
 
-      else if (VG_CLO_STREQ(arg, "--trace-syscalls=yes"))
-         VG_(clo_trace_syscalls) = True;
-      else if (VG_CLO_STREQ(arg, "--trace-syscalls=no"))
-         VG_(clo_trace_syscalls) = False;
-
-      else if (VG_CLO_STREQ(arg, "--trace-signals=yes"))
-         VG_(clo_trace_signals) = True;
-      else if (VG_CLO_STREQ(arg, "--trace-signals=no"))
-         VG_(clo_trace_signals) = False;
-
-      else if (VG_CLO_STREQ(arg, "--trace-symtab=yes"))
-         VG_(clo_trace_symtab) = True;
-      else if (VG_CLO_STREQ(arg, "--trace-symtab=no"))
-         VG_(clo_trace_symtab) = False;
-
-      else if (VG_CLO_STREQ(arg, "--trace-sched=yes"))
-         VG_(clo_trace_sched) = True;
-      else if (VG_CLO_STREQ(arg, "--trace-sched=no"))
-         VG_(clo_trace_sched) = False;
-
       else if (VG_CLO_STREQ(arg, "--trace-pthread=none"))
          VG_(clo_trace_pthread_level) = 0;
       else if (VG_CLO_STREQ(arg, "--trace-pthread=some"))
@@ -1867,44 +1803,13 @@ static void process_cmd_line_options
       else if (VG_CLO_STREQ(arg, "--trace-pthread=all"))
          VG_(clo_trace_pthread_level) = 2;
 
-      else if (VG_CLO_STREQN(14, arg, "--weird-hacks="))
-         VG_(clo_weird_hacks) = &arg[14];
-
-      else if (VG_CLO_STREQN(17, arg, "--signal-polltime="))
-	 VG_(clo_signal_polltime) = VG_(atoll)(&arg[17]);
-
-      else if (VG_CLO_STREQ(arg, "--lowlat-signals=yes"))
-	 VG_(clo_lowlat_signals) = True;
-      else if (VG_CLO_STREQ(arg, "--lowlat-signals=no"))
-	 VG_(clo_lowlat_signals) = False;
-
-      else if (VG_CLO_STREQ(arg, "--lowlat-syscalls=yes"))
-	 VG_(clo_lowlat_syscalls) = True;
-      else if (VG_CLO_STREQ(arg, "--lowlat-syscalls=no"))
-	 VG_(clo_lowlat_syscalls) = False;
-
-      else if (VG_CLO_STREQN(13, arg, "--dump-error="))
-         VG_(clo_dump_error) = (Int)VG_(atoll)(&arg[13]);
-
-      else if (VG_CLO_STREQ(arg, "--wait-for-gdb=yes"))
-	 VG_(clo_wait_for_gdb) = True;
-      else if (VG_CLO_STREQ(arg, "--wait-for-gdb=no"))
-	 VG_(clo_wait_for_gdb) = False;
-
-      else if (VG_CLO_STREQN(14, arg, "--num-callers=")) {
-         /* Make sure it's sane. */
-	 VG_(clo_backtrace_size) = (Int)VG_(atoll)(&arg[14]);
-         if (VG_(clo_backtrace_size) < 1)
-            VG_(clo_backtrace_size) = 1;
-         if (VG_(clo_backtrace_size) >= VG_DEEPEST_BACKTRACE)
-            VG_(clo_backtrace_size) = VG_DEEPEST_BACKTRACE;
-      }
-
       else if ( ! VG_(needs).command_line_options
              || ! SK_(process_cmd_line_option)(arg) ) {
          VG_(bad_option)(arg);
       }
    }
+
+   // Check various option values
 
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
@@ -2649,7 +2554,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 {
    VGP_PUSHCC(VgpCoreCheapSanity);
 
-   if (VG_(sanity_level) < 1) return;
+   if (VG_(clo_sanity_level) < 1) return;
 
    /* --- First do all the tests that we can do quickly. ---*/
 
@@ -2669,8 +2574,8 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
    /* Once every 25 times, check some more expensive stuff. */
    if ( force_expensive
-     || VG_(sanity_level) > 1
-     || (VG_(sanity_level) == 1 && (VG_(sanity_fast_count) % 25) == 0)) {
+     || VG_(clo_sanity_level) > 1
+     || (VG_(clo_sanity_level) == 1 && (VG_(sanity_fast_count) % 25) == 0)) {
 
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       VG_(sanity_slow_count)++;
@@ -2695,7 +2600,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
       VGP_POPCC(VgpCoreExpensiveSanity);
    }
 
-   if (VG_(sanity_level) > 1) {
+   if (VG_(clo_sanity_level) > 1) {
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       /* Check sanity of the low-level memory manager.  Note that bugs
          in the client's code can cause this to fail, so we don't do

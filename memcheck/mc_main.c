@@ -1601,16 +1601,8 @@ Bool  MC_(clo_cleanup)                = True;
 
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-   if (VG_CLO_STREQ(arg, "--avoid-strlen-errors=yes"))
-      MC_(clo_avoid_strlen_errors) = True;
-   else if (VG_CLO_STREQ(arg, "--avoid-strlen-errors=no"))
-      MC_(clo_avoid_strlen_errors) = False;
-
-   else if (VG_CLO_STREQ(arg, "--cleanup=yes"))
-      MC_(clo_cleanup) = True;
-   else if (VG_CLO_STREQ(arg, "--cleanup=no"))
-      MC_(clo_cleanup) = False;
-
+        VG_BOOL_CLO("--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
+   else VG_BOOL_CLO("--cleanup",             MC_(clo_cleanup))
    else
       return MAC_(process_common_cmd_line_option)(arg);
 

@@ -56,37 +56,19 @@ Bool  MAC_(clo_workaround_gcc296_bugs) = False;
 
 Bool MAC_(process_common_cmd_line_option)(Char* arg)
 {
-   if      (VG_CLO_STREQ(arg, "--partial-loads-ok=yes"))
-      MAC_(clo_partial_loads_ok) = True;
-   else if (VG_CLO_STREQ(arg, "--partial-loads-ok=no"))
-      MAC_(clo_partial_loads_ok) = False;
-
-   else if (VG_CLO_STREQN(15, arg, "--freelist-vol=")) {
-      MAC_(clo_freelist_vol) = (Int)VG_(atoll)(&arg[15]);
-      if (MAC_(clo_freelist_vol) < 0) MAC_(clo_freelist_vol) = 0;
-   }
-
-   else if (VG_CLO_STREQ(arg, "--leak-check=yes"))
-      MAC_(clo_leak_check) = True;
-   else if (VG_CLO_STREQ(arg, "--leak-check=no"))
-      MAC_(clo_leak_check) = False;
-
+        VG_BOOL_CLO("--leak-check",            MAC_(clo_leak_check))
+   else VG_BOOL_CLO("--partial-loads-ok",      MAC_(clo_partial_loads_ok))
+   else VG_BOOL_CLO("--show-reachable",        MAC_(clo_show_reachable))
+   else VG_BOOL_CLO("--workaround-gcc296-bugs",MAC_(clo_workaround_gcc296_bugs))
+   
+   else VG_BNUM_CLO("--freelist-vol",  MAC_(clo_freelist_vol), 0, 1000000000)
+   
    else if (VG_CLO_STREQ(arg, "--leak-resolution=low"))
       MAC_(clo_leak_resolution) = Vg_LowRes;
    else if (VG_CLO_STREQ(arg, "--leak-resolution=med"))
       MAC_(clo_leak_resolution) = Vg_MedRes;
    else if (VG_CLO_STREQ(arg, "--leak-resolution=high"))
       MAC_(clo_leak_resolution) = Vg_HighRes;
-   
-   else if (VG_CLO_STREQ(arg, "--show-reachable=yes"))
-      MAC_(clo_show_reachable) = True;
-   else if (VG_CLO_STREQ(arg, "--show-reachable=no"))
-      MAC_(clo_show_reachable) = False;
-
-   else if (VG_CLO_STREQ(arg, "--workaround-gcc296-bugs=yes"))
-      MAC_(clo_workaround_gcc296_bugs) = True;
-   else if (VG_CLO_STREQ(arg, "--workaround-gcc296-bugs=no"))
-      MAC_(clo_workaround_gcc296_bugs) = False;
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);

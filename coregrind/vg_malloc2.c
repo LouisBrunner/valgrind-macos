@@ -66,16 +66,8 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
       }
    }
 
-   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=yes"))
-      VG_(clo_sloppy_malloc) = True;
-   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=no"))
-      VG_(clo_sloppy_malloc) = False;
-
-   else if (VG_CLO_STREQ(arg, "--trace-malloc=yes"))
-      VG_(clo_trace_malloc) = True;
-   else if (VG_CLO_STREQ(arg, "--trace-malloc=no"))
-      VG_(clo_trace_malloc) = False;
-
+   else VG_BOOL_CLO("--sloppy-malloc=yes", VG_(clo_sloppy_malloc))
+   else VG_BOOL_CLO("--trace-malloc=yes",  VG_(clo_trace_malloc))
    else 
       return False;
 

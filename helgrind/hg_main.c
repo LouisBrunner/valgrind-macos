@@ -3342,61 +3342,21 @@ void SK_(pre_clo_init)(void)
    hg_malloc_list = VG_(HT_construct)();
 }
 
-static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
-{
-   Int len = VG_(strlen)(argstr);
-
-   if (VG_(strncmp)(arg, argstr, len) == 0) {
-      if (VG_(strcmp)(arg+len, "yes") == 0) {
-	 *ret = True;
-	 return True;
-      } else if (VG_(strcmp)(arg+len, "no") == 0) {
-	 *ret = False;
-	 return True;
-      } else
-	 VG_(bad_option)(arg);
-   }
-   return False;
-}
-
-static Bool match_str(Char *arg, Char *argstr, Char **ret)
-{
-   Int len = VG_(strlen)(argstr);
-
-   if (VG_(strncmp)(arg, argstr, len) == 0) {
-      *ret = VG_(strdup)(arg+len);
-      return True;
-   }
-
-   return False;
-}
-
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-   Char *str;
+   if      (VG_CLO_STREQ(arg, "--show-last-access=no"))
+      clo_execontext = EC_None;
+   else if (VG_CLO_STREQ(arg, "--show-last-access=some"))
+      clo_execontext = EC_Some;
+   else if (VG_CLO_STREQ(arg, "--show-last-access=all"))
+      clo_execontext = EC_All;
 
-   if (match_str(arg, "--show-last-access=", &str)) {
-      Bool ok = True;
-      if (VG_(strcmp)(str, "no") == 0)
-	 clo_execontext = EC_None;
-      else if (VG_(strcmp)(str, "some") == 0)
-	 clo_execontext = EC_Some;
-      else if (VG_(strcmp)(str, "all") == 0)
-	 clo_execontext = EC_All;
-      else {
-	 ok = False;
-	 VG_(bad_option)(arg);
-      }
+   else VG_BOOL_CLO("--private-stacks", clo_priv_stacks)
 
-      VG_(free)(str);
-      if (ok)
-	 return True;
-   }
+   else 
+      return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
-   if (match_Bool(arg, "--private-stacks=", &clo_priv_stacks))
-      return True;
-
-   return VG_(replacement_malloc_process_cmd_line_option)(arg);
+   return True;
 }
 
 void SK_(print_usage)(void)

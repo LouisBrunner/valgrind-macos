@@ -290,30 +290,11 @@ static XFormat clo_format   = XText;
 
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-   if      (VG_CLO_STREQ(arg, "--heap=yes"))
-      clo_heap = True;
-   else if (VG_CLO_STREQ(arg, "--heap=no"))
-      clo_heap = False;
+        VG_BOOL_CLO("--heap",       clo_heap)
+   else VG_BOOL_CLO("--stacks",     clo_stacks)
 
-   else if (VG_CLO_STREQN(13, arg, "--heap-admin=")) {
-      clo_heap_admin = (Int)VG_(atoll)(&arg[13]);
-      if (clo_heap_admin > 100) {
-         VG_(message)(Vg_UserMsg,
-            "Admin size for heap blocks too large");
-         VG_(bad_option)(arg);
-      }
-   }
-
-   else if (VG_CLO_STREQ(arg, "--stacks=yes"))
-      clo_stacks = True;
-   else if (VG_CLO_STREQ(arg, "--stacks=no"))
-      clo_stacks = False;
-
-   else if (VG_CLO_STREQN(8, arg, "--depth=")) {
-      clo_depth = (Int)VG_(atoll)(&arg[8]);
-      if (clo_depth < 1)          clo_depth = 1;
-      if (clo_depth >= MAX_DEPTH) clo_depth = MAX_DEPTH;
-   }
+   else VG_NUM_CLO ("--heap-admin",  clo_heap_admin)
+   else VG_BNUM_CLO("--depth",       clo_depth, 1, MAX_DEPTH)
 
    else if (VG_CLO_STREQN(11, arg, "--alloc-fn=")) {
       alloc_fns[n_alloc_fns] = & arg[11];
@@ -331,7 +312,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
-   
+
    return True;
 }
 

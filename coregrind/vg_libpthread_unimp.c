@@ -223,16 +223,16 @@ weak_alias(_IO_ftrylockfile, ftrylockfile)
 __attribute__((weak)) void tcdrain ( void ) { vgPlain_unimp("tcdrain"); }
 //--//__attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }
 
-__attribute__((weak)) void pthread_attr_getguardsize ( void )
-                      { vgPlain_unimp("pthread_attr_getguardsize"); }
+//__attribute__((weak)) void pthread_attr_getguardsize ( void )
+//                      { vgPlain_unimp("pthread_attr_getguardsize"); }
 __attribute__((weak)) void pthread_attr_getstack ( void )
                       { vgPlain_unimp("pthread_attr_getstack"); }
 __attribute__((weak)) void pthread_attr_getstackaddr ( void )
                       { vgPlain_unimp("pthread_attr_getstackaddr"); }
 __attribute__((weak)) void pthread_attr_getstacksize ( void )
                       { vgPlain_unimp("pthread_attr_getstacksize"); }
-__attribute__((weak)) void pthread_attr_setguardsize ( void )
-                      { vgPlain_unimp("pthread_attr_setguardsize"); }
+//__attribute__((weak)) void pthread_attr_setguardsize ( void )
+//                      { vgPlain_unimp("pthread_attr_setguardsize"); }
 __attribute__((weak)) void pthread_attr_setstack ( void )
                       { vgPlain_unimp("pthread_attr_setstack"); }
 __attribute__((weak)) void pthread_attr_setstackaddr ( void )

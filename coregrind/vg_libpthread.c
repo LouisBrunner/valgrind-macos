@@ -302,7 +302,9 @@ int pthread_attr_init(pthread_attr_t *attr)
 {
    /* Just initialise the fields which we might look at. */
    attr->__detachstate = PTHREAD_CREATE_JOINABLE;
-   return 0;
+   /* Linuxthreads sets this field to the value __getpagesize(), so I
+      guess the following is OK. */
+   attr->__guardsize = VKI_BYTES_PER_PAGE;   return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
@@ -433,6 +435,7 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 
 
 /* Bogus ... */
+__attribute__((weak))
 int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
                                 void ** stackaddr )
 {
@@ -444,6 +447,7 @@ int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
 }
 
 /* Not bogus (!) */
+__attribute__((weak))
 int pthread_attr_getstacksize ( const pthread_attr_t * _attr, 
                                 size_t * __stacksize )
 {
@@ -469,6 +473,32 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
   *policy = attr->__schedpolicy;
   return 0;
 }
+
+
+/* This is completely bogus.  We reject all attempts to change it from
+   VKI_BYTES_PER_PAGE.  I don't have a clue what it's for so it seems
+   safest to be paranoid. */
+__attribute__((weak)) 
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
+{
+   static int moans = N_MOANS;
+
+   if (guardsize == VKI_BYTES_PER_PAGE)
+      return 0;
+
+   if (moans-- > 0) 
+       ignored("pthread_attr_setguardsize: ignoring guardsize != 4096");
+
+   return 0;
+}
+
+/* A straight copy of the LinuxThreads code. */
+__attribute__((weak)) 
+int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
+{
+   *guardsize = attr->__guardsize;
+   return 0;
+}  
 
 
 /* --------------------------------------------------- 

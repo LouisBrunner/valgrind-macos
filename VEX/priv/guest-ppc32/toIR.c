@@ -948,7 +948,7 @@ static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
 
 
 /*------------------------------------------------------------*/
-/*--- Instruction Translation                             --- */
+/*--- Integer Instruction Translation                     --- */
 /*------------------------------------------------------------*/
 
 /*
@@ -1292,6 +1292,9 @@ static Bool dis_int_arith ( UInt theInstr )
 
 
 
+/*
+  Integer Compare Instructions
+*/
 static Bool dis_int_cmp ( UInt theInstr )
 {
    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
@@ -1394,7 +1397,9 @@ static Bool dis_int_cmp ( UInt theInstr )
 }
 
 
-
+/*
+  Integer Logical Instructions
+*/
 static Bool dis_int_logic ( UInt theInstr )
 {
    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
@@ -1578,6 +1583,9 @@ static Bool dis_int_logic ( UInt theInstr )
 
 
 
+/*
+  Integer Rotate Instructions
+*/
 static Bool dis_int_rot ( UInt theInstr )
 {
    /* M-Form */
@@ -1642,6 +1650,9 @@ static Bool dis_int_rot ( UInt theInstr )
 
 
 
+/*
+  Integer Load Instructions
+*/
 static Bool dis_int_load ( UInt theInstr )
 {
    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
@@ -1827,6 +1838,9 @@ static Bool dis_int_load ( UInt theInstr )
 
 
 
+/*
+  Integer Store Instructions
+*/
 static Bool dis_int_store ( UInt theInstr )
 {
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
@@ -1980,6 +1994,9 @@ static Bool dis_int_store ( UInt theInstr )
 
 
 
+/*
+  Integer Load/Store Multiple Instructions
+*/
 static Bool dis_int_ldst_mult ( UInt theInstr )
 {
    /* D-Form */
@@ -2037,6 +2054,9 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 
 
 
+/*
+  Integer Load/Store String Instructions
+*/
 static Bool dis_int_ldst_str ( UInt theInstr )
 {
    /* X-Form */
@@ -2244,6 +2264,9 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
 
 
 
+/*
+  Integer Branch Instructions
+*/
 static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 {
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);    /* theInstr[26:31] */
@@ -2407,6 +2430,9 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 
 
 
+/*
+  Condition Register Logical Instructions
+*/
 static Bool dis_cond_logic ( UInt theInstr )
 {
    /* XL-Form */
@@ -2491,6 +2517,9 @@ static Bool dis_cond_logic ( UInt theInstr )
 
 
 
+/*
+  System Linkage Instructions
+*/
 static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
 {
    if (theInstr != 0x44000002) {
@@ -2511,6 +2540,10 @@ static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
    return True;
 }
 
+
+/*
+  Memory Synchronization Instructions
+*/
 static Bool dis_memsync ( UInt theInstr )
 {
    /* X-Form, XL-Form */
@@ -2628,6 +2661,9 @@ static Bool dis_memsync ( UInt theInstr )
 
 
 
+/*
+  Integer Shift Instructions
+*/
 static Bool dis_int_shift ( UInt theInstr )
 {
    /* X-Form */
@@ -2749,6 +2785,9 @@ static Bool dis_int_shift ( UInt theInstr )
 
 
 
+/*
+  Integer Load/Store Reverse Instructions
+*/
 static Bool dis_int_ldst_rev ( UInt theInstr )
 {
    /* X-Form */
@@ -2850,6 +2889,9 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 
 
 
+/*
+  Processor Control Instructions
+*/
 static Bool dis_proc_ctl ( UInt theInstr )
 {
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
@@ -2992,6 +3034,9 @@ static Bool dis_proc_ctl ( UInt theInstr )
 }
 
 
+/*
+  Cache Management Instructions
+*/
 static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
 {
    /* X-Form */
@@ -3078,6 +3123,691 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    return True;
 }
 
+
+
+
+
+
+
+/*------------------------------------------------------------*/
+/*--- Floating Point Instruction Translation               ---*/
+/*------------------------------------------------------------*/
+
+/*
+  Floating Point Load Instructions
+*/
+static Bool dis_fp_load ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   /* D-Form */
+   UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+
+   switch(opc1) {
+   case 0x30: // lfsx (Load Float Single Indexed, PPC32 p444)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfsx)\n");
+         return False;
+      }
+      DIP("lfsx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x31: // lfsux (Load Float Single with Update Indexed, PPC32 p443)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfsux)\n");
+         return False;
+      }
+      DIP("lfsux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x32: // lfdx (Load Float Double Indexed, PPC32 p439)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfdx)\n");
+         return False;
+      }
+      DIP("lfdx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x33: // lfdux (Load Float Double with Update Indexed, PPC32 p439)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfdux)\n");
+         return False;
+      }
+      DIP("lfdux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1F:
+      switch(opc2) {
+      case 0x217: // lfs (Load Float Single, PPC32 p441)
+         DIP("lfs fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x237: // lfsu (Load Float Single with Update, PPC32 p442)
+         DIP("lfsu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x257: // lfd (Load Float Double, PPC32 p437)
+         DIP("lfd fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x277: // lfdu (Load Float Double with Update, PPC32 p438)
+         DIP("lfdu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_load(PPC32)(opc2)\n");
+         return False;
+      }
+      break;
+
+   default:
+      vex_printf("dis_fp_load(PPC32)(opc1)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Store Instructions
+*/
+static Bool dis_fp_store ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frS_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   /* D-Form */
+   UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+
+   switch(opc1) {
+   case 0x34: // stfsx (Store Float Single Indexed, PPC32 p521)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,stfsx)\n");
+         return False;
+      }
+      DIP("stfsx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x35: // stfsux (Store Float Single with Update Indexed, PPC32 p520)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,stfsux)\n");
+         return False;
+      }
+      DIP("stfsux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x36: // stfdx (Store Float Double Indexed, PPC32 p516)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,stfdx)\n");
+         return False;
+      }
+      DIP("stfdx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x37: // stfdux (Store Float Double with Update Indexed, PPC32 p515)
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,stfdux)\n");
+         return False;
+      }
+      DIP("stfdux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1F:
+      switch(opc2) {
+      case 0x297: // stfs (Store Float Single, PPC32 p518)
+         DIP("stfs fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x2B7: // stfsu (Store Float Single with Update, PPC32 p519)
+         DIP("stfsu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x2D7: // stfd (Store Float Double, PPC32 p513)
+         DIP("stfd fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x2F7: // stfdu (Store Float Double with Update, PPC32 p514)
+         DIP("stfdu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
+         if (b0 != 0) {
+            vex_printf("dis_fp_load(PPC32)(instr,stfiwx)\n");
+            return False;
+         }
+         DIP("stfiwx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_store(PPC32)(opc2)\n");
+         return False;
+      }
+      break;
+
+   default:
+      vex_printf("dis_fp_store(PPC32)(opc1)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Arith Instructions
+*/
+static Bool dis_fp_arith ( UInt theInstr )
+{
+   /* A-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar frA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar frC_addr = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
+   UChar opc2     = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
+   UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   switch (opc1) {
+   case 0x3B:
+      switch (opc2) {
+      case 0x12: // fdivs (Floating Divide Single, PPC32 p407)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fdivs)\n");
+            return False;
+         }
+         DIP("fdivs%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x14: // fsubs (Floating Subtract Single, PPC32 p430)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fsubs)\n");
+            return False;
+         }
+         DIP("fsubs%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x15: // fadds (Floating Add Single, PPC32 p401)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fadds)\n");
+            return False;
+         }
+         DIP("fadds%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fsqrts)\n");
+            return False;
+         }
+         DIP("fsqrts%s fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fres)\n");
+            return False;
+         }
+         DIP("fres%s fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x19: // fmuls (Floating Multiply Single, PPC32 p414)
+         if (frB_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fmuls)\n");
+            return False;
+         }
+         DIP("fmuls%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_arith(PPC32)(3B: opc2)\n");
+         return False;
+      }
+   case 0x3F:
+      switch (opc2) {           
+      case 0x12: // fdiv (Floating Divide (Double-Precision), PPC32 p406)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fdiv)\n");
+            return False;
+         }
+         DIP("fdiv%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x14: // fsub (Floating Subtract (Double-Precision), PPC32 p429)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fsub)\n");
+            return False;
+         }
+         DIP("fsub%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x15: // fadd (Floating Add (Double-Precision), PPC32 p400)
+         if (frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fadd)\n");
+            return False;
+         }
+         DIP("fadd%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fsqrt)\n");
+            return False;
+         }
+         DIP("fsqrt%s fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x17: // fsel (Floating Select, PPC32 p426)
+         DIP("fsel%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x19: // fmul (Floating Multiply (Double Precision), PPC32 p413)
+         if (frB_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,fmul)\n");
+            return False;
+         }
+         DIP("fmul%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1A: // frsqrte (Floating Reciprocal SqRt Estimate, PPC32 p424)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_cmp(PPC32)(instr,frsqrte)\n");
+            return False;
+         }
+         DIP("frsqrte%s fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_arith(PPC32)(3F: opc2)\n");
+         return False;
+      }
+   default:
+      vex_printf("dis_fp_arith(PPC32)(opc1)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Mult-Add Instructions
+*/
+static Bool dis_fp_multadd ( UInt theInstr )
+{
+   /* A-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar frA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar frC_addr = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
+   UChar opc2     = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
+   UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   switch (opc1) {
+   case 0x3B:
+      switch (opc2) {
+      case 0x1C: // fmsubs (Floating Mult-Subtr Single, PPC32 p409)
+         DIP("fmsubs%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1D: // fmadds (Floating Mult-Add Single, PPC32 p409)
+         DIP("fmadds%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
+         DIP("fnmsubs%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
+         DIP("fnmadds%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_multadd(PPC32)(3B: opc2)\n");
+         return False;
+      }
+   case 0x3F:
+      switch (opc2) {           
+      case 0x1C: // fmsub (Float Mult-Subtr (Double Precision), PPC32 p411)
+         DIP("fmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1D: // fmadd (Float Mult-Add (Double Precision), PPC32 p408)
+         DIP("fmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1E: // fnmsub (Float Neg Mult-Subtr (Double Precision), PPC32 p419)
+         DIP("fnmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      case 0x1F: // fnmadd (Float Neg Mult-Add (Double Precision), PPC32 p417)
+         DIP("fnmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         DIP(" => not implemented\n");
+         return False;
+
+      default:
+         vex_printf("dis_fp_multadd(PPC32)(3F: opc2)\n");
+         return False;
+      }
+   default:
+      vex_printf("dis_fp_multadd(PPC32)(opc1)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Compare Instructions
+*/
+static Bool dis_fp_cmp ( UInt theInstr )
+{   
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+   UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+   UChar frA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */   
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   if (opc1 != 0x3F || b21to22 != 0 || b0 != 0) {
+      vex_printf("dis_fp_cmp(PPC32)(instr)\n");
+      return False;
+   }
+
+   opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
+   switch (opc2) {
+   case 0x000: // fcmpu (Floating Compare Unordered, PPC32 p403)
+      DIP("fcmpu crf%d,fr%d,fr%d\n", crfD, frA_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x020: // fcmpo (Floating Compare Ordered, PPC32 p402)
+      DIP("fcmpo crf%d,fr%d,fr%d\n", crfD, frA_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_fp_cmp(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Rounding/Conversion Instructions
+*/
+static Bool dis_fp_round ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar b16to20  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   if (opc1 != 0x3F || b16to20 != 0) {
+      vex_printf("dis_fp_round(PPC32)(instr)\n");
+      return False;
+   }
+
+   opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
+   switch (opc2) {
+   case 0x00C: // frsp (Floating Round to Single, PPC32 p423)
+      DIP("frsp%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x00E: // fctiw (Floating Conv to Int, PPC32 p404)
+      DIP("fctiw%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x00F: // fctiwz (Floating Conv to Int, Round to Zero, PPC32 p405)
+      DIP("fctiwz%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_fp_round(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Move Instructions
+*/
+static Bool dis_fp_move ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar b16to20  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   if (opc1 != 0x3F || b16to20 != 0) {
+      vex_printf("dis_fp_move(PPC32)(instr)\n");
+      return False;
+   }
+
+   opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
+   switch (opc2) {
+   case 0x028: // fneg (Floating Negate, PPC32 p416)
+      DIP("fneg%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x048: // fmr (Floating Move Register, PPC32 p410)
+      DIP("fmr%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x088: // fnabs (Floating Negative Absolute Value, PPC32 p415)
+      DIP("fnabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x108: // fabs (Floating Absolute Value, PPC32 p399)
+      DIP("fabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_fp_move(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+
+
+/*
+  Floating Point Status/Control Register Instructions
+*/
+static Bool dis_fp_scr ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   /* Too many forms - see each switch case */
+   UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar flag_Rc = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   if (opc1 != 0x3F) {
+      vex_printf("dis_fp_scr(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x026: { // mtfsb1 (Move to FPSCR Bit 1, PPC32 p479)
+      UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+      UInt  b11to20 =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+
+      if (b11to20 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsb1)\n");
+         return False;
+      }
+      DIP("mtfsb1%s crb%d \n", flag_Rc ? "." : "", crbD);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   case 0x040: { // mcrfs (Move to Condition Register from FPSCR, PPC32 p465)
+      UChar crfD    = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+      UChar b21to22 = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+      UChar crfS    = toUChar((theInstr >> 18) & 0x7);  /* theInstr[18:20] */
+      UChar b11to17 = toUChar((theInstr >> 11) & 0x7F); /* theInstr[11:17] */
+
+      if (b21to22 != 0 || b11to17 != 0 || flag_Rc != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mcrfs)\n");
+         return False;
+      }
+      DIP("mcrfs crf%d,crf%d\n", crfD, crfS);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   case 0x046: { // mtfsb0 (Move to FPSCR Bit 0, PPC32 p478)
+      UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+      UInt  b11to20 =         (theInstr >> 16) & 0x3FF; /* theInstr[11:20] */
+
+      if (b11to20 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsb0)\n");
+         return False;
+      }      
+      DIP("mtfsb0%s crb%d\n", flag_Rc ? "." : "", crbD);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
+      UChar crfD    = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+      UChar b16to22 = toUChar((theInstr >> 16) & 0x7F); /* theInstr[16:22] */
+      UChar IMM     = toUChar((theInstr >> 12) & 0xF);  /* theInstr[11:15] */
+      UChar b11     = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
+
+      if (b16to22 != 0 || b11 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsfi)\n");
+         return False;
+      }      
+      DIP("mtfsfi%s crf%d,%d\n", flag_Rc ? "." : "", crfD, IMM);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   case 0x247: { // mffs (Move from FPSCR, PPC32 p481)
+      UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+      UInt  b11to20  =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+
+      if (b11to20 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mffs)\n");
+         return False;
+      }      
+      DIP("mffs%s fr%d\n", flag_Rc ? "." : "", frD_addr);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   case 0x2C7: { // mtfsf (Move to FPSCR Fields, PPC32 p480)
+      UChar b25      = toUChar((theInstr >> 25) & 0x1);  /* theInstr[25]    */
+      UChar FM       = toUChar((theInstr >> 17) & 0xFF); /* theInstr[17:24] */
+      UChar b16      = toUChar((theInstr >> 16) & 0x1);  /* theInstr[16]    */
+      UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+
+      if (b25 != 0 || b16 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsf)\n");
+         return False;
+      }      
+      DIP("mtfsf%s %d,fr%d\n", flag_Rc ? "." : "", FM, frB_addr);
+      DIP(" => not implemented\n");
+      return False;
+   }
+
+   default:
+      vex_printf("dis_fp_scr(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
 
 
 
@@ -3236,14 +3966,98 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       DIP("trap op (twi) => not implemented\n");
       goto decode_failure;
 
-   /* Floating Point Ops */
-   case 0x30: case 0x31: case 0x32:
-   case 0x33: case 0x34: case 0x35:
-   case 0x36: case 0x37: case 0x3B:
-   case 0x3F:
-      DIP("Floating Point Op => not implemented\n");
+   /* Floating Point Load Instructions */
+   case 0x30: case 0x31: case 0x32: // lfsx, lfsux, lfdx
+   case 0x33:                       // lfdux
+      if (dis_fp_load( theInstr )) goto decode_success;
       goto decode_failure;
 
+   /* Floating Point Store Instructions */
+   case 0x34: case 0x35: case 0x36: // stfsx, stfsux, stfdx
+   case 0x37:                       // stfdux
+      if (dis_fp_store( theInstr )) goto decode_success;
+      goto decode_failure;
+
+   case 0x3B:
+      opc2 = (theInstr >> 1) & 0x1F;    /* theInstr[1:5] */
+      switch (opc2) {
+      /* Floating Point Arith Instructions */
+      case 0x12: case 0x14: case 0x15: // fdivs,  fsubs, fadds
+      case 0x16: case 0x18: case 0x19: // fsqrts, fres,  fmuls
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Mult-Add Instructions */
+      case 0x1C: case 0x1D: case 0x1E: // fmsubs, fmadds, fnmsubs
+      case 0x1F:                       // fnmadds
+         if (dis_fp_multadd(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      default:
+         goto decode_failure;
+      }
+      break;
+
+   case 0x3F:
+      /* Instrs using opc[1:5] never overlap with instrs using opc[1:10],
+         so we can simply fall through the first switch statement */
+
+      opc2 = (theInstr >> 1) & 0x1F;    /* theInstr[1:5] */
+      switch (opc2) {
+      /* Floating Point Arith Instructions */
+      case 0x12: case 0x14: case 0x15: // fdiv,  fsub, fadd
+      case 0x16: case 0x17: case 0x19: // fsqrt, fsel, fmul
+      case 0x1A:                       // frsqrte
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Mult-Add Instructions */         
+      case 0x1C: case 0x1D: case 0x1E: // fmsub, fmadd, fnmsub
+      case 0x1F:                       // fnmadd
+         if (dis_fp_multadd(theInstr)) goto decode_success;
+         goto decode_failure;
+         
+      default:
+         break; // Fall through
+      }
+
+      opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
+      switch (opc2) {
+      /* Floating Point Compare Instructions */         
+      case 0x000: // fcmpu
+      case 0x020: // fcmpo
+         if (dis_fp_cmp(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Rounding/Conversion Instructions */         
+      case 0x00C: // frsp
+      case 0x00E: // fctiw
+      case 0x00F: // fctiwz
+         if (dis_fp_round(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Move Instructions */         
+      case 0x028: // fneg
+      case 0x048: // fmr
+      case 0x088: // fnabs
+      case 0x108: // fabs
+         if (dis_fp_move( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Status/Control Register Instructions */         
+      case 0x026: // mtfsb1
+      case 0x040: // mcrfs
+      case 0x046: // mtfsb0
+      case 0x086: // mtfsfi
+      case 0x247: // mffs
+      case 0x2C7: // mtfsf
+         if (dis_fp_scr( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         goto decode_failure;
+      }
+      break;
 
    case 0x13:
       switch (opc2) {
@@ -3368,11 +4182,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          DIP("trap op (tw) => not implemented\n");
          goto decode_failure;
 
-      /* Floating Point Ops */
-      case 0x217: case 0x237: case 0x257:
-      case 0x277: case 0x297: case 0x2B7:
-      case 0x2D7: case 0x2F7: case 0x3D7:
-         DIP("Floating Point Op => not implemented\n");
+      /* Floating Point Load Instructions */
+      case 0x217: case 0x237: case 0x257: // lfs, lfsu, lfd
+      case 0x277:                         // lfdu
+         if (dis_fp_load( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* Floating Point Store Instructions */
+      case 0x297: case 0x2B7: case 0x2D7: // stfs,  stfsu, stfd
+      case 0x2F7: case 0x3D7:             // stfdu, stfiwx
+         if (dis_fp_store( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AltiVec instructions */

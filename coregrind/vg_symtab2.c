@@ -407,30 +407,49 @@ static Int compare_RiSym(void *va, void *vb) {
 static RiSym *prefersym(RiSym *a, RiSym *b)
 {
    Int pfx;
+   Int lena, lenb;
+   Int i;
+   static const struct {
+      const Char *prefix;
+      Int len;
+   } prefixes[] = {
+#define PFX(x)	{ x, sizeof(x)-1 }
+      /* order from longest to shortest */
+      PFX("__GI___libc_"),
+      PFX("__GI___"),
+      PFX("__libc_"),
+      PFX("__GI__"),
+      PFX("__GI_"),
+      PFX("__"),
+#undef PFX
+   };
+
+   lena = VG_(strlen)(a->name);
+   lenb = VG_(strlen)(b->name);
 
    /* rearrange so that a is the long one */
-   if (VG_(strlen)(a->name) < VG_(strlen)(b->name)) {
+   if (lena < lenb) {
       RiSym *t;
+      Int lt;
 
       t = a;
       a = b;
       b = t;
+
+      lt = lena;
+      lena = lenb;
+      lenb = lt;
    }
 
-   pfx = 0;
-   
-   if      (VG_(memcmp)(a->name, "__GI___libc_", 12) == 0)
-      pfx = 12;
-   else if (VG_(memcmp)(a->name, "__libc_", 7) == 0)
-      pfx = 7;
-   else if (VG_(memcmp)(a->name, "__GI___", 7) == 0)
-      pfx = 7;
-   else if (VG_(memcmp)(a->name, "__GI__", 6) == 0)
-      pfx = 6;
-   else if (VG_(memcmp)(a->name, "__GI_", 5) == 0)
-      pfx = 5;
-   else if (VG_(memcmp)(a->name, "__", 2) == 0)
-      pfx = 2;
+   for(i = pfx = 0; i < sizeof(prefixes)/sizeof(*prefixes); i++) {
+      Int pfxlen = prefixes[i].len;
+
+      if (pfxlen < lena &&
+	  VG_(memcmp)(a->name, prefixes[i].prefix, pfxlen) == 0) {
+	 pfx = pfxlen;
+	 break;
+      }
+   }
 
    if (pfx != 0 && VG_(strcmp)(a->name + pfx, b->name) == 0)
       return b;

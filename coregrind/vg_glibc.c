@@ -33,7 +33,9 @@ void *sbrk(ptrdiff_t inc)
 }
 int __sbrk(void *) __attribute__((alias ("sbrk")));
 
+#if 0
 void *mmap(void *addr, size_t len, int prot, int flags, int fd, __off_t offset)
 {
    return VG_(mmap)(addr, len, prot, flags, fd, offset);
 }
+#endif

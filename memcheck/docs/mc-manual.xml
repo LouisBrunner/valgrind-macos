@@ -211,7 +211,7 @@ Invalid read of size 4
    by 0x40F6B804: (within /usr/lib/libpng.so.2.1.0.9)
    by 0x40B07FF4: read_png_image__FP8QImageIO (kernel/qpngio.cpp:326)
    by 0x40AC751B: QImageIO::read() (kernel/qimage.cpp:3621)
-   Address 0xBFFFF0E0 is not stack'd, malloc'd or free'd
+ Address 0xBFFFF0E0 is not stack'd, malloc'd or free'd
 ]]></programlisting>
 
 <para>This happens when your program reads or writes memory at a
@@ -260,7 +260,6 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x402DFA94: _IO_vfprintf (_itoa.h:49)
    by 0x402E8476: _IO_printf (printf.c:36)
    by 0x8048472: main (tests/manuel1.c:8)
-   by 0x402A6E5E: __libc_start_main (libc-start.c:129)
 ]]></programlisting>
 
 <para>An uninitialised-value use error is reported when your
@@ -314,13 +313,9 @@ Memcheck complains.</para>
 Invalid free()
    at 0x4004FFDF: free (vg_clientmalloc.c:577)
    by 0x80484C7: main (tests/doublefree.c:10)
-   by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-   by 0x80483B1: (within tests/doublefree)
-   Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
+ Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
    at 0x4004FFDF: free (vg_clientmalloc.c:577)
    by 0x80484C7: main (tests/doublefree.c:10)
-   by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-   by 0x80483B1: (within tests/doublefree)
 ]]></programlisting>
 
 <para>Memcheck keeps track of the blocks allocated by your
@@ -350,7 +345,7 @@ Mismatched free() / delete / delete []
    by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
    by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
    by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
-   Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
+ Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
    at 0x4004318C: __builtin_vec_new (vg_clientfuncs.c:152)
    by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
    by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
@@ -496,8 +491,6 @@ overlap.  Memcheck checks for this.</para>
 ==27492== Source and destination overlap in memcpy(0xbffff294, 0xbffff280, 21)
 ==27492==    at 0x40026CDC: memcpy (mc_replace_strmem.c:71)
 ==27492==    by 0x804865A: main (overlap.c:40)
-==27492==    by 0x40246335: __libc_start_main (../sysdeps/generic/libc-start.c:129)
-==27492==    by 0x8048470: (within /auto/homes/njn25/grind/head6/memcheck/tests/overlap)
 ==27492== 
 ]]></programlisting>
 

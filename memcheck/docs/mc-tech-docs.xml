@@ -34,8 +34,8 @@ it has been under contemplation for a very long time, perhaps
 seriously for about five years.  Somewhat over two years ago, I
 started working on the x86 code generator for the Glasgow Haskell
 Compiler (http://www.haskell.org/ghc), gaining familiarity with
-x86 internals on the way.  I then did Cacheprof
-(http://www.cacheprof.org), gaining further x86 experience.  Some
+x86 internals on the way.  I then did Cacheprof,
+gaining further x86 experience.  Some
 time around Feb 2000 I started experimenting with a user-space
 x86 interpreter for x86-Linux.  This worked, but it was clear
 that a JIT-based scheme would be necessary to give reasonable

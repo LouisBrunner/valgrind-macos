@@ -194,7 +194,10 @@ places:</para>
    helpful when valgrinding a whole tree of processes at once,
    since it means that each process writes to its own logfile,
    rather than the result being jumbled up in one big
-   logfile.</para>
+   logfile.  If <computeroutput>filename.pid12345</computeroutput> already
+   exists, then it will name new files
+   <computeroutput>filename.pid12345.1</computeroutput> and so on.
+   </para>
 
    <para>If you want to specify precisely the file name to use,
    without the trailing
@@ -292,9 +295,7 @@ error message is written to the commentary.  For example:</para>
 ==25832== Invalid read of size 4
 ==25832==    at 0x8048724: BandMatrix::ReSize(int, int, int) (bogon.cpp:45)
 ==25832==    by 0x80487AF: main (bogon.cpp:66)
-==25832==    by 0x40371E5E: __libc_start_main (libc-start.c:129)
-==25832==    by 0x80485D1: (within /home/sewardj/newmat10/bogon)
-==25832==    Address 0xBFFFF74C is not stack'd, malloc'd or free'd]]></programlisting>
+==25832==  Address 0xBFFFF74C is not stack'd, malloc'd or free'd]]></programlisting>
 
 <para>This message says that the program did an illegal 4-byte
 read of address 0xBFFFF74C, which, as far as Memcheck can tell,
@@ -585,7 +586,7 @@ categories.</para>
     <para><computeroutput>--help-debug</computeroutput></para>
     <para>Same as <computeroutput>--help</computeroutput>, but
      also lists debugging options which usually are only of use
-     to developers.</para>
+     to Valgrind's developers.</para>
    </listitem>
 
    <listitem>
@@ -866,10 +867,10 @@ Addrcheck), the following options apply.</para>
     [default: 8]</para>
     <para>By default Valgrind's
     <computeroutput>malloc</computeroutput>,
-    <computeroutput>realloc</computeroutput>, etc, return 4-byte
-    aligned addresses.  These are suitable for any accesses on
+    <computeroutput>realloc</computeroutput>, etc, return 8-byte
+    aligned addresses.  This is standard for
     x86 processors.  Some programs might however assume that
-    <computeroutput>malloc</computeroutput> et al return 8- or
+    <computeroutput>malloc</computeroutput> et al return 16- or
     more aligned memory.  The supplied value must be between 4
     and 4096 inclusive, and must be a power of two.</para>
    </listitem>
@@ -962,7 +963,29 @@ Addrcheck), the following options apply.</para>
       some device drivers with a large number of strange ioctl
       commands becomes very tiresome.</para>
      </listitem>
+     <listitem><para><computeroutput>ioctl-mmap</computeroutput></para> 
+      <para>Some ioctl requests can mmap new memory into your
+      process address space.  If Valgrind doesn't know about these mappings,
+      it could put new mappings over them, and/or complain bitterly when
+      your program uses them.  This option makes Valgrind scan the address
+      space for new mappings after each unknown ioctl has finished.  You may
+      also need to run with
+      <computeroutput>--pointercheck=no</computeroutput> if the ioctl
+      decides to place the mapping out of the client's usual address space.
+      </para>
+     </listitem>
     </itemizedlist>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--pointercheck=yes</computeroutput> [default]</para>
+    <para><computeroutput>--pointercheck=no</computeroutput></para>
+    <para>This option make Valgrind generate a check on every memory
+    reference to make sure it is within the client's part of the
+    address space.  This prevents stray writes from damaging
+    Valgrind itself.  On x86, this uses the CPU's segmentation
+    machinery, and has almost no performance cost; there's almost
+    never a reason to turn it off.</para>
    </listitem>
 
   </itemizedlist>
@@ -985,7 +1008,10 @@ Nevertheless:</para>
     <para>When enabled, each x86 insn is translated separately
     into instrumented code.  When disabled, translation is done
     on a per-basic-block basis, giving much better
-    translations.</para>
+    translations.  This option is very useful if your program expects
+    precise exceptions (if it, for example, inspects or modifies register
+    state from within a signal handler).
+    </para>
    </listitem>
 
    <listitem>
@@ -1148,18 +1174,31 @@ custom checks.</para>
 <para>Clients need to include a header file to make this work.
 Which header file depends on which client requests you use.  Some
 client requests are handled by the core, and are defined in the
-header file <filename>valgrind.h</filename>.  Tool-specific
+header file <filename>valgrind/valgrind.h</filename>.  Tool-specific
 header files are named after the tool, e.g.
-<filename>memcheck.h</filename>.  All header files can be found
-in the <literal>include</literal> directory of wherever Valgrind
+<filename>valgrind/memcheck.h</filename>.  All header files can be found
+in the <literal>include/valgrind</literal> directory of wherever Valgrind
 was installed.</para>
 
 <para>The macros in these header files have the magical property
 that they generate code in-line which Valgrind can spot.
 However, the code does nothing when not run on Valgrind, so you
-are not forced to run your program on Valgrind just because you
-use the macros in this file.  Also, you are not required to link
-your program with any extra supporting libraries.</para>
+are not forced to run your program under Valgrind just because you
+use the macros in this file.  Also, you are not required to link your
+program with any extra supporting libraries.</para>
+
+<para>The code left in your binary has negligible performance impact.
+However, if you really wish to compile out the client requests, you can
+compile with <computeroutput>-DNVALGRIND</computeroutput> (analogous to
+<computeroutput>-DNDEBUG</computeroutput>'s effect on
+<computeroutput>assert()</computeroutput>).
+</para>
+
+<para>You are encouraged to copy the <filename>valgrind/*.h</filename> headers
+into your project's include directory, so your program doesn't have a
+compile-time dependency on Valgrind being installed.  The Valgrind headers,
+unlike the rest of the code, is under a BSD-style license so you may include
+them without worrying about license incompatibility.</para>
 
 <para>Here is a brief description of the macros available in
 <filename>valgrind.h</filename>, which work with more than one
@@ -1172,7 +1211,9 @@ tool-specific macros).</para>
    <term><computeroutput>RUNNING_ON_VALGRIND</computeroutput>:</term>
    <listitem>
     <para>returns 1 if running on Valgrind, 0 if running on the
-    real CPU.</para>
+    real CPU.  If you are running Valgrind under itself, it will return the
+    number of layers of Valgrind emulation we're running under.
+    </para>
    </listitem>
   </varlistentry>
 
@@ -1326,8 +1367,8 @@ in your client if you include a tool-specific header.</para>
 
 
 
-<sect1 id="manual-core.pthreads" xreflabel="Support for POSIX Pthreads">
-<title>Support for POSIX Pthreads</title>
+<sect1 id="manual-core.pthreads" xreflabel="Support for Threads">
+<title>Support for Threads</title>
 
 <para>Valgrind supports programs which use POSIX pthreads.
 Getting this to work was technically challenging but it all works
@@ -1345,6 +1386,24 @@ approach avoids the horrible implementation problems of
 implementing a truly multiprocessor version of Valgrind, but it
 does mean that threaded apps run only on one CPU, even if you
 have a multiprocessor machine.</para>
+
+<para>Your program will use the native
+<computeroutput>libpthread</computeroutput>, but not all of its facilities
+will work.  In particular, process-shared synchronization WILL NOT
+WORK.  They rely on special atomic instruction sequences which
+Valgrind does not emulate in a way which works between processes.
+Unfortunately there's no way for Valgrind to warn when this is happening,
+and such calls will mostly work; it's only when there's a race will it fail.
+</para>
+
+<para>Valgrind also supports direct use of the
+<computeroutput>clone()</computeroutput> system call,
+<computeroutput>futex()</computeroutput> and so on.
+<computeroutput>clone()</computeroutput> is supported where either
+everything is shared (a thread) or nothing is shared (fork-like); partial
+sharing will fail.  Again, any use of atomic instruction sequences in shared
+memory between processes will not work.
+</para>
 
 <para>Valgrind schedules your threads in a round-robin fashion,
 with all threads having equal priority.  It switches threads
@@ -1403,19 +1462,20 @@ Mozilla-0.9.2.1 and Galeon-0.11.3, both as supplied with RedHat
 <sect1 id="manual-core.signals" xreflabel="Handling of Signals">
 <title>Handling of Signals</title>
 
-<para>Valgrind provides suitable handling of signals, so,
-provided you stick to POSIX stuff, you should be ok.  Basic
-sigaction() and sigprocmask() are handled.  Signal handlers may
-return in the normal way or do longjmp(); both should work ok.
-As specified by POSIX, a signal is blocked in its own handler.
-Default actions for signals should work as before.  Etc,
-etc.</para>
+<para>Valgrind has a fairly complete signal implementation.  It should be
+able to cope with any valid use of signals.</para>
+ 
+<para>If you're using signals in clever ways (for example, catching
+SIGSEGV, modifying page state and restarting the instruction), you're
+probably relying on precise exceptions.  In this case, you will need
+to use <computeroutput>--single-step=yes</computeroutput>.</para>
 
-<para>Under the hood, dealing with signals is a real pain, and
-Valgrind's simulation leaves much to be desired.  If your program
-does way-strange stuff with signals, bad things may happen.  If
-so, let us know.  We don't promise to fix it, but we'd at least
-like to be aware of it.</para>
+<para>If your program dies as a result of a fatal core-dumping signal,
+Valgrind will generate its own core file
+(<computeroutput>vgcore.pidNNNNN</computeroutput>) containing your program's
+state.  You may use this core file for post-mortem debugging with gdb or
+similar.  (Note: it will not generate a core if your core dump size limit is
+0.)</para>
 
 </sect1>
 
@@ -1429,10 +1489,31 @@ like to be aware of it.</para>
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X or 2.3.X.  I don't think there is much else to say.  There
-are no options apart from the usual
-<computeroutput>--prefix</computeroutput> that you should give to
-<computeroutput>./configure</computeroutput>.</para>
+2.2.X or 2.3.X.</para>
+
+<para>There are two options (in addition to the usual
+<computeroutput>--prefix=</computeroutput> which affect how Valgrind is built:
+<itemizedlist>
+ <listitem>
+  <para><computeroutput>--enable-pie</computeroutput></para>
+  <para>>PIE stands for "position-independent executable".  This is
+  enabled by default if your toolchain supports it.  PIE allows Valgrind
+  to place itself as high as possible in memory, giving your program as
+  much address space as possible.  It also allows Valgrind to run under
+  itself.  If PIE is disabled, Valgrind loads at a default address which
+  is suitable for most systems.  This is also useful for debugging
+  Valgrind itself.</para>
+ </listitem>
+
+ <listitem>
+  <para><computeroutput>--enable-tls</computeroutput></para>
+  <para>TLS (Thread Local Storage) is a relatively new mechanism which
+  requires compiler, linker and kernel support.  Valgrind automatically test
+  if TLS is supported and enable this option.  Sometimes it cannot test for
+  TLS, so this option allows you to override the automatic test.</para>
+ </listitem>
+</itemizedlist>
+</para>
 
 <para>The <computeroutput>configure</computeroutput> script tests
 the version of the X server currently indicated by the current
@@ -1503,13 +1584,9 @@ the following constraints:</para>
   </listitem>
 
   <listitem>
-   <para>Pthreads support is improving, but there are still
-   significant limitations in that department.  See the section
-   above on Pthreads.  Note that your program must be dynamically
-   linked against <literal>libpthread.so</literal>, so that
-   Valgrind can substitute its own implementation at program
-   startup time.  If you're statically linked against it, things
-   will fail badly.</para>
+   <para>Atomic instruction sequences are not supported, which will affect
+   any use of synchronization objects being shared between processes.  They
+   will appear to work, but fail sporadically.</para>
   </listitem>
 
   <listitem>
@@ -1605,19 +1682,10 @@ the following constraints:</para>
  </itemizedlist>
 
 
- <para>Known platform-specific limitations, as of release 1.0.0:</para>
+ <para>Known platform-specific limitations, as of release 2.4.0:</para>
  <itemizedlist>
   <listitem>
-   <para>On Red Hat 7.3, there have been reports of link errors
-   (at program start time) for threaded programs using
-   <computeroutput>__pthread_clock_gettime</computeroutput> and
-   <computeroutput>__pthread_clock_settime</computeroutput>.
-   This appears to be due to
-   <computeroutput>/lib/librt-2.2.5.so</computeroutput> needing
-   them.  Unfortunately I do not understand enough about this
-   problem to fix it properly, and I can't reproduce it on my
-   test RedHat 7.3 system.  Please mail me if you have more
-   information / understanding.</para>
+   <para>(none)</para>
   </listitem>
  </itemizedlist>
 
@@ -1637,44 +1705,41 @@ found <xref linkend="mc-tech-docs"/>.</para>
 <sect2 id="manual-core.startb" xreflabel="Getting Started">
 <title>Getting started</title>
 
-<para>Valgrind is compiled into a shared object, valgrind.so.
-The shell script valgrind sets the LD_PRELOAD environment
-variable to point to valgrind.so.  This causes the .so to be
-loaded as an extra library to any subsequently executed
-dynamically-linked ELF binary, viz, the program you want to
-debug.</para>
+<para>Valgrind is compiled into two executables:
+<computeroutput>valgrind</computeroutput>, and
+<computeroutput>stage2</computeroutput>.
+<computeroutput>valgrind</computeroutput> is a statically-linked executable
+which loads at the normal address (0x8048000).
+<computeroutput>stage2</computeroutput> is a normal dynamically-linked
+executable; it is either linked to load at a high address (0xb8000000) or is
+a Position Independent Executable.</para>
 
-<para>The dynamic linker allows each .so in the process image to
-have an initialisation function which is run before main().  It
-also allows each .so to have a finalisation function run after
-main() exits.</para>
+<para><computeroutput>Valgrind</computeroutput> (also known as <computeroutput>stage1</computeroutput>):
+<orderedlist>
+ <listitem><para>Decides where to load stage2.</para></listitem>
+ <listitem><para>Pads the address space with
+    <computeroutput>mmap</computeroutput>, leaving holes only where stage2
+    should load.</para></listitem>
+ <listitem><para>Loads stage2 in the same manner as
+    <computeroutput>execve()</computeroutput> would, but
+    "manually".</para></listitem> 
+ <listitem><para>Jumps to the start of stage2.</para></listitem>
+</orderedlist></para>
 
-<para>When valgrind.so's initialisation function is called by the
-dynamic linker, the synthetic CPU to starts up.  The real CPU
-remains locked in valgrind.so for the entire rest of the program,
-but the synthetic CPU returns from the initialisation function.
-Startup of the program now continues as usual -- the dynamic
-linker calls all the other .so's initialisation routines, and
-eventually runs main().  This all runs on the synthetic CPU, not
-the real one, but the client program cannot tell the
-difference.</para>
+<para>Once stage2 is loaded, it uses
+<computeroutput>dlopen()</computeroutput> to load the tool, unmaps all
+traces of stage1, initializes the client's state, and starts the synthetic
+CPU.</para>
 
-<para>Eventually main() exits, so the synthetic CPU calls
-valgrind.so's finalisation function.  Valgrind detects this, and
-uses it as its cue to exit.  It prints summaries of all errors
-detected, possibly checks for memory leaks, and then exits the
-finalisation routine, but now on the real CPU.  The synthetic CPU
-has now lost control -- permanently -- so the program exits back
-to the OS on the real CPU, just as it would have done
-anyway.</para>
+<para>Each thread runs in its own kernel thread, and loops in
+<computeroutput>VG_(schedule)</computeroutput> as it runs.  When the thread
+terminates, <computeroutput>VG_(schedule)</computeroutput> returns.  Once
+all the threads have terminated, Valgrind as a whole exits.</para>
 
-<para>On entry, Valgrind switches stacks, so it runs on its own
-stack.  On exit, it switches back.  This means that the client
-program continues to run on its own stack, so we can switch back
-and forth between running it on the simulated and real CPUs
-without difficulty.  This was an important design decision,
-because it makes it easy (well, significantly less difficult) to
-debug the synthetic CPU.</para>
+<para>Each thread also has two stacks.  One is the client's stack, which
+is manipulated with the client's instructions.  The other is
+Valgrind's internal stack, which is used by all Valgrind's code on
+behalf of that thread.  It is important to not get them confused.</para>
 
 </sect2>
 
@@ -1775,11 +1840,10 @@ details.</para>
 <sect2 id="manual-core.syssignals" xreflabel="Signals">
 <title>Signals</title>
 
-<para>All system calls to sigaction() and sigprocmask() are
-intercepted.  If the client program is trying to set a signal
-handler, Valgrind makes a note of the handler address and which
-signal it is for.  Valgrind then arranges for the same signal to
-be delivered to its own handler.</para>
+<para>All signal-related system calls are intercepted.  If the client
+program is trying to set a signal handler, Valgrind makes a note of the
+handler address and which signal it is for.  Valgrind then arranges for the
+same signal to be delivered to its own handler.</para>
 
 <para>When such a signal arrives, Valgrind's own handler catches
 it, and notes the fact.  At a convenient safe point in execution,
@@ -1842,9 +1906,7 @@ sewardj@phoenix:~/newmat10$
 ==25832== Invalid read of size 4
 ==25832==    at 0x8048724: _ZN10BandMatrix6ReSizeEiii (bogon.cpp:45)
 ==25832==    by 0x80487AF: main (bogon.cpp:66)
-==25832==    by 0x40371E5E: __libc_start_main (libc-start.c:129)
-==25832==    by 0x80485D1: (within /home/sewardj/newmat10/bogon)
-==25832==    Address 0xBFFFF74C is not stack'd, malloc'd or free'd
+==25832==  Address 0xBFFFF74C is not stack'd, malloc'd or free'd
 ==25832==
 ==25832== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 ==25832== malloc/free: in use at exit: 0 bytes in 0 blocks.

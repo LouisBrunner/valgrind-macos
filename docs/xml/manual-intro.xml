@@ -154,14 +154,13 @@ platform: Linux on x86s.  Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
-ensure that it works on machines with kernel 2.2 or 2.4 and glibc
-2.1.X, 2.2.X or 2.3.1.  This should cover the vast majority of
-modern Linux installations.  Note that glibc-2.3.2+, with the
-NPTL (Native Posix Threads Library) package won't work.  We hope
-to be able to fix this, but it won't be easy.</para>
+ensure that it works on machines with kernel 2.4 or 2.6 and glibc
+2.1.X--2.3.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
-version 2. Some of the PThreads test cases,
+version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers are
+distributed under a BSD-style license, so you may include them in your code
+without worrying about license conflicts.  Some of the PThreads test cases,
 <computeroutput>pth_*.c</computeroutput>, are taken from
 "Pthreads Programming" by Bradford Nichols, Dick Buttlar &amp;
 Jacqueline Proulx Farrell, ISBN 1-56592-115-1, published by

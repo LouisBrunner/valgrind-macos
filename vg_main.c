@@ -1156,6 +1156,10 @@ void VG_(main) ( void )
    VGP_(init_profiling)();
 #  endif
 
+   /* Hook to delay things long enough so we can get the pid and
+      attach GDB in another shell. */
+   /* {extern unsigned int sleep(unsigned int seconds); sleep(10);} */
+
    if (VG_(clo_instrument)) {
       VGP_PUSHCC(VgpInitAudit);
       VGM_(init_memory_audit)();

@@ -218,7 +218,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
                      /*IN*/  UInt       delta, 
                      /*IN*/  VexSubArch subarch,
-                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Int*       size,
                      /*OUT*/ Addr64*    whereNext );
 
 
@@ -358,7 +358,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
             if (0 && (n_resteers & 0xFF) == 0)
             vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
                        n_resteers, d_resteers,
-                       ULong_to_Ptr(guest_next), delta);
+                       ULong_to_Ptr(guest_next), (Int)delta);
             break;
       }
    }
@@ -456,7 +456,7 @@ static Int eregOfRM ( UChar mod_reg_rm )
 static UChar getUChar ( UInt delta )
 {
    UChar v = guest_code[delta+0];
-   return v & 0xFF;
+   return toUChar(v);
 }
 
 static UInt getUDisp16 ( UInt delta )
@@ -1460,9 +1460,10 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
       jump table seems a bit excessive. 
    */
-   mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-   mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
-   mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
+   mod_reg_rm &= 0xC7;                      /* is now XX000YYY */
+   mod_reg_rm  = toUChar(mod_reg_rm | (mod_reg_rm >> 3));  
+                                            /* is now XX0XXYYY */
+   mod_reg_rm &= 0x1F;                      /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
       /* (%eax) .. (%edi), not including (%esp) or (%ebp).
@@ -1482,7 +1483,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
       */
       case 0x08: case 0x09: case 0x0A: case 0x0B: 
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-         { UChar rm = mod_reg_rm & 7;
+         { UChar rm = toUChar(mod_reg_rm & 7);
            UInt  d  = getSDisp8(delta);
            DIS(buf, "%s%d(%s)", sorbTxt(sorb), (Int)d, nameIReg(4,rm));
            *len = 2;
@@ -1496,7 +1497,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
       */
       case 0x10: case 0x11: case 0x12: case 0x13: 
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-         { UChar rm = mod_reg_rm & 7;
+         { UChar rm = toUChar(mod_reg_rm & 7);
            UInt  d  = getUDisp32(delta);
            DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), (Int)d, nameIReg(4,rm));
            *len = 5;
@@ -1542,9 +1543,9 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
             horrendous schemes, do you suppose?  
          */
          UChar sib     = getIByte(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          delta++;
 
          if (index_r != R_ESP && base_r != R_EBP) {
@@ -1603,9 +1604,9 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
       */
       case 0x0C: {
          UChar sib     = getIByte(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          UInt  d       = getSDisp8(delta+1);
 
          if (index_r == R_ESP) {
@@ -1643,9 +1644,9 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
       */
       case 0x14: {
          UChar sib     = getIByte(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          UInt d        = getUDisp32(delta+1);
 
          if (index_r == R_ESP) {
@@ -1691,7 +1692,8 @@ static UInt lengthAMode ( UInt delta )
       jump table seems a bit excessive. 
    */
    mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-   mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
+   mod_reg_rm  = toUChar(mod_reg_rm | (mod_reg_rm >> 3));  
+                                     /* is now XX0XXYYY */
    mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
@@ -1721,7 +1723,7 @@ static UInt lengthAMode ( UInt delta )
       /* SIB, no displacement.  */
       case 0x04: {
          UChar sib    = getIByte(delta);
-         UChar base_r = sib & 7;
+         UChar base_r = toUChar(sib & 7);
          if (base_r == R_EBP) return 6; else return 2;
       }
       /* SIB, with 8-bit displacement.  */
@@ -5507,7 +5509,7 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
          if (sz != 4) 
             goto mmx_decode_failure;
          byte2  = getIByte(delta);           /* amode / sub-opcode */
-         subopc = (byte2 >> 3) & 7;
+         subopc = toUChar( (byte2 >> 3) & 7 );
 
 #        define SHIFT_BY_IMM(_name,_op)                         \
              do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
@@ -6691,7 +6693,7 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
    }
    else
    if (needNot && !all_lanes) {
-      mask = sz==4 ? 0x000F : 0x00FF;
+      mask = toUShort( sz==4 ? 0x000F : 0x00FF );
       putXMMReg( gregOfRM(rm), 
                  binop(Iop_Xor128, mkexpr(plain), mkV128(mask)) );
    }
@@ -6941,7 +6943,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
                      /*IN*/  UInt       delta, 
                      /*IN*/  VexSubArch subarch,
-                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Int*       size,
                      /*OUT*/ Addr64*    whereNext )
 {
    IRType    ty;

@@ -182,52 +182,6 @@
 <title>Valgrind behaves unexpectedly</title>
 <qandaset id="qset.unexpected">
 
-<qandaentry id="faq.no-output">
- <question>
-  <para>I try running "valgrind my-program", but my-program runs
-  normally, and Valgrind doesn't emit any output at all.</para>
- </question>
- <answer>
-  <para><command>For versions prior to 2.1.1:</command></para>
-
-  <para>Valgrind doesn't work out-of-the-box with programs that
-  are entirely statically linked.  It does a quick test at
-  startup, and if it detects that the program is statically
-  linked, it aborts with an explanation.</para>
-
-  <para>This test may fail in some obscure cases, eg. if you run
-  a script under Valgrind and the script interpreter is
-  statically linked.</para>
-
-  <para>If you still want static linking, you can ask gcc to link
-  certain libraries statically.  Try the following options:</para>
-<screen>
--Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
-</screen>
-
-  <para>Just make sure you end with
-  <computeroutput>-Wl,-Bdynamic</computeroutput> so that libc is
-  dynamically linked.</para>
-
-  <para>If you absolutely cannot use dynamic libraries, you can
-  try statically linking together all the .o files in coregrind/,
-  all the .o files of the tool of your choice (eg. those in
-  memcheck/), and the .o files of your program.  You'll end up
-  with a statically linked binary that runs permanently under
-  Valgrind's control.  Note that we haven't tested this procedure
-  thoroughly.</para>
-
-  <para><command>For versions 2.1.1 and later:</command></para>
-  <para>Valgrind does now work with static binaries, although
-  beware that some of the tools won't operate as well as normal,
-  because they have access to less information about how the
-  program runs.  Eg. Memcheck will miss some errors that it would
-  otherwise find.  This is because Valgrind doesn't replace
-  malloc() and friends with its own versions.  It's best if your
-  program is dynamically linked with glibc.</para>
- </answer>
-</qandaentry>
-
 <qandaentry id="faq.slowthread">
  <question>
   <para>My threaded server process runs unbelievably slowly on
@@ -381,7 +335,9 @@ Invalid write of size 1
   I know my program has errors.</para>
  </question>
  <answer>
-  <para>By default, Valgrind only traces the top-level process.
+  <para>There are two possible causes of this.</para>
+
+  <para>First, by default, Valgrind only traces the top-level process.
   So if your program spawns children, they won't be traced by
   Valgrind by default.  Also, if your program is started by a
   shell script, Perl script, or something similar, Valgrind will
@@ -403,6 +359,16 @@ valgrind-listener 12345
 
   <para>Obviously you have to start the listener process first.
   See the Manual: <ulink url="http://www.valgrind.org/docs/bookset/manual-core.out2file.html">Directing output to file</ulink> for more details.</para>
+
+  <para>Second, if your program is statically linked, most Valgrind tools
+  won't work as well, because they won't be able to replace certain
+  functions, such as malloc(), with their own versions.  A key indicator of
+  this is if Memcheck says:
+<programlisting>
+No malloc'd blocks -- no leaks are possible
+</programlisting>
+when you know your program calls malloc().  The workaround is to avoid
+statically linking your program.</para>
  </answer>
 </qandaentry>
 

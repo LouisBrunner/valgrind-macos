@@ -130,46 +130,7 @@ might not if the jump happens to land in addressable memory.
 4. Valgrind behaves unexpectedly
 -----------------------------------------------------------------
 
-4.1. I try running "valgrind my_program", but my_program runs normally,
-     and Valgrind doesn't emit any output at all.
-
-For versions prior to 2.1.1:
-
-Valgrind doesn't work out-of-the-box with programs that are entirely
-statically linked.  It does a quick test at startup, and if it detects
-that the program is statically linked, it aborts with an explanation.
-    
-This test may fail in some obscure cases, eg. if you run a script under
-Valgrind and the script interpreter is statically linked.
-
-If you still want static linking, you can ask gcc to link certain
-libraries statically.  Try the following options:
-
-        -Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
-
-Just make sure you end with -Wl,-Bdynamic so that libc is dynamically
-linked.
-
-If you absolutely cannot use dynamic libraries, you can try statically
-linking together all the .o files in coregrind/, all the .o files of the
-tool of your choice (eg. those in memcheck/), and the .o files of your
-program.  You'll end up with a statically linked binary that runs
-permanently under Valgrind's control.  Note that we haven't tested this
-procedure thoroughly.
-
-
-For versions 2.1.1 and later:
-
-Valgrind does now work with static binaries, although beware that some
-of the tools won't operate as well as normal, because they have access
-to less information about how the program runs.  Eg. Memcheck will miss
-some errors that it would otherwise find.  This is because Valgrind
-doesn't replace malloc() and friends with its own versions.  It's best
-if your program is dynamically linked with glibc.
-
------------------------------------------------------------------
-
-4.2. My threaded server process runs unbelievably slowly on Valgrind.
+4.1. My threaded server process runs unbelievably slowly on Valgrind.
      So slowly, in fact, that at first I thought it had completely
      locked up.
 
@@ -187,7 +148,7 @@ improved with 1.9.6 and later versions.
 
 -----------------------------------------------------------------
 
-4.3. My program uses the C++ STL and string classes.  Valgrind
+4.2. My program uses the C++ STL and string classes.  Valgrind
      reports 'still reachable' memory leaks involving these classes
      at the exit of the program, but there should be none.
 
@@ -227,7 +188,7 @@ absolutely want to do that. But beware:
    others.
 
 -----------------------------------------------------------------------------
-4.4. The stack traces given by Memcheck (or another tool) aren't helpful.
+4.3. The stack traces given by Memcheck (or another tool) aren't helpful.
      How can I improve them?
 
 If they're not long enough, use --num-callers to make them longer.
@@ -274,8 +235,10 @@ Some example sub-traces:
 5.1. I try running "valgrind --tool=memcheck my_program" and get
      Valgrind's startup message, but I don't get any errors and I know
      my program has errors.
+
+There are two possible causes of this.
    
-By default, Valgrind only traces the top-level process.  So if your
+First, by default, Valgrind only traces the top-level process.  So if your
 program spawns children, they won't be traced by Valgrind by default.
 Also, if your program is started by a shell script, Perl script, or
 something similar, Valgrind will trace the shell, or the Perl
@@ -293,6 +256,16 @@ listen on that port:
   
 Obviously you have to start the listener process first.  See the
 documentation for more details.
+
+Second, if your program is statically linked, most Valgrind tools won't
+work as well, because they won't be able to replace certain functions,
+such as malloc(), with their own versions.  A key indicator of this is
+if Memcheck says:
+
+  No malloc'd blocks -- no leaks are possible
+
+when you know your program calls malloc().  The workaround is to avoid
+statically linking your program.
 
 -----------------------------------------------------------------
 

@@ -40,23 +40,7 @@ A1. When the program exits, valgrind runs the procedure
 
 -----------------------------------------------------------------
 
-Q2. My program dies complaining that syscall 197 is unimplemented.
-
-A2. 197, which is fstat64, is supported by valgrind.  The problem is
-    that the /usr/include/asm/unistd.h on the machine on which your
-    valgrind was built, doesn't match your kernel -- or, to be more 
-    specific, glibc is asking your kernel to do a syscall which is
-    not listed in /usr/include/asm/unistd.h.
-
-    The fix is simple.  Somewhere near the top of
-    coregrind/vg_syscalls.c, add the following line:
-
-       #define __NR_fstat64            197
-
-    Rebuild and try again.  The above line should appear before any
-    uses of the __NR_fstat64 symbol in that file.  If you look at the
-    place where __NR_fstat64 is used in vg_syscalls.c, it will be
-    obvious why this fix works.
+Q2. [Question erased, as it is no longer relevant]
 
 -----------------------------------------------------------------
 

@@ -451,12 +451,8 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
       }
 
       guest_rip_curr_instr = guest_rip_bbstart + delta;
-vex_traceflags = VEX_TRACE_FE;
-if (amd64code[delta] != 0xC3)
-vex_printf("LALALA ");
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, subarch_guest, &size, &guest_next );
-vex_traceflags = 0;
       insn_verbose = False;
 
       /* Print the resulting IR, if needed. */

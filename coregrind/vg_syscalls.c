@@ -4463,17 +4463,18 @@ PREx(sys_mkdir, MayBlock)
    PRE_MEM_RASCIIZ( "mkdir(pathname)", arg1 );
 }
 
-PRE(mmap2)
+PREx(sys_mmap2, 0)
 {
-   // Exactly like __NR_mmap except:
+   // Exactly like old_mmap() except:
    //  - all 6 args are passed in regs, rather than in a memory-block.
    //  - the file offset is specified in pagesize units rather than bytes,
    //    so that it can be used for files bigger than 2^32 bytes.
-   /* void* mmap2(void *start, size_t length, int prot, 
-                  int flags, int fd, off_t offset); 
-   */
-   PRINT("mmap2 ( %p, %llu, %d, %d, %d, %d )",
-		arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );
+   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+         arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );
+   PRE_REG_READ6(long, "mmap2",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
 
    if (arg4 & VKI_MAP_FIXED) {
       if (!valid_client_addr(arg1, arg2, tid, "mmap2"))
@@ -4487,44 +4488,49 @@ PRE(mmap2)
    }
 }
 
-POST(mmap2)
+POSTx(sys_mmap2)
 {
    vg_assert(valid_client_addr(res, arg2, tid, "mmap2"));
-   mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_PAGE_SIZE );
+   mmap_segment( (Addr)res, arg2, arg3, arg4, arg5,
+                 arg6 * (ULong)VKI_PAGE_SIZE );
 }
 
-PRE(mmap)
+PREx(old_mmap, Special)
 {
-   /* void* mmap(void *start, size_t length, int prot, 
-      int flags, int fd, off_t offset); 
-   */
-
+   /* struct mmap_arg_struct {           
+         unsigned long addr;
+         unsigned long len;
+         unsigned long prot;
+         unsigned long flags;
+         unsigned long fd;
+         unsigned long offset;
+   }; */
    UInt a1, a2, a3, a4, a5, a6;
 
-   vg_assert(tid = tst->tid);
+   PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
    PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
 
-   PRINT("mmap ( %p, %llu, %d, %d, %d, %d )",
-		a1, (ULong)a2, a3, a4, a5, a6 );
+   PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
+         a1, (ULong)a2, a3, a4, a5, a6 );
 
    if (a4 & VKI_MAP_FIXED) {
-      if (!valid_client_addr(a1, a2, tid, "mmap")) {
-	 PRINT("mmap failing: %p-%p\n", a1, a1+a2);
-	 set_result( -VKI_ENOMEM );
+      if (!valid_client_addr(a1, a2, tid, "old_mmap")) {
+         PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
+         set_result( -VKI_ENOMEM );
       }
    } else {
       a1 = VG_(find_map_space)(a1, a2, True);
       if (a1 == 0)
-	 set_result( -VKI_ENOMEM );
+         set_result( -VKI_ENOMEM );
       else
-	 a4 |= VKI_MAP_FIXED;
+         a4 |= VKI_MAP_FIXED;
    }
 
    if (res != -VKI_ENOMEM) {
       PLATFORM_DO_MMAP(res, a1, a2, a3, a4, a5, a6);
 
       if (!VG_(is_kerror)(res)) {
-         vg_assert(valid_client_addr(res, a2, tid, "mmap"));
+         vg_assert(valid_client_addr(res, a2, tid, "old_mmap"));
          mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
       }
    }
@@ -4883,7 +4889,7 @@ PREx(old_select, MayBlock)
       };
    */
    PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
-   PRE_MEM_READ( "old_select(args)", arg1, 5*sizeof(UInt) );
+   PRE_MEM_READ( "old_select(args)", arg1, 5*sizeof(UWord) );
 
    {
       UInt* arg_struct = (UInt*)arg1;
@@ -6419,7 +6425,7 @@ static const struct sys_info sys_info[] = {
    //   (__NR_reboot,           sys_reboot),       // 88 * L
    //   (__NR_readdir,          old_readdir),      // 89 () L -- superseded
 
-   SYSB_(__NR_mmap,             old_mmap, Special), // 90  old_mmap
+   SYSX_(__NR_mmap,             old_mmap),         // 90 (x86) (P but not...)
    SYSXY(__NR_munmap,           sys_munmap),       // 91 * P
    SYSX_(__NR_truncate,         sys_truncate),     // 92 * P
    SYSX_(__NR_ftruncate,        sys_ftruncate),    // 93 * P
@@ -6544,7 +6550,7 @@ static const struct sys_info sys_info[] = {
    // Nb: we convert vfork() to fork() in VG_(pre_syscall)().
    //   (__NR_vfork,            sys_vfork),        // 190 -- Valgrind avoids
    SYSXY(__NR_ugetrlimit,       sys_getrlimit),    // 191 * (?)
-   SYSBA(__NR_mmap2,            sys_mmap2, 0),     // 192 
+   SYSXY(__NR_mmap2,            sys_mmap2),        // 192 (x86?) P?
    SYSX_(__NR_truncate64,       sys_truncate64),   // 193 %% (P?)
    SYSX_(__NR_ftruncate64,      sys_ftruncate64),  // 194 %% (P?)
    

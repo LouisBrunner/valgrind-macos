@@ -360,9 +360,12 @@ int main(void)
    // __NR_readdir 89
    // (superseded, not handled by Valgrind)
 
-   // __NR_mmap 90
- //GO(__NR_mmap, ".s .m");
- //SY(__NR_mmap);
+   // __NR_mmap 90 --> old_mmap()
+   {
+      long args[6] = { x0, x0, x0, x0, x0-1, x0 };
+      GO(__NR_mmap, "1s 0m");
+      SY(__NR_mmap, args+x0);
+   }
 
    // __NR_munmap 91 --> sys_munmap()
    GO(__NR_munmap, "2s 0m");
@@ -776,9 +779,9 @@ int main(void)
    GO(__NR_ugetrlimit, "2s 1m");
    SY(__NR_ugetrlimit, x0, x0);
 
-   // __NR_mmap2 192
- //GO(__NR_mmap2, ".s .m");
- //SY(__NR_mmap2);
+   // __NR_mmap2 192 --> sys_mmap()
+   GO(__NR_mmap2, "5s 0m");
+   SY(__NR_mmap2, x0, x0, x0, x0, x0-1, x0);
 
    // __NR_truncate64 193 --> sys_truncate64()
    GO(__NR_truncate64, "3s 1m");

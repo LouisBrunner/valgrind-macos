@@ -2,12 +2,12 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: memcmp (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/memcheck/memcmptest)
+   by 0x........: (within /.../tests/memcmptest)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: memcmp (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/memcheck/memcmptest)
+   by 0x........: (within /.../tests/memcmptest)
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 20 bytes in 2 blocks.

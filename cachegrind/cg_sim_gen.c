@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Generic stuff shared by all cache simulation files.          ---*/
-/*---                                            vg_cachesim_gen.c ---*/
+/*---                                                 cg_sim_gen.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -39,8 +39,8 @@
       - both blocks miss                 --> one miss (not two)
 */
 
-#ifndef __VG_CACHESIM_GEN_C
-#define __VG_CACHESIM_GEN_C
+#ifndef __CG_SIM_GEN_C
+#define __CG_SIM_GEN_C
 
 typedef struct {
    int          size;                   /* bytes */
@@ -204,9 +204,9 @@ miss_treatment:                                                             \
    return;                                                                  \
 }
 
-#endif  /* ndef __VG_CACHESIM_GEN_C */
+#endif  /* ndef __CG_SIM_GEN_C */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                        vg_cachesim_gen.c ---*/
+/*--- end                                             cg_sim_gen.c ---*/
 /*--------------------------------------------------------------------*/
 

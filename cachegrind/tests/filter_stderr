@@ -2,7 +2,7 @@
 
 dir=`dirname $0`
 
-$dir/../filter_stderr_basic                         |
+$dir/../../tests/filter_stderr_basic                |
 
 # Remove numbers from I/D/L2 "refs:" lines
 sed "s/\(\(I\|D\|L2\) *refs:\)[ 0-9,()+rdw]*$/\1/"  |

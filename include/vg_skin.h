@@ -99,7 +99,7 @@ typedef unsigned char          Bool;
    definitions.
    ------------------------------------------------------------------ */
 
-#include "./vg_kerneliface.h"
+#include "core/vg_kerneliface.h"
 
 
 /*====================================================================*/

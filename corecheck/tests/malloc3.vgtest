@@ -1,2 +1,2 @@
 prog: malloc3
-stdout_filter: ../filter_addresses
+stdout_filter: ../../tests/filter_addresses

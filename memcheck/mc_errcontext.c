@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- Part of the MemCheck skin: management of memory error        ---*/
 /*--- messages.                                                    ---*/
-/*---                                     vg_memcheck_errcontext.c ---*/
+/*---                                              mc_errcontext.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_memcheck_include.h"
+#include "mc_include.h"
 
 /*------------------------------------------------------------*/
 /*--- Defns                                                ---*/
@@ -606,5 +606,5 @@ extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
 #  undef STREQ
 
 /*--------------------------------------------------------------------*/
-/*--- end                                 vg_memcheck_errcontext.c ---*/
+/*--- end                                          mc_errcontext.c ---*/
 /*--------------------------------------------------------------------*/

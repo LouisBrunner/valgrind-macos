@@ -5,7 +5,7 @@ Syscall param sigaction(act) contains uninitialised or unaddressable byte(s)
    at 0x........: __libc_sigaction (...libc...)
    by 0x........: main (sigaltstack.c:27)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: sigaltstack@@GLIBC_2.0 (in /.../tests/memcheck/sigaltstack)
+   by 0x........: sigaltstack@@GLIBC_2.0 (in /.../tests/sigaltstack)
    Address 0x........ is on thread 1's stack
 res = 0
 raising the signal

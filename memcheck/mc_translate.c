@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------*/
 /*--- Part of the MemCheck skin: instrument UCode to perform       ---*/
 /*--- memory checking operations.                                  ---*/
-/*---                                      vg_memcheck_translate.c ---*/
+/*---                                               mc_translate.c ---*/
 /*--------------------------------------------------------------------*/
 /*
    This file is part of Valgrind, an x86 protected-mode emulator 
@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_memcheck_include.h"
+#include "mc_include.h"
 
 /* ---------------------------------------------------------------------
    Template functions for extending UCode
@@ -1466,5 +1466,5 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb, Addr not_used )
 #undef dis
 
 /*--------------------------------------------------------------------*/
-/*--- end                                  vg_memcheck_translate.c ---*/
+/*--- end                                           mc_translate.c ---*/
 /*--------------------------------------------------------------------*/

@@ -1,4 +1,5 @@
-INCLUDES = -I$(top_srcdir)
+
+INCLUDES = -I$(top_srcdir)/core -I$(top_srcdir)/include
 
 CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
 

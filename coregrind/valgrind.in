@@ -71,7 +71,7 @@ fi
 skin_so="vgskin_${skin}.so"
 if [ ! -r $VALGRIND/$skin_so ] ; then
    echo
-   echo "Extension error:"
+   echo "Skin error:"
    echo "  The shared library \`$skin_so' for the chosen"
    echo "  skin \`$skin' could not be found in"
    echo "  $VALGRIND"

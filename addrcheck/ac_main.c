@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- The AddrCheck skin: like MemCheck, but only does address     ---*/
 /*--- checking.  No definedness checking.                          ---*/
-/*---                                               vg_addrcheck.c ---*/
+/*---                                                    ac_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_addrcheck_include.h"
+#include "ac_include.h"
 //#include "vg_profile.c"
 
 /*------------------------------------------------------------*/
@@ -2583,5 +2583,5 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           vg_addrcheck.c ---*/
+/*--- end                                                ac_main.c ---*/
 /*--------------------------------------------------------------------*/

@@ -37,7 +37,7 @@
 # - Add directory to valgrind/configure.in
 # - Write a Makefile.am for it
 # - Write a filter_stderr for it;  it should always call
-#   ../filter_stderr_basic as its first step
+#   ../../tests/filter_stderr_basic as its first step
 # - Add test programs, .vgtest, .stderr.exp{,.hd}, .stdout.exp files
 #
 # Note that if you add new basis filters in tests/, if they call other basic
@@ -64,8 +64,8 @@ my @failures;           # List of failed tests
 
 my $exp = "";           # --eraser is default
 
-# Assumes we're in tests/
-my $valgrind = "../bin/valgrind";
+# Assumes we're in valgrind/
+my $valgrind = "bin/valgrind";
 
 chomp(my $tests_dir = `pwd`);
 
@@ -187,6 +187,14 @@ sub mysystem($)
     (system($_[0]) != 2) or exit 1;      # 2 is SIGINT
 }
 
+# from a directory name like "/foo/cachesim/tests/" determine the skin name
+sub determine_skin()
+{
+    my $dir = `pwd`;
+    $dir =~ /.*\/([^\/]+)\/tests.*/;   # foo/skin_name/tests/foo
+    return $1;
+}
+
 sub do_one_test($$) 
 {
     my ($dir, $vgtest) = @_;
@@ -203,7 +211,8 @@ sub do_one_test($$)
     if ($exp eq ".hd") {
         mysystem("$valgrind $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
     } else {
-        mysystem("$valgrind --skin=$dir $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+        my $skin=determine_skin();
+        mysystem("$valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
     }
 
     if (defined $stdout_filter) {
@@ -243,23 +252,33 @@ sub do_one_test($$)
 }
 
 #----------------------------------------------------------------------------
-# Test one directory
+# Test one directory (and any subdirs)
 #----------------------------------------------------------------------------
+sub test_one_dir($);    # forward declaration
+
 sub test_one_dir($) 
 {
     my ($dir) = @_;
     $dir =~ s/\/$//;    # trim a trailing '/'
 
+    if ($dir =~ /^(CVS|docs)$/) { return; }    # ignore CVS/ and docs/ dirs
+
     print "-- Running tests in $dir ----------------------------------\n";
     chdir($dir) or die "Could not change into $dir\n";
 
-    my @vgtests = glob "*\.vgtest";
-    
-    foreach my $vgtest (@vgtests) {
-        do_one_test($dir, $vgtest);
+#    my @vgtests = glob "*\.vgtest";
+    my @fs = glob "*";
+
+    foreach my $f (@fs) {
+        if (-d $f) {
+            test_one_dir($f);
+        } elsif ($f =~ /\.vgtest$/) {
+            do_one_test($dir, $f);
+        }
     }
+    
+    print "-- Finished tests in $dir ----------------------------------\n";
     chdir("..");
-    print "\n";
 }
 
 #----------------------------------------------------------------------------
@@ -267,7 +286,7 @@ sub test_one_dir($)
 #----------------------------------------------------------------------------
 sub summarise_results 
 {
-    print "-- Failed tests -------------------------------\n";
+    print "\n== Failed tests ===============================\n";
     if (0 == @failures) {
         print "   (none)\n";
     } else {

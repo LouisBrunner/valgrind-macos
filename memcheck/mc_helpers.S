@@ -1,6 +1,6 @@
 ##--------------------------------------------------------------------##
 ##--- Support routines for the memory checker.                     ---##
-##---                                        vg_memcheck_helpers.S ---##
+##---                                        	      mc_helpers.S ---##
 ##--------------------------------------------------------------------##
 
 /*
@@ -28,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_constants.h"
+#include "vg_constants_skin.h"
 
 .global SK_(helper_value_check0_fail)
 SK_(helper_value_check0_fail):
@@ -58,5 +58,7 @@ SK_(helper_value_check4_fail):
 	popal
 	ret
 
-
+##--------------------------------------------------------------------##
+##--- end                                    	      mc_helpers.S ---##
+##--------------------------------------------------------------------##
 

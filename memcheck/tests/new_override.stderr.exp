@@ -2,7 +2,7 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (new_override.cpp:25)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/memcheck/new_override)
+   by 0x........: (within /.../tests/new_override)
 
 ERROR SUMMARY: 2 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 32 bytes in 1 blocks.

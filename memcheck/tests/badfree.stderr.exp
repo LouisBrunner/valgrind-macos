@@ -3,14 +3,14 @@ Invalid free() / delete / delete[]
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (badfree.c:12)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: free@@GLIBC_2.0 (in /.../tests/memcheck/badfree)
+   by 0x........: free@@GLIBC_2.0 (in /.../tests/badfree)
    Address 0x........ is not stack'd, malloc'd or free'd
 
 Invalid free() / delete / delete[]
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (badfree.c:15)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: free@@GLIBC_2.0 (in /.../tests/memcheck/badfree)
+   by 0x........: free@@GLIBC_2.0 (in /.../tests/badfree)
    Address 0x........ is on thread 1's stack
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------*/
 /*--- A header file for all parts of the MemCheck skin.            ---*/
-/*---                                        vg_memcheck_include.h ---*/
+/*---                                                 mc_include.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_MEMCHECK_INCLUDE_H
-#define __VG_MEMCHECK_INCLUDE_H
+#ifndef __MC_INCLUDE_H
+#define __MC_INCLUDE_H
 
 #include "vg_skin.h"
 
@@ -204,6 +204,6 @@ extern void SK_(record_user_error)        ( ThreadState* tst, Addr a,
 #endif
 
 /*--------------------------------------------------------------------*/
-/*--- end                                    vg_memcheck_include.h ---*/
+/*--- end                                             mc_include.h ---*/
 /*--------------------------------------------------------------------*/
 

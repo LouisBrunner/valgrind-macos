@@ -3,12 +3,12 @@ Invalid free() / delete / delete[]
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (memalign_test.c:17)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: valloc@@GLIBC_2.0 (in /.../tests/memcheck/memalign_test)
+   by 0x........: valloc@@GLIBC_2.0 (in /.../tests/memalign_test)
    Address 0x........ is 0 bytes inside a block of size 111110 free'd
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (memalign_test.c:15)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: valloc@@GLIBC_2.0 (in /.../tests/memcheck/memalign_test)
+   by 0x........: valloc@@GLIBC_2.0 (in /.../tests/memalign_test)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

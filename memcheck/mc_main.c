@@ -2,7 +2,7 @@
 /*--- Part of the MemCheck skin: Maintain bitmaps of memory,       ---*/
 /*--- tracking the accessibility (A) and validity (V) status of    ---*/
 /*--- each byte.                                                   ---*/
-/*---                                                vg_memcheck.c ---*/
+/*---                                                    mc_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,8 +30,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_memcheck_include.h"
-#include "vg_memcheck.h"   /* for client requests */
+#include "mc_include.h"
+#include "memcheck.h"   /* for client requests */
 //#include "vg_profile.c"
 
 /* Define to debug the mem audit system. */
@@ -2424,5 +2424,5 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_memcheck.c ---*/
+/*--- end                                                mc_main.c ---*/
 /*--------------------------------------------------------------------*/

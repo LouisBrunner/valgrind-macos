@@ -1,6 +1,6 @@
 
 discard ... (... -> ...) translations in range 0x........ .. 0x........
-discard syms in /.../tests/cachesim/myprint.so due to munmap()
+discard syms in /.../tests/myprint.so due to munmap()
 
 I   refs:
 I1  misses:

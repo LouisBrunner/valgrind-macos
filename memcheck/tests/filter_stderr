@@ -6,15 +6,15 @@
 
 dir=`dirname $0`
 
-$dir/../filter_stderr_basic                             |
+$dir/../../tests/filter_stderr_basic                    |
 
 # Anonymise addresses
-$dir/../filter_addresses                                |
+$dir/../../tests/filter_addresses                       |
 
 # Anonymise line numbers in vg_clientfuncs.c
 sed "s/vg_clientfuncs.c:[0-9]\+/vg_clientfuncs.c:.../"  |
 
-$dir/../filter_test_paths                               |
+$dir/../../tests/filter_test_paths                      |
 
 # Anonymise paths like "(in /foo/bar/libc-baz.so)"
 sed "s/(in \/.*libc.*)$/(in \/...libc...)/"             |

@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- Part of the MemCheck skin: for when the client advises       ---*/
 /*--- Valgrind about memory permissions.                           ---*/
-/*---                                     vg_memcheck_clientreqs.c ---*/
+/*---                                              mc_clientreqs.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,9 +30,9 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_memcheck_include.h"
+#include "mc_include.h"
 
-#include "vg_memcheck.h"  /* for VG_USERREQ__* */
+#include "memcheck.h"  /* for VG_USERREQ__* */
 
 
 /*------------------------------------------------------------*/
@@ -363,5 +363,5 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                 vg_memcheck_clientreqs.c ---*/
+/*--- end                                          mc_clientreqs.c ---*/
 /*--------------------------------------------------------------------*/

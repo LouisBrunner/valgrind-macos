@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- The cache simulation skin: cache detection; instrumentation, ---*/
 /*--- recording and results printing.                              ---*/
-/*---                                                vg_cachesim.c ---*/
+/*---                                                    cg_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -40,9 +40,9 @@ typedef struct {
     int line_size;  /* bytes */ 
 } cache_t;
 
-#include "vg_cachesim_L2.c"
-#include "vg_cachesim_I1.c"
-#include "vg_cachesim_D1.c"
+#include "cg_sim_L2.c"
+#include "cg_sim_I1.c"
+#include "cg_sim_D1.c"
 
 /*------------------------------------------------------------*/
 /*--- Constants                                            ---*/
@@ -1999,5 +1999,5 @@ Bool SK_(expensive_sanity_check)(void)
 #endif
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_cachesim.c ---*/
+/*--- end                                                cg_main.c ---*/
 /*--------------------------------------------------------------------*/

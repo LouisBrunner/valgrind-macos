@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(vg_clientmalloc.c)
+AC_INIT(core/vg_clientmalloc.c)   # give me a source file, any source file...
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(valgrind, post-1.0.0-ERASER)
+AM_INIT_AUTOMAKE(valgrind, HEAD)
 
 AM_MAINTAINER_MODE
 
@@ -291,17 +291,28 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
 
 AC_OUTPUT(
-   vg_annotate
-   valgrind
-   valgrind.spec
    Makefile 
+   valgrind.spec
+   core/Makefile 
+   core/demangle/Makefile 
+   core/docs/Makefile
+   core/valgrind
    docs/Makefile 
-   tests/Makefile 
-   tests/cachesim/Makefile 
-   tests/corecheck/Makefile 
-   tests/none/Makefile 
-   tests/memcheck/Makefile 
-   demangle/Makefile)
+   addrcheck/Makefile
+   memcheck/Makefile
+   memcheck/tests/Makefile
+   memcheck/docs/Makefile
+   cachegrind/Makefile
+   cachegrind/cg_annotate
+   cachegrind/tests/Makefile
+   cachegrind/docs/Makefile
+   corecheck/Makefile
+   corecheck/tests/Makefile
+   helgrind/Makefile
+   lackey/Makefile
+   none/Makefile
+   none/tests/Makefile
+) 
 
 cat<<EOF
 

@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- A header file for the AddrCheck skin.                        ---*/
-/*---                                       vg_addrcheck_include.h ---*/
+/*---                                                 ac_include.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,8 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_ADDRCHECK_INCLUDE_H
-#define __VG_ADDRCHECK_INCLUDE_H
+#ifndef __AC_INCLUDE_H
+#define __AC_INCLUDE_H
 
 #include "vg_skin.h"
 
@@ -115,6 +115,6 @@ extern void SK_(detect_memory_leaks) ( void );
 #endif
 
 /*--------------------------------------------------------------------*/
-/*--- end                                   vg_addrcheck_include.h ---*/
+/*--- end                                             ac_include.h ---*/
 /*--------------------------------------------------------------------*/
 

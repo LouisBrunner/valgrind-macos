@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- Part of the MemCheck skin: Generate code for skin-specific   ---*/
 /*--- UInstrs.                                                     ---*/
-/*---                                     vg_memcheck_from_ucode.c ---*/
+/*---                                              mc_from_ucode.c ---*/
 /*--------------------------------------------------------------------*/
 /*
    This file is part of Valgrind, an x86 protected-mode emulator 
@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_memcheck_include.h"
+#include "mc_include.h"
 
 /*------------------------------------------------------------*/
 /*--- Renamings of frequently-used global functions.       ---*/
@@ -638,5 +638,5 @@ void SK_(emitExtUInstr) ( UInstr* u, RRegSet regs_live_before )
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                 vg_memcheck_from_ucode.c ---*/
+/*--- end                                          mc_from_ucode.c ---*/
 /*--------------------------------------------------------------------*/

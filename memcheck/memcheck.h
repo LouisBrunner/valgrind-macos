@@ -56,8 +56,8 @@
 */
 
 
-#ifndef __VG_MEMCHECK_H
-#define __VG_MEMCHECK_H
+#ifndef __MEMCHECK_H
+#define __MEMCHECK_H
 
 
 /* This file is for inclusion into client (your!) code.

@@ -2,7 +2,7 @@
 Invalid write of size 4
    at 0x........: main (signal2.c:17)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: exit@@GLIBC_2.0 (in /.../tests/memcheck/signal2)
+   by 0x........: exit@@GLIBC_2.0 (in /.../tests/signal2)
    Address 0x........ is not stack'd, malloc'd or free'd
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

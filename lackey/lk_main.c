@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------*/
 /*--- Simple skin for counting UInstrs, using a C helper.          ---*/
-/*---                                                  vg_lackey.c ---*/
+/*---                                                    lk_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -79,7 +79,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used)
    needs->name        = "lackey";
    needs->description = "a UInstr counter";
 
-   //VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
+   VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);
    VG_(register_compact_helper)((Addr) & add_one_x86_instr);
    VG_(register_compact_helper)((Addr) & add_one_UInstr);
@@ -219,6 +219,6 @@ void SK_(fini)(void)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                              vg_lackey.c ---*/
+/*--- end                                                lk_main.c ---*/
 /*--------------------------------------------------------------------*/
 

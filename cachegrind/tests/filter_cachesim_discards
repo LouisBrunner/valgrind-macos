@@ -2,4 +2,4 @@
 
 dir=`dirname $0`
 
-$dir/filter_stderr | $dir/../filter_discards
+$dir/filter_stderr | $dir/../../tests/filter_discards

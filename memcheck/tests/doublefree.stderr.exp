@@ -3,12 +3,12 @@ Invalid free() / delete / delete[]
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (doublefree.c:10)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: free@@GLIBC_2.0 (in /.../tests/memcheck/doublefree)
+   by 0x........: free@@GLIBC_2.0 (in /.../tests/doublefree)
    Address 0x........ is 0 bytes inside a block of size 177 free'd
    at 0x........: free (vg_clientfuncs.c:...)
    by 0x........: main (doublefree.c:10)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: free@@GLIBC_2.0 (in /.../tests/memcheck/doublefree)
+   by 0x........: free@@GLIBC_2.0 (in /.../tests/doublefree)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

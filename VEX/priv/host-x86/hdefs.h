@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (x86h_defs.h) is                              ---*/
+/*--- This file (host-x86/hdefs.h) is                         ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -33,8 +33,8 @@
    USA.
 */
 
-#ifndef __LIBVEX_X86H_DEFS_H
-#define __LIBVEX_X86H_DEFS_H
+#ifndef __LIBVEX_HOST_X86_HDEFS_H
+#define __LIBVEX_HOST_X86_HDEFS_H
 
 
 /* --------- Registers. --------- */
@@ -672,8 +672,8 @@ extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
 extern HInstrArray* iselBB_X86           ( IRBB*, VexSubArch );
 
-#endif /* ndef __LIBVEX_X86H_DEFS_H */
+#endif /* ndef __LIBVEX_HOST_X86_HDEFS_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                         x86h_defs.h ---*/
+/*--- end                                    host-x86/hdefs.h ---*/
 /*---------------------------------------------------------------*/

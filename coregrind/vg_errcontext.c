@@ -962,8 +962,8 @@ void VG_(load_suppressions) ( void )
    vg_suppressions = NULL;
    for (i = 0; i < VG_(clo_n_suppressions); i++) {
       if (VG_(clo_verbosity) > 1) {
-         VG_(message)(Vg_UserMsg, "Reading suppressions file: %s", 
-                                  VG_(clo_suppressions)[i] );
+         VG_(message)(Vg_DebugMsg, "Reading suppressions file: %s", 
+                                   VG_(clo_suppressions)[i] );
       }
       load_one_suppressions_file( VG_(clo_suppressions)[i] );
    }

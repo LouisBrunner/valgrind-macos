@@ -391,7 +391,7 @@ Bool VG_(translate) ( ThreadId tid,
       } else {
          VG_(strcpy)(name2, "???");
       }
-      VG_(message)(Vg_UserMsg, 
+      VG_(message)(Vg_DebugMsg, 
                    "TRANSLATE: 0x%llx (%s) redirected to 0x%llx (%s)",
                    orig_addr, name1,
                    redir, name2 );

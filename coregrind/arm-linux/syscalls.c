@@ -132,6 +132,11 @@ PRE(sys_ipc, Special)
    I_die_here;
 }
 
+POST(sys_ipc)
+{
+   I_die_here;
+}
+
 #undef PRE
 #undef POST
 

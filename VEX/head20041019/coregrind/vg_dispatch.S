@@ -120,7 +120,9 @@ dispatch_boring:
 	movl	%eax, (%ebp, %esi, 4)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	cmpl	$0, VG_(dispatch_ctr)
+	/* -------cmpl	$0, VG_(dispatch_ctr) */
+	subl $1, VG_(dispatch_ctr)
+	
 	jz	counter_is_zero
 	/* try a fast lookup in the translation cache */
 	TT_LOOKUP(%ebx, fast_lookup_failed)
@@ -178,44 +180,6 @@ dispatch_exceptional:
 	movl	%ebp, %eax
 	jmp	run_innerloop_exit
 
-
-/*
-	This is the translation chainer, our run-time linker, if you like.
-
-	VG_(patch_me) patches the call instruction in the jump site
-	with a jump to the generated code for the branch target.  %eax
-	contains the original program's EIP - if we get a hit in
-	tt_fast, then the call is patched into a jump; otherwise it
-	simply drops back into the dispatch loop for normal
-	processing.
-
-	The callsite is expected to look like:
-		call	VG_(patch_me)
-	it will be transformed into
-		jmp	$TARGETADDR
-
-	The environment we're expecting on entry is:
-		%eax    = branch target address (original code EIP)
-		*(%esp) = just after call
-*/
-.globl VG_(patch_me)
-VG_(patch_me):
-	/* try a fast lookup in the translation cache */
-	TT_LOOKUP(%ebx, 1f)
-
-	/* Patch call instruction at callsite into a chained jmp */
-	popl	%eax	    /* eax = just after (VG_PATCHME_CALLSZ byte) call */
-	addl	$VG_CODE_OFFSET, %ebx	/* ebx = target eip */
-	subl	%eax, %ebx		/* ebx = delta */
-	movb	$0xE9, -(VG_PATCHME_CALLSZ-0)(%eax)		/* 0xe9 = jmp */
-	movl	%ebx,  -(VG_PATCHME_CALLSZ-1)(%eax)	       /* store delta */
-	addl	%eax, %ebx
-	incl	VG_(bb_enchain_count)			      /* update stats */
-	jmp	*%ebx					       /* jmp to dest */
-
-	/* tt_fast miss: return into main dispatch loop */
-1:	addl	$4, %esp	/* remove our call address */
-	ret			/* return into main dispatch loop above */
 	
 .data
 panic_msg_ebp:

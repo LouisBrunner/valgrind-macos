@@ -504,9 +504,10 @@ X86Instr* X86Instr_Push( X86RMI* src ) {
    i->Xin.Push.src = src;
    return i;
 }
-X86Instr* X86Instr_Call ( HReg target, Int regparms ) {
+X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_Call;
+   i->Xin.Call.cond     = cond;
    i->Xin.Call.target   = target;
    i->Xin.Call.regparms = regparms;
    vassert(regparms >= 0 && regparms <= 3);
@@ -697,8 +698,11 @@ void ppX86Instr ( X86Instr* i ) {
          ppX86RMI(i->Xin.Push.src);
          return;
       case Xin_Call:
-         vex_printf("call[%d] *", i->Xin.Call.regparms);
-         ppHRegX86(i->Xin.Call.target);
+         vex_printf("call%s[%d] ", 
+                    i->Xin.Call.cond==Xcc_ALWAYS 
+                       ? "" : showX86CondCode(i->Xin.Call.cond), 
+                    i->Xin.Call.regparms);
+         vex_printf("0x%x", i->Xin.Call.target);
          break;
       case Xin_Goto:
          if (i->Xin.Goto.jk == Ijk_ClientReq 
@@ -871,12 +875,14 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmModify, hregX86_ESP());
          return;
       case Xin_Call:
-         addHRegUse(u, HRmRead, i->Xin.Call.target);
-         /* claim it trashes all the callee-saved regs */
+         /* This is a bit subtle. */
+         /* First off, claim it trashes all the callee-saved regs */
          /* which I believe to be %eax,%ecx,%edx. */
          addHRegUse(u, HRmWrite, hregX86_EAX());
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());
+         /* Now we have to state any parameter-carrying registers
+            which might be read.  This depends on the regparmness. */
          switch (i->Xin.Call.regparms) {
             case 3: addHRegUse(u, HRmRead, hregX86_ECX()); /*fallthru*/
             case 2: addHRegUse(u, HRmRead, hregX86_EDX()); /*fallthru*/
@@ -884,6 +890,20 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
             case 0: break;
             default: vpanic("getRegUsage_X86Instr:Call:regparms");
          }
+         /* Finally, there is the issue that the insn trashes a
+            register because the literal target address has to be
+            loaded into a register.  Fortunately, for the 0/1/2
+            regparm case, we can use EAX, ECX and EDX respectively, so
+            this does not cause any further damage.  For the 3-regparm
+            case, we'll have to choose another register arbitrarily --
+            since A,C and D are used for parameters -- and so we might
+            as well choose EDI. */
+         if (i->Xin.Call.regparms == 3)
+            addHRegUse(u, HRmWrite, hregX86_EDI());
+         /* Upshot of this is that the assembler really must observe
+            the here-stated convention of which register to use as an
+            address temporary, depending on the regparmness: 0==EAX,
+            1==ECX, 2==EDX, 3==EDI. */
          return;
       case Xin_Goto:
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
@@ -993,7 +1013,6 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapRegs_X86RMI(m, i->Xin.Push.src);
          return;
       case Xin_Call:
-         mapReg(m, &i->Xin.Call.target);
          return;
       case Xin_Goto:
          mapRegs_X86RI(m, i->Xin.Goto.dst);
@@ -1083,7 +1102,8 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 
 
 /* Generate x86 spill/reload instructions under the direction of the
-   register allocator.  */
+   register allocator.  Note it's critical these don't write the
+   condition codes. */
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
 {
@@ -1329,7 +1349,7 @@ static UChar* do_fop2_st ( UChar* p, X86FpOp op, Int i )
 
 Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 {
-   UInt opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
+   UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
    UChar* p = &buf[0];
    UChar* ptmp;
@@ -1620,8 +1640,27 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
 
    case Xin_Call:
+      /* See detailed comment for Xin_Call in getRegUsage_X86Instr above
+         for explanation of this. */
+      switch (i->Xin.Call.regparms) {
+         case 0: irno = iregNo(hregX86_EAX()); break;
+         case 1: irno = iregNo(hregX86_ECX()); break;
+         case 2: irno = iregNo(hregX86_EDX()); break;
+         case 3: irno = iregNo(hregX86_EDI()); break;
+         default: vpanic(" emit_X86Instr:call:regparms");
+      }
+      /* jump over the following two insns if the condition does not
+         hold */
+      if (i->Xin.Call.cond != Xcc_ALWAYS) {
+         *p++ = 0x70 + (0xF & (i->Xin.Call.cond ^ 1));
+         *p++ = 0x07; /* 7 bytes in the next two insns */
+      }
+      /* movl $target, %tmp */
+      *p++ = 0xB8 + irno; 
+      p = emit32(p, i->Xin.Call.target);
+      /* call *%tmp */
       *p++ = 0xFF;
-      p = doAMode_R(p, fake(2), i->Xin.Call.target);
+      *p++ = 0xD0 + irno;
       goto done;
 
    case Xin_Goto:

@@ -297,28 +297,15 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg )
    helper and clearing the args off the stack. */
 
 static 
-void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
+void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc, 
+                              IRCallee* cee, Int n_arg_ws )
 {
-   HReg freg;
-
    /* Complication.  Need to decide which reg to use as the fn address
       pointer, in a way that doesn't trash regparm-passed
       parameters. */
    vassert(sizeof(void*) == 4);
 
-   switch (cee->regparms) {
-      case 0: freg = hregX86_EAX(); break;
-      case 1: freg = hregX86_EDX(); break;
-      case 2: freg = hregX86_ECX(); break;
-      case 3: freg = hregX86_EDI(); break;
-      default: vpanic("callHelperAndClearArgs(x86): > 3 regparms");
-   }
-
-   addInstr(env, X86Instr_Alu32R(
-                    Xalu_MOV,
-                    X86RMI_Imm((UInt)cee->addr),
-                    freg));
-   addInstr(env, X86Instr_Call(freg, cee->regparms));
+   addInstr(env, X86Instr_Call( cc, (UInt)cee->addr, cee->regparms));
    if (n_arg_ws > 0)
       addInstr(env, X86Instr_Alu32R(Xalu_ADD,
                        X86RMI_Imm(4*n_arg_ws),
@@ -326,12 +313,16 @@ void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
 }
 
 
-/* Do a complete function call. */
+/* Do a complete function call.  guard is a Ity_Bit expression
+   indicating whether or not the call happens.  If guard==NULL, the
+   call is unconditional. */
 
 static
 void doHelperCall ( ISelEnv* env, 
-                    Bool passBBP, IRCallee* cee, IRExpr** args )
+                    Bool passBBP, 
+                    IRExpr* guard, IRCallee* cee, IRExpr** args )
 {
+   X86CondCode cc;
    HReg argregs[3];
    Int  not_done_yet, n_args, n_arg_ws, stack_limit, i, argreg;
 
@@ -402,8 +393,23 @@ void doHelperCall ( ISelEnv* env,
 
    vassert(not_done_yet == 0);
 
+   /* Now we can compute the condition.  We can't do it earlier
+      because the argument computations could trash the condition
+      codes.  Be a bit clever to handle the common case where the
+      guard is 1:Bit. */
+   cc = Xcc_ALWAYS;
+   if (guard) {
+      if (guard->tag == Iex_Const 
+          && guard->Iex.Const.con->tag == Ico_Bit
+          && guard->Iex.Const.con->Ico.Bit == True) {
+         /* unconditional -- do nothing */
+      } else {
+         cc = iselCondCode( env, guard );
+      }
+   }
+
    /* call the helper, and get the args off the stack afterwards. */
-   callHelperAndClearArgs( env, cee, n_arg_ws );
+   callHelperAndClearArgs( env, cc, cee, n_arg_ws );
 }
 
 
@@ -518,22 +524,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Binop: {
       X86AluOp   aluOp;
       X86ShiftOp shOp;
-
-#if 0
-      { DECLARE_PATTERN(p_rol32);
-        DEFINE_PATTERN(p_rol32,
-           binop(Iop_Or32,
-                 binop(Iop_Shl32,bind(0),bind(1)),
-                 binop(Iop_Shr32,
-                       bind(2),
-                       binop(Iop_Sub8,IRConst_U8(32),bind(3)))));
-        if (matchIRExpr(&mi,p_rol32,e)
-            && eqIRExpr(mi.bindee[0], mi.bindee[2])
-            && eqIRExpr(mi.bindee[1], mi.bindee[3])) {
-           /* emit roll */
-        }
-      }
-#endif
 
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
@@ -968,7 +958,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1695,7 +1685,7 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg tHi = newVRegI(env);
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
@@ -2202,7 +2192,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       passBBP = d->nFxState > 0 && d->needsBBP;
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->cee, d->args );
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == INVALID_IRTEMP)
@@ -2217,6 +2207,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          lookupIRTemp64( &dstHi, &dstLo, env, d->tmp);
          addInstr(env, mk_MOVsd_RR(hregX86_EDX(),dstHi) );
          addInstr(env, mk_MOVsd_RR(hregX86_EAX(),dstLo) );
+         return;
+      }
+      if (retty == Ity_I32 || retty == Ity_I16) {
+         /* The returned value is in %eax.  Park it in the register
+            associated with tmp. */
+         HReg dst = lookupIRTemp(env, d->tmp);
+         addInstr(env, mk_MOVsd_RR(hregX86_EAX(),dst) );
          return;
       }
       break;

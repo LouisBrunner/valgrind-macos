@@ -340,9 +340,12 @@ typedef
          struct {
             X86RMI* src;
          } Push;
+         /* Pseudo-insn.  Call target (an absolute address), on given
+            condition (which could be Xcc_ALWAYS). */
          struct {
-            HReg target;
-            Int  regparms; /* 0 .. 3 */
+            X86CondCode cond;
+            Addr32      target;
+            Int         regparms; /* 0 .. 3 */
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
             Xcc_ALWAYS).  Note importantly that if the jump is 
@@ -449,7 +452,7 @@ extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 extern X86Instr* X86Instr_Push      ( X86RMI* );
-extern X86Instr* X86Instr_Call      ( HReg, Int );
+extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
 extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
 extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,

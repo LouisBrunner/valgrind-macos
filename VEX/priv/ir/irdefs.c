@@ -283,6 +283,10 @@ void ppIREffect ( IREffect fx )
 void ppIRDirty ( IRDirty* d )
 {
    Int i;
+   if (d->tmp != INVALID_IRTEMP) {
+      ppIRTemp(d->tmp);
+      vex_printf(" = ");
+   }
    vex_printf("DIRTY ");
    ppIRExpr(d->guard);
    if (d->needsBBP)
@@ -300,10 +304,6 @@ void ppIRDirty ( IRDirty* d )
       vex_printf("-gst(%d,%d)", d->fxState[i].offset, d->fxState[i].size);
    }
    vex_printf(" ::: ");
-   if (d->tmp != INVALID_IRTEMP) {
-      ppIRTemp(d->tmp);
-      vex_printf(" = ");
-   }
    ppIRCallee(d->cee);
    vex_printf("(");
    for (i = 0; d->args[i] != NULL; i++) {
@@ -418,6 +418,8 @@ IRConst* IRConst_Bit ( Bool bit )
    IRConst* c = LibVEX_Alloc(sizeof(IRConst));
    c->tag     = Ico_Bit;
    c->Ico.Bit = bit;
+   /* call me paranoid; I don't care :-) */
+   vassert(bit == False || bit == True);
    return c;
 }
 IRConst* IRConst_U8 ( UChar u8 )

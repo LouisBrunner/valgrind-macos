@@ -4,8 +4,8 @@ SUBDIRS = demangle . docs
 add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include
 
 AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(libdir)"\"
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
-		@PREFERRED_STACK_BOUNDARY@ -g
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
+		@PREFERRED_STACK_BOUNDARY@ -g -fpic
 AM_CCASFLAGS = $(add_includes)
 
 valdir = $(libdir)/valgrind
@@ -19,7 +19,7 @@ val_PROGRAMS = \
 	valgrinq.so \
 	libpthread.so
 
-EXTRA_DIST = vg_libpthread.vs
+EXTRA_DIST = vg_libpthread.vs valgrind.vs
 
 libpthread_so_SOURCES = \
 	vg_libpthread.c \
@@ -53,6 +53,7 @@ valgrind_so_SOURCES = \
 	vg_mylibc.c \
 	vg_needs.c \
 	vg_procselfmaps.c \
+	vg_proxylwp.c \
 	vg_dummy_profile.c \
 	vg_signals.c \
 	vg_startup.S \
@@ -63,7 +64,11 @@ valgrind_so_SOURCES = \
 	vg_translate.c \
 	vg_transtab.c \
 	vg_ldt.c
-valgrind_so_LDFLAGS = -Wl,-z,initfirst -shared
+valgrind_so_DEPENDENCIES = $(srcdir)/valgrind.vs
+valgrind_so_LDFLAGS = \
+	-Wl,-z,initfirst -shared \
+	-Wl,-version-script $(srcdir)/valgrind.vs 
+
 valgrind_so_LDADD = \
 	demangle/cp-demangle.o \
 	demangle/cplus-dem.o \

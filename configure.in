@@ -114,7 +114,7 @@ case "${kernel}" in
 
      *) 
 	    AC_MSG_RESULT([unsupported (${kernel})])
-	    AC_MSG_ERROR([Valgrind works on kernels 2.2 and 2.4])
+	    AC_MSG_ERROR([Valgrind works on kernels 2.2, 2.4, 2.6])
 	    ;;
 esac
 

@@ -120,9 +120,19 @@ Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
+/* PID of the main thread */
+Int VG_(main_pid);
+
+/* PGRP of process */
+Int VG_(main_pgrp);
 
 /* Words. */
 static Int baB_off = 0;
+
+/* jmp_buf for fatal signals */
+Int	VG_(fatal_sigNo) = -1;
+Bool	VG_(fatal_signal_set) = False;
+jmp_buf VG_(fatal_signal_jmpbuf);
 
 /* Returns the offset, in words. */
 static Int alloc_BaB ( Int words )
@@ -549,6 +559,17 @@ Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_chain_bb)       = True;
 
+static Bool   VG_(clo_wait_for_gdb)   = False;
+
+/* If we're doing signal routing, poll for signals every 50mS by
+   default. */
+Int    VG_(clo_signal_polltime) = 50;
+
+/* These flags reduce thread wakeup latency on syscall completion and
+   signal delivery, respectively.  The downside is possible unfairness. */
+Bool   VG_(clo_lowlat_syscalls) = False; /* low-latency syscalls */
+Bool   VG_(clo_lowlat_signals)  = False; /* low-latency signals */
+
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
 Bool VG_(running_on_simd_CPU) = False;
@@ -633,6 +654,13 @@ static void usage ( void )
 "                              suppressions file <filename>\n"
 "    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
 "         recognised hacks are: ioctl-VTIME truncate-writes lax-ioctls\n"
+"    --signal-polltime=<time>  time, in mS, we should poll for signals.\n"
+"                              Only applies for older kernels which need\n"
+"                              signal routing [50]\n"
+"    --lowlat-signals=no|yes   improve wake-up latency when a thread receives\n"
+"			       a signal [no]\n"
+"    --lowlat-syscalls=no|yes  improve wake-up latency when a thread's\n"
+"			       syscall completes [no]\n"
 "\n"
 "  %s skin user options:\n";
 
@@ -656,6 +684,7 @@ static void usage ( void )
 "    --dump-error=<number>     show translation for basic block\n"
 "                              associated with <number>'th\n"
 "                              error context [0=don't show any]\n"
+"    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
 "  %s skin debugging options:\n";
 
@@ -1056,11 +1085,29 @@ static void process_cmd_line_options ( void )
       else if (VG_CLO_STREQN(14, argv[i], "--weird-hacks="))
          VG_(clo_weird_hacks) = &argv[i][14];
 
+      else if (VG_CLO_STREQN(17, argv[i], "--signal-polltime="))
+	 VG_(clo_signal_polltime) = VG_(atoll)(&argv[i][17]);
+
+      else if (VG_CLO_STREQ(argv[i], "--lowlat-signals=yes"))
+	 VG_(clo_lowlat_signals) = True;
+      else if (VG_CLO_STREQ(argv[i], "--lowlat-signals=no"))
+	 VG_(clo_lowlat_signals) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--lowlat-syscalls=yes"))
+	 VG_(clo_lowlat_syscalls) = True;
+      else if (VG_CLO_STREQ(argv[i], "--lowlat-syscalls=no"))
+	 VG_(clo_lowlat_syscalls) = False;
+
       else if (VG_CLO_STREQN(13, argv[i], "--stop-after="))
          VG_(clo_stop_after) = VG_(atoll)(&argv[i][13]);
 
       else if (VG_CLO_STREQN(13, argv[i], "--dump-error="))
          VG_(clo_dump_error) = (Int)VG_(atoll)(&argv[i][13]);
+
+      else if (VG_CLO_STREQ(argv[i], "--wait-for-gdb=yes"))
+	 VG_(clo_wait_for_gdb) = True;
+      else if (VG_CLO_STREQ(argv[i], "--wait-for-gdb=no"))
+	 VG_(clo_wait_for_gdb) = False;
 
       else if (VG_CLO_STREQN(14, argv[i], "--num-callers=")) {
          /* Make sure it's sane. */
@@ -1163,6 +1210,15 @@ static void process_cmd_line_options ( void )
          break;
       }
 
+   }
+
+   /* Move logfile_fd into the safe range, so it doesn't conflict with any app fds */
+   eventually_logfile_fd = VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_DUPFD, VG_MAX_FD+1);
+   if (eventually_logfile_fd < 0)
+      VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
+   else {
+      VG_(clo_logfile_fd) = eventually_logfile_fd;
+      VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_SETFD, VKI_FD_CLOEXEC);
    }
 
    /* Ok, the logging sink is running now.  Print a suitable preamble.
@@ -1413,6 +1469,15 @@ static void vg_show_counts ( void )
    Main!
    ------------------------------------------------------------------ */
 
+/* Initialize the PID and PGRP of scheduler LWP; this is also called
+   in any new children after fork. */
+static void newpid(ThreadId unused)
+{
+   /* PID of scheduler LWP */
+   VG_(main_pid) = VG_(getpid)();
+   VG_(main_pgrp) = VG_(getpgrp)();
+}
+
 /* Where we jump to once Valgrind has got control, and the real
    machine's state has been copied to the m_state_static. */
 
@@ -1420,7 +1485,6 @@ void VG_(main) ( void )
 {
    Int               i;
    VgSchedReturnCode src;
-   ThreadState*      tst;
 
    if (0) {
       if (VG_(have_ssestate))
@@ -1449,6 +1513,9 @@ void VG_(main) ( void )
       VG_(exit)(1);
    }
 
+   VG_(atfork)(NULL, NULL, newpid);
+   newpid(VG_INVALID_THREADID);
+
    /* Set up our stack sanity-check words. */
    for (i = 0; i < 10; i++) {
       VG_(stack)[i] = (UInt)(&VG_(stack)[i])                   ^ 0xA4B3C2D1;
@@ -1467,15 +1534,6 @@ void VG_(main) ( void )
    */
    VG_(read_procselfmaps)();
 
-   /* Hook to delay things long enough so we can get the pid and
-      attach GDB in another shell. */
-   if (0) {
-      Int p, q;
-      VG_(printf)("pid=%d\n", VG_(getpid)());
-      for (p = 0; p < 50000; p++)
-         for (q = 0; q < 50000; q++) ;
-   }
-
    /* Setup stuff that depends on the skin.  Must be before:
       - vg_init_baseBlock(): to register helpers
       - process_cmd_line_options(): to register skin name and description,
@@ -1487,6 +1545,14 @@ void VG_(main) ( void )
 
    /* Process Valgrind's command-line opts (from env var VG_ARGS). */
    process_cmd_line_options();
+
+   /* Hook to delay things long enough so we can get the pid and
+      attach GDB in another shell. */
+   if (VG_(clo_wait_for_gdb)) {
+      VG_(printf)("pid=%d\n", VG_(getpid)());
+      /* do "jump *$eip" to skip this in gdb */
+      VG_(do_syscall)(__NR_pause);
+   }
 
    /* Do post command-line processing initialisation.  Must be before:
       - vg_init_baseBlock(): to register any more helpers
@@ -1501,6 +1567,9 @@ void VG_(main) ( void )
       - VG_(sigstartup_actions)()
    */
    VG_(scheduler_init)();
+
+   /* Set up the ProxyLWP machinery */
+   VG_(proxy_init)();
 
    /* Initialise the signal handling subsystem, temporarily parking
       the saved blocking-mask in saved_sigmask. */
@@ -1549,7 +1618,13 @@ void VG_(main) ( void )
    /* Run! */
    VG_(running_on_simd_CPU) = True;
    VGP_PUSHCC(VgpSched);
-   src = VG_(scheduler)();
+
+   if (__builtin_setjmp(&VG_(fatal_signal_jmpbuf)) == 0) {
+      VG_(fatal_signal_set) = True;
+      src = VG_(scheduler)();
+   } else
+      src = VgSrc_FatalSig;
+
    VGP_POPCC(VgpSched);
    VG_(running_on_simd_CPU) = False;
 
@@ -1604,14 +1679,21 @@ void VG_(main) ( void )
       );
    }
 
+   /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
+   vg_assert(src == VgSrc_FatalSig ||
+	     VG_(threads)[VG_(last_run_tid)].status == VgTs_Runnable ||
+	     VG_(threads)[VG_(last_run_tid)].status == VgTs_WaitJoiner);
+   VG_(nuke_all_threads_except)(VG_INVALID_THREADID);
+
    /* Decide how to exit.  This depends on what the scheduler
       returned. */
+  
    switch (src) {
       case VgSrc_ExitSyscall: /* the normal way out */
          vg_assert(VG_(last_run_tid) > 0 
                    && VG_(last_run_tid) < VG_N_THREADS);
-         tst = & VG_(threads)[VG_(last_run_tid)];
-         vg_assert(tst->status == VgTs_Runnable);
+	 VG_(proxy_shutdown)();
+
          /* The thread's %EBX at the time it did __NR_exit() will hold
             the arg to __NR_exit(), so we just do __NR_exit() with
             that arg. */
@@ -1622,6 +1704,7 @@ void VG_(main) ( void )
 
       case VgSrc_Deadlock:
          /* Just exit now.  No point in continuing. */
+	 VG_(proxy_shutdown)();
          VG_(exit)(0);
          VG_(core_panic)("entered the afterlife in vg_main() -- Deadlock");
          break;
@@ -1636,12 +1719,21 @@ void VG_(main) ( void )
          VG_(load_thread_state)(1 /* root thread */ );
          VG_(copy_baseBlock_to_m_state_static)();
 
+	 VG_(proxy_shutdown)();
+
          /* This pushes a return address on the simulator's stack,
             which is abandoned.  We call vg_sigshutdown_actions() at
             the end of vg_switch_to_real_CPU(), so as to ensure that
             the original stack and machine state is restored before
             the real signal mechanism is restored.  */
          VG_(switch_to_real_CPU)();
+
+      case VgSrc_FatalSig:
+	 /* We were killed by a fatal signal, so replicate the effect */
+	 vg_assert(VG_(fatal_sigNo) != -1);
+	 VG_(kill_self)(VG_(fatal_sigNo));
+	 VG_(core_panic)("vg_main(): signal was supposed to be fatal");
+	 break;
 
       default:
          VG_(core_panic)("vg_main(): unexpected scheduler return code");
@@ -1900,6 +1992,8 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       VG_(sanity_slow_count)++;
+
+      VG_(proxy_sanity)();
 
 #     if 0
       { void zzzmemscan(void); zzzmemscan(); }

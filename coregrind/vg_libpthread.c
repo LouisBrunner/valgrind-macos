@@ -74,23 +74,18 @@
 #include <stdio.h>
 
 
+# define strong_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+
+
 /* ---------------------------------------------------------------------
    Forwardses.
    ------------------------------------------------------------------ */
 
 #define WEAK	__attribute__((weak))
-
-
-static
-int my_do_syscall1 ( int syscallno, int arg1 );
-
-static
-int my_do_syscall2 ( int syscallno, 
-                     int arg1, int arg2 );
-
-static
-int my_do_syscall3 ( int syscallno, 
-                     int arg1, int arg2, int arg3 );
 
 static
 __inline__
@@ -141,7 +136,7 @@ int get_pt_trace_level ( void )
 static
 void my_exit ( int arg )
 {
-   my_do_syscall1(__NR_exit, arg);
+   VG_(do_syscall)(__NR_exit, arg);
    /*NOTREACHED*/
 }
 
@@ -149,7 +144,7 @@ void my_exit ( int arg )
 static
 void my_write ( int fd, const void *buf, int count )
 {
-   my_do_syscall3(__NR_write, fd, (int)buf, count );
+   VG_(do_syscall)(__NR_write, fd, (int)buf, count );
 }
 */
 
@@ -1208,7 +1203,7 @@ int pthread_cancel(pthread_t thread)
    return res;
 }
 
-static __inline__
+static
 void __my_pthread_testcancel(void)
 {
    int res;
@@ -1272,10 +1267,6 @@ int pthread_sigmask(int how, const sigset_t *newmask,
                return EINVAL;
    }
 
-   /* Crude check */
-   if (newmask == NULL)
-      return EFAULT;
-
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_SIGMASK,
                            how, newmask, oldmask, 0);
@@ -1284,17 +1275,20 @@ int pthread_sigmask(int how, const sigset_t *newmask,
    return res == 0 ? 0 : EFAULT;
 }
 
-
 int sigwait ( const sigset_t* set, int* sig )
 {
    int res;
-   ensure_valgrind("sigwait");
+   vki_ksiginfo_t si;
+   
+   __my_pthread_testcancel();
+
    /* As with pthread_sigmask we deliberately confuse sigset_t with
       vki_ksigset_t. */
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__SIGWAIT,
-                           set, sig, 0, 0);
-   return res;
+   si.si_signo = 0;
+   res = VG_(ksigtimedwait)((const vki_ksigset_t *)set, &si, NULL);
+   *sig = si.si_signo;
+
+   return 0;			/* always returns 0 */
 }
 
 
@@ -1323,40 +1317,6 @@ int raise (int sig)
   }
 }
 
-
-int pause ( void )
-{
-   unsigned int n_orig, n_now;
-   struct vki_timespec nanosleep_interval;
-   ensure_valgrind("pause");
-
-   /* This is surely a cancellation point. */
-   __my_pthread_testcancel();
-
-   VALGRIND_MAGIC_SEQUENCE(n_orig, 0xFFFFFFFF /* default */,
-                           VG_USERREQ__GET_N_SIGS_RETURNED, 
-                           0, 0, 0, 0);
-   my_assert(n_orig != 0xFFFFFFFF);
-
-   while (1) {
-      VALGRIND_MAGIC_SEQUENCE(n_now, 0xFFFFFFFF /* default */,
-                              VG_USERREQ__GET_N_SIGS_RETURNED, 
-                              0, 0, 0, 0);
-      my_assert(n_now != 0xFFFFFFFF);
-      my_assert(n_now >= n_orig);
-      if (n_now != n_orig) break;
-
-      nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 12 * 1000 * 1000; /* 12 milliseconds */
-      /* It's critical here that valgrind's nanosleep implementation
-         is nonblocking. */
-      (void)my_do_syscall2(__NR_nanosleep, 
-                           (int)(&nanosleep_interval), (int)NULL);
-   }
-
-   *(__errno_location()) = EINTR;
-   return -1;
-}
 
 
 /* ---------------------------------------------------
@@ -1433,15 +1393,16 @@ int __pthread_key_create(pthread_key_t *key,
    VALGRIND_MAGIC_SEQUENCE(res, 1 /* default */,
                            VG_USERREQ__PTHREAD_KEY_CREATE,
                            key, destr_function, 0, 0);
-   my_assert(res == 0);
-
-   /* POSIX sez: "Upon key creation, the value NULL shall be
-      associated with the new key in all active threads." */
-   for (i = 0; i < VG_N_THREADS; i++) {
-      specifics_ptr = get_or_allocate_specifics_ptr(i);
-      /* we get NULL if i is an invalid thread. */
-      if (specifics_ptr != NULL)
-         specifics_ptr[*key] = NULL;
+   
+   if (res == 0) {
+      /* POSIX sez: "Upon key creation, the value NULL shall be
+	 associated with the new key in all active threads." */
+      for (i = 0; i < VG_N_THREADS; i++) {
+	 specifics_ptr = get_or_allocate_specifics_ptr(i);
+	 /* we get NULL if i is an invalid thread. */
+	 if (specifics_ptr != NULL)
+	    specifics_ptr[*key] = NULL;
+      }
    }
 
    return res;
@@ -1525,7 +1486,6 @@ int __pthread_once ( pthread_once_t *once_control,
 {
    int res;
    int done;
-   ensure_valgrind("pthread_once");
 
 #  define TAKE_LOCK                                   \
       res = __pthread_mutex_lock(&once_masterlock);   \
@@ -1534,6 +1494,14 @@ int __pthread_once ( pthread_once_t *once_control,
 #  define RELEASE_LOCK                                \
       res = __pthread_mutex_unlock(&once_masterlock); \
       my_assert(res == 0);
+
+   void cleanup(void *v) {
+      TAKE_LOCK;
+      *once_control = P_ONCE_NOT_DONE;
+      RELEASE_LOCK;
+   }
+
+   ensure_valgrind("pthread_once");
 
    /* Grab the lock transiently, so we can safely see what state this
       once_control is in. */
@@ -1546,10 +1514,12 @@ int __pthread_once ( pthread_once_t *once_control,
  	 /* Not started.  Change state to indicate running, drop the
 	    lock and run.  */
          *once_control = P_ONCE_RUNNING;
+	 _pthread_cleanup_push(NULL, cleanup, NULL);
 	 RELEASE_LOCK;
          init_routine();
          /* re-take the lock, and set state to indicate done. */
 	 TAKE_LOCK;
+	 _pthread_cleanup_pop(NULL, False);
          *once_control = P_ONCE_COMPLETED;
 	 RELEASE_LOCK;
 	 break;
@@ -1891,6 +1861,15 @@ int sigaction(int signum,
 #  endif
 }
 
+extern 
+int __libc_accept(int fd, struct sockaddr *addr, socklen_t *len);
+
+WEAK int __accept(int fd, struct sockaddr *addr, socklen_t *len)
+{
+   __my_pthread_testcancel();
+   return __libc_accept(fd, addr, len);
+}
+strong_alias(__accept, accept);
 
 extern
 int  __libc_connect(int  sockfd,  
@@ -1935,149 +1914,12 @@ ssize_t read(int fd, void *buf, size_t count)
    return __libc_read(fd, buf, count);
 }
 
-/*
- * Ugh, this is horrible but here goes:
- *
- * Open of a named pipe (fifo file) can block.  In a threaded program,
- * this means that the whole thing can block.  We therefore need to
- * make the open appear to block to the caller, but still keep polling
- * for everyone else.
- *
- * There are four cases:
- *
- * - the caller asked for O_NONBLOCK.  The easy one: we just do it.
- *
- * - the caller asked for a blocking O_RDONLY open.  We open it with
- *   O_NONBLOCK and then use poll to wait for it to become ready.
- *
- * - the caller asked for a blocking O_WRONLY open.  Unfortunately, this
- *   will fail with ENXIO when we make it non-blocking.  Doubly
- *   unfortunate is that we can only rely on these semantics if it is
- *   actually a fifo file; the hack is that if we see that it is a
- *   O_WRONLY open and we get ENXIO, then stat the path and see if it
- *   actually is a fifo.  This is racy, but it is the best we can do.
- *   If it is a fifo, then keep trying the open until it works; if not
- *   just return the error.
- *
- * - the caller asked for a blocking O_RDWR open.  Well, under Linux,
- *   this never blocks, so we just clear the non-blocking flag and
- *   return.
- *
- * This code assumes that for whatever we open, O_NONBLOCK followed by
- * a fcntl clearing O_NONBLOCK is the same as opening without
- * O_NONBLOCK.  Also assumes that stat and fstat have no side-effects.
- *
- * XXX Should probably put in special cases for some devices as well,
- * like serial ports.  Unfortunately they don't work like fifos, so
- * this logic will become even more tortured.  Wait until we really
- * need it.
- */ 
-static int _open(const char *pathname, int flags, mode_t mode,
-	         int (*openp)(const char *, int, mode_t))
-{
-   int fd;
-   struct stat st;
-   struct vki_timespec nanosleep_interval;
-   int saved_errno;
-
-   __my_pthread_testcancel();
-
-   /* Assume we can only get O_RDONLY, O_WRONLY or O_RDWR */
-   my_assert((flags & VKI_O_ACCMODE) != VKI_O_ACCMODE);
-
-   for(;;) {
-      fd = (*openp)(pathname, flags | VKI_O_NONBLOCK, mode);
-
-      /* return immediately if caller wanted nonblocking anyway */
-      if (flags & VKI_O_NONBLOCK)
-	 return fd;
-
-      saved_errno = *(__errno_location());
-
-      if (fd != -1)
-	 break;			/* open worked */
-
-      /* If we got ENXIO and we're opening WRONLY, and it turns out
-	 to really be a FIFO, then poll waiting for open to succeed */
-      if (*(__errno_location()) == ENXIO &&
-	  (flags & VKI_O_ACCMODE) == VKI_O_WRONLY &&
-	  (stat(pathname, &st) == 0 && S_ISFIFO(st.st_mode))) {
-
-	 /* OK, we're opening a FIFO for writing; sleep and spin */
-	 nanosleep_interval.tv_sec  = 0;
-	 nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
-	 /* It's critical here that valgrind's nanosleep implementation
-	    is nonblocking. */
-	 (void)my_do_syscall2(__NR_nanosleep, 
-			      (int)(&nanosleep_interval), (int)NULL);
-      } else {
-	 /* it was just an error */
-	 *(__errno_location()) = saved_errno;
-	 return -1;
-      }
-   }
-
-   /* OK, we've got a nonblocking FD for a caller who wants blocking;
-      reset the flags to what they asked for */
-   fcntl(fd, VKI_F_SETFL, flags);
-
-   /* Return now if one of:
-      - we were opening O_RDWR (never blocks)
-      - we opened with O_WRONLY (polling already done)
-      - the thing we opened wasn't a FIFO after all (or fstat failed)
-   */
-   if ((flags & VKI_O_ACCMODE) != VKI_O_RDONLY ||
-       (fstat(fd, &st) == -1 || !S_ISFIFO(st.st_mode))) {
-      *(__errno_location()) = saved_errno;
-      return fd;
-   }
-
-   /* OK, drop into the poll loop looking for something to read on the fd */
-   my_assert((flags & VKI_O_ACCMODE) == VKI_O_RDONLY);
-   for(;;) {
-      struct pollfd pollfd;
-      int res;
-
-      pollfd.fd = fd;
-      pollfd.events = POLLIN;
-      pollfd.revents = 0;
-
-      res = my_do_syscall3(__NR_poll, (int)&pollfd, 1, 0);
-      
-      my_assert(res == 0 || res == 1);
-
-      if (res == 1) {
-	 /* OK, got it.
-
-	    XXX This is wrong: we're waiting for either something to
-	    read or a HUP on the file descriptor, but the semantics of
-	    fifo open are that we should unblock as soon as someone
-	    simply opens the other end, not that they write something.
-	    With luck this won't matter in practice.
-	 */
-	 my_assert(pollfd.revents & (POLLIN|POLLHUP));
-	 break;
-      }
-
-      /* Still nobody home; sleep and spin */
-      nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
-      /* It's critical here that valgrind's nanosleep implementation
-	 is nonblocking. */
-      (void)my_do_syscall2(__NR_nanosleep, 
-			   (int)(&nanosleep_interval), (int)NULL);
-   }
-
-   *(__errno_location()) = saved_errno;
-   return fd;
-}
-
 extern
 int __libc_open64(const char *pathname, int flags, mode_t mode);
 /* WEAK */
 int open64(const char *pathname, int flags, mode_t mode)
 {
-   return _open(pathname, flags, mode, __libc_open64);
+   return __libc_open64(pathname, flags, mode);
 }
 
 extern
@@ -2085,7 +1927,7 @@ int __libc_open(const char *pathname, int flags, mode_t mode);
 /* WEAK */
 int open(const char *pathname, int flags, mode_t mode)
 {
-   return _open(pathname, flags, mode, __libc_open);
+   return __libc_open(pathname, flags, mode);
 }
 
 extern
@@ -2097,30 +1939,6 @@ int close(int fd)
    return __libc_close(fd);
 }
 
-
-WEAK
-int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
-{
-   return VGR_(accept)(s, addr, addrlen);
-}
-
-WEAK
-int recv(int s, void *buf, size_t len, int flags)
-{
-   return VGR_(recv)(s, buf, len, flags);
-}
-
-WEAK
-int readv(int fd, const struct iovec *iov, int count)
-{
-  return VGR_(readv)(fd, iov, count);
-}
-
-WEAK
-int writev(int fd, const struct iovec *iov, int count)
-{
-  return VGR_(writev)(fd, iov, count);
-}
 
 extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
@@ -2135,10 +1953,19 @@ pid_t waitpid(pid_t pid, int *status, int options)
 extern
 int __libc_nanosleep(const struct timespec *req, struct timespec *rem);
 WEAK
-int nanosleep(const struct timespec *req, struct timespec *rem)
+int __nanosleep(const struct timespec *req, struct timespec *rem)
 {
    __my_pthread_testcancel();
    return __libc_nanosleep(req, rem);
+}
+
+extern
+int __libc_pause(void);
+WEAK
+int __pause(void)
+{
+   __my_pthread_testcancel();
+   return __libc_pause();
 }
 
 
@@ -2213,24 +2040,14 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
    return __libc_pread(fd, buf, count, offset);
 }
 
-
-extern  
-void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
-/* not weak: WEAK */
-void longjmp(jmp_buf env, int val)
+extern
+int __libc_recv(int s, void *msg, size_t len, int flags);
+WEAK
+int recv(int s, void *msg, size_t len, int flags)
 {
-   __libc_longjmp(env, val);
+   __my_pthread_testcancel();
+   return __libc_recv(s, msg, len, flags);
 }
-
-
-extern void __libc_siglongjmp (sigjmp_buf env, int val)
-                               __attribute__ ((noreturn));
-void siglongjmp(sigjmp_buf env, int val)
-{
-   kludged("siglongjmp (cleanup handlers are ignored)");
-   __libc_siglongjmp(env, val);
-}
-
 
 extern
 int __libc_send(int s, const void *msg, size_t len, int flags);
@@ -2269,8 +2086,6 @@ WEAK
 int recvfrom(int s, void *buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen)
 {
-   __my_pthread_testcancel();
-   VGR_(wait_for_fd_to_be_readable_or_erring)(s);
    __my_pthread_testcancel();
    return __libc_recvfrom(s, buf, len, flags, from, fromlen);
 }
@@ -2315,6 +2130,40 @@ int msync(const void *start, size_t length, int flags)
 {
    __my_pthread_testcancel();
    return __libc_msync(start, length, flags);
+}
+
+strong_alias(close, __close)
+strong_alias(fcntl, __fcntl)
+strong_alias(lseek, __lseek)
+strong_alias(open, __open)
+strong_alias(open64, __open64)
+strong_alias(read, __read)
+strong_alias(wait, __wait)
+strong_alias(write, __write)
+strong_alias(connect, __connect)
+strong_alias(send, __send)
+
+weak_alias (__pread64, pread64)
+weak_alias (__pwrite64, pwrite64)
+weak_alias(__nanosleep, nanosleep)
+weak_alias(__pause, pause)
+
+
+extern  
+void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
+/* not weak: WEAK */
+void longjmp(jmp_buf env, int val)
+{
+   __libc_longjmp(env, val);
+}
+
+
+extern void __libc_siglongjmp (sigjmp_buf env, int val)
+                               __attribute__ ((noreturn));
+void siglongjmp(sigjmp_buf env, int val)
+{
+   kludged("siglongjmp (cleanup handlers are ignored)");
+   __libc_siglongjmp(env, val);
 }
 
 
@@ -2396,71 +2245,6 @@ pid_t __vfork(void)
    return __fork();
 }
 
-
-static
-int my_do_syscall1 ( int syscallno, int arg1 )
-{ 
-   int __res;
-   __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
-                     : "=a" (__res)
-                     : "0" (syscallno),
-                       "d" (arg1) );
-   return __res;
-}
-
-static
-int my_do_syscall2 ( int syscallno, 
-                     int arg1, int arg2 )
-{ 
-   int __res;
-   __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
-                     : "=a" (__res)
-                     : "0" (syscallno),
-                       "d" (arg1),
-                       "c" (arg2) );
-   return __res;
-}
-
-static
-int my_do_syscall3 ( int syscallno, 
-                     int arg1, int arg2, int arg3 )
-{ 
-   int __res;
-   __asm__ volatile ("pushl %%ebx; movl %%esi,%%ebx ; int $0x80 ; popl %%ebx"
-                     : "=a" (__res)
-                     : "0" (syscallno),
-                       "S" (arg1),
-                       "c" (arg2),
-                       "d" (arg3) );
-   return __res;
-}
-
-static inline
-int my_do_syscall5 ( int syscallno, 
-                     int arg1, int arg2, int arg3, int arg4, int arg5 )
-{ 
-   int __res;
-   __asm__ volatile ("int $0x80"
-                     : "=a" (__res)
-                     : "0" (syscallno),
-                       "b" (arg1),
-                       "c" (arg2),
-                       "d" (arg3),
-                       "S" (arg4),
-                       "D" (arg5));
-   return __res;
-}
-
-
-WEAK
-int select ( int n, 
-             fd_set *rfds, 
-             fd_set *wfds, 
-             fd_set *xfds, 
-             struct timeval *timeout )
-{
-   return VGR_(select)(n, rfds, wfds, xfds, timeout);
-}
 
 
 /* ---------------------------------------------------------------------
@@ -3013,64 +2797,30 @@ pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attr, int pshared)
 }
 
 
-/* ---------------------------------------------------------------------
-   Make SYSV IPC not block everything -- pass to vg_intercept.c.
-   ------------------------------------------------------------------ */
-
-WEAK
-int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
-{
-   return VGR_(msgsnd)(msgid, msgp, msgsz, msgflg);
-}
-
-WEAK
-int msgrcv(int msqid, void* msgp, size_t msgsz, 
-           long msgtyp, int msgflg )
-{
-   return VGR_(msgrcv)(msqid, msgp, msgsz, msgtyp, msgflg );
-}
-
 
 /* ---------------------------------------------------------------------
-   The glibc sources say that returning -1 in these 3 functions
-   causes real time signals not to be used.
+   Manage the allocation and use of RT signals.  The Valgrind core
+   uses one.  glibc needs us to implement this to make RT signals
+   work; things just seem to crash if we don't.
    ------------------------------------------------------------------ */
-
 int __libc_current_sigrtmin (void)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      kludged("__libc_current_sigrtmin");
-   return -1;
+   return VG_(sig_rtmin);
 }
 
 int __libc_current_sigrtmax (void)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      kludged("__libc_current_sigrtmax");
-   return -1;
+   return VG_(sig_rtmax);
 }
 
 int __libc_allocate_rtsig (int high)
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      kludged("__libc_allocate_rtsig");
-   return -1;
+   return VG_(sig_alloc_rtsig)(high);
 }
-
 
 /* ---------------------------------------------------------------------
    B'stard.
    ------------------------------------------------------------------ */
-
-# define strong_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
-
-# define weak_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
-
 strong_alias(__pthread_mutex_lock, pthread_mutex_lock)
 strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
 strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
@@ -3090,22 +2840,8 @@ strong_alias(__pthread_setspecific, pthread_setspecific)
 strong_alias(sigaction, __sigaction)
 #endif
      
-strong_alias(close, __close)
-strong_alias(fcntl, __fcntl)
-strong_alias(lseek, __lseek)
-strong_alias(open, __open)
-strong_alias(open64, __open64)
-strong_alias(read, __read)
-strong_alias(wait, __wait)
-strong_alias(write, __write)
-strong_alias(connect, __connect)
-strong_alias(send, __send)
-
-weak_alias (__pread64, pread64)
-weak_alias (__pwrite64, pwrite64)
 weak_alias(__fork, fork)
 weak_alias(__vfork, vfork)
-
 weak_alias (__pthread_kill_other_threads_np, pthread_kill_other_threads_np)
 
 /*--------------------------------------------------*/

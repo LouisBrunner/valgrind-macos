@@ -45,6 +45,9 @@
    options or sizes, recompile, and still have a working system.
    ------------------------------------------------------------------ */
 
+/* For system call numbers __NR_... */
+#include "vg_unistd.h"
+
 #include "vg_constants.h"
 
 /* All stuff visible to core and skins goes in vg_skin.h.  Things
@@ -108,11 +111,14 @@
    give finer interleaving but much increased scheduling overheads. */
 #define VG_SCHEDULING_QUANTUM   50000
 
-/* Number of file descriptors that can simultaneously be waited on for
-   I/O to complete.  Perhaps this should be the same as VG_N_THREADS
-   (surely a thread can't wait on more than one fd at once?.  Who
-   knows.) */
-#define VG_N_WAITING_FDS 20
+/* Maximum FD Valgrind can use for its internal file descriptors. */
+#define VG_MAX_SAFE_FD	1024	/* usual ulimit */
+
+/* Maximum allowed application-visible file descriptor.  Valgrind's
+   internal fds hide above this (starting at VG_MAX_FD+1).  This is
+   derived from the default fd limit (1024) minus the 2 fds per thread
+   and a small number of extra fds. */
+#define VG_MAX_FD	(VG_MAX_SAFE_FD - (VG_N_THREADS*2 + 4))
 
 /* Stack size for a thread.  We try and check that they do not go
    beyond it. */
@@ -136,7 +142,6 @@
 /* Valgrind's stack sizes, in words */
 #define VG_STACK_SIZE_W       10000
 #define VG_SIGSTACK_SIZE_W    10000
-
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -166,6 +171,11 @@ typedef
       VgLogTo_Socket
    } VgLogTo;
 
+/* pid of main process */
+extern Int VG_(main_pid);
+
+/* pgrp of process (global to all threads) */
+extern Int VG_(main_pgrp);
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
@@ -236,6 +246,14 @@ extern Int   VG_(clo_dump_error);
 extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous weird hacks needed for some progs. */
 extern Char* VG_(clo_weird_hacks);
+/* How often we should poll for signals, assuming we need to poll for
+   signals. */
+extern Int   VG_(clo_signal_polltime);
+
+/* Low latency syscalls and signals */
+extern Bool  VG_(clo_lowlat_syscalls);
+extern Bool  VG_(clo_lowlat_signals);
+
 /* Should we run __libc_freeres at exit?  Sometimes causes crashes.
    Default: YES.  Note this is subservient to VG_(needs).libc_freeres;
    if the latter says False, then the setting of VG_(clo_weird_hacks)
@@ -510,7 +528,7 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 #define VG_USERREQ__PTHREAD_GETSPECIFIC_PTR 0x3016
 #define VG_USERREQ__READ_MILLISECOND_TIMER  0x3017
 #define VG_USERREQ__PTHREAD_SIGMASK         0x3018
-#define VG_USERREQ__SIGWAIT                 0x3019
+#define VG_USERREQ__SIGWAIT                 0x3019 /* unused */
 #define VG_USERREQ__PTHREAD_KILL            0x301A
 #define VG_USERREQ__PTHREAD_YIELD           0x301B
 #define VG_USERREQ__PTHREAD_KEY_VALIDATE    0x301C
@@ -523,7 +541,7 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 
 /* Ask how many signal handler returns have happened to this
    thread. */
-#define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024
+#define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024 /* unused */
 
 /* Get/set entries for a thread's pthread_atfork stack. */
 #define VG_USERREQ__SET_FHSTACK_USED        0x3025
@@ -549,40 +567,6 @@ In vg_constants.h:
    called at program exit. */
 extern void VG_(__libc_freeres_wrapper)( void );
 
-extern void VGR_(wait_for_fd_to_be_readable_or_erring) ( int fd );
-extern void VGR_(wait_for_fd_to_be_writable_or_erring) ( int fd );
-
-extern int VGR_(recv)(int s, void *buf, unsigned int/*size_t*/ len, 
-                                        int flags);
-
-extern int VGR_(accept)(int s, /*struct sockaddr*/ void *addr, 
-                               /*socklen_t*/ void *addrlen);
-
-
-extern int VGR_(select) ( int n, 
-                          /*fd_set*/ void *rfds, 
-                          /*fd_set*/ void *wfds, 
-                          /*fd_set*/ void *xfds, 
-                          /*struct timeval*/ void *timeout );
-
-extern int VGR_(msgsnd)(int msgid, 
-                        const void *msgp, 
-                        /*size_t*/ unsigned int msgsz, 
-                        int msgflg);
-
-extern int VGR_(msgrcv)( int msqid, 
-                         void* msgp,  
-                         /*size_t*/ unsigned int msgsz, 
-                         long msgtyp, 
-                         int msgflg );
-
-extern int VGR_(readv)(int fd, 
-                       const /*struct iovec*/ void *iovV, 
-                       int count);
-
-extern int VGR_(writev)(int fd, 
-                        const /*struct iovec*/ void *iovV, 
-                        int count);
 
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),
@@ -667,16 +651,15 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    ------------------------------------------------------------------ */
 
 typedef
-   enum { 
+   enum ThreadStatus { 
       VgTs_Empty,      /* this slot is not in use */
       VgTs_Runnable,   /* waiting to be scheduled */
       VgTs_WaitJoiner, /* waiting for someone to do join on me */
       VgTs_WaitJoinee, /* waiting for the thread I did join on */
-      VgTs_WaitFD,     /* waiting for I/O completion on a fd */
       VgTs_WaitMX,     /* waiting on a mutex */
       VgTs_WaitCV,     /* waiting on a condition variable */
-      VgTs_WaitSIG,    /* waiting due to sigwait() */
-      VgTs_Sleeping    /* sleeping for a while */
+      VgTs_WaitSys,    /* waiting for a syscall to complete */
+      VgTs_Sleeping,   /* sleeping for a while */
    }
    ThreadStatus;
 
@@ -697,6 +680,7 @@ typedef
    }
    ForkHandlerEntry;
 
+typedef struct ProxyLWP ProxyLWP;
 
 typedef
    struct _ThreadState {
@@ -744,6 +728,15 @@ typedef
    void**   joiner_thread_return;
    ThreadId joiner_jee_tid;      
 
+   /* If VgTs_WaitSys, this is the result of the pre-syscall check */
+   void *sys_pre_res;
+
+   /* If VgTs_WaitSys, this is the syscall we're currently running */
+   Int syscallno;
+
+   /* Details about this thread's proxy LWP */
+   ProxyLWP *proxy;
+
    /* Whether or not detached. */
    Bool detached;
 
@@ -771,22 +764,23 @@ typedef
 
    /* This thread's blocked-signals mask.  Semantics is that for a
       signal to be delivered to this thread, the signal must not be
-      blocked by either the process-wide signal mask nor by this
-      one.  So, if this thread is prepared to handle any signal that
-      the process as a whole is prepared to handle, this mask should
-      be made empty -- and that it is its default, starting
-      state. */
+      blocked by this signal mask.  If more than one thread accepts a
+      signal, then it will be delivered to one at random.  If all
+      threads block the signal, it will remain pending until either a
+      thread unblocks it or someone uses sigwaitsig/sigtimedwait.
+
+      sig_mask reflects what the client told us its signal mask should
+      be, but isn't necessarily the current signal mask of the proxy
+      LWP: it may have more signals blocked because of signal
+      handling, or it may be different because of sigsuspend.
+   */
    vki_ksigset_t sig_mask;
 
-   /* When not VgTs_WaitSIG, has no meaning.  When VgTs_WaitSIG,
-      is the set of signals for which we are sigwait()ing. */
-   vki_ksigset_t sigs_waited_for;
-
-   /* Counts the number of times a signal handler for this thread
-      has returned.  This makes it easy to implement pause(), by
-      polling this value, of course interspersed with nanosleeps,
-      and waiting till it changes. */
-   UInt n_signals_returned;
+   /* Effective signal mask.  This is the mask which is currently
+      applying; it may be different from sig_mask while a signal
+      handler is running.
+    */
+   vki_ksigset_t eff_sig_mask;
 
    /* Stacks.  When a thread slot is freed, we don't deallocate its
       stack; we just leave it lying around for the next use of the
@@ -877,6 +871,9 @@ extern Bool VG_(is_valid_or_empty_tid) ( ThreadId tid );
    False if no thread is currently running. */
 extern Bool VG_(is_running_thread)(ThreadId tid);
 
+/* Get the ThreadState for a particular thread */
+extern ThreadState *VG_(get_ThreadState)(ThreadId tid);
+
 /* Copy the specified thread's state into VG_(baseBlock) in
    preparation for running it. */
 extern void VG_(load_thread_state)( ThreadId );
@@ -894,6 +891,14 @@ extern ThreadId VG_(get_current_tid) ( void );
 /* Nuke all threads except tid. */
 extern void VG_(nuke_all_threads_except) ( ThreadId me );
 
+/* Give a hint to the scheduler that it may be a good time to find a
+   new runnable thread.  If prefer_sched != VG_INVALID_THREADID, then
+   try to schedule that thread.
+*/
+extern void VG_(need_resched) ( ThreadId prefer_sched );
+
+/* Add a new timeout event for a thread*/
+extern void VG_(add_timeout) ( ThreadId tid, UInt time );
 
 /* Return codes from the scheduler. */
 typedef
@@ -902,8 +907,10 @@ typedef
                             even if we wait for a long time */
       VgSrc_ExitSyscall, /* client called exit().  This is the normal
                             route out. */
-      VgSrc_BbsDone      /* In a debugging run, the specified number of
+      VgSrc_BbsDone,     /* In a debugging run, the specified number of
                             bbs has been completed. */
+      VgSrc_FatalSig	 /* Killed by the default action of a fatal
+			    signal */
    }
    VgSchedReturnCode;
 
@@ -979,13 +986,25 @@ extern Int     VG_(longjmpd_on_signal);
    Exports of vg_signals.c
    ------------------------------------------------------------------ */
 
+extern Bool VG_(do_signal_routing); /* whether scheduler LWP has to route signals */
+
+/* RT signal allocation */
+extern Int  VG_(sig_rtmin);
+extern Int  VG_(sig_rtmax);
+extern Int  VG_(sig_alloc_rtsig) ( Int high );
+
 extern void VG_(sigstartup_actions) ( void );
 extern void VG_(sigshutdown_actions) ( void );
 
-extern Bool VG_(deliver_signals) ( void );
+extern void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *, Bool async );
 extern void VG_(unblock_host_signal) ( Int sigNo );
 extern void VG_(handle_SCSS_change) ( Bool force_update );
 
+extern Bool VG_(is_sig_ign) ( Int sigNo );
+
+/* Route pending signals from the scheduler LWP to the appropriate
+   thread LWP. */
+extern void VG_(route_signals) ( void );
 
 /* Fake system calls for signal handling. */
 extern void VG_(do__NR_sigaltstack)   ( ThreadId tid );
@@ -1013,6 +1032,10 @@ extern void VG_(block_all_host_signals)
                   ( /* OUT */ vki_ksigset_t* saved_mask );
 extern void VG_(restore_all_host_signals) 
                   ( /* IN */ vki_ksigset_t* saved_mask );
+
+extern vki_ksiginfo_t VG_(unresumable_siginfo);
+
+extern void VG_(kill_self)(Int sigNo);
 
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
@@ -1045,8 +1068,12 @@ extern Int VG_(select)( Int n,
                         vki_fd_set* writefds, 
                         vki_fd_set* exceptfds, 
                         struct vki_timeval * timeout );
+extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 extern Int VG_(nanosleep)( const struct vki_timespec *req, 
                            struct vki_timespec *rem );
+
+/* Move an fd into the Valgrind-safe range */
+Int VG_(safe_fd)(Int oldfd);
 
 extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 
@@ -1388,6 +1415,10 @@ extern ThreadId VG_(last_run_tid);
    real. */
 extern Int VG_(exitcode);
 
+/* If we're doing the default action of a fatal signal */
+extern jmp_buf VG_(fatal_signal_jmpbuf);
+extern Bool    VG_(fatal_signal_set);		/* jmp_buf is valid */
+extern Int     VG_(fatal_sigNo);		/* the fatal signal */
 
 /* --- Counters, for informational purposes only. --- */
 
@@ -1458,29 +1489,53 @@ extern void VG_(remove_if_exeseg)   ( Addr a, UInt len );
 extern __attribute__((regparm(1))) 
        void VG_(unknown_esp_update) ( Addr new_ESP );
 
+extern Bool VG_(is_addressable)(Addr p, Int sz);
+
+/* ---------------------------------------------------------------------
+   Exports of vg_proxylwp.c
+   ------------------------------------------------------------------ */
+
+/* Issue a syscall for thread tid */
+extern Int  VG_(sys_issue)(int tid);
+
+extern void VG_(proxy_init)     ( void );
+extern void VG_(proxy_create)   ( ThreadId tid );
+extern void VG_(proxy_delete)   ( ThreadId tid, Bool force );
+extern void VG_(proxy_results)  ( void );
+extern void VG_(proxy_sendsig)  ( ThreadId tid, Int signo );
+extern void VG_(proxy_setsigmask)(ThreadId tid);
+extern void VG_(proxy_sigack)   ( ThreadId tid, const vki_ksigset_t *);
+extern void VG_(proxy_abort_syscall) ( ThreadId tid );
+extern void VG_(proxy_waitsig)  ( void );
+
+extern void VG_(proxy_shutdown) ( void );	/* shut down the syscall workers */
+extern Int  VG_(proxy_resfd)    ( void );	/* FD something can select on to know 
+						   a syscall finished */
+
+/* Sanity-check the whole proxy-LWP machinery */
+void VG_(proxy_sanity)(void);
+
+/* Send a signal from a thread's proxy to the thread.  This longjmps
+   back into the proxy's main loop, so it doesn't return. */
+__attribute__ ((__noreturn__))
+extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo, 
+				  const struct vki_sigcontext *sigcontext );
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_syscalls.c
    ------------------------------------------------------------------ */
 
 extern void VG_(init_dataseg_end_for_brk) ( void );
 
-extern void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid );
-
-extern void* VG_(pre_known_blocking_syscall) ( ThreadId tid, Int syscallno );
-extern void  VG_(post_known_blocking_syscall)( ThreadId tid, Int syscallno,
-                                               void* pre_res, Int res );
+extern Bool VG_(pre_syscall) ( ThreadId tid );
+extern void VG_(post_syscall)( ThreadId tid );
 
 extern Bool VG_(is_kerror) ( Int res );
 
-#define KERNEL_DO_SYSCALL(thread_id, result_lvalue)      \
-         VG_(load_thread_state)(thread_id);              \
-         VG_(copy_baseBlock_to_m_state_static)();        \
-         VG_(do_syscall)();                              \
-         VG_(copy_m_state_static_to_baseBlock)();        \
-         VG_(save_thread_state)(thread_id);              \
-         result_lvalue = VG_(threads)[thread_id].m_eax;  \
-         VG_TRACK( post_reg_write_syscall_return, thread_id, R_EAX );
-
+/* Internal atfork handlers */
+typedef void (*vg_atfork_t)(ThreadId);
+extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c
@@ -1508,8 +1563,9 @@ extern Addr VG_(search_transtab) ( Addr original_addr );
    Exports of vg_syscall.S
    ------------------------------------------------------------------ */
 
-extern void VG_(do_syscall) ( void );
-
+extern Int VG_(do_syscall) ( UInt, ... );
+extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg, 
+			Int *child_tid, Int *parent_tid);
 
 /* ---------------------------------------------------------------------
    Exports of vg_startup.S

@@ -50,9 +50,6 @@
 #define VKI_WORDS_PER_PAGE (VKI_BYTES_PER_PAGE / VKI_BYTES_PER_WORD)
 
 
-/* For system call numbers __NR_... */
-#include <asm/unistd.h>
-
 /* An implementation of signal sets.  These are the same as the sigset
    implementations in the relevant Linux kernels.  Note carefully that
    this has nothing to do with glibc's signal sets.  We work entirely
@@ -89,6 +86,142 @@ typedef
    } 
    vki_kstack_t;
 
+#define SI_MAX_SIZE	128
+#define SI_PAD_SIZE	((SI_MAX_SIZE/sizeof(int)) - 3)
+
+union vki_sigval {
+   Int sival_int;
+   void *sival_ptr;
+};
+
+typedef
+   struct {
+      Int si_signo;
+      Int si_errno;
+      Int si_code;
+
+      union {
+	 Int _pad[SI_PAD_SIZE];
+
+	 /* kill() */
+	 struct {
+	    Int _pid;		/* sender's pid */
+	    Short _uid;		/* sender's uid */
+	 } _kill;
+
+	 /* POSIX.1b timers */
+	 struct {
+	    UInt _timer1;
+	    UInt _timer2;
+	 } _timer;
+
+	 /* POSIX.1b signals */
+	 struct {
+	    Int _pid;		/* sender's pid */
+	    UShort _uid;		/* sender's uid */
+	    union vki_sigval _sigval;
+	 } _rt;
+
+	 /* SIGCHLD */
+	 struct {
+	    Int _pid;		/* which child */
+	    UShort _uid;		/* sender's uid */
+	    Int _status;		/* exit code */
+	    Int _utime;
+	    Int _stime;
+	 } _sigchld;
+
+	 /* SIGILL, SIGFPE, SIGSEGV, SIGBUS */
+	 struct {
+	    void *_addr; /* faulting insn/memory ref. */
+	 } _sigfault;
+
+	 /* SIGPOLL */
+	 struct {
+	    Int _band;	/* POLL_IN, POLL_OUT, POLL_MSG */
+	    Int _fd;
+	 } _sigpoll;
+      } _sifields;
+   } vki_ksiginfo_t;
+
+/* linux-2.6/include/asm-generic/siginfo.h */
+
+#define VKI_SI_USER	0
+#define VKI_SI_QUEUE	-1
+#define VKI_SI_TKILL	-6
+
+struct vki_fpreg {
+	UShort significand[4];
+	UShort exponent;
+};
+
+struct vki_fpxreg {
+	UShort significand[4];
+	UShort exponent;
+	UShort padding[3];
+};
+
+struct vki_xmmreg {
+	UInt element[4];
+};
+
+struct vki_fpstate {
+	/* Regular FPU environment */
+	unsigned long 	cw;
+	unsigned long	sw;
+	unsigned long	tag;
+	unsigned long	ipoff;
+	unsigned long	cssel;
+	unsigned long	dataoff;
+	unsigned long	datasel;
+	struct vki_fpreg	_st[8];
+	unsigned short	status;
+	unsigned short	magic;		/* 0xffff = regular FPU data only */
+
+	/* FXSR FPU environment */
+	unsigned long	_fxsr_env[6];	/* FXSR FPU env is ignored */
+	unsigned long	mxcsr;
+	unsigned long	reserved;
+	struct vki_fpxreg	_fxsr_st[8];	/* FXSR FPU reg data is ignored */
+	struct vki_xmmreg	_xmm[8];
+	unsigned long	padding[56];
+};
+
+#define X86_FXSR_MAGIC		0x0000
+
+struct vki_sigcontext {
+	UShort	gs, __gsh;
+	UShort	fs, __fsh;
+	UShort	es, __esh;
+	UShort	ds, __dsh;
+	UInt	edi;
+	UInt	esi;
+	UInt	ebp;
+	UInt	esp;
+	UInt	ebx;
+	UInt	edx;
+	UInt	ecx;
+	UInt	eax;
+	UInt	trapno;
+	UInt	err;
+	UInt	eip;
+	UShort	cs, __csh;
+	UInt	eflags;
+	UInt	esp_at_signal;
+	UShort	ss, __ssh;
+	struct	vki_fpstate * fpstate;
+	UInt	oldmask;
+	UInt	cr2;
+};
+
+struct vki_ucontext {
+	UInt		  uc_flags;
+	struct vki_ucontext  *uc_link;
+	vki_kstack_t	  uc_stack;
+	struct vki_sigcontext uc_mcontext;
+	vki_ksigset_t	  uc_sigmask;	/* mask last for extensibility */
+};
+
 
 /* sigaltstack controls */
 #define VKI_SS_ONSTACK      1
@@ -110,25 +243,65 @@ typedef
 #define VKI_SA_ONSTACK      0x08000000
 #define VKI_SA_RESTART      0x10000000
 #define VKI_SA_NOCLDSTOP    0x00000001
+#define VKI_SA_SIGINFO      0x00000004
 #define VKI_SA_RESETHAND    0x80000000
 #define VKI_SA_ONESHOT      VKI_SA_RESETHAND
 #define VKI_SA_NODEFER      0x40000000
 #define VKI_SA_NOMASK       VKI_SA_NODEFER
+#define VKI_SA_NOCLDWAIT    0x00000002
 #if 0
-#define VKI_SA_NOCLDWAIT    0x00000002 /* not supported yet */
-#define VKI_SA_SIGINFO      0x00000004
 #define VKI_SA_INTERRUPT    0x20000000 /* dummy -- ignored */
 #define VKI_SA_RESTORER     0x04000000
 #endif
 
-#define VKI_SIGSEGV         11
-#define VKI_SIGBUS           7
-#define VKI_SIGILL           4
-#define VKI_SIGFPE           8
-#define VKI_SIGKILL          9
-#define VKI_SIGSTOP         19
-#define VKI_SIGTERM         15
-#define VKI_SIGUSR1         10
+/* extra wait flags */
+#define	VKI_WNOHANG	1		/* Don't block waiting.  */
+#define	VKI_WUNTRACED	2		/* Report status of stopped children.  */
+#define VKI__WALL	0x40000000	/* Wait for any child.  */
+#define VKI__WCLONE	0x80000000	/* Wait for cloned process.  */
+
+#define	VKI_SIGHUP	1	/* Hangup (POSIX).  */
+#define	VKI_SIGINT	2	/* Interrupt (ANSI).  */
+#define	VKI_SIGQUIT	3	/* Quit (POSIX).  */
+#define	VKI_SIGILL	4	/* Illegal instruction (ANSI).  */
+#define	VKI_SIGTRAP	5	/* Trace trap (POSIX).  */
+#define	VKI_SIGABRT	6	/* Abort (ANSI).  */
+#define	VKI_SIGIOT	6	/* IOT trap (4.2 BSD).  */
+#define	VKI_SIGBUS	7	/* BUS error (4.2 BSD).  */
+#define	VKI_SIGFPE	8	/* Floating-point exception (ANSI).  */
+#define	VKI_SIGKILL	9	/* Kill, unblockable (POSIX).  */
+#define	VKI_SIGUSR1	10	/* User-defined signal 1 (POSIX).  */
+#define	VKI_SIGSEGV	11	/* Segmentation violation (ANSI).  */
+#define	VKI_SIGUSR2	12	/* User-defined signal 2 (POSIX).  */
+#define	VKI_SIGPIPE	13	/* Broken pipe (POSIX).  */
+#define	VKI_SIGALRM	14	/* Alarm clock (POSIX).  */
+#define	VKI_SIGTERM	15	/* Termination (ANSI).  */
+#define	VKI_SIGSTKFLT	16	/* Stack fault.  */
+#define	VKI_SIGCLD	SIGCHLD	/* Same as SIGCHLD (System V).  */
+#define	VKI_SIGCHLD	17	/* Child status has changed (POSIX).  */
+#define	VKI_SIGCONT	18	/* Continue (POSIX).  */
+#define	VKI_SIGSTOP	19	/* Stop, unblockable (POSIX).  */
+#define	VKI_SIGTSTP	20	/* Keyboard stop (POSIX).  */
+#define	VKI_SIGTTIN	21	/* Background read from tty (POSIX).  */
+#define	VKI_SIGTTOU	22	/* Background write to tty (POSIX).  */
+#define	VKI_SIGURG	23	/* Urgent condition on socket (4.2 BSD).  */
+#define	VKI_SIGXCPU	24	/* CPU limit exceeded (4.2 BSD).  */
+#define	VKI_SIGXFSZ	25	/* File size limit exceeded (4.2 BSD).  */
+#define	VKI_SIGVTALRM	26	/* Virtual alarm clock (4.2 BSD).  */
+#define	VKI_SIGPROF	27	/* Profiling alarm clock (4.2 BSD).  */
+#define	VKI_SIGWINCH	28	/* Window size change (4.3 BSD, Sun).  */
+#define	VKI_SIGPOLL	SIGIO	/* Pollable event occurred (System V).  */
+#define	VKI_SIGIO	29	/* I/O now possible (4.2 BSD).  */
+#define	VKI_SIGPWR	30	/* Power failure restart (System V).  */
+#define	VKI_SIGSYS	31	/* Bad system call.  */
+#define	VKI_SIGUNUSED	31
+
+#define VKI_SIGRTMIN	    32
+#define VKI_SIGRTMAX	    63
+
+#define VKI_SIGVGINT	    (VKI_SIGRTMIN+0) /* signal for internal use - interrupt */
+#define VKI_SIGVGKILL	    (VKI_SIGRTMIN+1) /* signal for internal use - kill */
+#define VKI_SIGRTUSERMIN    (VKI_SIGRTMIN+2) /* first user-usable RT signal */
 
 /* The following are copied from include/asm-i386/mman.h .*/
 
@@ -178,15 +351,21 @@ typedef
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */
 
 #define VKI_EPERM            1      /* Operation not permitted */
-#define VKI_EINTR            4      /* Interrupted system call */
-#define VKI_EINVAL          22      /* Invalid argument */
-#define VKI_ENOMEM          12      /* Out of memory */
-#define	VKI_EFAULT          14      /* Bad address */
+#define VKI_ENOENT	     2	    /* No such file or directory */
 #define VKI_ESRCH            3      /* No such process */
-#define VKI_ENOSYS          38      /* Function not implemented */
-
+#define VKI_EINTR            4      /* Interrupted system call */
+#define VKI_EBADF            9      /* Bad file number */
+#define VKI_ENOMEM          12      /* Out of memory */
 #define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
 #define VKI_EAGAIN          11      /* Try again */
+#define	VKI_EFAULT          14      /* Bad address */
+#define VKI_EINVAL          22      /* Invalid argument */
+#define VKI_EMFILE	    24	    /* Too many open files */
+#define VKI_ENOSYS          38      /* Function not implemented */
+
+#define VKI_ERESTARTSYS	    512
+#define VKI_ERESTARTNOINTR  513
+#define VKI_ERESTARTNOHAND  514
 
 
 /* Gawd ... hack ... */
@@ -290,6 +469,22 @@ do { \
 
 
 
+struct vki_pollfd {
+   Int		fd;
+   Short	events;
+   Short	revents;
+};
+
+/* asm/poll.h */
+#define VKI_POLLIN          0x0001
+#define VKI_POLLPRI         0x0002
+#define VKI_POLLOUT         0x0004
+#define VKI_POLLERR         0x0008
+#define VKI_POLLHUP         0x0010
+#define VKI_POLLNVAL        0x0020
+
+
+
 /* 
 ./include/asm-i386/posix_types.h:typedef long           __kernel_suseconds_t;
 ./include/linux/types.h:typedef __kernel_suseconds_t    suseconds_t;
@@ -307,8 +502,14 @@ struct vki_timeval {
 
 /* For fcntl on fds ..
    from ./include/asm-i386/fcntl.h */
+#define VKI_F_DUPFD	    0	    /* dup */
+#define VKI_F_GETFD	    1	    /* get close_on_exec */
+#define VKI_F_SETFD	    2	    /* set/clear close_on_exec */
 #define VKI_F_GETFL         3       /* get file->f_flags */
 #define VKI_F_SETFL         4       /* set file->f_flags */
+
+/* for F_[GET|SET]FL */
+#define VKI_FD_CLOEXEC	    1	    /* actually anything with low bit set goes */
 
 #define VKI_O_NONBLOCK        04000
 
@@ -411,6 +612,26 @@ typedef struct vki_modify_ldt_ldt_s {
 #define VKI_MODIFY_LDT_CONTENTS_CODE        2
 
 
+/* Flags for clone() */
+/* linux/sched.h */
+#define VKI_CSIGNAL		0x000000ff	/* signal mask to be sent at exit */
+#define VKI_CLONE_VM		0x00000100	/* set if VM shared between processes */
+#define VKI_CLONE_FS		0x00000200	/* set if fs info shared between processes */
+#define VKI_CLONE_FILES		0x00000400	/* set if open files shared between processes */
+#define VKI_CLONE_SIGHAND	0x00000800	/* set if signal handlers and blocked signals shared */
+#define VKI_CLONE_IDLETASK	0x00001000	/* set if new pid should be 0 (kernel only)*/
+#define VKI_CLONE_PTRACE	0x00002000	/* set if we want to let tracing continue on the child too */
+#define VKI_CLONE_VFORK		0x00004000	/* set if the parent wants the child to wake it up on mm_release */
+#define VKI_CLONE_PARENT	0x00008000	/* set if we want to have the same parent as the cloner */
+#define VKI_CLONE_THREAD	0x00010000	/* Same thread group? */
+#define VKI_CLONE_NEWNS		0x00020000	/* New namespace group? */
+#define VKI_CLONE_SYSVSEM	0x00040000	/* share system V SEM_UNDO semantics */
+#define VKI_CLONE_SETTLS	0x00080000	/* create a new TLS for the child */
+#define VKI_CLONE_PARENT_SETTID	0x00100000	/* set the TID in the parent */
+#define VKI_CLONE_CHILD_CLEARTID	0x00200000	/* clear the TID in the child */
+#define VKI_CLONE_DETACHED	0x00400000	/* parent wants no child-exit signal */
+#define VKI_CLONE_UNTRACED	0x00800000	/* set if the tracing process can't force VKI_CLONE_PTRACE on this clone */
+#define VKI_CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
 
 #endif /* ndef __VG_KERNELIFACE_H */
 

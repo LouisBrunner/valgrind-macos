@@ -1,0 +1,195 @@
+- works on stock 2.4 kernels, but the scheduler loop must poll
+- works on RH9 2.4.20-18.9 kernel, but doesn't seem quite as stable 
+  as 2.5/2.6
+  for pending signals rather than relying on the kernel delivering them
+  to the right place.
+- most tested on 2.6.0-test1 and up
+
+- running job-control programs (ie, bash) under Valgrind won't work
+  properly without a kernel patch (as of 2.6.0-test2-mm2).  This is because
+  threads in a thread group don't follow the thread group leader's changes
+  in process group ID, and they can't change it for themselves.
+
+- SA_NOCLDWAIT doesn't work properly if the program is actually blocked
+  in wait4() when SIGCHLD arrives; the wait4() will return details for
+  the exiting child.  In other circumstances children should be quietly reaped.
+  [ This may be fixable when running under RH2.4 and 2.6, since we can
+    set NOCLDWAIT in the kernel's state without risk of losing our child
+    threads. ]
+
+- 2.4 has somewhat disfunctional thread/signal interactions, so many test
+  do not work as well under 2.4.  In general, it should be no worse than
+  the old signal code.  I don't intend spending a lot of time fixing this
+  because 2.6 is nearly ready for widespread use.
+
+TODO:
+
+- support application use of clone().  Interesting question is which
+  options do we support?  Do we need to implement futex as well, or can
+  we just use the kernel's implementation?
+
+========================================
+Testing
+
+I've been testing with the Posix test suite:
+http://sourceforge.net/projects/posixtest/, version 1.2.0.  
+
+----------------------------------------
+Expected failures:
+
+conformance/interfaces/sigwaitinfo/6-1.test
+	pthread_kill() calls the tkill syscall, which causes a code of
+	SI_TKILL rather than the SI_USER which this test expects.
+
+conformance/interfaces/sigrelse/3-*.test
+	glibc bug in sigrelse(), which fails without Valgrind too.
+
+conformance/interfaces/pthread_barrier_*/*
+	Valgrind's libpthreads doesn't implement pthread_barrier_*.
+	(There are some passes, but I don't know why.)
+
+conformance/interfaces/pthread_cond_timedwait/2-3
+	This test is just completely broken.  It does expose a problem
+	in Valgrind's mutex implementation - it is too dependent on
+	the client code not doing stupid stuff.  This test makes
+	Valgrind have an assertion failure.
+
+conformance/interfaces/pthread_condattr_getpshared/*
+	pthread_condattr_getpshared not implemented
+
+conformance/interfaces/pthread_condattr_setpshared/*
+	pthread_condattr_setpshared not implemented
+
+conformance/interfaces/pthread_key_create/speculative/5-1
+	Valgrind should cope with key overload
+
+conformance/interfaces/pthread_mutex_timedlock/*
+	not implemented
+
+conformance/interfaces/pthread_rwlock_rdlock/2-1:
+	relies on pthread_setschedparam
+
+conformance/interfaces/pthread_rwlock_timedrdlock/*
+	valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: pthread_rwlock_timedrdlock
+
+conformance/interfaces/pthread_rwlockattr_getpshared/*
+	pthread_rwlockattr_getpshared not implemented
+
+conformance/interfaces/pthread_rwlockattr_setpshared/*
+	pthread_rwlockattr_setpshared not implemented
+
+conformance/interfaces/sched_rr_get_interval/*
+	syscall 161 (sched_rr_get_interval) not implemented
+
+conformance/interfaces/sigaction/21-1
+	Subtle problem: if app specifies SA_NOCLDWAIT on their SIGCHLD
+	signal handler, Valgrind will attempt to catch the SIGCHLD and
+	wait4() on all the children before returning to the app.
+	However, if the app was running a wait4() at the time the
+	SIGCHLD arrives, it will get the child's status.  Quite what
+	the app is doing running wait4() when it explicitly asked for
+	it to be useless, I'm not sure...
+
+conformance/interfaces/sigaction/17-{3,6,8,12}
+	(2.4) These fail under 2.4 because they deal with SIGSEGV, SIGBUS
+	and SIGILL.  These signals can only be delivered if there's a
+	thread immediately ready to handle them, but cannot be left
+	pending indefinitely.  These tests hang forever because the
+	signal is discarded rather than delivered.
+
+conformance/interfaces/sigqueue/{1,4,8}-1
+	(2.4) Signals that we route manually do not have queued data
+	associated with them - they are routed with tkill.  Also
+	pending signals are only kept in a mask, not in a queue, so
+	there can only be one at a time.
+
+----------------------------------------
+
+Still to investigate:
+
+conformance/interfaces/pthread_detach/4-1
+
++conformance/interfaces/pthread_rwlock_rdlock/4-1: execution: FAILED: Output:
++main: attempt write lock
++main: acquired write lock
++sig_thread: attemp read lock
++main: fire SIGUSR1 to sig_thread
++SIGUSR1 was not caught by sig_thread
+
+
++conformance/interfaces/pthread_rwlock_unlock/4-1: execution: FAILED: Output:
++Test FAILED: Incorrect error code, expected 0 or EINVAL, got 1
+
++conformance/interfaces/pthread_rwlock_wrlock/2-1: execution: FAILED: Output:
++main: attempt write lock
++sig_thread: attempt write lock
++main: fire SIGUSR1 to sig_thread
++The signal handler did not get called.
+
++conformance/interfaces/pthread_rwlock_wrlock/3-1: execution: FAILED: Output:
++
++sched status:
++
++Thread 1: status = WaitCV, associated_mx = 0x40115910, associated_cv = 0x401158E0
++==11243==    at 0x40102962: pthread_cond_wait (vg_libpthread.c:1093)
++==11243==    by 0x40104976: __pthread_rwlock_wrlock (vg_libpthread.c:2619)
++==11243==    by 0x8048588: main (3-1.c:53)
++==11243==    by 0x4013DA46: __libc_start_main (in /lib/libc-2.3.2.so)
++
++==11243== Warning: pthread scheduler exited due to deadlock
++
++valgrind: vg_main.c:1619 (vgPlain_main): Assertion `vgPlain_threads[vgPlain_last_run_tid].status == VgTs_Runnable' failed.
++
++sched status:
++
++Thread 1: status = WaitCV, associated_mx = 0x40115910, associated_cv = 0x401158E0
++==11243==    at 0x40102962: pthread_cond_wait (vg_libpthread.c:1093)
++==11243==    by 0x40104976: __pthread_rwlock_wrlock (vg_libpthread.c:2619)
++==11243==    by 0x8048588: main (3-1.c:53)
++==11243==    by 0x4013DA46: __libc_start_main (in /lib/libc-2.3.2.so)
+
+
++conformance/interfaces/sem_close/1-1.test:
+/home/jeremy/bk/valgrind/syscalls/coregrind/.in_place/libpthread.so.0:
+version `GLIBC_2.1.1' not found (required by
+conformance/interfaces/sem_close/1-1.test)
+
++conformance/interfaces/sem_timedwait/6-1: execution: FAILED: Output:
++TEST FAILED
++conformance/interfaces/sem_timedwait/6-2: execution: FAILED: Output:
++TEST FAILED
+
++conformance/interfaces/sem_timedwait/9-1: execution: FAILED: Output:
++In handler
++TEST FAILED: errno != EINTR
+
+
+conformance/interfaces/sigaction/10-1: 
+	Used to work.  Mysterious.  Works everywhere except in the test harness...
+
+
++conformance/interfaces/sigpause/1-2: execution: FAILED: Output:
++
++valgrind: vg_mylibc.c:1324 (vgPlain_read_millisecond_timer): Assertion `rdtsc_now > rdtsc_cal_end_raw' failed.
++
++sched status:
++
++Thread 1: status = Sleeping, associated_mx = 0x0, associated_cv = 0x0
++==19929==    at 0x401D6765: __GI___libc_nanosleep (in /lib/libc-2.3.2.so)
++==19929==    by 0x80485C1: main (1-2.c:65)
++==19929==    by 0x4013DA46: __libc_start_main (in /lib/libc-2.3.2.so)
++==19929==    by 0x8048494: ??? (start.S:81)
++
++Thread 2: status = WaitSys, associated_mx = 0x0, associated_cv = 0x0
++==19929==    at 0x40150796: __libc_sigsuspend (in /lib/libc-2.3.2.so)
++==19929==    by 0x401509B3: __GI___sigpause (in /lib/libc-2.3.2.so)
++==19929==    by 0x804857C: a_thread_func (1-2.c:48)
++==19929==    by 0x40102099: thread_wrapper (vg_libpthread.c:667)
+
+
+
+----------------------------------------
+
+Fixes:
+conformance/interfaces/pthread_detach/4-2
+	This fails under NPTL, but passes under Valgrind

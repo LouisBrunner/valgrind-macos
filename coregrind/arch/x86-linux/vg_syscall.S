@@ -30,138 +30,89 @@
 */
 
 #include "vg_constants.h"
-
+#include "vg_unistd.h"
 
 .globl	VG_(do_syscall)
 
-# NOTE that this routine expects the simulated machines state
-# to be in m_state_static.  Therefore it needs to be wrapped by
-# code which copies from baseBlock before the call, into
-# m_state_static, and back afterwards.
+/*
+	Perform a Linux syscall with int 0x80
 	
+	Syscall args are passed on the stack
+	Int VG_(do_syscall)(Int syscall_no, ...)
+
+	This has no effect on the virtual machine; the expectation is
+	that the syscall mechanism makes no useful changes to any
+	register except %eax, which is returned.
+ */
 VG_(do_syscall):
-	# Save all the int registers of the real machines state on the
-	# simulators stack.
-	pushal
-
-	# and save the real FPU state too
-	fwait
-
-	pushfl
-	cmpb	$0, VG_(have_ssestate)
-	jz	qq1nosse
-	fxsave	VG_(real_sse_state_saved_over_syscall)
-	andl	$0x0000FFBF, VG_(real_sse_state_saved_over_syscall)+24
-	fxrstor	VG_(real_sse_state_saved_over_syscall)
-	jmp	qq1merge
-qq1nosse:		
-	fnsave	VG_(real_sse_state_saved_over_syscall)
-	frstor	VG_(real_sse_state_saved_over_syscall)
-qq1merge:
-	popfl
-	
-	# remember what the simulators stack pointer is
-	movl	%esp, VG_(esp_saved_over_syscall)
-	
-	# Now copy the simulated machines state into the real one
-	# esp still refers to the simulators stack
-	pushfl
-	cmpb	$0, VG_(have_ssestate)
-	jz	qq2nosse
-	andl	$0x0000FFBF, VG_(m_state_static)+64+24
-	fxrstor	VG_(m_state_static)+64
-	jmp	qq2merge
-qq2nosse:	
-	frstor	VG_(m_state_static)+64
-qq2merge:
-	popfl
-	
-	movl	VG_(m_state_static)+56, %eax
-	pushl	%eax
-	popfl
-#if 0
-	/* don't bother to save/restore seg regs across the kernel iface.  
-	   Once we have our hands on them, our simulation of it is 
-	   completely internal, and the kernel sees nothing.  
-	   What's more, loading new values in to %cs seems 
-	   to be impossible anyway. */
-	movw	VG_(m_state_static)+0, %cs
-	movw	VG_(m_state_static)+4, %ss
-	movw	VG_(m_state_static)+8, %ds
-	movw	VG_(m_state_static)+12, %es
-	movw	VG_(m_state_static)+16, %fs
-	movw	VG_(m_state_static)+20, %gs
-#endif
-	movl	VG_(m_state_static)+24, %eax
-	movl	VG_(m_state_static)+28, %ecx
-	movl	VG_(m_state_static)+32, %edx
-	movl	VG_(m_state_static)+36, %ebx
-	movl	VG_(m_state_static)+40, %esp
-	movl	VG_(m_state_static)+44, %ebp
-	movl	VG_(m_state_static)+48, %esi
-	movl	VG_(m_state_static)+52, %edi
-
-	# esp now refers to the simulatees stack
-	# Do the actual system call
+	push	%esi
+	push	%edi
+	push	%ebx
+	push	%ebp
+	movl	16+ 4(%esp),%eax
+	movl	16+ 8(%esp),%ebx
+	movl	16+12(%esp),%ecx
+	movl	16+16(%esp),%edx
+	movl	16+20(%esp),%esi
+	movl	16+24(%esp),%edi
+	movl	16+28(%esp),%ebp
 	int	$0x80
-
-	# restore stack as soon as possible
-	# esp refers to simulatees stack
-	movl	%esp, VG_(m_state_static)+40
-	movl	VG_(esp_saved_over_syscall), %esp
-	# esp refers to simulators stack
-
-	# ... and undo everything else.  
-	# Copy real state back to simulated state.
-#if 0
-	movw	%cs, VG_(m_state_static)+0
-	movw	%ss, VG_(m_state_static)+4
-	movw	%ds, VG_(m_state_static)+8
-	movw	%es, VG_(m_state_static)+12
-	movw	%fs, VG_(m_state_static)+16
-	movw	%gs, VG_(m_state_static)+20
-#endif
-	movl	%eax, VG_(m_state_static)+24
-	movl	%ecx, VG_(m_state_static)+28
-	movl	%edx, VG_(m_state_static)+32
-	movl	%ebx, VG_(m_state_static)+36
-	movl	%ebp, VG_(m_state_static)+44
-	movl	%esi, VG_(m_state_static)+48
-	movl	%edi, VG_(m_state_static)+52
-	pushfl
-	popl	%eax
-	movl	%eax, VG_(m_state_static)+56
-	fwait
-
-	pushfl
-	cmpb	$0, VG_(have_ssestate)
-	jz	pp2nosse
-	fxsave	VG_(m_state_static)+64
-	andl	$0x0000FFBF, VG_(m_state_static)+64+24
-	fxrstor	VG_(m_state_static)+64
-	jmp	pp2merge
-pp2nosse:
-	fnsave	VG_(m_state_static)+64
-	frstor	VG_(m_state_static)+64
-pp2merge:
-	popfl
-	
-	# Restore the state of the simulator
-	pushfl
-	cmpb	$0, VG_(have_ssestate)
-	jz	pp1nosse
-	andl	$0x0000FFBF, VG_(real_sse_state_saved_over_syscall)+24
-	fxrstor	VG_(real_sse_state_saved_over_syscall)
-	jmp	pp1merge
-pp1nosse:
-	frstor	VG_(real_sse_state_saved_over_syscall)
-pp1merge:
-	popfl
-
-	popal
-
+	popl	%ebp
+	popl	%ebx
+	popl	%edi
+	popl	%esi
 	ret
 
+/*
+	Perform a clone system call.  clone is strange because it has
+	fork()-like return-twice semantics, so it needs special
+	handling here.
+
+	int VG_(clone)(int (*fn)(void *), void *child_stack, int flags, void *arg, 
+	               0                  4                  8          12
+		       pid_t *child_tid, pid_t *parent_tid)
+		       16                20
+
+ */
+.globl VG_(clone)
+VG_(clone):
+#define FSZ	(4+4+4)			/* frame size = retaddr+ebx+edi */
+	push	%ebx
+	push	%edi
+	/* set up child stack with function and arg */
+	movl	 4+FSZ(%esp), %ecx	/* child stack */
+	movl	12+FSZ(%esp), %ebx	/* fn arg */
+	movl	 0+FSZ(%esp), %eax	/* fn */
+	lea	-8(%ecx), %ecx		/* make space on stack */
+	movl	%ebx, 4(%ecx)		/*   fn arg */
+	movl	%eax, 0(%ecx)		/*   fn */
+
+	/* get other args to clone */
+	movl	 8+FSZ(%esp), %ebx	/* flags */
+	movl	20+FSZ(%esp), %edx	/* parent tid * */
+	movl	16+FSZ(%esp), %edi	/* child tid * */
+	movl	$__NR_clone, %eax
+	int	$0x80
+	testl	%eax, %eax
+	jnz	1f
+
+	/* CHILD - call thread function */
+	popl	%eax
+	call	*%eax
+
+	/* exit with result */
+	movl	%eax, %ebx
+	movl	$__NR_exit, %eax
+	int	$0x80
+
+	/* Hm, exit returned */
+	ud2
+		
+1:	/* PARENT or ERROR */
+	pop	%edi
+	pop	%ebx
+	ret
+	
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_syscall.S ---##
 ##--------------------------------------------------------------------##

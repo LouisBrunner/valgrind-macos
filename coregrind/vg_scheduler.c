@@ -47,18 +47,10 @@
      ThreadStatus.retval
   Currently unsure, and so am not doing so.
 
-- Signals interrupting read/write and nanosleep: SA_RESTART settings.
-  Read/write correctly return with EINTR when SA_RESTART isn't
-  specified and they are interrupted by a signal.  nanosleep just
-  pretends signals don't exist -- should be fixed.
-
 - So, what's the deal with signals and mutexes?  If a thread is
   blocked on a mutex, or for a condition variable for that matter, can
   signals still be delivered to it?  This has serious consequences --
   deadlocks, etc.
-
-- Signals still not really right.  Each thread should have its
-  own pending-set, but there is just one process-wide pending set.
 
   TODO for valgrind-1.0:
 
@@ -66,14 +58,9 @@
 
   TODO sometime:
 
-- poll() in the vg_libpthread.c -- should it handle the nanosleep
-  being interrupted by a signal?  Ditto accept?
-
 - Mutex scrubbing - clearup_after_thread_exit: look for threads
   blocked on mutexes held by the exiting thread, and release them
   appropriately. (??)
-
-- pthread_atfork
 
 */
 
@@ -112,36 +99,13 @@ jmp_buf VG_(scheduler_jmpbuf);
 Bool    VG_(scheduler_jmpbuf_valid) = False;
 /* ... and if so, here's the signal which caused it to do so. */
 Int     VG_(longjmpd_on_signal);
+/* If the current thread gets a syncronous unresumable signal, then
+   its details are placed here by the signal handler, to be passed to
+   the applications signal handler later on. */
+vki_ksiginfo_t VG_(unresumable_siginfo);
 
-
-/* Machinery to keep track of which threads are waiting on which
-   fds. */
-typedef
-   struct {
-      /* The thread which made the request. */
-      ThreadId tid;
-
-      /* The next two fields describe the request. */
-      /* File descriptor waited for.  -1 means this slot is not in use */
-      Int      fd;
-      /* The syscall number the fd is used in. */
-      UInt     syscall_no;
-
-      /* False => still waiting for select to tell us the fd is ready
-         to go.  True => the fd is ready, but the results have not yet
-         been delivered back to the calling thread.  Once the latter
-         happens, this entire record is marked as no longer in use, by
-         making the fd field be -1.  */
-      Bool     ready; 
-
-      /* The result from SK_(pre_blocking_syscall)();  is passed to
-       * SK_(post_blocking_syscall)(). */
-      void*    pre_result;
-   }
-   VgWaitedOnFd;
-
-static VgWaitedOnFd vg_waiting_fds[VG_N_WAITING_FDS];
-
+/* If != VG_INVALID_THREADID, this is the preferred tid to schedule */
+static ThreadId prefer_sched = VG_INVALID_THREADID;
 
 /* Keeping track of keys. */
 typedef
@@ -239,7 +203,6 @@ void VG_(pp_sched_status) ( void )
       VG_(printf)("\nThread %d: status = ", i);
       switch (VG_(threads)[i].status) {
          case VgTs_Runnable:   VG_(printf)("Runnable"); break;
-         case VgTs_WaitFD:     VG_(printf)("WaitFD"); break;
          case VgTs_WaitJoinee: VG_(printf)("WaitJoinee(%d)", 
                                            VG_(threads)[i].joiner_jee_tid);
                                break;
@@ -247,7 +210,7 @@ void VG_(pp_sched_status) ( void )
          case VgTs_Sleeping:   VG_(printf)("Sleeping"); break;
          case VgTs_WaitMX:     VG_(printf)("WaitMX"); break;
          case VgTs_WaitCV:     VG_(printf)("WaitCV"); break;
-         case VgTs_WaitSIG:    VG_(printf)("WaitSIG"); break;
+         case VgTs_WaitSys:    VG_(printf)("WaitSys"); break;
          default: VG_(printf)("???"); break;
       }
       VG_(printf)(", associated_mx = %p, associated_cv = %p\n", 
@@ -260,30 +223,6 @@ void VG_(pp_sched_status) ( void )
       );
    }
    VG_(printf)("\n");
-}
-
-static
-void add_waiting_fd ( ThreadId tid, Int fd, Int syscall_no, void* pre_res )
-{
-   Int i;
-
-   vg_assert(fd != -1); /* avoid total chaos */
-
-   for (i = 0;  i < VG_N_WAITING_FDS; i++)
-      if (vg_waiting_fds[i].fd == -1)
-         break;
-
-   if (i == VG_N_WAITING_FDS)
-      VG_(core_panic)("add_waiting_fd: VG_N_WAITING_FDS is too low");
-   /*
-   VG_(printf)("add_waiting_fd: add (tid %d, fd %d) at slot %d\n", 
-               tid, fd, i);
-   */
-   vg_waiting_fds[i].fd         = fd;
-   vg_waiting_fds[i].tid        = tid;
-   vg_waiting_fds[i].ready      = False;
-   vg_waiting_fds[i].syscall_no = syscall_no;
-   vg_waiting_fds[i].pre_result = pre_res;
 }
 
 
@@ -361,6 +300,12 @@ ThreadId vg_alloc_ThreadState ( void )
    VG_(printf)("Increase VG_N_THREADS, rebuild and try again.\n");
    VG_(core_panic)("VG_N_THREADS is too low");
    /*NOTREACHED*/
+}
+
+ThreadState *VG_(get_ThreadState)(ThreadId tid)
+{
+   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   return &VG_(threads)[tid];
 }
 
 Bool VG_(is_running_thread)(ThreadId tid)
@@ -561,6 +506,10 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
    VGP_PUSHCC(VgpRun);
    VG_(load_thread_state) ( tid );
+
+   /* there should be no undealt-with signals */
+   vg_assert(VG_(unresumable_siginfo).si_signo == 0);
+
    if (__builtin_setjmp(VG_(scheduler_jmpbuf)) == 0) {
       /* try this ... */
       VG_(scheduler_jmpbuf_valid) = True;
@@ -601,11 +550,16 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].cancel_ty   = True; /* PTHREAD_CANCEL_DEFERRED */
    VG_(threads)[tid].cancel_pend = NULL; /* not pending */
    VG_(threads)[tid].custack_used = 0;
-   VG_(threads)[tid].n_signals_returned = 0;
    VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
-   VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
+   VG_(ksigfillset)(&VG_(threads)[tid].eff_sig_mask);
    VG_(threads)[tid].specifics_ptr = NULL;
+
+   VG_(threads)[tid].syscallno		  = -1;
+   VG_(threads)[tid].sys_pre_res	  = NULL;
+
+   VG_(threads)[tid].proxy		  = NULL;
 }
+
 
 
 /* Initialise the scheduler.  Create a single "main" thread ready to
@@ -624,9 +578,6 @@ void VG_(scheduler_init) ( void )
       VG_(threads)[i].stack_base           = (Addr)NULL;
       VG_(threads)[i].stack_highest_word   = (Addr)NULL;
    }
-
-   for (i = 0; i < VG_N_WAITING_FDS; i++)
-      vg_waiting_fds[i].fd = -1; /* not in use */
 
    for (i = 0; i < VG_N_THREAD_KEYS; i++) {
       vg_thread_keys[i].inuse      = False;
@@ -656,147 +607,31 @@ void VG_(scheduler_init) ( void )
 
    /* Not running client code right now. */
    VG_(scheduler_jmpbuf_valid) = False;
+
+   /* Proxy for main thread */
+   VG_(proxy_create)(tid_main);
 }
 
 
-/* What if fd isn't a valid fd? */
-static
-void set_fd_nonblocking ( Int fd )
-{
-   Int res = VG_(fcntl)( fd, VKI_F_GETFL, 0 );
-   vg_assert(!VG_(is_kerror)(res));
-   res |= VKI_O_NONBLOCK;
-   res = VG_(fcntl)( fd, VKI_F_SETFL, res );
-   vg_assert(!VG_(is_kerror)(res));
-}
-
-static
-void set_fd_blocking ( Int fd )
-{
-   Int res = VG_(fcntl)( fd, VKI_F_GETFL, 0 );
-   vg_assert(!VG_(is_kerror)(res));
-   res &= ~VKI_O_NONBLOCK;
-   res = VG_(fcntl)( fd, VKI_F_SETFL, res );
-   vg_assert(!VG_(is_kerror)(res));
-}
-
-static
-Bool fd_is_blockful ( Int fd )
-{
-   Int res = VG_(fcntl)( fd, VKI_F_GETFL, 0 );
-   vg_assert(!VG_(is_kerror)(res));
-   return (res & VKI_O_NONBLOCK) ? False : True;
-}
-
-static
-Bool fd_is_valid ( Int fd )
-{
-   Int res = VG_(fcntl)( fd, VKI_F_GETFL, 0 );
-   return VG_(is_kerror)(res) ? False : True;
-}
 
 
 
 /* vthread tid is returning from a signal handler; modify its
    stack/regs accordingly. */
 
-/* [Helper fn for handle_signal_return] tid, assumed to be in WaitFD
-   for read or write, has been interrupted by a signal.  Find and
-   clear the relevant vg_waiting_fd[] entry.  Most of the code in this
-   procedure is total paranoia, if you look closely. */
-
-/* 4 Apr 2003: monty@mysql.com sent a fix, which adds the comparisons
-   against -1, and the following explaination.
-
-   Valgrind uses fd = -1 internally to tell that a file descriptor is
-   not in use, as the following code shows (at end of
-   cleanup_waiting_fd_table()).
-
-   vg_assert(waiters == 1);
-   for (i = 0; i < VG_N_WAITING_FDS; i++)
-     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1)
-         break;
-   vg_assert(i < VG_N_WAITING_FDS);
-   vg_assert(vg_waiting_fds[i].fd != -1);
-   vg_waiting_fds[i].fd = -1;    -- not in use
-                     ^^^^^^^
-
-   The bug is that valrind is setting fd = -1 for a not used file
-   descriptor but vg_waiting_fds[i].tid is not reset.
-
-   What happens is that on a later call to cleanup_waiting_fd_table()
-   the function will find old files that was waited on before by the
-   same thread, even if they are marked as 'not in use' by the above
-   code.
-
-   I first tried to fix the bug by setting vg_waiting_fds[i].tid to 0
-   at the end of the above function but this didn't fix the bug.
-   (Maybe there is other places in the code where tid is not properly
-   reset).  After adding the test for 'fd == -1' to the loops in
-   cleanup_waiting_fd_table() all problems disappeared.
-*/
-
-static
-void cleanup_waiting_fd_table ( ThreadId tid )
-{
-   Int  i, waiters;
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(VG_(threads)[tid].status == VgTs_WaitFD);
-   vg_assert(VG_(threads)[tid].m_eax == __NR_read 
-             || VG_(threads)[tid].m_eax == __NR_write);
-
-   /* Excessively paranoidly ... find the fd this op was waiting
-      for, and mark it as not being waited on. */
-   waiters = 0;
-   for (i = 0; i < VG_N_WAITING_FDS; i++) {
-     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1) {
-         waiters++;
-         vg_assert(vg_waiting_fds[i].syscall_no == VG_(threads)[tid].m_eax);
-      }
-   }
-   vg_assert(waiters == 1);
-   for (i = 0; i < VG_N_WAITING_FDS; i++)
-     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1)
-         break;
-   vg_assert(i < VG_N_WAITING_FDS);
-   vg_assert(vg_waiting_fds[i].fd != -1);
-   vg_waiting_fds[i].fd = -1; /* not in use */
-}
-
-
 static
 void handle_signal_return ( ThreadId tid )
 {
-   Char msg_buf[100];
    Bool restart_blocked_syscalls;
    struct vki_timespec * rem;
 
    vg_assert(VG_(is_valid_tid)(tid));
-
-   /* Increment signal-returned counter.  Used only to implement pause(). */
-   VG_(threads)[tid].n_signals_returned++;
 
    restart_blocked_syscalls = VG_(signal_returns)(tid);
 
    if (restart_blocked_syscalls)
       /* Easy; we don't have to do anything. */
       return;
-
-   if (VG_(threads)[tid].status == VgTs_WaitFD
-       && (VG_(threads)[tid].m_eax == __NR_read 
-           || VG_(threads)[tid].m_eax == __NR_write)) {
-      /* read() or write() interrupted.  Force a return with EINTR. */
-      cleanup_waiting_fd_table(tid);
-      SET_SYSCALL_RETVAL(tid, -VKI_EINTR);
-      VG_(threads)[tid].status = VgTs_Runnable;
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf, 
-            "read() / write() interrupted by signal; return EINTR" );
-         print_sched_event(tid, msg_buf);
-      }
-      return;
-   }
 
    if (VG_(threads)[tid].status == VgTs_Sleeping
        && VG_(threads)[tid].m_eax == __NR_nanosleep) {
@@ -814,10 +649,6 @@ void handle_signal_return ( ThreadId tid )
       return;
    }
 
-   if (VG_(threads)[tid].status == VgTs_WaitFD) {
-      VG_(core_panic)("handle_signal_return: unknown interrupted syscall");
-   }
-
    /* All other cases?  Just return. */
 }
 
@@ -825,11 +656,7 @@ void handle_signal_return ( ThreadId tid )
 static
 void sched_do_syscall ( ThreadId tid )
 {
-   UInt  saved_meax, saved_sheax;
-   Int   res, syscall_no;
-   UInt  fd;
-   void* pre_res;
-   Bool  orig_fd_blockness;
+   Int   syscall_no;
    Char  msg_buf[100];
 
    vg_assert(VG_(is_valid_tid)(tid));
@@ -837,10 +664,21 @@ void sched_do_syscall ( ThreadId tid )
 
    syscall_no = VG_(threads)[tid].m_eax; /* syscall number */
 
-   if (syscall_no == __NR_nanosleep) {
+   /* Special-case nanosleep because we can.  But should we?
+
+      XXX not doing so for now, because it doesn't seem to work
+      properly, and we can use the syscall nanosleep just as easily.
+    */
+   if (0 && syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
       req = (struct vki_timespec*)VG_(threads)[tid].m_ebx; /* arg1 */
+
+      if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
+	 SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
+	 return;
+      }
+
       t_now = VG_(read_millisecond_timer)();     
       t_awaken 
          = t_now
@@ -853,366 +691,158 @@ void sched_do_syscall ( ThreadId tid )
                                t_now, t_awaken-t_now);
 	 print_sched_event(tid, msg_buf);
       }
+      VG_(add_timeout)(tid, t_awaken);
       /* Force the scheduler to run something else for a while. */
       return;
    }
 
-   if (syscall_no != __NR_read && syscall_no != __NR_write) {
-      /* We think it's non-blocking.  Just do it in the normal way. */
-      VG_(perform_assumed_nonblocking_syscall)(tid);
-      /* The thread is still runnable. */
-      return;
-   }
-
-   /* Set the fd to nonblocking, and do the syscall, which will return
-      immediately, in order to lodge a request with the Linux kernel.
-      We later poll for I/O completion using select().  */
-
-   fd = VG_(threads)[tid].m_ebx /* arg1 */;
-
-   /* Deal with error case immediately. */
-   if (!fd_is_valid(fd)) {
-      if (VG_(needs).core_errors)
-         VG_(message)(Vg_UserMsg, 
-            "Warning: invalid file descriptor %d in syscall %s",
-            fd, syscall_no == __NR_read ? "read()" : "write()" );
-      pre_res = VG_(pre_known_blocking_syscall)(tid, syscall_no);
-      KERNEL_DO_SYSCALL(tid, res);
-      VG_(post_known_blocking_syscall)(tid, syscall_no, pre_res, res);
-      /* We're still runnable. */
+   /* If pre_syscall returns true, then we're done immediately */
+   if (VG_(pre_syscall)(tid)) {
+      VG_(post_syscall(tid));
       vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-      return;
-   }
-
-   /* From here onwards we know that fd is valid. */
-
-   orig_fd_blockness = fd_is_blockful(fd);
-   set_fd_nonblocking(fd);
-   vg_assert(!fd_is_blockful(fd));
-   pre_res = VG_(pre_known_blocking_syscall)(tid, syscall_no);
-
-   /* This trashes the thread's %eax; we have to preserve it. */
-   saved_meax  = VG_(threads)[tid].m_eax;
-   saved_sheax = VG_(threads)[tid].sh_eax;
-   KERNEL_DO_SYSCALL(tid,res);
-
-   /* Restore original blockfulness of the fd. */
-   if (orig_fd_blockness)
-      set_fd_blocking(fd);
-   else
-      set_fd_nonblocking(fd);
-
-   if (res != -VKI_EWOULDBLOCK || !orig_fd_blockness) {
-      /* Finish off in the normal way.  Don't restore %EAX, since that
-         now (correctly) holds the result of the call.  We get here if either:
-         1.  The call didn't block, or
-         2.  The fd was already in nonblocking mode before we started to
-             mess with it.  In this case, we're not expecting to handle 
-             the I/O completion -- the client is.  So don't file a 
-             completion-wait entry. 
-      */
-      VG_(post_known_blocking_syscall)(tid, syscall_no, pre_res, res);
-      /* We're still runnable. */
-      vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
    } else {
-
-      vg_assert(res == -VKI_EWOULDBLOCK && orig_fd_blockness);
-
-      /* It would have blocked.  First, restore %EAX to what it was
-         before our speculative call. */
-      saved_meax  = VG_(threads)[tid].m_eax  = saved_meax;
-      saved_sheax = VG_(threads)[tid].sh_eax = saved_sheax;
-      
-      /* Put this fd in a table of fds on which we are waiting for
-         completion. The arguments for select() later are constructed
-         from this table.  */
-      add_waiting_fd(tid, fd, saved_meax /* which holds the syscall # */,
-                     pre_res);
-      /* Deschedule thread until an I/O completion happens. */
-      VG_(threads)[tid].status = VgTs_WaitFD;
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf,"block until I/O ready on fd %d", fd);
-	 print_sched_event(tid, msg_buf);
-      }
+      vg_assert(VG_(threads)[tid].status == VgTs_WaitSys);
    }
 }
 
 
-/* Find out which of the fds in vg_waiting_fds are now ready to go, by
-   making enquiries with select(), and mark them as ready.  We have to
-   wait for the requesting threads to fall into the the WaitFD state
-   before we can actually finally deliver the results, so this
-   procedure doesn't do that; complete_blocked_syscalls() does it.
 
-   It might seem odd that a thread which has done a blocking syscall
-   is not in WaitFD state; the way this can happen is if it initially
-   becomes WaitFD, but then a signal is delivered to it, so it becomes
-   Runnable for a while.  In this case we have to wait for the
-   sighandler to return, whereupon the WaitFD state is resumed, and
-   only at that point can the I/O result be delivered to it.  However,
-   this point may be long after the fd is actually ready.  
+struct timeout {
+   UInt		time;		/* time we should awaken */
+   ThreadId	tid;		/* thread which cares about this timeout */
+   struct timeout *next;
+};
 
-   So, poll_for_ready_fds() merely detects fds which are ready.
-   complete_blocked_syscalls() does the second half of the trick,
-   possibly much later: it delivers the results from ready fds to
-   threads in WaitFD state. 
-*/
-static
-void poll_for_ready_fds ( void )
+static struct timeout *timeouts;
+
+void VG_(add_timeout)(ThreadId tid, UInt time)
 {
-   vki_ksigset_t      saved_procmask;
-   vki_fd_set         readfds;
-   vki_fd_set         writefds;
-   vki_fd_set         exceptfds;
-   struct vki_timeval timeout;
-   Int                fd, fd_max, i, n_ready, syscall_no, n_ok;
-   ThreadId           tid;
-   Bool               rd_ok, wr_ok, ex_ok;
-   Char               msg_buf[100];
+   struct timeout *t = VG_(arena_malloc)(VG_AR_CORE, sizeof(*t));
+   struct timeout **prev, *tp;
 
-   struct vki_timespec* rem;
-   UInt                 t_now;
+   t->time = time;
+   t->tid = tid;
 
-   /* Awaken any sleeping threads whose sleep has expired. */
-   for (tid = 1; tid < VG_N_THREADS; tid++)
-      if (VG_(threads)[tid].status == VgTs_Sleeping)
-         break;
+   if (VG_(clo_trace_sched)) {
+      Char msg_buf[100];
+      VG_(sprintf)(msg_buf, "add_timeout: now=%u adding timeout at %u",
+		   VG_(read_millisecond_timer)(), time);
+      print_sched_event(tid, msg_buf);
+   }
 
-   /* Avoid pointless calls to VG_(read_millisecond_timer). */
-   if (tid < VG_N_THREADS) {
-      t_now = VG_(read_millisecond_timer)();
-      for (tid = 1; tid < VG_N_THREADS; tid++) {
-         if (VG_(threads)[tid].status != VgTs_Sleeping)
-            continue;
-         if (t_now >= VG_(threads)[tid].awaken_at) {
-            /* Resume this thread.  Set to zero the remaining-time
-               (second) arg of nanosleep, since it's used up all its
-               time. */
-            vg_assert(VG_(threads)[tid].m_eax == __NR_nanosleep);
-            rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
-            if (rem != NULL) {
-	       rem->tv_sec = 0;
-               rem->tv_nsec = 0;
-            }
-            /* Make the syscall return 0 (success). */
-            SET_SYSCALL_RETVAL(tid, 0);
-            
-	    /* Reschedule this thread. */
-            VG_(threads)[tid].status = VgTs_Runnable;
-            if (VG_(clo_trace_sched)) {
-               VG_(sprintf)(msg_buf, "at %d: nanosleep done", 
-                                     t_now);
-               print_sched_event(tid, msg_buf);
-            }
-         }
+   for(tp = timeouts, prev = &timeouts; 
+       tp != NULL && tp->time < time; 
+       prev = &tp->next, tp = tp->next)
+      ;
+   t->next = tp;
+   *prev = t;
+}
+
+/* Sleep for a while, but be willing to be woken. */
+static
+void idle ( void )
+{
+   struct vki_pollfd pollfd[1];
+   Int delta = -1;
+   Int fd = VG_(proxy_resfd)();
+
+   pollfd[0].fd = fd;
+   pollfd[0].events = VKI_POLLIN;
+
+   /* Look though the nearest timeouts, looking for the next future
+      one (there may be stale past timeouts).  They'll all be mopped
+      below up when the poll() finishes. */
+   if (timeouts != NULL) {
+      struct timeout *tp;
+      Bool wicked = False;
+      UInt now = VG_(read_millisecond_timer)();
+
+      for(tp = timeouts; tp != NULL && tp->time < now; tp = tp->next) {
+	 /* If a thread is still sleeping in the past, make it runnable */
+	 ThreadState *tst = VG_(get_ThreadState)(tp->tid);
+	 if (tst->status == VgTs_Sleeping)
+	    tst->status = VgTs_Runnable;
+	 wicked = True;		/* no sleep for the wicked */
       }
-   }
 
-   /* And look for threads waiting on file descriptors which are now
-      ready for I/O.*/
-   timeout.tv_sec = 0;
-   timeout.tv_usec = 0;
-
-   VKI_FD_ZERO(&readfds);
-   VKI_FD_ZERO(&writefds);
-   VKI_FD_ZERO(&exceptfds);
-   fd_max = -1;
-   for (i = 0; i < VG_N_WAITING_FDS; i++) {
-      if (vg_waiting_fds[i].fd == -1 /* not in use */) 
-         continue;
-      if (vg_waiting_fds[i].ready /* already ready? */) 
-         continue;
-      fd = vg_waiting_fds[i].fd;
-      /* VG_(printf)("adding QUERY for fd %d\n", fd); */
-      vg_assert(fd >= 0);
-      if (fd > fd_max) 
-         fd_max = fd;
-      tid = vg_waiting_fds[i].tid;
-      vg_assert(VG_(is_valid_tid)(tid));
-      syscall_no = vg_waiting_fds[i].syscall_no;
-      switch (syscall_no) {
-         case __NR_read:
-            /* In order to catch timeout events on fds which are
-               readable and which have been ioctl(TCSETA)'d with a
-               VTIMEout, we appear to need to ask if the fd is
-               writable, for some reason.  Ask me not why.  Since this
-               is strange and potentially troublesome we only do it if
-               the user asks specially. */
-            if (VG_(strstr)(VG_(clo_weird_hacks), "ioctl-VTIME") != NULL)
-               VKI_FD_SET(fd, &writefds);
-            VKI_FD_SET(fd, &readfds); break;
-         case __NR_write: 
-            VKI_FD_SET(fd, &writefds); break;
-         default: 
-            VG_(core_panic)("poll_for_ready_fds: unexpected syscall");
-            /*NOTREACHED*/
-            break;
+      if (tp != NULL) {
+	 delta = tp->time - now;
+	 vg_assert(delta >= 0);
       }
+      if (wicked)
+	 delta = 0;
    }
 
-   /* Short cut: if no fds are waiting, give up now. */
-   if (fd_max == -1)
-      return;
+   /* gotta wake up for something! */
+   vg_assert(fd != -1 || delta != -1);
 
-   /* BLOCK ALL SIGNALS.  We don't want the complication of select()
-      getting interrupted. */
-   VG_(block_all_host_signals)( &saved_procmask );
-
-   n_ready = VG_(select)
-                ( fd_max+1, &readfds, &writefds, &exceptfds, &timeout);
-   if (VG_(is_kerror)(n_ready)) {
-      VG_(printf)("poll_for_ready_fds: select returned %d\n", n_ready);
-      VG_(core_panic)("poll_for_ready_fds: select failed?!");
-      /*NOTREACHED*/
-   }
+   /* If we need to do signal routing, then poll for pending signals
+      every VG_(clo_signal_polltime) mS */
+   if (VG_(do_signal_routing) && (delta > VG_(clo_signal_polltime) || delta == -1))
+      delta = VG_(clo_signal_polltime);
    
-   /* UNBLOCK ALL SIGNALS */
-   VG_(restore_all_host_signals)( &saved_procmask );
-
-   /* VG_(printf)("poll_for_io_completions: %d fs ready\n", n_ready); */
-
-   if (n_ready == 0)
-      return;   
-
-   /* Inspect all the fds we know about, and handle any completions that
-      have happened. */
-   /*
-   VG_(printf)("\n\n");
-   for (fd = 0; fd < 100; fd++)
-     if (VKI_FD_ISSET(fd, &writefds) || VKI_FD_ISSET(fd, &readfds)) {
-       VG_(printf)("X"); } else { VG_(printf)("."); };
-   VG_(printf)("\n\nfd_max = %d\n", fd_max);
-   */
-
-   for (fd = 0; fd <= fd_max; fd++) {
-      rd_ok = VKI_FD_ISSET(fd, &readfds);
-      wr_ok = VKI_FD_ISSET(fd, &writefds);
-      ex_ok = VKI_FD_ISSET(fd, &exceptfds);
-
-      n_ok = (rd_ok ? 1 : 0) + (wr_ok ? 1 : 0) + (ex_ok ? 1 : 0);
-      if (n_ok == 0) 
-         continue;
-      if (n_ok > 1) {
-         VG_(printf)("offending fd = %d\n", fd);
-         VG_(core_panic)("poll_for_ready_fds: multiple events on fd");
-      }
-
-      /* An I/O event completed for fd.  Find the thread which
-         requested this. */
-      for (i = 0; i < VG_N_WAITING_FDS; i++) {
-         if (vg_waiting_fds[i].fd == -1 /* not in use */) 
-            continue;
-         if (vg_waiting_fds[i].fd == fd) 
-            break;
-      }
-
-      /* And a bit more paranoia ... */
-      vg_assert(i >= 0 && i < VG_N_WAITING_FDS);
-
-      /* Mark the fd as ready. */      
-      vg_assert(! vg_waiting_fds[i].ready);
-      vg_waiting_fds[i].ready = True;
+   if (VG_(clo_trace_sched)) {
+      Char msg_buf[100];
+      VG_(sprintf)(msg_buf, "idle: waiting for %dms and fd %d",
+		   delta, fd);
+      print_sched_event(0, msg_buf);
    }
-}
 
+   VG_(poll)(pollfd, fd != -1 ? 1 : 0, delta);
 
-/* See comment attached to poll_for_ready_fds() for explaination. */
-static
-void complete_blocked_syscalls ( void )
-{
-   Int      fd, i, res;
-   UInt     syscall_no;
-   void*    pre_res;
-   ThreadId tid;
-   Char     msg_buf[100];
+   /* See if there's anything on the timeout list which needs
+      waking, and mop up anything in the past. */
+   {
+      UInt now = VG_(read_millisecond_timer)();
+      struct timeout *tp;
 
-   /* Inspect all the outstanding fds we know about. */
+      tp = timeouts;
 
-   for (i = 0; i < VG_N_WAITING_FDS; i++) {
-      if (vg_waiting_fds[i].fd == -1 /* not in use */) 
-         continue;
-      if (! vg_waiting_fds[i].ready)
-         continue;
+      while(tp && tp->time <= now) {
+	 struct timeout *dead;
+	 ThreadState *tst;
+	 
+	 tst = VG_(get_ThreadState)(tp->tid);
+	
+	 if (VG_(clo_trace_sched)) {
+	    Char msg_buf[100];
+	    VG_(sprintf)(msg_buf, "idle: now=%u removing timeout at %u",
+			 now, tp->time);
+	    print_sched_event(tp->tid, msg_buf);
+	 }
 
-      fd  = vg_waiting_fds[i].fd;
-      tid = vg_waiting_fds[i].tid;
-      vg_assert(VG_(is_valid_tid)(tid));
+	 /* If awaken_at != tp->time then it means the timeout is
+	    stale and we should just ignore it. */
+	 if(tst->awaken_at == tp->time) {
+	    switch(tst->status) {
+	    case VgTs_Sleeping:
+	       tst->awaken_at = 0xFFFFFFFF;
+	       tst->status = VgTs_Runnable;
+	       break;
 
-      /* The thread actually has to be waiting for the I/O event it
-         requested before we can deliver the result! */
-      if (VG_(threads)[tid].status != VgTs_WaitFD)
-         continue;
+	    case VgTs_WaitCV:
+	       do_pthread_cond_timedwait_TIMEOUT(tst->tid);
+	       break;
 
-      /* Ok, actually do it!  We can safely use %EAX as the syscall
-         number, because the speculative call made by
-         sched_do_syscall() doesn't change %EAX in the case where the
-         call would have blocked. */
-      syscall_no = vg_waiting_fds[i].syscall_no;
-      vg_assert(syscall_no == VG_(threads)[tid].m_eax);
+	    default:
+	       /* This is a bit odd but OK; if a thread had a timeout
+		  but woke for some other reason (signal, condvar
+		  wakeup), then it will still be on the list. */
+	       if (0)
+		  VG_(printf)("idle(): unexpected status tp->tid=%d tst->status = %d\n", 
+			      tp->tid, tst->status);
+	       break;
+	    }
+	 }
 
-      pre_res = vg_waiting_fds[i].pre_result;
+	 dead = tp;
+	 tp = tp->next;
 
-      /* In a rare case pertaining to writing into a pipe, write()
-         will block when asked to write > 4096 bytes even though the
-         kernel claims, when asked via select(), that blocking will
-         not occur for a write on that fd.  This can cause deadlocks.
-         An easy answer is to limit the size of the write to 4096
-         anyway and hope that the client program's logic can handle
-         the short write.  That shoulds dubious to me, so we don't do
-         it by default. */
-      if (syscall_no == __NR_write 
-          && VG_(threads)[tid].m_edx /* arg3, count */ > 4096
-          && VG_(strstr)(VG_(clo_weird_hacks), "truncate-writes") != NULL) {
-         /* VG_(printf)("truncate write from %d to 4096\n", 
-            VG_(threads)[tid].m_edx ); */
-         VG_(threads)[tid].m_edx = 4096;
+	 VG_(arena_free)(VG_AR_CORE, dead);
       }
 
-      KERNEL_DO_SYSCALL(tid,res);
-      VG_(post_known_blocking_syscall)(tid, syscall_no, pre_res, res);
-
-      /* Reschedule. */
-      VG_(threads)[tid].status = VgTs_Runnable;
-      /* Mark slot as no longer in use. */
-      vg_waiting_fds[i].fd = -1;
-      /* pp_sched_status(); */
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf,"resume due to I/O completion on fd %d", fd);
-	 print_sched_event(tid, msg_buf);
-      }
+      timeouts = tp;
    }
-}
-
-
-static
-void check_for_pthread_cond_timedwait ( void )
-{
-   Int  i;
-   UInt now;
-   for (i = 1; i < VG_N_THREADS; i++) {
-      if (VG_(threads)[i].status != VgTs_WaitCV)
-         continue;
-      if (VG_(threads)[i].awaken_at == 0xFFFFFFFF /* no timeout */)
-         continue;
-      now = VG_(read_millisecond_timer)();
-      if (now >= VG_(threads)[i].awaken_at) {
-         do_pthread_cond_timedwait_TIMEOUT(i);
-      }
-   }
-}
-
-
-static
-void nanosleep_for_a_while ( void )
-{
-   Int res;
-   struct vki_timespec req;
-   struct vki_timespec rem;
-   req.tv_sec = 0;
-   req.tv_nsec = 10 * 1000 * 1000;
-   res = VG_(nanosleep)( &req, &rem );   
-   vg_assert(res == 0 /* ok */ || res == 1 /* interrupted by signal */);
 }
 
 
@@ -1231,8 +861,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
    UInt     trc;
    UInt     dispatch_ctr_SAVED;
    Int      done_this_time, n_in_bounded_wait;
+   Int	    n_exists, n_waiting_for_reaper;
    Addr     trans_addr;
-   Bool     sigs_delivered;
 
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
@@ -1265,42 +895,34 @@ VgSchedReturnCode VG_(scheduler) ( void )
          /* For stats purposes only. */
          VG_(num_scheduling_events_MAJOR) ++;
 
-         /* See if any I/O operations which we were waiting for have
-            completed, and, if so, make runnable the relevant waiting
-            threads. */
-         poll_for_ready_fds();
-         complete_blocked_syscalls();
-         check_for_pthread_cond_timedwait();
+	 /* Route signals to their proper places */
+	 VG_(route_signals)();
 
-         /* See if there are any signals which need to be delivered.  If
-            so, choose thread(s) to deliver them to, and build signal
-            delivery frames on those thread(s) stacks. */
-
-	 /* Be careful about delivering signals to a thread waiting
-            for a mutex.  In particular, when the handler is running,
-            that thread is temporarily apparently-not-waiting for the
-            mutex, so if it is unlocked by another thread whilst the
-            handler is running, this thread is not informed.  When the
-            handler returns, the thread resumes waiting on the mutex,
-            even if, as a result, it has missed the unlocking of it.
-            Potential deadlock.  This sounds all very strange, but the
-            POSIX standard appears to require this behaviour.  */
-         sigs_delivered = VG_(deliver_signals)();
-	 if (sigs_delivered)
-            VG_(do_sanity_checks)( False );
+         /* See if any of the proxy LWPs report any activity: either a
+	    syscall completing or a signal arriving. */
+	 VG_(proxy_results)();
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;
+	 if (prefer_sched != VG_INVALID_THREADID) {
+	    tid_next = prefer_sched-1;
+	    prefer_sched = VG_INVALID_THREADID;
+	 }
          n_in_bounded_wait = 0;
+	 n_exists = 0;
+	 n_waiting_for_reaper = 0;
          while (True) {
             tid_next++;
             if (tid_next >= VG_N_THREADS) tid_next = 1;
-            if (VG_(threads)[tid_next].status == VgTs_WaitFD
-                || VG_(threads)[tid_next].status == VgTs_Sleeping
-                || VG_(threads)[tid_next].status == VgTs_WaitSIG
+            if (VG_(threads)[tid_next].status == VgTs_Sleeping
+                || VG_(threads)[tid_next].status == VgTs_WaitSys
                 || (VG_(threads)[tid_next].status == VgTs_WaitCV 
                     && VG_(threads)[tid_next].awaken_at != 0xFFFFFFFF))
                n_in_bounded_wait ++;
+	    if (VG_(threads)[tid_next].status != VgTs_Empty)
+	       n_exists++;
+	    if (VG_(threads)[tid_next].status == VgTs_WaitJoiner)
+	       n_waiting_for_reaper++;
             if (VG_(threads)[tid_next].status == VgTs_Runnable) 
                break; /* We can run this one. */
             if (tid_next == tid) 
@@ -1315,6 +937,12 @@ VgSchedReturnCode VG_(scheduler) ( void )
             break;
 	 }
 
+	 /* All threads have exited - pretend someone called exit() */
+	 if (n_waiting_for_reaper == n_exists) {
+	    VG_(exitcode) = 0;	/* ? */
+	    return VgSrc_ExitSyscall;
+	 }
+
          /* We didn't find a runnable thread.  Now what? */
          if (n_in_bounded_wait == 0) {
             /* No runnable threads and no prospect of any appearing
@@ -1324,10 +952,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
             return VgSrc_Deadlock;
          }
 
-         /* At least one thread is in a fd-wait state.  Delay for a
-            while, and go round again, in the hope that eventually a
-            thread becomes runnable. */
-         nanosleep_for_a_while();
+	 /* Nothing needs doing, so sit in idle until either a timeout
+	    happens or a thread's syscall completes. */
+         idle();
 	 /* pp_sched_status(); */
 	 /* VG_(printf)("."); */
       }
@@ -1463,9 +1090,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                the unprotected malloc/free system. */
 
             if (VG_(threads)[tid].m_eax == __NR_exit
-#               if defined(__NR_exit_group)
                 || VG_(threads)[tid].m_eax == __NR_exit_group
-#               endif
                ) {
 
                /* If __NR_exit, remember the supplied argument. */
@@ -1500,14 +1125,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 
             /* We've dealt with __NR_exit at this point. */
-            { Bool b
-                  = VG_(threads)[tid].m_eax != __NR_exit
-#                   if defined(__NR_exit_group)
-                    && VG_(threads)[tid].m_eax != __NR_exit_group
-#                   endif
-                    ;
-              vg_assert(b);
-            }
+	    vg_assert(VG_(threads)[tid].m_eax != __NR_exit && 
+		      VG_(threads)[tid].m_eax != __NR_exit_group);
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an
@@ -1529,12 +1148,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
 #           endif
 
             if (VG_(threads)[tid].status == VgTs_Runnable) {
-               /* Better do a signal check, since if in a tight loop
-                  with a slow syscall it may be a very long time
-                  before we get back to the main signal check in Stage 1. */
-               sigs_delivered = VG_(deliver_signals)();
-               if (sigs_delivered)
-                  VG_(do_sanity_checks)( False );
                continue; /* with this thread */
             } else {
                goto stage1;
@@ -1583,9 +1196,19 @@ VgSchedReturnCode VG_(scheduler) ( void )
             break;
 
          case VG_TRC_UNRESUMABLE_SIGNAL:
-            /* It got a SIGSEGV/SIGBUS, which we need to deliver right
-               away.  Again, do nothing, so we wind up back at Phase
-               1, whereupon the signal will be "delivered". */
+            /* It got a SIGSEGV/SIGBUS/SIGILL/SIGFPE, which we need to
+               deliver right away.  */
+	    vg_assert(VG_(unresumable_siginfo).si_signo == VKI_SIGSEGV ||
+		      VG_(unresumable_siginfo).si_signo == VKI_SIGBUS  ||
+		      VG_(unresumable_siginfo).si_signo == VKI_SIGILL  ||
+		      VG_(unresumable_siginfo).si_signo == VKI_SIGFPE);
+	    vg_assert(VG_(longjmpd_on_signal) == VG_(unresumable_siginfo).si_signo);
+
+	    /* make sure we've unblocked the signals which the handler blocked */
+	    VG_(unblock_host_signal)(VG_(longjmpd_on_signal));
+
+	    VG_(deliver_signal)(tid, &VG_(unresumable_siginfo), False);
+	    VG_(unresumable_siginfo).si_signo = 0; /* done */
 	    break;
 
          default: 
@@ -1620,6 +1243,41 @@ VgSchedReturnCode VG_(scheduler) ( void )
       "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
 
    return VgSrc_BbsDone;
+}
+
+void VG_(need_resched) ( ThreadId prefer )
+{
+   /* Tell the scheduler now might be a good time to find a new
+      runnable thread, because something happened which woke a thread
+      up.
+
+      NB: This can be called unsynchronized from either a signal
+      handler, or from another LWP (ie, real kernel thread).
+
+      In principle this could simply be a matter of setting
+      VG_(dispatch_ctr) to a small value (say, 2), which would make
+      any running code come back to the scheduler fairly quickly.
+
+      However, since the scheduler implements a strict round-robin
+      policy with only one priority level, there are, by definition,
+      no better threads to be running than the current thread anyway,
+      so we may as well ignore this hint.  For processes with a
+      mixture of compute and I/O bound threads, this means the compute
+      threads could introduce longish latencies before the I/O threads
+      run.  For programs with only I/O bound threads, need_resched
+      won't have any effect anyway.
+
+      OK, so I've added command-line switches to enable low-latency
+      syscalls and signals.  The prefer_sched variable is in effect
+      the ID of a single thread which has higher priority than all the
+      others.  If set, the scheduler will prefer to schedule that
+      thread over all others.  Naturally, this could lead to
+      starvation or other unfairness.
+    */
+
+   if (VG_(dispatch_ctr) > 10)
+      VG_(dispatch_ctr) = 2;
+   prefer_sched = prefer;
 }
 
 
@@ -1671,13 +1329,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    /* .cancel_pend will hold &thread_exit_wrapper */
    VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
 
-   /* Clear out the waited-for-signals set, if needed, so as not to
-      cause the sanity checker to bomb before
-      cleanup_after_thread_exited() really cleans up properly for this
-      thread. */
-   if (VG_(threads)[tid].status == VgTs_WaitSIG) {
-      VG_(ksigemptyset)( & VG_(threads)[tid].sigs_waited_for );
-   }
+   VG_(proxy_abort_syscall)(tid);
 
    VG_(threads)[tid].status = VgTs_Runnable;
 
@@ -1697,32 +1349,23 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 /* Release resources and generally clean up once a thread has finally
    disappeared. */
 static
-void cleanup_after_thread_exited ( ThreadId tid )
+void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
-   Int           i;
-   vki_ksigset_t irrelevant_sigmask;
    vg_assert(VG_(is_valid_or_empty_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
    /* Its stack is now off-limits */
    VG_TRACK( die_mem_stack, VG_(threads)[tid].stack_base,
                             VG_(threads)[tid].stack_size );
 
-   /* Forget about any pending signals directed specifically at this
-      thread, and get rid of signal handlers specifically arranged for
-      this thread. */
-   VG_(block_all_host_signals)( &irrelevant_sigmask );
-   VG_(handle_SCSS_change)( False /* lazy update */ );
-
-   /* Clean up the waiting_fd table */
-   for (i = 0; i < VG_N_WAITING_FDS; i++) {
-      if (vg_waiting_fds[i].tid == tid) {
-         vg_waiting_fds[i].fd = -1; /* not in use */
-      }
-   }
-
    /* Deallocate its LDT, if it ever had one. */
    VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].ldt );
    VG_(threads)[tid].ldt = NULL;
+
+   /* Not interested in the timeout anymore */
+   VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
+
+   /* Delete proxy LWP */
+   VG_(proxy_delete)(tid, forcekill);
 }
 
 
@@ -1744,8 +1387,16 @@ void maybe_rendezvous_joiners_and_joinees ( void )
       if (jee == VG_INVALID_THREADID) 
          continue;
       vg_assert(VG_(is_valid_tid)(jee));
-      if (VG_(threads)[jee].status != VgTs_WaitJoiner)
+      if (VG_(threads)[jee].status != VgTs_WaitJoiner) {
+	 /* if joinee has become detached, then make join fail with
+	    EINVAL */
+	 if (VG_(threads)[jee].detached) {
+	    VG_(threads)[jnr].status = VgTs_Runnable;
+	    VG_(threads)[jnr].joiner_jee_tid = VG_INVALID_THREADID;
+	    SET_PTHREQ_RETVAL(jnr, VKI_EINVAL);
+	 }
          continue;
+      }
       /* ok!  jnr is waiting to join with jee, and jee is waiting to be
          joined by ... well, any thread.  So let's do it! */
 
@@ -1765,7 +1416,7 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 
       /* Joinee is discarded */
       VG_(threads)[jee].status = VgTs_Empty; /* bye! */
-      cleanup_after_thread_exited ( jee );
+      cleanup_after_thread_exited ( jee, False );
       if (VG_(clo_trace_sched)) {
 	 VG_(sprintf)(msg_buf,
 		      "rendezvous with joinee %d.  %d resumes, %d exits.",
@@ -1784,19 +1435,21 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 
 /* Nuke all threads other than tid.  POSIX specifies that this should
    happen in __NR_exec, and after a __NR_fork() when I am the child,
-   as POSIX requires. */
+   as POSIX requires.  Also used at process exit time with
+   me==VG_INVALID_THREADID */
 void VG_(nuke_all_threads_except) ( ThreadId me )
 {
    ThreadId tid;
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (tid == me
-          || VG_(threads)[tid].status == VgTs_Empty) 
+          || VG_(threads)[tid].status == VgTs_Empty)
          continue;
       if (0)
          VG_(printf)(
             "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
+      VG_(proxy_delete)(tid, True);
       VG_(threads)[tid].status = VgTs_Empty;
-      cleanup_after_thread_exited( tid );
+      cleanup_after_thread_exited( tid, True );
    }
 }
 
@@ -1949,7 +1602,6 @@ static
 void do__set_or_get_detach ( ThreadId tid, 
                              Int what, ThreadId det )
 {
-   ThreadId i;
    Char     msg_buf[100];
    /* VG_(printf)("do__set_or_get_detach tid %d what %d det %d\n", 
       tid, what, det); */
@@ -1972,23 +1624,11 @@ void do__set_or_get_detach ( ThreadId tid,
       case 2: /* get */
          SET_PTHREQ_RETVAL(tid, VG_(threads)[det].detached ? 1 : 0);
          return;
-      case 1: /* set detached.  If someone is in a join-wait for det,
-                 do not detach. */
-         for (i = 1; i < VG_N_THREADS; i++) {
-            if (VG_(threads)[i].status == VgTs_WaitJoinee
-                && VG_(threads)[i].joiner_jee_tid == det) {
-               SET_PTHREQ_RETVAL(tid, 0);
-               if (VG_(clo_trace_sched)) {
-                  VG_(sprintf)(msg_buf,
-                     "tid %d not detached because %d in join-wait for it",
-                     det, i);
-                  print_sched_event(tid, msg_buf);
-               }
-               return;
-            }
-         }
+      case 1:
          VG_(threads)[det].detached = True;
          SET_PTHREQ_RETVAL(tid, 0); 
+	 /* wake anyone who was joining on us */
+	 maybe_rendezvous_joiners_and_joinees();
          return;
       case 0: /* set not detached */
          VG_(threads)[det].detached = False;
@@ -2018,11 +1658,14 @@ void do__set_cancelpend ( ThreadId tid,
       }
       VG_(record_pthread_error)( tid, 
          "pthread_cancel: target thread does not exist, or invalid");
-      SET_PTHREQ_RETVAL(tid, -VKI_ESRCH);
+      SET_PTHREQ_RETVAL(tid, VKI_ESRCH);
       return;
    }
 
    VG_(threads)[cee].cancel_pend = cancelpend_hdlr;
+
+   /* interrupt a pending syscall */
+   VG_(proxy_abort_syscall)(cee);
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, 
@@ -2035,7 +1678,8 @@ void do__set_cancelpend ( ThreadId tid,
    SET_PTHREQ_RETVAL(tid, 0);
 
    /* Perhaps we can nuke the cancellee right now? */
-   do__testcancel(cee);
+   if (!VG_(threads)[cee].cancel_ty) /* if PTHREAD_CANCEL_ASYNCHRONOUS */
+      do__testcancel(cee);
 }
 
 
@@ -2054,7 +1698,7 @@ void do_pthread_join ( ThreadId tid,
       VG_(record_pthread_error)( tid, 
          "pthread_join: attempt to join to self");
       SET_PTHREQ_RETVAL(tid, EDEADLK); /* libc constant, not a kernel one */
-      VG_(threads)[tid].status = VgTs_Runnable;
+      vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
       return;
    }
 
@@ -2063,12 +1707,12 @@ void do_pthread_join ( ThreadId tid,
    maybe_rendezvous_joiners_and_joinees();
 
    /* Is this a sane request? */
-   if ( ! VG_(is_valid_tid)(jee) ) {
+   if ( ! VG_(is_valid_tid)(jee) ||
+	VG_(threads)[jee].detached) {
       /* Invalid thread to join to. */
       VG_(record_pthread_error)( tid, 
-         "pthread_join: target thread does not exist, or invalid");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
-      VG_(threads)[tid].status = VgTs_Runnable;
+         "pthread_join: target thread does not exist, invalid, or detached");
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2081,8 +1725,8 @@ void do_pthread_join ( ThreadId tid,
          VG_(record_pthread_error)( tid, 
             "pthread_join: another thread already "
             "in join-wait for target thread");
-         SET_PTHREQ_RETVAL(tid, EINVAL);
-         VG_(threads)[tid].status = VgTs_Runnable;
+         SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
+	 vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
          return;
       }
    }
@@ -2136,11 +1780,12 @@ void do__quit ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    VG_(threads)[tid].status = VgTs_Empty; /* bye! */
-   cleanup_after_thread_exited ( tid );
+   cleanup_after_thread_exited ( tid, False );
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "do__quit (detached thread exit)");
       print_sched_event(tid, msg_buf);
    }
+   maybe_rendezvous_joiners_and_joinees();
    /* Return value is irrelevant; this thread will not get
       rescheduled. */
 }
@@ -2264,7 +1909,12 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* We inherit our parent's signal mask. */
    VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;
-   VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
+
+   /* Now that the signal mask is set up, create a proxy LWP for this thread */
+   VG_(proxy_create)(tid);
+
+   /* Set the proxy's signal mask */
+   VG_(proxy_setsigmask)(tid);
 
    /* return child's tid to parent */
    SET_PTHREQ_RETVAL(parent_tid, tid); /* success */
@@ -2388,7 +2038,7 @@ void do_pthread_mutex_lock( ThreadId tid,
    if (mutex == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_lock/trylock: mutex is NULL");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2408,7 +2058,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_mutex_lock/trylock: mutex is invalid");
-         SET_PTHREQ_RETVAL(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
          return;
    }
 
@@ -2492,7 +2142,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    if (mutex == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_unlock: mutex is NULL");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2520,7 +2170,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_mutex_unlock: mutex is invalid");
-         SET_PTHREQ_RETVAL(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
          return;
    }
 
@@ -2640,7 +2290,6 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
             cv, mx );
          print_pthread_event(tid, msg_buf);
       }
-
    }
 }
 
@@ -2711,7 +2360,7 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          }
 
       }
-
+   
       n_to_release--;
    }
 }
@@ -2742,7 +2391,7 @@ void do_pthread_cond_wait ( ThreadId tid,
    if (mutex == NULL || cond == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_cond_wait/timedwait: cond or mutex is NULL");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2762,7 +2411,7 @@ void do_pthread_cond_wait ( ThreadId tid,
       default:
          VG_(record_pthread_error)( tid, 
             "pthread_cond_wait/timedwait: mutex is invalid");
-         SET_PTHREQ_RETVAL(tid, EINVAL);
+         SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
          return;
    }
 
@@ -2772,7 +2421,7 @@ void do_pthread_cond_wait ( ThreadId tid,
          VG_(record_pthread_error)( tid, 
             "pthread_cond_wait/timedwait: mutex is unlocked "
             "or is locked but not owned by thread");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2781,6 +2430,8 @@ void do_pthread_cond_wait ( ThreadId tid,
    VG_(threads)[tid].associated_cv = cond;
    VG_(threads)[tid].associated_mx = mutex;
    VG_(threads)[tid].awaken_at     = ms_end;
+   if (ms_end != 0xFFFFFFFF)
+      VG_(add_timeout)(tid, ms_end);
 
    if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, 
@@ -2817,7 +2468,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
    if (cond == NULL) {
       VG_(record_pthread_error)( tid, 
          "pthread_cond_signal/broadcast: cond is NULL");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
    
@@ -2893,11 +2544,10 @@ void do_pthread_key_create ( ThreadId tid,
          break;
 
    if (i == VG_N_THREAD_KEYS) {
-      /* SET_PTHREQ_RETVAL(tid, EAGAIN); 
-         return; 
-      */
-      VG_(core_panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
-                      " increase and recompile");
+      VG_(message)(Vg_UserMsg, "pthread_key_create() asked for too many keys (more than %d): increase VG_N_THREAD_KEYS and recompile Valgrind.",
+		   VG_N_THREAD_KEYS);
+      SET_PTHREQ_RETVAL(tid, EAGAIN); 
+      return; 
    }
 
    vg_thread_keys[i].inuse      = True;
@@ -2929,7 +2579,7 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
    if (!is_valid_key(key)) {
       VG_(record_pthread_error)( tid, 
          "pthread_key_delete: key is invalid");
-      SET_PTHREQ_RETVAL(tid, EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -2949,7 +2599,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    void** specifics_ptr;
    Char   msg_buf[100];
 
-   if (VG_(clo_trace_pthread_level) >= 1) {
+   if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "pthread_getspecific_ptr" );
       print_pthread_event(tid, msg_buf);
    }
@@ -2997,7 +2647,7 @@ void do__get_key_destr_and_spec ( ThreadId tid,
                                   CleanupEntry* cu )
 {
    Char msg_buf[100];
-   if (VG_(clo_trace_pthread_level) >= 1) {
+   if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, 
          "get_key_destr_and_arg (key = %d)", key );
       print_pthread_event(tid, msg_buf);
@@ -3072,33 +2722,6 @@ void do_pthread_sigmask ( ThreadId tid,
 
 
 static
-void do_sigwait ( ThreadId tid,
-                  vki_ksigset_t* set, 
-                  Int* sig )
-{
-   vki_ksigset_t irrelevant_sigmask;
-   Char          msg_buf[100];
-
-   if (VG_(clo_trace_signals) || VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, 
-         "suspend due to sigwait(): set %p, sig %p",
-         set, sig );
-      print_pthread_event(tid, msg_buf);
-   }
-
-   vg_assert(VG_(is_valid_tid)(tid) 
-             && VG_(threads)[tid].status == VgTs_Runnable);
-
-   /* Change SCSS */
-   VG_(threads)[tid].sigs_waited_for = *set;
-   VG_(threads)[tid].status = VgTs_WaitSIG;
-
-   VG_(block_all_host_signals)( &irrelevant_sigmask );
-   VG_(handle_SCSS_change)( False /* lazy update */ );
-}
-
-
-static
 void do_pthread_kill ( ThreadId tid, /* me */
                        ThreadId thread, /* thread to signal */
                        Int sig )
@@ -3118,12 +2741,18 @@ void do_pthread_kill ( ThreadId tid, /* me */
    if (!VG_(is_valid_tid)(thread)) {
       VG_(record_pthread_error)( tid, 
          "pthread_kill: invalid target thread");
-      SET_PTHREQ_RETVAL(tid, -VKI_ESRCH);
+      SET_PTHREQ_RETVAL(tid, VKI_ESRCH);
+      return;
+   }
+
+   if (sig == 0) {
+      /* OK, signal 0 is just for testing */
+      SET_PTHREQ_RETVAL(tid, 0);
       return;
    }
 
    if (sig < 1 || sig > VKI_KNSIG) {
-      SET_PTHREQ_RETVAL(tid, -VKI_EINVAL);
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
 
@@ -3352,10 +2981,6 @@ void do_client_request ( ThreadId tid )
          do__testcancel ( tid );
          break;
 
-      case VG_USERREQ__GET_N_SIGS_RETURNED:
-         SET_PTHREQ_RETVAL(tid, VG_(threads)[tid].n_signals_returned);
-         break;
-
       case VG_USERREQ__PTHREAD_JOIN:
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
          break;
@@ -3414,12 +3039,6 @@ void do_client_request ( ThreadId tid )
                               arg[1],
                               (vki_ksigset_t*)(arg[2]),
                               (vki_ksigset_t*)(arg[3]) );
-	 break;
-
-      case VG_USERREQ__SIGWAIT:
-         do_sigwait ( tid,
-                      (vki_ksigset_t*)(arg[1]),
-                      (Int*)(arg[2]) );
 	 break;
 
       case VG_USERREQ__PTHREAD_KILL:
@@ -3555,6 +3174,26 @@ void scheduler_sanity ( void )
    pthread_mutex_t* mx;
    pthread_cond_t*  cv;
    Int              i;
+   struct timeout*  top;
+   UInt		    lasttime = 0;
+
+   for(top = timeouts; top != NULL; top = top->next) {
+      vg_assert(top->time >= lasttime);
+      vg_assert(VG_(is_valid_or_empty_tid)(top->tid));
+
+#if 0
+      /* assert timeout entry is either stale, or associated with a
+	 thread in the right state
+	 
+	 XXX disable for now - can be stale, but times happen to match
+      */
+      vg_assert(VG_(threads)[top->tid].awaken_at != top->time ||
+		VG_(threads)[top->tid].status == VgTs_Sleeping ||
+		VG_(threads)[top->tid].status == VgTs_WaitCV);
+#endif
+
+      lasttime = top->time;
+   }
 
    /* VG_(printf)("scheduler_sanity\n"); */
    for (i = 1; i < VG_N_THREADS; i++) {
@@ -3604,15 +3243,6 @@ void scheduler_sanity ( void )
                "VG_PTHREAD_STACK_SIZE in vg_include.h and recompile.");
             VG_(exit)(1);
 	 }
-
-         if (VG_(threads)[i].status == VgTs_WaitSIG) {
-            vg_assert( ! VG_(kisemptysigset)(
-                            & VG_(threads)[i].sigs_waited_for) );
-	 } else {
-            vg_assert( VG_(kisemptysigset)(
-                          & VG_(threads)[i].sigs_waited_for) );
-	 }
-
       }
    }
 

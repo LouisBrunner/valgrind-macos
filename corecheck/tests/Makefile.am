@@ -12,6 +12,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \
 	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
 	pth_empty.stderr.exp pth_empty.vgtest \
+	pth_exit.stderr.exp pth_exit.stdout.exp pth_exit.vgtest \
 	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
@@ -21,7 +22,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	erringfds sigkill res_search \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
-	pth_mutexspeed pth_once
+	pth_exit pth_mutexspeed pth_once
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
 AM_CXXFLAGS = $(AM_CFLAGS)
@@ -39,6 +40,8 @@ pth_cvsimple_SOURCES	= pth_cvsimple.c
 pth_cvsimple_LDADD	= -lpthread
 pth_empty_SOURCES 	= pth_empty.c
 pth_empty_LDADD 	= -lpthread
+pth_exit_SOURCES 	= pth_exit.c
+pth_exit_LDADD	 	= -lpthread
 pth_mutexspeed_SOURCES	= pth_mutexspeed.c
 pth_mutexspeed_LDADD	= -lpthread
 pth_once_SOURCES	= pth_once.c

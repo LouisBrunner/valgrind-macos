@@ -420,11 +420,16 @@ extern Int VG_(log2) ( Int x );
 /* unistd.h, fcntl.h, sys/stat.h */
 extern Int  VG_(getpid)  ( void );
 extern Int  VG_(getppid) ( void );
+extern Int  VG_(getpgrp) ( void );
+extern Int  VG_(gettid)	 ( void );
+extern Int  VG_(setpgid) ( Int pid, Int pgrp );
 
 extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
 extern Int  VG_(read)   ( Int fd, void* buf, Int count);
-extern Int  VG_(write)  ( Int fd, void* buf, Int count);
+extern Int  VG_(write)  ( Int fd, const void* buf, Int count);
 extern void VG_(close)  ( Int fd );
+
+extern Int  VG_(pipe)   ( Int fd[2] );
 
 /* Nb: VG_(rename)() declared in stdio.h section above */
 extern Int  VG_(unlink) ( Char* file_name );
@@ -492,12 +497,17 @@ extern Int VG_(ksigaction)   ( Int signum,
                                const vki_ksigaction* act,
                                vki_ksigaction* oldact );
 
+extern Int VG_(ksigtimedwait)( const vki_ksigset_t *, vki_ksiginfo_t *, 
+			       const struct vki_timespec * );
+
 extern Int VG_(ksignal)      ( Int signum, void (*sighandler)(Int) );
 extern Int VG_(ksigaltstack) ( const vki_kstack_t* ss, vki_kstack_t* oss );
 
 extern Int VG_(kkill)        ( Int pid, Int signo );
+extern Int VG_(ktkill)       ( Int pid, Int signo );
 extern Int VG_(ksigpending)  ( vki_ksigset_t* set );
 
+extern Int VG_(waitpid)	     ( Int pid, Int *status, Int options );
 
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */

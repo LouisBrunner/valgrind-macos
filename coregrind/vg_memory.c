@@ -317,6 +317,47 @@ void VG_(unknown_esp_update)(Addr new_ESP)
    }
 }
 
+static jmp_buf segv_jmpbuf;
+
+static void segv_handler(Int seg)
+{
+   __builtin_longjmp(segv_jmpbuf, 1);
+   VG_(core_panic)("longjmp failed");
+}
+
+/* 
+   Test if a piece of memory is addressable by setting up a temporary
+   SIGSEGV handler, then try to touch the memory.  No signal = good,
+   signal = bad.
+ */
+Bool VG_(is_addressable)(Addr p, Int size)
+{
+   volatile Char * volatile cp = (volatile Char *)p;
+   volatile Bool ret;
+   vki_ksigaction sa, origsa;
+   vki_ksigset_t mask;
+
+   vg_assert(size > 0);
+
+   sa.ksa_handler = segv_handler;
+   sa.ksa_flags = 0;
+   VG_(ksigfillset)(&sa.ksa_mask);
+   VG_(ksigaction)(VKI_SIGSEGV, &sa, &origsa);
+   VG_(ksigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
+
+   if (__builtin_setjmp(&segv_jmpbuf) == 0) {
+      while(size--)
+	 *cp++;
+      ret = True;
+    } else
+      ret = False;
+
+   VG_(ksigaction)(VKI_SIGSEGV, &origsa, NULL);
+   VG_(ksigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+
+   return ret;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                              vg_memory.c ---*/
 /*--------------------------------------------------------------------*/

@@ -39,7 +39,8 @@
 #   $PREFIX/bin/vg_regtest --all
 #
 # You can specify individual files to test, or whole directories, or both.
-# Directories are traversed recursively, except for ones name CVS/ or docs/.
+# Directories are traversed recursively, except for ones named, for example, 
+# CVS/ or docs/.
 #
 # Each test is defined in a file <test>.vgtest, containing one or more of the
 # following lines, in any order:
@@ -272,8 +273,8 @@ sub test_one_dir($$)
     my ($dir, $prev_dirs) = @_;
     $dir =~ s/\/$//;    # trim a trailing '/'
 
-    # ignore CVS/ and docs/ and doc/ dirs
-    if ($dir =~ /^(CVS|docs|doc)$/) { return; } 
+    # ignore dirs into which we should not recurse
+    if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; } 
 
     chdir($dir) or die "Could not change into $dir\n";
 

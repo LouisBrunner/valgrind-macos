@@ -2377,6 +2377,18 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tid, "", orig_addr, 1 );
 
+   if (!VG_(is_addressable)(orig_addr, 1)) {
+      /* Code address is bad - deliver a signal instead */
+      vki_ksiginfo_t info;
+
+      info.si_signo = VKI_SIGSEGV;
+      info.si_code = 1;		/* address not mapped to object */
+      info._sifields._sigfault._addr = orig_addr;
+
+      VG_(deliver_signal)(tid, &info, False);
+      return;
+   }
+
    cb = VG_(alloc_UCodeBlock)();
    cb->orig_eip = orig_addr;
 

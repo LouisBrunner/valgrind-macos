@@ -33,7 +33,7 @@
 
 /* These includes are only used for making sense of the args for
    system calls. */
-#include <asm/unistd.h>   /* for system call numbers */
+#include "vg_unistd.h"    /* for system call numbers */
 #include <sys/mman.h>     /* for PROT_* */
 #include <sys/utsname.h>  /* for uname */
 #include <sys/time.h>     /* for struct timeval & struct timezone */
@@ -57,7 +57,7 @@
 #include <linux/cdrom.h>  /* for cd-rom ioctls */
 #include <sys/user.h>     /* for struct user_regs_struct et al */
 #include <signal.h>       /* for siginfo_t */
-#include <sys/timex.h>    /* for struct timex */
+#include <linux/timex.h>  /* for adjtimex */
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

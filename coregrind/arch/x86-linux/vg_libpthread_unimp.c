@@ -34,6 +34,8 @@
    Give a binding for everything the real libpthread.so binds.
    ------------------------------------------------------------------ */
 
+#include "vg_include.h"  /* For GLIBC_2_3, or not, as the case may be */
+
 extern void vgPlain_unimp ( char* );
 #define unimp(str) vgPlain_unimp(str)
 
@@ -163,6 +165,14 @@ void sem_unlink ( void )  { unimp("sem_unlink"); }
 
 void __pthread_clock_gettime ( void ) { unimp("__pthread_clock_gettime"); }
 void __pthread_clock_settime ( void ) { unimp("__pthread_clock_settime"); }
+#ifdef GLIBC_2_3
+/* Needed for Red Hat 8.0 */
+__asm__(".symver __pthread_clock_gettime,"
+        "__pthread_clock_gettime@GLIBC_PRIVATE");
+__asm__(".symver __pthread_clock_settime,"
+        "__pthread_clock_settime@GLIBC_PRIVATE");
+#endif
+
 
 #if 0
 void pthread_create@@GLIBC_2.1 ( void )  { unimp("pthread_create@@GLIBC_2.1"); }

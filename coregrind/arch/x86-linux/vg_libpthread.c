@@ -76,11 +76,29 @@
 static void wait_for_fd_to_be_readable_or_erring ( int fd );
 
 static
+int my_do_syscall1 ( int syscallno, int arg1 );
+
+static
 int my_do_syscall2 ( int syscallno, 
                      int arg1, int arg2 );
 
-__attribute__((weak))
-ssize_t write(int fd, const void *buf, size_t count);
+static
+int my_do_syscall3 ( int syscallno, 
+                     int arg1, int arg2, int arg3 );
+
+
+#ifdef GLIBC_2_3
+   /* kludge by JRS (not from glibc) ... */
+   typedef void* __locale_t;
+
+   /* Copied from locale/locale.h in glibc-2.2.93 sources */
+   /* This value can be passed to `uselocale' and may be returned by
+      it.  Passing this value to any other function has undefined
+      behavior.  */
+#  define LC_GLOBAL_LOCALE       ((__locale_t) -1L)
+   extern __locale_t __uselocale ( __locale_t );
+#endif
+
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -101,20 +119,18 @@ int get_pt_trace_level ( void )
    return res;
 }
 
-
 static
 void my_exit ( int arg )
 {
-   int __res;
-   __asm__ volatile ("movl %%ecx, %%ebx ; int $0x80"
-                     : "=a" (__res)
-                     : "0" (__NR_exit),
-                       "c" (arg) );
-   /* We don't bother to mention the fact that this asm trashes %ebx,
-      since it won't return.  If you ever do let it return ... fix
-      this! */
+   my_do_syscall1(__NR_exit, arg);
+   /*NOTREACHED*/
 }
 
+static
+void my_write ( int fd, const void *buf, int count )
+{
+   my_do_syscall3(__NR_write, fd, (int)buf, count );
+}
 
 /* We need this guy -- it's in valgrind.so. */
 extern void VG_(startup) ( void );
@@ -145,7 +161,7 @@ void barf ( char* str )
    strcat(buf, "\nvalgrind's libpthread.so: ");
    strcat(buf, str);
    strcat(buf, "\n\n");
-   write(2, buf, strlen(buf));
+   my_write(2, buf, strlen(buf));
    my_exit(1);
    /* We have to persuade gcc into believing this doesn't return. */
    while (1) { };
@@ -156,10 +172,10 @@ static void ignored ( char* msg )
 {
    if (get_pt_trace_level() >= 0) {
       char* ig = "valgrind's libpthread.so: IGNORED call to: ";
-      write(2, ig, strlen(ig));
-      write(2, msg, strlen(msg));
+      my_write(2, ig, strlen(ig));
+      my_write(2, msg, strlen(msg));
       ig = "\n";
-      write(2, ig, strlen(ig));
+      my_write(2, ig, strlen(ig));
    }
 }
 
@@ -167,10 +183,10 @@ static void kludged ( char* msg )
 {
    if (get_pt_trace_level() >= 0) {
       char* ig = "valgrind's libpthread.so: KLUDGED call to: ";
-      write(2, ig, strlen(ig));
-      write(2, msg, strlen(msg));
+      my_write(2, ig, strlen(ig));
+      my_write(2, msg, strlen(msg));
       ig = "\n";
-      write(2, ig, strlen(ig));
+      my_write(2, ig, strlen(ig));
    }
 }
 
@@ -183,10 +199,10 @@ __attribute__((noreturn))
 void vgPlain_unimp ( char* what )
 {
    char* ig = "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ";
-   write(2, ig, strlen(ig));
-   write(2, what, strlen(what));
+   my_write(2, ig, strlen(ig));
+   my_write(2, what, strlen(what));
    ig = "\n";
-   write(2, ig, strlen(ig));
+   my_write(2, ig, strlen(ig));
    barf("Please report this bug to me at: jseward@acm.org");
 }
 
@@ -1418,19 +1434,40 @@ void init_libc_tsd_keys ( void )
    int res, i;
    pthread_key_t k;
 
+   /* Don't fall into deadlock if we get called again whilst we still
+      hold the lock, via the __uselocale() call herein. */
+   if (libc_specifics_inited != 0)
+      return;
+
+   /* Take the lock. */
    res = pthread_mutex_lock(&libc_specifics_inited_mx);
    if (res != 0) barf("init_libc_tsd_keys: lock");
 
-   if (libc_specifics_inited == 0) {
-      /* printf("INIT libc specifics\n"); */
-      libc_specifics_inited = 1;
-      for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
-         res = pthread_key_create(&k, NULL);
-	 if (res != 0) barf("init_libc_tsd_keys: create");
-         libc_specifics_keys[i] = k;
-      }
+   /* Now test again, to be sure there is no mistake. */
+   if (libc_specifics_inited != 0) {
+      res = pthread_mutex_unlock(&libc_specifics_inited_mx);
+      if (res != 0) barf("init_libc_tsd_keys: unlock(1)");
+      return;
    }
 
+   /* Actually do the initialisation. */
+   /* printf("INIT libc specifics\n"); */
+   for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
+      res = pthread_key_create(&k, NULL);
+      if (res != 0) barf("init_libc_tsd_keys: create");
+      libc_specifics_keys[i] = k;
+   }
+
+   /* Signify init done. */
+   libc_specifics_inited = 1;
+
+#  ifdef GLIBC_2_3
+   /* Set the initialising thread's locale to the global (default)
+      locale.  A hack in support of glibc-2.3. */
+   __uselocale(LC_GLOBAL_LOCALE);
+#  endif
+
+   /* Unlock and return. */
    res = pthread_mutex_unlock(&libc_specifics_inited_mx);
    if (res != 0) barf("init_libc_tsd_keys: unlock");
 }

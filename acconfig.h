@@ -6,6 +6,7 @@
 
 #undef GLIBC_2_1
 #undef GLIBC_2_2
+#undef GLIBC_2_3
 
 #undef XFREE_3
 #undef XFREE_4

@@ -132,6 +132,16 @@ AC_EGREP_CPP([GLIBC_22], [
 ],
 glibc="2.2")
 
+AC_EGREP_CPP([GLIBC_23], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 3)
+  GLIBC_23
+ #endif
+#endif
+],
+glibc="2.3")
+
 case "${glibc}" in
      2.1)
 	AC_MSG_RESULT(2.1 family)
@@ -145,9 +155,18 @@ case "${glibc}" in
 	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
 	;;
 
+     2.3)
+	AC_MSG_RESULT(2.3 family)
+	AC_DEFINE(GLIBC_2_3)
+	## Use the same suppression for as for 2.2.
+	## This is a horrible hack that should be gotten
+	## rid of.  JRS, 20021007.
+	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
+	;;
+
      *)
 	AC_MSG_RESULT(unsupported version)
-	AC_MSG_ERROR([Valgrind requires the glibc version 2.1 or 2.2])
+	AC_MSG_ERROR([Valgrind requires the glibc version 2.1, 2.2 or 2.3])
 	;;
 esac
 

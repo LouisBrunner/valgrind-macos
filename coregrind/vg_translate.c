@@ -419,7 +419,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                (u->flags_w==FlagsOSZACP || emptyW))
 #  define CCd ((u->flags_r==FlagC   || emptyR) && \
                (u->flags_w==FlagsOC || emptyW))
-#  define CCf (CC0 || CCr || CCw)
+#  define CCf (CC0 || (emptyR && u->flags_w==FlagsZCP))
 #  define CCg ((u->flags_r==FlagsOSZACP || emptyR) && emptyW)
 #  define CCj (u->cond==CondAlways ? CC0 : CCg)
 
@@ -860,14 +860,14 @@ void VG_(up_UInstr) ( Int i, UInstr* u )
    VG_(pp_UInstr_regs)(i, u);
    
    VG_(printf)("opcode:          %d\n", u->opcode);
-   VG_(printf)("lit32:           %x\n", u->lit32);
+   VG_(printf)("lit32:           0x%x\n", u->lit32);
    VG_(printf)("size:            %d\n", u->size);
    VG_(printf)("val1,val2,val3:  %d, %d, %d\n", u->val1, u->val2, u->val3);
    VG_(printf)("tag1,tag2,tag3:  %d, %d, %d\n", u->tag1, u->tag2, u->tag3);
-   VG_(printf)("flags_r:         %x\n", u->flags_r);
-   VG_(printf)("flags_w:         %x\n", u->flags_w);
-   VG_(printf)("extra4b:         %x\n", u->extra4b);
-   VG_(printf)("cond:            %x\n", u->cond);
+   VG_(printf)("flags_r:         0x%x\n", u->flags_r);
+   VG_(printf)("flags_w:         0x%x\n", u->flags_w);
+   VG_(printf)("extra4b:         0x%x\n", u->extra4b);
+   VG_(printf)("cond:            0x%x\n", u->cond);
    VG_(printf)("signed_widen:    %d\n", u->signed_widen);
    VG_(printf)("jmpkind:         %d\n", u->jmpkind);
    VG_(printf)("argc,regparms_n: %d, %d\n", u->argc, u->regparms_n);

@@ -534,7 +534,7 @@ extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
       case Addr4Supp: su_size = 4; goto addr_case;
       case Addr8Supp: su_size = 8; goto addr_case;
       addr_case:
-         return (err->ekind == AddrErr && err_extra->size != su_size);
+         return (err->ekind == AddrErr && err_extra->size == su_size);
 
       case FreeSupp:
          return (err->ekind == FreeErr || err->ekind == FreeMismatchErr);

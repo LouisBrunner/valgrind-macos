@@ -2128,7 +2128,6 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 {
    Int          i;
    Bool         do_expensive_checks;
-   ThreadState* tst;
 
    if (VG_(sanity_level) < 1) return;
 
@@ -2147,10 +2146,6 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
    /* Check stuff pertaining to the memory check system. */
 
    if (VG_(clo_instrument)) {
-
-      /* Check that the eflags tag is as expected. */
-      UInt vv = tst->sh_eflags;
-      vg_assert(vv == VGM_EFLAGS_VALID || VGM_EFLAGS_INVALID);
 
       /* Check that nobody has spuriously claimed that the first or
          last 16 pages of memory have become accessible [...] */

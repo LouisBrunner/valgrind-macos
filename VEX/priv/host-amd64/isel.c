@@ -37,7 +37,7 @@
 #include "libvex_ir.h"
 #include "libvex.h"
 
-//.. #include "ir/irmatch.h"
+#include "ir/irmatch.h"
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "host-generic/h_generic_regs.h"
@@ -64,23 +64,23 @@
 //.. 
 //.. /* debugging only, do not use */
 //.. /* define DEFAULT_FPUCW 0x037F */
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- misc helpers                                      ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* These are duplicated in guest-x86/toIR.c */
-//.. static IRExpr* unop ( IROp op, IRExpr* a )
-//.. {
-//..    return IRExpr_Unop(op, a);
-//.. }
-//.. 
-//.. static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
-//.. {
-//..    return IRExpr_Binop(op, a1, a2);
-//.. }
-//.. 
+
+
+/*---------------------------------------------------------*/
+/*--- misc helpers                                      ---*/
+/*---------------------------------------------------------*/
+
+/* These are duplicated in guest-amd64/toIR.c */
+static IRExpr* unop ( IROp op, IRExpr* a )
+{
+   return IRExpr_Unop(op, a);
+}
+
+static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
+{
+   return IRExpr_Binop(op, a1, a2);
+}
+
 //.. static IRExpr* mkU64 ( ULong i )
 //.. {
 //..    return IRExpr_Const(IRConst_U64(i));
@@ -90,11 +90,11 @@
 //.. {
 //..    return IRExpr_Const(IRConst_U32(i));
 //.. }
-//.. 
-//.. static IRExpr* bind ( Int binder )
-//.. {
-//..    return IRExpr_Binder(binder);
-//.. }
+
+static IRExpr* bind ( Int binder )
+{
+   return IRExpr_Binder(binder);
+}
 
 
 
@@ -344,233 +344,214 @@ static AMD64Instr* mk_iMOVsd_RR ( HReg src, HReg dst )
 //..    ppIRExpr(arg);
 //..    vpanic("pushArg(x86): can't handle arg of this type");
 //.. }
-//.. 
-//.. 
-//.. /* Complete the call to a helper function, by calling the 
-//..    helper and clearing the args off the stack. */
-//.. 
-//.. static 
-//.. void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc, 
-//..                               IRCallee* cee, Int n_arg_ws )
-//.. {
-//..    /* Complication.  Need to decide which reg to use as the fn address
-//..       pointer, in a way that doesn't trash regparm-passed
-//..       parameters. */
-//..    vassert(sizeof(void*) == 4);
-//.. 
-//..    addInstr(env, X86Instr_Call( cc, (UInt)cee->addr, cee->regparms));
-//..    if (n_arg_ws > 0)
-//..       add_to_esp(env, 4*n_arg_ws);
-//.. }
-//.. 
-//.. 
-//.. /* Used only in doHelperCall.  See big comment in doHelperCall re
-//..    handling of regparm args.  This function figures out whether
-//..    evaluation of an expression might require use of a fixed register.
-//..    If in doubt return True (safe but suboptimal).  
-//.. */
-//.. static
-//.. Bool mightRequireFixedRegs ( IRExpr* e )
-//.. {
-//..    switch (e->tag) {
-//..       case Iex_Tmp: case Iex_Const: case Iex_Get: 
-//..          return False;
-//..       default:
-//..          return True;
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* Do a complete function call.  guard is a Ity_Bit expression
-//..    indicating whether or not the call happens.  If guard==NULL, the
-//..    call is unconditional. */
-//.. 
-//.. static
-//.. void doHelperCall ( ISelEnv* env, 
-//..                     Bool passBBP, 
-//..                     IRExpr* guard, IRCallee* cee, IRExpr** args )
-//.. {
-//..    X86CondCode cc;
-//..    HReg        argregs[3];
-//..    HReg        tmpregs[3];
-//..    Bool        danger;
-//..    Int         not_done_yet, n_args, n_arg_ws, stack_limit, 
-//..                i, argreg, argregX;
-//.. 
-//..    /* Marshal args for a call, do the call, and clear the stack.
-//..       Complexities to consider:
-//.. 
-//..       * if passBBP is True, %ebp (the baseblock pointer) is to be
-//..         passed as the first arg.
-//.. 
-//..       * If the callee claims regparmness of 1, 2 or 3, we must pass the
-//..         first 1, 2 or 3 args in registers (EAX, EDX, and ECX
-//..         respectively).  To keep things relatively simple, only args of
-//..         type I32 may be passed as regparms -- just bomb out if anything
-//..         else turns up.  Clearly this depends on the front ends not
-//..         trying to pass any other types as regparms.  
-//..    */
-//.. 
-//..    /* 16 Nov 2004: the regparm handling is complicated by the
-//..       following problem.
-//.. 
-//..       Consider a call two a function with two regparm parameters:
-//..       f(e1,e2).  We need to compute e1 into %eax and e2 into %edx.
-//..       Suppose code is first generated to compute e1 into %eax.  Then,
-//..       code is generated to compute e2 into %edx.  Unfortunately, if
-//..       the latter code sequence uses %eax, it will trash the value of
-//..       e1 computed by the former sequence.  This could happen if (for
-//..       example) e2 itself involved a function call.  In the code below,
-//..       args are evaluated right-to-left, not left-to-right, but the
-//..       principle and the problem are the same.
-//.. 
-//..       One solution is to compute all regparm-bound args into vregs
-//..       first, and once they are all done, move them to the relevant
-//..       real regs.  This always gives correct code, but it also gives
-//..       a bunch of vreg-to-rreg moves which are usually redundant but 
-//..       are hard for the register allocator to get rid of.
-//.. 
-//..       A compromise is to first examine all regparm'd argument 
-//..       expressions.  If they are all so simple that it is clear 
-//..       they will be evaluated without use of any fixed registers,
-//..       use the old compute-directly-to-fixed-target scheme.  If not,
-//..       be safe and use the via-vregs scheme.
-//.. 
-//..       Note this requires being able to examine an expression and
-//..       determine whether or not evaluation of it might use a fixed
-//..       register.  That requires knowledge of how the rest of this
-//..       insn selector works.  Currently just the following 3 are 
-//..       regarded as safe -- hopefully they cover the majority of
-//..       arguments in practice: IRExpr_Tmp IRExpr_Const IRExpr_Get.
-//..    */
-//..    vassert(cee->regparms >= 0 && cee->regparms <= 3);
-//.. 
-//..    n_args = n_arg_ws = 0;
-//..    while (args[n_args]) n_args++;
-//.. 
-//..    not_done_yet = n_args;
-//..    if (passBBP)
-//..       not_done_yet++;
-//.. 
-//..    stack_limit = cee->regparms;
-//..    if (cee->regparms > 0 && passBBP) stack_limit--;
-//.. 
-//..    /* ------ BEGIN marshall all arguments ------ */
-//.. 
-//..    /* Push (R to L) the stack-passed args, [n_args-1 .. stack_limit] */
-//..    for (i = n_args-1; i >= stack_limit; i--) {
-//..       n_arg_ws += pushArg(env, args[i]);
-//..       not_done_yet--;
-//..    }
-//.. 
-//..    /* args [stack_limit-1 .. 0] and possibly %ebp are to be passed in
-//..       registers. */
-//.. 
-//..    if (cee->regparms > 0) {
-//.. 
-//..       /* ------ BEGIN deal with regparms ------ */
-//.. 
-//..       /* deal with regparms, not forgetting %ebp if needed. */
-//..       argregs[0] = hregX86_EAX();
-//..       argregs[1] = hregX86_EDX();
-//..       argregs[2] = hregX86_ECX();
-//..       tmpregs[0] = tmpregs[1] = tmpregs[2] = INVALID_HREG;
-//.. 
-//..       argreg = cee->regparms;
-//.. 
-//..       /* In keeping with big comment above, detect potential danger
-//..          and use the via-vregs scheme if needed. */
-//..       danger = False;
-//..       for (i = stack_limit-1; i >= 0; i--) {
-//..          if (mightRequireFixedRegs(args[i])) {
-//..             danger = True;
-//..             break;
-//..          }
-//..       }
-//.. 
-//..       if (danger) {
-//.. 
-//..          /* Move via temporaries */
-//..          argregX = argreg;
-//..          for (i = stack_limit-1; i >= 0; i--) {
-//.. 
-//..             if (0) {
-//..                vex_printf("x86 host: register param is complex: ");
-//..                ppIRExpr(args[i]);
-//..                vex_printf("\n");
-//..             }
-//.. 
-//..             argreg--;
-//..             vassert(argreg >= 0);
-//..             vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
-//..             tmpregs[argreg] = iselIntExpr_R(env, args[i]);
-//..             not_done_yet--;
-//..          }
-//..          for (i = stack_limit-1; i >= 0; i--) {
-//..             argregX--;
-//..             vassert(argregX >= 0);
-//..             addInstr( env, mk_iMOVsd_RR( tmpregs[argregX], argregs[argregX] ) );
-//..          }
-//.. 
-//..       } else {
-//..          /* It's safe to compute all regparm args directly into their
-//..             target registers. */
-//..          for (i = stack_limit-1; i >= 0; i--) {
-//..             argreg--;
-//..             vassert(argreg >= 0);
-//..             vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
-//..             addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
-//..                                           iselIntExpr_RMI(env, args[i]),
-//..                                           argregs[argreg]));
-//..             not_done_yet--;
-//..          }
-//.. 
-//..       }
-//.. 
-//..       /* Not forgetting %ebp if needed. */
-//..       if (passBBP) {
-//..          vassert(argreg == 1);
-//..          addInstr(env, mk_iMOVsd_RR( hregX86_EBP(), argregs[0]));
-//..          not_done_yet--;
-//..       }
-//.. 
-//..       /* ------ END deal with regparms ------ */
-//.. 
-//..    } else {
-//.. 
-//..       /* No regparms.  Heave %ebp on the stack if needed. */
-//..       if (passBBP) {
-//..          addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
-//..          n_arg_ws++;
-//..          not_done_yet--;
-//..       }
-//.. 
-//..    }
-//.. 
-//..    vassert(not_done_yet == 0);
-//.. 
-//..    /* ------ END marshall all arguments ------ */
-//.. 
-//..    /* Now we can compute the condition.  We can't do it earlier
-//..       because the argument computations could trash the condition
-//..       codes.  Be a bit clever to handle the common case where the
-//..       guard is 1:Bit. */
-//..    cc = Xcc_ALWAYS;
-//..    if (guard) {
-//..       if (guard->tag == Iex_Const 
-//..           && guard->Iex.Const.con->tag == Ico_U1
-//..           && guard->Iex.Const.con->Ico.U1 == True) {
-//..          /* unconditional -- do nothing */
-//..       } else {
-//..          cc = iselCondCode( env, guard );
-//..       }
-//..    }
-//.. 
-//..    /* call the helper, and get the args off the stack afterwards. */
-//..    callHelperAndClearArgs( env, cc, cee, n_arg_ws );
-//.. }
-//.. 
-//.. 
+
+
+/* Used only in doHelperCall.  See big comment in doHelperCall re
+   handling of register-parameter args.  This function figures out
+   whether evaluation of an expression might require use of a fixed
+   register.  If in doubt return True (safe but suboptimal).
+*/
+static
+Bool mightRequireFixedRegs ( IRExpr* e )
+{
+   switch (e->tag) {
+      case Iex_Tmp: case Iex_Const: case Iex_Get: 
+         return False;
+      default:
+         return True;
+   }
+}
+
+
+/* Do a complete function call.  guard is a Ity_Bit expression
+   indicating whether or not the call happens.  If guard==NULL, the
+   call is unconditional. */
+
+static
+void doHelperCall ( ISelEnv* env, 
+                    Bool passBBP, 
+                    IRExpr* guard, IRCallee* cee, IRExpr** args )
+{
+   AMD64CondCode cc;
+   HReg          argregs[6];
+   HReg          tmpregs[6];
+   Bool          go_fast;
+   Int           n_args, i, argreg;
+
+   /* Marshal args for a call and do the call.
+
+      If passBBP is True, %rbp (the baseblock pointer) is to be passed
+      as the first arg.
+
+      This function only deals with a tiny set of possibilities, which
+      cover all helpers in practice.  The restrictions are that only
+      arguments in registers are supported, hence only 6x64 integer
+      bits in total can be passed.  In fact the only supported arg
+      type is I64.
+
+      Generating code which is both efficient and correct when
+      parameters are to be passed in registers is difficult, for the
+      reasons elaborated in detail in comments attached to
+      doHelperCall() in priv/host-x86/isel.c.  Here, we use a variant
+      of the method described in those comments.
+
+      The problem is split into two cases: the fast scheme and the
+      slow scheme.  In the fast scheme, arguments are computed
+      directly into the target (real) registers.  This is only safe
+      when we can be sure that computation of each argument will not
+      trash any real registers set by computation of any other
+      argument.
+
+      In the slow scheme, all args are first computed into vregs, and
+      once they are all done, they are moved to the relevant real
+      regs.  This always gives correct code, but it also gives a bunch
+      of vreg-to-rreg moves which are usually redundant but are hard
+      for the register allocator to get rid of.
+
+      To decide which scheme to use, all argument expressions are
+      first examined.  If they are all so simple that it is clear they
+      will be evaluated without use of any fixed registers, use the
+      fast scheme, else use the slow scheme.  Note also that only
+      unconditional calls may use the fast scheme, since having to
+      compute a condition expression could itself trash real
+      registers.
+
+      Note this requires being able to examine an expression and
+      determine whether or not evaluation of it might use a fixed
+      register.  That requires knowledge of how the rest of this insn
+      selector works.  Currently just the following 3 are regarded as
+      safe -- hopefully they cover the majority of arguments in
+      practice: IRExpr_Tmp IRExpr_Const IRExpr_Get.
+   */
+
+   /* Note that the cee->regparms field is meaningless on AMD64 host
+      (since there is only one calling convention) and so we always
+      ignore it. */
+
+   n_args = 0;
+   for (i = 0; args[i]; i++)
+      n_args++;
+
+   if (6 < n_args + (passBBP ? 1 : 0))
+      vpanic("doHelperCall(AMD64): cannot currently handle > 6 args");
+
+   argregs[0] = hregAMD64_RDI();
+   argregs[1] = hregAMD64_RSI();
+   argregs[2] = hregAMD64_RDX();
+   argregs[3] = hregAMD64_RCX();
+   argregs[4] = hregAMD64_R8();
+   argregs[5] = hregAMD64_R9();
+
+   tmpregs[0] = tmpregs[1] = tmpregs[2] =
+   tmpregs[3] = tmpregs[4] = tmpregs[5] = INVALID_HREG;
+
+   /* First decide which scheme (slow or fast) is to be used.  First
+      assume the fast scheme, and select slow if any contraindications
+      (wow) appear. */
+
+   go_fast = True;
+
+   if (guard) {
+      if (guard->tag == Iex_Const 
+          && guard->Iex.Const.con->tag == Ico_U1
+          && guard->Iex.Const.con->Ico.U1 == True) {
+         /* unconditional */
+      } else {
+         /* Not manifestly unconditional -- be conservative. */
+         go_fast = False;
+      }
+   }
+
+   if (go_fast) {
+      for (i = 0; i < n_args; i++) {
+         if (mightRequireFixedRegs(args[i])) {
+            go_fast = False;
+            break;
+         }
+      }
+   }
+
+   /* At this point the scheme to use has been established.  Generate
+      code to get the arg values into the argument rregs. */
+
+   if (go_fast) {
+
+      /* FAST SCHEME */
+      argreg = 0;
+      if (passBBP) {
+         addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), argregs[argreg]));
+         argreg++;
+      }
+
+      for (i = 0; i < n_args; i++) {
+         vassert(argreg < 6);
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_MOV, 
+                          iselIntExpr_RMI(env, args[i]),
+                          argregs[argreg]
+                       )
+                 );
+         argreg++;
+      }
+
+      /* Fast scheme only applies for unconditional calls.  Hence: */
+      cc = Acc_ALWAYS;
+
+   } else {
+
+      /* SLOW SCHEME; move via temporaries */
+      argreg = 0;
+
+      if (passBBP) {
+         /* This is pretty stupid; better to move directly to rdi
+            after the rest of the args are done. */
+         tmpregs[argreg] = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[argreg]));
+         argreg++;
+      }
+
+      for (i = 0; i < n_args; i++) {
+         vassert(argreg < 6);
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+         tmpregs[argreg] = iselIntExpr_R(env, args[i]);
+         argreg++;
+      }
+
+      /* Now we can compute the condition.  We can't do it earlier
+         because the argument computations could trash the condition
+         codes.  Be a bit clever to handle the common case where the
+         guard is 1:Bit. */
+      cc = Acc_ALWAYS;
+      if (guard) {
+         if (guard->tag == Iex_Const 
+             && guard->Iex.Const.con->tag == Ico_U1
+             && guard->Iex.Const.con->Ico.U1 == True) {
+            /* unconditional -- do nothing */
+         } else {
+            cc = iselCondCode( env, guard );
+         }
+      }
+
+      /* Move the args to their final destinations. */
+      for (i = 0; i < argreg; i++) {
+         /* None of these insns, including any spill code that might
+            be generated, may alter the condition codes. */
+         addInstr( env, mk_iMOVsd_RR( tmpregs[i], argregs[i] ) );
+      }
+
+   }
+
+   /* Finally, the call itself. */
+   addInstr(env, AMD64Instr_Call( 
+                    cc, 
+                    (ULong)cee->addr, 
+                    n_args + (passBBP ? 1 : 0) 
+                 )
+   );
+}
+
+
 //.. /* Given a guest-state array descriptor, an index expression and a
 //..    bias, generate an X86AMode holding the relevant guest state
 //..    offset. */
@@ -728,7 +709,9 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
-//..    MatchInfo mi;
+   MatchInfo mi;
+   DECLARE_PATTERN(p_16Uto64);
+   DECLARE_PATTERN(p_1Uto8_32to1_64to32);
 //..    DECLARE_PATTERN(p_32to1_then_1Uto8);
 
    IRType ty = typeOfIRExpr(env->type_env,e);
@@ -754,10 +737,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_LoadEX(4,False,amode,dst));
          return dst;
       }
-//..       if (ty == Ity_I16) {
-//..          addInstr(env, X86Instr_LoadEX(2,False,amode,dst));
-//..          return dst;
-//..       }
+      if (ty == Ity_I16) {
+         addInstr(env, AMD64Instr_LoadEX(2,False,amode,dst));
+         return dst;
+      }
 //..       if (ty == Ity_I8) {
 //..          addInstr(env, X86Instr_LoadEX(1,False,amode,dst));
 //..          return dst;
@@ -783,10 +766,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_Add8: case Iop_Add16: case Iop_Add32: case Iop_Add64: 
             aluOp = Aalu_ADD; break;
-//..          case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
-//..             aluOp = Xalu_SUB; break;
-//..          case Iop_And8: case Iop_And16: case Iop_And32: 
-//..             aluOp = Xalu_AND; break;
+         case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: case Iop_Sub64:
+            aluOp = Aalu_SUB; break;
+         case Iop_And8: case Iop_And16: case Iop_And32: case Iop_And64: 
+            aluOp = Aalu_AND; break;
 //..          case Iop_Or8: case Iop_Or16: case Iop_Or32:  
 //..             aluOp = Xalu_OR; break;
 //..          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: 
@@ -813,8 +796,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             shOp = Ash_SHL; break;
 //..          case Iop_Shr32: case Iop_Shr16: case Iop_Shr8: 
 //..             shOp = Xsh_SHR; break;
-//..          case Iop_Sar32: case Iop_Sar16: case Iop_Sar8: 
-//..             shOp = Xsh_SAR; break;
+         case Iop_Sar64: case Iop_Sar32: case Iop_Sar16: case Iop_Sar8: 
+            shOp = Ash_SAR; break;
          default:
             shOp = Ash_INVALID; break;
       }
@@ -827,8 +810,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          /* Do any necessary widening for 32/16/8 bit operands */
          switch (e->Iex.Binop.op) {
-            case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: break;
-            default: vassert(0);
+            case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: 
+               break;
 //..             case Iop_Shr8:
 //..                addInstr(env, X86Instr_Alu32R(
 //..                                 Xalu_AND, X86RMI_Imm(0xFF), dst));
@@ -845,7 +828,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..                addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, X86RM_Reg(dst)));
 //..                addInstr(env, X86Instr_Sh32(Xsh_SAR, 16, X86RM_Reg(dst)));
 //..                break;
-//..             default: break;
+            case Iop_Sar32:
+               addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(dst)));
+               addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, AMD64RM_Reg(dst)));
+               break;
+            default: 
+               vassert(0);
          }
 
          /* Now consider the shift amount.  If it's a literal, we
@@ -999,19 +987,33 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- UNARY OP --------- */
    case Iex_Unop: {
-//..       /* 1Uto8(32to1(expr32)) */
-//..       DEFINE_PATTERN(p_32to1_then_1Uto8,
-//..                      unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
-//..       if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
-//..          IRExpr* expr32 = mi.bindee[0];
-//..          HReg dst = newVRegI(env);
-//..          HReg src = iselIntExpr_R(env, expr32);
-//..          addInstr(env, mk_iMOVsd_RR(src,dst) );
-//..          addInstr(env, X86Instr_Alu32R(Xalu_AND,
-//..                                        X86RMI_Imm(1), dst));
-//..          return dst;
-//..       }
-//.. 
+      /* 32Uto64(16Uto32(expr16)) */
+      DEFINE_PATTERN(p_16Uto64,
+                     unop(Iop_32Uto64, unop(Iop_16Uto32, bind(0)) ) );
+      if (matchIRExpr(&mi,p_16Uto64,e)) {
+         IRExpr* expr16 = mi.bindee[0];
+         HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, expr16);
+         addInstr(env, mk_iMOVsd_RR(src,dst) );
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 48, AMD64RM_Reg(dst)));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHR, 48, AMD64RM_Reg(dst)));
+         return dst;
+      }
+
+      /* 1Uto8(32to1(64to32(expr64))) */
+      DEFINE_PATTERN(p_1Uto8_32to1_64to32,
+                     unop(Iop_1Uto8, 
+                          unop(Iop_32to1, unop(Iop_64to32, bind(0)))));
+      if (matchIRExpr(&mi,p_1Uto8_32to1_64to32,e)) {
+         IRExpr* expr64 = mi.bindee[0];
+         HReg    dst    = newVRegI(env);
+         HReg    src    = iselIntExpr_R(env, expr64);
+         addInstr(env, mk_iMOVsd_RR(src,dst) );
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND,
+                                         AMD64RMI_Imm(1), dst));
+         return dst;
+      }
+
 //..       /* 16Uto32(LDle(expr32)) */
 //..       {
 //..          DECLARE_PATTERN(p_LDle16_then_16Uto32);
@@ -1030,6 +1032,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, AMD64Instr_MovZLQ(src,dst) );
+            return dst;
+         }
+         case Iop_32Sto64: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            UInt amt = 32;
+            addInstr(env, mk_iMOVsd_RR(src,dst) );
+            addInstr(env, AMD64Instr_Sh64(Ash_SHL, amt, AMD64RM_Reg(dst)));
+            addInstr(env, AMD64Instr_Sh64(Ash_SAR, amt, AMD64RM_Reg(dst)));
             return dst;
          }
 //..          case Iop_8Uto16:
@@ -1181,24 +1192,24 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* --------- CCALL --------- */
-//..    case Iex_CCall: {
-//..       HReg    dst = newVRegI(env);
-//..       vassert(ty == Ity_I32);
-//.. 
-//..       /* be very restrictive for now.  Only 32/64-bit ints allowed
-//..          for args, and 32 bits for return type. */
-//..       if (e->Iex.CCall.retty != Ity_I32)
-//..          goto irreducible;
-//.. 
-//..       /* Marshal args, do the call, clear stack. */
-//..       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
-//.. 
-//..       addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
-//..       return dst;
-//..    }
-//.. 
+
+   /* --------- CCALL --------- */
+   case Iex_CCall: {
+      HReg    dst = newVRegI(env);
+      vassert(ty == Ity_I64);
+
+      /* be very restrictive for now.  Only 64-bit ints allowed
+         for args, and 64 bits for return type. */
+      if (e->Iex.CCall.retty != Ity_I64)
+         goto irreducible;
+
+      /* Marshal args, do the call, clear stack. */
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+
+      addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
+      return dst;
+   }
+
 //..    /* --------- LITERAL --------- */
 //..    /* 32/16/8-bit literals */
 //..    case Iex_Const: {
@@ -1207,23 +1218,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..       addInstr(env, X86Instr_Alu32R(Xalu_MOV, rmi, r));
 //..       return r;
 //..    }
-//.. 
-//..    /* --------- MULTIPLEX --------- */
-//..    case Iex_Mux0X: {
-//..      if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
-//..          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-//..         HReg r8;
-//..         HReg rX   = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-//..         X86RM* r0 = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
-//..         HReg dst = newVRegI(env);
-//..         addInstr(env, mk_iMOVsd_RR(rX,dst));
-//..         r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-//..         addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
-//..         addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
-//..         return dst;
-//..       }
-//..       break;
-//..    }
+
+   /* --------- MULTIPLEX --------- */
+   case Iex_Mux0X: {
+     if ((ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
+         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
+        HReg     r8;
+        HReg     rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
+        AMD64RM* r0  = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
+        HReg dst = newVRegI(env);
+        addInstr(env, mk_iMOVsd_RR(rX,dst));
+        r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+        addInstr(env, AMD64Instr_Test64(AMD64RI_Imm(0xFF), AMD64RM_Reg(r8)));
+        addInstr(env, AMD64Instr_CMov64(Acc_Z,r0,dst));
+        return dst;
+      }
+      break;
+   }
 
    default: 
    break;
@@ -1257,8 +1268,42 @@ static AMD64AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static AMD64AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
 {
+   MatchInfo mi;
+   DECLARE_PATTERN(p_complex);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I64);
+
+   /* Add64( Add64(expr1, Shl64(expr2, imm8)), simm32 ) */
+   /*              bind0        bind1  bind2   bind3   */
+   DEFINE_PATTERN(p_complex,
+      binop( Iop_Add64,
+             binop( Iop_Add64, 
+                    bind(0), 
+                    binop(Iop_Shl64, bind(1), bind(2))
+                  ),
+             bind(3)
+           )
+   );
+   if (matchIRExpr(&mi, p_complex, e)) {
+      IRExpr* expr1  = mi.bindee[0];
+      IRExpr* expr2  = mi.bindee[1];
+      IRExpr* imm8   = mi.bindee[2];
+      IRExpr* simm32 = mi.bindee[3];
+      if (imm8->tag == Iex_Const 
+          && imm8->Iex.Const.con->tag == Ico_U8
+          && imm8->Iex.Const.con->Ico.U8 < 4
+          /* imm8 is OK, now check simm32 */
+          && simm32->tag == Iex_Const
+          && simm32->Iex.Const.con->tag == Ico_U64
+          && fitsIn32Bits(simm32->Iex.Const.con->Ico.U64)) {
+         UInt shift = imm8->Iex.Const.con->Ico.U8;
+         UInt offset = (UInt)(0xFFFFFFFF & simm32->Iex.Const.con->Ico.U64);
+         HReg r1 = iselIntExpr_R(env, expr1);
+         HReg r2 = iselIntExpr_R(env, expr2);
+         vassert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
+         return AMD64AMode_IRRS(offset, r1, r2, shift);
+      }
+   }
 
    /* Add64(expr1, Shl64(expr2, imm)) */
    if (e->tag == Iex_Binop
@@ -1419,73 +1464,74 @@ static AMD64RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
 }
 
 
-//.. /* --------------------- RMs --------------------- */
-//.. 
-//.. /* Similarly, calculate an expression into an X86RM operand.  As with
-//..    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
-//.. 
-//.. static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    X86RM* rm = iselIntExpr_RM_wrk(env, e);
-//..    /* sanity checks ... */
-//..    switch (rm->tag) {
-//..       case Xrm_Reg:
-//..          vassert(hregClass(rm->Xrm.Reg.reg) == HRcInt32);
-//..          vassert(hregIsVirtual(rm->Xrm.Reg.reg));
-//..          return rm;
-//..       case Xrm_Mem:
-//..          vassert(sane_AMode(rm->Xrm.Mem.am));
-//..          return rm;
-//..       default:
-//..          vpanic("iselIntExpr_RM: unknown x86 RM tag");
-//..    }
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static X86RM* iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    IRType ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
-//.. 
-//..    /* special case: 32-bit GET */
-//..    if (e->tag == Iex_Get && ty == Ity_I32) {
-//..       return X86RM_Mem(X86AMode_IR(e->Iex.Get.offset,
-//..                                    hregX86_EBP()));
-//..    }
-//.. 
-//..    /* special case: load from memory */
-//.. 
-//..    /* default case: calculate into a register and return that */
-//..    {
-//..       HReg r = iselIntExpr_R ( env, e );
-//..       return X86RM_Reg(r);
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* --------------------- CONDCODE --------------------- */
-//.. 
-//.. /* Generate code to evaluated a bit-typed expression, returning the
-//..    condition code which would correspond when the expression would
-//..    notionally have returned 1. */
-//.. 
-//.. static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    /* Uh, there's nothing we can sanity check here, unfortunately. */
-//..    return iselCondCode_wrk(env,e);
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
+/* --------------------- RMs --------------------- */
+
+/* Similarly, calculate an expression into an AMD64RM operand.  As
+   with iselIntExpr_R, the expression can have type 64, 32, 16 or 8
+   bits.  */
+
+static AMD64RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
+{
+   AMD64RM* rm = iselIntExpr_RM_wrk(env, e);
+   /* sanity checks ... */
+   switch (rm->tag) {
+      case Arm_Reg:
+         vassert(hregClass(rm->Arm.Reg.reg) == HRcInt64);
+         vassert(hregIsVirtual(rm->Arm.Reg.reg));
+         return rm;
+      case Arm_Mem:
+         vassert(sane_AMode(rm->Arm.Mem.am));
+         return rm;
+      default:
+         vpanic("iselIntExpr_RM: unknown amd64 RM tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static AMD64RM* iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
+
+   /* special case: 64-bit GET */
+   if (e->tag == Iex_Get && ty == Ity_I64) {
+      return AMD64RM_Mem(AMD64AMode_IR(e->Iex.Get.offset,
+                                       hregAMD64_RBP()));
+   }
+
+   /* special case: load from memory */
+
+   /* default case: calculate into a register and return that */
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return AMD64RM_Reg(r);
+   }
+}
+
+
+/* --------------------- CONDCODE --------------------- */
+
+/* Generate code to evaluated a bit-typed expression, returning the
+   condition code which would correspond when the expression would
+   notionally have returned 1. */
+
+static AMD64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+{
+   /* Uh, there's nothing we can sanity check here, unfortunately. */
+   return iselCondCode_wrk(env,e);
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
+{
 //..    MatchInfo mi;
 //..    DECLARE_PATTERN(p_32to1);
 //..    DECLARE_PATTERN(p_1Uto32_then_32to1);
 //..    DECLARE_PATTERN(p_1Sto32_then_32to1);
-//.. 
-//..    vassert(e);
-//..    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
-//.. 
+
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
+
 //..    /* Constant 1:Bit */
 //..    if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
 //..       HReg r;
@@ -1650,12 +1696,12 @@ static AMD64RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
 //..       addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
 //..       return Xcc_NZ;
 //..    }
-//.. 
-//..    ppIRExpr(e);
-//..    vpanic("iselCondCode");
-//.. }
-//.. 
-//.. 
+
+   ppIRExpr(e);
+   vpanic("iselCondCode(amd64)");
+}
+
+
 //.. /*---------------------------------------------------------*/
 //.. /*--- ISEL: Integer expressions (64 bit)                ---*/
 //.. /*---------------------------------------------------------*/
@@ -3159,24 +3205,24 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    switch (stmt->tag) {
 
-//..    /* --------- STORE --------- */
-//..    case Ist_STle: {
-//..       X86AMode* am;
-//..       IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
-//..       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
-//..       vassert(tya == Ity_I32);
-//..       am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
+   /* --------- STORE --------- */
+   case Ist_STle: {
+      AMD64AMode* am;
+      IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
+      vassert(tya == Ity_I64);
+      am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
 //..       if (tyd == Ity_I32) {
 //..          X86RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
 //..          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
 //..          return;
 //..       }
-//..       if (tyd == Ity_I8 || tyd == Ity_I16) {
-//..          HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
-//..          addInstr(env, X86Instr_Store(tyd==Ity_I8 ? 1 : 2,
-//..                                       r,am));
-//..          return;
-//..       }
+      if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
+         HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
+         addInstr(env, AMD64Instr_Store(tyd==Ity_I8 ? 1 : (tyd==Ity_I16 ? 2 : 4),
+                                        r,am));
+         return;
+      }
 //..       if (tyd == Ity_F64) {
 //..          HReg r = iselDblExpr(env, stmt->Ist.STle.data);
 //..          addInstr(env, X86Instr_FpLdSt(False/*store*/, 8, r, am));
@@ -3203,7 +3249,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..          return;
 //..       }
 //..       break;
-//..    }
+   }
 
    /* --------- PUT --------- */
    case Ist_Put: {

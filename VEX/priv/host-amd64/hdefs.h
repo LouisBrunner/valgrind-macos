@@ -367,15 +367,15 @@ typedef
       Ain_Alu64R,    /* 64-bit mov/arith/logical, dst=REG */
       Ain_Alu64M,    /* 64-bit mov/arith/logical, dst=MEM */
       Ain_Sh64,      /* 64-bit shift/rotate, dst=REG or MEM */
-//..       Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
+      Ain_Test64,    /* 64-bit test (AND, set flags, discard result) */
 //..       Xin_Unary32,   /* 32-bit not and neg */
 //..       Xin_MulL,      /* widening multiply */
 //..       Xin_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
-//..       Xin_Call,      /* call to address in register */
+      Ain_Call,      /* call to address in register */
       Ain_Goto,      /* conditional/unconditional jmp to dst */
-//..       Xin_CMov32,    /* conditional move */
+      Ain_CMov64,    /* conditional move */
       Ain_MovZLQ,    /* reg-reg move, zeroing out top half */
       Ain_LoadEX,    /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,     /* store 32/16/8 bit value in memory */
@@ -427,10 +427,10 @@ typedef
             UInt         src;  /* shift amount, or 0 means %cl */
             AMD64RM*     dst;
          } Sh64;
-//..          struct {
-//..             X86RI* src;
-//..             X86RM* dst;
-//..          } Test32;
+         struct {
+            AMD64RI* src;
+            AMD64RM* dst;
+         } Test64;
 //..          /* Not and Neg */
 //..          struct {
 //..             X86UnaryOp op;
@@ -458,13 +458,13 @@ typedef
 //..          struct {
 //..             X86RMI* src;
 //..          } Push;
-//..          /* Pseudo-insn.  Call target (an absolute address), on given
-//..             condition (which could be Xcc_ALWAYS). */
-//..          struct {
-//..             X86CondCode cond;
-//..             Addr32      target;
-//..             Int         regparms; /* 0 .. 3 */
-//..          } Call;
+         /* Pseudo-insn.  Call target (an absolute address), on given
+            condition (which could be Xcc_ALWAYS). */
+         struct {
+            AMD64CondCode cond;
+            Addr64        target;
+            Int           regparms; /* 0 .. 6 */
+         } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
             Acc_ALWAYS). */
          struct {
@@ -472,13 +472,13 @@ typedef
             AMD64CondCode cond;
             AMD64RI*      dst;
          } Goto;
-//..          /* Mov src to dst on the given condition, which may not
-//..             be the bogus Xcc_ALWAYS. */
-//..          struct {
-//..             X86CondCode cond;
-//..             X86RM*      src;
-//..             HReg        dst;
-//..          } CMov32;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Acc_ALWAYS. */
+         struct {
+            AMD64CondCode cond;
+            AMD64RM*      src;
+            HReg          dst;
+         } CMov64;
          /* reg-reg move, zeroing out top half */
          struct {
             HReg src;
@@ -639,14 +639,14 @@ extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
 extern AMD64Instr* AMD64Instr_Alu64M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_Sh64      ( AMD64ShiftOp, UInt, AMD64RM* );
-//.. extern AMD64Instr* AMD64Instr_Test32    ( AMD64RI* src, AMD64RM* dst );
+extern AMD64Instr* AMD64Instr_Test64    ( AMD64RI* src, AMD64RM* dst );
 //.. extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, AMD64ScalarSz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Div       ( Bool syned, AMD64ScalarSz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Push      ( AMD64RMI* );
-//.. extern AMD64Instr* AMD64Instr_Call      ( AMD64CondCode, Addr32, Int );
+extern AMD64Instr* AMD64Instr_Call      ( AMD64CondCode, Addr64, Int );
 extern AMD64Instr* AMD64Instr_Goto      ( IRJumpKind, AMD64CondCode cond, AMD64RI* dst );
-//.. extern AMD64Instr* AMD64Instr_CMov32    ( AMD64CondCode, AMD64RM* src, HReg dst );
+extern AMD64Instr* AMD64Instr_CMov64    ( AMD64CondCode, AMD64RM* src, HReg dst );
 extern AMD64Instr* AMD64Instr_MovZLQ    ( HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
                                           AMD64AMode* src, HReg dst );

@@ -408,12 +408,12 @@ AMD64RM* AMD64RM_Reg ( HReg reg ) {
    op->Arm.Reg.reg = reg;
    return op;
 }
-//.. AMD64RM* AMD64RM_Mem ( AMD64AMode* am ) {
-//..    AMD64RM* op      = LibVEX_Alloc(sizeof(AMD64RM));
-//..    op->tag        = Xrm_Mem;
-//..    op->Xrm.Mem.am = am;
-//..    return op;
-//.. }
+AMD64RM* AMD64RM_Mem ( AMD64AMode* am ) {
+   AMD64RM* op    = LibVEX_Alloc(sizeof(AMD64RM));
+   op->tag        = Arm_Mem;
+   op->Arm.Mem.am = am;
+   return op;
+}
 
 void ppAMD64RM ( AMD64RM* op ) {
    switch (op->tag) {
@@ -630,13 +630,13 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
    i->Ain.Sh64.dst = dst;
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Test32  ( AMD64RI* src, AMD64RM* dst ) {
-//..    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag            = Xin_Test32;
-//..    i->Xin.Test32.src = src;
-//..    i->Xin.Test32.dst = dst;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Test64 ( AMD64RI* src, AMD64RM* dst ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_Test64;
+   i->Ain.Test64.src = src;
+   i->Ain.Test64.dst = dst;
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_Unary32  ( AMD64UnaryOp op, AMD64RM* dst ) {
 //..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag             = Xin_Unary32;
@@ -676,15 +676,15 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
 //..    i->Xin.Push.src = src;
 //..    return i;
 //.. }
-//.. AMD64Instr* AMD64Instr_Call ( AMD64CondCode cond, Addr32 target, Int regparms ) {
-//..    AMD64Instr* i          = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag               = Xin_Call;
-//..    i->Xin.Call.cond     = cond;
-//..    i->Xin.Call.target   = target;
-//..    i->Xin.Call.regparms = regparms;
-//..    vassert(regparms >= 0 && regparms <= 3);
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Call ( AMD64CondCode cond, Addr64 target, Int regparms ) {
+   AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag               = Ain_Call;
+   i->Ain.Call.cond     = cond;
+   i->Ain.Call.target   = target;
+   i->Ain.Call.regparms = regparms;
+   vassert(regparms >= 0 && regparms <= 6);
+   return i;
+}
 AMD64Instr* AMD64Instr_Goto ( IRJumpKind jk, AMD64CondCode cond, AMD64RI* dst ) {
    AMD64Instr* i    = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag           = Ain_Goto;
@@ -693,15 +693,15 @@ AMD64Instr* AMD64Instr_Goto ( IRJumpKind jk, AMD64CondCode cond, AMD64RI* dst ) 
    i->Ain.Goto.jk   = jk;
    return i;
 }
-//.. AMD64Instr* AMD64Instr_CMov32  ( AMD64CondCode cond, AMD64RM* src, HReg dst ) {
-//..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag             = Xin_CMov32;
-//..    i->Xin.CMov32.cond = cond;
-//..    i->Xin.CMov32.src  = src;
-//..    i->Xin.CMov32.dst  = dst;
-//..    vassert(cond != Xcc_ALWAYS);
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_CMov64 ( AMD64CondCode cond, AMD64RM* src, HReg dst ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_CMov64;
+   i->Ain.CMov64.cond = cond;
+   i->Ain.CMov64.src  = src;
+   i->Ain.CMov64.dst  = dst;
+   vassert(cond != Acc_ALWAYS);
+   return i;
+}
 AMD64Instr* AMD64Instr_MovZLQ ( HReg src, HReg dst ) {
    AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag            = Ain_MovZLQ;
@@ -942,12 +942,12 @@ void ppAMD64Instr ( AMD64Instr* i )
             vex_printf("$%d,", i->Ain.Sh64.src);
          ppAMD64RM(i->Ain.Sh64.dst);
          return;
-//..       case Xin_Test32:
-//..          vex_printf("testl ");
-//..          ppAMD64RI(i->Xin.Test32.src);
-//..          vex_printf(",");
-//..          ppAMD64RM(i->Xin.Test32.dst);
-//..          return;
+      case Ain_Test64:
+         vex_printf("testq ");
+         ppAMD64RI(i->Ain.Test64.src);
+         vex_printf(",");
+         ppAMD64RM(i->Ain.Test64.dst);
+         return;
 //..       case Xin_Unary32:
 //..          vex_printf("%sl ", showAMD64UnaryOp(i->Xin.Unary32.op));
 //..          ppAMD64RM(i->Xin.Unary32.dst);
@@ -978,13 +978,13 @@ void ppAMD64Instr ( AMD64Instr* i )
 //..          vex_printf("pushl ");
 //..          ppAMD64RMI(i->Xin.Push.src);
 //..          return;
-//..       case Xin_Call:
-//..          vex_printf("call%s[%d] ", 
-//..                     i->Xin.Call.cond==Xcc_ALWAYS 
-//..                        ? "" : showAMD64CondCode(i->Xin.Call.cond), 
-//..                     i->Xin.Call.regparms);
-//..          vex_printf("0x%x", i->Xin.Call.target);
-//..          break;
+      case Ain_Call:
+         vex_printf("call%s[%d] ", 
+                    i->Ain.Call.cond==Acc_ALWAYS 
+                       ? "" : showAMD64CondCode(i->Ain.Call.cond),
+                    i->Ain.Call.regparms );
+         vex_printf("0x%llx", i->Ain.Call.target);
+         break;
       case Ain_Goto:
          if (i->Ain.Goto.cond != Acc_ALWAYS) {
             vex_printf("if (%%rflags.%s) { ", 
@@ -1002,12 +1002,12 @@ void ppAMD64Instr ( AMD64Instr* i )
             vex_printf(" }");
          }
          return;
-//..       case Xin_CMov32:
-//..          vex_printf("cmov%s ", showAMD64CondCode(i->Xin.CMov32.cond));
-//..          ppAMD64RM(i->Xin.CMov32.src);
-//..          vex_printf(",");
-//..          ppHRegAMD64(i->Xin.CMov32.dst);
-//..          return;
+      case Ain_CMov64:
+         vex_printf("cmov%s ", showAMD64CondCode(i->Ain.CMov64.cond));
+         ppAMD64RM(i->Ain.CMov64.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.CMov64.dst);
+         return;
       case Ain_MovZLQ:
          vex_printf("movzlq ");
          ppHRegAMD64(i->Ain.MovZLQ.src);
@@ -1024,12 +1024,13 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf(",");
          ppHRegAMD64(i->Ain.LoadEX.dst);
          return;
-//..       case Xin_Store:
-//..          vex_printf("mov%c ", i->Xin.Store.sz==1 ? 'b' : 'w');
-//..          ppHRegAMD64(i->Xin.Store.src);
-//..          vex_printf(",");
-//..          ppAMD64AMode(i->Xin.Store.dst);
-//..          return;
+      case Ain_Store:
+         vex_printf("mov%c ", i->Ain.Store.sz==1 ? 'b' 
+                              : (i->Ain.Store.sz==2 ? 'w' : 'l'));
+         ppHRegAMD64(i->Ain.Store.src);
+         vex_printf(",");
+         ppAMD64AMode(i->Ain.Store.dst);
+         return;
 //..       case Xin_Set32:
 //..          vex_printf("setl%s ", showAMD64CondCode(i->Xin.Set32.cond));
 //..          ppHRegAMD64(i->Xin.Set32.dst);
@@ -1211,10 +1212,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          if (i->Ain.Sh64.src == 0)
             addHRegUse(u, HRmRead, hregAMD64_RCX());
          return;
-//..       case Xin_Test32:
-//..          addRegUsage_AMD64RI(u, i->Xin.Test32.src);
-//..          addRegUsage_AMD64RM(u, i->Xin.Test32.dst, HRmRead);
-//..          return;
+      case Ain_Test64:
+         addRegUsage_AMD64RI(u, i->Ain.Test64.src);
+         addRegUsage_AMD64RM(u, i->Ain.Test64.dst, HRmRead);
+         return;
 //..       case Xin_Unary32:
 //..          addRegUsage_AMD64RM(u, i->Xin.Unary32.dst, HRmModify);
 //..          return;
@@ -1238,47 +1239,52 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 //..          addRegUsage_AMD64RMI(u, i->Xin.Push.src);
 //..          addHRegUse(u, HRmModify, hregAMD64_ESP());
 //..          return;
-//..       case Xin_Call:
-//..          /* This is a bit subtle. */
-//..          /* First off, claim it trashes all the callee-saved regs */
-//..          /* which I believe to be %eax,%ecx,%edx. */
-//..          addHRegUse(u, HRmWrite, hregAMD64_EAX());
-//..          addHRegUse(u, HRmWrite, hregAMD64_ECX());
-//..          addHRegUse(u, HRmWrite, hregAMD64_EDX());
-//..          /* Now we have to state any parameter-carrying registers
-//..             which might be read.  This depends on the regparmness. */
-//..          switch (i->Xin.Call.regparms) {
-//..             case 3: addHRegUse(u, HRmRead, hregAMD64_ECX()); /*fallthru*/
-//..             case 2: addHRegUse(u, HRmRead, hregAMD64_EDX()); /*fallthru*/
-//..             case 1: addHRegUse(u, HRmRead, hregAMD64_EAX()); break;
-//..             case 0: break;
-//..             default: vpanic("getRegUsage_AMD64Instr:Call:regparms");
-//..          }
-//..          /* Finally, there is the issue that the insn trashes a
-//..             register because the literal target address has to be
-//..             loaded into a register.  Fortunately, for the 0/1/2
-//..             regparm case, we can use EAX, EDX and ECX respectively, so
-//..             this does not cause any further damage.  For the 3-regparm
-//..             case, we'll have to choose another register arbitrarily --
-//..             since A, D and C are used for parameters -- and so we might
-//..             as well choose EDI. */
-//..          if (i->Xin.Call.regparms == 3)
-//..             addHRegUse(u, HRmWrite, hregAMD64_EDI());
-//..          /* Upshot of this is that the assembler really must observe
-//..             the here-stated convention of which register to use as an
-//..             address temporary, depending on the regparmness: 0==EAX,
-//..             1==EDX, 2==ECX, 3==EDI. */
-//..          return;
+      case Ain_Call:
+         /* This is a bit subtle. */
+         /* First off, claim it trashes all the caller-saved regs
+            which fall within the register allocator's jurisdiction.
+            These I believe to be: rax rcx rdx rsi rdi r8 r9 r10 r11 
+         */
+         addHRegUse(u, HRmWrite, hregAMD64_RAX());
+         addHRegUse(u, HRmWrite, hregAMD64_RCX());
+         addHRegUse(u, HRmWrite, hregAMD64_RDX());
+         addHRegUse(u, HRmWrite, hregAMD64_RSI());
+         addHRegUse(u, HRmWrite, hregAMD64_RDI());
+         addHRegUse(u, HRmWrite, hregAMD64_R8());
+         addHRegUse(u, HRmWrite, hregAMD64_R9());
+         addHRegUse(u, HRmWrite, hregAMD64_R10());
+         addHRegUse(u, HRmWrite, hregAMD64_R11());
+
+         /* Now we have to state any parameter-carrying registers
+            which might be read.  This depends on the regparmness. */
+         switch (i->Ain.Call.regparms) {
+            case 6: addHRegUse(u, HRmRead, hregAMD64_R9());  /*fallthru*/
+            case 5: addHRegUse(u, HRmRead, hregAMD64_R8());  /*fallthru*/
+            case 4: addHRegUse(u, HRmRead, hregAMD64_RCX()); /*fallthru*/
+            case 3: addHRegUse(u, HRmRead, hregAMD64_RDX()); /*fallthru*/
+            case 2: addHRegUse(u, HRmRead, hregAMD64_RSI()); /*fallthru*/
+            case 1: addHRegUse(u, HRmRead, hregAMD64_RDI()); break;
+            case 0: break;
+            default: vpanic("getRegUsage_AMD64Instr:Call:regparms");
+         }
+         /* Finally, there is the issue that the insn trashes a
+            register because the literal target address has to be
+            loaded into a register.  Fortunately, r11 is stated in the
+            ABI as a scratch register, and so seems a suitable victim.  */
+         addHRegUse(u, HRmWrite, hregAMD64_R11());
+         /* Upshot of this is that the assembler really must use r11,
+            and no other, as a destination temporary. */
+         return;
       case Ain_Goto:
          addRegUsage_AMD64RI(u, i->Ain.Goto.dst);
          addHRegUse(u, HRmWrite, hregAMD64_RAX());
          if (i->Ain.Goto.jk != Ijk_Boring)
             addHRegUse(u, HRmWrite, hregAMD64_RBP());
          return;
-//..       case Xin_CMov32:
-//..          addRegUsage_AMD64RM(u, i->Xin.CMov32.src, HRmRead);
-//..          addHRegUse(u, HRmModify, i->Xin.CMov32.dst);
-//..          return;
+      case Ain_CMov64:
+         addRegUsage_AMD64RM(u, i->Ain.CMov64.src, HRmRead);
+         addHRegUse(u, HRmModify, i->Ain.CMov64.dst);
+         return;
       case Ain_MovZLQ:
          addHRegUse(u, HRmRead,  i->Ain.MovZLQ.src);
          addHRegUse(u, HRmWrite, i->Ain.MovZLQ.dst);
@@ -1287,10 +1293,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addRegUsage_AMD64AMode(u, i->Ain.LoadEX.src);
          addHRegUse(u, HRmWrite, i->Ain.LoadEX.dst);
          return;
-//..       case Xin_Store:
-//..          addHRegUse(u, HRmRead, i->Xin.Store.src);
-//..          addRegUsage_AMD64AMode(u, i->Xin.Store.dst);
-//..          return;
+      case Ain_Store:
+         addHRegUse(u, HRmRead, i->Ain.Store.src);
+         addRegUsage_AMD64AMode(u, i->Ain.Store.dst);
+         return;
 //..       case Xin_Set32:
 //..          addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
 //..          return;
@@ -1434,10 +1440,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
       case Ain_Sh64:
          mapRegs_AMD64RM(m, i->Ain.Sh64.dst);
          return;
-//..       case Xin_Test32:
-//..          mapRegs_AMD64RI(m, i->Xin.Test32.src);
-//..          mapRegs_AMD64RM(m, i->Xin.Test32.dst);
-//..          return;
+      case Ain_Test64:
+         mapRegs_AMD64RI(m, i->Ain.Test64.src);
+         mapRegs_AMD64RM(m, i->Ain.Test64.dst);
+         return;
 //..       case Xin_Unary32:
 //..          mapRegs_AMD64RM(m, i->Xin.Unary32.dst);
 //..          return;
@@ -1454,15 +1460,15 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 //..       case Xin_Push:
 //..          mapRegs_AMD64RMI(m, i->Xin.Push.src);
 //..          return;
-//..       case Xin_Call:
-//..          return;
+      case Ain_Call:
+         return;
       case Ain_Goto:
          mapRegs_AMD64RI(m, i->Ain.Goto.dst);
          return;
-//..       case Xin_CMov32:
-//..          mapRegs_AMD64RM(m, i->Xin.CMov32.src);
-//..          mapReg(m, &i->Xin.CMov32.dst);
-//..          return;
+      case Ain_CMov64:
+         mapRegs_AMD64RM(m, i->Ain.CMov64.src);
+         mapReg(m, &i->Ain.CMov64.dst);
+         return;
       case Ain_MovZLQ:
          mapReg(m, &i->Ain.MovZLQ.src);
          mapReg(m, &i->Ain.MovZLQ.dst);
@@ -1471,10 +1477,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapRegs_AMD64AMode(m, i->Ain.LoadEX.src);
          mapReg(m, &i->Ain.LoadEX.dst);
          return;
-//..       case Xin_Store:
-//..          mapReg(m, &i->Xin.Store.src);
-//..          mapRegs_AMD64AMode(m, i->Xin.Store.dst);
-//..          return;
+      case Ain_Store:
+         mapReg(m, &i->Ain.Store.src);
+         mapRegs_AMD64AMode(m, i->Ain.Store.dst);
+         return;
 //..       case Xin_Set32:
 //..          mapReg(m, &i->Xin.Set32.dst);
 //..          return;

@@ -369,7 +369,7 @@ typedef
       Ain_MovZLQ,    /* reg-reg move, zeroing out top half */
       Ain_LoadEX,    /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,     /* store 32/16/8 bit value in memory */
-      Ain_Set64,     /* convert condition code to 32-bit value */
+      Ain_Set64,     /* convert condition code to 64-bit value */
       Ain_Bsfr64,    /* 64-bit bsf/bsr */
       Ain_MFence,    /* mem fence */
 //.. 

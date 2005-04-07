@@ -1656,7 +1656,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
             return disAMode_copy2tmp(
                    handleSegOverride(sorb, mkU32(d)));
          }
-
+         /*NOTREACHED*/
          vassert(0);
       }
 
@@ -1697,6 +1697,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
                                     getIReg(4,index_r), mkU8(scale))),
                         mkU32(d))));
          }
+	 /*NOTREACHED*/
          vassert(0);
       }
 
@@ -1737,6 +1738,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
                                     getIReg(4,index_r), mkU8(scale))),
                         mkU32(d))));
          }
+	 /*NOTREACHED*/
          vassert(0);
       }
 
@@ -2657,7 +2659,8 @@ UInt dis_Grp8_Imm ( UChar       sorb,
       case 7: /* BTC */
          assign( t2m, binop(Iop_Xor32, mkU32(mask), mkexpr(t2)) );
          break;
-     default: 
+      default: 
+         /*NOTREACHED*/ /*the previous switch guards this*/
          vassert(0);
    }
 
@@ -5300,6 +5303,7 @@ static UInt dis_MMX_shiftG_byE ( UChar sorb, UInt delta,
         )
      );
    } else {
+      /*NOTREACHED*/
       vassert(0);
    }
 
@@ -5345,17 +5349,18 @@ UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
    }
 
    if (shl || shr) {
-     assign( e1, amt >= size 
-                    ? mkU64(0)
-                    : binop(op, mkexpr(e0), mkU8(amt))
-     );
+      assign( e1, amt >= size 
+                     ? mkU64(0)
+                     : binop(op, mkexpr(e0), mkU8(amt))
+      );
    } else 
    if (sar) {
-     assign( e1, amt >= size 
-                    ? binop(op, mkexpr(e0), mkU8(size-1))
-                    : binop(op, mkexpr(e0), mkU8(amt))
-     );
+      assign( e1, amt >= size 
+                     ? binop(op, mkexpr(e0), mkU8(size-1))
+                     : binop(op, mkexpr(e0), mkU8(amt))
+      );
    } else {
+      /*NOTREACHED*/
       vassert(0);
    }
 
@@ -6896,6 +6901,7 @@ static UInt dis_SSE_shiftG_byE ( UChar sorb, UInt delta,
         )
      );
    } else {
+      /*NOTREACHED*/
       vassert(0);
    }
 
@@ -6939,17 +6945,18 @@ UInt dis_SSE_shiftE_imm ( UInt delta, HChar* opname, IROp op )
    }
 
    if (shl || shr) {
-     assign( e1, amt >= size 
-                    ? mkV128(0x0000)
-                    : binop(op, mkexpr(e0), mkU8(amt))
-     );
+      assign( e1, amt >= size 
+                     ? mkV128(0x0000)
+                     : binop(op, mkexpr(e0), mkU8(amt))
+      );
    } else 
    if (sar) {
-     assign( e1, amt >= size 
-                    ? binop(op, mkexpr(e0), mkU8(size-1))
-                    : binop(op, mkexpr(e0), mkU8(amt))
-     );
+      assign( e1, amt >= size 
+                     ? binop(op, mkexpr(e0), mkU8(size-1))
+                     : binop(op, mkexpr(e0), mkU8(amt))
+      );
    } else {
+      /*NOTREACHED*/
       vassert(0);
    }
 
@@ -7905,7 +7912,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             case 1:  assign(t5, mkexpr(t1)); break;
             case 2:  assign(t5, mkexpr(t2)); break;
             case 3:  assign(t5, mkexpr(t3)); break;
-            default: vassert(0);
+            default: vassert(0); /*NOTREACHED*/
          }
          putIReg(4, gregOfRM(modrm), unop(Iop_16Uto32, mkexpr(t5)));
          DIP("pextrw $%d,%s,%s\n",
@@ -7956,7 +7963,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          case 1:  assign(t6, mk64from16s(t3,t2,t4,t0)); break;
          case 2:  assign(t6, mk64from16s(t3,t4,t1,t0)); break;
          case 3:  assign(t6, mk64from16s(t4,t2,t1,t0)); break;
-         default: vassert(0);
+         default: vassert(0); /*NOTREACHED*/
       }
       putMMXReg(gregOfRM(modrm), mkexpr(t6));
       goto decode_success;
@@ -8052,7 +8059,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          case 1: hintstr = "t0"; break;
          case 2: hintstr = "t1"; break;
          case 3: hintstr = "t2"; break;
-         default: vassert(0);
+         default: vassert(0); /*NOTREACHED*/
       }
 
       DIP("prefetch%s %s\n", hintstr, dis_buf);
@@ -9647,7 +9654,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             case 5:  assign(t4, unop(Iop_32HIto16, mkexpr(t2))); break;
             case 6:  assign(t4, unop(Iop_32to16,   mkexpr(t3))); break;
             case 7:  assign(t4, unop(Iop_32HIto16, mkexpr(t3))); break;
-            default: vassert(0);
+            default: vassert(0); /*NOTREACHED*/
          }
          putIReg(4, gregOfRM(modrm), unop(Iop_16Uto32, mkexpr(t4)));
          DIP("pextrw $%d,%s,%s\n",
@@ -9999,7 +10006,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       lo64r = newTemp(Ity_I64);
 
       if (imm >= 16) {
-         vassert(0); /* awaiting test case */
          putXMMReg(reg, mkV128(0x0000));
          goto decode_success;
       }
@@ -10008,13 +10014,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
       assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
 
+      if (imm == 0) {
+         assign( lo64r, mkexpr(lo64) );
+         assign( hi64r, mkexpr(hi64) );
+      }
+      else
       if (imm == 8) {
          assign( lo64r, mkU64(0) );
          assign( hi64r, mkexpr(lo64) );
       }
       else
       if (imm > 8) {
-         vassert(0); /* awaiting test case */
          assign( lo64r, mkU64(0) );
          assign( hi64r, binop( Iop_Shl64, 
                                mkexpr(lo64),
@@ -10126,7 +10136,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       lo64r = newTemp(Ity_I64);
 
       if (imm >= 16) {
-         vassert(0); /* awaiting test case */
          putXMMReg(reg, mkV128(0x0000));
          goto decode_success;
       }
@@ -10135,13 +10144,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
       assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
 
+      if (imm == 0) {
+         assign( lo64r, mkexpr(lo64) );
+         assign( hi64r, mkexpr(hi64) );
+      }
+      else
       if (imm == 8) {
          assign( hi64r, mkU64(0) );
          assign( lo64r, mkexpr(hi64) );
       }
       else 
       if (imm > 8) {
-         vassert(0); /* awaiting test case */
          assign( hi64r, mkU64(0) );
          assign( lo64r, binop( Iop_Shr64, 
                                mkexpr(hi64),

@@ -1683,7 +1683,7 @@ int main(int argc, char **argv)
         func();
     }
 #endif
-    //    test_bsx();  REINSTATE64
+    test_bsx();  //REINSTATE64
     test_mul();
     test_jcc();
     //    test_floats();  REINSTATE64

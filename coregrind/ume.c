@@ -152,36 +152,38 @@ struct elfinfo *readelf(int fd, const char *filename)
    e->fd = fd;
 
    if (pread(fd, &e->e, sizeof(e->e), 0) != sizeof(e->e)) {
-      fprintf(stderr, "valgrind: %s: can't read elf header: %s\n", 
+      fprintf(stderr, "valgrind: %s: can't read ELF header: %s\n", 
 	      filename, strerror(errno));
       return NULL;
    }
 
    if (memcmp(&e->e.e_ident[0], ELFMAG, SELFMAG) != 0) {
-      fprintf(stderr, "valgrind: %s: bad ELF magic\n", filename);
+      fprintf(stderr, "valgrind: %s: bad ELF magic number\n", filename);
       return NULL;
    }
    if (e->e.e_ident[EI_CLASS] != VGA_ELF_CLASS) {
-      fprintf(stderr, "valgrind: wrong executable class (eg. 32-bit instead\n"
-                      "valgrind: of 64-bit)\n");
+      fprintf(stderr, 
+              "valgrind: wrong ELF executable class "
+              "(eg. 32-bit instead of 64-bit)\n");
       return NULL;
    }
    if (e->e.e_ident[EI_DATA] != VGA_ELF_ENDIANNESS) {
-      fprintf(stderr, "valgrind: wrong endian-ness\n");
+      fprintf(stderr, "valgrind: executable has wrong endian-ness\n");
       return NULL;
    }
    if (!(e->e.e_type == ET_EXEC || e->e.e_type == ET_DYN)) {
-      fprintf(stderr, "valgrind: need executable\n");
+      fprintf(stderr, "valgrind: this is not an executable\n");
       return NULL;
    }
 
    if (e->e.e_machine != VGA_ELF_MACHINE) {
-      fprintf(stderr, "valgrind: wrong architecture\n");
+      fprintf(stderr, "valgrind: executable is not for "
+                      "this architecture\n");
       return NULL;
    }
 
    if (e->e.e_phentsize != sizeof(ESZ(Phdr))) {
-      fprintf(stderr, "valgrind: sizeof Phdr wrong\n");
+      fprintf(stderr, "valgrind: sizeof ELF Phdr wrong\n");
       return NULL;
    }
 

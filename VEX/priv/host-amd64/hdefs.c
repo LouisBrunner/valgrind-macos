@@ -1811,7 +1811,7 @@ AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
 /* --------- The amd64 assembler (bleh.) --------- */
 
 /* Produce the low three bits of an integer register number. */
-static UChar iregNo ( HReg r )
+static UChar iregBits210 ( HReg r )
 {
    UInt n;
    vassert(hregClass(r) == HRcInt64);
@@ -1831,6 +1831,18 @@ static UChar iregBit3 ( HReg r )
    vassert(n <= 15);
    return toUChar((n >> 3) & 1);
 }
+
+/* Produce a complete 4-bit integer register number. */
+static UChar iregBits3210 ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 15);
+   return toUChar(n);
+}
+
 
 
 //.. static UInt fregNo ( HReg r )
@@ -1936,28 +1948,31 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
           && am->Aam.IR.reg != hregAMD64_R12() 
           && am->Aam.IR.reg != hregAMD64_R13() 
          ) {
-         *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Aam.IR.reg));
+         *p++ = mkModRegRM(0, iregBits210(greg), 
+                              iregBits210(am->Aam.IR.reg));
          return p;
       }
       if (fits8bits(am->Aam.IR.imm)
           && am->Aam.IR.reg != hregAMD64_RSP()
           && am->Aam.IR.reg != hregAMD64_R12()
          ) {
-         *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Aam.IR.reg));
+         *p++ = mkModRegRM(1, iregBits210(greg), 
+                              iregBits210(am->Aam.IR.reg));
          *p++ = toUChar(am->Aam.IR.imm & 0xFF);
          return p;
       }
       if (am->Aam.IR.reg != hregAMD64_RSP()
           && am->Aam.IR.reg != hregAMD64_R12()
          ) {
-         *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Aam.IR.reg));
+         *p++ = mkModRegRM(2, iregBits210(greg), 
+                              iregBits210(am->Aam.IR.reg));
          p = emit32(p, am->Aam.IR.imm);
          return p;
       }
       if ((am->Aam.IR.reg == hregAMD64_RSP()
            || am->Aam.IR.reg == hregAMD64_R12())
           && fits8bits(am->Aam.IR.imm)) {
- 	 *p++ = mkModRegRM(1, iregNo(greg), 4);
+ 	 *p++ = mkModRegRM(1, iregBits210(greg), 4);
          *p++ = 0x24;
          *p++ = toUChar(am->Aam.IR.imm & 0xFF);
          return p;
@@ -1965,7 +1980,7 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
       if (/* (am->Aam.IR.reg == hregAMD64_RSP()
 	     || wait for test case for RSP case */
           am->Aam.IR.reg == hregAMD64_R12()) {
- 	 *p++ = mkModRegRM(2, iregNo(greg), 4);
+ 	 *p++ = mkModRegRM(2, iregBits210(greg), 4);
          *p++ = 0x24;
          p = emit32(p, am->Aam.IR.imm);
          return p;
@@ -1977,14 +1992,14 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
    if (am->tag == Aam_IRRS) {
       if (fits8bits(am->Aam.IRRS.imm)
           && am->Aam.IRRS.index != hregAMD64_RSP()) {
-         *p++ = mkModRegRM(1, iregNo(greg), 4);
+         *p++ = mkModRegRM(1, iregBits210(greg), 4);
          *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index, 
                                           am->Aam.IRRS.base);
          *p++ = toUChar(am->Aam.IRRS.imm & 0xFF);
          return p;
       }
       if (am->Aam.IRRS.index != hregAMD64_RSP()) {
-         *p++ = mkModRegRM(2, iregNo(greg), 4);
+         *p++ = mkModRegRM(2, iregBits210(greg), 4);
          *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index,
                                           am->Aam.IRRS.base);
          p = emit32(p, am->Aam.IRRS.imm);
@@ -2002,7 +2017,7 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
 /* Emit a mod-reg-rm byte when the rm bit denotes a reg. */
 static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg ) 
 {
-   *p++ = mkModRegRM(3, iregNo(greg), iregNo(ereg));
+   *p++ = mkModRegRM(3, iregBits210(greg), iregBits210(ereg));
    return p;
 }
 
@@ -2167,7 +2182,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 
    case Ain_Imm64:
       *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Imm64.dst)));
-      *p++ = toUChar(0xB8 + iregNo(i->Ain.Imm64.dst));
+      *p++ = toUChar(0xB8 + iregBits210(i->Ain.Imm64.dst));
       p = emit64(p, i->Ain.Imm64.imm64);
       goto done;
 
@@ -2178,7 +2193,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
             case Armi_Imm:
                *p++ = toUChar(0x48 + (1 & iregBit3(i->Ain.Alu64R.dst)));
                *p++ = 0xC7;
-               *p++ = toUChar(0xC0 + iregNo(i->Ain.Alu64R.dst));
+               *p++ = toUChar(0xC0 + iregBits210(i->Ain.Alu64R.dst));
                p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
                goto done;
             case Armi_Reg:
@@ -2513,7 +2528,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
             goto done;
          case Armi_Reg:
             *p++ = toUChar(0x40 + (1 & iregBit3(i->Ain.Push.src->Armi.Reg.reg)));
-            *p++ = toUChar(0x50 + iregNo(i->Ain.Push.src->Armi.Reg.reg));
+            *p++ = toUChar(0x50 + iregBits210(i->Ain.Push.src->Armi.Reg.reg));
             goto done;
         default: 
             goto bad;
@@ -2677,8 +2692,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          of the destination should be forced to zero, but doing 'xorq
          %r,%r' kills the flag(s) we are about to read.  Sigh.  So
          start off my moving $0 into the dest. */
-
-      reg = iregNo(i->Ain.Set64.dst);
+      reg = iregBits3210(i->Ain.Set64.dst);
       vassert(reg < 16);
 
       /* movq $0, %dst */
@@ -2932,7 +2946,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       *p++ = 0x9C;
       /* popq %dst */
       *p++ = toUChar(0x40 + (1 & iregBit3(i->Ain.SseUComIS.dst)));
-      *p++ = toUChar(0x58 + iregNo(i->Ain.SseUComIS.dst));
+      *p++ = toUChar(0x58 + iregBits210(i->Ain.SseUComIS.dst));
       goto done;
 
    case Ain_SseSI2SF:

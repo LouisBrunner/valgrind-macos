@@ -987,9 +987,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    PLAXY(__NR_msgctl,            sys_msgctl),         // 71 
    GENXY(__NR_fcntl,             sys_fcntl),          // 72 
    //   (__NR_flock,             sys_flock),          // 73 
-   //   (__NR_fsync,             sys_fsync),          // 74 
+   GENX_(__NR_fsync,             sys_fsync),          // 74 
 
-   //   (__NR_fdatasync,         sys_fdatasync),      // 75 
+   GENX_(__NR_fdatasync,         sys_fdatasync),      // 75 
    //   (__NR_truncate,          sys_truncate),       // 76 
    GENX_(__NR_ftruncate,         sys_ftruncate),      // 77 
    GENXY(__NR_getdents,          sys_getdents),       // 78 
@@ -1008,9 +1008,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_readlink,          sys_readlink),       // 89 
 
    GENX_(__NR_chmod,             sys_chmod),          // 90 
-   //   (__NR_fchmod,            sys_fchmod),         // 91 
+   GENX_(__NR_fchmod,            sys_fchmod),         // 91 
    GENX_(__NR_chown,             sys_chown),          // 92 
-   //   (__NR_fchown,            sys_fchown),         // 93 
+   GENX_(__NR_fchown,            sys_fchown),         // 93 
    //   (__NR_lchown,            sys_lchown),         // 94 
 
    GENX_(__NR_umask,             sys_umask),          // 95 

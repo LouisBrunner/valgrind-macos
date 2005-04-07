@@ -1300,21 +1300,21 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_Bsfr64(True,src,dst));
             return dst;
          }
-//..          case Iop_Clz32: {
-//..             /* Count leading zeroes.  Do 'bsrl' to establish the index
-//..                of the highest set bit, and subtract that value from
-//..                31. */
-//..             HReg tmp = newVRegI(env);
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Bsfr32(False,src,tmp));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
-//..                                           X86RMI_Imm(31), dst));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_SUB,
-//..                                           X86RMI_Reg(tmp), dst));
-//..             return dst;
-//..          }
-//.. 
+         case Iop_Clz64: {
+            /* Count leading zeroes.  Do 'bsrq' to establish the index
+               of the highest set bit, and subtract that value from
+               63. */
+            HReg tmp = newVRegI(env);
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, AMD64Instr_Bsfr64(False,src,tmp));
+            addInstr(env, AMD64Instr_Alu64R(Aalu_MOV, 
+                                            AMD64RMI_Imm(63), dst));
+            addInstr(env, AMD64Instr_Alu64R(Aalu_SUB,
+                                            AMD64RMI_Reg(tmp), dst));
+            return dst;
+         }
+
 //..          case Iop_128to32: {
 //..             HReg      dst  = newVRegI(env);
 //..             HReg      vec  = iselVecExpr(env, e->Iex.Unop.arg);

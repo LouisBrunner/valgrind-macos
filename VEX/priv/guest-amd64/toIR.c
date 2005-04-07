@@ -3330,6 +3330,7 @@ ULong dis_Grp8_Imm ( Prefix pfx,
    switch (sz) {
       case 2:  src_val &= 15; break;
       case 4:  src_val &= 31; break;
+      case 8:  src_val &= 63; break;
       default: *decode_OK = False; return delta;
    }
 
@@ -12863,9 +12864,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          if (haveF2orF3(pfx)) goto decode_failure;
          delta = dis_bs_E_G ( pfx, sz, delta, True );
          break;
-//..       case 0xBD: /* BSR Gv,Ev */
-//..          delta = dis_bs_E_G ( sorb, sz, delta, False );
-//..          break;
+      case 0xBD: /* BSR Gv,Ev */
+         if (haveF2orF3(pfx)) goto decode_failure;
+         delta = dis_bs_E_G ( pfx, sz, delta, False );
+         break;
 
       /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
 

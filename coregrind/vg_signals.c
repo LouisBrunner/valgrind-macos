@@ -1718,8 +1718,8 @@ static void (*fault_catcher)(Int sig, Addr addr);
 
 void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
 {
-   if (catcher != NULL && fault_catcher != NULL)
-      VG_(core_panic)("Fault catcher is already registered");
+   vg_assert2(NULL == catcher || NULL == fault_catcher,
+              "Fault catcher is already registered");
 
    fault_catcher = catcher;
 }

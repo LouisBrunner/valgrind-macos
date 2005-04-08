@@ -453,16 +453,24 @@ extern Bool VG_(getcwd_alloc) ( Char** cwd );
 #define VG_STRINGIFY_WRK(x)   #x
 #define VG_STRINGIFY(x)       VG_STRINGIFY_WRK(x)
 
-#define tl_assert(expr)                                               \
-  ((void) ((expr) ? 0 :						      \
-	   (VG_(tool_assert_fail) (VG_STRINGIFY(expr),	              \
-			           __FILE__, __LINE__,                \
-                                   __PRETTY_FUNCTION__), 0)))
+#define tl_assert(expr)                                                 \
+  ((void) ((expr) ? 0 :                                                 \
+           (VG_(assert_fail) (/*isCore?*/False, VG_STRINGIFY(expr),     \
+                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
+                              ""),                                      \
+                              0)))
+
+#define tl_assert2(expr, format, args...)                               \
+  ((void) ((expr) ? 0 :                                                 \
+           (VG_(assert_fail) (/*isCore?*/False, VG_STRINGIFY(expr),     \
+                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
+                              format, ##args),                          \
+                              0)))
 
 __attribute__ ((__noreturn__))
-extern void VG_(tool_assert_fail) ( const Char* expr, const Char* file,
-                                    Int line, const Char* fn );
-
+extern void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
+                               Int line, const Char* fn, 
+                               const Char* format, ... );
 
 /* ------------------------------------------------------------------ */
 /* Get memory by anonymous mmap. */

@@ -652,8 +652,8 @@ static void handle_tt_miss ( ThreadId tid )
       /* Not found; we need to request a translation. */
       if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/ )) {
 	 found = VG_(search_transtab)( NULL, ip, True ); 
-	 if (!found)
-	    VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+         vg_assert2(found, "VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+      
       } else {
 	 // If VG_(translate)() fails, it's because it had to throw a
 	 // signal because the client jumped to a bad address.  That
@@ -840,9 +840,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       default: 
-	 VG_(printf)("\ntrc = %d\n", trc);
-	 VG_(core_panic)("VG_(scheduler), phase 3: "
-			 "unexpected thread return code");
+	 vg_assert2(0, "VG_(scheduler), phase 3: "
+                       "unexpected thread return code (%u)", trc);
 	 /* NOTREACHED */
 	 break;
 

@@ -782,18 +782,25 @@ extern void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg);
 
 // Useful for making failing stubs, when certain things haven't yet been
 // implemented.
-#define I_die_here                                                    \
-   VG_(core_assert_fail) ("Unimplemented functionality",              \
-                           __FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define I_die_here                                             \
+   VG_(assert_fail) ("Unimplemented functionality",            \
+                     __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
+                     "valgrind", VG_BUGS_TO, "")
 
-#define vg_assert(expr)                                               \
-  ((void) ((expr) ? 0 :						      \
-	   (VG_(core_assert_fail) (VG_STRINGIFY(expr),	              \
-			           __FILE__, __LINE__,                \
-                                   __PRETTY_FUNCTION__), 0)))
-__attribute__ ((__noreturn__))
-extern void VG_(core_assert_fail) ( const Char* expr, const Char* file, 
-                                    Int line, const Char* fn );
+#define vg_assert(expr)                                                 \
+  ((void) ((expr) ? 0 :                                                 \
+           (VG_(assert_fail) (/*isCore*/True, VG_STRINGIFY(expr),       \
+                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
+                              ""),                                      \
+                              0)))
+
+#define vg_assert2(expr, format, args...)                               \
+  ((void) ((expr) ? 0 :                                                 \
+           (VG_(assert_fail) (/*isCore*/True, VG_STRINGIFY(expr),       \
+                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
+                              format, ##args),                          \
+                              0)))
+
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 __attribute__ ((__noreturn__))

@@ -1169,6 +1169,8 @@ static void report_and_quit ( const Char* report, StackTrace ips )
    else
       VG_(pp_StackTrace)(ips, VG_(clo_backtrace_size));
    
+   VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
+
    VG_(pp_sched_status)();
    VG_(printf)("\n");
    VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
@@ -1181,35 +1183,51 @@ static void report_and_quit ( const Char* report, StackTrace ips )
    VG_(exit)(1);
 }
 
-__attribute__ ((noreturn))
-static void assert_fail ( const Char* expr, const Char* name, const Char* report,
-                          const Char* file, Int line, const Char* fn )
+void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
+                        Int line, const Char* fn, const Char* format, ... )
 {
+   va_list vargs;
+   Char buf[256];
+   Char* bufptr = buf;
+   Char* component;
+   Char* bugs_to;
+
    static Bool entered = False;
    if (entered) 
      VG_(exit)(2);
    entered = True;
-   VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
-               name, file, line, fn, expr );
-   report_and_quit(report, NULL);
-}
 
-void VG_(tool_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
-{
-   assert_fail(expr, VG_(details).name, VG_(details).bug_reports_to, 
-               file, line, fn);
-}
+   va_start(vargs,format);
+   VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs, &bufptr );
+   add_to_vg_sprintf_buf('\0', &bufptr);
+   va_end(vargs);
 
-void VG_(core_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
-{
-   assert_fail(expr, "valgrind", VG_BUGS_TO, file, line, fn);
+   if (isCore) {
+      component = "valgrind";
+      bugs_to   = VG_BUGS_TO;
+   } else { 
+      component = VG_(details).name;
+      bugs_to   = VG_(details).bug_reports_to;
+   }
+
+   // Treat vg_assert2(0, "foo") specially, as a panicky abort
+   if (VG_STREQ(expr, "0")) {
+      VG_(printf)("\n%s: %s:%d (%s): the `impossible' happened.\n",
+                  component, file, line, fn, expr );
+   } else {
+      VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
+                  component, file, line, fn, expr );
+   }
+   if (!VG_STREQ(buf, ""))
+      VG_(printf)("%s: %s\n", component, buf );
+
+   report_and_quit(bugs_to, NULL);
 }
 
 __attribute__ ((noreturn))
 static void panic ( Char* name, Char* report, Char* str, StackTrace ips )
 {
    VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
-   VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
    report_and_quit(report, ips);
 }
 

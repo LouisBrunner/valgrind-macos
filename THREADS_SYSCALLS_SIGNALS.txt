@@ -19,6 +19,13 @@ extern void VG_(set_sleeping) ( ThreadId tid, ThreadStatus state );
 
 The master semaphore is run_sema in vg_scheduler.c.
 
+
+(what happens at a fork?)
+
+VG_(scheduler_init) registers sched_fork_cleanup as a child atfork
+handler.  sched_fork_cleanup, among other things, reinitializes the
+semaphore with a new pipe so the process has its own.
+
 --------------------------------------------------------------------
 
 Re:   New World signal handling

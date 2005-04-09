@@ -1,4 +1,16 @@
 
+9 Apr 05 (starting work on memcheck for 32/64-bit and big/little endian)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* get rid of memcheck/mc_asm.h and include/tool_asm.h.  I think 
+  these are left over from single-platform days, when it made
+  sense to have tool-helpers written in assembly.  Looks like we
+  need to retain coregrind/core_asm.h, though.
+
+  Urk.  Perhaps nuke all that X86_FEAT gunk in coregrind/core_asm.h
+  though.  Vex isn't clever enough to distinguish dozens of CPU
+  subvariants.
+
+
 23 March 05
 ~~~~~~~~~~~
 Do we still need ARCH_PTHREQ_RET (or *PTHREQ* for that matter) ?

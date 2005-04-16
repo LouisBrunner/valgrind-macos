@@ -160,7 +160,7 @@
   particularly SSE/SSE2 instructions.  Try a newer Valgrind; we
   now support almost all instructions.  If it still happens with
   newer versions, if the failing instruction is an SSE/SSE2
-  instruction, you might be able to recompile your progrma
+  instruction, you might be able to recompile your program
   without it by using the flag
   <computeroutput>-march</computeroutput> to gcc.  Either way,
   let us know and we'll try to fix it.</para>
@@ -257,7 +257,7 @@
    </listitem>
    <listitem>
     <para>allocators belong to the more messy parts of the STL
-    and people went at great lengths to make it portable across
+    and people went to great lengths to make it portable across
     platforms. Chances are good that your solution will work on
     your platform, but not on others.</para>
    </listitem>

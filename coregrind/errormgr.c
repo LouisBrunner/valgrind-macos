@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Management of error messages.                vg_errcontext.c ---*/
+/*--- Management of error messages.                     errormgr.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,7 +29,9 @@
 */
 
 #include "core.h"
+#include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_stacktrace.h"
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -92,7 +94,7 @@ struct _Error {
 
    // The tool-specific part
    ExeContext* where;      // Initialised by core
-   Int ekind;              // Used by ALL.  Must be in the range (0..)
+   ErrorKind ekind;        // Used by ALL.  Must be in the range (0..)
    Addr addr;              // Used frequently
    Char* string;           // Used frequently
    void* extra;            // For any tool-specific extras
@@ -394,16 +396,15 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
 
    /* Perhaps we want a debugger attach at this point? */
    if (allow_db_attach &&
-       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) 
-   {
+       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) ))
+   {   
       VG_(printf)("starting debugger\n");
       VG_(start_debugger)( err->tid );
-   }
+   }  
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(clo_gen_suppressions) == 2
        || (VG_(clo_gen_suppressions) == 1
-           && VG_(is_action_requested)( "Print suppression",
-                                        &still_noisy ))
+           && VG_(is_action_requested)( "Print suppression", &still_noisy ))
       ) {
       gen_suppression(err);
       if (VG_(clo_gen_suppressions) == 1 && !still_noisy)

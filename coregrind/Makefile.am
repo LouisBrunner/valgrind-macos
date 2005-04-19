@@ -27,6 +27,7 @@ noinst_LIBRARIES = lib_replace_malloc.a
 noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
+	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_stacktrace.h	\
 	ume.h			\
@@ -51,6 +52,7 @@ valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 stage2_SOURCES = \
+	errormgr.c \
 	execontext.c \
 	stacktrace.c \
 	ume.c \
@@ -58,7 +60,6 @@ stage2_SOURCES = \
 	vg_scheduler.c \
 	vg_default.c \
 	vg_demangle.c \
-	vg_errcontext.c \
 	vg_hashtable.c \
 	vg_replace_malloc.c \
 	vg_main.c \

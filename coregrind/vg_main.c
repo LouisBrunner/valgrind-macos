@@ -33,6 +33,7 @@
 #include "core.h"
 #include "ume.h"
 #include "pub_core_execontext.h"
+#include "pub_core_errormgr.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

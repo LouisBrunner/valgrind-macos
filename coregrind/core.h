@@ -862,26 +862,6 @@ Bool VG_(translate) ( ThreadId tid,
                       Int      debugging_verbosity );
 
 /* ---------------------------------------------------------------------
-   Exports of vg_errcontext.c.
-   ------------------------------------------------------------------ */
-
-typedef
-   enum { 
-      ThreadErr      = -1,   // Thread error
-      MutexErr       = -2,   // Mutex error
-   }
-   CoreErrorKind;
-
-extern void VG_(load_suppressions)    ( void );
-
-extern void VG_(show_all_errors)      ( void );
-
-extern Bool VG_(is_action_requested)  ( Char* action, Bool* clo );
-
-extern UInt VG_(get_n_errs_found)     ( void );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */
 

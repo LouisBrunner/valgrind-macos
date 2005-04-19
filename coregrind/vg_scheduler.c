@@ -61,7 +61,7 @@
 #include "core.h"
 
 #include "pub_core_stacktrace.h"
-
+#include "pub_core_errormgr.h"
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.

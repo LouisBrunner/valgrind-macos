@@ -81,6 +81,8 @@
 
 #include "core.h"
 
+#include "pub_core_errormgr.h"
+
 /* Define to give more sanity checking for signals. */
 #define DEBUG_SIGNALS
 

@@ -383,7 +383,7 @@ typedef
       Iop_MulHi16Ux4,
       Iop_MulHi16Sx4,
 
-      /* AVERAGING: note: (arg1 + arg2 + 1) >> 1 */
+      /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
       Iop_Avg8Ux8,
       Iop_Avg16Ux4,
 
@@ -500,7 +500,7 @@ typedef
       Iop_MulHi16Ux8,
       Iop_MulHi16Sx8,
 
-      /* AVERAGING: note: (arg1 + arg2 + 1) >> 1 */
+      /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
       Iop_Avg8Ux16,
       Iop_Avg16Ux8,
 
@@ -562,21 +562,36 @@ typedef
 
    IRExpr_GetI (also IRStmt_PutI)
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   This carries two ints, which give the lowest and highest possible
-   byte offsets that the GetI can possibly reference.  For example, if
-   the type is Ity_I32, and the Expr may have a value of M, M+4 or
-   M+8, where M is a translation-time known constant, then the low and
-   high limits are M and M+11 respectively.
+   These allow circular indexing into parts of the guest state, which
+   is essential for modelling situations where the identity of guest
+   registers is not known until run time.  One example is the x87 FP
+   register stack.
 
-   PutI's limit values are interpreted identically.
+   The part of the guest state to be treated as a circular array is
+   described in an IRArray structure attached to the GetI/PutI.
+   IRArray holds the offset of the first element in the array, the
+   type of each element, and the number of elements.
 
-   The limit values are used by IR optimisers to establish
+   The array index is indicated rather indirectly, in a way which
+   makes optimisation easy: as the sum of variable part (the 'ix'
+   field) and a constant offset (the 'bias' field).
+
+   Since the indexing is circular, the actual array index to use
+   is computed as (ix + bias) % number-of-elements-in-the-array.
+
+   Here's an example.  The description
+
+      (96:8xF64)[t39,-7]
+
+   describes an array of 8 F64-typed values, the guest-state-offset
+   of the first being 96.  This array is being indexed at
+   (t39 - 7) % 8.
+
+   It is important to get the array size/type exactly correct since IR
+   optimisation looks closely at such info in order to establish
    aliasing/non-aliasing between seperate GetI and PutI events, which
-   could be used to do reordering of them, or suchlike things.
-   Clearly it's critical to give the correct limit values -- this is
-   something that can't be automatically checked (in general), and so
-   the front-end writers must be very careful to tell the truth, since
-   not doing so could lead to obscure IR optimisation bugs.
+   is used to establish when they can be reordered, etc.  Putting
+   incorrect info in will lead to obscure IR optimisation bugs.
 
    IRExpr_CCall
    ~~~~~~~~~~~~
@@ -609,8 +624,7 @@ typedef
    details about what the helper does (and you better be telling the
    truth, otherwise any derived instrumentation will be wrong).  Also
    IRStmt_Dirty inhibits various IR optimisations and so can cause
-   quite poor code to be generated.  Try to avoid it.  
-*/
+   quite poor code to be generated.  Try to avoid it.  */
 
 /* The possible kinds of expressions are as follows: */
 typedef

@@ -87,11 +87,11 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 //.. {
 //..    return IRExpr_Const(IRConst_U64(i));
 //.. }
-//.. 
-//.. static IRExpr* mkU32 ( UInt i )
-//.. {
-//..    return IRExpr_Const(IRConst_U32(i));
-//.. }
+
+static IRExpr* mkU32 ( UInt i )
+{
+   return IRExpr_Const(IRConst_U32(i));
+}
 
 static IRExpr* bind ( Int binder )
 {
@@ -1284,15 +1284,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
 //..          case Iop_1Sto8:
 //..          case Iop_1Sto16:
-//..          case Iop_1Sto32: {
-//..             /* could do better than this, but for now ... */
-//..             HReg dst         = newVRegI(env);
-//..             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Set32(cond,dst));
-//..             addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(dst)));
-//..             addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(dst)));
-//..             return dst;
-//..          }
+//..          case Iop_1Sto32:
+         case Iop_1Sto64: {
+            /* could do better than this, but for now ... */
+            HReg dst           = newVRegI(env);
+            AMD64CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, AMD64Instr_Set64(cond,dst));
+            addInstr(env, AMD64Instr_Sh64(Ash_SHL, 63, AMD64RM_Reg(dst)));
+            addInstr(env, AMD64Instr_Sh64(Ash_SAR, 63, AMD64RM_Reg(dst)));
+            return dst;
+         }
          case Iop_Ctz64: {
             /* Count trailing zeroes, implemented by amd64 'bsfq' */
             HReg dst = newVRegI(env);
@@ -1798,23 +1799,23 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       return Acc_NZ;
    }
 
-//..    /* CmpEQ8 / CmpNE8 */
-//..    if (e->tag == Iex_Binop 
-//..        && (e->Iex.Binop.op == Iop_CmpEQ8
-//..            || e->Iex.Binop.op == Iop_CmpNE8)) {
-//..       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..       HReg    r    = newVRegI(env);
-//..       addInstr(env, mk_iMOVsd_RR(r1,r));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(0xFF),r));
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_CmpEQ8:  return Xcc_Z;
-//..          case Iop_CmpNE8:  return Xcc_NZ;
-//..          default: vpanic("iselCondCode(x86): CmpXX8");
-//..       }
-//..    }
-//.. 
+   /* CmpEQ8 / CmpNE8 */
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_CmpEQ8
+           || e->Iex.Binop.op == Iop_CmpNE8)) {
+      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+      HReg      r    = newVRegI(env);
+      addInstr(env, mk_iMOVsd_RR(r1,r));
+      addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
+      addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(0xFF),r));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpEQ8:  return Acc_Z;
+         case Iop_CmpNE8:  return Acc_NZ;
+         default: vpanic("iselCondCode(amd64): CmpXX8");
+      }
+   }
+
 //..    /* CmpEQ16 / CmpNE16 */
 //..    if (e->tag == Iex_Binop 
 //..        && (e->Iex.Binop.op == Iop_CmpEQ16
@@ -1831,17 +1832,17 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..          default: vpanic("iselCondCode(x86): CmpXX16");
 //..       }
 //..    }
-//.. 
-//..    /* CmpNE32(1Sto32(b), 0) ==> b */
-//..    {
-//..       DECLARE_PATTERN(p_CmpNE32_1Sto32);
-//..       DEFINE_PATTERN(
-//..          p_CmpNE32_1Sto32,
-//..          binop(Iop_CmpNE32, unop(Iop_1Sto32,bind(0)), mkU32(0)));
-//..       if (matchIRExpr(&mi, p_CmpNE32_1Sto32, e)) {
-//..          return iselCondCode(env, mi.bindee[0]);
-//..       }
-//..    }
+
+   /* CmpNE32(1Sto32(b), 0) ==> b */
+   {
+      DECLARE_PATTERN(p_CmpNE32_1Sto32);
+      DEFINE_PATTERN(
+         p_CmpNE32_1Sto32,
+         binop(Iop_CmpNE32, unop(Iop_1Sto32,bind(0)), mkU32(0)));
+      if (matchIRExpr(&mi, p_CmpNE32_1Sto32, e)) {
+         return iselCondCode(env, mi.bindee[0]);
+      }
+   }
 
    /* Cmp*64*(x,y) */
    if (e->tag == Iex_Binop 
@@ -3612,7 +3613,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
 
       retty = typeOfIRTemp(env->type_env, d->tmp);
-      if (retty == Ity_I64) {
+      if (retty == Ity_I64 || retty == Ity_I32) {
          /* The returned value is in %rax.  Park it in the register
             associated with tmp. */
          HReg dst = lookupIRTemp(env, d->tmp);

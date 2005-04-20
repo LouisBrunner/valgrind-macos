@@ -426,6 +426,8 @@ void VG_(setup_code_redirect_table) ( void )
    add_redirect_sym_to_sym("soname:libc.so.6", "stpcpy",
                            "*vgpreload_memcheck.so*", "stpcpy");
 
+   add_redirect_sym_to_sym("soname:ld-linux.so.2", "strlen",
+                           "*vgpreload_memcheck.so*", "strlen");
    add_redirect_sym_to_sym("soname:libc.so.6", "strlen",
                            "*vgpreload_memcheck.so*", "strlen");
 

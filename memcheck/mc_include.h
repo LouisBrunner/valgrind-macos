@@ -61,13 +61,13 @@ extern void MC_(helperc_value_check1_fail) ( void );
 extern void MC_(helperc_value_check0_fail) ( void );
 
 extern VGA_REGPARM(1) void MC_(helperc_STOREV8) ( Addr, ULong );
-extern VGA_REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UInt );
-extern VGA_REGPARM(2) void MC_(helperc_STOREV2) ( Addr, UInt );
-extern VGA_REGPARM(2) void MC_(helperc_STOREV1) ( Addr, UInt );
+extern VGA_REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UWord );
+extern VGA_REGPARM(2) void MC_(helperc_STOREV2) ( Addr, UWord );
+extern VGA_REGPARM(2) void MC_(helperc_STOREV1) ( Addr, UWord );
 
-extern VGA_REGPARM(1) UInt MC_(helperc_LOADV1)  ( Addr );
-extern VGA_REGPARM(1) UInt MC_(helperc_LOADV2)  ( Addr );
-extern VGA_REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
+extern VGA_REGPARM(1) UWord MC_(helperc_LOADV1)  ( Addr );
+extern VGA_REGPARM(1) UWord MC_(helperc_LOADV2)  ( Addr );
+extern VGA_REGPARM(1) UWord MC_(helperc_LOADV4)  ( Addr );
 extern VGA_REGPARM(1) ULong MC_(helperc_LOADV8)  ( Addr );
 
 /* Functions defined in mc_errcontext.c */

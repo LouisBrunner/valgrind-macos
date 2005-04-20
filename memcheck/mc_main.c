@@ -1193,8 +1193,8 @@ void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 OffT offset, SizeT size)
 {
-   UChar area[512];
-   tl_assert(size <= 512);
+   UChar area[1024];
+   tl_assert(size <= 1024);
    VG_(memset)(area, VGM_BYTE_VALID, size);
    VG_(set_shadow_regs_area)( tid, offset, size, area );
 }
@@ -1235,10 +1235,21 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
 }
 
 
-//zz /*------------------------------------------------------------*/
-//zz /*--- Functions called directly from generated code.       ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
+/*------------------------------------------------------------*/
+/*--- Functions called directly from generated code.       ---*/
+/*------------------------------------------------------------*/
+
+/* Types:  LOADV4, LOADV2, LOADV1 are:
+               UWord fn ( Addr a )
+   so they return 32-bits on 32-bit machines and 64-bits on
+   64-bit machines.  Addr has the same size as a host word.
+
+   LOADV8 is always  ULong fn ( Addr a )
+
+   Similarly for STOREV1, STOREV2, STOREV4, the supplied vbits
+   are a UWord, and for STOREV8 they are a ULong.
+*/
+
 //zz static __inline__ UInt rotateRight16 ( UInt x )
 //zz {
 //zz    /* Amazingly, gcc turns this into a single rotate insn. */
@@ -1338,9 +1349,9 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
 /* ------------------------ Size = 4 ------------------------ */
 
 VGA_REGPARM(1)
-UInt MC_(helperc_LOADV4) ( Addr a )
+UWord MC_(helperc_LOADV4) ( Addr a )
 {
-   return (UInt)mc_LOADVn_slow( a, 4, False/*littleendian*/ );
+   return (UWord)mc_LOADVn_slow( a, 4, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    return mc_rd_V4_SLOWLY(a);
 //zz #  else
@@ -1364,9 +1375,9 @@ UInt MC_(helperc_LOADV4) ( Addr a )
 }
 
 VGA_REGPARM(2)
-void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV4) ( Addr a, UWord vbytes )
 {
-   mc_STOREVn_slow( a, 4, vbytes, False/*littleendian*/ );
+   mc_STOREVn_slow( a, 4, (ULong)vbytes, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    mc_wr_V4_SLOWLY(a, vbytes);
 //zz #  else
@@ -1392,9 +1403,9 @@ void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 /* ------------------------ Size = 2 ------------------------ */
 
 VGA_REGPARM(1)
-UInt MC_(helperc_LOADV2) ( Addr a )
+UWord MC_(helperc_LOADV2) ( Addr a )
 {
-   return (UInt)mc_LOADVn_slow( a, 2, False/*littleendian*/ );
+   return (UWord)mc_LOADVn_slow( a, 2, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    return mc_rd_V2_SLOWLY(a);
 //zz #  else
@@ -1416,9 +1427,9 @@ UInt MC_(helperc_LOADV2) ( Addr a )
 }
 
 VGA_REGPARM(2)
-void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV2) ( Addr a, UWord vbytes )
 {
-   mc_STOREVn_slow( a, 2, vbytes, False/*littleendian*/ );
+   mc_STOREVn_slow( a, 2, (ULong)vbytes, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    mc_wr_V2_SLOWLY(a, vbytes);
 //zz #  else
@@ -1440,9 +1451,9 @@ void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
 /* ------------------------ Size = 1 ------------------------ */
 
 VGA_REGPARM(1)
-UInt MC_(helperc_LOADV1) ( Addr a )
+UWord MC_(helperc_LOADV1) ( Addr a )
 {
-   return (UInt)mc_LOADVn_slow( a, 1, False/*littleendian*/ );
+   return (UWord)mc_LOADVn_slow( a, 1, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    return mc_rd_V1_SLOWLY(a);
 //zz #  else
@@ -1464,9 +1475,9 @@ UInt MC_(helperc_LOADV1) ( Addr a )
 }
 
 VGA_REGPARM(2)
-void MC_(helperc_STOREV1) ( Addr a, UInt vbytes )
+void MC_(helperc_STOREV1) ( Addr a, UWord vbytes )
 {
-   mc_STOREVn_slow( a, 1, vbytes, False/*littleendian*/ );
+   mc_STOREVn_slow( a, 1, (ULong)vbytes, False/*littleendian*/ );
 //zz #  ifdef VG_DEBUG_MEMORY
 //zz    mc_wr_V1_SLOWLY(a, vbytes);
 //zz #  else

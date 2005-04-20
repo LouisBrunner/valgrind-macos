@@ -192,7 +192,8 @@ static IRType shadowType ( IRType ty )
       case Ity_I8:
       case Ity_I16:
       case Ity_I32: 
-      case Ity_I64:  return ty;
+      case Ity_I64: 
+      case Ity_I128: return ty;
       case Ity_F32:  return Ity_I32;
       case Ity_F64:  return Ity_I64;
       case Ity_V128: return Ity_V128;
@@ -1554,6 +1555,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_32HLto64:
          return assignNew(mce, Ity_I64, binop(op, vatom1, vatom2));
 
+      case Iop_MullS64:
+      case Iop_MullU64: {
+         IRAtom* vLo64 = mkLeft64(mce, mkUifU64(mce, vatom1,vatom2));
+         IRAtom* vHi64 = mkPCastTo(mce, Ity_I64, vLo64);
+         return assignNew(mce, Ity_I128, binop(Iop_64HLto128, vHi64, vLo64));
+      }
+
       case Iop_MullS32:
       case Iop_MullU32: {
          IRAtom* vLo32 = mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
@@ -1750,6 +1758,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_32Uto64:
       case Iop_V128to64:
       case Iop_V128HIto64:
+      case Iop_128HIto64:
+      case Iop_128to64:
          return assignNew(mce, Ity_I64, unop(op, vatom));
 
       case Iop_64to32:
@@ -1975,6 +1985,12 @@ IRExpr* zwidenToHostWord ( MCEnv* mce, IRAtom* vatom )
          case Ity_I32: return vatom;
          case Ity_I16: return assignNew(mce, tyH, unop(Iop_16Uto32, vatom));
          case Ity_I8:  return assignNew(mce, tyH, unop(Iop_8Uto32, vatom));
+         default:      goto unhandled;
+      }
+   } else
+   if (tyH == Ity_I64) {
+      switch (ty) {
+         case Ity_I32: return assignNew(mce, tyH, unop(Iop_32Uto64, vatom));
          default:      goto unhandled;
       }
    } else {
@@ -2398,6 +2414,14 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout,
       /* We don't currently support this case. */
       VG_(tool_panic)("host/guest word size mismatch");
    }
+
+   /* Check we're not completely nuts */
+   tl_assert(sizeof(UWord) == sizeof(void*));
+   tl_assert(sizeof(Word)  == sizeof(void*));
+   tl_assert(sizeof(ULong) == 8);
+   tl_assert(sizeof(Long)  == 8);
+   tl_assert(sizeof(UInt)  == 4);
+   tl_assert(sizeof(Int)   == 4);
 
    /* Set up BB */
    bb           = emptyIRBB();

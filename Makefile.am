@@ -6,12 +6,13 @@ include $(top_srcdir)/Makefile.all.am
 ## include must be first for tool.h
 ## addrcheck must come after memcheck, for mac_*.o
 TOOLS =		memcheck \
-		addrcheck \
 		cachegrind \
 		corecheck \
 		massif \
 		lackey \
 		none
+
+##		addrcheck \
 
 # Temporary: we want to compile Helgrind, but not regtest it.
 SUBDIRS = 	include coregrind . docs tests auxprogs $(TOOLS) helgrind

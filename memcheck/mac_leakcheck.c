@@ -316,6 +316,7 @@ static Int lc_markstack_pop(void)
    return ret;
 }
 
+
 /* Scan a block of memory between [start, start+len).  This range may
    be bogus, inaccessable, or otherwise strange; we deal with it.
 
@@ -323,6 +324,7 @@ static Int lc_markstack_pop(void)
    cliques, and clique is the index of the current clique leader. */
 static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 {
+#if 0
    Addr ptr = ROUNDUP(start, sizeof(Addr));
    Addr end = ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
@@ -372,7 +374,9 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
    VG_(set_fault_catcher)(NULL);
+#endif
 }
+
 
 static void lc_scan_memory(Addr start, SizeT len)
 {

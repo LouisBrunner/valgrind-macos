@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Cachegrind: every but the simulation itself.                 ---*/
+/*--- Cachegrind: everything but the simulation itself.            ---*/
 /*---                                                    cg_main.c ---*/
 /*--------------------------------------------------------------------*/
 

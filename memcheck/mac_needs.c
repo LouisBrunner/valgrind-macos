@@ -797,25 +797,35 @@ M  89   fpu_write 10/28/108/512
 
 #ifdef MAC_PROFILE_MEMORY
 
-UInt MAC_(event_ctr)[N_PROF_EVENTS];
+UInt   MAC_(event_ctr)[N_PROF_EVENTS];
+HChar* MAC_(event_ctr_name)[N_PROF_EVENTS];
 
 static void init_prof_mem ( void )
 {
    Int i;
-   for (i = 0; i < N_PROF_EVENTS; i++)
+   for (i = 0; i < N_PROF_EVENTS; i++) {
       MAC_(event_ctr)[i] = 0;
+      MAC_(event_ctr_name)[i] = NULL;
+   }
 }
 
 static void done_prof_mem ( void )
 {
-   Int i;
+   Int  i;
+   Bool spaced = False;
    for (i = 0; i < N_PROF_EVENTS; i++) {
-      if ((i % 10) == 0) 
+      if (!spaced && (i % 10) == 0) {
          VG_(printf)("\n");
-      if (MAC_(event_ctr)[i] > 0)
-         VG_(printf)( "prof mem event %2d: %d\n", i, MAC_(event_ctr)[i] );
+         spaced = True;
+      }
+      if (MAC_(event_ctr)[i] > 0) {
+         spaced = False;
+         VG_(printf)( "prof mem event %3d: %9d   %s\n", 
+                      i, MAC_(event_ctr)[i],
+                      MAC_(event_ctr_name)[i] 
+                         ? MAC_(event_ctr_name)[i] : "unnamed");
+      }
    }
-   VG_(printf)("\n");
 }
 
 #else

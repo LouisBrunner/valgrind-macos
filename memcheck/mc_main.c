@@ -860,47 +860,87 @@ static void mc_make_readable ( Addr a, SizeT len )
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
-static __inline__
-void make_aligned_word32_writable(Addr a)
-{
-   PROF_EVENT(43, "make_aligned_word32_writable");
-   mc_make_writable(a, 4);
-//zz    SecMap* sm;
-//zz    UInt    sm_off;
-//zz    UChar   mask;
-//zz 
-//zz    VGP_PUSHCC(VgpESPAdj);
-//zz    ENSURE_MAPPABLE(a, "make_aligned_word_writable");
-//zz    sm     = primary_map[PM_IDX(a)];
-//zz    sm_off = SM_OFF(a);
-//zz    ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
-//zz    mask = 0x0F;
-//zz    mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
-//zz    /* mask now contains 1s where we wish to make address bits invalid (0s). */
-//zz    sm->abits[sm_off >> 3] &= ~mask;
-//zz    VGP_POPCC(VgpESPAdj);
-}
 
 static __inline__
-void make_aligned_word32_noaccess(Addr a)
+void make_aligned_word32_writable ( Addr aA )
 {
-   PROF_EVENT(44, "make_aligned_word32_noaccess");
-   mc_make_noaccess(a, 4);
-//zz    SecMap* sm;
-//zz    UInt    sm_off;
-//zz    UChar   mask;
-//zz 
-//zz    VGP_PUSHCC(VgpESPAdj);
-//zz    ENSURE_MAPPABLE(a, "make_aligned_word_noaccess");
-//zz    sm     = primary_map[PM_IDX(a)];
-//zz    sm_off = SM_OFF(a);
-//zz    ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
-//zz    mask = 0x0F;
-//zz    mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
-//zz    /* mask now contains 1s where we wish to make address bits invalid (1s). */
-//zz    sm->abits[sm_off >> 3] |= mask;
-//zz    VGP_POPCC(VgpESPAdj);
+   PROF_EVENT(300, "make_aligned_word32_writable");
+
+#  if VG_DEBUG_MEMORY >= 2
+   mc_make_writable(aA, 4);
+#  else
+
+   if (EXPECTED_NOT_TAKEN(aA > MAX_PRIMARY_ADDRESS)) {
+      PROF_EVENT(300, "make_aligned_word32_writable-slow1");
+      mc_make_writable(aA, 4);
+      return;
+   }
+
+   UWord a      = (UWord)aA;
+   UWord sec_no = (UWord)(a >> 16);
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAPS);
+#  endif
+
+   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
+      primary_map[sec_no] = copy_for_writing(primary_map[sec_no]);
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+
+   /* Paint the new area as uninitialised. */
+   ((UInt*)(sm->vbyte))[v_off >> 2] = VGM_WORD32_INVALID;
+
+   UWord mask = 0x0F;
+   mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
+   /* mask now contains 1s where we wish to make address bits valid
+      (0s). */
+   sm->abits[a_off] &= ~mask;
+#  endif
 }
+
+
+static __inline__
+void make_aligned_word32_noaccess ( Addr aA )
+{
+   PROF_EVENT(310, "make_aligned_word32_noaccess");
+
+#  if VG_DEBUG_MEMORY >= 2
+   mc_make_noaccess(aA, 4);
+#  else
+
+   if (EXPECTED_NOT_TAKEN(aA > MAX_PRIMARY_ADDRESS)) {
+      PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
+      mc_make_noaccess(aA, 4);
+      return;
+   }
+
+   UWord a      = (UWord)aA;
+   UWord sec_no = (UWord)(a >> 16);
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAPS);
+#  endif
+
+   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
+      primary_map[sec_no] = copy_for_writing(primary_map[sec_no]);
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+
+   /* Paint the abandoned data as uninitialised.  Probably not
+      necessary, but still .. */
+   ((UInt*)(sm->vbyte))[v_off >> 2] = VGM_WORD32_INVALID;
+
+   UWord mask = 0x0F;
+   mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
+   /* mask now contains 1s where we wish to make address bits invalid
+      (1s). */
+   sm->abits[a_off] |= mask;
+#  endif
+}
+
 
 /* Nb: by "aligned" here we mean 8-byte aligned */
 static __inline__
@@ -1402,10 +1442,13 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
    if (EXPECTED_TAKEN(abits == VGM_NIBBLE_VALID)) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible. */
-      return (UWord)(
-                0xFFFFFFFFULL
-                & ((UInt*)(sm->vbyte))[ v_off >> 2 ]
-             );
+      /* On a 32-bit platform, simply hoick the required 32 bits out of
+         the vbyte array.  On a 64-bit platform, also set the upper 32
+         bits to 1 ("undefined"), just in case.  This almost certainly
+         isn't necessary, but be paranoid. */
+      UWord ret = (UWord)0xFFFFFFFF00000000ULL;
+      ret |= (UWord)( ((UInt*)(sm->vbyte))[ v_off >> 2 ] );
+      return ret;
    } else {
       /* Slow but general case. */
       PROF_EVENT(222, "helperc_LOADV4-slow2");
@@ -1414,7 +1457,6 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
 
 #  endif
 }
-
 
 VGA_REGPARM(2)
 void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
@@ -1462,6 +1504,7 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
 #  endif
 }
 
+
 /* ------------------------ Size = 2 ------------------------ */
 
 VGA_REGPARM(1)
@@ -1494,10 +1537,12 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
    UWord   v_off = a & 0xFFFF;
    UWord   a_off = v_off >> 3;
    UWord   abits = (UWord)(sm->abits[a_off]);
-
    if (EXPECTED_TAKEN(abits == VGM_BYTE_VALID)) {
       /* Handle common case quickly: a is mapped, and the entire
          word32 it lives in is addressible. */
+      /* Set the upper 16/48 bits of the result to 1 ("undefined"),
+         just in case.  This almost certainly isn't necessary, but be
+         paranoid. */
       return (~(UWord)0xFFFF)
              |
              (UWord)( ((UShort*)(sm->vbyte))[ v_off >> 1 ] );
@@ -1510,28 +1555,50 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
 #  endif
 }
 
+
 VGA_REGPARM(2)
-void MC_(helperc_STOREV2) ( Addr a, UWord vbytes )
+void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
 {
    PROF_EVENT(250, "helperc_STOREV2");
+
+#  if VG_DEBUG_MEMORY >= 2
    mc_STOREVn_slow( a, 2, (ULong)vbytes, False/*littleendian*/ );
-//zz #  ifdef VG_DEBUG_MEMORY
-//zz    mc_wr_V2_SLOWLY(a, vbytes);
-//zz #  else
-//zz    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
-//zz    SecMap* sm     = primary_map[sec_no];
-//zz    UInt    a_off  = (SM_OFF(a)) >> 3;
-//zz    PROF_EVENT(63);
-//zz    if (!IS_DISTINGUISHED_SM(sm) && sm->abits[a_off] == VGM_BYTE_VALID) {
-//zz       /* Handle common case quickly. */
-//zz       UInt v_off = SM_OFF(a);
-//zz       ((UShort*)(sm->vbyte))[ v_off >> 1 ] = vbytes & 0x0000FFFF;
-//zz    } else {
-//zz       /* Slow but general case. */
-//zz       mc_wr_V2_SLOWLY(a, vbytes);
-//zz    }
-//zz #  endif
+#  else
+
+   const UWord mask = ~((0x10000-2) | ((N_PRIMARY_MAPS-1) << 16));
+   UWord a = (UWord)aA;
+
+   /* If any part of 'a' indicated by the mask is 1, either 'a' is not
+      naturally aligned, or 'a' exceeds the range covered by the
+      primary map.  Either way we defer to the slow-path case. */
+   if (EXPECTED_NOT_TAKEN(a & mask)) {
+      PROF_EVENT(251, "helperc_STOREV2-slow1");
+      mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
+      return;
+   }
+
+   UWord sec_no = (UWord)(a >> 16);
+
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAPS);
+#  endif
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+   UWord   abits = (UWord)(sm->abits[a_off]);
+   if (EXPECTED_TAKEN(!is_distinguished_sm(sm) 
+                      && abits == VGM_BYTE_VALID)) {
+      /* Handle common case quickly. */
+      ((UShort*)(sm->vbyte))[ v_off >> 1 ] = (UShort)vbytes;
+   } else {
+      /* Slow but general case. */
+      PROF_EVENT(252, "helperc_STOREV2-slow2");
+      mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
+   }
+#  endif
 }
+
 
 /* ------------------------ Size = 1 ------------------------ */
 
@@ -1564,10 +1631,13 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
    SecMap* sm    = primary_map[sec_no];
    UWord   v_off = a & 0xFFFF;
    UWord   a_off = v_off >> 3;
-   UWord   abits = 0xFF & (UWord)(sm->abits[a_off]);
+   UWord   abits = (UWord)(sm->abits[a_off]);
    if (EXPECTED_TAKEN(abits == VGM_BYTE_VALID)) {
       /* Handle common case quickly: a is mapped, and the entire
          word32 it lives in is addressible. */
+      /* Set the upper 24/56 bits of the result to 1 ("undefined"),
+         just in case.  This almost certainly isn't necessary, but be
+         paranoid. */
       return (~(UWord)0xFF)
              |
              (UWord)( ((UChar*)(sm->vbyte))[ v_off ] );
@@ -1609,7 +1679,7 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
    SecMap* sm    = primary_map[sec_no];
    UWord   v_off = a & 0xFFFF;
    UWord   a_off = v_off >> 3;
-   UWord   abits = 0xFF & (UWord)(sm->abits[a_off]);
+   UWord   abits = (UWord)(sm->abits[a_off]);
    if (EXPECTED_TAKEN(!is_distinguished_sm(sm) 
                       && abits == VGM_BYTE_VALID)) {
       /* Handle common case quickly: a is mapped, the entire word32 it

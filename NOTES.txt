@@ -6,6 +6,12 @@
   sense to have tool-helpers written in assembly.  Looks like we
   need to retain coregrind/core_asm.h, though.
 
+  [core_asm.h includes tool_asm.h.  The contents of tool_asm.h could be put
+  into core_asm.h, but that would deviate from the structure described at
+  the top of core.h... that structure will slowly change as core.h/tool.h
+  are split up into separate headers for each module, but it might be
+  worthwhile keeping the asm-only headers?  Not sure.  --njn]
+
   Urk.  Perhaps nuke all that X86_FEAT gunk in coregrind/core_asm.h
   though.  Vex isn't clever enough to distinguish dozens of CPU
   subvariants.

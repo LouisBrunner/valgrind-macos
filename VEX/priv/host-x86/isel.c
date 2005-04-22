@@ -44,9 +44,11 @@
 #include "host-generic/h_generic_simd64.h"
 #include "host-x86/hdefs.h"
 
-/* TODO 4 Feb 2005:
+/* TODO 21 Apr 2005:
 
-   -- Fill in load-case in iselIntExpr_RMI
+   -- (Really an assembler issue) don't emit CMov32 as a cmov
+      insn, since that's expensive on P4 and conditional branch
+      is cheaper if (as we expect) the condition is highly predictable
 
    -- preserve xmm registers across function calls (by declaring them
       as trashed by call insns)

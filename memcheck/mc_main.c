@@ -35,6 +35,11 @@
    sanity check: 
       auxmap only covers address space that the primary doesn't
       auxmap entries non-duplicated (expensive)
+      there are no secondary map leaks.  this can easily be established
+         by counting the number of secmaps issued, and ensuring that
+         the same number of pointers-to-secmaps from the main/aux
+         primary map can be found
+      there is only one pointer to each non-distinguished secmap.
 
    types of helper functions
 
@@ -60,7 +65,7 @@
       1  some sanity checking, fast cases are used
       2  max sanity checking, only slow cases are used
 */
-#define VG_DEBUG_MEMORY 1
+#define VG_DEBUG_MEMORY 0
 
 
 typedef enum {
@@ -79,15 +84,26 @@ typedef enum {
 /* The number of entries in the primary map can be altered.  However
    we hardwire the assumption that each secondary map covers precisely
    64k of address space. */
+#define SECONDARY_SIZE 65536               /* DO NOT CHANGE */
+#define SECONDARY_MASK (SECONDARY_SIZE-1)  /* DO NOT CHANGE */
 
-/* Only change this.  N_PRIMARY_MAPS *must* be a power of 2. */
+/* Only change this.  N_PRIMARY_MAP *must* be a power of 2. */
 #define N_PRIMARY_BITS  16
 
 /* Do not change this. */
-#define N_PRIMARY_MAPS  (1 << N_PRIMARY_BITS)
+#define N_PRIMARY_MAP  (1 << N_PRIMARY_BITS)
 
 /* Do not change this. */
-#define MAX_PRIMARY_ADDRESS (Addr)((((Addr)65536) * N_PRIMARY_MAPS)-1)
+#define MAX_PRIMARY_ADDRESS (Addr)((((Addr)65536) * N_PRIMARY_MAP)-1)
+
+
+/* --------------- Stats maps --------------- */
+
+static Int   n_secmaps_issued   = 0;
+static ULong n_auxmap_searches  = 0;
+static ULong n_auxmap_cmps      = 0;
+static Int   n_sanity_cheap     = 0;
+static Int   n_sanity_expensive = 0;
 
 
 /* --------------- Secondary maps --------------- */
@@ -125,6 +141,7 @@ static SecMap* copy_for_writing ( SecMap* dist_sm )
 
    new_sm = VG_(shadow_alloc)(sizeof(SecMap));
    VG_(memcpy)(new_sm, dist_sm, sizeof(SecMap));
+   n_secmaps_issued++;
    return new_sm;
 }
 
@@ -132,10 +149,10 @@ static SecMap* copy_for_writing ( SecMap* dist_sm )
 /* --------------- Primary maps --------------- */
 
 /* The main primary map.  This covers some initial part of the address
-   space, addresses 0 .. (N_PRIMARY_MAPS << 16)-1.  The rest of it is
+   space, addresses 0 .. (N_PRIMARY_MAP << 16)-1.  The rest of it is
    handled using the auxiliary primary map.  
 */
-static SecMap* primary_map[N_PRIMARY_MAPS];
+static SecMap* primary_map[N_PRIMARY_MAP];
 
 
 /* An entry in the auxiliary primary map.  base must be a 64k-aligned
@@ -145,7 +162,7 @@ static SecMap* primary_map[N_PRIMARY_MAPS];
 */
 typedef
    struct { 
-      Addr base;
+      Addr    base;
       SecMap* sm;
    }
    AuxMapEnt;
@@ -156,10 +173,6 @@ static AuxMapEnt  hacky_auxmaps[N_AUXMAPS];
 static Int        auxmap_size = N_AUXMAPS;
 static Int        auxmap_used = 0;
 static AuxMapEnt* auxmap      = &hacky_auxmaps[0];
-
-/* Auxmap statistics */
-static ULong n_auxmap_searches = 0;
-static ULong n_auxmap_cmps     = 0;
 
 
 /* Find an entry in the auxiliary map.  If an entry is found, move it
@@ -533,7 +546,7 @@ static void init_shadow_memory ( void )
    /* Set up the primary map. */
    /* These entries gradually get overwritten as the used address
       space expands. */
-   for (i = 0; i < N_PRIMARY_MAPS; i++)
+   for (i = 0; i < N_PRIMARY_MAP; i++)
       primary_map[i] = &sm_distinguished[SM_DIST_NOACCESS];
 
    /* auxmap_size = auxmap_used = 0; 
@@ -668,16 +681,69 @@ static void init_shadow_memory ( void )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-static void set_address_range_perms ( Addr a, SizeT len, 
+/* Given address 'a', find the place where the pointer to a's
+   secondary map lives.  If a falls into the primary map, the returned
+   value points to one of the entries in primary_map[].  Otherwise,
+   the auxiliary primary map is searched for 'a', or an entry is
+   created for it; either way, the returned value points to the
+   relevant AuxMapEnt's .sm field.
+
+   The point of this is to enable set_address_range_perms to assign
+   secondary maps in a uniform way, without worrying about whether a
+   given secondary map is pointed to from the main or auxiliary
+   primary map.  
+*/
+
+static SecMap** find_secmap_binder_for_addr ( Addr aA )
+{
+   if (aA > MAX_PRIMARY_ADDRESS) {
+      AuxMapEnt* am = find_or_alloc_in_auxmap(aA);
+      return &am->sm;
+   } else {
+      UWord a      = (UWord)aA;
+      UWord sec_no = (UWord)(a >> 16);
+#     if VG_DEBUG_MEMORY >= 1
+      tl_assert(sec_no < N_PRIMARY_MAP);
+#     endif
+      return &primary_map[sec_no];
+   }
+}
+
+
+static void set_address_range_perms ( Addr aA, SizeT len, 
                                       UWord example_a_bit,
                                       UWord example_v_bit )
 {
+   PROF_EVENT(150, "set_address_range_perms");
+
+   /* Check the permissions make sense. */
+   tl_assert(example_a_bit == VGM_BIT_VALID 
+             || example_a_bit == VGM_BIT_INVALID);
+   tl_assert(example_v_bit == VGM_BIT_VALID 
+             || example_v_bit == VGM_BIT_INVALID);
+   if (example_a_bit == VGM_BIT_INVALID)
+      tl_assert(example_v_bit == VGM_BIT_INVALID);
+
+   if (len == 0)
+      return;
+
+   if (VG_(clo_verbosity) > 0) {
+      if (len > 100 * 1000 * 1000) {
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: set address range perms: "
+                      "large range %u, a %d, v %d",
+                      len, example_a_bit, example_v_bit );
+      }
+   }
+
+   UWord a = (UWord)aA;
+
+#  if VG_DEBUG_MEMORY >= 2
+
+   /*------------------ debug-only case ------------------ */
    SizeT i;
 
-   UWord example_vbyte = 1 & example_v_bit;
-   example_vbyte |= (example_vbyte << 1);
-   example_vbyte |= (example_vbyte << 2);
-   example_vbyte |= (example_vbyte << 4);
+   UWord example_vbyte = BIT_TO_BYTE(example_v_bit);
 
    tl_assert(sizeof(SizeT) == sizeof(Addr));
 
@@ -691,151 +757,120 @@ static void set_address_range_perms ( Addr a, SizeT len,
    for (i = 0; i < len; i++) {
       set_abit_and_vbyte(a+i, example_a_bit, example_vbyte);
    }
-}
 
-//zz {
-//zz    UChar   vbyte, abyte8;
-//zz    UInt    vword4, sm_off;
-//zz    SecMap* sm;
-//zz 
-//zz    PROF_EVENT(30);
-//zz 
-//zz    if (len == 0)
-//zz       return;
-//zz 
-//zz    if (VG_(clo_verbosity) > 0) {
-//zz       if (len > 100 * 1000 * 1000) {
-//zz          VG_(message)(Vg_UserMsg, 
-//zz                       "Warning: set address range perms: "
-//zz                       "large range %u, a %d, v %d",
-//zz                       len, example_a_bit, example_v_bit );
-//zz       }
-//zz    }
-//zz 
-//zz    VGP_PUSHCC(VgpSetMem);
-//zz 
-//zz    /* Requests to change permissions of huge address ranges may
-//zz       indicate bugs in our machinery.  30,000,000 is arbitrary, but so
-//zz       far all legitimate requests have fallen beneath that size. */
-//zz    /* 4 Mar 02: this is just stupid; get rid of it. */
-//zz    /* tl_assert(len < 30000000); */
-//zz 
-//zz    /* Check the permissions make sense. */
-//zz    tl_assert(example_a_bit == VGM_BIT_VALID 
-//zz              || example_a_bit == VGM_BIT_INVALID);
-//zz    tl_assert(example_v_bit == VGM_BIT_VALID 
-//zz              || example_v_bit == VGM_BIT_INVALID);
-//zz    if (example_a_bit == VGM_BIT_INVALID)
-//zz       tl_assert(example_v_bit == VGM_BIT_INVALID);
-//zz 
-//zz    /* The validity bits to write. */
-//zz    vbyte = example_v_bit==VGM_BIT_VALID 
-//zz               ? VGM_BYTE_VALID : VGM_BYTE_INVALID;
-//zz 
-//zz    /* In order that we can charge through the address space at 8
-//zz       bytes/main-loop iteration, make up some perms. */
-//zz    abyte8 = BIT_EXPAND(example_a_bit);
-//zz    vword4 = (vbyte << 24) | (vbyte << 16) | (vbyte << 8) | vbyte;
-//zz 
-//zz #  ifdef VG_DEBUG_MEMORY
-//zz    /* Do it ... */
-//zz    while (True) {
-//zz       PROF_EVENT(31);
-//zz       if (len == 0) break;
-//zz       set_abit ( a, example_a_bit );
-//zz       set_vbyte ( a, vbyte );
-//zz       a++;
-//zz       len--;
-//zz    }
-//zz 
-//zz #  else
-//zz    /* Slowly do parts preceding 8-byte alignment. */
-//zz    while (True) {
-//zz       PROF_EVENT(31);
-//zz       if (len == 0) break;
-//zz       if ((a % 8) == 0) break;
-//zz       set_abit ( a, example_a_bit );
-//zz       set_vbyte ( a, vbyte );
-//zz       a++;
-//zz       len--;
-//zz    }   
-//zz 
-//zz    if (len == 0) {
-//zz       VGP_POPCC(VgpSetMem);
-//zz       return;
-//zz    }
-//zz    tl_assert((a % 8) == 0 && len > 0);
-//zz 
-//zz    /* Now align to the next primary_map entry */
-//zz    for (; (a & SECONDARY_MASK) && len >= 8; a += 8, len -= 8) {
-//zz 
-//zz       PROF_EVENT(32);
-//zz       /* If the primary is already pointing to a distinguished map
-//zz          with the same properties as we're trying to set, then leave
-//zz          it that way. */
-//zz       if (primary_map[PM_IDX(a)] == DSM(example_a_bit, example_v_bit))
-//zz          continue;
-//zz 
-//zz       ENSURE_MAPPABLE(a, "set_address_range_perms(fast)");
-//zz       sm = primary_map[PM_IDX(a)];
-//zz       sm_off = SM_OFF(a);
-//zz       sm->abits[sm_off >> 3] = abyte8;
-//zz       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = vword4;
-//zz       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = vword4;
-//zz    }
-//zz 
-//zz    /* Now set whole secondary maps to the right distinguished value.
-//zz 
-//zz       Note that if the primary already points to a non-distinguished
-//zz       secondary, then don't replace the reference.  That would just
-//zz       leak memory.
-//zz     */
-//zz    for(; len >= SECONDARY_SIZE; a += SECONDARY_SIZE, len -= SECONDARY_SIZE) {
-//zz       sm = primary_map[PM_IDX(a)];
-//zz 
-//zz       if (IS_DISTINGUISHED_SM(sm))
-//zz          primary_map[PM_IDX(a)] = DSM(example_a_bit, example_v_bit);
-//zz       else {
-//zz          VG_(memset)(sm->abits, abyte8, sizeof(sm->abits));
-//zz          VG_(memset)(sm->vbyte, vbyte, sizeof(sm->vbyte));
-//zz       }
-//zz    }
-//zz 
-//zz    /* Now finish off any remains */
-//zz    for (; len >= 8; a += 8, len -= 8) {
-//zz       PROF_EVENT(32);
-//zz 
-//zz       /* If the primary is already pointing to a distinguished map
-//zz          with the same properties as we're trying to set, then leave
-//zz          it that way. */
-//zz       if (primary_map[PM_IDX(a)] == DSM(example_a_bit, example_v_bit))
-//zz          continue;
-//zz 
-//zz       ENSURE_MAPPABLE(a, "set_address_range_perms(fast)");
-//zz       sm = primary_map[PM_IDX(a)];
-//zz       sm_off = SM_OFF(a);
-//zz       sm->abits[sm_off >> 3] = abyte8;
-//zz       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = vword4;
-//zz       ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = vword4;
-//zz    }
-//zz 
-//zz    /* Finish the upper fragment. */
-//zz    while (True) {
-//zz       PROF_EVENT(33);
-//zz       if (len == 0) break;
-//zz       set_abit ( a, example_a_bit );
-//zz       set_vbyte ( a, vbyte );
-//zz       a++;
-//zz       len--;
-//zz    }   
-//zz #  endif
-//zz 
-//zz    /* Check that zero page and highest page have not been written to
-//zz       -- this could happen with buggy syscall wrappers.  Today
-//zz       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-//zz    tl_assert(TL_(cheap_sanity_check)());
-//zz    VGP_POPCC(VgpSetMem);
-//zz }
+#  else
+
+   /*------------------ standard handling ------------------ */
+   UWord    vbits8, abits8, vbits32, v_off, a_off;
+   SecMap*  sm;
+   SecMap** binder;
+   SecMap*  example_dsm;
+
+   /* Decide on the distinguished secondary that we might want
+      to use (part of the space-compression scheme). */
+   if (example_a_bit == VGM_BIT_INVALID) {
+      example_dsm = &sm_distinguished[SM_DIST_NOACCESS];
+   } else {
+      if (example_v_bit == VGM_BIT_VALID) {
+         example_dsm = &sm_distinguished[SM_DIST_ACCESS_DEFINED];
+      } else {
+         example_dsm = &sm_distinguished[SM_DIST_ACCESS_UNDEFINED];
+      }
+   }
+
+   /* Make various wider versions of the A/V values to use. */
+   vbits8  = BIT_TO_BYTE(example_v_bit);
+   abits8  = BIT_TO_BYTE(example_a_bit);
+   vbits32 = (vbits8 << 24) | (vbits8 << 16) | (vbits8 << 8) | vbits8;
+
+   /* Slowly do parts preceding 8-byte alignment. */
+   while (True) {
+      if (len == 0) break;
+      PROF_EVENT(151, "set_address_range_perms-loop1-pre");
+      if (VG_IS_8_ALIGNED(a)) break;
+      set_abit_and_vbyte( a, example_a_bit, vbits8 );
+      a++;
+      len--;
+   }   
+
+   if (len == 0)
+      return;
+
+   tl_assert(VG_IS_8_ALIGNED(a) && len > 0);
+
+   /* Now go in steps of 8 bytes. */
+   binder = find_secmap_binder_for_addr(a);
+
+   while (True) {
+
+      if (len < 8) break;
+
+      PROF_EVENT(152, "set_address_range_perms-loop8");
+
+      if ((a & SECONDARY_MASK) == 0) {
+         /* we just traversed a primary map boundary, so update the
+            binder. */
+         binder = find_secmap_binder_for_addr(a);
+         PROF_EVENT(153, "set_address_range_perms-update-binder");
+
+	 /* Space-optimisation.  If we are setting the entire
+            secondary map, just point this entry at one of our
+            distinguished secondaries.  However, only do that if it
+            already points at a distinguished secondary, since doing
+            otherwise would leak the existing secondary.  We could do
+            better and free up any pre-existing non-distinguished
+            secondary at this point, since we are guaranteed that each
+            non-dist secondary only has one pointer to it, and we have
+            that pointer right here. */
+         if (len >= SECONDARY_SIZE && is_distinguished_sm(*binder)) {
+            PROF_EVENT(154, "set_address_range_perms-entire-secmap");
+            *binder = example_dsm;
+            len -= SECONDARY_SIZE;
+            a += SECONDARY_SIZE;
+            continue;
+         }
+      }
+
+      /* If the primary is already pointing to a distinguished map
+         with the same properties as we're trying to set, then leave
+         it that way. */
+      if (*binder == example_dsm) {
+         a += 8;
+         len -= 8;
+         continue;
+      }
+
+      /* Make sure it's OK to write the secondary. */
+      if (is_distinguished_sm(*binder))
+         *binder = copy_for_writing(*binder);
+
+      sm = *binder;
+      v_off = a & 0xFFFF;
+      a_off = v_off >> 3;
+      sm->abits[a_off] = (UChar)abits8;
+      ((UInt*)(sm->vbyte))[(v_off >> 2) + 0] = (UInt)vbits32;
+      ((UInt*)(sm->vbyte))[(v_off >> 2) + 1] = (UInt)vbits32;
+
+      a += 8;
+      len -= 8;
+   }
+
+   if (len == 0)
+      return;
+
+   tl_assert(VG_IS_8_ALIGNED(a) && len > 0 && len < 8);
+
+   /* Finish the upper fragment. */
+   while (True) {
+      if (len == 0) break;
+      PROF_EVENT(155, "set_address_range_perms-loop1-post");
+      set_abit_and_vbyte ( a, example_a_bit, vbits8 );
+      a++;
+      len--;
+   }   
+
+#  endif
+}
 
 /* Set permissions for address ranges ... */
 
@@ -871,7 +906,7 @@ void make_aligned_word32_writable ( Addr aA )
 #  else
 
    if (EXPECTED_NOT_TAKEN(aA > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(300, "make_aligned_word32_writable-slow1");
+      PROF_EVENT(301, "make_aligned_word32_writable-slow1");
       mc_make_writable(aA, 4);
       return;
    }
@@ -879,7 +914,7 @@ void make_aligned_word32_writable ( Addr aA )
    UWord a      = (UWord)aA;
    UWord sec_no = (UWord)(a >> 16);
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
@@ -919,7 +954,7 @@ void make_aligned_word32_noaccess ( Addr aA )
    UWord a      = (UWord)aA;
    UWord sec_no = (UWord)(a >> 16);
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
@@ -944,40 +979,79 @@ void make_aligned_word32_noaccess ( Addr aA )
 
 /* Nb: by "aligned" here we mean 8-byte aligned */
 static __inline__
-void make_aligned_word64_writable(Addr a)
+void make_aligned_word64_writable ( Addr aA )
 {
-   PROF_EVENT(45, "make_aligned_word64_writable");
-   mc_make_writable(a, 8);
-//zz    SecMap* sm;
-//zz    UInt    sm_off;
-//zz 
-//zz    VGP_PUSHCC(VgpESPAdj);
-//zz    ENSURE_MAPPABLE(a, "make_aligned_doubleword_writable");
-//zz    sm = primary_map[PM_IDX(a)];
-//zz    sm_off = SM_OFF(a);
-//zz    sm->abits[sm_off >> 3] = VGM_BYTE_VALID;
-//zz    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
-//zz    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
-//zz    VGP_POPCC(VgpESPAdj);
+   PROF_EVENT(320, "make_aligned_word64_writable");
+
+#  if VG_DEBUG_MEMORY >= 2
+   mc_make_writable(aA, 8);
+#  else
+
+   if (EXPECTED_NOT_TAKEN(aA > MAX_PRIMARY_ADDRESS)) {
+      PROF_EVENT(321, "make_aligned_word64_writable-slow1");
+      mc_make_writable(aA, 8);
+      return;
+   }
+
+   UWord a      = (UWord)aA;
+   UWord sec_no = (UWord)(a >> 16);
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAP);
+#  endif
+
+   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
+      primary_map[sec_no] = copy_for_writing(primary_map[sec_no]);
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+
+   /* Paint the new area as uninitialised. */
+   ((ULong*)(sm->vbyte))[v_off >> 3] = VGM_WORD64_INVALID;
+
+   /* Make the relevant area accessible. */
+   sm->abits[a_off] = VGM_BYTE_VALID;
+#  endif
 }
 
+
 static __inline__
-void make_aligned_word64_noaccess(Addr a)
+void make_aligned_word64_noaccess ( Addr aA )
 {
-   PROF_EVENT(46, "make_aligned_word64_noaccess");
-   mc_make_noaccess(a, 8);
-//zz    SecMap* sm;
-//zz    UInt    sm_off;
-//zz 
-//zz    VGP_PUSHCC(VgpESPAdj);
-//zz    ENSURE_MAPPABLE(a, "make_aligned_doubleword_noaccess");
-//zz    sm = primary_map[PM_IDX(a)];
-//zz    sm_off = SM_OFF(a);
-//zz    sm->abits[sm_off >> 3] = VGM_BYTE_INVALID;
-//zz    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
-//zz    ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
-//zz    VGP_POPCC(VgpESPAdj);
+   PROF_EVENT(330, "make_aligned_word64_noaccess");
+
+#  if VG_DEBUG_MEMORY >= 2
+   mc_make_noaccess(aA, 8);
+#  else
+
+   if (EXPECTED_NOT_TAKEN(aA > MAX_PRIMARY_ADDRESS)) {
+      PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
+      mc_make_noaccess(aA, 8);
+      return;
+   }
+
+   UWord a      = (UWord)aA;
+   UWord sec_no = (UWord)(a >> 16);
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAP);
+#  endif
+
+   if (EXPECTED_NOT_TAKEN(is_distinguished_sm(primary_map[sec_no])))
+      primary_map[sec_no] = copy_for_writing(primary_map[sec_no]);
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+
+   /* Paint the abandoned data as uninitialised.  Probably not
+      necessary, but still .. */
+   ((ULong*)(sm->vbyte))[v_off >> 3] = VGM_WORD64_INVALID;
+
+   /* Make the abandoned area inaccessible. */
+   sm->abits[a_off] = VGM_BYTE_INVALID;
+#  endif
 }
+
 
 /* The stack-pointer update handling functions */
 SP_UPDATE_HANDLERS ( make_aligned_word32_writable,
@@ -1416,7 +1490,7 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
    return (UWord)mc_LOADVn_slow( aA, 4, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-4) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-4) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
 
    /* If any part of 'a' indicated by the mask is 1, either 'a' is not
@@ -1430,7 +1504,7 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -1464,10 +1538,10 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
    PROF_EVENT(230, "helperc_STOREV4");
 
 #  if VG_DEBUG_MEMORY >= 2
-   mc_STOREVn_slow( a, 4, (ULong)vbytes, False/*littleendian*/ );
+   mc_STOREVn_slow( aA, 4, (ULong)vbytes, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-4) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-4) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
 
    /* If any part of 'a' indicated by the mask is 1, either 'a' is not
@@ -1482,7 +1556,7 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -1516,7 +1590,7 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
    return (UWord)mc_LOADVn_slow( aA, 2, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-2) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-2) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
 
    /* If any part of 'a' indicated by the mask is 1, either 'a' is not
@@ -1530,7 +1604,7 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -1562,10 +1636,10 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
    PROF_EVENT(250, "helperc_STOREV2");
 
 #  if VG_DEBUG_MEMORY >= 2
-   mc_STOREVn_slow( a, 2, (ULong)vbytes, False/*littleendian*/ );
+   mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-2) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-2) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
 
    /* If any part of 'a' indicated by the mask is 1, either 'a' is not
@@ -1580,7 +1654,7 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -1608,10 +1682,10 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
    PROF_EVENT(260, "helperc_LOADV1");
 
 #  if VG_DEBUG_MEMORY >= 2
-   return (UWord)mc_LOADVn_slow( a, 1, False/*littleendian*/ );
+   return (UWord)mc_LOADVn_slow( aA, 1, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-1) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-1) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
 
    /* If any part of 'a' indicated by the mask is 1, it means 'a'
@@ -1625,7 +1699,7 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -1659,7 +1733,7 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
    mc_STOREVn_slow( aA, 1, (ULong)vbyte, False/*littleendian*/ );
 #  else
 
-   const UWord mask = ~((0x10000-1) | ((N_PRIMARY_MAPS-1) << 16));
+   const UWord mask = ~((0x10000-1) | ((N_PRIMARY_MAP-1) << 16));
    UWord a = (UWord)aA;
    /* If any part of 'a' indicated by the mask is 1, it means 'a'
       exceeds the range covered by the primary map.  In which case we
@@ -1673,7 +1747,7 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
    UWord sec_no = (UWord)(a >> 16);
 
 #  if VG_DEBUG_MEMORY >= 1
-   tl_assert(sec_no < N_PRIMARY_MAPS);
+   tl_assert(sec_no < N_PRIMARY_MAP);
 #  endif
 
    SecMap* sm    = primary_map[sec_no];
@@ -2155,48 +2229,110 @@ static void mc_detect_memory_leaks ( ThreadId tid, LeakCheckMode mode )
 Bool TL_(cheap_sanity_check) ( void )
 {
    /* nothing useful we can rapidly check */
+   n_sanity_cheap++;
    PROF_EVENT(490, "cheap_sanity_check");
    return True;
 }
 
 Bool TL_(expensive_sanity_check) ( void )
 {
-   Int     i;
+   Int     i, n_secmaps_found;
    SecMap* sm;
+   Bool    bad = False;
 
+   n_sanity_expensive++;
    PROF_EVENT(491, "expensive_sanity_check");
 
-   /* Check the 3 distinguished SMs. */
+   /* Check that the 3 distinguished SMs are still as they should
+      be. */
 
    /* Check A invalid, V invalid. */
    sm = &sm_distinguished[SM_DIST_NOACCESS];
    for (i = 0; i < 65536; i++)
       if (!(sm->vbyte[i] == VGM_BYTE_INVALID))
-         return False;
+         bad = True;
    for (i = 0; i < 8192; i++)
       if (!(sm->abits[i] == VGM_BYTE_INVALID))
-         return False;
+         bad = True;
 
    /* Check A valid, V invalid. */
    sm = &sm_distinguished[SM_DIST_ACCESS_UNDEFINED];
    for (i = 0; i < 65536; i++)
       if (!(sm->vbyte[i] == VGM_BYTE_INVALID))
-         return False;
+         bad = True;
    for (i = 0; i < 8192; i++)
       if (!(sm->abits[i] == VGM_BYTE_VALID))
-         return False;
+         bad = True;
 
    /* Check A valid, V valid. */
    sm = &sm_distinguished[SM_DIST_ACCESS_DEFINED];
    for (i = 0; i < 65536; i++)
       if (!(sm->vbyte[i] == VGM_BYTE_VALID))
-         return False;
+         bad = True;
    for (i = 0; i < 8192; i++)
       if (!(sm->abits[i] == VGM_BYTE_VALID))
-         return False;
+         bad = True;
 
+   if (bad) {
+      VG_(printf)("memcheck expensive sanity: "
+                  "distinguished_secondaries have changed\n");
+      return False;
+   }
+
+   /* check nonsensical auxmap sizing */
    if (auxmap_used > auxmap_size)
-       return False;
+       bad = True;
+
+   if (bad) {
+      VG_(printf)("memcheck expensive sanity: "
+                  "nonsensical auxmap sizing\n");
+      return False;
+   }
+
+   /* check that the number of secmaps issued matches the number that
+      are reachable (iow, no secmap leaks) */
+   n_secmaps_found = 0;
+   for (i = 0; i < N_PRIMARY_MAP; i++) {
+     if (primary_map[i] == NULL) {
+       bad = True;
+     } else {
+     if (!is_distinguished_sm(primary_map[i]))
+       n_secmaps_found++;
+     }
+   }
+
+   for (i = 0; i < auxmap_used; i++) {
+      if (auxmap[i].sm == NULL) {
+         bad = True;
+      } else {
+         if (!is_distinguished_sm(auxmap[i].sm))
+            n_secmaps_found++;
+      }
+   }
+
+   if (n_secmaps_found != n_secmaps_issued)
+      bad = True;
+
+   if (bad) {
+      VG_(printf)("memcheck expensive sanity: "
+                  "apparent secmap leakage\n");
+      return False;
+   }
+
+   /* check that auxmap only covers address space that the primary
+      doesn't */
+   
+   for (i = 0; i < auxmap_used; i++)
+      if (auxmap[i].base <= MAX_PRIMARY_ADDRESS)
+         bad = True;
+
+   if (bad) {
+      VG_(printf)("memcheck expensive sanity: "
+                  "auxmap covers wrong address space\n");
+      return False;
+   }
+
+   /* there is only one pointer to each secmap (expensive) */
 
    return True;
 }
@@ -2607,14 +2743,47 @@ void TL_(fini) ( Int exitcode )
 {
    MAC_(common_fini)( mc_detect_memory_leaks );
 
+   Int     i, n_accessible_dist;
+   SecMap* sm;
+
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_DebugMsg,
-         "memcheck: auxmaps: %d auxmap entries (%dk, %dM) in use",
-         auxmap_used, 
-         64 * auxmap_used, auxmap_used / 16 );
+         " memcheck: sanity checks: %d cheap, %d expensive",
+         n_sanity_cheap, n_sanity_expensive );
       VG_(message)(Vg_DebugMsg,
-         "memcheck: auxmaps: %lld searches, %lld comparisons",
+         " memcheck: auxmaps: %d auxmap entries (%dk, %dM) in use",
+         auxmap_used, 
+         auxmap_used * 64, 
+         auxmap_used / 16 );
+      VG_(message)(Vg_DebugMsg,
+         " memcheck: auxmaps: %lld searches, %lld comparisons",
          n_auxmap_searches, n_auxmap_cmps );   
+      VG_(message)(Vg_DebugMsg,
+         " memcheck: secondaries: %d issued (%dk, %dM)",
+         n_secmaps_issued, 
+         n_secmaps_issued * 64,
+         n_secmaps_issued / 16 );   
+
+      n_accessible_dist = 0;
+      for (i = 0; i < N_PRIMARY_MAP; i++) {
+         sm = primary_map[i];
+         if (is_distinguished_sm(sm)
+             && sm != &sm_distinguished[SM_DIST_NOACCESS])
+            n_accessible_dist ++;
+      }
+      for (i = 0; i < auxmap_used; i++) {
+         sm = auxmap[i].sm;
+         if (is_distinguished_sm(sm)
+             && sm != &sm_distinguished[SM_DIST_NOACCESS])
+            n_accessible_dist ++;
+      }
+
+      VG_(message)(Vg_DebugMsg,
+         " memcheck: secondaries: %d accessible and distinguished (%dk, %dM)",
+         n_accessible_dist, 
+         n_accessible_dist * 64,
+         n_accessible_dist / 16 );   
+
    }
 
    if (0) {

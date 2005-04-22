@@ -171,7 +171,7 @@ typedef
    VgpToolCC;
 
 /* Define to collect detailed performance info. */
-#define MAC_PROFILE_MEMORY
+/* #define MAC_PROFILE_MEMORY */
 
 #ifdef MAC_PROFILE_MEMORY
 #  define N_PROF_EVENTS 500
@@ -196,13 +196,13 @@ extern HChar* MAC_(event_ctr_name)[N_PROF_EVENTS];
 #endif   /* MAC_PROFILE_MEMORY */
 
 
-//zz /*------------------------------------------------------------*/
-//zz /*--- V and A bits (Victoria & Albert ?)                   ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
-//zz /* expand 1 bit -> 8 */
-//zz #define BIT_EXPAND(b)	((~(((UChar)(b) & 1) - 1)) & 0xFF)
-//zz 
+/*------------------------------------------------------------*/
+/*--- V and A bits (Victoria & Albert ?)                   ---*/
+/*------------------------------------------------------------*/
+
+/* expand 1 bit -> 8 */
+#define BIT_TO_BYTE(b)  ((~(((UChar)(b) & 1) - 1)) & 0xFF)
+
 //zz #define SECONDARY_SHIFT	16
 //zz #define SECONDARY_SIZE	(1 << SECONDARY_SHIFT)
 //zz #define SECONDARY_MASK	(SECONDARY_SIZE - 1)

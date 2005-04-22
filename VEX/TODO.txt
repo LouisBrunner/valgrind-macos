@@ -12,20 +12,11 @@ iropt: reconsider precise exceptions
 x86 guest: look at FP accuracy
 
 
-Test
-~~~~
-Test adc/sbb carry dependency in memcheck
-
-
 Optimisation opportunities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Improved isel for memcheck artefacts on x86 (generate neg ; sbbl)
 
 Assess tt_fast miss rates 
-
-Better register allocation - spilling reduction
-
-iropt less conservative re precise exns
 
 improve stack-update pass
 
@@ -34,6 +25,7 @@ proper profiling machinery
 do not CSE exprs :: Ity_Bit
 
 x86 iselIntExpr_RMI: actually generate the M case if possible
+
 
 JIT speedups
 ~~~~~~~~~~~~
@@ -54,19 +46,10 @@ Optimisation after first instrumentation rather than 2nd ?
 
 disallow dirty helpers from writing SP/IP
 
-make instrumentation work at no optimisation
-
 write API doc, clarify IR semantics
 
 make IR utils module
 
-tt/tc simplification, also profiling
-
 generic stack pointer identification at startup?
 
 New memstack_k: old or new sp?
-
-Set host FPU mode before starting.  Also set Dflag = 0 
-
-skin_panic -> tool_panic
-

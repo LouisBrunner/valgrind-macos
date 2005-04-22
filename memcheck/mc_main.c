@@ -322,9 +322,9 @@ static
 ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
 {
    /* Make up a result V word, which contains the loaded data for
-      valid addresses and Undefined for invalid addresses.  Iterate
-      over the bytes in the word, from the most significant down to
-      the least. */
+      valid addresses and Defined for invalid addresses.  Iterate over
+      the bytes in the word, from the most significant down to the
+      least. */
    ULong vw          = VGM_WORD64_INVALID;
    SizeT i           = szB-1;
    SizeT n_addrs_bad = 0;
@@ -343,7 +343,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
       if (!aok)
          n_addrs_bad++;
       vw <<= 8; 
-      vw |= 0xFF & (aok ? vbyte : VGM_BYTE_INVALID);
+      vw |= 0xFF & (aok ? vbyte : VGM_BYTE_VALID);
       if (i == 0) break;
       i--;
    }
@@ -351,8 +351,6 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
    if (n_addrs_bad > 0)
       MAC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
 
-   //if (n_addrs_bad == n)
-   //   vw = VGM_WORD64_VALID;
    return vw;
 }
 

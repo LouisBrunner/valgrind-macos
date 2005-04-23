@@ -76,10 +76,6 @@
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
 
-// On X86, any access below %esp is illegal.
-// The signal handler needs to know this.
-#define VGA_STACK_REDZONE_SIZE 0
-
 //extern const Char VG_(helper_wrapper_before)[];	/* in dispatch.S */
 //extern const Char VG_(helper_wrapper_return)[];	/* in dispatch.S */
 

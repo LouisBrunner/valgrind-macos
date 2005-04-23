@@ -1,4 +1,14 @@
 
+23 Apr 05 (memcheck-on-amd64 notes)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a thread is given an initial stack with address range [lo .. hi],
+we need to tell memcheck that the area [lo - VGA_STACK_REDZONE_SIZE
+.. hi] is valid, rather than just [lo .. hi] as has been the case on
+x86-only systems.  However, am not sure where to look for the 
+call into memcheck that states the new stack area.
+
+
 9 Apr 05 (starting work on memcheck for 32/64-bit and big/little endian)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * get rid of memcheck/mc_asm.h and include/tool_asm.h.  I think 

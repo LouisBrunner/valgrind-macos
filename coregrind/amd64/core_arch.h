@@ -76,9 +76,6 @@
    asm("movq %%rbp, %0" : "=r" (lval));      \
 } while (0)
 
-// On AMD64, it's ok to access up to 128 bytes below %rsp.
-// The signal handler needs to know this.
-#define VGA_STACK_REDZONE_SIZE 128
 
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState

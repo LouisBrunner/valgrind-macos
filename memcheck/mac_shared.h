@@ -437,163 +437,163 @@ extern                void MAC_(new_mem_stack) ( Addr a, SizeT len);
    factoring, rather than eg. using function pointers.  
 */
 
-#define SP_UPDATE_HANDLERS(ALIGNED4_NEW,  ALIGNED4_DIE,       \
-                           ALIGNED8_NEW,  ALIGNED8_DIE,       \
-                           UNALIGNED_NEW, UNALIGNED_DIE)      \
-                                                              \
-void VGA_REGPARM(1) MAC_(new_mem_stack_4)(Addr new_SP)        \
-{                                                             \
-   PROF_EVENT(110, "new_mem_stack_4");                        \
-   if (VG_IS_4_ALIGNED(new_SP)) {                             \
-      ALIGNED4_NEW  ( new_SP );                               \
-   } else {                                                   \
-      UNALIGNED_NEW ( new_SP, 4 );                            \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(die_mem_stack_4)(Addr new_SP)        \
-{                                                             \
-   PROF_EVENT(120, "die_mem_stack_4");                        \
-   if (VG_IS_4_ALIGNED(new_SP)) {                             \
-      ALIGNED4_DIE  ( new_SP-4 );                             \
-   } else {                                                   \
-      UNALIGNED_DIE ( new_SP-4, 4 );                          \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(new_mem_stack_8)(Addr new_SP)        \
-{                                                             \
-   PROF_EVENT(111, "new_mem_stack_8");                        \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_NEW  ( new_SP );                               \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_NEW  ( new_SP   );                             \
-      ALIGNED4_NEW  ( new_SP+4 );                             \
-   } else {                                                   \
-      UNALIGNED_NEW ( new_SP, 8 );                            \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(die_mem_stack_8)(Addr new_SP)        \
-{                                                             \
-   PROF_EVENT(121, "die_mem_stack_8");                        \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_DIE  ( new_SP-8 );                             \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_DIE  ( new_SP-8 );                             \
-      ALIGNED4_DIE  ( new_SP-4 );                             \
-   } else {                                                   \
-      UNALIGNED_DIE ( new_SP-8, 8 );                          \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(new_mem_stack_12)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(112, "new_mem_stack_12");                       \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_NEW  ( new_SP   );                             \
-      ALIGNED4_NEW  ( new_SP+8 );                             \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_NEW  ( new_SP   );                             \
-      ALIGNED8_NEW  ( new_SP+4 );                             \
-   } else {                                                   \
-      UNALIGNED_NEW ( new_SP, 12 );                           \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(die_mem_stack_12)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(122, "die_mem_stack_12");                       \
-   /* Note the -12 in the test */                             \
-   if (VG_IS_8_ALIGNED(new_SP-12)) {                          \
-      ALIGNED8_DIE  ( new_SP-12 );                            \
-      ALIGNED4_DIE  ( new_SP-4  );                            \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_DIE  ( new_SP-12 );                            \
-      ALIGNED8_DIE  ( new_SP-8  );                            \
-   } else {                                                   \
-      UNALIGNED_DIE ( new_SP-12, 12 );                        \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(new_mem_stack_16)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(113, "new_mem_stack_16");                       \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_NEW  ( new_SP   );                             \
-      ALIGNED8_NEW  ( new_SP+8 );                             \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_NEW  ( new_SP    );                            \
-      ALIGNED8_NEW  ( new_SP+4  );                            \
-      ALIGNED4_NEW  ( new_SP+12 );                            \
-   } else {                                                   \
-      UNALIGNED_NEW ( new_SP, 16 );                           \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(die_mem_stack_16)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(123, "die_mem_stack_16");                       \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_DIE  ( new_SP-16 );                            \
-      ALIGNED8_DIE  ( new_SP-8  );                            \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_DIE  ( new_SP-16 );                            \
-      ALIGNED8_DIE  ( new_SP-12 );                            \
-      ALIGNED4_DIE  ( new_SP-4  );                            \
-   } else {                                                   \
-      UNALIGNED_DIE ( new_SP-16, 16 );                        \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(new_mem_stack_32)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(114, "new_mem_stack_32");                       \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_NEW  ( new_SP    );                            \
-      ALIGNED8_NEW  ( new_SP+8  );                            \
-      ALIGNED8_NEW  ( new_SP+16 );                            \
-      ALIGNED8_NEW  ( new_SP+24 );                            \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_NEW  ( new_SP    );                            \
-      ALIGNED8_NEW  ( new_SP+4  );                            \
-      ALIGNED8_NEW  ( new_SP+12 );                            \
-      ALIGNED8_NEW  ( new_SP+20 );                            \
-      ALIGNED4_NEW  ( new_SP+28 );                            \
-   } else {                                                   \
-      UNALIGNED_NEW ( new_SP, 32 );                           \
-   }                                                          \
-}                                                             \
-                                                              \
-void VGA_REGPARM(1) MAC_(die_mem_stack_32)(Addr new_SP)       \
-{                                                             \
-   PROF_EVENT(124, "die_mem_stack_32");                       \
-   if (VG_IS_8_ALIGNED(new_SP)) {                             \
-      ALIGNED8_DIE  ( new_SP-32 );                            \
-      ALIGNED8_DIE  ( new_SP-24 );                            \
-      ALIGNED8_DIE  ( new_SP-16 );                            \
-      ALIGNED8_DIE  ( new_SP- 8 );                            \
-   } else if (VG_IS_4_ALIGNED(new_SP)) {                      \
-      ALIGNED4_DIE  ( new_SP-32 );                            \
-      ALIGNED8_DIE  ( new_SP-28 );                            \
-      ALIGNED8_DIE  ( new_SP-20 );                            \
-      ALIGNED8_DIE  ( new_SP-12 );                            \
-      ALIGNED4_DIE  ( new_SP-4  );                            \
-   } else {                                                   \
-      UNALIGNED_DIE ( new_SP-32, 32 );                        \
-   }                                                          \
-}                                                             \
-                                                              \
-void MAC_(new_mem_stack) ( Addr a, SizeT len )                \
-{                                                             \
-   PROF_EVENT(115, "new_mem_stack");                          \
-   UNALIGNED_NEW ( a, len );                                  \
-}                                                             \
-                                                              \
-void MAC_(die_mem_stack) ( Addr a, SizeT len )                \
-{                                                             \
-   PROF_EVENT(125, "die_mem_stack");                          \
-   UNALIGNED_DIE ( a, len );                                  \
+#define SP_UPDATE_HANDLERS(ALIGNED4_NEW,  ALIGNED4_DIE,           \
+                           ALIGNED8_NEW,  ALIGNED8_DIE,           \
+                           UNALIGNED_NEW, UNALIGNED_DIE)          \
+                                                                  \
+void VGA_REGPARM(1) MAC_(new_mem_stack_4)(Addr new_SP)            \
+{                                                                 \
+   PROF_EVENT(110, "new_mem_stack_4");                            \
+   if (VG_IS_4_ALIGNED(new_SP)) {                                 \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP );         \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + new_SP, 4 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(die_mem_stack_4)(Addr new_SP)            \
+{                                                                 \
+   PROF_EVENT(120, "die_mem_stack_4");                            \
+   if (VG_IS_4_ALIGNED(new_SP)) {                                 \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-4 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + new_SP-4, 4 );    \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(new_mem_stack_8)(Addr new_SP)            \
+{                                                                 \
+   PROF_EVENT(111, "new_mem_stack_8");                            \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP );         \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP   );       \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+4 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + new_SP, 8 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(die_mem_stack_8)(Addr new_SP)            \
+{                                                                 \
+   PROF_EVENT(121, "die_mem_stack_8");                            \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-8 );       \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-8 );       \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-4 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + new_SP-8, 8 );    \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(new_mem_stack_12)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(112, "new_mem_stack_12");                           \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP   );       \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+8 );       \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP   );       \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+4 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + new_SP, 12 );     \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(die_mem_stack_12)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(122, "die_mem_stack_12");                           \
+   /* Note the -12 in the test */                                 \
+   if (VG_IS_8_ALIGNED(new_SP-12)) {                              \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-12 );      \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-4  );      \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-12 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-8  );      \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + new_SP-12, 12 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(new_mem_stack_16)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(113, "new_mem_stack_16");                           \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP   );       \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+8 );       \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP    );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+4  );      \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+12 );      \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + new_SP, 16 );     \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(die_mem_stack_16)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(123, "die_mem_stack_16");                           \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-16 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-8  );      \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-16 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-12 );      \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-4  );      \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + new_SP-16, 16 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(new_mem_stack_32)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_32");                           \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP    );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+8  );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+16 );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+24 );      \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP    );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+4  );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+12 );      \
+      ALIGNED8_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+20 );      \
+      ALIGNED4_NEW  ( -VGA_STACK_REDZONE_SIZE + new_SP+28 );      \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + new_SP, 32 );     \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VGA_REGPARM(1) MAC_(die_mem_stack_32)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(124, "die_mem_stack_32");                           \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-32 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-24 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-16 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP- 8 );      \
+   } else if (VG_IS_4_ALIGNED(new_SP)) {                          \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-32 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-28 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-20 );      \
+      ALIGNED8_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-12 );      \
+      ALIGNED4_DIE  ( -VGA_STACK_REDZONE_SIZE + new_SP-4  );      \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + new_SP-32, 32 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void MAC_(new_mem_stack) ( Addr a, SizeT len )                    \
+{                                                                 \
+   PROF_EVENT(115, "new_mem_stack");                              \
+   UNALIGNED_NEW ( -VGA_STACK_REDZONE_SIZE + a, len );            \
+}                                                                 \
+                                                                  \
+void MAC_(die_mem_stack) ( Addr a, SizeT len )                    \
+{                                                                 \
+   PROF_EVENT(125, "die_mem_stack");                              \
+   UNALIGNED_DIE ( -VGA_STACK_REDZONE_SIZE + a, len );            \
 }
 
 #endif   /* __MAC_SHARED_H */

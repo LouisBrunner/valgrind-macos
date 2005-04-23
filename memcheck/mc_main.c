@@ -1493,14 +1493,14 @@ void MC_(helperc_value_check1_fail) ( void )
    MC_(record_value_error) ( VG_(get_running_tid)(), 1 );
 }
 
-//zz void MC_(helperc_value_check2_fail) ( void )
-//zz {
-//zz    MC_(record_value_error) ( VG_(get_running_tid)(), 2 );
-//zz }
-
 void MC_(helperc_value_check4_fail) ( void )
 {
    MC_(record_value_error) ( VG_(get_running_tid)(), 4 );
+}
+
+void MC_(helperc_value_check8_fail) ( void )
+{
+   MC_(record_value_error) ( VG_(get_running_tid)(), 8 );
 }
 
 VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )

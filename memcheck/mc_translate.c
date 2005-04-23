@@ -702,6 +702,13 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
                                  mkIRExprVec_0() 
                                );
          break;
+      case 8:
+         di = unsafeIRDirty_0_N( 0/*regparms*/, 
+                                 "MC_(helperc_value_check8_fail)",
+                                 &MC_(helperc_value_check8_fail),
+                                 mkIRExprVec_0() 
+                               );
+         break;
       default:
          di = unsafeIRDirty_0_N( 1/*regparms*/, 
                                  "MC_(helperc_complain_undef)",

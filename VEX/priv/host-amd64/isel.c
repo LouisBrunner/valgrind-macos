@@ -1283,8 +1283,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 //..          case Iop_1Sto8:
-//..          case Iop_1Sto16:
-//..          case Iop_1Sto32:
+         case Iop_1Sto16:
+         case Iop_1Sto32:
          case Iop_1Sto64: {
             /* could do better than this, but for now ... */
             HReg dst           = newVRegI(env);
@@ -1316,17 +1316,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
-//..          case Iop_128to32: {
-//..             HReg      dst  = newVRegI(env);
-//..             HReg      vec  = iselVecExpr(env, e->Iex.Unop.arg);
-//..             X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..             sub_from_esp(env, 16);
-//..             addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
-//..             addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(esp0), dst ));
-//..             add_to_esp(env, 16);
-//..             return dst;
-//..          }
-
+         case Iop_V128to32: {
+            HReg        dst     = newVRegI(env);
+            HReg        vec     = iselVecExpr(env, e->Iex.Unop.arg);
+            AMD64AMode* rsp_m16 = AMD64AMode_IR(-16, hregAMD64_RSP());
+            addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, vec, rsp_m16));
+            addInstr(env, AMD64Instr_LoadEX(4, False/*z-widen*/, rsp_m16, dst));
+            return dst;
+         }
 
          /* V128{HI}to64 */
          case Iop_V128HIto64:
@@ -1815,6 +1812,24 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          default: vpanic("iselCondCode(amd64): CmpXX8");
       }
    }
+
+   /* CmpEQ32 / CmpNE32 */
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_CmpEQ32
+           || e->Iex.Binop.op == Iop_CmpNE32)) {
+      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+      HReg      r    = newVRegI(env);
+      addInstr(env, mk_iMOVsd_RR(r1,r));
+      addInstr(env, AMD64Instr_Alu64R(Aalu_XOR,rmi2,r));
+      addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(r)));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpEQ32:  return Acc_Z;
+         case Iop_CmpNE32:  return Acc_NZ;
+         default: vpanic("iselCondCode(amd64): CmpXX8");
+      }
+   }
+
 
 //..    /* CmpEQ16 / CmpNE16 */
 //..    if (e->tag == Iex_Binop 
@@ -3172,29 +3187,25 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
 
-//..       case Iop_Set128lo32: {
-//..          HReg dst = newVRegV(env);
-//..          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          sub_from_esp(env, 16);
-//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, srcV, esp0));
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(srcI), esp0));
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
-
       case Iop_SetV128lo64: {
          HReg dst  = newVRegV(env);
          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
-         sub_from_rsp(env, 16);
-         addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, srcV, rsp0));
-         addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, AMD64RI_Reg(srcI), rsp0));
-         addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, dst, rsp0));
-         add_to_rsp(env, 16);
+         AMD64AMode* rsp_m16 = AMD64AMode_IR(-16, hregAMD64_RSP());
+         addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, srcV, rsp_m16));
+         addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, AMD64RI_Reg(srcI), rsp_m16));
+         addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, dst, rsp_m16));
+         return dst;
+      }
+
+      case Iop_SetV128lo32: {
+         HReg dst  = newVRegV(env);
+         HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         AMD64AMode* rsp_m16 = AMD64AMode_IR(-16, hregAMD64_RSP());
+         addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, srcV, rsp_m16));
+         addInstr(env, AMD64Instr_Store(4, srcI, rsp_m16));
+         addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, dst, rsp_m16));
          return dst;
       }
 
@@ -3613,7 +3624,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
 
       retty = typeOfIRTemp(env->type_env, d->tmp);
-      if (retty == Ity_I64 || retty == Ity_I32) {
+      if (retty == Ity_I64 || retty == Ity_I32 
+          || retty == Ity_I16 || retty == Ity_I8) {
          /* The returned value is in %rax.  Park it in the register
             associated with tmp. */
          HReg dst = lookupIRTemp(env, d->tmp);

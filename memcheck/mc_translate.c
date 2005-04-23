@@ -2372,10 +2372,12 @@ static Bool isBogusAtom ( IRAtom* at )
       default: ppIRExpr(at); tl_assert(0);
    }
    /* VG_(printf)("%llx\n", n); */
-   return (n == 0xFEFEFEFF
-           || n == 0x80808080 /*
-           || n == 0x01010101
-           || n == 0x01010100*/);
+   return (/*32*/    n == 0xFEFEFEFFULL
+           /*32*/ || n == 0x80808080ULL
+           /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
+           /*64*/ || n == 0x8080808080808080ULL
+	   /*64*/ || n == 0x0101010101010101ULL
+          );
 }
 
 static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )

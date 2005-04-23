@@ -1179,17 +1179,92 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
 /* ------------------------ Size = 8 ------------------------ */
 
 VGA_REGPARM(1)
-ULong MC_(helperc_LOADV8) ( Addr a )
+ULong MC_(helperc_LOADV8) ( Addr aA )
 {
-   PROF_EVENT(70, "helperc_LOADV8");
-   return mc_LOADVn_slow( a, 8, False/*littleendian*/ );
+   PROF_EVENT(200, "helperc_LOADV8");
+
+#  if VG_DEBUG_MEMORY >= 2
+   return mc_LOADVn_slow( aA, 8, False/*littleendian*/ );
+#  else
+
+   const UWord mask = ~((0x10000-8) | ((N_PRIMARY_MAP-1) << 16));
+   UWord a = (UWord)aA;
+
+   /* If any part of 'a' indicated by the mask is 1, either 'a' is not
+      naturally aligned, or 'a' exceeds the range covered by the
+      primary map.  Either way we defer to the slow-path case. */
+   if (EXPECTED_NOT_TAKEN(a & mask)) {
+      PROF_EVENT(201, "helperc_LOADV8-slow1");
+      return (UWord)mc_LOADVn_slow( aA, 8, False/*littleendian*/ );
+   }
+
+   UWord sec_no = (UWord)(a >> 16);
+
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAP);
+#  endif
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+   UWord   abits = (UWord)(sm->abits[a_off]);
+
+   if (EXPECTED_TAKEN(abits == VGM_BYTE_VALID)) {
+      /* Handle common case quickly: a is suitably aligned, is mapped,
+         and is addressible. */
+      return ((ULong*)(sm->vbyte))[ v_off >> 3 ];
+   } else {
+      /* Slow but general case. */
+      PROF_EVENT(202, "helperc_LOADV8-slow2");
+      return mc_LOADVn_slow( a, 8, False/*littleendian*/ );
+   }
+
+#  endif
 }
 
 VGA_REGPARM(1)
-void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
+void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
 {
-   PROF_EVENT(71, "helperc_STOREV8");
-   mc_STOREVn_slow( a, 8, vbytes, False/*littleendian*/ );
+   PROF_EVENT(210, "helperc_STOREV8");
+
+#  if VG_DEBUG_MEMORY >= 2
+   mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
+#  else
+
+   const UWord mask = ~((0x10000-8) | ((N_PRIMARY_MAP-1) << 16));
+   UWord a = (UWord)aA;
+
+   /* If any part of 'a' indicated by the mask is 1, either 'a' is not
+      naturally aligned, or 'a' exceeds the range covered by the
+      primary map.  Either way we defer to the slow-path case. */
+   if (EXPECTED_NOT_TAKEN(a & mask)) {
+      PROF_EVENT(211, "helperc_STOREV8-slow1");
+      mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
+      return;
+   }
+
+   UWord sec_no = (UWord)(a >> 16);
+
+#  if VG_DEBUG_MEMORY >= 1
+   tl_assert(sec_no < N_PRIMARY_MAP);
+#  endif
+
+   SecMap* sm    = primary_map[sec_no];
+   UWord   v_off = a & 0xFFFF;
+   UWord   a_off = v_off >> 3;
+   UWord   abits = (UWord)(sm->abits[a_off]);
+
+   if (EXPECTED_TAKEN(!is_distinguished_sm(sm) 
+                      && abits == VGM_BYTE_VALID)) {
+      /* Handle common case quickly: a is suitably aligned, is mapped,
+         and is addressible. */
+      ((ULong*)(sm->vbyte))[ v_off >> 3 ] = vbytes;
+   } else {
+      /* Slow but general case. */
+      PROF_EVENT(212, "helperc_STOREV8-slow2");
+      mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
+   }
+#  endif
 }
 
 /* ------------------------ Size = 4 ------------------------ */

@@ -1403,6 +1403,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_LoadEX( 1, False, am, dst ));
          return dst;
       }
+      if (ty == Ity_I64) {
+         addInstr(env, AMD64Instr_Alu64R( Aalu_MOV, AMD64RMI_Mem(am), dst ));
+         return dst;
+      }
       break;
    }
 
@@ -3547,14 +3551,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, AMD64Instr_Store( 1, r, am ));
          return;
       }
-//..       if (ty == Ity_I64) {
-//..          HReg rHi, rLo;
-//..          X86AMode* am4 = advance4(am);
-//..          iselInt64Expr(&rHi, &rLo, env, stmt->Ist.PutI.data);
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rLo), am ));
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rHi), am4 ));
-//..          return;
-//..       }
+      if (ty == Ity_I64) {
+         AMD64RI* ri = iselIntExpr_RI(env, stmt->Ist.PutI.data);
+         addInstr(env, AMD64Instr_Alu64M( Aalu_MOV, ri, am ));
+         return;
+      }
       break;
    }
 

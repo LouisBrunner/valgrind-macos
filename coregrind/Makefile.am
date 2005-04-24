@@ -37,7 +37,7 @@ noinst_HEADERS = \
 
 EXTRA_DIST = \
 	valgrind.vs \
-	gen_toolint.pl toolfuncs.def
+	gen_toolint.pl toolfuncs.def README_MODULES.txt
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h
 CLEANFILES = vg_toolint.c vg_toolint.h

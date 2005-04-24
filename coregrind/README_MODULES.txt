@@ -34,15 +34,14 @@ its public (exported) interface:
   coregrind/pub_core_foo.h
 
 pub_tool_foo.h describes that part of the module's functionality that
-is visible to tools.  Hopefully this can be minimal or zero.  The file
-must still exist even if it defines nothing.
+is visible to tools.  Hopefully this can be minimal or zero.  If there
+is nothing to visible to tool, pub_tool_foo.h can be omitted.
 
 pub_core_foo.h describes functionality that is visible to other
 modules in the core.  This is a strict superset of the visible-to-tool
-functionality.
-
-Consequently, pub_core_foo.h may #include pub_tool_foo.h, but not the
-other way round.
+functionality.  Consequently, pub_core_foo.h *must* #include
+pub_tool_foo.h, if it exists.  pub_tool_foo.h *must not* #include
+pub_core_foo.h, nor any other pub_core_ header for that matter.
 
 No module may include the private headers of any other module.  If a
 type/enum/function/struct/whatever is stated in neither

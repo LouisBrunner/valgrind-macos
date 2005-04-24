@@ -991,31 +991,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return hi16;
       }
 
-//..       if (e->Iex.Binop.op == Iop_8HLto16) {
-//..          HReg hi8  = newVRegI(env);
-//..          HReg lo8  = newVRegI(env);
-//..          HReg hi8s = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          HReg lo8s = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..          addInstr(env, mk_iMOVsd_RR(hi8s, hi8));
-//..          addInstr(env, mk_iMOVsd_RR(lo8s, lo8));
-//..          addInstr(env, X86Instr_Sh32(Xsh_SHL, 8, X86RM_Reg(hi8)));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFF), lo8));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo8), hi8));
-//..          return hi8;
-//..       }
-//.. 
-//..       if (e->Iex.Binop.op == Iop_16HLto32) {
-//..          HReg hi16  = newVRegI(env);
-//..          HReg lo16  = newVRegI(env);
-//..          HReg hi16s = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          HReg lo16s = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..          addInstr(env, mk_iMOVsd_RR(hi16s, hi16));
-//..          addInstr(env, mk_iMOVsd_RR(lo16s, lo16));
-//..          addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, X86RM_Reg(hi16)));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFFFF), lo16));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo16), hi16));
-//..          return hi16;
-//..       }
+      if (e->Iex.Binop.op == Iop_8HLto16) {
+         HReg hi8  = newVRegI(env);
+         HReg lo8  = newVRegI(env);
+         HReg hi8s = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg lo8s = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(hi8s, hi8));
+         addInstr(env, mk_iMOVsd_RR(lo8s, lo8));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 8, AMD64RM_Reg(hi8)));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_AND, AMD64RMI_Imm(0xFF), lo8));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_OR, AMD64RMI_Reg(lo8), hi8));
+         return hi8;
+      }
 
       if (e->Iex.Binop.op == Iop_MullS32
           || e->Iex.Binop.op == Iop_MullS16
@@ -1282,7 +1271,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_Set64(cond,dst));
             return dst;
          }
-//..          case Iop_1Sto8:
+         case Iop_1Sto8:
          case Iop_1Sto16:
          case Iop_1Sto32:
          case Iop_1Sto64: {

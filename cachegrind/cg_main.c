@@ -779,15 +779,6 @@ static CC Dw_total;
 
 static Char* cachegrind_out_file;
 
-static void file_err ( void )
-{
-   VG_(message)(Vg_UserMsg,
-      "error: can't open cache simulation output file `%s'",
-      cachegrind_out_file );
-   VG_(message)(Vg_UserMsg,
-      "       ... so simulation results will be missing.");
-}
-
 static void fprint_lineCC(Int fd, lineCC* n)
 {
    Char buf[512];
@@ -819,7 +810,11 @@ static void fprint_CC_table_and_calc_totals(void)
    if (fd < 0) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      file_err(); 
+      VG_(message)(Vg_UserMsg,
+         "error: can't open cache simulation output file `%s'",
+         cachegrind_out_file );
+      VG_(message)(Vg_UserMsg,
+         "       ... so simulation results will be missing.");
       return;
    }
 

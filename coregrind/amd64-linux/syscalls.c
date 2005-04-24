@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
+#include "pub_core_sigframe.h"
 
 
 /* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */
@@ -545,7 +546,7 @@ PRE(sys_rt_sigreturn, Special)
       something goes wrong in the sigreturn */
    VGA_(restart_syscall)(&tst->arch);
 
-   VGA_(signal_return)(tid, True);
+   VG_(sigframe_destroy)(tid, True);
 
    /* Keep looking for signals until there are none */
    VG_(poll_signals)(tid);

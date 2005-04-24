@@ -1,6 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Arch-specific signals stuff.                 amd64/signals.c ---*/
+/*--- Create/destroy signal delivery frames.                       ---*/
+/*---                                       sigframe-amd64-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,6 +30,7 @@
 */
 
 #include "core.h"
+#include "pub_core_sigframe.h"
 
 #include "libvex_guest_amd64.h"
 
@@ -36,14 +38,9 @@
 /* This module creates and removes signal frames for signal deliveries
    on amd64-linux.
 
-   FIXME: Note that this file is in the wrong place.  It is marked as
-   amd64 specific, but in fact it is specific to both amd64 and linux.
-   There is nothing that ensures that (eg) amd64-netbsd will have the
-   same signal frame layout as Linux.
-
-   Note also, this file contains kernel-specific knowledge in the
-   form of 'struct rt_sigframe'.  How does that relate to the vki
-   kernel interface stuff?
+   Note, this file contains kernel-specific knowledge in the form of
+   'struct rt_sigframe'.  How does that relate to the vki kernel
+   interface stuff?
 
    A 'struct rtsigframe' is pushed onto the client's stack.  This
    contains a subsidiary vki_ucontext.  That holds the vcpu's state
@@ -478,11 +475,13 @@ static Addr build_rt_sigframe(ThreadState *tst,
 }
 
 
-void VGA_(push_signal_frame)(ThreadId tid, Addr rsp_top_of_frame,
-                             const vki_siginfo_t *siginfo,
-                             void *handler, UInt flags,
-                             const vki_sigset_t *mask,
-			     void *restorer)
+void VG_(sigframe_create)( ThreadId tid, 
+                            Addr rsp_top_of_frame,
+                            const vki_siginfo_t *siginfo,
+                            void *handler, 
+                            UInt flags,
+                            const vki_sigset_t *mask,
+                            void *restorer )
 {
    Addr rsp;
    struct rt_sigframe *frame;
@@ -584,7 +583,7 @@ SizeT restore_rt_sigframe ( ThreadState *tst,
 }
 
 
-void VGA_(signal_return)(ThreadId tid, Bool isRT)
+void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 {
    Addr          rsp;
    ThreadState*  tst;
@@ -673,7 +672,7 @@ void VGA_(signal_return)(ThreadId tid, Bool isRT)
 //:: {
 //::    VG_(memcpy)(xfpu, arch->m_sse.state, sizeof(*xfpu));
 //:: }
-//:: 
-//:: /*--------------------------------------------------------------------*/
-//:: /*--- end                                                          ---*/
-//:: /*--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*/
+/*--- end                                   sigframe-amd64-linux.c ---*/
+/*--------------------------------------------------------------------*/

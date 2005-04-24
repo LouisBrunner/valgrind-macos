@@ -1035,37 +1035,43 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
 /*
    The stack
    ~~~~~~~~~
-   The stack's segment seems to be dynamically extended downwards
-   by the kernel as the stack pointer moves down.  Initially, a
-   1-page (4k) stack is allocated.  When %esp moves below that for
-   the first time, presumably a page fault occurs.  The kernel
-   detects that the faulting address is in the range from %esp upwards
-   to the current valid stack.  It then extends the stack segment
-   downwards for enough to cover the faulting address, and resumes
-   the process (invisibly).  The process is unaware of any of this.
+   The stack's segment seems to be dynamically extended downwards by
+   the kernel as the stack pointer moves down.  Initially, a 1-page
+   (4k) stack is allocated.  When SP moves below that for the first
+   time, presumably a page fault occurs.  The kernel detects that the
+   faulting address is in the range from SP - VGA_STACK_REDZONE_SIZE
+   upwards to the current valid stack.  It then extends the stack
+   segment downwards for enough to cover the faulting address, and
+   resumes the process (invisibly).  The process is unaware of any of
+   this.
 
-   That means that Valgrind can't spot when the stack segment is
-   being extended.  Fortunately, we want to precisely and continuously
-   update stack permissions around %esp, so we need to spot all
-   writes to %esp anyway.
+   That means that Valgrind can't spot when the stack segment is being
+   extended.  Fortunately, we want to precisely and continuously
+   update stack permissions around SP, so we need to spot all writes
+   to SP anyway.
 
-   The deal is: when %esp is assigned a lower value, the stack is
-   being extended.  Create a secondary maps to fill in any holes
-   between the old stack ptr and this one, if necessary.  Then 
-   mark all bytes in the area just "uncovered" by this %esp change
-   as write-only.
+   The deal is: when SP is assigned a lower value, the stack is being
+   extended.  Create suitably-permissioned pages to fill in any holes
+   between the old stack ptr and this one, if necessary.  Then mark
+   all bytes in the area just "uncovered" by this SP change as
+   write-only.
 
-   When %esp goes back up, mark the area receded over as unreadable
-   and unwritable.
+   When SP goes back up, mark the area receded over as unreadable and
+   unwritable.
 
-   Just to record the %esp boundary conditions somewhere convenient:
-   %esp always points to the lowest live byte in the stack.  All
-   addresses below %esp are not live; those at and above it are.  
+   Just to record the SP boundary conditions somewhere convenient: SP
+   - VGA_STACK_REDZONE_SIZE always points to the lowest live byte in
+   the stack.  All addresses below SP - VGA_STACK_REDZONE_SIZE are not
+   live; those at and above it are.
+
+   We do not concern ourselves here with the VGA_STACK_REDZONE_SIZE
+   bias; that is handled by new_mem_stack/die_mem_stack.
 */
 
 /* This function gets called if new_mem_stack and/or die_mem_stack are
-   tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
-   isn't used in preference */
+   tracked by the tool, and one of the specialised cases
+   (eg. new_mem_stack_4) isn't used in preference.  
+*/
 VGA_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
@@ -1202,46 +1208,11 @@ Bool VG_(is_shadow_addr)(Addr a)
    return a >= VG_(shadow_base) && a < VG_(shadow_end);
 }
 
-Bool VG_(is_valgrind_addr)(Addr a)
-{
-vg_assert(0);
-   return a >= VG_(valgrind_base) && a <= VG_(valgrind_last);
-}
-
-Addr VG_(get_client_base)(void)
-{
-vg_assert(0);
-   return VG_(client_base);
-}
-
-Addr VG_(get_client_end)(void)
-{
-vg_assert(0);
-   return VG_(client_end);
-}
-
-Addr VG_(get_client_size)(void)
-{
-vg_assert(0);
-   return VG_(client_end)-VG_(client_base);
-}
-
-Addr VG_(get_shadow_base)(void)
-{
-vg_assert(0);
-   return VG_(shadow_base);
-}
-
-Addr VG_(get_shadow_end)(void)
-{
-vg_assert(0);
-   return VG_(shadow_end);
-}
-
 Addr VG_(get_shadow_size)(void)
 {
    return VG_(shadow_end)-VG_(shadow_base);
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- Handling shadow memory                                       ---*/

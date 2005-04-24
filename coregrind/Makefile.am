@@ -4,8 +4,13 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 ## When building, we are only interested in the current arch/OS/platform.
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
 ## That's what DIST_SUBDIRS specifies.
-SUBDIRS      = $(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     demangle .
-DIST_SUBDIRS = $(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) demangle .
+SUBDIRS = \
+	$(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     \
+	m_sigframe demangle .
+
+DIST_SUBDIRS = \
+	$(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) \
+	m_sigframe demangle .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
@@ -87,6 +92,7 @@ stage2_SOURCES = \
 ## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \
 	demangle/libdemangle.a \
+	m_sigframe/libsigframe.a \
 	${VG_PLATFORM}/libplatform.a \
 	${VG_ARCH}/libarch.a \
 	${VG_OS}/libos.a \

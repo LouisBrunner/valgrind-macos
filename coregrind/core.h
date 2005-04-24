@@ -1687,13 +1687,6 @@ extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 // Used by leakcheck
 extern void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr));
 
-// Signal stuff
-extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
-                                      const vki_siginfo_t *siginfo,
-                                      void *handler, UInt flags,
-                                      const vki_sigset_t *mask,
-				      void *restorer );
-
 ////typedef struct _ThreadArchAux ThreadArchAux;
 
 

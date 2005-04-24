@@ -394,6 +394,7 @@ AC_OUTPUT(
    auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 
+   coregrind/m_sigframe/Makefile 
    coregrind/amd64/Makefile
    coregrind/arm/Makefile
    coregrind/x86/Makefile

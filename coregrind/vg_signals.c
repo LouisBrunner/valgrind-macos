@@ -82,6 +82,8 @@
 #include "core.h"
 
 #include "pub_core_errormgr.h"
+#include "pub_core_sigframe.h"
+
 
 /* Define to give more sanity checking for signals. */
 #define DEBUG_SIGNALS
@@ -814,11 +816,11 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
    /* This may fail if the client stack is busted; if that happens,
       the whole process will exit rather than simply calling the
       signal handler. */
-   VGA_(push_signal_frame)(tid, esp_top_of_frame, siginfo,
-                           scss.scss_per_sig[sigNo].scss_handler,
-                           scss.scss_per_sig[sigNo].scss_flags,
-			  &tst->sig_mask,
-			   scss.scss_per_sig[sigNo].scss_restorer);
+   VG_(sigframe_create) (tid, esp_top_of_frame, siginfo,
+                         scss.scss_per_sig[sigNo].scss_handler,
+                         scss.scss_per_sig[sigNo].scss_flags,
+                         &tst->sig_mask,
+                         scss.scss_per_sig[sigNo].scss_restorer);
 }
 
 

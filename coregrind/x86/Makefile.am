@@ -21,7 +21,6 @@ libarch_a_SOURCES = \
 	cpuid.S \
 	helpers.S \
 	dispatch.S \
-	signals.c \
 	jmp_with_stack.c \
 	state.c
 

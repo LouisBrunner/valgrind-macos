@@ -18,7 +18,6 @@ CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
 	dispatch.S \
-	signals.c \
 	state.c
 
 if USE_PIE

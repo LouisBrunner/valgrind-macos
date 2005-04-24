@@ -1,6 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Arch-specific signals stuff.                   x86/signals.c ---*/
+/*--- Create/destroy signal delivery frames.                       ---*/
+/*---                                         sigframe-x86-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,21 +30,16 @@
 */
 
 #include "core.h"
-
+#include "pub_core_sigframe.h"
 #include "libvex_guest_x86.h"
 
 
 /* This module creates and removes signal frames for signal deliveries
    on x86-linux.
 
-   FIXME: Note that this file is in the wrong place.  It is marked as
-   x86 specific, but in fact it is specific to both x86 and linux.
-   There is nothing that ensures that (eg) x86-solaris will have the
-   same signal frame layout as Linux.
-
-   Note also, this file contains kernel-specific knowledge in the
-   form of 'struct sigframe' and 'struct rt_sigframe'.  How does
-   that relate to the vki kernel interface stuff?
+   Note, this file contains kernel-specific knowledge in the form of
+   'struct sigframe' and 'struct rt_sigframe'.  How does that relate
+   to the vki kernel interface stuff?
 
    Either a 'struct sigframe' or a 'struct rtsigframe' is pushed 
    onto the client's stack.  This contains a subsidiary
@@ -552,11 +548,14 @@ static Addr build_rt_sigframe(ThreadState *tst,
 }
 
 
-void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
-                             const vki_siginfo_t *siginfo,
-                             void *handler, UInt flags,
-                             const vki_sigset_t *mask,
-			     void *restorer)
+/* EXPORTED */
+void VG_(sigframe_create)( ThreadId tid, 
+                           Addr esp_top_of_frame,
+                           const vki_siginfo_t *siginfo,
+                           void *handler, 
+                           UInt flags,
+                           const vki_sigset_t *mask,
+		           void *restorer )
 {
    Addr		esp;
    ThreadState* tst = VG_(get_ThreadState)(tid);
@@ -662,7 +661,8 @@ SizeT restore_rt_sigframe ( ThreadState *tst,
 }
 
 
-void VGA_(signal_return)(ThreadId tid, Bool isRT)
+/* EXPORTED */
+void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 {
    Addr          esp;
    ThreadState*  tst;
@@ -747,7 +747,7 @@ void VGA_(signal_return)(ThreadId tid, Bool isRT)
 //:: {
 //::    VG_(memcpy)(xfpu, arch->m_sse.state, sizeof(*xfpu));
 //:: }
-//:: 
-//:: /*--------------------------------------------------------------------*/
-//:: /*--- end                                                          ---*/
-//:: /*--------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*/
+/*--- end                                     sigframe-x86-linux.c ---*/
+/*--------------------------------------------------------------------*/

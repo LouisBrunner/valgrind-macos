@@ -120,11 +120,6 @@ typedef VexGuestX86State VexGuestArchState;
 // Base address of client address space.
 #define VGA_CLIENT_BASE       0x0ul
 
-/* ---------------------------------------------------------------------
-   Signal stuff (should be plat)
-   ------------------------------------------------------------------ */
-
-void VGA_(signal_return)(ThreadId tid, Bool isRT);
 
 #endif   // __X86_CORE_ARCH_H
 

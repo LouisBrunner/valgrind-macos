@@ -203,6 +203,10 @@ static ULong bogus_tc_entry = (Addr64)1;
 /*global*/ UInt* VG_(tt_fastN)[VG_TT_FAST_SIZE];
 
 
+/* Make sure we're not used before initialisation. */
+static Bool init_done = False;
+
+
 /*------------------ STATS DECLS ------------------*/
 
 /* Number of fast-cache updates and flushes done. */
@@ -330,6 +334,7 @@ void VG_(add_to_trans_tab)( VexGuestExtents* vge,
    UChar* srcP;
    UChar* dstP;
 
+   vg_assert(init_done);
    vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
    vg_assert(code_len > 0 && code_len < 20000);
 
@@ -429,6 +434,8 @@ Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
                             Bool          upd_cache )
 {
    Int i, j, k, kstart, sno;
+
+   vg_assert(init_done);
    /* Find the initial probe point just once.  It will be the same in
       all sectors and avoids multiple expensive % operations. */
    n_full_lookups++;
@@ -516,6 +523,8 @@ void VG_(discard_translations) ( Addr64 guest_start, UInt range )
    Int sno, i;
    Bool anyDeleted = False;
 
+   vg_assert(init_done);
+
    for (sno = 0; sno < N_SECTORS; sno++) {
       if (sectors[sno].tc == NULL)
          continue;
@@ -552,6 +561,9 @@ void VG_(sanity_check_tt_tc) ( Char* who )
 void VG_(init_tt_tc) ( void )
 {
    Int i, avg_codeszQ;
+
+   vg_assert(!init_done);
+   init_done = True;
 
    /* Otherwise lots of things go wrong... */
    vg_assert(sizeof(ULong) == 8);

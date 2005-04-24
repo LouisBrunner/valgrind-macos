@@ -52,9 +52,9 @@ valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 stage2_SOURCES = \
-	errormgr.c \
-	execontext.c \
-	stacktrace.c \
+	m_errormgr.c \
+	m_execontext.c \
+	m_stacktrace.c \
 	ume.c \
 	\
 	vg_scheduler.c \

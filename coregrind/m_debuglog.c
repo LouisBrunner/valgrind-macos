@@ -448,22 +448,27 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... )
 {
    UInt ret, pid;
+   Int indent;
    va_list vargs;
    printf_buf buf;
+
    
    if (level > loglevel)
       return;
 
+   indent = 1*level - 1;
+   if (indent < 1) indent = 1;
+
    buf.n = 0;
    buf.buf[0] = 0;
    pid = local_sys_getpid();
-   (void)myvprintf_str ( add_to_buf, &buf, 0, 1, "<", False );
-   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 5, (ULong)pid );
-   (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ",", False );
+   (void)myvprintf_str ( add_to_buf, &buf, 0, 2, "--", False );
+   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, (ULong)pid );
+   (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
    (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, (ULong)level );
-   (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ",", False );
+   (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 8, (HChar*)modulename, False );
-   (void)myvprintf_str ( add_to_buf, &buf, 0, 2, "> ", False );
+   (void)myvprintf_str ( add_to_buf, &buf, 0, indent, "", False );
 
    va_start(vargs,format);
    

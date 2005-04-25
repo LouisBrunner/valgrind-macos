@@ -2169,15 +2169,15 @@ static void build_valgrind_map_callback ( Addr start, SizeT size, UInt prot,
       start allocating more memory (note: heap is OK, it's just mmap
       which is the problem here). */
    if (start >= VG_(client_end) && start < VG_(valgrind_last)) {
-      if (0)
-	 VG_(printf)("init1: %p-%p prot %s\n",
-		     start, start+size, VG_(prot_str)(prot));
+      VG_(debugLog)(2, "main",
+                    "valgrind-seg: %p-%p prot 0x%x file=%s\n",
+                    start, start+size, prot, filename);
       VG_(map_file_segment)(start, size, prot,
-			    SF_MMAP|SF_NOSYMS|SF_VALGRIND,
-			    dev, ino, foffset, filename);
+                            SF_MMAP|SF_NOSYMS|SF_VALGRIND,
+                            dev, ino, foffset, filename);
       /* update VG_(valgrind_last) if it looks wrong */
       if (start+size > VG_(valgrind_last))
-	      VG_(valgrind_last) = start+size-1;
+         VG_(valgrind_last) = start+size-1;
    }
 }
 
@@ -2205,9 +2205,9 @@ static void build_segment_map_callback ( Addr start, SizeT size, UInt prot,
    is_stack_segment 
       = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
 
-   if (0)
-      VG_(printf)("init2: %p-%p prot %s stack=%d\n",
-		  start, start+size, VG_(prot_str)(prot), is_stack_segment);
+   VG_(debugLog)(2, "main",
+                 "any-seg: %p-%p prot 0x%x stack=%d file=%s\n",
+                 start, start+size, prot, is_stack_segment, filename);
 
    if (is_stack_segment)
       flags = SF_STACK | SF_GROWDOWN;

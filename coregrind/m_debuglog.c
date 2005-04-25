@@ -55,7 +55,9 @@
 
 /* ----- x86-linux specifics ----- */
 
-#if VG_PLATFORM == x86-linux
+/* Arse!  Really I want to test VG_PLATFORM, but this does not
+   seem to be possible. */
+#if defined(__i386__) && defined(__linux__)
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
@@ -80,6 +82,17 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(__x86_64__) && defined(__linux__)
+
+static UInt local_sys_write_stderr ( HChar* buf, Int n )
+{
+  return 0;
+}
+
+static UInt local_sys_getpid ( void )
+{
+  return 0;
+}
 
 #else
 #error Unknown VG_PLATFORM

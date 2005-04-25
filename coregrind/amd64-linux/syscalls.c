@@ -31,6 +31,7 @@
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
 #include "pub_core_sigframe.h"
+#include "pub_core_aspacemgr.h"
 
 
 /* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */

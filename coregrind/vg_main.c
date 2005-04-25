@@ -34,6 +34,7 @@
 #include "ume.h"
 #include "pub_core_execontext.h"
 #include "pub_core_errormgr.h"
+#include "pub_core_debuglog.h"
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -1672,6 +1673,10 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                VG_CLO_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
 
+      else if (VG_CLO_STREQ(arg, "-d")) {
+         /* do nothing */
+      }
+
       else VG_BOOL_CLO(arg, "--branchpred",       VG_(clo_branchpred))
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
@@ -2406,6 +2411,22 @@ static int prmap(char *start, char *end, const char *perm, off_t off,
    return True;
 }
 
+/* This may be needed before m_mylibc is OK to run. */
+static Int local_strcmp ( const HChar* s1, const HChar* s2 )
+{
+   while (True) {
+      if (*s1 == 0 && *s2 == 0) return 0;
+      if (*s1 == 0) return -1;
+      if (*s2 == 0) return 1;
+
+      if (*(UChar*)s1 < *(UChar*)s2) return -1;
+      if (*(UChar*)s1 > *(UChar*)s2) return 1;
+
+      s1++; s2++;
+   }
+}
+
+
 int main(int argc, char **argv, char **envp)
 {
    char **cl_argv;
@@ -2420,13 +2441,33 @@ int main(int argc, char **argv, char **envp)
    Addr sp_at_startup;     /* client's SP at the point we gained control. */
    UInt * client_auxv;
    struct vki_rlimit zero = { 0, 0 };
-   Int padfile;
+   Int padfile, loglevel, i;
 
    //============================================================
    // Nb: startup is complex.  Prerequisites are shown at every step.
    //
    // *** Be very careful when messing with the order ***
    //============================================================
+
+   //--------------------------------------------------------------
+   // Start up the logging mechanism
+   //   p: none
+   //--------------------------------------------------------------
+   /* Start the debugging-log system ASAP.  First find out how many 
+      "-d"s were specified.  This is a pre-scan of the command line. */
+   loglevel = 0;
+   for (i = 1; i < argc; i++) {
+     if (argv[i][0] != '-')
+        break;
+     if (0 == local_strcmp(argv[i], "--")) 
+        break;
+     if (0 == local_strcmp(argv[i], "-d")) 
+        loglevel++;
+   }
+
+   /* ... and start the debug logger.  Now we can safely emit logging
+      messages all through startup. */
+   VG_(debugLog_startup)(loglevel, "Stage 2");
 
    //============================================================
    // Command line argument handling order:

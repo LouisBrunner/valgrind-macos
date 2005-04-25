@@ -29,6 +29,7 @@
 
 #include "core.h"
 #include "vg_symtypes.h"
+#include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 
 typedef enum {
    TyUnknown,			/* unknown type */
@@ -501,12 +502,13 @@ static void clear_visited(void)
    }
 }
 
-static void bprintf(void (*send)(Char, void*), void *send_arg, const Char *fmt, ...)
+static 
+void bprintf(void (*send)(HChar, void*), void *send_arg, const Char *fmt, ...)
 {
    va_list vargs;
 
    va_start(vargs, fmt);
-   VG_(vprintf)(send, fmt, vargs, send_arg);
+   VG_(debugLog_vprintf)(send, send_arg, fmt, vargs);
    va_end(vargs);
 }
 
@@ -667,7 +669,7 @@ static UInt describe_addr_bufidx;
 static UInt describe_addr_bufsz;
 
 /* Add a character to the result buffer */
-static void describe_addr_addbuf(Char c,void *p) {
+static void describe_addr_addbuf(HChar c,void *p) {
    if ((describe_addr_bufidx+1) >= describe_addr_bufsz) {
       Char *n;
     

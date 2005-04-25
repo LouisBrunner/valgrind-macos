@@ -318,8 +318,6 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 extern UInt VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
 extern UInt VG_(sprintf) ( Char* buf, Char *format, ... );
-extern UInt VG_(vprintf) ( void(*send)(Char, void *),
-                           const Char *format, va_list vargs, void *send_arg );
 
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 

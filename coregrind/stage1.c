@@ -44,6 +44,8 @@
 #include "core.h"
 #include "ume.h"
 #include "memcheck/memcheck.h"
+#include "pub_core_debuglog.h"
+
 
 static int stack[SIGSTKSZ*4];
 
@@ -300,6 +302,7 @@ static void main2(void)
       foreach_map(prmap, /*dummy*/NULL);
    }
 
+   VG_(debugLog)(1, "stage1", "main2(): starting stage2\n");
    jump_and_switch_stacks(
       (Addr) esp,           /* stack */
       (Addr) info.init_eip  /* where to */
@@ -314,6 +317,23 @@ int main(int argc, char** argv)
 {
    struct rlimit rlim;
    const char *cp;
+   int i, loglevel;
+
+   /* Start the debugging-log system ASAP.  First find out how many 
+      "-d"s were specified.  This is a pre-scan of the command line. */
+   loglevel = 0;
+   for (i = 1; i < argc; i++) {
+     if (argv[i][0] != '-')
+        break;
+     if (0 == strcmp(argv[i], "--")) 
+        break;
+     if (0 == strcmp(argv[i], "-d")) 
+        loglevel++;
+   }
+
+   /* ... and start the debug logger.  Now we can safely emit logging
+      messages all through startup. */
+   VG_(debugLog_startup)(loglevel, "Stage 1");
 
    // Initial stack pointer is to argc, which is immediately before argv[0]
    // on the stack.  Nb: Assumes argc is word-aligned.
@@ -335,6 +355,7 @@ int main(int argc, char** argv)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
+   VG_(debugLog)(1, "stage1", "main(): running main2() on new stack\n");
    jump_and_switch_stacks(
       (Addr) stack + sizeof(stack),  /* stack */
       (Addr) main2                   /* where to */

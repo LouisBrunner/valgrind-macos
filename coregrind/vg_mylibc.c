@@ -32,6 +32,8 @@
 
 #include "core.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
+
 
 /* ---------------------------------------------------------------------
    Wrappers around system calls, and other stuff, to do with signals.
@@ -391,266 +393,6 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 }
 
 
-/* ---------------------------------------------------------------------
-   printf implementation.  The key function, vg_vprintf(), emits chars 
-   into a caller-supplied function.  Distantly derived from:
-
-      vprintf replacement for Checker.
-      Copyright 1993, 1994, 1995 Tristan Gingold
-      Written September 1993 Tristan Gingold
-      Tristan Gingold, 8 rue Parmentier, F-91120 PALAISEAU, FRANCE
-
-   (Checker itself was GPL'd.)
-   ------------------------------------------------------------------ */
-
-
-/* Some flags.  */
-#define VG_MSG_SIGNED    1 /* The value is signed. */
-#define VG_MSG_ZJUSTIFY  2 /* Must justify with '0'. */
-#define VG_MSG_LJUSTIFY  4 /* Must justify on the left. */
-#define VG_MSG_PAREN     8 /* Parenthesize if present (for %y) */
-#define VG_MSG_COMMA    16 /* Add commas to numbers (for %d, %u) */
-
-/* Copy a string into the buffer. */
-static UInt
-myvprintf_str ( void(*send)(Char, void*), Int flags, Int width, Char* str, 
-                Bool capitalise, void *send_arg )
-{
-#  define MAYBE_TOUPPER(ch) (capitalise ? VG_(toupper)(ch) : (ch))
-   UInt ret = 0;
-   Int i, extra;
-   Int len = VG_(strlen)(str);
-
-   if (width == 0) {
-      ret += len;
-      for (i = 0; i < len; i++)
-          send(MAYBE_TOUPPER(str[i]), send_arg);
-      return ret;
-   }
-
-   if (len > width) {
-      ret += width;
-      for (i = 0; i < width; i++)
-         send(MAYBE_TOUPPER(str[i]), send_arg);
-      return ret;
-   }
-
-   extra = width - len;
-   if (flags & VG_MSG_LJUSTIFY) {
-      ret += extra;
-      for (i = 0; i < extra; i++)
-         send(' ', send_arg);
-   }
-   ret += len;
-   for (i = 0; i < len; i++)
-      send(MAYBE_TOUPPER(str[i]), send_arg);
-   if (!(flags & VG_MSG_LJUSTIFY)) {
-      ret += extra;
-      for (i = 0; i < extra; i++)
-         send(' ', send_arg);
-   }
-
-#  undef MAYBE_TOUPPER
-
-   return ret;
-}
-
-/* Write P into the buffer according to these args:
- *  If SIGN is true, p is a signed.
- *  BASE is the base.
- *  If WITH_ZERO is true, '0' must be added.
- *  WIDTH is the width of the field.
- */
-static UInt
-myvprintf_int64 ( void(*send)(Char,void*), Int flags, Int base, Int width, ULong p, void *send_arg)
-{
-   Char buf[40];
-   Int  ind = 0;
-   Int  i, nc = 0;
-   Bool neg = False;
-   Char *digits = "0123456789ABCDEF";
-   UInt ret = 0;
-
-   if (base < 2 || base > 16)
-      return ret;
- 
-   if ((flags & VG_MSG_SIGNED) && (Long)p < 0) {
-      p   = - (Long)p;
-      neg = True;
-   }
-
-   if (p == 0)
-      buf[ind++] = '0';
-   else {
-      while (p > 0) {
-         if (flags & VG_MSG_COMMA && 10 == base &&
-             0 == (ind-nc) % 3 && 0 != ind) 
-         {
-            buf[ind++] = ',';
-            nc++;
-         }
-         buf[ind++] = digits[p % base];
-         p /= base;
-      }
-   }
-
-   if (neg)
-      buf[ind++] = '-';
-
-   if (width > 0 && !(flags & VG_MSG_LJUSTIFY)) {
-      for(; ind < width; ind++) {
-         vg_assert(ind < 39);
-         buf[ind] = (flags & VG_MSG_ZJUSTIFY) ? '0': ' ';
-      }
-   }
-
-   /* Reverse copy to buffer.  */
-   ret += ind;
-   for (i = ind -1; i >= 0; i--) {
-      send(buf[i], send_arg);
-   }
-   if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
-      for(; ind < width; ind++) {
-	 ret++;
-         send(' ', send_arg);  // Never pad with zeroes on RHS -- changes the value!
-      }
-   }
-   return ret;
-}
-
-
-/* A simple vprintf().  */
-UInt
-VG_(vprintf) ( void(*send)(Char,void*), const Char *format, va_list vargs, void *send_arg )
-{
-   UInt ret = 0;
-   int i;
-   int flags;
-   int width;
-   Bool is_long;
-
-   /* We assume that vargs has already been initialised by the 
-      caller, using va_start, and that the caller will similarly
-      clean up with va_end.
-   */
-
-   for (i = 0; format[i] != 0; i++) {
-      if (format[i] != '%') {
-         send(format[i], send_arg);
-	 ret++;
-         continue;
-      }
-      i++;
-      /* A '%' has been found.  Ignore a trailing %. */
-      if (format[i] == 0)
-         break;
-      if (format[i] == '%') {
-         /* `%%' is replaced by `%'. */
-         send('%', send_arg);
-	 ret++;
-         continue;
-      }
-      flags = 0;
-      is_long = False;
-      width = 0; /* length of the field. */
-      if (format[i] == '(') {
-	 flags |= VG_MSG_PAREN;
-	 i++;
-      }
-      /* If ',' follows '%', commas will be inserted. */
-      if (format[i] == ',') {
-         flags |= VG_MSG_COMMA;
-         i++;
-      }
-      /* If '-' follows '%', justify on the left. */
-      if (format[i] == '-') {
-         flags |= VG_MSG_LJUSTIFY;
-         i++;
-      }
-      /* If '0' follows '%', pads will be inserted. */
-      if (format[i] == '0') {
-         flags |= VG_MSG_ZJUSTIFY;
-         i++;
-      }
-      /* Compute the field length. */
-      while (format[i] >= '0' && format[i] <= '9') {
-         width *= 10;
-         width += format[i++] - '0';
-      }
-      while (format[i] == 'l') {
-         i++;
-         is_long = True;
-      }
-
-      switch (format[i]) {
-         case 'd': /* %d */
-            flags |= VG_MSG_SIGNED;
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Long)), send_arg);
-            else
-               ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Int)), send_arg);
-            break;
-         case 'u': /* %u */
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, ULong)), send_arg);
-            else
-               ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, UInt)), send_arg);
-            break;
-         case 'p': /* %p */
-	    ret += 2;
-            send('0',send_arg);
-            send('x',send_arg);
-            ret += myvprintf_int64(send, flags, 16, width, 
-				   (ULong)((UWord)va_arg (vargs, void *)), send_arg);
-            break;
-         case 'x': /* %x */
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, ULong)), send_arg);
-            else
-               ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, UInt)), send_arg);
-            break;
-         case 'c': /* %c */
-	    ret++;
-            send(va_arg (vargs, int), send_arg);
-            break;
-         case 's': case 'S': { /* %s */
-            char *str = va_arg (vargs, char *);
-            if (str == (char*) 0) str = "(null)";
-            ret += myvprintf_str(send, flags, width, str, format[i]=='S', send_arg);
-            break;
-	 }
-	 case 'y': { /* %y - print symbol */
-	    Char buf[100];
-	    Char *cp = buf;
-	    Addr a = va_arg(vargs, Addr);
-
-	    if (flags & VG_MSG_PAREN)
-	       *cp++ = '(';
-	    if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
-	       if (flags & VG_MSG_PAREN) {
-		  cp += VG_(strlen)(cp);
-		  *cp++ = ')';
-		  *cp = '\0';
-	       }
-	       ret += myvprintf_str(send, flags, width, buf, 0, send_arg);
-	    }
-
-	    break;
-	 }
-         default:
-            break;
-      }
-   }
-   return ret;
-}
-
-
 /* A general replacement for printf().  Note that only low-level 
    debugging info should be sent via here.  The official route is to
    to use vg_message().  This interface is deprecated.
@@ -660,7 +402,7 @@ typedef struct {
    int n;
 } printf_buf;
 
-static void add_to_myprintf_buf ( Char c, void *p )
+static void add_to_myprintf_buf ( HChar c, void *p )
 {
    printf_buf *myprintf_buf = (printf_buf *)p;
    
@@ -683,7 +425,8 @@ UInt VG_(printf) ( const char *format, ... )
    printf_buf myprintf_buf = {"",0};
    va_start(vargs,format);
    
-   ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs, &myprintf_buf );
+   ret = VG_(debugLog_vprintf) 
+            ( add_to_myprintf_buf, &myprintf_buf, format, vargs );
 
    if (myprintf_buf.n > 0 && VG_(clo_log_fd) >= 0) {
       VG_(send_bytes_to_logging_sink)( myprintf_buf.buf, myprintf_buf.n );
@@ -695,7 +438,7 @@ UInt VG_(printf) ( const char *format, ... )
 }
 
 /* A general replacement for sprintf(). */
-static void add_to_vg_sprintf_buf ( Char c, void *p )
+static void add_to_vg_sprintf_buf ( HChar c, void *p )
 {
    char **vg_sprintf_ptr = p;
    *(*vg_sprintf_ptr)++ = c;
@@ -709,7 +452,8 @@ UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 
    va_start(vargs,format);
 
-   ret = VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs, &vg_sprintf_ptr );
+   ret = VG_(debugLog_vprintf) 
+            ( add_to_vg_sprintf_buf, &vg_sprintf_ptr, format, vargs );
    add_to_vg_sprintf_buf(0,&vg_sprintf_ptr);
 
    va_end(vargs);
@@ -1198,7 +942,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    entered = True;
 
    va_start(vargs,format);
-   VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs, &bufptr );
+   VG_(debugLog_vprintf) ( add_to_vg_sprintf_buf, &bufptr, format, vargs );
    add_to_vg_sprintf_buf('\0', &bufptr);
    va_end(vargs);
 

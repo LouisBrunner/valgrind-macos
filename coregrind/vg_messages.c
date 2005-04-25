@@ -31,6 +31,7 @@
 
 
 #include "core.h"
+#include "pub_core_debuglog.h"  /* VG_(debugLog_vprintf) */
 
 #include <time.h>
 #include <sys/time.h>
@@ -41,7 +42,7 @@
 static char mbuf[M_MSGBUF];
 static int n_mbuf;
 
-static void add_to_buf ( Char c, void *p )
+static void add_to_buf ( HChar c, void *p )
 {
   if (n_mbuf >= (M_MSGBUF-1)) return;
   mbuf[n_mbuf++] = c;
@@ -71,7 +72,7 @@ static int add_to_msg ( const Char *format, ... )
    int count;
    va_list vargs;
    va_start(vargs,format);
-   count = VG_(vprintf) ( add_to_buf, format, vargs, 0 );
+   count = VG_(debugLog_vprintf) ( add_to_buf, NULL, format, vargs );
    va_end(vargs);
    return count;
 }
@@ -119,7 +120,7 @@ int VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
 {
    int count;
    count = start_msg ( kind );
-   count += VG_(vprintf) ( add_to_buf, format, vargs, 0 );
+   count += VG_(debugLog_vprintf) ( add_to_buf, NULL, format, vargs );
    count += end_msg();
    return count;
 }

@@ -14,7 +14,7 @@ DIST_SUBDIRS = \
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
-		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
+		-DVG_PLATFORM="$(VG_PLATFORM)"
 AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
 AM_CFLAGS += -fno-omit-frame-pointer
 
@@ -35,6 +35,8 @@ noinst_HEADERS = \
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_stacktrace.h	\
+	pub_core_sigframe.h	\
+	pub_core_debuglog.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
@@ -51,6 +53,7 @@ valgrind_SOURCES = \
 	ume.c \
 	\
 	stage1.c \
+	m_debuglog.c \
 	${VG_ARCH}/jmp_with_stack.c 
 valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g
@@ -60,6 +63,7 @@ stage2_SOURCES = \
 	m_errormgr.c \
 	m_execontext.c \
 	m_stacktrace.c \
+	m_debuglog.c \
 	ume.c \
 	\
 	vg_scheduler.c \
@@ -132,6 +136,7 @@ vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl proto  < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl struct < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
+
 
 vg_inject_so_SOURCES = vg_intercept.c
 vg_inject_so_CFLAGS = $(AM_CFLAGS) -fpic

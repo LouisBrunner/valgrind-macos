@@ -31,6 +31,8 @@
 
 #include "core.h"
 #include "pub_core_sigframe.h"
+#include "pub_core_aspacemgr.h" /* find_segment */
+
 
 #include "libvex_guest_x86.h"
 

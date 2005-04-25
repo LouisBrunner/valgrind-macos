@@ -31,6 +31,8 @@
 
 
 #include "core.h"
+#include "pub_core_aspacemgr.h"
+
 //zz#include "memcheck/memcheck.h"
 
 //#define DEBUG_MALLOC      // turn on heavyweight debugging machinery

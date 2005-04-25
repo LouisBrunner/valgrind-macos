@@ -83,6 +83,7 @@
 
 #include "pub_core_errormgr.h"
 #include "pub_core_sigframe.h"
+#include "pub_core_aspacemgr.h"
 
 
 /* Define to give more sanity checking for signals. */

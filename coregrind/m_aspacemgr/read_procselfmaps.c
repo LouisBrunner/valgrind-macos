@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A simple parser for /proc/self/maps on Linux 2.4.X           ---*/
-/*---                                            vg_procselfmaps.c ---*/
+/*--- A simple parser for /proc/self/maps on Linux 2.4.X/2.6.X     ---*/
+/*---                                          read_procselfmaps.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -31,6 +31,8 @@
 
 
 #include "core.h"
+#include "pub_core_aspacemgr.h"
+
 
 /* Size of a smallish table used to read /proc/self/map entries. */
 #define M_PROCMAP_BUF 50000
@@ -261,5 +263,5 @@ void VG_(parse_procselfmaps) (
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                        vg_procselfmaps.c ---*/
+/*--- end                                      read_procselfmaps.c ---*/
 /*--------------------------------------------------------------------*/

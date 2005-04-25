@@ -33,6 +33,8 @@
 #include "vg_symtypes.h"
 #include "vg_symtab2.h"
 
+#include "pub_core_aspacemgr.h"
+
 #include <elf.h>          /* ELF defns                      */
 
 static SegInfo* segInfo = NULL;

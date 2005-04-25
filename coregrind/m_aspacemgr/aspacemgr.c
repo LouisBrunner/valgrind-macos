@@ -1,8 +1,8 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Memory-related stuff: segment initialisation and tracking,   ---*/
-/*--- stack operations                                             ---*/
-/*---                                                  vg_memory.c ---*/
+/*--- The address space manager: segment initialisation and        ---*/
+/*--- tracking, stack operations                                   ---*/
+/*---                                                  aspacemgr.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -31,6 +31,8 @@
 */
 
 #include "core.h"
+#include "pub_core_aspacemgr.h"
+
 
 /* Define to debug the memory-leak-detector. */
 /* #define VG_DEBUG_LEAKCHECK */
@@ -1300,5 +1302,5 @@ void *VG_(shadow_alloc)(UInt size)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                              vg_memory.c ---*/
+/*--- end                                              aspacemgr.c ---*/
 /*--------------------------------------------------------------------*/

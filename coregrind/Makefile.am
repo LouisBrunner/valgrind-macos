@@ -6,11 +6,11 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 ## That's what DIST_SUBDIRS specifies.
 SUBDIRS = \
 	$(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     \
-	m_sigframe demangle .
+	m_sigframe m_aspacemgr demangle .
 
 DIST_SUBDIRS = \
 	$(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) \
-	m_sigframe demangle .
+	m_sigframe m_aspacemgr demangle .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
@@ -37,6 +37,7 @@ noinst_HEADERS = \
 	pub_core_stacktrace.h	\
 	pub_core_sigframe.h	\
 	pub_core_debuglog.h	\
+	pub_core_aspacemgr.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
@@ -73,11 +74,9 @@ stage2_SOURCES = \
 	vg_replace_malloc.c \
 	vg_main.c \
 	vg_malloc2.c \
-	vg_memory.c \
 	vg_messages.c \
 	vg_mylibc.c \
 	vg_needs.c \
-	vg_procselfmaps.c \
 	vg_dummy_profile.c \
 	vg_signals.c \
 	vg_symtab2.c \
@@ -97,6 +96,7 @@ stage2_SOURCES = \
 stage2_extra= \
 	demangle/libdemangle.a \
 	m_sigframe/libsigframe.a \
+	m_aspacemgr/libaspacemgr.a \
 	${VG_PLATFORM}/libplatform.a \
 	${VG_ARCH}/libarch.a \
 	${VG_OS}/libos.a \

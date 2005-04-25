@@ -32,6 +32,8 @@
 #include "core.h"
 #include "vg_symtab2.h"
 
+#include "pub_core_aspacemgr.h"
+
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/
 /*------------------------------------------------------------*/

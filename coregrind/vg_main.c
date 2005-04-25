@@ -35,6 +35,7 @@
 #include "pub_core_execontext.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_debuglog.h"
+#include "pub_core_aspacemgr.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

@@ -30,6 +30,8 @@
 
 #include "core.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_aspacemgr.h"
+
 
 /* All system calls are channelled through here, doing two things:
 

@@ -556,7 +556,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    len = PGROUNDUP(len);
 
    if (debug)
-      VG_(printf)("unmap_range(%p, %d)\n", addr, len);
+      VG_(printf)("unmap_range(%p, %lu)\n", addr, len);
    if (0) show_segments("unmap_range(BEFORE)");
    end = addr+len;
 
@@ -594,7 +594,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 s->len = addr - s->addr;
 
 	 if (debug)
-	    VG_(printf)("  case 1: s->len=%d\n", s->len);
+	    VG_(printf)("  case 1: s->len=%lu\n", s->len);
       } else if (addr <= s->addr && end > s->addr && end < s_end) {
 	 /* this segment's head is truncated by [addr, addr+len)
 	    -> truncate head
@@ -602,7 +602,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 Word delta = end - s->addr;
 
 	 if (debug)
-	    VG_(printf)("  case 2: s->addr=%p s->len=%d delta=%d\n", 
+	    VG_(printf)("  case 2: s->addr=%p s->len=%lu delta=%d\n", 
                         s->addr, s->len, delta);
 
          dump_translations_from(s);
@@ -668,7 +668,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    if (debug)
       VG_(printf)(
          "\n"
-         "map_file_segment(addr=%p len=%llu prot=0x%x flags=0x%x\n"
+         "map_file_segment(addr=%p len=%lu prot=0x%x flags=0x%x\n"
          "                 dev=0x%4x ino=%d off=%ld\n"
          "                 filename='%s')\n",
          addr, (ULong)len, prot, flags, dev, ino, off, filename);
@@ -780,7 +780,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
    static const Bool debug = False || mem_debug;
 
    if (debug)
-      VG_(printf)("\nmprotect_range(%p, %d, %x)\n", a, len, prot);
+      VG_(printf)("\nmprotect_range(%p, %lu, %x)\n", a, len, prot);
 
    if (0) show_segments( "mprotect_range(before)" );
 
@@ -821,7 +821,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
    if (debug) {
       VG_(printf)("\n\n");
-      VG_(printf)("find_map_space(%p, %d, %d) ...\n",
+      VG_(printf)("find_map_space(%p, %lu, %d) ...\n",
                   addr, len, for_client);
    }
 
@@ -923,7 +923,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
       ret = 0; /* not found */
 
    if (debug)
-      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n\n",
+      VG_(printf)("find_map_space(%p, %lu, %d) -> %p\n\n",
                   addr, len, for_client, ret);
 
    if (fixed) {

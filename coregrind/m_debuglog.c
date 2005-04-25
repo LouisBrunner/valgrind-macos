@@ -456,7 +456,7 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    if (level > loglevel)
       return;
 
-   indent = 1*level - 1;
+   indent = 2*level - 1;
    if (indent < 1) indent = 1;
 
    buf.n = 0;

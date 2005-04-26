@@ -338,8 +338,7 @@ static IRAtom* mkLeft8 ( MCEnv* mce, IRAtom* a1 ) {
    return assignNew(mce, Ity_I8, 
                     binop(Iop_Or8, a1, 
                           assignNew(mce, Ity_I8,
-                                    /* unop(Iop_Neg8, a1)))); */
-                                    binop(Iop_Sub8, mkU8(0), a1) )));
+                                         unop(Iop_Neg8, a1))));
 }
 
 static IRAtom* mkLeft16 ( MCEnv* mce, IRAtom* a1 ) {
@@ -348,8 +347,7 @@ static IRAtom* mkLeft16 ( MCEnv* mce, IRAtom* a1 ) {
    return assignNew(mce, Ity_I16, 
                     binop(Iop_Or16, a1, 
                           assignNew(mce, Ity_I16,
-                                    /* unop(Iop_Neg16, a1)))); */
-                                    binop(Iop_Sub16, mkU16(0), a1) )));
+                                         unop(Iop_Neg16, a1))));
 }
 
 static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
@@ -358,8 +356,7 @@ static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
    return assignNew(mce, Ity_I32, 
                     binop(Iop_Or32, a1, 
                           assignNew(mce, Ity_I32,
-                                    /* unop(Iop_Neg32, a1)))); */
-                                    binop(Iop_Sub32, mkU32(0), a1) )));
+                                         unop(Iop_Neg32, a1))));
 }
 
 static IRAtom* mkLeft64 ( MCEnv* mce, IRAtom* a1 ) {
@@ -368,8 +365,7 @@ static IRAtom* mkLeft64 ( MCEnv* mce, IRAtom* a1 ) {
    return assignNew(mce, Ity_I64, 
                     binop(Iop_Or64, a1, 
                           assignNew(mce, Ity_I64,
-                                    /* unop(Iop_Neg32, a1)))); */
-                                    binop(Iop_Sub64, mkU64(0), a1) )));
+                                         unop(Iop_Neg64, a1))));
 }
 
 /* --------- 'Improvement' functions for AND/OR. --------- */
@@ -496,16 +492,16 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
          tmp1 = vbits;
          break;
       case Ity_I8: 
-         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE8, vbits, mkU8(0)));
+         tmp1 = assignNew(mce, Ity_I1, unop(Iop_CmpNEZ8, vbits));
          break;
       case Ity_I16: 
-         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE16, vbits, mkU16(0)));
+         tmp1 = assignNew(mce, Ity_I1, unop(Iop_CmpNEZ16, vbits));
          break;
       case Ity_I32: 
-         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE32, vbits, mkU32(0)));
+         tmp1 = assignNew(mce, Ity_I1, unop(Iop_CmpNEZ32, vbits));
          break;
       case Ity_I64: 
-         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE64, vbits, mkU64(0)));
+         tmp1 = assignNew(mce, Ity_I1, unop(Iop_CmpNEZ64, vbits));
          break;
       case Ity_I128: {
          /* Gah.  Chop it in half, OR the halves together, and compare
@@ -514,7 +510,7 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
          IRAtom* tmp3 = assignNew(mce, Ity_I64, unop(Iop_128to64, vbits));
          IRAtom* tmp4 = assignNew(mce, Ity_I64, binop(Iop_Or64, tmp2, tmp3));
          tmp1         = assignNew(mce, Ity_I1, 
-                                       binop(Iop_CmpNE64, tmp4, mkU64(0)));
+                                       unop(Iop_CmpNEZ64, tmp4));
          break;
       }
       default:
@@ -601,7 +597,7 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
          opNOT  = Iop_Not64;
          opXOR  = Iop_Xor64;
          opCMP  = Iop_CmpEQ64;
-         top    = mkU64(0xFFFFFFFFFFFFFFFF);
+         top    = mkU64(0xFFFFFFFFFFFFFFFFULL);
          break;
       default:
          VG_(tool_panic)("expensiveCmpEQorNE");
@@ -901,10 +897,43 @@ IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
 static
 IRAtom* mkLazy2 ( MCEnv* mce, IRType finalVty, IRAtom* va1, IRAtom* va2 )
 {
-   /* force everything via 32-bit intermediaries. */
    IRAtom* at;
+   IRType t1 = typeOfIRExpr(mce->bb->tyenv, va1);
+   IRType t2 = typeOfIRExpr(mce->bb->tyenv, va2);
    tl_assert(isShadowAtom(mce,va1));
    tl_assert(isShadowAtom(mce,va2));
+
+   /* The general case is inefficient because PCast is an expensive
+      operation.  Here are some special cases which use PCast only
+      once rather than twice. */
+
+   /* I64 x I64 -> I64 */
+   if (t1 == Ity_I64 && t2 == Ity_I64 && finalVty == Ity_I64) {
+      if (0) VG_(printf)("mkLazy2: I64 x I64 -> I64\n");
+      at = mkUifU(mce, Ity_I64, va1, va2);
+      at = mkPCastTo(mce, Ity_I64, at);
+      return at;
+   }
+
+   /* I64 x I64 -> I32 */
+   if (t1 == Ity_I64 && t2 == Ity_I64 && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy2: I64 x I64 -> I32\n");
+      at = mkUifU(mce, Ity_I64, va1, va2);
+      at = mkPCastTo(mce, Ity_I32, at);
+      return at;
+   }
+
+   if (0) {
+      VG_(printf)("mkLazy2 ");
+      ppIRType(t1);
+      VG_(printf)("_");
+      ppIRType(t2);
+      VG_(printf)("_");
+      ppIRType(finalVty);
+      VG_(printf)("\n");
+   }
+
+   /* General case: force everything via 32-bit intermediaries. */
    at = mkPCastTo(mce, Ity_I32, va1);
    at = mkUifU(mce, Ity_I32, at, mkPCastTo(mce, Ity_I32, va2));
    at = mkPCastTo(mce, finalVty, at);

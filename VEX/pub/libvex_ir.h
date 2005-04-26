@@ -230,10 +230,10 @@ typedef
       */
 
       /* Ordering not important after here. */
-      Iop_CmpLT32S,
-      Iop_CmpLE32S,
-      Iop_CmpLT32U,
-      Iop_CmpLE32U,
+      Iop_CmpLT32S, Iop_CmpLT64S,
+      Iop_CmpLE32S, Iop_CmpLE64S,
+      Iop_CmpLT32U, Iop_CmpLT64U,
+      Iop_CmpLE32U, Iop_CmpLE64U,
 
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */

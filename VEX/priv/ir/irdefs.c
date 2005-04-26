@@ -171,6 +171,11 @@ void ppIROp ( IROp op )
       case Iop_CmpLT32U: vex_printf("CmpLT32U"); return;
       case Iop_CmpLE32U: vex_printf("CmpLE32U"); return;
 
+      case Iop_CmpLT64S: vex_printf("CmpLT64S"); return;
+      case Iop_CmpLE64S: vex_printf("CmpLE64S"); return;
+      case Iop_CmpLT64U: vex_printf("CmpLT64U"); return;
+      case Iop_CmpLE64U: vex_printf("CmpLE64U"); return;
+
       case Iop_DivU32: vex_printf("DivU32"); return;
       case Iop_DivS32: vex_printf("DivS32"); return;
 
@@ -1271,6 +1276,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpLT32U: case Iop_CmpLE32U:
          COMPARISON(Ity_I32);
       case Iop_CmpEQ64: case Iop_CmpNE64:
+      case Iop_CmpLT64S: case Iop_CmpLE64S:
+      case Iop_CmpLT64U: case Iop_CmpLE64U:
          COMPARISON(Ity_I64);
 
       case Iop_MullU8: case Iop_MullS8:

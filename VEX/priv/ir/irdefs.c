@@ -176,6 +176,16 @@ void ppIROp ( IROp op )
       case Iop_CmpLT64U: vex_printf("CmpLT64U"); return;
       case Iop_CmpLE64U: vex_printf("CmpLE64U"); return;
 
+      case Iop_CmpNEZ8:  vex_printf("CmpNEZ8"); return;
+      case Iop_CmpNEZ16: vex_printf("CmpNEZ16"); return;
+      case Iop_CmpNEZ32: vex_printf("CmpNEZ32"); return;
+      case Iop_CmpNEZ64: vex_printf("CmpNEZ64"); return;
+
+      case Iop_Neg8:  vex_printf("Neg8"); return;
+      case Iop_Neg16: vex_printf("Neg16"); return;
+      case Iop_Neg32: vex_printf("Neg32"); return;
+      case Iop_Neg64: vex_printf("Neg64"); return;
+
       case Iop_DivU32: vex_printf("DivU32"); return;
       case Iop_DivS32: vex_printf("DivS32"); return;
 
@@ -1206,6 +1216,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
      *t_dst = (_td); *t_arg1 = (_ta1); *t_arg2 = (_ta2); break
 #  define COMPARISON(_ta)         \
      *t_dst = Ity_I1; *t_arg1 = *t_arg2 = (_ta); break;
+#  define UNARY_COMPARISON(_ta)         \
+     *t_dst = Ity_I1; *t_arg1 = (_ta); break;
 
    *t_dst  = Ity_INVALID;
    *t_arg1 = Ity_INVALID;
@@ -1259,11 +1271,15 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
          BINARY(Ity_I64, Ity_I64,Ity_I8);
 
-      case Iop_Not8:   UNARY(Ity_I8,Ity_I8);
-      case Iop_Not16:  UNARY(Ity_I16,Ity_I16);
-      case Iop_Not32:  UNARY(Ity_I32,Ity_I32);
+      case Iop_Not8: case Iop_Neg8:
+         UNARY(Ity_I8,Ity_I8);
+      case Iop_Not16: case Iop_Neg16:
+         UNARY(Ity_I16,Ity_I16);
+      case Iop_Not32: case Iop_Neg32:
+         UNARY(Ity_I32,Ity_I32);
 
-      case Iop_Not64:  
+      case Iop_Neg64:
+      case Iop_Not64:
       case Iop_CmpNEZ32x2: case Iop_CmpNEZ16x4: case Iop_CmpNEZ8x8:
          UNARY(Ity_I64,Ity_I64);
 
@@ -1279,6 +1295,11 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpLT64S: case Iop_CmpLE64S:
       case Iop_CmpLT64U: case Iop_CmpLE64U:
          COMPARISON(Ity_I64);
+
+      case Iop_CmpNEZ8:  UNARY_COMPARISON(Ity_I8);
+      case Iop_CmpNEZ16: UNARY_COMPARISON(Ity_I16);
+      case Iop_CmpNEZ32: UNARY_COMPARISON(Ity_I32);
+      case Iop_CmpNEZ64: UNARY_COMPARISON(Ity_I64);
 
       case Iop_MullU8: case Iop_MullS8:
          BINARY(Ity_I16, Ity_I8,Ity_I8);
@@ -1456,6 +1477,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 #  undef UNARY
 #  undef BINARY
 #  undef COMPARISON
+#  undef UNARY_COMPARISON
 }
 
 

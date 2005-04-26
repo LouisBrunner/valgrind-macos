@@ -235,6 +235,10 @@ typedef
       Iop_CmpLT32U, Iop_CmpLT64U,
       Iop_CmpLE32U, Iop_CmpLE64U,
 
+      /* As a sop to Valgrind-Memcheck, the following are useful. */
+      Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
+      Iop_Neg8, Iop_Neg16, Iop_Neg32, Iop_Neg64,
+
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */
       Iop_DivU32,   // :: I32,I32 -> I32 (simple div, no mod)
@@ -248,11 +252,21 @@ typedef
                           // of which lo half is div and hi half is mod
       Iop_DivModS128to64, // ditto, signed
 
+      /* Integer conversions.  Some of these are redundant (eg
+         Iop_64to8 is the same as Iop_64to32 and then Iop_32to8), but
+         having a complete set reduces the typical dynamic size of IR
+         and makes the instruction selectors easier to write. */
+
       /* Widening conversions */
-      Iop_8Uto16, Iop_8Uto32, Iop_16Uto32, Iop_32Uto64,
-      Iop_8Sto16, Iop_8Sto32, Iop_16Sto32, Iop_32Sto64,
+      Iop_8Uto16, Iop_8Uto32,  Iop_8Uto64,
+                  Iop_16Uto32, Iop_16Uto64,
+                               Iop_32Uto64,
+      Iop_8Sto16, Iop_8Sto32,  Iop_8Sto64,
+                  Iop_16Sto32, Iop_16Sto64,
+                               Iop_32Sto64,
+
       /* Narrowing conversions */
-      Iop_32to8,
+      Iop_64to8, Iop_32to8, Iop_64to16,
       /* 8 <-> 16 bit conversions */
       Iop_16to8,      // :: I16 -> I8, low half
       Iop_16HIto8,    // :: I16 -> I8, high half

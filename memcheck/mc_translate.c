@@ -595,6 +595,14 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
          opCMP  = Iop_CmpEQ32;
          top    = mkU32(0xFFFFFFFF);
          break;
+      case Ity_I64:
+         opDIFD = Iop_And64;
+         opUIFU = Iop_Or64;
+         opNOT  = Iop_Not64;
+         opXOR  = Iop_Xor64;
+         opCMP  = Iop_CmpEQ64;
+         top    = mkU64(0xFFFFFFFFFFFFFFFF);
+         break;
       default:
          VG_(tool_panic)("expensiveCmpEQorNE");
    }
@@ -1651,9 +1659,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          else
             goto cheap_cmp64;
       cheap_cmp64:
-	 //      case Iop_CmpLE64S: case Iop_CmpLE64U: 
-	 //      case Iop_CmpLT64U: case Iop_CmpLT64S:
-	 //      case Iop_CmpNE64:
+      case Iop_CmpLE64S: case Iop_CmpLE64U: 
+      case Iop_CmpLT64U: case Iop_CmpLT64S:
+      case Iop_CmpNE64:
          return mkPCastTo(mce, Ity_I1, mkUifU64(mce, vatom1,vatom2));
 
       case Iop_CmpEQ32: 

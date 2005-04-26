@@ -146,14 +146,20 @@ HReg hregAMD64_XMM15 ( void ) { return mkHReg(15, HRcVec128, False); }
 void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
 {
 #if 1
-   *nregs = 6;
+   *nregs = 11;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-   (*arr)[ 0] = hregAMD64_RDI();
-   (*arr)[ 1] = hregAMD64_R8();
-   (*arr)[ 2] = hregAMD64_R9();
-   (*arr)[ 3] = hregAMD64_XMM7();
-   (*arr)[ 4] = hregAMD64_XMM8();
-   (*arr)[ 5] = hregAMD64_XMM9();
+   (*arr)[ 0] = hregAMD64_RSI();
+   (*arr)[ 1] = hregAMD64_RDI();
+   (*arr)[ 2] = hregAMD64_R8();
+   (*arr)[ 3] = hregAMD64_R9();
+   (*arr)[ 4] = hregAMD64_R12();
+   (*arr)[ 5] = hregAMD64_R13();
+   (*arr)[ 6] = hregAMD64_R14();
+   (*arr)[ 7] = hregAMD64_R15();
+
+   (*arr)[ 8] = hregAMD64_XMM7();
+   (*arr)[ 9] = hregAMD64_XMM8();
+   (*arr)[10] = hregAMD64_XMM9();
 #else
    *nregs = 30;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));

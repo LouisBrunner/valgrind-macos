@@ -1166,7 +1166,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 
 
    PLAX_(__NR_semtimedop,        sys_semtimedop),     // 220 
-   //   (__NR_fadvise64,         sys_fadvise64),      // 221 
+   LINX_(__NR_fadvise64,         sys_fadvise64),      // 221 
    //   (__NR_timer_create,      sys_timer_create),   // 222 
    //   (__NR_timer_settime,     sys_timer_settime),  // 223 
    //   (__NR_timer_gettime,     sys_timer_gettime),  // 224 

@@ -567,6 +567,19 @@ POST(sys_tgkill)
    VG_(poll_signals)(tid);
 }
 
+PRE(sys_fadvise64, 0)
+{
+   PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ4(long, "fadvise64",
+                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice)
+}
+
+PRE(sys_fadvise64_64, 0)
+{
+   PRINT("sys_fadvise64_64 ( %d, %lld, %lld, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ4(long, "fadvise64_64",
+                 int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice)
+}
 
 // Nb: this wrapper is "Special" because we have to pad/unpad memory around
 // the syscall itself, and this allows us to control exactly the code that

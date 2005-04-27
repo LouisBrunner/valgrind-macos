@@ -900,22 +900,20 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondL)) {
          /* long sub/cmp, then L (signed less than) 
             --> test dst <s src */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
+         return unop(Iop_1Uto64,
                      binop(Iop_CmpLT64S, 
                            binop(Iop_Shl64,cc_dep1,mkU8(32)),
-                           binop(Iop_Shl64,cc_dep2,mkU8(32)))));
+                           binop(Iop_Shl64,cc_dep2,mkU8(32))));
 
       }
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondLE)) {
          /* long sub/cmp, then L (signed less than or equal) 
             --> test dst <s src */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
+         return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64S, 
                            binop(Iop_Shl64,cc_dep1,mkU8(32)),
-                           binop(Iop_Shl64,cc_dep2,mkU8(32)))));
+                           binop(Iop_Shl64,cc_dep2,mkU8(32))));
 
       }
 
@@ -936,24 +934,23 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 
       /*---------------- SUBW ----------------*/
 
-      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondZ)) {
-         /* word sub/cmp, then Z --> test dst==src */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ16, 
-                           unop(Iop_32to16,unop(Iop_64to32,cc_dep1)),
-                           unop(Iop_32to16,unop(Iop_64to32,cc_dep2)))));
-      }
+      // CAUSES xedit not to work
+      //      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondZ)) {
+      //         /* word sub/cmp, then Z --> test dst==src */
+      //         return unop(Iop_1Uto64,
+      //                     binop(Iop_CmpEQ16, 
+      //                           unop(Iop_64to16,cc_dep1),
+      //                           unop(Iop_64to16,cc_dep2)));
+      //      }
 
       /*---------------- SUBB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
+         return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ8, 
-                           unop(Iop_32to8,unop(Iop_64to32,cc_dep1)),
-                           unop(Iop_32to8,unop(Iop_64to32,cc_dep2)))));
+                           unop(Iop_64to8,cc_dep1),
+                           unop(Iop_64to8,cc_dep2)));
       }
 
 //      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondNZ)) {
@@ -979,10 +976,10 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondZ)) {
          /* long and/or/xor, then Z --> test dst==0 */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,binop(Iop_CmpEQ64, 
-                                      binop(Iop_Shl64,cc_dep1,mkU8(32)), 
-                                      mkU64(0))));
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, 
+                           binop(Iop_Shl64,cc_dep1,mkU8(32)), 
+                           mkU64(0)));
       }
 
 //..       if (isU32(cc_op, AMD64G_CC_OP_LOGICL) && isU32(cond, X86CondS)) {
@@ -997,10 +994,10 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
             OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
             the result is <=signed 0.  Hence ...
          */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,binop(Iop_CmpLE64S, 
-                                      binop(Iop_Shl64,cc_dep1,mkU8(32)), 
-                                      mkU64(0))));
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLE64S, 
+                           binop(Iop_Shl64,cc_dep1,mkU8(32)), 
+                           mkU64(0)));
       }
 
 //..       if (isU32(cc_op, AMD64G_CC_OP_LOGICL) && isU32(cond, X86CondBE)) {
@@ -1112,19 +1109,17 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBL)) {
          /* C after sub denotes unsigned less than */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
+         return unop(Iop_1Uto64,
                      binop(Iop_CmpLT64U, 
                            binop(Iop_Shl64,cc_dep1,mkU8(32)), 
-                           binop(Iop_Shl64,cc_dep2,mkU8(32)))));
+                           binop(Iop_Shl64,cc_dep2,mkU8(32))));
       }
       if (isU64(cc_op, AMD64G_CC_OP_SUBB)) {
          /* C after sub denotes unsigned less than */
-         return unop(Iop_32Uto64,
-                unop(Iop_1Uto32,
+         return unop(Iop_1Uto64,
                      binop(Iop_CmpLT64U, 
                            binop(Iop_And64,cc_dep1,mkU64(0xFF)),
-                           binop(Iop_And64,cc_dep2,mkU64(0xFF)))));
+                           binop(Iop_And64,cc_dep2,mkU64(0xFF))));
       }
       if (isU64(cc_op, AMD64G_CC_OP_LOGICQ)
           || isU64(cc_op, AMD64G_CC_OP_LOGICL)

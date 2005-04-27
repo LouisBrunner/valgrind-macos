@@ -145,6 +145,17 @@ HReg hregAMD64_XMM15 ( void ) { return mkHReg(15, HRcVec128, False); }
 
 void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
 {
+#if 0
+   *nregs = 6;
+   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   (*arr)[ 0] = hregAMD64_RSI();
+   (*arr)[ 1] = hregAMD64_RDI();
+   (*arr)[ 2] = hregAMD64_RBX();
+
+   (*arr)[ 3] = hregAMD64_XMM7();
+   (*arr)[ 4] = hregAMD64_XMM8();
+   (*arr)[ 5] = hregAMD64_XMM9();
+#endif
 #if 1
    *nregs = 11;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
@@ -160,7 +171,8 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[ 8] = hregAMD64_XMM7();
    (*arr)[ 9] = hregAMD64_XMM8();
    (*arr)[10] = hregAMD64_XMM9();
-#else
+#endif
+#if 0
    *nregs = 30;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[ 0] = hregAMD64_RAX();
@@ -1033,7 +1045,7 @@ void ppAMD64Instr ( AMD64Instr* i )
          ppAMD64RM(i->Ain.Test64.dst);
          return;
       case Ain_Unary64:
-         vex_printf("%sl ", showAMD64UnaryOp(i->Ain.Unary64.op));
+         vex_printf("%sq ", showAMD64UnaryOp(i->Ain.Unary64.op));
          ppAMD64RM(i->Ain.Unary64.dst);
          return;
       case Ain_MulL:
@@ -2426,15 +2438,16 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
             goto bad;
          }
       }
-//..       if (i->Xin.Unary32.op == Xun_NEG) {
-//..          *p++ = 0xF7;
-//..          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-//..             p = doAMode_R(p, fake(3), i->Xin.Unary32.dst->Xrm.Reg.reg);
-//..             goto done;
-//..          } else {
-//..             goto bad;
-//..          }
-//..       }
+      if (i->Ain.Unary64.op == Aun_NEG) {
+         if (i->Ain.Unary64.dst->tag == Arm_Reg) {
+            *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst->Arm.Reg.reg);
+            *p++ = 0xF7;
+            p = doAMode_R(p, fake(3), i->Ain.Unary64.dst->Arm.Reg.reg);
+            goto done;
+         } else {
+            goto bad;
+         }
+      }
       break;
 
    case Ain_MulL:

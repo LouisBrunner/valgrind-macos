@@ -114,12 +114,6 @@ typedef enum {
 
 /* --------------- Basic configuration --------------- */
 
-/* The number of entries in the primary map can be altered.  However
-   we hardwire the assumption that each secondary map covers precisely
-   64k of address space. */
-#define SECONDARY_SIZE 65536               /* DO NOT CHANGE */
-#define SECONDARY_MASK (SECONDARY_SIZE-1)  /* DO NOT CHANGE */
-
 /* Only change this.  N_PRIMARY_MAP *must* be a power of 2. */
 #define N_PRIMARY_BITS  16
 
@@ -210,12 +204,12 @@ static AuxMapEnt* auxmap      = &hacky_auxmaps[0];
 
 /* Find an entry in the auxiliary map.  If an entry is found, move it
    one step closer to the front of the array, then return its address.
-   If an entry is not found, allocate one.  Note carefully that
+   If an entry is not found, return NULL.  Note carefully that
    because a each call potentially rearranges the entries, each call
    to this function invalidates ALL AuxMapEnt*s previously obtained by
    calling this fn.  
 */
-static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
+static AuxMapEnt* maybe_find_in_auxmap ( Addr a )
 {
    UWord i;
    tl_assert(a > MAX_PRIMARY_ADDRESS);
@@ -240,6 +234,23 @@ static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
       }
       return &auxmap[i];
    }
+
+   return NULL;
+}
+
+
+/* Find an entry in the auxiliary map.  If an entry is found, move it
+   one step closer to the front of the array, then return its address.
+   If an entry is not found, allocate one.  Note carefully that
+   because a each call potentially rearranges the entries, each call
+   to this function invalidates ALL AuxMapEnt*s previously obtained by
+   calling this fn.  
+*/
+static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
+{
+   AuxMapEnt* am = maybe_find_in_auxmap(a);
+   if (am)
+      return am;
 
    /* We didn't find it.  Hmm.  This is a new piece of address space.
       We'll need to allocate a new AuxMap entry for it. */
@@ -280,6 +291,23 @@ static SecMap* get_secmap_readable ( Addr a )
       return am->sm;
    }
 }
+
+/* If 'a' has a SecMap, produce it.  Else produce NULL.  But don't
+   allocate one if one doesn't already exist.  This is used by the
+   leak checker.
+*/
+static SecMap* maybe_get_secmap_for ( Addr a )
+{
+   if (a <= MAX_PRIMARY_ADDRESS) {
+      UWord pm_off = a >> 16;
+      return primary_map[ pm_off ];
+   } else {
+      AuxMapEnt* am = maybe_find_in_auxmap(a);
+      return am ? am->sm : NULL;
+   }
+}
+
+
 
 /* Produce the secmap for 'a', either from the primary map or by
    ensuring there is an entry for it in the aux primary map.  The
@@ -1655,45 +1683,46 @@ VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 //zz 
 //zz    return 1;
 //zz }
-//zz 
-//zz 
-//zz /*------------------------------------------------------------*/
-//zz /*--- Detecting leaked (unreachable) malloc'd blocks.      ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
-//zz /* For the memory leak detector, say whether an entire 64k chunk of
-//zz    address space is possibly in use, or not.  If in doubt return
-//zz    True.
-//zz */
-//zz static
-//zz Bool mc_is_valid_64k_chunk ( UInt chunk_number )
-//zz {
-//zz    tl_assert(chunk_number >= 0 && chunk_number < PRIMARY_SIZE);
-//zz    if (primary_map[chunk_number] == DSM_NOTADDR) {
-//zz       /* Definitely not in use. */
-//zz       return False;
-//zz    } else {
-//zz       return True;
-//zz    }
-//zz }
-//zz 
-//zz 
-//zz /* For the memory leak detector, say whether or not a given word
-//zz    address is to be regarded as valid. */
-//zz static
-//zz Bool mc_is_valid_address ( Addr a )
-//zz {
-//zz    UInt vbytes;
-//zz    UChar abits;
-//zz    tl_assert(VG_IS_4_ALIGNED(a));
-//zz    abits  = get_abits4_ALIGNED(a);
-//zz    vbytes = get_vbytes4_ALIGNED(a);
-//zz    if (abits == VGM_NIBBLE_VALID && vbytes == VGM_WORD_VALID) {
-//zz       return True;
-//zz    } else {
-//zz       return False;
-//zz    }
-//zz }
+
+
+/*------------------------------------------------------------*/
+/*--- Detecting leaked (unreachable) malloc'd blocks.      ---*/
+/*------------------------------------------------------------*/
+
+/* For the memory leak detector, say whether an entire 64k chunk of
+   address space is possibly in use, or not.  If in doubt return
+   True.
+*/
+static
+Bool mc_is_within_valid_secondary ( Addr a )
+{
+   SecMap* sm = maybe_get_secmap_for ( a );
+   if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]) {
+      /* Definitely not in use. */
+      return False;
+   } else {
+      return True;
+   }
+}
+
+
+/* For the memory leak detector, say whether or not a given word
+   address is to be regarded as valid. */
+static
+Bool mc_is_valid_aligned_word ( Addr a )
+{
+   tl_assert(sizeof(UWord) == 4 || sizeof(UWord) == 8);
+   if (sizeof(UWord) == 4) {
+      tl_assert(VG_IS_4_ALIGNED(a));
+   } else {
+      tl_assert(VG_IS_8_ALIGNED(a));
+   }
+   if (mc_check_readable( a, sizeof(UWord), NULL ) == MC_Ok) {
+      return True;
+   } else {
+      return False;
+   }
+}
 
 
 /* Leak detector for this tool.  We don't actually do anything, merely
@@ -1701,9 +1730,12 @@ VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
    tool. */
 static void mc_detect_memory_leaks ( ThreadId tid, LeakCheckMode mode )
 {
-   VG_(printf)("memcheck: leak detection currently disabled\n");
-   //   MAC_(do_detect_memory_leaks) ( 
-   //      tid, mode, mc_is_valid_64k_chunk, mc_is_valid_address );
+   MAC_(do_detect_memory_leaks) ( 
+      tid, 
+      mode, 
+      mc_is_within_valid_secondary, 
+      mc_is_valid_aligned_word 
+   );
 }
 
 

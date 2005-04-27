@@ -175,8 +175,8 @@ static Addr         lc_min_mallocd_addr;
 static Addr         lc_max_mallocd_addr;
 static SizeT	    lc_scanned;
 
-static Bool	  (*lc_is_valid_chunk)  (UInt chunk);
-static Bool	  (*lc_is_valid_address)(Addr addr);
+static Bool	  (*lc_is_within_valid_secondary) (Addr addr);
+static Bool	  (*lc_is_valid_aligned_word)     (Addr addr);
 
 static const Char *pp_lossmode(Reachedness lossmode)
 {
@@ -324,7 +324,6 @@ static Int lc_markstack_pop(void)
    cliques, and clique is the index of the current clique leader. */
 static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 {
-#if 0
    Addr ptr = ROUNDUP(start, sizeof(Addr));
    Addr end = ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
@@ -340,11 +339,11 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
        !VG_(is_addressable)(ptr, sizeof(Addr), VKI_PROT_READ))
       ptr = PGROUNDUP(ptr+1);	/* first page bad */
 
-   while(ptr < end) {
+   while (ptr < end) {
       Addr addr;
 
       /* Skip invalid chunks */
-      if (!(*lc_is_valid_chunk)(PM_IDX(ptr))) {
+      if (!(*lc_is_within_valid_secondary)(ptr)) {
 	 ptr = ROUNDUP(ptr+1, SECONDARY_SIZE);
 	 continue;
       }
@@ -357,7 +356,7 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
       }
 
       if (__builtin_setjmp(memscan_jmpbuf) == 0) {
-	 if ((*lc_is_valid_address)(ptr)) {
+	 if ((*lc_is_valid_aligned_word)(ptr)) {
 	    addr = *(Addr *)ptr;
 	    _lc_markstack_push(addr, clique);
 	 } else if (0 && VG_DEBUG_LEAKCHECK)
@@ -374,7 +373,6 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
    VG_(set_fault_catcher)(NULL);
-#endif
 }
 
 
@@ -570,8 +568,8 @@ static void make_summary()
 */
 void MAC_(do_detect_memory_leaks) (
    ThreadId tid, LeakCheckMode mode,
-   Bool (*is_valid_64k_chunk) ( UInt ),
-   Bool (*is_valid_address)   ( Addr )
+   Bool (*is_within_valid_secondary) ( Addr ),
+   Bool (*is_valid_aligned_word)     ( Addr )
 )
 {
    Int i;
@@ -622,8 +620,8 @@ void MAC_(do_detect_memory_leaks) (
    }
    lc_markstack_top = -1;
 
-   lc_is_valid_chunk   = is_valid_64k_chunk;
-   lc_is_valid_address = is_valid_address;
+   lc_is_within_valid_secondary = is_within_valid_secondary;
+   lc_is_valid_aligned_word     = is_valid_aligned_word;
 
    lc_scanned = 0;
 

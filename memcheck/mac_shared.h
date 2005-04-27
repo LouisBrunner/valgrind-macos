@@ -203,6 +203,12 @@ extern HChar* MAC_(event_ctr_name)[N_PROF_EVENTS];
 /* expand 1 bit -> 8 */
 #define BIT_TO_BYTE(b)  ((~(((UChar)(b) & 1) - 1)) & 0xFF)
 
+/* The number of entries in the primary map can be altered.  However
+   we hardwire the assumption that each secondary map covers precisely
+   64k of address space. */
+#define SECONDARY_SIZE 65536               /* DO NOT CHANGE */
+#define SECONDARY_MASK (SECONDARY_SIZE-1)  /* DO NOT CHANGE */
+
 //zz #define SECONDARY_SHIFT	16
 //zz #define SECONDARY_SIZE	(1 << SECONDARY_SHIFT)
 //zz #define SECONDARY_MASK	(SECONDARY_SIZE - 1)
@@ -407,8 +413,8 @@ extern void MAC_(print_malloc_stats) ( void );
 
 extern void MAC_(do_detect_memory_leaks) (
           ThreadId tid, LeakCheckMode mode,
-          Bool (*is_valid_64k_chunk) ( UInt ),
-          Bool (*is_valid_address)   ( Addr )
+          Bool (*is_within_valid_secondary) ( Addr ),
+          Bool (*is_valid_aligned_word)     ( Addr )
        );
 
 extern VGA_REGPARM(1) void MAC_(new_mem_stack_4)  ( Addr old_ESP );

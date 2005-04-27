@@ -1832,6 +1832,11 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Ctz32:
          return mkPCastTo(mce, Ity_I32, vatom);
 
+      case Iop_1Uto64:
+      case Iop_8Uto64:
+      case Iop_8Sto64:
+      case Iop_16Uto64:
+      case Iop_16Sto64:
       case Iop_32Sto64:
       case Iop_32Uto64:
       case Iop_V128to64:
@@ -1853,15 +1858,20 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_8Uto16:
       case Iop_32to16:
       case Iop_32HIto16:
+      case Iop_64to16:
          return assignNew(mce, Ity_I16, unop(op, vatom));
 
       case Iop_1Uto8:
       case Iop_16to8:
       case Iop_32to8:
+      case Iop_64to8:
          return assignNew(mce, Ity_I8, unop(op, vatom));
 
       case Iop_32to1:
          return assignNew(mce, Ity_I1, unop(Iop_32to1, vatom));
+
+      case Iop_64to1:
+         return assignNew(mce, Ity_I1, unop(Iop_64to1, vatom));
 
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:

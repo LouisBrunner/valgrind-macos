@@ -266,16 +266,16 @@ IRExpr* doScalarWidening ( Int szSmall, Int szBig, Bool signd, IRExpr* src )
       return unop(signd ? Iop_16Sto32 : Iop_16Uto32, src);
    }
    if (szSmall == 1 && szBig == 8 && !signd) {
-      return unop(Iop_32Uto64, unop(Iop_8Uto32, src));
+      return unop(Iop_8Uto64, src);
    }
    if (szSmall == 1 && szBig == 8 && signd) {
-      return unop(Iop_32Sto64, unop(Iop_8Sto32, src));
+      return unop(Iop_8Sto64, src);
    }
    if (szSmall == 2 && szBig == 8 && !signd) {
-      return unop(Iop_32Uto64, unop(Iop_16Uto32, src));
+      return unop(Iop_16Uto64, src);
    }
    if (szSmall == 2 && szBig == 8 && signd) {
-      return unop(Iop_32Sto64, unop(Iop_16Sto32, src));
+      return unop(Iop_16Sto64, src);
    }
    vpanic("doScalarWidening(amd64)");
 }
@@ -1545,7 +1545,7 @@ static IRExpr* mk_amd64g_calculate_condition ( AMD64Condcode cond )
    /* Exclude the requested condition, OP and NDEP from definedness
       checking.  We're only interested in DEP1 and DEP2. */
    call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1<<4);
-   return unop(Iop_32to1, unop(Iop_64to32, call));
+   return unop(Iop_64to1, call);
 }
 
 /* Build IR to calculate just the carry flag from stored
@@ -1593,8 +1593,8 @@ static IRExpr* widenUto64 ( IRExpr* e )
    switch (typeOfIRExpr(irbb->tyenv,e)) {
       case Ity_I64: return e;
       case Ity_I32: return unop(Iop_32Uto64, e);
-      case Ity_I16: return unop(Iop_32Uto64, unop(Iop_16Uto32,e));
-      case Ity_I8:  return unop(Iop_32Uto64, unop(Iop_8Uto32,e));
+      case Ity_I16: return unop(Iop_16Uto64, e);
+      case Ity_I8:  return unop(Iop_8Uto64, e);
       default: vpanic("widenUto64");
    }
 }
@@ -1605,8 +1605,8 @@ static IRExpr* widenSto64 ( IRExpr* e )
    switch (typeOfIRExpr(irbb->tyenv,e)) {
       case Ity_I64: return e;
       case Ity_I32: return unop(Iop_32Sto64, e);
-      case Ity_I16: return unop(Iop_32Sto64, unop(Iop_16Sto32,e));
-      case Ity_I8:  return unop(Iop_32Sto64, unop(Iop_8Sto32,e));
+      case Ity_I16: return unop(Iop_16Sto64, e);
+      case Ity_I8:  return unop(Iop_8Sto64, e);
       default: vpanic("widenSto64");
    }
 }
@@ -1625,9 +1625,9 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    if (src_ty == Ity_I64 && dst_ty == Ity_I32)
       return unop(Iop_64to32, e);
    if (src_ty == Ity_I64 && dst_ty == Ity_I16)
-      return unop(Iop_32to16, unop(Iop_64to32, e));
+      return unop(Iop_64to16, e);
    if (src_ty == Ity_I64 && dst_ty == Ity_I8)
-      return unop(Iop_32to8, unop(Iop_64to32, e));
+      return unop(Iop_64to8, e);
 
    vex_printf("\nsrc, dst tys are: ");
    ppIRType(src_ty);
@@ -6803,7 +6803,7 @@ ULong dis_bs_E_G ( Prefix pfx, Int sz, ULong delta, Bool fwds )
          );
 
    if (sz == 2)
-      assign( dst, unop(Iop_32to16, unop(Iop_64to32, mkexpr(dst64))) );
+      assign( dst, unop(Iop_64to16, mkexpr(dst64)) );
    else
    if (sz == 4)
       assign( dst, unop(Iop_64to32, mkexpr(dst64)) );

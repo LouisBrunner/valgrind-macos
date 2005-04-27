@@ -62,12 +62,15 @@
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
    UInt __res;
-   __asm__ volatile ("int $0x80"
-                     : "=a" (__res)
-                     : "0" (4), /* __NR_write */
-                       "b" (2), /* stderr */
-                       "c" (buf),
-                       "d" (n) );
+   __asm__ volatile (
+      "movl $4, %%eax\n"   /* set %eax = __NR_write */
+      "movl $2, %%ebx\n"   /* set %ebx = stderr */
+      "movl %1, %%ecx\n"   /* set %ecx = buf */
+      "movl %2, %%edx\n"   /* set %ecx = n */
+      "int $0x80\n"        /* write(stderr, buf, n) */
+      "movl %%eax, %0\n"   /* set __res = eax */
+      : "=mr" (__res)
+      : "g" (buf), "g" (n) );
    if (__res < 0) 
       __res = -1;
    return __res;
@@ -76,9 +79,11 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
 static UInt local_sys_getpid ( void )
 {
    UInt __res;
-   __asm__ volatile ("int $0x80"
-                     : "=a" (__res)
-                     : "0" (20) /* __NR_getpid */);
+   __asm__ volatile (
+      "movl $20, %%eax\n"  /* set %eax = __NR_getpid */
+      "int  $0x80\n"       /* getpid() */
+      "movl %%eax, %0\n"   /* set __res = eax */
+      : "=mr" (__res) );
    return __res;
 }
 

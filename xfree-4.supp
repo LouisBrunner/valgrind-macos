@@ -183,5 +183,24 @@
    fun:_XSend
 }
 
+##
+## HACK to do with strlen not being intercepted early enough
+{
+   strlen-not-intercepted-early-enough-HACK-1
+   Memcheck:Addr4
+   fun:strlen
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+}
+
+{
+   strlen-not-intercepted-early-enough-HACK-2
+   Memcheck:Addr4
+   fun:strlen
+   fun:decompose_rpath
+   fun:cache_rpath
+   fun:_dl_map_object
+}
+
 ##----------------------------------------------------------------------##
 

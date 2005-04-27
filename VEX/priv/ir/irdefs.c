@@ -142,11 +142,19 @@ void ppIROp ( IROp op )
       case Iop_32Sto64:  vex_printf("32Sto64"); return;
       case Iop_32Uto64:  vex_printf("32Uto64"); return;
       case Iop_32to8:    vex_printf("32to8");   return;
+      case Iop_16Uto64:  vex_printf("16Uto64"); return;
+      case Iop_16Sto64:  vex_printf("16Sto64"); return;
+      case Iop_8Uto64:   vex_printf("8Uto64"); return;
+      case Iop_8Sto64:   vex_printf("8Sto64"); return;
+      case Iop_64to16:   vex_printf("64to16"); return;
+      case Iop_64to8:    vex_printf("64to8");  return;
 
       case Iop_Not1:     vex_printf("Not1");    return;
       case Iop_32to1:    vex_printf("32to1");   return;
+      case Iop_64to1:    vex_printf("64to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
       case Iop_1Uto32:   vex_printf("1Uto32");  return;
+      case Iop_1Uto64:   vex_printf("1Uto64");  return;
       case Iop_1Sto8:    vex_printf("1Sto8");  return;
       case Iop_1Sto16:   vex_printf("1Sto16");  return;
       case Iop_1Sto32:   vex_printf("1Sto32");  return;
@@ -1350,8 +1358,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_1Sto8:  UNARY(Ity_I8,Ity_I1);
       case Iop_1Sto16: UNARY(Ity_I16,Ity_I1);
       case Iop_1Uto32: case Iop_1Sto32: UNARY(Ity_I32,Ity_I1);
-      case Iop_1Sto64: UNARY(Ity_I64,Ity_I1);
+      case Iop_1Sto64: case Iop_1Uto64: UNARY(Ity_I64,Ity_I1);
       case Iop_32to1:  UNARY(Ity_I1,Ity_I32);
+      case Iop_64to1:  UNARY(Ity_I1,Ity_I64);
 
       case Iop_8Uto32: case Iop_8Sto32:
          UNARY(Ity_I32,Ity_I8);
@@ -1365,7 +1374,16 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32Sto64: case Iop_32Uto64:
          UNARY(Ity_I64,Ity_I32);
 
+      case Iop_8Uto64: case Iop_8Sto64:
+         UNARY(Ity_I64,Ity_I8);
+
+      case Iop_16Uto64: case Iop_16Sto64:
+         UNARY(Ity_I64,Ity_I16);
+      case Iop_64to16:
+         UNARY(Ity_I16, Ity_I64);
+
       case Iop_32to8: UNARY(Ity_I8,Ity_I32);
+      case Iop_64to8: UNARY(Ity_I8,Ity_I64);
 
       case Iop_ScaleF64: case Iop_PRemF64: case Iop_PRem1F64:
       case Iop_AtanF64: case Iop_Yl2xF64:  case Iop_Yl2xp1F64: 

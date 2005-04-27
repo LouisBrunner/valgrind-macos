@@ -286,8 +286,10 @@ typedef
       /* 1-bit stuff */
       Iop_Not1,   /* :: Ity_Bit -> Ity_Bit */
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
-      Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
+      Iop_64to1,  /* :: Ity_I64 -> Ity_Bit, just select bit[0] */
+      Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8,  unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */
+      Iop_1Uto64, /* :: Ity_Bit -> Ity_I64, unsigned widen */
       Iop_1Sto8,  /* :: Ity_Bit -> Ity_I8,  signed widen */
       Iop_1Sto16, /* :: Ity_Bit -> Ity_I16, signed widen */
       Iop_1Sto32, /* :: Ity_Bit -> Ity_I32, signed widen */

@@ -66,11 +66,13 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "movl $4, %%eax\n"   /* set %eax = __NR_write */
       "movl $2, %%ebx\n"   /* set %ebx = stderr */
       "movl %1, %%ecx\n"   /* set %ecx = buf */
-      "movl %2, %%edx\n"   /* set %ecx = n */
+      "movl %2, %%edx\n"   /* set %edx = n */
       "int $0x80\n"        /* write(stderr, buf, n) */
       "movl %%eax, %0\n"   /* set __res = eax */
       : "=mr" (__res)
-      : "g" (buf), "g" (n) );
+      : "g" (buf), "g" (n)
+      : "eax", "ebx", "ecx", "edx"
+   );
    if (__res < 0) 
       __res = -1;
    return __res;
@@ -83,7 +85,9 @@ static UInt local_sys_getpid ( void )
       "movl $20, %%eax\n"  /* set %eax = __NR_getpid */
       "int  $0x80\n"       /* getpid() */
       "movl %%eax, %0\n"   /* set __res = eax */
-      : "=mr" (__res) );
+      : "=mr" (__res)
+      :
+      : "eax" );
    return __res;
 }
 
@@ -96,7 +100,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "movq $1, %%rax\n"   /* set %rax = __NR_write */
       "movq $2, %%rdi\n"   /* set %rdi = stderr */
       "movq %1, %%rsi\n"   /* set %rsi = buf */
-      "movl %2, %%edx\n"  /* set %edx = n */
+      "movl %2, %%edx\n"   /* set %edx = n */
       "syscall\n"          /* write(stderr, buf, n) */
       "movl %%eax, %0\n"   /* set __res = %eax */
       : "=mr" (__res)

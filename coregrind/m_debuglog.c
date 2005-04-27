@@ -91,12 +91,33 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-  return 0;
+   UInt __res;
+   __asm__ volatile (
+      "movq $1, %%rax\n"   /* set %rax = __NR_write */
+      "movq $2, %%rdi\n"   /* set %rdi = stderr */
+      "movq %1, %%rsi\n"   /* set %rsi = buf */
+      "movl %2, %%edx\n"  /* set %edx = n */
+      "syscall\n"          /* write(stderr, buf, n) */
+      "movl %%eax, %0\n"   /* set __res = %eax */
+      : "=mr" (__res)
+      : "g" (buf), "g" (n)
+      : "rax", "rdi", "rsi", "rdx" );
+   if (__res < 0) 
+      __res = -1;
+   return __res;
 }
 
 static UInt local_sys_getpid ( void )
 {
-  return 0;
+   UInt __res;
+   __asm__ volatile (
+      "movq $39, %%rax\n"  /* set %rax = __NR_getpid */
+      "syscall\n"          /* getpid() */
+      "movl %%eax, %0\n"   /* set __res = %eax */
+      : "=mr" (__res)
+      :
+      : "rax" );
+   return __res;
 }
 
 #else

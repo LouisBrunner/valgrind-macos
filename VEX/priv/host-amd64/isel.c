@@ -1824,6 +1824,16 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       return Acc_NZ;
    }
 
+   /* --- patterns rooted at: CmpNEZ16 --- */
+
+   /* CmpNEZ16(x) */
+   if (e->tag == Iex_Unop 
+       && e->Iex.Unop.op == Iop_CmpNEZ16) {
+      HReg r = iselIntExpr_R(env, e->Iex.Unop.arg);
+      addInstr(env, AMD64Instr_Test64(AMD64RI_Imm(0xFFFF),AMD64RM_Reg(r)));
+      return Acc_NZ;
+   }
+
    /* --- patterns rooted at: CmpNEZ32 --- */
 
    /* CmpNEZ32(x) */

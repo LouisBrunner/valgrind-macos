@@ -115,10 +115,23 @@ typedef enum {
 /* --------------- Basic configuration --------------- */
 
 /* Only change this.  N_PRIMARY_MAP *must* be a power of 2. */
-#define N_PRIMARY_BITS  16
+
+#if VEX_HOST_WORDSIZE == 4
+
+/* cover the entire address space */
+#  define N_PRIMARY_BITS  16
+
+#else
+
+/* Just handle the first 16G fast and the rest via auxiliary
+   primaries. */
+#  define N_PRIMARY_BITS  18
+
+#endif
+
 
 /* Do not change this. */
-#define N_PRIMARY_MAP  (1 << N_PRIMARY_BITS)
+#define N_PRIMARY_MAP  (1ULL << N_PRIMARY_BITS)
 
 /* Do not change this. */
 #define MAX_PRIMARY_ADDRESS (Addr)((((Addr)65536) * N_PRIMARY_MAP)-1)

@@ -63,15 +63,18 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
    UInt __res;
    __asm__ volatile (
-      "movl $4, %%eax\n"   /* set %eax = __NR_write */
-      "movl $2, %%ebx\n"   /* set %ebx = stderr */
-      "movl %1, %%ecx\n"   /* set %ecx = buf */
-      "movl %2, %%edx\n"   /* set %edx = n */
-      "int $0x80\n"        /* write(stderr, buf, n) */
-      "movl %%eax, %0\n"   /* set __res = eax */
+      "movl  $4, %%eax\n"    /* %eax = __NR_write */
+      "movl  $2, %%edi\n"    /* %edi = stderr */
+      "movl  %1, %%ecx\n"    /* %ecx = buf */
+      "movl  %2, %%edx\n"    /* %edx = n */
+      "pushl %%ebx\n"
+      "movl  %%edi, %%ebx\n"
+      "int   $0x80\n"        /* write(stderr, buf, n) */
+      "popl  %%ebx\n"
+      "movl  %%eax, %0\n"    /* __res = eax */
       : "=mr" (__res)
       : "g" (buf), "g" (n)
-      : "eax", "ebx", "ecx", "edx"
+      : "eax", "edi", "ecx", "edx"
    );
    if (__res < 0) 
       __res = -1;

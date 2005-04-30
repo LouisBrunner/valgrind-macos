@@ -825,6 +825,497 @@ void VG_(read_debuginfo_dwarf1) (
 }
 
 
+/*------------------------------------------------------------*/
+/*--- Read call-frame info from an .eh_frame section       ---*/
+/*------------------------------------------------------------*/
+
+/* the number of regs we are prepared to unwind */
+#define N_CFI_REGS 20
+
+/* Instructions for the automaton */
+enum dwarf_cfa_primary_ops
+  {
+    DW_CFA_use_secondary = 0,
+    DW_CFA_advance_loc   = 1,
+    DW_CFA_offset        = 2,
+    DW_CFA_restore       = 3
+  };
+
+enum dwarf_cfa_secondary_ops
+  {
+    DW_CFA_nop              = 0x00,
+    DW_CFA_set_loc          = 0x01,
+    DW_CFA_advance_loc1     = 0x02,
+    DW_CFA_advance_loc2     = 0x03,
+    DW_CFA_advance_loc4     = 0x04,
+    DW_CFA_offset_extended  = 0x05,
+    DW_CFA_restore_extended = 0x06,
+    DW_CFA_undefined        = 0x07,
+    DW_CFA_same_value       = 0x08,
+    DW_CFA_register         = 0x09,
+    DW_CFA_remember_state   = 0x0a,
+    DW_CFA_restore_state    = 0x0b,
+    DW_CFA_def_cfa          = 0x0c,
+    DW_CFA_def_cfa_register = 0x0d,
+    DW_CFA_def_cfa_offset   = 0x0e,
+    DW_CFA_lo_user          = 0x1c,
+    DW_CFA_GNU_args_size    = 0x2e,
+    DW_CFA_hi_user          = 0x3f
+  };
+
+
+typedef
+   struct {
+      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch } tag;
+
+      /* CFA offset if tag==RR_CFAoff */
+      Int coff;
+
+      /* reg, if tag==RR_Reg */
+      Int reg;
+   }
+   RegRule;
+
+typedef
+   struct {
+      /* Read-only fields. */
+      Int code_a_f;
+      Int data_a_f;
+      /* The rest of these fields can be modifed by
+         run_CF_instruction. */
+      /* The LOC entry */
+      Addr loc;
+      /* The CFA entry */
+      Int cfa_reg;
+      Int cfa_offset; /* in bytes */
+      /* register unwind rules */
+      RegRule reg[N_CFI_REGS];
+   }
+   UnwindContext;
+
+static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
+{
+   Int i;
+   ctx->code_a_f = 0;
+   ctx->data_a_f = 0;
+   ctx->loc = 0;
+   ctx->cfa_reg = 0;
+   ctx->cfa_offset = 0;
+   for (i = 0; i < N_CFI_REGS; i++) {
+      ctx->reg[i].tag = RR_Undef;
+      ctx->reg[i].coff = 0;
+      ctx->reg[i].reg = 0;
+   }
+}
+
+static void ppUnwindContext ( UnwindContext* ctx )
+{
+   Int i;
+   VG_(printf)("0x%llx: ", (ULong)ctx->loc);
+   VG_(printf)("%d(r%d) ",  ctx->cfa_offset, ctx->cfa_reg);
+   for (i = 0; i < N_CFI_REGS; i++) {
+      switch (ctx->reg[i].tag) {
+         case RR_Undef:  VG_(printf)("u  "); break;
+         case RR_Same:   VG_(printf)("s  "); break;
+         case RR_CFAoff: VG_(printf)("c%d ", ctx->reg[i].coff); break;
+         case RR_Reg:    VG_(printf)("r%d ", ctx->reg[i].reg); break;
+         case RR_Arch:   VG_(printf)("a  "); break;
+         default:        VG_(core_panic)("ppUnwindContext");
+      }
+   }
+   VG_(printf)("\n");
+}
+
+static inline Bool host_is_little_endian ( void )
+{
+   UInt x = 0x76543210;
+   UChar* p = (UChar*)(&x);
+   return toBool(*p == 0x10);
+}
+
+
+static UShort read_UShort ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   UInt r = 0;
+   r = data[0] 
+       | ( ((UInt)data[1]) << 8 );
+   return r;
+}
+
+static UInt read_UInt ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   UInt r = 0;
+   r = data[0] 
+       | ( ((UInt)data[1]) << 8 ) 
+       | ( ((UInt)data[2]) << 16 ) 
+       | ( ((UInt)data[3]) << 24 );
+   return r;
+}
+
+static Addr read_Addr ( UChar* data )
+{
+  if (sizeof(Addr) == 4)
+    return read_UInt(data);
+  vg_assert(0);
+}
+
+static UChar read_UChar ( UChar* data )
+{
+   return data[0];
+}
+
+
+/* Run a CFI instruction, and also return its length.
+   Returns 0 if the instruction could not be executed. 
+*/
+static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx, 
+                                UChar* instr )
+{
+   Int   off, reg, nleb;
+   UInt  delta;
+   Int   i   = 0;
+   UChar hi2 = (instr[i] >> 6) & 3;
+   UChar lo6 = instr[i] & 0x3F;
+   i++;
+
+   if (hi2 == DW_CFA_advance_loc) {
+      delta = (UInt)lo6;
+      ctx->loc += delta;
+      return i;
+   }
+
+   if (hi2 == DW_CFA_offset) {
+      /* Set rule for reg 'lo6' to CFAoffset(off * data_af) */
+      off = read_leb128( &instr[i], &nleb, 0 );
+      i += nleb;
+      reg = (Int)lo6;
+      if (reg < 0 || reg >= N_CFI_REGS) 
+         return 0; /* fail */
+      ctx->reg[reg].tag = RR_CFAoff;
+      ctx->reg[reg].coff = off * ctx->data_a_f;
+      return i;
+   }
+
+   if (hi2 == DW_CFA_restore) {
+      vg_assert(0);
+      VG_(printf)("DW_CFA_restore(%d)\n", (Int)lo6);
+      return i;
+   }
+
+   vg_assert(hi2 == DW_CFA_use_secondary);
+
+   switch (lo6) {
+      case DW_CFA_nop: 
+         break;
+      case DW_CFA_advance_loc1:
+         vg_assert(0);
+         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         VG_(printf)("DW_CFA_advance_loc1(%d)\n", delta); 
+         break;
+
+      case DW_CFA_def_cfa:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->cfa_reg    = reg;
+         ctx->cfa_offset = off;
+         break;
+
+      case DW_CFA_def_cfa_register: {
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->cfa_reg = reg;
+         break;
+      }
+      case DW_CFA_def_cfa_offset: {
+         off = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         ctx->cfa_offset = off;
+         break;
+      }
+      case DW_CFA_GNU_args_size: {
+         /* No idea what is supposed to happen.  gdb-6.3 simply
+            ignores these. */
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         break;
+      }
+      default: 
+         vg_assert(0);
+         VG_(printf)("0:%d\n", (Int)lo6); 
+         break;
+   }
+
+   return i;   
+}
+
+
+/* Show a CFI instruction, and also return its length. */
+static Int show_CF_instruction ( UChar* instr )
+{
+   UInt  delta;
+   Int   off, reg, nleb;
+   Int   i   = 0;
+   UChar hi2 = (instr[i] >> 6) & 3;
+   UChar lo6 = instr[i] & 0x3F;
+   i++;
+
+   if (hi2 == DW_CFA_advance_loc) {
+      VG_(printf)("DW_CFA_advance_loc(%d)\n", (Int)lo6);
+      return i;
+   }
+
+   if (hi2 == DW_CFA_offset) {
+      off = read_leb128( &instr[i], &nleb, 0 );
+      i += nleb;
+      VG_(printf)("DW_CFA_offset(r%d + %d x data_af)\n", (Int)lo6, off);
+      return i;
+   }
+
+   if (hi2 == DW_CFA_restore) {
+      VG_(printf)("DW_CFA_restore(%d)\n", (Int)lo6);
+      return i;
+   }
+
+   vg_assert(hi2 == DW_CFA_use_secondary);
+
+   switch (lo6) {
+
+      case DW_CFA_nop: 
+         VG_(printf)("DW_CFA_nop\n"); 
+         break;
+
+      case DW_CFA_advance_loc1:
+         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         VG_(printf)("DW_CFA_advance_loc1(%d)\n", delta); 
+         break;
+
+      case DW_CFA_def_cfa:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         VG_(printf)("DW_CFA_def_cfa(r%d, off %d)\n", reg, off); 
+         break;
+
+      case DW_CFA_def_cfa_register:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_def_cfa_register(r%d)\n", reg); 
+         break;
+
+      case DW_CFA_def_cfa_offset: 
+         off = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_def_cfa_offset(%d)\n", off); 
+         break;
+
+      case DW_CFA_GNU_args_size:
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         VG_(printf)("DW_CFA_GNU_args_size(%d)\n", off ); 
+         break;
+
+      default: 
+         VG_(printf)("0:%d\n", (Int)lo6); 
+         break;
+   }
+
+   return i;
+}
+
+
+static void show_CF_instructions ( UChar* instrs, Int ilen )
+{
+   Int i = 0;
+   while (True) {
+      if (i >= ilen) break;
+      i += show_CF_instruction( &instrs[i] );
+   }
+}
+
+/* Run the CF instructions in instrs[0 .. ilen-1], until the end is
+   reached, or until there is a failure.  Return True iff success. 
+*/
+static 
+Bool run_CF_instructions ( UnwindContext* ctx, UChar* instrs, Int ilen )
+{
+   Int j, i = 0;
+   ppUnwindContext(ctx);
+   while (True) {
+      if (i >= ilen) break;
+      if (0) (void)show_CF_instruction( &instrs[i] );
+      j = run_CF_instruction( ctx, &instrs[i] );
+      if (j == 0)
+         return False; /* execution failed */
+      i += j;
+      ppUnwindContext(ctx);
+   }
+   return True;
+}
+
+
+void VG_(read_callframe_info_dwarf2) 
+        ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz )
+{
+   UnwindContext ctx;
+   Int nbytes;
+   HChar* how = NULL;
+   Int cie_codeaf = 0;
+   Int cie_dataaf = 0;
+   Bool ok;
+
+   UChar* current_cie = NULL;
+
+   if (ehframe_sz != 240) return;
+   VG_(printf)("\n\n\neh_frame %p %d\n", ehframe, ehframe_sz);
+
+   UChar* data = ehframe;
+
+   UChar* cie_instrs = NULL;
+   Int cie_ilen = 0;
+
+   /* Loop over CIEs/FDEs */
+
+   while (True) {
+
+     /* Are we done? */
+     if (data == ehframe + ehframe_sz)
+       return;
+
+     /* Overshot the end?  Means something is wrong */
+     if  (data > ehframe + ehframe_sz) {
+       how = "overran the end of .eh_frame";
+       goto bad;
+     }
+
+     /* Ok, we must be looking at the start of a new CIE or FDE.
+        Figure out which it is. */
+
+      UChar* ciefde_start = data;
+      VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
+
+      UInt ciefde_len = read_UInt(data); data += sizeof(UInt);
+      VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
+
+      /* Apparently, if the .length field is zero, we are at the end
+	 of the sequence.  ?? Neither the DWARF2 spec not the AMD64
+	 ABI spec say this, though. */
+      if (ciefde_len == 0) {
+         if (data == ehframe + ehframe_sz)
+            return;
+         how = "zero-sized CIE/FDE but not at section end\n";
+         goto bad;
+      }
+
+      UInt cie_pointer = read_UInt(data); data += sizeof(UInt);
+      VG_(printf)("cie.pointer     = %d\n", cie_pointer);
+
+      /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
+      if (cie_pointer == 0) {
+
+         /* Remember the start proper of the current CIE */
+         current_cie = ciefde_start + sizeof(UInt);
+
+         /* --------- CIE --------- */
+         UChar cie_version = read_UChar(data); data += sizeof(UChar);
+         VG_(printf)("cie.version     = %d\n", (Int)cie_version);
+
+         UChar* cie_augmentation = data;
+         data += 1 + VG_(strlen)(cie_augmentation);
+         VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
+
+         if (0 != VG_(strcmp)(cie_augmentation, "")) {
+            how = "non-NULL cie.augmentation";
+            goto bad;
+         }
+
+         cie_codeaf = read_leb128( data, &nbytes, 0);
+         data += nbytes;
+         VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
+
+         cie_dataaf = read_leb128( data, &nbytes, 1);
+         data += nbytes;
+         VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
+
+         UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
+         VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
+
+         cie_instrs = data;
+         cie_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
+         VG_(printf)("cie.instrs      = %p\n", (Int)cie_instrs);
+         VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
+
+         if (cie_ilen < 0 || cie_ilen > ehframe_sz) {
+            how = "implausible # cie initial insns";
+            goto bad;
+         }
+
+	 data += cie_ilen;
+
+         show_CF_instructions(cie_instrs, cie_ilen);
+
+      } else {
+
+         /* --------- FDE --------- */
+
+	/* Ensure that (1) we have a valid CIE, and (2) that 
+	   it is indeed the CIE referred to by this FDE. */
+	if (current_cie == NULL) {
+	  how = "FDE with no preceding CIE";
+	  goto bad;
+	}
+	if (cie_pointer != data - current_cie) {
+	  how = "FDE does not refer to preceding CIE";
+	  goto bad;
+	}
+
+         Addr fde_initloc = read_Addr(data); data += sizeof(Addr);
+         VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
+
+         UWord fde_arange = read_Addr(data); data += sizeof(Addr);
+         VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
+
+         UChar* fde_instrs = data;
+         Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
+         VG_(printf)("fde.instrs      = %p\n", (Int)fde_instrs);
+         VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
+
+         if (fde_ilen < 0 || fde_ilen > ehframe_sz) {
+            how = "implausible # fde initial insns";
+            goto bad;
+         }
+
+	 data += fde_ilen;
+
+	 initUnwindContext(&ctx);
+         ctx.code_a_f = cie_codeaf;
+         ctx.data_a_f = cie_dataaf;
+	 ok = run_CF_instructions(&ctx, cie_instrs, cie_ilen);
+         if (ok)
+	    ok = run_CF_instructions(&ctx, fde_instrs, fde_ilen);
+      }
+   }
+
+   /* Read a CIE and remember important bits */
+
+
+
+   return;
+
+   bad:
+    VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CIE reading", how);
+    return;
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                               vg_dwarf.c ---*/
 /*--------------------------------------------------------------------*/

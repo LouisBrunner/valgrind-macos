@@ -96,6 +96,7 @@ static void freeSegInfo ( SegInfo* si )
    if (si->symtab)   VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
    if (si->loctab)   VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
    if (si->scopetab) VG_(arena_free)(VG_AR_SYMTAB, si->scopetab);
+   if (si->cfisi)    VG_(arena_free)(VG_AR_SYMTAB, si->cfisi);
 
    for(chunk = si->strchunks; chunk != NULL; chunk = next) {
       next = chunk->next;
@@ -1455,6 +1456,7 @@ Bool read_lib_symbols ( SegInfo* si )
       UChar*     debug_line   = NULL; /* .debug_line   (dwarf2) */
       UChar*     dwarf1d      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l      = NULL; /* .line         (dwarf1) */
+      UChar*     ehframe      = NULL; /* .eh_frame     (dwarf2) */
 
       /* Section sizes, in bytes */
       UInt       o_strtab_sz     = 0;
@@ -1467,6 +1469,7 @@ Bool read_lib_symbols ( SegInfo* si )
       UInt       debug_line_sz   = 0;
       UInt       dwarf1d_sz      = 0;
       UInt       dwarf1l_sz      = 0;
+      UInt       ehframe_sz      = 0;
 
       Bool       has_debuginfo = False;
 
@@ -1503,6 +1506,7 @@ Bool read_lib_symbols ( SegInfo* si )
          else FIND(".debug_line",   debug_line,   debug_line_sz, 0, UChar*)
          else FIND(".debug",        dwarf1d,      dwarf1d_sz,    0, UChar*)
          else FIND(".line",         dwarf1l,      dwarf1l_sz,    0, UChar*)
+         else FIND(".eh_frame",     ehframe,      ehframe_sz,    0, UChar*)
 
          else FIND(".got",         si->got_start, si->got_size,  1, Addr)
          else FIND(".plt",         si->plt_start, si->plt_size,  1, Addr)
@@ -1575,6 +1579,11 @@ Bool read_lib_symbols ( SegInfo* si )
          }
       }
 
+      /* Read .eh_frame (call-frame-info) if any */
+      if (ehframe && ehframe_sz > 4) {
+         VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz );
+      }
+
       /* Read the stabs and/or dwarf2 debug information, if any. */
       if (stab != NULL && stabstr != NULL) {
          has_debuginfo = True;
@@ -1591,9 +1600,10 @@ Bool read_lib_symbols ( SegInfo* si )
                                           dwarf1l, dwarf1l_sz );
       } 
       if (!has_debuginfo) {
-         VG_(symerr)("   object doesn't have any debug info");
+         VG_(symerr)("   object doesn't have any line number info");
          goto out;
       }
+
    }
    res = True;
 
@@ -1646,6 +1656,8 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si->strchunks = NULL;
    si->scopetab = NULL;
    si->scopetab_size = si->scopetab_used = 0;
+   si->cfisi = NULL;
+   si->cfisi_size = si->cfisi_used = 0;
 
    si->seg = seg;
 

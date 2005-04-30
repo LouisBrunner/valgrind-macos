@@ -117,6 +117,21 @@ struct _ScopeRange {
 
 #define STRCHUNKSIZE	(64*1024)
 
+
+/* A structure to summarise CFI summary info.  It defines an address
+   range, and for that address range, gives info on how the
+   procedure's return address is to be derived from the current stack
+   pointer value in that range.  For example, if .raoffset is 16, then
+   the return address is found in memory at (SP+16). */
+typedef
+   struct {
+      Addr base;
+      UInt len;
+      Int  raoffset;
+   }
+   CfiSI;
+
+
 /* A structure which contains information pertaining to one mapped
    text segment. (typedef in tool.h) */
 struct _SegInfo {
@@ -144,6 +159,10 @@ struct _SegInfo {
    ScopeRange *scopetab;
    UInt        scopetab_used;
    UInt        scopetab_size;
+   /* An expandable array of CFI summary info records. */
+   CfiSI* cfisi;
+   UInt   cfisi_used;
+   UInt   cfisi_size;
 
    /* Expandable arrays of characters -- the string table.
       Pointers into this are stable (the arrays are not reallocated)
@@ -200,6 +219,12 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si,
 void VG_(read_debuginfo_dwarf1) ( SegInfo* si, 
                                   UChar* dwarf1d, Int dwarf1d_sz, 
                                   UChar* dwarf1l, Int dwarf1l_sz );
+
+/* --------------------
+   CFI reader
+   -------------------- */
+void VG_(read_callframe_info_dwarf2) 
+    ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz );
 
 
 #endif /* _VG_SYMTYPE_H */

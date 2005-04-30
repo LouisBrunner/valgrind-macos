@@ -1588,7 +1588,7 @@ static void pre_process_cmd_line_options
       properly really entails getting rid of the circularity between
       the two memory allocators, but that is more than I have time to
       sort out right now. */
-   VG_(clo_vex_control).guest_chase_thresh = 0;
+   //   VG_(clo_vex_control).guest_chase_thresh = 0;
 
    /* parse the options we have (only the options we care about now) */
    for (i = 1; i < vg_argc; i++) {

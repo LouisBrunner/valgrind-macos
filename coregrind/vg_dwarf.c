@@ -829,6 +829,87 @@ void VG_(read_debuginfo_dwarf1) (
 /*--- Read call-frame info from an .eh_frame section       ---*/
 /*------------------------------------------------------------*/
 
+void VG_(ppCfiSI) ( CfiSI* si )
+{
+#  define SHOW_HOW(_how, _off)                   \
+      do {                                       \
+         if (_how == CFIR_UNKNOWN) {             \
+            VG_(printf)("Unknown");              \
+         } else                                  \
+         if (_how == CFIR_SAME) {                \
+            VG_(printf)("Same");                 \
+         } else                                  \
+         if (_how == CFIR_CFAREL) {              \
+            VG_(printf)("cfa+%d", _off);         \
+         } else                                  \
+         if (_how == CFIR_MEMCFAREL) {           \
+            VG_(printf)("*(cfa+%d)", _off);      \
+         } else {                                \
+            VG_(printf)("???");                  \
+         }                                       \
+      } while (0)
+
+   VG_(printf)("[%p .. %p]: ", si->base, 
+                               si->base + (UWord)si->len - 1);
+   VG_(printf)("let cfa=%s+%d", 
+               si->cfa_sprel ? "oldSP" : "oldFP", si->cfa_off);
+   VG_(printf)(" in RA=");
+   SHOW_HOW(si->ra_how, si->ra_off);
+   VG_(printf)(" SP=");
+   SHOW_HOW(si->sp_how, si->sp_off);
+   VG_(printf)(" FP=");
+   SHOW_HOW(si->fp_how, si->fp_off);
+   VG_(printf)("\n");
+
+#  undef SHOW_HOW
+}
+
+static void initCfiSI ( CfiSI* si )
+{
+   si->base      = 0;
+   si->len       = 0;
+   si->cfa_sprel = False;
+   si->ra_how    = 0;
+   si->sp_how    = 0;
+   si->fp_how    = 0;
+   si->cfa_off   = 0;
+   si->ra_off    = 0;
+   si->sp_off    = 0;
+   si->fp_off    = 0;
+}
+
+
+/* Useful info ..
+
+   gdb-6.3/gdb/i386-tdep.c:
+
+   DWARF2/GCC uses the stack address *before* the function call as a
+   frame's CFA.  [jrs: I presume this means %esp before the call as
+   the CFA]. 
+
+   JRS: on amd64, the dwarf register numbering is, as per
+   gdb-6.3/gdb/tdep-amd64.c and also amd64-abi-0.95.pdf:
+
+      0    1    2    3    4    5    6    7
+      RAX  RDX  RCX  RBX  RSI  RDI  RBP  RSP
+
+      8  ...  15
+      R8 ... R15
+
+      16 is the return address (RIP)
+
+   This is pretty strange given this not the encoding scheme for
+   registers used in amd64 code.
+
+   On x86 I cannot find any documentation.  It _appears_ to be the
+   actual instruction encoding, viz:
+
+      0    1    2    3    4    5    6    7
+      EAX  ECX  EDX  EBX  ESP  EBP  ESI  EDI
+
+      8 is the return address (EIP) */
+
+
 /* the number of regs we are prepared to unwind */
 #define N_CFI_REGS 20
 
@@ -879,8 +960,9 @@ typedef
 typedef
    struct {
       /* Read-only fields. */
-      Int code_a_f;
-      Int data_a_f;
+      Int  code_a_f;
+      Int  data_a_f;
+      Addr initloc;
       /* The rest of these fields can be modifed by
          run_CF_instruction. */
       /* The LOC entry */
@@ -908,21 +990,113 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
    }
 }
 
+static void ppRegRule ( RegRule* reg )
+{
+   switch (reg->tag) {
+      case RR_Undef:  VG_(printf)("u  "); break;
+      case RR_Same:   VG_(printf)("s  "); break;
+      case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
+      case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
+      case RR_Arch:   VG_(printf)("a  "); break;
+      default:        VG_(core_panic)("ppRegRule");
+   }
+}
+
+
 static void ppUnwindContext ( UnwindContext* ctx )
 {
    Int i;
    VG_(printf)("0x%llx: ", (ULong)ctx->loc);
    VG_(printf)("%d(r%d) ",  ctx->cfa_offset, ctx->cfa_reg);
-   for (i = 0; i < N_CFI_REGS; i++) {
-      switch (ctx->reg[i].tag) {
-         case RR_Undef:  VG_(printf)("u  "); break;
-         case RR_Same:   VG_(printf)("s  "); break;
-         case RR_CFAoff: VG_(printf)("c%d ", ctx->reg[i].coff); break;
-         case RR_Reg:    VG_(printf)("r%d ", ctx->reg[i].reg); break;
-         case RR_Arch:   VG_(printf)("a  "); break;
-         default:        VG_(core_panic)("ppUnwindContext");
-      }
+   for (i = 0; i < N_CFI_REGS; i++)
+      ppRegRule(&ctx->reg[i]);
+   VG_(printf)("\n");
+}
+
+
+/* Summarise ctx into si, if possible.  Returns True if successful.
+   This is taken to be just after ctx's loc advances; hence the
+   summary is up to but not including the current loc.
+*/
+static Bool summarise_context_x86 ( /*OUT*/CfiSI* si,
+                                    Addr loc_start,
+	                            UnwindContext* ctx )
+{
+   initCfiSI(si);
+
+   /* How to generate the CFA */
+   if (ctx->cfa_reg == 4 /* ESP */) {
+      si->cfa_sprel = True;
+      si->cfa_off   = ctx->cfa_offset;
+   } else
+   if (ctx->cfa_reg == 5 /* EBP */) {
+      si->cfa_sprel = False;
+      si->cfa_off   = ctx->cfa_offset;
+   } else {
+      goto failed;
    }
+
+#  define SUMMARISE_HOW(_how, _off, _ctxreg)                             \
+   switch (_ctxreg.tag) {                                                \
+      case RR_Undef:  _how = CFIR_UNKNOWN;   _off = 0; break;            \
+      case RR_Same:   _how = CFIR_SAME;      _off = 0; break;            \
+      case RR_CFAoff: _how = CFIR_MEMCFAREL; _off = _ctxreg.coff; break; \
+      default:        goto failed; /* otherwise give up */               \
+   }
+
+   SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[8 /* Return address */] );
+   SUMMARISE_HOW(si->fp_how, si->fp_off, ctx->reg[5 /* EBP */] );
+
+#  undef SUMMARISE_HOW
+
+   /* on x86, it seems the old %esp value before the call is always
+      the same as the CFA.  Therefore ... */
+   si->sp_how = CFIR_CFAREL;
+   si->sp_off = 0;
+
+   /* also, gcc says "Undef" for %ebp when it is unchanged.  So .. */
+   if (ctx->reg[5 /* EBP */].tag == RR_Undef)
+      si->fp_how = CFIR_SAME;
+
+   /* knock out some obviously stupid cases */
+   if (si->ra_how == CFIR_SAME) goto failed;
+
+   /* bogus looking range?  Note, we require that the difference is
+      representable in 32 bits. */
+   if (loc_start >= ctx->loc) goto failed;
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      goto failed;
+
+   si->base = loc_start + ctx->initloc;
+   si->len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
+  failed:
+   VG_(printf)("summarise_context_x86(loc_start = %p)"
+               ": cannot summarise:\n   ", loc_start);
+   ppUnwindContext(ctx);
+   return False;
+}
+
+static void ppUnwindContext_x86_summary ( UnwindContext* ctx )
+{
+   VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
+
+   if (ctx->cfa_reg == 4 /* ESP */) {
+      VG_(printf)("SP/CFA=%d+%%esp   ", ctx->cfa_offset);
+   } else
+   if (ctx->cfa_reg == 5 /* EBP */) {
+      VG_(printf)("SP/CFA=%d+%%ebp   ", ctx->cfa_offset);
+   } else {
+      VG_(printf)("SP/CFA=unknown  ", ctx->cfa_offset);
+   }
+
+   VG_(printf)("RA=");
+   ppRegRule( &ctx->reg[8 /* Return address */] );
+
+   VG_(printf)("FP=");
+   ppRegRule( &ctx->reg[5 /* EBP */] );
    VG_(printf)("\n");
 }
 
@@ -1145,18 +1319,37 @@ static void show_CF_instructions ( UChar* instrs, Int ilen )
    reached, or until there is a failure.  Return True iff success. 
 */
 static 
-Bool run_CF_instructions ( UnwindContext* ctx, UChar* instrs, Int ilen )
+Bool run_CF_instructions ( SegInfo* si,
+                           UnwindContext* ctx, UChar* instrs, Int ilen,
+                           UWord fde_arange )
 {
+  CfiSI cfisi;
+
    Int j, i = 0;
-   ppUnwindContext(ctx);
+   Addr loc_prev;
+   if (0) ppUnwindContext(ctx);
+   if (0) ppUnwindContext_x86_summary(ctx);
    while (True) {
+      loc_prev = ctx->loc;
       if (i >= ilen) break;
       if (0) (void)show_CF_instruction( &instrs[i] );
       j = run_CF_instruction( ctx, &instrs[i] );
       if (j == 0)
          return False; /* execution failed */
       i += j;
-      ppUnwindContext(ctx);
+      if (0) ppUnwindContext(ctx);
+      if (loc_prev != ctx->loc && si) {
+         summarise_context_x86 ( &cfisi, loc_prev, ctx );
+         VG_(addCfiSI)(si, &cfisi);
+      }
+   }
+   if (ctx->loc < fde_arange) {
+      loc_prev = ctx->loc;
+      ctx->loc = fde_arange;
+      if (si) {
+         summarise_context_x86 ( &cfisi, loc_prev, ctx );
+         VG_(addCfiSI)(si, &cfisi);
+      }
    }
    return True;
 }
@@ -1174,8 +1367,8 @@ void VG_(read_callframe_info_dwarf2)
 
    UChar* current_cie = NULL;
 
-   if (ehframe_sz != 240) return;
-   VG_(printf)("\n\n\neh_frame %p %d\n", ehframe, ehframe_sz);
+   if (0&& ehframe_sz != 240) return;
+   if (0) VG_(printf)("\n\n\neh_frame %p %d\n", ehframe, ehframe_sz);
 
    UChar* data = ehframe;
 
@@ -1200,10 +1393,10 @@ void VG_(read_callframe_info_dwarf2)
         Figure out which it is. */
 
       UChar* ciefde_start = data;
-      VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
+      if (0) VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
 
       UInt ciefde_len = read_UInt(data); data += sizeof(UInt);
-      VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
+      if (0) VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
 	 of the sequence.  ?? Neither the DWARF2 spec not the AMD64
@@ -1216,7 +1409,7 @@ void VG_(read_callframe_info_dwarf2)
       }
 
       UInt cie_pointer = read_UInt(data); data += sizeof(UInt);
-      VG_(printf)("cie.pointer     = %d\n", cie_pointer);
+      if (0) VG_(printf)("cie.pointer     = %d\n", cie_pointer);
 
       /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
       if (cie_pointer == 0) {
@@ -1226,11 +1419,11 @@ void VG_(read_callframe_info_dwarf2)
 
          /* --------- CIE --------- */
          UChar cie_version = read_UChar(data); data += sizeof(UChar);
-         VG_(printf)("cie.version     = %d\n", (Int)cie_version);
+         if (0) VG_(printf)("cie.version     = %d\n", (Int)cie_version);
 
          UChar* cie_augmentation = data;
          data += 1 + VG_(strlen)(cie_augmentation);
-         VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
+         if (0) VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
 
          if (0 != VG_(strcmp)(cie_augmentation, "")) {
             how = "non-NULL cie.augmentation";
@@ -1239,19 +1432,19 @@ void VG_(read_callframe_info_dwarf2)
 
          cie_codeaf = read_leb128( data, &nbytes, 0);
          data += nbytes;
-         VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
+         if (0) VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
 
          cie_dataaf = read_leb128( data, &nbytes, 1);
          data += nbytes;
-         VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
+         if (0) VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
 
          UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
-         VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
+         if (0) VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
 
          cie_instrs = data;
          cie_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         VG_(printf)("cie.instrs      = %p\n", (Int)cie_instrs);
-         VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
+         if (0) VG_(printf)("cie.instrs      = %p\n", (Int)cie_instrs);
+         if (0) VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
 
          if (cie_ilen < 0 || cie_ilen > ehframe_sz) {
             how = "implausible # cie initial insns";
@@ -1260,33 +1453,33 @@ void VG_(read_callframe_info_dwarf2)
 
 	 data += cie_ilen;
 
-         show_CF_instructions(cie_instrs, cie_ilen);
+         if (0) show_CF_instructions(cie_instrs, cie_ilen);
 
       } else {
 
          /* --------- FDE --------- */
 
-	/* Ensure that (1) we have a valid CIE, and (2) that 
-	   it is indeed the CIE referred to by this FDE. */
-	if (current_cie == NULL) {
-	  how = "FDE with no preceding CIE";
-	  goto bad;
-	}
-	if (cie_pointer != data - current_cie) {
-	  how = "FDE does not refer to preceding CIE";
-	  goto bad;
-	}
+         /* Ensure that (1) we have a valid CIE, and (2) that it is
+            indeed the CIE referred to by this FDE. */
+         if (current_cie == NULL) {
+            how = "FDE with no preceding CIE";
+            goto bad;
+         }
+         if (cie_pointer != data - current_cie) {
+            how = "FDE does not refer to preceding CIE";
+            goto bad;
+         }
 
          Addr fde_initloc = read_Addr(data); data += sizeof(Addr);
-         VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
+         if (0) VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
          UWord fde_arange = read_Addr(data); data += sizeof(Addr);
-         VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
+         if (0) VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
 
          UChar* fde_instrs = data;
          Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         VG_(printf)("fde.instrs      = %p\n", (Int)fde_instrs);
-         VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
+         if (0) VG_(printf)("fde.instrs      = %p\n", (Int)fde_instrs);
+         if (0) VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
 
          if (fde_ilen < 0 || fde_ilen > ehframe_sz) {
             how = "implausible # fde initial insns";
@@ -1298,20 +1491,17 @@ void VG_(read_callframe_info_dwarf2)
 	 initUnwindContext(&ctx);
          ctx.code_a_f = cie_codeaf;
          ctx.data_a_f = cie_dataaf;
-	 ok = run_CF_instructions(&ctx, cie_instrs, cie_ilen);
+         ctx.initloc  = fde_initloc;
+	 ok = run_CF_instructions(NULL, &ctx, cie_instrs, cie_ilen, 0);
          if (ok)
-	    ok = run_CF_instructions(&ctx, fde_instrs, fde_ilen);
+	    ok = run_CF_instructions(si, &ctx, fde_instrs, fde_ilen, fde_arange);
       }
    }
-
-   /* Read a CIE and remember important bits */
-
-
 
    return;
 
    bad:
-    VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CIE reading", how);
+    VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CFI reading", how);
     return;
 }
 

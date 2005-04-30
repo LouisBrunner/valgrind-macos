@@ -1943,6 +1943,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       tst = VG_(get_ThreadState)(tid);
       VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size), 
                            VGP_UCONTEXT_INSTR_PTR(uc),
+                           VGP_UCONTEXT_STACK_PTR(uc),
                            VGP_UCONTEXT_FRAME_PTR(uc),
                            VGP_UCONTEXT_STACK_PTR(uc),
                            tst->os_state.valgrind_stack_base + 

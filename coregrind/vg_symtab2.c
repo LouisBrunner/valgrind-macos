@@ -369,6 +369,40 @@ void VG_(addScopeInfo) ( SegInfo* si,
    addScopeRange ( si, &range );
 }
 
+
+/* Top-level place to call to add a CFI summary record.  The supplied
+   CfiSI is copied. */
+void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
+{
+   static const Bool debug = False;
+
+   if (debug) {
+      VG_(printf)("adding CfiSI: ");
+      VG_(ppCfiSI)(cfisi);
+   }
+
+   UInt   new_sz, i;
+   CfiSI* new_tab;
+
+   if (si->cfisi_used == si->cfisi_size) {
+      new_sz = 2 * si->cfisi_size;
+      if (new_sz == 0) new_sz = 20;
+      new_tab = VG_(arena_malloc)(VG_AR_SYMTAB, new_sz * sizeof(CfiSI) );
+      if (si->cfisi != NULL) {
+         for (i = 0; i < si->cfisi_used; i++)
+            new_tab[i] = si->cfisi[i];
+         VG_(arena_free)(VG_AR_SYMTAB, si->cfisi);
+      }
+      si->cfisi = new_tab;
+      si->cfisi_size = new_sz;
+   }
+
+   si->cfisi[si->cfisi_used] = *cfisi;
+   si->cfisi_used++;
+   vg_assert(si->cfisi_used <= si->cfisi_size);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Helpers                                              ---*/
 /*------------------------------------------------------------*/
@@ -2275,6 +2309,82 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 
 #undef APPEND
 }
+
+/* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */
+
+Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
+                         /*MOD*/Addr* spP,
+                         /*MOD*/Addr* fpP,
+                         Addr min_accessible,
+                         Addr max_accessible )
+{
+   Int      i;
+   SegInfo* si;
+   CfiSI*   cfisi = NULL;
+   Addr     cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
+
+   if (0) VG_(printf)("search for %p\n", *ipP);
+
+   for (si = segInfo; si != NULL; si = si->next) {
+      for (i = 0; i < si->cfisi_used; i++) {
+         if (si->cfisi[i].base <= *ipP
+             && *ipP < si->cfisi[i].base+si->cfisi[i].len) {
+            cfisi = &si->cfisi[i];
+	    goto postloop;
+	 }
+      }
+   }
+
+  postloop:
+   if (cfisi == NULL)
+      return False;
+
+   if (0) {
+      VG_(printf)("found cfisi: "); 
+      VG_(ppCfiSI)(cfisi);
+   }
+
+   ipPrev = spPrev = fpPrev = 0;
+
+   ipHere = *ipP;
+   spHere = *spP;
+   fpHere = *fpP;
+
+   cfa = cfisi->cfa_off + (cfisi->cfa_sprel ? spHere : fpHere);
+
+#  define COMPUTE(_prev, _here, _how, _off)             \
+      do {                                              \
+         switch (_how) {                                \
+            case CFIR_UNKNOWN:                          \
+               return False;                            \
+            case CFIR_SAME:                             \
+               _prev = _here; break;                    \
+            case CFIR_MEMCFAREL: {                      \
+               Addr a = cfa + (Word)_off;               \
+               if (a < min_accessible                   \
+                   || a+sizeof(Addr) > max_accessible)  \
+                  return False;                         \
+               _prev = *(Addr*)a;                       \
+               break;                                   \
+            }                                           \
+            case CFIR_CFAREL:                           \
+               _prev = cfa + (Word)_off;                \
+               break;                                   \
+         }                                              \
+      } while (0)
+
+   COMPUTE(ipPrev, ipHere, cfisi->ra_how, cfisi->ra_off);
+   COMPUTE(spPrev, spHere, cfisi->sp_how, cfisi->sp_off);
+   COMPUTE(fpPrev, fpHere, cfisi->fp_how, cfisi->fp_off);
+
+#  undef COMPUTE
+
+   *ipP = ipPrev;
+   *spP = spPrev;
+   *fpP = fpPrev;
+   return True;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- SegInfo accessor functions                           ---*/

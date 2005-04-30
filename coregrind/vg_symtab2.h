@@ -118,18 +118,48 @@ struct _ScopeRange {
 #define STRCHUNKSIZE	(64*1024)
 
 
-/* A structure to summarise CFI summary info.  It defines an address
-   range, and for that address range, gives info on how the
-   procedure's return address is to be derived from the current stack
-   pointer value in that range.  For example, if .raoffset is 16, then
-   the return address is found in memory at (SP+16). */
+/* A structure to summarise CFI summary info for the code address
+   range [base .. base+len-1].  In short, if you know (sp,fp,ip) at
+   some point and ip is in the range [base .. base+len-1], it tells
+   you how to calculate (sp,fp) for the caller of the current
+   frame and also ra, the return address of the current frame.
+
+   First off, calculate CFA, the Canonical Frame Address, thusly:
+
+     cfa = if cfa_sprel then sp+cfa_off else fp+cfa_off
+
+   Once that is done, the previous frame's sp/fp values and this
+   frame's ra value can be calculated like this:
+
+      old_sp/fp/ra
+         = case sp/fp/ra_how of
+              CFIR_UNKNOWN   -> we don't know, sorry
+              CFIR_SAME      -> same as it was before (sp/fp only)
+              CFIR_CFAREL    -> cfa + sp/fp/ra_off
+              CFIR_MEMCFAREL -> *( cfa + sp/fp/ra_off )
+*/
+
+#define CFIR_UNKNOWN   ((UChar)0)
+#define CFIR_SAME      ((UChar)1)
+#define CFIR_CFAREL    ((UChar)2)
+#define CFIR_MEMCFAREL ((UChar)3)
+
 typedef
    struct {
-      Addr base;
-      UInt len;
-      Int  raoffset;
+      Addr  base;
+      UInt  len;
+      Bool  cfa_sprel;
+      UChar ra_how; /* a CFIR_ value */
+      UChar sp_how; /* a CFIR_ value */
+      UChar fp_how; /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
    }
    CfiSI;
+
+extern void VG_(ppCfiSI)   ( CfiSI* );
 
 
 /* A structure which contains information pertaining to one mapped
@@ -196,6 +226,7 @@ struct _SegInfo {
 Char *VG_(addStr) ( SegInfo* si, Char* str, Int len );
 void VG_(addScopeInfo) ( SegInfo* si, Addr this, Addr next, Scope *scope);
 void VG_(addLineInfo) ( SegInfo* si, Char* filename, Addr this, Addr next, Int lineno, Int entry);
+void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi );
 
 /* Non-fatal -- use vg_panic if terminal. */
 void VG_(symerr) ( Char* msg );

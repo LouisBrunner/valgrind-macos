@@ -902,7 +902,7 @@ static inline void get_and_pp_real_StackTrace(Addr ret)
               tst->os_state.valgrind_stack_szB;
 
    VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size),
-                        ret, fp, sp, stacktop);
+                        ret, sp, fp, sp, stacktop);
    VG_(pp_StackTrace)  (ips, VG_(clo_backtrace_size));
 }
 

@@ -882,6 +882,13 @@ extern void VG_(setup_code_redirect_table) ( void );
 
 extern Bool VG_(resolve_redir_allsegs)(CodeRedirect *redir);
 
+extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
+                                /*MOD*/Addr* spP,
+                                /*MOD*/Addr* fpP,
+                                Addr min_accessible,
+                                Addr max_accessible );
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_redir.c
    ------------------------------------------------------------------ */

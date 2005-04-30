@@ -38,7 +38,8 @@
 /* Take a snapshot of the client's stack, putting the up to 'n_ips' IPs 
    into 'ips'.  In order to be thread-safe, we pass in the thread's IP
    and FP.  Returns number of IPs put in 'ips'.  */
-UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
+UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, 
+                            Addr ip, Addr sp, Addr fp,
                             Addr fp_min, Addr fp_max_orig )
 {
    static const Bool debug = False;
@@ -72,32 +73,57 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, Addr ip, Addr fp,
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(fp_min <= fp_max);*/
 
-   if (fp_min + 4000000 <= fp_max) {
+   ips[0] = ip;
+   i = 1;
+
+   if (fp_min + VG_(clo_max_stackframe) <= fp_max) {
       /* If the stack is ridiculously big, don't poke around ... but
          don't bomb out either.  Needed to make John Regehr's
          user-space threads package work. JRS 20021001 */
-      ips[0] = ip;
-      i = 1;
    } else {
-      /* Get whatever we safely can ... */
-      ips[0] = ip;
-      fp = VGA_FIRST_STACK_FRAME(fp);
-      for (i = 1; i < n_ips; i++) {
-         if (!(fp_min <= fp && fp <= fp_max)) {
-	    if (debug)
-	       VG_(printf)("... out of range %p\n", fp);
-            break; /* fp gone baaaad */
-         }
-         // NJN 2002-sep-17: monotonicity doesn't work -- gives wrong traces...
-         //     if (fp >= ((UInt*)fp)[0]) {
-         //   VG_(printf)("nonmonotonic\n");
-         //    break; /* fp gone nonmonotonic */
-         // }
-         ips[i] = VGA_STACK_FRAME_RET(fp);  /* ret addr */
-         fp     = VGA_STACK_FRAME_NEXT(fp);  /* old fp */
-	 if (debug)
-	    VG_(printf)("     ips[%d]=%08p\n", i, ips[i]);
+
+      while (True) {
+
+         if (i >= n_ips)
+            break;
+
+         /* Try to derive a new (ip,sp,fp) triple from the current
+            set. */
+
+         /* First off, see if there is any CFI info to hand which can
+            be used. */
+         if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+            ips[i++] = ip;
+            if (debug)
+               VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
+            continue;
+	 }
+
+ 	 /* If VG_(use_CFI_info) fails, it won't modify ip/sp/fp, so
+            we can safely try the old-fashioned method. */
+	 /* This bit is supposed to deal with frames resulting from
+            functions which begin "pushl% ebp ; movl %esp, %ebp" (x86)
+            or "pushl% ebp ; movl %esp, %ebp" (amd64).  Unfortunately,
+            since we can't (easily) look at the insns at the start of
+            the fn, like GDB does, there's no reliable way to tell.
+            Hence the hack of first trying out CFI, and if that fails,
+            then use this as a fallback. */
+         if (fp_min <= fp && fp <= fp_max) {
+            /* fp looks sane, so use it. */
+            ip = VGA_STACK_FRAME_RET(fp);
+            sp = fp + sizeof(Addr) /*saved %ebp/%rbp*/ 
+                    + sizeof(Addr) /*ra*/;
+            fp = VGA_STACK_FRAME_NEXT(fp);
+            ips[i++] = ip;
+            if (debug)
+               VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+            continue;
+	 }
+
+         /* No luck there.  We have to give up. */
+         break;
       }
+
    }
    n_found = i;
 
@@ -139,7 +165,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       VG_(printf)("tid %d: stack_highest=%p ip=%p sp=%p fp=%p\n",
 		  tid, stack_highest_word, ip, sp, fp);
 
-   return VG_(get_StackTrace2)(ips, n_ips, ip, fp, sp, stack_highest_word);
+   return VG_(get_StackTrace2)(ips, n_ips, ip, sp, fp, sp, stack_highest_word);
 }
 
 static void printIpDesc(UInt n, Addr ip)

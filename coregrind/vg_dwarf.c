@@ -933,24 +933,25 @@ enum dwarf_cfa_primary_ops
 
 enum dwarf_cfa_secondary_ops
   {
-    DW_CFA_nop              = 0x00,
-    DW_CFA_set_loc          = 0x01,
-    DW_CFA_advance_loc1     = 0x02,
-    DW_CFA_advance_loc2     = 0x03,
-    DW_CFA_advance_loc4     = 0x04,
-    DW_CFA_offset_extended  = 0x05,
-    DW_CFA_restore_extended = 0x06,
-    DW_CFA_undefined        = 0x07,
-    DW_CFA_same_value       = 0x08,
-    DW_CFA_register         = 0x09,
-    DW_CFA_remember_state   = 0x0a,
-    DW_CFA_restore_state    = 0x0b,
-    DW_CFA_def_cfa          = 0x0c,
-    DW_CFA_def_cfa_register = 0x0d,
-    DW_CFA_def_cfa_offset   = 0x0e,
-    DW_CFA_lo_user          = 0x1c,
-    DW_CFA_GNU_args_size    = 0x2e,
-    DW_CFA_hi_user          = 0x3f
+    DW_CFA_nop                = 0x00,
+    DW_CFA_set_loc            = 0x01,
+    DW_CFA_advance_loc1       = 0x02,
+    DW_CFA_advance_loc2       = 0x03,
+    DW_CFA_advance_loc4       = 0x04,
+    DW_CFA_offset_extended    = 0x05,
+    DW_CFA_restore_extended   = 0x06,
+    DW_CFA_undefined          = 0x07,
+    DW_CFA_same_value         = 0x08,
+    DW_CFA_register           = 0x09,
+    DW_CFA_remember_state     = 0x0a,
+    DW_CFA_restore_state      = 0x0b,
+    DW_CFA_def_cfa            = 0x0c,
+    DW_CFA_def_cfa_register   = 0x0d,
+    DW_CFA_def_cfa_offset     = 0x0e,
+    DW_CFA_offset_extended_sf = 0x11, /* DWARF3 only */
+    DW_CFA_lo_user            = 0x1c,
+    DW_CFA_GNU_args_size      = 0x2e,
+    DW_CFA_hi_user            = 0x3f
   };
 
 #define DW_EH_PE_absptr		0x00
@@ -1285,7 +1286,7 @@ static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
          vg_assert(0);
    }
 
-   if ((encoding & 0x0f) == 0x00)
+   if ((encoding & 0x07) == 0x00)
       encoding |= default_address_encoding();
 
    switch (encoding & 0x0f) {
@@ -1308,7 +1309,7 @@ static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
          *nbytes += sizeof(Long);
          return base + read_Long(data);
       default:
-         vg_assert(0);
+         vg_assert2(0, "read encoded address %d\n", encoding & 0x0f);
    }
 }
 
@@ -1382,27 +1383,38 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->cfa_offset = off;
          break;
 
-      case DW_CFA_def_cfa_register: {
+      case DW_CFA_offset_extended_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_CFAoff;
+         ctx->reg[reg].coff = off * ctx->data_a_f;
+         break;         
+
+      case DW_CFA_def_cfa_register:
          reg = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
          ctx->cfa_reg = reg;
          break;
-      }
-      case DW_CFA_def_cfa_offset: {
+
+      case DW_CFA_def_cfa_offset:
          off = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
          ctx->cfa_offset = off;
          break;
-      }
-      case DW_CFA_GNU_args_size: {
+
+      case DW_CFA_GNU_args_size:
          /* No idea what is supposed to happen.  gdb-6.3 simply
             ignores these. */
          off = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          break;
-      }
+
       default: 
          VG_(printf)("Unhandled CFI instruction 0:%d\n", (Int)lo6); 
          i = 0;
@@ -1569,10 +1581,6 @@ void VG_(read_callframe_info_dwarf2)
    Bool ok;
 
    UChar* current_cie = NULL;
-
-   if (0&& ehframe_sz != 240) return;
-   if (0) VG_(printf)("\n\n\neh_frame %p %d\n", ehframe, ehframe_sz);
-
    UChar* data = ehframe;
 
    UChar* cie_instrs = NULL;
@@ -1580,28 +1588,38 @@ void VG_(read_callframe_info_dwarf2)
    Bool saw_z_augmentation = False;
    UChar address_encoding = default_address_encoding();
 
+   if (VG_(clo_trace_cfi)) {
+      VG_(printf)("\n-----------------------------------------------\n");
+      VG_(printf)("CFI info: ehframe %p, ehframe_sz %d\n",
+		   ehframe, ehframe_sz );
+      VG_(printf)("CFI info: name %s\n",
+		  si->filename );
+   }
+
    /* Loop over CIEs/FDEs */
 
    while (True) {
 
-     /* Are we done? */
-     if (data == ehframe + ehframe_sz)
-       return;
+      /* Are we done? */
+      if (data == ehframe + ehframe_sz)
+         return;
 
-     /* Overshot the end?  Means something is wrong */
-     if  (data > ehframe + ehframe_sz) {
-       how = "overran the end of .eh_frame";
-       goto bad;
-     }
+      /* Overshot the end?  Means something is wrong */
+      if (data > ehframe + ehframe_sz) {
+         how = "overran the end of .eh_frame";
+         goto bad;
+      }
 
-     /* Ok, we must be looking at the start of a new CIE or FDE.
-        Figure out which it is. */
+      /* Ok, we must be looking at the start of a new CIE or FDE.
+         Figure out which it is. */
 
       UChar* ciefde_start = data;
-      if (0) VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
+      if (VG_(clo_trace_cfi)) 
+         VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
 
       UInt ciefde_len = read_UInt(data); data += sizeof(UInt);
-      if (0) VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
+      if (VG_(clo_trace_cfi)) 
+         VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
 	 of the sequence.  ?? Neither the DWARF2 spec not the AMD64
@@ -1614,7 +1632,8 @@ void VG_(read_callframe_info_dwarf2)
       }
 
       UInt cie_pointer = read_UInt(data); data += sizeof(UInt);
-      if (0) VG_(printf)("cie.pointer     = %d\n", cie_pointer);
+      if (VG_(clo_trace_cfi)) 
+         VG_(printf)("cie.pointer     = %d\n", cie_pointer);
 
       /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
       if (cie_pointer == 0) {
@@ -1623,12 +1642,21 @@ void VG_(read_callframe_info_dwarf2)
          current_cie = ciefde_start + sizeof(UInt);
 
          /* --------- CIE --------- */
+	 if (VG_(clo_trace_cfi)) 
+            VG_(printf)("------ new CIE ------\n");
+
          UChar cie_version = read_UChar(data); data += sizeof(UChar);
-         if (0) VG_(printf)("cie.version     = %d\n", (Int)cie_version);
+         if (VG_(clo_trace_cfi))
+            VG_(printf)("cie.version     = %d\n", (Int)cie_version);
+         if (cie_version != 1) {
+            how = "unexpected CIE version (not 1)";
+            goto bad;
+         }
 
          UChar* cie_augmentation = data;
          data += 1 + VG_(strlen)(cie_augmentation);
-         if (0) VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
 
          if (cie_augmentation[0] == 'e' && cie_augmentation[1] == 'h') {
             data += sizeof(Addr);
@@ -1637,14 +1665,17 @@ void VG_(read_callframe_info_dwarf2)
 
          cie_codeaf = read_leb128( data, &nbytes, 0);
          data += nbytes;
-         if (0) VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
 
          cie_dataaf = read_leb128( data, &nbytes, 1);
          data += nbytes;
-         if (0) VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
 
          UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
-         if (0) VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
 
          saw_z_augmentation = *cie_augmentation == 'z';
          if (saw_z_augmentation) {
@@ -1682,12 +1713,15 @@ void VG_(read_callframe_info_dwarf2)
 
         done_augmentation:
 
-         if (0) VG_(printf)("cie.encoding    = 0x%x\n", address_encoding);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("cie.encoding    = 0x%x\n", address_encoding);
 
          cie_instrs = data;
          cie_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         if (0) VG_(printf)("cie.instrs      = %p\n", cie_instrs);
-         if (0) VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
+         if (VG_(clo_trace_cfi)) {
+            VG_(printf)("cie.instrs      = %p\n", cie_instrs);
+            VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
+	 }
 
          if (cie_ilen < 0 || cie_ilen > ehframe_sz) {
             how = "implausible # cie initial insns";
@@ -1696,7 +1730,8 @@ void VG_(read_callframe_info_dwarf2)
 
 	 data += cie_ilen;
 
-         if (0) show_CF_instructions(cie_instrs, cie_ilen);
+         if (VG_(clo_trace_cfi)) 
+            show_CF_instructions(cie_instrs, cie_ilen);
 
       } else {
 
@@ -1713,15 +1748,19 @@ void VG_(read_callframe_info_dwarf2)
             goto bad;
          }
 
-         Addr fde_initloc = read_encoded_address(data, address_encoding,
-                                                 &nbytes, ehframe, ehframe_addr);
+         Addr fde_initloc 
+            = read_encoded_address(data, address_encoding,
+                                   &nbytes, ehframe, ehframe_addr);
          data += nbytes;
-         if (0) VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
-         UWord fde_arange = read_encoded_address(data, address_encoding & 0xf,
-                                                 &nbytes, ehframe, ehframe_addr);
+         UWord fde_arange 
+            = read_encoded_address(data, address_encoding & 0xf,
+                                   &nbytes, ehframe, ehframe_addr);
          data += nbytes;
-         if (0) VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
+         if (VG_(clo_trace_cfi)) 
+            VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
 
          if (saw_z_augmentation) {
             data += read_leb128( data, &nbytes, 0);
@@ -1730,15 +1769,18 @@ void VG_(read_callframe_info_dwarf2)
 
          UChar* fde_instrs = data;
          Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         if (0) VG_(printf)("fde.instrs      = %p\n", fde_instrs);
-         if (0) VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
+         if (VG_(clo_trace_cfi)) VG_(printf)("fde.instrs      = %p\n", fde_instrs);
+         if (VG_(clo_trace_cfi)) VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
 
          if (fde_ilen < 0 || fde_ilen > ehframe_sz) {
-            how = "implausible # fde initial insns";
+            how = "implausible # fde insns";
             goto bad;
          }
 
 	 data += fde_ilen;
+
+         if (VG_(clo_trace_cfi)) 
+            show_CF_instructions(fde_instrs, fde_ilen);
 
 	 initUnwindContext(&ctx);
          ctx.code_a_f = cie_codeaf;

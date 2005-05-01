@@ -909,6 +909,15 @@ static void initCfiSI ( CfiSI* si )
 
       8 is the return address (EIP) */
 
+#if defined(__x86__)
+#define FP_COL 5
+#define SP_COL 4
+#define RA_COL 8
+#elif defined(__amd64__)
+#define FP_COL 6
+#define SP_COL 7
+#define RA_COL 16
+#endif
 
 /* the number of regs we are prepared to unwind */
 #define N_CFI_REGS 20
@@ -943,6 +952,27 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_GNU_args_size    = 0x2e,
     DW_CFA_hi_user          = 0x3f
   };
+
+#define DW_EH_PE_absptr		0x00
+#define DW_EH_PE_omit		0xff
+
+#define DW_EH_PE_uleb128	0x01
+#define DW_EH_PE_udata2		0x02
+#define DW_EH_PE_udata4		0x03
+#define DW_EH_PE_udata8		0x04
+#define DW_EH_PE_sleb128	0x09
+#define DW_EH_PE_sdata2		0x0A
+#define DW_EH_PE_sdata4		0x0B
+#define DW_EH_PE_sdata8		0x0C
+#define DW_EH_PE_signed		0x08
+
+#define DW_EH_PE_pcrel		0x10
+#define DW_EH_PE_textrel	0x20
+#define DW_EH_PE_datarel	0x30
+#define DW_EH_PE_funcrel	0x40
+#define DW_EH_PE_aligned	0x50
+
+#define DW_EH_PE_indirect	0x80
 
 
 typedef
@@ -1018,18 +1048,18 @@ static void ppUnwindContext ( UnwindContext* ctx )
    This is taken to be just after ctx's loc advances; hence the
    summary is up to but not including the current loc.
 */
-static Bool summarise_context_x86 ( /*OUT*/CfiSI* si,
-                                    Addr loc_start,
-	                            UnwindContext* ctx )
+static Bool summarise_context( /*OUT*/CfiSI* si,
+                               Addr loc_start,
+	                       UnwindContext* ctx )
 {
    initCfiSI(si);
 
    /* How to generate the CFA */
-   if (ctx->cfa_reg == 4 /* ESP */) {
+   if (ctx->cfa_reg == SP_COL) {
       si->cfa_sprel = True;
       si->cfa_off   = ctx->cfa_offset;
    } else
-   if (ctx->cfa_reg == 5 /* EBP */) {
+   if (ctx->cfa_reg == FP_COL) {
       si->cfa_sprel = False;
       si->cfa_off   = ctx->cfa_offset;
    } else {
@@ -1044,8 +1074,8 @@ static Bool summarise_context_x86 ( /*OUT*/CfiSI* si,
       default:        goto failed; /* otherwise give up */               \
    }
 
-   SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[8 /* Return address */] );
-   SUMMARISE_HOW(si->fp_how, si->fp_off, ctx->reg[5 /* EBP */] );
+   SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[RA_COL] );
+   SUMMARISE_HOW(si->fp_how, si->fp_off, ctx->reg[FP_COL] );
 
 #  undef SUMMARISE_HOW
 
@@ -1055,7 +1085,7 @@ static Bool summarise_context_x86 ( /*OUT*/CfiSI* si,
    si->sp_off = 0;
 
    /* also, gcc says "Undef" for %ebp when it is unchanged.  So .. */
-   if (ctx->reg[5 /* EBP */].tag == RR_Undef)
+   if (ctx->reg[FP_COL].tag == RR_Undef)
       si->fp_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
@@ -1073,30 +1103,30 @@ static Bool summarise_context_x86 ( /*OUT*/CfiSI* si,
    return True;
 
   failed:
-   VG_(printf)("summarise_context_x86(loc_start = %p)"
+   VG_(printf)("summarise_context(loc_start = %p)"
                ": cannot summarise:\n   ", loc_start);
    ppUnwindContext(ctx);
    return False;
 }
 
-static void ppUnwindContext_x86_summary ( UnwindContext* ctx )
+static void ppUnwindContext_summary ( UnwindContext* ctx )
 {
    VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
 
-   if (ctx->cfa_reg == 4 /* ESP */) {
-      VG_(printf)("SP/CFA=%d+%%esp   ", ctx->cfa_offset);
+   if (ctx->cfa_reg == SP_COL) {
+      VG_(printf)("SP/CFA=%d+SP   ", ctx->cfa_offset);
    } else
-   if (ctx->cfa_reg == 5 /* EBP */) {
-      VG_(printf)("SP/CFA=%d+%%ebp   ", ctx->cfa_offset);
+   if (ctx->cfa_reg == FP_COL) {
+      VG_(printf)("SP/CFA=%d+FP   ", ctx->cfa_offset);
    } else {
       VG_(printf)("SP/CFA=unknown  ", ctx->cfa_offset);
    }
 
    VG_(printf)("RA=");
-   ppRegRule( &ctx->reg[8 /* Return address */] );
+   ppRegRule( &ctx->reg[RA_COL] );
 
    VG_(printf)("FP=");
-   ppRegRule( &ctx->reg[5 /* EBP */] );
+   ppRegRule( &ctx->reg[FP_COL] );
    VG_(printf)("\n");
 }
 
@@ -1107,6 +1137,41 @@ static inline Bool host_is_little_endian ( void )
    return toBool(*p == 0x10);
 }
 
+
+static Short read_Short ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   Short r = 0;
+   r = data[0] 
+       | ( ((UInt)data[1]) << 8 );
+   return r;
+}
+
+static Int read_Int ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   Int r = 0;
+   r = data[0] 
+       | ( ((UInt)data[1]) << 8 ) 
+       | ( ((UInt)data[2]) << 16 ) 
+       | ( ((UInt)data[3]) << 24 );
+   return r;
+}
+
+static Long read_Long ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   Long r = 0;
+   r = data[0] 
+       | ( ((ULong)data[1]) << 8 ) 
+       | ( ((ULong)data[2]) << 16 ) 
+       | ( ((ULong)data[3]) << 24 )
+       | ( ((ULong)data[4]) << 32 ) 
+       | ( ((ULong)data[5]) << 40 ) 
+       | ( ((ULong)data[6]) << 48 ) 
+       | ( ((ULong)data[7]) << 56 );
+   return r;
+}
 
 static UShort read_UShort ( UChar* data )
 {
@@ -1128,16 +1193,123 @@ static UInt read_UInt ( UChar* data )
    return r;
 }
 
+static ULong read_ULong ( UChar* data )
+{
+   vg_assert(host_is_little_endian());
+   ULong r = 0;
+   r = data[0] 
+       | ( ((ULong)data[1]) << 8 ) 
+       | ( ((ULong)data[2]) << 16 ) 
+       | ( ((ULong)data[3]) << 24 )
+       | ( ((ULong)data[4]) << 32 ) 
+       | ( ((ULong)data[5]) << 40 ) 
+       | ( ((ULong)data[6]) << 48 ) 
+       | ( ((ULong)data[7]) << 56 );
+   return r;
+}
+
 static Addr read_Addr ( UChar* data )
 {
   if (sizeof(Addr) == 4)
     return read_UInt(data);
+  else if (sizeof(Addr) == 8)
+    return read_ULong(data);
   vg_assert(0);
 }
 
 static UChar read_UChar ( UChar* data )
 {
    return data[0];
+}
+
+static UChar default_address_encoding ()
+{
+   switch (sizeof(Addr)) {
+      case 4: return DW_EH_PE_udata4;
+      case 8: return DW_EH_PE_udata8;
+      default: vg_assert(0);
+   }
+}
+
+static UInt size_of_encoded_address ( UChar encoding )
+{
+   if (encoding == DW_EH_PE_omit)
+      return 0;
+
+   switch (encoding & 0x07) {
+      case DW_EH_PE_absptr: return sizeof(Addr);
+      case DW_EH_PE_udata2: return sizeof(UShort);
+      case DW_EH_PE_udata4: return sizeof(UInt);
+      case DW_EH_PE_udata8: return sizeof(ULong);
+      default: vg_assert(0);
+   }
+}
+
+static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
+                                   UChar* ehframe, Addr ehframe_addr )
+{
+   Addr base;
+   Int offset;
+
+   vg_assert((encoding & DW_EH_PE_indirect) == 0);
+
+   *nbytes = 0;
+
+   switch (encoding & 0x70) {
+      case DW_EH_PE_absptr:
+         base = 0;
+         break;
+      case DW_EH_PE_pcrel:
+         base = ehframe_addr + ( data - ehframe );
+         break;
+      case DW_EH_PE_datarel:
+         vg_assert(0);
+         base = /* data base address */ 0;
+         break;
+      case DW_EH_PE_textrel:
+         vg_assert(0);
+         base = /* text base address */ 0;
+         break;
+      case DW_EH_PE_funcrel:
+         base = 0;
+         break;
+      case DW_EH_PE_aligned:
+         base = 0;
+         offset = data - ehframe;
+         if ((offset % sizeof(Addr)) != 0) {
+            *nbytes = sizeof(Addr) - (offset % sizeof(Addr));
+            data += *nbytes;
+         }
+         break;
+      default:
+         vg_assert(0);
+   }
+
+   if ((encoding & 0x0f) == 0x00)
+      encoding |= default_address_encoding();
+
+   switch (encoding & 0x0f) {
+      case DW_EH_PE_udata2:
+         *nbytes += sizeof(UShort);
+         return base + read_UShort(data);
+      case DW_EH_PE_udata4:
+         *nbytes += sizeof(UInt);
+         return base + read_UInt(data);
+      case DW_EH_PE_udata8:
+         *nbytes += sizeof(ULong);
+         return base + read_ULong(data);
+      case DW_EH_PE_sdata2:
+         *nbytes += sizeof(Short);
+         return base + read_Short(data);
+      case DW_EH_PE_sdata4:
+         *nbytes += sizeof(Int);
+         return base + read_Int(data);
+      case DW_EH_PE_sdata8:
+         *nbytes += sizeof(Long);
+         return base + read_Long(data);
+      default:
+         vg_assert(0);
+   }
 }
 
 
@@ -1183,10 +1355,20 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    switch (lo6) {
       case DW_CFA_nop: 
          break;
+      case DW_CFA_set_loc:
+         ctx->loc = read_Addr(&instr[i]) - ctx->initloc; i+= sizeof(Addr);
+         break;
       case DW_CFA_advance_loc1:
-         vg_assert(0);
          delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
-         VG_(printf)("DW_CFA_advance_loc1(%d)\n", delta); 
+         ctx->loc += delta;
+         break;
+      case DW_CFA_advance_loc2:
+         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         ctx->loc += delta;
+         break;
+      case DW_CFA_advance_loc4:
+         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         ctx->loc += delta;
          break;
 
       case DW_CFA_def_cfa:
@@ -1222,8 +1404,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
       }
       default: 
-         vg_assert(0);
-         VG_(printf)("0:%d\n", (Int)lo6); 
+         VG_(printf)("Unhandled CFI instruction 0:%d\n", (Int)lo6); 
+         i = 0;
          break;
    }
 
@@ -1236,11 +1418,17 @@ static Int show_CF_instruction ( UChar* instr )
 {
    UInt  delta;
    Int   off, reg, nleb;
+   Addr  loc;
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
    UChar lo6 = instr[i] & 0x3F;
    i++;
 
+   if (0) VG_(printf)("raw:%x/%x:%x:%x:%x:%x:%x:%x:%x:%x\n",
+                      hi2, lo6,
+                      instr[i+0], instr[i+1], instr[i+2], instr[i+3],
+                      instr[i+4], instr[i+5], instr[i+6], instr[i+7] );
+   
    if (hi2 == DW_CFA_advance_loc) {
       VG_(printf)("DW_CFA_advance_loc(%d)\n", (Int)lo6);
       return i;
@@ -1266,9 +1454,24 @@ static Int show_CF_instruction ( UChar* instr )
          VG_(printf)("DW_CFA_nop\n"); 
          break;
 
+      case DW_CFA_set_loc:
+         loc = read_Addr(&instr[i]); i+= sizeof(Addr);
+         VG_(printf)("DW_CFA_set_loc(%p)\n", loc); 
+         break;
+
       case DW_CFA_advance_loc1:
          delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
          VG_(printf)("DW_CFA_advance_loc1(%d)\n", delta); 
+         break;
+
+      case DW_CFA_advance_loc2:
+         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         VG_(printf)("DW_CFA_advance_loc2(%d)\n", delta); 
+         break;
+
+      case DW_CFA_advance_loc4:
+         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         VG_(printf)("DW_CFA_advance_loc4(%d)\n", delta); 
          break;
 
       case DW_CFA_def_cfa:
@@ -1328,7 +1531,7 @@ Bool run_CF_instructions ( SegInfo* si,
    Int j, i = 0;
    Addr loc_prev;
    if (0) ppUnwindContext(ctx);
-   if (0) ppUnwindContext_x86_summary(ctx);
+   if (0) ppUnwindContext_summary(ctx);
    while (True) {
       loc_prev = ctx->loc;
       if (i >= ilen) break;
@@ -1339,7 +1542,7 @@ Bool run_CF_instructions ( SegInfo* si,
       i += j;
       if (0) ppUnwindContext(ctx);
       if (loc_prev != ctx->loc && si) {
-         summarise_context_x86 ( &cfisi, loc_prev, ctx );
+         summarise_context ( &cfisi, loc_prev, ctx );
          VG_(addCfiSI)(si, &cfisi);
       }
    }
@@ -1347,7 +1550,7 @@ Bool run_CF_instructions ( SegInfo* si,
       loc_prev = ctx->loc;
       ctx->loc = fde_arange;
       if (si) {
-         summarise_context_x86 ( &cfisi, loc_prev, ctx );
+         summarise_context ( &cfisi, loc_prev, ctx );
          VG_(addCfiSI)(si, &cfisi);
       }
    }
@@ -1356,7 +1559,7 @@ Bool run_CF_instructions ( SegInfo* si,
 
 
 void VG_(read_callframe_info_dwarf2) 
-        ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz )
+        ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {
    UnwindContext ctx;
    Int nbytes;
@@ -1374,6 +1577,8 @@ void VG_(read_callframe_info_dwarf2)
 
    UChar* cie_instrs = NULL;
    Int cie_ilen = 0;
+   Bool saw_z_augmentation = False;
+   UChar address_encoding = default_address_encoding();
 
    /* Loop over CIEs/FDEs */
 
@@ -1425,9 +1630,9 @@ void VG_(read_callframe_info_dwarf2)
          data += 1 + VG_(strlen)(cie_augmentation);
          if (0) VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
 
-         if (0 != VG_(strcmp)(cie_augmentation, "")) {
-            how = "non-NULL cie.augmentation";
-            goto bad;
+         if (cie_augmentation[0] == 'e' && cie_augmentation[1] == 'h') {
+            data += sizeof(Addr);
+            cie_augmentation += 2;
          }
 
          cie_codeaf = read_leb128( data, &nbytes, 0);
@@ -1441,9 +1646,47 @@ void VG_(read_callframe_info_dwarf2)
          UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
          if (0) VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
 
+         saw_z_augmentation = *cie_augmentation == 'z';
+         if (saw_z_augmentation) {
+            UInt length = read_leb128( data, &nbytes, 0);
+            data += nbytes;
+            cie_instrs = data + length;
+            cie_augmentation++;
+         } else {
+            cie_instrs = NULL;
+         }
+
+         while (*cie_augmentation) {
+            switch (*cie_augmentation) {
+               case 'L':
+                  data++;
+                  cie_augmentation++;
+                  break;
+               case 'R':
+                  address_encoding = read_UChar(data); data += sizeof(UChar);
+                  cie_augmentation++;
+                  break;
+               case 'P':
+                  data += size_of_encoded_address(address_encoding);
+                  cie_augmentation++;
+                  break;
+               default:
+                  if (cie_instrs == NULL) {
+                     how = "unhandled cie.augmentation";
+                     goto bad;
+                  }
+                  data = cie_instrs;
+                  goto done_augmentation;
+            }
+         }
+
+        done_augmentation:
+
+         if (0) VG_(printf)("cie.encoding    = 0x%x\n", address_encoding);
+
          cie_instrs = data;
          cie_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         if (0) VG_(printf)("cie.instrs      = %p\n", (Int)cie_instrs);
+         if (0) VG_(printf)("cie.instrs      = %p\n", cie_instrs);
          if (0) VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
 
          if (cie_ilen < 0 || cie_ilen > ehframe_sz) {
@@ -1470,15 +1713,24 @@ void VG_(read_callframe_info_dwarf2)
             goto bad;
          }
 
-         Addr fde_initloc = read_Addr(data); data += sizeof(Addr);
+         Addr fde_initloc = read_encoded_address(data, address_encoding,
+                                                 &nbytes, ehframe, ehframe_addr);
+         data += nbytes;
          if (0) VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
-         UWord fde_arange = read_Addr(data); data += sizeof(Addr);
+         UWord fde_arange = read_encoded_address(data, address_encoding & 0xf,
+                                                 &nbytes, ehframe, ehframe_addr);
+         data += nbytes;
          if (0) VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
+
+         if (saw_z_augmentation) {
+            data += read_leb128( data, &nbytes, 0);
+            data += nbytes;
+         }
 
          UChar* fde_instrs = data;
          Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         if (0) VG_(printf)("fde.instrs      = %p\n", (Int)fde_instrs);
+         if (0) VG_(printf)("fde.instrs      = %p\n", fde_instrs);
          if (0) VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
 
          if (fde_ilen < 0 || fde_ilen > ehframe_sz) {

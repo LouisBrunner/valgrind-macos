@@ -255,7 +255,7 @@ void VG_(read_debuginfo_dwarf1) ( SegInfo* si,
    CFI reader
    -------------------- */
 void VG_(read_callframe_info_dwarf2) 
-    ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz );
+    ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr );
 
 
 #endif /* _VG_SYMTYPE_H */

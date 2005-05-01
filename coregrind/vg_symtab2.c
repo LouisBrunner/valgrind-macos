@@ -1505,11 +1505,15 @@ Bool read_lib_symbols ( SegInfo* si )
       UInt       dwarf1l_sz      = 0;
       UInt       ehframe_sz      = 0;
 
+      /* Section virtual addresses */
+      Addr       dummy_addr      = 0;
+      Addr       ehframe_addr    = 0;
+
       Bool       has_debuginfo = False;
 
       /* Find all interesting sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
-#        define FIND(sec_name, sec_data, sec_size, in_exec, type) \
+#        define FIND(sec_name, sec_data, sec_size, sec_addr, in_exec, type) \
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
             if (0 != sec_data) \
                VG_(core_panic)("repeated section!\n"); \
@@ -1518,6 +1522,7 @@ Bool read_lib_symbols ( SegInfo* si )
             else \
                sec_data = (type)(oimage + shdr[i].sh_offset); \
             sec_size = shdr[i].sh_size; \
+            sec_addr = si->offset + shdr[i].sh_addr; \
             TRACE_SYMTAB( "%18s: %p .. %p\n", \
                           sec_name, sec_data, sec_data + sec_size - 1); \
             if ( shdr[i].sh_offset + sec_size > n_oimage ) { \
@@ -1528,22 +1533,22 @@ Bool read_lib_symbols ( SegInfo* si )
 
          /* Nb: must find where .got and .plt sections will be in the
           * executable image, not in the object image transiently loaded. */
-              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   0, ElfXX_Sym*)
-         else FIND(".dynstr",       o_dynstr,     o_dynstr_sz,   0, UChar*)
-         else FIND(".symtab",       o_symtab,     o_symtab_sz,   0, ElfXX_Sym*)
-         else FIND(".strtab",       o_strtab,     o_strtab_sz,   0, UChar*)
+              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   dummy_addr,   0, ElfXX_Sym*)
+         else FIND(".dynstr",       o_dynstr,     o_dynstr_sz,   dummy_addr,   0, UChar*)
+         else FIND(".symtab",       o_symtab,     o_symtab_sz,   dummy_addr,   0, ElfXX_Sym*)
+         else FIND(".strtab",       o_strtab,     o_strtab_sz,   dummy_addr,   0, UChar*)
 
-         else FIND(".gnu_debuglink", debuglink,   debuglink_sz,  0, Char*)
+         else FIND(".gnu_debuglink", debuglink,   debuglink_sz,  dummy_addr,   0, Char*)
 
-         else FIND(".stab",         stab,         stab_sz,       0, UChar*)
-         else FIND(".stabstr",      stabstr,      stabstr_sz,    0, UChar*)
-         else FIND(".debug_line",   debug_line,   debug_line_sz, 0, UChar*)
-         else FIND(".debug",        dwarf1d,      dwarf1d_sz,    0, UChar*)
-         else FIND(".line",         dwarf1l,      dwarf1l_sz,    0, UChar*)
-         else FIND(".eh_frame",     ehframe,      ehframe_sz,    0, UChar*)
+         else FIND(".stab",         stab,         stab_sz,       dummy_addr,   0, UChar*)
+         else FIND(".stabstr",      stabstr,      stabstr_sz,    dummy_addr,   0, UChar*)
+         else FIND(".debug_line",   debug_line,   debug_line_sz, dummy_addr,   0, UChar*)
+         else FIND(".debug",        dwarf1d,      dwarf1d_sz,    dummy_addr,   0, UChar*)
+         else FIND(".line",         dwarf1l,      dwarf1l_sz,    dummy_addr,   0, UChar*)
+         else FIND(".eh_frame",     ehframe,      ehframe_sz,    ehframe_addr, 0, UChar*)
 
-         else FIND(".got",         si->got_start, si->got_size,  1, Addr)
-         else FIND(".plt",         si->plt_start, si->plt_size,  1, Addr)
+         else FIND(".got",         si->got_start, si->got_size,  dummy_addr,   1, Addr)
+         else FIND(".plt",         si->plt_start, si->plt_size,  dummy_addr,   1, Addr)
 
 #        undef FIND
          
@@ -1615,7 +1620,7 @@ Bool read_lib_symbols ( SegInfo* si )
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe && ehframe_sz > 4) {
-         VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz );
+         VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any. */

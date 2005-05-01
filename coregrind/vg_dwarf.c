@@ -1047,12 +1047,14 @@ static void ppUnwindContext ( UnwindContext* ctx )
 
 /* Summarise ctx into si, if possible.  Returns True if successful.
    This is taken to be just after ctx's loc advances; hence the
-   summary is up to but not including the current loc.
+   summary is up to but not including the current loc.  This works
+   on both x86 and amd64.
 */
 static Bool summarise_context( /*OUT*/CfiSI* si,
                                Addr loc_start,
 	                       UnwindContext* ctx )
 {
+   Int why = 0;
    initCfiSI(si);
 
    /* How to generate the CFA */
@@ -1064,6 +1066,7 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
       si->cfa_sprel = False;
       si->cfa_off   = ctx->cfa_offset;
    } else {
+      why = 1;
       goto failed;
    }
 
@@ -1072,7 +1075,7 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
       case RR_Undef:  _how = CFIR_UNKNOWN;   _off = 0; break;            \
       case RR_Same:   _how = CFIR_SAME;      _off = 0; break;            \
       case RR_CFAoff: _how = CFIR_MEMCFAREL; _off = _ctxreg.coff; break; \
-      default:        goto failed; /* otherwise give up */               \
+      default:        { why = 2; goto failed; } /* otherwise give up */  \
    }
 
    SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[RA_COL] );
@@ -1080,23 +1083,26 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
 
 #  undef SUMMARISE_HOW
 
-   /* on x86, it seems the old %esp value before the call is always
-      the same as the CFA.  Therefore ... */
+   /* on x86/amd64, it seems the old %{e,r}sp value before the call is
+      always the same as the CFA.  Therefore ... */
    si->sp_how = CFIR_CFAREL;
    si->sp_off = 0;
 
-   /* also, gcc says "Undef" for %ebp when it is unchanged.  So .. */
+   /* also, gcc says "Undef" for %{e,r}bp when it is unchanged.  So
+      .. */
    if (ctx->reg[FP_COL].tag == RR_Undef)
       si->fp_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
-   if (si->ra_how == CFIR_SAME) goto failed;
+   if (si->ra_how == CFIR_SAME) 
+      { why = 3; goto failed; }
 
    /* bogus looking range?  Note, we require that the difference is
       representable in 32 bits. */
-   if (loc_start >= ctx->loc) goto failed;
+   if (loc_start >= ctx->loc) 
+      { why = 4; goto failed; }
    if (ctx->loc - loc_start > 10000000 /* let's say */)
-      goto failed;
+      { why = 5; goto failed; }
 
    si->base = loc_start + ctx->initloc;
    si->len  = (UInt)(ctx->loc - loc_start);
@@ -1105,7 +1111,7 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
 
   failed:
    VG_(printf)("summarise_context(loc_start = %p)"
-               ": cannot summarise:\n   ", loc_start);
+               ": cannot summarise(why=%d):\n   ", loc_start, why);
    ppUnwindContext(ctx);
    return False;
 }
@@ -1223,7 +1229,7 @@ static UChar read_UChar ( UChar* data )
    return data[0];
 }
 
-static UChar default_address_encoding ()
+static UChar default_Addr_encoding ()
 {
    switch (sizeof(Addr)) {
       case 4: return DW_EH_PE_udata4;
@@ -1232,7 +1238,7 @@ static UChar default_address_encoding ()
    }
 }
 
-static UInt size_of_encoded_address ( UChar encoding )
+static UInt size_of_encoded_Addr ( UChar encoding )
 {
    if (encoding == DW_EH_PE_omit)
       return 0;
@@ -1246,8 +1252,8 @@ static UInt size_of_encoded_address ( UChar encoding )
    }
 }
 
-static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
-                                   UChar* ehframe, Addr ehframe_addr )
+static Addr read_encoded_Addr ( UChar* data, UChar encoding, Int *nbytes,
+                                UChar* ehframe, Addr ehframe_addr )
 {
    Addr base;
    Int offset;
@@ -1287,7 +1293,7 @@ static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
    }
 
    if ((encoding & 0x07) == 0x00)
-      encoding |= default_address_encoding();
+      encoding |= default_Addr_encoding();
 
    switch (encoding & 0x0f) {
       case DW_EH_PE_udata2:
@@ -1318,7 +1324,8 @@ static Addr read_encoded_address ( UChar* data, UChar encoding, Int *nbytes,
    Returns 0 if the instruction could not be executed. 
 */
 static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx, 
-                                UChar* instr )
+                                UChar* instr,
+                                UnwindContext* restore_ctx )
 {
    Int   off, reg, nleb;
    UInt  delta;
@@ -1346,8 +1353,12 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    }
 
    if (hi2 == DW_CFA_restore) {
-      vg_assert(0);
-      VG_(printf)("DW_CFA_restore(%d)\n", (Int)lo6);
+      reg = (Int)lo6;
+      if (reg < 0 || reg >= N_CFI_REGS) 
+         return 0; /* fail */
+      if (restore_ctx == NULL)
+         return 0; /* fail */
+      ctx->reg[reg] = restore_ctx->reg[reg];
       return i;
    }
 
@@ -1536,7 +1547,8 @@ static void show_CF_instructions ( UChar* instrs, Int ilen )
 static 
 Bool run_CF_instructions ( SegInfo* si,
                            UnwindContext* ctx, UChar* instrs, Int ilen,
-                           UWord fde_arange )
+                           UWord fde_arange,
+                           UnwindContext* restore_ctx )
 {
   CfiSI cfisi;
 
@@ -1548,7 +1560,7 @@ Bool run_CF_instructions ( SegInfo* si,
       loc_prev = ctx->loc;
       if (i >= ilen) break;
       if (0) (void)show_CF_instruction( &instrs[i] );
-      j = run_CF_instruction( ctx, &instrs[i] );
+      j = run_CF_instruction( ctx, &instrs[i], restore_ctx );
       if (j == 0)
          return False; /* execution failed */
       i += j;
@@ -1573,7 +1585,7 @@ Bool run_CF_instructions ( SegInfo* si,
 void VG_(read_callframe_info_dwarf2) 
         ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {
-   UnwindContext ctx;
+   UnwindContext ctx, restore_ctx;
    Int nbytes;
    HChar* how = NULL;
    Int cie_codeaf = 0;
@@ -1586,7 +1598,7 @@ void VG_(read_callframe_info_dwarf2)
    UChar* cie_instrs = NULL;
    Int cie_ilen = 0;
    Bool saw_z_augmentation = False;
-   UChar address_encoding = default_address_encoding();
+   UChar address_encoding = default_Addr_encoding();
 
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");
@@ -1698,7 +1710,8 @@ void VG_(read_callframe_info_dwarf2)
                   cie_augmentation++;
                   break;
                case 'P':
-                  data += size_of_encoded_address(address_encoding);
+                  data += size_of_encoded_Addr( read_UChar(data) );
+                  data++;
                   cie_augmentation++;
                   break;
                default:
@@ -1749,15 +1762,15 @@ void VG_(read_callframe_info_dwarf2)
          }
 
          Addr fde_initloc 
-            = read_encoded_address(data, address_encoding,
-                                   &nbytes, ehframe, ehframe_addr);
+            = read_encoded_Addr(data, address_encoding,
+                                &nbytes, ehframe, ehframe_addr);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
          UWord fde_arange 
-            = read_encoded_address(data, address_encoding & 0xf,
-                                   &nbytes, ehframe, ehframe_addr);
+            = read_encoded_Addr(data, address_encoding & 0xf,
+                                &nbytes, ehframe, ehframe_addr);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
@@ -1769,8 +1782,10 @@ void VG_(read_callframe_info_dwarf2)
 
          UChar* fde_instrs = data;
          Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
-         if (VG_(clo_trace_cfi)) VG_(printf)("fde.instrs      = %p\n", fde_instrs);
-         if (VG_(clo_trace_cfi)) VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
+         if (VG_(clo_trace_cfi)) {
+            VG_(printf)("fde.instrs      = %p\n", fde_instrs);
+            VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);
+	 }
 
          if (fde_ilen < 0 || fde_ilen > ehframe_sz) {
             how = "implausible # fde insns";
@@ -1786,9 +1801,17 @@ void VG_(read_callframe_info_dwarf2)
          ctx.code_a_f = cie_codeaf;
          ctx.data_a_f = cie_dataaf;
          ctx.initloc  = fde_initloc;
-	 ok = run_CF_instructions(NULL, &ctx, cie_instrs, cie_ilen, 0);
-         if (ok)
-	    ok = run_CF_instructions(si, &ctx, fde_instrs, fde_ilen, fde_arange);
+
+	 initUnwindContext(&restore_ctx);
+
+	 ok = run_CF_instructions(
+                 NULL, &ctx, cie_instrs, cie_ilen, 0, NULL);
+         if (ok) {
+            restore_ctx = ctx;
+	    ok = run_CF_instructions(
+                    si, &ctx, fde_instrs, fde_ilen, fde_arange, 
+                    &restore_ctx);
+	 }
       }
    }
 

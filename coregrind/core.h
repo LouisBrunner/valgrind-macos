@@ -231,6 +231,8 @@ extern Bool  VG_(clo_trace_syscalls);
 extern Bool  VG_(clo_trace_signals);
 /* DEBUG: print symtab details?  default: NO */
 extern Bool  VG_(clo_trace_symtab);
+/* DEBUG: print call-frame-info details?  default: NO */
+extern Bool  VG_(clo_trace_cfi);
 /* DEBUG: print redirection details?  default: NO */
 extern Bool  VG_(clo_trace_redir);
 /* DEBUG: print thread scheduling events?  default: NO */

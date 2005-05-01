@@ -1435,6 +1435,7 @@ Int    VG_(clo_trace_notbelow) = 0;
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
 Bool   VG_(clo_trace_symtab)   = False;
+Bool   VG_(clo_trace_cfi)      = False;
 Bool   VG_(clo_trace_redir)    = False;
 Bool   VG_(clo_trace_sched)    = False;
 Bool   VG_(clo_trace_pthreads) = False;
@@ -1509,6 +1510,7 @@ static void usage ( Bool debug_help )
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
+"    --trace-cfi=no|yes        show call-frame-info details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 #if 0
@@ -1704,6 +1706,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched))
       else VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals))
       else VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab))
+      else VG_BOOL_CLO(arg, "--trace-cfi",        VG_(clo_trace_cfi))
       else VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir))
       else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
       else VG_BOOL_CLO(arg, "--trace-pthreads",   VG_(clo_trace_pthreads))

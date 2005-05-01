@@ -1076,7 +1076,20 @@ Nevertheless:</para>
     <para><computeroutput>--trace-symtab=no</computeroutput>
     [default]</para>
     <para><computeroutput>--trace-symtab=yes</computeroutput></para>
-    <para>Enable/disable tracing of symbol table reading.</para>
+    <para>Enable/disable tracing of symbol table reading and line
+    number info reading.</para>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--trace-cfi=no</computeroutput>
+    [default]</para>
+    <para><computeroutput>--trace-cfi=yes</computeroutput></para>
+    <para>Enable/disable tracing of call-frame-info reading.
+    Call-frame-info (CFI) is information inserted by compilers 
+    which describes the relationship between adjacent call frames.
+    On architectures which by default do not use a frame pointer, 
+    such as AMD64, this information is essential for creating stack 
+    snapshots.</para>
    </listitem>
 
    <listitem>

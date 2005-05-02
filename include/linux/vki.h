@@ -47,8 +47,8 @@
    are different to those in here. 
 
    Also note that this file contains all the generic header info, ie. that
-   from linux/include/linux/*.h.  The arch-specific header info, eg. that
-   from linux/include/asm-i386/*.h, is in $PLATFORM/vki_arch.h and
+   from linux/include/linux/ *.h.  The arch-specific header info, eg. that
+   from linux/include/asm-i386/ *.h, is in $PLATFORM/vki_arch.h and
    $PLATFORM/vki_arch_posixtypes.h.  (Two files are required to avoid
    circular dependencies between the generic VKI header and the
    arch-specific VKI header.  It's possible in the future, as more stuff

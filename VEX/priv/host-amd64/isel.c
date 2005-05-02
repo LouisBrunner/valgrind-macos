@@ -780,9 +780,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
    DECLARE_PATTERN(p_8Uto64);
-   DECLARE_PATTERN(p_16Uto64);
    DECLARE_PATTERN(p_1Uto8_64to1);
-//..    DECLARE_PATTERN(p_32to1_then_1Uto8);
 
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
@@ -1747,7 +1745,6 @@ static AMD64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
 static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
-   DECLARE_PATTERN(p_32to1_64to32);
 //..    DECLARE_PATTERN(p_1Uto32_then_32to1);
 //..    DECLARE_PATTERN(p_1Sto32_then_32to1);
 

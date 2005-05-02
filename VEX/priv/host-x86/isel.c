@@ -97,16 +97,6 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    return IRExpr_Binop(op, a1, a2);
 }
 
-static IRExpr* mkU64 ( ULong i )
-{
-   return IRExpr_Const(IRConst_U64(i));
-}
-
-static IRExpr* mkU32 ( UInt i )
-{
-   return IRExpr_Const(IRConst_U32(i));
-}
-
 static IRExpr* bind ( Int binder )
 {
    return IRExpr_Binder(binder);
@@ -255,15 +245,6 @@ static HReg        iselVecExpr     ( ISelEnv* env, IRExpr* e );
 /*---------------------------------------------------------*/
 /*--- ISEL: Misc helpers                                ---*/
 /*---------------------------------------------------------*/
-
-/* Is this a 32-bit zero expression? */
-
-static Bool isZero32 ( IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const
-                  && e->Iex.Const.con->tag == Ico_U32
-                  && e->Iex.Const.con->Ico.U32 == 0 );
-}
 
 /* Make a int reg-reg move. */
 

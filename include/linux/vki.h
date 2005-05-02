@@ -46,15 +46,15 @@
    Note especially that the types are not the glibc versions, many of which
    are different to those in here. 
 
-   Also note that all the necessary headers for this architecture are in
-   this one file.  Since some Linux headers are generic, this means that
-   some code duplication will occur between different vki.h files between
-   different Linux Valgrind ports.  This is because it's difficult to
-   separate the generic and arch-specific parts for Valgrind's purpose
-   without introducing lots of separate files, since the dependencies
-   between headers is quite complex.  The resulting code duplication is not
-   a big deal, since the header code should not change over time.  
-
+   Also note that this file contains all the generic header info, ie. that
+   from linux/include/linux/*.h.  The arch-specific header info, eg. that
+   from linux/include/asm-i386/*.h, is in $PLATFORM/vki_arch.h and
+   $PLATFORM/vki_arch_posixtypes.h.  (Two files are required to avoid
+   circular dependencies between the generic VKI header and the
+   arch-specific VKI header.  It's possible in the future, as more stuff
+   gets pulled in, that we might have to split files up some more to avoid
+   further circular dependencies.)
+   
    Finally, note that it is assumed that __KERNEL__ is set for all these
    definitions, which affects some of them.
 */

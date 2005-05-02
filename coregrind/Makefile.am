@@ -13,8 +13,8 @@ DIST_SUBDIRS = \
 	m_sigframe m_aspacemgr demangle .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
-		-DKICKSTART_BASE=@KICKSTART_BASE@ \
-		-DVG_PLATFORM="$(VG_PLATFORM)"
+		-DKICKSTART_BASE=@KICKSTART_BASE@
+
 AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
 AM_CFLAGS += -fno-omit-frame-pointer
 

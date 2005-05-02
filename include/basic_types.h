@@ -57,6 +57,11 @@ typedef  Word                 SSizeT;     // 32             64
 
 typedef  Word                   OffT;     // 32             64
 
+
+/* This is going to be either 4 or 8. */
+#define VG_WORDSIZE VEX_HOST_WORDSIZE
+
+
 /* ---------------------------------------------------------------------
    non-builtin types
    ------------------------------------------------------------------ */

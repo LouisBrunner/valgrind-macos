@@ -1509,6 +1509,8 @@ extern const Int  VG_(trampoline_code_length);
 extern const Int  VG_(tramp_sigreturn_offset);
 extern const Int  VG_(tramp_rt_sigreturn_offset);
 extern const Int  VG_(tramp_syscall_offset);
+extern const Int  VG_(tramp_gettimeofday_offset);
+extern const Int  VG_(tramp_time_offset);
 
 /* ---------------------------------------------------------------------
    Things relating to the used tool

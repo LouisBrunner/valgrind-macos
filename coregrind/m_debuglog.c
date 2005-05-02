@@ -55,9 +55,7 @@
 
 /* ----- x86-linux specifics ----- */
 
-/* Arse!  Really I want to test VG_PLATFORM, but this does not
-   seem to be possible. */
-#if defined(__i386__) && defined(__linux__)
+#if defined(VGP_x86_linux)
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
@@ -94,7 +92,7 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
-#elif defined(__x86_64__) && defined(__linux__)
+#elif defined(VGP_amd64_linux)
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
@@ -128,7 +126,7 @@ static UInt local_sys_getpid ( void )
 }
 
 #else
-#error Unknown VG_PLATFORM
+# error Unknown platform
 #endif
 
 

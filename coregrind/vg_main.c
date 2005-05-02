@@ -1081,7 +1081,7 @@ static Addr setup_client_stack(void* init_sp,
 
 // XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 // Perhaps a per-arch VGA_NEEDS_TRAMPOLINE constant is necessary?
-#if defined(__i386__) || defined(__amd64__)
+#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    /* --- trampoline page --- */
    VG_(memcpy)( (void *)VG_(client_trampoline_code),
                 &VG_(trampoline_code_start), VG_(trampoline_code_length) );
@@ -1629,7 +1629,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                   "./configure --prefix=... or --libdir=...");
 
 // XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
-#ifdef __x86__
+#if defined(VGP_x86_linux)
    {
       UInt* auxp;
       for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
@@ -2672,7 +2672,7 @@ int main(int argc, char **argv, char **envp)
    VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
    sp_at_startup___global_arg = 0;
    
-#if defined(__i386__) || defined(__amd64__)
+#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
    //--------------------------------------------------------------
    // Protect client trampoline page (which is also sysinfo stuff)
    //   p: segment stuff   [otherwise get seg faults...]
@@ -2681,12 +2681,13 @@ int main(int argc, char **argv, char **envp)
       Segment *seg;
       VG_(mprotect)( (void *)VG_(client_trampoline_code),
 		     VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
-#endif
+
       /* Make sure this segment isn't treated as stack */
       seg = VG_(find_segment)(VG_(client_trampoline_code));
       if (seg)
 	 seg->flags &= ~(SF_STACK | SF_GROWDOWN);
    }
+#endif
 
    //==============================================================
    // Can use VG_(map)() after segments set up

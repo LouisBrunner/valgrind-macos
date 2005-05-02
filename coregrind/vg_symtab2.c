@@ -805,6 +805,26 @@ void canonicaliseLoctab ( SegInfo* si )
 }
 
 
+/* Sort the call-frame-info table by starting address.  Mash the table
+   around so as to establish the property that addresses are in order
+   and the ranges do not overlap.  This facilitates using binary
+   search to map addresses to locations when we come to query the
+   table.  
+
+   Also, set cfisi_minaddr and cfisi_maxaddr to be the min and max of
+   any of the address ranges contained in cfisi[0 .. cfisi_used-1], so
+   as to facilitate rapidly skipping this SegInfo when looking for an
+   address which falls outside that range.
+*/
+static Int compare_CfiSI(void *va, void *vb) {
+   CfiSI *a = (CfiSI*)va;
+   CfiSI *b = (CfiSI*)vb;
+
+   if (a->base < b->base) return -1;
+   if (a->base > b->base) return  1;
+   return 0;
+}
+
 static
 void canonicaliseCfiSI ( SegInfo* si )
 {
@@ -826,6 +846,28 @@ void canonicaliseCfiSI ( SegInfo* si )
    }
    VG_(printf)("%d entries, %p .. %p\n", si->cfisi_used,
 	       si->cfisi_minaddr, si->cfisi_maxaddr);
+
+   /* Sort the cfisi array by base address. */
+   VG_(ssort)(si->cfisi, si->cfisi_used, sizeof(*si->cfisi), compare_CfiSI);
+
+   /* Ensure relevant postconditions hold. */
+   for (i = 0; i < si->cfisi_used; i++) {
+      /* No zero-length ranges. */
+      vg_assert(si->cfisi[i].len > 0);
+      /* Makes sense w.r.t. summary address range */
+      vg_assert(si->cfisi[i].base >= si->cfisi_minaddr);
+      vg_assert(si->cfisi[i].base + si->cfisi[i].len - 1
+                <= si->cfisi_maxaddr);
+
+      if (i < si->cfisi_used - 1) {
+         /* In order. */
+         vg_assert(si->cfisi[i].base < si->cfisi[i+1].base);
+         /* No overlaps. */
+         vg_assert(si->cfisi[i].base + si->cfisi[i].len - 1
+                   < si->cfisi[i+1].base);
+      }
+   }
+
 }
 
 
@@ -2005,6 +2047,32 @@ static void search_all_scopetabs ( Addr ptr,
    VGP_POPCC(VgpSearchSyms);
 }
 
+
+/* Find a CFI-table index containing the specified pointer, or -1
+   if not found.  Binary search.  */
+
+static Int search_one_cfitab ( SegInfo* si, Addr ptr )
+{
+   Addr a_mid_lo, a_mid_hi;
+   Int  mid, size, 
+        lo = 0, 
+        hi = si->cfisi_used-1;
+   while (True) {
+      /* current unsearched space is from lo to hi, inclusive. */
+      if (lo > hi) return -1; /* not found */
+      mid      = (lo + hi) / 2;
+      a_mid_lo = si->cfisi[mid].base;
+      size     = si->cfisi[mid].len;
+      a_mid_hi = a_mid_lo + size - 1;
+      vg_assert(a_mid_hi >= a_mid_lo);
+      if (ptr < a_mid_lo) { hi = mid-1; continue; } 
+      if (ptr > a_mid_hi) { lo = mid+1; continue; }
+      vg_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
+      return mid;
+   }
+}
+
+
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
    Caller supplies buf and nbuf.  If demangle is False, don't do
@@ -2367,22 +2435,14 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
       if (*ipP < si->cfisi_minaddr || *ipP > si->cfisi_maxaddr)
          continue;
 
-      for (i = 0; i < si->cfisi_used; i++) {
-
-  if (0) {static Int searches=0;
-   searches++;
-   if (searches % 10000000 == 0) VG_(printf)("%d searches\n", searches);
-   }
-
-         if (si->cfisi[i].base <= *ipP
-             && *ipP < si->cfisi[i].base+si->cfisi[i].len) {
-            cfisi = &si->cfisi[i];
-	    goto postloop;
-	 }
+      i = search_one_cfitab( si, *ipP );
+      if (i != -1) {
+         vg_assert(i >= 0 && i < si->cfisi_used);
+         cfisi = &si->cfisi[i];
+         break;
       }
    }
 
-  postloop:
    if (cfisi == NULL)
       return False;
 

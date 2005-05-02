@@ -1217,11 +1217,11 @@ static ULong read_ULong ( UChar* data )
 
 static Addr read_Addr ( UChar* data )
 {
-  if (sizeof(Addr) == 4)
-    return read_UInt(data);
-  else if (sizeof(Addr) == 8)
-    return read_ULong(data);
-  vg_assert(0);
+   if (sizeof(Addr) == 4)
+      return read_UInt(data);
+   else if (sizeof(Addr) == 8)
+      return read_ULong(data);
+   vg_assert(0);
 }
 
 static UChar read_UChar ( UChar* data )
@@ -1550,8 +1550,8 @@ Bool run_CF_instructions ( SegInfo* si,
                            UWord fde_arange,
                            UnwindContext* restore_ctx )
 {
-  CfiSI cfisi;
-
+   CfiSI cfisi;
+   Bool summ_ok;
    Int j, i = 0;
    Addr loc_prev;
    if (0) ppUnwindContext(ctx);
@@ -1566,16 +1566,24 @@ Bool run_CF_instructions ( SegInfo* si,
       i += j;
       if (0) ppUnwindContext(ctx);
       if (loc_prev != ctx->loc && si) {
-         summarise_context ( &cfisi, loc_prev, ctx );
-         VG_(addCfiSI)(si, &cfisi);
+         summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
+         if (summ_ok) {
+            VG_(addCfiSI)(si, &cfisi);
+            if (VG_(clo_trace_cfi))
+               VG_(ppCfiSI)(&cfisi);
+         }
       }
    }
    if (ctx->loc < fde_arange) {
       loc_prev = ctx->loc;
       ctx->loc = fde_arange;
       if (si) {
-         summarise_context ( &cfisi, loc_prev, ctx );
-         VG_(addCfiSI)(si, &cfisi);
+         summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
+         if (summ_ok) {
+            VG_(addCfiSI)(si, &cfisi);
+            if (VG_(clo_trace_cfi))
+               VG_(ppCfiSI)(&cfisi);
+         }
       }
    }
    return True;

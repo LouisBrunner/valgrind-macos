@@ -909,11 +909,11 @@ static void initCfiSI ( CfiSI* si )
 
       8 is the return address (EIP) */
 
-#if defined(__x86__)
+#if defined(VGP_x86_linux)
 #define FP_COL 5
 #define SP_COL 4
 #define RA_COL 8
-#elif defined(__amd64__)
+#elif defined(VGP_amd64_linux)
 #define FP_COL 6
 #define SP_COL 7
 #define RA_COL 16
@@ -1327,7 +1327,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                                 UChar* instr,
                                 UnwindContext* restore_ctx )
 {
-   Int   off, reg, nleb;
+   Int   off, reg, reg2, nleb;
    UInt  delta;
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
@@ -1394,6 +1394,19 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->cfa_offset = off;
          break;
 
+      case DW_CFA_register:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         reg2 = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         if (reg2 < 0 || reg2 >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_Reg;
+         ctx->reg[reg].reg = reg2;
+         break;
+
       case DW_CFA_offset_extended_sf:
          reg = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
@@ -1440,7 +1453,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
 static Int show_CF_instruction ( UChar* instr )
 {
    UInt  delta;
-   Int   off, reg, nleb;
+   Int   off, reg, reg2, nleb;
    Addr  loc;
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
@@ -1503,6 +1516,14 @@ static Int show_CF_instruction ( UChar* instr )
          off = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          VG_(printf)("DW_CFA_def_cfa(r%d, off %d)\n", reg, off); 
+         break;
+
+      case DW_CFA_register:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         reg2 = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_register(r%d, r%d)\n", reg, reg2); 
          break;
 
       case DW_CFA_def_cfa_register:

@@ -1583,15 +1583,6 @@ static void pre_process_cmd_line_options
 
    LibVEX_default_VexControl(& VG_(clo_vex_control));
 
-   /* For the time being, disable chasing across basic block
-      boundaries.  This fools the redirector to the extent that that
-      strlen et al do not get reliably intercepted, and hence makes
-      memcheck report some false errors.  Fixing the redirector
-      properly really entails getting rid of the circularity between
-      the two memory allocators, but that is more than I have time to
-      sort out right now. */
-   //   VG_(clo_vex_control).guest_chase_thresh = 0;
-
    /* parse the options we have (only the options we care about now) */
    for (i = 1; i < vg_argc; i++) {
 

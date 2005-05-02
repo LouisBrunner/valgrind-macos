@@ -145,7 +145,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
    Addr sp                 = STACK_PTR(tst->arch);
    Addr stack_highest_word = tst->client_stack_highest_word;
 
-#ifdef __x86__
+#if defined(VGP_x86_linux)
    /* Nasty little hack to deal with sysinfo syscalls - if libc is
       using the sysinfo page for syscalls (the TLS version does), then
       ip will always appear to be in that page when doing a syscall,

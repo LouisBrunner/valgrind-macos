@@ -844,8 +844,11 @@ void canonicaliseCfiSI ( SegInfo* si )
       if (here_max > si->cfisi_maxaddr)
          si->cfisi_maxaddr = here_max;
    }
-   VG_(printf)("%d entries, %p .. %p\n", si->cfisi_used,
-	       si->cfisi_minaddr, si->cfisi_maxaddr);
+
+   if (VG_(clo_trace_cfi))
+      VG_(printf)("canonicaliseCfiSI: %d entries, %p .. %p\n", 
+                  si->cfisi_used,
+	          si->cfisi_minaddr, si->cfisi_maxaddr);
 
    /* Sort the cfisi array by base address. */
    VG_(ssort)(si->cfisi, si->cfisi_used, sizeof(*si->cfisi), compare_CfiSI);

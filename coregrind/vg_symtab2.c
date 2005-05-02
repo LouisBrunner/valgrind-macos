@@ -381,6 +381,8 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
       VG_(ppCfiSI)(cfisi);
    }
 
+   vg_assert(cfisi->len > 0 && cfisi->len < 1000000);
+
    UInt   new_sz, i;
    CfiSI* new_tab;
 
@@ -800,6 +802,30 @@ void canonicaliseLoctab ( SegInfo* si )
                 < si->loctab[i+1].addr);
    }
 #  undef SWAP
+}
+
+
+static
+void canonicaliseCfiSI ( SegInfo* si )
+{
+   Int   i;
+   const Addr minAddr = 0;
+   const Addr maxAddr = ~minAddr;
+
+   /* Set cfisi_minaddr and cfisi_maxaddr to summarise the entire
+      address range contained in cfisi[0 .. cfisi_used-1]. */
+   si->cfisi_minaddr = maxAddr; 
+   si->cfisi_maxaddr = minAddr;
+   for (i = 0; i < si->cfisi_used; i++) {
+      Addr here_min = si->cfisi[i].base;
+      Addr here_max = si->cfisi[i].base + si->cfisi[i].len - 1;
+      if (here_min < si->cfisi_minaddr)
+         si->cfisi_minaddr = here_min;
+      if (here_max > si->cfisi_maxaddr)
+         si->cfisi_maxaddr = here_max;
+   }
+   VG_(printf)("%d entries, %p .. %p\n", si->cfisi_used,
+	       si->cfisi_minaddr, si->cfisi_maxaddr);
 }
 
 
@@ -1697,6 +1723,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si->scopetab_size = si->scopetab_used = 0;
    si->cfisi = NULL;
    si->cfisi_size = si->cfisi_used = 0;
+   si->cfisi_minaddr = si->cfisi_maxaddr = 0;
 
    si->seg = seg;
 
@@ -1724,6 +1751,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
       canonicaliseSymtab ( si );
       canonicaliseLoctab ( si );
       canonicaliseScopetab ( si );
+      canonicaliseCfiSI ( si );
 
       /* do redirects */
       VG_(resolve_seg_redirs)( si );
@@ -2328,10 +2356,24 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
    CfiSI*   cfisi = NULL;
    Addr     cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
 
+
    if (0) VG_(printf)("search for %p\n", *ipP);
 
    for (si = segInfo; si != NULL; si = si->next) {
+      /* Use the per-SegInfo summary address ranges to skip
+	 inapplicable SegInfos quickly. */
+      if (si->cfisi_used == 0)
+         continue;
+      if (*ipP < si->cfisi_minaddr || *ipP > si->cfisi_maxaddr)
+         continue;
+
       for (i = 0; i < si->cfisi_used; i++) {
+
+  if (0) {static Int searches=0;
+   searches++;
+   if (searches % 10000000 == 0) VG_(printf)("%d searches\n", searches);
+   }
+
          if (si->cfisi[i].base <= *ipP
              && *ipP < si->cfisi[i].base+si->cfisi[i].len) {
             cfisi = &si->cfisi[i];

@@ -189,10 +189,14 @@ struct _SegInfo {
    ScopeRange *scopetab;
    UInt        scopetab_used;
    UInt        scopetab_size;
-   /* An expandable array of CFI summary info records. */
+   /* An expandable array of CFI summary info records.  Also includes
+      summary address bounds, showing the min and max address covered
+      by any of the records, as an aid to fast searching. */
    CfiSI* cfisi;
    UInt   cfisi_used;
    UInt   cfisi_size;
+   Addr   cfisi_minaddr;
+   Addr   cfisi_maxaddr;
 
    /* Expandable arrays of characters -- the string table.
       Pointers into this are stable (the arrays are not reallocated)

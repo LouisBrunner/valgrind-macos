@@ -1811,24 +1811,6 @@ static UInt lengthAMode ( UInt delta )
 /*--- Disassembling common idioms                          ---*/
 /*------------------------------------------------------------*/
 
-static
-void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
-{
-   IRType ty = szToITy(size);
-   /* reg := 0 */
-   putIReg(size, ge_reg, mkU(ty,0));
-   /* Flags: C,A,O=0, Z=1, S=0, P=1 */
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(X86G_CC_MASK_Z|X86G_CC_MASK_P) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-   /* Set NDEP even though it isn't used.  This makes redundant-PUT
-      elimination of previous stores to this field work better. */
-   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
-   DIP("xor%c %s, %s\n", nameISize(size),
-                         nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
-}
-
-
 /* Handle binary integer instructions of the form
       op E, G  meaning
       op reg-or-mem, reg
@@ -1885,10 +1867,10 @@ UInt dis_op2_E_G ( UChar       sorb,
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
-         dependency. */
-      if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)) {
-         codegen_XOR_reg_with_itself ( size, gregOfRM(rm) );
-         return 1+delta0;
+         dependency.  Ditto SBB reg,reg. */
+      if ((op8 == Iop_Xor8 || (op8 == Iop_Sub8 && addSubCarry))
+          && gregOfRM(rm) == eregOfRM(rm)) {
+         putIReg(size, gregOfRM(rm), mkU(ty,0));
       }
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  getIReg(size,eregOfRM(rm)) );
@@ -1993,10 +1975,10 @@ UInt dis_op2_G_E ( UChar       sorb,
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
-         dependency. */
-      if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)) {
-         codegen_XOR_reg_with_itself ( size, gregOfRM(rm) );
-         return 1+delta0;
+         dependency.  Ditto SBB reg,reg.*/
+      if ((op8 == Iop_Xor8 || (op8 == Iop_Sub8 && addSubCarry))
+          && gregOfRM(rm) == eregOfRM(rm)) {
+         putIReg(size, eregOfRM(rm), mkU(ty,0));
       }
       assign(dst0, getIReg(size,eregOfRM(rm)));
       assign(src,  getIReg(size,gregOfRM(rm)));

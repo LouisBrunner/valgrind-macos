@@ -836,9 +836,9 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
 
 static Bool isU64 ( IRExpr* e, ULong n )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U64
-          && e->Iex.Const.con->Ico.U64 == n;
+   return toBool( e->tag == Iex_Const
+                  && e->Iex.Const.con->tag == Ico_U64
+                  && e->Iex.Const.con->Ico.U64 == n );
 }
 
 IRExpr* guest_amd64_spechelper ( HChar* function_name,

@@ -83,16 +83,6 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    return IRExpr_Binop(op, a1, a2);
 }
 
-//.. static IRExpr* mkU64 ( ULong i )
-//.. {
-//..    return IRExpr_Const(IRConst_U64(i));
-//.. }
-
-static IRExpr* mkU32 ( UInt i )
-{
-   return IRExpr_Const(IRConst_U32(i));
-}
-
 static IRExpr* bind ( Int binder )
 {
    return IRExpr_Binder(binder);
@@ -1197,8 +1187,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_16Uto32: {
             HReg dst     = newVRegI(env);
             HReg src     = iselIntExpr_R(env, e->Iex.Unop.arg);
-            Bool srcIs16 = e->Iex.Unop.op==Iop_16Uto32
-                           || e->Iex.Unop.op==Iop_16Uto64;
+            Bool srcIs16 = toBool( e->Iex.Unop.op==Iop_16Uto32
+                                   || e->Iex.Unop.op==Iop_16Uto64 );
             UInt mask    = srcIs16 ? 0xFFFF : 0xFF;
             addInstr(env, mk_iMOVsd_RR(src,dst) );
             addInstr(env, AMD64Instr_Alu64R(Aalu_AND,
@@ -1212,8 +1202,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_16Sto64: {
             HReg dst     = newVRegI(env);
             HReg src     = iselIntExpr_R(env, e->Iex.Unop.arg);
-            Bool srcIs16 = e->Iex.Unop.op==Iop_16Sto32
-                           || e->Iex.Unop.op==Iop_16Sto64;
+            Bool srcIs16 = toBool( e->Iex.Unop.op==Iop_16Sto32
+                                   || e->Iex.Unop.op==Iop_16Sto64 );
             UInt amt     = srcIs16 ? 48 : 56;
             addInstr(env, mk_iMOVsd_RR(src,dst) );
             addInstr(env, AMD64Instr_Sh64(Ash_SHL, amt, AMD64RM_Reg(dst)));

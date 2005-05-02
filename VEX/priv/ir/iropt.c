@@ -964,8 +964,8 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     - (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
          case Iop_Neg8:
-            e2 = IRExpr_Const(IRConst_U8(
-                    - (e->Iex.Unop.arg->Iex.Const.con->Ico.U8)));
+            e2 = IRExpr_Const(IRConst_U8(toUChar(
+                    - (e->Iex.Unop.arg->Iex.Const.con->Ico.U8))));
             break;
 
          case Iop_64to8: {

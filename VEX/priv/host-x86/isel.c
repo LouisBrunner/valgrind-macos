@@ -1471,9 +1471,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* var */
    if (e->tag == Iex_Tmp) {
       HReg r32 = lookupIRTemp(env, e->Iex.Tmp.tmp);
-      HReg dst = newVRegI(env);
-      addInstr(env, mk_iMOVsd_RR(r32,dst));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
+      /* Test32 doesn't modify r32; so this is OK. */
+      addInstr(env, X86Instr_Test32(1,r32));
       return Xcc_NZ;
    }
 
@@ -1626,7 +1625,7 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       HReg    r    = newVRegI(env);
       addInstr(env, mk_iMOVsd_RR(r1,r));
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(0xFF),r));
+      addInstr(env, X86Instr_Test32(0xFF,r));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ8:  return Xcc_Z;
          case Iop_CmpNE8:  return Xcc_NZ;
@@ -1643,7 +1642,7 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       HReg    r    = newVRegI(env);
       addInstr(env, mk_iMOVsd_RR(r1,r));
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
-      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(0xFFFF),r));
+      addInstr(env, X86Instr_Test32(0xFFFF,r));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ16:  return Xcc_Z;
          case Iop_CmpNE16:  return Xcc_NZ;

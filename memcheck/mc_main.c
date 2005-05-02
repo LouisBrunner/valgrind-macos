@@ -50,11 +50,6 @@
 */
 #define VG_DEBUG_MEMORY 0
 
-
-typedef enum {
-   MC_Ok = 5, MC_AddrErr = 6, MC_ValueErr = 7
-} MC_ReadResult;
-
 #define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
 
 
@@ -116,7 +111,7 @@ typedef enum {
 
 /* Only change this.  N_PRIMARY_MAP *must* be a power of 2. */
 
-#if VEX_HOST_WORDSIZE == 4
+#if VG_WORDSIZE == 4
 
 /* cover the entire address space */
 #  define N_PRIMARY_BITS  16
@@ -131,7 +126,7 @@ typedef enum {
 
 
 /* Do not change this. */
-#define N_PRIMARY_MAP  (1ULL << N_PRIMARY_BITS)
+#define N_PRIMARY_MAP  ( ((UWord)1) << N_PRIMARY_BITS)
 
 /* Do not change this. */
 #define MAX_PRIMARY_ADDRESS (Addr)((((Addr)65536) * N_PRIMARY_MAP)-1)
@@ -917,6 +912,15 @@ SP_UPDATE_HANDLERS ( make_aligned_word32_writable,
 /*------------------------------------------------------------*/
 /*--- Checking memory                                      ---*/
 /*------------------------------------------------------------*/
+
+typedef 
+   enum {
+      MC_Ok = 5, 
+      MC_AddrErr = 6, 
+      MC_ValueErr = 7
+   } 
+   MC_ReadResult;
+
 
 /* Check permissions for address range.  If inadequate permissions
    exist, *bad_addr is set to the offending address, so the caller can

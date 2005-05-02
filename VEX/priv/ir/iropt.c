@@ -1283,6 +1283,12 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
+            case Iop_64HLto128:
+               /* We can't fold this, because there is no way to
+                  express he result in IR, but at least pretend to
+                  handle it, so as to stop getting blasted with
+                  no-rule-for-this-primop messages. */
+               break;
 
             default:
                goto unhandled;

@@ -1632,7 +1632,7 @@ void VG_(read_callframe_info_dwarf2)
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");
       VG_(printf)("CFI info: ehframe %p, ehframe_sz %d\n",
-		   ehframe, ehframe_sz );
+	          ehframe, ehframe_sz );
       VG_(printf)("CFI info: name %s\n",
 		  si->filename );
    }
@@ -1656,7 +1656,8 @@ void VG_(read_callframe_info_dwarf2)
 
       UChar* ciefde_start = data;
       if (VG_(clo_trace_cfi)) 
-         VG_(printf)("\ncie/fde.start   = %p\n", ciefde_start);
+         VG_(printf)("\ncie/fde.start   = %p (ehframe + 0x%x)\n", 
+                     ciefde_start, ciefde_start - ehframe);
 
       UInt ciefde_len = read_UInt(data); data += sizeof(UInt);
       if (VG_(clo_trace_cfi)) 

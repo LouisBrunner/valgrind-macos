@@ -1728,6 +1728,8 @@ void VG_(read_callframe_info_dwarf2)
             cie_instrs = NULL;
          }
 
+         address_encoding = default_Addr_encoding();
+
          while (*cie_augmentation) {
             switch (*cie_augmentation) {
                case 'L':

@@ -1,13 +1,11 @@
 Syscall param socketcall.getsockname(name) points to unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
+   by 0x........: main (buflen_check.c:18)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param socketcall.getsockname(namelen_in) points to unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
+   by 0x........: main (buflen_check.c:19)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 getsockname(1) failed
 getsockname(2) failed

@@ -219,19 +219,20 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
    switch (ai->akind) {
       case Stack: 
          VG_(message)(Vg_UserMsg, 
-                      " Address 0x%x is on thread %d's stack", 
-                      a, ai->stack_tid);
+                      " Address 0x%lx is on thread %d's stack", 
+                      (ULong)a, ai->stack_tid);
          break;
       case Unknown:
          if (ai->maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
-               " Address 0x%x is just below %%esp.  Possibly a bug in GCC/G++",
-               a);
+               " Address 0x%lx is just below %%esp.  Possibly a bug in GCC/G++",
+               (ULong)a);
             VG_(message)(Vg_UserMsg, 
                "  v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
 	 } else {
             VG_(message)(Vg_UserMsg, 
-               " Address 0x%x is not stack'd, malloc'd or (recently) free'd",a);
+               " Address 0x%lx is not stack'd, malloc'd or (recently) free'd",
+               (ULong)a);
          }
          break;
       case Freed: case Mallocd: case UserG: case Mempool: {
@@ -257,8 +258,8 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
-            " Address 0x%x is %llu bytes %s a %s of size %d %s",
-            a, (ULong)delta, relative, kind,
+            " Address 0x%lx is %llu bytes %s a %s of size %d %s",
+            (ULong)a, (ULong)delta, relative, kind,
             ai->blksize,
             ai->akind==Mallocd ? "alloc'd" 
                : ai->akind==Freed ? "free'd" 

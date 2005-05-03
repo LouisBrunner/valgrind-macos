@@ -1560,7 +1560,7 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       if (matchIRExpr(&mi, p_CmpNEZ32_And32, e)) {
          HReg    r0   = iselIntExpr_R(env, mi.bindee[0]);
          X86RMI* rmi1 = iselIntExpr_RMI(env, mi.bindee[1]);
-         HReg tmp = newVRegI(env);
+         HReg    tmp  = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR(r0, tmp));
          addInstr(env, X86Instr_Alu32R(Xalu_AND,rmi1,tmp));
          return Xcc_NZ;
@@ -1575,12 +1575,13 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       if (matchIRExpr(&mi, p_CmpNEZ32_Or32, e)) {
          HReg    r0   = iselIntExpr_R(env, mi.bindee[0]);
          X86RMI* rmi1 = iselIntExpr_RMI(env, mi.bindee[1]);
-         HReg tmp = newVRegI(env);
+         HReg    tmp  = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR(r0, tmp));
          addInstr(env, X86Instr_Alu32R(Xalu_OR,rmi1,tmp));
          return Xcc_NZ;
       }
    }
+
    /* CmpNEZ32(x) */
    if (e->tag == Iex_Unop 
        && e->Iex.Unop.op == Iop_CmpNEZ32) {
@@ -1600,6 +1601,24 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          unop(Iop_CmpNEZ64, unop(Iop_1Sto64,bind(0))));
       if (matchIRExpr(&mi, p_CmpNEZ64_1Sto64, e)) {
          return iselCondCode(env, mi.bindee[0]);
+      }
+   }
+
+   /* CmpNEZ64(Or64(x,y)) */
+   {
+      DECLARE_PATTERN(p_CmpNEZ64_Or64);
+      DEFINE_PATTERN(p_CmpNEZ64_Or64,
+                     unop(Iop_CmpNEZ64, binop(Iop_Or64, bind(0), bind(1))));
+      if (matchIRExpr(&mi, p_CmpNEZ64_Or64, e)) {
+         HReg    hi1, lo1, hi2, lo2;
+         HReg    tmp  = newVRegI(env);
+         iselInt64Expr( &hi1, &lo1, env, mi.bindee[0] );
+         addInstr(env, mk_iMOVsd_RR(hi1, tmp));
+         addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(lo1),tmp));
+         iselInt64Expr( &hi2, &lo2, env, mi.bindee[1] );
+         addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(hi2),tmp));
+         addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(lo2),tmp));
+         return Xcc_NZ;
       }
    }
 

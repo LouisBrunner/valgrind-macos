@@ -613,7 +613,7 @@ PRE(sys_rt_sigreturn, Special)
       something goes wrong in the sigreturn */
    VGA_(restart_syscall)(&tst->arch);
 
-   VG_(sigframe_destroy)(tid, False);
+   VG_(sigframe_destroy)(tid, True);
 
    /* Keep looking for signals until there are none */
    VG_(poll_signals)(tid);

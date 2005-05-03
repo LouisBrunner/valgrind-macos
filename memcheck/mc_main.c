@@ -1158,7 +1158,7 @@ void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 
 /* When some chunk of guest state is written, mark the corresponding
    shadow area as valid.  This is used to initialise arbitrarily large
-   chunks of guest state, hence the (somewhat arbitrary) 512 limit.
+   chunks of guest state, hence the (somewhat arbitrary) 1024 limit.
 */
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 OffT offset, SizeT size)
@@ -1195,7 +1195,7 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
    bad = False;
    for (i = 0; i < size; i++) {
       if (area[i] != VGM_BYTE_VALID) {
-         bad = False;
+         bad = True;
          break;
       }
    }

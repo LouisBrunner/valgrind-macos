@@ -202,5 +202,33 @@
    fun:_dl_map_object
 }
 
+{
+   strlen-not-intercepted-early-enough-HACK-3
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+}
+
+{
+   strlen-not-intercepted-early-enough-HACK-4
+   Memcheck:Cond
+   fun:strlen
+   fun:expand_dynamic_string_token
+   fun:_dl_map_object
+   fun:map_doit
+}
+
+## HACK to do with index not being intercepted early enough
+{
+   index-not-intercepted-early-enough-HACK-1
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+   fun:_dl_map_object
+   fun:map_doit
+}
+
 ##----------------------------------------------------------------------##
 

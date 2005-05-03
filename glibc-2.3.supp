@@ -374,3 +374,10 @@
    obj:/lib/tls/libpthread-2.3.4.so
    obj:/lib/tls/libpthread-2.3.4.so
 }
+{
+   Unterminated strstr string in is_smp_system() (NPTL)
+   Memcheck:Cond
+   fun:strstr
+   fun:__pthread_initialize_minimal
+   obj:/lib64/tls/libpthread*.so*
+}

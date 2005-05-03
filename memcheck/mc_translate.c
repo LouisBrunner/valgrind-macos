@@ -1884,6 +1884,17 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Not1:
          return vatom;
 
+      /* Neg* really fall under the Add/Sub banner, and as such you
+         might think would qualify for the 'expensive add/sub'
+         treatment.  However, in this case since the implied literal
+         is zero (0 - arg), we just do the cheap thing anyway. */
+      case Iop_Neg8:
+         return mkLeft8(mce, vatom);
+      case Iop_Neg16:
+         return mkLeft16(mce, vatom);
+      case Iop_Neg32:
+         return mkLeft32(mce, vatom);
+
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Unop");

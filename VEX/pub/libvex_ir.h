@@ -200,8 +200,9 @@ extern void ppIRTemp ( IRTemp );
 
 typedef
    enum { 
-      /* Do not change this ordering.  The IR generators
-         rely on (eg) Iop_Add64 == IopAdd8 + 3. */
+      /* -- Do not change this ordering.  The IR generators rely on
+            (eg) Iop_Add64 == IopAdd8 + 3. -- */
+
       Iop_INVALID=0x13000,
       Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
@@ -218,6 +219,10 @@ typedef
       Iop_CmpNE8,  Iop_CmpNE16,  Iop_CmpNE32,  Iop_CmpNE64,
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
+      Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
+
+      /* -- Ordering not important after here. -- */
+
       /* Widening multiplies */
       Iop_MullS8, Iop_MullS16, Iop_MullS32, Iop_MullS64,
       Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
@@ -229,7 +234,6 @@ typedef
          zero.  You must ensure they are never given a zero argument.
       */
 
-      /* Ordering not important after here. */
       Iop_CmpLT32S, Iop_CmpLT64S,
       Iop_CmpLE32S, Iop_CmpLE64S,
       Iop_CmpLT32U, Iop_CmpLT64U,
@@ -237,7 +241,6 @@ typedef
 
       /* As a sop to Valgrind-Memcheck, the following are useful. */
       Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
-      Iop_Neg8, Iop_Neg16, Iop_Neg32, Iop_Neg64,
 
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */

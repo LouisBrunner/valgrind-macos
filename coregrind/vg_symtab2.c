@@ -386,6 +386,18 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
    UInt   new_sz, i;
    CfiSI* new_tab;
 
+   /* Rule out ones which are completely outside the segment.  These
+      probably indicate some kind of bug, but for the meantime ignore
+      them. */
+   if ( cfisi->base + cfisi->len - 1  <  si->start
+        || si->start + si->size - 1 < cfisi->base ) {
+      if (VG_(clo_trace_cfi)) {
+         VG_(printf)("CfiSI outside segment: ");
+         VG_(ppCfiSI)(cfisi);
+      }
+      return;
+   }
+
    if (si->cfisi_used == si->cfisi_size) {
       new_sz = 2 * si->cfisi_size;
       if (new_sz == 0) new_sz = 20;
@@ -863,6 +875,13 @@ void canonicaliseCfiSI ( SegInfo* si )
                 <= si->cfisi_maxaddr);
 
       if (i < si->cfisi_used - 1) {
+         /*
+         if (!(si->cfisi[i].base < si->cfisi[i+1].base)) {
+            VG_(printf)("\nOOO cfisis:\n");
+            VG_(ppCfiSI)(&si->cfisi[i]);
+            VG_(ppCfiSI)(&si->cfisi[i+1]);
+         }
+         */
          /* In order. */
          vg_assert(si->cfisi[i].base < si->cfisi[i+1].base);
          /* No overlaps. */

@@ -50,6 +50,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]
+    --trace-cfi=no|yes        show call-frame-info details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --command-line-only=no|yes  only use command line options [no]

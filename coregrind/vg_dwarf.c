@@ -829,6 +829,42 @@ void VG_(read_debuginfo_dwarf1) (
 /*--- Read call-frame info from an .eh_frame section       ---*/
 /*------------------------------------------------------------*/
 
+/* Useful info ..
+
+   In general:
+   gdb-6.3/gdb/dwarf2-frame.c
+
+   gdb-6.3/gdb/i386-tdep.c:
+
+   DWARF2/GCC uses the stack address *before* the function call as a
+   frame's CFA.  [jrs: I presume this means %esp before the call as
+   the CFA]. 
+
+   JRS: on amd64, the dwarf register numbering is, as per
+   gdb-6.3/gdb/tdep-amd64.c and also amd64-abi-0.95.pdf:
+
+      0    1    2    3    4    5    6    7
+      RAX  RDX  RCX  RBX  RSI  RDI  RBP  RSP
+
+      8  ...  15
+      R8 ... R15
+
+      16 is the return address (RIP)
+
+   This is pretty strange given this not the encoding scheme for
+   registers used in amd64 code.
+
+   On x86 I cannot find any documentation.  It _appears_ to be the
+   actual instruction encoding, viz:
+
+      0    1    2    3    4    5    6    7
+      EAX  ECX  EDX  EBX  ESP  EBP  ESI  EDI
+
+      8 is the return address (EIP) */
+
+
+/* ------------ Deal with summary-info records ------------ */
+
 void VG_(ppCfiSI) ( CfiSI* si )
 {
 #  define SHOW_HOW(_how, _off)                   \
@@ -879,35 +915,7 @@ static void initCfiSI ( CfiSI* si )
 }
 
 
-/* Useful info ..
-
-   gdb-6.3/gdb/i386-tdep.c:
-
-   DWARF2/GCC uses the stack address *before* the function call as a
-   frame's CFA.  [jrs: I presume this means %esp before the call as
-   the CFA]. 
-
-   JRS: on amd64, the dwarf register numbering is, as per
-   gdb-6.3/gdb/tdep-amd64.c and also amd64-abi-0.95.pdf:
-
-      0    1    2    3    4    5    6    7
-      RAX  RDX  RCX  RBX  RSI  RDI  RBP  RSP
-
-      8  ...  15
-      R8 ... R15
-
-      16 is the return address (RIP)
-
-   This is pretty strange given this not the encoding scheme for
-   registers used in amd64 code.
-
-   On x86 I cannot find any documentation.  It _appears_ to be the
-   actual instruction encoding, viz:
-
-      0    1    2    3    4    5    6    7
-      EAX  ECX  EDX  EBX  ESP  EBP  ESI  EDI
-
-      8 is the return address (EIP) */
+/* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
 #define FP_COL 5
@@ -976,9 +984,15 @@ enum dwarf_cfa_secondary_ops
 #define DW_EH_PE_indirect	0x80
 
 
+/* RegRule and UnwindContext are used temporarily to do the unwinding.
+   The result is then summarised into a CfiSI, if possible. */
+
 typedef
    struct {
       enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch } tag;
+
+      /* Note, .coff and .reg are never both in use.  Therefore could
+         merge them into one. */
 
       /* CFA offset if tag==RR_CFAoff */
       Int coff;
@@ -987,6 +1001,19 @@ typedef
       Int reg;
    }
    RegRule;
+
+static void ppRegRule ( RegRule* reg )
+{
+   switch (reg->tag) {
+      case RR_Undef:  VG_(printf)("u  "); break;
+      case RR_Same:   VG_(printf)("s  "); break;
+      case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
+      case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
+      case RR_Arch:   VG_(printf)("a  "); break;
+      default:        VG_(core_panic)("ppRegRule");
+   }
+}
+
 
 typedef
    struct {
@@ -1006,6 +1033,16 @@ typedef
    }
    UnwindContext;
 
+static void ppUnwindContext ( UnwindContext* ctx )
+{
+   Int i;
+   VG_(printf)("0x%llx: ", (ULong)ctx->loc);
+   VG_(printf)("%d(r%d) ",  ctx->cfa_offset, ctx->cfa_reg);
+   for (i = 0; i < N_CFI_REGS; i++)
+      ppRegRule(&ctx->reg[i]);
+   VG_(printf)("\n");
+}
+
 static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 {
    Int i;
@@ -1021,29 +1058,8 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
    }
 }
 
-static void ppRegRule ( RegRule* reg )
-{
-   switch (reg->tag) {
-      case RR_Undef:  VG_(printf)("u  "); break;
-      case RR_Same:   VG_(printf)("s  "); break;
-      case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
-      case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
-      case RR_Arch:   VG_(printf)("a  "); break;
-      default:        VG_(core_panic)("ppRegRule");
-   }
-}
 
-
-static void ppUnwindContext ( UnwindContext* ctx )
-{
-   Int i;
-   VG_(printf)("0x%llx: ", (ULong)ctx->loc);
-   VG_(printf)("%d(r%d) ",  ctx->cfa_offset, ctx->cfa_reg);
-   for (i = 0; i < N_CFI_REGS; i++)
-      ppRegRule(&ctx->reg[i]);
-   VG_(printf)("\n");
-}
-
+/* --------------- Summarisation --------------- */
 
 /* Summarise ctx into si, if possible.  Returns True if successful.
    This is taken to be just after ctx's loc advances; hence the
@@ -1110,9 +1126,12 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
    return True;
 
   failed:
-   VG_(printf)("summarise_context(loc_start = %p)"
-               ": cannot summarise(why=%d):\n   ", loc_start, why);
-   ppUnwindContext(ctx);
+   if (VG_(clo_verbosity) > 1) {
+      VG_(message)(Vg_DebugMsg,
+                  "summarise_context(loc_start = %p)"
+                  ": cannot summarise(why=%d):   ", loc_start, why);
+      ppUnwindContext(ctx);
+   }
    return False;
 }
 
@@ -1137,13 +1156,15 @@ static void ppUnwindContext_summary ( UnwindContext* ctx )
    VG_(printf)("\n");
 }
 
+
+/* ------------ Pick apart DWARF2 byte streams ------------ */
+
 static inline Bool host_is_little_endian ( void )
 {
    UInt x = 0x76543210;
    UChar* p = (UChar*)(&x);
    return toBool(*p == 0x10);
 }
-
 
 static Short read_Short ( UChar* data )
 {
@@ -1217,11 +1238,11 @@ static ULong read_ULong ( UChar* data )
 
 static Addr read_Addr ( UChar* data )
 {
-   if (sizeof(Addr) == 4)
-      return read_UInt(data);
-   else if (sizeof(Addr) == 8)
-      return read_ULong(data);
-   vg_assert(0);
+#  if VG_WORDSIZE == 4
+   return read_UInt(data);
+#  else
+   return read_ULong(data);
+#  endif
 }
 
 static UChar read_UChar ( UChar* data )
@@ -1319,6 +1340,8 @@ static Addr read_encoded_Addr ( UChar* data, UChar encoding, Int *nbytes,
    }
 }
 
+
+/* ------------ Run/show CFI instructions ------------ */
 
 /* Run a CFI instruction, and also return its length.
    Returns 0 if the instruction could not be executed. 
@@ -1440,7 +1463,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
 
       default: 
-         VG_(printf)("Unhandled CFI instruction 0:%d\n", (Int)lo6); 
+         VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
+                                   "instruction 0:%d", (Int)lo6); 
          i = 0;
          break;
    }
@@ -1450,6 +1474,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
 
 
 /* Show a CFI instruction, and also return its length. */
+
 static Int show_CF_instruction ( UChar* instr )
 {
    UInt  delta;
@@ -1611,8 +1636,11 @@ Bool run_CF_instructions ( SegInfo* si,
 }
 
 
+/* ------------ Main entry point for CFI reading ------------ */
+
 void VG_(read_callframe_info_dwarf2) 
-        ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
+        ( /*OUT*/SegInfo* si, 
+          UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {
    UnwindContext ctx, restore_ctx;
    Int nbytes;
@@ -1718,6 +1746,10 @@ void VG_(read_callframe_info_dwarf2)
          UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
+         if (cie_rareg != RA_COL) {
+            how = "cie.ra_reg does not match RA_COL";
+            goto bad;
+         }
 
          saw_z_augmentation = *cie_augmentation == 'z';
          if (saw_z_augmentation) {

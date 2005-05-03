@@ -391,9 +391,19 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
       them. */
    if ( cfisi->base + cfisi->len - 1  <  si->start
         || si->start + si->size - 1 < cfisi->base ) {
-      if (VG_(clo_trace_cfi)) {
-         VG_(printf)("CfiSI outside segment: ");
-         VG_(ppCfiSI)(cfisi);
+      static Int complaints = 3;
+      if (VG_(clo_trace_cfi) || complaints > 0) {
+         complaints--;
+         VG_(message)(
+            Vg_DebugMsg,
+            "warning: CfiSI %p .. %p outside segment %p .. %p",
+            cfisi->base, 
+            cfisi->base + cfisi->len - 1,
+            si->start,
+            si->start + si->size - 1 
+         );
+         if (VG_(clo_trace_cfi)) 
+            VG_(ppCfiSI)(cfisi);
       }
       return;
    }
@@ -1709,7 +1719,7 @@ Bool read_lib_symbols ( SegInfo* si )
       }
 
       /* Read .eh_frame (call-frame-info) if any */
-      if (ehframe && ehframe_sz > 4) {
+      if (ehframe) {
          VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
       }
 

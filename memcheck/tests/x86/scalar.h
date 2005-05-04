@@ -1,5 +1,4 @@
-// XXX: x86-specific, so these should be in x86/, or something
-#include "../../coregrind/x86-linux/vki_unistd.h"
+#include "../../../coregrind/x86-linux/vki_unistd.h"
 
 #include <assert.h>
 #include <errno.h>

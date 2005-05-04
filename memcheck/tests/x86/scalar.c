@@ -1,4 +1,4 @@
-#include "../memcheck.h"
+#include "../../memcheck.h"
 #include "scalar.h"
 
 // Here we are trying to trigger every syscall error (scalar errors and

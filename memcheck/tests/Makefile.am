@@ -4,8 +4,6 @@ DIST_SUBDIRS = ${VG_ARCH_ALL} .
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
 		 filter_stderr filter_stderr_backtrace
 
-noinst_HEADERS = scalar.h
-
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	badaddrvalue.stderr.exp \
@@ -63,11 +61,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
-	scalar.stderr.exp scalar.vgtest \
-	scalar_fork.stderr.exp scalar_fork.vgtest \
-	scalar_exit_group.stderr.exp scalar_exit_group.vgtest \
-	scalar_supp.stderr.exp scalar_supp.vgtest scalar_supp.supp \
-	scalar_vfork.stderr.exp scalar_vfork.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.vgtest \
@@ -101,7 +94,6 @@ check_PROGRAMS = \
 	pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
-	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	sigaltstack signal2 sigprocmask \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
@@ -167,11 +159,6 @@ post_syscall_SOURCES	= post-syscall.c
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
-scalar_SOURCES 		= scalar.c
-scalar_exit_group_SOURCES 	= scalar_exit_group.c
-scalar_fork_SOURCES 	= scalar_fork.c
-scalar_supp_SOURCES 	= scalar_supp.c
-scalar_vfork_SOURCES 	= scalar_vfork.c
 signal2_SOURCES 	= signal2.c
 sigprocmask_SOURCES 	= sigprocmask.c
 supp1_SOURCES 		= supp.c

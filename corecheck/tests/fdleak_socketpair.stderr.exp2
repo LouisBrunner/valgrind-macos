@@ -1,0 +1,24 @@
+
+
+FILE DESCRIPTORS: 5 open at exit.
+Open AF_UNIX socket .: <unknown>
+   at 0x........: socketpair (in /...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
+   by 0x........: ...
+
+Open AF_UNIX socket .: <unknown>
+   at 0x........: socketpair (in /...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
+   by 0x........: ...
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: /dev/null
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

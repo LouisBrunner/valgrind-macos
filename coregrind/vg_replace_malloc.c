@@ -235,10 +235,15 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znwm,          __builtin_new);
 // operator new(unsigned int), ARM/cfront mangling
 //ALLOC_or_BOMB(m_libpgc_dot_so,         __nw__FUi,      __builtin_new);
 
-// TODO: create 64-bit version
+// TODO: these should only exist on 32-bit platforms
 // operator new(unsigned, std::nothrow_t const&), GNU mangling
 ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnwjRKSt9nothrow_t,  __builtin_new);
 ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnwjRKSt9nothrow_t,  __builtin_new);
+
+// TODO: these should only exist on 64-bit platforms
+// operator new(unsigned long, std::nothrow_t const&), GNU mangling
+ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnwmRKSt9nothrow_t,  __builtin_new);
+ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnwmRKSt9nothrow_t,  __builtin_new);
 
 // operator new[](unsigned int), GNU mangling
 ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_vec_new, __builtin_vec_new );
@@ -253,10 +258,15 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znaj,             __builtin_vec_new );
 ALLOC_or_BOMB(m_libstc_plus_plus_star, _Znam,             __builtin_vec_new );
 ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znam,             __builtin_vec_new );
 
-// TODO: create 64-bit version
+// TODO: these should only exist on 32-bit platforms
 // operator new[](unsigned, std::nothrow_t const&), GNU mangling
 ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnajRKSt9nothrow_t, __builtin_vec_new );
 ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnajRKSt9nothrow_t, __builtin_vec_new );
+
+// TODO: these should only exist on 64-bit platforms
+// operator new[](unsigned long, std::nothrow_t const&), GNU mangling
+ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnamRKSt9nothrow_t, __builtin_vec_new );
+ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnamRKSt9nothrow_t, __builtin_vec_new );
 
 
 /* Generate a replacement for 'fnname' in object 'soname', which calls

@@ -19,7 +19,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badrw.stderr.exp badrw.vgtest \
 	brk.stderr.exp brk.vgtest \
 	brk2.stderr.exp brk2.vgtest \
-	buflen_check.stderr.exp buflen_check.vgtest \
+	buflen_check.stderr.exp buflen_check.stderr.exp2 buflen_check.vgtest \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \

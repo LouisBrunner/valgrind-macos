@@ -32,6 +32,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
+	threadederrno.stderr.exp threadederrno.stdout.exp \
+	threadederrno.vgtest \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
 check_PROGRAMS = \
@@ -40,7 +42,7 @@ check_PROGRAMS = \
 	fdleak_socketpair sigkill res_search \
 	pth_atfork1 pth_cancel1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
-	as_mmap as_shm \
+	as_mmap as_shm threadederrno \
 	vgprintf
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
@@ -88,5 +90,5 @@ pth_rwlock_SOURCES	= pth_rwlock.c
 pth_rwlock_LDADD	= -lpthread
 res_search_SOURCES      = res_search.c
 res_search_LDADD        = -lresolv -lpthread
-
-
+threadederrno_SOURCES	= threadederrno.c
+threadederrno_LDADD	= -lpthread

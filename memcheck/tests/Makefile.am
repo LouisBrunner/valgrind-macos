@@ -80,8 +80,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
-	threadederrno.stderr.exp threadederrno.stdout.exp \
-	threadederrno.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.vgtest \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
@@ -107,7 +105,7 @@ check_PROGRAMS = \
 	sigaltstack signal2 sigprocmask \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
-	mismatches new_override metadata threadederrno \
+	mismatches new_override metadata \
 	vgtest_ume \
 	writev zeropage
 
@@ -185,8 +183,6 @@ weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
 str_tester_SOURCES	= str_tester.c
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
-threadederrno_SOURCES	= threadederrno.c
-threadederrno_LDADD	= -lpthread
 writev_SOURCES		= writev.c
 zeropage_SOURCES	= zeropage.c
 

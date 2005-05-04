@@ -3,13 +3,11 @@
 FILE DESCRIPTORS: 5 open at exit.
 Open AF_UNIX socket .: <unknown>
    at 0x........: socketpair (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
+   by 0x........: main (fdleak_socketpair.c:15)
 
 Open AF_UNIX socket .: <unknown>
    at 0x........: socketpair (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
+   by 0x........: main (fdleak_socketpair.c:15)
 
 Open file descriptor .: .
    <inherited from parent>

@@ -41,7 +41,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
-	manuel2.stderr.exp manuel2.stdout.exp manuel2.vgtest \
+	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
@@ -56,7 +56,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
-	pointer-trace.vgtest pointer-trace.stdout.exp pointer-trace.stderr.exp \
+	pointer-trace.vgtest pointer-trace.stdout.exp \
+	pointer-trace.stderr.exp pointer-trace.stderr.exp64 \
 	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \

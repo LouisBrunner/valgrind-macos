@@ -699,19 +699,16 @@ void set_SSE_rounding_mode ( ISelEnv* env, IRExpr* mode )
 //.. }
 
 
-/* Generate !src into a new vector register, and be sure that the code
-   is SSE1 compatible.  Amazing that Intel doesn't offer a less crappy
-   way to do this. 
+/* Generate !src into a new vector register.  Amazing that there isn't
+   a less crappy way to do this.
 */
 static HReg do_sse_NotV128 ( ISelEnv* env, HReg src )
 {
    HReg dst = newVRegV(env);
-   /* Set dst to zero.  Not strictly necessary, but the idea of doing
-      a FP comparison on whatever junk happens to be floating around
-      in it is just too scary. */
+   /* Set dst to zero.  Not strictly necessary. */
    addInstr(env, AMD64Instr_SseReRg(Asse_XOR, dst, dst));
    /* And now make it all 1s ... */
-   addInstr(env, AMD64Instr_Sse32Fx4(Asse_CMPEQF, dst, dst));
+   addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, dst, dst));
    /* Finally, xor 'src' into it. */
    addInstr(env, AMD64Instr_SseReRg(Asse_XOR, src, dst));
    return dst;
@@ -3049,34 +3046,33 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return do_sse_NotV128(env, arg);
       }
 
-//..       case Iop_CmpNEZ64x2: {
-//..          /* We can use SSE2 instructions for this. */
-//..          /* Ideally, we want to do a 64Ix2 comparison against zero of
-//..             the operand.  Problem is no such insn exists.  Solution
-//..             therefore is to do a 32Ix4 comparison instead, and bitwise-
-//..             negate (NOT) the result.  Let a,b,c,d be 32-bit lanes, and 
-//..             let the not'd result of this initial comparison be a:b:c:d.
-//..             What we need to compute is (a|b):(a|b):(c|d):(c|d).  So, use
-//..             pshufd to create a value b:a:d:c, and OR that with a:b:c:d,
-//..             giving the required result.
-//.. 
-//..             The required selection sequence is 2,3,0,1, which
-//..             according to Intel's documentation means the pshufd
-//..             literal value is 0xB1, that is, 
-//..             (2 << 6) | (3 << 4) | (0 << 2) | (1 << 0) 
-//..          */
-//..          HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg tmp  = newVRegV(env);
-//..          HReg dst  = newVRegV(env);
-//..          REQUIRE_SSE2;
-//..          addInstr(env, X86Instr_SseReRg(Xsse_XOR, tmp, tmp));
-//..          addInstr(env, X86Instr_SseReRg(Xsse_CMPEQ32, arg, tmp));
-//..          tmp = do_sse_Not128(env, tmp);
-//..          addInstr(env, X86Instr_SseShuf(0xB1, tmp, dst));
-//..          addInstr(env, X86Instr_SseReRg(Xsse_OR, tmp, dst));
-//..          return dst;
-//..       }
-//.. 
+      case Iop_CmpNEZ64x2: {
+         /* We can use SSE2 instructions for this. */
+         /* Ideally, we want to do a 64Ix2 comparison against zero of
+            the operand.  Problem is no such insn exists.  Solution
+            therefore is to do a 32Ix4 comparison instead, and bitwise-
+            negate (NOT) the result.  Let a,b,c,d be 32-bit lanes, and 
+            let the not'd result of this initial comparison be a:b:c:d.
+            What we need to compute is (a|b):(a|b):(c|d):(c|d).  So, use
+            pshufd to create a value b:a:d:c, and OR that with a:b:c:d,
+            giving the required result.
+
+            The required selection sequence is 2,3,0,1, which
+            according to Intel's documentation means the pshufd
+            literal value is 0xB1, that is, 
+            (2 << 6) | (3 << 4) | (0 << 2) | (1 << 0) 
+         */
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg tmp  = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         addInstr(env, AMD64Instr_SseReRg(Asse_XOR, tmp, tmp));
+         addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, arg, tmp));
+         tmp = do_sse_NotV128(env, tmp);
+         addInstr(env, AMD64Instr_SseShuf(0xB1, tmp, dst));
+         addInstr(env, AMD64Instr_SseReRg(Asse_OR, tmp, dst));
+         return dst;
+      }
+
 //..       case Iop_CmpNEZ32x4: {
 //..          /* Sigh, we have to generate lousy code since this has to
 //..             work on SSE1 hosts */
@@ -3355,7 +3351,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
 //..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
 //..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
-//..       case Iop_Add64x2:    op = Xsse_ADD64;    goto do_SseReRg;
+      case Iop_Add64x2:    op = Asse_ADD64;    goto do_SseReRg;
 //..       case Iop_QAdd8Sx16:  op = Xsse_QADD8S;   goto do_SseReRg;
 //..       case Iop_QAdd16Sx8:  op = Xsse_QADD16S;  goto do_SseReRg;
 //..       case Iop_QAdd8Ux16:  op = Xsse_QADD8U;   goto do_SseReRg;
@@ -3378,7 +3374,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_Sub8x16:    op = Xsse_SUB8;     goto do_SseReRg;
 //..       case Iop_Sub16x8:    op = Xsse_SUB16;    goto do_SseReRg;
 //..       case Iop_Sub32x4:    op = Xsse_SUB32;    goto do_SseReRg;
-//..       case Iop_Sub64x2:    op = Xsse_SUB64;    goto do_SseReRg;
+      case Iop_Sub64x2:    op = Asse_SUB64;    goto do_SseReRg;
 //..       case Iop_QSub8Sx16:  op = Xsse_QSUB8S;   goto do_SseReRg;
 //..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
 //..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
@@ -3405,24 +3401,21 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_SarN32x4: op = Xsse_SAR32; goto do_SseShift;
 //..       case Iop_ShrN16x8: op = Xsse_SHR16; goto do_SseShift;
 //..       case Iop_ShrN32x4: op = Xsse_SHR32; goto do_SseShift;
-//..       case Iop_ShrN64x2: op = Xsse_SHR64; goto do_SseShift;
-//..       do_SseShift: {
-//..          HReg      greg = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          HReg      ereg = newVRegV(env);
-//..          HReg      dst  = newVRegV(env);
-//..          REQUIRE_SSE2;
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(rmi));
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, ereg, esp0));
-//..          addInstr(env, mk_vMOVsd_RR(greg, dst));
-//..          addInstr(env, X86Instr_SseReRg(op, ereg, dst));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
+      case Iop_ShrN64x2: op = Asse_SHR64; goto do_SseShift;
+      do_SseShift: {
+         HReg        greg = iselVecExpr(env, e->Iex.Binop.arg1);
+         AMD64RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
+         HReg        ereg = newVRegV(env);
+         HReg        dst  = newVRegV(env);
+         addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+         addInstr(env, AMD64Instr_Push(rmi));
+         addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, ereg, rsp0));
+         addInstr(env, mk_vMOVsd_RR(greg, dst));
+         addInstr(env, AMD64Instr_SseReRg(op, ereg, dst));
+         add_to_rsp(env, 16);
+         return dst;
+      }
 
       default:
          break;

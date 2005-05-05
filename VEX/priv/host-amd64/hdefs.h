@@ -322,10 +322,12 @@ typedef
       /* Bitwise */
       Asse_AND, Asse_OR, Asse_XOR, Asse_ANDN,
 //..       /* Integer binary */
-//..       Xsse_ADD8,   Xsse_ADD16,   Xsse_ADD32,   Xsse_ADD64,
+//..       Xsse_ADD8,   Xsse_ADD16,   Xsse_ADD32,
+      Asse_ADD64,
 //..       Xsse_QADD8U, Xsse_QADD16U,
 //..       Xsse_QADD8S, Xsse_QADD16S,
-//..       Xsse_SUB8,   Xsse_SUB16,   Xsse_SUB32,   Xsse_SUB64,
+//..       Xsse_SUB8,   Xsse_SUB16,   Xsse_SUB32,
+      Asse_SUB64,
 //..       Xsse_QSUB8U, Xsse_QSUB16U,
 //..       Xsse_QSUB8S, Xsse_QSUB16S,
 //..       Xsse_MUL16,
@@ -336,10 +338,12 @@ typedef
 //..       Xsse_MAX8U,
 //..       Xsse_MIN16S,
 //..       Xsse_MIN8U,
-//..       Xsse_CMPEQ8,  Xsse_CMPEQ16,  Xsse_CMPEQ32,
+//..       Xsse_CMPEQ8,  Xsse_CMPEQ16,  
+      Asse_CMPEQ32,
 //..       Xsse_CMPGT8S, Xsse_CMPGT16S, Xsse_CMPGT32S,
 //..       Xsse_SHL16, Xsse_SHL32, Xsse_SHL64,
-//..       Xsse_SHR16, Xsse_SHR32, Xsse_SHR64,
+//..       Xsse_SHR16, Xsse_SHR32, 
+      Asse_SHR64,
 //..       Xsse_SAR16, Xsse_SAR32, 
 //..       Xsse_PACKSSD, Xsse_PACKSSW, Xsse_PACKUSW,
 //..       Xsse_UNPCKHB, Xsse_UNPCKHW, Xsse_UNPCKHD, Xsse_UNPCKHQ,
@@ -397,7 +401,7 @@ typedef
       Ain_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
       Ain_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,   /* SSE conditional move */
-//..       Xin_SseShuf    /* SSE2 shuffle (pshufd) */
+      Ain_SseShuf    /* SSE2 shuffle (pshufd) */
    }
    AMD64InstrTag;
 
@@ -642,11 +646,11 @@ typedef
             HReg          src;
             HReg          dst;
          } SseCMov;
-//..          struct {
-//..             Int    order; /* 0 <= order <= 0xFF */
-//..             HReg   src;
-//..             HReg   dst;
-//..          } SseShuf;
+         struct {
+            Int    order; /* 0 <= order <= 0xFF */
+            HReg   src;
+            HReg   dst;
+         } SseShuf;
 
       } Ain;
    }
@@ -695,7 +699,7 @@ extern AMD64Instr* AMD64Instr_Sse64Fx2  ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_Sse64FLo  ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov   ( AMD64CondCode, HReg src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_SseShuf   ( Int order, HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_SseShuf   ( Int order, HReg src, HReg dst );
 
 
 extern void ppAMD64Instr ( AMD64Instr* );

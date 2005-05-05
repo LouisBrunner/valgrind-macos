@@ -474,6 +474,10 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
 	 VG_(threads)[tid].altstack.ss_sp    = ss->ss_sp;
 	 VG_(threads)[tid].altstack.ss_size  = ss->ss_size;
 	 VG_(threads)[tid].altstack.ss_flags = 0;
+
+         VG_TRACK( new_mem_stack_signal,
+                   ss->ss_sp + ss->ss_size - VGA_STACK_REDZONE_SIZE,
+                   VGA_STACK_REDZONE_SIZE );
       }
    }
    SET_SYSCALL_RETVAL(tid, 0);

@@ -425,7 +425,7 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 
    /* For tracking memory events, indicate the entire frame has been
       allocated. */
-   VG_TRACK( new_mem_stack_signal, addr, size );
+   VG_TRACK( new_mem_stack_signal, addr - VGA_STACK_REDZONE_SIZE, size );
 
    return True;
 }
@@ -682,7 +682,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    else
       size = restore_rt_sigframe(tst, (struct rt_sigframe *)esp, &sigNo);
 
-   VG_TRACK( die_mem_stack_signal, esp, size );
+   VG_TRACK( die_mem_stack_signal - VGA_STACK_REDZONE_SIZE, esp, size );
 
    if (VG_(clo_trace_signals))
       VG_(message)(

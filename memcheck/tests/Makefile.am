@@ -33,7 +33,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
-	leak-cycle.vgtest leak-cycle.stderr.exp \
+	leak-cycle.vgtest leak-cycle.stderr.exp leak-cycle.stderr.exp64 \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
@@ -47,7 +47,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	memalign_test.stderr.exp memalign_test.vgtest \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
-	mempool.stderr.exp mempool.vgtest \
+	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \

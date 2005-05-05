@@ -1,0 +1,45 @@
+
+searching for pointers to 18 not-freed blocks.
+checked ... bytes.
+
+48 (16 direct, 32 indirect) bytes in 1 blocks are definitely lost in loss record 15 of 18
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cycle.c:11)
+   by 0x........: mkcycle (leak-cycle.c:22)
+   by 0x........: main (leak-cycle.c:36)
+
+
+48 (16 direct, 32 indirect) bytes in 1 blocks are definitely lost in loss record 16 of 18
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cycle.c:11)
+   by 0x........: mkcycle (leak-cycle.c:22)
+   by 0x........: main (leak-cycle.c:37)
+
+
+96 (16 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 17 of 18
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cycle.c:11)
+   by 0x........: mkcycle (leak-cycle.c:22)
+   by 0x........: main (leak-cycle.c:45)
+
+
+96 (16 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 18 of 18
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-cycle.c:11)
+   by 0x........: mkcycle (leak-cycle.c:22)
+   by 0x........: main (leak-cycle.c:59)
+
+LEAK SUMMARY:
+   definitely lost: 64 bytes in 4 blocks.
+   indirectly lost: 224 bytes in 14 blocks.
+     possibly lost: 0 bytes in 0 blocks.
+   still reachable: 0 bytes in 0 blocks.
+        suppressed: 0 bytes in 0 blocks.
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --show-reachable=yes
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 288 bytes in 18 blocks.
+malloc/free: 18 allocs, 0 frees, 288 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

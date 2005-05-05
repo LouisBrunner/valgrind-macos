@@ -48,7 +48,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
 	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
-	mismatches.stderr.exp mismatches.vgtest \
+	mismatches.stderr.exp mismatches.stderr.exp64 mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \

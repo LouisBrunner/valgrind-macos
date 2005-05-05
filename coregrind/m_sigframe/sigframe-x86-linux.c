@@ -682,7 +682,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    else
       size = restore_rt_sigframe(tst, (struct rt_sigframe *)esp, &sigNo);
 
-   VG_TRACK( die_mem_stack_signal - VGA_STACK_REDZONE_SIZE, esp, size );
+   VG_TRACK( die_mem_stack_signal, esp - VGA_STACK_REDZONE_SIZE, size );
 
    if (VG_(clo_trace_signals))
       VG_(message)(

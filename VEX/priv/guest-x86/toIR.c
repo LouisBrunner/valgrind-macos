@@ -34,7 +34,11 @@
 */
 
 /* TODO:
-   SBB reg with itself (copy from amd64 front end)
+
+   Check the following.  It afflicts the amd64 front end, not sure if
+   applicable here: MOVQ (sse) is wrong wrt is the upper half zeroed
+   or not?  It always should be if dst is a reg; not quite the same as
+   MOVSD.
 
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
@@ -77,8 +81,7 @@
    The delta values are 32-bit ints, not 64-bit ints.  That means
    this module may not work right if run on a 64-bit host.  That should
    be fixed properly, really -- if anyone ever wants to use Vex to
-   translate x86 code for execution on a 64-bit host.
-*/
+   translate x86 code for execution on a 64-bit host.  */
 
 /* Performance holes:
 

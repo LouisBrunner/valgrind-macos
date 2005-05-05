@@ -696,6 +696,8 @@ ULong amd64g_calculate_rflags_c ( ULong cc_op,
 
    /* Fast-case some common ones. */
    switch (cc_op) {
+      case AMD64G_CC_OP_COPY:
+         return (cc_dep1 >> AMD64G_CC_SHIFT_C) & 1;
       case AMD64G_CC_OP_LOGICQ: 
       case AMD64G_CC_OP_LOGICL: 
       case AMD64G_CC_OP_LOGICW: 
@@ -1045,37 +1047,37 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 //..          /* SHRL, then Z --> test dep1 == 0 */
 //..          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
 //..       }
-//.. 
-//..       /*---------------- COPY ----------------*/
-//..       /* This can happen, as a result of x87 FP compares: "fcom ... ;
-//..          fnstsw %ax ; sahf ; jbe" for example. */
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_COPY) && 
-//..           (isU32(cond, X86CondBE) || isU32(cond, X86CondNBE))) {
-//..          /* COPY, then BE --> extract C and Z from dep1, and test (C
-//..             or Z == 1). */
-//..          /* COPY, then NBE --> extract C and Z from dep1, and test (C
-//..             or Z == 0). */
-//..          UInt nnn = isU32(cond, X86CondBE) ? 1 : 0;
-//..          return
-//..             unop(
-//..                Iop_1Uto32,
-//..                binop(
-//..                   Iop_CmpEQ32,
-//..                   binop(
-//..                      Iop_And32,
-//..                      binop(
-//..                         Iop_Or32,
-//..                         binop(Iop_Shr32, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
-//..                         binop(Iop_Shr32, cc_dep1, mkU8(AMD64G_CC_SHIFT_Z))
-//..                      ),
-//..                      mkU32(1)
-//..                   ),
-//..                   mkU32(nnn)
-//..                )
-//..             );
-//..       }
-//..       
+
+      /*---------------- COPY ----------------*/
+      /* This can happen, as a result of amd64 FP compares: "comisd ... ;
+         jbe" for example. */
+
+      if (isU64(cc_op, AMD64G_CC_OP_COPY) && 
+          (isU64(cond, AMD64CondBE) || isU64(cond, AMD64CondNBE))) {
+         /* COPY, then BE --> extract C and Z from dep1, and test (C
+            or Z == 1). */
+         /* COPY, then NBE --> extract C and Z from dep1, and test (C
+            or Z == 0). */
+         ULong nnn = isU64(cond, AMD64CondBE) ? 1 : 0;
+         return
+            unop(
+               Iop_1Uto64,
+               binop(
+                  Iop_CmpEQ64,
+                  binop(
+                     Iop_And64,
+                     binop(
+                        Iop_Or64,
+                        binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
+                        binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_Z))
+                     ),
+                     mkU64(1)
+                  ),
+                  mkU64(nnn)
+               )
+            );
+      }
+      
 //..       if (isU32(cc_op, AMD64G_CC_OP_COPY) && isU32(cond, X86CondB)) {
 //..          /* COPY, then B --> extract C dep1, and test (C == 1). */
 //..          return
@@ -1133,13 +1135,13 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
-//..       if (isU32(cc_op, AMD64G_CC_OP_COPY)) {
+//..       if (isU64(cc_op, AMD64G_CC_OP_COPY)) {
 //..          /* cflag after COPY is stored in DEP1. */
 //..          return
 //..             binop(
-//..                Iop_And32,
-//..                binop(Iop_Shr32, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
-//..                mkU32(1)
+//..                Iop_And64,
+//..                binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
+//..                mkU64(1)
 //..             );
 //..       }
 //.. #     if 0

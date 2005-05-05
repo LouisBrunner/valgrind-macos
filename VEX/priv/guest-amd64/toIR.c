@@ -9164,12 +9164,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       goto after_sse_decoders;
 //.. 
 //..    insn = (UChar*)&guest_code[delta];
-//.. 
-//..    /* 66 0F 58 = ADDPD -- add 32Fx4 from R/M to R */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x58) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "addpd", Iop_Add64Fx2 );
-//..       goto decode_success;
-//..    }
+
+   /* 66 0F 58 = ADDPD -- add 32Fx4 from R/M to R */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x58) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "addpd", Iop_Add64Fx2 );
+      goto decode_success;
+   }
  
    /* F2 0F 58 = ADDSD -- add 64F0x2 from R/M to R */
    if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x58) {
@@ -9893,21 +9894,21 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x29) {
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          /* fall through; awaiting test case */
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-//..          DIP("movapd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
-//..                                dis_buf );
-//..          delta += 2+alen;
-//..          goto decode_success;
-//..       }
-//..    }
-//.. 
+   /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x29) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         /* fall through; awaiting test case */
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
+         DIP("movapd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
+                               dis_buf );
+         delta += 2+alen;
+         goto decode_success;
+      }
+   }
+
 //..    /* 66 0F 6E = MOVD from r/m32 to xmm, zeroing high 3/4 of xmm. */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6E) {
 //..       modrm = getUChar(delta+2);
@@ -10028,41 +10029,41 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..          /* fall through, apparently no mem case for this insn */
 //..       }
 //..    }
-//.. 
-//..    /* 66 0F 16 = MOVHPD -- move from mem to high half of XMM. */
-//..    /* These seems identical to MOVHPS.  This instruction encoding is
-//..       completely crazy. */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x16) {
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          /* fall through; apparently reg-reg is not possible */
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          delta += 2+alen;
-//..          putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
-//..                           loadLE(Ity_I64, mkexpr(addr)) );
-//..          DIP("movhpd %s,%s\n", dis_buf, 
-//..                                nameXMMReg( gregOfRM(modrm) ));
-//..          goto decode_success;
-//..       }
-//..    }
-//.. 
-//..    /* 66 0F 17 = MOVHPD -- move from high half of XMM to mem. */
-//..    /* Again, this seems identical to MOVHPS. */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x17) {
-//..       if (!epartIsReg(insn[2])) {
-//..          delta += 2;
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          delta += alen;
-//..          storeLE( mkexpr(addr), 
-//..                   getXMMRegLane64( gregOfRM(insn[2]),
-//..                                    1/*upper lane*/ ) );
-//..          DIP("movhpd %s,%s\n", nameXMMReg( gregOfRM(insn[2]) ),
-//..                                dis_buf);
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
+
+   /* 66 0F 16 = MOVHPD -- move from mem to high half of XMM. */
+   /* These seems identical to MOVHPS.  This instruction encoding is
+      completely crazy. */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x16) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         /* fall through; apparently reg-reg is not possible */
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         delta += 2+alen;
+         putXMMRegLane64( gregOfRexRM(pfx,modrm), 1/*upper lane*/,
+                          loadLE(Ity_I64, mkexpr(addr)) );
+         DIP("movhpd %s,%s\n", dis_buf, 
+                               nameXMMReg( gregOfRexRM(pfx,modrm) ));
+         goto decode_success;
+      }
+   }
+
+   /* 66 0F 17 = MOVHPD -- move from high half of XMM to mem. */
+   /* Again, this seems identical to MOVHPS. */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x17) {
+      if (!epartIsReg(insn[2])) {
+         delta += 2;
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRexRM(pfx,insn[2]),
+                                   1/*upper lane*/ ) );
+         DIP("movhpd %s,%s\n", nameXMMReg( gregOfRexRM(pfx,insn[2]) ),
+                               dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
+   }
 
    /* 66 0F 12 = MOVLPD -- move from mem to low half of XMM. */
    /* Identical to MOVLPS ? */
@@ -10082,23 +10083,23 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
    }
 
-//..    /* 66 0F 13 = MOVLPD -- move from low half of XMM to mem. */
-//..    /* Identical to MOVLPS ? */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x13) {
-//..       if (!epartIsReg(insn[2])) {
-//..          delta += 2;
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          delta += alen;
-//..          storeLE( mkexpr(addr), 
-//..                   getXMMRegLane64( gregOfRM(insn[2]), 
-//..                                    0/*lower lane*/ ) );
-//..          DIP("movlpd %s, %s\n", nameXMMReg( gregOfRM(insn[2]) ),
-//..                                 dis_buf);
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
-//.. 
+   /* 66 0F 13 = MOVLPD -- move from low half of XMM to mem. */
+   /* Identical to MOVLPS ? */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x13) {
+      modrm = getUChar(delta+2);
+      if (!epartIsReg(modrm)) {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         delta += 2+alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRexRM(pfx,modrm), 
+                                   0/*lower lane*/ ) );
+         DIP("movlpd %s, %s\n", nameXMMReg( gregOfRexRM(pfx,modrm) ),
+                                dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
+   }
+
 //..    /* 66 0F 50 = MOVMSKPD - move 2 sign bits from 2 x F64 in xmm(E) to
 //..       2 lowest bits of ireg(G) */
 //..    if (insn[0] == 0x0F && insn[1] == 0x50) {
@@ -10237,11 +10238,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
    }
 
-//..    /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x59) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "mulpd", Iop_Mul64Fx2 );
-//..       goto decode_success;
-//..    }
+   /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */
+   if (have66noF2noF3(pfx) && sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x59) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "mulpd", Iop_Mul64Fx2 );
+      goto decode_success;
+   }
 
    /* F2 0F 59 = MULSD -- mul 64F0x2 from R/M to R */
    if (haveF2no66noF3(pfx) && sz == 4
@@ -10321,11 +10323,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F 5C = SUBPD -- sub 64Fx2 from R/M to R */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x5C) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "subpd", Iop_Sub64Fx2 );
-//..       goto decode_success;
-//..    }
+   /* 66 0F 5C = SUBPD -- sub 64Fx2 from R/M to R */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x5C) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "subpd", Iop_Sub64Fx2 );
+      goto decode_success;
+   }
 
    /* F2 0F 5C = SUBSD -- sub 64F0x2 from R/M to R */
    if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x5C) {
@@ -11836,11 +11839,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          goto decode_failure;
       }
 
-//..    /* ------------------------ opl imm, A ----------------- */
-//.. 
-//..    case 0x04: /* ADD Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_Add8, True, delta, "add" );
-//..       break;
+   /* ------------------------ opl imm, A ----------------- */
+
+   case 0x04: /* ADD Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, Iop_Add8, True, delta, "add" );
+      break;
    case 0x05: /* ADD Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );

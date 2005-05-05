@@ -966,15 +966,15 @@ AMD64Instr* AMD64Instr_Sse32FLo ( AMD64SseOp op, HReg src, HReg dst ) {
    vassert(op != Asse_MOV);
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Sse64Fx2 ( AMD64SseOp op, HReg src, HReg dst ) {
-//..    AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag              = Xin_Sse64Fx2;
-//..    i->Xin.Sse64Fx2.op  = op;
-//..    i->Xin.Sse64Fx2.src = src;
-//..    i->Xin.Sse64Fx2.dst = dst;
-//..    vassert(op != Xsse_MOV);
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Sse64Fx2 ( AMD64SseOp op, HReg src, HReg dst ) {
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_Sse64Fx2;
+   i->Ain.Sse64Fx2.op  = op;
+   i->Ain.Sse64Fx2.src = src;
+   i->Ain.Sse64Fx2.dst = dst;
+   vassert(op != Asse_MOV);
+   return i;
+}
 AMD64Instr* AMD64Instr_Sse64FLo ( AMD64SseOp op, HReg src, HReg dst ) {
    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag              = Ain_Sse64FLo;
@@ -1279,12 +1279,12 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf(",");
          ppHRegAMD64(i->Ain.Sse32FLo.dst);
          return;
-//..       case Xin_Sse64Fx2:
-//..          vex_printf("%spd ", showAMD64SseOp(i->Xin.Sse64Fx2.op));
-//..          ppHRegAMD64(i->Xin.Sse64Fx2.src);
-//..          vex_printf(",");
-//..          ppHRegAMD64(i->Xin.Sse64Fx2.dst);
-//..          return;
+      case Ain_Sse64Fx2:
+         vex_printf("%spd ", showAMD64SseOp(i->Ain.Sse64Fx2.op));
+         ppHRegAMD64(i->Ain.Sse64Fx2.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Sse64Fx2.dst);
+         return;
       case Ain_Sse64FLo:
          vex_printf("%ssd ", showAMD64SseOp(i->Ain.Sse64FLo.op));
          ppHRegAMD64(i->Ain.Sse64FLo.src);
@@ -1537,15 +1537,15 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Ain.Sse32FLo.dst);
          return;
-//..       case Xin_Sse64Fx2:
-//..          vassert(i->Xin.Sse64Fx2.op != Xsse_MOV);
-//..          unary = i->Xin.Sse64Fx2.op == Xsse_RCPF
-//..                  || i->Xin.Sse64Fx2.op == Xsse_RSQRTF
-//..                  || i->Xin.Sse64Fx2.op == Xsse_SQRTF;
-//..          addHRegUse(u, HRmRead, i->Xin.Sse64Fx2.src);
-//..          addHRegUse(u, unary ? HRmWrite : HRmModify, 
-//..                        i->Xin.Sse64Fx2.dst);
-//..          return;
+      case Ain_Sse64Fx2:
+         vassert(i->Ain.Sse64Fx2.op != Asse_MOV);
+         unary = i->Ain.Sse64Fx2.op == Asse_RCPF
+                 || i->Ain.Sse64Fx2.op == Asse_RSQRTF
+                 || i->Ain.Sse64Fx2.op == Asse_SQRTF;
+         addHRegUse(u, HRmRead, i->Ain.Sse64Fx2.src);
+         addHRegUse(u, unary ? HRmWrite : HRmModify, 
+                       i->Ain.Sse64Fx2.dst);
+         return;
       case Ain_Sse64FLo:
          vassert(i->Ain.Sse64FLo.op != Asse_MOV);
          unary = toBool( i->Ain.Sse64FLo.op == Asse_RCPF
@@ -1721,10 +1721,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapReg(m, &i->Ain.Sse32FLo.src);
          mapReg(m, &i->Ain.Sse32FLo.dst);
          return;
-//..       case Xin_Sse64Fx2:
-//..          mapReg(m, &i->Xin.Sse64Fx2.src);
-//..          mapReg(m, &i->Xin.Sse64Fx2.dst);
-//..          return;
+      case Ain_Sse64Fx2:
+         mapReg(m, &i->Ain.Sse64Fx2.src);
+         mapReg(m, &i->Ain.Sse64Fx2.dst);
+         return;
       case Ain_Sse64FLo:
          mapReg(m, &i->Ain.Sse64FLo.src);
          mapReg(m, &i->Ain.Sse64FLo.dst);
@@ -3100,30 +3100,33 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          *p++ = toUChar(xtra & 0xFF);
       goto done;
 
-//..    case Xin_Sse64Fx2:
-//..       xtra = 0;
-//..       *p++ = 0x66;
-//..       *p++ = 0x0F;
-//..       switch (i->Xin.Sse64Fx2.op) {
-//..          case Xsse_ADDF:   *p++ = 0x58; break;
+   case Ain_Sse64Fx2:
+      xtra = 0;
+      *p++ = 0x66;
+      *p++ = clearWBit(
+             rexAMode_R( vreg2ireg(i->Ain.Sse64Fx2.dst),
+                         vreg2ireg(i->Ain.Sse64Fx2.src) ));
+      *p++ = 0x0F;
+      switch (i->Ain.Sse64Fx2.op) {
+         case Asse_ADDF:   *p++ = 0x58; break;
 //..          case Xsse_DIVF:   *p++ = 0x5E; break;
 //..          case Xsse_MAXF:   *p++ = 0x5F; break;
 //..          case Xsse_MINF:   *p++ = 0x5D; break;
-//..          case Xsse_MULF:   *p++ = 0x59; break;
+         case Asse_MULF:   *p++ = 0x59; break;
 //..          case Xsse_RCPF:   *p++ = 0x53; break;
 //..          case Xsse_RSQRTF: *p++ = 0x52; break;
 //..          case Xsse_SQRTF:  *p++ = 0x51; break;
-//..          case Xsse_SUBF:   *p++ = 0x5C; break;
+         case Asse_SUBF:   *p++ = 0x5C; break;
 //..          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
 //..          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
 //..          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
-//..          default: goto bad;
-//..       }
-//..       p = doAMode_R(p, fake(vregNo(i->Xin.Sse64Fx2.dst)),
-//..                        fake(vregNo(i->Xin.Sse64Fx2.src)) );
-//..       if (xtra & 0x100)
-//..          *p++ = (UChar)(xtra & 0xFF);
-//..       goto done;
+         default: goto bad;
+      }
+      p = doAMode_R(p, vreg2ireg(i->Ain.Sse64Fx2.dst),
+                       vreg2ireg(i->Ain.Sse64Fx2.src) );
+      if (xtra & 0x100)
+         *p++ = (UChar)(xtra & 0xFF);
+      goto done;
 
    case Ain_Sse32FLo:
       xtra = 0;
@@ -3144,7 +3147,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_SUBF:   *p++ = 0x5C; break;
 //..          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
-//..          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse32FLo.dst),

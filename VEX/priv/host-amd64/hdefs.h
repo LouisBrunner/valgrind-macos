@@ -393,7 +393,7 @@ typedef
       Ain_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
       Ain_Sse32Fx4,  /* SSE binary, 32Fx4 */
       Ain_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
-//..       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
+      Ain_Sse64Fx2,  /* SSE binary, 64Fx2 */
       Ain_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
       Ain_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,   /* SSE conditional move */
@@ -620,11 +620,11 @@ typedef
             HReg       src;
             HReg       dst;
          } Sse32FLo;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } Sse64Fx2;
+         struct {
+            AMD64SseOp op;
+            HReg       src;
+            HReg       dst;
+         } Sse64Fx2;
          struct {
             AMD64SseOp op;
             HReg       src;
@@ -691,7 +691,7 @@ extern AMD64Instr* AMD64Instr_SseLdSt   ( Bool isLoad, Int sz, HReg, AMD64AMode*
 extern AMD64Instr* AMD64Instr_SseLdzLO  ( Int sz, HReg, AMD64AMode* );
 extern AMD64Instr* AMD64Instr_Sse32Fx4  ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_Sse32FLo  ( AMD64SseOp, HReg, HReg );
-//.. extern AMD64Instr* AMD64Instr_Sse64Fx2  ( AMD64SseOp, HReg, HReg );
+extern AMD64Instr* AMD64Instr_Sse64Fx2  ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_Sse64FLo  ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov   ( AMD64CondCode, HReg src, HReg dst );

@@ -3272,26 +3272,25 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
 //..       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
 //..       case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
-//..       case Iop_Add64Fx2:   op = Xsse_ADDF;   goto do_64Fx2;
+      case Iop_Add64Fx2:   op = Asse_ADDF;   goto do_64Fx2;
 //..       case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
 //..       case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
 //..       case Iop_Min64Fx2:   op = Xsse_MINF;   goto do_64Fx2;
-//..       case Iop_Mul64Fx2:   op = Xsse_MULF;   goto do_64Fx2;
-//..       case Iop_Sub64Fx2:   op = Xsse_SUBF;   goto do_64Fx2;
-//..       do_64Fx2:
-//..       {
-//..          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
-//..          HReg dst = newVRegV(env);
-//..          REQUIRE_SSE2;
-//..          addInstr(env, mk_vMOVsd_RR(argL, dst));
-//..          addInstr(env, X86Instr_Sse64Fx2(op, argR, dst));
-//..          return dst;
-//..       }
+      case Iop_Mul64Fx2:   op = Asse_MULF;   goto do_64Fx2;
+      case Iop_Sub64Fx2:   op = Asse_SUBF;   goto do_64Fx2;
+      do_64Fx2:
+      {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argR, dst));
+         return dst;
+      }
 
 //..       case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
       case Iop_CmpLT32F0x4: op = Asse_CMPLTF; goto do_32F0x4;
-//..       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
+      case Iop_CmpLE32F0x4: op = Asse_CMPLEF; goto do_32F0x4;
       case Iop_Add32F0x4:   op = Asse_ADDF;   goto do_32F0x4;
       case Iop_Div32F0x4:   op = Asse_DIVF;   goto do_32F0x4;
       case Iop_Max32F0x4:   op = Asse_MAXF;   goto do_32F0x4;

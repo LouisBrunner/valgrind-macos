@@ -92,7 +92,6 @@ static void mullS64 ( Long u, Long v, Long* rHi, Long* rLo )
    *rLo = u * v;
 }
 
-#if 0 /* UNUSED */
 static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
 {
    ULong u0, v0, w0;
@@ -109,7 +108,6 @@ static void mullU64 ( ULong u, ULong v, ULong* rHi, ULong* rLo )
    *rHi = u1 * v1 + w2 + (w1 >> 32);
    *rLo = u * v;
 }
-#endif /* UNUSED */
 
 
 static const UChar parity_table[256] = {
@@ -643,6 +641,8 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
                                                   UInt,   toUInt );
       case AMD64G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   toUInt,
                                                   ULong,  idULong );
+
+      case AMD64G_CC_OP_UMULQ:  ACTIONS_UMULQ;
 
       case AMD64G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   toUChar,
                                                   Short,  toUShort );

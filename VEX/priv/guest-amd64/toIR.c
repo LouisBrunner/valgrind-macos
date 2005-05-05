@@ -3425,7 +3425,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
          IRTemp resHi   = newTemp(Ity_I64);
          IRTemp resLo   = newTemp(Ity_I64);
          IROp   mulOp   = syned ? Iop_MullS64 : Iop_MullU64;
-         UInt   tBaseOp = syned ? AMD64G_CC_OP_SMULQ : AMD64G_CC_OP_UMULQ;
+         UInt   tBaseOp = syned ? AMD64G_CC_OP_SMULB : AMD64G_CC_OP_UMULB;
          setFlags_MUL ( Ity_I64, t1, tmp, tBaseOp );
          assign( res128, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
          assign( resHi, unop(Iop_128HIto64,mkexpr(res128)));

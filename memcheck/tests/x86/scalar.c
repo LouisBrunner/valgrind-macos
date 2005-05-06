@@ -317,7 +317,7 @@ int main(void)
 
    // __NR_sigaction 67
    GO(__NR_sigaction, "3s 2m");
-   SY(__NR_sigaction, x0, x0, x0+1); FAIL;
+   SY(__NR_sigaction, x0, x0+&px[1], x0+&px[1]); FAIL;
 
    // __NR_sgetmask 68 sys_sgetmask()
    GO(__NR_sgetmask, "n/a");

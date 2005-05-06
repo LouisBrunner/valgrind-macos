@@ -711,7 +711,7 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
 
 Syscall param fcntl(lock) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 -----------------------------------------------------
  56:            __NR_mpx ni
@@ -805,13 +805,17 @@ Syscall param sigaction(act) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
 
 Syscall param sigaction(oldact) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
 -----------------------------------------------------
  68:       __NR_sgetmask n/a
 -----------------------------------------------------
@@ -1668,7 +1672,7 @@ Syscall param sigprocmask(set) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:20)
+   by 0x........: main (scalar.c:24)
 
 Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
@@ -1676,7 +1680,7 @@ Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:20)
+   by 0x........: main (scalar.c:24)
 -----------------------------------------------------
 127:  __NR_create_module ni
 -----------------------------------------------------
@@ -3340,7 +3344,7 @@ Syscall param fcntl64(arg) contains uninitialised byte(s)
 
 Syscall param fcntl64(lock) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 -----------------------------------------------------
 222:                 222 ni

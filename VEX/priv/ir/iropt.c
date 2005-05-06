@@ -977,7 +977,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
          case Iop_64to16: {
             ULong w64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             w64 &= 0xFFFFULL;
-            e2 = IRExpr_Const(IRConst_U16( (UChar)w64 ));
+            e2 = IRExpr_Const(IRConst_U16( (UShort)w64 ));
             break;
          }
          case Iop_64to32: {

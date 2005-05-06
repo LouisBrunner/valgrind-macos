@@ -3336,10 +3336,10 @@ ULong dis_Grp8_Imm ( Prefix pfx,
 
    /* Invent a mask suitable for the operation. */
    switch (gregLO3ofRM(modrm)) {
-      case 4: /* BT */  mask = 0;               break;
-      case 5: /* BTS */ mask = 1 << src_val;    break;
-      case 6: /* BTR */ mask = ~(1 << src_val); break;
-      case 7: /* BTC */ mask = 1 << src_val;    break;
+      case 4: /* BT */  mask = 0;                  break;
+      case 5: /* BTS */ mask = 1ULL << src_val;    break;
+      case 6: /* BTR */ mask = ~(1ULL << src_val); break;
+      case 7: /* BTC */ mask = 1ULL << src_val;    break;
          /* If this needs to be extended, probably simplest to make a
             new function to handle the other cases (0 .. 3).  The
             Intel docs do however not indicate any use for 0 .. 3, so

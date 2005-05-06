@@ -936,14 +936,13 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 
       /*---------------- SUBW ----------------*/
 
-      // CAUSES xedit not to work
-      //      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondZ)) {
-      //         /* word sub/cmp, then Z --> test dst==src */
-      //         return unop(Iop_1Uto64,
-      //                     binop(Iop_CmpEQ16, 
-      //                           unop(Iop_64to16,cc_dep1),
-      //                           unop(Iop_64to16,cc_dep2)));
-      //      }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondZ)) {
+         /* word sub/cmp, then Z --> test dst==src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ16, 
+                           unop(Iop_64to16,cc_dep1),
+                           unop(Iop_64to16,cc_dep2)));
+      }
 
       /*---------------- SUBB ----------------*/
 

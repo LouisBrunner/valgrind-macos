@@ -4264,35 +4264,35 @@ static void fp_pop ( void )
 //.. {
 //..    put_C3210( binop(Iop_And32, get_C3210(), mkU32(~X86G_FC_MASK_C2)) );
 //.. }
-//.. 
-//.. 
-//.. /* ------------------------------------------------------- */
-//.. /* Given all that stack-mangling junk, we can now go ahead
-//..    and describe FP instructions. 
-//.. */
-//.. 
-//.. /* ST(0) = ST(0) `op` mem64/32(addr)
-//..    Need to check ST(0)'s tag on read, but not on write.
-//.. */
-//.. static
-//.. void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
-//..                          IROp op, Bool dbl )
-//.. {
-//..    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
-//..    if (dbl) {
-//..       put_ST_UNCHECKED(0, 
-//..          binop( op, 
-//..                 get_ST(0), 
-//..                 loadLE(Ity_F64,mkexpr(addr))
-//..          ));
-//..    } else {
-//..       put_ST_UNCHECKED(0, 
-//..          binop( op, 
-//..                 get_ST(0), 
-//..                 unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr)))
-//..          ));
-//..    }
-//.. }
+
+
+/* ------------------------------------------------------- */
+/* Given all that stack-mangling junk, we can now go ahead
+   and describe FP instructions. 
+*/
+
+/* ST(0) = ST(0) `op` mem64/32(addr)
+   Need to check ST(0)'s tag on read, but not on write.
+*/
+static
+void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
+                         IROp op, Bool dbl )
+{
+   DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
+   if (dbl) {
+      put_ST_UNCHECKED(0, 
+         binop( op, 
+                get_ST(0), 
+                loadLE(Ity_F64,mkexpr(addr))
+         ));
+   } else {
+      put_ST_UNCHECKED(0, 
+         binop( op, 
+                get_ST(0), 
+                unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr)))
+         ));
+   }
+}
 
 
 /* ST(0) = mem64/32(addr) `op` ST(0)
@@ -4401,10 +4401,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          switch (gregLO3ofRM(modrm)) {
 
-//..             case 0: /* FADD single-real */
-//..                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, False );
-//..                break;
-//.. 
+            case 0: /* FADD single-real */
+               fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, False );
+               break;
+
 //..             case 1: /* FMUL single-real */
 //..                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
 //..                break;
@@ -4516,9 +4516,9 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "div", Iop_DivF64, modrm - 0xF0, 0, False );
                break;
 
-//..             case 0xF8 ... 0xFF: /* FDIVR %st(?),%st(0) */
-//..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, modrm - 0xF8, 0, False );
-//..                break;
+            case 0xF8 ... 0xFF: /* FDIVR %st(?),%st(0) */
+               fp_do_oprev_ST_ST ( "divr", Iop_DivF64, modrm - 0xF8, 0, False );
+               break;
 
             default:
                goto decode_fail;
@@ -5007,15 +5007,15 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
          delta++;
          switch (modrm) {
 
-//..             case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
-//..                r_src = (UInt)modrm - 0xC0;
-//..                DIP("fcmovb %%st(%d), %%st(0)\n", r_src);
-//..                put_ST_UNCHECKED(0, 
-//..                                 IRExpr_Mux0X( 
-//..                                     unop(Iop_1Uto8,
-//..                                          mk_x86g_calculate_condition(X86CondB)), 
-//..                                     get_ST(0), get_ST(r_src)) );
-//..                break;
+            case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fcmovb %%st(%d), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_amd64g_calculate_condition(AMD64CondB)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
 
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
@@ -5155,15 +5155,15 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
          delta++;
          switch (modrm) {
 
-//..             case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
-//..                r_src = (UInt)modrm - 0xC0;
-//..                DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
-//..                put_ST_UNCHECKED(0, 
-//..                                 IRExpr_Mux0X( 
-//..                                     unop(Iop_1Uto8,
-//..                                          mk_x86g_calculate_condition(X86CondNB)), 
-//..                                     get_ST(0), get_ST(r_src)) );
-//..                break;
+            case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_amd64g_calculate_condition(AMD64CondNB)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
 
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
@@ -5241,9 +5241,9 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );
                break;
 
-//..             case 0xF0 ... 0xF7: /* FCOMI %st(0),%st(?) */
-//..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, False );
-//..                break;
+            case 0xF0 ... 0xF7: /* FCOMI %st(0),%st(?) */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, False );
+               break;
 
             default:
                goto decode_fail;
@@ -5755,10 +5755,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );
                break;
 
-//..             case 0xF0 ... 0xF7: /* FCOMIP %st(0),%st(?) */
-//..                /* not really right since COMIP != UCOMIP */
-//..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, True );
-//..                break;
+            case 0xF0 ... 0xF7: /* FCOMIP %st(0),%st(?) */
+               /* not really right since COMIP != UCOMIP */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, True );
+               break;
 
             default: 
                goto decode_fail;

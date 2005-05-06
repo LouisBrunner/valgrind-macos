@@ -394,14 +394,16 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
       static Int complaints = 3;
       if (VG_(clo_trace_cfi) || complaints > 0) {
          complaints--;
-         VG_(message)(
-            Vg_DebugMsg,
-            "warning: CfiSI %p .. %p outside segment %p .. %p",
-            cfisi->base, 
-            cfisi->base + cfisi->len - 1,
-            si->start,
-            si->start + si->size - 1 
-         );
+         if (VG_(clo_verbosity) > 1) {
+            VG_(message)(
+               Vg_DebugMsg,
+               "warning: CfiSI %p .. %p outside segment %p .. %p",
+               cfisi->base, 
+               cfisi->base + cfisi->len - 1,
+               si->start,
+               si->start + si->size - 1 
+            );
+         }
          if (VG_(clo_trace_cfi)) 
             VG_(ppCfiSI)(cfisi);
       }

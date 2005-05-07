@@ -474,10 +474,6 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
 	 VG_(threads)[tid].altstack.ss_sp    = ss->ss_sp;
 	 VG_(threads)[tid].altstack.ss_size  = ss->ss_size;
 	 VG_(threads)[tid].altstack.ss_flags = 0;
-
-         VG_TRACK( new_mem_stack_signal,
-                   ss->ss_sp + ss->ss_size - VGA_STACK_REDZONE_SIZE,
-                   VGA_STACK_REDZONE_SIZE );
       }
    }
    SET_SYSCALL_RETVAL(tid, 0);
@@ -809,7 +805,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = STACK_PTR(tst->arch);
+      esp_top_of_frame = STACK_PTR(tst->arch) - VGA_STACK_REDZONE_SIZE;
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );

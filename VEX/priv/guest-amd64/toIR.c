@@ -4405,10 +4405,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, False );
                break;
 
-//..             case 1: /* FMUL single-real */
-//..                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
-//..                break;
-//.. 
+            case 1: /* FMUL single-real */
+               fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
+               break;
+
 //..             case 2: /* FCOM single-real */
 //..                DIP("fcoms %s\n", dis_buf);
 //..                /* This forces C1 to zero, which isn't right. */
@@ -4439,22 +4439,22 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                    ));
 //..                fp_pop();
 //..                break;  
-//.. 
-//..             case 4: /* FSUB single-real */
-//..                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );
-//..                break;
+
+            case 4: /* FSUB single-real */
+               fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );
+               break;
 
             case 5: /* FSUBR single-real */
                fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, False );
                break;
 
-//..             case 6: /* FDIV single-real */
-//..                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
-//..                break;
-//.. 
-//..             case 7: /* FDIVR single-real */
-//..                fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, False );
-//..                break;
+            case 6: /* FDIV single-real */
+               fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
+               break;
+
+            case 7: /* FDIVR single-real */
+               fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, False );
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -4508,9 +4508,9 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
                break;
 
-//..             case 0xE8 ... 0xEF: /* FSUBR %st(?),%st(0) */
-//..                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, modrm - 0xE8, 0, False );
-//..                break;
+            case 0xE8 ... 0xEF: /* FSUBR %st(?),%st(0) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, modrm - 0xE8, 0, False );
+               break;
 
             case 0xF0 ... 0xF7: /* FDIV %st(?),%st(0) */
                fp_do_op_ST_ST ( "div", Iop_DivF64, modrm - 0xF0, 0, False );
@@ -4890,12 +4890,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                                          get_ST(1), get_ST(0)));
 //..                fp_pop();
 //..                break;
-//.. 
-//..             case 0xFA: /* FSQRT */
-//..                DIP("fsqrt\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
-//..                break;
-//.. 
+
+            case 0xFA: /* FSQRT */
+               DIP("fsqrt\n");
+               put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
+               break;
+
 //..             case 0xFB: { /* FSINCOS */
 //..                IRTemp a1 = newTemp(Ity_F64);
 //..                assign( a1, get_ST(0) );
@@ -5263,14 +5263,14 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          switch (gregLO3ofRM(modrm)) {
 
-//..             case 0: /* FADD double-real */
-//..                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, True );
-//..                break;
-//.. 
-//..             case 1: /* FMUL double-real */
-//..                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
-//..                break;
-//.. 
+            case 0: /* FADD double-real */
+               fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, True );
+               break;
+
+            case 1: /* FMUL double-real */
+               fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
+               break;
+
 //..             case 2: /* FCOM double-real */
 //..                DIP("fcoml %s\n", dis_buf);
 //..                /* This forces C1 to zero, which isn't right. */
@@ -5299,22 +5299,22 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                    ));
 //..                fp_pop();
 //..                break;  
-//.. 
-//..             case 4: /* FSUB double-real */
-//..                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, True );
-//..                break;
+
+            case 4: /* FSUB double-real */
+               fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, True );
+               break;
 
             case 5: /* FSUBR double-real */
                fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, True );
                break;
 
-//..             case 6: /* FDIV double-real */
-//..                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, True );
-//..                break;
-//.. 
-//..             case 7: /* FDIVR double-real */
-//..                fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, True );
-//..                break;
+            case 6: /* FDIV double-real */
+               fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, True );
+               break;
+
+            case 7: /* FDIVR double-real */
+               fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, True );
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -5339,13 +5339,13 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0, modrm - 0xE0, False );
                break;
 
-//..             case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
-//..                break;
-//.. 
-//..             case 0xF0 ... 0xF7: /* FDIVR %st(0),%st(?) */
-//..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, False );
-//..                break;
+            case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
+               fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
+               break;
+
+            case 0xF0 ... 0xF7: /* FDIVR %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, False );
+               break;
 
             case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */
                fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, False );

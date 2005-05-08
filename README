@@ -96,5 +96,5 @@ fork/exec calls.
 
 
 Julian Seward (jseward@acm.org)
-Nick Nethercote (njn25@cam.ac.uk)
+Nick Nethercote (njn@valgrind.org)
 Jeremy Fitzhardinge (jeremy@goop.org)

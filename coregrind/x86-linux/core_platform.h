@@ -52,11 +52,9 @@
 // Setting a syscall result
 #define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_EAX = (val))
 
-// For setting thread regs and shadow regs from within the core, once a
-// syscall has completed.
-#define SET_SYSCALL_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, SYSCALL_RET, post_reg_write, \
-                  Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord))
+// For informing tools that a syscall result has been set.
+#define VGP_TRACK_SYSCALL_RETVAL(zztid) \
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord) );
 
 /* ---------------------------------------------------------------------
    Exports of vg_ldt.c
@@ -107,7 +105,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 } while (0)
 
 #define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {     \
-   UInt *arg_block = (UInt*)SYSCALL_ARG1(tst->arch);            \
+   UInt *arg_block = (UInt*)(tst->arch.vex.VGP_SYSCALL_ARG1);   \
    PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );\
    a1 = arg_block[0];                                           \
    a2 = arg_block[1];                                           \

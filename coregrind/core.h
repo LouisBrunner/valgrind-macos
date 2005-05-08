@@ -703,22 +703,6 @@ extern void VG_(resume_scheduler) ( ThreadId tid );
 /* If true, a fault is Valgrind-internal (ie, a bug) */
 extern Bool VG_(my_fault);
 
-// Write a value to a client's thread register, and shadow (if necessary).
-// Note that there are some further similar macros in the arch- and
-// platform-specific parts;  these ones are the totally generic ones.
-#define SET_THREAD_REG( zztid, zzval, zzGETREG, zzevent, zzargs... ) \
-   do { zzGETREG(VG_(threads)[zztid].arch) = (zzval); \
-        VG_TRACK( zzevent, ##zzargs ); \
-   } while (0)
-
-#define SET_CLREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, CLREQ_RET, post_reg_write, \
-                  Vg_CoreClientReq, zztid, O_CLREQ_RET, sizeof(UWord))
-
-#define SET_CLCALL_RETVAL(zztid, zzval, f) \
-   SET_THREAD_REG(zztid, zzval, CLREQ_RET, post_reg_write_clientcall_return, \
-                  zztid, O_CLREQ_RET, sizeof(UWord), f)
-
 /* ---------------------------------------------------------------------
    Exports of vg_signals.c
    ------------------------------------------------------------------ */
@@ -738,13 +722,14 @@ extern Bool VG_(is_sig_ign) ( Int sigNo );
 extern void VG_(poll_signals) ( ThreadId );
 
 /* Fake system calls for signal handling. */
-extern Int VG_(do_sys_sigaltstack)   ( ThreadId tid );
-extern Int VG_(do_sys_sigaction)     ( Int signo, 
-                                       const struct vki_sigaction *new_act, 
-                                       struct vki_sigaction *old_act );
-extern Int VG_(do_sys_sigprocmask)   ( ThreadId tid, Int how, 
-                                       vki_sigset_t* set,
-                                       vki_sigset_t* oldset );
+extern Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss,
+                                                   vki_stack_t* oss );
+extern Int VG_(do_sys_sigaction)   ( Int signo, 
+                                     const struct vki_sigaction *new_act, 
+                                     struct vki_sigaction *old_act );
+extern Int VG_(do_sys_sigprocmask) ( ThreadId tid, Int how, 
+                                     vki_sigset_t* set,
+                                     vki_sigset_t* oldset );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 
@@ -1064,15 +1049,15 @@ Bool VG_(do_sigkill)(Int pid, Int tgid);
 #define GENX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgArch_gen, const, name)
 #define GENXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgArch_gen, const, name)
 
-// Space-saving macros for syscall wrappers
-#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define RES     SYSCALL_RET(tst->arch)    // in POST(x)
-#define ARG1    SYSCALL_ARG1(tst->arch)
-#define ARG2    SYSCALL_ARG2(tst->arch)
-#define ARG3    SYSCALL_ARG3(tst->arch)
-#define ARG4    SYSCALL_ARG4(tst->arch)
-#define ARG5    SYSCALL_ARG5(tst->arch)
-#define ARG6    SYSCALL_ARG6(tst->arch)
+// Space-saving macros for syscall PRE() and POST() wrappers
+#define RES    ((tst->arch).vex.VGP_SYSCALL_RET)
+#define SYSNO  ((tst->arch).vex.VGP_SYSCALL_NUM)
+#define ARG1   ((tst->arch).vex.VGP_SYSCALL_ARG1)
+#define ARG2   ((tst->arch).vex.VGP_SYSCALL_ARG2)
+#define ARG3   ((tst->arch).vex.VGP_SYSCALL_ARG3)
+#define ARG4   ((tst->arch).vex.VGP_SYSCALL_ARG4)
+#define ARG5   ((tst->arch).vex.VGP_SYSCALL_ARG5)
+#define ARG6   ((tst->arch).vex.VGP_SYSCALL_ARG6)
 
 // For setting the result of a syscall in a wrapper
 #define SET_RESULT(val)                            \
@@ -1601,16 +1586,6 @@ extern void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr));
 // ---------------------------------------------------------------------
 // Platform-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
-
-// Accessors for the ThreadArchState
-#define SYSCALL_NUM(regs)  ((regs).vex.VGP_SYSCALL_NUM)
-#define SYSCALL_ARG1(regs) ((regs).vex.VGP_SYSCALL_ARG1)
-#define SYSCALL_ARG2(regs) ((regs).vex.VGP_SYSCALL_ARG2)
-#define SYSCALL_ARG3(regs) ((regs).vex.VGP_SYSCALL_ARG3)
-#define SYSCALL_ARG4(regs) ((regs).vex.VGP_SYSCALL_ARG4)
-#define SYSCALL_ARG5(regs) ((regs).vex.VGP_SYSCALL_ARG5)
-#define SYSCALL_ARG6(regs) ((regs).vex.VGP_SYSCALL_ARG6)
-#define SYSCALL_RET(regs)  ((regs).vex.VGP_SYSCALL_RET)
 
 // Offsets for the shadow state
 #define O_SYSCALL_NUM   (offsetof(VexGuestArchState, VGP_SYSCALL_NUM))

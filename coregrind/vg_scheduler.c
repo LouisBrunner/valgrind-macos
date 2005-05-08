@@ -891,6 +891,21 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
    Specifying shadow register values
    ------------------------------------------------------------------ */
 
+// These macros write a value to a client's thread register, and tell the
+// tool that it's happened (if necessary).
+
+#define SET_CLREQ_RETVAL(zztid, zzval) \
+   do { CLREQ_RET(VG_(threads)[zztid].arch) = (zzval); \
+        VG_TRACK( post_reg_write, \
+                  Vg_CoreClientReq, zztid, O_CLREQ_RET, sizeof(UWord)); \
+   } while (0)
+
+#define SET_CLCALL_RETVAL(zztid, zzval, f) \
+   do { CLREQ_RET(VG_(threads)[zztid].arch) = (zzval); \
+        VG_TRACK( post_reg_write_clientcall_return, \
+                  zztid, O_CLREQ_RET, sizeof(UWord), f); \
+   } while (0)
+
 void VG_(set_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
                                  const UChar* area )
 {
@@ -924,16 +939,12 @@ void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
 
 void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UWord ret_shadow )
 {
-   VG_(set_shadow_regs_area)(tid, O_SYSCALL_RET, sizeof(UWord),
-                             (UChar*)&ret_shadow);
+   VG_(threads)[tid].arch.vex_shadow.VGP_SYSCALL_RET = ret_shadow;
 }
 
 UInt VG_(get_exit_status_shadow) ( ThreadId tid )
 {
-   UInt ret;
-   VG_(get_shadow_regs_area)(tid, O_SYSCALL_ARG1, sizeof(UInt),
-                             (UChar*)&ret);
-   return ret;
+   return VG_(threads)[tid].arch.vex_shadow.VGP_SYSCALL_ARG1;
 }
 
 

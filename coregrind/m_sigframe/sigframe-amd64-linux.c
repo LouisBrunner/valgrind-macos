@@ -361,11 +361,6 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 }
 
 
-#define SET_SIGNAL_RSP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
-                  Vg_CoreSignal, zztid, O_STACK_PTR, sizeof(Addr))
-
-
 /* Extend the stack segment downwards if needed so as to ensure the
    new signal frames are mapped to something.  Return a Bool
    indicating whether or not the operation was successful.
@@ -494,8 +489,9 @@ void VG_(sigframe_create)( ThreadId tid,
    frame = (struct rt_sigframe *)rsp;
 
    /* Set the thread so it will next run the handler. */
-   /* tst->m_rsp  = rsp; */
-   SET_SIGNAL_RSP(tid, rsp);
+   /* tst->m_rsp  = rsp;  also notify the tool we've updated RSP */
+   STACK_PTR(VG_(threads)[tid].arch) = rsp;
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, O_STACK_PTR, sizeof(Addr));
 
    //VG_(printf)("handler = %p\n", handler);
    tst->arch.vex.guest_RIP = (Addr) handler;

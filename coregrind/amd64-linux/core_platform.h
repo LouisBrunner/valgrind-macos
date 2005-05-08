@@ -52,10 +52,9 @@
 // Setting a syscall result
 #define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_RAX = (val))
 
-// Setting thread regs and shadow regs from within the core
-#define SET_SYSCALL_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, SYSCALL_RET, post_reg_write, \
-                  Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord))
+// For informing tools that a syscall result has been set.
+#define VGP_TRACK_SYSCALL_RETVAL(zztid) \
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord) );
 
 /* ---------------------------------------------------------------------
    Exports of vg_ldt.c

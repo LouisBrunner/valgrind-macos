@@ -5608,7 +5608,8 @@ PRE(sys_sigaltstack, Special)
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );
    }
 
-   SET_RESULT( VG_(do_sys_sigaltstack) (tid) );
+   SET_RESULT( VG_(do_sys_sigaltstack) (tid, (vki_stack_t*)ARG1, 
+                                             (vki_stack_t*)ARG2) );
 }
 
 POST(sys_sigaltstack)
@@ -6165,10 +6166,9 @@ void VG_(client_syscall) ( ThreadId tid )
 
    vg_assert(VG_(is_running_thread)(tid));
 
-   // The RES part is redundant -- we're assigning the value to itself --
-   // but we need this call to tell the tool that the assignment has
-   // occurred.
-   SET_SYSCALL_RETVAL(tid, RES);
+   // Tell the tool that the assignment has occurred, so it can update
+   // shadow regs as necessary.
+   VGP_TRACK_SYSCALL_RETVAL(tid);
 
    VG_(post_syscall)(tid);
 

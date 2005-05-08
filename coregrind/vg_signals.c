@@ -429,15 +429,11 @@ static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 }
 
 
-Int VG_(do_sys_sigaltstack) ( ThreadId tid )
+Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss )
 {
-   vki_stack_t* ss;
-   vki_stack_t* oss;
-   Addr         m_SP;
+   Addr m_SP;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_stack_t*)SYSCALL_ARG1(VG_(threads)[tid].arch);
-   oss   = (vki_stack_t*)SYSCALL_ARG2(VG_(threads)[tid].arch);
    m_SP  = STACK_PTR(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))

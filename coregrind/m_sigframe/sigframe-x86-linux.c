@@ -382,11 +382,6 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 }
 
 
-#define SET_SIGNAL_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
-                  Vg_CoreSignal, zztid, O_STACK_PTR, sizeof(Addr))
-
-
 /* Extend the stack segment downwards if needed so as to ensure the
    new signal frames are mapped to something.  Return a Bool
    indicating whether or not the operation was successful.
@@ -572,8 +567,9 @@ void VG_(sigframe_create)( ThreadId tid,
                                 siginfo, handler, flags, mask, restorer);
 
    /* Set the thread so it will next run the handler. */
-   /* tst->m_esp  = esp; */
-   SET_SIGNAL_ESP(tid, esp);
+   /* tst->m_esp  = esp;  also notify the tool we've updated ESP */
+   STACK_PTR(VG_(threads)[tid].arch) = esp;
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, O_STACK_PTR, sizeof(Addr));
 
    //VG_(printf)("handler = %p\n", handler);
    tst->arch.vex.guest_EIP = (Addr) handler;

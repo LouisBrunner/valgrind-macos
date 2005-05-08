@@ -1105,7 +1105,7 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    MC_ReadResult res;
-   Addr bad_addr;
+   Addr bad_addr = 0;   // shut GCC up
    /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
    VGP_PUSHCC(VgpCheckMem);

@@ -1271,7 +1271,7 @@ void TL_(pp_Error) ( Error* err )
 /* Creates a copy of the `extra' part, updates the copy with address info if
    necessary, and returns the copy. */
 /* This one called from generated code and non-generated code. */
-void mc_record_value_error ( ThreadId tid, Int size )
+static void mc_record_value_error ( ThreadId tid, Int size )
 {
    MAC_Error err_extra;
 
@@ -1283,8 +1283,8 @@ void mc_record_value_error ( ThreadId tid, Int size )
 
 /* This called from non-generated code */
 
-void mc_record_user_error ( ThreadId tid, Addr a, Bool isWrite,
-                            Bool isUnaddr )
+static void mc_record_user_error ( ThreadId tid, Addr a, Bool isWrite,
+                                   Bool isUnaddr )
 {
    MAC_Error err_extra;
 

@@ -164,12 +164,18 @@ Bool TL_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
          return False;
       }
 
-      case UserErr:
+      // Perhaps we should also check the addrinfo.akinds for equality.
+      // That would result in more error reports, but only in cases where
+      // a register contains uninitialised bytes and points to memory
+      // containing uninitialised bytes.  Currently, the 2nd of those to be
+      // detected won't be reported.  That is (nearly?) always the memory
+      // error, which is good.
       case ParamErr:
-         if (e1_extra->isUnaddr != e2_extra->isUnaddr)         return False;
-         if (VG_(get_error_kind)(e1) == ParamErr 
-             && 0 != VG_(strcmp)(VG_(get_error_string)(e1),
-                                 VG_(get_error_string)(e2)))   return False;
+         if (0 != VG_(strcmp)(VG_(get_error_string)(e1),
+                              VG_(get_error_string)(e2)))   return False;
+         // fall through
+      case UserErr:
+         if (e1_extra->isUnaddr != e2_extra->isUnaddr)      return False;
          return True;
 
       case FreeErr:
@@ -470,12 +476,18 @@ void MAC_(record_core_mem_error) ( ThreadId tid, Bool isUnaddr, Char* msg )
    VG_(maybe_record_error)( tid, CoreMemErr, /*addr*/0, msg, &err_extra );
 }
 
+// Three kinds of param errors:
+// - register arg contains undefined bytes
+// - memory arg is unaddressable
+// - memory arg contains undefined bytes
+// 'isReg' and 'isUnaddr' dictate which of these it is.
 void MAC_(record_param_error) ( ThreadId tid, Addr a, Bool isReg,
                                 Bool isUnaddr, Char* msg )
 {
    MAC_Error err_extra;
 
    tl_assert(VG_INVALID_THREADID != tid);
+   if (isUnaddr) tl_assert(!isReg);    // unaddressable register is impossible
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = ( isReg ? Register : Undescribed );
    err_extra.isUnaddr = isUnaddr;

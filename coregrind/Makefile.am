@@ -1,16 +1,22 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
+MODULES = \
+	demangle \
+	m_aspacemgr \
+	m_sigframe \
+	m_syscalls
+
 ## When building, we are only interested in the current arch/OS/platform.
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
 ## That's what DIST_SUBDIRS specifies.
 SUBDIRS = \
-	$(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     \
-	m_sigframe m_aspacemgr demangle .
+	$(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM) \
+	$(MODULES) .
 
 DIST_SUBDIRS = \
 	$(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) \
-	m_sigframe m_aspacemgr demangle .
+	$(MODULES) .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
@@ -32,12 +38,13 @@ noinst_LIBRARIES = lib_replace_malloc.a
 noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
+	pub_core_aspacemgr.h	\
+	pub_core_debuglog.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
-	pub_core_stacktrace.h	\
 	pub_core_sigframe.h	\
-	pub_core_debuglog.h	\
-	pub_core_aspacemgr.h	\
+	pub_core_stacktrace.h	\
+	pub_core_syscalls.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
@@ -87,7 +94,6 @@ stage2_SOURCES = \
 	vg_stabs.c \
 	vg_skiplist.c \
 	vg_symtypes.c \
-	vg_syscalls.c \
 	vg_toolint.c \
 	vg_translate.c \
 	vg_transtab.c
@@ -95,8 +101,9 @@ stage2_SOURCES = \
 ## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \
 	demangle/libdemangle.a \
-	m_sigframe/libsigframe.a \
 	m_aspacemgr/libaspacemgr.a \
+	m_sigframe/libsigframe.a \
+	m_syscalls/libsyscalls.a \
 	${VG_PLATFORM}/libplatform.a \
 	${VG_ARCH}/libarch.a \
 	${VG_OS}/libos.a \

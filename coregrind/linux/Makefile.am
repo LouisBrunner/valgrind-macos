@@ -10,8 +10,7 @@ noinst_LIBRARIES = libos.a
 
 libos_a_SOURCES = \
 	core_os.c \
-	sema.c \
-	syscalls.c
+	sema.c
 
 if USE_PIE
 libos_a_CFLAGS = $(AM_CFLAGS) -fpie

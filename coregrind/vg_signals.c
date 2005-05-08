@@ -81,9 +81,10 @@
 
 #include "core.h"
 
+#include "pub_core_aspacemgr.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_sigframe.h"
-#include "pub_core_aspacemgr.h"
+#include "pub_core_syscalls.h"
 
 
 /* Define to give more sanity checking for signals. */

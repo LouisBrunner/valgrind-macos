@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific syscalls stuff.       x86-linux/syscalls.c ---*/
+/*--- Platform-specific syscalls stuff.       syscalls-x86-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -35,8 +35,10 @@
 
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
-#include "pub_core_sigframe.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_sigframe.h"
+#include "pub_core_syscalls.h"
+#include "priv_syscalls.h"
 
 
 /* ---------------------------------------------------------------------

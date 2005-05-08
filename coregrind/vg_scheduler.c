@@ -60,8 +60,9 @@
                              VG_USERREQ__DISCARD_TRANSLATIONS, and others */
 #include "core.h"
 
-#include "pub_core_stacktrace.h"
 #include "pub_core_errormgr.h"
+#include "pub_core_stacktrace.h"
+#include "pub_core_syscalls.h"
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.
@@ -935,18 +936,6 @@ void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
 
    VG_(memcpy)( area, (void*)(((Addr)&(tst->arch.vex_shadow)) + offset), size);
 }
-
-
-void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UWord ret_shadow )
-{
-   VG_(threads)[tid].arch.vex_shadow.VGP_SYSCALL_RET = ret_shadow;
-}
-
-UInt VG_(get_exit_status_shadow) ( ThreadId tid )
-{
-   return VG_(threads)[tid].arch.vex_shadow.VGP_SYSCALL_ARG1;
-}
-
 
 /* ---------------------------------------------------------------------
    Handle client requests.

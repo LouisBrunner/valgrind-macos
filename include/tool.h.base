@@ -788,17 +788,6 @@ extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
 extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, const UChar* area );
 
-/* This one lets you override the shadow of the return value register for a
-   syscall.  Call it from TL_(post_syscall)() (not TL_(pre_syscall)()!) to
-   override the default shadow register value. */
-extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid,
-                                                  UWord ret_shadow );
-
-/* This can be called from TL_(fini)() to find the shadow of the argument
-   to exit(), ie. the shadow of the program's return value. */
-extern UInt VG_(get_exit_status_shadow) ( ThreadId );
-
-
 /*====================================================================*/
 /*=== Specific stuff for replacing malloc() and friends            ===*/
 /*====================================================================*/

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Handle system calls.                           vg_syscalls.c ---*/
+/*--- Handle system calls.                              syscalls.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,8 +29,10 @@
 */
 
 #include "core.h"
-#include "pub_core_stacktrace.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_stacktrace.h"
+#include "pub_core_syscalls.h"
+#include "priv_syscalls.h"
 
 
 /* All system calls are channelled through here, doing two things:
@@ -40,7 +42,7 @@
    * perform the syscall, usually by passing it along to the kernel
      unmodified.
 
-   A magical piece of assembly code, VG_(do_syscall)(), in vg_syscall.S
+   A magical piece of assembly code, VG_(do_syscall)(), in syscall-$PLATFORM.S
    does the tricky bit of passing a syscall to the kernel, whilst
    having the simulator retain control.
 */

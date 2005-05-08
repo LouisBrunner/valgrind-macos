@@ -31,9 +31,10 @@
 */
 
 #include "core.h"
-#include "pub_core_stacktrace.h"
-#include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 #include "pub_core_aspacemgr.h"
+#include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
+#include "pub_core_stacktrace.h"
+#include "pub_core_syscalls.h"
 
 
 /* ---------------------------------------------------------------------

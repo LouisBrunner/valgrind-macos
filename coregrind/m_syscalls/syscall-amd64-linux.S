@@ -1,6 +1,6 @@
 
 ##--------------------------------------------------------------------##
-##--- Support for doing system calls.        amd64-linux/syscall.S ---##
+##--- Support for doing system calls.        syscall-amd64-linux.S ---##
 ##--------------------------------------------------------------------##
 
 /*

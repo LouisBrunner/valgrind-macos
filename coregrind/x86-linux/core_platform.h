@@ -36,27 +36,6 @@
 //#include "platform_arch.h"        // platform-specific tool stuff
 
 /* ---------------------------------------------------------------------
-   Dealing with registers
-   ------------------------------------------------------------------ */
-
-// Accessors for the ThreadArchState
-#define VGP_SYSCALL_NUM       guest_EAX
-#define VGP_SYSCALL_ARG1      guest_EBX
-#define VGP_SYSCALL_ARG2      guest_ECX
-#define VGP_SYSCALL_ARG3      guest_EDX
-#define VGP_SYSCALL_ARG4      guest_ESI
-#define VGP_SYSCALL_ARG5      guest_EDI
-#define VGP_SYSCALL_ARG6      guest_EBP
-#define VGP_SYSCALL_RET       guest_EAX
-
-// Setting a syscall result
-#define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_EAX = (val))
-
-// For informing tools that a syscall result has been set.
-#define VGP_TRACK_SYSCALL_RETVAL(zztid) \
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord) );
-
-/* ---------------------------------------------------------------------
    Exports of vg_ldt.c
    ------------------------------------------------------------------ */
 

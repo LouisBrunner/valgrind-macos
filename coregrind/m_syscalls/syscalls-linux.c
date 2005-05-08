@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Linux-specific syscalls, etc.               linux/syscalls.c ---*/
+/*--- Linux-specific syscalls, etc.               syscalls-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "priv_syscalls.h"
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for arch-generic, Linux-specific syscalls

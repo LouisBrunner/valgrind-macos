@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific syscalls stuff.     amd64-linux/syscalls.c ---*/
+/*--- Platform-specific syscalls stuff.     syscalls-amd64-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,8 +30,10 @@
 
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
-#include "pub_core_sigframe.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_sigframe.h"
+#include "pub_core_syscalls.h"
+#include "priv_syscalls.h"
 
 
 /* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */
@@ -1156,7 +1158,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    LINXY(__NR_io_cancel,         sys_io_cancel),      // 210 
    //   (__NR_get_thread_area,   sys_ni_syscall),     // 211 
    //   (__NR_lookup_dcookie,    sys_lookup_dcookie), // 212 
-   LINXY(__NR_epoll_create,      sys_epoll_create),   // 213 
+   //   (__NR_epoll_create,      sys_epoll_create),   // 213 
    //   (__NR_epoll_ctl_old,     sys_ni_syscall),     // 214 
 
    //   (__NR_epoll_wait_old,    sys_ni_syscall),     // 215 
@@ -1179,8 +1181,8 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_clock_nanosleep,   sys_clock_nanosleep),// 230 
    LINX_(__NR_exit_group,        sys_exit_group),     // 231 
-   LINXY(__NR_epoll_wait,        sys_epoll_wait),     // 232 
-   LINX_(__NR_epoll_ctl,         sys_epoll_ctl),      // 233 
+   //   (__NR_epoll_wait,        sys_epoll_wait),     // 232 
+   //   (__NR_epoll_ctl,         sys_epoll_ctl),      // 233 
    LINXY(__NR_tgkill,            sys_tgkill),         // 234 
 
    //   (__NR_utimes,            sys_utimes),         // 235 
@@ -1209,5 +1211,5 @@ const UInt VGA_(syscall_table_size) =
 //}
 
 /*--------------------------------------------------------------------*/
-/*--- end                                   amd64-linux/syscalls.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

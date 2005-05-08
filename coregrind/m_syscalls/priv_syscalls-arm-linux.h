@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific stuff for the core.                        ---*/
-/*---                                    arm-linux/core_platform.h ---*/
+/*--- ARM/Linux-specific syscall stuff.  priv_syscalls-arm-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,35 +28,30 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __ARM_LINUX_CORE_PLATFORM_H
-#define __ARM_LINUX_CORE_PLATFORM_H
+#ifndef __PRIV_SYSCALLS_ARM_LINUX_H
+#define __PRIV_SYSCALLS_ARM_LINUX_H
 
-//#include "core_platform_asm.h"    // platform-specific asm  stuff
-//#include "platform_arch.h"        // platform-specific tool stuff
+// Accessors for the ThreadArchState
+#define VGP_SYSCALL_NUM       guest_SYSCALLNO
+#define VGP_SYSCALL_ARG1      guest_R0
+#define VGP_SYSCALL_ARG2      guest_R1
+#define VGP_SYSCALL_ARG3      guest_R2
+#define VGP_SYSCALL_ARG4      guest_R3
+#define VGP_SYSCALL_ARG5      guest_R4
+#define VGP_SYSCALL_ARG6      guest_R5
+#define VGP_SYSCALL_RET       guest_R0 // ToDo XXX ????????
 
-/* ---------------------------------------------------------------------
-   ucontext stuff
-   ------------------------------------------------------------------ */
+// ToDo XXX ????????
+#define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_R0 = (val))
 
-#define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
-#define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.arm_sp)
-#define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
-#define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
+// For informing tools that a syscall result has been set.
+// XXX ToDo: not sure about this
+#define VGP_TRACK_SYSCALL_RETVAL(zztid) \
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord) );
 
-/* ---------------------------------------------------------------------
-   mmap() stuff
-   ------------------------------------------------------------------ */
-
-#define VGP_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
-   I_die_here; \
-} while (0)
-
-#define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do { \
-   I_die_here; \
-} while (0)
-
-#endif   // __ARM_LINUX_CORE_PLATFORM_H
+#endif   // __PRIV_SYSCALLS_ARM_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

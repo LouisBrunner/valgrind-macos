@@ -70,12 +70,6 @@ extern VGA_REGPARM(1) UWord MC_(helperc_LOADV2)  ( Addr );
 extern VGA_REGPARM(1) UWord MC_(helperc_LOADV4)  ( Addr );
 extern VGA_REGPARM(1) ULong MC_(helperc_LOADV8)  ( Addr );
 
-/* Functions defined in mc_errcontext.c */
-extern void MC_(record_value_error)  ( ThreadId tid, Int size );
-extern void MC_(record_user_error)   ( ThreadId tid, Addr a, Bool isWrite,
-                                       Bool isUnaddr );
-
-
 #endif
 
 /*--------------------------------------------------------------------*/

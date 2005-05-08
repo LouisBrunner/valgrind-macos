@@ -1206,6 +1206,122 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
 
 
 /*------------------------------------------------------------*/
+/*--- Printing errors                                      ---*/
+/*------------------------------------------------------------*/
+
+void TL_(pp_Error) ( Error* err )
+{
+   MAC_Error* err_extra = VG_(get_error_extra)(err);
+
+   switch (VG_(get_error_kind)(err)) {
+      case CoreMemErr: {
+         Char* s = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
+         VG_(message)(Vg_UserMsg, "%s contains %s byte(s)", 
+                      VG_(get_error_string)(err), s);
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         break;
+      
+      } 
+      
+      case ValueErr:
+         if (err_extra->size == 0) {
+             VG_(message)(Vg_UserMsg,
+                "Conditional jump or move depends on uninitialised value(s)");
+         } else {
+             VG_(message)(Vg_UserMsg,
+                          "Use of uninitialised value of size %d",
+                          err_extra->size);
+         }
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         break;
+
+      case ParamErr: {
+         Bool isReg = ( Register == err_extra->addrinfo.akind );
+         Char* s1 = ( isReg ? "contains" : "points to" );
+         Char* s2 = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
+         if (isReg) tl_assert(!err_extra->isUnaddr);
+
+         VG_(message)(Vg_UserMsg, "Syscall param %s %s %s byte(s)",
+                      VG_(get_error_string)(err), s1, s2);
+
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         break;
+      }
+      case UserErr: {
+         Char* s = ( err_extra->isUnaddr ? "Unaddressable" : "Uninitialised" );
+
+         VG_(message)(Vg_UserMsg, 
+            "%s byte(s) found during client check request", s);
+
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         break;
+      }
+      default: 
+         MAC_(pp_shared_Error)(err);
+         break;
+   }
+}
+
+/*------------------------------------------------------------*/
+/*--- Recording errors                                     ---*/
+/*------------------------------------------------------------*/
+
+/* Creates a copy of the `extra' part, updates the copy with address info if
+   necessary, and returns the copy. */
+/* This one called from generated code and non-generated code. */
+void mc_record_value_error ( ThreadId tid, Int size )
+{
+   MAC_Error err_extra;
+
+   MAC_(clear_MAC_Error)( &err_extra );
+   err_extra.size     = size;
+   err_extra.isUnaddr = False;
+   VG_(maybe_record_error)( tid, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
+}
+
+/* This called from non-generated code */
+
+void mc_record_user_error ( ThreadId tid, Addr a, Bool isWrite,
+                            Bool isUnaddr )
+{
+   MAC_Error err_extra;
+
+   tl_assert(VG_INVALID_THREADID != tid);
+   MAC_(clear_MAC_Error)( &err_extra );
+   err_extra.addrinfo.akind = Undescribed;
+   err_extra.isUnaddr       = isUnaddr;
+   VG_(maybe_record_error)( tid, UserErr, a, /*s*/NULL, &err_extra );
+}
+
+/*------------------------------------------------------------*/
+/*--- Suppressions                                         ---*/
+/*------------------------------------------------------------*/
+
+Bool TL_(recognised_suppression) ( Char* name, Supp* su )
+{
+   SuppKind skind;
+
+   if (MAC_(shared_recognised_suppression)(name, su))
+      return True;
+
+   /* Extra suppressions not used by Addrcheck */
+   else if (VG_STREQ(name, "Cond"))    skind = Value0Supp;
+   else if (VG_STREQ(name, "Value0"))  skind = Value0Supp;/* backwards compat */
+   else if (VG_STREQ(name, "Value1"))  skind = Value1Supp;
+   else if (VG_STREQ(name, "Value2"))  skind = Value2Supp;
+   else if (VG_STREQ(name, "Value4"))  skind = Value4Supp;
+   else if (VG_STREQ(name, "Value8"))  skind = Value8Supp;
+   else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
+   else 
+      return False;
+
+   VG_(set_supp_kind)(su, skind);
+   return True;
+}
+
+/*------------------------------------------------------------*/
 /*--- Functions called directly from generated code:       ---*/
 /*--- Load/store handlers.                                 ---*/
 /*------------------------------------------------------------*/
@@ -1605,27 +1721,27 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
 
 void MC_(helperc_value_check0_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_running_tid)(), 0 );
+   mc_record_value_error ( VG_(get_running_tid)(), 0 );
 }
 
 void MC_(helperc_value_check1_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_running_tid)(), 1 );
+   mc_record_value_error ( VG_(get_running_tid)(), 1 );
 }
 
 void MC_(helperc_value_check4_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_running_tid)(), 4 );
+   mc_record_value_error ( VG_(get_running_tid)(), 4 );
 }
 
 void MC_(helperc_value_check8_fail) ( void )
 {
-   MC_(record_value_error) ( VG_(get_running_tid)(), 8 );
+   mc_record_value_error ( VG_(get_running_tid)(), 8 );
 }
 
 VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 {
-   MC_(record_value_error) ( VG_(get_running_tid)(), (Int)sz );
+   mc_record_value_error ( VG_(get_running_tid)(), (Int)sz );
 }
 
 
@@ -1687,7 +1803,7 @@ VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 //zz       /* setting */
 //zz       for (i = 0; i < szW; i++) {
 //zz          if (get_vbytes4_ALIGNED( (Addr)&vbits[i] ) != VGM_WORD_VALID)
-//zz             MC_(record_value_error)(tid, 4);
+//zz             mc_record_value_error(tid, 4);
 //zz          set_vbytes4_ALIGNED( (Addr)&data[i], vbits[i] );
 //zz       }
 //zz    } else {
@@ -2108,8 +2224,8 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
          ok = mc_check_writable ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/True,
-                                     /*isUnaddr*/True );
+            mc_record_user_error ( tid, bad_addr, /*isWrite*/True,
+                                   /*isUnaddr*/True );
          *ret = ok ? (UWord)NULL : bad_addr;
 	 break;
 
@@ -2117,11 +2233,11 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
          MC_ReadResult res;
          res = mc_check_readable ( arg[1], arg[2], &bad_addr );
          if (MC_AddrErr == res)
-            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/False,
-                                     /*isUnaddr*/True );
+            mc_record_user_error ( tid, bad_addr, /*isWrite*/False,
+                                   /*isUnaddr*/True );
          else if (MC_ValueErr == res)
-            MC_(record_user_error) ( tid, bad_addr, /*isWrite*/False,
-                                     /*isUnaddr*/False );
+            mc_record_user_error ( tid, bad_addr, /*isWrite*/False,
+                                   /*isUnaddr*/False );
          *ret = ( res==MC_Ok ? (UWord)NULL : bad_addr );
 	 break;
       }

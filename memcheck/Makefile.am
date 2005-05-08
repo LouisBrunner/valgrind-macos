@@ -17,7 +17,6 @@ vgtool_memcheck_so_SOURCES = \
 	mac_leakcheck.c \
 	mac_malloc_wrappers.c \
 	mac_needs.c \
-	mc_errcontext.c \
 	mc_main.c \
 	mc_translate.c
 vgtool_memcheck_so_LDFLAGS = -shared

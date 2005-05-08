@@ -4512,8 +4512,9 @@ PRE(old_mmap, Special)
    }
 
    if (RES != -VKI_ENOMEM) {
-      VGP_DO_MMAP(RES, a1, a2, a3, a4, a5, a6);
-      SET_RESULT(RES);
+      int res;
+      VGP_DO_MMAP(res, a1, a2, a3, a4, a5, a6);
+      SET_RESULT(res);
 
       if (!VG_(is_kerror)(RES)) {
          vg_assert(VG_(valid_client_addr)(RES, a2, tid, "old_mmap"));
@@ -5607,8 +5608,7 @@ PRE(sys_sigaltstack, Special)
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );
    }
 
-   VG_(do_sys_sigaltstack) (tid);
-   SET_RESULT(RES); /* sigh */
+   SET_RESULT( VG_(do_sys_sigaltstack) (tid) );
 }
 
 POST(sys_sigaltstack)
@@ -5675,11 +5675,11 @@ PRE(sys_sigprocmask, Special)
    if (set)
       bigger_set.sig[0] = *(vki_old_sigset_t*)set;
 
-   VG_(do_sys_sigprocmask) ( tid, 
-                             ARG1 /*how*/, 
-                             set ? &bigger_set : NULL,
-                             oldset ? &bigger_oldset : NULL);
-   SET_RESULT(RES);
+   SET_RESULT(
+      VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
+                                set ? &bigger_set    : NULL,
+                             oldset ? &bigger_oldset : NULL)
+   );
 
    if (oldset)
       *oldset = bigger_oldset.sig[0];
@@ -5707,12 +5707,10 @@ PRE(sys_rt_sigprocmask, Special)
    if (sizeof(vki_sigset_t) != ARG4)
       SET_RESULT( -VKI_EMFILE );
    else {
-      VG_(do_sys_sigprocmask) ( tid, 
-				ARG1 /*how*/, 
-				(vki_sigset_t*) ARG2,
-				(vki_sigset_t*) ARG3 );
-      /* Mark that the result is set. */
-      SET_RESULT(RES);
+      SET_RESULT( VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
+                                            (vki_sigset_t*) ARG2,
+                                            (vki_sigset_t*) ARG3 )
+      );
    }
 }
 
@@ -6167,6 +6165,9 @@ void VG_(client_syscall) ( ThreadId tid )
 
    vg_assert(VG_(is_running_thread)(tid));
 
+   // The RES part is redundant -- we're assigning the value to itself --
+   // but we need this call to tell the tool that the assignment has
+   // occurred.
    SET_SYSCALL_RETVAL(tid, RES);
 
    VG_(post_syscall)(tid);
@@ -6182,95 +6183,6 @@ void VG_(client_syscall) ( ThreadId tid )
 
    VGP_POPCC(VgpCoreSysWrap);
 }
-
-//static void restart_syscall(ThreadId tid)
-//{
-//   ThreadState* tst;
-//   tst = VG_(get_ThreadState)(tid);
-//
-//   vg_assert(tst != NULL);
-//   vg_assert(tst->status == VgTs_WaitSys);
-//   vg_assert(tst->syscallno != -1);
-//
-//   SYSNO = tst->syscallno;
-//   VGA_(restart_syscall)(&tst->arch);
-//}
-
-// svn version of post_syscall
-//void VG_(post_syscall) ( ThreadId tid, Bool restart )
-//{
-//   ThreadState* tst;
-//   UInt syscallno, flags;
-//   const struct SyscallTableEntry *sys;
-//   Bool isSpecial = False;
-//   Bool restarted = False;
-//
-//   VGP_PUSHCC(VgpCoreSysWrap);
-//
-//   tst = VG_(get_ThreadState)(tid);
-//   vg_assert(tst->tid == tid);
-//
-//   /* Tell the tool about the syscall return value */
-//   SET_SYSCALL_RETVAL(tst->tid, RES);
-//
-//   syscallno = tst->syscallno;
-//
-//   vg_assert(syscallno != -1);			/* must be a current syscall */
-//
-//   if (syscallno < VGA_(syscall_table_size) &&
-//       VGA_(syscall_table)[syscallno].before != NULL)
-//   {
-//      sys = &VGA_(syscall_table)[syscallno];
-//   } else {
-//      sys = &bad_sys;
-//   }
-//   flags = *(sys->flags_ptr);
-//
-//   isSpecial = flags & Special;
-//
-//   if (RES == -VKI_ERESTARTSYS) {
-//      /* Applications never expect to see this, so we should either
-//	 restart the syscall or fail it with EINTR, depending on what
-//	 our caller wants.  Generally they'll want to restart, but if
-//	 client set the signal state to not restart, then we fail with
-//	 EINTR.  Either way, ERESTARTSYS means the syscall made no
-//	 progress, and so can be failed or restarted without
-//	 consequence. */
-//      if (0)
-//	 VG_(printf)("syscall %d returned ERESTARTSYS; restart=%d\n",
-//		     syscallno, restart);
-//
-//      if (restart) {
-//	 restarted = True;
-//	 restart_syscall(tid);
-//      } else
-//	 RES = -VKI_EINTR;
-//   } 
-//
-//   if (!restarted) {
-//      if (sys->after != NULL &&
-//          ((tst->sys_flags & PostOnFail) != 0 || !VG_(is_kerror)(RES)))
-//	 (sys->after)(tst->tid, tst);
-//
-//      /* Do any post-syscall actions
-//
-//	 NOTE: this is only called if the syscall completed.  If the
-//	 syscall was restarted, then it will call the Tool's
-//	 pre_syscall again, without calling post_syscall (ie, more
-//	 pre's than post's)
-//       */
-//      if (VG_(needs).syscall_wrapper) {
-//	 VGP_PUSHCC(VgpToolSysWrap);
-//	 TL_(post_syscall)(tid, syscallno, RES);
-//	 VGP_POPCC(VgpToolSysWrap);
-//      }
-//   }
-//
-//   tst->status = VgTs_Runnable;	/* runnable again */
-//   tst->syscallno = -1;		/* no current syscall */
-//
-//   VGP_POPCC(VgpCoreSysWrap);
-//}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

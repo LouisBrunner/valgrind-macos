@@ -738,13 +738,13 @@ extern Bool VG_(is_sig_ign) ( Int sigNo );
 extern void VG_(poll_signals) ( ThreadId );
 
 /* Fake system calls for signal handling. */
-extern void VG_(do_sys_sigaltstack)   ( ThreadId tid );
-extern Int  VG_(do_sys_sigaction)     ( Int signo, 
-					const struct vki_sigaction *new_act, 
-					struct vki_sigaction *old_act );
-extern void VG_(do_sys_sigprocmask)   ( ThreadId tid, Int how, 
-                                        vki_sigset_t* set,
-                                        vki_sigset_t* oldset );
+extern Int VG_(do_sys_sigaltstack)   ( ThreadId tid );
+extern Int VG_(do_sys_sigaction)     ( Int signo, 
+                                       const struct vki_sigaction *new_act, 
+                                       struct vki_sigaction *old_act );
+extern Int VG_(do_sys_sigprocmask)   ( ThreadId tid, Int how, 
+                                       vki_sigset_t* set,
+                                       vki_sigset_t* oldset );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 
@@ -1074,6 +1074,7 @@ Bool VG_(do_sigkill)(Int pid, Int tgid);
 #define ARG5    SYSCALL_ARG5(tst->arch)
 #define ARG6    SYSCALL_ARG6(tst->arch)
 
+// For setting the result of a syscall in a wrapper
 #define SET_RESULT(val)                            \
    do { VGP_SET_SYSCALL_RESULT(tst->arch, (val));  \
         tst->syscall_result_set = True;            \

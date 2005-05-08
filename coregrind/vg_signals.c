@@ -429,7 +429,7 @@ static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 }
 
 
-void VG_(do_sys_sigaltstack) ( ThreadId tid )
+Int VG_(do_sys_sigaltstack) ( ThreadId tid )
 {
    vki_stack_t* ss;
    vki_stack_t* oss;
@@ -454,21 +454,18 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
 
    if (ss != NULL) {
       if (on_sig_stack(tid, STACK_PTR(VG_(threads)[tid].arch))) {
-         SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
-         return;
+         return -VKI_EPERM;
       }
       if (ss->ss_flags != VKI_SS_DISABLE 
           && ss->ss_flags != VKI_SS_ONSTACK 
           && ss->ss_flags != 0) {
-         SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
-         return;
+         return -VKI_EINVAL;
       }
       if (ss->ss_flags == VKI_SS_DISABLE) {
          VG_(threads)[tid].altstack.ss_flags = VKI_SS_DISABLE;
       } else {
          if (ss->ss_size < VKI_MINSIGSTKSZ) {
-            SET_SYSCALL_RETVAL(tid, -VKI_ENOMEM);
-            return;
+            return -VKI_ENOMEM;
          }
 
 	 VG_(threads)[tid].altstack.ss_sp    = ss->ss_sp;
@@ -476,7 +473,7 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
 	 VG_(threads)[tid].altstack.ss_flags = 0;
       }
    }
-   SET_SYSCALL_RETVAL(tid, 0);
+   return 0;
 }
 
 
@@ -701,7 +698,7 @@ void do_setmask ( ThreadId tid,
 }
 
 
-void VG_(do_sys_sigprocmask) ( ThreadId tid,
+int VG_(do_sys_sigprocmask) ( ThreadId tid,
                                Int how, 
                                vki_sigset_t* set,
                                vki_sigset_t* oldset )
@@ -712,15 +709,13 @@ void VG_(do_sys_sigprocmask) ( ThreadId tid,
    case VKI_SIG_SETMASK:
       vg_assert(VG_(is_valid_tid)(tid));
       do_setmask ( tid, how, set, oldset );
-      SET_SYSCALL_RETVAL(tid, 0);
       VG_(poll_signals)(tid);	/* look for any newly deliverable signals */
-      break;
+      return 0;
 
    default:
       VG_(message)(Vg_DebugMsg, 
                   "sigprocmask: unknown `how' field %d", how);
-      SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
-      break;
+      return -VKI_EINVAL;
    }
 }
 

@@ -52,7 +52,8 @@
 // Setting a syscall result
 #define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_EAX = (val))
 
-// Setting thread regs and shadow regs from within the core
+// For setting thread regs and shadow regs from within the core, once a
+// syscall has completed.
 #define SET_SYSCALL_RETVAL(zztid, zzval) \
    SET_THREAD_REG(zztid, zzval, SYSCALL_RET, post_reg_write, \
                   Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord))

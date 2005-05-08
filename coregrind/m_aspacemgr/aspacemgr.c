@@ -1042,7 +1042,7 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    the kernel as the stack pointer moves down.  Initially, a 1-page
    (4k) stack is allocated.  When SP moves below that for the first
    time, presumably a page fault occurs.  The kernel detects that the
-   faulting address is in the range from SP - VGA_STACK_REDZONE_SIZE
+   faulting address is in the range from SP - VGA_STACK_REDZONE_SZB
    upwards to the current valid stack.  It then extends the stack
    segment downwards for enough to cover the faulting address, and
    resumes the process (invisibly).  The process is unaware of any of
@@ -1062,12 +1062,12 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    When SP goes back up, mark the area receded over as unreadable and
    unwritable.
 
-   Just to record the SP boundary conditions somewhere convenient: SP
-   - VGA_STACK_REDZONE_SIZE always points to the lowest live byte in
-   the stack.  All addresses below SP - VGA_STACK_REDZONE_SIZE are not
+   Just to record the SP boundary conditions somewhere convenient: 
+   SP - VGA_STACK_REDZONE_SZB always points to the lowest live byte in
+   the stack.  All addresses below SP - VGA_STACK_REDZONE_SZB are not
    live; those at and above it are.
 
-   We do not concern ourselves here with the VGA_STACK_REDZONE_SIZE
+   We do not concern ourselves here with the VGA_STACK_REDZONE_SZB
    bias; that is handled by new_mem_stack/die_mem_stack.
 */
 

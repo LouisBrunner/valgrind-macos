@@ -36,8 +36,8 @@
 
 #define VGA_REGPARM(n)
 
-#define VGA_MIN_INSTR_SIZE    4
-#define VGA_MAX_INSTR_SIZE    4 
+#define VGA_MIN_INSTR_SZB     4
+#define VGA_MAX_INSTR_SZB     4 
 
 #endif   // __ARM_TOOL_ARCH_H
 

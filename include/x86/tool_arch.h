@@ -34,14 +34,14 @@
 #define VGA_REGPARM(n)      __attribute__((regparm(n)))
 
 
-#define VGA_MIN_INSTR_SIZE    1
-#define VGA_MAX_INSTR_SIZE   16
+#define VGA_MIN_INSTR_SZB    1
+#define VGA_MAX_INSTR_SZB   16
 
 
 /* How many bytes below the stack pointer are validly addressible?
    On x86, the answer is: none.
 */
-#define VGA_STACK_REDZONE_SIZE 0
+#define VGA_STACK_REDZONE_SZB    0
 
 
 #endif   // __X86_TOOL_ARCH_H

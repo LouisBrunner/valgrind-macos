@@ -535,8 +535,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
 
    // Nb: instrLen will be zero if Vex failed to decode it.
    tl_assert( 0 == instrLen ||
-              (instrLen >= VGA_MIN_INSTR_SIZE && 
-               instrLen <= VGA_MAX_INSTR_SIZE) );
+              (instrLen >= VGA_MIN_INSTR_SZB && 
+               instrLen <= VGA_MAX_INSTR_SZB) );
 
    // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
    // done inaccurately, but they're very rare and this avoids errors from

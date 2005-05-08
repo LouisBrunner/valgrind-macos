@@ -34,14 +34,14 @@
 #define VGA_REGPARM(n)  /* */
 
 
-#define VGA_MIN_INSTR_SIZE    1
-#define VGA_MAX_INSTR_SIZE   16
+#define VGA_MIN_INSTR_SZB     1
+#define VGA_MAX_INSTR_SZB    16
 
 
 /* How many bytes below the stack pointer are validly addressible?
    On amd64, the answer is: 128.
 */
-#define VGA_STACK_REDZONE_SIZE 128
+#define VGA_STACK_REDZONE_SZB    128
 
 
 #endif   // __AMD64_TOOL_ARCH_H

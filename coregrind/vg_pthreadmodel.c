@@ -201,9 +201,19 @@ static void *before_pthread_create(va_list va)
    // [Possible: When using a tool that replaces malloc(), we want to call
    //  the replacement version.  Otherwise, we want to use VG_(cli_malloc)().
    //  So we go via the default version of TL_(malloc)() in vg_default?]
-   VG_(tl_malloc_called_deliberately) = True;
-   data = TL_(malloc)(sizeof(*data));
-   VG_(tl_malloc_called_deliberately) = False;
+   tl_assert2(0, "read the comment in the code about this...");
+
+   // XXX: These three lines are going to have to change.  They relied on
+   // TL_(malloc) being a weak symbol, and it just doesn't fit with the
+   // VG_(tdict) approach that we've switched to.  The right way to do this
+   // will be to provide a function in the core that checks if
+   // VG_(tdict).malloc_malloc has been set (or perhaps it would be better
+   // to check whether VG_USERREQ__GET_MALLOCFUNCS has been called, ie.
+   // whether replace_malloc.c:init() has been called);  if so, it should
+   // call it, if not, it should call VG_(cli_malloc)().
+//   VG_(tl_malloc_called_deliberately) = True;
+//   data = TL_(malloc)(sizeof(*data));
+//   VG_(tl_malloc_called_deliberately) = False;
 
    VG_TRACK(pre_mem_write, Vg_CorePThread, tst->tid, "new thread data",
 	    (Addr)data, sizeof(*data));

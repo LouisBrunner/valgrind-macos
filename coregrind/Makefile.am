@@ -75,7 +75,6 @@ stage2_SOURCES = \
 	ume.c \
 	\
 	vg_scheduler.c \
-	vg_default.c \
 	vg_demangle.c \
 	vg_hashtable.c \
 	vg_replace_malloc.c \

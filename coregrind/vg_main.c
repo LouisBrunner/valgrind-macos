@@ -2872,7 +2872,21 @@ void VG_(shutdown_actions)(ThreadId tid)
    /* Print Vex storage stats */
    if (0)
        LibVEX_ShowAllocStats();
+}
 
+/* If the tool fails to define one or more of the required functions,
+ * make it very clear what went wrong! */
+// XXX: this is not a very good place for this function.  Hopefully we'll be
+// able to remove it in the future.
+__attribute__ ((noreturn))
+void VG_(missing_tool_func) ( const Char* fn )
+{
+   VG_(printf)(
+      "\nTool error:\n"
+      "  The tool you have selected is missing the function `%s',\n"
+      "  which is required.\n\n",
+      fn);
+   VG_(tool_panic)("Missing tool function");
 }
 
 /*--------------------------------------------------------------------*/

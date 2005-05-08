@@ -30,7 +30,6 @@
 */
 
 #include "core_asm.h"
-#include "amd64_private_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_amd64_RIP */
 
 

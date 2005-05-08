@@ -287,10 +287,13 @@ UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 
+/* Client address space segment limit descriptor entry */
+#define POINTERCHECK_SEGIDX  1
+
 Bool VGA_(setup_pointercheck)(void)
 {
    vki_modify_ldt_t ldt = { 
-      VG_POINTERCHECK_SEGIDX,    // entry_number
+      POINTERCHECK_SEGIDX,       // entry_number
       VG_(client_base),          // base_addr
       (VG_(client_end)-VG_(client_base)) / VKI_PAGE_SIZE, // limit
       1,                         // seg_32bit

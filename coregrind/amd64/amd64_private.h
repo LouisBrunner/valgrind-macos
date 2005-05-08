@@ -32,7 +32,6 @@
 #define __AMD64_PRIVATE_H
 
 #include "core_arch_asm.h"       // arch-specific asm  stuff
-#include "amd64_private_asm.h"   // private arch-specific asm stuff
 #include "tool_arch.h"           // arch-specific tool stuff
 
 /* ---------------------------------------------------------------------

@@ -32,7 +32,6 @@
 #define __X86_PRIVATE_H
 
 #include "core_arch_asm.h"    // arch-specific asm  stuff
-#include "x86_private_asm.h"  // private arch-specific asm stuff
 #include "tool_arch.h"        // arch-specific tool stuff
 
 #include "libvex_guest_x86.h" // for VexGuestX86SegDescr

@@ -358,16 +358,6 @@ Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
-/* Terminate this single thread */
-void VG_(exit_single)( Int status )
-{
-   (void)VG_(do_syscall1)(__NR_exit, status );
-   /* Why are we still alive here? */
-   /*NOTREACHED*/
-   *(volatile Int *)0 = 'x';
-   vg_assert(2+2 == 5);
-}
-
 /* Pull down the entire world */
 void VG_(exit)( Int status )
 {

@@ -333,10 +333,6 @@ extern void* VG_(realloc)        ( void* p, SizeT size );
 extern void VG_(exit)( Int status )
             __attribute__ ((__noreturn__));
 
-/* terminate the calling thread - probably not what you want */
-extern void  VG_(exit_single)( Int status )
-             __attribute__ ((__noreturn__));
-
 /* Prints a panic message (a constant string), appends newline and bug
    reporting info, aborts. */
 __attribute__ ((__noreturn__))

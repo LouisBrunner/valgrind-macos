@@ -558,30 +558,30 @@ HChar* showAMD64ShiftOp ( AMD64ShiftOp op ) {
    }
 }
 
-//.. HChar* showAMD64FpOp ( AMD64FpOp op ) {
-//..    switch (op) {
+HChar* showA87FpOp ( A87FpOp op ) {
+   switch (op) {
 //..       case Xfp_ADD:    return "add";
 //..       case Xfp_SUB:    return "sub";
 //..       case Xfp_MUL:    return "mul";
 //..       case Xfp_DIV:    return "div";
-//..       case Xfp_SCALE:  return "scale";
-//..       case Xfp_ATAN:   return "atan";
-//..       case Xfp_YL2X:   return "yl2x";
+      case Afp_SCALE:  return "scale";
+      case Afp_ATAN:   return "atan";
+      case Afp_YL2X:   return "yl2x";
 //..       case Xfp_YL2XP1: return "yl2xp1";
 //..       case Xfp_PREM:   return "prem";
 //..       case Xfp_PREM1:  return "prem1";
-//..       case Xfp_SQRT:   return "sqrt";
+      case Afp_SQRT:   return "sqrt";
 //..       case Xfp_ABS:    return "abs";
 //..       case Xfp_NEG:    return "chs";
 //..       case Xfp_MOV:    return "mov";
-//..       case Xfp_SIN:    return "sin";
-//..       case Xfp_COS:    return "cos";
+      case Afp_SIN:    return "sin";
+      case Afp_COS:    return "cos";
 //..       case Xfp_TAN:    return "tan";
-//..       case Xfp_ROUND:  return "round";
-//..       case Xfp_2XM1:   return "2xm1";
-//..       default: vpanic("showAMD64FpOp");
-//..    }
-//.. }
+      case Afp_ROUND:  return "round";
+      case Afp_2XM1:   return "2xm1";
+      default: vpanic("showA87FpOp");
+   }
+}
 
 HChar* showAMD64SseOp ( AMD64SseOp op ) {
    switch (op) {
@@ -807,8 +807,38 @@ AMD64Instr* AMD64Instr_Bsfr64 ( Bool isFwds, HReg src, HReg dst ) {
 }
 AMD64Instr* AMD64Instr_MFence ( void )
 {
-   AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
-   i->tag                = Ain_MFence;
+   AMD64Instr* i = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag        = Ain_MFence;
+   return i;
+}
+AMD64Instr* AMD64Instr_A87Free ( Int nregs )
+{
+   AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag               = Ain_A87Free;
+   i->Ain.A87Free.nregs = nregs;
+   vassert(nregs >= 1 && nregs <= 7);
+   return i;
+}
+AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush )
+{
+   AMD64Instr* i            = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag                   = Ain_A87PushPop;
+   i->Ain.A87PushPop.addr   = addr;
+   i->Ain.A87PushPop.isPush = isPush;
+   return i;
+}
+AMD64Instr* AMD64Instr_A87FpOp ( A87FpOp op )
+{
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_A87FpOp;
+   i->Ain.A87FpOp.op = op;
+   return i;
+}
+AMD64Instr* AMD64Instr_A87LdCW ( AMD64AMode* addr )
+{
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_A87LdCW;
+   i->Ain.A87LdCW.addr = addr;
    return i;
 }
 
@@ -1147,6 +1177,20 @@ void ppAMD64Instr ( AMD64Instr* i )
       case Ain_MFence:
          vex_printf("mfence" );
          return;
+      case Ain_A87Free:
+         vex_printf("ffree %%st(7..%d)\n", 7 - i->Ain.A87Free.nregs );
+         break;
+      case Ain_A87PushPop:
+         vex_printf(i->Ain.A87PushPop.isPush ? "fldl " : "fstpl ");
+         ppAMD64AMode(i->Ain.A87PushPop.addr);
+         break;
+      case Ain_A87FpOp:
+         vex_printf("f%s\n", showA87FpOp(i->Ain.A87FpOp.op));
+         break;
+      case Ain_A87LdCW:
+         vex_printf("fldcw ");
+         ppAMD64AMode(i->Ain.A87LdCW.addr);
+         break;
 //..       case Xin_FpUnary:
 //..          vex_printf("g%sD ", showAMD64FpOp(i->Xin.FpUnary.op));
 //..          ppHRegAMD64(i->Xin.FpUnary.src);
@@ -1457,6 +1501,16 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          return;
       case Ain_MFence:
          return;
+      case Ain_A87Free:
+         return;
+      case Ain_A87PushPop:
+         addRegUsage_AMD64AMode(u, i->Ain.A87PushPop.addr);
+         return;
+      case Ain_A87FpOp:
+         return;
+      case Ain_A87LdCW:
+         addRegUsage_AMD64AMode(u, i->Ain.A87LdCW.addr);
+         return;
 //..       case Xin_FpUnary:
 //..          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1583,7 +1637,7 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 }
 
 /* local helper */
-static void mapReg(HRegRemap* m, HReg* r)
+static inline void mapReg(HRegRemap* m, HReg* r)
 {
    *r = lookupHRegRemap(m, *r);
 }
@@ -1654,6 +1708,16 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapReg(m, &i->Ain.Bsfr64.dst);
          return;
       case Ain_MFence:
+         return;
+      case Ain_A87Free:
+         return;
+      case Ain_A87PushPop:
+         mapRegs_AMD64AMode(m, i->Ain.A87PushPop.addr);
+         return;
+      case Ain_A87FpOp:
+         return;
+      case Ain_A87LdCW:
+         mapRegs_AMD64AMode(m, i->Ain.A87LdCW.addr);
          return;
 //..       case Xin_FpUnary:
 //..          mapReg(m, &i->Xin.FpUnary.src);
@@ -2080,14 +2144,15 @@ static UChar rexAMode_R ( HReg greg, HReg ereg )
 }
 
 
-//.. /* Emit ffree %st(7) */
-//.. static UChar* do_ffree_st7 ( UChar* p )
-//.. {
-//..    *p++ = 0xDD;
-//..    *p++ = 0xC7;
-//..    return p;
-//.. }
-//.. 
+/* Emit ffree %st(N) */
+static UChar* do_ffree_st ( UChar* p, Int n )
+{
+   vassert(n >= 0 && n <= 7);
+   *p++ = 0xDD;
+   *p++ = toUChar(0xC0 + n);
+   return p;
+}
+
 //.. /* Emit fstp %st(i), 1 <= i <= 7 */
 //.. static UChar* do_fstp_st ( UChar* p, Int i )
 //.. {
@@ -2187,6 +2252,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
    UChar  rex;
    UChar* p = &buf[0];
    UChar* ptmp;
+   Int    j;
    vassert(nbuf >= 32);
 
    /* Wrap an integer as a int register, for use assembling
@@ -2742,6 +2808,51 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
    case Ain_MFence:
       /* mfence */
       *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+      goto done;
+
+   case Ain_A87Free:
+      vassert(i->Ain.A87Free.nregs > 0 && i->Ain.A87Free.nregs <= 7);
+      for (j = 0; j < i->Ain.A87Free.nregs; j++) {
+         p = do_ffree_st(p, 7-j);
+      }
+      goto done;
+
+   case Ain_A87PushPop:
+      if (i->Ain.A87PushPop.isPush) {
+         /* Load from memory into %st(0): fldl amode */
+         *p++ = clearWBit(
+                   rexAMode_M(fake(0), i->Ain.A87PushPop.addr) );
+         *p++ = 0xDD;
+	 p = doAMode_M(p, fake(0)/*subopcode*/, i->Ain.A87PushPop.addr);
+      } else {
+         /* Dump %st(0) to memory: fstpl amode */
+         *p++ = clearWBit(
+                   rexAMode_M(fake(3), i->Ain.A87PushPop.addr) );
+         *p++ = 0xDD;
+         p = doAMode_M(p, fake(3)/*subopcode*/, i->Ain.A87PushPop.addr);
+         goto done;
+      }
+      goto done;
+
+   case Ain_A87FpOp:
+      switch (i->Ain.A87FpOp.op) {
+         case Afp_SQRT:  *p++ = 0xD9; *p++ = 0xFA; break;
+         case Afp_SIN:   *p++ = 0xD9; *p++ = 0xFE; break;
+         case Afp_COS:   *p++ = 0xD9; *p++ = 0xFF; break;
+         case Afp_ROUND: *p++ = 0xD9; *p++ = 0xFC; break;
+         case Afp_2XM1:  *p++ = 0xD9; *p++ = 0xF0; break;
+         case Afp_SCALE: *p++ = 0xD9; *p++ = 0xFD; break;
+         case Afp_ATAN:  *p++ = 0xD9; *p++ = 0xF3; break;
+         case Afp_YL2X:  *p++ = 0xD9; *p++ = 0xF1; break;
+         default: goto bad;
+      }
+      goto done;
+
+   case Ain_A87LdCW:
+      *p++ = clearWBit(
+                rexAMode_M(fake(5), i->Ain.A87LdCW.addr) );
+      *p++ = 0xD9;
+      p = doAMode_M(p, fake(5)/*subopcode*/, i->Ain.A87LdCW.addr);
       goto done;
 
    case Ain_Store:

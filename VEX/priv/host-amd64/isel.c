@@ -618,20 +618,19 @@ void set_SSE_rounding_default ( ISelEnv* env )
    add_to_rsp(env, 8);
 }
 
-//.. /* Mess with the FPU's rounding mode: set to the default rounding mode
-//..    (DEFAULT_FPUCW). */
-//.. static 
-//.. void set_FPU_rounding_default ( ISelEnv* env )
-//.. {
-//..    /* pushl $DEFAULT_FPUCW
-//..       fldcw 0(%esp)
-//..       addl $4, %esp 
-//..    */
-//..    X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-//..    addInstr(env, X86Instr_Push(X86RMI_Imm(DEFAULT_FPUCW)));
-//..    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
-//..    add_to_esp(env, 4);
-//.. }
+/* Mess with the FPU's rounding mode: set to the default rounding mode
+   (DEFAULT_FPUCW). */
+static 
+void set_FPU_rounding_default ( ISelEnv* env )
+{
+   /* movq $DEFAULT_FPUCW, -8(%rsp)
+      fldcw -8(%esp)
+   */
+   AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+   addInstr(env, AMD64Instr_Alu64M(
+                    Aalu_MOV, AMD64RI_Imm(DEFAULT_FPUCW), m8_rsp));
+   addInstr(env, AMD64Instr_A87LdCW(m8_rsp));
+}
 
 
 /* Mess with the SSE unit's rounding mode: 'mode' is an I32-typed
@@ -669,34 +668,34 @@ void set_SSE_rounding_mode ( ISelEnv* env, IRExpr* mode )
 }
 
 
-//.. /* Mess with the FPU's rounding mode: 'mode' is an I32-typed
-//..    expression denoting a value in the range 0 .. 3, indicating a round
-//..    mode encoded as per type IRRoundingMode.  Set the x87 FPU to have
-//..    the same rounding.
-//.. */
-//.. static
-//.. void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
-//.. {
-//..    HReg rrm  = iselIntExpr_R(env, mode);
-//..    HReg rrm2 = newVRegI(env);
-//..    X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-//.. 
-//..    /* movl  %rrm, %rrm2
-//..       andl  $3, %rrm2   -- shouldn't be needed; paranoia
-//..       shll  $10, %rrm2
-//..       orl   $DEFAULT_FPUCW, %rrm2
-//..       pushl %rrm2
-//..       fldcw 0(%esp)
-//..       addl  $4, %esp
-//..    */
-//..    addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
-//..    addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
-//..    addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
-//..    addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(DEFAULT_FPUCW), rrm2));
-//..    addInstr(env, X86Instr_Push(X86RMI_Reg(rrm2)));
-//..    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
-//..    add_to_esp(env, 4);
-//.. }
+/* Mess with the FPU's rounding mode: 'mode' is an I32-typed
+   expression denoting a value in the range 0 .. 3, indicating a round
+   mode encoded as per type IRRoundingMode.  Set the x87 FPU to have
+   the same rounding.
+*/
+static
+void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
+{
+   HReg rrm  = iselIntExpr_R(env, mode);
+   HReg rrm2 = newVRegI(env);
+   AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+
+   /* movq  %rrm, %rrm2
+      andq  $3, %rrm2   -- shouldn't be needed; paranoia
+      shlq  $10, %rrm2
+      orq   $DEFAULT_FPUCW, %rrm2
+      movq  %rrm2, -8(%rsp)
+      fldcw -8(%esp)
+   */
+   addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
+   addInstr(env, AMD64Instr_Alu64R(Aalu_AND, AMD64RMI_Imm(3), rrm2));
+   addInstr(env, AMD64Instr_Sh64(Ash_SHL, 10, AMD64RM_Reg(rrm2)));
+   addInstr(env, AMD64Instr_Alu64R(Aalu_OR, 
+                                   AMD64RMI_Imm(DEFAULT_FPUCW), rrm2));
+   addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, 
+                                   AMD64RI_Reg(rrm2), m8_rsp));
+   addInstr(env, AMD64Instr_A87LdCW(m8_rsp));
+}
 
 
 /* Generate !src into a new vector register.  Amazing that there isn't
@@ -1315,7 +1314,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             sub_from_rsp(env, 16);
             addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, vec, rsp0));
             addInstr(env, AMD64Instr_Alu64R( Aalu_MOV, 
-                                           AMD64RMI_Mem(rspN), dst ));
+                                             AMD64RMI_Mem(rspN), dst ));
             add_to_rsp(env, 16);
             return dst;
          }
@@ -2811,25 +2810,73 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return res;
 //..       }
 //..    }
-//.. 
-//..    if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
-//..       HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
-//..       HReg dst = newVRegF(env);
-//.. 
-//..       /* rf now holds the value to be rounded.  The first thing to do
-//..          is set the FPU's rounding mode accordingly. */
-//.. 
-//..       /* Set host rounding mode */
-//..       set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
-//.. 
-//..       /* grndint %rf, %dst */
-//..       addInstr(env, X86Instr_FpUnary(Xfp_ROUND, rf, dst));
-//.. 
-//..       /* Restore default FPU rounding. */
-//..       set_FPU_rounding_default( env );
-//.. 
-//..       return dst;
-//..    }
+
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
+      AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+      HReg        arg    = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg        dst    = newVRegV(env);
+
+      /* rf now holds the value to be rounded.  The first thing to do
+         is set the FPU's rounding mode accordingly. */
+
+      /* Set host x87 rounding mode */
+      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+      addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
+      addInstr(env, AMD64Instr_A87Free(1));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+      addInstr(env, AMD64Instr_A87FpOp(Afp_ROUND));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+      addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
+
+      /* Restore default x87 rounding. */
+      set_FPU_rounding_default( env );
+
+      return dst;
+   }
+
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_ScaleF64
+           || e->Iex.Binop.op == Iop_AtanF64
+           || e->Iex.Binop.op == Iop_Yl2xF64)
+      ) {
+      AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+      HReg        arg1   = iselDblExpr(env, e->Iex.Binop.arg1);
+      HReg        arg2   = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg        dst    = newVRegV(env);
+      Bool     arg2first = toBool(e->Iex.Binop.op == Iop_ScaleF64);
+      addInstr(env, AMD64Instr_A87Free(2));
+
+      /* one arg -> top of x87 stack */
+      addInstr(env, AMD64Instr_SseLdSt(
+                       False/*store*/, 8, arg2first ? arg2 : arg1, m8_rsp));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+
+      /* other arg -> top of x87 stack */
+      addInstr(env, AMD64Instr_SseLdSt(
+                       False/*store*/, 8, arg2first ? arg1 : arg2, m8_rsp));
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+
+      /* do it */
+      switch (e->Iex.Binop.op) {
+         case Iop_ScaleF64: 
+            addInstr(env, AMD64Instr_A87FpOp(Afp_SCALE));
+            break;
+         case Iop_AtanF64: 
+            addInstr(env, AMD64Instr_A87FpOp(Afp_ATAN));
+            break;
+         case Iop_Yl2xF64: 
+            addInstr(env, AMD64Instr_A87FpOp(Afp_YL2X));
+            break;
+         default: 
+            vassert(0);
+      }
+
+      /* save result */
+      addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+      addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
+      return dst;
+   }
 
    if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_I64toF64) {
       HReg dst = newVRegV(env);
@@ -2874,28 +2921,31 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-//..    if (e->tag == Iex_Unop) {
-//..       X86FpOp fpop = Xfp_INVALID;
-//..       switch (e->Iex.Unop.op) {
+   if (e->tag == Iex_Unop) {
+      A87FpOp fpop = Afp_INVALID;
+      switch (e->Iex.Unop.op) {
 //..          case Iop_NegF64:  fpop = Xfp_NEG; break;
 //..          case Iop_AbsF64:  fpop = Xfp_ABS; break;
-//..          case Iop_SqrtF64: fpop = Xfp_SQRT; break;
-//..          case Iop_SinF64:  fpop = Xfp_SIN; break;
-//..          case Iop_CosF64:  fpop = Xfp_COS; break;
+         case Iop_SqrtF64: fpop = Afp_SQRT; break;
+         case Iop_SinF64:  fpop = Afp_SIN; break;
+         case Iop_CosF64:  fpop = Afp_COS; break;
 //..          case Iop_TanF64:  fpop = Xfp_TAN; break;
-//..          case Iop_2xm1F64: fpop = Xfp_2XM1; break;
-//..          default: break;
-//..       }
-//..       if (fpop != Xfp_INVALID) {
-//..          HReg res = newVRegF(env);
-//..          HReg src = iselDblExpr(env, e->Iex.Unop.arg);
-//..          addInstr(env, X86Instr_FpUnary(fpop,src,res));
-//.. 	 if (fpop != Xfp_SQRT
-//..              && fpop != Xfp_NEG && fpop != Xfp_ABS)
-//..             roundToF64(env, res);
-//..          return res;
-//..       }
-//..    }
+         case Iop_2xm1F64: fpop = Afp_2XM1; break;
+         default: break;
+      }
+      if (fpop != Afp_INVALID) {
+         AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+         HReg        arg    = iselDblExpr(env, e->Iex.Unop.arg);
+         HReg        dst    = newVRegV(env);
+         addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
+         addInstr(env, AMD64Instr_A87Free(1));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+         addInstr(env, AMD64Instr_A87FpOp(fpop));
+         addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+         addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
+         return dst;
+      }
+   }
 
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {

@@ -338,7 +338,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_DFLAG     offsetof(VexGuestAMD64State,guest_DFLAG)
 #define OFFB_IDFLAG    offsetof(VexGuestAMD64State,guest_IDFLAG)
 #define OFFB_FTOP      offsetof(VexGuestAMD64State,guest_FTOP)
-//.. #define OFFB_FC3210    offsetof(VexGuestX86State,guest_FC3210)
+#define OFFB_FC3210    offsetof(VexGuestAMD64State,guest_FC3210)
 #define OFFB_FPROUND   offsetof(VexGuestAMD64State,guest_FPROUND)
 //.. 
 //.. #define OFFB_CS        offsetof(VexGuestX86State,guest_CS)
@@ -4124,17 +4124,18 @@ static void put_ftop ( IRExpr* e )
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
-//.. /* --------- Get/put the C3210 bits. --------- */
-//.. 
-//.. static IRExpr* get_C3210 ( void )
-//.. {
-//..    return IRExpr_Get( OFFB_FC3210, Ity_I32 );
-//.. }
-//.. 
-//.. static void put_C3210 ( IRExpr* e )
-//.. {
-//..    stmt( IRStmt_Put( OFFB_FC3210, e ) );
-//.. }
+/* --------- Get/put the C3210 bits. --------- */
+
+static IRExpr*  /* :: Ity_I64 */ get_C3210 ( void )
+{
+   return IRExpr_Get( OFFB_FC3210, Ity_I64 );
+}
+
+static void put_C3210 ( IRExpr* e  /* :: Ity_I64 */ )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I64);
+   stmt( IRStmt_Put( OFFB_FC3210, e ) );
+}
 
 /* --------- Get/put the FPU rounding mode. --------- */
 static IRExpr* /* :: Ity_I32 */ get_fpround ( void )
@@ -4257,13 +4258,13 @@ static void fp_pop ( void )
    put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
 }
 
-//.. /* Clear the C2 bit of the FPU status register, for
-//..    sin/cos/tan/sincos. */
-//.. 
-//.. static void clear_C2 ( void )
-//.. {
-//..    put_C3210( binop(Iop_And32, get_C3210(), mkU32(~X86G_FC_MASK_C2)) );
-//.. }
+/* Clear the C2 bit of the FPU status register, for
+   sin/cos/tan/sincos. */
+
+static void clear_C2 ( void )
+{
+   put_C3210( binop(Iop_And64, get_C3210(), mkU64(~AMD64G_FC_MASK_C2)) );
+}
 
 
 /* ------------------------------------------------------- */
@@ -4824,18 +4825,18 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ST(0, IRExpr_Const(IRConst_F64i(0x0000000000000000ULL)));
                break;
 
-//..             case 0xF0: /* F2XM1 */
-//..                DIP("f2xm1\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_2xm1F64, get_ST(0)));
-//..                break;
-//.. 
-//..             case 0xF1: /* FYL2X */
-//..                DIP("fyl2x\n");
-//..                put_ST_UNCHECKED(1, binop(Iop_Yl2xF64,
-//..                                          get_ST(1), get_ST(0)));
-//..                fp_pop();
-//..                break;
-//.. 
+            case 0xF0: /* F2XM1 */
+               DIP("f2xm1\n");
+               put_ST_UNCHECKED(0, unop(Iop_2xm1F64, get_ST(0)));
+               break;
+
+            case 0xF1: /* FYL2X */
+               DIP("fyl2x\n");
+               put_ST_UNCHECKED(1, binop(Iop_Yl2xF64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
+
 //..             case 0xF2: /* FPTAN */
 //..                DIP("ftan\n");
 //..                put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
@@ -4843,14 +4844,14 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
 //..                clear_C2(); /* HACK */
 //..                break;
-//.. 
-//..             case 0xF3: /* FPATAN */
-//..                DIP("fpatan\n");
-//..                put_ST_UNCHECKED(1, binop(Iop_AtanF64,
-//..                                          get_ST(1), get_ST(0)));
-//..                fp_pop();
-//..                break;
-//.. 
+
+            case 0xF3: /* FPATAN */
+               DIP("fpatan\n");
+               put_ST_UNCHECKED(1, binop(Iop_AtanF64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
+
 //..             case 0xF5: { /* FPREM1 -- IEEE compliant */
 //..                IRTemp a1 = newTemp(Ity_F64);
 //..                IRTemp a2 = newTemp(Ity_F64);
@@ -4896,40 +4897,40 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
                break;
 
-//..             case 0xFB: { /* FSINCOS */
-//..                IRTemp a1 = newTemp(Ity_F64);
-//..                assign( a1, get_ST(0) );
-//..                DIP("fsincos\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_SinF64, mkexpr(a1)));
-//..                fp_push();
-//..                put_ST(0, unop(Iop_CosF64, mkexpr(a1)));
-//..                clear_C2(); /* HACK */
-//..                break;
-//..             }
-//.. 
-//..             case 0xFC: /* FRNDINT */
-//..                DIP("frndint\n");
-//..                put_ST_UNCHECKED(0,
-//..                   binop(Iop_RoundF64, get_roundingmode(), get_ST(0)) );
-//..                break;
-//.. 
-//..             case 0xFD: /* FSCALE */
-//..                DIP("fscale\n");
-//..                put_ST_UNCHECKED(0, binop(Iop_ScaleF64,
-//..                                          get_ST(0), get_ST(1)));
-//..                break;
-//.. 
-//..             case 0xFE: /* FSIN */
-//..                DIP("fsin\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
-//..                clear_C2(); /* HACK */
-//..                break;
-//.. 
-//..             case 0xFF: /* FCOS */
-//..                DIP("fcos\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_CosF64, get_ST(0)));
-//..                clear_C2(); /* HACK */
-//..                break;
+            case 0xFB: { /* FSINCOS */
+               IRTemp a1 = newTemp(Ity_F64);
+               assign( a1, get_ST(0) );
+               DIP("fsincos\n");
+               put_ST_UNCHECKED(0, unop(Iop_SinF64, mkexpr(a1)));
+               fp_push();
+               put_ST(0, unop(Iop_CosF64, mkexpr(a1)));
+               clear_C2(); /* HACK */
+               break;
+            }
+
+            case 0xFC: /* FRNDINT */
+               DIP("frndint\n");
+               put_ST_UNCHECKED(0,
+                  binop(Iop_RoundF64, get_roundingmode(), get_ST(0)) );
+               break;
+
+            case 0xFD: /* FSCALE */
+               DIP("fscale\n");
+               put_ST_UNCHECKED(0, binop(Iop_ScaleF64,
+                                         get_ST(0), get_ST(1)));
+               break;
+
+            case 0xFE: /* FSIN */
+               DIP("fsin\n");
+               put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
+               clear_C2(); /* HACK */
+               break;
+
+            case 0xFF: /* FCOS */
+               DIP("fcos\n");
+               put_ST_UNCHECKED(0, unop(Iop_CosF64, get_ST(0)));
+               clear_C2(); /* HACK */
+               break;
 
             default:
                goto decode_fail;
@@ -5034,6 +5035,16 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
                                          mk_amd64g_calculate_condition(AMD64CondBE)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
+            case 0xD8 ... 0xDF: /* FCMOVU ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD8;
+               DIP("fcmovu %%st(%u), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_amd64g_calculate_condition(AMD64CondP)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 

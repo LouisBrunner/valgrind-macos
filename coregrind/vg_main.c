@@ -2175,7 +2175,7 @@ static void build_valgrind_map_callback ( Addr start, SizeT size, UInt prot,
    if (start >= VG_(client_end) && start < VG_(valgrind_last)) {
       VG_(debugLog)(2, "main",
                     "valgrind-seg: %p-%p prot 0x%x file=%s\n",
-                    start, start+size, prot, filename);
+                    (void*)start, (void*)(start+size), prot, filename);
       VG_(map_file_segment)(start, size, prot,
                             SF_MMAP|SF_NOSYMS|SF_VALGRIND,
                             dev, ino, foffset, filename);
@@ -2211,7 +2211,8 @@ static void build_segment_map_callback ( Addr start, SizeT size, UInt prot,
 
    VG_(debugLog)(2, "main",
                  "any-seg: %p-%p prot 0x%x stack=%d file=%s\n",
-                 start, start+size, prot, is_stack_segment, filename);
+                 (void*)start, (void*)(start+size), prot, is_stack_segment, 
+                 filename);
 
    if (is_stack_segment)
       flags = SF_STACK | SF_GROWDOWN;

@@ -16,8 +16,8 @@ vgpreload_memcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
 vgtool_memcheck_so_SOURCES = \
 	mac_leakcheck.c \
 	mac_malloc_wrappers.c \
-	mac_needs.c \
 	mc_main.c \
+	mac_shared.c \
 	mc_translate.c
 vgtool_memcheck_so_LDFLAGS = -shared
 

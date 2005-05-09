@@ -764,7 +764,10 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
+   /* Used for unary/binary SIMD64 ops. */
+   HWord fn = 0;
    Bool second_is_UInt;
+
    MatchInfo mi;
    DECLARE_PATTERN(p_8Uto64);
    DECLARE_PATTERN(p_1Uto8_64to1);
@@ -807,7 +810,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Binop: {
       AMD64AluOp   aluOp;
       AMD64ShiftOp shOp;
-      HWord fn = 0; /* helper fn for most SIMD64 stuff */
 
 //.. 
 //..       /* Pattern: Sub32(0,x) */
@@ -1484,6 +1486,32 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          default: 
             break;
       }
+
+      /* Deal with unary 64-bit SIMD ops. */
+      switch (e->Iex.Unop.op) {
+         case Iop_CmpNEZ32x2:
+            fn = (HWord)h_generic_calc_CmpNEZ32x2; break;
+         case Iop_CmpNEZ16x4:
+            fn = (HWord)h_generic_calc_CmpNEZ16x4; break;
+         case Iop_CmpNEZ8x8:
+            fn = (HWord)h_generic_calc_CmpNEZ8x8; break;
+         default:
+            fn = (HWord)0; break;
+      }
+      if (fn != (HWord)0) {
+         /* Note: the following assumes all helpers are of
+            signature 
+               ULong fn ( ULong ), and they are
+            not marked as regparm functions. 
+         */
+         HReg dst = newVRegI(env);
+         HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 1 ));
+         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
+         return dst;
+      }
+
       break;
    }
 
@@ -2517,33 +2545,6 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //..             addInstr(env, mk_iMOVsd_RR(sLo, tLo));
 //..             addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tHi)));
 //..             addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tLo)));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
-//..          case Iop_CmpNEZ32x2:
-//..             fn = (HWord)h_generic_calc_CmpNEZ32x2; goto unish;
-//..          case Iop_CmpNEZ16x4:
-//..             fn = (HWord)h_generic_calc_CmpNEZ16x4; goto unish;
-//..          case Iop_CmpNEZ8x8:
-//..             fn = (HWord)h_generic_calc_CmpNEZ8x8; goto unish;
-//..          unish: {
-//..             /* Note: the following assumes all helpers are of
-//..                signature 
-//..                   ULong fn ( ULong ), and they are
-//..                not marked as regparm functions. 
-//..             */
-//..             HReg xLo, xHi;
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-//..             addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
-//..             add_to_esp(env, 2*4);
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
 //..             *rHi = tHi;
 //..             *rLo = tLo;
 //..             return;

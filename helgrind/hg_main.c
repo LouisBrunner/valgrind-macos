@@ -32,7 +32,7 @@
 #include "tool.h"
 #include "helgrind.h"
 
-static UInt n_eraser_warnings = 0;
+static UInt n_hg_warnings = 0;
 static UInt n_lockorder_warnings = 0;
 
 /*------------------------------------------------------------*/
@@ -419,24 +419,26 @@ static void addPriorTLS(ThreadId tid, ThreadId prior)
    }
 }
 
+static Bool isPrior(const ThreadLifeSeg *t, const ThreadLifeSeg *prior)
+{
+   if (t == NULL || t->mark == tlsmark)
+      return False;
+
+   if (t == prior)
+      return True;
+
+   ((ThreadLifeSeg *)t)->mark = tlsmark;
+
+   return isPrior(t->prior[0], prior) || isPrior(t->prior[1], prior);
+}
+
 /* Return True if prior is definitely not concurrent with tls */
 static Bool tlsIsDisjoint(const ThreadLifeSeg *tls, 
 			  const ThreadLifeSeg *prior)
 {
-   Bool isPrior(const ThreadLifeSeg *t) {
-      if (t == NULL || t->mark == tlsmark)
-	 return False;
-
-      if (t == prior)
-	 return True;
-
-      ((ThreadLifeSeg *)t)->mark = tlsmark;
-
-      return isPrior(t->prior[0]) || isPrior(t->prior[1]);
-   }
    tlsmark++;			/* new traversal mark */
 
-   return isPrior(tls);
+   return isPrior(tls, prior);
 }
 
 static inline UInt packTLS(ThreadLifeSeg *tls)
@@ -590,7 +592,7 @@ void init_nonvirgin_sword(Addr a)
 }
 
 
-/* In this case, we treat it for Eraser's sake like virgin (it hasn't
+/* In this case, we treat it for Helgrind's sake like virgin (it hasn't
  * been inited by a particular thread, it's just done automatically upon
  * startup), but we mark its .state specially so it doesn't look like an 
  * uninited read. */
@@ -1689,48 +1691,48 @@ static void copy_address_range_state(Addr src, Addr dst, SizeT len)
 }
 
 // SSS: put these somewhere better
-static void eraser_mem_read (Addr a, SizeT data_size, ThreadId tid);
-static void eraser_mem_write(Addr a, SizeT data_size, ThreadId tid);
+static void hg_mem_read (Addr a, SizeT data_size, ThreadId tid);
+static void hg_mem_write(Addr a, SizeT data_size, ThreadId tid);
 
-static void eraser_mem_help_read_1(Addr a) VGA_REGPARM(1);
-static void eraser_mem_help_read_2(Addr a) VGA_REGPARM(1);
-static void eraser_mem_help_read_4(Addr a) VGA_REGPARM(1);
-static void eraser_mem_help_read_N(Addr a, SizeT size) VGA_REGPARM(2);
+static void hg_mem_help_read_1(Addr a) VGA_REGPARM(1);
+static void hg_mem_help_read_2(Addr a) VGA_REGPARM(1);
+static void hg_mem_help_read_4(Addr a) VGA_REGPARM(1);
+static void hg_mem_help_read_N(Addr a, SizeT size) VGA_REGPARM(2);
 
-static void eraser_mem_help_write_1(Addr a, UInt val) VGA_REGPARM(2);
-static void eraser_mem_help_write_2(Addr a, UInt val) VGA_REGPARM(2);
-static void eraser_mem_help_write_4(Addr a, UInt val) VGA_REGPARM(2);
-static void eraser_mem_help_write_N(Addr a, SizeT size) VGA_REGPARM(2);
+static void hg_mem_help_write_1(Addr a, UInt val) VGA_REGPARM(2);
+static void hg_mem_help_write_2(Addr a, UInt val) VGA_REGPARM(2);
+static void hg_mem_help_write_4(Addr a, UInt val) VGA_REGPARM(2);
+static void hg_mem_help_write_N(Addr a, SizeT size) VGA_REGPARM(2);
 
 static void bus_lock(void);
 static void bus_unlock(void);
 
 static
-void eraser_pre_mem_read(CorePart part, ThreadId tid,
-                         Char* s, Addr base, SizeT size )
+void hg_pre_mem_read(CorePart part, ThreadId tid,
+                     Char* s, Addr base, SizeT size )
 {
    if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(tool_panic)("a");}
-   eraser_mem_read(base, size, tid);
+   hg_mem_read(base, size, tid);
 }
 
 static
-void eraser_pre_mem_read_asciiz(CorePart part, ThreadId tid,
-                                Char* s, Addr base )
+void hg_pre_mem_read_asciiz(CorePart part, ThreadId tid,
+                            Char* s, Addr base )
 {
-   eraser_mem_read(base, VG_(strlen)((Char*)base), tid);
+   hg_mem_read(base, VG_(strlen)((Char*)base), tid);
 }
 
 static
-void eraser_pre_mem_write(CorePart part, ThreadId tid,
-                          Char* s, Addr base, SizeT size )
+void hg_pre_mem_write(CorePart part, ThreadId tid,
+                      Char* s, Addr base, SizeT size )
 {
-   eraser_mem_write(base, size, tid);
+   hg_mem_write(base, size, tid);
 }
 
 
 
 static
-void eraser_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
+void hg_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it readable.  Seems to work... */
    make_segment_readable(a, len);
@@ -1738,7 +1740,7 @@ void eraser_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 
 
 static
-void eraser_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
+void hg_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 {
    if (is_inited) {
       make_readable(a, len);
@@ -1748,8 +1750,8 @@ void eraser_new_mem_heap ( Addr a, SizeT len, Bool is_inited )
 }
 
 static
-void eraser_set_perms (Addr a, SizeT len,
-                       Bool rr, Bool ww, Bool xx)
+void hg_set_perms (Addr a, SizeT len,
+                   Bool rr, Bool ww, Bool xx)
 {
    if      (rr) make_readable(a, len);
    else if (ww) make_writable(a, len);
@@ -1757,13 +1759,13 @@ void eraser_set_perms (Addr a, SizeT len,
 }
 
 static
-void eraser_new_mem_stack_private(Addr a, SizeT len)
+void hg_new_mem_stack_private(Addr a, SizeT len)
 {
    set_address_range_state(a, len, Vge_NonVirginInit);
 }
 
 static
-void eraser_new_mem_stack(Addr a, SizeT len)
+void hg_new_mem_stack(Addr a, SizeT len)
 {
    set_address_range_state(a, len, Vge_VirginInit);
 }
@@ -1831,7 +1833,7 @@ void* alloc_and_new_mem ( ThreadId tid, SizeT size, SizeT alignment,
    }
    if (is_zeroed) VG_(memset)((void*)p, 0, size);
    add_HG_Chunk ( tid, p, size );
-   eraser_new_mem_heap( p, size, is_zeroed );
+   hg_new_mem_heap( p, size, is_zeroed );
 
    return (void*)p;
 }
@@ -1971,8 +1973,8 @@ static void* hg_realloc ( ThreadId tid, void* p, SizeT new_size )
 
       /* First half kept and copied, second half new */
       copy_address_range_state( (Addr)p, p_new, hc->size );
-      eraser_new_mem_heap ( p_new+hc->size, new_size-hc->size,
-                            /*inited*/False );
+      hg_new_mem_heap ( p_new+hc->size, new_size-hc->size,
+                        /*inited*/False );
 
       /* Copy from old to new */
       for (i = 0; i < hc->size; i++)
@@ -2103,9 +2105,9 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       nonstk_ld++;
 
 	       switch(u_in->size) {
-	       case 1: help = eraser_mem_help_read_1; break;
-	       case 2: help = eraser_mem_help_read_2; break;
-	       case 4: help = eraser_mem_help_read_4; break;
+	       case 1: help = hg_mem_help_read_1; break;
+	       case 2: help = hg_mem_help_read_2; break;
+	       case 4: help = hg_mem_help_read_4; break;
 	       default:
 		  VG_(tool_panic)("bad size");
 	       }
@@ -2134,7 +2136,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    /* XXX all registers should be flushed to baseblock
 	       here */
 	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    uCCall(cb, (Addr) & hg_mem_help_read_N, 2, 2, False);
 	    
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -2151,7 +2153,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    /* XXX all registers should be flushed to baseblock
 	       here */
 	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
-	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    uCCall(cb, (Addr) & hg_mem_help_read_N, 2, 2, False);
 	    
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -2172,7 +2174,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    uLiteral(cb, (UInt)u_in->size);
 
 	    uInstr2(cb, CCALL, 0, TempReg, addr, TempReg, t_size);
-	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    uCCall(cb, (Addr) & hg_mem_help_read_N, 2, 2, False);
 	    
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -2188,9 +2190,9 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       nonstk_st++;
 
 	       switch(u_in->size) {
-	       case 1: help = eraser_mem_help_write_1; break;
-	       case 2: help = eraser_mem_help_write_2; break;
-	       case 4: help = eraser_mem_help_write_4; break;
+	       case 1: help = hg_mem_help_write_1; break;
+	       case 2: help = hg_mem_help_write_2; break;
+	       case 4: help = hg_mem_help_write_4; break;
 	       default:
 		  VG_(tool_panic)("bad size");
 	       }
@@ -2218,7 +2220,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       /* XXX all registers should be flushed to baseblock
 		  here */
 	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-	    uCCall(cb, (Addr) & eraser_mem_help_write_N, 2, 2, False);
+	    uCCall(cb, (Addr) & hg_mem_help_write_N, 2, 2, False);
 
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -2236,7 +2238,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       /* XXX all registers should be flushed to baseblock
 		  here */
 	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
-	    uCCall(cb, (Addr) & eraser_mem_help_write_N, 2, 2, False);
+	    uCCall(cb, (Addr) & hg_mem_help_write_N, 2, 2, False);
 
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -2275,18 +2277,18 @@ static IRBB* hg_instrument ( IRBB* bb_in, VexGuestLayout* layout,
 typedef
    enum {
       /* Possible data race */
-      EraserSupp
+      RaceSupp
    }
-   EraserSuppKind;
+   RaceSuppKind;
 
 /* What kind of error it is. */
 typedef
    enum { 
-      EraserErr,		/* data-race */
+      RaceErr,	        	/* data-race */
       MutexErr,			/* mutex operations */
       LockGraphErr,		/* mutex order error */
    }
-   EraserErrorKind;
+   RaceErrorKind;
 
 /* The classification of a faulting address. */
 typedef 
@@ -2472,13 +2474,13 @@ static UInt hg_update_extra(Error* err)
    return sizeof(HelgrindError);
 }
 
-static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write,
-				  shadow_word prevstate )
+static void record_race_error ( ThreadId tid, Addr a, Bool is_write,
+                                shadow_word prevstate )
 {
    shadow_word *sw;
    HelgrindError err_extra;
 
-   n_eraser_warnings++;
+   n_hg_warnings++;
 
    clear_HelgrindError(&err_extra);
    err_extra.isWrite = is_write;
@@ -2488,7 +2490,7 @@ static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write,
       err_extra.lasttouched = getExeContext(a);
    err_extra.addrinfo.expr = VG_(describe_addr)(tid, a);
 
-   VG_(maybe_record_error)( tid, EraserErr, a, 
+   VG_(maybe_record_error)( tid, RaceErr, a, 
                             (is_write ? "writing" : "reading"),
                             &err_extra);
 
@@ -2542,7 +2544,7 @@ static Bool hg_eq_Error ( VgRes not_used, Error* e1, Error* e2 )
    tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
 
    switch (VG_(get_error_kind)(e1)) {
-   case EraserErr:
+   case RaceErr:
       return VG_(get_error_address)(e1) == VG_(get_error_address)(e2);
 
    case MutexErr:
@@ -2654,7 +2656,7 @@ static void hg_pp_Error ( Error* err )
    *msg = '\0';
 
    switch(VG_(get_error_kind)(err)) {
-   case EraserErr: {
+   case RaceErr: {
       Addr err_addr = VG_(get_error_address)(err);
                       
       VG_(message)(Vg_UserMsg, "Possible data race %s variable at %p %(y",
@@ -2779,7 +2781,7 @@ static void hg_pp_Error ( Error* err )
 static Bool hg_recognised_suppression ( Char* name, Supp *su )
 {
    if (0 == VG_(strcmp)(name, "Eraser")) {
-      VG_(set_supp_kind)(su, EraserSupp);
+      VG_(set_supp_kind)(su, RaceSupp);
       return True;
    } else {
       return False;
@@ -2797,15 +2799,15 @@ static Bool hg_read_extra_suppression_info ( Int fd, Char* buf, Int nBuf, Supp* 
 
 static Bool hg_error_matches_suppression(Error* err, Supp* su)
 {
-   tl_assert(VG_(get_supp_kind)(su) == EraserSupp);
+   tl_assert(VG_(get_supp_kind)(su) == RaceSupp);
 
-   return (VG_(get_error_kind)(err) == EraserErr);
+   return (VG_(get_error_kind)(err) == RaceErr);
 }
 
 static Char* hg_get_error_name ( Error* err )
 {
-   if (EraserErr == VG_(get_error_kind)(err)) {
-      return "Eraser";
+   if (RaceErr == VG_(get_error_kind)(err)) {
+      return "Eraser";     // old name, required for backwards compatibility
    } else {
       return NULL;      /* Other errors types can't be suppressed */
    }
@@ -2816,14 +2818,14 @@ static void hg_print_extra_suppression_info ( Error* err )
    /* Do nothing */
 }
 
-static void eraser_pre_mutex_lock(ThreadId tid, void* void_mutex)
+static void hg_pre_mutex_lock(ThreadId tid, void* void_mutex)
 {
    Mutex *mutex = get_mutex((Addr)void_mutex);
 
    test_mutex_state(mutex, MxLocked, tid);
 }
 
-static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
+static void hg_post_mutex_lock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
    Mutex *mutex = get_mutex((Addr)void_mutex);
@@ -2837,7 +2839,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 
    /* VG_(printf)("LOCK: held %d, new %p\n", thread_locks[tid], mutex); */
 #  if LOCKSET_SANITY > 1
-   sanity_check_locksets("eraser_post_mutex_lock-IN");
+   sanity_check_locksets("hg_post_mutex_lock-IN");
 #  endif
 
    ls = lookup_LockSet_with(thread_locks[tid], mutex);
@@ -2853,11 +2855,11 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
       VG_(printf)("tid %u now has lockset %p\n", tid, ls);
 
    if (debug || LOCKSET_SANITY > 1)
-      sanity_check_locksets("eraser_post_mutex_lock-OUT");
+      sanity_check_locksets("hg_post_mutex_lock-OUT");
 }
 
 
-static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
+static void hg_post_mutex_unlock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
    Int i = 0;
@@ -2874,7 +2876,7 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
       VG_(printf)("unlock(%u, %p%(y)\n", tid, mutex->mutexp, mutex->mutexp);
 
    if (debug || LOCKSET_SANITY > 1)
-      sanity_check_locksets("eraser_post_mutex_unlock-IN");
+      sanity_check_locksets("hg_post_mutex_unlock-IN");
 
    ls = lookup_LockSet_without(thread_locks[tid], mutex);
 
@@ -2892,7 +2894,7 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
    thread_locks[tid] = ls;
 
    if (debug || LOCKSET_SANITY > 1)
-      sanity_check_locksets("eraser_post_mutex_unlock-OUT");
+      sanity_check_locksets("hg_post_mutex_unlock-OUT");
 }
 
 
@@ -2932,7 +2934,7 @@ void dump_around_a(Addr a)
    #define DEBUG_STATE(args...)
 #endif
 
-static void eraser_mem_read_word(Addr a, ThreadId tid)
+static void hg_mem_read_word(Addr a, ThreadId tid)
 {
    shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL; 
    shadow_word  prevstate;
@@ -3017,7 +3019,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
    statechange = sword->other != prevstate.other;
 
    if (isempty(ls)) {
-      record_eraser_error(tid, a, False /* !is_write */, prevstate);
+      record_race_error(tid, a, False /* !is_write */, prevstate);
    }
    goto done;
 
@@ -3033,7 +3035,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
    }
 }
 
-static void eraser_mem_read(Addr a, SizeT size, ThreadId tid)
+static void hg_mem_read(Addr a, SizeT size, ThreadId tid)
 {
    Addr end;
 
@@ -3041,10 +3043,10 @@ static void eraser_mem_read(Addr a, SizeT size, ThreadId tid)
    a = ROUNDDN(a, 4);
 
    for ( ; a < end; a += 4)
-      eraser_mem_read_word(a, tid);
+      hg_mem_read_word(a, tid);
 }
 
-static void eraser_mem_write_word(Addr a, ThreadId tid)
+static void hg_mem_write_word(Addr a, ThreadId tid)
 {
    ThreadLifeSeg *tls;
    shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL;
@@ -3122,7 +3124,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
 
   SHARED_MODIFIED:
    if (isempty(unpackLockSet(sword->other))) {
-      record_eraser_error(tid, a, True /* is_write */, prevstate);
+      record_race_error(tid, a, True /* is_write */, prevstate);
    }
    goto done;
 
@@ -3138,7 +3140,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
    }
 }
 
-static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
+static void hg_mem_write(Addr a, SizeT size, ThreadId tid)
 {
    Addr     end;
 
@@ -3146,49 +3148,49 @@ static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
    a = ROUNDDN(a, 4);
 
    for ( ; a < end; a += 4)
-      eraser_mem_write_word(a, tid);
+      hg_mem_write_word(a, tid);
 }
 
 #undef DEBUG_STATE
 
-VGA_REGPARM(1) static void eraser_mem_help_read_1(Addr a)
+VGA_REGPARM(1) static void hg_mem_help_read_1(Addr a)
 {
-   eraser_mem_read(a, 1, VG_(get_running_tid)());
+   hg_mem_read(a, 1, VG_(get_running_tid)());
 }
 
-VGA_REGPARM(1) static void eraser_mem_help_read_2(Addr a)
+VGA_REGPARM(1) static void hg_mem_help_read_2(Addr a)
 {
-   eraser_mem_read(a, 2, VG_(get_running_tid)());
+   hg_mem_read(a, 2, VG_(get_running_tid)());
 }
 
-VGA_REGPARM(1) static void eraser_mem_help_read_4(Addr a)
+VGA_REGPARM(1) static void hg_mem_help_read_4(Addr a)
 {
-   eraser_mem_read(a, 4, VG_(get_running_tid)());
+   hg_mem_read(a, 4, VG_(get_running_tid)());
 }
 
-VGA_REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
+VGA_REGPARM(2) static void hg_mem_help_read_N(Addr a, SizeT size)
 {
-   eraser_mem_read(a, size, VG_(get_running_tid)());
+   hg_mem_read(a, size, VG_(get_running_tid)());
 }
 
-VGA_REGPARM(2) static void eraser_mem_help_write_1(Addr a, UInt val)
+VGA_REGPARM(2) static void hg_mem_help_write_1(Addr a, UInt val)
 {
    if (*(UChar *)a != val)
-      eraser_mem_write(a, 1, VG_(get_running_tid)());
+      hg_mem_write(a, 1, VG_(get_running_tid)());
 }
-VGA_REGPARM(2) static void eraser_mem_help_write_2(Addr a, UInt val)
+VGA_REGPARM(2) static void hg_mem_help_write_2(Addr a, UInt val)
 {
    if (*(UShort *)a != val)
-      eraser_mem_write(a, 2, VG_(get_running_tid)());
+      hg_mem_write(a, 2, VG_(get_running_tid)());
 }
-VGA_REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
+VGA_REGPARM(2) static void hg_mem_help_write_4(Addr a, UInt val)
 {
    if (*(UInt *)a != val)
-      eraser_mem_write(a, 4, VG_(get_running_tid)());
+      hg_mem_write(a, 4, VG_(get_running_tid)());
 }
-VGA_REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
+VGA_REGPARM(2) static void hg_mem_help_write_N(Addr a, SizeT size)
 {
-   eraser_mem_write(a, size, VG_(get_running_tid)());
+   hg_mem_write(a, size, VG_(get_running_tid)());
 }
 
 static void hg_thread_create(ThreadId parent, ThreadId child)
@@ -3218,14 +3220,14 @@ static Int __BUS_HARDWARE_LOCK__;
 static void bus_lock(void)
 {
    ThreadId tid = VG_(get_running_tid)();
-   eraser_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
-   eraser_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
+   hg_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
+   hg_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
 }
 
 static void bus_unlock(void)
 {
    ThreadId tid = VG_(get_running_tid)();
-   eraser_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
+   hg_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
 }
 
 /*--------------------------------------------------------------------*/
@@ -3302,9 +3304,9 @@ static void hg_post_clo_init(void)
    }
 
    if (clo_priv_stacks)
-      stack_tracker = & eraser_new_mem_stack_private;
+      stack_tracker = & hg_new_mem_stack_private;
    else
-      stack_tracker = & eraser_new_mem_stack;
+      stack_tracker = & hg_new_mem_stack;
 
    VG_(track_new_mem_stack)        (stack_tracker);
    VG_(track_new_mem_stack_signal) (stack_tracker);
@@ -3323,7 +3325,7 @@ static void hg_fini(Int exitcode)
 
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
-		   n_eraser_warnings, n_lockorder_warnings);
+		   n_hg_warnings, n_lockorder_warnings);
 
    if (0)
       VG_(printf)("stk_ld:%u+stk_st:%u = %u  nonstk_ld:%u+nonstk_st:%u = %u  %u%%\n",
@@ -3378,14 +3380,14 @@ static void hg_pre_clo_init(void)
                                    hg_realloc,
                                    8 );
 
-   VG_(track_new_mem_startup)      (& eraser_new_mem_startup);
+   VG_(track_new_mem_startup)      (& hg_new_mem_startup);
 
    /* stack ones not decided until hg_post_clo_init() */
 
    VG_(track_new_mem_brk)         (& make_writable);
-   VG_(track_new_mem_mmap)        (& eraser_new_mem_startup);
+   VG_(track_new_mem_mmap)        (& hg_new_mem_startup);
 
-   VG_(track_change_mem_mprotect) (& eraser_set_perms);
+   VG_(track_change_mem_mprotect) (& hg_set_perms);
 
    VG_(track_ban_mem_stack)       (NULL);
 
@@ -3394,17 +3396,17 @@ static void hg_pre_clo_init(void)
    VG_(track_die_mem_brk)         (NULL);
    VG_(track_die_mem_munmap)      (NULL);
 
-   VG_(track_pre_mem_read)        (& eraser_pre_mem_read);
-   VG_(track_pre_mem_read_asciiz) (& eraser_pre_mem_read_asciiz);
-   VG_(track_pre_mem_write)       (& eraser_pre_mem_write);
+   VG_(track_pre_mem_read)        (& hg_pre_mem_read);
+   VG_(track_pre_mem_read_asciiz) (& hg_pre_mem_read_asciiz);
+   VG_(track_pre_mem_write)       (& hg_pre_mem_write);
    VG_(track_post_mem_write)      (NULL);
 
    VG_(track_post_thread_create)  (& hg_thread_create);
    VG_(track_post_thread_join)    (& hg_thread_join);
 
-   VG_(track_pre_mutex_lock)      (& eraser_pre_mutex_lock);
-   VG_(track_post_mutex_lock)     (& eraser_post_mutex_lock);
-   VG_(track_post_mutex_unlock)   (& eraser_post_mutex_unlock);
+   VG_(track_pre_mutex_lock)      (& hg_pre_mutex_lock);
+   VG_(track_post_mutex_lock)     (& hg_post_mutex_lock);
+   VG_(track_post_mutex_unlock)   (& hg_post_mutex_unlock);
 
    for (i = 0; i < LOCKSET_HASH_SZ; i++)
       lockset_hash[i] = NULL;

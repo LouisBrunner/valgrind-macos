@@ -841,10 +841,10 @@ static
 void buf_and_len_pre_check( ThreadId tid, Addr buf_p, Addr buflen_p,
                             Char* buf_s, Char* buflen_s )
 {
-   if (VG_(defined_pre_mem_write)()) {
+   if (VG_(tdict).track_pre_mem_write) {
       UInt buflen_in = deref_UInt( tid, buflen_p, buflen_s);
       if (buflen_in > 0) {
-         TL_(pre_mem_write) ( Vg_CoreSysCall, tid, buf_s, buf_p, buflen_in );
+         VG_(tdict).track_pre_mem_write( Vg_CoreSysCall, tid, buf_s, buf_p, buflen_in );
       }
    }
 }
@@ -853,10 +853,11 @@ static
 void buf_and_len_post_check( ThreadId tid, Int res,
                              Addr buf_p, Addr buflen_p, Char* s )
 {
-   if (!VG_(is_kerror)(res) && VG_(defined_post_mem_write)()) {
+   if (!VG_(is_kerror)(res) && VG_(tdict).track_post_mem_write) 
+   {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
       if (buflen_out > 0 && buf_p != (Addr)NULL) {
-         TL_(post_mem_write) ( Vg_CoreSysCall, tid, buf_p, buflen_out );
+         VG_(tdict).track_post_mem_write( Vg_CoreSysCall, tid, buf_p, buflen_out );
       }
    }
 }
@@ -6037,9 +6038,7 @@ void VG_(post_syscall) (ThreadId tid)
       pre_syscall again, without calling post_syscall (ie, more
       pre's than post's) */
    if (VG_(needs).syscall_wrapper) {
-     //VGP_PUSHCC(VgpSkinSysWrap);
-      TL_(post_syscall)(tid, syscallno, RES);
-      //VGP_POPCC(VgpSkinSysWrap);
+      VG_TDICT_CALL(tool_post_syscall, tid, syscallno, RES);
    }
 }
 
@@ -6096,9 +6095,7 @@ void VG_(client_syscall) ( ThreadId tid )
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
-      VGP_PUSHCC(VgpToolSysWrap);
-      TL_(pre_syscall)(tid, syscallno);
-      VGP_POPCC(VgpToolSysWrap);
+      VG_TDICT_CALL(tool_pre_syscall, tid, syscallno);
    }
 
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 

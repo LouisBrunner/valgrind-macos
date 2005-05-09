@@ -39,7 +39,7 @@
 /*--- Comparing and printing errors                        ---*/
 /*------------------------------------------------------------*/
 
-void TL_(pp_Error) ( Error* err )
+static void ac_pp_Error ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -75,7 +75,7 @@ void TL_(pp_Error) ( Error* err )
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(recognised_suppression) ( Char* name, Supp* su )
+static Bool ac_recognised_suppression ( Char* name, Supp* su )
 {
    return MAC_(shared_recognised_suppression)(name, su);
 }
@@ -381,10 +381,6 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
    }   
 #  endif
 
-   /* Check that zero page and highest page have not been written to
-      -- this could happen with buggy syscall wrappers.  Today
-      (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   tl_assert(TL_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -986,8 +982,8 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
-                      IRType gWordTy, IRType hWordTy )
+static IRBB* ac_instrument(IRBB* bb_in, VexGuestLayout* layout, 
+                           IRType gWordTy, IRType hWordTy )
 {
    Int         i, hsz;
    IRStmt*     st;
@@ -1189,13 +1185,13 @@ static void ac_detect_memory_leaks ( ThreadId tid, LeakCheckMode mode )
    Sanity check machinery (permanently engaged).
    ------------------------------------------------------------------ */
 
-Bool TL_(cheap_sanity_check) ( void )
+static Bool ac_cheap_sanity_check ( void )
 {
    /* nothing useful we can rapidly check */
    return True;
 }
 
-Bool TL_(expensive_sanity_check) ( void )
+static Bool ac_expensive_sanity_check ( void )
 {
    Int i;
 
@@ -1219,7 +1215,7 @@ Bool TL_(expensive_sanity_check) ( void )
 /*--- Client requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
+static Bool ac_handle_client_request ( ThreadId tid, UWord* arg, UWord *ret )
 {
 #define IGNORE(what)                                                    \
    do {                                                                 \
@@ -1288,27 +1284,36 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(process_cmd_line_option)(Char* arg)
+static Bool ac_process_cmd_line_option(Char* arg)
 {
    return MAC_(process_common_cmd_line_option)(arg);
 }
 
-void TL_(print_usage)(void)
+static void ac_print_usage(void)
 {  
    MAC_(print_common_usage)();
 }
 
-void TL_(print_debug_usage)(void)
+static void ac_print_debug_usage(void)
 {  
    MAC_(print_common_debug_usage)();
 }
 
 
 /*------------------------------------------------------------*/
-/*--- Setup                                                ---*/
+/*--- Setup and finalisation                               ---*/
 /*------------------------------------------------------------*/
 
-void TL_(pre_clo_init)(void)
+static void ac_post_clo_init ( void )
+{
+}
+
+static void ac_fini ( Int exitcode )
+{
+   MAC_(common_fini)( ac_detect_memory_leaks );
+}
+
+static void ac_pre_clo_init(void)
 {
    VG_(details_name)            ("Addrcheck");
    VG_(details_version)         (NULL);
@@ -1318,38 +1323,38 @@ void TL_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 135 );
 
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
+   VG_(basic_tool_funcs)          (ac_post_clo_init,
+                                   ac_instrument,
+                                   ac_fini);
 
    VG_(needs_core_errors)         ();
-   VG_(needs_tool_errors)         (TL_(eq_Error),
-                                   TL_(pp_Error),
-                                   TL_(update_extra),
-                                   TL_(recognised_suppression),
-                                   TL_(read_extra_suppression_info),
-                                   TL_(error_matches_suppression),
-                                   TL_(get_error_name),
-                                   TL_(print_extra_suppression_info));
+   VG_(needs_tool_errors)         (MAC_(eq_Error),
+                                   ac_pp_Error,
+                                   MAC_(update_extra),
+                                   MAC_(shared_recognised_suppression),
+                                   MAC_(read_extra_suppression_info),
+                                   MAC_(error_matches_suppression),
+                                   MAC_(get_error_name),
+                                   MAC_(print_extra_suppression_info));
    VG_(needs_libc_freeres)        ();
-   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
-                                   TL_(print_usage),
-                                   TL_(print_debug_usage));
-   VG_(needs_client_requests)     (TL_(handle_client_request));
-   VG_(needs_sanity_checks)       (TL_(cheap_sanity_check),
-                                   TL_(expensive_sanity_check));
+   VG_(needs_command_line_options)(MAC_(process_common_cmd_line_option),
+                                   MAC_(print_common_usage),
+                                   MAC_(print_common_debug_usage));
+   VG_(needs_client_requests)     (ac_handle_client_request);
+   VG_(needs_sanity_checks)       (ac_cheap_sanity_check,
+                                   ac_expensive_sanity_check);
    VG_(needs_shadow_memory)       ();
 
-   VG_(malloc_funcs)              (TL_(malloc),
-                                   TL_(__builtin_new),
-                                   TL_(__builtin_vec_new),
-                                   TL_(memalign),
-                                   TL_(calloc),
-                                   TL_(free),
-                                   TL_(__builtin_delete),
-                                   TL_(__builtin_vec_delete),
-                                   TL_(realloc),
-                                   MALLOC_REDZONE_SZB );
+   VG_(malloc_funcs)              (MAC_(malloc),
+                                   MAC_(__builtin_new),
+                                   MAC_(__builtin_vec_new),
+                                   MAC_(memalign),
+                                   MAC_(calloc),
+                                   MAC_(free),
+                                   MAC_(__builtin_delete),
+                                   MAC_(__builtin_vec_delete),
+                                   MAC_(realloc),
+                                   MAC_MALLOC_REDZONE_SZB );
 
    MAC_( new_mem_heap)             = & ac_new_mem_heap;
    MAC_( ban_mem_heap)             = & ac_make_noaccess;
@@ -1357,37 +1362,37 @@ void TL_(pre_clo_init)(void)
    MAC_( die_mem_heap)             = & ac_make_noaccess;
    MAC_(check_noaccess)            = & ac_check_noaccess;
 
-   VG_(init_new_mem_startup)      ( & ac_new_mem_startup );
-   VG_(init_new_mem_stack_signal) ( & ac_make_accessible );
-   VG_(init_new_mem_brk)          ( & ac_make_accessible );
-   VG_(init_new_mem_mmap)         ( & ac_new_mem_mmap );
+   VG_(track_new_mem_startup)     ( & ac_new_mem_startup );
+   VG_(track_new_mem_stack_signal)( & ac_make_accessible );
+   VG_(track_new_mem_brk)         ( & ac_make_accessible );
+   VG_(track_new_mem_mmap)        ( & ac_new_mem_mmap );
    
-   VG_(init_copy_mem_remap)       ( & ac_copy_address_range_state );
+   VG_(track_copy_mem_remap)      ( & ac_copy_address_range_state );
       
-   VG_(init_die_mem_stack_signal) ( & ac_make_noaccess ); 
-   VG_(init_die_mem_brk)          ( & ac_make_noaccess );
-   VG_(init_die_mem_munmap)       ( & ac_make_noaccess ); 
+   VG_(track_die_mem_stack_signal)( & ac_make_noaccess ); 
+   VG_(track_die_mem_brk)         ( & ac_make_noaccess );
+   VG_(track_die_mem_munmap)      ( & ac_make_noaccess ); 
 
-   VG_(init_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
-   VG_(init_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
-   VG_(init_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
-   VG_(init_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
-   VG_(init_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
-   VG_(init_new_mem_stack)        ( & MAC_(new_mem_stack)    );
+   VG_(track_new_mem_stack_4)     ( & MAC_(new_mem_stack_4)  );
+   VG_(track_new_mem_stack_8)     ( & MAC_(new_mem_stack_8)  );
+   VG_(track_new_mem_stack_12)    ( & MAC_(new_mem_stack_12) );
+   VG_(track_new_mem_stack_16)    ( & MAC_(new_mem_stack_16) );
+   VG_(track_new_mem_stack_32)    ( & MAC_(new_mem_stack_32) );
+   VG_(track_new_mem_stack)       ( & MAC_(new_mem_stack)    );
 
-   VG_(init_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
-   VG_(init_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
-   VG_(init_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
-   VG_(init_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
-   VG_(init_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
-   VG_(init_die_mem_stack)        ( & MAC_(die_mem_stack)    );
+   VG_(track_die_mem_stack_4)     ( & MAC_(die_mem_stack_4)  );
+   VG_(track_die_mem_stack_8)     ( & MAC_(die_mem_stack_8)  );
+   VG_(track_die_mem_stack_12)    ( & MAC_(die_mem_stack_12) );
+   VG_(track_die_mem_stack_16)    ( & MAC_(die_mem_stack_16) );
+   VG_(track_die_mem_stack_32)    ( & MAC_(die_mem_stack_32) );
+   VG_(track_die_mem_stack)       ( & MAC_(die_mem_stack)    );
    
-   VG_(init_ban_mem_stack)        ( & ac_make_noaccess );
+   VG_(track_ban_mem_stack)       ( & ac_make_noaccess );
 
-   VG_(init_pre_mem_read)         ( & ac_check_is_readable );
-   VG_(init_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
-   VG_(init_pre_mem_write)        ( & ac_check_is_writable );
-   VG_(init_post_mem_write)       ( & ac_post_mem_write );
+   VG_(track_pre_mem_read)        ( & ac_check_is_readable );
+   VG_(track_pre_mem_read_asciiz) ( & ac_check_is_readable_asciiz );
+   VG_(track_pre_mem_write)       ( & ac_check_is_writable );
+   VG_(track_post_mem_write)      ( & ac_post_mem_write );
 
    VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
@@ -1397,16 +1402,7 @@ void TL_(pre_clo_init)(void)
    MAC_(common_pre_clo_init)();
 }
 
-void TL_(post_clo_init) ( void )
-{
-}
-
-void TL_(fini) ( Int exitcode )
-{
-   MAC_(common_fini)( ac_detect_memory_leaks );
-}
-
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 1./8)
+VG_DETERMINE_INTERFACE_VERSION(ac_pre_clo_init, 1./8)
 
 
 /*--------------------------------------------------------------------*/

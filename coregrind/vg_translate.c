@@ -93,7 +93,7 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
 
 #  define DO(kind, syze)                                                \
       do {                                                              \
-         if (!VG_(defined_##kind##_mem_stack_##syze)())                 \
+         if (!VG_(tdict).track_##kind##_mem_stack_##syze) \
             goto generic;                                               \
                                                                         \
          /* I don't know if it's really necessary to say that the */    \
@@ -327,19 +327,18 @@ static Bool chase_into_ok ( Addr64 addr64 )
 
 static Bool need_to_handle_SP_assignment(void)
 {
-   return ( VG_(defined_new_mem_stack_4)()  ||
-            VG_(defined_die_mem_stack_4)()  ||
-            VG_(defined_new_mem_stack_8)()  ||
-            VG_(defined_die_mem_stack_8)()  ||
-            VG_(defined_new_mem_stack_12)() ||
-            VG_(defined_die_mem_stack_12)() ||
-            VG_(defined_new_mem_stack_16)() ||
-            VG_(defined_die_mem_stack_16)() ||
-            VG_(defined_new_mem_stack_32)() ||
-            VG_(defined_die_mem_stack_32)() ||
-            VG_(defined_new_mem_stack)()    ||
-            VG_(defined_die_mem_stack)()
-          );
+   return ( VG_(tdict).track_new_mem_stack_4  ||
+            VG_(tdict).track_die_mem_stack_4  ||
+            VG_(tdict).track_new_mem_stack_8  ||
+            VG_(tdict).track_die_mem_stack_8  ||
+            VG_(tdict).track_new_mem_stack_12 ||
+            VG_(tdict).track_die_mem_stack_12 ||
+            VG_(tdict).track_new_mem_stack_16 ||
+            VG_(tdict).track_die_mem_stack_16 ||
+            VG_(tdict).track_new_mem_stack_32 ||
+            VG_(tdict).track_die_mem_stack_32 ||
+            VG_(tdict).track_new_mem_stack    ||
+            VG_(tdict).track_die_mem_stack    );
 }
 
 
@@ -443,6 +442,8 @@ Bool VG_(translate) ( ThreadId tid,
    }
 
    /* Actually do the translation. */
+   tl_assert2(VG_(tdict).tool_instrument,
+              "you forgot to set VgToolInterface function 'tool_instrument'");
    tres = LibVEX_Translate ( 
              VG_(vex_arch), VG_(vex_subarch),
              VG_(vex_arch), VG_(vex_subarch),
@@ -451,7 +452,7 @@ Bool VG_(translate) ( ThreadId tid,
              chase_into_ok,
              &vge,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
-             TL_(instrument),
+             VG_(tdict).tool_instrument,
              need_to_handle_SP_assignment()
                 ? vg_SP_update_pass
                 : NULL,

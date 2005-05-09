@@ -1109,7 +1109,7 @@ void do_client_request ( ThreadId tid )
                VG_(printf)("client request: code %x,  addr %p,  len %d\n",
                            arg[0], (void*)arg[1], arg[2] );
 
-	    if (TL_(handle_client_request) ( tid, arg, &ret ))
+	    if ( VG_TDICT_CALL(tool_handle_client_request, tid, arg, &ret) )
 	       SET_CLREQ_RETVAL(tid, ret);
          } else {
 	    static Bool whined = False;

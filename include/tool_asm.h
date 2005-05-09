@@ -45,9 +45,6 @@
 #define VGO_(str)   VGAPPEND(vgOS_,str)
 #define VGP_(str)   VGAPPEND(vgPlatform_,str)
 
-/* Tool-specific ones.  Note that final name still starts with "vg". */
-#define TL_(str)    VGAPPEND(vgTool_,str)
-
 #endif /* ndef __TOOL_ASM_H */
 
 /*--------------------------------------------------------------------*/

@@ -31,10 +31,8 @@
 
 #include "core.h"
 
-
-/* ---------------------------------------------------------------------
-   Tool data structure initialisation
-   ------------------------------------------------------------------ */
+// The core/tool dictionary of functions (initially zeroed, as we want it)
+VgToolInterface VG_(tdict);
 
 /*--------------------------------------------------------------------*/
 /* Setting basic functions */
@@ -49,6 +47,7 @@ void VG_(basic_tool_funcs)(
    VG_(tdict).tool_instrument    = instrument;
    VG_(tdict).tool_fini          = fini;
 }
+
 
 /*--------------------------------------------------------------------*/
 /* Setting details */
@@ -76,6 +75,7 @@ DETAILS(Char*, description)
 DETAILS(Char*, copyright_author)
 DETAILS(Char*, bug_reports_to)
 DETAILS(UInt,  avg_translation_sizeB)
+
 
 /*--------------------------------------------------------------------*/
 /* Setting needs */
@@ -112,24 +112,24 @@ void VG_(sanity_check_needs) ( void)
    CHECK_NOT(VG_(details).copyright_author, NULL);
    CHECK_NOT(VG_(details).bug_reports_to,   NULL);
 
-   if ( (VG_(defined_new_mem_stack_4)()  ||
-         VG_(defined_new_mem_stack_8)()  ||
-         VG_(defined_new_mem_stack_12)() ||
-         VG_(defined_new_mem_stack_16)() ||
-         VG_(defined_new_mem_stack_32)()) &&
-       ! VG_(defined_new_mem_stack)()) 
+   if ( (VG_(tdict).track_new_mem_stack_4  ||
+         VG_(tdict).track_new_mem_stack_8  ||
+         VG_(tdict).track_new_mem_stack_12 ||
+         VG_(tdict).track_new_mem_stack_16 ||
+         VG_(tdict).track_new_mem_stack_32 ) &&
+       ! VG_(tdict).track_new_mem_stack) 
    {
       VG_(printf)("\nTool error: one of the specialised `new_mem_stack_n'\n"
                   "events tracked, but not the generic `new_mem_stack' one.\n");
       VG_(tool_panic)("`new_mem_stack' should be defined\n");
    }
 
-   if ( (VG_(defined_die_mem_stack_4)()  ||
-         VG_(defined_die_mem_stack_8)()  ||
-         VG_(defined_die_mem_stack_12)() ||
-         VG_(defined_die_mem_stack_16)() ||
-         VG_(defined_die_mem_stack_32)()) &&
-       ! VG_(defined_die_mem_stack)()) 
+   if ( (VG_(tdict).track_die_mem_stack_4  ||
+         VG_(tdict).track_die_mem_stack_8  ||
+         VG_(tdict).track_die_mem_stack_12 ||
+         VG_(tdict).track_die_mem_stack_16 ||
+         VG_(tdict).track_die_mem_stack_32 ) &&
+       ! VG_(tdict).track_die_mem_stack) 
    {
       VG_(printf)("\nTool error: one of the specialised `die_mem_stack_n'\n"
                   "events tracked, but not the generic `die_mem_stack' one.\n");
@@ -143,7 +143,7 @@ void VG_(sanity_check_needs) ( void)
       else
 	 VG_(printf)("\nTool error: tool didn't allocate shadow memory, but apparently "
 		     "needs it.\n");
-      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match TL_(shadow_ratio)\n");
+      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match 'shadow_ratio'\n");
    }
 
 #undef CHECK_NOT
@@ -233,6 +233,7 @@ void VG_(needs_sanity_checks)(
 }
 
 
+/*--------------------------------------------------------------------*/
 /* Replacing malloc() */
 
 extern void VG_(malloc_funcs)(
@@ -261,8 +262,75 @@ extern void VG_(malloc_funcs)(
    VG_(set_client_malloc_redzone_szB)( client_malloc_redzone_szB );
 }
 
+
 /*--------------------------------------------------------------------*/
-/*--- end                                               vg_needs.c ---*/
+/* Tracked events */
+
+#define DEF(fn, args...) \
+void VG_(fn)(void(*f)(args)) \
+{ \
+   VG_(tdict).fn = f; \
+}
+
+#define DEF2(fn, args...) \
+void VG_(fn)(VGA_REGPARM(1) void(*f)(args)) \
+{ \
+   VG_(tdict).fn = f; \
+}
+
+DEF(track_new_mem_startup,       Addr, SizeT, Bool, Bool, Bool)
+DEF(track_new_mem_stack_signal,  Addr, SizeT)
+DEF(track_new_mem_brk,           Addr, SizeT)
+DEF(track_new_mem_mmap,          Addr, SizeT, Bool, Bool, Bool)
+
+DEF(track_copy_mem_remap,        Addr, Addr, SizeT)
+DEF(track_change_mem_mprotect,   Addr, SizeT, Bool, Bool, Bool)
+DEF(track_die_mem_stack_signal,  Addr, SizeT)
+DEF(track_die_mem_brk,           Addr, SizeT)
+DEF(track_die_mem_munmap,        Addr, SizeT)
+
+DEF2(track_new_mem_stack_4,      Addr)
+DEF2(track_new_mem_stack_8,      Addr)
+DEF2(track_new_mem_stack_12,     Addr)
+DEF2(track_new_mem_stack_16,     Addr)
+DEF2(track_new_mem_stack_32,     Addr)
+DEF (track_new_mem_stack,        Addr, SizeT)
+
+DEF2(track_die_mem_stack_4,      Addr)
+DEF2(track_die_mem_stack_8,      Addr)
+DEF2(track_die_mem_stack_12,     Addr)
+DEF2(track_die_mem_stack_16,     Addr)
+DEF2(track_die_mem_stack_32,     Addr)
+DEF (track_die_mem_stack,        Addr, SizeT)
+
+DEF(track_ban_mem_stack,         Addr, SizeT)
+
+DEF(track_pre_mem_read,          CorePart, ThreadId, Char*, Addr, SizeT)
+DEF(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
+DEF(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
+DEF(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
+
+DEF(track_pre_reg_read,          CorePart, ThreadId, Char*, OffT, SizeT)
+DEF(track_post_reg_write,        CorePart, ThreadId,        OffT, SizeT)
+
+DEF(track_post_reg_write_clientcall_return, ThreadId, OffT, SizeT, Addr)
+
+DEF(track_thread_run,            ThreadId)
+
+DEF(track_post_thread_create,    ThreadId, ThreadId)
+DEF(track_post_thread_join,      ThreadId, ThreadId)
+
+DEF(track_pre_mutex_lock,        ThreadId, void*)
+DEF(track_post_mutex_lock,       ThreadId, void*)
+DEF(track_post_mutex_unlock,     ThreadId, void*)
+
+DEF(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)
+DEF(track_post_deliver_signal,   ThreadId, Int sigNo)
+
+DEF(track_init_shadow_page,      Addr)
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 
 

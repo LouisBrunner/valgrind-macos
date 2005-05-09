@@ -401,7 +401,7 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
          to the host's native pointer type; if that is 32 bits then it
          discards the upper 32 bits.  If we are cachegrinding on a
          32-bit host then we are also ensured that the guest word size
-         is 32 bits, due to the assertion in TL_(instrument) that the
+         is 32 bits, due to the assertion in cg_instrument that the
          host and guest word sizes must be the same.  Hence
          st->Ist.IMark.addr will have been derived from a 32-bit guest
          code address and truncation of it is safe.  I believe this
@@ -603,8 +603,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 }
 
-IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, 
-                        IRType gWordTy, IRType hWordTy )
+static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
+                             IRType gWordTy, IRType hWordTy )
 {
    Int      i, dataSize = 0, bbInfo_i;
    IRBB*    bbOut;
@@ -768,7 +768,7 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 }
 
 /*------------------------------------------------------------*/
-/*--- TL_(fini)() and related function                     ---*/
+/*--- cg_fini() and related function                       ---*/
 /*------------------------------------------------------------*/
 
 // Total reads/writes/misses.  Calculated during CC traversal at the end.
@@ -902,7 +902,7 @@ void percentify(Int n, Int ex, Int field_width, char buf[])
    for (i = 0; i < space; i++)  buf[i] = ' ';
 }
 
-void TL_(fini)(Int exitcode)
+static void cg_fini(Int exitcode)
 {
    static char buf1[128], buf2[128], buf3[128], fmt [128];
 
@@ -1025,7 +1025,7 @@ void TL_(fini)(Int exitcode)
 /*--------------------------------------------------------------------*/
 
 // Called when a translation is invalidated due to code unloading.
-void TL_(discard_basic_block_info) ( Addr a, SizeT size )
+static void cg_discard_basic_block_info ( Addr a, SizeT size )
 {
    VgHashNode** prev_next_ptr;
    VgHashNode*  bbInfo;
@@ -1075,7 +1075,7 @@ static void parse_cache_opt ( cache_t* cache, char* opt )
    VG_(bad_option)(opt);
 }
 
-Bool TL_(process_cmd_line_option)(Char* arg)
+static Bool cg_process_cmd_line_option(Char* arg)
 {
    // 5 is length of "--I1="
    if      (VG_CLO_STREQN(5, arg, "--I1="))
@@ -1090,7 +1090,7 @@ Bool TL_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void TL_(print_usage)(void)
+static void cg_print_usage(void)
 {
    VG_(printf)(
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
@@ -1099,7 +1099,7 @@ void TL_(print_usage)(void)
    );
 }
 
-void TL_(print_debug_usage)(void)
+static void cg_print_debug_usage(void)
 {
    VG_(printf)(
 "    (none)\n"
@@ -1110,40 +1110,7 @@ void TL_(print_debug_usage)(void)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-void TL_(pre_clo_init)(void)
-{
-   Char* base_dir = NULL;
-
-   VG_(details_name)            ("Cachegrind");
-   VG_(details_version)         (NULL);
-   VG_(details_description)     ("an I1/D1/L2 cache profiler");
-   VG_(details_copyright_author)(
-      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote et al.");
-   VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 155 );
-
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
-
-   VG_(needs_basic_block_discards)(TL_(discard_basic_block_info));
-   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
-                                   TL_(print_usage),
-                                   TL_(print_debug_usage));
-
-   /* Get working directory */
-   tl_assert( VG_(getcwd_alloc)(&base_dir) );
-
-   /* Block is big enough for dir name + cachegrind.out.<pid> */
-   cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
-   VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
-                base_dir, VG_(getpid)());
-   VG_(free)(base_dir);
-
-   instr_info_table = VG_(HT_construct)();
-}
-
-void TL_(post_clo_init)(void)
+static void cg_post_clo_init(void)
 {
    cache_t I1c, D1c, L2c; 
 
@@ -1158,7 +1125,40 @@ void TL_(post_clo_init)(void)
    VG_(register_profile_event)(VgpCacheResults,  "cache-results");
 }
 
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
+static void cg_pre_clo_init(void)
+{
+   Char* base_dir = NULL;
+
+   VG_(details_name)            ("Cachegrind");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("an I1/D1/L2 cache profiler");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote et al.");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
+   VG_(details_avg_translation_sizeB) ( 155 );
+
+   VG_(basic_tool_funcs)          (cg_post_clo_init,
+                                   cg_instrument,
+                                   cg_fini);
+
+   VG_(needs_basic_block_discards)(cg_discard_basic_block_info);
+   VG_(needs_command_line_options)(cg_process_cmd_line_option,
+                                   cg_print_usage,
+                                   cg_print_debug_usage);
+
+   /* Get working directory */
+   tl_assert( VG_(getcwd_alloc)(&base_dir) );
+
+   /* Block is big enough for dir name + cachegrind.out.<pid> */
+   cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
+   VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
+                base_dir, VG_(getpid)());
+   VG_(free)(base_dir);
+
+   instr_info_table = VG_(HT_construct)();
+}
+
+VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                cg_main.c ---*/

@@ -30,7 +30,21 @@
 
 #include "tool.h"
 
-void TL_(pre_clo_init)(void)
+static void nl_post_clo_init(void)
+{
+}
+
+static IRBB* nl_instrument(IRBB* bb, VexGuestLayout* layout, 
+                           IRType gWordTy, IRType hWordTy)
+{
+    return bb;
+}
+
+static void nl_fini(Int exitcode)
+{
+}
+
+static void nl_pre_clo_init(void)
 {
    VG_(details_name)            ("Nulgrind");
    VG_(details_version)         (NULL);
@@ -39,28 +53,14 @@ void TL_(pre_clo_init)(void)
       "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
+   VG_(basic_tool_funcs)        (nl_post_clo_init,
+                                 nl_instrument,
+                                 nl_fini);
 
    /* No needs, no core events to track */
 }
 
-void TL_(post_clo_init)(void)
-{
-}
-
-IRBB* TL_(instrument)(IRBB* bb, VexGuestLayout* layout, 
-                      IRType gWordTy, IRType hWordTy)
-{
-    return bb;
-}
-
-void TL_(fini)(Int exitcode)
-{
-}
-
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(nl_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

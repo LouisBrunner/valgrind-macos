@@ -37,8 +37,8 @@
    gory details.
 
    This file can be linked into the injected so file for any tool that
-   wishes to know about calls to malloc().  It should define functions
-   TL_(malloc) et al that will be called.
+   wishes to know about calls to malloc().  The tool must define all
+   the functions that will be called via 'info'.
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */

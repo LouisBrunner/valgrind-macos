@@ -1228,7 +1228,7 @@ vg_assert(0);
       VG_(printf)("init_shadow_range(%p, %d)\n", p, sz);
 
    vg_assert(VG_(needs).shadow_memory);
-   vg_assert(VG_(defined_init_shadow_page)());
+   vg_assert(VG_(tdict).track_init_shadow_page);
 
    sz = PGROUNDUP(p+sz) - PGROUNDDN(p);
    p = PGROUNDDN(p);
@@ -1254,7 +1254,7 @@ void *VG_(shadow_alloc)(UInt size)
    if (0) show_segments("shadow_alloc(before)");
 
    vg_assert(VG_(needs).shadow_memory);
-   vg_assert(!VG_(defined_init_shadow_page)());
+   vg_assert(!VG_(tdict).track_init_shadow_page);
 
    size = PGROUNDUP(size);
 

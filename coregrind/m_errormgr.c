@@ -235,9 +235,9 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
      //         vg_assert(VG_(needs).core_errors);
      //         return VG_(tm_error_equal)(res, e1, e2);
       default: 
-         if (VG_(needs).tool_errors)
-            return TL_(eq_Error)(res, e1, e2);
-         else {
+         if (VG_(needs).tool_errors) {
+            return VG_TDICT_CALL(tool_eq_Error, res, e1, e2);
+         } else {
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
                         e1->ekind);
@@ -263,7 +263,7 @@ static void pp_Error ( Error* err, Bool printCount )
      //         break;
       default: 
          if (VG_(needs).tool_errors)
-            TL_(pp_Error)( err );
+            VG_TDICT_CALL( tool_pp_Error, err );
          else {
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
                         "probably needs to be set?\n",
@@ -373,14 +373,14 @@ static void gen_suppression(Error* err)
       VG_(printf)("   core:PThread\n");
 
    } else {
-      Char* name = TL_(get_error_name)(err);
+      Char* name = VG_TDICT_CALL(tool_get_error_name, err);
       if (NULL == name) {
          VG_(message)(Vg_UserMsg, 
                       "(tool does not allow error to be suppressed)");
          return;
       }
       VG_(printf)("   %s:%s\n", VG_(details).name, name);
-      TL_(print_extra_suppression_info)(err);
+      VG_TDICT_CALL(tool_print_extra_suppression_info, err);
    }
 
    // Print stack trace elements
@@ -524,15 +524,15 @@ void VG_(maybe_record_error) ( ThreadId tid,
       will disappear shortly, so we must copy it.  First do the main
       (non-`extra') part.
      
-      Then TL_(update_extra) can update the `extra' part.  This is for when
-      there are more details to fill in which take time to work out but
-      don't affect our earlier decision to include the error -- by
+      Then VG_(tdict).tool_update_extra can update the `extra' part.  This
+      is for when there are more details to fill in which take time to work
+      out but don't affect our earlier decision to include the error -- by
       postponing those details until now, we avoid the extra work in the
       case where we ignore the error.  Ugly.
 
       Then, if there is an `extra' part, copy it too, using the size that
-      TL_(update_extra) returned.  Also allow for people using the void*
-      extra field for a scalar value like an integer.
+      VG_(tdict).tool_update_extra returned.  Also allow for people using
+      the void* extra field for a scalar value like an integer.
    */
 
    /* copy main part */
@@ -548,7 +548,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
      //         break;
       default:
          vg_assert(VG_(needs).tool_errors);
-         extra_size = TL_(update_extra)(p);
+         extra_size = VG_TDICT_CALL(tool_update_extra, p);
          break;
    }
 
@@ -595,10 +595,11 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
    /* Unless it's suppressed, we're going to show it.  Don't need to make
       a copy, because it's only temporary anyway.
 
-      Then update the `extra' part with TL_(update_extra), because that can
-      have an affect on whether it's suppressed.  Ignore the size return
-      value of TL_(update_extra), because we're not copying `extra'. */
-   (void)TL_(update_extra)(&err);
+      Then update the `extra' part with VG_(tdict).tool_update_extra),
+      because that can have an affect on whether it's suppressed.  Ignore
+      the size return value of VG_(tdict).tool_update_extra, because we're
+      not copying `extra'. */
+   (void)VG_TDICT_CALL(tool_update_extra, &err);
 
    if (NULL == is_suppressible_error(&err)) {
       if (count_error)
@@ -865,7 +866,7 @@ static void load_one_suppressions_file ( Char* filename )
                tool_name_present(VG_(details).name, tool_names))
       {
          // A tool suppression
-         if (TL_(recognised_suppression)(supp_name, supp)) {
+         if (VG_TDICT_CALL(tool_recognised_suppression, supp_name, supp)) {
             /* Do nothing, function fills in supp->skind */
          } else {
             BOMB("unknown tool suppression type");
@@ -883,7 +884,7 @@ static void load_one_suppressions_file ( Char* filename )
       }
 
       if (VG_(needs).tool_errors && 
-          !TL_(read_extra_suppression_info)(fd, buf, N_BUF, supp))
+          !VG_TDICT_CALL(tool_read_extra_suppression_info, fd, buf, N_BUF, supp))
       {
          BOMB("bad or missing extra suppression info");
       }
@@ -965,7 +966,7 @@ Bool supp_matches_error(Supp* su, Error* err)
          return (err->ekind == ThreadErr || err->ekind == MutexErr);
       default:
          if (VG_(needs).tool_errors) {
-            return TL_(error_matches_suppression)(err, su);
+            return VG_TDICT_CALL(tool_error_matches_suppression, err, su);
          } else {
             VG_(printf)(
                "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"

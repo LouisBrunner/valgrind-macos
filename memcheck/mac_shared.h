@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Declarations shared between MemCheck and AddrCheck.          ---*/
+/*--- Declarations shared between Memcheck and Addrcheck.          ---*/
 /*---                                                 mac_shared.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -323,7 +323,7 @@ extern void MAC_(print_common_usage)             ( void );
 extern void MAC_(print_common_debug_usage)       ( void );
 
 /* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
-#define MALLOC_REDZONE_SZB    16
+#define MAC_MALLOC_REDZONE_SZB    16
 
 /*------------------------------------------------------------*/
 /*--- Variables                                            ---*/
@@ -362,7 +362,14 @@ extern void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai );
 
 extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
-extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
+extern Bool  MAC_(eq_Error) ( VgRes res, Error* e1, Error* e2 );
+extern UInt  MAC_(update_extra)( Error* err );
+extern Bool  MAC_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su );
+extern Bool  MAC_(error_matches_suppression)(Error* err, Supp* su);
+extern Char* MAC_(get_error_name) ( Error* err );
+extern void  MAC_(print_extra_suppression_info)  ( Error* err );
+
+extern Bool  MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
 extern void* MAC_(new_block) ( ThreadId tid,
                                Addr p, SizeT size, SizeT align, UInt rzB,
@@ -430,6 +437,15 @@ extern VGA_REGPARM(1) void MAC_(die_mem_stack_32) ( Addr old_ESP );
 extern                void MAC_(die_mem_stack) ( Addr a, SizeT len);
 extern                void MAC_(new_mem_stack) ( Addr a, SizeT len);
 
+extern void* MAC_(malloc)               ( ThreadId tid, SizeT n );
+extern void* MAC_(__builtin_new)        ( ThreadId tid, SizeT n );
+extern void* MAC_(__builtin_vec_new)    ( ThreadId tid, SizeT n );
+extern void* MAC_(memalign)             ( ThreadId tid, SizeT align, SizeT n );
+extern void* MAC_(calloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 );
+extern void  MAC_(free)                 ( ThreadId tid, void* p );
+extern void  MAC_(__builtin_delete)     ( ThreadId tid, void* p );
+extern void  MAC_(__builtin_vec_delete) ( ThreadId tid, void* p );
+extern void* MAC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
 
 /*------------------------------------------------------------*/
 /*--- Stack pointer adjustment                             ---*/

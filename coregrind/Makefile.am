@@ -47,15 +47,11 @@ noinst_HEADERS = \
 	pub_core_syscalls.h	\
 	ume.h			\
 	vg_symtab2.h		\
-	vg_symtypes.h		\
-	vg_toolint.h
+	vg_symtypes.h
 
 EXTRA_DIST = \
 	valgrind.vs \
-	gen_toolint.pl toolfuncs.def README_MODULES.txt
-
-BUILT_SOURCES = vg_toolint.c vg_toolint.h
-CLEANFILES = vg_toolint.c vg_toolint.h
+	README_MODULES.txt
 
 valgrind_SOURCES = \
 	ume.c \
@@ -93,7 +89,6 @@ stage2_SOURCES = \
 	vg_stabs.c \
 	vg_skiplist.c \
 	vg_symtypes.c \
-	vg_toolint.c \
 	vg_translate.c \
 	vg_transtab.c
 
@@ -129,19 +124,6 @@ stage2_LDFLAGS = -Wl,--export-dynamic -g \
 endif
 
 stage2_LDADD= $(stage2_extra) -ldl
-
-
-vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
-	rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl callwrap     < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl missingfuncs < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl initfunc     < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl structdef    < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
-
-vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
-	rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl proto  < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl struct < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 
 
 vg_inject_so_SOURCES = vg_intercept.c

@@ -54,7 +54,8 @@ typedef
    struct _Error
    Error;
 
-/* Useful in TL_(error_matches_suppression)(), TL_(pp_Error)(), etc */
+/* Useful in VG_(tdict).tool_error_matches_suppression(),
+ * VG_(tdict).tool_pp_Error(), etc */
 ExeContext* VG_(get_error_where)   ( Error* err );
 ErrorKind   VG_(get_error_kind)    ( Error* err );
 Addr        VG_(get_error_address) ( Error* err );
@@ -112,7 +113,7 @@ typedef
    struct _Supp
    Supp;
 
-/* Useful in TL_(error_matches_suppression)() */
+/* Useful in VG_(tdict).tool_error_matches_suppression() */
 SuppKind VG_(get_supp_kind)   ( Supp* su );
 Char*    VG_(get_supp_string) ( Supp* su );
 void*    VG_(get_supp_extra)  ( Supp* su );

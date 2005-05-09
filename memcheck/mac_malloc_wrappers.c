@@ -212,57 +212,57 @@ void* MAC_(new_block) ( ThreadId tid,
    return (void*)p;
 }
 
-void* TL_(malloc) ( ThreadId tid, SizeT n )
+void* MAC_(malloc) ( ThreadId tid, SizeT n )
 {
    if (complain_about_silly_args(n, "malloc")) {
       return NULL;
    } else {
       return MAC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
-         MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocMalloc,
+         MAC_MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocMalloc,
          MAC_(malloc_list));
    }
 }
 
-void* TL_(__builtin_new) ( ThreadId tid, SizeT n )
+void* MAC_(__builtin_new) ( ThreadId tid, SizeT n )
 {
    if (complain_about_silly_args(n, "__builtin_new")) {
       return NULL;
    } else {
       return MAC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
-         MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocNew,
+         MAC_MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocNew,
          MAC_(malloc_list));
    }
 }
 
-void* TL_(__builtin_vec_new) ( ThreadId tid, SizeT n )
+void* MAC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 {
    if (complain_about_silly_args(n, "__builtin_vec_new")) {
       return NULL;
    } else {
       return MAC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
-         MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocNewVec,
+         MAC_MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocNewVec,
          MAC_(malloc_list));
    }
 }
 
-void* TL_(memalign) ( ThreadId tid, SizeT align, SizeT n )
+void* MAC_(memalign) ( ThreadId tid, SizeT align, SizeT n )
 {
    if (complain_about_silly_args(n, "memalign")) {
       return NULL;
    } else {
       return MAC_(new_block) ( tid, 0, n, align, 
-         MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocMalloc,
+         MAC_MALLOC_REDZONE_SZB, /*is_zeroed*/False, MAC_AllocMalloc,
          MAC_(malloc_list));
    }
 }
 
-void* TL_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
+void* MAC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 {
    if (complain_about_silly_args2(nmemb, size1)) {
       return NULL;
    } else {
       return MAC_(new_block) ( tid, 0, nmemb*size1, VG_(clo_alignment),
-         MALLOC_REDZONE_SZB, /*is_zeroed*/True, MAC_AllocMalloc,
+         MAC_MALLOC_REDZONE_SZB, /*is_zeroed*/True, MAC_AllocMalloc,
          MAC_(malloc_list));
    }
 }
@@ -320,25 +320,25 @@ void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
    VGP_POPCC(VgpCliMalloc);
 }
 
-void TL_(free) ( ThreadId tid, void* p )
+void MAC_(free) ( ThreadId tid, void* p )
 {
    MAC_(handle_free)( 
-      tid, (Addr)p, MALLOC_REDZONE_SZB, MAC_AllocMalloc );
+      tid, (Addr)p, MAC_MALLOC_REDZONE_SZB, MAC_AllocMalloc );
 }
 
-void TL_(__builtin_delete) ( ThreadId tid, void* p )
+void MAC_(__builtin_delete) ( ThreadId tid, void* p )
 {
    MAC_(handle_free)(
-      tid, (Addr)p, MALLOC_REDZONE_SZB, MAC_AllocNew);
+      tid, (Addr)p, MAC_MALLOC_REDZONE_SZB, MAC_AllocNew);
 }
 
-void TL_(__builtin_vec_delete) ( ThreadId tid, void* p )
+void MAC_(__builtin_vec_delete) ( ThreadId tid, void* p )
 {
    MAC_(handle_free)(
-      tid, (Addr)p, MALLOC_REDZONE_SZB, MAC_AllocNewVec);
+      tid, (Addr)p, MAC_MALLOC_REDZONE_SZB, MAC_AllocNewVec);
 }
 
-void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
+void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 {
    MAC_Chunk  *mc;
    MAC_Chunk **prev_chunks_next_ptr;
@@ -394,17 +394,17 @@ void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 
       /* First half kept and copied, second half new, 
          red zones as normal */
-      MAC_(ban_mem_heap) ( p_new-MALLOC_REDZONE_SZB, MALLOC_REDZONE_SZB );
+      MAC_(ban_mem_heap) ( p_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
       MAC_(copy_mem_heap)( (Addr)p, p_new, mc->size );
       MAC_(new_mem_heap) ( p_new+mc->size, new_size-mc->size, /*inited*/False );
-      MAC_(ban_mem_heap) ( p_new+new_size, MALLOC_REDZONE_SZB );
+      MAC_(ban_mem_heap) ( p_new+new_size, MAC_MALLOC_REDZONE_SZB );
 
       /* Copy from old to new */
       for (i = 0; i < mc->size; i++)
          ((UChar*)p_new)[i] = ((UChar*)p)[i];
 
       /* Free old memory */
-      die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MALLOC_REDZONE_SZB );
+      die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MAC_MALLOC_REDZONE_SZB );
 
       /* this has to be after die_and_free_mem, otherwise the
          former succeeds in shorting out the new block, not the

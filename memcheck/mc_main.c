@@ -1209,7 +1209,7 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
 /*--- Printing errors                                      ---*/
 /*------------------------------------------------------------*/
 
-void TL_(pp_Error) ( Error* err )
+static void mc_pp_Error ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -1299,7 +1299,7 @@ static void mc_record_user_error ( ThreadId tid, Addr a, Bool isWrite,
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(recognised_suppression) ( Char* name, Supp* su )
+static Bool mc_recognised_suppression ( Char* name, Supp* su )
 {
    SuppKind skind;
 
@@ -1923,7 +1923,7 @@ static void init_shadow_memory ( void )
 /*--- Sanity check machinery (permanently engaged)         ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(cheap_sanity_check) ( void )
+static Bool mc_cheap_sanity_check ( void )
 {
    /* nothing useful we can rapidly check */
    n_sanity_cheap++;
@@ -1931,7 +1931,7 @@ Bool TL_(cheap_sanity_check) ( void )
    return True;
 }
 
-Bool TL_(expensive_sanity_check) ( void )
+static Bool mc_expensive_sanity_check ( void )
 {
    Int     i, n_secmaps_found;
    SecMap* sm;
@@ -2039,9 +2039,9 @@ Bool TL_(expensive_sanity_check) ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
-Bool  MC_(clo_avoid_strlen_errors)    = True;
+Bool MC_(clo_avoid_strlen_errors)    = True;
 
-Bool TL_(process_cmd_line_option)(Char* arg)
+static Bool mc_process_cmd_line_option(Char* arg)
 {
         VG_BOOL_CLO(arg, "--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
    else
@@ -2050,7 +2050,7 @@ Bool TL_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void TL_(print_usage)(void)
+static void mc_print_usage(void)
 {  
    MAC_(print_common_usage)();
    VG_(printf)(
@@ -2058,7 +2058,7 @@ void TL_(print_usage)(void)
    );
 }
 
-void TL_(print_debug_usage)(void)
+static void mc_print_debug_usage(void)
 {  
    MAC_(print_common_debug_usage)();
    VG_(printf)(
@@ -2205,7 +2205,7 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
    return False;
 }
 
-Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
+static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
    Bool  ok;
@@ -2320,113 +2320,14 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 }
 
 /*------------------------------------------------------------*/
-/*--- Setup                                                ---*/
+/*--- Setup and finalisation                               ---*/
 /*------------------------------------------------------------*/
 
-void TL_(pre_clo_init)(void)
-{
-   VG_(details_name)            ("Memcheck");
-   VG_(details_version)         (NULL);
-   VG_(details_description)     ("a memory error detector");
-   VG_(details_copyright_author)(
-      "Copyright (C) 2002-2005, and GNU GPL'd, by Julian Seward et al.");
-   VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 370 );
-
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
-
-   VG_(needs_core_errors)         ();
-   VG_(needs_tool_errors)         (TL_(eq_Error),
-                                   TL_(pp_Error),
-                                   TL_(update_extra),
-                                   TL_(recognised_suppression),
-                                   TL_(read_extra_suppression_info),
-                                   TL_(error_matches_suppression),
-                                   TL_(get_error_name),
-                                   TL_(print_extra_suppression_info));
-   VG_(needs_libc_freeres)        ();
-   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
-                                   TL_(print_usage),
-                                   TL_(print_debug_usage));
-   VG_(needs_client_requests)     (TL_(handle_client_request));
-   VG_(needs_sanity_checks)       (TL_(cheap_sanity_check),
-                                   TL_(expensive_sanity_check));
-   VG_(needs_shadow_memory)       ();
-
-   VG_(malloc_funcs)              (TL_(malloc),
-                                   TL_(__builtin_new),
-                                   TL_(__builtin_vec_new),
-                                   TL_(memalign),
-                                   TL_(calloc),
-                                   TL_(free),
-                                   TL_(__builtin_delete),
-                                   TL_(__builtin_vec_delete),
-                                   TL_(realloc),
-                                   MALLOC_REDZONE_SZB );
-
-   MAC_( new_mem_heap)             = & mc_new_mem_heap;
-   MAC_( ban_mem_heap)             = & mc_make_noaccess;
-   MAC_(copy_mem_heap)             = & mc_copy_address_range_state;
-   MAC_( die_mem_heap)             = & mc_make_noaccess;
-   MAC_(check_noaccess)            = & mc_check_noaccess;
-
-   VG_(init_new_mem_startup)      ( & mc_new_mem_startup );
-   VG_(init_new_mem_stack_signal) ( & mc_make_writable );
-   VG_(init_new_mem_brk)          ( & mc_make_writable );
-   VG_(init_new_mem_mmap)         ( & mc_new_mem_mmap );
-   
-   VG_(init_copy_mem_remap)       ( & mc_copy_address_range_state );
-      
-   VG_(init_die_mem_stack_signal) ( & mc_make_noaccess ); 
-   VG_(init_die_mem_brk)          ( & mc_make_noaccess );
-   VG_(init_die_mem_munmap)       ( & mc_make_noaccess ); 
-
-   VG_(init_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
-   VG_(init_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
-   VG_(init_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
-   VG_(init_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
-   VG_(init_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
-   VG_(init_new_mem_stack)        ( & MAC_(new_mem_stack)    );
-
-   VG_(init_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
-   VG_(init_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
-   VG_(init_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
-   VG_(init_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
-   VG_(init_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
-   VG_(init_die_mem_stack)        ( & MAC_(die_mem_stack)    );
-   
-   VG_(init_ban_mem_stack)        ( & mc_make_noaccess );
-
-   VG_(init_pre_mem_read)         ( & mc_check_is_readable );
-   VG_(init_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
-   VG_(init_pre_mem_write)        ( & mc_check_is_writable );
-   VG_(init_post_mem_write)       ( & mc_post_mem_write );
-
-   VG_(init_pre_reg_read)         ( & mc_pre_reg_read );
-
-   VG_(init_post_reg_write)                   ( & mc_post_reg_write );
-   VG_(init_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
-
-   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
-   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
-   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
-
-   /* Additional block description for VG_(describe_addr)() */
-   MAC_(describe_addr_supp) = client_perm_maybe_describe;
-
-   init_shadow_memory();
-   MAC_(common_pre_clo_init)();
-
-   tl_assert( TL_(expensive_sanity_check)() );
-}
-
-void TL_(post_clo_init) ( void )
+static void mc_post_clo_init ( void )
 {
 }
 
-void TL_(fini) ( Int exitcode )
+static void mc_fini ( Int exitcode )
 {
    MAC_(common_fini)( mc_detect_memory_leaks );
 
@@ -2480,7 +2381,106 @@ void TL_(fini) ( Int exitcode )
    }
 }
 
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 9./8)
+static void mc_pre_clo_init(void)
+{
+   VG_(details_name)            ("Memcheck");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a memory error detector");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002-2005, and GNU GPL'd, by Julian Seward et al.");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
+   VG_(details_avg_translation_sizeB) ( 370 );
+
+   VG_(basic_tool_funcs)          (mc_post_clo_init,
+                                   MC_(instrument),
+                                   mc_fini);
+
+   VG_(needs_core_errors)         ();
+   VG_(needs_tool_errors)         (MAC_(eq_Error),
+                                   mc_pp_Error,
+                                   MAC_(update_extra),
+                                   mc_recognised_suppression,
+                                   MAC_(read_extra_suppression_info),
+                                   MAC_(error_matches_suppression),
+                                   MAC_(get_error_name),
+                                   MAC_(print_extra_suppression_info));
+   VG_(needs_libc_freeres)        ();
+   VG_(needs_command_line_options)(mc_process_cmd_line_option,
+                                   mc_print_usage,
+                                   mc_print_debug_usage);
+   VG_(needs_client_requests)     (mc_handle_client_request);
+   VG_(needs_sanity_checks)       (mc_cheap_sanity_check,
+                                   mc_expensive_sanity_check);
+   VG_(needs_shadow_memory)       ();
+
+   VG_(malloc_funcs)              (MAC_(malloc),
+                                   MAC_(__builtin_new),
+                                   MAC_(__builtin_vec_new),
+                                   MAC_(memalign),
+                                   MAC_(calloc),
+                                   MAC_(free),
+                                   MAC_(__builtin_delete),
+                                   MAC_(__builtin_vec_delete),
+                                   MAC_(realloc),
+                                   MAC_MALLOC_REDZONE_SZB );
+
+   MAC_( new_mem_heap)             = & mc_new_mem_heap;
+   MAC_( ban_mem_heap)             = & mc_make_noaccess;
+   MAC_(copy_mem_heap)             = & mc_copy_address_range_state;
+   MAC_( die_mem_heap)             = & mc_make_noaccess;
+   MAC_(check_noaccess)            = & mc_check_noaccess;
+
+   VG_(track_new_mem_startup)     ( & mc_new_mem_startup );
+   VG_(track_new_mem_stack_signal)( & mc_make_writable );
+   VG_(track_new_mem_brk)         ( & mc_make_writable );
+   VG_(track_new_mem_mmap)        ( & mc_new_mem_mmap );
+   
+   VG_(track_copy_mem_remap)      ( & mc_copy_address_range_state );
+      
+   VG_(track_die_mem_stack_signal)( & mc_make_noaccess ); 
+   VG_(track_die_mem_brk)         ( & mc_make_noaccess );
+   VG_(track_die_mem_munmap)      ( & mc_make_noaccess ); 
+
+   VG_(track_new_mem_stack_4)     ( & MAC_(new_mem_stack_4)  );
+   VG_(track_new_mem_stack_8)     ( & MAC_(new_mem_stack_8)  );
+   VG_(track_new_mem_stack_12)    ( & MAC_(new_mem_stack_12) );
+   VG_(track_new_mem_stack_16)    ( & MAC_(new_mem_stack_16) );
+   VG_(track_new_mem_stack_32)    ( & MAC_(new_mem_stack_32) );
+   VG_(track_new_mem_stack)       ( & MAC_(new_mem_stack)    );
+
+   VG_(track_die_mem_stack_4)     ( & MAC_(die_mem_stack_4)  );
+   VG_(track_die_mem_stack_8)     ( & MAC_(die_mem_stack_8)  );
+   VG_(track_die_mem_stack_12)    ( & MAC_(die_mem_stack_12) );
+   VG_(track_die_mem_stack_16)    ( & MAC_(die_mem_stack_16) );
+   VG_(track_die_mem_stack_32)    ( & MAC_(die_mem_stack_32) );
+   VG_(track_die_mem_stack)       ( & MAC_(die_mem_stack)    );
+   
+   VG_(track_ban_mem_stack)       ( & mc_make_noaccess );
+
+   VG_(track_pre_mem_read)        ( & mc_check_is_readable );
+   VG_(track_pre_mem_read_asciiz) ( & mc_check_is_readable_asciiz );
+   VG_(track_pre_mem_write)       ( & mc_check_is_writable );
+   VG_(track_post_mem_write)      ( & mc_post_mem_write );
+
+   VG_(track_pre_reg_read)        ( & mc_pre_reg_read );
+
+   VG_(track_post_reg_write)                  ( & mc_post_reg_write );
+   VG_(track_post_reg_write_clientcall_return)( & mc_post_reg_write_clientcall );
+
+   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
+   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
+
+   /* Additional block description for VG_(describe_addr)() */
+   MAC_(describe_addr_supp) = client_perm_maybe_describe;
+
+   init_shadow_memory();
+   MAC_(common_pre_clo_init)();
+
+   tl_assert( mc_expensive_sanity_check() );
+}
+
+VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init, 9./8)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                mc_main.c ---*/

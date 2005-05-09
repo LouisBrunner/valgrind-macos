@@ -145,7 +145,7 @@ static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 
-Bool TL_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
+Bool MAC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
 {
    MAC_Error* e1_extra = VG_(get_error_extra)(e1);
    MAC_Error* e2_extra = VG_(get_error_extra)(e2);
@@ -207,7 +207,7 @@ Bool TL_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
          return True;
 
       case LeakErr:
-         VG_(tool_panic)("Shouldn't get LeakErr in TL_(eq_Error),\n"
+         VG_(tool_panic)("Shouldn't get LeakErr in MAC_(eq_Error),\n"
                          "since it's handled with VG_(unique_error)()!");
 
       case IllegalMempoolErr:
@@ -216,7 +216,7 @@ Bool TL_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
-         VG_(tool_panic)("unknown error code in TL_(eq_Error)");
+         VG_(tool_panic)("unknown error code in MAC_(eq_Error)");
    }
 }
 
@@ -315,7 +315,7 @@ void MAC_(pp_shared_Error) ( Error* err )
                                         "stated on the next line");
                break;
             default: 
-               VG_(tool_panic)("TL_(pp_shared_Error)(axskind)");
+               VG_(tool_panic)("MAC_(pp_shared_Error)(axskind)");
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -545,7 +545,7 @@ void MAC_(record_overlap_error) ( ThreadId tid,
 
 
 /* Updates the copy with address info if necessary (but not for all errors). */
-UInt TL_(update_extra)( Error* err )
+UInt MAC_(update_extra)( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case ValueErr:
@@ -597,7 +597,7 @@ Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
    return True;
 }
 
-Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
+Bool MAC_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 {
    Bool eof;
 
@@ -609,7 +609,7 @@ Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
    return True;
 }
 
-Bool TL_(error_matches_suppression)(Error* err, Supp* su)
+Bool MAC_(error_matches_suppression)(Error* err, Supp* su)
 {
    Int        su_size;
    MAC_Error* err_extra = VG_(get_error_extra)(err);
@@ -660,11 +660,11 @@ Bool TL_(error_matches_suppression)(Error* err, Supp* su)
                      "  unknown suppression type %d\n",
                      VG_(get_supp_kind)(su));
          VG_(tool_panic)("unknown suppression type in "
-                         "TL_(error_matches_suppression)");
+                         "MAC_(error_matches_suppression)");
    }
 }
 
-Char* TL_(get_error_name) ( Error* err )
+Char* MAC_(get_error_name) ( Error* err )
 {
    Char* s;
    switch (VG_(get_error_kind)(err)) {
@@ -701,7 +701,7 @@ Char* TL_(get_error_name) ( Error* err )
    VG_(printf)(s);
 }
 
-void TL_(print_extra_suppression_info) ( Error* err )
+void MAC_(print_extra_suppression_info) ( Error* err )
 {
    if (ParamErr == VG_(get_error_kind)(err)) {
       VG_(printf)("   %s\n", VG_(get_error_string)(err));

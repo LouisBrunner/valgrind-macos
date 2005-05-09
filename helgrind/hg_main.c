@@ -1652,11 +1652,6 @@ void set_address_range_state ( Addr a, SizeT len /* in bytes */,
       VG_(tool_panic)("Unexpected Vge_InitStatus");
    }
       
-   /* Check that zero page and highest page have not been written to
-      -- this could happen with buggy syscall wrappers.  Today
-      (2001-04-26) had precisely such a problem with
-      __NR_setitimer. */
-   tl_assert(TL_(cheap_sanity_check)());
    VGP_POPCC(VgpSARP);
 }
 
@@ -1841,27 +1836,27 @@ void* alloc_and_new_mem ( ThreadId tid, SizeT size, SizeT alignment,
    return (void*)p;
 }
 
-void* TL_(malloc) ( ThreadId tid, SizeT n )
+static void* hg_malloc ( ThreadId tid, SizeT n )
 {
    return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_new) ( ThreadId tid, SizeT n )
+static void* hg___builtin_new ( ThreadId tid, SizeT n )
 {
    return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_vec_new) ( ThreadId tid, SizeT n )
+static void* hg___builtin_vec_new ( ThreadId tid, SizeT n )
 {
    return alloc_and_new_mem ( tid, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(memalign) ( ThreadId tid, SizeT align, SizeT n )
+static void* hg_memalign ( ThreadId tid, SizeT align, SizeT n )
 {
    return alloc_and_new_mem ( tid, n, align,              /*is_zeroed*/False );
 }
 
-void* TL_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size )
+static void* hg_calloc ( ThreadId tid, SizeT nmemb, SizeT size )
 {
    return alloc_and_new_mem ( tid, nmemb*size, VG_(clo_alignment),
                               /*is_zeroed*/True );
@@ -1927,22 +1922,22 @@ void handle_free ( ThreadId tid, void* p )
    die_and_free_mem ( tid, hc, prev_chunks_next_ptr );
 }
 
-void TL_(free) ( ThreadId tid, void* p )
+static void hg_free ( ThreadId tid, void* p )
 {
    handle_free(tid, p);
 }
 
-void TL_(__builtin_delete) ( ThreadId tid, void* p )
+static void hg___builtin_delete ( ThreadId tid, void* p )
 {
    handle_free(tid, p);
 }
 
-void TL_(__builtin_vec_delete) ( ThreadId tid, void* p )
+static void hg___builtin_vec_delete ( ThreadId tid, void* p )
 {
    handle_free(tid, p);
 }
 
-void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
+static void* hg_realloc ( ThreadId tid, void* p, SizeT new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
@@ -1999,13 +1994,13 @@ void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 /*--- Machinery to support sanity checking                   ---*/
 /*--------------------------------------------------------------*/
 
-Bool TL_(cheap_sanity_check) ( void )
+static Bool hg_cheap_sanity_check ( void )
 {
    /* nothing useful we can rapidly check */
    return True;
 }
 
-Bool TL_(expensive_sanity_check)(void)
+static Bool hg_expensive_sanity_check(void)
 {
    Int i;
 
@@ -2266,8 +2261,8 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    return cb;
 }
 #endif
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
-                        IRType gWordTy, IRType hWordTy )
+static IRBB* hg_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+                             IRType gWordTy, IRType hWordTy )
 {
    VG_(message)(Vg_DebugMsg, "Helgrind is not yet ready to handle Vex IR");
    VG_(exit)(1);
@@ -2466,7 +2461,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 
 
 /* Updates the copy with address info if necessary. */
-UInt TL_(update_extra)(Error* err)
+static UInt hg_update_extra(Error* err)
 {
    HelgrindError* extra;
 
@@ -2540,7 +2535,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    VG_(maybe_record_error)(tid, LockGraphErr, mutex->mutexp, "", &err_extra);
 }
 
-Bool TL_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
+static Bool hg_eq_Error ( VgRes not_used, Error* e1, Error* e2 )
 {
    Char *e1s, *e2s;
 
@@ -2649,7 +2644,7 @@ static Char *lockset_str(const Char *prefix, const LockSet *lockset)
    return buf;
 }
 
-void TL_(pp_Error) ( Error* err )
+static void hg_pp_Error ( Error* err )
 {
    HelgrindError *extra = (HelgrindError *)VG_(get_error_extra)(err);
    Char buf[100];
@@ -2781,7 +2776,7 @@ void TL_(pp_Error) ( Error* err )
 }
 
 
-Bool TL_(recognised_suppression) ( Char* name, Supp *su )
+static Bool hg_recognised_suppression ( Char* name, Supp *su )
 {
    if (0 == VG_(strcmp)(name, "Eraser")) {
       VG_(set_supp_kind)(su, EraserSupp);
@@ -2792,7 +2787,7 @@ Bool TL_(recognised_suppression) ( Char* name, Supp *su )
 }
 
 
-Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
+static Bool hg_read_extra_suppression_info ( Int fd, Char* buf, Int nBuf, Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
       indicate nothing bad happened. */
@@ -2800,14 +2795,14 @@ Bool TL_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 }
 
 
-Bool TL_(error_matches_suppression)(Error* err, Supp* su)
+static Bool hg_error_matches_suppression(Error* err, Supp* su)
 {
    tl_assert(VG_(get_supp_kind)(su) == EraserSupp);
 
    return (VG_(get_error_kind)(err) == EraserErr);
 }
 
-extern Char* TL_(get_error_name) ( Error* err )
+static Char* hg_get_error_name ( Error* err )
 {
    if (EraserErr == VG_(get_error_kind)(err)) {
       return "Eraser";
@@ -2816,7 +2811,7 @@ extern Char* TL_(get_error_name) ( Error* err )
    }
 }
 
-extern void TL_(print_extra_suppression_info) ( Error* err )
+static void hg_print_extra_suppression_info ( Error* err )
 {
    /* Do nothing */
 }
@@ -3237,7 +3232,7 @@ static void bus_unlock(void)
 /*--- Client requests                                              ---*/
 /*--------------------------------------------------------------------*/
 
-Bool TL_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
+static Bool hg_handle_client_request(ThreadId tid, UWord *args, UWord *ret)
 {
    if (!VG_IS_TOOL_USERREQ('H','G',args[0]))
       return False;
@@ -3262,10 +3257,82 @@ Bool TL_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
 
 /*--------------------------------------------------------------------*/
-/*--- Setup                                                        ---*/
+/*--- Setup and finalisation                                       ---*/
 /*--------------------------------------------------------------------*/
 
-void TL_(pre_clo_init)(void)
+static Bool hg_process_cmd_line_option(Char* arg)
+{
+   if      (VG_CLO_STREQ(arg, "--show-last-access=no"))
+      clo_execontext = EC_None;
+   else if (VG_CLO_STREQ(arg, "--show-last-access=some"))
+      clo_execontext = EC_Some;
+   else if (VG_CLO_STREQ(arg, "--show-last-access=all"))
+      clo_execontext = EC_All;
+
+   else VG_BOOL_CLO(arg, "--private-stacks", clo_priv_stacks)
+
+   else 
+      return VG_(replacement_malloc_process_cmd_line_option)(arg);
+
+   return True;
+}
+
+static void hg_print_usage(void)
+{
+   VG_(printf)(
+"    --private-stacks=yes|no   assume thread stacks are used privately [no]\n"
+"    --show-last-access=no|some|all\n"
+"                           show location of last word access on error [no]\n"
+   );
+   VG_(replacement_malloc_print_usage)();
+}
+
+static void hg_print_debug_usage(void)
+{
+   VG_(replacement_malloc_print_debug_usage)();
+}
+
+static void hg_post_clo_init(void)
+{
+   void (*stack_tracker)(Addr a, SizeT len);
+   
+   if (clo_execontext) {
+      execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);
+      VG_(memset)(execontext_map, 0, sizeof(ExeContextMap *) * 65536);
+   }
+
+   if (clo_priv_stacks)
+      stack_tracker = & eraser_new_mem_stack_private;
+   else
+      stack_tracker = & eraser_new_mem_stack;
+
+   VG_(track_new_mem_stack)        (stack_tracker);
+   VG_(track_new_mem_stack_signal) (stack_tracker);
+}
+
+
+static void hg_fini(Int exitcode)
+{
+   if (DEBUG_LOCK_TABLE) {
+      pp_all_LockSets();
+      pp_all_mutexes();
+   }
+
+   if (LOCKSET_SANITY)
+      sanity_check_locksets("hg_fini");
+
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
+		   n_eraser_warnings, n_lockorder_warnings);
+
+   if (0)
+      VG_(printf)("stk_ld:%u+stk_st:%u = %u  nonstk_ld:%u+nonstk_st:%u = %u  %u%%\n",
+		  stk_ld, stk_st, stk_ld + stk_st,
+		  nonstk_ld, nonstk_st, nonstk_ld + nonstk_st,
+		  ((stk_ld+stk_st)*100) / (stk_ld + stk_st + nonstk_ld + nonstk_st));
+}
+
+static void hg_pre_clo_init(void)
 {
    Int i;
    LockSet *empty;
@@ -3278,64 +3345,66 @@ void TL_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 115 );
 
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
+   VG_(basic_tool_funcs)          (hg_post_clo_init,
+                                   hg_instrument,
+                                   hg_fini);
 
    VG_(needs_core_errors)         ();
-   VG_(needs_tool_errors)         (TL_(eq_Error),
-                                   TL_(pp_Error),
-                                   TL_(update_extra),
-                                   TL_(recognised_suppression),
-                                   TL_(read_extra_suppression_info),
-                                   TL_(error_matches_suppression),
-                                   TL_(get_error_name),
-                                   TL_(print_extra_suppression_info));
+   VG_(needs_tool_errors)         (hg_eq_Error,
+                                   hg_pp_Error,
+                                   hg_update_extra,
+                                   hg_recognised_suppression,
+                                   hg_read_extra_suppression_info,
+                                   hg_error_matches_suppression,
+                                   hg_get_error_name,
+                                   hg_print_extra_suppression_info);
    VG_(needs_data_syms)           ();
-   VG_(needs_client_requests)     (TL_(handle_client_request));
-   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
-                                   TL_(print_usage),
-                                   TL_(print_debug_usage));
+   VG_(needs_client_requests)     (hg_handle_client_request);
+   VG_(needs_sanity_checks)       (hg_cheap_sanity_check,
+                                   hg_expensive_sanity_check);
+   VG_(needs_command_line_options)(hg_process_cmd_line_option,
+                                   hg_print_usage,
+                                   hg_print_debug_usage);
    VG_(needs_shadow_memory)       ();
 
-   VG_(malloc_funcs)              (TL_(malloc),
-                                   TL_(__builtin_new),
-                                   TL_(__builtin_vec_new),
-                                   TL_(memalign),
-                                   TL_(calloc),
-                                   TL_(free),
-                                   TL_(__builtin_delete),
-                                   TL_(__builtin_vec_delete),
-                                   TL_(realloc),
+   VG_(malloc_funcs)              (hg_malloc,
+                                   hg___builtin_new,
+                                   hg___builtin_vec_new,
+                                   hg_memalign,
+                                   hg_calloc,
+                                   hg_free,
+                                   hg___builtin_delete,
+                                   hg___builtin_vec_delete,
+                                   hg_realloc,
                                    8 );
 
-   VG_(init_new_mem_startup)      (& eraser_new_mem_startup);
+   VG_(track_new_mem_startup)      (& eraser_new_mem_startup);
 
-   /* stack ones not decided until VG_(post_clo_init)() */
+   /* stack ones not decided until hg_post_clo_init() */
 
-   VG_(init_new_mem_brk)          (& make_writable);
-   VG_(init_new_mem_mmap)         (& eraser_new_mem_startup);
+   VG_(track_new_mem_brk)         (& make_writable);
+   VG_(track_new_mem_mmap)        (& eraser_new_mem_startup);
 
-   VG_(init_change_mem_mprotect)  (& eraser_set_perms);
+   VG_(track_change_mem_mprotect) (& eraser_set_perms);
 
-   VG_(init_ban_mem_stack)        (NULL);
+   VG_(track_ban_mem_stack)       (NULL);
 
-   VG_(init_die_mem_stack)        (NULL);
-   VG_(init_die_mem_stack_signal) (NULL);
-   VG_(init_die_mem_brk)          (NULL);
-   VG_(init_die_mem_munmap)       (NULL);
+   VG_(track_die_mem_stack)       (NULL);
+   VG_(track_die_mem_stack_signal)(NULL);
+   VG_(track_die_mem_brk)         (NULL);
+   VG_(track_die_mem_munmap)      (NULL);
 
-   VG_(init_pre_mem_read)         (& eraser_pre_mem_read);
-   VG_(init_pre_mem_read_asciiz)  (& eraser_pre_mem_read_asciiz);
-   VG_(init_pre_mem_write)        (& eraser_pre_mem_write);
-   VG_(init_post_mem_write)       (NULL);
+   VG_(track_pre_mem_read)        (& eraser_pre_mem_read);
+   VG_(track_pre_mem_read_asciiz) (& eraser_pre_mem_read_asciiz);
+   VG_(track_pre_mem_write)       (& eraser_pre_mem_write);
+   VG_(track_post_mem_write)      (NULL);
 
-   VG_(init_post_thread_create)   (& hg_thread_create);
-   VG_(init_post_thread_join)     (& hg_thread_join);
+   VG_(track_post_thread_create)  (& hg_thread_create);
+   VG_(track_post_thread_join)    (& hg_thread_join);
 
-   VG_(init_pre_mutex_lock)       (& eraser_pre_mutex_lock);
-   VG_(init_post_mutex_lock)      (& eraser_post_mutex_lock);
-   VG_(init_post_mutex_unlock)    (& eraser_post_mutex_unlock);
+   VG_(track_pre_mutex_lock)      (& eraser_pre_mutex_lock);
+   VG_(track_post_mutex_lock)     (& eraser_post_mutex_lock);
+   VG_(track_post_mutex_unlock)   (& eraser_post_mutex_unlock);
 
    for (i = 0; i < LOCKSET_HASH_SZ; i++)
       lockset_hash[i] = NULL;
@@ -3355,80 +3424,8 @@ void TL_(pre_clo_init)(void)
    hg_malloc_list = VG_(HT_construct)();
 }
 
-Bool TL_(process_cmd_line_option)(Char* arg)
-{
-   if      (VG_CLO_STREQ(arg, "--show-last-access=no"))
-      clo_execontext = EC_None;
-   else if (VG_CLO_STREQ(arg, "--show-last-access=some"))
-      clo_execontext = EC_Some;
-   else if (VG_CLO_STREQ(arg, "--show-last-access=all"))
-      clo_execontext = EC_All;
-
-   else VG_BOOL_CLO(arg, "--private-stacks", clo_priv_stacks)
-
-   else 
-      return VG_(replacement_malloc_process_cmd_line_option)(arg);
-
-   return True;
-}
-
-void TL_(print_usage)(void)
-{
-   VG_(printf)(
-"    --private-stacks=yes|no   assume thread stacks are used privately [no]\n"
-"    --show-last-access=no|some|all\n"
-"                           show location of last word access on error [no]\n"
-   );
-   VG_(replacement_malloc_print_usage)();
-}
-
-void TL_(print_debug_usage)(void)
-{
-   VG_(replacement_malloc_print_debug_usage)();
-}
-
-void TL_(post_clo_init)(void)
-{
-   void (*stack_tracker)(Addr a, SizeT len);
-   
-   if (clo_execontext) {
-      execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);
-      VG_(memset)(execontext_map, 0, sizeof(ExeContextMap *) * 65536);
-   }
-
-   if (clo_priv_stacks)
-      stack_tracker = & eraser_new_mem_stack_private;
-   else
-      stack_tracker = & eraser_new_mem_stack;
-
-   VG_(init_new_mem_stack)        (stack_tracker);
-   VG_(init_new_mem_stack_signal) (stack_tracker);
-}
-
-
-void TL_(fini)(Int exitcode)
-{
-   if (DEBUG_LOCK_TABLE) {
-      pp_all_LockSets();
-      pp_all_mutexes();
-   }
-
-   if (LOCKSET_SANITY)
-      sanity_check_locksets("TL_(fini)");
-
-   if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
-		   n_eraser_warnings, n_lockorder_warnings);
-
-   if (0)
-      VG_(printf)("stk_ld:%u+stk_st:%u = %u  nonstk_ld:%u+nonstk_st:%u = %u  %u%%\n",
-		  stk_ld, stk_st, stk_ld + stk_st,
-		  nonstk_ld, nonstk_st, nonstk_ld + nonstk_st,
-		  ((stk_ld+stk_st)*100) / (stk_ld + stk_st + nonstk_ld + nonstk_st));
-}
-
 /* Uses a 1:1 mapping */
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 1.0)
+VG_DETERMINE_INTERFACE_VERSION(hg_pre_clo_init, 1.0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                hg_main.c ---*/

@@ -1212,31 +1212,29 @@ static void load_tool( const char *toolname,
       goto bad_load;
    }
 
-   toolinfo = dlsym(handle, "vgTool_tool_info");
+   toolinfo = dlsym(handle, "vgPlain_tool_info");
    ok = (NULL != toolinfo);
    if (!ok) {
-      fprintf(stderr, "Tool \"%s\" doesn't define TL_(tool_info) - "
+      fprintf(stderr, "Tool \"%s\" doesn't define its ToolInfo - "
                       "add VG_DETERMINE_INTERFACE_VERSION?\n", toolname);
       goto bad_load;
    }
 
    ok = (toolinfo->sizeof_ToolInfo == sizeof(*toolinfo) &&
-     toolinfo->interface_major_version == VG_CORE_INTERFACE_MAJOR_VERSION &&
-     toolinfo->tl_pre_clo_init != NULL);
+         toolinfo->interface_version == VG_CORE_INTERFACE_VERSION &&
+         toolinfo->tl_pre_clo_init != NULL);
    if (!ok) { 
       fprintf(stderr, "Error:\n"
               "  Tool and core interface versions do not match.\n"
-              "  Interface version used by core is: %d.%d (size %d)\n"
-              "  Interface version used by tool is: %d.%d (size %d)\n"
-              "  The major version numbers must match.\n",
-              VG_CORE_INTERFACE_MAJOR_VERSION, 
-              VG_CORE_INTERFACE_MINOR_VERSION,
+              "  Interface version used by core is: %d (size %d)\n"
+              "  Interface version used by tool is: %d (size %d)\n"
+              "  The version numbers must match.\n",
+              VG_CORE_INTERFACE_VERSION, 
               (Int)sizeof(*toolinfo),
-              toolinfo->interface_major_version,
-              toolinfo->interface_minor_version, 
+              toolinfo->interface_version,
               toolinfo->sizeof_ToolInfo);
       fprintf(stderr, "  You need to at least recompile, and possibly update,\n");
-      if (VG_CORE_INTERFACE_MAJOR_VERSION > toolinfo->interface_major_version)
+      if (VG_CORE_INTERFACE_VERSION > toolinfo->interface_version)
          fprintf(stderr, "  your tool to work with this version of Valgrind.\n");
       else
          fprintf(stderr, "  your version of Valgrind to work with this tool.\n");
@@ -1557,7 +1555,7 @@ static void usage ( Bool debug_help )
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)
-	 TL_(print_usage)();
+	 VG_TDICT_CALL(tool_print_usage);
       else
 	 VG_(printf)("    (none)\n");
    }
@@ -1568,7 +1566,7 @@ static void usage ( Bool debug_help )
          VG_(printf)("  debugging options for %s:\n", VG_(details).name);
       
          if (VG_(needs).command_line_options)
-            TL_(print_debug_usage)();
+            VG_TDICT_CALL(tool_print_debug_usage);
          else
             VG_(printf)("    (none)\n");
       }
@@ -1811,7 +1809,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_gen_suppressions) = 2;
 
       else if ( ! VG_(needs).command_line_options
-             || ! TL_(process_cmd_line_option)(arg) ) {
+             || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
          VG_(bad_option)(arg);
       }
     skip_arg:
@@ -2297,7 +2295,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       last 16 pages of memory have become accessible [...] */
    if (VG_(needs).sanity_checks) {
       VGP_PUSHCC(VgpToolCheapSanity);
-      vg_assert(TL_(cheap_sanity_check)());
+      vg_assert(VG_TDICT_CALL(tool_cheap_sanity_check));
       VGP_POPCC(VgpToolCheapSanity);
    }
 
@@ -2320,7 +2318,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
       if (VG_(needs).sanity_checks) {
           VGP_PUSHCC(VgpToolExpensiveSanity);
-          vg_assert(TL_(expensive_sanity_check)());
+          vg_assert(VG_TDICT_CALL(tool_expensive_sanity_check));
           VGP_POPCC(VgpToolExpensiveSanity);
       }
 
@@ -2628,7 +2626,7 @@ int main(int argc, char **argv, char **envp)
    }
    process_cmd_line_options(client_auxv, tool);
 
-   TL_(post_clo_init)();
+   VG_TDICT_CALL(tool_post_clo_init);
 
    //--------------------------------------------------------------
    // Determine CPU architecture and subarchitecture
@@ -2857,7 +2855,7 @@ void VG_(shutdown_actions)(ThreadId tid)
    if (VG_(needs).core_errors || VG_(needs).tool_errors)
       VG_(show_all_errors)();
 
-   TL_(fini)( 0 /*exitcode*/ );
+   VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 
@@ -2872,21 +2870,6 @@ void VG_(shutdown_actions)(ThreadId tid)
    /* Print Vex storage stats */
    if (0)
        LibVEX_ShowAllocStats();
-}
-
-/* If the tool fails to define one or more of the required functions,
- * make it very clear what went wrong! */
-// XXX: this is not a very good place for this function.  Hopefully we'll be
-// able to remove it in the future.
-__attribute__ ((noreturn))
-void VG_(missing_tool_func) ( const Char* fn )
-{
-   VG_(printf)(
-      "\nTool error:\n"
-      "  The tool you have selected is missing the function `%s',\n"
-      "  which is required.\n\n",
-      fn);
-   VG_(tool_panic)("Missing tool function");
 }
 
 /*--------------------------------------------------------------------*/

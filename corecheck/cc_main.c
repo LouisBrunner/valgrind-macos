@@ -31,7 +31,21 @@
 
 #include "tool.h"
 
-void TL_(pre_clo_init)(void)
+static void cc_post_clo_init(void)
+{
+}
+
+static IRBB* cc_instrument(IRBB* bb_in, VexGuestLayout* layout, 
+                           IRType gWordTy, IRType hWordTy )
+{
+    return bb_in;
+}
+
+static void cc_fini(Int exitcode)
+{
+}
+
+static void cc_pre_clo_init(void)
 {
    VG_(details_name)            ("Corecheck");
    VG_(details_version)         (NULL);
@@ -40,30 +54,16 @@ void TL_(pre_clo_init)(void)
       "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
+   VG_(basic_tool_funcs)        (cc_post_clo_init,
+                                 cc_instrument,
+                                 cc_fini);
 
    VG_(needs_core_errors)();
 
    /* No core events to track */
 }
 
-void TL_(post_clo_init)(void)
-{
-}
-
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
-                      IRType gWordTy, IRType hWordTy )
-{
-    return bb_in;
-}
-
-void TL_(fini)(Int exitcode)
-{
-}
-
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
+VG_DETERMINE_INTERFACE_VERSION(cc_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                cc_main.c ---*/

@@ -251,6 +251,8 @@ static VgHashTable malloc_list  = NULL;   // HP_Chunks
 
 static UInt n_heap_blocks = 0;
 
+// Current directory at startup.
+static Char* base_dir;
 
 #define MAX_ALLOC_FNS      32      // includes the builtin ones
 
@@ -288,7 +290,7 @@ static Bool clo_stacks      = True;
 static Bool clo_depth       = 3;
 static XFormat clo_format   = XText;
 
-Bool TL_(process_cmd_line_option)(Char* arg)
+static Bool ms_process_cmd_line_option(Char* arg)
 {
         VG_BOOL_CLO(arg, "--heap",       clo_heap)
    else VG_BOOL_CLO(arg, "--stacks",     clo_stacks)
@@ -316,7 +318,7 @@ Bool TL_(process_cmd_line_option)(Char* arg)
    return True;
 }
 
-void TL_(print_usage)(void)
+static void ms_print_usage(void)
 {
    VG_(printf)( 
 "    --heap=no|yes             profile heap blocks [yes]\n"
@@ -329,7 +331,7 @@ void TL_(print_usage)(void)
    VG_(replacement_malloc_print_usage)();
 }
 
-void TL_(print_debug_usage)(void)
+static void ms_print_debug_usage(void)
 {
    VG_(replacement_malloc_print_debug_usage)();
 }
@@ -739,47 +741,47 @@ void die_block ( void* p, Bool custom_free )
 }
  
 
-void* TL_(malloc) ( ThreadId tid, SizeT n )
+static void* ms_malloc ( ThreadId tid, SizeT n )
 {
    return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_new) ( ThreadId tid, SizeT n )
+static void* ms___builtin_new ( ThreadId tid, SizeT n )
 {
    return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(__builtin_vec_new) ( ThreadId tid, SizeT n )
+static void* ms___builtin_vec_new ( ThreadId tid, SizeT n )
 {
    return new_block( tid, NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* TL_(calloc) ( ThreadId tid, SizeT m, SizeT size )
+static void* ms_calloc ( ThreadId tid, SizeT m, SizeT size )
 {
    return new_block( tid, NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-void *TL_(memalign)( ThreadId tid, SizeT align, SizeT n )
+static void *ms_memalign ( ThreadId tid, SizeT align, SizeT n )
 {
    return new_block( tid, NULL, n, align, False );
 }
 
-void TL_(free) ( ThreadId tid, void* p )
+static void ms_free ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void TL_(__builtin_delete) ( ThreadId tid, void* p )
+static void ms___builtin_delete ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False);
 }
 
-void TL_(__builtin_vec_delete) ( ThreadId tid, void* p )
+static void ms___builtin_vec_delete ( ThreadId tid, void* p )
 {
    die_block( p, /*custom_free*/False );
 }
 
-void* TL_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
+static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
 {
    HP_Chunk*    hc;
    HP_Chunk**   remove_handle;
@@ -1128,7 +1130,7 @@ static void die_mem_stack_signal(Addr a, SizeT len)
 /*--- Client Requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
+static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 {
    switch (argv[0]) {
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
@@ -1153,83 +1155,11 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
 }
 
 /*------------------------------------------------------------*/
-/*--- Initialisation                                       ---*/
-/*------------------------------------------------------------*/
-
-// Current directory at startup.
-static Char* base_dir;
-
-void TL_(pre_clo_init)()
-{ 
-   VG_(details_name)            ("Massif");
-   VG_(details_version)         (NULL);
-   VG_(details_description)     ("a space profiler");
-   VG_(details_copyright_author)("Copyright (C) 2003, Nicholas Nethercote");
-   VG_(details_bug_reports_to)  (VG_BUGS_TO);
-
-   // Basic functions
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
-
-   // Needs
-   VG_(needs_libc_freeres)();
-   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
-                                   TL_(print_usage),
-                                   TL_(print_debug_usage));
-   VG_(needs_client_requests)     (TL_(handle_client_request));
-
-   // Malloc replacement
-   VG_(malloc_funcs)              (TL_(malloc),
-                                   TL_(__builtin_new),
-                                   TL_(__builtin_vec_new),
-                                   TL_(memalign),
-                                   TL_(calloc),
-                                   TL_(free),
-                                   TL_(__builtin_delete),
-                                   TL_(__builtin_vec_delete),
-                                   TL_(realloc),
-                                   0 );
-
-   // Events to track
-   VG_(init_new_mem_stack_signal) ( new_mem_stack_signal );
-   VG_(init_die_mem_stack_signal) ( die_mem_stack_signal );
-
-   // Profiling events
-   VG_(register_profile_event)(VgpGetXPt,         "get-XPt");
-   VG_(register_profile_event)(VgpGetXPtSearch,   "get-XPt-search");
-   VG_(register_profile_event)(VgpCensus,         "census");
-   VG_(register_profile_event)(VgpCensusHeap,     "census-heap");
-   VG_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
-   VG_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
-   VG_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
-   VG_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
-   VG_(register_profile_event)(VgpPrintHp,        "print-hp");
-   VG_(register_profile_event)(VgpPrintXPts,      "print-XPts");
-
-   // HP_Chunks
-   malloc_list  = VG_(HT_construct)();
-
-   // Dummy node at top of the context structure.
-   alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);
-
-   tl_assert( VG_(getcwd_alloc)(&base_dir) );
-}
-
-void TL_(post_clo_init)(void)
-{
-   ms_interval = 1;
-
-   // Do an initial sample for t = 0
-   hp_census();
-}
-
-/*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
-                        IRType gWordTy, IRType hWordTy )
+static IRBB* ms_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+                             IRType gWordTy, IRType hWordTy )
 {
    /* XXX Will Massif work when gWordTy != hWordTy ? */
    return bb_in;
@@ -1811,7 +1741,7 @@ print_summary(ULong total_ST, ULong heap_ST, ULong heap_admin_ST,
    }
 }
 
-void TL_(fini)(Int exit_status)
+static void ms_fini(Int exit_status)
 {
    ULong total_ST      = 0;
    ULong heap_ST       = 0;
@@ -1829,7 +1759,76 @@ void TL_(fini)(Int exit_status)
    print_summary  ( total_ST, heap_ST, heap_admin_ST, stack_ST );
 }
 
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
+/*------------------------------------------------------------*/
+/*--- Initialisation                                       ---*/
+/*------------------------------------------------------------*/
+
+static void ms_post_clo_init(void)
+{
+   ms_interval = 1;
+
+   // Do an initial sample for t = 0
+   hp_census();
+}
+
+static void ms_pre_clo_init()
+{ 
+   VG_(details_name)            ("Massif");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("a space profiler");
+   VG_(details_copyright_author)("Copyright (C) 2003, Nicholas Nethercote");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
+
+   // Basic functions
+   VG_(basic_tool_funcs)          (ms_post_clo_init,
+                                   ms_instrument,
+                                   ms_fini);
+
+   // Needs
+   VG_(needs_libc_freeres)();
+   VG_(needs_command_line_options)(ms_process_cmd_line_option,
+                                   ms_print_usage,
+                                   ms_print_debug_usage);
+   VG_(needs_client_requests)     (ms_handle_client_request);
+
+   // Malloc replacement
+   VG_(malloc_funcs)              (ms_malloc,
+                                   ms___builtin_new,
+                                   ms___builtin_vec_new,
+                                   ms_memalign,
+                                   ms_calloc,
+                                   ms_free,
+                                   ms___builtin_delete,
+                                   ms___builtin_vec_delete,
+                                   ms_realloc,
+                                   0 );
+
+   // Events to track
+   VG_(track_new_mem_stack_signal)( new_mem_stack_signal );
+   VG_(track_die_mem_stack_signal)( die_mem_stack_signal );
+
+   // Profiling events
+   VG_(register_profile_event)(VgpGetXPt,         "get-XPt");
+   VG_(register_profile_event)(VgpGetXPtSearch,   "get-XPt-search");
+   VG_(register_profile_event)(VgpCensus,         "census");
+   VG_(register_profile_event)(VgpCensusHeap,     "census-heap");
+   VG_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
+   VG_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
+   VG_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
+   VG_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
+   VG_(register_profile_event)(VgpPrintHp,        "print-hp");
+   VG_(register_profile_event)(VgpPrintXPts,      "print-XPts");
+
+   // HP_Chunks
+   malloc_list  = VG_(HT_construct)();
+
+   // Dummy node at top of the context structure.
+   alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);
+
+   tl_assert( VG_(getcwd_alloc)(&base_dir) );
+}
+
+VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                ms_main.c ---*/

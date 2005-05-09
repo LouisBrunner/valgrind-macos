@@ -44,7 +44,7 @@ static void add_one_dlrr_call(void)
    n_dlrr_calls++;
 }
 
-/* See comment above TL_(instrument) for reason why n_machine_instrs is
+/* See comment above lk_instrument for reason why n_machine_instrs is
    incremented here. */
 static void add_one_BB(void)
 {
@@ -72,22 +72,7 @@ static void add_one_Jcc_untaken(void)
    n_Jccs_untaken++;
 }
 
-void TL_(pre_clo_init)(void)
-{
-   VG_(details_name)            ("Lackey");
-   VG_(details_version)         (NULL);
-   VG_(details_description)     ("an example Valgrind tool");
-   VG_(details_copyright_author)(
-      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
-   VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 175 );
-
-   VG_(basic_tool_funcs)          (TL_(post_clo_init),
-                                   TL_(instrument),
-                                   TL_(fini));
-}
-
-void TL_(post_clo_init)(void)
+static void lk_post_clo_init(void)
 {
 }
 
@@ -133,8 +118,8 @@ void TL_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, 
-                      IRType gWordTy, IRType hWordTy )
+static IRBB* lk_instrument(IRBB* bb_in, VexGuestLayout* layout, 
+                           IRType gWordTy, IRType hWordTy )
 {
    IRDirty* di;
    Int      i;
@@ -251,7 +236,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout,
 #endif
 }
 
-void TL_(fini)(Int exitcode)
+static void lk_fini(Int exitcode)
 {
     VG_(message)(Vg_UserMsg,
                  "Counted %d calls to _dl_runtime_resolve()", n_dlrr_calls);
@@ -282,7 +267,22 @@ void TL_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);
 }
 
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
+static void lk_pre_clo_init(void)
+{
+   VG_(details_name)            ("Lackey");
+   VG_(details_version)         (NULL);
+   VG_(details_description)     ("an example Valgrind tool");
+   VG_(details_copyright_author)(
+      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
+   VG_(details_avg_translation_sizeB) ( 175 );
+
+   VG_(basic_tool_funcs)          (lk_post_clo_init,
+                                   lk_instrument,
+                                   lk_fini);
+}
+
+VG_DETERMINE_INTERFACE_VERSION(lk_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                lk_main.c ---*/

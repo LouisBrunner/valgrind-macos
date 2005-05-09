@@ -393,44 +393,44 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 */
 
 #define PRRSN \
-      TL_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
-                        O_SYSCALL_NUM, sizeof(UWord));
+      VG_(tdict).track_pre_reg_read(Vg_CoreSysCall, tid, "(syscallno)", \
+                                    O_SYSCALL_NUM, sizeof(UWord));
 #define PRRAn(n,s,t,a) \
-      TL_(pre_reg_read)(Vg_CoreSysCall, tid, s"("#a")", \
-                        O_SYSCALL_ARG##n, sizeof(t));
+      VG_(tdict).track_pre_reg_read(Vg_CoreSysCall, tid, s"("#a")", \
+                                    O_SYSCALL_ARG##n, sizeof(t));
 #define PRE_REG_READ0(tr, s) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
    }
 #define PRE_REG_READ1(tr, s, t1, a1) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); \
    }
 #define PRE_REG_READ2(tr, s, t1, a1, t2, a2) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); \
    }
 #define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
    }
 #define PRE_REG_READ4(tr, s, t1, a1, t2, a2, t3, a3, t4, a4) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
       PRRAn(4,s,t4,a4); \
    }
 #define PRE_REG_READ5(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
       PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); \
    }
 #define PRE_REG_READ6(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5, t6, a6) \
-   if (VG_(defined_pre_reg_read)()) { \
+   if (VG_(tdict).track_pre_reg_read) { \
       PRRSN; \
       PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
       PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); PRRAn(6,s,t6,a6); \

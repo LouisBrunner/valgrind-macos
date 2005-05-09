@@ -101,10 +101,6 @@ typedef struct _ThreadState ThreadState;
 
 #include "valgrind.h"
 
-#undef TL_
-#define TL_(x)	vgToolInternal_##x
-
-
 /* ---------------------------------------------------------------------
    Global macros.
    ------------------------------------------------------------------ */
@@ -321,13 +317,6 @@ typedef
 
 extern VgDetails VG_(details);
 
-/* If new fields are added to this type, update:
- *  - vg_main.c:initialisation of VG_(needs)
- *  - vg_main.c:sanity_check_needs()
- *
- * If the name of this type or any of its fields change, update:
- *  - dependent comments (just search for "VG_(needs)"). 
- */
 typedef
    struct {
       Bool libc_freeres;
@@ -347,7 +336,118 @@ typedef
 
 extern VgNeeds VG_(needs);
 
-#include "vg_toolint.h"
+typedef struct {
+   // ---------------------------------------------
+   // 'Needs' and related functions
+   // ---------------------------------------------
+   // Basic functions
+   void  (*tool_pre_clo_init) (void);
+   void  (*tool_post_clo_init)(void);
+   IRBB* (*tool_instrument)   (IRBB*, VexGuestLayout*, IRType, IRType);
+   void  (*tool_fini)         (Int);
+
+   // VG_(needs).core_errors
+   // (none)
+   
+   // VG_(needs).tool_errors
+   Bool  (*tool_eq_Error)                    (VgRes, Error*, Error*);
+   void  (*tool_pp_Error)                    (Error*);
+   UInt  (*tool_update_extra)                (Error*);
+   Bool  (*tool_recognised_suppression)      (Char*, Supp*);
+   Bool  (*tool_read_extra_suppression_info) (Int, Char*, Int, Supp*);
+   Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
+   Char* (*tool_get_error_name)              (Error*);
+   void  (*tool_print_extra_suppression_info)(Error*);
+
+   // VG_(needs).basic_block_discards
+   void (*tool_discard_basic_block_info)(Addr, SizeT);
+
+   // VG_(needs).command_line_options
+   Bool (*tool_process_cmd_line_option)(Char*);
+   void (*tool_print_usage)            (void);
+   void (*tool_print_debug_usage)      (void);
+
+   // VG_(needs).client_requests
+   Bool (*tool_handle_client_request)(ThreadId, UWord*, UWord*);
+
+   // VG_(needs).syscall_wrapper
+   void (*tool_pre_syscall) (ThreadId, UInt);
+   void (*tool_post_syscall)(ThreadId, UInt, Int);
+
+   // VG_(needs).sanity_checks
+   Bool (*tool_cheap_sanity_check)(void);
+   Bool (*tool_expensive_sanity_check)(void);
+
+   // ---------------------------------------------
+   // Event tracking functions
+   // ---------------------------------------------
+   void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool);
+   void (*track_new_mem_stack_signal)(Addr, SizeT);
+   void (*track_new_mem_brk)         (Addr, SizeT);
+   void (*track_new_mem_mmap)        (Addr, SizeT, Bool, Bool, Bool);
+
+   void (*track_copy_mem_remap)      (Addr, Addr, SizeT);
+   void (*track_change_mem_mprotect) (Addr, SizeT, Bool, Bool, Bool);
+   void (*track_die_mem_stack_signal)(Addr, SizeT);
+   void (*track_die_mem_brk)         (Addr, SizeT);
+   void (*track_die_mem_munmap)      (Addr, SizeT);
+
+   VGA_REGPARM(1) void (*track_new_mem_stack_4) (Addr);
+   VGA_REGPARM(1) void (*track_new_mem_stack_8) (Addr);
+   VGA_REGPARM(1) void (*track_new_mem_stack_12)(Addr);
+   VGA_REGPARM(1) void (*track_new_mem_stack_16)(Addr);
+   VGA_REGPARM(1) void (*track_new_mem_stack_32)(Addr);
+   void (*track_new_mem_stack)(Addr, SizeT);
+
+   VGA_REGPARM(1) void (*track_die_mem_stack_4) (Addr);
+   VGA_REGPARM(1) void (*track_die_mem_stack_8) (Addr);
+   VGA_REGPARM(1) void (*track_die_mem_stack_12)(Addr);
+   VGA_REGPARM(1) void (*track_die_mem_stack_16)(Addr);
+   VGA_REGPARM(1) void (*track_die_mem_stack_32)(Addr);
+   void (*track_die_mem_stack)(Addr, SizeT);
+
+   void (*track_ban_mem_stack)(Addr, SizeT);
+
+   void (*track_pre_mem_read)       (CorePart, ThreadId, Char*, Addr, SizeT);
+   void (*track_pre_mem_read_asciiz)(CorePart, ThreadId, Char*, Addr);
+   void (*track_pre_mem_write)      (CorePart, ThreadId, Char*, Addr, SizeT);
+   void (*track_post_mem_write)     (CorePart, ThreadId, Addr, SizeT);
+
+   void (*track_pre_reg_read)  (CorePart, ThreadId, Char*, OffT, SizeT);
+   void (*track_post_reg_write)(CorePart, ThreadId,        OffT, SizeT);
+   void (*track_post_reg_write_clientcall_return)(ThreadId, OffT, SizeT, Addr);
+
+   void (*track_thread_run)(ThreadId);
+
+   void (*track_post_thread_create)(ThreadId, ThreadId);
+   void (*track_post_thread_join)  (ThreadId, ThreadId);
+
+   void (*track_pre_mutex_lock)   (ThreadId, void*);
+   void (*track_post_mutex_lock)  (ThreadId, void*);
+   void (*track_post_mutex_unlock)(ThreadId, void*);
+
+   void (*track_pre_deliver_signal) (ThreadId, Int sigNo, Bool);
+   void (*track_post_deliver_signal)(ThreadId, Int sigNo);
+
+   void (*track_init_shadow_page)(Addr);
+
+   // ---------------------------------------------
+   // malloc/free replacements
+   // ---------------------------------------------
+   void* (*malloc_malloc)              (ThreadId, SizeT);
+   void* (*malloc___builtin_new)       (ThreadId, SizeT);
+   void* (*malloc___builtin_vec_new)   (ThreadId, SizeT);
+   void* (*malloc_memalign)            (ThreadId, SizeT, SizeT);
+   void* (*malloc_calloc)              (ThreadId, SizeT, SizeT);
+   void  (*malloc_free)                (ThreadId, void*);
+   void  (*malloc___builtin_delete)    (ThreadId, void*);
+   void  (*malloc___builtin_vec_delete)(ThreadId, void*);
+   void* (*malloc_realloc)             (ThreadId, void*, SizeT);
+
+} VgToolInterface;
+
+extern VgToolInterface VG_(tdict);
+
 
 
 /* ---------------------------------------------------------------------
@@ -1065,14 +1165,20 @@ extern const Int  VG_(tramp_time_offset);
    Things relating to the used tool
    ------------------------------------------------------------------ */
 
+// Note the use of C's comma operator here -- it means that we execute both
+// statements, and the rvalue of the whole thing is the rvalue of the last
+// statement.  This lets us say "x = VG_TDICT_CALL(...)" in the required
+// places, while still checking the assertion.
+#define VG_TDICT_CALL(fn, args...) \
+   ( tl_assert2(VG_(tdict).fn, \
+                "you forgot to set VgToolInterface function '" #fn "'"), \
+     VG_(tdict).fn(args) )
+
 #define VG_TRACK(fn, args...) 			\
    do {						\
-      if (VG_(defined_##fn)())			\
-	 TL_(fn)(args);				\
+      if (VG_(tdict).track_##fn)		\
+	 VG_(tdict).track_##fn(args);           \
    } while(0)
-
-__attribute__ ((noreturn))
-extern void VG_(missing_tool_func) ( const Char* fn );
 
 // ---------------------------------------------------------------------
 // Architecture-specific things defined in eg. x86/*.c

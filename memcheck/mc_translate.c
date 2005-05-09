@@ -2505,7 +2505,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 }
 
 
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
+IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
                         IRType gWordTy, IRType hWordTy )
 {
    Bool verboze = False; //True; 

@@ -77,20 +77,14 @@ extern const Char *VG_(libdir);
 /*=== Core/tool interface version                                  ===*/
 /*====================================================================*/
 
-/* The major version number indicates binary-incompatible changes to the
-   interface;  if the core and tool major versions don't match, Valgrind
-   will abort.  The minor version indicates binary-compatible changes.
-
-   (Update: as it happens, we're never using the minor version number, because
-   there's no point in doing so.)
-*/
-#define VG_CORE_INTERFACE_MAJOR_VERSION   7
-#define VG_CORE_INTERFACE_MINOR_VERSION   0
+/* The version number indicates binary-incompatible changes to the
+   interface;  if the core and tool versions don't match, Valgrind
+   will abort.  */
+#define VG_CORE_INTERFACE_VERSION   8
 
 typedef struct _ToolInfo {
    Int	sizeof_ToolInfo;
-   Int	interface_major_version;
-   Int	interface_minor_version;
+   Int	interface_version;
 
    /* Initialise tool.   Must do the following:
       - initialise the `details' struct, via the VG_(details_*)() functions
@@ -103,21 +97,20 @@ typedef struct _ToolInfo {
       - register any tool-specific profiling events
       - any other tool-specific initialisation
    */
-   void        (*tl_pre_clo_init) ( void );
+   void (*tl_pre_clo_init) ( void );
 
    /* Specifies how big the shadow segment should be as a ratio to the
       client address space.  0 for no shadow segment. */
-   float	shadow_ratio;
+   float shadow_ratio;
 } ToolInfo;
 
 /* Every tool must include this macro somewhere, exactly once. */
-#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)		\
-   const ToolInfo TL_(tool_info) = {					\
-      .sizeof_ToolInfo         = sizeof(ToolInfo),			\
-      .interface_major_version = VG_CORE_INTERFACE_MAJOR_VERSION,	\
-      .interface_minor_version = VG_CORE_INTERFACE_MINOR_VERSION,	\
-      .tl_pre_clo_init         = pre_clo_init,				\
-      .shadow_ratio	       = shadow,				\
+#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)   \
+   const ToolInfo VG_(tool_info) = {                           \
+      .sizeof_ToolInfo   = sizeof(ToolInfo),                   \
+      .interface_version = VG_CORE_INTERFACE_VERSION,          \
+      .tl_pre_clo_init   = pre_clo_init,                       \
+      .shadow_ratio	 = shadow,                             \
    };
 
 /*====================================================================*/
@@ -166,7 +159,7 @@ extern Bool  VG_(clo_profile);
 
 /* Call this if a recognised option was bad for some reason.
    Note: don't use it just because an option was unrecognised -- return 'False'
-   from TL_(process_cmd_line_option) to indicate that. */
+   from VG_(tdict).tool_process_cmd_line_option) to indicate that. */
 extern void VG_(bad_option) ( Char* opt );
 
 /* Client args */
@@ -797,7 +790,8 @@ extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
    follow the following instructions.  You can do it from scratch,
    though, if you enjoy that sort of thing. */
 
-/* Can be called from TL_(malloc) et al to do the actual alloc/freeing. */
+/* Can be called from VG_(tdict).malloc_malloc et al to do the actual
+ * alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
 
@@ -828,10 +822,19 @@ extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 /* Basic tool functions */
 
 extern void VG_(basic_tool_funcs)(
-   void(*post_clo_init)(void),
-   IRBB*(*instrument)(IRBB* bb_in, VexGuestLayout* layout, 
-                      IRType gWordTy, IRType hWordTy ),
-   void(*fini)(Int)
+   // Do any initialisation that can only be done after command line
+   // processing.
+   void  (*post_clo_init)(void),
+
+   // Instrument a basic block.  Must be a true function, ie. the same input
+   // always results in the same output, because basic blocks can be
+   // retranslated.  Unless you're doing something really strange...
+   IRBB* (*instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+                       IRType gWordTy, IRType hWordTy ),
+
+   // Finish up, print out any results, etc.  `exitcode' is program's exit
+   // code.  The shadow can be found with VG_(get_exit_status_shadow)().
+   void  (*fini)(Int)
 );
 
 /* ------------------------------------------------------------------ */
@@ -897,7 +900,8 @@ extern void VG_(needs_tool_errors) (
 
    // Should fill in any details that could be postponed until after the
    // decision whether to ignore the error (ie. details not affecting the
-   // result of TL_(eq_Error)()).  This saves time when errors are ignored.
+   // result of VG_(tdict).tool_eq_Error()).  This saves time when errors
+   // are ignored.
    // Yuk.
    // Return value: must be the size of the `extra' part in bytes -- used by
    // the core to make a copy.
@@ -920,12 +924,12 @@ extern void VG_(needs_tool_errors) (
 
    // This should return the suppression name, for --gen-suppressions, or NULL
    // if that error type cannot be suppressed.  This is the inverse of
-   // TL_(recognised_suppression)().
+   // VG_(tdict).tool_recognised_suppression().
    Char* (*get_error_name)(Error* err),
 
    // This should print any extra info for the error, for --gen-suppressions,
    // including the newline.  This is the inverse of
-   // TL_(read_extra_suppression_info)().
+   // VG_(tdict).tool_read_extra_suppression_info().
    void (*print_extra_suppression_info)(Error* err)
 );
 
@@ -980,8 +984,8 @@ extern void VG_(needs_syscall_wrapper) (
 );
 
 /* Are tool-state sanity checks performed? */
-// Can be useful for ensuring a tool's correctness.  TL_(cheap_sanity_check)
-// is called very frequently;  TL_(expensive_sanity_check) is called less
+// Can be useful for ensuring a tool's correctness.  cheap_sanity_check()
+// is called very frequently;  expensive_sanity_check() is called less
 // frequently and can be more involved.
 extern void VG_(needs_sanity_checks) (
    Bool(*cheap_sanity_check)(void),
@@ -991,12 +995,8 @@ extern void VG_(needs_sanity_checks) (
 /* Do we need to see data symbols? */
 extern void VG_(needs_data_syms) ( void );
 
-/* Does the tool need shadow memory allocated (if you set this, you must also statically initialize 
-   float TL_(shadow_ratio) = n./m;
-   to define how many shadow bits you need per client address space bit.
-*/
+/* Does the tool need shadow memory allocated? */
 extern void VG_(needs_shadow_memory)( void );
-extern float TL_(shadow_ratio);
 
 /* ------------------------------------------------------------------ */
 /* Malloc replacement */
@@ -1025,6 +1025,132 @@ typedef
           Vg_CoreTranslate, Vg_CoreClientReq }
    CorePart;
 
-#endif   /* NDEF __TOOL_H */
+/* Events happening in core to track.  To be notified, pass a callback
+   function to the appropriate function.  To ignore an event, don't do
+   anything (the default is for events to be ignored).
 
-/* gen_toolint.pl will put the VG_(init_*)() functions here: */
+   Note that most events aren't passed a ThreadId.  If the event is one called
+   from generated code (eg. new_mem_stack_*), you can use
+   VG_(get_running_tid)() to find it.  Otherwise, it has to be passed in,
+   as in pre_mem_read, and so the event signature will require changing.
+
+   Memory events (Nb: to track heap allocation/freeing, a tool must replace
+   malloc() et al.  See above how to do this.)
+
+   These ones occur at startup, upon some signals, and upon some syscalls
+ */
+void VG_(track_new_mem_startup)     (void(*f)(Addr a, SizeT len,
+                                              Bool rr, Bool ww, Bool xx));
+void VG_(track_new_mem_stack_signal)(void(*f)(Addr a, SizeT len));
+void VG_(track_new_mem_brk)         (void(*f)(Addr a, SizeT len));
+void VG_(track_new_mem_mmap)        (void(*f)(Addr a, SizeT len,
+                                              Bool rr, Bool ww, Bool xx));
+
+void VG_(track_copy_mem_remap)      (void(*f)(Addr from, Addr to, SizeT len));
+void VG_(track_change_mem_mprotect) (void(*f)(Addr a, SizeT len,
+                                              Bool rr, Bool ww, Bool xx));
+void VG_(track_die_mem_stack_signal)(void(*f)(Addr a, SizeT len));
+void VG_(track_die_mem_brk)         (void(*f)(Addr a, SizeT len));
+void VG_(track_die_mem_munmap)      (void(*f)(Addr a, SizeT len));
+
+/* These ones are called when SP changes.  A tool could track these itself
+   (except for ban_mem_stack) but it's much easier to use the core's help.
+
+   The specialised ones are called in preference to the general one, if they
+   are defined.  These functions are called a lot if they are used, so
+   specialising can optimise things significantly.  If any of the
+   specialised cases are defined, the general case must be defined too.
+
+   Nb: all the specialised ones must use the VGA_REGPARM(n) attribute.
+ */
+void VG_(track_new_mem_stack_4) (VGA_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_8) (VGA_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_12)(VGA_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_16)(VGA_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_32)(VGA_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack)                  (void(*f)(Addr a, SizeT len));
+
+void VG_(track_die_mem_stack_4) (VGA_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_8) (VGA_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_12)(VGA_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_16)(VGA_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_32)(VGA_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack)                  (void(*f)(Addr a, SizeT len));
+
+/* Used for redzone at end of thread stacks */
+void VG_(track_ban_mem_stack)      (void(*f)(Addr a, SizeT len));
+
+/* These ones occur around syscalls, signal handling, etc */
+void VG_(track_pre_mem_read)       (void(*f)(CorePart part, ThreadId tid,
+                                             Char* s, Addr a, SizeT size));
+void VG_(track_pre_mem_read_asciiz)(void(*f)(CorePart part, ThreadId tid,
+                                             Char* s, Addr a));
+void VG_(track_pre_mem_write)      (void(*f)(CorePart part, ThreadId tid,
+                                             Char* s, Addr a, SizeT size));
+void VG_(track_post_mem_write)     (void(*f)(CorePart part, ThreadId tid,
+                                             Addr a, SizeT size));
+
+/* Register events.  Use VG_(set_shadow_state_area)() to set the shadow regs
+   for these events.  */
+void VG_(track_pre_reg_read)  (void(*f)(CorePart part, ThreadId tid,
+                                        Char* s, OffT guest_state_offset,
+                                        SizeT size));
+void VG_(track_post_reg_write)(void(*f)(CorePart part, ThreadId tid,
+                                        OffT guest_state_offset,
+                                        SizeT size));
+
+/* This one is called for malloc() et al if they are replaced by a tool. */
+void VG_(track_post_reg_write_clientcall_return)(
+      void(*f)(ThreadId tid, OffT guest_state_offset, SizeT size, Addr f));
+
+
+/* Scheduler events (not exhaustive) */
+void VG_(track_thread_run)(void(*f)(ThreadId tid));
+
+
+/* Thread events (not exhaustive)
+
+   Called during thread create, before the new thread has run any
+   instructions (or touched any memory).
+ */
+void VG_(track_post_thread_create)(void(*f)(ThreadId tid, ThreadId child));
+void VG_(track_post_thread_join)  (void(*f)(ThreadId joiner, ThreadId joinee));
+
+/* Mutex events (not exhaustive)
+   "void *mutex" is really a pthread_mutex *
+
+   Called before a thread can block while waiting for a mutex (called
+   regardless of whether the thread will block or not).  */
+void VG_(track_pre_mutex_lock)(void(*f)(ThreadId tid, void* mutex));
+
+/* Called once the thread actually holds the mutex (always paired with
+   pre_mutex_lock).  */
+void VG_(track_post_mutex_lock)(void(*f)(ThreadId tid, void* mutex));
+
+/* Called after a thread has released a mutex (no need for a corresponding
+   pre_mutex_unlock, because unlocking can't block).  */
+void VG_(track_post_mutex_unlock)(void(*f)(ThreadId tid, void* mutex));
+
+/* Signal events (not exhaustive)
+
+   ... pre_send_signal, post_send_signal ...
+
+   Called before a signal is delivered;  `alt_stack' indicates if it is
+   delivered on an alternative stack.  */
+void VG_(track_pre_deliver_signal) (void(*f)(ThreadId tid, Int sigNo,
+                                             Bool alt_stack));
+/* Called after a signal is delivered.  Nb: unfortunately, if the signal
+   handler longjmps, this won't be called.  */
+void VG_(track_post_deliver_signal)(void(*f)(ThreadId tid, Int sigNo));
+
+
+/* Others... condition variables...
+   ...
+
+   Shadow memory management
+ */
+void VG_(track_init_shadow_page)(void(*f)(Addr p));
+
+#endif   /* __TOOL_H */
+
+

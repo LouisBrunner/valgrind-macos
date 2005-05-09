@@ -6085,60 +6085,60 @@ static ULong dis_MMX_shiftG_byE ( Prefix pfx, ULong delta,
 }
 
 
-//.. /* Vector by scalar shift of E by an immediate byte.  This is a
-//..    straight copy of dis_SSE_shiftE_imm. */
-//.. 
-//.. static 
-//.. UInt dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
-//.. {
-//..    Bool    shl, shr, sar;
-//..    UChar   rm   = getUChar(delta);
-//..    IRTemp  e0   = newTemp(Ity_I64);
-//..    IRTemp  e1   = newTemp(Ity_I64);
-//..    UChar   amt, size;
-//..    vassert(epartIsReg(rm));
-//..    vassert(gregOfRM(rm) == 2 
-//..            || gregOfRM(rm) == 4 || gregOfRM(rm) == 6);
-//..    amt = (Int)(getUChar(delta+1));
-//..    delta += 2;
-//..    DIP("%s $%d,%s\n", opname,
-//..                       (Int)amt,
-//..                       nameMMXReg(eregOfRM(rm)) );
-//.. 
-//..    assign( e0, getMMXReg(eregOfRM(rm)) );
-//.. 
-//..    shl = shr = sar = False;
-//..    size = 0;
-//..    switch (op) {
-//..       case Iop_ShlN16x4: shl = True; size = 16; break;
-//..       case Iop_ShlN32x2: shl = True; size = 32; break;
-//..       case Iop_Shl64:    shl = True; size = 64; break;
-//..       case Iop_SarN16x4: sar = True; size = 16; break;
-//..       case Iop_SarN32x2: sar = True; size = 32; break;
-//..       case Iop_ShrN16x4: shr = True; size = 16; break;
-//..       case Iop_ShrN32x2: shr = True; size = 32; break;
-//..       case Iop_Shr64:    shr = True; size = 64; break;
-//..       default: vassert(0);
-//..    }
-//.. 
-//..    if (shl || shr) {
-//..      assign( e1, amt >= size 
-//..                     ? mkU64(0)
-//..                     : binop(op, mkexpr(e0), mkU8(amt))
-//..      );
-//..    } else 
-//..    if (sar) {
-//..      assign( e1, amt >= size 
-//..                     ? binop(op, mkexpr(e0), mkU8(size-1))
-//..                     : binop(op, mkexpr(e0), mkU8(amt))
-//..      );
-//..    } else {
-//..       vassert(0);
-//..    }
-//.. 
-//..    putMMXReg( eregOfRM(rm), mkexpr(e1) );
-//..    return delta;
-//.. }
+/* Vector by scalar shift of E by an immediate byte.  This is a
+   straight copy of dis_SSE_shiftE_imm. */
+
+static 
+ULong dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
+{
+   Bool    shl, shr, sar;
+   UChar   rm   = getUChar(delta);
+   IRTemp  e0   = newTemp(Ity_I64);
+   IRTemp  e1   = newTemp(Ity_I64);
+   UChar   amt, size;
+   vassert(epartIsReg(rm));
+   vassert(gregLO3ofRM(rm) == 2 
+           || gregLO3ofRM(rm) == 4 || gregLO3ofRM(rm) == 6);
+   amt = (Int)(getUChar(delta+1));
+   delta += 2;
+   DIP("%s $%d,%s\n", opname,
+                      (Int)amt,
+                      nameMMXReg(eregLO3ofRM(rm)) );
+
+   assign( e0, getMMXReg(eregLO3ofRM(rm)) );
+
+   shl = shr = sar = False;
+   size = 0;
+   switch (op) {
+      case Iop_ShlN16x4: shl = True; size = 16; break;
+      case Iop_ShlN32x2: shl = True; size = 32; break;
+      case Iop_Shl64:    shl = True; size = 64; break;
+      case Iop_SarN16x4: sar = True; size = 16; break;
+      case Iop_SarN32x2: sar = True; size = 32; break;
+      case Iop_ShrN16x4: shr = True; size = 16; break;
+      case Iop_ShrN32x2: shr = True; size = 32; break;
+      case Iop_Shr64:    shr = True; size = 64; break;
+      default: vassert(0);
+   }
+
+   if (shl || shr) {
+     assign( e1, amt >= size 
+                    ? mkU64(0)
+                    : binop(op, mkexpr(e0), mkU8(amt))
+     );
+   } else 
+   if (sar) {
+     assign( e1, amt >= size 
+                    ? binop(op, mkexpr(e0), mkU8(size-1))
+                    : binop(op, mkexpr(e0), mkU8(amt))
+     );
+   } else {
+      vassert(0);
+   }
+
+   putMMXReg( eregLO3ofRM(rm), mkexpr(e1) );
+   return delta;
+}
 
 
 /* Completely handle all MMX instructions except emms. */
@@ -6157,50 +6157,96 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
 
    switch (opc) {
 
-//..       case 0x6E: 
-//..          /* MOVD (src)ireg-or-mem (E), (dst)mmxreg (G)*/
-//..          if (sz != 4) 
-//..             goto mmx_decode_failure;
-//..          modrm = getUChar(delta);
-//..          if (epartIsReg(modrm)) {
-//..             delta++;
-//..             putMMXReg(
-//..                gregOfRM(modrm),
-//..                binop( Iop_32HLto64,
-//..                       mkU32(0),
-//..                       getIReg(4, eregOfRM(modrm)) ) );
-//..             DIP("movd %s, %s\n", 
-//..                 nameIReg(4,eregOfRM(modrm)), nameMMXReg(gregOfRM(modrm)));
-//..          } else {
-//..             IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..             delta += len;
-//..             putMMXReg(
-//..                gregOfRM(modrm),
-//..                binop( Iop_32HLto64,
-//..                       mkU32(0),
-//..                       loadLE(Ity_I32, mkexpr(addr)) ) );
-//..             DIP("movd %s, %s\n", dis_buf, nameMMXReg(gregOfRM(modrm)));
-//..          }
-//..          break;
-//.. 
-//..       case 0x7E: /* MOVD (src)mmxreg (G), (dst)ireg-or-mem (E) */
-//..          if (sz != 4) 
-//..             goto mmx_decode_failure;
-//..          modrm = getUChar(delta);
-//..          if (epartIsReg(modrm)) {
-//..             delta++;
-//..             putIReg( 4, eregOfRM(modrm),
-//..                      unop(Iop_64to32, getMMXReg(gregOfRM(modrm)) ) );
-//..             DIP("movd %s, %s\n", 
-//..                 nameMMXReg(gregOfRM(modrm)), nameIReg(4,eregOfRM(modrm)));
-//..          } else {
-//..             IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..             delta += len;
-//..             storeLE( mkexpr(addr),
-//..                      unop(Iop_64to32, getMMXReg(gregOfRM(modrm)) ) );
-//..             DIP("movd %s, %s\n", nameMMXReg(gregOfRM(modrm)), dis_buf);
-//..          }
-//..          break;
+      case 0x6E: 
+         if (sz == 4) {
+            /* MOVD (src)ireg32-or-mem32 (E), (dst)mmxreg (G)*/
+            modrm = getUChar(delta);
+            if (epartIsReg(modrm)) {
+               delta++;
+               putMMXReg(
+                  gregLO3ofRM(modrm),
+                  binop( Iop_32HLto64,
+                         mkU32(0),
+                         getIReg32(eregOfRexRM(pfx,modrm)) ) );
+               DIP("movd %s, %s\n", 
+                   nameIReg32(eregOfRexRM(pfx,modrm)), 
+                   nameMMXReg(gregLO3ofRM(modrm)));
+            } else {
+               IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+               delta += len;
+               putMMXReg(
+                  gregLO3ofRM(modrm),
+                  binop( Iop_32HLto64,
+                         mkU32(0),
+                         loadLE(Ity_I32, mkexpr(addr)) ) );
+               DIP("movd %s, %s\n", dis_buf, nameMMXReg(gregLO3ofRM(modrm)));
+            }
+         } 
+         else
+         if (sz == 8) {
+            /* MOVD (src)ireg64-or-mem64 (E), (dst)mmxreg (G)*/
+            modrm = getUChar(delta);
+            if (epartIsReg(modrm)) {
+               delta++;
+               putMMXReg( gregLO3ofRM(modrm),
+                          getIReg64(eregOfRexRM(pfx,modrm)) );
+               DIP("movd %s, %s\n", 
+                   nameIReg64(eregOfRexRM(pfx,modrm)), 
+                   nameMMXReg(gregLO3ofRM(modrm)));
+            } else {
+               IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+               delta += len;
+               putMMXReg( gregLO3ofRM(modrm),
+                          loadLE(Ity_I64, mkexpr(addr)) );
+               DIP("movd{64} %s, %s\n", dis_buf, nameMMXReg(gregLO3ofRM(modrm)));
+            }
+         }
+         else {
+            goto mmx_decode_failure;
+         }
+         break;
+
+      case 0x7E:
+         if (sz == 4) {
+            /* MOVD (src)mmxreg (G), (dst)ireg32-or-mem32 (E) */
+            modrm = getUChar(delta);
+            if (epartIsReg(modrm)) {
+               delta++;
+               putIReg32( eregOfRexRM(pfx,modrm),
+                          unop(Iop_64to32, getMMXReg(gregLO3ofRM(modrm)) ) );
+               DIP("movd %s, %s\n", 
+                   nameMMXReg(gregLO3ofRM(modrm)), 
+                   nameIReg32(eregOfRexRM(pfx,modrm)));
+            } else {
+               IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+               delta += len;
+               storeLE( mkexpr(addr),
+                        unop(Iop_64to32, getMMXReg(gregLO3ofRM(modrm)) ) );
+               DIP("movd %s, %s\n", nameMMXReg(gregLO3ofRM(modrm)), dis_buf);
+            }
+         }
+         else
+         if (sz == 8) {
+            /* MOVD (src)mmxreg (G), (dst)ireg64-or-mem64 (E) */
+            modrm = getUChar(delta);
+            if (epartIsReg(modrm)) {
+               delta++;
+               putIReg64( eregOfRexRM(pfx,modrm),
+                          getMMXReg(gregLO3ofRM(modrm)) );
+               DIP("movd %s, %s\n", 
+                   nameMMXReg(gregLO3ofRM(modrm)), 
+                   nameIReg64(eregOfRexRM(pfx,modrm)));
+            } else {
+               IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+               delta += len;
+               storeLE( mkexpr(addr),
+                       getMMXReg(gregLO3ofRM(modrm)) );
+               DIP("movd{64} %s, %s\n", nameMMXReg(gregLO3ofRM(modrm)), dis_buf);
+            }
+         } else {
+            goto mmx_decode_failure;
+         }
+         break;
 
       case 0x6F:
          /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
@@ -6394,53 +6440,46 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
       case 0xE2: SHIFT_BY_REG("psrad", Iop_SarN32x2);
 
 #     undef SHIFT_BY_REG
-//.. 
-//..       case 0x71: 
-//..       case 0x72: 
-//..       case 0x73: {
-//..          /* (sz==4): PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
-//..          UChar byte1, byte2, subopc;
-//..          void* hAddr;
-//..          Char* hName;
-//..          if (sz != 4) 
-//..             goto mmx_decode_failure;
-//..          byte1  = opc;                       /* 0x71/72/73 */
-//..          byte2  = getUChar(delta);           /* amode / sub-opcode */
-//..          subopc = (byte2 >> 3) & 7;
-//.. 
-#if 0 /* stop gcc multi-line comment warning */
-/.. #        define SHIFT_BY_IMM(_name,_op)                         \
-/..              do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
-/..              } while (0)
-#endif /* stop gcc multi-line comment warning */
-//.. 
-//..          hAddr = NULL;
-//..          hName = NULL;
-//.. 
-//..               if (subopc == 2 /*SRL*/ && opc == 0x71) 
-//..                  SHIFT_BY_IMM("psrlw", Iop_ShrN16x4);
-//..          else if (subopc == 2 /*SRL*/ && opc == 0x72) 
-//..                  SHIFT_BY_IMM("psrld", Iop_ShrN32x2);
-//..          else if (subopc == 2 /*SRL*/ && opc == 0x73) 
-//..                  SHIFT_BY_IMM("psrlq", Iop_Shr64);
-//.. 
-//..          else if (subopc == 4 /*SAR*/ && opc == 0x71) 
-//..                  SHIFT_BY_IMM("psraw", Iop_SarN16x4);
-//..          else if (subopc == 4 /*SAR*/ && opc == 0x72) 
-//..                  SHIFT_BY_IMM("psrad", Iop_SarN32x2);
-//.. 
-//..          else if (subopc == 6 /*SHL*/ && opc == 0x71) 
-//..                  SHIFT_BY_IMM("psllw", Iop_ShlN16x4);
-//..          else if (subopc == 6 /*SHL*/ && opc == 0x72) 
-//..                  SHIFT_BY_IMM("pslld", Iop_ShlN32x2);
-//..          else if (subopc == 6 /*SHL*/ && opc == 0x73) 
-//..                  SHIFT_BY_IMM("psllq", Iop_Shl64);
-//.. 
-//..          else goto mmx_decode_failure;
-//.. 
-//.. #        undef SHIFT_BY_IMM
-//..          break;
-//..       }
+
+      case 0x71: 
+      case 0x72: 
+      case 0x73: {
+         /* (sz==4): PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
+         UChar byte1, byte2, subopc;
+         if (sz != 4) 
+            goto mmx_decode_failure;
+         byte1  = opc;                       /* 0x71/72/73 */
+         byte2  = getUChar(delta);           /* amode / sub-opcode */
+         subopc = (byte2 >> 3) & 7;
+
+#        define SHIFT_BY_IMM(_name,_op)                        \
+            do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
+            } while (0)
+
+              if (subopc == 2 /*SRL*/ && opc == 0x71) 
+                  SHIFT_BY_IMM("psrlw", Iop_ShrN16x4);
+         else if (subopc == 2 /*SRL*/ && opc == 0x72) 
+                 SHIFT_BY_IMM("psrld", Iop_ShrN32x2);
+         else if (subopc == 2 /*SRL*/ && opc == 0x73) 
+                 SHIFT_BY_IMM("psrlq", Iop_Shr64);
+
+         else if (subopc == 4 /*SAR*/ && opc == 0x71) 
+                 SHIFT_BY_IMM("psraw", Iop_SarN16x4);
+         else if (subopc == 4 /*SAR*/ && opc == 0x72) 
+                 SHIFT_BY_IMM("psrad", Iop_SarN32x2);
+
+         else if (subopc == 6 /*SHL*/ && opc == 0x71) 
+                 SHIFT_BY_IMM("psllw", Iop_ShlN16x4);
+         else if (subopc == 6 /*SHL*/ && opc == 0x72) 
+                  SHIFT_BY_IMM("pslld", Iop_ShlN32x2);
+         else if (subopc == 6 /*SHL*/ && opc == 0x73) 
+                 SHIFT_BY_IMM("psllq", Iop_Shl64);
+
+         else goto mmx_decode_failure;
+
+#        undef SHIFT_BY_IMM
+         break;
+      }
 
       /* --- MMX decode failure --- */
       default:
@@ -13277,12 +13316,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 
-//..       case 0x71: 
-//..       case 0x72: 
-//..       case 0x73: /* PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
-//.. 
-//..       case 0x6E: /* MOVD (src)ireg-or-mem, (dst)mmxreg */
-//..       case 0x7E: /* MOVD (src)mmxreg, (dst)ireg-or-mem */
+      case 0x71: 
+      case 0x72: 
+      case 0x73: /* PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
+
+      case 0x6E: /* MOVD (src)ireg-or-mem, (dst)mmxreg */
+      case 0x7E: /* MOVD (src)mmxreg, (dst)ireg-or-mem */
       case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
 
@@ -13352,7 +13391,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
          /* If sz==2 this is SSE, and we assume sse idec has
             already spotted those cases by now. */
-         if (sz != 4)
+         if (sz != 4 && sz != 8)
             goto decode_failure;
          if (have66orF2orF3(pfx))
             goto decode_failure;

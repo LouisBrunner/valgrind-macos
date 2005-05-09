@@ -41,7 +41,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "host-generic/h_generic_regs.h"
-//.. #include "host-generic/h_generic_simd64.h"
+#include "host-generic/h_generic_simd64.h"
 #include "host-amd64/hdefs.h"
 
 
@@ -764,6 +764,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
+   Bool second_is_UInt;
    MatchInfo mi;
    DECLARE_PATTERN(p_8Uto64);
    DECLARE_PATTERN(p_1Uto8_64to1);
@@ -806,6 +807,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Binop: {
       AMD64AluOp   aluOp;
       AMD64ShiftOp shOp;
+      HWord fn = 0; /* helper fn for most SIMD64 stuff */
+
 //.. 
 //..       /* Pattern: Sub32(0,x) */
 //..       if (e->Iex.Binop.op == Iop_Sub32 && isZero32(e->Iex.Binop.arg1)) {
@@ -916,6 +919,141 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, mk_iMOVsd_RR(regR,hregAMD64_RCX()));
             addInstr(env, AMD64Instr_Sh64(shOp, 0/* %cl */, AMD64RM_Reg(dst)));
          }
+         return dst;
+      }
+
+      /* Deal with 64-bit SIMD binary ops */
+      second_is_UInt = False;
+      switch (e->Iex.Binop.op) {
+         case Iop_Add8x8:
+            fn = (HWord)h_generic_calc_Add8x8; break;
+         case Iop_Add16x4:
+            fn = (HWord)h_generic_calc_Add16x4; break;
+         case Iop_Add32x2:
+            fn = (HWord)h_generic_calc_Add32x2; break;
+//.. 
+//..          case Iop_Avg8Ux8:
+//..             fn = (HWord)h_generic_calc_Avg8Ux8; break;
+//..          case Iop_Avg16Ux4:
+//..             fn = (HWord)h_generic_calc_Avg16Ux4; break;
+
+         case Iop_CmpEQ8x8:
+            fn = (HWord)h_generic_calc_CmpEQ8x8; break;
+         case Iop_CmpEQ16x4:
+            fn = (HWord)h_generic_calc_CmpEQ16x4; break;
+         case Iop_CmpEQ32x2:
+            fn = (HWord)h_generic_calc_CmpEQ32x2; break;
+
+         case Iop_CmpGT8Sx8:
+            fn = (HWord)h_generic_calc_CmpGT8Sx8; break;
+         case Iop_CmpGT16Sx4:
+            fn = (HWord)h_generic_calc_CmpGT16Sx4; break;
+         case Iop_CmpGT32Sx2:
+            fn = (HWord)h_generic_calc_CmpGT32Sx2; break;
+
+         case Iop_InterleaveHI8x8:
+            fn = (HWord)h_generic_calc_InterleaveHI8x8; break;
+         case Iop_InterleaveLO8x8:
+            fn = (HWord)h_generic_calc_InterleaveLO8x8; break;
+         case Iop_InterleaveHI16x4:
+            fn = (HWord)h_generic_calc_InterleaveHI16x4; break;
+         case Iop_InterleaveLO16x4:
+            fn = (HWord)h_generic_calc_InterleaveLO16x4; break;
+         case Iop_InterleaveHI32x2:
+            fn = (HWord)h_generic_calc_InterleaveHI32x2; break;
+         case Iop_InterleaveLO32x2:
+            fn = (HWord)h_generic_calc_InterleaveLO32x2; break;
+
+//..          case Iop_Max8Ux8:
+//..             fn = (HWord)h_generic_calc_Max8Ux8; break;
+//..          case Iop_Max16Sx4:
+//..             fn = (HWord)h_generic_calc_Max16Sx4; break;
+//..          case Iop_Min8Ux8:
+//..             fn = (HWord)h_generic_calc_Min8Ux8; break;
+//..          case Iop_Min16Sx4:
+//..             fn = (HWord)h_generic_calc_Min16Sx4; break;
+
+         case Iop_Mul16x4:
+            fn = (HWord)h_generic_calc_Mul16x4; break;
+         case Iop_MulHi16Sx4:
+            fn = (HWord)h_generic_calc_MulHi16Sx4; break;
+//..          case Iop_MulHi16Ux4:
+//..             fn = (HWord)h_generic_calc_MulHi16Ux4; break;
+//.. 
+         case Iop_QAdd8Sx8:
+            fn = (HWord)h_generic_calc_QAdd8Sx8; break;
+         case Iop_QAdd16Sx4:
+            fn = (HWord)h_generic_calc_QAdd16Sx4; break;
+         case Iop_QAdd8Ux8:
+            fn = (HWord)h_generic_calc_QAdd8Ux8; break;
+         case Iop_QAdd16Ux4:
+            fn = (HWord)h_generic_calc_QAdd16Ux4; break;
+
+         case Iop_QNarrow32Sx2:
+            fn = (HWord)h_generic_calc_QNarrow32Sx2; break;
+         case Iop_QNarrow16Sx4:
+            fn = (HWord)h_generic_calc_QNarrow16Sx4; break;
+         case Iop_QNarrow16Ux4:
+            fn = (HWord)h_generic_calc_QNarrow16Ux4; break;
+
+         case Iop_QSub8Sx8:
+            fn = (HWord)h_generic_calc_QSub8Sx8; break;
+         case Iop_QSub16Sx4:
+            fn = (HWord)h_generic_calc_QSub16Sx4; break;
+         case Iop_QSub8Ux8:
+            fn = (HWord)h_generic_calc_QSub8Ux8; break;
+         case Iop_QSub16Ux4:
+            fn = (HWord)h_generic_calc_QSub16Ux4; break;
+
+         case Iop_Sub8x8:
+            fn = (HWord)h_generic_calc_Sub8x8; break;
+         case Iop_Sub16x4:
+            fn = (HWord)h_generic_calc_Sub16x4; break;
+         case Iop_Sub32x2:
+            fn = (HWord)h_generic_calc_Sub32x2; break;
+
+         case Iop_ShlN32x2:
+            fn = (HWord)h_generic_calc_ShlN32x2; 
+            second_is_UInt = True;
+            break;
+         case Iop_ShlN16x4:
+            fn = (HWord)h_generic_calc_ShlN16x4;
+            second_is_UInt = True;
+            break;
+         case Iop_ShrN32x2:
+            fn = (HWord)h_generic_calc_ShrN32x2; 
+            second_is_UInt = True; 
+            break;
+         case Iop_ShrN16x4:
+            fn = (HWord)h_generic_calc_ShrN16x4;
+            second_is_UInt = True; 
+            break;
+         case Iop_SarN32x2:
+            fn = (HWord)h_generic_calc_SarN32x2;
+            second_is_UInt = True; 
+            break;
+         case Iop_SarN16x4:
+            fn = (HWord)h_generic_calc_SarN16x4;
+            second_is_UInt = True; 
+            break;
+
+         default:
+            fn = (HWord)0; break;
+      }
+      if (fn != (HWord)0) {
+         /* Note: the following assumes all helpers are of signature 
+               ULong fn ( ULong, ULong ), and they are
+            not marked as regparm functions. 
+         */
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         if (second_is_UInt)
+            addInstr(env, AMD64Instr_MovZLQ(argR, argR));
+         addInstr(env, mk_iMOVsd_RR(argL, hregAMD64_RDI()) );
+         addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RSI()) );
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2 ));
+         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
 
@@ -2320,152 +2458,6 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //..             return;
 //..          }
 //.. 
-//..          case Iop_Add8x8:
-//..             fn = (HWord)h_generic_calc_Add8x8; goto binnish;
-//..          case Iop_Add16x4:
-//..             fn = (HWord)h_generic_calc_Add16x4; goto binnish;
-//..          case Iop_Add32x2:
-//..             fn = (HWord)h_generic_calc_Add32x2; goto binnish;
-//.. 
-//..          case Iop_Avg8Ux8:
-//..             fn = (HWord)h_generic_calc_Avg8Ux8; goto binnish;
-//..          case Iop_Avg16Ux4:
-//..             fn = (HWord)h_generic_calc_Avg16Ux4; goto binnish;
-//.. 
-//..          case Iop_CmpEQ8x8:
-//..             fn = (HWord)h_generic_calc_CmpEQ8x8; goto binnish;
-//..          case Iop_CmpEQ16x4:
-//..             fn = (HWord)h_generic_calc_CmpEQ16x4; goto binnish;
-//..          case Iop_CmpEQ32x2:
-//..             fn = (HWord)h_generic_calc_CmpEQ32x2; goto binnish;
-//.. 
-//..          case Iop_CmpGT8Sx8:
-//..             fn = (HWord)h_generic_calc_CmpGT8Sx8; goto binnish;
-//..          case Iop_CmpGT16Sx4:
-//..             fn = (HWord)h_generic_calc_CmpGT16Sx4; goto binnish;
-//..          case Iop_CmpGT32Sx2:
-//..             fn = (HWord)h_generic_calc_CmpGT32Sx2; goto binnish;
-//.. 
-//..          case Iop_InterleaveHI8x8:
-//..             fn = (HWord)h_generic_calc_InterleaveHI8x8; goto binnish;
-//..          case Iop_InterleaveLO8x8:
-//..             fn = (HWord)h_generic_calc_InterleaveLO8x8; goto binnish;
-//..          case Iop_InterleaveHI16x4:
-//..             fn = (HWord)h_generic_calc_InterleaveHI16x4; goto binnish;
-//..          case Iop_InterleaveLO16x4:
-//..             fn = (HWord)h_generic_calc_InterleaveLO16x4; goto binnish;
-//..          case Iop_InterleaveHI32x2:
-//..             fn = (HWord)h_generic_calc_InterleaveHI32x2; goto binnish;
-//..          case Iop_InterleaveLO32x2:
-//..             fn = (HWord)h_generic_calc_InterleaveLO32x2; goto binnish;
-//.. 
-//..          case Iop_Max8Ux8:
-//..             fn = (HWord)h_generic_calc_Max8Ux8; goto binnish;
-//..          case Iop_Max16Sx4:
-//..             fn = (HWord)h_generic_calc_Max16Sx4; goto binnish;
-//..          case Iop_Min8Ux8:
-//..             fn = (HWord)h_generic_calc_Min8Ux8; goto binnish;
-//..          case Iop_Min16Sx4:
-//..             fn = (HWord)h_generic_calc_Min16Sx4; goto binnish;
-//.. 
-//..          case Iop_Mul16x4:
-//..             fn = (HWord)h_generic_calc_Mul16x4; goto binnish;
-//..          case Iop_MulHi16Sx4:
-//..             fn = (HWord)h_generic_calc_MulHi16Sx4; goto binnish;
-//..          case Iop_MulHi16Ux4:
-//..             fn = (HWord)h_generic_calc_MulHi16Ux4; goto binnish;
-//.. 
-//..          case Iop_QAdd8Sx8:
-//..             fn = (HWord)h_generic_calc_QAdd8Sx8; goto binnish;
-//..          case Iop_QAdd16Sx4:
-//..             fn = (HWord)h_generic_calc_QAdd16Sx4; goto binnish;
-//..          case Iop_QAdd8Ux8:
-//..             fn = (HWord)h_generic_calc_QAdd8Ux8; goto binnish;
-//..          case Iop_QAdd16Ux4:
-//..             fn = (HWord)h_generic_calc_QAdd16Ux4; goto binnish;
-//.. 
-//..          case Iop_QNarrow32Sx2:
-//..             fn = (HWord)h_generic_calc_QNarrow32Sx2; goto binnish;
-//..          case Iop_QNarrow16Sx4:
-//..             fn = (HWord)h_generic_calc_QNarrow16Sx4; goto binnish;
-//..          case Iop_QNarrow16Ux4:
-//..             fn = (HWord)h_generic_calc_QNarrow16Ux4; goto binnish;
-//.. 
-//..          case Iop_QSub8Sx8:
-//..             fn = (HWord)h_generic_calc_QSub8Sx8; goto binnish;
-//..          case Iop_QSub16Sx4:
-//..             fn = (HWord)h_generic_calc_QSub16Sx4; goto binnish;
-//..          case Iop_QSub8Ux8:
-//..             fn = (HWord)h_generic_calc_QSub8Ux8; goto binnish;
-//..          case Iop_QSub16Ux4:
-//..             fn = (HWord)h_generic_calc_QSub16Ux4; goto binnish;
-//.. 
-//..          case Iop_Sub8x8:
-//..             fn = (HWord)h_generic_calc_Sub8x8; goto binnish;
-//..          case Iop_Sub16x4:
-//..             fn = (HWord)h_generic_calc_Sub16x4; goto binnish;
-//..          case Iop_Sub32x2:
-//..             fn = (HWord)h_generic_calc_Sub32x2; goto binnish;
-//.. 
-//..          binnish: {
-//..             /* Note: the following assumes all helpers are of
-//..                signature 
-//..                   ULong fn ( ULong, ULong ), and they are
-//..                not marked as regparm functions. 
-//..             */
-//..             HReg xLo, xHi, yLo, yHi;
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(yHi)));
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(yLo)));
-//..             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-//..             addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
-//..             add_to_esp(env, 4*4);
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
-//..          case Iop_ShlN32x2:
-//..             fn = (HWord)h_generic_calc_ShlN32x2; goto shifty;
-//..          case Iop_ShlN16x4:
-//..             fn = (HWord)h_generic_calc_ShlN16x4; goto shifty;
-//..          case Iop_ShrN32x2:
-//..             fn = (HWord)h_generic_calc_ShrN32x2; goto shifty;
-//..          case Iop_ShrN16x4:
-//..             fn = (HWord)h_generic_calc_ShrN16x4; goto shifty;
-//..          case Iop_SarN32x2:
-//..             fn = (HWord)h_generic_calc_SarN32x2; goto shifty;
-//..          case Iop_SarN16x4:
-//..             fn = (HWord)h_generic_calc_SarN16x4; goto shifty;
-//..          shifty: {
-//..             /* Note: the following assumes all helpers are of
-//..                signature 
-//..                   ULong fn ( ULong, UInt ), and they are
-//..                not marked as regparm functions. 
-//..             */
-//..             HReg xLo, xHi;
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             X86RMI* y = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..             addInstr(env, X86Instr_Push(y));
-//..             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-//..             addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
-//..             add_to_esp(env, 3*4);
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-
          default: 
             break;
       }

@@ -567,7 +567,7 @@ HChar* showA87FpOp ( A87FpOp op ) {
       case Afp_SCALE:  return "scale";
       case Afp_ATAN:   return "atan";
       case Afp_YL2X:   return "yl2x";
-//..       case Xfp_YL2XP1: return "yl2xp1";
+      case Afp_YL2XP1: return "yl2xp1";
 //..       case Xfp_PREM:   return "prem";
 //..       case Xfp_PREM1:  return "prem1";
       case Afp_SQRT:   return "sqrt";
@@ -576,7 +576,7 @@ HChar* showA87FpOp ( A87FpOp op ) {
 //..       case Xfp_MOV:    return "mov";
       case Afp_SIN:    return "sin";
       case Afp_COS:    return "cos";
-//..       case Xfp_TAN:    return "tan";
+      case Afp_TAN:    return "tan";
       case Afp_ROUND:  return "round";
       case Afp_2XM1:   return "2xm1";
       default: vpanic("showA87FpOp");
@@ -2836,14 +2836,16 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 
    case Ain_A87FpOp:
       switch (i->Ain.A87FpOp.op) {
-         case Afp_SQRT:  *p++ = 0xD9; *p++ = 0xFA; break;
-         case Afp_SIN:   *p++ = 0xD9; *p++ = 0xFE; break;
-         case Afp_COS:   *p++ = 0xD9; *p++ = 0xFF; break;
-         case Afp_ROUND: *p++ = 0xD9; *p++ = 0xFC; break;
-         case Afp_2XM1:  *p++ = 0xD9; *p++ = 0xF0; break;
-         case Afp_SCALE: *p++ = 0xD9; *p++ = 0xFD; break;
-         case Afp_ATAN:  *p++ = 0xD9; *p++ = 0xF3; break;
-         case Afp_YL2X:  *p++ = 0xD9; *p++ = 0xF1; break;
+         case Afp_SQRT:   *p++ = 0xD9; *p++ = 0xFA; break;
+         case Afp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
+         case Afp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
+         case Afp_TAN:    *p++ = 0xD9; *p++ = 0xF2; break;
+         case Afp_ROUND:  *p++ = 0xD9; *p++ = 0xFC; break;
+         case Afp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
+         case Afp_SCALE:  *p++ = 0xD9; *p++ = 0xFD; break;
+         case Afp_ATAN:   *p++ = 0xD9; *p++ = 0xF3; break;
+         case Afp_YL2X:   *p++ = 0xD9; *p++ = 0xF1; break;
+         case Afp_YL2XP1: *p++ = 0xD9; *p++ = 0xF9; break;
          default: goto bad;
       }
       goto done;

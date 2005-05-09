@@ -2838,7 +2838,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_ScaleF64
            || e->Iex.Binop.op == Iop_AtanF64
-           || e->Iex.Binop.op == Iop_Yl2xF64)
+           || e->Iex.Binop.op == Iop_Yl2xF64
+           || e->Iex.Binop.op == Iop_Yl2xp1F64)
       ) {
       AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
       HReg        arg1   = iselDblExpr(env, e->Iex.Binop.arg1);
@@ -2867,6 +2868,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             break;
          case Iop_Yl2xF64: 
             addInstr(env, AMD64Instr_A87FpOp(Afp_YL2X));
+            break;
+         case Iop_Yl2xp1F64: 
+            addInstr(env, AMD64Instr_A87FpOp(Afp_YL2XP1));
             break;
          default: 
             vassert(0);
@@ -2927,9 +2931,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          case Iop_NegF64:  fpop = Xfp_NEG; break;
 //..          case Iop_AbsF64:  fpop = Xfp_ABS; break;
          case Iop_SqrtF64: fpop = Afp_SQRT; break;
-         case Iop_SinF64:  fpop = Afp_SIN; break;
-         case Iop_CosF64:  fpop = Afp_COS; break;
-//..          case Iop_TanF64:  fpop = Xfp_TAN; break;
+         case Iop_SinF64:  fpop = Afp_SIN;  break;
+         case Iop_CosF64:  fpop = Afp_COS;  break;
+         case Iop_TanF64:  fpop = Afp_TAN;  break;
          case Iop_2xm1F64: fpop = Afp_2XM1; break;
          default: break;
       }
@@ -2937,10 +2941,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
          HReg        arg    = iselDblExpr(env, e->Iex.Unop.arg);
          HReg        dst    = newVRegV(env);
+         Int     nNeeded    = e->Iex.Unop.op==Iop_TanF64 ? 2 : 1;
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
-         addInstr(env, AMD64Instr_A87Free(1));
+         addInstr(env, AMD64Instr_A87Free(nNeeded));
          addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
          addInstr(env, AMD64Instr_A87FpOp(fpop));
+         if (e->Iex.Unop.op==Iop_TanF64) {
+            /* get rid of the extra 1.0 that fptan pushes */
+            addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
+         }
          addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
          return dst;

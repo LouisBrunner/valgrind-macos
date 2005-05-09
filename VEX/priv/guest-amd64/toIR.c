@@ -4143,11 +4143,11 @@ static IRExpr* /* :: Ity_I32 */ get_fpround ( void )
    return unop(Iop_64to32, IRExpr_Get( OFFB_FPROUND, Ity_I64 ));
 }
 
-//.. static void put_fpround ( IRExpr* /* :: Ity_I32 */ e )
-//.. {
-//..    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
-//..    stmt( IRStmt_Put( OFFB_FPROUND, unop(Iop_32Uto64,e) ) );
-//.. }
+static void put_fpround ( IRExpr* /* :: Ity_I32 */ e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
+   stmt( IRStmt_Put( OFFB_FPROUND, unop(Iop_32Uto64,e) ) );
+}
 
 
 /* --------- Synthesise a 2-bit FPU rounding mode. --------- */
@@ -4617,47 +4617,47 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                DIP("fldenv %s\n", dis_buf);
 //..                break;
 //..             }
-//.. 
-//..             case 5: {/* FLDCW */
-//..                /* The only thing we observe in the control word is the
-//..                   rounding mode.  Therefore, pass the 16-bit value
-//..                   (x87 native-format control word) to a clean helper,
-//..                   getting back a 64-bit value, the lower half of which
-//..                   is the FPROUND value to store, and the upper half of
-//..                   which is the emulation-warning token which may be
-//..                   generated.
-//..                */
-//..                /* ULong x86h_check_fldcw ( UInt ); */
-//..                IRTemp t64 = newTemp(Ity_I64);
-//..                IRTemp ew = newTemp(Ity_I32);
-//..                DIP("fldcw %s\n", dis_buf);
-//..                assign( t64, mkIRExprCCall(
-//..                                Ity_I64, 0/*regparms*/, 
-//..                                "x86g_check_fldcw",
-//..                                &x86g_check_fldcw, 
-//..                                mkIRExprVec_1( 
-//..                                   unop( Iop_16Uto32, 
-//..                                         loadLE(Ity_I16, mkexpr(addr)))
-//..                                )
-//..                             )
-//..                      );
-//.. 
-//..                put_fpround( unop(Iop_64to32, mkexpr(t64)) );
-//..                assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
-//..                put_emwarn( mkexpr(ew) );
-//..                /* Finally, if an emulation warning was reported,
-//..                   side-exit to the next insn, reporting the warning,
-//..                   so that Valgrind's dispatcher sees the warning. */
-//..                stmt( 
-//..                   IRStmt_Exit(
-//..                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
-//..                      Ijk_EmWarn,
-//..                      IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
-//..                   )
-//..                );
-//..                break;
-//..             }
-//.. 
+
+            case 5: {/* FLDCW */
+               /* The only thing we observe in the control word is the
+                  rounding mode.  Therefore, pass the 16-bit value
+                  (x87 native-format control word) to a clean helper,
+                  getting back a 64-bit value, the lower half of which
+                  is the FPROUND value to store, and the upper half of
+                  which is the emulation-warning token which may be
+                  generated.
+               */
+               /* ULong amd64h_check_fldcw ( ULong ); */
+               IRTemp t64 = newTemp(Ity_I64);
+               IRTemp ew = newTemp(Ity_I32);
+               DIP("fldcw %s\n", dis_buf);
+               assign( t64, mkIRExprCCall(
+                               Ity_I64, 0/*regparms*/, 
+                               "amd64g_check_fldcw",
+                               &amd64g_check_fldcw, 
+                               mkIRExprVec_1( 
+                                  unop( Iop_16Uto64, 
+                                        loadLE(Ity_I16, mkexpr(addr)))
+                               )
+                            )
+                     );
+
+               put_fpround( unop(Iop_64to32, mkexpr(t64)) );
+               assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
+               put_emwarn( mkexpr(ew) );
+               /* Finally, if an emulation warning was reported,
+                  side-exit to the next insn, reporting the warning,
+                  so that Valgrind's dispatcher sees the warning. */
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U64( guest_rip_bbstart+delta )
+                  )
+               );
+               break;
+            }
+
 //..             case 6: { /* FNSTENV m28 */
 //..                /* Uses dirty helper: 
 //..                      void x86g_do_FSTENV ( VexGuestX86State*, UInt ) */
@@ -4697,24 +4697,24 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                DIP("fnstenv %s\n", dis_buf);
 //..                break;
 //..             }
-//.. 
-//..             case 7: /* FNSTCW */
-//..               /* Fake up a native x87 FPU control word.  The only
-//..                  thing it depends on is FPROUND[1:0], so call a clean
-//..                  helper to cook it up. */
-//..                /* UInt x86h_create_fpucw ( UInt fpround ) */
-//..                DIP("fnstcw %s\n", dis_buf);
-//..                storeLE(
-//..                   mkexpr(addr), 
-//..                   unop( Iop_32to16, 
-//..                         mkIRExprCCall(
-//..                            Ity_I32, 0/*regp*/,
-//..                            "x86g_create_fpucw", &x86g_create_fpucw, 
-//..                            mkIRExprVec_1( get_fpround() ) 
-//..                         ) 
-//..                   ) 
-//..                );
-//..                break;
+
+            case 7: /* FNSTCW */
+               /* Fake up a native x87 FPU control word.  The only
+                  thing it depends on is FPROUND[1:0], so call a clean
+                  helper to cook it up. */
+               /* ULong x86h_create_fpucw ( ULong fpround ) */
+               DIP("fnstcw %s\n", dis_buf);
+               storeLE(
+                  mkexpr(addr), 
+                  unop( Iop_64to16, 
+                        mkIRExprCCall(
+                           Ity_I64, 0/*regp*/,
+                           "amd64g_create_fpucw", &amd64g_create_fpucw, 
+                           mkIRExprVec_1( unop(Iop_32Uto64, get_fpround()) ) 
+                        ) 
+                  ) 
+               );
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -4837,13 +4837,13 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 0xF2: /* FPTAN */
-//..                DIP("ftan\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
-//..                fp_push();
-//..                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
-//..                clear_C2(); /* HACK */
-//..                break;
+            case 0xF2: /* FPTAN */
+               DIP("ftan\n");
+               put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
+               clear_C2(); /* HACK */
+               break;
 
             case 0xF3: /* FPATAN */
                DIP("fpatan\n");
@@ -4885,12 +4885,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                break;
 //..             }
 //.. 
-//..             case 0xF9: /* FYL2XP1 */
-//..                DIP("fyl2xp1\n");
-//..                put_ST_UNCHECKED(1, binop(Iop_Yl2xp1F64,
-//..                                          get_ST(1), get_ST(0)));
-//..                fp_pop();
-//..                break;
+            case 0xF9: /* FYL2XP1 */
+               DIP("fyl2xp1\n");
+               put_ST_UNCHECKED(1, binop(Iop_Yl2xp1F64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
 
             case 0xFA: /* FSQRT */
                DIP("fsqrt\n");

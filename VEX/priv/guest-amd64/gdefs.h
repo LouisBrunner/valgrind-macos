@@ -97,9 +97,9 @@ extern ULong amd64g_calculate_condition (
 //                UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
 //             );
 
-//extern ULong amd64g_check_fldcw ( ULong fpucw );
+extern ULong amd64g_check_fldcw ( ULong fpucw );
 
-//extern ULong amd64g_create_fpucw ( ULong fpround );
+extern ULong amd64g_create_fpucw ( ULong fpround );
 
 extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 

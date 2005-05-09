@@ -1268,6 +1268,43 @@ ULong amd64g_create_mxcsr ( ULong sseround )
 }
 
 
+/* CLEAN HELPER */
+/* fpucw[15:0] contains a x87 native format FPU control word.
+   Extract from it the required FPROUND value and any resulting
+   emulation warning, and return (warn << 32) | fpround value.
+*/
+ULong amd64g_check_fldcw ( ULong fpucw )
+{
+   /* Decide on a rounding mode.  fpucw[11:10] holds it. */
+   /* NOTE, encoded exactly as per enum IRRoundingMode. */
+   ULong rmode = (fpucw >> 10) & 3;
+
+   /* Detect any required emulation warnings. */
+   VexEmWarn ew = EmWarn_NONE;
+
+   if ((fpucw & 0x3F) != 0x3F) {
+      /* unmasked exceptions! */
+      ew = EmWarn_X86_x87exns;
+   }
+   else
+   if (((fpucw >> 8) & 3) != 3) {
+      /* unsupported precision */
+      ew = EmWarn_X86_x87precision;
+   }
+
+   return (((ULong)ew) << 32) | ((ULong)rmode);
+}
+
+
+/* CLEAN HELPER */
+/* Given fpround as an IRRoundingMode value, create a suitable x87
+   native format FPU control word. */
+ULong amd64g_create_fpucw ( ULong fpround )
+{
+   fpround &= 3;
+   return 0x037F | (fpround << 10);
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/

@@ -2,7 +2,7 @@ VALGRIND_2.1 {
 	global:
 		vgPlain_*;
 		vgTool_*;
-		vgPlatform*;
+		vgPlatform_*;
                 vgArch_*;
 		*IROp*;
 		*IRExpr*;

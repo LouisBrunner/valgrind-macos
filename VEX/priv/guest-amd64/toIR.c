@@ -8157,12 +8157,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    
 //..    /* Otherwise we must be doing sse1 or sse2, so we can at least try
 //..       for SSE1 here. */
-//.. 
-//..    /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x58) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "addps", Iop_Add32Fx4 );
-//..       goto decode_success;
-//..    }
+
+   /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x58) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "addps", Iop_Add32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 58 = ADDSS -- add 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -8185,11 +8186,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F C2 = CMPPS -- 32Fx4 comparison from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC2) {
-//..       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmpps", True, 4 );
-//..       goto decode_success;
-//..    }
+   /* 0F C2 = CMPPS -- 32Fx4 comparison from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0xC2) {
+      delta = dis_SSEcmp_E_to_G( pfx, delta+2, "cmpps", True, 4 );
+      goto decode_success;
+   }
 
    /* F3 0F C2 = CMPSS -- 32F0x4 comparison from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -8238,46 +8240,46 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 2A = CVTPI2PS -- convert 2 x I32 in mem/mmx to 2 x F32 in low
-//..       half xmm */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x2A) {
-//..       IRTemp arg64 = newTemp(Ity_I64);
-//..       IRTemp rmode = newTemp(Ity_I32);
-//..       vassert(sz == 4);
-//.. 
-//..       modrm = getUChar(delta+2);
-//..       do_MMX_preamble();
-//..       if (epartIsReg(modrm)) {
-//..          assign( arg64, getMMXReg(eregOfRM(modrm)) );
-//..          delta += 2+1;
-//..          DIP("cvtpi2ps %s,%s\n", nameMMXReg(eregOfRM(modrm)),
-//..                                  nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          assign( arg64, loadLE(Ity_I64, mkexpr(addr)) );
-//..          delta += 2+alen;
-//..          DIP("cvtpi2ps %s,%s\n", dis_buf,
-//..                                  nameXMMReg(gregOfRM(modrm)) );
-//..       }
-//.. 
-//..       assign( rmode, get_sse_roundingmode() );
-//.. 
-//..       putXMMRegLane32F( 
-//..          gregOfRM(modrm), 0,
-//..          binop(Iop_F64toF32, 
-//..                mkexpr(rmode),
-//..                unop(Iop_I32toF64, 
-//..                     unop(Iop_64to32, mkexpr(arg64)) )) );
-//.. 
-//..       putXMMRegLane32F(
-//..          gregOfRM(modrm), 1, 
-//..          binop(Iop_F64toF32, 
-//..                mkexpr(rmode),
-//..                unop(Iop_I32toF64,
-//..                     unop(Iop_64HIto32, mkexpr(arg64)) )) );
-//.. 
-//..       goto decode_success;
-//..    }
+   /* 0F 2A = CVTPI2PS -- convert 2 x I32 in mem/mmx to 2 x F32 in low
+      half xmm */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x2A) {
+      IRTemp arg64 = newTemp(Ity_I64);
+      IRTemp rmode = newTemp(Ity_I32);
+
+      modrm = getUChar(delta+2);
+      do_MMX_preamble();
+      if (epartIsReg(modrm)) {
+         assign( arg64, getMMXReg(eregLO3ofRM(modrm)) );
+         delta += 2+1;
+         DIP("cvtpi2ps %s,%s\n", nameMMXReg(eregLO3ofRM(modrm)),
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign( arg64, loadLE(Ity_I64, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("cvtpi2ps %s,%s\n", dis_buf,
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)) );
+      }
+
+      assign( rmode, get_sse_roundingmode() );
+
+      putXMMRegLane32F( 
+         gregOfRexRM(pfx,modrm), 0,
+         binop(Iop_F64toF32, 
+               mkexpr(rmode),
+               unop(Iop_I32toF64, 
+                    unop(Iop_64to32, mkexpr(arg64)) )) );
+
+      putXMMRegLane32F(
+         gregOfRexRM(pfx,modrm), 1, 
+         binop(Iop_F64toF32, 
+               mkexpr(rmode),
+               unop(Iop_I32toF64,
+                    unop(Iop_64HIto32, mkexpr(arg64)) )) );
+
+      goto decode_success;
+   }
 
    /* F3 0F 2A = CVTSI2SS 
       -- sz==4: convert I32 in mem/ireg to F32 in low quarter xmm
@@ -8333,63 +8335,68 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 2D = CVTPS2PI -- convert 2 x F32 in mem/low half xmm to 2 x
-//..       I32 in mmx, according to prevailing SSE rounding mode */
+   /* 0F 2D = CVTPS2PI -- convert 2 x F32 in mem/low half xmm to 2 x
+      I32 in mmx, according to prevailing SSE rounding mode */
 //..    /* 0F 2C = CVTTPS2PI -- convert 2 x F32 in mem/low half xmm to 2 x
 //..       I32 in mmx, rounding towards zero */
-//..    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x2D || insn[1] == 0x2C)) {
-//..       IRTemp dst64  = newTemp(Ity_I64);
-//..       IRTemp rmode  = newTemp(Ity_I32);
-//..       IRTemp f32lo  = newTemp(Ity_F32);
-//..       IRTemp f32hi  = newTemp(Ity_F32);
-//..       Bool   r2zero = insn[1] == 0x2C;
-//.. 
-//..       do_MMX_preamble();
-//..       modrm = getUChar(delta+2);
-//.. 
-//..       if (epartIsReg(modrm)) {
-//..          delta += 2+1;
-//.. 	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
-//.. 	 assign(f32hi, getXMMRegLane32F(eregOfRM(modrm), 1));
-//..          DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
-//..                                    nameXMMReg(eregOfRM(modrm)),
-//..                                    nameMMXReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//.. 	 assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
-//.. 	 assign(f32hi, loadLE(Ity_F32, binop( Iop_Add32, 
-//..                                               mkexpr(addr), 
-//..                                               mkU32(4) )));
-//..          delta += 2+alen;
-//..          DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
-//..                                    dis_buf,
-//..                                    nameMMXReg(gregOfRM(modrm)));
-//..       }
-//.. 
-//..       if (r2zero) {
-//..          assign(rmode, mkU32((UInt)Irrm_ZERO) );
-//..       } else {
-//..          assign( rmode, get_sse_roundingmode() );
-//..       }
-//.. 
-//..       assign( 
-//..          dst64,
-//..          binop( Iop_32HLto64,
-//..                 binop( Iop_F64toI32, 
-//..                        mkexpr(rmode), 
-//..                        unop( Iop_F32toF64, mkexpr(f32hi) ) ),
-//..                 binop( Iop_F64toI32, 
-//..                        mkexpr(rmode), 
-//..                        unop( Iop_F32toF64, mkexpr(f32lo) ) )
-//..               )
-//..       );
-//.. 
-//..       putMMXReg(gregOfRM(modrm), mkexpr(dst64));
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* F3 0F 2D = CVTSS2SI -- convert F32 in mem/low quarter xmm to
-//..       I32 in ireg, according to prevailing SSE rounding mode */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && (insn[1] == 0x2D /* || insn[1] == 0x2C */)) {
+      IRTemp dst64  = newTemp(Ity_I64);
+      IRTemp rmode  = newTemp(Ity_I32);
+      IRTemp f32lo  = newTemp(Ity_F32);
+      IRTemp f32hi  = newTemp(Ity_F32);
+      Bool   r2zero = toBool(insn[1] == 0x2C);
+
+      do_MMX_preamble();
+      modrm = getUChar(delta+2);
+
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         assign(f32lo, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 0));
+         assign(f32hi, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 1));
+         DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
+                                   nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                   nameMMXReg(gregLO3ofRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+         assign(f32hi, loadLE(Ity_F32, binop( Iop_Add64, 
+                                              mkexpr(addr), 
+                                              mkU64(4) )));
+         delta += 2+alen;
+         DIP("cvt%sps2pi %s,%s\n", r2zero ? "t" : "",
+                                   dis_buf,
+                                   nameMMXReg(gregLO3ofRM(modrm)));
+      }
+
+      if (r2zero) {
+         assign(rmode, mkU32((UInt)Irrm_ZERO) );
+      } else {
+         assign( rmode, get_sse_roundingmode() );
+      }
+
+      assign( 
+         dst64,
+         binop( Iop_32HLto64,
+                binop( Iop_F64toI32, 
+                       mkexpr(rmode), 
+                       unop( Iop_F32toF64, mkexpr(f32hi) ) ),
+                binop( Iop_F64toI32, 
+                       mkexpr(rmode), 
+                       unop( Iop_F32toF64, mkexpr(f32lo) ) )
+              )
+      );
+
+      putMMXReg(gregLO3ofRM(modrm), mkexpr(dst64));
+      goto decode_success;
+   }
+
+   /* F3 0F 2D = CVTSS2SI 
+      when sz==4 -- convert F32 in mem/low quarter xmm to I32 in ireg, 
+                    according to prevailing SSE rounding mode
+      when sz==8 -- convert F32 in mem/low quarter xmm to I64 in ireg, 
+                    according to prevailing SSE rounding mode
+   */
    /* F3 0F 2C = CVTTSS2SI 
       when sz==4 -- convert F32 in mem/low quarter xmm to I32 in ireg, 
                     truncating towards zero
@@ -8398,7 +8405,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    */
    if (haveF3no66noF2(pfx) 
        && insn[0] == 0x0F 
-       && ( /* insn[1] == 0x2D || */ insn[1] == 0x2C)) {
+       && (insn[1] == 0x2D || insn[1] == 0x2C)) {
       IRTemp rmode  = newTemp(Ity_I32);
       IRTemp f32lo  = newTemp(Ity_F32);
       Bool   r2zero = toBool(insn[1] == 0x2C);
@@ -8441,56 +8448,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-
-////////////////////////////////////////////////////////////////
-//..    /* F3 0F 2C = CVTTSS2SI -- convert F32 in mem/low quarter xmm to
-//..       I32 in ireg, according to prevailing SSE rounding mode */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F 
-//..        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
-//..       IRTemp rmode = newTemp(Ity_I32);
-//..       IRTemp f32lo = newTemp(Ity_F32);
-//..       Bool   r2zero = insn[2] == 0x2C;
-//..       vassert(sz == 4);
-//.. 
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 3+1;
-//.. 	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
-//..          DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
-//..                                    nameXMMReg(eregOfRM(modrm)),
-//..                                    nameIReg(4, gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//.. 	 assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
-//..          delta += 3+alen;
-//..          DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
-//..                                    dis_buf,
-//..                                    nameIReg(4, gregOfRM(modrm)));
-//..       }
-//.. 
-//..       if (r2zero) {
-//..          assign( rmode, mkU32((UInt)Irrm_ZERO) );
-//..       } else {
-//..          assign( rmode, get_sse_roundingmode() );
-//..       }
-//.. 
-//..       putIReg(4, gregOfRM(modrm),
-//..                  binop( Iop_F64toI32, 
-//..                         mkexpr(rmode), 
-//..                         unop( Iop_F32toF64, mkexpr(f32lo) ) )
-//..       );
-//.. 
-//..       goto decode_success;
-//..    }
-///////////////////////////////////////////////////////////////////
-
-
-//.. 
-//..    /* 0F 5E = DIVPS -- div 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5E) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "divps", Iop_Div32Fx4 );
-//..       goto decode_success;
-//..    }
+   /* 0F 5E = DIVPS -- div 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x5E) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "divps", Iop_Div32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 5E = DIVSS -- div 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -8548,11 +8511,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5F) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "maxps", Iop_Max32Fx4 );
-//..       goto decode_success;
-//..    }
+   /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x5F) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "maxps", Iop_Max32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 5F = MAXSS -- max 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -8561,11 +8525,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 5D = MINPS -- min 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5D) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "minps", Iop_Min32Fx4 );
-//..       goto decode_success;
-//..    }
+   /* 0F 5D = MINPS -- min 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x5D) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "minps", Iop_Min32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 5D = MINSS -- min 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -8612,81 +8577,85 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
    }
 
-//..    /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
-//..    /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x16) {
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 2+1;
-//..          putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
-//..                           getXMMRegLane64( eregOfRM(modrm), 0 ) );
-//..          DIP("movhps %s,%s\n", nameXMMReg(eregOfRM(modrm)), 
-//..                                nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          delta += 2+alen;
-//..          putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
-//..                           loadLE(Ity_I64, mkexpr(addr)) );
-//..          DIP("movhps %s,%s\n", dis_buf, 
-//..                                nameXMMReg( gregOfRM(modrm) ));
-//..       }
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 0F 17 = MOVHPS -- move from high half of XMM to mem. */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x17) {
-//..       if (!epartIsReg(insn[2])) {
-//..          delta += 2;
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          delta += alen;
-//..          storeLE( mkexpr(addr), 
-//..                   getXMMRegLane64( gregOfRM(insn[2]),
-//..                                    1/*upper lane*/ ) );
-//..          DIP("movhps %s,%s\n", nameXMMReg( gregOfRM(insn[2]) ),
-//..                                dis_buf);
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
-//.. 
-//..    /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
-//..    /* OF 12 = MOVHLPS -- from from hi half to lo half of XMM. */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x12) {
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 2+1;
-//..          putXMMRegLane64( gregOfRM(modrm),  
-//..                           0/*lower lane*/,
-//..                           getXMMRegLane64( eregOfRM(modrm), 1 ));
-//..          DIP("movhlps %s, %s\n", nameXMMReg(eregOfRM(modrm)), 
-//..                                  nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          delta += 2+alen;
-//..          putXMMRegLane64( gregOfRM(modrm),  0/*lower lane*/,
-//..                           loadLE(Ity_I64, mkexpr(addr)) );
-//..          DIP("movlps %s, %s\n", 
-//..              dis_buf, nameXMMReg( gregOfRM(modrm) ));
-//..       }
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 0F 13 = MOVLPS -- move from low half of XMM to mem. */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x13) {
-//..       if (!epartIsReg(insn[2])) {
-//..          delta += 2;
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          delta += alen;
-//..          storeLE( mkexpr(addr), 
-//..                   getXMMRegLane64( gregOfRM(insn[2]), 
-//..                                    0/*lower lane*/ ) );
-//..          DIP("movlps %s, %s\n", nameXMMReg( gregOfRM(insn[2]) ),
-//..                                 dis_buf);
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
-//.. 
+   /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
+   /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
+   if (haveNo66noF2noF3(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x16) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         putXMMRegLane64( gregOfRexRM(pfx,modrm), 1/*upper lane*/,
+                          getXMMRegLane64( eregOfRexRM(pfx,modrm), 0 ) );
+         DIP("movhps %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)), 
+                               nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         delta += 2+alen;
+         putXMMRegLane64( gregOfRexRM(pfx,modrm), 1/*upper lane*/,
+                          loadLE(Ity_I64, mkexpr(addr)) );
+         DIP("movhps %s,%s\n", dis_buf, 
+                               nameXMMReg( gregOfRexRM(pfx,modrm) ));
+      }
+      goto decode_success;
+   }
+
+   /* 0F 17 = MOVHPS -- move from high half of XMM to mem. */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x17) {
+      if (!epartIsReg(insn[2])) {
+         delta += 2;
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRexRM(pfx,insn[2]),
+                                   1/*upper lane*/ ) );
+         DIP("movhps %s,%s\n", nameXMMReg( gregOfRexRM(pfx,insn[2]) ),
+                               dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
+   }
+
+   /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
+   /* OF 12 = MOVHLPS -- from from hi half to lo half of XMM. */
+   if (haveNo66noF2noF3(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x12) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         putXMMRegLane64( gregOfRexRM(pfx,modrm),  
+                          0/*lower lane*/,
+                          getXMMRegLane64( eregOfRexRM(pfx,modrm), 1 ));
+         DIP("movhlps %s, %s\n", nameXMMReg(eregOfRexRM(pfx,modrm)), 
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         delta += 2+alen;
+         putXMMRegLane64( gregOfRexRM(pfx,modrm),  0/*lower lane*/,
+                          loadLE(Ity_I64, mkexpr(addr)) );
+         DIP("movlps %s, %s\n", 
+             dis_buf, nameXMMReg( gregOfRexRM(pfx,modrm) ));
+      }
+      goto decode_success;
+   }
+
+   /* 0F 13 = MOVLPS -- move from low half of XMM to mem. */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x13) {
+      if (!epartIsReg(insn[2])) {
+         delta += 2;
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRexRM(pfx,insn[2]), 
+                                   0/*lower lane*/ ) );
+         DIP("movlps %s, %s\n", nameXMMReg( gregOfRexRM(pfx,insn[2]) ),
+                                dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
+   }
+
 //..    /* 0F 50 = MOVMSKPS - move 4 sign bits from 4 x F32 in xmm(E)
 //..       to 4 lowest bits of ireg(G) */
 //..    if (insn[0] == 0x0F && insn[1] == 0x50) {
@@ -8799,11 +8768,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
    }
 
-//..    /* 0F 59 = MULPS -- mul 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x59) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "mulps", Iop_Mul32Fx4 );
-//..       goto decode_success;
-//..    }
+   /* 0F 59 = MULPS -- mul 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x59) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "mulps", Iop_Mul32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 59 = MULSS -- mul 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -9187,11 +9157,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 5C = SUBPS -- sub 32Fx4 from R/M to R */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5C) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "subps", Iop_Sub32Fx4 );
-//..       goto decode_success;
-//..    }
+   /* 0F 5C = SUBPS -- sub 32Fx4 from R/M to R */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x5C) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "subps", Iop_Sub32Fx4 );
+      goto decode_success;
+   }
 
    /* F3 0F 5C = SUBSS -- sub 32F0x4 from R/M to R */
    if (haveF3no66noF2(pfx) && sz == 4
@@ -12263,40 +12234,45 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       DIP("pusha%c\n", nameISize(sz));
 //..       break;
-//.. 
-//..    case 0x8F: /* POPL/POPW m32 */
-//..      { Int len;
-//..        UChar rm = getUChar(delta);
-//.. 
-//..        /* make sure this instruction is correct POP */
-//..        vassert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
-//..        /* and has correct size */
-//..        vassert(sz == 4);      
-//..        
-//..        t1 = newTemp(Ity_I32); t3 = newTemp(Ity_I32);
-//..        /* set t1 to ESP: t1 = ESP */
-//..        assign( t1, getIReg(4, R_ESP) );
-//..        /* load M[ESP] to virtual register t3: t3 = M[t1] */
-//..        assign( t3, loadLE(Ity_I32, mkexpr(t1)) );
-//..        
-//..        /* increase ESP; must be done before the STORE.  Intel manual says:
-//..             If the ESP register is used as a base register for addressing
-//..             a destination operand in memory, the POP instruction computes
-//..             the effective address of the operand after it increments the
-//..             ESP register.
-//..        */
-//..        putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t1), mkU32(sz)) );
-//.. 
-//..        /* resolve MODR/M */
-//..        addr = disAMode ( &len, sorb, delta, dis_buf);
-//..        storeLE( mkexpr(addr), mkexpr(t3) );
-//.. 
-//..        DIP("popl %s\n", dis_buf);
-//.. 
-//..        delta += len;
-//..        break;
-//..      }
-//.. 
+
+   case 0x8F: { /* POPQ m64 / POPW m16 */
+      Int len;
+      /* There is no encoding for 32-bit pop in 64-bit mode.
+         So sz==4 actually means sz==8. */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      vassert(sz == 2 || sz == 4);
+      if (sz == 4) sz = 8;
+      if (sz != 8) goto decode_failure; // until we know a sz==2 test case exists
+
+      UChar rm = getUChar(delta);
+
+      /* make sure this instruction is correct POP */
+      if (epartIsReg(rm) || gregLO3ofRM(rm) != 0)
+         goto decode_failure;
+      /* and has correct size */
+      vassert(sz == 8);      
+       
+      t1 = newTemp(Ity_I64);
+      t3 = newTemp(Ity_I64);
+      assign( t1, getIReg64(R_RSP) );
+      assign( t3, loadLE(Ity_I64, mkexpr(t1)) );
+       
+      /* Increase RSP; must be done before the STORE.  Intel manual
+         says: If the RSP register is used as a base register for
+         addressing a destination operand in memory, the POP
+         instruction computes the effective address of the operand
+         after it increments the RSP register.  */
+      putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t1), mkU64(sz)) );
+
+      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
+      storeLE( mkexpr(addr), mkexpr(t3) );
+
+      DIP("popl %s\n", dis_buf);
+
+      delta += len;
+      break;
+   }
+
 //.. //--    case 0x1F: /* POP %DS */
 //.. //--       dis_pop_segreg( cb, R_DS, sz ); break;
 //.. //--    case 0x07: /* POP %ES */

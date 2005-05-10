@@ -43,6 +43,8 @@ functionality.  Consequently, pub_core_foo.h *must* #include
 pub_tool_foo.h, if it exists.  pub_tool_foo.h *must not* #include
 pub_core_foo.h, nor any other pub_core_ header for that matter.
 
+Module-private headers are named "priv_foo.h".
+
 No module may include the private headers of any other module.  If a
 type/enum/function/struct/whatever is stated in neither
 include/pub_tool_foo.h nor coregrind/pub_core_foo.h then module 'foo'

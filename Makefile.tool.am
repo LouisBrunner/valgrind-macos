@@ -4,3 +4,6 @@ SUBDIRS = . tests docs
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.tool-flags.am
 include $(top_srcdir)/Makefile.tool-inplace.am
+
+LIBREPLACEMALLOC = $(top_builddir)/coregrind/m_replacemalloc/libreplacemalloc_toolpreload.a
+

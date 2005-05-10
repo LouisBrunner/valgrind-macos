@@ -395,6 +395,7 @@ AC_OUTPUT(
    coregrind/Makefile 
    coregrind/demangle/Makefile 
    coregrind/m_aspacemgr/Makefile 
+   coregrind/m_replacemalloc/Makefile 
    coregrind/m_sigframe/Makefile 
    coregrind/m_syscalls/Makefile 
    coregrind/amd64/Makefile

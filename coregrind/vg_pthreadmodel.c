@@ -207,9 +207,7 @@ static void *before_pthread_create(va_list va)
    // TL_(malloc) being a weak symbol, and it just doesn't fit with the
    // VG_(tdict) approach that we've switched to.  The right way to do this
    // will be to provide a function in the core that checks if
-   // VG_(tdict).malloc_malloc has been set (or perhaps it would be better
-   // to check whether VG_USERREQ__GET_MALLOCFUNCS has been called, ie.
-   // whether replace_malloc.c:init() has been called);  if so, it should
+   // VG_(tdict).malloc_malloc has been set;  if so, it should
    // call it, if not, it should call VG_(cli_malloc)().
 //   VG_(tl_malloc_called_deliberately) = True;
 //   data = TL_(malloc)(sizeof(*data));

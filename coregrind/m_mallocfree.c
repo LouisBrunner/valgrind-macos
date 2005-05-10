@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- An implementation of malloc/free which doesn't use sbrk.     ---*/
-/*---                                                 vg_malloc2.c ---*/
+/*---                                               m_mallocfree.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -515,61 +515,6 @@ Superblock* findSb ( Arena* a, Block* b )
    VG_(printf)("findSb: can't find pointer %p in arena `%s'\n", b, a->name );
    VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
    return NULL; /*NOTREACHED*/
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Command line options                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Nb: the allocator always rounds blocks up to a multiple of
-   VG_MIN_MALLOC_SZB.
-*/
-
-/* DEBUG: print malloc details?  default: NO */
-Bool VG_(clo_trace_malloc)  = False;
-
-/* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use VG_MIN_MALLOC_SZB. */
-UInt VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
-
-
-Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
-{
-   if (VG_CLO_STREQN(12, arg, "--alignment=")) {
-      VG_(clo_alignment) = (UInt)VG_(atoll)(&arg[12]);
-
-      if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB
-          || VG_(clo_alignment) > 4096
-          || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-         VG_(message)(Vg_UserMsg, "");
-         VG_(message)(Vg_UserMsg, 
-            "Invalid --alignment= setting.  "
-            "Should be a power of 2, >= %d, <= 4096.", VG_MIN_MALLOC_SZB);
-         VG_(bad_option)("--alignment");
-      }
-   }
-
-   else VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc))
-   else 
-      return False;
-
-   return True;
-}
-
-void VG_(replacement_malloc_print_usage)(void)
-{
-   VG_(printf)(
-"    --alignment=<number>      set minimum alignment of allocations [%d]\n",
-   VG_MIN_MALLOC_SZB
-   );
-}
-
-void VG_(replacement_malloc_print_debug_usage)(void)
-{
-   VG_(printf)(
-"    --trace-malloc=no|yes     show client malloc details? [no]\n"
-   );
 }
 
 
@@ -1150,8 +1095,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    .    .               .   .   .               .   .
 
 */
-static 
-void* arena_malloc_aligned ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
+void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 {
    SizeT  base_pszB_req, base_pszB_act, frag_bszB;
    Block  *base_b, *align_b;
@@ -1170,10 +1114,10 @@ void* arena_malloc_aligned ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    // a power of 2.
    if (req_alignB < VG_MIN_MALLOC_SZB
        || req_alignB > 1048576
-       || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-      VG_(printf)("arena_malloc_aligned(%p, %d, %d)\nbad alignment", 
+       || VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
+      VG_(printf)("VG_(arena_memalign)(%p, %d, %d)\nbad alignment", 
                   a, req_alignB, req_pszB );
-      VG_(core_panic)("arena_malloc_aligned");
+      VG_(core_panic)("VG_(arena_memalign)");
       /*NOTREACHED*/
    }
    // Paranoid
@@ -1346,103 +1290,6 @@ void* VG_(realloc) ( void* ptr, SizeT size )
    return VG_(arena_realloc) ( VG_AR_TOOL, ptr, size );
 }
 
-void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )                 
-{                                                                             
-   // 'align' should be valid (ie. big enough and a power of two) by now.
-   // arena_malloc_aligned() will abort if it's not.
-   if (VG_MIN_MALLOC_SZB == align)
-      return VG_(arena_malloc)    ( VG_AR_CLIENT, nbytes ); 
-   else                                                                       
-      return arena_malloc_aligned ( VG_AR_CLIENT, align, nbytes );
-}                                                                             
-
-void VG_(cli_free) ( void* p )                                   
-{                                                                             
-   VG_(arena_free) ( VG_AR_CLIENT, p );                          
-}
-
-
-Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size )
-{  
-   return (start - client_malloc_redzone_szB <= a
-           && a < start + size + client_malloc_redzone_szB);
-}
-
-
-/*------------------------------------------------------------*/
-/*--- The original test driver machinery.                  ---*/
-/*------------------------------------------------------------*/
-
-#if 0
-
-#if 1
-#define N_TEST_TRANSACTIONS 100000000
-#define N_TEST_ARR 200000
-#define M_TEST_MALLOC 1000
-#else
-#define N_TEST_TRANSACTIONS 500000
-#define N_TEST_ARR 30000
-#define M_TEST_MALLOC 500
-#endif
-
-
-void* test_arr[N_TEST_ARR];
-
-int main ( int argc, char** argv )
-{
-   Int i, j, k, nbytes, qq;
-   unsigned char* chp;
-   Arena* a = &arena[VG_AR_CORE];
-   srandom(1);
-   for (i = 0; i < N_TEST_ARR; i++)
-      test_arr[i] = NULL;
-
-   for (i = 0; i < N_TEST_TRANSACTIONS; i++) {
-      if (i % 50000 == 0) mallocSanityCheck(a);
-      j = random() % N_TEST_ARR;
-      if (test_arr[j]) {
-         vg_free(a, test_arr[j]);
-         test_arr[j] = NULL;
-      } else {
-         nbytes = 1 + random() % M_TEST_MALLOC;
-         qq = random()%64;
-         if (qq == 32) 
-            nbytes *= 17;
-         else if (qq == 33)
-            nbytes = 0;
-         test_arr[j] 
-           = (i % 17) == 0
-                ? vg_memalign(a, nbytes, 1<< (3+(random()%10)))
-                : vg_malloc( a, nbytes );
-         chp = test_arr[j];
-         for (k = 0; k < nbytes; k++) 
-            chp[k] = (unsigned char)(k + 99);
-      }
-   }
-
-
-   for (i = 0; i < N_TEST_ARR; i++) {
-      if (test_arr[i]) {
-         vg_free(a, test_arr[i]);
-         test_arr[i] = NULL;
-      }
-   }
-   mallocSanityCheck(a);
-
-   fprintf(stderr, "ALL DONE\n");
-
-   show_arena_stats(a);
-   fprintf(stderr, "%d max useful, %d bytes mmap'd (%4.1f%%), %d useful\n",
-           a->bytes_on_loan_max, 
-           a->bytes_mmaped, 
-           100.0 * (double)a->bytes_on_loan_max / (double)a->bytes_mmaped,
-           a->bytes_on_loan );
-
-   return 0;
-}
-#endif /* 0 */
-
-
 /*--------------------------------------------------------------------*/
-/*--- end                                             vg_malloc2.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

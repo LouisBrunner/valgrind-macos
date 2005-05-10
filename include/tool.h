@@ -317,11 +317,6 @@ extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 /* ------------------------------------------------------------------ */
 /* stdlib.h */
 
-extern void* VG_(malloc)         ( SizeT nbytes );
-extern void  VG_(free)           ( void* p );
-extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
-extern void* VG_(realloc)        ( void* p, SizeT size );
-
 /* terminate everything */
 extern void VG_(exit)( Int status )
             __attribute__ ((__noreturn__));
@@ -780,39 +775,6 @@ extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, UChar* area );
 extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, const UChar* area );
-
-/*====================================================================*/
-/*=== Specific stuff for replacing malloc() and friends            ===*/
-/*====================================================================*/
-
-/* If a tool replaces malloc() et al, the easiest way to do so is to
-   link with vg_replace_malloc.o into its vgpreload_*.so file, and
-   follow the following instructions.  You can do it from scratch,
-   though, if you enjoy that sort of thing. */
-
-/* Can be called from VG_(tdict).malloc_malloc et al to do the actual
- * alloc/freeing. */
-extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
-extern void  VG_(cli_free)   ( void* p );
-
-/* Check if an address is within a range, allowing for redzones at edges */
-extern Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size );
-
-/* ------------------------------------------------------------------ */
-/* Some options that can be used by a tool if malloc() et al are replaced.
-   The tool should call the functions in the appropriate places to give
-   control over these aspects of Valgrind's version of malloc(). */
-
-/* DEBUG: print malloc details?  default: NO */
-extern Bool VG_(clo_trace_malloc);
-/* Minimum alignment in functions that don't specify alignment explicitly.
-   default: VG_MIN_MALLOC_SZB */
-extern UInt VG_(clo_alignment);
-
-extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );
-extern void VG_(replacement_malloc_print_usage)             ( void );
-extern void VG_(replacement_malloc_print_debug_usage)       ( void );
-
 
 /*====================================================================*/
 /*=== Tool-specific stuff                                          ===*/

@@ -30,7 +30,7 @@
 */
 
 #include "tool.h"
-//#include "vg_profile.c"
+#include "pub_tool_mallocfree.h"
 
 #include "cg_arch.h"
 #include "cg_sim.c"

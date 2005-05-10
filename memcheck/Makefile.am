@@ -7,10 +7,11 @@ val_PROGRAMS = vgtool_memcheck.so vgpreload_memcheck.so
 
 vgpreload_memcheck_so_SOURCES = \
 	mac_replace_strmem.c
-vgpreload_memcheck_so_DEPENDENCIES = $(top_builddir)/coregrind/lib_replace_malloc.a
+vgpreload_memcheck_so_DEPENDENCIES = \
+	$(LIBREPLACEMALLOC)
 vgpreload_memcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
 	-Wl,--whole-archive \
-	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	$(LIBREPLACEMALLOC) \
 	-Wl,--no-whole-archive
 
 vgtool_memcheck_so_SOURCES = \

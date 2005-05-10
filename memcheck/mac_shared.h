@@ -37,6 +37,8 @@
 #define __MAC_SHARED_H
 
 #include "tool.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_replacemalloc.h"
 
 #define MAC_(str)    VGAPPEND(vgMAC_,str)
 

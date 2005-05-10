@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A header file for all private parts of Valgrind's core.      ---*/
-/*--- Include no other! (more or less...)                          ---*/
+/*--- A header file for various private parts of Valgrind's core.  ---*/
 /*---                                                       core.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -97,6 +96,7 @@ typedef struct _ThreadState ThreadState;
                            //   eg. x86-linux/core_platform.h
 #include "core_os.h"       // OS-specific stuff,    eg. linux/core_os.h
 
+#include "pub_core_mallocfree.h"  // for type 'ArenaId'
 #include "pub_core_stacktrace.h"  // for type 'StackTrace'
 
 #include "valgrind.h"
@@ -458,57 +458,6 @@ void VG_(sanity_check_needs)(void);
 
 
 /* ---------------------------------------------------------------------
-   Exports of vg_malloc2.c
-   ------------------------------------------------------------------ */
-
-/* Allocation arenas.  
-
-      CORE      for the core's general use.
-      TOOL      for the tool to use (and the only one it uses).
-      SYMTAB    for Valgrind's symbol table storage.
-      CLIENT    for the client's mallocs/frees, if the tool replaces glibc's
-                    malloc() et al -- redzone size is chosen by the tool.
-      DEMANGLE  for the C++ demangler.
-      EXECTXT   for storing ExeContexts.
-      ERRORS    for storing CoreErrors.
-
-   When adding a new arena, remember also to add it to ensure_mm_init(). 
-*/
-typedef Int ArenaId;
-
-#define VG_N_ARENAS        7
-
-#define VG_AR_CORE         0
-#define VG_AR_TOOL         1
-#define VG_AR_SYMTAB       2
-#define VG_AR_CLIENT       3
-#define VG_AR_DEMANGLE     4
-#define VG_AR_EXECTXT      5
-#define VG_AR_ERRORS       6
-
-// This is both the minimum payload size of a malloc'd block, and its
-// minimum alignment.  Must be a power of 2 greater than 4, and should be
-// greater than 8.
-#define VG_MIN_MALLOC_SZB        8
-
-extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
-extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, 
-                                  SizeT nmemb, SizeT bytes_per_memb );
-extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT size );
-
-/* Sets the size of the redzones at the start and end of heap blocks.  This
-   must be called before any of VG_(malloc) and friends are called. */
-extern void  VG_(set_client_malloc_redzone_szB) ( SizeT rz_szB );
-
-extern SizeT VG_(arena_payload_szB) ( ArenaId aid, void* payload );
-
-extern void  VG_(sanity_check_malloc_all) ( void );
-
-extern void  VG_(print_all_arena_stats) ( void );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_intercept.c
    ------------------------------------------------------------------ */
 
@@ -575,10 +524,10 @@ extern void  VG_(print_all_arena_stats) ( void );
    A synonym for exit. */
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
 
-/* Intercept prefix stuff.  See coregrind/vg_replace_malloc.c for
-   details.  Unfortunately the "_vgi_" literal is also hardcoded in
-   that file, so if you change this one you must also change the other
-   one. */
+/* Intercept prefix stuff.  See
+   coregrind/m_replace_malloc/vg_replace_malloc.c for details.
+   Unfortunately the "_vgi_" literal is also hardcoded in that file, so if
+   you change this one you must also change the other one. */
 #define VG_INTERCEPT_PREFIX "_vgi_"
 #define VG_INTERCEPT_PREFIX_LEN 5
 

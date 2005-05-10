@@ -39,6 +39,10 @@
    This file can be linked into the injected so file for any tool that
    wishes to know about calls to malloc().  The tool must define all
    the functions that will be called via 'info'.
+
+   It's called vg_replace_malloc.c because this filename appears in stack
+   traces, so we want it to be something that should be obvious what it
+   means to users.
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */

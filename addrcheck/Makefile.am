@@ -16,10 +16,10 @@ vgpreload_addrcheck_so_SOURCES =
 vgpreload_addrcheck_so_LDADD = \
 	../memcheck/mac_replace_strmem.o
 vgpreload_addrcheck_so_DEPENDENCIES = \
-	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	$(LIBREPLACEMALLOC) \
 	../memcheck/mac_replace_strmem.o
 vgpreload_addrcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
 	-Wl,--whole-archive \
-	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	$(LIBREPLACEMALLOC) \
 	-Wl,--no-whole-archive
 

@@ -14,6 +14,8 @@ incinc_HEADERS = \
 	tool_asm.h 		\
 	pub_tool_errormgr.h 	\
 	pub_tool_execontext.h 	\
+	pub_tool_mallocfree.h 	\
+	pub_tool_replacemalloc.h\
 	pub_tool_stacktrace.h 	\
 	valgrind.h
 

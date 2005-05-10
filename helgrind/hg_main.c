@@ -30,6 +30,9 @@
 */
 
 #include "tool.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_replacemalloc.h"
+
 #include "helgrind.h"
 
 static UInt n_hg_warnings = 0;

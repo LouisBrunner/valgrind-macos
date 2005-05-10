@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 MODULES = \
 	demangle \
 	m_aspacemgr \
+	m_replacemalloc \
 	m_sigframe \
 	m_syscalls
 
@@ -33,8 +34,6 @@ val_PROGRAMS = \
 	stage2 \
 	vg_inject.so
 
-noinst_LIBRARIES = lib_replace_malloc.a
-
 noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
@@ -42,6 +41,8 @@ noinst_HEADERS = \
 	pub_core_debuglog.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
+	pub_core_mallocfree.h	\
+	pub_core_replacemalloc.h\
 	pub_core_sigframe.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
@@ -66,6 +67,7 @@ valgrind_LDADD=
 stage2_SOURCES = \
 	m_errormgr.c \
 	m_execontext.c \
+	m_mallocfree.c \
 	m_stacktrace.c \
 	m_debuglog.c \
 	ume.c \
@@ -73,9 +75,7 @@ stage2_SOURCES = \
 	vg_scheduler.c \
 	vg_demangle.c \
 	vg_hashtable.c \
-	vg_replace_malloc.c \
 	vg_main.c \
-	vg_malloc2.c \
 	vg_messages.c \
 	vg_mylibc.c \
 	vg_needs.c \
@@ -103,28 +103,41 @@ stage2_extra= \
 	${VG_OS}/libos.a \
 	@VEX_DIR@/libvex.a
 
-## Test repeated in both arms of the if-then-else because older versions of
-## automake don't seem to like having += within an if-then-else.
+## These ones must be linked in with the --whole-archive flag, because they
+## wouldn't get pulled into stage otherwise (because they contain symbols
+## only referred to by tool shared objects).
+stage2_extra2 = \
+	m_replacemalloc/libreplacemalloc_core.a
+	
+## Nb: older versions of automake don't seem to like having += within an
+## if-then-else, so we have to use these variables for the common parts.
+st2_DEPS_common = \
+	$(srcdir)/valgrind.vs \
+	$(stage2_extra) \
+	$(stage2_extra2)
+
+st2_LDFLAGS_common = \
+	-Wl,--export-dynamic -g \
+	-Wl,-version-script $(srcdir)/valgrind.vs
+
 if USE_PIE
 stage2_CFLAGS = $(AM_CFLAGS) -fpie
-stage2_DEPENDENCIES = \
-	$(srcdir)/valgrind.vs \
-	$(stage2_extra)
-stage2_LDFLAGS = -Wl,--export-dynamic -g \
-	-Wl,-version-script $(srcdir)/valgrind.vs \
+stage2_DEPENDENCIES = $(st2_DEPS_common)
+stage2_LDFLAGS = \
+	$(st2_LDFLAGS_common) \
+	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-pie
 else
 stage2_CFLAGS = $(AM_CFLAGS)
-stage2_DEPENDENCIES = \
-	$(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds \
-	$(stage2_extra)
-stage2_LDFLAGS = -Wl,--export-dynamic -g \
-	-Wl,-version-script $(srcdir)/valgrind.vs \
+stage2_DEPENDENCIES = $(st2_DEPS_common) ${VG_ARCH}/stage2.lds
+stage2_LDFLAGS = \
+	$(st2_LDFLAGS_common) \
+	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,${VG_ARCH}/stage2.lds
 endif
 
-stage2_LDADD= $(stage2_extra) -ldl
-
+stage2_LDADD= $(stage2_extra) \
+	-ldl
 
 vg_inject_so_SOURCES = vg_intercept.c
 vg_inject_so_CFLAGS = $(AM_CFLAGS) -fpic
@@ -133,9 +146,6 @@ vg_inject_so_LDFLAGS = \
 	-shared \
 	-Wl,--soname,vg_inject.so \
 	-Wl,-z,initfirst
-
-lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
-lib_replace_malloc_a_CFLAGS  = $(AM_CFLAGS) -fpic -fno-omit-frame-pointer
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

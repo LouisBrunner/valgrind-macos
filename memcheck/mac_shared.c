@@ -379,7 +379,8 @@ static Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc, void *ap)
 {
    Addr a = *(Addr *)ap;
   
-   return VG_(addr_is_in_block)( a, mc->data, mc->size );
+   return VG_(addr_is_in_block)( a, mc->data, mc->size,
+                                 MAC_MALLOC_REDZONE_SZB );
 }
 
 /* Callback for searching malloc'd lists */

@@ -2156,7 +2156,7 @@ static Bool find_addr(VgHashNode* sh_ch, void* ap)
   MAC_Chunk *m = (MAC_Chunk*)sh_ch;
   Addr a = *(Addr*)ap;
 
-  return VG_(addr_is_in_block)(a, m->data, m->size);
+  return VG_(addr_is_in_block)(a, m->data, m->size, MAC_MALLOC_REDZONE_SZB);
 }
 
 static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
@@ -2168,7 +2168,8 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
    for (i = 0; i < cgb_used; i++) {
       if (cgbs[i].start == 0 && cgbs[i].size == 0) 
          continue;
-      if (VG_(addr_is_in_block)(a, cgbs[i].start, cgbs[i].size)) {
+      // Use zero as the redzone for client blocks.
+      if (VG_(addr_is_in_block)(a, cgbs[i].start, cgbs[i].size, 0)) {
          MAC_Mempool **d, *mp;
 
          /* OK - maybe it's a mempool, too? */

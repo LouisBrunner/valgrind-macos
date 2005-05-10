@@ -8,10 +8,11 @@ vgtool_massif_so_SOURCES = ms_main.c
 vgtool_massif_so_LDFLAGS = -shared
 
 vgpreload_massif_so_SOURCES = 
-vgpreload_massif_so_DEPENDENCIES = $(top_builddir)/coregrind/lib_replace_malloc.a
+vgpreload_massif_so_DEPENDENCIES = \
+	$(LIBREPLACEMALLOC)
 vgpreload_massif_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
 	-Wl,--whole-archive \
-	$(top_builddir)/coregrind/lib_replace_malloc.a \
+	$(LIBREPLACEMALLOC) \
 	-Wl,--no-whole-archive
 
 

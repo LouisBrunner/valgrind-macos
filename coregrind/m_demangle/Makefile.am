@@ -18,7 +18,11 @@ noinst_HEADERS = \
 noinst_LIBRARIES = libdemangle.a
 
 libdemangle_a_SOURCES = \
-	cp-demangle.c cplus-dem.c dyn-string.c safe-ctype.c
+	cp-demangle.c \
+	cplus-dem.c \
+	demangle.c \
+	dyn-string.c \
+	safe-ctype.c
 
 ## Ignore harmless warnings for these ones
 cp-demangle.o: CFLAGS += -Wno-unused -Wno-shadow 

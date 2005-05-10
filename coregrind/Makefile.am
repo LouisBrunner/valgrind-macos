@@ -2,7 +2,7 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 MODULES = \
-	demangle \
+	m_demangle \
 	m_aspacemgr \
 	m_replacemalloc \
 	m_sigframe \
@@ -19,7 +19,7 @@ DIST_SUBDIRS = \
 	$(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) \
 	$(MODULES) .
 
-AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
+AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
 
 AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
@@ -39,6 +39,7 @@ noinst_HEADERS = \
 	core_asm.h		\
 	pub_core_aspacemgr.h	\
 	pub_core_debuglog.h	\
+	pub_core_demangle.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_mallocfree.h	\
@@ -75,7 +76,6 @@ stage2_SOURCES = \
 	ume.c \
 	\
 	vg_scheduler.c \
-	vg_demangle.c \
 	vg_hashtable.c \
 	vg_main.c \
 	vg_messages.c \
@@ -95,7 +95,7 @@ stage2_SOURCES = \
 
 ## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \
-	demangle/libdemangle.a \
+	m_demangle/libdemangle.a \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \
 	m_syscalls/libsyscalls.a \

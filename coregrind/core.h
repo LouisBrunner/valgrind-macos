@@ -718,14 +718,6 @@ extern void   VG_(nanosleep)(struct vki_timespec *);
 extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
 
 /* ---------------------------------------------------------------------
-   Exports of vg_demangle.c
-   ------------------------------------------------------------------ */
-
-extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
-
-extern void   VG_(reloc_abs_jump)	  ( UChar *jmp );
-
-/* ---------------------------------------------------------------------
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 

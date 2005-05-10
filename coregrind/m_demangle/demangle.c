@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Demangling of C++ mangled names.                             ---*/
-/*---                                                vg_demangle.c ---*/
+/*--- Demangling of C++ mangled names.                  demangle.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -56,7 +55,6 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
 
    VGP_POPCC(VgpDemangle);
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

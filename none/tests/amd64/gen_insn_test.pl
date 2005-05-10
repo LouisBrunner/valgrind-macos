@@ -144,7 +144,7 @@ static void handle_sigill(int signum)
 __attribute__((unused))
 static int eq_float(float f1, float f2)
 {
-   return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 * pow(2,-12);
+   return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 * powf(2,-12);
 }
 
 __attribute__((unused))
@@ -663,8 +663,8 @@ while (<>)
         }
         elsif ($arg->{type} eq "xmm")
         {
-            print qq|         \"movlps 0%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
-            print qq|         \"movhps 8%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
+            print qq|         \"movlps 0+%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
+            print qq|         \"movhps 8+%$arg->{argnum}, %%$arg->{register}\\n\"\n|;
         }
         elsif ($arg->{type} eq "st")
         {
@@ -693,20 +693,21 @@ while (<>)
 
     if (defined($eflagsmask) || defined($eflagsset))
     {
-        print qq|         \"pushfl\\n\"\n|;
-        print qq|         \"andl \$$eflagsmask, (%%esp)\\n\"\n| if defined($eflagsmask);
-        print qq|         \"orl \$$eflagsset, (%%esp)\\n\"\n| if defined($eflagsset);
-        print qq|         \"popfl\\n\"\n|;
+        print qq|         \"pushfq\\n\"\n|;
+        print qq|         \"andl \$$eflagsmask, (%%rsp)\\n\"\n| if defined($eflagsmask);
+        print qq|         \"andl \$0, 8(%%rsp)\\n\"\n| if defined($eflagsmask);
+        print qq|         \"orq \$$eflagsset, (%%rsp)\\n\"\n| if defined($eflagsset);
+        print qq|         \"popfq\\n\"\n|;
     }
 
     if (defined($fpucwmask) || defined($fpucwset))
     {
-        print qq|         \"subl \$2, %%esp\\n\"\n|;
-        print qq|         \"fstcw (%%esp)\\n\"\n|;
-        print qq|         \"andw \$$fpucwmask, (%%esp)\\n\"\n| if defined($fpucwmask);
-        print qq|         \"orw \$$fpucwset, (%%esp)\\n\"\n| if defined($fpucwset);
-        print qq|         \"fldcw (%%esp)\\n\"\n|;
-        print qq|         \"addl \$2, %%esp\\n\"\n|;
+        print qq|         \"subl \$2, %%rsp\\n\"\n|;
+        print qq|         \"fstcw (%%rsp)\\n\"\n|;
+        print qq|         \"andw \$$fpucwmask, (%%rsp)\\n\"\n| if defined($fpucwmask);
+        print qq|         \"orw \$$fpucwset, (%%rsp)\\n\"\n| if defined($fpucwset);
+        print qq|         \"fldcw (%%rsp)\\n\"\n|;
+        print qq|         \"addl \$2, %%rsp\\n\"\n|;
     }
 
     print qq|         \"$insn|;
@@ -776,8 +777,8 @@ while (<>)
         }
         elsif ($result->{type} eq "xmm")
         {
-            print qq|         \"movlps %%$result->{register}, 0%$result->{argnum}\\n\"\n|;
-            print qq|         \"movhps %%$result->{register}, 8%$result->{argnum}\\n\"\n|;
+            print qq|         \"movlps %%$result->{register}, 0+%$result->{argnum}\\n\"\n|;
+            print qq|         \"movhps %%$result->{register}, 8+%$result->{argnum}\\n\"\n|;
         }
         elsif ($result->{type} eq "st")
         {
@@ -785,8 +786,8 @@ while (<>)
         }
         elsif ($result->{type} eq "eflags")
         {
-            print qq|         \"pushfl\\n\"\n|;
-            print qq|         \"popl %$result->{argnum}\\n\"\n|;
+            print qq|         \"pushfq\\n\"\n|;
+            print qq|         \"popq %$result->{argnum}\\n\"\n|;
         }
         elsif ($result->{type} eq "fpucw")
         {

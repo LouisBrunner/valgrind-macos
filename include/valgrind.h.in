@@ -244,8 +244,9 @@ typedef
 #define __extension__
 #endif
 
-/* Returns 1 if running on Valgrind, 0 if running on the real CPU. 
-   Currently implemented but untested. */
+/* Returns the number of Valgrinds this code is running under.  That is,
+   0 if running natively, 1 if running under Valgrind, 2 if running under
+   Valgrind which is running under another Valgrind, etc. */
 #define RUNNING_ON_VALGRIND  __extension__                         \
    ({unsigned int _qzz_res;                                        \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* returned if not */,     \

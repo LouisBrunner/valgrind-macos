@@ -989,6 +989,8 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
+      // Nb: this looks like a circular definition, because it kind of is.
+      // See comment in valgrind.h to understand what's going on.
       case VG_USERREQ__RUNNING_ON_VALGRIND:
          SET_CLREQ_RETVAL(tid, RUNNING_ON_VALGRIND+1);
          break;

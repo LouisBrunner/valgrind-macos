@@ -323,14 +323,12 @@ typedef
       /* Bitwise */
       Asse_AND, Asse_OR, Asse_XOR, Asse_ANDN,
 //..       /* Integer binary */
-//..       Xsse_ADD8,   Xsse_ADD16,   Xsse_ADD32,
-      Asse_ADD64,
+      Asse_ADD8, Asse_ADD16, Asse_ADD32, Asse_ADD64,
 //..       Xsse_QADD8U, Xsse_QADD16U,
 //..       Xsse_QADD8S, Xsse_QADD16S,
-//..       Xsse_SUB8,   Xsse_SUB16,   Xsse_SUB32,
-      Asse_SUB64,
-//..       Xsse_QSUB8U, Xsse_QSUB16U,
-//..       Xsse_QSUB8S, Xsse_QSUB16S,
+      Asse_SUB8, Asse_SUB16, Asse_SUB32, Asse_SUB64,
+      Asse_QSUB8U, Asse_QSUB16U,
+      Asse_QSUB8S, Asse_QSUB16S,
 //..       Xsse_MUL16,
 //..       Xsse_MULHI16U,
 //..       Xsse_MULHI16S,
@@ -346,9 +344,9 @@ typedef
 //..       Xsse_SHR16, Xsse_SHR32, 
       Asse_SHR64,
 //..       Xsse_SAR16, Xsse_SAR32, 
-//..       Xsse_PACKSSD, Xsse_PACKSSW, Xsse_PACKUSW,
-//..       Xsse_UNPCKHB, Xsse_UNPCKHW, Xsse_UNPCKHD, Xsse_UNPCKHQ,
-//..       Xsse_UNPCKLB, Xsse_UNPCKLW, Xsse_UNPCKLD, Xsse_UNPCKLQ
+      Asse_PACKSSD, Asse_PACKSSW, Asse_PACKUSW,
+      Asse_UNPCKHB, Asse_UNPCKHW, Asse_UNPCKHD, Asse_UNPCKHQ,
+      Asse_UNPCKLB, Asse_UNPCKLW, Asse_UNPCKLD, Asse_UNPCKLQ
    }
    AMD64SseOp;
 

@@ -1419,16 +1419,16 @@ static Int xmmGuestRegOffset ( UInt xmmreg )
    }
 }
 
-//.. /* Lanes of vector registers are always numbered from zero being the
-//..    least significant lane (rightmost in the register).  */
-//.. 
-//.. static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
-//.. {
-//..    /* Correct for little-endian host only. */
-//..    vassert(!host_is_bigendian);
-//..    vassert(laneno >= 0 && laneno < 8);
-//..    return xmmGuestRegOffset( xmmreg ) + 2 * laneno;
-//.. }
+/* Lanes of vector registers are always numbered from zero being the
+   least significant lane (rightmost in the register).  */
+
+static Int xmmGuestRegLane16offset ( UInt xmmreg, Int laneno )
+{
+   /* Correct for little-endian host only. */
+   vassert(!host_is_bigendian);
+   vassert(laneno >= 0 && laneno < 8);
+   return xmmGuestRegOffset( xmmreg ) + 2 * laneno;
+}
 
 static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
 {
@@ -1512,11 +1512,11 @@ static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
-//.. static void putXMMRegLane16 ( UInt xmmreg, Int laneno, IRExpr* e )
-//.. {
-//..    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
-//..    stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
-//.. }
+static void putXMMRegLane16 ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
+   stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
+}
 
 static IRExpr* mkV128 ( UShort mask )
 {
@@ -9301,11 +9301,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F C2 = CMPPD -- 64Fx2 comparison from R/M to R */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC2) {
-//..       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmppd", True, 8 );
-//..       goto decode_success;
-//..    }
+   /* 66 0F C2 = CMPPD -- 64Fx2 comparison from R/M to R */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xC2) {
+      delta = dis_SSEcmp_E_to_G( pfx, delta+2, "cmppd", True, 8 );
+      goto decode_success;
+   }
 
    /* F2 0F C2 = CMPSD -- 64F0x2 comparison from R/M to R */
    if (haveF2no66noF3(pfx) && sz == 4
@@ -10018,7 +10019,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* 66 0F 6E = MOVD from ireg32/m32 to xmm lo 1/4, zeroing high 3/4 of xmm. */
    /*              or from ireg64/m64 to xmm lo 1/2, zeroing high 1/2 of xmm. */
    if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x6E) {
-      vassert(sz == 4 || sz == 8);
+      vassert(sz == 2 || sz == 8);
+      if (sz == 2) sz = 4;
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          delta += 2+1;
@@ -10444,12 +10446,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F 51 = SQRTPD -- approx sqrt 64Fx2 from R/M to R */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x51) {
-//..       delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
-//..                                         "sqrtpd", Iop_Sqrt64Fx2 );
-//..       goto decode_success;
-//..    }
+   /* 66 0F 51 = SQRTPD -- approx sqrt 64Fx2 from R/M to R */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x51) {
+      delta = dis_SSE_E_to_G_unary_all( pfx, delta+2, 
+                                        "sqrtpd", Iop_Sqrt64Fx2 );
+      goto decode_success;
+   }
 
    /* F2 0F 51 = SQRTSD -- approx sqrt 64F0x2 from R/M to R */
    if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x51) {
@@ -10522,45 +10525,51 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* 66 0F 57 = XORPD -- G = G xor E */
-   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x57) {
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x57) {
       delta = dis_SSE_E_to_G_all( pfx, delta+2, "xorpd", Iop_XorV128 );
       goto decode_success;
    }
 
-//..    /* 66 0F 6B = PACKSSDW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6B) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "packssdw", Iop_QNarrow32Sx4, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 63 = PACKSSWB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x63) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "packsswb", Iop_QNarrow16Sx8, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 67 = PACKUSWB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x67) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "packuswb", Iop_QNarrow16Ux8, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F FC = PADDB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFC) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "paddb", Iop_Add8x16, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F FE = PADDD */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFE) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "paddd", Iop_Add32x4, False );
-//..       goto decode_success;
-//..    }
+   /* 66 0F 6B = PACKSSDW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x6B) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "packssdw", Iop_QNarrow32Sx4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 63 = PACKSSWB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x63) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "packsswb", Iop_QNarrow16Sx8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 67 = PACKUSWB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x67) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "packuswb", Iop_QNarrow16Ux8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F FC = PADDB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xFC) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "paddb", Iop_Add8x16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F FE = PADDD */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xFE) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "paddd", Iop_Add32x4, False );
+      goto decode_success;
+   }
 
    /* ***--- this is an MMX class insn introduced in SSE2 ---*** */
    /* 0F D4 = PADDQ -- add 64x1 */
@@ -10683,60 +10692,70 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                                  "pcmpgtw", Iop_CmpGT16Sx8, False );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F C5 = PEXTRW -- extract 16-bit field from xmm(E) and put 
-//..       zero-extend of it in ireg(G). */
-//..    if (insn[0] == 0x0F && insn[1] == 0xC5) {
-//..       modrm = insn[2];
-//..       if (sz == 2 && epartIsReg(modrm)) {
-//..          t5 = newTemp(Ity_V128);
-//..          t4 = newTemp(Ity_I16);
-//..          assign(t5, getXMMReg(eregOfRM(modrm)));
-//..          breakup128to32s( t5, &t3, &t2, &t1, &t0 );
-//..          switch (insn[3] & 7) {
-//..             case 0:  assign(t4, unop(Iop_32to16,   mkexpr(t0))); break;
-//..             case 1:  assign(t4, unop(Iop_32HIto16, mkexpr(t0))); break;
-//..             case 2:  assign(t4, unop(Iop_32to16,   mkexpr(t1))); break;
-//..             case 3:  assign(t4, unop(Iop_32HIto16, mkexpr(t1))); break;
-//..             case 4:  assign(t4, unop(Iop_32to16,   mkexpr(t2))); break;
-//..             case 5:  assign(t4, unop(Iop_32HIto16, mkexpr(t2))); break;
-//..             case 6:  assign(t4, unop(Iop_32to16,   mkexpr(t3))); break;
-//..             case 7:  assign(t4, unop(Iop_32HIto16, mkexpr(t3))); break;
-//..             default: vassert(0);
-//..          }
-//..          putIReg(4, gregOfRM(modrm), unop(Iop_16Uto32, mkexpr(t4)));
-//..          DIP("pextrw $%d,%s,%s\n",
-//..              (Int)insn[3], nameXMMReg(eregOfRM(modrm)),
-//..                            nameIReg(4,gregOfRM(modrm)));
-//..          delta += 4;
-//..          goto decode_success;
-//..       } 
-//..       /* else fall through */
-//..    }
-//.. 
-//..    /* 66 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
-//..       put it into the specified lane of xmm(G). */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC4) {
-//..       Int lane;
-//..       t4 = newTemp(Ity_I16);
-//..       modrm = insn[2];
-//.. 
-//..       if (epartIsReg(modrm)) {
-//..          assign(t4, getIReg(2, eregOfRM(modrm)));
-//..          lane = insn[3];
-//..          delta += 2+2;
-//..          DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
-//..                                    nameIReg(2,eregOfRM(modrm)),
-//..                                    nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          /* awaiting test case */
-//..          goto decode_failure;
-//..       }
-//.. 
-//..       putXMMRegLane16( gregOfRM(modrm), lane & 7, mkexpr(t4) );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 66 0F C5 = PEXTRW -- extract 16-bit field from xmm(E) and put 
+      zero-extend of it in ireg(G). */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xC5) {
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         t5 = newTemp(Ity_V128);
+         t4 = newTemp(Ity_I16);
+         assign(t5, getXMMReg(eregOfRexRM(pfx,modrm)));
+         breakup128to32s( t5, &t3, &t2, &t1, &t0 );
+         switch (insn[3] & 7) {
+            case 0:  assign(t4, unop(Iop_32to16,   mkexpr(t0))); break;
+            case 1:  assign(t4, unop(Iop_32HIto16, mkexpr(t0))); break;
+            case 2:  assign(t4, unop(Iop_32to16,   mkexpr(t1))); break;
+            case 3:  assign(t4, unop(Iop_32HIto16, mkexpr(t1))); break;
+            case 4:  assign(t4, unop(Iop_32to16,   mkexpr(t2))); break;
+            case 5:  assign(t4, unop(Iop_32HIto16, mkexpr(t2))); break;
+            case 6:  assign(t4, unop(Iop_32to16,   mkexpr(t3))); break;
+            case 7:  assign(t4, unop(Iop_32HIto16, mkexpr(t3))); break;
+            default: vassert(0);
+         }
+         putIReg32(gregOfRexRM(pfx,modrm), unop(Iop_16Uto32, mkexpr(t4)));
+         DIP("pextrw $%d,%s,%s\n",
+             (Int)insn[3], nameXMMReg(eregOfRexRM(pfx,modrm)),
+                           nameIReg32(gregOfRexRM(pfx,modrm)));
+         delta += 4;
+         goto decode_success;
+      } 
+      /* else fall through */
+      /* note, if memory case is ever filled in, there is 1 byte after
+         amode */
+   }
+
+   /* 66 0F C4 = PINSRW -- get 16 bits from E(mem or low half ireg) and
+      put it into the specified lane of xmm(G). */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xC4) {
+      Int lane;
+      t4 = newTemp(Ity_I16);
+      modrm = insn[2];
+
+      if (epartIsReg(modrm)) {
+         assign(t4, getIReg16(eregOfRexRM(pfx,modrm)));
+         delta += 3+1;
+         lane = insn[3+1-1];
+         DIP("pinsrw $%d,%s,%s\n", (Int)lane, 
+                                   nameIReg16(eregOfRexRM(pfx,modrm)),
+                                   nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 
+                           1/*byte after the amode*/ );
+         delta += 3+alen;
+         lane = insn[3+alen-1];
+         assign(t4, loadLE(Ity_I16, mkexpr(addr)));
+         DIP("pinsrw $%d,%s,%s\n", (Int)lane,
+                                   dis_buf,
+                                   nameXMMReg(gregOfRexRM(pfx,modrm)));
+     }
+
+      putXMMRegLane16( gregOfRexRM(pfx,modrm), lane & 7, mkexpr(t4) );
+      goto decode_success;
+   }
+
 //..    /* 66 0F EE = PMAXSW -- 16x8 signed max */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEE) {
 //..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
@@ -11036,64 +11055,69 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_shiftG_byE( sorb, delta+2, "pslld", Iop_ShlN32x4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F 73 /7 ib = PSLLDQ by immediate */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
-//..        && epartIsReg(insn[2])
-//..        && gregOfRM(insn[2]) == 7) {
-//..       IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
-//..       Int    imm = (Int)insn[3];
-//..       Int    reg = eregOfRM(insn[2]);
-//..       DIP("pslldq $%d,%s\n", imm, nameXMMReg(reg));
-//..       vassert(imm >= 0 && imm <= 255);
-//..       delta += 4;
-//.. 
-//..       sV    = newTemp(Ity_V128);
-//..       dV    = newTemp(Ity_V128);
-//..       hi64  = newTemp(Ity_I64);
-//..       lo64  = newTemp(Ity_I64);
-//..       hi64r = newTemp(Ity_I64);
-//..       lo64r = newTemp(Ity_I64);
-//.. 
-//..       if (imm >= 16) {
-//..          vassert(0); /* awaiting test case */
-//..          putXMMReg(reg, mkV128(0x0000));
-//..          goto decode_success;
-//..       }
-//.. 
-//..       assign( sV, getXMMReg(reg) );
-//..       assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
-//..       assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
-//.. 
-//..       if (imm == 8) {
-//..          assign( lo64r, mkU64(0) );
-//..          assign( hi64r, mkexpr(lo64) );
-//..       }
-//..       else
-//..       if (imm > 8) {
-//..          vassert(0); /* awaiting test case */
-//..          assign( lo64r, mkU64(0) );
-//..          assign( hi64r, binop( Iop_Shl64, 
-//..                                mkexpr(lo64),
-//..                                mkU8( 8*(imm-8) ) ));
-//..       } else {
-//..          assign( lo64r, binop( Iop_Shl64, 
-//..                                mkexpr(lo64),
-//..                                mkU8(8 * imm) ));
-//..          assign( hi64r, 
-//..                  binop( Iop_Or64,
-//..                         binop(Iop_Shl64, mkexpr(hi64), 
-//..                                          mkU8(8 * imm)),
-//..                         binop(Iop_Shr64, mkexpr(lo64),
-//..                                          mkU8(8 * (8 - imm)) )
-//..                       )
-//..                );
-//..       }
-//..       assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
-//..       putXMMReg(reg, mkexpr(dV));
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 66 0F 73 /7 ib = PSLLDQ by immediate */
+   /* note, if mem case ever filled in, 1 byte after amode */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x73
+       && epartIsReg(insn[2])
+       && gregLO3ofRM(insn[2]) == 7) {
+      IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
+      Int    imm = (Int)insn[3];
+      Int    reg = eregOfRexRM(pfx,insn[2]);
+      DIP("pslldq $%d,%s\n", imm, nameXMMReg(reg));
+      vassert(imm >= 0 && imm <= 255);
+      delta += 4;
+
+      sV    = newTemp(Ity_V128);
+      dV    = newTemp(Ity_V128);
+      hi64  = newTemp(Ity_I64);
+      lo64  = newTemp(Ity_I64);
+      hi64r = newTemp(Ity_I64);
+      lo64r = newTemp(Ity_I64);
+
+      if (imm >= 16) {
+         putXMMReg(reg, mkV128(0x0000));
+         goto decode_success;
+      }
+
+      assign( sV, getXMMReg(reg) );
+      assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
+
+      if (imm == 0) {
+         assign( lo64r, mkexpr(lo64) );
+         assign( hi64r, mkexpr(hi64) );
+      }
+      else
+      if (imm == 8) {
+         assign( lo64r, mkU64(0) );
+         assign( hi64r, mkexpr(lo64) );
+      }
+      else
+      if (imm > 8) {
+         assign( lo64r, mkU64(0) );
+         assign( hi64r, binop( Iop_Shl64, 
+                               mkexpr(lo64),
+                               mkU8( 8*(imm-8) ) ));
+      } else {
+         assign( lo64r, binop( Iop_Shl64, 
+                               mkexpr(lo64),
+                               mkU8(8 * imm) ));
+         assign( hi64r, 
+                 binop( Iop_Or64,
+                        binop(Iop_Shl64, mkexpr(hi64), 
+                                         mkU8(8 * imm)),
+                        binop(Iop_Shr64, mkexpr(lo64),
+                                         mkU8(8 * (8 - imm)) )
+                      )
+               );
+      }
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(hi64r), mkexpr(lo64r)) );
+      putXMMReg(reg, mkexpr(dV));
+      goto decode_success;
+   }
+
 //..    /* 66 0F 73 /6 ib = PSLLQ by immediate */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
 //..        && epartIsReg(insn[2])
@@ -11163,64 +11187,69 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_shiftG_byE( sorb, delta+2, "psrld", Iop_ShrN32x4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F 73 /3 ib = PSRLDQ by immediate */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
-//..        && epartIsReg(insn[2])
-//..        && gregOfRM(insn[2]) == 3) {
-//..       IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
-//..       Int    imm = (Int)insn[3];
-//..       Int    reg = eregOfRM(insn[2]);
-//..       DIP("psrldq $%d,%s\n", imm, nameXMMReg(reg));
-//..       vassert(imm >= 0 && imm <= 255);
-//..       delta += 4;
-//.. 
-//..       sV    = newTemp(Ity_V128);
-//..       dV    = newTemp(Ity_V128);
-//..       hi64  = newTemp(Ity_I64);
-//..       lo64  = newTemp(Ity_I64);
-//..       hi64r = newTemp(Ity_I64);
-//..       lo64r = newTemp(Ity_I64);
-//.. 
-//..       if (imm >= 16) {
-//..          vassert(0); /* awaiting test case */
-//..          putXMMReg(reg, mkV128(0x0000));
-//..          goto decode_success;
-//..       }
-//.. 
-//..       assign( sV, getXMMReg(reg) );
-//..       assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
-//..       assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
-//.. 
-//..       if (imm == 8) {
-//..          assign( hi64r, mkU64(0) );
-//..          assign( lo64r, mkexpr(hi64) );
-//..       }
-//..       else 
-//..       if (imm > 8) {
-//..          vassert(0); /* awaiting test case */
-//..          assign( hi64r, mkU64(0) );
-//..          assign( lo64r, binop( Iop_Shr64, 
-//..                                mkexpr(hi64),
-//..                                mkU8( 8*(imm-8) ) ));
-//..       } else {
-//..          assign( hi64r, binop( Iop_Shr64, 
-//..                                mkexpr(hi64),
-//..                                mkU8(8 * imm) ));
-//..          assign( lo64r, 
-//..                  binop( Iop_Or64,
-//..                         binop(Iop_Shr64, mkexpr(lo64), 
-//..                                          mkU8(8 * imm)),
-//..                         binop(Iop_Shl64, mkexpr(hi64),
-//..                                          mkU8(8 * (8 - imm)) )
-//..                       )
-//..                );
-//..       }
-//.. 
-//..       assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
-//..       putXMMReg(reg, mkexpr(dV));
-//..       goto decode_success;
-//..    }
+
+   /* 66 0F 73 /3 ib = PSRLDQ by immediate */
+   /* note, if mem case ever filled in, 1 byte after amode */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x73
+       && epartIsReg(insn[2])
+       && gregLO3ofRM(insn[2]) == 3) {
+      IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
+      Int    imm = (Int)insn[3];
+      Int    reg = eregOfRexRM(pfx,insn[2]);
+      DIP("psrldq $%d,%s\n", imm, nameXMMReg(reg));
+      vassert(imm >= 0 && imm <= 255);
+      delta += 4;
+
+      sV    = newTemp(Ity_V128);
+      dV    = newTemp(Ity_V128);
+      hi64  = newTemp(Ity_I64);
+      lo64  = newTemp(Ity_I64);
+      hi64r = newTemp(Ity_I64);
+      lo64r = newTemp(Ity_I64);
+
+      if (imm >= 16) {
+         putXMMReg(reg, mkV128(0x0000));
+         goto decode_success;
+      }
+
+      assign( sV, getXMMReg(reg) );
+      assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
+
+      if (imm == 0) {
+         assign( lo64r, mkexpr(lo64) );
+         assign( hi64r, mkexpr(hi64) );
+      }
+      else
+      if (imm == 8) {
+         assign( hi64r, mkU64(0) );
+         assign( lo64r, mkexpr(hi64) );
+      }
+      else 
+      if (imm > 8) {
+         assign( hi64r, mkU64(0) );
+         assign( lo64r, binop( Iop_Shr64, 
+                               mkexpr(hi64),
+                               mkU8( 8*(imm-8) ) ));
+      } else {
+         assign( hi64r, binop( Iop_Shr64, 
+                               mkexpr(hi64),
+                               mkU8(8 * imm) ));
+         assign( lo64r, 
+                 binop( Iop_Or64,
+                        binop(Iop_Shr64, mkexpr(lo64), 
+                                         mkU8(8 * imm)),
+                        binop(Iop_Shl64, mkexpr(hi64),
+                                         mkU8(8 * (8 - imm)) )
+                      )
+               );
+      }
+
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(hi64r), mkexpr(lo64r)) );
+      putXMMReg(reg, mkexpr(dV));
+      goto decode_success;
+   }
 
    /* 66 0F 73 /2 ib = PSRLQ by immediate */
    if (have66noF2noF3(pfx) && sz == 2 
@@ -11250,20 +11279,22 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_shiftG_byE( sorb, delta+2, "psrlw", Iop_ShrN16x8 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F F8 = PSUBB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xF8) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubb", Iop_Sub8x16, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F FA = PSUBD */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFA) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubd", Iop_Sub32x4, False );
-//..       goto decode_success;
-//..    }
+
+   /* 66 0F F8 = PSUBB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xF8) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubb", Iop_Sub8x16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F FA = PSUBD */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xFA) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubd", Iop_Sub32x4, False );
+      goto decode_success;
+   }
 
    /* ***--- this is an MMX class insn introduced in SSE2 ---*** */
    /* 0F FB = PSUBQ -- sub 64x1 */
@@ -11283,104 +11314,117 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 66 0F F9 = PSUBW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xF9) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubw", Iop_Sub16x8, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F E8 = PSUBSB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE8) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubsb", Iop_QSub8Sx16, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F E9 = PSUBSW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE9) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubsw", Iop_QSub16Sx8, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F D8 = PSUBSB */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD8) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubusb", Iop_QSub8Ux16, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F D9 = PSUBSW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD9) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "psubusw", Iop_QSub16Ux8, False );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 68 = PUNPCKHBW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x68) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpckhbw",
-//..                                  Iop_InterleaveHI8x16, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 6A = PUNPCKHDQ */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6A) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpckhdq",
-//..                                  Iop_InterleaveHI32x4, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 6D = PUNPCKHQDQ */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6D) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpckhqdq",
-//..                                  Iop_InterleaveHI64x2, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 69 = PUNPCKHWD */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x69) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpckhwd",
-//..                                  Iop_InterleaveHI16x8, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 60 = PUNPCKLBW */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x60) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpcklbw",
-//..                                  Iop_InterleaveLO8x16, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 62 = PUNPCKLDQ */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x62) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpckldq",
-//..                                  Iop_InterleaveLO32x4, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 6C = PUNPCKLQDQ */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6C) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpcklqdq",
-//..                                  Iop_InterleaveLO64x2, True );
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* 66 0F 61 = PUNPCKLWD */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x61) {
-//..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-//..                                  "punpcklwd",
-//..                                  Iop_InterleaveLO16x8, True );
-//..       goto decode_success;
-//..    }
+   /* 66 0F F9 = PSUBW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xF9) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubw", Iop_Sub16x8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F E8 = PSUBSB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xE8) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubsb", Iop_QSub8Sx16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F E9 = PSUBSW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xE9) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubsw", Iop_QSub16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F D8 = PSUBSB */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xD8) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubusb", Iop_QSub8Ux16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F D9 = PSUBSW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xD9) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "psubusw", Iop_QSub16Ux8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F 68 = PUNPCKHBW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x68) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpckhbw",
+                                 Iop_InterleaveHI8x16, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6A = PUNPCKHDQ */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x6A) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpckhdq",
+                                 Iop_InterleaveHI32x4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6D = PUNPCKHQDQ */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x6D) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpckhqdq",
+                                 Iop_InterleaveHI64x2, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 69 = PUNPCKHWD */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x69) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpckhwd",
+                                 Iop_InterleaveHI16x8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 60 = PUNPCKLBW */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x60) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpcklbw",
+                                 Iop_InterleaveLO8x16, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 62 = PUNPCKLDQ */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x62) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpckldq",
+                                 Iop_InterleaveLO32x4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6C = PUNPCKLQDQ */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x6C) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpcklqdq",
+                                 Iop_InterleaveLO64x2, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 61 = PUNPCKLWD */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x61) {
+      delta = dis_SSEint_E_to_G( pfx, delta+2, 
+                                 "punpcklwd",
+                                 Iop_InterleaveLO16x8, True );
+      goto decode_success;
+   }
 
    /* 66 0F EF = PXOR */
    if (have66noF2noF3(pfx) && sz == 2 

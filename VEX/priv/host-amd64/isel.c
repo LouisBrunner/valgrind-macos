@@ -3191,16 +3191,15 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
 //..       case Iop_Recip64Fx2: op = Xsse_RCPF;   goto do_64Fx2_unary;
-//..       case Iop_RSqrt64Fx2: op = Xsse_RSQRTF; goto do_64Fx2_unary;
-//..       case Iop_Sqrt64Fx2:  op = Xsse_SQRTF;  goto do_64Fx2_unary;
-//..       do_64Fx2_unary:
-//..       {
-//..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg dst = newVRegV(env);
-//..          REQUIRE_SSE2;
-//..          addInstr(env, X86Instr_Sse64Fx2(op, arg, dst));
-//..          return dst;
-//..       }
+//..       case Iop_RSqrt64Fx2: op = Asse_RSQRTF; goto do_64Fx2_unary;
+      case Iop_Sqrt64Fx2:  op = Asse_SQRTF;  goto do_64Fx2_unary;
+      do_64Fx2_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, AMD64Instr_Sse64Fx2(op, arg, dst));
+         return dst;
+      }
 
       case Iop_Recip32F0x4: op = Asse_RCPF;   goto do_32F0x4_unary;
       case Iop_RSqrt32F0x4: op = Asse_RSQRTF; goto do_32F0x4_unary;
@@ -3317,9 +3316,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
-//..       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
-//..       case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
+      case Iop_CmpEQ64Fx2: op = Asse_CMPEQF; goto do_64Fx2;
+      case Iop_CmpLT64Fx2: op = Asse_CMPLTF; goto do_64Fx2;
+      case Iop_CmpLE64Fx2: op = Asse_CMPLEF; goto do_64Fx2;
       case Iop_Add64Fx2:   op = Asse_ADDF;   goto do_64Fx2;
 //..       case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
 //..       case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
@@ -3372,37 +3371,37 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_QNarrow32Sx4: 
-//..          op = Xsse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_QNarrow16Sx8: 
-//..          op = Xsse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_QNarrow16Ux8: 
-//..          op = Xsse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
-//.. 
-//..       case Iop_InterleaveHI8x16: 
-//..          op = Xsse_UNPCKHB; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveHI16x8: 
-//..          op = Xsse_UNPCKHW; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveHI32x4: 
-//..          op = Xsse_UNPCKHD; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveHI64x2: 
-//..          op = Xsse_UNPCKHQ; arg1isEReg = True; goto do_SseReRg;
-//.. 
-//..       case Iop_InterleaveLO8x16: 
-//..          op = Xsse_UNPCKLB; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveLO16x8: 
-//..          op = Xsse_UNPCKLW; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveLO32x4: 
-//..          op = Xsse_UNPCKLD; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_InterleaveLO64x2: 
-//..          op = Xsse_UNPCKLQ; arg1isEReg = True; goto do_SseReRg;
-//.. 
+      case Iop_QNarrow32Sx4: 
+         op = Asse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Sx8: 
+         op = Asse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Ux8: 
+         op = Asse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
+
+      case Iop_InterleaveHI8x16: 
+         op = Asse_UNPCKHB; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI16x8: 
+         op = Asse_UNPCKHW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI32x4: 
+         op = Asse_UNPCKHD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI64x2: 
+         op = Asse_UNPCKHQ; arg1isEReg = True; goto do_SseReRg;
+
+      case Iop_InterleaveLO8x16: 
+         op = Asse_UNPCKLB; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO16x8: 
+         op = Asse_UNPCKLW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO32x4: 
+         op = Asse_UNPCKLD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO64x2: 
+         op = Asse_UNPCKLQ; arg1isEReg = True; goto do_SseReRg;
+
       case Iop_AndV128:    op = Asse_AND;      goto do_SseReRg;
       case Iop_OrV128:     op = Asse_OR;       goto do_SseReRg;
       case Iop_XorV128:    op = Asse_XOR;      goto do_SseReRg;
-//..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
+      case Iop_Add8x16:    op = Asse_ADD8;     goto do_SseReRg;
 //..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
-//..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
+      case Iop_Add32x4:    op = Asse_ADD32;    goto do_SseReRg;
       case Iop_Add64x2:    op = Asse_ADD64;    goto do_SseReRg;
 //..       case Iop_QAdd8Sx16:  op = Xsse_QADD8S;   goto do_SseReRg;
 //..       case Iop_QAdd16Sx8:  op = Xsse_QADD16S;  goto do_SseReRg;
@@ -3423,20 +3422,19 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_MulHi16Ux8: op = Xsse_MULHI16U; goto do_SseReRg;
 //..       case Iop_MulHi16Sx8: op = Xsse_MULHI16S; goto do_SseReRg;
 //..       case Iop_Mul16x8:    op = Xsse_MUL16;    goto do_SseReRg;
-//..       case Iop_Sub8x16:    op = Xsse_SUB8;     goto do_SseReRg;
-//..       case Iop_Sub16x8:    op = Xsse_SUB16;    goto do_SseReRg;
-//..       case Iop_Sub32x4:    op = Xsse_SUB32;    goto do_SseReRg;
+      case Iop_Sub8x16:    op = Asse_SUB8;     goto do_SseReRg;
+      case Iop_Sub16x8:    op = Asse_SUB16;    goto do_SseReRg;
+      case Iop_Sub32x4:    op = Asse_SUB32;    goto do_SseReRg;
       case Iop_Sub64x2:    op = Asse_SUB64;    goto do_SseReRg;
-//..       case Iop_QSub8Sx16:  op = Xsse_QSUB8S;   goto do_SseReRg;
-//..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
-//..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
-//..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
+      case Iop_QSub8Sx16:  op = Asse_QSUB8S;   goto do_SseReRg;
+      case Iop_QSub16Sx8:  op = Asse_QSUB16S;  goto do_SseReRg;
+      case Iop_QSub8Ux16:  op = Asse_QSUB8U;   goto do_SseReRg;
+      case Iop_QSub16Ux8:  op = Asse_QSUB16U;  goto do_SseReRg;
       do_SseReRg: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegV(env);
          if (arg1isEReg) {
-            goto vec_fail; /* awaiting test case */
             addInstr(env, mk_vMOVsd_RR(arg2, dst));
             addInstr(env, AMD64Instr_SseReRg(op, arg1, dst));
          } else {

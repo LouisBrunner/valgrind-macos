@@ -38,6 +38,7 @@
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
+#include "pub_tool_tooliface.h"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK
 

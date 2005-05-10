@@ -85,6 +85,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
+#include "pub_core_tooliface.h"
 
 
 /* Define to give more sanity checking for signals. */

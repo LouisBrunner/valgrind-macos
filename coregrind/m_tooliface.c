@@ -30,6 +30,7 @@
 */
 
 #include "core.h"
+#include "pub_core_tooliface.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
 VgToolInterface VG_(tdict);

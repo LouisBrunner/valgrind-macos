@@ -33,6 +33,7 @@
 #include "core.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_syscalls.h"
+#include "pub_core_tooliface.h"
 
 
 /* Define to debug the memory-leak-detector. */

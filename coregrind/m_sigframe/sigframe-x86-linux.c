@@ -30,9 +30,9 @@
 */
 
 #include "core.h"
-#include "pub_core_sigframe.h"
 #include "pub_core_aspacemgr.h" /* find_segment */
-
+#include "pub_core_sigframe.h"
+#include "pub_core_tooliface.h"
 
 #include "libvex_guest_x86.h"
 

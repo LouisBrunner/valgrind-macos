@@ -30,6 +30,7 @@
 */
 
 #include "tool.h"
+#include "pub_tool_tooliface.h"
 
 static void cc_post_clo_init(void)
 {

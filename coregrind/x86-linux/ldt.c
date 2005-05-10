@@ -84,6 +84,7 @@
 */
 
 #include "core.h"
+#include "pub_core_tooliface.h"
 #include "x86_private.h"
 #include "libvex_guest_x86.h"
 

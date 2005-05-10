@@ -1,3 +1,34 @@
+
+/*--------------------------------------------------------------------*/
+/*--- Semaphore stuff.                                linux/sema.c ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2000-2005 Julian Seward
+      jseward@acm.org
+   (except where noted below)
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
 #include "core.h"
 
 #if FUTEX_SEMA
@@ -6,8 +37,7 @@
 
    Taken from futex-2.2/usersem.c
    Based on work by Matthew Kirkwood <matthew@hairy.beasts.org>. 
- */
-
+*/
 
 #define FUTEX_PASSED (-(1024 * 1024 * 1024))
 
@@ -110,3 +140,9 @@ void VGO_(sema_up)(vg_sema_t *sema)
 }
 
 #endif	/* FUTEX_SEMA */
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/
+
+

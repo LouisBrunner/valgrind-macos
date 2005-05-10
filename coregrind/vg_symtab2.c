@@ -34,8 +34,9 @@
 #include "vg_symtab2.h"
 
 #include "pub_core_aspacemgr.h"
+#include "pub_core_tooliface.h"
 
-#include <elf.h>          /* ELF defns                      */
+#include <elf.h>          /* ELF defns */
 
 static SegInfo* segInfo = NULL;
 

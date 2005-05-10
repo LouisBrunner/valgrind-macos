@@ -38,6 +38,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
+#include "pub_core_tooliface.h"
 #include "priv_syscalls.h"
 
 

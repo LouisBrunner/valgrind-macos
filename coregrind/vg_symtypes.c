@@ -30,6 +30,7 @@
 #include "core.h"
 #include "vg_symtypes.h"
 #include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
+#include "pub_core_tooliface.h"
 
 typedef enum {
    TyUnknown,			/* unknown type */

@@ -64,6 +64,7 @@
 #include "pub_core_replacemalloc.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
+#include "pub_core_tooliface.h"
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.

@@ -31,6 +31,7 @@
 
 #include "tool.h"
 #include "pub_tool_mallocfree.h"
+#include "pub_tool_tooliface.h"
 
 #include "cg_arch.h"
 #include "cg_sim.c"

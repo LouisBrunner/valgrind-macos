@@ -30,6 +30,7 @@
 */
 
 #include "core.h"
+#include "pub_core_tooliface.h"
 
 /* #define DEBUG_TRANSTAB */
 
@@ -575,11 +576,8 @@ void VG_(init_tt_tc) ( void )
                    "(startup of code management)");
 
    /* Figure out how big each tc area should be.  */
-   avg_codeszQ 
-      = (VG_(details).avg_translation_sizeB + 7) / 8;
-
-   tc_sector_szQ
-      = N_TTES_PER_SECTOR_USABLE * (1 + avg_codeszQ);
+   avg_codeszQ   = (VG_(details).avg_translation_sizeB + 7) / 8;
+   tc_sector_szQ = N_TTES_PER_SECTOR_USABLE * (1 + avg_codeszQ);
 
    /* Ensure the calculated value is not way crazy. */
    vg_assert(tc_sector_szQ >= 2 * N_TTES_PER_SECTOR_USABLE);

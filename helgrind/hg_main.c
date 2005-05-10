@@ -32,6 +32,7 @@
 #include "tool.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_replacemalloc.h"
+#include "pub_tool_tooliface.h"
 
 #include "helgrind.h"
 

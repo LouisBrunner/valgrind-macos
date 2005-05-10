@@ -7,8 +7,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Nicholas Nethercote
-      njn@valgrind.org
+   Copyright (C) 2000-2005 Julian Seward
+      jseward@acm.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_tooliface.h"
 #include "amd64_private.h"
 #include <sys/ptrace.h>
 
@@ -236,4 +237,3 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, ThreadArchState* arch)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

@@ -46,6 +46,7 @@ noinst_HEADERS = \
 	pub_core_sigframe.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
+	pub_core_tooliface.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h
@@ -65,11 +66,12 @@ valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 stage2_SOURCES = \
+	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
 	m_mallocfree.c \
 	m_stacktrace.c \
-	m_debuglog.c \
+	m_tooliface.c \
 	ume.c \
 	\
 	vg_scheduler.c \
@@ -78,7 +80,6 @@ stage2_SOURCES = \
 	vg_main.c \
 	vg_messages.c \
 	vg_mylibc.c \
-	vg_needs.c \
 	vg_dummy_profile.c \
 	vg_signals.c \
 	vg_symtab2.c \

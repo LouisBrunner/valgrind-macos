@@ -32,6 +32,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_tooliface.h"
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/

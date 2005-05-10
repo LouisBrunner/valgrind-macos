@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_tooliface.h"
 #include "x86_private.h"
 #include <sys/ptrace.h>
 
@@ -345,4 +346,3 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, ThreadArchState* arch)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

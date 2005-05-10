@@ -17,6 +17,7 @@ incinc_HEADERS = \
 	pub_tool_mallocfree.h 	\
 	pub_tool_replacemalloc.h\
 	pub_tool_stacktrace.h 	\
+	pub_tool_tooliface.h 	\
 	valgrind.h
 
 BUILT_SOURCES = valgrind.h

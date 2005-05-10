@@ -37,6 +37,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
 #include "pub_core_syscalls.h"
+#include "pub_core_tooliface.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

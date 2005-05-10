@@ -596,8 +596,8 @@ HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_CMPLTF:   return "cmpFlt";
       case Asse_CMPLEF:   return "cmpFle";
       case Asse_CMPUNF:   return "cmpFun";
-//..       case Xsse_RCPF:     return "rcp";
-//..       case Xsse_RSQRTF:   return "rsqrt";
+      case Asse_RCPF:     return "rcp";
+      case Asse_RSQRTF:   return "rsqrt";
       case Asse_SQRTF:    return "sqrt";
       case Asse_AND:      return "and";
       case Asse_OR:       return "or";
@@ -3198,9 +3198,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_MAXF:   *p++ = 0x5F; break;
          case Asse_MINF:   *p++ = 0x5D; break;
          case Asse_MULF:   *p++ = 0x59; break;
-        //case Asse_RCPF:   *p++ = 0x53; break;
-	//case Asse_RSQRTF: *p++ = 0x52; break;
-	//case Asse_SQRTF:  *p++ = 0x51; break;
+         case Asse_RCPF:   *p++ = 0x53; break;
+         case Asse_RSQRTF: *p++ = 0x52; break;
+         case Asse_SQRTF:  *p++ = 0x51; break;
          case Asse_SUBF:   *p++ = 0x5C; break;
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
@@ -3254,9 +3254,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_MAXF:   *p++ = 0x5F; break;
          case Asse_MINF:   *p++ = 0x5D; break;
          case Asse_MULF:   *p++ = 0x59; break;
-//..          case Xsse_RCPF:   *p++ = 0x53; break;
-//..          case Xsse_RSQRTF: *p++ = 0x52; break;
-//..          case Xsse_SQRTF:  *p++ = 0x51; break;
+         case Asse_RCPF:   *p++ = 0x53; break;
+         case Asse_RSQRTF: *p++ = 0x52; break;
+         case Asse_SQRTF:  *p++ = 0x51; break;
          case Asse_SUBF:   *p++ = 0x5C; break;
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;

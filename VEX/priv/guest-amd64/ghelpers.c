@@ -1387,6 +1387,10 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/
 
+static inline UChar abdU8 ( UChar xx, UChar yy ) {
+   return toUChar(xx>yy ? xx-yy : yy-xx);
+}
+
 static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
@@ -1408,6 +1412,39 @@ static inline UShort sel16x4_0 ( ULong w64 ) {
    return toUShort(lo32);
 }
 
+static inline UChar sel8x8_7 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 24);
+}
+static inline UChar sel8x8_6 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 16);
+}
+static inline UChar sel8x8_5 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 8);
+}
+static inline UChar sel8x8_4 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 0);
+}
+static inline UChar sel8x8_3 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 24);
+}
+static inline UChar sel8x8_2 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 16);
+}
+static inline UChar sel8x8_1 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 8);
+}
+static inline UChar sel8x8_0 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 0);
+}
+
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 {
@@ -1418,6 +1455,37 @@ ULong amd64g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
          (((Int)(Short)sel16x4_1(xx)) * ((Int)(Short)sel16x4_1(yy)))
             + (((Int)(Short)sel16x4_0(xx)) * ((Int)(Short)sel16x4_0(yy)))
       );
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_mmx_pmovmskb ( ULong xx )
+{
+   ULong r = 0;
+   if (xx & (1ULL << (64-1))) r |= (1<<7);
+   if (xx & (1ULL << (56-1))) r |= (1<<6);
+   if (xx & (1ULL << (48-1))) r |= (1<<5);
+   if (xx & (1ULL << (40-1))) r |= (1<<4);
+   if (xx & (1ULL << (32-1))) r |= (1<<3);
+   if (xx & (1ULL << (24-1))) r |= (1<<2);
+   if (xx & (1ULL << (16-1))) r |= (1<<1);
+   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
+   return r;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
+{
+   UInt t = 0;
+   t += (UInt)abdU8( sel8x8_7(xx), sel8x8_7(yy) );
+   t += (UInt)abdU8( sel8x8_6(xx), sel8x8_6(yy) );
+   t += (UInt)abdU8( sel8x8_5(xx), sel8x8_5(yy) );
+   t += (UInt)abdU8( sel8x8_4(xx), sel8x8_4(yy) );
+   t += (UInt)abdU8( sel8x8_3(xx), sel8x8_3(yy) );
+   t += (UInt)abdU8( sel8x8_2(xx), sel8x8_2(yy) );
+   t += (UInt)abdU8( sel8x8_1(xx), sel8x8_1(yy) );
+   t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
+   t &= 0xFFFF;
+   return (ULong)t;
 }
 
 

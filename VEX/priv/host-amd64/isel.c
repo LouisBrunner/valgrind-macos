@@ -933,11 +933,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_Add16x4; break;
          case Iop_Add32x2:
             fn = (HWord)h_generic_calc_Add32x2; break;
-//.. 
-//..          case Iop_Avg8Ux8:
-//..             fn = (HWord)h_generic_calc_Avg8Ux8; break;
-//..          case Iop_Avg16Ux4:
-//..             fn = (HWord)h_generic_calc_Avg16Ux4; break;
+
+         case Iop_Avg8Ux8:
+            fn = (HWord)h_generic_calc_Avg8Ux8; break;
+         case Iop_Avg16Ux4:
+            fn = (HWord)h_generic_calc_Avg16Ux4; break;
 
          case Iop_CmpEQ8x8:
             fn = (HWord)h_generic_calc_CmpEQ8x8; break;
@@ -966,22 +966,22 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_InterleaveLO32x2:
             fn = (HWord)h_generic_calc_InterleaveLO32x2; break;
 
-//..          case Iop_Max8Ux8:
-//..             fn = (HWord)h_generic_calc_Max8Ux8; break;
-//..          case Iop_Max16Sx4:
-//..             fn = (HWord)h_generic_calc_Max16Sx4; break;
-//..          case Iop_Min8Ux8:
-//..             fn = (HWord)h_generic_calc_Min8Ux8; break;
-//..          case Iop_Min16Sx4:
-//..             fn = (HWord)h_generic_calc_Min16Sx4; break;
+         case Iop_Max8Ux8:
+            fn = (HWord)h_generic_calc_Max8Ux8; break;
+         case Iop_Max16Sx4:
+            fn = (HWord)h_generic_calc_Max16Sx4; break;
+         case Iop_Min8Ux8:
+            fn = (HWord)h_generic_calc_Min8Ux8; break;
+         case Iop_Min16Sx4:
+            fn = (HWord)h_generic_calc_Min16Sx4; break;
 
          case Iop_Mul16x4:
             fn = (HWord)h_generic_calc_Mul16x4; break;
          case Iop_MulHi16Sx4:
             fn = (HWord)h_generic_calc_MulHi16Sx4; break;
-//..          case Iop_MulHi16Ux4:
-//..             fn = (HWord)h_generic_calc_MulHi16Ux4; break;
-//.. 
+         case Iop_MulHi16Ux4:
+            fn = (HWord)h_generic_calc_MulHi16Ux4; break;
+
          case Iop_QAdd8Sx8:
             fn = (HWord)h_generic_calc_QAdd8Sx8; break;
          case Iop_QAdd16Sx4:
@@ -3178,18 +3178,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec1, dst));
 //..          return dst;
 //..       }
-//.. 
-//..       case Iop_Recip32Fx4: op = Xsse_RCPF;   goto do_32Fx4_unary;
-//..       case Iop_RSqrt32Fx4: op = Xsse_RSQRTF; goto do_32Fx4_unary;
-//..       case Iop_Sqrt32Fx4:  op = Xsse_SQRTF;  goto do_32Fx4_unary;
-//..       do_32Fx4_unary:
-//..       {
-//..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg dst = newVRegV(env);
-//..          addInstr(env, X86Instr_Sse32Fx4(op, arg, dst));
-//..          return dst;
-//..       }
-//.. 
+
+      case Iop_Recip32Fx4: op = Asse_RCPF;   goto do_32Fx4_unary;
+      case Iop_RSqrt32Fx4: op = Asse_RSQRTF; goto do_32Fx4_unary;
+      case Iop_Sqrt32Fx4:  op = Asse_SQRTF;  goto do_32Fx4_unary;
+      do_32Fx4_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, AMD64Instr_Sse32Fx4(op, arg, dst));
+         return dst;
+      }
+
 //..       case Iop_Recip64Fx2: op = Xsse_RCPF;   goto do_64Fx2_unary;
 //..       case Iop_RSqrt64Fx2: op = Xsse_RSQRTF; goto do_64Fx2_unary;
 //..       case Iop_Sqrt64Fx2:  op = Xsse_SQRTF;  goto do_64Fx2_unary;
@@ -3201,25 +3201,25 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse64Fx2(op, arg, dst));
 //..          return dst;
 //..       }
-//.. 
-//..       case Iop_Recip32F0x4: op = Xsse_RCPF;   goto do_32F0x4_unary;
-//..       case Iop_RSqrt32F0x4: op = Xsse_RSQRTF; goto do_32F0x4_unary;
-//..       case Iop_Sqrt32F0x4:  op = Xsse_SQRTF;  goto do_32F0x4_unary;
-//..       do_32F0x4_unary:
-//..       {
-//..          /* A bit subtle.  We have to copy the arg to the result
-//..             register first, because actually doing the SSE scalar insn
-//..             leaves the upper 3/4 of the destination register
-//..             unchanged.  Whereas the required semantics of these
-//..             primops is that the upper 3/4 is simply copied in from the
-//..             argument. */
-//..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg dst = newVRegV(env);
-//..          addInstr(env, mk_vMOVsd_RR(arg, dst));
-//..          addInstr(env, X86Instr_Sse32FLo(op, arg, dst));
-//..          return dst;
-//..       }
-//.. 
+
+      case Iop_Recip32F0x4: op = Asse_RCPF;   goto do_32F0x4_unary;
+      case Iop_RSqrt32F0x4: op = Asse_RSQRTF; goto do_32F0x4_unary;
+      case Iop_Sqrt32F0x4:  op = Asse_SQRTF;  goto do_32F0x4_unary;
+      do_32F0x4_unary:
+      {
+         /* A bit subtle.  We have to copy the arg to the result
+            register first, because actually doing the SSE scalar insn
+            leaves the upper 3/4 of the destination register
+            unchanged.  Whereas the required semantics of these
+            primops is that the upper 3/4 is simply copied in from the
+            argument. */
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(arg, dst));
+         addInstr(env, AMD64Instr_Sse32FLo(op, arg, dst));
+         return dst;
+      }
+
 //..       case Iop_Recip64F0x2: op = Xsse_RCPF;   goto do_64F0x2_unary;
 //..       case Iop_RSqrt64F0x2: op = Xsse_RSQRTF; goto do_64F0x2_unary;
       case Iop_Sqrt64F0x2:  op = Asse_SQRTF;  goto do_64F0x2_unary;

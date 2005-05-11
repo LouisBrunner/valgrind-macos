@@ -342,7 +342,6 @@ static Bool need_to_handle_SP_assignment(void)
             VG_(tdict).track_die_mem_stack    );
 }
 
-
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
                       Bool     debugging_translation,
@@ -355,11 +354,32 @@ Bool VG_(translate) ( ThreadId tid,
    Segment*  seg;
    VexGuestExtents vge;
 
+   /* Indicates what arch and subarch we are running on. */
+   static VexArch    vex_arch    = VexArch_INVALID;
+   static VexSubArch vex_subarch = VexSubArch_INVALID;
+
    /* Make sure Vex is initialised right. */
    VexTranslateResult tres;
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
+      Bool ok = VGA_(getArchAndSubArch)( &vex_arch, &vex_subarch );
+      if (!ok) {
+         VG_(printf)("\n");
+         VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
+         VG_(printf)("   Supported CPUs are:\n");
+         VG_(printf)("   * x86 with SSE state (Pentium II or above, "
+                     "AMD Athlon or above)\n");
+         VG_(printf)("\n");
+         VG_(exit)(1);
+      }
+      if (VG_(clo_verbosity) > 2) {
+         VG_(message)(Vg_DebugMsg, 
+                      "Host CPU: arch = %s, subarch = %s",
+                      LibVEX_ppVexArch   ( vex_arch ),
+                      LibVEX_ppVexSubArch( vex_subarch ) );
+      }
+
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,     /* debug_paranoia */ 
                     False, /* valgrind support */
@@ -446,8 +466,8 @@ Bool VG_(translate) ( ThreadId tid,
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
    tres = LibVEX_Translate ( 
-             VG_(vex_arch), VG_(vex_subarch),
-             VG_(vex_arch), VG_(vex_subarch),
+             vex_arch, vex_subarch,
+             vex_arch, vex_subarch,
              (UChar*)ULong_to_Ptr(orig_addr), 
              (Addr64)orig_addr, 
              chase_into_ok,

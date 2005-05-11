@@ -776,10 +776,6 @@ extern UInt VG_(dispatch_ctr);
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 
-/* Indicates what arch and subarch we are running on. */
-extern VexArch    VG_(vex_arch);
-extern VexSubArch VG_(vex_subarch);
-
 /* 64-bit counter for the number of basic blocks done. */
 extern ULong VG_(bbs_done);
 

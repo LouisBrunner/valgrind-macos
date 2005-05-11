@@ -153,10 +153,6 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
-/* Indicates what arch and subarch we are running on. */
-VexArch    VG_(vex_arch)    = VexArch_INVALID;
-VexSubArch VG_(vex_subarch) = VexSubArch_INVALID;
-
 
 /* ---------------------------------------------------------------------
    Running stuff                            
@@ -2625,30 +2621,6 @@ int main(int argc, char **argv, char **envp)
    process_cmd_line_options(client_auxv, tool);
 
    VG_TDICT_CALL(tool_post_clo_init);
-
-   //--------------------------------------------------------------
-   // Determine CPU architecture and subarchitecture
-   //   p: none
-   //--------------------------------------------------------------
-   VG_(debugLog)(1, "main", "Check CPU arch/subarch\n");
-   {  Bool ok = VGA_(getArchAndSubArch)(
-                   & VG_(vex_arch), & VG_(vex_subarch) );
-      if (!ok) {
-         VG_(printf)("\n");
-         VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
-         VG_(printf)("   Supported CPUs are:\n");
-         VG_(printf)("   * x86 with SSE state (Pentium II or above, "
-                     "AMD Athlon or above)\n");
-         VG_(printf)("\n");
-         VG_(exit)(1);
-      }
-      if (VG_(clo_verbosity) > 2) {
-         VG_(message)(Vg_DebugMsg, 
-                      "Host CPU: arch = %s, subarch = %s",
-                      LibVEX_ppVexArch( VG_(vex_arch) ),
-                      LibVEX_ppVexSubArch( VG_(vex_subarch) ) );
-      }
-   }
 
    //--------------------------------------------------------------
    // Build segment map (all segments)

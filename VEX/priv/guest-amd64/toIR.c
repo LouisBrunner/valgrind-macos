@@ -12302,7 +12302,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 
    case 0x8F: { /* POPQ m64 / POPW m16 */
-      Int len;
+      Int   len;
+      UChar rm;
       /* There is no encoding for 32-bit pop in 64-bit mode.
          So sz==4 actually means sz==8. */
       if (haveF2orF3(pfx)) goto decode_failure;
@@ -12310,7 +12311,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (sz == 4) sz = 8;
       if (sz != 8) goto decode_failure; // until we know a sz==2 test case exists
 
-      UChar rm = getUChar(delta);
+      rm = getUChar(delta);
 
       /* make sure this instruction is correct POP */
       if (epartIsReg(rm) || gregLO3ofRM(rm) != 0)

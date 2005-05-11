@@ -875,24 +875,26 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       cc_dep1 = args[2];
       cc_dep2 = args[3];
 
-//..       /*---------------- ADDL ----------------*/
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_ADDL) && isU32(cond, X86CondZ)) {
-//..          /* long add, then Z --> test (dst+src == 0) */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpEQ32, 
-//..                            binop(Iop_Add32, cc_dep1, cc_dep2),
-//..                            mkU32(0)));
-//..       }
+      /*---------------- ADDQ ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_ADDQ) && isU64(cond, AMD64CondZ)) {
+         /* long long add, then Z --> test (dst+src == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, 
+                           binop(Iop_Add64, cc_dep1, cc_dep2),
+                           mkU64(0)));
+      }
 
       /*---------------- SUBL ----------------*/
 
-//..       if (isU32(cc_op, AMD64G_CC_OP_SUBL) && isU32(cond, X86CondZ)) {
-//..          /* long sub/cmp, then Z --> test dst==src */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpEQ32, cc_dep1, cc_dep2));
-//..       }
-//.. 
+      if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondZ)) {
+         /* long sub/cmp, then Z --> test dst==src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32, 
+                           unop(Iop_64to32,cc_dep1), 
+                           unop(Iop_64to32,cc_dep2)));
+      }
+
 //..       if (isU32(cc_op, AMD64G_CC_OP_SUBL) && isU32(cond, X86CondNZ)) {
 //..          /* long sub/cmp, then NZ --> test dst!=src */
 //..          return unop(Iop_1Uto32,

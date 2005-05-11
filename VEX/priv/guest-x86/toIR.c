@@ -7765,13 +7765,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* 0F 2B = MOVNTPS -- for us, just a plain SSE store. */
+   /* 66 0F 2B = MOVNTPD -- for us, just a plain SSE store. */
    if (insn[0] == 0x0F && insn[1] == 0x2B) {
       modrm = getIByte(delta+2);
       if (!epartIsReg(modrm)) {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-         DIP("movntps %s,%s\n", dis_buf,
-                                nameXMMReg(gregOfRM(modrm)));
+         DIP("movntp%s %s,%s\n", sz==2 ? "d" : "s",
+                                 dis_buf,
+                                 nameXMMReg(gregOfRM(modrm)));
          delta += 2+alen;
          goto decode_success;
       }

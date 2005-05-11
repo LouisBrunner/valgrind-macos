@@ -681,7 +681,7 @@ AMD64Instr* AMD64Instr_Alu64M ( AMD64AluOp op, AMD64RI* src, AMD64AMode* dst ) {
    vassert(op != Aalu_MUL);
    return i;
 }
-AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
+AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, HReg dst ) {
    AMD64Instr* i   = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag          = Ain_Sh64;
    i->Ain.Sh64.op  = op;
@@ -689,27 +689,25 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
    i->Ain.Sh64.dst = dst;
    return i;
 }
-AMD64Instr* AMD64Instr_Test64 ( AMD64RI* src, AMD64RM* dst ) {
-   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
-   i->tag            = Ain_Test64;
-   i->Ain.Test64.src = src;
-   i->Ain.Test64.dst = dst;
+AMD64Instr* AMD64Instr_Test64 ( UInt imm32, HReg dst ) {
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_Test64;
+   i->Ain.Test64.imm32 = imm32;
+   i->Ain.Test64.dst   = dst;
    return i;
 }
-AMD64Instr* AMD64Instr_Unary64 ( AMD64UnaryOp op, AMD64RM* dst ) {
+AMD64Instr* AMD64Instr_Unary64 ( AMD64UnaryOp op, HReg dst ) {
    AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag             = Ain_Unary64;
    i->Ain.Unary64.op  = op;
    i->Ain.Unary64.dst = dst;
    return i;
 }
-AMD64Instr* AMD64Instr_MulL ( Bool syned, Int sz, AMD64RM* src ) {
+AMD64Instr* AMD64Instr_MulL ( Bool syned, AMD64RM* src ) {
    AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag            = Ain_MulL;
    i->Ain.MulL.syned = syned;
-   i->Ain.MulL.sz    = sz;
    i->Ain.MulL.src   = src;
-   vassert(sz == 2 || sz == 4 || sz == 8);
    return i;
 }
 AMD64Instr* AMD64Instr_Div ( Bool syned, Int sz, AMD64RM* src ) {
@@ -1066,22 +1064,18 @@ void ppAMD64Instr ( AMD64Instr* i )
             vex_printf("%%cl,"); 
          else 
             vex_printf("$%d,", (Int)i->Ain.Sh64.src);
-         ppAMD64RM(i->Ain.Sh64.dst);
+         ppHRegAMD64(i->Ain.Sh64.dst);
          return;
       case Ain_Test64:
-         vex_printf("testq ");
-         ppAMD64RI(i->Ain.Test64.src);
-         vex_printf(",");
-         ppAMD64RM(i->Ain.Test64.dst);
+         vex_printf("testq $%d,", (Int)i->Ain.Test64.imm32);
+         ppHRegAMD64(i->Ain.Test64.dst);
          return;
       case Ain_Unary64:
          vex_printf("%sq ", showAMD64UnaryOp(i->Ain.Unary64.op));
-         ppAMD64RM(i->Ain.Unary64.dst);
+         ppHRegAMD64(i->Ain.Unary64.dst);
          return;
       case Ain_MulL:
-         vex_printf("%cmul%s ",
-                    i->Ain.MulL.syned ? 's' : 'u',
-                    showAMD64ScalarSz(i->Ain.MulL.sz));
+         vex_printf("%cmulq ", i->Ain.MulL.syned ? 's' : 'u');
          ppAMD64RM(i->Ain.MulL.src);
          return;
       case Ain_Div:
@@ -1386,16 +1380,15 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addRegUsage_AMD64AMode(u, i->Ain.Alu64M.dst);
          return;
       case Ain_Sh64:
-         addRegUsage_AMD64RM(u, i->Ain.Sh64.dst, HRmModify);
+         addHRegUse(u, HRmModify, i->Ain.Sh64.dst);
          if (i->Ain.Sh64.src == 0)
             addHRegUse(u, HRmRead, hregAMD64_RCX());
          return;
       case Ain_Test64:
-         addRegUsage_AMD64RI(u, i->Ain.Test64.src);
-         addRegUsage_AMD64RM(u, i->Ain.Test64.dst, HRmRead);
+         addHRegUse(u, HRmRead, i->Ain.Test64.dst);
          return;
       case Ain_Unary64:
-         addRegUsage_AMD64RM(u, i->Ain.Unary64.dst, HRmModify);
+         addHRegUse(u, HRmModify, i->Ain.Unary64.dst);
          return;
       case Ain_MulL:
          addRegUsage_AMD64RM(u, i->Ain.MulL.src, HRmRead);
@@ -1657,14 +1650,13 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapRegs_AMD64AMode(m, i->Ain.Alu64M.dst);
          return;
       case Ain_Sh64:
-         mapRegs_AMD64RM(m, i->Ain.Sh64.dst);
+         mapReg(m, &i->Ain.Sh64.dst);
          return;
       case Ain_Test64:
-         mapRegs_AMD64RI(m, i->Ain.Test64.src);
-         mapRegs_AMD64RM(m, i->Ain.Test64.dst);
+         mapReg(m, &i->Ain.Test64.dst);
          return;
       case Ain_Unary64:
-         mapRegs_AMD64RM(m, i->Ain.Unary64.dst);
+         mapReg(m, &i->Ain.Unary64.dst);
          return;
       case Ain_MulL:
          mapRegs_AMD64RM(m, i->Ain.MulL.src);
@@ -1827,14 +1819,7 @@ Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
       *dst = i->Ain.Alu64R.dst;
       return True;
    }
-//..    /* Moves between FP regs */
-//..    if (i->tag == Xin_FpUnary) {
-//..       if (i->Xin.FpUnary.op != Xfp_MOV)
-//..          return False;
-//..       *src = i->Xin.FpUnary.src;
-//..       *dst = i->Xin.FpUnary.dst;
-//..       return True;
-//..    }
+   /* Moves between vector regs */
    if (i->tag == Ain_SseReRg) {
       if (i->Ain.SseReRg.op != Asse_MOV)
          return False;
@@ -1860,8 +1845,6 @@ AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB )
    switch (hregClass(rreg)) {
       case HRcInt64:
          return AMD64Instr_Alu64M ( Aalu_MOV, AMD64RI_Reg(rreg), am );
-	 //case HRcFlt64:
-	 //   return AMD64Instr_FpLdSt ( False/*store*/, 8, rreg, am );
       case HRcVec128:
          return AMD64Instr_SseLdSt ( False/*store*/, 16, rreg, am );
       default: 
@@ -1879,8 +1862,6 @@ AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
    switch (hregClass(rreg)) {
       case HRcInt64:
          return AMD64Instr_Alu64R ( Aalu_MOV, AMD64RMI_Mem(am), rreg );
-	 //case HRcFlt64:
-	 //   return AMD64Instr_FpLdSt ( True/*load*/, 8, rreg, am );
       case HRcVec128:
          return AMD64Instr_SseLdSt ( True/*load*/, 16, rreg, am );
       default: 
@@ -1924,19 +1905,6 @@ static UChar iregBits3210 ( HReg r )
    vassert(n <= 15);
    return toUChar(n);
 }
-
-
-
-//.. static UInt fregNo ( HReg r )
-//.. {
-//..    UInt n;
-//..    vassert(hregClass(r) == HRcFlt64);
-//..    vassert(!hregIsVirtual(r));
-//..    n = hregNumber(r);
-//..    vassert(n <= 5);
-//..    return n;
-//.. }
-
 
 /* Given an xmm (128bit V-class) register number, produce the
    equivalent numbered register in 64-bit I-class.  This is a bit of
@@ -2455,88 +2423,61 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          default: goto bad;
       }
       if (i->Ain.Sh64.src == 0) {
-         *p++ = rexAMode_R(fake(0), 
-                           i->Ain.Sh64.dst->Arm.Reg.reg);
+         *p++ = rexAMode_R(fake(0), i->Ain.Sh64.dst);
          *p++ = toUChar(opc_cl);
-         switch (i->Ain.Sh64.dst->tag) {
-            case Arm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Ain.Sh64.dst->Arm.Reg.reg);
-               goto done;
-            default:
-               goto bad;
-         }
+         p = doAMode_R(p, fake(subopc), i->Ain.Sh64.dst);
+         goto done;
       } else {
-         *p++ = rexAMode_R(fake(0), i->Ain.Sh64.dst->Arm.Reg.reg);
+         *p++ = rexAMode_R(fake(0), i->Ain.Sh64.dst);
          *p++ = toUChar(opc_imm);
-         switch (i->Ain.Sh64.dst->tag) {
-            case Arm_Reg:
-               p = doAMode_R(p, fake(subopc), 
-                                i->Ain.Sh64.dst->Arm.Reg.reg);
-               *p++ = (UChar)(i->Ain.Sh64.src);
-               goto done;
-            default:
-               goto bad;
-         }
-      }
-      break;
-
-   case Ain_Test64:
-      if (i->Ain.Test64.src->tag == Ari_Imm
-          && i->Ain.Test64.dst->tag == Arm_Reg) {
-         /* testq sign-extend($imm32), %reg */
-         *p++ = rexAMode_R(fake(0), i->Ain.Test64.dst->Arm.Reg.reg);
-         *p++ = 0xF7;
-         p = doAMode_R(p, fake(0), i->Ain.Test64.dst->Arm.Reg.reg);
-         p = emit32(p, i->Ain.Test64.src->Ari.Imm.imm32);
+         p = doAMode_R(p, fake(subopc), i->Ain.Sh64.dst);
+         *p++ = (UChar)(i->Ain.Sh64.src);
          goto done;
       }
       break;
 
+   case Ain_Test64:
+      /* testq sign-extend($imm32), %reg */
+      *p++ = rexAMode_R(fake(0), i->Ain.Test64.dst);
+      *p++ = 0xF7;
+      p = doAMode_R(p, fake(0), i->Ain.Test64.dst);
+      p = emit32(p, i->Ain.Test64.imm32);
+      goto done;
+
    case Ain_Unary64:
       if (i->Ain.Unary64.op == Aun_NOT) {
-         if (i->Ain.Unary64.dst->tag == Arm_Reg) {
-            *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst->Arm.Reg.reg);
-            *p++ = 0xF7;
-            p = doAMode_R(p, fake(2), i->Ain.Unary64.dst->Arm.Reg.reg);
-            goto done;
-         } else {
-            goto bad;
-         }
+         *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst);
+         *p++ = 0xF7;
+         p = doAMode_R(p, fake(2), i->Ain.Unary64.dst);
+         goto done;
       }
       if (i->Ain.Unary64.op == Aun_NEG) {
-         if (i->Ain.Unary64.dst->tag == Arm_Reg) {
-            *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst->Arm.Reg.reg);
-            *p++ = 0xF7;
-            p = doAMode_R(p, fake(3), i->Ain.Unary64.dst->Arm.Reg.reg);
-            goto done;
-         } else {
-            goto bad;
-         }
+         *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst);
+         *p++ = 0xF7;
+         p = doAMode_R(p, fake(3), i->Ain.Unary64.dst);
+         goto done;
       }
       break;
 
    case Ain_MulL:
       subopc = i->Ain.MulL.syned ? 5 : 4;
-      if (i->Ain.MulL.sz == 8) {
-         switch (i->Ain.MulL.src->tag)  {
-            case Arm_Mem:
-               *p++ = rexAMode_M( fake(0),
-                                  i->Ain.MulL.src->Arm.Mem.am);
-               *p++ = 0xF7;
-               p = doAMode_M(p, fake(subopc),
-                                i->Ain.MulL.src->Arm.Mem.am);
-               goto done;
-            case Arm_Reg:
-               *p++ = rexAMode_R(fake(0), 
-                                 i->Ain.MulL.src->Arm.Reg.reg);
-               *p++ = 0xF7;
-               p = doAMode_R(p, fake(subopc), 
-                                i->Ain.MulL.src->Arm.Reg.reg);
-               goto done;
-            default:
-               goto bad;
-         }
+      switch (i->Ain.MulL.src->tag)  {
+         case Arm_Mem:
+            *p++ = rexAMode_M( fake(0),
+                               i->Ain.MulL.src->Arm.Mem.am);
+            *p++ = 0xF7;
+            p = doAMode_M(p, fake(subopc),
+                             i->Ain.MulL.src->Arm.Mem.am);
+            goto done;
+         case Arm_Reg:
+            *p++ = rexAMode_R(fake(0), 
+                              i->Ain.MulL.src->Arm.Reg.reg);
+            *p++ = 0xF7;
+            p = doAMode_R(p, fake(subopc), 
+                             i->Ain.MulL.src->Arm.Reg.reg);
+            goto done;
+         default:
+            goto bad;
       }
       break;
 

@@ -429,22 +429,21 @@ typedef
          struct {
             AMD64ShiftOp op;
             UInt         src;  /* shift amount, or 0 means %cl */
-            AMD64RM*     dst;
+            HReg         dst;
          } Sh64;
          struct {
-            AMD64RI* src;
-            AMD64RM* dst;
+            UInt   imm32;
+            HReg   dst;
          } Test64;
          /* Not and Neg */
          struct {
             AMD64UnaryOp op;
-            AMD64RM*     dst;
+            HReg         dst;
          } Unary64;
-         /* DX:AX = AX *s/u r/m16, or EDX:EAX = EAX *s/u r/m32,
-            or RDX:RAX = RAX *s/u r/m64 */
+         /* 64 x 64 -> 128 bit widening multiply: RDX:RAX = RAX *s/u
+            r/m64 */
          struct {
             Bool     syned;
-            Int      sz; /* 2, 4 or 8 only */
             AMD64RM* src;
          } MulL;
           /* amd64 div/idiv instruction.  Modifies RDX and RAX and
@@ -651,10 +650,10 @@ typedef
 extern AMD64Instr* AMD64Instr_Imm64      ( ULong imm64, HReg dst );
 extern AMD64Instr* AMD64Instr_Alu64R     ( AMD64AluOp, AMD64RMI*, HReg );
 extern AMD64Instr* AMD64Instr_Alu64M     ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
-extern AMD64Instr* AMD64Instr_Unary64    ( AMD64UnaryOp op, AMD64RM* dst );
-extern AMD64Instr* AMD64Instr_Sh64       ( AMD64ShiftOp, UInt, AMD64RM* );
-extern AMD64Instr* AMD64Instr_Test64     ( AMD64RI* src, AMD64RM* dst );
-extern AMD64Instr* AMD64Instr_MulL       ( Bool syned, Int sz, AMD64RM* );
+extern AMD64Instr* AMD64Instr_Unary64    ( AMD64UnaryOp op, HReg dst );
+extern AMD64Instr* AMD64Instr_Sh64       ( AMD64ShiftOp, UInt, HReg );
+extern AMD64Instr* AMD64Instr_Test64     ( UInt imm32, HReg dst );
+extern AMD64Instr* AMD64Instr_MulL       ( Bool syned, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Div        ( Bool syned, Int sz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_Push       ( AMD64RMI* );

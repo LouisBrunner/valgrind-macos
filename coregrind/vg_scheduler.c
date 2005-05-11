@@ -85,6 +85,9 @@ ThreadState VG_(threads)[VG_N_THREADS];
 /* If true, a fault is Valgrind-internal (ie, a bug) */
 Bool VG_(my_fault) = True;
 
+/* Counts downwards in VG_(run_innerloop). */
+UInt VG_(dispatch_ctr);
+
 /* Forwards */
 static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( ThreadId tid );

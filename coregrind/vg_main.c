@@ -162,9 +162,6 @@ VexSubArch VG_(vex_subarch) = VexSubArch_INVALID;
    Running stuff                            
    ------------------------------------------------------------------ */
 
-/* Counts downwards in VG_(run_innerloop). */
-UInt VG_(dispatch_ctr);
-
 /* 64-bit counter for the number of basic blocks done. */
 ULong VG_(bbs_done) = 0;
 

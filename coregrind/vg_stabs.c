@@ -185,8 +185,8 @@ static SymType *structDef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *n
 		     isstruct ? "struct" : "union", name, ref, def);
 
       def = VG_(st_mktypedef)(ref, name, VG_(st_basetype)(def, False));
-      VG_(st_setname)(def, name);
    }
+   VG_(st_setname)(def, name);
    return def;
 }
 

@@ -8712,15 +8712,19 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       /* else fall through */
    }
 
+   /* 66 0F 2B = MOVNTPD -- for us, just a plain SSE store. */
    /* 0F 2B = MOVNTPS -- for us, just a plain SSE store. */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
-       && insn[0] == 0x0F && insn[1] == 0x2B) {
+   if ( ( (haveNo66noF2noF3(pfx) && sz == 4)
+          || (have66noF2noF3(pfx) && sz == 2) 
+        )
+        && insn[0] == 0x0F && insn[1] == 0x2B) {
       modrm = getUChar(delta+2);
       if (!epartIsReg(modrm)) {
          addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
-         DIP("movntps %s,%s\n", dis_buf,
-                                nameXMMReg(gregOfRexRM(pfx,modrm)));
+         DIP("movntp%s %s,%s\n", sz==2 ? "d" : "s",
+                                 dis_buf,
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
          delta += 2+alen;
          goto decode_success;
       }
@@ -9962,7 +9966,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (epartIsReg(modrm)) {
          delta += 2+1;
          if (sz == 4) {
-            goto decode_failure; /* awaiting test case */
             putXMMReg(
                gregOfRexRM(pfx,modrm),
                unop( Iop_32UtoV128, getIReg32(eregOfRexRM(pfx,modrm)) ) 
@@ -10043,66 +10046,64 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* F3 0F 6F = MOVDQU -- move from E (mem or xmm) to G (xmm). */
-//..    /* Unfortunately can't simply use the MOVDQA case since the
-//..       prefix lengths are different (66 vs F3) */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x6F) {
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          putXMMReg( gregOfRM(modrm), 
-//..                     getXMMReg( eregOfRM(modrm) ));
-//..          DIP("movdqu %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-//..                                nameXMMReg(gregOfRM(modrm)));
-//..          delta += 3+1;
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//..          putXMMReg( gregOfRM(modrm), 
-//..                     loadLE(Ity_V128, mkexpr(addr)) );
-//..          DIP("movdqu %s,%s\n", dis_buf,
-//..                                nameXMMReg(gregOfRM(modrm)));
-//..          delta += 3+alen;
-//..       }
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* F3 0F 7F = MOVDQU -- move from G (xmm) to E (mem or xmm). */
-//..    /* Unfortunately can't simply use the MOVDQA case since the
-//..       prefix lengths are different (66 vs F3) */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7F) {
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 3+1;
-//..          putXMMReg( eregOfRM(modrm),
-//..                     getXMMReg(gregOfRM(modrm)) );
-//..          DIP("movdqu %s, %s\n", nameXMMReg(gregOfRM(modrm)), 
-//..                                 nameXMMReg(eregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode( &alen, sorb, delta+3, dis_buf );
-//..          delta += 3+alen;
-//..          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-//..          DIP("movdqu %s, %s\n", nameXMMReg(gregOfRM(modrm)), dis_buf);
-//..       }
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* F2 0F D6 = MOVDQ2Q -- move from E (lo half xmm, not mem) to G (mmx). */
-//..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xD6) {
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          do_MMX_preamble();
-//..          putMMXReg( gregOfRM(modrm), 
-//..                     getXMMRegLane64( eregOfRM(modrm), 0 ));
-//..          DIP("movdq2q %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-//..                                 nameMMXReg(gregOfRM(modrm)));
-//..          delta += 3+1;
-//..          goto decode_success;
-//..       } else {
-//..          /* fall through, apparently no mem case for this insn */
-//..       }
-//..    }
+   /* F3 0F 6F = MOVDQU -- move from E (mem or xmm) to G (xmm). */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x6F) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         putXMMReg( gregOfRexRM(pfx,modrm), 
+                    getXMMReg( eregOfRexRM(pfx,modrm) ));
+         DIP("movdqu %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                               nameXMMReg(gregOfRexRM(pfx,modrm)));
+         delta += 2+1;
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         putXMMReg( gregOfRexRM(pfx,modrm), 
+                    loadLE(Ity_V128, mkexpr(addr)) );
+         DIP("movdqu %s,%s\n", dis_buf,
+                               nameXMMReg(gregOfRexRM(pfx,modrm)));
+         delta += 2+alen;
+      }
+      goto decode_success;
+   }
+
+   /* F3 0F 7F = MOVDQU -- move from G (xmm) to E (mem or xmm). */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x7F) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         goto decode_failure; /* awaiting test case */
+         delta += 2+1;
+         putXMMReg( eregOfRexRM(pfx,modrm),
+                    getXMMReg(gregOfRexRM(pfx,modrm)) );
+         DIP("movdqu %s, %s\n", nameXMMReg(gregOfRexRM(pfx,modrm)), 
+                                nameXMMReg(eregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode( &alen, pfx, delta+2, dis_buf, 0 );
+         delta += 2+alen;
+         storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
+         DIP("movdqu %s, %s\n", nameXMMReg(gregOfRexRM(pfx,modrm)), dis_buf);
+      }
+      goto decode_success;
+   }
+
+   /* F2 0F D6 = MOVDQ2Q -- move from E (lo half xmm, not mem) to G (mmx). */
+   if (haveF2no66noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0xD6) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         do_MMX_preamble();
+         putMMXReg( gregLO3ofRM(modrm), 
+                    getXMMRegLane64( eregOfRexRM(pfx,modrm), 0 ));
+         DIP("movdq2q %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                nameMMXReg(gregLO3ofRM(modrm)));
+         delta += 2+1;
+         goto decode_success;
+      } else {
+         /* apparently no mem case for this insn */
+         goto decode_failure;
+      }
+   }
 
    /* 66 0F 16 = MOVHPD -- move from mem to high half of XMM. */
    /* These seems identical to MOVHPS.  This instruction encoding is
@@ -10174,45 +10175,49 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       /* else fall through */
    }
 
-//..    /* 66 0F 50 = MOVMSKPD - move 2 sign bits from 2 x F64 in xmm(E) to
-//..       2 lowest bits of ireg(G) */
-//..    if (insn[0] == 0x0F && insn[1] == 0x50) {
-//..       modrm = getUChar(delta+2);
-//..       if (sz == 2 && epartIsReg(modrm)) {
-//..          Int src;
-//..          t0 = newTemp(Ity_I32);
-//..          t1 = newTemp(Ity_I32);
-//..          delta += 2+1;
-//..          src = eregOfRM(modrm);
-//..          assign( t0, binop( Iop_And32,
-//..                             binop(Iop_Shr32, getXMMRegLane32(src,1), mkU8(31)),
-//..                             mkU32(1) ));
-//..          assign( t1, binop( Iop_And32,
-//..                             binop(Iop_Shr32, getXMMRegLane32(src,3), mkU8(30)),
-//..                             mkU32(2) ));
-//..          putIReg(4, gregOfRM(modrm),
-//..                     binop(Iop_Or32, mkexpr(t0), mkexpr(t1))
-//..                  );
-//..          DIP("movmskpd %s,%s\n", nameXMMReg(src), 
-//..                                  nameIReg(4, gregOfRM(modrm)));
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
-//.. 
-//..    /* 66 0F E7 = MOVNTDQ -- for us, just a plain SSE store. */
-//..    if (insn[0] == 0x0F && insn[1] == 0xE7) {
-//..       modrm = getUChar(delta+2);
-//..       if (sz == 2 && !epartIsReg(modrm)) {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-//..          DIP("movntdq %s,%s\n", dis_buf,
-//..                                 nameXMMReg(gregOfRM(modrm)));
-//..          delta += 2+alen;
-//..          goto decode_success;
-//..       }
-//..       /* else fall through */
-//..    }
+   /* 66 0F 50 = MOVMSKPD - move 2 sign bits from 2 x F64 in xmm(E) to
+      2 lowest bits of ireg(G) */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0x50) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         Int src;
+         t0 = newTemp(Ity_I32);
+         t1 = newTemp(Ity_I32);
+         delta += 2+1;
+         src = eregOfRexRM(pfx,modrm);
+         assign( t0, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,1), mkU8(31)),
+                            mkU32(1) ));
+         assign( t1, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,3), mkU8(30)),
+                            mkU32(2) ));
+         putIReg32( gregOfRexRM(pfx,modrm),
+                    binop(Iop_Or32, mkexpr(t0), mkexpr(t1))
+                  );
+         DIP("movmskpd %s,%s\n", nameXMMReg(src), 
+                                 nameIReg32(gregOfRexRM(pfx,modrm)));
+         goto decode_success;
+      }
+      /* else fall through */
+      goto decode_failure;
+   }
+
+   /* 66 0F E7 = MOVNTDQ -- for us, just a plain SSE store. */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xE7) {
+      modrm = getUChar(delta+2);
+      if (!epartIsReg(modrm)) {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
+         DIP("movntdq %s,%s\n", dis_buf,
+                                nameXMMReg(gregOfRexRM(pfx,modrm)));
+         delta += 2+alen;
+         goto decode_success;
+      }
+      /* else fall through */
+      goto decode_failure;
+   }
 
    /* 0F C3 = MOVNTI -- for us, just a plain ireg store. */
    if (haveNo66noF2noF3(pfx) &&
@@ -10247,34 +10252,36 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
    }
 
-//..    /* F3 0F D6 = MOVQ2DQ -- move from E (mmx) to G (lo half xmm, zero
-//..       hi half). */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xD6) {
-//..       vassert(sz == 4);
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          do_MMX_preamble();
-//..          putXMMReg( gregOfRM(modrm), 
-//..                     unop(Iop_64Uto128, getMMXReg( eregOfRM(modrm) )) );
-//..          DIP("movq2dq %s,%s\n", nameMMXReg(eregOfRM(modrm)),
-//..                                 nameXMMReg(gregOfRM(modrm)));
-//..          delta += 3+1;
-//..          goto decode_success;
-//..       } else {
-//..          /* fall through, apparently no mem case for this insn */
-//..       }
-//..    }
-//.. 
-//..    /* F3 0F 7E = MOVQ -- move 64 bits from E (mem or lo half xmm) to
-//..       G (lo half xmm).  If E is mem, upper half of G is zeroed out. */
+   /* F3 0F D6 = MOVQ2DQ -- move from E (mmx) to G (lo half xmm, zero
+      hi half). */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0xD6) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         do_MMX_preamble();
+         putXMMReg( gregOfRexRM(pfx,modrm), 
+                    unop(Iop_64UtoV128, getMMXReg( eregLO3ofRM(modrm) )) );
+         DIP("movq2dq %s,%s\n", nameMMXReg(eregLO3ofRM(modrm)),
+                                nameXMMReg(gregOfRexRM(pfx,modrm)));
+         delta += 2+1;
+         goto decode_success;
+      } else {
+         /* apparently no mem case for this insn */
+         goto decode_failure;
+      }
+   }
+
+   /* F3 0F 7E = MOVQ -- move 64 bits from E (mem or lo half xmm) to
+      G (lo half xmm).  If E is mem, upper half of G is zeroed out. */
    /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out.
       (original defn) */
-   if ( (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x10)
+   if ( (haveF2no66noF3(pfx) && sz == 4 
+         && insn[0] == 0x0F && insn[1] == 0x10)
         || 
-        (haveF3no66noF2(pfx) && insn[0] == 0x0F && insn[1] == 0x7E)
+        (haveF3no66noF2(pfx) && sz == 4 
+         && insn[0] == 0x0F && insn[1] == 0x7E)
       ) {
-      vassert(sz == 4);
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          putXMMRegLane64( gregOfRexRM(pfx,modrm), 0,

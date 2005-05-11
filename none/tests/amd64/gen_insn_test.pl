@@ -79,6 +79,17 @@ our @IntRegs = (
                 { r8 => "dh" }
                 );
 
+#our @IntRegs = (
+#                { r8 => "r8b", r16 => "r8w", r32 => "r8d", r64 => "r8" },
+#                { r8 => "r9b", r16 => "r9w", r32 => "r9d", r64 => "r9" },
+#                { r8 => "r10b", r16 => "r10w", r32 => "r10d", r64 => "r10" },
+#                { r8 => "r11b", r16 => "r11w", r32 => "r11d", r64 => "r11" },
+#                { r8 => "ah" },
+#                { r8 => "bh" },
+#                { r8 => "ch" },
+#                { r8 => "dh" }
+#                );
+
 print <<EOF;
 #include <math.h>
 #include <setjmp.h>
@@ -144,13 +155,15 @@ static void handle_sigill(int signum)
 __attribute__((unused))
 static int eq_float(float f1, float f2)
 {
-   return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 * powf(2,-12);
+   /* return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 * powf(2,-12); */
+   return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 / 4096.0;
 }
 
 __attribute__((unused))
 static int eq_double(double d1, double d2)
 {
-   return d1 == d2 || fabs(d1 - d2) < fabs(d1) * 1.5 * pow(2,-12);
+   /* return d1 == d2 || fabs(d1 - d2) < fabs(d1) * 1.5 * pow(2,-12); */
+   return d1 == d2 || fabs(d1 - d2) < fabs(d1) * 1.5 / 4096.0;
 }
 
 EOF
@@ -196,6 +209,7 @@ while (<>)
     my @intregs = @IntRegs;
     my @mmregs  = map { "mm$_" }  (6,7,0,1,2,3,4,5);
     my @xmmregs = map { "xmm$_" } (4,5,0,1,2,3,6,7);
+#    my @xmmregs = map { "xmm$_" } (12,13,8,9,10,11,14,15);
     my @fpregs  = map { "st$_" }  (0 .. 7);
 
     my @presets;
@@ -695,7 +709,7 @@ while (<>)
     {
         print qq|         \"pushfq\\n\"\n|;
         print qq|         \"andl \$$eflagsmask, (%%rsp)\\n\"\n| if defined($eflagsmask);
-        print qq|         \"andl \$0, 8(%%rsp)\\n\"\n| if defined($eflagsmask);
+        print qq|         \"andl \$0, 4(%%rsp)\\n\"\n| if defined($eflagsmask);
         print qq|         \"orq \$$eflagsset, (%%rsp)\\n\"\n| if defined($eflagsset);
         print qq|         \"popfq\\n\"\n|;
     }

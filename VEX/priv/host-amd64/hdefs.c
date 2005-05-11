@@ -1603,9 +1603,12 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
                        i->Ain.Sse64FLo.dst);
          return;
       case Ain_SseReRg:
-         if (i->Ain.SseReRg.op == Asse_XOR
-             && i->Ain.SseReRg.src == i->Ain.SseReRg.dst) {
-            /* reg-alloc needs to understand 'xor r,r' as a write of r */
+         if ( (i->Ain.SseReRg.op == Asse_XOR
+               || i->Ain.SseReRg.op == Asse_CMPEQ32)
+              && i->Ain.SseReRg.src == i->Ain.SseReRg.dst) {
+            /* reg-alloc needs to understand 'xor r,r' and 'cmpeqd
+               r,r' as a write of a value to r, and independent of any
+               previous value in r */
             /* (as opposed to a rite of passage :-) */
             addHRegUse(u, HRmWrite, i->Ain.SseReRg.dst);
          } else {

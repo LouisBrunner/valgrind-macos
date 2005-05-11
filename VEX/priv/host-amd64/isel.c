@@ -698,17 +698,31 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 }
 
 
+/* Generate all-zeroes into a new vector register.
+*/
+static HReg generate_zeroes_V128 ( ISelEnv* env )
+{
+   HReg dst = newVRegV(env);
+   addInstr(env, AMD64Instr_SseReRg(Asse_XOR, dst, dst));
+   return dst;
+}
+
+/* Generate all-ones into a new vector register.
+*/
+static HReg generate_ones_V128 ( ISelEnv* env )
+{
+   HReg dst = newVRegV(env);
+   addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, dst, dst));
+   return dst;
+}
+
+
 /* Generate !src into a new vector register.  Amazing that there isn't
    a less crappy way to do this.
 */
 static HReg do_sse_NotV128 ( ISelEnv* env, HReg src )
 {
-   HReg dst = newVRegV(env);
-   /* Set dst to zero.  Not strictly necessary. */
-   addInstr(env, AMD64Instr_SseReRg(Asse_XOR, dst, dst));
-   /* And now make it all 1s ... */
-   addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, dst, dst));
-   /* Finally, xor 'src' into it. */
+   HReg dst = generate_ones_V128(env);
    addInstr(env, AMD64Instr_SseReRg(Asse_XOR, src, dst));
    return dst;
 }
@@ -3053,7 +3067,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg dst = newVRegV(env);
       vassert(e->Iex.Const.con->tag == Ico_V128);
       if (e->Iex.Const.con->Ico.V128 == 0x0000) {
-         addInstr(env, AMD64Instr_SseReRg(Asse_XOR, dst, dst));
+         dst = generate_zeroes_V128(env);
          return dst;
       } else
       if (e->Iex.Const.con->Ico.V128 == 0x00FF) {
@@ -3108,9 +3122,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             (2 << 6) | (3 << 4) | (0 << 2) | (1 << 0) 
          */
          HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
-         HReg tmp  = newVRegV(env);
+         HReg tmp  = generate_zeroes_V128(env);
          HReg dst  = newVRegV(env);
-         addInstr(env, AMD64Instr_SseReRg(Asse_XOR, tmp, tmp));
          addInstr(env, AMD64Instr_SseReRg(Asse_CMPEQ32, arg, tmp));
          tmp = do_sse_NotV128(env, tmp);
          addInstr(env, AMD64Instr_SseShuf(0xB1, tmp, dst));
@@ -3118,59 +3131,20 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_CmpNEZ32x4: {
-//..          /* Sigh, we have to generate lousy code since this has to
-//..             work on SSE1 hosts */
-//..          /* basically, the idea is: for each lane:
-//..                movl lane, %r ; negl %r   (now CF = lane==0 ? 0 : 1)
-//..                sbbl %r, %r               (now %r = 1Sto32(CF))
-//..                movl %r, lane
-//..          */
-//..          Int       i;
-//..          X86AMode* am;
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          HReg      arg  = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg      dst  = newVRegV(env);
-//..          HReg      r32  = newVRegI(env);
-//..          sub_from_esp(env, 16);
-//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, arg, esp0));
-//..          for (i = 0; i < 4; i++) {
-//..             am = X86AMode_IR(i*4, hregX86_ESP());
-//..             addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(am), r32));
-//..             addInstr(env, X86Instr_Unary32(Xun_NEG, X86RM_Reg(r32)));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(r32), r32));
-//..             addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r32), am));
-//..          }
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
-//.. 
-//..       case Iop_CmpNEZ8x16:
-//..       case Iop_CmpNEZ16x8: {
-//..          /* We can use SSE2 instructions for this. */
-//..          HReg arg;
-//..          HReg vec0 = newVRegV(env);
-//..          HReg vec1 = newVRegV(env);
-//..          HReg dst  = newVRegV(env);
-//..          X86SseOp cmpOp 
-//..             = e->Iex.Unop.op==Iop_CmpNEZ16x8 ? Xsse_CMPEQ16
-//..                                              : Xsse_CMPEQ8;
-//..          REQUIRE_SSE2;
-//..          addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec0, vec0));
-//..          addInstr(env, mk_vMOVsd_RR(vec0, vec1));
-//..          addInstr(env, X86Instr_Sse32Fx4(Xsse_CMPEQF, vec1, vec1));
-//..          /* defer arg computation to here so as to give CMPEQF as long
-//..             as possible to complete */
-//..          arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          /* vec0 is all 0s; vec1 is all 1s */
-//..          addInstr(env, mk_vMOVsd_RR(arg, dst));
-//..          /* 16x8 or 8x16 comparison == */
-//..          addInstr(env, X86Instr_SseReRg(cmpOp, vec0, dst));
-//..          /* invert result */
-//..          addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec1, dst));
-//..          return dst;
-//..       }
+      case Iop_CmpNEZ32x4: op = Asse_CMPEQ32; goto do_CmpNEZ_vector;
+      case Iop_CmpNEZ16x8: op = Asse_CMPEQ16; goto do_CmpNEZ_vector;
+      case Iop_CmpNEZ8x16: op = Asse_CMPEQ8;  goto do_CmpNEZ_vector;
+      do_CmpNEZ_vector:
+      {
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg tmp  = newVRegV(env);
+         HReg zero = generate_zeroes_V128(env);
+         HReg dst;
+         addInstr(env, mk_vMOVsd_RR(arg, tmp));
+         addInstr(env, AMD64Instr_SseReRg(op, zero, tmp));
+         dst = do_sse_NotV128(env, tmp);
+         return dst;
+      }
 
       case Iop_Recip32Fx4: op = Asse_RCPF;   goto do_32Fx4_unary;
       case Iop_RSqrt32Fx4: op = Asse_RSQRTF; goto do_32Fx4_unary;

@@ -2050,32 +2050,6 @@ void VG_(poll_signals)(ThreadId tid)
    VG_(restore_all_host_signals)(&saved_mask);
 }
 
-/* Set the standard set of blocked signals, used wheneever we're not
-   running a client syscall. */
-void VG_(block_signals)(ThreadId tid)
-{
-   vki_sigset_t mask;
-
-   VG_(sigfillset)(&mask);
-
-   /* Don't block these because they're synchronous */
-   VG_(sigdelset)(&mask, VKI_SIGSEGV);
-   VG_(sigdelset)(&mask, VKI_SIGBUS);
-   VG_(sigdelset)(&mask, VKI_SIGFPE);
-   VG_(sigdelset)(&mask, VKI_SIGILL);
-   VG_(sigdelset)(&mask, VKI_SIGTRAP);
-
-   /* Can't block these anyway */
-   VG_(sigdelset)(&mask, VKI_SIGSTOP);
-   VG_(sigdelset)(&mask, VKI_SIGKILL);
-
-   /* Master doesn't block this */
-   if (tid == VG_(master_tid))
-      VG_(sigdelset)(&mask, VKI_SIGVGCHLD);
-
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
-}
-
 /* At startup, copy the process' real signal state to the SCSS.
    Whilst doing this, block all real signals.  Then calculate SKSS and
    set the kernel to that.  Also initialise DCSS. 

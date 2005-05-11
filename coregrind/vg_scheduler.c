@@ -424,6 +424,32 @@ void VG_(resume_scheduler)(ThreadId tid)
    }
 }
 
+/* Set the standard set of blocked signals, used wheneever we're not
+   running a client syscall. */
+static void block_signals(ThreadId tid)
+{
+   vki_sigset_t mask;
+
+   VG_(sigfillset)(&mask);
+
+   /* Don't block these because they're synchronous */
+   VG_(sigdelset)(&mask, VKI_SIGSEGV);
+   VG_(sigdelset)(&mask, VKI_SIGBUS);
+   VG_(sigdelset)(&mask, VKI_SIGFPE);
+   VG_(sigdelset)(&mask, VKI_SIGILL);
+   VG_(sigdelset)(&mask, VKI_SIGTRAP);
+
+   /* Can't block these anyway */
+   VG_(sigdelset)(&mask, VKI_SIGSTOP);
+   VG_(sigdelset)(&mask, VKI_SIGKILL);
+
+   /* Master doesn't block this */
+   if (tid == VG_(master_tid))
+      VG_(sigdelset)(&mask, VKI_SIGVGCHLD);
+
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+}
+
 #define SCHEDSETJMP(tid, jumped, stmt)					\
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
@@ -511,7 +537,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
          signal handler to longjmp. */
       vg_assert(trc == 0);
       trc = VG_TRC_FAULT_SIGNAL;
-      VG_(block_signals)(tid);
+      block_signals(tid);
    } 
 
    done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
@@ -684,7 +710,7 @@ static void handle_syscall(ThreadId tid)
    vg_assert(VG_(is_running_thread)(tid));
    
    if (jumped) {
-      VG_(block_signals)(tid);
+      block_signals(tid);
       VG_(poll_signals)(tid);
    }
 }
@@ -706,7 +732,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    VGP_PUSHCC(VgpSched);
 
    /* set the proper running signal mask */
-   VG_(block_signals)(tid);
+   block_signals(tid);
    
    vg_assert(VG_(is_running_thread)(tid));
 

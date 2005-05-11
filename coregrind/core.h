@@ -593,10 +593,6 @@ extern Bool VG_(my_fault);
    Exports of vg_signals.c
    ------------------------------------------------------------------ */
 
-/* Set the standard set of blocked signals, used wheneever we're not
-   running a client syscall. */
-extern void VG_(block_signals)(ThreadId tid);
-
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);
 

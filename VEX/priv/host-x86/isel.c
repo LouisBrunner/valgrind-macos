@@ -571,7 +571,7 @@ X86AMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
 
    switch (elemSz) {
       case 1:  shift = 0; break;
-      case 4:  shift = 2; vassert(0); /* awaiting test case */ break;
+      case 4:  shift = 2; break;
       case 8:  shift = 3; break;
       default: vpanic("genGuestArrayOffset(x86 host)(2)");
    }
@@ -1166,7 +1166,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
       if (ty == Ity_I32) {
-         vassert(0); /* awaiting test case */
          addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(am), dst));
          return dst;
       }
@@ -3376,7 +3375,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
       if (ty == Ity_I32) {
          HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
-         vassert(0); /* awaiting test case */
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(r), am ));
          return;
       }

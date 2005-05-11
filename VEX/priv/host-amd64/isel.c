@@ -2634,20 +2634,17 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-//..    if (e->tag == Iex_Unop
-//..        && e->Iex.Unop.op == Iop_ReinterpI32asF32) {
-//..        /* Given an I32, produce an IEEE754 float with the same bit
-//..           pattern. */
-//..       HReg    dst = newVRegF(env);
-//..       X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Unop.arg);
-//..       /* paranoia */
-//..       addInstr(env, X86Instr_Push(rmi));
-//..       addInstr(env, X86Instr_FpLdSt(
-//..                        True/*load*/, 4, dst, 
-//..                        X86AMode_IR(0, hregX86_ESP())));
-//..       add_to_esp(env, 4);
-//..       return dst;
-//..    }
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_ReinterpI32asF32) {
+       /* Given an I32, produce an IEEE754 float with the same bit
+          pattern. */
+       HReg        dst    = newVRegV(env);
+       HReg        src    = iselIntExpr_R(env, e->Iex.Unop.arg);
+       AMD64AMode* m4_rsp = AMD64AMode_IR(-4, hregAMD64_RSP());
+       addInstr(env, AMD64Instr_Store(4, src, m4_rsp));
+       addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 4, dst, m4_rsp ));
+       return dst;
+   }
 
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
@@ -3320,9 +3317,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT64Fx2: op = Asse_CMPLTF; goto do_64Fx2;
       case Iop_CmpLE64Fx2: op = Asse_CMPLEF; goto do_64Fx2;
       case Iop_Add64Fx2:   op = Asse_ADDF;   goto do_64Fx2;
-//..       case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
-//..       case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
-//..       case Iop_Min64Fx2:   op = Xsse_MINF;   goto do_64Fx2;
+      case Iop_Div64Fx2:   op = Asse_DIVF;   goto do_64Fx2;
+      case Iop_Max64Fx2:   op = Asse_MAXF;   goto do_64Fx2;
+      case Iop_Min64Fx2:   op = Asse_MINF;   goto do_64Fx2;
       case Iop_Mul64Fx2:   op = Asse_MULF;   goto do_64Fx2;
       case Iop_Sub64Fx2:   op = Asse_SUBF;   goto do_64Fx2;
       do_64Fx2:
@@ -3400,21 +3397,21 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_OrV128:     op = Asse_OR;       goto do_SseReRg;
       case Iop_XorV128:    op = Asse_XOR;      goto do_SseReRg;
       case Iop_Add8x16:    op = Asse_ADD8;     goto do_SseReRg;
-//..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
+      case Iop_Add16x8:    op = Asse_ADD16;    goto do_SseReRg;
       case Iop_Add32x4:    op = Asse_ADD32;    goto do_SseReRg;
       case Iop_Add64x2:    op = Asse_ADD64;    goto do_SseReRg;
-//..       case Iop_QAdd8Sx16:  op = Xsse_QADD8S;   goto do_SseReRg;
-//..       case Iop_QAdd16Sx8:  op = Xsse_QADD16S;  goto do_SseReRg;
-//..       case Iop_QAdd8Ux16:  op = Xsse_QADD8U;   goto do_SseReRg;
-//..       case Iop_QAdd16Ux8:  op = Xsse_QADD16U;  goto do_SseReRg;
-//..       case Iop_Avg8Ux16:   op = Xsse_AVG8U;    goto do_SseReRg;
-//..       case Iop_Avg16Ux8:   op = Xsse_AVG16U;   goto do_SseReRg;
-//..       case Iop_CmpEQ8x16:  op = Xsse_CMPEQ8;   goto do_SseReRg;
-//..       case Iop_CmpEQ16x8:  op = Xsse_CMPEQ16;  goto do_SseReRg;
-//..       case Iop_CmpEQ32x4:  op = Xsse_CMPEQ32;  goto do_SseReRg;
-//..       case Iop_CmpGT8Sx16: op = Xsse_CMPGT8S;  goto do_SseReRg;
-//..       case Iop_CmpGT16Sx8: op = Xsse_CMPGT16S; goto do_SseReRg;
-//..       case Iop_CmpGT32Sx4: op = Xsse_CMPGT32S; goto do_SseReRg;
+      case Iop_QAdd8Sx16:  op = Asse_QADD8S;   goto do_SseReRg;
+      case Iop_QAdd16Sx8:  op = Asse_QADD16S;  goto do_SseReRg;
+      case Iop_QAdd8Ux16:  op = Asse_QADD8U;   goto do_SseReRg;
+      case Iop_QAdd16Ux8:  op = Asse_QADD16U;  goto do_SseReRg;
+      case Iop_Avg8Ux16:   op = Asse_AVG8U;    goto do_SseReRg;
+      case Iop_Avg16Ux8:   op = Asse_AVG16U;   goto do_SseReRg;
+      case Iop_CmpEQ8x16:  op = Asse_CMPEQ8;   goto do_SseReRg;
+      case Iop_CmpEQ16x8:  op = Asse_CMPEQ16;  goto do_SseReRg;
+      case Iop_CmpEQ32x4:  op = Asse_CMPEQ32;  goto do_SseReRg;
+      case Iop_CmpGT8Sx16: op = Asse_CMPGT8S;  goto do_SseReRg;
+      case Iop_CmpGT16Sx8: op = Asse_CMPGT16S; goto do_SseReRg;
+      case Iop_CmpGT32Sx4: op = Asse_CMPGT32S; goto do_SseReRg;
       case Iop_Max16Sx8:   op = Asse_MAX16S;   goto do_SseReRg;
       case Iop_Max8Ux16:   op = Asse_MAX8U;    goto do_SseReRg;
       case Iop_Min16Sx8:   op = Asse_MIN16S;   goto do_SseReRg;

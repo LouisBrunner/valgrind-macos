@@ -1082,56 +1082,6 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL( tid, VG_(get_n_errs_found)() );
          break;
 
-      /* Obsolete requests: print a warning in case there's an old
-	 libpthread.so still hanging around. */
-      case VG_USERREQ__APPLY_IN_NEW_THREAD:
-      case VG_USERREQ__QUIT:
-      case VG_USERREQ__WAIT_JOINER:
-      case VG_USERREQ__PTHREAD_JOIN:
-      case VG_USERREQ__SET_CANCELSTATE:
-      case VG_USERREQ__SET_CANCELTYPE:
-      case VG_USERREQ__TESTCANCEL:
-      case VG_USERREQ__SET_CANCELPEND:
-      case VG_USERREQ__SET_OR_GET_DETACH:
-      case VG_USERREQ__PTHREAD_GET_THREADID:
-      case VG_USERREQ__PTHREAD_MUTEX_LOCK:
-      case VG_USERREQ__PTHREAD_MUTEX_TIMEDLOCK:
-      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
-      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
-      case VG_USERREQ__PTHREAD_COND_WAIT:
-      case VG_USERREQ__PTHREAD_COND_TIMEDWAIT:
-      case VG_USERREQ__PTHREAD_COND_SIGNAL:
-      case VG_USERREQ__PTHREAD_COND_BROADCAST:
-      case VG_USERREQ__PTHREAD_KEY_CREATE:
-      case VG_USERREQ__PTHREAD_KEY_DELETE:
-      case VG_USERREQ__PTHREAD_SETSPECIFIC_PTR:
-      case VG_USERREQ__PTHREAD_GETSPECIFIC_PTR:
-      case VG_USERREQ__READ_MILLISECOND_TIMER:
-      case VG_USERREQ__PTHREAD_SIGMASK:
-      case VG_USERREQ__SIGWAIT:
-      case VG_USERREQ__PTHREAD_KILL:
-      case VG_USERREQ__PTHREAD_YIELD:
-      case VG_USERREQ__PTHREAD_KEY_VALIDATE:
-      case VG_USERREQ__CLEANUP_PUSH:
-      case VG_USERREQ__CLEANUP_POP:
-      case VG_USERREQ__GET_KEY_D_AND_S:
-      case VG_USERREQ__NUKE_OTHER_THREADS:
-      case VG_USERREQ__GET_N_SIGS_RETURNED:
-      case VG_USERREQ__SET_FHSTACK_USED:
-      case VG_USERREQ__GET_FHSTACK_USED:
-      case VG_USERREQ__SET_FHSTACK_ENTRY:
-      case VG_USERREQ__GET_FHSTACK_ENTRY:
-      case VG_USERREQ__GET_SIGRT_MIN:
-      case VG_USERREQ__GET_SIGRT_MAX:
-      case VG_USERREQ__ALLOC_RTSIG:
-      case VG_USERREQ__MALLOC:
-      case VG_USERREQ__FREE:
-	 VG_(message)(Vg_UserMsg, "It looks like you've got an old libpthread.so* ");
-	 VG_(message)(Vg_UserMsg, "installed in \"%s\".", VG_(libdir));
-	 VG_(message)(Vg_UserMsg, "Please delete it and try again.");
-	 VG_(exit)(99);
-         break;
-
       default:
 	 if (VGA_(client_request)(tid, arg)) {
 	    /* architecture handled the client request */

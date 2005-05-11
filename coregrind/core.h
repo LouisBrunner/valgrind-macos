@@ -302,64 +302,15 @@ extern void VG_(done_profiling) ( void );
    Exports of vg_intercept.c
    ------------------------------------------------------------------ */
 
-/* This doesn't export code or data that valgrind.so needs to link
-   against.  However, the scheduler does need to know the following
-   request codes.  A few, publically-visible, request codes are also
-   defined in valgrind.h, and similar headers for some tools. */
+/* These are the internal client request codes.  The publically-visible
+   request codes are also defined in valgrind.h, and similar headers for
+   some tools. */
 
-/* Obsolete pthread-related requests */
-#define VG_USERREQ__MALLOC                  0x2001
-#define VG_USERREQ__FREE                    0x2002
-#define VG_USERREQ__APPLY_IN_NEW_THREAD     0x3001
-#define VG_USERREQ__QUIT                    0x3002
-#define VG_USERREQ__WAIT_JOINER             0x3003
-#define VG_USERREQ__PTHREAD_JOIN            0x3004
-#define VG_USERREQ__SET_CANCELSTATE         0x3005
-#define VG_USERREQ__SET_CANCELTYPE          0x3006
-#define VG_USERREQ__TESTCANCEL              0x3007
-#define VG_USERREQ__SET_CANCELPEND          0x3008
-#define VG_USERREQ__SET_OR_GET_DETACH       0x3009
-#define VG_USERREQ__PTHREAD_GET_THREADID    0x300A
-#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x300B
-#define VG_USERREQ__PTHREAD_MUTEX_TIMEDLOCK 0x300C
-#define VG_USERREQ__PTHREAD_MUTEX_TRYLOCK   0x300D
-#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x300E
-#define VG_USERREQ__PTHREAD_COND_WAIT       0x300F
-#define VG_USERREQ__PTHREAD_COND_TIMEDWAIT  0x3010
-#define VG_USERREQ__PTHREAD_COND_SIGNAL     0x3011
-#define VG_USERREQ__PTHREAD_COND_BROADCAST  0x3012
-#define VG_USERREQ__PTHREAD_KEY_CREATE      0x3013
-#define VG_USERREQ__PTHREAD_KEY_DELETE      0x3014
-#define VG_USERREQ__PTHREAD_SETSPECIFIC_PTR 0x3015
-#define VG_USERREQ__PTHREAD_GETSPECIFIC_PTR 0x3016
-#define VG_USERREQ__READ_MILLISECOND_TIMER  0x3017
-#define VG_USERREQ__PTHREAD_SIGMASK         0x3018
-#define VG_USERREQ__SIGWAIT                 0x3019
-#define VG_USERREQ__PTHREAD_KILL            0x301A
-#define VG_USERREQ__PTHREAD_YIELD           0x301B
-#define VG_USERREQ__PTHREAD_KEY_VALIDATE    0x301C
-#define VG_USERREQ__CLEANUP_PUSH            0x3020
-#define VG_USERREQ__CLEANUP_POP             0x3021
-#define VG_USERREQ__GET_KEY_D_AND_S         0x3022
-#define VG_USERREQ__NUKE_OTHER_THREADS      0x3023
-#define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024
-#define VG_USERREQ__SET_FHSTACK_USED        0x3025
-#define VG_USERREQ__GET_FHSTACK_USED        0x3026
-#define VG_USERREQ__SET_FHSTACK_ENTRY       0x3027
-#define VG_USERREQ__GET_FHSTACK_ENTRY       0x3028
-#define VG_USERREQ__GET_SIGRT_MIN	    0x302B
-#define VG_USERREQ__GET_SIGRT_MAX	    0x302C
-#define VG_USERREQ__ALLOC_RTSIG		    0x302D
+/* Get the tool's malloc-wrapping functions */
 #define VG_USERREQ__GET_MALLOCFUNCS	    0x3030
-#define VG_USERREQ__GET_STACK_INFO          0x3033
-#define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
-#define VG_USERREQ__PTHREAD_ERROR           0x3102
-
 
 /* Internal equivalent of VALGRIND_PRINTF . */
 #define VG_USERREQ__INTERNAL_PRINTF         0x3103
-/* Internal equivalent of VALGRIND_PRINTF_BACKTRACE . (no longer used) */
-//#define VG_USERREQ__INTERNAL_PRINTF_BACKTRACE 0x3104
 
 /* Denote the finish of __libc_freeres_wrapper(). 
    A synonym for exit. */

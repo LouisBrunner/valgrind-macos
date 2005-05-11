@@ -836,8 +836,6 @@ extern Word VG_(do_syscall) ( UInt, UWord, UWord, UWord, UWord, UWord, UWord );
 #define vgPlain_do_syscall5(s,a,b,c,d,e)   VG_(do_syscall)((s),(a),(b),(c),(d),(e),0)
 #define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),(c),(d),(e),(f))
 
-extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg, 
-			Int *child_tid, Int *parent_tid, vki_modify_ldt_t * );
 extern void VG_(sigreturn)(void);
 
 /* ---------------------------------------------------------------------

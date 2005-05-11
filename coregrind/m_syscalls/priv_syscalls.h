@@ -75,6 +75,9 @@ extern const UInt VGA_(syscall_table_size);
    
 extern void VGA_(restart_syscall)(ThreadArchState* arch);
 
+extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg, 
+			Int *child_tid, Int *parent_tid, vki_modify_ldt_t * );
+
 /*
   Perform a syscall on behalf of a client thread, using a specific
   signal mask.  On completion, the signal mask is set to restore_mask

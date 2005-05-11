@@ -47,19 +47,12 @@
 /*=== Build options and table sizes.                               ===*/
 /*====================================================================*/
 
-/* You should be able to change these options or sizes, recompile, and
-   still have a working system. */
-
 /* The maximum number of pthreads that we support.  This is
    deliberately not very high since our implementation of some of the
    scheduler algorithms is surely O(N) in the number of threads, since
    that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
 #define VG_N_THREADS 100
-
-/* Maximum number of pthread keys available.  Again, we start low until
-   the need for a higher number presents itself. */
-#define VG_N_THREAD_KEYS 50
 
 
 /*====================================================================*/

@@ -2008,6 +2008,21 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --- patterns rooted at: CmpNEZ64 --- */
 
+   /* CmpNEZ64(Or64(x,y)) */
+   {
+      DECLARE_PATTERN(p_CmpNEZ64_Or64);
+      DEFINE_PATTERN(p_CmpNEZ64_Or64,
+                     unop(Iop_CmpNEZ64, binop(Iop_Or64, bind(0), bind(1))));
+      if (matchIRExpr(&mi, p_CmpNEZ64_Or64, e)) {
+         HReg      r0   = iselIntExpr_R(env, mi.bindee[0]);
+         AMD64RMI* rmi1 = iselIntExpr_RMI(env, mi.bindee[1]);
+         HReg      tmp  = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(r0, tmp));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_OR,rmi1,tmp));
+         return Acc_NZ;
+      }
+   }
+
    /* CmpNEZ64(x) */
    if (e->tag == Iex_Unop 
        && e->Iex.Unop.op == Iop_CmpNEZ64) {

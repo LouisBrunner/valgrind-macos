@@ -157,7 +157,7 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[ 5] = hregAMD64_XMM9();
 #endif
 #if 1
-   *nregs = 11;
+   *nregs = 18;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[ 0] = hregAMD64_RSI();
    (*arr)[ 1] = hregAMD64_RDI();
@@ -168,49 +168,17 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[ 6] = hregAMD64_R14();
    (*arr)[ 7] = hregAMD64_R15();
 
-   (*arr)[ 8] = hregAMD64_XMM7();
-   (*arr)[ 9] = hregAMD64_XMM8();
-   (*arr)[10] = hregAMD64_XMM9();
-#endif
-#if 0
-   *nregs = 30;
-   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-   (*arr)[ 0] = hregAMD64_RAX();
-   (*arr)[ 1] = hregAMD64_RBX();
-   (*arr)[ 2] = hregAMD64_RCX();
-   (*arr)[ 3] = hregAMD64_RDX();
-   (*arr)[ 4] = hregAMD64_RSI();
-   (*arr)[ 5] = hregAMD64_RDI();
-   (*arr)[ 6] = hregAMD64_R8();
-   (*arr)[ 7] = hregAMD64_R9();
-   (*arr)[ 8] = hregAMD64_R10();
-   (*arr)[ 9] = hregAMD64_R11();
-   (*arr)[10] = hregAMD64_R12();
-   (*arr)[11] = hregAMD64_R13();
-   (*arr)[12] = hregAMD64_R14();
-   (*arr)[13] = hregAMD64_R15();
-   //   (*arr)[6] = hregAMD64_FAKE0();
-   //(*arr)[7] = hregAMD64_FAKE1();
-   //(*arr)[8] = hregAMD64_FAKE2();
-   //(*arr)[9] = hregAMD64_FAKE3();
-   //(*arr)[10] = hregAMD64_FAKE4();
-   //(*arr)[11] = hregAMD64_FAKE5();
-   (*arr)[14] = hregAMD64_XMM0();
-   (*arr)[15] = hregAMD64_XMM1();
-   (*arr)[16] = hregAMD64_XMM2();
-   (*arr)[17] = hregAMD64_XMM3();
-   (*arr)[18] = hregAMD64_XMM4();
-   (*arr)[19] = hregAMD64_XMM5();
-   (*arr)[20] = hregAMD64_XMM6();
-   (*arr)[21] = hregAMD64_XMM7();
-   (*arr)[22] = hregAMD64_XMM8();
-   (*arr)[23] = hregAMD64_XMM9();
-   (*arr)[24] = hregAMD64_XMM10();
-   (*arr)[25] = hregAMD64_XMM11();
-   (*arr)[26] = hregAMD64_XMM12();
-   (*arr)[27] = hregAMD64_XMM13();
-   (*arr)[28] = hregAMD64_XMM14();
-   (*arr)[29] = hregAMD64_XMM15();
+   (*arr)[ 8] = hregAMD64_XMM3();
+   (*arr)[ 9] = hregAMD64_XMM4();
+   (*arr)[10] = hregAMD64_XMM5();
+   (*arr)[11] = hregAMD64_XMM6();
+   (*arr)[12] = hregAMD64_XMM7();
+
+   (*arr)[13] = hregAMD64_XMM8();
+   (*arr)[14] = hregAMD64_XMM9();
+   (*arr)[15] = hregAMD64_XMM10();
+   (*arr)[16] = hregAMD64_XMM11();
+   (*arr)[17] = hregAMD64_XMM12();
 #endif
 }
 

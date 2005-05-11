@@ -1593,9 +1593,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          return;
       case Ain_Sse64Fx2:
          vassert(i->Ain.Sse64Fx2.op != Asse_MOV);
-         unary = i->Ain.Sse64Fx2.op == Asse_RCPF
-                 || i->Ain.Sse64Fx2.op == Asse_RSQRTF
-                 || i->Ain.Sse64Fx2.op == Asse_SQRTF;
+         unary = toBool( i->Ain.Sse64Fx2.op == Asse_RCPF
+                         || i->Ain.Sse64Fx2.op == Asse_RSQRTF
+                         || i->Ain.Sse64Fx2.op == Asse_SQRTF );
          addHRegUse(u, HRmRead, i->Ain.Sse64Fx2.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Ain.Sse64Fx2.dst);
@@ -3238,7 +3238,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse64Fx2.dst),
                        vreg2ireg(i->Ain.Sse64Fx2.src) );
       if (xtra & 0x100)
-         *p++ = (UChar)(xtra & 0xFF);
+         *p++ = toUChar(xtra & 0xFF);
       goto done;
 
    case Ain_Sse32FLo:

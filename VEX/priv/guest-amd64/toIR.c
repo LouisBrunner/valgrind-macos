@@ -891,7 +891,7 @@ static Bool haveNo66noF2noF3 ( Prefix pfx )
 /* Return True iff pfx has any of 66, F2 and F3 set */
 static Bool have66orF2orF3 ( Prefix pfx )
 {
-  return ! haveNo66noF2noF3(pfx);
+  return toBool( ! haveNo66noF2noF3(pfx) );
 }
 
 /* Clear all the segment-override bits in a prefix. */
@@ -2017,7 +2017,7 @@ static HChar* nameXMMReg ( Int xmmreg )
    return xmm_names[xmmreg];
 }
  
-static HChar* nameMMXGran ( UChar gran )
+static HChar* nameMMXGran ( Int gran )
 {
    switch (gran) {
       case 0: return "b";
@@ -4305,7 +4305,7 @@ static void clear_C2 ( void )
    Need to check ST(0)'s tag on read, but not on write.
 */
 static
-void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
+void fp_do_op_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf, 
                          IROp op, Bool dbl )
 {
    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
@@ -5039,7 +5039,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovb %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovb %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -5197,7 +5197,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnb %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -5883,7 +5883,7 @@ static
 ULong dis_MMXop_regmem_to_reg ( Prefix pfx,
                                 ULong  delta,
                                 UChar  opc,
-                                Char*  name,
+                                HChar* name,
                                 Bool   show_granularity )
 {
    HChar   dis_buf[50];
@@ -5898,7 +5898,7 @@ ULong dis_MMXop_regmem_to_reg ( Prefix pfx,
    Bool    invG  = False;
    IROp    op    = Iop_INVALID;
    void*   hAddr = NULL;
-   Char*   hName = NULL;
+   HChar*  hName = NULL;
    Bool    eLeft = False;
 
 #  define XXX(_name) do { hAddr = &_name; hName = #_name; } while (0)
@@ -6115,7 +6115,7 @@ ULong dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
    vassert(epartIsReg(rm));
    vassert(gregLO3ofRM(rm) == 2 
            || gregLO3ofRM(rm) == 4 || gregLO3ofRM(rm) == 6);
-   amt = (Int)(getUChar(delta+1));
+   amt = getUChar(delta+1);
    delta += 2;
    DIP("%s $%d,%s\n", opname,
                       (Int)amt,
@@ -6461,12 +6461,11 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
       case 0x72: 
       case 0x73: {
          /* (sz==4): PSLLgg/PSRAgg/PSRLgg mmxreg by imm8 */
-         UChar byte1, byte2, subopc;
+         UChar byte2, subopc;
          if (sz != 4) 
             goto mmx_decode_failure;
-         byte1  = opc;                       /* 0x71/72/73 */
-         byte2  = getUChar(delta);           /* amode / sub-opcode */
-         subopc = (byte2 >> 3) & 7;
+         byte2  = getUChar(delta);      /* amode / sub-opcode */
+         subopc = toUChar( (byte2 >> 3) & 7 );
 
 #        define SHIFT_BY_IMM(_name,_op)                        \
             do { delta = dis_MMX_shiftE_imm(delta,_name,_op);  \
@@ -7755,7 +7754,7 @@ ULong dis_SSE_shiftE_imm ( Prefix pfx,
    vassert(epartIsReg(rm));
    vassert(gregLO3ofRM(rm) == 2 
            || gregLO3ofRM(rm) == 4 || gregLO3ofRM(rm) == 6);
-   amt = (Int)(getUChar(delta+1));
+   amt = getUChar(delta+1);
    delta += 2;
    DIP("%s $%d,%s\n", opname,
                       (Int)amt,
@@ -9223,7 +9222,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
       IRTemp sV, dV;
       IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
-      Bool hi = insn[1] == 0x15;
+      Bool hi = toBool(insn[1] == 0x15);
       sV = newTemp(Ity_V128);
       dV = newTemp(Ity_V128);
       s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
@@ -9489,7 +9488,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       IRTemp rmode  = newTemp(Ity_I32);
       IRTemp f64lo  = newTemp(Ity_F64);
       IRTemp f64hi  = newTemp(Ity_F64);
-      Bool   r2zero = insn[1] == 0x2C;
+      Bool   r2zero = toBool(insn[1] == 0x2C);
 
       do_MMX_preamble();
       modrm = getUChar(delta+2);

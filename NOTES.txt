@@ -1,4 +1,11 @@
 
+11 May 05
+~~~~~~~~~
+ToDo:  vex-x86:   check/fix behaviour on SSE MOVQ / MOVSD insns.
+       vex-amd64: ditto
+                  * check above/below the line for reg-alloc
+
+
 23 Apr 05 (memcheck-on-amd64 notes)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * If a thread is given an initial stack with address range [lo .. hi],
@@ -6,13 +13,6 @@
   .. hi] is valid, rather than just [lo .. hi] as has been the case on
   x86-only systems.  However, am not sure where to look for the call
   into memcheck that states the new stack area.
-
-* vg_replace_malloc.c: need to create intercepts for
-  64-bit versions of
-     operator new(unsigned, std::nothrow_t const&)
-  and 
-     operator new[](unsigned, std::nothrow_t const&)
-
 
 
 9 Apr 05 (starting work on memcheck for 32/64-bit and big/little endian)

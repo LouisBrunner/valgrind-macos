@@ -1488,6 +1488,14 @@ ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
    return (ULong)t;
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
+{
+   ULong rHi8 = amd64g_calculate_mmx_pmovmskb ( w64hi );
+   ULong rLo8 = amd64g_calculate_mmx_pmovmskb ( w64lo );
+   return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Helpers for dealing with, and describing,               ---*/

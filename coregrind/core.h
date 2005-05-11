@@ -379,24 +379,6 @@ extern void VG_(done_profiling) ( void );
 #define VG_WRAPPER_ALIAS(name) "_vgw_" #name
 
 
-struct vg_mallocfunc_info {
-   /* things vg_replace_malloc.o needs to know about */
-   void* (*tl_malloc)              (ThreadId tid, SizeT n);
-   void* (*tl___builtin_new)       (ThreadId tid, SizeT n);
-   void* (*tl___builtin_vec_new)   (ThreadId tid, SizeT n);
-   void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT n);
-   void* (*tl_calloc)              (ThreadId tid, SizeT nmemb, SizeT n);
-   void  (*tl_free)                (ThreadId tid, void* p);
-   void  (*tl___builtin_delete)    (ThreadId tid, void* p);
-   void  (*tl___builtin_vec_delete)(ThreadId tid, void* p);
-   void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
-
-   SizeT (*arena_payload_szB)      (ArenaId aid, void* payload);
-
-   Bool	clo_trace_malloc;
-};
-
-
 /* ---------------------------------------------------------------------
    Exports of vg_scheduler.c
    ------------------------------------------------------------------ */

@@ -36,10 +36,23 @@
 // replace malloc/free with their own versions.
 //--------------------------------------------------------------------
 
-// Nb: there are no exports in this header;  all exports for this module
-// are in include/pub_tool_replacemalloc.h
-
 #include "pub_tool_replacemalloc.h"
+
+// things vg_replace_malloc.o needs to know about
+struct vg_mallocfunc_info {
+   void* (*tl_malloc)              (ThreadId tid, SizeT n);
+   void* (*tl___builtin_new)       (ThreadId tid, SizeT n);
+   void* (*tl___builtin_vec_new)   (ThreadId tid, SizeT n);
+   void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT n);
+   void* (*tl_calloc)              (ThreadId tid, SizeT nmemb, SizeT n);
+   void  (*tl_free)                (ThreadId tid, void* p);
+   void  (*tl___builtin_delete)    (ThreadId tid, void* p);
+   void  (*tl___builtin_vec_delete)(ThreadId tid, void* p);
+   void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
+
+   SizeT (*arena_payload_szB)      (ArenaId aid, void* payload);
+   Bool	clo_trace_malloc;
+};
 
 #endif   // __PUB_CORE_REPLACEMALLOC_H
 

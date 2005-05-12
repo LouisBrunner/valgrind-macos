@@ -457,6 +457,11 @@ void VG_(setup_code_redirect_table) ( void )
    /* apparently index is the same thing as strchr */
    add_redirect_sym_to_sym("soname:libc.so.6", "index",
                            "*vgpreload_memcheck.so*", "strchr");
+   add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "index",
+                           "*vgpreload_memcheck.so*", "strchr");
+
+   add_redirect_sym_to_sym("soname:libc.so.6", "strcpy",
+                           "*vgpreload_memcheck.so*", "strcpy");
 
    add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "strcmp",
                            "*vgpreload_memcheck.so*", "strcmp");

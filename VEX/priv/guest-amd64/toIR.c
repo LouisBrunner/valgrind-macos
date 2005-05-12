@@ -4828,40 +4828,40 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL)));
                break;
 
-//..             case 0xE9: /* FLDL2T */
-//..                DIP("fldl2t\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x400a934f0979a371ULL)));
-//..                break;
-//.. 
-//..             case 0xEA: /* FLDL2E */
-//..                DIP("fldl2e\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff71547652b82feULL)));
-//..                break;
-//.. 
-//..             case 0xEB: /* FLDPI */
-//..                DIP("fldpi\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x400921fb54442d18ULL)));
-//..                break;
-//.. 
-//..             case 0xEC: /* FLDLG2 */
-//..                DIP("fldlg2\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x3fd34413509f79ffULL)));
-//..                break;
-//.. 
-//..             case 0xED: /* FLDLN2 */
-//..                DIP("fldln2\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x3fe62e42fefa39efULL)));
-//..                break;
+            case 0xE9: /* FLDL2T */
+               DIP("fldl2t\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x400a934f0979a371ULL)));
+               break;
+
+            case 0xEA: /* FLDL2E */
+               DIP("fldl2e\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff71547652b82feULL)));
+               break;
+
+            case 0xEB: /* FLDPI */
+               DIP("fldpi\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x400921fb54442d18ULL)));
+               break;
+
+            case 0xEC: /* FLDLG2 */
+               DIP("fldlg2\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3fd34413509f79ffULL)));
+               break;
+
+            case 0xED: /* FLDLN2 */
+               DIP("fldln2\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3fe62e42fefa39efULL)));
+               break;
 
             case 0xEE: /* FLDZ */
                DIP("fldz\n");
@@ -4910,12 +4910,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                put_C3210( binop(Iop_PRem1C3210F64, mkexpr(a1), mkexpr(a2)) );
 //..                break;
 //..             }
-//.. 
-//..             case 0xF7: /* FINCSTP */
-//..                DIP("fprem\n");
-//..                put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
-//..                break;
-//.. 
+
+            case 0xF7: /* FINCSTP */
+               DIP("fincstp\n");
+               put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
+               break;
+
 //..             case 0xF8: { /* FPREM -- not IEEE compliant */
 //..                IRTemp a1 = newTemp(Ity_F64);
 //..                IRTemp a2 = newTemp(Ity_F64);
@@ -4991,56 +4991,56 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
-         //IROp   fop;
-         //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         IROp   fop;
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
          switch (gregLO3ofRM(modrm)) {
 
-//..             case 0: /* FIADD m32int */ /* ST(0) += m32int */
-//..                DIP("fiaddl %s\n", dis_buf);
-//..                fop = Iop_AddF64;
-//..                goto do_fop_m32;
-//.. 
-//..             case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
-//..                DIP("fimull %s\n", dis_buf);
-//..                fop = Iop_MulF64;
-//..                goto do_fop_m32;
-//.. 
-//..             case 4: /* FISUB m32int */ /* ST(0) -= m32int */
-//..                DIP("fisubl %s\n", dis_buf);
-//..                fop = Iop_SubF64;
-//..                goto do_fop_m32;
-//.. 
-//..             case 5: /* FISUBR m32int */ /* ST(0) = m32int - ST(0) */
-//..                DIP("fisubrl %s\n", dis_buf);
-//..                fop = Iop_SubF64;
-//..                goto do_foprev_m32;
-//.. 
-//..             case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
-//..                DIP("fisubl %s\n", dis_buf);
-//..                fop = Iop_DivF64;
-//..                goto do_fop_m32;
-//.. 
-//..             case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
-//..                DIP("fidivrl %s\n", dis_buf);
-//..                fop = Iop_DivF64;
-//..                goto do_foprev_m32;
-//.. 
-//..             do_fop_m32:
-//..                put_ST_UNCHECKED(0, 
-//..                   binop(fop, 
-//..                         get_ST(0),
-//..                         unop(Iop_I32toF64,
-//..                              loadLE(Ity_I32, mkexpr(addr)))));
-//..                break;
-//.. 
-//..             do_foprev_m32:
-//..                put_ST_UNCHECKED(0, 
-//..                   binop(fop, 
-//..                         unop(Iop_I32toF64,
-//..                              loadLE(Ity_I32, mkexpr(addr))),
-//..                         get_ST(0)));
-//..                break;
+            case 0: /* FIADD m32int */ /* ST(0) += m32int */
+               DIP("fiaddl %s\n", dis_buf);
+               fop = Iop_AddF64;
+               goto do_fop_m32;
+
+            case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
+               DIP("fimull %s\n", dis_buf);
+               fop = Iop_MulF64;
+               goto do_fop_m32;
+
+            case 4: /* FISUB m32int */ /* ST(0) -= m32int */
+               DIP("fisubl %s\n", dis_buf);
+               fop = Iop_SubF64;
+               goto do_fop_m32;
+
+            case 5: /* FISUBR m32int */ /* ST(0) = m32int - ST(0) */
+               DIP("fisubrl %s\n", dis_buf);
+               fop = Iop_SubF64;
+               goto do_foprev_m32;
+
+            case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
+               DIP("fisubl %s\n", dis_buf);
+               fop = Iop_DivF64;
+               goto do_fop_m32;
+
+            case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
+               DIP("fidivrl %s\n", dis_buf);
+               fop = Iop_DivF64;
+               goto do_foprev_m32;
+
+            do_fop_m32:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        get_ST(0),
+                        unop(Iop_I32toF64,
+                             loadLE(Ity_I32, mkexpr(addr)))));
+               break;
+
+            do_foprev_m32:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        unop(Iop_I32toF64,
+                             loadLE(Ity_I32, mkexpr(addr))),
+                        get_ST(0)));
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -5133,11 +5133,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                               loadLE(Ity_I32, mkexpr(addr))));
                break;
 
-//..             case 2: /* FIST m32 */
-//..                DIP("fistl %s\n", dis_buf);
-//..                storeLE( mkexpr(addr), 
-//..                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
-//..                break;
+            case 2: /* FIST m32 */
+               DIP("fistl %s\n", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
+               break;
 
             case 3: /* FISTP m32 */
                DIP("fistpl %s\n", dis_buf);
@@ -5556,6 +5556,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
          delta++;
          switch (modrm) {
 
+            case 0xC0 ... 0xC7: /* FFREE %st(?) */
+               r_dst = (UInt)modrm - 0xC0;
+               DIP("ffree %%st(%u)\n", r_dst);
+               put_ST_TAG ( r_dst, mkU8(0) );
+               break;
+
 //..             case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
 //..                r_dst = (UInt)modrm - 0xD0;
 //..                DIP("fst %%st(0),%%st(%d)\n", r_dst);
@@ -5614,66 +5620,67 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
       if (modrm < 0xC0) {
 
-//..          /* bits 5,4,3 are an opcode extension, and the modRM also
-//..             specifies an address. */
-//..          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
-//..          delta += len;
-//.. 
-//..          switch (gregLO3ofRM(modrm)) {
-//.. 
-//..             case 0: /* FIADD m16int */ /* ST(0) += m16int */
-//..                DIP("fiaddw %s\n", dis_buf);
-//..                fop = Iop_AddF64;
-//..                goto do_fop_m16;
-//.. 
-//..             case 1: /* FIMUL m16int */ /* ST(0) *= m16int */
-//..                DIP("fimulw %s\n", dis_buf);
-//..                fop = Iop_MulF64;
-//..                goto do_fop_m16;
-//.. 
-//..             case 4: /* FISUB m16int */ /* ST(0) -= m16int */
-//..                DIP("fisubw %s\n", dis_buf);
-//..                fop = Iop_SubF64;
-//..                goto do_fop_m16;
-//.. 
-//..             case 5: /* FISUBR m16int */ /* ST(0) = m16int - ST(0) */
-//..                DIP("fisubrw %s\n", dis_buf);
-//..                fop = Iop_SubF64;
-//..                goto do_foprev_m16;
-//.. 
-//..             case 6: /* FIDIV m16int */ /* ST(0) /= m16int */
-//..                DIP("fisubw %s\n", dis_buf);
-//..                fop = Iop_DivF64;
-//..                goto do_fop_m16;
-//.. 
-//..             case 7: /* FIDIVR m16int */ /* ST(0) = m16int / ST(0) */
-//..                DIP("fidivrw %s\n", dis_buf);
-//..                fop = Iop_DivF64;
-//..                goto do_foprev_m16;
-//.. 
-//..             do_fop_m16:
-//..                put_ST_UNCHECKED(0, 
-//..                   binop(fop, 
-//..                         get_ST(0),
-//..                         unop(Iop_I32toF64,
-//..                              unop(Iop_16Sto32, 
-//..                                   loadLE(Ity_I16, mkexpr(addr))))));
-//..                break;
-//.. 
-//..             do_foprev_m16:
-//..                put_ST_UNCHECKED(0, 
-//..                   binop(fop, 
-//..                         unop(Iop_I32toF64,
-//..                              unop(Iop_16Sto32, 
-//..                                   loadLE(Ity_I16, mkexpr(addr)))),
-//..                         get_ST(0)));
-//..                break;
-//.. 
-//..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-//..                vex_printf("first_opcode == 0xDE\n");
-//..                goto decode_fail;
-//..          }
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IROp   fop;
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
+
+         switch (gregLO3ofRM(modrm)) {
+
+            case 0: /* FIADD m16int */ /* ST(0) += m16int */
+               DIP("fiaddw %s\n", dis_buf);
+               fop = Iop_AddF64;
+               goto do_fop_m16;
+
+            case 1: /* FIMUL m16int */ /* ST(0) *= m16int */
+               DIP("fimulw %s\n", dis_buf);
+               fop = Iop_MulF64;
+               goto do_fop_m16;
+
+            case 4: /* FISUB m16int */ /* ST(0) -= m16int */
+               DIP("fisubw %s\n", dis_buf);
+               fop = Iop_SubF64;
+               goto do_fop_m16;
+
+            case 5: /* FISUBR m16int */ /* ST(0) = m16int - ST(0) */
+               DIP("fisubrw %s\n", dis_buf);
+               fop = Iop_SubF64;
+               goto do_foprev_m16;
+
+            case 6: /* FIDIV m16int */ /* ST(0) /= m16int */
+               DIP("fisubw %s\n", dis_buf);
+               fop = Iop_DivF64;
+               goto do_fop_m16;
+
+            case 7: /* FIDIVR m16int */ /* ST(0) = m16int / ST(0) */
+               DIP("fidivrw %s\n", dis_buf);
+               fop = Iop_DivF64;
+               goto do_foprev_m16;
+
+            do_fop_m16:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        get_ST(0),
+                        unop(Iop_I32toF64,
+                             unop(Iop_16Sto32, 
+                                  loadLE(Ity_I16, mkexpr(addr))))));
+               break;
+
+            do_foprev_m16:
+               put_ST_UNCHECKED(0, 
+                  binop(fop, 
+                        unop(Iop_I32toF64,
+                             unop(Iop_16Sto32, 
+                                  loadLE(Ity_I16, mkexpr(addr)))),
+                        get_ST(0)));
+               break;
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+               vex_printf("first_opcode == 0xDE\n");
+               goto decode_fail;
+         }
 
       } else {
 
@@ -5751,7 +5758,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                storeLE( mkexpr(addr), 
 //..                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
 //..                break;
-//.. 
+
 //..             case 3: /* FISTP m16 */
 //..                DIP("fistps %s\n", dis_buf);
 //..                storeLE( mkexpr(addr), 
@@ -5767,12 +5774,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                loadLE(Ity_I64, mkexpr(addr))));
                break;
 
-//..             case 7: /* FISTP m64 */
-//..                DIP("fistpll %s\n", dis_buf);
-//..                storeLE( mkexpr(addr), 
-//..                         binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
-//..                fp_pop();
-//..                break;
+            case 7: /* FISTP m64 */
+               DIP("fistpll %s\n", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
+               fp_pop();
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -11666,10 +11673,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--       DIP("lahf\n");
 //.. //--       break;
 //.. //-- 
-//..    case 0x9B: /* FWAIT */
-//..       /* ignore? */
-//..       DIP("fwait\n");
-//..       break;
+   case 0x9B: /* FWAIT */
+      /* ignore? */
+      DIP("fwait\n");
+      break;
 
    case 0xD8:
    case 0xD9:

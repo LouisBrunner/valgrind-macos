@@ -32,11 +32,11 @@
 #define __PUB_CORE_DISPATCH_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module deals with management of the entire process
-// address space.  Almost everything depends upon it, including dynamic
-// memory management.  Hence this module is almost completely
-// standalone; the only module it uses is m_debuglog.  DO NOT CHANGE
-// THIS.
+// PURPOSE: This module contains the inner loop of the execution
+// mechanism, which is: find next basic block, execute it, repeat until
+// the next bb isn't found in the fast-cache; or if the current bb
+// exited with a request for some special action before continuing; or
+// if the current thread has used up its scheduling quantum.
 //--------------------------------------------------------------------
 
 /* This subroutine is called from the C world.  It is passed

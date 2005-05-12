@@ -636,14 +636,6 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern void   VG_(nanosleep)(struct vki_timespec *);
 
 /* ---------------------------------------------------------------------
-   Exports of vg_message.c
-   ------------------------------------------------------------------ */
-
-/* Low-level -- send bytes directly to the message sink.  Do not
-   use. */
-extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
-
-/* ---------------------------------------------------------------------
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 

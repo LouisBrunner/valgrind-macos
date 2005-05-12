@@ -29,66 +29,18 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-
 #include "core.h"
-#include "pub_core_debuglog.h"  /* VG_(debugLog_vprintf) */
 
 #include <time.h>
 #include <sys/time.h>
 
-/* Size of a buffer used for creating messages. */
-#define M_MSGBUF 10000
-
-static char mbuf[M_MSGBUF];
-static int n_mbuf;
-
-static void add_to_buf ( HChar c, void *p )
+UInt VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
 {
-  if (n_mbuf >= (M_MSGBUF-1)) return;
-  mbuf[n_mbuf++] = c;
-  mbuf[n_mbuf]   = 0;
-}
-
-static void add_timestamp ( Char *buf )
-{
-   struct timeval tv;
-   struct tm tm;
-  
-   if ( gettimeofday( &tv, NULL ) == 0 &&
-        localtime_r( &tv.tv_sec, &tm ) == &tm ) {
-      VG_(sprintf)( buf, "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
-                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
-   }
-   else {
-      VG_(strcpy)( buf, "" );
-   }
-   
-   return;
-}
-
-static int add_to_msg ( const Char *format, ... )
-{
-   int count;
-   va_list vargs;
-   va_start(vargs,format);
-   count = VG_(debugLog_vprintf) ( add_to_buf, NULL, format, vargs );
-   va_end(vargs);
-   return count;
-}
-
-static int start_msg ( VgMsgKind kind )
-{
-   Char ts[32];
-   Char c;
+   UInt  count = 0;
+   Char  c;
+   const Char* pfx_s;
    static const Char pfx[] = ">>>>>>>>>>>>>>>>";
-   n_mbuf = 0;
-   mbuf[n_mbuf] = 0;
 
-   if (VG_(clo_time_stamp))
-     add_timestamp(ts);
-   else
-     VG_(strcpy)(ts, "");
    switch (kind) {
       case Vg_UserMsg:       c = '='; break;
       case Vg_DebugMsg:      c = '-'; break;
@@ -96,63 +48,45 @@ static int start_msg ( VgMsgKind kind )
       case Vg_ClientMsg:     c = '*'; break;
       default:               c = '?'; break;
    }
+
    // The pfx trick prints one or more '>' characters in front of the
    // messages when running Valgrind under Valgrind, one per level of
    // self-hosting.
-   return add_to_msg( "%s%c%c%s%d%c%c ", 
-                      &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
-                      c,c, ts, VG_(getpid)(), c,c );
-}
+   pfx_s = &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
 
-static 
-int end_msg ( void )
-{
-   int count = 0;
-   if (VG_(clo_log_fd) >= 0) {
-      add_to_buf('\n',0);
-      VG_(send_bytes_to_logging_sink) ( mbuf, VG_(strlen)(mbuf) );
-      count = 1;
+   // Print the message
+   count = 0;
+   count += VG_(printf) ("%s%c%c", pfx_s, c,c);
+
+   if (VG_(clo_time_stamp)) {
+      struct timeval tv;
+      struct tm tm;
+     
+      if ( gettimeofday( &tv, NULL ) == 0 &&
+           localtime_r( &tv.tv_sec, &tm ) == &tm )
+      {
+         count +=
+            VG_(printf)( "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
+                         tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                         tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
+      }
    }
-   return count;
-}
 
-int VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
-{
-   int count;
-   count = start_msg ( kind );
-   count += VG_(debugLog_vprintf) ( add_to_buf, NULL, format, vargs );
-   count += end_msg();
+   count += VG_(printf) ("%d%c%c ", VG_(getpid)(), c,c);
+   count += VG_(vprintf)(format, vargs);
+   count += VG_(printf) ("\n");
    return count;
 }
 
 /* Send a simple single-part message. */
-int VG_(message) ( VgMsgKind kind, const Char* format, ... )
+UInt VG_(message) ( VgMsgKind kind, const Char* format, ... )
 {
-   int count;
+   UInt count;
    va_list vargs;
    va_start(vargs,format);
    count = VG_(vmessage) ( kind, format, vargs );
    va_end(vargs);
    return count;
-}
-
-/* Do the low-level send of a message to the logging sink. */
-void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes )
-{
-   Int rc;
-   if (VG_(logging_to_filedes)) {
-      VG_(write)( VG_(clo_log_fd), msg, nbytes );
-   } else {
-      rc = VG_(write_socket)( VG_(clo_log_fd), msg, nbytes );
-      if (rc == -1) {
-         /* for example, the listener process died.  Switch back to
-            stderr. */
-         VG_(logging_to_filedes) = True;
-         VG_(clo_log_to) = VgLogTo_Fd;
-         VG_(clo_log_fd) = 2;
-         VG_(write)( VG_(clo_log_fd), msg, nbytes );
-      }
-   }
 }
 
 /*--------------------------------------------------------------------*/

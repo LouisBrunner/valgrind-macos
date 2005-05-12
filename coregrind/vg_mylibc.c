@@ -390,41 +390,67 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
    debugging info should be sent via here.  The official route is to
    to use vg_message().  This interface is deprecated.
 */
+
+/* Do the low-level send of a message to the logging sink. */
+static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
+{
+   if (VG_(logging_to_filedes)) {
+      VG_(write)( VG_(clo_log_fd), msg, nbytes );
+   } else {
+      Int rc = VG_(write_socket)( VG_(clo_log_fd), msg, nbytes );
+      if (rc == -1) {
+         // For example, the listener process died.  Switch back to stderr.
+         VG_(logging_to_filedes) = True;
+         VG_(clo_log_to) = VgLogTo_Fd;
+         VG_(clo_log_fd) = 2;
+         VG_(write)( VG_(clo_log_fd), msg, nbytes );
+      }
+   }
+}
+
 typedef struct {
    char buf[100];
    int n;
 } printf_buf;
 
+// Adds a single char to the buffer.  When the buffer gets sufficiently
+// full, we write its contents to the logging sink.
 static void add_to_myprintf_buf ( HChar c, void *p )
 {
    printf_buf *myprintf_buf = (printf_buf *)p;
    
    if (myprintf_buf->n >= 100-10 /*paranoia*/ ) {
-      if (VG_(clo_log_fd) >= 0) {
-         VG_(send_bytes_to_logging_sink)( 
-            myprintf_buf->buf, VG_(strlen)(myprintf_buf->buf) );
-      }
+      send_bytes_to_logging_sink( myprintf_buf->buf, myprintf_buf->n );
       myprintf_buf->n = 0;
-      myprintf_buf->buf[myprintf_buf->n] = 0;      
    }
    myprintf_buf->buf[myprintf_buf->n++] = c;
-   myprintf_buf->buf[myprintf_buf->n] = 0;
+   myprintf_buf->buf[myprintf_buf->n]   = 0;
+}
+
+UInt VG_(vprintf) ( const char *format, va_list vargs )
+{
+   UInt ret = 0;
+   printf_buf myprintf_buf = {"",0};
+
+   if (VG_(clo_log_fd) >= 0) {
+      ret = VG_(debugLog_vprintf) 
+               ( add_to_myprintf_buf, &myprintf_buf, format, vargs );
+
+      // Write out any chars left in the buffer.
+      if (myprintf_buf.n > 0) {
+         send_bytes_to_logging_sink( myprintf_buf.buf, myprintf_buf.n );
+      }
+   }
+   return ret;
 }
 
 UInt VG_(printf) ( const char *format, ... )
 {
    UInt ret;
    va_list vargs;
-   printf_buf myprintf_buf = {"",0};
-   va_start(vargs,format);
-   
-   ret = VG_(debugLog_vprintf) 
-            ( add_to_myprintf_buf, &myprintf_buf, format, vargs );
 
-   if (myprintf_buf.n > 0 && VG_(clo_log_fd) >= 0) {
-      VG_(send_bytes_to_logging_sink)( myprintf_buf.buf, myprintf_buf.n );
-   }
-
+   va_start(vargs, format);
+   ret = VG_(vprintf)(format, vargs);
    va_end(vargs);
 
    return ret;
@@ -437,21 +463,28 @@ static void add_to_vg_sprintf_buf ( HChar c, void *p )
    *(*vg_sprintf_ptr)++ = c;
 }
 
-UInt VG_(sprintf) ( Char* buf, Char *format, ... )
+UInt VG_(vsprintf) ( Char* buf, const Char *format, va_list vargs )
 {
    Int ret;
-   va_list vargs;
    Char *vg_sprintf_ptr = buf;
-
-   va_start(vargs,format);
 
    ret = VG_(debugLog_vprintf) 
             ( add_to_vg_sprintf_buf, &vg_sprintf_ptr, format, vargs );
-   add_to_vg_sprintf_buf(0,&vg_sprintf_ptr);
-
-   va_end(vargs);
+   add_to_vg_sprintf_buf('\0', &vg_sprintf_ptr);
 
    vg_assert(VG_(strlen)(buf) == ret);
+
+   return ret;
+}
+
+UInt VG_(sprintf) ( Char* buf, const Char *format, ... )
+{
+   UInt ret;
+   va_list vargs;
+
+   va_start(vargs,format);
+   ret = VG_(vsprintf)(buf, format, vargs);
+   va_end(vargs);
 
    return ret;
 }
@@ -935,7 +968,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    entered = True;
 
    va_start(vargs,format);
-   VG_(debugLog_vprintf) ( add_to_vg_sprintf_buf, &bufptr, format, vargs );
+   VG_(vsprintf) ( bufptr, format, vargs );
    add_to_vg_sprintf_buf('\0', &bufptr);
    va_end(vargs);
 

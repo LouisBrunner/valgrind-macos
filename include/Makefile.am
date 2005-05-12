@@ -16,6 +16,7 @@ incinc_HEADERS = \
 	pub_tool_execontext.h 	\
 	pub_tool_mallocfree.h 	\
 	pub_tool_replacemalloc.h\
+	pub_tool_skiplist.h 	\
 	pub_tool_stacktrace.h 	\
 	pub_tool_tooliface.h 	\
 	valgrind.h

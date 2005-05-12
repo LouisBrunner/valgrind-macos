@@ -45,6 +45,7 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sigframe.h	\
+	pub_core_skiplist.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
 	pub_core_tooliface.h	\
@@ -71,6 +72,7 @@ stage2_SOURCES = \
 	m_errormgr.c \
 	m_execontext.c \
 	m_mallocfree.c \
+	m_skiplist.c \
 	m_stacktrace.c \
 	m_tooliface.c \
 	ume.c \
@@ -88,7 +90,6 @@ stage2_SOURCES = \
 	vg_redir.c \
 	vg_dwarf.c \
 	vg_stabs.c \
-	vg_skiplist.c \
 	vg_symtypes.c \
 	vg_translate.c \
 	vg_transtab.c

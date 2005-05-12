@@ -1,4 +1,8 @@
 
+/*--------------------------------------------------------------------*/
+/*--- A skiplist implementation.                      m_skiplist.c ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -83,6 +87,7 @@
  */
 
 #include "core.h"
+#include "pub_core_skiplist.h"
 
 #include <stdlib.h>
 
@@ -498,4 +503,7 @@ Int VG_(cmp_string)(const void *v1, const void *v2)
    return VG_(strcmp)(a, b);
 }
 
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/
 

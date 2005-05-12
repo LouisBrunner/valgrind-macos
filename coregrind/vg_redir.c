@@ -33,6 +33,7 @@
 #include "vg_symtab2.h"
 
 #include "pub_core_aspacemgr.h"
+#include "pub_core_skiplist.h"
 
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/

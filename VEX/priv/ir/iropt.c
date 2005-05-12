@@ -414,6 +414,10 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
       case Ist_IMark:
          addStmtToIRBB(bb, st);
          break;
+      case Ist_AbiHint:
+         e1 = flatten_Expr(bb, st->Ist.AbiHint.base);
+         addStmtToIRBB(bb, IRStmt_AbiHint(e1, st->Ist.AbiHint.len));
+         break;
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
          addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
@@ -671,7 +675,10 @@ static void handle_gets_Stmt (
          crude solution is just to flush everything; we could easily
          enough do a lot better if needed. */
       /* Probably also overly-conservative, but also dump everything
-         if we hit a memory fence. */
+         if we hit a memory fence.  Ditto AbiHints.*/
+      case Ist_AbiHint:
+         vassert(isIRAtom(st->Ist.AbiHint.base));
+         /* fall through */
       case Ist_MFence:
       case Ist_Dirty:
          for (j = 0; j < env->used; j++)
@@ -1507,6 +1514,12 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 #  endif
 
    switch (st->tag) {
+      case Ist_AbiHint:
+         vassert(isIRAtom(st->Ist.AbiHint.base));
+         return IRStmt_AbiHint(
+                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.base)),
+                   st->Ist.AbiHint.len
+                );
       case Ist_Put:
          vassert(isIRAtom(st->Ist.Put.data));
          return IRStmt_Put(
@@ -1732,6 +1745,9 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
    Int      i;
    IRDirty* d;
    switch (st->tag) {
+      case Ist_AbiHint:
+         addUses_Expr(set, st->Ist.AbiHint.base);
+         return;
       case Ist_PutI:
          addUses_Expr(set, st->Ist.PutI.ix);
          addUses_Expr(set, st->Ist.PutI.data);
@@ -2573,7 +2589,8 @@ Bool guestAccessWhichMightOverlapPutI (
          return False;
 
       case Ist_MFence:
-         /* just be paranoid ... this should be rare. */
+      case Ist_AbiHint:
+         /* just be paranoid ... these should be rare. */
          return True;
 
       case Ist_Dirty:
@@ -2803,6 +2820,9 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    switch (st->tag) {
       case Ist_NoOp:
       case Ist_IMark:
+         break;
+      case Ist_AbiHint:
+         deltaIRExpr(st->Ist.AbiHint.base, delta);
          break;
       case Ist_Put:
          deltaIRExpr(st->Ist.Put.data, delta);
@@ -3166,6 +3186,9 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
    Int      i;
    IRDirty* d;
    switch (st->tag) {
+      case Ist_AbiHint:
+         occCount_Expr(env, st->Ist.AbiHint.base);
+         return;
       case Ist_Tmp: 
          occCount_Expr(env, st->Ist.Tmp.data); 
          return; 
@@ -3293,6 +3316,11 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
    IRDirty* d;
    IRDirty* d2;
    switch (st->tag) {
+      case Ist_AbiHint:
+         return IRStmt_AbiHint(
+                   tbSubst_Expr(env, st->Ist.AbiHint.base),
+                   st->Ist.AbiHint.len
+                );
       case Ist_STle:
          return IRStmt_STle(
                    tbSubst_Expr(env, st->Ist.STle.addr),
@@ -3580,6 +3608,8 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
                  computation prior to it is forced to complete before
                  proceeding with the fence. */
               || st->tag == Ist_MFence
+              /* also be (probably overly) paranoid re AbiHints */
+              || st->tag == Ist_AbiHint
               );
          /*
          if (ti->invalidateMe)
@@ -3691,6 +3721,9 @@ static Bool hasGetIorPutI ( IRBB* bb )
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
       switch (st->tag) {
+         case Ist_AbiHint:
+            vassert(isIRAtom(st->Ist.AbiHint.base));
+            break;
          case Ist_PutI: 
             return True;
          case Ist_Tmp:  

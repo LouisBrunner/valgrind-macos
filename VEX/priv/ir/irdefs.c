@@ -613,6 +613,11 @@ void ppIRStmt ( IRStmt* s )
          vex_printf( "------ IMark(0x%llx, %d) ------", 
                      s->Ist.IMark.addr, s->Ist.IMark.len);
          break;
+      case Ist_AbiHint:
+         vex_printf("====== AbiHint(");
+         ppIRExpr(s->Ist.AbiHint.base);
+         vex_printf(", %d) ======", s->Ist.AbiHint.len);
+         break;
       case Ist_Put:
          vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
          ppIRExpr(s->Ist.Put.data);
@@ -948,6 +953,13 @@ IRStmt* IRStmt_IMark ( Addr64 addr, Int len ) {
    s->Ist.IMark.len  = len;
    return s;
 }
+IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len ) {
+   IRStmt* s           = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag              = Ist_AbiHint;
+   s->Ist.AbiHint.base = base;
+   s->Ist.AbiHint.len  = len;
+   return s;
+}
 IRStmt* IRStmt_Put ( Int off, IRExpr* data ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
@@ -1153,6 +1165,9 @@ IRStmt* dopyIRStmt ( IRStmt* s )
    switch (s->tag) {
       case Ist_NoOp:
          return IRStmt_NoOp();
+      case Ist_AbiHint:
+         return IRStmt_AbiHint(dopyIRExpr(s->Ist.AbiHint.base),
+                               s->Ist.AbiHint.len);
       case Ist_IMark:
          return IRStmt_IMark(s->Ist.IMark.addr, s->Ist.IMark.len);
       case Ist_Put: 
@@ -1648,6 +1663,8 @@ Bool isFlatIRStmt ( IRStmt* st )
    IRDirty* di;
 
    switch (st->tag) {
+      case Ist_AbiHint:
+         return isIRAtom(st->Ist.AbiHint.base);
       case Ist_Put:
          return isIRAtom(st->Ist.Put.data);
       case Ist_PutI:
@@ -1835,6 +1852,9 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
    switch (stmt->tag) {
       case Ist_IMark:
          break;
+      case Ist_AbiHint:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.AbiHint.base,def_counts);
+         break;
       case Ist_Put:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.data,def_counts);
          break;
@@ -1981,6 +2001,11 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
             instruction sizes. */
          if (stmt->Ist.IMark.len < 0 || stmt->Ist.IMark.len > 20)
             sanityCheckFail(bb,stmt,"IRStmt.IMark.len: implausible");
+         break;
+      case Ist_AbiHint:
+         if (typeOfIRExpr(tyenv, stmt->Ist.AbiHint.base) != gWordTy)
+            sanityCheckFail(bb,stmt,"IRStmt.AbiHint.base: "
+                                    "not :: guest word type");
          break;
       case Ist_Put:
          tcExpr( bb, stmt, stmt->Ist.Put.data, gWordTy );

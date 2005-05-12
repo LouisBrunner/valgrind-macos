@@ -896,19 +896,32 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 
 /* ------------------ Statements ------------------ */
 
-/* The possible kinds of statements are as follows: */
+/* The possible kinds of statements are as follows.  Those marked
+   OPTIONAL are hints of one kind or another, and as such do not
+   denote any change in the guest state or of IR temporaries.  They
+   can therefore be omitted without changing the meaning denoted by
+   the IR. 
+
+   At the moment, the only AbiHint is one which indicates that a given
+   chunk of address space has become undefined.  This is used on
+   amd64-linux to pass stack-redzoning hints to whoever wants to see
+   them.
+*/
 typedef 
    enum {
-      Ist_NoOp,   /* no-op (usually resulting from IR optimisation) */
-      Ist_IMark,  /* instruction mark: describe addr/len of guest insn
-                     whose IR follows */
-      Ist_Put,    /* write guest state, fixed offset */
-      Ist_PutI,   /* write guest state, run-time offset */
-      Ist_Tmp,    /* assign value to temporary */
-      Ist_STle,   /* little-endian write to memory */
-      Ist_Dirty,  /* call complex ("dirty") helper function */
-      Ist_MFence, /* memory fence */
-      Ist_Exit    /* conditional exit from BB */
+      Ist_NoOp,    /* OPTIONAL: no-op (usually resulting from IR
+                      optimisation) */
+      Ist_IMark,   /* OPTIONAL: instruction mark: describe addr/len of
+                      guest insn whose IR follows.  */
+      Ist_AbiHint, /* OPTIONAL: tell me something about this
+                      platform's ABI */
+      Ist_Put,     /* write guest state, fixed offset */
+      Ist_PutI,    /* write guest state, run-time offset */
+      Ist_Tmp,     /* assign value to temporary */
+      Ist_STle,    /* little-endian write to memory */
+      Ist_Dirty,   /* call complex ("dirty") helper function */
+      Ist_MFence,  /* memory fence */
+      Ist_Exit     /* conditional exit from BB */
    } 
    IRStmtTag;
 
@@ -922,6 +935,11 @@ typedef
             Addr64 addr;
             Int    len;
          } IMark;
+         struct {
+            /* [base .. base+len-1] has become uninitialised */
+            IRExpr* base;
+            Int     len;
+         } AbiHint;
          struct {
             Int     offset;
             IRExpr* data;
@@ -954,16 +972,17 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_NoOp   ( void );
-extern IRStmt* IRStmt_IMark  ( Addr64 addr, Int len );
-extern IRStmt* IRStmt_Put    ( Int off, IRExpr* data );
-extern IRStmt* IRStmt_PutI   ( IRArray* descr, IRExpr* ix, Int bias, 
-                               IRExpr* data );
-extern IRStmt* IRStmt_Tmp    ( IRTemp tmp, IRExpr* data );
-extern IRStmt* IRStmt_STle   ( IRExpr* addr, IRExpr* data );
-extern IRStmt* IRStmt_Dirty  ( IRDirty* details );
-extern IRStmt* IRStmt_MFence ( void );
-extern IRStmt* IRStmt_Exit   ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
+extern IRStmt* IRStmt_NoOp    ( void );
+extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
+extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len );
+extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
+extern IRStmt* IRStmt_PutI    ( IRArray* descr, IRExpr* ix, Int bias, 
+                                IRExpr* data );
+extern IRStmt* IRStmt_Tmp     ( IRTemp tmp, IRExpr* data );
+extern IRStmt* IRStmt_STle    ( IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
+extern IRStmt* IRStmt_MFence  ( void );
+extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
 extern IRStmt* dopyIRStmt ( IRStmt* );
 

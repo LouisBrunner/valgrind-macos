@@ -2077,6 +2077,20 @@ void jcc_01 ( AMD64Condcode cond, Addr64 d64_false, Addr64 d64_true )
    }
 }
 
+/* Let new_rsp be the %rsp value after a call/return.  This function
+   generates an AbiHint to say that -128(%rsp) .. -1(%rsp) should now
+   be regarded as uninitialised.
+*/
+static void make_redzone_AbiHint ( IRTemp new_rsp, HChar* who )
+{
+   if (0) vex_printf("AbiHint: %s\n", who);
+   vassert(typeOfIRTemp(irbb->tyenv, new_rsp) == Ity_I64);
+   stmt( IRStmt_AbiHint( 
+            binop(Iop_Sub64, mkexpr(new_rsp), mkU64(128)), 
+            128 
+         ));
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Disassembling addressing modes                       ---*/
@@ -3758,6 +3772,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+1));
+            make_redzone_AbiHint(t2, "call-Ev(reg)");
             jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
             showSz = False;
@@ -3812,6 +3827,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_rip_bbstart+delta+len));
+            make_redzone_AbiHint(t2, "call-Ev(mem)");
             jmp_treg(Ijk_Call,t3);
             *whatNext = Dis_StopHere;
             showSz = False;
@@ -7266,9 +7282,12 @@ void dis_ret ( ULong d64 )
 {
    IRTemp t1 = newTemp(Ity_I64); 
    IRTemp t2 = newTemp(Ity_I64);
+   IRTemp t3 = newTemp(Ity_I64);
    assign(t1, getIReg64(R_RSP));
    assign(t2, loadLE(Ity_I64,mkexpr(t1)));
-   putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t1), mkU64(8+d64)));
+   assign(t3, binop(Iop_Add64, mkexpr(t1), mkU64(8+d64)));
+   putIReg64(R_RSP, mkexpr(t3));
+   make_redzone_AbiHint(t3, "ret");
    jmp_treg(Ijk_Ret,t2);
 }
 
@@ -11490,6 +11509,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       assign(t1, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
       putIReg64(R_RSP, mkexpr(t1));
       storeLE( mkexpr(t1), mkU64(guest_rip_bbstart+delta));
+      make_redzone_AbiHint(t1, "call-d32");
       if (resteerOK && resteerOkFn((Addr64)d64)) {
          /* follow into the call target. */
          whatNext = Dis_Resteer;

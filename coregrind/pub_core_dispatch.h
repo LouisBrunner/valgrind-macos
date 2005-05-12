@@ -54,6 +54,22 @@
 */
 extern UWord VG_(run_innerloop) ( void* guest_state );
 
+/* Magic values that the guest state might be set to when returning to the
+   dispatcher.  The only other legitimate value is to point to the
+   start of the thread's VEX guest state.  These also are return values from
+   from VG_(run_innerloop) to the scheduler.
+*/
+/* Defines values for JMP_EMWARN, JMP_SYSCALL, JMP_CLIENTREQ and
+   JMP_YIELD */
+#include "libvex_trc_values.h"
+
+/* And some more of our own.  These must not have the same values as
+   those from libvex_trc_values.h. */
+#define VG_TRC_INNER_FASTMISS     37 /* TRC only; means fast-cache miss. */
+#define VG_TRC_INNER_COUNTERZERO  41 /* TRC only; means bb ctr == 0 */
+#define VG_TRC_FAULT_SIGNAL       43 /* TRC only; got sigsegv/sigbus */
+#define VG_TRC_INVARIANT_FAILED   47 /* TRC only; invariant violation */
+
 #endif   // __PUB_CORE_DISPATCH_H
 
 /*--------------------------------------------------------------------*/

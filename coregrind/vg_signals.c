@@ -727,7 +727,7 @@ int VG_(do_sys_sigprocmask) ( ThreadId tid,
    ------------------------------------------------------------------ */
 
 /* Block all host signals, dumping the old mask in *saved_mask. */
-void VG_(block_all_host_signals) ( /* OUT */ vki_sigset_t* saved_mask )
+static void block_all_host_signals ( /* OUT */ vki_sigset_t* saved_mask )
 {
    Int           ret;
    vki_sigset_t block_procmask;
@@ -738,11 +738,21 @@ void VG_(block_all_host_signals) ( /* OUT */ vki_sigset_t* saved_mask )
 }
 
 /* Restore the blocking mask using the supplied saved one. */
-void VG_(restore_all_host_signals) ( /* IN */ vki_sigset_t* saved_mask )
+static void restore_all_host_signals ( /* IN */ vki_sigset_t* saved_mask )
 {
    Int ret;
    ret = VG_(sigprocmask)(VKI_SIG_SETMASK, saved_mask, NULL);
    vg_assert(ret == 0);
+}
+
+void VG_(clear_out_queued_signals)( ThreadId tid, vki_sigset_t* saved_mask )
+{
+   block_all_host_signals(saved_mask);
+   if (VG_(threads)[tid].sig_queue != NULL) {
+      VG_(arena_free)(VG_AR_CORE, VG_(threads)[tid].sig_queue);
+      VG_(threads)[tid].sig_queue = NULL;
+   }
+   restore_all_host_signals(saved_mask);
 }
 
 Bool VG_(client_signal_OK)(Int sigNo)
@@ -1552,7 +1562,7 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    tst = VG_(get_ThreadState)(tid);
 
    /* Protect the signal queue against async deliveries */
-   VG_(block_all_host_signals)(&savedmask);
+   block_all_host_signals(&savedmask);
 
    if (tst->sig_queue == NULL) {
       tst->sig_queue = VG_(arena_malloc)(VG_AR_CORE, sizeof(*tst->sig_queue));
@@ -1577,7 +1587,7 @@ void queue_signal(ThreadId tid, const vki_siginfo_t *si)
    sq->sigs[sq->next] = *si;
    sq->next = (sq->next+1) % N_QUEUED_SIGNALS;
 
-   VG_(restore_all_host_signals)(&savedmask);
+   restore_all_host_signals(&savedmask);
 }
 
 /*
@@ -2018,7 +2028,7 @@ void VG_(poll_signals)(ThreadId tid)
 
    //VG_(printf)("tid %d pollset=%08x%08x\n", tid, pollset.sig[1], pollset.sig[0]);
 
-   VG_(block_all_host_signals)(&saved_mask); // protect signal queue
+   block_all_host_signals(&saved_mask); // protect signal queue
 
    /* First look for any queued pending signals */
    sip = next_queued(tid, &pollset); /* this thread */
@@ -2047,7 +2057,7 @@ void VG_(poll_signals)(ThreadId tid)
 				   where it came from */
    }
 
-   VG_(restore_all_host_signals)(&saved_mask);
+   restore_all_host_signals(&saved_mask);
 }
 
 /* At startup, copy the process' real signal state to the SCSS.
@@ -2064,7 +2074,7 @@ void VG_(sigstartup_actions) ( void )
    /* Block all signals.  saved_procmask remembers the previous mask,
       which the first thread inherits.
    */
-   VG_(block_all_host_signals)( &saved_procmask );
+   block_all_host_signals( &saved_procmask );
 
    /* Copy per-signal settings to SCSS. */
    for (i = 1; i <= _VKI_NSIG; i++) {

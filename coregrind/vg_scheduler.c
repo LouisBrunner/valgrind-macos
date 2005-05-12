@@ -578,13 +578,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].altstack.ss_size = 0;
    VG_(threads)[tid].altstack.ss_flags = VKI_SS_DISABLE;
 
-   /* clear out queued signals */
-   VG_(block_all_host_signals)(&savedmask);
-   if (VG_(threads)[tid].sig_queue != NULL) {
-      VG_(arena_free)(VG_AR_CORE, VG_(threads)[tid].sig_queue);
-      VG_(threads)[tid].sig_queue = NULL;
-   }
-   VG_(restore_all_host_signals)(&savedmask);
+   VG_(clear_out_queued_signals)(tid, &savedmask);
 
    VG_(threads)[tid].sched_jmpbuf_valid = False;
 }

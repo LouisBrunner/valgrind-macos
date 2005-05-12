@@ -546,11 +546,8 @@ extern Int VG_(do_sys_sigprocmask) ( ThreadId tid, Int how,
                                      vki_sigset_t* set,
                                      vki_sigset_t* oldset );
 
-/* Handy utilities to block/restore all host signals. */
-extern void VG_(block_all_host_signals) 
-                  ( /* OUT */ vki_sigset_t* saved_mask );
-extern void VG_(restore_all_host_signals) 
-                  ( /* IN */ vki_sigset_t* saved_mask );
+extern void VG_(clear_out_queued_signals) 
+                  ( ThreadId tid, /* OUT */ vki_sigset_t* saved_mask );
 
 extern void VG_(kill_self)(Int sigNo);
 

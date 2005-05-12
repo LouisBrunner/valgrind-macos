@@ -362,6 +362,23 @@ DECL( void *memset(void *s, Int c, SizeT n) )
    return s;
 }
 
+DECL( void *memmove(void *dstV, const void *srcV, SizeT n) )
+{
+   SizeT i;
+   Char* dst = (Char*)dstV;
+   Char* src = (Char*)srcV;
+   if (dst < src) {
+      for (i = 0; i < n; i++)
+         dst[i] = src[i];
+   }
+   else 
+   if (dst > src) {
+      for (i = 0; i < n; i++)
+         dst[n-i-1] = src[n-i-1];
+   }
+   return dst;
+}
+
 
 /* Find the first occurrence of C in S or the final NUL byte.  */
 

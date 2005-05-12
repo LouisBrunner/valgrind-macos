@@ -169,8 +169,11 @@ so will probably slow down your program, sometimes drastically.
   with -D__USE_MALLOC. Beware! This is removed from gcc starting with
   version 3.3.
 
-- With 3.2.2 and later, you should export the environment variable
+- With gcc 3.2.2 and later, you should export the environment variable
   GLIBCPP_FORCE_NEW before running your program.
+
+- With gcc 3.4 and later, that variable has changed name to
+  GLIBCXX_FORCE_NEW.
 
 There are other ways to disable memory pooling: using the malloc_alloc
 template with your objects (not portable, but should work for gcc) or

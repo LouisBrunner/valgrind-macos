@@ -234,9 +234,13 @@
     This is removed from gcc starting with version 3.3.</para>
    </listitem>
    <listitem>
-    <para>With 3.2.2 and later, you should export the environment
+    <para>With gcc 3.2.2 and later, you should export the environment
     variable <literal>GLIBCPP_FORCE_NEW</literal> before running
     your program.</para>
+   </listitem>
+   <listitem>
+    <para>With gcc 3.4 and later, that variable has changed name to
+    <literal>GLIBCXX_FORCE_NEW</literal>.</para>
    </listitem>
   </itemizedlist>
 

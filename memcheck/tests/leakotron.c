@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "../memcheck.h"
 
 /* 
@@ -94,8 +95,12 @@ static struct node *mk()
 int main()
 {
 	int i;
-	int base_definite, base_dubious, base_reachable, base_suppressed;
-	int definite, dubious, reachable, suppressed, total;
+	long base_definite, base_dubious, base_reachable, base_suppressed;
+	long definite, dubious, reachable, suppressed;
+        int total;
+
+        /* we require these longs to have same size as a machine word */
+        assert(sizeof(long) == sizeof(void*));
 
 	/* get a baseline in case the runtime allocated some memory */
 	VALGRIND_DO_LEAK_CHECK;
@@ -139,12 +144,12 @@ int main()
 
 	if (0)
 		printf("leaks: definite %d, dubious %d, reachable %d, suppressed %d = %d\n",
-		       definite, dubious, reachable, suppressed, total);
+		       (int)definite, (int)dubious, (int)reachable, (int)suppressed, total);
 
 	if (reachable != 0)
 		printf("FAILED: I freed everything, "
 		       "but there's still %d bytes reachable\n", 
-		       reachable);
+		       (int)reachable);
 	else if (total != bytes)
 		printf("FAILED: I count %d bytes, leakcheck says %d\n",
 		       bytes, total);

@@ -650,7 +650,11 @@ while (<>)
     print qq|   \{\n|;
     print qq|      asm\(\n|;
 #    print qq|         \"fsave %$stateargnum\\n\"\n|;
-    
+    print qq|         \"ffree %%st(7)\\n\"\n|;
+    print qq|         \"ffree %%st(6)\\n\"\n|;
+    print qq|         \"ffree %%st(5)\\n\"\n|;
+    print qq|         \"ffree %%st(4)\\n\"\n|;
+
     my @fpargs;
 
     foreach my $arg (@presets, @args)
@@ -716,12 +720,12 @@ while (<>)
 
     if (defined($fpucwmask) || defined($fpucwset))
     {
-        print qq|         \"subl \$2, %%rsp\\n\"\n|;
+        print qq|         \"subq \$2, %%rsp\\n\"\n|;
         print qq|         \"fstcw (%%rsp)\\n\"\n|;
         print qq|         \"andw \$$fpucwmask, (%%rsp)\\n\"\n| if defined($fpucwmask);
         print qq|         \"orw \$$fpucwset, (%%rsp)\\n\"\n| if defined($fpucwset);
         print qq|         \"fldcw (%%rsp)\\n\"\n|;
-        print qq|         \"addl \$2, %%rsp\\n\"\n|;
+        print qq|         \"addq \$2, %%rsp\\n\"\n|;
     }
 
     print qq|         \"$insn|;

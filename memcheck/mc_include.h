@@ -70,6 +70,8 @@ extern VGA_REGPARM(1) UWord MC_(helperc_LOADV2)  ( Addr );
 extern VGA_REGPARM(1) UWord MC_(helperc_LOADV4)  ( Addr );
 extern VGA_REGPARM(1) ULong MC_(helperc_LOADV8)  ( Addr );
 
+extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
+
 /* Functions defined in mc_translate.c */
 extern IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout,
                                IRType gWordTy, IRType hWordTy );

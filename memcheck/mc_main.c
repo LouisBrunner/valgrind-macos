@@ -909,6 +909,14 @@ SP_UPDATE_HANDLERS ( make_aligned_word32_writable,
                    );
 
 
+void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
+{
+   tl_assert(sizeof(UWord) == sizeof(SizeT));
+   //   VG_(printf)("helperc_MAKE_STACK_UNINIT %p %d\n", base, len );
+   mc_make_writable(base, len);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Checking memory                                      ---*/
 /*------------------------------------------------------------*/

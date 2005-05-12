@@ -2404,6 +2404,26 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 
 }
 
+/* We have an ABI hint telling us that [base .. base+len-1] is to
+   become undefined ("writable").  Generate code to call a helper to
+   notify the A/V bit machinery of this fact.
+
+   We call 
+   void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
+*/
+static
+void do_AbiHint ( MCEnv* mce, IRExpr* base, Int len )
+{
+   IRDirty* di;
+   di = unsafeIRDirty_0_N(
+           0/*regparms*/,
+           "MC_(helperc_MAKE_STACK_UNINIT)",
+           &MC_(helperc_MAKE_STACK_UNINIT),
+           mkIRExprVec_2( base, mkIRExpr_HWord( (UInt)len) )
+        );
+   stmt( mce->bb, IRStmt_Dirty(di) );
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Memcheck main                                        ---*/
@@ -2493,6 +2513,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
          return isBogusAtom(st->Ist.Exit.guard);
+      case Ist_AbiHint:
+         return isBogusAtom(st->Ist.AbiHint.base);
       case Ist_NoOp:
       case Ist_IMark:
       case Ist_MFence:
@@ -2610,6 +2632,10 @@ IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout,
 
          case Ist_Dirty:
             do_shadow_Dirty( &mce, st->Ist.Dirty.details );
+            break;
+
+         case Ist_AbiHint:
+            do_AbiHint( &mce, st->Ist.AbiHint.base, st->Ist.AbiHint.len );
             break;
 
          default:

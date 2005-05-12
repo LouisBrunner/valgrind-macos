@@ -30,89 +30,89 @@
    Addrcheck,Memcheck:Param
    write(buf)
    fun:*libc_write
-   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
    fun:*X11TransWrite
 }
 
 {
    libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libX11.so.6.2
-   obj:/usr/X11R6/lib/libX11.so.6.2
-   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
 }
 
 {
    libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXt.so.6.0
-   obj:/usr/X11R6/lib/libXt.so.6.0
-   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
 }
 
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
 }
 
 {
    libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXmu.so.6.2
-   obj:/usr/X11R6/lib/libXmu.so.6.2
-   obj:/usr/X11R6/lib/libXmu.so.6.2
+   obj:/usr/X11R6/lib*/libXmu.so.6.2
+   obj:/usr/X11R6/lib*/libXmu.so.6.2
+   obj:/usr/X11R6/lib*/libXmu.so.6.2
 }
 
 {
    libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXt.so.6.0
-   obj:/usr/X11R6/lib/libXt.so.6.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
 }
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Value4)
    Memcheck:Value4
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
 }
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXt.so.6.0
 }
 
 {
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libX11.so.6.2
-   obj:/usr/X11R6/lib/libX11.so.6.2
-   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
 }
 
 {
    libX11.so.6.2/libXaw.so.7.0/libXaw.so.7.0(Cond)
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libX11.so.6.2
-   obj:/usr/X11R6/lib/libXaw.so.7.0
-   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
+   obj:/usr/X11R6/lib*/libXaw.so.7.0
 }
 
 {
    libXpm.so.4.11/libXpm.so.4.11/libXpm.so.4.11
    Memcheck:Cond
-   obj:/usr/X11R6/lib/libXpm.so.4.11
-   obj:/usr/X11R6/lib/libXpm.so.4.11
-   obj:/usr/X11R6/lib/libXpm.so.4.11
+   obj:/usr/X11R6/lib*/libXpm.so.4.11
+   obj:/usr/X11R6/lib*/libXpm.so.4.11
+   obj:/usr/X11R6/lib*/libXpm.so.4.11
 }
 
 {
@@ -141,7 +141,7 @@
    write(buf)
    fun:*
    fun:_X11TransWrite
-   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
 }
 
 {
@@ -150,7 +150,7 @@
    write(buf)
    fun:write
    fun:_X11TransWrite
-   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
 }
 
 {
@@ -178,72 +178,9 @@
    Memcheck:Param
    writev(vector[...])
    fun:writev
-   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib*/libX11.so.6.2
    fun:_X11TransWritev
    fun:_XSend
-}
-
-##
-## HACK to do with strlen not being intercepted early enough
-{
-   strlen-not-intercepted-early-enough-HACK-1
-   Memcheck:Addr4
-   fun:strlen
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-}
-
-{
-   strlen-not-intercepted-early-enough-HACK-2
-   Memcheck:Addr4
-   fun:strlen
-   fun:decompose_rpath
-   fun:cache_rpath
-   fun:_dl_map_object
-}
-
-{
-   strlen-not-intercepted-early-enough-HACK-3
-   Memcheck:Cond
-   fun:strlen
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-}
-
-{
-   strlen-not-intercepted-early-enough-HACK-4
-   Memcheck:Cond
-   fun:strlen
-   fun:expand_dynamic_string_token
-   fun:_dl_map_object
-   fun:map_doit
-}
-
-## HACK to do with index not being intercepted early enough
-{
-   index-not-intercepted-early-enough-HACK-1
-   Memcheck:Cond
-   fun:index
-   fun:expand_dynamic_string_token
-   fun:_dl_map_object
-   fun:map_doit
-}
-{
-   index-not-intercepted-early-enough-HACK-2
-   Memcheck:Cond
-   fun:index
-   fun:_dl_map_object
-   fun:map_doit
-   fun:_dl_catch_error
-}
-{
-   index-not-intercepted-early-enough-HACK-3
-   Memcheck:Cond
-   fun:index
-   fun:_dl_map_object
-   fun:dl_main
-   fun:_dl_sysdep_start
 }
 
 ##----------------------------------------------------------------------##

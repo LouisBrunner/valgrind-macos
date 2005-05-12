@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "../memcheck.h"
 
 int main(void)
@@ -13,6 +14,9 @@ int main(void)
    int  n_dubious    = 0;
    int  n_leaked     = 0;
    int  n_suppressed = 0;
+
+   /* we require these longs to have same size as a machine word */
+   assert(sizeof(long) == sizeof(void*));
 
    /* Error counting */
    printf("errors: %d\n", VALGRIND_COUNT_ERRORS);

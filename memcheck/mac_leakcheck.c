@@ -494,7 +494,10 @@ static void full_report(ThreadId tid)
 		       Unreached == p_min->loss_mode || Interior == p_min->loss_mode );
       is_suppressed = 
          VG_(unique_error) ( tid, LeakErr, (UInt)i+1,
-                             (Char*)n_lossrecords, (void*) p_min,
+                             /* HACK ALERT */
+                             ULong_to_Ptr((ULong)(UInt)n_lossrecords), 
+                             /* end HACK ALERT */
+                             (void*) p_min,
                              p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );
 

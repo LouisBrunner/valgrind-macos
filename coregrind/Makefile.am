@@ -42,6 +42,7 @@ noinst_HEADERS = \
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
 	pub_core_dispatch.h	\
+	pub_core_dispatch_asm.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_mallocfree.h	\

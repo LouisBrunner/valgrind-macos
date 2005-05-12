@@ -30,6 +30,7 @@
 */
 
 #include "core_asm.h"
+#include "pub_core_dispatch_asm.h"
 
 .globl VG_(run_innerloop)
 VG_(run_innerloop):

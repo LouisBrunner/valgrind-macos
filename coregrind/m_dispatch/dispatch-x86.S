@@ -30,6 +30,7 @@
 */
 
 #include "core_asm.h"
+#include "pub_core_dispatch_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_x86_EIP */
 
 

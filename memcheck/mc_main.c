@@ -912,7 +912,99 @@ SP_UPDATE_HANDLERS ( make_aligned_word32_writable,
 void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
 {
    tl_assert(sizeof(UWord) == sizeof(SizeT));
-   //   VG_(printf)("helperc_MAKE_STACK_UNINIT %p %d\n", base, len );
+   if (0)
+      VG_(printf)("helperc_MAKE_STACK_UNINIT %p %d\n", base, len );
+
+#  if 0
+   /* Really slow version */
+   mc_make_writable(base, len);
+#  endif
+
+#  if 0
+   /* Slow(ish) version, which is fairly easily seen to be correct.
+   */
+   if (EXPECTED_TAKEN( VG_IS_8_ALIGNED(base) && len==128 )) {
+      make_aligned_word64_writable(base +   0);
+      make_aligned_word64_writable(base +   8);
+      make_aligned_word64_writable(base +  16);
+      make_aligned_word64_writable(base +  24);
+
+      make_aligned_word64_writable(base +  32);
+      make_aligned_word64_writable(base +  40);
+      make_aligned_word64_writable(base +  48);
+      make_aligned_word64_writable(base +  56);
+
+      make_aligned_word64_writable(base +  64);
+      make_aligned_word64_writable(base +  72);
+      make_aligned_word64_writable(base +  80);
+      make_aligned_word64_writable(base +  88);
+
+      make_aligned_word64_writable(base +  96);
+      make_aligned_word64_writable(base + 104);
+      make_aligned_word64_writable(base + 112);
+      make_aligned_word64_writable(base + 120);
+   } else {
+      mc_make_writable(base, len);
+   }
+#  endif 
+
+   /* Idea is: go fast when
+         * 8-aligned and length is 128
+         * the sm is available in the main primary map
+         * the address range falls entirely with a single
+           secondary map
+         * the SM is modifiable
+      If all those conditions hold, just update the V bits
+      by writing directly on the v-bit array.   We don't care
+      about A bits; if the address range is marked invalid,
+      any attempt to access it will elicit an addressing error,
+      and that's good enough.
+   */
+   if (EXPECTED_TAKEN( len == 128
+                       && VG_IS_8_ALIGNED(base) 
+      )) {
+      /* Now we know the address range is suitably sized and
+         aligned. */
+      UWord a_lo   = (UWord)base;
+      UWord a_hi   = (UWord)(base + 127);
+      UWord sec_lo = a_lo >> 16;
+      UWord sec_hi = a_hi >> 16;
+
+      if (EXPECTED_TAKEN( sec_lo == sec_hi 
+                          && sec_lo <= N_PRIMARY_MAP
+         )) {
+         /* Now we know that the entire address range falls within a
+            single secondary map, and that that secondary 'lives' in
+            the main primary map. */
+         SecMap* sm = primary_map[sec_lo];
+
+         if (EXPECTED_TAKEN( !is_distinguished_sm(sm) )) {
+            /* And finally, now we know that the secondary in question
+               is modifiable. */
+            UWord   v_off = a_lo & 0xFFFF;
+            ULong*  p     = (ULong*)(&sm->vbyte[v_off]);
+            p[ 0] =  VGM_WORD64_INVALID;
+            p[ 1] =  VGM_WORD64_INVALID;
+            p[ 2] =  VGM_WORD64_INVALID;
+            p[ 3] =  VGM_WORD64_INVALID;
+            p[ 4] =  VGM_WORD64_INVALID;
+            p[ 5] =  VGM_WORD64_INVALID;
+            p[ 6] =  VGM_WORD64_INVALID;
+            p[ 7] =  VGM_WORD64_INVALID;
+            p[ 8] =  VGM_WORD64_INVALID;
+            p[ 9] =  VGM_WORD64_INVALID;
+            p[10] =  VGM_WORD64_INVALID;
+            p[11] =  VGM_WORD64_INVALID;
+            p[12] =  VGM_WORD64_INVALID;
+            p[13] =  VGM_WORD64_INVALID;
+            p[14] =  VGM_WORD64_INVALID;
+            p[15] =  VGM_WORD64_INVALID;
+            return;
+	 }
+      }
+   }
+
+   /* else fall into slow case */
    mc_make_writable(base, len);
 }
 

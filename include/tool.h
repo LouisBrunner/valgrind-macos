@@ -210,11 +210,11 @@ extern void VG_(popcc)  ( UInt cc );
 /* General stuff */
 
 /* Check if an address/whatever is aligned */
-#define VG_IS_4_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x3))
-#define VG_IS_8_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x7))
-#define VG_IS_16_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0xf))
-#define VG_IS_WORD_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
-#define VG_IS_PAGE_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & (VKI_PAGE_SIZE-1)))
+#define VG_IS_4_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x3)))
+#define VG_IS_8_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x7)))
+#define VG_IS_16_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & ((Addr)0xf)))
+#define VG_IS_WORD_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(sizeof(Addr)-1))))
+#define VG_IS_PAGE_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(VKI_PAGE_SIZE-1))))
 
 
 /* ------------------------------------------------------------------ */

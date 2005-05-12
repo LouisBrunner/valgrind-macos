@@ -397,6 +397,10 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
    case Ist_NoOp:
       break;
 
+   case Ist_AbiHint:
+      /* ABI hints aren't interesting to cachegrind.  Ignore. */
+      break;
+
    case Ist_IMark:
       /* st->Ist.IMark.addr is a 64-bit int.  ULong_to_Ptr casts this
          to the host's native pointer type; if that is 32 bits then it

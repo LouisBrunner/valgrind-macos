@@ -582,7 +582,8 @@ extern void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg);
 // Useful for making failing stubs, when certain things haven't yet been
 // implemented.
 #define I_die_here                                             \
-   VG_(assert_fail) ("Unimplemented functionality",            \
+   VG_(assert_fail) (/*isCore*//*BOGUS*/True,                  \
+                     "Unimplemented functionality",            \
                      __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
                      "valgrind", VG_BUGS_TO, "")
 

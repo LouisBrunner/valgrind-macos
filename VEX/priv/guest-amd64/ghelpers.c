@@ -1079,22 +1079,22 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
             );
       }
       
-//..       if (isU32(cc_op, AMD64G_CC_OP_COPY) && isU32(cond, X86CondB)) {
-//..          /* COPY, then B --> extract C dep1, and test (C == 1). */
-//..          return
-//..             unop(
-//..                Iop_1Uto32,
-//..                binop(
-//..                   Iop_CmpNE32,
-//..                   binop(
-//..                      Iop_And32,
-//..                      binop(Iop_Shr32, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
-//..                      mkU32(1)
-//..                   ),
-//..                   mkU32(0)
-//..                )
-//..             );
-//..       }
+      if (isU64(cc_op, AMD64G_CC_OP_COPY) && isU64(cond, AMD64CondB)) {
+         /* COPY, then B --> extract C dep1, and test (C == 1). */
+         return
+            unop(
+               Iop_1Uto64,
+               binop(
+                  Iop_CmpNE64,
+                  binop(
+                     Iop_And64,
+                     binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
+                     mkU64(1)
+                  ),
+                  mkU64(0)
+               )
+            );
+      }
 
       return NULL;
    }

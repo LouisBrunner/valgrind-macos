@@ -19,7 +19,6 @@ CLEANFILES = stage2.lds
 libarch_a_SOURCES = \
 	cpuid.S \
 	helpers.S \
-	dispatch.S \
 	jmp_with_stack.c \
 	state.c
 

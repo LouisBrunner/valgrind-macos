@@ -60,6 +60,7 @@
                              VG_USERREQ__DISCARD_TRANSLATIONS, and others */
 #include "core.h"
 
+#include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_replacemalloc.h"
 #include "pub_core_stacktrace.h"

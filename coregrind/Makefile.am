@@ -2,8 +2,9 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 MODULES = \
-	m_demangle \
 	m_aspacemgr \
+	m_demangle \
+	m_dispatch \
 	m_replacemalloc \
 	m_sigframe \
 	m_syscalls
@@ -40,6 +41,7 @@ noinst_HEADERS = \
 	pub_core_aspacemgr.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
+	pub_core_dispatch.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_mallocfree.h	\
@@ -96,6 +98,7 @@ stage2_SOURCES = \
 
 ## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \
+	m_dispatch/libdispatch.a \
 	m_demangle/libdemangle.a \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \

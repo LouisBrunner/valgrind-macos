@@ -393,8 +393,9 @@ AC_OUTPUT(
    include/x86-linux/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
-   coregrind/m_demangle/Makefile 
    coregrind/m_aspacemgr/Makefile 
+   coregrind/m_demangle/Makefile 
+   coregrind/m_dispatch/Makefile 
    coregrind/m_replacemalloc/Makefile 
    coregrind/m_sigframe/Makefile 
    coregrind/m_syscalls/Makefile 

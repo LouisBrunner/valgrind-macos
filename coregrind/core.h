@@ -661,9 +661,6 @@ extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 
 extern Addr VG_(reverse_search_one_symtab) ( const SegInfo* si, const Char* name );
 
-/* Set up some default redirects */
-extern void VG_(setup_code_redirect_table) ( void );
-
 extern Bool VG_(resolve_redir_allsegs)(CodeRedirect *redir);
 
 extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
@@ -676,8 +673,12 @@ extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 /* ---------------------------------------------------------------------
    Exports of vg_redir.c
    ------------------------------------------------------------------ */
+
 /* Redirection machinery */
 extern Addr VG_(code_redirect) ( Addr orig );
+
+/* Set up some default redirects */
+extern void VG_(setup_code_redirect_table) ( void );
 
 extern void VG_(add_redirect_sym_to_addr)(const Char *from_lib,
 					  const Char *from_sym,
@@ -822,25 +823,6 @@ extern Word VG_(do_syscall) ( UInt, UWord, UWord, UWord, UWord, UWord, UWord );
 #define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),(c),(d),(e),(f))
 
 extern void VG_(sigreturn)(void);
-
-/* ---------------------------------------------------------------------
-   Exports of vg_dispatch.S
-   ------------------------------------------------------------------ */
-
-/* This subroutine is called from the C world.  It is passed
-   a pointer to the VEX guest state (arch.vex).  It must run code
-   from the instruction pointer in the guest state, and exit when
-   VG_(dispatch_ctr) reaches zero, or we need to defer to the scheduler.
-   The return value must indicate why it returned back to the scheduler.
-   It can also be exited if the executing code throws a non-resumable
-   signal, for example SIGSEGV, in which case control longjmp()s back past
-   here.
-
-   This code simply handles the common case fast -- when the translation
-   address is found in the translation cache.  For anything else, the
-   scheduler does the work.
-*/
-extern UWord VG_(run_innerloop) ( void* guest_state );
 
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S

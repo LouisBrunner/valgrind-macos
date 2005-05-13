@@ -1,3 +1,7 @@
+13 May 05
+~~~~~~~~~
+ToDo: (arch)/dispatch.S: In dispatch_exceptional, there's no point testing the guest code return value against VG_TRC_INNER_COUNTERZERO, as vex never sets this flag.
+
 
 11 May 05
 ~~~~~~~~~

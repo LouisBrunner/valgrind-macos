@@ -32,6 +32,8 @@
 #include "core.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_translate.h"
+#include "pub_core_transtab.h"
 
 
 /*------------------------------------------------------------*/
@@ -496,10 +498,10 @@ Bool VG_(translate) ( ThreadId tid,
    if (!debugging_translation) {
       // Note that we use orig_addr0, not orig_addr, which might have been
       // changed by the redirection
-      VG_(add_to_trans_tab)( &vge,
-                             orig_addr0,
-                             (Addr)(&tmpbuf[0]), 
-                             tmpbuf_used );
+      VG_(add_to_transtab)( &vge,
+                            orig_addr0,
+                            (Addr)(&tmpbuf[0]), 
+                            tmpbuf_used );
    }
 
    VGP_POPCC(VgpTranslate);

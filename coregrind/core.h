@@ -759,38 +759,6 @@ extern ULong VG_(bbs_done);
 
 
 /* ---------------------------------------------------------------------
-   Exports of vg_transtab.c
-   ------------------------------------------------------------------ */
-
-/* The fast-cache for tt-lookup, and for finding counters. */
-extern ULong* VG_(tt_fast) [VG_TT_FAST_SIZE];
-extern UInt*  VG_(tt_fastN)[VG_TT_FAST_SIZE];
-
-
-extern void VG_(init_tt_tc)       ( void );
-
-extern
-void VG_(add_to_trans_tab)( VexGuestExtents* vge,
-                            Addr64           entry,
-                            AddrH            code,
-                            UInt             code_len );
-
-extern Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
-                                   Addr64        guest_addr, 
-                                   Bool          upd_cache );
-
-extern void VG_(discard_translations) ( Addr64 start, UInt range );
-
-extern void VG_(sanity_check_tt_tc) ( Char* caller );
-
-extern void VG_(print_tt_tc_stats) ( void );
-
-extern UInt VG_(get_bbs_translated) ( void );
-
-extern void VG_(show_BB_profile) ( void );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_syscall.S
    ------------------------------------------------------------------ */
 

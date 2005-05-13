@@ -34,6 +34,7 @@
 
 #include "pub_core_aspacemgr.h"
 #include "pub_core_skiplist.h"
+#include "pub_core_transtab.h"
 
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/

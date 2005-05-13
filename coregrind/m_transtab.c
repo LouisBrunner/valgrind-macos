@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Management of the translation table and cache.               ---*/
-/*---                                                vg_transtab.c ---*/
+/*---                                                 m_transtab.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -31,7 +31,9 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
+// XXX: this module should not depend on m_translate!
 #include "pub_core_translate.h"
+#include "pub_core_transtab.h"
 
 /* #define DEBUG_TRANSTAB */
 
@@ -326,10 +328,10 @@ static void initialiseSector ( Int sno )
    pre: youngest_sector points to a valid (although possibly full)
    sector.
 */
-void VG_(add_to_trans_tab)( VexGuestExtents* vge,
-                            Addr64           entry,
-                            AddrH            code,
-                            UInt             code_len )
+void VG_(add_to_transtab)( VexGuestExtents* vge,
+                           Addr64           entry,
+                           AddrH            code,
+                           UInt             code_len )
 {
    Int    tcAvailQ, reqdQ, y, i;
    ULong  *tce, *tce2;
@@ -341,7 +343,7 @@ void VG_(add_to_trans_tab)( VexGuestExtents* vge,
    vg_assert(code_len > 0 && code_len < 20000);
 
    if (0)
-      VG_(printf)("add_to_trans_tab(entry = 0x%llx, len = %d)\n",
+      VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d)\n",
                   entry, code_len);
 
    n_in_count++;
@@ -804,5 +806,5 @@ void VG_(show_BB_profile) ( void )
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_transtab.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

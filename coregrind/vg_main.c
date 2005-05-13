@@ -38,6 +38,7 @@
 #include "pub_core_execontext.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_transtab.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

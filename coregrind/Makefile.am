@@ -53,6 +53,7 @@ noinst_HEADERS = \
 	pub_core_syscalls.h	\
 	pub_core_tooliface.h	\
 	pub_core_translate.h	\
+	pub_core_transtab.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h
@@ -80,6 +81,7 @@ stage2_SOURCES = \
 	m_stacktrace.c \
 	m_tooliface.c \
 	m_translate.c \
+	m_transtab.c \
 	ume.c \
 	\
 	vg_scheduler.c \
@@ -95,8 +97,7 @@ stage2_SOURCES = \
 	vg_redir.c \
 	vg_dwarf.c \
 	vg_stabs.c \
-	vg_symtypes.c \
-	vg_transtab.c
+	vg_symtypes.c
 
 ## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \

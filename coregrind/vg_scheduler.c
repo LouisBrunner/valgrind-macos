@@ -67,6 +67,7 @@
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"
+#include "pub_core_transtab.h"
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------

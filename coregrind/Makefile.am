@@ -78,6 +78,7 @@ stage2_SOURCES = \
 	m_skiplist.c \
 	m_stacktrace.c \
 	m_tooliface.c \
+	m_translate.c \
 	ume.c \
 	\
 	vg_scheduler.c \
@@ -94,7 +95,6 @@ stage2_SOURCES = \
 	vg_dwarf.c \
 	vg_stabs.c \
 	vg_symtypes.c \
-	vg_translate.c \
 	vg_transtab.c
 
 ## libplatform.a must be before libarch.a and libos.a, it seems.

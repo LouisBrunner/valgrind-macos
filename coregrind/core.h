@@ -634,16 +634,6 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern void   VG_(nanosleep)(struct vki_timespec *);
 
 /* ---------------------------------------------------------------------
-   Exports of vg_translate.c
-   ------------------------------------------------------------------ */
-
-extern 
-Bool VG_(translate) ( ThreadId tid, 
-                      Addr64   orig_addr,
-                      Bool     debugging_translation,
-                      Int      debugging_verbosity );
-
-/* ---------------------------------------------------------------------
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 

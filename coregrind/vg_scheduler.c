@@ -66,6 +66,7 @@
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_translate.h"
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------

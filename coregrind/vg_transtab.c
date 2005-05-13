@@ -31,6 +31,7 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_translate.h"
 
 /* #define DEBUG_TRANSTAB */
 

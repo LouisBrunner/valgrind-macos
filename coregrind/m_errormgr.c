@@ -33,6 +33,7 @@
 #include "pub_core_execontext.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_translate.h"
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/

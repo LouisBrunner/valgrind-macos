@@ -39,9 +39,6 @@
 
 #include "valgrind.h"
 #include "core.h"
-#include <unistd.h>
-#include <pthread.h>
-#include <dlfcn.h>
 
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.

@@ -3091,7 +3091,6 @@ ULong dis_Grp1 ( Prefix pfx,
          helper_ADC( sz, dst1, dst0, src );
       } else 
       if (gregLO3ofRM(modrm) == 3 /* SBB */) {
-         vassert(0); /* awaiting test case */
          helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));

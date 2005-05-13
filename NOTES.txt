@@ -29,10 +29,6 @@ ToDo:  vex-x86:   check/fix behaviour on SSE MOVQ / MOVSD insns.
   [tool_asm.h will need to remain in some form -- there are still assembly
   files that need to see VG_() and related macros. --njn]
 
-  Urk.  Perhaps nuke all that X86_FEAT gunk in coregrind/core_asm.h
-  though.  Vex isn't clever enough to distinguish dozens of CPU
-  subvariants.
-
 
 23 March 05
 ~~~~~~~~~~~

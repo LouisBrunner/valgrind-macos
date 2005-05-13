@@ -42,6 +42,8 @@
 #  error Unknown platform
 #endif
 
+#include "vki_unistd.h"
+
 // Offsets for the shadow state
 #define O_SYSCALL_NUM   (offsetof(VexGuestArchState, VGP_SYSCALL_NUM))
 #define O_SYSCALL_ARG1  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG1))

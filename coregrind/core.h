@@ -82,9 +82,6 @@
    external tools.
 */
 
-/* For system call numbers __NR_... */
-#include "vki_unistd.h"
-
 #include "core_asm.h"      // asm stuff
 #include "tool.h"          // tool stuff
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h

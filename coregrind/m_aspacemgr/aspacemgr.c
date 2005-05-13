@@ -34,6 +34,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
+#include "vki_unistd.h"
 
 
 /* Define to debug the memory-leak-detector. */

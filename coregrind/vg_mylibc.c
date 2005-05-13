@@ -427,7 +427,7 @@ static void add_to_myprintf_buf ( HChar c, void *p )
    myprintf_buf->buf[myprintf_buf->n]   = 0;
 }
 
-UInt VG_(vprintf) ( const char *format, va_list vargs )
+UInt VG_(vprintf) ( const HChar *format, va_list vargs )
 {
    UInt ret = 0;
    printf_buf myprintf_buf = {"",0};
@@ -444,7 +444,7 @@ UInt VG_(vprintf) ( const char *format, va_list vargs )
    return ret;
 }
 
-UInt VG_(printf) ( const char *format, ... )
+UInt VG_(printf) ( const HChar *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -463,7 +463,7 @@ static void add_to_vg_sprintf_buf ( HChar c, void *p )
    *(*vg_sprintf_ptr)++ = c;
 }
 
-UInt VG_(vsprintf) ( Char* buf, const Char *format, va_list vargs )
+UInt VG_(vsprintf) ( Char* buf, const HChar *format, va_list vargs )
 {
    Int ret;
    Char *vg_sprintf_ptr = buf;
@@ -477,7 +477,7 @@ UInt VG_(vsprintf) ( Char* buf, const Char *format, va_list vargs )
    return ret;
 }
 
-UInt VG_(sprintf) ( Char* buf, const Char *format, ... )
+UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -954,7 +954,7 @@ static void report_and_quit ( const Char* report, StackTrace ips )
 }
 
 void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
-                        Int line, const Char* fn, const Char* format, ... )
+                        Int line, const Char* fn, const HChar* format, ... )
 {
    va_list vargs;
    Char buf[256];

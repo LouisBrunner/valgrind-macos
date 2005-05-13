@@ -34,7 +34,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-UInt VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
+UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
 {
    UInt  count = 0;
    Char  c;
@@ -79,7 +79,7 @@ UInt VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
 }
 
 /* Send a simple single-part message. */
-UInt VG_(message) ( VgMsgKind kind, const Char* format, ... )
+UInt VG_(message) ( VgMsgKind kind, const HChar* format, ... )
 {
    UInt count;
    va_list vargs;

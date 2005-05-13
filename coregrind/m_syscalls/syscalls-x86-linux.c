@@ -55,7 +55,7 @@ extern const Addr VGA_(blksys_committed);
 extern const Addr VGA_(blksys_finished);
 
 // Back up to restart a system call.
-void VGA_(restart_syscall)(ThreadArchState *arch)
+static void restart_syscall(ThreadArchState *arch)
 {
    arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
 
@@ -131,13 +131,13 @@ void VGA_(interrupted_syscall)(ThreadId tid,
       /* syscall hasn't even started; go around again */
       if (debug)
 	 VG_(printf)("  not started: restart\n");
-      VGA_(restart_syscall)(th_regs);
+      restart_syscall(th_regs);
    } else if (eip == VGA_(blksys_restart)) {
       /* We're either about to run the syscall, or it was interrupted
 	 and the kernel restarted it.  Restart if asked, otherwise
 	 EINTR it. */
       if (restart)
-	 VGA_(restart_syscall)(th_regs);
+	 restart_syscall(th_regs);
       else {
 	 th_regs->vex.VGP_SYSCALL_RET = -VKI_EINTR;
 	 VG_(post_syscall)(tid);
@@ -593,7 +593,7 @@ PRE(sys_sigreturn, Special)
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
-   VGA_(restart_syscall)(&tst->arch);
+   restart_syscall(&tst->arch);
 
    VG_(sigframe_destroy)(tid, False);
 
@@ -614,7 +614,7 @@ PRE(sys_rt_sigreturn, Special)
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
-   VGA_(restart_syscall)(&tst->arch);
+   restart_syscall(&tst->arch);
 
    VG_(sigframe_destroy)(tid, True);
 

@@ -49,7 +49,7 @@ void VGA_(do_thread_syscall)(UWord sys,
 
 
 // Back up to restart a system call.
-void VGA_(restart_syscall)(ThreadArchState *arch)
+static void restart_syscall(ThreadArchState *arch)
 {
    I_die_here;
 #if 0

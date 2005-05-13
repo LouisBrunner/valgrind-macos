@@ -918,13 +918,13 @@ static void initCfiSI ( CfiSI* si )
 /* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
-#define FP_COL 5
-#define SP_COL 4
-#define RA_COL 8
+#define FP_REG         5
+#define SP_REG         4
+#define RA_REG_DEFAULT 8
 #elif defined(VGP_amd64_linux)
-#define FP_COL 6
-#define SP_COL 7
-#define RA_COL 16
+#define FP_REG         6
+#define SP_REG         7
+#define RA_REG_DEFAULT 16
 #endif
 
 /* the number of regs we are prepared to unwind */
@@ -1017,10 +1017,11 @@ static void ppRegRule ( RegRule* reg )
 
 typedef
    struct {
-      /* Read-only fields. */
+      /* Read-only fields (set by the CIE) */
       Int  code_a_f;
       Int  data_a_f;
       Addr initloc;
+      Int  ra_reg;
       /* The rest of these fields can be modifed by
          run_CF_instruction. */
       /* The LOC entry */
@@ -1046,10 +1047,12 @@ static void ppUnwindContext ( UnwindContext* ctx )
 static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 {
    Int i;
-   ctx->code_a_f = 0;
-   ctx->data_a_f = 0;
-   ctx->loc = 0;
-   ctx->cfa_reg = 0;
+   ctx->code_a_f   = 0;
+   ctx->data_a_f   = 0;
+   ctx->initloc    = 0;
+   ctx->ra_reg     = RA_REG_DEFAULT;
+   ctx->loc        = 0;
+   ctx->cfa_reg    = 0;
    ctx->cfa_offset = 0;
    for (i = 0; i < N_CFI_REGS; i++) {
       ctx->reg[i].tag = RR_Undef;
@@ -1074,11 +1077,11 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
    initCfiSI(si);
 
    /* How to generate the CFA */
-   if (ctx->cfa_reg == SP_COL) {
+   if (ctx->cfa_reg == SP_REG) {
       si->cfa_sprel = True;
       si->cfa_off   = ctx->cfa_offset;
    } else
-   if (ctx->cfa_reg == FP_COL) {
+   if (ctx->cfa_reg == FP_REG) {
       si->cfa_sprel = False;
       si->cfa_off   = ctx->cfa_offset;
    } else {
@@ -1094,8 +1097,8 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
       default:        { why = 2; goto failed; } /* otherwise give up */  \
    }
 
-   SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[RA_COL] );
-   SUMMARISE_HOW(si->fp_how, si->fp_off, ctx->reg[FP_COL] );
+   SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si->fp_how, si->fp_off, ctx->reg[FP_REG] );
 
 #  undef SUMMARISE_HOW
 
@@ -1106,7 +1109,7 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
 
    /* also, gcc says "Undef" for %{e,r}bp when it is unchanged.  So
       .. */
-   if (ctx->reg[FP_COL].tag == RR_Undef)
+   if (ctx->reg[FP_REG].tag == RR_Undef)
       si->fp_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
@@ -1139,20 +1142,20 @@ static void ppUnwindContext_summary ( UnwindContext* ctx )
 {
    VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
 
-   if (ctx->cfa_reg == SP_COL) {
+   if (ctx->cfa_reg == SP_REG) {
       VG_(printf)("SP/CFA=%d+SP   ", ctx->cfa_offset);
    } else
-   if (ctx->cfa_reg == FP_COL) {
+   if (ctx->cfa_reg == FP_REG) {
       VG_(printf)("SP/CFA=%d+FP   ", ctx->cfa_offset);
    } else {
       VG_(printf)("SP/CFA=unknown  ", ctx->cfa_offset);
    }
 
    VG_(printf)("RA=");
-   ppRegRule( &ctx->reg[RA_COL] );
+   ppRegRule( &ctx->reg[ctx->ra_reg] );
 
    VG_(printf)("FP=");
-   ppRegRule( &ctx->reg[FP_COL] );
+   ppRegRule( &ctx->reg[FP_REG] );
    VG_(printf)("\n");
 }
 
@@ -1647,6 +1650,7 @@ void VG_(read_callframe_info_dwarf2)
    HChar* how = NULL;
    Int cie_codeaf = 0;
    Int cie_dataaf = 0;
+   Int cie_rareg  = 0;
    Bool ok;
 
    UChar* current_cie = NULL;
@@ -1697,7 +1701,7 @@ void VG_(read_callframe_info_dwarf2)
       if (ciefde_len == 0) {
          if (data == ehframe + ehframe_sz)
             return;
-         how = "zero-sized CIE/FDE but not at section end\n";
+         how = "zero-sized CIE/FDE but not at section end";
          goto bad;
       }
 
@@ -1743,11 +1747,11 @@ void VG_(read_callframe_info_dwarf2)
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
 
-         UChar cie_rareg = read_UChar(data); data += sizeof(UChar);
+         cie_rareg = read_UChar(data); data += sizeof(UChar);
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
-         if (cie_rareg != RA_COL) {
-            how = "cie.ra_reg does not match RA_COL";
+         if (cie_rareg < 0 || cie_rareg >= N_CFI_REGS) {
+            how = "cie.ra_reg has implausible value";
             goto bad;
          }
 
@@ -1865,6 +1869,7 @@ void VG_(read_callframe_info_dwarf2)
          ctx.code_a_f = cie_codeaf;
          ctx.data_a_f = cie_dataaf;
          ctx.initloc  = fde_initloc;
+         ctx.ra_reg   = cie_rareg;
 
 	 initUnwindContext(&restore_ctx);
 

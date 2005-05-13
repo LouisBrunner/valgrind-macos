@@ -52,6 +52,7 @@ noinst_HEADERS = \
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
 	pub_core_tooliface.h	\
+	pub_core_translate.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h

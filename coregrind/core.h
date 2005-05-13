@@ -907,8 +907,6 @@ extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 // Used by leakcheck
 extern void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr));
 
-////typedef struct _ThreadArchAux ThreadArchAux;
-
 
 // ---------------------------------------------------------------------
 // Platform-specific things defined in eg. x86/*.c

@@ -104,17 +104,6 @@ typedef
 typedef VexGuestAMD64State VexGuestArchState;
 
 /* ---------------------------------------------------------------------
-   libpthread stuff
-   ------------------------------------------------------------------ */
-
-// ToDo XXX???  not at all sure about this...
-struct _ThreadArchAux {
-  //   void*         tls_data;
-  //   int           tls_segment;
-  //   unsigned long sysinfo;
-};
-
-/* ---------------------------------------------------------------------
    Miscellaneous constants
    ------------------------------------------------------------------ */
 

@@ -29,7 +29,6 @@ mcinclude_HEADERS = \
 
 noinst_HEADERS =	\
 	mac_shared.h	\
-	mc_asm.h	\
 	mc_include.h
 
 mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer

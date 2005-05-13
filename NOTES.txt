@@ -21,16 +21,13 @@ ToDo:  vex-x86:   check/fix behaviour on SSE MOVQ / MOVSD insns.
 
 9 Apr 05 (starting work on memcheck for 32/64-bit and big/little endian)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* get rid of memcheck/mc_asm.h and include/tool_asm.h.  I think 
-  these are left over from single-platform days, when it made
+* get rid of include/tool_asm.h.  I think 
+  this is left over from single-platform days, when it made
   sense to have tool-helpers written in assembly.  Looks like we
   need to retain coregrind/core_asm.h, though.
 
-  [core_asm.h includes tool_asm.h.  The contents of tool_asm.h could be put
-  into core_asm.h, but that would deviate from the structure described at
-  the top of core.h... that structure will slowly change as core.h/tool.h
-  are split up into separate headers for each module, but it might be
-  worthwhile keeping the asm-only headers?  Not sure.  --njn]
+  [tool_asm.h will need to remain in some form -- there are still assembly
+  files that need to see VG_() and related macros. --njn]
 
   Urk.  Perhaps nuke all that X86_FEAT gunk in coregrind/core_asm.h
   though.  Vex isn't clever enough to distinguish dozens of CPU

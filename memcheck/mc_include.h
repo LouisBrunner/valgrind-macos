@@ -37,8 +37,8 @@
 #define __MC_INCLUDE_H
 
 #include "mac_shared.h"
-#include "mc_asm.h"
 
+#define MC_(str)    VGAPPEND(vgMemCheck_,str)
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/

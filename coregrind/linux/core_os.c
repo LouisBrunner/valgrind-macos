@@ -45,6 +45,33 @@ void VGA_(os_state_init)(ThreadState *tst)
    VGA_(os_state_clear)(tst);
 }
 
+static void terminate(ThreadId tid, VgSchedReturnCode src)
+{
+   vg_assert(tid == VG_(master_tid));
+   vg_assert(VG_(count_living_threads)() == 0);
+
+   //--------------------------------------------------------------
+   // Exit, according to the scheduler's return code
+   //--------------------------------------------------------------
+   switch (src) {
+   case VgSrc_ExitSyscall: /* the normal way out */
+      VG_(exit)( VG_(threads)[VG_(master_tid)].os_state.exitcode );
+      /* NOT ALIVE HERE! */
+      VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
+      break; /* what the hell :) */
+
+   case VgSrc_FatalSig:
+      /* We were killed by a fatal signal, so replicate the effect */
+      vg_assert(VG_(threads)[VG_(master_tid)].os_state.fatalsig != 0);
+      VG_(kill_self)(VG_(threads)[VG_(master_tid)].os_state.fatalsig);
+      VG_(core_panic)("main(): signal was supposed to be fatal");
+      break;
+
+   default:
+      VG_(core_panic)("main(): unexpected scheduler return code");
+   }
+}
+
 /* Run a thread from beginning to end. Does not return. */
 void VGA_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
@@ -78,34 +105,7 @@ void VGA_(thread_wrapper)(Word /*ThreadId*/ tidW)
    
    if (tid == VG_(master_tid)) {
       VG_(shutdown_actions)(tid);
-      VGA_(terminate)(tid, ret);
-   }
-}
-
-void VGA_(terminate)(ThreadId tid, VgSchedReturnCode src)
-{
-   vg_assert(tid == VG_(master_tid));
-   vg_assert(VG_(count_living_threads)() == 0);
-
-   //--------------------------------------------------------------
-   // Exit, according to the scheduler's return code
-   //--------------------------------------------------------------
-   switch (src) {
-   case VgSrc_ExitSyscall: /* the normal way out */
-      VG_(exit)( VG_(threads)[VG_(master_tid)].os_state.exitcode );
-      /* NOT ALIVE HERE! */
-      VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
-      break; /* what the hell :) */
-
-   case VgSrc_FatalSig:
-      /* We were killed by a fatal signal, so replicate the effect */
-      vg_assert(VG_(threads)[VG_(master_tid)].os_state.fatalsig != 0);
-      VG_(kill_self)(VG_(threads)[VG_(master_tid)].os_state.fatalsig);
-      VG_(core_panic)("main(): signal was supposed to be fatal");
-      break;
-
-   default:
-      VG_(core_panic)("main(): unexpected scheduler return code");
+      terminate(tid, ret);
    }
 }
 

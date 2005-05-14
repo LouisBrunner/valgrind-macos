@@ -350,8 +350,6 @@ void VG_(exit_thread)(ThreadId tid)
    vg_assert(VG_(is_running_thread)(tid));
    vg_assert(VG_(is_exiting)(tid));
 
-   VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
-
    mostly_clear_thread_record(tid);
    running_tid = VG_INVALID_THREADID;
 

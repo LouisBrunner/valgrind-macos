@@ -208,7 +208,7 @@ static void add_resolved(CodeRedirect *redir)
 
 /* Resolve a redir using si if possible, and add it to the resolved
    list */
-Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si)
+static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 {
    Bool resolved;
 
@@ -273,7 +273,7 @@ static Bool resolve_redir_allsegs(CodeRedirect *redir)
        si != NULL; 
        si = VG_(next_seginfo)(si))
    {
-      if (VG_(resolve_redir)(redir, si))
+      if (resolve_redir(redir, si))
 	 return True;
    }
    return False;
@@ -297,7 +297,7 @@ void VG_(resolve_seg_redirs)(SegInfo *si)
    for(redir = unresolved_redir; redir != NULL; redir = next) {
       next = redir->next;
 
-      if (VG_(resolve_redir)(redir, si)) {
+      if (resolve_redir(redir, si)) {
 	 *prevp = next;
 	 redir->next = NULL;
       } else

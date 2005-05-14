@@ -671,7 +671,6 @@ extern void VG_(add_redirect_sym_to_addr)(const Char *from_lib,
 					  Addr to_addr);
 extern void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr);
 extern void VG_(resolve_seg_redirs)(SegInfo *si);
-extern Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si);
 
 /* Wrapping machinery */
 enum return_type {

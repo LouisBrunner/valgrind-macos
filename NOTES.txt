@@ -1,13 +1,14 @@
 13 May 05
 ~~~~~~~~~
-ToDo: (arch)/dispatch.S: In dispatch_exceptional, there's no point testing the guest code return value against VG_TRC_INNER_COUNTERZERO, as vex never sets this flag.
+ToDo: (arch)/dispatch.S: In dispatch_exceptional, there's no point
+testing the guest code return value against VG_TRC_INNER_COUNTERZERO,
+as vex never sets this flag.  Need to check to see if it's possible to
+completely get rid of VG_TRC_INNER_COUNTERZERO.
 
 
 11 May 05
 ~~~~~~~~~
-ToDo:  vex-x86:   check/fix behaviour on SSE MOVQ / MOVSD insns.
-       vex-amd64: ditto
-                  * check above/below the line for reg-alloc
+ToDo: vex-amd64: check above/below the line for reg-alloc
 
 
 23 Apr 05 (memcheck-on-amd64 notes)

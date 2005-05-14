@@ -103,6 +103,9 @@ movmskpd_1 ... ok
 movntdq_1 ... ok
 movnti_1 ... ok
 movntpd_1 ... ok
+movq_1 ... ok
+movq_2 ... ok
+movq_3 ... ok
 movq2dq_1 ... ok
 movsd_1 ... ok
 movsd_2 ... ok

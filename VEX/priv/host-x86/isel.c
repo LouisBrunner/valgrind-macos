@@ -2305,6 +2305,24 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
+         /* Neg64(e) */
+         case Iop_Neg64: {
+            HReg yLo, yHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            /* yHi:yLo = arg */
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Unop.arg);
+            /* tLo = 0 - yLo, and set carry */
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tLo));
+            addInstr(env, X86Instr_Alu32R(Xalu_SUB, X86RMI_Reg(yLo), tLo));
+            /* tHi = 0 - yHi - carry */
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tHi));
+            addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(yHi), tHi));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
          /* ReinterpF64asI64(e) */
          /* Given an IEEE754 double, produce an I64 with the same bit
             pattern. */

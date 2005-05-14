@@ -35,11 +35,6 @@
 
 /* TODO:
 
-   Check the following.  It afflicts the amd64 front end, not sure if
-   applicable here: MOVQ (sse) is wrong wrt is the upper half zeroed
-   or not?  It always should be if dst is a reg; not quite the same as
-   MOVSD.
-
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.

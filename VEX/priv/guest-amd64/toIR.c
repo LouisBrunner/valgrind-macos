@@ -42,13 +42,6 @@
    disInstr for details.
 */
 
-/* TODO:
-
-   MOVQ (sse) is wrong wrt is the upper half zeroed or not?
-   It always should be if dst is a reg; not quite the same
-   as MOVSD.
-*/
-
 //.. /* TODO:
 //.. 
 //..    check flag settings for cmpxchg
@@ -8081,39 +8074,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       SSE2 as a minimum so there is no point distinguishing SSE1 vs
       SSE2. */
 
-   /* There are just so many damn SSE insns, and amongst them are a
-      large number of data-move insns, many of which seem almost
-      identical.  Here's a statement of the behaviour of MOVQ, MOVSD,
-      MOVD, MOVSS.  It doesn't help that the Intel manuals are less
-      than accurate about these.  The AMD docs seem OK tho. 
-
-      The following is true for both x86 and amd64.  MOVQ and MOVSD
-      shunt 64-bit things around.  r is an xmm register and m is
-      memory.
-
-      MOVQ  r <- r   lo64 moved; hi64 set to zero
-      MOVQ  m <- r   lo64 moved
-      MOVQ  r <- m   lo64 moved; hi64 set to zero
-
-      MOVSD r <- r   lo64 moved; hi64 unchanged
-      MOVSD m <- r   lo64 moved
-      MOVSD r <- m   lo64 moved; hi64 set to zero
-
-      MOVD and MOVSS shunt 32-bit things around, and are exactly
-      analogous:
-
-      MOVD  r <- r   lo32 moved; hi96 set to zero
-      MOVD  m <- r   lo32 moved
-      MOVD  r <- m   lo32 moved; hi96 set to zero
-
-      MOVSS r <- r   lo32 moved; hi96 unchanged
-      MOVSS m <- r   lo32 moved
-      MOVSS r <- m   lo32 moved; hi96 set to zero
-
-      For MOVQ and MOVD, the r <- r rules apply even if the source r
-      is instead an integer register.
-   */
-
    insn = (UChar*)&guest_code[delta];
 
 //..    /* Treat fxsave specially.  It should be doable even on an SSE0
@@ -10266,6 +10226,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through, awaiting test case */
+         /* dst: lo half copied, hi half zeroed */
       } else {
          addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
          storeLE( mkexpr(addr), 
@@ -10296,10 +10257,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* F3 0F 7E = MOVQ -- move 64 bits from E (mem or lo half xmm) to
-      G (lo half xmm).  If E is mem, upper half of G is zeroed out. */
+      G (lo half xmm).  Upper half of G is zeroed out. */
    /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out.
-      (original defn) */
+      If E is reg, upper half of G is unchanged. */
    if ( (haveF2no66noF3(pfx) && sz == 4 
          && insn[0] == 0x0F && insn[1] == 0x10)
         || 
@@ -10310,6 +10271,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (epartIsReg(modrm)) {
          putXMMRegLane64( gregOfRexRM(pfx,modrm), 0,
                           getXMMRegLane64( eregOfRexRM(pfx,modrm), 0 ));
+         if (insn[1] == 0x7E/*MOVQ*/) {
+            /* zero bits 127:64 */
+            putXMMRegLane64( gregOfRexRM(pfx,modrm), 1, mkU64(0) );
+         }
          DIP("movsd %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
                               nameXMMReg(gregOfRexRM(pfx,modrm)));
          delta += 2+1;

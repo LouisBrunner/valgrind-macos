@@ -77,7 +77,7 @@ struct _Segment {
    UInt        dev;           // device
    UInt        ino;           // inode
 
-   SegInfo*    symtab;        // symbol table
+   SegInfo*    seginfo;       // symbol table, etc
 };
 
 /* segment mapped from a file descriptor */

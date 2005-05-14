@@ -278,7 +278,7 @@ static void zeroise_segment ( Int i )
    segments[i].fnIdx    = -1;
    segments[i].dev      = 0;
    segments[i].ino      = 0;
-   segments[i].symtab   = NULL;
+   segments[i].seginfo  = NULL;
 }
 
 
@@ -386,7 +386,7 @@ static inline Bool segments_are_mergeable(Segment *s1, Segment *s2)
    if (s1->prot != s2->prot)
       return False;
 
-   if (s1->symtab != s2->symtab)
+   if (s1->seginfo != s2->seginfo)
       return False;
 
    if (s1->flags & SF_FILE){
@@ -520,9 +520,9 @@ static void recycleseg(Segment *s)
 static void freeseg(Segment *s)
 {
    recycleseg(s);
-   if (s->symtab != NULL) {
-      VG_(symtab_decref)(s->symtab, s->addr);
-      s->symtab = NULL;
+   if (s->seginfo != NULL) {
+      VG_(seginfo_decref)(s->seginfo, s->addr);
+      s->seginfo = NULL;
    }
 
    VG_(SkipNode_Free)(&sk_segments, s);
@@ -700,7 +700,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    s->filename = s->fnIdx==-1 ? NULL : &segnames[s->fnIdx].fname[0];
    s->dev      = dev;
    s->ino      = ino;
-   s->symtab   = NULL;
+   s->seginfo  = NULL;
 
    /* Clean up right now */
    preen_segments();
@@ -710,7 +710,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
       Valgrind, is at least readable and seems to contain an object
       file, then try reading symbols from it.
    */
-   if (s->symtab == NULL
+   if (s->seginfo == NULL
        && (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
        && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP) {
       if (off == 0
@@ -718,22 +718,22 @@ VG_(map_file_segment)( Addr addr, SizeT len,
 	  && (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)
 	  && len >= VKI_PAGE_SIZE
           && VG_(is_object_file)((void *)addr)) {
-         s->symtab = VG_(read_seg_symbols)(s);
-         if (s->symtab != NULL) {
+         s->seginfo = VG_(read_seg_symbols)(s);
+         if (s->seginfo != NULL) {
             s->flags |= SF_DYNLIB;
          }
       } else if (flags & SF_MMAP) {
 #if 0
 	 const SegInfo *info;
 
-	 /* Otherwise see if an existing symtab applies to this Segment */
+	 /* Otherwise see if an existing SegInfo applies to this Segment */
 	 for(info = VG_(next_seginfo)(NULL);
 	     info != NULL;
 	     info = VG_(next_seginfo)(info)) {
 	    if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info)))
             {
-	       s->symtab = (SegInfo *)info;
-	       VG_(symtab_incref)((SegInfo *)info);
+	       s->seginfo = (SegInfo *)info;
+	       VG_(seginfo_incref)((SegInfo *)info);
 	    }
 	 }
 #endif

@@ -559,11 +559,11 @@ typedef struct _SegInfo SegInfo;
    is present or not. */
 extern SegInfo* VG_(get_obj)  ( Addr a );
 
-extern const SegInfo* VG_(next_seginfo)  ( const SegInfo *seg );
-extern       Addr     VG_(seg_start)     ( const SegInfo *seg );
-extern       SizeT    VG_(seg_size)      ( const SegInfo *seg );
-extern const UChar*   VG_(seg_filename)  ( const SegInfo *seg );
-extern       ULong    VG_(seg_sym_offset)( const SegInfo *seg );
+extern const SegInfo* VG_(next_seginfo)  ( const SegInfo *si );
+extern       Addr     VG_(seg_start)     ( const SegInfo *si );
+extern       SizeT    VG_(seg_size)      ( const SegInfo *si );
+extern const UChar*   VG_(seg_filename)  ( const SegInfo *si );
+extern       ULong    VG_(seg_sym_offset)( const SegInfo *si );
 
 typedef
    enum {

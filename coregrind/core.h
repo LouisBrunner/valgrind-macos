@@ -642,8 +642,8 @@ typedef struct _CodeRedirect CodeRedirect;
 
 extern Bool VG_(is_object_file)   ( const void *hdr );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
-extern void VG_(symtab_incref)	  ( SegInfo * );
-extern void VG_(symtab_decref)	  ( SegInfo *, Addr a );
+extern void VG_(seginfo_incref)   ( SegInfo * );
+extern void VG_(seginfo_decref)   ( SegInfo *, Addr a );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 

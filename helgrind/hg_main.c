@@ -2402,14 +2402,15 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 
    /* Search for it in segments */
    {
-      const SegInfo *seg;
+      const SegInfo *si;
 
-      for(seg = VG_(next_seginfo)(NULL); 
-	  seg != NULL; 
-	  seg = VG_(next_seginfo)(seg)) {
-	 Addr base = VG_(seg_start)(seg);
-	 SizeT size = VG_(seg_size)(seg);
-	 const UChar *filename = VG_(seg_filename)(seg);
+      for (si = VG_(next_seginfo)(NULL); 
+	   si != NULL; 
+	   si = VG_(next_seginfo)(si)) 
+      {
+	 Addr base = VG_(seg_start)(si);
+	 SizeT size = VG_(seg_size)(si);
+	 const UChar *filename = VG_(seg_filename)(si);
 
 	 if (a >= base && a < base+size) {
 	    ai->akind = Segment;

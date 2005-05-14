@@ -1539,7 +1539,7 @@ Bool read_lib_symbols ( SegInfo* si )
 		     continue;
 
 		  if (seg->symtab != NULL)
-		     VG_(symtab_decref)(seg->symtab, seg->addr);
+		     VG_(seginfo_decref)(seg->symtab, seg->addr);
 
 		  VG_(symtab_incref)(si);
 		  seg->symtab = si;
@@ -1644,11 +1644,11 @@ Bool read_lib_symbols ( SegInfo* si )
          else FIND(".plt",         si->plt_start, si->plt_size,  dummy_addr,   1, Addr)
 
 #        undef FIND
-         
-         /* Check some sizes */
-         vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
-         vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
       }
+         
+      /* Check some sizes */
+      vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
 
       read_symtab(si, "symbol table", False,
                   o_symtab, o_symtab_sz,
@@ -1702,10 +1702,6 @@ Bool read_lib_symbols ( SegInfo* si )
                   else FIND(".line",         dwarf1l,      dwarf1l_sz,    UChar*)
 
 #                 undef FIND
-         
-                  /* Check some sizes */
-                  vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
-                  vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
                }
             }
          }
@@ -1766,7 +1762,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
 {
    SegInfo* si;
 
-   vg_assert(seg->symtab == NULL);
+   vg_assert(seg->seginfo == NULL);
 
    VGP_PUSHCC(VgpReadSyms);
 
@@ -1869,14 +1865,14 @@ static void unload_symbols ( Addr start, SizeT length )
    return;
 }
 
-void VG_(symtab_decref)(SegInfo *si, Addr start)
+void VG_(seginfo_decref)(SegInfo *si, Addr start)
 {
    vg_assert(si->ref >= 1);
    if (--si->ref == 0)
       unload_symbols(si->start, si->size);
 }
 
-void VG_(symtab_incref)(SegInfo *si)
+void VG_(seginfo_incref)(SegInfo *si)
 {
    vg_assert(si->ref > 0);
    si->ref++;
@@ -1949,10 +1945,10 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
 
    s = VG_(find_segment)(ptr);
 
-   if (s == NULL || s->symtab == NULL)
+   if (s == NULL || s->seginfo == NULL)
       goto not_found;
    
-   si = s->symtab;
+   si = s->seginfo;
 
    sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
    if (sno == -1) goto not_found;
@@ -2522,56 +2518,56 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 /*--- SegInfo accessor functions                           ---*/
 /*------------------------------------------------------------*/
 
-const SegInfo* VG_(next_seginfo)(const SegInfo* seg)
+const SegInfo* VG_(next_seginfo)(const SegInfo* si)
 {
-   if (seg == NULL)
+   if (si == NULL)
       return segInfo;
-   return seg->next;
+   return si->next;
 }
 
-Addr VG_(seg_start)(const SegInfo* seg)
+Addr VG_(seg_start)(const SegInfo* si)
 {
-   return seg->start;
+   return si->start;
 }
 
-SizeT VG_(seg_size)(const SegInfo* seg)
+SizeT VG_(seg_size)(const SegInfo* si)
 {
-   return seg->size;
+   return si->size;
 }
 
-const UChar* VG_(seg_filename)(const SegInfo* seg)
+const UChar* VG_(seg_filename)(const SegInfo* si)
 {
-   return seg->filename;
+   return si->filename;
 }
 
-ULong VG_(seg_sym_offset)(const SegInfo* seg)
+ULong VG_(seg_sym_offset)(const SegInfo* si)
 {
-   return seg->offset;
+   return si->offset;
 }
 
 VgSectKind VG_(seg_sect_kind)(Addr a)
 {
-   SegInfo* seg;
+   SegInfo* si;
    VgSectKind ret = Vg_SectUnknown;
 
-   for(seg = segInfo; seg != NULL; seg = seg->next) {
-      if (a >= seg->start && a < (seg->start + seg->size)) {
+   for(si = segInfo; si != NULL; si = si->next) {
+      if (a >= si->start && a < (si->start + si->size)) {
 	 if (0)
-	    VG_(printf)("addr=%p seg=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
-			a, seg, seg->filename, 
-			seg->got_start, seg->got_size,
-			seg->plt_start, seg->plt_size,
-			seg->data_start, seg->data_size,
-			seg->bss_start, seg->bss_size);
+	    VG_(printf)("addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
+			a, si, si->filename, 
+			si->got_start, si->got_size,
+			si->plt_start, si->plt_size,
+			si->data_start, si->data_size,
+			si->bss_start, si->bss_size);
 	 ret = Vg_SectText;
 
-	 if (a >= seg->data_start && a < (seg->data_start + seg->data_size))
+	 if (a >= si->data_start && a < (si->data_start + si->data_size))
 	    ret = Vg_SectData;
-	 else if (a >= seg->bss_start && a < (seg->bss_start + seg->bss_size))
+	 else if (a >= si->bss_start && a < (si->bss_start + si->bss_size))
 	    ret = Vg_SectBSS;
-	 else if (a >= seg->plt_start && a < (seg->plt_start + seg->plt_size))
+	 else if (a >= si->plt_start && a < (si->plt_start + si->plt_size))
 	    ret = Vg_SectPLT;
-	 else if (a >= seg->got_start && a < (seg->got_start + seg->got_size))
+	 else if (a >= si->got_start && a < (si->got_start + si->got_size))
 	    ret = Vg_SectGOT;
       }
    }

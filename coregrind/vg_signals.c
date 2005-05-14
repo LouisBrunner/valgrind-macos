@@ -1887,8 +1887,6 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       and have it delivered.  Otherwise it's a Valgrind bug. */
    {   
       Addr ips[ VG_(clo_backtrace_size) ];
-      Addr context_ip;
-      Char buf[1024];
       ThreadState *tst = VG_(get_ThreadState)(VG_(get_lwp_tid)(VG_(gettid)()));
 
       if (VG_(sigismember)(&tst->sig_mask, sigNo)) {
@@ -1920,23 +1918,10 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 		   "INTERNAL ERROR: Valgrind received a signal %d (%s) - exiting",
 		   sigNo, signame(sigNo));
 
-      buf[0] = 0;
-      context_ip = VGP_UCONTEXT_INSTR_PTR(uc);
-      if (1 && !VG_(get_fnname)(context_ip, buf+2, sizeof(buf)-5)) {
-	 Int len;
-
-	 buf[0] = ' ';
-	 buf[1] = '(';
-	 len = VG_(strlen)(buf);
-	 buf[len] = ')';
-	 buf[len+1] = '\0';
-      }
-
       VG_(message)(Vg_DebugMsg, 
-		   "si_code=%x Fault EIP: %p%s; Faulting address: %p",
-		   info->si_code, context_ip, buf, info->_sifields._sigfault._addr);
-      VG_(message)(Vg_DebugMsg, 
-		   "  sp=%p\n", VGP_UCONTEXT_STACK_PTR(uc));
+		   "si_code=%x;  Faulting address: %p;  sp: %p",
+		   info->si_code, info->_sifields._sigfault._addr,
+                   VGP_UCONTEXT_STACK_PTR(uc));
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */

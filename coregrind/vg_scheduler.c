@@ -130,16 +130,6 @@ Bool VG_(is_valid_tid) ( ThreadId tid )
 }
 
 
-__inline__
-static Bool is_valid_or_empty_tid ( ThreadId tid )
-{
-   /* tid is unsigned, hence no < 0 test. */
-   if (tid == 0) return False;
-   if (tid >= VG_N_THREADS) return False;
-   return True;
-}
-
-
 /* For constructing error messages only: try and identify a thread
    whose stack satisfies the predicate p, or return VG_INVALID_THREADID
    if none do.

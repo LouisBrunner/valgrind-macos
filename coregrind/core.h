@@ -83,7 +83,7 @@
 */
 
 #include "tool.h"          // tool stuff
-#include "tool_asm.h"      // XXX: temporary, for VG_() and friends
+#include "core_asm.h"
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 
 // Ugly: this is needed by linux/core_os.h

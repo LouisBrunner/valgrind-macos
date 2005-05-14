@@ -37,6 +37,7 @@ val_PROGRAMS = \
 
 noinst_HEADERS = \
 	core.h			\
+	core_asm.h		\
 	pub_core_aspacemgr.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\

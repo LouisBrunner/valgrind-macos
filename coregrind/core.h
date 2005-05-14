@@ -649,8 +649,6 @@ extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 
 extern Addr VG_(reverse_search_one_symtab) ( const SegInfo* si, const Char* name );
 
-extern Bool VG_(resolve_redir_allsegs)(CodeRedirect *redir);
-
 extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
                                 /*MOD*/Addr* spP,
                                 /*MOD*/Addr* fpP,

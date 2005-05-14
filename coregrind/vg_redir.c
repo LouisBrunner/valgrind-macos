@@ -265,6 +265,20 @@ Bool VG_(resolve_redir)(CodeRedirect *redir, const SegInfo *si)
    return resolved;
 }
 
+static Bool resolve_redir_allsegs(CodeRedirect *redir)
+{
+   const SegInfo *si;
+
+   for(si = VG_(next_seginfo)(NULL); 
+       si != NULL; 
+       si = VG_(next_seginfo)(si))
+   {
+      if (VG_(resolve_redir)(redir, si))
+	 return True;
+   }
+   return False;
+}
+
 /* Go through the complete redir list, resolving as much as possible with this SegInfo.
 
     This should be called when a new SegInfo symtab is loaded.
@@ -314,7 +328,7 @@ static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
 
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */
-   if (!VG_(resolve_redir_allsegs)(redir)) {
+   if (!resolve_redir_allsegs(redir)) {
       /* nope, add to list */
       redir->next = unresolved_redir;
       unresolved_redir = redir;
@@ -344,7 +358,7 @@ void VG_(add_redirect_sym_to_addr)(const Char *from_lib, const Char *from_sym,
 
     /* Check against all existing segments to see if this redirection
        can be resolved immediately */
-   if (!VG_(resolve_redir_allsegs)(redir)) {
+   if (!resolve_redir_allsegs(redir)) {
       /* nope, add to list */
       redir->next = unresolved_redir;
       unresolved_redir = redir;
@@ -397,7 +411,7 @@ CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
    
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */
-   if (!VG_(resolve_redir_allsegs)(redir)) {
+   if (!resolve_redir_allsegs(redir)) {
       /* nope, add to list */
       redir->next = unresolved_redir;
       unresolved_redir = redir;

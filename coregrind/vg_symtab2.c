@@ -1058,17 +1058,6 @@ void handle_intercept( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
    VG_(arena_free)(VG_AR_SYMTAB, lib);
 }
 
-Bool VG_(resolve_redir_allsegs)(CodeRedirect *redir)
-{
-   SegInfo *si;
-
-   for(si = segInfo; si != NULL; si = si->next)
-      if (VG_(resolve_redir)(redir, si))
-	 return True;
-
-   return False;
-}
-
 //static
 //void handle_wrapper( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
 //{

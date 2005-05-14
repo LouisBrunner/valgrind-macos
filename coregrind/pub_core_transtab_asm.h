@@ -1,13 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Asm-specific core stuff.                          core_asm.h ---*/
+/*--- Asm-only TransTab stuff.             pub_core_transtab_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward 
+   Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,22 +28,15 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __CORE_ASM_H
-#define __CORE_ASM_H
-
-#include "tool_asm.h"            // tool asm stuff
-#include "core_arch_asm.h"       // arch-specific asm stuff
-
-/* This file is included in all Valgrind source files, including
-   assembly ones. */
-
+#ifndef __PUB_CORE_TRANSTAB_ASM_H
+#define __PUB_CORE_TRANSTAB_ASM_H
 
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 16
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
 
-#endif /* __CORE_ASM_H */
+#endif   // __PUB_CORE_TRANSTAB_ASM_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

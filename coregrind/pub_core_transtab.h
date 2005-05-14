@@ -37,6 +37,8 @@
 // enabling fast look-ups of them.
 //--------------------------------------------------------------------
 
+#include "pub_core_transtab_asm.h"
+
 /* The fast-cache for tt-lookup, and for finding counters. */
 extern ULong* VG_(tt_fast) [VG_TT_FAST_SIZE];
 extern UInt*  VG_(tt_fastN)[VG_TT_FAST_SIZE];

@@ -31,6 +31,7 @@
 
 #include "core_asm.h"
 #include "pub_core_dispatch_asm.h"
+#include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_amd64_RIP */
 
 

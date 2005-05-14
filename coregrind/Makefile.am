@@ -37,7 +37,6 @@ val_PROGRAMS = \
 
 noinst_HEADERS = \
 	core.h			\
-	core_asm.h		\
 	pub_core_aspacemgr.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
@@ -55,6 +54,7 @@ noinst_HEADERS = \
 	pub_core_tooliface.h	\
 	pub_core_translate.h	\
 	pub_core_transtab.h	\
+	pub_core_transtab_asm.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h

@@ -45,6 +45,7 @@ noinst_HEADERS = \
 	pub_core_dispatch_asm.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
+	pub_core_hashtable.h	\
 	pub_core_mallocfree.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sigframe.h	\
@@ -76,6 +77,7 @@ stage2_SOURCES = \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
+	m_hashtable.c \
 	m_mallocfree.c \
 	m_skiplist.c \
 	m_stacktrace.c \
@@ -85,7 +87,6 @@ stage2_SOURCES = \
 	ume.c \
 	\
 	vg_scheduler.c \
-	vg_hashtable.c \
 	vg_main.c \
 	vg_messages.c \
 	vg_mylibc.c \

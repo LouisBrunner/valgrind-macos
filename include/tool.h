@@ -579,62 +579,6 @@ typedef
 extern VgSectKind VG_(seg_sect_kind)(Addr);
 
 /*====================================================================*/
-/*=== Generic hash table                                           ===*/
-/*====================================================================*/
-
-/* Generic type for a separately-chained hash table.  Via a kind of dodgy
-   C-as-C++ style inheritance, tools can extend the VgHashNode type, so long
-   as the first two fields match the sizes of these two fields.  Requires
-   a bit of casting by the tool. */
-typedef
-   struct _VgHashNode {
-      struct _VgHashNode * next;
-      UWord              key;
-   }
-   VgHashNode;
-
-typedef
-   VgHashNode**
-   VgHashTable;
-
-/* Make a new table.  Allocates the memory with VG_(calloc)(), so can be freed
- * with VG_(free)(). */
-extern VgHashTable VG_(HT_construct) ( void );
-
-/* Count the number of nodes in a table. */
-extern Int VG_(HT_count_nodes) ( VgHashTable table );
-
-/* Add a node to the table. */
-extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
-
-/* Looks up a node in the hash table.  Also returns the address of the
-   previous node's `next' pointer which allows it to be removed from the
-   list later without having to look it up again.  */
-extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UWord key,
-                                    /*OUT*/VgHashNode*** next_ptr );
-
-/* Allocates an array of pointers to all the shadow chunks of malloc'd
-   blocks.  Must be freed with VG_(free)(). */
-extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_shadows );
-
-/* Returns first node that matches predicate `p', or NULL if none do.
-   Extra arguments can be implicitly passed to `p' using `d' which is an
-   opaque pointer passed to `p' each time it is called. */
-extern VgHashNode* VG_(HT_first_match) ( VgHashTable t,
-                                         Bool (*p)(VgHashNode*, void*),
-                                         void* d );
-
-/* Applies a function f() once to each node.  Again, `d' can be used
-   to pass extra information to the function. */
-extern void VG_(HT_apply_to_all_nodes)( VgHashTable t,
-                                        void (*f)(VgHashNode*, void*),
-                                        void* d );
-
-/* Destroy a table. */
-extern void VG_(HT_destruct) ( VgHashTable t );
-
-
-/*====================================================================*/
 /*=== Functions for shadow registers                               ===*/
 /*====================================================================*/
 

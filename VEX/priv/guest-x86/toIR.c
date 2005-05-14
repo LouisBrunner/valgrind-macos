@@ -9245,6 +9245,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       modrm = getIByte(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through, awaiting test case */
+         /* dst: lo half copied, hi half zeroed */
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
          storeLE( mkexpr(addr), 
@@ -9274,10 +9275,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    }
 
    /* F3 0F 7E = MOVQ -- move 64 bits from E (mem or lo half xmm) to
-      G (lo half xmm).  If E is mem, upper half of G is zeroed out. */
+      G (lo half xmm).  Upper half of G is zeroed out. */
    /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out.
-      (original defn) */
+      If E is reg, upper half of G is unchanged. */
    if ((insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x10)
        || (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7E)) {
       vassert(sz == 4);
@@ -9285,6 +9286,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (epartIsReg(modrm)) {
          putXMMRegLane64( gregOfRM(modrm), 0,
                           getXMMRegLane64( eregOfRM(modrm), 0 ));
+         if (insn[0] == 0xF3/*MOVQ*/) {
+            /* zero bits 127:64 */
+            putXMMRegLane64( gregOfRM(modrm), 1, mkU64(0) );
+         }
          DIP("movsd %s,%s\n", nameXMMReg(eregOfRM(modrm)),
                               nameXMMReg(gregOfRM(modrm)));
          delta += 3+1;

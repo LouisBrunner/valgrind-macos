@@ -351,7 +351,7 @@ static void printSuppForIp(UInt n, Addr ip)
 
    if ( VG_(get_fnname_nodemangle) (ip, buf,  VG_ERRTXT_LEN) ) {
       VG_(printf)("   fun:%s\n", buf);
-   } else if ( VG_(get_objname)(ip, buf+7, VG_ERRTXT_LEN-7) ) {
+   } else if ( VG_(get_objname)(ip, buf, VG_ERRTXT_LEN) ) {
       VG_(printf)("   obj:%s\n", buf);
    } else {
       VG_(printf)("   ???:???       "

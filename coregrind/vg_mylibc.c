@@ -843,9 +843,9 @@ Char* VG_(strdup) ( const Char* s )
 
 /* ---------------------------------------------------------------------
    A simple string matching routine, purloined from Hugs98.
-      `*'    matches any sequence of zero or more characters
-      `?'    matches any single character exactly 
-      `\c'   matches the character c only (ignoring special chars)
+      '*'    matches any sequence of zero or more characters
+      '?'    matches any single character exactly 
+      '\c'   matches the character c only (ignoring special chars)
       c      matches the character c only
    ------------------------------------------------------------------ */
 
@@ -982,10 +982,10 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
 
    // Treat vg_assert2(0, "foo") specially, as a panicky abort
    if (VG_STREQ(expr, "0")) {
-      VG_(printf)("\n%s: %s:%d (%s): the `impossible' happened.\n",
+      VG_(printf)("\n%s: %s:%d (%s): the 'impossible' happened.\n",
                   component, file, line, fn, expr );
    } else {
-      VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
+      VG_(printf)("\n%s: %s:%d (%s): Assertion '%s' failed.\n",
                   component, file, line, fn, expr );
    }
    if (!VG_STREQ(buf, ""))
@@ -997,7 +997,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
 __attribute__ ((noreturn))
 static void panic ( Char* name, Char* report, Char* str, StackTrace ips )
 {
-   VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
+   VG_(printf)("\n%s: the 'impossible' happened:\n   %s\n", name, str);
    report_and_quit(report, ips);
 }
 

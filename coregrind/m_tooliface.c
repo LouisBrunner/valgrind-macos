@@ -101,7 +101,7 @@ void VG_(sanity_check_needs) ( void)
 {
 #define CHECK_NOT(var, value)                               \
    if ((var)==(value)) {                                    \
-      VG_(printf)("\nTool error: `%s' not initialised\n",   \
+      VG_(printf)("\nTool error: '%s' not initialised\n",   \
                   VG_STRINGIFY(var));                       \
       VG_(tool_panic)("Uninitialised details field\n");     \
    }
@@ -120,9 +120,9 @@ void VG_(sanity_check_needs) ( void)
          VG_(tdict).track_new_mem_stack_32 ) &&
        ! VG_(tdict).track_new_mem_stack) 
    {
-      VG_(printf)("\nTool error: one of the specialised `new_mem_stack_n'\n"
-                  "events tracked, but not the generic `new_mem_stack' one.\n");
-      VG_(tool_panic)("`new_mem_stack' should be defined\n");
+      VG_(printf)("\nTool error: one of the specialised 'new_mem_stack_n'\n"
+                  "events tracked, but not the generic 'new_mem_stack' one.\n");
+      VG_(tool_panic)("'new_mem_stack' should be defined\n");
    }
 
    if ( (VG_(tdict).track_die_mem_stack_4  ||
@@ -132,9 +132,9 @@ void VG_(sanity_check_needs) ( void)
          VG_(tdict).track_die_mem_stack_32 ) &&
        ! VG_(tdict).track_die_mem_stack) 
    {
-      VG_(printf)("\nTool error: one of the specialised `die_mem_stack_n'\n"
-                  "events tracked, but not the generic `die_mem_stack' one.\n");
-      VG_(tool_panic)("`die_mem_stack' should be defined\n");
+      VG_(printf)("\nTool error: one of the specialised 'die_mem_stack_n'\n"
+                  "events tracked, but not the generic 'die_mem_stack' one.\n");
+      VG_(tool_panic)("'die_mem_stack' should be defined\n");
    }
 
    if (VG_(needs).shadow_memory != (VG_(get_shadow_size)() != 0)) {

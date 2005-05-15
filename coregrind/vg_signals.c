@@ -712,7 +712,7 @@ int VG_(do_sys_sigprocmask) ( ThreadId tid,
 
    default:
       VG_(message)(Vg_DebugMsg, 
-                  "sigprocmask: unknown `how' field %d", how);
+                  "sigprocmask: unknown 'how' field %d", how);
       return -VKI_EINVAL;
    }
 }

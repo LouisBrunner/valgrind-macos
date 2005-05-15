@@ -74,7 +74,7 @@
 //zz    All entries in the primary (top-level) map must point to a valid
 //zz    secondary (second-level) map.  Since most of the 4G of address
 //zz    space will not be in use -- ie, not mapped at all -- there is a
-//zz    distinguished secondary map, which indicates `not addressible and
+//zz    distinguished secondary map, which indicates 'not addressible and
 //zz    not valid' writeable for all bytes.  Entries in the primary map for
 //zz    which the entire 64k is not in use at all point at this
 //zz    distinguished map.
@@ -1368,7 +1368,7 @@ static void mc_pp_Error ( Error* err )
 /*--- Recording errors                                     ---*/
 /*------------------------------------------------------------*/
 
-/* Creates a copy of the `extra' part, updates the copy with address info if
+/* Creates a copy of the 'extra' part, updates the copy with address info if
    necessary, and returns the copy. */
 /* This one called from generated code and non-generated code. */
 static void mc_record_value_error ( ThreadId tid, Int size )

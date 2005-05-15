@@ -62,7 +62,7 @@ static void panic ( Char* str )
 {
    fprintf(stderr,
            "\nvalgrind-listener: the "
-           "`impossible' happened:\n   %s\n", str);
+           "'impossible' happened:\n   %s\n", str);
    fprintf(stderr,
            "Please report this bug at: %s\n\n", VG_BUGS_TO);
    exit(1);
@@ -72,7 +72,7 @@ __attribute__ ((noreturn))
 static void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
    fprintf(stderr,
-           "\nvalgrind-listener: %s:%d (%s): Assertion `%s' failed.\n",
+           "\nvalgrind-listener: %s:%d (%s): Assertion '%s' failed.\n",
            file, line, fn, expr );
    fprintf(stderr,
            "Please report this bug at: %s\n\n", VG_BUGS_TO);

@@ -72,7 +72,7 @@ void VG_(HT_add_node) ( VgHashTable table, VgHashNode* node )
 }
 
 /* Looks up a VgHashNode in the table.  Also returns the address of
-   the previous node's `next' pointer which allows it to be removed from the
+   the previous node's 'next' pointer which allows it to be removed from the
    list later without having to look it up again.  */
 VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
                              /*OUT*/VgHashNode*** next_ptr )

@@ -79,7 +79,7 @@ static ThreadId last_tid_printed = 1;
  * effectively extend it by defining their own enums in the (0..) range. */
 
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
-   enum (with element values in the normal range (0..)) for `ekind'. 
+   enum (with element values in the normal range (0..)) for 'ekind'. 
    Functions for getting/setting the tool-relevant fields are in
    include/tool.h.
 
@@ -167,7 +167,7 @@ typedef
 /* Suppressions.  Tools can get/set tool-relevant parts with functions
    declared in include/tool.h.  Extensible via the 'extra' field. 
    Tools can use a normal enum (with element values in the normal range
-   (0..)) for `skind'. */
+   (0..)) for 'skind'. */
 struct _Supp {
    struct _Supp* next;
    Int count;     // The number of times this error has been suppressed.
@@ -524,15 +524,15 @@ void VG_(maybe_record_error) ( ThreadId tid,
 
    /* OK, we're really going to collect it.  The context is on the stack and
       will disappear shortly, so we must copy it.  First do the main
-      (non-`extra') part.
+      (non-'extra') part.
      
-      Then VG_(tdict).tool_update_extra can update the `extra' part.  This
+      Then VG_(tdict).tool_update_extra can update the 'extra' part.  This
       is for when there are more details to fill in which take time to work
       out but don't affect our earlier decision to include the error -- by
       postponing those details until now, we avoid the extra work in the
       case where we ignore the error.  Ugly.
 
-      Then, if there is an `extra' part, copy it too, using the size that
+      Then, if there is an 'extra' part, copy it too, using the size that
       VG_(tdict).tool_update_extra returned.  Also allow for people using
       the void* extra field for a scalar value like an integer.
    */
@@ -541,7 +541,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
 
-   /* update `extra' */
+   /* update 'extra' */
    switch (ekind) {
      //      case ThreadErr:
      //      case MutexErr:
@@ -554,7 +554,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
          break;
    }
 
-   /* copy block pointed to by `extra', if there is one */
+   /* copy block pointed to by 'extra', if there is one */
    if (NULL != p->extra && 0 != extra_size) { 
       void* new_extra = VG_(malloc)(extra_size);
       VG_(memcpy)(new_extra, p->extra, extra_size);
@@ -582,8 +582,8 @@ void VG_(maybe_record_error) ( ThreadId tid,
    errors that the tool wants to report immediately, eg. because they're
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
-   suppressed.  Bool `print_error' dictates whether to print the error. 
-   Bool `count_error' dictates whether to count the error in n_errs_found.
+   suppressed.  Bool 'print_error' dictates whether to print the error. 
+   Bool 'count_error' dictates whether to count the error in n_errs_found.
 */
 Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
@@ -597,10 +597,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
    /* Unless it's suppressed, we're going to show it.  Don't need to make
       a copy, because it's only temporary anyway.
 
-      Then update the `extra' part with VG_(tdict).tool_update_extra),
+      Then update the 'extra' part with VG_(tdict).tool_update_extra),
       because that can have an affect on whether it's suppressed.  Ignore
       the size return value of VG_(tdict).tool_update_extra, because we're
-      not copying `extra'. */
+      not copying 'extra'. */
    (void)VG_TDICT_CALL(tool_update_extra, &err);
 
    if (NULL == is_suppressible_error(&err)) {
@@ -743,7 +743,7 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
          i--; buf[i] = 0; 
       };
 
-      /* VG_(printf)("The line is `%s'\n", buf); */
+      /* VG_(printf)("The line is '%s'\n", buf); */
       /* Ok, we have a line.  If a non-comment line, return.
          If a comment line, start all over again. */
       if (buf[0] != '#') return False;
@@ -808,7 +808,7 @@ static void load_one_suppressions_file ( Char* filename )
 
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (fd < 0) {
-      VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file `%s'", 
+      VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file '%s'", 
                    filename );
       VG_(exit)(1);
    }
@@ -936,7 +936,7 @@ static void load_one_suppressions_file ( Char* filename )
 
   syntax_error:
    VG_(message)(Vg_UserMsg, 
-                "FATAL: in suppressions file `%s': %s", filename, err_str );
+                "FATAL: in suppressions file '%s': %s", filename, err_str );
    
    VG_(close)(fd);
    VG_(message)(Vg_UserMsg, "exiting now.");

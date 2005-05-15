@@ -74,8 +74,8 @@ void VG_(register_profile_event) ( Int n, Char* name )
       VG_(tool_panic)("profile event too high");
    }
    if (vgp_names[n] != NULL) {
-      VG_(printf)("\nProfile event #%d being registered as `%s'\n"
-                  "already registered as `%s'.\n"
+      VG_(printf)("\nProfile event #%d being registered as '%s'\n"
+                  "already registered as '%s'.\n"
                   "Note that tool and core event numbers must not overlap.\n",
                   n, name, vgp_names[n]);
       VG_(tool_panic)("profile event already registered");
@@ -135,7 +135,7 @@ void VG_(pushcc) ( UInt cc )
 {
    if (vgp_sp >= VGP_M_STACK-1) { 
       VG_(printf)(
-         "\nMaximum profile stack depth (%d) reached for event #%d (`%s').\n"
+         "\nMaximum profile stack depth (%d) reached for event #%d ('%s').\n"
          "This is probably due to a VG_(pushcc)() without a matching\n"
          "VG_(popcc)().  Make sure they all match.\n"
          "Or if you are nesting profiling events very deeply, increase\n"

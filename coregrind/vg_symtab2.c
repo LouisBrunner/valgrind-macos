@@ -136,7 +136,7 @@ Char *VG_(addStr) ( SegInfo* si, Char* str, Int len )
    if (len == -1)
       len = VG_(strlen)(str);
 
-   /* Avoid gratuitous duplication:  if we saw `str' within the last NN,
+   /* Avoid gratuitous duplication:  if we saw 'str' within the last NN,
     * within this segment, return that index.  Saves about 200KB in glibc,
     * extra time taken is too small to measure.  --NJN 2002-Aug-30 */
    if (curr_si == si) {
@@ -1091,7 +1091,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
                 o_symtab_sz/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
-      0 always denotes `unknown symbol'. */
+      0 always denotes 'unknown symbol'. */
    for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
       ElfXX_Sym* sym = & o_symtab[i];
 #     if 1

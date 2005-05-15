@@ -513,7 +513,7 @@ Superblock* findSb ( Arena* a, Block* b )
       if ((Block*)&sb->payload_bytes[0] <= b
           && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
          return sb;
-   VG_(printf)("findSb: can't find pointer %p in arena `%s'\n", b, a->name );
+   VG_(printf)("findSb: can't find pointer %p in arena '%s'\n", b, a->name );
    VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
    return NULL; /*NOTREACHED*/
 }

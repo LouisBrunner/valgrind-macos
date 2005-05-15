@@ -817,7 +817,7 @@ static void fprint_CC_table_and_calc_totals(void)
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
       VG_(message)(Vg_UserMsg,
-         "error: can't open cache simulation output file `%s'",
+         "error: can't open cache simulation output file '%s'",
          cachegrind_out_file );
       VG_(message)(Vg_UserMsg,
          "       ... so simulation results will be missing.");

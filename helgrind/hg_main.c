@@ -1716,7 +1716,7 @@ static
 void hg_pre_mem_read(CorePart part, ThreadId tid,
                      Char* s, Addr base, SizeT size )
 {
-   if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(tool_panic)("a");}
+   if (tid > 50) { VG_(printf)("pid = %d, s = '%s', part = %d\n", tid, s, part); VG_(tool_panic)("a");}
    hg_mem_read(base, size, tid);
 }
 

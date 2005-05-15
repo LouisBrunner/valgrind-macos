@@ -217,7 +217,7 @@ void VG_(parse_procselfmaps) (
     syntaxerror:
       VG_(message)(Vg_UserMsg, "FATAL: syntax error reading /proc/self/maps");
       { Int k;
-        VG_(printf)("last 50 chars: `");
+        VG_(printf)("last 50 chars: '");
         for (k = i-50; k <= i; k++) VG_(printf)("%c", procmap_buf[k]);
         VG_(printf)("'\n");
       }
@@ -234,7 +234,7 @@ void VG_(parse_procselfmaps) (
       i++;
       if (i < i_eol-1 && procmap_buf[i] == '/') {
          /* Minor hack: put a '\0' at the filename end for the call to
-            `record_mapping', then restore the old char with `tmp'. */
+            'record_mapping', then restore the old char with 'tmp'. */
          filename = &procmap_buf[i];
          tmp = filename[i_eol - i];
          filename[i_eol - i] = '\0';

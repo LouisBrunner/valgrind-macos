@@ -102,7 +102,7 @@ static Bool ac_recognised_suppression ( Char* name, Supp* su )
    All entries in the primary (top-level) map must point to a valid
    secondary (second-level) map.  Since most of the 4G of address
    space will not be in use -- ie, not mapped at all -- there is a
-   distinguished secondary map, which indicates `not addressible and
+   distinguished secondary map, which indicates 'not addressible and
    not valid' writeable for all bytes.  Entries in the primary map for
    which the entire 64k is not in use at all point at this
    distinguished map.
@@ -1221,7 +1221,7 @@ static Bool ac_handle_client_request ( ThreadId tid, UWord* arg, UWord *ret )
    do {                                                                 \
       if (moans-- > 0) {                                                \
          VG_(message)(Vg_UserMsg,                                       \
-            "Warning: Addrcheck: ignoring `%s' request.", what);     \
+            "Warning: Addrcheck: ignoring '%s' request.", what);     \
          VG_(message)(Vg_UserMsg,                                       \
             "   To honour this request, rerun with --tool=memcheck.");  \
       }                                                                 \

@@ -1265,7 +1265,7 @@ static void revert_to_stderr ( void )
 void VG_(bad_option) ( Char* opt )
 {
    revert_to_stderr();
-   VG_(printf)("valgrind: Bad option `%s'; aborting.\n", opt);
+   VG_(printf)("valgrind: Bad option '%s'; aborting.\n", opt);
    VG_(printf)("valgrind: Use --help for more information.\n");
    VG_(exit)(1);
 }
@@ -1904,7 +1904,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                // was some other file error, we give up.
 	       if (eventually_log_fd != -VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
-			       "Can't create/open log file `%s.pid%d'; giving up!", 
+			       "Can't create/open log file '%s.pid%d'; giving up!", 
 			       VG_(clo_log_name), pid);
 		  VG_(bad_option)(
 		     "--log-file=<file> (didn't work out for some reason.)");
@@ -1927,7 +1927,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
          } else {
             VG_(message)(Vg_UserMsg, 
-                         "Can't create/open log file `%s'; giving up!", 
+                         "Can't create/open log file '%s'; giving up!", 
                          VG_(clo_log_name));
             VG_(bad_option)(
                "--log-file-exactly=<file> (didn't work out for some reason.)");
@@ -1944,14 +1944,14 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             VG_(message)(Vg_UserMsg, 
                "Invalid --log-socket=ipaddr or --log-socket=ipaddr:port spec"); 
             VG_(message)(Vg_UserMsg, 
-               "of `%s'; giving up!", VG_(clo_log_name) );
+               "of '%s'; giving up!", VG_(clo_log_name) );
             VG_(bad_option)(
                "--log-socket=");
             /*NOTREACHED*/
 	 }
          if (eventually_log_fd == -2) {
             VG_(message)(Vg_UserMsg, 
-               "valgrind: failed to connect to logging server `%s'.",
+               "valgrind: failed to connect to logging server '%s'.",
                VG_(clo_log_name) ); 
             VG_(message)(Vg_UserMsg, 
                 "Log messages will sent to stderr instead." );

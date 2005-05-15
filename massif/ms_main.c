@@ -1298,7 +1298,7 @@ static Char* clean_fnname(Char *d, Char* s)
 
 static void file_err ( Char* file )
 {
-   VG_(message)(Vg_UserMsg, "error: can't open output file `%s'", file );
+   VG_(message)(Vg_UserMsg, "error: can't open output file '%s'", file );
    VG_(message)(Vg_UserMsg, "       ... so profile results will be missing.");
 }
 

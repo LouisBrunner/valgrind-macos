@@ -334,7 +334,7 @@ VG_(debugLog_vprintf) (
       if (format[i] == 0)
          break;
       if (format[i] == '%') {
-         /* `%%' is replaced by `%'. */
+         /* '%%' is replaced by '%'. */
          send('%', send_arg2);
          ret++;
          continue;

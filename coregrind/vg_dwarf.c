@@ -957,6 +957,7 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_def_cfa_register   = 0x0d,
     DW_CFA_def_cfa_offset     = 0x0e,
     DW_CFA_offset_extended_sf = 0x11, /* DWARF3 only */
+    DW_CFA_def_cfa_offset_sf  = 0x13, /* DWARF3 only */
     DW_CFA_lo_user            = 0x1c,
     DW_CFA_GNU_args_size      = 0x2e,
     DW_CFA_hi_user            = 0x3f
@@ -1456,6 +1457,12 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          off = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
          ctx->cfa_offset = off;
+         break;
+
+      case DW_CFA_def_cfa_offset_sf:
+         off = read_leb128( &instr[i], &nleb, 1);
+         i += nleb;
+         ctx->cfa_offset = off * ctx->data_a_f;
          break;
 
       case DW_CFA_GNU_args_size:

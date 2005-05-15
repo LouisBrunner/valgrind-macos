@@ -382,6 +382,17 @@
    obj:/lib64/tls/libpthread*.so*
 }
 
+##----------------------------------------------------------------------##
+## glibc-2.3.5 on FC4
+## Assumes that sysctl returns \0-terminated strings in is_smp_system
+{
+   Unterminated strstr string in is_smp_system() (NPTL)
+   Memcheck:Cond
+   fun:strstr
+   fun:__pthread_initialize_minimal
+   obj:*/libpthread-2.3.5.so
+   obj:*/libpthread-2.3.5.so
+}
 
 
 ##----------------------------------------------------------------------##

@@ -284,6 +284,13 @@
   unless you run 'strip' on them; some libraries ship
   stripped).</para>
 
+  <para>Also, for leak reports involving shared objects, if the shared
+  object is unloaded before the program terminates, Valgrind will discard
+  the debug information and the error message will be full of
+  <literal>???</literal> entries.  The workaround here is to avoid calling
+  dlclose() on these shared objects.
+  </para>
+
   <para>Also, <literal>-fomit-frame-pointer</literal> and
   <literal>-fstack-check</literal> can make stack traces
   worse.</para>
@@ -319,6 +326,17 @@ Invalid write of size 1
    at 0x80483C4: really (malloc1.c:20)
    by 0x42015703: __libc_start_main (in /lib/tls/libc-2.3.2.so)
    by 0x80482CC: ??? (start.S:81)
+</programlisting>
+
+  <para>A leak error message involving an unloaded shared object:</para>
+
+<programlisting>
+84 bytes in 1 blocks are possibly lost in loss record 488 of 713
+   at 0x1B9036DA: operator new(unsigned) (vg_replace_malloc.c:132)
+   by 0x1DB63EEB: ???
+   by 0x1DB4B800: ???
+   by 0x1D65E007: ???
+   by 0x8049EE6: main (main.cpp:24)
 </programlisting>
 
  </answer>

@@ -32,6 +32,7 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "valgrind.h"
 
 //zz#include "memcheck/memcheck.h"
 

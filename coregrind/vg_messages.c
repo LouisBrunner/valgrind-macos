@@ -30,6 +30,7 @@
 */
 
 #include "core.h"
+#include "valgrind.h"
 
 #include <time.h>
 #include <sys/time.h>

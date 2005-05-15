@@ -83,7 +83,6 @@
 */
 
 #include "tool.h"          // tool stuff
-#include "core_asm.h"
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 
 // Ugly: this is needed by linux/core_os.h
@@ -95,8 +94,6 @@ typedef struct _ThreadState ThreadState;
 
 #include "pub_core_mallocfree.h"  // for type 'ArenaId'
 #include "pub_core_stacktrace.h"  // for type 'StackTrace'
-
-#include "valgrind.h"
 
 /* ---------------------------------------------------------------------
    Global macros.

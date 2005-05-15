@@ -918,13 +918,15 @@ static void initCfiSI ( CfiSI* si )
 /* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
-#define FP_REG         5
-#define SP_REG         4
-#define RA_REG_DEFAULT 8
+#  define FP_REG         5
+#  define SP_REG         4
+#  define RA_REG_DEFAULT 8
 #elif defined(VGP_amd64_linux)
-#define FP_REG         6
-#define SP_REG         7
-#define RA_REG_DEFAULT 16
+#  define FP_REG         6
+#  define SP_REG         7
+#  define RA_REG_DEFAULT 16
+#else
+#  error Unknown platform
 #endif
 
 /* the number of regs we are prepared to unwind */

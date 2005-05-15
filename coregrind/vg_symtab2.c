@@ -2252,21 +2252,14 @@ Bool VG_(get_filename_linenum)( Addr a,
 
 /* return a pointer to a register (now for 5 other impossible things
    before breakfast) */
-static UInt *regaddr(ThreadId tid, Int regno)
+static UInt* regaddr(ThreadId tid, Int regno)
 {
-   UInt *ret = 0;
-
-   ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
+   UInt* ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
 
    if (ret == 0) {
-      Char file[100];
-      Int line;
-      Addr eip = VG_(get_IP)(tid);
-
-      if (!VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
-	 file[0] = 0;
-      VG_(printf)("mysterious register %d used at %p %s:%d\n",
-		  regno, eip, file, line);
+      Char buf[100];
+      VG_(describe_IP)( VG_(get_IP)(tid), buf, 100 );
+      VG_(printf)("mysterious register %d used at %s\n", regno, buf);
    }
 
    return ret;

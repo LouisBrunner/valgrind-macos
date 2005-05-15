@@ -151,15 +151,6 @@ typedef struct _ThreadState ThreadState;
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
 
-/* Describes where logging output is to be sent. */
-typedef
-   enum {
-      VgLogTo_Fd,
-      VgLogTo_File,
-      VgLogTo_FileExactly,
-      VgLogTo_Socket
-   } VgLogTo;
-
 /* Application-visible file descriptor limits */
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
@@ -184,22 +175,22 @@ extern Bool  VG_(clo_trace_children);
 
 /* Where logging output is to be sent to.
 
-   When log_to == VgLogTo_Fd, clo_log_fd holds the file id, and is
-   taken from the command line.  clo_log_name is irrelevant.
+   With --log-fd (and by default), clo_log_fd holds the file id, and is
+   taken from the command line.  (fd 2, stderr, is the default.)
+   clo_log_name is irrelevant.
 
-   When log_to == VgLogTo_File, clo_log_name holds the log-file
+   With --log-file/--log-file-exactly, clo_log_name holds the log-file
    name, and is taken from the command line.  clo_log_fd is then
    made to hold the relevant file id, by opening clo_log_name
    (concatenated with the process ID) for writing.
 
-   When log_to == VgLogTo_Socket, clo_log_name holds the
-   hostname:portnumber pair, and is taken from the command line.
-   clo_log_fd is then made to hold the relevant file handle, by
-   opening a connection to said hostname:portnumber pair. 
+   With --log-socket, clo_log_name holds the hostname:portnumber pair,
+   and is taken from the command line.  clo_log_fd is then made to hold
+   the relevant file handle, by opening a connection to that
+   hostname:portnumber pair. 
 
    Global default is to set log_to == VgLogTo_Fd and log_fd == 2
    (stderr). */
-extern VgLogTo VG_(clo_log_to);
 extern Int     VG_(clo_log_fd);
 extern Char*   VG_(clo_log_name);
 
@@ -698,7 +689,7 @@ extern Bool VG_(is_resolved)(const CodeRedirect *redir);
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
-extern Bool VG_(logging_to_filedes);
+extern Bool VG_(logging_to_socket);
 
 /* Sanity checks which may be done at any time.  The scheduler decides when. */
 extern void VG_(sanity_check_general) ( Bool force_expensive );

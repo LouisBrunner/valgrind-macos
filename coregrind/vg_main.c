@@ -164,7 +164,7 @@ ULong VG_(bbs_done) = 0;
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
-Bool VG_(logging_to_filedes) = True;
+Bool VG_(logging_to_socket) = False;
 
 
 /*====================================================================*/
@@ -1256,15 +1256,15 @@ static void load_tool( const char *toolname,
 /*=== Command line errors                                          ===*/
 /*====================================================================*/
 
-static void abort_msg ( void )
+static void revert_to_stderr ( void )
 {
-   VG_(clo_log_to) = VgLogTo_Fd;
+   vg_assert( !VG_(logging_to_socket) );
    VG_(clo_log_fd) = 2; /* stderr */
 }
 
 void VG_(bad_option) ( Char* opt )
 {
-   abort_msg();
+   revert_to_stderr();
    VG_(printf)("valgrind: Bad option `%s'; aborting.\n", opt);
    VG_(printf)("valgrind: Use --help for more information.\n");
    VG_(exit)(1);
@@ -1272,7 +1272,7 @@ void VG_(bad_option) ( Char* opt )
 
 static void missing_prog ( void  )
 {
-   abort_msg();
+   revert_to_stderr();
    VG_(printf)("valgrind: no program specified\n");
    VG_(printf)("valgrind: Use --help for more information.\n");
    VG_(exit)(1);
@@ -1280,7 +1280,7 @@ static void missing_prog ( void  )
 
 static void config_error ( Char* msg )
 {
-   abort_msg();
+   revert_to_stderr();
    VG_(printf)("valgrind: Startup or configuration error:\n   %s\n", msg);
    VG_(printf)("valgrind: Unable to start up properly.  Giving up.\n");
    VG_(exit)(1);
@@ -1410,11 +1410,8 @@ Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 
-/* See big comment in core.h for meaning of these three.
-   fd is initially stdout, for --help, but gets moved to stderr by default
-   immediately afterwards. */
-VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
-Int     VG_(clo_log_fd)        = 1;
+/* See big comment in core.h for meaning of these two. */
+Int     VG_(clo_log_fd)        = 2;
 Char*   VG_(clo_log_name)      = NULL;
 
 Bool   VG_(clo_time_stamp)     = False;
@@ -1546,6 +1543,10 @@ static void usage ( Bool debug_help )
 "  tool's start-up message for more information.\n"
 "\n";
 
+   // Ensure the message goes to stdout
+   VG_(clo_log_fd) = 1;
+   vg_assert( !VG_(logging_to_socket) );
+
    VG_(printf)(usage1);
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
@@ -1604,6 +1605,12 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 {
    Int  i, eventually_log_fd;
    Int  toolname_len = VG_(strlen)(toolname);
+   enum {
+      VgLogTo_Fd,
+      VgLogTo_File,
+      VgLogTo_FileExactly,
+      VgLogTo_Socket
+   } log_to = VgLogTo_Fd;   // Where is logging output to be sent?
 
    /* log to stderr by default, but usage message goes to stdout */
    eventually_log_fd = 2; 
@@ -1721,23 +1728,23 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                        VG_(clo_vex_control).guest_chase_thresh, 0, 99)
 
       else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
-         VG_(clo_log_to)   = VgLogTo_Fd;
+         log_to            = VgLogTo_Fd;
          VG_(clo_log_name) = NULL;
          eventually_log_fd = (Int)VG_(atoll)(&arg[9]);
       }
 
       else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
-         VG_(clo_log_to)   = VgLogTo_File;
+         log_to            = VgLogTo_File;
          VG_(clo_log_name) = &arg[11];
       }
 
       else if (VG_CLO_STREQN(19, arg, "--log-file-exactly=")) {
-         VG_(clo_log_to)   = VgLogTo_FileExactly;
+         log_to            = VgLogTo_FileExactly;
          VG_(clo_log_name) = &arg[19];
       }
 
       else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
-         VG_(clo_log_to)   = VgLogTo_Socket;
+         log_to            = VgLogTo_Socket;
          VG_(clo_log_name) = &arg[13];
       }
 
@@ -1836,18 +1843,31 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(bad_option)("--db-attach=yes and --trace-children=yes");
    }
 
-   /* Set up logging now.  After this is done, VG_(clo_log_fd)
+   if (VG_(clo_gen_suppressions) > 0 && 
+       !VG_(needs).core_errors && !VG_(needs).tool_errors) {
+      VG_(message)(Vg_UserMsg, 
+                   "Can't use --gen-suppressions= with this tool,");
+      VG_(message)(Vg_UserMsg, 
+                   "as it doesn't generate errors.");
+      VG_(bad_option)("--gen-suppressions=");
+   }
+
+   /* All non-logging-related options have been checked.  If the logging
+      option specified is ok, we can switch to it, as we know we won't
+      have to generate any other command-line-related error messages.
+      (So far we should be still attached to stderr, so we can show on
+      the terminal any problems to do with processing command line
+      opts.)
+   
+      So set up logging now.  After this is done, VG_(clo_log_fd)
       should be connected to whatever sink has been selected, and we
       indiscriminately chuck stuff into it without worrying what the
       nature of it is.  Oh the wonder of Unix streams. */
 
-   /* So far we should be still attached to stdout, so we can show on
-      the terminal any problems to do with processing command line
-      opts. */
-   vg_assert(VG_(clo_log_fd) == 1 /* stdout */);
-   vg_assert(VG_(logging_to_filedes) == True);
+   vg_assert(VG_(clo_log_fd) == 2 /* stderr */);
+   vg_assert(VG_(logging_to_socket) == False);
 
-   switch (VG_(clo_log_to)) {
+   switch (log_to) {
 
       case VgLogTo_Fd: 
          vg_assert(VG_(clo_log_name) == NULL);
@@ -1871,6 +1891,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 			    VG_(clo_log_name), pid, seq );
 	    seq++;
 
+            // EXCL: it will fail with EEXIST if the file already exists.
 	    eventually_log_fd 
 	       = VG_(open)(logfilename, 
 			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
@@ -1879,13 +1900,15 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 	       VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
 	       break; /* for (;;) */
 	    } else {
+               // If the file already existed, we try the next name.  If it
+               // was some other file error, we give up.
 	       if (eventually_log_fd != -VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
 			       "Can't create/open log file `%s.pid%d'; giving up!", 
 			       VG_(clo_log_name), pid);
 		  VG_(bad_option)(
 		     "--log-file=<file> (didn't work out for some reason.)");
-		  break; /* for (;;) */
+                  /*NOTREACHED*/
 	       }
 	    }
 	 }
@@ -1893,20 +1916,16 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
 
       case VgLogTo_FileExactly: {
-         Char logfilename[1000];
-
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
-         VG_(sprintf)(logfilename, "%s", VG_(clo_log_name));
 
          eventually_log_fd 
-            = VG_(open)(logfilename, 
+            = VG_(open)(VG_(clo_log_name),
                         VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
                         VKI_S_IRUSR|VKI_S_IWUSR);
          if (eventually_log_fd >= 0) {
             VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
-         } 
-         else if (eventually_log_fd != -VKI_EEXIST) {
+         } else {
             VG_(message)(Vg_UserMsg, 
                          "Can't create/open log file `%s'; giving up!", 
                          VG_(clo_log_name));
@@ -1928,6 +1947,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                "of `%s'; giving up!", VG_(clo_log_name) );
             VG_(bad_option)(
                "--log-socket=");
+            /*NOTREACHED*/
 	 }
          if (eventually_log_fd == -2) {
             VG_(message)(Vg_UserMsg, 
@@ -1938,17 +1958,21 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             VG_(message)(Vg_UserMsg, 
                 "" );
             /* We don't change anything here. */
+            vg_assert(VG_(clo_log_fd) == 2);
 	 } else {
             vg_assert(eventually_log_fd > 0);
             VG_(clo_log_fd) = eventually_log_fd;
-            VG_(logging_to_filedes) = False;
+            VG_(logging_to_socket) = True;
          }
          break;
       }
-
    }
 
-   /* Move log_fd into the safe range, so it doesn't conflict with any app fds */
+   // Move log_fd into the safe range, so it doesn't conflict with any app fds.
+   // XXX: this is more or less duplicating the behaviour of the calls to
+   // VG_(safe_fd)() above, although this does not close the original fd.
+   // Perhaps the VG_(safe_fd)() calls above should be removed, and this
+   // code should be replaced with a call to VG_(safe_fd)().   --njn
    eventually_log_fd = VG_(fcntl)(VG_(clo_log_fd), VKI_F_DUPFD, VG_(fd_hard_limit));
    if (eventually_log_fd < 0)
       VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
@@ -1985,7 +2009,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          "Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.");
    }
 
-   if (VG_(clo_verbosity) > 0 && VG_(clo_log_to) != VgLogTo_Fd) {
+   if (VG_(clo_verbosity) > 0 && log_to != VgLogTo_Fd) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
          "My PID = %d, parent PID = %d.  Prog and args are:",
@@ -1996,7 +2020,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
    if (VG_(clo_verbosity) > 1) {
       Int fd;
-      if (VG_(clo_log_to) != VgLogTo_Fd)
+      if (log_to != VgLogTo_Fd)
          VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
       VG_(message)(Vg_DebugMsg, "Command line");
@@ -2016,7 +2040,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          #define BUF_LEN    256
          Char version_buf[BUF_LEN];
          Int n = VG_(read) ( fd, version_buf, BUF_LEN );
-         vg_assert(n <= 256);
+         vg_assert(n <= BUF_LEN);
          if (n > 0) {
             version_buf[n-1] = '\0';
             VG_(message)(Vg_DebugMsg, "  %s", version_buf);
@@ -2038,15 +2062,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(sprintf)(buf, "%s/%s", VG_(libdir), default_supp);
       VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
       VG_(clo_n_suppressions)++;
-   }
-
-   if (VG_(clo_gen_suppressions) > 0 && 
-       !VG_(needs).core_errors && !VG_(needs).tool_errors) {
-      VG_(message)(Vg_UserMsg, 
-                   "Can't use --gen-suppressions= with this tool,");
-      VG_(message)(Vg_UserMsg, 
-                   "as it doesn't generate errors.");
-      VG_(bad_option)("--gen-suppressions=");
    }
 }
 

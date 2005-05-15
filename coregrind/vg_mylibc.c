@@ -395,14 +395,13 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 /* Do the low-level send of a message to the logging sink. */
 static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
 {
-   if (VG_(logging_to_filedes)) {
+   if (!VG_(logging_to_socket)) {
       VG_(write)( VG_(clo_log_fd), msg, nbytes );
    } else {
       Int rc = VG_(write_socket)( VG_(clo_log_fd), msg, nbytes );
       if (rc == -1) {
          // For example, the listener process died.  Switch back to stderr.
-         VG_(logging_to_filedes) = True;
-         VG_(clo_log_to) = VgLogTo_Fd;
+         VG_(logging_to_socket) = False;
          VG_(clo_log_fd) = 2;
          VG_(write)( VG_(clo_log_fd), msg, nbytes );
       }

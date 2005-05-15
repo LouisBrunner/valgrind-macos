@@ -1650,14 +1650,6 @@ Bool read_lib_symbols ( SegInfo* si )
       vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
       vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
 
-      read_symtab(si, "symbol table", False,
-                  o_symtab, o_symtab_sz,
-                  o_strtab, o_strtab_sz);
-
-      read_symtab(si, "dynamic symbol table", True,
-                  o_dynsym, o_dynsym_sz,
-                  o_dynstr, o_dynstr_sz);
-
       /* Did we find a debuglink section? */
       if (debuglink != NULL) {
          UInt crc_offset = ROUNDUP(VG_(strlen)(debuglink)+1, 4);
@@ -1707,6 +1699,15 @@ Bool read_lib_symbols ( SegInfo* si )
          }
       }
 
+      /* Read symbols */
+      read_symtab(si, "symbol table", False,
+                  o_symtab, o_symtab_sz,
+                  o_strtab, o_strtab_sz);
+
+      read_symtab(si, "dynamic symbol table", True,
+                  o_dynsym, o_dynsym_sz,
+                  o_dynstr, o_dynstr_sz);
+
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe) {
          VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
@@ -1731,7 +1732,6 @@ Bool read_lib_symbols ( SegInfo* si )
          VG_(symerr)("   object doesn't have any line number info");
          goto out;
       }
-
    }
    res = True;
 

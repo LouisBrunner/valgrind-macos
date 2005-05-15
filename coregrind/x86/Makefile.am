@@ -5,8 +5,7 @@ AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
 
 noinst_HEADERS = \
 	core_arch.h \
-	core_arch_asm.h \
-	x86_private.h
+	core_arch_asm.h
 
 noinst_LIBRARIES = libarch.a
 

@@ -36,27 +36,6 @@
 //#include "platform_arch.h"        // platform-specific tool stuff
 
 /* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
-   ------------------------------------------------------------------ */
-
-// XXX: eventually all these should be x86-private, and not visible to the
-// core (except maybe do_useseg()?)
-
-/* Simulate the modify_ldt syscall. */
-extern Int VG_(sys_modify_ldt) ( ThreadId tid,
-                                 Int func, void* ptr, UInt bytecount );
-
-/* Simulate the {get,set}_thread_area syscalls. */
-extern Int VG_(sys_set_thread_area) ( ThreadId tid,
-                                      vki_modify_ldt_t* info );
-extern Int VG_(sys_get_thread_area) ( ThreadId tid,
-                                      vki_modify_ldt_t* info );
-
-/* Called from generated code.  Given a segment selector and a virtual
-   address, return a linear address, and do limit checks too. */
-extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
-
-/* ---------------------------------------------------------------------
    ucontext stuff
    ------------------------------------------------------------------ */
 

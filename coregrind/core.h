@@ -805,10 +805,6 @@ extern void
                                  Addr esp_at_startup,
                                  /*MOD*/ ThreadArchState* arch );
 
-// Thread stuff
-extern void VGA_(cleanup_thread) ( ThreadArchState* );
-extern void VGA_(setup_child)    ( ThreadArchState*, ThreadArchState* );
-
 // OS/Platform-specific thread clear (after thread exit)
 extern void VGA_(os_state_clear)(ThreadState *);
 

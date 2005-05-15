@@ -47,9 +47,12 @@ extern void VG_(post_syscall)   ( ThreadId tid );
 // interrupted with a signal.  Returns True if the syscall completed
 // (either interrupted or finished normally), or False if it was
 // restarted (or the signal didn't actually interrupt a syscall).
-extern void VGA_(interrupted_syscall)(ThreadId tid,
+extern void VGP_(interrupted_syscall)(ThreadId tid,
                                       struct vki_ucontext *uc,
                                       Bool restart);
+
+// Release resources held by this thread
+extern void VGP_(cleanup_thread) ( ThreadArchState* );
 
 extern Bool VG_(is_kerror) ( Word res );
 

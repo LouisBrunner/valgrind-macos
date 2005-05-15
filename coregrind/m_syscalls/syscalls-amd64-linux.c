@@ -45,7 +45,7 @@
 
 
 /* ---------------------------------------------------------------------
-   Stacks, thread wrappers, clone
+   Stacks, thread wrappers
    Note.  Why is this stuff here?
    ------------------------------------------------------------------ */
 
@@ -107,7 +107,7 @@ static void restart_syscall(ThreadArchState *arch)
    get called multiple times.
  */
 /* NB: this is identical to the x86 version */
-void VGA_(interrupted_syscall)(ThreadId tid, 
+void VGP_(interrupted_syscall)(ThreadId tid, 
 			       struct vki_ucontext *uc,
 			       Bool restart)
 {
@@ -301,9 +301,14 @@ static Int start_thread(void *arg)
    VG_(core_panic)("Thread exit failed?\n");
 }
 
-/* 
+/* ---------------------------------------------------------------------
    clone() handling
+   ------------------------------------------------------------------ */
 
+// forward declaration
+static void setup_child ( ThreadArchState*, ThreadArchState* );
+
+/* 
    When a client clones, we need to keep track of the new thread.  This means:
    1. allocate a ThreadId+ThreadState+stack for the the thread
 
@@ -348,7 +353,7 @@ static Int do_clone(ThreadId ptid,
       If the clone call specifies a NULL rsp for the new thread, then
       it actually gets a copy of the parent's rsp.
    */
-   VGA_(setup_child)( &ctst->arch, &ptst->arch );
+   setup_child( &ctst->arch, &ptst->arch );
 
    VGP_SET_SYSCALL_RESULT(ctst->arch, 0);
    if (rsp != 0)
@@ -401,7 +406,7 @@ static Int do_clone(ThreadId ptid,
 
    if (ret < 0) {
       /* clone failed */
-      VGA_(cleanup_thread)(&ctst->arch);
+      VGP_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;
    }
 
@@ -449,6 +454,22 @@ static Int do_fork_clone(ThreadId tid, UInt flags, Addr rsp, Int *parent_tidptr,
 
    return ret;
 }
+
+/* ---------------------------------------------------------------------
+   More thread stuff
+   ------------------------------------------------------------------ */
+
+void VGP_(cleanup_thread) ( ThreadArchState *arch )
+{  
+}  
+
+void setup_child ( /*OUT*/ ThreadArchState *child, 
+                   /*IN*/  ThreadArchState *parent )
+{  
+   /* We inherit our parent's guest state. */
+   child->vex = parent->vex;
+   child->vex_shadow = parent->vex_shadow;
+}  
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for AMD64/Linux-specific syscalls

@@ -1651,7 +1651,7 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 		   sigNo, tid, info->si_code);
 
    /* Update thread state properly */
-   VGA_(interrupted_syscall)(tid, uc, 
+   VGP_(interrupted_syscall)(tid, uc, 
 			     !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
 
    /* Set up the thread's state to deliver a signal */

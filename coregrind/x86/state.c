@@ -30,7 +30,6 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
-#include "x86_private.h"
 #include "vki_unistd.h"
 #include <sys/ptrace.h>
 
@@ -141,103 +140,9 @@ void VGA_(init_thread1state) ( Addr client_eip,
              sizeof(VexGuestArchState));
 }
 
-
-/*------------------------------------------------------------*/
-/*--- LDT/GDT stuff                                        ---*/
-/*------------------------------------------------------------*/
-
-/* Create a zeroed-out GDT. */
-
-VexGuestX86SegDescr* VG_(alloc_zeroed_x86_GDT) ( void )
-{
-   Int nbytes = VEX_GUEST_X86_GDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
-}
-
-/* Create a zeroed-out LDT. */
-
-VexGuestX86SegDescr* VG_(alloc_zeroed_x86_LDT) ( void )
-{
-   Int nbytes = VEX_GUEST_X86_LDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(arena_calloc)(VG_AR_CORE, nbytes, 1);
-}
-
-/* Free up an LDT or GDT allocated by the above fns. */
-
-static void free_LDT_or_GDT ( VexGuestX86SegDescr* dt )
-{
-   vg_assert(dt);
-   VG_(arena_free)(VG_AR_CORE, (void*)dt);
-}
-
-/* Copy contents between two existing LDTs. */
-
-static void copy_LDT_from_to ( VexGuestX86SegDescr* src,
-                               VexGuestX86SegDescr* dst )
-{
-  Int i;
-  vg_assert(src);
-  vg_assert(dst);
-  for (i = 0; i < VEX_GUEST_X86_LDT_NENT; i++)
-     dst[i] = src[i];
-}
-
-/* Free this thread's DTs, if it has any. */
-
-static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
-{
-   vg_assert(sizeof(HWord) == sizeof(void*));
-
-   if (0)
-      VG_(printf)("deallocate_LGDTs_for_thread: "
-                  "ldt = 0x%x, gdt = 0x%x\n", 
-                  vex->guest_LDT, vex->guest_GDT );
-
-   if (vex->guest_LDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_LDT );
-      vex->guest_LDT = (HWord)NULL;
-   }
-
-   if (vex->guest_GDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_GDT );
-      vex->guest_GDT = (HWord)NULL;
-   }
-}
-
-
 /*------------------------------------------------------------*/
 /*--- Thread stuff                                         ---*/
 /*------------------------------------------------------------*/
-
-void VGA_(cleanup_thread) ( ThreadArchState* arch )
-{
-   /* Release arch-specific resources held by this thread. */
-   /* On x86, we have to dump the LDT and GDT. */
-   deallocate_LGDTs_for_thread( &arch->vex );
-}  
-
-
-void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child, 
-                         /*IN*/  ThreadArchState *parent )
-{
-   /* We inherit our parent's guest state. */
-   child->vex = parent->vex;
-   child->vex_shadow = parent->vex_shadow;
-   /* We inherit our parent's LDT. */
-   if (parent->vex.guest_LDT == (HWord)NULL) {
-      /* We hope this is the common case. */
-      child->vex.guest_LDT = (HWord)NULL;
-   } else {
-      /* No luck .. we have to take a copy of the parent's. */
-      child->vex.guest_LDT = (HWord)VG_(alloc_zeroed_x86_LDT)();
-      copy_LDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_LDT, 
-                        (VexGuestX86SegDescr*)child->vex.guest_LDT );
-   }
-
-   /* We need an empty GDT. */
-   child->vex.guest_GDT = (HWord)NULL;
-}  
-
 
 void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 {

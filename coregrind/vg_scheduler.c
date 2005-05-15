@@ -551,7 +551,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    vki_sigset_t savedmask;
 
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   VGA_(cleanup_thread)(&VG_(threads)[tid].arch);
+   VGP_(cleanup_thread)(&VG_(threads)[tid].arch);
    VG_(threads)[tid].tid = tid;
 
    /* Leave the thread in Zombie, so that it doesn't get reallocated

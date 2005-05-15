@@ -30,7 +30,6 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
-#include "amd64_private.h"
 #include <sys/ptrace.h>
 
 #include "libvex_guest_amd64.h"
@@ -86,36 +85,6 @@ void VGA_(init_thread1state) ( Addr client_rip,
 /*------------------------------------------------------------*/
 /*--- Thread stuff                                         ---*/
 /*------------------------------------------------------------*/
-
-void VGA_(cleanup_thread) ( ThreadArchState *arch )
-{  
-   /* TODO: deallocate the thread's LDT / GDT ? */
-}  
-
-
-void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child, 
-                         /*IN*/  ThreadArchState *parent )
-{  
-   /* We inherit our parent's guest state. */
-   child->vex = parent->vex;
-   child->vex_shadow = parent->vex_shadow;
-#if 0
-   /* TODO: inherit the thread's LDT / GDT ? */
-   /* We inherit our parent's LDT. */
-   if (parent->vex.guest_LDT == (HWord)NULL) {
-      /* We hope this is the common case. */
-      child->vex.guest_LDT = (HWord)NULL;
-   } else {
-      /* No luck .. we have to take a copy of the parent's. */
-      child->vex.guest_LDT = (HWord)VG_(alloc_zeroed_x86_LDT)();
-      copy_LDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_LDT, 
-                        (VexGuestX86SegDescr*)child->vex.guest_LDT );
-   }
-
-   /* We need an empty GDT. */
-   child->vex.guest_GDT = (HWord)NULL;
-#endif
-}  
 
 void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 {

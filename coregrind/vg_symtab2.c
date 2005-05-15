@@ -50,7 +50,7 @@ static SegInfo* segInfo = NULL;
    an 'XX' name.  Then use the 'XX' variant consistently in
    the rest of this file. 
 */
-#if VGA_WORD_SIZE == 4
+#if VG_WORDSIZE == 4
 #  define  ElfXX_Ehdr     Elf32_Ehdr
 #  define  ElfXX_Shdr     Elf32_Shdr
 #  define  ElfXX_Phdr     Elf32_Phdr
@@ -61,7 +61,7 @@ static SegInfo* segInfo = NULL;
 #  define  ELFXX_ST_BIND  ELF32_ST_BIND
 #  define  ELFXX_ST_TYPE  ELF32_ST_TYPE
 
-#elif VGA_WORD_SIZE == 8
+#elif VG_WORDSIZE == 8
 #  define  ElfXX_Ehdr     Elf64_Ehdr
 #  define  ElfXX_Shdr     Elf64_Shdr
 #  define  ElfXX_Phdr     Elf64_Phdr
@@ -73,7 +73,7 @@ static SegInfo* segInfo = NULL;
 #  define  ELFXX_ST_TYPE  ELF64_ST_TYPE
 
 #else
-# error "VGA_WORD_SIZE should be 4 or 8"
+# error "VG_WORDSIZE should be 4 or 8"
 #endif
 
 

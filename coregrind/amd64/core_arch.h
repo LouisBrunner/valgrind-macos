@@ -44,8 +44,6 @@
 #define VGA_ELF_MACHINE        EM_X86_64
 #define VGA_ELF_CLASS          ELFCLASS64
 
-#define VGA_WORD_SIZE         8
-
 /* ---------------------------------------------------------------------
    Interesting registers
    ------------------------------------------------------------------ */

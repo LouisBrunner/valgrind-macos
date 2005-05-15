@@ -392,7 +392,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    // taking into account the tool's shadow needs.
    client_size         = ROUNDDN((VG_(valgrind_base)-REDZONE_SIZE) / (1.+ratio),
                          CLIENT_SIZE_MULTIPLE);
-   VG_(client_base)    = VGA_CLIENT_BASE;
+   VG_(client_base)    = 0;
    VG_(client_end)     = VG_(client_base) + client_size;
    /* where !FIXED mmap goes */
    VG_(client_mapbase) = VG_(client_base) +
@@ -2386,7 +2386,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
   The memory map it creates is:
 
- VGA_CLIENT_BASE +-------------------------+
+  client_base    +-------------------------+
                  | client address space    |
 	         :                         :
 	         :                         :

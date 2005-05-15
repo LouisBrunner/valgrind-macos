@@ -106,9 +106,6 @@ typedef VexGuestARMState VexGuestArchState;
    Miscellaneous constants
    ------------------------------------------------------------------ */
 
-// Base address of client address space.
-#define VGA_CLIENT_BASE       0x0ul
-
 #endif   // __ARM_CORE_ARCH_H
 
 /*--------------------------------------------------------------------*/

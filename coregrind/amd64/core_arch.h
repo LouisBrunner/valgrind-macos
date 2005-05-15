@@ -108,10 +108,6 @@ typedef VexGuestAMD64State VexGuestArchState;
 // Valgrind's stack size, in words.
 #define VGA_STACK_SIZE_W      16384
 
-// Base address of client address space.
-#define VGA_CLIENT_BASE       0x0ul
-
-
 #endif   // __AMD64_CORE_ARCH_H
 
 /*--------------------------------------------------------------------*/

@@ -65,16 +65,6 @@
 #define VGA_STACK_FRAME_RET(rbp)       (((UWord*)rbp)[1])
 #define VGA_STACK_FRAME_NEXT(rbp)      (((UWord*)rbp)[0])
 
-// Get stack pointer and frame pointer
-#define VGA_GET_REAL_STACK_PTR(lval) do {   \
-   asm("movq %%rsp, %0" : "=r" (lval));      \
-} while (0)
-
-#define VGA_GET_REAL_FRAME_PTR(lval) do {   \
-   asm("movq %%rbp, %0" : "=r" (lval));      \
-} while (0)
-
-
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */

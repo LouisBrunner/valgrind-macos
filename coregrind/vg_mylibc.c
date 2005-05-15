@@ -906,6 +906,23 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
    Assertery.
    ------------------------------------------------------------------ */
 
+#if defined(VGP_x86_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("movl %%esp, %0;" \
+          "movl %%ebp, %1;" \
+          : "=r" (sp),\
+            "=r" (fp));
+#elif defined(VGP_amd64_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("movq %%rsp, %0;" \
+          "movl %%rbp, %1;" \
+          : "=r" (sp),\
+            "=r" (fp));
+#else
+#  error Unknown platform
+#endif
+
+
 /* Fake up an ExeContext which is of our actual real CPU state, so we
    can print a stack trace.  This isn't terribly useful in the case
    where we were killed by a signal, since we just get a backtrace
@@ -920,8 +937,7 @@ static inline void get_and_pp_real_StackTrace(Addr ret)
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
-   VGA_GET_REAL_STACK_PTR(sp);
-   VGA_GET_REAL_FRAME_PTR(fp);
+   GET_REAL_SP_AND_FP(sp, fp);
 
    stacktop = tst->os_state.valgrind_stack_base + 
               tst->os_state.valgrind_stack_szB;

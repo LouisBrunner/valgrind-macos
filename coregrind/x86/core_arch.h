@@ -65,15 +65,6 @@
 #define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])
 #define VGA_STACK_FRAME_NEXT(ebp)      (((UInt*)ebp)[0])
 
-// Get stack pointer and frame pointer
-#define VGA_GET_REAL_STACK_PTR(esp) do {   \
-   asm("movl %%esp, %0" : "=r" (esp));       \
-} while (0)
-
-#define VGA_GET_REAL_FRAME_PTR(ebp) do {   \
-   asm("movl %%ebp, %0" : "=r" (ebp));       \
-} while (0)
-
 //extern const Char VG_(helper_wrapper_before)[];	/* in dispatch.S */
 //extern const Char VG_(helper_wrapper_return)[];	/* in dispatch.S */
 

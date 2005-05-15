@@ -106,9 +106,6 @@ typedef VexGuestARMState VexGuestArchState;
    Miscellaneous constants
    ------------------------------------------------------------------ */
 
-// Valgrind's signal stack size, in words.
-#define VGA_SIGSTACK_SIZE_W   10000
-
 // Base address of client address space.
 #define VGA_CLIENT_BASE       0x0ul
 

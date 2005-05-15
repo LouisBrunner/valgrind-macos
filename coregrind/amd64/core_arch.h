@@ -105,9 +105,6 @@ typedef VexGuestAMD64State VexGuestArchState;
    Miscellaneous constants
    ------------------------------------------------------------------ */
 
-// Valgrind's signal stack size, in words.
-#define VGA_SIGSTACK_SIZE_W   10000
-
 // Valgrind's stack size, in words.
 #define VGA_STACK_SIZE_W      16384
 

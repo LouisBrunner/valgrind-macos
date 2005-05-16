@@ -258,30 +258,30 @@
 ##----------------------------------------------------------------------##
 ## glibc-2.3.3 on FC2
 ## Assumes that sysctl returns \0-terminated strings in is_smp_system
-{
-   Unterminated strstr string in is_smp_system() (NPTL)
-   Memcheck:Cond
-   fun:strstr
-   fun:__pthread_initialize_minimal
-   obj:/lib/tls/libpthread*.so*
-   obj:/lib/tls/libpthread*.so*
-}
-{
-   Unterminated strstr string in is_smp_system() (LinuxThreads)
-   Memcheck:Cond
-   fun:strstr
-   fun:pthread_initialize
-   obj:/lib/i686/libpthread*.so*
-   obj:/lib/i686/libpthread*.so*
-}
-{
-   Unterminated strstr string in is_smp_system() (LinuxThreads)
-   Memcheck:Cond
-   fun:strstr
-   fun:pthread_initialize
-   obj:/lib/libpthread-0.10.so
-   obj:/lib/libpthread-0.10.so
-}
+#{
+#   Unterminated strstr string in is_smp_system() (NPTL)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:__pthread_initialize_minimal
+#   obj:/lib/tls/libpthread*.so*
+#   obj:/lib/tls/libpthread*.so*
+#}
+#{
+#   Unterminated strstr string in is_smp_system() (LinuxThreads)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:pthread_initialize
+#   obj:/lib/i686/libpthread*.so*
+#   obj:/lib/i686/libpthread*.so*
+#}
+#{
+#   Unterminated strstr string in is_smp_system() (LinuxThreads)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:pthread_initialize
+#   obj:/lib/libpthread-0.10.so
+#   obj:/lib/libpthread-0.10.so
+#}
 
 ## Bug in PRE(sys_clone), really.  Some args are not used.
 {
@@ -366,33 +366,33 @@
 ##----------------------------------------------------------------------##
 ## glibc-2.3.4 on FC3
 ## Assumes that sysctl returns \0-terminated strings in is_smp_system
-{
-   Unterminated strstr string in is_smp_system() (NPTL)
-   Memcheck:Cond
-   fun:strstr
-   fun:__pthread_initialize_minimal
-   obj:/lib/tls/libpthread-2.3.4.so
-   obj:/lib/tls/libpthread-2.3.4.so
-}
-{
-   Unterminated strstr string in is_smp_system() (NPTL)
-   Memcheck:Cond
-   fun:strstr
-   fun:__pthread_initialize_minimal
-   obj:/lib64/tls/libpthread*.so*
-}
+#{
+#   Unterminated strstr string in is_smp_system() (NPTL)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:__pthread_initialize_minimal
+#   obj:/lib/tls/libpthread-2.3.4.so
+#   obj:/lib/tls/libpthread-2.3.4.so
+#}
+#{
+#   Unterminated strstr string in is_smp_system() (NPTL)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:__pthread_initialize_minimal
+#   obj:/lib64/tls/libpthread*.so*
+#}
 
 ##----------------------------------------------------------------------##
 ## glibc-2.3.5 on FC4
 ## Assumes that sysctl returns \0-terminated strings in is_smp_system
-{
-   Unterminated strstr string in is_smp_system() (NPTL)
-   Memcheck:Cond
-   fun:strstr
-   fun:__pthread_initialize_minimal
-   obj:*/libpthread-2.3.5.so
-   obj:*/libpthread-2.3.5.so
-}
+#{
+#   Unterminated strstr string in is_smp_system() (NPTL)
+#   Memcheck:Cond
+#   fun:strstr
+#   fun:__pthread_initialize_minimal
+#   obj:*/libpthread-2.3.5.so
+#   obj:*/libpthread-2.3.5.so
+#}
 
 
 ##----------------------------------------------------------------------##

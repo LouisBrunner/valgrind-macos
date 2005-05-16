@@ -863,58 +863,6 @@ void VG_(read_debuginfo_dwarf1) (
       8 is the return address (EIP) */
 
 
-/* ------------ Deal with summary-info records ------------ */
-
-void VG_(ppCfiSI) ( CfiSI* si )
-{
-#  define SHOW_HOW(_how, _off)                   \
-      do {                                       \
-         if (_how == CFIR_UNKNOWN) {             \
-            VG_(printf)("Unknown");              \
-         } else                                  \
-         if (_how == CFIR_SAME) {                \
-            VG_(printf)("Same");                 \
-         } else                                  \
-         if (_how == CFIR_CFAREL) {              \
-            VG_(printf)("cfa+%d", _off);         \
-         } else                                  \
-         if (_how == CFIR_MEMCFAREL) {           \
-            VG_(printf)("*(cfa+%d)", _off);      \
-         } else {                                \
-            VG_(printf)("???");                  \
-         }                                       \
-      } while (0)
-
-   VG_(printf)("[%p .. %p]: ", si->base, 
-                               si->base + (UWord)si->len - 1);
-   VG_(printf)("let cfa=%s+%d", 
-               si->cfa_sprel ? "oldSP" : "oldFP", si->cfa_off);
-   VG_(printf)(" in RA=");
-   SHOW_HOW(si->ra_how, si->ra_off);
-   VG_(printf)(" SP=");
-   SHOW_HOW(si->sp_how, si->sp_off);
-   VG_(printf)(" FP=");
-   SHOW_HOW(si->fp_how, si->fp_off);
-   VG_(printf)("\n");
-
-#  undef SHOW_HOW
-}
-
-static void initCfiSI ( CfiSI* si )
-{
-   si->base      = 0;
-   si->len       = 0;
-   si->cfa_sprel = False;
-   si->ra_how    = 0;
-   si->sp_how    = 0;
-   si->fp_how    = 0;
-   si->cfa_off   = 0;
-   si->ra_off    = 0;
-   si->sp_off    = 0;
-   si->fp_off    = 0;
-}
-
-
 /* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
@@ -1062,6 +1010,58 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
       ctx->reg[i].coff = 0;
       ctx->reg[i].reg = 0;
    }
+}
+
+
+/* ------------ Deal with summary-info records ------------ */
+
+void VG_(ppCfiSI) ( CfiSI* si )
+{
+#  define SHOW_HOW(_how, _off)                   \
+      do {                                       \
+         if (_how == CFIR_UNKNOWN) {             \
+            VG_(printf)("Unknown");              \
+         } else                                  \
+         if (_how == CFIR_SAME) {                \
+            VG_(printf)("Same");                 \
+         } else                                  \
+         if (_how == CFIR_CFAREL) {              \
+            VG_(printf)("cfa+%d", _off);         \
+         } else                                  \
+         if (_how == CFIR_MEMCFAREL) {           \
+            VG_(printf)("*(cfa+%d)", _off);      \
+         } else {                                \
+            VG_(printf)("???");                  \
+         }                                       \
+      } while (0)
+
+   VG_(printf)("[%p .. %p]: ", si->base, 
+                               si->base + (UWord)si->len - 1);
+   VG_(printf)("let cfa=%s+%d", 
+               si->cfa_sprel ? "oldSP" : "oldFP", si->cfa_off);
+   VG_(printf)(" in RA=");
+   SHOW_HOW(si->ra_how, si->ra_off);
+   VG_(printf)(" SP=");
+   SHOW_HOW(si->sp_how, si->sp_off);
+   VG_(printf)(" FP=");
+   SHOW_HOW(si->fp_how, si->fp_off);
+   VG_(printf)("\n");
+
+#  undef SHOW_HOW
+}
+
+static void initCfiSI ( CfiSI* si )
+{
+   si->base      = 0;
+   si->len       = 0;
+   si->cfa_sprel = False;
+   si->ra_how    = 0;
+   si->sp_how    = 0;
+   si->fp_how    = 0;
+   si->cfa_off   = 0;
+   si->ra_off    = 0;
+   si->sp_off    = 0;
+   si->fp_off    = 0;
 }
 
 

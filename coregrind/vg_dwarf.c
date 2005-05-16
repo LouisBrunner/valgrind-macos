@@ -915,7 +915,8 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_offset_extended_sf = 0x11, /* DWARF3 only */
     DW_CFA_def_cfa_offset_sf  = 0x13, /* DWARF3 only */
     DW_CFA_lo_user            = 0x1c,
-    DW_CFA_GNU_args_size      = 0x2e,
+    DW_CFA_GNU_window_save    = 0x2d, /* GNU extension */
+    DW_CFA_GNU_args_size      = 0x2e, /* GNU extension */
     DW_CFA_hi_user            = 0x3f
   };
 
@@ -1513,6 +1514,11 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->cfa_reg = -1; /* indicating we don't know */
          break;
 
+      case DW_CFA_GNU_window_save:
+         /* Ignored.  This appears to be sparc-specific; quite why it
+            turns up in SuSE-supplied x86 .so's beats me. */
+         break;
+
       default: 
          VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
                                    "instruction 0:%d", (Int)lo6); 
@@ -1634,6 +1640,10 @@ static Int show_CF_instruction ( UChar* instr )
          i += nleb;
          i += len;
          VG_(printf)("DW_CFA_expression(r%d, length %d)\n", reg, len);
+         break;
+
+      case DW_CFA_GNU_window_save:
+         VG_(printf)("DW_CFA_GNU_window_save\n");
          break;
 
       default: 

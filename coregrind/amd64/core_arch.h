@@ -57,32 +57,6 @@
 #define VGA_CLREQ_RET         guest_RDX
 
 /* ---------------------------------------------------------------------
-   Architecture-specific part of a ThreadState
-   ------------------------------------------------------------------ */
-
-// Architecture-specific part of a ThreadState
-// XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core...
-typedef 
-   struct {
-      /* --- BEGIN vex-mandated guest state --- */
-
-      /* Saved machine context. */
-      VexGuestAMD64State vex;
-
-      /* Saved shadow context. */
-      VexGuestAMD64State vex_shadow;
-
-      /* Spill area. */
-      UChar vex_spill[LibVEX_N_SPILL_BYTES];
-
-      /* --- END vex-mandated guest state --- */
-   } 
-   ThreadArchState;
-
-typedef VexGuestAMD64State VexGuestArchState;
-
-/* ---------------------------------------------------------------------
    Miscellaneous constants
    ------------------------------------------------------------------ */
 

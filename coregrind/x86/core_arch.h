@@ -65,29 +65,6 @@
 
 
 /* ---------------------------------------------------------------------
-   Architecture-specific part of a ThreadState
-   ------------------------------------------------------------------ */
-
-typedef 
-   struct {
-      /* --- BEGIN vex-mandated guest state --- */
-
-      /* Saved machine context. */
-      VexGuestX86State vex;
-
-      /* Saved shadow context. */
-      VexGuestX86State vex_shadow;
-
-      /* Spill area. */
-      UChar vex_spill[LibVEX_N_SPILL_BYTES];
-
-      /* --- END vex-mandated guest state --- */
-   } 
-   ThreadArchState;
-
-typedef VexGuestX86State VexGuestArchState;
-
-/* ---------------------------------------------------------------------
    Miscellaneous constants
    ------------------------------------------------------------------ */
 

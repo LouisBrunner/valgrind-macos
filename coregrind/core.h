@@ -300,6 +300,36 @@ typedef
    }
    VgSchedReturnCode;
 
+
+#if defined(VGA_x86)
+   typedef VexGuestX86State   VexGuestArchState;
+#elif defined(VGA_x86)
+   typedef VexGuestAMD64State VexGuestArchState;
+#elif defined(VGA_arm)
+   typedef VexGuestARMState   VexGuestArchState;
+#else
+#  error Unknown architecture
+#endif
+
+
+typedef 
+   struct {
+      /* --- BEGIN vex-mandated guest state --- */
+
+      /* Saved machine context. */
+      VexGuestArchState vex;
+
+      /* Saved shadow context. */
+      VexGuestArchState vex_shadow;
+
+      /* Spill area. */
+      UChar vex_spill[LibVEX_N_SPILL_BYTES];
+
+      /* --- END vex-mandated guest state --- */
+   } 
+   ThreadArchState;
+
+
 struct _ThreadState {
    /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.
       The thread identity is simply the index in vg_threads[].

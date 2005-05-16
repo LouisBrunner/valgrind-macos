@@ -36,7 +36,6 @@
 #include "libvex.h"
 #include "libvex_guest_arm.h"
 
-
 /* ---------------------------------------------------------------------
    Basic properties
    ------------------------------------------------------------------ */
@@ -61,36 +60,6 @@
 
 #define VGA_CLREQ_ARGS        guest_R0
 #define VGA_CLREQ_RET         guest_R0
-
-// Get stack pointer and frame pointer
-#define VGA_GET_REAL_STACK_PTR(esp) do {   \
-   I_die_here; \
-} while (0)
-
-#define VGA_GET_REAL_FRAME_PTR(ebp) do {   \
-   I_die_here; \
-} while (0)
-
-/* ---------------------------------------------------------------------
-   Architecture-specific part of a ThreadState
-   ------------------------------------------------------------------ */
-
-// Architecture-specific part of a ThreadState
-// XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core... ?? 
-typedef struct {
-   /* Saved machine context. */
-   VexGuestARMState vex;
-
-   /* Saved shadow context. */
-   VexGuestARMState vex_shadow;
-
-   /* Spill area. */
-   UChar vex_spill[LibVEX_N_SPILL_BYTES];
-} 
-ThreadArchState;
-
-typedef VexGuestARMState VexGuestArchState;
 
 /* ---------------------------------------------------------------------
    Miscellaneous constants

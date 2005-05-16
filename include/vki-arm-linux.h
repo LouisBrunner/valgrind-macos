@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- ARM/Linux-specific kernel interface.    arm-linux/vki_arch.h ---*/
+/*--- ARM/Linux-specific kernel interface.         vki-arm-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __ARM_LINUX_VKI_ARCH_H
-#define __ARM_LINUX_VKI_ARCH_H
+#ifndef __VKI_ARM_LINUX_H
+#define __VKI_ARM_LINUX_H
 
 // ARM can be big or little endian;  we're only supporting little endian.  
 #define VKI_LITTLE_ENDIAN  1
@@ -613,7 +613,7 @@ struct vki_shminfo64 {
 // And that's it!
 //----------------------------------------------------------------------
 
-#endif // __ARM_LINUX_VKI_ARCH_H
+#endif // __VKI_ARM_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

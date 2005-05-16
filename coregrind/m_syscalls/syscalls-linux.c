@@ -357,7 +357,7 @@ POST(sys_sysctl)
    args = (struct __vki_sysctl_args *)ARG1;
    if (args->oldlenp != NULL) {
       POST_MEM_WRITE((Addr)args->oldlenp, sizeof(*args->oldlenp));
-      POST_MEM_WRITE((Addr)args->oldval, *args->oldlenp);
+      POST_MEM_WRITE((Addr)args->oldval, 1 + *args->oldlenp);
    }
 }
 

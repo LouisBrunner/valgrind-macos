@@ -2270,7 +2270,28 @@ static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
    default:          return 0;
    }
 #elif defined(VGA_amd64)
-#  error AMD64 not done yet
+/* This is the Intel register encoding -- integer regs. */
+#  define R_STACK_PTR   7
+#  define R_FRAME_PTR   6
+   switch (regno) {
+   case 0:           return (Addr) & arch->vex.guest_RAX;
+   case 1:           return (Addr) & arch->vex.guest_RDX;
+   case 2:           return (Addr) & arch->vex.guest_RCX;
+   case 3:           return (Addr) & arch->vex.guest_RBX;
+   case 4:           return (Addr) & arch->vex.guest_RSI;
+   case 5:           return (Addr) & arch->vex.guest_RDI;
+   case R_FRAME_PTR: return (Addr) & arch->vex.guest_RBP;
+   case R_STACK_PTR: return (Addr) & arch->vex.guest_RSP;
+   case 8:           return (Addr) & arch->vex.guest_R8;
+   case 9:           return (Addr) & arch->vex.guest_R9;
+   case 10:          return (Addr) & arch->vex.guest_R10;
+   case 11:          return (Addr) & arch->vex.guest_R11;
+   case 12:          return (Addr) & arch->vex.guest_R12;
+   case 13:          return (Addr) & arch->vex.guest_R13;
+   case 14:          return (Addr) & arch->vex.guest_R14;
+   case 15:          return (Addr) & arch->vex.guest_R15;
+   default:          return 0;
+   }
 #else
 #  error Unknown platform
 #endif

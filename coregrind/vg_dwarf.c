@@ -862,6 +862,10 @@ void VG_(read_debuginfo_dwarf1) (
 
       8 is the return address (EIP) */
 
+/* Note that we don't support DWARF3 expressions (DW_CFA_expression,
+   DW_CFA_def_cfa_expression).  The code just reads over them and
+   ignores them. 
+*/
 
 /* --------------- Decls --------------- */
 
@@ -906,6 +910,8 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_def_cfa            = 0x0c,
     DW_CFA_def_cfa_register   = 0x0d,
     DW_CFA_def_cfa_offset     = 0x0e,
+    DW_CFA_def_cfa_expression = 0x0f, /* DWARF3 only */
+    DW_CFA_expression         = 0x10, /* DWARF3 only */
     DW_CFA_offset_extended_sf = 0x11, /* DWARF3 only */
     DW_CFA_def_cfa_offset_sf  = 0x13, /* DWARF3 only */
     DW_CFA_lo_user            = 0x1c,
@@ -940,7 +946,7 @@ enum dwarf_cfa_secondary_ops
 
 typedef
    struct {
-      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch } tag;
+      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch, RR_Expr } tag;
 
       /* Note, .coff and .reg are never both in use.  Therefore could
          merge them into one. */
@@ -961,6 +967,7 @@ static void ppRegRule ( RegRule* reg )
       case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
       case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
       case RR_Arch:   VG_(printf)("a  "); break;
+      case RR_Expr:   VG_(printf)("e  "); break;
       default:        VG_(core_panic)("ppRegRule");
    }
 }
@@ -977,7 +984,7 @@ typedef
          run_CF_instruction. */
       /* The LOC entry */
       Addr loc;
-      /* The CFA entry */
+      /* The CFA entry.  If -1, means we don't know (Dwarf3 Expression). */
       Int cfa_reg;
       Int cfa_offset; /* in bytes */
       /* register unwind rules */
@@ -1080,6 +1087,12 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
    initCfiSI(si);
 
    /* How to generate the CFA */
+   if (ctx->cfa_reg == -1) {
+      /* it was set by DW_CFA_def_cfa_expression; we don't know what
+         it really is */
+      why = 6;
+      goto failed;
+   } else
    if (ctx->cfa_reg == SP_REG) {
       si->cfa_sprel = True;
       si->cfa_off   = ctx->cfa_offset;
@@ -1132,7 +1145,7 @@ static Bool summarise_context( /*OUT*/CfiSI* si,
    return True;
 
   failed:
-   if (VG_(clo_verbosity) > 1) {
+   if (VG_(clo_verbosity) > 2 || VG_(clo_trace_cfi)) {
       VG_(message)(Vg_DebugMsg,
                   "summarise_context(loc_start = %p)"
                   ": cannot summarise(why=%d):   ", loc_start, why);
@@ -1356,7 +1369,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                                 UChar* instr,
                                 UnwindContext* restore_ctx )
 {
-   Int   off, reg, reg2, nleb;
+   Int   off, reg, reg2, nleb, len;
    UInt  delta;
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
@@ -1474,6 +1487,32 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          break;
 
+      case DW_CFA_expression:
+         /* Too difficult to really handle; just skip over it and say
+            that we don't know what do to with the register. */
+         if (VG_(clo_trace_cfi))
+            VG_(printf)("DWARF2 CFI reader: "
+                        "ignoring DW_CFA_expression\n");
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_Expr;
+         break;
+
+      case DW_CFA_def_cfa_expression:
+         if (VG_(clo_trace_cfi))
+            VG_(printf)("DWARF2 CFI reader: "
+                        "ignoring DW_CFA_def_cfa_expression\n");
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         ctx->cfa_reg = -1; /* indicating we don't know */
+         break;
+
       default: 
          VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
                                    "instruction 0:%d", (Int)lo6); 
@@ -1490,7 +1529,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
 static Int show_CF_instruction ( UChar* instr )
 {
    UInt  delta;
-   Int   off, reg, reg2, nleb;
+   Int   off, reg, reg2, nleb, len;
    Addr  loc;
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
@@ -1579,6 +1618,22 @@ static Int show_CF_instruction ( UChar* instr )
          off = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          VG_(printf)("DW_CFA_GNU_args_size(%d)\n", off ); 
+         break;
+
+      case DW_CFA_def_cfa_expression:
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         VG_(printf)("DW_CFA_def_cfa_expression(length %d)\n", len);
+         break;
+
+      case DW_CFA_expression:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         VG_(printf)("DW_CFA_expression(r%d, length %d)\n", reg, len);
          break;
 
       default: 

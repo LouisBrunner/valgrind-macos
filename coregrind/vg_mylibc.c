@@ -915,7 +915,7 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
 #elif defined(VGP_amd64_linux)
 #  define GET_REAL_SP_AND_FP(sp, fp) \
       asm("movq %%rsp, %0;" \
-          "movl %%rbp, %1;" \
+          "movq %%rbp, %1;" \
           : "=r" (sp),\
             "=r" (fp));
 #else

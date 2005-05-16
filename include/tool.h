@@ -34,14 +34,18 @@
 
 #include "basic_types.h"
 #include "tool_asm.h"           /* asm stuff */
-#include "tool_arch.h"          /* arch-specific tool stuff */
-#include "vki.h"
 
 #include "pub_tool_errormgr.h"      // needed for 'Error', 'Supp'
 #include "pub_tool_execontext.h"    // needed for 'ExeContext'
 
 #include "libvex.h"
 #include "libvex_ir.h"
+
+#if defined(VGO_linux)
+#  include "vki-linux.h"
+#else
+#  error Unknown OS
+#endif
 
 /*====================================================================*/
 /*=== Build options and table sizes.                               ===*/
@@ -588,6 +592,31 @@ extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, UChar* area );
 extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, const UChar* area );
+
+/*====================================================================*/
+/*=== Arch-specific stuff                                          ===*/
+/*====================================================================*/
+
+/* VGA_STACK_REDZONE_SZB: how many bytes below the stack pointer are validly
+ * addressible? */
+#if defined(VGA_x86)
+#  define VGA_REGPARM(n)            __attribute__((regparm(n)))
+#  define VGA_MIN_INSTR_SZB         1
+#  define VGA_MAX_INSTR_SZB        16
+#  define VGA_STACK_REDZONE_SZB     0
+#elif defined(VGA_amd64)
+#  define VGA_REGPARM(n)            /* */
+#  define VGA_MIN_INSTR_SZB         1
+#  define VGA_MAX_INSTR_SZB        16
+#  define VGA_STACK_REDZONE_SZB   128
+#elif defined(VGA_arm)
+#  define VGA_REGPARM(n)            /* */
+#  define VGA_MIN_INSTR_SZB         4
+#  define VGA_MAX_INSTR_SZB         4 
+#  define VGA_STACK_REDZONE_SZB     0
+#else
+#  error Unknown platform
+#endif
 
 #endif   /* __TOOL_H */
 

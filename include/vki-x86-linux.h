@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- AMD64/Linux-specific kernel interface.                       ---*/
-/*---                                       amd64-linux/vki_arch.h ---*/
+/*--- x86/Linux-specific kernel interface.         vki-x86-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,14 +28,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __AMD64_LINUX_VKI_ARCH_H
-#define __AMD64_LINUX_VKI_ARCH_H
+#ifndef __VKI_X86_LINUX_H
+#define __VKI_X86_LINUX_H
 
-// AMD64 is little-endian.
+// x86 is little-endian.
 #define VKI_LITTLE_ENDIAN  1
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/types.h
+// From linux-2.6.8.1/include/asm-i386/types.h
 //----------------------------------------------------------------------
 
 typedef unsigned char __vki_u8;
@@ -54,18 +53,35 @@ typedef unsigned short vki_u16;
 typedef unsigned int vki_u32;
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/page.h
+// From linux-2.6.8.1/include/asm-i386/page.h
 //----------------------------------------------------------------------
 
+/* PAGE_SHIFT determines the page size */
 #define VKI_PAGE_SHIFT	12
 #define VKI_PAGE_SIZE	(1UL << VKI_PAGE_SHIFT)
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/signal.h
+// From linux-2.6.8.1/include/asm-i386/signal.h
 //----------------------------------------------------------------------
 
+#define VKI_MINSIGSTKSZ	2048
+
+#define VKI_SIG_BLOCK          0	/* for blocking signals */
+#define VKI_SIG_UNBLOCK        1	/* for unblocking signals */
+#define VKI_SIG_SETMASK        2	/* for setting the signal mask */
+
+/* Type of a signal handler.  */
+typedef void __vki_signalfn_t(int);
+typedef __vki_signalfn_t __user *__vki_sighandler_t;
+
+typedef void __vki_restorefn_t(void);
+typedef __vki_restorefn_t __user *__vki_sigrestore_t;
+
+#define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
+#define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
+
 #define _VKI_NSIG	64
-#define _VKI_NSIG_BPW	64
+#define _VKI_NSIG_BPW	32
 #define _VKI_NSIG_WORDS	(_VKI_NSIG / _VKI_NSIG_BPW)
 
 typedef unsigned long vki_old_sigset_t;		/* at least 32 bits */
@@ -80,6 +96,7 @@ typedef struct {
 #define VKI_SIGILL		 4
 #define VKI_SIGTRAP		 5
 #define VKI_SIGABRT		 6
+//#define VKI_SIGIOT		 6
 #define VKI_SIGBUS		 7
 #define VKI_SIGFPE		 8
 #define VKI_SIGKILL		 9
@@ -107,45 +124,41 @@ typedef struct {
 #define VKI_SIGSYS		31
 #define	VKI_SIGUNUSED		31
 
-#define VKI_SIGRTMIN		32
-#define VKI_SIGRTMAX		_VKI_NSIG
+/* These should not be considered constants from userland.  */
+#define VKI_SIGRTMIN	32
+// [[This was (_NSIG-1) in 2.4.X... not sure if it matters.]]
+#define VKI_SIGRTMAX	_VKI_NSIG
 
-#define VKI_SA_NOCLDSTOP	0x00000001
-#define VKI_SA_NOCLDWAIT	0x00000002
-#define VKI_SA_SIGINFO		0x00000004
-#define VKI_SA_ONSTACK		0x08000000
-#define VKI_SA_RESTART		0x10000000
-#define VKI_SA_NODEFER		0x40000000
-#define VKI_SA_RESETHAND	0x80000000
+#define VKI_SA_NOCLDSTOP	0x00000001u
+#define VKI_SA_NOCLDWAIT	0x00000002u
+#define VKI_SA_SIGINFO		0x00000004u
+#define VKI_SA_ONSTACK		0x08000000u
+#define VKI_SA_RESTART		0x10000000u
+#define VKI_SA_NODEFER		0x40000000u
+#define VKI_SA_RESETHAND	0x80000000u
 
-#define VKI_SA_NOMASK	VKI_SA_NODEFER
-#define VKI_SA_ONESHOT	VKI_SA_RESETHAND
+#define VKI_SA_NOMASK		VKI_SA_NODEFER
+#define VKI_SA_ONESHOT		VKI_SA_RESETHAND
+//#define VKI_SA_INTERRUPT	0x20000000 /* dummy -- ignored */
 
-#define VKI_SA_RESTORER	0x04000000
+#define VKI_SA_RESTORER		0x04000000
 
 #define VKI_SS_ONSTACK	1
 #define VKI_SS_DISABLE	2
 
-#define VKI_MINSIGSTKSZ	2048
-
-#define VKI_SIG_BLOCK          0	/* for blocking signals */
-#define VKI_SIG_UNBLOCK        1	/* for unblocking signals */
-#define VKI_SIG_SETMASK        2	/* for setting the signal mask */
-
-typedef void __vki_signalfn_t(int);
-typedef __vki_signalfn_t __user *__vki_sighandler_t;
-
-typedef void __vki_restorefn_t(void);
-typedef __vki_restorefn_t __user *__vki_sigrestore_t;
-
-#define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
-#define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
-
-struct vki_sigaction {
+struct vki_old_sigaction {
         // [[Nb: a 'k' prefix is added to "sa_handler" because
         // bits/sigaction.h (which gets dragged in somehow via signal.h)
         // #defines it as something else.  Since that is done for glibc's
         // purposes, which we don't care about here, we use our own name.]]
+        __vki_sighandler_t ksa_handler;
+        vki_old_sigset_t sa_mask;
+        unsigned long sa_flags;
+        __vki_sigrestore_t sa_restorer;
+};
+
+struct vki_sigaction {
+        // [[See comment about extra 'k' above]]
 	__vki_sighandler_t ksa_handler;
 	unsigned long sa_flags;
 	__vki_sigrestore_t sa_restorer;
@@ -159,74 +172,94 @@ typedef struct vki_sigaltstack {
 } vki_stack_t;
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/sigcontext.h
+// From linux-2.6.8.1/include/asm-i386/sigcontext.h
 //----------------------------------------------------------------------
+
+struct _vki_fpreg {
+	unsigned short significand[4];
+	unsigned short exponent;
+};
+
+struct _vki_fpxreg {
+	unsigned short significand[4];
+	unsigned short exponent;
+	unsigned short padding[3];
+};
+
+struct _vki_xmmreg {
+	unsigned long element[4];
+};
 
 struct _vki_fpstate {
-	__vki_u16	cwd;
-	__vki_u16	swd;
-	__vki_u16	twd;	/* Note this is not the same as the 32bit/x87/FSAVE twd */
-	__vki_u16	fop;
-	__vki_u64	rip;
-	__vki_u64	rdp; 
-	__vki_u32	mxcsr;
-	__vki_u32	mxcsr_mask;
-	__vki_u32	st_space[32];	/* 8*16 bytes for each FP-reg */
-	__vki_u32	xmm_space[64];	/* 16*16 bytes for each XMM-reg  */
-	__vki_u32	reserved2[24];
+	/* Regular FPU environment */
+	unsigned long 	cw;
+	unsigned long	sw;
+	unsigned long	tag;
+	unsigned long	ipoff;
+	unsigned long	cssel;
+	unsigned long	dataoff;
+	unsigned long	datasel;
+	struct _vki_fpreg	_st[8];
+	unsigned short	status;
+	unsigned short	magic;		/* 0xffff = regular FPU data only */
+
+	/* FXSR FPU environment */
+	unsigned long	_fxsr_env[6];	/* FXSR FPU env is ignored */
+	unsigned long	mxcsr;
+	unsigned long	reserved;
+	struct _vki_fpxreg	_fxsr_st[8];	/* FXSR FPU reg data is ignored */
+	struct _vki_xmmreg	_xmm[8];
+	unsigned long	padding[56];
 };
 
-struct vki_sigcontext { 
-	unsigned long r8;
-	unsigned long r9;
-	unsigned long r10;
-	unsigned long r11;
-	unsigned long r12;
-	unsigned long r13;
-	unsigned long r14;
-	unsigned long r15;
-	unsigned long rdi;
-	unsigned long rsi;
-	unsigned long rbp;
-	unsigned long rbx;
-	unsigned long rdx;
-	unsigned long rax;
-	unsigned long rcx;
-	unsigned long rsp;
-	unsigned long rip;
-	unsigned long eflags;		/* RFLAGS */
-	unsigned short cs;
-	unsigned short gs;
-	unsigned short fs;
-	unsigned short __pad0; 
-	unsigned long err;
+struct vki_sigcontext {
+	unsigned short gs, __gsh;
+	unsigned short fs, __fsh;
+	unsigned short es, __esh;
+	unsigned short ds, __dsh;
+	unsigned long edi;
+	unsigned long esi;
+	unsigned long ebp;
+	unsigned long esp;
+	unsigned long ebx;
+	unsigned long edx;
+	unsigned long ecx;
+	unsigned long eax;
 	unsigned long trapno;
+	unsigned long err;
+	unsigned long eip;
+	unsigned short cs, __csh;
+	unsigned long eflags;
+	unsigned long esp_at_signal;
+	unsigned short ss, __ssh;
+	struct _vki_fpstate __user * fpstate;
 	unsigned long oldmask;
 	unsigned long cr2;
-	struct _vki_fpstate __user *fpstate;	/* zero when no FPU context */
-	unsigned long reserved1[8];
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/mman.h
+// From linux-2.6.8.1/include/asm-i386/mman.h
 //----------------------------------------------------------------------
 
+#define VKI_PROT_NONE	0x0		/* No page permissions */
 #define VKI_PROT_READ	0x1		/* page can be read */
 #define VKI_PROT_WRITE	0x2		/* page can be written */
 #define VKI_PROT_EXEC	0x4		/* page can be executed */
-#define VKI_PROT_NONE	0x0		/* page can not be accessed */
 
 #define VKI_MAP_SHARED	0x01		/* Share changes */
 #define VKI_MAP_PRIVATE	0x02		/* Changes are private */
+//#define VKI_MAP_TYPE	0x0f		/* Mask for type of mapping */
 #define VKI_MAP_FIXED	0x10		/* Interpret addr exactly */
 #define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
+#define VKI_MAP_NORESERVE	0x4000		/* don't check for reservations */
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/fcntl.h
+// From linux-2.6.8.1/include/asm-i386/fcntl.h
 //----------------------------------------------------------------------
 
 #define VKI_O_RDONLY	     00
 #define VKI_O_WRONLY	     01
+#define VKI_O_RDWR	     02
 #define VKI_O_CREAT	   0100	/* not fcntl */
 #define VKI_O_EXCL	   0200	/* not fcntl */
 #define VKI_O_TRUNC	  01000	/* not fcntl */
@@ -247,12 +280,17 @@ struct vki_sigcontext {
 #define VKI_F_SETSIG		10	/*  for sockets. */
 #define VKI_F_GETSIG		11	/*  for sockets. */
 
+#define VKI_F_GETLK64		12	/*  using 'struct flock64' */
+#define VKI_F_SETLK64		13
+#define VKI_F_SETLKW64		14
+
+/* for F_[GET|SET]FL */
 #define VKI_FD_CLOEXEC	1	/* actually anything with low bit set goes */
 
 #define VKI_F_LINUX_SPECIFIC_BASE	1024
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/resource.h
+// From linux-2.6.8.1/include/asm-i386/resource.h
 //----------------------------------------------------------------------
 
 #define VKI_RLIMIT_DATA		2	/* max data size */
@@ -261,7 +299,7 @@ struct vki_sigcontext {
 #define VKI_RLIMIT_NOFILE	7	/* max number of open files */
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/socket.h
+// From linux-2.6.8.1/include/asm-i386/socket.h
 //----------------------------------------------------------------------
 
 #define VKI_SOL_SOCKET	1
@@ -269,7 +307,7 @@ struct vki_sigcontext {
 #define VKI_SO_TYPE	3
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/sockios.h
+// From linux-2.6.8.1/include/asm-i386/sockios.h
 //----------------------------------------------------------------------
 
 #define VKI_SIOCSPGRP	0x8902
@@ -277,52 +315,105 @@ struct vki_sigcontext {
 #define VKI_SIOCGSTAMP	0x8906		/* Get stamp */
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/stat.h
+// From linux-2.6.8.1/include/asm-i386/stat.h
 //----------------------------------------------------------------------
+
+#define VKI_S_IFMT  00170000
+#define VKI_S_IFSOCK 0140000
+#define VKI_S_IFLNK	 0120000
+#define VKI_S_IFREG  0100000
+#define VKI_S_IFBLK  0060000
+#define VKI_S_IFDIR  0040000
+#define VKI_S_IFCHR  0020000
+#define VKI_S_IFIFO  0010000
+#define VKI_S_ISUID  0004000
+#define VKI_S_ISGID  0002000
+#define VKI_S_ISVTX  0001000
+
+#define VKI_S_ISLNK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFLNK)
+#define VKI_S_ISREG(m)	(((m) & VKI_S_IFMT) == VKI_S_IFREG)
+#define VKI_S_ISDIR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFDIR)
+#define VKI_S_ISCHR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFCHR)
+#define VKI_S_ISBLK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFBLK)
+#define VKI_S_ISFIFO(m)	(((m) & VKI_S_IFMT) == VKI_S_IFIFO)
+#define VKI_S_ISSOCK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFSOCK)
 
 struct vki_stat {
-	unsigned long	st_dev;
-	unsigned long	st_ino;
-	unsigned long	st_nlink;
+	unsigned long  st_dev;
+	unsigned long  st_ino;
+	unsigned short st_mode;
+	unsigned short st_nlink;
+	unsigned short st_uid;
+	unsigned short st_gid;
+	unsigned long  st_rdev;
+	unsigned long  st_size;
+	unsigned long  st_blksize;
+	unsigned long  st_blocks;
+	unsigned long  st_atime;
+	unsigned long  st_atime_nsec;
+	unsigned long  st_mtime;
+	unsigned long  st_mtime_nsec;
+	unsigned long  st_ctime;
+	unsigned long  st_ctime_nsec;
+	unsigned long  __unused4;
+	unsigned long  __unused5;
+};
+
+struct vki_stat64 {
+	unsigned long long	st_dev;
+	unsigned char	__pad0[4];
+
+#define STAT64_HAS_BROKEN_ST_INO	1
+	unsigned long	__st_ino;
 
 	unsigned int	st_mode;
-	unsigned int	st_uid;
-	unsigned int	st_gid;
-	unsigned int	__pad0;
-	unsigned long	st_rdev;
-	long		st_size;
-	long		st_blksize;
-	long		st_blocks;	/* Number 512-byte blocks allocated. */
+	unsigned int	st_nlink;
+
+	unsigned long	st_uid;
+	unsigned long	st_gid;
+
+	unsigned long long	st_rdev;
+	unsigned char	__pad3[4];
+
+	long long	st_size;
+	unsigned long	st_blksize;
+
+	unsigned long	st_blocks;	/* Number 512-byte blocks allocated. */
+	unsigned long	__pad4;		/* future possible st_blocks high bits */
 
 	unsigned long	st_atime;
-	unsigned long 	st_atime_nsec; 
+	unsigned long	st_atime_nsec;
+
 	unsigned long	st_mtime;
-	unsigned long	st_mtime_nsec;
+	unsigned int	st_mtime_nsec;
+
 	unsigned long	st_ctime;
-	unsigned long   st_ctime_nsec;
-  	long		__unused[3];
+	unsigned long	st_ctime_nsec;
+
+	unsigned long long	st_ino;
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/statfs.h
+// From linux-2.6.8.1/include/asm-i386/statfs.h
 //----------------------------------------------------------------------
 
+// [[Nb: asm-i386/statfs.h just #include asm-generic/statfs.h directly]]
 struct vki_statfs {
-	long f_type;
-	long f_bsize;
-	long f_blocks;
-	long f_bfree;
-	long f_bavail;
-	long f_files;
-	long f_ffree;
+	__vki_u32 f_type;
+	__vki_u32 f_bsize;
+	__vki_u32 f_blocks;
+	__vki_u32 f_bfree;
+	__vki_u32 f_bavail;
+	__vki_u32 f_files;
+	__vki_u32 f_ffree;
 	__vki_kernel_fsid_t f_fsid;
-	long f_namelen;
-	long f_frsize;
-	long f_spare[5];
+	__vki_u32 f_namelen;
+	__vki_u32 f_frsize;
+	__vki_u32 f_spare[5];
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/termios.h
+// From linux-2.6.8.1/include/asm-i386/termios.h
 //----------------------------------------------------------------------
 
 struct vki_winsize {
@@ -342,12 +433,13 @@ struct vki_termio {
 	unsigned char c_cc[VKI_NCC];	/* control characters */
 };
 
+
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/termbits.h
+// From linux-2.6.8.1/include/asm-i386/termbits.h
 //----------------------------------------------------------------------
 
-typedef unsigned char	vki_cc_t;
-typedef unsigned int	vki_tcflag_t;
+typedef unsigned char   vki_cc_t;
+typedef unsigned int    vki_tcflag_t;
 
 #define VKI_NCCS 19
 struct vki_termios {
@@ -359,9 +451,8 @@ struct vki_termios {
 	vki_cc_t c_cc[VKI_NCCS];	/* control characters */
 };
 
-
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/ioctl.h
+// From linux-2.6.8.1/include/asm-i386/ioctl.h
 //----------------------------------------------------------------------
 
 #define _VKI_IOC_NRBITS		8
@@ -369,6 +460,8 @@ struct vki_termios {
 #define _VKI_IOC_SIZEBITS	14
 #define _VKI_IOC_DIRBITS	2
 
+#define _VKI_IOC_NRMASK		((1 << _VKI_IOC_NRBITS)-1)
+#define _VKI_IOC_TYPEMASK	((1 << _VKI_IOC_TYPEBITS)-1)
 #define _VKI_IOC_SIZEMASK	((1 << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK	((1 << _VKI_IOC_DIRBITS)-1)
 
@@ -387,20 +480,31 @@ struct vki_termios {
 	 ((nr)   << _VKI_IOC_NRSHIFT) | \
 	 ((size) << _VKI_IOC_SIZESHIFT))
 
-#define _VKI_IO(type,nr)		_VKI_IOC(_VKI_IOC_NONE,(type),(nr),0)
-#define _VKI_IOR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ,(type),(nr),sizeof(size))
-#define _VKI_IOW(type,nr,size)	_VKI_IOC(_VKI_IOC_WRITE,(type),(nr),sizeof(size))
-#define _VKI_IOWR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ|_VKI_IOC_WRITE,(type),(nr),sizeof(size))
+/* provoke compile error for invalid uses of size argument */
+extern unsigned int __vki_invalid_size_argument_for_IOC;
+#define _VKI_IOC_TYPECHECK(t) \
+	((sizeof(t) == sizeof(t[1]) && \
+	  sizeof(t) < (1 << _VKI_IOC_SIZEBITS)) ? \
+	  sizeof(t) : __vki_invalid_size_argument_for_IOC)
 
-#define _VKI_IOC_DIR(nr)		(((nr) >> _VKI_IOC_DIRSHIFT) & _VKI_IOC_DIRMASK)
-#define _VKI_IOC_SIZE(nr)		(((nr) >> _VKI_IOC_SIZESHIFT) & _VKI_IOC_SIZEMASK)
+/* used to create numbers */
+#define _VKI_IO(type,nr)	_VKI_IOC(_VKI_IOC_NONE,(type),(nr),0)
+#define _VKI_IOR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ,(type),(nr),(_VKI_IOC_TYPECHECK(size)))
+#define _VKI_IOW(type,nr,size)	_VKI_IOC(_VKI_IOC_WRITE,(type),(nr),(_VKI_IOC_TYPECHECK(size)))
+#define _VKI_IOWR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ|_VKI_IOC_WRITE,(type),(nr),(_VKI_IOC_TYPECHECK(size)))
+
+/* used to decode ioctl numbers.. */
+#define _VKI_IOC_DIR(nr)	(((nr) >> _VKI_IOC_DIRSHIFT) & _VKI_IOC_DIRMASK)
+#define _VKI_IOC_TYPE(nr)	(((nr) >> _VKI_IOC_TYPESHIFT) & _VKI_IOC_TYPEMASK)
+#define _VKI_IOC_NR(nr)		(((nr) >> _VKI_IOC_NRSHIFT) & _VKI_IOC_NRMASK)
+#define _VKI_IOC_SIZE(nr)	(((nr) >> _VKI_IOC_SIZESHIFT) & _VKI_IOC_SIZEMASK)
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/ioctls.h
+// From linux-2.6.8.1/include/asm-i386/ioctls.h
 //----------------------------------------------------------------------
 
 #define VKI_TCGETS	0x5401
-#define VKI_TCSETS	0x5402
+#define VKI_TCSETS	0x5402 /* Clashes with SNDCTL_TMR_START sound ioctl */
 #define VKI_TCSETSW	0x5403
 #define VKI_TCSETSF	0x5404
 #define VKI_TCGETA	0x5405
@@ -429,9 +533,10 @@ struct vki_termios {
 #define VKI_FIOASYNC	0x5452
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/poll.h
+// From linux-2.6.8.1/include/asm-i386/poll.h
 //----------------------------------------------------------------------
 
+/* These are specified by iBCS2 */
 #define VKI_POLLIN		0x0001
 
 struct vki_pollfd {
@@ -441,20 +546,54 @@ struct vki_pollfd {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/user.h
+// From linux-2.6.8.1/include/asm-i386/user.h
 //----------------------------------------------------------------------
 
+struct vki_user_i387_struct {
+	long	cwd;
+	long	swd;
+	long	twd;
+	long	fip;
+	long	fcs;
+	long	foo;
+	long	fos;
+	long	st_space[20];	/* 8*10 bytes for each FP-reg = 80 bytes */
+};
+
+struct vki_user_fxsr_struct {
+	unsigned short	cwd;
+	unsigned short	swd;
+	unsigned short	twd;
+	unsigned short	fop;
+	long	fip;
+	long	fcs;
+	long	foo;
+	long	fos;
+	long	mxcsr;
+	long	reserved;
+	long	st_space[32];	/* 8*16 bytes for each FP-reg = 128 bytes */
+	long	xmm_space[32];	/* 8*16 bytes for each XMM-reg = 128 bytes */
+	long	padding[56];
+};
+
+/*
+ * This is the old layout of "struct pt_regs", and
+ * is still the layout used by user mode (the new
+ * pt_regs doesn't have all registers as the kernel
+ * doesn't use the extra segment registers)
+ */
 struct vki_user_regs_struct {
-	unsigned long r15,r14,r13,r12,rbp,rbx,r11,r10;
-	unsigned long r9,r8,rax,rcx,rdx,rsi,rdi,orig_rax;
-	unsigned long rip,cs,eflags;
-	unsigned long rsp,ss;
-  	unsigned long fs_base, gs_base;
-	unsigned long ds,es,fs,gs; 
-}; 
+	long ebx, ecx, edx, esi, edi, ebp, eax;
+	unsigned short ds, __ds, es, __es;
+	unsigned short fs, __fs, gs, __gs;
+	long orig_eax, eip;
+	unsigned short cs, __cs;
+	long eflags, esp;
+	unsigned short ss, __ss;
+};
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/elf.h
+// From linux-2.6.8.1/include/asm-i386/elf.h
 //----------------------------------------------------------------------
 
 typedef unsigned long vki_elf_greg_t;
@@ -462,8 +601,13 @@ typedef unsigned long vki_elf_greg_t;
 #define VKI_ELF_NGREG (sizeof (struct vki_user_regs_struct) / sizeof(vki_elf_greg_t))
 typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
 
+typedef struct vki_user_i387_struct vki_elf_fpregset_t;
+typedef struct vki_user_fxsr_struct vki_elf_fpxregset_t;
+
+#define VKI_AT_SYSINFO		32
+
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/ucontext.h
+// From linux-2.6.8.1/include/asm-i386/ucontext.h
 //----------------------------------------------------------------------
 
 struct vki_ucontext {
@@ -475,27 +619,17 @@ struct vki_ucontext {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/segment.h
+// From linux-2.6.8.1/include/asm-i386/segment.h
 //----------------------------------------------------------------------
 
-#define VKI_GDT_ENTRY_TLS_ENTRIES 3
-
-#define VKI_GDT_ENTRY_TLS_MIN 11
-#define VKI_GDT_ENTRY_TLS_MAX 13
+#define VKI_GDT_ENTRY_TLS_ENTRIES	3
+#define VKI_GDT_ENTRY_TLS_MIN	6
+#define VKI_GDT_ENTRY_TLS_MAX 	(VKI_GDT_ENTRY_TLS_MIN + VKI_GDT_ENTRY_TLS_ENTRIES - 1)
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/ldt.h
+// From linux-2.6.8.1/include/asm-i386/ldt.h
 //----------------------------------------------------------------------
 
-// I think this LDT stuff will have to be reinstated for amd64, but I'm not
-// certain.  (Nb: The sys_arch_prctl seems to have replaced
-// [gs]et_thread_area syscalls.)
-//
-// Note that the type here is very slightly different to the
-// type for x86 (the final 'lm' field is added);  I'm not sure about the
-// significance of that... --njn
-
-#if 0
 /* [[Nb: This is the structure passed to the modify_ldt syscall.  Just so as
    to confuse and annoy everyone, this is _not_ the same as an
    VgLdtEntry and has to be translated into such.  The logic for doing
@@ -510,17 +644,19 @@ struct vki_user_desc {
 	unsigned int  limit_in_pages:1;
 	unsigned int  seg_not_present:1;
 	unsigned int  useable:1;
-        unsigned int  lm:1;
+        // [[Nb: this field is not in the kernel sources, but it has always
+        // been in the Valgrind sources so I will keep it there in case it's
+        // important... this is an x86-defined data structure so who
+        // knows;  maybe it's important to set this field to zero at some
+        // point.  --njn]]
+	unsigned int  reserved:25;
 };
 
 // [[Nb: for our convenience within Valgrind, use a more specific name]]
 typedef struct vki_user_desc vki_modify_ldt_t;
-#endif
-
-typedef void vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
-// From linux-2.6.11.2/include/asm-x86_64/ipcbuf.h
+// From linux-2.6.8.1/include/asm-i386/ipcbuf.h
 //----------------------------------------------------------------------
 
 struct vki_ipc64_perm
@@ -539,7 +675,7 @@ struct vki_ipc64_perm
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.11.2/include/asm-x86_64/sembuf.h
+// From linux-2.6.8.1/include/asm-i386/sembuf.h
 //----------------------------------------------------------------------
 
 struct vki_semid64_ds {
@@ -554,14 +690,17 @@ struct vki_semid64_ds {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.11.2/include/asm-x86_64/msgbuf.h
+// From linux-2.6.8.1/include/asm-i386/msgbuf.h
 //----------------------------------------------------------------------
 
 struct vki_msqid64_ds {
 	struct vki_ipc64_perm msg_perm;
 	__vki_kernel_time_t msg_stime;	/* last msgsnd time */
+	unsigned long	__unused1;
 	__vki_kernel_time_t msg_rtime;	/* last msgrcv time */
+	unsigned long	__unused2;
 	__vki_kernel_time_t msg_ctime;	/* last change time */
+	unsigned long	__unused3;
 	unsigned long  msg_cbytes;	/* current number of bytes on queue */
 	unsigned long  msg_qnum;	/* number of messages in queue */
 	unsigned long  msg_qbytes;	/* max number of bytes on queue */
@@ -572,15 +711,41 @@ struct vki_msqid64_ds {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.11.2/include/asm-x86_64/shmbuf.h
+// From linux-2.6.8.1/include/asm-i386/ipc.h
+//----------------------------------------------------------------------
+
+struct vki_ipc_kludge {
+	struct vki_msgbuf __user *msgp;
+	long msgtyp;
+};
+
+#define VKI_SEMOP		 1
+#define VKI_SEMGET		 2
+#define VKI_SEMCTL		 3
+#define VKI_SEMTIMEDOP	 	 4
+#define VKI_MSGSND		11
+#define VKI_MSGRCV		12
+#define VKI_MSGGET		13
+#define VKI_MSGCTL		14
+#define VKI_SHMAT		21
+#define VKI_SHMDT		22
+#define VKI_SHMGET		23
+#define VKI_SHMCTL		24
+
+
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-i386/shmbuf.h
 //----------------------------------------------------------------------
 
 struct vki_shmid64_ds {
 	struct vki_ipc64_perm	shm_perm;	/* operation perms */
 	vki_size_t		shm_segsz;	/* size of segment (bytes) */
 	__vki_kernel_time_t	shm_atime;	/* last attach time */
+	unsigned long		__unused1;
 	__vki_kernel_time_t	shm_dtime;	/* last detach time */
+	unsigned long		__unused2;
 	__vki_kernel_time_t	shm_ctime;	/* last change time */
+	unsigned long		__unused3;
 	__vki_kernel_pid_t	shm_cpid;	/* pid of creator */
 	__vki_kernel_pid_t	shm_lpid;	/* pid of last operator */
 	unsigned long		shm_nattch;	/* no. of current attaches */
@@ -601,10 +766,43 @@ struct vki_shminfo64 {
 };
 
 //----------------------------------------------------------------------
+// DRM ioctls
+//----------------------------------------------------------------------
+
+// jrs 20050207: where did all this stuff come from?  Is it really
+// i386 specific, or should it go into the linux-generic category?
+//struct vki_drm_buf_pub {
+//	Int		  idx;	       /**< Index into the master buffer list */
+//	Int		  total;       /**< Buffer size */
+//	Int		  used;	       /**< Amount of buffer in use (for DMA) */
+//	void	  __user *address;     /**< Address of buffer */
+//};
+//
+//struct vki_drm_buf_map {
+//	Int	      count;		/**< Length of the buffer list */
+//	void	      __user *virtual;	/**< Mmap'd area in user-virtual */
+//	struct vki_drm_buf_pub __user *list;	/**< Buffer information */
+//};
+//
+///* We need to pay attention to this, because it mmaps memory */
+//#define VKI_DRM_IOCTL_MAP_BUFS		_VKI_IOWR('d', 0x19, struct vki_drm_buf_map)
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-i386/ptrace.h
+//----------------------------------------------------------------------
+
+#define VKI_PTRACE_GETREGS            12
+#define VKI_PTRACE_SETREGS            13
+#define VKI_PTRACE_GETFPREGS          14
+#define VKI_PTRACE_SETFPREGS          15
+#define VKI_PTRACE_GETFPXREGS         18
+#define VKI_PTRACE_SETFPXREGS         19
+
+//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
 
-#endif // __AMD64_LINUX_VKI_ARCH_H
+#endif // __VKI_X86_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

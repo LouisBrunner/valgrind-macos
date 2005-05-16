@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- AMD64/Linux-specific kernel interface: posix types.          ---*/
-/*---                            amd64-linux/vki_arch_posixtypes.h ---*/
+/*---                                 vki_posixtypes-amd64-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,8 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __AMD64_LINUX_VKI_ARCH_POSIXTYPES_H
-#define __AMD64_LINUX_VKI_ARCH_POSIXTYPES_H
+#ifndef __VKI_POSIXTYPES_AMD64_LINUX_H
+#define __VKI_POSIXTYPES_AMD64_LINUX_H
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-x86_64/posix_types.h
@@ -61,7 +61,7 @@ typedef unsigned short __vki_kernel_old_gid_t;
 typedef __vki_kernel_uid_t __vki_kernel_uid32_t;
 typedef __vki_kernel_gid_t __vki_kernel_gid32_t;
 
-#endif // __AMD64_LINUX_VKI_ARCH_POSIXTYPES_H
+#endif // __VKI_POSIXTYPES_AMD64_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -32,7 +32,6 @@
 #define __ARM_CORE_ARCH_H
 
 #include "core_arch_asm.h"    // arch-specific asm  stuff
-#include "tool_arch.h"        // arch-specific tool stuff
 
 #include "libvex_guest_arm.h"
 

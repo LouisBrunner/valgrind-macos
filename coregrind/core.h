@@ -32,56 +32,6 @@
 #ifndef __CORE_H
 #define __CORE_H
 
-/*
-   [This comment is not longer accurate -- we're switching to an easier to
-   understand module-based approach, with one or two headers per module,
-   rather than having monolithic headers as described.  --njn 07-May-2005]
-   
-   Header hierarchy:
-
-   - core C   files include core.h
-   - core asm files include core_asm.h
-   - tool C   files include tool.h
-   - tool asm files include tool_asm.h
-
-   - The hierarchy of the header files themselves is based around the
-     following rules:
-
-      - core headers     include  tool headers
-      - generic headers  include  arch/OS/platform headers
-      - C headers        include  asm headers
-
-     This gives the following hierarchy (only showing 'arch' headers, not
-     'os' or 'platform' headers), where arrows indicate inclusion, and
-     $VG_ARCH==x86:
-
-
-   (include/x86/tool_arch_asm.h?) <----- coregrind/x86/core_arch_asm.h
-              ^   ^                          ^   ^
-             /     \                        /     \
-            /       \                      /       \
-           /         \                    /         \
- include/tool_asm.h <-\---- coregrind/core_asm.h     \
-           ^           \                  ^           \
-            \  include/x86/tool_arch.h <--------coregrind/x86/core_arch.h
-             \         ^                    \         ^
-              \       /                      \       /
-               \     /                        \     /
-                \   /                          \   /
-           include/tool.h <------------ coregrind/core.h
-
-
-   Note that core.h contains the *declarations* of arch-specific functions
-   and variables, which can be used by the core_arch.h file of any
-   architecture.  (The functions/variables are *defined* within arch/.)
-   However, arch-specific macros and types cannot go into core.h, because
-   there is no separation between declaration and definition for
-   macros/types, so they instead go into $VG_ARCH/core_arch.h.
-
-   The tool-specific headers are all in include/ so they can be seen by any
-   external tools.
-*/
-
 #include "tool.h"          // tool stuff
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 

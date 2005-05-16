@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- x86/Linux-specific kernel interface: posix types.            ---*/
-/*---                              x86-linux/vki_arch_posixtypes.h ---*/
+/*---                                   vki_posixtypes-x86-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,8 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __X86_LINUX_VKI_ARCH_POSIXTYPES_H
-#define __X86_LINUX_VKI_ARCH_POSIXTYPES_H
+#ifndef __VKI_POSIXTYPES_X86_LINUX_H
+#define __VKI_POSIXTYPES_X86_LINUX_H
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/posix_types.h
@@ -61,7 +61,7 @@ typedef struct {
 	int	val[2];
 } __vki_kernel_fsid_t;
 
-#endif // __X86_LINUX_VKI_ARCH_POSIXTYPES_H
+#endif // __VKI_POSIXTYPES_X86_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

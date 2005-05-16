@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Linux-specific kernel interface.                 linux/vki.h ---*/
+/*--- Linux-specific kernel interface.                 vki-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -48,8 +48,8 @@
 
    Also note that this file contains all the generic header info, ie. that
    from linux/include/linux/ *.h.  The arch-specific header info, eg. that
-   from linux/include/asm-i386/ *.h, is in $PLATFORM/vki_arch.h and
-   $PLATFORM/vki_arch_posixtypes.h.  (Two files are required to avoid
+   from linux/include/asm-i386/ *.h, is in vki-$PLATFORM.h and
+   vki_posixtypes-$PLATFORM.h.  (Two files are required to avoid
    circular dependencies between the generic VKI header and the
    arch-specific VKI header.  It's possible in the future, as more stuff
    gets pulled in, that we might have to split files up some more to avoid
@@ -59,14 +59,20 @@
    definitions, which affects some of them.
 */
 
-#ifndef __LINUX_VKI_H
-#define __LINUX_VKI_H
+#ifndef __VKI_LINUX_H
+#define __VKI_LINUX_H
 
 //----------------------------------------------------------------------
 // Arch-specific POSIX types
 //----------------------------------------------------------------------
 
-#include "vki_arch_posixtypes.h"
+#if defined(VGA_x86)
+#  include "vki_posixtypes-x86-linux.h"
+#elif defined(VGA_amd64)
+#  include "vki_posixtypes-amd64-linux.h"
+#else
+#  error Unknown platform
+#endif
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/compiler.h
@@ -138,7 +144,13 @@ typedef unsigned int	        vki_uint;
 // Now the rest of the arch-specific stuff
 //----------------------------------------------------------------------
 
-#include "vki_arch.h"
+#if defined(VGA_x86)
+#  include "vki-x86-linux.h"
+#elif defined(VGA_amd64)
+#  include "vki-amd64-linux.h"
+#else
+#  error Unknown platform
+#endif
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/limits.h
@@ -1891,7 +1903,7 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 #define VKI_PTRACE_PEEKDATA	   2
 #define VKI_PTRACE_PEEKUSR	   3
 
-#endif // __LINUX_VKI_H
+#endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

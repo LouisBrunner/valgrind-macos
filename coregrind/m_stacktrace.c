@@ -120,7 +120,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
             we can safely try the old-fashioned method. */
 	 /* This bit is supposed to deal with frames resulting from
             functions which begin "pushl% ebp ; movl %esp, %ebp" (x86)
-            or "pushl% ebp ; movl %esp, %ebp" (amd64).  Unfortunately,
+            or "pushq %rbp ; movq %rsp, %rbp" (amd64).  Unfortunately,
             since we can't (easily) look at the insns at the start of
             the fn, like GDB does, there's no reliable way to tell.
             Hence the hack of first trying out CFI, and if that fails,

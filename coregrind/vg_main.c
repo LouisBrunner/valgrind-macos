@@ -2001,7 +2001,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          "Using LibVEX rev %s, a library for dynamic binary translation.",
          LibVEX_Version() );
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2004, and GNU GPL'd, by OpenWorks LLP.");
+         "Copyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.");
       VG_(message)(Vg_UserMsg,
          "Using valgrind-%s, a dynamic binary instrumentation framework.",
          VERSION);

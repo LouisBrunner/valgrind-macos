@@ -187,13 +187,16 @@ void VGA_(client_syscall)(Int syscallno, ThreadState *tst,
  */
 #define FILL	0xdeadbeefcabafeed
 
+// Valgrind's stack size, in words.
+#define STACK_SIZE_W      16384
+
 static UWord* allocstack(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    UWord* rsp;
 
    if (tst->os_state.valgrind_stack_base == 0) {
-      void *stk = VG_(mmap)(0, VGA_STACK_SIZE_W * sizeof(UWord) + VKI_PAGE_SIZE,
+      void *stk = VG_(mmap)(0, STACK_SIZE_W * sizeof(UWord) + VKI_PAGE_SIZE,
 			    VKI_PROT_READ|VKI_PROT_WRITE,
 			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
 			    SF_VALGRIND,
@@ -202,7 +205,7 @@ static UWord* allocstack(ThreadId tid)
       if (stk != (void *)-1) {
 	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
 	 tst->os_state.valgrind_stack_base = ((Addr)stk) + VKI_PAGE_SIZE;
-	 tst->os_state.valgrind_stack_szB  = VGA_STACK_SIZE_W * sizeof(UWord);
+	 tst->os_state.valgrind_stack_szB  = STACK_SIZE_W * sizeof(UWord);
       } else 
 	 return (UWord*)-1;
    }

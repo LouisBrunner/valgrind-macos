@@ -54,13 +54,6 @@
 #define VGA_CLREQ_ARGS        guest_RAX
 #define VGA_CLREQ_RET         guest_RDX
 
-/* ---------------------------------------------------------------------
-   Miscellaneous constants
-   ------------------------------------------------------------------ */
-
-// Valgrind's stack size, in words.
-#define VGA_STACK_SIZE_W      16384
-
 #endif   // __AMD64_CORE_ARCH_H
 
 /*--------------------------------------------------------------------*/

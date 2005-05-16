@@ -61,14 +61,6 @@
 //extern const Char VG_(helper_INT)[];
 //extern const Char VG_(helper_breakpoint)[];
 
-
-/* ---------------------------------------------------------------------
-   Miscellaneous constants
-   ------------------------------------------------------------------ */
-
-// Valgrind's stack size, in words.
-#define VGA_STACK_SIZE_W      16384
-
 #endif   // __X86_CORE_ARCH_H
 
 /*--------------------------------------------------------------------*/

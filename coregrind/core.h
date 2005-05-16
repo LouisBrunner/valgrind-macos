@@ -303,7 +303,7 @@ typedef
 
 #if defined(VGA_x86)
    typedef VexGuestX86State   VexGuestArchState;
-#elif defined(VGA_x86)
+#elif defined(VGA_amd64)
    typedef VexGuestAMD64State VexGuestArchState;
 #elif defined(VGA_arm)
    typedef VexGuestARMState   VexGuestArchState;

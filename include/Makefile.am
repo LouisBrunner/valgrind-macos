@@ -1,6 +1,5 @@
 
 EXTRA_DIST = \
-	valgrind.h.in \
 	vg_profile.c
 
 incincdir = $(includedir)/valgrind
@@ -25,6 +24,3 @@ incinc_HEADERS = \
 	vki_posixtypes-amd64-linux.h	\
 	vki_posixtypes-arm-linux.h	\
 	vki_posixtypes-x86-linux.h
-
-BUILT_SOURCES = valgrind.h
-CLEANFILES = valgrind.h

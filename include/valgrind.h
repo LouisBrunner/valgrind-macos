@@ -60,14 +60,11 @@
 
 #include <stdarg.h>
 
-#undef __@VG_ARCH@__
-#define __@VG_ARCH@__   1	// Architecture we're installed on
-
-
 /* If we're not compiling for our target architecture, don't generate
-   any inline asms.  This would be a bit neater if we used the same
-   CPP symbols as the compiler for identifying architectures. */
-#if !defined(__i386__) && !defined(__amd64__)
+   any inline asms.  Note that in this file we're using the compiler's
+   CPP symbols for identifying architectures, which are different to
+   the ones we use within the rest of Valgrind. */
+#if !defined(__i386__) && !defined(__x86_64__)
 #  ifndef NVALGRIND
 #    define NVALGRIND	1
 #  endif  /* NVALGRIND */
@@ -88,7 +85,18 @@
    problem, you can compile with the NVALGRIND symbol defined (gcc
    -DNVALGRIND) so that client requests are not even compiled in.  */
 
-#ifndef NVALGRIND
+#ifdef NVALGRIND
+
+/* Define NVALGRIND to completely remove the Valgrind magic sequence
+   from the compiled code (analogous to NDEBUG's effects on assert()) */
+#define VALGRIND_MAGIC_SEQUENCE(					\
+        _zzq_rlval, _zzq_default, _zzq_request,                         \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
+   {									\
+      (_zzq_rlval) = (_zzq_default);					\
+   }
+
+#else  /* NVALGRIND */
 
 /* The following defines the magic code sequences which the JITter spots and
    handles magically.  Don't look too closely at them; they will rot
@@ -104,11 +112,11 @@
       _zzq_arg1..4  request params
 
    Nb: we put the assembly code sequences for all architectures in this one
-   file.  This is because this file must be stand-alone, so we can't rely on
-   eg. x86/ subdirectories like we do within the rest of Valgrind.
+   file.  This is because this file must be stand-alone, and we don't want
+   to have multiple files.
 */
 
-#ifdef __amd64__
+#ifdef __x86_64__
 extern int printf (__const char *__restrict __format, ...);
 extern void exit (int __status);
 #define VALGRIND_MAGIC_SEQUENCE(                                \
@@ -129,10 +137,7 @@ extern void exit (int __status);
                  : "cc", "memory"				\
                 );						\
   }
-// XXX: make sure that the register holding the args and the register taking
-// the return value match VGA_CLREQ_ARGS and VGA_CLREQ_RET in
-// amd64/core_arch.h!
-#endif  // __amd64__
+#endif  // __x86_64__
 
 #ifdef __i386__
 #define VALGRIND_MAGIC_SEQUENCE(				\
@@ -154,10 +159,9 @@ extern void exit (int __status);
                 );						\
   }
 #endif  // __i386__
-// Insert assembly code for other architectures here...
 
 #ifdef __arm__
-// XXX: terporary, until MAGIC_SEQUENCE is written properly
+// XXX: temporary, until MAGIC_SEQUENCE is written properly
 extern int printf (__const char *__restrict __format, ...);
 extern void exit (int __status);
 #define VALGRIND_MAGIC_SEQUENCE(                                        \
@@ -175,20 +179,11 @@ extern void exit (int __status);
     asm volatile("");                                                   \
   }
 // XXX: make sure that the register holding the args and the register taking
-// the return value match VGA_CLREQ_ARGS and VGA_CLREQ_RET in
-// arm/core_arch.h!
+// the return value match what the scheduler is expecting.
 #endif  // __arm__
 
-#else  /* NVALGRIND */
-/* Define NVALGRIND to completely remove the Valgrind magic sequence
-   from the compiled code (analogous to NDEBUG's effects on
-   assert())  */
-#define VALGRIND_MAGIC_SEQUENCE(					\
-        _zzq_rlval, _zzq_default, _zzq_request,                         \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
-   {									\
-      (_zzq_rlval) = (_zzq_default);					\
-   }
+// Insert assembly code for other architectures here...
+
 #endif /* NVALGRIND */
 
 
@@ -267,7 +262,12 @@ typedef
                             _qzz_addr, _qzz_len, 0, 0);            \
    }
 
-#ifndef NVALGRIND
+#ifdef NVALGRIND
+
+#define VALGRIND_PRINTF(...)
+#define VALGRIND_PRINTF_BACKTRACE(...)
+
+#else /* NVALGRIND */
 
 int VALGRIND_PRINTF(const char *format, ...)
    __attribute__((format(__printf__, 1, 2)));
@@ -298,11 +298,6 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    va_end(vargs);
    return (int)_qzz_res;
 }
-
-#else /* NVALGRIND */
-
-#define VALGRIND_PRINTF(...)
-#define VALGRIND_PRINTF_BACKTRACE(...)
 
 #endif /* NVALGRIND */
 

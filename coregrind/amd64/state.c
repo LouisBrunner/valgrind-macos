@@ -112,56 +112,6 @@ void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 
 
 /*------------------------------------------------------------*/
-/*--- Symtab stuff                                         ---*/
-/*------------------------------------------------------------*/
-
-#if 0
-/* This is the Intel register encoding -- integer regs. */
-#define R_EAX 0
-#define R_ECX 1
-#define R_EDX 2
-#define R_EBX 3
-#define R_ESP 4
-#define R_EBP 5
-#define R_ESI 6
-#define R_EDI 7
-#define R_E8  8
-#define R_E9  9
-#define R_E10 10
-#define R_E11 11
-#define R_E12 12
-#define R_E13 13
-#define R_E14 14
-#define R_E15 15
-#endif
-
-UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
-{
-   I_die_here;
-#if 0
-   switch (regno) {
-   case R_RAX: return &arch->vex.guest_RAX;
-   case R_RCX: return &arch->vex.guest_RCX;
-   case R_RDX: return &arch->vex.guest_RDX;
-   case R_RBX: return &arch->vex.guest_RBX;
-   case R_RSP: return &arch->vex.guest_RSP;
-   case R_RBP: return &arch->vex.guest_RBP;
-   case R_RSI: return &arch->vex.guest_RSI;
-   case R_RDI: return &arch->vex.guest_RDI;
-   case R_R8 : return &arch->vex.guest_R8 ;
-   case R_R9 : return &arch->vex.guest_R9 ;
-   case R_R10: return &arch->vex.guest_R10;
-   case R_R11: return &arch->vex.guest_R11;
-   case R_R12: return &arch->vex.guest_R12;
-   case R_R13: return &arch->vex.guest_R13;
-   case R_R14: return &arch->vex.guest_R14;
-   case R_R15: return &arch->vex.guest_R15;
-   default:    return NULL;
-   }
-#endif
-}
-
-/*------------------------------------------------------------*/
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 

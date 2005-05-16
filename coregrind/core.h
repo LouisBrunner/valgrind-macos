@@ -828,9 +828,6 @@ extern void VGA_(reap_threads)(ThreadId self);
 // handle an arch-specific client request
 extern Bool VGA_(client_request)(ThreadId tid, UWord *args);
 
-// Symtab stuff
-extern UInt* VGA_(reg_addr_from_tst) ( Int regno, ThreadArchState* );
-
 // Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
 

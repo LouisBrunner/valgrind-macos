@@ -89,28 +89,6 @@ void VGA_(setup_child) ( ThreadArchState *regs, ThreadArchState *parent_regs )
 
 
 /*------------------------------------------------------------*/
-/*--- Symtab stuff                                         ---*/
-/*------------------------------------------------------------*/
-
-UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
-{
-   I_die_here;
-#if 0
-   switch (regno) {
-   case R_EAX: return &arch->vex.guest_EAX;
-   case R_ECX: return &arch->vex.guest_ECX;
-   case R_EDX: return &arch->vex.guest_EDX;
-   case R_EBX: return &arch->vex.guest_EBX;
-   case R_ESP: return &arch->vex.guest_ESP;
-   case R_EBP: return &arch->vex.guest_EBP;
-   case R_ESI: return &arch->vex.guest_ESI;
-   case R_EDI: return &arch->vex.guest_EDI;
-   default:    return NULL;
-   }
-#endif
-}
-
-/*------------------------------------------------------------*/
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 

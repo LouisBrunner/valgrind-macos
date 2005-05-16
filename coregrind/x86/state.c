@@ -162,35 +162,6 @@ void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 
 
 /*------------------------------------------------------------*/
-/*--- Symtab stuff                                         ---*/
-/*------------------------------------------------------------*/
-
-/* This is the Intel register encoding -- integer regs. */
-#define R_EAX 0
-#define R_ECX 1
-#define R_EDX 2
-#define R_EBX 3
-#define R_ESP 4
-#define R_EBP 5
-#define R_ESI 6
-#define R_EDI 7
-
-UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
-{
-   switch (regno) {
-   case R_EAX: return &arch->vex.guest_EAX;
-   case R_ECX: return &arch->vex.guest_ECX;
-   case R_EDX: return &arch->vex.guest_EDX;
-   case R_EBX: return &arch->vex.guest_EBX;
-   case R_ESP: return &arch->vex.guest_ESP;
-   case R_EBP: return &arch->vex.guest_EBP;
-   case R_ESI: return &arch->vex.guest_ESI;
-   case R_EDI: return &arch->vex.guest_EDI;
-   default:    return NULL;
-   }
-}
-
-/*------------------------------------------------------------*/
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 

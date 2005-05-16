@@ -2250,11 +2250,38 @@ Bool VG_(get_filename_linenum)( Addr a,
 
 #ifndef TEST
 
+// Note that R_STACK_PTR and R_FRAME_PTR are used again further below,
+// which is why they get a named constant.
+static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
+{
+#if defined(VGA_x86)
+/* This is the Intel register encoding -- integer regs. */
+#  define R_STACK_PTR   4
+#  define R_FRAME_PTR   5
+   switch (regno) {
+   case 0:           return (Addr) & arch->vex.guest_EAX;
+   case 1:           return (Addr) & arch->vex.guest_ECX;
+   case 2:           return (Addr) & arch->vex.guest_EDX;
+   case 3:           return (Addr) & arch->vex.guest_EBX;
+   case R_STACK_PTR: return (Addr) & arch->vex.guest_ESP;
+   case R_FRAME_PTR: return (Addr) & arch->vex.guest_EBP;
+   case 6:           return (Addr) & arch->vex.guest_ESI;
+   case 7:           return (Addr) & arch->vex.guest_EDI;
+   default:          return 0;
+   }
+#elif defined(VGA_amd64)
+#  error AMD64 not done yet
+#else
+#  error Unknown platform
+#endif
+}
+
+
 /* return a pointer to a register (now for 5 other impossible things
    before breakfast) */
-static UInt* regaddr(ThreadId tid, Int regno)
+static Addr regaddr(ThreadId tid, Int regno)
 {
-   UInt* ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
+   Addr ret = regaddr_from_tst(regno, &VG_(threads)[tid].arch);
 
    if (ret == 0) {
       Char buf[100];
@@ -2330,7 +2357,6 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 	 if (debug && 0)
 	    VG_(printf)("sym->name=%s sym->kind=%d offset=%d\n", sym->name, sym->kind, sym->u.offset);
 	 switch(sym->kind) {
-	    UInt reg;
 
 	 case SyGlobal:
 	 case SyStatic:
@@ -2341,17 +2367,18 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 	    break;
 
 	 case SyReg:
-	    v->valuep = (Addr)regaddr(tid, sym->u.regno);
+	    v->valuep = regaddr(tid, sym->u.regno);
 	    break;
 
 	 case SyEBPrel:
-	 case SyESPrel:
-	    reg = *regaddr(tid, sym->kind == SyESPrel ? 
-                                VGA_R_STACK_PTR : VGA_R_FRAME_PTR);
+	 case SyESPrel: {
+	    Addr reg = *(Addr*)regaddr(tid, sym->kind == SyESPrel
+                                            ? R_STACK_PTR : R_FRAME_PTR);
 	    if (debug)
 	       VG_(printf)("reg=%p+%d=%p\n", reg, sym->u.offset, reg+sym->u.offset);
-	    v->valuep = (Addr)(reg + sym->u.offset);
+	    v->valuep = reg + sym->u.offset;
 	    break;
+         }
 
 	 case SyType:
 	    VG_(core_panic)("unexpected typedef in scope");

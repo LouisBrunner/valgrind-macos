@@ -56,10 +56,6 @@
 #define VGA_CLREQ_ARGS        guest_EAX
 #define VGA_CLREQ_RET         guest_EDX
 
-// Register numbers, for vg_symtab2.c
-#define VGA_R_STACK_PTR       4
-#define VGA_R_FRAME_PTR       5
-
 // Stack frame layout and linkage
 #define VGA_FIRST_STACK_FRAME(ebp)     (ebp)
 #define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])

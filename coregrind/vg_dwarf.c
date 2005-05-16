@@ -30,6 +30,7 @@
 #include "core.h"
 #include "vg_symtab2.h"
 
+#include "pub_core_options.h"
 
 /* Structure found in the .debug_line section.  */
 typedef struct

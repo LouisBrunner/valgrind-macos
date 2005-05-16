@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_options.h"
 #include "pub_core_tooliface.h"
 
 void VGA_(os_state_clear)(ThreadState *tst)

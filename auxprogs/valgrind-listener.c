@@ -47,6 +47,7 @@
 
 /* For VG_CLO_DEFAULT_LOGPORT and VG_BUGS_TO. */
 #include "core.h"
+#include "pub_core_options.h"
 
 
 /*---------------------------------------------------------------*/

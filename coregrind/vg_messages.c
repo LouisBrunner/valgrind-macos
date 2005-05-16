@@ -32,6 +32,8 @@
 #include "core.h"
 #include "valgrind.h"
 
+#include "pub_core_options.h"
+
 #include <time.h>
 #include <sys/time.h>
 

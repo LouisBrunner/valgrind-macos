@@ -30,6 +30,8 @@
 #ifndef __PRIV_SYSCALLS_H
 #define __PRIV_SYSCALLS_H
 
+#include "pub_core_options.h"
+
 // This is ugly, but the alternatives (ie. doing it "properly" with -I options
 // and directories and more Makefiles) are even worse.
 #if defined(VGP_amd64_linux)

@@ -83,6 +83,7 @@
 
 #include "pub_core_aspacemgr.h"
 #include "pub_core_errormgr.h"
+#include "pub_core_options.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"

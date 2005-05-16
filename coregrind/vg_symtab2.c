@@ -35,6 +35,7 @@
 
 #include "pub_core_aspacemgr.h"
 #include "pub_core_demangle.h"
+#include "pub_core_options.h"
 #include "pub_core_tooliface.h"
 
 #include <elf.h>          /* ELF defns */

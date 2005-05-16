@@ -36,6 +36,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_options.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_transtab.h"
@@ -1399,6 +1400,8 @@ static void as_closepadfile(int padfile)
 /*=== Command-line: variables, processing, etc                     ===*/
 /*====================================================================*/
 
+// See pub_{core,tool}_options.h for explanations of all these.
+
 /* Define, and set defaults. */
 VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
@@ -1409,13 +1412,9 @@ Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
-
-/* See big comment in core.h for meaning of these two. */
-Int     VG_(clo_log_fd)        = 2;
-Char*   VG_(clo_log_name)      = NULL;
-
+Int    VG_(clo_log_fd)         = 2;
+Char*  VG_(clo_log_name)       = NULL;
 Bool   VG_(clo_time_stamp)     = False;
-
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
@@ -1435,15 +1434,14 @@ Int    VG_(clo_backtrace_size) = 12;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
-Bool   VG_(clo_show_below_main) = False;
+Bool   VG_(clo_show_below_main)= False;
 Bool   VG_(clo_pointercheck)   = True;
 Bool   VG_(clo_support_elan3)  = False;
 Bool   VG_(clo_branchpred)     = False;
 Bool   VG_(clo_model_pthreads) = False;
 Bool   VG_(clo_show_emwarns)   = False;
 Int    VG_(clo_max_stackframe) = 2000000;
-
-static Bool   VG_(clo_wait_for_gdb)   = False;
+Bool   VG_(clo_wait_for_gdb)   = False;
 
 
 static void usage ( Bool debug_help )

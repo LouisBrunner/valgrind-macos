@@ -64,54 +64,9 @@
 extern const Char *VG_(libdir);
 
 
-/*====================================================================*/
-/*=== Command-line options                                         ===*/
-/*====================================================================*/
-
 /* Use this for normal null-termination-style string comparison */
 #define VG_STREQ(s1,s2) (s1 != NULL && s2 != NULL \
                          && VG_(strcmp)((s1),(s2))==0)
-
-/* Use these for recognising tool command line options -- stops comparing
-   once whitespace is reached. */
-#define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#define VG_CLO_STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
-
-/* Higher-level command-line option recognisers;  use in if/else chains */
-
-#define VG_BOOL_CLO(qq_arg, qq_option, qq_var) \
-        if (VG_CLO_STREQ(qq_arg, qq_option"=yes")) { (qq_var) = True; } \
-   else if (VG_CLO_STREQ(qq_arg, qq_option"=no"))  { (qq_var) = False; }
-
-#define VG_STR_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = &qq_arg[ VG_(strlen)(qq_option)+1 ]; \
-   }
-
-#define VG_NUM_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
-   }
-
-/* Bounded integer arg */
-#define VG_BNUM_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
-      if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
-      if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
-   }
-
-
-/* Verbosity level: 0 = silent, 1 (default), > 1 = more verbose. */
-extern Int   VG_(clo_verbosity);
-
-/* Profile? */
-extern Bool  VG_(clo_profile);
-
-/* Call this if a recognised option was bad for some reason.
-   Note: don't use it just because an option was unrecognised -- return 'False'
-   from VG_(tdict).tool_process_cmd_line_option) to indicate that. */
-extern void VG_(bad_option) ( Char* opt );
 
 /* Client args */
 extern Int    VG_(client_argc);

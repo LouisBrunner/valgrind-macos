@@ -62,6 +62,7 @@
 
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"
+#include "pub_core_options.h"
 #include "pub_core_replacemalloc.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"

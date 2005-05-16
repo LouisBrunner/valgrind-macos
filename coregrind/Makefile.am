@@ -47,6 +47,7 @@ noinst_HEADERS = \
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
 	pub_core_mallocfree.h	\
+	pub_core_options.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sigframe.h	\
 	pub_core_skiplist.h	\
@@ -80,6 +81,7 @@ stage2_SOURCES = \
 	m_execontext.c \
 	m_hashtable.c \
 	m_mallocfree.c \
+	m_options.c \
 	m_skiplist.c \
 	m_stacktrace.c \
 	m_tooliface.c \

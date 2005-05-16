@@ -92,135 +92,9 @@ typedef struct _ThreadState ThreadState;
 #define VALGRINDCLO	"_VALGRIND_CLO"
 
 
-/* ---------------------------------------------------------------------
-   Command-line-settable options
-   ------------------------------------------------------------------ */
-
-/* Default destination port to be used in logging over a network, if
-   none specified. */
-#define VG_CLO_DEFAULT_LOGPORT 1500
-
-/* The max number of suppression files. */
-#define VG_CLO_MAX_SFILES 10
-
 /* Application-visible file descriptor limits */
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
-
-/* Vex iropt control */
-extern VexControl VG_(clo_vex_control);
-/* Should we stop collecting errors if too many appear?  default: YES */
-extern Bool  VG_(clo_error_limit);
-/* Enquire about whether to attach to a debugger at errors?   default: NO */
-extern Bool  VG_(clo_db_attach);
-/* The debugger command?  default: whatever gdb ./configure found */
-extern Char* VG_(clo_db_command);
-/* Generating a suppression for each error?   default: 0 (NO)
-   Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
-extern Int  VG_(clo_gen_suppressions);
-/* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
-extern Int   VG_(clo_sanity_level);
-/* Automatically attempt to demangle C++ names?  default: YES */
-extern Bool  VG_(clo_demangle);
-/* Simulate child processes? default: NO */
-extern Bool  VG_(clo_trace_children);
-
-/* Where logging output is to be sent to.
-
-   With --log-fd (and by default), clo_log_fd holds the file id, and is
-   taken from the command line.  (fd 2, stderr, is the default.)
-   clo_log_name is irrelevant.
-
-   With --log-file/--log-file-exactly, clo_log_name holds the log-file
-   name, and is taken from the command line.  clo_log_fd is then
-   made to hold the relevant file id, by opening clo_log_name
-   (concatenated with the process ID) for writing.
-
-   With --log-socket, clo_log_name holds the hostname:portnumber pair,
-   and is taken from the command line.  clo_log_fd is then made to hold
-   the relevant file handle, by opening a connection to that
-   hostname:portnumber pair. 
-
-   Global default is to set log_to == VgLogTo_Fd and log_fd == 2
-   (stderr). */
-extern Int     VG_(clo_log_fd);
-extern Char*   VG_(clo_log_name);
-
-/* Add timestamps to log messages?  default: NO */
-extern Bool  VG_(clo_time_stamp);
-
-/* The file descriptor to read for input.  default: 0 == stdin */
-extern Int   VG_(clo_input_fd);
-/* The number of suppression files specified. */
-extern Int   VG_(clo_n_suppressions);
-/* The names of the suppression files. */
-extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
-
-/* DEBUG: print generated code?  default: 00000000 ( == NO ) */
-extern Bool  VG_(clo_trace_flags);
-/* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
-extern Bool  VG_(clo_profile_flags);
-/* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
-extern Int   VG_(clo_trace_notbelow);
-/* DEBUG: print system calls?  default: NO */
-extern Bool  VG_(clo_trace_syscalls);
-/* DEBUG: print signal details?  default: NO */
-extern Bool  VG_(clo_trace_signals);
-/* DEBUG: print symtab details?  default: NO */
-extern Bool  VG_(clo_trace_symtab);
-/* DEBUG: print call-frame-info details?  default: NO */
-extern Bool  VG_(clo_trace_cfi);
-/* DEBUG: print redirection details?  default: NO */
-extern Bool  VG_(clo_trace_redir);
-/* DEBUG: print thread scheduling events?  default: NO */
-extern Bool  VG_(clo_trace_sched);
-/* DEBUG: print pthreads calls?  default: NO */
-extern Bool  VG_(clo_trace_pthreads);
-/* Display gory details for the k'th most popular error.  default:
-   Infinity. */
-extern Int   VG_(clo_dump_error);
-/* Number of parents of a backtrace.  Default: 8.  */
-extern Int   VG_(clo_backtrace_size);
-/* Engage miscellaneous weird hacks needed for some progs. */
-extern Char* VG_(clo_weird_hacks);
-
-/* Track open file descriptors? */
-extern Bool  VG_(clo_track_fds);
-
-/* Should we run __libc_freeres at exit?  Sometimes causes crashes.
-   Default: YES.  Note this is subservient to VG_(needs).libc_freeres;
-   if the latter says False, then the setting of VG_(clo_weird_hacks)
-   is ignored.  Ie if a tool says no, I don't want this to run, that
-   cannot be overridden from the command line. */
-extern Bool  VG_(clo_run_libc_freeres);
-/* Generate branch-prediction hints? */
-extern Bool VG_(clo_branchpred);
-/* Continue stack traces below main()?  Default: NO */
-extern Bool VG_(clo_show_below_main);
-/* Test each client pointer dereference to check it's within the
-   client address space bounds */
-extern Bool VG_(clo_pointercheck);
-/* Model the pthread library */
-extern Bool VG_(clo_model_pthreads);
-
-/* HACK: Use hacked version of clone for Quadrics Elan3 drivers */
-extern Bool VG_(clo_support_elan3);
-
-/* Should we show VEX emulation warnings?  Default: NO */
-extern Bool VG_(clo_show_emwarns);
-
-/* How much does the stack pointer have to change before tools
-   consider a stack switch to have happened?  Default: 2000000 bytes */
-extern Int VG_(clo_max_stackframe);
-
-/* Set up the libc freeres wrapper */
-extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
-
-// Clean up the client by calling before the final reports
-extern void VGA_(final_tidyup)(ThreadId tid);
-
-// Arch-specific client requests
-extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
 
 /* ---------------------------------------------------------------------
    Profiling stuff
@@ -818,6 +692,15 @@ extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 
 // Used by leakcheck
 extern void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr));
+
+// Set up the libc freeres wrapper
+extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
+
+// Clean up the client by calling before the final reports
+extern void VGA_(final_tidyup)(ThreadId tid);
+
+// Arch-specific client requests
+extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
 
 
 // ---------------------------------------------------------------------

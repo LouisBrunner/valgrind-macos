@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_execontext.h"
+#include "pub_core_options.h"
 
 /*------------------------------------------------------------*/
 /*--- Low-level ExeContext storage.                        ---*/

@@ -31,6 +31,7 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_options.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"

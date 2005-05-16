@@ -35,6 +35,19 @@
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
+// Stack frame layout and linkage
+#if defined(VGA_x86)
+#  define FIRST_STACK_FRAME(ebp)    (ebp)
+#  define STACK_FRAME_RET(ebp)      (((UWord*)ebp)[1])
+#  define STACK_FRAME_NEXT(ebp)     (((UWord*)ebp)[0])
+#elif defined(VGA_amd64)
+#  define FIRST_STACK_FRAME(rbp)    (rbp)
+#  define STACK_FRAME_RET(rbp)      (((UWord*)rbp)[1])
+#  define STACK_FRAME_NEXT(rbp)     (((UWord*)rbp)[0])
+#else
+#  error Unknown platform
+#endif
+
 /* Take a snapshot of the client's stack, putting the up to 'n_ips' IPs 
    into 'ips'.  In order to be thread-safe, we pass in the thread's IP
    and FP.  Returns number of IPs put in 'ips'.  */
@@ -82,6 +95,10 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          user-space threads package work. JRS 20021001 */
    } else {
 
+      // XXX: I think this line is needed for PPC to work, but I'm not
+      // certain, so I'm commenting it out for the moment.
+      //fp = FIRST_STACK_FRAME(fp)
+
       while (True) {
 
          if (i >= n_ips)
@@ -110,10 +127,10 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
             then use this as a fallback. */
          if (fp_min <= fp && fp <= fp_max) {
             /* fp looks sane, so use it. */
-            ip = VGA_STACK_FRAME_RET(fp);
+            ip = STACK_FRAME_RET(fp);
             sp = fp + sizeof(Addr) /*saved %ebp/%rbp*/ 
                     + sizeof(Addr) /*ra*/;
-            fp = VGA_STACK_FRAME_NEXT(fp);
+            fp = STACK_FRAME_NEXT(fp);
             ips[i++] = ip;
             if (debug)
                VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);

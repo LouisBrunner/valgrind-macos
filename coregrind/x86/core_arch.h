@@ -56,11 +56,6 @@
 #define VGA_CLREQ_ARGS        guest_EAX
 #define VGA_CLREQ_RET         guest_EDX
 
-// Stack frame layout and linkage
-#define VGA_FIRST_STACK_FRAME(ebp)     (ebp)
-#define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])
-#define VGA_STACK_FRAME_NEXT(ebp)      (((UInt*)ebp)[0])
-
 //extern const Char VG_(helper_wrapper_before)[];	/* in dispatch.S */
 //extern const Char VG_(helper_wrapper_return)[];	/* in dispatch.S */
 

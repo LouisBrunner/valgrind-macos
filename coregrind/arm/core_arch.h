@@ -62,12 +62,6 @@
 #define VGA_CLREQ_ARGS        guest_R0
 #define VGA_CLREQ_RET         guest_R0
 
-// Stack frame layout and linkage
-// XXX ToDo: ???
-#define VGA_FIRST_STACK_FRAME(ebp)     (ebp)
-#define VGA_STACK_FRAME_RET(ebp)       (((UInt*)ebp)[1])
-#define VGA_STACK_FRAME_NEXT(ebp)      (((UInt*)ebp)[0])
-
 // Get stack pointer and frame pointer
 #define VGA_GET_REAL_STACK_PTR(esp) do {   \
    I_die_here; \

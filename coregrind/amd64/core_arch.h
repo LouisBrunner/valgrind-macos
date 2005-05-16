@@ -56,11 +56,6 @@
 #define VGA_CLREQ_ARGS        guest_RAX
 #define VGA_CLREQ_RET         guest_RDX
 
-// Stack frame layout and linkage
-#define VGA_FIRST_STACK_FRAME(rbp)     (rbp)
-#define VGA_STACK_FRAME_RET(rbp)       (((UWord*)rbp)[1])
-#define VGA_STACK_FRAME_NEXT(rbp)      (((UWord*)rbp)[0])
-
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */

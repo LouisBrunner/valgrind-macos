@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_TOOLIFACE_H
 #define __PUB_TOOL_TOOLIFACE_H
 
+#include "pub_tool_errormgr.h"   // for Error, Supp
+#include "libvex.h"              // for VexGuestLayout
+
 /* ------------------------------------------------------------------ */
 /* The interface version */
 

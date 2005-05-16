@@ -35,12 +35,6 @@
 #include "basic_types.h"
 #include "tool_asm.h"           /* asm stuff */
 
-#include "pub_tool_errormgr.h"      // needed for 'Error', 'Supp'
-#include "pub_tool_execontext.h"    // needed for 'ExeContext'
-
-#include "libvex.h"
-#include "libvex_ir.h"
-
 #if defined(VGO_linux)
 #  include "vki-linux.h"
 #else

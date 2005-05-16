@@ -33,6 +33,7 @@
 
 #include "core_arch_asm.h"    // arch-specific asm  stuff
 
+#include "libvex.h"
 #include "libvex_guest_arm.h"
 
 

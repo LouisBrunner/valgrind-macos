@@ -1,6 +1,9 @@
 -------------------------------------------------------------------
 Guide to the directory structure
 -------------------------------------------------------------------
+[16-May-2005: a lot of the stuff about arch/OS/platform specific code
+ is out of date in here.  Hopefully, things have gotten simpler.  --njn]
+
 Valgrind has 2 main levels of genericity.
  
  1. Multiple tools, plus the core.

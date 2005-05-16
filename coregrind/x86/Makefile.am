@@ -4,8 +4,7 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
 
 noinst_HEADERS = \
-	core_arch.h \
-	core_arch_asm.h
+	core_arch.h
 
 noinst_LIBRARIES = libarch.a
 

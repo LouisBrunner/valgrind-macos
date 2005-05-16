@@ -45,6 +45,22 @@
 #define VGO_(str)   VGAPPEND(vgOS_,str)
 #define VGP_(str)   VGAPPEND(vgPlatform_,str)
 
+// Print a constant from asm code.
+// Nb: you'll need to define VG_(oynk)(Int) to use this.
+#if defined(VGA_x86)
+#  define OYNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
+#elif defined(VGA_amd64)
+#  define OYNK(nnn) push %r8 ; push %r9 ; push %r10; push %r11; \
+                    push %rax; push %rbx; push %rcx; push %rdx; \
+                    push %rsi; push %rdi; \
+                    movl $nnn, %edi; call VG_(oynk); \
+                    pop %rdi; pop %rsi; pop %rdx; pop %rcx; \
+                    pop %rbx; pop %rax; pop %r11; pop %r10; \
+                    pop %r9 ; pop %r8
+#else
+#  error Unknown architecture
+#endif
+
 #endif /* ndef __TOOL_ASM_H */
 
 /*--------------------------------------------------------------------*/

@@ -31,8 +31,6 @@
 #ifndef __X86_CORE_ARCH_H
 #define __X86_CORE_ARCH_H
 
-#include "core_arch_asm.h"    // arch-specific asm  stuff
-
 #include "libvex.h"
 #include "libvex_guest_x86.h"
 

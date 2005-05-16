@@ -45,6 +45,8 @@ typedef struct _ThreadState ThreadState;
 #include "pub_core_mallocfree.h"  // for type 'ArenaId'
 #include "pub_core_stacktrace.h"  // for type 'StackTrace'
 
+#include <setjmp.h>       /* for jmp_buf         */
+
 /* ---------------------------------------------------------------------
    Global macros.
    ------------------------------------------------------------------ */

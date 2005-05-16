@@ -59,13 +59,6 @@
 } while (0)
 
 
-/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
-   state, but does need to pass though "val". */
-#include <setjmp.h>       /* for jmp_buf         */
-
-#define VGP_SETJMP(env)       setjmp(env)
-#define VGP_LONGJMP(env, val) longjmp(env, val)
-
 #endif   // __AMD64_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

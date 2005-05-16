@@ -141,13 +141,6 @@ static __inline__ void __futex_commit(void)
    __asm__ __volatile__ ("lock; addl $0,0(%%esp)": : :"memory");
 }
 
-/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
-   state, but does need to pass though "val". */
-#include <setjmp.h>       /* for jmp_buf         */
-
-#define VGP_SETJMP(env)       setjmp(env)
-#define VGP_LONGJMP(env, val) longjmp(env, val)
-
 #endif   // __X86_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

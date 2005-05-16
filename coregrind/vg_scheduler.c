@@ -415,7 +415,7 @@ void VG_(resume_scheduler)(ThreadId tid)
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
    
-      VGP_LONGJMP(tst->sched_jmpbuf, True);
+      longjmp(tst->sched_jmpbuf, True);
    }
 }
 
@@ -445,11 +445,13 @@ static void block_signals(ThreadId tid)
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
 }
 
+/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
+   state, but does need to pass "val" through. */
 #define SCHEDSETJMP(tid, jumped, stmt)					\
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
-      (jumped) = VGP_SETJMP(_qq_tst->sched_jmpbuf);                     \
+      (jumped) = setjmp(_qq_tst->sched_jmpbuf);                         \
       if ((jumped) == 0) {						\
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\

@@ -99,6 +99,12 @@ typedef
    }
    LossRecord;
 
+/* The 'extra' struct for leak errors. */
+typedef struct {
+   UInt        n_this_record;
+   UInt        n_total_records;
+   LossRecord* lossRecord;
+} LeakExtra;
 
 /* Find the i such that ptr points at or inside the block described by
    shadows[i].  Return -1 if none found.  This assumes that shadows[]
@@ -178,7 +184,7 @@ static SizeT	    lc_scanned;
 static Bool	  (*lc_is_within_valid_secondary) (Addr addr);
 static Bool	  (*lc_is_valid_aligned_word)     (Addr addr);
 
-static const Char *pp_lossmode(Reachedness lossmode)
+static const Char *str_lossmode(Reachedness lossmode)
 {
    const Char *loss = "?";
 
@@ -194,10 +200,11 @@ static const Char *pp_lossmode(Reachedness lossmode)
 
 /* Used for printing leak errors, avoids exposing the LossRecord type (which
    comes in as void*, requiring a cast. */
-void MAC_(pp_LeakError)(void* vl, UInt n_this_record, UInt n_total_records)
+void MAC_(pp_LeakError)(void* vextra)
 {
-   LossRecord* l = (LossRecord*)vl;
-   const Char *loss = pp_lossmode(l->loss_mode);
+   LeakExtra* extra = (LeakExtra*)vextra;
+   LossRecord* l    = extra->lossRecord;
+   const Char *loss = str_lossmode(l->loss_mode);
 
    VG_(message)(Vg_UserMsg, "");
    if (l->indirect_bytes) {
@@ -205,12 +212,12 @@ void MAC_(pp_LeakError)(void* vl, UInt n_this_record, UInt n_total_records)
 		   "%d (%d direct, %d indirect) bytes in %d blocks are %s in loss record %d of %d",
 		   l->total_bytes + l->indirect_bytes, 
 		   l->total_bytes, l->indirect_bytes, l->num_blocks,
-		   loss, n_this_record, n_total_records);
+		   loss, extra->n_this_record, extra->n_total_records);
    } else {
       VG_(message)(Vg_UserMsg, 
 		   "%d bytes in %d blocks are %s in loss record %d of %d",
 		   l->total_bytes, l->num_blocks,
-		   loss, n_this_record, n_total_records);
+		   loss, extra->n_this_record, extra->n_total_records);
    }
    VG_(pp_ExeContext)(l->allocated_at);
 }
@@ -409,6 +416,7 @@ static void full_report(ThreadId tid)
    LossRecord* errlist;
    LossRecord* p;
    Bool   is_suppressed;
+   LeakExtra leak_extra;
 
    /* Go through and group lost structures into cliques.  For each
       Unreached block, push it onto the mark stack, and find all the
@@ -419,7 +427,7 @@ static void full_report(ThreadId tid)
    for (i = 0; i < lc_n_shadows; i++) {
       if (VG_DEBUG_CLIQUE)
 	 VG_(printf)("cliques: %d at %p -> %s\n",
-		     i, lc_shadows[i]->data, pp_lossmode(lc_markstack[i].state));
+		     i, lc_shadows[i]->data, str_lossmode(lc_markstack[i].state));
       if (lc_markstack[i].state != Unreached)
 	 continue;
 
@@ -487,18 +495,23 @@ static void full_report(ThreadId tid)
       /* Ok to have tst==NULL;  it's only used if --gdb-attach=yes, and
          we disallow that when --leak-check=yes.  
          
-         Prints the error if not suppressed, unless it's reachable (Proper or IndirectLeak)
-         and --show-reachable=no */
+         Prints the error if not suppressed, unless it's reachable (Proper
+         or IndirectLeak) and --show-reachable=no */
 
       print_record = ( MAC_(clo_show_reachable) || 
-		       Unreached == p_min->loss_mode || Interior == p_min->loss_mode );
+		       Unreached == p_min->loss_mode || 
+                       Interior == p_min->loss_mode );
+
+      // Nb: because VG_(unique_error) does all the error processing
+      // immediately, and doesn't save the error, leakExtra can be
+      // stack-allocated.
+      leak_extra.n_this_record   = i+1;
+      leak_extra.n_total_records = n_lossrecords;
+      leak_extra.lossRecord      = p_min;
       is_suppressed = 
-         VG_(unique_error) ( tid, LeakErr, (UInt)i+1,
-                             /* HACK ALERT */
-                             ULong_to_Ptr((ULong)(UInt)n_lossrecords), 
-                             /* end HACK ALERT */
-                             (void*) p_min,
-                             p_min->allocated_at, print_record,
+         VG_(unique_error) ( tid, LeakErr, /*Addr*/0, /*s*/NULL,
+                             /*extra*/&leak_extra, 
+                             /*where*/p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );
 
       if (is_suppressed) {

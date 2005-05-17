@@ -418,8 +418,7 @@ extern Bool MAC_(handle_common_client_requests) ( ThreadId tid,
                                                   UWord* arg_block, UWord* ret );
 
 /* For leak checking */
-extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record, 
-                                         UInt n_total_records); 
+extern void MAC_(pp_LeakError)(void* extra);
                            
 extern void MAC_(print_malloc_stats) ( void );
 

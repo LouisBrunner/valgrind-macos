@@ -78,9 +78,9 @@ extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
 /* Similar to VG_(maybe_record_error)(), except this one doesn't record the
    error -- useful for errors that can only happen once.  The errors can be
    suppressed, though.  Return value is True if it was suppressed.
-   `print_error' dictates whether to print the error, which is a bit of a
+   'print_error' dictates whether to print the error, which is a bit of a
    hack that's useful sometimes if you just want to know if the error would
-   be suppressed without possibly printing it.  `count_error' dictates
+   be suppressed without possibly printing it.  'count_error' dictates
    whether to add the error in the error total count (another mild hack). */
 extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,

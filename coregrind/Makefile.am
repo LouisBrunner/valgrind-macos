@@ -23,9 +23,6 @@ DIST_SUBDIRS = \
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
 
-AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
-AM_CFLAGS += -fno-omit-frame-pointer
-
 default.supp: $(SUPP_FILES)
 
 bin_PROGRAMS = \
@@ -120,7 +117,7 @@ stage2_extra= \
 ## only referred to by tool shared objects).
 stage2_extra2 = \
 	m_replacemalloc/libreplacemalloc_core.a
-	
+
 ## Nb: older versions of automake don't seem to like having += within an
 ## if-then-else, so we have to use these variables for the common parts.
 st2_DEPS_common = \
@@ -133,14 +130,12 @@ st2_LDFLAGS_common = \
 	-Wl,-version-script $(srcdir)/valgrind.vs
 
 if USE_PIE
-stage2_CFLAGS = $(AM_CFLAGS) -fpie
 stage2_DEPENDENCIES = $(st2_DEPS_common)
 stage2_LDFLAGS = \
 	$(st2_LDFLAGS_common) \
 	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-pie
 else
-stage2_CFLAGS = $(AM_CFLAGS)
 stage2_DEPENDENCIES = $(st2_DEPS_common) ${VG_ARCH}/stage2.lds
 stage2_LDFLAGS = \
 	$(st2_LDFLAGS_common) \

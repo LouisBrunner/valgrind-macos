@@ -335,6 +335,7 @@ AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
 fi
 
 # Check for PIE support in the compiler and linker
+AC_SUBST(PIE_AM_CFLAGS)
 AC_CACHE_CHECK([for PIE support], vg_cv_pie,
 	       [AC_ARG_ENABLE(pie, [  --enable-pie            platform supports PIE linking],
 		[vg_cv_pie=$enableval],
@@ -350,6 +351,7 @@ AC_CACHE_CHECK([for PIE support], vg_cv_pie,
                  LDFLAGS=$safe_LDFLAGS])])
 if test "$vg_cv_pie" = yes; then
 AC_DEFINE([HAVE_PIE], 1, [can create position-independent executables])
+PIE_AM_CFLAGS="-fpie"
 fi
 AM_CONDITIONAL(USE_PIE, test "$vg_cv_pie" = "yes")
 

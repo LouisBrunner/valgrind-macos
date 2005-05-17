@@ -1,14 +1,6 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-## Test repeated in both arms of the if-then-else because older versions of
-## automake don't seem to like having += within an if-then-else.
-if USE_PIE
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g -fpie
-else
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g
-endif
-
 noinst_HEADERS = \
 	ansidecl.h     \
 	dyn-string.h   \

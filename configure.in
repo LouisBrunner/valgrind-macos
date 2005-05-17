@@ -96,9 +96,9 @@ case "${host_cpu}" in
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="x86"
         KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="@PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
-        ARCH_TOOL_AM_CFLAGS="@PREFERRED_STACK_BOUNDARY@"
-        ARCH_CORE_AM_CCASFLAGS=""
+        ARCH_CORE_AM_CFLAGS="-m32 @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_TOOL_AM_CFLAGS="-m32 @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CCASFLAGS="-m32"
         ;;
 
      x86_64) 
@@ -108,15 +108,15 @@ case "${host_cpu}" in
         # quantities; therefore going above 0x7fffffff doesn't work... this is
         # a problem.
         KICKSTART_BASE="0x70000000"
-        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=64" 
+        ARCH_CORE_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=64" 
         # XXX: need to use -fpic, otherwise when linking tools I get this error
         # message:
         #   relocation R_X86_64_32 can not be used when making a shared object;
         #   recompile with -fPIC
         #
         # I don't understand...  --njn
-        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -fpic"
-        ARCH_CORE_AM_CCASFLAGS=""
+        ARCH_TOOL_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -fpic"
+        ARCH_CORE_AM_CCASFLAGS="-m64"
         ;;
 
      arm*) 

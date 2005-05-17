@@ -83,7 +83,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   Valgrind is Copyright (C) 2000-2005 Julian Seward et al.
   and licensed under the GNU General Public License, version 2.
-  Bug reports, feedback, admiration, abuse, etc, to: valgrind.kde.org.
+  Bug reports, feedback, admiration, abuse, etc, to: www.valgrind.org.
 
   Tools are copyright and licensed by their authors.  See each
   tool's start-up message for more information.

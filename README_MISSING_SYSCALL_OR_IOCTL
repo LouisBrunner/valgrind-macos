@@ -166,5 +166,5 @@ There's a default case, sometimes it isn't correct and you have to write a
 more specific case to get the right behaviour.
 
 As above, please create a bug report and attach the patch as described
-on http://valgrind.kde.org/bugs.html
+on http://www.valgrind.org.
 

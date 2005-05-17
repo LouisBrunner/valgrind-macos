@@ -75,7 +75,7 @@ typedef
    Where to send bug reports to.
    ------------------------------------------------------------------ */
 
-#define VG_BUGS_TO "valgrind.kde.org"
+#define VG_BUGS_TO "www.valgrind.org"
 
 
 #endif /* __BASIC_TYPES_H */

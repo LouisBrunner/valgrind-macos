@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_demangle.h"
 #include "pub_core_options.h"
 #include "demangle.h"
 

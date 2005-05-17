@@ -127,12 +127,12 @@ static Int allocate_segname ( const HChar* name )
          segnames_used++;
       } else {
          VG_(printf)(
-            "coregrind/vg_memory.c:\n"
+            "coregrind/m_aspacemgr/aspacemgr.c:\n"
             "   VG_N_SEGNAMES is too small: "
             "increase it and rebuild Valgrind.\n"
          );
          VG_(printf)(
-            "coregrind/vg_memory.c:\n"
+            "coregrind/m_aspacemgr/aspacemgr.c:\n"
             "   giving up now.\n\n"
          );
          VG_(exit)(0);

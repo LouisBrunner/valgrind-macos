@@ -35,16 +35,6 @@
 
 #include "libvex_guest_x86.h"
 
-/* Global and Local descriptor tables for threads.
-
-   See comments in libvex_guest_x86.h for LibVEX's model of x86
-   segment descriptors.
-
-   Mostly, threads never generate LDT (or GDT?) entries.  Therefore,
-   we will initially start off with LDTs and GDTs being (HWord)NULL
-   and allocate them on demand.
-*/
-
 
 /*------------------------------------------------------------*/
 /*--- Determining arch/subarch.                            ---*/

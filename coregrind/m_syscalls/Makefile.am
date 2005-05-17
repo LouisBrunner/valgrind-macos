@@ -8,6 +8,7 @@ EXTRA_DIST = \
 
 noinst_HEADERS = \
 	priv_syscalls.h \
+	priv_syscalls-linux.h \
 	priv_syscalls-amd64-linux.h \
 	priv_syscalls-arm-linux.h \
 	priv_syscalls-x86-linux.h

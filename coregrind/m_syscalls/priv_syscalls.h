@@ -32,8 +32,12 @@
 
 #include "pub_core_options.h"
 
-// This is ugly, but the alternatives (ie. doing it "properly" with -I options
-// and directories and more Makefiles) are even worse.
+#if defined(VGO_linux)
+#  include "priv_syscalls-linux.h"
+#else
+#  error Unknown OS
+#endif
+
 #if defined(VGP_amd64_linux)
 #  include "priv_syscalls-amd64-linux.h"
 #elif defined(VGP_arm_linux)

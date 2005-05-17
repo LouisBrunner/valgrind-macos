@@ -271,7 +271,7 @@ extern Char VG_(toupper) ( Char c );
 extern Int   VG_(strlen)         ( const Char* str );
 extern Char* VG_(strcat)         ( Char* dest, const Char* src );
 extern Char* VG_(strncat)        ( Char* dest, const Char* src, Int n );
-extern Char* VG_(strpbrk)        ( const Char* s, const Char* accept );
+extern Char* VG_(strpbrk)        ( const Char* s, const Char* accpt );
 extern Char* VG_(strcpy)         ( Char* dest, const Char* src );
 extern Char* VG_(strncpy)        ( Char* dest, const Char* src, Int ndest );
 extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );

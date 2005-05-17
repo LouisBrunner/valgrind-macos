@@ -99,7 +99,7 @@ int           conn_fd[M_CONNECTIONS];
 struct pollfd conn_pollfd[M_CONNECTIONS];
 
 
-void set_nonblocking ( int sd )
+static void set_nonblocking ( int sd )
 {
    int res;
    res = fcntl(sd, F_GETFL);
@@ -110,7 +110,7 @@ void set_nonblocking ( int sd )
    }
 }
 
-void set_blocking ( int sd )
+static void set_blocking ( int sd )
 {
    int res;
    res = fcntl(sd, F_GETFL);
@@ -122,7 +122,7 @@ void set_blocking ( int sd )
 }
 
 
-void copyout ( char* buf, int nbuf )
+static void copyout ( char* buf, int nbuf )
 {
    int i;
    for (i = 0; i < nbuf; i++) {
@@ -135,7 +135,7 @@ void copyout ( char* buf, int nbuf )
    fflush(stdout);
 }
 
-int read_from_sd ( int sd )
+static int read_from_sd ( int sd )
 {
    char buf[100];
    int n;
@@ -154,7 +154,7 @@ int read_from_sd ( int sd )
 }
 
 
-void snooze ( void )
+static void snooze ( void )
 {
    struct timespec req;
    req.tv_sec = 0;
@@ -164,7 +164,7 @@ void snooze ( void )
 
 
 /* returns 0 if invalid, else port # */
-int atoi_portno ( char* str )
+static int atoi_portno ( char* str )
 {
    int n = 0;
    while (1) {
@@ -183,7 +183,7 @@ int atoi_portno ( char* str )
 }
 
 
-void usage ( void )
+static void usage ( void )
 {
    fprintf(stderr, 
       "\n"
@@ -206,7 +206,7 @@ void usage ( void )
 }
 
 
-void banner ( char* str )
+static void banner ( char* str )
 {
    time_t t;
    t = time(NULL);
@@ -215,14 +215,14 @@ void banner ( char* str )
 }
 
 
-void exit_routine ( void )
+static void exit_routine ( void )
 {
    banner("exited");
    exit(0);
 }
 
 
-void sigint_handler ( int signo )
+static void sigint_handler ( int signo )
 {
    exit_routine();
 }

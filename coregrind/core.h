@@ -35,9 +35,6 @@
 #include "tool.h"          // tool stuff
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 
-// Ugly: this is needed by linux/core_os.h
-typedef struct _ThreadState ThreadState;
-
 #include "core_platform.h" // platform-specific stuff,
                            //   eg. x86-linux/core_platform.h
 #include "core_os.h"       // OS-specific stuff,    eg. linux/core_os.h
@@ -204,7 +201,7 @@ typedef
    ThreadArchState;
 
 
-struct _ThreadState {
+typedef struct {
    /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.
       The thread identity is simply the index in vg_threads[].
       ThreadId == 1 is the root thread and has the special property
@@ -288,7 +285,9 @@ struct _ThreadState {
    /* Per-thread jmp_buf to resume scheduler after a signal */
    Bool    sched_jmpbuf_valid;
    jmp_buf sched_jmpbuf;
-};
+}
+ThreadState;
+
 
 /* The thread table. */
 extern ThreadState VG_(threads)[VG_N_THREADS];
@@ -324,7 +323,8 @@ extern Bool VG_(is_exiting)(ThreadId tid);
 extern Int VG_(count_living_threads)(void);
 
 /* Nuke all threads except tid. */
-extern void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode reason );
+extern void VG_(nuke_all_threads_except) ( ThreadId me,
+                                           VgSchedReturnCode reason );
 
 /* Make a thread the running thread.  The thread must previously been
    sleeping, and not holding the CPU semaphore. This will set the
@@ -588,9 +588,6 @@ extern void VG_(unimplemented) ( Char* msg )
 
 /* Something of a function looking for a home ... start up debugger. */
 extern void VG_(start_debugger) ( ThreadId tid );
-
-/* Counts downwards in vg_run_innerloop. */
-extern UInt VG_(dispatch_ctr);
 
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );

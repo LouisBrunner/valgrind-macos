@@ -12011,9 +12011,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
       break;
 
-//..    case 0x34: /* XOR Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
-//..       break;
+   case 0x34: /* XOR Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
+      break;
    case 0x35: /* XOR Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );

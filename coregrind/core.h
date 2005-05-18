@@ -408,9 +408,6 @@ extern Bool VG_(client_signal_OK)(Int sigNo);
    before using that signal to kill the process. */
 extern void VG_(set_default_handler)(Int sig);
 
-/* Adjust a client's signal mask to match our internal requirements */
-extern void VG_(sanitize_client_sigmask)(ThreadId tid, vki_sigset_t *mask);
-
 /* Wait until a thread-related predicate is true */
 extern void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg);
 

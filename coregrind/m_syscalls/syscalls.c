@@ -6043,6 +6043,25 @@ void VG_(post_syscall) (ThreadId tid)
    }
 }
 
+/* Add and remove signals from mask so that we end up telling the
+   kernel the state we actually want rather than what the client
+   wants. */
+static void sanitize_client_sigmask(ThreadId tid, vki_sigset_t *mask)
+{
+   VG_(sigdelset)(mask, VKI_SIGKILL);
+   VG_(sigdelset)(mask, VKI_SIGSTOP);
+
+   VG_(sigdelset)(mask, VKI_SIGVGKILL); /* never block */
+
+   /* SIGVGCHLD is used by threads to indicate their state changes to
+      the master thread.  Mostly it doesn't care, so it leaves the
+      signal ignored and unblocked.  Everyone else should have it
+      blocked, so there's at most 1 thread with it unblocked. */
+   if (tid == VG_(master_tid))
+      VG_(sigdelset)(mask, VKI_SIGVGCHLD);
+   else
+      VG_(sigaddset)(mask, VKI_SIGVGCHLD);
+}
 
 void VG_(client_syscall) ( ThreadId tid )
 {
@@ -6142,7 +6161,7 @@ void VG_(client_syscall) ( ThreadId tid )
          PRINT(" --> ...\n");
 
          mask = tst->sig_mask;
-         VG_(sanitize_client_sigmask)(tid, &mask);
+         sanitize_client_sigmask(tid, &mask);
 
          VG_(set_sleeping)(tid, VgTs_WaitSys);
          VGA_(client_syscall)(syscallno, tst, &mask);

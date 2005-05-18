@@ -636,26 +636,6 @@ void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg)
    VG_(set_running)(VG_(master_tid));
 }
 
-/* Add and remove signals from mask so that we end up telling the
-   kernel the state we actually want rather than what the client
-   wants. */
-void VG_(sanitize_client_sigmask)(ThreadId tid, vki_sigset_t *mask)
-{
-   VG_(sigdelset)(mask, VKI_SIGKILL);
-   VG_(sigdelset)(mask, VKI_SIGSTOP);
-
-   VG_(sigdelset)(mask, VKI_SIGVGKILL); /* never block */
-
-   /* SIGVGCHLD is used by threads to indicate their state changes to
-      the master thread.  Mostly it doesn't care, so it leaves the
-      signal ignored and unblocked.  Everyone else should have it
-      blocked, so there's at most 1 thread with it unblocked. */
-   if (tid == VG_(master_tid))
-      VG_(sigdelset)(mask, VKI_SIGVGCHLD);
-   else
-      VG_(sigaddset)(mask, VKI_SIGVGCHLD);
-}
-
 /* 
    This updates the thread's signal mask.  There's no such thing as a
    process-wide signal mask.

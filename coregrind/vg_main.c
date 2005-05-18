@@ -92,9 +92,6 @@
    it's own use - just a small constant. */
 #define N_RESERVED_FDS (10)
 
-/* Default debugger command. */
-#define CLO_DEFAULT_DBCOMMAND GDB_PATH " -nw %f %p"
-
 /*====================================================================*/
 /*=== Global entities not referenced from generated code           ===*/
 /*====================================================================*/

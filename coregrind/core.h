@@ -408,9 +408,6 @@ extern Bool VG_(client_signal_OK)(Int sigNo);
    before using that signal to kill the process. */
 extern void VG_(set_default_handler)(Int sig);
 
-/* Wait until a thread-related predicate is true */
-extern void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg);
-
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */

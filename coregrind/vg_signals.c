@@ -583,59 +583,6 @@ void do_sigprocmask_bitops ( Int vki_how,
    }
 }
 
-static void sigvgchld_handler(Int sig)
-{
-   VG_(printf)("got a sigvgchld?\n");
-}
-
-/* 
-   Wait until some predicate about threadstates is satisfied.
-
-   This uses SIGVGCHLD as a notification that it is now worth
-   re-evaluating the predicate.
- */
-void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg)
-{
-   vki_sigset_t set, saved;
-   struct vki_sigaction sa, old_sa;
-
-   /* 
-      SIGVGCHLD is set to be ignored, and is unblocked by default.
-      This means all such signals are simply discarded.
-
-      In this loop, we actually block it, and then poll for it with
-      sigtimedwait.
-    */
-   VG_(sigemptyset)(&set);
-   VG_(sigaddset)(&set, VKI_SIGVGCHLD);
-
-   VG_(set_sleeping)(VG_(master_tid), VgTs_Yielding);
-   VG_(sigprocmask)(VKI_SIG_BLOCK, &set, &saved);
-
-   /* It shouldn't be necessary to set a handler, since the signal is
-      always blocked, but it seems to be necessary to convice the
-      kernel not to just toss the signal... */
-   sa.ksa_handler = sigvgchld_handler;
-   sa.sa_flags = 0;
-   VG_(sigfillset)(&sa.sa_mask);
-   VG_(sigaction)(VKI_SIGVGCHLD, &sa, &old_sa);
-
-   vg_assert(old_sa.ksa_handler == VKI_SIG_IGN);
-
-   while(!(*pred)(arg)) {
-      struct vki_siginfo si;
-      Int ret = VG_(sigtimedwait)(&set, &si, NULL);
-
-      if (ret > 0 && VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "Got %d (code=%d) from tid lwp %d",
-		      ret, si.si_code, si._sifields._kill._pid);
-   }
-
-   VG_(sigaction)(VKI_SIGVGCHLD, &old_sa, NULL);
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &saved, NULL);
-   VG_(set_running)(VG_(master_tid));
-}
-
 /* 
    This updates the thread's signal mask.  There's no such thing as a
    process-wide signal mask.

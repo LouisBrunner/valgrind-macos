@@ -83,12 +83,12 @@ VG_(do_syscall):
 
 	System call requires:
 
+	    int    $__NR_clone  in %rax
 	    int    flags	in %rdi
 	    void*  child_stack	in %rsi
 	    pid_t* parent_tid	in %rdx
 	    pid_t* child_tid	in %r10
 	    void*  tls_ptr      in %r8
-        
  */
 .globl VG_(clone)
 VG_(clone):

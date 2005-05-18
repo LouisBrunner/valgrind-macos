@@ -71,11 +71,24 @@ VG_(do_syscall):
 	fork()-like return-twice semantics, so it needs special
 	handling here.
 
-	int VG_(clone)(int (*fn)(void *), void *child_stack, int flags, void *arg, 
-	               0                  4                  8          12
-		       pid_t *child_tid, pid_t *parent_tid, vki_modify_ldt_t *)
-		       16                20	            24
+	Upon entry, we have:
 
+	    int (fn)(void*)	in  0+FSZ(%esp)
+	    void* child_stack   in  4+FSZ(%esp)
+	    int flags           in  8+FSZ(%esp)
+	    void* arg           in 12+FSZ(%esp)
+	    pid_t* child_tid    in 16+FSZ(%esp)
+	    pid_t* parent_tid   in 20+FSZ(%esp)
+	    void* tls_ptr       in 24+FSZ(%esp)
+
+	System call requires:
+
+	    int    $__NR_clone  in %eax
+	    int    flags	in %ebx
+	    void*  child_stack	in %ecx
+	    pid_t* parent_tid	in %edx
+	    pid_t* child_tid	in %edi
+	    void*  tls_ptr      in %esi
  */
 .globl VG_(clone)
 VG_(clone):
@@ -83,7 +96,7 @@ VG_(clone):
 	push	%ebx
 	push	%edi
 	/* set up child stack with function and arg */
-	movl	 4+FSZ(%esp), %ecx	/* child stack */
+	movl	 4+FSZ(%esp), %ecx	/* syscall arg2: child stack */
 	movl	12+FSZ(%esp), %ebx	/* fn arg */
 	movl	 0+FSZ(%esp), %eax	/* fn */
 	lea	-8(%ecx), %ecx		/* make space on stack */
@@ -91,21 +104,21 @@ VG_(clone):
 	movl	%eax, 0(%ecx)		/*   fn */
 
 	/* get other args to clone */
-	movl	 8+FSZ(%esp), %ebx	/* flags */
-	movl	20+FSZ(%esp), %edx	/* parent tid * */
-	movl	16+FSZ(%esp), %edi	/* child tid * */
-	movl	24+FSZ(%esp), %esi	/* modify_ldt_t * */
+	movl	 8+FSZ(%esp), %ebx	/* syscall arg1: flags */
+	movl	20+FSZ(%esp), %edx	/* syscall arg3: parent tid * */
+	movl	16+FSZ(%esp), %edi	/* syscall arg4: child tid * */
+	movl	24+FSZ(%esp), %esi	/* syscall arg5: tls_ptr * */
 	movl	$__NR_clone, %eax
-	int	$0x80
-	testl	%eax, %eax
+	int	$0x80			/* clone() */
+	testl	%eax, %eax		/* child if retval == 0 */
 	jnz	1f
 
 	/* CHILD - call thread function */
 	popl	%eax
-	call	*%eax
+	call	*%eax			/* call fn */
 
 	/* exit with result */
-	movl	%eax, %ebx
+	movl	%eax, %ebx		/* arg1: return value from fn */
 	movl	$__NR_exit, %eax
 	int	$0x80
 

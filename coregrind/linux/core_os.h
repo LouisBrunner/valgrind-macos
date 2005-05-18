@@ -104,11 +104,6 @@ typedef struct {
    Int	lwpid;			/* PID of kernel task */
    Int	threadgroup;		/* thread group id */
 
-   /* how we were started */
-   UInt clone_flags;		/* flags passed to clone() to create this thread */
-   Int  *parent_tidptr;
-   Int  *child_tidptr;
-
    ThreadId parent;		/* parent tid (if any) */
 
    /* runtime details */

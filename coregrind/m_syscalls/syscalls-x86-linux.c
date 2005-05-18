@@ -363,12 +363,9 @@ static Int do_clone(ThreadId ptid,
       ctst->arch.vex.guest_ESP = esp;
 
    ctst->os_state.parent = ptid;
-   ctst->os_state.clone_flags = flags;
-   ctst->os_state.parent_tidptr = parent_tidptr;
-   ctst->os_state.child_tidptr = child_tidptr;
 
    /* inherit signal mask */
-   ctst->sig_mask = ptst->sig_mask;
+   ctst->sig_mask     = ptst->sig_mask;
    ctst->tmp_sig_mask = ptst->sig_mask;
 
    /* We don't really know where the client stack is, because its

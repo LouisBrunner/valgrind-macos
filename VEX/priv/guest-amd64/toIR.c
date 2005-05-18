@@ -6916,15 +6916,22 @@ void codegen_xchg_rAX_Reg ( Prefix pfx, Int sz, UInt regLo3 )
    IRType ty = szToITy(sz);
    IRTemp t1 = newTemp(ty);
    IRTemp t2 = newTemp(ty);
-   vassert(sz == 8);
+   vassert(sz == 4 || sz == 8);
    vassert(regLo3 < 8);
-   assign( t1, getIReg64(R_RAX) );
-   assign( t2, getIRegRexB(8,pfx, regLo3) );
-   putIReg64( R_RAX, mkexpr(t2) );
-   putIRegRexB(8, pfx, regLo3, mkexpr(t1) );
+   if (sz == 8) {
+      assign( t1, getIReg64(R_RAX) );
+      assign( t2, getIRegRexB(8, pfx, regLo3) );
+      putIReg64( R_RAX, mkexpr(t2) );
+      putIRegRexB(8, pfx, regLo3, mkexpr(t1) );
+   } else {
+      assign( t1, getIReg32(R_RAX) );
+      assign( t2, getIRegRexB(4, pfx, regLo3) );
+      putIReg32( R_RAX, mkexpr(t2) );
+      putIRegRexB(4, pfx, regLo3, mkexpr(t1) );
+   }
    DIP("xchg%c %s, %s\n", 
        nameISize(sz), nameIRegRAX(sz), 
-                      nameIRegRexB(8,pfx, regLo3));
+                      nameIRegRexB(sz,pfx, regLo3));
 }
 
 
@@ -12746,9 +12753,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       break;
 
    case 0x90: /* XCHG eAX,eAX */
-      if (haveF2orF3(pfx)) goto decode_failure;
-      DIP("nop\n");
-      break;
+      /* detect and handle NOPs specially */
+      if (/* F2/F3 probably change meaning completely */
+          !haveF2orF3(pfx)
+          /* If REX.B is 1, we're not exchanging rAX with itself */
+          && getRexB(pfx)==0 ) {
+         DIP("nop\n");
+         break;
+      }
+      /* else fall through to normal case. */
    case 0x91: /* XCHG rAX,rCX */
    case 0x92: /* XCHG rAX,rDX */
    case 0x93: /* XCHG rAX,rBX */
@@ -12756,8 +12769,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    case 0x95: /* XCHG rAX,rBP */
    case 0x96: /* XCHG rAX,rSI */
    case 0x97: /* XCHG rAX,rDI */
+
+      /* guard against mutancy */
       if (haveF2orF3(pfx)) goto decode_failure;
-      if (sz != 8) goto decode_failure; /* temp hack */
+
+      /* sz == 2 could legitimately happen, but we don't handle it yet */
+      if (sz == 2) goto decode_failure; /* awaiting test case */
+
       codegen_xchg_rAX_Reg ( pfx, sz, opc - 0x90 );
       break;
 

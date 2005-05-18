@@ -372,8 +372,6 @@ extern Int VG_(max_signal);
 
 extern void VG_(sigstartup_actions) ( void );
 
-extern Bool VG_(is_sig_ign) ( Int sigNo );
-
 /* Poll a thread's set of pending signals, and update the Thread's context to deliver one */
 extern void VG_(poll_signals) ( ThreadId );
 

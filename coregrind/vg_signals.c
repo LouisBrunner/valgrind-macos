@@ -201,7 +201,7 @@ typedef
 
 static SKSS skss;
 
-Bool VG_(is_sig_ign)(Int sigNo)
+static Bool is_sig_ign(Int sigNo)
 {
    vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
@@ -1656,7 +1656,7 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 			     !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
 
    /* Set up the thread's state to deliver a signal */
-   if (!VG_(is_sig_ign)(info->si_signo))
+   if (!is_sig_ign(info->si_signo))
       deliver_signal(tid, info);
 
    /* longjmp back to the thread's main loop to start executing the
@@ -2034,7 +2034,7 @@ void VG_(poll_signals)(ThreadId tid)
       if (VG_(clo_trace_signals))
 	 VG_(message)(Vg_DebugMsg, "Polling found signal %d for tid %d", 
 		      sip->si_signo, tid);
-      if (!VG_(is_sig_ign)(sip->si_signo))
+      if (!is_sig_ign(sip->si_signo))
 	 deliver_signal(tid, sip);
       else if (VG_(clo_trace_signals))
 	 VG_(message)(Vg_DebugMsg, "   signal %d ignored", sip->si_signo);

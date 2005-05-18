@@ -12723,9 +12723,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* ------------------------ XCHG ----------------------- */
 
-//..    case 0x86: /* XCHG Gb,Eb */
-//..       sz = 1;
-//..       /* Fall through ... */
+   case 0x86: /* XCHG Gb,Eb */
+      sz = 1;
+      /* Fall through ... */
    case 0x87: /* XCHG Gv,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);

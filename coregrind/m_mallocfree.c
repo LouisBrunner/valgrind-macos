@@ -44,7 +44,7 @@
 /*--- Main types                                           ---*/
 /*------------------------------------------------------------*/
 
-#define N_MALLOC_LISTS     16    // do not change this
+#define N_MALLOC_LISTS     18    // do not change this
 
 // The amount you can ask for is limited only by sizeof(SizeT)...
 #define MAX_PSZB              (~((SizeT)0x0))
@@ -533,22 +533,27 @@ UInt pszB_to_listNo ( SizeT pszB )
 {
    vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
    pszB /= VG_MIN_MALLOC_SZB;
-   if (pszB <= 2)   return 0;
-   if (pszB <= 3)   return 1;
-   if (pszB <= 4)   return 2;
-   if (pszB <= 5)   return 3;
-   if (pszB <= 6)   return 4;
-   if (pszB <= 7)   return 5;
-   if (pszB <= 8)   return 6;
-   if (pszB <= 9)   return 7;
-   if (pszB <= 10)  return 8;
-   if (pszB <= 11)  return 9;
-   if (pszB <= 12)  return 10;
-   if (pszB <= 16)  return 11;
-   if (pszB <= 32)  return 12;
-   if (pszB <= 64)  return 13;
-   if (pszB <= 128) return 14;
-   return 15;
+   switch (pszB) {
+      case 0:  return 0;
+      case 1:  return 1;
+      case 2:  return 2;
+      case 3:  return 3;
+      case 4:  return 4;
+      case 5:  return 5;
+      case 6:  return 6;
+      case 7:  return 7;
+      case 8:  return 8;
+      case 9:  return 9;
+      case 10: return 10;
+      case 11: return 11;
+      case 12: return 12;
+      default: break;
+   }
+   if (pszB <= 16)  return 13;
+   if (pszB <= 32)  return 14;
+   if (pszB <= 64)  return 15;
+   if (pszB <= 128) return 16;
+   return 17;
 }
 
 // What is the minimum payload size for a given list?

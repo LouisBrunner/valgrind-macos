@@ -191,14 +191,26 @@ static void printIpDesc(UInt n, Addr ip)
    static UChar buf[VG_ERRTXT_LEN];
 
    VG_(describe_IP)(ip, buf, VG_ERRTXT_LEN);
-   VG_(message)(Vg_UserMsg, "   %s %s", ( n == 0 ? "at" : "by" ), buf);
+
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "    %s", buf);
+   } else {
+      VG_(message)(Vg_UserMsg, "   %s %s", ( n == 0 ? "at" : "by" ), buf);
+   }
 }
 
 /* Print a StackTrace. */
 void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips )
 {
    vg_assert( n_ips > 0 );
+
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "  <stack>");
+
    VG_(apply_StackTrace)( printIpDesc, ips, n_ips );
+
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "  </stack>");
 }
 
 /* Get and immediately print a StackTrace. */

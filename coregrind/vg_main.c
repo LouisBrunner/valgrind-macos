@@ -1392,6 +1392,12 @@ static void as_closepadfile(int padfile)
    vg_assert(0 == res);
 }
 
+/*====================================================================*/
+/*=== Command-line: variables, processing, etc                     ===*/
+/*====================================================================*/
+
+// See pub_{core,tool}_options.h for explanations of all these.
+
 static void usage ( Bool debug_help )
 {
    Char* usage1 = 
@@ -1404,6 +1410,7 @@ static void usage ( Bool debug_help )
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
+"    --xml=yes                 show errors as XML\n"
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
@@ -1627,6 +1634,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          /* do nothing */
       }
 
+      else VG_BOOL_CLO(arg, "--xml",              VG_(clo_xml))
       else VG_BOOL_CLO(arg, "--branchpred",       VG_(clo_branchpred))
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
@@ -1798,6 +1806,29 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(bad_option)("--gen-suppressions=");
    }
 
+   /* If we've been asked to emit XML, mash around various other
+      options so as to constrain the output somewhat, and to remove
+      any need for user input during the run. */
+   if (VG_(clo_xml)) {
+      /* Disable suppression generation (requires user input) */
+      VG_(clo_gen_suppressions) = 0;
+      /* Disable attaching to GDB (requires user input) */
+      VG_(clo_db_attach) = False;
+      /* Set a known verbosity level */
+      VG_(clo_verbosity) = 1;
+      /* Disable error limits (this might be a bad idea!) */
+      VG_(clo_error_limit) = False;
+      /* Disable emulation warnings */
+      VG_(clo_show_emwarns) = False;
+      /* Disable waiting for GDB to debug Valgrind */
+      VG_(clo_wait_for_gdb) = False;
+      /* No file-descriptor leak checking yet */
+      VG_(clo_track_fds) = False;
+      /* Also, we want to set options for the leak checker, but that
+         will have to be done in Memcheck's flag-handling code, not
+         here. */
+   }
+
    /* All non-logging-related options have been checked.  If the logging
       option specified is ok, we can switch to it, as we know we won't
       have to generate any other command-line-related error messages.
@@ -1914,6 +1945,16 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
    }
 
+
+   /* Check that the requested tool actually supports XML output. */
+   if (VG_(clo_xml) && 0 != VG_(strcmp)(toolname, "memcheck")) {
+      VG_(clo_xml) = False;
+      VG_(message)(Vg_UserMsg, 
+         "Currently only Memcheck supports XML output."); 
+      VG_(bad_option)("--xml=yes");
+      /*NOTREACHED*/
+   }
+
    // Move log_fd into the safe range, so it doesn't conflict with any app fds.
    // XXX: this is more or less duplicating the behaviour of the calls to
    // VG_(safe_fd)() above, although this does not close the original fd.
@@ -1932,27 +1973,43 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       command line args, to help people trying to interpret the
       results of a run which encompasses multiple processes. */
 
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "<valgrindoutput>");
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "<protocolversion>1</protocolversion>");
+      VG_(message)(Vg_UserMsg, "");
+   }
+
+   HChar* xpre  = VG_(clo_xml) ? "<preamble>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</preamble>" : "";
+
    if (VG_(clo_verbosity > 0)) {
       /* Tool details */
-      VG_(message)(Vg_UserMsg, "%s%s%s, %s.",
+      VG_(message)(Vg_UserMsg, "%s%s%s%s, %s.%s",
+                   xpre,
                    VG_(details).name, 
                    NULL == VG_(details).version ? "" : "-",
                    NULL == VG_(details).version 
                       ? (Char*)"" : VG_(details).version,
-                   VG_(details).description);
-      VG_(message)(Vg_UserMsg, "%s", VG_(details).copyright_author);
+                   VG_(details).description,
+                   xpost);
+      VG_(message)(Vg_UserMsg, "%s%s%s", 
+                               xpre, VG_(details).copyright_author, xpost);
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
-         "Using LibVEX rev %s, a library for dynamic binary translation.",
-         LibVEX_Version() );
+         "%sUsing LibVEX rev %s, a library for dynamic binary translation.%s",
+         xpre, LibVEX_Version(), xpost );
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.");
+         "%sCopyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.%s",
+         xpre, xpost );
       VG_(message)(Vg_UserMsg,
-         "Using valgrind-%s, a dynamic binary instrumentation framework.",
-         VERSION);
+         "%sUsing valgrind-%s, a dynamic binary instrumentation framework.%s",
+         xpre, VERSION, xpost);
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.");
+         "%sCopyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.%s",
+         xpre, xpost );
    }
 
    if (VG_(clo_verbosity) > 0 && log_to != VgLogTo_Fd) {
@@ -1962,6 +2019,17 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(getpid)(), VG_(getppid)() );
       for (i = 0; i < VG_(client_argc); i++) 
          VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+   }
+   else
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
+      VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "<argv>");   
+      for (i = 0; i < VG_(client_argc); i++) 
+         VG_(message)(Vg_UserMsg, "  <arg>%s</arg>", VG_(client_argv)[i]);
+      VG_(message)(Vg_UserMsg, "</argv>");   
    }
 
    if (VG_(clo_verbosity) > 1) {
@@ -1983,7 +2051,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       if (fd < 0) {
          VG_(message)(Vg_DebugMsg, "  can't open /proc/version");
       } else {
-         #define BUF_LEN    256
+#        define BUF_LEN    256
          Char version_buf[BUF_LEN];
          Int n = VG_(read) ( fd, version_buf, BUF_LEN );
          vg_assert(n <= BUF_LEN);
@@ -1994,7 +2062,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
             VG_(message)(Vg_DebugMsg, "  (empty?)");
          }
          VG_(close)(fd);
-         #undef BUF_LEN
+#        undef BUF_LEN
       }
    }
 
@@ -2291,8 +2359,10 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
 	 remains = VGA_(stack_unused)(tid);
 	 if (remains < VKI_PAGE_SIZE)
-	    VG_(message)(Vg_DebugMsg, "WARNING: Thread %d is within %d bytes of running out of stack!",
-			 tid, remains);
+	    VG_(message)(Vg_DebugMsg, 
+                         "WARNING: Thread %d is within %d bytes "
+                         "of running out of stack!",
+		         tid, remains);
       }
 
       /* 
@@ -2726,7 +2796,7 @@ int main(int argc, char **argv, char **envp)
    // Verbosity message
    //   p: end_rdtsc_calibration [so startup message is printed first]
    //--------------------------------------------------------------
-   if (VG_(clo_verbosity) == 1)
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "For more details, rerun with: -v");
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
@@ -2744,6 +2814,11 @@ int main(int argc, char **argv, char **envp)
    VGP_POPCC(VgpStartup);
 
    vg_assert(VG_(master_tid) == 1);
+
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "<status>RUNNING</status>");
+      VG_(message)(Vg_UserMsg, "");
+   }
 
    VG_(debugLog)(1, "main", "Running thread 1\n");
    VGA_(main_thread_wrapper)(1);
@@ -2780,6 +2855,11 @@ void VG_(shutdown_actions)(ThreadId tid)
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
 
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "<status>FINISHED</status>");
+      VG_(message)(Vg_UserMsg, "");
+   }
+
    /* Print out file descriptor summary and stats. */
    if (VG_(clo_track_fds))
       VG_(show_open_fds)();
@@ -2788,6 +2868,12 @@ void VG_(shutdown_actions)(ThreadId tid)
       VG_(show_all_errors)();
 
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
+
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "</valgrindoutput>");
+      VG_(message)(Vg_UserMsg, "");
+   }
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
 

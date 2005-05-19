@@ -222,23 +222,27 @@ Bool MAC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
 
 void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
 {
+   HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
+   HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
+
    switch (ai->akind) {
       case Stack: 
          VG_(message)(Vg_UserMsg, 
-                      " Address 0x%lx is on thread %d's stack", 
-                      (ULong)a, ai->stack_tid);
+                      "%sAddress 0x%llx is on thread %d's stack%s", 
+                      xpre, (ULong)a, ai->stack_tid, xpost);
          break;
       case Unknown:
          if (ai->maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
-               " Address 0x%lx is just below %%esp.  Possibly a bug in GCC/G++",
-               (ULong)a);
-            VG_(message)(Vg_UserMsg, 
-               "  v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
+               "%sAddress 0x%llx is just below the stack ptr.  "
+               "To suppress, use: --workaround-gcc296-bugs=yes%s",
+               xpre, (ULong)a, xpost
+            );
 	 } else {
             VG_(message)(Vg_UserMsg, 
-               " Address 0x%lx is not stack'd, malloc'd or (recently) free'd",
-               (ULong)a);
+               "%sAddress 0x%llx "
+               "is not stack'd, malloc'd or (recently) free'd%s",
+               xpre, (ULong)a, xpost);
          }
          break;
       case Freed: case Mallocd: case UserG: case Mempool: {
@@ -264,12 +268,14 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
-            " Address 0x%lx is %llu bytes %s a %s of size %d %s",
+            "%sAddress 0x%llx is %llu bytes %s a %s of size %d %s%s",
+            xpre,
             (ULong)a, (ULong)delta, relative, kind,
             ai->blksize,
             ai->akind==Mallocd ? "alloc'd" 
                : ai->akind==Freed ? "free'd" 
-                                  : "client-defined");
+                                  : "client-defined",
+            xpost);
          VG_(pp_ExeContext)(ai->lastchange);
          break;
       }
@@ -288,14 +294,26 @@ void MAC_(pp_shared_Error) ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
+   HChar* xpre  = VG_(clo_xml) ? "  <what>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
+
    switch (VG_(get_error_kind)(err)) {
       case FreeErr:
-         VG_(message)(Vg_UserMsg, "Invalid free() / delete / delete[]");
-         /* fall through */
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>InvalidFree</kind>");
+         VG_(message)(Vg_UserMsg, 
+                      "%sInvalid free() / delete / delete[]%s",
+                      xpre, xpost);
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         break;
+
       case FreeMismatchErr:
-         if (VG_(get_error_kind)(err) == FreeMismatchErr)
-            VG_(message)(Vg_UserMsg, 
-                         "Mismatched free() / delete / delete []");
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>MismatchedFree</kind>");
+         VG_(message)(Vg_UserMsg, 
+                      "%sMismatched free() / delete / delete []%s",
+                      xpre, xpost);
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
@@ -303,16 +321,26 @@ void MAC_(pp_shared_Error) ( Error* err )
       case AddrErr:
          switch (err_extra->axskind) {
             case ReadAxs:
-               VG_(message)(Vg_UserMsg, "Invalid read of size %d", 
-                                        err_extra->size ); 
+               if (VG_(clo_xml))
+                  VG_(message)(Vg_UserMsg, "  <kind>InvalidRead</kind>");
+               VG_(message)(Vg_UserMsg,
+                            "%sInvalid read of size %d%s", 
+                            xpre, err_extra->size, xpost ); 
                break;
             case WriteAxs:
-               VG_(message)(Vg_UserMsg, "Invalid write of size %d", 
-                                        err_extra->size ); 
+               if (VG_(clo_xml))
+                  VG_(message)(Vg_UserMsg, "  <kind>InvalidWrite</kind>");
+               VG_(message)(Vg_UserMsg, 
+                           "%sInvalid write of size %d%s", 
+                           xpre, err_extra->size, xpost ); 
                break;
             case ExecAxs:
-               VG_(message)(Vg_UserMsg, "Jump to the invalid address "
-                                        "stated on the next line");
+               if (VG_(clo_xml))
+                  VG_(message)(Vg_UserMsg, "  <kind>InvalidJump</kind>");
+               VG_(message)(Vg_UserMsg, 
+                            "%sJump to the invalid address "
+                            "stated on the next line%s",
+                            xpre, xpost);
                break;
             default: 
                VG_(tool_panic)("MAC_(pp_shared_Error)(axskind)");
@@ -323,16 +351,22 @@ void MAC_(pp_shared_Error) ( Error* err )
 
       case OverlapErr: {
          OverlapExtra* ov_extra = (OverlapExtra*)VG_(get_error_extra)(err);
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>Overlap</kind>");
          if (ov_extra->len == -1)
             VG_(message)(Vg_UserMsg,
-                         "Source and destination overlap in %s(%p, %p)",
+                         "%sSource and destination overlap in %s(%p, %p)%s",
+                         xpre,
                          VG_(get_error_string)(err),
-                         ov_extra->dst, ov_extra->src);
+                         ov_extra->dst, ov_extra->src,
+                         xpost);
          else
             VG_(message)(Vg_UserMsg,
-                         "Source and destination overlap in %s(%p, %p, %d)",
+                         "%sSource and destination overlap in %s(%p, %p, %d)%s",
+                         xpre,
                          VG_(get_error_string)(err),
-                         ov_extra->dst, ov_extra->src, ov_extra->len);
+                         ov_extra->dst, ov_extra->src, ov_extra->len,
+                         xpost);
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
       }
@@ -342,7 +376,10 @@ void MAC_(pp_shared_Error) ( Error* err )
       }
 
       case IllegalMempoolErr:
-         VG_(message)(Vg_UserMsg, "Illegal memory pool address");
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>InvalidMemPool</kind>");
+         VG_(message)(Vg_UserMsg, "%sIllegal memory pool address%s",
+                                  xpre, xpost);
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
@@ -860,7 +897,7 @@ void MAC_(common_fini)(void (*leak_check)(ThreadId tid, LeakCheckMode mode))
 {
    MAC_(print_malloc_stats)();
 
-   if (VG_(clo_verbosity) == 1) {
+   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
       if (MAC_(clo_leak_check) == LC_Off)
          VG_(message)(Vg_UserMsg, 
              "For a detailed leak analysis,  rerun with: --leak-check=yes");

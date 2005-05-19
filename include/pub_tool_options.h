@@ -61,10 +61,15 @@
    }
 
 /* Verbosity level: 0 = silent, 1 (default), > 1 = more verbose. */
-extern Int   VG_(clo_verbosity);
+extern Int  VG_(clo_verbosity);
 
-/* Profile? */
-extern Bool  VG_(clo_profile);
+/* Profile?  default: NO */
+extern Bool VG_(clo_profile);
+
+/* Emit all messages as XML? default: NO */
+/* If clo_xml is set, various other options are set in a non-default
+   way.  See vg_main.c and mc_main.c. */
+extern Bool VG_(clo_xml);
 
 /* Call this if a recognised option was bad for some reason.
    Note: don't use it just because an option was unrecognised -- return 'False'

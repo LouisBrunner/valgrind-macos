@@ -549,6 +549,8 @@ void MAC_(print_malloc_stats) ( void )
    
    if (VG_(clo_verbosity) == 0)
       return;
+   if (VG_(clo_xml))
+      return;
 
    /* Count memory still in use. */
    VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), malloc_stats_count_chunk, &ms);

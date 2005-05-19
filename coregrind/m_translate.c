@@ -407,7 +407,7 @@ Bool VG_(translate) ( ThreadId tid,
       ok = VG_(get_fnname_w_offset)(redir, name2, 64);
       if (!ok) VG_(strcpy)(name2, "???");
       VG_(message)(Vg_DebugMsg, 
-                   "TRANSLATE: 0x%llx (%s) redirected to 0x%llx (%s)",
+                   "REDIR: 0x%llx (%s) redirected to 0x%llx (%s)",
                    orig_addr, name1,
                    redir, name2 );
    }

@@ -59,7 +59,9 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
 
    // Print the message
    count = 0;
-   count += VG_(printf) ("%s%c%c", pfx_s, c,c);
+
+   if (!VG_(clo_xml))
+      count += VG_(printf) ("%s%c%c", pfx_s, c,c);
 
    if (VG_(clo_time_stamp)) {
       struct timeval tv;
@@ -75,7 +77,9 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
       }
    }
 
-   count += VG_(printf) ("%d%c%c ", VG_(getpid)(), c,c);
+   if (!VG_(clo_xml))
+      count += VG_(printf) ("%d%c%c ", VG_(getpid)(), c,c);
+
    count += VG_(vprintf)(format, vargs);
    count += VG_(printf) ("\n");
    return count;

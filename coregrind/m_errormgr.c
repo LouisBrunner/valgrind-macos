@@ -251,11 +251,18 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 
 static void pp_Error ( Error* err, Bool printCount )
 {
-   if (printCount)
-      VG_(message)(Vg_UserMsg, "Observed %d times:", err->count );
-   if (err->tid > 0 && err->tid != last_tid_printed) {
-      VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
-      last_tid_printed = err->tid;
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "<error>");
+      VG_(message)(Vg_UserMsg, "  <tid>%d</tid>", err->tid);
+   }
+
+   if (!VG_(clo_xml)) {
+      if (printCount)
+         VG_(message)(Vg_UserMsg, "Observed %d times:", err->count );
+      if (err->tid > 0 && err->tid != last_tid_printed) {
+         VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
+         last_tid_printed = err->tid;
+      }
    }
 
    switch (err->ekind) {
@@ -274,6 +281,9 @@ static void pp_Error ( Error* err, Bool printCount )
             VG_(tool_panic)("unhandled error type");
          }
    }
+
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "</error>");
 }
 
 /* Figure out if we want to perform a given action for this error, possibly
@@ -629,6 +639,31 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 /*--- Exported fns                                         ---*/
 /*------------------------------------------------------------*/
 
+/* Show the used suppressions.  Returns False if no suppression
+   got used. */
+static Bool show_used_suppressions ( void )
+{
+   Supp  *su;
+   Bool  any_supp;
+
+   any_supp = False;
+   for (su = suppressions; su != NULL; su = su->next) {
+      if (su->count <= 0)
+         continue;
+      any_supp = True;
+      if (VG_(clo_xml)) {
+         VG_(message)(Vg_DebugMsg, 
+                      "<supp><count>%d</count><name>%s</name></supp>", 
+                      su->count, su->sname);
+      } else {
+         VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);
+      }
+   }
+
+   return any_supp;
+}
+
+
 /* This is called not from generated code but from the scheduler */
 void VG_(show_all_errors) ( void )
 {
@@ -652,6 +687,15 @@ void VG_(show_all_errors) ( void )
       if (su->count > 0)
          n_supp_contexts++;
    }
+
+   /* If we're printing XML, just show the suppressions and stop.
+    */
+   if (VG_(clo_xml)) {
+      (void)show_used_suppressions();
+      return;
+   }
+
+   /* We only get here if not printing XML. */
    VG_(message)(Vg_UserMsg,
                 "ERROR SUMMARY: "
                 "%d errors from %d contexts (suppressed: %d from %d)",
@@ -691,13 +735,7 @@ void VG_(show_all_errors) ( void )
 
    if (n_supp_contexts > 0) 
       VG_(message)(Vg_DebugMsg, "");
-   any_supp = False;
-   for (su = suppressions; su != NULL; su = su->next) {
-      if (su->count > 0) {
-         any_supp = True;
-         VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);
-      }
-   }
+   any_supp = show_used_suppressions();
 
    if (n_err_contexts > 0) {
       if (any_supp) 

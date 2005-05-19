@@ -184,40 +184,79 @@ static SizeT	    lc_scanned;
 static Bool	  (*lc_is_within_valid_secondary) (Addr addr);
 static Bool	  (*lc_is_valid_aligned_word)     (Addr addr);
 
-static const Char *str_lossmode(Reachedness lossmode)
+static const HChar* str_lossmode ( Reachedness lossmode )
 {
-   const Char *loss = "?";
-
-   switch(lossmode) {
-   case Unreached:	loss = "definitely lost"; break;
-   case IndirectLeak:	loss = "indirectly lost"; break;
-   case Interior:	loss = "possibly lost"; break;
-   case Proper:		loss = "still reachable"; break;
+   const HChar *loss = "?";
+   switch (lossmode) {
+      case Unreached:    loss = "definitely lost"; break;
+      case IndirectLeak: loss = "indirectly lost"; break;
+      case Interior:     loss = "possibly lost"; break;
+      case Proper:       loss = "still reachable"; break;
    }
-
    return loss;
 }
+
+static const HChar* xml_kind ( Reachedness lossmode )
+{
+   const HChar *loss = "?";
+   switch (lossmode) {
+      case Unreached:    loss = "Leak_DefinitelyLost"; break;
+      case IndirectLeak: loss = "Leak_IndirectlyLost"; break;
+      case Interior:     loss = "Leak_PossiblyLost"; break;
+      case Proper:       loss = "Leak_StillReachable"; break;
+   }
+   return loss;
+}
+
 
 /* Used for printing leak errors, avoids exposing the LossRecord type (which
    comes in as void*, requiring a cast. */
 void MAC_(pp_LeakError)(void* vextra)
 {
+   HChar* xpre  = VG_(clo_xml) ? "  <what>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
+
    LeakExtra* extra = (LeakExtra*)vextra;
    LossRecord* l    = extra->lossRecord;
    const Char *loss = str_lossmode(l->loss_mode);
 
-   VG_(message)(Vg_UserMsg, "");
+   if (VG_(clo_xml)) {
+      VG_(message)(Vg_UserMsg, "  <kind>%s</kind>", xml_kind(l->loss_mode));
+   } else {
+      VG_(message)(Vg_UserMsg, "");
+   }
+
    if (l->indirect_bytes) {
       VG_(message)(Vg_UserMsg, 
-		   "%d (%d direct, %d indirect) bytes in %d blocks are %s in loss record %d of %d",
-		   l->total_bytes + l->indirect_bytes, 
-		   l->total_bytes, l->indirect_bytes, l->num_blocks,
-		   loss, extra->n_this_record, extra->n_total_records);
+         "%s%d (%d direct, %d indirect) bytes in %d blocks"
+         " are %s in loss record %d of %d%s",
+         xpre,
+         l->total_bytes + l->indirect_bytes, 
+         l->total_bytes, l->indirect_bytes, l->num_blocks,
+         loss, extra->n_this_record, extra->n_total_records,
+         xpost
+      );
+      if (VG_(clo_xml)) {
+         VG_(message)(Vg_UserMsg, "  <leakedbytes>%d</leakedbytes>", 
+                                  l->total_bytes + l->indirect_bytes);
+         VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
+                                  l->num_blocks);
+      }
    } else {
-      VG_(message)(Vg_UserMsg, 
-		   "%d bytes in %d blocks are %s in loss record %d of %d",
-		   l->total_bytes, l->num_blocks,
-		   loss, extra->n_this_record, extra->n_total_records);
+      VG_(message)(
+         Vg_UserMsg, 
+         "%s%d bytes in %d blocks are %s in loss record %d of %d%s",
+         xpre,
+         l->total_bytes, l->num_blocks,
+         loss, extra->n_this_record, extra->n_total_records,
+         xpost
+      );
+      if (VG_(clo_xml)) {
+         VG_(message)(Vg_UserMsg, "  <leakedbytes>%d</leakedbytes>", 
+                                  l->total_bytes);
+         VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
+                                  l->num_blocks);
+      }
    }
    VG_(pp_ExeContext)(l->allocated_at);
 }
@@ -612,14 +651,14 @@ void MAC_(do_detect_memory_leaks) (
 
    if (lc_n_shadows == 0) {
       tl_assert(lc_shadows == NULL);
-      if (VG_(clo_verbosity) >= 1) {
+      if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
          VG_(message)(Vg_UserMsg, 
                       "No malloc'd blocks -- no leaks are possible.");
       }
       return;
    }
 
-   if (VG_(clo_verbosity) > 0)
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, 
                    "searching for pointers to %d not-freed blocks.", 
                    lc_n_shadows );
@@ -650,7 +689,7 @@ void MAC_(do_detect_memory_leaks) (
    /* Keep walking the heap until everything is found */
    lc_do_leakcheck(-1);
 
-   if (VG_(clo_verbosity) > 0)
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "checked %d bytes.", lc_scanned);
 
    blocks_leaked     = MAC_(bytes_leaked)     = 0;
@@ -664,7 +703,7 @@ void MAC_(do_detect_memory_leaks) (
    else
       make_summary();
 
-   if (VG_(clo_verbosity) > 0) {
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
       VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 

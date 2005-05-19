@@ -1313,11 +1313,18 @@ static void mc_pp_Error ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
+   HChar* xpre  = VG_(clo_xml) ? "  <what>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
+
    switch (VG_(get_error_kind)(err)) {
       case CoreMemErr: {
          Char* s = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
-         VG_(message)(Vg_UserMsg, "%s contains %s byte(s)", 
-                      VG_(get_error_string)(err), s);
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>CoreMemError</kind>");
+            /* What the hell *is* a CoreMemError? jrs 2005-May-18 */
+         VG_(message)(Vg_UserMsg, "%s%s contains %s byte(s)%s", 
+                      xpre, VG_(get_error_string)(err), s, xpost);
+
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
       
@@ -1325,12 +1332,17 @@ static void mc_pp_Error ( Error* err )
       
       case ValueErr:
          if (err_extra->size == 0) {
-             VG_(message)(Vg_UserMsg,
-                "Conditional jump or move depends on uninitialised value(s)");
+            if (VG_(clo_xml))
+               VG_(message)(Vg_UserMsg, "  <kind>UninitCondition</kind>");
+            VG_(message)(Vg_UserMsg, "%sConditional jump or move depends"
+                                     " on uninitialised value(s)%s", 
+                                     xpre, xpost);
          } else {
-             VG_(message)(Vg_UserMsg,
-                          "Use of uninitialised value of size %d",
-                          err_extra->size);
+            if (VG_(clo_xml))
+               VG_(message)(Vg_UserMsg, "  <kind>UninitValue</kind>");
+            VG_(message)(Vg_UserMsg,
+                         "%sUse of uninitialised value of size %d%s",
+                         xpre, err_extra->size, xpost);
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
@@ -1341,8 +1353,10 @@ static void mc_pp_Error ( Error* err )
          Char* s2 = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
          if (isReg) tl_assert(!err_extra->isUnaddr);
 
-         VG_(message)(Vg_UserMsg, "Syscall param %s %s %s byte(s)",
-                      VG_(get_error_string)(err), s1, s2);
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>SyscallParam</kind>");
+         VG_(message)(Vg_UserMsg, "%sSyscall param %s %s %s byte(s)%s",
+                      xpre, VG_(get_error_string)(err), s1, s2, xpost);
 
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -1351,8 +1365,11 @@ static void mc_pp_Error ( Error* err )
       case UserErr: {
          Char* s = ( err_extra->isUnaddr ? "Unaddressable" : "Uninitialised" );
 
+         if (VG_(clo_xml))
+            VG_(message)(Vg_UserMsg, "  <kind>ClientCheck</kind>");
          VG_(message)(Vg_UserMsg, 
-            "%s byte(s) found during client check request", s);
+            "%s%s byte(s) found during client check request%s", 
+            xpre, s, xpost);
 
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -2426,6 +2443,13 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
 static void mc_post_clo_init ( void )
 {
+   /* If we've been asked to emit XML, mash around various other
+      options so as to constrain the output somewhat. */
+   if (VG_(clo_xml)) {
+      /* Extract as much info as possible from the leak checker. */
+      MAC_(clo_show_reachable) = True;
+      MAC_(clo_leak_check) = LC_Full;
+   }
 }
 
 static void mc_fini ( Int exitcode )

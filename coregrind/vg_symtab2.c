@@ -2436,7 +2436,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
      buf[n] = '\0';                                         \
    }
    UInt  lineno; 
-   UChar ibuf[20];
+   UChar ibuf[50];
    UInt  n = 0;
    static UChar buf_fn[VG_ERRTXT_LEN];
    static UChar buf_obj[VG_ERRTXT_LEN];
@@ -2445,29 +2445,62 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    Bool  know_objname = VG_(get_objname)(eip, buf_obj, VG_ERRTXT_LEN);
    Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc,
                                                   VG_ERRTXT_LEN, &lineno);
-   VG_(sprintf)(ibuf,"0x%llx: ", (ULong)eip);
-   APPEND(ibuf);
-   if (know_fnname) { 
-      APPEND(buf_fn);
-      if (!know_srcloc && know_objname) {
-         APPEND(" (in ");
+
+   if (VG_(clo_xml)) {
+
+      /* Print in XML format, dumping in as much info as we know. */
+      APPEND("<frame>");
+      VG_(sprintf)(ibuf,"<ip>0x%llx</ip>", (ULong)eip);
+      APPEND(ibuf);
+      if (know_objname) {
+         APPEND("<obj>");
+         APPEND(buf_obj);
+         APPEND("</obj>");
+      }
+      if (know_fnname) {
+         APPEND("<fn>");
+         APPEND(buf_fn);
+         APPEND("</fn>");
+      }
+      if (know_srcloc) {
+         APPEND("<file>");
+         APPEND(buf_srcloc);
+         APPEND("</file>");
+         APPEND("<line>");
+         VG_(sprintf)(ibuf,"%d",lineno);
+         APPEND(ibuf);
+         APPEND("</line>");
+      }
+      APPEND("</frame>");
+
+   } else {
+
+      /* Print for humans to read */
+      VG_(sprintf)(ibuf,"0x%llx: ", (ULong)eip);
+      APPEND(ibuf);
+      if (know_fnname) { 
+         APPEND(buf_fn);
+         if (!know_srcloc && know_objname) {
+            APPEND(" (in ");
+            APPEND(buf_obj);
+            APPEND(")");
+         }
+      } else if (know_objname && !know_srcloc) {
+         APPEND("(within ");
          APPEND(buf_obj);
          APPEND(")");
+      } else {
+         APPEND("???");
       }
-   } else if (know_objname && !know_srcloc) {
-      APPEND("(within ");
-      APPEND(buf_obj);
-      APPEND(")");
-   } else {
-      APPEND("???");
-   }
-   if (know_srcloc) {
-      APPEND(" (");
-      APPEND(buf_srcloc);
-      APPEND(":");
-      VG_(sprintf)(ibuf,"%d",lineno);
-      APPEND(ibuf);
-      APPEND(")");
+      if (know_srcloc) {
+         APPEND(" (");
+         APPEND(buf_srcloc);
+         APPEND(":");
+         VG_(sprintf)(ibuf,"%d",lineno);
+         APPEND(ibuf);
+         APPEND(")");
+      }
+
    }
    return buf;
 

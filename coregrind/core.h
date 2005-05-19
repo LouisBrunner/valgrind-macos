@@ -247,10 +247,6 @@ typedef struct {
       be set while Thread is in VgTs_WaitSys. */
    Int syscallno;
 
-   /* A value the Tool wants to pass from its pre-syscall to its
-      post-syscall function. */
-   void *tool_pre_syscall_value;
-
    /* Client stacks.  When a thread slot is freed, we don't deallocate its
       stack; we just leave it lying around for the next use of the
       slot.  If the next use of the slot requires a larger stack,

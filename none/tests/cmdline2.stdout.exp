@@ -7,6 +7,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --version                 show version
     -q --quiet                run silently; only print error msgs
     -v --verbose              be more verbose, incl counts of errors
+    --xml=yes                 all output is in XML (Memcheck only)
     --trace-children=no|yes   Valgrind-ise child processes? [no]
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]

@@ -1410,7 +1410,7 @@ static void usage ( Bool debug_help )
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
-"    --xml=yes                 show errors as XML\n"
+"    --xml=yes                 all output is in XML (Memcheck only)\n"
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"

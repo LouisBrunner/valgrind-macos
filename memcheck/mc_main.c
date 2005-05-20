@@ -2447,7 +2447,7 @@ static void mc_post_clo_init ( void )
       options so as to constrain the output somewhat. */
    if (VG_(clo_xml)) {
       /* Extract as much info as possible from the leak checker. */
-      MAC_(clo_show_reachable) = True;
+      /* MAC_(clo_show_reachable) = True; */
       MAC_(clo_leak_check) = LC_Full;
    }
 }

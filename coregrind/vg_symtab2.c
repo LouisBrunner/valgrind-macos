@@ -384,7 +384,7 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
       VG_(ppCfiSI)(cfisi);
    }
 
-   vg_assert(cfisi->len > 0 && cfisi->len < 1000000);
+   vg_assert(cfisi->len > 0 && cfisi->len < 2000000);
 
    UInt   new_sz, i;
    CfiSI* new_tab;

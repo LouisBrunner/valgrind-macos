@@ -2856,6 +2856,10 @@ void VG_(shutdown_actions)(ThreadId tid)
       VG_(message)(Vg_UserMsg, "");
 
    if (VG_(clo_xml)) {
+      if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+         VG_(show_error_counts_as_XML)();
+         VG_(message)(Vg_UserMsg, "");
+      }
       VG_(message)(Vg_UserMsg, "<status>FINISHED</status>");
       VG_(message)(Vg_UserMsg, "");
    }

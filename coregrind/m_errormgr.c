@@ -253,6 +253,8 @@ static void pp_Error ( Error* err, Bool printCount )
 {
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<error>");
+      VG_(message)(Vg_UserMsg, "  <unique>0x%llx</unique>",
+                                  Ptr_to_ULong(err));
       VG_(message)(Vg_UserMsg, "  <tid>%d</tid>", err->tid);
    }
 
@@ -664,7 +666,8 @@ static Bool show_used_suppressions ( void )
 }
 
 
-/* This is called not from generated code but from the scheduler */
+/* Show all the errors that occurred, and possibly also the
+   suppressions used. */
 void VG_(show_all_errors) ( void )
 {
    Int    i, n_min;
@@ -748,6 +751,27 @@ void VG_(show_all_errors) ( void )
       VG_(message)(Vg_UserMsg, "");
    }
 }
+
+
+/* Show occurrence counts of all errors, in XML form. */
+void VG_(show_error_counts_as_XML) ( void )
+{
+   Error* err;
+   VG_(message)(Vg_UserMsg, "<errorcounts>");
+   for (err = errors; err != NULL; err = err->next) {
+      if (err->supp != NULL)
+         continue;
+      if (err->count <= 0)
+         continue;
+      VG_(message)(
+         Vg_UserMsg, "  <pair><unique>0x%llx</unique>"
+                     "<count>%d</count></pair>",
+         Ptr_to_ULong(err), err->count
+      );
+   }
+   VG_(message)(Vg_UserMsg, "</errorcounts>");
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Standard suppressions                                ---*/

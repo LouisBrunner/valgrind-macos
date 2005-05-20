@@ -49,13 +49,15 @@ typedef
    }
    CoreErrorKind;
 
-extern void VG_(load_suppressions)    ( void );
+extern void VG_(load_suppressions)        ( void );
 
-extern void VG_(show_all_errors)      ( void );
+extern void VG_(show_all_errors)          ( void );
 
-extern Bool VG_(is_action_requested)  ( Char* action, Bool* clo );
+extern void VG_(show_error_counts_as_XML) ( void );
 
-extern UInt VG_(get_n_errs_found)     ( void );
+extern Bool VG_(is_action_requested)      ( Char* action, Bool* clo );
+
+extern UInt VG_(get_n_errs_found)         ( void );
 
 #endif   // __PUB_CORE_ERRORMGR_H
 

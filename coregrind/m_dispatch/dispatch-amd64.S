@@ -189,8 +189,6 @@ run_innerloop_exit_REALLY:
 */
 dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
-	cmpq	$VG_TRC_INNER_COUNTERZERO, %rbp
-	jz	counter_is_zero
 
 	/* save %rax in %RIP and defer to sched */
 	movq	8(%rsp), %rdi

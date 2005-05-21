@@ -165,8 +165,6 @@ run_innerloop_exit_REALLY:
 */
 dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
-	cmpl	$VG_TRC_INNER_COUNTERZERO, %ebp
-	jz	counter_is_zero
 
 	/* save %eax in %EIP and defer to sched */
 	movl	28(%esp), %edi

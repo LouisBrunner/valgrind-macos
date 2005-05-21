@@ -533,22 +533,10 @@ UInt pszB_to_listNo ( SizeT pszB )
 {
    vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
    pszB /= VG_MIN_MALLOC_SZB;
-   switch (pszB) {
-      case 0:  return 0;
-      case 1:  return 1;
-      case 2:  return 2;
-      case 3:  return 3;
-      case 4:  return 4;
-      case 5:  return 5;
-      case 6:  return 6;
-      case 7:  return 7;
-      case 8:  return 8;
-      case 9:  return 9;
-      case 10: return 10;
-      case 11: return 11;
-      case 12: return 12;
-      default: break;
-   }
+
+   // The first 13 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
+   // The final 4 hold bigger blocks.
+   if (pszB <= 12)  return pszB;
    if (pszB <= 16)  return 13;
    if (pszB <= 32)  return 14;
    if (pszB <= 64)  return 15;

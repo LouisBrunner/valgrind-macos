@@ -533,14 +533,17 @@ Int VG_(do_sys_sigaction) ( Int signo,
    return 0;
 
   bad_signo:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
+                              && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
                    "Warning: bad signal number %d in sigaction()", 
                    signo);
+   }
    return -VKI_EINVAL;
 
   bad_signo_reserved:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1) {
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
+                              && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
@@ -551,13 +554,15 @@ Int VG_(do_sys_sigaction) ( Int signo,
    return -VKI_EINVAL;
 
   bad_sigkill_or_sigstop:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
+                              && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
       VG_(message)(Vg_UserMsg,
 		   "         the %s signal is uncatchable", 
 		   signame(signo));
+   }
    return -VKI_EINVAL;
 }
 

@@ -11,7 +11,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	as_shm.stderr.exp as_shm.stdout.exp as_shm.vgtest \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 fdleak_cmsg.vgtest \
-	fdleak_creat.stderr.exp fdleak_creat.vgtest \
+	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
+	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \
 	fdleak_dup.stderr.exp fdleak_dup.vgtest \
 	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
 	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 \

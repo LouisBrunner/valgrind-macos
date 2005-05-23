@@ -1,0 +1,22 @@
+
+
+FILE DESCRIPTORS: 5 open at exit.
+Open file descriptor .: /dev/null
+   at 0x........: fcntl (in /...libc...)
+   by 0x........: main (fdleak_fcntl.c:18)
+
+Open file descriptor .: /dev/null
+   at 0x........: open (in /...libc...)
+   by 0x........: main (fdleak_fcntl.c:17)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: /dev/null
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

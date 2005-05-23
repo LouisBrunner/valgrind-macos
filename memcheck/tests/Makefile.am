@@ -34,7 +34,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp leak-cycle.stderr.exp64 \
-	leak-tree.vgtest leak-tree.stderr.exp leak-tree.stderr.exp64 \
+	leak-tree.vgtest leak-tree.stderr.exp \
+	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
 	malloc1.stderr.exp malloc1.vgtest \

@@ -2,7 +2,7 @@ SUBDIRS      = ${VG_ARCH}     .
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
-		 filter_stderr filter_stderr_backtrace
+		 filter_stderr filter_stderr_backtrace filter_xml
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
@@ -77,6 +77,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.vgtest \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
+	xml1.stderr.exp xml1.stdout.exp xml1.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
 
 check_PROGRAMS = \
@@ -100,7 +101,7 @@ check_PROGRAMS = \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata \
-	vgtest_ume \
+	vgtest_ume xml1 \
 	writev zeropage
 
 
@@ -173,6 +174,7 @@ metadata_SOURCES	= metadata.c
 str_tester_SOURCES	= str_tester.c
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 writev_SOURCES		= writev.c
+xml1_SOURCES		= xml1.c
 zeropage_SOURCES	= zeropage.c
 
 # C++ ones

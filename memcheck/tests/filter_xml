@@ -1,0 +1,9 @@
+#! /bin/sh
+
+./filter_stderr |
+sed "s/<tid>[0-9]*<\/tid>/<tid>...<\/tid>/" |
+sed "s/<pid>[0-9]*<\/pid>/<pid>...<\/pid>/" |
+sed "s/<ppid>[0-9]*<\/ppid>/<ppid>...<\/ppid>/" |
+sed "s/<obj>.*<\/obj>/<obj>...<\/obj>/" |
+sed "s/<preamble>.*<\/preamble>/<preamble>...<\/preamble>/"
+

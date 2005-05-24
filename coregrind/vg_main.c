@@ -563,6 +563,10 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
       to = copy_args(f1_clo,  to);
       to = copy_args(env_clo, to);
       to = copy_args(f2_clo,  to);
+    
+      // Free memory
+      free(f1_clo);
+      free(f2_clo);
 
       /* copy original arguments, stopping at command or -- */
       while (*from) {

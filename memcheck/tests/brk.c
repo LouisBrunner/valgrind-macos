@@ -26,7 +26,7 @@ int main(void)
 //   vals[9] = EOL;
    vals[8] = EOL;
 
-   for (i = 0; (void*)0xffffffff != vals[i]; i++) {
+   for (i = 0; EOL != vals[i]; i++) {
       res = (void*)syscall(__NR_brk, vals[i]);
    }
 

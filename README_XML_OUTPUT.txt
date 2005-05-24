@@ -59,8 +59,10 @@ caveats.
 
 The output format
 ~~~~~~~~~~~~~~~~~
-For the most part this should be self descriptive.  It is printed
-in a sort-of human-readable way for easy understanding.
+For the most part this should be self descriptive.  It is printed in a
+sort-of human-readable way for easy understanding.  You may want to
+read the rest of this together with the results of "valgrind --xml=yes
+memcheck/tests/xml1" as an example.
 
 All tags are balanced: a <foo> tag is always closed by </foo>.  Hence
 in the description that follows, mention of a tag <foo> implicitly
@@ -72,7 +74,7 @@ somewhere below.  The root nonterminal is TOPLEVEL.
 The following nonterminals are not described further:
    INT   is a 64-bit signed decimal integer.
    TEXT  is arbitrary text.
-   HEX64 is a 64-bit hexadecimal number.
+   HEX64 is a 64-bit hexadecimal number, with leading "0x".
 
 
 TOPLEVEL
@@ -314,7 +316,7 @@ Each <pair> gives the current error count <count> for the error with
 unique tag </unique>.  The counts do not have to give a count for each
 error so far presented - partial information is allowable.
 
-As at Valgrind rev 3792, error counts are only emitted at program
+As at Valgrind rev 3793, error counts are only emitted at program
 termination.  However, it is perfectly acceptable to periodically emit
 error counts as the program is running.  Doing so would facilitate a
 GUI to dynamically update its error-count display as the program runs.

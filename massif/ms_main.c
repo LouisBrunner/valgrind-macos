@@ -923,7 +923,7 @@ static void halve_censi(void)
 
    // Sets j to the index of the first not-yet-removed census at or after i
    #define FIND_CENSUS(i, j) \
-      for (j = i; -1 == censi[j].ms_time; j++) { }
+      for (j = i; j < MAX_N_CENSI && -1 == censi[j].ms_time; j++) { }
 
    for (i = 2; i < MAX_N_CENSI; i += 2) {
       // Find the censi representing the smallest timespan.  The timespan
@@ -989,7 +989,6 @@ static void hp_census(void)
    static UInt ms_next_census = 0;     // zero allows startup census
 
    Int     ms_time, ms_time_since_prev;
-   Int     i, K;
    Census* census;
 
    VGP_PUSHCC(VgpCensus);
@@ -1010,6 +1009,7 @@ static void hp_census(void)
 
    // Heap: snapshot the K most significant XTrees -------------------
    if (clo_heap) {
+      Int i, K;
       K = ( alloc_xpt->n_children < MAX_SNAPSHOTS 
           ? alloc_xpt->n_children
           : MAX_SNAPSHOTS);     // max out
@@ -1086,7 +1086,6 @@ static void hp_census(void)
       census->stacks_space = sigstacks_space;
       // slightly abusing this function
       VG_(first_matching_thread_stack)( count_stack_size, &census->stacks_space );
-      i++;
    }
 
    // Finish, update interval if necessary -----------------------------

@@ -1,0 +1,156 @@
+
+<valgrindoutput>
+
+<protocolversion>1</protocolversion>
+
+<preamble>...</preamble>
+<preamble>...</preamble>
+<preamble>...</preamble>
+<preamble>...</preamble>
+<preamble>...</preamble>
+<preamble>...</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<argv>
+  <arg>./xml1</arg>
+</argv>
+
+<status>RUNNING</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidRead</kind>
+  <what>Invalid read of size 4</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>11</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes after a block of size 40 alloc'd</auxwhat>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>malloc</fn><file>vg_replace_malloc.c</file><line>220</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>8</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UninitCondition</kind>
+  <what>Conditional jump or move depends on uninitialised value(s)</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>14</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>UninitValue</kind>
+  <what>Use of uninitialised value of size 8</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>21</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidFree</kind>
+  <what>Invalid free() / delete / delete[]</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>free</fn><file>vg_replace_malloc.c</file><line>306</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>25</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes inside a block of size 40 free'd</auxwhat>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>free</fn><file>vg_replace_malloc.c</file><line>306</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>24</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidFree</kind>
+  <what>Invalid free() / delete / delete[]</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>free</fn><file>vg_replace_malloc.c</file><line>306</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>28</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+  <auxwhat>Address 0x........ is on thread 1's stack</auxwhat>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>SyscallParam</kind>
+  <what>Syscall param exit_group(exit_code) contains uninitialised byte(s)</what>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>_Exit</fn></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>exit</fn></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>__libc_start_main</fn></frame>
+    <frame><ip>0x........</ip><obj>...</obj><file>start.S</file><line>113</line></frame>
+  </stack>
+</error>
+
+<errorcounts>
+  <pair><count>1</count><unique>0x........</unique></pair>
+  <pair><count>1</count><unique>0x........</unique></pair>
+  <pair><count>1</count><unique>0x........</unique></pair>
+  <pair><count>1</count><unique>0x........</unique></pair>
+  <pair><count>1</count><unique>0x........</unique></pair>
+  <pair><count>1</count><unique>0x........</unique></pair>
+</errorcounts>
+
+<status>FINISHED</status>
+
+<suppcounts>
+  <pair><count>3</count><name>index-not-intercepted-early-enough-HACK-1</name></pair>
+  <pair><count>1</count><name>strlen-not-intercepted-early-enough-HACK-5</name></pair>
+  <pair><count>1</count><name>strlen-not-intercepted-early-enough-HACK-4</name></pair>
+  <pair><count>1</count><name>strlen-not-intercepted-early-enough-HACK-3</name></pair>
+  <pair><count>2</count><name>dl_relocate_object</name></pair>
+<suppcounts>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>Leak_DefinitelyLost</kind>
+  <what>396 bytes in 1 blocks are definitely lost in loss record 1 of 1</what>
+  <leakedbytes>396</leakedbytes>
+  <leakedblocks>1</leakedblocks>
+  <stack>
+    <frame><ip>0x........</ip><obj>...</obj><fn>malloc</fn><file>vg_replace_malloc.c</file><line>220</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame3</fn><file>xml1.c</file><line>31</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame2</fn><file>xml1.c</file><line>39</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>frame1</fn><file>xml1.c</file><line>44</line></frame>
+    <frame><ip>0x........</ip><obj>...</obj><fn>main</fn><file>xml1.c</file><line>49</line></frame>
+  </stack>
+</error>
+
+</valgrindoutput>
+

@@ -240,7 +240,7 @@ ThreadId VG_(get_lwp_tid)(Int lwp)
 {
    ThreadId tid;
    
-   for(tid = 1; tid <= VG_N_THREADS; tid++)
+   for(tid = 1; tid < VG_N_THREADS; tid++)
       if (VG_(threads)[tid].status != VgTs_Empty && VG_(threads)[tid].os_state.lwpid == lwp)
 	 return tid;
 

@@ -648,6 +648,9 @@ static Bool show_used_suppressions ( void )
    Supp  *su;
    Bool  any_supp;
 
+   if (VG_(clo_xml))
+      VG_(message)(Vg_DebugMsg, "<suppcounts>");
+
    any_supp = False;
    for (su = suppressions; su != NULL; su = su->next) {
       if (su->count <= 0)
@@ -655,12 +658,15 @@ static Bool show_used_suppressions ( void )
       any_supp = True;
       if (VG_(clo_xml)) {
          VG_(message)(Vg_DebugMsg, 
-                      "<supp><count>%d</count><name>%s</name></supp>", 
+                      "  <pair><count>%d</count><name>%s</name></pair>", 
                       su->count, su->sname);
       } else {
          VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);
       }
    }
+
+   if (VG_(clo_xml))
+      VG_(message)(Vg_DebugMsg, "<suppcounts>");
 
    return any_supp;
 }
@@ -764,9 +770,9 @@ void VG_(show_error_counts_as_XML) ( void )
       if (err->count <= 0)
          continue;
       VG_(message)(
-         Vg_UserMsg, "  <pair><unique>0x%llx</unique>"
-                     "<count>%d</count></pair>",
-         Ptr_to_ULong(err), err->count
+         Vg_UserMsg, "  <pair><count>%d</count>"
+                     "<unique>0x%llx</unique></pair>",
+         err->count, Ptr_to_ULong(err)
       );
    }
    VG_(message)(Vg_UserMsg, "</errorcounts>");

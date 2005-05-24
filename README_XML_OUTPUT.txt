@@ -328,7 +328,7 @@ Suppressions not mentioned were used zero times.
 
   <suppcounts>
      zero or more of
-        <supp> <count>INT</count> <name>TEXT</name> </supp>
+        <pair> <count>INT</count> <name>TEXT</name> </pair>
   </suppcounts>
 
 The <name> is as specified in the suppression name fields in .supp

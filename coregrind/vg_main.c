@@ -2025,6 +2025,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
+      VG_(message)(Vg_UserMsg, "<tool>%s</tool>", toolname);
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<argv>");   
       for (i = 0; i < VG_(client_argc); i++) 

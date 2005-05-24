@@ -458,7 +458,6 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 /*=== Command line setup                                           ===*/
 /*====================================================================*/
 
-/* Nb: malloc'd memory never freed -- kept throughout like argv, envp */
 static char* get_file_clo(char* dir)
 {
 #  define FLEN 512

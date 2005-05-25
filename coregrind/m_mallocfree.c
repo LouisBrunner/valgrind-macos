@@ -66,7 +66,7 @@ typedef UChar UByte;
 
         bszB == pszB + 2*sizeof(SizeT) + 2*sizeof(void*) + 2*a->rz_szB
 
-     Furthermore, both size fields in the block have their least-sifnificant
+     Furthermore, both size fields in the block have their least-significant
      bit set if the block is not in use, and unset if it is in use.
      (The bottom 3 or so bits are always free for this because of alignment.)
      A block size of zero is not possible, because a block always has at
@@ -83,7 +83,7 @@ typedef UChar UByte;
 typedef
    struct {
       // No fields are actually used in this struct, because a Block has
-      // loads of variable sized fields and so can't be accessed
+      // many variable sized fields and so can't be accessed
       // meaningfully with normal fields.  So we use access functions all
       // the time.  This struct gives us a type to use, though.  Also, we
       // make sizeof(Block) 1 byte so that we can do arithmetic with the

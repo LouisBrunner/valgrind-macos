@@ -5241,10 +5241,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                );
                break;
 
-//..             case 0xE2:
-//..                DIP("fnclex\n");
-//..                break;
-//.. 
+            case 0xE2:
+               DIP("fnclex\n");
+               break;
+
 //..             case 0xE3: {
 //..                /* Uses dirty helper: 
 //..                      void x86g_do_FINIT ( VexGuestX86State* ) */

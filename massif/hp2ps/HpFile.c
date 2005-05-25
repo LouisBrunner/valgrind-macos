@@ -340,7 +340,7 @@ GetHpTok(infp)
  *	"thefloatish").
  */
 
-static char numberstring[ NUMBER_LENGTH - 1 ];
+static char numberstring[ NUMBER_LENGTH ];
 
 token
 GetNumber(infp)

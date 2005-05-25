@@ -413,9 +413,9 @@ string_list_new (length)
      int length;
 {
   string_list_t s = (string_list_t) malloc (sizeof (struct string_list_def));
-  s->caret_position = 0;
   if (s == NULL)
     return NULL;
+  s->caret_position = 0;
   if (!dyn_string_init ((dyn_string_t) s, length))
     return NULL;
   return s;

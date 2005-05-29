@@ -32,19 +32,6 @@
 #ifndef __AMD64_LINUX_CORE_PLATFORM_H
 #define __AMD64_LINUX_CORE_PLATFORM_H
 
-//#include "core_platform_asm.h"    // platform-specific asm  stuff
-//#include "platform_arch.h"        // platform-specific tool stuff
-
-/* ---------------------------------------------------------------------
-   ucontext stuff
-   ------------------------------------------------------------------ */
-
-#define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.rip)
-#define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.rsp)
-#define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.rbp)
-#define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.rax)
-#define VGP_UCONTEXT_SYSCALL_RET(uc)   ((uc)->uc_mcontext.rax)
-
 /* ---------------------------------------------------------------------
    mmap() stuff
    ------------------------------------------------------------------ */

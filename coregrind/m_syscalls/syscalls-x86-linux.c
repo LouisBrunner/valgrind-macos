@@ -107,18 +107,17 @@ static void restart_syscall(ThreadArchState *arch)
  */
 /* NB: this is identical to the amd64 version */
 void VGP_(interrupted_syscall)(ThreadId tid, 
-			       struct vki_ucontext *uc,
+                               Word eip, UWord sysnum, UWord sysret,
 			       Bool restart)
 {
    static const Bool debug = 0;
 
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ThreadArchState *th_regs = &tst->arch;
-   Word eip = VGP_UCONTEXT_INSTR_PTR(uc);
 
    if (debug)
       VG_(printf)("interrupted_syscall: eip=%p; restart=%d eax=%d\n", 
-		  eip, restart, VGP_UCONTEXT_SYSCALL_NUM(uc));
+		  eip, restart, sysnum);
 
    if (eip < VGA_(blksys_setup) || eip >= VGA_(blksys_finished)) {
       VG_(printf)("  not in syscall (%p - %p)\n", VGA_(blksys_setup), VGA_(blksys_finished));
@@ -148,8 +147,8 @@ void VGP_(interrupted_syscall)(ThreadId tid,
 	 The saved real CPU %eax has the result, which we need to move
 	 to EAX. */
       if (debug)
-	 VG_(printf)("  completed: ret=%d\n", VGP_UCONTEXT_SYSCALL_RET(uc));
-      th_regs->vex.VGP_SYSCALL_RET = VGP_UCONTEXT_SYSCALL_RET(uc);
+	 VG_(printf)("  completed: ret=%d\n", sysret);
+      th_regs->vex.VGP_SYSCALL_RET = sysret;
       VG_(post_syscall)(tid);
    } else if (eip >= VGA_(blksys_committed) && eip < VGA_(blksys_finished)) {
       /* Result committed, but the signal mask has not been restored;

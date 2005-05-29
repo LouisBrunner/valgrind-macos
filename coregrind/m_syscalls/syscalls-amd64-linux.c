@@ -108,18 +108,17 @@ static void restart_syscall(ThreadArchState *arch)
  */
 /* NB: this is identical to the x86 version */
 void VGP_(interrupted_syscall)(ThreadId tid, 
-			       struct vki_ucontext *uc,
+                               Word ip, UWord sysnum, UWord sysret,
 			       Bool restart)
 {
    static const Bool debug = 0;
 
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ThreadArchState *th_regs = &tst->arch;
-   Word ip = VGP_UCONTEXT_INSTR_PTR(uc);
 
    if (debug)
       VG_(printf)("interrupted_syscall: ip=%p; restart=%d eax=%d\n", 
-		  ip, restart, VGP_UCONTEXT_SYSCALL_NUM(uc));
+		  ip, restart, sysnum);
 
    if (ip < VGA_(blksys_setup) || ip >= VGA_(blksys_finished)) {
       VG_(printf)("  not in syscall (%p - %p)\n", VGA_(blksys_setup), VGA_(blksys_finished));
@@ -149,8 +148,8 @@ void VGP_(interrupted_syscall)(ThreadId tid,
 	 The saved real CPU %rax has the result, which we need to move
 	 to RAX. */
       if (debug)
-	 VG_(printf)("  completed: ret=%d\n", VGP_UCONTEXT_SYSCALL_RET(uc));
-      th_regs->vex.VGP_SYSCALL_RET = VGP_UCONTEXT_SYSCALL_RET(uc);
+	 VG_(printf)("  completed: ret=%d\n", sysret);
+      th_regs->vex.VGP_SYSCALL_RET = sysret;
       VG_(post_syscall)(tid);
    } else if (ip >= VGA_(blksys_committed) && ip < VGA_(blksys_finished)) {
       /* Result committed, but the signal mask has not been restored;

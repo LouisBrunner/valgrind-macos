@@ -113,6 +113,28 @@ typedef struct SigQueue {
    vki_siginfo_t sigs[N_QUEUED_SIGNALS];
 } SigQueue;
 
+#if defined(VGP_x86_linux)
+#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.eip)
+#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.esp)
+#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.ebp)
+#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.eax)
+#  define VGP_UCONTEXT_SYSCALL_RET(uc)    ((uc)->uc_mcontext.eax)
+#elif defined(VGP_amd64_linux)
+#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.rip)
+#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.rsp)
+#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.rbp)
+#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.rax)
+#  define VGP_UCONTEXT_SYSCALL_RET(uc)    ((uc)->uc_mcontext.rax)
+#elif defined(VGP_arm_linux)
+#  define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
+#  define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.arm_sp)
+#  define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
+#  define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
+#  error VGP_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
+#else
+#  error Unknown platform
+#endif
+
 /* ---------------------------------------------------------------------
    HIGH LEVEL STUFF TO DO WITH SIGNALS: POLICY (MOSTLY)
    ------------------------------------------------------------------ */
@@ -1584,7 +1606,10 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 		   sigNo, tid, info->si_code);
 
    /* Update thread state properly */
-   VGP_(interrupted_syscall)(tid, uc, 
+   VGP_(interrupted_syscall)(tid, 
+                             VGP_UCONTEXT_INSTR_PTR(uc), 
+                             VGP_UCONTEXT_SYSCALL_NUM(uc), 
+                             VGP_UCONTEXT_SYSCALL_RET(uc), 
 			     !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
 
    /* Set up the thread's state to deliver a signal */

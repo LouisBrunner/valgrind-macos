@@ -32,18 +32,6 @@
 #ifndef __ARM_LINUX_CORE_PLATFORM_H
 #define __ARM_LINUX_CORE_PLATFORM_H
 
-//#include "core_platform_asm.h"    // platform-specific asm  stuff
-//#include "platform_arch.h"        // platform-specific tool stuff
-
-/* ---------------------------------------------------------------------
-   ucontext stuff
-   ------------------------------------------------------------------ */
-
-#define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
-#define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.arm_sp)
-#define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
-#define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
-
 /* ---------------------------------------------------------------------
    mmap() stuff
    ------------------------------------------------------------------ */

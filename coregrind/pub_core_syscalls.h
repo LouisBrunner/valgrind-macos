@@ -48,7 +48,7 @@ extern void VG_(post_syscall)   ( ThreadId tid );
 // (either interrupted or finished normally), or False if it was
 // restarted (or the signal didn't actually interrupt a syscall).
 extern void VGP_(interrupted_syscall)(ThreadId tid,
-                                      struct vki_ucontext *uc,
+                                      Word eip, UWord sysnum, UWord sysret,
                                       Bool restart);
 
 // Release resources held by this thread

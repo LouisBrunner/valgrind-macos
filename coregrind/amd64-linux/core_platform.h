@@ -54,11 +54,6 @@
                          (prot), (flags), (fd), (offset));              \
 } while (0)
 
-#define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
-   I_die_here; \
-} while (0)
-
-
 #endif   // __AMD64_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

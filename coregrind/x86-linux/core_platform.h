@@ -62,17 +62,6 @@
    ret = VG_(do_syscall1)(__NR_mmap, (UWord)(&(__args[0])) );           \
 } while (0)
 
-#define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {     \
-   UInt *arg_block = (UInt*)(tst->arch.vex.VGP_SYSCALL_ARG1);   \
-   PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );\
-   a1 = arg_block[0];                                           \
-   a2 = arg_block[1];                                           \
-   a3 = arg_block[2];                                           \
-   a4 = arg_block[3];                                           \
-   a5 = arg_block[4];                                           \
-   a6 = arg_block[5];                                           \
-} while (0)
-
 #endif   // __X86_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

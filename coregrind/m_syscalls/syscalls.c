@@ -4467,6 +4467,9 @@ PRE(sys_mkdir, MayBlock)
    PRE_MEM_RASCIIZ( "mkdir(pathname)", ARG1 );
 }
 
+// Nb: this should probably be in m_syscalls/syscalls-x86-linux.c, but it
+// might be required for ARM, and I was too lazy to move it (which would
+// have required making mmap_segment() public).
 PRE(old_mmap, Special)
 {
    /* struct mmap_arg_struct {           
@@ -4477,10 +4480,24 @@ PRE(old_mmap, Special)
          unsigned long fd;
          unsigned long offset;
    }; */
-   UInt a1, a2, a3, a4, a5, a6;
+#if defined(VGP_x86_linux)
+   // do nothing
+#else
+   vg_assert(0, "old_mmap should only be called on x86/Linux");
+#endif
+   
+   UWord a1, a2, a3, a4, a5, a6;
+   UWord *arg_block = (UWord*)(tst->arch.vex.VGP_SYSCALL_ARG1);
 
    PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
-   VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
+   arg_block = (UWord*)(tst->arch.vex.VGP_SYSCALL_ARG1);
+   PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );\
+   a1 = arg_block[0];
+   a2 = arg_block[1];
+   a3 = arg_block[2];
+   a4 = arg_block[3];
+   a5 = arg_block[4];
+   a6 = arg_block[5];
 
    PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
          a1, (ULong)a2, a3, a4, a5, a6 );

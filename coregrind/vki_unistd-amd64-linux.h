@@ -24,8 +24,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __AMD64_LINUX_VKI_UNISTD_H_
-#define __AMD64_LINUX_VKI_UNISTD_H_
+#ifndef __VKI_UNISTD_AMD64_LINUX_H
+#define __VKI_UNISTD_AMD64_LINUX_H
 
 // From linux-2.6.9/include/asm-x86_64/unistd.h
 
@@ -326,4 +326,4 @@
 #define __NR_waitid		247
 
 
-#endif /* __AMD64_LINUX_VKI_UNISTD_H_ */
+#endif /* __VKI_UNISTD_AMD64_LINUX_H */

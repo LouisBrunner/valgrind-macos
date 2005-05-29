@@ -397,9 +397,6 @@ AC_OUTPUT(
    coregrind/arm/Makefile
    coregrind/x86/Makefile
    coregrind/linux/Makefile
-   coregrind/amd64-linux/Makefile
-   coregrind/arm-linux/Makefile
-   coregrind/x86-linux/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile

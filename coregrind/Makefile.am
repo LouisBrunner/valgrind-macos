@@ -13,11 +13,11 @@ MODULES = \
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
 ## That's what DIST_SUBDIRS specifies.
 SUBDIRS = \
-	$(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM) \
+	$(VG_ARCH)     $(VG_OS)	\
 	$(MODULES) .
 
 DIST_SUBDIRS = \
-	$(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) \
+	$(VG_ARCH_ALL) $(VG_OS_ALL) \
 	$(MODULES) .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
@@ -57,7 +57,11 @@ noinst_HEADERS = \
 	pub_core_transtab_asm.h	\
 	ume.h			\
 	vg_symtab2.h		\
-	vg_symtypes.h
+	vg_symtypes.h		\
+	vki_unistd.h		\
+	vki_unistd-amd64-linux.h\
+	vki_unistd-arm-linux.h	\
+	vki_unistd-x86-linux.h
 
 EXTRA_DIST = \
 	valgrind.vs \

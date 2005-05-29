@@ -24,8 +24,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __ARM_LINUX_VKI_UNISTD_H_
-#define __ARM_LINUX_VKI_UNISTD_H_
+#ifndef __VKI_UNISTD_ARM_LINUX_H
+#define __VKI_UNISTD_ARM_LINUX_H
 
 // From linux-2.6.8.1/include/asm-arm/unistd.h
 
@@ -308,4 +308,4 @@
 #define __NR_pciconfig_read		(__NR_SYSCALL_BASE+272)
 #define __NR_pciconfig_write		(__NR_SYSCALL_BASE+273)
 
-#endif /* __ARM_LINUX_VKI_UNISTD_H_ */
+#endif /* __VKI_UNISTD_ARM_LINUX_H */

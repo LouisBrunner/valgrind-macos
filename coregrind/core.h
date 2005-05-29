@@ -35,8 +35,6 @@
 #include "tool.h"          // tool stuff
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 
-#include "core_platform.h" // platform-specific stuff,
-                           //   eg. x86-linux/core_platform.h
 #include "core_os.h"       // OS-specific stuff,    eg. linux/core_os.h
 
 #include "pub_core_mallocfree.h"  // for type 'ArenaId'
@@ -442,10 +440,12 @@ extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 
 /* system/mman.h */
-extern void* VG_(mmap)( void* start, SizeT length, UInt prot, UInt flags,
-                        UInt sf_flags, UInt fd, OffT offset );
-extern Int  VG_(munmap)( void* start, SizeT length );
-extern Int  VG_(mprotect)( void *start, SizeT length, UInt prot );
+extern void* VG_(mmap)       ( void* start, SizeT length, UInt prot, UInt flags,
+                               UInt sf_flags, UInt fd, OffT offset );
+extern void* VG_(mmap_native)( void* start, SizeT length, UInt prot, UInt flags,
+                                              UInt fd, OffT offset );
+extern Int VG_(munmap)       ( void* start, SizeT length );
+extern Int VG_(mprotect)       ( void *start, SizeT length, UInt prot );
 extern Int VG_(mprotect_native)( void *start, SizeT length, UInt prot );
 
 

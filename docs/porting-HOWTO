@@ -1,6 +1,9 @@
 This is a rough guide to porting Valgrind to a new architecture, or a new
 operating system.  It's quite preliminary, but should get you started.
 
+[29-May-2005: the stuff about the locations of files is now badly out of
+date.  --njn]
+
 -----------------------------------------------------------------------------
 Porting Valgrind to a new architecture
 -----------------------------------------------------------------------------

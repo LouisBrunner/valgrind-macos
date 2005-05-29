@@ -953,14 +953,14 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 void VG_(pad_address_space)(Addr start)
 {
    Addr     addr = (start == 0) ? VG_(client_base) : start;
-   Addr     ret;
+   void*    ret;
 
    Int      i = 0;
    Segment* s = i >= segments_used ? NULL : &segments[i];
    
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
-         VGP_DO_MMAP(ret, addr, s->addr - addr, 0,
+         ret = VG_(mmap_native)((void*)addr, s->addr - addr, 0,
                      VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                      -1, 0);
       }
@@ -970,7 +970,7 @@ void VG_(pad_address_space)(Addr start)
    }
 
    if (addr <= VG_(valgrind_last)) {
-      VGP_DO_MMAP(ret, addr, VG_(valgrind_last) - addr + 1, 0,
+      ret = VG_(mmap_native)((void*)addr, VG_(valgrind_last) - addr + 1, 0,
                   VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                   -1, 0);
    }

@@ -4533,8 +4533,7 @@ PRE(old_mmap, Special)
    }
 
    if (RES != -VKI_ENOMEM) {
-      int res;
-      VGP_DO_MMAP(res, a1, a2, a3, a4, a5, a6);
+      Int res = (Int)VG_(mmap_native)((void*)a1, a2, a3, a4, a5, a6);
       SET_RESULT(res);
 
       if (!VG_(is_kerror)(RES)) {

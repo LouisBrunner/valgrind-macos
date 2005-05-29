@@ -288,19 +288,28 @@ Int VG_(gettid)(void)
    mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */
 
-static Int munmap_inner(void *start, SizeT length)
-{
-   return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
-}
-
-static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags,
+void* VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
                        UInt fd, OffT offset)
 {
-   Word ret;
-   
-   VGP_DO_MMAP(ret, start, length, prot,
-               flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT), fd, offset);
-   return ret;
+   UWord ret;
+#if defined(VGP_x86_linux)
+   { 
+      UWord args[6];
+      args[0] = (UWord)start;
+      args[1] = length;
+      args[2] = prot;
+      args[3] = flags;
+      args[4] = fd;
+      args[5] = offset;
+      ret = VG_(do_syscall1)(__NR_mmap, (UWord)args );
+   }
+#elif defined(VGP_amd64_linux)
+   ret = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
+                         prot, flags, fd, offset);
+#else
+#  error Unknown platform
+#endif
+   return VG_(is_kerror)(ret) ? (void*)-1 : (void*)ret;
 }
 
 /* Returns -1 on failure. */
@@ -317,10 +326,12 @@ void* VG_(mmap)( void* start, SizeT length,
    if (start == 0)
       return (void *)-1;
 
-   res = mmap_inner(start, length, prot, flags, fd, offset);
+   res = (Addr)VG_(mmap_native)(start, length, prot, 
+                                flags & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
+                                fd, offset);
 
    // Check it ended up in the right place.
-   if (!VG_(is_kerror)(res)) {
+   if (res != (Addr)-1) {
       if (flags & VKI_MAP_CLIENT) {
          vg_assert(VG_(client_base) <= res && res+length <= VG_(client_end));
       } else {
@@ -337,29 +348,36 @@ void* VG_(mmap)( void* start, SizeT length,
       VG_(map_fd_segment)(res, length, prot, sf_flags, fd, offset, NULL);
    }
 
-   return VG_(is_kerror)(res) ? ((void*)(-1)) : (void*)res;
+   return (void*)res;
+}
+
+static Int munmap_native(void *start, SizeT length)
+{
+   Int res = VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
+   return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 /* Returns -1 on failure. */
 Int VG_(munmap)( void* start, SizeT length )
 {
-   Int res = munmap_inner(start, length);
-   if (!VG_(is_kerror)(res))
+   Int res = munmap_native(start, length);
+   if (0 == res)
       VG_(unmap_range)((Addr)start, length);
+   return res;
+}
+
+Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
+{
+   Int res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 Int VG_(mprotect)( void *start, SizeT length, UInt prot )
 {
-   Int res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
-   if (!VG_(is_kerror)(res))
+   Int res = VG_(mprotect_native)(start, length, prot);
+   if (0 == res)
       VG_(mprotect_range)((Addr)start, length, prot);
-   return VG_(is_kerror)(res) ? -1 : 0;
-}
-Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
-{
-   Int res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
-   return VG_(is_kerror)(res) ? -1 : 0;
+   return res;
 }
 
 /* Pull down the entire world */

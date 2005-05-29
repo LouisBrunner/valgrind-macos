@@ -489,45 +489,6 @@ extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 
 
 /* ---------------------------------------------------------------------
-   Exports of vg_redir.c
-   ------------------------------------------------------------------ */
-
-/* Redirection machinery */
-extern Addr VG_(code_redirect) ( Addr orig );
-
-/* Set up some default redirects */
-extern void VG_(setup_code_redirect_table) ( void );
-
-extern void VG_(add_redirect_sym_to_addr)(const Char *from_lib,
-					  const Char *from_sym,
-					  Addr to_addr);
-extern void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr);
-extern void VG_(resolve_seg_redirs)(SegInfo *si);
-
-/* Wrapping machinery */
-enum return_type {
-   RT_RETURN,
-   RT_LONGJMP,
-   RT_EXIT,
-};
-
-typedef struct _FuncWrapper FuncWrapper;
-struct _FuncWrapper {
-   void *(*before)(va_list args);
-   void  (*after) (void *nonce, enum return_type, Word retval);
-};
-
-extern void VG_(wrap_function)(Addr eip, const FuncWrapper *wrapper);
-extern const FuncWrapper *VG_(is_wrapped)(Addr eip);
-extern Bool VG_(is_wrapper_return)(Addr eip);
-
-/* Primary interface for adding wrappers for client-side functions. */
-extern CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
-				      const FuncWrapper *wrapper);
-
-extern Bool VG_(is_resolved)(const CodeRedirect *redir);
-
-/* ---------------------------------------------------------------------
    Exports of vg_main.c
    ------------------------------------------------------------------ */
 
@@ -687,13 +648,6 @@ extern void VGA_(final_tidyup)(ThreadId tid);
 // Arch-specific client requests
 extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
 
-
-// ---------------------------------------------------------------------
-// Platform-specific things defined in eg. x86/*.c
-// ---------------------------------------------------------------------
-
-// Do any platform specific redirects.
-extern void VGP_(setup_redirects)(void);
 
 ///* ---------------------------------------------------------------------
 //   Thread modelling

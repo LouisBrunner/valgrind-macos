@@ -35,6 +35,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_skiplist.h"
 #include "pub_core_options.h"
+#include "pub_core_redir.h"
 #include "pub_core_transtab.h"
 
 /*------------------------------------------------------------*/
@@ -490,8 +491,23 @@ void VG_(setup_code_redirect_table) ( void )
 
    add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "strlen",
                            "*vgpreload_memcheck.so*", "strlen");
-}
 
+#if defined(VGP_x86_linux)
+   /* Redirect _dl_sysinfo_int80, which is glibc's default system call
+      routine, to the routine in our trampoline page so that the
+      special sysinfo unwind hack in m_stacktrace.c will kick in.  */
+   VG_(add_redirect_sym_to_addr)("soname:ld-linux.so.2", "_dl_sysinfo_int80",
+                                 VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+#elif defined(VGP_amd64_linux)
+   /* Redirect vsyscalls to local versions */
+   VG_(add_redirect_addr_to_addr)(0xFFFFFFFFFF600000ULL,
+                                  VG_(client_trampoline_code)+VG_(tramp_gettimeofday_offset));
+   VG_(add_redirect_addr_to_addr)(0xFFFFFFFFFF600400ULL,
+                                  VG_(client_trampoline_code)+VG_(tramp_time_offset));
+#else
+#  error Unknown platform
+#endif
+}
 
 //:: /*------------------------------------------------------------*/
 //:: /*--- General function wrapping.                           ---*/

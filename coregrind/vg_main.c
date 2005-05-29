@@ -37,6 +37,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
 #include "pub_core_options.h"
+#include "pub_core_redir.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_transtab.h"
@@ -2794,7 +2795,6 @@ int main(int argc, char **argv, char **envp)
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise redirects\n");
    VG_(setup_code_redirect_table)();
-   VGP_(setup_redirects)();
 
    //--------------------------------------------------------------
    // Verbosity message

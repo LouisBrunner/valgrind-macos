@@ -3039,41 +3039,30 @@ static
 void dis_MOVS ( Int sz, IRTemp t_inc )
 {
    IRType ty = szToITy(sz);
-   //IRTemp tv = newTemp(ty);        /* value being copied */
    IRTemp td = newTemp(Ity_I32);   /* EDI */
    IRTemp ts = newTemp(Ity_I32);   /* ESI */
 
-   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
    assign( td, getIReg(4, R_EDI) );
    assign( ts, getIReg(4, R_ESI) );
 
-   //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tv);
-   //uInstr2(cb, STORE,sz, TempReg, tv,    TempReg, td);
    storeLE( mkexpr(td), loadLE(ty,mkexpr(ts)) );
 
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-
-   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-   //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
    putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
    putIReg( 4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
 }
 
-//-- static 
-//-- void dis_LODS ( UCodeBlock* cb, Int sz, Int t_inc )
-//-- {
-//--    Int ta = newTemp(cb);   /* EAX */
-//--    Int ts = newTemp(cb);   /* ESI */
-//-- 
-//--    uInstr2(cb, GET,    4, ArchReg, R_ESI, TempReg, ts);
-//--    uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, ta);
-//--    uInstr2(cb, PUT,   sz, TempReg, ta,    ArchReg, R_EAX);
-//-- 
-//--    uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//--    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//-- }
+static 
+void dis_LODS ( Int sz, IRTemp t_inc )
+{
+   IRType ty = szToITy(sz);
+   IRTemp ts = newTemp(Ity_I32);   /* ESI */
+
+   assign( ts, getIReg(4, R_ESI) );
+
+   putIReg( sz, R_EAX, loadLE(ty, mkexpr(ts)) );
+
+   putIReg( 4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
+}
 
 static 
 void dis_STOS ( Int sz, IRTemp t_inc )
@@ -3082,17 +3071,11 @@ void dis_STOS ( Int sz, IRTemp t_inc )
    IRTemp ta = newTemp(ty);        /* EAX */
    IRTemp td = newTemp(Ity_I32);   /* EDI */
 
-   //uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
    assign( ta, getIReg(sz, R_EAX) );
-
-   //uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
    assign( td, getIReg(4, R_EDI) );
 
-   //uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
    storeLE( mkexpr(td), mkexpr(ta) );
 
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
 }
 
@@ -3102,34 +3085,18 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
    IRType ty  = szToITy(sz);
    IRTemp tdv = newTemp(ty);      /* (EDI) */
    IRTemp tsv = newTemp(ty);      /* (ESI) */
-   //IRTemp res = newTemp(ty);
    IRTemp td  = newTemp(Ity_I32); /*  EDI  */
    IRTemp ts  = newTemp(Ity_I32); /*  ESI  */
 
-   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    assign( td, getIReg(4, R_EDI) );
-
-   //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
    assign( ts, getIReg(4, R_ESI) );
 
-   //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
    assign( tdv, loadLE(ty,mkexpr(td)) );
-
-   //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
    assign( tsv, loadLE(ty,mkexpr(ts)) );
 
-   //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
-   //setFlagsFromUOpcode(cb, SUB);
-   //assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(tsv), mkexpr(tdv)) );
    setFlags_DEP1_DEP2 ( Iop_Sub8, tsv, tdv, ty );
 
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-
-   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
-
-   //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
    putIReg(4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
 }
 
@@ -3140,24 +3107,13 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    IRTemp ta  = newTemp(ty);       /*  EAX  */
    IRTemp td  = newTemp(Ity_I32);  /*  EDI  */
    IRTemp tdv = newTemp(ty);       /* (EDI) */
-   //IRTemp res = newTemp(ty);
 
-   //uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
    assign( ta, getIReg(sz, R_EAX) );
-
-   //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    assign( td, getIReg(4, R_EDI) );
 
-   //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
    assign( tdv, loadLE(ty,mkexpr(td)) );
-
-   //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
-   //setFlagsFromUOpcode(cb, SUB);
-   //assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(ta), mkexpr(tdv)) );
    setFlags_DEP1_DEP2 ( Iop_Sub8, ta, tdv, ty );
 
-   //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-   //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
 }
 
@@ -3173,17 +3129,12 @@ void dis_REP_op ( X86Condcode cond,
    IRTemp t_inc = newTemp(Ity_I32);
    IRTemp tc    = newTemp(Ity_I32);  /*  ECX  */
 
-   //uInstr2 (cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
    assign( tc, getIReg(4,R_ECX) );
 
-   //uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-   //uLiteral(cb, eip_next);
    stmt( IRStmt_Exit( binop(Iop_CmpEQ32,mkexpr(tc),mkU32(0)),
                       Ijk_Boring,
                       IRConst_U32(eip_next) ) );
 
-   //uInstr1 (cb, DEC,   4, TempReg, tc);
-   //uInstr2 (cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
    putIReg(4, R_ECX, binop(Iop_Sub32, mkexpr(tc), mkU32(1)) );
 
    dis_string_op_increment(sz, t_inc);
@@ -11325,10 +11276,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
       break;
 
-//--    case 0xAC: /* LODS, no REP prefix */
-//--    case 0xAD:
-//--       dis_string_op( cb, dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
-//--       break;
+   case 0xAC: /* LODS, no REP prefix */
+   case 0xAD:
+      dis_string_op( dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
+      break;
 
    case 0xAE: /* SCAS, no REP prefix */
    case 0xAF:

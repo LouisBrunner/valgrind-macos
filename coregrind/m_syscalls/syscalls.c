@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
@@ -964,10 +965,17 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
       }
       return False;
    }
-   else if (soft && fd >= VG_(fd_soft_limit)) {
+   else 
+   if (soft && fd >= VG_(fd_soft_limit)) {
       return False;
    }
-   return True;
+   else 
+   if (fd == 2 && VG_(debugLog_getLevel)() > 0) {
+      return False;
+   } 
+   else {
+      return True;
+   }
 }
 
 
@@ -2368,6 +2376,8 @@ PRE(sys_execve, Special)
       // Create executable name: "/proc/self/fd/<vgexecfd>", update ARG1
       path = VG_(build_child_exename)();
    }
+
+   VG_(debugLog)(1, "syscalls", "Exec of %s\n", (HChar*)ARG1);
 
    if (0) {
       Char **cpp;

@@ -449,8 +449,8 @@ VG_(debugLog_vprintf) (
 
 static Int loglevel = 0;
 
-/* EXPORTED */
 /* Module startup. */
+/* EXPORTED */
 void VG_(debugLog_startup) ( Int level, HChar* who )
 {
    if (level < 0)  level = 0;
@@ -461,6 +461,16 @@ void VG_(debugLog_startup) ( Int level, HChar* who )
                  "level %d logging requested\n", 
                  who, loglevel);
 }
+
+/* Get the logging threshold level, as set by the most recent call to
+   VG_(debugLog_startup), or zero if there have been no such calls so
+   far. */
+/* EXPORTED */
+Int VG_(debugLog_getLevel) ( void )
+{
+   return loglevel;
+}
+
 
 /* ------------ */
 

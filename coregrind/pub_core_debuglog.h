@@ -58,12 +58,21 @@
 extern 
 void VG_(debugLog_startup) ( Int level, HChar* who );
 
+
+/* Get the logging threshold level, as set by the most recent call to
+   VG_(debugLog_startup), or zero if there have been no such calls so
+   far. */
+extern
+Int VG_(debugLog_getLevel) ( void );
+
+
 /* Send debugging output.  Nothing happens unless 'level' 
    does not exceed the logging threshold level. */
 extern
 __attribute__((format(__printf__, 3, 4)))
 void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... );
+
 
 /* A simple vprintf().  For each emitted byte, (*send) is called with
    that byte, and 'send_arg2' as its second param. */

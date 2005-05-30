@@ -2480,17 +2480,17 @@ int main(int argc, char **argv, char **envp)
       "-d"s were specified.  This is a pre-scan of the command line. */
    loglevel = 0;
    for (i = 1; i < argc; i++) {
-     if (argv[i][0] != '-')
-        break;
-     if (0 == local_strcmp(argv[i], "--")) 
-        break;
-     if (0 == local_strcmp(argv[i], "-d")) 
-        loglevel++;
+      if (argv[i][0] != '-')
+         break;
+      if (0 == local_strcmp(argv[i], "--")) 
+         break;
+      if (0 == local_strcmp(argv[i], "-d")) 
+         loglevel++;
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging
       messages all through startup. */
-   VG_(debugLog_startup)(loglevel, "Stage 2");
+   VG_(debugLog_startup)(loglevel, "Stage 2 (main)");
 
    //============================================================
    // Command line argument handling order:
@@ -2539,6 +2539,22 @@ int main(int argc, char **argv, char **envp)
    VG_(debugLog)(1, "main", "Preprocess command line opts\n");
    get_command_line(argc, argv, &vg_argc, &vg_argv, &cl_argv);
    pre_process_cmd_line_options(&need_help, &tool, &exec);
+
+   /* If this process was created by exec done by another Valgrind
+      process, the arguments will only show up at this point.  Hence
+      we need to also snoop around in vg_argv to see if anyone is
+      asking for debug logging. */
+   if (loglevel == 0) {
+      for (i = 1; i < vg_argc; i++) {
+         if (vg_argv[i][0] != '-')
+            break;
+         if (0 == local_strcmp(vg_argv[i], "--")) 
+            break;
+         if (0 == local_strcmp(vg_argv[i], "-d")) 
+            loglevel++;
+      }
+      VG_(debugLog_startup)(loglevel, "Stage 2 (second go)");
+   }
 
    //==============================================================
    // Nb: once a tool is specified, the tool.so must be loaded even if 

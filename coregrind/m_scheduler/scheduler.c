@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Thread scheduling.                            vg_scheduler.c ---*/
+/*--- Thread scheduling.                               scheduler.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -64,12 +64,14 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_options.h"
 #include "pub_core_replacemalloc.h"
+#include "pub_core_scheduler.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
 #include "vki_unistd.h"
+#include "priv_sema.h"
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.
@@ -263,7 +265,7 @@ void VG_(set_running)(ThreadId tid)
    
    tst->status = VgTs_Runnable;
    
-   VGO_(sema_down)(&run_sema);
+   VG_(sema_down)(&run_sema);
    if (running_tid != VG_INVALID_THREADID)
       VG_(printf)("tid %d found %d running\n", tid, running_tid);
    vg_assert(running_tid == VG_INVALID_THREADID);
@@ -325,7 +327,7 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate)
 
    /* Release the run_sema; this will reschedule any runnable
       thread. */
-   VGO_(sema_up)(&run_sema);
+   VG_(sema_up)(&run_sema);
 
    if (VG_(clo_trace_sched)) {
       Char buf[50];
@@ -357,7 +359,7 @@ void VG_(exit_thread)(ThreadId tid)
    /* There should still be a valid exitreason for this thread */
    vg_assert(VG_(threads)[tid].exitreason != VgSrc_None);
 
-   VGO_(sema_up)(&run_sema);
+   VG_(sema_up)(&run_sema);
 }
 
 /* Kill a thread.  This interrupts whatever a thread is doing, and
@@ -608,9 +610,9 @@ static void sched_fork_cleanup(ThreadId me)
    }
 
    /* re-init and take the sema */
-   VGO_(sema_deinit)(&run_sema);
-   VGO_(sema_init)(&run_sema);
-   VGO_(sema_down)(&run_sema);
+   VG_(sema_deinit)(&run_sema);
+   VG_(sema_init)(&run_sema);
+   VG_(sema_down)(&run_sema);
 }
 
 
@@ -624,7 +626,7 @@ void VG_(scheduler_init) ( void )
    Int i;
    ThreadId tid_main;
 
-   VGO_(sema_init)(&run_sema);
+   VG_(sema_init)(&run_sema);
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       VG_(threads)[i].sig_queue            = NULL;
@@ -1124,5 +1126,5 @@ void scheduler_sanity ( ThreadId tid )
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           vg_scheduler.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

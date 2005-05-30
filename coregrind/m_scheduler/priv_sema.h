@@ -1,15 +1,14 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Linux-specific stuff for the core.                           ---*/
-/*---                                              linux/core_os.h ---*/
+/*--- Private scheduler header.                        priv_sema.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Nicholas Nethercote
-      njn@valgrind.org
+   Copyright (C) 2000-2005 Julian Seward
+      jseward@acm.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -29,28 +28,27 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __LINUX_CORE_OS_H
-#define __LINUX_CORE_OS_H
+#ifndef __PRIV_SEMA_H
+#define __PRIV_SEMA_H
 
-/* OS-specific thread state */
+/* Not really a semaphore, but use a pipe for a token-passing scheme */
+/* Not really a semaphore, but use a pipe for a token-passing scheme */
 typedef struct {
-   /* who we are */
-   Int	lwpid;			/* PID of kernel task */
-   Int	threadgroup;		/* thread group id */
+   Int pipe[2];
+   Int owner_thread;		/* who currently has it */
+} vg_sema_t;
 
-   ThreadId parent;		/* parent tid (if any) */
+// Nb: this may be OS-specific, but let's not factor it out until we
+// implement an OS port for which this isn't ok.  Then we can rename them
+// VGO_(sema_init)(), etc.
+void VG_(sema_init)   ( vg_sema_t *sema );
+void VG_(sema_deinit) ( vg_sema_t *sema );
+void VG_(sema_down)   ( vg_sema_t *sema );
+void VG_(sema_up)     ( vg_sema_t *sema );
 
-   /* runtime details */
-   Addr  valgrind_stack_base;	/* Valgrind's stack base */
-   SizeT valgrind_stack_szB;	/* stack size in bytes */
-
-   /* exit details */
-   Int  exitcode;		/* in the case of exitgroup, set by someone else */
-   Int  fatalsig;		/* fatal signal */
-} os_thread_t;
-
-#endif   // __LINUX_CORE_OS_H
+#endif   // __PRIV_SEMA_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Semaphore stuff.                                linux/sema.c ---*/
+/*--- Semaphore stuff.                                      sema.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -9,7 +9,6 @@
 
    Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
-   (except where noted below)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -30,13 +29,14 @@
 */
 
 #include "core.h"
+#include "priv_sema.h"
 
 /* 
    Slower (than the removed futex-based sema scheme) but more portable
    pipe-based token passing scheme.
  */
 
-void VGO_(sema_init)(vg_sema_t *sema)
+void VG_(sema_init)(vg_sema_t *sema)
 {
    VG_(pipe)(sema->pipe);
    sema->pipe[0] = VG_(safe_fd)(sema->pipe[0]);
@@ -48,7 +48,7 @@ void VGO_(sema_init)(vg_sema_t *sema)
    VG_(write)(sema->pipe[1], "T", 1);
 }
 
-void VGO_(sema_deinit)(vg_sema_t *sema)
+void VG_(sema_deinit)(vg_sema_t *sema)
 {
    VG_(close)(sema->pipe[0]);
    VG_(close)(sema->pipe[1]);
@@ -56,7 +56,7 @@ void VGO_(sema_deinit)(vg_sema_t *sema)
 }
 
 /* get a token */
-void VGO_(sema_down)(vg_sema_t *sema)
+void VG_(sema_down)(vg_sema_t *sema)
 {
    Char buf[2] = { 'x' };
    Int ret;
@@ -77,7 +77,7 @@ void VGO_(sema_down)(vg_sema_t *sema)
 }
 
 /* put token back */
-void VGO_(sema_up)(vg_sema_t *sema)
+void VG_(sema_up)(vg_sema_t *sema)
 {
    Int ret;
 

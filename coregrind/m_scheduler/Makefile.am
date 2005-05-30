@@ -2,9 +2,11 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 noinst_HEADERS = \
-	core_os.h
+	priv_sema.h
 
-noinst_LIBRARIES = libos.a
+noinst_LIBRARIES = libscheduler.a
 
-libos_a_SOURCES = \
-	core_os.c
+libscheduler_a_SOURCES = \
+	scheduler.c \
+	sema.c
+

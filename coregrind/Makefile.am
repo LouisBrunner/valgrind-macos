@@ -6,6 +6,7 @@ MODULES = \
 	m_demangle \
 	m_dispatch \
 	m_replacemalloc \
+	m_scheduler \
 	m_sigframe \
 	m_syscalls
 
@@ -47,6 +48,7 @@ noinst_HEADERS = \
 	pub_core_options.h	\
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
+	pub_core_scheduler.h	\
 	pub_core_sigframe.h	\
 	pub_core_skiplist.h	\
 	pub_core_stacktrace.h	\
@@ -92,7 +94,6 @@ stage2_SOURCES = \
 	m_transtab.c \
 	ume.c \
 	\
-	vg_scheduler.c \
 	vg_main.c \
 	vg_messages.c \
 	vg_mylibc.c \
@@ -105,7 +106,9 @@ stage2_SOURCES = \
 	vg_stabs.c \
 	vg_symtypes.c
 
+## Nb: libscheduler.a must precede libdispatch.a in this list.
 stage2_extra= \
+	m_scheduler/libscheduler.a \
 	m_dispatch/libdispatch.a \
 	m_demangle/libdemangle.a \
 	m_aspacemgr/libaspacemgr.a \

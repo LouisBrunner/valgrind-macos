@@ -29,26 +29,37 @@
 */
 
 #include "core.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"
 
-void VGA_(os_state_clear)(ThreadState *tst)
+void VGO_(os_state_clear)(ThreadState *tst)
 {
    tst->os_state.lwpid = 0;
    tst->os_state.threadgroup = 0;
 }
 
-void VGA_(os_state_init)(ThreadState *tst)
+void VGO_(os_state_init)(ThreadState *tst)
 {
    tst->os_state.valgrind_stack_base = 0;
    tst->os_state.valgrind_stack_szB  = 0;
 
-   VGA_(os_state_clear)(tst);
+   VGO_(os_state_clear)(tst);
 }
 
-static void terminate(ThreadId tid, VgSchedReturnCode src)
+static Bool i_am_the_only_thread ( void )
 {
-   vg_assert(tid == VG_(master_tid));
+   Int c = VG_(count_living_threads)();
+   vg_assert(c >= 1); /* stay sane */
+   return c == 1;
+}
+
+
+void VGO_(terminate_NORETURN)(ThreadId tid, VgSchedReturnCode src)
+{
+   VG_(debugLog)(1, "core_os", 
+                    "VGO_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
+
    vg_assert(VG_(count_living_threads)() == 0);
 
    //--------------------------------------------------------------
@@ -56,15 +67,15 @@ static void terminate(ThreadId tid, VgSchedReturnCode src)
    //--------------------------------------------------------------
    switch (src) {
    case VgSrc_ExitSyscall: /* the normal way out */
-      VG_(exit)( VG_(threads)[VG_(master_tid)].os_state.exitcode );
+      VG_(exit)( VG_(threads)[tid].os_state.exitcode );
       /* NOT ALIVE HERE! */
       VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
       break; /* what the hell :) */
 
    case VgSrc_FatalSig:
       /* We were killed by a fatal signal, so replicate the effect */
-      vg_assert(VG_(threads)[VG_(master_tid)].os_state.fatalsig != 0);
-      VG_(kill_self)(VG_(threads)[VG_(master_tid)].os_state.fatalsig);
+      vg_assert(VG_(threads)[tid].os_state.fatalsig != 0);
+      VG_(kill_self)(VG_(threads)[tid].os_state.fatalsig);
       VG_(core_panic)("main(): signal was supposed to be fatal");
       break;
 
@@ -73,9 +84,16 @@ static void terminate(ThreadId tid, VgSchedReturnCode src)
    }
 }
 
-/* Run a thread from beginning to end. Does not return. */
-void VGA_(thread_wrapper)(Word /*ThreadId*/ tidW)
+
+/* Run a thread from beginning to end and return the thread's
+   scheduler-return-code. */
+
+VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
+   VG_(debugLog)(1, "core_os", 
+                    "VGO_(thread_wrapper)(tid=%lld): entry\n", 
+                    (ULong)tidW);
+
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
    ThreadState* tst = VG_(get_ThreadState)(tid);
@@ -103,79 +121,24 @@ void VGA_(thread_wrapper)(Word /*ThreadId*/ tidW)
    
    vg_assert(tst->status == VgTs_Runnable);
    vg_assert(VG_(is_running_thread)(tid));
-   
-   if (tid == VG_(master_tid)) {
-      VG_(shutdown_actions)(tid);
-      terminate(tid, ret);
-   }
+
+   VG_(debugLog)(1, "core_os", 
+                    "VGO_(thread_wrapper)(tid=%lld): done\n", 
+                    (ULong)tidW);
+
+   /* Return to caller, still holding the lock. */
+   return ret;
 }
 
-/* wait until all other threads are dead */
-static Bool alldead(void *v)
-{
-   /* master_tid must be alive... */
-   Int c = VG_(count_living_threads)();
-   //VG_(printf)("alldead: count=%d\n", c);
-   return c <= 1;
-}
 
-static void sigvgchld_handler(Int sig)
-{
-   VG_(printf)("got a sigvgchld?\n");
-}
-
-/* 
-   Wait until some predicate about threadstates is satisfied.
-
-   This uses SIGVGCHLD as a notification that it is now worth
-   re-evaluating the predicate.
- */
-static void wait_for_threadstate(Bool (*pred)(void *), void *arg)
-{
-   vki_sigset_t set, saved;
-   struct vki_sigaction sa, old_sa;
-
-   /* 
-      SIGVGCHLD is set to be ignored, and is unblocked by default.
-      This means all such signals are simply discarded.
-
-      In this loop, we actually block it, and then poll for it with
-      sigtimedwait.
-    */
-   VG_(sigemptyset)(&set);
-   VG_(sigaddset)(&set, VKI_SIGVGCHLD);
-
-   VG_(set_sleeping)(VG_(master_tid), VgTs_Yielding);
-   VG_(sigprocmask)(VKI_SIG_BLOCK, &set, &saved);
-
-   /* It shouldn't be necessary to set a handler, since the signal is
-      always blocked, but it seems to be necessary to convice the
-      kernel not to just toss the signal... */
-   sa.ksa_handler = sigvgchld_handler;
-   sa.sa_flags = 0;
-   VG_(sigfillset)(&sa.sa_mask);
-   VG_(sigaction)(VKI_SIGVGCHLD, &sa, &old_sa);
-
-   vg_assert(old_sa.ksa_handler == VKI_SIG_IGN);
-
-   while(!(*pred)(arg)) {
-      struct vki_siginfo si;
-      Int ret = VG_(sigtimedwait)(&set, &si, NULL);
-
-      if (ret > 0 && VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "Got %d (code=%d) from tid lwp %d",
-		      ret, si.si_code, si._sifields._kill._pid);
-   }
-
-   VG_(sigaction)(VKI_SIGVGCHLD, &old_sa, NULL);
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &saved, NULL);
-   VG_(set_running)(VG_(master_tid));
-}
-
+/* Wait until all other threads disappear. */
 void VGA_(reap_threads)(ThreadId self)
 {
-   vg_assert(self == VG_(master_tid));
-   wait_for_threadstate(alldead, NULL);
+   while (!i_am_the_only_thread()) {
+      /* Let other thread(s) run */
+      VG_(vg_yield)();
+   }
+   vg_assert(i_am_the_only_thread());
 }
 
 /* The we need to know the address of it so it can be

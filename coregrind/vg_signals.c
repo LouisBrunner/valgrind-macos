@@ -303,8 +303,6 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
          // cases in the switch, so we handle them in the 'default' case.
 	 if (sig == VKI_SIGVGKILL)
 	    skss_handler = sigvgkill_handler;
-	 else if (sig == VKI_SIGVGCHLD)
-	    skss_handler = VKI_SIG_IGN;	/* we only poll for it */
 	 else {
 	    if (scss_handler == VKI_SIG_IGN)
 	       skss_handler = VKI_SIG_IGN;
@@ -1358,7 +1356,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       #endif
 
    /* stash fatal signal in main thread */
-   VG_(threads)[VG_(master_tid)].os_state.fatalsig = sigNo;
+   // what's this for?
+   //VG_(threads)[VG_(master_tid)].os_state.fatalsig = sigNo;
 
    /* everyone dies */
    VG_(nuke_all_threads_except)(tid, VgSrc_FatalSig);
@@ -1884,8 +1883,10 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */
 
-      if (tid == 0)            /* could happen after everyone has exited */
-        tid = VG_(master_tid);
+      //if (tid == 0)            /* could happen after everyone has exited */
+      //  tid = VG_(master_tid);
+      vg_assert(tid != 0);
+
       tst = VG_(get_ThreadState)(tid);
       VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size), 
                            VGP_UCONTEXT_INSTR_PTR(uc),
@@ -1966,8 +1967,6 @@ void VG_(poll_signals)(ThreadId tid)
    /* look for all the signals this thread isn't blocking */
    for(i = 0; i < _VKI_NSIG_WORDS; i++)
       pollset.sig[i] = ~tst->sig_mask.sig[i];
-
-   VG_(sigdelset)(&pollset, VKI_SIGVGCHLD); /* already dealt with */
 
    //VG_(printf)("tid %d pollset=%08x%08x\n", tid, pollset.sig[1], pollset.sig[0]);
 
@@ -2063,18 +2062,17 @@ void VG_(sigstartup_actions) ( void )
       VG_(message)(Vg_DebugMsg, "Max kernel-supported signal is %d", VG_(max_signal));
 
    /* Our private internal signals are treated as ignored */
-   scss.scss_per_sig[VKI_SIGVGCHLD].scss_handler = VKI_SIG_IGN;
-   scss.scss_per_sig[VKI_SIGVGCHLD].scss_flags   = VKI_SA_SIGINFO;
-   VG_(sigfillset)(&scss.scss_per_sig[VKI_SIGVGCHLD].scss_mask);
-
    scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
    scss.scss_per_sig[VKI_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
    VG_(sigfillset)(&scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
    /* Copy the process' signal mask into the root thread. */
-   vg_assert(VG_(threads)[VG_(master_tid)].status == VgTs_Init);
-   VG_(threads)[VG_(master_tid)].sig_mask = saved_procmask;
-   VG_(threads)[VG_(master_tid)].tmp_sig_mask = saved_procmask;
+   vg_assert(VG_(threads)[1].status == VgTs_Init);
+   for (i = 2; i < VG_N_THREADS; i++)
+      vg_assert(VG_(threads)[i].status == VgTs_Empty);
+
+   VG_(threads)[1].sig_mask = saved_procmask;
+   VG_(threads)[1].tmp_sig_mask = saved_procmask;
 
    /* Calculate SKSS and apply it.  This also sets the initial kernel
       mask we need to run with. */

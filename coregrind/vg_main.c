@@ -137,12 +137,6 @@ const Char *VG_(libdir) = VG_LIBDIR;
 static Int  vg_argc;
 static Char **vg_argv;
 
-/* The master thread the one which will be responsible for mopping
-   everything up at exit.  Normally it is tid 1, since that's the
-   first thread created, but it may be something else after a
-   fork(). */
-ThreadId VG_(master_tid) = VG_INVALID_THREADID;
-
 /* Application-visible file descriptor limits */
 Int VG_(fd_soft_limit) = -1;
 Int VG_(fd_hard_limit) = -1;
@@ -2817,24 +2811,29 @@ int main(int argc, char **argv, char **envp)
    //--------------------------------------------------------------
    VGP_POPCC(VgpStartup);
 
-   vg_assert(VG_(master_tid) == 1);
-
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<status>RUNNING</status>");
       VG_(message)(Vg_UserMsg, "");
    }
 
    VG_(debugLog)(1, "main", "Running thread 1\n");
-   VGA_(main_thread_wrapper)(1);
+   /* As a result of the following call, the last thread standing
+      eventually winds up running VG_(shutdown_actions_NORETURN) just
+      below. */
+   VGP_(main_thread_wrapper_NORETURN)(1);
 
-   abort();
+   /*NOTREACHED*/
+   vg_assert(0);
 }
 
 
 /* Do everything which needs doing when the last thread exits */
-void VG_(shutdown_actions)(ThreadId tid)
+void VG_(shutdown_actions_NORETURN) ( ThreadId tid, 
+                                      VgSchedReturnCode tids_schedretcode )
 {
-   vg_assert(tid == VG_(master_tid));
+   VG_(debugLog)(1, "main", "entering VG_(shutdown_actions_NORETURN)\n");
+
+   vg_assert( VG_(count_living_threads)() == 1 );
    vg_assert(VG_(is_running_thread)(tid));
 
    // Wait for all other threads to exit.
@@ -2896,6 +2895,12 @@ void VG_(shutdown_actions)(ThreadId tid)
    /* Print Vex storage stats */
    if (0)
        LibVEX_ShowAllocStats();
+
+   /* Ok, finally exit in the os-specific way.  In short, if the
+      (last) thread exited by calling sys_exit, do likewise; if the
+      (last) thread stopped due to a fatal signal, terminate the
+      entire system with that same fatal signal. */
+   VGO_(terminate_NORETURN)( tid, tids_schedretcode );
 }
 
 /*--------------------------------------------------------------------*/

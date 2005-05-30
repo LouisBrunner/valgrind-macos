@@ -35,6 +35,7 @@
 
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
+#include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
@@ -244,63 +245,115 @@ SSizeT VGA_(stack_unused)(ThreadId tid)
    return ((Addr)p) - tst->os_state.valgrind_stack_base;
 }
 
-/*
-   Allocate a stack for the main thread, and call VGA_(thread_wrapper)
-   on that stack.
- */
-void VGA_(main_thread_wrapper)(ThreadId tid)
+
+/* Run a thread all the way to the end, then do appropriate exit actions
+   (this is the last-one-out-turn-off-the-lights bit). 
+*/
+static void run_a_thread_NORETURN ( Word tidW )
 {
+   ThreadId tid = (ThreadId)tidW;
+
+   VG_(debugLog)(1, "syscalls-x86-linux", 
+                    "run_a_thread_NORETURN(tid=%lld): "
+                       "VGO_(thread_wrapper) called\n",
+                       (ULong)tidW);
+
+   /* Run the thread all the way through. */
+   VgSchedReturnCode src = VGO_(thread_wrapper)(tid);  
+
+   VG_(debugLog)(1, "syscalls-x86-linux", 
+                    "run_a_thread_NORETURN(tid=%lld): "
+                       "VGO_(thread_wrapper) done\n",
+                       (ULong)tidW);
+
+   Int c = VG_(count_living_threads)();
+   vg_assert(c >= 1); /* stay sane */
+
+   if (c == 1) {
+
+      VG_(debugLog)(1, "syscalls-x86-linux", 
+                       "run_a_thread_NORETURN(tid=%lld): "
+                          "last one standing\n",
+                          (ULong)tidW);
+
+      /* We are the last one standing.  Keep hold of the lock and
+         carry on to show final tool results, then exit the entire system. */
+      VG_(shutdown_actions_NORETURN)(tid, src);
+
+   } else {
+
+      VG_(debugLog)(1, "syscalls-x86-linux", 
+                       "run_a_thread_NORETURN(tid=%lld): "
+                          "not last one standing\n",
+                          (ULong)tidW);
+
+      /* OK, thread is dead, but others still exist.  Just exit. */
+      ThreadState *tst = VG_(get_ThreadState)(tid);
+
+      /* This releases the run lock */
+      VG_(exit_thread)(tid);
+      vg_assert(tst->status == VgTs_Zombie);
+
+      /* We have to use this sequence to terminate the thread to
+         prevent a subtle race.  If VG_(exit_thread)() had left the
+         ThreadState as Empty, then it could have been reallocated,
+         reusing the stack while we're doing these last cleanups.
+         Instead, VG_(exit_thread) leaves it as Zombie to prevent
+         reallocation.  We need to make sure we don't touch the stack
+         between marking it Empty and exiting.  Hence the
+         assembler. */
+      asm volatile (
+         "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
+         "movl	%2, %%eax\n"    /* set %eax = __NR_exit */
+         "movl	%3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
+         "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+
+      VG_(core_panic)("Thread exit failed?\n");
+   }
+
+   /*NOTREACHED*/
+   vg_assert(0);
+}
+
+
+/*
+   Allocate a stack for the main thread, and run it all the way to the
+   end.  
+*/
+void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid)
+{
+   VG_(debugLog)(1, "syscalls-x86-linux", 
+                    "entering VGP_(main_thread_wrapper_NORETURN)\n");
+
    UWord* esp = allocstack(tid);
 
-   vg_assert(tid == VG_(master_tid));
+   /* shouldn't be any other threads around yet */
+   vg_assert( VG_(count_living_threads)() == 1 );
 
    call_on_new_stack_0_1( 
-      (Addr)esp,             /* stack */
-      0,                     /*bogus return address*/
-      VGA_(thread_wrapper),  /* fn to call */
-      (Word)tid              /* arg to give it */
+      (Addr)esp,              /* stack */
+      0,                      /*bogus return address*/
+      run_a_thread_NORETURN,  /* fn to call */
+      (Word)tid               /* arg to give it */
    );
 
    /*NOTREACHED*/
    vg_assert(0);
 }
 
-static Int start_thread(void *arg)
+
+static Int start_thread_NORETURN ( void* arg )
 {
-   ThreadState *tst = (ThreadState *)arg;
-   ThreadId tid = tst->tid;
+   ThreadState* tst = (ThreadState*)arg;
+   ThreadId     tid = tst->tid;
 
-   VGA_(thread_wrapper)(tid);
-
-   /* OK, thread is dead; this releases the run lock */
-   VG_(exit_thread)(tid);
-
-   vg_assert(tst->status == VgTs_Zombie);
-
-   /* Poke the reaper */
-   if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "Sending SIGVGCHLD to master tid=%d lwp=%d", 
-		   VG_(master_tid), VG_(threads)[VG_(master_tid)].os_state.lwpid);
-
-   VG_(tkill)(VG_(threads)[VG_(master_tid)].os_state.lwpid, VKI_SIGVGCHLD);
-
-   /* We have to use this sequence to terminate the thread to prevent
-      a subtle race.  If VG_(exit_thread)() had left the ThreadState
-      as Empty, then it could have been reallocated, reusing the stack
-      while we're doing these last cleanups.  Instead,
-      VG_(exit_thread) leaves it as Zombie to prevent reallocation.
-      We need to make sure we don't touch the stack between marking it
-      Empty and exiting.  Hence the assembler. */
-   asm volatile (
-      "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
-      "movl	%2, %%eax\n"    /* set %eax = __NR_exit */
-      "movl	%3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
-      "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
-      : "=m" (tst->status)
-      : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
-
-   VG_(core_panic)("Thread exit failed?\n");
+   run_a_thread_NORETURN ( (Word)tid );
+   /*NOTREACHED*/
+   vg_assert(0);
 }
+
 
 /* ---------------------------------------------------------------------
    clone() handling
@@ -404,7 +457,7 @@ static Int do_clone(ThreadId ptid,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, &savedmask);
 
    /* Create the new thread */
-   ret = VG_(clone)(start_thread, stack, flags, &VG_(threads)[ctid],
+   ret = VG_(clone)(start_thread_NORETURN, stack, flags, &VG_(threads)[ctid],
 		    child_tidptr, parent_tidptr, NULL);
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
@@ -1470,7 +1523,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_chroot,            sys_chroot),         // 61
    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),           // 63
-   GENXY(__NR_getppid,           sys_getppid),        // 64
+   GENX_(__NR_getppid,           sys_getppid),        // 64
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
    GENX_(__NR_setsid,            sys_setsid),         // 66

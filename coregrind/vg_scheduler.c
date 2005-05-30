@@ -439,10 +439,6 @@ static void block_signals(ThreadId tid)
    VG_(sigdelset)(&mask, VKI_SIGSTOP);
    VG_(sigdelset)(&mask, VKI_SIGKILL);
 
-   /* Master doesn't block this */
-   if (tid == VG_(master_tid))
-      VG_(sigdelset)(&mask, VKI_SIGVGCHLD);
-
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
 }
 
@@ -566,7 +562,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(sigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(sigemptyset)(&VG_(threads)[tid].tmp_sig_mask);
 
-   VGA_(os_state_clear)(&VG_(threads)[tid]);
+   VGO_(os_state_clear)(&VG_(threads)[tid]);
 
    /* start with no altstack */
    VG_(threads)[tid].altstack.ss_sp = (void *)0xdeadbeef;
@@ -599,8 +595,6 @@ static void sched_fork_cleanup(ThreadId me)
 {
    ThreadId tid;
    vg_assert(running_tid == me);
-
-   VG_(master_tid) = me;
 
    VG_(threads)[me].os_state.lwpid = VG_(gettid)();
    VG_(threads)[me].os_state.threadgroup = VG_(getpid)();
@@ -635,7 +629,7 @@ void VG_(scheduler_init) ( void )
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       VG_(threads)[i].sig_queue            = NULL;
 
-      VGA_(os_state_init)(&VG_(threads)[i]);
+      VGO_(os_state_init)(&VG_(threads)[i]);
       mostly_clear_thread_record(i);
 
       VG_(threads)[i].status                    = VgTs_Empty;
@@ -644,8 +638,6 @@ void VG_(scheduler_init) ( void )
    }
 
    tid_main = VG_(alloc_ThreadState)();
-
-   VG_(master_tid) = tid_main;
 
    /* Initial thread's stack is the original process stack */
    VG_(threads)[tid_main].client_stack_highest_word 

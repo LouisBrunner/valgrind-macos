@@ -345,7 +345,10 @@ extern VgSchedReturnCode VG_(scheduler) ( ThreadId tid );
 
 // Do everything which needs doing before the process finally ends,
 // like printing reports, etc
-extern void VG_(shutdown_actions)(ThreadId tid);
+extern void VG_(shutdown_actions_NORETURN) (
+               ThreadId tid, 
+               VgSchedReturnCode tids_schedretcode 
+            );
 
 extern void VG_(scheduler_init) ( void );
 
@@ -524,12 +527,6 @@ extern Int  VG_(clexecfd);
 Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
 Char* VG_(build_child_exename)     ( void );
 
-/* The master thread the one which will be responsible for mopping
-   everything up at exit.  Normally it is tid 1, since that's the
-   first thread created, but it may be something else after a
-   fork(). */
-extern ThreadId VG_(master_tid);
-
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg )
@@ -608,21 +605,23 @@ extern void
                                  /*MOD*/ ThreadArchState* arch );
 
 // OS/Platform-specific thread clear (after thread exit)
-extern void VGA_(os_state_clear)(ThreadState *);
+extern void VGO_(os_state_clear)(ThreadState *);
 
 // OS/Platform-specific thread init (at scheduler init time)
-extern void VGA_(os_state_init)(ThreadState *);
+extern void VGO_(os_state_init)(ThreadState *);
 
-// Run a thread from beginning to end.  Does not return if tid == VG_(master_tid).
-void VGA_(thread_wrapper)(Word /*ThreadId*/ tid);
+// Run a thread from beginning to end. 
+extern VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tid);
 
-// Like VGA_(thread_wrapper), but it allocates a stack before calling
-// to VGA_(thread_wrapper) on that stack, as if it had been set up by
-// clone()
-void VGA_(main_thread_wrapper)(ThreadId tid) __attribute__ ((__noreturn__));
+// Call here to exit the entire Valgrind system.
+extern void VGO_(terminate_NORETURN)(ThreadId tid, VgSchedReturnCode src);
+
+// Allocates a stack for the first thread, then runs it,
+// as if the thread had been set up by clone()
+extern void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid);
 
 // Return how many bytes of a thread's Valgrind stack are unused
-SSizeT VGA_(stack_unused)(ThreadId tid);
+extern SSizeT VGA_(stack_unused)(ThreadId tid);
 
 // wait until all other threads are dead
 extern void VGA_(reap_threads)(ThreadId self);

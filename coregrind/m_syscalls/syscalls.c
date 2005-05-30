@@ -2345,27 +2345,17 @@ PRE(sys_execve, Special)
    /* Resistance is futile.  Nuke all other threads.  POSIX mandates
       this. (Really, nuke them all, since the new process will make
       its own new thread.) */
-   VG_(master_tid) = tid;       /* become the master */
    VG_(nuke_all_threads_except)( tid, VgSrc_ExitSyscall );
    VGA_(reap_threads)(tid);
 
-   if (0) {
-      /* Shut down cleanly and report final state
-         XXX Is this reasonable? */
-      tst->exitreason = VgSrc_ExitSyscall;
-      VG_(shutdown_actions)(tid);
-   }
-
-   {
-      // Remove the valgrind-specific stuff from the environment so the
-      // child doesn't get vg_inject.so, vgpreload.so, etc.  This is
-      // done unconditionally, since if we are tracing the child,
-      // stage1/2 will set up the appropriate client environment.
-      Char** envp = (Char**)ARG3;
-
-      if (envp != NULL) {
-         VG_(env_remove_valgrind_env_stuff)( envp );
-      }
+   { // Remove the valgrind-specific stuff from the environment so the
+     // child doesn't get vg_inject.so, vgpreload.so, etc.  This is
+     // done unconditionally, since if we are tracing the child,
+     // stage1/2 will set up the appropriate client environment.
+     Char** envp = (Char**)ARG3;
+     if (envp != NULL) {
+        VG_(env_remove_valgrind_env_stuff)( envp );
+     }
    }
 
    if (VG_(clo_trace_children)) {
@@ -2950,16 +2940,6 @@ PRE(sys_getppid, 0)
 {
    PRINT("sys_getppid ()");
    PRE_REG_READ0(long, "getppid");
-}
-
-POST(sys_getppid)
-{
-   /* If the master thread has already exited, and it is this thread's
-      parent, then force getppid to return 1 (init) rather than the
-      real ppid, so that it thinks its parent has exited. */
-   if (VG_(threads)[VG_(master_tid)].os_state.lwpid == RES &&
-       VG_(is_exiting)(VG_(master_tid)))
-      RES = 1;
 }
 
 static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
@@ -6068,15 +6048,6 @@ static void sanitize_client_sigmask(ThreadId tid, vki_sigset_t *mask)
    VG_(sigdelset)(mask, VKI_SIGSTOP);
 
    VG_(sigdelset)(mask, VKI_SIGVGKILL); /* never block */
-
-   /* SIGVGCHLD is used by threads to indicate their state changes to
-      the master thread.  Mostly it doesn't care, so it leaves the
-      signal ignored and unblocked.  Everyone else should have it
-      blocked, so there's at most 1 thread with it unblocked. */
-   if (tid == VG_(master_tid))
-      VG_(sigdelset)(mask, VKI_SIGVGCHLD);
-   else
-      VG_(sigaddset)(mask, VKI_SIGVGCHLD);
 }
 
 void VG_(client_syscall) ( ThreadId tid )

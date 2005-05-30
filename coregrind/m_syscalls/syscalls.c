@@ -4483,7 +4483,7 @@ PRE(old_mmap, Special)
 #if defined(VGP_x86_linux)
    // do nothing
 #else
-   vg_assert(0, "old_mmap should only be called on x86/Linux");
+   vg_assert2(0, "old_mmap should only be called on x86/Linux");
 #endif
    
    UWord a1, a2, a3, a4, a5, a6;

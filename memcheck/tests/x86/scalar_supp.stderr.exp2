@@ -1,0 +1,20 @@
+Syscall param (syscallno) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_supp.c:18)
+
+Syscall param write(fd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_supp.c:18)
+
+Syscall param write(buf) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_supp.c:18)
+
+Syscall param write(count) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_supp.c:18)
+
+Syscall param write(buf) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_supp.c:18)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd

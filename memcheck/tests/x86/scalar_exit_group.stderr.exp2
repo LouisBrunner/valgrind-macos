@@ -1,0 +1,6 @@
+-----------------------------------------------------
+252:     __NR_exit_group 1s 0m
+-----------------------------------------------------
+Syscall param exit_group(exit_code) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar_exit_group.c:14)

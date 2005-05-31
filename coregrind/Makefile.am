@@ -51,6 +51,7 @@ noinst_HEADERS = \
 	pub_core_replacemalloc.h\
 	pub_core_scheduler.h	\
 	pub_core_sigframe.h	\
+	pub_core_signals.h	\
 	pub_core_skiplist.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
@@ -89,6 +90,7 @@ stage2_SOURCES = \
 	m_mallocfree.c \
 	m_options.c \
 	m_redir.c \
+	m_signals.c \
 	m_skiplist.c \
 	m_stacktrace.c \
 	m_tooliface.c \
@@ -99,7 +101,6 @@ stage2_SOURCES = \
 	vg_messages.c \
 	vg_mylibc.c \
 	vg_dummy_profile.c \
-	vg_signals.c \
 	vg_symtab2.c \
 	vg_threadmodel.c \
 	vg_pthreadmodel.c \

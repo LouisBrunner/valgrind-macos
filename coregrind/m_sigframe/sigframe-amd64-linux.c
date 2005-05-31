@@ -33,6 +33,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_options.h"
 #include "pub_core_sigframe.h"
+#include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 
 #include "libvex_guest_amd64.h"

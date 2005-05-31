@@ -34,6 +34,7 @@
 #include "pub_core_main.h"       // for VG_(bbs_done)
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
+#include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"

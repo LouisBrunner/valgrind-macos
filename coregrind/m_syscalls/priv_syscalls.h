@@ -31,6 +31,7 @@
 #define __PRIV_SYSCALLS_H
 
 #include "pub_core_options.h"
+#include "pub_core_signals.h"
 
 #if defined(VGO_linux)
 #  include "priv_syscalls-linux.h"

@@ -85,6 +85,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
+#include "pub_core_signals.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"

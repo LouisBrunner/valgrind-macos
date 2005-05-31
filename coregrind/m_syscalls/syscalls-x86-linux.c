@@ -360,7 +360,7 @@ static Int start_thread_NORETURN ( void* arg )
    ------------------------------------------------------------------ */
 
 // forward declarations
-static void setup_child ( ThreadArchState*, ThreadArchState* );
+static void setup_child ( ThreadArchState*, ThreadArchState*, Bool );
 static Int sys_set_thread_area ( ThreadId, vki_modify_ldt_t* );
 
 /* 
@@ -408,7 +408,11 @@ static Int do_clone(ThreadId ptid,
       If the clone call specifies a NULL esp for the new thread, then
       it actually gets a copy of the parent's esp.
    */
-   setup_child( &ctst->arch, &ptst->arch );
+   /* HACK: The clone call done by the Quadrics Elan3 driver specifies
+      clone flags of 0xF00, and it seems to rely on the assumption
+      that the child inherits a copy of the parent's GDT. Hence that
+      is passed as an arg to setup_child. */
+   setup_child( &ctst->arch, &ptst->arch, VG_(clo_support_elan3) );
 
    VGP_SET_SYSCALL_RESULT(ctst->arch, 0);
    if (esp != 0)
@@ -656,6 +660,17 @@ static void copy_LDT_from_to ( VexGuestX86SegDescr* src,
      dst[i] = src[i];
 }
 
+/* Copy contents between two existing GDTs. */
+static void copy_GDT_from_to ( VexGuestX86SegDescr* src,
+                               VexGuestX86SegDescr* dst )
+{
+  Int i;
+  vg_assert(src);
+  vg_assert(dst);
+  for (i = 0; i < VEX_GUEST_X86_GDT_NENT; i++)
+     dst[i] = src[i];
+}
+
 /* Free this thread's DTs, if it has any. */
 static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 {
@@ -899,11 +914,13 @@ void VGP_(cleanup_thread) ( ThreadArchState* arch )
 
 
 static void setup_child ( /*OUT*/ ThreadArchState *child, 
-                          /*IN*/  ThreadArchState *parent )
+                          /*IN*/  ThreadArchState *parent,
+                          Bool inherit_parents_GDT )
 {
    /* We inherit our parent's guest state. */
    child->vex = parent->vex;
    child->vex_shadow = parent->vex_shadow;
+
    /* We inherit our parent's LDT. */
    if (parent->vex.guest_LDT == (HWord)NULL) {
       /* We hope this is the common case. */
@@ -915,8 +932,16 @@ static void setup_child ( /*OUT*/ ThreadArchState *child,
                         (VexGuestX86SegDescr*)child->vex.guest_LDT );
    }
 
-   /* We need an empty GDT. */
+   /* Either we start with an empty GDT (the usual case) or inherit a
+      copy of our parents' one (Quadrics Elan3 driver -style clone
+      only). */
    child->vex.guest_GDT = (HWord)NULL;
+
+   if (inherit_parents_GDT && parent->vex.guest_GDT != (HWord)NULL) {
+      child->vex.guest_GDT = (HWord)alloc_zeroed_x86_GDT();
+      copy_GDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_GDT,
+                        (VexGuestX86SegDescr*)child->vex.guest_GDT );
+   }
 }  
 
 /* ---------------------------------------------------------------------
@@ -1003,6 +1028,27 @@ PRE(sys_clone, Special)
       return;
    }
 
+   /* Be ultra-paranoid and filter out any clone-variants we don't understand:
+      - ??? specifies clone flags of 0x100011
+      - ??? specifies clone flags of 0x1200011.
+      - NPTL specifies clone flags of 0x7D0F00.
+      - The Quadrics Elan3 driver specifies clone flags of 0xF00.
+      Everything else is rejected. 
+   */
+   if (!VG_(clo_support_elan3)
+       && (cloneflags == 0x100011 || cloneflags == 0x1200011
+                                  || cloneflags == 0x7D0F00)) {
+      /* OK */
+   }
+   else 
+   if (VG_(clo_support_elan3) && cloneflags == 0xF00) {
+      /* OK */
+   }
+   else {
+      /* Nah.  We don't like it.  Go away. */
+      goto reject;
+   }
+
    /* Only look at the flags we really care about */
    switch(cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
    case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
@@ -1028,11 +1074,23 @@ PRE(sys_clone, Special)
       break;
 
    default:
+   reject:
       /* should we just ENOSYS? */
-      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: %x", ARG1);
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%x", ARG1);
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "NOTE: if this happened when attempting "
+                               "to run code using");
+      VG_(message)(Vg_UserMsg, "      Quadrics Elan3 user-space drivers,"
+                               " you should re-run ");
+      VG_(message)(Vg_UserMsg, "      with --support-elan3=yes.");
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
+      VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");
+      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork");
+      VG_(message)(Vg_UserMsg, " - for the Quadrics Elan3 user-space driver");
       VG_(unimplemented)
-         ("Valgrind does not support general clone().  The only supported uses "
-          "are via a threads library, fork, or vfork.");
+         ("Valgrind does not support general clone().");
    }
 
    if (!VG_(is_kerror)(RES)) {

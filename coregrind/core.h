@@ -243,7 +243,7 @@ extern const Int  VG_(tramp_rt_sigreturn_offset);
 extern const Int  VG_(tramp_syscall_offset);
 extern const Int  VG_(tramp_gettimeofday_offset);
 extern const Int  VG_(tramp_time_offset);
-
+ 
 // ---------------------------------------------------------------------
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------

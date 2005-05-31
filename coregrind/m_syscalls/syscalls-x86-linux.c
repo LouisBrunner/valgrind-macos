@@ -412,7 +412,7 @@ static Int do_clone(ThreadId ptid,
       clone flags of 0xF00, and it seems to rely on the assumption
       that the child inherits a copy of the parent's GDT. Hence that
       is passed as an arg to setup_child. */
-   setup_child( &ctst->arch, &ptst->arch, VG_(clo_support_elan3) );
+   setup_child( &ctst->arch, &ptst->arch, True /*VG_(clo_support_elan3)*/ );
 
    VGP_SET_SYSCALL_RESULT(ctst->arch, 0);
    if (esp != 0)
@@ -1035,14 +1035,12 @@ PRE(sys_clone, Special)
       - The Quadrics Elan3 driver specifies clone flags of 0xF00.
       Everything else is rejected. 
    */
-   if (!VG_(clo_support_elan3)
-       && (cloneflags == 0x100011 || cloneflags == 0x1200011
-                                  || cloneflags == 0x7D0F00)) {
-      /* OK */
-   }
-   else 
-   if (VG_(clo_support_elan3) && cloneflags == 0xF00) {
-      /* OK */
+   if (
+          (cloneflags == 0x100011 || cloneflags == 0x1200011
+                                  || cloneflags == 0x7D0F00
+                                  || cloneflags == 0xF00
+                                  || cloneflags == 0xF21)) {
+     /* OK */
    }
    else {
       /* Nah.  We don't like it.  Go away. */

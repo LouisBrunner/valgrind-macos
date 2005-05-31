@@ -632,7 +632,11 @@ void VG_(scheduler_init) ( void )
    VG_(sema_init)(&run_sema);
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
-      VG_(threads)[i].sig_queue            = NULL;
+
+      /* Paranoia .. completely zero it out. */
+      VG_(memset)( & VG_(threads)[i], 0, sizeof( VG_(threads)[i] ) );
+
+      VG_(threads)[i].sig_queue = NULL;
 
       VGO_(os_state_init)(&VG_(threads)[i]);
       mostly_clear_thread_record(i);

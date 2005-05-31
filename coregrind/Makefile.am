@@ -3,6 +3,7 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 MODULES = \
 	m_aspacemgr \
+	m_debuginfo \
 	m_demangle \
 	m_dispatch \
 	m_replacemalloc \
@@ -37,6 +38,7 @@ noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
 	pub_core_aspacemgr.h	\
+	pub_core_debuginfo.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
 	pub_core_dispatch.h	\
@@ -60,8 +62,6 @@ noinst_HEADERS = \
 	pub_core_transtab.h	\
 	pub_core_transtab_asm.h	\
 	ume.h			\
-	vg_symtab2.h		\
-	vg_symtypes.h		\
 	vki_unistd.h		\
 	vki_unistd-amd64-linux.h\
 	vki_unistd-arm-linux.h	\
@@ -101,18 +101,15 @@ stage2_SOURCES = \
 	vg_messages.c \
 	vg_mylibc.c \
 	vg_dummy_profile.c \
-	vg_symtab2.c \
 	vg_threadmodel.c \
-	vg_pthreadmodel.c \
-	vg_dwarf.c \
-	vg_stabs.c \
-	vg_symtypes.c
+	vg_pthreadmodel.c
 
 ## Nb: libscheduler.a must precede libdispatch.a in this list.
 stage2_extra= \
+	m_debuginfo/libdebuginfo.a \
+	m_demangle/libdemangle.a \
 	m_scheduler/libscheduler.a \
 	m_dispatch/libdispatch.a \
-	m_demangle/libdemangle.a \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \
 	m_syscalls/libsyscalls.a \

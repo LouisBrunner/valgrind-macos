@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Intra-Valgrind interfaces for vg_symtypes.c.   vg_symtypes.h ---*/
+/*--- Intra-Valgrind interfaces for symtypes.c.    priv_symtypes.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_SYMTYPES_H
-#define __VG_SYMTYPES_H
+#ifndef __PRIV_SYMTYPES_H
+#define __PRIV_SYMTYPES_H
 
 /* Lets try to make these opaque */
 typedef struct _SymType SymType;
@@ -87,7 +88,7 @@ Bool VG_(st_isunion)(SymType *);
 Bool VG_(st_isenum)(SymType *);
 
 /* ------------------------------------------------------------
-   Interface with vg_symtab2.c
+   Interface with symtab.c
    ------------------------------------------------------------ */
 
 /* Typed value */
@@ -105,8 +106,8 @@ struct _Variable {
 
 Variable *VG_(get_scope_variables)(ThreadId tid);
 
-#endif /* VG_SYMTYPES_H */
+#endif // __PRIV_SYMTYPES_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_symtypes.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

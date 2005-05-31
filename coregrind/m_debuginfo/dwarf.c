@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Read DWARF2 debug info.                           vg_dwarf.c ---*/
+/*--- Read DWARF2 debug info.                              dwarf.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,9 +29,8 @@
 */
 
 #include "core.h"
-#include "vg_symtab2.h"
-
 #include "pub_core_options.h"
+#include "priv_symtab.h"
 
 /* Structure found in the .debug_line section.  */
 typedef struct
@@ -1968,5 +1968,5 @@ void VG_(read_callframe_info_dwarf2)
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                               vg_dwarf.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

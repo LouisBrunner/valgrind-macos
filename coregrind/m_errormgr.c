@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
 #include "pub_core_main.h"          // for VG_(start_debugger)()

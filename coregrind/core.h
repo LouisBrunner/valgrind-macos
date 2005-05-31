@@ -210,29 +210,6 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern void   VG_(nanosleep)(struct vki_timespec *);
 
 /* ---------------------------------------------------------------------
-   Exports of vg_symtab2.c
-   ------------------------------------------------------------------ */
-
-typedef struct _Segment Segment;
-typedef struct _CodeRedirect CodeRedirect;
-
-extern Bool VG_(is_object_file)   ( const void *hdr );
-extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
-extern void VG_(seginfo_incref)   ( SegInfo * );
-extern void VG_(seginfo_decref)   ( SegInfo *, Addr a );
-
-extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
-
-extern Addr VG_(reverse_search_one_symtab) ( const SegInfo* si, const Char* name );
-
-extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
-                                /*MOD*/Addr* spP,
-                                /*MOD*/Addr* fpP,
-                                Addr min_accessible,
-                                Addr max_accessible );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_syscall.S
    ------------------------------------------------------------------ */
 

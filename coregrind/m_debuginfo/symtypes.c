@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Extract type info from debug info.             vg_symtypes.h ---*/
+/*--- Extract type info from debug info.                symtypes.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,9 +29,10 @@
 */
 
 #include "core.h"
-#include "vg_symtypes.h"
+#include "pub_core_debuginfo.h"
 #include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 #include "pub_core_tooliface.h"
+#include "priv_symtypes.h"
 
 typedef enum {
    TyUnknown,			/* unknown type */
@@ -1058,5 +1060,5 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 #endif /* TEST */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_symtypes.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

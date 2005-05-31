@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Header for symbol table stuff.                  vg_symtab2.h ---*/
+/*--- Header for symbol table stuff.                 priv_symtab.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,10 +28,11 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef _VG_SYMTYPE_H
-#define _VG_SYMTYPE_H
+#ifndef __PRIV_SYMTAB_H
+#define __PRIV_SYMTAB_H
 
-#include "vg_symtypes.h"
+#include "pub_core_debuginfo.h"
+#include "priv_symtypes.h"
 
 /* A structure to hold an ELF symbol (very crudely). */
 typedef 
@@ -262,8 +264,8 @@ void VG_(read_callframe_info_dwarf2)
     ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr );
 
 
-#endif /* _VG_SYMTYPE_H */
+#endif   // __PRIV_SYMTAB_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                             vg_symtab2.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -37,9 +37,11 @@
 // memory management.  Hence this module is almost completely
 // standalone; the only module it uses is m_debuglog.  DO NOT CHANGE
 // THIS.
+// [XXX: actually, this is far from true...]
 //--------------------------------------------------------------------
 
 /* #include "pub_tool_aspacemgr.h" */
+#include "pub_core_debuginfo.h"
 
 // Address space globals
 extern Addr VG_(client_base);	 // client address space limits

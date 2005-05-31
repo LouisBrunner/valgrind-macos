@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Management of symbols and debugging information.             ---*/
-/*---                                                 vg_symtab2.c ---*/
+/*---                                                     symtab.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,14 +30,12 @@
 */
 
 #include "core.h"
-#include "vg_symtypes.h"
-#include "vg_symtab2.h"
-
 #include "pub_core_aspacemgr.h"
 #include "pub_core_demangle.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
 #include "pub_core_tooliface.h"
+#include "priv_symtab.h"
 
 #include <elf.h>          /* ELF defns */
 
@@ -2652,5 +2650,5 @@ VgSectKind VG_(seg_sect_kind)(Addr a)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                             vg_symtab2.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

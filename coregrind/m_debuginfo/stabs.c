@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Read stabs debug info.                            vg_stabs.c ---*/
+/*--- Read stabs debug info.                               stabs.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,7 +29,7 @@
 */
 
 #include "core.h"
-#include "vg_symtab2.h"
+#include "priv_symtab.h"
 
 #include <a.out.h>        /* stabs defns                    */
 

@@ -30,13 +30,13 @@
    The GNU General Public License is contained in the file COPYING.
 */
 #include "core.h"
-#include "vg_symtab2.h"
 
 #include "pub_core_aspacemgr.h"
 #include "pub_core_skiplist.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
 #include "pub_core_transtab.h"
+#include "m_debuginfo/priv_symtab.h"  // XXX: bad!
 
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/

@@ -26,8 +26,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
-	execve.stderr.exp execve.vgtest \
-	execve2.stderr.exp execve2.vgtest \
+	execve.stderr.exp execve.stderr.exp2 execve.vgtest \
+	execve2.stderr.exp execve2.stderr.exp2 execve2.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.stderr.exp2 fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \

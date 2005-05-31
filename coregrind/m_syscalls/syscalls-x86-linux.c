@@ -1038,6 +1038,7 @@ PRE(sys_clone, Special)
    if (
           (cloneflags == 0x100011 || cloneflags == 0x1200011
                                   || cloneflags == 0x7D0F00
+                                  || cloneflags == 0x3D0F00
                                   || cloneflags == 0xF00
                                   || cloneflags == 0xF21)) {
      /* OK */

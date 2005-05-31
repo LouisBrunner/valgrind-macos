@@ -92,7 +92,7 @@ void VGA_(setup_child) ( ThreadArchState *regs, ThreadArchState *parent_regs )
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool VGA_(setup_pointercheck)(void)
+Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
 {
    I_die_here;
 #if 0

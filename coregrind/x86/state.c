@@ -158,12 +158,13 @@ void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 /* Client address space segment limit descriptor entry */
 #define POINTERCHECK_SEGIDX  1
 
-Bool VGA_(setup_pointercheck)(void)
+Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
 {
+   vg_assert(0 != client_end);
    vki_modify_ldt_t ldt = { 
       POINTERCHECK_SEGIDX,       // entry_number
-      VG_(client_base),          // base_addr
-      (VG_(client_end)-VG_(client_base)) / VKI_PAGE_SIZE, // limit
+      client_base,               // base_addr
+      (client_end - client_base) / VKI_PAGE_SIZE, // limit
       1,                         // seg_32bit
       0,                         // contents: data, RW, non-expanding
       0,                         // ! read_exec_only

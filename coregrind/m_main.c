@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Startup: the real stuff                            vg_main.c ---*/
+/*--- Startup: the real stuff                             m_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -36,6 +36,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
 #include "pub_core_syscalls.h"
@@ -101,26 +102,6 @@
    Startup stuff                            
    ------------------------------------------------------------------ */
 
-/* Client address space, lowest to highest (see top of ume.c) */
-Addr VG_(client_base);           /* client address space limits */
-Addr VG_(client_end);
-Addr VG_(client_mapbase);
-Addr VG_(client_trampoline_code);
-Addr VG_(clstk_base);
-Addr VG_(clstk_end);
-
-Addr VG_(brk_base);	         /* start of brk */
-Addr VG_(brk_limit);	         /* current brk */
-
-Addr VG_(shadow_base);	         /* tool's shadow memory */
-Addr VG_(shadow_end);
-
-Addr VG_(valgrind_base);	 /* valgrind's address range */
-
-// Note that VG_(valgrind_last) names the last byte of the section, whereas
-// the VG_(*_end) vars name the byte one past the end of the section.
-Addr VG_(valgrind_last);
-
 struct vki_rlimit VG_(client_rlimit_data);
 struct vki_rlimit VG_(client_rlimit_stack);
 
@@ -154,10 +135,6 @@ Char** VG_(client_envp);
 
 /* 64-bit counter for the number of basic blocks done. */
 ULong VG_(bbs_done) = 0;
-
-/* Tell the logging mechanism whether we are logging to a file
-   descriptor or a socket descriptor. */
-Bool VG_(logging_to_socket) = False;
 
 
 /*====================================================================*/
@@ -284,34 +261,6 @@ void VG_(start_debugger) ( ThreadId tid )
    }
 }
 
-
-/* Print some helpful-ish text about unimplemented things, and give
-   up. */
-void VG_(unimplemented) ( Char* msg )
-{
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, 
-      "Valgrind detected that your program requires");
-   VG_(message)(Vg_UserMsg, 
-      "the following unimplemented functionality:");
-   VG_(message)(Vg_UserMsg, "   %s", msg);
-   VG_(message)(Vg_UserMsg,
-      "This may be because the functionality is hard to implement,");
-   VG_(message)(Vg_UserMsg,
-      "or because no reasonable program would behave this way,");
-   VG_(message)(Vg_UserMsg,
-      "or because nobody has yet needed it.  In any case, let us know at");
-   VG_(message)(Vg_UserMsg,
-      "%s and/or try to work around the problem, if you can.", VG_BUGS_TO);
-   VG_(message)(Vg_UserMsg,
-      "");
-   VG_(message)(Vg_UserMsg,
-      "Valgrind has to exit now.  Sorry.  Bye!");
-   VG_(message)(Vg_UserMsg,
-      "");
-   VG_(pp_sched_status)();
-   VG_(exit)(1);
-}
 
 /* Get the simulated stack pointer */
 Addr VG_(get_SP) ( ThreadId tid )
@@ -2817,10 +2766,12 @@ int main(int argc, char **argv, char **envp)
 
    //--------------------------------------------------------------
    // Setup pointercheck
+   //   p: layout_remaining_space() [for VG_(client_{base,end})]
    //   p: process_cmd_line_options() [for VG_(clo_pointercheck)]
    //--------------------------------------------------------------
    if (VG_(clo_pointercheck))
-      VG_(clo_pointercheck) = VGA_(setup_pointercheck)();
+      VG_(clo_pointercheck) =
+         VGA_(setup_pointercheck)( VG_(client_base), VG_(client_end));
 
    //--------------------------------------------------------------
    // Run!
@@ -2920,5 +2871,5 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                vg_main.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

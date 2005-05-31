@@ -33,6 +33,7 @@
 #include "core.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
+#include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
@@ -406,10 +407,9 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 }
 
 
-/* A general replacement for printf().  Note that only low-level 
-   debugging info should be sent via here.  The official route is to
-   to use vg_message().  This interface is deprecated.
-*/
+/* Tell the logging mechanism whether we are logging to a file
+   descriptor or a socket descriptor. */
+Bool VG_(logging_to_socket) = False;
 
 /* Do the low-level send of a message to the logging sink. */
 static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
@@ -1049,6 +1049,34 @@ void VG_(core_panic_at) ( Char* str, StackTrace ips )
 void VG_(tool_panic) ( Char* str )
 {
    panic(VG_(details).name, VG_(details).bug_reports_to, str, NULL);
+}
+
+/* Print some helpful-ish text about unimplemented things, and give
+   up. */
+void VG_(unimplemented) ( Char* msg )
+{
+   VG_(message)(Vg_UserMsg, "");
+   VG_(message)(Vg_UserMsg, 
+      "Valgrind detected that your program requires");
+   VG_(message)(Vg_UserMsg, 
+      "the following unimplemented functionality:");
+   VG_(message)(Vg_UserMsg, "   %s", msg);
+   VG_(message)(Vg_UserMsg,
+      "This may be because the functionality is hard to implement,");
+   VG_(message)(Vg_UserMsg,
+      "or because no reasonable program would behave this way,");
+   VG_(message)(Vg_UserMsg,
+      "or because nobody has yet needed it.  In any case, let us know at");
+   VG_(message)(Vg_UserMsg,
+      "%s and/or try to work around the problem, if you can.", VG_BUGS_TO);
+   VG_(message)(Vg_UserMsg,
+      "");
+   VG_(message)(Vg_UserMsg,
+      "Valgrind has to exit now.  Sorry.  Bye!");
+   VG_(message)(Vg_UserMsg,
+      "");
+   VG_(pp_sched_status)();
+   VG_(exit)(1);
 }
 
 

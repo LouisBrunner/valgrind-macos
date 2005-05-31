@@ -44,6 +44,7 @@ noinst_HEADERS = \
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
+	pub_core_main.h		\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_redir.h	\
@@ -84,6 +85,7 @@ stage2_SOURCES = \
 	m_errormgr.c \
 	m_execontext.c \
 	m_hashtable.c \
+	m_main.c \
 	m_mallocfree.c \
 	m_options.c \
 	m_redir.c \
@@ -92,9 +94,8 @@ stage2_SOURCES = \
 	m_tooliface.c \
 	m_translate.c \
 	m_transtab.c \
-	ume.c \
 	\
-	vg_main.c \
+	ume.c \
 	vg_messages.c \
 	vg_mylibc.c \
 	vg_dummy_profile.c \

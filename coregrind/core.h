@@ -213,6 +213,15 @@ extern void  VG_(core_panic)      ( Char* str );
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic_at)   ( Char* str, StackTrace ips );
 
+/* Called when some unhandleable client behaviour is detected.
+   Prints a msg and aborts. */
+extern void VG_(unimplemented) ( Char* msg )
+            __attribute__((__noreturn__));
+
+/* Tell the logging mechanism whether we are logging to a file
+   descriptor or a socket descriptor. */
+extern Bool VG_(logging_to_socket);
+
 /* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 
@@ -266,57 +275,6 @@ extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
                                 /*MOD*/Addr* fpP,
                                 Addr min_accessible,
                                 Addr max_accessible );
-
-
-/* ---------------------------------------------------------------------
-   Exports of vg_main.c
-   ------------------------------------------------------------------ */
-
-/* Tell the logging mechanism whether we are logging to a file
-   descriptor or a socket descriptor. */
-extern Bool VG_(logging_to_socket);
-
-/* Sanity checks which may be done at any time.  The scheduler decides when. */
-extern void VG_(sanity_check_general) ( Bool force_expensive );
-
-/* Address space */
-extern Addr VG_(client_base);	/* client address space limits */
-extern Addr VG_(client_end);
-extern Addr VG_(client_mapbase); /* base of mappings */
-extern Addr VG_(clstk_base);	/* client stack range */
-extern Addr VG_(clstk_end);
-extern Addr VG_(client_trampoline_code);
-
-extern Addr VG_(brk_base);	/* start of brk */
-extern Addr VG_(brk_limit);	/* current brk */
-extern Addr VG_(shadow_base);	/* tool's shadow memory */
-extern Addr VG_(shadow_end);
-extern Addr VG_(valgrind_base);	/* valgrind's address range */
-extern Addr VG_(valgrind_last); // Nb: last byte, rather than one past the end
-
-extern struct vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
-extern struct vki_rlimit VG_(client_rlimit_stack); /* client's original rlimit stack */
-
-/* client executable file descriptor */
-extern Int  VG_(clexecfd);
-
-// Help set up the child used when doing execve() with --trace-children=yes
-Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
-Char* VG_(build_child_exename)     ( void );
-
-/* Called when some unhandleable client behaviour is detected.
-   Prints a msg and aborts. */
-extern void VG_(unimplemented) ( Char* msg )
-            __attribute__((__noreturn__));
-
-/* Something of a function looking for a home ... start up debugger. */
-extern void VG_(start_debugger) ( ThreadId tid );
-
-/* Stats ... */
-extern void VG_(print_scheduler_stats) ( void );
-
-/* 64-bit counter for the number of basic blocks done. */
-extern ULong VG_(bbs_done);
 
 
 /* ---------------------------------------------------------------------
@@ -407,7 +365,7 @@ extern void VGA_(reap_threads)(ThreadId self);
 extern Bool VGA_(client_request)(ThreadId tid, UWord *args);
 
 // Pointercheck
-extern Bool VGA_(setup_pointercheck) ( void );
+extern Bool VGA_(setup_pointercheck) ( Addr client_base, Addr client_end );
 
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );

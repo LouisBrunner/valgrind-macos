@@ -31,6 +31,7 @@
 #include "core.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_main.h"          // for VG_(start_debugger)()
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"

@@ -41,6 +41,21 @@
 
 /* #include "pub_tool_aspacemgr.h" */
 
+// Address space globals
+extern Addr VG_(client_base);	 // client address space limits
+extern Addr VG_(client_end);
+extern Addr VG_(client_mapbase); // base of mappings
+extern Addr VG_(clstk_base);	 // client stack range
+extern Addr VG_(clstk_end);
+extern Addr VG_(client_trampoline_code);
+
+extern Addr VG_(brk_base);	 // start of brk
+extern Addr VG_(brk_limit);	 // current brk
+extern Addr VG_(shadow_base);	 // tool's shadow memory
+extern Addr VG_(shadow_end);
+extern Addr VG_(valgrind_base);	 // valgrind's address range
+extern Addr VG_(valgrind_last);  // Nb: last byte, rather than one past the end
+
 /* A Segment is mapped piece of client memory.  This covers all kinds
    of mapped memory (exe, brk, mmap, .so, shm, stack, etc)
 

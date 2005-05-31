@@ -45,6 +45,30 @@
 static const Bool mem_debug = False;
 
 /*--------------------------------------------------------------*/
+/*--- Basic globals about the address space.                 ---*/
+/*--------------------------------------------------------------*/
+
+/* Client address space, lowest to highest (see top of ume.c) */
+Addr VG_(client_base);           /* client address space limits */
+Addr VG_(client_end);
+Addr VG_(client_mapbase);
+Addr VG_(client_trampoline_code);
+Addr VG_(clstk_base);
+Addr VG_(clstk_end);
+
+Addr VG_(brk_base);	         /* start of brk */
+Addr VG_(brk_limit);	         /* current brk */
+
+Addr VG_(shadow_base);	         /* tool's shadow memory */
+Addr VG_(shadow_end);
+
+Addr VG_(valgrind_base);	 /* valgrind's address range */
+
+// Note that VG_(valgrind_last) names the last byte of the section, whereas
+// the VG_(*_end) vars name the byte one past the end of the section.
+Addr VG_(valgrind_last);
+
+/*--------------------------------------------------------------*/
 /*--- A simple, self-contained ordered array of segments.    ---*/
 /*--------------------------------------------------------------*/
 

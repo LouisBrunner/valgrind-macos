@@ -64,25 +64,6 @@
 /* The directory we look for all our auxillary files in */
 #define VALGRINDLIB	"VALGRINDLIB"
 
-/* Additional command-line arguments; they are overridden by actual
-   command-line option.  Each argument is separated by spaces.  There
-   is no quoting mechanism.
- */
-#define VALGRINDOPTS	"VALGRIND_OPTS"
-
-/* If this variable is present in the environment, then valgrind will
-   not parse the command line for options at all; all options come
-   from this variable.  Arguments are terminated by ^A (\001).  There
-   is no quoting mechanism.
-
-   This variable is not expected to be set by anything other than
-   Valgrind itself, as part of its handling of execve with
-   --trace-children=yes.  This variable should not be present in the
-   client environment.
- */
-#define VALGRINDCLO	"_VALGRIND_CLO"
-
-
 /* Application-visible file descriptor limits */
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);

@@ -1,8 +1,8 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Implementation of POSIX signals.                vg_signals.c ---*/
+/*--- Implementation of POSIX signals.                 m_signals.c ---*/
 /*--------------------------------------------------------------------*/
-
+ 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -2080,5 +2080,5 @@ void VG_(sigstartup_actions) ( void )
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                             vg_signals.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -4,7 +4,7 @@
 /*--- on libc.so.                                                  ---*/
 /*---                                                  vg_mylibc.c ---*/
 /*--------------------------------------------------------------------*/
-
+ 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.

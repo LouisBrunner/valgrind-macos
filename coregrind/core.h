@@ -3,7 +3,7 @@
 /*--- A header file for various private parts of Valgrind's core.  ---*/
 /*---                                                       core.h ---*/
 /*--------------------------------------------------------------------*/
-
+ 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.

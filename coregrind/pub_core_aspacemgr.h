@@ -153,6 +153,9 @@ void VG_(parse_procselfmaps) (
 			   UInt dev, UInt ino, ULong foff,
                            const UChar *filename ) );
 
+// Pointercheck
+extern Bool VGA_(setup_pointercheck) ( Addr client_base, Addr client_end );
+
 #endif   // __PUB_CORE_ASPACEMGR_H
 
 /*--------------------------------------------------------------------*/

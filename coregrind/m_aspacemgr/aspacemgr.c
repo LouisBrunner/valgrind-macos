@@ -1330,6 +1330,46 @@ void *VG_(shadow_alloc)(UInt size)
    VG_(exit)(1);
 }
 
+/*------------------------------------------------------------*/
+/*--- pointercheck                                         ---*/
+/*------------------------------------------------------------*/
+
+Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
+{
+   vg_assert(0 != client_end);
+#if defined(VGP_x86_linux)
+   /* Client address space segment limit descriptor entry */
+   #define POINTERCHECK_SEGIDX  1
+
+   vki_modify_ldt_t ldt = { 
+      POINTERCHECK_SEGIDX,       // entry_number
+      client_base,               // base_addr
+      (client_end - client_base) / VKI_PAGE_SIZE, // limit
+      1,                         // seg_32bit
+      0,                         // contents: data, RW, non-expanding
+      0,                         // ! read_exec_only
+      1,                         // limit_in_pages
+      0,                         // ! seg not present
+      1,                         // useable
+   };
+   int ret = VG_(do_syscall3)(__NR_modify_ldt, 1, (UWord)&ldt, sizeof(ldt));
+   if (ret < 0) {
+      VG_(message)(Vg_UserMsg,
+                   "Warning: ignoring --pointercheck=yes, "
+                   "because modify_ldt failed (errno=%d)", -ret);
+      return False;
+   } else {
+      return True;
+   }
+#elif defined(VGP_amd64_linux)
+   if (0) 
+      VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
+   return True;
+#else
+#  error Unknown architecture
+#endif
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                              aspacemgr.c ---*/
 /*--------------------------------------------------------------------*/

@@ -278,9 +278,6 @@ extern void VGA_(reap_threads)(ThreadId self);
 // handle an arch-specific client request
 extern Bool VGA_(client_request)(ThreadId tid, UWord *args);
 
-// Pointercheck
-extern Bool VGA_(setup_pointercheck) ( Addr client_base, Addr client_end );
-
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 

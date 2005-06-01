@@ -112,18 +112,6 @@ void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
 
 
 /*------------------------------------------------------------*/
-/*--- pointercheck                                         ---*/
-/*------------------------------------------------------------*/
-
-Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
-{
-   vg_assert(0 != client_end);
-   if (0) 
-      VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
-   return True;
-}
-
-/*------------------------------------------------------------*/
 /*--- Debugger-related operations                          ---*/
 /*------------------------------------------------------------*/
 

@@ -31,6 +31,7 @@
 #include "core.h"
 #include "pub_core_demangle.h"
 #include "pub_core_options.h"
+#include "pub_core_profile.h"
 #include "demangle.h"
 
 void VG_(demangle) ( Char* orig, Char* result, Int result_size )

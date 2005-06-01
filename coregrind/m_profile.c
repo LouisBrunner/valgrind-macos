@@ -1,9 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Profiling machinery.  #include this file into a tool to      ---*/
-/*--- enable --profile=yes, but not for release versions of tools, ---*/
-/*--- because it uses glibc code.                                  ---*/
-/*---                                                 vg_profile.c ---*/
+/*--- Profiling machinery.                             m_profile.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -31,24 +28,16 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_PROFILE_C
-#define __VG_PROFILE_C
-
-#include "tool.h"
+#include "core.h"
+#include "pub_core_profile.h"
 
 /* get rid of these, if possible */
 #include <signal.h>
 #include <sys/time.h>
 
-/* Override the empty definitions from tool.h */
-#undef  VGP_PUSHCC
-#undef  VGP_POPCC
-#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VG_(pushcc)(x)
-#define VGP_POPCC(x)    if (VG_(clo_profile)) VG_(popcc)(x)
 
 #define VGP_M_STACK     20
 #define VGP_MAX_CCS     50
-
 
 /* All zeroed initially because they're static */
 static Int   vgp_nticks;
@@ -84,7 +73,7 @@ void VG_(register_profile_event) ( Int n, Char* name )
    vgp_names[n] = name;
 }
 
-void VG_(tick) ( int sigNo )
+static void tick ( int sigNo )
 {
    Int cc;
    vgp_nticks++;
@@ -97,6 +86,12 @@ void VG_(init_profiling) ( void )
 {
    struct itimerval value;
    Int ret;
+
+#ifndef VG_DO_PROFILING
+   VG_(printf)("valgrind:  you must compile with VG_DO_PROFILING defined\n");
+   VG_(printf)("           before using --profile=yes.  Aborting.\n");
+   VG_(exit)(1);
+#endif
 
    /* Register core events... tricky macro definition causes
       VG_(register_profile_event)() to be called once for each core event
@@ -113,9 +108,9 @@ void VG_(init_profiling) ( void )
    value.it_interval.tv_usec = 10 * 1000;
    value.it_value = value.it_interval;
 
-   signal(SIGPROF, VG_(tick) );
+   signal(SIGPROF, tick );
    ret = setitimer(ITIMER_PROF, &value, NULL);
-   if (ret != 0) VG_(tool_panic)("vgp_init_profiling");
+   if (ret != 0) VG_(core_panic)("vgp_init_profiling");
 }
 
 void VG_(done_profiling) ( void )
@@ -141,7 +136,7 @@ void VG_(pushcc) ( UInt cc )
          "Or if you are nesting profiling events very deeply, increase\n"
          "VGP_M_STACK and recompile Valgrind.\n",
          VGP_M_STACK, cc, vgp_names[cc]);
-      VG_(tool_panic)("Profiling stack overflow");
+      VG_(core_panic)("Profiling stack overflow");
    }
    vgp_sp++;
    vgp_stack[vgp_sp] = cc;
@@ -154,10 +149,11 @@ void VG_(popcc) ( UInt cc )
       VG_(printf)(
          "\nProfile stack underflow.  This is due to a VG_(popcc)() without\n"
          "a matching VG_(pushcc)().  Make sure they all match.\n");
-      VG_(tool_panic)("Profiling stack underflow");
+      VG_(core_panic)("Profiling stack underflow");
    }
    if (vgp_stack[vgp_sp] != cc) {
       Int i;
+      VG_(printf)("profiling problem:\n");
       VG_(printf)("popping %s, stack looks like:\n", vgp_names[cc]);
       for (i = vgp_sp; i >= 0; i--)
          VG_(printf)("%2d: %s\n", i, vgp_names[vgp_stack[i]]);
@@ -166,8 +162,8 @@ void VG_(popcc) ( UInt cc )
    vgp_sp--;
 }
 
-#endif /* __VG_PROFILE_C */
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/
 
-/*--------------------------------------------------------------------*/
-/*--- end                                             vg_profile.c ---*/
-/*--------------------------------------------------------------------*/
+

@@ -38,6 +38,7 @@
 #include "pub_core_execontext.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
+#include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscalls.h"

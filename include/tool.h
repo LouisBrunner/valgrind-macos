@@ -97,65 +97,6 @@ extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs
 
 
 /*====================================================================*/
-/*=== Profiling                                                    ===*/
-/*====================================================================*/
-
-/* Nb: VG_(register_profile_event)() relies on VgpUnc being the first one */
-#define VGP_CORE_LIST \
-   /* These ones depend on the core */                \
-   VGP_PAIR(VgpUnc,         "unclassified"),          \
-   VGP_PAIR(VgpStartup,     "startup"),               \
-   VGP_PAIR(VgpRun,         "running"),               \
-   VGP_PAIR(VgpSched,       "scheduler"),             \
-   VGP_PAIR(VgpMalloc,      "low-lev malloc/free"),   \
-   VGP_PAIR(VgpCliMalloc,   "client  malloc/free"),   \
-   VGP_PAIR(VgpTranslate,   "translate-main"),        \
-   VGP_PAIR(VgpToUCode,     "to-ucode"),              \
-   VGP_PAIR(VgpFromUcode,   "from-ucode"),            \
-   VGP_PAIR(VgpImprove,     "improve"),               \
-   VGP_PAIR(VgpESPUpdate,   "ESP-update"),            \
-   VGP_PAIR(VgpRegAlloc,    "reg-alloc"),             \
-   VGP_PAIR(VgpLiveness,    "liveness-analysis"),     \
-   VGP_PAIR(VgpDoLRU,       "do-lru"),                \
-   VGP_PAIR(VgpSlowFindT,   "slow-search-transtab"),  \
-   VGP_PAIR(VgpExeContext,  "exe-context"),           \
-   VGP_PAIR(VgpReadSyms,    "read-syms"),             \
-   VGP_PAIR(VgpSearchSyms,  "search-syms"),           \
-   VGP_PAIR(VgpAddToT,      "add-to-transtab"),       \
-   VGP_PAIR(VgpCoreSysWrap, "core-syscall-wrapper"),  \
-   VGP_PAIR(VgpDemangle,    "demangle"),              \
-   VGP_PAIR(VgpCoreCheapSanity,     "core-cheap-sanity"),     \
-   VGP_PAIR(VgpCoreExpensiveSanity, "core-expensive-sanity"), \
-   /* These ones depend on the tool */                \
-   VGP_PAIR(VgpPreCloInit,  "pre-clo-init"),          \
-   VGP_PAIR(VgpPostCloInit, "post-clo-init"),         \
-   VGP_PAIR(VgpInstrument,  "instrument"),            \
-   VGP_PAIR(VgpToolSysWrap, "tool-syscall-wrapper"),  \
-   VGP_PAIR(VgpToolCheapSanity,     "tool-cheap-sanity"),     \
-   VGP_PAIR(VgpToolExpensiveSanity, "tool-expensive-sanity"), \
-   VGP_PAIR(VgpFini,        "fini")
-
-#define VGP_PAIR(n,name) n
-typedef enum { VGP_CORE_LIST } VgpCoreCC;
-#undef  VGP_PAIR
-
-/* When registering tool profiling events, ensure that the 'n' value is in
- * the range (VgpFini+1..) */
-extern void VG_(register_profile_event) ( Int n, Char* name );
-
-extern void VG_(pushcc) ( UInt cc );
-extern void VG_(popcc)  ( UInt cc );
-
-/* Define them only if they haven't already been defined by vg_profile.c */
-#ifndef VGP_PUSHCC
-#  define VGP_PUSHCC(x)
-#endif
-#ifndef VGP_POPCC
-#  define VGP_POPCC(x)
-#endif
-
-
-/*====================================================================*/
 /*=== Useful stuff to call from generated code                     ===*/
 /*====================================================================*/
 

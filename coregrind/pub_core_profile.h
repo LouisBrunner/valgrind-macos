@@ -1,15 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Dummy profiling machinery -- overridden by tools when they   ---*/
-/*--- want profiling.                                              ---*/
-/*---                                           vg_dummy_profile.c ---*/
+/*--- The built-in profiler.                    pub_core_profile.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward 
+   Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,42 +28,23 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#ifndef __PUB_CORE_PROFILE_H
+#define __PUB_CORE_PROFILE_H
 
-static void vgp_die(void)
-{
-   VG_(printf)(
-      "\nProfiling error:\n"
-      "  The --profile=yes option was specified, but the tool\n"
-      "  wasn't built for profiling.  #include \"vg_profile.c\"\n"
-      "  into the tool and rebuild to allow profiling.\n\n");
-   VG_(exit)(1);
-}
+//--------------------------------------------------------------------
+// PURPOSE: This module implements Valgrind's internal tick-and-stack-based
+// profiler.  To use it, define VG_DO_PROFILING and use --profile=yes.
+// Unfortunately, it's currently broken (and has been for some time)
+// because it doesn't interact well with signal handling.
+//--------------------------------------------------------------------
 
-void VG_(register_profile_event) ( Int n, Char* name )
-{
-}
+#include "pub_tool_profile.h"
 
-void VG_(init_profiling) ( void )
-{
-   vgp_die();
-}
+extern void VG_(init_profiling) ( void );
+extern void VG_(done_profiling) ( void );
 
-void VG_(done_profiling) ( void )
-{
-   VG_(core_panic)("done_profiling(), but not compiled for profiling??");
-}
-
-void VG_(pushcc) ( UInt cc )
-{
-   vgp_die();
-}
-
-void VG_(popcc) ( UInt cc )
-{
-   vgp_die();
-}
+#endif   // __PUB_CORE_PROFILE_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                       vg_dummy_profile.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

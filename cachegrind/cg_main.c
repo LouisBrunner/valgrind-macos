@@ -34,6 +34,7 @@
 #include "pub_tool_hashtable.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
+#include "pub_tool_profile.h"
 #include "pub_tool_tooliface.h"
 
 #include "cg_arch.h"

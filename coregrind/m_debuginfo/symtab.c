@@ -33,6 +33,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_demangle.h"
 #include "pub_core_options.h"
+#include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_tooliface.h"
 #include "priv_symtab.h"

@@ -88,19 +88,6 @@ extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
 /* ---------------------------------------------------------------------
-   Profiling stuff
-   ------------------------------------------------------------------ */
-
-extern void VG_(init_profiling) ( void );
-extern void VG_(done_profiling) ( void );
-
-#undef  VGP_PUSHCC
-#undef  VGP_POPCC
-#define VGP_PUSHCC(x)   if (VG_(clo_profile)) VG_(pushcc)(x)
-#define VGP_POPCC(x)    if (VG_(clo_profile)) VG_(popcc)(x)
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_intercept.c
    ------------------------------------------------------------------ */
 

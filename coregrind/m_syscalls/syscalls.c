@@ -32,6 +32,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_main.h"
+#include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
@@ -6071,7 +6072,7 @@ void VG_(client_syscall) ( ThreadId tid )
    Bool runInLWP     = False;
    Bool syscall_done = False;	/* we actually ran the syscall */
 
-   VGP_PUSHCC(VgpCoreSysWrap);
+//   VGP_PUSHCC(VgpCoreSysWrap);
 
    tst = VG_(get_ThreadState)(tid);
 
@@ -6198,7 +6199,7 @@ void VG_(client_syscall) ( ThreadId tid )
    /* VG_(post_syscall) should set this */
    vg_assert(tst->syscallno == -1);
 
-   VGP_POPCC(VgpCoreSysWrap);
+//   VGP_POPCC(VgpCoreSysWrap);
 }
 
 /*--------------------------------------------------------------------*/

@@ -65,6 +65,7 @@
 #include "pub_core_errormgr.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
+#include "pub_core_profile.h"
 #include "pub_core_replacemalloc.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"

@@ -32,7 +32,6 @@
 
 #include "mac_shared.h"
 #include "memcheck.h"
-//#include "vg_profile.c"
 
 
 /*------------------------------------------------------------*/

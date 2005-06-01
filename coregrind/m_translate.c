@@ -33,6 +33,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_main.h"       // for VG_(bbs_done)
 #include "pub_core_options.h"
+#include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
@@ -468,6 +469,8 @@ Bool VG_(translate) ( ThreadId tid,
       verbosity = VG_(clo_trace_flags);
    }
 
+   VGP_PUSHCC(VgpVexTime);
+   
    /* Actually do the translation. */
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
@@ -491,6 +494,8 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tres == VexTransOK);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
+
+   VGP_POPCC(VgpVexTime);
 
 #undef DECIDE_IF_PRINTING_CODEGEN
 

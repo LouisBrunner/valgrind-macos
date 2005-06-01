@@ -224,7 +224,6 @@ extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*,
 #define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
 // Offsets for the Vex state
 #define O_STACK_PTR        (offsetof(VexGuestArchState, VGA_STACK_PTR))
-#define O_FRAME_PTR        (offsetof(VexGuestArchState, VGA_FRAME_PTR))
 #define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
 
 

@@ -2448,29 +2448,39 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 
    if (VG_(clo_xml)) {
 
+      Bool   human_readable = True;
+      HChar* maybe_newline  = human_readable ? "\n      " : "";
+      HChar* maybe_newline2 = human_readable ? "\n    "   : "";
+
       /* Print in XML format, dumping in as much info as we know. */
       APPEND("<frame>");
       VG_(sprintf)(ibuf,"<ip>0x%llx</ip>", (ULong)eip);
+      APPEND(maybe_newline);
       APPEND(ibuf);
       if (know_objname) {
+         APPEND(maybe_newline);
          APPEND("<obj>");
          APPEND(buf_obj);
          APPEND("</obj>");
       }
       if (know_fnname) {
+         APPEND(maybe_newline);
          APPEND("<fn>");
          APPEND(buf_fn);
          APPEND("</fn>");
       }
       if (know_srcloc) {
+         APPEND(maybe_newline);
          APPEND("<file>");
          APPEND(buf_srcloc);
          APPEND("</file>");
+         APPEND(maybe_newline);
          APPEND("<line>");
          VG_(sprintf)(ibuf,"%d",lineno);
          APPEND(ibuf);
          APPEND("</line>");
       }
+      APPEND(maybe_newline2);
       APPEND("</frame>");
 
    } else {

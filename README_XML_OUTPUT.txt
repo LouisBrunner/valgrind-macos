@@ -86,6 +86,7 @@ version.  This is provided so that existing parsers can identify XML
 created by future versions of Valgrind merely by observing that the
 protocol version is one they don't understand.  Hence TOPLEVEL is:
 
+  <?xml version="1.0"?>
   <valgrindoutput>
     <protocolversion>INT<protocolversion>
     VERSION1STUFF
@@ -117,12 +118,11 @@ following in sequence:
 
      <tool>TEXT</tool>
 
-* The program and args being run.  Note, the program name is not
-  distinguished; it is merely the first presented TEXT:
+* The program and args being run.
 
      <argv>
-       <arg>TEXT</arg>
-       (one or more of)
+       <exe>TEXT</exe>
+       <arg>TEXT</arg> (zero or more of)
      </argv>
 
 * The following, indicating that the program has now started:

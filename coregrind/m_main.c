@@ -1924,6 +1924,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "<?xml version=\"1.0\"?>");
+      VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<valgrindoutput>");
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<protocolversion>1</protocolversion>");
@@ -1977,8 +1979,11 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "<tool>%s</tool>", toolname);
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<argv>");   
-      for (i = 0; i < VG_(client_argc); i++) 
-         VG_(message)(Vg_UserMsg, "  <arg>%s</arg>", VG_(client_argv)[i]);
+      for (i = 0; i < VG_(client_argc); i++) {
+         HChar* tag = i==0 ? "exe" : "arg";
+         VG_(message)(Vg_UserMsg, "  <%s>%s</%s>", 
+                                  tag, VG_(client_argv)[i], tag);
+      }
       VG_(message)(Vg_UserMsg, "</argv>");   
    }
 

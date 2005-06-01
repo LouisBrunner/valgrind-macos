@@ -941,39 +941,29 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
 #  error Unknown platform
 #endif
 
-
-/* Fake up an ExeContext which is of our actual real CPU state, so we
-   can print a stack trace.  This isn't terribly useful in the case
-   where we were killed by a signal, since we just get a backtrace
-   into the signal handler.  Also, it could be somewhat risky if we
-   actully got the panic/exception within the execontext/stack
-   dump/symtab code.  But it's better than nothing. */
-static inline void get_and_pp_real_StackTrace(Addr ret)
+__attribute__ ((noreturn))
+static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 {
-   Addr ips[VG_DEEPEST_BACKTRACE];
-   Addr sp, fp;
-   Addr stacktop;
-   ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
-   ThreadState *tst = VG_(get_ThreadState)(tid);
+   #define BACKTRACE_DEPTH    100         // nice and deep!
+   Addr stacktop, ips[BACKTRACE_DEPTH];
+   ThreadState *tst;
 
-   GET_REAL_SP_AND_FP(sp, fp);
+   tst = VG_(get_ThreadState)( VG_(get_lwp_tid)(VG_(gettid)()) );
+
+   // If necessary, fake up an ExeContext which is of our actual real CPU
+   // state.  Could cause problems if we got the panic/exception within the
+   // execontext/stack dump/symtab code.  But it's better than nothing.
+   if (0 == ip && 0 == sp && 0 == fp) {
+       ip = (Addr)__builtin_return_address(0);
+       GET_REAL_SP_AND_FP(sp, fp);
+   }
 
    stacktop = tst->os_state.valgrind_stack_base + 
               tst->os_state.valgrind_stack_szB;
 
-   VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size),
-                        ret, sp, fp, sp, stacktop);
-   VG_(pp_StackTrace)  (ips, VG_(clo_backtrace_size));
-}
+   VG_(get_StackTrace2)(ips, BACKTRACE_DEPTH, ip, sp, fp, sp, stacktop);
+   VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
 
-__attribute__ ((noreturn))
-static void report_and_quit ( const Char* report, StackTrace ips )
-{
-   if (ips == NULL)
-      get_and_pp_real_StackTrace((Addr)__builtin_return_address(0));
-   else
-      VG_(pp_StackTrace)(ips, VG_(clo_backtrace_size));
-   
    VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
 
    VG_(pp_sched_status)();
@@ -986,6 +976,8 @@ static void report_and_quit ( const Char* report, StackTrace ips )
    VG_(printf)("In the bug report, send all the above text, the valgrind\n");
    VG_(printf)("version, and what Linux distro you are using.  Thanks.\n\n");
    VG_(exit)(1);
+
+   #undef BACKTRACE_DEPTH
 }
 
 void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
@@ -1002,9 +994,8 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
      VG_(exit)(2);
    entered = True;
 
-   va_start(vargs,format);
+   va_start(vargs, format);
    VG_(vsprintf) ( bufptr, format, vargs );
-   add_to_vg_sprintf_buf('\0', &bufptr);
    va_end(vargs);
 
    if (isCore) {
@@ -1026,29 +1017,30 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    if (!VG_STREQ(buf, ""))
       VG_(printf)("%s: %s\n", component, buf );
 
-   report_and_quit(bugs_to, NULL);
+   report_and_quit(bugs_to, 0,0,0);
 }
 
 __attribute__ ((noreturn))
-static void panic ( Char* name, Char* report, Char* str, StackTrace ips )
+static void panic ( Char* name, Char* report, Char* str,
+                    Addr ip, Addr sp, Addr fp )
 {
    VG_(printf)("\n%s: the 'impossible' happened:\n   %s\n", name, str);
-   report_and_quit(report, ips);
+   report_and_quit(report, ip, sp, fp);
+}
+
+void VG_(core_panic_at) ( Char* str, Addr ip, Addr sp, Addr fp )
+{
+   panic("valgrind", VG_BUGS_TO, str, ip, sp, fp);
 }
 
 void VG_(core_panic) ( Char* str )
 {
-   panic("valgrind", VG_BUGS_TO, str, NULL);
-}
-
-void VG_(core_panic_at) ( Char* str, StackTrace ips )
-{
-   panic("valgrind", VG_BUGS_TO, str, ips);
+   VG_(core_panic_at)(str, 0,0,0);
 }
 
 void VG_(tool_panic) ( Char* str )
 {
-   panic(VG_(details).name, VG_(details).bug_reports_to, str, NULL);
+   panic(VG_(details).name, VG_(details).bug_reports_to, str, 0,0,0);
 }
 
 /* Print some helpful-ish text about unimplemented things, and give

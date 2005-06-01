@@ -41,7 +41,6 @@
 
 #include "pub_core_mallocfree.h"  // for type 'ArenaId'
 #include "pub_core_scheduler.h"   // for types 'ThreadState', 'ThreadArchState'
-#include "pub_core_stacktrace.h"  // for type 'StackTrace'
 
 /* ---------------------------------------------------------------------
    Global macros.
@@ -49,10 +48,6 @@
 
 /* Max length of a text fragment used to construct error messages. */
 #define VG_ERRTXT_LEN 4096
-
-/* The maximum number of calls we're prepared to save in a
-   backtrace. */
-#define VG_DEEPEST_BACKTRACE 50
 
 /* Useful macros */
 /* a - alignment - must be a power of 2 */
@@ -166,7 +161,7 @@ extern void VG_(done_profiling) ( void );
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( Char* str, StackTrace ips );
+extern void  VG_(core_panic_at)   ( Char* str, Addr ip, Addr sp, Addr fp );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */

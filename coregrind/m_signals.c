@@ -87,6 +87,7 @@
 #include "pub_core_options.h"
 #include "pub_core_signals.h"
 #include "pub_core_sigframe.h"
+#include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 
@@ -1845,7 +1846,6 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       from the client's code, then we can jump back into the scheduler
       and have it delivered.  Otherwise it's a Valgrind bug. */
    {   
-      Addr ips[ VG_(clo_backtrace_size) ];
       ThreadState *tst = VG_(get_ThreadState)(VG_(get_lwp_tid)(VG_(gettid)()));
 
       if (VG_(sigismember)(&tst->sig_mask, sigNo)) {
@@ -1889,15 +1889,10 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       //  tid = VG_(master_tid);
       vg_assert(tid != 0);
 
-      tst = VG_(get_ThreadState)(tid);
-      VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size), 
-                           VGP_UCONTEXT_INSTR_PTR(uc),
-                           VGP_UCONTEXT_STACK_PTR(uc),
-                           VGP_UCONTEXT_FRAME_PTR(uc),
-                           VGP_UCONTEXT_STACK_PTR(uc),
-                           tst->os_state.valgrind_stack_base + 
-                           tst->os_state.valgrind_stack_szB);
-      VG_(core_panic_at)("Killed by fatal signal", ips);
+      VG_(core_panic_at)("Killed by fatal signal",
+                         VGP_UCONTEXT_INSTR_PTR(uc),
+                         VGP_UCONTEXT_STACK_PTR(uc),
+                         VGP_UCONTEXT_FRAME_PTR(uc));
    }
 }
 

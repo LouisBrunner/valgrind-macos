@@ -38,6 +38,7 @@
 
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
+#include "pub_tool_libcbase.h"
 
 
 #define EXPECTED_TAKEN(cond)     __builtin_expect((cond),1)

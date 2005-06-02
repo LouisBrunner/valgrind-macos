@@ -32,6 +32,7 @@
 
 #include <setjmp.h>
 #include "mac_shared.h"
+#include "pub_tool_libcbase.h"
 
 /* Define to debug the memory-leak-detector. */
 #define VG_DEBUG_LEAKCHECK 0

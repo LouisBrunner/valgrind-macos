@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_options.h"
 #include "priv_symtab.h"
 

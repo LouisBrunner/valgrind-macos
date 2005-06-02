@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "priv_symtab.h"
 
 #include <a.out.h>        /* stabs defns                    */

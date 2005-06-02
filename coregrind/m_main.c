@@ -36,6 +36,7 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"

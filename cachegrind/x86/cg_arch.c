@@ -29,6 +29,7 @@
 */
 
 #include "tool.h"
+#include "pub_tool_libcbase.h"
 #include "cg_arch.h"
 
 // All CPUID info taken from sandpile.org/a32/cpuid.htm */

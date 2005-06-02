@@ -32,7 +32,7 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
-
+#include "pub_core_libcbase.h"
 
 /* Size of a smallish table used to read /proc/self/map entries. */
 #define M_PROCMAP_BUF 50000

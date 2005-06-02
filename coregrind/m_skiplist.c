@@ -87,6 +87,7 @@
  */
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_skiplist.h"
 
 #include <stdlib.h>

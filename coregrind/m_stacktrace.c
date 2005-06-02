@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"

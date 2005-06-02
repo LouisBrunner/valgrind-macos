@@ -63,6 +63,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"

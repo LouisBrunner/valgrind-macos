@@ -1,13 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Demangling of C++ mangled names.                  demangle.c ---*/
+/*--- Standalone libc stuff.                   pub_core_libcbase.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward 
+   Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,37 +28,18 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
-#include "pub_core_demangle.h"
-#include "pub_core_libcbase.h"
-#include "pub_core_options.h"
-#include "pub_core_profile.h"
-#include "demangle.h"
+#ifndef __PUB_CORE_LIBCBASE_H
+#define __PUB_CORE_LIBCBASE_H
 
-void VG_(demangle) ( Char* orig, Char* result, Int result_size )
-{
-   Char* demangled = NULL;
+//--------------------------------------------------------------------
+// PURPOSE: This module contains all the libc code that is entirely
+// standalone (other than the VG_() macro and some types defined 
+// elsewhere):  string functions, char functions, and a few other things.
+//--------------------------------------------------------------------
 
-   VGP_PUSHCC(VgpDemangle);
+#include "pub_tool_libcbase.h"
 
-   if (VG_(clo_demangle))
-      demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
-
-   if (demangled) {
-      VG_(strncpy_safely)(result, demangled, result_size);
-      VG_(arena_free) (VG_AR_DEMANGLE, demangled);
-   } else {
-      VG_(strncpy_safely)(result, orig, result_size);
-   }
-
-   // 13 Mar 2005: We used to check here that the demangler wasn't leaking
-   // by calling the (now-removed) function VG_(is_empty_arena)().  But,
-   // very rarely (ie. I've heard of it twice in 3 years), the demangler
-   // does leak.  But, we can't do much about it, and it's not a disaster,
-   // so we just let it slide without aborting or telling the user.
-
-   VGP_POPCC(VgpDemangle);
-}
+#endif   // __PUB_CORE_LIBCBASE_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

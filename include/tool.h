@@ -63,11 +63,6 @@
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
 
-
-/* Use this for normal null-termination-style string comparison */
-#define VG_STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                         && VG_(strcmp)((s1),(s2))==0)
-
 /* Client args */
 extern Int    VG_(client_argc);
 extern Char** VG_(client_argv);
@@ -101,17 +96,6 @@ extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs
 /*====================================================================*/
 
 /* ------------------------------------------------------------------ */
-/* General stuff */
-
-/* Check if an address/whatever is aligned */
-#define VG_IS_4_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x3)))
-#define VG_IS_8_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & ((Addr)0x7)))
-#define VG_IS_16_ALIGNED(aaa_p)   (0 == (((Addr)(aaa_p)) & ((Addr)0xf)))
-#define VG_IS_WORD_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(sizeof(Addr)-1))))
-#define VG_IS_PAGE_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(VKI_PAGE_SIZE-1))))
-
-
-/* ------------------------------------------------------------------ */
 /* Thread-related stuff */
 
 /* Special magic value for an invalid ThreadId.  It corresponds to
@@ -137,16 +121,9 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 /*=== Valgrind's version of libc                                   ===*/
 /*====================================================================*/
 
-/* Valgrind doesn't use libc at all, for good reasons (trust us).  So here
-   are its own versions of C library functions, but with VG_ prefixes.  Note
-   that the types of some are slightly different to the real ones.  Some
-   additional useful functions are provided too; descriptions of how they
-   work are given below. */
-
 #if !defined(NULL)
 #  define NULL ((void*)0)
 #endif
-
 
 /* ------------------------------------------------------------------ */
 /* stdio.h
@@ -186,63 +163,6 @@ extern Int VG_(setrlimit) ( Int resource, const struct vki_rlimit *rlim );
 
 /* Crude stand-in for the glibc system() call. */
 extern Int   VG_(system) ( Char* cmd );
-
-extern Long  VG_(atoll)  ( Char* str );
-
-/* Like atoll(), but converts a number of base 16 */
-extern Long  VG_(atoll16) ( Char* str );
-
-/* Like atoll(), but converts a number of base 2..36 */
-extern Long  VG_(atoll36) ( UInt base, Char* str );
-
-/* Like qsort(), but does shell-sort.  The size==1/2/4 cases are specialised. */
-extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
-                        Int (*compar)(void*, void*) );
-
-
-/* ------------------------------------------------------------------ */
-/* ctype.h */
-extern Bool VG_(isspace) ( Char c );
-extern Bool VG_(isdigit) ( Char c );
-extern Char VG_(toupper) ( Char c );
-
-
-/* ------------------------------------------------------------------ */
-/* string.h */
-extern Int   VG_(strlen)         ( const Char* str );
-extern Char* VG_(strcat)         ( Char* dest, const Char* src );
-extern Char* VG_(strncat)        ( Char* dest, const Char* src, Int n );
-extern Char* VG_(strpbrk)        ( const Char* s, const Char* accpt );
-extern Char* VG_(strcpy)         ( Char* dest, const Char* src );
-extern Char* VG_(strncpy)        ( Char* dest, const Char* src, Int ndest );
-extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );
-extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, Int nmax );
-extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
-extern Char* VG_(strchr)         ( const Char* s, Char c );
-extern Char* VG_(strrchr)        ( const Char* s, Char c );
-extern Char* VG_(strdup)         ( const Char* s);
-extern void* VG_(memcpy)         ( void *d, const void *s, Int sz );
-extern void* VG_(memset)         ( void *s, Int c, Int sz );
-extern Int   VG_(memcmp)         ( const void* s1, const void* s2, Int n );
-
-/* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
-extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );
-extern Int   VG_(strncmp_ws)     ( const Char* s1, const Char* s2, Int nmax );
-
-/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
-   last character. */
-extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
-
-/* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
- * meta-symbols '*' and '?'.  '\' escapes meta-symbols. */
-extern Bool  VG_(string_match)   ( const Char* pat, const Char* str );
-
-
-/* ------------------------------------------------------------------ */
-/* math.h */
-/* Returns the base-2 logarithm of x. */
-extern Int VG_(log2) ( Int x );
-
 
 /* ------------------------------------------------------------------ */
 /* unistd.h, fcntl.h, sys/stat.h */

@@ -8,6 +8,7 @@ incinc_HEADERS = \
 	pub_tool_errormgr.h 		\
 	pub_tool_execontext.h 		\
 	pub_tool_hashtable.h 		\
+	pub_tool_libcbase.h 		\
 	pub_tool_mallocfree.h 		\
 	pub_tool_options.h 		\
 	pub_tool_profile.h		\

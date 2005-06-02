@@ -31,6 +31,7 @@
 */
 
 #include "mac_shared.h"
+#include "pub_tool_libcbase.h"
 
 /*------------------------------------------------------------*/
 /*--- Defns                                                ---*/

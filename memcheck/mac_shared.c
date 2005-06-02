@@ -30,9 +30,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-
 #include "mac_shared.h"
-
+#include "pub_tool_libcbase.h"
 #include "memcheck.h"   /* for VG_USERREQ__* */
 
 /*------------------------------------------------------------*/

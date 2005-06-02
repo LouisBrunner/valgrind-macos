@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA.  */
 #endif*/
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "ansidecl.h"
 #include "dyn-string.h"
 

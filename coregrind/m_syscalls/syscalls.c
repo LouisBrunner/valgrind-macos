@@ -31,6 +31,7 @@
 #include "core.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_main.h"
 #include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"

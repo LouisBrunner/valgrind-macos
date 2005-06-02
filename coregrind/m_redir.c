@@ -32,6 +32,7 @@
 #include "core.h"
 
 #include "pub_core_aspacemgr.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_skiplist.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"

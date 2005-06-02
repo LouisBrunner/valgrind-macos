@@ -30,6 +30,7 @@
 
 #include "tool.h"
 #include "cg_arch.h"
+#include "pub_tool_libcbase.h"
 
 void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                             Bool all_caches_clo_defined)

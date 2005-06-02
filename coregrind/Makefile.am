@@ -46,6 +46,7 @@ noinst_HEADERS = \
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
+	pub_core_libcbase.h	\
 	pub_core_main.h		\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
@@ -87,6 +88,7 @@ stage2_SOURCES = \
 	m_errormgr.c \
 	m_execontext.c \
 	m_hashtable.c \
+	m_libcbase.c \
 	m_main.c \
 	m_mallocfree.c \
 	m_options.c \

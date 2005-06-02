@@ -41,6 +41,7 @@
 #endif*/
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "ansidecl.h"
 #include "dyn-string.h"
 #include "demangle.h"
@@ -1408,7 +1409,7 @@ demangle_number (dm, value, base, is_signed)
   }
 
   if (base == 36) {
-     *value = VG_(atoll36) (36, dyn_string_buf (number));
+     *value = VG_(atoll36) (dyn_string_buf (number));
   } else {
      *value = VG_(atoll) (dyn_string_buf (number));
   }

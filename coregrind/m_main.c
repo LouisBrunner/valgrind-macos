@@ -300,7 +300,7 @@ static int scan_auxv(void* init_sp)
 	 break;
 
       case AT_PHDR:
-         VG_(valgrind_base) = PGROUNDDN(auxv->u.a_val);
+         VG_(valgrind_base) = VG_PGROUNDDN(auxv->u.a_val);
          break;
       }
 
@@ -328,20 +328,20 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    // VG_(valgrind_base) should have been set by scan_auxv, but if not,
    // this is a workable approximation
    if (VG_(valgrind_base) == 0) {
-      VG_(valgrind_base) = PGROUNDDN(&_start);
+      VG_(valgrind_base) = VG_PGROUNDDN(&_start);
    }
 
-   VG_(valgrind_last)  = ROUNDUP(argc_addr, 0x10000) - 1; // stack
+   VG_(valgrind_last)  = VG_ROUNDUP(argc_addr, 0x10000) - 1; // stack
 
    // This gives the client the largest possible address space while
    // taking into account the tool's shadow needs.
-   client_size         = ROUNDDN((VG_(valgrind_base)-REDZONE_SIZE) / (1.+ratio),
+   client_size         = VG_ROUNDDN((VG_(valgrind_base)-REDZONE_SIZE) / (1.+ratio),
                          CLIENT_SIZE_MULTIPLE);
    VG_(client_base)    = 0;
    VG_(client_end)     = VG_(client_base) + client_size;
    /* where !FIXED mmap goes */
    VG_(client_mapbase) = VG_(client_base) +
-         PGROUNDDN((Addr)(client_size * CLIENT_HEAP_PROPORTION));
+         VG_PGROUNDDN((Addr)(client_size * CLIENT_HEAP_PROPORTION));
 
    VG_(shadow_base)    = VG_(client_end) + REDZONE_SIZE;
    VG_(shadow_end)     = VG_(valgrind_base);
@@ -873,7 +873,7 @@ static Addr setup_client_stack(void* init_sp,
       sizeof(char **)*envc +		/* envp */
       sizeof(char **) +			/* terminal NULL */
       auxsize +				/* auxv */
-      ROUNDUP(stringsize, sizeof(Word)) +/* strings (aligned) */
+      VG_ROUNDUP(stringsize, sizeof(Word)) +/* strings (aligned) */
       VKI_PAGE_SIZE;			/* page for trampoline code */
 
    if (0) VG_(printf)("stacksize = %d\n", stacksize);
@@ -885,13 +885,13 @@ static Addr setup_client_stack(void* init_sp,
 
    /* cl_esp is the client's stack pointer */
    cl_esp = VG_(clstk_end) - stacksize;
-   cl_esp = ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
+   cl_esp = VG_ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
    stringbase = strtab = (char *)(VG_(client_trampoline_code) 
-                         - ROUNDUP(stringsize, sizeof(int)));
+                         - VG_ROUNDUP(stringsize, sizeof(int)));
 
-   VG_(clstk_base) = PGROUNDDN(cl_esp);
+   VG_(clstk_base) = VG_PGROUNDDN(cl_esp);
 
    if (0)
       printf("stringsize=%d auxsize=%d stacksize=%d\n"
@@ -903,7 +903,8 @@ static Addr setup_client_stack(void* init_sp,
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
-   res = mmap((void *)PGROUNDDN(cl_esp), VG_(clstk_end) - PGROUNDDN(cl_esp),
+   res = mmap((void *)VG_PGROUNDDN(cl_esp), 
+              VG_(clstk_end) - VG_PGROUNDDN(cl_esp),
 	      PROT_READ | PROT_WRITE | PROT_EXEC, 
 	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
    vg_assert((void*)-1 != res); 

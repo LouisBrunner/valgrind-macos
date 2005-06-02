@@ -251,22 +251,23 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       // use ph->p_align -- part of stage2's memory gets trashed somehow.)
       //
       // The condition handles the case of a zero-length segment.
-      if (PGROUNDUP(bss)-PGROUNDDN(addr) > 0) {
-         res = mmap((char *)PGROUNDDN(addr), PGROUNDUP(bss)-PGROUNDDN(addr),
-                    prot, MAP_FIXED|MAP_PRIVATE, e->fd, PGROUNDDN(off));
-         check_mmap(res, (char*)PGROUNDDN(addr),
-                    PGROUNDUP(bss)-PGROUNDDN(addr));
+      if (VG_PGROUNDUP(bss)-VG_PGROUNDDN(addr) > 0) {
+         res = mmap((char *)VG_PGROUNDDN(addr),
+                    VG_PGROUNDUP(bss)-VG_PGROUNDDN(addr),
+                    prot, MAP_FIXED|MAP_PRIVATE, e->fd, VG_PGROUNDDN(off));
+         check_mmap(res, (char*)VG_PGROUNDDN(addr),
+                    VG_PGROUNDUP(bss)-VG_PGROUNDDN(addr));
       }
 
       // if memsz > filesz, fill the remainder with zeroed pages
       if (memsz > filesz) {
 	 UInt bytes;
 
-	 bytes = PGROUNDUP(brkaddr)-PGROUNDUP(bss);
+	 bytes = VG_PGROUNDUP(brkaddr)-VG_PGROUNDUP(bss);
 	 if (bytes > 0) {
-	    res = mmap((char *)PGROUNDUP(bss), bytes,
+	    res = mmap((char *)VG_PGROUNDUP(bss), bytes,
 		       prot, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
-            check_mmap(res, (char*)PGROUNDUP(bss), bytes);
+            check_mmap(res, (char*)VG_PGROUNDUP(bss), bytes);
          }
 
 	 bytes = bss & (VKI_PAGE_SIZE - 1);
@@ -413,7 +414,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       int flags = MAP_PRIVATE|MAP_ANONYMOUS;
 
       if (info->map_base != 0) {
-	 base = (char *)ROUNDUP(info->map_base, interp_align);
+	 base = (char *)VG_ROUNDUP(info->map_base, interp_align);
 	 flags |= MAP_FIXED;
       }
 

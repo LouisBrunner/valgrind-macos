@@ -596,8 +596,8 @@ PRE(sys_io_setup, Special)
                  unsigned, nr_events, vki_aio_context_t *, ctxp);
    PRE_MEM_WRITE( "io_setup(ctxp)", ARG2, sizeof(vki_aio_context_t) );
    
-   size = PGROUNDUP(sizeof(struct vki_aio_ring) +
-                    ARG1*sizeof(struct vki_io_event));
+   size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) +
+                       ARG1*sizeof(struct vki_io_event));
    addr = VG_(find_map_space)(0, size, True);
    
    if (addr == 0) {
@@ -645,8 +645,8 @@ PRE(sys_io_destroy, Special)
    // If we are going to seg fault (due to a bogus ARG1) do it as late as
    // possible...
    r = *(struct vki_aio_ring **)ARG1;
-   size = PGROUNDUP(sizeof(struct vki_aio_ring) + 
-                    r->nr*sizeof(struct vki_io_event));
+   size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) + 
+                       r->nr*sizeof(struct vki_io_event));
 
    SET_RESULT( VG_(do_syscall1)(SYSNO, ARG1) );
 

@@ -465,7 +465,7 @@ static Addr build_sigframe(ThreadState *tst,
    vg_assert((flags & VKI_SA_SIGINFO) == 0);
 
    esp -= sizeof(*frame);
-   esp = ROUNDDN(esp, 16);
+   esp = VG_ROUNDDN(esp, 16);
    frame = (struct sigframe *)esp;
 
    if (!extend(tst, esp, sizeof(*frame)))
@@ -512,7 +512,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    vg_assert((flags & VKI_SA_SIGINFO) != 0);
 
    esp -= sizeof(*frame);
-   esp = ROUNDDN(esp, 16);
+   esp = VG_ROUNDDN(esp, 16);
    frame = (struct rt_sigframe *)esp;
 
    if (!extend(tst, esp, sizeof(*frame)))

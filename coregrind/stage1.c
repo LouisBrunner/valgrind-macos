@@ -265,15 +265,15 @@ static void main2(void)
    extern char _end;
    int *esp;
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
-   info.exe_end  = PGROUNDDN(init_sp);
+   info.exe_end  = VG_PGROUNDDN(init_sp);
 #ifdef HAVE_PIE
-   info.exe_base = ROUNDDN(info.exe_end - 0x02000000, 0x10000000);
-   assert(info.exe_base >= PGROUNDUP(&_end));
+   info.exe_base = VG_ROUNDDN(info.exe_end - 0x02000000, 0x10000000);
+   assert(info.exe_base >= VG_PGROUNDUP(&_end));
    info.map_base = info.exe_base + 0x01000000;
 #else
    // If this system doesn't have PIE (position-independent executables),
    // we have to choose a hardwired location for stage2.
-   info.exe_base = PGROUNDUP(&_end);
+   info.exe_base = VG_PGROUNDUP(&_end);
    info.map_base = KICKSTART_BASE + 0x01000000;
 #endif
 

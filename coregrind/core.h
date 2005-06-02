@@ -49,12 +49,6 @@
 /* Max length of a text fragment used to construct error messages. */
 #define VG_ERRTXT_LEN 4096
 
-// 'a' -- the alignment -- must be a power of 2
-#define ROUNDDN(p, a)	((Addr)(p) & ~((Addr)(a)-1))
-#define ROUNDUP(p, a)	ROUNDDN((p)+(a)-1, (a))
-#define PGROUNDDN(p)	ROUNDDN(p, VKI_PAGE_SIZE)
-#define PGROUNDUP(p)	ROUNDUP(p, VKI_PAGE_SIZE)
-
 /* ---------------------------------------------------------------------
    Environment variables
    ------------------------------------------------------------------ */

@@ -77,12 +77,6 @@ static UInt n_lockorder_warnings = 0;
 /* Rotate an unsigned quantity left */
 #define ROTL(x, n)	(((x) << (n)) | ((x) >> ((sizeof(x)*8)-(n))))
 
-/* round a up to the next multiple of N.  N must be a power of 2 */
-#define ROUNDUP(a, N)	((a + N - 1) & ~(N-1))
-
-/* Round a down to the next multiple of N.  N must be a power of 2 */
-#define ROUNDDN(a, N)	((a) & ~(N-1))
-
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
@@ -1625,8 +1619,8 @@ void set_address_range_state ( Addr a, SizeT len /* in bytes */,
     * len/4+1 words.  This works out which it is by aligning the block and
     * seeing if the end byte is in the same word as it is for the unaligned
     * block; if not, it's the awkward case. */
-   end = ROUNDUP(a + len, 4);
-   a   = ROUNDDN(a, 4);
+   end = VG_ROUNDUP(a + len, 4);
+   a   = VG_ROUNDDN(a, 4);
 
    /* Do it ... */
    switch (status) {
@@ -3049,8 +3043,8 @@ static void hg_mem_read(Addr a, SizeT size, ThreadId tid)
 {
    Addr end;
 
-   end = ROUNDUP(a+size, 4);
-   a = ROUNDDN(a, 4);
+   end = VG_ROUNDUP(a+size, 4);
+   a   = VG_ROUNDDN(a, 4);
 
    for ( ; a < end; a += 4)
       hg_mem_read_word(a, tid);
@@ -3154,8 +3148,8 @@ static void hg_mem_write(Addr a, SizeT size, ThreadId tid)
 {
    Addr     end;
 
-   end = ROUNDUP(a+size, 4);
-   a = ROUNDDN(a, 4);
+   end = VG_ROUNDUP(a+size, 4);
+   a   = VG_ROUNDDN(a, 4);
 
    for ( ; a < end; a += 4)
       hg_mem_write_word(a, tid);

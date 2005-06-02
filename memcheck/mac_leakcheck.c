@@ -38,11 +38,6 @@
 #define VG_DEBUG_LEAKCHECK 0
 #define VG_DEBUG_CLIQUE	   0
 
-#define ROUNDDN(p, a)	((Addr)(p) & ~((a)-1))
-#define ROUNDUP(p, a)	ROUNDDN((p)+(a)-1, (a))
-#define PGROUNDDN(p)	ROUNDDN(p, VKI_PAGE_SIZE)
-#define PGROUNDUP(p)	ROUNDUP(p, VKI_PAGE_SIZE)
-
 /*------------------------------------------------------------*/
 /*--- Low-level address-space scanning, for the leak       ---*/
 /*--- detector.                                            ---*/
@@ -371,8 +366,8 @@ static Int lc_markstack_pop(void)
    cliques, and clique is the index of the current clique leader. */
 static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 {
-   Addr ptr = ROUNDUP(start, sizeof(Addr));
-   Addr end = ROUNDDN(start+len, sizeof(Addr));
+   Addr ptr = VG_ROUNDUP(start, sizeof(Addr));
+   Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
    vki_sigset_t sigmask;
 
    if (VG_DEBUG_LEAKCHECK)
@@ -384,14 +379,14 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 
    if (!VG_(is_client_addr)(ptr) ||
        !VG_(is_addressable)(ptr, sizeof(Addr), VKI_PROT_READ))
-      ptr = PGROUNDUP(ptr+1);	/* first page bad */
+      ptr = VG_PGROUNDUP(ptr+1);	/* first page bad */
 
    while (ptr < end) {
       Addr addr;
 
       /* Skip invalid chunks */
       if (!(*lc_is_within_valid_secondary)(ptr)) {
-	 ptr = ROUNDUP(ptr+1, SECONDARY_SIZE);
+	 ptr = VG_ROUNDUP(ptr+1, SECONDARY_SIZE);
 	 continue;
       }
 
@@ -414,7 +409,7 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 	    longjmped out of a signal handler. */
 	 VG_(sigprocmask)(VKI_SIG_SETMASK, &sigmask, NULL);
 
-	 ptr = PGROUNDUP(ptr+1);	/* bad page - skip it */
+	 ptr = VG_PGROUNDUP(ptr+1);	/* bad page - skip it */
       }
    }
 

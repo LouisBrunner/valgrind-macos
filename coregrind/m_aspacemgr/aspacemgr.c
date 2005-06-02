@@ -583,7 +583,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    if (len == 0)
       return;
 
-   len = PGROUNDUP(len);
+   len = VG_PGROUNDUP(len);
 
    if (debug)
       VG_(printf)("unmap_range(%p, %lu)\n", addr, len);
@@ -705,7 +705,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
 
    /* Everything must be page-aligned */
    vg_assert(VG_IS_PAGE_ALIGNED(addr));
-   len = PGROUNDUP(len);
+   len = VG_PGROUNDUP(len);
 
    /* Nuke/truncate any existing segment(s) covering [addr,addr+len) */
    VG_(unmap_range)(addr, len);
@@ -816,7 +816,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 
    /* Everything must be page-aligned */
    vg_assert(VG_IS_PAGE_ALIGNED(a));
-   len = PGROUNDUP(len);
+   len = VG_PGROUNDUP(len);
 
    split_segment(a);
    split_segment(a+len);
@@ -868,7 +868,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
    /* Everything must be page-aligned */
    vg_assert((addr & (VKI_PAGE_SIZE-1)) == 0);
-   len = PGROUNDUP(len);
+   len = VG_PGROUNDUP(len);
 
    len += VKI_PAGE_SIZE * 2; /* leave redzone gaps before and after mapping */
 
@@ -1158,8 +1158,8 @@ Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
    if (size == 0)
       return True; /* isn't this a bit of a strange case? */
 
-   p    = PGROUNDDN(p);
-   size = PGROUNDUP(size);
+   p    = VG_PGROUNDDN(p);
+   size = VG_PGROUNDUP(size);
    vg_assert(VG_IS_PAGE_ALIGNED(p));
    vg_assert(VG_IS_PAGE_ALIGNED(size));
 
@@ -1184,7 +1184,7 @@ Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
 Addr VG_(get_memory_from_mmap_for_client)
         (Addr addr, SizeT len, UInt prot, UInt sf_flags)
 {
-   len = PGROUNDUP(len);
+   len = VG_PGROUNDUP(len);
 
    tl_assert(!(sf_flags & SF_FIXED));
    tl_assert(0 == addr);
@@ -1259,15 +1259,15 @@ vg_assert(0);
    vg_assert(VG_(needs).shadow_memory);
    vg_assert(VG_(tdict).track_init_shadow_page);
 
-   sz = PGROUNDUP(p+sz) - PGROUNDDN(p);
-   p = PGROUNDDN(p);
+   sz = VG_PGROUNDUP(p+sz) - VG_PGROUNDDN(p);
+   p  = VG_PGROUNDDN(p);
 
    VG_(mprotect)((void *)p, sz, VKI_PROT_READ|VKI_PROT_WRITE);
    
    if (call_init) 
       while(sz) {
 	 /* ask the tool to initialize each page */
-	 VG_TRACK( init_shadow_page, PGROUNDDN(p) );
+	 VG_TRACK( init_shadow_page, VG_PGROUNDDN(p) );
 	 
 	 p  += VKI_PAGE_SIZE;
 	 sz -= VKI_PAGE_SIZE;
@@ -1285,7 +1285,7 @@ void *VG_(shadow_alloc)(UInt size)
    vg_assert(VG_(needs).shadow_memory);
    vg_assert(!VG_(tdict).track_init_shadow_page);
 
-   size = PGROUNDUP(size);
+   size = VG_PGROUNDUP(size);
 
    if (shadow_alloc == 0)
       shadow_alloc = VG_(shadow_base);

@@ -173,8 +173,8 @@ void mash_addr_and_len( Addr* a, SizeT* len)
 {
    Addr ra;
    
-   ra = PGROUNDDN(*a);
-   *len = PGROUNDUP(*a + *len) - ra;
+   ra = VG_PGROUNDDN(*a);
+   *len = VG_PGROUNDUP(*a + *len) - ra;
    *a = ra;
 }
 
@@ -211,10 +211,10 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
    Addr ret;
    Segment *seg, *next;
 
-   old_size = PGROUNDUP(old_size);
-   new_size = PGROUNDUP(new_size);
+   old_size = VG_PGROUNDUP(old_size);
+   new_size = VG_PGROUNDUP(new_size);
 
-   if (PGROUNDDN(old_addr) != old_addr)
+   if (VG_PGROUNDDN(old_addr) != old_addr)
       return -VKI_EINVAL;
 
    if (!VG_(valid_client_addr)(old_addr, old_size, tid, "mremap(old_addr)"))
@@ -225,7 +225,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       flags &= ~(VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE);
 
    if (flags & VKI_MREMAP_FIXED) {
-      if (PGROUNDDN(new_addr) != new_addr)
+      if (VG_PGROUNDDN(new_addr) != new_addr)
 	 return -VKI_EINVAL;
 
       if (!VG_(valid_client_addr)(new_addr, new_size, tid, "mremap(new_addr)"))
@@ -907,8 +907,8 @@ static Addr do_brk(Addr newbrk)
    if (seg != NULL && newbrk > seg->addr)
       return VG_(brk_limit);
 
-   current = PGROUNDUP(VG_(brk_limit));
-   newaddr = PGROUNDUP(newbrk);
+   current = VG_PGROUNDUP(VG_(brk_limit));
+   newaddr = VG_PGROUNDUP(newbrk);
    if (newaddr != current) {
 
       /* new brk in a new page - fix the mappings */

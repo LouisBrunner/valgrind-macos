@@ -442,7 +442,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    Int	sigNo = siginfo->si_signo;
 
    rsp -= sizeof(*frame);
-   rsp = ROUNDDN(rsp, 16);
+   rsp = VG_ROUNDDN(rsp, 16);
    frame = (struct rt_sigframe *)rsp;
 
    if (!extend(tst, rsp, sizeof(*frame)))

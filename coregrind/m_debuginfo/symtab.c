@@ -1654,7 +1654,7 @@ Bool read_lib_symbols ( SegInfo* si )
 
       /* Did we find a debuglink section? */
       if (debuglink != NULL) {
-         UInt crc_offset = ROUNDUP(VG_(strlen)(debuglink)+1, 4);
+         UInt crc_offset = VG_ROUNDUP(VG_(strlen)(debuglink)+1, 4);
          UInt crc;
 
          vg_assert(crc_offset + sizeof(UInt) <= debuglink_sz);

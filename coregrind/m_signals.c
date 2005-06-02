@@ -943,15 +943,15 @@ struct note {
 
 static UInt note_size(const struct note *n)
 {
-   return sizeof(Elf32_Nhdr) + ROUNDUP(VG_(strlen)(n->name)+1, 4) + ROUNDUP(n->note.n_descsz, 4);
+   return sizeof(Elf32_Nhdr) + VG_ROUNDUP(VG_(strlen)(n->name)+1, 4) + VG_ROUNDUP(n->note.n_descsz, 4);
 }
 
 static void add_note(struct note **list, const Char *name, UInt type, const void *data, UInt datasz)
 {
    Int namelen = VG_(strlen)(name)+1;
    Int notelen = sizeof(struct note) + 
-      ROUNDUP(namelen, 4) + 
-      ROUNDUP(datasz, 4);
+      VG_ROUNDUP(namelen, 4) + 
+      VG_ROUNDUP(datasz, 4);
    struct note *n = VG_(arena_malloc)(VG_AR_CORE, notelen);
 
    VG_(memset)(n, 0, notelen);
@@ -964,7 +964,7 @@ static void add_note(struct note **list, const Char *name, UInt type, const void
    n->note.n_descsz = datasz;
 
    VG_(memcpy)(n->name, name, namelen);
-   VG_(memcpy)(n->name+ROUNDUP(namelen,4), data, datasz);
+   VG_(memcpy)(n->name+VG_ROUNDUP(namelen,4), data, datasz);
 }
 
 static void write_note(Int fd, const struct note *n)
@@ -1147,7 +1147,7 @@ static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 
    off += notesz;
 
-   off = PGROUNDUP(off);
+   off = VG_PGROUNDUP(off);
 
    for(seg = VG_(first_segment)(), idx = 1;
        seg != NULL;
@@ -1660,7 +1660,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
    vg_assert(seg->addr > addr);
 
    /* Create the mapping */
-   base = PGROUNDDN(addr);
+   base = VG_PGROUNDDN(addr);
    newsize = seg->addr - base;
 
    if (seg->len + newsize >= maxsize)
@@ -1810,11 +1810,11 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	    nothing mapped there (as opposed to a permissions fault),
 	    then extend the stack segment. 
 	 */
-         Addr base = PGROUNDDN(esp - VGA_STACK_REDZONE_SZB);
+         Addr base = VG_PGROUNDDN(esp - VGA_STACK_REDZONE_SZB);
 	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 
-			    "       -> extended stack base to %p", PGROUNDDN(fault));
+			    "       -> extended stack base to %p", VG_PGROUNDDN(fault));
 	    return;             // extension succeeded, restart instruction
 	 } else
 	    VG_(message)(Vg_UserMsg, "Stack overflow in thread %d: can't grow stack to %p", 
@@ -1833,7 +1833,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 static Int recursion = 0;
 
 	 if (recursion++ == 0) {
-	    VG_(init_shadow_range)(PGROUNDDN(fault), VKI_PAGE_SIZE, True);
+	    VG_(init_shadow_range)(VG_PGROUNDDN(fault), VKI_PAGE_SIZE, True);
 	    recursion--;
 	    return;
 	 } else {

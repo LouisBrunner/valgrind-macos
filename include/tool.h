@@ -57,6 +57,12 @@
 /*=== Useful macros                                                ===*/
 /*====================================================================*/
 
+// 'a' -- the alignment -- must be a power of 2
+#define VG_ROUNDDN(p, a)   ((Addr)(p) & ~((Addr)(a)-1))
+#define VG_ROUNDUP(p, a)   VG_ROUNDDN((p)+(a)-1, (a))
+#define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
+#define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
+
 /* No, really.  I _am_ that strange. */
 #define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
 

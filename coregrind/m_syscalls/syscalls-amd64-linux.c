@@ -427,12 +427,12 @@ static Int do_clone(ThreadId ptid,
       only go down to the start of the mmaped segment. */
    seg = VG_(find_segment)((Addr)rsp);
    if (seg) {
-      ctst->client_stack_highest_word = (Addr)PGROUNDUP(rsp);
+      ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(rsp);
       ctst->client_stack_szB  = ctst->client_stack_highest_word - seg->addr;
 
       if (debug)
 	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
-		     ctid, seg->addr, PGROUNDUP(rsp));
+		     ctid, seg->addr, VG_PGROUNDUP(rsp));
    } else {
       VG_(message)(Vg_UserMsg, "!? New thread %d starts with RSP(%p) unmapped\n",
 		   ctid, rsp);

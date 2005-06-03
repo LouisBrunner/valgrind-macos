@@ -1,14 +1,14 @@
 
 /*--------------------------------------------------------------------*/
-/*--- ARM-specific definitions.                      arm/cg_arch.c ---*/
+/*--- Printing libc stuff.                    pub_core_libcprint.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind tool for cache
-   profiling programs.
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
 
-   Copyright (C) 2002-2005 Nicholas Nethercote
-      njn@valgrind.org
+   Copyright (C) 2000-2005 Julian Seward
+      jseward@acm.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -28,22 +28,22 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"
-#include "cg_arch.h"
+#ifndef __PUB_CORE_LIBCPRINT_H
+#define __PUB_CORE_LIBCPRINT_H
 
-void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
-                            Bool all_caches_clo_defined)
-{
-   // XXX: I1 and D1 are vaguely plausible, although they could really be
-   // anything.  However, most (all?) ARMs don't have an L2 cache.  But
-   // Cachegrind assumes the presence of an L2 cache... so we just copy the
-   // x86 defaults.  Urk.
-   *I1c = (cache_t) {   4096, 2, 32 };
-   *D1c = (cache_t) {   4096, 2, 32 };
-   *L2c = (cache_t) { 262144, 8, 64 };
-}
+//--------------------------------------------------------------------
+// PURPOSE: This module contains all the libc code that is related to
+// higher-level (ie. higher than DebugLog) printing, eg. VG_(printf)().
+//--------------------------------------------------------------------
+
+#include "pub_tool_libcprint.h"
+
+/* Tell the logging mechanism whether we are logging to a file
+   descriptor or a socket descriptor. */
+extern Bool VG_(logging_to_socket);
+
+#endif   // __PUB_CORE_LIBCPRINT_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

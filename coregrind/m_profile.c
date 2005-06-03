@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_profile.h"
 
 /* get rid of these, if possible */

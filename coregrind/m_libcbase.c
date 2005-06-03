@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"       // XXX: temporary, for NULL, VG_(), Char, etc
+#include "core.h"       // XXX: temporary, for NULL, VG_(), Char, etc
 #include "pub_core_libcbase.h"
 
 /* ---------------------------------------------------------------------

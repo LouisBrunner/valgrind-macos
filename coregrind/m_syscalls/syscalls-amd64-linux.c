@@ -32,6 +32,7 @@
 #include "ume.h"                /* for jmp_with_stack */
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"

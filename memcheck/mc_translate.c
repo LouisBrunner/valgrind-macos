@@ -30,6 +30,7 @@
 */
 
 #include "mc_include.h"
+#include "pub_tool_libcprint.h"
 
 
 /*------------------------------------------------------------*/

@@ -31,6 +31,7 @@
 #include "tool.h"
 #include "cg_arch.h"
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcprint.h"
 
 // All CPUID info taken from sandpile.org/a32/cpuid.htm */
 // Probably only works for Intel and AMD chips, and probably only for some of

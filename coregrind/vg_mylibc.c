@@ -34,6 +34,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 #include "pub_core_libcbase.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
@@ -407,107 +408,6 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
    return res;
 }
 
-
-/* Tell the logging mechanism whether we are logging to a file
-   descriptor or a socket descriptor. */
-Bool VG_(logging_to_socket) = False;
-
-/* Do the low-level send of a message to the logging sink. */
-static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
-{
-   if (!VG_(logging_to_socket)) {
-      VG_(write)( VG_(clo_log_fd), msg, nbytes );
-   } else {
-      Int rc = VG_(write_socket)( VG_(clo_log_fd), msg, nbytes );
-      if (rc == -1) {
-         // For example, the listener process died.  Switch back to stderr.
-         VG_(logging_to_socket) = False;
-         VG_(clo_log_fd) = 2;
-         VG_(write)( VG_(clo_log_fd), msg, nbytes );
-      }
-   }
-}
-
-typedef struct {
-   char buf[100];
-   int n;
-} printf_buf;
-
-// Adds a single char to the buffer.  When the buffer gets sufficiently
-// full, we write its contents to the logging sink.
-static void add_to_myprintf_buf ( HChar c, void *p )
-{
-   printf_buf *myprintf_buf = (printf_buf *)p;
-   
-   if (myprintf_buf->n >= 100-10 /*paranoia*/ ) {
-      send_bytes_to_logging_sink( myprintf_buf->buf, myprintf_buf->n );
-      myprintf_buf->n = 0;
-   }
-   myprintf_buf->buf[myprintf_buf->n++] = c;
-   myprintf_buf->buf[myprintf_buf->n]   = 0;
-}
-
-UInt VG_(vprintf) ( const HChar *format, va_list vargs )
-{
-   UInt ret = 0;
-   printf_buf myprintf_buf = {"",0};
-
-   if (VG_(clo_log_fd) >= 0) {
-      ret = VG_(debugLog_vprintf) 
-               ( add_to_myprintf_buf, &myprintf_buf, format, vargs );
-
-      // Write out any chars left in the buffer.
-      if (myprintf_buf.n > 0) {
-         send_bytes_to_logging_sink( myprintf_buf.buf, myprintf_buf.n );
-      }
-   }
-   return ret;
-}
-
-UInt VG_(printf) ( const HChar *format, ... )
-{
-   UInt ret;
-   va_list vargs;
-
-   va_start(vargs, format);
-   ret = VG_(vprintf)(format, vargs);
-   va_end(vargs);
-
-   return ret;
-}
-
-/* A general replacement for sprintf(). */
-static void add_to_vg_sprintf_buf ( HChar c, void *p )
-{
-   char **vg_sprintf_ptr = p;
-   *(*vg_sprintf_ptr)++ = c;
-}
-
-UInt VG_(vsprintf) ( Char* buf, const HChar *format, va_list vargs )
-{
-   Int ret;
-   Char *vg_sprintf_ptr = buf;
-
-   ret = VG_(debugLog_vprintf) 
-            ( add_to_vg_sprintf_buf, &vg_sprintf_ptr, format, vargs );
-   add_to_vg_sprintf_buf('\0', &vg_sprintf_ptr);
-
-   vg_assert(VG_(strlen)(buf) == ret);
-
-   return ret;
-}
-
-UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
-{
-   UInt ret;
-   va_list vargs;
-
-   va_start(vargs,format);
-   ret = VG_(vsprintf)(buf, format, vargs);
-   va_end(vargs);
-
-   return ret;
-}
 
 /* ---------------------------------------------------------------------
    strdup()

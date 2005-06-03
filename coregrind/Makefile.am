@@ -47,6 +47,7 @@ noinst_HEADERS = \
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
 	pub_core_libcbase.h	\
+	pub_core_libcprint.h	\
 	pub_core_main.h		\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
@@ -89,6 +90,7 @@ stage2_SOURCES = \
 	m_execontext.c \
 	m_hashtable.c \
 	m_libcbase.c \
+	m_libcprint.c \
 	m_main.c \
 	m_mallocfree.c \
 	m_options.c \
@@ -102,7 +104,6 @@ stage2_SOURCES = \
 	m_transtab.c \
 	\
 	ume.c \
-	vg_messages.c \
 	vg_mylibc.c \
 	vg_threadmodel.c \
 	vg_pthreadmodel.c

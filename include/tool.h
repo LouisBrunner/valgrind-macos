@@ -78,26 +78,6 @@ extern Char** VG_(client_envp);
 
 
 /*====================================================================*/
-/*=== Printing messages for the user                               ===*/
-/*====================================================================*/
-
-/* Print a message prefixed by "??<pid>?? "; '?' depends on the VgMsgKind.
-   Should be used for all user output. */
-
-typedef
-   enum { Vg_UserMsg,         /* '?' == '=' */
-          Vg_DebugMsg,        /* '?' == '-' */
-          Vg_DebugExtraMsg,   /* '?' == '+' */
-          Vg_ClientMsg        /* '?' == '*' */
-   }
-   VgMsgKind;
-
-/* Send a single-part message.  Appends a newline. */
-extern UInt VG_(message)    ( VgMsgKind kind, const HChar* format, ... );
-extern UInt VG_(vmessage)   ( VgMsgKind kind, const HChar* format, va_list vargs );
-
-
-/*====================================================================*/
 /*=== Useful stuff to call from generated code                     ===*/
 /*====================================================================*/
 
@@ -132,17 +112,7 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 #endif
 
 /* ------------------------------------------------------------------ */
-/* stdio.h
- *
- * Note that they all output to the file descriptor given by the
- * --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
- * Hence no need for VG_(fprintf)().
- */
-extern UInt VG_(printf)  ( const HChar *format, ... );
-extern UInt VG_(vprintf) ( const HChar *format, va_list vargs );
-/* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
-extern UInt VG_(sprintf) ( Char* buf, const HChar* format, ... );
-extern UInt VG_(vsprintf)( Char* buf, const HChar* format, va_list vargs );
+/* stdio.h */
 
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 

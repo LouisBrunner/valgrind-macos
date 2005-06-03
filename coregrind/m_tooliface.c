@@ -31,6 +31,7 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_libcprint.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
 VgToolInterface VG_(tdict);

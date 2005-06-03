@@ -128,10 +128,6 @@ extern void  VG_(core_panic_at)   ( Char* str, Addr ip, Addr sp, Addr fp );
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
 
-/* Tell the logging mechanism whether we are logging to a file
-   descriptor or a socket descriptor. */
-extern Bool VG_(logging_to_socket);
-
 /* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 

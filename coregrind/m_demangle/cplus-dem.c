@@ -39,6 +39,7 @@ Boston, MA 02111-1307, USA.  */
 #include "safe-ctype.h"
 #include "core.h"
 #include "pub_core_libcbase.h"
+#include "pub_tool_libcprint.h"
 
 /*#include <sys/types.h>
 #include <string.h>

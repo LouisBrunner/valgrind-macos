@@ -32,6 +32,7 @@
 
 #include "mac_shared.h"
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcprint.h"
 
 /*------------------------------------------------------------*/
 /*--- Defns                                                ---*/

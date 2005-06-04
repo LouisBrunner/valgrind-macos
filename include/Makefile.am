@@ -10,6 +10,7 @@ incinc_HEADERS = \
 	pub_tool_hashtable.h 		\
 	pub_tool_libcbase.h 		\
 	pub_tool_libcassert.h 		\
+	pub_tool_libcfile.h 		\
 	pub_tool_libcprint.h 		\
 	pub_tool_mallocfree.h 		\
 	pub_tool_options.h 		\

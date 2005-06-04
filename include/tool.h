@@ -112,11 +112,6 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 #endif
 
 /* ------------------------------------------------------------------ */
-/* stdio.h */
-
-extern Int  VG_(rename) ( Char* old_name, Char* new_name );
-
-/* ------------------------------------------------------------------ */
 /* stdlib.h */
 
 /* terminate everything */
@@ -142,34 +137,11 @@ extern Int   VG_(system) ( Char* cmd );
 
 /* ------------------------------------------------------------------ */
 /* unistd.h, fcntl.h, sys/stat.h */
-extern Int  VG_(getdents)( UInt fd, struct vki_dirent *dirp, UInt count );
-extern Int  VG_(readlink)( Char* path, Char* buf, UInt bufsize );
 extern Int  VG_(getpid)  ( void );
 extern Int  VG_(getppid) ( void );
 extern Int  VG_(getpgrp) ( void );
 extern Int  VG_(gettid)	 ( void );
 extern Int  VG_(setpgid) ( Int pid, Int pgrp );
-
-extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
-extern Int  VG_(read)   ( Int fd, void* buf, Int count);
-extern Int  VG_(write)  ( Int fd, const void* buf, Int count);
-extern OffT VG_(lseek)  ( Int fd, OffT offset, Int whence);
-extern void VG_(close)  ( Int fd );
-
-extern Int  VG_(pipe)   ( Int fd[2] );
-
-/* Nb: VG_(rename)() declared in stdio.h section above */
-extern Int  VG_(unlink) ( Char* file_name );
-extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
-extern Int  VG_(fstat)  ( Int   fd,        struct vki_stat* buf );
-extern Int  VG_(dup2)   ( Int oldfd, Int newfd );
-
-extern Char* VG_(getcwd) ( Char* buf, SizeT size );
-
-/* Easier to use than VG_(getcwd)() -- does the buffer fiddling itself.
-   String put into 'cwd' is VG_(malloc)'d, and should be VG_(free)'d.
-   Returns False if it fails.  Will fail if the pathname is > 65535 bytes. */
-extern Bool VG_(getcwd_alloc) ( Char** cwd );
 
 /* ------------------------------------------------------------------ */
 /* Get memory by anonymous mmap. */
@@ -246,14 +218,6 @@ extern Int VG_(tkill)       ( ThreadId tid, Int signo );
 extern Int VG_(sigpending)  ( vki_sigset_t* set );
 
 extern Int VG_(waitpid)	    ( Int pid, Int *status, Int options );
-
-/* ------------------------------------------------------------------ */
-/* socket.h. */
-
-extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen);
-extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen);
-extern Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
-                             Int *optlen);
 
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */

@@ -112,14 +112,6 @@ extern Int VG_(mprotect)       ( void *start, SizeT length, UInt prot );
 extern Int VG_(mprotect_native)( void *start, SizeT length, UInt prot );
 
 
-/* Move an fd into the Valgrind-safe range */
-Int VG_(safe_fd)(Int oldfd);
-
-extern Int VG_(write_socket)( Int sd, void *msg, Int count );
-
-/* --- Connecting over the network --- */
-extern Int VG_(connect_via_socket)( UChar* str );
-
 /* Environment manipulations */
 extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
                                   const Char *val );

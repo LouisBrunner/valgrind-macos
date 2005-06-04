@@ -172,35 +172,6 @@ extern Char* VG_(getcwd) ( Char* buf, SizeT size );
 extern Bool VG_(getcwd_alloc) ( Char** cwd );
 
 /* ------------------------------------------------------------------ */
-/* assert.h */
-/* Asserts permanently enabled -- no turning off with NDEBUG.  Hurrah! */
-
-/* This odd definition lets us stringify VG_(x) function names to
-   "vgPlain_x".  We need to do two macroexpansions to get the VG_ macro
-   expanded before stringifying. */
-#define VG_STRINGIFY_WRK(x)   #x
-#define VG_STRINGIFY(x)       VG_STRINGIFY_WRK(x)
-
-#define tl_assert(expr)                                                 \
-  ((void) ((expr) ? 0 :                                                 \
-           (VG_(assert_fail) (/*isCore?*/False, VG_STRINGIFY(expr),     \
-                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
-                              ""),                                      \
-                              0)))
-
-#define tl_assert2(expr, format, args...)                               \
-  ((void) ((expr) ? 0 :                                                 \
-           (VG_(assert_fail) (/*isCore?*/False, VG_STRINGIFY(expr),     \
-                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
-                              format, ##args),                          \
-                              0)))
-
-__attribute__ ((__noreturn__))
-extern void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
-                               Int line, const Char* fn, 
-                               const HChar* format, ... );
-
-/* ------------------------------------------------------------------ */
 /* Get memory by anonymous mmap. */
 extern void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who );
 

@@ -47,6 +47,7 @@ noinst_HEADERS = \
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
 	pub_core_libcbase.h	\
+	pub_core_libcassert.h	\
 	pub_core_libcprint.h	\
 	pub_core_main.h		\
 	pub_core_mallocfree.h	\
@@ -90,6 +91,7 @@ stage2_SOURCES = \
 	m_execontext.c \
 	m_hashtable.c \
 	m_libcbase.c \
+	m_libcassert.c \
 	m_libcprint.c \
 	m_main.c \
 	m_mallocfree.c \

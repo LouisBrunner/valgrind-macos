@@ -32,6 +32,7 @@
 #include "core.h"
 #include "pub_core_aspacemgr.h" /* find_segment */
 #include "pub_core_libcbase.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_sigframe.h"

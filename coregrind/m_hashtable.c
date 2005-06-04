@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_hashtable.h"
+#include "pub_core_libcassert.h"
 
 /*--------------------------------------------------------------------*/
 /*--- Declarations                                                 ---*/

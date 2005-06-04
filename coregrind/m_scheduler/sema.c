@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_libcassert.h"
 #include "priv_sema.h"
 
 /* 

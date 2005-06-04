@@ -31,6 +31,7 @@
 #include "core.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "valgrind.h"           // for RUNNING_ON_VALGRIND

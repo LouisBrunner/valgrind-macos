@@ -39,6 +39,7 @@
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 
 

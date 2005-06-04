@@ -96,38 +96,6 @@ extern Int VG_(fd_hard_limit);
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
 
-// Useful for making failing stubs, when certain things haven't yet been
-// implemented.
-#define I_die_here                                             \
-   VG_(assert_fail) (/*isCore*//*BOGUS*/True,                  \
-                     "Unimplemented functionality",            \
-                     __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
-                     "valgrind", VG_BUGS_TO, "")
-
-#define vg_assert(expr)                                                 \
-  ((void) ((expr) ? 0 :                                                 \
-           (VG_(assert_fail) (/*isCore*/True, VG_STRINGIFY(expr),       \
-                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
-                              ""),                                      \
-                              0)))
-
-#define vg_assert2(expr, format, args...)                               \
-  ((void) ((expr) ? 0 :                                                 \
-           (VG_(assert_fail) (/*isCore*/True, VG_STRINGIFY(expr),       \
-                              __FILE__, __LINE__, __PRETTY_FUNCTION__,  \
-                              format, ##args),                          \
-                              0)))
-
-__attribute__ ((__noreturn__))
-extern void  VG_(core_panic)      ( Char* str );
-__attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( Char* str, Addr ip, Addr sp, Addr fp );
-
-/* Called when some unhandleable client behaviour is detected.
-   Prints a msg and aborts. */
-extern void VG_(unimplemented) ( Char* msg )
-            __attribute__((__noreturn__));
-
 /* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 

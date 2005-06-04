@@ -33,6 +33,7 @@
 #include <setjmp.h>
 #include "mac_shared.h"
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 
 /* Define to debug the memory-leak-detector. */

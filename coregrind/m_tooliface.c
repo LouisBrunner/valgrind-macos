@@ -31,6 +31,7 @@
 
 #include "core.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
@@ -100,11 +101,10 @@ VgNeeds VG_(needs) = {
 /* static */
 void VG_(sanity_check_needs) ( void)
 {
-#define CHECK_NOT(var, value)                               \
-   if ((var)==(value)) {                                    \
-      VG_(printf)("\nTool error: '%s' not initialised\n",   \
-                  VG_STRINGIFY(var));                       \
-      VG_(tool_panic)("Uninitialised details field\n");     \
+#define CHECK_NOT(var, value)                                   \
+   if ((var)==(value)) {                                        \
+      VG_(printf)("\nTool error: '%s' not initialised\n", #var);\
+      VG_(tool_panic)("Uninitialised details field\n");         \
    }
    
    /* Ones that must be set */

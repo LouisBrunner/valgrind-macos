@@ -33,6 +33,7 @@
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"

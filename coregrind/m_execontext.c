@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_execontext.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"

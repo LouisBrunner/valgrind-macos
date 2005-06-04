@@ -31,6 +31,7 @@
 */
 
 #include "mac_shared.h"
+#include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcprint.h"
 #include "memcheck.h"   /* for VG_USERREQ__* */

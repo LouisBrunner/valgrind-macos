@@ -30,6 +30,7 @@
 
 #include "core.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_tooliface.h"
 #include <sys/ptrace.h>
 

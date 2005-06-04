@@ -42,6 +42,7 @@
 
 #include "core.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcassert.h"
 #include "ansidecl.h"
 #include "dyn-string.h"
 #include "demangle.h"

@@ -2786,6 +2786,11 @@ int main(int argc, char **argv, char **envp)
          VGA_(setup_pointercheck)( VG_(client_base), VG_(client_end));
 
    //--------------------------------------------------------------
+   // register client stack
+   //--------------------------------------------------------------
+   VG_(clstk_id) = VG_(handle_stack_register)(VG_(clstk_base), VG_(clstk_end));
+
+   //--------------------------------------------------------------
    // Run!
    //--------------------------------------------------------------
    VGP_POPCC(VgpStartup);

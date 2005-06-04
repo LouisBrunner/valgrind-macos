@@ -36,6 +36,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
+	stack_changes.vgtest \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
@@ -48,7 +49,7 @@ check_PROGRAMS = \
 	pth_atfork1 pth_cancel1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	as_mmap as_shm threadederrno \
-	vgprintf
+	stack_changes vgprintf
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
 AM_CPPFLAGS = -I$(top_builddir)/include
@@ -97,3 +98,6 @@ res_search_SOURCES      = res_search.c
 res_search_LDADD        = -lresolv -lpthread
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
+
+# Stack tests
+stack_changes_SOURCES   = stack_changes.c

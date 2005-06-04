@@ -232,7 +232,12 @@ typedef
 
           /* Allow printfs to valgrind log. */
           VG_USERREQ__PRINTF = 0x1401,
-          VG_USERREQ__PRINTF_BACKTRACE = 0x1402
+          VG_USERREQ__PRINTF_BACKTRACE = 0x1402,
+
+          /* Stack support. */
+          VG_USERREQ__STACK_REGISTER   = 0x1501,
+          VG_USERREQ__STACK_DEREGISTER = 0x1502,
+          VG_USERREQ__STACK_CHANGE     = 0x1503,
    } Vg_ClientRequest;
 
 #ifndef __GNUC__
@@ -419,6 +424,32 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__MEMPOOL_FREE,              \
                             pool, addr, 0, 0);                     \
+   }
+
+/* Mark a piece of memory as being a stack. Returns a stack id. */
+#define VALGRIND_STACK_REGISTER(start, end)                        \
+   ({unsigned int _qzz_res;                                        \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__STACK_REGISTER,            \
+                            start, end, 0, 0);                     \
+    _qzz_res;                                                      \
+   })
+
+/* Unmark the piece of memory associated with a stack id as being a
+   stack. */
+#define VALGRIND_STACK_DEREGISTER(id)                              \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__STACK_DEREGISTER,          \
+                            id, 0, 0, 0);                          \
+   }
+
+/* Change the start and end address of the stack id. */
+#define VALGRIND_STACK_CHANGE(id, start, end)                      \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__STACK_CHANGE,              \
+                            id, start, end, 0);                    \
    }
 
 #endif   /* __VALGRIND_H */

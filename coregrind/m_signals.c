@@ -1675,6 +1675,10 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
 		 -1, 0) == (void *)-1)
       return False;
 
+   /* When we change the main stack, we have to let the stack handling
+      code know about it. */
+   VG_(handle_stack_change)(VG_(clstk_id), base, VG_(clstk_end));
+
    if (0)
       VG_(printf)("extended stack: %p %d\n",
 		  base, newsize);

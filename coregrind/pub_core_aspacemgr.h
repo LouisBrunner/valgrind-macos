@@ -49,6 +49,7 @@ extern Addr VG_(client_end);
 extern Addr VG_(client_mapbase); // base of mappings
 extern Addr VG_(clstk_base);	 // client stack range
 extern Addr VG_(clstk_end);
+extern UWord VG_(clstk_id);      // client stack id
 extern Addr VG_(client_trampoline_code);
 
 extern Addr VG_(brk_base);	 // start of brk
@@ -130,6 +131,10 @@ extern Segment *VG_(split_segment)(Addr a);
 
 extern void VG_(pad_address_space)  (Addr start);
 extern void VG_(unpad_address_space)(Addr start);
+
+extern UWord VG_(handle_stack_register)(Addr start, Addr end);
+extern void VG_(handle_stack_deregister)(UWord id);
+extern void VG_(handle_stack_change)(UWord id, Addr start, Addr end);
 
 extern VGA_REGPARM(2)
        void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );

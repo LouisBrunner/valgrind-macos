@@ -1038,6 +1038,21 @@ void do_client_request ( ThreadId tid )
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
+      case VG_USERREQ__STACK_REGISTER: {
+         UWord sid = VG_(handle_stack_register)((Addr)arg[1], (Addr)arg[2]);
+         SET_CLREQ_RETVAL( tid, sid );
+         break; }
+
+      case VG_USERREQ__STACK_DEREGISTER: {
+         VG_(handle_stack_deregister)(arg[1]);
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+         break; }
+
+      case VG_USERREQ__STACK_CHANGE: {
+         VG_(handle_stack_change)(arg[1], (Addr)arg[2], (Addr)arg[3]);
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+         break; }
+
       case VG_USERREQ__GET_MALLOCFUNCS: {
 	 struct vg_mallocfunc_info *info = (struct vg_mallocfunc_info *)arg[1];
 

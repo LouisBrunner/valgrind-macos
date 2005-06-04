@@ -1378,6 +1378,41 @@ tool-specific macros).</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry>
+   <term><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</term>
+   <listitem>
+    <para>Register a new stack.  Informs Valgrind that the memory range
+    between start and end is a unique stack.  Returns a stack identifier
+    that can be used with other
+    <computeroutput>VALGRIND_STACK_*</computeroutput> calls.</para>
+    <para>Valgrind will use this information to determine if a change to
+    the stack pointer is an item pushed onto the stack or a change over
+    to a new stack.  Use this if you're using a user-level thread package
+    and are noticing spurious errors from Valgrind about uninitialized
+    memory reads.</para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
+   <term><computeroutput>VALGRIND_STACK_DEREGISTER(id)</computeroutput>:</term>
+   <listitem>
+    <para>Deregister a previously registered stack.  Informs
+    Valgrind that previously registered memory range with stack id
+    <computeroutput>id</computeroutput> is no longer a stack.</para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
+   <term><computeroutput>VALGRIND_STACK_CHANGE(id, start, end)</computeroutput>:</term>
+   <listitem>
+    <para>Change a previously registered stack.  Informs
+    Valgrind that the previously registerer stack with stack id
+    <computeroutput>id</computeroutput> has changed it's start and end
+    values.  Use this if your user-level thread package implements
+    stack growth.</para>
+   </listitem>
+  </varlistentry>
+
  </variablelist>
 
 <para>Note that <filename>valgrind.h</filename> is included by

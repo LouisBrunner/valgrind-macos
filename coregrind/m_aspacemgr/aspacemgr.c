@@ -59,6 +59,7 @@ Addr VG_(client_mapbase);
 Addr VG_(client_trampoline_code);
 Addr VG_(clstk_base);
 Addr VG_(clstk_end);
+UWord VG_(clstk_id);
 
 Addr VG_(brk_base);	         /* start of brk */
 Addr VG_(brk_limit);	         /* current brk */
@@ -1103,6 +1104,175 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    bias; that is handled by new_mem_stack/die_mem_stack.
 */
 
+/*
+ * This structure holds information about the start and end addresses of
+ * registered stacks.  There's always at least one stack registered:
+ * the main process stack.  It will be the first stack registered and
+ * so will have a stack id of 0.  The user does not need to register
+ * this stack: Valgrind does it automatically right before it starts
+ * running the client.  No other stacks are automatically registered by
+ * Valgrind, however.
+ */
+
+typedef struct _Stack {
+   UWord id;
+   Addr start;
+   Addr end;
+   struct _Stack *next;
+} Stack;
+
+static Stack *stacks;
+static UWord next_id;  /* Next id we hand out to a newly registered stack */
+
+/*
+ * These are the id, start and end values of the current stack.  If the
+ * stack pointer falls outside the range of the current stack, we search
+ * the stacks list above for a matching stack.
+ */
+
+static Addr current_stack_start;
+static Addr current_stack_end;
+static UWord current_stack_id;
+
+/* Search for a particular stack by id number. */
+static Bool find_stack_by_id(UWord id, Addr *start, Addr *end)
+{
+   Stack *i = stacks;
+   while(i) {
+      if(i->id == id) {
+         *start = i->start;
+         *end = i->end;
+         return True;
+      }
+      i = i->next;
+   }
+   return False;
+}
+
+/* Find what stack an address falls into. */
+static Bool find_stack_by_addr(Addr sp, Addr *start, Addr *end, UWord *id)
+{
+   Stack *i = stacks;
+   while(i) {
+      if(sp >= i->start && sp <= i->end) {
+         *start = i->start;
+         *end = i->end;
+         *id = i->id;
+         return True;
+      }
+      i = i->next;
+   }
+   return False;
+}
+
+/* Change over to a new stack. */
+static Bool set_current_stack(UWord id)
+{
+   Addr start, end;
+   if (find_stack_by_id(id, &start, &end)) {
+      current_stack_id = id;
+      current_stack_start = start;
+      current_stack_end = end;
+      return True;
+   }
+   return False;
+}
+
+/*
+ * Register a new stack from start - end.  This is invoked from the
+ * VALGRIND_STACK_REGISTER client request, and is also called just before
+ * we start the client running, to register the main process stack.
+ *
+ * Note: this requires allocating a piece of memory to store the Stack
+ * structure, which places a dependency between this module and the
+ * mallocfree module.  However, there is no real chance of a circular
+ * dependency here, since the mallocfree module would never call back to
+ * this function.
+ */
+
+UWord VG_(handle_stack_register)(Addr start, Addr end)
+{
+   Stack *i;
+   if (start > end) {
+      Addr t = end;
+      end = start;
+      start = t;
+   }
+
+   i = (Stack *)VG_(arena_malloc)(VG_AR_CORE, sizeof(Stack));
+   i->start = start;
+   i->end = end;
+   i->id = next_id++;
+   i->next = stacks;
+   stacks = i;
+
+   if(i->id == 0) {
+      set_current_stack(i->id);
+   }
+
+   return i->id;
+}
+
+/*
+ * Deregister a stack.  This is invoked from the VALGRIND_STACK_DEREGISTER
+ * client request.
+ *
+ * Note: this requires freeing the piece of memory that was used to store
+ * the Stack structure, which places a dependency between this module
+ * and the mallocfree module.  However, there is no real chance of
+ * a circular dependency here, since the mallocfree module would never
+ * call back to this function.
+ */
+
+void VG_(handle_stack_deregister)(UWord id)
+{
+   Stack *i = stacks;
+   Stack *prev = NULL;
+
+   if(current_stack_id == id) {
+      return;
+   }
+
+   while(i) {
+      if (i->id == id) {
+         if(prev == NULL) {
+            stacks = i->next;
+         } else {
+            prev->next = i->next;
+         }
+         VG_(arena_free)(VG_AR_CORE, i);
+         return;
+      }
+      prev = i;
+      i = i->next;
+   }
+}
+
+/*
+ * Change a stack.  This is invoked from the VALGRIND_STACK_CHANGE client
+ * request and from the stack growth stuff the signals module when
+ * extending the main process stack.
+ */
+
+void VG_(handle_stack_change)(UWord id, Addr start, Addr end)
+{
+   Stack *i = stacks;
+
+   if (id == current_stack_id) {
+      current_stack_start = start;
+      current_stack_end = end;
+   }
+
+   while(i) {
+      if (i->id == id) {
+         i->start = start;
+         i->end = end;
+         return;
+      }
+      i = i->next;
+   }
+}
+
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases
    (eg. new_mem_stack_4) isn't used in preference.  
@@ -1112,6 +1282,19 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
    static Int moans = 3;
    Word delta  = (Word)new_SP - (Word)old_SP;
+
+   /* Check if the stack pointer is still in the same stack as before. */
+   if (new_SP < current_stack_start || new_SP > current_stack_end) {
+      Addr start, end;
+      UWord new_id;
+      Bool found = find_stack_by_addr(new_SP, &start, &end, &new_id);
+      if (found && new_id != current_stack_id) {
+         /* The stack pointer is now in another stack.  Update the current
+            stack information and return without doing anything else. */
+         set_current_stack(new_id);
+         return;
+      }
+   }
 
    if (delta < -VG_(clo_max_stackframe) || VG_(clo_max_stackframe) < delta) {
       /* SP has changed by more than some threshold amount (by

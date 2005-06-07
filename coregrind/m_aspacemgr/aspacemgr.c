@@ -590,7 +590,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    len = VG_PGROUNDUP(len);
 
    if (debug)
-      VG_(printf)("unmap_range(%p, %lu)\n", addr, len);
+      VG_(printf)("unmap_range(%p, %llu)\n", addr, (ULong)len);
    if (0) show_segments("unmap_range(BEFORE)");
    end = addr+len;
 
@@ -698,6 +698,8 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    static const Bool debug = False || mem_debug;
    Segment* s;
    Int      idx;
+   HChar*   stage2_suffix = "lib/valgrind/stage2";
+   Bool     is_stage2 = VG_(strstr)(filename, stage2_suffix) != NULL;
 
    if (debug)
       VG_(printf)(
@@ -706,6 +708,8 @@ VG_(map_file_segment)( Addr addr, SizeT len,
          "                 dev=0x%4x ino=%d off=%ld\n"
          "                 filename='%s')\n",
          addr, (ULong)len, prot, flags, dev, ino, off, filename);
+
+   if (0) show_segments("before map_file_segment");
 
    /* Everything must be page-aligned */
    vg_assert(VG_IS_PAGE_ALIGNED(addr));
@@ -741,7 +745,9 @@ VG_(map_file_segment)( Addr addr, SizeT len,
       file, then try reading symbols from it.
    */
    if (s->seginfo == NULL
-       && (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
+       && ( (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
+            || is_stage2
+          )
        && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP) {
       if (off == 0
 	  && s->fnIdx != -1
@@ -855,8 +861,8 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 
    if (debug) {
       VG_(printf)("\n\n");
-      VG_(printf)("find_map_space(%p, %lu, %d) ...\n",
-                  addr, len, for_client);
+      VG_(printf)("find_map_space(%p, %llu, %d) ...\n",
+                  addr, (ULong)len, for_client);
    }
 
    if (0) show_segments("find_map_space: start");
@@ -957,8 +963,8 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
       ret = 0; /* not found */
 
    if (debug)
-      VG_(printf)("find_map_space(%p, %lu, %d) -> %p\n\n",
-                  addr, len, for_client, ret);
+      VG_(printf)("find_map_space(%p, %llu, %d) -> %p\n\n",
+                  addr, (ULong)len, for_client, ret);
 
    if (fixed) {
       vg_assert(ret == 0 || ret == addrOrig);
@@ -982,7 +988,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 void VG_(pad_address_space)(Addr start)
 {
    Addr     addr = (start == 0) ? VG_(client_base) : start;
-   void*    ret;
+   SysRes   ret;
 
    Int      i = 0;
    Segment* s = i >= segments_used ? NULL : &segments[i];
@@ -1010,7 +1016,7 @@ void VG_(pad_address_space)(Addr start)
 void VG_(unpad_address_space)(Addr start)
 {
    Addr     addr = (start == 0) ? VG_(client_base) : start;
-   Int      ret;
+   SysRes   ret;
 
    Int      i = 0;
    Segment* s = i >= segments_used ? NULL : &segments[i];
@@ -1539,11 +1545,11 @@ Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
       0,                         // ! seg not present
       1,                         // useable
    };
-   int ret = VG_(do_syscall3)(__NR_modify_ldt, 1, (UWord)&ldt, sizeof(ldt));
-   if (ret < 0) {
+   SysRes ret = VG_(do_syscall3)(__NR_modify_ldt, 1, (UWord)&ldt, sizeof(ldt));
+   if (ret.isError) {
       VG_(message)(Vg_UserMsg,
                    "Warning: ignoring --pointercheck=yes, "
-                   "because modify_ldt failed (errno=%d)", -ret);
+                   "because modify_ldt failed (errno=%d)", ret.val);
       return False;
    } else {
       return True;

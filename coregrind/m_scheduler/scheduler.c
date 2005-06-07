@@ -338,7 +338,8 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate)
 
    if (VG_(clo_trace_sched)) {
       Char buf[50];
-      VG_(sprintf)(buf, "now sleeping in state %s", name_of_thread_state(sleepstate));
+      VG_(sprintf)(buf, "now sleeping in state %s", 
+                        name_of_thread_state(sleepstate));
       print_sched_event(tid, buf);
    }
 }
@@ -410,8 +411,6 @@ void VG_(vg_yield)(void)
       VG_(nanosleep)(&ts);
 
    VG_(set_running)(tid);
-
-   VG_(poll_signals)(tid);	/* something might have happened */
 }
 
 
@@ -566,8 +565,6 @@ void mostly_clear_thread_record ( ThreadId tid )
       until the caller is finally done with the thread stack. */
    VG_(threads)[tid].status               = VgTs_Zombie;
 
-   VG_(threads)[tid].syscallno = -1;
-
    VG_(sigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(sigemptyset)(&VG_(threads)[tid].tmp_sig_mask);
 
@@ -613,6 +610,7 @@ static void sched_fork_cleanup(ThreadId me)
       if (tid != me) {
          mostly_clear_thread_record(tid);
 	 VG_(threads)[tid].status = VgTs_Empty;
+         VG_(clear_syscallInfo)(tid);
       }
    }
 
@@ -908,6 +906,8 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
             "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
 
       VG_(threads)[tid].exitreason = src;
+      if (src == VgSrc_FatalSig)
+         VG_(threads)[tid].os_state.fatalsig = VKI_SIGKILL;
       VG_(kill_thread)(tid);
    }
 }

@@ -609,7 +609,7 @@ PRE(sys_clone, Special)
 
       /* Thread creation was successful; let the child have the chance
          to run */
-      VG_(vg_yield)();
+      XXX FIXME VG_(vg_yield)();
    }
 }
 
@@ -628,7 +628,7 @@ PRE(sys_rt_sigreturn, Special)
    VG_(sigframe_destroy)(tid, True);
 
    /* Keep looking for signals until there are none */
-   VG_(poll_signals)(tid);
+   XXX FIXME VG_(poll_signals)(tid);
 
    /* placate return-must-be-set assertion */
    SET_RESULT(RES);

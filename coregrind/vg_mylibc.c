@@ -36,6 +36,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcfile.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
@@ -159,77 +160,76 @@ void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 */
 Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 {
-   Int res = VG_(do_syscall4)(__NR_rt_sigprocmask, 
-                              how, (UWord)set, (UWord)oldset, 
-                              _VKI_NSIG_WORDS * sizeof(UWord));
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall4)(__NR_rt_sigprocmask, 
+                                 how, (UWord)set, (UWord)oldset, 
+                                 _VKI_NSIG_WORDS * sizeof(UWord));
+   return res.isError ? -1 : 0;
 }
 
 
 Int VG_(sigaction) ( Int signum, const struct vki_sigaction* act,  
                      struct vki_sigaction* oldact)
 {
-   Int res = VG_(do_syscall4)(__NR_rt_sigaction,
-		              signum, (UWord)act, (UWord)oldact, 
-		              _VKI_NSIG_WORDS * sizeof(UWord));
-   /* VG_(printf)("res = %d\n",res); */
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall4)(__NR_rt_sigaction,
+                                 signum, (UWord)act, (UWord)oldact, 
+                                 _VKI_NSIG_WORDS * sizeof(UWord));
+   return res.isError ? -1 : 0;
 }
 
 
 Int VG_(sigaltstack)( const vki_stack_t* ss, vki_stack_t* oss )
 {
-   Int res = VG_(do_syscall2)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall2)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
+   return res.isError ? -1 : 0;
 }
 
 Int VG_(sigtimedwait)( const vki_sigset_t *set, vki_siginfo_t *info, 
                        const struct vki_timespec *timeout )
 {
-   Int res = VG_(do_syscall4)(__NR_rt_sigtimedwait, (UWord)set, (UWord)info, 
-                              (UWord)timeout, sizeof(*set));
-
-   return res;
+   SysRes res = VG_(do_syscall4)(__NR_rt_sigtimedwait, (UWord)set, (UWord)info, 
+                                 (UWord)timeout, sizeof(*set));
+   return res.isError ? -1 : res.val;
 }
  
 Int VG_(signal)(Int signum, void (*sighandler)(Int))
 {
-   Int res;
+   SysRes res;
+   Int    n;
    struct vki_sigaction sa;
    sa.ksa_handler = sighandler;
    sa.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
    sa.sa_restorer = NULL;
-   res = VG_(sigemptyset)( &sa.sa_mask );
-   vg_assert(res == 0);
+   n = VG_(sigemptyset)( &sa.sa_mask );
+   vg_assert(n == 0);
    res = VG_(do_syscall4)(__NR_rt_sigaction, signum, (UWord)&sa, (UWord)NULL,
-			 _VKI_NSIG_WORDS * sizeof(UWord));
-   return VG_(is_kerror)(res) ? -1 : 0;
+                           _VKI_NSIG_WORDS * sizeof(UWord));
+   return res.isError ? -1 : 0;
 }
 
 
 Int VG_(kill)( Int pid, Int signo )
 {
-   Int res = VG_(do_syscall2)(__NR_kill, pid, signo);
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall2)(__NR_kill, pid, signo);
+   return res.isError ? -1 : 0;
 }
 
 
 Int VG_(tkill)( ThreadId tid, Int signo )
 {
-   Int ret = -VKI_ENOSYS;
+   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
 
 #if 0
    /* This isn't right because the client may create a process
       structure with multiple thread groups */
-   ret = VG_(do_syscall)(__NR_tgkill, VG_(getpid)(), tid, signo);
+   res = VG_(do_syscall)(__NR_tgkill, VG_(getpid)(), tid, signo);
 #endif
 
-   ret = VG_(do_syscall2)(__NR_tkill, tid, signo);
+   res = VG_(do_syscall2)(__NR_tkill, tid, signo);
 
-   if (ret == -VKI_ENOSYS)
-      ret = VG_(do_syscall2)(__NR_kill, tid, signo);
+   if (res.isError && res.val == VKI_ENOSYS)
+      res = VG_(do_syscall2)(__NR_kill, tid, signo);
 
-   return VG_(is_kerror)(ret) ? -1 : 0;
+   return res.isError ? -1 : 0;
 }
 
 Int VG_(sigpending) ( vki_sigset_t* set )
@@ -241,27 +241,23 @@ Int VG_(sigpending) ( vki_sigset_t* set )
 #ifdef __amd64__
    I_die_here;
 #else
-   Int res = VG_(do_syscall1)(__NR_sigpending, (UWord)set);
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall1)(__NR_sigpending, (UWord)set);
+   return res.isError ? -1 : 0;
 #endif
 }
 
 Int VG_(waitpid)(Int pid, Int *status, Int options)
 {
-   Int ret = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
-
-   return VG_(is_kerror)(ret) ? -1 : ret;
+   SysRes res = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
+   return res.isError ? -1 : res.val;
 }
 
 Int VG_(gettid)(void)
 {
-   Int ret;
+   SysRes res = VG_(do_syscall0)(__NR_gettid);
 
-   ret = VG_(do_syscall0)(__NR_gettid);
-
-   if (ret == -VKI_ENOSYS) {
-      Char pid[16];
-      
+   if (res.isError && res.val == VKI_ENOSYS) {
+      Char pid[16];      
       /*
        * The gettid system call does not exist. The obvious assumption
        * to make at this point would be that we are running on an older
@@ -275,15 +271,16 @@ Int VG_(gettid)(void)
        * So instead of calling getpid here we use readlink to see where
        * the /proc/self link is pointing...
        */
-      if ((ret = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
-                                  (UWord)pid, sizeof(pid))) >= 0) 
-      {
-         pid[ret] = '\0';
-         ret = VG_(atoll)(pid);
+
+      res = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
+                             (UWord)pid, sizeof(pid));
+      if (!res.isError && res.val > 0) {
+         pid[res.val] = '\0';
+         res.val = VG_(atoll)(pid);
       }
    }
 
-   return ret;
+   return res.val;
 }
 
 
@@ -292,11 +289,11 @@ Int VG_(gettid)(void)
    mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */
 
-void* VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
-                       UInt fd, OffT offset)
+SysRes VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
+                        UInt fd, OffT offset)
 {
-   UWord ret;
-#if defined(VGP_x86_linux)
+   SysRes res;
+#  if defined(VGP_x86_linux)
    { 
       UWord args[6];
       args[0] = (UWord)start;
@@ -305,22 +302,22 @@ void* VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
       args[3] = flags;
       args[4] = fd;
       args[5] = offset;
-      ret = VG_(do_syscall1)(__NR_mmap, (UWord)args );
+      res = VG_(do_syscall1)(__NR_mmap, (UWord)args );
    }
-#elif defined(VGP_amd64_linux)
-   ret = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
+#  elif defined(VGP_amd64_linux)
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
-#else
-#  error Unknown platform
-#endif
-   return VG_(is_kerror)(ret) ? (void*)-1 : (void*)ret;
+#  else
+#    error Unknown platform
+#  endif
+   return res;
 }
 
 /* Returns -1 on failure. */
 void* VG_(mmap)( void* start, SizeT length,
                  UInt prot, UInt flags, UInt sf_flags, UInt fd, OffT offset)
 {
-   Addr  res;
+   SysRes res;
 
    if (!(flags & VKI_MAP_FIXED)) {
       start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
@@ -330,16 +327,18 @@ void* VG_(mmap)( void* start, SizeT length,
    if (start == 0)
       return (void *)-1;
 
-   res = (Addr)VG_(mmap_native)(start, length, prot, 
-                                flags & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
-                                fd, offset);
+   res = VG_(mmap_native)(start, length, prot, 
+                          flags & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
+                          fd, offset);
 
    // Check it ended up in the right place.
-   if (res != (Addr)-1) {
+   if (!res.isError) {
       if (flags & VKI_MAP_CLIENT) {
-         vg_assert(VG_(client_base) <= res && res+length <= VG_(client_end));
+         vg_assert(VG_(client_base) <= res.val 
+                   && res.val+length <= VG_(client_end));
       } else {
-         vg_assert(VG_(valgrind_base) <= res && res+length-1 <= VG_(valgrind_last));
+         vg_assert(VG_(valgrind_base) <= res.val 
+                   && res.val+length-1 <= VG_(valgrind_last));
       }
 
       sf_flags |= SF_MMAP;
@@ -349,16 +348,16 @@ void* VG_(mmap)( void* start, SizeT length,
       if (!(flags & VKI_MAP_CLIENT))    sf_flags |= SF_VALGRIND;
       if (  flags & VKI_MAP_NOSYMS)     sf_flags |= SF_NOSYMS;
 
-      VG_(map_fd_segment)(res, length, prot, sf_flags, fd, offset, NULL);
+      VG_(map_fd_segment)(res.val, length, prot, sf_flags, fd, offset, NULL);
    }
 
-   return (void*)res;
+   return res.isError ? (void*)-1 : (void*)res.val;
 }
 
 static Int munmap_native(void *start, SizeT length)
 {
-   Int res = VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
+   return res.isError ? -1 : 0;
 }
 
 /* Returns -1 on failure. */
@@ -372,8 +371,8 @@ Int VG_(munmap)( void* start, SizeT length )
 
 Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
 {
-   Int res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
-   return VG_(is_kerror)(res) ? -1 : 0;
+   SysRes res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
+   return res.isError ? -1 : 0;
 }
 
 Int VG_(mprotect)( void *start, SizeT length, UInt prot )
@@ -398,15 +397,15 @@ void VG_(exit)( Int status )
 /* Returns -1 on error. */
 Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
 {
-   Int res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
-   return VG_(is_kerror)(res) ? -1 : res;
+   SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+   return res.isError ? -1 : res.val;
 }
 
 Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 {
-   Int res = VG_(do_syscall3)(__NR_poll, (UWord)ufds, nfds, timeout);
-
-   return res;
+   SysRes res = VG_(do_syscall3)(__NR_poll, (UWord)ufds, nfds, timeout);
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return res.val;
 }
 
 
@@ -543,56 +542,49 @@ Char *VG_(getenv)(Char *varname)
 /* Support for getrlimit. */
 Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
-   Int res = -VKI_ENOSYS;
+   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
    /* res = getrlimit( resource, rlim ); */
 #  ifdef __NR_ugetrlimit
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
 #  endif
-   if (res == -VKI_ENOSYS)
+   if (res.isError && res.val == VKI_ENOSYS)
       res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
+   return res.isError ? -1 : res.val;
 }
 
 
 /* Support for setrlimit. */
 Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 {
-   Int res;
+   SysRes res;
    /* res = setrlimit( resource, rlim ); */
    res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
+   return res.isError ? -1 : res.val;
 }
-
 
 /* You'd be amazed how many places need to know the current pid. */
 Int VG_(getpid) ( void )
 {
-   Int res;
-   /* res = getpid(); */
-   res = VG_(do_syscall0)(__NR_getpid);
-   return res;
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getpid) . val;
 }
 
 Int VG_(getpgrp) ( void )
 {
-   Int res;
-   /* res = getpgid(); */
-   res = VG_(do_syscall0)(__NR_getpgrp);
-   return res;
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getpgrp) . val;
 }
 
 Int VG_(getppid) ( void )
 {
-   Int res;
-   res = VG_(do_syscall0)(__NR_getppid);
-   return res;
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getppid) . val;
 }
 
 Int VG_(setpgid) ( Int pid, Int pgrp )
 {
-   return VG_(do_syscall2)(__NR_setpgid, pid, pgrp);
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall2)(__NR_setpgid, pid, pgrp) . val;
 }
 
 /* Walk through a colon-separated environment variable, and remove the
@@ -695,12 +687,14 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
    child! */
 Int VG_(system) ( Char* cmd )
 {
-   Int pid, res;
+   Int    pid;
+   SysRes res;
    if (cmd == NULL)
       return 1;
-   pid = VG_(do_syscall0)(__NR_fork);
-   if (VG_(is_kerror)(pid))
+   res = VG_(do_syscall0)(__NR_fork);
+   if (res.isError)
       return -1;
+   pid = res.val;
    if (pid == 0) {
       /* child */
       static Char** envp = NULL;
@@ -724,12 +718,8 @@ Int VG_(system) ( Char* cmd )
       VG_(exit)(1);
    } else {
       /* parent */
-      res = VG_(waitpid)(pid, NULL, 0);
-      if (VG_(is_kerror)(res)) {
-         return -1;
-      } else {
-	 return 0;
-      }
+      Int zzz = VG_(waitpid)(pid, NULL, 0);
+      return zzz == -1 ? -1 : 0;
    }
 }
 
@@ -742,8 +732,8 @@ UInt VG_(read_millisecond_timer) ( void )
 {
    static ULong base = 0;
    struct vki_timeval tv_now;
-   ULong now;
-   Int res;
+   ULong  now;
+   SysRes res;
 
    res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
    
@@ -758,7 +748,7 @@ UInt VG_(read_millisecond_timer) ( void )
 
 void VG_(nanosleep)(struct vki_timespec *ts)
 {
-   VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
+   (void)VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
 }
 
 /* ---------------------------------------------------------------------
@@ -794,6 +784,75 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
    VG_(printf)("\n");
    VG_(exit)(1);
 }
+
+/* ---------------------------------------------------------------------
+   Misc stuff looking for a proper home
+   ------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------
+   A simple atfork() facility for Valgrind's internal use
+   ------------------------------------------------------------------ */
+
+struct atfork {
+   vg_atfork_t	pre;
+   vg_atfork_t	parent;
+   vg_atfork_t	child;
+};
+
+#define VG_MAX_ATFORK	10
+
+static struct atfork atforks[VG_MAX_ATFORK];
+static Int n_atfork;
+
+void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child)
+{
+   Int i;
+
+   for(i = 0; i < n_atfork; i++) {
+      if (atforks[i].pre == pre &&
+          atforks[i].parent == parent &&
+          atforks[i].child == child)
+         return;
+   }
+
+   if (n_atfork >= VG_MAX_ATFORK)
+      VG_(core_panic)("Too many VG_(atfork) handlers requested: "
+                      "raise VG_MAX_ATFORK");
+
+   atforks[n_atfork].pre    = pre;
+   atforks[n_atfork].parent = parent;
+   atforks[n_atfork].child  = child;
+
+   n_atfork++;
+}
+
+void VG_(do_atfork_pre)(ThreadId tid)
+{
+   Int i;
+
+   for(i = 0; i < n_atfork; i++)
+      if (atforks[i].pre != NULL)
+	 (*atforks[i].pre)(tid);
+}
+
+void VG_(do_atfork_parent)(ThreadId tid)
+{
+   Int i;
+
+   for(i = 0; i < n_atfork; i++)
+      if (atforks[i].parent != NULL)
+	 (*atforks[i].parent)(tid);
+}
+
+void VG_(do_atfork_child)(ThreadId tid)
+{
+   Int i;
+
+   for(i = 0; i < n_atfork; i++)
+      if (atforks[i].child != NULL)
+	 (*atforks[i].child)(tid);
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

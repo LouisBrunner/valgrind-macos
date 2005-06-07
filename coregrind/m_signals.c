@@ -124,7 +124,9 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.esp)
 #  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.ebp)
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.eax)
-#  define VGP_UCONTEXT_SYSCALL_RET(uc)    ((uc)->uc_mcontext.eax)
+#  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
+      /* Convert the value in uc_mcontext.eax into a SysRes. */ \
+      VG_(mk_SysRes_x86_linux)( (uc)->uc_mcontext.eax )
 #elif defined(VGP_amd64_linux)
 #  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.rip)
 #  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.rsp)
@@ -327,10 +329,11 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 
       /* SA_ONESHOT: ignore client setting */
       
-      /* SA_RESTART: ignore client setting and always set it for us
-	 (even though we never rely on the kernel to restart a
+      /* SA_RESTART: ignore client setting and always set it for us.
+	 Though we never rely on the kernel to restart a
 	 syscall, we observe whether it wanted to restart the syscall
-	 or not, which helps VGA_(interrupted_syscall)()) */
+	 or not, which is needed by 
+         VG_(fixup_guest_state_after_syscall_interrupted) */
       skss_flags |= VKI_SA_RESTART;
 
       /* SA_NOMASK: ignore it */
@@ -458,7 +461,7 @@ static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 }
 
 
-Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss )
+SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss )
 {
    Addr m_SP;
 
@@ -479,18 +482,18 @@ Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss )
 
    if (ss != NULL) {
       if (on_sig_stack(tid, STACK_PTR(VG_(threads)[tid].arch))) {
-         return -VKI_EPERM;
+         return VG_(mk_SysRes_Error)( VKI_EPERM );
       }
       if (ss->ss_flags != VKI_SS_DISABLE 
           && ss->ss_flags != VKI_SS_ONSTACK 
           && ss->ss_flags != 0) {
-         return -VKI_EINVAL;
+         return VG_(mk_SysRes_Error)( VKI_EINVAL );
       }
       if (ss->ss_flags == VKI_SS_DISABLE) {
          VG_(threads)[tid].altstack.ss_flags = VKI_SS_DISABLE;
       } else {
          if (ss->ss_size < VKI_MINSIGSTKSZ) {
-            return -VKI_ENOMEM;
+            return VG_(mk_SysRes_Error)( VKI_ENOMEM );
          }
 
 	 VG_(threads)[tid].altstack.ss_sp    = ss->ss_sp;
@@ -498,13 +501,13 @@ Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss )
 	 VG_(threads)[tid].altstack.ss_flags = 0;
       }
    }
-   return 0;
+   return VG_(mk_SysRes_Success)( 0 );
 }
 
 
-Int VG_(do_sys_sigaction) ( Int signo, 
-			    const struct vki_sigaction *new_act, 
-			    struct vki_sigaction *old_act )
+SysRes VG_(do_sys_sigaction) ( Int signo, 
+                               const struct vki_sigaction *new_act, 
+                               struct vki_sigaction *old_act )
 {
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -523,7 +526,8 @@ Int VG_(do_sys_sigaction) ( Int signo,
    /* don't let them use our signals */
    if ( (signo > VKI_SIGVGRTUSERMAX)
 	&& new_act
-	&& !(new_act->ksa_handler == VKI_SIG_DFL || new_act->ksa_handler == VKI_SIG_IGN) )
+	&& !(new_act->ksa_handler == VKI_SIG_DFL 
+             || new_act->ksa_handler == VKI_SIG_IGN) )
       goto bad_signo_reserved;
 
    /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
@@ -556,7 +560,7 @@ Int VG_(do_sys_sigaction) ( Int signo,
    if (new_act) {
       handle_SCSS_change( False /* lazy update */ );
    }
-   return 0;
+   return VG_(mk_SysRes_Success)( 0 );
 
   bad_signo:
    if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
@@ -565,7 +569,7 @@ Int VG_(do_sys_sigaction) ( Int signo,
                    "Warning: bad signal number %d in sigaction()", 
                    signo);
    }
-   return -VKI_EINVAL;
+   return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_signo_reserved:
    if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
@@ -577,7 +581,7 @@ Int VG_(do_sys_sigaction) ( Int signo,
 		   "         the %s signal is used internally by Valgrind", 
 		   signame(signo));
    }
-   return -VKI_EINVAL;
+   return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
    if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
@@ -589,7 +593,7 @@ Int VG_(do_sys_sigaction) ( Int signo,
 		   "         the %s signal is uncatchable", 
 		   signame(signo));
    }
-   return -VKI_EINVAL;
+   return VG_(mk_SysRes_Error)( VKI_EINVAL );
 }
 
 
@@ -655,10 +659,10 @@ void do_setmask ( ThreadId tid,
 }
 
 
-int VG_(do_sys_sigprocmask) ( ThreadId tid,
-                               Int how, 
-                               vki_sigset_t* set,
-                               vki_sigset_t* oldset )
+SysRes VG_(do_sys_sigprocmask) ( ThreadId tid,
+                                 Int how, 
+                                 vki_sigset_t* set,
+                                 vki_sigset_t* oldset )
 {
    switch(how) {
    case VKI_SIG_BLOCK:
@@ -666,13 +670,12 @@ int VG_(do_sys_sigprocmask) ( ThreadId tid,
    case VKI_SIG_SETMASK:
       vg_assert(VG_(is_valid_tid)(tid));
       do_setmask ( tid, how, set, oldset );
-      VG_(poll_signals)(tid);	/* look for any newly deliverable signals */
-      return 0;
+      return VG_(mk_SysRes_Success)( 0 );
 
    default:
       VG_(message)(Vg_DebugMsg, 
                   "sigprocmask: unknown 'how' field %d", how);
-      return -VKI_EINVAL;
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 }
 
@@ -1611,11 +1614,13 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 		   sigNo, tid, info->si_code);
 
    /* Update thread state properly */
-   VGP_(interrupted_syscall)(tid, 
-                             VGP_UCONTEXT_INSTR_PTR(uc), 
-                             VGP_UCONTEXT_SYSCALL_NUM(uc), 
-                             VGP_UCONTEXT_SYSCALL_RET(uc), 
-			     !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART));
+   VG_(fixup_guest_state_after_syscall_interrupted)(
+      tid, 
+      VGP_UCONTEXT_INSTR_PTR(uc), 
+      VGP_UCONTEXT_SYSCALL_NUM(uc), 
+      VGP_UCONTEXT_SYSCALL_SYSRES(uc),  
+      !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART)
+   );
 
    /* Set up the thread's state to deliver a signal */
    if (!is_sig_ign(info->si_signo))
@@ -1985,7 +1990,8 @@ void VG_(poll_signals)(ThreadId tid)
    /* If there was nothing queued, ask the kernel for a pending signal */
    if (sip == NULL && VG_(sigtimedwait)(&pollset, &si, &zero) > 0) {
       if (VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "poll_signals: got signal %d for thread %d", si.si_signo, tid);
+	 VG_(message)(Vg_DebugMsg, "poll_signals: got signal %d "
+                                   "for thread %d", si.si_signo, tid);
       sip = &si;
    }
 

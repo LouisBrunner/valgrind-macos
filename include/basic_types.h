@@ -71,6 +71,17 @@ typedef
    UInt
    ThreadId;
 
+/* An abstraction of syscall return values.
+   When .isError == False, val holds the return value.
+   When .isError == True,  val holds the error code.
+*/
+typedef
+   struct { 
+      UWord val;
+      Bool  isError;
+   }
+   SysRes;
+
 /* ---------------------------------------------------------------------
    Where to send bug reports to.
    ------------------------------------------------------------------ */

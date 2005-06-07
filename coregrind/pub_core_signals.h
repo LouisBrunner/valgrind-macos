@@ -40,18 +40,19 @@ extern Int VG_(max_signal);
 
 extern void VG_(sigstartup_actions) ( void );
 
-/* Poll a thread's set of pending signals, and update the Thread's context to deliver one */
+/* Poll a thread's set of pending signals, and update the Thread's
+   context to deliver one (viz, create signal frames if needed) */
 extern void VG_(poll_signals) ( ThreadId );
 
 /* Fake system calls for signal handling. */
-extern Int VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss,
-                                                   vki_stack_t* oss );
-extern Int VG_(do_sys_sigaction)   ( Int signo, 
-                                     const struct vki_sigaction *new_act, 
-                                     struct vki_sigaction *old_act );
-extern Int VG_(do_sys_sigprocmask) ( ThreadId tid, Int how, 
-                                     vki_sigset_t* set,
-                                     vki_sigset_t* oldset );
+extern SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss,
+                                                      vki_stack_t* oss );
+extern SysRes VG_(do_sys_sigaction)   ( Int signo, 
+                                        const struct vki_sigaction *new_act, 
+                                        struct vki_sigaction *old_act );
+extern SysRes VG_(do_sys_sigprocmask) ( ThreadId tid, Int how, 
+                                        vki_sigset_t* set,
+                                        vki_sigset_t* oldset );
 
 extern void VG_(clear_out_queued_signals) 
                   ( ThreadId tid, /* OUT */ vki_sigset_t* saved_mask );

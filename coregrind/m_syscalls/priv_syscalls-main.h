@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86/Linux-specific syscall stuff.  priv_syscalls-x86-linux.h ---*/
+/*--- Private exports of syscalls-main.c.     priv_syscalls-main.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,12 +28,16 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_SYSCALLS_X86_LINUX_H
-#define __PRIV_SYSCALLS_X86_LINUX_H
+#ifndef __PRIV_SYSCALLS_MAIN_H
+#define __PRIV_SYSCALLS_MAIN_H
 
-#endif   // __PRIV_SYSCALLS_X86_LINUX_H
+/* Back up a thread so as to restart a system call. */
+extern
+void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch );
+
+#endif   // __PRIV_SYSCALLS_MAIN_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                          ---*/
+/*--- end                                     priv_syscalls-main.h ---*/
 /*--------------------------------------------------------------------*/
 

@@ -135,7 +135,7 @@ typedef struct {
 
    // VG_(needs).syscall_wrapper
    void (*tool_pre_syscall) (ThreadId, UInt);
-   void (*tool_post_syscall)(ThreadId, UInt, Int);
+   void (*tool_post_syscall)(ThreadId, UInt, SysRes);
 
    // VG_(needs).sanity_checks
    Bool (*tool_cheap_sanity_check)(void);

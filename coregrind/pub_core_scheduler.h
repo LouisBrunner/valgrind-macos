@@ -138,10 +138,6 @@ typedef struct {
       be rare. */
    struct SigQueue *sig_queue;
 
-   /* Syscall the Thread is currently running; -1 if none.  Should only
-      be set while Thread is in VgTs_WaitSys. */
-   Int syscallno;
-
    /* Client stacks.  When a thread slot is freed, we don't deallocate its
       stack; we just leave it lying around for the next use of the
       slot.  If the next use of the slot requires a larger stack,

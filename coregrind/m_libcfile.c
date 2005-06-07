@@ -33,7 +33,6 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_options.h"
-#include "pub_core_syscalls.h"      // For VG_(is_kerror)()
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------
@@ -67,86 +66,77 @@ Int VG_(safe_fd)(Int oldfd)
 /* Returns -1 on failure. */
 Int VG_(open) ( const Char* pathname, Int flags, Int mode )
 {  
-   Int fd = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
-   return fd;
+   SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
+   return res.isError ? -1 : res.val;
 }
 
 void VG_(close) ( Int fd )
 {
-   VG_(do_syscall1)(__NR_close, fd);
+   (void)VG_(do_syscall1)(__NR_close, fd);
 }
 
 Int VG_(read) ( Int fd, void* buf, Int count)
 {
-   Int res;
-   res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
-   return res;
+   SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
+   return res.isError ? -1 : res.val;
 }
 
 Int VG_(write) ( Int fd, const void* buf, Int count)
 {
-   Int res;
-   res = VG_(do_syscall3)(__NR_write, fd, (UWord)buf, count);
-   return res;
+   SysRes res = VG_(do_syscall3)(__NR_write, fd, (UWord)buf, count);
+   return res.isError ? -1 : res.val;
 }
 
 Int VG_(pipe) ( Int fd[2] )
 {
-   Int ret = VG_(do_syscall1)(__NR_pipe, (UWord)fd);
-   return VG_(is_kerror)(ret) ? -1 : 0;
+   SysRes res = VG_(do_syscall1)(__NR_pipe, (UWord)fd);
+   return res.isError ? -1 : 0;
 }
 
 OffT VG_(lseek) ( Int fd, OffT offset, Int whence)
 {
-   Int res;
-   res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
+   SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
+   return res.isError ? (-1) : 0;
 }
 
 Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
-   Int res;
-   res = VG_(do_syscall2)(__NR_stat, (UWord)file_name, (UWord)buf);
-   return res;			/* return -ve error */
+   SysRes res = VG_(do_syscall2)(__NR_stat, (UWord)file_name, (UWord)buf);
+   return res.isError ? (-1) : 0;
 }
 
 Int VG_(fstat) ( Int fd, struct vki_stat* buf )
 {
-   Int res;
-   res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)buf);
-   return VG_(is_kerror)(res) ? (-1) : 0;
+   SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)buf);
+   return res.isError ? (-1) : 0;
 }
 
 Int VG_(dup2) ( Int oldfd, Int newfd )
 {
-   Int res;
-   res = VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
-   return VG_(is_kerror)(res) ? (-1) : res;
+   SysRes res = VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
+   return res.isError ? (-1) : res.val;
 }
 
 Int VG_(rename) ( Char* old_name, Char* new_name )
 {
-   Int res;
-   res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);
-   return VG_(is_kerror)(res) ? (-1) : 0;
+   SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);
+   return res.isError ? (-1) : 0;
 }
 
 Int VG_(unlink) ( Char* file_name )
 {
-   Int res;
-   res = VG_(do_syscall1)(__NR_unlink, (UWord)file_name);
-   return VG_(is_kerror)(res) ? (-1) : 0;
+   SysRes res = VG_(do_syscall1)(__NR_unlink, (UWord)file_name);
+   return res.isError ? (-1) : 0;
 }
 
 /* Nb: we do not allow the Linux extension which malloc()s memory for the
    buffer if buf==NULL, because we don't want Linux calling malloc() */
 Char* VG_(getcwd) ( Char* buf, SizeT size )
 {
-   Word res;
+   SysRes res;
    vg_assert(buf != NULL);
    res = VG_(do_syscall2)(__NR_getcwd, (UWord)buf, size);
-   return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
+   return res.isError ? ((Char*)NULL) : (Char*)res.val;
 }
 
 /* Alternative version that does allocate the memory.  Easier to use. */
@@ -170,20 +160,18 @@ Bool VG_(getcwd_alloc) ( Char** out )
 
 Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)
 {
-   Int res;
+   SysRes res;
    /* res = readlink( path, buf, bufsiz ); */
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
+   return res.isError ? -1 : res.val;
 }
 
 Int VG_(getdents) (UInt fd, struct vki_dirent *dirp, UInt count)
 {
-   Int res;
+   SysRes res;
    /* res = getdents( fd, dirp, count ); */
    res = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, count);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
+   return res.isError ? -1 : res.val;
 }
 
 /* ---------------------------------------------------------------------
@@ -309,133 +297,119 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 #  undef GET_CH
 }
 
-
 static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
-   Int res;
-   UWord args[3];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[3];
    args[0] = domain;
    args[1] = type;
    args[2] = protocol;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SOCKET, (UWord)&args);
-   if (VG_(is_kerror)(res)) 
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+   I_die_here;
+#  endif
 }
 
 static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen )
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
-   Int res;
-   UWord args[3];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[3];
    args[0] = sockfd;
    args[1] = (UWord)serv_addr;
    args[2] = addrlen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_CONNECT, (UWord)&args);
-   if (VG_(is_kerror)(res)) 
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+   I_die_here;
+#  endif
 }
 
 Int VG_(write_socket)( Int sd, void *msg, Int count )
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
    /* This is actually send(). */
-
    /* Requests not to send SIGPIPE on errors on stream oriented
       sockets when the other end breaks the connection. The EPIPE
       error is still returned. */
    Int flags = VKI_MSG_NOSIGNAL;
 
-   Int res;
-   UWord args[4];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[4];
    args[0] = sd;
    args[1] = (UWord)msg;
    args[2] = count;
    args[3] = flags;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SEND, (UWord)&args);
-   if (VG_(is_kerror)(res)) 
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+   I_die_here;
+#  endif
 }
 
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
-   Int res;
-   UWord args[3];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
    args[2] = (UWord)namelen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UWord)&args);
-   if(VG_(is_kerror)(res))
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+   I_die_here;
+#  endif
 }
 
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
-   Int res;
-   UWord args[3];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
    args[2] = (UWord)namelen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UWord)&args);
-   if(VG_(is_kerror)(res))
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+   I_die_here;
+#  endif
 }
 
 Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
-// AMD64/Linux doesn't define __NR_socketcall... see comment above
-// VG_(sigpending)() for more details.
-#ifdef __amd64__
-   I_die_here;
-#else
-   Int res;
-   UWord args[5];
+#  if defined(VGP_x86_linux)
+   SysRes res;
+   UWord  args[5];
    args[0] = sd;
    args[1] = level;
    args[2] = optname;
    args[3] = (UWord)optval;
    args[4] = (UWord)optlen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UWord)&args);
-   if(VG_(is_kerror)(res))
-      res = -1;
-   return res;
-#endif
+   return res.isError ? -1 : res.val;
+#  else
+   I_die_here;
+   // AMD64/Linux doesn't define __NR_socketcall... see comment above
+   // VG_(sigpending)() for more details.
+#  endif
 }
 
 

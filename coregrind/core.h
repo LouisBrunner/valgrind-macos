@@ -105,7 +105,7 @@ extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 /* system/mman.h */
 extern void* VG_(mmap)       ( void* start, SizeT length, UInt prot, UInt flags,
                                UInt sf_flags, UInt fd, OffT offset );
-extern void* VG_(mmap_native)( void* start, SizeT length, UInt prot, UInt flags,
+extern SysRes VG_(mmap_native)( void* start, SizeT length, UInt prot, UInt flags,
                                               UInt fd, OffT offset );
 extern Int VG_(munmap)       ( void* start, SizeT length );
 extern Int VG_(mprotect)       ( void *start, SizeT length, UInt prot );
@@ -120,6 +120,16 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 
 extern void   VG_(nanosleep)(struct vki_timespec *);
 
+/* Simple Valgrind-internal atfork mechanism */
+/* Internal atfork handlers */
+typedef void (*vg_atfork_t)(ThreadId);
+extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, 
+                                         vg_atfork_t child);
+extern void VG_(do_atfork_pre)   (ThreadId tid);
+extern void VG_(do_atfork_parent)(ThreadId tid);
+extern void VG_(do_atfork_child) (ThreadId tid);
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_syscall.S
    ------------------------------------------------------------------ */
@@ -129,16 +139,6 @@ extern void   VG_(nanosleep)(struct vki_timespec *);
 // cause problems when passing 32-bit integers on 64-bit platforms, because
 // the top 32-bits might not be zeroed appropriately, eg. as would happen
 // with the 6th arg on AMD64 which is passed on the stack.
-extern Word VG_(do_syscall) ( UInt, UWord, UWord, UWord, UWord, UWord, UWord );
-
-// Macros make life easier.
-#define vgPlain_do_syscall0(s)             VG_(do_syscall)((s),0,0,0,0,0,0)
-#define vgPlain_do_syscall1(s,a)           VG_(do_syscall)((s),(a),0,0,0,0,0)
-#define vgPlain_do_syscall2(s,a,b)         VG_(do_syscall)((s),(a),(b),0,0,0,0)
-#define vgPlain_do_syscall3(s,a,b,c)       VG_(do_syscall)((s),(a),(b),(c),0,0,0)
-#define vgPlain_do_syscall4(s,a,b,c,d)     VG_(do_syscall)((s),(a),(b),(c),(d),0,0)
-#define vgPlain_do_syscall5(s,a,b,c,d,e)   VG_(do_syscall)((s),(a),(b),(c),(d),(e),0)
-#define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),(c),(d),(e),(f))
 
 extern void VG_(sigreturn)(void);
 

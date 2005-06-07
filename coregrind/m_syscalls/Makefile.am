@@ -5,7 +5,8 @@ EXTRA_DIST = \
 	README_SYSCALLS.txt
 
 noinst_HEADERS = \
-	priv_syscalls.h \
+	priv_types_n_macros.h \
+	priv_syscalls-generic.h \
 	priv_syscalls-linux.h \
 	priv_syscalls-amd64-linux.h \
 	priv_syscalls-arm-linux.h \
@@ -15,6 +16,7 @@ noinst_LIBRARIES = libsyscalls.a
 
 libsyscalls_a_SOURCES = \
 	syscall-@VG_PLATFORM@.S \
-	syscalls.c \
+	syscalls-generic.c \
 	syscalls-@VG_OS@.c \
-	syscalls-@VG_PLATFORM@.c
+	syscalls-@VG_PLATFORM@.c \
+	syscalls-main.c

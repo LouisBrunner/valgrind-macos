@@ -235,7 +235,7 @@ extern void VG_(needs_client_requests) (
 // corresponding post_ function had better free() it!
 extern void VG_(needs_syscall_wrapper) (
    void (* pre_syscall)(ThreadId tid, UInt syscallno),
-   void (*post_syscall)(ThreadId tid, UInt syscallno, Int res)
+   void (*post_syscall)(ThreadId tid, UInt syscallno, SysRes res)
 );
 
 /* Are tool-state sanity checks performed? */

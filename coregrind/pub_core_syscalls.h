@@ -43,22 +43,20 @@ extern void VG_(client_syscall) ( ThreadId tid );
 
 extern void VG_(post_syscall)   ( ThreadId tid );
 
-// Fix up the thread's state because a syscall may have been
-// interrupted with a signal.  Returns True if the syscall completed
-// (either interrupted or finished normally), or False if it was
-// restarted (or the signal didn't actually interrupt a syscall).
-extern void VGP_(interrupted_syscall)(ThreadId tid,
-                                      Word eip, UWord sysnum, UWord sysret,
-                                      Bool restart);
+/* Clear this module's private state for thread 'tid' */
+extern void VG_(clear_syscallInfo) ( Int tid );
+
+// Fix up a thread's state when syscall is interrupted by a signal.
+extern void VG_(fixup_guest_state_after_syscall_interrupted)(
+               ThreadId tid,
+               Addr     ip, 
+               UWord    sysnum,
+               SysRes   sysret,
+               Bool     restart
+            );
 
 // Release resources held by this thread
 extern void VGP_(cleanup_thread) ( ThreadArchState* );
-
-extern Bool VG_(is_kerror) ( Word res );
-
-/* Internal atfork handlers */
-typedef void (*vg_atfork_t)(ThreadId);
-extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 
 /* fd leakage calls. */
 extern void VG_(init_preopened_fds) ( void );

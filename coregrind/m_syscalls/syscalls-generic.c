@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Handle system calls.                              syscalls.c ---*/
+/*--- Wrappers for generic Unix system calls    syscalls-generic.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -32,91 +32,21 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
-#include "pub_core_libcassert.h"
-#include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcfile.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_main.h"
-#include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
-#include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
-#include "priv_syscalls.h"
+#include "pub_core_options.h"
+#include "pub_core_signals.h"
+#include "pub_core_syscalls.h"
 
+#include "priv_types_n_macros.h"
+#include "priv_syscalls-generic.h"
 
-/* All system calls are channelled through here, doing two things:
+#include "vki_unistd.h"              /* for the __NR_* constants */
 
-   * notify the tool of the events (mem/reg reads, writes) happening
-
-   * perform the syscall, usually by passing it along to the kernel
-     unmodified.
-
-   A magical piece of assembly code, VG_(do_syscall)(), in syscall-$PLATFORM.S
-   does the tricky bit of passing a syscall to the kernel, whilst
-   having the simulator retain control.
-*/
-
-/* ---------------------------------------------------------------------
-   A simple atfork() facility for Valgrind's internal use
-   ------------------------------------------------------------------ */
-
-struct atfork {
-   vg_atfork_t	pre;
-   vg_atfork_t	parent;
-   vg_atfork_t	child;
-};
-
-#define VG_MAX_ATFORK	10
-
-static struct atfork atforks[VG_MAX_ATFORK];
-static Int n_atfork;
-
-void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++) {
-      if (atforks[i].pre == pre &&
-	  atforks[i].parent == parent &&
-	  atforks[i].child == child)
-	 return;
-   }
-
-   if (n_atfork >= VG_MAX_ATFORK)
-      VG_(core_panic)("Too many VG_(atfork) handlers requested: raise VG_MAX_ATFORK");
-
-   atforks[n_atfork].pre    = pre;
-   atforks[n_atfork].parent = parent;
-   atforks[n_atfork].child  = child;
-
-   n_atfork++;
-}
-
-void VG_(do_atfork_pre)(ThreadId tid)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].pre != NULL)
-	 (*atforks[i].pre)(tid);
-}
-
-void VG_(do_atfork_parent)(ThreadId tid)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].parent != NULL)
-	 (*atforks[i].parent)(tid);
-}
-
-void VG_(do_atfork_child)(ThreadId tid)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].child != NULL)
-	 (*atforks[i].child)(tid);
-}
 
 /* return true if address range entirely contained within client
    address space */
@@ -143,8 +73,9 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 		  syscallname, start, end, cl_base, VG_(client_end), ret);
 
    if (!ret && syscallname != NULL) {
-      VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried to modify addresses %p-%p",
-		   syscallname, start, end);
+      VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried "
+                               "to modify addresses %p-%p",
+                               syscallname, start, end);
 
       if (VG_(clo_verbosity) > 1) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
@@ -181,8 +112,8 @@ void mash_addr_and_len( Addr* a, SizeT* len)
    *a = ra;
 }
 
-static
-void mmap_segment ( Addr a, SizeT len, UInt prot, UInt mm_flags, Int fd, ULong offset )
+void VG_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
+                         UInt mm_flags, Int fd, ULong offset )
 {
    Bool rr, ww, xx;
    UInt flags;
@@ -207,21 +138,21 @@ void mmap_segment ( Addr a, SizeT len, UInt prot, UInt mm_flags, Int fd, ULong o
 }
 
 static 
-Addr mremap_segment ( Addr old_addr, SizeT old_size,
-		      Addr new_addr, SizeT new_size,
-		      UInt flags, ThreadId tid)
+SysRes mremap_segment ( Addr old_addr, SizeT old_size,
+                        Addr new_addr, SizeT new_size,
+                        UInt flags, ThreadId tid)
 {
-   Addr ret;
+   SysRes ret;
    Segment *seg, *next;
 
    old_size = VG_PGROUNDUP(old_size);
    new_size = VG_PGROUNDUP(new_size);
 
    if (VG_PGROUNDDN(old_addr) != old_addr)
-      return -VKI_EINVAL;
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
    if (!VG_(valid_client_addr)(old_addr, old_size, tid, "mremap(old_addr)"))
-      return -VKI_EFAULT;
+      return VG_(mk_SysRes_Error)( VKI_EFAULT );
 
    /* fixed at the current address means we don't move it */
    if ((flags & VKI_MREMAP_FIXED) && (old_addr == new_addr))
@@ -229,28 +160,28 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
 
    if (flags & VKI_MREMAP_FIXED) {
       if (VG_PGROUNDDN(new_addr) != new_addr)
-	 return -VKI_EINVAL;
+	 return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
       if (!VG_(valid_client_addr)(new_addr, new_size, tid, "mremap(new_addr)"))
-	 return -VKI_ENOMEM;
+	 return VG_(mk_SysRes_Error)( VKI_ENOMEM );
 
       /* check for overlaps */
       if ((old_addr < (new_addr+new_size) &&
 	   (old_addr+old_size) > new_addr) ||
 	  (new_addr < (old_addr+new_size) &&
 	   (new_addr+new_size) > old_addr))
-	 return -VKI_EINVAL;
+	 return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
    /* Do nothing */
    if (!(flags & VKI_MREMAP_FIXED) && new_size == old_size)
-      return old_addr;
+      return VG_(mk_SysRes_Success)( old_addr );
 
    seg = VG_(find_segment)(old_addr);
 
    /* range must be contained within segment */
    if (seg == NULL || !VG_(seg_contains)(seg, old_addr, old_size))
-      return -VKI_EINVAL;
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
    next = VG_(find_segment_above_mapped)(old_addr);
 
@@ -264,7 +195,8 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       Addr a;
       
       if ((flags & (VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE)) == 0)
-	 return -VKI_ENOMEM;	/* not allowed to move */
+         /* not allowed to move */
+	 return VG_(mk_SysRes_Error)( VKI_ENOMEM ); 
 
       if ((flags & VKI_MREMAP_FIXED) == 0)
 	  new_addr = 0;
@@ -272,19 +204,18 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       a = VG_(find_map_space)(new_addr, new_size, True);
 
       if ((flags & VKI_MREMAP_FIXED) && a != new_addr)
-	 return -VKI_ENOMEM;	/* didn't find the place we wanted */
+         /* didn't find the place we wanted */
+	 return VG_(mk_SysRes_Error)( VKI_ENOMEM );
 
       new_addr = a;
-      ret = a;
 
       /* we've nailed down the location */
-      flags |=  VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE;
+      flags |= VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE;
 
       ret = VG_(do_syscall5)(__NR_mremap, old_addr, old_size, new_size, 
 			     flags, new_addr);
 
-      if (ret != new_addr) {
-	 vg_assert(VG_(is_kerror)(ret));
+      if (ret.isError) {
 	 return ret;
       }
 
@@ -307,7 +238,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       VG_(munmap)((void *)old_addr, old_size);
    } else {
       /* staying in place */
-      ret = old_addr;
+      ret = VG_(mk_SysRes_Success)( old_addr );
 
       if (new_size < old_size) {
 	 VG_TRACK(die_mem_munmap, old_addr+new_size, old_size-new_size);
@@ -323,7 +254,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
 	 ret = VG_(do_syscall5)(__NR_mremap, old_addr, old_size, new_size, 
 			        flags, 0);
 
-	 if (ret != old_addr)
+	 if (ret.isError || (!ret.isError && ret.val != old_addr))
 	    return ret;
 
 	 VG_TRACK(new_mem_mmap, old_addr+old_size, new_size-old_size,
@@ -343,34 +274,9 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
 }
 
 
-/* Is this a Linux kernel error return value? */
-/* From:
-   http://sources.redhat.com/cgi-bin/cvsweb.cgi/libc/sysdeps/unix/sysv/
-   linux/i386/sysdep.h?
-   rev=1.28&content-type=text/x-cvsweb-markup&cvsroot=glibc
-
-   \begin{quote}:
-
-   Linux uses a negative return value to indicate syscall errors,
-   unlike most Unices, which use the condition codes' carry flag.
-
-   Since version 2.1 the return value of a system call might be
-   negative even if the call succeeded.  E.g., the 'lseek' system call
-   might return a large offset.  Therefore we must not anymore test
-   for < 0, but test for a real error by making sure the value in %eax
-   is a real error number.  Linus said he will make sure the no syscall
-   returns a value in -1 .. -4095 as a valid result so we can safely
-   test with -4095.  
-
-   END QUOTE
-*/
-Bool VG_(is_kerror) ( Word res )
-{
-   if (res >= -4095 && res <= -1)
-      return True;
-   else
-      return False;
-}
+/* ---------------------------------------------------------------------
+   File-descriptor tracking
+   ------------------------------------------------------------------ */
 
 /* One of these is allocated for each open file descriptor.  */
 
@@ -527,11 +433,9 @@ Char *inet2name(struct vki_sockaddr_in *sa, UInt len, Char *name)
    return name;
 }
 
-
 /*
  * Try get some details about a socket.
  */
-
 static void
 getsockdetails(int fd)
 {
@@ -773,8 +677,8 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
 
 static
 void pre_mem_read_sockaddr ( ThreadId tid,
-			     Char *description,
-			     struct vki_sockaddr *sa, UInt salen )
+                             Char *description,
+                             struct vki_sockaddr *sa, UInt salen )
 {
    Char *outmsg;
 
@@ -858,11 +762,10 @@ void buf_and_len_pre_check( ThreadId tid, Addr buf_p, Addr buflen_p,
 }
 
 static 
-void buf_and_len_post_check( ThreadId tid, Int res,
+void buf_and_len_post_check( ThreadId tid, SysRes res,
                              Addr buf_p, Addr buflen_p, Char* s )
 {
-   if (!VG_(is_kerror)(res) && VG_(tdict).track_post_mem_write) 
-   {
+   if (!res.isError && VG_(tdict).track_post_mem_write) {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
       if (buflen_out > 0 && buf_p != (Addr)NULL) {
          VG_(tdict).track_post_mem_write( Vg_CoreSysCall, tid, buf_p, buflen_out );
@@ -1001,13 +904,14 @@ VG_(generic_PRE_sys_socketpair) ( ThreadId tid,
                   arg3, 2*sizeof(int) );
 }
 
-UWord 
+SysRes
 VG_(generic_POST_sys_socketpair) ( ThreadId tid,
-                                   UWord res,
+                                   SysRes res,
                                    UWord arg0, UWord arg1, 
                                    UWord arg2, UWord arg3 )
 {
-   UWord r = res;
+   SysRes r = res;
+   vg_assert(!res.isError); /* guaranteed by caller */
    Int fd1 = ((Int*)arg3)[0];
    Int fd2 = ((Int*)arg3)[1];
    POST_MEM_WRITE( arg3, 2*sizeof(int) );
@@ -1015,7 +919,7 @@ VG_(generic_POST_sys_socketpair) ( ThreadId tid,
        !VG_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
       VG_(close)(fd1);
       VG_(close)(fd2);
-      r = -VKI_EMFILE;
+      r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       POST_MEM_WRITE( arg3, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
@@ -1028,16 +932,17 @@ VG_(generic_POST_sys_socketpair) ( ThreadId tid,
 
 /* ------ */
 
-UWord 
-VG_(generic_POST_sys_socket) ( ThreadId tid, UWord res )
+SysRes 
+VG_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
 {
-   UWord r = res;
-   if (!VG_(fd_allowed)(res, "socket", tid, True)) {
-      VG_(close)(res);
-      r = -VKI_EMFILE;
+   SysRes r = res;
+   vg_assert(!res.isError); /* guaranteed by caller */
+   if (!VG_(fd_allowed)(res.val, "socket", tid, True)) {
+      VG_(close)(res.val);
+      r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, res, NULL);
+         VG_(record_fd_open)(tid, res.val, NULL);
    }
    return r;
 }
@@ -1071,15 +976,16 @@ VG_(generic_PRE_sys_accept) ( ThreadId tid,
                               "socketcall.accept(addrlen_in)" );
 }
 
-UWord 
+SysRes 
 VG_(generic_POST_sys_accept) ( ThreadId tid,
-                               UWord res,
+                               SysRes res,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
-   UWord r = res;
-   if (!VG_(fd_allowed)(res, "accept", tid, True)) {
-      VG_(close)(res);
-      r = -VKI_EMFILE;
+   SysRes r = res;
+   vg_assert(!res.isError); /* guaranteed by caller */
+   if (!VG_(fd_allowed)(res.val, "accept", tid, True)) {
+      VG_(close)(res.val);
+      r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       Addr addr_p     = arg1;
       Addr addrlen_p  = arg2;
@@ -1087,7 +993,7 @@ VG_(generic_POST_sys_accept) ( ThreadId tid,
          buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
                                   "socketcall.accept(addrlen_out)" );
       if (VG_(clo_track_fds))
-          VG_(record_fd_open)(tid, res, NULL);
+          VG_(record_fd_open)(tid, res.val, NULL);
    }
    return r;
 }
@@ -1146,7 +1052,7 @@ VG_(generic_PRE_sys_recvfrom) ( ThreadId tid,
 
 void 
 VG_(generic_POST_sys_recvfrom) ( ThreadId tid,
-                                 UWord res,
+                                 SysRes res,
                                  UWord arg0, UWord arg1, UWord arg2,
                                  UWord arg3, UWord arg4, UWord arg5 )
 {
@@ -1155,6 +1061,7 @@ VG_(generic_POST_sys_recvfrom) ( ThreadId tid,
    Addr from_p     = arg4;
    Addr fromlen_p  = arg5;
 
+   vg_assert(!res.isError); /* guaranteed by caller */
    if (from_p != (Addr)NULL) 
       buf_and_len_post_check ( tid, res, from_p, fromlen_p,
                                "socketcall.recvfrom(fromlen_out)" );
@@ -1239,12 +1146,13 @@ VG_(generic_PRE_sys_getsockopt) ( ThreadId tid,
 
 void 
 VG_(generic_POST_sys_getsockopt) ( ThreadId tid,
-                                   UWord res,
+                                   SysRes res,
                                    UWord arg0, UWord arg1, UWord arg2,
                                    UWord arg3, UWord arg4 )
 {
    Addr optval_p  = arg3;
    Addr optlen_p  = arg4;
+   vg_assert(!res.isError); /* guaranteed by caller */
    if (optval_p != (Addr)NULL) 
       buf_and_len_post_check ( tid, res, optval_p, optlen_p,
                                "socketcall.getsockopt(optlen_out)" );
@@ -1267,11 +1175,12 @@ VG_(generic_PRE_sys_getsockname) ( ThreadId tid,
 
 void 
 VG_(generic_POST_sys_getsockname) ( ThreadId tid,
-                                    UWord res,
+                                    SysRes res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
    Addr name_p     = arg1;
    Addr namelen_p  = arg2;
+   vg_assert(!res.isError); /* guaranteed by caller */
    buf_and_len_post_check ( tid, res, name_p, namelen_p,
                             "socketcall.getsockname(namelen_out)" );
 }
@@ -1293,11 +1202,12 @@ VG_(generic_PRE_sys_getpeername) ( ThreadId tid,
 
 void 
 VG_(generic_POST_sys_getpeername) ( ThreadId tid,
-                                    UWord res,
+                                    SysRes res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
    Addr name_p     = arg1;
    Addr namelen_p  = arg2;
+   vg_assert(!res.isError); /* guaranteed by caller */
    buf_and_len_post_check ( tid, res, name_p, namelen_p,
                             "socketcall.getpeername(namelen_out)" );
 }
@@ -1326,7 +1236,6 @@ VG_(generic_PRE_sys_recvmsg) ( ThreadId tid,
 
 void 
 VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
-                                UWord res,
                                 UWord arg0, UWord arg1 )
 {
    struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
@@ -1368,22 +1277,22 @@ VG_(generic_PRE_sys_semtimedop) ( ThreadId tid,
 static
 UInt get_sem_count( Int semid )
 {
-  struct vki_semid_ds buf;
-  union vki_semun arg;
-  long res;
+   struct vki_semid_ds buf;
+   union vki_semun arg;
+   SysRes res;
 
-  arg.buf = &buf;
+   arg.buf = &buf;
 
-#ifdef __NR_semctl
-  res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
-#else
-  res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
-                         VKI_IPC_STAT, (UWord)&arg);
-#endif
-  if ( VG_(is_kerror)(res) )
-    return 0;
+#  ifdef __NR_semctl
+   res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
+#  else
+   res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
+                          VKI_IPC_STAT, (UWord)&arg);
+# endif
+   if (res.isError)
+      return 0;
 
-  return buf.sem_nsems;
+   return buf.sem_nsems;
 }
 
 void
@@ -1568,15 +1477,15 @@ VG_(generic_POST_sys_msgctl) ( ThreadId tid,
 static
 UInt get_shm_size ( Int shmid )
 {
-#ifdef __NR_shmctl
+#  ifdef __NR_shmctl
    struct vki_shmid64_ds buf;
-   long __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
-#else
+   SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, VKI_IPC_STAT, (UWord)&buf);
+#  else
    struct vki_shmid_ds buf;
-   long __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
+   SysRes __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
                                  VKI_IPC_STAT, 0, (UWord)&buf);
-#endif
-   if ( VG_(is_kerror) ( __res ) )
+#  endif
+   if (__res.isError)
       return 0;
  
    return buf.shm_segsz;
@@ -1736,94 +1645,94 @@ VG_(generic_POST_sys_shmctl) ( ThreadId tid,
    XXX: some of these are arch-specific, and should be factored out.
 */
 
-#define PRE(name, f)     PRE_TEMPLATE( , vgArch_gen, name, f)
-#define POST(name)      POST_TEMPLATE( , vgArch_gen, name)
+#define PRE(name)      DEFN_PRE_TEMPLATE(generic, name)
+#define POST(name)     DEFN_POST_TEMPLATE(generic, name)
 
-// Combine two 32-bit values into a 64-bit value
-#define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+//zz // Combine two 32-bit values into a 64-bit value
+//zz #define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+//zz 
+//zz //PRE(sys_exit_group, Special)
+//zz //{
+//zz //   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
+//zz //}
 
-//PRE(sys_exit_group, Special)
-//{
-//   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
-//}
-
-PRE(sys_exit, Special)
+PRE(sys_exit)
 {
+   ThreadState* tst;
    /* simple; just make this thread exit */
    PRINT("exit( %d )", ARG1);
    PRE_REG_READ1(void, "exit", int, exitcode);
+   tst = VG_(get_ThreadState)(tid);
+   /* Set the thread's status to be exiting, then claim that the
+      syscall succeeded. */
    tst->exitreason = VgSrc_ExitSyscall;
    tst->os_state.exitcode = ARG1;
-   /* exit doesn't return anything (it doesn't return.)
-      Nevertheless, if we don't do this, the result-not-assigned-
-      yet-you-said-you-were-Special assertion in the main syscall
-      handling logic will fire.  Hence ..
-   */
-   SET_RESULT(0);
+   SET_STATUS_Success(0);
 }
 
-PRE(sys_sched_yield, MayBlock)
-{
-   PRINT("sched_yield()");
-   PRE_REG_READ0(long, "sys_sched_yield");
-}
+//zz PRE(sys_sched_yield, SfMayBlock)
+//zz {
+//zz    PRINT("sched_yield()");
+//zz    PRE_REG_READ0(long, "sys_sched_yield");
+//zz }
 
-PRE(sys_ni_syscall, Special)
+PRE(sys_ni_syscall)
 {
    PRINT("non-existent syscall! (ni_syscall)");
    PRE_REG_READ0(long, "ni_syscall");
-   SET_RESULT( -VKI_ENOSYS );
+   SET_STATUS_Failure( VKI_ENOSYS );
 }
 
-PRE(sys_set_tid_address, 0)
-{
-   PRINT("sys_set_tid_address ( %p )", ARG1);
-   PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
-}
+//zz PRE(sys_set_tid_address, 0)
+//zz {
+//zz    PRINT("sys_set_tid_address ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
+//zz }
+//zz 
+//zz PRE(sys_iopl, 0)
+//zz {
+//zz    PRINT("sys_iopl ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "iopl", unsigned long, level);
+//zz }
+//zz 
+//zz PRE(sys_setxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_setxattr ( %p, %p, %p, %llu, %d )",
+//zz          ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+//zz    PRE_REG_READ5(long, "setxattr",
+//zz                  char *, path, char *, name,
+//zz                  void *, value, vki_size_t, size, int, flags);
+//zz    PRE_MEM_RASCIIZ( "setxattr(path)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "setxattr(name)", ARG2 );
+//zz    PRE_MEM_READ( "setxattr(value)", ARG3, ARG4 );
+//zz }
+//zz 
+//zz PRE(sys_lsetxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_lsetxattr ( %p, %p, %p, %llu, %d )",
+//zz          ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+//zz    PRE_REG_READ5(long, "lsetxattr",
+//zz                  char *, path, char *, name,
+//zz                  void *, value, vki_size_t, size, int, flags);
+//zz    PRE_MEM_RASCIIZ( "lsetxattr(path)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "lsetxattr(name)", ARG2 );
+//zz    PRE_MEM_READ( "lsetxattr(value)", ARG3, ARG4 );
+//zz }
+//zz 
+//zz PRE(sys_fsetxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_fsetxattr ( %d, %p, %p, %llu, %d )",
+//zz          ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+//zz    PRE_REG_READ5(long, "fsetxattr",
+//zz                  int, fd, char *, name, void *, value,
+//zz                  vki_size_t, size, int, flags);
+//zz    PRE_MEM_RASCIIZ( "fsetxattr(name)", ARG2 );
+//zz    PRE_MEM_READ( "fsetxattr(value)", ARG3, ARG4 );
+//zz }
 
-PRE(sys_iopl, 0)
+PRE(sys_getxattr)
 {
-   PRINT("sys_iopl ( %d )", ARG1);
-   PRE_REG_READ1(long, "iopl", unsigned long, level);
-}
-
-PRE(sys_setxattr, MayBlock)
-{
-   PRINT("sys_setxattr ( %p, %p, %p, %llu, %d )",
-         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
-   PRE_REG_READ5(long, "setxattr",
-                 char *, path, char *, name,
-                 void *, value, vki_size_t, size, int, flags);
-   PRE_MEM_RASCIIZ( "setxattr(path)", ARG1 );
-   PRE_MEM_RASCIIZ( "setxattr(name)", ARG2 );
-   PRE_MEM_READ( "setxattr(value)", ARG3, ARG4 );
-}
-
-PRE(sys_lsetxattr, MayBlock)
-{
-   PRINT("sys_lsetxattr ( %p, %p, %p, %llu, %d )",
-         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
-   PRE_REG_READ5(long, "lsetxattr",
-                 char *, path, char *, name,
-                 void *, value, vki_size_t, size, int, flags);
-   PRE_MEM_RASCIIZ( "lsetxattr(path)", ARG1 );
-   PRE_MEM_RASCIIZ( "lsetxattr(name)", ARG2 );
-   PRE_MEM_READ( "lsetxattr(value)", ARG3, ARG4 );
-}
-
-PRE(sys_fsetxattr, MayBlock)
-{
-   PRINT("sys_fsetxattr ( %d, %p, %p, %llu, %d )",
-         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
-   PRE_REG_READ5(long, "fsetxattr",
-                 int, fd, char *, name, void *, value,
-                 vki_size_t, size, int, flags);
-   PRE_MEM_RASCIIZ( "fsetxattr(name)", ARG2 );
-   PRE_MEM_READ( "fsetxattr(value)", ARG3, ARG4 );
-}
-
-PRE(sys_getxattr, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_getxattr ( %p, %p, %p, %llu )", ARG1,ARG2,ARG3, (ULong)ARG4);
    PRE_REG_READ4(ssize_t, "getxattr",
                  char *, path, char *, name, void *, value, vki_size_t, size);
@@ -1834,266 +1743,268 @@ PRE(sys_getxattr, MayBlock)
 
 POST(sys_getxattr)
 {
+   vg_assert(SUCCESS);
    if (RES > 0 && ARG3 != (Addr)NULL) {
       POST_MEM_WRITE( ARG3, RES );
    }
 }
 
-PRE(sys_lgetxattr, MayBlock)
+//zz PRE(sys_lgetxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_lgetxattr ( %p, %p, %p, %llu )", ARG1,ARG2,ARG3, (ULong)ARG4);
+//zz    PRE_REG_READ4(ssize_t, "lgetxattr",
+//zz                  char *, path, char *, name, void *, value, vki_size_t, size);
+//zz    PRE_MEM_RASCIIZ( "lgetxattr(path)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "lgetxattr(name)", ARG2 );
+//zz    PRE_MEM_WRITE( "lgetxattr(value)", ARG3, ARG4 );
+//zz }
+//zz 
+//zz POST(sys_lgetxattr)
+//zz {
+//zz    if (RES > 0 && ARG3 != (Addr)NULL) {
+//zz       POST_MEM_WRITE( ARG3, RES );
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_fgetxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_fgetxattr ( %d, %p, %p, %llu )", ARG1, ARG2, ARG3, (ULong)ARG4);
+//zz    PRE_REG_READ4(ssize_t, "fgetxattr",
+//zz                  int, fd, char *, name, void *, value, vki_size_t, size);
+//zz    PRE_MEM_RASCIIZ( "fgetxattr(name)", ARG2 );
+//zz    PRE_MEM_WRITE( "fgetxattr(value)", ARG3, ARG4 );
+//zz }
+//zz 
+//zz POST(sys_fgetxattr)
+//zz {
+//zz    if (RES > 0 && ARG3 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG3, RES );
+//zz }
+//zz 
+//zz PRE(sys_listxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_listxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+//zz    PRE_REG_READ3(ssize_t, "listxattr",
+//zz                  char *, path, char *, list, vki_size_t, size);
+//zz    PRE_MEM_RASCIIZ( "listxattr(path)", ARG1 );
+//zz    PRE_MEM_WRITE( "listxattr(list)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz POST(sys_listxattr)
+//zz {
+//zz    if (RES > 0 && ARG2 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG2, RES );
+//zz }
+//zz 
+//zz PRE(sys_llistxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_llistxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+//zz    PRE_REG_READ3(ssize_t, "llistxattr",
+//zz                  char *, path, char *, list, vki_size_t, size);
+//zz    PRE_MEM_RASCIIZ( "llistxattr(path)", ARG1 );
+//zz    PRE_MEM_WRITE( "llistxattr(list)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz POST(sys_llistxattr)
+//zz {
+//zz    if (RES > 0 && ARG2 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG2, RES );
+//zz }
+//zz 
+//zz PRE(sys_flistxattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_flistxattr ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+//zz    PRE_REG_READ3(ssize_t, "flistxattr",
+//zz                  int, fd, char *, list, vki_size_t, size);
+//zz    PRE_MEM_WRITE( "flistxattr(list)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz POST(sys_flistxattr)
+//zz {
+//zz    if (RES > 0 && ARG2 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG2, RES );
+//zz }
+//zz 
+//zz PRE(sys_removexattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_removexattr ( %p, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "removexattr", char *, path, char *, name);
+//zz    PRE_MEM_RASCIIZ( "removexattr(path)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "removexattr(name)", ARG2 );
+//zz }
+//zz 
+//zz PRE(sys_lremovexattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_lremovexattr ( %p, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "lremovexattr", char *, path, char *, name);
+//zz    PRE_MEM_RASCIIZ( "lremovexattr(path)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "lremovexattr(name)", ARG2 );
+//zz }
+//zz 
+//zz PRE(sys_fremovexattr, SfMayBlock)
+//zz {
+//zz    PRINT("sys_fremovexattr ( %d, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
+//zz    PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
+//zz }
+//zz 
+//zz PRE(sys_quotactl, 0)
+//zz {
+//zz    PRINT("sys_quotactl (0x%x, %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3, ARG4);
+//zz    PRE_REG_READ4(long, "quotactl",
+//zz                  unsigned int, cmd, const char *, special, vki_qid_t, id,
+//zz                  void *, addr);
+//zz    PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
+//zz }
+//zz 
+//zz // XXX: this wrapper is only suitable for 32-bit platforms
+//zz PRE(sys_lookup_dcookie, 0)
+//zz {
+//zz    PRINT("sys_lookup_dcookie (0x%llx, %p, %d)", LOHI64(ARG1,ARG2), ARG3, ARG4);
+//zz    PRE_REG_READ4(long, "lookup_dcookie",
+//zz                  vki_u32, cookie_low32, vki_u32, cookie_high32,
+//zz                  char *, buf, vki_size_t, len);
+//zz    PRE_MEM_WRITE( "lookup_dcookie(buf)", ARG3, ARG4);
+//zz }
+//zz 
+//zz POST(sys_lookup_dcookie)
+//zz {
+//zz    if (ARG3 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG3, RES);
+//zz }
+//zz 
+//zz PRE(sys_fsync, SfMayBlock)
+//zz {
+//zz    PRINT("sys_fsync ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "fsync", unsigned int, fd);
+//zz }
+//zz 
+//zz PRE(sys_fdatasync, SfMayBlock)
+//zz {
+//zz    PRINT("sys_fdatasync ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "fdatasync", unsigned int, fd);
+//zz }
+//zz 
+//zz PRE(sys_msync, SfMayBlock)
+//zz {
+//zz    PRINT("sys_msync ( %p, %llu, %d )", ARG1,(ULong)ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "msync",
+//zz                  unsigned long, start, vki_size_t, length, int, flags);
+//zz    PRE_MEM_READ( "msync(start)", ARG1, ARG2 );
+//zz }
+//zz 
+//zz // Nb: getpmsg() and putpmsg() are special additional syscalls used in early
+//zz // versions of LiS (Linux Streams).  They are not part of the kernel.
+//zz // Therefore, we have to provide this type ourself, rather than getting it
+//zz // from the kernel sources.
+//zz struct vki_pmsg_strbuf {
+//zz    int     maxlen;         /* no. of bytes in buffer */
+//zz    int     len;            /* no. of bytes returned */
+//zz    vki_caddr_t buf;        /* pointer to data */
+//zz };
+//zz 
+//zz PRE(sys_getpmsg, SfMayBlock)
+//zz {
+//zz    /* LiS getpmsg from http://www.gcom.com/home/linux/lis/ */
+//zz    struct vki_pmsg_strbuf *ctrl;
+//zz    struct vki_pmsg_strbuf *data;
+//zz    PRINT("sys_getpmsg ( %d, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+//zz    PRE_REG_READ5(int, "getpmsg",
+//zz                  int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
+//zz                  int *, bandp, int *, flagsp);
+//zz    ctrl = (struct vki_pmsg_strbuf *)ARG2;
+//zz    data = (struct vki_pmsg_strbuf *)ARG3;
+//zz    if (ctrl && ctrl->maxlen > 0)
+//zz       PRE_MEM_WRITE( "getpmsg(ctrl)", (Addr)ctrl->buf, ctrl->maxlen);
+//zz    if (data && data->maxlen > 0)
+//zz       PRE_MEM_WRITE( "getpmsg(data)", (Addr)data->buf, data->maxlen);
+//zz    if (ARG4)
+//zz       PRE_MEM_WRITE( "getpmsg(bandp)", (Addr)ARG4, sizeof(int));
+//zz    if (ARG5)
+//zz       PRE_MEM_WRITE( "getpmsg(flagsp)", (Addr)ARG5, sizeof(int));
+//zz }
+//zz 
+//zz POST(sys_getpmsg)
+//zz {
+//zz    struct vki_pmsg_strbuf *ctrl;
+//zz    struct vki_pmsg_strbuf *data;
+//zz 
+//zz    ctrl = (struct vki_pmsg_strbuf *)ARG2;
+//zz    data = (struct vki_pmsg_strbuf *)ARG3;
+//zz    if (RES == 0 && ctrl && ctrl->len > 0) {
+//zz       POST_MEM_WRITE( (Addr)ctrl->buf, ctrl->len);
+//zz    }
+//zz    if (RES == 0 && data && data->len > 0) {
+//zz       POST_MEM_WRITE( (Addr)data->buf, data->len);
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_putpmsg, SfMayBlock)
+//zz {
+//zz    /* LiS putpmsg from http://www.gcom.com/home/linux/lis/ */
+//zz    struct vki_pmsg_strbuf *ctrl;
+//zz    struct vki_pmsg_strbuf *data;
+//zz    PRINT("sys_putpmsg ( %d, %p, %p, %d, %d )", ARG1,ARG2,ARG3,ARG4,ARG5);
+//zz    PRE_REG_READ5(int, "putpmsg",
+//zz                  int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
+//zz                  int, band, int, flags);
+//zz    ctrl = (struct vki_pmsg_strbuf *)ARG2;
+//zz    data = (struct vki_pmsg_strbuf *)ARG3;
+//zz    if (ctrl && ctrl->len > 0)
+//zz       PRE_MEM_READ( "putpmsg(ctrl)", (Addr)ctrl->buf, ctrl->len);
+//zz    if (data && data->len > 0)
+//zz       PRE_MEM_READ( "putpmsg(data)", (Addr)data->buf, data->len);
+//zz }
+//zz 
+//zz PRE(sys_getitimer, 0)
+//zz {
+//zz    PRINT("sys_getitimer ( %d, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "getitimer", int, which, struct itimerval *, value);
+//zz    PRE_MEM_WRITE( "getitimer(value)", ARG2, sizeof(struct vki_itimerval) );
+//zz }
+//zz 
+//zz POST(sys_getitimer)
+//zz {
+//zz    if (ARG2 != (Addr)NULL) {
+//zz       POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerval));
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_setitimer, 0)
+//zz {
+//zz    PRINT("sys_setitimer ( %d, %p, %p )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "setitimer", 
+//zz                  int, which,
+//zz                  struct itimerval *, value, struct itimerval *, ovalue);
+//zz    if (ARG2 != (Addr)NULL)
+//zz       PRE_MEM_READ( "setitimer(value)", ARG2, sizeof(struct vki_itimerval) );
+//zz    if (ARG3 != (Addr)NULL)
+//zz       PRE_MEM_WRITE( "setitimer(ovalue)", ARG3, sizeof(struct vki_itimerval));
+//zz }
+//zz 
+//zz POST(sys_setitimer)
+//zz {
+//zz    if (ARG3 != (Addr)NULL) {
+//zz       POST_MEM_WRITE(ARG3, sizeof(struct vki_itimerval));
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_chroot, 0)
+//zz {
+//zz    PRINT("sys_chroot ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "chroot", const char *, path);
+//zz    PRE_MEM_RASCIIZ( "chroot(path)", ARG1 );
+//zz }
+
+PRE(sys_madvise)
 {
-   PRINT("sys_lgetxattr ( %p, %p, %p, %llu )", ARG1,ARG2,ARG3, (ULong)ARG4);
-   PRE_REG_READ4(ssize_t, "lgetxattr",
-                 char *, path, char *, name, void *, value, vki_size_t, size);
-   PRE_MEM_RASCIIZ( "lgetxattr(path)", ARG1 );
-   PRE_MEM_RASCIIZ( "lgetxattr(name)", ARG2 );
-   PRE_MEM_WRITE( "lgetxattr(value)", ARG3, ARG4 );
-}
-
-POST(sys_lgetxattr)
-{
-   if (RES > 0 && ARG3 != (Addr)NULL) {
-      POST_MEM_WRITE( ARG3, RES );
-   }
-}
-
-PRE(sys_fgetxattr, MayBlock)
-{
-   PRINT("sys_fgetxattr ( %d, %p, %p, %llu )", ARG1, ARG2, ARG3, (ULong)ARG4);
-   PRE_REG_READ4(ssize_t, "fgetxattr",
-                 int, fd, char *, name, void *, value, vki_size_t, size);
-   PRE_MEM_RASCIIZ( "fgetxattr(name)", ARG2 );
-   PRE_MEM_WRITE( "fgetxattr(value)", ARG3, ARG4 );
-}
-
-POST(sys_fgetxattr)
-{
-   if (RES > 0 && ARG3 != (Addr)NULL)
-      POST_MEM_WRITE( ARG3, RES );
-}
-
-PRE(sys_listxattr, MayBlock)
-{
-   PRINT("sys_listxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
-   PRE_REG_READ3(ssize_t, "listxattr",
-                 char *, path, char *, list, vki_size_t, size);
-   PRE_MEM_RASCIIZ( "listxattr(path)", ARG1 );
-   PRE_MEM_WRITE( "listxattr(list)", ARG2, ARG3 );
-}
-
-POST(sys_listxattr)
-{
-   if (RES > 0 && ARG2 != (Addr)NULL)
-      POST_MEM_WRITE( ARG2, RES );
-}
-
-PRE(sys_llistxattr, MayBlock)
-{
-   PRINT("sys_llistxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
-   PRE_REG_READ3(ssize_t, "llistxattr",
-                 char *, path, char *, list, vki_size_t, size);
-   PRE_MEM_RASCIIZ( "llistxattr(path)", ARG1 );
-   PRE_MEM_WRITE( "llistxattr(list)", ARG2, ARG3 );
-}
-
-POST(sys_llistxattr)
-{
-   if (RES > 0 && ARG2 != (Addr)NULL)
-      POST_MEM_WRITE( ARG2, RES );
-}
-
-PRE(sys_flistxattr, MayBlock)
-{
-   PRINT("sys_flistxattr ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
-   PRE_REG_READ3(ssize_t, "flistxattr",
-                 int, fd, char *, list, vki_size_t, size);
-   PRE_MEM_WRITE( "flistxattr(list)", ARG2, ARG3 );
-}
-
-POST(sys_flistxattr)
-{
-   if (RES > 0 && ARG2 != (Addr)NULL)
-      POST_MEM_WRITE( ARG2, RES );
-}
-
-PRE(sys_removexattr, MayBlock)
-{
-   PRINT("sys_removexattr ( %p, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "removexattr", char *, path, char *, name);
-   PRE_MEM_RASCIIZ( "removexattr(path)", ARG1 );
-   PRE_MEM_RASCIIZ( "removexattr(name)", ARG2 );
-}
-
-PRE(sys_lremovexattr, MayBlock)
-{
-   PRINT("sys_lremovexattr ( %p, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "lremovexattr", char *, path, char *, name);
-   PRE_MEM_RASCIIZ( "lremovexattr(path)", ARG1 );
-   PRE_MEM_RASCIIZ( "lremovexattr(name)", ARG2 );
-}
-
-PRE(sys_fremovexattr, MayBlock)
-{
-   PRINT("sys_fremovexattr ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
-   PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
-}
-
-PRE(sys_quotactl, 0)
-{
-   PRINT("sys_quotactl (0x%x, %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3, ARG4);
-   PRE_REG_READ4(long, "quotactl",
-                 unsigned int, cmd, const char *, special, vki_qid_t, id,
-                 void *, addr);
-   PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
-}
-
-// XXX: this wrapper is only suitable for 32-bit platforms
-PRE(sys_lookup_dcookie, 0)
-{
-   PRINT("sys_lookup_dcookie (0x%llx, %p, %d)", LOHI64(ARG1,ARG2), ARG3, ARG4);
-   PRE_REG_READ4(long, "lookup_dcookie",
-                 vki_u32, cookie_low32, vki_u32, cookie_high32,
-                 char *, buf, vki_size_t, len);
-   PRE_MEM_WRITE( "lookup_dcookie(buf)", ARG3, ARG4);
-}
-
-POST(sys_lookup_dcookie)
-{
-   if (ARG3 != (Addr)NULL)
-      POST_MEM_WRITE( ARG3, RES);
-}
-
-PRE(sys_fsync, MayBlock)
-{
-   PRINT("sys_fsync ( %d )", ARG1);
-   PRE_REG_READ1(long, "fsync", unsigned int, fd);
-}
-
-PRE(sys_fdatasync, MayBlock)
-{
-   PRINT("sys_fdatasync ( %d )", ARG1);
-   PRE_REG_READ1(long, "fdatasync", unsigned int, fd);
-}
-
-PRE(sys_msync, MayBlock)
-{
-   PRINT("sys_msync ( %p, %llu, %d )", ARG1,(ULong)ARG2,ARG3);
-   PRE_REG_READ3(long, "msync",
-                 unsigned long, start, vki_size_t, length, int, flags);
-   PRE_MEM_READ( "msync(start)", ARG1, ARG2 );
-}
-
-// Nb: getpmsg() and putpmsg() are special additional syscalls used in early
-// versions of LiS (Linux Streams).  They are not part of the kernel.
-// Therefore, we have to provide this type ourself, rather than getting it
-// from the kernel sources.
-struct vki_pmsg_strbuf {
-   int     maxlen;         /* no. of bytes in buffer */
-   int     len;            /* no. of bytes returned */
-   vki_caddr_t buf;        /* pointer to data */
-};
-
-PRE(sys_getpmsg, MayBlock)
-{
-   /* LiS getpmsg from http://www.gcom.com/home/linux/lis/ */
-   struct vki_pmsg_strbuf *ctrl;
-   struct vki_pmsg_strbuf *data;
-   PRINT("sys_getpmsg ( %d, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(int, "getpmsg",
-                 int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
-                 int *, bandp, int *, flagsp);
-   ctrl = (struct vki_pmsg_strbuf *)ARG2;
-   data = (struct vki_pmsg_strbuf *)ARG3;
-   if (ctrl && ctrl->maxlen > 0)
-      PRE_MEM_WRITE( "getpmsg(ctrl)", (Addr)ctrl->buf, ctrl->maxlen);
-   if (data && data->maxlen > 0)
-      PRE_MEM_WRITE( "getpmsg(data)", (Addr)data->buf, data->maxlen);
-   if (ARG4)
-      PRE_MEM_WRITE( "getpmsg(bandp)", (Addr)ARG4, sizeof(int));
-   if (ARG5)
-      PRE_MEM_WRITE( "getpmsg(flagsp)", (Addr)ARG5, sizeof(int));
-}
-
-POST(sys_getpmsg)
-{
-   struct vki_pmsg_strbuf *ctrl;
-   struct vki_pmsg_strbuf *data;
-
-   ctrl = (struct vki_pmsg_strbuf *)ARG2;
-   data = (struct vki_pmsg_strbuf *)ARG3;
-   if (RES == 0 && ctrl && ctrl->len > 0) {
-      POST_MEM_WRITE( (Addr)ctrl->buf, ctrl->len);
-   }
-   if (RES == 0 && data && data->len > 0) {
-      POST_MEM_WRITE( (Addr)data->buf, data->len);
-   }
-}
-
-PRE(sys_putpmsg, MayBlock)
-{
-   /* LiS putpmsg from http://www.gcom.com/home/linux/lis/ */
-   struct vki_pmsg_strbuf *ctrl;
-   struct vki_pmsg_strbuf *data;
-   PRINT("sys_putpmsg ( %d, %p, %p, %d, %d )", ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(int, "putpmsg",
-                 int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
-                 int, band, int, flags);
-   ctrl = (struct vki_pmsg_strbuf *)ARG2;
-   data = (struct vki_pmsg_strbuf *)ARG3;
-   if (ctrl && ctrl->len > 0)
-      PRE_MEM_READ( "putpmsg(ctrl)", (Addr)ctrl->buf, ctrl->len);
-   if (data && data->len > 0)
-      PRE_MEM_READ( "putpmsg(data)", (Addr)data->buf, data->len);
-}
-
-PRE(sys_getitimer, 0)
-{
-   PRINT("sys_getitimer ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "getitimer", int, which, struct itimerval *, value);
-   PRE_MEM_WRITE( "getitimer(value)", ARG2, sizeof(struct vki_itimerval) );
-}
-
-POST(sys_getitimer)
-{
-   if (ARG2 != (Addr)NULL) {
-      POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerval));
-   }
-}
-
-PRE(sys_setitimer, 0)
-{
-   PRINT("sys_setitimer ( %d, %p, %p )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "setitimer", 
-                 int, which,
-                 struct itimerval *, value, struct itimerval *, ovalue);
-   if (ARG2 != (Addr)NULL)
-      PRE_MEM_READ( "setitimer(value)", ARG2, sizeof(struct vki_itimerval) );
-   if (ARG3 != (Addr)NULL)
-      PRE_MEM_WRITE( "setitimer(ovalue)", ARG3, sizeof(struct vki_itimerval));
-}
-
-POST(sys_setitimer)
-{
-   if (ARG3 != (Addr)NULL) {
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_itimerval));
-   }
-}
-
-PRE(sys_chroot, 0)
-{
-   PRINT("sys_chroot ( %p )", ARG1);
-   PRE_REG_READ1(long, "chroot", const char *, path);
-   PRE_MEM_RASCIIZ( "chroot(path)", ARG1 );
-}
-
-PRE(sys_madvise, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_madvise ( %p, %llu, %d )", ARG1,(ULong)ARG2,ARG3);
    PRE_REG_READ3(long, "madvise",
                  unsigned long, start, vki_size_t, length, int, advice);
 }
 
-PRE(sys_mremap, Special)
+PRE(sys_mremap)
 {
    // Nb: this is different to the glibc version described in the man pages,
    // which lacks the fifth 'new_address' argument.
@@ -2103,153 +2014,155 @@ PRE(sys_mremap, Special)
                  unsigned long, old_addr, unsigned long, old_size,
                  unsigned long, new_size, unsigned long, flags,
                  unsigned long, new_addr);
-   SET_RESULT( mremap_segment((Addr)ARG1, ARG2, (Addr)ARG5, ARG3, ARG4, tid) );
+   SET_STATUS_from_SysRes( 
+      mremap_segment((Addr)ARG1, ARG2, (Addr)ARG5, ARG3, ARG4, tid) 
+   );
 }
 
-PRE(sys_nice, 0)
-{
-   PRINT("sys_nice ( %d )", ARG1);
-   PRE_REG_READ1(long, "nice", int, inc);
-}
+//zz PRE(sys_nice, 0)
+//zz {
+//zz    PRINT("sys_nice ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "nice", int, inc);
+//zz }
+//zz 
+//zz PRE(sys_sched_getscheduler, 0)
+//zz {
+//zz    PRINT("sys_sched_getscheduler ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "sched_getscheduler", vki_pid_t, pid);
+//zz }
+//zz 
+//zz PRE(sys_sched_setscheduler, 0)
+//zz {
+//zz    PRINT("sys_sched_setscheduler ( %d, %d, %p )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "sched_setscheduler", 
+//zz                  vki_pid_t, pid, int, policy, struct sched_param *, p);
+//zz    if (ARG3 != 0)
+//zz       PRE_MEM_READ( "sched_setscheduler(p)", 
+//zz 		    ARG3, sizeof(struct vki_sched_param));
+//zz }
+//zz 
+//zz PRE(sys_mlock, SfMayBlock)
+//zz {
+//zz    PRINT("sys_mlock ( %p, %llu )", ARG1, (ULong)ARG2);
+//zz    PRE_REG_READ2(long, "mlock", unsigned long, addr, vki_size_t, len);
+//zz }
+//zz 
+//zz PRE(sys_munlock, SfMayBlock)
+//zz {
+//zz    PRINT("sys_munlock ( %p, %llu )", ARG1, (ULong)ARG2);
+//zz    PRE_REG_READ2(long, "munlock", unsigned long, addr, vki_size_t, len);
+//zz }
+//zz 
+//zz PRE(sys_mlockall, SfMayBlock)
+//zz {
+//zz    PRINT("sys_mlockall ( %x )", ARG1);
+//zz    PRE_REG_READ1(long, "mlockall", int, flags);
+//zz }
+//zz 
+//zz PRE(sys_munlockall, SfMayBlock)
+//zz {
+//zz    PRINT("sys_munlockall ( )");
+//zz    PRE_REG_READ0(long, "munlockall");
+//zz }
+//zz 
+//zz PRE(sys_sched_get_priority_max, 0)
+//zz {
+//zz    PRINT("sched_get_priority_max ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "sched_get_priority_max", int, policy);
+//zz }
+//zz 
+//zz PRE(sys_sched_get_priority_min, 0)
+//zz {
+//zz    PRINT("sched_get_priority_min ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "sched_get_priority_min", int, policy);
+//zz }
+//zz 
+//zz PRE(sys_setpriority, 0)
+//zz {
+//zz    PRINT("sys_setpriority ( %d, %d, %d )", ARG1, ARG2, ARG3);
+//zz    PRE_REG_READ3(long, "setpriority", int, which, int, who, int, prio);
+//zz }
+//zz 
+//zz PRE(sys_getpriority, 0)
+//zz {
+//zz    PRINT("sys_getpriority ( %d, %d )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "getpriority", int, which, int, who);
+//zz }
+//zz 
+//zz PRE(sys_setregid16, 0)
+//zz {
+//zz    PRINT("sys_setregid16 ( %d, %d )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
+//zz }
+//zz 
+//zz // XXX: only for 32-bit archs
+//zz PRE(sys_pwrite64, SfMayBlock)
+//zz {
+//zz    PRINT("sys_pwrite64 ( %d, %p, %llu, %lld )",
+//zz          ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
+//zz    PRE_REG_READ5(ssize_t, "pwrite64",
+//zz                  unsigned int, fd, const char *, buf, vki_size_t, count,
+//zz                  vki_u32, offset_low32, vki_u32, offset_high32);
+//zz    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz PRE(sys_sync, SfMayBlock)
+//zz {
+//zz    PRINT("sys_sync ( )");
+//zz    PRE_REG_READ0(long, "sync");
+//zz }
+//zz 
+//zz PRE(sys_fstatfs, 0)
+//zz {
+//zz    PRINT("sys_fstatfs ( %d, %p )",ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "fstatfs",
+//zz                  unsigned int, fd, struct statfs *, buf);
+//zz    PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct vki_statfs) );
+//zz }
+//zz 
+//zz POST(sys_fstatfs)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs) );
+//zz }
+//zz 
+//zz PRE(sys_fstatfs64, 0)
+//zz {
+//zz    PRINT("sys_fstatfs64 ( %d, %llu, %p )",ARG1,(ULong)ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "fstatfs64",
+//zz                  unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
+//zz    PRE_MEM_WRITE( "fstatfs64(buf)", ARG3, ARG2 );
+//zz }
+//zz 
+//zz POST(sys_fstatfs64)
+//zz {
+//zz    POST_MEM_WRITE( ARG3, ARG2 );
+//zz }
+//zz 
+//zz PRE(sys_getsid, 0)
+//zz {
+//zz    PRINT("sys_getsid ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
+//zz }
+//zz 
+//zz // XXX: only for 32-bit archs
+//zz PRE(sys_pread64, SfMayBlock)
+//zz {
+//zz    PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
+//zz          ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
+//zz    PRE_REG_READ5(ssize_t, "pread64",
+//zz                  unsigned int, fd, char *, buf, vki_size_t, count,
+//zz                  vki_u32, offset_low32, vki_u32, offset_high32);
+//zz    PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz POST(sys_pread64)
+//zz {
+//zz    if (RES > 0) {
+//zz       POST_MEM_WRITE( ARG2, RES );
+//zz    }
+//zz }
 
-PRE(sys_sched_getscheduler, 0)
-{
-   PRINT("sys_sched_getscheduler ( %d )", ARG1);
-   PRE_REG_READ1(long, "sched_getscheduler", vki_pid_t, pid);
-}
-
-PRE(sys_sched_setscheduler, 0)
-{
-   PRINT("sys_sched_setscheduler ( %d, %d, %p )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "sched_setscheduler", 
-                 vki_pid_t, pid, int, policy, struct sched_param *, p);
-   if (ARG3 != 0)
-      PRE_MEM_READ( "sched_setscheduler(p)", 
-		    ARG3, sizeof(struct vki_sched_param));
-}
-
-PRE(sys_mlock, MayBlock)
-{
-   PRINT("sys_mlock ( %p, %llu )", ARG1, (ULong)ARG2);
-   PRE_REG_READ2(long, "mlock", unsigned long, addr, vki_size_t, len);
-}
-
-PRE(sys_munlock, MayBlock)
-{
-   PRINT("sys_munlock ( %p, %llu )", ARG1, (ULong)ARG2);
-   PRE_REG_READ2(long, "munlock", unsigned long, addr, vki_size_t, len);
-}
-
-PRE(sys_mlockall, MayBlock)
-{
-   PRINT("sys_mlockall ( %x )", ARG1);
-   PRE_REG_READ1(long, "mlockall", int, flags);
-}
-
-PRE(sys_munlockall, MayBlock)
-{
-   PRINT("sys_munlockall ( )");
-   PRE_REG_READ0(long, "munlockall");
-}
-
-PRE(sys_sched_get_priority_max, 0)
-{
-   PRINT("sched_get_priority_max ( %d )", ARG1);
-   PRE_REG_READ1(long, "sched_get_priority_max", int, policy);
-}
-
-PRE(sys_sched_get_priority_min, 0)
-{
-   PRINT("sched_get_priority_min ( %d )", ARG1);
-   PRE_REG_READ1(long, "sched_get_priority_min", int, policy);
-}
-
-PRE(sys_setpriority, 0)
-{
-   PRINT("sys_setpriority ( %d, %d, %d )", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "setpriority", int, which, int, who, int, prio);
-}
-
-PRE(sys_getpriority, 0)
-{
-   PRINT("sys_getpriority ( %d, %d )", ARG1, ARG2);
-   PRE_REG_READ2(long, "getpriority", int, which, int, who);
-}
-
-PRE(sys_setregid16, 0)
-{
-   PRINT("sys_setregid16 ( %d, %d )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
-}
-
-// XXX: only for 32-bit archs
-PRE(sys_pwrite64, MayBlock)
-{
-   PRINT("sys_pwrite64 ( %d, %p, %llu, %lld )",
-         ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
-   PRE_REG_READ5(ssize_t, "pwrite64",
-                 unsigned int, fd, const char *, buf, vki_size_t, count,
-                 vki_u32, offset_low32, vki_u32, offset_high32);
-   PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
-}
-
-PRE(sys_sync, MayBlock)
-{
-   PRINT("sys_sync ( )");
-   PRE_REG_READ0(long, "sync");
-}
-
-PRE(sys_fstatfs, 0)
-{
-   PRINT("sys_fstatfs ( %d, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "fstatfs",
-                 unsigned int, fd, struct statfs *, buf);
-   PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct vki_statfs) );
-}
-
-POST(sys_fstatfs)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs) );
-}
-
-PRE(sys_fstatfs64, 0)
-{
-   PRINT("sys_fstatfs64 ( %d, %llu, %p )",ARG1,(ULong)ARG2,ARG3);
-   PRE_REG_READ3(long, "fstatfs64",
-                 unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
-   PRE_MEM_WRITE( "fstatfs64(buf)", ARG3, ARG2 );
-}
-
-POST(sys_fstatfs64)
-{
-   POST_MEM_WRITE( ARG3, ARG2 );
-}
-
-PRE(sys_getsid, 0)
-{
-   PRINT("sys_getsid ( %d )", ARG1);
-   PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
-}
-
-// XXX: only for 32-bit archs
-PRE(sys_pread64, MayBlock)
-{
-   PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
-         ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
-   PRE_REG_READ5(ssize_t, "pread64",
-                 unsigned int, fd, char *, buf, vki_size_t, count,
-                 vki_u32, offset_low32, vki_u32, offset_high32);
-   PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
-}
-
-POST(sys_pread64)
-{
-   if (RES > 0) {
-      POST_MEM_WRITE( ARG2, RES );
-   }
-}
-
-PRE(sys_mknod, 0)
+PRE(sys_mknod)
 {
    PRINT("sys_mknod ( %p, 0x%x, 0x%x )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "mknod",
@@ -2257,49 +2170,49 @@ PRE(sys_mknod, 0)
    PRE_MEM_RASCIIZ( "mknod(pathname)", ARG1 );
 }
 
-PRE(sys_flock, MayBlock)
-{
-   PRINT("sys_flock ( %d, %d )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
-}
-
-PRE(sys_init_module, MayBlock)
-{
-   PRINT("sys_init_module ( %p, %llu, %p )", ARG1, (ULong)ARG2, ARG3 );
-   PRE_REG_READ3(long, "init_module",
-                 void *, umod, unsigned long, len, const char *, uargs);
-   PRE_MEM_READ( "init_module(umod)", ARG1, ARG2 );
-   PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
-}
-
-PRE(sys_capget, 0)
-{
-   PRINT("sys_capget ( %p, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "capget", 
-                 vki_cap_user_header_t, header, vki_cap_user_data_t, data);
-   PRE_MEM_READ( "capget(header)", ARG1, 
-                  sizeof(struct __vki_user_cap_header_struct) );
-   PRE_MEM_WRITE( "capget(data)", ARG2, 
-                  sizeof(struct __vki_user_cap_data_struct) );
-}
-
-POST(sys_capget)
-{
-   if (ARG2 != (Addr)NULL)
-      POST_MEM_WRITE( ARG2, sizeof(struct __vki_user_cap_data_struct) );
-}
-
-PRE(sys_capset, 0)
-{
-   PRINT("sys_capset ( %p, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "capset", 
-                 vki_cap_user_header_t, header,
-                 const vki_cap_user_data_t, data);
-   PRE_MEM_READ( "capset(header)", 
-                  ARG1, sizeof(struct __vki_user_cap_header_struct) );
-   PRE_MEM_READ( "capset(data)", 
-                  ARG2, sizeof(struct __vki_user_cap_data_struct) );
-}
+//zz PRE(sys_flock, SfMayBlock)
+//zz {
+//zz    PRINT("sys_flock ( %d, %d )", ARG1, ARG2 );
+//zz    PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
+//zz }
+//zz 
+//zz PRE(sys_init_module, SfMayBlock)
+//zz {
+//zz    PRINT("sys_init_module ( %p, %llu, %p )", ARG1, (ULong)ARG2, ARG3 );
+//zz    PRE_REG_READ3(long, "init_module",
+//zz                  void *, umod, unsigned long, len, const char *, uargs);
+//zz    PRE_MEM_READ( "init_module(umod)", ARG1, ARG2 );
+//zz    PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
+//zz }
+//zz 
+//zz PRE(sys_capget, 0)
+//zz {
+//zz    PRINT("sys_capget ( %p, %p )", ARG1, ARG2 );
+//zz    PRE_REG_READ2(long, "capget", 
+//zz                  vki_cap_user_header_t, header, vki_cap_user_data_t, data);
+//zz    PRE_MEM_READ( "capget(header)", ARG1, 
+//zz                   sizeof(struct __vki_user_cap_header_struct) );
+//zz    PRE_MEM_WRITE( "capget(data)", ARG2, 
+//zz                   sizeof(struct __vki_user_cap_data_struct) );
+//zz }
+//zz 
+//zz POST(sys_capget)
+//zz {
+//zz    if (ARG2 != (Addr)NULL)
+//zz       POST_MEM_WRITE( ARG2, sizeof(struct __vki_user_cap_data_struct) );
+//zz }
+//zz 
+//zz PRE(sys_capset, 0)
+//zz {
+//zz    PRINT("sys_capset ( %p, %p )", ARG1, ARG2 );
+//zz    PRE_REG_READ2(long, "capset", 
+//zz                  vki_cap_user_header_t, header,
+//zz                  const vki_cap_user_data_t, data);
+//zz    PRE_MEM_READ( "capset(header)", 
+//zz                   ARG1, sizeof(struct __vki_user_cap_header_struct) );
+//zz    PRE_MEM_READ( "capset(data)", 
+//zz                   ARG2, sizeof(struct __vki_user_cap_data_struct) );
+//zz }
 
 // Pre_read a char** argument.
 static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
@@ -2318,9 +2231,10 @@ static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 
 // XXX: prototype here seemingly doesn't match the prototype for i386-linux,
 // but it seems to work nonetheless...
-PRE(sys_execve, Special)
+PRE(sys_execve)
 {
-   Char *path;          /* path to executable */
+   Char*        path;          /* path to executable */
+   ThreadState* tst;
 
    PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
@@ -2333,6 +2247,9 @@ PRE(sys_execve, Special)
 
    path = (Char *)ARG1;
 
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = VG_(get_ThreadState)(tid);
+
    /* Erk.  If the exec fails, then the following will have made a
       mess of things which makes it hard for us to continue.  The
       right thing to do is piece everything together again in
@@ -2341,17 +2258,18 @@ PRE(sys_execve, Special)
       exec. */
    {
       struct vki_stat st;
-      Int ret = VG_(stat)((Char *)ARG1, &st);
+      Int i = VG_(stat)((Char *)ARG1, &st);
 
-      if (ret < 0) {
-	 SET_RESULT( ret );
+      if (i == -1) {
+         /* stat failed */
+         SET_STATUS_Failure( VKI_EACCES/*really, we should copy stat's result*/ );
 	 return;
       }
       /* just look for regular file with any X bit set
 	 XXX do proper permissions check?
        */
       if ((st.st_mode & 0100111) == 0100000) {
-	 SET_RESULT( -VKI_EACCES );
+	 SET_STATUS_Failure( VKI_EACCES );
 	 return;
       }
    }
@@ -2439,7 +2357,9 @@ PRE(sys_execve, Special)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
    }
 
-   SET_RESULT( VG_(do_syscall3)(__NR_execve, (UWord)path, ARG2, ARG3) );
+   SET_STATUS_from_SysRes( 
+      VG_(do_syscall3)(__NR_execve, (UWord)path, ARG2, ARG3) 
+   );
 
    /* If we got here, then the execve failed.  We've already made too
       much of a mess of ourselves to continue, so we have to abort. */
@@ -2447,27 +2367,28 @@ PRE(sys_execve, Special)
                 ARG1, ARG1, ARG2, ARG3, -RES);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
                             "execve() failing, so I'm dying.");
-   VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(execve), "
+   VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "
                             "or work out how to recover.");
    VG_(exit)(101);
 }
 
-PRE(sys_access, 0)
+PRE(sys_access)
 {
    PRINT("sys_access ( %p(%s), %d )", ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "access", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "access(pathname)", ARG1 );
 }
 
-PRE(sys_alarm, 0)
+PRE(sys_alarm)
 {
    PRINT("sys_alarm ( %d )", ARG1);
    PRE_REG_READ1(unsigned long, "alarm", unsigned int, seconds);
 }
 
-PRE(sys_brk, Special)
+PRE(sys_brk)
 {
    Addr brk_limit = VG_(brk_limit);
+   Addr brk_new; 
 
    /* libc   says: int   brk(void *end_data_segment);
       kernel says: void* brk(void* end_data_segment);  (more or less)
@@ -2487,74 +2408,75 @@ PRE(sys_brk, Special)
    PRINT("sys_brk ( %p )", ARG1);
    PRE_REG_READ1(unsigned long, "brk", unsigned long, end_data_segment);
 
-   SET_RESULT( do_brk(ARG1) );
+   brk_new = do_brk(ARG1);
+   SET_STATUS_Success( brk_new );
 
-   if (RES == ARG1) {
+   if (brk_new == ARG1) {
       /* brk() succeeded */
-      if (RES < brk_limit) {
+      if (brk_new < brk_limit) {
          /* successfully shrunk the data segment. */
          VG_TRACK( die_mem_brk, (Addr)ARG1,
 		   brk_limit-ARG1 );
       } else
-      if (RES > brk_limit) {
+      if (brk_new > brk_limit) {
          /* successfully grew the data segment */
          VG_TRACK( new_mem_brk, brk_limit,
                                 ARG1-brk_limit );
       }
    } else {
       /* brk() failed */
-      vg_assert(brk_limit == RES);
+      vg_assert(brk_limit == brk_new);
    }
 }
 
-PRE(sys_chdir, 0)
+PRE(sys_chdir)
 {
    PRINT("sys_chdir ( %p )", ARG1);
    PRE_REG_READ1(long, "chdir", const char *, path);
    PRE_MEM_RASCIIZ( "chdir(path)", ARG1 );
 }
 
-PRE(sys_chmod, 0)
+PRE(sys_chmod)
 {
    PRINT("sys_chmod ( %p, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "chmod", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
 }
 
-PRE(sys_chown16, 0)
-{
-   PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "chown16",
-                 const char *, path,
-                 vki_old_uid_t, owner, vki_old_gid_t, group);
-   PRE_MEM_RASCIIZ( "chown16(path)", ARG1 );
-}
+//zz PRE(sys_chown16, 0)
+//zz {
+//zz    PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "chown16",
+//zz                  const char *, path,
+//zz                  vki_old_uid_t, owner, vki_old_gid_t, group);
+//zz    PRE_MEM_RASCIIZ( "chown16(path)", ARG1 );
+//zz }
+//zz 
+//zz PRE(sys_chown, 0)
+//zz {
+//zz    /* int chown(const char *path, uid_t owner, gid_t group); */
+//zz    PRINT("sys_chown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "chown",
+//zz                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
+//zz    PRE_MEM_RASCIIZ( "chown(path)", ARG1 );
+//zz }
+//zz 
+//zz PRE(sys_lchown, 0)
+//zz {
+//zz    PRINT("sys_lchown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "lchown",
+//zz                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
+//zz    PRE_MEM_RASCIIZ( "lchown(path)", ARG1 );
+//zz }
 
-PRE(sys_chown, 0)
-{
-   /* int chown(const char *path, uid_t owner, gid_t group); */
-   PRINT("sys_chown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "chown",
-                 const char *, path, vki_uid_t, owner, vki_gid_t, group);
-   PRE_MEM_RASCIIZ( "chown(path)", ARG1 );
-}
-
-PRE(sys_lchown, 0)
-{
-   PRINT("sys_lchown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "lchown",
-                 const char *, path, vki_uid_t, owner, vki_gid_t, group);
-   PRE_MEM_RASCIIZ( "lchown(path)", ARG1 );
-}
-
-PRE(sys_close, 0)
+PRE(sys_close)
 {
    PRINT("sys_close ( %d )", ARG1);
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
    /* Detect and negate attempts by the client to close Valgrind's log fd */
    if (!VG_(fd_allowed)(ARG1, "close", tid, False))
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 POST(sys_close)
@@ -2562,7 +2484,7 @@ POST(sys_close)
    if (VG_(clo_track_fds)) record_fd_close(tid, ARG1);
 }
 
-PRE(sys_dup, 0)
+PRE(sys_dup)
 {
    PRINT("sys_dup ( %d )", ARG1);
    PRE_REG_READ1(long, "dup", unsigned int, oldfd);
@@ -2570,117 +2492,119 @@ PRE(sys_dup, 0)
 
 POST(sys_dup)
 {
+   vg_assert(SUCCESS);
    if (!VG_(fd_allowed)(RES, "dup", tid, True)) {
       VG_(close)(RES);
-      SET_RESULT( -VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
    }
 }
 
-PRE(sys_dup2, 0)
+PRE(sys_dup2)
 {
    PRINT("sys_dup2 ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "dup2", unsigned int, oldfd, unsigned int, newfd);
    if (!VG_(fd_allowed)(ARG2, "dup2", tid, True))
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 POST(sys_dup2)
 {
+   vg_assert(SUCCESS);
    if (VG_(clo_track_fds))
       VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
 }
 
-PRE(sys_fchdir, 0)
-{
-   PRINT("sys_fchdir ( %d )", ARG1);
-   PRE_REG_READ1(long, "fchdir", unsigned int, fd);
-}
-
-PRE(sys_fchown16, 0)
-{
-   PRINT("sys_fchown16 ( %d, %d, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "fchown16",
-                 unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
-}
-
-PRE(sys_fchown, 0)
-{
-   PRINT("sys_fchown ( %d, %d, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "fchown",
-                 unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
-}
-
-PRE(sys_fchmod, 0)
-{
-   PRINT("sys_fchmod ( %d, %d )", ARG1,ARG2);
-   PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
-}
-
-PRE(sys_fcntl, 0)
-{
-   switch (ARG2) {
-   // These ones ignore ARG3.
-   case VKI_F_GETFD:
-   case VKI_F_GETFL:
-   case VKI_F_GETOWN:
-   case VKI_F_SETOWN:
-   case VKI_F_GETSIG:
-   case VKI_F_SETSIG:
-   case VKI_F_GETLEASE:
-      PRINT("sys_fcntl ( %d, %d )", ARG1,ARG2);
-      PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
-      break;
-
-   // These ones use ARG3 as "arg".
-   case VKI_F_DUPFD:
-   case VKI_F_SETFD:
-   case VKI_F_SETFL:
-   case VKI_F_SETLEASE:
-   case VKI_F_NOTIFY:
-      PRINT("sys_fcntl[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
-      PRE_REG_READ3(long, "fcntl",
-                    unsigned int, fd, unsigned int, cmd, unsigned long, arg);
-      break;
-
-   // These ones use ARG3 as "lock".
-   case VKI_F_GETLK:
-   case VKI_F_SETLK:
-   case VKI_F_SETLKW:
-#ifndef __amd64__
-   case VKI_F_GETLK64:
-   case VKI_F_SETLK64:
-   case VKI_F_SETLKW64:
-#else
-#endif
-      PRINT("sys_fcntl[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
-      PRE_REG_READ3(long, "fcntl",
-                    unsigned int, fd, unsigned int, cmd,
-                    struct flock64 *, lock);
-      break;
-   }
-
-   //if (ARG2 == VKI_F_SETLKW)
-   //   tst->sys_flags |= MayBlock;
-}
-
-POST(sys_fcntl)
-{
-   if (ARG2 == VKI_F_DUPFD) {
-      if (!VG_(fd_allowed)(RES, "fcntl(DUPFD)", tid, True)) {
-         VG_(close)(RES);
-         SET_RESULT( -VKI_EMFILE );
-      } else {
-         if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
-      }
-   }
-}
+//zz PRE(sys_fchdir, 0)
+//zz {
+//zz    PRINT("sys_fchdir ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "fchdir", unsigned int, fd);
+//zz }
+//zz 
+//zz PRE(sys_fchown16, 0)
+//zz {
+//zz    PRINT("sys_fchown16 ( %d, %d, %d )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "fchown16",
+//zz                  unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
+//zz }
+//zz 
+//zz PRE(sys_fchown, 0)
+//zz {
+//zz    PRINT("sys_fchown ( %d, %d, %d )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "fchown",
+//zz                  unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
+//zz }
+//zz 
+//zz PRE(sys_fchmod, 0)
+//zz {
+//zz    PRINT("sys_fchmod ( %d, %d )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
+//zz }
+//zz 
+//zz PRE(sys_fcntl, 0)
+//zz {
+//zz    switch (ARG2) {
+//zz    // These ones ignore ARG3.
+//zz    case VKI_F_GETFD:
+//zz    case VKI_F_GETFL:
+//zz    case VKI_F_GETOWN:
+//zz    case VKI_F_SETOWN:
+//zz    case VKI_F_GETSIG:
+//zz    case VKI_F_SETSIG:
+//zz    case VKI_F_GETLEASE:
+//zz       PRINT("sys_fcntl ( %d, %d )", ARG1,ARG2);
+//zz       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
+//zz       break;
+//zz 
+//zz    // These ones use ARG3 as "arg".
+//zz    case VKI_F_DUPFD:
+//zz    case VKI_F_SETFD:
+//zz    case VKI_F_SETFL:
+//zz    case VKI_F_SETLEASE:
+//zz    case VKI_F_NOTIFY:
+//zz       PRINT("sys_fcntl[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
+//zz       PRE_REG_READ3(long, "fcntl",
+//zz                     unsigned int, fd, unsigned int, cmd, unsigned long, arg);
+//zz       break;
+//zz 
+//zz    // These ones use ARG3 as "lock".
+//zz    case VKI_F_GETLK:
+//zz    case VKI_F_SETLK:
+//zz    case VKI_F_SETLKW:
+//zz #ifndef __amd64__
+//zz    case VKI_F_GETLK64:
+//zz    case VKI_F_SETLK64:
+//zz    case VKI_F_SETLKW64:
+//zz #else
+//zz #endif
+//zz       PRINT("sys_fcntl[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
+//zz       PRE_REG_READ3(long, "fcntl",
+//zz                     unsigned int, fd, unsigned int, cmd,
+//zz                     struct flock64 *, lock);
+//zz       break;
+//zz    }
+//zz 
+//zz    //if (ARG2 == VKI_F_SETLKW)
+//zz    //   tst->sys_flags |= SfMayBlock;
+//zz }
+//zz 
+//zz POST(sys_fcntl)
+//zz {
+//zz    if (ARG2 == VKI_F_DUPFD) {
+//zz       if (!VG_(fd_allowed)(RES, "fcntl(DUPFD)", tid, True)) {
+//zz          VG_(close)(RES);
+//zz          SET_STATUS_( -VKI_EMFILE );
+//zz       } else {
+//zz          if (VG_(clo_track_fds))
+//zz             VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+//zz       }
+//zz    }
+//zz }
 
 // XXX: wrapper only suitable for 32-bit systems
-PRE(sys_fcntl64, 0)
+PRE(sys_fcntl64)
 {
    switch (ARG2) {
    // These ones ignore ARG3.
@@ -2710,11 +2634,11 @@ PRE(sys_fcntl64, 0)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#ifndef __amd64__
+#  if defined(VGP_amd64_linux)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
-#endif
+#  endif
       PRINT("sys_fcntl64[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "fcntl64",
                     unsigned int, fd, unsigned int, cmd,
@@ -2722,45 +2646,47 @@ PRE(sys_fcntl64, 0)
       break;
    }
    
-#ifndef __amd64__
+#  if defined(VGP_amd64_linux)
    //if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
-   //   tst->sys_flags |= MayBlock;
-#else
+   //   tst->sys_flags |= SfMayBlock;
+#  else
    //if (ARG2 == VKI_F_SETLKW)
-   //   tst->sys_flags |= MayBlock;
-#endif
+   //   tst->sys_flags |= SfMayBlock;
+#  endif
 }
 
 POST(sys_fcntl64)
 {
+   vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
       if (!VG_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(RES);
-         SET_RESULT( -VKI_EMFILE );
+         SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+            VG_(record_fd_open)(tid, RES, 
+                                VG_(resolve_filename)(RES));
       }
    }
 }
 
-PRE(sys_newfstat, 0)
-{
-   PRINT("sys_newfstat ( %d, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat *, buf);
-   PRE_MEM_WRITE( "fstat(buf)", ARG2, sizeof(struct vki_stat) );
-}
-
-POST(sys_newfstat)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
-}
+//zz PRE(sys_newfstat, 0)
+//zz {
+//zz    PRINT("sys_newfstat ( %d, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat *, buf);
+//zz    PRE_MEM_WRITE( "fstat(buf)", ARG2, sizeof(struct vki_stat) );
+//zz }
+//zz 
+//zz POST(sys_newfstat)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
+//zz }
 
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
 // ignore the various args it gets, and so it looks arch-neutral.  Hmm.
-PRE(sys_fork, 0)
+PRE(sys_fork)
 {
    vki_sigset_t mask;
 
@@ -2774,14 +2700,16 @@ PRE(sys_fork, 0)
 
    VG_(do_atfork_pre)(tid);
 
-   SET_RESULT(VG_(do_syscall0)(__NR_fork));
+   SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
 
-   if (RES == 0) {
+   if (SUCCESS && RES == 0) {
       VG_(do_atfork_child)(tid);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
-   } else if (RES > 0) {
+   } 
+   else 
+   if (SUCCESS && RES > 0) {
       PRINT("   fork: process %d created child %d\n", VG_(getpid)(), RES);
 
       VG_(do_atfork_parent)(tid);
@@ -2791,57 +2719,58 @@ PRE(sys_fork, 0)
    }
 }
 
-PRE(sys_ftruncate, MayBlock)
-{
-   PRINT("sys_ftruncate ( %d, %lld )", ARG1,(ULong)ARG2);
-   PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
-}
+//zz PRE(sys_ftruncate, SfMayBlock)
+//zz {
+//zz    PRINT("sys_ftruncate ( %d, %lld )", ARG1,(ULong)ARG2);
+//zz    PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
+//zz }
+//zz 
+//zz PRE(sys_truncate, SfMayBlock)
+//zz {
+//zz    PRINT("sys_truncate ( %p(%s), %d )", ARG1,ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "truncate", 
+//zz                  const char *, path, unsigned long, length);
+//zz    PRE_MEM_RASCIIZ( "truncate(path)", ARG1 );
+//zz }
+//zz 
+//zz // XXX: this wrapper is only suitable for 32-bit platforms
+//zz PRE(sys_ftruncate64, SfMayBlock)
+//zz {
+//zz    PRINT("sys_ftruncate64 ( %d, %lld )", ARG1, LOHI64(ARG2,ARG3));
+//zz    PRE_REG_READ3(long, "ftruncate64",
+//zz                  unsigned int, fd,
+//zz                  vki_u32, length_low32, vki_u32, length_high32);
+//zz }
+//zz 
+//zz // XXX: this wrapper is only suitable for 32-bit platforms
+//zz PRE(sys_truncate64, SfMayBlock)
+//zz {
+//zz    PRINT("sys_truncate64 ( %p, %lld )", ARG1, LOHI64(ARG2, ARG3));
+//zz    PRE_REG_READ3(long, "truncate64",
+//zz                  const char *, path,
+//zz                  vki_u32, length_low32, vki_u32, length_high32);
+//zz    PRE_MEM_RASCIIZ( "truncate64(path)", ARG1 );
+//zz }
+//zz 
+//zz 
+//zz PRE(sys_getdents, SfMayBlock)
+//zz {
+//zz    PRINT("sys_getdents ( %d, %p, %d )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "getdents",
+//zz                  unsigned int, fd, struct linux_dirent *, dirp,
+//zz                  unsigned int, count);
+//zz    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
+//zz }
+//zz 
+//zz POST(sys_getdents)
+//zz {
+//zz    if (RES > 0)
+//zz       POST_MEM_WRITE( ARG2, RES );
+//zz }
 
-PRE(sys_truncate, MayBlock)
+PRE(sys_getdents64)
 {
-   PRINT("sys_truncate ( %p(%s), %d )", ARG1,ARG1,ARG2);
-   PRE_REG_READ2(long, "truncate", 
-                 const char *, path, unsigned long, length);
-   PRE_MEM_RASCIIZ( "truncate(path)", ARG1 );
-}
-
-// XXX: this wrapper is only suitable for 32-bit platforms
-PRE(sys_ftruncate64, MayBlock)
-{
-   PRINT("sys_ftruncate64 ( %d, %lld )", ARG1, LOHI64(ARG2,ARG3));
-   PRE_REG_READ3(long, "ftruncate64",
-                 unsigned int, fd,
-                 vki_u32, length_low32, vki_u32, length_high32);
-}
-
-// XXX: this wrapper is only suitable for 32-bit platforms
-PRE(sys_truncate64, MayBlock)
-{
-   PRINT("sys_truncate64 ( %p, %lld )", ARG1, LOHI64(ARG2, ARG3));
-   PRE_REG_READ3(long, "truncate64",
-                 const char *, path,
-                 vki_u32, length_low32, vki_u32, length_high32);
-   PRE_MEM_RASCIIZ( "truncate64(path)", ARG1 );
-}
-
-
-PRE(sys_getdents, MayBlock)
-{
-   PRINT("sys_getdents ( %d, %p, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "getdents",
-                 unsigned int, fd, struct linux_dirent *, dirp,
-                 unsigned int, count);
-   PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
-}
-
-POST(sys_getdents)
-{
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, RES );
-}
-
-PRE(sys_getdents64, MayBlock)
-{
+  *flags |= SfMayBlock;
    PRINT("sys_getdents64 ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getdents64",
                  unsigned int, fd, struct linux_dirent64 *, dirp,
@@ -2851,39 +2780,40 @@ PRE(sys_getdents64, MayBlock)
 
 POST(sys_getdents64)
 {
+   vg_assert(SUCCESS);
    if (RES > 0)
       POST_MEM_WRITE( ARG2, RES );
 }
 
-PRE(sys_getgroups16, 0)
-{
-   PRINT("sys_getgroups16 ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "getgroups16", int, size, vki_old_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_WRITE( "getgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
-}
+//zz PRE(sys_getgroups16, 0)
+//zz {
+//zz    PRINT("sys_getgroups16 ( %d, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "getgroups16", int, size, vki_old_gid_t *, list);
+//zz    if (ARG1 > 0)
+//zz       PRE_MEM_WRITE( "getgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
+//zz }
+//zz 
+//zz POST(sys_getgroups16)
+//zz {
+//zz    if (ARG1 > 0 && RES > 0)
+//zz       POST_MEM_WRITE( ARG2, RES * sizeof(vki_old_gid_t) );
+//zz }
+//zz 
+//zz PRE(sys_getgroups, 0)
+//zz {
+//zz    PRINT("sys_getgroups ( %d, %p )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "getgroups", int, size, vki_gid_t *, list);
+//zz    if (ARG1 > 0)
+//zz       PRE_MEM_WRITE( "getgroups(list)", ARG2, ARG1 * sizeof(vki_gid_t) );
+//zz }
+//zz 
+//zz POST(sys_getgroups)
+//zz {
+//zz    if (ARG1 > 0 && RES > 0)
+//zz       POST_MEM_WRITE( ARG2, RES * sizeof(vki_gid_t) );
+//zz }
 
-POST(sys_getgroups16)
-{
-   if (ARG1 > 0 && RES > 0)
-      POST_MEM_WRITE( ARG2, RES * sizeof(vki_old_gid_t) );
-}
-
-PRE(sys_getgroups, 0)
-{
-   PRINT("sys_getgroups ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "getgroups", int, size, vki_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_WRITE( "getgroups(list)", ARG2, ARG1 * sizeof(vki_gid_t) );
-}
-
-POST(sys_getgroups)
-{
-   if (ARG1 > 0 && RES > 0)
-      POST_MEM_WRITE( ARG2, RES * sizeof(vki_gid_t) );
-}
-
-PRE(sys_getcwd, 0)
+PRE(sys_getcwd)
 {
    // Note that the kernel version of getcwd() behaves quite differently to
    // the glibc one.
@@ -2894,65 +2824,66 @@ PRE(sys_getcwd, 0)
 
 POST(sys_getcwd)
 {
+   vg_assert(SUCCESS);
    if (RES != (Addr)NULL)
       POST_MEM_WRITE( ARG1, RES );
 }
 
-PRE(sys_geteuid16, 0)
+PRE(sys_geteuid16)
 {
    PRINT("sys_geteuid16 ( )");
    PRE_REG_READ0(long, "geteuid16");
 }
 
-PRE(sys_geteuid, 0)
+PRE(sys_geteuid)
 {
    PRINT("sys_geteuid ( )");
    PRE_REG_READ0(long, "geteuid");
 }
 
-PRE(sys_getegid16, 0)
-{
-   PRINT("sys_getegid16 ( )");
-   PRE_REG_READ0(long, "getegid16");
-}
+//zz PRE(sys_getegid16, 0)
+//zz {
+//zz    PRINT("sys_getegid16 ( )");
+//zz    PRE_REG_READ0(long, "getegid16");
+//zz }
+//zz 
+//zz PRE(sys_getegid, 0)
+//zz {
+//zz    PRINT("sys_getegid ( )");
+//zz    PRE_REG_READ0(long, "getegid");
+//zz }
+//zz 
+//zz PRE(sys_getgid16, 0)
+//zz {
+//zz    PRINT("sys_getgid16 ( )");
+//zz    PRE_REG_READ0(long, "getgid16");
+//zz }
+//zz 
+//zz PRE(sys_getgid, 0)
+//zz {
+//zz    PRINT("sys_getgid ( )");
+//zz    PRE_REG_READ0(long, "getgid");
+//zz }
 
-PRE(sys_getegid, 0)
-{
-   PRINT("sys_getegid ( )");
-   PRE_REG_READ0(long, "getegid");
-}
-
-PRE(sys_getgid16, 0)
-{
-   PRINT("sys_getgid16 ( )");
-   PRE_REG_READ0(long, "getgid16");
-}
-
-PRE(sys_getgid, 0)
-{
-   PRINT("sys_getgid ( )");
-   PRE_REG_READ0(long, "getgid");
-}
-
-PRE(sys_getpid, 0)
+PRE(sys_getpid)
 {
    PRINT("sys_getpid ()");
    PRE_REG_READ0(long, "getpid");
 }
 
-PRE(sys_getpgid, 0)
-{
-   PRINT("sys_getpgid ( %d )", ARG1);
-   PRE_REG_READ1(long, "getpgid", vki_pid_t, pid);
-}
+//zz PRE(sys_getpgid, 0)
+//zz {
+//zz    PRINT("sys_getpgid ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "getpgid", vki_pid_t, pid);
+//zz }
+//zz 
+//zz PRE(sys_getpgrp, 0)
+//zz {
+//zz    PRINT("sys_getpgrp ()");
+//zz    PRE_REG_READ0(long, "getpgrp");
+//zz }
 
-PRE(sys_getpgrp, 0)
-{
-   PRINT("sys_getpgrp ()");
-   PRE_REG_READ0(long, "getpgrp");
-}
-
-PRE(sys_getppid, 0)
+PRE(sys_getppid)
 {
    PRINT("sys_getppid ()");
    PRE_REG_READ0(long, "getppid");
@@ -2978,20 +2909,20 @@ static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
     }
 }
 
-PRE(sys_old_getrlimit, 0)
-{
-   PRINT("sys_old_getrlimit ( %d, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "old_getrlimit",
-                 unsigned int, resource, struct rlimit *, rlim);
-   PRE_MEM_WRITE( "old_getrlimit(rlim)", ARG2, sizeof(struct vki_rlimit) );
-}
+//zz PRE(sys_old_getrlimit, 0)
+//zz {
+//zz    PRINT("sys_old_getrlimit ( %d, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "old_getrlimit",
+//zz                  unsigned int, resource, struct rlimit *, rlim);
+//zz    PRE_MEM_WRITE( "old_getrlimit(rlim)", ARG2, sizeof(struct vki_rlimit) );
+//zz }
+//zz 
+//zz POST(sys_old_getrlimit)
+//zz {
+//zz    common_post_getrlimit(tid, ARG1, ARG2);
+//zz }
 
-POST(sys_old_getrlimit)
-{
-   common_post_getrlimit(tid, ARG1, ARG2);
-}
-
-PRE(sys_getrlimit, 0)
+PRE(sys_getrlimit)
 {
    PRINT("sys_getrlimit ( %d, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "getrlimit",
@@ -3004,21 +2935,21 @@ POST(sys_getrlimit)
    common_post_getrlimit(tid, ARG1, ARG2);
 }
 
-PRE(sys_getrusage, 0)
-{
-   /* int getrusage (int who, struct rusage *usage); */
-   PRINT("sys_getrusage ( %d, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "getrusage", int, who, struct rusage *, usage);
-   PRE_MEM_WRITE( "getrusage(usage)", ARG2, sizeof(struct vki_rusage) );
-}
+//zz PRE(sys_getrusage, 0)
+//zz {
+//zz    /* int getrusage (int who, struct rusage *usage); */
+//zz    PRINT("sys_getrusage ( %d, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "getrusage", int, who, struct rusage *, usage);
+//zz    PRE_MEM_WRITE( "getrusage(usage)", ARG2, sizeof(struct vki_rusage) );
+//zz }
+//zz 
+//zz POST(sys_getrusage)
+//zz {
+//zz    if (RES == 0)
+//zz       POST_MEM_WRITE( ARG2, sizeof(struct vki_rusage) );
+//zz }
 
-POST(sys_getrusage)
-{
-   if (RES == 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_rusage) );
-}
-
-PRE(sys_gettimeofday, 0)
+PRE(sys_gettimeofday)
 {
    PRINT("sys_gettimeofday ( %p, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "gettimeofday",
@@ -3030,6 +2961,7 @@ PRE(sys_gettimeofday, 0)
 
 POST(sys_gettimeofday)
 {
+   vg_assert(SUCCESS);
    if (RES == 0) {
       POST_MEM_WRITE( ARG1, sizeof(struct vki_timeval) );
       if (ARG2 != 0)
@@ -3037,33 +2969,34 @@ POST(sys_gettimeofday)
    }
 }
 
-PRE(sys_settimeofday, 0)
-{
-   PRINT("sys_settimeofday ( %p, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "settimeofday",
-                 struct timeval *, tv, struct timezone *, tz);
-   PRE_MEM_READ( "settimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
-   if (ARG2 != 0) {
-      PRE_MEM_READ( "settimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
-      /* maybe should warn if tz->tz_dsttime is non-zero? */
-   }
-}
+//zz PRE(sys_settimeofday, 0)
+//zz {
+//zz    PRINT("sys_settimeofday ( %p, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "settimeofday",
+//zz                  struct timeval *, tv, struct timezone *, tz);
+//zz    PRE_MEM_READ( "settimeofday(tv)", ARG1, sizeof(struct vki_timeval) );
+//zz    if (ARG2 != 0) {
+//zz       PRE_MEM_READ( "settimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
+//zz       /* maybe should warn if tz->tz_dsttime is non-zero? */
+//zz    }
+//zz }
 
-PRE(sys_getuid16, 0)
+PRE(sys_getuid16)
 {
    PRINT("sys_getuid16 ( )");
    PRE_REG_READ0(long, "getuid16");
 }
 
-PRE(sys_getuid, 0)
+PRE(sys_getuid)
 {
    PRINT("sys_getuid ( )");
    PRE_REG_READ0(long, "getuid");
 }
 
 // XXX: I reckon some of these cases must be x86-specific
-PRE(sys_ioctl, MayBlock)
+PRE(sys_ioctl)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_ioctl ( %d, 0x%x, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "ioctl",
                  unsigned int, fd, unsigned int, request, unsigned long, arg);
@@ -3378,7 +3311,7 @@ PRE(sys_ioctl, MayBlock)
       break;
    case VKI_SIOCSPGRP:
       PRE_MEM_READ( "ioctl(SIOCSPGRP)", ARG3, sizeof(int) );
-      //tst->sys_flags &= ~MayBlock;
+      //tst->sys_flags &= ~SfMayBlock;
       break;
 
       /* linux/soundcard interface (OSS) */
@@ -3827,6 +3760,7 @@ PRE(sys_ioctl, MayBlock)
 
 POST(sys_ioctl)
 {
+   vg_assert(SUCCESS);
    switch (ARG2 /* request */) {
    case VKI_TCSETS:
    case VKI_TCSETSW:
@@ -4323,7 +4257,7 @@ POST(sys_ioctl)
       UInt dir  = _VKI_IOC_DIR(ARG2);
       UInt size = _VKI_IOC_SIZE(ARG2);
       if (size > 0 && (dir & _VKI_IOC_READ)
-	  && RES == 0
+	  && RES == 0 
 	  && ARG3 != (Addr)NULL)
 	 POST_MEM_WRITE(ARG3, size);
       break;
@@ -4369,7 +4303,8 @@ Bool VG_(do_sigkill)(Int pid, Int tgid)
    /* Check to see that the target isn't already exiting. */
    if (!VG_(is_exiting)(tid)) {
       if (VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "Thread %d being killed with SIGKILL", tst->tid);
+	 VG_(message)(Vg_DebugMsg, "Thread %d being killed with SIGKILL", 
+                                   tst->tid);
       
       tst->exitreason = VgSrc_FatalSig;
       tst->os_state.fatalsig = VKI_SIGKILL;
@@ -4381,167 +4316,74 @@ Bool VG_(do_sigkill)(Int pid, Int tgid)
    return True;
 }
 
-PRE(sys_kill, Special)
+PRE(sys_kill)
 {
    /* int kill(pid_t pid, int sig); */
    PRINT("sys_kill ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "kill", int, pid, int, sig);
    if (!VG_(client_signal_OK)(ARG2)) {
-      SET_RESULT( -VKI_EINVAL );
+      SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
 
    /* If we're sending SIGKILL, check to see if the target is one of
       our threads and handle it specially. */
    if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
-      SET_RESULT(0);
+      SET_STATUS_Success(0);
    else
-      SET_RESULT(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
+      SET_STATUS_from_SysRes( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "kill: sent signal %d to pid %d",
 		   ARG2, ARG1);
-   // Check to see if this kill gave us a pending signal
-   VG_(poll_signals)(tid);
+
+   /* This kill might have given us a pending signal.  Ask for a check once 
+      the syscall is done. */
+   *flags |= SfPollAfter;
 }
 
-PRE(sys_link, MayBlock)
+PRE(sys_link)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_link ( %p, %p)", ARG1, ARG2);
    PRE_REG_READ2(long, "link", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "link(oldpath)", ARG1);
    PRE_MEM_RASCIIZ( "link(newpath)", ARG2);
 }
 
-PRE(sys_lseek, 0)
+PRE(sys_lseek)
 {
    PRINT("sys_lseek ( %d, %d, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(vki_off_t, "lseek",
                  unsigned int, fd, vki_off_t, offset, unsigned int, whence);
 }
 
-PRE(sys_newlstat, 0)
-{
-   PRINT("sys_newlstat ( %p(%s), %p )", ARG1,ARG1,ARG2);
-   PRE_REG_READ2(long, "lstat", char *, file_name, struct stat *, buf);
-   PRE_MEM_RASCIIZ( "lstat(file_name)", ARG1 );
-   PRE_MEM_WRITE( "lstat(buf)", ARG2, sizeof(struct vki_stat) );
-}
+//zz PRE(sys_newlstat, 0)
+//zz {
+//zz    PRINT("sys_newlstat ( %p(%s), %p )", ARG1,ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "lstat", char *, file_name, struct stat *, buf);
+//zz    PRE_MEM_RASCIIZ( "lstat(file_name)", ARG1 );
+//zz    PRE_MEM_WRITE( "lstat(buf)", ARG2, sizeof(struct vki_stat) );
+//zz }
+//zz 
+//zz POST(sys_newlstat)
+//zz {
+//zz    if (RES == 0) {
+//zz       POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
+//zz    }
+//zz }
 
-POST(sys_newlstat)
+PRE(sys_mkdir)
 {
-   if (RES == 0) {
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
-   }
-}
-
-// XXX: this syscall is generic, but not necessarily applicable to every
-// architecture -- I think only to 32-bit archs.  We're going to need
-// something like linux/core_os32.h for such things, eventually, I think.
-// --njn
-#ifndef __amd64__
-PRE(sys_lstat64, 0)
-{
-   PRINT("sys_lstat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
-   PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
-   PRE_MEM_RASCIIZ( "lstat64(file_name)", ARG1 );
-   PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
-}
-
-POST(sys_lstat64)
-{
-   if (RES == 0) {
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
-   }
-}
-#endif
-
-PRE(sys_mkdir, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_mkdir ( %p, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "mkdir", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "mkdir(pathname)", ARG1 );
 }
 
-// Nb: this should probably be in m_syscalls/syscalls-x86-linux.c, but it
-// might be required for ARM, and I was too lazy to move it (which would
-// have required making mmap_segment() public).
-PRE(old_mmap, Special)
+PRE(sys_mmap2)
 {
-   /* struct mmap_arg_struct {           
-         unsigned long addr;
-         unsigned long len;
-         unsigned long prot;
-         unsigned long flags;
-         unsigned long fd;
-         unsigned long offset;
-   }; */
-#if defined(VGP_x86_linux)
-   // do nothing
-#else
-   vg_assert2(0, "old_mmap should only be called on x86/Linux");
-#endif
-   
-   UWord a1, a2, a3, a4, a5, a6;
-   UWord *arg_block = (UWord*)(tst->arch.vex.VGP_SYSCALL_ARG1);
-
-   PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
-   arg_block = (UWord*)(tst->arch.vex.VGP_SYSCALL_ARG1);
-   PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );\
-   a1 = arg_block[0];
-   a2 = arg_block[1];
-   a3 = arg_block[2];
-   a4 = arg_block[3];
-   a5 = arg_block[4];
-   a6 = arg_block[5];
-
-   PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
-         a1, (ULong)a2, a3, a4, a5, a6 );
-
-   if (a2 == 0) {
-      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
-         shall be established. */
-      SET_RESULT( -VKI_EINVAL );
-      return;
-   }
-
-   if (/*(a4 & VKI_MAP_FIXED) &&*/ (0 != (a1 & (VKI_PAGE_SIZE-1)))) {
-      /* zap any misaligned addresses. */
-      SET_RESULT( -VKI_EINVAL );
-      return;
-   }
-
-   if (a4 & VKI_MAP_FIXED) {
-      if (!VG_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
-         PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
-         SET_RESULT( -VKI_ENOMEM );
-      }
-   } else {
-      Addr a = VG_(find_map_space)(a1, a2, True);
-      if (a == 0 && a1 != 0)
-         a1 = VG_(find_map_space)(0, a2, True);
-      else
-         a1 = a;
-      if (a1 == 0)
-         SET_RESULT( -VKI_ENOMEM );
-      else
-         a4 |= VKI_MAP_FIXED;
-   }
-
-   if (RES != -VKI_ENOMEM) {
-      Int res = (Int)VG_(mmap_native)((void*)a1, a2, a3, a4, a5, a6);
-      SET_RESULT(res);
-
-      if (!VG_(is_kerror)(RES)) {
-         vg_assert(VG_(valid_client_addr)(RES, a2, tid, "old_mmap"));
-         mmap_segment( (Addr)RES, a2, a3, a4, a5, a6 );
-      }
-   }
-}
-
-PRE(sys_mmap2, 0)
-{
-   // Exactly like old_mmap() except:
+   // Exactly like old_mmap() in x86-linux except:
    //  - all 6 args are passed in regs, rather than in a memory-block.
    //  - the file offset is specified in pagesize units rather than bytes,
    //    so that it can be used for files bigger than 2^32 bytes.
@@ -4555,7 +4397,7 @@ PRE(sys_mmap2, 0)
    if (ARG2 == 0) {
       /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
          shall be established. */
-      SET_RESULT( -VKI_EINVAL );
+      SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
 
@@ -4563,13 +4405,13 @@ PRE(sys_mmap2, 0)
       /* zap any misaligned addresses. */
       /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
          to fail.   Here, we catch them all. */
-      SET_RESULT( -VKI_EINVAL );
+      SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
 
    if (ARG4 & VKI_MAP_FIXED) {
       if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
-	 SET_RESULT( -VKI_ENOMEM );
+	 SET_STATUS_Failure( VKI_ENOMEM );
    } else {
       Addr a = VG_(find_map_space)(ARG1, ARG2, True);
       if (a == 0 && ARG1 != 0)
@@ -4577,7 +4419,7 @@ PRE(sys_mmap2, 0)
       else
          ARG1 = a;
       if (ARG1 == 0)
-	 SET_RESULT( -VKI_ENOMEM );
+	 SET_STATUS_Failure( VKI_ENOMEM );
       else 
          ARG4 |= VKI_MAP_FIXED;
    }
@@ -4585,19 +4427,20 @@ PRE(sys_mmap2, 0)
 
 POST(sys_mmap2)
 {
+   vg_assert(SUCCESS);
    vg_assert(VG_(valid_client_addr)(RES, ARG2, tid, "mmap2"));
-   mmap_segment( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
-                 ARG6 * (ULong)VKI_PAGE_SIZE );
+   VG_(mmap_segment)( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
+                      ARG6 * (ULong)VKI_PAGE_SIZE );
 }
 
-PRE(sys_mprotect, 0)
+PRE(sys_mprotect)
 {
    PRINT("sys_mprotect ( %p, %llu, %d )", ARG1,(ULong)ARG2,ARG3);
    PRE_REG_READ3(long, "mprotect",
                  unsigned long, addr, vki_size_t, len, unsigned long, prot);
 
    if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mprotect"))
-      SET_RESULT( -VKI_ENOMEM );
+      SET_STATUS_Failure( VKI_ENOMEM );
 }
 
 POST(sys_mprotect)
@@ -4614,13 +4457,14 @@ POST(sys_mprotect)
    VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
 }
 
-PRE(sys_munmap, 0)
+PRE(sys_munmap)
 {
+   if (0) VG_(printf)("  munmap( %p )\n", ARG1);
    PRINT("sys_munmap ( %p, %llu )", ARG1,(ULong)ARG2);
    PRE_REG_READ2(long, "munmap", unsigned long, start, vki_size_t, length);
 
    if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "munmap"))
-      SET_RESULT( -VKI_EINVAL );
+      SET_STATUS_Failure( VKI_EINVAL );
 }
 
 POST(sys_munmap)
@@ -4633,22 +4477,23 @@ POST(sys_munmap)
    VG_TRACK( die_mem_munmap, a, len );
 }
 
-PRE(sys_mincore, 0)
-{
-   PRINT("sys_mincore ( %p, %llu, %p )", ARG1,(ULong)ARG2,ARG3);
-   PRE_REG_READ3(long, "mincore",
-                 unsigned long, start, vki_size_t, length,
-                 unsigned char *, vec);
-   PRE_MEM_WRITE( "mincore(vec)", ARG3, (ARG2 + 4096 - 1) / 4096);
-}
+//zz PRE(sys_mincore, 0)
+//zz {
+//zz    PRINT("sys_mincore ( %p, %llu, %p )", ARG1,(ULong)ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "mincore",
+//zz                  unsigned long, start, vki_size_t, length,
+//zz                  unsigned char *, vec);
+//zz    PRE_MEM_WRITE( "mincore(vec)", ARG3, (ARG2 + 4096 - 1) / 4096);
+//zz }
+//zz 
+//zz POST(sys_mincore)
+//zz {
+//zz    POST_MEM_WRITE( ARG3, (ARG2 + 4096 - 1) / 4096 );  
+//zz }
 
-POST(sys_mincore)
+PRE(sys_nanosleep)
 {
-   POST_MEM_WRITE( ARG3, (ARG2 + 4096 - 1) / 4096 );  
-}
-
-PRE(sys_nanosleep, MayBlock|PostOnFail)
-{
+   *flags |= SfMayBlock|SfPostOnFail;
    PRINT("sys_nanosleep ( %p, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "nanosleep", 
                  struct timespec *, req, struct timespec *, rem);
@@ -4659,12 +4504,14 @@ PRE(sys_nanosleep, MayBlock|PostOnFail)
 
 POST(sys_nanosleep)
 {
-   if (ARG2 != 0 && RES == -VKI_EINTR)
+   vg_assert(SUCCESS || FAILURE);
+   if (ARG2 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
-PRE(sys_open, MayBlock)
+PRE(sys_open)
 {
+   *flags |= SfMayBlock;
    if (ARG2 & VKI_O_CREAT) {
       // 3-arg version
       PRINT("sys_open ( %p(%s), %d, %d )",ARG1,ARG1,ARG2,ARG3);
@@ -4681,45 +4528,51 @@ PRE(sys_open, MayBlock)
 
 POST(sys_open)
 {
+   vg_assert(SUCCESS);
    if (!VG_(fd_allowed)(RES, "open", tid, True)) {
       VG_(close)(RES);
-      SET_RESULT( -VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         VG_(record_fd_open)(tid, RES, 
+                                  VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
    }
 }
 
-PRE(sys_read, MayBlock)
+PRE(sys_read)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_read ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(ssize_t, "read",
                  unsigned int, fd, char *, buf, vki_size_t, count);
 
    if (!VG_(fd_allowed)(ARG1, "read", tid, False))
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
    else
       PRE_MEM_WRITE( "read(buf)", ARG2, ARG3 );
 }
 
 POST(sys_read)
 {
+   vg_assert(SUCCESS);
    POST_MEM_WRITE( ARG2, RES );
 }
 
-PRE(sys_write, MayBlock)
+PRE(sys_write)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_write ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(ssize_t, "write",
                  unsigned int, fd, const char *, buf, vki_size_t, count);
    if (!VG_(fd_allowed)(ARG1, "write", tid, False))
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
    else
       PRE_MEM_READ( "write(buf)", ARG2, ARG3 );
 }
 
-PRE(sys_creat, MayBlock)
+PRE(sys_creat)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_creat ( %p(%s), %d )", ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "creat", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "creat(pathname)", ARG1 );
@@ -4727,9 +4580,10 @@ PRE(sys_creat, MayBlock)
 
 POST(sys_creat)
 {
+   vg_assert(SUCCESS);
    if (!VG_(fd_allowed)(RES, "creat", tid, True)) {
       VG_(close)(RES);
-      SET_RESULT( -VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
          VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
@@ -4737,7 +4591,7 @@ POST(sys_creat)
 }
 
 // XXX: sort of x86-specific
-PRE(sys_pipe, 0)
+PRE(sys_pipe)
 {
    PRINT("sys_pipe ( %p )", ARG1);
    PRE_REG_READ1(int, "pipe", unsigned long *, filedes);
@@ -4752,7 +4606,7 @@ POST(sys_pipe)
        !VG_(fd_allowed)(p[1], "pipe", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
-      SET_RESULT( -VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EMFILE );
    } else {
       POST_MEM_WRITE( ARG1, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
@@ -4763,7 +4617,7 @@ POST(sys_pipe)
 }
 
 // XXX: x86-specific, due to pollfd struct
-PRE(sys_poll, MayBlock)
+PRE(sys_poll)
 {
    /* struct pollfd {
         int fd;           -- file descriptor
@@ -4773,6 +4627,7 @@ PRE(sys_poll, MayBlock)
       int poll(struct pollfd *ufds, unsigned int nfds, int timeout) 
    */
    UInt i;
+   *flags |= SfMayBlock;
    struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
    PRINT("sys_poll ( %p, %d, %d )\n", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "poll",
@@ -4799,9 +4654,9 @@ POST(sys_poll)
    }
 }
 
-PRE(sys_readlink, Special)
+PRE(sys_readlink)
 {
-   int saved = SYSNO;
+   Word saved = SYSNO;
    PRINT("sys_readlink ( %p, %p, %llu )", ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
@@ -4813,33 +4668,36 @@ PRE(sys_readlink, Special)
     * /proc/<pid>/exe.
     */
 
-   SET_RESULT( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
-   if ((Int)RES == -2) {
-      char name[25];
+   SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
 
+   /* jrs 20050604: where does the magic value 2 come from?  It seems
+      like it should be a kernel error value, but we don't know of any
+      such. */
+   if (SWHAT == SsFailure && RES_unchecked == 2) {
+      HChar name[25];
       VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   
       if (VG_(strcmp)((Char *)ARG1, name) == 0 ||
           VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0) {
          VG_(sprintf)(name, "/proc/self/fd/%d", VG_(clexecfd));
-         SET_RESULT( VG_(do_syscall3)(saved, (UWord)name, ARG2, ARG3));
+         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, ARG2, ARG3));
       }
    }
 
-   if ((Int)RES > 0)
+   if (SUCCESS && RES > 0)
       POST_MEM_WRITE( ARG2, RES );
 }
 
-PRE(sys_readv, MayBlock)
+PRE(sys_readv)
 {
    Int i;
    struct vki_iovec * vec;
+   *flags |= SfMayBlock;
    PRINT("sys_readv ( %d, %p, %llu )",ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(ssize_t, "readv",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
    if (!VG_(fd_allowed)(ARG1, "readv", tid, False)) {
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
@@ -4855,6 +4713,7 @@ PRE(sys_readv, MayBlock)
 
 POST(sys_readv)
 {
+   vg_assert(SUCCESS);
    if (RES > 0) {
       Int i;
       struct vki_iovec * vec = (struct vki_iovec *)ARG2;
@@ -4871,7 +4730,7 @@ POST(sys_readv)
    }
 }
 
-PRE(sys_rename, 0)
+PRE(sys_rename)
 {
    PRINT("sys_rename ( %p, %p )", ARG1, ARG2 );
    PRE_REG_READ2(long, "rename", const char *, oldpath, const char *, newpath);
@@ -4879,41 +4738,42 @@ PRE(sys_rename, 0)
    PRE_MEM_RASCIIZ( "rename(newpath)", ARG2 );
 }
 
-PRE(sys_rmdir, MayBlock)
-{
-   PRINT("sys_rmdir ( %p )", ARG1);
-   PRE_REG_READ1(long, "rmdir", const char *, pathname);
-   PRE_MEM_RASCIIZ( "rmdir(pathname)", ARG1 );
-}
+//zz PRE(sys_rmdir, SfMayBlock)
+//zz {
+//zz    PRINT("sys_rmdir ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "rmdir", const char *, pathname);
+//zz    PRE_MEM_RASCIIZ( "rmdir(pathname)", ARG1 );
+//zz }
+//zz 
+//zz PRE(sys_sched_setparam, 0)
+//zz {
+//zz    PRINT("sched_setparam ( %d, %p )", ARG1, ARG2 );
+//zz    PRE_REG_READ2(long, "sched_setparam", 
+//zz                  vki_pid_t, pid, struct sched_param *, p);
+//zz    PRE_MEM_READ( "sched_setparam(p)", ARG2, sizeof(struct vki_sched_param) );
+//zz }
+//zz 
+//zz POST(sys_sched_setparam)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
+//zz }
+//zz 
+//zz PRE(sys_sched_getparam, 0)
+//zz {
+//zz    PRINT("sched_getparam ( %d, %p )", ARG1, ARG2 );
+//zz    PRE_REG_READ2(long, "sched_getparam", 
+//zz                  vki_pid_t, pid, struct sched_param *, p);
+//zz    PRE_MEM_WRITE( "sched_getparam(p)", ARG2, sizeof(struct vki_sched_param) );
+//zz }
+//zz 
+//zz POST(sys_sched_getparam)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
+//zz }
 
-PRE(sys_sched_setparam, 0)
+PRE(sys_select)
 {
-   PRINT("sched_setparam ( %d, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "sched_setparam", 
-                 vki_pid_t, pid, struct sched_param *, p);
-   PRE_MEM_READ( "sched_setparam(p)", ARG2, sizeof(struct vki_sched_param) );
-}
-
-POST(sys_sched_setparam)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
-}
-
-PRE(sys_sched_getparam, 0)
-{
-   PRINT("sched_getparam ( %d, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "sched_getparam", 
-                 vki_pid_t, pid, struct sched_param *, p);
-   PRE_MEM_WRITE( "sched_getparam(p)", ARG2, sizeof(struct vki_sched_param) );
-}
-
-POST(sys_sched_getparam)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
-}
-
-PRE(sys_select, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_select ( %d, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "select",
                  int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
@@ -4932,65 +4792,65 @@ PRE(sys_select, MayBlock)
       PRE_MEM_READ( "select(timeout)", ARG5, sizeof(struct vki_timeval) );
 }
 
-PRE(sys_setgid16, 0)
-{
-   PRINT("sys_setgid16 ( %d )", ARG1);
-   PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
-}
+//zz PRE(sys_setgid16, 0)
+//zz {
+//zz    PRINT("sys_setgid16 ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
+//zz }
+//zz 
+//zz PRE(sys_setgid, 0)
+//zz {
+//zz    PRINT("sys_setgid ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "setgid", vki_gid_t, gid);
+//zz }
+//zz 
+//zz PRE(sys_setsid, 0)
+//zz {
+//zz    PRINT("sys_setsid ( )");
+//zz    PRE_REG_READ0(long, "setsid");
+//zz }
+//zz 
+//zz PRE(sys_setgroups16, 0)
+//zz {
+//zz    PRINT("sys_setgroups16 ( %llu, %p )", (ULong)ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setgroups16", int, size, vki_old_gid_t *, list);
+//zz    if (ARG1 > 0)
+//zz       PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
+//zz }
+//zz 
+//zz PRE(sys_setgroups, 0)
+//zz {
+//zz    PRINT("setgroups ( %llu, %p )", (ULong)ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setgroups", int, size, vki_gid_t *, list);
+//zz    if (ARG1 > 0)
+//zz       PRE_MEM_READ( "setgroups(list)", ARG2, ARG1 * sizeof(vki_gid_t) );
+//zz }
+//zz 
+//zz PRE(sys_setpgid, 0)
+//zz {
+//zz    PRINT("setpgid ( %d, %d )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setpgid", vki_pid_t, pid, vki_pid_t, pgid);
+//zz }
+//zz 
+//zz PRE(sys_setregid, 0)
+//zz {
+//zz    PRINT("sys_setregid ( %d, %d )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setregid", vki_gid_t, rgid, vki_gid_t, egid);
+//zz }
+//zz 
+//zz PRE(sys_setreuid16, 0)
+//zz {
+//zz    PRINT("setreuid16 ( 0x%x, 0x%x )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setreuid16", vki_old_uid_t, ruid, vki_old_uid_t, euid);
+//zz }
+//zz 
+//zz PRE(sys_setreuid, 0)
+//zz {
+//zz    PRINT("sys_setreuid ( 0x%x, 0x%x )", ARG1, ARG2);
+//zz    PRE_REG_READ2(long, "setreuid", vki_uid_t, ruid, vki_uid_t, euid);
+//zz }
 
-PRE(sys_setgid, 0)
-{
-   PRINT("sys_setgid ( %d )", ARG1);
-   PRE_REG_READ1(long, "setgid", vki_gid_t, gid);
-}
-
-PRE(sys_setsid, 0)
-{
-   PRINT("sys_setsid ( )");
-   PRE_REG_READ0(long, "setsid");
-}
-
-PRE(sys_setgroups16, 0)
-{
-   PRINT("sys_setgroups16 ( %llu, %p )", (ULong)ARG1, ARG2);
-   PRE_REG_READ2(long, "setgroups16", int, size, vki_old_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
-}
-
-PRE(sys_setgroups, 0)
-{
-   PRINT("setgroups ( %llu, %p )", (ULong)ARG1, ARG2);
-   PRE_REG_READ2(long, "setgroups", int, size, vki_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_READ( "setgroups(list)", ARG2, ARG1 * sizeof(vki_gid_t) );
-}
-
-PRE(sys_setpgid, 0)
-{
-   PRINT("setpgid ( %d, %d )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setpgid", vki_pid_t, pid, vki_pid_t, pgid);
-}
-
-PRE(sys_setregid, 0)
-{
-   PRINT("sys_setregid ( %d, %d )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setregid", vki_gid_t, rgid, vki_gid_t, egid);
-}
-
-PRE(sys_setreuid16, 0)
-{
-   PRINT("setreuid16 ( 0x%x, 0x%x )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setreuid16", vki_old_uid_t, ruid, vki_old_uid_t, euid);
-}
-
-PRE(sys_setreuid, 0)
-{
-   PRINT("sys_setreuid ( 0x%x, 0x%x )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setreuid", vki_uid_t, ruid, vki_uid_t, euid);
-}
-
-PRE(sys_setrlimit, 0)
+PRE(sys_setrlimit)
 {
    PRINT("sys_setrlimit ( %d, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "setrlimit",
@@ -5000,372 +4860,97 @@ PRE(sys_setrlimit, 0)
    if (ARG1 == VKI_RLIMIT_NOFILE) {
       if (((struct vki_rlimit *)ARG2)->rlim_cur > VG_(fd_hard_limit) ||
           ((struct vki_rlimit *)ARG2)->rlim_max != VG_(fd_hard_limit)) {
-         SET_RESULT( -VKI_EPERM );
+         SET_STATUS_Failure( VKI_EPERM );
       }
       else {
          VG_(fd_soft_limit) = ((struct vki_rlimit *)ARG2)->rlim_cur;
-         SET_RESULT( 0 );
+         SET_STATUS_Success( 0 );
       }
    }
    else if (ARG1 == VKI_RLIMIT_DATA) {
       if (((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max ||
           ((struct vki_rlimit *)ARG2)->rlim_max > ((struct vki_rlimit *)ARG2)->rlim_max) {
-         SET_RESULT( -VKI_EPERM );
+         SET_STATUS_Failure( VKI_EPERM );
       }
       else {
          VG_(client_rlimit_data) = *(struct vki_rlimit *)ARG2;
-         SET_RESULT( 0 );
+         SET_STATUS_Success( 0 );
       }
    }
    else if (ARG1 == VKI_RLIMIT_STACK && tid == 1) {
       if (((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max ||
           ((struct vki_rlimit *)ARG2)->rlim_max > ((struct vki_rlimit *)ARG2)->rlim_max) {
-         SET_RESULT( -VKI_EPERM );
+         SET_STATUS_Failure( VKI_EPERM );
       }
       else {
-         VG_(threads)[tid].client_stack_szB  = ((struct vki_rlimit *)ARG2)->rlim_cur;
+         VG_(threads)[tid].client_stack_szB = ((struct vki_rlimit *)ARG2)->rlim_cur;
          VG_(client_rlimit_stack) = *(struct vki_rlimit *)ARG2;
-         SET_RESULT( 0 );
+         SET_STATUS_Success( 0 );
       }
    }
 }
 
-PRE(sys_setuid16, 0)
+PRE(sys_setuid16)
 {
    PRINT("sys_setuid16 ( %d )", ARG1);
    PRE_REG_READ1(long, "setuid16", vki_old_uid_t, uid);
 }
 
-PRE(sys_setuid, 0)
-{
-   PRINT("sys_setuid ( %d )", ARG1);
-   PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
-}
+//zz PRE(sys_setuid, 0)
+//zz {
+//zz    PRINT("sys_setuid ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
+//zz }
 
-PRE(sys_socketcall, MayBlock)
-{
-#  define ARG2_0  (((UWord*)ARG2)[0])
-#  define ARG2_1  (((UWord*)ARG2)[1])
-#  define ARG2_2  (((UWord*)ARG2)[2])
-#  define ARG2_3  (((UWord*)ARG2)[3])
-#  define ARG2_4  (((UWord*)ARG2)[4])
-#  define ARG2_5  (((UWord*)ARG2)[5])
+//zz PRE(sys_newstat, 0)
+//zz {
+//zz    PRINT("sys_newstat ( %p(%s), %p )", ARG1,ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "stat", char *, file_name, struct stat *, buf);
+//zz    PRE_MEM_RASCIIZ( "stat(file_name)", ARG1 );
+//zz    PRE_MEM_WRITE( "stat(buf)", ARG2, sizeof(struct vki_stat) );
+//zz }
+//zz 
+//zz POST(sys_newstat)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
+//zz }
+//zz 
+//zz PRE(sys_statfs, 0)
+//zz {
+//zz    PRINT("sys_statfs ( %p, %p )",ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
+//zz    PRE_MEM_RASCIIZ( "statfs(path)", ARG1 );
+//zz    PRE_MEM_WRITE( "statfs(buf)", ARG2, sizeof(struct vki_statfs) );
+//zz }
+//zz 
+//zz POST(sys_statfs)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs) );
+//zz }
+//zz 
+//zz PRE(sys_statfs64, 0)
+//zz {
+//zz    PRINT("sys_statfs64 ( %p, %llu, %p )",ARG1,(ULong)ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "statfs64",
+//zz                  const char *, path, vki_size_t, size, struct statfs64 *, buf);
+//zz    PRE_MEM_RASCIIZ( "statfs64(path)", ARG1 );
+//zz    PRE_MEM_WRITE( "statfs64(buf)", ARG3, ARG2 );
+//zz }
+//zz 
+//zz POST(sys_statfs64)
+//zz {
+//zz    POST_MEM_WRITE( ARG3, ARG2 );
+//zz }
+//zz 
+//zz PRE(sys_symlink, SfMayBlock)
+//zz {
+//zz    PRINT("sys_symlink ( %p, %p )",ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "symlink", const char *, oldpath, const char *, newpath);
+//zz    PRE_MEM_RASCIIZ( "symlink(oldpath)", ARG1 );
+//zz    PRE_MEM_RASCIIZ( "symlink(newpath)", ARG2 );
+//zz }
 
-   PRINT("sys_socketcall ( %d, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
-
-   switch (ARG1 /* request */) {
-
-   case VKI_SYS_SOCKETPAIR:
-      /* int socketpair(int d, int type, int protocol, int sv[2]); */
-      PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
-      break;
-
-   case VKI_SYS_SOCKET:
-      /* int socket(int domain, int type, int protocol); */
-      PRE_MEM_READ( "socketcall.socket(args)", ARG2, 3*sizeof(Addr) );
-      break;
-
-   case VKI_SYS_BIND:
-      /* int bind(int sockfd, struct sockaddr *my_addr, 
-	 int addrlen); */
-      PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-               
-   case VKI_SYS_LISTEN:
-      /* int listen(int s, int backlog); */
-      PRE_MEM_READ( "socketcall.listen(args)", ARG2, 2*sizeof(Addr) );
-      break;
-
-   case VKI_SYS_ACCEPT: {
-      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-      PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-   }
-
-   case VKI_SYS_SENDTO:
-      /* int sendto(int s, const void *msg, int len, 
-                    unsigned int flags, 
-                    const struct sockaddr *to, int tolen); */
-      PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-      VG_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                   ARG2_3, ARG2_4, ARG2_5 );
-      break;
-
-   case VKI_SYS_SEND:
-      /* int send(int s, const void *msg, size_t len, int flags); */
-      PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_RECVFROM:
-      /* int recvfrom(int s, void *buf, int len, unsigned int flags,
-	 struct sockaddr *from, int *fromlen); */
-      PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-      VG_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                     ARG2_3, ARG2_4, ARG2_5 );
-      break;
-   
-   case VKI_SYS_RECV:
-      /* int recv(int s, void *buf, int len, unsigned int flags); */
-      /* man 2 recv says:
-	 The  recv call is normally used only on a connected socket
-	 (see connect(2)) and is identical to recvfrom with a  NULL
-	 from parameter.
-      */
-      PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_CONNECT:
-      /* int connect(int sockfd, 
-                     struct sockaddr *serv_addr, int addrlen ); */
-      PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_SETSOCKOPT:
-      /* int setsockopt(int s, int level, int optname, 
-                        const void *optval, int optlen); */
-      PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-      VG_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                       ARG2_3, ARG2_4 );
-      break;
-
-   case VKI_SYS_GETSOCKOPT:
-      /* int getsockopt(int s, int level, int optname, 
-                        void *optval, socklen_t *optlen); */
-      PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-      VG_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
-                                       ARG2_3, ARG2_4 );
-      break;
-
-   case VKI_SYS_GETSOCKNAME:
-      /* int getsockname(int s, struct sockaddr* name, int* namelen) */
-      PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_GETPEERNAME:
-      /* int getpeername(int s, struct sockaddr* name, int* namelen) */
-      PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_SHUTDOWN:
-      /* int shutdown(int s, int how); */
-      PRE_MEM_READ( "socketcall.shutdown(args)", ARG2, 2*sizeof(Addr) );
-      break;
-
-   case VKI_SYS_SENDMSG: {
-      /* int sendmsg(int s, const struct msghdr *msg, int flags); */
-
-      /* this causes warnings, and I don't get why. glibc bug?
-       * (after all it's glibc providing the arguments array)
-       PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
-      */
-      VG_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
-      break;
-   }
-      
-   case VKI_SYS_RECVMSG: {
-      /* int recvmsg(int s, struct msghdr *msg, int flags); */
-
-      /* this causes warnings, and I don't get why. glibc bug?
-       * (after all it's glibc providing the arguments array)
-       PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
-      */
-      VG_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
-      break;
-   }
-
-   default:
-      VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",ARG1);
-      SET_RESULT( -VKI_EINVAL );
-      break;
-   }
-#  undef ARG2_0
-#  undef ARG2_1
-#  undef ARG2_2
-#  undef ARG2_3
-#  undef ARG2_4
-#  undef ARG2_5
-}
-
-POST(sys_socketcall)
-{
-#  define ARG2_0  (((UWord*)ARG2)[0])
-#  define ARG2_1  (((UWord*)ARG2)[1])
-#  define ARG2_2  (((UWord*)ARG2)[2])
-#  define ARG2_3  (((UWord*)ARG2)[3])
-#  define ARG2_4  (((UWord*)ARG2)[4])
-#  define ARG2_5  (((UWord*)ARG2)[5])
-
-   UWord r;
-   switch (ARG1 /* request */) {
-
-   case VKI_SYS_SOCKETPAIR:
-      VG_(generic_POST_sys_socketpair)( tid, RES, ARG2_0, 
-                                        ARG2_1, ARG2_2, ARG2_3 );
-      break;
-
-   case VKI_SYS_SOCKET:
-     r = VG_(generic_POST_sys_socket)( tid, RES );
-     SET_RESULT(r);
-     break;
-
-   case VKI_SYS_BIND:
-      /* int bind(int sockfd, struct sockaddr *my_addr, 
-			int addrlen); */
-      break;
-               
-   case VKI_SYS_LISTEN:
-      /* int listen(int s, int backlog); */
-      break;
-
-   case VKI_SYS_ACCEPT:
-      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-     r = VG_(generic_POST_sys_accept)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-     SET_RESULT(r);
-     break;
-
-   case VKI_SYS_SENDTO:
-      break;
-
-   case VKI_SYS_SEND:
-      break;
-
-   case VKI_SYS_RECVFROM:
-      VG_(generic_POST_sys_recvfrom)( tid, RES, ARG2_0, ARG2_1, ARG2_2,
-                                           ARG2_3, ARG2_4, ARG2_5 );
-      break;
-
-   case VKI_SYS_RECV:
-      VG_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_CONNECT:
-      break;
-
-   case VKI_SYS_SETSOCKOPT:
-      break;
-
-   case VKI_SYS_GETSOCKOPT:
-      VG_(generic_POST_sys_getsockopt)( tid, RES, ARG2_0, ARG2_1, 
-                                             ARG2_2, ARG2_3, ARG2_4 );
-      break;
-
-   case VKI_SYS_GETSOCKNAME:
-      VG_(generic_POST_sys_getsockname)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_GETPEERNAME:
-      VG_(generic_POST_sys_getpeername)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-   case VKI_SYS_SHUTDOWN:
-      break;
-
-   case VKI_SYS_SENDMSG:
-      break;
-
-   case VKI_SYS_RECVMSG:
-     VG_(generic_POST_sys_recvmsg)( tid, RES, ARG2_0, ARG2_1 );
-     break;
-
-   default:
-      VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",ARG1);
-      VG_(core_panic)("... bye!\n");
-      break; /*NOTREACHED*/
-   }
-#  undef ARG2_0
-#  undef ARG2_1
-#  undef ARG2_2
-#  undef ARG2_3
-#  undef ARG2_4
-#  undef ARG2_5
-}
-
-PRE(sys_newstat, 0)
-{
-   PRINT("sys_newstat ( %p(%s), %p )", ARG1,ARG1,ARG2);
-   PRE_REG_READ2(long, "stat", char *, file_name, struct stat *, buf);
-   PRE_MEM_RASCIIZ( "stat(file_name)", ARG1 );
-   PRE_MEM_WRITE( "stat(buf)", ARG2, sizeof(struct vki_stat) );
-}
-
-POST(sys_newstat)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
-}
-
-PRE(sys_statfs, 0)
-{
-   PRINT("sys_statfs ( %p, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
-   PRE_MEM_RASCIIZ( "statfs(path)", ARG1 );
-   PRE_MEM_WRITE( "statfs(buf)", ARG2, sizeof(struct vki_statfs) );
-}
-
-POST(sys_statfs)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_statfs) );
-}
-
-PRE(sys_statfs64, 0)
-{
-   PRINT("sys_statfs64 ( %p, %llu, %p )",ARG1,(ULong)ARG2,ARG3);
-   PRE_REG_READ3(long, "statfs64",
-                 const char *, path, vki_size_t, size, struct statfs64 *, buf);
-   PRE_MEM_RASCIIZ( "statfs64(path)", ARG1 );
-   PRE_MEM_WRITE( "statfs64(buf)", ARG3, ARG2 );
-}
-
-POST(sys_statfs64)
-{
-   POST_MEM_WRITE( ARG3, ARG2 );
-}
-
-PRE(sys_symlink, MayBlock)
-{
-   PRINT("sys_symlink ( %p, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "symlink", const char *, oldpath, const char *, newpath);
-   PRE_MEM_RASCIIZ( "symlink(oldpath)", ARG1 );
-   PRE_MEM_RASCIIZ( "symlink(newpath)", ARG2 );
-}
-
-// See comment above PRE(sys_lstat64) for an explanation of this #ifdef.
-#ifndef __amd64__
-PRE(sys_stat64, 0)
-{
-   PRINT("sys_stat64 ( %p, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
-   PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
-   PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
-}
-
-POST(sys_stat64)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
-}
-
-PRE(sys_fstat64, 0)
-{
-   PRINT("sys_fstat64 ( %d, %p )",ARG1,ARG2);
-   PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
-   PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
-}
-
-POST(sys_fstat64)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
-}
-#endif
-
-PRE(sys_time, 0)
+PRE(sys_time)
 {
    /* time_t time(time_t *t); */
    PRINT("sys_time ( %p )",ARG1);
@@ -5382,34 +4967,35 @@ POST(sys_time)
    }
 }
 
-PRE(sys_times, 0)
-{
-   PRINT("sys_times ( %p )", ARG1);
-   PRE_REG_READ1(long, "times", struct tms *, buf);
-   PRE_MEM_WRITE( "times(buf)", ARG1, sizeof(struct vki_tms) );
-}
+//zz PRE(sys_times, 0)
+//zz {
+//zz    PRINT("sys_times ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "times", struct tms *, buf);
+//zz    PRE_MEM_WRITE( "times(buf)", ARG1, sizeof(struct vki_tms) );
+//zz }
+//zz 
+//zz POST(sys_times)
+//zz {
+//zz    if (ARG1 != 0) {
+//zz       POST_MEM_WRITE( ARG1, sizeof(struct vki_tms) );
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_umask, 0)
+//zz {
+//zz    PRINT("sys_umask ( %d )", ARG1);
+//zz    PRE_REG_READ1(long, "umask", int, mask);
+//zz }
 
-POST(sys_times)
+PRE(sys_unlink)
 {
-   if (ARG1 != 0) {
-      POST_MEM_WRITE( ARG1, sizeof(struct vki_tms) );
-   }
-}
-
-PRE(sys_umask, 0)
-{
-   PRINT("sys_umask ( %d )", ARG1);
-   PRE_REG_READ1(long, "umask", int, mask);
-}
-
-PRE(sys_unlink, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_unlink ( %p(%s) )", ARG1,ARG1);
    PRE_REG_READ1(long, "unlink", const char *, pathname);
    PRE_MEM_RASCIIZ( "unlink(pathname)", ARG1 );
 }
 
-PRE(sys_newuname, 0)
+PRE(sys_newuname)
 {
    PRINT("sys_newuname ( %p )", ARG1);
    PRE_REG_READ1(long, "uname", struct new_utsname *, buf);
@@ -5423,17 +5009,18 @@ POST(sys_newuname)
    }
 }
 
-PRE(sys_utime, MayBlock)
-{
-   PRINT("sys_utime ( %p, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
-   PRE_MEM_RASCIIZ( "utime(filename)", ARG1 );
-   if (ARG2 != 0)
-      PRE_MEM_READ( "utime(buf)", ARG2, sizeof(struct vki_utimbuf) );
-}
+//zz PRE(sys_utime, SfMayBlock)
+//zz {
+//zz    PRINT("sys_utime ( %p, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
+//zz    PRE_MEM_RASCIIZ( "utime(filename)", ARG1 );
+//zz    if (ARG2 != 0)
+//zz       PRE_MEM_READ( "utime(buf)", ARG2, sizeof(struct vki_utimbuf) );
+//zz }
 
-PRE(sys_waitpid, MayBlock)
+PRE(sys_waitpid)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_waitpid ( %d, %p, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "waitpid", 
                  vki_pid_t, pid, unsigned int *, status, int, options);
@@ -5448,8 +5035,9 @@ POST(sys_waitpid)
       POST_MEM_WRITE( ARG2, sizeof(int) );
 }
 
-PRE(sys_wait4, MayBlock)
+PRE(sys_wait4)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_wait4 ( %d, %p, %d, %p )", ARG1,ARG2,ARG3,ARG4);
 
    PRE_REG_READ4(long, "wait4", 
@@ -5469,16 +5057,17 @@ POST(sys_wait4)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_rusage) );
 }
 
-PRE(sys_writev, MayBlock)
+PRE(sys_writev)
 {
    Int i;
    struct vki_iovec * vec;
+   *flags |= SfMayBlock;
    PRINT("sys_writev ( %d, %p, %llu )",ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(ssize_t, "writev",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
    if (!VG_(fd_allowed)(ARG1, "writev", tid, False)) {
-      SET_RESULT( -VKI_EBADF );
+      SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_READ( "writev(vector)", 
 		     ARG2, ARG3 * sizeof(struct vki_iovec) );
@@ -5492,69 +5081,70 @@ PRE(sys_writev, MayBlock)
    }
 }
 
-PRE(sys_utimes, 0)
-{
-   PRINT("sys_utimes ( %p, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
-   PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );
-   if (ARG2 != 0)
-      PRE_MEM_READ( "utimes(tvp)", ARG2, sizeof(struct vki_timeval) );
-}
+//zz PRE(sys_utimes, 0)
+//zz {
+//zz    PRINT("sys_utimes ( %p, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
+//zz    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );
+//zz    if (ARG2 != 0)
+//zz       PRE_MEM_READ( "utimes(tvp)", ARG2, sizeof(struct vki_timeval) );
+//zz }
+//zz 
+//zz PRE(sys_sched_setaffinity, 0)
+//zz {
+//zz    PRINT("sched_setaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
+//zz    PRE_REG_READ3(long, "sched_setaffinity", 
+//zz                  vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
+//zz    PRE_MEM_READ( "sched_setaffinity(mask)", ARG3, ARG2);
+//zz }
+//zz 
+//zz PRE(sys_sched_getaffinity, 0)
+//zz {
+//zz    PRINT("sched_getaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
+//zz    PRE_REG_READ3(long, "sched_getaffinity", 
+//zz                  vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
+//zz    PRE_MEM_WRITE( "sched_getaffinity(mask)", ARG3, ARG2);
+//zz }
+//zz 
+//zz POST(sys_sched_getaffinity)
+//zz {
+//zz    POST_MEM_WRITE(ARG3, ARG2);
+//zz }
+//zz 
+//zz PRE(sys_acct, 0)
+//zz {
+//zz    PRINT("sys_acct ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "acct", const char *, filename);
+//zz    PRE_MEM_RASCIIZ( "acct(filename)", ARG1 );
+//zz }
 
-PRE(sys_sched_setaffinity, 0)
+PRE(sys_pause)
 {
-   PRINT("sched_setaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "sched_setaffinity", 
-                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
-   PRE_MEM_READ( "sched_setaffinity(mask)", ARG3, ARG2);
-}
-
-PRE(sys_sched_getaffinity, 0)
-{
-   PRINT("sched_getaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "sched_getaffinity", 
-                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
-   PRE_MEM_WRITE( "sched_getaffinity(mask)", ARG3, ARG2);
-}
-
-POST(sys_sched_getaffinity)
-{
-   POST_MEM_WRITE(ARG3, ARG2);
-}
-
-PRE(sys_acct, 0)
-{
-   PRINT("sys_acct ( %p )", ARG1);
-   PRE_REG_READ1(long, "acct", const char *, filename);
-   PRE_MEM_RASCIIZ( "acct(filename)", ARG1 );
-}
-
-PRE(sys_pause, MayBlock)
-{
+   *flags |= SfMayBlock;
    PRINT("sys_pause ( )");
    PRE_REG_READ0(long, "pause");
 }
 
-// XXX: x86-specific
-PRE(sys_sigsuspend, MayBlock)
-{
-   /* The C library interface to sigsuspend just takes a pointer to
-      a signal mask but this system call has three arguments - the first
-      two don't appear to be used by the kernel and are always passed as
-      zero by glibc and the third is the first word of the signal mask
-      so only 32 signals are supported.
-     
-      In fact glibc normally uses rt_sigsuspend if it is available as
-      that takes a pointer to the signal mask so supports more signals.
-    */
-   PRINT("sys_sigsuspend ( %d, %d, %d )", ARG1,ARG2,ARG3 );
-   PRE_REG_READ3(int, "sigsuspend",
-                 int, history0, int, history1,
-                 vki_old_sigset_t, mask);
-}
+//zz // XXX: x86-specific
+//zz PRE(sys_sigsuspend, SfMayBlock)
+//zz {
+//zz    /* The C library interface to sigsuspend just takes a pointer to
+//zz       a signal mask but this system call has three arguments - the first
+//zz       two don't appear to be used by the kernel and are always passed as
+//zz       zero by glibc and the third is the first word of the signal mask
+//zz       so only 32 signals are supported.
+//zz      
+//zz       In fact glibc normally uses rt_sigsuspend if it is available as
+//zz       that takes a pointer to the signal mask so supports more signals.
+//zz     */
+//zz    PRINT("sys_sigsuspend ( %d, %d, %d )", ARG1,ARG2,ARG3 );
+//zz    PRE_REG_READ3(int, "sigsuspend",
+//zz                  int, history0, int, history1,
+//zz                  vki_old_sigset_t, mask);
+//zz }
 
 // XXX: x86-specific
-PRE(sys_rt_sigsuspend, MayBlock)
+PRE(sys_rt_sigsuspend)
 {
    /* The C library interface to sigsuspend just takes a pointer to
       a signal mask but this system call has two arguments - a pointer
@@ -5562,6 +5152,7 @@ PRE(sys_rt_sigsuspend, MayBlock)
       on the size being equal to sizeof(sigset_t) however and will just
       return EINVAL if it isn't.
     */
+   *flags |= SfMayBlock;
    PRINT("sys_rt_sigsuspend ( %p, %d )", ARG1,ARG2 );
    PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
    if (ARG1 != (Addr)NULL) {
@@ -5569,8 +5160,9 @@ PRE(sys_rt_sigsuspend, MayBlock)
    }
 }
 
-PRE(sys_rt_sigtimedwait, MayBlock)
+PRE(sys_rt_sigtimedwait)
 {
+   *flags |= SfMayBlock;
    PRINT("sys_rt_sigtimedwait ( %p, %p, %p, %lld )",
          ARG1,ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(long, "rt_sigtimedwait", 
@@ -5590,28 +5182,28 @@ POST(sys_rt_sigtimedwait)
       POST_MEM_WRITE( ARG2, sizeof(vki_siginfo_t) );
 }
 
-PRE(sys_rt_sigqueueinfo, 0)
-{
-   PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "rt_sigqueueinfo", 
-                 int, pid, int, sig, vki_siginfo_t *, uinfo);
-   if (ARG2 != 0)
-      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
-}
-
-POST(sys_rt_sigqueueinfo)
-{
-   PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "rt_sigqueueinfo",
-                 int, pid, int, sig, vki_siginfo_t *, uinfo);
-   if (ARG2 != 0)
-      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
-   if (!VG_(client_signal_OK)(ARG2))
-      SET_RESULT( -VKI_EINVAL );
-}
+//zz PRE(sys_rt_sigqueueinfo, 0)
+//zz {
+//zz    PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
+//zz    PRE_REG_READ3(long, "rt_sigqueueinfo", 
+//zz                  int, pid, int, sig, vki_siginfo_t *, uinfo);
+//zz    if (ARG2 != 0)
+//zz       PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
+//zz }
+//zz 
+//zz POST(sys_rt_sigqueueinfo)
+//zz {
+//zz    PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
+//zz    PRE_REG_READ3(long, "rt_sigqueueinfo",
+//zz                  int, pid, int, sig, vki_siginfo_t *, uinfo);
+//zz    if (ARG2 != 0)
+//zz       PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
+//zz    if (!VG_(client_signal_OK)(ARG2))
+//zz       SET_STATUS_( -VKI_EINVAL );
+//zz }
 
 // XXX: x86-specific
-PRE(sys_sigaltstack, Special)
+PRE(sys_sigaltstack)
 {
    /* int sigaltstack(const stack_t *ss, stack_t *oss); */
    PRINT("sigaltstack ( %p, %p )",ARG1,ARG2);
@@ -5624,18 +5216,21 @@ PRE(sys_sigaltstack, Special)
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );
    }
 
-   SET_RESULT( VG_(do_sys_sigaltstack) (tid, (vki_stack_t*)ARG1, 
-                                             (vki_stack_t*)ARG2) );
+   SET_STATUS_from_SysRes( 
+      VG_(do_sys_sigaltstack) (tid, (vki_stack_t*)ARG1, 
+                              (vki_stack_t*)ARG2)
+   );
 }
 
 POST(sys_sigaltstack)
 {
+   vg_assert(SUCCESS);
    if (RES == 0 && ARG2 != 0)
       POST_MEM_WRITE( ARG2, sizeof(vki_stack_t));
 }
 
 // XXX: x86-specific
-PRE(sys_rt_sigaction, Special)
+PRE(sys_rt_sigaction)
 {
    PRINT("sys_rt_sigaction ( %d, %p, %p, %d )", ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "rt_sigaction",
@@ -5651,7 +5246,7 @@ PRE(sys_rt_sigaction, Special)
    // sys_rt_sigaction... perhaps this function should be renamed
    // VG_(do_sys_rt_sigaction)()  --njn
 
-   SET_RESULT(
+   SET_STATUS_from_SysRes(
       VG_(do_sys_sigaction)(ARG1, (const struct vki_sigaction *)ARG2,
                             (struct vki_sigaction *)ARG3)
    );
@@ -5659,6 +5254,7 @@ PRE(sys_rt_sigaction, Special)
 
 POST(sys_rt_sigaction)
 {
+   vg_assert(SUCCESS);
    if (RES == 0 && ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_sigaction));
 }
@@ -5666,8 +5262,8 @@ POST(sys_rt_sigaction)
 // XXX: This syscall is not used on amd64 -- it only provides
 //      sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
 // This wrapper is only suitable for 32-bit architectures.
-#ifndef __amd64__
-PRE(sys_sigprocmask, Special)
+#if defined(VGP_x86_linux)
+PRE(sys_sigprocmask)
 {
    vki_old_sigset_t* set;
    vki_old_sigset_t* oldset;
@@ -5692,7 +5288,7 @@ PRE(sys_sigprocmask, Special)
    if (set)
       bigger_set.sig[0] = *(vki_old_sigset_t*)set;
 
-   SET_RESULT(
+   SET_STATUS_from_SysRes(
       VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
                                 set ? &bigger_set    : NULL,
                              oldset ? &bigger_oldset : NULL)
@@ -5700,16 +5296,20 @@ PRE(sys_sigprocmask, Special)
 
    if (oldset)
       *oldset = bigger_oldset.sig[0];
+
+   if (SUCCESS)
+      *flags |= SfPollAfter;
 }
 
 POST(sys_sigprocmask)
 {
+   vg_assert(SUCCESS);
    if (RES == 0 && ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(vki_old_sigset_t));
 }
 #endif
 
-PRE(sys_rt_sigprocmask, Special)
+PRE(sys_rt_sigprocmask)
 {
    PRINT("sys_rt_sigprocmask ( %d, %p, %p, %llu )",ARG1,ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(long, "rt_sigprocmask", 
@@ -5722,235 +5322,240 @@ PRE(sys_rt_sigprocmask, Special)
 
    // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
    if (sizeof(vki_sigset_t) != ARG4)
-      SET_RESULT( -VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EMFILE );
    else {
-      SET_RESULT( VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
+      SET_STATUS_from_SysRes( 
+                  VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
                                             (vki_sigset_t*) ARG2,
                                             (vki_sigset_t*) ARG3 )
       );
    }
+
+   if (SUCCESS)
+      *flags |= SfPollAfter;
 }
 
 POST(sys_rt_sigprocmask)
 {
+   vg_assert(SUCCESS);
    if (RES == 0 && ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(vki_sigset_t));
 }
 
-PRE(sys_sigpending, 0)
-{
-   PRINT( "sys_sigpending ( %p )", ARG1 );
-   PRE_REG_READ1(long, "sigpending", vki_old_sigset_t *, set);
-   PRE_MEM_WRITE( "sigpending(set)", ARG1, sizeof(vki_old_sigset_t));
-}
+//zz PRE(sys_sigpending, 0)
+//zz {
+//zz    PRINT( "sys_sigpending ( %p )", ARG1 );
+//zz    PRE_REG_READ1(long, "sigpending", vki_old_sigset_t *, set);
+//zz    PRE_MEM_WRITE( "sigpending(set)", ARG1, sizeof(vki_old_sigset_t));
+//zz }
+//zz 
+//zz POST(sys_sigpending)
+//zz {
+//zz    POST_MEM_WRITE( ARG1, sizeof(vki_old_sigset_t) ) ;
+//zz }
+//zz 
+//zz PRE(sys_rt_sigpending, 0)
+//zz {
+//zz    PRINT( "sys_rt_sigpending ( %p )", ARG1 );
+//zz    PRE_REG_READ2(long, "rt_sigpending", 
+//zz                  vki_sigset_t *, set, vki_size_t, sigsetsize);
+//zz    PRE_MEM_WRITE( "rt_sigpending(set)", ARG1, sizeof(vki_sigset_t));
+//zz }
+//zz 
+//zz POST(sys_rt_sigpending)
+//zz {
+//zz    POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
+//zz }
+//zz 
+//zz PRE(sys_mq_open, 0)
+//zz {
+//zz    PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
+//zz          ARG1,ARG1,ARG2,(ULong)ARG3,ARG4);
+//zz    PRE_REG_READ4(long, "mq_open",
+//zz                  const char *, name, int, oflag, vki_mode_t, mode,
+//zz                  struct mq_attr *, attr);
+//zz    PRE_MEM_RASCIIZ( "mq_open(name)", ARG1 );
+//zz    if ((ARG2 & VKI_O_CREAT) != 0 && ARG4 != 0) {
+//zz       const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG4;
+//zz       PRE_MEM_READ( "mq_open(attr->mq_maxmsg)",
+//zz                      (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
+//zz       PRE_MEM_READ( "mq_open(attr->mq_msgsize)",
+//zz                      (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
+//zz    }
+//zz }
+//zz 
+//zz POST(sys_mq_open)
+//zz {
+//zz    if (!VG_(fd_allowed)(RES, "mq_open", tid, True)) {
+//zz       VG_(close)(RES);
+//zz       SET_STATUS_( -VKI_EMFILE );
+//zz    } else {
+//zz       if (VG_(clo_track_fds))
+//zz          VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_mq_unlink, 0)
+//zz {
+//zz    PRINT("sys_mq_unlink ( %p(%s) )", ARG1,ARG1);
+//zz    PRE_REG_READ1(long, "mq_unlink", const char *, name);
+//zz    PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
+//zz }
+//zz 
+//zz PRE(sys_mq_timedsend, SfMayBlock)
+//zz {
+//zz    PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
+//zz          ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+//zz    PRE_REG_READ5(long, "mq_timedsend",
+//zz                  vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
+//zz                  unsigned int, msg_prio, const struct timespec *, abs_timeout);
+//zz    if (!VG_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
+//zz       SET_STATUS_( -VKI_EBADF );
+//zz    } else {
+//zz       PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
+//zz       if (ARG5 != 0)
+//zz          PRE_MEM_READ( "mq_timedsend(abs_timeout)", ARG5,
+//zz                         sizeof(struct vki_timespec) );
+//zz    }
+//zz }
+//zz 
+//zz PRE(sys_mq_timedreceive, SfMayBlock)
+//zz {
+//zz    PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
+//zz          ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+//zz    PRE_REG_READ5(ssize_t, "mq_timedreceive",
+//zz                  vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
+//zz                  unsigned int *, msg_prio,
+//zz                  const struct timespec *, abs_timeout);
+//zz    if (!VG_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
+//zz       SET_STATUS_( -VKI_EBADF );
+//zz    } else {
+//zz       PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
+//zz       if (ARG4 != 0)
+//zz          PRE_MEM_WRITE( "mq_timedreceive(msg_prio)",
+//zz                         ARG4, sizeof(unsigned int) );
+//zz       if (ARG5 != 0)
+//zz          PRE_MEM_READ( "mq_timedreceive(abs_timeout)",
+//zz                         ARG5, sizeof(struct vki_timespec) );
+//zz    }
+//zz }
+//zz 
+//zz POST(sys_mq_timedreceive)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, ARG3 );
+//zz    if (ARG4 != 0)
+//zz       POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
+//zz }
+//zz 
+//zz PRE(sys_mq_notify, 0)
+//zz {
+//zz    PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
+//zz    PRE_REG_READ2(long, "mq_notify",
+//zz                  vki_mqd_t, mqdes, const struct sigevent *, notification);
+//zz    if (!VG_(fd_allowed)(ARG1, "mq_notify", tid, False))
+//zz       SET_STATUS_( -VKI_EBADF );
+//zz    else if (ARG2 != 0)
+//zz       PRE_MEM_READ( "mq_notify(notification)",
+//zz                     ARG2, sizeof(struct vki_sigevent) );
+//zz }
+//zz 
+//zz PRE(sys_mq_getsetattr, 0)
+//zz {
+//zz    PRINT("sys_mq_getsetattr( %d, %p, %p )", ARG1,ARG2,ARG3 );
+//zz    PRE_REG_READ3(long, "mq_getsetattr",
+//zz                  vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
+//zz                  struct mq_attr *, omqstat);
+//zz    if (!VG_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
+//zz       SET_STATUS_( -VKI_EBADF );
+//zz    } else {
+//zz       if (ARG2 != 0) {
+//zz          const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG2;
+//zz          PRE_MEM_READ( "mq_getsetattr(mqstat->mq_flags)",
+//zz                         (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
+//zz       }
+//zz       if (ARG3 != 0)
+//zz          PRE_MEM_WRITE( "mq_getsetattr(omqstat)", ARG3,
+//zz                         sizeof(struct vki_mq_attr) );
+//zz    }   
+//zz }
+//zz 
+//zz POST(sys_mq_getsetattr)
+//zz {
+//zz    if (ARG3 != 0)
+//zz       POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
+//zz }
+//zz 
+//zz PRE(sys_timer_create, 0)
+//zz {
+//zz    PRINT("sys_timer_create( %d, %p, %p )", ARG1,ARG2,ARG3);
+//zz    PRE_REG_READ3(long, "timer_create",
+//zz                  vki_clockid_t, clockid, struct sigevent *, evp,
+//zz                  vki_timer_t *, timerid);
+//zz    if (ARG2 != 0)
+//zz       PRE_MEM_READ( "timer_create(evp)", ARG2, sizeof(struct vki_sigevent) );
+//zz    PRE_MEM_WRITE( "timer_create(timerid)", ARG3, sizeof(vki_timer_t) );
+//zz }
+//zz 
+//zz POST(sys_timer_create)
+//zz {
+//zz    POST_MEM_WRITE( ARG3, sizeof(vki_timer_t) );
+//zz }
+//zz 
+//zz PRE(sys_timer_settime, 0)
+//zz {
+//zz    PRINT("sys_timer_settime( %lld, %d, %p, %p )", (ULong)ARG1,ARG2,ARG3,ARG4);
+//zz    PRE_REG_READ4(long, "timer_settime", 
+//zz                  vki_timer_t, timerid, int, flags,
+//zz                  const struct itimerspec *, value,
+//zz                  struct itimerspec *, ovalue);
+//zz    PRE_MEM_READ( "timer_settime(value)", ARG3,
+//zz                   sizeof(struct vki_itimerspec) );
+//zz    if (ARG4 != 0)
+//zz        PRE_MEM_WRITE( "timer_settime(ovalue)", ARG4,
+//zz                       sizeof(struct vki_itimerspec) );
+//zz }
+//zz 
+//zz POST(sys_timer_settime)
+//zz {
+//zz    if (ARG4 != 0)
+//zz       POST_MEM_WRITE( ARG4, sizeof(struct vki_itimerspec) );
+//zz }
+//zz 
+//zz PRE(sys_timer_gettime, 0)
+//zz {
+//zz    PRINT("sys_timer_gettime( %lld, %p )", (ULong)ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "timer_gettime", 
+//zz                  vki_timer_t, timerid, struct itimerspec *, value);
+//zz    PRE_MEM_WRITE( "timer_gettime(value)", ARG2,
+//zz                   sizeof(struct vki_itimerspec));
+//zz }
+//zz 
+//zz POST(sys_timer_gettime)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_itimerspec) );
+//zz }
+//zz 
+//zz PRE(sys_timer_getoverrun, 0)
+//zz {
+//zz    PRINT("sys_timer_getoverrun( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "timer_getoverrun", vki_timer_t, timerid);
+//zz }
+//zz 
+//zz PRE(sys_timer_delete, 0)
+//zz {
+//zz    PRINT("sys_timer_delete( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
+//zz }
+//zz 
+//zz PRE(sys_clock_settime, 0)
+//zz {
+//zz    PRINT("sys_clock_settime( %d, %p )", ARG1,ARG2);
+//zz    PRE_REG_READ2(long, "clock_settime", 
+//zz                  vki_clockid_t, clk_id, const struct timespec *, tp);
+//zz    PRE_MEM_READ( "clock_settime(tp)", ARG2, sizeof(struct vki_timespec) );
+//zz }
 
-POST(sys_sigpending)
-{
-   POST_MEM_WRITE( ARG1, sizeof(vki_old_sigset_t) ) ;
-}
-
-PRE(sys_rt_sigpending, 0)
-{
-   PRINT( "sys_rt_sigpending ( %p )", ARG1 );
-   PRE_REG_READ2(long, "rt_sigpending", 
-                 vki_sigset_t *, set, vki_size_t, sigsetsize);
-   PRE_MEM_WRITE( "rt_sigpending(set)", ARG1, sizeof(vki_sigset_t));
-}
-
-POST(sys_rt_sigpending)
-{
-   POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
-}
-
-PRE(sys_mq_open, 0)
-{
-   PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
-         ARG1,ARG1,ARG2,(ULong)ARG3,ARG4);
-   PRE_REG_READ4(long, "mq_open",
-                 const char *, name, int, oflag, vki_mode_t, mode,
-                 struct mq_attr *, attr);
-   PRE_MEM_RASCIIZ( "mq_open(name)", ARG1 );
-   if ((ARG2 & VKI_O_CREAT) != 0 && ARG4 != 0) {
-      const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG4;
-      PRE_MEM_READ( "mq_open(attr->mq_maxmsg)",
-                     (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
-      PRE_MEM_READ( "mq_open(attr->mq_msgsize)",
-                     (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
-   }
-}
-
-POST(sys_mq_open)
-{
-   if (!VG_(fd_allowed)(RES, "mq_open", tid, True)) {
-      VG_(close)(RES);
-      SET_RESULT( -VKI_EMFILE );
-   } else {
-      if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
-   }
-}
-
-PRE(sys_mq_unlink, 0)
-{
-   PRINT("sys_mq_unlink ( %p(%s) )", ARG1,ARG1);
-   PRE_REG_READ1(long, "mq_unlink", const char *, name);
-   PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
-}
-
-PRE(sys_mq_timedsend, MayBlock)
-{
-   PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
-         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
-   PRE_REG_READ5(long, "mq_timedsend",
-                 vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
-                 unsigned int, msg_prio, const struct timespec *, abs_timeout);
-   if (!VG_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
-      SET_RESULT( -VKI_EBADF );
-   } else {
-      PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
-      if (ARG5 != 0)
-         PRE_MEM_READ( "mq_timedsend(abs_timeout)", ARG5,
-                        sizeof(struct vki_timespec) );
-   }
-}
-
-PRE(sys_mq_timedreceive, MayBlock)
-{
-   PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
-         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
-   PRE_REG_READ5(ssize_t, "mq_timedreceive",
-                 vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
-                 unsigned int *, msg_prio,
-                 const struct timespec *, abs_timeout);
-   if (!VG_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
-      SET_RESULT( -VKI_EBADF );
-   } else {
-      PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
-      if (ARG4 != 0)
-         PRE_MEM_WRITE( "mq_timedreceive(msg_prio)",
-                        ARG4, sizeof(unsigned int) );
-      if (ARG5 != 0)
-         PRE_MEM_READ( "mq_timedreceive(abs_timeout)",
-                        ARG5, sizeof(struct vki_timespec) );
-   }
-}
-
-POST(sys_mq_timedreceive)
-{
-   POST_MEM_WRITE( ARG2, ARG3 );
-   if (ARG4 != 0)
-      POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
-}
-
-PRE(sys_mq_notify, 0)
-{
-   PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
-   PRE_REG_READ2(long, "mq_notify",
-                 vki_mqd_t, mqdes, const struct sigevent *, notification);
-   if (!VG_(fd_allowed)(ARG1, "mq_notify", tid, False))
-      SET_RESULT( -VKI_EBADF );
-   else if (ARG2 != 0)
-      PRE_MEM_READ( "mq_notify(notification)",
-                    ARG2, sizeof(struct vki_sigevent) );
-}
-
-PRE(sys_mq_getsetattr, 0)
-{
-   PRINT("sys_mq_getsetattr( %d, %p, %p )", ARG1,ARG2,ARG3 );
-   PRE_REG_READ3(long, "mq_getsetattr",
-                 vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
-                 struct mq_attr *, omqstat);
-   if (!VG_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
-      SET_RESULT( -VKI_EBADF );
-   } else {
-      if (ARG2 != 0) {
-         const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG2;
-         PRE_MEM_READ( "mq_getsetattr(mqstat->mq_flags)",
-                        (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
-      }
-      if (ARG3 != 0)
-         PRE_MEM_WRITE( "mq_getsetattr(omqstat)", ARG3,
-                        sizeof(struct vki_mq_attr) );
-   }   
-}
-
-POST(sys_mq_getsetattr)
-{
-   if (ARG3 != 0)
-      POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
-}
-
-PRE(sys_timer_create, 0)
-{
-   PRINT("sys_timer_create( %d, %p, %p )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "timer_create",
-                 vki_clockid_t, clockid, struct sigevent *, evp,
-                 vki_timer_t *, timerid);
-   if (ARG2 != 0)
-      PRE_MEM_READ( "timer_create(evp)", ARG2, sizeof(struct vki_sigevent) );
-   PRE_MEM_WRITE( "timer_create(timerid)", ARG3, sizeof(vki_timer_t) );
-}
-
-POST(sys_timer_create)
-{
-   POST_MEM_WRITE( ARG3, sizeof(vki_timer_t) );
-}
-
-PRE(sys_timer_settime, 0)
-{
-   PRINT("sys_timer_settime( %lld, %d, %p, %p )", (ULong)ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(long, "timer_settime", 
-                 vki_timer_t, timerid, int, flags,
-                 const struct itimerspec *, value,
-                 struct itimerspec *, ovalue);
-   PRE_MEM_READ( "timer_settime(value)", ARG3,
-                  sizeof(struct vki_itimerspec) );
-   if (ARG4 != 0)
-       PRE_MEM_WRITE( "timer_settime(ovalue)", ARG4,
-                      sizeof(struct vki_itimerspec) );
-}
-
-POST(sys_timer_settime)
-{
-   if (ARG4 != 0)
-      POST_MEM_WRITE( ARG4, sizeof(struct vki_itimerspec) );
-}
-
-PRE(sys_timer_gettime, 0)
-{
-   PRINT("sys_timer_gettime( %lld, %p )", (ULong)ARG1,ARG2);
-   PRE_REG_READ2(long, "timer_gettime", 
-                 vki_timer_t, timerid, struct itimerspec *, value);
-   PRE_MEM_WRITE( "timer_gettime(value)", ARG2,
-                  sizeof(struct vki_itimerspec));
-}
-
-POST(sys_timer_gettime)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_itimerspec) );
-}
-
-PRE(sys_timer_getoverrun, 0)
-{
-   PRINT("sys_timer_getoverrun( %p )", ARG1);
-   PRE_REG_READ1(long, "timer_getoverrun", vki_timer_t, timerid);
-}
-
-PRE(sys_timer_delete, 0)
-{
-   PRINT("sys_timer_delete( %p )", ARG1);
-   PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
-}
-
-PRE(sys_clock_settime, 0)
-{
-   PRINT("sys_clock_settime( %d, %p )", ARG1,ARG2);
-   PRE_REG_READ2(long, "clock_settime", 
-                 vki_clockid_t, clk_id, const struct timespec *, tp);
-   PRE_MEM_READ( "clock_settime(tp)", ARG2, sizeof(struct vki_timespec) );
-}
-
-PRE(sys_clock_gettime, 0)
+PRE(sys_clock_gettime)
 {
    PRINT("sys_clock_gettime( %d, %p )" , ARG1,ARG2);
    PRE_REG_READ2(long, "clock_gettime", 
@@ -5963,250 +5568,22 @@ POST(sys_clock_gettime)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
-PRE(sys_clock_getres, 0)
-{
-   PRINT("sys_clock_getres( %d, %p )" , ARG1,ARG2);
-   // Nb: we can't use "RES" as the param name because that's a macro
-   // defined above!
-   PRE_REG_READ2(long, "clock_getres", 
-                 vki_clockid_t, clk_id, struct timespec *, res);
-   PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
-}
+//zz PRE(sys_clock_getres, 0)
+//zz {
+//zz    PRINT("sys_clock_getres( %d, %p )" , ARG1,ARG2);
+//zz    // Nb: we can't use "RES" as the param name because that's a macro
+//zz    // defined above!
+//zz    PRE_REG_READ2(long, "clock_getres", 
+//zz                  vki_clockid_t, clk_id, struct timespec *, res);
+//zz    PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
+//zz }
+//zz 
+//zz POST(sys_clock_getres)
+//zz {
+//zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+//zz }
 
-POST(sys_clock_getres)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
-}
-
-
-/* ---------------------------------------------------------------------
-   Executing the syscalls
-   ------------------------------------------------------------------ */
-
-static UInt bad_flags = Special;
-static void bad_before(ThreadId tid, ThreadState *tst)
-{
-   VG_(message)
-      (Vg_DebugMsg,"WARNING: unhandled syscall: %u", (UInt)SYSNO);
-   if (VG_(clo_verbosity) > 1) {
-      VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-   }
-   VG_(message)
-      (Vg_DebugMsg,"Do not panic.  You may be able to fix this easily.");
-   VG_(message)
-      (Vg_DebugMsg,"Read the file README_MISSING_SYSCALL_OR_IOCTL.");
-
-   SET_RESULT( -VKI_ENOSYS );
-}
-
-static const struct SyscallTableEntry bad_sys =
-   { &bad_flags, bad_before, NULL };
-
-static const struct SyscallTableEntry *get_syscall_entry(UInt syscallno)
-{
-   const struct SyscallTableEntry *sys;
-
-   if (syscallno < VGA_(syscall_table_size) &&
-       VGA_(syscall_table)[syscallno].before != NULL)
-      sys = &VGA_(syscall_table)[syscallno];
-   else
-      sys = &bad_sys;
-
-   return sys;
-}
-
-/* Perform post-syscall actions */
-void VG_(post_syscall) (ThreadId tid)
-{
-   const struct SyscallTableEntry *sys;
-   UInt flags;
-   Bool mayBlock;
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   Int syscallno;
-
-   vg_assert(VG_(is_running_thread)(tid));
-
-   syscallno = tst->syscallno;
-   tst->syscallno = -1;
-
-   vg_assert(syscallno != -1);
-
-   sys = get_syscall_entry(syscallno);
-   flags = *(sys->flags_ptr);
-
-   mayBlock        = !!( flags & MayBlock );
-
-   if (sys->after != NULL &&
-       ((flags & PostOnFail) != 0 || !VG_(is_kerror)(RES))) {
-      if (0)
-         VG_(printf)("post_syscall: calling sys_after tid=%d syscallno=%d\n",
-                     tid, syscallno);
-      (sys->after)(tid, tst);
-   }
-
-   /* Do any post-syscall actions
-
-      NOTE: this is only called if the syscall completed.  If the
-      syscall was restarted, then it will call the Tool's
-      pre_syscall again, without calling post_syscall (ie, more
-      pre's than post's) */
-   if (VG_(needs).syscall_wrapper) {
-      VG_TDICT_CALL(tool_post_syscall, tid, syscallno, RES);
-   }
-}
-
-/* Add and remove signals from mask so that we end up telling the
-   kernel the state we actually want rather than what the client
-   wants. */
-static void sanitize_client_sigmask(ThreadId tid, vki_sigset_t *mask)
-{
-   VG_(sigdelset)(mask, VKI_SIGKILL);
-   VG_(sigdelset)(mask, VKI_SIGSTOP);
-
-   VG_(sigdelset)(mask, VKI_SIGVGKILL); /* never block */
-}
-
-void VG_(client_syscall) ( ThreadId tid )
-{
-   ThreadState* tst;
-   UInt         syscallno, flags;
-   const struct SyscallTableEntry *sys;
-   Bool isSpecial    = False;
-   Bool mayBlock     = False;
-   Bool runInLWP     = False;
-   Bool syscall_done = False;	/* we actually ran the syscall */
-
-//   VGP_PUSHCC(VgpCoreSysWrap);
-
-   tst = VG_(get_ThreadState)(tid);
-
-   syscallno = (UInt)SYSNO;
-
-   /* the syscall no is in %eax.  For syscalls with <= 6 args,
-      args 1 .. 6 to the syscall are in %ebx %ecx %edx %esi %edi %ebp.
-      For calls with > 6 args, %ebx points to a lump of memory
-      containing the args.
-
-      The result is returned in %eax.  If this value >= 0, the call
-      succeeded, and this is the return value.  If < 0, it failed, and
-      the negation of this value is errno.  To be more specific, 
-      if RES is in the range -EMEDIUMTYPE (-124) .. -EPERM (-1)
-      (kernel 2.4.9 sources, include/asm-i386/errno.h)
-      then it indicates an error.  Otherwise it doesn't.
-
-      Dirk Mueller (mueller@kde.org) says that values -4095 .. -1
-      (inclusive?) indicate error returns.  Not sure where the -4095
-      comes from.
-   */
-
-   vg_assert(VG_(is_running_thread)(tid));
-   vg_assert(tst->syscallno == -1);
-   tst->syscallno = syscallno;
-
-   /* Make sure the tmp signal mask matches the real signal
-      mask; sigsuspend may change this. */
-   vg_assert(VG_(iseqsigset)(&tst->sig_mask, &tst->tmp_sig_mask));
-
-   sys = get_syscall_entry(syscallno);
-   flags = *(sys->flags_ptr);
-
-   /* !! is standard idiom to turn an int->bool */
-   isSpecial       = !!( flags & Special );
-   mayBlock        = !!( flags & MayBlock );
-   // At most one of these should be true
-   vg_assert( isSpecial + mayBlock <= 1 );
-
-   /* Do any pre-syscall actions */
-   if (VG_(needs).syscall_wrapper) {
-      VG_TDICT_CALL(tool_pre_syscall, tid, syscallno);
-   }
-
-   PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
-         VG_(getpid)(), tid, syscallno, 
-         isSpecial ? " special"  : "",
-         runInLWP  ? " runInLWP" : "");
-
-   tst->syscall_result_set = False;
-
-   if (isSpecial) {
-      /* "Special" syscalls are implemented by Valgrind internally,
-	 and do not generate real kernel calls.  The expectation,
-	 therefore, is that the "before" function not only does the
-	 appropriate tests, but also performs the syscall itself and
-	 sets the result.  Special syscalls cannot block. */
-      vg_assert(!mayBlock && !runInLWP);
-
-      (sys->before)(tst->tid, tst);
-      /* This *must* result in tst->syscall_result_set becoming
-         True. */
-
-      //      vg_assert(tst->sys_flags == flags);
-      vg_assert(tst->syscall_result_set == True);
-
-      PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
-      syscall_done = True;
-   } else {
-      (sys->before)(tst->tid, tst);
-      /* This *may* result in tst->syscall_result_set becoming
-         True. */
-
-      if (tst->syscall_result_set) {
-	 /* "before" decided to provide a syscall result itself, so
-	    don't do anything - just pretend the syscall happened. */
-         PRINT(" ==> %lld (0x%llx)\n", (Long)RES, (ULong)RES);
-	 syscall_done = True;
-      } else if (mayBlock) {
-         vki_sigset_t mask;
-
-         vg_assert(!(flags & PadAddr));
-
-         /* Syscall may block, so run it asynchronously */
-         PRINT(" --> ...\n");
-
-         mask = tst->sig_mask;
-         sanitize_client_sigmask(tid, &mask);
-
-         VG_(set_sleeping)(tid, VgTs_WaitSys);
-         VGA_(client_syscall)(syscallno, tst, &mask);
-         /* VGA_(client_syscall) may not return if the syscall was
-            interrupted by a signal.  In that case, flow of control
-            will end up back in the scheduler via the signal
-            machinery. */
-         VG_(set_running)(tid);
-         PRINT("SYSCALL[%d,%d](%3d) --> %lld (0x%llx)\n",
-               VG_(getpid)(), tid, syscallno, (Long)(Word)RES, (ULong)RES);
-      } else {
-	 /* run the syscall directly */
-         if (flags & PadAddr)
-            VG_(pad_address_space)(VG_(client_end));
-
-	 RES = VG_(do_syscall6)(syscallno, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
-         PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
-	 syscall_done = True;
-      }
-   }
-
-   vg_assert(VG_(is_running_thread)(tid));
-
-   // Tell the tool that the assignment has occurred, so it can update
-   // shadow regs as necessary.
-   VGP_TRACK_SYSCALL_RETVAL(tid);
-
-   VG_(post_syscall)(tid);
-
-   if (flags & PadAddr) {
-      vg_assert(!mayBlock);
-      VG_(unpad_address_space)(VG_(client_end));
-      //VG_(sanity_check_memory)();
-   }
-
-   /* VG_(post_syscall) should set this */
-   vg_assert(tst->syscallno == -1);
-
-//   VGP_POPCC(VgpCoreSysWrap);
-}
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                          ---*/
+/*--- end                                       syscalls-generic.c ---*/
 /*--------------------------------------------------------------------*/
-

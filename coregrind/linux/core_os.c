@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -140,6 +141,7 @@ void VGA_(reap_threads)(ThreadId self)
    while (!i_am_the_only_thread()) {
       /* Let other thread(s) run */
       VG_(vg_yield)();
+      VG_(poll_signals)(self);
    }
    vg_assert(i_am_the_only_thread());
 }

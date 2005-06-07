@@ -471,6 +471,56 @@ void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
    #undef SORT
 }
 
+/* ---------------------------------------------------------------------
+   A function for doing syscalls.
+   ------------------------------------------------------------------ */
+
+#if defined(VGP_x86_linux)
+extern UInt do_syscall_x86_linux_WRK (
+          UInt syscall_no, 
+          UInt a1, UInt a2, UInt a3,
+          UInt a4, UInt a5, UInt a6
+       );
+asm(
+"do_syscall_x86_linux_WRK:\n"
+"	push	%esi\n"
+"	push	%edi\n"
+"	push	%ebx\n"
+"	push	%ebp\n"
+"	movl	16+ 4(%esp),%eax\n"
+"	movl	16+ 8(%esp),%ebx\n"
+"	movl	16+12(%esp),%ecx\n"
+"	movl	16+16(%esp),%edx\n"
+"	movl	16+20(%esp),%esi\n"
+"	movl	16+24(%esp),%edi\n"
+"	movl	16+28(%esp),%ebp\n"
+"	int	$0x80\n"
+"	popl	%ebp\n"
+"	popl	%ebx\n"
+"	popl	%edi\n"
+"	popl	%esi\n"
+"	ret\n"
+);
+#endif
+
+
+SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3, 
+                                      UWord a4, UWord a5, UWord a6 )
+{
+   SysRes res;
+
+#  if defined(VGP_x86_linux)
+   UInt eax = do_syscall_x86_linux_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   res = VG_(mk_SysRes_x86_linux)( eax );
+#  else
+
+#    error VG_(do_syscall): unimplemented on this platform
+
+#  endif
+
+   return res;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

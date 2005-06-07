@@ -32,104 +32,6 @@
 #include "vki_unistd.h"
 #include "libvex_guest_offsets.h"
 		
-.globl	VG_(do_syscall)
-
-/*
-	Perform a Linux syscall with int 0x80
-	
-	Syscall args are passed on the stack
-	Int VG_(do_syscall)(Int syscall_no, UWord a1, UWord a2, UWord a3,
-					    UWord a4, UWord a5, UWord a6)
-
-	This has no effect on the virtual machine; the assumption is
-	that the syscall mechanism makes no useful changes to any
-	register except %eax, which is returned. (Some kernels will
-	change other registers randomly, but they're just compiler
-	spill values.)
- */
-VG_(do_syscall):
-	push	%esi
-	push	%edi
-	push	%ebx
-	push	%ebp
-	movl	16+ 4(%esp),%eax
-	movl	16+ 8(%esp),%ebx
-	movl	16+12(%esp),%ecx
-	movl	16+16(%esp),%edx
-	movl	16+20(%esp),%esi
-	movl	16+24(%esp),%edi
-	movl	16+28(%esp),%ebp
-	int	$0x80
-	popl	%ebp
-	popl	%ebx
-	popl	%edi
-	popl	%esi
-	ret
-
-/*
-	Perform a clone system call.  clone is strange because it has
-	fork()-like return-twice semantics, so it needs special
-	handling here.
-
-	Upon entry, we have:
-
-	    int (fn)(void*)	in  0+FSZ(%esp)
-	    void* child_stack   in  4+FSZ(%esp)
-	    int flags           in  8+FSZ(%esp)
-	    void* arg           in 12+FSZ(%esp)
-	    pid_t* child_tid    in 16+FSZ(%esp)
-	    pid_t* parent_tid   in 20+FSZ(%esp)
-	    void* tls_ptr       in 24+FSZ(%esp)
-
-	System call requires:
-
-	    int    $__NR_clone  in %eax
-	    int    flags	in %ebx
-	    void*  child_stack	in %ecx
-	    pid_t* parent_tid	in %edx
-	    pid_t* child_tid	in %edi
-	    void*  tls_ptr      in %esi
- */
-.globl VG_(clone)
-VG_(clone):
-#define FSZ	(4+4+4)			/* frame size = retaddr+ebx+edi */
-	push	%ebx
-	push	%edi
-	/* set up child stack with function and arg */
-	movl	 4+FSZ(%esp), %ecx	/* syscall arg2: child stack */
-	movl	12+FSZ(%esp), %ebx	/* fn arg */
-	movl	 0+FSZ(%esp), %eax	/* fn */
-	lea	-8(%ecx), %ecx		/* make space on stack */
-	movl	%ebx, 4(%ecx)		/*   fn arg */
-	movl	%eax, 0(%ecx)		/*   fn */
-
-	/* get other args to clone */
-	movl	 8+FSZ(%esp), %ebx	/* syscall arg1: flags */
-	movl	20+FSZ(%esp), %edx	/* syscall arg3: parent tid * */
-	movl	16+FSZ(%esp), %edi	/* syscall arg4: child tid * */
-	movl	24+FSZ(%esp), %esi	/* syscall arg5: tls_ptr * */
-	movl	$__NR_clone, %eax
-	int	$0x80			/* clone() */
-	testl	%eax, %eax		/* child if retval == 0 */
-	jnz	1f
-
-	/* CHILD - call thread function */
-	popl	%eax
-	call	*%eax			/* call fn */
-
-	/* exit with result */
-	movl	%eax, %ebx		/* arg1: return value from fn */
-	movl	$__NR_exit, %eax
-	int	$0x80
-
-	/* Hm, exit returned */
-	ud2
-		
-1:	/* PARENT or ERROR */
-	pop	%edi
-	pop	%ebx
-	ret
-#undef FSZ
 	
 .globl VG_(sigreturn)
 VG_(sigreturn):
@@ -163,7 +65,8 @@ VG_(sigreturn):
 	
 	Prototype:
 
-	Int VGA_(_client_syscall)(Int syscallno,		// 0
+	Int VGA_(do_syscall_for_client_WRK)(
+	                          Int syscallno,		// 0
 				  void* guest_state,		// 4
 				  const vki_sigset_t *sysmask,	// 8
 				  const vki_sigset_t *postmask,	// 12
@@ -174,8 +77,8 @@ VG_(sigreturn):
 /* from vki_arch.h */	
 #define VKI_SIG_SETMASK	2
 	
-.globl VGA_(_client_syscall)
-VGA_(_client_syscall):
+.globl VGA_(do_syscall_for_client_WRK)
+VGA_(do_syscall_for_client_WRK):
 	/* save callee-saved regs */
 	push	%esi
 	push	%edi
@@ -234,8 +137,9 @@ VGA_(_client_syscall):
 	ret
 
 .section .rodata
-/* export the ranges so that VGA_(interrupted_syscall) can do the
-	right thing */
+/* export the ranges so that
+   VG_(fixup_guest_state_after_syscall_interrupted) can do the
+   right thing */
 	
 .globl VGA_(blksys_setup)
 .globl VGA_(blksys_restart)

@@ -31,68 +31,60 @@
 #ifndef __PRIV_SYSCALLS_LINUX_H
 #define __PRIV_SYSCALLS_LINUX_H
 
-// Macros for adding Linux-specific, arch-independent wrappers to a syscall
-// table.
-#define LINX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgOS_linux, const, name) 
-#define LINXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgOS_linux, const, name)
+/* requires #include "priv_types_n_macros.h" */
 
-// The following syscall wrappers are Linux-specific, but arch-independent.
-#define LINUX_SYSCALL_WRAPPER(x) \
-   extern UInt VGO_(linux_##x##_flags); \
-   extern void VGO_(linux_##x##_before)(ThreadId tid, ThreadState *tst); \
-   extern void VGO_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
 
-LINUX_SYSCALL_WRAPPER(sys_exit_group);
+DECL_TEMPLATE(linux,sys_exit_group);
 
-LINUX_SYSCALL_WRAPPER(sys_mount);
-LINUX_SYSCALL_WRAPPER(sys_oldumount);
-LINUX_SYSCALL_WRAPPER(sys_umount);
+DECL_TEMPLATE(linux,sys_mount);
+DECL_TEMPLATE(linux,sys_oldumount);
+DECL_TEMPLATE(linux,sys_umount);
 
-LINUX_SYSCALL_WRAPPER(sys_llseek);
-LINUX_SYSCALL_WRAPPER(sys_adjtimex);
+DECL_TEMPLATE(linux,sys_llseek);
+DECL_TEMPLATE(linux,sys_adjtimex);
 
-LINUX_SYSCALL_WRAPPER(sys_setfsuid16);
-LINUX_SYSCALL_WRAPPER(sys_setfsgid16);
-LINUX_SYSCALL_WRAPPER(sys_setresuid16);  // man page says "non-standard";
-LINUX_SYSCALL_WRAPPER(sys_getresuid16);
-LINUX_SYSCALL_WRAPPER(sys_setresgid16);  // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresgid16);
+DECL_TEMPLATE(linux,sys_setfsuid16);
+DECL_TEMPLATE(linux,sys_setfsgid16);
+DECL_TEMPLATE(linux,sys_setresuid16);  // man page says "non-standard";
+DECL_TEMPLATE(linux,sys_getresuid16);
+DECL_TEMPLATE(linux,sys_setresgid16);  // man page says "non-standard"
+DECL_TEMPLATE(linux,sys_getresgid16);
 
-LINUX_SYSCALL_WRAPPER(sys_setfsuid);
-LINUX_SYSCALL_WRAPPER(sys_setfsgid);
-LINUX_SYSCALL_WRAPPER(sys_setresuid);    // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresuid);
-LINUX_SYSCALL_WRAPPER(sys_setresgid);    // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresgid);
+DECL_TEMPLATE(linux,sys_setfsuid);
+DECL_TEMPLATE(linux,sys_setfsgid);
+DECL_TEMPLATE(linux,sys_setresuid);    // man page says "non-standard"
+DECL_TEMPLATE(linux,sys_getresuid);
+DECL_TEMPLATE(linux,sys_setresgid);    // man page says "non-standard"
+DECL_TEMPLATE(linux,sys_getresgid);
 
-LINUX_SYSCALL_WRAPPER(sys_ioperm);
-LINUX_SYSCALL_WRAPPER(sys_syslog);
-LINUX_SYSCALL_WRAPPER(sys_vhangup);
-LINUX_SYSCALL_WRAPPER(sys_sysinfo);
-LINUX_SYSCALL_WRAPPER(sys_personality);
-LINUX_SYSCALL_WRAPPER(sys_sysctl);
-LINUX_SYSCALL_WRAPPER(sys_prctl);
+DECL_TEMPLATE(linux,sys_ioperm);
+DECL_TEMPLATE(linux,sys_syslog);
+DECL_TEMPLATE(linux,sys_vhangup);
+DECL_TEMPLATE(linux,sys_sysinfo);
+DECL_TEMPLATE(linux,sys_personality);
+DECL_TEMPLATE(linux,sys_sysctl);
+DECL_TEMPLATE(linux,sys_prctl);
 
-LINUX_SYSCALL_WRAPPER(sys_sendfile);
-LINUX_SYSCALL_WRAPPER(sys_sendfile64);
-LINUX_SYSCALL_WRAPPER(sys_futex);
+DECL_TEMPLATE(linux,sys_sendfile);
+DECL_TEMPLATE(linux,sys_sendfile64);
+DECL_TEMPLATE(linux,sys_futex);
 
-LINUX_SYSCALL_WRAPPER(sys_epoll_create);
-LINUX_SYSCALL_WRAPPER(sys_epoll_ctl);
-LINUX_SYSCALL_WRAPPER(sys_epoll_wait);
+DECL_TEMPLATE(linux,sys_epoll_create);
+DECL_TEMPLATE(linux,sys_epoll_ctl);
+DECL_TEMPLATE(linux,sys_epoll_wait);
 
-LINUX_SYSCALL_WRAPPER(sys_gettid);
-LINUX_SYSCALL_WRAPPER(sys_tkill);
-LINUX_SYSCALL_WRAPPER(sys_tgkill);
+DECL_TEMPLATE(linux,sys_gettid);
+DECL_TEMPLATE(linux,sys_tkill);
+DECL_TEMPLATE(linux,sys_tgkill);
 
-LINUX_SYSCALL_WRAPPER(sys_fadvise64);
-LINUX_SYSCALL_WRAPPER(sys_fadvise64_64);
+DECL_TEMPLATE(linux,sys_fadvise64);
+DECL_TEMPLATE(linux,sys_fadvise64_64);
 
-LINUX_SYSCALL_WRAPPER(sys_io_setup);
-LINUX_SYSCALL_WRAPPER(sys_io_destroy);
-LINUX_SYSCALL_WRAPPER(sys_io_getevents);
-LINUX_SYSCALL_WRAPPER(sys_io_submit);
-LINUX_SYSCALL_WRAPPER(sys_io_cancel);
+DECL_TEMPLATE(linux,sys_io_setup);
+DECL_TEMPLATE(linux,sys_io_destroy);
+DECL_TEMPLATE(linux,sys_io_getevents);
+DECL_TEMPLATE(linux,sys_io_submit);
+DECL_TEMPLATE(linux,sys_io_cancel);
 
 #endif   // __PRIV_SYSCALLS_LINUX_H
 

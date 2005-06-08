@@ -30,15 +30,17 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
+#include "pub_core_signals.h"
 
 #include "priv_types_n_macros.h"
+#include "priv_syscalls-generic.h"
 #include "priv_syscalls-linux.h"
-
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for arch-generic, Linux-specific syscalls
@@ -49,6 +51,12 @@
 
 #define PRE(name)       DEFN_PRE_TEMPLATE(linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
+
+PRE(sys_set_tid_address)
+{
+   PRINT("sys_set_tid_address ( %p )", ARG1);
+   PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
+}
 
 PRE(sys_exit_group)
 {
@@ -416,62 +424,65 @@ POST(sys_sysctl)
 //zz       POST_MEM_WRITE( ARG3, sizeof(vki_loff_t) );
 //zz    }
 //zz }
-//zz 
-//zz PRE(sys_futex, MayBlock)
-//zz {
-//zz    /* 
-//zz       arg    param                              used by ops
-//zz 
-//zz       ARG1 - u32 *futex				all
-//zz       ARG2 - int op
-//zz       ARG3 - int val				WAIT,WAKE,FD,REQUEUE,CMP_REQUEUE
-//zz       ARG4 - struct timespec *utime		WAIT:time*	REQUEUE,CMP_REQUEUE:val2
-//zz       ARG5 - u32 *uaddr2			REQUEUE,CMP_REQUEUE
-//zz       ARG6 - int val3				CMP_REQUEUE
-//zz     */
-//zz    PRINT("sys_futex ( %p, %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
-//zz    PRE_REG_READ6(long, "futex", 
-//zz                  vki_u32 *, futex, int, op, int, val,
-//zz                  struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
-//zz 
-//zz    PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
-//zz 
-//zz    switch(ARG2) {
-//zz    case VKI_FUTEX_WAIT:
-//zz       if (ARG4 != 0)
-//zz 	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
-//zz       break;
-//zz 
-//zz    case VKI_FUTEX_REQUEUE:
-//zz    case VKI_FUTEX_CMP_REQUEUE:
-//zz       PRE_MEM_READ( "futex(futex2)", ARG5, sizeof(Int) );
-//zz       break;
-//zz 
-//zz    case VKI_FUTEX_WAKE:
-//zz    case VKI_FUTEX_FD:
-//zz       /* no additional pointers */
-//zz       break;
-//zz 
-//zz    default:
-//zz       SET_RESULT(-VKI_ENOSYS);   // some futex function we don't understand
-//zz       break;
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_futex)
-//zz {
-//zz    POST_MEM_WRITE( ARG1, sizeof(int) );
-//zz    if (ARG2 == VKI_FUTEX_FD) {
-//zz       if (!VG_(fd_allowed)(RES, "futex", tid, True)) {
-//zz          VG_(close)(RES);
-//zz          SET_RESULT( -VKI_EMFILE );
-//zz       } else {
-//zz          if (VG_(clo_track_fds))
-//zz             VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
-//zz       }
-//zz    }
-//zz }
-//zz 
+
+PRE(sys_futex)
+{
+   /* 
+      arg    param                              used by ops
+
+      ARG1 - u32 *futex				all
+      ARG2 - int op
+      ARG3 - int val				WAIT,WAKE,FD,REQUEUE,CMP_REQUEUE
+      ARG4 - struct timespec *utime		WAIT:time*	REQUEUE,CMP_REQUEUE:val2
+      ARG5 - u32 *uaddr2			REQUEUE,CMP_REQUEUE
+      ARG6 - int val3				CMP_REQUEUE
+    */
+   PRINT("sys_futex ( %p, %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ6(long, "futex", 
+                 vki_u32 *, futex, int, op, int, val,
+                 struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+
+   PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
+
+   *flags |= SfMayBlock;
+
+   switch(ARG2) {
+   case VKI_FUTEX_WAIT:
+      if (ARG4 != 0)
+	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
+      break;
+
+   case VKI_FUTEX_REQUEUE:
+   case VKI_FUTEX_CMP_REQUEUE:
+      PRE_MEM_READ( "futex(futex2)", ARG5, sizeof(Int) );
+      break;
+
+   case VKI_FUTEX_WAKE:
+   case VKI_FUTEX_FD:
+      /* no additional pointers */
+      break;
+
+   default:
+      SET_STATUS_Failure( VKI_ENOSYS );   // some futex function we don't understand
+      break;
+   }
+}
+
+POST(sys_futex)
+{
+   vg_assert(SUCCESS);
+   POST_MEM_WRITE( ARG1, sizeof(int) );
+   if (ARG2 == VKI_FUTEX_FD) {
+      if (!VG_(fd_allowed)(RES, "futex", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+      }
+   }
+}
+
 //zz PRE(sys_epoll_create, 0)
 //zz {
 //zz    PRINT("sys_epoll_create ( %d )", ARG1);
@@ -482,7 +493,7 @@ POST(sys_sysctl)
 //zz {
 //zz    if (!VG_(fd_allowed)(RES, "epoll_create", tid, True)) {
 //zz       VG_(close)(RES);
-//zz       SET_RESULT( -VKI_EMFILE );
+//zz       SET_STATUS_( -VKI_EMFILE );
 //zz    } else {
 //zz       if (VG_(clo_track_fds))
 //zz          VG_(record_fd_open) (tid, RES, NULL);
@@ -530,16 +541,16 @@ POST(sys_sysctl)
 //zz    PRINT("sys_tkill ( %d, %d )", ARG1,ARG2);
 //zz    PRE_REG_READ2(long, "tkill", int, tid, int, sig);
 //zz    if (!VG_(client_signal_OK)(ARG2)) {
-//zz       SET_RESULT( -VKI_EINVAL );
+//zz       SET_STATUS_( -VKI_EINVAL );
 //zz       return;
 //zz    }
 //zz 
 //zz    /* If we're sending SIGKILL, check to see if the target is one of
 //zz       our threads and handle it specially. */
 //zz    if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
-//zz       SET_RESULT(0);
+//zz       SET_STATUS_(0);
 //zz    else
-//zz       SET_RESULT(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
+//zz       SET_STATUS_(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
 //zz 
 //zz    if (VG_(clo_trace_signals))
 //zz       VG_(message)(Vg_DebugMsg, "tkill: sent signal %d to pid %d",
@@ -547,40 +558,38 @@ POST(sys_sysctl)
 //zz    // Check to see if this kill gave us a pending signal
 //zz    XXX FIXME VG_(poll_signals)(tid);
 //zz }
-//zz 
-//zz PRE(sys_tgkill, Special)
-//zz {
-//zz    /* int tgkill(pid_t tgid, pid_t tid, int sig); */
-//zz    PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
-//zz    if (!VG_(client_signal_OK)(ARG3)) {
-//zz       SET_RESULT( -VKI_EINVAL );
-//zz       return;
-//zz    }
-//zz    
-//zz    /* If we're sending SIGKILL, check to see if the target is one of
-//zz       our threads and handle it specially. */
-//zz    if (ARG3 == VKI_SIGKILL && VG_(do_sigkill)(ARG2, ARG1))
-//zz       SET_RESULT(0);
-//zz    else
-//zz       SET_RESULT(VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3));
-//zz 
-//zz    if (VG_(clo_trace_signals))
-//zz       VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
-//zz 		   ARG3, ARG1, ARG2);
-//zz    // Check to see if this kill gave us a pending signal
-//zz    XXX FIXME VG_(poll_signals)(tid);
-//zz }
-//zz 
-//zz POST(sys_tgkill)
-//zz {
-//zz    if (VG_(clo_trace_signals))
-//zz       VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
-//zz                    ARG3, ARG1, ARG2);
-//zz    // Check to see if this kill gave us a pending signal
-//zz    XXX FIXME VG_(poll_signals)(tid);
-//zz }
-//zz 
+
+PRE(sys_tgkill)
+{
+   /* int tgkill(pid_t tgid, pid_t tid, int sig); */
+   PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
+   if (!VG_(client_signal_OK)(ARG3)) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+   
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG3 == VKI_SIGKILL && VG_(do_sigkill)(ARG2, ARG1))
+      SET_STATUS_Success(0);
+   else
+      SET_STATUS_from_SysRes(VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3));
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
+		   ARG3, ARG1, ARG2);
+   /* Check to see if this kill gave us a pending signal */
+   *flags |= SfPollAfter;
+}
+
+POST(sys_tgkill)
+{
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
+                   ARG3, ARG1, ARG2);
+}
+
 //zz PRE(sys_fadvise64, 0)
 //zz {
 //zz    PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )", ARG1,ARG2,ARG3);
@@ -613,14 +622,14 @@ POST(sys_sysctl)
 //zz    addr = VG_(find_map_space)(0, size, True);
 //zz    
 //zz    if (addr == 0) {
-//zz       SET_RESULT( -VKI_ENOMEM );
+//zz       SET_STATUS_( -VKI_ENOMEM );
 //zz       return;
 //zz    }
 //zz 
 //zz    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, SF_FIXED);
 //zz    
 //zz    VG_(pad_address_space)(0);
-//zz    SET_RESULT( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
+//zz    SET_STATUS_( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
 //zz    VG_(unpad_address_space)(0);
 //zz 
 //zz    if (RES == 0) {
@@ -660,7 +669,7 @@ POST(sys_sysctl)
 //zz    size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) + 
 //zz                        r->nr*sizeof(struct vki_io_event));
 //zz 
-//zz    SET_RESULT( VG_(do_syscall1)(SYSNO, ARG1) );
+//zz    SET_STATUS_( VG_(do_syscall1)(SYSNO, ARG1) );
 //zz 
 //zz    if (RES == 0 && s != NULL) { 
 //zz       VG_TRACK( die_mem_munmap, ARG1, size );

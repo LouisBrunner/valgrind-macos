@@ -949,6 +949,7 @@ DECL_TEMPLATE(x86_linux, sys_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_ipc);
 DECL_TEMPLATE(x86_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_modify_ldt);
+DECL_TEMPLATE(x86_linux, sys_set_thread_area);
 
 //zz PRE(old_select, MayBlock)
 //zz {
@@ -1192,16 +1193,16 @@ PRE(sys_modify_ldt)
    }
 }
 
-//zz PRE(sys_set_thread_area, Special)
-//zz {
-//zz    PRINT("sys_set_thread_area ( %p )", ARG1);
-//zz    PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
-//zz    PRE_MEM_READ( "set_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
-//zz 
-//zz    /* "do" the syscall ourselves; the kernel never sees it */
-//zz    SET_STATUS_( sys_set_thread_area( tid, (void *)ARG1 ) );
-//zz }
-//zz 
+PRE(sys_set_thread_area)
+{
+   PRINT("sys_set_thread_area ( %p )", ARG1);
+   PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
+   PRE_MEM_READ( "set_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
+
+   /* "do" the syscall ourselves; the kernel never sees it */
+   SET_STATUS_from_SysRes( sys_set_thread_area( tid, (void *)ARG1 ) );
+}
+
 //zz PRE(sys_get_thread_area, Special)
 //zz {
 //zz    PRINT("sys_get_thread_area ( %p )", ARG1);
@@ -2204,10 +2205,10 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    LINX_(__NR_tkill,             sys_tkill),          // 238 */Linux
 //zz    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
 //zz 
-//zz    LINXY(__NR_futex,             sys_futex),             // 240
+   LINXY(__NR_futex,             sys_futex),             // 240
 //zz    GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
 //zz    GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
-//zz    PLAX_(__NR_set_thread_area,   sys_set_thread_area),   // 243
+   PLAX_(__NR_set_thread_area,   sys_set_thread_area),   // 243
 //zz    PLAX_(__NR_get_thread_area,   sys_get_thread_area),   // 244
 //zz 
 //zz    LINX_(__NR_io_setup,          sys_io_setup),       // 245
@@ -2225,7 +2226,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 255
 //zz    LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 256
 //zz    //   (__NR_remap_file_pages,  sys_remap_file_pages),  // 257 */Linux
-//zz    GENX_(__NR_set_tid_address,   sys_set_tid_address),   // 258
+   LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 258
 //zz    GENXY(__NR_timer_create,      sys_timer_create),      // 259
 //zz 
 //zz    GENXY(__NR_timer_settime,     sys_timer_settime),  // (timer_create+1)
@@ -2240,7 +2241,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    GENXY(__NR_statfs64,          sys_statfs64),       // 268
 //zz    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
 //zz 
-//zz    LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
+   LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
 //zz    GENX_(__NR_utimes,            sys_utimes),         // 271
 //zz    LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273

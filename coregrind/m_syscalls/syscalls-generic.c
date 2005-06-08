@@ -1683,12 +1683,6 @@ PRE(sys_ni_syscall)
    SET_STATUS_Failure( VKI_ENOSYS );
 }
 
-//zz PRE(sys_set_tid_address, 0)
-//zz {
-//zz    PRINT("sys_set_tid_address ( %p )", ARG1);
-//zz    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
-//zz }
-//zz 
 //zz PRE(sys_iopl, 0)
 //zz {
 //zz    PRINT("sys_iopl ( %d )", ARG1);

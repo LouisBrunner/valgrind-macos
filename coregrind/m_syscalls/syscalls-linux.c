@@ -162,25 +162,25 @@ POST(sys_llseek)
 //zz {
 //zz    POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
 //zz }
-//zz 
-//zz PRE(sys_setfsuid16, 0)
-//zz {
-//zz    PRINT("sys_setfsuid16 ( %d )", ARG1);
-//zz    PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
-//zz }
-//zz 
+
+PRE(sys_setfsuid16)
+{
+   PRINT("sys_setfsuid16 ( %d )", ARG1);
+   PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
+}
+
 //zz PRE(sys_setfsuid, 0)
 //zz {
 //zz    PRINT("sys_setfsuid ( %d )", ARG1);
 //zz    PRE_REG_READ1(long, "setfsuid", vki_uid_t, uid);
 //zz }
-//zz 
-//zz PRE(sys_setfsgid16, 0)
-//zz {
-//zz    PRINT("sys_setfsgid16 ( %d )", ARG1);
-//zz    PRE_REG_READ1(long, "setfsgid16", vki_old_gid_t, gid);
-//zz }
-//zz 
+
+PRE(sys_setfsgid16)
+{
+   PRINT("sys_setfsgid16 ( %d )", ARG1);
+   PRE_REG_READ1(long, "setfsgid16", vki_old_gid_t, gid);
+}
+
 //zz PRE(sys_setfsgid, 0)
 //zz {
 //zz    PRINT("sys_setfsgid ( %d )", ARG1);
@@ -295,62 +295,63 @@ POST(sys_getresgid)
    }
 }
 
-//zz PRE(sys_ioperm, 0)
-//zz {
-//zz    PRINT("sys_ioperm ( %d, %d, %d )", ARG1, ARG2, ARG3 );
-//zz    PRE_REG_READ3(long, "ioperm",
-//zz                  unsigned long, from, unsigned long, num, int, turn_on);
-//zz }
-//zz 
-//zz PRE(sys_syslog, MayBlock)
-//zz {
-//zz    PRINT("sys_syslog (%d, %p, %d)", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
-//zz    switch (ARG1) {
-//zz    // The kernel uses magic numbers here, rather than named constants,
-//zz    // therefore so do we.
-//zz    case 2: case 3: case 4:
-//zz       PRE_MEM_WRITE( "syslog(bufp)", ARG2, ARG3);
-//zz       break;
-//zz    default: 
-//zz       break;
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_syslog)
-//zz {
-//zz    switch (ARG1) {
-//zz    case 2: case 3: case 4:
-//zz       POST_MEM_WRITE( ARG2, ARG3 );
-//zz       break;
-//zz    default:
-//zz       break;
-//zz    }
-//zz }
-//zz 
-//zz PRE(sys_vhangup, 0)
-//zz {
-//zz    PRINT("sys_vhangup ( )");
-//zz    PRE_REG_READ0(long, "vhangup");
-//zz }
-//zz 
-//zz PRE(sys_sysinfo, 0)
-//zz {
-//zz    PRINT("sys_sysinfo ( %p )",ARG1);
-//zz    PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
-//zz    PRE_MEM_WRITE( "sysinfo(info)", ARG1, sizeof(struct vki_sysinfo) );
-//zz }
-//zz 
-//zz POST(sys_sysinfo)
-//zz {
-//zz    POST_MEM_WRITE( ARG1, sizeof(struct vki_sysinfo) );
-//zz }
-//zz 
-//zz PRE(sys_personality, 0)
-//zz {
-//zz    PRINT("sys_personality ( %llu )", (ULong)ARG1);
-//zz    PRE_REG_READ1(long, "personality", vki_u_long, persona);
-//zz }
+PRE(sys_ioperm)
+{
+   PRINT("sys_ioperm ( %d, %d, %d )", ARG1, ARG2, ARG3 );
+   PRE_REG_READ3(long, "ioperm",
+                 unsigned long, from, unsigned long, num, int, turn_on);
+}
+
+PRE(sys_syslog)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_syslog (%d, %p, %d)", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
+   switch (ARG1) {
+   // The kernel uses magic numbers here, rather than named constants,
+   // therefore so do we.
+   case 2: case 3: case 4:
+      PRE_MEM_WRITE( "syslog(bufp)", ARG2, ARG3);
+      break;
+   default: 
+      break;
+   }
+}
+
+POST(sys_syslog)
+{
+   switch (ARG1) {
+   case 2: case 3: case 4:
+      POST_MEM_WRITE( ARG2, ARG3 );
+      break;
+   default:
+      break;
+   }
+}
+
+PRE(sys_vhangup)
+{
+   PRINT("sys_vhangup ( )");
+   PRE_REG_READ0(long, "vhangup");
+}
+
+PRE(sys_sysinfo)
+{
+   PRINT("sys_sysinfo ( %p )",ARG1);
+   PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
+   PRE_MEM_WRITE( "sysinfo(info)", ARG1, sizeof(struct vki_sysinfo) );
+}
+
+POST(sys_sysinfo)
+{
+   POST_MEM_WRITE( ARG1, sizeof(struct vki_sysinfo) );
+}
+
+PRE(sys_personality)
+{
+   PRINT("sys_personality ( %llu )", (ULong)ARG1);
+   PRE_REG_READ1(long, "personality", vki_u_long, persona);
+}
 
 PRE(sys_sysctl)
 {

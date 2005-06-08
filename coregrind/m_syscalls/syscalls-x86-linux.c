@@ -951,39 +951,41 @@ DECL_TEMPLATE(x86_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_modify_ldt);
 DECL_TEMPLATE(x86_linux, sys_set_thread_area);
 DECL_TEMPLATE(x86_linux, sys_ptrace);
+DECL_TEMPLATE(x86_linux, sys_sigaction);
+DECL_TEMPLATE(x86_linux, old_select);
 
-//zz PRE(old_select, MayBlock)
-//zz {
-//zz    /* struct sel_arg_struct {
-//zz       unsigned long n;
-//zz       fd_set *inp, *outp, *exp;
-//zz       struct timeval *tvp;
-//zz       };
-//zz    */
-//zz    PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
-//zz    PRE_MEM_READ( "old_select(args)", ARG1, 5*sizeof(UWord) );
-//zz 
-//zz    {
-//zz       UInt* arg_struct = (UInt*)ARG1;
-//zz       UInt a1, a2, a3, a4, a5;
-//zz 
-//zz       a1 = arg_struct[0];
-//zz       a2 = arg_struct[1];
-//zz       a3 = arg_struct[2];
-//zz       a4 = arg_struct[3];
-//zz       a5 = arg_struct[4];
-//zz 
-//zz       PRINT("old_select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
-//zz       if (a2 != (Addr)NULL)
-//zz          PRE_MEM_READ( "old_select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
-//zz       if (a3 != (Addr)NULL)
-//zz          PRE_MEM_READ( "old_select(writefds)",  a3, a1/8 /* __FD_SETSIZE/8 */ );
-//zz       if (a4 != (Addr)NULL)
-//zz          PRE_MEM_READ( "old_select(exceptfds)", a4, a1/8 /* __FD_SETSIZE/8 */ );
-//zz       if (a5 != (Addr)NULL)
-//zz          PRE_MEM_READ( "old_select(timeout)", a5, sizeof(struct vki_timeval) );
-//zz    }
-//zz }
+PRE(old_select)
+{
+   /* struct sel_arg_struct {
+      unsigned long n;
+      fd_set *inp, *outp, *exp;
+      struct timeval *tvp;
+      };
+   */
+   PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
+   PRE_MEM_READ( "old_select(args)", ARG1, 5*sizeof(UWord) );
+   *flags |= SfMayBlock;
+   {
+      UInt* arg_struct = (UInt*)ARG1;
+      UInt a1, a2, a3, a4, a5;
+
+      a1 = arg_struct[0];
+      a2 = arg_struct[1];
+      a3 = arg_struct[2];
+      a4 = arg_struct[3];
+      a5 = arg_struct[4];
+
+      PRINT("old_select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
+      if (a2 != (Addr)NULL)
+         PRE_MEM_READ( "old_select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
+      if (a3 != (Addr)NULL)
+         PRE_MEM_READ( "old_select(writefds)",  a3, a1/8 /* __FD_SETSIZE/8 */ );
+      if (a4 != (Addr)NULL)
+         PRE_MEM_READ( "old_select(exceptfds)", a4, a1/8 /* __FD_SETSIZE/8 */ );
+      if (a5 != (Addr)NULL)
+         PRE_MEM_READ( "old_select(timeout)", a5, sizeof(struct vki_timeval) );
+   }
+}
 
 PRE(sys_clone)
 {
@@ -1820,81 +1822,69 @@ POST(sys_socketcall)
 #  undef ARG2_5
 }
 
-//zz // jrs 20050207: this is from the svn branch
-//zz //PRE(sys_sigaction, Special)
-//zz //{
-//zz //   PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
-//zz //   PRE_REG_READ3(int, "sigaction",
-//zz //                 int, signum, const struct old_sigaction *, act,
-//zz //                 struct old_sigaction *, oldact)
-//zz //   if (ARG2 != 0)
-//zz //      PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
-//zz //   if (ARG3 != 0)
-//zz //      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
-//zz //
-//zz //   VG_(do_sys_sigaction)(tid);
-//zz //}
-//zz 
-//zz /* Convert from non-RT to RT sigset_t's */
-//zz static void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
-//zz {
-//zz    VG_(sigemptyset)(set);
-//zz    set->sig[0] = *oldset;
-//zz }
-//zz PRE(sys_sigaction, Special)
-//zz {
-//zz    struct vki_sigaction new, old;
-//zz    struct vki_sigaction *newp, *oldp;
-//zz 
-//zz    PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(int, "sigaction",
-//zz                  int, signum, const struct old_sigaction *, act,
-//zz                  struct old_sigaction *, oldact);
-//zz 
-//zz    newp = oldp = NULL;
-//zz 
-//zz    if (ARG2 != 0)
-//zz       PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
-//zz 
-//zz    if (ARG3 != 0) {
-//zz       PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
-//zz       oldp = &old;
-//zz    }
-//zz 
-//zz    //jrs 20050207: what?!  how can this make any sense?
-//zz    //if (VG_(is_kerror)(SYSRES))
-//zz    //   return;
-//zz 
-//zz    if (ARG2 != 0) {
-//zz       struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
-//zz 
-//zz       new.ksa_handler = oldnew->ksa_handler;
-//zz       new.sa_flags = oldnew->sa_flags;
-//zz       new.sa_restorer = oldnew->sa_restorer;
-//zz       convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
-//zz       newp = &new;
-//zz    }
-//zz 
-//zz    SET_STATUS_( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
-//zz 
-//zz    if (ARG3 != 0 && RES == 0) {
-//zz       struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
-//zz 
-//zz       oldold->ksa_handler = oldp->ksa_handler;
-//zz       oldold->sa_flags = oldp->sa_flags;
-//zz       oldold->sa_restorer = oldp->sa_restorer;
-//zz       oldold->sa_mask = oldp->sa_mask.sig[0];
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_sigaction)
-//zz {
-//zz    if (RES == 0 && ARG3 != 0)
-//zz       POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
-//zz }
-//zz 
-//zz #undef PRE
-//zz #undef POST
+/* Convert from non-RT to RT sigset_t's */
+static 
+void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
+{
+   VG_(sigemptyset)(set);
+   set->sig[0] = *oldset;
+}
+PRE(sys_sigaction)
+{
+   struct vki_sigaction new, old;
+   struct vki_sigaction *newp, *oldp;
+
+   PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "sigaction",
+                 int, signum, const struct old_sigaction *, act,
+                 struct old_sigaction *, oldact);
+
+   newp = oldp = NULL;
+
+   if (ARG2 != 0)
+      PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
+
+   if (ARG3 != 0) {
+      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
+      oldp = &old;
+   }
+
+   //jrs 20050207: what?!  how can this make any sense?
+   //if (VG_(is_kerror)(SYSRES))
+   //   return;
+
+   if (ARG2 != 0) {
+      struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
+
+      new.ksa_handler = oldnew->ksa_handler;
+      new.sa_flags = oldnew->sa_flags;
+      new.sa_restorer = oldnew->sa_restorer;
+      convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
+      newp = &new;
+   }
+
+   SET_STATUS_from_SysRes( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
+
+   if (ARG3 != 0 && SUCCESS && RES == 0) {
+      struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
+
+      oldold->ksa_handler = oldp->ksa_handler;
+      oldold->sa_flags = oldp->sa_flags;
+      oldold->sa_restorer = oldp->sa_restorer;
+      oldold->sa_mask = oldp->sa_mask.sig[0];
+   }
+}
+
+POST(sys_sigaction)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0 && ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
+}
+
+#undef PRE
+#undef POST
+
 
 /* ---------------------------------------------------------------------
    The x86/Linux syscall table
@@ -1974,46 +1964,46 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_getgid,            sys_getgid16),       // 47
 //zz    //   (__NR_signal,            sys_signal),         // 48 */* (ANSI C)
    GENX_(__NR_geteuid,           sys_geteuid16),      // 49
-//zz 
-//zz    GENX_(__NR_getegid,           sys_getegid16),      // 50
-//zz    GENX_(__NR_acct,              sys_acct),           // 51
-//zz    LINX_(__NR_umount2,           sys_umount),         // 52
+
+   GENX_(__NR_getegid,           sys_getegid16),      // 50
+   GENX_(__NR_acct,              sys_acct),           // 51
+   LINX_(__NR_umount2,           sys_umount),         // 52
    GENX_(__NR_lock,              sys_ni_syscall),     // 53
    GENXY(__NR_ioctl,             sys_ioctl),          // 54
-//zz 
-//zz    GENXY(__NR_fcntl,             sys_fcntl),          // 55
+
+   GENXY(__NR_fcntl,             sys_fcntl),          // 55
    GENX_(__NR_mpx,               sys_ni_syscall),     // 56
-//zz    GENX_(__NR_setpgid,           sys_setpgid),        // 57
+   GENX_(__NR_setpgid,           sys_setpgid),        // 57
    GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
 //zz    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
 //zz 
    GENX_(__NR_umask,             sys_umask),          // 60
-//zz    GENX_(__NR_chroot,            sys_chroot),         // 61
+   GENX_(__NR_chroot,            sys_chroot),         // 61
 //zz    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),           // 63
    GENX_(__NR_getppid,           sys_getppid),        // 64
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
-//zz    GENX_(__NR_setsid,            sys_setsid),         // 66
-//zz    PLAXY(__NR_sigaction,         sys_sigaction),      // 67
+   GENX_(__NR_setsid,            sys_setsid),         // 66
+   PLAXY(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
 //zz 
-//zz    GENX_(__NR_setreuid,          sys_setreuid16),     // 70
-//zz    GENX_(__NR_setregid,          sys_setregid16),     // 71
+   GENX_(__NR_setreuid,          sys_setreuid16),     // 70
+   GENX_(__NR_setregid,          sys_setregid16),     // 71
 //zz    GENX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
-//zz    GENXY(__NR_sigpending,        sys_sigpending),     // 73
+   GENXY(__NR_sigpending,        sys_sigpending),     // 73
 //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
 //zz 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 75
-//zz    GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76
-//zz    GENXY(__NR_getrusage,         sys_getrusage),      // 77
+   GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76
+   GENXY(__NR_getrusage,         sys_getrusage),      // 77
    GENXY(__NR_gettimeofday,      sys_gettimeofday),   // 78
-//zz    GENX_(__NR_settimeofday,      sys_settimeofday),   // 79
-//zz 
-//zz    GENXY(__NR_getgroups,         sys_getgroups16),    // 80
-//zz    GENX_(__NR_setgroups,         sys_setgroups16),    // 81
-//zz    PLAX_(__NR_select,            old_select),         // 82
+   GENX_(__NR_settimeofday,      sys_settimeofday),   // 79
+
+   GENXY(__NR_getgroups,         sys_getgroups16),    // 80
+   GENX_(__NR_setgroups,         sys_setgroups16),    // 81
+   PLAX_(__NR_select,            old_select),         // 82
    GENX_(__NR_symlink,           sys_symlink),        // 83
 //zz    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete
 //zz 
@@ -2025,36 +2015,36 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz 
    PLAX_(__NR_mmap,              old_mmap),           // 90
    GENXY(__NR_munmap,            sys_munmap),         // 91
-//zz    GENX_(__NR_truncate,          sys_truncate),       // 92
+   GENX_(__NR_truncate,          sys_truncate),       // 92
    GENX_(__NR_ftruncate,         sys_ftruncate),      // 93
-//zz    GENX_(__NR_fchmod,            sys_fchmod),         // 94
-//zz 
-//zz    GENX_(__NR_fchown,            sys_fchown16),       // 95
-//zz    GENX_(__NR_getpriority,       sys_getpriority),    // 96
-//zz    GENX_(__NR_setpriority,       sys_setpriority),    // 97
+   GENX_(__NR_fchmod,            sys_fchmod),         // 94
+
+   GENX_(__NR_fchown,            sys_fchown16),       // 95
+   GENX_(__NR_getpriority,       sys_getpriority),    // 96
+   GENX_(__NR_setpriority,       sys_setpriority),    // 97
    GENX_(__NR_profil,            sys_ni_syscall),     // 98
-//zz    GENXY(__NR_statfs,            sys_statfs),         // 99
-//zz 
-//zz    GENXY(__NR_fstatfs,           sys_fstatfs),        // 100
-//zz    LINX_(__NR_ioperm,            sys_ioperm),         // 101
+   GENXY(__NR_statfs,            sys_statfs),         // 99
+
+   GENXY(__NR_fstatfs,           sys_fstatfs),        // 100
+   LINX_(__NR_ioperm,            sys_ioperm),         // 101
    PLAXY(__NR_socketcall,        sys_socketcall),     // 102 x86/Linux-only
-//zz    LINXY(__NR_syslog,            sys_syslog),         // 103
-//zz    GENXY(__NR_setitimer,         sys_setitimer),      // 104
-//zz 
-//zz    GENXY(__NR_getitimer,         sys_getitimer),      // 105
-//zz    GENXY(__NR_stat,              sys_newstat),        // 106
-//zz    GENXY(__NR_lstat,             sys_newlstat),       // 107
-//zz    GENXY(__NR_fstat,             sys_newfstat),       // 108
+   LINXY(__NR_syslog,            sys_syslog),         // 103
+   GENXY(__NR_setitimer,         sys_setitimer),      // 104
+
+   GENXY(__NR_getitimer,         sys_getitimer),      // 105
+   GENXY(__NR_stat,              sys_newstat),        // 106
+   GENXY(__NR_lstat,             sys_newlstat),       // 107
+   GENXY(__NR_fstat,             sys_newfstat),       // 108
 //zz    //   (__NR_olduname,          sys_uname),          // 109 -- obsolete
 //zz 
-//zz    GENX_(__NR_iopl,              sys_iopl),           // 110
-//zz    LINX_(__NR_vhangup,           sys_vhangup),        // 111
+   GENX_(__NR_iopl,              sys_iopl),           // 110
+   LINX_(__NR_vhangup,           sys_vhangup),        // 111
    GENX_(__NR_idle,              sys_ni_syscall),     // 112
 //zz    //   (__NR_vm86old,           sys_vm86old),        // 113 x86/Linux-only
    GENXY(__NR_wait4,             sys_wait4),          // 114
 //zz 
 //zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
-//zz    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
+   LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
    PLAXY(__NR_ipc,               sys_ipc),            // 117
    GENX_(__NR_fsync,             sys_fsync),          // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),      // 119 ?/Linux
@@ -2069,38 +2059,38 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
 //zz    // Nb: create_module() was removed 2.4-->2.6
    GENX_(__NR_create_module,     sys_ni_syscall),     // 127
-//zz    GENX_(__NR_init_module,       sys_init_module),    // 128
+   GENX_(__NR_init_module,       sys_init_module),    // 128
 //zz    //   (__NR_delete_module,     sys_delete_module),  // 129 (*/Linux)?
 //zz 
 //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
    GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130
-//zz    GENX_(__NR_quotactl,          sys_quotactl),       // 131
-//zz    GENX_(__NR_getpgid,           sys_getpgid),        // 132
-//zz    GENX_(__NR_fchdir,            sys_fchdir),         // 133
+   GENX_(__NR_quotactl,          sys_quotactl),       // 131
+   GENX_(__NR_getpgid,           sys_getpgid),        // 132
+   GENX_(__NR_fchdir,            sys_fchdir),         // 133
 //zz    //   (__NR_bdflush,           sys_bdflush),        // 134 */Linux
 //zz 
 //zz    //   (__NR_sysfs,             sys_sysfs),          // 135 SVr4
-//zz    LINX_(__NR_personality,       sys_personality),    // 136
+   LINX_(__NR_personality,       sys_personality),    // 136
    GENX_(__NR_afs_syscall,       sys_ni_syscall),     // 137
-//zz    LINX_(__NR_setfsuid,          sys_setfsuid16),     // 138
-//zz    LINX_(__NR_setfsgid,          sys_setfsgid16),     // 139
-//zz 
+   LINX_(__NR_setfsuid,          sys_setfsuid16),     // 138
+   LINX_(__NR_setfsgid,          sys_setfsgid16),     // 139
+ 
    LINXY(__NR__llseek,           sys_llseek),         // 140
    GENXY(__NR_getdents,          sys_getdents),       // 141
    GENX_(__NR__newselect,        sys_select),         // 142
-//zz    GENX_(__NR_flock,             sys_flock),          // 143
-//zz    GENX_(__NR_msync,             sys_msync),          // 144
-//zz 
+   GENX_(__NR_flock,             sys_flock),          // 143
+   GENX_(__NR_msync,             sys_msync),          // 144
+
    GENXY(__NR_readv,             sys_readv),          // 145
    GENX_(__NR_writev,            sys_writev),         // 146
-//zz    GENX_(__NR_getsid,            sys_getsid),         // 147
-//zz    GENX_(__NR_fdatasync,         sys_fdatasync),      // 148
+   GENX_(__NR_getsid,            sys_getsid),         // 147
+   GENX_(__NR_fdatasync,         sys_fdatasync),      // 148
    LINXY(__NR__sysctl,           sys_sysctl),         // 149
-//zz 
-//zz    GENX_(__NR_mlock,             sys_mlock),          // 150
-//zz    GENX_(__NR_munlock,           sys_munlock),        // 151
-//zz    GENX_(__NR_mlockall,          sys_mlockall),       // 152
-//zz    GENX_(__NR_munlockall,        sys_munlockall),     // 153
+
+   GENX_(__NR_mlock,             sys_mlock),          // 150
+   GENX_(__NR_munlock,           sys_munlock),        // 151
+   GENX_(__NR_mlockall,          sys_mlockall),       // 152
+   GENX_(__NR_munlockall,        sys_munlockall),     // 153
 //zz    GENXY(__NR_sched_setparam,    sys_sched_setparam), // 154
 //zz 
    GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155

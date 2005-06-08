@@ -1962,11 +1962,11 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_kill,              sys_kill),           // 37
    GENX_(__NR_rename,            sys_rename),         // 38
    GENX_(__NR_mkdir,             sys_mkdir),          // 39
-//zz 
-//zz    GENX_(__NR_rmdir,             sys_rmdir),          // 40
+
+   GENX_(__NR_rmdir,             sys_rmdir),          // 40
    GENXY(__NR_dup,               sys_dup),            // 41
    GENXY(__NR_pipe,              sys_pipe),           // 42
-//zz    GENXY(__NR_times,             sys_times),          // 43
+   GENXY(__NR_times,             sys_times),          // 43
    GENX_(__NR_prof,              sys_ni_syscall),     // 44
 //zz 
    GENX_(__NR_brk,               sys_brk),            // 45
@@ -1987,13 +1987,13 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
 //zz    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
 //zz 
-//zz    GENX_(__NR_umask,             sys_umask),          // 60
+   GENX_(__NR_umask,             sys_umask),          // 60
 //zz    GENX_(__NR_chroot,            sys_chroot),         // 61
 //zz    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),           // 63
    GENX_(__NR_getppid,           sys_getppid),        // 64
-//zz 
-//zz    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
+
+   GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
 //zz    GENX_(__NR_setsid,            sys_setsid),         // 66
 //zz    PLAXY(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
@@ -2014,7 +2014,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    GENXY(__NR_getgroups,         sys_getgroups16),    // 80
 //zz    GENX_(__NR_setgroups,         sys_setgroups16),    // 81
 //zz    PLAX_(__NR_select,            old_select),         // 82
-//zz    GENX_(__NR_symlink,           sys_symlink),        // 83
+   GENX_(__NR_symlink,           sys_symlink),        // 83
 //zz    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete
 //zz 
    GENX_(__NR_readlink,          sys_readlink),       // 85
@@ -2056,7 +2056,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
 //zz    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
    PLAXY(__NR_ipc,               sys_ipc),            // 117
-//zz    GENX_(__NR_fsync,             sys_fsync),          // 118
+   GENX_(__NR_fsync,             sys_fsync),          // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),      // 119 ?/Linux
 
    PLAX_(__NR_clone,             sys_clone),          // 120
@@ -2086,7 +2086,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    LINX_(__NR_setfsgid,          sys_setfsgid16),     // 139
 //zz 
    LINXY(__NR__llseek,           sys_llseek),         // 140
-//zz    GENXY(__NR_getdents,          sys_getdents),       // 141
+   GENXY(__NR_getdents,          sys_getdents),       // 141
    GENX_(__NR__newselect,        sys_select),         // 142
 //zz    GENX_(__NR_flock,             sys_flock),          // 143
 //zz    GENX_(__NR_msync,             sys_msync),          // 144
@@ -2103,13 +2103,13 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    GENX_(__NR_munlockall,        sys_munlockall),     // 153
 //zz    GENXY(__NR_sched_setparam,    sys_sched_setparam), // 154
 //zz 
-//zz    GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
-//zz    GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
-//zz    GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
-//zz    GENX_(__NR_sched_yield,            sys_sched_yield),           // 158
-//zz    GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
-//zz 
-//zz    GENX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
+   GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
+   GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
+   GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
+   GENX_(__NR_sched_yield,            sys_sched_yield),           // 158
+   GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
+
+   GENX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
 //zz    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
@@ -2157,21 +2157,21 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    PLAXY(__NR_fstat64,           sys_fstat64),        // 197
 //zz    GENX_(__NR_lchown32,          sys_lchown),         // 198
    GENX_(__NR_getuid32,          sys_getuid),         // 199
-//zz 
-//zz    GENX_(__NR_getgid32,          sys_getgid),         // 200
+
+   GENX_(__NR_getgid32,          sys_getgid),         // 200
    GENX_(__NR_geteuid32,         sys_geteuid),        // 201
-//zz    GENX_(__NR_getegid32,         sys_getegid),        // 202
+   GENX_(__NR_getegid32,         sys_getegid),        // 202
 //zz    GENX_(__NR_setreuid32,        sys_setreuid),       // 203
 //zz    GENX_(__NR_setregid32,        sys_setregid),       // 204
-//zz 
-//zz    GENXY(__NR_getgroups32,       sys_getgroups),      // 205
+
+   GENXY(__NR_getgroups32,       sys_getgroups),      // 205
 //zz    GENX_(__NR_setgroups32,       sys_setgroups),      // 206
 //zz    GENX_(__NR_fchown32,          sys_fchown),         // 207
 //zz    LINX_(__NR_setresuid32,       sys_setresuid),      // 208
-//zz    LINXY(__NR_getresuid32,       sys_getresuid),      // 209
-//zz 
+   LINXY(__NR_getresuid32,       sys_getresuid),      // 209
+
 //zz    LINX_(__NR_setresgid32,       sys_setresgid),      // 210
-//zz    LINXY(__NR_getresgid32,       sys_getresgid),      // 211
+   LINXY(__NR_getresgid32,       sys_getresgid),      // 211
 //zz    GENX_(__NR_chown32,           sys_chown),          // 212
 //zz    GENX_(__NR_setuid32,          sys_setuid),         // 213
 //zz    GENX_(__NR_setgid32,          sys_setgid),         // 214

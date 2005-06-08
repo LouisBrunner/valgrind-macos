@@ -220,26 +220,27 @@ POST(sys_llseek)
 //zz       POST_MEM_WRITE( ARG3, sizeof(vki_old_uid_t) );
 //zz    }
 //zz }
-//zz 
-//zz PRE(sys_getresuid, 0)
-//zz {
-//zz    PRINT("sys_getresuid ( %p, %p, %p )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(long, "getresuid", 
-//zz                  vki_uid_t *, ruid, vki_uid_t *, euid, vki_uid_t *, suid);
-//zz    PRE_MEM_WRITE( "getresuid(ruid)", ARG1, sizeof(vki_uid_t) );
-//zz    PRE_MEM_WRITE( "getresuid(euid)", ARG2, sizeof(vki_uid_t) );
-//zz    PRE_MEM_WRITE( "getresuid(suid)", ARG3, sizeof(vki_uid_t) );
-//zz }
-//zz 
-//zz POST(sys_getresuid)
-//zz {
-//zz    if (RES == 0) {
-//zz       POST_MEM_WRITE( ARG1, sizeof(vki_uid_t) );
-//zz       POST_MEM_WRITE( ARG2, sizeof(vki_uid_t) );
-//zz       POST_MEM_WRITE( ARG3, sizeof(vki_uid_t) );
-//zz    }
-//zz }
-//zz 
+
+PRE(sys_getresuid)
+{
+   PRINT("sys_getresuid ( %p, %p, %p )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "getresuid", 
+                 vki_uid_t *, ruid, vki_uid_t *, euid, vki_uid_t *, suid);
+   PRE_MEM_WRITE( "getresuid(ruid)", ARG1, sizeof(vki_uid_t) );
+   PRE_MEM_WRITE( "getresuid(euid)", ARG2, sizeof(vki_uid_t) );
+   PRE_MEM_WRITE( "getresuid(suid)", ARG3, sizeof(vki_uid_t) );
+}
+
+POST(sys_getresuid)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_uid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_uid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_uid_t) );
+   }
+}
+
 //zz PRE(sys_setresgid16, 0)
 //zz {
 //zz    PRINT("sys_setresgid16 ( %d, %d, %d )", ARG1, ARG2, ARG3);
@@ -273,26 +274,27 @@ POST(sys_llseek)
 //zz       POST_MEM_WRITE( ARG3, sizeof(vki_old_gid_t) );
 //zz    }
 //zz }
-//zz 
-//zz PRE(sys_getresgid, 0)
-//zz {
-//zz    PRINT("sys_getresgid ( %p, %p, %p )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ3(long, "getresgid", 
-//zz                  vki_gid_t *, rgid, vki_gid_t *, egid, vki_gid_t *, sgid);
-//zz    PRE_MEM_WRITE( "getresgid(rgid)", ARG1, sizeof(vki_gid_t) );
-//zz    PRE_MEM_WRITE( "getresgid(egid)", ARG2, sizeof(vki_gid_t) );
-//zz    PRE_MEM_WRITE( "getresgid(sgid)", ARG3, sizeof(vki_gid_t) );
-//zz }
-//zz 
-//zz POST(sys_getresgid)
-//zz {
-//zz    if (RES == 0) {
-//zz       POST_MEM_WRITE( ARG1, sizeof(vki_gid_t) );
-//zz       POST_MEM_WRITE( ARG2, sizeof(vki_gid_t) );
-//zz       POST_MEM_WRITE( ARG3, sizeof(vki_gid_t) );
-//zz    }
-//zz }
-//zz 
+
+PRE(sys_getresgid)
+{
+   PRINT("sys_getresgid ( %p, %p, %p )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "getresgid", 
+                 vki_gid_t *, rgid, vki_gid_t *, egid, vki_gid_t *, sgid);
+   PRE_MEM_WRITE( "getresgid(rgid)", ARG1, sizeof(vki_gid_t) );
+   PRE_MEM_WRITE( "getresgid(egid)", ARG2, sizeof(vki_gid_t) );
+   PRE_MEM_WRITE( "getresgid(sgid)", ARG3, sizeof(vki_gid_t) );
+}
+
+POST(sys_getresgid)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_gid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_gid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_gid_t) );
+   }
+}
+
 //zz PRE(sys_ioperm, 0)
 //zz {
 //zz    PRINT("sys_ioperm ( %d, %d, %d )", ARG1, ARG2, ARG3 );

@@ -528,13 +528,13 @@ POST(sys_futex)
 //zz    if (RES > 0)
 //zz       POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
 //zz }
-//zz 
-//zz PRE(sys_gettid, 0)
-//zz {
-//zz    PRINT("sys_gettid ()");
-//zz    PRE_REG_READ0(long, "gettid");
-//zz }
-//zz 
+
+PRE(sys_gettid)
+{
+   PRINT("sys_gettid ()");
+   PRE_REG_READ0(long, "gettid");
+}
+
 //zz PRE(sys_tkill, Special)
 //zz {
 //zz    /* int tkill(pid_t tid, int sig); */

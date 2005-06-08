@@ -950,6 +950,7 @@ DECL_TEMPLATE(x86_linux, sys_ipc);
 DECL_TEMPLATE(x86_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_modify_ldt);
 DECL_TEMPLATE(x86_linux, sys_set_thread_area);
+DECL_TEMPLATE(x86_linux, sys_ptrace);
 
 //zz PRE(old_select, MayBlock)
 //zz {
@@ -1216,71 +1217,71 @@ PRE(sys_set_thread_area)
 //zz       POST_MEM_WRITE( ARG1, sizeof(vki_modify_ldt_t) );
 //zz    }
 //zz }
-//zz 
-//zz // Parts of this are x86-specific, but the *PEEK* cases are generic.
-//zz // XXX: Why is the memory pointed to by ARG3 never checked?
-//zz PRE(sys_ptrace, 0)
-//zz {
-//zz    PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
-//zz    PRE_REG_READ4(int, "ptrace", 
-//zz                  long, request, long, pid, long, addr, long, data);
-//zz    switch (ARG1) {
-//zz    case VKI_PTRACE_PEEKTEXT:
-//zz    case VKI_PTRACE_PEEKDATA:
-//zz    case VKI_PTRACE_PEEKUSR:
-//zz       PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
-//zz 		     sizeof (long));
-//zz       break;
-//zz    case VKI_PTRACE_GETREGS:
-//zz       PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
-//zz 		     sizeof (struct vki_user_regs_struct));
-//zz       break;
-//zz    case VKI_PTRACE_GETFPREGS:
-//zz       PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
-//zz 		     sizeof (struct vki_user_i387_struct));
-//zz       break;
-//zz    case VKI_PTRACE_GETFPXREGS:
-//zz       PRE_MEM_WRITE( "ptrace(getfpxregs)", ARG4, 
-//zz                      sizeof(struct vki_user_fxsr_struct) );
-//zz       break;
-//zz    case VKI_PTRACE_SETREGS:
-//zz       PRE_MEM_READ( "ptrace(setregs)", ARG4, 
-//zz 		     sizeof (struct vki_user_regs_struct));
-//zz       break;
-//zz    case VKI_PTRACE_SETFPREGS:
-//zz       PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
-//zz 		     sizeof (struct vki_user_i387_struct));
-//zz       break;
-//zz    case VKI_PTRACE_SETFPXREGS:
-//zz       PRE_MEM_READ( "ptrace(setfpxregs)", ARG4, 
-//zz                      sizeof(struct vki_user_fxsr_struct) );
-//zz       break;
-//zz    default:
-//zz       break;
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_ptrace)
-//zz {
-//zz    switch (ARG1) {
-//zz    case VKI_PTRACE_PEEKTEXT:
-//zz    case VKI_PTRACE_PEEKDATA:
-//zz    case VKI_PTRACE_PEEKUSR:
-//zz       POST_MEM_WRITE( ARG4, sizeof (long));
-//zz       break;
-//zz    case VKI_PTRACE_GETREGS:
-//zz       POST_MEM_WRITE( ARG4, sizeof (struct vki_user_regs_struct));
-//zz       break;
-//zz    case VKI_PTRACE_GETFPREGS:
-//zz       POST_MEM_WRITE( ARG4, sizeof (struct vki_user_i387_struct));
-//zz       break;
-//zz    case VKI_PTRACE_GETFPXREGS:
-//zz       POST_MEM_WRITE( ARG4, sizeof(struct vki_user_fxsr_struct) );
-//zz       break;
-//zz    default:
-//zz       break;
-//zz    }
-//zz }
+
+// Parts of this are x86-specific, but the *PEEK* cases are generic.
+// XXX: Why is the memory pointed to by ARG3 never checked?
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "ptrace", 
+                 long, request, long, pid, long, addr, long, data);
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
+		     sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
+		     sizeof (struct vki_user_i387_struct));
+      break;
+   case VKI_PTRACE_GETFPXREGS:
+      PRE_MEM_WRITE( "ptrace(getfpxregs)", ARG4, 
+                     sizeof(struct vki_user_fxsr_struct) );
+      break;
+   case VKI_PTRACE_SETREGS:
+      PRE_MEM_READ( "ptrace(setregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_SETFPREGS:
+      PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
+		     sizeof (struct vki_user_i387_struct));
+      break;
+   case VKI_PTRACE_SETFPXREGS:
+      PRE_MEM_READ( "ptrace(setfpxregs)", ARG4, 
+                     sizeof(struct vki_user_fxsr_struct) );
+      break;
+   default:
+      break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      POST_MEM_WRITE( ARG4, sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_i387_struct));
+      break;
+   case VKI_PTRACE_GETFPXREGS:
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_user_fxsr_struct) );
+      break;
+   default:
+      break;
+   }
+}
 
 // XXX: this duplicates a function in coregrind/vg_syscalls.c, yuk
 static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
@@ -1945,7 +1946,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_getuid,            sys_getuid16),       // 24 ## P
 //zz 
 //zz    //   (__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
-//zz    PLAXY(__NR_ptrace,            sys_ptrace),         // 26
+   PLAXY(__NR_ptrace,            sys_ptrace),         // 26
    GENX_(__NR_alarm,             sys_alarm),          // 27
 //zz    //   (__NR_oldfstat,          sys_fstat),          // 28 * L -- obsolete
    GENX_(__NR_pause,             sys_pause),          // 29
@@ -2025,7 +2026,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    PLAX_(__NR_mmap,              old_mmap),           // 90
    GENXY(__NR_munmap,            sys_munmap),         // 91
 //zz    GENX_(__NR_truncate,          sys_truncate),       // 92
-//zz    GENX_(__NR_ftruncate,         sys_ftruncate),      // 93
+   GENX_(__NR_ftruncate,         sys_ftruncate),      // 93
 //zz    GENX_(__NR_fchmod,            sys_fchmod),         // 94
 //zz 
 //zz    GENX_(__NR_fchown,            sys_fchown16),       // 95
@@ -2185,8 +2186,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENXY(__NR_fcntl64,           sys_fcntl64),        // 221
    GENX_(222,                    sys_ni_syscall),     // 222
    GENX_(223,                    sys_ni_syscall),     // 223
-//zz    LINX_(__NR_gettid,            sys_gettid),         // 224
-//zz 
+   LINX_(__NR_gettid,            sys_gettid),         // 224
+
 //zz    //   (__NR_readahead,         sys_readahead),      // 225 */(Linux?)
 //zz    GENX_(__NR_setxattr,          sys_setxattr),       // 226
 //zz    GENX_(__NR_lsetxattr,         sys_lsetxattr),      // 227
@@ -2249,8 +2250,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz 
 //zz    //   (__NR_get_mempolicy,     sys_get_mempolicy),  // 275 ?/?
 //zz    //   (__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
-//zz    GENXY(__NR_mq_open,           sys_mq_open),        // 277
-//zz    GENX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
+   GENXY(__NR_mq_open,           sys_mq_open),        // 277
+   GENX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
 //zz    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)
 //zz 
 //zz    GENXY(__NR_mq_timedreceive,   sys_mq_timedreceive),// (mq_open+3)

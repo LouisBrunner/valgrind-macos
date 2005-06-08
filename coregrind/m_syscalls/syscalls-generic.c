@@ -2713,12 +2713,13 @@ PRE(sys_fork)
    }
 }
 
-//zz PRE(sys_ftruncate, SfMayBlock)
-//zz {
-//zz    PRINT("sys_ftruncate ( %d, %lld )", ARG1,(ULong)ARG2);
-//zz    PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
-//zz }
-//zz 
+PRE(sys_ftruncate)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_ftruncate ( %d, %lld )", ARG1,(ULong)ARG2);
+   PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
+}
+
 //zz PRE(sys_truncate, SfMayBlock)
 //zz {
 //zz    PRINT("sys_truncate ( %p(%s), %d )", ARG1,ARG1,ARG2);
@@ -5360,42 +5361,43 @@ POST(sys_rt_sigprocmask)
 //zz {
 //zz    POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
 //zz }
-//zz 
-//zz PRE(sys_mq_open, 0)
-//zz {
-//zz    PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
-//zz          ARG1,ARG1,ARG2,(ULong)ARG3,ARG4);
-//zz    PRE_REG_READ4(long, "mq_open",
-//zz                  const char *, name, int, oflag, vki_mode_t, mode,
-//zz                  struct mq_attr *, attr);
-//zz    PRE_MEM_RASCIIZ( "mq_open(name)", ARG1 );
-//zz    if ((ARG2 & VKI_O_CREAT) != 0 && ARG4 != 0) {
-//zz       const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG4;
-//zz       PRE_MEM_READ( "mq_open(attr->mq_maxmsg)",
-//zz                      (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
-//zz       PRE_MEM_READ( "mq_open(attr->mq_msgsize)",
-//zz                      (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_mq_open)
-//zz {
-//zz    if (!VG_(fd_allowed)(RES, "mq_open", tid, True)) {
-//zz       VG_(close)(RES);
-//zz       SET_STATUS_( -VKI_EMFILE );
-//zz    } else {
-//zz       if (VG_(clo_track_fds))
-//zz          VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
-//zz    }
-//zz }
-//zz 
-//zz PRE(sys_mq_unlink, 0)
-//zz {
-//zz    PRINT("sys_mq_unlink ( %p(%s) )", ARG1,ARG1);
-//zz    PRE_REG_READ1(long, "mq_unlink", const char *, name);
-//zz    PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
-//zz }
-//zz 
+
+PRE(sys_mq_open)
+{
+   PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
+         ARG1,ARG1,ARG2,(ULong)ARG3,ARG4);
+   PRE_REG_READ4(long, "mq_open",
+                 const char *, name, int, oflag, vki_mode_t, mode,
+                 struct mq_attr *, attr);
+   PRE_MEM_RASCIIZ( "mq_open(name)", ARG1 );
+   if ((ARG2 & VKI_O_CREAT) != 0 && ARG4 != 0) {
+      const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG4;
+      PRE_MEM_READ( "mq_open(attr->mq_maxmsg)",
+                     (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
+      PRE_MEM_READ( "mq_open(attr->mq_msgsize)",
+                     (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
+   }
+}
+
+POST(sys_mq_open)
+{
+   vg_assert(SUCCESS);
+   if (!VG_(fd_allowed)(RES, "mq_open", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+   }
+}
+
+PRE(sys_mq_unlink)
+{
+   PRINT("sys_mq_unlink ( %p(%s) )", ARG1,ARG1);
+   PRE_REG_READ1(long, "mq_unlink", const char *, name);
+   PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
+}
+
 //zz PRE(sys_mq_timedsend, SfMayBlock)
 //zz {
 //zz    PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",

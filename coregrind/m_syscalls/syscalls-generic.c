@@ -2015,11 +2015,11 @@ PRE(sys_mremap)
    );
 }
 
-//zz PRE(sys_nice, 0)
-//zz {
-//zz    PRINT("sys_nice ( %d )", ARG1);
-//zz    PRE_REG_READ1(long, "nice", int, inc);
-//zz }
+PRE(sys_nice)
+{
+   PRINT("sys_nice ( %d )", ARG1);
+   PRE_REG_READ1(long, "nice", int, inc);
+}
 
 PRE(sys_sched_getscheduler)
 {
@@ -2101,13 +2101,14 @@ PRE(sys_sched_get_priority_min)
 //zz                  vki_u32, offset_low32, vki_u32, offset_high32);
 //zz    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
 //zz }
-//zz 
-//zz PRE(sys_sync, SfMayBlock)
-//zz {
-//zz    PRINT("sys_sync ( )");
-//zz    PRE_REG_READ0(long, "sync");
-//zz }
-//zz 
+
+PRE(sys_sync)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_sync ( )");
+   PRE_REG_READ0(long, "sync");
+}
+
 //zz PRE(sys_fstatfs, 0)
 //zz {
 //zz    PRINT("sys_fstatfs ( %d, %p )",ARG1,ARG2);
@@ -2853,11 +2854,11 @@ PRE(sys_getegid)
    PRE_REG_READ0(long, "getegid");
 }
 
-//zz PRE(sys_getgid16, 0)
-//zz {
-//zz    PRINT("sys_getgid16 ( )");
-//zz    PRE_REG_READ0(long, "getgid16");
-//zz }
+PRE(sys_getgid16)
+{
+   PRINT("sys_getgid16 ( )");
+   PRE_REG_READ0(long, "getgid16");
+}
 
 PRE(sys_getgid)
 {
@@ -4793,12 +4794,12 @@ PRE(sys_select)
       PRE_MEM_READ( "select(timeout)", ARG5, sizeof(struct vki_timeval) );
 }
 
-//zz PRE(sys_setgid16, 0)
-//zz {
-//zz    PRINT("sys_setgid16 ( %d )", ARG1);
-//zz    PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
-//zz }
-//zz 
+PRE(sys_setgid16)
+{
+   PRINT("sys_setgid16 ( %d )", ARG1);
+   PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
+}
+
 //zz PRE(sys_setgid, 0)
 //zz {
 //zz    PRINT("sys_setgid ( %d )", ARG1);
@@ -5011,14 +5012,15 @@ POST(sys_newuname)
    }
 }
 
-//zz PRE(sys_utime, SfMayBlock)
-//zz {
-//zz    PRINT("sys_utime ( %p, %p )", ARG1,ARG2);
-//zz    PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
-//zz    PRE_MEM_RASCIIZ( "utime(filename)", ARG1 );
-//zz    if (ARG2 != 0)
-//zz       PRE_MEM_READ( "utime(buf)", ARG2, sizeof(struct vki_utimbuf) );
-//zz }
+PRE(sys_utime)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_utime ( %p, %p )", ARG1,ARG2);
+   PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
+   PRE_MEM_RASCIIZ( "utime(filename)", ARG1 );
+   if (ARG2 != 0)
+      PRE_MEM_READ( "utime(buf)", ARG2, sizeof(struct vki_utimbuf) );
+}
 
 PRE(sys_waitpid)
 {
@@ -5405,89 +5407,91 @@ PRE(sys_mq_unlink)
    PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
 }
 
-//zz PRE(sys_mq_timedsend, SfMayBlock)
-//zz {
-//zz    PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
-//zz          ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
-//zz    PRE_REG_READ5(long, "mq_timedsend",
-//zz                  vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
-//zz                  unsigned int, msg_prio, const struct timespec *, abs_timeout);
-//zz    if (!VG_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
-//zz       SET_STATUS_( -VKI_EBADF );
-//zz    } else {
-//zz       PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
-//zz       if (ARG5 != 0)
-//zz          PRE_MEM_READ( "mq_timedsend(abs_timeout)", ARG5,
-//zz                         sizeof(struct vki_timespec) );
-//zz    }
-//zz }
-//zz 
-//zz PRE(sys_mq_timedreceive, SfMayBlock)
-//zz {
-//zz    PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
-//zz          ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
-//zz    PRE_REG_READ5(ssize_t, "mq_timedreceive",
-//zz                  vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
-//zz                  unsigned int *, msg_prio,
-//zz                  const struct timespec *, abs_timeout);
-//zz    if (!VG_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
-//zz       SET_STATUS_( -VKI_EBADF );
-//zz    } else {
-//zz       PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
-//zz       if (ARG4 != 0)
-//zz          PRE_MEM_WRITE( "mq_timedreceive(msg_prio)",
-//zz                         ARG4, sizeof(unsigned int) );
-//zz       if (ARG5 != 0)
-//zz          PRE_MEM_READ( "mq_timedreceive(abs_timeout)",
-//zz                         ARG5, sizeof(struct vki_timespec) );
-//zz    }
-//zz }
-//zz 
-//zz POST(sys_mq_timedreceive)
-//zz {
-//zz    POST_MEM_WRITE( ARG2, ARG3 );
-//zz    if (ARG4 != 0)
-//zz       POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
-//zz }
-//zz 
-//zz PRE(sys_mq_notify, 0)
-//zz {
-//zz    PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
-//zz    PRE_REG_READ2(long, "mq_notify",
-//zz                  vki_mqd_t, mqdes, const struct sigevent *, notification);
-//zz    if (!VG_(fd_allowed)(ARG1, "mq_notify", tid, False))
-//zz       SET_STATUS_( -VKI_EBADF );
-//zz    else if (ARG2 != 0)
-//zz       PRE_MEM_READ( "mq_notify(notification)",
-//zz                     ARG2, sizeof(struct vki_sigevent) );
-//zz }
-//zz 
-//zz PRE(sys_mq_getsetattr, 0)
-//zz {
-//zz    PRINT("sys_mq_getsetattr( %d, %p, %p )", ARG1,ARG2,ARG3 );
-//zz    PRE_REG_READ3(long, "mq_getsetattr",
-//zz                  vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
-//zz                  struct mq_attr *, omqstat);
-//zz    if (!VG_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
-//zz       SET_STATUS_( -VKI_EBADF );
-//zz    } else {
-//zz       if (ARG2 != 0) {
-//zz          const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG2;
-//zz          PRE_MEM_READ( "mq_getsetattr(mqstat->mq_flags)",
-//zz                         (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
-//zz       }
-//zz       if (ARG3 != 0)
-//zz          PRE_MEM_WRITE( "mq_getsetattr(omqstat)", ARG3,
-//zz                         sizeof(struct vki_mq_attr) );
-//zz    }   
-//zz }
-//zz 
-//zz POST(sys_mq_getsetattr)
-//zz {
-//zz    if (ARG3 != 0)
-//zz       POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
-//zz }
-//zz 
+PRE(sys_mq_timedsend)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
+         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "mq_timedsend",
+                 vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int, msg_prio, const struct timespec *, abs_timeout);
+   if (!VG_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
+      if (ARG5 != 0)
+         PRE_MEM_READ( "mq_timedsend(abs_timeout)", ARG5,
+                        sizeof(struct vki_timespec) );
+   }
+}
+
+PRE(sys_mq_timedreceive)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
+         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+   PRE_REG_READ5(ssize_t, "mq_timedreceive",
+                 vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int *, msg_prio,
+                 const struct timespec *, abs_timeout);
+   if (!VG_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
+      if (ARG4 != 0)
+         PRE_MEM_WRITE( "mq_timedreceive(msg_prio)",
+                        ARG4, sizeof(unsigned int) );
+      if (ARG5 != 0)
+         PRE_MEM_READ( "mq_timedreceive(abs_timeout)",
+                        ARG5, sizeof(struct vki_timespec) );
+   }
+}
+
+POST(sys_mq_timedreceive)
+{
+   POST_MEM_WRITE( ARG2, ARG3 );
+   if (ARG4 != 0)
+      POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
+}
+
+PRE(sys_mq_notify)
+{
+   PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
+   PRE_REG_READ2(long, "mq_notify",
+                 vki_mqd_t, mqdes, const struct sigevent *, notification);
+   if (!VG_(fd_allowed)(ARG1, "mq_notify", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   else if (ARG2 != 0)
+      PRE_MEM_READ( "mq_notify(notification)",
+                    ARG2, sizeof(struct vki_sigevent) );
+}
+
+PRE(sys_mq_getsetattr)
+{
+   PRINT("sys_mq_getsetattr( %d, %p, %p )", ARG1,ARG2,ARG3 );
+   PRE_REG_READ3(long, "mq_getsetattr",
+                 vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
+                 struct mq_attr *, omqstat);
+   if (!VG_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      if (ARG2 != 0) {
+         const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG2;
+         PRE_MEM_READ( "mq_getsetattr(mqstat->mq_flags)",
+                        (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
+      }
+      if (ARG3 != 0)
+         PRE_MEM_WRITE( "mq_getsetattr(omqstat)", ARG3,
+                        sizeof(struct vki_mq_attr) );
+   }   
+}
+
+POST(sys_mq_getsetattr)
+{
+   if (ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
+}
+
 //zz PRE(sys_timer_create, 0)
 //zz {
 //zz    PRINT("sys_timer_create( %d, %p, %p )", ARG1,ARG2,ARG3);

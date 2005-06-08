@@ -1950,15 +1950,15 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_alarm,             sys_alarm),          // 27
 //zz    //   (__NR_oldfstat,          sys_fstat),          // 28 * L -- obsolete
    GENX_(__NR_pause,             sys_pause),          // 29
-//zz 
-//zz    GENX_(__NR_utime,             sys_utime),          // 30
+
+   GENX_(__NR_utime,             sys_utime),          // 30
    GENX_(__NR_stty,              sys_ni_syscall),     // 31
    GENX_(__NR_gtty,              sys_ni_syscall),     // 32
    GENX_(__NR_access,            sys_access),         // 33
-//zz    GENX_(__NR_nice,              sys_nice),           // 34
-//zz 
+   GENX_(__NR_nice,              sys_nice),           // 34
+
    GENX_(__NR_ftime,             sys_ni_syscall),     // 35
-//zz    GENX_(__NR_sync,              sys_sync),           // 36
+   GENX_(__NR_sync,              sys_sync),           // 36
    GENX_(__NR_kill,              sys_kill),           // 37
    GENX_(__NR_rename,            sys_rename),         // 38
    GENX_(__NR_mkdir,             sys_mkdir),          // 39
@@ -1970,8 +1970,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_prof,              sys_ni_syscall),     // 44
 //zz 
    GENX_(__NR_brk,               sys_brk),            // 45
-//zz    GENX_(__NR_setgid,            sys_setgid16),       // 46
-//zz    GENX_(__NR_getgid,            sys_getgid16),       // 47
+   GENX_(__NR_setgid,            sys_setgid16),       // 46
+   GENX_(__NR_getgid,            sys_getgid16),       // 47
 //zz    //   (__NR_signal,            sys_signal),         // 48 */* (ANSI C)
    GENX_(__NR_geteuid,           sys_geteuid16),      // 49
 //zz 
@@ -2252,11 +2252,11 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    //   (__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
    GENXY(__NR_mq_open,           sys_mq_open),        // 277
    GENX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
-//zz    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)
-//zz 
-//zz    GENXY(__NR_mq_timedreceive,   sys_mq_timedreceive),// (mq_open+3)
-//zz    GENX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
-//zz    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
+   GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)
+
+   GENXY(__NR_mq_timedreceive,   sys_mq_timedreceive),// (mq_open+3)
+   GENX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
+   GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
    GENX_(__NR_sys_kexec_load,    sys_ni_syscall),     // 283
 };
 

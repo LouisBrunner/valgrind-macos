@@ -2,6 +2,10 @@
 ~~~~~~~~~
 ToDo: vex-amd64: check above/below the line for reg-alloc
 
+9 June 05 (after major syscalls overhaul)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+corecheck/m_syscalls/syscalls-x86-linux.h is now empty.  Should it be
+deleted?
 
 23 Apr 05 (memcheck-on-amd64 notes)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

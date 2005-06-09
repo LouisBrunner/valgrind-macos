@@ -48,12 +48,6 @@
 
 #include "vki_unistd.h"              /* for the __NR_* constants */
 
-/* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */
-#define ARCH_SET_GS 0x1001
-#define ARCH_SET_FS 0x1002
-#define ARCH_GET_FS 0x1003
-#define ARCH_GET_GS 0x1004
-
 
 /* ---------------------------------------------------------------------
    Stacks, thread wrappers
@@ -682,7 +676,7 @@ PRE(sys_arch_prctl)
    // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   vg_assert(ARG1 == ARCH_SET_FS);
+   vg_assert(ARG1 == VKI_ARCH_SET_FS);
    tst = VG_(get_ThreadState)(tid);
    tst->arch.vex.guest_FS_ZERO = ARG2;
 

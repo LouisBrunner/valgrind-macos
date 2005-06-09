@@ -360,34 +360,44 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
 
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
-#  if defined(VGP_x86_linux)
    SysRes res;
+
+#  if defined(VGP_x86_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
    args[2] = (UWord)namelen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UWord)&args);
    return res.isError ? -1 : res.val;
+
+#  elif defined(VGP_amd64_linux)
+   res = VG_(do_syscall3)( __NR_getsockname,
+                           (UWord)sd, (UWord)name, (UWord)namelen );
+   return res.isError ? -1 : res.val;
+
 #  else
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
    I_die_here;
 #  endif
 }
 
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
-#  if defined(VGP_x86_linux)
    SysRes res;
+
+#  if defined(VGP_x86_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
    args[2] = (UWord)namelen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UWord)&args);
    return res.isError ? -1 : res.val;
+
+#  elif defined(VGP_amd64_linux)
+   res = VG_(do_syscall3)( __NR_getpeername,
+                           (UWord)sd, (UWord)name, (UWord)namelen );
+   return res.isError ? -1 : res.val;
+
 #  else
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
    I_die_here;
 #  endif
 }
@@ -395,8 +405,9 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
-#  if defined(VGP_x86_linux)
    SysRes res;
+
+#  if defined(VGP_x86_linux)
    UWord  args[5];
    args[0] = sd;
    args[1] = level;
@@ -405,10 +416,15 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    args[4] = (UWord)optlen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UWord)&args);
    return res.isError ? -1 : res.val;
+
+#  elif defined(VGP_amd64_linux)
+   res = VG_(do_syscall5)( __NR_getsockopt,
+                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)optval, (UWord)optlen );
+   return res.isError ? -1 : res.val;
+
 #  else
    I_die_here;
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
 #  endif
 }
 

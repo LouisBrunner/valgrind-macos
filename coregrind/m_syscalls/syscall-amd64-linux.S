@@ -32,101 +32,8 @@
 #include "vki_unistd.h"
 #include "libvex_guest_offsets.h"
 
-/*
-	Perform a Linux syscall with the "syscall" instruction.
-	
-	Incoming args (syscall number + up to 6 args) come in 
-	%rdi, %rsi, %rdx, %rcx, %r8, %r9, and the last one on the stack
-	(ie. the C calling convention).
 
-	They are passed to the syscall in the regs
-	%rdi, %rsi, %rdx, %r10, %r8, %r9 (yes, really %r10, not %rcx), ie. the
-	kernel's syscall calling convention.
-
-	%rax holds the syscall number and gets the return value.
-	%rcx and %r11 are clobbered by the syscall;  no matter, they
-	are caller-save (the syscall clobbers no callee-save regs, so
-	we don't have to do any register saving/restoring).
-
-	This has no effect on the virtual machine; the expectation is
-	that the syscall mechanism makes no useful changes to any
-	register except %rax, which is returned.
-*/
-.globl	VG_(do_syscall)
-VG_(do_syscall):
-	# Convert function calling convention --> syscall calling convention
-	movq	%rdi, %rax
-	movq	%rsi, %rdi
-	movq	%rdx, %rsi
-	movq	%rcx, %rdx
-	movq	%r8,  %r10
-	movq	%r9,  %r8
-	movq    8(%rsp), %r9		# last arg from stack
-	syscall
-	ret
-
-
-/*
-        Perform a clone system call.  clone is strange because it has
-        fork()-like return-twice semantics, so it needs special
-        handling here.
-
-	Upon entry, we have:
-
-	    int (*fn)(void*)	in %rdi
-	    void*  child_stack	in %rsi
-	    int    flags	in %rdx
-	    void*  arg		in %rcx
-	    pid_t* child_tid	in %r8
-	    pid_t* parent_tid	in %r9
-	    void*  tls_ptr      at 8(%rsp)
-
-	System call requires:
-
-	    int    $__NR_clone  in %rax
-	    int    flags	in %rdi
-	    void*  child_stack	in %rsi
-	    pid_t* parent_tid	in %rdx
-	    pid_t* child_tid	in %r10
-	    void*  tls_ptr      in %r8
- */
-.globl VG_(clone)
-VG_(clone):
-        // set up child stack, temporarily preserving fn and arg
-        subq    $16, %rsi               // make space on stack
-        movq    %rcx, 8(%rsi)           // save arg
-        movq    %rdi, 0(%rsi)           // save fn 
-        
-        // setup syscall
-        movq    $__NR_clone, %rax       // syscall number
-        movq    %rdx,     %rdi          // syscall arg1: flags
-        // %rsi already setup           // syscall arg2: child_stack
-        movq    %r9,      %rdx          // syscall arg3: parent_tid
-        movq    %r8,      %r10          // syscall arg4: child_tid
-        movq    8(%rsp),  %r8           // syscall arg5: tls_ptr
-
-        syscall                         // clone()
-
-        testq   %rax, %rax              // child if retval == 0
-        jnz     1f
-
-        // CHILD - call thread function
-        pop     %rax                    // pop fn
-        pop     %rdi                    // pop fn arg1: arg
-        call    *%rax                   // call fn
-
-        // exit with result
-        movq    %rax, %rdi              // arg1: return value from fn
-        movq    $__NR_exit, %rax
-
-        syscall
-
-        // Exit returned?!
-        ud2
-
-1:      // PARENT or ERROR
-        ret
-
+/*----------------------------------------------------------------*/
 .globl VG_(sigreturn)
 VG_(sigreturn):
         movq    $__NR_rt_sigreturn, %rax
@@ -159,7 +66,8 @@ VG_(sigreturn):
 	
 	Prototype:
 
-	Int VGA_(_client_syscall)(Int syscallno,		// rdi
+	Int VGA_(do_syscall_for_client_WRK(
+	                          Int syscallno,		// rdi
 				  void* guest_state,		// rsi
 				  const vki_sigset_t *sysmask,	// rdx
 				  const vki_sigset_t *postmask,	// rcx
@@ -170,8 +78,8 @@ VG_(sigreturn):
 /* from vki_arch.h */	
 #define VKI_SIG_SETMASK	2
 	
-.globl VGA_(_client_syscall)
-VGA_(_client_syscall):
+.globl VGA_(do_syscall_for_client_WRK)
+VGA_(do_syscall_for_client_WRK):
 	/* save callee-saved regs */
 	pushq	%rbx
 	pushq	%rbp

@@ -106,6 +106,15 @@ static inline SysRes VG_(mk_SysRes_x86_linux) ( Int eax ) {
    return res;
 }
 
+/* Similarly .. */
+static inline SysRes VG_(mk_SysRes_amd64_linux) ( Long rax ) {
+   SysRes res;
+   res.isError = rax >= -4095 && rax <= -1;
+   res.val     = res.isError ? -rax : rax;
+   return res;
+}
+
+
 
 #endif   // __PUB_CORE_LIBCBASE_H
 

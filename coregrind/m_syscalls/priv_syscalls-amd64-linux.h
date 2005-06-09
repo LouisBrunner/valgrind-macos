@@ -32,23 +32,6 @@
 #ifndef __PRIV_SYSCALLS_AMD64_LINUX_H
 #define __PRIV_SYSCALLS_AMD64_LINUX_H
 
-// Accessors for the ThreadArchState
-#define VGP_SYSCALL_NUM       guest_RAX
-#define VGP_SYSCALL_ARG1      guest_RDI
-#define VGP_SYSCALL_ARG2      guest_RSI
-#define VGP_SYSCALL_ARG3      guest_RDX
-#define VGP_SYSCALL_ARG4      guest_R10
-#define VGP_SYSCALL_ARG5      guest_R8
-#define VGP_SYSCALL_ARG6      guest_R9
-#define VGP_SYSCALL_RET       guest_RAX
-
-// Setting a syscall result
-#define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_RAX = (val))
-
-// For informing tools that a syscall result has been set.
-#define VGP_TRACK_SYSCALL_RETVAL(zztid) \
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord) );
-
 #endif   // __PRIV_SYSCALLS_AMD64_LINUX_H
 
 /*--------------------------------------------------------------------*/

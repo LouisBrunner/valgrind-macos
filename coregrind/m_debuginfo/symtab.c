@@ -1718,12 +1718,16 @@ Bool read_lib_symbols ( SegInfo* si )
          VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
       }
 
-      /* Read the stabs and/or dwarf2 debug information, if any. */
+      /* Read the stabs and/or dwarf2 debug information, if any.  It
+         appears reading stabs stuff on amd64-linux doesn't work, so
+         we ignore it. */
+#     if !defined(VGP_amd64_linux)
       if (stab != NULL && stabstr != NULL) {
          has_debuginfo = True;
          VG_(read_debuginfo_stabs) ( si, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
+#     endif
       if (debug_line) {
          has_debuginfo = True;
          VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );

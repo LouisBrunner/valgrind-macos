@@ -315,7 +315,7 @@ asm(
          /* Hm, exit returned */
 "        ud2\n"
 
-"1:      /* PARENT or ERROR */\n"
+"1:\n"   /* PARENT or ERROR */
 "        pop     %edi\n"
 "        pop     %ebx\n"
 "        ret\n"
@@ -326,6 +326,7 @@ asm(
 #undef __NR_EXIT
 #undef STRINGIFY
 #undef STRINGIFZ
+
 
 // forward declarations
 static void setup_child ( ThreadArchState*, ThreadArchState*, Bool );
@@ -343,8 +344,8 @@ static SysRes sys_set_thread_area ( ThreadId, vki_modify_ldt_t* );
  */
 static SysRes do_clone ( ThreadId ptid, 
                          UInt flags, Addr esp, 
-                         Int *parent_tidptr, 
-                         Int *child_tidptr, 
+                         Int* parent_tidptr, 
+                         Int* child_tidptr, 
                          vki_modify_ldt_t *tlsinfo)
 {
    static const Bool debug = False;
@@ -383,7 +384,8 @@ static SysRes do_clone ( ThreadId ptid,
       is passed as an arg to setup_child. */
    setup_child( &ctst->arch, &ptst->arch, True /*VG_(clo_support_elan3)*/ );
 
-   /* Make sys_clone appear to have returned zero in the child. */
+   /* Make sys_clone appear to have returned Success(0) in the
+      child. */
    ctst->arch.vex.guest_EAX = 0;
 
    if (esp != 0)
@@ -438,6 +440,7 @@ static SysRes do_clone ( ThreadId ptid,
             child_tidptr, parent_tidptr, NULL
          );
    res = VG_(mk_SysRes_x86_linux)( eax );
+
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
   out:
@@ -474,8 +477,9 @@ static SysRes do_fork_clone ( ThreadId tid,
 
    /* Since this is the fork() form of clone, we don't need all that
       VG_(clone) stuff */
-   res = VG_(do_syscall5)(__NR_clone, flags, (UWord)NULL, (UWord)parent_tidptr, 
-                                             (UWord)NULL, (UWord)child_tidptr);
+   res = VG_(do_syscall5)( __NR_clone, flags, 
+                           (UWord)NULL, (UWord)parent_tidptr, 
+                           (UWord)NULL, (UWord)child_tidptr );
 
    if (!res.isError && res.val == 0) {
       /* child */
@@ -1070,7 +1074,7 @@ PRE(sys_clone)
    case 0: /* plain fork */
       SET_STATUS_from_SysRes(
          do_fork_clone(tid,
-                       cloneflags,              /* flags */
+                       cloneflags,      /* flags */
                        (Addr)ARG2,      /* child ESP */
                        (Int *)ARG3,     /* parent_tidptr */
                        (Int *)ARG5));   /* child_tidptr */
@@ -1890,8 +1894,7 @@ POST(sys_sigaction)
    The x86/Linux syscall table
    ------------------------------------------------------------------ */
 
-/* Add a Linux-specific, arch-independent wrapper to a syscall
-   table. */
+/* Add an x86-linux specific wrapper to a syscall table. */
 #define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(x86_linux, sysno, name) 
 #define PLAXY(sysno, name)    WRAPPER_ENTRY_XY(x86_linux, sysno, name)
 

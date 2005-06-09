@@ -504,6 +504,44 @@ asm(
 #endif
 
 
+#if defined(VGP_amd64_linux)
+/* Perform a Linux syscall with the "syscall" instruction.
+	
+   Incoming args (syscall number + up to 6 args) come in %rdi, %rsi,
+   %rdx, %rcx, %r8, %r9, and the last one on the stack (ie. the C
+   calling convention).
+
+   They are passed to the syscall in the regs %rdi, %rsi, %rdx, %r10,
+   %r8, %r9 (yes, really %r10, not %rcx), ie. the kernel's syscall
+   calling convention.
+
+   %rax holds the syscall number and gets the return value.  %rcx and
+   %r11 are clobbered by the syscall; no matter, they are caller-save
+   (the syscall clobbers no callee-save regs, so we don't have to do
+   any register saving/restoring).
+*/
+extern ULong do_syscall_amd64_linux_WRK (
+          ULong syscall_no, 
+          ULong a1, ULong a2, ULong a3,
+          ULong a4, ULong a5, ULong a6
+       );
+asm(
+"do_syscall_amd64_linux_WRK:\n"
+        /* Convert function calling convention --> syscall calling
+           convention */
+"	movq	%rdi, %rax\n"
+"	movq	%rsi, %rdi\n"
+"	movq	%rdx, %rsi\n"
+"	movq	%rcx, %rdx\n"
+"	movq	%r8,  %r10\n"
+"	movq	%r9,  %r8\n"
+"	movq    8(%rsp), %r9\n"	 /* last arg from stack */
+"	syscall\n"
+"	ret\n"
+);
+#endif
+
+
 SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3, 
                                       UWord a4, UWord a5, UWord a6 )
 {
@@ -514,8 +552,14 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
    res = VG_(mk_SysRes_x86_linux)( eax );
 #  else
 
+#  if defined(VGP_amd64_linux)
+   ULong rax = do_syscall_amd64_linux_WRK(sysno,a1,a2,a3,a4,a5,a6);
+   res = VG_(mk_SysRes_amd64_linux)( rax );
+#  else
+
 #    error VG_(do_syscall): unimplemented on this platform
 
+#  endif
 #  endif
 
    return res;

@@ -43,6 +43,15 @@
 #include "priv_syscalls-main.h"
 
 
+/* Useful info which needs to be recorded somewhere:
+   Use of registers in syscalls (on linux) is:
+
+          NUM  ARG1  ARG2  ARG3  ARG4  ARG5  ARG6  RESULT
+   x86    eax  ebx   ecx   edx   esi   edi   ebp   eax       (== NUM)
+   amd64  rax  rdi   rsi   rdx   r10   r8    r9    rax       (== NUM)
+   ppc32  r0   r3    r4    r5    r6    r7    r8    r3+CR0.SO (== ARG1)
+*/
+
 /* This is the top level of the system-call handler module.  All
    system calls are channelled through here, doing two things:
 
@@ -262,7 +271,18 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg5  = gst->guest_EDI;
    canonical->arg6  = gst->guest_EBP;
 #  else
+#  if defined(VGP_amd64_linux)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   canonical->sysno = gst->guest_RAX;
+   canonical->arg1  = gst->guest_RDI;
+   canonical->arg2  = gst->guest_RSI;
+   canonical->arg3  = gst->guest_RDX;
+   canonical->arg4  = gst->guest_R10;
+   canonical->arg5  = gst->guest_R8;
+   canonical->arg6  = gst->guest_R9;
+#  else
 #    error "getSyscallArgsFromGuestState: unknown arch"
+#  endif
 #  endif
 }
 
@@ -280,7 +300,18 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_EDI = canonical->arg5;
    gst->guest_EBP = canonical->arg6;
 #  else
+#  if defined(VGP_amd64_linux)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   gst->guest_RAX = canonical->sysno;
+   gst->guest_RDI = canonical->arg1;
+   gst->guest_RSI = canonical->arg2;
+   gst->guest_RDX = canonical->arg3;
+   gst->guest_R10 = canonical->arg4;
+   gst->guest_R8  = canonical->arg5;
+   gst->guest_R9  = canonical->arg6;
+#  else
 #    error "putSyscallArgsIntoGuestState: unknown arch"
+#  endif
 #  endif
 }
 
@@ -294,7 +325,14 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    canonical->what = i >= -4095 && i <= -1  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)(canonical->what==SsFailure ? -i : i);
 #  else
+#  if defined(VGP_amd64_linux)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   Long              i   = (Int)gst->guest_RAX;
+   canonical->what = i >= -4095 && i <= -1  ? SsFailure  : SsSuccess;
+   canonical->val  = (UWord)(canonical->what==SsFailure ? -i : i);
+#  else
 #    error "getSyscallStatusFromGuestState: unknown arch"
+#  endif
 #  endif
 }
 
@@ -315,7 +353,19 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
       gst->guest_EAX = canonical->val;
    }
 #  else
+#  if defined(VGP_amd64_linux)
+   VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   if (canonical->what == SsFailure) {
+      /* This isn't exactly right, in that really a Failure with res
+         not in the range 1 .. 4095 is unrepresentable in the
+         Linux-x86 scheme.  Oh well. */
+      gst->guest_RAX = - (Long)canonical->val;
+   } else {
+      gst->guest_RAX = canonical->val;
+   }
+#  else
 #    error "putSyscallStatusIntoGuestState: unknown arch"
+#  endif
 #  endif
 }
 
@@ -337,7 +387,18 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg6   = OFFSET_x86_EBP;
    layout->o_retval = OFFSET_x86_EAX;
 #  else
+#  if defined(VGP_amd64_linux)
+   layout->o_sysno  = OFFSET_amd64_RAX;
+   layout->o_arg1   = OFFSET_amd64_RDI;
+   layout->o_arg2   = OFFSET_amd64_RSI;
+   layout->o_arg3   = OFFSET_amd64_RDX;
+   layout->o_arg4   = OFFSET_amd64_R10;
+   layout->o_arg5   = OFFSET_amd64_R8;
+   layout->o_arg6   = OFFSET_amd64_R9;
+   layout->o_retval = OFFSET_amd64_RAX;
+#  else
 #    error "getSyscallLayout: unknown arch"
+#  endif
 #  endif
 }
 
@@ -819,7 +880,28 @@ void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 #  else
 
+#  if defined(VGP_amd64_linux)
+   arch->vex.guest_RIP -= 2;             // sizeof(syscall)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      syscall == 0F 05 
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_RIP;
+      
+      if (p[0] != 0x0F || p[1] != 0x05)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %p %02x %02x\n",
+                      arch->vex.guest_RIP, p[0], p[1]); 
+
+      vg_assert(p[0] == 0x0F && p[1] == 0x05);
+   }
+#  else
+
 #    error "VG_(fixup_guest_state_to_restart_syscall): unknown plat"
+#  endif
 #  endif
 }
 

@@ -1648,9 +1648,9 @@ VG_(generic_POST_sys_shmctl) ( ThreadId tid,
 #define PRE(name)      DEFN_PRE_TEMPLATE(generic, name)
 #define POST(name)     DEFN_POST_TEMPLATE(generic, name)
 
-//zz // Combine two 32-bit values into a 64-bit value
-//zz #define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
-//zz 
+// Combine two 32-bit values into a 64-bit value
+#define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+
 //zz //PRE(sys_exit_group, Special)
 //zz //{
 //zz //   VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
@@ -2147,23 +2147,26 @@ PRE(sys_getsid)
    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
-//zz // XXX: only for 32-bit archs
-//zz PRE(sys_pread64, SfMayBlock)
-//zz {
-//zz    PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
-//zz          ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
-//zz    PRE_REG_READ5(ssize_t, "pread64",
-//zz                  unsigned int, fd, char *, buf, vki_size_t, count,
-//zz                  vki_u32, offset_low32, vki_u32, offset_high32);
-//zz    PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
-//zz }
-//zz 
-//zz POST(sys_pread64)
-//zz {
-//zz    if (RES > 0) {
-//zz       POST_MEM_WRITE( ARG2, RES );
-//zz    }
-//zz }
+// XXX: only for 32-bit archs
+// XXX even more: this in fact gets used by amd64-linux.  Someone
+// should look into this properly.
+PRE(sys_pread64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, LOHI64(ARG4,ARG5));
+   PRE_REG_READ5(ssize_t, "pread64",
+                 unsigned int, fd, char *, buf, vki_size_t, count,
+                 vki_u32, offset_low32, vki_u32, offset_high32);
+   PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
+}
+POST(sys_pread64)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      POST_MEM_WRITE( ARG2, RES );
+   }
+}
 
 PRE(sys_mknod)
 {
@@ -2579,7 +2582,7 @@ PRE(sys_fcntl)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#  if defined(VGP_amd64_linux)
+#  if defined(VGP_x86_linux)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
@@ -2641,7 +2644,7 @@ PRE(sys_fcntl64)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#  if defined(VGP_amd64_linux)
+#  if defined(VGP_x86_linux)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
@@ -2653,12 +2656,12 @@ PRE(sys_fcntl64)
       break;
    }
    
-#  if defined(VGP_amd64_linux)
-   //if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
-   //   tst->sys_flags |= SfMayBlock;
+#  if defined(VGP_x86_linux)
+   if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
+      *flags |= SfMayBlock;
 #  else
-   //if (ARG2 == VKI_F_SETLKW)
-   //   tst->sys_flags |= SfMayBlock;
+   if (ARG2 == VKI_F_SETLKW)
+      *flags |= SfMayBlock;
 #  endif
 }
 

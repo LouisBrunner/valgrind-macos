@@ -947,8 +947,10 @@ enum dwarf_cfa_secondary_ops
 
 
 /* RegRule and UnwindContext are used temporarily to do the unwinding.
-   The result is then summarised into a CfiSI, if possible. */
-
+   The result is then summarised into a sequence of CfiSIs, if
+   possible.  UnwindContext effectively holds the state of the
+   abstract machine whilst it is running.
+*/
 typedef
    struct {
       enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch, RR_Expr } tag;
@@ -1719,25 +1721,49 @@ Bool run_CF_instructions ( SegInfo* si,
 
 /* ------------ Main entry point for CFI reading ------------ */
 
+typedef
+   struct {
+      /* This gives the CIE an identity to which FDEs will refer. */
+      UInt   offset;
+      /* Code, data factors. */
+      Int    code_a_f;
+      Int    data_a_f;
+      /* Return-address pseudo-register. */
+      Int    ra_reg;
+      UChar  address_encoding;
+      /* Where are the instrs?  Note, this are simply pointers back to
+         the transiently-mapped-in section. */
+      UChar* instrs;
+      Int    ilen;
+      /* God knows .. don't ask */
+      Bool   saw_z_augmentation;
+   }
+   CIE;
+
+static void init_CIE ( CIE* cie )
+{
+   cie->offset             = 0;
+   cie->code_a_f           = 0;
+   cie->data_a_f           = 0;
+   cie->ra_reg             = 0;
+   cie->address_encoding   = 0;
+   cie->instrs             = NULL;
+   cie->ilen               = 0;
+   cie->saw_z_augmentation = False;
+}
+
+#define N_CIEs 200
+static CIE the_CIEs[N_CIEs];
+
+
 void VG_(read_callframe_info_dwarf2) 
         ( /*OUT*/SegInfo* si, 
           UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {
-   UnwindContext ctx, restore_ctx;
-   Int nbytes;
+   Int    nbytes;
    HChar* how = NULL;
-   Int cie_codeaf = 0;
-   Int cie_dataaf = 0;
-   Int cie_rareg  = 0;
-   Bool ok;
-
-   UChar* current_cie = NULL;
+   Int    n_CIEs = 0;
    UChar* data = ehframe;
-
-   UChar* cie_instrs = NULL;
-   Int cie_ilen = 0;
-   Bool saw_z_augmentation = False;
-   UChar address_encoding = default_Addr_encoding();
 
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");
@@ -1749,6 +1775,25 @@ void VG_(read_callframe_info_dwarf2)
 
    /* Loop over CIEs/FDEs */
 
+   /* Conceptually, the frame info is a sequence of FDEs, one for each
+      function.  Inside an FDE is a miniature program for a special
+      state machine, which, when run, produces the stack-unwinding
+      info for that function.
+
+      Because the FDEs typically have much in common, and because the
+      DWARF designers appear to have been fanatical about space
+      saving, the common parts are factored out into so-called CIEs.
+      That means that what we traverse is a sequence of structs, each
+      of which is either a FDE (usually) or a CIE (occasionally).
+      Each FDE has a field indicating which CIE is the one pertaining
+      to it.
+
+      The following loop traverses the sequence.  FDEs are dealt with
+      immediately; once we harvest the useful info in an FDE, it is
+      then forgotten about.  By contrast, CIEs are validated and
+      dumped into an array, because later FDEs may refer to any
+      previously-seen CIE.
+   */
    while (True) {
 
       /* Are we done? */
@@ -1774,8 +1819,8 @@ void VG_(read_callframe_info_dwarf2)
          VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
-	 of the sequence.  ?? Neither the DWARF2 spec not the AMD64
-	 ABI spec say this, though. */
+         of the sequence.  ?? Neither the DWARF2 spec not the AMD64
+         ABI spec say this, though. */
       if (ciefde_len == 0) {
          if (data == ehframe + ehframe_sz)
             return;
@@ -1783,19 +1828,35 @@ void VG_(read_callframe_info_dwarf2)
          goto bad;
       }
 
-      UInt cie_pointer = read_UInt(data); data += sizeof(UInt);
+      UInt cie_pointer = read_UInt(data); 
+      data += sizeof(UInt); /* XXX see XXX below */
       if (VG_(clo_trace_cfi)) 
          VG_(printf)("cie.pointer     = %d\n", cie_pointer);
 
       /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
       if (cie_pointer == 0) {
 
-         /* Remember the start proper of the current CIE */
-         current_cie = ciefde_start + sizeof(UInt);
+         Int this_CIE;
 
          /* --------- CIE --------- */
-	 if (VG_(clo_trace_cfi)) 
-            VG_(printf)("------ new CIE ------\n");
+	 if (1||VG_(clo_trace_cfi)) 
+            VG_(printf)("------ new CIE (#%d of 0 .. %d) ------\n", 
+                        n_CIEs, N_CIEs - 1);
+
+	 /* Allocate a new CIE record. */
+         vg_assert(n_CIEs >= 0 && n_CIEs <= N_CIEs);
+         if (n_CIEs == N_CIEs) {
+            how = "N_CIEs is too low.  Increase and recompile.";
+            goto bad;
+         }
+
+         this_CIE = n_CIEs;
+         n_CIEs++;
+         init_CIE( &the_CIEs[this_CIE] );
+
+	 /* Record its offset.  This is how we will find it again
+            later when looking at an FDE. */
+         the_CIEs[this_CIE].offset = ciefde_start - ehframe;
 
          UChar cie_version = read_UChar(data); data += sizeof(UChar);
          if (VG_(clo_trace_cfi))
@@ -1815,35 +1876,41 @@ void VG_(read_callframe_info_dwarf2)
             cie_augmentation += 2;
          }
 
-         cie_codeaf = read_leb128( data, &nbytes, 0);
+         the_CIEs[this_CIE].code_a_f = read_leb128( data, &nbytes, 0);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
-            VG_(printf)("cie.code_af     = %d\n", cie_codeaf);
+            VG_(printf)("cie.code_af     = %d\n", 
+                        the_CIEs[this_CIE].code_a_f);
 
-         cie_dataaf = read_leb128( data, &nbytes, 1);
+         the_CIEs[this_CIE].data_a_f = read_leb128( data, &nbytes, 1);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
-            VG_(printf)("cie.data_af     = %d\n", cie_dataaf);
+            VG_(printf)("cie.data_af     = %d\n",
+                        the_CIEs[this_CIE].data_a_f);
 
-         cie_rareg = read_UChar(data); data += sizeof(UChar);
+         the_CIEs[this_CIE].ra_reg = (Int)read_UChar(data); 
+         data += sizeof(UChar);
          if (VG_(clo_trace_cfi)) 
-            VG_(printf)("cie.ra_reg      = %d\n", (Int)cie_rareg);
-         if (cie_rareg < 0 || cie_rareg >= N_CFI_REGS) {
+            VG_(printf)("cie.ra_reg      = %d\n", 
+                        the_CIEs[this_CIE].ra_reg);
+         if (the_CIEs[this_CIE].ra_reg < 0 
+             || the_CIEs[this_CIE].ra_reg >= N_CFI_REGS) {
             how = "cie.ra_reg has implausible value";
             goto bad;
          }
 
-         saw_z_augmentation = *cie_augmentation == 'z';
-         if (saw_z_augmentation) {
+         the_CIEs[this_CIE].saw_z_augmentation 
+            = *cie_augmentation == 'z';
+         if (the_CIEs[this_CIE].saw_z_augmentation) {
             UInt length = read_leb128( data, &nbytes, 0);
             data += nbytes;
-            cie_instrs = data + length;
+            the_CIEs[this_CIE].instrs = data + length;
             cie_augmentation++;
          } else {
-            cie_instrs = NULL;
+            the_CIEs[this_CIE].instrs = NULL;
          }
 
-         address_encoding = default_Addr_encoding();
+         the_CIEs[this_CIE].address_encoding = default_Addr_encoding();
 
          while (*cie_augmentation) {
             switch (*cie_augmentation) {
@@ -1852,7 +1919,8 @@ void VG_(read_callframe_info_dwarf2)
                   cie_augmentation++;
                   break;
                case 'R':
-                  address_encoding = read_UChar(data); data += sizeof(UChar);
+                  the_CIEs[this_CIE].address_encoding 
+                     = read_UChar(data); data += sizeof(UChar);
                   cie_augmentation++;
                   break;
                case 'P':
@@ -1861,11 +1929,11 @@ void VG_(read_callframe_info_dwarf2)
                   cie_augmentation++;
                   break;
                default:
-                  if (cie_instrs == NULL) {
+                  if (the_CIEs[this_CIE].instrs == NULL) {
                      how = "unhandled cie.augmentation";
                      goto bad;
                   }
-                  data = cie_instrs;
+                  data = the_CIEs[this_CIE].instrs;
                   goto done_augmentation;
             }
          }
@@ -1873,55 +1941,72 @@ void VG_(read_callframe_info_dwarf2)
         done_augmentation:
 
          if (VG_(clo_trace_cfi)) 
-            VG_(printf)("cie.encoding    = 0x%x\n", address_encoding);
+            VG_(printf)("cie.encoding    = 0x%x\n", 
+                        the_CIEs[this_CIE].address_encoding);
 
-         cie_instrs = data;
-         cie_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
+         the_CIEs[this_CIE].instrs = data;
+         the_CIEs[this_CIE].ilen
+            = ciefde_start + ciefde_len + sizeof(UInt) - data;
          if (VG_(clo_trace_cfi)) {
-            VG_(printf)("cie.instrs      = %p\n", cie_instrs);
-            VG_(printf)("cie.ilen        = %d\n", (Int)cie_ilen);
+            VG_(printf)("cie.instrs      = %p\n", the_CIEs[this_CIE].instrs);
+            VG_(printf)("cie.ilen        = %d\n", the_CIEs[this_CIE].ilen);
 	 }
 
-         if (cie_ilen < 0 || cie_ilen > ehframe_sz) {
+         if (the_CIEs[this_CIE].ilen < 0
+             || the_CIEs[this_CIE].ilen > ehframe_sz) {
             how = "implausible # cie initial insns";
             goto bad;
          }
 
-	 data += cie_ilen;
+         data += the_CIEs[this_CIE].ilen;
 
          if (VG_(clo_trace_cfi)) 
-            show_CF_instructions(cie_instrs, cie_ilen);
+            show_CF_instructions(the_CIEs[this_CIE].instrs, 
+                                 the_CIEs[this_CIE].ilen);
 
       } else {
 
+         UnwindContext ctx, restore_ctx;
+         Int  cie;
+         UInt look_for;
+         Bool ok;
+
          /* --------- FDE --------- */
 
-         /* Ensure that (1) we have a valid CIE, and (2) that it is
-            indeed the CIE referred to by this FDE. */
-         if (current_cie == NULL) {
-            how = "FDE with no preceding CIE";
+         /* Find the relevant CIE.  The CIE we want is located
+            cie_pointer bytes back from here. */
+
+         /* re sizeof(UInt), matches XXX above.  For 64-bit dwarf this
+            will have to be a ULong instead. */
+         look_for = (data - sizeof(UInt) - ehframe) - cie_pointer;
+
+         for (cie = 0; cie < n_CIEs; cie++) {
+            if (0) VG_(printf)("look for %d   %d\n",
+                               look_for, the_CIEs[cie].offset );
+            if (the_CIEs[cie].offset == look_for)
+               break;
+	 }
+         vg_assert(cie >= 0 && cie <= n_CIEs);
+         if (cie == n_CIEs) {
+            how = "FDE refers to not-findable CIE";
             goto bad;
-         }
-         if (cie_pointer != data - current_cie) {
-            how = "FDE does not refer to preceding CIE";
-            goto bad;
-         }
+	 }
 
          Addr fde_initloc 
-            = read_encoded_Addr(data, address_encoding,
+            = read_encoded_Addr(data, the_CIEs[cie].address_encoding,
                                 &nbytes, ehframe, ehframe_addr);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
          UWord fde_arange 
-            = read_encoded_Addr(data, address_encoding & 0xf,
+            = read_encoded_Addr(data, the_CIEs[cie].address_encoding & 0xf,
                                 &nbytes, ehframe, ehframe_addr);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
 
-         if (saw_z_augmentation) {
+         if (the_CIEs[cie].saw_z_augmentation) {
             data += read_leb128( data, &nbytes, 0);
             data += nbytes;
          }
@@ -1944,15 +2029,16 @@ void VG_(read_callframe_info_dwarf2)
             show_CF_instructions(fde_instrs, fde_ilen);
 
 	 initUnwindContext(&ctx);
-         ctx.code_a_f = cie_codeaf;
-         ctx.data_a_f = cie_dataaf;
+         ctx.code_a_f = the_CIEs[cie].code_a_f;
+         ctx.data_a_f = the_CIEs[cie].data_a_f;
          ctx.initloc  = fde_initloc;
-         ctx.ra_reg   = cie_rareg;
+         ctx.ra_reg   = the_CIEs[cie].ra_reg;
 
 	 initUnwindContext(&restore_ctx);
 
 	 ok = run_CF_instructions(
-                 NULL, &ctx, cie_instrs, cie_ilen, 0, NULL);
+                 NULL, &ctx, the_CIEs[cie].instrs, 
+                             the_CIEs[cie].ilen, 0, NULL);
          if (ok) {
             restore_ctx = ctx;
 	    ok = run_CF_instructions(

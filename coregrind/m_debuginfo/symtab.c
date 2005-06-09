@@ -2435,17 +2435,41 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 #endif /* TEST */
 
 /* Print into buf info on code address, function name and filename */
+
+static Int putStr ( Int n, Int n_buf, Char* buf, Char* str ) 
+{
+   for (; n < n_buf-1 && *str != 0; n++,str++)
+      buf[n] = *str;
+   buf[n] = '\0';
+   return n;
+}
+static Int putStrEsc ( Int n, Int n_buf, Char* buf, Char* str ) 
+{
+   Char alt[2];
+   for (; *str != 0; str++) {
+      switch (*str) {
+         case '&': n = putStr( n, n_buf, buf, "&amp;"); break;
+         case '<': n = putStr( n, n_buf, buf, "&lt;"); break;
+         case '>': n = putStr( n, n_buf, buf, "&gt;"); break;
+         default:  alt[0] = *str;
+                   alt[1] = 0;
+                   n = putStr( n, n_buf, buf, alt );
+                   break;
+      }
+   }
+   return n;
+}
+
 Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 {
-#define APPEND(str)                                         \
-   { UChar* sss;                                            \
-     for (sss = str; n < n_buf-1 && *sss != 0; n++,sss++)   \
-        buf[n] = *sss;                                      \
-     buf[n] = '\0';                                         \
-   }
+#  define APPEND(_str) \
+      n = putStr(n, n_buf, buf, _str);
+#  define APPEND_ESC(_str) \
+      n = putStrEsc(n, n_buf, buf, _str);
+
    UInt  lineno; 
    UChar ibuf[50];
-   UInt  n = 0;
+   Int   n = 0;
    static UChar buf_fn[VG_ERRTXT_LEN];
    static UChar buf_obj[VG_ERRTXT_LEN];
    static UChar buf_srcloc[VG_ERRTXT_LEN];
@@ -2468,19 +2492,19 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
       if (know_objname) {
          APPEND(maybe_newline);
          APPEND("<obj>");
-         APPEND(buf_obj);
+         APPEND_ESC(buf_obj);
          APPEND("</obj>");
       }
       if (know_fnname) {
          APPEND(maybe_newline);
          APPEND("<fn>");
-         APPEND(buf_fn);
+         APPEND_ESC(buf_fn);
          APPEND("</fn>");
       }
       if (know_srcloc) {
          APPEND(maybe_newline);
          APPEND("<file>");
-         APPEND(buf_srcloc);
+         APPEND_ESC(buf_srcloc);
          APPEND("</file>");
          APPEND(maybe_newline);
          APPEND("<line>");
@@ -2522,7 +2546,8 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    }
    return buf;
 
-#undef APPEND
+#  undef APPEND
+#  undef APPEND_ESC
 }
 
 /* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */

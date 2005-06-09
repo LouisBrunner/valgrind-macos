@@ -206,7 +206,7 @@ typedef
    AuxMapEnt;
 
 /* An expanding array of AuxMapEnts. */
-#define N_AUXMAPS 500 /* HACK */
+#define N_AUXMAPS 20000 /* HACK */
 static AuxMapEnt  hacky_auxmaps[N_AUXMAPS];
 static Int        auxmap_size = N_AUXMAPS;
 static Int        auxmap_used = 0;

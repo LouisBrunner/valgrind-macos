@@ -13,15 +13,17 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 fdleak_cmsg.vgtest \
 	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
 	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \
-	fdleak_dup.stderr.exp fdleak_dup.stderr.exp2 fdleak_dup.vgtest \
-	fdleak_dup2.stderr.exp fdleak_dup2.stderr.exp2 fdleak_dup2.vgtest \
+	fdleak_dup.stderr.exp fdleak_dup.stderr.exp2 \
+	fdleak_dup.stderr.exp3 fdleak_dup.vgtest \
+	fdleak_dup2.stderr.exp fdleak_dup2.stderr.exp2 \
+	fdleak_dup2.stderr.exp3 fdleak_dup2.vgtest \
 	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 \
 	fdleak_fcntl.stderr.exp3 fdleak_fcntl.stderr.exp4 \
 	fdleak_fcntl.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stderr.exp2 \
 	fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
 	fdleak_open.stderr.exp fdleak_open.stderr.exp2 fdleak_open.vgtest \
-	fdleak_pipe.stderr.exp fdleak_pipe.vgtest \
+	fdleak_pipe.stderr.exp fdleak_pipe.stderr.exp2 fdleak_pipe.vgtest \
 	fdleak_socketpair.stderr.exp fdleak_socketpair.stderr.exp2 \
 	fdleak_socketpair.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \

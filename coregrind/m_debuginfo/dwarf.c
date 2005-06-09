@@ -1839,7 +1839,7 @@ void VG_(read_callframe_info_dwarf2)
          Int this_CIE;
 
          /* --------- CIE --------- */
-	 if (1||VG_(clo_trace_cfi)) 
+	 if (VG_(clo_trace_cfi)) 
             VG_(printf)("------ new CIE (#%d of 0 .. %d) ------\n", 
                         n_CIEs, N_CIEs - 1);
 

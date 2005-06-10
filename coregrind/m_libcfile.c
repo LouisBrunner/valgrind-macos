@@ -39,6 +39,10 @@
    File stuff
    ------------------------------------------------------------------ */
 
+/* Application-visible file descriptor limits */
+Int VG_(fd_soft_limit) = -1;
+Int VG_(fd_hard_limit) = -1;
+
 static inline Bool fd_exists(Int fd)
 {
    struct vki_stat st;

@@ -56,10 +56,6 @@
 /* The directory we look for all our auxillary files in */
 #define VALGRINDLIB	"VALGRINDLIB"
 
-/* Application-visible file descriptor limits */
-extern Int VG_(fd_soft_limit);
-extern Int VG_(fd_hard_limit);
-
 /* ---------------------------------------------------------------------
    Exports of vg_intercept.c
    ------------------------------------------------------------------ */

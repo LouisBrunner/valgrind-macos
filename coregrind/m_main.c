@@ -125,10 +125,6 @@ const Char *VG_(libdir) = VG_LIBDIR;
 static Int  vg_argc;
 static Char **vg_argv;
 
-/* Application-visible file descriptor limits */
-Int VG_(fd_soft_limit) = -1;
-Int VG_(fd_hard_limit) = -1;
-
 /* As deduced from sp_at_startup, the client's argc, argv[] and
    envp[] as extracted from the client's stack at startup-time. */
 Int    VG_(client_argc);

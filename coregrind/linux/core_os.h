@@ -32,23 +32,6 @@
 #ifndef __LINUX_CORE_OS_H
 #define __LINUX_CORE_OS_H
 
-/* OS-specific thread state */
-typedef struct {
-   /* who we are */
-   Int	lwpid;			/* PID of kernel task */
-   Int	threadgroup;		/* thread group id */
-
-   ThreadId parent;		/* parent tid (if any) */
-
-   /* runtime details */
-   Addr  valgrind_stack_base;	/* Valgrind's stack base */
-   SizeT valgrind_stack_szB;	/* stack size in bytes */
-
-   /* exit details */
-   Int  exitcode;		/* in the case of exitgroup, set by someone else */
-   Int  fatalsig;		/* fatal signal */
-} os_thread_t;
-
 #endif   // __LINUX_CORE_OS_H
 
 /*--------------------------------------------------------------------*/

@@ -553,6 +553,20 @@ UInt run_thread_for_a_while ( ThreadId tid )
 }
 
 
+static void os_state_clear(ThreadState *tst)
+{
+   tst->os_state.lwpid = 0;
+   tst->os_state.threadgroup = 0;
+}
+
+static void os_state_init(ThreadState *tst)
+{
+   tst->os_state.valgrind_stack_base = 0;
+   tst->os_state.valgrind_stack_szB  = 0;
+
+   os_state_clear(tst);
+}
+
 static 
 void mostly_clear_thread_record ( ThreadId tid )
 {
@@ -569,7 +583,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(sigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(sigemptyset)(&VG_(threads)[tid].tmp_sig_mask);
 
-   VGO_(os_state_clear)(&VG_(threads)[tid]);
+   os_state_clear(&VG_(threads)[tid]);
 
    /* start with no altstack */
    VG_(threads)[tid].altstack.ss_sp = (void *)0xdeadbeef;
@@ -641,7 +655,7 @@ void VG_(scheduler_init) ( void )
 
       VG_(threads)[i].sig_queue = NULL;
 
-      VGO_(os_state_init)(&VG_(threads)[i]);
+      os_state_init(&VG_(threads)[i]);
       mostly_clear_thread_record(i);
 
       VG_(threads)[i].status                    = VgTs_Empty;

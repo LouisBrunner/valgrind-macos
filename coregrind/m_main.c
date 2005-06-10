@@ -2877,11 +2877,32 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
    if (0)
        LibVEX_ShowAllocStats();
 
-   /* Ok, finally exit in the os-specific way.  In short, if the
-      (last) thread exited by calling sys_exit, do likewise; if the
-      (last) thread stopped due to a fatal signal, terminate the
-      entire system with that same fatal signal. */
-   VGO_(terminate_NORETURN)( tid, tids_schedretcode );
+   /* Ok, finally exit in the os-specific way, according to the scheduler's
+      return code.  In short, if the (last) thread exited by calling
+      sys_exit, do likewise; if the (last) thread stopped due to a fatal
+      signal, terminate the entire system with that same fatal signal. */
+   VG_(debugLog)(1, "core_os", 
+                    "VGO_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
+
+   vg_assert(VG_(count_living_threads)() == 0);
+
+   switch (tids_schedretcode) {
+   case VgSrc_ExitSyscall: /* the normal way out */
+      VG_(exit)( VG_(threads)[tid].os_state.exitcode );
+      /* NOT ALIVE HERE! */
+      VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
+      break; /* what the hell :) */
+
+   case VgSrc_FatalSig:
+      /* We were killed by a fatal signal, so replicate the effect */
+      vg_assert(VG_(threads)[tid].os_state.fatalsig != 0);
+      VG_(kill_self)(VG_(threads)[tid].os_state.fatalsig);
+      VG_(core_panic)("main(): signal was supposed to be fatal");
+      break;
+
+   default:
+      VG_(core_panic)("main(): unexpected scheduler return code");
+   }
 }
 
 /*--------------------------------------------------------------------*/

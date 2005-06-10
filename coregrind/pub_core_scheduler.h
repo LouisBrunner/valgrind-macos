@@ -95,6 +95,23 @@ typedef
    } 
    ThreadArchState;
 
+/* OS-specific thread state */
+typedef struct {
+   /* who we are */
+   Int	lwpid;			// PID of kernel task
+   Int	threadgroup;		// thread group id
+
+   ThreadId parent;		// parent tid (if any)
+
+   /* runtime details */
+   Addr  valgrind_stack_base;	// Valgrind's stack base
+   SizeT valgrind_stack_szB;	// stack size in bytes
+
+   /* exit details */
+   Int  exitcode;		// in the case of exitgroup, set by someone else
+   Int  fatalsig;		// fatal signal
+} os_thread_t;
+
 
 typedef struct {
    /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.

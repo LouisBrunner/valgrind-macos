@@ -35,8 +35,6 @@
 #include "tool.h"          // tool stuff
 #include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
 
-#include "core_os.h"       // OS-specific stuff,    eg. linux/core_os.h
-
 #include <setjmp.h>        // for jmp_buf
 
 #include "pub_core_mallocfree.h"  // for type 'ArenaId'
@@ -177,17 +175,8 @@ extern void
                                  Addr esp_at_startup,
                                  /*MOD*/ ThreadArchState* arch );
 
-// OS/Platform-specific thread clear (after thread exit)
-extern void VGO_(os_state_clear)(ThreadState *);
-
-// OS/Platform-specific thread init (at scheduler init time)
-extern void VGO_(os_state_init)(ThreadState *);
-
 // Run a thread from beginning to end. 
 extern VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tid);
-
-// Call here to exit the entire Valgrind system.
-extern void VGO_(terminate_NORETURN)(ThreadId tid, VgSchedReturnCode src);
 
 // Allocates a stack for the first thread, then runs it,
 // as if the thread had been set up by clone()

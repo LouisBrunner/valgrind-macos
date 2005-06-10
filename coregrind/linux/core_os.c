@@ -38,57 +38,12 @@
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 
-void VGO_(os_state_clear)(ThreadState *tst)
-{
-   tst->os_state.lwpid = 0;
-   tst->os_state.threadgroup = 0;
-}
-
-void VGO_(os_state_init)(ThreadState *tst)
-{
-   tst->os_state.valgrind_stack_base = 0;
-   tst->os_state.valgrind_stack_szB  = 0;
-
-   VGO_(os_state_clear)(tst);
-}
-
 static Bool i_am_the_only_thread ( void )
 {
    Int c = VG_(count_living_threads)();
    vg_assert(c >= 1); /* stay sane */
    return c == 1;
 }
-
-
-void VGO_(terminate_NORETURN)(ThreadId tid, VgSchedReturnCode src)
-{
-   VG_(debugLog)(1, "core_os", 
-                    "VGO_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
-
-   vg_assert(VG_(count_living_threads)() == 0);
-
-   //--------------------------------------------------------------
-   // Exit, according to the scheduler's return code
-   //--------------------------------------------------------------
-   switch (src) {
-   case VgSrc_ExitSyscall: /* the normal way out */
-      VG_(exit)( VG_(threads)[tid].os_state.exitcode );
-      /* NOT ALIVE HERE! */
-      VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
-      break; /* what the hell :) */
-
-   case VgSrc_FatalSig:
-      /* We were killed by a fatal signal, so replicate the effect */
-      vg_assert(VG_(threads)[tid].os_state.fatalsig != 0);
-      VG_(kill_self)(VG_(threads)[tid].os_state.fatalsig);
-      VG_(core_panic)("main(): signal was supposed to be fatal");
-      break;
-
-   default:
-      VG_(core_panic)("main(): unexpected scheduler return code");
-   }
-}
-
 
 /* Run a thread from beginning to end and return the thread's
    scheduler-return-code. */

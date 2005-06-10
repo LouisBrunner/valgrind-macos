@@ -4598,7 +4598,7 @@ Syscall param mq_getsetattr(omqstat) points to unaddressable byte(s)
 9999:                9999 1e
 -----------------------------------------------------
 WARNING: unhandled syscall: 9999
-Do not panic.  You may be able to fix this easily.
+You may be able to write your own handler.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
 -----------------------------------------------------
   1:           __NR_exit 1s 0m

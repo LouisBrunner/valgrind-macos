@@ -327,7 +327,7 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  else
 #  if defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
-   Long              i   = (Int)gst->guest_RAX;
+   Long                i   = (Long)gst->guest_RAX;
    canonical->what = i >= -4095 && i <= -1  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)(canonical->what==SsFailure ? -i : i);
 #  else

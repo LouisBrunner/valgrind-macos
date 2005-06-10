@@ -40,6 +40,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"

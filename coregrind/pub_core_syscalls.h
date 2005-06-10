@@ -36,6 +36,13 @@
 // but also the code that executes them, and related stuff.
 //--------------------------------------------------------------------
 
+// Return how many bytes of a thread's Valgrind stack are unused
+extern SSizeT VGA_(stack_unused)(ThreadId tid);
+
+// Allocates a stack for the first thread, then runs it,
+// as if the thread had been set up by clone()
+extern void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid);
+
 extern HChar* VG_(resolve_filename_nodup)(Int fd);
 extern HChar* VG_(resolve_filename)(Int fd);
 

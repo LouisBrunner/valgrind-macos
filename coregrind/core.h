@@ -220,13 +220,6 @@ extern void
 // Run a thread from beginning to end. 
 extern VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tid);
 
-// Allocates a stack for the first thread, then runs it,
-// as if the thread had been set up by clone()
-extern void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid);
-
-// Return how many bytes of a thread's Valgrind stack are unused
-extern SSizeT VGA_(stack_unused)(ThreadId tid);
-
 // wait until all other threads are dead
 extern void VGA_(reap_threads)(ThreadId self);
 
@@ -300,3 +293,4 @@ extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

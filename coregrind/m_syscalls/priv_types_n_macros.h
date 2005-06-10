@@ -83,11 +83,10 @@ typedef
    SyscallArgLayout;
 
 /* Flags describing syscall wrappers */
-#define SfMayBlock   (1 << 1)    /* may block                              */
-#define SfPostOnFail (1 << 2)    /* call POST() function on failure        */
-/* #define SfPadAddr (1 << 3) */ /* pad+unpad address space around syscall */
-#define SfPollAfter  (1 << 4)    /* poll for signals on completion         */
-#define SfYieldAfter (1 << 5)    /* yield on completion                    */
+#define SfMayBlock   (1 << 1)    /* may block                       */
+#define SfPostOnFail (1 << 2)    /* call POST() function on failure */
+#define SfPollAfter  (1 << 3)    /* poll for signals on completion  */
+#define SfYieldAfter (1 << 4)    /* yield on completion             */
 
 
 /* ---------------------------------------------------------------------
@@ -143,13 +142,18 @@ extern const UInt VGP_(syscall_table_size);
 
    You should create corresponding global declarations using
    DECL_TEMPLATE (indirectly) below.  
+
+   Note.  The silly name "arrghs" is used rather than just "args"
+   because a few wrappers declare the name "args" themselves, and
+   renaming those decls can change the name that comes out in error
+   messages (on scalar arg checks).  Hence rename this instead.
 */
 
 #define DEFN_PRE_TEMPLATE(auxstr, name)                          \
    void vgSysWrap_##auxstr##_##name##_before                     \
                                  ( ThreadId tid,                 \
                                    SyscallArgLayout* layout,     \
-                                   /*MOD*/SyscallArgs* args,     \
+                                   /*MOD*/SyscallArgs* arrghs,   \
                                    /*OUT*/SyscallStatus* status, \
                                    /*OUT*/UWord* flags           \
                                  )
@@ -157,7 +161,7 @@ extern const UInt VGP_(syscall_table_size);
 #define DEFN_POST_TEMPLATE(auxstr, name)                         \
    void vgSysWrap_##auxstr##_##name##_after                      \
                                  ( ThreadId tid,                 \
-                                   SyscallArgs* args,            \
+                                   SyscallArgs* arrghs,          \
                                    SyscallStatus* status         \
                                  )
 
@@ -171,14 +175,14 @@ extern const UInt VGP_(syscall_table_size);
    void vgSysWrap_##auxstr##_##name##_before                     \
                                  ( ThreadId tid,                 \
                                    SyscallArgLayout* layout,     \
-                                   /*MOD*/SyscallArgs* args,     \
+                                   /*MOD*/SyscallArgs* arrghs,   \
                                    /*OUT*/SyscallStatus* status, \
                                    /*OUT*/UWord* flags           \
                                  );                              \
    extern                                                        \
    void vgSysWrap_##auxstr##_##name##_after                      \
                                  ( ThreadId tid,                 \
-                                   SyscallArgs* args,            \
+                                   SyscallArgs* arrghs,          \
                                    SyscallStatus* status         \
                                  );
 
@@ -213,13 +217,13 @@ extern const UInt VGP_(syscall_table_size);
 
 /* Reference to the syscall's arguments -- the ones which the
    pre-wrapper may have modified, not the original copy. */
-#define SYSNO  (args->sysno)
-#define ARG1   (args->arg1)
-#define ARG2   (args->arg2)
-#define ARG3   (args->arg3)
-#define ARG4   (args->arg4)
-#define ARG5   (args->arg5)
-#define ARG6   (args->arg6)
+#define SYSNO  (arrghs->sysno)
+#define ARG1   (arrghs->arg1)
+#define ARG2   (arrghs->arg2)
+#define ARG3   (arrghs->arg3)
+#define ARG4   (arrghs->arg4)
+#define ARG5   (arrghs->arg5)
+#define ARG6   (arrghs->arg6)
 
 /* Reference to the syscall's current result status/value.  Note that
    

@@ -847,45 +847,45 @@ static SysRes sys_set_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
 }
 
 
-//zz static Int sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
-//zz {
-//zz    Int idx;
-//zz    VexGuestX86SegDescr* gdt;
-//zz 
-//zz    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
-//zz    vg_assert(8 == sizeof(VexGuestX86SegDescr));
-//zz 
-//zz    if (info == NULL)
-//zz       return -VKI_EFAULT;
-//zz 
-//zz    idx = info->entry_number;
-//zz 
-//zz    if (idx < 0 || idx >= VEX_GUEST_X86_GDT_NENT)
-//zz       return -VKI_EINVAL;
-//zz 
-//zz    gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
-//zz 
-//zz    /* If the thread doesn't have a GDT, allocate it now. */
-//zz    if (!gdt) {
-//zz       gdt = alloc_zeroed_x86_GDT();
-//zz       VG_(threads)[tid].arch.vex.guest_GDT = (HWord)gdt;
-//zz    }
-//zz 
-//zz    info->base_addr = ( gdt[idx].LdtEnt.Bits.BaseHi << 24 ) |
-//zz                      ( gdt[idx].LdtEnt.Bits.BaseMid << 16 ) |
-//zz                      gdt[idx].LdtEnt.Bits.BaseLow;
-//zz    info->limit = ( gdt[idx].LdtEnt.Bits.LimitHi << 16 ) |
-//zz                    gdt[idx].LdtEnt.Bits.LimitLow;
-//zz    info->seg_32bit = gdt[idx].LdtEnt.Bits.Default_Big;
-//zz    info->contents = ( gdt[idx].LdtEnt.Bits.Type >> 2 ) & 0x3;
-//zz    info->read_exec_only = ( gdt[idx].LdtEnt.Bits.Type & 0x1 ) ^ 0x1;
-//zz    info->limit_in_pages = gdt[idx].LdtEnt.Bits.Granularity;
-//zz    info->seg_not_present = gdt[idx].LdtEnt.Bits.Pres ^ 0x1;
-//zz    info->useable = gdt[idx].LdtEnt.Bits.Sys;
-//zz    info->reserved = 0;
-//zz 
-//zz    return 0;
-//zz }
+static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
+{
+   Int idx;
+   VexGuestX86SegDescr* gdt;
+
+   vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
+   vg_assert(8 == sizeof(VexGuestX86SegDescr));
+
+   if (info == NULL)
+      return VG_(mk_SysRes_Error)( VKI_EFAULT );
+
+   idx = info->entry_number;
+
+   if (idx < 0 || idx >= VEX_GUEST_X86_GDT_NENT)
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+
+   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+
+   /* If the thread doesn't have a GDT, allocate it now. */
+   if (!gdt) {
+      gdt = alloc_zeroed_x86_GDT();
+      VG_(threads)[tid].arch.vex.guest_GDT = (HWord)gdt;
+   }
+
+   info->base_addr = ( gdt[idx].LdtEnt.Bits.BaseHi << 24 ) |
+                     ( gdt[idx].LdtEnt.Bits.BaseMid << 16 ) |
+                     gdt[idx].LdtEnt.Bits.BaseLow;
+   info->limit = ( gdt[idx].LdtEnt.Bits.LimitHi << 16 ) |
+                   gdt[idx].LdtEnt.Bits.LimitLow;
+   info->seg_32bit = gdt[idx].LdtEnt.Bits.Default_Big;
+   info->contents = ( gdt[idx].LdtEnt.Bits.Type >> 2 ) & 0x3;
+   info->read_exec_only = ( gdt[idx].LdtEnt.Bits.Type & 0x1 ) ^ 0x1;
+   info->limit_in_pages = gdt[idx].LdtEnt.Bits.Granularity;
+   info->seg_not_present = gdt[idx].LdtEnt.Bits.Pres ^ 0x1;
+   info->useable = gdt[idx].LdtEnt.Bits.Sys;
+   info->reserved = 0;
+
+   return VG_(mk_SysRes_Error)( 0 );
+}
 
 /* ---------------------------------------------------------------------
    More thread stuff
@@ -954,6 +954,7 @@ DECL_TEMPLATE(x86_linux, sys_ipc);
 DECL_TEMPLATE(x86_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_modify_ldt);
 DECL_TEMPLATE(x86_linux, sys_set_thread_area);
+DECL_TEMPLATE(x86_linux, sys_get_thread_area);
 DECL_TEMPLATE(x86_linux, sys_ptrace);
 DECL_TEMPLATE(x86_linux, sys_sigaction);
 DECL_TEMPLATE(x86_linux, old_select);
@@ -1210,19 +1211,19 @@ PRE(sys_set_thread_area)
    SET_STATUS_from_SysRes( sys_set_thread_area( tid, (void *)ARG1 ) );
 }
 
-//zz PRE(sys_get_thread_area, Special)
-//zz {
-//zz    PRINT("sys_get_thread_area ( %p )", ARG1);
-//zz    PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
-//zz    PRE_MEM_WRITE( "get_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
-//zz 
-//zz    /* "do" the syscall ourselves; the kernel never sees it */
-//zz    SET_STATUS_( sys_get_thread_area( tid, (void *)ARG1 ) );
-//zz 
-//zz    if (!VG_(is_kerror)(RES)) {
-//zz       POST_MEM_WRITE( ARG1, sizeof(vki_modify_ldt_t) );
-//zz    }
-//zz }
+PRE(sys_get_thread_area)
+{
+   PRINT("sys_get_thread_area ( %p )", ARG1);
+   PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
+   PRE_MEM_WRITE( "get_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
+
+   /* "do" the syscall ourselves; the kernel never sees it */
+   SET_STATUS_from_SysRes( sys_get_thread_area( tid, (void *)ARG1 ) );
+
+   if (SUCCESS) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_modify_ldt_t) );
+   }
+}
 
 // Parts of this are x86-specific, but the *PEEK* cases are generic.
 // XXX: Why is the memory pointed to by ARG3 never checked?
@@ -1458,16 +1459,16 @@ PRE(old_mmap)
    }; */
    UWord a1, a2, a3, a4, a5, a6;
 
-   UWord* arg_block = (UWord*)ARG1;
-   PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, ARG1);
-   PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );
+   UWord* args = (UWord*)ARG1;
+   PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
+   PRE_MEM_READ( "old_mmap(args)", (Addr)args, 6*sizeof(UWord) );
 
-   a1 = arg_block[0];
-   a2 = arg_block[1];
-   a3 = arg_block[2];
-   a4 = arg_block[3];
-   a5 = arg_block[4];
-   a6 = arg_block[5];
+   a1 = args[0];
+   a2 = args[1];
+   a3 = args[2];
+   a4 = args[3];
+   a5 = args[4];
+   a6 = args[5];
 
    PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
          a1, (ULong)a2, a3, a4, a5, a6 );
@@ -1515,13 +1516,13 @@ PRE(old_mmap)
 
    if (0)
    VG_(printf)("old_mmap( %p, fixed %d ) -> %s(%p)\n", 
-               arg_block[0], 
-               arg_block[3]&VKI_MAP_FIXED, 
+               args[0], 
+               args[3]&VKI_MAP_FIXED, 
                FAILURE ? "Fail" : "Success", RES_unchecked);
 
    /* Stay sane */
-   if (SUCCESS && (arg_block[3] & VKI_MAP_FIXED))
-      vg_assert(RES == arg_block[0]);
+   if (SUCCESS && (args[3] & VKI_MAP_FIXED))
+      vg_assert(RES == args[0]);
 }
 
 // XXX: lstat64/fstat64/stat64 are generic, but not necessarily
@@ -2094,8 +2095,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    GENX_(__NR_munlock,           sys_munlock),        // 151
    GENX_(__NR_mlockall,          sys_mlockall),       // 152
    GENX_(__NR_munlockall,        sys_munlockall),     // 153
-//zz    GENXY(__NR_sched_setparam,    sys_sched_setparam), // 154
-//zz 
+   GENXY(__NR_sched_setparam,    sys_sched_setparam), // 154
+
    GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
    GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
    GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
@@ -2106,73 +2107,73 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 //zz    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
-//zz    LINX_(__NR_setresuid,         sys_setresuid16),    // 164
-//zz 
-//zz    LINXY(__NR_getresuid,         sys_getresuid16),    // 165
+   LINX_(__NR_setresuid,         sys_setresuid16),    // 164
+
+   LINXY(__NR_getresuid,         sys_getresuid16),    // 165
 //zz    //   (__NR_vm86,              sys_vm86),           // 166 x86/Linux-only
    GENX_(__NR_query_module,      sys_ni_syscall),     // 167
    GENXY(__NR_poll,              sys_poll),           // 168
 //zz    //   (__NR_nfsservctl,        sys_nfsservctl),     // 169 */Linux
 //zz 
-//zz    LINX_(__NR_setresgid,         sys_setresgid16),    // 170
-//zz    LINXY(__NR_getresgid,         sys_getresgid16),    // 171
-//zz    LINX_(__NR_prctl,             sys_prctl),          // 172
+   LINX_(__NR_setresgid,         sys_setresgid16),    // 170
+   LINXY(__NR_getresgid,         sys_getresgid16),    // 171
+   LINX_(__NR_prctl,             sys_prctl),          // 172
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 x86/Linux only?
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174
 
    GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 175
-//zz    GENXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 176
+   GENXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 176
    GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 177
-//zz    GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 178
+   GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 178
    GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 179
-//zz 
-//zz    GENXY(__NR_pread64,           sys_pread64),        // 180
-//zz    GENX_(__NR_pwrite64,          sys_pwrite64),       // 181
-//zz    GENX_(__NR_chown,             sys_chown16),        // 182
+
+   GENXY(__NR_pread64,           sys_pread64),        // 180
+   GENX_(__NR_pwrite64,          sys_pwrite64),       // 181
+   GENX_(__NR_chown,             sys_chown16),        // 182
    GENXY(__NR_getcwd,            sys_getcwd),         // 183
-//zz    GENXY(__NR_capget,            sys_capget),         // 184
-//zz 
-//zz    GENX_(__NR_capset,            sys_capset),         // 185
+   GENXY(__NR_capget,            sys_capget),         // 184
+
+   GENX_(__NR_capset,            sys_capset),         // 185
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 186
-//zz    LINXY(__NR_sendfile,          sys_sendfile),       // 187
-//zz    GENXY(__NR_getpmsg,           sys_getpmsg),        // 188
-//zz    GENX_(__NR_putpmsg,           sys_putpmsg),        // 189
+   LINXY(__NR_sendfile,          sys_sendfile),       // 187
+   GENXY(__NR_getpmsg,           sys_getpmsg),        // 188
+   GENX_(__NR_putpmsg,           sys_putpmsg),        // 189
 
    // Nb: we treat vfork as fork
    GENX_(__NR_vfork,             sys_fork),           // 190
    GENXY(__NR_ugetrlimit,        sys_getrlimit),      // 191
    GENXY(__NR_mmap2,             sys_mmap2),          // 192
-//zz    GENX_(__NR_truncate64,        sys_truncate64),     // 193
-//zz    GENX_(__NR_ftruncate64,       sys_ftruncate64),    // 194
-//zz    
+   GENX_(__NR_truncate64,        sys_truncate64),     // 193
+   GENX_(__NR_ftruncate64,       sys_ftruncate64),    // 194
+   
    PLAXY(__NR_stat64,            sys_stat64),         // 195
    PLAXY(__NR_lstat64,           sys_lstat64),        // 196
    PLAXY(__NR_fstat64,           sys_fstat64),        // 197
-//zz    GENX_(__NR_lchown32,          sys_lchown),         // 198
+   GENX_(__NR_lchown32,          sys_lchown),         // 198
    GENX_(__NR_getuid32,          sys_getuid),         // 199
 
    GENX_(__NR_getgid32,          sys_getgid),         // 200
    GENX_(__NR_geteuid32,         sys_geteuid),        // 201
    GENX_(__NR_getegid32,         sys_getegid),        // 202
-//zz    GENX_(__NR_setreuid32,        sys_setreuid),       // 203
-//zz    GENX_(__NR_setregid32,        sys_setregid),       // 204
+   GENX_(__NR_setreuid32,        sys_setreuid),       // 203
+   GENX_(__NR_setregid32,        sys_setregid),       // 204
 
    GENXY(__NR_getgroups32,       sys_getgroups),      // 205
-//zz    GENX_(__NR_setgroups32,       sys_setgroups),      // 206
-//zz    GENX_(__NR_fchown32,          sys_fchown),         // 207
-//zz    LINX_(__NR_setresuid32,       sys_setresuid),      // 208
+   GENX_(__NR_setgroups32,       sys_setgroups),      // 206
+   GENX_(__NR_fchown32,          sys_fchown),         // 207
+   LINX_(__NR_setresuid32,       sys_setresuid),      // 208
    LINXY(__NR_getresuid32,       sys_getresuid),      // 209
 
-//zz    LINX_(__NR_setresgid32,       sys_setresgid),      // 210
+   LINX_(__NR_setresgid32,       sys_setresgid),      // 210
    LINXY(__NR_getresgid32,       sys_getresgid),      // 211
-//zz    GENX_(__NR_chown32,           sys_chown),          // 212
-//zz    GENX_(__NR_setuid32,          sys_setuid),         // 213
-//zz    GENX_(__NR_setgid32,          sys_setgid),         // 214
-//zz 
-//zz    LINX_(__NR_setfsuid32,        sys_setfsuid),       // 215
-//zz    LINX_(__NR_setfsgid32,        sys_setfsgid),       // 216
+   GENX_(__NR_chown32,           sys_chown),          // 212
+   GENX_(__NR_setuid32,          sys_setuid),         // 213
+   GENX_(__NR_setgid32,          sys_setgid),         // 214
+
+   LINX_(__NR_setfsuid32,        sys_setfsuid),       // 215
+   LINX_(__NR_setfsgid32,        sys_setfsgid),       // 216
 //zz    //   (__NR_pivot_root,        sys_pivot_root),     // 217 */Linux
-//zz    GENXY(__NR_mincore,           sys_mincore),        // 218
+   GENXY(__NR_mincore,           sys_mincore),        // 218
    GENX_(__NR_madvise,           sys_madvise),        // 219
 
    GENXY(__NR_getdents64,        sys_getdents64),     // 220
@@ -2182,61 +2183,61 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    LINX_(__NR_gettid,            sys_gettid),         // 224
 
 //zz    //   (__NR_readahead,         sys_readahead),      // 225 */(Linux?)
-//zz    GENX_(__NR_setxattr,          sys_setxattr),       // 226
-//zz    GENX_(__NR_lsetxattr,         sys_lsetxattr),      // 227
-//zz    GENX_(__NR_fsetxattr,         sys_fsetxattr),      // 228
+   GENX_(__NR_setxattr,          sys_setxattr),       // 226
+   GENX_(__NR_lsetxattr,         sys_lsetxattr),      // 227
+   GENX_(__NR_fsetxattr,         sys_fsetxattr),      // 228
    GENXY(__NR_getxattr,          sys_getxattr),       // 229
-//zz 
-//zz    GENXY(__NR_lgetxattr,         sys_lgetxattr),      // 230
-//zz    GENXY(__NR_fgetxattr,         sys_fgetxattr),      // 231
-//zz    GENXY(__NR_listxattr,         sys_listxattr),      // 232
-//zz    GENXY(__NR_llistxattr,        sys_llistxattr),     // 233
-//zz    GENXY(__NR_flistxattr,        sys_flistxattr),     // 234
-//zz 
-//zz    GENX_(__NR_removexattr,       sys_removexattr),    // 235
-//zz    GENX_(__NR_lremovexattr,      sys_lremovexattr),   // 236
-//zz    GENX_(__NR_fremovexattr,      sys_fremovexattr),   // 237
+
+   GENXY(__NR_lgetxattr,         sys_lgetxattr),      // 230
+   GENXY(__NR_fgetxattr,         sys_fgetxattr),      // 231
+   GENXY(__NR_listxattr,         sys_listxattr),      // 232
+   GENXY(__NR_llistxattr,        sys_llistxattr),     // 233
+   GENXY(__NR_flistxattr,        sys_flistxattr),     // 234
+
+   GENX_(__NR_removexattr,       sys_removexattr),    // 235
+   GENX_(__NR_lremovexattr,      sys_lremovexattr),   // 236
+   GENX_(__NR_fremovexattr,      sys_fremovexattr),   // 237
 //zz    LINX_(__NR_tkill,             sys_tkill),          // 238 */Linux
-//zz    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
-//zz 
+   LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
+
    LINXY(__NR_futex,             sys_futex),             // 240
-//zz    GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
-//zz    GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
+   GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
+   GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
    PLAX_(__NR_set_thread_area,   sys_set_thread_area),   // 243
-//zz    PLAX_(__NR_get_thread_area,   sys_get_thread_area),   // 244
-//zz 
-//zz    LINX_(__NR_io_setup,          sys_io_setup),       // 245
-//zz    LINX_(__NR_io_destroy,        sys_io_destroy),     // 246
-//zz    LINXY(__NR_io_getevents,      sys_io_getevents),   // 247
-//zz    LINX_(__NR_io_submit,         sys_io_submit),      // 248
-//zz    LINXY(__NR_io_cancel,         sys_io_cancel),      // 249
-//zz 
+   PLAX_(__NR_get_thread_area,   sys_get_thread_area),   // 244
+
+   LINX_(__NR_io_setup,          sys_io_setup),       // 245
+   LINX_(__NR_io_destroy,        sys_io_destroy),     // 246
+   LINXY(__NR_io_getevents,      sys_io_getevents),   // 247
+   LINX_(__NR_io_submit,         sys_io_submit),      // 248
+   LINXY(__NR_io_cancel,         sys_io_cancel),      // 249
+
 //zz    LINX_(__NR_fadvise64,         sys_fadvise64),      // 250 */(Linux?)
    GENX_(251,                    sys_ni_syscall),     // 251
    LINX_(__NR_exit_group,        sys_exit_group),     // 252
-//zz    GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
-//zz    LINXY(__NR_epoll_create,      sys_epoll_create),   // 254
-//zz 
-//zz    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 255
-//zz    LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 256
+   GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
+   LINXY(__NR_epoll_create,      sys_epoll_create),   // 254
+
+   LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 255
+   LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 256
 //zz    //   (__NR_remap_file_pages,  sys_remap_file_pages),  // 257 */Linux
    LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 258
-//zz    GENXY(__NR_timer_create,      sys_timer_create),      // 259
-//zz 
-//zz    GENXY(__NR_timer_settime,     sys_timer_settime),  // (timer_create+1)
-//zz    GENXY(__NR_timer_gettime,     sys_timer_gettime),  // (timer_create+2)
-//zz    GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun),//(timer_create+3)
-//zz    GENX_(__NR_timer_delete,      sys_timer_delete),   // (timer_create+4)
-//zz    GENX_(__NR_clock_settime,     sys_clock_settime),  // (timer_create+5)
-//zz 
+   GENXY(__NR_timer_create,      sys_timer_create),      // 259
+
+   GENXY(__NR_timer_settime,     sys_timer_settime),  // (timer_create+1)
+   GENXY(__NR_timer_gettime,     sys_timer_gettime),  // (timer_create+2)
+   GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun),//(timer_create+3)
+   GENX_(__NR_timer_delete,      sys_timer_delete),   // (timer_create+4)
+   GENX_(__NR_clock_settime,     sys_clock_settime),  // (timer_create+5)
+
    GENXY(__NR_clock_gettime,     sys_clock_gettime),  // (timer_create+6)
-//zz    GENXY(__NR_clock_getres,      sys_clock_getres),   // (timer_create+7)
+   GENXY(__NR_clock_getres,      sys_clock_getres),   // (timer_create+7)
 //zz    //   (__NR_clock_nanosleep,   sys_clock_nanosleep),// (timer_create+8) */*
-//zz    GENXY(__NR_statfs64,          sys_statfs64),       // 268
-//zz    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
-//zz 
+   GENXY(__NR_statfs64,          sys_statfs64),       // 268
+   GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
+
    LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
-//zz    GENX_(__NR_utimes,            sys_utimes),         // 271
+   GENX_(__NR_utimes,            sys_utimes),         // 271
 //zz    LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
 //zz    //   (__NR_mbind,             sys_mbind),          // 274 ?/?

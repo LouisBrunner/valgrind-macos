@@ -7,10 +7,7 @@ EXTRA_DIST = \
 noinst_HEADERS = \
 	priv_types_n_macros.h \
 	priv_syscalls-generic.h \
-	priv_syscalls-linux.h \
-	priv_syscalls-amd64-linux.h \
-	priv_syscalls-arm-linux.h \
-	priv_syscalls-x86-linux.h
+	priv_syscalls-linux.h
 
 noinst_LIBRARIES = libsyscalls.a
 

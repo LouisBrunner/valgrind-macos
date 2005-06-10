@@ -444,9 +444,6 @@ AC_OUTPUT(
    memcheck/tests/x86/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
-   cachegrind/amd64/Makefile
-   cachegrind/arm/Makefile
-   cachegrind/x86/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/amd64/Makefile
    cachegrind/tests/arm/Makefile

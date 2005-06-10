@@ -1,9 +1,6 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-noinst_HEADERS = \
-	core_arch.h
-
 noinst_LIBRARIES = libarch.a
 
 EXTRA_DIST = \

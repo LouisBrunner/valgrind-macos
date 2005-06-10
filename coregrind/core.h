@@ -238,10 +238,6 @@ extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
 // Clean up the client by calling before the final reports
 extern void VGA_(final_tidyup)(ThreadId tid);
 
-// Arch-specific client requests
-extern Bool VGA_(client_requests)(ThreadId tid, UWord *args);
-
-
 ///* ---------------------------------------------------------------------
 //   Thread modelling
 //   ------------------------------------------------------------------ */

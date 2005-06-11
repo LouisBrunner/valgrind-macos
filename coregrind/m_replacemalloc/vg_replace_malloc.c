@@ -96,14 +96,7 @@
    Z         -->  ZZ
 */
 
-
-/* It would be nice to be able to write VG_INTERCEPT_PREFIX instead of
-   "_vgi_" here, but I can't figure out how to get cpp to cooperate.
-   If you change this "_vgi_" you should also change the definitiion
-   of VG_INTERCEPT_PREFIX in core.h accordingly.
-*/
-#define ENCODE(libname,fnname) _vgi_##libname##_##fnname
-
+#define ENCODE(libname,fnname) VG_INTERCEPT(libname##_##fnname)
 
 /* Some handy mangled names */
 #define  m_libstc_plus_plus_star  libstdcZpZpZa   // libstdc++*

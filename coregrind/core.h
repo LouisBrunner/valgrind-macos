@@ -113,17 +113,16 @@
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
 
 /* Intercept prefix stuff.  See
-   coregrind/m_replace_malloc/vg_replace_malloc.c for details.
-   Unfortunately the "_vgi_" literal is also hardcoded in that file, so if
-   you change this one you must also change the other one. */
-#define VG_INTERCEPT_PREFIX "_vgi_"
-#define VG_INTERCEPT_PREFIX_LEN 5
+   coregrind/m_replace_malloc/vg_replace_malloc.c for details. */
+#define VG_INTERCEPT(name)       _vgi_##name
+#define VG_INTERCEPT_PREFIX      "_vgi_"
+#define VG_INTERCEPT_PREFIX_LEN  5
 
 /* Not sure what these are for.  Todo: clarify */
-#define VG_WRAPPER_PREFIX "_vgw_"
-#define VG_WRAPPER_PREFIX_LEN 5
-#define VG_WRAPPER(name) _vgw_##name
-#define VG_WRAPPER_ALIAS(name) "_vgw_" #name
+#define VG_WRAPPER_PREFIX        "_vgw_"
+#define VG_WRAPPER_PREFIX_LEN    5
+#define VG_WRAPPER(name)         _vgw_##name
+#define VG_WRAPPER_ALIAS(name)   "_vgw_" #name
 
 
 /* ---------------------------------------------------------------------

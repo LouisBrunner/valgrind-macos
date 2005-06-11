@@ -193,9 +193,11 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
 
 static void printIpDesc(UInt n, Addr ip)
 {
-   static UChar buf[VG_ERRTXT_LEN];
+   #define BUF_LEN   4096
+   
+   static UChar buf[BUF_LEN];
 
-   VG_(describe_IP)(ip, buf, VG_ERRTXT_LEN);
+   VG_(describe_IP)(ip, buf, BUF_LEN);
 
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "    %s", buf);

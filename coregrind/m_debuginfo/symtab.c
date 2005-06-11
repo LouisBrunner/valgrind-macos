@@ -2467,17 +2467,18 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
       n = putStr(n, n_buf, buf, _str);
 #  define APPEND_ESC(_str) \
       n = putStrEsc(n, n_buf, buf, _str);
+#  define BUF_LEN    4096
 
    UInt  lineno; 
    UChar ibuf[50];
    Int   n = 0;
-   static UChar buf_fn[VG_ERRTXT_LEN];
-   static UChar buf_obj[VG_ERRTXT_LEN];
-   static UChar buf_srcloc[VG_ERRTXT_LEN];
-   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  VG_ERRTXT_LEN);
-   Bool  know_objname = VG_(get_objname)(eip, buf_obj, VG_ERRTXT_LEN);
+   static UChar buf_fn[BUF_LEN];
+   static UChar buf_obj[BUF_LEN];
+   static UChar buf_srcloc[BUF_LEN];
+   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  BUF_LEN);
+   Bool  know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
    Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc,
-                                                  VG_ERRTXT_LEN, &lineno);
+                                                  BUF_LEN, &lineno);
 
    if (VG_(clo_xml)) {
 

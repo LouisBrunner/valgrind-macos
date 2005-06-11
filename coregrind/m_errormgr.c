@@ -365,13 +365,15 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    vg_assert( tid < VG_N_THREADS );
 }
 
+#define ERRTXT_LEN   4096
+
 static void printSuppForIp(UInt n, Addr ip)
 {
-   static UChar buf[VG_ERRTXT_LEN];
+   static UChar buf[ERRTXT_LEN];
 
-   if ( VG_(get_fnname_nodemangle) (ip, buf,  VG_ERRTXT_LEN) ) {
+   if ( VG_(get_fnname_nodemangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(printf)("   fun:%s\n", buf);
-   } else if ( VG_(get_objname)(ip, buf, VG_ERRTXT_LEN) ) {
+   } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
       VG_(printf)("   obj:%s\n", buf);
    } else {
       VG_(printf)("   ???:???       "
@@ -1062,7 +1064,7 @@ static
 Bool supp_matches_callers(Error* err, Supp* su)
 {
    Int i;
-   Char caller_name[VG_ERRTXT_LEN];
+   Char caller_name[ERRTXT_LEN];
    StackTrace ips = VG_(extract_StackTrace)(err->where);
 
    for (i = 0; i < su->n_callers; i++) {
@@ -1070,13 +1072,13 @@ Bool supp_matches_callers(Error* err, Supp* su)
       vg_assert(su->callers[i].name != NULL);
       switch (su->callers[i].ty) {
          case ObjName: 
-            if (!VG_(get_objname)(a, caller_name, VG_ERRTXT_LEN))
+            if (!VG_(get_objname)(a, caller_name, ERRTXT_LEN))
                return False;
             break; 
 
          case FunName: 
             // Nb: mangled names used in suppressions
-            if (!VG_(get_fnname_nodemangle)(a, caller_name, VG_ERRTXT_LEN))
+            if (!VG_(get_fnname_nodemangle)(a, caller_name, ERRTXT_LEN))
                return False;
             break;
          default: VG_(tool_panic)("supp_matches_callers");

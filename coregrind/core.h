@@ -81,13 +81,6 @@
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
 /* ---------------------------------------------------------------------
-   Global macros.
-   ------------------------------------------------------------------ */
-
-/* Max length of a text fragment used to construct error messages. */
-#define VG_ERRTXT_LEN 4096
-
-/* ---------------------------------------------------------------------
    Environment variables
    ------------------------------------------------------------------ */
 

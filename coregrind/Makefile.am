@@ -55,6 +55,7 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_profile.h	\
+	pub_core_pthreadmodel.h	\
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
 	pub_core_scheduler.h	\
@@ -63,6 +64,7 @@ noinst_HEADERS = \
 	pub_core_skiplist.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syscalls.h	\
+	pub_core_threadmodel.h	\
 	pub_core_tooliface.h	\
 	pub_core_translate.h	\
 	pub_core_transtab.h	\
@@ -101,18 +103,18 @@ stage2_SOURCES = \
 	m_mallocfree.c \
 	m_options.c \
 	m_profile.c \
+	m_pthreadmodel.c \
 	m_redir.c \
 	m_signals.c \
 	m_skiplist.c \
 	m_stacktrace.c \
+	m_threadmodel.c \
 	m_tooliface.c \
 	m_translate.c \
 	m_transtab.c \
 	\
 	ume.c \
-	vg_mylibc.c \
-	vg_threadmodel.c \
-	vg_pthreadmodel.c
+	vg_mylibc.c
 
 ## Nb: libscheduler.a must precede libdispatch.a in this list.
 stage2_extra= \

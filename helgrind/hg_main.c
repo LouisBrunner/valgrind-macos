@@ -455,7 +455,8 @@ static inline UInt packTLS(ThreadLifeSeg *tls)
 
 static inline ThreadLifeSeg *unpackTLS(UInt i)
 {
-   return (ThreadLifeSeg *)(i << STATE_BITS);
+   /* HACK ALERT -- DUBIOUS CAST */
+   return (ThreadLifeSeg *)ULong_to_Ptr(i << STATE_BITS);
 }
 
 /*------------------------------------------------------------*/
@@ -673,7 +674,8 @@ static inline UInt packLockSet(const LockSet *p)
 
 static inline const LockSet *unpackLockSet(UInt id)
 {
-   return (LockSet *)(id << STATE_BITS);
+   /* HACK ALERT -- DUBIOUS CAST */
+   return (LockSet *)ULong_to_Ptr(id << STATE_BITS);
 }
 
 static 

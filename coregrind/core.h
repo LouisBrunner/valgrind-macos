@@ -36,7 +36,7 @@
 
 #include "libvex.h"
 #if defined(VGA_x86)
-#include "libvex_guest_x86.h"
+#  include "libvex_guest_x86.h"
 #  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
 #  define VGA_ELF_MACHINE     EM_386
 #  define VGA_ELF_CLASS       ELFCLASS32
@@ -46,6 +46,7 @@
 #  define VGA_CLREQ_ARGS      guest_EAX
 #  define VGA_CLREQ_RET       guest_EDX
 #elif defined(VGA_amd64)
+#  include "libvex_guest_amd64.h"
 #  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
 #  define VGA_ELF_MACHINE     EM_X86_64
 #  define VGA_ELF_CLASS       ELFCLASS64

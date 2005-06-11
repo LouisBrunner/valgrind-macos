@@ -32,7 +32,6 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_tooliface.h"
-#include "vki_unistd.h"
 #include <sys/ptrace.h>
 
 #include "libvex_guest_x86.h"

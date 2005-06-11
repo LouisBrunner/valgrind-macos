@@ -75,6 +75,7 @@ extern void* VG_(arena_calloc)  ( ArenaId arena,
 extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT size );
 extern void* VG_(arena_memalign)( ArenaId aid, SizeT req_alignB, 
                                                SizeT req_pszB );
+extern Char* VG_(arena_strdup)  ( ArenaId aid, const Char* s);
 
 /* Sets the size of the redzones at the start and end of heap blocks.  This
    must be called before any of VG_(malloc) and friends are called. */

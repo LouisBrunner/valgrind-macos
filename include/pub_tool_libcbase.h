@@ -64,7 +64,6 @@ extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, SizeT nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strrchr)        ( const Char* s, Char c );
-extern Char* VG_(strdup)         ( const Char* s);
 
 /* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );

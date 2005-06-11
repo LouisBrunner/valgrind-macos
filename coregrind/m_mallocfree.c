@@ -1263,6 +1263,25 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
 }
 
 
+/* Inline just for the wrapper VG_(strdup) below */
+__inline__ Char* VG_(arena_strdup) ( ArenaId aid, const Char* s )
+{
+   Int   i;
+   Int   len;
+   Char* res;
+
+   if (s == NULL)
+      return NULL;
+
+   len = VG_(strlen)(s) + 1;
+   res = VG_(arena_malloc) (aid, len);
+
+   for (i = 0; i < len; i++)
+      res[i] = s[i];
+   return res;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Tool-visible functions.                              ---*/
 /*------------------------------------------------------------*/
@@ -1287,6 +1306,11 @@ void* VG_(calloc) ( SizeT nmemb, SizeT bytes_per_memb )
 void* VG_(realloc) ( void* ptr, SizeT size )
 {
    return VG_(arena_realloc) ( VG_AR_TOOL, ptr, size );
+}
+
+Char* VG_(strdup) ( const Char* s )
+{
+   return VG_(arena_strdup) ( VG_AR_TOOL, s ); 
 }
 
 /*--------------------------------------------------------------------*/

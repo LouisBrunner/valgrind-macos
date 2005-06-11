@@ -37,6 +37,7 @@ extern void* VG_(malloc)         ( SizeT nbytes );
 extern void  VG_(free)           ( void* p );
 extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
 extern void* VG_(realloc)        ( void* p, SizeT size );
+extern Char* VG_(strdup)         ( const Char* s );
 
 #endif   // __PUB_TOOL_MALLOCFREE_H
 

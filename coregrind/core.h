@@ -131,9 +131,6 @@
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
 
-/* Tools use VG_(strdup)() which doesn't expose ArenaId */
-extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
-
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 

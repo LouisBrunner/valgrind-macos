@@ -209,34 +209,6 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 
 
 /* ---------------------------------------------------------------------
-   strdup()
-   ------------------------------------------------------------------ */
-
-/* Inline just for the wrapper VG_(strdup) below */
-__inline__ Char* VG_(arena_strdup) ( ArenaId aid, const Char* s )
-{
-   Int   i;
-   Int   len;
-   Char* res;
-
-   if (s == NULL)
-      return NULL;
-
-   len = VG_(strlen)(s) + 1;
-   res = VG_(arena_malloc) (aid, len);
-
-   for (i = 0; i < len; i++)
-      res[i] = s[i];
-   return res;
-}
-
-/* Wrapper to avoid exposing tools to ArenaId's */
-Char* VG_(strdup) ( const Char* s )
-{
-   return VG_(arena_strdup) ( VG_AR_TOOL, s ); 
-}
-
-/* ---------------------------------------------------------------------
    Misc functions looking for a proper home.
    ------------------------------------------------------------------ */
 

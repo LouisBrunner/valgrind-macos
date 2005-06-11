@@ -49,6 +49,9 @@ extern UInt VG_(vsprintf)( Char* buf, const HChar* format, va_list vargs );
    Messages for the user
    ------------------------------------------------------------------ */
 
+/* No, really.  I _am_ that strange. */
+#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
+
 /* Print a message prefixed by "??<pid>?? "; '?' depends on the VgMsgKind.
    Should be used for all user output. */
 

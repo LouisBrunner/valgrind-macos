@@ -63,9 +63,6 @@
 #define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
 #define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
 
-/* No, really.  I _am_ that strange. */
-#define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
-
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
 

@@ -35,6 +35,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"      // For VG_(fstat)()
+#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -1471,7 +1472,7 @@ void *VG_(shadow_alloc)(UInt size)
 {
    static Addr shadow_alloc = 0;
    Addr try_here;
-   Int r;
+   SysRes r;
 
    if (0) show_segments("shadow_alloc(before)");
 
@@ -1509,7 +1510,7 @@ void *VG_(shadow_alloc)(UInt size)
    r = VG_(mprotect_native)( (void*)try_here, 
                              size,  VKI_PROT_READ|VKI_PROT_WRITE );
 
-   if (r != 0)
+   if (r.isError)
       goto failed;
 
    shadow_alloc += size;

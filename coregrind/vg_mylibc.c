@@ -86,102 +86,8 @@ Int VG_(gettid)(void)
 
 
 /* ---------------------------------------------------------------------
-   mmap/munmap, exit, fcntl
+   exit, fcntl
    ------------------------------------------------------------------ */
-
-SysRes VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
-                        UInt fd, OffT offset)
-{
-   SysRes res;
-#  if defined(VGP_x86_linux)
-   { 
-      UWord args[6];
-      args[0] = (UWord)start;
-      args[1] = length;
-      args[2] = prot;
-      args[3] = flags;
-      args[4] = fd;
-      args[5] = offset;
-      res = VG_(do_syscall1)(__NR_mmap, (UWord)args );
-   }
-#  elif defined(VGP_amd64_linux)
-   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
-                         prot, flags, fd, offset);
-#  else
-#    error Unknown platform
-#  endif
-   return res;
-}
-
-/* Returns -1 on failure. */
-void* VG_(mmap)( void* start, SizeT length,
-                 UInt prot, UInt flags, UInt sf_flags, UInt fd, OffT offset)
-{
-   SysRes res;
-
-   if (!(flags & VKI_MAP_FIXED)) {
-      start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
-
-      flags |= VKI_MAP_FIXED;
-   }
-   if (start == 0)
-      return (void *)-1;
-
-   res = VG_(mmap_native)(start, length, prot, 
-                          flags & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
-                          fd, offset);
-
-   // Check it ended up in the right place.
-   if (!res.isError) {
-      if (flags & VKI_MAP_CLIENT) {
-         vg_assert(VG_(client_base) <= res.val 
-                   && res.val+length <= VG_(client_end));
-      } else {
-         vg_assert(VG_(valgrind_base) <= res.val 
-                   && res.val+length-1 <= VG_(valgrind_last));
-      }
-
-      sf_flags |= SF_MMAP;
-      if (  flags & VKI_MAP_FIXED)      sf_flags |= SF_FIXED;
-      if (  flags & VKI_MAP_SHARED)     sf_flags |= SF_SHARED;
-      if (!(flags & VKI_MAP_ANONYMOUS)) sf_flags |= SF_FILE;
-      if (!(flags & VKI_MAP_CLIENT))    sf_flags |= SF_VALGRIND;
-      if (  flags & VKI_MAP_NOSYMS)     sf_flags |= SF_NOSYMS;
-
-      VG_(map_fd_segment)(res.val, length, prot, sf_flags, fd, offset, NULL);
-   }
-
-   return res.isError ? (void*)-1 : (void*)res.val;
-}
-
-static Int munmap_native(void *start, SizeT length)
-{
-   SysRes res = VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
-   return res.isError ? -1 : 0;
-}
-
-/* Returns -1 on failure. */
-Int VG_(munmap)( void* start, SizeT length )
-{
-   Int res = munmap_native(start, length);
-   if (0 == res)
-      VG_(unmap_range)((Addr)start, length);
-   return res;
-}
-
-Int VG_(mprotect_native)( void *start, SizeT length, UInt prot )
-{
-   SysRes res = VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
-   return res.isError ? -1 : 0;
-}
-
-Int VG_(mprotect)( void *start, SizeT length, UInt prot )
-{
-   Int res = VG_(mprotect_native)(start, length, prot);
-   if (0 == res)
-      VG_(mprotect_range)((Addr)start, length, prot);
-   return res;
-}
 
 /* Pull down the entire world */
 void VG_(exit)( Int status )
@@ -521,40 +427,6 @@ UInt VG_(read_millisecond_timer) ( void )
 void VG_(nanosleep)(struct vki_timespec *ts)
 {
    (void)VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
-}
-
-/* ---------------------------------------------------------------------
-   Primitive support for bagging memory via mmap.
-   ------------------------------------------------------------------ */
-
-void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
-{
-   static SizeT tot_alloc = 0;
-   void* p;
-   p = VG_(mmap)(0, nBytes,
-                 VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-                 VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 0, -1, 0);
-
-   if (p != ((void*)(-1))) {
-      vg_assert((void*)VG_(valgrind_base) <= p && p <= (void*)VG_(valgrind_last));
-      tot_alloc += nBytes;
-      if (0)
-         VG_(printf)(
-            "get_memory_from_mmap: %llu tot, %llu req = %p .. %p, caller %s\n",
-            (ULong)tot_alloc, (ULong)nBytes, p, ((char*)p) + nBytes - 1, who );
-      return p;
-   }
-
-   VG_(printf)("\n");
-   VG_(printf)("VG_(get_memory_from_mmap): %s's request for %llu bytes failed.\n",
-               who, (ULong)nBytes);
-   VG_(printf)("VG_(get_memory_from_mmap): %llu bytes already allocated.\n", 
-               (ULong)tot_alloc);
-   VG_(printf)("\n");
-   VG_(printf)("Sorry.  You could try using a tool that uses less memory;\n");
-   VG_(printf)("eg. addrcheck instead of memcheck.\n");
-   VG_(printf)("\n");
-   VG_(exit)(1);
 }
 
 /* ---------------------------------------------------------------------

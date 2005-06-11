@@ -137,9 +137,6 @@ extern Int  VG_(gettid)	 ( void );
 extern Int  VG_(setpgid) ( Int pid, Int pgrp );
 
 /* ------------------------------------------------------------------ */
-/* Get memory by anonymous mmap. */
-extern void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who );
-
 /* Register an interest in apparently internal faults; used code which
    wanders around dangerous memory (ie, leakcheck).  The catcher is
    not expected to return. */

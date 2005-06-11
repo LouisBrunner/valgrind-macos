@@ -49,6 +49,7 @@ noinst_HEADERS = \
 	pub_core_libcbase.h	\
 	pub_core_libcassert.h	\
 	pub_core_libcfile.h	\
+	pub_core_libcmman.h	\
 	pub_core_libcprint.h	\
 	pub_core_libcsignal.h	\
 	pub_core_main.h		\
@@ -97,6 +98,7 @@ stage2_SOURCES = \
 	m_libcbase.c \
 	m_libcassert.c \
 	m_libcfile.c \
+	m_libcmman.c \
 	m_libcprint.c \
 	m_libcsignal.c \
 	m_main.c \

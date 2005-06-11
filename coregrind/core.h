@@ -126,16 +126,6 @@
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 
-/* system/mman.h */
-extern void* VG_(mmap)       ( void* start, SizeT length, UInt prot, UInt flags,
-                               UInt sf_flags, UInt fd, OffT offset );
-extern SysRes VG_(mmap_native)( void* start, SizeT length, UInt prot, UInt flags,
-                                              UInt fd, OffT offset );
-extern Int VG_(munmap)       ( void* start, SizeT length );
-extern Int VG_(mprotect)       ( void *start, SizeT length, UInt prot );
-extern Int VG_(mprotect_native)( void *start, SizeT length, UInt prot );
-
-
 /* Environment manipulations */
 extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
                                   const Char *val );

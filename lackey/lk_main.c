@@ -41,6 +41,7 @@ static ULong n_guest_instrs = 0;
 static ULong n_Jccs         = 0;
 static ULong n_Jccs_untaken = 0;
 
+__attribute__((unused))
 static void add_one_dlrr_call(void)
 {
    n_dlrr_calls++;
@@ -54,11 +55,13 @@ static void add_one_BB(void)
    n_guest_instrs++;
 }
 
+__attribute__((unused))
 static void add_one_UInstr(void)
 {
    n_UInstrs++;
 }
 
+__attribute__((unused))
 static void add_one_guest_instr(void)
 {
    n_guest_instrs++;

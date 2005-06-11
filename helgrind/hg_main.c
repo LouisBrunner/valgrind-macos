@@ -1699,17 +1699,27 @@ static void copy_address_range_state(Addr src, Addr dst, SizeT len)
 static void hg_mem_read (Addr a, SizeT data_size, ThreadId tid);
 static void hg_mem_write(Addr a, SizeT data_size, ThreadId tid);
 
+__attribute__((unused))
 static void hg_mem_help_read_1(Addr a) VGA_REGPARM(1);
+__attribute__((unused))
 static void hg_mem_help_read_2(Addr a) VGA_REGPARM(1);
+__attribute__((unused))
 static void hg_mem_help_read_4(Addr a) VGA_REGPARM(1);
+__attribute__((unused))
 static void hg_mem_help_read_N(Addr a, SizeT size) VGA_REGPARM(2);
 
+__attribute__((unused))
 static void hg_mem_help_write_1(Addr a, UInt val) VGA_REGPARM(2);
+__attribute__((unused))
 static void hg_mem_help_write_2(Addr a, UInt val) VGA_REGPARM(2);
+__attribute__((unused))
 static void hg_mem_help_write_4(Addr a, UInt val) VGA_REGPARM(2);
+__attribute__((unused))
 static void hg_mem_help_write_N(Addr a, SizeT size) VGA_REGPARM(2);
 
+__attribute__((unused))
 static void bus_lock(void);
+__attribute__((unused))
 static void bus_unlock(void);
 
 static

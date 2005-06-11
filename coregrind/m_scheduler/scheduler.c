@@ -68,6 +68,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_replacemalloc.h"

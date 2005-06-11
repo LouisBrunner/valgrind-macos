@@ -38,6 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_main.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscalls.h"

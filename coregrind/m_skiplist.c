@@ -90,6 +90,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_skiplist.h"
 
 #include <stdlib.h>

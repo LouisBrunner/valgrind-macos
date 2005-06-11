@@ -47,6 +47,7 @@
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
 #include "core.h"
+#include "pub_core_mallocfree.h"    // for VG_MIN_MALLOC_SZB, VG_AR_CLIENT
 #include "pub_core_replacemalloc.h"
 
 /* The general idea is: you can write a function like this:

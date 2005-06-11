@@ -41,6 +41,7 @@ Boston, MA 02111-1307, USA.  */
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_tool_libcprint.h"
+#include "pub_core_mallocfree.h"
 
 /*#include <sys/types.h>
 #include <string.h>

@@ -36,6 +36,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"

@@ -31,6 +31,7 @@
 #include "core.h"
 #include "pub_core_demangle.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "demangle.h"

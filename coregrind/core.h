@@ -78,7 +78,6 @@
 
 #include <setjmp.h>        // for jmp_buf
 
-#include "pub_core_mallocfree.h"  // for type 'ArenaId'
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
 /* ---------------------------------------------------------------------

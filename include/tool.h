@@ -104,10 +104,6 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 /*=== Valgrind's version of libc                                   ===*/
 /*====================================================================*/
 
-#if !defined(NULL)
-#  define NULL ((void*)0)
-#endif
-
 /* ------------------------------------------------------------------ */
 /* stdlib.h */
 

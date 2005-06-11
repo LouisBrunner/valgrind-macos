@@ -206,7 +206,7 @@ Int VG_(tkill)( ThreadId tid, Int signo )
 #if 0
    /* This isn't right because the client may create a process
       structure with multiple thread groups */
-   res = VG_(do_syscall)(__NR_tgkill, VG_(getpid)(), tid, signo);
+   res = VG_(do_syscall3)(__NR_tgkill, VG_(getpid)(), tid, signo);
 #endif
 
    res = VG_(do_syscall2)(__NR_tkill, tid, signo);

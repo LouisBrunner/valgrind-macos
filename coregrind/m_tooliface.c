@@ -30,10 +30,11 @@
 */
 
 #include "core.h"
-#include "pub_core_tooliface.h"
+#include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_tooliface.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
 VgToolInterface VG_(tdict);

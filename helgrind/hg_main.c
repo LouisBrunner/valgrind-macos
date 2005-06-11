@@ -30,6 +30,7 @@
 */
 
 #include "tool.h"
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"

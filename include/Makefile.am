@@ -5,6 +5,7 @@ incinc_HEADERS = \
 	basic_types.h 			\
 	tool.h 				\
 	tool_asm.h 			\
+	pub_tool_aspacemgr.h 		\
 	pub_tool_errormgr.h 		\
 	pub_tool_execontext.h 		\
 	pub_tool_hashtable.h 		\

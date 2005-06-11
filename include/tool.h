@@ -140,31 +140,10 @@ extern Int  VG_(setpgid) ( Int pid, Int pgrp );
 /* Get memory by anonymous mmap. */
 extern void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who );
 
-extern Bool VG_(is_client_addr) (Addr a);
-
-extern Bool VG_(is_shadow_addr) (Addr a);
-extern Addr VG_(get_shadow_size)(void);
-
-extern void *VG_(shadow_alloc)(UInt size);
-
-extern Bool VG_(is_addressable)(Addr p, SizeT sz, UInt prot);
-
 /* Register an interest in apparently internal faults; used code which
    wanders around dangerous memory (ie, leakcheck).  The catcher is
    not expected to return. */
 extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
-
-/* initialize shadow pages in the range [p, p+sz) This calls
-   init_shadow_page for each one.  It should be a lot more efficient
-   for bulk-initializing shadow pages than faulting on each one. 
-*/
-extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
-
-/* Calls into the core used by leak-checking */
-
-/* Calls "add_rootrange" with each range of memory which looks like a
-   plausible source of root pointers. */
-extern void VG_(find_root_memory)(void (*add_rootrange)(Addr addr, SizeT sz));
 
 /* Calls "mark_addr" with register values (which may or may not be pointers) */
 extern void VG_(mark_from_registers)(void (*mark_addr)(Addr addr));

@@ -40,7 +40,7 @@
 // [XXX: actually, this is far from true...]
 //--------------------------------------------------------------------
 
-/* #include "pub_tool_aspacemgr.h" */
+#include "pub_tool_aspacemgr.h"
 #include "pub_core_debuginfo.h"
 
 // Address space globals

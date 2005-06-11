@@ -972,12 +972,15 @@ PRE(sys_shmget)
 
 PRE(wrap_sys_shmat)
 {
+   UWord arg2tmp;
    PRINT("wrap_sys_shmat ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmat",
                  int, shmid, const void *, shmaddr, int, shmflg);
-   ARG2 = VG_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
-   if (ARG2 == 0)
+   arg2tmp = VG_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
+   if (arg2tmp == 0)
       SET_STATUS_Failure( VKI_EINVAL );
+   else
+      ARG2 = arg2tmp;
 }
 POST(wrap_sys_shmat)
 {

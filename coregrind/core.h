@@ -148,12 +148,6 @@ extern void VG_(do_atfork_child) (ThreadId tid);
    Exports of vg_syscall.S
    ------------------------------------------------------------------ */
 
-// We use a full prototype rather than "..." here to ensure that all
-// arguments get converted to a UWord appropriately.  Not doing so can
-// cause problems when passing 32-bit integers on 64-bit platforms, because
-// the top 32-bits might not be zeroed appropriately, eg. as would happen
-// with the 6th arg on AMD64 which is passed on the stack.
-
 extern void VG_(sigreturn)(void);
 
 /* ---------------------------------------------------------------------

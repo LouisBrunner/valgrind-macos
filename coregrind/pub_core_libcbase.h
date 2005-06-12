@@ -46,6 +46,12 @@
 /* Do a syscall on this platform, with 6 args, and return the result
    in canonical format in a SysRes value. */
 
+// We use a full prototype for VG_(do_syscall) rather than "..." to ensure
+// that all arguments get converted to a UWord appropriately.  Not doing so
+// can cause problems when passing 32-bit integers on 64-bit platforms,
+// because the top 32-bits might not be zeroed appropriately, eg. as would
+// happen with the 6th arg on AMD64 which is passed on the stack.
+
 extern SysRes VG_(do_syscall) ( UWord sysno, 
                                 UWord, UWord, UWord, 
                                 UWord, UWord, UWord );

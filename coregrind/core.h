@@ -163,20 +163,11 @@ extern VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tid);
 // wait until all other threads are dead
 extern void VGA_(reap_threads)(ThreadId self);
 
-// handle an arch-specific client request
-extern Bool VGA_(client_request)(ThreadId tid, UWord *args);
-
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 
 // Used by leakcheck
 extern void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr));
-
-// Set up the libc freeres wrapper
-extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
-
-// Clean up the client by calling before the final reports
-extern void VGA_(final_tidyup)(ThreadId tid);
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

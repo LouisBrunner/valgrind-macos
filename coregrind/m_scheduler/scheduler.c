@@ -983,6 +983,32 @@ void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
    Handle client requests.
    ------------------------------------------------------------------ */
 
+// OS-specific(?) client requests
+static Bool os_client_request(ThreadId tid, UWord *args)
+{
+   Bool handled = True;
+
+   vg_assert(VG_(is_running_thread)(tid));
+
+   switch(args[0]) {
+   case VG_USERREQ__LIBC_FREERES_DONE:
+      /* This is equivalent to an exit() syscall, but we don't set the
+	 exitcode (since it might already be set) */
+      if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched))
+	 VG_(message)(Vg_DebugMsg, 
+		      "__libc_freeres() done; really quitting!");
+      VG_(threads)[tid].exitreason = VgSrc_ExitSyscall;
+      break;
+
+   default:
+      handled = False;
+      break;
+   }
+
+   return handled;
+}
+
+
 /* Do a client request for the thread tid.  After the request, tid may
    or may not still be runnable; if not, the scheduler will have to
    choose a new thread to run.  
@@ -1109,8 +1135,8 @@ void do_client_request ( ThreadId tid )
          break;
 
       default:
-	 if (VGA_(client_request)(tid, arg)) {
-	    /* architecture handled the client request */
+	 if (os_client_request(tid, arg)) {
+	    // do nothing, os_client_request() handled it
          } else if (VG_(needs).client_requests) {
 	    UWord ret;
 

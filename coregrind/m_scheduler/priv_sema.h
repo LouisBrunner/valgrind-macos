@@ -39,8 +39,7 @@ typedef struct {
 } vg_sema_t;
 
 // Nb: this may be OS-specific, but let's not factor it out until we
-// implement an OS port for which this isn't ok.  Then we can rename them
-// VGO_(sema_init)(), etc.
+// implement an OS port for which this isn't ok.
 void VG_(sema_init)   ( vg_sema_t *sema );
 void VG_(sema_deinit) ( vg_sema_t *sema );
 void VG_(sema_down)   ( vg_sema_t *sema );

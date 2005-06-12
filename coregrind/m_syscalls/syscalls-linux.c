@@ -30,10 +30,12 @@
 
 #include "core.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
@@ -42,6 +44,51 @@
 #include "priv_types_n_macros.h"
 #include "priv_syscalls-generic.h"
 #include "priv_syscalls-linux.h"
+
+// Run a thread from beginning to end and return the thread's
+// scheduler-return-code.
+VgSchedReturnCode VG_(thread_wrapper)(Word /*ThreadId*/ tidW)
+{
+   VG_(debugLog)(1, "core_os", 
+                    "VG_(thread_wrapper)(tid=%lld): entry\n", 
+                    (ULong)tidW);
+
+   VgSchedReturnCode ret;
+   ThreadId     tid = (ThreadId)tidW;
+   ThreadState* tst = VG_(get_ThreadState)(tid);
+
+   vg_assert(tst->status == VgTs_Init);
+
+   /* make sure we get the CPU lock before doing anything significant */
+   VG_(set_running)(tid);
+
+   if (0)
+      VG_(printf)("thread tid %d started: stack = %p\n",
+		  tid, &tid);
+
+   VG_TRACK ( post_thread_create, tst->os_state.parent, tid );
+
+   tst->os_state.lwpid = VG_(gettid)();
+   tst->os_state.threadgroup = VG_(getpid)();
+
+   /* Thread created with all signals blocked; scheduler will set the
+      appropriate mask */
+
+   ret = VG_(scheduler)(tid);
+
+   vg_assert(VG_(is_exiting)(tid));
+   
+   vg_assert(tst->status == VgTs_Runnable);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   VG_(debugLog)(1, "core_os", 
+                    "VG_(thread_wrapper)(tid=%lld): done\n", 
+                    (ULong)tidW);
+
+   /* Return to caller, still holding the lock. */
+   return ret;
+}
+
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for arch-generic, Linux-specific syscalls

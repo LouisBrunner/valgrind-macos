@@ -2867,7 +2867,7 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
    vg_assert(VG_(is_running_thread)(tid));
 
    // Wait for all other threads to exit.
-   VGA_(reap_threads)(tid);
+   VG_(reap_threads)(tid);
 
    VG_(clo_model_pthreads) = False;
 
@@ -2931,7 +2931,7 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
       sys_exit, do likewise; if the (last) thread stopped due to a fatal
       signal, terminate the entire system with that same fatal signal. */
    VG_(debugLog)(1, "core_os", 
-                    "VGO_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
+                    "VG_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
 
    vg_assert(VG_(count_living_threads)() == 0);
 

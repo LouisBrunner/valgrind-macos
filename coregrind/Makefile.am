@@ -15,11 +15,11 @@ MODULES = \
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
 ## That's what DIST_SUBDIRS specifies.
 SUBDIRS = \
-	$(VG_ARCH)     $(VG_OS)	\
+	$(VG_ARCH) \
 	$(MODULES) .
 
 DIST_SUBDIRS = \
-	$(VG_ARCH_ALL) $(VG_OS_ALL) \
+	$(VG_ARCH_ALL) \
 	$(MODULES) .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
@@ -129,7 +129,6 @@ stage2_extra= \
 	m_sigframe/libsigframe.a \
 	m_syscalls/libsyscalls.a \
 	${VG_ARCH}/libarch.a \
-	${VG_OS}/libos.a \
 	@VEX_DIR@/libvex.a
 
 ## These ones must be linked in with the --whole-archive flag, because they

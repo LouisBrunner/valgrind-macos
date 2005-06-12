@@ -2250,6 +2250,24 @@ static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
    }
 }
 
+static Bool i_am_the_only_thread ( void )
+{
+   Int c = VG_(count_living_threads)();
+   vg_assert(c >= 1); /* stay sane */
+   return c == 1;
+}
+
+/* Wait until all other threads disappear. */
+void VG_(reap_threads)(ThreadId self)
+{
+   while (!i_am_the_only_thread()) {
+      /* Let other thread(s) run */
+      VG_(vg_yield)();
+      VG_(poll_signals)(self);
+   }
+   vg_assert(i_am_the_only_thread());
+}
+
 // XXX: prototype here seemingly doesn't match the prototype for i386-linux,
 // but it seems to work nonetheless...
 PRE(sys_execve)
@@ -2299,7 +2317,7 @@ PRE(sys_execve)
       this. (Really, nuke them all, since the new process will make
       its own new thread.) */
    VG_(nuke_all_threads_except)( tid, VgSrc_ExitSyscall );
-   VGA_(reap_threads)(tid);
+   VG_(reap_threads)(tid);
 
    { // Remove the valgrind-specific stuff from the environment so the
      // child doesn't get vg_inject.so, vgpreload.so, etc.  This is

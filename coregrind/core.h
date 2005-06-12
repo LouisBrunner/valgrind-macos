@@ -157,12 +157,6 @@ extern void
                                  Addr esp_at_startup,
                                  /*MOD*/ ThreadArchState* arch );
 
-// Run a thread from beginning to end. 
-extern VgSchedReturnCode VGO_(thread_wrapper)(Word /*ThreadId*/ tid);
-
-// wait until all other threads are dead
-extern void VGA_(reap_threads)(ThreadId self);
-
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 

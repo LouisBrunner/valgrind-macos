@@ -133,15 +133,15 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    VG_(debugLog)(1, "syscalls-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VGO_(thread_wrapper) called\n",
+                       "VG_(thread_wrapper) called\n",
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
-   VgSchedReturnCode src = VGO_(thread_wrapper)(tid);  
+   VgSchedReturnCode src = VG_(thread_wrapper)(tid);  
 
    VG_(debugLog)(1, "syscalls-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VGO_(thread_wrapper) done\n",
+                       "VG_(thread_wrapper) done\n",
                        (ULong)tidW);
 
    Int c = VG_(count_living_threads)();

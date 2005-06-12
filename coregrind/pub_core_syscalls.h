@@ -62,6 +62,9 @@ extern void VG_(fixup_guest_state_after_syscall_interrupted)(
                Bool     restart
             );
 
+// Wait until all other threads are dead
+extern void VG_(reap_threads)(ThreadId self);
+
 // Release resources held by this thread
 extern void VGP_(cleanup_thread) ( ThreadArchState* );
 

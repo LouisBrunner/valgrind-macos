@@ -396,16 +396,7 @@ pointer-to-member to the destructor of the array's content just
 before the pointer actually returned.  This implies a
 variable-sized overhead in what's returned by
 <computeroutput>new</computeroutput> or
-<computeroutput>new[]</computeroutput>.  It rather surprising how
-compilers
-<footnote>
-  <para>[Ed: runtime-support libraries ?]</para>
-</footnote>
-are robust to mismatch in <computeroutput>new</computeroutput> /
-<computeroutput>delete</computeroutput>
-<computeroutput>new[]</computeroutput> /
-<computeroutput>delete[]</computeroutput>.</para>
-
+<computeroutput>new[]</computeroutput>.
 </sect2>
 
 

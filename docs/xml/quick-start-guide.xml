@@ -34,14 +34,16 @@ memory errors in your program with Memcheck.  Note that this guide applies
 to Valgrind version 2.4.0;  some of the information is not quite right for
 earlier versions.</para>
 
-<sect1>
+<sect1 id="quick-start.prepare" 
+       xreflabel="Preparing your program">
 <title>Preparing your program</title>
 <para>Compile your program with <computeroutput>-g</computeroutput> to include
 debugging information so that Memcheck's error messages include exact line
 numbers.</para>
 </sect1>
 
-<sect1>
+<sect1 id="quick-start.mcrun" 
+       xreflabel="Running your program under Memcheck">
 <title>Running your program under Memcheck</title>
 <para>If you normally run your program like this:
 
@@ -64,7 +66,8 @@ and use a lot more memory.  Memcheck will issue messages about memory errors
 and leaks that it detects.</para>
 </sect1>
 
-<sect1>
+<sect1 id="quick-start.interpret" 
+       xreflabel="Interpreting Memcheck's output">
 <title>Interpreting Memcheck's output</title>
 <para>Here's an example C program with a memory error and a memory leak.
 
@@ -170,7 +173,7 @@ If you don't understand an error message, please consult
 examples of all the error messages Memcheck produces.</para>
 </sect1>
 
-<sect1>
+<sect1 id="quick-start.caveats" xreflabel="Caveats">
 <title>Caveats</title>
 <para>Memcheck is not perfect;  it occasionally produces false positives,
 and there are mechanisms for suppressing these (see
@@ -184,7 +187,7 @@ example, it can't detect if you overrun the bounds of an array that is
 allocated statically or on the stack.</para>
 </sect1>
 
-<sect1>
+<sect1 id="quick-start.info" xreflabel="More Information">
 <title>More information</title>
 <para>Please consult the <xref linkend="FAQ"/> and the
 <xref linkend="manual"/>, which have much more information.  Note that the

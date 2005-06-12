@@ -1534,7 +1534,7 @@ different.</para>
 
 
 
-<sect2 id="mc-manual.trans" xreflabel="Translation into UCode">
+<sect2 id="mc-tech-docs.trans" xreflabel="Translation into UCode">
 <title>Translation into UCode</title>
 
 <para><computeroutput>VG_(disBB)</computeroutput> allocates a new

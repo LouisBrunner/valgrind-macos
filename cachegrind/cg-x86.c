@@ -30,6 +30,7 @@
 
 #include "tool.h"
 #include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "cg_arch.h"
 

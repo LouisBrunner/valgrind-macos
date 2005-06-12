@@ -46,6 +46,13 @@
                               0)))
 
 __attribute__ ((__noreturn__))
+extern void VG_(exit)( Int status );
+
+/* Prints a panic message, appends newline and bug reporting info, aborts. */
+__attribute__ ((__noreturn__))
+extern void  VG_(tool_panic) ( Char* str );
+
+__attribute__ ((__noreturn__))
 extern void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 
                                Int line, const Char* fn, 
                                const HChar* format, ... );

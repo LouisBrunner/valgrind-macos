@@ -82,13 +82,6 @@
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
 /* ---------------------------------------------------------------------
-   Environment variables
-   ------------------------------------------------------------------ */
-
-/* The directory we look for all our auxillary files in */
-#define VALGRINDLIB	"VALGRINDLIB"
-
-/* ---------------------------------------------------------------------
    Exports of vg_intercept.c
    ------------------------------------------------------------------ */
 
@@ -124,25 +117,6 @@
    ------------------------------------------------------------------ */
 
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
-extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
-
-/* Environment manipulations */
-extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
-                                  const Char *val );
-extern void   VG_(env_unsetenv) ( Char **env, const Char *varname );
-extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env ); 
-
-extern void   VG_(nanosleep)(struct vki_timespec *);
-
-/* Simple Valgrind-internal atfork mechanism */
-/* Internal atfork handlers */
-typedef void (*vg_atfork_t)(ThreadId);
-extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, 
-                                         vg_atfork_t child);
-extern void VG_(do_atfork_pre)   (ThreadId tid);
-extern void VG_(do_atfork_parent)(ThreadId tid);
-extern void VG_(do_atfork_child) (ThreadId tid);
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscall.S

@@ -45,6 +45,7 @@
 #include "ume.h"
 #include "memcheck/memcheck.h"
 #include "pub_core_debuglog.h"
+#include "pub_core_libcproc.h"
 
 
 static int stack[SIGSTKSZ*4];

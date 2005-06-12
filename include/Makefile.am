@@ -14,6 +14,7 @@ incinc_HEADERS = \
 	pub_tool_libcfile.h 		\
 	pub_tool_libcmman.h 		\
 	pub_tool_libcprint.h 		\
+	pub_tool_libcproc.h 		\
 	pub_tool_libcsignal.h 		\
 	pub_tool_mallocfree.h 		\
 	pub_tool_options.h 		\

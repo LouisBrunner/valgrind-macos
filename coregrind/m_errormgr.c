@@ -36,6 +36,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_main.h"          // for VG_(start_debugger)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"

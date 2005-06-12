@@ -32,9 +32,11 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_main.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"
+#include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------
    Assertery.
@@ -55,6 +57,17 @@
 #else
 #  error Unknown platform
 #endif
+
+/* Pull down the entire world */
+void VG_(exit)( Int status )
+{
+   (void)VG_(do_syscall1)(__NR_exit_group, status );
+   (void)VG_(do_syscall1)(__NR_exit, status );
+   /* Why are we still alive here? */
+   /*NOTREACHED*/
+   *(volatile Int *)0 = 'x';
+   vg_assert(2+2 == 5);
+}
 
 __attribute__ ((noreturn))
 static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )

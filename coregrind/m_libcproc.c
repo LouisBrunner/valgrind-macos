@@ -1,8 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Reimplementation of some C library stuff, to avoid depending ---*/
-/*--- on libc.so.                                                  ---*/
-/*---                                                  vg_mylibc.c ---*/
+/*--- Process-related libc stuff.                     m_libcproc.c ---*/
 /*--------------------------------------------------------------------*/
  
 /*
@@ -31,118 +29,36 @@
 */
 
 #include "core.h"
-#include "pub_core_aspacemgr.h"
-#include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcfile.h"
-#include "pub_core_main.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_options.h"
-#include "pub_core_stacktrace.h"
-#include "pub_core_syscalls.h"
-#include "pub_core_tooliface.h"
 #include "vki_unistd.h"
 
+/* ---------------------------------------------------------------------
+   Command line and environment stuff
+   ------------------------------------------------------------------ */
 
-Int VG_(waitpid)(Int pid, Int *status, Int options)
+/* As deduced from sp_at_startup, the client's argc, argv[] and
+   envp[] as extracted from the client's stack at startup-time. */
+Int    VG_(client_argc);
+Char** VG_(client_argv);
+Char** VG_(client_envp);
+
+/* We do getenv without libc's help by snooping around in
+   VG_(client_envp) as determined at startup time. */
+Char *VG_(getenv)(Char *varname)
 {
-   SysRes res = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
-   return res.isError ? -1 : res.val;
-}
-
-Int VG_(gettid)(void)
-{
-   SysRes res = VG_(do_syscall0)(__NR_gettid);
-
-   if (res.isError && res.val == VKI_ENOSYS) {
-      Char pid[16];      
-      /*
-       * The gettid system call does not exist. The obvious assumption
-       * to make at this point would be that we are running on an older
-       * system where the getpid system call actually returns the ID of
-       * the current thread.
-       *
-       * Unfortunately it seems that there are some systems with a kernel
-       * where getpid has been changed to return the ID of the thread group
-       * leader but where the gettid system call has not yet been added.
-       *
-       * So instead of calling getpid here we use readlink to see where
-       * the /proc/self link is pointing...
-       */
-
-      res = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
-                             (UWord)pid, sizeof(pid));
-      if (!res.isError && res.val > 0) {
-         pid[res.val] = '\0';
-         res.val = VG_(atoll)(pid);
+   Int i, n;
+   n = VG_(strlen)(varname);
+   for (i = 0; VG_(client_envp)[i] != NULL; i++) {
+      Char* s = VG_(client_envp)[i];
+      if (VG_(strncmp)(varname, s, n) == 0 && s[n] == '=') {
+         return & s[n+1];
       }
    }
-
-   return res.val;
-}
-
-
-
-/* ---------------------------------------------------------------------
-   exit, fcntl
-   ------------------------------------------------------------------ */
-
-/* Pull down the entire world */
-void VG_(exit)( Int status )
-{
-   (void)VG_(do_syscall1)(__NR_exit_group, status );
-   (void)VG_(do_syscall1)(__NR_exit, status );
-   /* Why are we still alive here? */
-   /*NOTREACHED*/
-   *(volatile Int *)0 = 'x';
-   vg_assert(2+2 == 5);
-}
-
-/* Returns -1 on error. */
-Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
-{
-   SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
-   return res.isError ? -1 : res.val;
-}
-
-Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
-{
-   SysRes res = VG_(do_syscall3)(__NR_poll, (UWord)ufds, nfds, timeout);
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return res.val;
-}
-
-
-/* ---------------------------------------------------------------------
-   Misc functions looking for a proper home.
-   ------------------------------------------------------------------ */
-
-/* clone the environment */
-static Char **env_clone ( Char **oldenv )
-{
-   Char **oldenvp;
-   Char **newenvp;
-   Char **newenv;
-   Int  envlen;
-
-   for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
-
-   envlen = oldenvp - oldenv + 1;
-   
-   newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
-
-   oldenvp = oldenv;
-   newenvp = newenv;
-   
-   while (oldenvp && *oldenvp) {
-      *newenvp++ = *oldenvp++;
-   }
-   
-   *newenvp = *oldenvp;
-
-   return newenv;
+   return NULL;
 }
 
 void  VG_(env_unsetenv) ( Char **env, const Char *varname )
@@ -200,69 +116,6 @@ Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
    }
 
    return oldenv;
-}
-
-/* We do getenv without libc's help by snooping around in
-   VG_(client_envp) as determined at startup time. */
-Char *VG_(getenv)(Char *varname)
-{
-   Int i, n;
-   n = VG_(strlen)(varname);
-   for (i = 0; VG_(client_envp)[i] != NULL; i++) {
-      Char* s = VG_(client_envp)[i];
-      if (VG_(strncmp)(varname, s, n) == 0 && s[n] == '=') {
-         return & s[n+1];
-      }
-   }
-   return NULL;
-}
-
-/* Support for getrlimit. */
-Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
-{
-   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
-   /* res = getrlimit( resource, rlim ); */
-#  ifdef __NR_ugetrlimit
-   res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
-#  endif
-   if (res.isError && res.val == VKI_ENOSYS)
-      res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-   return res.isError ? -1 : res.val;
-}
-
-
-/* Support for setrlimit. */
-Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
-{
-   SysRes res;
-   /* res = setrlimit( resource, rlim ); */
-   res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
-   return res.isError ? -1 : res.val;
-}
-
-/* You'd be amazed how many places need to know the current pid. */
-Int VG_(getpid) ( void )
-{
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getpid) . val;
-}
-
-Int VG_(getpgrp) ( void )
-{
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getpgrp) . val;
-}
-
-Int VG_(getppid) ( void )
-{
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getppid) . val;
-}
-
-Int VG_(setpgid) ( Int pid, Int pgrp )
-{
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall2)(__NR_setpgid, pid, pgrp) . val;
 }
 
 /* Walk through a colon-separated environment variable, and remove the
@@ -361,6 +214,56 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
    VG_(arena_free)(VG_AR_CORE, buf);
 }
 
+/* ---------------------------------------------------------------------
+   Various important syscall wrappers
+   ------------------------------------------------------------------ */
+
+Int VG_(waitpid)(Int pid, Int *status, Int options)
+{
+   SysRes res = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
+   return res.isError ? -1 : res.val;
+}
+
+/* Returns -1 on error. */
+Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
+{
+   SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+   return res.isError ? -1 : res.val;
+}
+
+Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
+{
+   SysRes res = VG_(do_syscall3)(__NR_poll, (UWord)ufds, nfds, timeout);
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return res.val;
+}
+
+/* clone the environment */
+static Char **env_clone ( Char **oldenv )
+{
+   Char **oldenvp;
+   Char **newenvp;
+   Char **newenv;
+   Int  envlen;
+
+   for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
+
+   envlen = oldenvp - oldenv + 1;
+   
+   newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
+
+   oldenvp = oldenv;
+   newenvp = newenv;
+   
+   while (oldenvp && *oldenvp) {
+      *newenvp++ = *oldenvp++;
+   }
+   
+   *newenvp = *oldenvp;
+
+   return newenv;
+}
+
 /* Return -1 if error, else 0.  NOTE does not indicate return code of
    child! */
 Int VG_(system) ( Char* cmd )
@@ -401,9 +304,98 @@ Int VG_(system) ( Char* cmd )
    }
 }
 
+/* ---------------------------------------------------------------------
+   Resource limits
+   ------------------------------------------------------------------ */
+
+struct vki_rlimit VG_(client_rlimit_data);
+struct vki_rlimit VG_(client_rlimit_stack);
+
+/* Support for getrlimit. */
+Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
+{
+   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+   /* res = getrlimit( resource, rlim ); */
+#  ifdef __NR_ugetrlimit
+   res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
+#  endif
+   if (res.isError && res.val == VKI_ENOSYS)
+      res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
+   return res.isError ? -1 : res.val;
+}
+
+
+/* Support for setrlimit. */
+Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
+{
+   SysRes res;
+   /* res = setrlimit( resource, rlim ); */
+   res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
+   return res.isError ? -1 : res.val;
+}
 
 /* ---------------------------------------------------------------------
-   Support for a millisecond-granularity timer.
+   pids, etc
+   ------------------------------------------------------------------ */
+
+Int VG_(gettid)(void)
+{
+   SysRes res = VG_(do_syscall0)(__NR_gettid);
+
+   if (res.isError && res.val == VKI_ENOSYS) {
+      Char pid[16];      
+      /*
+       * The gettid system call does not exist. The obvious assumption
+       * to make at this point would be that we are running on an older
+       * system where the getpid system call actually returns the ID of
+       * the current thread.
+       *
+       * Unfortunately it seems that there are some systems with a kernel
+       * where getpid has been changed to return the ID of the thread group
+       * leader but where the gettid system call has not yet been added.
+       *
+       * So instead of calling getpid here we use readlink to see where
+       * the /proc/self link is pointing...
+       */
+
+      res = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
+                             (UWord)pid, sizeof(pid));
+      if (!res.isError && res.val > 0) {
+         pid[res.val] = '\0';
+         res.val = VG_(atoll)(pid);
+      }
+   }
+
+   return res.val;
+}
+
+/* You'd be amazed how many places need to know the current pid. */
+Int VG_(getpid) ( void )
+{
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getpid) . val;
+}
+
+Int VG_(getpgrp) ( void )
+{
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getpgrp) . val;
+}
+
+Int VG_(getppid) ( void )
+{
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall0)(__NR_getppid) . val;
+}
+
+Int VG_(setpgid) ( Int pid, Int pgrp )
+{
+   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
+   return VG_(do_syscall2)(__NR_setpgid, pid, pgrp) . val;
+}
+
+/* ---------------------------------------------------------------------
+   Timing stuff
    ------------------------------------------------------------------ */
 
 UInt VG_(read_millisecond_timer) ( void )
@@ -428,10 +420,6 @@ void VG_(nanosleep)(struct vki_timespec *ts)
 {
    (void)VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
 }
-
-/* ---------------------------------------------------------------------
-   Misc stuff looking for a proper home
-   ------------------------------------------------------------------ */
 
 /* ---------------------------------------------------------------------
    A simple atfork() facility for Valgrind's internal use
@@ -497,8 +485,6 @@ void VG_(do_atfork_child)(ThreadId tid)
 	 (*atforks[i].child)(tid);
 }
 
-
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

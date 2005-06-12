@@ -66,14 +66,6 @@
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
 
-/* Client args */
-extern Int    VG_(client_argc);
-extern Char** VG_(client_argv);
-
-/* Client environment.  Can be inspected with VG_(getenv)() */
-extern Char** VG_(client_envp);
-
-
 /*====================================================================*/
 /*=== Useful stuff to call from generated code                     ===*/
 /*====================================================================*/
@@ -105,38 +97,6 @@ extern Addr VG_(get_IP) ( ThreadId tid );
 /*====================================================================*/
 
 /* ------------------------------------------------------------------ */
-/* stdlib.h */
-
-/* terminate everything */
-extern void VG_(exit)( Int status )
-            __attribute__ ((__noreturn__));
-
-/* Prints a panic message (a constant string), appends newline and bug
-   reporting info, aborts. */
-__attribute__ ((__noreturn__))
-extern void  VG_(tool_panic) ( Char* str );
-
-/* Looks up VG_(client_envp) */
-extern Char* VG_(getenv) ( Char* name );
-
-/* Get client resource limit*/
-extern Int VG_(getrlimit) ( Int resource, struct vki_rlimit *rlim );
-
-/* Set client resource limit*/
-extern Int VG_(setrlimit) ( Int resource, const struct vki_rlimit *rlim );
-
-/* Crude stand-in for the glibc system() call. */
-extern Int   VG_(system) ( Char* cmd );
-
-/* ------------------------------------------------------------------ */
-/* unistd.h, fcntl.h, sys/stat.h */
-extern Int  VG_(getpid)  ( void );
-extern Int  VG_(getppid) ( void );
-extern Int  VG_(getpgrp) ( void );
-extern Int  VG_(gettid)	 ( void );
-extern Int  VG_(setpgid) ( Int pid, Int pgrp );
-
-/* ------------------------------------------------------------------ */
 /* Register an interest in apparently internal faults; used code which
    wanders around dangerous memory (ie, leakcheck).  The catcher is
    not expected to return. */
@@ -145,12 +105,8 @@ extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
 /* Calls "mark_addr" with register values (which may or may not be pointers) */
 extern void VG_(mark_from_registers)(void (*mark_addr)(Addr addr));
 
-extern Int VG_(waitpid)	    ( Int pid, Int *status, Int options );
-
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */
-extern UInt VG_(read_millisecond_timer) ( void );
-
 extern Bool VG_(has_cpuid) ( void );
 
 extern void VG_(cpuid) ( UInt eax,

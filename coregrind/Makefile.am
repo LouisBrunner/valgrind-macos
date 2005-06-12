@@ -51,6 +51,7 @@ noinst_HEADERS = \
 	pub_core_libcfile.h	\
 	pub_core_libcmman.h	\
 	pub_core_libcprint.h	\
+	pub_core_libcproc.h	\
 	pub_core_libcsignal.h	\
 	pub_core_main.h		\
 	pub_core_mallocfree.h	\
@@ -100,6 +101,7 @@ stage2_SOURCES = \
 	m_libcfile.c \
 	m_libcmman.c \
 	m_libcprint.c \
+	m_libcproc.c \
 	m_libcsignal.c \
 	m_main.c \
 	m_mallocfree.c \
@@ -115,8 +117,7 @@ stage2_SOURCES = \
 	m_translate.c \
 	m_transtab.c \
 	\
-	ume.c \
-	vg_mylibc.c
+	ume.c
 
 ## Nb: libscheduler.a must precede libdispatch.a in this list.
 stage2_extra= \

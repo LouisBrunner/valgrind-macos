@@ -36,6 +36,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"

@@ -34,6 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "vki_unistd.h"
 
 SysRes VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,

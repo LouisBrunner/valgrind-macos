@@ -41,6 +41,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
@@ -111,9 +112,6 @@
    Startup stuff                            
    ------------------------------------------------------------------ */
 
-struct vki_rlimit VG_(client_rlimit_data);
-struct vki_rlimit VG_(client_rlimit_stack);
-
 /* stage1 (main) executable */
 static Int vgexecfd = -1;
 
@@ -126,12 +124,6 @@ const Char *VG_(libdir) = VG_LIBDIR;
 /* our argc/argv */
 static Int  vg_argc;
 static Char **vg_argv;
-
-/* As deduced from sp_at_startup, the client's argc, argv[] and
-   envp[] as extracted from the client's stack at startup-time. */
-Int    VG_(client_argc);
-Char** VG_(client_argv);
-Char** VG_(client_envp);
 
 
 /* ---------------------------------------------------------------------

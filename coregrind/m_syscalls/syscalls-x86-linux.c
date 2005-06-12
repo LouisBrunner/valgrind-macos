@@ -42,6 +42,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_sigframe.h"

@@ -41,9 +41,6 @@
 /* Sanity checks which may be done at any time.  The scheduler decides when. */
 extern void VG_(sanity_check_general) ( Bool force_expensive );
 
-extern struct vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
-extern struct vki_rlimit VG_(client_rlimit_stack); /* client's original rlimit stack */
-
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);
 

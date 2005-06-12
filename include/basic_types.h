@@ -69,10 +69,18 @@ typedef  Word                   OffT;     // 32             64
    non-builtin types
    ------------------------------------------------------------------ */
 
+// XXX: these probably shouldn't be here...
+
 /* ThreadIds are simply indices into the VG_(threads)[] array. */
 typedef
    UInt
    ThreadId;
+
+/* Special magic value for an invalid ThreadId.  It corresponds to
+   LinuxThreads using zero as the initial value for
+   pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
+#define VG_INVALID_THREADID ((ThreadId)(0))
+
 
 /* An abstraction of syscall return values.
    When .isError == False, val holds the return value.

@@ -57,12 +57,6 @@
 /*=== Useful macros                                                ===*/
 /*====================================================================*/
 
-// 'a' -- the alignment -- must be a power of 2
-#define VG_ROUNDDN(p, a)   ((Addr)(p) & ~((Addr)(a)-1))
-#define VG_ROUNDUP(p, a)   VG_ROUNDDN((p)+(a)-1, (a))
-#define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
-#define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
-
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
 
@@ -72,11 +66,6 @@ extern const Char *VG_(libdir);
 
 /* ------------------------------------------------------------------ */
 /* Thread-related stuff */
-
-/* Special magic value for an invalid ThreadId.  It corresponds to
-   LinuxThreads using zero as the initial value for
-   pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
-#define VG_INVALID_THREADID ((ThreadId)(0))
 
 /* Get the TID of the thread which currently has the CPU. */
 extern ThreadId VG_(get_running_tid) ( void );

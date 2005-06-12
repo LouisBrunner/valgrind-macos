@@ -96,6 +96,13 @@ extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 #define VG_IS_WORD_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(sizeof(Addr)-1))))
 #define VG_IS_PAGE_ALIGNED(aaa_p) (0 == (((Addr)(aaa_p)) & ((Addr)(VKI_PAGE_SIZE-1))))
 
+// 'a' -- the alignment -- must be a power of 2.
+// The latter two require the vki-*.h header to be imported also.
+#define VG_ROUNDDN(p, a)   ((Addr)(p) & ~((Addr)(a)-1))
+#define VG_ROUNDUP(p, a)   VG_ROUNDDN((p)+(a)-1, (a))
+#define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
+#define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
+
 /* ---------------------------------------------------------------------
    Misc useful functions
    ------------------------------------------------------------------ */

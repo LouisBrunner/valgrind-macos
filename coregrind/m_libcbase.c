@@ -547,20 +547,15 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
 {
    SysRes res;
 
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    UInt eax = do_syscall_x86_linux_WRK(sysno,a1,a2,a3,a4,a5,a6);
    res = VG_(mk_SysRes_x86_linux)( eax );
-#  else
-
-#  if defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    ULong rax = do_syscall_amd64_linux_WRK(sysno,a1,a2,a3,a4,a5,a6);
    res = VG_(mk_SysRes_amd64_linux)( rax );
-#  else
-
-#    error VG_(do_syscall): unimplemented on this platform
-
-#  endif
-#  endif
+#else
+#  error VG_(do_syscall): unimplemented on this platform
+#endif
 
    return res;
 }

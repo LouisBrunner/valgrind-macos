@@ -38,7 +38,8 @@
 
 #include "pub_tool_libcproc.h"
 
-/* The directory we look for all our auxillary files in */
+/* The directory we look for all our auxillary files in.  Useful for
+   running Valgrind out of a build tree without having to do "make install". */
 #define VALGRINDLIB	"VALGRINDLIB"
 
 /* Additional command-line arguments; they are overridden by actual

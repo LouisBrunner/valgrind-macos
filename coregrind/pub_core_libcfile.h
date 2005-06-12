@@ -43,7 +43,8 @@ extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
 /* Move an fd into the Valgrind-safe range */
-extern Int VG_(safe_fd)(Int oldfd);
+extern Int VG_(safe_fd) ( Int oldfd );
+extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 
 extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );

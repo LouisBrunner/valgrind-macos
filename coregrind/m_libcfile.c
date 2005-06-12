@@ -122,6 +122,13 @@ Int VG_(dup2) ( Int oldfd, Int newfd )
    return res.isError ? (-1) : res.val;
 }
 
+/* Returns -1 on error. */
+Int VG_(fcntl) ( Int fd, Int cmd, Int arg )
+{
+   SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+   return res.isError ? -1 : res.val;
+}
+
 Int VG_(rename) ( Char* old_name, Char* new_name )
 {
    SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);

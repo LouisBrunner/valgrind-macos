@@ -43,6 +43,9 @@ extern Char** VG_(client_envp);
 /* Looks up VG_(client_envp) */
 extern Char* VG_(getenv) ( Char* name );
 
+/* Path to all our library/aux files */
+extern const Char *VG_(libdir);
+
 /* ---------------------------------------------------------------------
    Important syscalls
    ------------------------------------------------------------------ */

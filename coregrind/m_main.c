@@ -118,9 +118,6 @@ static Int vgexecfd = -1;
 /* client executable */
 Int  VG_(clexecfd) = -1;
 
-/* Path to library directory */
-const Char *VG_(libdir) = VG_LIBDIR;
-
 /* our argc/argv */
 static Int  vg_argc;
 static Char **vg_argv;

@@ -46,6 +46,9 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
+/* Path to library directory */
+const Char *VG_(libdir) = VG_LIBDIR;
+
 /* We do getenv without libc's help by snooping around in
    VG_(client_envp) as determined at startup time. */
 Char *VG_(getenv)(Char *varname)

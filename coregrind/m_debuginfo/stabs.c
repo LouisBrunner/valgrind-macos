@@ -1414,7 +1414,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	    if (line.addr != 0) {
 	       /* finish off previous line */
-	       VG_(addLineInfo)(si, file.name, line.addr,
+	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	    }
 
@@ -1446,7 +1446,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	    if (line.addr != 0) {
 	       /* there was a previous */
-	       VG_(addLineInfo)(si, file.name, line.addr,
+	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	    }
 
@@ -1555,7 +1555,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 	    }
 
 	    if (line.addr) {
-	       VG_(addLineInfo)(si, file.name, line.addr,
+	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	       line.addr = 0;
 	    }

@@ -737,7 +737,8 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
    if (debug) {
       Char file[100];
       Int line;
-      if (!VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
+      if (!VG_(get_filename_linenum)(eip, file, sizeof(file), 
+                                          NULL, 0, NULL, &line))
 	 file[0] = 0;
       VG_(printf)("describing address %p for tid=%d @ %s:%d\n", addr, tid, file, line);
    }
@@ -1047,7 +1048,8 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	 if (addr != found->valuep)
 	    bprintf(describe_addr_addbuf, 0, "+%d", addr - found->valuep);
 
-	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
+	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), 
+                                            NULL, 0, NULL, &line))
 	    bprintf(describe_addr_addbuf, 0, " at %s:%d", file, line, addr);
       }
    }

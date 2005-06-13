@@ -165,8 +165,12 @@ static Int  BB_retranslations   = 0;
 static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
                            Char fn[FN_LEN], Int* line)
 {
-   Bool found_file_line = VG_(get_filename_linenum)(instr_addr, file,
-                                                    FILE_LEN, line);
+   Bool found_file_line = VG_(get_filename_linenum)(
+                             instr_addr, 
+                             file, FILE_LEN,
+                             NULL, 0, NULL,
+                             line
+                          );
    Bool found_fn        = VG_(get_fnname)(instr_addr, fn, FN_LEN);
 
    if (!found_file_line) {

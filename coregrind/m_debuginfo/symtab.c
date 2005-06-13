@@ -248,11 +248,12 @@ void addLoc ( SegInfo* si, RiLoc* loc )
 
 void VG_(addLineInfo) ( SegInfo* si,
 			Char*    filename,
+			Char*    dirname, /* NULL == directory is unknown */
 			Addr     this,
 			Addr     next,
 			Int      lineno,
 			Int      entry /* only needed for debug printing */
-		       )
+		      )
 {
    static const Bool debug = False;
    RiLoc loc;
@@ -262,7 +263,9 @@ void VG_(addLineInfo) ( SegInfo* si,
    if (this == next) return;
 
    if (debug)
-      VG_(printf)("  src %s line %d %p-%p\n", filename, lineno, this, next);
+      VG_(printf)( "  src %s %s line %d %p-%p\n",
+                   dirname ? dirname : (Char*)"(unknown)",
+                   filename, lineno, this, next );
 
    /* Maximum sanity checking.  Some versions of GNU as do a shabby
     * job with stabs entries; if anything looks suspicious, revert to
@@ -314,6 +317,7 @@ void VG_(addLineInfo) ( SegInfo* si,
    loc.size      = (UShort)size;
    loc.lineno    = lineno;
    loc.filename  = filename;
+   loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
 		       "addLoc: addr %p, size %d, line %d, file %s",
@@ -2242,20 +2246,42 @@ Bool VG_(get_linenum)( Addr a, UInt* lineno )
    return True;
 }
 
-/* Map a code address to a (filename, line number) pair.  
-   Returns True if successful.
+/* Map a code address to a filename/line number/dir name info.
+   See prototype for detailed description of behaviour.
 */
-Bool VG_(get_filename_linenum)( Addr a, 
-                                Char* filename, Int n_filename, 
-                                UInt* lineno )
+Bool VG_(get_filename_linenum) ( Addr a, 
+                                 /*OUT*/Char* filename, Int n_filename,
+                                 /*OUT*/Char* dirname,  Int n_dirname,
+                                 /*OUT*/Bool* dirname_available,
+                                 /*OUT*/UInt* lineno )
 {
    SegInfo* si;
    Int      locno;
+
+   vg_assert( (dirname == NULL && dirname_available == NULL)
+              ||
+              (dirname != NULL && dirname_available != NULL) );
+
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) 
       return False;
    VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
    *lineno = si->loctab[locno].lineno;
+
+   if (dirname) {
+      /* caller wants directory info too .. */
+      vg_assert(n_dirname > 0);
+      if (si->loctab[locno].dirname) {
+         /* .. and we have some */
+         *dirname_available = True;
+         VG_(strncpy_safely)(dirname, si->loctab[locno].dirname,
+                                      n_dirname);
+      } else {
+         /* .. but we don't have any */
+         *dirname_available = False;
+         *dirname = 0;
+      }
+   }
 
    return True;
 }
@@ -2267,7 +2293,7 @@ Bool VG_(get_filename_linenum)( Addr a,
 static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
 {
 #if defined(VGA_x86)
-/* This is the Intel register encoding -- integer regs. */
+   /* This is the Intel register encoding -- integer regs. */
 #  define R_STACK_PTR   4
 #  define R_FRAME_PTR   5
    switch (regno) {
@@ -2282,7 +2308,7 @@ static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
    default:          return 0;
    }
 #elif defined(VGA_amd64)
-/* This is the Intel register encoding -- integer regs. */
+   /* This is the AMD64 register encoding -- integer regs. */
 #  define R_STACK_PTR   7
 #  define R_FRAME_PTR   6
    switch (regno) {
@@ -2358,7 +2384,8 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
       Char file[100];
       Int line;
 
-      if (!VG_(get_filename_linenum)(sr->addr, file, sizeof(file), &line))
+      if (!VG_(get_filename_linenum)(sr->addr, file, sizeof(file), 
+                                                     NULL, 0, NULL, &line))
 	 file[0] = 0;
 
       VG_(printf)("found scope range %p: eip=%p (%s:%d) size=%d scope=%p\n",
@@ -2366,7 +2393,9 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
    }
 
    distance = 0;
-   for(scope = si->scopetab[scopeidx].scope; scope != NULL; scope = scope->outer, distance++) {
+   for (scope = si->scopetab[scopeidx].scope; 
+        scope != NULL; 
+        scope = scope->outer, distance++) {
       UInt i;
 
       for(i = 0; i < scope->nsyms; i++) {
@@ -2435,6 +2464,10 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 
    return list;
 }
+
+#  undef R_STACK_PTR
+#  undef R_FRAME_PTR
+
 #endif /* TEST */
 
 /* Print into buf info on code address, function name and filename */
@@ -2477,11 +2510,16 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    static UChar buf_fn[BUF_LEN];
    static UChar buf_obj[BUF_LEN];
    static UChar buf_srcloc[BUF_LEN];
+   static UChar buf_dirname[BUF_LEN];
+   Bool  know_dirinfo = False;
    Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  BUF_LEN);
    Bool  know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
-   Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc,
-                                                  BUF_LEN, &lineno);
-
+   Bool  know_srcloc  = VG_(get_filename_linenum)(
+                           eip, 
+                           buf_srcloc,  BUF_LEN, 
+                           buf_dirname, BUF_LEN, &know_dirinfo,
+                           &lineno 
+                        );
    if (VG_(clo_xml)) {
 
       Bool   human_readable = True;
@@ -2506,6 +2544,12 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
          APPEND("</fn>");
       }
       if (know_srcloc) {
+         if (know_dirinfo) {
+            APPEND(maybe_newline);
+            APPEND("<dir>");
+            APPEND(buf_dirname);
+            APPEND("</dir>");
+         }
          APPEND(maybe_newline);
          APPEND("<file>");
          APPEND_ESC(buf_srcloc);
@@ -2552,6 +2596,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 
 #  undef APPEND
 #  undef APPEND_ESC
+#  undef BUF_LEN
 }
 
 /* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */

@@ -47,11 +47,23 @@ extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
 extern Bool VG_(get_fnname_w_offset)
                               ( Addr a, Char* fnname,   Int n_fnname   );
 
-/* This one is more efficient if getting both filename and line number,
-   because the two lookups are done together. */
+/* This one is the most general.  It gives filename, line number and
+   optionally directory name.  filename and linenum may not be NULL.
+   dirname may be NULL, meaning that the caller does not want
+   directory name info, in which case dirname_available must also be
+   NULL.  If dirname is non-null, directory info is written to it, if
+   it is available; if not available, '\0' is written to the first
+   byte.  In either case *dirname_available is set to indicate whether
+   or not directory information was available.
+
+   Returned value indicates whether any filename/line info could be
+   found. */
 extern Bool VG_(get_filename_linenum)
-                              ( Addr a, Char* filename, Int n_filename,
-                                        UInt* linenum );
+                              ( Addr a, 
+                                /*OUT*/Char* filename, Int n_filename,
+                                /*OUT*/Char* dirname,  Int n_dirname,
+                                /*OUT*/Bool* dirname_available,
+                                /*OUT*/UInt* linenum );
 
 /* Succeeds only if we find from debug info that 'a' is the address of the
    first instruction in a function -- as opposed to VG_(get_fnname) which

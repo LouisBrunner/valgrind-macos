@@ -2730,7 +2730,8 @@ static void hg_pp_Error ( Error* err )
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
 	 
-	 if (VG_(get_filename_linenum)(ip, file, sizeof(file), &line)) {
+	 if (VG_(get_filename_linenum)(ip, file, sizeof(file), 
+                                           NULL, 0, NULL, &line)) {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y (%s:%u)",
 			 ip, ip, file, line);
 	 } else if (VG_(get_objname)(ip, file, sizeof(file))) {

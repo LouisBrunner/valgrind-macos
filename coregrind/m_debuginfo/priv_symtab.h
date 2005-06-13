@@ -69,7 +69,9 @@ typedef
       UShort size:LOC_SIZE_BITS;    /* byte size; we catch overflows of this */
       UInt   lineno:LINENO_BITS;    /* source line number, or zero */
       /* Word 3 */
-      Char*  filename;                /* source filename */
+      Char*  filename;              /* source filename */
+      /* Word 4 */
+      Char*  dirname;               /* source directory name */
    }
    RiLoc;
 
@@ -231,7 +233,10 @@ struct _SegInfo {
 
 Char *VG_(addStr) ( SegInfo* si, Char* str, Int len );
 void VG_(addScopeInfo) ( SegInfo* si, Addr this, Addr next, Scope *scope);
-void VG_(addLineInfo) ( SegInfo* si, Char* filename, Addr this, Addr next, Int lineno, Int entry);
+void VG_(addLineInfo) ( SegInfo* si, 
+                        Char* filename, 
+                        Char* dirname,  /* NULL is allowable */
+                        Addr this, Addr next, Int lineno, Int entry);
 void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi );
 
 /* Non-fatal -- use vg_panic if terminal. */

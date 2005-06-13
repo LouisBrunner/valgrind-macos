@@ -105,6 +105,10 @@ extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 
 extern ULong amd64g_create_mxcsr ( ULong sseround );
 
+extern VexEmWarn amd64g_dirtyhelper_FLDENV ( VexGuestAMD64State*, HWord );
+
+extern void amd64g_dirtyhelper_FSTENV ( VexGuestAMD64State*, HWord );
+
 /* Translate a guest virtual_addr into a guest linear address by
    consulting the supplied LDT/GDT structures.  Their representation
    must be as specified in pub/libvex_guest_amd64.h.  To indicate a

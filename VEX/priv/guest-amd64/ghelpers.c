@@ -1308,6 +1308,98 @@ ULong amd64g_create_fpucw ( ULong fpround )
 }
 
 
+/* This is used to implement 'fldenv'.  
+   Reads 28 bytes at x87_state[0 .. 27]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+VexEmWarn amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
+                                      /*IN*/HWord x87_state)
+{
+   Int        stno, preg;
+   UInt       tag;
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
+   UInt       tagw    = x87->env[FP_ENV_TAG];
+   UInt       fpucw   = x87->env[FP_ENV_CTRL];
+   ULong      c3210   = x87->env[FP_ENV_STAT] & 0x4700;
+   VexEmWarn  ew;
+   ULong      fpround;
+   ULong      pair;
+
+   /* Copy tags */
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      tag = (tagw >> (2*preg)) & 3;
+      if (tag == 3) {
+         /* register is empty */
+         vexTags[preg] = 0;
+      } else {
+         /* register is non-empty */
+         vexTags[preg] = 1;
+      }
+   }
+
+   /* stack pointer */
+   vex_state->guest_FTOP = ftop;
+
+   /* status word */
+   vex_state->guest_FC3210 = c3210;
+
+   /* handle the control word, setting FPROUND and detecting any
+      emulation warnings. */
+   pair    = amd64g_check_fldcw ( (ULong)fpucw );
+   fpround = pair & 0xFFFFFFFFULL;
+   ew      = (VexEmWarn)(pair >> 32);
+   
+   vex_state->guest_FPROUND = fpround & 3;
+
+   /* emulation warnings --> caller */
+   return ew;
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+/* Create an x87 FPU env from the guest state, as close as we can
+   approximate it.  Writes 28 bytes at x87_state[0..27]. */
+void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
+                                 /*OUT*/HWord x87_state )
+{
+   Int        i, stno, preg;
+   UInt       tagw;
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = vex_state->guest_FTOP;
+   ULong      c3210   = vex_state->guest_FC3210;
+
+   for (i = 0; i < 14; i++)
+      x87->env[i] = 0;
+
+   x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
+   x87->env[FP_ENV_STAT] 
+      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
+   x87->env[FP_ENV_CTRL] 
+      = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
+
+   /* Compute the x87 tag word. */
+   tagw = 0;
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      if (vexTags[preg] == 0) {
+         /* register is empty */
+         tagw |= (3 << (2*preg));
+      } else {
+         /* register is full. */
+         tagw |= (0 << (2*preg));
+      }
+   }
+   x87->env[FP_ENV_TAG] = toUShort(tagw);
+
+   /* We don't dump the x87 registers, tho. */
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
 /*---------------------------------------------------------------*/

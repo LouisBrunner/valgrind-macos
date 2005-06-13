@@ -4596,64 +4596,62 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 4: { /* FLDENV m108 */
-//..                /* Uses dirty helper: 
-//..                      VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, Addr32 ) */
-//..                IRTemp   ew = newTemp(Ity_I32);
-//..                IRDirty* d  = unsafeIRDirty_0_N ( 
-//..                                 0/*regparms*/, 
-//..                                 "x86g_dirtyhelper_FLDENV", 
-//..                                 &x86g_dirtyhelper_FLDENV,
-//..                                 mkIRExprVec_1( mkexpr(addr) )
-//..                              );
-//..                d->needsBBP = True;
-//..                d->tmp      = ew;
-//..                /* declare we're reading memory */
-//..                d->mFx   = Ifx_Read;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 28;
-//.. 
-//..                /* declare we're writing guest state */
-//..                d->nFxState = 5;
-//.. 
-//..                d->fxState[0].fx     = Ifx_Write;
-//..                d->fxState[0].offset = OFFB_FTOP;
-//..                d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[1].fx     = Ifx_Write;
-//..                d->fxState[1].offset = OFFB_FPREGS;
-//..                d->fxState[1].size   = 8 * sizeof(ULong);
-//.. 
-//..                d->fxState[2].fx     = Ifx_Write;
-//..                d->fxState[2].offset = OFFB_FPTAGS;
-//..                d->fxState[2].size   = 8 * sizeof(UChar);
-//.. 
-//..                d->fxState[3].fx     = Ifx_Write;
-//..                d->fxState[3].offset = OFFB_FPROUND;
-//..                d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[4].fx     = Ifx_Write;
-//..                d->fxState[4].offset = OFFB_FC3210;
-//..                d->fxState[4].size   = sizeof(UInt);
-//.. 
-//..                stmt( IRStmt_Dirty(d) );
-//.. 
-//..                /* ew contains any emulation warning we may need to
-//..                   issue.  If needed, side-exit to the next insn,
-//..                   reporting the warning, so that Valgrind's dispatcher
-//..                   sees the warning. */
-//..                put_emwarn( mkexpr(ew) );
-//..                stmt( 
-//..                   IRStmt_Exit(
-//..                      binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
-//..                      Ijk_EmWarn,
-//..                      IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
-//..                   )
-//..                );
-//.. 
-//..                DIP("fldenv %s\n", dis_buf);
-//..                break;
-//..             }
+            case 4: { /* FLDENV m28 */
+               /* Uses dirty helper: 
+                     VexEmWarn amd64g_do_FLDENV ( VexGuestX86State*, HWord ) */
+               IRTemp    ew = newTemp(Ity_I32);
+               IRTemp   w64 = newTemp(Ity_I64);
+               IRDirty*   d = unsafeIRDirty_0_N ( 
+                                 0/*regparms*/, 
+                                 "amd64g_dirtyhelper_FLDENV", 
+                                 &amd64g_dirtyhelper_FLDENV,
+                                 mkIRExprVec_1( mkexpr(addr) )
+                              );
+               d->needsBBP = True;
+               d->tmp      = w64;
+               /* declare we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 28;
+
+               /* declare we're writing guest state */
+               d->nFxState = 4;
+
+               d->fxState[0].fx     = Ifx_Write;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Write;
+               d->fxState[1].offset = OFFB_FPTAGS;
+               d->fxState[1].size   = 8 * sizeof(UChar);
+
+               d->fxState[2].fx     = Ifx_Write;
+               d->fxState[2].offset = OFFB_FPROUND;
+               d->fxState[2].size   = sizeof(ULong);
+
+               d->fxState[3].fx     = Ifx_Write;
+               d->fxState[3].offset = OFFB_FC3210;
+               d->fxState[3].size   = sizeof(ULong);
+
+               stmt( IRStmt_Dirty(d) );
+
+               /* ew contains any emulation warning we may need to
+                  issue.  If needed, side-exit to the next insn,
+                  reporting the warning, so that Valgrind's dispatcher
+                  sees the warning. */
+	       assign(ew, unop(Iop_64to32,mkexpr(w64)) );
+               put_emwarn( mkexpr(ew) );
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U64( guest_rip_bbstart+delta )
+                  )
+               );
+
+               DIP("fldenv %s\n", dis_buf);
+               break;
+            }
 
             case 5: {/* FLDCW */
                /* The only thing we observe in the control word is the
@@ -4695,51 +4693,51 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
             }
 
-//..             case 6: { /* FNSTENV m28 */
-//..                /* Uses dirty helper: 
-//..                      void x86g_do_FSTENV ( VexGuestX86State*, UInt ) */
-//..                IRDirty* d = unsafeIRDirty_0_N ( 
-//..                                0/*regparms*/, 
-//..                                "x86g_dirtyhelper_FSTENV", 
-//..                                &x86g_dirtyhelper_FSTENV,
-//..                                mkIRExprVec_1( mkexpr(addr) )
-//..                             );
-//..                d->needsBBP = True;
-//..                /* declare we're writing memory */
-//..                d->mFx   = Ifx_Write;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 28;
-//.. 
-//..                /* declare we're reading guest state */
-//..                d->nFxState = 4;
-//.. 
-//..                d->fxState[0].fx     = Ifx_Read;
-//..                d->fxState[0].offset = OFFB_FTOP;
-//..                d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[1].fx     = Ifx_Read;
-//..                d->fxState[1].offset = OFFB_FPTAGS;
-//..                d->fxState[1].size   = 8 * sizeof(UChar);
-//.. 
-//..                d->fxState[2].fx     = Ifx_Read;
-//..                d->fxState[2].offset = OFFB_FPROUND;
-//..                d->fxState[2].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[3].fx     = Ifx_Read;
-//..                d->fxState[3].offset = OFFB_FC3210;
-//..                d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..                stmt( IRStmt_Dirty(d) );
-//.. 
-//..                DIP("fnstenv %s\n", dis_buf);
-//..                break;
-//..             }
+            case 6: { /* FNSTENV m28 */
+               /* Uses dirty helper: 
+                     void amd64g_do_FSTENV ( VexGuestAMD64State*, HWord ) */
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               0/*regparms*/, 
+                               "amd64g_dirtyhelper_FSTENV", 
+                               &amd64g_dirtyhelper_FSTENV,
+                               mkIRExprVec_1( mkexpr(addr) )
+                            );
+               d->needsBBP = True;
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 28;
+
+               /* declare we're reading guest state */
+               d->nFxState = 4;
+
+               d->fxState[0].fx     = Ifx_Read;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Read;
+               d->fxState[1].offset = OFFB_FPTAGS;
+               d->fxState[1].size   = 8 * sizeof(UChar);
+
+               d->fxState[2].fx     = Ifx_Read;
+               d->fxState[2].offset = OFFB_FPROUND;
+               d->fxState[2].size   = sizeof(ULong);
+
+               d->fxState[3].fx     = Ifx_Read;
+               d->fxState[3].offset = OFFB_FC3210;
+               d->fxState[3].size   = sizeof(ULong);
+
+               stmt( IRStmt_Dirty(d) );
+
+               DIP("fnstenv %s\n", dis_buf);
+               break;
+            }
 
             case 7: /* FNSTCW */
                /* Fake up a native x87 FPU control word.  The only
                   thing it depends on is FPROUND[1:0], so call a clean
                   helper to cook it up. */
-               /* ULong x86h_create_fpucw ( ULong fpround ) */
+               /* ULong amd64g_create_fpucw ( ULong fpround ) */
                DIP("fnstcw %s\n", dis_buf);
                storeLE(
                   mkexpr(addr), 

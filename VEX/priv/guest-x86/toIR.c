@@ -3733,7 +3733,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 4: { /* FLDENV m28 */
                /* Uses dirty helper: 
-                     VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, Addr32 ) */
+                     VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, HWord ) */
                IRTemp   ew = newTemp(Ity_I32);
                IRDirty* d  = unsafeIRDirty_0_N ( 
                                 0/*regparms*/, 
@@ -3832,7 +3832,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 6: { /* FNSTENV m28 */
                /* Uses dirty helper: 
-                     void x86g_do_FSTENV ( VexGuestX86State*, UInt ) */
+                     void x86g_do_FSTENV ( VexGuestX86State*, HWord ) */
                IRDirty* d = unsafeIRDirty_0_N ( 
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSTENV", 

@@ -75,6 +75,26 @@ extern
 void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 );
 
 
+/* Layout of the real x87 state. */
+typedef
+   struct {
+      UShort env[14];
+      UChar  reg[80];
+   }
+   Fpu_State;
+
+/* Offsets, in 16-bit ints, into the FPU environment (env) area. */
+#define FP_ENV_CTRL   0
+#define FP_ENV_STAT   2
+#define FP_ENV_TAG    4
+#define FP_ENV_IP     6 /* and 7 */
+#define FP_ENV_CS     8
+#define FP_ENV_OPOFF  10 /* and 11 */
+#define FP_ENV_OPSEL  12
+#define FP_REG(ii)    (10*(7-(ii)))
+
+
+
 #endif /* ndef __G_GENERIC_X87_H */
 
 /*---------------------------------------------------------------*/

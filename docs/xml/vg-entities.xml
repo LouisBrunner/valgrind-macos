@@ -7,6 +7,6 @@
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Development release">
-<!ENTITY rel-version "2.1.2">
-<!ENTITY rel-date    "July 18 2004">
+<!ENTITY rel-version "3.0.0">
+<!ENTITY rel-date    "June 01 2005">
 

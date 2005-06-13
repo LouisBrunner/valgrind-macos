@@ -1417,9 +1417,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
    ppIRExpr(e);
    vpanic("fold_Expr: no rule for the above");
 #  else
-   vex_printf("vex iropt: fold_Expr: no rule for: ");
-   ppIRExpr(e);
-   vex_printf("\n");
+   if (vex_control.iropt_verbosity > 0) {
+      vex_printf("vex iropt: fold_Expr: no rule for: ");
+      ppIRExpr(e);
+      vex_printf("\n");
+   }
    return e2;
 #  endif
 }

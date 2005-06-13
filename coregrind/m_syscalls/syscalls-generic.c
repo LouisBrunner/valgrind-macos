@@ -3786,7 +3786,7 @@ PRE(sys_ioctl)
 	  */
       } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
 	 static Int moans = 3;
-	 if (moans > 0) {
+	 if (moans > 0 && !VG_(clo_xml)) {
 	    moans--;
 	    VG_(message)(Vg_UserMsg, 
 			 "Warning: noted but unhandled ioctl 0x%x"

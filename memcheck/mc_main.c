@@ -557,7 +557,7 @@ static void set_address_range_perms ( Addr aA, SizeT len,
    if (len == 0)
       return;
 
-   if (VG_(clo_verbosity) > 0) {
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
       if (len > 100 * 1000 * 1000) {
          VG_(message)(Vg_UserMsg, 
                       "Warning: set address range perms: "

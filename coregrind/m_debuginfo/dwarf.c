@@ -36,6 +36,81 @@
 #include "pub_core_options.h"
 #include "priv_symtab.h"
 
+
+/*------------------------------------------------------------*/
+/*--- Expanding arrays of words, for holding file name and ---*/
+/*--- directory name arrays.                               ---*/
+/*------------------------------------------------------------*/
+
+typedef
+   struct {
+      Word* tab;
+      UInt  tab_size;
+      UInt  tab_used;
+   }
+   WordArray;
+
+static void init_WordArray ( WordArray* wa )
+{
+   wa->tab      = NULL;
+   wa->tab_size = 0;
+   wa->tab_used = 0;
+}
+
+static void free_WordArray ( WordArray* wa )
+{
+   if (wa->tab) {
+      vg_assert(wa->tab_size > 0);
+      VG_(arena_free)(VG_AR_SYMTAB, wa->tab);
+   }
+   init_WordArray(wa);
+}
+
+static void addto_WordArray ( WordArray* wa, Word w )
+{
+   UInt  new_size, i;
+   Word* new_tab;
+
+   if (0) VG_(printf)("<<ADD %p (new sz = %d) >>\n", 
+                      (HChar*)w, wa->tab_used+1);
+
+   if (wa->tab_used < wa->tab_size) {
+      /* fine */
+   } else {
+      /* expand array */
+      if (0) VG_(printf)("EXPAND ARRAY from %d\n", wa->tab_size);
+      vg_assert(wa->tab_used == wa->tab_size);
+      vg_assert( (wa->tab_size == 0 && wa->tab == NULL)
+                 || (wa->tab_size != 0 && wa->tab != NULL) );
+      new_size = wa->tab_size == 0 ? 8 : 2 * wa->tab_size;
+      new_tab  = VG_(arena_malloc)(VG_AR_SYMTAB, 
+                                   new_size * sizeof(Word));
+      vg_assert(new_tab != NULL);
+      for (i = 0; i < wa->tab_used; i++)
+         new_tab[i] = wa->tab[i];
+      wa->tab_size = new_size;
+      if (wa->tab)
+         VG_(arena_free)(VG_AR_SYMTAB, wa->tab);
+      wa->tab = new_tab;
+   }
+
+   vg_assert(wa->tab_used < wa->tab_size);
+   vg_assert(wa->tab_size > 0);
+   wa->tab[wa->tab_used] = w;
+   wa->tab_used++;
+}
+
+static Word index_WordArray ( WordArray* wa, Int i )
+{
+   vg_assert(i >= 0 && i < wa->tab_used);
+   return wa->tab[i];
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Read DWARF2 format line number info.                 ---*/
+/*------------------------------------------------------------*/
+
 /* Structure found in the .debug_line section.  */
 typedef struct
 {
@@ -105,9 +180,6 @@ typedef struct State_Machine_Registers
   Int   is_stmt;
   Int   basic_block;
   Int   end_sequence;
-  /* This variable hold the number of the last entry seen
-     in the File Table.  */
-  UInt  last_file_entry;
 } SMR;
 
 
@@ -157,13 +229,27 @@ void reset_state_machine ( Int is_stmt )
   state_machine_regs.is_stmt = is_stmt;
   state_machine_regs.basic_block = 0;
   state_machine_regs.end_sequence = 0;
-  state_machine_regs.last_file_entry = 0;
 }
+
+/* Look up a directory name, or return NULL if unknown. */
+static
+Char* lookupDir ( Int filename_index,
+                  WordArray* fnidx2dir,
+                  WordArray* dirnames )
+{
+   Word diridx  = index_WordArray( fnidx2dir, filename_index );
+   Word dirname = index_WordArray( dirnames, (Int)diridx );
+   return (Char*)dirname;
+}
+
 
 /* Handled an extend line op.  Returns true if this is the end
    of sequence.  */
 static 
-int process_extended_line_op( SegInfo *si, Char*** fnames, 
+int process_extended_line_op( SegInfo *si, 
+                              WordArray* filenames, 
+                              WordArray* dirnames, 
+                              WordArray* fnidx2dir, 
                               UChar* data, Int is_stmt)
 {
   UChar   op_code;
@@ -197,10 +283,15 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
       */
       if (state_machine_regs.is_stmt) {
 	 if (state_machine_regs.last_address)
-	    VG_(addLineInfo) (si, (*fnames)[state_machine_regs.last_file], 
-			      si->offset + state_machine_regs.last_address, 
-			      si->offset + state_machine_regs.address, 
-			      state_machine_regs.last_line, 0);
+	    VG_(addLineInfo) (
+               si, 
+               (Char*)index_WordArray(filenames, state_machine_regs.last_file), 
+               lookupDir( state_machine_regs.last_file,
+                          fnidx2dir, dirnames ),
+               si->offset + state_machine_regs.last_address, 
+               si->offset + state_machine_regs.address, 
+               state_machine_regs.last_line, 0
+            );
       }
       reset_state_machine (is_stmt);
       break;
@@ -212,15 +303,8 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
       break;
 
     case DW_LNE_define_file:
-      ++ state_machine_regs.last_file_entry;
       name = data;
-      if (*fnames == NULL)
-        *fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (Char *) * 2);
-      else
-        *fnames = VG_(arena_realloc)(
-                     VG_AR_SYMTAB, *fnames,
-                     sizeof(Char *) * (state_machine_regs.last_file_entry + 1));
-      (*fnames)[state_machine_regs.last_file_entry] = VG_(addStr) (si,name, -1);
+      addto_WordArray( filenames, (Word)VG_(addStr)(si,name,-1) );
       data += VG_(strlen) ((char *) data) + 1;
       read_leb128 (data, & bytes_read, 0);
       data += bytes_read;
@@ -239,37 +323,78 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
 
 void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 {
-  DWARF2_External_LineInfo * external;
-  DWARF2_Internal_LineInfo   info;
-  UChar *            standard_opcodes;
-  UChar *            data = dwarf2;
-  UChar *            end  = dwarf2 + dwarf2_sz;
-  UChar *            end_of_sequence;
-  Char  **           fnames = NULL;
+  DWARF2_External_LineInfo* external;
+  DWARF2_Internal_LineInfo  info;
+  UChar*                    standard_opcodes;
+  UChar*                    data = dwarf2;
+  UChar*                    end  = dwarf2 + dwarf2_sz;
+  UChar*                    end_of_sequence;
+  WordArray                 filenames;
+  WordArray                 dirnames;
+  WordArray                 fnidx2dir;
+
+  /* filenames is an array of file names harvested from the DWARF2 info.  
+     Entry [0] is NULL and is never referred to by the state machine.
+
+     Similarly, dirnames is an array of directory names.  Entry [0] is
+     also NULL and denotes "we don't know what the path is", since
+     that is different from "the path is the empty string".  Unlike
+     the file name table, the state machine does refer to entry [0],
+     which basically means "." ("the current directory of the
+     compilation", whatever that means, according to the DWARF3 spec.)
+
+     fnidx2dir is an array of indexes into the dirnames table.
+     (confused yet?)  filenames[] and fnidx2dir[] are indexed together.
+     That is, for some index i in the filename table, then
+
+         the filename is    filenames[i]
+         the diretory is dirnames[ fnidx2dir[i] ] */
 
   /* Fails due to gcc padding ...
   vg_assert(sizeof(DWARF2_External_LineInfo)
             == sizeof(DWARF2_Internal_LineInfo));
   */
 
-  while (data < end)
-    {
+  init_WordArray(&filenames);
+  init_WordArray(&dirnames);
+  init_WordArray(&fnidx2dir);
+
+  while (data < end) {
+
+      /* Dump the file/dirname tables and start over. */
+      free_WordArray(&filenames);
+      free_WordArray(&dirnames);
+      free_WordArray(&fnidx2dir);
+
+      init_WordArray(&filenames);
+      init_WordArray(&dirnames);
+      init_WordArray(&fnidx2dir);
+
+      /* DWARF2 starts numbering filename entries at 1, so we need to
+         add a dummy zeroth entry to the table.  The zeroth dirnames
+         entry denotes 'current directory of compilation' so we might
+         as well make the fnidx2dir zeroth entry denote that. 
+      */
+      addto_WordArray( &filenames, (Word)NULL );
+      addto_WordArray( &dirnames,  (Word)VG_(addStr)(si,".",-1) );
+      addto_WordArray( &fnidx2dir, (Word)0 );  /* "." */
+
       external = (DWARF2_External_LineInfo *) data;
 
       /* Check the length of the block.  */
       info.li_length = * ((UInt *)(external->li_length));
 
-      if (info.li_length == 0xffffffff)
+      if (info.li_length == 0xffffffff) 
        {
          VG_(symerr)("64-bit DWARF line info is not supported yet.");
-         break;
+         goto out;
        }
 
       if (info.li_length + sizeof (external->li_length) > dwarf2_sz)
        {
         VG_(symerr)("DWARF line info appears to be corrupt "
                   "- the section is too small");
-         return;
+        goto out;
        }
 
       /* Check its version number.  */
@@ -278,7 +403,7 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
        {
          VG_(symerr)("Only DWARF version 2 line info "
                    "is currently supported.");
-         return;
+         goto out;
        }
 
       info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
@@ -313,7 +438,7 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
 
       if (0) VG_(printf)("dwarf2: line base: %d, range %d, opc base: %d\n",
-		  info.li_line_base, info.li_line_range, info.li_opcode_base);
+                  info.li_line_base, info.li_line_range, info.li_opcode_base);
 
       /* Sign extend the line base field.  */
       info.li_line_base <<= 24;
@@ -330,64 +455,39 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       /* Read the contents of the Directory table.  */
       data = standard_opcodes + info.li_opcode_base - 1;
 
-      if (* data == 0) 
-       {
-       }
-      else
-       {
-         /* We ignore the directory table, since gcc gives the entire
-            path as part of the filename */
-         while (* data != 0)
-           {
-             data += VG_(strlen) ((char *) data) + 1;
-           }
-       }
-
-      /* Skip the NUL at the end of the table.  */
+      while (* data != 0) {
+         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,data,-1) );
+         data += VG_(strlen) ((char *) data) + 1;
+      }
       if (*data != 0) {
          VG_(symerr)("can't find NUL at end of DWARF2 directory table");
-         return;
+         goto out;
       }
       data ++;
 
-      /* Read the contents of the File Name table.  */
-      if (* data == 0)
-       {
-       }
-      else
-       {
-         while (* data != 0)
-           {
-             UChar * name;
-             Int bytes_read;
+      /* Read the contents of the File Name table.  This produces a
+         bunch of file names, and for each, an index to the
+         corresponding direcory name entry. */
+      while (* data != 0) {
+         UChar* name;
+         Int    bytes_read, diridx;
+         name = data;
+         data += VG_(strlen) ((Char *) data) + 1;
 
-             ++ state_machine_regs.last_file_entry;
-             name = data;
-             /* Since we don't have realloc (0, ....) == malloc (...)
-		semantics, we need to malloc the first time. */
+         diridx = read_leb128 (data, & bytes_read, 0);
+         data += bytes_read;
+         read_leb128 (data, & bytes_read, 0);
+         data += bytes_read;
+         read_leb128 (data, & bytes_read, 0);
+         data += bytes_read;
 
-             if (fnames == NULL)
-               fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (Char *) * 2);
-             else
-               fnames = VG_(arena_realloc)(VG_AR_SYMTAB, fnames,
-                           sizeof(Char *) 
-                              * (state_machine_regs.last_file_entry + 1));
-             data += VG_(strlen) ((Char *) data) + 1;
-             fnames[state_machine_regs.last_file_entry] = VG_(addStr) (si,name, -1);
-
-             read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-           }
-       }
-
-      /* Skip the NUL at the end of the table.  */
+	 addto_WordArray( &filenames, (Word)VG_(addStr)(si,name,-1) );
+	 addto_WordArray( &fnidx2dir, (Word)diridx );
+	 if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
+      }
       if (*data != 0) {
          VG_(symerr)("can't find NUL at end of DWARF2 file name table");
-         return;
+         goto out;
       }
       data ++;
 
@@ -401,7 +501,7 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 
          op_code = * data ++;
 
-	 if (0) VG_(printf)("dwarf2: OPC: %d\n", op_code);
+         if (0) VG_(printf)("dwarf2: OPC: %d\n", op_code);
 
          if (op_code >= info.li_opcode_base)
            {
@@ -420,10 +520,17 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 	     if (state_machine_regs.is_stmt) {
 		 /* only add a statement if there was a previous boundary */
 		 if (state_machine_regs.last_address) 
-		     VG_(addLineInfo) (si, fnames[state_machine_regs.last_file], 
-				       si->offset + state_machine_regs.last_address, 
-				       si->offset + state_machine_regs.address, 
-				       state_machine_regs.last_line, 0);
+		     VG_(addLineInfo)(
+                        si, 
+                        (Char*)index_WordArray( &filenames,
+                                                state_machine_regs.last_file ),
+                        lookupDir( state_machine_regs.last_file,
+                                   &fnidx2dir, &dirnames ),
+                        si->offset + state_machine_regs.last_address, 
+                        si->offset + state_machine_regs.address, 
+                        state_machine_regs.last_line, 
+                        0
+                     );
 		 state_machine_regs.last_address = state_machine_regs.address;
 		 state_machine_regs.last_file = state_machine_regs.file;
 		 state_machine_regs.last_line = state_machine_regs.line;
@@ -433,8 +540,8 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
            {
            case DW_LNS_extended_op:
              data += process_extended_line_op (
-                        si, &fnames, data, 
-                        info.li_default_is_stmt);
+                        si, &filenames, &dirnames, &fnidx2dir,
+                        data, info.li_default_is_stmt);
              break;
 
            case DW_LNS_copy:
@@ -443,10 +550,17 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 	     if (state_machine_regs.is_stmt) {
 		/* only add a statement if there was a previous boundary */
 		if (state_machine_regs.last_address) 
-		     VG_(addLineInfo) (si, fnames[state_machine_regs.last_file], 
-				       si->offset + state_machine_regs.last_address, 
-				       si->offset + state_machine_regs.address,
-				       state_machine_regs.last_line, 0);
+		     VG_(addLineInfo)(
+                        si, 
+                        (Char*)index_WordArray( &filenames,
+                                                state_machine_regs.last_file ),
+                        lookupDir( state_machine_regs.last_file,
+                                   &fnidx2dir, &dirnames ),
+                        si->offset + state_machine_regs.last_address, 
+                        si->offset + state_machine_regs.address,
+                        state_machine_regs.last_line, 
+                        0
+                     );
 		 state_machine_regs.last_address = state_machine_regs.address;
 		 state_machine_regs.last_file = state_machine_regs.file;
 		 state_machine_regs.last_line = state_machine_regs.line;
@@ -527,10 +641,14 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              }
              break;
            }
-       }
-      VG_(arena_free)(VG_AR_SYMTAB, fnames);
-      fnames = NULL;
-    }
+      } /* while (data < end_of_sequence) */
+
+  } /* while (data < end) */
+
+ out:
+  free_WordArray(&filenames);
+  free_WordArray(&dirnames);
+  free_WordArray(&fnidx2dir);
 }
 
 
@@ -813,7 +931,7 @@ void VG_(read_debuginfo_dwarf1) (
 	    if (delta > 0 && prev_line > 0) {
 	       if (0) VG_(printf) ("     %d  %d-%d\n",
                                    prev_line, prev_delta, delta-1);
-	       VG_(addLineInfo) ( si, curr_filenm, 
+	       VG_(addLineInfo) ( si, curr_filenm, NULL,
 		 	          base + prev_delta, base + delta,
 			          prev_line, 0 );
 	    }

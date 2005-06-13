@@ -483,8 +483,10 @@ struct vki_ucontext {
 #define VKI_GDT_ENTRY_TLS_MIN 11
 #define VKI_GDT_ENTRY_TLS_MAX 13
 
-// These are actually from linux-???/include/asm-i386/prctl.h.
-// But they appear to be needed on amd64.
+//----------------------------------------------------------------------
+// From linux-2.6.11.9/include/asm-x86_64/prctl.h
+//----------------------------------------------------------------------
+
 #define VKI_ARCH_SET_GS 0x1001
 #define VKI_ARCH_SET_FS 0x1002
 #define VKI_ARCH_GET_FS 0x1003

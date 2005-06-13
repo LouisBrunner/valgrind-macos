@@ -3749,27 +3749,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->mSize = 28;
 
                /* declare we're writing guest state */
-               d->nFxState = 5;
+               d->nFxState = 4;
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
                d->fxState[0].size   = sizeof(UInt);
 
                d->fxState[1].fx     = Ifx_Write;
-               d->fxState[1].offset = OFFB_FPREGS;
-               d->fxState[1].size   = 8 * sizeof(ULong);
+               d->fxState[1].offset = OFFB_FPTAGS;
+               d->fxState[1].size   = 8 * sizeof(UChar);
 
                d->fxState[2].fx     = Ifx_Write;
-               d->fxState[2].offset = OFFB_FPTAGS;
-               d->fxState[2].size   = 8 * sizeof(UChar);
+               d->fxState[2].offset = OFFB_FPROUND;
+               d->fxState[2].size   = sizeof(UInt);
 
                d->fxState[3].fx     = Ifx_Write;
-               d->fxState[3].offset = OFFB_FPROUND;
+               d->fxState[3].offset = OFFB_FC3210;
                d->fxState[3].size   = sizeof(UInt);
-
-               d->fxState[4].fx     = Ifx_Write;
-               d->fxState[4].offset = OFFB_FC3210;
-               d->fxState[4].size   = sizeof(UInt);
 
                stmt( IRStmt_Dirty(d) );
 

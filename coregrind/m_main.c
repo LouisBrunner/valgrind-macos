@@ -1905,7 +1905,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       results of a run which encompasses multiple processes. */
 
    if (VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<?xml version=\"1.0\"?>");
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<valgrindoutput>");
@@ -1914,10 +1913,14 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "");
    }
 
-   HChar* xpre  = VG_(clo_xml) ? "<preamble>" : "";
-   HChar* xpost = VG_(clo_xml) ? "</preamble>" : "";
+   HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</line>" : "";
 
    if (VG_(clo_verbosity > 0)) {
+
+      if (VG_(clo_xml))
+         VG_(message)(Vg_UserMsg, "<preamble>");
+
       /* Tool details */
       VG_(message)(Vg_UserMsg, "%s%s%s%s, %s.%s",
                    xpre,
@@ -1943,6 +1946,9 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, 
          "%sCopyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.%s",
          xpre, xpost );
+
+      if (VG_(clo_xml))
+         VG_(message)(Vg_UserMsg, "</preamble>");
    }
 
    if (VG_(clo_verbosity) > 0 && log_to != VgLogTo_Fd) {

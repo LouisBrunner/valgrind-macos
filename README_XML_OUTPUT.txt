@@ -24,6 +24,8 @@ Design goals
 * Put as much information as possible into the XML and let the GUIs
   decide what to show the user (a.k.a provide mechanism, not policy).
 
+* Make XML which is actually parseable by standard XML tools.
+
 
 How to use
 ~~~~~~~~~~
@@ -76,10 +78,22 @@ The following nonterminals are not described further:
    TEXT  is arbitrary text.
    HEX64 is a 64-bit hexadecimal number, with leading "0x".
 
+Text strings are escaped so as to remove the <, > and & characters
+which would otherwise mess up parsing.  They are replaced respectively
+with the standard encodings "&lt;", "&gt;" and "&amp;" respectively.
+Note this is not (yet) done throughout, only for function names in
+<frame>..</frame> tags-pairs.
+
 
 TOPLEVEL
 --------
-All output is contained within the tag-pair <valgrindoutput>.
+
+The first line output is always this:
+
+   <?xml version="1.0"?>
+
+All remaining output is contained within the tag-pair
+<valgrindoutput>.
 
 Inside that, the first entity is an indication of the protocol
 version.  This is provided so that existing parsers can identify XML
@@ -107,7 +121,9 @@ following in sequence:
   components.  The text in them can be anything; it is not intended
   for interpretation by the GUI:
 
-     <preamble>Misc version/copyright text</preamble>
+     <preamble>
+        <line>Misc version/copyright text</line>  (zero or more of)
+     </preamble>
 
 * The PID of this process and of its parent:
 
@@ -284,6 +300,7 @@ FRAME records a single program location:
       <ip>HEX64</ip>
       optionally <obj>TEXT</obj>
       optionally <fn>TEXT</fn>
+      optionally <dir>TEXT</dir>
       optionally <file>TEXT</file>
       optionally <line>INT</line>
    </frame>
@@ -296,6 +313,10 @@ The optional fields, if present, appear in the order stated:
 * obj: gives the name of the ELF object containing the code address
 
 * fn: gives the name of the function containing the code address
+
+* dir: gives the source directory associated with the name specified
+       by <file>.  Note the current implementation often does not
+       put anything useful in this field.
 
 * file: gives the name of the source file containing the code address
 
@@ -335,3 +356,4 @@ Suppressions not mentioned were used zero times.
 
 The <name> is as specified in the suppression name fields in .supp
 files.
+

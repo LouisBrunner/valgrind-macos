@@ -46,6 +46,7 @@
 
 #include "ume.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_machine.h"
 
 #if	ELFSZ == 64
 #define ESZ(x)	Elf64_##x

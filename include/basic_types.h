@@ -65,6 +65,14 @@ typedef  Word                   OffT;     // 32             64
 #  define NULL ((void*)0)
 #endif
 
+#if defined(VGA_x86)
+#  define VGA_REGPARM(n)            __attribute__((regparm(n)))
+#elif defined(VGA_amd64) || defined(VGA_arm)
+#  define VGA_REGPARM(n)            /* */
+#else
+#  error Unknown arch
+#endif
+
 /* ---------------------------------------------------------------------
    non-builtin types
    ------------------------------------------------------------------ */

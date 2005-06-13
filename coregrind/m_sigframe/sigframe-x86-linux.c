@@ -34,6 +34,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_machine.h"
 #include "pub_core_options.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_signals.h"
@@ -573,7 +574,7 @@ void VG_(sigframe_create)( ThreadId tid,
 
    /* Set the thread so it will next run the handler. */
    /* tst->m_esp  = esp;  also notify the tool we've updated ESP */
-   STACK_PTR(VG_(threads)[tid].arch) = esp;
+   VG_(set_SP)(tid, esp);
    VG_TRACK( post_reg_write, Vg_CoreSignal, tid, O_STACK_PTR, sizeof(Addr));
 
    //VG_(printf)("handler = %p\n", handler);

@@ -35,47 +35,15 @@
 #include "tool.h"          // tool stuff
 
 #include "libvex.h"
+
+// XXX: this is needed because pub_core_scheduler needs VexGuestXXXState...
 #if defined(VGA_x86)
 #  include "libvex_guest_x86.h"
-#  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
-#  define VGA_ELF_MACHINE     EM_386
-#  define VGA_ELF_CLASS       ELFCLASS32
-#  define VGA_INSTR_PTR       guest_EIP
-#  define VGA_STACK_PTR       guest_ESP
-#  define VGA_FRAME_PTR       guest_EBP
-#  define VGA_CLREQ_ARGS      guest_EAX
-#  define VGA_CLREQ_RET       guest_EDX
 #elif defined(VGA_amd64)
 #  include "libvex_guest_amd64.h"
-#  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
-#  define VGA_ELF_MACHINE     EM_X86_64
-#  define VGA_ELF_CLASS       ELFCLASS64
-#  define VGA_INSTR_PTR       guest_RIP
-#  define VGA_STACK_PTR       guest_RSP
-#  define VGA_FRAME_PTR       guest_RBP
-#  define VGA_CLREQ_ARGS      guest_RAX
-#  define VGA_CLREQ_RET       guest_RDX
-#elif defined(VGA_arm)
-#define VGA_ELF_ENDIANNESS     ELFDATA2LSB
-#define VGA_ELF_MACHINE        EM_ARM
-#define VGA_ELF_CLASS          ELFCLASS32
-   // XXX: Not sure, but I think:
-   //   r11 = frame pointer
-   //   r12 = "implicit parameter" (neither caller-save, nor callee-save)
-   //   r13 = stack pointer
-   //   r14 = link register
-   //   r15 = program counter
-#  define VGA_INSTR_PTR       guest_R15
-#  define VGA_STACK_PTR       guest_R13
-#  define VGA_FRAME_PTR       guest_R11
-#  define VGA_CLREQ_ARGS      guest_R0
-#  define VGA_CLREQ_RET       guest_R0
 #else
 #  error Unknown arch
 #endif
-
-
-
 
 #include <setjmp.h>        // for jmp_buf
 
@@ -139,17 +107,6 @@ extern const Int  VG_(tramp_time_offset);
 // Returns False to indicate we cannot proceed further.
 extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*, 
                                      /*OUT*/VexSubArch* );
-
-// Accessors for the ThreadArchState
-#define INSTR_PTR(regs)    ((regs).vex.VGA_INSTR_PTR)
-#define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)
-#define FRAME_PTR(regs)    ((regs).vex.VGA_FRAME_PTR)
-#define CLREQ_ARGS(regs)   ((regs).vex.VGA_CLREQ_ARGS)
-#define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
-// Offsets for the Vex state
-#define O_STACK_PTR        (offsetof(VexGuestArchState, VGA_STACK_PTR))
-#define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
-
 
 // Setting up the initial thread (1) state
 extern void 

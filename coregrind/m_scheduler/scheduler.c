@@ -68,6 +68,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_machine.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -156,7 +157,7 @@ ThreadId VG_(first_matching_thread_stack)
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
 
-      if ( p ( STACK_PTR(VG_(threads)[tid].arch),
+      if ( p ( VG_(get_SP)(tid),
                VG_(threads)[tid].client_stack_highest_word, d ) )
          return tid;
    }
@@ -683,12 +684,11 @@ void VG_(scheduler_init) ( void )
 static void handle_tt_miss ( ThreadId tid )
 {
    Bool found;
-   Addr ip = INSTR_PTR(VG_(threads)[tid].arch);
+   Addr ip = VG_(get_IP)(tid);
 
    /* Trivial event.  Miss in the fast-cache.  Do a full
       lookup for it. */
-   found = VG_(search_transtab)( NULL,
-                                 ip, True/*upd_fast_cache*/ );
+   found = VG_(search_transtab)( NULL, ip, True/*upd_fast_cache*/ );
    if (!found) {
       /* Not found; we need to request a translation. */
       if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/ )) {
@@ -877,7 +877,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       }
 
       case VEX_TRC_JMP_NODECODE:
-         VG_(synth_sigill)(tid, INSTR_PTR(VG_(threads)[tid].arch));
+         VG_(synth_sigill)(tid, VG_(get_IP)(tid));
          break;
 
       default: 
@@ -934,6 +934,23 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
    Specifying shadow register values
    ------------------------------------------------------------------ */
 
+#if defined(VGA_x86)
+#  define VGA_CLREQ_ARGS      guest_EAX
+#  define VGA_CLREQ_RET       guest_EDX
+#elif defined(VGA_amd64)
+#  define VGA_CLREQ_ARGS      guest_RAX
+#  define VGA_CLREQ_RET       guest_RDX
+#elif defined(VGA_arm)
+#  define VGA_CLREQ_ARGS      guest_R0
+#  define VGA_CLREQ_RET       guest_R0
+#else
+#  error Unknown arch
+#endif
+
+#define CLREQ_ARGS(regs)   ((regs).vex.VGA_CLREQ_ARGS)
+#define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
+#define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
+
 // These macros write a value to a client's thread register, and tell the
 // tool that it's happened (if necessary).
 
@@ -948,36 +965,6 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
         VG_TRACK( post_reg_write_clientcall_return, \
                   zztid, O_CLREQ_RET, sizeof(UWord), f); \
    } while (0)
-
-void VG_(set_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
-                                 const UChar* area )
-{
-   ThreadState* tst;
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
-   // Bounds check
-   vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
-   vg_assert(offset + size <= sizeof(VexGuestArchState));
-
-   VG_(memcpy)( (void*)(((Addr)(&tst->arch.vex_shadow)) + offset), area, size);
-}
-
-void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
-                                 UChar* area )
-{
-   ThreadState* tst;
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
-   // Bounds check
-   vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
-   vg_assert(offset + size <= sizeof(VexGuestArchState));
-
-   VG_(memcpy)( area, (void*)(((Addr)&(tst->arch.vex_shadow)) + offset), size);
-}
 
 /* ---------------------------------------------------------------------
    Handle client requests.

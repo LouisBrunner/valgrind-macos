@@ -37,6 +37,7 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcproc.h"
+#include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_profile.h"

@@ -53,6 +53,7 @@ noinst_HEADERS = \
 	pub_core_libcprint.h	\
 	pub_core_libcproc.h	\
 	pub_core_libcsignal.h	\
+	pub_core_machine.h	\
 	pub_core_main.h		\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
@@ -103,6 +104,7 @@ stage2_SOURCES = \
 	m_libcprint.c \
 	m_libcproc.c \
 	m_libcsignal.c \
+	m_machine.c \
 	m_main.c \
 	m_mallocfree.c \
 	m_options.c \

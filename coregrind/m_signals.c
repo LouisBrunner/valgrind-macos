@@ -89,6 +89,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_machine.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -475,7 +476,7 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
    Addr m_SP;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   m_SP  = STACK_PTR(VG_(threads)[tid].arch);
+   m_SP  = VG_(get_SP)(tid);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -490,7 +491,7 @@ SysRes VG_(do_sys_sigaltstack) ( ThreadId tid, vki_stack_t* ss, vki_stack_t* oss
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(tid, STACK_PTR(VG_(threads)[tid].arch))) {
+      if (on_sig_stack(tid, VG_(get_SP)(tid))) {
          return VG_(mk_SysRes_Error)( VKI_EPERM );
       }
       if (ss->ss_flags != VKI_SS_DISABLE 
@@ -763,7 +764,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tid, STACK_PTR(tst->arch)) == 0
+          sas_ss_flags(tid, VG_(get_SP)(tid)) == 0
       ) {
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
@@ -779,7 +780,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = STACK_PTR(tst->arch) - VGA_STACK_REDZONE_SZB;
+      esp_top_of_frame = VG_(get_SP)(tid) - VGA_STACK_REDZONE_SZB;
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
@@ -1792,8 +1793,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 
    if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, EIP=%p, eip=%p",
-                   sigNo, info->si_code, 
-		   INSTR_PTR(VG_(threads)[tid].arch), 
+                   sigNo, info->si_code, VG_(get_IP)(tid), 
 		   VGP_UCONTEXT_INSTR_PTR(uc) );
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
@@ -1803,7 +1803,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
     */
    if (info->si_signo == VKI_SIGSEGV) {
       Addr fault = (Addr)info->_sifields._sigfault._addr;
-      Addr esp   =  STACK_PTR(VG_(threads)[tid].arch);
+      Addr esp   =  VG_(get_SP)(tid);
       Segment* seg;
 
       seg = VG_(find_segment)(fault);

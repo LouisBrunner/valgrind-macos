@@ -43,6 +43,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_machine.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -253,18 +254,6 @@ void VG_(start_debugger) ( ThreadId tid )
       VG_(kill)(pid, VKI_SIGKILL);
       VG_(waitpid)(pid, &status, 0);
    }
-}
-
-
-/* Get the simulated stack pointer */
-Addr VG_(get_SP) ( ThreadId tid )
-{
-   return STACK_PTR( VG_(threads)[tid].arch );
-}
-
-Addr VG_(get_IP) ( ThreadId tid )
-{
-   return INSTR_PTR( VG_(threads)[tid].arch );
 }
 
 
@@ -2828,7 +2817,7 @@ static void final_tidyup(ThreadId tid)
 		   "Caught __NR_exit; running __libc_freeres()");
       
    /* point thread context to point to libc_freeres_wrapper */
-   INSTR_PTR(VG_(threads)[tid].arch) = __libc_freeres_wrapper;
+   VG_(set_IP)(tid, __libc_freeres_wrapper);
    // XXX should we use a special stack?
 
    /* Block all blockable signals by copying the real block state into

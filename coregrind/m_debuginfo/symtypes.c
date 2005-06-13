@@ -36,6 +36,7 @@
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_tooliface.h"
 #include "priv_symtypes.h"

@@ -68,11 +68,6 @@ extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
                           void* d );
 
-/* Get parts of the client's state. */
-extern Addr VG_(get_SP) ( ThreadId tid );
-extern Addr VG_(get_IP) ( ThreadId tid );
-
-
 /*====================================================================*/
 /*=== Valgrind's version of libc                                   ===*/
 /*====================================================================*/
@@ -93,42 +88,6 @@ extern Bool VG_(has_cpuid) ( void );
 extern void VG_(cpuid) ( UInt eax,
                          UInt *eax_ret, UInt *ebx_ret,
                          UInt *ecx_ret, UInt *edx_ret );
-
-/*====================================================================*/
-/*=== Functions for shadow registers                               ===*/
-/*====================================================================*/
-
-// For get/set, 'area' is where the asked-for shadow state will be copied
-// into/from.
-extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, UChar* area );
-extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, const UChar* area );
-
-/*====================================================================*/
-/*=== Arch-specific stuff                                          ===*/
-/*====================================================================*/
-
-/* VGA_STACK_REDZONE_SZB: how many bytes below the stack pointer are validly
- * addressible? */
-#if defined(VGA_x86)
-#  define VGA_REGPARM(n)            __attribute__((regparm(n)))
-#  define VGA_MIN_INSTR_SZB         1
-#  define VGA_MAX_INSTR_SZB        16
-#  define VGA_STACK_REDZONE_SZB     0
-#elif defined(VGA_amd64)
-#  define VGA_REGPARM(n)            /* */
-#  define VGA_MIN_INSTR_SZB         1
-#  define VGA_MAX_INSTR_SZB        16
-#  define VGA_STACK_REDZONE_SZB   128
-#elif defined(VGA_arm)
-#  define VGA_REGPARM(n)            /* */
-#  define VGA_MIN_INSTR_SZB         4
-#  define VGA_MAX_INSTR_SZB         4 
-#  define VGA_STACK_REDZONE_SZB     0
-#else
-#  error Unknown platform
-#endif
 
 #endif   /* __TOOL_H */
 

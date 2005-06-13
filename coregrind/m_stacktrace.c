@@ -33,6 +33,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_machine.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
@@ -162,11 +163,10 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
 UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
 {
    /* thread in thread table */
-   ThreadState* tst        = & VG_(threads)[ tid ];
-   Addr ip                 = INSTR_PTR(tst->arch);
-   Addr fp                 = FRAME_PTR(tst->arch);
-   Addr sp                 = STACK_PTR(tst->arch);
-   Addr stack_highest_word = tst->client_stack_highest_word;
+   Addr ip                 = VG_(get_IP)(tid);
+   Addr fp                 = VG_(get_FP)(tid);
+   Addr sp                 = VG_(get_SP)(tid);
+   Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
 
 #if defined(VGP_x86_linux)
    /* Nasty little hack to deal with sysinfo syscalls - if libc is

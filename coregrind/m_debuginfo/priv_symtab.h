@@ -231,20 +231,29 @@ struct _SegInfo {
    struct _StabTypeTab	*stab_typetab;
 };
 
+extern
 Char *VG_(addStr) ( SegInfo* si, Char* str, Int len );
+
+extern
 void VG_(addScopeInfo) ( SegInfo* si, Addr this, Addr next, Scope *scope);
+
+extern
 void VG_(addLineInfo) ( SegInfo* si, 
                         Char* filename, 
                         Char* dirname,  /* NULL is allowable */
                         Addr this, Addr next, Int lineno, Int entry);
+
+extern
 void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi );
 
 /* Non-fatal -- use vg_panic if terminal. */
+extern
 void VG_(symerr) ( Char* msg );
 
 /* --------------------
    Stabs reader
    -------------------- */
+extern
 void VG_(read_debuginfo_stabs) ( SegInfo* si,
 				 UChar* stabC,   Int stab_sz, 
 				 UChar* stabstr, Int stabstr_sz );
@@ -252,12 +261,18 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 /* --------------------
    DWARF2 reader
    -------------------- */
-void VG_(read_debuginfo_dwarf2) ( SegInfo* si, 
-                                  UChar* dwarf2, Int dwarf2_sz );
+extern
+void VG_(read_debuginfo_dwarf2) 
+        ( SegInfo* si,
+          UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
+          UChar* debugabbrev,                     /* .debug_abbrev */
+          UChar* debugline,   Int debug_line_sz,  /* .debug_line */
+          UChar* debugstr );
 
 /* --------------------
    DWARF1 reader
    -------------------- */
+extern
 void VG_(read_debuginfo_dwarf1) ( SegInfo* si, 
                                   UChar* dwarf1d, Int dwarf1d_sz, 
                                   UChar* dwarf1l, Int dwarf1l_sz );
@@ -265,6 +280,7 @@ void VG_(read_debuginfo_dwarf1) ( SegInfo* si,
 /* --------------------
    CFI reader
    -------------------- */
+extern
 void VG_(read_callframe_info_dwarf2) 
     ( /*OUT*/SegInfo* si, UChar* ehframe, Int ehframe_sz, Addr ehframe_addr );
 

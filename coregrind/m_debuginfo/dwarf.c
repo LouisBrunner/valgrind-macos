@@ -138,6 +138,17 @@ typedef struct
 }
 DWARF2_Internal_LineInfo;
 
+/* Structure holding additional infos found from a .debug_info
+ * compilation unit block */
+typedef struct
+{
+  /* Feel free to add more members here if you need ! */
+  Char* compdir;   /* Compilation directory - points to .debug_info */
+  Char* name;      /* Main file name - points to .debug_info */
+  UInt  stmt_list; /* Offset in .debug_line */
+} 
+UnitInfo;
+
 /* Line number opcodes.  */
 enum dwarf_line_number_ops
   {
@@ -213,22 +224,43 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
 }
 
 
+/* Small helper functions easier to use
+ * value is returned and the given pointer is
+ * moved past end of leb128 data */
+static UInt read_leb128U( UChar **data )
+{
+  Int len;
+  UInt val = read_leb128( *data, &len, 0 );
+  *data += len;
+  return val;
+}
+
+/* Same for signed data */
+static Int read_leb128S( UChar **data )
+{
+   Int len;
+   UInt val = read_leb128( *data, &len, 1 );
+   *data += len;
+   return val;
+}
+
+
 static SMR state_machine_regs;
 
 static 
 void reset_state_machine ( Int is_stmt )
 {
-  if (0) VG_(printf)("smr.a := %p (reset)\n", 0 );
-  state_machine_regs.last_address = 0;
-  state_machine_regs.last_file = 1;
-  state_machine_regs.last_line = 1;
-  state_machine_regs.address = 0;
-  state_machine_regs.file = 1;
-  state_machine_regs.line = 1;
-  state_machine_regs.column = 0;
-  state_machine_regs.is_stmt = is_stmt;
-  state_machine_regs.basic_block = 0;
-  state_machine_regs.end_sequence = 0;
+   if (0) VG_(printf)("smr.a := %p (reset)\n", 0 );
+   state_machine_regs.last_address = 0;
+   state_machine_regs.last_file = 1;
+   state_machine_regs.last_line = 1;
+   state_machine_regs.address = 0;
+   state_machine_regs.file = 1;
+   state_machine_regs.line = 1;
+   state_machine_regs.column = 0;
+   state_machine_regs.is_stmt = is_stmt;
+   state_machine_regs.basic_block = 0;
+   state_machine_regs.end_sequence = 0;
 }
 
 /* Look up a directory name, or return NULL if unknown. */
@@ -242,415 +274,685 @@ Char* lookupDir ( Int filename_index,
    return (Char*)dirname;
 }
 
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 
 /* Handled an extend line op.  Returns true if this is the end
    of sequence.  */
 static 
-int process_extended_line_op( SegInfo *si, 
+Int process_extended_line_op( SegInfo*   si, 
                               WordArray* filenames, 
                               WordArray* dirnames, 
                               WordArray* fnidx2dir, 
                               UChar* data, Int is_stmt)
 {
-  UChar   op_code;
-  Int     bytes_read;
-  UInt    len;
-  UChar * name;
-  Addr    adr;
+   UChar  op_code;
+   Int    bytes_read;
+   UInt   len;
+   UChar* name;
+   Addr   adr;
 
-  len = read_leb128 (data, & bytes_read, 0);
-  data += bytes_read;
+   len = read_leb128 (data, & bytes_read, 0);
+   data += bytes_read;
 
-  if (len == 0)
-    {
+   if (len == 0) {
       VG_(message)(Vg_UserMsg,
-         "badly formed extended line op encountered!\n");
+                   "badly formed extended line op encountered!\n");
       return bytes_read;
-    }
+   }
 
-  len += bytes_read;
-  op_code = * data ++;
+   len += bytes_read;
+   op_code = * data ++;
 
-  if (0) VG_(printf)("dwarf2: ext OPC: %d\n", op_code);
+   if (0) VG_(printf)("dwarf2: ext OPC: %d\n", op_code);
 
-  switch (op_code)
-    {
-    case DW_LNE_end_sequence:
-      if (0) VG_(printf)("1001: si->o %p, smr.a %p\n", 
-                         si->offset, state_machine_regs.address );
-      state_machine_regs.end_sequence = 1; /* JRS: added for compliance
-         with spec; is pointless due to reset_state_machine below 
-      */
-      if (state_machine_regs.is_stmt) {
-	 if (state_machine_regs.last_address)
-	    VG_(addLineInfo) (
-               si, 
-               (Char*)index_WordArray(filenames, state_machine_regs.last_file), 
-               lookupDir( state_machine_regs.last_file,
-                          fnidx2dir, dirnames ),
-               si->offset + state_machine_regs.last_address, 
-               si->offset + state_machine_regs.address, 
-               state_machine_regs.last_line, 0
-            );
-      }
-      reset_state_machine (is_stmt);
-      break;
+   switch (op_code) {
+      case DW_LNE_end_sequence:
+         if (0) VG_(printf)("1001: si->o %p, smr.a %p\n", 
+                            si->offset, state_machine_regs.address );
+         /* JRS: added for compliance with spec; is pointless due to
+            reset_state_machine below */
+         state_machine_regs.end_sequence = 1; 
 
-    case DW_LNE_set_address:
-      adr = *((Addr *)data);
-      if (0) VG_(printf)("smr.a := %p\n", adr );
-      state_machine_regs.address = adr;
-      break;
+         if (state_machine_regs.is_stmt) {
+            if (state_machine_regs.last_address)
+               VG_(addLineInfo) (
+                  si, 
+                  (Char*)index_WordArray(filenames, 
+                                         state_machine_regs.last_file), 
+                  lookupDir( state_machine_regs.last_file,
+                             fnidx2dir, dirnames ),
+                  si->offset + state_machine_regs.last_address, 
+                  si->offset + state_machine_regs.address, 
+                  state_machine_regs.last_line, 0
+               );
+         }
+         reset_state_machine (is_stmt);
+         break;
 
-    case DW_LNE_define_file:
-      name = data;
-      addto_WordArray( filenames, (Word)VG_(addStr)(si,name,-1) );
-      data += VG_(strlen) ((char *) data) + 1;
-      read_leb128 (data, & bytes_read, 0);
-      data += bytes_read;
-      read_leb128 (data, & bytes_read, 0);
-      data += bytes_read;
-      read_leb128 (data, & bytes_read, 0);
-      break;
+      case DW_LNE_set_address:
+         adr = *((Addr *)data);
+         if (0) VG_(printf)("smr.a := %p\n", adr );
+         state_machine_regs.address = adr;
+         break;
 
-    default:
-      break;
-    }
-
-  return len;
-}
-
-
-void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
-{
-  DWARF2_External_LineInfo* external;
-  DWARF2_Internal_LineInfo  info;
-  UChar*                    standard_opcodes;
-  UChar*                    data = dwarf2;
-  UChar*                    end  = dwarf2 + dwarf2_sz;
-  UChar*                    end_of_sequence;
-  WordArray                 filenames;
-  WordArray                 dirnames;
-  WordArray                 fnidx2dir;
-
-  /* filenames is an array of file names harvested from the DWARF2 info.  
-     Entry [0] is NULL and is never referred to by the state machine.
-
-     Similarly, dirnames is an array of directory names.  Entry [0] is
-     also NULL and denotes "we don't know what the path is", since
-     that is different from "the path is the empty string".  Unlike
-     the file name table, the state machine does refer to entry [0],
-     which basically means "." ("the current directory of the
-     compilation", whatever that means, according to the DWARF3 spec.)
-
-     fnidx2dir is an array of indexes into the dirnames table.
-     (confused yet?)  filenames[] and fnidx2dir[] are indexed together.
-     That is, for some index i in the filename table, then
-
-         the filename is    filenames[i]
-         the diretory is dirnames[ fnidx2dir[i] ] */
-
-  /* Fails due to gcc padding ...
-  vg_assert(sizeof(DWARF2_External_LineInfo)
-            == sizeof(DWARF2_Internal_LineInfo));
-  */
-
-  init_WordArray(&filenames);
-  init_WordArray(&dirnames);
-  init_WordArray(&fnidx2dir);
-
-  while (data < end) {
-
-      /* Dump the file/dirname tables and start over. */
-      free_WordArray(&filenames);
-      free_WordArray(&dirnames);
-      free_WordArray(&fnidx2dir);
-
-      init_WordArray(&filenames);
-      init_WordArray(&dirnames);
-      init_WordArray(&fnidx2dir);
-
-      /* DWARF2 starts numbering filename entries at 1, so we need to
-         add a dummy zeroth entry to the table.  The zeroth dirnames
-         entry denotes 'current directory of compilation' so we might
-         as well make the fnidx2dir zeroth entry denote that. 
-      */
-      addto_WordArray( &filenames, (Word)NULL );
-      addto_WordArray( &dirnames,  (Word)VG_(addStr)(si,".",-1) );
-      addto_WordArray( &fnidx2dir, (Word)0 );  /* "." */
-
-      external = (DWARF2_External_LineInfo *) data;
-
-      /* Check the length of the block.  */
-      info.li_length = * ((UInt *)(external->li_length));
-
-      if (info.li_length == 0xffffffff) 
-       {
-         VG_(symerr)("64-bit DWARF line info is not supported yet.");
-         goto out;
-       }
-
-      if (info.li_length + sizeof (external->li_length) > dwarf2_sz)
-       {
-        VG_(symerr)("DWARF line info appears to be corrupt "
-                  "- the section is too small");
-        goto out;
-       }
-
-      /* Check its version number.  */
-      info.li_version = * ((UShort *) (external->li_version));
-      if (info.li_version != 2)
-       {
-         VG_(symerr)("Only DWARF version 2 line info "
-                   "is currently supported.");
-         goto out;
-       }
-
-      info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
-      info.li_min_insn_length = * ((UChar *)(external->li_min_insn_length));
-
-      info.li_default_is_stmt = True; 
-         /* WAS: = * ((UChar *)(external->li_default_is_stmt)); */
-         /* Josef Weidendorfer (20021021) writes:
-
-            It seems to me that the Intel Fortran compiler generates
-            bad DWARF2 line info code: It sets "is_stmt" of the state
-            machine in the the line info reader to be always
-            false. Thus, there is never a statement boundary generated
-            and therefore never a instruction range/line number
-            mapping generated for valgrind.
-
-            Please have a look at the DWARF2 specification, Ch. 6.2
-            (x86.ddj.com/ftp/manuals/tools/dwarf.pdf).  Perhaps I
-            understand this wrong, but I don't think so.
-
-            I just had a look at the GDB DWARF2 reader...  They
-            completely ignore "is_stmt" when recording line info ;-)
-            That's the reason "objdump -S" works on files from the the
-            intel fortran compiler.  
-         */
-
-
-      /* JRS: changed (UInt*) to (UChar*) */
-      info.li_line_base       = * ((UChar *)(external->li_line_base));
-
-      info.li_line_range      = * ((UChar *)(external->li_line_range));
-      info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
-
-      if (0) VG_(printf)("dwarf2: line base: %d, range %d, opc base: %d\n",
-                  info.li_line_base, info.li_line_range, info.li_opcode_base);
-
-      /* Sign extend the line base field.  */
-      info.li_line_base <<= 24;
-      info.li_line_base >>= 24;
-
-      end_of_sequence = data + info.li_length 
-                             + sizeof (external->li_length);
-
-      reset_state_machine (info.li_default_is_stmt);
-
-      /* Read the contents of the Opcodes table.  */
-      standard_opcodes = data + sizeof (* external);
-
-      /* Read the contents of the Directory table.  */
-      data = standard_opcodes + info.li_opcode_base - 1;
-
-      while (* data != 0) {
-         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,data,-1) );
-         data += VG_(strlen) ((char *) data) + 1;
-      }
-      if (*data != 0) {
-         VG_(symerr)("can't find NUL at end of DWARF2 directory table");
-         goto out;
-      }
-      data ++;
-
-      /* Read the contents of the File Name table.  This produces a
-         bunch of file names, and for each, an index to the
-         corresponding direcory name entry. */
-      while (* data != 0) {
-         UChar* name;
-         Int    bytes_read, diridx;
+      case DW_LNE_define_file:
          name = data;
-         data += VG_(strlen) ((Char *) data) + 1;
-
-         diridx = read_leb128 (data, & bytes_read, 0);
-         data += bytes_read;
+         addto_WordArray( filenames, (Word)VG_(addStr)(si,name,-1) );
+         data += VG_(strlen) ((char *) data) + 1;
          read_leb128 (data, & bytes_read, 0);
          data += bytes_read;
          read_leb128 (data, & bytes_read, 0);
          data += bytes_read;
+         read_leb128 (data, & bytes_read, 0);
+         break;
 
-	 addto_WordArray( &filenames, (Word)VG_(addStr)(si,name,-1) );
-	 addto_WordArray( &fnidx2dir, (Word)diridx );
-	 if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
-      }
-      if (*data != 0) {
-         VG_(symerr)("can't find NUL at end of DWARF2 file name table");
-         goto out;
-      }
-      data ++;
+      default:
+         break;
+   }
 
-      /* Now display the statements.  */
-
-      while (data < end_of_sequence)
-       {
-         UChar op_code;
-         Int           adv;
-         Int           bytes_read;
-
-         op_code = * data ++;
-
-         if (0) VG_(printf)("dwarf2: OPC: %d\n", op_code);
-
-         if (op_code >= info.li_opcode_base)
-           {
-             Int advAddr;
-             op_code -= info.li_opcode_base;
-             adv      = (op_code / info.li_line_range) 
-                           * info.li_min_insn_length;
-             advAddr = adv;
-             state_machine_regs.address += adv;
-             if (0) VG_(printf)("smr.a += %p\n", adv );
-             adv = (op_code % info.li_line_range) + info.li_line_base;
-             if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
-                                si->offset, state_machine_regs.address );
-             state_machine_regs.line += adv;
-
-	     if (state_machine_regs.is_stmt) {
-		 /* only add a statement if there was a previous boundary */
-		 if (state_machine_regs.last_address) 
-		     VG_(addLineInfo)(
-                        si, 
-                        (Char*)index_WordArray( &filenames,
-                                                state_machine_regs.last_file ),
-                        lookupDir( state_machine_regs.last_file,
-                                   &fnidx2dir, &dirnames ),
-                        si->offset + state_machine_regs.last_address, 
-                        si->offset + state_machine_regs.address, 
-                        state_machine_regs.last_line, 
-                        0
-                     );
-		 state_machine_regs.last_address = state_machine_regs.address;
-		 state_machine_regs.last_file = state_machine_regs.file;
-		 state_machine_regs.last_line = state_machine_regs.line;
-	     }
-           }
-         else switch (op_code)
-           {
-           case DW_LNS_extended_op:
-             data += process_extended_line_op (
-                        si, &filenames, &dirnames, &fnidx2dir,
-                        data, info.li_default_is_stmt);
-             break;
-
-           case DW_LNS_copy:
-             if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
-                                si->offset, state_machine_regs.address );
-	     if (state_machine_regs.is_stmt) {
-		/* only add a statement if there was a previous boundary */
-		if (state_machine_regs.last_address) 
-		     VG_(addLineInfo)(
-                        si, 
-                        (Char*)index_WordArray( &filenames,
-                                                state_machine_regs.last_file ),
-                        lookupDir( state_machine_regs.last_file,
-                                   &fnidx2dir, &dirnames ),
-                        si->offset + state_machine_regs.last_address, 
-                        si->offset + state_machine_regs.address,
-                        state_machine_regs.last_line, 
-                        0
-                     );
-		 state_machine_regs.last_address = state_machine_regs.address;
-		 state_machine_regs.last_file = state_machine_regs.file;
-		 state_machine_regs.last_line = state_machine_regs.line;
-	     }
-             state_machine_regs.basic_block = 0; /* JRS added */
-             break;
-
-           case DW_LNS_advance_pc:
-             adv = info.li_min_insn_length 
-                      * read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             state_machine_regs.address += adv;
-             if (0) VG_(printf)("smr.a += %p\n", adv );
-             break;
-
-           case DW_LNS_advance_line:
-             adv = read_leb128 (data, & bytes_read, 1);
-             data += bytes_read;
-             state_machine_regs.line += adv;
-             break;
-
-           case DW_LNS_set_file:
-             adv = read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             state_machine_regs.file = adv;
-             break;
-
-           case DW_LNS_set_column:
-             adv = read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             state_machine_regs.column = adv;
-             break;
-
-           case DW_LNS_negate_stmt:
-             adv = state_machine_regs.is_stmt;
-             adv = ! adv;
-             state_machine_regs.is_stmt = adv;
-             break;
-
-           case DW_LNS_set_basic_block:
-             state_machine_regs.basic_block = 1;
-             break;
-
-           case DW_LNS_const_add_pc:
-             adv = (((255 - info.li_opcode_base) / info.li_line_range)
-                    * info.li_min_insn_length);
-             state_machine_regs.address += adv;
-             if (0) VG_(printf)("smr.a += %p\n", adv );
-             break;
-
-           case DW_LNS_fixed_advance_pc:
-             /* XXX: Need something to get 2 bytes */
-             adv = *((UShort *)data);
-             data += 2;
-             state_machine_regs.address += adv;
-             if (0) VG_(printf)("smr.a += %p\n", adv );
-             break;
-
-           case DW_LNS_set_prologue_end:
-             break;
-
-           case DW_LNS_set_epilogue_begin:
-             break;
-
-           case DW_LNS_set_isa:
-             adv = read_leb128 (data, & bytes_read, 0);
-             data += bytes_read;
-             break;
-
-           default:
-             {
-               int j;
-               for (j = standard_opcodes[op_code - 1]; j > 0 ; --j)
-                 {
-                   read_leb128 (data, &bytes_read, 0);
-                   data += bytes_read;
-                 }
-             }
-             break;
-           }
-      } /* while (data < end_of_sequence) */
-
-  } /* while (data < end) */
-
- out:
-  free_WordArray(&filenames);
-  free_WordArray(&dirnames);
-  free_WordArray(&fnidx2dir);
+   return len;
 }
 
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+/* read a .debug_line section block for a compilation unit
+ *
+ * Input:   - theBlock must point to the start of the block
+ *            for the given compilation unit
+ *          - ui contains additional info like the compilation dir
+ *            for this unit
+ *
+ * Output: - si debug info structures get updated
+ */
+static 
+void read_dwarf2_lineblock ( SegInfo*  si, 
+                             UnitInfo* ui, 
+                             UChar*    theBlock, 
+                             Int       noLargerThan )
+{
+   DWARF2_External_LineInfo* external;
+   DWARF2_Internal_LineInfo  info;
+   UChar*                    standard_opcodes;
+   UChar*                    data = theBlock;
+   UChar*                    end_of_sequence;
+   WordArray                 filenames;
+   WordArray                 dirnames;
+   WordArray                 fnidx2dir;
+
+   /* filenames is an array of file names harvested from the DWARF2
+      info.  Entry [0] is NULL and is never referred to by the state
+      machine.
+
+      Similarly, dirnames is an array of directory names.  Entry [0]
+      is also NULL and denotes "we don't know what the path is", since
+      that is different from "the path is the empty string".  Unlike
+      the file name table, the state machine does refer to entry [0],
+      which basically means "." ("the current directory of the
+      compilation", whatever that means, according to the DWARF3
+      spec.)
+
+      fnidx2dir is an array of indexes into the dirnames table.
+      (confused yet?)  filenames[] and fnidx2dir[] are indexed
+      together.  That is, for some index i in the filename table, then
+
+         the filename  is filenames[i]
+         the directory is dirnames[ fnidx2dir[i] ] */
+
+   /* Fails due to gcc padding ...
+   vg_assert(sizeof(DWARF2_External_LineInfo)
+             == sizeof(DWARF2_Internal_LineInfo));
+   */
+
+   vg_assert(noLargerThan > 0);
+
+   init_WordArray(&filenames);
+   init_WordArray(&dirnames);
+   init_WordArray(&fnidx2dir);
+
+   /* DWARF2 starts numbering filename entries at 1, so we need to
+      add a dummy zeroth entry to the table.  The zeroth dirnames
+      entry denotes 'current directory of compilation' so we might
+      as well make the fnidx2dir zeroth entry denote that. 
+   */
+   addto_WordArray( &filenames, (Word)NULL );
+
+   if (ui->compdir)
+      addto_WordArray( &dirnames, (Word)VG_(addStr)(si, ui->compdir, -1) );
+   else
+      addto_WordArray( &dirnames, (Word)VG_(addStr)(si, ".", -1) );
+
+   addto_WordArray( &fnidx2dir, (Word)0 );  /* compilation dir */
+
+
+   external = (DWARF2_External_LineInfo *) data;
+
+   /* Check the length of the block.  */
+   info.li_length = * ((UInt *)(external->li_length));
+
+   if (info.li_length == 0xffffffff) {
+      VG_(symerr)("64-bit DWARF line info is not supported yet.");
+      goto out;
+   }
+
+   if (info.li_length + sizeof (external->li_length) > noLargerThan) {
+      VG_(symerr)("DWARF line info appears to be corrupt "
+                  "- the section is too small");
+      goto out;
+   }
+
+   /* Check its version number.  */
+   info.li_version = * ((UShort *) (external->li_version));
+   if (info.li_version != 2) {
+      VG_(symerr)("Only DWARF version 2 line info "
+                  "is currently supported.");
+      goto out;
+   }
+
+   info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
+   info.li_min_insn_length = * ((UChar *)(external->li_min_insn_length));
+
+   info.li_default_is_stmt = True; 
+   /* WAS: = * ((UChar *)(external->li_default_is_stmt)); */
+   /* Josef Weidendorfer (20021021) writes:
+
+      It seems to me that the Intel Fortran compiler generates bad
+      DWARF2 line info code: It sets "is_stmt" of the state machine in
+      the the line info reader to be always false. Thus, there is
+      never a statement boundary generated and therefore never a
+      instruction range/line number mapping generated for valgrind.
+
+      Please have a look at the DWARF2 specification, Ch. 6.2
+      (x86.ddj.com/ftp/manuals/tools/dwarf.pdf).  Perhaps I understand
+      this wrong, but I don't think so.
+
+      I just had a look at the GDB DWARF2 reader...  They completely
+      ignore "is_stmt" when recording line info ;-) That's the reason
+      "objdump -S" works on files from the the intel fortran compiler.
+   */
+
+   /* JRS: changed (UInt*) to (UChar*) */
+   info.li_line_base       = * ((UChar *)(external->li_line_base));
+
+   info.li_line_range      = * ((UChar *)(external->li_line_range));
+   info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
+
+   if (0) VG_(printf)("dwarf2: line base: %d, range %d, opc base: %d\n",
+                      info.li_line_base, 
+                      info.li_line_range, info.li_opcode_base);
+
+   /* Sign extend the line base field.  */
+   info.li_line_base <<= 24;
+   info.li_line_base >>= 24;
+
+   end_of_sequence = data + info.li_length 
+                          + sizeof (external->li_length);
+
+   reset_state_machine (info.li_default_is_stmt);
+
+   /* Read the contents of the Opcodes table.  */
+   standard_opcodes = data + sizeof (* external);
+
+   /* Read the contents of the Directory table.  */
+   data = standard_opcodes + info.li_opcode_base - 1;
+
+   while (* data != 0) {
+
+#     define NBUF 4096
+      static Char buf[NBUF];
+
+      /* If data[0] is '/', then 'data' is an absolute path and we
+         don't mess with it.  Otherwise, if we can, construct the
+         'path ui->compdir' ++ "/" ++ 'data'. */
+
+      if (*data != '/' 
+          /* not an absolute path */
+          && VG_(strlen)(ui->compdir) + VG_(strlen)(data) + 5/*paranoia*/ < NBUF
+          /* it's short enough to concatenate */) 
+      {
+         buf[0] = 0;
+         VG_(strcat)(buf, ui->compdir);
+         VG_(strcat)(buf, "/");
+         VG_(strcat)(buf, data);
+         vg_assert(VG_(strlen)(buf) < NBUF);
+         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,buf,-1) );
+         if (0) VG_(printf)("rel path  %s\n", buf);
+      } else {
+         /* just use 'data'. */
+         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,data,-1) );
+         if (0) VG_(printf)("abs path  %s\n", data);
+      }
+
+      data += VG_(strlen)(data) + 1;
+
+#     undef NBUF
+   }
+   if (*data != 0) {
+      VG_(symerr)("can't find NUL at end of DWARF2 directory table");
+      goto out;
+   }
+   data ++;
+
+   /* Read the contents of the File Name table.  This produces a bunch
+      of file names, and for each, an index to the corresponding
+      direcory name entry. */
+   while (* data != 0) {
+      UChar* name;
+      Int    bytes_read, diridx;
+      name = data;
+      data += VG_(strlen) ((Char *) data) + 1;
+
+      diridx = read_leb128 (data, & bytes_read, 0);
+      data += bytes_read;
+      read_leb128 (data, & bytes_read, 0);
+      data += bytes_read;
+      read_leb128 (data, & bytes_read, 0);
+      data += bytes_read;
+
+      addto_WordArray( &filenames, (Word)VG_(addStr)(si,name,-1) );
+      addto_WordArray( &fnidx2dir, (Word)diridx );
+      if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
+   }
+   if (*data != 0) {
+      VG_(symerr)("can't find NUL at end of DWARF2 file name table");
+      goto out;
+   }
+   data ++;
+
+   /* Now display the statements.  */
+
+   while (data < end_of_sequence) {
+
+      UChar op_code;
+      Int           adv;
+      Int           bytes_read;
+
+      op_code = * data ++;
+
+      if (0) VG_(printf)("dwarf2: OPC: %d\n", op_code);
+
+      if (op_code >= info.li_opcode_base) {
+
+         Int advAddr;
+         op_code -= info.li_opcode_base;
+         adv      = (op_code / info.li_line_range) 
+                       * info.li_min_insn_length;
+         advAddr = adv;
+         state_machine_regs.address += adv;
+         if (0) VG_(printf)("smr.a += %p\n", adv );
+         adv = (op_code % info.li_line_range) + info.li_line_base;
+         if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
+                            si->offset, state_machine_regs.address );
+         state_machine_regs.line += adv;
+
+         if (state_machine_regs.is_stmt) {
+            /* only add a statement if there was a previous boundary */
+            if (state_machine_regs.last_address) 
+               VG_(addLineInfo)(
+                  si, 
+                  (Char*)index_WordArray( &filenames,
+                                          state_machine_regs.last_file ),
+                  lookupDir( state_machine_regs.last_file,
+                             &fnidx2dir, &dirnames ),
+                  si->offset + state_machine_regs.last_address, 
+                  si->offset + state_machine_regs.address, 
+                  state_machine_regs.last_line, 
+                  0
+               );
+            state_machine_regs.last_address = state_machine_regs.address;
+            state_machine_regs.last_file = state_machine_regs.file;
+            state_machine_regs.last_line = state_machine_regs.line;
+         }
+
+      }
+
+      else /* ! (op_code >= info.li_opcode_base) */
+      switch (op_code) {
+         case DW_LNS_extended_op:
+            data += process_extended_line_op (
+                       si, &filenames, &dirnames, &fnidx2dir,
+                       data, info.li_default_is_stmt);
+            break;
+
+         case DW_LNS_copy:
+            if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
+                               si->offset, state_machine_regs.address );
+            if (state_machine_regs.is_stmt) {
+               /* only add a statement if there was a previous boundary */
+               if (state_machine_regs.last_address) 
+                  VG_(addLineInfo)(
+                     si, 
+                     (Char*)index_WordArray( &filenames,
+                                             state_machine_regs.last_file ),
+                     lookupDir( state_machine_regs.last_file,
+                                &fnidx2dir, &dirnames ),
+                     si->offset + state_machine_regs.last_address, 
+                     si->offset + state_machine_regs.address,
+                     state_machine_regs.last_line, 
+                     0
+                  );
+               state_machine_regs.last_address = state_machine_regs.address;
+               state_machine_regs.last_file = state_machine_regs.file;
+               state_machine_regs.last_line = state_machine_regs.line;
+            }
+            state_machine_regs.basic_block = 0; /* JRS added */
+            break;
+
+         case DW_LNS_advance_pc:
+            adv = info.li_min_insn_length 
+                     * read_leb128 (data, & bytes_read, 0);
+            data += bytes_read;
+            state_machine_regs.address += adv;
+            if (0) VG_(printf)("smr.a += %p\n", adv );
+            break;
+
+         case DW_LNS_advance_line:
+            adv = read_leb128 (data, & bytes_read, 1);
+            data += bytes_read;
+            state_machine_regs.line += adv;
+            break;
+
+         case DW_LNS_set_file:
+            adv = read_leb128 (data, & bytes_read, 0);
+            data += bytes_read;
+            state_machine_regs.file = adv;
+            break;
+
+         case DW_LNS_set_column:
+            adv = read_leb128 (data, & bytes_read, 0);
+            data += bytes_read;
+            state_machine_regs.column = adv;
+            break;
+
+         case DW_LNS_negate_stmt:
+            adv = state_machine_regs.is_stmt;
+            adv = ! adv;
+            state_machine_regs.is_stmt = adv;
+            break;
+
+         case DW_LNS_set_basic_block:
+            state_machine_regs.basic_block = 1;
+            break;
+
+         case DW_LNS_const_add_pc:
+            adv = (((255 - info.li_opcode_base) / info.li_line_range)
+                   * info.li_min_insn_length);
+            state_machine_regs.address += adv;
+            if (0) VG_(printf)("smr.a += %p\n", adv );
+            break;
+
+         case DW_LNS_fixed_advance_pc:
+            /* XXX: Need something to get 2 bytes */
+            adv = *((UShort *)data);
+            data += 2;
+            state_machine_regs.address += adv;
+            if (0) VG_(printf)("smr.a += %p\n", adv );
+            break;
+
+         case DW_LNS_set_prologue_end:
+            break;
+
+         case DW_LNS_set_epilogue_begin:
+            break;
+
+         case DW_LNS_set_isa:
+            adv = read_leb128 (data, & bytes_read, 0);
+            data += bytes_read;
+            break;
+
+         default: {
+            Int j;
+            for (j = standard_opcodes[op_code - 1]; j > 0 ; --j) {
+               read_leb128 (data, &bytes_read, 0);
+               data += bytes_read;
+            }
+         }
+         break;
+      } /* switch (op_code) */
+
+   } /* while (data < end_of_sequence) */
+
+  out:
+   free_WordArray(&filenames);
+   free_WordArray(&dirnames);
+   free_WordArray(&fnidx2dir);
+}
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+/* Return abbrev for given code 
+ * Returned pointer points to the tag
+ * */
+static UChar* lookup_abbrev( UChar* p, UInt acode )
+{
+   UInt code;
+   UInt name;
+   for( ; ; ) {
+      code = read_leb128U( &p );
+      if ( code == acode )
+         return p;
+      read_leb128U( &p ); /* skip tag */
+      p++;                /* skip has_children flag */
+      do {
+         name = read_leb128U( &p ); /* name */
+         read_leb128U( &p );   /* form */
+      }
+      while( name != 0 ); /* until name == form == 0 */
+   }
+   return NULL;
+}
+
+/* Read general information for a particular compile unit block in
+ * the .debug_info section.
+ * 
+ * Input: - unitblock is the start of a compilation
+ *          unit block in .debuginfo section
+ *        - debugabbrev is start of .debug_abbrev section
+ *        - debugstr is start of .debug_str section
+ *        
+ * Output: Fill members of ui pertaining to the compilation unit:
+ *         - ui->name is the name of the compilation unit
+ *         - ui->compdir is the compilation unit directory
+ *         - ui->stmt_list is the offset in .debug_line section
+ *                for the dbginfos of this compilation unit
+ *                
+ * Note : the output strings are not allocated and point
+ * directly to the memory-mapped section.
+ */
+static 
+void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
+                                  UChar*    unitblock,
+                                  UChar*    debugabbrev,
+                                  UChar*    debugstr )
+{
+   UInt atoffs, acode, abcode, blklen;
+   Int  addr_size, ver, level;
+
+   UChar* p = unitblock;
+   UChar* end;
+   UChar* abbrev;
+
+   VG_(memset)( ui, 0, sizeof( UnitInfo ) );
+   ui->stmt_list = (UInt)-1;
+   
+   /* Read the compilation unit header in .debug_info section - See p 70 */  
+   blklen    = *((UInt*)p);   p += 4; /* This block length */
+   ver       = *((UShort*)p); p += 2; /* version should be 2 */
+   atoffs    = *((UInt*)p);   p += 4; /* get offset in abbrev */
+   addr_size = *p;            p += 1; /* Address size */
+
+   end    = unitblock + blklen + 4; /* End of this block */
+   level  = 0;                      /* Level in the abbrev tree */
+   abbrev = debugabbrev + atoffs;   /* Abbreviation data for this block */
+   
+   /* Read the compilation unit entries */
+   while ( p < end ) {
+      Bool has_child;
+      UInt tag;
+
+      acode = read_leb128U( &p ); /* abbreviation code */
+      if ( acode == 0 ) {
+         /* NULL entry used for padding - or last child for a sequence
+            - see para 7.5.3 */
+         level--;
+         continue;
+      }
+      
+      /* Read abbreviation header */
+      abcode = read_leb128U( &abbrev ); /* abbreviation code */
+      if ( acode != abcode ) {
+         /* We are in in children list, and must rewind to a
+          * previously declared abbrev code.  This code works but is
+          * not triggered since we shortcut the parsing once we have
+          * read the compile_unit block.  This should only occur when
+          * level > 0 */
+         abbrev = lookup_abbrev( debugabbrev + atoffs, acode );
+      }
+
+      tag = read_leb128U( &abbrev );
+      has_child = *(abbrev++) == 1; /* DW_CHILDREN_yes */
+
+      if ( has_child )
+         level++;
+
+      /* And loop on entries */
+      for ( ; ; ) {
+         /* Read entry definition */
+         UInt name, form;
+         UInt   cval = -1;   /* Constant value read */
+         Char  *sval = NULL; /* String value read */
+         name = read_leb128U( &abbrev );
+         form = read_leb128U( &abbrev );
+         if ( name == 0 )
+            break;
+       
+         /* Read data */
+         /* Attributes encoding explained p 71 */
+         if ( form == 0x16 /* FORM_indirect */ )
+            form = read_leb128U( &p );
+         /* Decode form. For most kinds, Just skip the amount of data since
+            we don't use it for now */
+         switch( form ) {
+            /* Those cases extract the data properly */
+            case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
+            case 0x06: /* FORM_data4 */     cval = *((UInt*)p);p +=4; break;
+            case 0x0e: /* FORM_strp */      sval = debugstr + *((UInt*)p); 
+                                            p += 4; break;
+                                            /* pointer in .debug_str */
+            case 0x08: /* FORM_string */    sval = (Char*)p; 
+                                            p += VG_(strlen)((Char*)p) + 1; break;
+            case 0x0b: /* FORM_data1 */     cval = *p; p++; break;
+            
+            /* TODO : Following ones just skip data - implement if you need */
+            case 0x01: /* FORM_addr */      p += addr_size; break;
+            case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
+            case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
+            case 0x07: /* FORM_data8 */     p +=8; break;
+            case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
+            case 0x0a: /* FORM_block1 */    p += *p + 1; break;
+            case 0x0c: /* FORM_flag */      p++; break;
+            case 0x0d: /* FORM_sdata */     read_leb128S( &p ); break;
+            case 0x0f: /* FORM_udata */     read_leb128U( &p ); break;
+            case 0x10: /* FORM_ref_addr */  p += addr_size; break;
+                                            /* TODO Check that !!! */
+            case 0x11: /* FORM_ref1 */      p++; break;
+            case 0x12: /* FORM_ref2 */      p += 2; break;
+            case 0x13: /* FORM_ref4 */      p += 4; break;
+            case 0x14: /* FORM_ref8 */      p += 8; break;
+            case 0x15: /* FORM_ref_udata */ read_leb128U( &p ); break;
+            
+            default:
+               VG_(printf)( "### unhandled dwarf2 abbrev form code 0x%x\n", form );
+               break;
+         }
+         
+         /* Now store the members we need in the UnitInfo structure */
+         if ( tag == 0x0011 /*TAG_compile_unit*/ ) {
+                 if ( name == 0x03 ) ui->name = sval;      /* DW_AT_name */
+            else if ( name == 0x1b ) ui->compdir = sval;   /* DW_AT_compdir */
+            else if ( name == 0x10 ) ui->stmt_list = cval; /* DW_AT_stmt_list */
+         }
+      }
+      /* Shortcut the parsing once we have read the compile_unit block
+       * That's enough info for us, and we are not gdb ! */
+      if ( tag == 0x0011 /*TAG_compile_unit*/ )
+         break;
+   } /* Loop on each sub block */
+
+   /* This test would be valid if we were not shortcuting the parsing
+   if( level != 0 )
+      VG_(printf)( "#### Exiting debuginfo block at level %d !!!\n", level );
+   */
+}
+
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+
+/* Collect the debug info from dwarf2 debugging sections
+ * of a given module.
+ * 
+ * Inputs: given .debug_xxx sections
+ * Output: update si to contain all the dwarf2 debug infos
+ */
+void VG_(read_debuginfo_dwarf2) 
+        ( SegInfo* si,
+          UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
+          UChar* debugabbrev,                     /* .debug_abbrev */
+          UChar* debugline,   Int debug_line_sz,  /* .debug_line */
+          UChar* debugstr )                       /* .debug_str */
+{
+   UnitInfo ui;
+   Int      ver;
+   UChar*   block;
+   UChar*   end = debuginfo + debug_info_sz;
+   UInt     blklen;
+
+   /* Iterate on all the blocks we find in .debug_info */
+   for ( block = debuginfo; block < end - 4; block += blklen + 4 ) {
+
+      /* Read the compilation unit header in .debug_info section - See
+         p 70 */
+      blklen = *((UInt*)block);         /* This block length */
+
+      if ( block + blklen + 4 > end ) {
+         VG_(symerr)( "Last block truncated in .debug_info; ignoring" );
+         return;
+      }
+      ver = *((UShort*)(block + 4));    /* version should be 2 */
+      
+      if ( ver != 2 ) {
+         VG_(symerr)( "Ignoring non-dwarf2 block in .debug_info" );
+         continue;
+      }
+      
+      /* Fill ui with offset in .debug_line and compdir */
+      if ( 0 )
+         VG_(printf)( "Reading UnitInfo at 0x%x.....\n", block - debuginfo );
+      read_unitinfo_dwarf2( &ui, block, debugabbrev, debugstr );
+      if ( 0 )
+        VG_(printf)( "   => LINES=0x%x    NAME=%s     DIR=%s\n", 
+                     ui.stmt_list, ui.name, ui.compdir );
+      
+      /* Ignore blocks with no .debug_line associated block */
+      if ( ui.stmt_list == (UInt)-1 )
+         continue;
+      
+      if (0) 
+         VG_(printf)("debug_line_sz %d, ui.stmt_list %d  %s\n", 
+                     debug_line_sz, ui.stmt_list, ui.name );
+      /* Read the .debug_line block for this compile unit */
+      read_dwarf2_lineblock( si, &ui, debugline + ui.stmt_list, 
+                                      debug_line_sz - ui.stmt_list );
+   }
+}
+
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 
 /*------------------------------------------------------------*/
 /*--- Read DWARF1 format line number info.                 ---*/

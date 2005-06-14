@@ -1593,6 +1593,9 @@ Bool read_lib_symbols ( SegInfo* si )
       UChar*     stab         = NULL; /* .stab         (stabs)  */
       UChar*     stabstr      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line   = NULL; /* .debug_line   (dwarf2) */
+      UChar*     debug_info   = NULL; /* .debug_info   (dwarf2) */
+      UChar*     debug_abbv   = NULL; /* .debug_abbrev (dwarf2) */
+      UChar*     debug_str    = NULL; /* .debug_str    (dwarf2) */
       UChar*     dwarf1d      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l      = NULL; /* .line         (dwarf1) */
       UChar*     ehframe      = NULL; /* .eh_frame     (dwarf2) */
@@ -1606,6 +1609,9 @@ Bool read_lib_symbols ( SegInfo* si )
       UInt       stab_sz         = 0;
       UInt       stabstr_sz      = 0;
       UInt       debug_line_sz   = 0;
+      UInt       debug_info_sz   = 0;
+      UInt       debug_abbv_sz   = 0;
+      UInt       debug_str_sz    = 0;
       UInt       dwarf1d_sz      = 0;
       UInt       dwarf1l_sz      = 0;
       UInt       ehframe_sz      = 0;
@@ -1647,7 +1653,12 @@ Bool read_lib_symbols ( SegInfo* si )
 
          else FIND(".stab",         stab,         stab_sz,       dummy_addr,   0, UChar*)
          else FIND(".stabstr",      stabstr,      stabstr_sz,    dummy_addr,   0, UChar*)
+
          else FIND(".debug_line",   debug_line,   debug_line_sz, dummy_addr,   0, UChar*)
+         else FIND(".debug_info",   debug_info,   debug_info_sz, dummy_addr,   0, UChar*)
+         else FIND(".debug_abbrev", debug_abbv,   debug_abbv_sz, dummy_addr,   0, UChar*)
+         else FIND(".debug_str",    debug_str,    debug_str_sz,  dummy_addr,   0, UChar*)
+
          else FIND(".debug",        dwarf1d,      dwarf1d_sz,    dummy_addr,   0, UChar*)
          else FIND(".line",         dwarf1l,      dwarf1l_sz,    dummy_addr,   0, UChar*)
          else FIND(".eh_frame",     ehframe,      ehframe_sz,    ehframe_addr, 0, UChar*)
@@ -1737,7 +1748,11 @@ Bool read_lib_symbols ( SegInfo* si )
 #     endif
       if (debug_line) {
          has_debuginfo = True;
-         VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );
+         VG_(read_debuginfo_dwarf2) ( si, 
+                                      debug_info,   debug_info_sz,
+                                      debug_abbv,
+                                      debug_line,   debug_line_sz,
+                                      debug_str );
       }
       if (dwarf1d && dwarf1l) {
          has_debuginfo = True;

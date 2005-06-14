@@ -1378,9 +1378,9 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
 
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
    x87->env[FP_ENV_STAT] 
-      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
+      = toUShort(toUInt( ((ftop & 7) << 11) | (c3210 & 0x4700) ));
    x87->env[FP_ENV_CTRL] 
-      = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
+      = toUShort(toUInt( amd64g_create_fpucw( vex_state->guest_FPROUND ) ));
 
    /* Compute the x87 tag word. */
    tagw = 0;

@@ -2216,7 +2216,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    LINX_(__NR_io_submit,         sys_io_submit),      // 248
    LINXY(__NR_io_cancel,         sys_io_cancel),      // 249
 
-//zz    LINX_(__NR_fadvise64,         sys_fadvise64),      // 250 */(Linux?)
+   LINX_(__NR_fadvise64,         sys_fadvise64),      // 250 */(Linux?)
    GENX_(251,                    sys_ni_syscall),     // 251
    LINX_(__NR_exit_group,        sys_exit_group),     // 252
    GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie), // 253
@@ -2242,7 +2242,7 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 
    LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
    GENX_(__NR_utimes,            sys_utimes),         // 271
-//zz    LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
+   LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
 //zz    //   (__NR_mbind,             sys_mbind),          // 274 ?/?
 //zz 

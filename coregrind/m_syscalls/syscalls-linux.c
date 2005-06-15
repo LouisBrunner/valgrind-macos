@@ -645,19 +645,19 @@ POST(sys_tgkill)
                    ARG3, ARG1, ARG2);
 }
 
-//zz PRE(sys_fadvise64, 0)
-//zz {
-//zz    PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ4(long, "fadvise64",
-//zz                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice)
-//zz }
-//zz 
-//zz PRE(sys_fadvise64_64, 0)
-//zz {
-//zz    PRINT("sys_fadvise64_64 ( %d, %lld, %lld, %d )", ARG1,ARG2,ARG3);
-//zz    PRE_REG_READ4(long, "fadvise64_64",
-//zz                  int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice)
-//zz }
+PRE(sys_fadvise64)
+{
+   PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ4(long, "fadvise64",
+                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice)
+}
+
+PRE(sys_fadvise64_64)
+{
+   PRINT("sys_fadvise64_64 ( %d, %lld, %lld, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ4(long, "fadvise64_64",
+                 int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice)
+}
 
 // Nb: this wrapper has to pad/unpad memory around the syscall itself,
 // and this allows us to control exactly the code that gets run while

@@ -267,12 +267,12 @@ static void make_space_at ( Int i )
    vg_assert(segments_used >= 0);
    if (segments_used+1 == VG_N_SEGMENTS) {
       VG_(printf)(
-         "coregrind/vg_memory.c:\n"
+         "coregrind/m_aspacemgr/aspacemgr.c:\n"
          "   VG_N_SEGMENTS is too small: "
          "increase it and rebuild Valgrind.\n"
       );
       VG_(printf)(
-         "coregrind/vg_memory.c:\n"
+         "coregrind/m_aspacemgr/aspacemgr.c:\n"
          "   giving up now.\n\n"
       );
       VG_(exit)(0);

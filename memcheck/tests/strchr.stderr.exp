@@ -1,0 +1,7 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: index (mac_replace_strmem.c:...)
+   by 0x........: main (strchr.c:11)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: index (mac_replace_strmem.c:...)
+   by 0x........: main (strchr.c:12)
